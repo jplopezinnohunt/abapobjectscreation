@@ -1,0 +1,3 @@
+  method IF_HRASR00GEN_SERVICE~GET_FIELD_INFO.
+
+  endmethod.

@@ -1,0 +1,76 @@
+--- Program: YPS8_BCS_V2_SEL (Total lines: 75) ---
+*&---------------------------------------------------------------------*
+*&  Include           YFM1_BCS_V3_SEL
+*&---------------------------------------------------------------------*
+
+SELECTION-SCREEN BEGIN OF BLOCK b00 WITH FRAME TITLE TEXT-b00.
+SELECT-OPTIONS s_fikrs FOR gs_budt-rfikrs  OBLIGATORY.
+SELECTION-SCREEN END OF BLOCK b00.
+SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
+SELECT-OPTIONS s_type FOR gs_fmfincode-type.
+SELECT-OPTIONS s_fund FOR gs_budt-rfund.
+SELECT-OPTIONS s_fictr FOR gs_budt-rfundsctr.
+SELECT-OPTIONS s_fipex FOR gs_budt-rcmmtitem.
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETERS p_excl80 AS CHECKBOX.
+SELECTION-SCREEN COMMENT 3(70) TEXT-c01.
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETERS p_avc AS CHECKBOX default 'X'.
+SELECTION-SCREEN COMMENT 3(70) TEXT-c02.
+SELECTION-SCREEN END OF LINE.
+SELECT-OPTIONS s_output FOR gs_fund_c5-fm_output.
+SELECT-OPTIONS s_c5_id FOR gs_fund_c5-c5_id NO INTERVALS.
+PARAMETERS p_ibf AS CHECKBOX.
+SELECTION-SCREEN END OF BLOCK b01.
+SELECTION-SCREEN BEGIN OF BLOCK b04 WITH FRAME TITLE TEXT-b04.
+PARAMETERS p_versi TYPE budt-rvers.
+SELECTION-SCREEN END OF BLOCK b04.
+SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
+SELECT-OPTIONS s_gjahr FOR gs_budt-ryear NO-EXTENSION.
+SELECTION-SCREEN END OF BLOCK b02.
+SELECTION-SCREEN BEGIN OF BLOCK b05 WITH FRAME TITLE TEXT-b05.
+SELECT-OPTIONS s_donor FOR gs_prps-yye_donor.
+SELECT-OPTIONS s_sector FOR gs_prps-usr02.
+SELECT-OPTIONS s_divis FOR gs_prps-usr03.
+SELECT-OPTIONS s_regio FOR gs_prps-usr00.
+SELECT-OPTIONS s_exec FOR gs_prps-yye_exec.
+SELECT-OPTIONS s_subre FOR gs_prps-usr01.
+SELECT-OPTIONS s_ptitle FOR gs_prps-post1.
+SELECTION-SCREEN END OF BLOCK b05.
+SELECTION-SCREEN BEGIN OF BLOCK b06 WITH FRAME TITLE TEXT-b06.
+PARAMETERS p_conv AS CHECKBOX.
+SELECTION-SCREEN END OF BLOCK b06.
+SELECTION-SCREEN BEGIN OF BLOCK b03 WITH FRAME TITLE TEXT-b03.
+PARAMETERS p_detail RADIOBUTTON GROUP r001 DEFAULT 'X'.
+PARAMETERS p_aggreg RADIOBUTTON GROUP r001.
+PARAMETERS p_text AS CHECKBOX DEFAULT abap_true.
+PARAMETERS p_layout LIKE disvariant-variant.
+SELECTION-SCREEN END OF BLOCK b03.
+
+
+INITIALIZATION.
+  "default values
+  p_versi = '0'.
+  s_fikrs-sign = 'I'.
+  s_fikrs-option = 'EQ'.
+  s_fikrs-low = 'UNES'.
+  APPEND s_fikrs.
+  "Set fiscal year
+  s_gjahr-sign = 'I'.
+  s_gjahr-option = 'BT'.
+  s_gjahr-low = '2001'.
+  s_gjahr-high = sy-datum(4).
+  APPEND s_gjahr.
+*  s_fipex-sign = 'E'.
+*  s_fipex-option = 'EQ'.
+*  s_fipex-low = 'REVENUE'.
+*  APPEND s_fipex.
+*  s_fipex-sign = 'E'.
+*  s_fipex-option = 'EQ'.
+*  s_fipex-low = 'RESERVE '.
+*  APPEND s_fipex.
+
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_layout.
+  p_layout = ycl_bc_layout_variant=>f4_variant( sy-repid ).

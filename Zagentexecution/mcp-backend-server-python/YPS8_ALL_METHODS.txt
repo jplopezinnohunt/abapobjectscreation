@@ -1,0 +1,2036 @@
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM001 ---
+  METHOD SET_SELECTION_VALUES.
+
+    FIELD-SYMBOLS <lt_range> TYPE ANY TABLE.
+    FIELD-SYMBOLS <lv_param> TYPE any.
+    DATA lv_selname TYPE fieldname.
+
+    lv_selname = iv_selname.
+    CASE iv_kind.
+      WHEN 'S'.   "SELECT-OPTIONS
+        REPLACE 'S_' IN lv_selname WITH 'MR_'.
+        ASSIGN (lv_selname) TO <lt_range>.
+        CHECK <lt_range> IS ASSIGNED.
+        <lt_range> = it_value.
+      WHEN 'P'. "PARAMETERS
+        REPLACE 'P_' IN lv_selname WITH 'MP_'.
+        ASSIGN (lv_selname) TO <lv_param>.
+        CHECK <lv_param> IS ASSIGNED.
+        <lv_param> = iv_value.
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM002 ---
+  METHOD get_data.
+
+    me->initialize_data( ).
+    me->read_data_from_db( ).
+    me->prepare_data( ).
+    IF mp_aggreg = abap_true.   "Only one summarized line per fund
+      me->aggregate_data( ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM003 ---
+  METHOD display_alv.
+
+    mv_repid = iv_repid.
+
+    "Init ALV
+    TRY.
+        CALL METHOD cl_salv_table=>factory
+*      EXPORTING
+*        list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*        r_container    =
+*        container_name =
+          IMPORTING
+            r_salv_table = mo_salv_table
+          CHANGING
+            t_table      = mt_result.
+      CATCH cx_salv_msg .
+    ENDTRY.
+
+    "ALV functions activation
+    me->set_functions( ).
+
+    "ALV columns
+    me->set_columns( ).
+
+    "ALV layout
+    me->set_layout( ).
+
+    "ALV display settings
+    me->set_display_settings( ).
+
+    "Display list
+    mo_salv_table->display( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM004 ---
+  METHOD read_data_from_db.
+
+    me->read_fmfincode( ).
+    CHECK mt_fund IS NOT INITIAL.
+    me->read_fmbdt( ).
+    me->filter_fund( ).
+    CHECK mt_fund IS NOT INITIAL.
+    me->read_fmit( ).
+    me->read_project( ).
+    me->read_avc( ).
+    CHECK mt_project IS NOT INITIAL.
+    me->read_cooi_bpej( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM005 ---
+  METHOD prepare_data.
+
+    DATA lv_end_fistl TYPE boolean.
+    DATA ls_result TYPE ysfm_data_rep_2.
+    DATA ls_result_head TYPE ysfm_data_rep_2.
+    DATA lt_wfmbdt TYPE tty_wfmbdt.
+    DATA lt_wfmbdt_oth TYPE tty_wfmbdt.
+    DATA lt_wfmbdt_fund TYPE tty_wfmbdt.
+    DATA lr_fistl TYPE tty_fistl.
+    DATA lv_rate_today TYPE ukurs_curr.
+
+    LOOP AT mt_fmbdt INTO DATA(ls_fmbdt).
+
+      AT NEW fikrs.
+        CLEAR: mv_waers, mv_convert, lv_rate_today.
+        READ TABLE mo_conv_rate->mt_conv INTO DATA(ls_conv) WITH KEY fikrs = ls_fmbdt-fikrs.
+        IF sy-subrc = 0.
+          mv_waers = ls_conv-waers.
+          mv_convert = abap_true.
+          "Get rate at sy-datum
+*          READ TABLE mt_conv_data INTO DATA(ls_conv_data) WITH KEY waers = mv_waers
+*                                                                   gjahr = '0000'
+*                                                                   perio = '000'.
+          lv_rate_today = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                                  iv_gjahr = '0000'
+                                                  iv_perio = '000' ).
+        ENDIF.
+      ENDAT.
+
+      AT NEW fincode.
+        CLEAR: ms_fipex_all, ls_result_head, lt_wfmbdt_fund, lr_fistl, mv_no_project.
+        ls_result_head-fikrs = ls_fmbdt-fikrs.
+        ls_result_head-fincode = ls_fmbdt-fincode.
+        me->set_master_data( CHANGING cs_result = ls_result_head ).
+      ENDAT.
+
+      AT NEW fistl.
+        CLEAR: lt_wfmbdt, lt_wfmbdt_oth, ls_result.
+        mv_excl80 = mp_excl80.
+        ls_result = ls_result_head.
+        ls_result-fistl = ls_fmbdt-fistl.
+      ENDAT.
+
+      "Check project has been selected
+      CHECK mv_no_project = abap_false.
+
+      "Check fund / fund center / commitment item
+      IF me->is_commitment_item_in_avc( iv_fikrs = ls_fmbdt-fikrs
+                                        iv_fincode = ls_fmbdt-fincode
+                                        iv_fistl = ls_fmbdt-fistl
+                                        iv_fipex = ls_fmbdt-fipex ) = abap_true.
+        me->set_main_to_light_table( EXPORTING is_fmbdt = ls_fmbdt
+                                               iv_rate = lv_rate_today
+                                     CHANGING ct_wfmbdt = lt_wfmbdt ).
+      ENDIF.
+
+      AT END OF fistl.
+        DELETE lt_wfmbdt WHERE hamount IS INITIAL AND fipex <> 'REVENUE'.
+        IF lt_wfmbdt IS NOT INITIAL.
+          "Get amounts out of selection period for ALLOC_TOTAL
+          LOOP AT mt_fmbdt_oth INTO DATA(ls_fmbdt_oth) WHERE fikrs = ls_fmbdt-fikrs
+                                                       AND   fincode = ls_fmbdt-fincode
+                                                       AND   fistl = ls_fmbdt-fistl.
+            IF me->is_commitment_item_in_avc( iv_fikrs = ls_fmbdt_oth-fikrs
+                                              iv_fincode = ls_fmbdt_oth-fincode
+                                              iv_fistl = ls_fmbdt_oth-fistl
+                                              iv_fipex = ls_fmbdt_oth-fipex ) = abap_true.
+              me->set_main_to_light_table( EXPORTING is_fmbdt = ls_fmbdt_oth
+                                                     iv_rate = lv_rate_today
+                                           CHANGING ct_wfmbdt = lt_wfmbdt_oth ).
+            ENDIF.
+          ENDLOOP.
+          DELETE lt_wfmbdt_oth WHERE hamount IS INITIAL AND fipex <> 'REVENUE'.
+          "Set amounts in result table
+          me->set_amounts( is_result = ls_result
+                           it_wfmbdt = lt_wfmbdt
+                           it_wfmbdt_oth = lt_wfmbdt_oth ).
+          APPEND VALUE #( sign = 'I' option = 'EQ' low = ls_fmbdt-fistl ) TO lr_fistl.
+          APPEND LINES OF lt_wfmbdt TO lt_wfmbdt_fund.
+        ENDIF.
+      ENDAT.
+
+      AT END OF fincode.
+        ls_result = ls_result_head.
+        mv_excl80 = abap_false.
+        me->set_other_fund_center( is_result = ls_result
+                                   ir_fistl = lr_fistl
+                                   it_wfmbdt = lt_wfmbdt_fund ).
+        me->set_project_amounts( iv_fikrs = ls_fmbdt-fikrs
+                                 iv_fincode = ls_fmbdt-fincode ).
+      ENDAT.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM006 ---
+  METHOD initialize_data.
+
+    DATA lv_year TYPE gjahr.
+    DATA lv_perio TYPE periode.
+    DATA lv_date TYPE datum.
+    DATA lv_rate TYPE ukurs_curr.
+
+    "Extract fiscal dates from selection period
+    READ TABLE mr_gjahr INTO DATA(ls_gjahr) INDEX 1.
+    mv_begda = |{ ls_gjahr-low }0101|.
+    mv_endda = |{ ls_gjahr-high }1231|.
+    mv_begye = ls_gjahr-low.
+    mv_endye = ls_gjahr-high.
+    mv_prev_year = mv_endye - 1.
+
+    "Read commitment item texts
+    SELECT * INTO TABLE mt_fmcit FROM fmcit WHERE spras = sy-langu
+                                            AND   fikrs IN mr_fikrs
+                                            AND   gjahr = '0000'.
+
+*    CLEAR: mt_conv, mt_conv_data.
+*    IF mp_conv = abap_true.
+*      "Get company code / FM area which are not in USD
+*      SELECT a~bukrs,
+*             b~fikrs,
+*             b~waers
+*             FROM t001 AS a
+*             INNER JOIN fm01 AS b ON b~fikrs = a~fikrs
+*             WHERE b~waers <> 'USD'
+*             INTO TABLE @mt_conv.
+*
+*      "Get conversion date by period
+*      LOOP AT mt_conv INTO DATA(ls_conv) WHERE fikrs IN mr_fikrs.
+*        "Check if conversion has been done in currency
+*        READ TABLE mt_conv_data TRANSPORTING NO FIELDS WITH KEY waers = ls_conv-waers
+*                                                                gjahr = '0000'
+*                                                                perio = '000'.
+*        CHECK sy-subrc <> 0.
+*        lv_year = mv_begye.
+*        "Set rate for sy-datum into year 0000 period 000
+*        lv_rate = me->get_exchange_rate( iv_waers = ls_conv-waers iv_date = sy-datum ).
+*        INSERT VALUE #( waers = ls_conv-waers gjahr = '0000' perio = '000' cdate = sy-datum rate = lv_rate )
+*               INTO TABLE mt_conv_data.
+*        DO.
+*          CLEAR lv_perio.
+*          DO 17 TIMES.
+*            IF lv_perio = 0.
+*              lv_date = |{ lv_year }0101|.
+*            ELSE.
+*              CALL FUNCTION 'LAST_DAY_IN_PERIOD_GET'
+*                EXPORTING
+*                  i_gjahr        = lv_year
+**                 I_MONMIT       = 00
+*                  i_periv        = 'K4'
+*                  i_poper        = lv_perio
+*                IMPORTING
+*                  e_date         = lv_date
+*                EXCEPTIONS
+*                  input_false    = 1
+*                  t009_notfound  = 2
+*                  t009b_notfound = 3
+*                  OTHERS         = 4.
+*            ENDIF.
+*            lv_rate = me->get_exchange_rate( iv_waers = ls_conv-waers iv_date = lv_date ).
+*            INSERT VALUE #( waers = ls_conv-waers gjahr = lv_year perio = lv_perio cdate = lv_date rate = lv_rate )
+*                   INTO TABLE mt_conv_data.
+*            ADD 1 TO lv_perio.
+*          ENDDO.
+*          IF lv_year = mv_endye.
+*            EXIT.
+*          ELSE.
+*            ADD 1 TO lv_year.
+*          ENDIF.
+*        ENDDO.
+*      ENDLOOP.
+*    ENDIF.
+    mo_conv_rate = NEW ycl_fm_conversion_rate( iv_target_waers = 'USD'
+                                               iv_begye = mv_begye
+                                               iv_endye = mv_endye
+                                               it_fikrs_range = mr_fikrs ).
+    IF mp_conv = abap_false.
+      CLEAR mo_conv_rate->mt_conv.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM009 ---
+  METHOD read_fmbdt.
+
+    DATA lr_fipex TYPE RANGE OF fm_fipex.
+    DATA lt_fmbdt TYPE tty_fmbdt.
+
+    lr_fipex = VALUE #( ( sign = 'E' option = 'EQ' low = 'REVENUE' )
+                        ( sign = 'E' option = 'EQ' low = 'RESERVE' ) ).
+    APPEND LINES OF mr_fipex TO lr_fipex.
+
+    "Get data from FMBDT
+    SELECT a~rfikrs AS fikrs,
+           a~rfund AS fincode,
+           a~rfundsctr AS fistl,
+           a~rcmmtitem AS fipex,
+           c~curr1 AS waers,
+           a~budtype_9 AS btype,
+           b~bukrs AS bukrs,
+           a~hslvt AS hslvt,
+           a~hsl01 AS hsl01,
+           a~hsl02 AS hsl02,
+           a~hsl03 AS hsl03,
+           a~hsl04 AS hsl04,
+           a~hsl05 AS hsl05,
+           a~hsl06 AS hsl06,
+           a~hsl07 AS hsl07,
+           a~hsl08 AS hsl08,
+           a~hsl09 AS hsl09,
+           a~hsl10 AS hsl10,
+           a~hsl11 AS hsl11,
+           a~hsl12 AS hsl12,
+           a~hsl13 AS hsl13,
+           a~hsl14 AS hsl14,
+           a~hsl15 AS hsl15,
+           a~hsl16 AS hsl16,
+           a~rldnr AS rldnr,
+           a~rrcty AS rrcty,
+           a~rvers AS rvers,
+           a~ryear AS ryear,
+           a~robjnr AS robjnr,
+           a~cobjnr AS cobjnr,
+           a~sobjnr AS sobjnr,
+           a~rtcur  AS rtcur
+           FROM fmbdt AS a
+           LEFT OUTER JOIN t001 AS b ON b~fikrs = a~rfikrs
+           LEFT OUTER JOIN t882 AS c ON  c~bukrs = b~bukrs
+                                     AND c~rldnr = '00'
+           FOR ALL ENTRIES IN @mt_fund
+           WHERE a~rfikrs = @mt_fund-fikrs
+           AND   a~rfund = @mt_fund-fincode
+           AND   a~rvers = @mp_versi
+           "AND   a~ryear IN @mr_gjahr
+           AND   a~rfundsctr IN @mr_fictr
+           AND   a~rcmmtitem IN @lr_fipex
+           AND   ( a~valtype_9 = 'B1' OR a~valtype_9 = 'R1' )
+           AND   a~wfstate_9 = 'P'
+           AND   ( a~budtype_9 = '3000' OR a~budtype_9 = '4000' )
+           INTO TABLE @lt_fmbdt.
+
+    SORT lt_fmbdt.
+
+    LOOP AT lt_fmbdt INTO DATA(ls_fmbdt).
+      IF ls_fmbdt-ryear IN mr_gjahr.
+        APPEND ls_fmbdt TO mt_fmbdt.
+      ELSE.
+        APPEND ls_fmbdt TO mt_fmbdt_oth.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00A ---
+  METHOD read_fmfincode.
+
+    DATA lt_ibf TYPE RANGE OF ye_fm_c5_contribution.
+
+    "Set IBF flag in range
+    IF mp_ibf = abap_true.
+      APPEND VALUE #( sign = 'I' option = 'EQ' low = abap_true ) TO lt_ibf.
+    ENDIF.
+
+    "Get funds from select criteria
+    SELECT DISTINCT a~fikrs,
+                    a~fincode,
+                    b~bukrs,
+                    a~datab,
+                    a~datbis,
+                    c~pspnr
+           FROM fmfincode AS a
+           LEFT OUTER JOIN t001 AS b ON b~fikrs = a~fikrs
+           LEFT OUTER JOIN proj AS c ON  c~pspid = a~fincode
+                                     AND c~vbukr = b~bukrs
+           WHERE a~fikrs IN @mr_fikrs
+           AND   a~fincode IN @mr_fund
+           AND   a~datab <= @mv_endda
+           AND   a~datbis >= @mv_begda
+           AND   a~type IN @mr_type
+           INTO CORRESPONDING FIELDS OF TABLE @mt_fund.
+
+    "Keep only funds which exist as project
+    DELETE mt_fund WHERE pspnr IS INITIAL.
+
+    CHECK mt_fund IS NOT INITIAL.
+
+    "Get fund assignment to C/5 period and Part of IBF and Output
+    SELECT a~fikrs, a~fincode, a~c5_id, a~c5_sel, a~fm_output, b~year_from, b~year_to
+           FROM ytfm_fund_c5 AS a INNER JOIN ytfm_c5 AS b ON b~c5_id = a~c5_id
+           FOR ALL ENTRIES IN @mt_fund
+           WHERE a~fikrs = @mt_fund-fikrs
+           AND   a~fincode = @mt_fund-fincode
+           AND   a~fm_output IN @mr_output
+           AND   a~c5_id IN @mr_c5_id
+           AND   a~c5_sel IN @lt_ibf
+           AND   b~year_from <= @mv_endye
+           AND   b~year_to >= @mv_begye
+           INTO TABLE @mt_fund_c5.
+
+    "Check selection critera related to fund assignment to C/5
+    IF mr_output IS NOT INITIAL OR mr_c5_id IS NOT INITIAL OR lt_ibf IS NOT INITIAL.
+      LOOP AT mt_fund INTO DATA(ls_fund).
+        READ TABLE mt_fund_c5 TRANSPORTING NO FIELDS WITH KEY fikrs = ls_fund-fikrs
+                                                              fincode = ls_fund-fincode.
+        CHECK sy-subrc <> 0.
+        DELETE mt_fund.
+      ENDLOOP.
+    ENDIF.
+
+    "Get output masterdata
+    SELECT a~fm_output,
+           a~otype,
+           b~otext
+           FROM ytfm_output AS a
+           LEFT OUTER JOIN ytfm_output_t AS b ON  b~sprsl = @sy-langu
+                                              AND b~fm_output = a~fm_output
+           WHERE a~fm_output IN @mr_output
+           INTO TABLE @mt_output.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00B ---
+  METHOD read_fmit.
+
+*    DATA lr_fipex TYPE RANGE OF fm_fipex.
+*
+*    lr_fipex = VALUE #( ( sign = 'E' option = 'EQ' low = 'REVENUE' )
+*                        ( sign = 'E' option = 'EQ' low = 'GAINS' ) ).
+*    APPEND LINES OF mr_fipex TO lr_fipex.
+
+    "Get fund management data
+    SELECT a~fikrs AS fikrs,
+           a~rfonds AS fincode,
+           a~rfistl AS fistl,
+           a~rfipex AS fipex,
+           b~waers AS waers,
+           a~rwrttp AS wrttp,
+           a~rbtart AS btart,
+           a~hslvt AS hslvt,
+           a~hsl01 AS hsl01,
+           a~hsl02 AS hsl02,
+           a~hsl03 AS hsl03,
+           a~hsl04 AS hsl04,
+           a~hsl05 AS hsl05,
+           a~hsl06 AS hsl06,
+           a~hsl07 AS hsl07,
+           a~hsl08 AS hsl08,
+           a~hsl09 AS hsl09,
+           a~hsl10 AS hsl10,
+           a~hsl11 AS hsl11,
+           a~hsl12 AS hsl12,
+           a~hsl13 AS hsl13,
+           a~hsl14 AS hsl14,
+           a~hsl15 AS hsl15,
+           a~hsl16 AS hsl16,
+           a~rldnr AS rldnr,
+           a~rrcty AS rrcty,
+           a~rvers AS rvers,
+           a~ryear AS ryear,
+           a~robjnr AS robjnr,
+           a~cobjnr AS cobjnr,
+           a~sobjnr AS sobjnr,
+           a~rtcur  AS rtcur
+           FROM fmit AS a
+           LEFT OUTER JOIN fm01 AS b ON b~fikrs = a~fikrs
+           FOR ALL ENTRIES IN @mt_fund
+           WHERE a~fikrs = @mt_fund-fikrs
+           AND   a~rfonds = @mt_fund-fincode
+           AND   a~rvers = @mp_versi
+           AND   a~ryear IN @mr_gjahr
+           AND   a~rfistl IN @mr_fictr
+           AND   a~rfipex IN @mr_fipex
+           AND   a~rwrttp IN @mt_wrttp_all
+           %_HINTS MSSQLNT 'TABLE FMIT ABINDEX(3)'
+          INTO TABLE @mt_fmit.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00C ---
+  METHOD constructor.
+
+    DATA lt_wrttp_grp TYPE TABLE OF ytfm_wrttp_gr.
+    DATA ls_wrttp_grp TYPE ytfm_wrttp_gr.
+    DATA ls_wrttp_range LIKE LINE OF mt_wrttp_all.
+    DATA lo_structdescr TYPE REF TO cl_abap_structdescr.
+    DATA lt_components TYPE cl_abap_structdescr=>component_table.
+    DATA ls_dfies TYPE dfies.
+    DATA lo_elemdescr TYPE REF TO cl_abap_elemdescr.
+
+    "Get value type grouping
+    SELECT * INTO TABLE lt_wrttp_grp FROM ytfm_wrttp_gr WHERE wrttp_grp = 'YPS8_ALL'.
+    LOOP AT lt_wrttp_grp INTO ls_wrttp_grp.
+      ls_wrttp_range-sign = 'I'.
+      ls_wrttp_range-option = 'EQ'.
+      ls_wrttp_range-low = ls_wrttp_grp-wrttp.
+      APPEND ls_wrttp_range TO mt_wrttp_all.
+    ENDLOOP.
+
+    SELECT * INTO TABLE lt_wrttp_grp FROM ytfm_wrttp_gr WHERE wrttp_grp = 'YPS8_GR1'.
+    LOOP AT lt_wrttp_grp INTO ls_wrttp_grp.
+      ls_wrttp_range-sign = 'I'.
+      ls_wrttp_range-option = 'EQ'.
+      ls_wrttp_range-low = ls_wrttp_grp-wrttp.
+      APPEND ls_wrttp_range TO mt_wrttp_gr1.
+    ENDLOOP.
+
+    "Get list of columns
+    lo_structdescr ?= cl_abap_structdescr=>describe_by_name( 'YSFM_DATA_REP_2' ).
+    mt_components = lo_structdescr->components.
+
+    "Get list of amount fields
+*    lo_structdescr ?= cl_abap_structdescr=>describe_by_name( 'YSFM_DATA_REP_AMOUNT_2' ).
+*    lt_components = lo_structdescr->get_components( ).
+*    LOOP AT lt_components INTO DATA(ls_components).
+*      lo_elemdescr ?= ls_components-type.
+*      ls_dfies = lo_elemdescr->get_ddic_field( ).
+*      IF ls_dfies-datatype = 'CURR'.   "Currency field
+*        APPEND ls_components-name TO mt_amount_fields.
+*      ENDIF.
+*    ENDLOOP.
+
+    "Get company code / FM area which are not in USD
+*    SELECT a~bukrs,
+*           b~fikrs,
+*           b~waers
+*           FROM t001 AS a
+*           INNER JOIN fm01 AS b ON b~fikrs = a~fikrs
+*           WHERE b~waers <> 'USD'
+*           INTO TABLE @mt_conv.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00D ---
+  METHOD read_project.
+
+    TYPES: BEGIN OF lty_psphi,
+             psphi TYPE prps-psphi,
+           END OF lty_psphi.
+    DATA lt_psphi TYPE TABLE OF lty_psphi.
+
+    SELECT a~pspnr AS pspnr,
+           a~pspid AS pspid,
+           a~vbukr AS bukrs,
+           a~objnr AS objnr_proj,
+           b~objnr AS objnr_prps,
+           b~psphi AS psphi,
+           a~post1 AS post1,
+           a~plfaz AS plfaz,
+           a~plsez AS plsez,
+           b~yye_donor AS donor,
+           b~usr02 AS sector,
+           b~usr03 AS division,
+           b~yye_typ_sou AS typ_sou,
+           b~yye_exec AS exeby,
+           b~usr00 AS region,
+           b~usr01 AS subregion,
+           b~verna AS verna,
+           b~astna AS astna,
+           b~pgsbr AS pgsbr,
+           b~usr04 AS ccaq_code,
+           b~usr06 AS approv,
+           b~use06 AS approv_cuky,
+           b~usr07 AS approv_o,
+           b~use07 AS approv_o_cuky,
+           b~yye_pour_10 AS pour_10,
+           b~yye_pour_20 AS pour_20,
+           b~yye_pour_30 AS pour_30,
+           b~yye_pour_40 AS pour_40,
+           b~yye_pour_50 AS pour_50,
+           b~yye_exec_agency AS exec_agency,
+           b~yye_impl_agency AS impl_agency,
+           b~prart AS prart,
+           b~yye_coop_agency AS coop_agency,
+           b~yye_maj_com AS maj_com,
+           b~yye_program AS program,
+           b~yye_keywrd1 AS keyword1,
+           b~yye_keywrd2 AS keyword2,
+           b~yye_benef1 AS benef1,
+           b~yye_benef2 AS benef2,
+           b~yye_mainst1 AS mainst1,
+           b~yye_mainst2 AS mainst2,
+           b~yye_verna AS verna2,
+           c~curr1 AS ledg_waers,
+           b~yye_reggr AS reggr,
+           b~yye_country AS country,
+           b~yye_appr_line AS appr_line,
+           b~yye_impl_unit AS impl_unit
+           FROM proj AS a
+           "INNER JOIN prps AS b ON b~psphi = a~pspnr
+           INNER JOIN prps AS b ON b~posid = a~pspid
+           LEFT OUTER JOIN t882 AS c ON  c~bukrs = a~vbukr
+                                     AND c~rldnr = '00'
+           FOR ALL ENTRIES IN @mt_fund
+           WHERE a~pspnr = @mt_fund-pspnr
+           AND   b~yye_donor IN @mr_donor
+           AND   b~usr02 IN @mr_sector
+           AND   b~usr03 IN @mr_divis
+           AND   b~usr00 IN @mr_regio
+           AND   b~usr01 IN @mr_subre
+           AND   b~yye_exec IN @mr_exec
+           AND   a~post1 IN @mr_title
+           INTO TABLE @mt_project.
+
+    "SORT mt_project.
+
+    "Get all items for project
+    LOOP AT mt_project INTO DATA(ls_project).
+      APPEND ls_project-psphi TO lt_psphi.
+    ENDLOOP.
+    SORT lt_psphi.
+    DELETE ADJACENT DUPLICATES FROM lt_psphi.
+
+    CHECK lt_psphi IS NOT INITIAL.
+
+    SELECT pspnr, posid, objnr, psphi, pbukr FROM prps
+           FOR ALL ENTRIES IN @lt_psphi
+           WHERE psphi = @lt_psphi-psphi
+           INTO TABLE @mt_prps.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00E ---
+  METHOD filter_fund.
+
+    DATA lt_fund TYPE table of ty_fund.
+
+    LOOP AT mt_fmbdt INTO DATA(ls_fmbdt).
+      AT NEW fincode.
+        READ TABLE mt_fund INTO DATA(ls_fund) WITH KEY fikrs = ls_fmbdt-fikrs
+                                                       fincode = ls_fmbdt-fincode.
+        CHECK sy-subrc = 0.
+        APPEND ls_fund TO lt_fund.
+      ENDAT.
+    ENDLOOP.
+
+    mt_fund = lt_fund.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00H ---
+  METHOD read_cooi_bpej.
+
+    TYPES: BEGIN OF lty_proj,
+             objnr TYPE prps-objnr,
+             bukrs TYPE proj-vbukr,
+           END OF lty_proj.
+    DATA lt_proj TYPE TABLE OF lty_proj.
+    DATA ls_proj TYPE lty_proj.
+    DATA lv_date TYPE datum.
+
+    SELECT SINGLE low FROM tvarvc WHERE name = 'Y_FM_YPS8_FMAVCT_DB_ACCESS'
+                                  AND   type = 'P'
+           INTO @DATA(lv_value).
+
+    "get distinct project
+    LOOP AT mt_prps INTO DATA(ls_prps).
+      ls_proj-objnr = ls_prps-objnr.
+      ls_proj-bukrs = ls_prps-pbukr.
+      APPEND ls_proj TO lt_proj.
+    ENDLOOP.
+
+    SORT lt_proj.
+    DELETE ADJACENT DUPLICATES FROM lt_proj.
+
+    lv_date = |{ mv_endye }0101|.
+
+    CASE lv_value+1(1).
+      WHEN space.
+        SELECT a~refbt,
+               a~refbn,
+               a~rfpos,
+               a~rfknt,
+               a~rftrm,
+               a~rfart,
+               a~lifnr,
+               a~lednr,
+               a~objnr,
+               a~hrkft,
+               a~rforg,
+               a~rftyp,
+               a~rfsys,
+               a~sakto,
+               a~bukrs,
+               a~bldat,
+               a~budat,
+               a~whgbtr,
+               a~loekz,
+               b~fipos
+               FROM cooi AS a
+               LEFT OUTER JOIN skb1 AS b ON  b~bukrs = a~bukrs
+                                         AND b~saknr = a~sakto
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE a~objnr = @lt_proj-objnr
+               AND   a~bukrs = @lt_proj-bukrs
+               AND   ( a~rftyp = 'PORD' OR a~rftyp = 'PREQ' )
+               AND   a~loekz = @space
+               AND   a~budat >= @lv_date
+               INTO TABLE @mt_cooi.
+      WHEN 'I'.
+        SELECT a~refbt,
+               a~refbn,
+               a~rfpos,
+               a~rfknt,
+               a~rftrm,
+               a~rfart,
+               a~lifnr,
+               a~lednr,
+               a~objnr,
+               a~hrkft,
+               a~rforg,
+               a~rftyp,
+               a~rfsys,
+               a~sakto,
+               a~bukrs,
+               a~bldat,
+               a~budat,
+               a~whgbtr,
+               a~loekz,
+               b~fipos
+               FROM cooi AS a
+               LEFT OUTER JOIN skb1 AS b ON  b~bukrs = a~bukrs
+                                         AND b~saknr = a~sakto
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE a~objnr = @lt_proj-objnr
+               AND   a~bukrs = @lt_proj-bukrs
+               AND   ( a~rftyp = 'PORD' OR a~rftyp = 'PREQ' )
+               AND   a~loekz = @space
+               AND   a~budat >= @lv_date
+               %_HINTS MSSQLNT 'TABLE COOI ABINDEX(ZOB)'
+               INTO TABLE @mt_cooi.
+      WHEN 'A'.
+        SELECT a~refbt,
+               a~refbn,
+               a~rfpos,
+               a~rfknt,
+               a~rftrm,
+               a~rfart,
+               a~lifnr,
+               a~lednr,
+               a~objnr,
+               a~hrkft,
+               a~rforg,
+               a~rftyp,
+               a~rfsys,
+               a~sakto,
+               a~bukrs,
+               a~bldat,
+               a~budat,
+               a~whgbtr,
+               a~loekz,
+               b~fipos
+               FROM cooi AS a
+               LEFT OUTER JOIN skb1 AS b ON  b~bukrs = a~bukrs
+                                         AND b~saknr = a~sakto
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE a~objnr = @lt_proj-objnr
+               AND   a~bukrs = @lt_proj-bukrs
+               %_HINTS MSSQLNT 'TABLE COOI ABINDEX(ZOB)'
+               INTO TABLE @mt_cooi.
+        DELETE mt_cooi WHERE rftyp <> 'PORD' AND rftyp <> 'PREQ'.
+        DELETE mt_cooi WHERE loekz <> space.
+        DELETE mt_cooi WHERE budat < lv_date.
+    ENDCASE.
+
+    "get distinct project
+    CLEAR lt_proj.
+    LOOP AT mt_project INTO DATA(ls_project).
+      ls_proj-objnr = ls_project-objnr_prps.
+      ls_proj-bukrs = ls_project-bukrs.
+      APPEND ls_proj TO lt_proj.
+    ENDLOOP.
+
+    SORT lt_proj.
+    DELETE ADJACENT DUPLICATES FROM lt_proj.
+
+    CASE lv_value+2(1).
+      WHEN space.
+        SELECT belnr,
+               buzei,
+               objnr,
+               wtjhr,
+               wljhr,
+               twaer,
+               gjahr,
+               vorga
+               FROM bpej
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE objnr = @lt_proj-objnr
+               AND   gjahr BETWEEN @mv_begye AND @mv_endye
+               INTO TABLE @mt_bpej.
+      WHEN 'I'.
+        SELECT belnr,
+               buzei,
+               objnr,
+               wtjhr,
+               wljhr,
+               twaer,
+               gjahr,
+               vorga
+               FROM bpej
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE objnr = @lt_proj-objnr
+               AND   gjahr BETWEEN @mv_begye AND @mv_endye
+               %_HINTS MSSQLNT 'TABLE BPEJ ABINDEX(1)'
+               INTO TABLE @mt_bpej.
+      WHEN 'A'.
+        SELECT belnr,
+               buzei,
+               objnr,
+               wtjhr,
+               wljhr,
+               twaer,
+               gjahr,
+               vorga
+               FROM bpej
+               FOR ALL ENTRIES IN @lt_proj
+               WHERE objnr = @lt_proj-objnr
+               %_HINTS MSSQLNT 'TABLE BPEJ ABINDEX(1)'
+               INTO TABLE @mt_bpej.
+        DELETE mt_bpej WHERE gjahr NOT BETWEEN mv_begye AND mv_endye.
+    ENDCASE.
+
+    "SORT mt_bpej.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00I ---
+  METHOD set_master_data.
+
+    DATA lt_lines TYPE TABLE OF tline.
+    DATA lv_tdname TYPE thead-tdname.
+    DATA lv_status TYPE bsvx-sttxt.
+
+    CLEAR: ms_project.
+
+    "Get fund master data
+    READ TABLE mt_fund INTO DATA(ls_fund) WITH KEY fikrs = cs_result-fikrs
+                                                   fincode = cs_result-fincode.
+    CHECK sy-subrc = 0.
+    cs_result-datab = ls_fund-datab.
+    cs_result-datbis = ls_fund-datbis.
+
+    "Get output assigned at end year selection
+    LOOP AT mt_fund_c5 INTO DATA(ls_fund_c5) WHERE fikrs = ls_fund-fikrs
+                                             AND   fincode = ls_fund-fincode
+                                             AND   year_from <= mv_endye
+                                             AND   year_to >= mv_endye.
+      cs_result-zzoutput = ls_fund_c5-fm_output.
+      cs_result-zzibf = ls_fund_c5-c5_sel.
+      EXIT.
+    ENDLOOP.
+    IF sy-subrc = 0 AND ls_fund_c5-fm_output IS NOT INITIAL.
+      READ TABLE mt_output INTO DATA(ls_output) WITH KEY fm_output = ls_fund_c5-fm_output.
+      IF sy-subrc = 0.
+        cs_result-output_type = ls_output-otype.
+        cs_result-output_text = ls_output-otext.
+      ENDIF.
+    ENDIF.
+
+    "Get project data
+    READ TABLE mt_project INTO ms_project WITH KEY pspnr = ls_fund-pspnr.
+    IF sy-subrc = 0.
+      MOVE-CORRESPONDING ms_project TO cs_result.
+
+      "Get status
+      CALL FUNCTION 'STATUS_TEXT_EDIT'
+        EXPORTING
+          flg_user_stat    = abap_true
+          objnr            = ms_project-objnr_proj
+*         ONLY_ACTIVE      = 'X'
+          spras            = sy-langu
+*         BYPASS_BUFFER    = ' '
+        IMPORTING
+          line             = lv_status
+        EXCEPTIONS
+          object_not_found = 1
+          OTHERS           = 2.
+      IF sy-subrc <> 0.
+        CLEAR cs_result-sttxt.
+      ELSE.
+        cs_result-sttxt = lv_status.
+      ENDIF.
+
+      "Get long text
+      IF mp_text = abap_true.
+        lv_tdname = ms_project-objnr_proj+1.
+        CALL FUNCTION 'READ_TEXT'
+          EXPORTING
+*           CLIENT                  = SY-MANDT
+            id                      = 'LTXT'
+            language                = sy-langu
+            name                    = lv_tdname
+            object                  = 'PMS'
+*           ARCHIVE_HANDLE          = 0
+*           LOCAL_CAT               = ' '
+*       IMPORTING
+*           HEADER                  =
+*           OLD_LINE_COUNTER        =
+          TABLES
+            lines                   = lt_lines
+          EXCEPTIONS
+            id                      = 1
+            language                = 2
+            name                    = 3
+            not_found               = 4
+            object                  = 5
+            reference_check         = 6
+            wrong_access_to_archive = 7
+            OTHERS                  = 8.
+        IF sy-subrc = 0.
+          LOOP AT lt_lines INTO DATA(ls_line).
+            CONCATENATE cs_result-stext ls_line-tdline INTO cs_result-stext SEPARATED BY space.
+          ENDLOOP.
+        ENDIF.
+      ENDIF.
+      "get region group text
+      cs_result-reggrt = ycl_ps_wbs_element_util=>get_region_text( iv_reggr = cs_result-reggr ).
+      "Get country text
+      cs_result-landx50 = ycl_ps_wbs_element_util=>get_country_text( iv_land1 = cs_result-country ).
+      "Get appropriation line text
+      cs_result-appr_line_t = ycl_ps_wbs_element_util=>get_org_unit_text( iv_orgeh = cs_result-appr_line
+                                                                          iv_begda = cs_result-plfaz
+                                                                          iv_endda = cs_result-plsez ).
+      "Get implementation unit text
+      cs_result-impl_unit_t = ycl_ps_wbs_element_util=>get_org_unit_text( iv_orgeh = cs_result-impl_unit
+                                                                          iv_begda = cs_result-plfaz
+                                                                          iv_endda = cs_result-plsez ).
+    ELSE.
+      mv_no_project = abap_true.
+    ENDIF.
+
+    ms_fipex_all = cs_result.
+    ms_fipex_all-fistl = '***'.
+    ms_fipex_all-fipex = '************************'.
+    ms_fipex_all-fipex_txt = '************************'.
+    .
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00J ---
+  METHOD SET_FUNCTIONS.
+
+    DATA lo_events TYPE REF TO cl_salv_events_table.
+
+    mo_functions = mo_salv_table->get_functions( ).
+    mo_functions->set_all( ).
+
+    lo_events = mo_salv_table->get_event( ).
+    SET HANDLER me->handle_double_click FOR lo_events.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00K ---
+  METHOD set_columns.
+
+    DATA lv_col_name TYPE lvc_fname.
+    DATA lo_column TYPE REF TO cl_salv_column_table.
+
+    mo_columns = mo_salv_table->get_columns( ).
+    "Column width optimization
+    mo_columns->set_optimize( abap_true ).
+
+    LOOP AT mt_components INTO DATA(ls_comp).
+      lv_col_name = ls_comp-name.
+      TRY.
+          lo_column ?= mo_columns->get_column( lv_col_name ).
+        CATCH cx_salv_not_found.
+          CONTINUE.
+      ENDTRY.
+      "Set fixed columns
+      IF sy-tabix <= 4.
+        lo_column->set_key( abap_true ).
+      ENDIF.
+      "Set long label
+      lo_column->set_fixed_header_text( 'L' ).
+      "Don't display if 0.00
+      IF ls_comp-type_kind = 'P' AND ls_comp-name <> 'RATE_CUMUL_1' AND ls_comp-name <> 'RATE_CUMUL_2'.
+        lo_column->set_zero( abap_false ).
+      ENDIF.
+      CASE lv_col_name.
+        WHEN 'FIPEX_TXT'.
+          lo_column->set_long_text( 'Commitment item text' ).
+        WHEN 'POST1'.
+          lo_column->set_long_text( 'Project text' ).
+        WHEN 'STEXT'.
+          lo_column->set_long_text( 'Project description' ).
+        WHEN 'PLFAZ'.
+          lo_column->set_long_text( 'Project planned start date' ).
+        WHEN 'PLSEZ'.
+          lo_column->set_long_text( 'Project planned finish date' ).
+        WHEN 'ALLOT_CURR'.
+          lo_column->set_long_text( 'Allotment current year' ).
+        WHEN 'ALLOT_CUMUL'.
+          lo_column->set_long_text( 'Allotment cumul' ).
+        WHEN 'WAERS_ALLOT'.
+          lo_column->set_long_text( 'Allotment currency' ).
+        WHEN 'OBLIG_CURR'.
+          lo_column->set_long_text( 'Obligated current year' ).
+        WHEN 'OBLIG_CUMUL'.
+          lo_column->set_long_text( 'Obligated cumul' ).
+        WHEN 'OBLIG_FUTUR'.
+          lo_column->set_long_text( 'Obligated futur' ).
+        WHEN 'OBLIG_CF'.
+          lo_column->set_long_text( 'Obligated carry forward' ).
+        WHEN 'ACTUAL_CURR'.
+          lo_column->set_long_text( 'Actual current' ).
+        WHEN 'ACTUAL_CUMUL'.
+          lo_column->set_long_text( 'Actual cumul' ).
+        WHEN 'RATE_CURR_1'.
+          lo_column->set_long_text( 'Actual/Allotment Current year' ).
+          lo_column->set_tooltip( 'Rate Actual / Allotment current year' ).
+        WHEN 'RATE_CURR_2'.
+          lo_column->set_long_text( 'Actual+Oblig/Allotment Current year' ).
+          lo_column->set_tooltip( 'Rate Actual+Oblig/Allot. Current year' ).
+        WHEN 'RATE_CUMUL_1'.
+          lo_column->set_long_text( 'Actual cumul/Allocation' ).
+          lo_column->set_tooltip( 'Rate Actual cumul/Allocation' ).
+        WHEN 'RATE_CUMUL_2'.
+          lo_column->set_long_text( 'Actual+Oblig cumul/Allocation' ).
+          lo_column->set_tooltip( 'Rate Actual+Oblig cumul/Allocation' ).
+        WHEN 'RATE_CUMUL_3'.
+          lo_column->set_long_text( 'Actual / allotment cumul' ).
+          lo_column->set_tooltip( 'Rate Actual / allotment cumul' ).
+        WHEN 'RATE_CUMUL_4'.
+          lo_column->set_long_text( 'Actual+Oblig / allotment cumul' ).
+          lo_column->set_tooltip( 'Rate Actual+Oblig / allotment cumul' ).
+        WHEN 'APPROUV_USD'.
+          lo_column->set_long_text( 'Approved budget $' ).
+        WHEN 'WAERS_APP_USD'.
+          lo_column->set_long_text( 'Currency for Approved budget $' ).
+        WHEN 'APPROUV_OTH'.
+          lo_column->set_long_text( 'Approved budget not in $' ).
+        WHEN 'WAERS_APP_OTH'.
+          lo_column->set_long_text( 'Currency for Approved budget not in $' ).
+        WHEN 'ZZIBF'.
+          lo_column->set_cell_type( if_salv_c_cell_type=>checkbox ).
+          lo_column->set_visible( abap_false ).
+        WHEN 'ACTUAL_PREV'.
+          lo_column->set_long_text( |{ mv_prev_year } Current| ).
+          lo_column->set_medium_text( |{ mv_prev_year } Current| ).
+          lo_column->set_visible( abap_false ).
+        WHEN 'REGGR' OR 'COUNTRY' OR 'APPR_LINE' OR 'IMPL_UNIT'.
+          lo_column->set_visible( abap_false ).
+        WHEN 'ALLOC_TOTAL'.
+          lo_column->set_long_text( 'Total Allocation' ).
+      ENDCASE.
+    ENDLOOP.
+
+    mo_columns->set_key_fixation( abap_true ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00L ---
+  METHOD set_layout.
+
+    DATA ls_layout_key TYPE salv_s_layout_key.
+
+    mo_layout = mo_salv_table->get_layout( ).
+    ls_layout_key-report = mv_repid.
+    mo_layout->set_key( ls_layout_key ).
+    mo_layout->set_save_restriction( if_salv_c_layout=>restrict_user_dependant ).
+    mo_layout->set_default( abap_true ).
+    IF mp_layout IS NOT INITIAL.
+      mo_layout->set_initial_layout( mp_layout ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00M ---
+  METHOD SET_DISPLAY_SETTINGS.
+
+*    DATA lo_header TYPE REF TO cl_salv_form_layout_grid.
+*    DATA lv_text TYPE text20.
+*    DATA lv_rate TYPE ye_fm_exec_rate.
+
+    mo_display_settings = mo_salv_table->get_display_settings( ).
+    "mo_display_settings->set_list_header( text-tit ).
+    mo_display_settings->set_striped_pattern( abap_true ).
+
+*    "Set header
+*    lo_header = NEW cl_salv_form_layout_grid( 2 ).
+*
+*    lo_header->create_text( row = 1 column = 1 text = 'Execution Date' ).
+*    WRITE sy-datum TO lv_text.
+*    lo_header->create_label( row = 1 column = 2 text = lv_text ).
+*
+*    lo_header->create_text( row = 2 column = 1 text = 'User' ).
+*    lo_header->create_label( row = 2 column = 2 text = sy-uname ).
+*
+*    "Total execution rate
+*    IF ms_grand_total-alloc IS NOT INITIAL.
+*      lv_rate = ms_grand_total-expend / ms_grand_total-alloc * 100.
+*    ENDIF.
+*    lv_text = |{ lv_rate } %|.
+*    lo_header->create_text( row = 3 column = 1 text = 'Total execution rate' ).
+*    lo_header->create_label( row = 3 column = 2 text = lv_text ).
+*
+*    lo_header->create_text( row = 4 column = 1 text = space ).
+*
+*    mo_salv_table->set_top_of_list( lo_header ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00N ---
+  METHOD set_amounts.
+
+    DATA ls_wfmbdt TYPE ty_wfmbdt.
+    DATA ls_wfmbdt_oth TYPE ty_wfmbdt.
+    FIELD-SYMBOLS <ls_wfmbdt> TYPE ty_wfmbdt.
+    FIELD-SYMBOLS <ls_wfmbdt_oth> TYPE ty_wfmbdt.
+    DATA lv_fipex_80 TYPE boolean.
+    DATA lr_fipex TYPE tty_fipex.
+    DATA ls_fmit TYPE ty_fmit.
+    DATA ls_result_initial TYPE ysfm_data_rep_2.
+    DATA ls_result_usd TYPE ysfm_data_rep_2.
+    DATA lv_whgbtr_usd TYPE whgxxx.
+    DATA lv_fipex_high TYPE fm_fipex VALUE '80'.
+
+    "save initial values
+    ls_result_initial = is_result.
+    ls_result_usd = is_result.
+
+    """"""""""""""""""""""""""""""""""""""""""""""""""
+    """""""""""Set data dependant of commitment item
+    """"""""""""""""""""""""""""""""""""""""""""""""""
+    "Check if exists Commitment item with value 80
+    READ TABLE it_wfmbdt TRANSPORTING NO FIELDS WITH KEY fipex = '80'.
+    IF sy-subrc = 0.
+      lv_fipex_80 = abap_true.
+      IF mv_excl80 = abap_true.
+        lv_fipex_high = '79'.
+      ENDIF.
+    ELSE.
+      mv_excl80 = abap_false.
+    ENDIF.
+    "Check if commitment item  is 'NPC'
+    READ TABLE it_wfmbdt ASSIGNING <ls_wfmbdt> WITH KEY fipex = 'NPC'.
+    IF sy-subrc = 0.
+      "Sum amount on NPC for commitment item between 20 and 50 or 80, delete 20 to 50 or 80.
+      LOOP AT it_wfmbdt INTO ls_wfmbdt WHERE fipex BETWEEN '20' AND lv_fipex_high.
+        ADD ls_wfmbdt-hamount TO <ls_wfmbdt>-hamount.
+        ADD ls_wfmbdt-hamount_usd TO <ls_wfmbdt>-hamount_usd.
+        DELETE it_wfmbdt.
+      ENDLOOP.
+      "Do the same for amounts out of selection period
+      READ TABLE it_wfmbdt_oth ASSIGNING <ls_wfmbdt_oth> WITH KEY fipex = 'NPC'.
+      IF sy-subrc <> 0.
+        APPEND INITIAL LINE TO it_wfmbdt_oth ASSIGNING <ls_wfmbdt_oth>.
+        <ls_wfmbdt_oth>-fikrs = <ls_wfmbdt>-fikrs.
+        <ls_wfmbdt_oth>-fincode = <ls_wfmbdt>-fincode.
+        <ls_wfmbdt_oth>-fistl = <ls_wfmbdt>-fistl.
+        <ls_wfmbdt_oth>-fipex = 'NPC'.
+        <ls_wfmbdt_oth>-waers = <ls_wfmbdt>-waers.
+        <ls_wfmbdt_oth>-bukrs = <ls_wfmbdt>-bukrs.
+      ENDIF.
+      LOOP AT it_wfmbdt_oth INTO ls_wfmbdt_oth WHERE fipex BETWEEN '20' AND lv_fipex_high.
+        ADD ls_wfmbdt_oth-hamount TO <ls_wfmbdt_oth>-hamount.
+        ADD ls_wfmbdt_oth-hamount_usd TO <ls_wfmbdt_oth>-hamount_usd.
+        DELETE it_wfmbdt_oth.
+      ENDLOOP.
+    ENDIF.
+
+    "Check if commitment item is 'PC'
+    READ TABLE it_wfmbdt ASSIGNING <ls_wfmbdt> WITH KEY fipex = 'PC'.
+    IF sy-subrc = 0.
+      "Sum amount on PC for commitment item between 10 and 19, delete 10 to 19.
+      LOOP AT it_wfmbdt INTO ls_wfmbdt WHERE fipex(1) = '1'.
+        ADD ls_wfmbdt-hamount TO <ls_wfmbdt>-hamount.
+        ADD ls_wfmbdt-hamount_usd TO <ls_wfmbdt>-hamount_usd.
+        DELETE it_wfmbdt.
+      ENDLOOP.
+      "Do the same for amounts out of selection period
+      READ TABLE it_wfmbdt_oth ASSIGNING <ls_wfmbdt_oth> WITH KEY fipex = 'PC'.
+      IF sy-subrc <> 0.
+        APPEND INITIAL LINE TO it_wfmbdt_oth ASSIGNING <ls_wfmbdt_oth>.
+        <ls_wfmbdt_oth>-fikrs = <ls_wfmbdt>-fikrs.
+        <ls_wfmbdt_oth>-fincode = <ls_wfmbdt>-fincode.
+        <ls_wfmbdt_oth>-fistl = <ls_wfmbdt>-fistl.
+        <ls_wfmbdt_oth>-fipex = 'PC'.
+        <ls_wfmbdt_oth>-waers = <ls_wfmbdt>-waers.
+        <ls_wfmbdt_oth>-bukrs = <ls_wfmbdt>-bukrs.
+      ENDIF.
+      LOOP AT it_wfmbdt_oth INTO ls_wfmbdt_oth WHERE fipex(1) = '1'.
+        ADD ls_wfmbdt_oth-hamount TO <ls_wfmbdt_oth>-hamount.
+        ADD ls_wfmbdt_oth-hamount_usd TO <ls_wfmbdt_oth>-hamount_usd.
+        DELETE it_wfmbdt_oth.
+      ENDLOOP.
+    ENDIF.
+
+    "Set data per commitment item
+    LOOP AT it_wfmbdt INTO ls_wfmbdt.
+      "Commitment item
+      is_result-fipex = ls_wfmbdt-fipex.
+      ls_result_usd-fipex = ls_wfmbdt-fipex.
+      READ TABLE mt_fmcit INTO DATA(ls_fmcit) WITH KEY fikrs = is_result-fikrs
+                                                       fipex = is_result-fipex.
+      IF sy-subrc = 0.
+        is_result-fipex_txt = ls_fmcit-text1.
+        ls_result_usd-fipex_txt = ls_fmcit-text1.
+      ENDIF.
+
+      "Support cost %
+      CASE ls_wfmbdt-fipex(1).
+        WHEN '1' OR 'P'.
+          is_result-rate_supcost = ms_project-pour_10.
+        WHEN '2'.
+          is_result-rate_supcost = ms_project-pour_20.
+        WHEN '3'.
+          is_result-rate_supcost = ms_project-pour_30.
+        WHEN '4'.
+          is_result-rate_supcost = ms_project-pour_40.
+        WHEN '5'.
+          is_result-rate_supcost = ms_project-pour_50.
+        WHEN 'T'.
+          is_result-rate_supcost = ( ms_project-pour_10 +
+                                ms_project-pour_20 +
+                                ms_project-pour_30 +
+                                ms_project-pour_40 +
+                                ms_project-pour_50 ) / 5.
+      ENDCASE.
+      ls_result_usd-rate_supcost = is_result-rate_supcost.
+
+      "Allocation on the selection period
+      is_result-alloc = ls_wfmbdt-hamount.
+      is_result-waers = ls_wfmbdt-waers.
+      ls_result_usd-alloc = ls_wfmbdt-hamount_usd.
+      ls_result_usd-waers = 'USD'.
+      "Released budget
+      is_result-released = ls_wfmbdt-hamount.
+      ls_result_usd-released = ls_wfmbdt-hamount_usd.
+
+      "Total allocation for full life of fund/project
+      is_result-alloc_total = is_result-alloc.
+      ls_result_usd-alloc_total = ls_result_usd-alloc.
+      READ TABLE it_wfmbdt_oth INTO ls_wfmbdt_oth WITH KEY fipex = ls_wfmbdt-fipex.
+      IF sy-subrc = 0.
+        ADD ls_wfmbdt_oth-hamount TO is_result-alloc_total.
+        ADD ls_wfmbdt_oth-hamount_usd TO ls_result_usd-alloc_total.
+      ENDIF.
+
+      "Obligated, Actual,
+      lr_fipex = me->get_fipex( iv_fipex = ls_wfmbdt-fipex
+                                iv_fipex_80 = lv_fipex_80 ).
+
+      LOOP AT mt_fmit INTO ls_fmit WHERE fikrs = is_result-fikrs
+                                   AND   fincode = is_result-fincode
+                                   AND   fistl = is_result-fistl
+                                   AND   fipex IN lr_fipex.
+        me->manage_fmit_data( EXPORTING is_fmit = ls_fmit
+                              CHANGING  cs_result = is_result
+                                        cs_result_usd = ls_result_usd ).
+      ENDLOOP.
+
+      "Obligated
+      IF lv_fipex_80 = abap_true.
+        lr_fipex = me->get_fipex( iv_fipex = ls_wfmbdt-fipex
+                                  iv_fipex_80 = abap_false ).
+      ENDIF.
+      LOOP AT mt_prps INTO DATA(ls_prps) WHERE psphi = ms_project-pspnr.
+        LOOP AT mt_cooi INTO DATA(ls_cooi) WHERE objnr = ls_prps-objnr
+                                           AND   bukrs = ms_project-bukrs
+                                           AND   fipos IN lr_fipex.
+          "Check if conversion
+          IF mv_convert = abap_true.
+*            READ TABLE mt_conv_data INTO ls_conv_data WITH KEY waers = mv_waers
+*                                                               gjahr = '0000'
+*                                                               perio = '000'.
+            lv_whgbtr_usd = ls_cooi-whgbtr / mo_conv_rate->get_rate( iv_waers = mv_waers
+                                                                     iv_gjahr = '0000'
+                                                                     iv_perio = 0 ).
+          ENDIF.
+          IF ls_cooi-budat(4) > mv_endye.
+            SUBTRACT ls_cooi-whgbtr FROM is_result-oblig_cumul.
+            SUBTRACT ls_cooi-whgbtr FROM is_result-oblig_curr.
+            ADD ls_cooi-whgbtr TO is_result-oblig_futur.
+            SUBTRACT lv_whgbtr_usd FROM ls_result_usd-oblig_cumul.
+            SUBTRACT lv_whgbtr_usd FROM ls_result_usd-oblig_curr.
+            ADD lv_whgbtr_usd TO ls_result_usd-oblig_futur.
+          ELSEIF ls_cooi-budat(4) = mv_endye AND
+                 ls_cooi-budat(4) > ls_cooi-bldat(4) AND
+                 ls_cooi-budat(4) > sy-datum(4).
+            ADD ls_cooi-whgbtr TO is_result-oblig_curr.
+            ADD lv_whgbtr_usd TO ls_result_usd-oblig_curr.
+          ENDIF.
+        ENDLOOP.
+      ENDLOOP.
+
+      """""""Computed amounts
+      me->compute_amounts( EXPORTING is_result_usd = ls_result_usd
+                           CHANGING cs_result = is_result ).
+
+      "Fill result table
+      APPEND is_result TO mt_result.
+      is_result = ls_result_usd = ls_result_initial.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00O ---
+  METHOD sum_hsl_amounts.
+
+    DATA lv_fieldname TYPE fieldname VALUE 'IS_HSL-HSLXX'.
+    DATA lv_perio TYPE periode.
+    DATA lv_rate TYPE ukurs_curr.
+    FIELD-SYMBOLS <field> TYPE hslxx9.
+
+*    DO 17 TIMES.
+*      IF sy-index = 1 AND iv_include_cf = abap_false.
+*        CONTINUE.
+*      ENDIF.
+*      ASSIGN COMPONENT sy-index OF STRUCTURE is_hsl TO FIELD-SYMBOL(<lv_amount>).
+*      ADD <lv_amount> TO rv_amount.
+*    ENDDO.
+
+    IF iv_convert = abap_false.
+      "==> better performance
+      rv_amount = is_hsl-hsl01 +
+                  is_hsl-hsl02 +
+                  is_hsl-hsl03 +
+                  is_hsl-hsl04 +
+                  is_hsl-hsl05 +
+                  is_hsl-hsl06 +
+                  is_hsl-hsl07 +
+                  is_hsl-hsl08 +
+                  is_hsl-hsl09 +
+                  is_hsl-hsl10 +
+                  is_hsl-hsl11 +
+                  is_hsl-hsl12 +
+                  is_hsl-hsl13 +
+                  is_hsl-hsl14 +
+                  is_hsl-hsl15 +
+                  is_hsl-hsl16.
+      "Include carry formard ?
+      IF iv_include_cf = abap_true.
+        ADD is_hsl-hslvt TO rv_amount.
+      ENDIF.
+    ELSE.
+      DO 16 TIMES.
+        ADD 1 TO lv_perio.
+        lv_fieldname+10 = lv_perio+1(2).
+        ASSIGN (lv_fieldname) TO <field>.
+        IF <field> IS ASSIGNED.
+          IF <field> IS NOT INITIAL.
+            "Get conversion at amount period
+*            READ TABLE mt_conv_data INTO ls_conv_data WITH KEY waers = mv_waers
+*                                                               gjahr = iv_gjahr
+*                                                               perio = lv_perio.
+            lv_rate = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                              iv_gjahr = iv_gjahr
+                                              iv_perio = lv_perio ).
+            IF lv_rate <> 0.
+              rv_amount = rv_amount + ( <field> / lv_rate ).
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDDO.
+      "Include carry formard ?
+      IF iv_include_cf = abap_true.
+*        READ TABLE mt_conv_data INTO ls_conv_data WITH KEY waers = mv_waers
+*                                                           gjahr = iv_gjahr
+*                                                           perio = 0.
+        lv_rate = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                          iv_gjahr = iv_gjahr
+                                          iv_perio = 0 ).
+        IF lv_rate <> 0.
+          rv_amount = rv_amount + ( is_hsl-hslvt / lv_rate ).
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    "Inverse sign
+    IF iv_inverse = abap_true.
+      rv_amount = rv_amount * -1.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00P ---
+  METHOD get_fipex.
+
+    CLEAR rt_fipex.
+
+    CASE iv_fipex.
+      WHEN 'PC'.
+        rt_fipex = VALUE #( ( sign = 'I' option = 'EQ' low = '10''' )
+                            ( sign = 'I' option = 'EQ' low = '11' )
+                            ( sign = 'I' option = 'EQ' low = '13' ) ).
+      WHEN 'NPC'.
+        rt_fipex = VALUE #( ( sign = 'I' option = 'EQ' low = '20' )
+                            ( sign = 'I' option = 'EQ' low = '30' )
+                            ( sign = 'I' option = 'EQ' low = '40' )
+                            ( sign = 'I' option = 'EQ' low = '50' ) ).
+        IF mv_excl80 = abap_false.
+          APPEND VALUE #( sign = 'I' option = 'EQ' low = '80' ) TO rt_fipex.
+        ENDIF.
+      WHEN 'TC'.
+        rt_fipex = VALUE #( ( sign = 'I' option = 'EQ' low = '10''' )
+                            ( sign = 'I' option = 'EQ' low = '11' )
+                            ( sign = 'I' option = 'EQ' low = '13' )
+                            ( sign = 'I' option = 'EQ' low = '20' )
+                            ( sign = 'I' option = 'EQ' low = '30' )
+                            ( sign = 'I' option = 'EQ' low = '40' )
+                            ( sign = 'I' option = 'EQ' low = '50' ) ).
+        IF iv_fipex_80 = abap_false.
+          APPEND VALUE #( sign = 'I' option = 'EQ' low = '80' ) TO rt_fipex.
+        ENDIF.
+      WHEN OTHERS.
+        rt_fipex = VALUE #( ( sign = 'I' option = 'EQ' low = iv_fipex ) ).
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00Q ---
+  METHOD handle_double_click.
+
+    DATA lr_fipex TYPE RANGE OF fm_fipex.
+
+    CHECK row IS NOT INITIAL AND column IS NOT INITIAL.
+
+    "Get list line.
+    READ TABLE mt_result INTO DATA(ls_result) INDEX row.
+    CHECK sy-subrc = 0.
+
+    IF ls_result-fipex <> c_fipex_all.
+      lr_fipex = me->get_fipex( iv_fipex = ls_result-fipex
+                                iv_fipex_80 = abap_false ).
+    ENDIF.
+
+    "Call Document Journal
+    SUBMIT zffmepgax WITH s_fikrs = ls_result-fikrs   SIGN 'I'
+                     WITH s_fonds = ls_result-fincode SIGN 'I'
+                     "WITH s_fictr = ls_result-fistl   SIGN 'I'
+                     WITH s_fipex IN lr_fipex
+                     WITH p_fyr_fr = mv_begye
+                     WITH p_fyr_to = mv_endye
+                     WITH p_per_fr = '1'
+                     WITH p_per_to = '16'
+                     WITH p_maxsel = '999999999'
+                     AND RETURN.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00R ---
+  METHOD get_exchange_rate.
+
+    CALL FUNCTION 'READ_EXCHANGE_RATE'
+      EXPORTING
+*       CLIENT           = SY-MANDT
+        date             = iv_date
+        foreign_currency = 'USD'
+        local_currency   = iv_waers
+*       TYPE_OF_RATE     = 'M'
+*       EXACT_DATE       = ' '
+      IMPORTING
+        exchange_rate    = rv_rate
+*       FOREIGN_FACTOR   =
+*       LOCAL_FACTOR     =
+*       VALID_FROM_DATE  =
+*       DERIVED_RATE_TYPE       =
+*       FIXED_RATE       =
+*       OLDEST_RATE_FROM =
+      EXCEPTIONS
+        no_rate_found    = 1
+        no_factors_found = 2
+        no_spread_found  = 3
+        derived_2_times  = 4
+        overflow         = 5
+        zero_rate        = 6
+        OTHERS           = 7.
+
+    IF sy-subrc <> 0.
+      rv_rate = 1.
+    ELSE.
+      IF rv_rate IS INITIAL.
+        rv_rate = 1.
+      ELSEIF rv_rate < 0.
+        rv_rate = -1 / rv_rate.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00S ---
+  METHOD set_project_amounts.
+
+    DATA lr_fipex TYPE tty_fipex.
+    DATA lv_amount TYPE hamount.
+    DATA ls_hsl TYPE ty_hsl.
+    DATA lv_rate TYPE ukurs_curr.
+
+    "check first if data found in result table for the project
+    READ TABLE mt_result INTO DATA(ls_result) WITH KEY fikrs = iv_fikrs
+                                                       fincode = iv_fincode.
+    CHECK sy-subrc = 0.
+
+    """"""""""""""""""""""""""""""""""""""""""""""""""
+    """""" Set data independant of fund center """""""
+    """"""""""""""""""""""""""""""""""""""""""""""""""
+    "Approve budget amount
+    ms_fipex_all-approuv_usd = ms_project-approv.
+    IF ms_fipex_all-approuv_usd IS NOT INITIAL.
+      ms_fipex_all-waers_app_usd = ms_project-approv_cuky.
+    ENDIF.
+    ms_fipex_all-approuv_oth = ms_project-approv_o.
+    IF ms_fipex_all-approuv_oth IS NOT INITIAL.
+      ms_fipex_all-waers_app_oth = ms_project-approv_o_cuky.
+    ENDIF.
+
+    "Allotment current year and cumul
+    LOOP AT mt_bpej INTO DATA(ls_bpej) WHERE objnr = ms_project-objnr_prps.
+      "Allotment for current year
+      IF ls_bpej-gjahr = mv_endye.
+        IF ls_bpej-vorga <> 'KBW1'.
+          ADD ls_bpej-wljhr TO ms_fipex_all-allot_curr.
+          ADD ls_bpej-wljhr TO ms_fipex_all-allot_cumul.
+        ENDIF.
+      ELSE.
+        ADD ls_bpej-wljhr TO ms_fipex_all-allot_cumul.
+      ENDIF.
+    ENDLOOP.
+    "Check if currency conversion to do
+    IF mv_convert = abap_true.
+      "Convert at sy-datum.
+*      READ TABLE mt_conv_data INTO DATA(ls_conv_data) WITH KEY waers = mv_waers
+*                                                               gjahr = '0000'
+*                                                               perio = '000'.
+      lv_rate = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                        iv_gjahr = '0000'
+                                        iv_perio = 0 ).
+      ms_fipex_all-allot_curr = ms_fipex_all-allot_curr / lv_rate.
+      ms_fipex_all-allot_cumul = ms_fipex_all-allot_cumul / lv_rate.
+      ms_fipex_all-waers_allot = 'USD'.
+    ELSE.
+      "Associated waers
+      ms_fipex_all-waers_allot = ms_project-ledg_waers.
+    ENDIF.
+
+    "Revenue, Gain/loss
+    lr_fipex = VALUE #( ( sign = 'I' option = 'EQ' low = 'REVENUE' )
+                        ( sign = 'I' option = 'EQ' low = 'GAINS' )
+                        ( sign = 'I' option = 'EQ' low = 'LOSS' ) ).
+
+    LOOP AT mt_fmit INTO DATA(ls_fmit) WHERE fikrs = iv_fikrs
+                                       AND   fincode = iv_fincode
+                                       AND   fipex IN lr_fipex.
+      IF ls_fmit-wrttp IN mt_wrttp_gr1.
+        MOVE-CORRESPONDING ls_fmit TO ls_hsl.
+        lv_amount = me->sum_hsl_amounts( is_hsl = ls_hsl iv_gjahr = ls_fmit-ryear iv_convert = mv_convert ).
+        CHECK lv_amount IS NOT INITIAL.
+        CASE ls_fmit-fipex.
+          WHEN 'REVENUE'.
+            ADD lv_amount TO ms_fipex_all-revenue.
+          WHEN 'GAINS' OR 'LOSS'.
+            ADD lv_amount TO ms_fipex_all-gain_loss.
+        ENDCASE.
+      ENDIF.
+    ENDLOOP.
+
+    """""""Compute amounts for commitment item independant
+    ms_fipex_all-waers = ls_result-waers.
+    "result
+    ms_fipex_all-resul = ms_fipex_all-revenue - ms_fipex_all-actual_cumul.
+    "Unencombered cash
+    ms_fipex_all-unencum = ms_fipex_all-revenue - ms_fipex_all-actual_cumul - ms_fipex_all-oblig_cumul.
+    "Available allotment
+    ms_fipex_all-allot_avail = ms_fipex_all-allot_curr - ms_fipex_all-oblig_curr - ms_fipex_all-actual_curr - ms_fipex_all-oblig_cf
+                               + ms_fipex_all-supp_cost.
+    "Rate
+    IF ms_fipex_all-allot_curr IS NOT INITIAL.
+      "Current year : actual / allotment
+      ms_fipex_all-rate_curr_1 = ms_fipex_all-actual_curr * 100 / ms_fipex_all-allot_curr.
+      "Current year : ( actual + oblig ) / allotment
+      ms_fipex_all-rate_curr_2 = ( ms_fipex_all-actual_curr + ms_fipex_all-oblig_curr ) * 100 / ms_fipex_all-allot_curr.
+    ENDIF.
+    IF ms_fipex_all-alloc IS NOT INITIAL.
+      "Cumul : actual / allocation
+      ms_fipex_all-rate_cumul_1 = ms_fipex_all-actual_cumul * 100 / ms_fipex_all-alloc.
+      "Cumul : (actual + oblig ) / allocation
+      ms_fipex_all-rate_cumul_2 = ( ms_fipex_all-actual_cumul + ms_fipex_all-oblig_cumul ) * 100 / ms_fipex_all-alloc.
+    ENDIF.
+    IF ms_fipex_all-allot_cumul IS NOT INITIAL.
+      "Cumul : actual / allotment
+      ms_fipex_all-rate_cumul_3 = ms_fipex_all-actual_cumul * 100 / ms_fipex_all-allot_cumul.
+      "Cumul : actual + oblig / allotment
+      ms_fipex_all-rate_cumul_4 = ( ms_fipex_all-actual_cumul + ms_fipex_all-oblig_cumul ) * 100 / ms_fipex_all-allot_cumul.
+    ENDIF.
+
+    CLEAR: ms_fipex_all-actual_cumul, ms_fipex_all-actual_curr, ms_fipex_all-actual_prev,
+           ms_fipex_all-oblig_cumul, ms_fipex_all-oblig_curr, ms_fipex_all-oblig_cf, ms_fipex_all-oblig_futur,
+           ms_fipex_all-alloc, ms_fipex_all-alloc_avail,
+           ms_fipex_all-supp_cost, ms_fipex_all-released, ms_fipex_all-assigned.
+
+    APPEND ms_fipex_all TO mt_result.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00T ---
+  METHOD set_other_fund_center.
+
+    DATA ls_fmit TYPE ty_fmit.
+    DATA lt_fmit TYPE TABLE OF ty_fmit.
+    DATA lr_fipex TYPE RANGE OF fm_fipex.
+    DATA lv_fipex TYPE fm_fipex.
+    DATA lv_fipex_80 TYPE boolean.
+    DATA ls_result_initial TYPE ysfm_data_rep_2.
+    DATA ls_result_usd TYPE ysfm_data_rep_2.
+    DATA ls_fmcit TYPE fmcit.
+
+    "Check data already managed for fund
+    CHECK ir_fistl IS NOT INITIAL.
+
+    "Get all commitment item (contained in TC)
+    lr_fipex = me->get_fipex( iv_fipex = 'TC'
+                              iv_fipex_80 = abap_false ).
+
+    "Extract from FMIT fund centers not managed
+    LOOP AT mt_fmit INTO ls_fmit WHERE fikrs = is_result-fikrs
+                                 AND   fincode = is_result-fincode
+                                 AND   fistl NOT IN ir_fistl
+                                 AND   fipex IN lr_fipex.
+      APPEND ls_fmit TO lt_fmit.
+    ENDLOOP.
+
+    CHECK lt_fmit IS NOT INITIAL.
+    SORT lt_fmit.
+    ls_result_initial = is_result.
+    CLEAR lr_fipex.
+
+    "Find original commitment item
+    READ TABLE it_wfmbdt TRANSPORTING NO FIELDS WITH KEY fipex = 'NPC'.
+    IF sy-subrc = 0.
+      lv_fipex = 'NPC'.
+    ENDIF.
+    READ TABLE it_wfmbdt TRANSPORTING NO FIELDS WITH KEY fipex = 'PC'.
+    IF sy-subrc = 0.
+      lv_fipex = 'PC'.
+    ENDIF.
+    READ TABLE it_wfmbdt TRANSPORTING NO FIELDS WITH KEY fipex = 'TC'.
+    IF sy-subrc = 0.
+      lv_fipex = 'TC'.
+    ENDIF.
+    READ TABLE it_wfmbdt TRANSPORTING NO FIELDS WITH KEY fipex = '80'.
+    IF sy-subrc = 0.
+      lv_fipex_80 = abap_true.
+    ENDIF.
+
+    IF lv_fipex IS NOT INITIAL.
+      lr_fipex = me->get_fipex( iv_fipex = lv_fipex
+                                iv_fipex_80 = lv_fipex_80 ).
+    ENDIF.
+
+    IF lv_fipex IS NOT INITIAL.
+      LOOP AT lt_fmit INTO ls_fmit.
+        AT NEW fistl.
+          is_result = ls_result_initial.
+          "Fund center
+          is_result-fistl = ls_fmit-fistl.
+          "Commitment item
+          is_result-fipex = lv_fipex.
+          READ TABLE mt_fmcit INTO ls_fmcit WITH KEY fikrs = is_result-fikrs
+                                                     fipex = is_result-fipex.
+          IF sy-subrc = 0.
+            is_result-fipex_txt = ls_fmcit-text1.
+          ENDIF.
+        ENDAT.
+        IF ls_fmit-fipex IN lr_fipex.
+          me->manage_fmit_data( EXPORTING is_fmit = ls_fmit
+                                CHANGING  cs_result = is_result
+                                          cs_result_usd = ls_result_usd ).
+          "Currency
+          IF mv_convert = abap_true.
+            ls_result_usd-waers = 'USD'.
+          ENDIF.
+          is_result-waers = ls_fmit-waers.
+        ENDIF.
+        AT END OF fistl.
+          "Save if at least one amount is <> 0
+          IF is_result-actual_curr IS NOT INITIAL OR
+             is_result-oblig_curr IS NOT INITIAL OR
+             is_result-oblig_cf IS NOT INITIAL OR
+             is_result-actual_cumul IS NOT INITIAL OR
+             is_result-oblig_cumul IS NOT INITIAL OR
+             is_result-actual_prev IS NOT INITIAL.
+            """""""Computed amounts
+            me->compute_amounts( EXPORTING is_result_usd = ls_result_usd
+                                 CHANGING  cs_result = is_result ).
+            APPEND is_result TO mt_result.
+          ENDIF.
+        ENDAT.
+      ENDLOOP.
+      DELETE lt_fmit WHERE fipex IN lr_fipex.
+    ENDIF.
+
+    LOOP AT lt_fmit INTO ls_fmit.
+      AT NEW fipex.
+        is_result = ls_result_initial.
+        "Fund center
+        is_result-fistl = ls_fmit-fistl.
+        "Commitment item
+        is_result-fipex = ls_fmit-fipex.
+        READ TABLE mt_fmcit INTO ls_fmcit WITH KEY fikrs = is_result-fikrs
+                                                   fipex = is_result-fipex.
+        IF sy-subrc = 0.
+          is_result-fipex_txt = ls_fmcit-text1.
+        ENDIF.
+      ENDAT.
+      me->manage_fmit_data( EXPORTING is_fmit = ls_fmit
+                            CHANGING  cs_result = is_result
+                                      cs_result_usd = ls_result_usd  ).
+      IF mv_convert = abap_true.
+        ls_result_usd-waers = 'USD'.
+      ENDIF.
+      is_result-waers = ls_fmit-waers.
+      AT END OF fipex.
+        "Save if at least one amount is <> 0
+        IF is_result-actual_curr IS NOT INITIAL OR
+           is_result-oblig_curr IS NOT INITIAL OR
+           is_result-oblig_cf IS NOT INITIAL OR
+           is_result-actual_cumul IS NOT INITIAL OR
+           is_result-oblig_cumul IS NOT INITIAL OR
+          is_result-actual_prev IS NOT INITIAL.
+          """""""Computed amounts
+          me->compute_amounts( EXPORTING is_result_usd = ls_result_usd
+                               CHANGING cs_result = is_result ).
+          APPEND is_result TO mt_result.
+        ENDIF.
+      ENDAT.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00U ---
+  METHOD manage_fmit_data.
+
+    DATA ls_hsl TYPE ty_hsl.
+    DATA lv_amount TYPE hamount.
+    DATA lv_hslvt TYPE hslvt9.
+    DATA lv_amount_usd TYPE hamount.
+    DATA lv_hslvt_usd TYPE hslvt9.
+    DATA lv_rate TYPE ukurs_curr.
+
+    "Merge period amounts
+    MOVE-CORRESPONDING is_fmit TO ls_hsl.
+    IF mv_convert = abap_true.
+      "Get amounts in USD
+      IF is_fmit-wrttp IN mt_wrttp_gr1.   "Convert at period date
+        lv_amount_usd = me->sum_hsl_amounts( is_hsl = ls_hsl iv_include_cf = abap_false iv_inverse = abap_true
+                                             iv_gjahr = is_fmit-ryear iv_convert = mv_convert ).
+*        READ TABLE mt_conv_data INTO ls_conv_data WITH KEY waers = mv_waers
+*                                                           gjahr = is_fmit-ryear
+*                                                           perio = '000'.
+        lv_rate = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                          iv_gjahr = is_fmit-ryear
+                                          iv_perio = 0 ).
+        lv_hslvt_usd = is_fmit-hslvt / lv_rate.
+      ELSE.   "Convert at sy-datum
+        lv_amount = me->sum_hsl_amounts( is_hsl = ls_hsl iv_include_cf = abap_false iv_inverse = abap_true ).
+*        READ TABLE mt_conv_data INTO ls_conv_data WITH KEY waers = mv_waers
+*                                                           gjahr = '0000'
+*                                                           perio = '000'.
+        lv_rate = mo_conv_rate->get_rate( iv_waers = mv_waers
+                                          iv_gjahr = '0000'
+                                          iv_perio = 0 ).
+        lv_amount_usd = lv_amount / lv_rate.
+        lv_hslvt_usd = is_fmit-hslvt / lv_rate.
+      ENDIF.
+    ENDIF.
+    "Get Amount in transaction currency
+    lv_amount = me->sum_hsl_amounts( is_hsl = ls_hsl iv_include_cf = abap_false iv_inverse = abap_true ).
+    lv_hslvt = is_fmit-hslvt.
+    CHECK lv_amount IS NOT INITIAL OR lv_hslvt IS NOT INITIAL.
+    MULTIPLY lv_hslvt BY -1.
+    MULTIPLY lv_hslvt_usd BY -1.
+    IF is_fmit-ryear = mv_endye AND is_fmit-btart <> '0300'.
+      IF is_fmit-wrttp IN mt_wrttp_gr1.
+        ADD lv_amount TO cs_result-actual_curr.
+        ADD lv_hslvt TO cs_result-actual_curr.
+        ADD lv_amount_usd TO cs_result_usd-actual_curr.
+        ADD lv_hslvt_usd TO cs_result_usd-actual_curr.
+      ELSE.
+        ADD lv_amount TO cs_result-oblig_curr.
+        ADD lv_hslvt TO cs_result-oblig_cf.
+        ADD lv_amount_usd TO cs_result_usd-oblig_curr.
+        ADD lv_hslvt_usd TO cs_result_usd-oblig_cf.
+      ENDIF.
+    ENDIF.
+    IF is_fmit-ryear = mv_prev_year AND is_fmit-btart <> '0300' AND is_fmit-wrttp IN mt_wrttp_gr1.
+      ADD lv_amount TO cs_result-actual_prev.
+      ADD lv_hslvt TO cs_result-actual_prev.
+      ADD lv_amount_usd TO cs_result_usd-actual_prev.
+      ADD lv_hslvt_usd TO cs_result_usd-actual_prev.
+    ENDIF.
+    IF is_fmit-wrttp IN mt_wrttp_gr1.
+      ADD lv_amount TO cs_result-actual_cumul.
+      ADD lv_hslvt TO cs_result-actual_cumul.
+      ADD lv_amount_usd TO cs_result_usd-actual_cumul.
+      ADD lv_hslvt_usd TO cs_result_usd-actual_cumul.
+    ELSEIF is_fmit-ryear <> mv_endye OR is_fmit-btart <> '0300'.
+      ADD lv_amount TO cs_result-oblig_cumul.
+      ADD lv_hslvt TO cs_result-oblig_cumul.
+      ADD lv_amount_usd TO cs_result_usd-oblig_cumul.
+      ADD lv_hslvt_usd TO cs_result_usd-oblig_cumul.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00V ---
+  METHOD compute_amounts.
+
+    """""""Computed amounts
+    "Available allocation
+    cs_result-alloc_avail = cs_result-alloc - cs_result-oblig_cumul - cs_result-oblig_futur - cs_result-actual_cumul.
+    IF mv_convert = abap_true.
+      "Convert amount at sy-datum
+*      READ TABLE mt_conv_data INTO DATA(ls_conv_data) WITH KEY waers = mv_waers
+*                                                               gjahr = '0000'
+*                                                               perio = '000'.
+      is_result_usd-alloc_avail = cs_result-alloc_avail / mo_conv_rate->get_rate( iv_waers = mv_waers
+                                                                                  iv_gjahr = '0000'
+                                                                                  iv_perio = 0 ).
+      "Recalculate allocation
+      is_result_usd-alloc = is_result_usd-alloc_avail + is_result_usd-oblig_cumul +
+                            is_result_usd-oblig_futur + is_result_usd-actual_cumul.
+      "Set cnverted amounts to working result
+      cs_result = is_result_usd.
+    ENDIF.
+    "Support cost total
+    IF cs_result-fipex = '80'.
+      cs_result-supp_cost = cs_result-oblig_cumul + cs_result-actual_curr.
+    ENDIF.
+
+    "Assigned
+    cs_result-assigned = cs_result-oblig_cumul + cs_result-actual_cumul.
+    """""""" Rates per commitment item
+    IF cs_result-alloc IS NOT INITIAL.
+      "Cumul : actual / allocation
+      cs_result-rate_cumul_1 = cs_result-actual_cumul * 100 / cs_result-alloc.
+      "Cumul : (actual + oblig ) / allocation
+      cs_result-rate_cumul_2 = ( cs_result-actual_cumul + cs_result-oblig_cumul ) * 100 / cs_result-alloc.
+    ENDIF.
+
+    "Prepare data for computed amounts independant of commitment item
+    ADD cs_result-actual_cumul TO ms_fipex_all-actual_cumul.
+    ADD cs_result-oblig_cumul TO ms_fipex_all-oblig_cumul.
+    ADD cs_result-actual_curr TO ms_fipex_all-actual_curr.
+    ADD cs_result-oblig_curr TO ms_fipex_all-oblig_curr.
+    ADD cs_result-alloc TO ms_fipex_all-alloc.
+    ADD cs_result-oblig_cf TO ms_fipex_all-oblig_cf.
+    ADD cs_result-supp_cost TO ms_fipex_all-supp_cost.
+    ADD cs_result-released TO ms_fipex_all-released.
+    ADD cs_result-alloc_avail TO ms_fipex_all-alloc_avail.
+    ADD cs_result-oblig_futur TO ms_fipex_all-oblig_futur.
+    ADD cs_result-assigned TO ms_fipex_all-assigned.
+    ADD cs_result-actual_prev TO ms_fipex_all-actual_prev.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00W ---
+  METHOD aggregate_data.
+
+    DATA lt_result TYPE TABLE OF ysfm_data_rep_2.
+    DATA ls_result_sum TYPE ysfm_data_rep_2.
+    DATA lv_fistl TYPE fistl.
+    DATA lv_new_fincode TYPE boolean.
+    DATA lt_slach TYPE match_result_tab.
+
+    lt_result = mt_result.
+    CLEAR mt_result.
+
+    SORT lt_result.
+
+    LOOP AT lt_result INTO DATA(ls_result).
+
+      "Initilization at new fincode
+      AT NEW fincode.
+        lv_new_fincode = abap_true.
+      ENDAT.
+
+      IF lv_new_fincode = abap_true.
+        ls_result_sum = ls_result.
+        CLEAR ls_result_sum-fistl.
+        lv_new_fincode = abap_false.
+      ELSE.
+        "Fill fund center: take into account when more than one (that should not happen !)
+        IF ls_result_sum-fistl IS INITIAL.
+          ls_result_sum-fistl = lv_fistl = ls_result-fistl.
+        ELSEIF lv_fistl <> ls_result-fistl.
+          IF ls_result_sum-fistl+12(4) IS NOT INITIAL.
+            FIND ALL OCCURRENCES OF '/' IN ls_result_sum-fistl RESULTS lt_slach.
+            LOOP AT lt_slach INTO DATA(ls_slach).
+            ENDLOOP.
+            IF sy-subrc = 0.
+              CLEAR ls_result_sum-fistl+ls_slach-offset.
+              ls_result_sum-fistl = |{ ls_result_sum-fistl }/...|.
+            ENDIF.
+          ELSE.
+            ls_result_sum-fistl = |{ ls_result_sum-fistl }/{ ls_result-fistl }|.
+          ENDIF.
+          lv_fistl = ls_result-fistl.
+        ENDIF.
+        "Sum amounts depending of commitment items
+        ADD ls_result-actual_cumul TO ls_result_sum-actual_cumul.
+        ADD ls_result-actual_curr TO ls_result_sum-actual_curr.
+        ADD ls_result-oblig_cumul TO ls_result_sum-oblig_cumul.
+        ADD ls_result-oblig_curr TO ls_result_sum-oblig_curr.
+        ADD ls_result-oblig_cf TO ls_result_sum-oblig_cf.
+        ADD ls_result-oblig_futur TO ls_result_sum-oblig_futur.
+        ADD ls_result-alloc TO ls_result_sum-alloc.
+        ADD ls_result-alloc_avail TO ls_result_sum-alloc_avail.
+        ADD ls_result-supp_cost TO ls_result_sum-supp_cost.
+        ADD ls_result-released TO ls_result_sum-released.
+        ADD ls_result-assigned TO ls_result_sum-assigned.
+        ADD ls_result-actual_prev TO ls_result_sum-actual_prev.
+      ENDIF.
+
+      AT END OF fincode.
+        APPEND ls_result_sum TO mt_result.
+      ENDAT.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00X ---
+  METHOD set_main_to_light_table.
+
+    DATA ls_wfmbdt TYPE ty_wfmbdt.
+    DATA ls_hsl TYPE ty_hsl.
+
+    CLEAR ls_wfmbdt.
+    MOVE-CORRESPONDING is_fmbdt TO ls_wfmbdt.
+    MOVE-CORRESPONDING is_fmbdt TO ls_hsl.
+    ls_wfmbdt-hamount = me->sum_hsl_amounts( is_hsl = ls_hsl iv_inverse = abap_true ).
+    IF ls_wfmbdt-hamount <> 0.
+      IF mv_convert = abap_true.  "Convert all amount at sy-datum
+        ls_wfmbdt-hamount_usd = ls_wfmbdt-hamount / iv_rate.
+      ENDIF.
+      "Aggregate amount per commitment
+      READ TABLE ct_wfmbdt ASSIGNING FIELD-SYMBOL(<ls_wfmbdt>) WITH KEY fipex = ls_wfmbdt-fipex.
+      IF sy-subrc = 0.
+        ADD ls_wfmbdt-hamount TO <ls_wfmbdt>-hamount.
+        ADD ls_wfmbdt-hamount_usd TO <ls_wfmbdt>-hamount_usd.
+      ELSE.
+        APPEND ls_wfmbdt TO ct_wfmbdt.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00Y ---
+  METHOD read_avc.
+
+    CHECK mp_avc = abap_true.
+
+    SELECT SINGLE low FROM tvarvc WHERE name = 'Y_FM_YPS8_FMAVCT_DB_ACCESS'
+                                  AND   type = 'P'
+           INTO @DATA(lv_value).
+    CASE lv_value(1).
+      WHEN space.
+        SELECT DISTINCT rfikrs AS fikrs,
+                        rfund AS fincode,
+                        rfundsctr AS fistl,
+                        rcmmtitem AS fipex
+               FROM fmavct
+               FOR ALL ENTRIES IN @mt_fund
+               WHERE rldnr = '9H'
+               "AND   ryear IN @mr_gjahr
+               AND   rfikrs = @mt_fund-fikrs
+               AND   rfund = @mt_fund-fincode
+               INTO TABLE @mt_fmavct.
+      WHEN 'I'.
+        SELECT DISTINCT rfikrs AS fikrs,
+                        rfund AS fincode,
+                        rfundsctr AS fistl,
+                        rcmmtitem AS fipex
+               FROM fmavct
+               FOR ALL ENTRIES IN @mt_fund
+               WHERE rfikrs = @mt_fund-fikrs
+               AND   rcvrgrp_9 = @space
+               AND   rfund = @mt_fund-fincode
+               %_HINTS MSSQLNT 'TABLE FMAVCT ABINDEX(2)'
+               INTO TABLE @mt_fmavct.
+      WHEN 'A'.
+        SELECT DISTINCT rfikrs AS fikrs,
+                        rfund AS fincode,
+                        rfundsctr AS fistl,
+                        rcmmtitem AS fipex
+               FROM fmavct
+               WHERE rldnr = '9H'
+               INTO TABLE @mt_fmavct.
+        LOOP AT mt_fmavct INTO DATA(ls_fmavct).
+          READ TABLE mt_fund TRANSPORTING NO FIELDS WITH KEY fikrs = ls_fmavct-fikrs
+                                                             fincode = ls_fmavct-fincode.
+          CHECK sy-subrc <> 0.
+          DELETE mt_fmavct.
+        ENDLOOP.
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_YPS8_BCS_BL===============CM00Z ---
+  METHOD is_commitment_item_in_avc.
+
+    IF mp_avc = abap_false.
+      rv_is_ok = abap_true.
+    ELSE.
+      READ TABLE mt_fmavct TRANSPORTING NO FIELDS WITH KEY fikrs = iv_fikrs
+                                                           fincode = iv_fincode
+                                                           fistl = iv_fistl
+                                                           fipex = iv_fipex.
+      CHECK sy-subrc = 0.
+      rv_is_ok = abap_true.
+    ENDIF.
+
+  ENDMETHOD.

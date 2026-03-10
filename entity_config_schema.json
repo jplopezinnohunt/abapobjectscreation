@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAP Gateway Entity Configuration Schema",
+  "description": "Schema for defining OData entities and properties",
+  "type": "object",
+  "required": ["service_name", "entities"],
+  "properties": {
+    "service_name": {
+      "type": "string",
+      "description": "Name of the Gateway service (e.g., Z_CRP_SRV)",
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "entities": {
+      "type": "array",
+      "description": "List of entities to create",
+      "items": {
+        "type": "object",
+        "required": ["name", "properties"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Entity Type name (e.g., Certificate)",
+            "pattern": "^[A-Z][a-zA-Z0-9]*$"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable label for the entity"
+          },
+          "entity_set_name": {
+            "type": "string",
+            "description": "Entity Set name (defaults to {name}Set)"
+          },
+          "properties": {
+            "type": "array",
+            "description": "List of properties for this entity",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Property name",
+                  "pattern": "^[A-Z][a-zA-Z0-9]*$"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "EDM type",
+                  "enum": [
+                    "Edm.String",
+                    "Edm.Int32",
+                    "Edm.Int64",
+                    "Edm.Decimal",
+                    "Edm.Boolean",
+                    "Edm.DateTime",
+                    "Edm.Time",
+                    "Edm.DateTimeOffset",
+                    "Edm.Guid",
+                    "Edm.Binary"
+                  ]
+                },
+                "is_key": {
+                  "type": "boolean",
+                  "description": "Is this property a key field?",
+                  "default": false
+                },
+                "nullable": {
+                  "type": "boolean",
+                  "description": "Can this property be null?",
+                  "default": true
+                },
+                "max_length": {
+                  "type": "integer",
+                  "description": "Maximum length (for String type)",
+                  "minimum": 1
+                },
+                "precision": {
+                  "type": "integer",
+                  "description": "Precision (for Decimal type)"
+                },
+                "scale": {
+                  "type": "integer",
+                  "description": "Scale (for Decimal type)"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Human-readable label"
+                },
+                "abap_fieldname": {
+                  "type": "string",
+                  "description": "Corresponding ABAP field name (optional)"
+                }
+              }
+            }
+          },
+          "navigations": {
+            "type": "array",
+            "description": "Navigation properties (associations)",
+            "items": {
+              "type": "object",
+              "required": ["name", "target_entity"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Navigation property name"
+                },
+                "target_entity": {
+                  "type": "string",
+                  "description": "Target entity type name"
+                },
+                "multiplicity": {
+                  "type": "string",
+                  "enum": ["0..1", "1", "*"],
+                  "description": "Cardinality of the relationship",
+                  "default": "*"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

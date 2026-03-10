@@ -1,0 +1,2 @@
+  method IF_EX_HCMFAB_PERSINFO_CONFIG~GET_DPC_INSTANCE.
+  endmethod.

@@ -1,0 +1,70 @@
+METHOD adjust_unenrolled_offer.
+
+  CLEAR es_offer.
+
+  es_offer-enrty = is_offer-enrty.
+  es_offer-event = is_offer-event.
+  es_offer-pernr = is_offer-pernr.
+  es_offer-barea = is_offer-barea.
+  es_offer-bpcat = is_offer-bpcat.
+  es_offer-bplan = is_offer-bplan.
+  es_offer-pltyp = is_offer-pltyp.
+  es_offer-begda = is_offer-begda.
+  es_offer-endda = is_offer-endda.
+  es_offer-benyn = is_offer-benyn.
+  es_offer-bpttx = is_offer-bpttx.
+  es_offer-broll = is_offer-broll.
+  es_offer-ctgyn = is_offer-ctgyn.
+  es_offer-cstcr = is_offer-cstcr.
+  es_offer-cstyn = is_offer-cstyn.
+  es_offer-covyn = is_offer-covyn.
+  es_offer-crdyn = is_offer-crdyn.
+  es_offer-depyn = is_offer-depyn.
+  es_offer-invyn = is_offer-invyn.
+  es_offer-bptok = is_offer-bptok.
+  es_offer-pstok = is_offer-pstok.
+  es_offer-psttx = is_offer-psttx.
+  es_offer-bprok = is_offer-bprok.
+  es_offer-preok = is_offer-preok.
+  es_offer-pretx = is_offer-pretx.
+  es_offer-curre = is_offer-curre.
+  es_offer-pretax_opt = is_offer-pretax_opt.
+  es_offer-rollo = is_offer-rollo.
+  es_offer-txt_barea = is_offer-txt_barea.
+  es_offer-txt_pcateg = is_offer-txt_pcateg.
+  es_offer-txt_pltype = is_offer-txt_pltype.
+  es_offer-txt_plan = is_offer-txt_plan.
+  es_offer-txt_period = is_offer-txt_period.
+  es_offer-url_pltype = is_offer-url_pltype.
+  es_offer-url_plan = is_offer-url_plan.
+  es_offer-txt_urlpl = is_offer-txt_urlpl.
+  es_offer-txt_urlpt = is_offer-txt_urlpt.
+  es_offer-add_bplan = c_true.
+  es_offer-del_bplan = c_false.
+  es_offer-chg_bplan = c_false.
+  IF is_offer-enrty = c_open_offer.
+    es_offer-del_bplan = c_true.
+  ENDIF.
+  es_offer-chg_benef = c_true.
+  es_offer-chg_depcv = c_true.
+  es_offer-chg_depdt = c_true.
+  es_offer-chg_bopti = c_true.
+  es_offer-chg_bcovr = c_true.
+  es_offer-chg_inves = c_true.
+  es_offer-chg_levl1 = c_true.
+  es_offer-chg_bpttx = c_true.
+  es_offer-chg_psttx = c_true.
+  es_offer-chg_pretx = c_true.
+  es_offer-inc_addno = is_offer-inc_addno. "Note 2820848
+  es_offer-dec_addno = is_offer-dec_addno.
+  es_offer-inc_camnt = is_offer-inc_camnt.
+  es_offer-dec_camnt = is_offer-dec_camnt.
+  es_offer-inc_preco = is_offer-inc_preco.
+  es_offer-dec_preco = is_offer-dec_preco.
+  es_offer-inc_pstco = is_offer-inc_pstco.
+  es_offer-dec_pstco = is_offer-dec_pstco.
+  es_offer-inc_bprco = is_offer-inc_bprco.
+  es_offer-dec_bprco = is_offer-dec_bprco.
+  es_offer-inc_bptco = is_offer-inc_bptco.
+  es_offer-dec_bptco = is_offer-dec_bptco. "Note 2820848
+ENDMETHOD.

@@ -1,0 +1,377 @@
+--- Program: YCL_YPS8_BCS_BL===============CI (Total lines: 376) ---
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF ty_fund,
+      fikrs   TYPE fmfincode-fikrs,
+      fincode TYPE fmfincode-fincode,
+      bukrs   TYPE t001-bukrs,
+      datab   TYPE fmfincode-datab,
+      datbis  TYPE fmfincode-datbis,
+      pspnr   TYPE proj-pspnr,
+    END OF ty_fund .
+  TYPES:
+    BEGIN OF ty_fund_c5,
+      fikrs     TYPE fikrs,
+      fincode   TYPE bp_geber,
+      c5_id     TYPE ye_fm_c5_id,
+      c5_sel    TYPE ye_fm_c5_contribution,
+      fm_output TYPE ye_fm_output,
+      year_from TYPE ye_ca_year_from,
+      year_to   TYPE ye_ca_year_to,
+    END OF ty_fund_c5 .
+  TYPES:
+    BEGIN OF ty_output,
+      fm_output TYPE ytfm_output-fm_output,
+      otype     TYPE ytfm_output-otype,
+      otext     TYPE ytfm_output_t-otext,
+    END OF ty_output .
+  TYPES:
+    BEGIN OF ty_hsl,
+      hslvt TYPE fmbdt-hslvt,    "Carry forward
+      hsl01 TYPE fmbdt-hsl01,
+      hsl02 TYPE fmbdt-hsl02,
+      hsl03 TYPE fmbdt-hsl03,
+      hsl04 TYPE fmbdt-hsl04,
+      hsl05 TYPE fmbdt-hsl05,
+      hsl06 TYPE fmbdt-hsl06,
+      hsl07 TYPE fmbdt-hsl07,
+      hsl08 TYPE fmbdt-hsl08,
+      hsl09 TYPE fmbdt-hsl09,
+      hsl10 TYPE fmbdt-hsl10,
+      hsl11 TYPE fmbdt-hsl11,
+      hsl12 TYPE fmbdt-hsl12,
+      hsl13 TYPE fmbdt-hsl13,
+      hsl14 TYPE fmbdt-hsl14,
+      hsl15 TYPE fmbdt-hsl15,
+      hsl16 TYPE fmbdt-hsl16,
+    END OF ty_hsl .
+  TYPES:
+    BEGIN OF ty_fmbdt,
+      fikrs   TYPE fmbdt-rfikrs,   "FM area
+      fincode TYPE fmbdt-rfund,    "Fund
+      fistl   TYPE fmbdt-rfundsctr, "Fund center
+      fipex   TYPE fmbdt-rcmmtitem, "Commitment item
+      waers   TYPE waers,          "Currency
+      btype   TYPE fmbdt-budtype_9, "Budget type
+      bukrs   TYPE t001-bukrs.     "Company code
+      INCLUDE TYPE ty_hsl.
+    TYPES:
+      rldnr   TYPE fmbdt-rldnr,   "To avoid distinct with FOR ALL ENTRIES
+      rrcty   TYPE fmbdt-rrcty,   "To avoid distinct with FOR ALL ENTRIES
+      rvers   TYPE fmbdt-rvers,   "To avoid distinct with FOR ALL ENTRIES
+      ryear   TYPE fmbdt-ryear,   "To avoid distinct with FOR ALL ENTRIES
+      robjnr  TYPE fmbdt-robjnr,  "To avoid distinct with FOR ALL ENTRIES
+      cobjnr  TYPE fmbdt-cobjnr,  "To avoid distinct with FOR ALL ENTRIES
+      sobjnr  TYPE fmbdt-sobjnr,  "To avoid distinct with FOR ALL ENTRIES
+      rtcur   TYPE fmbdt-rtcur,   "To avoid distinct with FOR ALL ENTRIES
+    END OF ty_fmbdt .
+  TYPES:
+    tty_fmbdt TYPE TABLE OF ty_fmbdt .
+  TYPES:
+    BEGIN OF ty_wfmbdt,
+      fikrs       TYPE fmbdt-rfikrs,   "FM area
+      fincode     TYPE fmbdt-rfund,    "Fund
+      fistl       TYPE fmbdt-rfundsctr, "Fund center
+      fipex       TYPE fmbdt-rcmmtitem, "Commitment item
+      waers       TYPE waers,          "Currency
+      bukrs       TYPE t001-bukrs,     "Company code
+      hamount     TYPE fmbdt-hsl01,    "Amount in transaction currency
+      hamount_usd TYPE fmbdt-hsl01,    "Amount in USD for currency conversion
+    END OF ty_wfmbdt .
+  TYPES:
+    tty_wfmbdt TYPE TABLE OF ty_wfmbdt .
+  TYPES:
+    BEGIN OF ty_fmit,
+      fikrs   TYPE fmit-fikrs,   "FM area
+      fincode TYPE fmit-rfonds,  "Fund
+      fistl   TYPE fmit-rfistl,  "Fund center
+      fipex   TYPE fmit-rfipex,  "Commitment item
+      waers   TYPE waers,        "Currency
+      wrttp   TYPE fmit-rwrttp,  "Value type
+      btart   TYPE fmit-rbtart.  "Amount type
+      INCLUDE TYPE ty_hsl.
+    TYPES:
+      rldnr   TYPE fmit-rldnr,   "To avoid distinct with FOR ALL ENTRIES
+      rrcty   TYPE fmit-rrcty,   "To avoid distinct with FOR ALL ENTRIES
+      rvers   TYPE fmit-rvers,   "To avoid distinct with FOR ALL ENTRIES
+      ryear   TYPE fmit-ryear,   "To avoid distinct with FOR ALL ENTRIES
+      robjnr  TYPE fmit-robjnr,  "To avoid distinct with FOR ALL ENTRIES
+      cobjnr  TYPE fmit-cobjnr,  "To avoid distinct with FOR ALL ENTRIES
+      sobjnr  TYPE fmit-sobjnr,  "To avoid distinct with FOR ALL ENTRIES
+      rtcur   TYPE fmit-rtcur,   "To avoid distinct with FOR ALL ENTRIES
+    END OF ty_fmit .
+  TYPES:
+    BEGIN OF ty_project,
+      pspnr         TYPE proj-pspnr,
+      pspid         TYPE proj-pspid,
+      bukrs         TYPE proj-vbukr,
+      objnr_proj    TYPE proj-objnr,
+      objnr_prps    TYPE prps-objnr,
+      psphi         TYPE prps-psphi,
+      post1         TYPE proj-post1,
+      plfaz         TYPE proj-plfaz,
+      plsez         TYPE proj-plsez,
+      donor         TYPE prps-yye_donor,
+      sector        TYPE prps-usr02,
+      division      TYPE prps-usr03,
+      typ_sou       TYPE prps-yye_typ_sou,
+      exeby         TYPE prps-yye_exec,
+      region        TYPE prps-usr00,
+      subregion     TYPE prps-usr01,
+      verna         TYPE prps-verna,
+      astna         TYPE prps-astna,
+      pgsbr         TYPE prps-pgsbr,
+      ccaq_code     TYPE prps-usr04,
+      approv        TYPE prps-usr06,
+      approv_cuky   TYPE prps-use06,
+      approv_o      TYPE prps-usr07,
+      approv_o_cuky TYPE prps-use07,
+      pour_10       TYPE prps-yye_pour_10,
+      pour_20       TYPE prps-yye_pour_20,
+      pour_30       TYPE prps-yye_pour_30,
+      pour_40       TYPE prps-yye_pour_40,
+      pour_50       TYPE prps-yye_pour_50,
+      exec_agency   TYPE prps-yye_exec_agency,
+      impl_agency   TYPE prps-yye_impl_agency,
+      prart         TYPE prps-prart,
+      coop_agency   TYPE prps-yye_coop_agency,
+      maj_com       TYPE prps-yye_maj_com,
+      progr         TYPE prps-yye_program,
+      keyword1      TYPE prps-yye_keywrd1,
+      keyword2      TYPE prps-yye_keywrd2,
+      benef1        TYPE prps-yye_benef1,
+      benef2        TYPE prps-yye_benef2,
+      mainst1       TYPE prps-yye_mainst1,
+      mainst2       TYPE prps-yye_mainst2,
+      verna2        TYPE prps-yye_verna,
+      ledg_waers    TYPE t882-curr1,
+      reggr         TYPE prps-yye_reggr,
+      country       TYPE prps-yye_country,
+      appr_line     TYPE prps-yye_appr_line,
+      impl_unit     TYPE prps-yye_impl_unit,
+    END OF ty_project .
+  TYPES:
+    BEGIN OF ty_prps,
+      pspnr TYPE prps-pspnr,
+      posid TYPE prps-posid,
+      objnr TYPE prps-objnr,
+      psphi TYPE prps-psphi,
+      pbukr TYPE prps-pbukr,
+    END OF ty_prps .
+  TYPES:
+    BEGIN OF ty_cooi,
+      refbt  TYPE cooi-refbt,
+      refbn  TYPE cooi-refbn,
+      rfpos  TYPE cooi-rfpos,
+      rfknt  TYPE cooi-rfknt,
+      rftrm  TYPE cooi-rftrm,
+      rfart  TYPE cooi-rfart,
+      lifnr  TYPE cooi-lifnr,
+      lednr  TYPE cooi-lednr,
+      objnr  TYPE cooi-objnr,
+      hrkft  TYPE cooi-hrkft,
+      rforg  TYPE cooi-rforg,
+      rftyp  TYPE cooi-rftyp,
+      rfsys  TYPE cooi-rfsys,
+      sakto  TYPE cooi-sakto,
+      bukrs  TYPE cooi-bukrs,
+      bldat  TYPE cooi-bldat,
+      budat  TYPE cooi-budat,
+      whgbtr TYPE cooi-whgbtr,
+      loekz  TYPE cooi-loekz,
+      fipos  TYPE skb1-fipos,
+    END OF ty_cooi .
+  TYPES:
+    BEGIN OF ty_bpej,
+      belnr TYPE bpej-belnr,
+      buzei TYPE bpej-belnr,
+      objnr TYPE bpej-objnr,
+      wtjhr TYPE bpej-wtjhr,
+      wljhr TYPE bpej-wljhr,
+      twaer TYPE bpej-twaer,
+      gjahr TYPE bpej-gjahr,
+      vorga TYPE bpej-vorga,
+    END OF ty_bpej .
+  TYPES:
+    BEGIN OF ty_fmavct,
+      fikrs   TYPE fmavct-rfikrs,
+      fincode TYPE fmavct-rfund,
+      fistl   TYPE fmavct-rfundsctr,
+      fipex   TYPE fmavct-rcmmtitem,
+    END OF ty_fmavct .
+  TYPES:
+    tty_fipex TYPE RANGE OF fm_fipex .
+  TYPES:
+    tty_fistl TYPE RANGE OF fistl .
+
+  DATA mp_avc TYPE xfeld .
+  DATA mv_excl80 TYPE xfeld .
+  DATA mp_excl80 TYPE xfeld .
+  DATA mv_prev_year TYPE gjahr .
+  DATA mp_ibf TYPE ye_fm_ibf_contribute .
+  DATA mo_conv_rate TYPE REF TO ycl_fm_conversion_rate .
+  DATA:
+    mr_output TYPE RANGE OF ye_fm_output .
+  DATA mp_aggreg TYPE boolean .
+  DATA mv_no_project TYPE boolean .
+  DATA mv_waers TYPE waers .
+  DATA mv_convert TYPE boolean .
+  DATA mp_conv TYPE boolean .
+  CONSTANTS c_fipex_all TYPE fm_fipex VALUE '************************' ##NO_TEXT.
+  DATA mt_components TYPE abap_compdescr_tab .
+  DATA ms_fipex_all TYPE ysfm_data_rep_2 .
+  DATA:
+    mt_prps TYPE SORTED TABLE OF ty_prps WITH NON-UNIQUE KEY psphi .
+  DATA mv_repid TYPE sy-repid .
+  DATA ms_project TYPE ty_project .
+  DATA:
+    mt_bpej TYPE TABLE OF ty_bpej WITH NON-UNIQUE KEY objnr .
+  DATA:
+    mt_cooi TYPE SORTED TABLE OF ty_cooi WITH NON-UNIQUE KEY objnr bukrs fipos .
+  DATA:
+    mt_project TYPE SORTED TABLE OF ty_project WITH UNIQUE KEY pspnr .
+  DATA:
+    mt_fmit TYPE SORTED TABLE OF ty_fmit WITH NON-UNIQUE KEY fikrs fincode fistl fipex .
+  DATA mt_fmbdt TYPE tty_fmbdt .
+  DATA mt_fmbdt_oth TYPE tty_fmbdt .
+  DATA:
+    mt_fund TYPE SORTED TABLE OF ty_fund WITH UNIQUE KEY fikrs fincode .
+  DATA mv_begda TYPE begda .
+  DATA mv_begye TYPE gjahr .
+  DATA mv_endda TYPE endda .
+  DATA mv_endye TYPE gjahr .
+  DATA:
+    mr_fikrs TYPE RANGE OF fikrs .
+  DATA:
+    mr_fund TYPE RANGE OF bp_geber .
+  DATA:
+    mr_fictr TYPE RANGE OF fistl .
+  DATA:
+    mr_fipex TYPE RANGE OF fm_fipex .
+  DATA mp_versi TYPE versn .
+  DATA:
+    mr_gjahr TYPE RANGE OF gjahr .
+  DATA:
+    mr_donor TYPE RANGE OF yye_donor .
+  DATA:
+    mr_sector TYPE RANGE OF usr02prps .
+  DATA:
+    mr_divis TYPE RANGE OF usr03prps .
+  DATA:
+    mr_regio TYPE RANGE OF usr00prps .
+  DATA:
+    mr_exec TYPE RANGE OF yye_exec .
+  DATA:
+    mr_subre TYPE RANGE OF usr01prps .
+  DATA:
+    mr_title TYPE RANGE OF ps_post1 .
+  DATA:
+    mr_c5_id TYPE RANGE OF ye_fm_c5_id .
+  DATA mp_text TYPE boolean .
+  DATA mp_layout TYPE slis_vari .
+  DATA:
+    mt_wrttp_all TYPE RANGE OF fm_wrttp .
+  DATA:
+    mt_wrttp_gr1 TYPE RANGE OF fm_wrttp .
+  DATA:
+    mt_fmcit TYPE TABLE OF fmcit .
+  DATA mo_columns TYPE REF TO cl_salv_columns_table .
+  DATA mo_display_settings TYPE REF TO cl_salv_display_settings .
+  DATA mo_functions TYPE REF TO cl_salv_functions_list .
+  DATA mo_salv_table TYPE REF TO cl_salv_table .
+  DATA mo_layout TYPE REF TO cl_salv_layout .
+  DATA:
+    mr_type TYPE RANGE OF fm_fundtype .
+  DATA:
+    mt_amount_fields TYPE TABLE OF fieldname .
+  DATA:
+    mt_output TYPE SORTED TABLE OF ty_output WITH UNIQUE KEY fm_output .
+  DATA:
+    mt_fmavct TYPE SORTED TABLE OF ty_fmavct WITH UNIQUE KEY fikrs fincode fistl fipex .
+  DATA:
+  mt_fund_c5 TYPE SORTED TABLE OF ty_fund_c5 WITH UNIQUE KEY fikrs fincode c5_id.
+
+  METHODS is_commitment_item_in_avc
+    IMPORTING
+      !iv_fikrs       TYPE fikrs
+      !iv_fincode     TYPE bp_geber
+      !iv_fistl       TYPE fistl
+      !iv_fipex       TYPE fm_fipex
+    RETURNING
+      VALUE(rv_is_ok) TYPE xfeld .
+  METHODS read_avc .
+  METHODS set_main_to_light_table
+    IMPORTING
+      !is_fmbdt  TYPE ty_fmbdt
+      !iv_rate   TYPE ukurs_curr
+    CHANGING
+      !ct_wfmbdt TYPE tty_wfmbdt .
+  METHODS aggregate_data .
+  METHODS compute_amounts
+    IMPORTING
+      VALUE(is_result_usd) TYPE ysfm_data_rep_2 OPTIONAL
+    CHANGING
+      !cs_result           TYPE ysfm_data_rep_2 .
+  METHODS manage_fmit_data
+    IMPORTING
+      VALUE(is_fmit) TYPE ty_fmit
+    CHANGING
+      !cs_result     TYPE ysfm_data_rep_2
+      !cs_result_usd TYPE ysfm_data_rep_2 .
+  METHODS set_other_fund_center
+    IMPORTING
+      VALUE(is_result) TYPE ysfm_data_rep_2
+      !ir_fistl        TYPE tty_fistl
+      !it_wfmbdt       TYPE tty_wfmbdt .
+  METHODS set_project_amounts
+    IMPORTING
+      !iv_fikrs   TYPE fikrs
+      !iv_fincode TYPE bp_geber .
+  METHODS get_exchange_rate
+    IMPORTING
+      !iv_waers      TYPE waers
+      !iv_date       TYPE datum
+    RETURNING
+      VALUE(rv_rate) TYPE ukurs_curr .
+  METHODS get_fipex
+    IMPORTING
+      !iv_fipex       TYPE fm_fipex
+      !iv_fipex_80    TYPE boolean
+    RETURNING
+      VALUE(rt_fipex) TYPE tty_fipex .
+  METHODS sum_hsl_amounts
+    IMPORTING
+      !is_hsl          TYPE ty_hsl
+      !iv_include_cf   TYPE boolean DEFAULT abap_true
+      !iv_inverse      TYPE boolean DEFAULT abap_false
+      !iv_gjahr        TYPE gjahr OPTIONAL
+      !iv_convert      TYPE boolean DEFAULT abap_false
+    RETURNING
+      VALUE(rv_amount) TYPE hamount .
+  METHODS handle_double_click
+      FOR EVENT double_click OF cl_salv_events_table
+    IMPORTING
+      !row
+      !column .
+  METHODS set_amounts
+    IMPORTING
+      VALUE(is_result)     TYPE ysfm_data_rep_2
+      VALUE(it_wfmbdt)     TYPE tty_wfmbdt
+      VALUE(it_wfmbdt_oth) TYPE tty_wfmbdt .
+  METHODS set_columns .
+  METHODS set_master_data
+    CHANGING
+      !cs_result TYPE ysfm_data_rep_2 .
+  METHODS read_cooi_bpej .
+  METHODS filter_fund .
+  METHODS read_project .
+  METHODS read_fmbdt .
+  METHODS read_fmfincode .
+  METHODS read_fmit .
+  METHODS initialize_data .
+  METHODS prepare_data .
+  METHODS read_data_from_db .
+  METHODS set_display_settings .
+  METHODS set_functions .
+  METHODS set_layout .
