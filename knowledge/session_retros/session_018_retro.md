@@ -18,6 +18,13 @@
 **Why it works:** `.gitignore` only prevents NEW tracking. Already-tracked files need explicit `git rm --cached`.
 **Reuse:** After adding gitignore rules, always check `git ls-files` for already-tracked files that match new ignore patterns.
 
+## ❌ Error 1: Launched subagent to investigate skill updates instead of just doing them
+**What I did:** Used Explore subagent to read 3 SKILL.md files and report what needed changing, then did the changes in a second pass.
+**Why it failed:** Wasted time. The task was "update skills" not "research if skills need updating." Direct Read + Edit would have been faster.
+**Fix:** Do the work directly. Subagents are for open-ended research, not for tasks with a clear action verb.
+**Lesson:** If the verb is "update/fix/write/create" → Read + Edit. If the verb is "find/explore/investigate" → subagent.
+**Cost:** ~90s wasted + user frustration
+
 ## Promote to Central?
 - [x] Pattern 1 qualifies (3x rule — mass commits happen across projects)
-- [ ] Proposed in priority-actions.md
+- [x] Proposed in priority-actions.md

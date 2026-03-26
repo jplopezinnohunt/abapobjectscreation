@@ -55,6 +55,11 @@
 - **Gap identified**: No cross-reference between skill maturity and SESSION_LOG entries. A skill could score high on docs but never have been invoked.
 - **Claim probed**: "13 Production skills (42%)" → count verified against list = 13. **[CONFIRMED]** count accurate, scores carry doc-quality caveat.
 
+### Skill Updates (session close)
+- `coordinator/SKILL.md`: Added governance layer section (GOVERNANCE.md, two-tier model, coverage gaps)
+- `skill_creator/SKILL.md`: Added maturity framework (4-point scoring)
+- `SKILL_MATURITY.md`: Corrected sap_debugging_and_healing Stub(1) → Draft(2)
+
 ### Pending → Next Session
 
 | Priority | Task |
