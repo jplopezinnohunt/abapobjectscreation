@@ -44,6 +44,14 @@ Used for intelligence dashboards (like `cts_dashboard.html`). Goal: classify ten
 
 Both scenarios use the same underlying data model but different analytics.
 
+### SCENARIO C — Transport Companion (user-friendly explanation)
+*Question: "What does this transport do? Explain it to a non-SAP person."*
+
+Used when someone needs a user-friendly HTML companion page explaining transport content. Delegates to `sap_transport_companion` skill which generates interactive HTML with executive summary, risk assessment, validation results, and action items. Supports multi-transport packages (e.g., FI + FM for company code creation) with import order analysis.
+
+See: `.agents/skills/sap_transport_companion/SKILL.md`
+Also: `.agents/skills/sap_company_code_copy/SKILL.md` for EC01-specific protocol.
+
 ---
 
 ## Part 1 — Transport Anatomy: The Three Layers of Truth
