@@ -23,6 +23,53 @@
 
 ---
 
+## Session #018 — 2026-03-26 (Internal Governance + Mass Commit)
+
+**Start**: ~afternoon 2026-03-26
+**Focus**: BROADCAST-001 (apply ecosystem governance pattern internally) + CRITICAL commit (11 sessions uncommitted)
+**Significance**: First governance baseline — all 31 skills evaluated, two-tier model formalized, 1,002 files committed
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **Skill Maturity Evaluation** | All 31 skills scored: 13 Production, 10 Functional, 4 Draft, 4 Stub |
+| **GOVERNANCE.md** | Internal coordinator index — two-tier model, directory structure, model routing rules |
+| **SKILL_MATURITY.md** | Companion dashboard — maturity scores, coverage map, consolidation opportunities |
+| **Mass Commit** | 1,002 files, 1.88M insertions — Sessions #011-#018 consolidated |
+| **.gitignore hardened** | 9.8GB extracted data dirs excluded, 120MB JSON data, vendor libs, .env removed from tracking |
+| **Memory loaded** | All 26 memory files (14 feedback, 6 project) internalized at session start |
+
+### Key Discoveries
+
+| Discovery | Impact |
+|-----------|--------|
+| 9.8GB of extracted_data/ was NOT gitignored | Would have destroyed repo on first `git add -A` |
+| .env was still tracked in git | Removed — gitignore only prevents new tracking |
+| T2R and P2D have no dedicated skills | Coverage gap for Travel and Project processes |
+| sap_segw + segw_automation should merge | Duplicate skills for same domain |
+| Maturity scores reflect doc quality, not battle-tested usage | Future reviews should cross-reference SESSION_LOG |
+
+### Verification Check
+- **Assumption challenged**: Maturity scores based on SKILL.md reading only — not validated against actual session usage. Some "Production" skills may have great docs but limited real-world runs.
+- **Gap identified**: No cross-reference between skill maturity and SESSION_LOG entries. A skill could score high on docs but never have been invoked.
+- **Claim probed**: "13 Production skills (42%)" → count verified against list = 13. **[CONFIRMED]** count accurate, scores carry doc-quality caveat.
+
+### Pending → Next Session
+
+| Priority | Task |
+|----------|------|
+| 🔴 Critical | FMIFIIT OBJNRZ enrichment for 2024+2026 (only 2025 done, script proven) |
+| 🔴 Critical | BSEG PROJK extraction (BSEG declustered in P01, alternative WBS source) |
+| 🟡 High | Fix B2R extraction verification (FMIOI/FMBH/FMBL date filter issue) |
+| 🟡 High | SES gap investigation (ESSR↔ESLL PACKNO mismatch) |
+| 🟡 High | Merge sap_segw + segw_automation into single skill |
+| 🟢 Backlog | EKBE timestamp enrichment, Job source code extraction |
+| 🟢 Backlog | Brain integration of P2P, OCEL multi-object |
+| 🟢 Backlog | Build dedicated T2R and P2D skills |
+
+---
+
 ## Session #011 — 2026-03-16 (CDHDR Extraction + P2P Completion + PBC Discovery)
 
 **Start**: ~afternoon 2026-03-16

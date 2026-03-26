@@ -5,17 +5,23 @@
 
 ## PROJECT BRAIN — What We Built
 
-### The System (as of 2026-03-15)
+### The System (as of 2026-03-26)
 
 ```
-UNESCO SAP Intelligence Toolkit — 7 Capability Layers
-├── L1: SAP Connectivity     → pyrfc + SNC/SSO (D01 dev / P01 prod)
-├── L2: Data Extraction      → 503 MB gold SQLite DB, 2.4M rows ← FMIFIIT DONE ✅
-├── L3: Validation/Domain    → sap_brain.py (73K nodes, 3-level access), 4 domain agents + coordinator
-├── L4: Code Extraction      → ADT API, BSP/OData/Enhancement extraction
-├── L5: Transport Intel      → CTS dashboard, 7,745 transports analyzed
-├── L6: Fiori Development    → Offboarding clone (React+UI5 Web Components)
-└── L7: Process Intelligence → Signavio-style process mining tool
+UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 31 Skills
+├── L1: SAP Connectivity      → pyrfc + SNC/SSO (D01 dev / P01 prod)
+├── L2: Data Extraction       → ~2.5GB gold SQLite DB, 24M+ rows, 42 tables
+├── L3: Validation/Domain     → sap_brain.py (73.9K nodes, 3-level access), 4 domain agents + coordinator
+├── L4: Code Extraction       → ADT API, BSP/OData/Enhancement extraction
+├── L5: Transport Intel       → CTS dashboard, 7,745 transports analyzed
+├── L6: Fiori Development     → Offboarding clone (React+UI5 Web Components)
+├── L7: Process Intelligence  → process-intelligence.html + pm4py (848K P2P events)
+├── L8: System Monitoring     → sap_system_monitor.py (SM04/SM35/SM37/ST22)
+├── L9: Class Deployment      → 16 scripts (create, deploy, verify ABAP classes)
+└── L10: BDC Intelligence     → bdc_full_inventory.py (Allos/Y1 payroll forensics)
+
+Governance: .agents/GOVERNANCE.md + SKILL_MATURITY.md (31 skills scored)
+Maturity: 13 Production (42%) | 10 Functional (32%) | 4 Draft | 4 Stub
 
 Each layer FEEDS the others:
   L2→L3 (data validates domain), L5→L4 (transports→code targets),
@@ -115,6 +121,10 @@ Each layer FEEDS the others:
 | 37 | **SAP MCP Server build** | SAP_MCP/ has a half-built MCP server for RFC — could expose RFC_READ_TABLE, BAPI_* as MCP tools for L1 |
 | 38 | **Duplicate script cleanup** | extract_bkpf, extract_ekko exist in BOTH mcp-backend-server-python/ AND sap_data_extraction/scripts/ — resolve |
 | 39 | **Archive legacy root docs** | ROADMAP.md (outdated), CLAUDE.md (outdated), pmo_tracker.md (superseded by PMO_BRAIN) — archive or update |
+| 40 | **Merge sap_segw + segw_automation** | Consolidation candidate from SKILL_MATURITY.md review |
+| 41 | **Build T2R skill** | Travel-to-Claim has no dedicated skill — coverage gap |
+| 42 | **Build P2D skill** | Project-to-Close has no dedicated skill — coverage gap |
+| 43 | **Cross-reference maturity vs SESSION_LOG** | Verify Production skills were actually used in sessions |
 
 ---
 

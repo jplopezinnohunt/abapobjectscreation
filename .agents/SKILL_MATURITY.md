@@ -134,3 +134,15 @@ Cross-Cutting:
 ---
 
 *Next review: After 5 sessions or when 3+ skills change maturity level*
+
+---
+
+## AI Diligence Statement
+
+| Field | Value |
+|-------|-------|
+| AI Role | Read all 31 SKILL.md files, scored maturity on 4-point scale, identified gaps and consolidation opportunities |
+| Model | Claude Opus 4.6 (1M context) via Claude Code CLI |
+| Human Role | JP Lopez directed the evaluation as part of BROADCAST-001, will validate scores against real usage |
+| Verification | Scores based on SKILL.md content analysis [INFERRED]. Count of 13 Production skills [VERIFIED]. Coverage map cross-referenced against UNESCO 5-process model [VERIFIED]. Session usage not cross-checked [GAP]. |
+| Accountability | JP Lopez maintains full responsibility |

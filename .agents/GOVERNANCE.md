@@ -102,3 +102,15 @@ Consumed from ecosystem:
 5. **Rules are hard constraints** — rules/ files override skill suggestions
 6. **Session log is append-only** — one entry per session, never edit past entries
 7. **Brain rebuild after extraction** — `sap_brain.py --build --html` after new data
+
+---
+
+## AI Diligence Statement
+
+| Field | Value |
+|-------|-------|
+| AI Role | Designed governance structure, two-tier model, directory documentation based on existing project artifacts |
+| Model | Claude Opus 4.6 (1M context) via Claude Code CLI |
+| Human Role | JP Lopez directed creation per BROADCAST-001 from ecosystem-coordinator |
+| Verification | Directory structure [VERIFIED] via filesystem reads. Skill count [VERIFIED]. Model routing rules [REPORTED] from MEMORY.md. Two-tier model [INFERRED] from existing project organization. |
+| Accountability | JP Lopez maintains full responsibility |
