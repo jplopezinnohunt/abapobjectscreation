@@ -15,13 +15,19 @@ Read ALL of these in parallel — do not read sequentially:
 
 - [ ] **MEMORY.md** — Read index + ALL topic files it points to
   - Path: `C:\Users\jp_lopez\.claude\projects\c--Users-jp-lopez-projects-abapobjectscreation\memory\MEMORY.md`
-  - ⚠️ MEMORY.md is an INDEX. You MUST read every `topic_*.md`, `project_*.md`, and `feedback_*.md` it references
+  - ⚠️ MEMORY.md is an INDEX. You MUST read every `project_*.md` and `feedback_*.md` it references
 - [ ] **SESSION_LOG.md** — Last session entry (date, accomplishments, pending)
   - Path: `.agents/intelligence/SESSION_LOG.md`
-- [ ] **PMO Tracker** — Current workstream status + blockers
-  - Path: `knowledge/pmo_tracker.md`
+- [ ] **PMO_BRAIN.md** — Current workstream status + blockers
+  - Path: `.agents/intelligence/PMO_BRAIN.md`
+- [ ] **Ecosystem shared knowledge** (parallel with above):
+  - `ecosystem-coordinator/.knowledge/way-of-working/collaboration-terms.md`
+  - `ecosystem-coordinator/.knowledge/way-of-working/session-start.md`
+  - `ecosystem-coordinator/ecosystem/priority-actions.md` — check for [BROADCAST] items
+- [ ] **GOVERNANCE.md** — Internal coordinator index, two-tier model, skill maturity summary
+  - Path: `.agents/GOVERNANCE.md`
 
-**Pass criteria**: You can answer: "What was the last session? What are the top 3 pending items?"
+**Pass criteria**: You can answer: "What was the last session? What are the top 3 pending items? Any ecosystem broadcasts?"
 
 ---
 
@@ -77,3 +83,5 @@ P01 password is blank in .env — SSO handles all prod auth.
 - ❌ Don't spawn explore agents for info already in MEMORY.md
 - ❌ Don't parrot back what you read — just confirm ready
 - ❌ Don't ask "what would you like to work on?" if PMO has Critical items
+- ❌ Don't skip ecosystem priority-actions — you'll miss [BROADCAST] alerts
+- ❌ Don't skip GOVERNANCE.md — it has the two-tier model and maturity scores
