@@ -171,6 +171,24 @@ Records with these WRTTP values are accumulated into the **Commitment** bucket (
 | `ZHR_MARRIAGE` | Marriage Status Change | `ZCL_CIVIL_STATUS` | `WS*` |
 | `ZHR_ADOPTION` | Child Adoption | `ZCL_NEW_ADOPTION` | `WS*` |
 
+---
+
+### FMPS_LINK — The 10-Digit Glue (WBS to Fund)
+- **Fields**: `PRPS-POSID(10)` vs `FMFINCODE-GEBER`
+- **Type**: Structural (Hard Link)
+- **Discovered In**: `ZXFMYU22` (FM Account Assignment Validation)
+- **Purpose**: Enforces donor budget integrity by matching the project code to the fund code.
+- **Rule**: If `PRPS-POSID(1) to (10)` <> `I_COBL-GEBER`, show error message `ZFI:009`.
+
+---
+
+### YXUSER_BYPASS — Global Validation Safety Valve
+- **Field**: `UNAME` (Table: `YXUSER`)
+- **Type**: Config-Table-Driven
+- **XTYPE Value**: `FM` (Validation Bypass) | `FRTL` (Hardware Tolerance Bypass)
+- **Discovered In**: `ZXFMYU22`, `ZXFMCU17`
+- **Logic**: If `SELECT SINGLE * FROM YXUSER WHERE XTYPE = 'FM' AND UNAME = SY-UNAME` finds a match, **ALL** validations in the include are skipped.
+
 #### ASR Conditional Logic (Pattern: Age Restriction)
 Discovered in `ZCL_HRFIORI_BIRTH_OF_A_CHILD`:
 - **Variable**: `lv_year` (derived from `I0021_FGBDT`)

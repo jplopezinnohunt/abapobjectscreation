@@ -35,3 +35,28 @@ If the failure is not an SAP backend issue, but rather a Playwright UI script fa
 ## 3. The Re-Execution Limit
 To prevent infinite diagnostic loops, the **Self-Healing Loop** is limited to **three (3)** attempts. 
 If the AI encounters an ST22 dump, rewrites the code, tries again, and dumps exactly three times, it must trigger the Master Abort protocol, format all three crash logs into a final `analysis_report.md`, and ping the user for manual intervention.
+
+---
+
+## 4. Validation Status (Session #017)
+
+> [!WARNING]
+> **This skill is a FRAMEWORK DEFINITION — it has NOT been fully tested in production.**
+> The self-healing loop has been designed but never executed end-to-end against a real SAP failure.
+> The Triple Threat protocol (ST22 + SU53 + SM21) is proven individually via `sap_system_monitor.py`,
+> but the autonomous loop (detect → diagnose → fix → retry) has not been validated.
+>
+> **Before trusting this skill for autonomous operation:**
+> 1. Test ST22 dump detection → ADT extraction → code fix cycle manually
+> 2. Test SU53 auth failure → role identification → user notification
+> 3. Test Playwright DOM self-healing → screenshot → locator correction cycle
+> 4. Validate 3-attempt limit actually stops (no infinite loops)
+
+## Known Failures
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| ST22 query returns empty | No dumps in timeframe | Normal — system healthy |
+| SU53 returns previous auth check | SU53 shows LAST failure, not current | Run `/nSU53` immediately after error |
+| SM21 access denied | Missing S_ADMI_FCD auth | Fall back to SNAP table via RFC |
+| Screenshot fails in headless | Playwright window not visible | Use `page.screenshot()` not `page.pdf()` |

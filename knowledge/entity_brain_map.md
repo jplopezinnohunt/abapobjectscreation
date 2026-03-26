@@ -17,8 +17,40 @@ To enable high-fidelity cloning and technical reconstruction of the UNESCO syste
 ---
 
 ## 0.1 Domain Analysis Index
-- **PSM-FM & PS**: [Initial Structural Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/PSM/psm_initial_analysis.md)
-- **HCM**: [HCM Connectivity Map](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hcm_connectivity_map.md)
+
+> Last updated: 2026-03-12 — domains expanded from 27 composite enhancement extraction.
+> Enhancement code by domain: `extracted_code/ENHO/_by_domain/` | Index: [DOMAIN_INDEX.md](file:///c:/Users/jp_lopez/projects/abapobjectscreation/Zagentexecution/mcp-backend-server-python/extracted_code/ENHO/_by_domain/DOMAIN_INDEX.md)
+
+### HCM — Human Capital Management
+- [HCM Connectivity Map](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hcm_connectivity_map.md)
+- [Fiori: Personal Data App](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hcm_personal_data_analysis.md) — enhancements: `ZHR_PERS_DATA`, `YCL_HRPA_UI_CONVERT_0002_UN`, `ZCL_HCMFAB_ASR_PROCESS`
+- [Fiori: Family Management App](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hcm_family_management_analysis.md) — enhancements: `ZHR_FIORI_0021`
+- [Fiori: Address Management App](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hcm_address_management_analysis.md) — enhancements: `YCL_HRPA_UI_CONVERT_0006_UN`
+- [Fiori: HR Offboarding App](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Fiori%20Apps/hr_offboarding_analysis.md)
+- [HCM Payroll Sub-Domain](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md) — `ZHR_PENSION`, `YHR_ENH_HUNCPFM0`, `Y_ENH_PRAA`, `ZHR_SPAU_PY_CPSIT_PGM_001`
+- [HCM Benefits & Fiori Sub-Domain](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Benefits/hcm_benefits_analysis.md) — `YHR_ENH_HRFIORI`, `YHR_ENH_HRCOREPLUS`, `ZCOMP_ENH_SF`
+- [HCM Infotypes & PA Sub-Domain](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Infotypes/hcm_infotypes_analysis.md) — `ZHR_FIORI_0021`, `ZHR_SPAU_PA`, `YENH_INFOTYPE`, `YCL_HRPA_UI_CONVERT_0002/0006_UN`
+- [ASR Framework Deep Dive](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/asr_framework_deep_dive.md)
+
+### FI — Finance
+- [FI Enhancements Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/FI/fi_enhancements_analysis.md) — `YCEI_FI_SUPPLIERS_PAYMENT`, `YENH_FI_DMEE`, `YENH_RFBIBL00`, `YFI_ENH`, `YFI_ENH_ARGA`, `ZFIX_EXCHANGERATE`
+- [Finance Validations Autopsy](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md)
+
+### PSM — Public Sector Management (FM)
+- [PSM Initial Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/PSM/psm_initial_analysis.md)
+- [FM-PS Hard Link](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md) — `YFM_ENH`
+
+### PS — Project System
+- [PS Enhancements Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/PS/ps_enhancements_analysis.md) — `YPS_ENH`
+
+### RE-FX — Real Estate
+- [RE-FX Enhancements Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/RE-FX/refx_enhancements_analysis.md) — `ZENH_REFX_CONTRACT_UNESCO`
+
+### Procurement
+- [Procurement Enhancements Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/Procurement/procurement_enhancements_analysis.md) — `Z_ICTP_PO_HOSTGUEST`
+
+### Output / Documents
+- [Output Enhancements Analysis](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/Output/output_enhancements_analysis.md) — `ZENH_DOCX`
 
 ---
 
@@ -31,6 +63,8 @@ graph LR
     subgraph ENTRY["🖥️ Entry Points"]
         direction TB
         YFM1["YFM1\nFM Budget Report"]
+        YPS8["YPS8\nFM/PS Project Report"]
+        YFM_COCKPIT["YFM_COCKPIT\nFM AVC Cockpit"]
         FIORI["Fiori App\n(CRP Frontend)"]
         FIORI_HCM["Fiori App\n(Personal Data)"]
         FIORI_ADDR["Fiori App\n(Manage Address)"]
@@ -45,6 +79,8 @@ graph LR
         direction TB
         YFM1_BCS_V3["YFM1_BCS_V3\n(Report Wrapper)"]
         YCL_BL["YCL_YFM1_BCS_BL\n(FM Report Logic)"]
+        YCL_PS8["YCL_YPS8_BCS_BL\n(FM/PS Logic)"]
+        YCL_IBF["YCL_FM_FUND_IBF_BL\n(Fund Metadata Logic)"]
         DPC_EXT["ZCL_Z_CRP_SRV\n_DPC_EXT\n(CRP Data Provider)"]
         MPC_EXT["ZCL_Z_CRP_SRV\n_MPC_EXT\n(CRP Model Provider)"]
         HCM_FEEDER["CL_HCMFAB_PERSINFO_FEEDER\n(HR Metadata & Data)"]
@@ -58,6 +94,28 @@ graph LR
         UI_VISI["ZTHRFIOFORM_VISI\n(UI Logic Manifest)"]
         UI_METADATA["ZTHRFIORI_UI5PRO\n(Universal UI Metadata)"]
         STEP_CTRL["ZTHRFIORI_STEP\n(Section Controller)"]
+        YCL_BASU_BL["YCL_FI_ACCOUNT_SUBST_BL\n(BA Substitution Mgmt)"]
+        YCL_BASU_RD["YCL_FI_ACCOUNT_SUBST_READ\n(BA Substitution Runtime)"]
+    end
+
+    subgraph ANALYTICS["📊 BI/BW Analytics Bridge"]
+        direction TB
+        ZXRSAU01["ZXRSAU01\n(TXN Extraction Enrichement)"]
+        ZXRSAU02["ZXRSAU02\n(Master Data Extraction)"]
+        BW_DATASRC["0PU_IS_PS_31/32\n(FM BW Datasources)"]
+    end
+
+    subgraph CONTROL["🛡️ Control & Derivation Layer"]
+        direction TB
+        FMDERIVE["FMDERIVE\n(Posting Derivation)"]
+        AVC_DER["AVC Derivation\n(AFMA / AFMT)"]
+        ZXFMDTU02["ZXFMDTU02\n(Hardcoded Derivation)"]
+        ZXFMYU22["ZXFMYU22\n(Acct. Assignment Valid.)"]
+        YJWB001["YJWB001\n(WBS User Field Valid.)"]
+        ZXTRVU05["ZXTRVU05\n(Travel Acct. Valid.)"]
+        SPAUTH["YCL_FM_SPENDING_AUTH\n(Appropriation Control)"]
+        YRGGBS00["YRGGBS00\n(Exit Pool: Validations/Subst.)"]
+        YFI_BASU["YFI_BASU_MOD\n(BA Substitution Tool)"]
     end
 
     subgraph PAYROLL["💰 UNESCO Payroll Engine"]
@@ -96,6 +154,8 @@ graph LR
         TOAAT["TOAAT\nArchiveLink Metadata"]
         PA0965["PA0965\nEducation Grant"]
         T7UN_EVE["T7UNPAD_EVE\nUN Entitlements"]
+        BPGE["BPGE\nBudget Totals"]
+        JCDS["JCDS\nChange Doc Status"]
     end
 
     subgraph TABLES_CUSTOM["🏛️ UNESCO Custom Tables"]
@@ -107,7 +167,10 @@ graph LR
         ZTHRFIOFORM_VISI["ZTHRFIOFORM_VISI\nUI Manifest"]
         ZTHRFIORI_UI5PRO["ZTHRFIORI_UI5PRO\nComponent Properties"]
         ZTHRFIORI_STEP["ZTHRFIORI_OFFB_S\nStep Sections"]
-        ZTHRFIORI_ATTAC["ZTHRFIORI_ATTAC\nDMS Link"]
+        YTFM_FUND_C5["YTFM_FUND_C5\nIBF Metadata"]
+        YUSR00_04["YUSR00-04\nWBS Validation Master"]
+        YTFI_BA_SUBST["YTFI_BA_SUBST\nBA Range Mapping rules"]
+        YXUSER["YXUSER\nValidation User Exclusion"]
     end
 
     subgraph HCM_BACKBONE["🧬 HCM Shared Backbone"]
@@ -116,60 +179,36 @@ graph LR
         BADI_COMMON["BAdI HCMFAB_B_COMMON\n(On Behalf Of logic)"]
     end
 
-    %% Entry → Logic/Backbone
-    FIORI_OFFB -->|consumes| SRV_OFFB
-    FIORI_BENEF -->|consumes| SRV_BENEF
+    %% Entry → Logic/Backbone/Control
+    YFM_COCKPIT -->|orchestrates| FMAVCDERIAOR_TX
+    YFM1 --> YCL_BL
+    YPS8 --> YCL_PS8
     
-    %% Shared Backbone Connections
-    SRV_PERS & SRV_ADDR & SRV_FMLY & SRV_ASR --> ASR_FW
+    %% Analytics Bridge
+    BW_DATASRC --> ZXRSAU01 & ZXRSAU02
+    ZXRSAU01 -->|enrichment| ANALYTICAL_DATA
+    ZXRSAU02 -->|links| FM_FUND & PRPS
+
+    %% Logic → Tables
+    YCL_IBF --> YTFM_FUND_C5
+    YCL_BL --> FM_TOTALS
+    YCL_PS8 --> FM_TOTALS & PRPS & PROJ
+
+    %% Control Layer Interaction
+    FMDERIVE --> ZXFMDTU02
+    ZXFMYU22 & ZXTRVU05 -->|Validates| PA_DOCS["Financial Postings"]
+    ZXFMYU22 -.->|10-digit Rule| FM_FUND & PRPS
+    ZXCN1U01 --> YJWB001
+    YJWB001 --> YUSR00_04
     
     %% Service → Logic
     SRV_BENEF --> BENEF_CTRL
     SRV_OFFB --> OFFB_LOGIC
     OFFB_LOGIC & BENEF_CTRL --> DMS_MGR
-    SRV_PERS & SRV_OFFB & SRV_BENEF --> OBO_BADI
 
-    %% Logic → Tables
-    BENEF_CTRL -->|stages in| ZBENEF_HDR
-    BENEF_CTRL -->|populates| ZBENEF_EG & ZBENEF_RS
-    DMS_MGR -->|links in| ZATTACH
-    DMS_MGR -->|streams via| ARCH_CRT
-    ARCH_CRT -->|persists in| TOAAT
-    ARCH_INS -->|maps to| TOA01
-    OBO_BADI -->|governs PERNR access via| PA0001
-    OBO_BADI -->|validates Roles via| AGR_USERS
-    
-    %% Workflow Normalization
-    SRV_PERS & SRV_OFFB & SRV_BENEF & SRV_ASR --> WF_NORM
-    WF_NORM -->|Maps to| STD_00_06["Standard Status 00-06"]
-    
-    %% UI Control
-    SRV_ASR --> UI_VISI
-    UI_VISI -->|governs| FRONTOUT["UI Field State\n(Mandatory/Hidden/Read-Only)"]
-
-    %% Payroll
-    subgraph CONTROL["🛡️ Control & Derivation Layer"]
-        direction TB
-        FMDERIVE["FMDERIVE\n(Posting Derivation)"]
-        AVC_DER["AVC Derivation\n(AFMA / AFMT)"]
-        FMDERIVE_002["Table FMDERIVE002\n(G/L -> Commit Item)"]
-        FMAFMAP["Table FMAFMAP*\n(AA Groups)"]
-        SPAUTH["YCL_FM_SPENDING_AUTH\n(Appropriation Control)"]
-    end
-
-    %% Logic → Control
-    YFM1_BCS_V3 --> SPAUTH
-    SRV_CRP --> ODATA
-    
-    %% Control → Tables
-    FMDERIVE --> FMDERIVE_002
-    AVC_DER --> FMAFMAP
-    SPAUTH --> YTFM_FUND_CPL
-    
-    %% Connections to existing nodes
-    FMDERIVE_002 --> FM_ITEM
-    FMAFMAP --> FM_FUND
-    YTFM_FUND_CPL --> FM_FUND
+    %% Data Sources
+    ZXRSAU02 -->|Historical Status| JCDS
+    ZXRSAU02 -->|Weighted PSC| BPGE
 
 ```
 
@@ -182,10 +221,13 @@ graph LR
 | Class | Domain | Package | Purpose | Reuse Potential |
 | :--- | :--- | :--- | :--- | :--- |
 | `YCL_YFM1_BCS_BL` | FM Reporting | `YB` | Full business logic for YFM1 report: selection, data retrieval, WRTTP grouping, period accumulation, ALV display. | **High** — Methods like `READ_DATA_FROM_DB` and `COMPUTE_TOTAL_AMOUNTS` can be reused for any FM-based report. |
+| `YCL_YPS8_BCS_BL` | FM/PS | `YE` | Core logic for integrated Project/Fund reports for non-RB funds. | **High** |
+| `YCL_FM_FUND_IBF_BL`| FM Master | `YB` | Logic for Integrated Budget Framework (IBF) fields and C5 management. | **Medium** |
 | `ZCL_Z_CRP_SRV_DPC_EXT` | CRP | `ZCRP` | Data Provider Extension for Z_CRP_SRV. Implements CRUD for CRP certificates and budget lines. | **Medium** — CRP-specific, but CRUD patterns are reusable for other OData services. |
 | `ZCL_Z_CRP_SRV_MPC_EXT` | CRP | `ZCRP` | Model Provider Extension. Defines OData entity model metadata for CRP. | **Low** — Model-specific. Only reuse as a template for new SEGW services. |
 | `CL_SALV_TABLE` | Framework | SAP | Standard SAP ALV framework class. Used by YFM1 for grid display. | **Universal** — Standard SAP class, reusable in any report. |
 | `ZCL_HRFIORI_PF_COMMON` | HCM | `ZHR_DEV` | **Normalization Recommendation**: Layer to map ASR/Hybrid statuses to numeric 00-06. | **High** — Critical for cross-app HR reporting. |
+| `YCL_SAP_TO_WORD` | BC | `Y*` | Integration for document handling (PDF to Word). Used in FM Cockpit Help. | **Medium** |
 
 ### 2.2 OData Services
 
@@ -355,15 +397,14 @@ flowchart TB
 > [!TIP]
 > This matrix highlights objects that are used across **multiple domains**, making them candidates for shared libraries or services.
 
-| Shared Object | Used by FM | Used by PS | Used by CRP | Used by FI | Used by Agent/MCP | Reuse Action |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| `FMFINCODE` (Fund Master) | ✅ | ✅ | ✅ | — | ✅ | **Vital Link** `FINCODE` bridges FM and PS. Create shared OData entity |
-| `PROJ` / `PRPS` (WBS) | ✅ (YPS8) | ✅ | — | — | — | `PROJ-PSPID` matches `FMFINCODE-FINCODE`. Use PRPS for donor custom fields (`YYE_DONOR`, `USR02`, etc.) |
-| `FMCIT` (Commitment Items) | ✅ | — | ✅ | — | ✅ | **Create shared OData entity** — both domains need item data |
-| `T001` (Company Codes) | — | — | ✅ | ✅ | ✅ | Already cross-domain. Candidate for a shared `CompanyCode` entity |
-| `RFC_READ_TABLE` | — | — | — | — | ✅ | Universal backend access. Centralized in `sap_mcp_server.py` |
-| `WRTTP_FM` (Filter Logic) | ✅ | — | — | — | — | **Any new FM report** should reuse this filter from the [Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md) |
-| `YTFM_OUTPUT` (Output Codes) | ✅ | — | — | — | — | Reuse for any UNESCO Results-Based Budgeting report |
+| Shared Object | Used by FM | Used by PS | Used by TV | Used by BW | Impact |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| `FINCODE` (Fund Master) | ✅ | ✅ | ✅ | ✅ | **Vital Link** `FINCODE` bridges FM and PS. Create shared OData entity |
+| `PROJ` / `PRPS` (WBS) | ✅ (YPS8) | ✅ | ✅ | ✅ | `PROJ-PSPID` matches `FMFINCODE-FINCODE`. Use PRPS for donor custom fields (`YYE_DONOR`, `USR02`, etc.) |
+| `FMCIT` (Commitment Items) | ✅ | — | ✅ | ✅ | **Create shared OData entity** — both domains need item data |
+| `WRTTP_FM` (Filter Logic) | ✅ | — | — | ✅ | **Any new FM report** should reuse this filter from the [Registry](file:///c:/Users/jp_lopez/projects/abapobjectscreation/.agents/skills/unesco_filter_registry/SKILL.md#wrttp_fm--funds-management-value-type-grouping) |
+| `ZXRSAU01/02` | ✅ | ✅ | — | ✅ | **Analytical Source of Truth**: Provides USD values and real posting dates not found in Pa/Fi tables. |
+| `YTFM_FUND_C5` | ✅ | — | — | ✅ | Reuse for any UNESCO Results-Based Budgeting report |
 
 ---
 

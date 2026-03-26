@@ -1,0 +1,30 @@
+--- Program: YFI_ACCOUNT_SUBSTITUTION (Total lines: 29) ---
+*&---------------------------------------------------------------------*
+*& Report YFI_ACCOUNT_SUBSTITUTION
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT yfi_account_substitution.
+
+DATA go_subst_bl TYPE REF TO ycl_fi_account_subst_bl.
+DATA gs_skb1 TYPE skb1.
+
+INCLUDE yfi_account_substitution_sel.
+INCLUDE yfi_account_substitution_clas.
+DATA go_events TYPE REF TO lcl_handle_events.
+
+
+
+
+START-OF-SELECTION.
+
+  SET PARAMETER ID 'BUK' FIELD p_bukrs.
+
+  go_subst_bl = NEW ycl_fi_account_subst_bl( iv_bukrs = p_bukrs
+                                             iv_mode = p_mode ).
+  go_subst_bl->init_alv( sy-repid ).
+  CREATE OBJECT go_events.
+  SET HANDLER go_events->on_user_command FOR go_subst_bl->get_event( ).
+  SET HANDLER go_events->on_single_click FOR go_subst_bl->get_event( ).
+
+  go_subst_bl->display_alv( ).

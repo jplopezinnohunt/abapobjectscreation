@@ -1,0 +1,422 @@
+=== SAP_Transport_Intelligence_Modules_Supplement.docx ===
+Total paragraphs: 419
+
+SAP Transport Orders
+Module Intelligence Supplement
+HR · Public Sector Management · Project System · Bank Integration · Finance (FI/GL)
+Version 1.0  |  March 2026
+MODULE 11
+Human Resources (HCM/PA/OM)
+Payroll, Infotypes, Org Management, Features & Schemas
+HR/HCM is architecturally different from all other SAP modules in terms of transport behavior. The data model is infotype-based, the payroll engine uses schemas and PCRs that are neither standard ABAP programs nor standard customizing tables, and Organizational Management objects live in a separate PD domain. All of this makes HR transport analysis significantly more complex than FI or MM.
+11.1  The HCM Transport Architecture — Why It Is Different
+In PA (Personnel Administration), employee data lives in PAnnnn tables (e.g. PA0008 = Basic Pay). These are operational data tables — they are NOT transported through normal CTS. Transporting PA data rows via customizing requests is an exceptional and dangerous practice.
+In PD (Personnel Development / Org Management), objects live in HRP1000–HRP1999 tables. These are transported via a special mechanism using program RHMOVE30, not the standard CTS import process.
+What IS transported via standard CTS are the customizing objects that DEFINE the behavior of the infotypes and the payroll calculation engine.
+11.2  Critical HR Object Types in Transports
+Object/Table
+Name
+Semantic: New vs. Modified — Impact
+T512W
+Wage Type Valuation
+CRITICAL. New row = new wage type processing rule. Modified = wage type changes how payroll processes it (processing class, eval class, cumulation). Affects every payslip for all employees in scope. A wrong T512W row in production causes incorrect salary calculations silently.
+T511
+Wage Type Catalog
+New row = new wage type created in the system. Modified = permissibility or text changed. T511 is the master list — without it, T512W has no meaning.
+T512Z
+WT Permissibility per Infotype
+Defines which wage types are allowed on which infotype. New = a wage type becomes available on an infotype (e.g. IT0008). Modified = wage type removed from an infotype → data entry validation changes.
+T510
+Pay Scale Groups
+New row = new pay scale group/level created for TARIF indirect valuation. Modified = salary amount in pay scale table changed → all employees on TARIF valuation get recalculated in next payroll run.
+T549A
+Payroll Accounting Areas
+Defines payroll area structure. New = new payroll area (company/period grouping). Modified = payroll period logic changes. A wrong modification can prevent payroll from running.
+T549Q
+Payroll Periods
+Period calendar for each payroll area. New = new period record added. Modified = period end dates changed. DO NOT transport NROB-equivalent period data to production without payroll team sign-off.
+T554S
+Absence Types
+New = new leave/absence category. Modified = counting rule or payroll relevance changed. If absence is payroll-relevant and counting rule changes, retroactive payroll corrections are triggered.
+T554C
+Absence Valuation
+How absences affect pay. Modified = change in whether/how an absence reduces salary. High payroll impact.
+T503
+Employee Group/Subgroup
+Enterprise structure groupings. New = new EG/ESG created. Modified = payroll accounting area assignment or WT permissibility grouping changed.
+T001P
+Personnel Area/Subarea
+New = new org unit below company code. Modified = country grouping (MOLGA) or pay scale area changed — affects which country-specific wage types and schemas are used.
+T508A
+Work Schedule Rules
+New = new work pattern. Modified = planned hours/shift pattern changes. Affects positive time management and overtime calculations.
+11.3  Payroll Schema and PCR Transports — The Most Dangerous HR Objects
+Payroll schemas (e.g. XU00 for global, DE00 for Germany) and Personnel Calculation Rules (PCRs) are transported as PROG objects — they appear like ABAP programs but they are actually payroll calculation logic written in a domain-specific language. This is the most dangerous transport category in HR.
+Object
+Transport Type
+Risk Profile
+Payroll Schema (e.g. ZU00)
+R3TR PROG (special)
+CRITICAL. A schema change affects the entire payroll calculation sequence. New schema = new country/client calculation logic. Modified = step added/removed from payroll run. Must be tested in payroll simulation before production transport.
+PCR (Personnel Calc Rule)
+R3TR PROG (special)
+HIGH. A PCR is a rule table called by the schema. New PCR = new calculation rule. Modified = existing payroll logic changed. The schema chains PCRs — a single wrong PCR can corrupt the entire payroll result table (RT).
+Feature (PINCH, TARIF, etc.)
+R3TR DECI
+HIGH. Features are decision trees that determine which schema/PCR/WT is used for a given employee based on their attributes. Modified feature = different payroll behavior for subset of employees. Transport is transparent — no code diff visible.
+⚠ PCR Sequential Transport Risk
+Payroll schemas and PCRs are versioned. If PCR1 is changed twice (TR1 and TR2), transporting TR1 after TR2 OVERWRITES the newer change.
+Always transport PCRs in sequence. Never skip a transport. Never re-transport an old PCR version.
+Before any payroll-related transport to production: run payroll simulation (PC00_M99_CALC_SIMU) and compare results for a sample population.
+A wrong PCR transported to production during an open payroll period causes inconsistent payroll results requiring full retroactive correction run.
+11.4  OM/PD Objects — The Special Transport Domain
+Organizational Management objects (Org Units, Positions, Jobs, Cost Center assignments) are stored in HRP1000–HRP1999. They are NOT automatically captured in SE09 transports. The correct tool is program RHMOVE30, which reads the PD object graph and creates a sequential transport file.
+RHMOVE30: Creates a PD data file. Must specify evaluation path (e.g. O-S-K for org unit → position → cost center). Transport includes all relationships within the evaluation path.
+RHINTE10: MUST be run after RHMOVE30 import. Synchronizes PD objects into the PA integration tables (T528T, T527X). Without it, org structure appears in OM but positions don't appear in PA infotypes.
+RHINTE20: Consistency check between PA and PD. Run before and after any OM transport.
+RHINTE30: Updates PA infotype 0001 (Org Assignment) for employees when OM data changes. Runs as batch input.
+⚠ OM Transport — The Invisible Risk
+Transporting OM objects via RHMOVE30 OVERWRITES the target PD hierarchy for the exported objects.
+If production has employees assigned to Position A, and development has deleted Position A, the RHMOVE30 transport will delete it in production — employees lose their org assignments.
+T777S (PD Relationships) and T77S0 (control table for PA-PD integration) are customizing tables that control OM behavior. Transporting T77S0 changes PA-PD integration switches globally.
+Always export OM data with test run first. Review RHINTE20 output before and after.
+MODULE 12
+Public Sector Management (PSM-FM)
+Funds Management, Budget Control System, Grants Management, Derivation Rules
+SAP Public Sector Management (PSM-FM / EA-PS) handles governmental budgeting, funds management (FM), and budget control. Transport objects in this module are particularly sensitive because they control legal budget availability checking (AVC — Availability Control). A wrong transport to production can silently disable budget enforcement or corrupt commitment ledger data.
+12.1  FM Architecture and Transport Criticality Map
+The FM module sits between CO and FI. Every financial posting (FI document, PO, goods receipt) is checked against the FM budget via the AVC engine. The configuration objects that control this engine are transported via standard customizing requests. If the configuration is inconsistent between source and target, budget checks fail silently or block all postings.
+Object/Table
+Area
+New vs. Modified Semantics
+FMDERIVE (Derivation Strategy)
+FM Core
+CRITICAL. FMDERIVE is the derivation engine that assigns FM account assignments (Fund, Fund Center, Commitment Item) to every posting. New rule = new derivation path. Modified rule = existing postings will be assigned to different FM objects. Silent misdirection of budget consumption. Transport via FMDERIVE → Extras → Transport (special export, not SE09).
+FMCI (Commitment Items)
+FM Master Data
+New row = new budget line item category. Modified = financial transaction type or commitment item type changed. If a commitment item's type is changed from Expenditure to Revenue, the budget sign flips and AVC stops checking it.
+FM01 (FM Areas)
+FM Structure
+New = new FM area created (top-level FM structure). This is a one-time setup. Modified = FM area currency or fiscal year variant changed. Extremely high impact — all FM master data references this.
+FMZUOB (Account Assignment)
+FM Integration
+Stores FM object assignments per CO object (cost center, internal order, WBS). Updated by FMDERIVER. If this table is empty or inconsistent in target, all postings fail AVC.
+T043 (AVC Tolerance Keys)
+AVC Control
+Modified = tolerance percentage for budget overrun changes. Increasing tolerance = less strict budget control. Setting to 100% = budget check effectively disabled. Must require CFO sign-off.
+FMRP_CRIT (Cover Groups)
+BCS
+BCS cover eligibility rules. New = new cover pool defined. Modified = funds can now cover each other's deficits (or can no longer do so). Directly affects year-end closing and carry-forward.
+FMRB (RIB Rules)
+BCS/Revenue
+Revenue Increasing the Budget rules. New = new automatic budget supplement from revenue. Modified = budget address for revenue posting changes. Incorrect RIB rule = revenue does not release expenditure budget.
+GMGRANT (Grant Master)
+Grants Mgmt
+Grants Management master data. New = new grant created in system. Modified = sponsor, budget period, or close date changed. Transport of grant master data is exceptional — usually maintained manually in production.
+⚠ FMDERIVE — Never Transport Rules with Values to Production Directly
+FMDERIVE derivation rules contain two layers: the rule structure (which fields derive from what) and the value tables (the actual data).
+SAP recommends transporting the rule structure WITHOUT values, then maintaining values manually in production to match local master data.
+If Dev and QAS/PRD have different master data (fund centers, funds) and you transport FMDERIVE values, derivation will point to non-existent FM objects in target.
+Error FINB_TR032 during FMDERIVE transport = RFC connection or TLOGOCHECK issue. Check SAP Note 666322 for FMDERIVE trace.
+12.2  BCS Activation Transport — The One-Time Critical Event
+The activation of Budget Control System (BCS) in IMG is a one-time cross-client workbench transport. Once BCS is activated in a system, it cannot be deactivated. The activation transport must follow strict sequencing:
+Step 1: Activate EA-PS (Enterprise Extension Public Sector). Cross-client workbench transport.
+Step 2: Activate BCS in IMG (replaces Former Budgeting). One-time, irreversible.
+Step 3: Transport FM Area definition (FM01).
+Step 4: Transport Commitment Item hierarchy and Fund Center hierarchy.
+Step 5: FMDERIVE strategy structure (without values).
+Step 6: AVC ledger configuration and tolerance keys.
+⚠ S/4HANA Migration Note
+In SAP S/4HANA, Former Budgeting (FB) is discontinued. BCS is the only option.
+If migrating from ECC to S/4HANA, the FM migration program RFMXPR49 converts old FM object assignments to the new derivation strategy format.
+After running RFMXPR49, validate with FMDERIVATIONANALYSIS before going live. Transport gaps in FMDERIVE after migration cause posting errors: 'Commitment item not assigned to XXXXXXXXX'.
+MODULE 13
+Project System (PS)
+Project Definitions, WBS, Networks, Cost Planning & Integration
+SAP Project System occupies a unique position in transport analysis: the distinction between customizing objects (project profile, network types, activity types) and master data (actual project definitions, WBS elements) is critical. Master data is NOT transported via CTS — it is created in each target system. What IS transported is the configuration that defines how projects behave.
+13.1  PS Transport Object Taxonomy
+Object/Table
+PS Area
+New vs. Modified — Semantic Impact
+TABU OPST (Status Profile)
+Status Management
+New = new user status profile for WBS/network. Modified = allowed business transactions or status sequence changed. If a status that allows billing is removed, milestone billing fails in production.
+TABU TCNF / TCNT (PS Info System)
+Reporting
+PS Info System configuration (displayed fields, overall profile). New = new reporting profile. Modified = report layout changes. Affects project managers' views in CJ20N and CN41.
+TABU T001C (Controlling Area)
+PS-CO Integration
+Controlling area for PS. Modified = currency type or fiscal year variant changed. All WBS cost planning and actuals are affected.
+TABU OPS_BUKRS (Project Profile)
+Project Config
+Project profile controls default settings for new projects: planning method, budget profile, milestone billing. New = new project profile type. Modified = default planning method changes — existing projects unaffected but new projects behave differently.
+TABU CN_OPS_TYPE (Network Type)
+Network Config
+Defines network order type properties. New = new network category. Modified = order type profile or settlement profile changed — affects cost settlement behavior.
+TABU T001C/TABU CSKS (Cost Centers)
+PS-CO Integration
+Cost center master data rows. These should NOT be in a transport normally. If present, review carefully — usually sign of a developer capturing master data accidentally.
+PROG/CLAS CN_* objects
+PS Enhancements
+BAdI implementations or enhancements for PS (e.g. CN_PROJ_MAINT for project creation). Modified = project creation/change behavior customized. Impact on all new projects.
+TABU T420 (Budget Profile)
+PS Budgeting
+Budget profile for WBS. New = new budget profile. Modified = AVC tolerance or carryforward settings changed. Transporting a more permissive budget profile to production reduces budget control rigor.
+NROB (Number Ranges)
+PS Objects
+CRITICAL. Project, WBS, network number ranges. Transporting resets current number counter in target. All existing projects reference numbers assigned before the transport. Counter reset causes duplicate numbers.
+13.2  PS Master Data vs. Customizing — The Classification Test
+When you see PS objects in a transport, apply this test to determine if they are customizing (should be transported) or master data (should NOT be transported via CTS):
+If you see...
+It IS customizing (transport OK)
+It is master data (investigate why it's in a TR)
+TABU PROJ
+Never — PROJ is always master data
+PROJ rows = actual project definitions. Developer capturing live data. Remove from transport.
+TABU PRPS
+Never — PRPS is always master data
+PRPS rows = WBS element records. Live data. Must not be transported.
+TABU CSKS (Cost Centers)
+In initial implementation context only
+Post-go-live CSKS rows = live master data changes. Require CO team review.
+TABU T420 (Budget Profile)
+Yes — configuration object
+Not applicable
+TABU OPS_BUKRS
+Yes — project profile config
+Not applicable
+TABU RPSCO (Cost Report)
+Never — RPSCO is a cost reporting table
+RPSCO = project cost aggregates. Transporting is meaningless and dangerous.
+13.3  PS-FM Integration Transport Sequencing
+When PS is integrated with FM (common in public sector implementations), transport sequencing becomes critical. WBS elements must exist in FM as funded programs, and FMDERIVE must have rules to derive FM objects from WBS. The correct transport sequence is:
+1. FM Structure First: Transport FM Area, Fund Center hierarchy, Commitment Item hierarchy.
+2. FMDERIVE Strategy: Transport the derivation strategy structure that maps WBS → FM objects.
+3. PS Configuration: Transport Project Profiles, Network Types, Budget Profiles.
+4. Status Profiles: Transport after PS config so they can reference correct order types.
+5. PS Number Ranges: NEVER transport. Set manually in each system.
+⚠ PS Settlement Profile Transport Risk
+The settlement profile for WBS elements and networks determines where costs settle (PA, PrCtr, FI, etc.).
+A modified settlement profile transport can change whether project costs go to CO-PA for profitability analysis or just to cost centers.
+If settlement profile references a PA characteristics set that doesn't exist in the target, settlement runs (CJ88/CJ8G) will fail with 'Characteristics not found' — blocking period-end closing.
+MODULE 14
+Bank Integration Management
+DMEE, Payment Medium Workbench, FBZP, BCM, House Banks
+Bank Integration Management in SAP covers the configuration of payment methods, house banks, DMEE payment format trees, and Bank Communication Management (BCM). This area produces some of the most deceptive transports: DMEE format trees look like benign configuration but control the exact byte-level format of payment files sent to banks. A wrong DMEE transport to production stops all vendor payments.
+14.1  Bank Integration Object Types
+Object/Table
+T-Code Source
+New vs. Modified — Impact
+TABU T012 (House Banks)
+FI12
+New row = new house bank defined in system. Modified = bank account number, currency, or GL reconciliation account changed. All F110 payment runs reference this. Wrong GL = all bank postings go to wrong account.
+TABU T012K (House Bank Accounts)
+FI12
+New = new bank account under a house bank. Modified = IBAN, account number, or currency changed. Critical for international payment files (SEPA, SWIFT).
+TABU T042 (Payment Methods)
+FBZP
+New = new payment method defined (e.g. Wire, Check, SEPA). Modified = payment method behavior changed (bank determination, document type, minimum/maximum amount). Affects which invoices are paid by which method.
+TABU T042Z (Payment Method Country)
+FBZP
+Links payment method to DMEE format. New = new method-country combination. Modified = assigned DME format changed → different bank file format generated on next F110 run.
+TABU T042I (Ranking Order)
+FBZP
+House bank ranking for automatic payment. Modified = system will select a different bank first during F110. Can route EUR payments through wrong account.
+DMEE Format Tree (R3TR DMEE)
+DMEE
+CRITICAL. The DMEE tree defines the exact structure of the payment file sent to the bank. New tree = new format (e.g. new SEPA Pain version). Modified tree = payment file structure changes. If the bank-expected format doesn't match, bank rejects entire batch.
+OBPM1 (Payment Medium Format)
+OBPM1
+Links DMEE tree name to payment medium format. Modified = wrong DMEE tree mapped to format → incorrect file generated. Must match DMEE tree name exactly.
+TABU T042B / T042V (BCM Settings)
+BCM Config
+Bank Communication Management approval rules. New = new approval workflow rule. Modified = approval threshold changed. If thresholds are too low, all payments require manual approval and F110 queues stack up.
+⚠ DMEE Transport — The Silent Payment Stopper
+DMEE trees are stored as database table entries (not ABAP code) but export as workbench objects in a transport.
+A modified DMEE tree transport overwrites the target tree completely. If the source tree is missing a mandatory bank field that the bank requires, ALL payments using that format are rejected by the bank.
+OBPM4 (Selection Variants) MUST be created manually in each system — it stores file path and company code/bank combinations. This is NOT transported. After a DMEE transport to production, OBPM4 variants must be manually recreated.
+Always test a new DMEE tree with one test vendor invoice before releasing to full F110 production run.
+SEPA pain version changes (pain.001.001.03 → pain.001.001.09) require DMEE tree replacement. Transporting the old tree after a version upgrade breaks compliance.
+14.2  The FBZP Configuration Dependency Chain
+FBZP configuration is a multi-level dependency chain. Each level must be transported in the correct order. A transport that changes level N without having level N-1 consistent in the target system causes runtime errors during F110:
+Level
+Configuration
+Table
+Transport Dependency
+1
+Company Code → Paying Co Code
+T042A (All Company Codes)
+Must exist first. Foundation of payment program.
+2
+Paying Co Code Settings
+T042B (Paying Company Code)
+Requires Level 1 in target.
+3
+Payment Methods / Country
+T042Z
+Requires Level 2. DMEE tree must exist in target at this point.
+4
+Payment Methods / Co Code
+T042C
+Requires Level 3.
+5
+House Banks (T012 / T012K)
+T012, T012K
+Can transport independently but must exist before Level 6.
+6
+Ranking / Bank Selection
+T042I
+Requires Level 5. References specific house bank IDs.
+⚠ OBPM4 Is Never Transported
+OBPM4 (Create/Assign Selection Variants for Payment Medium Workbench) stores file output paths and company/bank combinations.
+This configuration is system-specific and cannot be transported. It must be manually recreated in QA and Production after every new DMEE format setup.
+After any DMEE or FBZP transport to production: immediately verify OBPM4 variants are still correct.
+Missing OBPM4 variant = F110 generates payment run but creates no payment file. Invoices are marked paid in SAP but no money leaves the bank.
+MODULE 15
+Financial Accounting — Finance (FI/GL)
+General Ledger, New GL, Ledgers, Posting Periods, Chart of Accounts, Document Types
+Finance (FI) is the highest-risk module for transport analysis. Every transport that modifies FI customizing has the potential to immediately affect live financial postings — silently and retroactively. The impact is not limited to future transactions: some FI changes trigger automatic re-derivation on open items or affect period-closing processes that are already in flight.
+15.1  Chart of Accounts and GL Account Master
+Object/Table
+Area
+New vs. Modified — Impact
+TABU T004 (Chart of Accounts)
+COA Definition
+New = new chart of accounts created. This is a one-time foundational transport. Modified = length of GL account or maintenance language changed — affects all GL account maintenance screens.
+TABU SKA1 (GL Account CoA)
+GL Accounts
+New row = new GL account created in the chart of accounts (definition level). Modified = account group, account type, or PL/BS classification changed. A reclassification from P&L to Balance Sheet changes financial statement presentation globally.
+TABU SKB1 (GL Account Co Code)
+GL Accounts
+Company-code-level GL account properties. New = GL activated for a company code. Modified = open item management, line item display, or field status group changed. Changing open item management on a live account with balances causes data inconsistency.
+TABU T011 / FAGL_T011 (FSV)
+Financial Statement
+Financial Statement Version used for balance sheet/P&L reporting. New = new reporting version. Modified = account assignment in FSV changed → balance sheet reports show different results immediately. Must be approved by finance controller.
+TABU T077S (Account Groups)
+GL Structure
+Number range and field status for GL account creation. Modified = field status changes → mandatory/optional fields in GL master data change.
+TABU T880 (Global Parameters)
+Company Config
+Global company parameters: fiscal year, chart of accounts, company. Modified = structural change to how the company operates in SAP. Extremely rare post-go-live; always CRITICAL.
+15.2  Posting Period and Document Control
+Object/Table
+Area
+Impact
+TABU T001B (Posting Periods)
+Period Control
+CRITICAL. Open/close posting period configuration. Modified = which accounting periods are open for posting. Transporting this overwrites the current posting period status in target. If production has period 3/2026 open and transport sets it to 2/2026, all GL postings are blocked immediately.
+TABU T003 (Document Types)
+Document Control
+New = new document type created. Modified = number range, account type, or reversal document type changed. A document type change can prevent reversal of already-posted documents.
+TABU T004F (Field Status Groups)
+Data Entry
+Controls which fields are required/optional/hidden during document entry. Modified = field that was optional becomes required → all posting transactions that didn't provide that field will fail.
+TABU T005 (Countries)
+Localization
+Country settings including tax procedure. Modified = tax procedure assignment changes → all tax codes for that country recalculate against different procedures.
+TABU T030 (Account Determination)
+Automatic Posting
+CRITICAL — covered in base document. Included here as a reminder: any T030 transport requires Finance Controller sign-off and should be in a dedicated single-object transport for auditability.
+⚠ T001B — Never Transport Posting Period Status to Production
+Table T001B controls which fiscal periods are open for posting in production.
+Transporting T001B to production overwrites the current period control — effectively locking or unlocking accounting periods in production immediately on import.
+Period opening/closing is an OPERATIONAL action that must be done via OB52 directly in production by an authorized FI controller.
+If a transport containing T001B is imported to production: check immediately whether the correct periods are still open. If not, reopen via OB52 and document the incident.
+15.3  New General Ledger (New GL / S/4HANA Universal Journal)
+The New GL introduced parallel ledgers, document splitting, and segment reporting. S/4HANA replaces this with the Universal Journal (ACDOCA table). Transports in this area are particularly complex because they modify the ledger infrastructure that all FI/CO/AA/ML documents write to.
+Object
+T-Code
+Transport Risk
+FAGL_SCENARIO (Ledger Scenarios)
+FAGL_SCENARIO
+Scenarios define which fields are updated in the parallel ledger (e.g. Segment, Profit Center). New scenario = new dimension tracked. Modified = existing scenario assignment removed → dimension stops being populated in new documents. Historical documents already posted are unaffected but reports show gaps.
+FAGLFLEXT Ledger Totals Structure
+S/4HANA only
+In S/4HANA, FAGLFLEXT is replaced by ACDOCA. Any transport affecting ledger definition changes which documents post to which ACDOCA partition. Requires full regression testing.
+FAGL_T001L (Ledger Assignment)
+New GL Config
+Assigns ledgers to company codes. New assignment = company code starts posting to additional ledger. Modified = ledger removed from company code → parallel accounting stops for that entity.
+Document Splitting Configuration
+FAGL_SPLITTING
+Splitting rules for profit center/segment derivation. Modified = splitting logic changes for future documents. Cannot retroactively fix already-posted documents without migration program.
+15.4  FI Transport Impact — Module Summary Matrix
+Object Pattern
+Impact
+Reversible?
+Who must sign off
+T001B (Posting Periods)
+CRITICAL
+Immediate — OB52
+FI Controller + Basis. NEVER via transport.
+T030 / T030R (Account Determ.)
+CRITICAL
+Counter-transport
+FI Manager + External Auditor recommendation
+T011 / FSV (Financial Statements)
+HIGH
+Counter-transport
+Finance Controller
+SKA1 / SKB1 (GL Accounts)
+HIGH
+Via master data correction
+FI team + GL master data owner
+T003 (Document Types)
+MEDIUM
+Counter-transport
+FI team review
+FAGL_SCENARIO / Ledger Config
+CRITICAL
+Cannot retroactively fix
+SAP Architect + FI Manager + Test Manager
+T004F (Field Status Groups)
+MEDIUM
+Counter-transport
+FI team
+Cross-Module Transport Intelligence — Pattern Recognition
+This section provides a consolidated pattern reference for quickly assessing any transport. When reviewing a transport request that spans multiple modules, use this cross-module signal table.
+If you see this pattern in E071...
+Module
+Immediate interpretation and action required
+TABU T512W + TABU T511 together
+HR
+New wage type being defined AND valued. This is a payroll configuration change. Require payroll simulation sign-off before production import.
+TABU T549Q + TABU T549A
+HR
+Payroll period calendar + payroll area change. Never transport to production during open payroll period. High risk of payroll freeze.
+R3TR DECI (Feature object)
+HR
+Payroll feature transport. Affects employee grouping for schema selection. Must compare feature in source vs. target before import.
+FMDERIVE transport (special export)
+PSM-FM
+Derivation rule structure. Check if values are included — if so, verify master data alignment between source and target before import.
+TABU T043 (AVC Tolerance)
+PSM-FM
+Budget availability control strictness change. Any increase in tolerance = less budget enforcement. Requires budget officer approval.
+TABU FMCI + TABU FM01
+PSM-FM
+Commitment item + FM area change together = FM structural reconfiguration. High sequencing risk.
+TABU OPST (Status Profile) + CLAS CN_*
+PS
+Project status management + code. Verify status sequences still work with modified business logic.
+TABU PROJ or TABU PRPS
+PS
+ALARM: master data in transport. Project or WBS records should never be transported via CTS. Investigate origin.
+R3TR DMEE + TABU T042Z together
+Bank
+New DMEE format AND payment method-country assignment. Full payment format change. Verify OBPM1/OBPM4 manually in target after import.
+TABU T012 + TABU T012K
+Bank
+House bank + account change. GL reconciliation account reference must still exist in target. Verify T012K-HKONT exists in target chart of accounts.
+TABU T001B
+FI
+ALARM: posting period status in transport. Never import to production. Escalate to FI Controller immediately.
+TABU T030 + TABU T042Z in same TR
+FI + Bank
+Double CRITICAL: account determination AND payment format in one transport. Requires two separate expert sign-offs. Strong recommendation: split into two transports.
+TABU SKB1 with OBJFUNC='M'
+FI
+CRITICAL: GL account company-code data mass deletion and re-insertion. All GL account properties for the affected accounts wiped and replaced. Requires pre-import backup.
+FAGL_SCENARIO + FAGL_T001L
+FI/New GL
+Parallel ledger structural change. Requires UAT sign-off and migration assessment for existing posted documents.
+SAP Transport Intelligence — Module Supplement (HR · PSM-FM · PS · Bank · FI) — March 2026

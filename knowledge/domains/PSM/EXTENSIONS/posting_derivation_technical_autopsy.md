@@ -52,7 +52,23 @@ The system utilizes the standard user-exit **`FMDERIVE`** (Include `ZXFMDTU02`) 
 *   **Historical Fund Blocks**: Postings on funds starting with `149*` are blocked for Procurement transactions (`ME21`, `ME51`, etc.).
 *   **Period Control**: Transaction-specific period checks are implemented for ALV/FI transactions using custom tables `YFMXCHKP` and `YXTCODE`.
 
-## 6. Relationships Between Master Data & Postings
+## 6. Cross-Module Derivation & Validation Layer
+Beyond the core `FMDERIVE` strategy, several other modules contribute to the final account assignment truth:
+
+### 6.1 Travel Management (TV) Integration
+*   **Validation Exit**: [`ZXTRVU05`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/ZXTRVU05_RPY.abap).
+*   **Rule**: Explicit block on dual-assignments. A travel line cannot have both a Cost Center and a WBS Element.
+*   **Fund Consistency**: The system performs a dedicated check (`PERFORM COMPARE_FUND_WBS`) to ensure the WBS Element's budget matches the selected Fund.
+
+### 6.2 Project System (PS) Data Quality
+*   **Include**: [`YJWB001`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/YJWB001_RPY.abap).
+*   **Purpose**: Ensures project-level metadata (Region, Sector) is populated correctly. These fields are often used as higher-level derivation source fields in FM strategy.
+
+### 6.3 BI/BW Reporting Enrichment
+*   **Extraction Exit**: [`ZXRSAU01`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/ZXRSAU01_RPY.abap).
+*   **Function**: Calculates the "Analytical Posting Date" which is the true date the budget was consumed, regardless of when the FI period was closed. This is vital for UNESCO's Biennium reporting.
+
+## 7. Relationships Between Master Data & Postings
 | Source Object | Target FM Object | Mechanism |
 | :--- | :--- | :--- |
 | **G/L Account** | Commitment Item | `FMMD` strategy / `SKB1-FIPOS` |

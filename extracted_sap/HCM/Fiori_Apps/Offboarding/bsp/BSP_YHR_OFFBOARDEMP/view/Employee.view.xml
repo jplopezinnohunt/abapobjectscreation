@@ -1,0 +1,92 @@
+<mvc:View
+    controllerName="com.hr.unesco.yhrappoffboardingemp.controller.Employee"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    height="100%">
+
+    <f:DynamicPage id="dynamicPage" headerExpanded="true">
+        <f:content>
+            <Table
+                id="requestTable"
+                growing="true"
+                growingThreshold="20"
+                items="{path: 'offboardingModel>/EmployeeSet', templateShareable: false}"
+                noDataText="{i18n>noEmployeeRequests}">
+                
+                <!-- Toolbar/Header -->
+                <headerToolbar>
+                    <OverflowToolbar>
+                        <Title text="{i18n>employeeRequestsTitle}" level="H2"/>
+                        <ToolbarSpacer/>
+                        <Button icon="sap-icon://refresh" tooltip="{i18n>refreshTooltip}" press="onModelRefresh"/>
+                    </OverflowToolbar>
+                </headerToolbar>
+
+                <!-- Columns -->
+                <columns>
+                    <Column width="120px" sortProperty="CreatorPernr" filterProperty="CreatorPernr">
+                        <Text text="{i18n>columnEmployeeID}"/>
+                    </Column>
+                    <Column width="200px" sortProperty="CreatorLname" filterProperty="CreatorLname">
+                        <Text text="{i18n>columnEmployeeName}"/>
+                    </Column>
+                    <Column width="200px" sortProperty="Reason" filterProperty="Reason">
+                        <Text text="{i18n>columnReason}"/>
+                    </Column>
+                    <Column width="150px" sortProperty="EffectiveDate" filterProperty="EffectiveDate">
+                        <Text text="{i18n>columnEffectiveDate}"/>
+                    </Column>
+                    <Column width="150px" sortProperty="Endda" filterProperty="Endda">
+                        <Text text="{i18n>columnEndDate}"/>
+                    </Column>
+                    <Column width="150px" sortProperty="Status" filterProperty="Status">
+                        <Text text="{i18n>columnStatus}"/>
+                    </Column>
+                    <Column width="100px" hAlign="Center">
+                        <Text text="{i18n>columnAction}"/>
+                    </Column>
+                </columns>
+
+                <!-- Items Template -->
+                <items>
+                    <ColumnListItem type="Active">
+                        <cells>
+                            <ObjectIdentifier title="{offboardingModel>CreatorPernr}"/>
+                            <Text text="{parts:[{path:'offboardingModel>CreatorFname'},{path:'offboardingModel>CreatorLname'}],formatter:'.formatFullName'}"/>
+                            <ObjectStatus
+                                text="{offboardingModel>Reason}"/>
+                                <!--state="{= ${offboardingModel>Reason} === 'RES' ? 'Error' : 'Warning'}"/>-->
+                            <Text text="{path: 'offboardingModel>EffectiveDate', formatter: '.formatDate'}"/>
+                            <Text text="{path: 'offboardingModel>Endda', formatter: '.formatDate'}"/>
+                            <Text text="{offboardingModel>Status}"/>
+                            <HBox justifyContent="Center">
+                                <Button
+                                    icon="sap-icon://add"
+                                    text="{i18n>buttonFiles}"
+                                    tooltip="{i18n>tooltipManageFiles}"
+                                    type="Transparent"
+                                    press=".onAddFilesPress">
+                                    <customData>
+                                        <core:CustomData key="Pernr" value="{offboardingModel>CreatorPernr}"/>
+                                    </customData>
+                                </Button>
+                                <Button
+                                    icon="sap-icon://navigation-right-arrow"
+                                    tooltip="{i18n>tooltipViewDetails}"
+                                    type="Transparent"
+                                    press=".onNavToDetail"
+                                    class="sapUiTinyMarginBegin">
+                                    <customData>
+                                        <core:CustomData key="Pernr" value="{offboardingModel>CreatorPernr}"/>
+                                    </customData>
+                                </Button>
+                            </HBox>
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </f:content>
+    </f:DynamicPage>
+</mvc:View>

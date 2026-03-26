@@ -1,0 +1,374 @@
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CCMAC ---
+*"* use this source file for any macro definitions you need
+*"* in the implementation part of the class
+
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM001 ---
+  METHOD constructor.
+
+    mv_bukrs = iv_bukrs.
+    mv_mode = iv_mode.
+    me->load_data( ).
+
+    mo_alv_check = NEW ycl_ca_alv_in_popup( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM002 ---
+  METHOD load_data.
+
+    SELECT DISTINCT a~blart,
+                    b~ltext,
+                    a~gsber,
+                    g~gtext
+      FROM ytfi_ba_subst AS a
+      LEFT OUTER JOIN t003t AS b ON  b~spras = @sy-langu
+                                 AND b~blart = a~blart
+      LEFT OUTER JOIN tgsbt AS g ON  g~spras = @sy-langu
+                                 AND g~gsber = a~gsber
+      WHERE a~bukrs = @mv_bukrs
+      INTO CORRESPONDING FIELDS OF TABLE @mt_list.
+
+    LOOP AT mt_list ASSIGNING FIELD-SYMBOL(<ls_list>).
+      <ls_list>-hksel = icon_display_more.  "ICON_ENTER_MORE
+      SELECT sign,
+             opti AS option,
+             low,
+             high
+        FROM ytfi_ba_subst
+        WHERE bukrs = @mv_bukrs
+        AND   blart = @<ls_list>-blart
+        AND   gsber = @<ls_list>-gsber
+        AND   sign <> @space
+        INTO TABLE @<ls_list>-hktab.
+      IF <ls_list>-hktab IS INITIAL.
+        <ls_list>-hksel = icon_enter_more.
+      ELSE.
+        <ls_list>-hksel = icon_display_more.
+      ENDIF.
+      <ls_list>-hkdis = icon_display.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM003 ---
+  METHOD init_alv.
+
+    mv_repid = iv_repid.
+
+    TRY.
+        CALL METHOD cl_salv_table=>factory
+*          EXPORTING
+*           list_display = IF_SALV_C_BOOL_SAP=>FALSE
+*           r_container  = mo_alv_container
+*           container_name =
+          IMPORTING
+            r_salv_table = mo_salv_table
+          CHANGING
+            t_table      = mt_list.
+      CATCH cx_salv_msg .
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM005 ---
+  METHOD display_alv.
+
+    DATA ls_layout_key TYPE salv_s_layout_key.
+    DATA lo_column  TYPE REF TO cl_salv_column_table.
+    DATA lv_title TYPE lvc_title.
+    DATA lv_pfstatus TYPE sypfkey.
+
+    mo_functions = mo_salv_table->get_functions( ).
+    mo_columns = mo_salv_table->get_columns( ).
+    mo_layout = mo_salv_table->get_layout( ).
+    mo_display_settings = mo_salv_table->get_display_settings( ).
+    mo_functional_settings = mo_salv_table->get_functional_settings( ).
+
+    "ALV set status
+    IF mv_mode = 'M'.
+      lv_pfstatus = 'MAIN_STATUS'.
+    ELSE.
+      lv_pfstatus = 'MAIN_STATUS_DIS'.
+    ENDIF.
+    mo_salv_table->set_screen_status( pfstatus      = lv_pfstatus
+                                      report        = mv_repid
+                                      set_functions = mo_salv_table->c_functions_all ).
+
+    "ALV layout
+    mo_layout = mo_salv_table->get_layout( ).
+    ls_layout_key-report = mv_repid.
+    mo_layout->set_key( ls_layout_key ).
+
+    "List title
+    IF mv_mode = 'M'.
+      lv_title = |Manage { TEXT-t01 } { mv_bukrs }|.
+    ELSE.
+      lv_title = |Display { TEXT-t01 } { mv_bukrs }|.
+    ENDIF.
+    mo_display_settings->set_list_header( lv_title ).
+
+    "Columns
+    TRY.
+        lo_column ?= mo_columns->get_column( 'HKSEL' ).
+        lo_column->set_cell_type( if_salv_c_cell_type=>hotspot ).
+        lo_column->set_icon( if_salv_c_bool_sap=>true ).
+        lo_column->set_long_text( 'G/L Accounts' ).
+        lo_column->set_fixed_header_text( 'L' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+    TRY.
+        lo_column ?= mo_columns->get_column( 'HKDIS' ).
+        lo_column->set_cell_type( if_salv_c_cell_type=>hotspot ).
+        lo_column->set_icon( if_salv_c_bool_sap=>true ).
+        lo_column->set_long_text( 'List of G/L Accounts' ).
+        lo_column->set_fixed_header_text( 'L' ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+
+    "Display ALV
+    mo_salv_table->display( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM006 ---
+  METHOD GET_EVENT.
+
+    ro_event = mo_salv_table->get_event( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM007 ---
+  METHOD get_row_selected.
+
+    DATA lo_selections TYPE REF TO cl_salv_selections.
+    DATA lt_rows       TYPE salv_t_row.
+
+    CLEAR rv_row_index.
+
+    lo_selections = mo_salv_table->get_selections( ).
+    lt_rows = lo_selections->get_selected_rows( ).
+    READ TABLE lt_rows INTO rv_row_index INDEX 1.
+    IF sy-subrc <> 0.
+      MESSAGE TEXT-i01 TYPE 'I'.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM008 ---
+  METHOD get_accounts.
+
+    READ TABLE mt_list INTO DATA(ls_list) INDEX iv_row_index.
+    CHECK sy-subrc = 0.
+    rt_hkont = ls_list-hktab.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM009 ---
+  METHOD set_accounts.
+
+    READ TABLE mt_list ASSIGNING FIELD-SYMBOL(<ls_list>) INDEX iv_row_index.
+    CHECK sy-subrc = 0.
+    <ls_list>-hktab = it_hkont.
+
+    IF <ls_list>-hktab IS INITIAL.
+      <ls_list>-hksel = icon_enter_more.
+    ELSE.
+      <ls_list>-hksel = icon_display_more.
+    ENDIF.
+
+    "Update data
+    me->update_data( iv_blart = <ls_list>-blart
+                     iv_gsber = <ls_list>-gsber
+                     it_hkont = <ls_list>-hktab ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00A ---
+  METHOD insert_row.
+
+    DATA ls_list TYPE ty_list.
+
+    READ TABLE mt_list TRANSPORTING NO FIELDS WITH KEY blart = iv_blart
+                                                       gsber = iv_gsber.
+    IF sy-subrc = 0.
+      MESSAGE TEXT-e01 TYPE 'E'.
+      EXIT.
+    ENDIF.
+
+    "Update data
+    me->update_data( iv_blart = iv_blart
+                     iv_gsber = iv_gsber
+                     it_hkont = it_hkont ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00B ---
+  METHOD update_data.
+
+    DATA lt_data TYPE TABLE OF ytfi_ba_subst.
+    DATA ls_data TYPE ytfi_ba_subst.
+    DATA lv_numb TYPE ytfi_ba_subst-numb.
+
+    "First delete existing entries
+    DELETE FROM ytfi_ba_subst WHERE bukrs = mv_bukrs
+                              AND   blart = iv_blart
+                              AND   gsber = iv_gsber.
+    ls_data-bukrs = mv_bukrs.
+    ls_data-blart = iv_blart.
+    ls_data-gsber = iv_gsber.
+
+    LOOP AT it_hkont INTO DATA(ls_hkont).
+      ADD 1 TO lv_numb.
+      ls_data-numb = lv_numb.
+      ls_data-sign = ls_hkont-sign.
+      ls_data-opti = ls_hkont-option.
+      ls_data-low = ls_hkont-low.
+      ls_data-high = ls_hkont-high.
+      APPEND ls_data TO lt_data.
+    ENDLOOP.
+    IF sy-subrc <> 0.
+      APPEND ls_data TO lt_data.
+    ENDIF.
+
+    INSERT ytfi_ba_subst FROM TABLE lt_data.
+    IF sy-subrc <> 0.
+      MESSAGE TEXT-e02 TYPE 'E'.
+      ROLLBACK WORK.
+    ELSE.
+      COMMIT WORK.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00C ---
+  METHOD refresh_alv.
+
+    CLEAR mt_list.
+    me->load_data( ).
+    TRY.
+        mo_salv_table->set_data( CHANGING t_table = mt_list ).
+      CATCH cx_salv_no_new_data_allowed.
+    ENDTRY.
+
+    mo_salv_table->refresh( ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00D ---
+  METHOD delete_row.
+
+    READ TABLE mt_list INTO DATA(ls_list) INDEX iv_row_index.
+    CHECK sy-subrc = 0.
+    DELETE FROM ytfi_ba_subst WHERE bukrs = mv_bukrs
+                              AND   blart = ls_list-blart
+                              AND   gsber = ls_list-gsber.
+    COMMIT WORK.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00E ---
+  METHOD get_data_from_row_index.
+
+    CLEAR: ev_blart, ev_gsber, et_hkont.
+    READ TABLE mt_list INTO DATA(ls_list) INDEX iv_row_index.
+    CHECK sy-subrc = 0.
+    ev_blart = ls_list-blart.
+    ev_gsber = ls_list-gsber.
+    et_hkont = ls_list-hktab.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00F ---
+  METHOD display_account_list.
+
+    READ TABLE mt_list INTO DATA(ls_list) INDEX iv_row_index.
+    CHECK sy-subrc = 0 AND ls_list-hktab IS NOT INITIAL.
+
+    me->read_account_list( ls_list ).
+
+    mo_alv_check->execute( EXPORTING iv_title = 'List of G/L accounts'
+                           CHANGING ct_table = mt_acct ).
+
+*    SUBMIT yfi_account_substitution_list WITH p_bukrs = mv_bukrs
+*                                         WITH p_blart = ls_list-blart
+*                                         WITH p_gsber = ls_list-gsber
+*                                         AND RETURN.
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00G ---
+  METHOD check_accounts.
+
+    DATA lt_acct_all TYPE TABLE OF ty_acct.
+    DATA ls_check TYPE ty_check.
+
+    CLEAR mt_check.
+
+    LOOP AT mt_list INTO DATA(ls_list).
+      IF ls_list-hktab IS INITIAL.
+        CLEAR ls_check.
+        MOVE-CORRESPONDING ls_list TO ls_check.
+        ls_check-messg = TEXT-m02.
+        APPEND ls_check TO mt_check.
+      ELSE.
+        me->read_account_list( ls_list ).
+        APPEND LINES OF mt_acct TO lt_acct_all.
+      ENDIF.
+    ENDLOOP.
+
+    SORT lt_acct_all BY blart hkont.
+
+    LOOP AT lt_acct_all INTO DATA(ls_acct_all) GROUP BY ( blart = ls_acct_all-blart
+                                                          saknr = ls_acct_all-hkont
+                                                          size = GROUP SIZE )
+                        ASSIGNING FIELD-SYMBOL(<ls_acct_group>).
+      IF <ls_acct_group>-size > 1.
+        LOOP AT GROUP <ls_acct_group> INTO DATA(ls_acct_group).
+          CLEAR ls_check.
+          MOVE-CORRESPONDING ls_acct_group TO ls_check.
+          ls_check-messg = TEXT-m01.
+          APPEND ls_check TO mt_check.
+        ENDLOOP.
+      ENDIF.
+    ENDLOOP.
+
+    mo_alv_check->execute( EXPORTING iv_title = 'Inconsistency in G/L Accounts assignment'
+                           CHANGING ct_table = mt_check ).
+
+  ENDMETHOD.
+
+
+--- Method Implementation: YCL_FI_ACCOUNT_SUBST_BL=======CM00H ---
+  METHOD read_account_list.
+
+    CLEAR mt_acct.
+
+    SELECT a~bukrs, @is_list-blart, @is_list-gsber, a~saknr, t~txt50
+       FROM skb1 AS a
+       INNER JOIN t001 AS b ON b~bukrs = a~bukrs
+       LEFT OUTER JOIN skat AS t ON  t~spras = @sy-langu
+                                 AND t~ktopl = b~ktopl
+                                 AND t~saknr = a~saknr
+       WHERE a~bukrs = @mv_bukrs
+       AND   a~saknr IN @is_list-hktab
+       INTO  TABLE @mt_acct.
+
+  ENDMETHOD.

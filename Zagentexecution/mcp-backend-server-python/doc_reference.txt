@@ -1,0 +1,602 @@
+=== SAP_Transport_Intelligence_Reference.docx ===
+Total paragraphs: 599
+
+SAP Transport Orders
+Deep Intelligence Reference
+Reading, Interpreting, and Reasoning About Transport Content
+Version 1.0  |  March 2026
+1. The Anatomy of a Transport Request
+A SAP transport request is not a simple package of files. It is a structured record of intent — what changed, in which object, in which layer, and what R3trans should do about it during import. Understanding a transport deeply means distinguishing between what SE09/SE10 shows you (a simplified summary) and what actually travels in the cofile/datafile pair.
+1.1  The Three Layers of Truth
+Layer
+Where
+What it tells you
+Database (E07x)
+Tables E070, E071, E071K, E070C
+Request header, object list, table keys, client info. The 'register' of the transport.
+Cofile (K*.SID)
+/usr/sap/trans/cofiles/
+The command manifest. R3trans reads this first to know what actions to perform.
+Datafile (R*.SID)
+/usr/sap/trans/data/
+The actual binary payload. Contains the real object data, table rows, and ABAP code as exported by R3trans.
+⚠ Critical Rule: SE09/SE10 is a hint, not the truth
+The object list you see in SE09 or SE10 shows what was registered at the time of recording.
+The export protocol (after release) tells you what was ACTUALLY exported.
+Example: you create a plant (T001W) then delete it before releasing. E071 still shows the entry, but OBJFUNC=' ' and nothing is in the datafile.
+1.2  Key Database Tables
+Table
+Full Name
+Purpose
+E070
+Request/Task Header
+TRKORR (number), TRFUNCTION (type K/W), TRSTATUS (Open/Released), TARSYSTEM (target), AS4USER (owner)
+E071
+Object List
+Per object: PGMID, OBJECT, OBJ_NAME, OBJFUNC (action flag), LOCKFLAG, ACTIVITY
+E071K
+Table Keys
+For TABU objects: the specific row keys being transported (TABKEY field). What rows actually move.
+E070C
+Client Info
+Source client of a customizing request. If client deleted → request inaccessible.
+E07T
+Description Text
+Human-readable description AS4TEXT. Useful for bulk analysis.
+TADIR
+Repository Index
+PGMID, OBJECT, OBJ_NAME, DEVCLASS (package), SRCSYSTEM. Cross-reference to find which package owns the object.
+1.3  The PGMID / OBJECT / OBJ_NAME Triple
+Every object in a transport is uniquely identified by three fields working together:
+PGMID
+OBJECT
+OBJ_NAME
+Meaning
+R3TR
+PROG
+ZMYREPORT
+Full ABAP program including source, text elements, properties
+LIMU
+REPT
+ZMYREPORT
+Only the text elements of that program (subobject)
+R3TR
+TABU
+T001
+Table content rows (not the structure — the DATA). Keys in E071K.
+R3TR
+TABL
+ZMYTABLE
+Table DEFINITION (DDIC structure, fields). No data rows.
+LANG
+PROG
+ZMYREPORT
+Language-specific parts only (translations). Since Basis 4.6C.
+Key distinction: R3TR is a full/group object (the whole thing). LIMU is a subobject (a piece). Best practice: always transport R3TR, never LIMU fragments — a LIMU-only transport leaves a partially-consistent object in the target.
+2. Request Types and What They Mean
+The type of request (E070.TRFUNCTION) fundamentally changes how you should read the content. A workbench request and a customizing request carry the same PGMID/OBJECT syntax but have completely different semantics and consistency rules.
+2.1  Request Type Comparison
+Dimension
+Workbench Request (K)
+Customizing Request (W)
+E070.TRFUNCTION
+K
+W
+Client scope
+Client-independent (applies to all clients in target system upon import)
+Client-specific (only imports into the source client or specified target client)
+Typical objects
+PROG, CLAS, FUGR, TABL, VIEW, DTEL, DOMA, DEVC, TRAN, SICF, IWSG, IWOM, SUCU…
+TABU (customizing table rows), SOBJ, logical objects via SPRO recording
+Transport route
+Determined by TADIR package → transport layer → STMS route
+Determined by system-level setting (all customizing or none), standard transport layer
+STMS Import flag
+I = K (visible in import queue list)
+I = W
+Object consistency
+Must transport full R3TR. Partial LIMU transports create consistency risk.
+Logical objects may appear consistent in SE09 but keys are dynamically resolved at export time.
+2.2  Other Request Categories
+Type
+TRFUNCTION
+When to use / Behavior
+Transport of Copies
+T
+One-time manual move. No automatic delivery to target. Objects not locked. Useful for emergency patches or lateral copies.
+Relocation (with development)
+R
+Object moves to a different package. Original locked in source. Carries TADIR re-assignment.
+Relocation (without devt)
+S
+Package change without recording development. Lower risk but less traceable.
+Client Transport
+X / others
+Full or partial client copy using R3trans directly. Not managed through SE09/SE10 normally.
+3. Object Types Deep Dive — Reading the Object List
+The object type (E071.OBJECT) is the core of transport interpretation. The same field OBJECT='TABU' means completely different things depending on which table it points to. This section maps the most important object types and explains what a new entry vs. a modified entry means in each context.
+3.1  Development / Repository Objects (Workbench)
+PGMID
+OBJECT
+Common Name
+Semantic: New Object vs. Modified Object
+R3TR
+PROG
+ABAP Program
+New: entire program skeleton created. Modified: source code, attributes, or text elements changed. The whole PROG is transported — not individual lines. Diff only visible in ABAP Compare tools.
+R3TR
+CLAS
+ABAP Class
+New: new OO class with all methods. Modified: any method body, attribute, or interface assignment changed. The full class definition ships — class contract may change silently.
+R3TR
+FUGR
+Function Group
+New: entire FG with all FMs. Modified: any FM or include in the group. Warning: transporting FUGR replaces ALL function modules in target — not just the changed one.
+R3TR
+TABL
+DB Table Definition
+New: table structure created in target (empty, no data). Modified: field added/removed/changed. Critical: a field deletion or type change can break existing programs in target silently.
+R3TR
+VIEW
+View (DB/Help/Maint)
+New: view definition created. Modified: selection criteria or joined tables changed. Maintenance view changes can affect which table entries the end user can edit.
+R3TR
+DTEL
+Data Element
+Modified: usually label/search help change. Low risk unless domain or type assignment changed.
+R3TR
+DOMA
+Domain
+Modified: fixed values added/removed. High impact — validation logic across all fields using this domain changes in target.
+R3TR
+TRAN
+Transaction
+New: new t-code entry. Modified: program/screen assignment changed. Risk: users may navigate to wrong program.
+R3TR
+DEVC
+Package
+Package (formerly dev class). Rarely changed. Contains transport layer assignment. New = new package hierarchy.
+R3TR
+XPRA
+Post-Import Program
+A special object: program that RUNS after the transport imports. Not just code — it EXECUTES. Contains migration or conversion logic.
+R3TR
+ENQU
+Lock Object
+Modified: locking granularity changed. Can cause deadlocks or unlock scenarios in target.
+3.2  Customizing / Table Content Objects
+These are the most deceptive objects in a transport. TABU looks simple but the semantic meaning of each row depends entirely on the functional module context.
+PGMID
+OBJECT
+Table Example
+What new/modified means functionally
+R3TR
+TABU
+T001 (Company Code)
+New row = new company code defined. Modified row = company code name, currency, or country changed. High impact: all FI postings reference this key.
+R3TR
+TABU
+T001W (Plant)
+New row = new plant activated in system. Modified = plant description or valuation area changed. MM/PP impact.
+R3TR
+TABU
+T030 / T030R (Account Determ.)
+New row = new account determination rule added. Modified = G/L account assignment changed. Silent FI posting change — invoices will post to different accounts in target.
+R3TR
+TABU
+T156 / T156S (Movement Types)
+New = new MM movement type. Modified = movement type attributes or account determination group changed. Affects goods movements, stock valuation.
+R3TR
+TABU
+TVARVC (Program Parameters)
+Commonly used to store variants and values for background jobs. New/modified = program parameter values change. Affects report selection behavior silently.
+R3TR
+TABU
+UST04 (User Authorizations)
+Auth profile assignment. New row = user gets profile. Deleted row = user loses access. Security-critical — must be reviewed before import.
+R3TR
+TABU
+TDDAT (Table Auth Groups)
+Maintenance area for tables. New = table added to auth group, controls who can SM30 it. Often auto-generated by SE54 (table maintenance generator).
+⚠ TABU: The Invisible Danger
+When you see R3TR TABU in a transport, always check E071K for the specific row keys.
+OBJFUNC=' ' means current state of those rows is exported. If rows were deleted before release → nothing exports, but the entry still appears in the object list.
+OBJFUNC='D' means those rows will be DELETED in the target system.
+OBJFUNC='M' means delete-and-recreate: entire table wiped in target before rows inserted.
+Customizing TABU rows (e.g. T030) silently change financial behavior with no code change.
+3.3  Modern Platform Objects (Fiori / OData / S/4HANA)
+PGMID
+OBJECT
+Component
+Interpretation
+R3TR
+IWSG
+OData: Service Group
+Registers OData service in the Gateway. New = service becomes callable. Missing in target = 'Service not found' error at runtime.
+R3TR
+IWOM
+OData: Model Group
+Groups service metadata. Modified = entity type structure changed. API consumers may break.
+R3TR
+SICF
+ICF Service Node
+HTTP service activation entry. New = new URL path registered. Modified = handler class changed. Missing = Fiori app returns 404.
+R3TR
+SUCU
+Auth Object Check
+Authorization check assignment per t-code. Modified = auth checks changed or removed. Security impact.
+R3TR
+INTF
+ABAP Interface
+New = new interface definition. Modified = interface contract changed — all implementing classes must be re-transported.
+R3TR
+SHLP
+Search Help
+New/Modified = F4 value help behavior changes for all fields using this help.
+4. OBJFUNC — The Action Flag: The Most Misunderstood Field
+E071.OBJFUNC controls what R3trans does with each object during import. This field is mostly blank (standard transport) but when populated, it changes the nature of the transport completely. Most consultants ignore this field; understanding it is the difference between a safe transport and a destructive one.
+OBJFUNC
+Action
+Full Behavior and Implications
+' ' (blank)
+Standard transport
+Current state of the object exported from source. R3trans checks if object exists in target: if not → create, if yes → overwrite. This is the majority of transports.
+D
+Delete
+Object deleted in source before release. R3trans detects absence at export time and marks as deletion. In target: object is REMOVED. Tricky: OBJFUNC='D' only works if object does NOT exist in source at export time.
+M
+Delete + Recreate
+For TABU objects: ALL rows of the table in target are deleted first, then source rows are inserted. Use when you need exact parity. Extreme risk on large customizing tables.
+K
+Key-based selection
+Only rows matching the keys in E071K are transported. Standard for selective TABU transports. Most customizing recordings use K.
+I
+Insert all rows
+Insert all rows from source table into target. Does not delete existing target rows. Additive behavior. Risky if keys overlap.
+⚠ The Ghost Entry Trap
+Scenario: Developer creates plant TK01 → saves to transport. Then deletes TK01 before releasing the request.
+What SE09 shows: R3TR TABU T001W with key TK01
+What is actually exported: NOTHING — R3trans finds no row at export time
+What OBJFUNC shows: ' ' (blank, not 'D')
+Result in target: No change. But the entry in SE09/E071 looks like it will transport something.
+Conclusion: Always verify via the export log, not the object list, for TABU objects.
+5. New Object vs. Modified Object — The Core Semantic Problem
+SAP does not distinguish 'new' from 'modified' in the object list. Both appear identically in E071. The distinction is critical because the IMPACT in the target system is completely different. This section explains how to infer the intent.
+5.1  How to Detect If an Object Is New or Modified
+Method
+New Object Signal
+Modified Object Signal
+TADIR Check
+Object does NOT exist in TADIR of target system
+Object exists in TADIR of target, same or older version
+E070.AS4DATE
+Transport date close to original project start or object creation date
+Transport date is after initial go-live or prior transport
+SE09 Description Text
+Description says 'create', 'initial', 'new', 'baseline'
+Description says 'fix', 'change', 'correction', 'patch', sprint ID
+TABU: E071K count
+All keys present (full table state)
+Only delta keys present (modified rows)
+ABAP: SE39 Compare
+Target has no version to compare against
+SE39 shows diff between transport version and current active
+5.2  Module-Specific Semantic Differences
+Financial Accounting (FI / CO)
+FI customizing is the most sensitive area. Objects that appear as simple table row changes carry deep business meaning:
+T030 (Account Determination): A 'new' row means a new automatic posting rule — e.g. a new G/L account assigned to transaction key GBB/BSX. A 'modified' row means an existing automatic posting points to a different G/L. In production this immediately affects all future MM goods movements.
+T030R (Tax Account Determination): New row = new tax code mapped to a G/L. Modified = tax account changed. Can cause tax reporting errors if imported without functional sign-off.
+T001 (Company Code): New row is rare in non-rollout contexts — it means a new legal entity. Modified row (currency, country) is high risk post go-live.
+FAGL_T011 / T011 (Financial Statement Versions): New = new FSV structure. Modified = FSV changed, affecting balance sheet report output.
+Materials Management (MM)
+T156 (Movement Type): New movement type = new inventory transaction type. Entire business process may depend on this. Modified = movement type properties change — account assignment group, reversal movement, etc.
+T023 (Material Group): New row = new purchasing category. Modified = group description change, generally safe.
+MBEW / MARA / MARC (Master Data): Master data in transport = exceptional. Signals developer manually captured master data rows. Verify whether this is intentional or accidental (test data leak).
+Sales & Distribution (SD)
+TVAK (Sales Order Types): New row = new sales document type. Modified = order type behavior changed (pricing, delivery relevance, billing). High functional impact.
+T006 / T006A (Units of Measure): New = new UOM defined. Modified = conversion factor changed. Can affect invoice quantities.
+VKOA (Account Determination): SD revenue account determination. Identical risk profile to T030 in FI.
+BASIS / Security
+AGR_1251 / AGR_USERS (Roles): These are LOGICAL objects — E071K may appear empty but keys are dynamically resolved. A 'new' role transport creates the role. A 'modified' transport overwrites the entire role including all authorization object assignments.
+SUCU (Auth Check): New = new program/t-code added to authority check assignments. Modified = check removed (can be exploited). Always require security review.
+6. SAP-Generated Artifacts in Transports
+This is the most confusing area for non-BASIS consultants. When SAP generates internal structures as a side-effect of development, these artifacts appear in the transport alongside intentional objects. Misidentifying them leads to incorrect impact assessment.
+6.1  What Are Artifacts?
+Artifacts are objects that SAP automatically adds to a transport as technical dependencies — they were never explicitly created by the developer but are required for the primary object to function. They look identical to real objects in SE09.
+6.2  Artifact Reference Table
+Object
+Parent Object
+How Generated
+Risk if NOT transported
+TABU TDDAT
+Custom Table (TABL)
+Auto by SE54 when generating table maintenance view. Assigns table to authorization group.
+Table maintenance (SM30) won't be accessible to users — authorization group missing.
+FUGR <Z_GEN_*>
+Maintenance View / Table
+Auto by SE54. Function group for generated maintenance dialog.
+SM30 maintenance for the custom table will fail with 'No module for maintenance' error.
+SICF nodes
+OData Service (SEGW)
+Auto when activating OData service. Creates HTTP service path.
+Fiori app returns HTTP 404. Service registered in backend but not accessible via HTTP.
+IWSG / IWOM
+Custom OData (SEGW)
+Auto by SEGW when building OData project.
+'Service not found' error in Fiori Launchpad. Gateway registration incomplete.
+LIMU REPT
+PROG
+Auto when text elements modified separately.
+Inconsistency between source code references and text elements. Runtime dumps possible.
+ENQU (Lock Object)
+Custom Table (TABL)
+Auto-generated lock object when using SE11 lock object generator.
+Concurrent access control missing. Data corruption possible in high-concurrency scenarios.
+XPRA object
+Data migration code
+Explicitly added by developer, but easy to overlook. Marked as 'run after import'.
+Data migration step skipped silently. No error — but data not converted in target.
+TABU CWBNTCUST
+OSS Note
+Auto-recorded when applying SAP Notes via SNOTE.
+Note marked as not implemented in target. May cause re-application errors.
+⚠ The FUGR Overwrite Trap for Artifacts
+A transport containing R3TR FUGR Z_TABLE_MAINT (auto-generated by SE54) replaces ALL function modules in that function group.
+If the source developer has function modules A, B, C and target has A, B, C, D — after import D is GONE.
+Always compare FUGR contents before importing: SE37 → Function Group Contents in target vs. transport.
+SE54-generated FUGRs are particularly risky because they look like harmless artifacts.
+7. Reading the R3trans Export Log — The True Record
+The export protocol is generated when a transport is released (SE09 → Release). It is stored in /usr/sap/trans/log/<SID>Knnnnnn.SID. This is the authoritative source of what actually shipped — not the object list in SE09.
+7.1  Key Log Sections
+Return Codes
+RC
+Meaning
+Action Required
+0
+Success
+Transport exported cleanly. No issues.
+4
+Warning
+Transport completed with warnings. Review log for missing dependencies or syntax warnings. Usually safe to import but verify.
+8
+Error
+Transport exported but with errors. Some objects may be incomplete. DO NOT import to production without analysis.
+12
+Fatal
+Transport aborted. Datafile may be corrupt or empty. Do not import. Re-export required.
+What the Log Reveals That SE09 Doesn't
+Objects that were in E071 but had no data to export (OBJFUNC=' ' but row already deleted)
+Syntax errors in ABAP objects caught at export time
+Missing activation of DDIC objects (table not active → export incomplete)
+XPRA programs flagged for post-import execution
+Actual table row counts exported for each TABU entry
+7.2  ABAP Program: Transport Intelligence Query
+Use this report skeleton to extract the full transport picture from the database tables:
+SELECT a~trkorr, a~trfunction, a~trstatus, c~as4text,
+a~tarsystem, a~as4user, a~as4date,
+b~pgmid, b~object, b~obj_name,
+b~objfunc, b~lockflag,
+d~devclass
+FROM e070 AS a
+INNER JOIN e071 AS b ON a~trkorr = b~trkorr
+INNER JOIN e07t AS c ON c~trkorr = a~trkorr
+LEFT JOIN tadir AS d ON d~obj_name = b~obj_name
+INTO TABLE @DATA(et_transport)
+WHERE a~as4date IN @s_date
+AND b~object IN @s_obj.
+For TABU key details, join additionally with E071K on TRKORR + PGMID + OBJECT + OBJ_NAME to get the specific row keys being transported.
+8. Logical Objects — The Hidden Complexity
+Logical customizing objects (PGMID='R3TR', OBJECT type = logical) are the most deceptive transport objects in SAP. They look like normal transports in SE09 but their key resolution is entirely dynamic.
+8.1  What Makes an Object 'Logical'
+A logical object is defined not by a single database table but by a definition in the Logical Object Definition table. SAP dynamically reads this definition at export time to determine which tables and keys to include. The consequence:
+E071K appears empty: For logical objects, the key table E071K shows no entries. SAP displays key information in a 'simulation' view only. The actual key resolution happens at R3trans export time.
+Security risk (CVE-like): SAP Security Note #2671160 (patch May 2018) addressed a vulnerability where an attacker could manipulate the logical object definition to transport additional unauthorized data. Always verify kernel version for TLOGOCHECK parameter.
+Role transport example: An AGR_1251 (role) transport appears to show which authorizations are included — but the displayed keys are a simulation. Only the export log confirms what actually shipped.
+8.2  Module Examples of Logical Objects
+Object Type
+Module
+Content (dynamic at export)
+AGR_*
+Basis / Security
+Role definitions across multiple tables (AGR_1251, AGR_USERS, AGR_TEXTS, etc.)
+SPRX / WDYR
+Web Dynpro / UI
+UI component definitions with multiple internal tables.
+NROB
+Basis
+Number range objects. Contains current number status — transporting resets/overwrites number ranges in target.
+⚠ Number Range Transport Warning
+NROB (Number Range Object) is a logical object. Transporting it OVERWRITES the current number range status in target.
+If target production has issued invoices up to number 9000090 and you import a transport with current number at 9000001 — the next invoice in production will be 9000002, causing duplicate number errors.
+Rule: NEVER transport number ranges to production unless explicitly agreed with FI team. Always set manually.
+9. Transport Analysis Decision Framework
+Use this framework when reviewing a transport before import, approving a release to production, or building an AI agent to analyze transport content.
+9.1  Pre-Import Checklist
+#
+Check
+How to verify
+Risk if skipped
+1
+Request type (K vs W)
+E070.TRFUNCTION
+Wrong client scope — customizing applied globally or vice versa
+2
+Contains XPRA objects?
+E071 WHERE OBJECT='XPRA'
+Programs execute post-import without review — data conversion runs
+3
+Contains NROB (number ranges)?
+E071 WHERE OBJECT='NROB'
+Number range overwrite in production — duplicate document numbers
+4
+OBJFUNC='D' or 'M' present?
+E071 WHERE OBJFUNC IN ('D','M')
+Unintended deletion of objects or mass table data wipe in target
+5
+Contains account determination (T030/VKOA)?
+E071K WHERE OBJ_NAME IN ('T030','VKOA')
+Silent G/L account change — financial postings affected immediately
+6
+FUGR vs. FMs: check for artifact overwrite
+SE37 → compare FUGR contents source vs. target
+FMs deleted from target silently
+7
+Export log RC < 8?
+/usr/sap/trans/log/ or SE09 → log
+Incomplete objects imported to production
+8
+Contains auth objects (AGR, SUCU)?
+E071 WHERE OBJECT LIKE 'AGR%'
+Security role overwrite — user access changed unexpectedly
+9.2  Object-to-Impact Matrix
+Object Pattern
+Impact Level
+Reversible?
+Notes
+TABU T030/T030R
+CRITICAL
+Only via counter-transport
+Affects all future financial postings immediately
+TABU NROB
+CRITICAL
+Manual correction needed
+Number range overwrite — duplicate doc numbers in FI/MM/SD
+XPRA program
+HIGH
+Depends on logic
+Executes silently after import. Review code before import.
+TABU with OBJFUNC='M'
+CRITICAL
+Only via counter-transport
+Wipes entire table in target before inserting source rows
+PROG / CLAS / FUGR
+MEDIUM
+Re-transport previous version
+Code replaced. Syntax errors caught at import.
+SICF / IWSG (OData)
+MEDIUM
+De-register service
+Fiori service availability affected
+TABL (definition)
+HIGH
+Via DDIC rollback — complex
+Field deletion or type change can break programs using the table
+DOMA (fixed values)
+HIGH
+Via counter-transport
+Validation logic changes across all fields using domain
+TRAN (transaction)
+LOW
+Yes, re-transport
+Navigation change. Low risk unless critical t-code.
+DEVC (package)
+LOW
+Yes
+Package metadata. Rarely causes issues.
+10. Designing an AI Transport Intelligence Layer
+Building an AI agent that can read and interpret SAP transports requires mapping this semantic layer into structured prompts and extraction patterns. This section provides design guidance for a multi-agent transport analysis system.
+10.1  Data Extraction Pipeline
+Step 1: Structured Data Pull from E07x Tables
+Extract the full transport record into a structured JSON payload:
+transport: {
+header: { trkorr, type (K/W/T), status, owner, date, target_system },
+objects: [{ pgmid, object, obj_name, objfunc, lockflag }],
+table_keys: [{ obj_name, tabkey }],  // E071K
+description: 'as4text from E07T'
+}
+Step 2: Object Classification Layer
+Classify each object entry against the taxonomy in this document:
+Category: DEV | CUSTOMIZING | ARTIFACT | SECURITY | PLATFORM
+Impact tier: CRITICAL | HIGH | MEDIUM | LOW
+Is new?: compare OBJ_NAME against TADIR in target system
+Is artifact?: match against known artifact patterns (TDDAT, FUGR Z_*, SICF auto-nodes)
+Step 3: Semantic Enrichment by Object Type
+Route each object type to a specialized interpretation function:
+TABU → FI tables: lookup table in financial account determination catalog → flag as CRITICAL
+TABU → NROB: flag ALWAYS as CRITICAL with number range check
+XPRA: flag as HIGH + require code review attachment
+OBJFUNC='D' or 'M': flag as CRITICAL + require explicit approval
+AGR_* objects: route to security review queue
+10.2  LLM Prompt Pattern for Transport Analysis
+When feeding transport data to a language model for interpretation, structure the prompt as follows:
+You are an SAP transport expert. Analyze the following transport request.
+For each object, identify:
+1. Is this a new object or a modification to an existing one?
+2. Is this an intentional development object or an auto-generated artifact?
+3. What is the business impact of importing this to production?
+4. Are there any CRITICAL risks (account determination, number ranges, deletions)?
+Transport data: [STRUCTURED JSON FROM STEP 1]
+Target system TADIR snapshot: [TADIR EXTRACT FOR RELEVANT OBJ_NAMES]
+Module context: [FI | MM | SD | BASIS]
+10.3  Key Rules for the AI Layer
+Never trust the object list alone — always cross-reference with the export log RC code
+TABU entries require E071K key data to be meaningful — without it, the analysis is incomplete
+Distinguish logical objects (E071K appears empty) from regular TABU — different resolution logic
+OBJFUNC field must always be explicitly checked — blank is NOT the same as safe
+FUGR object type requires comparison of ALL function modules in the group, not just the changed FM
+Flag any transport containing T030, T030R, NROB, XPRA, or OBJFUNC D/M as requiring human sign-off regardless of AI confidence
+Appendix: Quick Reference Object Type Glossary
+OBJECT
+Name
+Description
+PROG
+ABAP Program
+Report, include, module pool. Full source + attributes.
+CLAS
+ABAP Class
+OO class: methods, attributes, interfaces, types.
+FUGR
+Function Group
+Container for function modules. Entire group transported.
+TABL
+DB Table (Def)
+DDIC table structure. No data rows.
+TABU
+DB Table (Data)
+Table content rows. Keys in E071K.
+VIEW
+View
+Database, help, maintenance, or projection view.
+DTEL
+Data Element
+Single-field semantic definition.
+DOMA
+Domain
+Data type with fixed values and format constraints.
+SHLP
+Search Help
+F4 help definition for fields.
+ENQU
+Lock Object
+Database lock granularity definition.
+TRAN
+Transaction
+T-code to program/screen mapping.
+DEVC
+Package
+Development package (formerly DevClass).
+NROB
+Number Range
+Logical number range object. Includes current counters.
+XPRA
+Post-Import Pgm
+Program executed automatically after transport import.
+INTF
+ABAP Interface
+OO interface definition.
+SICF
+ICF Service
+HTTP service node for Fiori / OData.
+IWSG
+GW Service Group
+OData service group registration.
+IWOM
+GW Model Group
+OData model metadata group.
+SUCU
+Auth Check
+Authorization object check per program/t-code.
+MSAG
+Message Class
+Application messages (E/W/I/S categories).
+SAP Transport Intelligence Reference — Julio's Architecture Knowledge Base — March 2026

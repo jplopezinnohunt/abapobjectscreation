@@ -264,3 +264,30 @@ After completing a task:
 **Remember:** This framework is the result of 103 experimental scripts. Respect the patterns that were proven to work. Don't reinvent the wheel - use the framework!
 
 Last updated: 2026-03-04
+
+---
+
+## Ecosystem Standards
+
+This project is governed by the **UNESCO SAP Ecosystem Coordinator**.
+Classification: **Tier 1 — Skill Project** (builds reusable knowledge)
+Publishes: `sap-intelligence`, `sap-gui-automation` skills
+
+**Load before session start:**
+- `C:\Users\jp_lopez\projects\ecosystem-coordinator\.knowledge\way-of-working\session-start.md`
+- `C:\Users\jp_lopez\projects\ecosystem-coordinator\.knowledge\skills\sap-intelligence\SKILL.md`
+- All topic files listed in this project's `memory/MEMORY.md`
+
+**Session end:** Follow `session-end.md` from ecosystem coordinator.
+**Propose new patterns to:** `ecosystem-coordinator/ecosystem/priority-actions.md`
+
+## Memory Architecture
+
+This project uses file-based memory with a strict architecture:
+- `memory/MEMORY.md` — **Index only** (under 150 lines). Lines after 200 are silently truncated.
+- `memory/topic_*.md` — Detail files read at every session start. No size limit.
+- `memory/feedback_*.md` — Corrections and preferences.
+- `memory/project_*.md` — Project state and decisions.
+
+**Rule:** If you only read MEMORY.md, you are missing most of the project's memory.
+Read ALL files it points to.

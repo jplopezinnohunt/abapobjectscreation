@@ -95,3 +95,53 @@ The app displays addresses in a **List Report** structure:
 1.  **To verify On-Behalf logic**: Inspect the implementation of BAdI `HCMFAB_B_COMMON` in the backend. Look for UNESCO-specific filters on organizational structures.
 2.  **To see the "Parking" data**: Query table `T5ASRPROCESSES` filtered by `INITIATOR_PERNR` to find active address change requests.
 3.  **To debug visibility**: Check `CL_HCMFAB_ADDRESS_DPC_EXT->GET_ENTITYSET`. It likely calls a "Feeder" class that evaluates `T588M` screen settings.
+
+---
+
+## 6. Composite Enhancement Linkage (ENHO Cross-Reference)
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+
+### YCL_HRPA_UI_CONVERT_0006_UN — Infotype 0006 (Address) Field Conversion
+- **Enhancement**: YCL_HRPA_UI_CONVERT_0006_UN (ENHC, composite)
+- **Interface**: CL_HRPA_UI_CONVERT_* for IT0006 (Address infotype)
+- **Impact**: Controls which PA0006 address fields are visible/editable in Fiori
+- **Directly referenced in existing analysis**: YCL_IM_PERSINFOUI_0006 (Section PART I.2)
+- **Connection chain**:
+`
+PA0006 (IT0006) Address fields
+  --> YCL_IM_PERSINFOUI_0006 (BAdI Implementation: field attribute override)
+        --> YCL_HRPA_UI_CONVERT_0006_UN (Composite Enhancement: UI field conversion)
+              --> Z_HCMFAB_ADDRESS_SRV (OData)
+                    --> AddressSet entity (STRAS, ORT01, ZZUNREG, ...)
+`
+- **Custom Field** ZZUNREG (UN Region) is in scope of this enhancement
+- **Note**: YCL_HRPA_UI_CONVERT_0006_UN is the UN-specific override. It works in concert with HCMFAB_B_COMMON for on-behalf authorization (see Part II of this document).
+
+
+---
+
+## 6. Composite Enhancement Linkage (ENHO Cross-Reference)
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+
+### YCL_HRPA_UI_CONVERT_0006_UN — Infotype 0006 (Address) Field Conversion
+- **Enhancement**: `YCL_HRPA_UI_CONVERT_0006_UN` (ENHC, composite)
+- **Interface**: `CL_HRPA_UI_CONVERT_*` UNESCO override for IT0006 (Address)
+- **Impact**: Controls which PA0006 address fields are visible/editable/mandatory
+- **Directly linked to**: `YCL_IM_PERSINFOUI_0006` (referenced in Section PART I.2)
+
+**End-to-End Chain**:
+```
+PA0006 (IT0006 Address fields: STRAS, ORT01, ZZUNREG, ...)
+  --> YCL_IM_PERSINFOUI_0006 (BAdI impl: field attribute override for IT0006)
+        --> YCL_HRPA_UI_CONVERT_0006_UN (Composite Enhancement: UN-specific UI field conversion)
+              --> Z_HCMFAB_ADDRESS_SRV (OData)
+                    --> AddressSet entity
+                          --> Fiori Manage Address App
+```
+
+**Note on ZZUNREG**: The UNESCO custom field `ZZUNREG` (UN Region) passes through this enhancement chain.
+It is set as visible/mandatory for permanent addresses (SUBTY=1) and hidden for others.

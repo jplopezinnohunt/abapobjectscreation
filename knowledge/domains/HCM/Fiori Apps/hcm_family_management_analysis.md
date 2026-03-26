@@ -75,3 +75,34 @@
 ---
 > [!NOTE]
 > This app heavily relies on the ASR framework for data staging. Master records (`PA0021`) are only updated AFTER the workflow approval.
+
+
+---
+
+## 8. Composite Enhancement Linkage (ENHO Cross-Reference)
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+> Extracted source: `extracted_code/ENHO/ZHR_FIORI_0021/`
+
+### ZHR_FIORI_0021 — IT0021 Family Member UI Field Control
+- **Enhancement Type**: Classic Enhancement Point (`=E` include)
+- **Interface**: `IF_HRPA_UI_CONVERT_STANDARD` (Infotype UI conversion)
+- **Package**: `ZFIORI` | **Transport**: `D01K9B0ENM` | **Last changed**: `G_SONNET` 2026-02-23
+
+| Field | Name | Rule | Impact on Fiori UI |
+|---|---|---|---|
+| `GOVAST` | Government-Assisted | Always INVISIBLE | Never shown to user |
+| `SPEMP` | Special Employment | Always INVISIBLE | Never shown to user |
+| `ERBNR` | Inheritance Number | Always INVISIBLE | Never shown to user |
+| `WAERS` | Currency | READ_ONLY | Only when FAMSA='14' (Child) or '2' (Spouse) |
+
+**End-to-End Chain**:
+```
+PA0021 (IT0021)
+  --> IF_HRPA_UI_CONVERT_STANDARD (SAP Standard)
+        --> ZHR_FIORI_0021 (UNESCO Enhancement: field visibility override)
+              --> ZHCMFAB_MYFAMILYMEMBERS_SRV (OData)
+                    --> FamilyMemberSet entity
+                          --> Fiori Family Members App (Z_FMLY_MAN_EXT / BSP)
+```

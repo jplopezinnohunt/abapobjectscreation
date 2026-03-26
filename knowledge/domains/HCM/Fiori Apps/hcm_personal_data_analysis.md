@@ -152,3 +152,81 @@ graph TD
 - **Metadata Discovery**: Check `CL_HCMFAB_PERSINFO_DPC_UTIL` for hidden metadata logic.
 - **ASR Routing**: All action-based Fiori UIs call `ZHR_PROCESS_AND_FORMS_SRV`.
 - **Decoupled Future**: New apps can be defined as new ASR Scenarios without backend OData changes.
+
+---
+
+## 12. Composite Enhancement Linkage (ENHO Cross-Reference)
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+> Source code: extracted_code/ENHO/
+
+### ZHR_PERS_DATA — Personal Data BAdI Container
+- **Enhancement**: ZHR_PERS_DATA (ENHC container, no direct source)
+- **Domain**: HCMFAB_B_MYPERSONALDATA BAdI area
+- **Package**: ZFIORI
+- **Next step**: Extract ZCL_HCMFAB_B_MYPERSONALDATA class methods for full logic
+
+### YCL_HRPA_UI_CONVERT_0002_UN — Infotype 0002 (Personal Data) Field Conversion
+- **Enhancement**: YCL_HRPA_UI_CONVERT_0002_UN (ENHC, package: confirmed in TADIR)
+- **Interface**: CL_HRPA_UI_CONVERT_* — the UNESCO extension hook for IT0002 field visibility
+- **Impact**: Controls which PA0002 fields are visible/editable/mandatory in Fiori
+- **Part of Chain**:
+`
+PA0002 (IT0002) field attributes
+  --> CL_HRPA_UI_CONVERT_<INFTY> (SAP standard conversion)
+        --> YCL_HRPA_UI_CONVERT_0002_UN (UNESCO override: field visibility)
+              --> Z_HCMFAB_MYPERSONALDATA_SRV (OData)
+                    --> PersonalDataSet entity (VORNA, NACHN, GBDAT, ...)
+`
+
+### ZCL_HCMFAB_ASR_PROCESS — ASR Process Configuration (Admin Employees)
+- **Enhancement / Class**: ZCL_HCMFAB_ASR_PROCESS (Package: ZFIORI, 13 CM methods extracted)
+- **Interface**: IF_HCMFAB_ASR_PROCESS_CONFG~GET_ADMIN_EMPLOYEES
+- **Key Logic** (from CM006):
+  - Checks user against roles YSF:HR:HRA* and YSF:HR:HRO* in AGR_USERS
+  - If role found: returns **all active employees** (STAT2='3') as admin employees
+  - If not: resolves HRA/HRO via BAPI_USR01DOHR_GETEMPLOYEE using SY-UNAME
+  - Joins with PA0001 (position/org) and T528T (position texts)
+- **Code Location**: [CM006 method](file:///c:/Users/jp_lopez/projects/abapobjectscreation/Zagentexecution/mcp-backend-server-python/extracted_code/ENHO/ZCL_HCMFAB_ASR_PROCESS/ZCL_HCMFAB_ASR_PROCESS========CM006.abap)
+
+
+---
+
+## 12. Composite Enhancement Linkage (ENHO Cross-Reference)
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+> Extracted source: `extracted_code/ENHO/`
+
+### ZHR_PERS_DATA — Personal Data BAdI Container
+- **Enhancement**: `ZHR_PERS_DATA` (ENHC, package: `ZFIORI`, no stand-alone source)
+- **Implements**: `HCMFAB_B_MYPERSONALDATA` BAdI (UNESCO implementation class: `ZCL_HCMFAB_B_MYPERSONALDATA`)
+- **Status**: Container-only ENHC — logic lives in linked BAdI class
+
+### YCL_HRPA_UI_CONVERT_0002_UN — Infotype 0002 Field Conversion (Personal Data)
+- **Enhancement**: `YCL_HRPA_UI_CONVERT_0002_UN` (ENHC, composite)
+- **Interface**: `CL_HRPA_UI_CONVERT_*` UNESCO override for IT0002
+- **Impact**: Controls visibility/editability of PA0002 fields in Fiori
+
+**End-to-End Chain**:
+```
+PA0002 (IT0002 Personal Data fields: VORNA, NACHN, GBDAT, ...)
+  --> CL_HRPA_UI_CONVERT_<INFTY> (SAP standard UI conversion)
+        --> YCL_HRPA_UI_CONVERT_0002_UN (UNESCO override — field attributes)
+              --> Z_HCMFAB_MYPERSONALDATA_SRV (OData)
+                    --> PersonalDataSet entity
+                          --> Fiori My Personal Data App (Z_PERS_MAN_EXT / BSP)
+```
+
+### ZCL_HCMFAB_ASR_PROCESS — ASR Process Configuration (Admin Employees)
+- **Enhancement / Class**: `ZCL_HCMFAB_ASR_PROCESS` (Package: `ZFIORI`)
+- **Interface implemented**: `IF_HCMFAB_ASR_PROCESS_CONFG~GET_ADMIN_EMPLOYEES`
+- **Extracted**: 13 CM method includes — richest ENHO (35 files total)
+- **Key Logic** (CM006 method — `GET_ADMIN_EMPLOYEES`):
+  - Checks current user against `AGR_USERS` for roles `YSF:HR:HRA*` / `YSF:HR:HRO*`
+  - If HR Admin role found: returns ALL active employees (PA0000 STAT2='3') as admins
+  - If no role: resolves employee via `BAPI_USR01DOHR_GETEMPLOYEE(sy-uname)`
+  - Joins PA0001 (position/org unit) + T528T (position texts in sy-langu)
+- **Business Meaning**: Drives who appears as a delegatable HR Admin in the Start ASR Process UI
+- **Code**: `extracted_code/ENHO/ZCL_HCMFAB_ASR_PROCESS/ZCL_HCMFAB_ASR_PROCESS========CM006.abap`

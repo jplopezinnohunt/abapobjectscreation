@@ -20,6 +20,7 @@ Analysis MUST be performed using these specific tools in `Zagentexecution\mcp-ba
 - `fetch_bsp.py` / `fetch_bsp_content.py`: Extracting `manifest.json` and UI source from the BSP repo.
 - `extract_methods.py`: Bulk extraction of ABAP source code (DPC_EXT, BAdIs, Feeder Classes).
 - `read_report.py`: Reading main programs and includes.
+- `TRDIR Scan`: If a class `ZCL_FOO` or `YCL_BAR` is not found, query `TRDIR` where `NAME` LIKE `YCL_BAR===============*` to find the Method Includes (`CM***`) or Class Pool (`CP`), then use `read_report.py` or `RPY_PROGRAM_READ`.
 
 ## 3. HCM & UNESCO Specialized Protocol (The Refined Standard)
 
@@ -55,6 +56,8 @@ Based on the successful analysis of the **Address Management**, **Offboarding**,
     - **FM/FI**: `T001` (Company Codes), `T004` (Chart of Accounts), `T5UT` (Unit Texts).
 - **Status & Workflow Maps**: Extract status transition rules from custom tables (e.g., `ZTHRFIORI_BREQ` status codes 00-09).
 - **UNESCO Special Filters**: Check `YTFM_WRTTP_GR` and `YTFM_OUTPUT` for RBB (Results Based Budgeting) logic.
+- **The "Safety Valve" (Bypass) Scan**: Always check for a check against table **`YXUSER`**. In UNESCO, this table contains a list of IDs (XTYPE='FM' or 'FRTL') that bypass all standard validations and hardware tolerance caps.
+- **Fiscal Gate Scan**: Query table **`YFMXCHKP`**. This is a custom UNESCO gate that blocks FM postings independently of FI periods (`OB52`). If `ACTIV = 'X'`, the period is locked.
 
 ## 4. The Technical Specification Standard (Fields & Sources)
 

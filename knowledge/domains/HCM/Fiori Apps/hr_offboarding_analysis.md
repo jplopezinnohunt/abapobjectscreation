@@ -139,3 +139,29 @@ graph TD
 - **State Persistence**: Every UI step completion must bit-flip `zthrfiori_reqsta`.
 - **Visibility Extension**: Travel visibility logic is hardcoded in the logic class based on PA data.
 - **Audit Logic**: Retrieval for the React "History" tab must filter `WorkflowStepSet` by Request GUID.
+
+
+---
+
+## [Additional] Composite Enhancement Linkage — ASR & Workflow
+
+> [!IMPORTANT]
+> Auto-generated from SE20 Composite Enhancement extraction (2026-03-12).
+
+### ZENH_PAWF_INT_AGREE — Internship Agreement Workflow Enhancement
+- **Enhancement**: `ZENH_PAWF_INT_AGREE` (ENHC, package: `ZHR_DEV`)
+- **Domain**: HCM/Workflow — PA Workflow for internship agreement
+- **Impact on this app**: May affect Fiori Inbox items and ASR scenario routing
+- **Status**: Container-only ENHC — TRDIR has no direct includes
+
+### ZCL_HCMFAB_ASR_PROCESS — ASR Process Configuration
+- **Enhancement / Class**: `ZCL_HCMFAB_ASR_PROCESS` (13 CM methods extracted)
+- **Implements**: `IF_HCMFAB_ASR_PROCESS_CONFG` (process configurator interface)
+- **Impact on this app**: Controls admin employee list for "Start Process on Behalf"
+- **Key finding**: HR Admin role check via `AGR_USERS` (YSF:HR:HRA* / YSF:HR:HRO*)
+- **Code**: `extracted_code/ENHO/ZCL_HCMFAB_ASR_PROCESS/`
+
+### ZCOMP_ENH_SF — SuccessFactors Integration Enhancement
+- **Enhancement**: `ZCOMP_ENH_SF` (ENHC, package: `ZHR_DEV`)
+- **Impact**: May affect OData payload routing to BTP/iFlow for SF sync
+- **Status**: Container-only ENHC — logic lives in linked SF integration classes

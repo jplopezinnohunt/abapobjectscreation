@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Transport Intelligence — Object Taxonomy Companion</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --card: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --orange: #ffa657;
+            --purple: #d2a8ff;
+            --red: #f85149;
+            --yellow: #e3b341;
+            --teal: #39d353;
+            --dev: #58a6ff;
+            --cfg: #ffa657;
+            --sec: #f85149;
+            --hcm: #d2a8ff;
+            --mdl: #3fb950;
+            --ui: #79c0ff;
+            --wf: #e3b341;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0a1628, #0d2040, #0a1628);
+            border-bottom: 1px solid var(--border);
+            padding: 44px 60px
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(88, 166, 255, .12);
+            border: 1px solid rgba(88, 166, 255, .35);
+            color: var(--accent);
+            font-size: .72rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            margin-bottom: 14px
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--dev), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px
+        }
+
+        .hero p {
+            color: var(--muted);
+            max-width: 780px;
+            font-size: .92rem
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 36px 40px 80px
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        h2 .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .section {
+            margin-bottom: 52px
+        }
+
+        /* Taxonomy tree */
+        .tax-tree {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px
+        }
+
+        .tax-node {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            border-left: 4px solid var(--accent)
+        }
+
+        .tax-node.dev {
+            border-left-color: var(--dev)
+        }
+
+        .tax-node.cfg {
+            border-left-color: var(--cfg)
+        }
+
+        .tax-node.sec {
+            border-left-color: var(--sec)
+        }
+
+        .tax-node.hcm {
+            border-left-color: var(--hcm)
+        }
+
+        .tax-node.mdl {
+            border-left-color: var(--mdl)
+        }
+
+        .tax-node.ui {
+            border-left-color: var(--ui)
+        }
+
+        .tax-node.wf {
+            border-left-color: var(--wf)
+        }
+
+        .tax-node.meta {
+            border-left-color: var(--muted)
+        }
+
+        .tax-node h3 {
+            font-size: .88rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .tax-node ul {
+            list-style: none;
+            font-size: .77rem;
+            color: var(--muted)
+        }
+
+        .tax-node ul li {
+            padding: 2px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 6px
+        }
+
+        .tax-node ul li code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .72rem;
+            background: rgba(255, 255, 255, .06);
+            padding: 1px 5px;
+            border-radius: 3px;
+            color: var(--text);
+            flex-shrink: 0
+        }
+
+        /* Domain inference table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .81rem
+        }
+
+        th {
+            font-size: .68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid rgba(48, 54, 61, .5)
+        }
+
+        tr:last-child td {
+            border-bottom: none
+        }
+
+        tr:hover td {
+            background: rgba(88, 166, 255, .04)
+        }
+
+        code.prefix {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .73rem;
+            color: var(--yellow)
+        }
+
+        /* User cards */
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 14px
+        }
+
+        .user-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px
+        }
+
+        .user-card h4 {
+            font-size: .9rem;
+            font-weight: 600;
+            margin-bottom: 4px
+        }
+
+        .user-badge {
+            display: inline-block;
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-bottom: 10px
+        }
+
+        .badge-dev {
+            background: rgba(88, 166, 255, .15);
+            color: var(--dev);
+            border: 1px solid rgba(88, 166, 255, .3)
+        }
+
+        .badge-cfg {
+            background: rgba(255, 166, 87, .15);
+            color: var(--cfg);
+            border: 1px solid rgba(255, 166, 87, .3)
+        }
+
+        .badge-sec {
+            background: rgba(248, 81, 73, .15);
+            color: var(--sec);
+            border: 1px solid rgba(248, 81, 73, .3)
+        }
+
+        .badge-full {
+            background: rgba(63, 185, 80, .15);
+            color: var(--green);
+            border: 1px solid rgba(63, 185, 80, .3)
+        }
+
+        .badge-fiori {
+            background: rgba(121, 192, 255, .15);
+            color: var(--ui);
+            border: 1px solid rgba(121, 192, 255, .3)
+        }
+
+        .badge-epi {
+            background: rgba(14, 165, 233, .15);
+            color: #0ea5e9;
+            border: 1px solid rgba(14, 165, 233, .3)
+        }
+
+        .bar-wrap {
+            margin-top: 8px
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: .73rem
+        }
+
+        .bar-lbl {
+            width: 80px;
+            color: var(--muted);
+            flex-shrink: 0
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--surface);
+            border-radius: 3px;
+            overflow: hidden
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px
+        }
+
+        .bar-val {
+            width: 55px;
+            text-align: right;
+            color: var(--muted)
+        }
+
+        /* Alert */
+        .alert {
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: .83rem;
+            margin-bottom: 16px
+        }
+
+        .alert-info {
+            background: rgba(88, 166, 255, .08);
+            border: 1px solid rgba(88, 166, 255, .25)
+        }
+
+        .alert-warn {
+            background: rgba(255, 166, 87, .08);
+            border: 1px solid rgba(255, 166, 87, .25)
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 3px
+        }
+
+        /* KPI row */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 36px
+        }
+
+        .kpi {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px
+        }
+
+        .kpi-val {
+            font-size: 1.8rem;
+            font-weight: 700
+        }
+
+        .kpi-lbl {
+            font-size: .68rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-top: 4px
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 18px 40px;
+            text-align: center;
+            color: var(--muted);
+            font-size: .73rem
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <div class="hero-badge">Architecture Document — Transport Intelligence</div>
+        <h1>SAP Object Taxonomy Framework</h1>
+        <p>3-layer classification system for 108,290 SAP objects from 7,745 transports (2017–2026). Combining transport
+            analysis with real object data delivers enterprise-grade system intelligence comparable to commercial tools
+            like Panaya, Basis ActiveControl, and Triton/Sophora.</p>
+    </div>
+    <main>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--dev)">22,866</div>
+                <div class="kpi-lbl">Dev Objects (21%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--cfg)">14,535</div>
+                <div class="kpi-lbl">Config Objects (13%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--sec)">6,171</div>
+                <div class="kpi-lbl">Security/Roles (6%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--mdl)">4,123</div>
+                <div class="kpi-lbl">Data Model (4%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:#0ea5e9">10,049</div>
+                <div class="kpi-lbl">EPI-USE (9%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--muted)">7,585</div>
+                <div class="kpi-lbl">Trans. Metadata (7%)</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--yellow)">7,745</div>
+                <div class="kpi-lbl">Total Transports</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--purple)">10 yrs</div>
+                <div class="kpi-lbl">2017 – 2026</div>
+            </div>
+        </div>
+
+        <!-- LAYER 1: Object Nature -->
+        <div class="section">
+            <h2><span class="dot" style="background:var(--dev)"></span>Layer 1 — Object Nature (What is it?)</h2>
+            <div class="alert alert-info"><strong>Principle</strong>Every SAP object transported belongs to one of 6
+                fundamental natures. This is the highest-level filter — separating code from configuration from data
+                from security from documentation from transport system noise.</div>
+            <div class="tax-tree">
+                <div class="tax-node dev">
+                    <h3>🔵 DEVELOPMENT</h3>
+                    <ul>
+                        <li>Custom code written by developers</li>
+                        <li>Changes system behavior programmatically</li>
+                        <li>Requires developer key + system access</li>
+                        <li>Covered by code review process</li>
+                    </ul>
+                </div>
+                <div class="tax-node cfg">
+                    <h3>🟠 CONFIGURATION</h3>
+                    <ul>
+                        <li>Table entries (TABU) adjusting SAP behavior</li>
+                        <li>Done by functional consultants via IMG</li>
+                        <li>No programming — parameter-driven</li>
+                        <li>Examples: chart of accounts, pay scales, org units</li>
+                    </ul>
+                </div>
+                <div class="tax-node sec">
+                    <h3>🔴 SECURITY</h3>
+                    <ul>
+                        <li>Authorization profiles and roles (PFCG/ACGR)</li>
+                        <li>Auth objects and check IDs</li>
+                        <li>Done by security administrators</li>
+                        <li>Examples: P_IKOUNA's 3,981 role transports</li>
+                    </ul>
+                </div>
+                <div class="tax-node mdl">
+                    <h3>🟢 DATA MODEL</h3>
+                    <ul>
+                        <li>Database tables (TABL), domains (DOMA), elements (DTEL)</li>
+                        <li>Structural changes — impacts DB schema</li>
+                        <li>High risk: affects all programs reading the table</li>
+                        <li>Requires transport to QA + prod carefully</li>
+                    </ul>
+                </div>
+                <div class="tax-node ui">
+                    <h3>🔷 USER INTERFACE</h3>
+                    <ul>
+                        <li>Text elements, form texts, screen labels</li>
+                        <li>Help documentation (SHI3/SHI6)</li>
+                        <li>Translations and localized content</li>
+                        <li>Low risk but important for user experience</li>
+                    </ul>
+                </div>
+                <div class="tax-node meta">
+                    <h3>⬜ TRANSPORT METADATA</h3>
+                    <ul>
+                        <li>RELE: Release action records (who/when released)</li>
+                        <li>MERG: Merge action records</li>
+                        <li>Not real SAP objects — CTS bookkeeping</li>
+                        <li>Should be EXCLUDED from change metrics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAYER 2: Technical Sub-type -->
+        <div class="section">
+            <h2><span class="dot" style="background:var(--accent)"></span>Layer 2 — Technical ABAP Sub-type (What kind?)
+            </h2>
+            <div class="tax-tree">
+                <!-- DEV sub-types -->
+                <div class="tax-node dev">
+                    <h3>📄 Reports & Programs <code style="color:var(--muted);font-size:.7rem">DEV_REP</code></h3>
+                    <ul>
+                        <li><code>PROG</code> Executable program (SE38)</li>
+                        <li><code>REPS</code> Program include (source part)</li>
+                        <li><code>REPT</code> Text include (UI texts)</li>
+                        <li><code>REPY</code> CUA status/menu include</li>
+                        <li><code>VARX</code> Program selection variants</li>
+                    </ul>
+                </div>
+                <div class="tax-node dev">
+                    <h3>🔷 Classes & Interfaces <code style="color:var(--muted);font-size:.7rem">DEV_CLAS</code></h3>
+                    <ul>
+                        <li><code>CLAS</code> ABAP class (SE24)</li>
+                        <li><code>INTF</code> ABAP interface</li>
+                        <li><code>METH</code> Class method (sub-object)</li>
+                        <li><code>CPUB/CPRO/CPRI</code> Class sections</li>
+                        <li><code>CINS/CINC</code> Class includes</li>
+                    </ul>
+                </div>
+                <div class="tax-node dev">
+                    <h3>⚡ Function Groups / BAPIs / RFCs <code
+                            style="color:var(--muted);font-size:.7rem">DEV_FUGR</code></h3>
+                    <ul>
+                        <li><code>FUGR</code> Function group (SE37)</li>
+                        <li><code>FUNC</code> Function module</li>
+                        <li><code>FUGA</code> Function group include</li>
+                        <li>BAPIs are FUNC with BAPI_ prefix</li>
+                        <li>RFCs are FUNC with REMOTE_ENABLED=X</li>
+                    </ul>
+                </div>
+                <div class="tax-node wf">
+                    <h3>🔄 Workflows <code style="color:var(--muted);font-size:.7rem">DEV_WF</code></h3>
+                    <ul>
+                        <li><code>SWFP</code> Workflow task</li>
+                        <li><code>SWFT</code> Standard task</li>
+                        <li><code>SWED</code> Event linkage</li>
+                        <li><code>SWFL</code> Workflow template</li>
+                        <li><code>PDWS</code> Process definition</li>
+                    </ul>
+                </div>
+                <div class="tax-node dev">
+                    <h3>🔌 Enhancements / BADIs <code style="color:var(--muted);font-size:.7rem">DEV_ENH</code></h3>
+                    <ul>
+                        <li><code>ENHO</code> Enhancement implementation</li>
+                        <li><code>ENHS</code> Enhancement spot</li>
+                        <li><code>ENHD</code> Enhancement definition</li>
+                        <li><code>ENHC</code> Composite enhancement</li>
+                        <li>These extend SAP standard without modification</li>
+                    </ul>
+                </div>
+                <div class="tax-node ui">
+                    <h3>🌐 Fiori / BSP / Web Dynpro <code style="color:var(--muted);font-size:.7rem">DEV_UI</code></h3>
+                    <ul>
+                        <li><code>WAPP</code> SAPUI5/Fiori app (JS+XML)</li>
+                        <li><code>SBYP</code> BSP page</li>
+                        <li><code>SMIM</code> MIME objects (CSS, icons, JS)</li>
+                        <li><code>WDYC/V/A</code> Web Dynpro component/view/app</li>
+                        <li><code>IWSV/IWOM</code> OData service registration</li>
+                        <li><code>SICF</code> HTTP service node</li>
+                    </ul>
+                </div>
+                <div class="tax-node dev">
+                    <h3>📝 Forms & Output <code style="color:var(--muted);font-size:.7rem">DEV_FORM</code></h3>
+                    <ul>
+                        <li><code>SFPF</code> Adobe Interactive Form</li>
+                        <li><code>SSFO</code> Smart Form</li>
+                        <li><code>F30</code> SAPscript (pay slips, FI forms)</li>
+                        <li><code>DMEE</code> Payment medium format (DMEE)</li>
+                        <li><code>PFRM</code> Print form</li>
+                    </ul>
+                </div>
+                <!-- CFG sub-types -->
+                <div class="tax-node cfg">
+                    <h3>⚙️ General Customizing <code style="color:var(--muted);font-size:.7rem">CFG_GEN</code></h3>
+                    <ul>
+                        <li><code>TABU</code> Table entries — primary config carrier</li>
+                        <li><code>CUS0/1</code> Customizing objects</li>
+                        <li><code>NROB</code> Number range definitions</li>
+                        <li><code>TDAT</code> Customizing table data</li>
+                        <li><code>LODE</code> BRF+ logical objects</li>
+                        <li><code>SCVI</code> Screen display variants</li>
+                    </ul>
+                </div>
+                <div class="tax-node hcm">
+                    <h3>👥 HCM Configuration <code style="color:var(--muted);font-size:.7rem">CFG_HCM</code></h3>
+                    <ul>
+                        <li><code>PDTS/PDVS</code> Personnel dev objects</li>
+                        <li><code>TABD</code> HR cluster table data</li>
+                        <li><code>SOTT</code> HCM object type definitions</li>
+                        <li><code>DTED/DOMD</code> HR dictionary objects</li>
+                        <li>Pay scales, work schedules, absence types</li>
+                    </ul>
+                </div>
+                <div class="tax-node sec">
+                    <h3>🔒 Security & Roles <code style="color:var(--muted);font-size:.7rem">CFG_SEC</code></h3>
+                    <ul>
+                        <li><code>ACGR</code> Activity Groups (= Roles, PFCG)</li>
+                        <li><code>AUTH</code> Authorization objects</li>
+                        <li><code>ACID</code> Authorization check IDs</li>
+                        <li><code>SUSC</code> User class assignments</li>
+                        <li>6,171 objects — primarily P_IKOUNA</li>
+                    </ul>
+                </div>
+                <div class="tax-node mdl">
+                    <h3>🗄️ Databases & Data Model <code style="color:var(--muted);font-size:.7rem">DATA_MDL</code></h3>
+                    <ul>
+                        <li><code>TABL</code> Transparent database table</li>
+                        <li><code>DOMA</code> Domain (value range definition)</li>
+                        <li><code>DTEL</code> Data element (field description)</li>
+                        <li><code>INDX</code> Database index</li>
+                        <li><code>VIEW</code> Database/maintenance view</li>
+                        <li>High risk — structural DB changes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAYER 3: Functional Domain -->
+        <div class="section">
+            <h2><span class="dot" style="background:var(--green)"></span>Layer 3 — Functional Domain (Which business
+                area?)</h2>
+            <div class="alert alert-warn"><strong>Note on Package Data</strong>The DEVCLASS field from E071 is empty in
+                the current extraction — TADIR was not joined. Functional domain is currently inferred from
+                <strong>object name prefixes</strong>. A future extraction enrichment step can join TADIR to get
+                accurate package → DLVUNIT mapping for 100% precision.</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Domain</th>
+                        <th>SAP Module</th>
+                        <th>Object Name Patterns</th>
+                        <th>Examples at UNESCO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🏦 <strong>Financial Accounting</strong></td>
+                        <td>FI</td>
+                        <td><code class="prefix">ZFI_* ZNA_FI* YNAZ* NAZFI*</code></td>
+                        <td>G/L accounts, payment formats (DMEE UNESCO), bank configs</td>
+                    </tr>
+                    <tr>
+                        <td>💰 <strong>Public Sector / Budget</strong></td>
+                        <td>PSM / FM</td>
+                        <td><code class="prefix">ZPSM_* ZFM_* YFBI* ZFMFG*</code></td>
+                        <td>BCS configuration, fund definitions, commitment items</td>
+                    </tr>
+                    <tr>
+                        <td>👥 <strong>Human Capital Mgmt</strong></td>
+                        <td>HCM / PA / PY</td>
+                        <td><code class="prefix">ZHR_* YHR_* ZPAY_* CL_HRPADUN*</code></td>
+                        <td>Pay scales, absence types, off-boarding Fiori, EPI-USE</td>
+                    </tr>
+                    <tr>
+                        <td>🏢 <strong>Organizational Mgmt</strong></td>
+                        <td>HCM / OM</td>
+                        <td><code class="prefix">ZPEP_* YOM_* ZPOS_* T77*</code></td>
+                        <td>Position management, org structure, UNESCO country tables</td>
+                    </tr>
+                    <tr>
+                        <td>🌐 <strong>Fiori / UI5 Apps</strong></td>
+                        <td>BC / UI</td>
+                        <td><code class="prefix">YWAPP_* YWD_* ZOMWF_* YQUI*</code></td>
+                        <td>Off-boarding app, workflow UIs, Fiori Launchpad config</td>
+                    </tr>
+                    <tr>
+                        <td>🔒 <strong>Security / Auth</strong></td>
+                        <td>BC-SEC</td>
+                        <td><code class="prefix">Y_FO_HR* Y_FI_* ACGR entries</code></td>
+                        <td>All role transports by P_IKOUNA and E_FRATNIK</td>
+                    </tr>
+                    <tr>
+                        <td>⚙️ <strong>Basis / Technical</strong></td>
+                        <td>BC</td>
+                        <td><code class="prefix">SICF* BC-* DEVC entries</code></td>
+                        <td>Number ranges, ICF nodes, package org</td>
+                    </tr>
+                    <tr>
+                        <td>💳 <strong>Payroll</strong></td>
+                        <td>PY</td>
+                        <td><code class="prefix">ZPAY_* YHR_PAY* CL_PAY* HRSFI*</code></td>
+                        <td>Payroll schemas, wage types, country-specific rules</td>
+                    </tr>
+                    <tr>
+                        <td>📊 <strong>Controlling</strong></td>
+                        <td>CO</td>
+                        <td><code class="prefix">ZCO_* ZKOSTET* GGB0* KE34*</code></td>
+                        <td>Cost elements, internal orders, GR/IR clearing</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- User Profiles -->
+        <div class="section">
+            <h2><span class="dot" style="background:var(--purple)"></span>Team Profiles — Based on Object-Level Evidence
+            </h2>
+            <div class="user-grid">
+
+                <div class="user-card">
+                    <h4>N_MENARD</h4>
+                    <span class="user-badge badge-full">FULL-STACK LEAD</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">CLAS (OO)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:48%;background:var(--dev)"></div>
+                            </div><span class="bar-val">10,207</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">UI/Fiori</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:34%;background:var(--ui)"></div>
+                            </div><span class="bar-val">7,204</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Reports</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:9%;background:var(--purple)"></div>
+                            </div><span class="bar-val">1,976</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">21,282 dev objects. Most active
+                        developer 2020–2026. Strong in OO classes and Fiori/BSP. Also does some config. Domain: HCM+FI.
+                    </p>
+                </div>
+
+                <div class="user-card">
+                    <h4>I_KONAKOV</h4>
+                    <span class="user-badge badge-dev">OO CLASS SPECIALIST</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">CLAS (OO)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:89%;background:var(--dev)"></div>
+                            </div><span class="bar-val">10,530</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Reports</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:6%;background:var(--purple)"></div>
+                            </div><span class="bar-val">750</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Functions</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:1.5%;background:var(--yellow)"></div>
+                            </div><span class="bar-val">171</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">11,824 dev objects. 89% ABAP OO
+                        classes. Very focused — likely framework/core developer. Active 2017–2025. HCM domain
+                        (CL_HRPADUN_* classes).</p>
+                </div>
+
+                <div class="user-card">
+                    <h4>P_IKOUNA / P.IKOUNA</h4>
+                    <span class="user-badge badge-sec">SECURITY ADMINISTRATOR</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">Roles (ACGR)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:90%;background:var(--sec)"></div>
+                            </div><span class="bar-val">3,981</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Auth Objects</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:8%;background:var(--orange)"></div>
+                            </div><span class="bar-val">~350</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">TABU (cfg)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:4%;background:var(--cfg)"></div>
+                            </div><span class="bar-val">~200</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">3,883 total objects (two SAP
+                        usernames). Pure security role management. Y_FO_HR_* patterns = HR Fiori role assignments.
+                        Active 2017–2024.</p>
+                </div>
+
+                <div class="user-card">
+                    <h4>A_SEFIANI</h4>
+                    <span class="user-badge badge-cfg">FUNCTIONAL CONSULTANT</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">Config (TABU)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:65%;background:var(--cfg)"></div>
+                            </div><span class="bar-val">3,109</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Workflows</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:12%;background:var(--wf)"></div>
+                            </div><span class="bar-val">268</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">Dev (mixed)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:8%;background:var(--dev)"></div>
+                            </div><span class="bar-val">185</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Most active configurator. 1,684
+                        transports but mostly config/workflow. Also does some HCM forms (SFPF). Consistently active
+                        2017–2026.</p>
+                </div>
+
+                <div class="user-card">
+                    <h4>S_IGUENINNI + GD_SCHELLINC</h4>
+                    <span class="user-badge badge-fiori">FIORI DEVELOPERS</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">WAPP/UI5</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:85%;background:var(--ui)"></div>
+                            </div><span class="bar-val">3,184</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">CLAS</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:12%;background:var(--dev)"></div>
+                            </div><span class="bar-val">544</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">New generation (2025–2026).
+                        Fiori/SAPUI5 specialists. GD_SCHELLINC started 2025, 1,129 objects in 2026. Building next-gen
+                        HCM screens.</p>
+                </div>
+
+                <div class="user-card">
+                    <h4>EPI-USE_LABS</h4>
+                    <span class="user-badge badge-epi">THIRD-PARTY HCM</span>
+                    <div class="bar-wrap">
+                        <div class="bar-row"><span class="bar-lbl">CLAS (OO)</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:99%;background:#0ea5e9)"></div>
+                            </div><span class="bar-val">10,756</span>
+                        </div>
+                        <div class="bar-row"><span class="bar-lbl">AUTH/ACID</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:2%;background:var(--sec)"></div>
+                            </div><span class="bar-val">256</span>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Data Sync Manager (DSM) suite.
+                        Installed 9 times over 8 years. Not UNESCO custom work. Source system: E9BK. Must be excluded
+                        from productivity metrics.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Future enrichment -->
+        <div class="section">
+            <h2><span class="dot" style="background:var(--yellow)"></span>Next Steps to Complete the Intelligence</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Enhancement</th>
+                        <th>Data Needed</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><strong>Join TADIR for DEVCLASS</strong></td>
+                        <td>RFC read of TADIR for all 38,839 unique objects</td>
+                        <td>Precise functional domain per object</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><strong>Object name prefix classifier</strong></td>
+                        <td>Already available in raw JSON</td>
+                        <td>Infer FI/HCM/PSM domain from Z-prefix pattern now</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><strong>BAPI/RFC detection</strong></td>
+                        <td>TFDIR table for remote-enabled funcs</td>
+                        <td>Identify all integration points built at UNESCO</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><strong>ACGR role name decoder</strong></td>
+                        <td>Role names already in ACGR obj_name</td>
+                        <td>Map Y_FO_HR_* → HCM, Y_FI_* → Finance roles</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><strong>Dashboard integration</strong></td>
+                        <td>Write cts_10yr_rich.json with taxonomy fields</td>
+                        <td>Interactive filter by type + domain + user + year</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><strong>Hot object tracking</strong></td>
+                        <td>Already in cts_10yr_analyzed.json</td>
+                        <td>Which objects were touched 5+ times = instability risk</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+    <footer>SAP Transport Intelligence Taxonomy Companion — UNESCO SAP · 108,290 objects · 2017-2026 · Generated
+        2026-03-12</footer>
+</body>
+
+</html>

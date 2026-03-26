@@ -1,0 +1,71 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZXTRVU03                                         *
+*&---------------------------------------------------------------------*
+
+DATA LT_P0017 TYPE TABLE OF P0017.
+DATA LS_P0017 TYPE P0017.
+DATA SUBRC_INFTYP TYPE SY-SUBRC.
+DATA L_ZTVCK TYPE ZTVCK.
+DATA L_RETURN(1).
+MOVE-CORRESPONDING TRIP_HEADER TO L_ZTVCK.
+
+CALL FUNCTION 'HR_READ_INFOTYPE'
+  EXPORTING
+    PERNR           = TRIP_HEADER-PERNR
+    INFTY           = '0017'
+    BEGDA           = TRIP_HEADER-DATV1
+    ENDDA           = TRIP_HEADER-DATV1
+  IMPORTING
+    SUBRC           = SUBRC_INFTYP
+  TABLES
+    INFTY_TAB       = LT_P0017
+  EXCEPTIONS
+    INFTY_NOT_FOUND = 1
+    OTHERS          = 2.
+
+READ TABLE LT_P0017 INTO LS_P0017 INDEX 1.
+IF SY-SUBRC EQ 0.
+  MOVE LS_P0017-SPEBE TO L_ZTVCK-SPEBE.
+ELSE.
+  CLEAR L_ZTVCK-SPEBE.
+ENDIF.
+
+** read the feature ztvck
+CALL METHOD CL_HRPA_FEATURE=>GET_VALUE
+  EXPORTING
+    FEATURE       = 'ZTVCK'
+    STRUC_CONTENT = L_ZTVCK
+  IMPORTING
+    RETURN_VALUE  = L_RETURN.
+
+IF L_RETURN = 'X' AND SY-SUBRC = 0.
+ MESSAGE E001(ZFITV) WITH TRIP_HEADER-KZREA TRIP_HEADER-KZTKT L_ZTVCK-SPEBE.
+ CONTINUE_WITH_UPDATE = 'N'.
+ENDIF.
+
+***********************************************************************************
+* check overlapping period with dependants
+DATA LS_USER TYPE PTK99.
+DATA L_ALLOWED(1) .
+
+LOOP AT USER INTO LS_USER. "only first line
+  EXIT.
+ENDLOOP.
+
+IF ZCL_TRIP=>IS_DEPENDANTS_MANDATORY( TRIP_HEADER ) EQ 'X' AND LS_USER IS INITIAL.
+  MESSAGE E003(ZFITV) WITH TRIP_HEADER-KZREA TRIP_HEADER-KZTKT L_ZTVCK-SPEBE.
+  CONTINUE_WITH_UPDATE = 'N'.
+ENDIF.
+
+CALL METHOD ZCL_TRIP=>IS_OVERLAPPING_ALLOWED
+  EXPORTING
+    HEAD    = TRIP_HEADER
+    PERIO   = TRIP_PERIOD
+    USERS   = LS_USER
+  RECEIVING
+    ALLOWED = L_ALLOWED.
+IF L_ALLOWED NE 'X'.
+  CONTINUE_WITH_UPDATE = 'N'.
+*  MESSAGE e002(zfitv) WITH trip_header-kzrea trip_header-kztkt.
+
+ENDIF.

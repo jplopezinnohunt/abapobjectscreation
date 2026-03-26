@@ -1,0 +1,5 @@
+  method IF_HCMFAB_ASR_PROCESS_CONFG~SET_FIO_BUTTONS.
+
+
+
+  endmethod.

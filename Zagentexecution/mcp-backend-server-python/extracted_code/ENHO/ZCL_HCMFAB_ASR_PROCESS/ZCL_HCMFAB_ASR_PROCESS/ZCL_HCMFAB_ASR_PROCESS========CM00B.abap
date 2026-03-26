@@ -1,0 +1,2 @@
+  method IF_HCMFAB_ASR_PROCESS_CONFG~HANDLE_WORKITEM.
+  endmethod.
