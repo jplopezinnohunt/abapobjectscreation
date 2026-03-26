@@ -174,6 +174,21 @@ This is how the agent gets smarter over sessions — not just from conversation 
 
 ---
 
+## Maturity Framework (Session #018)
+
+Every new SKILL.md should target a maturity level. See `.agents/SKILL_MATURITY.md` for the full rubric.
+
+| Score | Label | When to create at this level |
+|-------|-------|------------------------------|
+| 4 | Production | Only after real session usage + comprehensive docs |
+| 3 | Functional | Working skill, tested in at least 1 session |
+| 2 | Draft | Framework defined, not yet validated |
+| 1 | Stub | Placeholder for future work — avoid creating these |
+
+**Rule:** Don't create Stub skills. If you can't write at least Draft-level content, the skill isn't ready to exist yet.
+
+---
+
 ## Session Retrospective Protocol
 
 At end of each session, run `/session_retro` and ask:

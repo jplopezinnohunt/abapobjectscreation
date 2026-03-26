@@ -278,3 +278,20 @@ python sap_brain.py --build --html
 - Process mining nodes (PROCESS_VARIANT, BOTTLENECK, ANOMALY)
 - OB28/OBBH validation/substitution nodes
 - CDHDR change audit nodes
+
+---
+
+## Governance Layer (Session #018)
+
+This coordinator operates within a formal governance structure:
+
+- **`.agents/GOVERNANCE.md`** — Internal coordinator index, two-tier model, routing rules
+- **`.agents/SKILL_MATURITY.md`** — 31 skills scored (13 Production, 10 Functional, 4 Draft, 4 Stub)
+
+**Two-Tier Model:**
+- Tier 1 (Skills): `.agents/skills/` + `lib/` — define patterns
+- Tier 2 (Execution): `Zagentexecution/` — consume patterns
+
+**Routing by maturity:** Prefer Production (4) skills for critical operations. Draft (2) and Stub (1) skills need user confirmation before relying on them.
+
+**Coverage gaps:** T2R (Travel) and P2D (Project) have no dedicated skills — route to psm_domain_agent + fi_domain_agent as fallback.

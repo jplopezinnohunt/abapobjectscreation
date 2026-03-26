@@ -59,17 +59,17 @@
 | sap_automated_testing | OData HTTP validation | Only HTTP 200 checks, no GUI tests |
 | abapgit_integration | abapGit commit workflow | Not fully automated |
 | parallel_html_build | Part-based HTML generation | Niche, vis.js specific |
+| sap_debugging_and_healing | ST22+SU53+SM21 + Playwright self-heal framework | Needs end-to-end production validation |
 
 ---
 
-## Stub (Score 1) — 4 Skills
+## Stub (Score 1) — 3 Skills
 
 | Skill | Status | Action Needed |
 |-------|--------|---------------|
 | skill_creator | Meta-skill template, not production | Add real creation examples |
 | notion_integration | Notion MCP placeholder | Build real extraction examples |
 | unesco_filter_registry | Only WRTTP_FM documented | Catalog all known filters |
-| sap_debugging_and_healing | Triple Threat concept | Flesh out ST22+SU53+SM21 workflows |
 
 ---
 
@@ -125,8 +125,8 @@ Cross-Cutting:
 | Total Skills | 31 |
 | Production-Ready | 13 (42%) |
 | Functional | 10 (32%) |
-| Draft | 4 (13%) |
-| Stub | 4 (13%) |
+| Draft | 5 (16%) |
+| Stub | 3 (10%) |
 | UNESCO Processes Covered | 5/5 (T2R and P2D have gaps) |
 | Layers Covered | 10/10 |
 | Consolidation Candidates | 2 (merge sap_segw + segw_automation) |
