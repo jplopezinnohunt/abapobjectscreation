@@ -61,6 +61,39 @@
 
 ---
 
+## Session #027 — 2026-03-27 (4-Stream Architecture + REGUH Validation + Companion Corrections)
+
+**Start**: 2026-03-27
+**Focus**: Complete implementation of critical review findings. Fix Discovery #1 framing (OP≠BCM bypass), validate REGUH→BSAK link, add 4-stream model, fix F_DERAKHSHAN payroll finding, update sap_payment_e2e SKILL.md.
+**Significance**: Companion Discovery #1 now correctly describes field office sub-bank architecture. REGUH link validated at 1.38M matched rows. 4-stream model formally documented.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **Companion Discovery #1 rewritten** | Removed "bypasses BCM/DMEE/SWIFT" framing. Added 4-stream architecture table. Added AB breakdown (BSCHL=31/29). Added REGUH→OP=0 evidence. |
+| **Companion Discovery #4 updated** | F_DERAKHSHAN named finding added: 259 PAYROLL batches processed solo (CRUSR=CHUSR). Segregation-of-duties risk documented. |
+| **sap_payment_e2e Known Gap #2 fixed** | "REGUH linking incomplete" → "Link valid via VBLNR=AUGBL (1.38M rows). OP outside REGUH scope." |
+| **4-stream model added to SKILL.md** | Full table: Stream 1 (ZP/BCM), Stream 2 (OP/field office GL 2021xxx), Stream 3 (AB/netting), Stream 4 (IBE/MGIE/ICBA). Evidence: REGUH→OP=0. |
+| **PMO H13 updated** | 1,557 → 3,394 same-user batches. Named breakdown: UNES_AP_10=1,754, UBO_AP_MAX=627, UNES_AP_EX=317, PAYROLL=276, F_DERAKHSHAN=259 solo. |
+| **PMO H17 updated** | "Rebuild event log" → "Model all 4 clearing streams" with architecture. |
+
+### Key Intelligence Confirmed
+
+| Finding | Evidence |
+|---------|----------|
+| REGUH.VBLNR = BSAK.AUGBL: 1,380,108 rows | Link works cleanly. Previous "incomplete" note was wrong. |
+| REGUH→OP = 0 rows | OP docs completely outside F110/BCM. Field office architecture confirmed. |
+| GL 2021xxx = field office sub-bank accounts | Not in T012K. Explains why OP cannot use F110. |
+| AB = internal netting only | BSCHL=31 (109K credit netting) + BSCHL=29 (24K advance offset). No bank transfer. |
+| F_DERAKHSHAN: 259 PAYROLL batches solo | Single-person payroll BCM operator. Segregation-of-duties gap. |
+
+### PMO Status
+- No new items added (H13, H16, H17, H18 already exist from Session #026)
+- **Total: 9 Blocking | 14 High | 40 Backlog = 63 items**
+
+---
+
 ## Session #025 — 2026-03-27 (T015L Live Validation — PPC Tables Corrected)
 
 **Start**: 2026-03-27

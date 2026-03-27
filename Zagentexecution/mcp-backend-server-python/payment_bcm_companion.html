@@ -1306,29 +1306,41 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
 
   <!-- DISCOVERY 1 -->
   <div class="section" style="border-color:#e74c3c">
-    <h3 style="color:#e74c3c">&#9888; Discovery #1 — Manual Payments (F-53) Exceed F110 at UNESCO HQ</h3>
+    <h3 style="color:#e74c3c">&#9888; Discovery #1 — UNESCO HQ Has 4 Distinct Clearing Streams (Not 1)</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
-        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">BSAK clearing document types — UNES 2024+</div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">BSAK clearing document types — UNES 2024+ (confirmed via Gold DB)</div>
         <table>
           <tr><th>BLART</th><th>Type</th><th>Count</th><th>% of total</th></tr>
-          <tr style="background:#2d1515"><td><code>OP</code></td><td>F-53 Manual outgoing payment</td><td style="color:#e74c3c;font-weight:bold">267,122</td><td style="color:#e74c3c">48%</td></tr>
-          <tr><td><code>AB</code></td><td>Journal / reversal</td><td>183,666</td><td>33%</td></tr>
-          <tr style="background:#1a2a1a"><td><code>ZP</code></td><td>F110 Automatic payment</td><td style="color:#1abc9c;font-weight:bold">138,868</td><td style="color:#1abc9c">25%</td></tr>
+          <tr style="background:#2d1515"><td><code>OP</code></td><td>F-53 Field office sub-bank payment</td><td style="color:#e74c3c;font-weight:bold">267,122</td><td style="color:#e74c3c">48%</td></tr>
+          <tr><td><code>AB</code></td><td>Journal netting / reversal</td><td>183,666</td><td>33%</td></tr>
+          <tr style="background:#1a2a1a"><td><code>ZP</code></td><td>F110 Automatic payment (BCM)</td><td style="color:#1abc9c;font-weight:bold">138,868</td><td style="color:#1abc9c">25%</td></tr>
           <tr><td><code>KR</code></td><td>Vendor invoice (direct clear)</td><td>7,301</td><td>1%</td></tr>
           <tr><td><code>CC / IT / PP</code></td><td>Other clearing types</td><td>~10,000</td><td>2%</td></tr>
         </table>
+        <div style="font-size:11px;color:#7fb3d3;margin-top:12px;margin-bottom:6px">AB breakdown — internal netting only, no bank transfer</div>
+        <table>
+          <tr><th>BSCHL</th><th>Meaning</th><th>Count</th></tr>
+          <tr><td>31</td><td>Credit netting (down payment offset)</td><td>109,000</td></tr>
+          <tr><td>29</td><td>Advance application / offsets</td><td>24,000</td></tr>
+          <tr><td>Other</td><td>Reversals, corrections</td><td>~50,000</td></tr>
+        </table>
       </div>
       <div>
-        <div class="alert">
-          <strong>Impact on process model:</strong><br><br>
-          The payment event log defined <code>Payment Executed = BLART IN (ZP, KZ)</code>.<br>
-          This captures only <strong>138K</strong> clearing docs — F110 automatic payments.<br><br>
-          <strong>267K manual OP docs are NOT modeled.</strong><br><br>
-          Nearly double the volume bypasses F110, BCM, DMEE, and SWIFT entirely.<br>
-          The "550K cases / 207 variants" metrics are incomplete.<br><br>
-          <strong>Who uses OP?</strong> Field offices, advance payment settlements, netting.<br>
-          <strong>Fix required:</strong> Rebuild event log adding <code>BLART IN ('ZP','KZ','OP','PP')</code>.
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:6px">4-Stream clearing architecture (verified via REGUH + BSAK + GL analysis)</div>
+        <table>
+          <tr><th>#</th><th>Stream</th><th>BLART</th><th>GL Account</th><th>Bank System</th></tr>
+          <tr style="background:#1a2a1a"><td>1</td><td><strong>F110 / BCM</strong> (HQ auto)</td><td><code>ZP</code></td><td>T012K standard</td><td>SWIFT via BCM</td></tr>
+          <tr style="background:#2d1515"><td>2</td><td><strong>Field Office sub-bank</strong></td><td><code>OP</code></td><td><code>2021xxx</code> (not in T012K)</td><td>Local banking system</td></tr>
+          <tr><td>3</td><td><strong>Internal netting</strong></td><td><code>AB</code></td><td>Vendor reconciliation</td><td>No bank transfer</td></tr>
+          <tr><td>4</td><td><strong>Tier 3 codes</strong> (IBE/MGIE/ICBA)</td><td><code>OP</code></td><td>Local sub-accounts</td><td>Local banking</td></tr>
+        </table>
+        <div class="alert" style="margin-top:8px;font-size:11px">
+          <strong>Key evidence — REGUH→OP link = 0 rows.</strong><br>
+          Joined REGUH.VBLNR = BSAK.AUGBL WHERE BSAK_BLART=OP: <strong>zero matches</strong>.<br>
+          OP documents are completely separate from F110 — they credit GL <code>2021xxx</code> accounts (field office sub-bank clearing accounts, NOT in T012K house bank table).<br><br>
+          <strong>AB = no bank movement.</strong> BSCHL=31 = credit netting; BSCHL=29 = advance offset. Pure accounting adjustments.<br><br>
+          <strong>Process model impact:</strong> Current event log (ZP only) captures 138K of ~600K total clearing events. Model is Stream 1 only. Streams 2–4 require separate event log extension using BLART filter + GL account segmentation.
         </div>
       </div>
     </div>
@@ -1413,10 +1425,12 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
           <strong>229 payroll batch failures = staff not paid on time.</strong><br><br>
           Failed batches average <strong>$1.2M</strong> vs $358K for completed — large payments fail at higher rates.<br><br>
           UNES_AP_ST has 869 failures (standard AP) — systematic issue with file transmission or character encoding in vendor data.<br><br>
-          <strong>Not investigated yet.</strong> Root causes unknown. Recommend:<br>
+          <strong>Segregation-of-duties finding:</strong> User <code>F_DERAKHSHAN</code> created AND changed <strong>259 PAYROLL batches</strong> alone (CRUSR=CHUSR=F_DERAKHSHAN). This is the single-person payroll BCM operator — start-to-finish with no second signatory. Confirmed via BNK_BATCH_HEADER query.<br><br>
+          <strong>Not fully investigated.</strong> Root causes of IBC17 failures unknown. Recommend:<br>
           1. Query BNK_BATCH_ITEM for failed batches → find common vendors/currencies<br>
           2. Check SWIFT transmission log for file encoding errors<br>
-          3. For payroll failures: cross-reference with REGUH LAUFD to find affected pay periods
+          3. For payroll failures: cross-reference with REGUH LAUFD to find affected pay periods<br>
+          4. Audit F_DERAKHSHAN dual-control gap vs Delegation of Authority Annex III
         </div>
       </div>
     </div>
