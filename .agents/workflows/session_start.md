@@ -16,8 +16,9 @@ Read ALL of these in parallel — do not read sequentially:
 - [ ] **MEMORY.md** — Read index + ALL topic files it points to
   - Path: `C:\Users\jp_lopez\.claude\projects\c--Users-jp-lopez-projects-abapobjectscreation\memory\MEMORY.md`
   - ⚠️ MEMORY.md is an INDEX. You MUST read every `project_*.md` and `feedback_*.md` it references
-- [ ] **SESSION_LOG.md** — Last session entry (date, accomplishments, pending)
-  - Path: `.agents/intelligence/SESSION_LOG.md`
+- [ ] **SESSION_LOG.md** — Read ONLY the index to find latest session number, then read that retro file directly.
+  - Index path: `.agents/intelligence/SESSION_LOG.md` (compact — check top row for latest session)
+  - Retro path: `knowledge/session_retros/session_NNN_retro.md` ← **Read this file, not the index**
 - [ ] **PMO_BRAIN.md** — Current workstream status + blockers
   - Path: `.agents/intelligence/PMO_BRAIN.md`
 - [ ] **Ecosystem shared knowledge** (parallel with above):

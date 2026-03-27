@@ -12,8 +12,9 @@ Mark each checkbox as you complete it. A skipped step = knowledge loss.
 ## Phase 1: Session Retro File
 
 - [ ] **Create retro file** at `knowledge/session_retros/session_NNN_retro.md`
-  - Template: accomplishments table, key discoveries, blockers, pending → next session
+  - Template: accomplishments table, key discoveries, what failed/corrected, verification check, PMO reconciliation, pending → next session
   - Include: session number, date, duration, systems used, type (analysis/extraction/dev/audit)
+  - ⚠️ **SESSION_LOG.md is an INDEX** — add ONE row to the index table, NOT full content. Full content goes in the retro file.
 - [ ] **Verify retro is complete** — Can someone reading ONLY this file understand what happened?
 
 **Pass criteria**: Retro file exists and is self-contained.
