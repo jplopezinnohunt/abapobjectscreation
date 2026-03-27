@@ -10,7 +10,7 @@
 ## Purpose
 
 Specialized agent for all SAP payment and BCM (Bank Communication Management) questions at UNESCO. This agent has complete knowledge of:
-- Payment configuration across all 9 company codes
+- Payment configuration across 9 operational company codes (+ STEM = 10th, FBZP chain broken)
 - F110 automatic payment program setup (FBZP chain)
 - BCM batch routing, approval workflows, and status lifecycle
 - House bank network (211 banks across 50+ countries)
@@ -95,10 +95,13 @@ The **coordinator** should route to this agent when the user asks about:
 - 24 payment methods configured (most of any company code)
 - No BCM — T-prefix run IDs, payments go directly to bank
 
-**Tier 3 — Unconfigured (3 codes: IBE, MGIE, ICBA)**
-- NO T042A entries (payment methods not linked to house banks)
-- Have T012K bank accounts but no F110 routing
-- Payments likely manual (F-53) or handled by HQ
+**Tier 3 — Manual Payment via F-53 (3 codes: IBE, MGIE, ICBA)** [VERIFIED from BSAK 2024-2026]
+- NO T042A entries — F110 cannot run for these codes
+- Payments ARE posted in SAP via **F-53 (BLART=OP)** — outgoing payment document created manually
+- Bank transfer executed in LOCAL banking system; SAP receives the OP clearing doc
+- Cleared items confirmed in BSAK: IBE=5,364 OP docs, MGIE=3,211 OP docs, ICBA=1,227 OP docs (2024-2026)
+- Also see BLART=AB (reversals) and BLART=KR (direct credit memo clearing)
+- "Outside SAP" means the bank instruction — the accounting document IS in SAP
 
 ### Company Code Profiles
 
@@ -195,14 +198,28 @@ The **coordinator** should route to this agent when the user asks about:
 | L | Auslandsüberweisung (foreign transfer) | IBE, ICTP, UNES |
 | X | Exotic currency payment (method X → SOG01-USDD1, 1,069 currencies) | UNES only |
 | Z | Dummy payment method — STEPS only | UNES only (BNP01) |
+| A | Treasury bank-to-bank transfer (F111 / FRFT_B replenishments) | UNES only |
+| Q | Boleto Bar Code — Brazil domestic | UBO (CIT01/BRL01) |
+| R | TED Online — Brazil electronic transfer | UBO (CIT01/BRL01) |
+| W | Local country-specific (T042Z configured) | Subset of countries in T042Z |
 
 ### Process Mining Results
 
 - **1,435,376 events** / **550,993 cases** / **12 activities** / **207 variants**
 - Invoice → Payment: mean 4.1 days, median 2 days
 - Invoice → Clearing (E2E): mean 5.6 days, median 2 days
-- Due Date → Payment: mean 26.8 days late, median 14 days late
-- On-Time Payment: **1.1%** [NEEDS INVESTIGATION]
+- Due Date → Payment: mean 26.8 days, median 14 days [⚠ see below]
+- On-Time Payment: **1.1%** [⚠ MISLEADING — see below]
+
+**⚠ On-Time KPI is a measurement artifact [VERIFIED Session #026]**
+73% of UNES invoices have `ZTERM=0001` (Net immediate) with `ZFBDT = BUDAT`. The "due date" is the posting date itself — so "26.8 days late" actually means "26.8 days from posting to payment," not lateness against payment terms. For invoices WITH actual payment terms (`ZFBDT ≠ BUDAT`):
+- On-time/early: **4.6%** (9,090)
+- 1–7 days late: 18% (35,558)
+- 8–30 days late: 14% (28,279)
+- 31–100 days late: 20% (38,863)
+- 100+ days late: **43%** (85,666) ← genuine finding
+
+**Second gap**: UNES clearing documents show `BLART=OP` (F-53 manual) = **267K** vs `BLART=ZP` (F110) = **138K**. The event log only captured ZP. Manual payments via F-53 are not modeled. The 550K case count and "Payment Executed" activity both undercount actual payments.
 
 ### Payment Release Workflow (Pre-F110) [VERIFIED from handover docs]
 
@@ -571,7 +588,7 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | Brazil (BR) | Natural person STCD2 | Cdtr>Id>PrvtId | Condition: FPAYHX.STCD1 = '' |
 | USD/CAD/MGA/TND/BRL | Phone/Fax removed | CdtDtls>PhneNb, FaxNb | FPAYHX.WAERS <> currencies |
 | MGA/TND | Bank account removed (IBAN only) | CdtrAcct>Id | FPAYHX.SBISO <> 'TN','MG' |
-| AE/CN | Payment Purpose Code required | InstrForCdtrAgt/InstrInf | Read from SGTXT via exit |
+| AE/CN/ID/IN/JO/MA/MY/PH | Payment Purpose Code required | `Purp/Cd` or `InstrInf` | Read from `REGUP-LZBKZ` (T015L SCB indicator repurposed as PPC). Payroll detected via LAUF1 last-char 'P' → SALA. NOT from SGTXT. [VERIFIED architecture; XML value confirmation needs BAdI source read] |
 
 ### SG (Societe Generale) Specific [VERIFIED]
 
@@ -718,6 +735,8 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | BNK_BNK_COM_REL01 | Assign release procedure to BNK_COM |
 
 ## Payment Purpose Code (PPC) [VERIFIED from FS XML v2.0 + 20240321 Presentation]
+
+> ⚠ **VERIFICATION STATUS**: T015L configuration (73 rows, 8 countries) VERIFIED from P01 live query. BAdI architecture (AE+BH) VERIFIED from Gold DB CTS. **UNVERIFIED**: what exact value goes into `<Purp><Cd>` XML — is it the LZBKZ key (AE5), the abbreviation in ZWCK1 (SAL), or something else? Needs BAdI source code read (D01 ADT). AE+BH BAdIs are in D01 only — not yet live in P01. UTIL fallback for 6 other countries is INFERRED.
 
 **Scope**: SG format only (`/CGI_XML_CT_UNESCO`). Citibank payments do NOT use PPC. SG transmits to local banks that require a purpose code per regulatory mandate.
 

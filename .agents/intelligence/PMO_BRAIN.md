@@ -103,6 +103,9 @@ Each layer FEEDS the others:
 | H12 | **Populate HCM/Reports folder** | #005b | Code | Extract Z-reports in HCM namespace |
 | H13 | **BCM dual-control gap remediation** | #021 | Audit | UNES: 1,557 same-user batches (CRUSR=CHUSR). UBO: 284. Potential audit finding. Needs root cause analysis. |
 | H14 | **Extract YWFI package source from D01** | #021 | Code | Z_GET_CERTIF_OFFICER_UNESDIR, Z_WF_GET_CERTIFYING_OFFICER etc. D01 HTTP blocked via VPN — needs on-site or VPN route |
+| H16 | **Investigate 229 PAYROLL IBC17 (Failed) BCM batches** | #026 | Audit | 229 payroll batches failed = staff not paid on time. Query BNK_BATCH_ITEM for failed batches, cross-reference REGUH LAUFD for affected pay periods. Also: 869 UNES_AP_ST failures (avg $1.2M). Root causes unknown. |
+| H17 | **Rebuild payment event log: add BLART=OP (F-53) to Payment Executed** | #026 | Analytics | UNES: OP clears (267K) > ZP clears (138K). Current event log misses ~48% of actual payments. Re-run process mining with OP/PP included. Invalidates current 550K case count and variant analysis. |
+| H18 | **Read YCL_IDFI_CGI_DMEE_AE/BH source — confirm XML PurpCd value** | #026 | Code | PPC architecture confirmed in config but XML output value unknown. Does <Purp><Cd> contain "AE5", "SAL", or something else? Needs D01 ADT (password needs update). |
 | ~~H15~~ | ~~Read Blueprint BCM pages 21-47~~ | ~~#021~~ | ~~Knowledge~~ | ~~Done #022 — Full 21 SAP Notes, Delegation of Authority table, grouping rules, XML char handling all extracted~~ |
 
 ### 🟢 BACKLOG — When blocking/high are clear

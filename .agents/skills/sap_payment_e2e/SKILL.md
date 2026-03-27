@@ -78,7 +78,7 @@ Includes BCM (Bank Communication Management) batch tracking, FBZP chain complete
 ### BCM Status Codes (from BNK_BATCH_HEADER.CUR_STS)
 | Code | Meaning | Count |
 |------|---------|-------|
-| (empty) | Legacy/unknown | 15,003 |
+| (empty) | **Pre-TMS legacy 2014–2021** — CUR_STS not populated before Coupa/TMS migration (2022). All 15K batches confirmed in 2014–2021 date range. Zero empty-status batches after 2021. [VERIFIED from CRDATE analysis] | 15,003 |
 | IBC15 | Completed | 7,016 |
 | IBC17 | Failed | 2,056 |
 | IBC05 | Sent to bank | 1,650 |
@@ -178,7 +178,7 @@ T042 (Paying CoCode) → T042A (Pmt Methods/CoCode) → T042E (Pmt Methods/Count
 | `Zagentexecution/mcp-backend-server-python/build_payment_companion.py` | Companion builder (config interpretation) |
 | `Zagentexecution/mcp-backend-server-python/payment_event_log.csv` | Event log (1.4M rows, pm4py/Celonis ready) |
 | `Zagentexecution/mcp-backend-server-python/payment_process_mining.html` | Process mining dashboard (694KB) |
-| `Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html` | Payment & BCM companion v4 (775KB, 12 tabs) |
+| `Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html` | Payment & BCM companion v6 (13 tabs, PPC verified, Discoveries tab) |
 | `knowledge/domains/FI/payment_full_landscape.md` | Full payment landscape knowledge doc (100% PDF coverage) |
 
 ## Related Skills
@@ -211,9 +211,11 @@ T042 (Paying CoCode) → T042A (Pmt Methods/CoCode) → T042E (Pmt Methods/Count
 ## Known Gaps
 
 1. **FCLM_BAM_* tables don't exist** — UNESCO uses BNK_BATCH_* not FCLM_BAM_* for BCM
-2. **REGUH→Invoice linking incomplete** — REGUH.VBLNR format doesn't match BSAK.AUGBL directly. BCM item linkage via BNK_BATCH_ITEM.VBLNR is the correct bridge.
-3. **On-Time 1.1% needs investigation** — Could be ZFBDT (baseline date) not reflecting actual payment terms, or genuine late payment pattern.
-4. **IBE, MGIE, ICBA have no T042A** — No payment methods configured. Payments may be manual or handled differently.
+2. **REGUH→Invoice linking incomplete** — REGUH.VBLNR format doesn't match BSAK.AUGBL directly. OP clears (F-53 manual) bypass REGUH entirely — see Discovery #1.
+3. **On-Time 1.1% is a measurement artifact** — 73% of invoices have ZTERM=0001 (immediate) with ZFBDT=BUDAT. This means the "due date" = posting date. Real on-time for items with actual terms = 4.6%. The 26.8d/1.1% metrics should NOT be presented as late-payment KPIs without segmentation by ZTERM. [VERIFIED Session #026]
+4. **IBE/MGIE/ICBA DO clear invoices via F-53 (BLART=OP)** — 5,364 + 3,211 + 1,227 OP docs confirmed in BSAK 2024–2026. "Outside SAP" refers to the bank instruction, not the accounting document. [VERIFIED Session #026]
+5. **IBC17 failures uninvestigated** — 2,056 failed BCM batches. By rule: UNES_AP_ST=869, UNES_AR_BP=263, PAYROLL=229, UNES_TR_TR=185, IIEP_AP_ST=168. 229 payroll failures are operationally critical (staff not paid). Average failed batch = $1.2M vs $358K completed. [VERIFIED Session #026]
+6. **UNES clearing: OP (267K) > ZP (138K)** — Manual F-53 outgoing payments exceed F110 automatic payments at UNESCO HQ. The event log activity "Payment Executed = BLART=ZP" misses 267K manual payments. Process model is incomplete. [VERIFIED Session #026]
 
 ## You Know It Worked When
 

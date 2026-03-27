@@ -23,6 +23,44 @@
 
 ---
 
+## Session #026 — 2026-03-27 (Critical Review — Process Mining Corrections + 6 Discoveries)
+
+**Start**: 2026-03-27
+**Focus**: Full critical review of sap_payment_bcm_agent + sap_payment_e2e across 3 lenses (process mining, real data vs docs, SAP AP/BCM specialist). Apply all fixes. Add Discoveries tab to companion.
+**Significance**: Found 4 critical errors and 6 structural issues from live data queries. Payment process model substantially revised.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **C3 fixed** | DMEE table row "Read from SGTXT" → corrected to `REGUP-LZBKZ` with full PPC context. SGTXT parsing is prohibited. |
+| **S1 fixed** | IBE/MGIE/ICBA Tier 3 updated: F-53 (OP) docs confirmed in BSAK. These codes DO post payment docs in SAP. "Outside SAP" = bank instruction only. |
+| **S2 fixed** | Empty CUR_STS (15K batches) relabeled: Pre-TMS 2014–2021, not "unknown". Zero empty-status batches after 2021. |
+| **S4 fixed** | Methods A/Q/R/W added to payment methods table. |
+| **S5 fixed** | "9 company codes" → "9 operational + STEM (broken)" throughout. |
+| **C1 fixed** | On-time 1.1% flagged as measurement artifact. Root cause: 73% ZTERM=0001 (ZFBDT=BUDAT). Real on-time for actual-terms invoices = 4.6%. 43% are 100+ days late. |
+| **C4 fixed** | PPC section gets ⚠ UNVERIFIED PATH warning: XML PurpCd value unknown, AE/BH not in P01, UTIL fallback INFERRED. |
+| **S6 fixed** | sap_payment_e2e SKILL.md companion reference updated v4 → v7. Known Gaps expanded with 3 new findings. |
+| **Companion v7** | Discoveries tab added (14th tab). 6 discoveries with full data tables and action items. KPI bar: +Discoveries counter. |
+| **PMO** | 3 new HIGH items: H16 (229 payroll failures), H17 (rebuild event log with OP), H18 (read BAdI source). |
+
+### Key Intelligence Captured
+
+| Finding | Significance |
+|---------|-------------|
+| UNES: OP (267K) > ZP (138K) clearing docs | F-53 manual payments exceed F110 automation. Event log misses ~48% of actual payments. |
+| 73% ZTERM=0001 → ZFBDT=BUDAT | "1.1% on-time" is measurement artifact. Real late-payment: 43% are 100+ days late when terms exist. |
+| 229 PAYROLL IBC17 failures | Staff not paid on time. Uninvestigated. Average failed batch = $1.2M. |
+| IBE/MGIE/ICBA post OP docs | 9,637 + 3,376 + 2,044 cleared items confirmed. Accounting IS in SAP. |
+| Pre-TMS legacy batches (2014–2021) | All 15K empty-CUR_STS batches are historical. Zero post-2021. |
+| PPC XML value unknown | Configuration confirmed, output path unconfirmed. Needs BAdI source read. |
+
+### PMO Reconciliation
+- 3 new HIGH items added: H16, H17, H18
+- **Total: 9 Blocking | 14 High | 40 Backlog = 63 items**
+
+---
+
 ## Session #025 — 2026-03-27 (T015L Live Validation — PPC Tables Corrected)
 
 **Start**: 2026-03-27

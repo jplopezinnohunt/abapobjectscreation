@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>UNESCO SAP Payment &amp; BCM Intelligence Companion v4</title>
+<title>UNESCO SAP Payment &amp; BCM Intelligence Companion v7</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1923;color:#e0e0e0;font-size:13px}
@@ -42,8 +42,8 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 </head>
 <body>
 <div class="header">
-  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v6</span></h1>
-  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure &middot; <strong style="color:#1abc9c">PPC 8 countries (73 rows T015L VERIFIED)</strong></div>
+  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v7</span></h1>
+  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure &middot; PPC 8 countries (73 rows T015L VERIFIED) &middot; <strong style="color:#e74c3c">6 Data Discoveries</strong></div>
 </div>
 
 <div class="kpi-bar">
@@ -57,6 +57,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
   <div class="kpi"><div class="val" style="color:#e74c3c">1</div><div class="lbl">Audit Findings</div></div>
   <div class="kpi"><div class="val">4,431</div><div class="lbl">PAYR Records</div></div>
   <div class="kpi"><div class="val" style="color:#f39c12">8</div><div class="lbl">PPC Countries</div></div>
+  <div class="kpi"><div class="val" style="color:#e74c3c">6</div><div class="lbl">Data Discoveries</div></div>
 </div>
 
 <div class="tabs">
@@ -73,6 +74,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
   <div class="tab" onclick="show('roles',this)">Roles &amp; Auth</div>
   <div class="tab" onclick="show('infra',this)">Infrastructure</div>
   <div class="tab" onclick="show('ppc',this)" style="color:#f39c12">PPC</div>
+  <div class="tab" onclick="show('discoveries',this)" style="color:#e74c3c;font-weight:bold">&#128269; Discoveries</div>
 </div>
 
 <!-- TAB: E2E Flow -->
@@ -1293,6 +1295,191 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
         </table>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- TAB: DISCOVERIES -->
+<div id="tab-discoveries" class="content">
+  <div class="info" style="border-color:#e74c3c;background:#1e1010">
+    <strong style="color:#e74c3c">&#128269; Data Discoveries</strong> — Findings from live P01 queries and process mining that contradict or significantly enrich the documented model. Session #026 | 2026-03-27.
+  </div>
+
+  <!-- DISCOVERY 1 -->
+  <div class="section" style="border-color:#e74c3c">
+    <h3 style="color:#e74c3c">&#9888; Discovery #1 — Manual Payments (F-53) Exceed F110 at UNESCO HQ</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">BSAK clearing document types — UNES 2024+</div>
+        <table>
+          <tr><th>BLART</th><th>Type</th><th>Count</th><th>% of total</th></tr>
+          <tr style="background:#2d1515"><td><code>OP</code></td><td>F-53 Manual outgoing payment</td><td style="color:#e74c3c;font-weight:bold">267,122</td><td style="color:#e74c3c">48%</td></tr>
+          <tr><td><code>AB</code></td><td>Journal / reversal</td><td>183,666</td><td>33%</td></tr>
+          <tr style="background:#1a2a1a"><td><code>ZP</code></td><td>F110 Automatic payment</td><td style="color:#1abc9c;font-weight:bold">138,868</td><td style="color:#1abc9c">25%</td></tr>
+          <tr><td><code>KR</code></td><td>Vendor invoice (direct clear)</td><td>7,301</td><td>1%</td></tr>
+          <tr><td><code>CC / IT / PP</code></td><td>Other clearing types</td><td>~10,000</td><td>2%</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="alert">
+          <strong>Impact on process model:</strong><br><br>
+          The payment event log defined <code>Payment Executed = BLART IN (ZP, KZ)</code>.<br>
+          This captures only <strong>138K</strong> clearing docs — F110 automatic payments.<br><br>
+          <strong>267K manual OP docs are NOT modeled.</strong><br><br>
+          Nearly double the volume bypasses F110, BCM, DMEE, and SWIFT entirely.<br>
+          The "550K cases / 207 variants" metrics are incomplete.<br><br>
+          <strong>Who uses OP?</strong> Field offices, advance payment settlements, netting.<br>
+          <strong>Fix required:</strong> Rebuild event log adding <code>BLART IN ('ZP','KZ','OP','PP')</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 2 -->
+  <div class="section" style="border-color:#f39c12">
+    <h3 style="color:#f39c12">&#9888; Discovery #2 — On-Time 1.1% is a Measurement Artifact</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">ZFBDT = BUDAT rate by company code (2024+)</div>
+        <table>
+          <tr><th>Code</th><th>Total</th><th>ZFBDT=BUDAT</th><th>% Immediate</th></tr>
+          <tr><td>UBO</td><td>46,026</td><td>43,587</td><td style="color:#e74c3c">95%</td></tr>
+          <tr><td>ICTP</td><td>44,801</td><td>33,548</td><td style="color:#e74c3c">75%</td></tr>
+          <tr><td>UNES</td><td>616,327</td><td>447,229</td><td style="color:#e74c3c">73%</td></tr>
+          <tr><td>UIL</td><td>5,503</td><td>3,631</td><td style="color:#f39c12">66%</td></tr>
+          <tr><td>IIEP</td><td>13,434</td><td>6,231</td><td style="color:#f39c12">46%</td></tr>
+          <tr><td>ICBA</td><td>2,043</td><td>810</td><td style="color:#1abc9c">40%</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">Real on-time — items WITH actual payment terms only</div>
+        <table>
+          <tr><th>Bucket</th><th>Count</th><th>%</th></tr>
+          <tr style="background:#1a2a1a"><td>On-time / Early</td><td style="color:#1abc9c">9,090</td><td style="color:#1abc9c">4.6%</td></tr>
+          <tr><td>1–7 days late</td><td>35,558</td><td>18%</td></tr>
+          <tr><td>8–30 days late</td><td>28,279</td><td>14%</td></tr>
+          <tr><td>31–100 days late</td><td>38,863</td><td>20%</td></tr>
+          <tr style="background:#2d1515"><td>100+ days late</td><td style="color:#e74c3c;font-weight:bold">85,666</td><td style="color:#e74c3c;font-weight:bold">43%</td></tr>
+        </table>
+        <div class="info" style="margin-top:8px;font-size:11px">
+          <strong>Root cause:</strong> 73% of UNES invoices use <code>ZTERM=0001</code> (Net immediate) — due date = posting date. The "26.8 days late / 1.1% on-time" metric measures <em>days from posting to payment</em>, not payment terms compliance. For invoices with actual terms, <strong>43% are 100+ days late</strong> — a genuine finding.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 3 -->
+  <div class="section" style="border-color:#e74c3c">
+    <h3 style="color:#e74c3c">&#9888; Discovery #3 — IBE / MGIE / ICBA DO Post Payment Docs in SAP</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">BSAK clearing docs 2024–2026</div>
+        <table>
+          <tr><th>Code</th><th>BLART=OP (F-53)</th><th>BLART=AB</th><th>Other</th></tr>
+          <tr><td>IBE</td><td style="color:#f39c12;font-weight:bold">5,364</td><td>435</td><td>297</td></tr>
+          <tr><td>MGIE</td><td style="color:#f39c12;font-weight:bold">3,211</td><td>107</td><td>54</td></tr>
+          <tr><td>ICBA</td><td style="color:#f39c12;font-weight:bold">1,227</td><td>690</td><td>125</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="info" style="font-size:11px">
+          <strong>Corrected understanding of "Tier 3 / Outside SAP":</strong><br><br>
+          "Outside SAP" refers to the <em>bank instruction</em> — the actual wire transfer is done in a local banking system.<br><br>
+          The <strong>accounting document IS in SAP</strong>: F-53 (BLART=OP) posts the outgoing payment entry, debiting the vendor and crediting the bank sub-account.<br><br>
+          These codes have no T042A (cannot run F110) and no BCM, but they have real cleared AP volumes: IBE=9,637 total cleared items, MGIE=3,376, ICBA=2,044.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 4 -->
+  <div class="section" style="border-color:#e74c3c">
+    <h3 style="color:#e74c3c">&#9888; Discovery #4 — 229 Payroll BCM Batches Failed (IBC17)</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">IBC17 (Failed) batches by rule</div>
+        <table>
+          <tr><th>Rule</th><th>Failed Batches</th><th>Risk Level</th></tr>
+          <tr><td>UNES_AP_ST</td><td>869</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">HIGH</span></td></tr>
+          <tr><td>UNES_AR_BP</td><td>263</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">MEDIUM</span></td></tr>
+          <tr style="background:#2d1515"><td><strong>PAYROLL</strong></td><td style="color:#e74c3c;font-weight:bold">229</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">CRITICAL</span></td></tr>
+          <tr><td>UNES_TR_TR</td><td>185</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">HIGH</span></td></tr>
+          <tr><td>IIEP_AP_ST</td><td>168</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">MEDIUM</span></td></tr>
+          <tr><td>UIS_AP_MAX</td><td>116</td><td><span style="background:#7fb3d3;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">LOW</span></td></tr>
+          <tr><td>Others</td><td>235</td><td>&nbsp;</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="alert">
+          <strong>229 payroll batch failures = staff not paid on time.</strong><br><br>
+          Failed batches average <strong>$1.2M</strong> vs $358K for completed — large payments fail at higher rates.<br><br>
+          UNES_AP_ST has 869 failures (standard AP) — systematic issue with file transmission or character encoding in vendor data.<br><br>
+          <strong>Not investigated yet.</strong> Root causes unknown. Recommend:<br>
+          1. Query BNK_BATCH_ITEM for failed batches → find common vendors/currencies<br>
+          2. Check SWIFT transmission log for file encoding errors<br>
+          3. For payroll failures: cross-reference with REGUH LAUFD to find affected pay periods
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 5 -->
+  <div class="section" style="border-color:#3498db">
+    <h3 style="color:#3498db">&#128203; Discovery #5 — 15K Legacy BCM Batches Are Pre-TMS (2014–2021), Not Unknown</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:#7fb3d3;margin-bottom:8px">Empty CUR_STS batches by year</div>
+        <table>
+          <tr><th>Year</th><th>Count</th></tr>
+          <tr><td>2014</td><td>670</td></tr>
+          <tr><td>2015</td><td>1,759</td></tr>
+          <tr><td>2016</td><td>1,784</td></tr>
+          <tr><td>2017</td><td>2,133</td></tr>
+          <tr><td>2018</td><td>2,259</td></tr>
+          <tr><td>2019</td><td>2,508</td></tr>
+          <tr><td>2020</td><td>2,670</td></tr>
+          <tr><td>2021</td><td>1,220</td></tr>
+          <tr style="background:#1a2a1a"><td><strong>2022–2026</strong></td><td style="color:#1abc9c"><strong>0</strong></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="info" style="font-size:11px">
+          All 15,003 BCM batches with empty <code>CUR_STS</code> are from 2014–2021.<br><br>
+          After the <strong>Coupa/TMS migration in 2022</strong>, CUR_STS is populated on every batch. Zero empty-status batches exist in 2022–2026.<br><br>
+          These are not "unknown" state — they are <strong>legacy pre-TMS batches</strong> where the status field was not written by the older BCM version.<br><br>
+          Operationally, these are historical and require no action. Exclude from current operational analysis.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 6 -->
+  <div class="section" style="border-color:#9b59b6">
+    <h3 style="color:#9b59b6">&#128203; Discovery #6 — PPC Architecture: XML Value Unknown (Configuration Confirmed, Output Not)</h3>
+    <table>
+      <tr><th>What</th><th>Status</th><th>Detail</th></tr>
+      <tr><td>T015L configuration exists (73 rows, 8 countries)</td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">VERIFIED P01</span></td><td>AE(9), BH(6), CN(3), ID(9), IN(11), JO(10), MA(10), MY(10), PH(5)</td></tr>
+      <tr><td>AE + BH BAdIs confirmed in D01 CTS</td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">VERIFIED CTS</span></td><td>Y_IDFI_CGI_DMEE_COUNTRY_AE / _BH exist in D01 transport objects</td></tr>
+      <tr style="background:#2d1515"><td>AE + BH BAdIs NOT in P01 TADIR</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CONFIRMED GAP</span></td><td>Not yet transported to production. UTIL fallback likely active for AE+BH today.</td></tr>
+      <tr style="background:#2d1515"><td>What exact value enters <code>&lt;Purp&gt;&lt;Cd&gt;</code> XML</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">UNKNOWN</span></td><td>Is it <code>AE5</code>? Or <code>SAL</code> (from ZWCK1)? Or something else? BAdI source code never read. D01 ADT needed.</td></tr>
+      <tr><td>UTIL fallback for CN/ID/IN/JO/MA/MY/PH</td><td><span style="background:#f39c12;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">INFERRED</span></td><td>No ENBC in CTS for these 7 countries. YCL_IDFI_CGI_DMEE_UTIL class confirmed but source unread.</td></tr>
+      <tr><td>YOPAYMENT_TYPE table content</td><td><span style="background:#f39c12;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">D01 ONLY</span></td><td>TABLE_NOT_AVAILABLE on P01. Exists in D01 CTS (CUS0+CUS1). Not yet transported to production.</td></tr>
+    </table>
+    <div class="alert" style="margin-top:8px">
+      <strong>Risk:</strong> If AE/BH payments are currently live and going to UAE/Bahrain banks, the PPC injection is running on the UTIL fallback (not the dedicated BAdI). The codes may be correct (T015L is configured) but the LZBKZ→XML path is unconfirmed. A bank rejection on a PPC mismatch would surface only post-transmission.
+    </div>
+  </div>
+
+  <!-- Summary action table -->
+  <div class="section">
+    <h3>Action Items from Discoveries</h3>
+    <table>
+      <tr><th>#</th><th>Action</th><th>Effort</th><th>Priority</th></tr>
+      <tr><td>1</td><td>Rebuild payment event log adding BLART=OP/PP to "Payment Executed" activity. Re-run process mining with full clearing doc coverage.</td><td>Medium</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">HIGH</span></td></tr>
+      <tr><td>2</td><td>Segment cycle time KPIs by ZTERM. Report on-time separately for ZTERM=0001 vs actual-terms invoices. Remove the 1.1% headline.</td><td>Low</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">HIGH</span></td></tr>
+      <tr><td>3</td><td>Investigate 229 PAYROLL IBC17 failures: query BNK_BATCH_ITEM for failed batches, cross-reference REGUH for affected pay periods.</td><td>Medium</td><td><span style="background:#e74c3c;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CRITICAL</span></td></tr>
+      <tr><td>4</td><td>Read YCL_IDFI_CGI_DMEE_AE source code (needs D01 ADT — password needs update). Confirm what value enters &lt;Purp&gt;&lt;Cd&gt;.</td><td>Low</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:4px;font-size:10px">MEDIUM</span></td></tr>
+      <tr><td>5</td><td>Analyze 869 UNES_AP_ST failures: find common vendor/currency patterns to determine if systematic DMEE issue or data quality.</td><td>Medium</td><td><span style="background:#f39c12;color:#000;padding:1px 5px;border-radius:4px;font-size:10px">MEDIUM</span></td></tr>
+    </table>
   </div>
 </div>
 
