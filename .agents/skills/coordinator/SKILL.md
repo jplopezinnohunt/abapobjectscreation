@@ -151,6 +151,8 @@ ABAP class creation / deployment  → sap_class_deployment         → sonnet
 Process mining / DFG / variants   → sap_process_mining            → sonnet
 Change audit / CDHDR / who changed→ sap_change_audit              → sonnet
 Cost recovery / CRP certificates  → crp_fiori_app + fi_domain    → sonnet
+Payment / BCM / F110 / DMEE       → sap_payment_bcm_agent         → sonnet
+Payment E2E / cycle times / FBZP  → sap_payment_e2e               → sonnet
 ──────────────────────────────────────────────────────────────────────────
 Cross-domain question             → Load 2+ agents, synthesize   → opus
 ```
@@ -261,18 +263,19 @@ python sap_brain.py --build --html
 
 ---
 
-## Current Brain Status (updated Session #017)
+## Current Brain Status (updated Session #022)
 
 | Source | Nodes | Status |
 |--------|-------|--------|
 | Code objects (extracted_sap/) | 59 | ✅ Active |
 | SQLite data (42 tables, ~2.5GB Gold DB) | 73,000+ | ✅ Active |
-| Knowledge docs (knowledge/) | 45+ | ✅ Active (51 docs) |
-| Agent skills (.agents/skills/) | 28 | ✅ Active |
+| Knowledge docs (knowledge/) | 51+ | ✅ Active |
+| Agent skills (.agents/skills/) | 33 | ✅ Active |
 | Expert seed docs | 10 | ✅ Active |
 | CTS transports | 7,745 | ✅ Active |
-| JOINS_VIA edges (8 FK relationships) | 65,873 edges | ✅ Active |
-| **TOTAL** | **73,877 nodes / 65,873 edges** | **✅ Last built: 2026-03-15** |
+| Payment companion (SOURCE 9) | 27 new nodes | ✅ Active (added #022) |
+| JOINS_VIA edges | 65,873 edges | ✅ Active |
+| **TOTAL** | **73,914 nodes** | **✅ Last built: 2026-03-27** |
 
 **Pending enrichments:**
 - Process mining nodes (PROCESS_VARIANT, BOTTLENECK, ANOMALY)

@@ -198,23 +198,73 @@ Discovered in `ZCL_HRFIORI_BIRTH_OF_A_CHILD`:
 
 ---
 
-## Filter Catalog (Placeholders)
-
-As new programs are analyzed, new filter entries will be added below following the Standard Entry Format.
-
-<!-- 
-### BSTAT_XX — Document Status Filter
-- **Field**: `BSTAT` (Table: `BKPF`)
-- **Discovered In**: (pending)
-
-### VBTYP_XX — SD Document Category
-- **Field**: `VBTYP` (Table: `VBAK`)
-- **Discovered In**: (pending)
-
-### BLART_XX — Document Type Filter
+### BLART_FI — FI Document Type Filter (Payment & Posting)
 - **Field**: `BLART` (Table: `BKPF`)
-- **Discovered In**: (pending)
--->
+- **Domain**: `BLART`
+- **Type**: Config-Table-Driven (T003 defines types)
+- **Discovered In**: payment_process_mining.py, fi_domain_agent queries
+- **Also Used In**: All BKPF queries, P2P process mining, payment E2E event log
+
+#### Group: Invoice Documents (Input to Payment)
+| BLART | Description | Number Range | Payment Check |
+|-------|-------------|-------------|---------------|
+| `KR` | Supplier Invoices FI | 64 | Payment Validation Workflow |
+| `RE` | Invoice-Gross (MM) | 51 | Rule: MM only |
+| `KA` | Supplier Advances | 62 | Payment Validation Workflow |
+| `KG` | Credit Memo (Vendor) | 17 | Payment Validation Workflow |
+| `KT` | Temp Supplier Payments | 70 | Payment Validation Workflow |
+| `ER` | Expense Reimbursement | 69 | Payment Validation Workflow |
+| `IT` | Invoice IC Transfer | 95 | Payment Validation Workflow |
+| `MF` | MBF Postings | 81 | Payment Validation Workflow |
+| `PS` | Prosper Requests | 44 | Payment Validation Workflow |
+
+#### Group: Payment Documents (Output of F110/F111)
+| BLART | Description | Number Range | Notes |
+|-------|-------------|-------------|-------|
+| `ZP` | Payment Posting | 20 | F110/F111 output — auto-posted |
+| `CP` | Payments Cheque | 34 | Cheque payments (ICTP + field offices) |
+| `KZ` | Payment to Vendor | 14 | Manual payment (F-53) |
+
+#### Group: Auto-Blocked at Posting (Not Payable)
+| BLART | Description | Number Range |
+|-------|-------------|-------------|
+| `AB` | Accounting Document | 01 |
+| `AC` | Asset Accounting | 73 |
+| `FO` | Fixed Order | 40 |
+| `JV` | Joint Venture | 92 |
+| `KG` | Credit Memo (used also as blocked for some configs) | 17 |
+| `SN` | Supernumerary Postings | 65 | **Exception: NOT auto-blocked — audit gap** |
+| `RE` | Invoice Gross (MM) | 51 | Blocked; post via MM only |
+| `ZP` | Payment | 20 | Blocked; post via payment program only |
+
+**Key rule**: `BLART IN ('KR','RE','KA','KG')` = invoice filter for process mining. `BLART IN ('ZP','KZ','CP')` = payment filter.
+
+---
+
+### BCM_RULE — BCM Payment Grouping Rule Filter
+- **Field**: Rule identifier (Table: `BNK_BATCH_HEADER.BCM_RULE` or equivalent)
+- **Type**: Config-Table-Driven (BCM customizing)
+- **Discovered In**: BNK_BATCH_HEADER analysis (Session #021), Blueprint BCM
+- **Priority**: Lower number = higher priority (evaluated first)
+
+| Rule | Priority | Origin | Key Criteria | Dual Control |
+|------|----------|--------|-------------|--------------|
+| `UNES_AP_IK` | 0 | FI-AP/FI-AR | Method L + InstrKey B1 | Yes |
+| `UNES_AR_BP` | 1 | FI-AR | Customer 600000-699999 | Yes |
+| `UNES_TR_TR` | 1 | TR-CM-BT | Treasury transfers | **No (1 validation)** |
+| `UNES_AP_EX` | 2 | FI-AP/FI-AR-PR | Embargo country list | Yes |
+| `UNES_AP_ST` | 3 | FI-AP/FI-AR | Catch-all standard AP | Yes |
+| `PAYROLL` | 1 (STEPS) | HR-PY | All payroll runs | Yes (PAY+TRS) |
+
+**Additional grouping**: All rules also group by `VALUT` (value date) → one payment file per execution date.
+
+---
+
+## Filter Catalog (Pending Discovery)
+
+As new programs are analyzed, new filter entries will be added following the Standard Entry Format.
+
+Known pending: BSTAT (document status), VBTYP (SD category), FRGCO (release codes for payments)
 
 ---
 

@@ -38,6 +38,42 @@ If the AI encounters an ST22 dump, rewrites the code, tries again, and dumps exa
 
 ---
 
+## 4. Real-Session Patterns (from 103 Experiments + Sessions #001-#022)
+
+### RFC/pyrfc Failures (Data Extraction)
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `RFC_ERROR_DATA_LOSS` | Pagination bug in RFC_READ_TABLE for large tables | Extract day-by-day (not month). See `feedback_rfc_data_loss_workaround.md` |
+| `DATA_BUFFER_EXCEEDED` | Row too wide for RFC buffer (>512 bytes) | Use adaptive field splitting — remove large text fields, re-add in separate pass |
+| `KEY_NOT_FOUND` / `NOT_FOUND` | Cluster table (e.g., BSEG before declustering) | BSEG is declustered in P01 — use RFC_READ_TABLE directly. No MANDT in WHERE. |
+| `INVALID_TABLE_NAME` | Table not accessible via RFC_READ_TABLE | Try SE16N equivalent or use BAPI approach |
+| SNC auth failure on P01 | SNC partner name wrong | Check SM59 for exact partner name. Format: `p:CN=P01,O=...` |
+
+### Playwright/WebGUI Failures (UI Automation)
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Element not found | SAP dynamically changed element ID | Switch from ID locator to text locator: `filter({ hasText: /text/ })` |
+| Right-click menu never appears | Timing issue with SAP context menus | Use Select-Then-Toolbar pattern instead. Never right-click. |
+| Tree node not expanding | Focus lost after click | Click node → then `page.keyboard.press('ArrowRight')` |
+| Transport popup missed | Appears after async SAP round-trip | Always `await session.handleTransportRequest()` after save |
+| Status bar empty / wrong | SAP not finished processing | `await page.waitForSelector('#stbar-msg-txt:not(:empty)')` |
+
+### SAP Authorization Failures (SU53)
+- Run `/nSU53` IMMEDIATELY after the auth error (SU53 shows last failure only)
+- Common missing auth objects at UNESCO:
+  - `S_TABU_DIS` — table display (SE16/SE16N)
+  - `S_RFC` — RFC function group access
+  - `S_ADMI_FCD` — system administration (SM21, ST22)
+  - `F_STAT_MON` / `F_STAT_USR` — BCM payment monitoring/approval
+
+### ADT REST API Failures
+| HTTP Code | Meaning | Fix |
+|-----------|---------|-----|
+| 403 | Missing CSRF token | Call `GET /sap/bc/adt/` with `X-CSRF-Token: Fetch` first, then POST with token |
+| 404 | Object doesn't exist in D01 | Check if only in P01 — may not have been transported down |
+| 400 | Activation error | Read ST22 dump for ABAP compile error detail |
+| 503 | ADT not enabled | Check SICf for `/sap/bc/adt` — activate via SM59/SICf |
+
 ## 4. Validation Status (Session #017)
 
 > [!WARNING]

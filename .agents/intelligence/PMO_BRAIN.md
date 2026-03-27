@@ -90,9 +90,9 @@ Each layer FEEDS the others:
 | # | Task | First raised | Category | Notes |
 |---|------|-------------|----------|-------|
 | ~~H1~~ | ~~Create `sap_payment_e2e` skill~~ | ~~#019~~ | ~~Skill~~ | ~~Done #021~~ |
-| H2 | **Create `sap_process_mining` skill** | #017 | Skill | pm4py engine exists but has no SKILL.md |
-| H3 | **Create `sap_change_audit` skill** | #017 | Skill | CDHDR/CDPOS mining pattern — no skill |
-| H4 | **BSEG UNION view in SQLite** | #011 | Data | CREATE VIEW over 6 Celonis tables (BSIS+BSAS+BSIK+BSAK+BSID+BSAD) |
+| ~~H2~~ | ~~Create `sap_process_mining` skill~~ | ~~#017~~ | ~~Skill~~ | ~~Done — SKILL.md exists, Functional (3). OCEL pending as G1~~ |
+| ~~H3~~ | ~~Create `sap_change_audit` skill~~ | ~~#017~~ | ~~Skill~~ | ~~Done — SKILL.md exists, Functional (3). Compliance template → added #023~~ |
+| ~~H4~~ | ~~BSEG UNION view in SQLite~~ | ~~#011~~ | ~~Data~~ | ~~Done — bseg_union VIEW exists, 4.7M rows (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). Verified #023~~ |
 | H5 | **Merge sap_segw + segw_automation** | #018 | Skill | Duplicate skills for same domain |
 | H6 | **Brain integration of P2P** | #009 | Brain | PROCESS_VARIANT/BOTTLENECK/ANOMALY nodes |
 | H7 | **Design Fiori replacement for PRAA*** | #005 | App | PA30 infotype update app. BAPI: BAPI_EMPLOYEE_ENQUEUE + HR_MAINTAIN_MASTERDATA |

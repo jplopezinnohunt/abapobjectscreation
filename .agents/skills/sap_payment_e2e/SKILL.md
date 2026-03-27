@@ -178,9 +178,12 @@ T042 (Paying CoCode) → T042A (Pmt Methods/CoCode) → T042E (Pmt Methods/Count
 | `Zagentexecution/mcp-backend-server-python/build_payment_companion.py` | Companion builder (config interpretation) |
 | `Zagentexecution/mcp-backend-server-python/payment_event_log.csv` | Event log (1.4M rows, pm4py/Celonis ready) |
 | `Zagentexecution/mcp-backend-server-python/payment_process_mining.html` | Process mining dashboard (694KB) |
-| `Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html` | Payment & BCM companion (664KB) |
+| `Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html` | Payment & BCM companion v4 (775KB, 12 tabs) |
+| `knowledge/domains/FI/payment_full_landscape.md` | Full payment landscape knowledge doc (100% PDF coverage) |
 
 ## Related Skills
+
+**Session #022 note**: sap_payment_bcm_agent was deeply enriched — 13 PDFs fully extracted. Key new knowledge: payroll BCM flow (ZHRUN→FBPM1→BNK_APP), Note to Payee SWIFT :70 spec, HR payroll ZUONR formula, SWIFT directory access groups, BCM auth objects, 4 payment processes (Processes 1-4), 2023 security incident.
 
 | Skill | Relationship |
 |-------|-------------|

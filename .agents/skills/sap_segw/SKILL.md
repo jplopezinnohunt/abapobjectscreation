@@ -1,40 +1,187 @@
 ---
-name: ABAP SEGW Services Construction
-description: Guidelines for creating OData services via SAP Gateway Service Builder (SEGW) in Web SAP GUI.
+name: ABAP SEGW OData Services
+description: >
+  Complete skill for creating and automating SAP Gateway OData services via SEGW.
+  Covers: interview protocol, Playwright automation patterns, element IDs, entity/property/association
+  creation, service registration, transport handling. Consolidated from sap_segw + segw_automation.
 ---
 
-# ABAP SEGW Services Construction
+# ABAP SEGW — OData Service Construction
 
-## Overview
-Creating SEGW services in SAP involves defining data models, generating runtime artifacts, and registering the service. Automating this through Web SAP GUI requires navigating specific transaction codes and UI patterns.
+## NEVER Do This
 
-## Core Process Rules
-### 1. Pre-Development Interview
-Before starting any SEGW creation task, you MUST execute the interview checklist defined in `.agents/workflows/segw_interview.md`. Do not proceed without gathering the SAP System URL, exact Authentication method, Project Name, Development Package, and relevant Transport Requests.
+> [!CAUTION]
+> - **NEVER use right-click context menus** — use Select-Then-Toolbar pattern (proven in 103 experiments)
+> - **NEVER use hardcoded tree node IDs** (e.g., `#tree#C111#3#ni`) — IDs change between sessions. Use text locators.
+> - **NEVER skip transport request handling** — popups appear asynchronously after save/create. Always call `session.handleTransportRequest()`.
+> - **NEVER use `browser_subagent`** — no SAP session. Use `lib/sap-webgui-core/` framework via `SegwAutomation.js`.
 
-### 2. Hybrid Orchestration Evaluation
-Evaluate if the task should be done via Web GUI (Playwright) or Backend API (BAPI) by consulting `.agents/workflows/hybrid_orchestration.md`. SEGW creation is almost always a "Route A" Web GUI task.
+---
 
-## Core Steps
-1. **Transaction SEGW**: Launch the SAP Gateway Service Builder.
-2. **Project Creation**: Create a new project and assign it a package (e.g., `$TMP` for local objects or a custom package).
-3. **Data Model Definition**: Import DDIC structures or define entities and properties manually.
-4. **Service Generation**: Click the "Generate Runtime Objects" button to create DPC and MPC classes.
-5. **Service Registration**: Use transaction `/IWFND/MAINT_SERVICE` to register the newly generated service so it can be consumed externally.
+## Pre-Development Protocol
 
-## Automation via Generic Framework
+Before ANY SEGW task:
+1. Execute interview checklist in `.agents/workflows/segw_interview.md`
+2. Gather: SAP URL, auth method, project name, dev package, transport request
+3. Evaluate Web GUI vs BAPI via `.agents/workflows/hybrid_orchestration.md`
+   - **SEGW creation** = always Route A (Web GUI) — no BAPI equivalent for visual builder
 
-Automating SEGW must follow the **Generic Primitives First** philosophy. Do NOT use `browser_subagent` for direct interaction; instead, use the `lib/sap-webgui-core/` framework via `SegwAutomation.js`.
+---
 
-### Key Primitives for SEGW
-- **Tree Navigation**: Use `tree.selectNode(['Project Name', 'Data Model', 'Entity Types'])`.
-- **Toolbar Actions**: Use `toolbar.clickCreate()` or `toolbar.clickButton('Generate')`.
-- **Keyboard Over Mouse**: Use `page.keyboard.press('ArrowRight')` to expand tree nodes.
-- **Select-Then-Toolbar**: Always select the parent node in the tree before clicking a toolbar action.
+## Core Process (5 Steps)
 
-### Critical Rules
-1. **No Context Menus**: Avoid right-clicks. Use the toolbar buttons that become active after selecting a node.
-2. **Handle Transports**: Always call `session.handleTransportRequest()` after creating or saving objects.
-3. **Verify State**: Use `session.getStatusBarMessage()` to verify success or capture errors.
+1. **SEGW** — Launch Gateway Service Builder
+2. **Create/Open Project** — Assign to package (`$TMP` for local, custom for transport)
+3. **Data Model** — Import DDIC structures or define entities/properties manually
+4. **Generate Runtime** — Click "Generate Runtime Objects" → creates DPC + MPC classes
+5. **Register Service** — `/IWFND/MAINT_SERVICE` → Add Service → System Alias LOCAL
 
-Refer to `CLAUDE.md` and `lib/README.md` for full implementation patterns.
+---
+
+## Playwright Automation Patterns
+
+### Connection & Frame
+```javascript
+const browser = await chromium.connectOverCDP('http://localhost:9222');
+const frame = page.frameLocator('iframe[name^="itsframe1_"]').first();
+```
+
+### Select-Then-Toolbar (PROVEN PATTERN — use always)
+```javascript
+// ✅ CORRECT
+await tree.selectNode(['Entity Types']);
+await toolbar.clickCreate();     // Button activates after selection
+
+// ❌ WRONG — right-click menus are unreliable
+await entityTypesNode.click({ button: 'right' });
+```
+
+### Text Locators Over IDs
+```javascript
+// ✅ CORRECT — stable across sessions
+frame.locator('span, td').filter({ hasText: /^Entity Types$/ })
+
+// ❌ WRONG — IDs change
+frame.locator('#tree#C111#3#ni')
+```
+
+---
+
+## Key Element IDs (SEGW — C109/C111 prefix)
+
+**Main Toolbar (C109)**:
+| ID | Action |
+|----|--------|
+| `C109_btn0` | Create (context-sensitive) |
+| `C109_btn3` | Display/Change toggle |
+| `C109_btn5` | Check Consistency |
+| `C109_btn6` | Generate Runtime Objects |
+| `id~="btn[11]"` | Generate (alternative locator) |
+
+**Project Tree (C111) — use text locators, not these IDs**:
+| Node | Text Locator (preferred) |
+|------|--------------------------|
+| Entity Types | `span, td` filter `hasText: /^Entity Types$/` |
+| Associations | `span, td` filter `hasText: /^Associations$/` |
+| Entity Sets | `span, td` filter `hasText: /^Entity Sets$/` |
+
+**Status Bar**: `#stbar-msg-txt` or `.urStatusbar`
+**Popup inputs**: `.urPW input` (focus explicitly before typing)
+
+---
+
+## Workflow: Project Management
+
+### Open Existing Project
+1. Click "Open Project" (folder icon)
+2. Type project name in popup
+3. Press Enter → verify "Data Model" appears in tree
+
+### Create New Project
+1. Click "Create Project" (paper icon)
+2. Fill: Project name, Description, Attributes
+3. Confirm → Handle Package Selection popup
+   - Enter `$TMP` + click "Local Object" (dev only)
+   - Enter transport package for proper dev objects
+
+---
+
+## Workflow: Entity Creation
+
+### 1. Create Entity Type
+```javascript
+await tree.selectNode(['Project', 'Data Model', 'Entity Types']);
+await toolbar.clickCreate();
+// Fill popup: Entity Name
+// Uncheck "Create Related Entity Set" unless needed
+await popup.confirm();
+await session.handleTransportRequest();
+```
+
+### 2. Define Properties
+- Select entity → click "Properties" tab
+- Click "Append Row" / "Insert Row" icon (sub-toolbar)
+- Tab navigation preferred over direct ID clicks (grid IDs change with row inserts)
+- **Key fields**: check "Key" checkbox explicitly
+- **Non-key fields**: check "Nullable" checkbox
+
+### 3. Media Entities (e.g., CrpAttachment)
+- When creating: check **"Media"** checkbox in creation popup
+- Do NOT add binary content property — Edm.Stream is handled by SEGW automatically
+
+### 4. Associations
+- Select Associations node → toolbar Create
+- Principal Entity: 1-side (e.g., CrpCertificate)
+- Dependent Entity: M-side (e.g., CrpBudgetLine)
+- Set Referential Constraint: map header key → item foreign key
+
+### 5. Generate Runtime Objects
+```javascript
+await toolbar.clickButton('Generate');  // or C109_btn6
+// Wait for: "Model and service implementation generated" in status bar
+await expect(page.locator('#stbar-msg-txt'))
+    .toContainText('generated', { timeout: 30000 });
+```
+
+---
+
+## Workflow: Service Registration
+
+**Transaction**: `/n/IWFND/MAINT_SERVICE`
+1. Click "Add Service"
+2. System Alias: `LOCAL`
+3. Search for your project (e.g., `Z_CRP_SRV`)
+4. Select → click "Add Selected Services"
+5. Confirm transport
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Context menu doesn't open | JavaScript timing | Use `ArrowDown` + `Enter` instead of right-click |
+| Grid ID targeting fails | Row indices shift on insert | Use relative position or tab navigation |
+| Status bar empty after action | SAP async processing | `await page.waitForSelector('#stbar-msg-txt:not(:empty)')` |
+| Transport popup missed | Async appearance | `await session.handleTransportRequest()` after every save |
+| Tree node not found | ID changed | Switch to text locator: `filter({ hasText: /^NodeName$/ })` |
+
+---
+
+## Integration Points
+
+- `lib/sap-webgui-core/` — Framework: `SapTree`, `SapToolbar`, `SapPopup`, `SapSession`
+- `lib/sap-transactions/SegwAutomation.js` — SEGW-specific transaction class
+- `.agents/workflows/segw_interview.md` — Pre-task interview protocol
+- `.agents/workflows/hybrid_orchestration.md` — When to use GUI vs BAPI
+- `Zagentexecution/tasks/2026_03_04_crp_service_layer/` — 103 experiments, full learning archive
+
+---
+
+## You Know It Worked When
+
+1. Project opens with Data Model tree visible
+2. Entity type created with properties (Key + Nullable correctly set)
+3. Generate → status bar shows "generated"
+4. Service appears in `/IWFND/MAINT_SERVICE`
+5. `$metadata` endpoint returns your entity types

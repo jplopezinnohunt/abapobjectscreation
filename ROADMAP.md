@@ -1,4 +1,6 @@
-# Project Roadmap: SAP Automation Framework
+> **SUPERSEDED** — Archived 2026-03-27 (Session #023). This document reflects Phase 1 (WebGUI automation, 2026-03-04). All pending work is now tracked in `.agents/intelligence/PMO_BRAIN.md` (62 items). Project has evolved into a 10-layer intelligence platform (24M+ rows, 33 skills, 73K brain nodes).
+
+# Project Roadmap: SAP Automation Framework (ARCHIVED)
 
 ## 🎯 Vision
 A complete, production-ready SAP automation platform that combines:

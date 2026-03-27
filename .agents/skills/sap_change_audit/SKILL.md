@@ -186,6 +186,93 @@ df = pd.DataFrame(events, columns=['case:concept:name', 'concept:name',
 
 ---
 
+## Compliance Report Template
+
+Run this query to generate a compliance-ready change audit report for a given period:
+
+```sql
+-- Compliance Report: Config & Master Data Changes (UNESCO SAP)
+-- Scope: High-risk object classes (vendor master, roles, FM config, FI docs)
+-- Period: Adjust dates as needed
+
+SELECT
+    c.UDATE          AS change_date,
+    c.UTIME          AS change_time,
+    c.USERNAME        AS user_id,
+    c.OBJECTCLAS      AS object_class,
+    c.OBJECTID        AS object_id,
+    c.TCODE           AS transaction,
+    p.TABNAME         AS table_changed,
+    p.FNAME           AS field_changed,
+    p.VALUE_OLD       AS old_value,
+    p.VALUE_NEW       AS new_value
+FROM cdhdr c
+JOIN cdpos p
+    ON  c.OBJECTCLAS = p.OBJECTCLAS
+    AND c.OBJECTID   = p.OBJECTID
+    AND c.CHANGENR   = p.CHANGENR
+WHERE c.UDATE BETWEEN '20260101' AND '20260331'  -- adjust period
+  AND c.OBJECTCLAS IN (
+      'KRED',      -- Vendor master
+      'PFCG',      -- Roles & authorizations
+      'FMMD',      -- FM master data
+      'BELEG',     -- FI documents
+      'EINKBELEG'  -- Purchase documents
+  )
+ORDER BY c.UDATE DESC, c.UTIME DESC;
+```
+
+### Compliance Report Variants
+
+**Segregation of Duties — same user created + changed within 24h**:
+```sql
+SELECT c1.USERNAME, c1.OBJECTCLAS, c1.OBJECTID,
+       MIN(c1.UDATE) as created, MAX(c2.UDATE) as modified,
+       COUNT(*) as change_count
+FROM cdhdr c1
+JOIN cdhdr c2 ON c1.OBJECTID = c2.OBJECTID
+             AND c1.OBJECTCLAS = c2.OBJECTCLAS
+             AND c1.USERNAME = c2.USERNAME
+             AND c1.CHANGENR <> c2.CHANGENR
+WHERE c1.UDATE >= '20260101'
+  AND c1.OBJECTCLAS IN ('KRED', 'FMMD')
+GROUP BY c1.USERNAME, c1.OBJECTCLAS, c1.OBJECTID
+HAVING COUNT(*) > 1
+ORDER BY change_count DESC;
+```
+
+**Vendor master changes — high-value fields** (bank account, IBAN, payment terms):
+```sql
+SELECT c.USERNAME, c.UDATE, c.OBJECTID AS vendor,
+       p.FNAME AS field, p.VALUE_OLD, p.VALUE_NEW
+FROM cdhdr c
+JOIN cdpos p ON c.OBJECTCLAS = p.OBJECTCLAS
+             AND c.OBJECTID = p.OBJECTID
+             AND c.CHANGENR = p.CHANGENR
+WHERE c.OBJECTCLAS = 'KRED'
+  AND p.FNAME IN ('BANKL','BANKN','IBAN','ZTERM','SPERR','LOEVM')
+  AND c.UDATE >= '20260101'
+ORDER BY c.UDATE DESC;
+```
+
+**After-hours or weekend changes** (risk indicator):
+```sql
+SELECT c.USERNAME, c.UDATE, c.UTIME, c.OBJECTCLAS, c.OBJECTID, c.TCODE,
+       CASE CAST(strftime('%w', substr(c.UDATE,1,4)||'-'||substr(c.UDATE,5,2)||'-'||substr(c.UDATE,7,2)) AS INTEGER)
+           WHEN 0 THEN 'Sunday'
+           WHEN 6 THEN 'Saturday'
+           ELSE 'Weekday'
+       END AS day_type
+FROM cdhdr c
+WHERE c.UDATE >= '20260101'
+  AND c.OBJECTCLAS IN ('KRED','FMMD','PFCG')
+  AND (
+      CAST(strftime('%w', substr(c.UDATE,1,4)||'-'||substr(c.UDATE,5,2)||'-'||substr(c.UDATE,7,2)) AS INTEGER) IN (0,6)
+      OR CAST(substr(c.UTIME,1,2) AS INTEGER) NOT BETWEEN 7 AND 19
+  )
+ORDER BY c.UDATE DESC;
+```
+
 ## Integration Points
 
 - **Process Mining**: CDHDR events → pm4py DFG/variants (via `sap_process_mining` skill)

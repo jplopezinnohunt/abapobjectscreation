@@ -1,4 +1,6 @@
-# SESSION LOG — SAP Intelligence Platform
+> **SUPERSEDED** — Archived 2026-03-27 (Session #023). Authoritative session log is at `.agents/intelligence/SESSION_LOG.md` (Sessions #001-#023). This copy stops at Session #019 and is kept for historical reference only.
+
+# SESSION LOG — SAP Intelligence Platform (ARCHIVED)
 
 ## Session #019 — 2026-03-26
 **Focus:** Ad hoc transport companion for company code STEM creation

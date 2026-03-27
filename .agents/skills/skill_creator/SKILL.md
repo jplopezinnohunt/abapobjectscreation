@@ -128,28 +128,60 @@ Before saving a SKILL.md, verify:
 
 ---
 
-## This Project's Skill Hierarchy
+## This Project's Skill Hierarchy (33 Skills — Session #022)
 
-```
-.agents/skills/
-├── sap_adt_api/         ← ADT REST: read/write ABAP objects (D01)
-├── sap_webgui/          ← Browser automation for SAP WebGUI
-├── sap_segw/            ← OData service builder (SEGW)
-├── sap_fiori_tools/     ← Fiori Tools CLI scaffold/modify
-├── sap_native_desktop/  ← SAP thick client (win32com fallback)
-├── sap_expert_core/     ← Deep SAP domain knowledge (HCM, PSM, FI)
-├── sap_debugging_and_healing/ ← Self-repair after SAP errors
-├── sap_reverse_engineering/   ← Extract code from SAP via RFC
-├── sap_automated_testing/     ← OData service validation
-├── sap_system_monitor/  ← P01 monitoring (BDC, users, dumps, jobs) [NEW]
-├── skill_creator/       ← THIS SKILL: meta-skill for creating skills
-└── notion_integration/  ← Notion as requirements/doc source
-```
+**Orchestration**
+- `coordinator` — Master router (B2R/H2R/P2P/T2R/P2D), model routing, brain query
+- `skill_creator` — THIS SKILL: meta-skill for creating/evaluating skills
+
+**Domain Agents**
+- `psm_domain_agent` — FM/budget/fund management
+- `hcm_domain_agent` — HR lifecycle, infotypes, payroll, Fiori
+- `fi_domain_agent` — GL, validations, substitutions, FM-FI bridge
+- `sap_payment_bcm_agent` — F110/BCM/DMEE/SWIFT/FBZP chain, full payment domain
+- `sap_payment_e2e` — Payment process mining, E2E cycle times, FBZP validation
+
+**Data & Extraction**
+- `sap_data_extraction` — RFC extraction pipeline, Gold DB (24M+ rows, 42 tables)
+- `sap_adt_api` — ADT REST API: read/write/activate 14 ABAP object types
+
+**Intelligence & Analysis**
+- `sap_transport_intelligence` — CTS forensics, 7,745 transports, risk taxonomy
+- `sap_transport_companion` — Interactive HTML companion builder for transport contents
+- `sap_company_code_copy` — EC01 copy: 41-task checklist, FBZP chain, 6 validations
+- `sap_reverse_engineering` — OData service logic extraction, 5-phase protocol
+- `sap_enhancement_extraction` — BAdI/Enhancement mining
+- `sap_system_monitor` — SM04/SM35/SM37/ST22 operational dashboard
+- `sap_bdc_intelligence` — Batch input forensics (Allos vs Y1 payroll)
+- `sap_job_intelligence` — SM37 deep analysis, 228 programs/18 domains
+- `sap_interface_intelligence` — 239 RFC destinations, 19 systems, 19.4K IDocs
+- `sap_process_mining` — pm4py engine, 8 CLI commands, CTS/FM/P2P mining
+- `sap_change_audit` — CDHDR/CDPOS 7.8M rows, 100+ TCODE mappings
+
+**Development & Deployment**
+- `sap_class_deployment` — ABAP class creation via RFC/ADT, 6 CCIMP strategies
+- `sap_fiori_tools` — Fiori CLI, manifest editing, BSP extraction
+- `sap_fiori_extension_architecture` — Extension discovery, BAdI vs ENHO vs clone
+- `sap_segw` — SEGW OData builder (merged with segw_automation)
+- `sap_webgui` — Playwright browser automation (103 experiments, Select-Then-Toolbar)
+- `sap_native_desktop` — SAP GUI Scripting fallback (win32com)
+
+**Infrastructure**
+- `sap_expert_core` — Deep SAP knowledge (FI/PSM/ABAP/Workflow/OData)
+- `sap_debugging_and_healing` — Triple Threat: ST22 + SU53 + SM21
+- `sap_automated_testing` — OData HTTP validation
+- `abapgit_integration` — abapGit CI/CD workflow
+- `parallel_html_build` — vis.js dashboard generation
+- `unesco_filter_registry` — UNESCO-specific ABAP filter patterns
+- `notion_integration` — Notion API integration
+- `crp_fiori_app` — CRP architecture, 3-stream posting, 19 open items
 
 ### When to Use Which Skill
 
 | Task | Skill |
 |------|-------|
+| F110/BCM/payment question | `sap_payment_bcm_agent` |
+| Payment process mining / cycle times | `sap_payment_e2e` |
 | Read/write ABAP source code | `sap_adt_api` |
 | Monitor P01 production data | `sap_system_monitor` |
 | Build new OData service | `sap_segw` |
