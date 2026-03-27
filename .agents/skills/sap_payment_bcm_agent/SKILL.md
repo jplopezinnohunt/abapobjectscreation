@@ -148,6 +148,7 @@ The **coordinator** should route to this agent when the user asks about:
 | UNES_AP_IK | UNES | AP inter-company | 775 |
 | UIS_AP_ST | UIS | Montreal AP standard | 522 |
 | UNES_AP_11 | UNES | AP batch >=11 | 163 |
+| UNES_AP_X | UNES | **Exception: Exotic currencies (method X)**. Catches MGA payments WITHOUT IBAN → must be rejected. All other method X payments = normal flow. | Small |
 
 **BCM Status Lifecycle:**
 | Code | Meaning | Count | Avg Items | Avg Amount |
@@ -247,6 +248,26 @@ The **coordinator** should route to this agent when the user asks about:
 - Reads users from payment release customizing (SPRO: Release for Payment)
 - Fallback: `ZFI_PAYREL_EMAIL`
 
+### Named Validators by Release Group [VERIFIED from FS v2.0 Appendix]
+
+| Release Group | Doc Types | Named Users |
+|--------------|-----------|-------------|
+| BFM/PAY | AS, P3, SN | Terrer Ana, Bertoldini Simona, Perriot Dominique, Sall Amadou, Tahanout Kamel, Ollivier-Hutchings Beryl |
+| BFM/FRA + BFM/TRS/AR | MR | Sarr Ebrima, Kassim Yasmina, La Jeanette, Montrose Michelle, Bidault Isabelle, Nastase Claudia, Notari Dominique, Yli-Hietanen Anssi, Dinh Manh-Khang, Dagher Antoine, Gonod Caroline |
+| BSP/CFS | CO | Retnasingam Shantha, Dragan Silviu, Jayasinghe Harshinie |
+| HRM/SPI | MF | Ong Poun, Djamali Ibrahime |
+| HRM/SPI | IN | Charvet Riitta, Djamali Ibrahime |
+| HRM/SPI | AP | Charvet Riitta, Ong Poun |
+| BFM/TRS/CM | RF | Notari Dominique, Yli-Hietanen Anssi, Gazi Baizid, Marquand Isabelle, Krautheim Elisabeht |
+| BFM/FNS | PS, PN | Von Michael Martin, Moumpala Octave, Ba Assane |
+
+**Fallback table** `ZFI_PAYREL_EMAIL` known entries:
+- `D_CROUZET` → `D.CROUZET@UNESCO.ORG`
+- `M_SPRONK_WF` → `m.spronk@unesco.org`
+
+### Workflow Notification Email Content
+When a work item is assigned, email contains: SAP FI Document Number, Vendor Number, Vendor Name, Document Type, Business Area, Amount in Document Currency (incl. Tax), Tax amount, Amount without tax, Document Created by.
+
 ### Workflow Notifications
 - Program: `RSWUWFML2` variant `ZWKFLOW_FI_EMA`
 - ABAP FM `Z_WF_FI_EXCLUDE_NOTIF_EMAIL` checks user parameter `Z_WKF_EMAIL_NOTIF` in SU01
@@ -287,6 +308,23 @@ When WF item goes to wrong person or nobody:
 | SWU3 | Workflow runtime environment check |
 | SWU_OBUF | Synchronize workflow buffers |
 | PFTS | Task agent assignment maintenance |
+
+### SPRO Customizing Path (Payment Release)
+```
+Financial Accounting → Accounts Receivable and Accounts Payable
+  → Business Transactions → Release for Payment
+    → Create/Assign Workflow Variant
+    → Define Release Approval Groups / Paths / Procedures
+    → Define Relevant Document Types
+    → Define Users with Authorization to Payment Release
+    → Define Payment Block Reason for Payment Release
+```
+
+### SWU3 Go-Live Setup (run in each client — QA + P01)
+1. Run "Perform Automatic Workflow Customizing" (covers RFC dest WORKFLOW_LOCAL_xxx, WF-BATCH user, plan version)
+2. Assign agent for tasks via `PFTS`: enter TS90000002, TS90000007, TS90000008 → Extras → Agent Assignments → General Task → Update Index
+3. Run `SWU_OBUF` to synchronize buffers
+4. Verify via "Start Verification Workflow" button in SWU3 → check SAP Business Workplace inbox
 
 ## SAP Roles & Authorization Matrix [VERIFIED]
 
@@ -836,32 +874,68 @@ Full end-to-end flow for payroll bank payments:
 
 **Why this matters**: Without fixed references, remittance information in the bank file uses SAP-generated IDs that vendors cannot match to their invoices. Fixed references use the vendor's invoice number → zero reconciliation effort.
 
-### Complete Document Type Payment Validation Matrix [VERIFIED]
+### Complete Document Type Payment Validation Matrix [VERIFIED — 37 types]
+
+**Workflow types** (blocked on posting, released by workflow):
 
 | Doc Type | Description | Number Range | Payment Check |
 |----------|-------------|-------------|---------------|
-| KR | Supplier Invoices FI | 64 | Payment Validation Workflow |
-| KA | Supplier Advances | 62 | Payment Validation Workflow |
-| ER | Expense Reimbursement | 69 | Payment Validation Workflow |
-| KT | Temp Supplier Payments | 70 | Payment Validation Workflow |
-| IT | Invoice IC Transfer | 95 | Payment Validation Workflow |
-| CO | Coupons | 91 | Payment Validation Workflow |
-| AS | Advances Salaries | 63 | Payment Validation Workflow |
-| P3 | Payroll Adjustments | 85 | Payment Validation Workflow |
-| SN | Surnum Postings | 65 | NO (gap identified) |
-| MF | MBF Postings | 81 | Payment Validation Workflow |
-| IN | Insurance Transfers | 18 | Payment Validation Workflow |
 | AP | Annuities & Oth Ben | 69 | Payment Validation Workflow |
-| RF | Return of Funds ROF | 21 | Payment Validation Workflow |
+| AS | Advances Salaries | 63 | Payment Validation Workflow |
+| CO | Coupons | 91 | Payment Validation Workflow |
+| ER | Expense Reimbursement | 69 | Payment Validation Workflow |
+| IN | Insurance Transfers | 18 | Payment Validation Workflow |
+| IT | Invoice IC Transfer | 95 | Payment Validation Workflow |
+| KA | Supplier Advances | 62 | Payment Validation Workflow |
+| KR | Supplier Invoices FI | 64 | Payment Validation Workflow |
+| KT | Temp Supplier Payments | 70 | Payment Validation Workflow |
+| MF | MBF Postings | 81 | Payment Validation Workflow |
 | MR | Customer Reimburse | 72 | Payment Validation Workflow |
-| PS | Prosper Requests | 44 | Payment Validation Workflow |
+| P3 | Payroll Adjustments | 85 | Payment Validation Workflow |
 | PN | Participation Progr | 43 | Payment Validation Workflow |
+| PS | Prosper Requests | 44 | Payment Validation Workflow |
+| RF | Return of Funds ROF | 21 | Payment Validation Workflow |
+| SN | Surnum Postings | 65 | NO (gap — not in workflow) |
 | TD | Treasury Transaction | 41 | Payment Validation Workflow |
 | TO | Other Treasury Opera | 42 | Payment Validation Workflow |
-| AB | Accounting Document | 01 | Automatic Payment Block |
-| RE | Invoice-Gross (MM) | 51 | Rule: post only through MM |
-| ZP | Payment Posting | 20 | Rule: post only through F110/F111 |
-| CP | Payments Cheque | 34 | Rule: post only through payment program |
+
+**Automatic payment block** (substitution rule sets block N on posting — cannot be removed):
+
+| Doc Type | Description | Range |
+|----------|-------------|-------|
+| AB | Accounting Document | 01 |
+| AC | Assessed Contributions | 73 |
+| FO | Field Office Posting | 40 |
+| IM | Imprests | 33 |
+| IO | IOVs Postings | 93 |
+| IP | Incoming Payments | 32 |
+| JV | Adjustment Postings | 92 |
+| KG | Vendor Credit Memo | 17 |
+| KX | Visits and Missions | 15 |
+| KZ | Vendor Payment | 14 |
+| OP | Outgoing Payments Oth | 31 |
+| PF | Payroll FOPAG | 87 |
+| PP | Payroll Posting | 86 |
+| PX | Payroll Posting | 88 |
+| R8 | Migration for FO | R8 |
+| RB | Rebilling | 67 |
+| RV | Billing Doc Transfer | 19 |
+| SR | Sales & Renting Post | 74 |
+| SX | Surnum Postings | 68 |
+| VC | Voluntary Contrib | 75 |
+| Z5 | Petty Cash Postings | 39 |
+
+**Special rules** (posted only through specific programs):
+
+| Doc Type | Description | Rule |
+|----------|-------------|------|
+| CA | Crossed Payee Cheque | Only via F-58, FB01, FB02, FB08, FBL1N, FBL3N |
+| CC | Cashable Cheque | Same as CA |
+| CP | Payments Cheque | Only via payment program |
+| RE | Invoice-Gross (MM) | Only via MM (pre-validations in MM process) |
+| TF | Travel Req Field Off | Only via TV module |
+| TV | Travel Request FI TV | Only via TV module |
+| ZP | Payment Posting | Only via F110/F111 or FB08 reversal |
 
 ### UIL-Specific Configuration [VERIFIED from UIL Solution Doc]
 - 2 new bank accounts at Societe Generale: SOG05-EUR01 (EUR), SOG05-USD01 (USD)
@@ -871,6 +945,110 @@ Full end-to-end flow for payroll bank payments:
 - BCM Roles: `YS:FI:M:BCM_MERGE_________:`, `YS:FI:M:BCM_MON_APP______:`, `YS:FI:M:BCM_REV_REJ_PAY__:`
 - Payment run users: Britta Hoffman, Larissa Steppin
 - BCM validators: Atchoarena David, Jahan Nusrat, Valdes Cotera Raul, Zholdoshalieva Rakhat, Gazi Baizid, Yli-Hietanen Anssi
+
+---
+
+## Field Office Cash & Manual Cheque Handling [VERIFIED from CR 126/127 BBP]
+
+**Background**: CR 126 (Cash Journal), CR 127 (Manual Cheque), CR 15 (Bank Reconciliation) — implemented 2019–2020 for field offices under company code UNES.
+
+### Cash Journal — FBCJ (CR 126)
+- **Transaction**: FBCJ
+- **Document type**: Z5 — Petty Cash Postings (number range 39)
+- **G/L must be "Post automatically only"** in FS00 — prevents direct manual postings
+- **Number range**: Must be 01 (SAP requirement). Incoming: 1900000000–1999999999, Outgoing: 2900000000–2999999999
+- **Created manually before go-live in P01**
+
+**Pilot cash journals (UNES company code):**
+
+| Office | Cash Journal | G/L Account | Currency |
+|--------|-------------|------------|---------|
+| Dakar | DAK1 | 1900254 | XOF |
+| Mexico | MXC1 | 1900434 | MXN |
+| Santiago | STG1 | 1900574 | CLP |
+| Tashkent | TAS1 | varies | UZS |
+
+**18 Business Transactions defined** including: Customer/Vendor/G/L postings, FUEL PURCHASES (6022020), OFFICE SUPPLIES (6022023), POSTAGE COURIER (6024011), TAXI (6025011), MAINT & REPAIR (6032011/13/14), COURTESY EXPENSES (6035011).
+
+**Key G/L accounts:**
+| Account | Description |
+|---------|-------------|
+| 2021011 | Cash journal vendor clearing |
+| 2022011 | UNDP advance G/L |
+| 2029091 | Advance payment (Special G/L F) |
+| 9112034 | UNDP bank clearing account |
+
+### Manual Cheque — F-58 (CR 127)
+- **Transaction**: F-58 (Payment with Printout)
+- **Two new document types**: CA (Crossed/Payee Cheque), CC (Cashable Cheque)
+- Default for F-58 = CA; user can change to CC; can be bank-account-specific
+- CA and CC **only allowed in**: F-58, FB01, FB02, FB08, FBL1N, FBL3N
+
+**Pilot house banks for manual cheques:**
+
+| Office | House Bank | Account | Currency | Sub Bank Acct |
+|--------|-----------|---------|----------|--------------|
+| Santiago | BAE01 | CLP01 | CLP | 1109574 |
+| Mexico | CIT14 | MXN01 | MXN | 1143434 |
+
+### Cash Replenishment — 4 Methods
+
+| Method | When Used | Key Transaction | Notes |
+|--------|-----------|----------------|-------|
+| 1 — Cheque to staff member | Standard FO with bank account | F-47 (advance) → F-58 (CC cheque) → FBCJ | ZP+Z5 assignments aligned for BFM/AP clearing |
+| 2 — Bank transfer to staff member | Antenna office (no local bank account, HQ sends local ccy) | F-47 (advance) → payment via F110 → FBCJ | Instruction Key change to HQ |
+| 3 — Via UNDP | No local bank, HQ cannot send local ccy | F-48 (vendor DP) + Prosper request → UNDP pays → FBCJ | G/L 9112034 (UNDP clearing), Business Area GEF |
+| 4 — Cash facilitator | Remote location (e.g., Baghdad → Amman/Erbil) | FBCJ vendor posting → MIRO or FB60 for fee/invoice | Vendor 333061 = FLIGHT CENTRE (Mexico example) |
+
+### Bank Reconciliation (CR 15) — Cheque Clearing via EBS
+- Check number registered in F-58 → printed on physical cheque
+- When cashed: bank statement provides check number via code **NCHK**
+- EBS auto-matches NCHK → clears vendor payment document
+- **FEBAN**: manual processing for non-auto-cleared items
+- **EBS posting rules**: SUBE (Income MT940 clearing), SUBF (Payment MT940 clearing)
+- **Posting Type 4** = Clear debit G/L, **Type 8** = Clear credit sub-ledger (vendor)
+- Transaction types: **BAE01_CL** (Bank of Chile / Santiago), **CIT23_SN** (Citibank / Dakar)
+
+---
+
+## EBS & SWIFT Infrastructure Architecture [VERIFIED from Solution Description EBS]
+
+### SWIFT Integration Layer Architecture
+```
+SAP iRIS (F110/SAPFPAYM) → SAP Network File Directory → SWIFT Integration Layer (SIL) → SWIFT Alliance Lite 2 → Banks
+```
+- **SIL polling interval**: **3 minutes** (HQ general); **15 minutes** (UIL/UBO — different configuration)
+- 3 directory types on SWIFT server: Payment Files, Payment Status Reports (PSR), Bank Statement Files (EBS)
+
+### EBS File Paths — Table FEBV_FILEPATH (configured via transaction FILE)
+
+| Path Key | Usage | Physical Directory | File Name Pattern |
+|---------|-------|-------------------|------------------|
+| Z_EBS_PRO | Process (new EBS files) | `\\hq-sapitf\SWIFT$\<SYSID>\output\ebs\` | `OSOGEFRPPXXX*` |
+| Z_EBS_ARC | Archive (processed) | `\\hq-sapitf\SWIFT$\<SYSID>\output\ebs\archive` | — |
+| Z_EBS_ERR | Error (failed) | `\\hq-sapitf\SWIFT$\<SYSID>\output\ebs\error` | `OSOGEFRPPXXX_<CCODE>_<BANK_ID>_<ACCOUNT_ID>_<STATEMENT_DATE>` |
+| Z_EBS_TRA | Transfer (in transit) | `\\hq-sapitf\SWIFT$\<SYSID>\output\ebs\transfer` | — |
+
+**EBS file naming convention**: `OSOGEFRPPXXX_<CCODE>_<BANK_ID>_<ACCOUNT_ID>_<STATEMENT_DATE>`
+
+### SWIFT Directory Access Control
+- **No individual Windows user** can write to `\\hq-sapitf\SWIFT$\*` directly
+- **Only SAPFPAYM** program can write payment files (enforced via SAP authorization profile)
+- **SA_SWIFT** (Marlies Spronk, KMI/FAM): Modification rights — manages SWIFT server, Autoclient, SIL
+- **SG-SAPITF-SWIFT-RO**: Read and execute — BFM and KMI users for functional review
+
+| BFM/TRS | BFM/FAS | KMI |
+|---------|---------|-----|
+| Adjanohoun Irma | Bertoldini Simona | Spronk Marlies |
+| Streidwolf Engelhard | Derakhshan Farinaz | — |
+| Eng Thavry | La Jeanette | — |
+| Gazi Baizid | Lopez-Chemouny Christina | — |
+| Gupta Abhishek | Marquand Isabelle | — |
+| Sopraseuth Theptthevy | Mathewos Mehari | — |
+| Wettie Ingrid | — | — |
+| Yli-Hietanen Anssi | — | — |
+
+**Group update managed by**: Vincent Vaurette (SAP administrator)
 
 ## Custom Payment Programs
 
@@ -939,6 +1117,13 @@ Full end-to-end flow for payroll bank payments:
 | FS Fixed Payment Reference | Same folder | OBPM2, SEPA reference table BUKRS/LIFNR/BLART/BELNR, formula /INV/XBLNR BLDAT |
 | Helpcard BCM Validation | Same folder | BNK_APP 5 actions, digital signature (Signatory ID+password), BNK_MONI status tabs |
 | Helpcard Payroll Payments BCM | Same folder | ZHRUN→FBPM1→BNK_APP→BNK_MONI→BNK_MERGE_RESET, P_BATNO parameter, SAP Notes 1681517/1892712 |
+| Solution Document UIL Payment Process | `0 Solution Description/` | SOG05 EUR01/USD01, UIL BCM validators (6 persons), roles YS:FI:M:BCM_*, SFTP every 15 min |
+| BBP Cash Cheque Bank Reconciliation v2 | Same folder | CR 126 (FBCJ/Z5), CR 127 (F-58/CA/CC), CR 15 (EBS/FEBAN). Project: Yli-Hietanen+Spronk |
+| Solution Description Cash Cheque (Final) | Same folder | Final version: Mexico replaces Dakar as 2nd pilot, HQ 12xxxxx/13xxxxx EBS architecture |
+| Cash Replenishment Solution Proposals | Same folder | 4 replenishment methods (cheque/bank transfer/UNDP/cash facilitator), G/L 2029091/9112034 |
+| Solution Description Payment EBS Process | Same folder | Complete doc type registry (37 types), F111, 3 payment programs, FEBV_FILEPATH paths, SIL 3-min polling |
+| Payment in exotic currencies | `Payments/` | Method X pilot 5 currencies, BCM rule UNES_AP_X, G/L 1175011/1275011/1375011, YTR2, currency scope tables (1,069 in scope, 213 out of scope), embargo list |
+| Payment Release Workflow PDFs (5 docs) | `Payment Release Workflow/` | FS v2.0 (3 trigger filters, 7 groups, named validators), Technical Doc (SWU3 steps, PFTS), Wrong validators (email mismatch fix), Troubleshooting (SWI2_DIAG/SWIA), Active/passive substitution |
 
 ## Integration Points
 
