@@ -714,6 +714,145 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | BNK_BNK_INI_REL01 | Assign release procedure to BNK_INI |
 | BNK_BNK_COM_REL01 | Assign release procedure to BNK_COM |
 
+## Payment Purpose Code (PPC) [VERIFIED from FS XML v2.0 + 20240321 Presentation]
+
+**Scope**: SG format only (`/CGI_XML_CT_UNESCO`). Citibank payments do NOT use PPC. SG transmits to local banks that require a purpose code per regulatory mandate.
+
+### Design: SCB Indicator as PPC Carrier
+
+**Key insight**: UNESCO uses the **SCB indicator field** (`T015L-LZBKZ`) — normally the "State Central Bank indicator" in German banking — as the carrier for Payment Purpose Codes. This field is per payment method/currency in table T015L, and is readable in DMEE via `REGUP-LZBKZ`.
+
+| SAP Field | Table | Usage |
+|-----------|-------|-------|
+| LZBKZ | T015L | SCB indicator — repurposed as PPC container |
+| LZBKZ | REGUP | Read at payment run time → passed to DMEE exit |
+| LAUF1 suffix | REGUP | Payment type detection: 'P' = payroll, 'R' = replenishment, other = vendor |
+
+**Payment type detection via REGUP-LAUF1**:
+- Last character = `P` → Payroll payment → purpose code = `SAL` (Salary)
+- Last character = `R` → Replenishment → purpose code = `IFT` (Intracompany funds transfer)
+- Otherwise → Vendor/supplier payment → use country-specific PPC from T015L/LZBKZ
+
+**XML placement**: DMEE exit `FI_CGI_DMEE_EXIT_W_BADI` (already handling beneficiary name overflow) also handles PPC injection into:
+- `InstrForCdtrAgt/InstrInf` — Instruction for creditor agent
+- `Purp/Cd` — Purpose code element (ISO 20022 standard)
+
+### 8-Country Purpose Code Tables [VERIFIED from 20240321 Presentation]
+
+#### UAE (AE) — 20 codes
+| PPC | Description |
+|-----|-------------|
+| BEXP | Business Expenses |
+| CORT | Trade Settlement |
+| DIVI | Dividends |
+| GOVT | Government Payment |
+| HEDG | Hedging |
+| ICCP | Irrevocable Credit Card Payment |
+| IHRP | Instalment Hire Purchase |
+| INTC | Intracompany Payment |
+| INTP | Interest Payment |
+| LOAN | Loan |
+| MGSC | Mortgage |
+| OTHR | Other |
+| PENS | Pension |
+| RINP | Regular Instalment Payment |
+| SALA | Salary / Staff Payment |
+| SECU | Securities |
+| SSBE | Social Security Benefit |
+| SUPP | Supplier Payment |
+| TAXS | Tax Payment |
+| TREA | Treasury Payment |
+
+#### Bahrain (BH)
+| PPC | Description |
+|-----|-------------|
+| SALA | Salary |
+| SUPP | Supplier Payment |
+| GOVT | Government Payment |
+| TREA | Treasury |
+| OTHR | Other |
+
+#### China (CN)
+| PPC | Description |
+|-----|-------------|
+| 001 | Goods import/export |
+| 002 | Service |
+| 003 | Current transfer income |
+| 101 | Direct investment |
+| 102 | Securities investment |
+| 999 | Other capital items |
+
+**Note**: China uses numeric codes, not ISO 20022 text codes. Injected into `InstrInf` field.
+
+#### Indonesia (ID)
+| PPC | Description |
+|-----|-------------|
+| SALA | Salary |
+| SUPP | Goods/Services Purchase |
+| TREA | Capital / Treasury |
+| CORT | Trade Settlement |
+| OTHR | Other |
+
+#### India (IN)
+| PPC | Description |
+|-----|-------------|
+| P0001 | Advance payment against imports |
+| P0002 | Payment towards imports |
+| P0005 | Payments for services (non-software) |
+| P0006 | Payments for software services |
+| P0008 | Salary remittance |
+| P0010 | Remittance towards consultancy |
+| P1006 | Dividend remittance |
+| P0009 | Other current account payments |
+
+**Note**: India uses 5-character alphanumeric codes (RBI purpose codes). Must be transmitted in `Purp/Cd`.
+
+#### Jordan (JO)
+| PPC | Description |
+|-----|-------------|
+| SALA | Salary |
+| SUPP | Supplier/Vendor |
+| GOVT | Government / Institutional |
+| TREA | Treasury |
+| OTHR | Other |
+
+#### Morocco (MA)
+| PPC | Description |
+|-----|-------------|
+| SALA | Salary |
+| SUPP | Supplier |
+| TREA | Treasury Transfer |
+| OTHR | Other |
+
+#### Malaysia (MY) and Philippines (PH)
+| PPC | Description |
+|-----|-------------|
+| SALA | Salary |
+| SUPP | Trade / Vendor |
+| TREA | Intra-group / Treasury |
+| OTHR | Other |
+
+### Configuration Points
+
+| Step | Where | What |
+|------|-------|------|
+| 1 | T015L (transaction OBAT or SM30) | Enter PPC value in LZBKZ field per payment method + currency |
+| 2 | DMEE: `/CGI_XML_CT_UNESCO` | Node `Purp/Cd` or `InstrInf`: source = REGUP-LZBKZ with exit logic |
+| 3 | Exit `FI_CGI_DMEE_EXIT_W_BADI` | Intercepts LZBKZ + detects payroll (LAUF1 suffix 'P') / replenishment ('R') |
+| 4 | Test in V01 | Verify XML contains correct `<Purp><Cd>` element for country |
+| 5 | Bank confirmation | Each local SG bank confirms receipt with correct PPC |
+
+### Known Failure Modes
+
+| Failure | Cause | Fix |
+|---------|-------|-----|
+| Bank rejects file | Missing PPC — country requires it but T015L-LZBKZ not set | Add PPC in T015L for payment method + currency + country |
+| Wrong PPC on payroll | LAUF1 suffix detection logic not triggered | Check payment run ID format in FBZP or payroll program parameters |
+| China code rejected | Sending ISO text code instead of numeric | Verify DMEE condition: `LZBKZ` populated with 3-digit numeric for LAND1=CN |
+| India code invalid | RBI codes change periodically | Verify against current RBI Annex-I list |
+
+---
+
 ## BCM Infrastructure [VERIFIED from Blueprint + Solution Docs]
 
 ### File Transfer Architecture
@@ -1124,6 +1263,8 @@ SAP iRIS (F110/SAPFPAYM) → SAP Network File Directory → SWIFT Integration La
 | Solution Description Payment EBS Process | Same folder | Complete doc type registry (37 types), F111, 3 payment programs, FEBV_FILEPATH paths, SIL 3-min polling |
 | Payment in exotic currencies | `Payments/` | Method X pilot 5 currencies, BCM rule UNES_AP_X, G/L 1175011/1275011/1375011, YTR2, currency scope tables (1,069 in scope, 213 out of scope), embargo list |
 | Payment Release Workflow PDFs (5 docs) | `Payment Release Workflow/` | FS v2.0 (3 trigger filters, 7 groups, named validators), Technical Doc (SWU3 steps, PFTS), Wrong validators (email mismatch fix), Troubleshooting (SWI2_DIAG/SWIA), Active/passive substitution |
+| FS Payment Purpose Code XML 2.0 | `Payment Purpose Code/` | Custom dev for /CGI_XML_CT_UNESCO (SG only). SCB indicator (T015L-LZBKZ) as PPC carrier. LAUF1 suffix detection (P=payroll, R=replenishment). FI_CGI_DMEE_EXIT_W_BADI handles injection |
+| 20240321 Payment Purpose Code (presentation) | `Payment Purpose Code/` | Full PPC tables for 8 countries: AE (20 codes), BH, CN (numeric 001/002/003/101/102/999), ID, IN (RBI 5-char codes), JO, MA, MY/PH. XML tags: Purp/Cd + InstrInf |
 
 ## Integration Points
 

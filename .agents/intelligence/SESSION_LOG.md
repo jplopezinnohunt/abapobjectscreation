@@ -23,6 +23,38 @@
 
 ---
 
+## Session #024 — 2026-03-27 (Payment Purpose Code — PDF Coverage Completed)
+
+**Start**: 2026-03-27
+**Focus**: Discover and extract 2 missed PDFs in Payment Purpose Code/ subfolder → add PPC section to sap_payment_bcm_agent SKILL.md
+**Significance**: Final PDF gap closed. PPC section added — 8-country purpose code system now documented.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **PDF audit** | Full re-scan of source folder. Found 7 subfolders (not 4). Identified 2 missed PDFs in `Payment Purpose Code/` subfolder. |
+| **PPC content extracted** | FS Payment Purpose Code XML 2.0 + 20240321 presentation fully read |
+| **SKILL.md — PPC section added** | New `## Payment Purpose Code (PPC)` section: SCB indicator design (T015L-LZBKZ), LAUF1 suffix detection logic, 8-country tables (AE/BH/CN/ID/IN/JO/MA/MY/PH), XML tags, config steps, failure modes |
+| **Source Documentation updated** | +2 PPC PDF entries in SKILL.md source table |
+
+### Key Intelligence Captured
+
+| Finding | Significance |
+|---------|-------------|
+| SCB indicator (LZBKZ) repurposed as PPC | T015L-LZBKZ normally = State Central Bank indicator. UNESCO uses it as purpose code carrier per payment method/currency |
+| LAUF1 suffix = payment type | Last char 'P'=payroll→SAL, 'R'=replenishment→IFT, other=vendor→country code |
+| China uses numeric codes | 001/002/003/101/102/999 (not ISO text) — critical difference |
+| India uses RBI 5-char codes | P0001-P0010 range — must match current RBI Annex-I list |
+| UAE has 20 purpose codes | Largest set. AE also in BCM UNES_AP_EX exception list |
+| SG only | Citibank payments never use PPC — SG transmits to local banks requiring mandate |
+
+### PMO Reconciliation
+- No new PMO items opened or closed this session
+- **Total: 9 Blocking | 11 High | 40 Backlog = 60 items** (unchanged from #023)
+
+---
+
 ## Session #023 — 2026-03-27 (Payment PDF Completion + Skill Quality Sprint)
 
 **Start**: 2026-03-27
