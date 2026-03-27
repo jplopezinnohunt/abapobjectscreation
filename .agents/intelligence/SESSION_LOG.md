@@ -23,6 +23,124 @@
 
 ---
 
+## Session #022 — 2026-03-27 (Payment & BCM Intelligence — 100% Coverage)
+
+**Start**: 2026-03-27
+**Focus**: Complete the payment intelligence cycle — companion v4, brain SOURCE 9, knowledge doc
+**Significance**: Reached 100% PDF coverage. Companion upgraded to v4 (775KB, 12 tabs). Brain now has 9 sources (73,914 nodes). Full payment landscape knowledge captured.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **Companion v4** | 775KB, 12 tabs (+2 new: Roles & Auth, Infrastructure). Named validators, BCM grouping rules, XML char handling, country requirements, role matrix, 2023 incident, UIL config, WF issues |
+| **Brain SOURCE 9** | payment_bcm_companion.html added as knowledge source. 27 new nodes: 4 processes, 8 BCM rules, 7 validators, 4 DMEE trees, 2 audit findings |
+| **Brain: 73,914 nodes** | +27 from companion, +1 from new knowledge doc. Full 9-source build verified. |
+| **knowledge/domains/FI/payment_full_landscape.md** | Comprehensive FI payment knowledge doc: 4 processes, 2023 incident, delegation of authority, DMEE XML char handling, country requirements, WF issues, UIL config, 21 SAP Notes |
+| **H15 completed** | Blueprint BCM pages 21-47 fully extracted: Delegation of Authority table, validation flows, grouping rules, SAP notes |
+| **SKILL.md verified** | sap_payment_bcm_agent SKILL.md already comprehensive from #021 — verified all key content present |
+
+### Key Intelligence Captured (Session #022 additions)
+
+| Finding | Significance |
+|---------|-------------|
+| 4 payment processes documented | Process 1 (outside SAP) through Process 4 (BCM+Coupa) — critical architecture |
+| 2023 Security Incident | BCM bypass via dual role — remediation role YO:FI:COUPA_PAYMENT_FILE_: in V01 |
+| Named validators with limits | 12 named individuals, amounts from $150K to $50M |
+| BCM grouping rules detail | 5 FABS + 1 STEPS rules, priority order, criteria, dual control exceptions |
+| WF batch reservation issue | IIEP batches 8544/8545/8546 stuck with M_SARMENTO-G — SWIA fix |
+| UIL new config documented | SOG05 EUR01/USD01, GL accounts 1175791/1175792, 6 BCM validators |
+| XML char handling (3 layers) | Predefined SAP set + national char replacement + UNESCO custom set |
+| 21 SAP Notes listed | Complete list for BCM implementation |
+
+### PMO Reconciliation
+- Completed: H15 (Blueprint BCM pp.21-47)
+- **Total: 10 Blocking | 13 High | 40 Backlog = 63 items** (-1 net)
+
+---
+
+## Session #021 — 2026-03-27 (Payment & BCM Deep Dive)
+
+**Start**: 2026-03-27
+**Focus**: Full end-to-end payment lifecycle — configuration, BCM, DMEE, workflow, process mining
+**Significance**: First complete payment intelligence session. 13 PDFs analyzed. Full E2E from Invoice→SWIFT.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **13 PDFs analyzed** | Solution Description, Blueprint BCM, UIL config, FS XML format, workflow PDFs, handover docs |
+| **9 tables extracted** | BNK_BATCH_HEADER(27K), BNK_BATCH_ITEM(600K), REGUH(942K), PAYR(4K), T042A/B/E/I/Z, T012/T012K, T001 |
+| **sap_payment_bcm_agent** | 728-line skill: F110, BCM, FBZP chain, DMEE trees, workflow 90000003, YWFI package, 3 H items, 21 SAP notes |
+| **sap_payment_e2e** | E2E process mining skill: 1.4M events, 550K cases, cycle times, BCM flow |
+| **payment_bcm_companion.html** | 664KB interactive companion: E2E flow (vis.js), 9 co code profiles, BCM rules, house bank network |
+| **payment_process_mining.html** | 694KB process mining dashboard: DFG, variants, cycle times, company code comparison |
+| **BCM architecture documented** | Dual-bank setup (Citibank/SG), DMEE formats, SWIFT infrastructure, Coupa TMS routing |
+| **Audit finding** | UNES: 1,557 same-user BCM batches (CRUSR=CHUSR) — dual control bypass risk |
+
+### Key Intelligence Discovered
+
+| Finding | Significance |
+|---------|-------------|
+| FEBEP = 0 rows | BCM handles reconciliation, not classic EBS |
+| T042C = 0 rows | Bank determination via T042A (76 rows), not T042C |
+| IBE/MGIE/ICBA: no T042A | Pay outside SAP (local banking systems) |
+| REGUH 942K items: 358K proposals, 584K finals | F110 run volumes confirmed |
+| UNES BTE01-IRR02: 307 items | Iran payments in UNES_AP_EX exception rule |
+| Payment on-time rate: 1.1% | Median 14 days late vs due date |
+| D01 HTTP blocked via VPN | ADT code extraction requires on-site access |
+| DMEE: 2 trees (/CITI/XML/UNESCO/DC_V3_01 + /CGI_XML_CT_UNESCO) | USD/exotic=Citibank, EUR/CHF/etc=SG |
+| Payment workflow 90000003 | YBSEG business object, VBWF15 actor config, YWFI package (34 objects) |
+
+### PMO Reconciliation
+- Completed: H1 (sap_payment_e2e), +5 archive items (#24-28)
+- New: H13 (BCM dual control gap), H14 (YWFI code extraction), H15 (Blueprint BCM pages 21-47)
+- **Total: 10 Blocking | 14 High | 40 Backlog = 64 items** (+2 net)
+
+---
+
+## Session #020 — 2026-03-26 (Full 19-Session Audit + PMO Reconciliation)
+
+**Start**: ~evening 2026-03-26
+**Focus**: Complete review of all 19 sessions to find lost pending items
+**Significance**: Found 42 pending items vs 8 tracked in MEMORY.md — 11 sessions without PMO reconciliation
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **19-session review** | Every session entry read, pending items extracted and cross-referenced |
+| **PMO_BRAIN.md rewrite** | Single source of truth: 10 Blocking + 12 High + 40 Backlog items. Clean categories |
+| **Process Mining audit** | Identified 7 incomplete items: P2P temporal, CDHDR mining, OCEL, SES gap, brain integration, anomaly detection, sap_process_mining skill |
+| **Root cause identified** | PMO_BRAIN.md stale since #009. Each session logged pending locally but never reconciled centrally |
+| **Session Close Protocol** | Mandatory 6-step reconciliation added to PMO_BRAIN.md and session_retro.md |
+| **feedback_pmo_reconciliation.md** | New feedback rule: ALWAYS reconcile PMO at session close |
+
+### Key Discoveries
+
+| Discovery | Impact |
+|-----------|--------|
+| 42 pending items vs 8 tracked | 34 items invisible — risk of rediscovering/re-prioritizing old work |
+| PMO stale for 11 sessions (#009→#020) | Session-local pending lists diverged from central tracker |
+| Process Mining is PARTIALLY OPERATIONAL | Infrastructure works, but temporal analysis, CDHDR mining, OCEL all untouched |
+| CDHDR (7.8M rows) never mined | Biggest audit trail extracted but pm4py never run on it |
+| 10 skills have stale instructions | Agents may be working with wrong information |
+
+### PMO Reconciliation: +34 new, -0 completed, 42 total pending
+- 10 Blocking items
+- 12 High priority items
+- 40 Backlog items (5 subcategories)
+
+### Pending → Next Session
+
+Prioritized from Blocking list:
+1. B1: FMIFIIT OBJNRZ 2024+2026 (script proven, quick win)
+2. B3: CO tables COOI/COEP/RPSCO (entire CO layer missing)
+3. B7: CDHDR process mining (data exists, just run pm4py)
+4. B10: Update 10 stale skills
+
+---
+
 ## Session #018 — 2026-03-26 (Internal Governance + Mass Commit)
 
 **Start**: ~afternoon 2026-03-26

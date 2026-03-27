@@ -34,20 +34,27 @@ Record the result in SESSION_LOG under "Verification Check."
 
 ---
 
-## Phase 2: PMO Tracker Update
+## Phase 2: PMO Reconciliation (MANDATORY — #1 cause of lost items)
 
-- [ ] **Mark completed items** with ✅ in `.agents/intelligence/PMO_BRAIN.md`
-- [ ] **Add new pending items** discovered during session
-- [ ] **Update blockers** — resolved or new ones found?
+> Between sessions #009-#020, PMO was never reconciled. 34 items became invisible.
+> This step prevents that from happening again.
 
-**Pass criteria**: PMO_BRAIN reflects actual project state.
+- [ ] **List ALL new pending items** from this session (check SESSION_LOG entry you just wrote)
+- [ ] **Add each to PMO_BRAIN.md** under correct section: B=Blocking, H=High, G=Backlog
+- [ ] **Strike through completed items** with session # and date
+- [ ] **Verify count**: `pending_before + new - completed = pending_after`
+- [ ] **Write reconciliation line** in SESSION_LOG: "PMO reconciled: +N new, -N completed, N total"
+- [ ] **Update MEMORY.md** pending COUNT only (the list lives in PMO_BRAIN.md)
+
+**Pass criteria**: PMO_BRAIN item count matches reality. SESSION_LOG has reconciliation line.
+**Fail criteria**: Any pending item from this session is NOT in PMO_BRAIN.md.
 
 ---
 
 ## Phase 3: Memory Update
 
 - [ ] **Update MEMORY.md** — Session history section (1-2 lines per session)
-- [ ] **Update pending work list** in MEMORY.md — remove completed, add new
+- [ ] **Update pending count** in MEMORY.md (list lives in PMO_BRAIN.md, not here)
 - [ ] **Save new feedback memories** — for any mistakes made or corrections received
 - [ ] **Update/create project memories** — for new discoveries that affect future sessions
 
@@ -126,7 +133,8 @@ Brain: [node count if rebuilt]
 
 - ❌ Don't close without updating skills — this is the #1 cause of repeated mistakes
 - ❌ Don't write retro from memory — re-read what you actually did
-- ❌ Don't leave PMO tracker stale — it's the source of truth for priorities
+- ❌ Don't leave PMO tracker stale — it's the SINGLE source of truth. 11 sessions without reconciliation = 34 lost items
+- ❌ Don't duplicate pending lists — items live in PMO_BRAIN.md ONLY, everything else points there
 - ❌ Don't forget feedback memories — corrections are the most valuable memory type
 - ❌ Don't regenerate the retro for the user — use Read tool to SHOW the actual file
 - ❌ Don't skip workflow updates — if session_start or session_retro need changes, update them NOW

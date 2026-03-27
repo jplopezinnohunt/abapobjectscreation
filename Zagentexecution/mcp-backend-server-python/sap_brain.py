@@ -9,6 +9,7 @@ A connected knowledge graph that links ALL project knowledge sources:
   SOURCE 3: knowledge/**/*.md     → Domain knowledge documents
   SOURCE 4: .agents/skills/       → Agent skill documents
   SOURCE 5: Expert seed docs      → doc_reference.txt, YRGGBS00, etc.
+  SOURCE 9: Payment Companion     → payment_bcm_companion.html (payment processes, BCM rules, named validators, DMEE, infra)
 
 Living Knowledge Principle: The brain continuously evolves — it is NOT a static snapshot.
 Every session adds new nodes and edges. Every extraction enriches the graph.
@@ -69,6 +70,10 @@ NODE_TYPES = {
     "JOB_PROGRAM":  "Background Job Program (SM37)",
     "RFC_DEST":     "RFC Destination (SM59)",
     "SAP_SYSTEM":   "SAP System Instance",
+    # — Payment domain (Source 9) —
+    "PERSON":       "Named person (validator, processor, approver)",
+    "FINDING":      "Audit finding or security incident",
+    "CONFIG":       "SAP configuration object (BCM rule, DMEE tree, etc.)",
 }
 
 EDGE_TYPES = {
@@ -99,6 +104,11 @@ EDGE_TYPES = {
     "RUNS_PROGRAM":  "Job executes this program",
     "CONNECTS_TO":   "RFC destination connects to system",
     "INTEGRATES":    "Integration link between systems/programs",
+    # — Payment/audit relationships —
+    "AUTHORIZES":    "Person or role authorizes/validates this",
+    "RISK_IN":       "Audit finding or risk applies to this domain",
+    "DOCUMENTS":     "Companion/dashboard documents this entity",
+    "VISUALIZES":    "Dashboard visualizes this skill/knowledge",
 }
 
 
@@ -213,10 +223,15 @@ def build_brain():
     c7 = len(brain.nodes)
     print(f"  -> {c7 - c6} new nodes from job programs  (total: {c7})")
 
-    print(f"\n  [SOURCE 8/8] RFC Destinations & System Map (RFCDES) ...")
+    print(f"\n  [SOURCE 8/9] RFC Destinations & System Map (RFCDES) ...")
     _ingest_rfc_destinations(brain)
     c8 = len(brain.nodes)
     print(f"  -> {c8 - c7} new nodes from RFC/systems  (total: {c8})")
+
+    print(f"\n  [SOURCE 9/9] Payment & BCM Companion (payment_bcm_companion.html) ...")
+    _ingest_payment_companion(brain)
+    c9 = len(brain.nodes)
+    print(f"  -> {c9 - c8} new nodes from payment companion  (total: {c9})")
 
     return brain
 
@@ -1085,6 +1100,165 @@ def _ingest_rfc_destinations(brain):
 
     finally:
         conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SOURCE 9: PAYMENT & BCM COMPANION (payment_bcm_companion.html)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _ingest_payment_companion(brain):
+    """SOURCE 9: Payment & BCM Companion HTML — adds payment domain nodes.
+
+    Rather than parsing the full 775KB HTML, this function directly injects
+    structured payment knowledge nodes that the companion surfaces visually.
+    All data verified from BFM handover PDFs + Gold DB.
+    """
+    companion_path = PROJECT_ROOT / "Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html"
+    if not companion_path.exists():
+        print(f"  [SOURCE 9] payment_bcm_companion.html not found - skipping")
+        return
+
+    node_count = 0
+
+    # ── Domain anchor ─────────────────────────────────────────────────────────
+    brain.add_node(
+        "DOMAIN_PAYMENT", "DOMAIN", "Payment & BCM Domain",
+        domain="FI", path=companion_path,
+        metadata={"source": "payment_bcm_companion.html", "version": "v4"},
+        tags=["payment", "bcm", "fi", "domain"]
+    )
+    brain.add_node(
+        "COMPANION_PAYMENT", "KNOWLEDGE_DOC", "Payment BCM Intelligence Companion v4",
+        domain="FI", path=companion_path,
+        metadata={
+            "type": "html_companion", "size_kb": companion_path.stat().st_size // 1024,
+            "tabs": "E2E Flow|Companies|WF Architecture|BCM Config|DMEE Trees|Object Inventory|Variants|House Banks|Doc vs Reality|Go-Live & Notes|Roles & Auth|Infrastructure",
+            "objects": 561, "f110_items": 942011, "bcm_items": 592064,
+        },
+        tags=["payment", "companion", "dashboard", "fi"]
+    )
+    brain.add_edge("COMPANION_PAYMENT", "DOMAIN_PAYMENT", "BELONGS_TO")
+    node_count += 2
+
+    # ── 4 Payment Processes ───────────────────────────────────────────────────
+    processes = [
+        ("PROCESS_1_OUTSIDE_SAP", "Payment Process 1 — Outside SAP",
+         "IBE/MGIE/ICBA/Field offices. No F110, no BCM. Local banking system or cheques.",
+         ["IBE", "MGIE", "ICBA", "field_office"]),
+        ("PROCESS_2_F110_MANUAL", "Payment Process 2 — F110 + Manual Download",
+         "ICTP/UBO Banco do Brazil/UIL migrating. F110 creates file; user uploads manually to bank portal.",
+         ["ICTP", "UBO", "UIL"]),
+        ("PROCESS_3_BCM_2VAL", "Payment Process 3 — F110 + BCM (2 validations) + Coupa",
+         "UIS/IIEP/UIL-new/UBO-Citi. 2 BCM signatories required. Role: AP_PAYMENTS OR BCM_MON_APP (NEVER BOTH).",
+         ["UIS", "IIEP", "UIL", "UBO"]),
+        ("PROCESS_4_BCM_1VAL_COUPA", "Payment Process 4 — F110 + BCM (1 validation) + Coupa",
+         "UNES HQ. 1 BCM signatory + Coupa 2nd validation. SECURITY RISK: both roles on same user = bypass (2023 incident).",
+         ["UNES"]),
+    ]
+    for pid, name, desc, cos in processes:
+        brain.add_node(
+            pid, "PROCESS", name,
+            domain="FI", path=companion_path,
+            metadata={"description": desc, "company_codes": cos},
+            tags=["payment", "process", "architecture"] + cos
+        )
+        brain.add_edge(pid, "DOMAIN_PAYMENT", "BELONGS_TO")
+        brain.add_edge("COMPANION_PAYMENT", pid, "DOCUMENTS")
+        node_count += 1
+
+    # ── BCM Grouping Rules ────────────────────────────────────────────────────
+    bcm_rules = [
+        ("BCM_RULE_PAYROLL", "BCM Rule: PAYROLL", "268,902 items. HR-PY origin. STEPS system. PAY+TRS validation."),
+        ("BCM_RULE_UNES_AP_ST", "BCM Rule: UNES_AP_ST", "186,248 items. Standard AP catch-all. FI-AP/FI-AR. 2 validations."),
+        ("BCM_RULE_UNES_AP_10", "BCM Rule: UNES_AP_10", "72,221 items. AP batch >=10 items threshold."),
+        ("BCM_RULE_UBO_AP_MAX", "BCM Rule: UBO_AP_MAX", "25,095 items. Brazil AP maximum batch."),
+        ("BCM_RULE_IIEP_AP_ST", "BCM Rule: IIEP_AP_ST", "14,274 items. IIEP standard AP."),
+        ("BCM_RULE_UNES_TR_TR", "BCM Rule: UNES_TR_TR", "8,955 items. Treasury bank-to-bank transfers. 1 validation only."),
+        ("BCM_RULE_UNES_AR_BP", "BCM Rule: UNES_AR_BP", "6,471 items. AR business partners (Investments & FX)."),
+        ("BCM_RULE_UNES_AP_EX", "BCM Rule: UNES_AP_EX", "Embargo/exception country list. MM/IR/IQ/SD/SS/SY/CU/KP/AE/MX/JO."),
+    ]
+    for rid, name, desc in bcm_rules:
+        brain.add_node(
+            rid, "CONFIG", name,
+            domain="FI", path=companion_path,
+            metadata={"description": desc, "system": "BCM", "table": "BNK_BATCH_HEADER"},
+            tags=["bcm", "payment", "config", "rule"]
+        )
+        brain.add_edge(rid, "DOMAIN_PAYMENT", "PART_OF")
+        node_count += 1
+
+    # ── Named Validators (delegation of authority) ────────────────────────────
+    validators = [
+        ("VALIDATOR_ANSSI_YLI", "BCM Validator: Anssi Yli-Hietanen", "BFM076 Treasurer. FABS TRS group. $50M limit."),
+        ("VALIDATOR_EBRIMA_SARR", "BCM Validator: Ebrima Sarr", "BFM080 Chief Accountant. FABS TRS+AP group. $50M limit."),
+        ("VALIDATOR_BAIZID_GAZI", "BCM Validator: Baizid Gazi", "BFM073 Asst Treasury Officer. FABS TRS. $50M limit."),
+        ("VALIDATOR_LIONEL_CHABEAU", "BCM Validator: Lionel Chabeau", "BFM058 Chief AP. FABS AP group. $5M limit."),
+        ("VALIDATOR_ISABELLE_MARQUAND", "BCM Validator: Isabelle Marquand", "BFM383 Sr Finance Asst AP. $500K limit."),
+        ("VALIDATOR_SIMONA_BERTOLDINI", "BCM Validator: Simona Bertoldini", "BFM046 Chief PAY. FABS+STEPS AP+PAY. $5M/$300K."),
+        ("VALIDATOR_FARINAZ_DERAKHSHAN", "BCM Validator: Farinaz Derakhshan", "BFM037 Asst Officer PAY. STEPS PAY. $150K."),
+    ]
+    for vid, name, desc in validators:
+        brain.add_node(
+            vid, "PERSON", name,
+            domain="FI", path=companion_path,
+            metadata={"description": desc, "context": "BCM Delegation of Authority"},
+            tags=["bcm", "validator", "person", "auth"]
+        )
+        brain.add_edge(vid, "DOMAIN_PAYMENT", "AUTHORIZES")
+        node_count += 1
+
+    # ── DMEE Trees ────────────────────────────────────────────────────────────
+    dmee_trees = [
+        ("DMEE_CGI_UNESCO", "DMEE: CGI_XML_CT_UNESCO", "Societe Generale. UNES+institutes. CGI pain.001."),
+        ("DMEE_CITI_DC_V3", "DMEE: CITI/XML/UNESCO/DC_V3_01", "Citibank. UNES/UBO. Direct Credit XML v3. All USD/CAD/BRL/exotic."),
+        ("DMEE_SEPA_UNES", "DMEE: SEPA_CT_UNES", "SEPA Credit Transfer for UNES."),
+        ("DMEE_SEPA_ICTP", "DMEE: SEPA_CT_ICTP_ISO", "ISO 20022 SEPA CT for ICTP. Multiple variants."),
+    ]
+    for did, name, desc in dmee_trees:
+        brain.add_node(
+            did, "CONFIG", name,
+            domain="FI", path=companion_path,
+            metadata={"description": desc, "transaction": "DMEE", "assign": "OBPM1"},
+            tags=["dmee", "payment", "xml", "format"]
+        )
+        brain.add_edge(did, "DOMAIN_PAYMENT", "PART_OF")
+        node_count += 1
+
+    # ── Security incidents ────────────────────────────────────────────────────
+    brain.add_node(
+        "INCIDENT_2023_BCM_BYPASS", "FINDING", "2023 Security Incident: BCM Bypass via Dual Role",
+        domain="FI", path=companion_path,
+        metadata={
+            "year": 2023,
+            "description": "User had Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP together. Could generate F110 file AND download to Coupa bypassing BCM approval.",
+            "remediation": "New role YO:FI:COUPA_PAYMENT_FILE_: separates Coupa download from BCM monitor. Testing V01 → ready P01.",
+            "rule": "NEVER assign Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP to same user.",
+        },
+        tags=["security", "incident", "bcm", "audit", "fi"]
+    )
+    brain.add_edge("INCIDENT_2023_BCM_BYPASS", "DOMAIN_PAYMENT", "RISK_IN")
+    node_count += 1
+
+    # ── Audit finding ─────────────────────────────────────────────────────────
+    brain.add_node(
+        "AUDIT_BCM_DUAL_CONTROL", "FINDING", "Audit Finding: BCM Dual Control Gap (CRUSR=CHUSR)",
+        domain="FI", path=companion_path,
+        metadata={
+            "description": "BNK_BATCH_HEADER shows approved UNES batches where CRUSR=CHUSR (same user created and approved). Violates SoD.",
+            "table": "BNK_BATCH_HEADER",
+            "field": "CRUSR vs CHUSR on STATUS=A records",
+        },
+        tags=["audit", "sod", "bcm", "finding", "fi"]
+    )
+    brain.add_edge("AUDIT_BCM_DUAL_CONTROL", "DOMAIN_PAYMENT", "RISK_IN")
+    node_count += 1
+
+    # ── Cross-reference to skill ──────────────────────────────────────────────
+    skill_id = "SKILL_SAP_PAYMENT_BCM_AGENT"
+    if skill_id in brain.nodes:
+        brain.add_edge("COMPANION_PAYMENT", skill_id, "VISUALIZES")
+
+    print(f"  [SOURCE 9] Payment companion ingested: {node_count} nodes (processes, BCM rules, validators, DMEE, incidents)")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
