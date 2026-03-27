@@ -252,12 +252,38 @@ The **coordinator** should route to this agent when the user asks about:
 - ABAP FM `Z_WF_FI_EXCLUDE_NOTIF_EMAIL` checks user parameter `Z_WKF_EMAIL_NOTIF` in SU01
 - If parameter = 'X' → user gets email notifications for workflow items
 
+### Active/Passive Substitution for WF Absence [VERIFIED from handover doc]
+
+| Type | When Used | Behavior | Setup |
+|------|-----------|----------|-------|
+| **Active** | Planned absence (e.g., 10-day leave) | Work items automatically appear in substitute's inbox too | Settings → Workflow Settings → Activate substitute |
+| **Passive** | Unplanned absence (long-term fallback) | Substitute must manually "Adopt Substitution" to see items | Settings → Workflow Settings → Adopt Substitution |
+
+**Key rules:**
+- Substitute does NOT need original user's password or ID
+- Substitute cannot access other data beyond WF items (authorization limited to WF scope)
+- Work items completed by either user disappear from both inboxes automatically
+- Active substitution: items appear in BOTH inboxes simultaneously
+- Substitute can receive email notifications for new work items
+- Passive: substitute can cover multiple approvers, selects which approver's inbox to view
+
+**Configuration via SU3** → Maintain substitute (OOCU_RESP for org unit level)
+
+### Workflow Routing Failure Diagnostic [VERIFIED — 3-Step Process]
+
+When WF item goes to wrong person or nobody:
+1. **FB03** — check "Entered by" field on the FI document header (who posted it)
+2. **SU3** → Address tab → check E-Mail Address for that posting user
+3. **UNESdir / role.hq.int.unesco.org** → check what email is in the Role Management system
+
+**Root cause**: If SU3 email ≠ UNESdir email → workflow cannot find certifying officer → goes to fallback (ZFI_PAYREL_EMAIL). User must correct SU3 email. **All future items route correctly after fix. Past items remain unchanged.**
+
 ### Workflow Troubleshooting Transactions
 | Transaction | Purpose |
 |-------------|---------|
-| SWI2_DIAG | Diagnosis of workflows with errors (restart stuck items) |
+| SWI2_DIAG | Diagnosis of workflows with errors (restart stuck items). Handles document locking errors — select item + "Restart workflow" |
 | SWI2_ADM1 | Work items without agents (forward to correct validator) |
-| SWIA | Work Item Administration Report (lookup + forward) |
+| SWIA | Work Item Administration Report (lookup + forward). Filter by Status=Ready + work item text "Payment release for Invoice..." |
 | SWU3 | Workflow runtime environment check |
 | SWU_OBUF | Synchronize workflow buffers |
 | PFTS | Task agent assignment maintenance |
@@ -277,6 +303,32 @@ The **coordinator** should route to this agent when the user asks about:
 - Could generate payment file in F110 AND download to Coupa, bypassing BCM approval
 - **Remediation**: New role `YO:FI:COUPA_PAYMENT_FILE_:` separates Coupa download from BCM viewing
 - **Status**: Testing in V01, ready to move to P01
+
+### BCM Authorization Objects [VERIFIED from Blueprint pp.41-60 + SAP Note 1076337]
+
+**F_STAT_MON** — Controls BNK_MONI (Batch Monitor) and BNK_APP (Approve Payments)
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| BNK_RULE | Rule ID | Which BCM rule the user can process |
+| BNK_ACT | READ, EDIT, R, F, B | READ=display, EDIT=edit batch, R=reject, F=release, B=return |
+| BNK_ITMDFT | X / blank | X=display items, blank=no items displayed |
+
+**F_STAT_USR** — Signature User (4-eye principle for BNK_APP)
+- Assigns a "signature user" to each logon user for approval confirmation
+- One person maintains the relation, another person confirms it (hard-coded 4-eye)
+- Activities: 01=Create, 31=Confirm
+- Configured via: Accounting → FSCM → BCM → Environment → Current Settings → Maintain/Confirm Signature User
+
+**SAP Note 1076337** — BCM: Additional recommendations for customizing (BCM authorizations)
+
+**Authorization Changes Required When Implementing BCM:**
+1. Remove direct file generation from F110/F111 (payment files must go via BCM only)
+2. Restrict SWIFT directory access: `\\hq-sapift\SWIFTS\*` — only SAPFPAYM can write (no other SAP program, no individual Windows users)
+3. Add BCM transactions to AP role: FBPM1 (merge), BNK_MERGE_RESET (reset), FBPM2 (unmerged)
+4. Add to validator roles: BNK_APP (approve), BNK_MONI (monitor), BNK_MONIA (alt monitor)
+5. Add to TRS role: FTE_BSM (bank statement monitor), payment file creation
+6. Add to AR role: FTE_BSM (bank statement monitor)
 
 ### BCM Signatory Management
 - Transaction: `OOCU_RESP` (Organization → Responsibility)
