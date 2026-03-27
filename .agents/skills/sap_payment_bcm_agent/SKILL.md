@@ -383,6 +383,51 @@ When WF item goes to wrong person or nobody:
 
 **For UAH/VEF/LYD/YER**: AO must arrange alternative payment mechanism outside SAP (local banking, manual wire). Document as Process 1 (Outside SAP).
 
+### Exotic Currency Note to Payee — SWIFT Field :70 [VERIFIED from FS Note to Payee v1.1]
+
+**Payment method X** generates SWIFT field :70 (Note to Payee) with this structure:
+```
+EXO//Detailed reason for payment//additional information//
+```
+- Fixed prefix: `EXO//` — mandatory for ALL exotic currency payments (identifies file as exotic)
+- One entry per paid document (1 payment can cover multiple invoices — each gets its own entry)
+- "Detailed reason for payment" → determined from **REGUP-BLART** (document type) via custom table
+- "Additional information" → **FPAYP-XBLNR** (external document number / vendor invoice ref)
+
+**OBPM2 Note to Payee name:** `Y_EXOTIC_CURRENCY` — linked to payment method X and format `/Cmi101`
+
+**Function modules:** `Y_FI_PAYMEDIUM_NOTE_TO_PAYEE` (logic), `Y_FI_PAYMEDIUM_41` (may need changes)
+
+**Document Type → Payment Reason mapping** (custom table, REGUP-BLART as key):
+
+| Doc Type | Description | Reason in :70 field |
+|----------|-------------|---------------------|
+| AP | Annuities & Oth Ben | RENTS |
+| AS | Advances Salaries | STAFF MEMBER SALARY |
+| CO | Coupons | INVOICE |
+| ER | Expense Reimbursement | STAFF MEMBER REIMBURSEMENT |
+| IN | Insurance Transfers | INSURANCE |
+| IT | Invoice IC Transfer | INVOICE |
+| KA | Supplier Advances | SUPPLIER INVOICES |
+| KR | Supplier Invoices FI | SUPPLIER INVOICES |
+| KT | Temp Supp. Payments | STAFF MEMBER SALARY |
+| MF | MBF Postings | MEDICAL CLAIM |
+| MR | Customer Reimbursement | CUSTOMER REIMBURSEMENT |
+| P3 | Payroll Adjustments | STAFF MEMBER SALARY |
+| PN | Participation Program | CONTRIBUTION FROM UNESCO |
+| PS | Prosper Requests | PAYMENT TO THIRD PARTY |
+| RE | Invoice-Gross (MM) | INVOICE |
+| RF | Return of Funds ROF | INVOICE |
+| TF | Travel Req Field Off | STAFF TRAVEL |
+| TV | Travel Request FI TV | STAFF TRAVEL |
+
+**Madagascar (MGA) special rule for SWIFT field :57**:
+- Trigger: method X + currency MGA + beneficiary bank country MG (ALL three conditions)
+- Standard: cannot use :57A and :57D simultaneously in SWIFT format
+- Rule: use **:57D only** (Option D) — contains BIC + full bank name + address in one field
+- Fields: Sub-field 1 = `/34x` → `fpayh-zbnka` (bank name); Sub-field 2 = `4*35x` (address + city + branch + BIC)
+- Function module to modify: `Y_FI_PAYMEDIUM_101_30`
+
 ### Payment File Regeneration
 - Transaction: **ZPAYM** (custom) — regeneration of payment files from BCM batches
 - Shows batches by status (New, In Approval, Approved, Sent to Bank, Completed, Exceptions)
@@ -468,6 +513,10 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | `CL_IDFI_CGI_DMEE_FALLBACK` | /CGI_XML_CT_UNESCO | SG: empty bank number when not available (method GET_CREDIT) |
 | `/CITIPMW/FI_PAYMEDIUM_DMEE_05` | /CITI/.../DC_V3_01 | Brazil: BranchId fix `p_zbnky+3` → `p_zbnkl+3` (program `/CITIPMW/LPMWV3F01`) |
 | `YCL_IDFI_CGI_DMEE_FALLBACK` | Custom (YENH_FI_DMEE) | UNESCO DMEE fallback: credit/debit value calculation |
+| `Y_FI_PAYMEDIUM_NOTE_TO_PAYEE` | /Cmi101 (method X) | Exotic currencies: builds SWIFT :70 field with `EXO//reason//XBLNR//` |
+| `Y_FI_PAYMEDIUM_101_20` | /Cmi101 | HR payroll: CMI101 tags :21R (header ref) and :21 (item ref = PERNR last 7) |
+| `Y_FI_PAYMEDIUM_101_30` | /Cmi101 | Madagascar MGA: SWIFT :57D Option D (BIC + bank name/address in one field) |
+| `DMEE_EXIT_SEPA_21` | /SEPA_CT_UNES | HR payroll: populates `<PmtInfId>` XML node with laufi+identifier+month formula |
 
 ### Country-Specific DMEE Adaptations [VERIFIED]
 
@@ -692,6 +741,53 @@ Full end-to-end flow for payroll bank payments:
 - Strict check: If errors exist, reset is blocked until resolved
 - SAP Note 1681517: Adds restriction to reset by batch number only (prevents mass reset)
 
+### HR Payroll Payment References [VERIFIED from FS HR Payroll Payment References v2.1]
+
+**Context**: Payroll runs generate payment files in STEPS (now iRIS). Payment file and bank statement are in different systems — SAP standard references don't match. A custom reference is built for automated reconciliation.
+
+**SAP Objects**: Package `ZHR_HR_POSTING`, Class `ZCL_PAYMENT_REF`, Author: Claude-Henri Berger
+
+**Scope restriction**: These modifications are ONLY valid for payroll (REGUH-DORIGIN = 'HR-PY'). Must NOT be applied to FABS.
+
+#### BSEG-ZUONR Assignment (bulk payments — house bank SOG01, account EUR01)
+
+**Payment method S** (SEPA zone, from Feb 2014 — replaces H and I):
+
+| Business Area | Identifier | Formula |
+|---------------|-----------|---------|
+| GEF | `6` | `CONCATENATE reguh-laufi(4) '6' reguh-LAUFD+4(2)` |
+| OPF | `7` | `CONCATENATE reguh-laufi(4) '7' reguh-LAUFD+4(2)` |
+| Other | `8` | `CONCATENATE reguh-laufi(4) '8' reguh-LAUFD+4(2)` |
+
+**Payment method H** (legacy, France domestic — deactivatable as no longer in use):
+
+| Business Area | Identifier | Formula |
+|---------------|-----------|---------|
+| GEF | `1` | `CONCATENATE reguh-laufi(4) '1' reguh-LAUFD+4(2)` |
+| OPF | `2` | `CONCATENATE reguh-laufi(4) '2' reguh-LAUFD+4(2)` |
+| Other | `3` | `CONCATENATE reguh-laufi(4) '3' reguh-LAUFD+4(2)` |
+
+**Decoding the formula**: `laufi(4)` = first 4 chars of run ID + identifier digit + `LAUFD+4(2)` = 2-digit month from run date
+
+#### Individual payments (non-bulk):
+- BSEG-ZUONR = **last 7 positions of REGUH-PERNR** (personnel number, including leading zeros)
+- Example: PERNR=`10000050` → ZUONR=`0000050`
+
+#### CITI Bank rule (added v2.1, January 2019):
+- For all payroll postings via CITI bank: BSEG-ZUONR = **REGUH-VBLNR** (individual payment doc number)
+- Replaces personnel number logic for Citibank payroll payments
+- SAP Notes: **2007174** + **505698** (payment document number on HR payroll)
+
+#### DMEE — SEPA XML File Reference (/SEPA_CT_UNES)
+- Format tree: `/SEPA_CT_UNES`, tree type PAYM, edit via DMEE transaction
+- Field modified: `<PmtInfId>` (Payment Information ID XML node)
+- User exit: **`DMEE_EXIT_SEPA_21`** — applies same bulk formula (identifiers 6/7/8) to XML node
+
+#### CMI101 File — HR Payroll Tags
+- Function module (unchanged): **`Y_FI_PAYMEDIUM_101_20`**
+- Tag `:21R` (Header Reference): same formula as ZUONR (bulk = laufi+identifier+month; other = REGUT-RENUM last 7)
+- Tag `:21` (Item Reference): last 7 positions of REGUH-PERNR (individual beneficiary reference on bank statement)
+
 ### BNK_APP — Digital Signature & 5 Key Actions [VERIFIED from Helpcard BCM Validation]
 
 **Digital signature process**:
@@ -782,6 +878,10 @@ Full end-to-end flow for payroll bank payments:
 |---------|---------|----------------|
 | ZFI_SWIFT_UPLOAD_BCM | BCM SWIFT payment file upload (2.8K lines) | Z001 / P_KLEIN |
 | YBSEG_REL | Payment release report | YWFI / D_CROUZET |
+| ZCL_PAYMENT_REF | HR payroll payment reference class — bulk ZUONR formula + CITI VBLNR rule | ZHR_HR_POSTING / C-H Berger |
+| Y_FI_PAYMEDIUM_NOTE_TO_PAYEE | Note to payee for payment method X (exotic currency SWIFT :70) | — |
+| Y_FI_PAYMEDIUM_101_20 | CMI101 generation: HR payroll tags :21R + :21 (PERNR last 7) | — |
+| Y_FI_PAYMEDIUM_101_30 | CMI101 :57D adjustment for Madagascar (BIC + bank name in Option D) | — |
 | ZNOTREJECT | Non-rejection handler | YWFI / D_CROUZET |
 | YENH_FI_DMEE | DMEE format enhancement (credit/debit calc) | — |
 | YCEI_FI_SUPPLIERS_PAYMENT | Supplier payment enhancement | — |
@@ -832,6 +932,9 @@ Full end-to-end flow for payroll bank payments:
 | Payment process & auth 1.2 | Same folder | Extended: BCM signatory rules 90000004/90000005, OOCU_RESP, validation tiers |
 | Payment exotic currencies | Same folder | Method X, SOG01-USDD1, 3 currency tiers, BCM rule UNES_AP_X |
 | FS Exotic Currency Requirements | Same folder | Full 40+ currency table, UAH/VEF not serviced, LYD/YER compliance, ARS 90-day hold |
+| FS Note to Payee payment exotic currencies v1.1 | Same folder | SWIFT :70 EXO// format, Y_EXOTIC_CURRENCY in OBPM2, doc type→reason mapping, MGA :57D rule |
+| FS HR Payroll payment references v2.1 | `1 Functional Specifications/` | BSEG-ZUONR bulk formula (GEF/OPF/other), CITI VBLNR rule, ZCL_PAYMENT_REF, DMEE_EXIT_SEPA_21 |
+| Improvement Project to Brazil Payments | `UBO/BCM/` | 2014-2015 project (5% complete). 6 scope items: FI doc number in batch, utilities, salary transfer, auto-reconciliation, block rejected items, email to suppliers |
 | Regeneration payment files | Same folder | ZPAYM transaction, BCM batch status tabs |
 | FS Fixed Payment Reference | Same folder | OBPM2, SEPA reference table BUKRS/LIFNR/BLART/BELNR, formula /INV/XBLNR BLDAT |
 | Helpcard BCM Validation | Same folder | BNK_APP 5 actions, digital signature (Signatory ID+password), BNK_MONI status tabs |
