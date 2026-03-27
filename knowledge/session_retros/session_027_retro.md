@@ -84,4 +84,4 @@
 
 - [x] Can a new agent resume from this file alone? Yes — discoveries, evidence, pending items all here.
 - [x] Was at least one AI assumption challenged? Yes — "local banking system" for Stream 2 is INFERRED.
-- [x] Does the companion have a diligence statement? Pending (add at start of next session).
+- [x] Does the companion have a diligence statement? Yes — added Session #027 close.
