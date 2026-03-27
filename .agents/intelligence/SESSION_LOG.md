@@ -23,6 +23,44 @@
 
 ---
 
+## Session #023 — 2026-03-27 (Payment PDF Completion + Skill Quality Sprint)
+
+**Start**: 2026-03-27
+**Focus**: Complete remaining PDF knowledge extraction + systematically clear PMO H/G items
+**Significance**: 100% PDF coverage reached. 5 skills promoted. segw_automation consolidated. B10 partially cleared.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **PDF coverage 100%** | Groups 2, 3, 4 + final batch processed. 10/11 PDFs covered (BCM_contracts_committee_20131216 intentionally skipped). |
+| **sap_payment_bcm_agent SKILL.md** | +5 major additions: SWIFT directory access groups (11 named users), payroll BCM flow (ZHRUN→FBPM1→BNK_APP→BNK_MONI→BNK_MERGE_RESET), Fixed payment ref (OBPM2/XBLNR formula), Exotic currency Note to Payee (SWIFT :70 EXO// format, 18-entry reason table, MGA :57D rule), HR payroll ZUONR formula (laufi+GEF/OPF/other+month), CITI VBLNR rule |
+| **knowledge/domains/FI/payment_full_landscape.md** | Added SWIFT access control, payroll BCM flow, special currency restrictions (UAH/VEF/LYD/YER/ARS), Exotic currency :70 section |
+| **H2/H3/H4 verified done** | Ghost items — skills and bseg_union VIEW already existed. Marked closed. |
+| **H5 done** | sap_segw merged with segw_automation — comprehensive skill (5 workflows, element IDs, full troubleshooting). segw_automation now deprecation redirect. |
+| **G25 done** | ROADMAP.md + SESSION_LOG.md (root) archived with SUPERSEDED banners pointing to authoritative locations |
+| **B10 partial** | skill_creator (12→33 skills), unicode_filter_registry (BLART_FI + BCM_RULE filters added), sap_debugging_and_healing (real RFC/Playwright/SU53/ADT patterns from sessions #001-#022) |
+| **coordinator SKILL.md** | Payment routing added (BCM→sap_payment_bcm_agent, E2E→sap_payment_e2e). Brain stats updated (73,914 nodes, 9 sources) |
+
+### Key Intelligence Captured
+
+| Finding | Significance |
+|---------|-------------|
+| SWIFT :70 Note to Payee format | `EXO//reason//XBLNR//` — 18 doc type→reason entries, Y_EXOTIC_CURRENCY in OBPM2 |
+| Madagascar :57D Option D | Y_FI_PAYMEDIUM_101_30 custom FM handles beneficiary bank field |
+| ZUONR bulk payroll formula | `laufi(4) + identifier(1) + LAUFD_month(2)` — GEF=6, OPF=7, other=8 for method S |
+| CITI VBLNR rule | Individual payroll: CITI uses REGUH-VBLNR (implemented Jan 2019) |
+| SWIFT access control | SA_SWIFT + SG-SAPITF-SWIFT-RO (11 named users), maintained by Vincent Vaurette |
+| H2/H3/H4 already done | 3 PMO items were ghost — skills existed with correct content |
+
+### PMO Reconciliation
+- Closed: H2 (sap_process_mining), H3 (sap_change_audit), H4 (bseg_union VIEW), H5 (segw merge), G25 (archive root docs)
+- Partial: B10 (3/10 stale skills updated — skill_creator, unicode_filter_registry, sap_debugging_and_healing)
+- Still blocked (VPN): B1, B2, B3, B4, B5, B6, B7, B8, B9
+- **Total: 9 Blocking | 11 High | 40 Backlog = 60 items** (-3 from #022)
+
+---
+
 ## Session #022 — 2026-03-27 (Payment & BCM Intelligence — 100% Coverage)
 
 **Start**: 2026-03-27

@@ -1,6 +1,6 @@
 # UNESCO SAP — Project Brain + PMO Brain
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
-> **Last reconciled**: Session #022 (2026-03-27) — Companion v4 + Brain SOURCE 9 + payment_full_landscape.md
+> **Last reconciled**: Session #023 (2026-03-27) — PDF coverage 100%, H5/G25/H2/H3/H4 closed, B10 partial (3/10 skills updated)
 
 ---
 
@@ -83,7 +83,7 @@ Each layer FEEDS the others:
 | B7 | **CDHDR process mining** | #011 | Audit trail analysis | 7.8M rows extracted but NEVER processed with pm4py |
 | B8 | **P2P bottleneck/temporal analysis** | #009 | P2P insights | 848K event log built but no time analysis run |
 | B9 | **Fix STEM FBZP chain** | #019 | Company code unusable for payments | T042C+T042I missing. House bank CBE01 question |
-| B10 | **Update 10 stale skills** | #017 | Agents using outdated instructions | See #017 retro for full gap list |
+| B10 | **Update remaining stale skills** | #017 | Agents using outdated instructions | #023 partial: skill_creator (12→33 skills), unicode_filter_registry (+BLART_FI+BCM_RULE), sap_debugging_and_healing (+real patterns). Still need: sap_bdc_intelligence, sap_job_intelligence, sap_interface_intelligence, sap_enhancement_extraction, sap_process_mining, sap_native_desktop, sap_automated_testing |
 
 ### 🟡 HIGH — Next available session
 
@@ -93,7 +93,7 @@ Each layer FEEDS the others:
 | ~~H2~~ | ~~Create `sap_process_mining` skill~~ | ~~#017~~ | ~~Skill~~ | ~~Done — SKILL.md exists, Functional (3). OCEL pending as G1~~ |
 | ~~H3~~ | ~~Create `sap_change_audit` skill~~ | ~~#017~~ | ~~Skill~~ | ~~Done — SKILL.md exists, Functional (3). Compliance template → added #023~~ |
 | ~~H4~~ | ~~BSEG UNION view in SQLite~~ | ~~#011~~ | ~~Data~~ | ~~Done — bseg_union VIEW exists, 4.7M rows (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). Verified #023~~ |
-| H5 | **Merge sap_segw + segw_automation** | #018 | Skill | Duplicate skills for same domain |
+| ~~H5~~ | ~~Merge sap_segw + segw_automation~~ | ~~#018~~ | ~~Skill~~ | ~~Done #023 — sap_segw now comprehensive (5 workflows, element IDs, full troubleshooting). segw_automation redirects.~~ |
 | H6 | **Brain integration of P2P** | #009 | Brain | PROCESS_VARIANT/BOTTLENECK/ANOMALY nodes |
 | H7 | **Design Fiori replacement for PRAA*** | #005 | App | PA30 infotype update app. BAPI: BAPI_EMPLOYEE_ENQUEUE + HR_MAINTAIN_MASTERDATA |
 | H8 | **P01 transaction usage report** | #005b | Monitoring | `--report transactions --system P01` |
@@ -150,7 +150,7 @@ Each layer FEEDS the others:
 | G22 | **SAP MCP Server build** | #005b | Half-built in SAP_MCP/ — expose RFC_READ_TABLE as MCP tool |
 | G23 | **Duplicate script cleanup** | #005b | extract_* in mcp-backend-server-python/ AND sap_data_extraction/scripts/ |
 | G24 | **Index YRGGBS00 + YPS8** | #005b | Move to extracted_sap/PSM/ and index |
-| G25 | **Archive legacy root docs** | #005b | ROADMAP.md, pmo_tracker.md superseded |
+| ~~G25~~ | ~~Archive legacy root docs~~ | ~~#005b~~ | ~~Done #023 — ROADMAP.md + SESSION_LOG.md (root) have SUPERSEDED banners pointing to PMO_BRAIN.md and .agents/intelligence/SESSION_LOG.md~~ |
 | G26 | **Brain auto-refresh workflow** | #006 | `--build` after every extraction automatically |
 | G27 | **Notion PMO sync** | #006 | Write PMO Brain to Notion database via MCP |
 
