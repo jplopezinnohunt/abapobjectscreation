@@ -401,6 +401,8 @@ When WF item goes to wrong person or nobody:
 
 **NOTE**: Since 2022 (TMS/Coupa), all CITIBANK files must be XMLv3. XMLv2 phased out.
 
+**Legacy format (retired)**: `/CITI/XML/UNESCO/DIRECT_CREDIT` — Citi PMW Template Master V2. Used for standard ACH/WIRE before 2022. Replaced by DC_V3_01 for all company codes. Do not create new payment methods pointing to this format.
+
 ### Payment Method → Bank → Format Mapping [VERIFIED]
 
 | CC | Country | Bank | Account | Method | Type | Format |
@@ -508,6 +510,32 @@ When adding a new country, this is the **hardest part** — each bank has differ
 - Example: `UNES_SOGE_03SEPOPF.in`
 
 **SWIFT Transfer**: Every 15 minutes, SFTP checks directory → SWIFT Integration Layer (SIL) → Alliance Lite2 → Banks
+
+### SWIFT Directory Access Control [VERIFIED from Solution Description Payment Process]
+
+**Path**: `\\hq-sapitf\SWIFTS\Input\*` (payment files to bank) and `\\hq-sapitf\SWIFTS\output\*` (EBS + PSR from bank)
+
+| Access Group | Rights | Who |
+|---|---|---|
+| NT AUTHORITY\SYSTEM | Full control | System administrators |
+| SAPServiceP01 + p01adm | Modify | SAP technical operations |
+| SA_SWIFT (Marlies Spronk/KMI/FAM) | Modify | SWIFT coordinator |
+| SG-SAPITF-SWIFT-RO | Read/Execute | Functional staff (list below) |
+
+**SG-SAPITF-SWIFT-RO members** (as of 2021-10-20, maintained by Vincent Vaurette/SAP Admin):
+
+| BFM/TRS | BFM/FAS | KMI |
+|---------|---------|-----|
+| Adjanohoun, Irma | Bertoldini, Simona | Spronk, Marlies |
+| Streidwolf, Engelhard | Derakhshan, Farinaz | |
+| Eng, Thavry | La, Jeanette | |
+| Gazi, Baizid | Lopez-Chemouny, Christina | |
+| Gupta, Abhishek | Marquand, Isabelle | |
+| Sopraseuth, Thepthevy | Mathewos, Mehari | |
+| Wettie, Ingrid | | |
+| Yli-Hietanen, Anssi | | |
+
+**Security rule**: No individual user has write access to SWIFT folders. Only `SAPFPAYM` program can write to `\\hq-sapitf\coupa$\P01\In\Data`. Access changes requested to Vincent Vaurette.
 
 ### BCM Release Rules — Full Detail [VERIFIED from Blueprint pages 21-25]
 
@@ -790,6 +818,8 @@ Full end-to-end flow for payroll bank payments:
 | **Extracted ABAP Code** | `Zagentexecution/extracted_code/payment_workflow/` | 5 files, 14KB |
 
 ## Source Documentation (BFM Handover PDFs)
+
+**Field Office Scope**: Payment release workflow (WF 90000003) is active at UNESCO HQ only. Field offices (IBE, MGIE, ICBA) use Process 1 (outside SAP) — they post the outgoing payment directly and execute via local banking system. The workflow runs only when HQ executes a payment on behalf of a field office.
 
 | Document | Path | Key Content |
 |----------|------|-------------|
