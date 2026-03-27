@@ -42,8 +42,8 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 </head>
 <body>
 <div class="header">
-  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v4</span></h1>
-  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure</div>
+  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v5</span></h1>
+  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure &middot; <strong style="color:#1abc9c">Payment Purpose Codes (8 countries)</strong></div>
 </div>
 
 <div class="kpi-bar">
@@ -56,6 +56,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
   <div class="kpi"><div class="val" style="color:#27ae60">24</div><div class="lbl">Confirmed</div></div>
   <div class="kpi"><div class="val" style="color:#e74c3c">1</div><div class="lbl">Audit Findings</div></div>
   <div class="kpi"><div class="val">4,431</div><div class="lbl">PAYR Records</div></div>
+  <div class="kpi"><div class="val" style="color:#f39c12">8</div><div class="lbl">PPC Countries</div></div>
 </div>
 
 <div class="tabs">
@@ -71,6 +72,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
   <div class="tab" onclick="show('notes',this)">Go-Live &amp; Notes</div>
   <div class="tab" onclick="show('roles',this)">Roles &amp; Auth</div>
   <div class="tab" onclick="show('infra',this)">Infrastructure</div>
+  <div class="tab" onclick="show('ppc',this)" style="color:#f39c12">PPC</div>
 </div>
 
 <!-- TAB: E2E Flow -->
@@ -224,7 +226,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
           <li>Other types &rarr; <code>Rule 90000002</code> &rarr; <code>Z_WF_FI_PR_WF_ACTOR1_DET</code> &rarr; resolve group</li>
           <li>If no actor &rarr; fallback <code>ZFI_PAYREL_EMAIL</code> email notification</li>
           <li>Validator approves &rarr; payment block removed &rarr; vendor released</li>
-          <li>F110 picks up in next payment run (LAUFI prefix B = BCM, 0 = direct)</li>
+          <li>F110 picks up in next payment run (LAUFI prefix <code>BCM*</code> = routed to BCM, <code>0</code>/<code>T</code>/<code>M</code> = direct)</li>
         </ol>
       </div>
     </div>
@@ -753,6 +755,11 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 <tr><td style="font-size:12px">Bank Statement Monitor (FTE-BSM) for IBE/ICTP/IIEP/UBO/UIL</td><td style="font-size:12px;color:#2c3e50">No FEBEP/FEBKO tables in Gold DB</td><td><span style="background:#95a5a6;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — BSM config not in DB</span></td></tr>
 <tr><td style="font-size:12px">21 SAP Notes implemented</td><td style="font-size:12px;color:#2c3e50">SAP Notes referenced in CTS MERG objects</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL</span></td></tr>
 <tr><td style="font-size:12px">YCL_IDFI_CGI_DMEE classes per country</td><td style="font-size:12px;color:#2c3e50">CTS: CLAS YCL_IDFI_CGI_DMEE_AE + BH + CH/FR in CLSD</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
+<tr><td style="font-size:12px">PPC: T015L-LZBKZ used as purpose code carrier (SCB indicator repurposed)</td><td style="font-size:12px;color:#2c3e50">Not yet queried in Gold DB — T015L extracted but LZBKZ values for AE/BH/CN/IN not checked</td><td><span style="background:#7f8c8d;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">DOC ONLY</span></td></tr>
+<tr><td style="font-size:12px">PPC: BAdI ENBC AE + BH = only 2 PPC-specific implementations in CTS</td><td style="font-size:12px;color:#2c3e50">Gold DB CTS: 5 ENBC total. DE/FR/IT = address only. AE+BH = PPC. CN/ID/IN/JO/MA/MY/PH = none found in CTS.</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
+<tr><td style="font-size:12px">PPC: CN/ID/IN/JO/MA/MY/PH use UTIL fallback (GET_TAG_VALUE_FROM_CUSTO)</td><td style="font-size:12px;color:#2c3e50">No ENBC for these 7 countries in CTS. YCL_IDFI_CGI_DMEE_UTIL class confirmed. Fallback reads T015L-LZBKZ via customizing.</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — source unread</span></td></tr>
+<tr><td style="font-size:12px">PPC: YOPAYMENT_TYPE custom table exists</td><td style="font-size:12px;color:#2c3e50">CUS0+CUS1 objects in CTS confirmed. Drives P/R payment type detection. Content unread (needs RFC/SM30).</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — content unread</span></td></tr>
+<tr><td style="font-size:12px">AE/BH not in T042Z (no per-country payment method config)</td><td style="font-size:12px;color:#2c3e50">T042Z_FULL queried: AE, BH, JO, MA absent. These countries paid via cross-border method N/X without country restriction. CN/ID/MY/PH present in T042Z with local methods.</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
     </table>
   </div>
   <div class="alert">
@@ -874,7 +881,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
     <h3>The 4 UNESCO Payment Processes [VERIFIED — BFM Handover Documentation]</h3>
     <div class="info" style="margin-bottom:12px">
       Source: "Payment process and authorizations 1.2 TRS" (BFM/TRS handover).
-      Role <code>YS:FI:M:BCM_MON_APP______:XXXX</code> and <code>Y_XXXX_FI_AP_PAYMENTS</code> are MUTUALLY EXCLUSIVE (except UNES Process 4).
+      Role <code>YS:FI:M:BCM_MON_APP______:XXXX</code> and <code>Y_XXXX_FI_AP_PAYMENTS</code> must NEVER be on the <strong>same user</strong> (except UNES Process 4, where different users each hold one role). 2023 incident: one user had both &rarr; BCM bypassed.
     </div>
     <table>
       <tr><th style="width:40px">#</th><th>Process Name</th><th>Company Codes</th><th>Tool</th><th>SAP Role</th><th>Flow Description</th></tr>
@@ -1122,5 +1129,134 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
   interaction: { hover: true, tooltipDelay: 100 },
 });
 </script>
+
+<!-- TAB: PPC (Payment Purpose Code) -->
+<div id="tab-ppc" class="content">
+  <div class="info">
+    <strong>Scope:</strong> SG format only (<code>/CGI_XML_CT_UNESCO</code>). Citibank payments do NOT use PPC.
+    SG transmits to local banks that require a regulatory purpose code per destination country.
+    Design confirmed in: <em>FS Payment Purpose Code XML 2.0</em> + <em>20240321 Payment Purpose Code presentation</em>.
+  </div>
+
+  <div class="grid2">
+    <div>
+      <div class="section">
+        <h3>Architecture: BAdI Dispatcher per Country</h3>
+        <table>
+          <tr><th>Component</th><th>Object</th><th>Status</th></tr>
+          <tr><td>BAdI Definition</td><td><code>Y_BADI_IDFI_CGI_DMEE</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
+          <tr><td>DMEE Exit (dispatcher)</td><td><code>FI_CGI_DMEE_EXIT_W_BADI</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
+          <tr><td>UAE BAdI impl</td><td><code>Y_IDFI_CGI_DMEE_COUNTRY_AE</code> → <code>YCL_IDFI_CGI_DMEE_AE</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
+          <tr><td>Bahrain BAdI impl</td><td><code>Y_IDFI_CGI_DMEE_COUNTRY_BH</code> → <code>YCL_IDFI_CGI_DMEE_BH</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
+          <tr><td>Other 6 countries</td><td>CN, ID, IN, JO, MA, MY, PH → UTIL fallback (<code>GET_TAG_VALUE_FROM_CUSTO</code>)</td><td><span style="background:#f39c12;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS: no ENBC — uses UTIL class</span></td></tr>
+          <tr><td>PPC carrier table</td><td><code>T015L</code> field <code>LZBKZ</code> (SCB indicator repurposed)</td><td><span style="background:#7f8c8d;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">DOC ONLY</span></td></tr>
+          <tr><td>Payment type table</td><td><code>YOPAYMENT_TYPE</code> (data elem: <code>YE_HRMBF_PAYMENT_TYPE</code>)</td><td><span style="background:#7f8c8d;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">DOC ONLY</span></td></tr>
+        </table>
+        <div class="info" style="margin-top:8px">
+          <strong>Country resolution gap:</strong> T015L-LZBKZ is keyed by payment method + currency, not by destination country.
+          The BAdI class must also read <code>REGUP-UBISO</code> (beneficiary country) to route to the correct PPC.
+          Source code of <code>YCL_IDFI_CGI_DMEE_AE</code> needed to confirm exact lookup logic. [UNREAD]
+        </div>
+      </div>
+      <div class="section">
+        <h3>Payment Type Detection (REGUP-LAUF1 Suffix)</h3>
+        <table>
+          <tr><th>LAUF1 Last Char</th><th>Payment Type</th><th>Purpose Code</th></tr>
+          <tr><td><code style="background:#27ae60;color:#fff">P</code></td><td>Payroll</td><td><code>SALA</code> (ISO 20022 Salary)</td></tr>
+          <tr><td><code style="background:#2980b9;color:#fff">R</code></td><td>Replenishment (F111)</td><td><code>IFT</code> (Intracompany funds transfer)</td></tr>
+          <tr><td>Other</td><td>Vendor/Supplier</td><td>Country-specific code from T015L-LZBKZ</td></tr>
+        </table>
+        <div class="alert" style="margin-top:8px">
+          &#9888; Payroll code is <code>SALA</code> (4 chars, ISO 20022), NOT <code>SAL</code> (3 chars). Using SAL will cause bank rejection for countries that strictly validate ISO codes.
+        </div>
+      </div>
+      <div class="section">
+        <h3>XML Placement by Country</h3>
+        <table>
+          <tr><th>Country</th><th>XML Element</th><th>Code Format</th></tr>
+          <tr><td>UAE (AE), Bahrain (BH), Indonesia (ID), Jordan (JO), Morocco (MA)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>ISO 20022 text (4 chars, e.g. SALA, SUPP)</td></tr>
+          <tr><td>China (CN)</td><td><code>InstrInf</code></td><td>Numeric 3-char (001, 002, 003, 101, 102, 999)</td></tr>
+          <tr><td>India (IN)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>RBI codes 5-char alphanumeric (P0001-P1006)</td></tr>
+          <tr><td>Malaysia (MY), Philippines (PH)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>ISO text [INFERRED — no BAdI confirmed in CTS]</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="section">
+        <h3>8-Country Purpose Code Tables</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">UAE (AE) — 20 codes (BAdI confirmed)</div>
+            <div style="font-size:10px;line-height:1.7;color:#a9cce3">
+              BEXP · CORT · DIVI · GOVT · HEDG · ICCP · IHRP · INTC · INTP · LOAN · MGSC · OTHR · PENS · RINP · <strong style="color:#1abc9c">SALA</strong> · SECU · SSBE · <strong style="color:#1abc9c">SUPP</strong> · TAXS · <strong style="color:#1abc9c">TREA</strong>
+            </div>
+          </div>
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">Bahrain (BH) (BAdI confirmed)</div>
+            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · GOVT · TREA · OTHR</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Indonesia (ID)</div>
+            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · TREA · CORT · OTHR</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Jordan (JO) ⚠ Also UNES_AP_EX</div>
+            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · GOVT · TREA · OTHR</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Morocco (MA)</div>
+            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · TREA · OTHR</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">China (CN) — Numeric codes</div>
+            <table style="font-size:10px">
+              <tr><td><code>001</code></td><td>Goods import/export</td></tr>
+              <tr><td><code>002</code></td><td>Service</td></tr>
+              <tr><td><code>003</code></td><td>Current transfer income</td></tr>
+              <tr><td><code>101</code></td><td>Direct investment</td></tr>
+              <tr><td><code>102</code></td><td>Securities investment</td></tr>
+              <tr><td><code>999</code></td><td>Other capital items</td></tr>
+            </table>
+            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ NOT ISO text — numeric only → InstrInf</div>
+          </div>
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">India (IN) — RBI Codes</div>
+            <table style="font-size:10px">
+              <tr><td><code>P0001</code></td><td>Advance vs imports</td></tr>
+              <tr><td><code>P0002</code></td><td>Payment vs imports</td></tr>
+              <tr><td><code>P0005</code></td><td>Services (non-software)</td></tr>
+              <tr><td><code>P0006</code></td><td>Software services</td></tr>
+              <tr><td><code>P0008</code></td><td>Salary remittance</td></tr>
+              <tr><td><code>P0010</code></td><td>Consultancy</td></tr>
+              <tr><td><code>P1006</code></td><td>Dividend remittance</td></tr>
+              <tr><td><code>P0009</code></td><td>Other current payments</td></tr>
+            </table>
+            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ RBI codes change periodically — verify Annex-I</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#7fb3d3">
+          Malaysia (MY) / Philippines (PH): SALA · SUPP · TREA · OTHR [INFERRED — no dedicated BAdI confirmed in CTS extract]
+        </div>
+      </div>
+      <div class="section">
+        <h3>Cross-Domain Alert: AE + JO</h3>
+        <div class="alert">
+          UAE (AE) and Jordan (JO) appear in <strong>TWO</strong> control lists simultaneously:<br>
+          1. <code>UNES_AP_EX</code> BCM exception rule — payments routed to exceptional batch (manual oversight required)<br>
+          2. PPC requirement — payment XML must contain valid purpose code<br><br>
+          When paying vendors in UAE or Jordan: both the BCM exception workflow AND the PPC output must be correct.
+        </div>
+      </div>
+      <div class="section">
+        <h3>SAP Objects to Read for Full Validation</h3>
+        <table>
+          <tr><th>Object</th><th>Why</th><th>How</th></tr>
+          <tr><td><code>YCL_IDFI_CGI_DMEE_AE</code></td><td>Understand exact PPC dispatch logic — how beneficiary country is read, how purpose code is selected</td><td>ADT: /sap/bc/adt/oo/classes/ycl_idfi_cgi_dmee_ae/source/main</td></tr>
+          <tr><td><code>YCL_IDFI_CGI_DMEE_BH</code></td><td>Validate BH PPC codes match the 5 listed</td><td>ADT extraction</td></tr>
+          <tr><td><code>YOPAYMENT_TYPE</code></td><td>Validate P/R suffix logic — see actual table content</td><td>RFC: RFC_READ_TABLE or SM30 via WebGUI</td></tr>
+          <tr><td><code>T015L</code> (LZBKZ for UNES)</td><td>Validate that LZBKZ actually contains PPC values (vs empty)</td><td>SQL: SELECT ZLSCH, WAERS, LZBKZ FROM T015L WHERE BUKRS='UNES' AND LZBKZ != ''</td></tr>
+          <tr><td>TADIR search: <code>Y_IDFI_CGI_DMEE_COUNTRY_*</code></td><td>Get complete list of country BAdI implementations</td><td>RFC: RFC_READ_TABLE on TADIR WHERE OBJECT='ENBC' AND OBJ_NAME LIKE 'Y_IDFI_CGI_DMEE_COUNTRY%'</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

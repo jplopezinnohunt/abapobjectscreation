@@ -40,7 +40,7 @@ The **coordinator** should route to this agent when the user asks about:
 4. **Never tell users IBE/MGIE/ICBA can run F110** — They pay OUTSIDE SAP (manual transfer/check in local banking system). [VERIFIED from handover docs]
 5. **Never assume FEBEP has data** — 0 rows. BCM handles bank reconciliation, not classic electronic bank statements.
 6. **Never skip BCM when analyzing payments** — BCM sits between F110 and bank. 374K items routed through BCM batches.
-7. **Never assign Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP together** — This allows bypassing BCM validation entirely. 2023 INCIDENT: payment went to Coupa→bank without BCM approval. [VERIFIED from handover docs]
+7. **Never assign Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP together ON THE SAME USER** — This allows bypassing BCM validation entirely. 2023 INCIDENT: payment went to Coupa→bank without BCM approval. [VERIFIED from handover docs] Note: UNES Process 4 legitimately uses BOTH roles — but on DIFFERENT users (initiator ≠ approver). The risk is one person holding both.
 8. **Never use F110 run ID starting with B* for non-BCM payments** — B* prefix triggers BCM routing. Use any other ID for direct processing.
 
 ## UNESCO Payment Architecture
@@ -76,21 +76,22 @@ The **coordinator** should route to this agent when the user asks about:
 - **SECURITY RISK**: Both roles on same user = bypass BCM entirely (2023 incident)
 
 ### BCM Activation Rule
-- F110 run ID starting with **`B*`** → routed to BCM
-- Any other run ID → direct processing (no BCM)
-- This is configured in SAP payment program customizing
+- **FABS**: F110 run ID starting with **`BCM*`** → routed to BCM (literal prefix, not just B)
+- **STEPS**: All payroll runs → BCM (wildcard `*` configured — every run goes through BCM)
+- Any other prefix (0, T, M, etc.) → direct processing, no BCM batch created
+- Configured in: SFW5 business function `FIN_FSCM_BNK` + payment program BCM identifier field
 
 ### The 3 Payment Tiers (Data-Derived)
 
-**Tier 1 — Full Automation (6 codes: UNES, UBO, ICTP, IIEP, UIL, UIS)**
+**Tier 1 — Full Automation + BCM (5 codes: UNES, UBO, IIEP, UIL, UIS)**
 - F110 automatic payment → BCM batch grouping → bank file transmission
 - Complete FBZP chain: T042 → T042A → T042E → T042I → T012 → T012K
 - BCM approval workflow (BNK_INI/BNK_COM roles)
 
-**Tier 2 — Partial (ICTP)**
+**Tier 2 — F110 Autonomous / No BCM (ICTP)**
 - F110 + physical checks (PAYR Method K = 898 checks via UNI01)
 - 24 payment methods configured (most of any company code)
-- No BCM — payments go directly to bank
+- No BCM — T-prefix run IDs, payments go directly to bank
 
 **Tier 3 — Unconfigured (3 codes: IBE, MGIE, ICBA)**
 - NO T042A entries (payment methods not linked to house banks)
@@ -131,7 +132,7 @@ The **coordinator** should route to this agent when the user asks about:
 
 ### BCM Configuration
 
-**14 BCM Rules:**
+**15 BCM Rules:**
 | Rule | Company | Purpose | Volume |
 |------|---------|---------|--------|
 | PAYROLL | UNES | Payroll payments | 268,902 items |
@@ -190,7 +191,7 @@ The **coordinator** should route to this agent when the user asks about:
 | K | Auslandsscheck (foreign check) | IBE, ICTP, IIEP, UIS, UNES |
 | 5 | Manual cheque USD | ICTP, UNES |
 | L | Auslandsüberweisung (foreign transfer) | IBE, ICTP, UNES |
-| X | Cheque diferido (deferred check) | UNES only |
+| X | Exotic currency payment (method X → SOG01-USDD1, 1,069 currencies) | UNES only |
 | Z | Dummy payment method — STEPS only | UNES only (BNP01) |
 
 ### Process Mining Results
@@ -718,9 +719,37 @@ When adding a new country, this is the **hardest part** — each bank has differ
 
 **Scope**: SG format only (`/CGI_XML_CT_UNESCO`). Citibank payments do NOT use PPC. SG transmits to local banks that require a purpose code per regulatory mandate.
 
+### Architecture: BAdI per Country [VERIFIED from Gold DB CTS + SQL analysis]
+
+The DMEE exit `FI_CGI_DMEE_EXIT_W_BADI` dispatches to per-country BAdI classes. Gold DB CTS confirms the following taxonomy:
+
+**Naming convention** (important — two separate patterns):
+- `Y_IDFI_CGI_DMEE_COUNTRIES_XX` (ENHO only) = character/address handling for country XX (DE, FR, IT, AE)
+- `Y_IDFI_CGI_DMEE_COUNTRY_XX` (ENHO + **ENBC**) = PPC-specific BAdI for country XX
+
+**PPC-enabled ENBC implementations confirmed in CTS:**
+| BAdI Object | Class | Country |
+|------------|-------|---------|
+| `Y_IDFI_CGI_DMEE_COUNTRY_AE` | `YCL_IDFI_CGI_DMEE_AE` | UAE [CONFIRMED] |
+| `Y_IDFI_CGI_DMEE_COUNTRY_BH` | `YCL_IDFI_CGI_DMEE_BH` | Bahrain [CONFIRMED] |
+
+**Address/formatting ENBC only (NOT PPC):**
+- `Y_IDFI_CGI_DMEE_COUNTRIES_DE` → Germany (address)
+- `Y_IDFI_CGI_DMEE_COUNTRIES_FR` → France (address)
+- `Y_IDFI_CGI_DMEE_COUNTRIES_IT` → Italy (address)
+
+**Utility class (fallback mechanism):**
+- `YCL_IDFI_CGI_DMEE_UTIL` — method `GET_TAG_VALUE_FROM_CUSTO` — reads tag values from customizing tables. Countries without dedicated BAdI (CN, ID, IN, JO, MA, MY, PH) likely route through this class using T015L-LZBKZ as the configured value. [INFERRED — source code not read]
+
+**`YOPAYMENT_TYPE`** (CUS0 + CUS1 confirmed in CTS) — custom table storing payment type codes. Data element `YE_HRMBF_PAYMENT_TYPE`. Likely used for P/R payment type detection. [CONFIRMED table exists; CONTENT unread — needs RFC or SM30]
+
+**T042Z finding**: AE, BH, JO, MA are NOT in T042Z (no per-country payment method descriptions). This confirms these destinations are served by cross-border methods (N, X) without country-level method restriction. CN, ID, MY, PH ARE in T042Z with local methods (B/C/T/W).
+
 ### Design: SCB Indicator as PPC Carrier
 
 **Key insight**: UNESCO uses the **SCB indicator field** (`T015L-LZBKZ`) — normally the "State Central Bank indicator" in German banking — as the carrier for Payment Purpose Codes. This field is per payment method/currency in table T015L, and is readable in DMEE via `REGUP-LZBKZ`.
+
+**Country resolution gap**: T015L is keyed by (BUKRS + payment method + currency), NOT by destination country. If the same method/currency combination serves multiple PPC countries (e.g., method N/USD for both UAE and India), the BAdI class must also read the beneficiary country (`REGUP-UBISO` or `FPAYHX.ZBISO`) and perform a per-country lookup or branch. The T015L LZBKZ value likely acts as a flag or default; the actual per-country PPC logic is inside `YCL_IDFI_CGI_DMEE_AE`/`_BH` etc. [INFERRED — needs source code read to confirm]
 
 | SAP Field | Table | Usage |
 |-----------|-------|-------|
@@ -729,7 +758,7 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | LAUF1 suffix | REGUP | Payment type detection: 'P' = payroll, 'R' = replenishment, other = vendor |
 
 **Payment type detection via REGUP-LAUF1**:
-- Last character = `P` → Payroll payment → purpose code = `SAL` (Salary)
+- Last character = `P` → Payroll payment → purpose code = `SALA` (ISO 20022 — Salary)
 - Last character = `R` → Replenishment → purpose code = `IFT` (Intracompany funds transfer)
 - Otherwise → Vendor/supplier payment → use country-specific PPC from T015L/LZBKZ
 
@@ -824,7 +853,7 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | TREA | Treasury Transfer |
 | OTHR | Other |
 
-#### Malaysia (MY) and Philippines (PH)
+#### Malaysia (MY) and Philippines (PH) [INFERRED — same codes assumed; no dedicated BAdI confirmed in CTS]
 | PPC | Description |
 |-----|-------------|
 | SALA | Salary |
@@ -842,14 +871,26 @@ When adding a new country, this is the **hardest part** — each bank has differ
 | 4 | Test in V01 | Verify XML contains correct `<Purp><Cd>` element for country |
 | 5 | Bank confirmation | Each local SG bank confirms receipt with correct PPC |
 
+### Cross-Domain Warning: AE + JO Are Dual-Flagged
+
+UAE (AE) and Jordan (JO) appear in TWO separate control lists:
+1. **BCM UNES_AP_EX exception rule** — payments to AE/JO are routed to the exception batch (manual oversight)
+2. **PPC requirement** — payments to AE/JO require a purpose code in the XML
+
+When paying to UAE or Jordan: the payment gets exceptional BCM handling AND needs a valid PPC in the DMEE output. Both controls must be satisfied.
+
+**India compliance note**: RBI purpose codes (P0001-P1006) change periodically. Verify against current [RBI Annex-I](https://www.rbi.org.in) before adding new India payment types. Stale codes will cause bank rejection.
+
 ### Known Failure Modes
 
 | Failure | Cause | Fix |
 |---------|-------|-----|
-| Bank rejects file | Missing PPC — country requires it but T015L-LZBKZ not set | Add PPC in T015L for payment method + currency + country |
-| Wrong PPC on payroll | LAUF1 suffix detection logic not triggered | Check payment run ID format in FBZP or payroll program parameters |
+| Bank rejects file | Missing PPC — country requires it but T015L-LZBKZ not set | Add PPC in T015L for payment method + currency |
+| SALA sent as SAL | Incorrect 3-char code — ISO 20022 requires 4-char SALA | Verify exit uses `SALA` not `SAL` for payroll |
+| Wrong PPC on payroll | LAUF1 suffix detection logic not triggered | Check payment run ID format; verify YOPAYMENT_TYPE table content |
 | China code rejected | Sending ISO text code instead of numeric | Verify DMEE condition: `LZBKZ` populated with 3-digit numeric for LAND1=CN |
-| India code invalid | RBI codes change periodically | Verify against current RBI Annex-I list |
+| India code invalid | RBI codes change periodically (last verified 2024) | Verify against current RBI Annex-I list |
+| MY/PH PPC wrong | Codes assumed identical to shared ISO set — not BAdI-confirmed | Read actual YCL_IDFI_CGI_DMEE class for MY/PH if it exists |
 
 ---
 
