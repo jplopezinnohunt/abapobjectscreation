@@ -42,6 +42,8 @@ The **coordinator** should route to this agent when the user asks about:
 6. **Never skip BCM when analyzing payments** — BCM sits between F110 and bank. 374K items routed through BCM batches.
 7. **Never assign Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP together ON THE SAME USER** — This allows bypassing BCM validation entirely. 2023 INCIDENT: payment went to Coupa→bank without BCM approval. [VERIFIED from handover docs] Note: UNES Process 4 legitimately uses BOTH roles — but on DIFFERENT users (initiator ≠ approver). The risk is one person holding both.
 8. **Never use F110 run ID starting with B* for non-BCM payments** — B* prefix triggers BCM routing. Use any other ID for direct processing.
+9. **Never use ISO 20022 text codes for T015L/PPC** — UNESCO's T015L uses custom UNESCO-specific LZBKZ values (AE0-AE8, BH0-BH5, CN0-CN2, etc.), NOT ISO 20022 codes (BEXP/CORT/SALA...). The PDF documentation is wrong on this. Always query `SELECT LZBKZ, ZWCK1 FROM T015L WHERE MANDT=350` to get the actual values in use.
+10. **Never assume AE/BH PPC BAdIs are live in P01** — As of 2026-03-27, `Y_IDFI_CGI_DMEE_COUNTRY_AE` and `Y_IDFI_CGI_DMEE_COUNTRY_BH` exist only in D01 CTS transports. P01 TADIR has no record of them. UTIL fallback may still be active for these countries.
 
 ## UNESCO Payment Architecture
 
@@ -768,98 +770,132 @@ The DMEE exit `FI_CGI_DMEE_EXIT_W_BADI` dispatches to per-country BAdI classes. 
 
 ### 8-Country Purpose Code Tables [VERIFIED from 20240321 Presentation]
 
-#### UAE (AE) — 20 codes
-| PPC | Description |
-|-----|-------------|
-| BEXP | Business Expenses |
-| CORT | Trade Settlement |
-| DIVI | Dividends |
-| GOVT | Government Payment |
-| HEDG | Hedging |
-| ICCP | Irrevocable Credit Card Payment |
-| IHRP | Instalment Hire Purchase |
-| INTC | Intracompany Payment |
-| INTP | Interest Payment |
-| LOAN | Loan |
-| MGSC | Mortgage |
-| OTHR | Other |
-| PENS | Pension |
-| RINP | Regular Instalment Payment |
-| SALA | Salary / Staff Payment |
-| SECU | Securities |
-| SSBE | Social Security Benefit |
-| SUPP | Supplier Payment |
-| TAXS | Tax Payment |
-| TREA | Treasury Payment |
+#### UAE (AE) — 9 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| AE0 | FIS Financial services |
+| AE1 | CHC Charitable Contributions (Charity and Aid) |
+| AE2 | IFS International Financial Services |
+| AE3 | ITS International Trade Services |
+| AE4 | PMS Project Management Services |
+| AE5 | SAL Salary (Compensation of employees) |
+| AE6 | RNT Rent (real estate) |
+| AE7 | STR Staff Travel |
+| AE8 | TCS Technical/Consultancy Services |
 
-#### Bahrain (BH)
-| PPC | Description |
-|-----|-------------|
-| SALA | Salary |
-| SUPP | Supplier Payment |
-| GOVT | Government Payment |
-| TREA | Treasury |
-| OTHR | Other |
+**Note**: UNESCO-specific codes, NOT ISO 20022 text codes. Format: `[LZBKZ] [abbrev] [description]`. BAdI `Y_IDFI_CGI_DMEE_COUNTRY_AE` confirmed in CTS (D01 only — NOT yet in P01 TADIR as of 2026-03-27). AE payments via UNES_AP_EX exception batch.
 
-#### China (CN)
-| PPC | Description |
-|-----|-------------|
-| 001 | Goods import/export |
-| 002 | Service |
-| 003 | Current transfer income |
-| 101 | Direct investment |
-| 102 | Securities investment |
-| 999 | Other capital items |
+#### Bahrain (BH) — 6 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| BH0 | STR Staff Travel |
+| BH1 | FIS Financial services |
+| BH2 | IFS International Financial Services |
+| BH3 | CHC Charitable Contributions (Charity and Aid) |
+| BH4 | PMS Project Management Services |
+| BH5 | SAL Salary (Compensation of employees) |
 
-**Note**: China uses numeric codes, not ISO 20022 text codes. Injected into `InstrInf` field.
+**Note**: BAdI `Y_IDFI_CGI_DMEE_COUNTRY_BH` confirmed in CTS (D01 only — NOT yet in P01 TADIR as of 2026-03-27).
 
-#### Indonesia (ID)
-| PPC | Description |
-|-----|-------------|
-| SALA | Salary |
-| SUPP | Goods/Services Purchase |
-| TREA | Capital / Treasury |
-| CORT | Trade Settlement |
-| OTHR | Other |
+#### China (CN) — 3 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| CN0 | /CSTRDR/ Reglement d'un service |
+| CN1 | /CCDNDR/ (description from T015L) |
+| CN2 | /COCADR/ (description from T015L) |
 
-#### India (IN)
-| PPC | Description |
-|-----|-------------|
-| P0001 | Advance payment against imports |
-| P0002 | Payment towards imports |
-| P0005 | Payments for services (non-software) |
-| P0006 | Payments for software services |
-| P0008 | Salary remittance |
-| P0010 | Remittance towards consultancy |
-| P1006 | Dividend remittance |
-| P0009 | Other current account payments |
+**Note**: China uses slash-notation codes (NOT numeric 001/002/003 as in original PDF documentation). Descriptions are in French. Uses UTIL fallback `YCL_IDFI_CGI_DMEE_UTIL.GET_TAG_VALUE_FROM_CUSTO` — no dedicated BAdI in CTS.
 
-**Note**: India uses 5-character alphanumeric codes (RBI purpose codes). Must be transmitted in `Purp/Cd`.
+#### Indonesia (ID) — 9 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| ID0 | 2461 Business Trip |
+| ID1 | 2468 (description from T015L) |
+| ID2 | 2490 (description from T015L) |
+| ID3 | 2495 (description from T015L) |
+| ID4 | 2550 (description from T015L) |
+| ID5 | 2570 (description from T015L) |
+| ID6 | 2580 (description from T015L) |
+| ID7 | 2640 (description from T015L) |
+| ID8 | 2670 (description from T015L) |
 
-#### Jordan (JO)
-| PPC | Description |
-|-----|-------------|
-| SALA | Salary |
-| SUPP | Supplier/Vendor |
-| GOVT | Government / Institutional |
-| TREA | Treasury |
-| OTHR | Other |
+**Note**: Indonesia uses 4-digit numeric codes. Uses UTIL fallback — no dedicated BAdI in CTS.
 
-#### Morocco (MA)
-| PPC | Description |
-|-----|-------------|
-| SALA | Salary |
-| SUPP | Supplier |
-| TREA | Treasury Transfer |
-| OTHR | Other |
+#### India (IN) — 11 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| IN0 | P0301 Purchases towards travel |
+| IN1 | P0403 (description from T015L) |
+| IN2 | P0802 (description from T015L) |
+| IN3 | P0804 (description from T015L) |
+| IN4 | P1004 (description from T015L) |
+| IN5 | P1005 (description from T015L) |
+| IN6 | P1006 (description from T015L) |
+| IN7 | P1019 (description from T015L) |
+| IN8 | P1304 (description from T015L) |
+| IN9 | P1401 (description from T015L) |
+| INA | P1203 Maintenance of international institutions |
 
-#### Malaysia (MY) and Philippines (PH) [INFERRED — same codes assumed; no dedicated BAdI confirmed in CTS]
-| PPC | Description |
-|-----|-------------|
-| SALA | Salary |
-| SUPP | Trade / Vendor |
-| TREA | Intra-group / Treasury |
-| OTHR | Other |
+**Note**: India uses RBI purpose codes (5-char alphanumeric). Uses UTIL fallback — no dedicated BAdI in CTS. RBI codes change periodically — verify against current RBI Annex-I.
+
+#### Jordan (JO) — 10 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| JO0 | 206 Overseas Incoming Salaries |
+| JO1 | 404 (description from T015L) |
+| JO2 | 705 (description from T015L) |
+| JO3 | 801 (description from T015L) |
+| JO4 | 802 (description from T015L) |
+| JO5 | 803 (description from T015L) |
+| JO6 | 804 (description from T015L) |
+| JO7 | 807 (description from T015L) |
+| JO8 | 809 (description from T015L) |
+| JO9 | 811 (description from T015L) |
+
+**Note**: Jordan uses 3-digit numeric codes. Uses UTIL fallback — no dedicated BAdI in CTS. AE+JO both require PPC AND BCM exception batch (UNES_AP_EX).
+
+#### Morocco (MA) — 10 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| MA0 | 250 Transport aérien de passagers |
+| MA1 | 442 (description from T015L) |
+| MA2 | 510 (description from T015L) |
+| MA3 | 570 (description from T015L) |
+| MA4 | 585 (description from T015L) |
+| MA5 | 595 (description from T015L) |
+| MA6 | 720 (description from T015L) |
+| MA7 | 725 (description from T015L) |
+| MA8 | 800 (description from T015L) |
+| MA9 | 1280 (description from T015L) |
+
+**Note**: Morocco uses numeric codes with French descriptions. Uses UTIL fallback — no dedicated BAdI in CTS.
+
+#### Malaysia (MY) — 10 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| MY0 | 11210 Passenger by air |
+| MY1 | 12140 (description from T015L) |
+| MY2 | 14310 (description from T015L) |
+| MY3 | 15200 (description from T015L) |
+| MY4 | 16510 (description from T015L) |
+| MY5 | 16520 (description from T015L) |
+| MY6 | 16730 (description from T015L) |
+| MY7 | 16760 (description from T015L) |
+| MY8 | 16780 (description from T015L) |
+| MY9 | 16793 (description from T015L) |
+
+**Note**: Malaysia uses 5-digit numeric codes. Uses UTIL fallback — no dedicated BAdI confirmed in CTS. [INFERRED fallback applies]
+
+#### Philippines (PH) — 5 codes [VERIFIED from T015L P01 live query]
+| LZBKZ | Description (T015L.ZWCK1) |
+|-------|---------------------------|
+| PH0 | SUPP Supplier/Vendor payment |
+| PH1 | SALA Payroll/Salaries |
+| PH2 | BEXP Business Expenses |
+| PH3 | TRVL Travel |
+| PH4 | CHAR Charitable Contributions |
+
+**Note**: Philippines uses ISO-like 4-char codes. Uses UTIL fallback — no dedicated BAdI confirmed in CTS. [INFERRED fallback applies]
 
 ### Configuration Points
 
@@ -888,7 +924,7 @@ When paying to UAE or Jordan: the payment gets exceptional BCM handling AND need
 | Bank rejects file | Missing PPC — country requires it but T015L-LZBKZ not set | Add PPC in T015L for payment method + currency |
 | SALA sent as SAL | Incorrect 3-char code — ISO 20022 requires 4-char SALA | Verify exit uses `SALA` not `SAL` for payroll |
 | Wrong PPC on payroll | LAUF1 suffix detection logic not triggered | Check payment run ID format; verify YOPAYMENT_TYPE table content |
-| China code rejected | Sending ISO text code instead of numeric | Verify DMEE condition: `LZBKZ` populated with 3-digit numeric for LAND1=CN |
+| China code rejected | Sending wrong code format | Verify T015L has CN0-CN2 with slash-notation codes (/CSTRDR/ etc.), NOT numeric 001/002/003. Do NOT use ISO text codes for CN. |
 | India code invalid | RBI codes change periodically (last verified 2024) | Verify against current RBI Annex-I list |
 | MY/PH PPC wrong | Codes assumed identical to shared ISO set — not BAdI-confirmed | Read actual YCL_IDFI_CGI_DMEE class for MY/PH if it exists |
 
@@ -1305,7 +1341,7 @@ SAP iRIS (F110/SAPFPAYM) → SAP Network File Directory → SWIFT Integration La
 | Payment in exotic currencies | `Payments/` | Method X pilot 5 currencies, BCM rule UNES_AP_X, G/L 1175011/1275011/1375011, YTR2, currency scope tables (1,069 in scope, 213 out of scope), embargo list |
 | Payment Release Workflow PDFs (5 docs) | `Payment Release Workflow/` | FS v2.0 (3 trigger filters, 7 groups, named validators), Technical Doc (SWU3 steps, PFTS), Wrong validators (email mismatch fix), Troubleshooting (SWI2_DIAG/SWIA), Active/passive substitution |
 | FS Payment Purpose Code XML 2.0 | `Payment Purpose Code/` | Custom dev for /CGI_XML_CT_UNESCO (SG only). SCB indicator (T015L-LZBKZ) as PPC carrier. LAUF1 suffix detection (P=payroll, R=replenishment). FI_CGI_DMEE_EXIT_W_BADI handles injection |
-| 20240321 Payment Purpose Code (presentation) | `Payment Purpose Code/` | Full PPC tables for 8 countries: AE (20 codes), BH, CN (numeric 001/002/003/101/102/999), ID, IN (RBI 5-char codes), JO, MA, MY/PH. XML tags: Purp/Cd + InstrInf |
+| 20240321 Payment Purpose Code (presentation) | `Payment Purpose Code/` | PPC tables for 8 countries. **WARNING: country code values in this PDF do NOT match T015L P01 data.** PDF lists ISO 20022 text codes (BEXP/CORT/SALA...) for AE/BH. T015L reality: AE=9 UNESCO codes (AE0-AE8), BH=6 codes (BH0-BH5), CN=slash-notation (NOT 001/002/003). Use T015L query as authoritative source. |
 
 ## Integration Points
 

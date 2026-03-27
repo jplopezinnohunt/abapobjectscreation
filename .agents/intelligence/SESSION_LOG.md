@@ -23,6 +23,40 @@
 
 ---
 
+## Session #025 — 2026-03-27 (T015L Live Validation — PPC Tables Corrected)
+
+**Start**: 2026-03-27
+**Focus**: Live P01 SAP query of T015L to validate PPC documentation → fix all discrepancies between PDF-based tables and actual production data
+**Significance**: First live validation of PPC data. PDF documentation was completely wrong on code values. All 8 country tables replaced with T015L-verified data.
+
+### What Was Accomplished
+
+| Area | Achievement |
+|------|------------|
+| **T015L P01 live query** | 73 rows extracted. All 8 PPC countries confirmed. Code format completely different from PDF documentation. |
+| **SKILL.md — 8 country tables replaced** | All country tables now use actual LZBKZ values from T015L: AE(9), BH(6), CN(3), ID(9), IN(11), JO(10), MA(10), MY(10), PH(5) |
+| **SKILL.md — 2 new NEVER rules** | #9: Never use ISO 20022 codes for T015L/PPC. #10: Never assume AE/BH BAdIs are live in P01. |
+| **SKILL.md — Known failures updated** | China code failure entry corrected: slash-notation, not numeric 001/002/003 |
+| **SKILL.md — Source docs warning added** | 20240321 PDF entry now warns that ISO codes in PDF are WRONG |
+| **Companion v5→v6** | XML format table updated (9 rows, per-country). 8-country tables fully replaced with T015L data. Doc vs Reality: T015L → CONFIRMED. BAdI table: T015L CONFIRMED, YOPAYMENT_TYPE = D01 only. Warning banner added. |
+| **AE/BH BAdI status confirmed** | TADIR P01 query: Y_IDFI_CGI_DMEE_COUNTRY_AE and _BH do NOT exist in P01. CTS transport only (D01). AE/BH running on UTIL fallback in production. |
+
+### Key Intelligence Captured
+
+| Finding | Significance |
+|---------|-------------|
+| T015L LZBKZ format = UNESCO-specific codes | NOT ISO 20022. AE0-AE8, BH0-BH5, CN0-CN2, ID0-ID8, IN0-INA, JO0-JO9, MA0-MA9, MY0-MY9, PH0-PH4 |
+| China uses slash-notation | /CSTRDR/, /CCDNDR/, /COCADR/ with French descriptions. PDF 001/002/003 was completely wrong. |
+| AE+BH BAdIs NOT in P01 | Both Y_IDFI_CGI_DMEE_COUNTRY_AE and _BH absent from P01 TADIR. In D01 CTS only. AE/BH use UTIL fallback in production today. |
+| YOPAYMENT_TYPE not in P01 | TABLE_NOT_AVAILABLE on P01. Exists in D01 (CUS0+CUS1 in CTS). Not yet transported to production. |
+| T015L has no BUKRS column | Query with BUKRS filter → TABLE_WITHOUT_DATA. Key = MANDT+LZBKZ+BLART only. 73 rows globally. |
+
+### PMO Reconciliation
+- PMO not reconciled this session (documentation/validation session only)
+- **Total: 9 Blocking | 11 High | 40 Backlog = 60 items** (unchanged from #024)
+
+---
+
 ## Session #024 — 2026-03-27 (Payment Purpose Code — PDF Coverage Completed)
 
 **Start**: 2026-03-27

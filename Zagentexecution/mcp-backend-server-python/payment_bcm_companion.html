@@ -42,8 +42,8 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 </head>
 <body>
 <div class="header">
-  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v5</span></h1>
-  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure &middot; <strong style="color:#1abc9c">Payment Purpose Codes (8 countries)</strong></div>
+  <h1>UNESCO SAP Payment &amp; BCM Intelligence Companion&#160;<span style="font-size:14px;color:#7fb3d3">v6</span></h1>
+  <div class="sub">Complete intelligence: E2E flow &middot; 4 payment processes &middot; 561 CTS objects &middot; WF architecture &middot; BCM config &middot; Named validators &middot; Doc vs Reality &middot; 16 DMEE trees &middot; 82 variants &middot; XML char handling &middot; Infrastructure &middot; <strong style="color:#1abc9c">PPC 8 countries (73 rows T015L VERIFIED)</strong></div>
 </div>
 
 <div class="kpi-bar">
@@ -755,7 +755,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 <tr><td style="font-size:12px">Bank Statement Monitor (FTE-BSM) for IBE/ICTP/IIEP/UBO/UIL</td><td style="font-size:12px;color:#2c3e50">No FEBEP/FEBKO tables in Gold DB</td><td><span style="background:#95a5a6;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — BSM config not in DB</span></td></tr>
 <tr><td style="font-size:12px">21 SAP Notes implemented</td><td style="font-size:12px;color:#2c3e50">SAP Notes referenced in CTS MERG objects</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL</span></td></tr>
 <tr><td style="font-size:12px">YCL_IDFI_CGI_DMEE classes per country</td><td style="font-size:12px;color:#2c3e50">CTS: CLAS YCL_IDFI_CGI_DMEE_AE + BH + CH/FR in CLSD</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
-<tr><td style="font-size:12px">PPC: T015L-LZBKZ used as purpose code carrier (SCB indicator repurposed)</td><td style="font-size:12px;color:#2c3e50">Not yet queried in Gold DB — T015L extracted but LZBKZ values for AE/BH/CN/IN not checked</td><td><span style="background:#7f8c8d;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">DOC ONLY</span></td></tr>
+<tr><td style="font-size:12px">PPC: T015L-LZBKZ used as purpose code carrier (SCB indicator repurposed) — 73 rows across 8 countries. Codes are UNESCO-specific (AE0-AE8, BH0-BH5, CN0-CN2...) NOT ISO 20022. PDF documentation was wrong.</td><td style="font-size:12px;color:#2c3e50">P01 live query 2026-03-27: SELECT LZBKZ,ZWCK1 FROM T015L WHERE MANDT=350 → 73 rows. All 8 countries confirmed. AE=9 codes, BH=6, CN=3 (slash-notation), ID=9, IN=11, JO=10, MA=10, MY=10, PH=5.</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
 <tr><td style="font-size:12px">PPC: BAdI ENBC AE + BH = only 2 PPC-specific implementations in CTS</td><td style="font-size:12px;color:#2c3e50">Gold DB CTS: 5 ENBC total. DE/FR/IT = address only. AE+BH = PPC. CN/ID/IN/JO/MA/MY/PH = none found in CTS.</td><td><span style="background:#27ae60;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">CONFIRMED</span></td></tr>
 <tr><td style="font-size:12px">PPC: CN/ID/IN/JO/MA/MY/PH use UTIL fallback (GET_TAG_VALUE_FROM_CUSTO)</td><td style="font-size:12px;color:#2c3e50">No ENBC for these 7 countries in CTS. YCL_IDFI_CGI_DMEE_UTIL class confirmed. Fallback reads T015L-LZBKZ via customizing.</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — source unread</span></td></tr>
 <tr><td style="font-size:12px">PPC: YOPAYMENT_TYPE custom table exists</td><td style="font-size:12px;color:#2c3e50">CUS0+CUS1 objects in CTS confirmed. Drives P/R payment type detection. Content unread (needs RFC/SM30).</td><td><span style="background:#f39c12;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;white-space:nowrap">PARTIAL — content unread</span></td></tr>
@@ -1149,8 +1149,8 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
           <tr><td>UAE BAdI impl</td><td><code>Y_IDFI_CGI_DMEE_COUNTRY_AE</code> → <code>YCL_IDFI_CGI_DMEE_AE</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
           <tr><td>Bahrain BAdI impl</td><td><code>Y_IDFI_CGI_DMEE_COUNTRY_BH</code> → <code>YCL_IDFI_CGI_DMEE_BH</code></td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS CONFIRMED</span></td></tr>
           <tr><td>Other 6 countries</td><td>CN, ID, IN, JO, MA, MY, PH → UTIL fallback (<code>GET_TAG_VALUE_FROM_CUSTO</code>)</td><td><span style="background:#f39c12;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">CTS: no ENBC — uses UTIL class</span></td></tr>
-          <tr><td>PPC carrier table</td><td><code>T015L</code> field <code>LZBKZ</code> (SCB indicator repurposed)</td><td><span style="background:#7f8c8d;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">DOC ONLY</span></td></tr>
-          <tr><td>Payment type table</td><td><code>YOPAYMENT_TYPE</code> (data elem: <code>YE_HRMBF_PAYMENT_TYPE</code>)</td><td><span style="background:#7f8c8d;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">DOC ONLY</span></td></tr>
+          <tr><td>PPC carrier table</td><td><code>T015L</code> field <code>LZBKZ</code> — 73 rows, 8 countries confirmed. UNESCO-specific codes (AE0-AE8 etc), NOT ISO 20022. AE+BH BAdIs in D01 only, NOT yet in P01.</td><td><span style="background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">P01 VERIFIED 2026-03-27</span></td></tr>
+          <tr><td>Payment type table</td><td><code>YOPAYMENT_TYPE</code> (data elem: <code>YE_HRMBF_PAYMENT_TYPE</code>) — exists in CTS (D01). TABLE_NOT_AVAILABLE on P01 (not yet transported to production).</td><td><span style="background:#f39c12;color:#fff;padding:1px 5px;border-radius:4px;font-size:10px">D01 only — content unread</span></td></tr>
         </table>
         <div class="info" style="margin-top:8px">
           <strong>Country resolution gap:</strong> T015L-LZBKZ is keyed by payment method + currency, not by destination country.
@@ -1174,64 +1174,102 @@ const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges 
         <h3>XML Placement by Country</h3>
         <table>
           <tr><th>Country</th><th>XML Element</th><th>Code Format</th></tr>
-          <tr><td>UAE (AE), Bahrain (BH), Indonesia (ID), Jordan (JO), Morocco (MA)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>ISO 20022 text (4 chars, e.g. SALA, SUPP)</td></tr>
-          <tr><td>China (CN)</td><td><code>InstrInf</code></td><td>Numeric 3-char (001, 002, 003, 101, 102, 999)</td></tr>
-          <tr><td>India (IN)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>RBI codes 5-char alphanumeric (P0001-P1006)</td></tr>
-          <tr><td>Malaysia (MY), Philippines (PH)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>ISO text [INFERRED — no BAdI confirmed in CTS]</td></tr>
+          <tr><td>UAE (AE)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>UNESCO codes: AE0-AE8 (FIS/CHC/IFS/ITS/PMS/SAL/RNT/STR/TCS) [VERIFIED T015L]</td></tr>
+          <tr><td>Bahrain (BH)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>UNESCO codes: BH0-BH5 (STR/FIS/IFS/CHC/PMS/SAL) [VERIFIED T015L]</td></tr>
+          <tr><td>China (CN)</td><td><code>InstrInf</code></td><td>Slash-notation: CN0=/CSTRDR/, CN1=/CCDNDR/, CN2=/COCADR/ [VERIFIED T015L] ⚠ NOT 001/002/003</td></tr>
+          <tr><td>Indonesia (ID)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>4-digit numeric: ID0-ID8 (2461..2670) [VERIFIED T015L]</td></tr>
+          <tr><td>India (IN)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>RBI 5-char: IN0-INA (P0301..P1203, 11 codes) [VERIFIED T015L]</td></tr>
+          <tr><td>Jordan (JO)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>3-digit numeric: JO0-JO9 (206..811) [VERIFIED T015L]</td></tr>
+          <tr><td>Morocco (MA)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>Numeric (French desc): MA0-MA9 (250..1280) [VERIFIED T015L]</td></tr>
+          <tr><td>Malaysia (MY)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>5-digit numeric: MY0-MY9 (11210..16793) [VERIFIED T015L]</td></tr>
+          <tr><td>Philippines (PH)</td><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>ISO-like 4-char: PH0-PH4 (SUPP/SALA/BEXP/TRVL/CHAR) [VERIFIED T015L]</td></tr>
         </table>
       </div>
     </div>
     <div>
       <div class="section">
-        <h3>8-Country Purpose Code Tables</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <h3>8-Country Purpose Code Tables <span style="color:#1abc9c;font-size:10px;font-weight:normal">[ALL VERIFIED from T015L P01 live query 2026-03-27 — 73 rows total]</span></h3>
+        <div style="background:#1a2a1a;border:1px solid #1abc9c;padding:8px;border-radius:4px;font-size:10px;color:#f39c12;margin-bottom:8px">
+          ⚠ <strong>IMPORTANT</strong>: LZBKZ values are UNESCO-specific — NOT ISO 20022 codes. PDF documentation showed ISO codes (BEXP/CORT/SALA...) which are <strong>WRONG</strong>. Use the actual T015L values below. AE+BH BAdIs exist in D01 only (not yet in P01 TADIR as of 2026-03-27).
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">UAE (AE) — 20 codes (BAdI confirmed)</div>
-            <div style="font-size:10px;line-height:1.7;color:#a9cce3">
-              BEXP · CORT · DIVI · GOVT · HEDG · ICCP · IHRP · INTC · INTP · LOAN · MGSC · OTHR · PENS · RINP · <strong style="color:#1abc9c">SALA</strong> · SECU · SSBE · <strong style="color:#1abc9c">SUPP</strong> · TAXS · <strong style="color:#1abc9c">TREA</strong>
-            </div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">UAE (AE) — 9 codes ⚠ BAdI in D01 only</div>
+            <table style="font-size:10px">
+              <tr><td><code>AE0</code></td><td>FIS Financial services</td></tr>
+              <tr><td><code>AE1</code></td><td>CHC Charitable Contributions</td></tr>
+              <tr><td><code>AE2</code></td><td>IFS International Financial Svcs</td></tr>
+              <tr><td><code>AE3</code></td><td>ITS International Trade Svcs</td></tr>
+              <tr><td><code>AE4</code></td><td>PMS Project Mgmt Services</td></tr>
+              <tr><td><code>AE5</code></td><td><strong style="color:#1abc9c">SAL</strong> Salary</td></tr>
+              <tr><td><code>AE6</code></td><td>RNT Rent</td></tr>
+              <tr><td><code>AE7</code></td><td>STR Staff Travel</td></tr>
+              <tr><td><code>AE8</code></td><td>TCS Technical/Consultancy Svcs</td></tr>
+            </table>
           </div>
           <div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">Bahrain (BH) (BAdI confirmed)</div>
-            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · GOVT · TREA · OTHR</div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Indonesia (ID)</div>
-            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · TREA · CORT · OTHR</div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Jordan (JO) ⚠ Also UNES_AP_EX</div>
-            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · GOVT · TREA · OTHR</div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Morocco (MA)</div>
-            <div style="font-size:10px;line-height:1.7;color:#a9cce3">SALA · SUPP · TREA · OTHR</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">Bahrain (BH) — 6 codes ⚠ BAdI in D01 only</div>
+            <table style="font-size:10px">
+              <tr><td><code>BH0</code></td><td>STR Staff Travel</td></tr>
+              <tr><td><code>BH1</code></td><td>FIS Financial services</td></tr>
+              <tr><td><code>BH2</code></td><td>IFS International Financial Svcs</td></tr>
+              <tr><td><code>BH3</code></td><td>CHC Charitable Contributions</td></tr>
+              <tr><td><code>BH4</code></td><td>PMS Project Mgmt Services</td></tr>
+              <tr><td><code>BH5</code></td><td><strong style="color:#1abc9c">SAL</strong> Salary</td></tr>
+            </table>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Philippines (PH) — 5 codes [UTIL fallback]</div>
+            <table style="font-size:10px">
+              <tr><td><code>PH0</code></td><td>SUPP Supplier/Vendor</td></tr>
+              <tr><td><code>PH1</code></td><td><strong style="color:#1abc9c">SALA</strong> Payroll/Salaries</td></tr>
+              <tr><td><code>PH2</code></td><td>BEXP Business Expenses</td></tr>
+              <tr><td><code>PH3</code></td><td>TRVL Travel</td></tr>
+              <tr><td><code>PH4</code></td><td>CHAR Charitable Contributions</td></tr>
+            </table>
+          </div>
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">China (CN) — 3 codes [UTIL fallback] ⚠</div>
+            <table style="font-size:10px">
+              <tr><td><code>CN0</code></td><td>/CSTRDR/ Reglt d'un service</td></tr>
+              <tr><td><code>CN1</code></td><td>/CCDNDR/ (from T015L)</td></tr>
+              <tr><td><code>CN2</code></td><td>/COCADR/ (from T015L)</td></tr>
+            </table>
+            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ Slash-notation codes, French descriptions. NOT numeric 001/002/003 (PDF was wrong)</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Jordan (JO) — 10 codes ⚠ Also UNES_AP_EX</div>
+            <table style="font-size:10px">
+              <tr><td><code>JO0</code></td><td>206 Overseas Incoming Salaries</td></tr>
+              <tr><td><code>JO1-JO9</code></td><td>404/705/801/802/803/804/807/809/811</td></tr>
+            </table>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
           <div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">China (CN) — Numeric codes</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">Indonesia (ID) — 9 codes [UTIL fallback]</div>
             <table style="font-size:10px">
-              <tr><td><code>001</code></td><td>Goods import/export</td></tr>
-              <tr><td><code>002</code></td><td>Service</td></tr>
-              <tr><td><code>003</code></td><td>Current transfer income</td></tr>
-              <tr><td><code>101</code></td><td>Direct investment</td></tr>
-              <tr><td><code>102</code></td><td>Securities investment</td></tr>
-              <tr><td><code>999</code></td><td>Other capital items</td></tr>
+              <tr><td><code>ID0</code></td><td>2461 Business Trip</td></tr>
+              <tr><td><code>ID1-ID8</code></td><td>2468/2490/2495/2550/2570/2580/2640/2670</td></tr>
             </table>
-            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ NOT ISO text — numeric only → InstrInf</div>
           </div>
           <div>
-            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">India (IN) — RBI Codes</div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">India (IN) — 11 codes [UTIL fallback]</div>
             <table style="font-size:10px">
-              <tr><td><code>P0001</code></td><td>Advance vs imports</td></tr>
-              <tr><td><code>P0002</code></td><td>Payment vs imports</td></tr>
-              <tr><td><code>P0005</code></td><td>Services (non-software)</td></tr>
-              <tr><td><code>P0006</code></td><td>Software services</td></tr>
-              <tr><td><code>P0008</code></td><td>Salary remittance</td></tr>
-              <tr><td><code>P0010</code></td><td>Consultancy</td></tr>
-              <tr><td><code>P1006</code></td><td>Dividend remittance</td></tr>
-              <tr><td><code>P0009</code></td><td>Other current payments</td></tr>
+              <tr><td><code>IN0</code></td><td>P0301 Purchases for travel</td></tr>
+              <tr><td><code>IN1-IN9</code></td><td>P0403/P0802/P0804/P1004/P1005/P1006/P1019/P1304/P1401</td></tr>
+              <tr><td><code>INA</code></td><td>P1203 Maintenance of int'l institutions</td></tr>
             </table>
-            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ RBI codes change periodically — verify Annex-I</div>
+            <div style="color:#e74c3c;font-size:10px;margin-top:4px">⚠ RBI codes change — verify Annex-I before new types</div>
           </div>
-        </div>
-        <div style="margin-top:8px;font-size:10px;color:#7fb3d3">
-          Malaysia (MY) / Philippines (PH): SALA · SUPP · TREA · OTHR [INFERRED — no dedicated BAdI confirmed in CTS extract]
+          <div>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px">Morocco (MA) — 10 codes [UTIL fallback]</div>
+            <table style="font-size:10px">
+              <tr><td><code>MA0</code></td><td>250 Transport aérien passagers</td></tr>
+              <tr><td><code>MA1-MA9</code></td><td>442/510/570/585/595/720/725/800/1280</td></tr>
+            </table>
+            <div style="color:#f39c12;font-weight:bold;font-size:11px;margin-top:8px;margin-bottom:4px">Malaysia (MY) — 10 codes [UTIL fallback]</div>
+            <table style="font-size:10px">
+              <tr><td><code>MY0</code></td><td>11210 Passenger by air</td></tr>
+              <tr><td><code>MY1-MY9</code></td><td>12140/14310/15200/16510/16520/16730/16760/16780/16793</td></tr>
+            </table>
+          </div>
         </div>
       </div>
       <div class="section">
