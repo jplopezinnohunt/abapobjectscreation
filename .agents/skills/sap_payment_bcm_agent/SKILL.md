@@ -367,6 +367,22 @@ When WF item goes to wrong person or nobody:
 | + Branch + IBAN | + IBAN required | 284 | MGA, AOA, GEL, MRO |
 | Out of scope | Tax ID, embargo, etc. | 213 | COP, IRR, MMK, SDG, ARS, etc. |
 
+### Special Currency Restrictions [VERIFIED from FS Exotic Currency Requirements]
+
+| Currency | Country | Status | Restriction |
+|----------|---------|--------|-------------|
+| UAH | Ukraine | **Not serviced** | Cannot process — bank will not execute |
+| VEF | Venezuela | **Not serviced** | Cannot process — bank will not execute |
+| LYD | Libya | **Compliance pre-approval required** | Must get compliance clearance before each payment |
+| YER | Yemen | **Compliance pre-approval required** | Must get compliance clearance before each payment |
+| ARS | Argentina | **PMT held 90 days** | Payment held by Citibank for 90 days due to Argentine regulations |
+| COP | Colombia | **Tax ID required** | STCD field needed in vendor master — out of scope for standard method |
+| IRR | Iran | **Embargo** | Cannot process — OFAC/UN sanctions |
+| MMK | Myanmar | **Embargo** | Cannot process — OFAC/UN sanctions |
+| SDG | Sudan | **Embargo** | Cannot process — OFAC/UN sanctions |
+
+**For UAH/VEF/LYD/YER**: AO must arrange alternative payment mechanism outside SAP (local banking, manual wire). Document as Process 1 (Outside SAP).
+
 ### Payment File Regeneration
 - Transaction: **ZPAYM** (custom) — regeneration of payment files from BCM batches
 - Shows batches by status (New, In Approval, Approved, Sent to Bank, Completed, Exceptions)
@@ -574,6 +590,7 @@ When adding a new country, this is the **hardest part** — each bank has differ
 |-------------|---------|
 | DMEE | Display/Change Format Tree (the XML template) |
 | OBPM1 | Assign DMEE format to payment method |
+| OBPM2 | Configure fixed payment reference (SEPA remittance) |
 | OBPM4 | Create selection variants for payment medium (**NEVER transported**) |
 | OBPM5 | Set indicator for merging cross-payment media |
 | FBPM1 | Merge payments in BCM |
@@ -628,6 +645,72 @@ Banks
 1. **F111** — Payment Request program for bank-to-bank transfers (replenishments). Treasury manages via FRFT_B.
 2. **F110** — Automatic Payment program for all 3rd party payments.
 3. **Payroll payment program** — Run by BFM/PAY.
+
+### Payroll BCM Payment Flow [VERIFIED from Helpcard Payroll Payments BCM]
+
+Full end-to-end flow for payroll bank payments:
+
+| Step | Transaction | Action | Notes |
+|------|-------------|--------|-------|
+| 1 | **ZHRUN** | Prepare payroll payment | Test mode first (simulate). STEPS payroll system. |
+| 2 | **FBPM1** | Merge payments into BCM batch | Creates BCM batches from payroll payment documents. |
+| 3 | **BNK_APP** | BCM validation (PAY group → TRS group) | 2-step approval: Chief PAY (BFM 046) then Treasurer (BFM 076/073). |
+| 4 | **BNK_MONI** | Monitor batch status | Confirms batch sent to bank. |
+| 5 | **BNK_MERGE_RESET** | Reset batch if needed | Use only when payment must be re-run (e.g., wrong value date). |
+
+**BNK_MERGE_RESET parameters**:
+- `P_BATNO` = Batch number to reset (required — SAP Note 1892712 fixes field label)
+- Test mode: Run first to check what will be reset
+- Strict check: If errors exist, reset is blocked until resolved
+- SAP Note 1681517: Adds restriction to reset by batch number only (prevents mass reset)
+
+### BNK_APP — Digital Signature & 5 Key Actions [VERIFIED from Helpcard BCM Validation]
+
+**Digital signature process**:
+- Type: **System Signature** (not PKI certificate)
+- Authentication: SAP User ID + Password entered at approval time
+- Purpose: Non-repudiation — signatory confirms approval with credentials
+- BCM checks: signature user linked via F_STAT_USR authorization object
+
+**5 Primary Actions in BNK_APP**:
+1. **Validate batch** — Approve the payment batch (triggers WF to next signatory or file creation)
+2. **Reject batch** — Send back to originator with reason (triggers returned-batch WF)
+3. **Change line layout** — Adjust display columns (cosmetic only, no payment impact)
+4. **Change value date** — Modify the payment execution date (must be within allowed range)
+5. **Log / History** — View full audit trail: who validated/rejected and when
+
+**BNK_MONI Status Tabs**:
+| Tab | Meaning |
+|-----|---------|
+| New | Batch created, not yet submitted for approval |
+| In Approval | BCM validation in progress (1 or 2 signatories pending) |
+| Approved | All signatures complete, file creation scheduled |
+| Sent to Bank | File created and transferred via SWIFT |
+| Completed | Bank confirmed receipt and processing |
+| Exceptions | Error during file creation or SWIFT transfer |
+
+### Fixed Payment Reference (SEPA) [VERIFIED from FS Fixed Payment Reference]
+
+**Purpose**: Ensures a consistent, traceable payment reference in SEPA credit transfers. Replaces auto-generated references for specific vendor/document type combinations.
+
+**Configuration**: Transaction **OBPM2** — Payment Reference
+
+**Reference Table** (custom, per UNESCO):
+- Key: BUKRS + LIFNR + BLART + BELNR
+- Value: 75-character payment reference string
+
+**Formula when no table entry**:
+```
+/INV/&FPAYP-XBLNR& &FPAYP-BLDAT(Z)&
+```
+- `XBLNR` = External document number (vendor invoice number)
+- `BLDAT(Z)` = Document date formatted as YYYYMMDD
+
+**DMEE Trees using fixed reference**:
+- `SEPA_CT_UNES` — UNESCO SEPA Credit Transfer format
+- `CMI101` — CMI payment format (tag 20/23 contract reference)
+
+**Why this matters**: Without fixed references, remittance information in the bank file uses SAP-generated IDs that vendors cannot match to their invoices. Fixed references use the vendor's invoice number → zero reconciliation effort.
 
 ### Complete Document Type Payment Validation Matrix [VERIFIED]
 
@@ -718,7 +801,11 @@ Banks
 | Payment process & auth 1.1 | `UNESCO/DBS Team - FAM/.../Payments/` | 4 processes, BCM B* prefix, role matrix, security incident |
 | Payment process & auth 1.2 | Same folder | Extended: BCM signatory rules 90000004/90000005, OOCU_RESP, validation tiers |
 | Payment exotic currencies | Same folder | Method X, SOG01-USDD1, 3 currency tiers, BCM rule UNES_AP_X |
+| FS Exotic Currency Requirements | Same folder | Full 40+ currency table, UAH/VEF not serviced, LYD/YER compliance, ARS 90-day hold |
 | Regeneration payment files | Same folder | ZPAYM transaction, BCM batch status tabs |
+| FS Fixed Payment Reference | Same folder | OBPM2, SEPA reference table BUKRS/LIFNR/BLART/BELNR, formula /INV/XBLNR BLDAT |
+| Helpcard BCM Validation | Same folder | BNK_APP 5 actions, digital signature (Signatory ID+password), BNK_MONI status tabs |
+| Helpcard Payroll Payments BCM | Same folder | ZHRUN→FBPM1→BNK_APP→BNK_MONI→BNK_MERGE_RESET, P_BATNO parameter, SAP Notes 1681517/1892712 |
 
 ## Integration Points
 
