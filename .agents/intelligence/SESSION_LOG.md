@@ -53,6 +53,14 @@
 | XML char handling (3 layers) | Predefined SAP set + national char replacement + UNESCO custom set |
 | 21 SAP Notes listed | Complete list for BCM implementation |
 
+### SKILL.md Additions — PDF Groups 2, 3, 4 (session continuation)
+
+| Group | Content Added |
+|-------|--------------|
+| Group 3 | Payroll BCM flow (ZHRUN→FBPM1→BNK_APP→BNK_MONI→BNK_MERGE_RESET), BNK_APP 5 actions + digital signature, Fixed payment reference (OBPM2, /INV/XBLNR formula), Special currency restrictions (UAH/VEF not serviced, LYD/YER compliance, ARS 90-day hold) |
+| Group 2 | SWIFT directory access groups (SA_SWIFT, SG-SAPITF-SWIFT-RO with 11 named users, Vincent Vaurette maintains), Legacy /DIRECT_CREDIT format documented as retired (2022), Field office scope clarification (WF HQ-only) |
+| Group 4 | Agent failed — did not read PDFs, no content extracted |
+
 ### PMO Reconciliation
 - Completed: H15 (Blueprint BCM pp.21-47)
 - **Total: 10 Blocking | 13 High | 40 Backlog = 63 items** (-1 net)
