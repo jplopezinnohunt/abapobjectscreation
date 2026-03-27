@@ -60,6 +60,26 @@
 | Group 3 | Payroll BCM flow (ZHRUN→FBPM1→BNK_APP→BNK_MONI→BNK_MERGE_RESET), BNK_APP 5 actions + digital signature, Fixed payment reference (OBPM2, /INV/XBLNR formula), Special currency restrictions (UAH/VEF not serviced, LYD/YER compliance, ARS 90-day hold) |
 | Group 2 | SWIFT directory access groups (SA_SWIFT, SG-SAPITF-SWIFT-RO with 11 named users, Vincent Vaurette maintains), Legacy /DIRECT_CREDIT format documented as retired (2022), Field office scope clarification (WF HQ-only) |
 | Group 4 | Agent failed — did not read PDFs, no content extracted |
+| Final batch | FS Note to Payee exotic currencies v1.1: SWIFT :70 EXO// format, 18-entry doc type→reason table, Y_EXOTIC_CURRENCY in OBPM2, MGA :57D rule (Y_FI_PAYMEDIUM_101_30) |
+| Final batch | FS HR Payroll payment references v2.1: ZUONR bulk formula (laufi+GEF/OPF/other+month), CITI VBLNR rule (Jan 2019), DMEE_EXIT_SEPA_21, ZCL_PAYMENT_REF in ZHR_HR_POSTING |
+| Final batch | Improvement Project to Brazil Payments: 2014-2015 project plan (5% complete), 6 functional scope items documented as historical context |
+
+### PDF Coverage Final Status
+| PDF | Location | Status |
+|-----|---------|--------|
+| Blueprint BCM.pdf | 0 BCM/ | ✓ |
+| Exotic currency requirements.pdf | 0 BCM/ | ✓ |
+| Explanation — suppress invalid characters.pdf | 0 BCM/ | ✓ |
+| Helpcard BCM validation.pdf | 0 BCM/ | ✓ |
+| Helpcard payroll payments BCM.pdf | 0 BCM/ | ✓ |
+| FS Fixed payment reference.pdf | 1 Functional Specifications/ | ✓ |
+| FS HR Payroll payment references 2.1.pdf | 1 Functional Specifications/ | ✓ |
+| FS Note to Payee payment exotic currencies 11.pdf | 1 Functional Specifications/ | ✓ |
+| Regeneration of payment files.pdf | Payments/ | ✓ |
+| Improvement Project to Brazil Payments.pdf | UBO/BCM/ | ✓ |
+| BCM_contracts_committee_20131216.pdf | Contracts Licenses/ | ⚠ Intentionally skipped — 2013 committee doc, historical |
+| Solution Description Payment Process.pdf | — | ✓ (group 2) |
+| Payment process and authorizations 1.1+1.2.pdf | Payments/ | ✓ (groups 1+2) |
 
 ### PMO Reconciliation
 - Completed: H15 (Blueprint BCM pp.21-47)

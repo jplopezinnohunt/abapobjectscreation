@@ -121,6 +121,11 @@ Each DMEE tree node has per-field checkboxes — must be set **field-by-field**:
 | UAE/Bahrain | MEDIUM | Payment Purpose Code required. Read from SGTXT via exit. |
 | Japan (JP) | LOW | JPY 0 decimal places. |
 | COP/ARS/IRR/MMK/SDG | BLOCKER | Out of scope / embargo countries. |
+| ARS | HIGH | PMT held 90 days by Citibank (Argentine regulations). |
+| UAH (Ukraine) | BLOCKER | Not serviced — bank will not execute. |
+| VEF (Venezuela) | BLOCKER | Not serviced — bank will not execute. |
+| LYD (Libya) | HIGH | Compliance pre-approval required before each payment. |
+| YER (Yemen) | HIGH | Compliance pre-approval required before each payment. |
 
 ---
 
@@ -144,10 +149,24 @@ Banks
 **SWIFT client**: Alliance Lite2 (Java 7.51-55, IE 8/9 32-bit)
 **Dev/test prefix**: D (dev) or V (V01) instead of P (prod)
 
+### SWIFT Directory Access Control
+| Group | Rights | Who |
+|-------|--------|-----|
+| NT AUTHORITY\SYSTEM | Full control | SAP system administrators |
+| SAPServiceP01 + p01adm | Modify | SAP technical operations |
+| SA_SWIFT (Marlies Spronk/KMI) | Modify | SWIFT coordinator |
+| SG-SAPITF-SWIFT-RO | Read/Execute | BFM/TRS + BFM/FAS staff (11 named users) |
+
+**Rule**: No individual user has write access to SWIFT folders. Only program `SAPFPAYM` can write payment files. Access changes: contact Vincent Vaurette (SAP Admin).
+
 ### 3 Automatic Payment Programs at UNESCO
 1. **F110** — All 3rd party vendor payments (BFM/FAS/AP + Institutes)
 2. **F111** — Bank-to-bank treasury replenishments (BFM/TRS via FRFT_B)
 3. **Payroll Program** — HR payroll (BFM/PAY via STEPS system)
+
+**Payroll flow**: ZHRUN (prepare) → FBPM1 (merge into BCM batch) → BNK_APP (PAY then TRS validation) → BNK_MONI (monitor) → BNK_MERGE_RESET (reset if needed, P_BATNO parameter)
+
+**Field office scope**: Payment release workflow (WF 90000003) runs at HQ only. Field offices (IBE, MGIE, ICBA) use Process 1 (outside SAP). Workflow triggers only when HQ executes a payment on a field office's behalf.
 
 ---
 
@@ -201,6 +220,18 @@ See sap_payment_bcm_agent SKILL.md for full list. Key ones:
 - 1997772/1999340: BCM Rule Maintenance currency/amounts
 
 ---
+
+## Exotic Currency Note to Payee (SWIFT :70)
+
+Payment method X generates SWIFT field `:70` with format:
+```
+EXO//Detailed reason for payment//FPAYP-XBLNR//
+```
+- `EXO//` = fixed prefix for all exotic currency payments
+- Reason determined from document type (REGUP-BLART) via custom table
+- Additional info = FPAYP-XBLNR (vendor invoice number)
+- OBPM2 name: `Y_EXOTIC_CURRENCY` — function module `Y_FI_PAYMEDIUM_NOTE_TO_PAYEE`
+- Madagascar (MGA): SWIFT :57D Option D (BIC + bank address in one field — :57A and :57D cannot coexist)
 
 ## Integration Points
 - **sap_payment_bcm_agent** skill — full payment domain knowledge
