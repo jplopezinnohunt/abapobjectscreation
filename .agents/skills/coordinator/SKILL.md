@@ -153,6 +153,7 @@ Change audit / CDHDR / who changed→ sap_change_audit              → sonnet
 Cost recovery / CRP certificates  → crp_fiori_app + fi_domain    → sonnet
 Payment / BCM / F110 / DMEE       → sap_payment_bcm_agent         → sonnet
 Payment E2E / cycle times / FBZP  → sap_payment_e2e               → sonnet
+Bank statement / clearing / recon → sap_bank_statement_recon       → sonnet
 ──────────────────────────────────────────────────────────────────────────
 Cross-domain question             → Load 2+ agents, synthesize   → opus
 ```

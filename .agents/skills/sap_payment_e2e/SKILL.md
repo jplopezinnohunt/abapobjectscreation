@@ -48,7 +48,7 @@ Includes BCM (Bank Communication Management) batch tracking, FBZP chain complete
 |-------|---------|--------|
 | BNK_BATCH_ITEM | BCM batch items — VBLNR links batch→payment doc→invoice | Pending |
 | REGUH | F110 payment run headers — LAUFD/LAUFI/XVORL proposal flag | Readable, pending |
-| FEBEP | Electronic bank statement items — VBLNR→reconciliation | Readable, pending |
+| FEBEP | Electronic bank statement items — **223,710 rows (2024-2026), 99.9% posted** | ✅ Extracted #029 |
 | PAYR | Payment register (checks/transfers) | Readable, pending |
 
 ## Event Log Construction
@@ -206,7 +206,7 @@ T042 (Paying CoCode) → T042A (Pmt Methods/CoCode) → T042E (Pmt Methods/Count
 | BNK_BATCH_ITEM | 600,042 | BCM batch items — VBLNR links to invoices |
 | REGUH | 942,011 | F110 payment run headers (358K proposals, 584K final) |
 | PAYR | 4,431 | Payment register (checks: ICTP + UNES field offices) |
-| FEBEP | 0 | Empty — BCM handles reconciliation, not classic EBS |
+| FEBEP | **223,710** | **CORRECTED #029**: 223K items (2024-2026), 99.9% posted. EBS is FULLY active. FEBKO=84,972 headers. See `bank_statement_ebs_architecture.md` |
 
 ## 4-Stream Payment Architecture (Discovery #1 — Session #027)
 
@@ -214,16 +214,16 @@ UNESCO HQ clearing is NOT a single stream. BSAK analysis confirmed 4 structurall
 
 | Stream | BLART | Count | GL Account | Bank System | In Event Log? |
 |--------|-------|-------|------------|-------------|---------------|
-| 1 — F110/BCM (HQ auto) | ZP | 138K | T012K standard | SWIFT via BCM | ✅ Yes |
-| 2 — Field office sub-bank | OP | 267K | 2021xxx (NOT in T012K) | Local banking system | ❌ No |
-| 3 — Internal netting | AB | 184K | Vendor reconciliation | No bank transfer | ❌ No |
-| 4 — Tier 3 codes (IBE/MGIE/ICBA) | OP | ~10K | Local sub-accounts | Local banking | ❌ No |
+| 1 — F110/BCM (HQ auto) | ZP | 215K | T012K standard | SWIFT via BCM | ✅ Yes |
+| 2 — Field office sub-bank | OP | 274,863 | 2021xxx (NOT in T012K) | Local banking system | ✅ #028 |
+| 3 — Internal netting | AB | 138,378 | Vendor reconciliation | No bank transfer | ✅ #028 |
+| 4 — Tier 3 codes (IBE/MGIE/ICBA) | OP | 82 | Local sub-accounts | Local banking | ✅ #028 |
 
 **Key evidence**: REGUH.VBLNR = BSAK.AUGBL WHERE BSAK.BLART=OP → **0 rows** (confirmed Session #027).
 OP documents are completely outside F110/BCM. GL 2021xxx are field office sub-bank clearing accounts not in T012K.
 AB = BSCHL=31 (109K credit netting) + BSCHL=29 (24K advance offset). No bank transfer.
 
-**Impact**: Current event log models Stream 1 only (138K of ~600K clearing events). Streams 2–4 require separate modeling using BLART filter + GL account segmentation.
+**Impact**: All 4 streams now modeled (Session #028). Total: 1,848,699 events / 550,993 cases. Event log = `payment_event_log.csv`, dashboard = `payment_process_mining.html`.
 
 ## Known Gaps
 
@@ -231,8 +231,8 @@ AB = BSCHL=31 (109K credit netting) + BSCHL=29 (24K advance offset). No bank tra
 2. **REGUH→Invoice link validated** — REGUH.VBLNR = BSAK.AUGBL: **1,380,108 matched rows** confirmed. [VERIFIED Session #027]. OP docs are outside REGUH scope (REGUH→OP = 0 rows). Scope difference only, not a data quality issue.
 3. **On-Time 1.1% is a measurement artifact** — 73% of invoices have ZTERM=0001 (immediate) with ZFBDT=BUDAT. This means the "due date" = posting date. Real on-time for items with actual terms = 4.6%. The 26.8d/1.1% metrics should NOT be presented as late-payment KPIs without segmentation by ZTERM. [VERIFIED Session #026]
 4. **IBE/MGIE/ICBA DO clear invoices via F-53 (BLART=OP)** — 5,364 + 3,211 + 1,227 OP docs confirmed in BSAK 2024–2026. "Outside SAP" refers to the bank instruction, not the accounting document. [VERIFIED Session #026]
-5. **IBC17 failures uninvestigated** — 2,056 failed BCM batches. By rule: UNES_AP_ST=869, UNES_AR_BP=263, PAYROLL=229, UNES_TR_TR=185, IIEP_AP_ST=168. 229 payroll failures are operationally critical (staff not paid). Average failed batch = $1.2M vs $358K completed. F_DERAKHSHAN processed 259 payroll batches solo (CRUSR=CHUSR). [VERIFIED Session #026–027]
-6. **Event log covers Stream 1 only** — Current "Payment Executed = BLART=ZP" models 138K of ~600K clearing events. Streams 2–4 not modeled. See 4-Stream Architecture section above. [VERIFIED Session #027]
+5. ~~**IBC17 failures uninvestigated**~~ — Closed Session #028: ALL 2,056 IBC17 failures are 2021-2022 (BCM activation outage Jul21-Dec22). Zero failures in 2024-2026. Root cause: BCM misconfigured for 15 months after activation, fixed Oct-Dec 2022.
+6. ~~**Event log covers Stream 1 only**~~ — Resolved Session #028: All 4 streams now modeled. Stream 2 (OP field office): 274,863 events. Stream 3 (AB netting): 138,378 events. Stream 4 (Tier 3): 82 events. Total: 1,848,699 events.
 
 ## You Know It Worked When
 

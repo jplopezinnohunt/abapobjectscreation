@@ -1253,12 +1253,341 @@ def _ingest_payment_companion(brain):
     brain.add_edge("AUDIT_BCM_DUAL_CONTROL", "DOMAIN_PAYMENT", "RISK_IN")
     node_count += 1
 
+    # ── 4-Stream Clearing Architecture (Session #028) ──────────────────────
+    streams = [
+        ("STREAM_1_ZP_BCM", "Stream 1: F110/BCM Auto Payments (ZP)",
+         "HQ automated. F110 proposal -> BCM batch -> SWIFT. 215K events. GL in T012K.",
+         {"blart": "ZP", "events_2024_2026": 215122, "company_codes": ["UNES","UBO","IIEP","UIL","UIS","ICTP"]}),
+        ("STREAM_2_OP_FIELD", "Stream 2: Field Office Sub-Bank (OP)",
+         "Largest stream (38%). GL 2021xxx not in T012K. REGUH->OP=0 rows. Local banking.",
+         {"blart": "OP", "events_2024_2026": 274863, "gl_range": "2021xxx", "company_codes": ["UNES"]}),
+        ("STREAM_3_AB_NETTING", "Stream 3: Internal Netting (AB)",
+         "No bank transfer. BSCHL=31 credit netting (113K) + BSCHL=29 advance offset (25K).",
+         {"blart": "AB", "events_2024_2026": 138378, "bschl": ["31","29"]}),
+        ("STREAM_4_OP_TIER3", "Stream 4: Tier 3 Local OP (IBE/MGIE/ICBA)",
+         "Small entities via F-53 BLART=OP. 82 events. Not in REGUH.",
+         {"blart": "OP", "events_2024_2026": 82, "company_codes": ["IBE","MGIE","ICBA"]}),
+    ]
+    for sid, name, desc, meta in streams:
+        brain.add_node(
+            sid, "PROCESS", name,
+            domain="FI", path=companion_path,
+            metadata={"description": desc, **meta, "session": 28},
+            tags=["payment", "stream", "clearing", "process_mining"]
+        )
+        brain.add_edge(sid, "DOMAIN_PAYMENT", "PART_OF")
+        node_count += 1
+
+    # ── Process Mining Results (Session #028) ─────────────────────────────
+    brain.add_node(
+        "MINING_PAYMENT_E2E", "KNOWLEDGE_DOC", "Payment E2E Process Mining Results (4-stream)",
+        domain="FI", path=PROJECT_ROOT / "Zagentexecution/mcp-backend-server-python/payment_process_mining.html",
+        metadata={
+            "total_events": 1848699, "total_cases": 550993,
+            "streams": 4, "activities": 15,
+            "cycle_inv_to_pay_median": 2, "cycle_inv_to_pay_p90": 8,
+            "clearance_rate": 98.5,
+            "invoices_posted": 187429, "f110_runs_per_day": 23.3,
+            "same_day_pay_clear_pct": 98.6,
+            "session": 28,
+        },
+        tags=["payment", "process_mining", "analytics", "e2e"]
+    )
+    brain.add_edge("MINING_PAYMENT_E2E", "DOMAIN_PAYMENT", "BELONGS_TO")
+    brain.add_edge("MINING_PAYMENT_E2E", "COMPANION_PAYMENT", "DOCUMENTED_IN")
+    node_count += 1
+
+    # ── Updated Audit Finding: SoD with real numbers (Session #028) ───────
+    brain.add_node(
+        "AUDIT_SOD_UNES_AP_10", "FINDING", "SoD Finding: UNES_AP_10 — 2,280 same-user batches ($469M)",
+        domain="FI", path=companion_path,
+        metadata={
+            "rule": "UNES_AP_10", "same_user_batches": 2280, "amount_usd": 469000000,
+            "users": {"C_LOPEZ": 1212, "I_MARQUAND": 1068},
+            "period": "2024-2026", "session": 28,
+        },
+        tags=["audit", "sod", "bcm", "finding", "fi"]
+    )
+    brain.add_edge("AUDIT_SOD_UNES_AP_10", "DOMAIN_PAYMENT", "RISK_IN")
+    brain.add_edge("AUDIT_SOD_UNES_AP_10", "BCM_RULE_UNES_AP_10", "RISK_IN")
+    node_count += 1
+
+    brain.add_node(
+        "AUDIT_SOD_PAYROLL", "FINDING", "SoD Finding: F_DERAKHSHAN — 161 solo payroll batches ($40M)",
+        domain="FI", path=companion_path,
+        metadata={
+            "rule": "PAYROLL", "same_user_batches": 161, "amount_usd": 40000000,
+            "users": {"F_DERAKHSHAN": 161},
+            "period": "2024-01 to 2026-03", "ongoing": True, "session": 28,
+        },
+        tags=["audit", "sod", "bcm", "payroll", "finding", "fi"]
+    )
+    brain.add_edge("AUDIT_SOD_PAYROLL", "DOMAIN_PAYMENT", "RISK_IN")
+    brain.add_edge("AUDIT_SOD_PAYROLL", "BCM_RULE_PAYROLL", "RISK_IN")
+    brain.add_edge("AUDIT_SOD_PAYROLL", "VALIDATOR_FARINAZ_DERAKHSHAN", "RISK_IN")
+    node_count += 1
+
+    brain.add_node(
+        "AUDIT_SOD_UNES_AP_EX", "FINDING", "SoD Finding: UNES_AP_EX — 322 same-user exception batches",
+        domain="FI", path=companion_path,
+        metadata={
+            "rule": "UNES_AP_EX", "same_user_batches": 322, "amount_usd": 1900000,
+            "users": {"I_MARQUAND": 161, "C_LOPEZ": 161},
+            "risk": "CRITICAL — exception countries (AE/JO/embargo) must never have single-user approval",
+            "period": "2024-2026", "session": 28,
+        },
+        tags=["audit", "sod", "bcm", "embargo", "finding", "fi", "critical"]
+    )
+    brain.add_edge("AUDIT_SOD_UNES_AP_EX", "DOMAIN_PAYMENT", "RISK_IN")
+    brain.add_edge("AUDIT_SOD_UNES_AP_EX", "BCM_RULE_UNES_AP_EX", "RISK_IN")
+    node_count += 1
+
+    brain.add_node(
+        "FINDING_UNES_AP_11_STUCK", "FINDING", "UNES_AP_11: 106 batches stuck IBC11 ($122M)",
+        domain="FI", path=companion_path,
+        metadata={
+            "rule": "UNES_AP_11", "stuck_batches": 106, "amount_usd": 122000000,
+            "status": "IBC11", "completed_only": 21,
+            "period": "2024-01 to 2026-03",
+            "description": "Processing bottleneck — 83% of batches never reach IBC15",
+            "session": 28,
+        },
+        tags=["finding", "bcm", "bottleneck", "payment", "fi"]
+    )
+    brain.add_edge("FINDING_UNES_AP_11_STUCK", "DOMAIN_PAYMENT", "RISK_IN")
+    node_count += 1
+
+    brain.add_node(
+        "FINDING_BCM_OUTAGE_2021", "FINDING", "BCM Outage Jul 2021 - Dec 2022 (15 months, $2.49B failed)",
+        domain="FI", path=companion_path,
+        metadata={
+            "period": "2021-07 to 2022-12",
+            "total_failed_batches": 2056, "total_failed_amount": 2494000000,
+            "unretried_batches": 1922, "unretried_amount": 2390000000,
+            "root_cause": "BCM activated mid-2021 with misconfiguration. Fixed Oct-Dec 2022.",
+            "current_status": "Resolved — zero IBC17 failures since Jan 2023",
+            "session": 28,
+        },
+        tags=["finding", "bcm", "outage", "historical", "payment", "fi"]
+    )
+    brain.add_edge("FINDING_BCM_OUTAGE_2021", "DOMAIN_PAYMENT", "RISK_IN")
+    node_count += 1
+
     # ── Cross-reference to skill ──────────────────────────────────────────────
     skill_id = "SKILL_SAP_PAYMENT_BCM_AGENT"
     if skill_id in brain.nodes:
         brain.add_edge("COMPANION_PAYMENT", skill_id, "VISUALIZES")
 
-    print(f"  [SOURCE 9] Payment companion ingested: {node_count} nodes (processes, BCM rules, validators, DMEE, incidents)")
+    # Cross-ref streams to process mining
+    for sid, _, _, _ in streams:
+        brain.add_edge(sid, "MINING_PAYMENT_E2E", "DOCUMENTED_IN")
+
+    # ── Bank Statement & Reconciliation (Session #028) ────────────────────
+    brain.add_node(
+        "PROCESS_BANK_RECON", "PROCESS", "Bank Statement & Reconciliation E2E",
+        domain="FI", path=companion_path,
+        metadata={
+            "description": "Inbound: SWIFT->SIL->EBS auto-import (91.2% JOBBATCH)->FB01/Z1->BSIS. "
+                          "Recon: Manual FB05/Z7 clearing (T_ENG, EG_STREIDWOL, L_NEVES)->BSAS.",
+            "bank_stmt_docs": 239859, "z1_auto_pct": 91.2,
+            "unes_banks": 184, "unes_accounts": 366, "unes_currencies": 76,
+            "active_accounts": 145, "dormant_accounts": 221,
+            "session": 28,
+        },
+        tags=["payment", "bank_statement", "reconciliation", "process", "ebs"]
+    )
+    brain.add_edge("PROCESS_BANK_RECON", "DOMAIN_PAYMENT", "PART_OF")
+    node_count += 1
+
+    brain.add_node(
+        "FINDING_BANK_AGING", "FINDING", "Bank Recon: 101K+ items older than 15 months unreconciled",
+        domain="FI", path=companion_path,
+        metadata={
+            "open_items_total": 199599, "open_amount": 13942416230,
+            "items_15m_plus": 101663, "amount_15m_plus": 8157001268,
+            "description": "199K open bank GL items on UNES, 101K older than 15 months. "
+                          "Top: CIT04/USD04 (GL 1043011) = 6,877 items, $7.1B. "
+                          "SOG01/EUR01 (GL 1075012) = 6,767 items, $3.0B.",
+            "session": 28,
+        },
+        tags=["finding", "bank", "reconciliation", "aging", "fi"]
+    )
+    brain.add_edge("FINDING_BANK_AGING", "DOMAIN_PAYMENT", "RISK_IN")
+    brain.add_edge("FINDING_BANK_AGING", "PROCESS_BANK_RECON", "RISK_IN")
+    node_count += 1
+
+    brain.add_node(
+        "FINDING_DORMANT_ACCOUNTS", "FINDING", "221 dormant bank accounts (no activity 2024-2026)",
+        domain="FI", path=companion_path,
+        metadata={
+            "active": 145, "dormant": 221, "total": 366,
+            "description": "60% of T012K accounts for UNES have zero BSIS/BSAS activity. "
+                          "May include closed field office accounts or historical relics.",
+            "session": 28,
+        },
+        tags=["finding", "bank", "configuration", "dormant", "fi"]
+    )
+    brain.add_edge("FINDING_DORMANT_ACCOUNTS", "DOMAIN_PAYMENT", "RISK_IN")
+    brain.add_edge("FINDING_DORMANT_ACCOUNTS", "PROCESS_BANK_RECON", "RISK_IN")
+    node_count += 1
+
+    # ── EBS Architecture Deep Dive (Session #029) ──────────────────────────
+    ebs_nodes = [
+        ("CONFIG_EBS_POSTING_RULES", "CONFIG", "EBS Posting Rules (T028G: 1,025 rules, 23 transaction types)",
+         {"tables": "T028B=169,T028G=1025,T028D=331", "banks": "SOG_FR=18,CIT04_US=11,CIT21_CA=14,XRT940=258",
+          "algorithms": "000=none,001=standard,013=check,015=assignment,019=DME", "session": 29}),
+        ("CONFIG_EBS_SEARCH_STRINGS", "CONFIG", "EBS Search Strings — automatic clearing patterns",
+         {"patterns": "FO_PAYM_DOC,SOG_PAYM_DOC,SOG_STAFF,CIT_PAYM_DOC,CIT_STAFF,SOG_DME,CIT_DME",
+          "count": 331, "table": "T028D", "session": 29}),
+        ("CONFIG_EBS_ACCOUNT_SYMBOLS", "CONFIG", "EBS Account Symbols (BANK=10x,BANK_SUB=11x,BANK_TECH=12x,OFFSET_TECH_SUB=13x)",
+         {"symbols": "BANK=10xxxxx,BANK_SUB=11xxxxx,BANK_TECH=12xxxxx(legacy),OFFSET_TECH_SUB=13xxxxx(legacy)", "session": 29}),
+        ("TABLE_YBASUBST", "TABLE", "YBASUBST — Legacy BA Substitution (752 entries, 9 still BA=X)",
+         {"rows": 752, "z1_specific": 329, "unes_z1": 282, "ba_x_remaining": 9, "session": 29}),
+        ("TABLE_YTFI_BA_SUBST", "TABLE", "YTFI_BA_SUBST — Modern Range-Based BA Substitution (129 entries)",
+         {"rows": 129, "unes_z1_range": "0001000000-0001199999->GEF", "called_by": "YRGGBS00 U910", "session": 29}),
+        ("CONFIG_YTFBE001", "CONFIG", "CMOD YTFBE001 — EBS User Exit (EXIT_RFEBBU10_001->ZXF01U01->YTBAM001)",
+         {"project": "YTFBE001", "exit": "EXIT_RFEBBU10_001", "includes": "ZXF01U01,YTBAM001", "session": 29}),
+        ("TABLE_FEBEP", "TABLE", "FEBEP — Bank Statement Line Items (223,710 items 2024-2026, 99.9% posted)",
+         {"rows_2024_2026": 223710, "posting_rate_pct": 99.9, "monthly_avg": 8286,
+          "correction": "Previous claim FEBEP=0 was WRONG. EBS is fully active.", "session": 29}),
+        ("TABLE_FEBKO", "TABLE", "FEBKO — Bank Statement Headers (84,972 statements 2024-2026, 99% fully posted)",
+         {"rows_2024_2026": 84972, "fully_posted_pct": 99.0, "avg_items_per_stmt": 2.6, "session": 29}),
+        ("KNOWLEDGE_EBS_ARCH", "KNOWLEDGE_DOC", "bank_statement_ebs_architecture.md — Full EBS Reference",
+         {"path": "knowledge/domains/FI/bank_statement_ebs_architecture.md", "sections": 22,
+          "parts": "A=Configuration(12),B=Reality(6),C=Bridge(4)", "session": 29}),
+        ("FINDING_EBS_ACTIVE", "FINDING", "FEBEP=0 claim was WRONG — EBS has 223K items, 99.9% posted",
+         {"correction": "SKILL.md line 41 claimed FEBEP=0. Actual: 223,710 items (2024-2026). "
+          "84,972 FEBKO statement headers. EBS framework is fully active in P01.",
+          "impact": "All skills referencing FEBEP=0 must be corrected.", "session": 29}),
+        ("FINDING_RECON_ARCHITECTURE", "FINDING", "10xxxxx=bank view (never cleared), 11xxxxx=clearing view (99.4% cleared)",
+         {"description": "199K open items on 10xxxxx are NOT unreconciled — they are the permanent bank ledger. "
+          "Real reconciliation happens on 11xxxxx sub-bank accounts with 99.4% clearing rate. "
+          "Actual unreconciled = 2,737 items on 11xxxxx.",
+          "sub_bank_clearing_pct": 99.4, "real_unreconciled": 2737, "session": 29}),
+    ]
+    for nid, ntype, label, meta in ebs_nodes:
+        brain.add_node(nid, ntype, label, domain="FI", path="knowledge/domains/FI/bank_statement_ebs_architecture.md",
+                       metadata=meta, tags=["ebs", "bank_statement", "reconciliation", "fi"])
+        brain.add_edge(nid, "PROCESS_BANK_RECON", "PART_OF")
+        node_count += 1
+
+    # ── Session #030: Bank Statement & Reconciliation — Own Domain ──────────
+    # Bank Statement is NOT a sub-topic of payments. It is its own domain.
+    brain.add_node(
+        "DOMAIN_BANK_STATEMENT", "DOMAIN", "Bank Statement & Reconciliation Domain",
+        domain="FI", path="knowledge/domains/FI/bank_statement_ebs_architecture.md",
+        metadata={"source": "bank_statement_ebs_companion.html", "session": 30,
+                  "scope": "MT940 import, EBS posting, auto-clearing, FEBAN post-processing, 10xxx/11xxx GL architecture"},
+        tags=["bank_statement", "reconciliation", "ebs", "fi", "domain"]
+    )
+    brain.add_edge("DOMAIN_BANK_STATEMENT", "DOMAIN_PAYMENT", "BRIDGES_TO")
+    brain.add_edge("PROCESS_BANK_RECON", "DOMAIN_BANK_STATEMENT", "BELONGS_TO")
+    node_count += 1
+
+    s30_nodes = [
+        # E2E chain findings
+        ("FINDING_E2E_CHAIN", "FINDING", "E2E Chain: NTRF->SUBD->algo015 = 50% of all bank items (dominant chain)",
+         {"top_chain": "NTRF->SUBD->015=66,783 items (50%)", "total_analyzed": 133638,
+          "algo_015_pct": 85.7, "clearing_rules_pct": 98.7, "auto_posting_pct": 94.9,
+          "session": 30}),
+        ("FINDING_CLEARING_RATES", "FINDING", "ALL posting rules clear at 95-99.6% when items post to 11xxxxx. 102I apparent 29% was misleading (82% BELNR=*)",
+         {"SUBD_rate": 94.8, "102O_rate": 96.4, "SUBC_rate": 94.9, "TECD_rate": 96.4,
+          "102I_posted_rate": 99.6, "102I_apparent_rate": 29.2, "MXXD_rate": 98.8,
+          "insight": "82% of 102I items have BELNR=* (ACH returns, bank corrections, no FI posting). Of items that DO post, 99.6% clear. System is healthy.",
+          "session": 30}),
+        ("FINDING_CLEARING_SPEED", "FINDING", "55.3% same-day clearing, 76.4% within 3 days",
+         {"same_day_pct": 55.3, "within_3_days_pct": 76.4, "within_30_days_pct": 99.3,
+          "over_30_days_pct": 0.7, "avg_items_per_clearing_doc": 5.1,
+          "max_items_single_doc": 1882, "session": 30}),
+        ("FINDING_OPEN_ITEMS_HEALTHY", "FINDING", "2,996 open items are 87.8% <30 days old = normal processing lag, NOT backlog",
+         {"open_11xxx": 2996, "under_30_days_pct": 87.8, "under_90_days_pct": 99.4,
+          "over_365_days": 12,
+          "top_banks": "SCB09-NGN(690),AIB01-AFN(524),ECO08-USD(143)",
+          "correction": "Previous framing as 'reconciliation gap' was misleading. This is healthy current queue.",
+          "session": 30}),
+        # Config tier discovery
+        ("CONFIG_TIER_HQ", "CONFIG", "Config Tier 1: HQ Detailed (12 accounts, SOG_FR/CIT04_US, 7+ rules, 5 algorithms)",
+         {"accounts": 12, "pct_total": 8, "formats": "SOG_FR,CIT04_US,CIT21_CA",
+          "rules": "102I,102O,101I,111I,111O,999I,999O", "algorithms": "000,001,013,015,019",
+          "clearing_pct": "67-82%", "session": 30}),
+        ("CONFIG_TIER_FO", "CONFIG", "Config Tier 2: Field Office Generic (111 accounts, XRT940, SUBC/SUBD only, algo 015)",
+         {"accounts": 111, "pct_total": 77, "format": "XRT940",
+          "rules": "SUBC,SUBD", "algorithm": "015",
+          "clearing_pct": "100% attempt", "ext_codes": 65,
+          "insight": "All 65 ext codes map identically to SUBC/SUBD. No differentiation between charges, transfers, checks.",
+          "session": 30}),
+        ("CONFIG_TIER_TREASURY", "CONFIG", "Config Tier 3: Treasury Manual (18 accounts, TR_TRNF, algo 000 = no auto-clearing)",
+         {"accounts": 18, "pct_total": 13, "format": "TR_TRNF",
+          "rules": "102I,102O", "algorithm": "000",
+          "clearing_pct": "0% auto", "processing": "100% manual FEBAN",
+          "session": 30}),
+        # ZUONR pattern discovery
+        ("FINDING_ZUONR_PATTERNS", "FINDING", "ZUONR patterns: 3100x=FO docs, NONREF=7.5K can't clear, BANK CHARG=1.9K charges",
+         {"top_patterns": "3100x=9338(FO_docs),NONREF=7575(no_ref),3500x=3294(Z1_self),UK00x=2894(UK_remittance),BANK_CHARG=1917(charges)",
+          "zuonr_fill_cleared": 97.6, "zuonr_fill_open": 98.6,
+          "insight": "ZUONR is filled even on uncleared items - search strings extract text but it doesn't match any open payment doc.",
+          "session": 30}),
+        # EFART discovery
+        ("FINDING_EFART_MANUAL", "FINDING", "EFART=M (manual format): 5.1% of items, produces MXXD/MXXC rules with algo 000",
+         {"efart_m_stmts": 314, "efart_m_pct": 1.0,
+          "accounts": "GHS01(Ghana),SDD01(Sudan),USD01",
+          "insight": "Field offices where electronic banking is unavailable use manual entry. These items never auto-clear.",
+          "session": 30}),
+        # Clearing doc patterns
+        ("FINDING_AUGBL_PATTERNS", "FINDING", "Clearing doc patterns: 01x=64.5%(F110 payments), 35x=31.8%(Z7 clearing docs)",
+         {"prefix_01_pct": 64.5, "prefix_01_docs": 79776,
+          "prefix_35_pct": 31.8, "prefix_35_docs": 17525,
+          "other_prefixes": "30x=1.6%,31x=1.0%,00x=0.5%",
+          "session": 30}),
+        # Companion
+        ("COMPANION_EBS", "KNOWLEDGE_DOC", "Bank Statement EBS Companion v1 (10 tabs, production E2E chain analysis)",
+         {"type": "html_companion", "tabs": 10,
+          "tab_names": "Overview|E2E Chain|Config Tiers|Posting Rules|Algorithms|GL Structure|BA Determination|Production Reality|Interactive Map|Glossary",
+          "path": "Zagentexecution/mcp-backend-server-python/bank_statement_ebs_companion.html",
+          "session": 30}),
+        # New data tables
+        ("TABLE_FEBRE", "TABLE", "FEBRE - Bank Statement Tag 86 Text (1M+ rows, note-to-payee from MT940)",
+         {"rows": "1M+", "fields": "KUKEY,ESNUM,RSNUM,VWEZW", "all_history": True, "session": 30}),
+        ("TABLE_TCURR", "TABLE", "TCURR - Exchange Rates (54,993 rates from 2024+)",
+         {"rows": 54993, "session": 30}),
+        ("TABLE_T028E", "TABLE", "T028E - Posting Key Definitions (1,316 entries)",
+         {"rows": 1316, "session": 30}),
+    ]
+    for nid, ntype, label, meta in s30_nodes:
+        brain.add_node(nid, ntype, label, domain="FI",
+                       path="Zagentexecution/mcp-backend-server-python/bank_statement_ebs_companion.html",
+                       metadata=meta, tags=["ebs", "bank_statement", "reconciliation", "fi", "session_030"])
+        brain.add_edge(nid, "DOMAIN_BANK_STATEMENT", "BELONGS_TO")
+        node_count += 1
+
+    # Process mining findings (Session #030)
+    pm_nodes = [
+        ("FINDING_PM_VARIANTS", "FINDING", "159 process variants. Happy path (IMPORTED->POSTED->CLEARED)=45.7%. OPEN=33.8%",
+         {"total_events": 263451, "total_cases": 72637, "variants": 159,
+          "happy_path_pct": 45.7, "open_pct": 33.8, "session": 30}),
+        ("FINDING_PM_CYCLE_TIMES", "FINDING", "Median clearing: 0 days (61.5% same-day). P75=3 days. TR_TRNF median=132 days",
+         {"median_days": 0, "same_day_pct": 61.5, "p75_days": 3, "p95_days": 159,
+          "xrt940_median": 0, "tr_trnf_median": 132,
+          "insight": "Treasury transfers (TR_TRNF) median 132-day cycle = genuine bottleneck. Manual FEBAN only.",
+          "session": 30}),
+    ]
+    for nid, ntype, label, meta in pm_nodes:
+        brain.add_node(nid, ntype, label, domain="FI",
+                       path="Zagentexecution/mcp-backend-server-python/bank_stmt_event_log.csv",
+                       metadata=meta, tags=["ebs", "bank_statement", "process_mining", "fi", "session_030"])
+        brain.add_edge(nid, "DOMAIN_BANK_STATEMENT", "BELONGS_TO")
+        node_count += 1
+
+    # Cross-references
+    brain.add_edge("COMPANION_EBS", "KNOWLEDGE_EBS_ARCH", "DOCUMENTS")
+    brain.add_edge("COMPANION_EBS", "DOMAIN_BANK_STATEMENT", "BELONGS_TO")
+    brain.add_edge("CONFIG_TIER_FO", "CONFIG_EBS_POSTING_RULES", "PART_OF")
+    brain.add_edge("CONFIG_TIER_HQ", "CONFIG_EBS_POSTING_RULES", "PART_OF")
+    brain.add_edge("CONFIG_TIER_TREASURY", "CONFIG_EBS_POSTING_RULES", "PART_OF")
+    brain.add_edge("TABLE_FEBRE", "CONFIG_EBS_SEARCH_STRINGS", "PART_OF")
+    brain.add_edge("FINDING_ZUONR_PATTERNS", "CONFIG_EBS_SEARCH_STRINGS", "DOCUMENTS")
+
+    print(f"  [SOURCE 9] Payment companion ingested: {node_count} nodes (processes, streams, BCM rules, validators, DMEE, findings, bank recon, EBS architecture, E2E analysis)")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

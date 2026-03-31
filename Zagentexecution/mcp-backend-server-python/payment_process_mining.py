@@ -253,9 +253,114 @@ def build_event_log():
 
     print(f"    -> {len(pay_rows):,} payment docs, {pay_event_count:,} linked to invoices, {unlinked_payments:,} unlinked")
 
-    # ── STEP 3c: Link REGUH proposals to invoice cases via VBLNR ──
+    # ── STEP 3c: Stream 2 — Field Office OP Clearing (GL 2021xxx) ──
+    # OP docs hitting GL 2021xxx = field office sub-bank accounts, NOT in T012K
+    # These are structurally separate from F110/BCM (REGUH→OP = 0 rows)
+    print("  [3c/11] Stream 2: Field Office OP Clearing (BSAK→BKPF BLART=OP, GL 2021xxx)...")
+    op_field_count = 0
+    op_clearing_rows = conn.execute("""
+        SELECT a.BUKRS, a.BELNR, a.GJAHR, a.AUGBL, a.AUGDT, a.LIFNR,
+               a.WRBTR, a.WAERS, a.HKONT, a.BSCHL,
+               b.BUDAT AS pay_budat, b.USNAM AS pay_usnam, b.TCODE AS pay_tcode
+        FROM bsak a
+        JOIN bkpf b ON a.BUKRS = b.BUKRS AND a.AUGBL = b.BELNR AND a.GJAHR = b.GJAHR
+        WHERE a.BUDAT >= '20240101'
+          AND b.BLART = 'OP'
+          AND a.HKONT LIKE '00020210%'
+    """).fetchall()
+
+    for r in op_clearing_rows:
+        case_id = f"INV_{r['BUKRS']}_{r['BELNR']}_{r['GJAHR']}"
+        events.append({
+            'case_id': case_id,
+            'activity': 'Field Office Payment (OP)',
+            'timestamp': r['pay_budat'] or r['AUGDT'],
+            'resource': r['pay_usnam'] or '',
+            'doc_number': r['AUGBL'],
+            'company_code': r['BUKRS'],
+            'doc_type': 'OP',
+            'tcode': r['pay_tcode'] or '',
+            'amount': r['WRBTR'] or 0,
+            'currency': r['WAERS'] or '',
+            'vendor': r['LIFNR'] or '',
+            'description': f"GL:{r['HKONT']} Stream:FieldOffice",
+        })
+        op_field_count += 1
+    print(f"    -> {op_field_count:,} field office OP clearing events")
+
+    # ── STEP 3d: Stream 3 — Internal Netting (AB BSCHL=31/29) ──
+    # AB = no bank transfer. BSCHL=31 = credit netting, BSCHL=29 = advance offset
+    print("  [3d/11] Stream 3: Internal Netting (BSAK→BKPF BLART=AB, BSCHL=31/29)...")
+    ab_net_count = 0
+    ab_clearing_rows = conn.execute("""
+        SELECT a.BUKRS, a.BELNR, a.GJAHR, a.AUGBL, a.AUGDT, a.LIFNR,
+               a.WRBTR, a.WAERS, a.BSCHL,
+               b.BUDAT AS pay_budat, b.USNAM AS pay_usnam
+        FROM bsak a
+        JOIN bkpf b ON a.BUKRS = b.BUKRS AND a.AUGBL = b.BELNR AND a.GJAHR = b.GJAHR
+        WHERE a.BUDAT >= '20240101'
+          AND b.BLART = 'AB'
+          AND a.BSCHL IN ('31', '29')
+    """).fetchall()
+
+    for r in ab_clearing_rows:
+        case_id = f"INV_{r['BUKRS']}_{r['BELNR']}_{r['GJAHR']}"
+        activity = 'Invoice Netted (Credit)' if r['BSCHL'] == '31' else 'Invoice Offset (Advance)'
+        events.append({
+            'case_id': case_id,
+            'activity': activity,
+            'timestamp': r['pay_budat'] or r['AUGDT'],
+            'resource': r['pay_usnam'] or '',
+            'doc_number': r['AUGBL'],
+            'company_code': r['BUKRS'],
+            'doc_type': 'AB',
+            'tcode': '',
+            'amount': r['WRBTR'] or 0,
+            'currency': r['WAERS'] or '',
+            'vendor': r['LIFNR'] or '',
+            'description': f"BSCHL:{r['BSCHL']} Stream:Netting",
+        })
+        ab_net_count += 1
+    print(f"    -> {ab_net_count:,} netting events (AB)")
+
+    # ── STEP 3e: Stream 4 — Tier 3 OP (IBE/MGIE/ICBA) ──
+    # Smaller entities using OP clearing through local banking
+    print("  [3e/11] Stream 4: Tier 3 OP Clearing (IBE/MGIE/ICBA)...")
+    op_tier3_count = 0
+    op_tier3_rows = conn.execute("""
+        SELECT a.BUKRS, a.BELNR, a.GJAHR, a.AUGBL, a.AUGDT, a.LIFNR,
+               a.WRBTR, a.WAERS, a.HKONT,
+               b.BUDAT AS pay_budat, b.USNAM AS pay_usnam
+        FROM bsak a
+        JOIN bkpf b ON a.BUKRS = b.BUKRS AND a.AUGBL = b.BELNR AND a.GJAHR = b.GJAHR
+        WHERE a.BUDAT >= '20240101'
+          AND b.BLART = 'OP'
+          AND a.BUKRS IN ('IBE', 'MGIE', 'ICBA')
+          AND a.HKONT NOT LIKE '00020210%'
+    """).fetchall()
+
+    for r in op_tier3_rows:
+        case_id = f"INV_{r['BUKRS']}_{r['BELNR']}_{r['GJAHR']}"
+        events.append({
+            'case_id': case_id,
+            'activity': 'Local Payment (OP Tier3)',
+            'timestamp': r['pay_budat'] or r['AUGDT'],
+            'resource': r['pay_usnam'] or '',
+            'doc_number': r['AUGBL'],
+            'company_code': r['BUKRS'],
+            'doc_type': 'OP',
+            'tcode': '',
+            'amount': r['WRBTR'] or 0,
+            'currency': r['WAERS'] or '',
+            'vendor': r['LIFNR'] or '',
+            'description': f"GL:{r['HKONT']} Stream:Tier3",
+        })
+        op_tier3_count += 1
+    print(f"    -> {op_tier3_count:,} tier 3 OP clearing events")
+
+    # ── STEP 3f: Link REGUH proposals to invoice cases via VBLNR ──
     # REGUH.VBLNR = payment doc number, same as BSAK.AUGBL
-    print("  [3c/8] Linking REGUH proposals to invoices...")
+    print("  [3f/11] Linking REGUH proposals to invoices...")
     reguh_linked = 0
     if reguh_rows:
         for r in reguh_rows:

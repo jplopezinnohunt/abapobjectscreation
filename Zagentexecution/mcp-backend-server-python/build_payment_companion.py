@@ -95,6 +95,149 @@ cts_by_type = {}
 for r in cts_objs:
     cts_by_type.setdefault(r[1], []).append(r[2])
 
+# ── Deep Analysis (Session #028) ─────────────────────────────────────────────
+
+# 4-stream clearing volumes
+stream_data = db.execute("""
+    SELECT b.BLART,
+           SUM(CASE WHEN b.BLART='OP' AND a.HKONT LIKE '00020210%' THEN 1 ELSE 0 END) op_field,
+           SUM(CASE WHEN b.BLART='AB' THEN 1 ELSE 0 END) ab,
+           SUM(CASE WHEN b.BLART='ZP' THEN 1 ELSE 0 END) zp,
+           SUM(CASE WHEN b.BLART='OP' AND a.HKONT NOT LIKE '00020210%' THEN 1 ELSE 0 END) op_other
+    FROM bsak a
+    JOIN bkpf b ON a.BUKRS=b.BUKRS AND a.AUGBL=b.BELNR AND a.GJAHR=b.GJAHR
+    WHERE a.BUDAT >= '20240101'
+""").fetchone()
+stream_counts = {
+    'zp': stream_data[3] if stream_data else 0,
+    'op_field': stream_data[1] if stream_data else 0,
+    'ab': stream_data[2] if stream_data else 0,
+    'op_other': stream_data[4] if stream_data else 0,
+}
+
+# SoD same-user by rule (2024-2026)
+sod_by_rule = db.execute("""
+    SELECT RULE_ID, COUNT(*) cnt, ROUND(SUM(CAST(BATCH_SUM AS REAL)),2) amt,
+           SUM(CAST(ITEM_CNT AS INT)) items
+    FROM BNK_BATCH_HEADER
+    WHERE CRDATE >= '20240101' AND CRUSR = CHUSR AND CUR_STS IN ('IBC15','IBC11','IBC05')
+    GROUP BY RULE_ID ORDER BY cnt DESC
+""").fetchall()
+
+# SoD same-user by person
+sod_by_person = db.execute("""
+    SELECT CRUSR, RULE_ID, COUNT(*) cnt, ROUND(SUM(CAST(BATCH_SUM AS REAL)),2) amt
+    FROM BNK_BATCH_HEADER
+    WHERE CRDATE >= '20240101' AND CRUSR = CHUSR AND CUR_STS IN ('IBC15','IBC11','IBC05')
+    GROUP BY CRUSR, RULE_ID ORDER BY cnt DESC LIMIT 15
+""").fetchall()
+
+# Approval matrix (dual-controlled)
+approval_matrix = db.execute("""
+    SELECT CRUSR, CHUSR, COUNT(*) cnt, ROUND(SUM(CAST(BATCH_SUM AS REAL)),2) amt
+    FROM BNK_BATCH_HEADER
+    WHERE CRDATE >= '20240101' AND CRUSR != CHUSR AND CUR_STS IN ('IBC15','IBC11','IBC05')
+    GROUP BY CRUSR, CHUSR ORDER BY cnt DESC LIMIT 15
+""").fetchall()
+
+# Monthly stream volumes
+monthly_streams = db.execute("""
+    SELECT SUBSTR(a.AUGDT,1,6) ym,
+           SUM(CASE WHEN b.BLART='ZP' THEN 1 ELSE 0 END) zp,
+           SUM(CASE WHEN b.BLART='OP' AND a.HKONT LIKE '00020210%' THEN 1 ELSE 0 END) op_field,
+           SUM(CASE WHEN b.BLART='AB' THEN 1 ELSE 0 END) ab,
+           SUM(CASE WHEN b.BLART NOT IN ('ZP','AB') AND NOT (b.BLART='OP' AND a.HKONT LIKE '00020210%') THEN 1 ELSE 0 END) others
+    FROM bsak a JOIN bkpf b ON a.BUKRS=b.BUKRS AND a.AUGBL=b.BELNR AND a.GJAHR=b.GJAHR
+    WHERE a.AUGDT >= '20240101' AND a.AUGDT < '20270101'
+    GROUP BY SUBSTR(a.AUGDT,1,6) ORDER BY ym
+""").fetchall()
+
+# House bank by rule
+hb_by_rule = db.execute("""
+    SELECT HBKID, RULE_ID, COUNT(*) cnt, ROUND(SUM(CAST(BATCH_SUM AS REAL)),2) amt
+    FROM BNK_BATCH_HEADER
+    WHERE CRDATE >= '20240101' AND CUR_STS IN ('IBC15','IBC11')
+    GROUP BY HBKID, RULE_ID ORDER BY HBKID, cnt DESC
+""").fetchall()
+
+# BCM status distribution (2024-2026)
+bcm_status_dist = db.execute("""
+    SELECT CUR_STS, COUNT(*) cnt, ROUND(SUM(CAST(BATCH_SUM AS REAL)),2) amt
+    FROM BNK_BATCH_HEADER WHERE CRDATE >= '20240101'
+    GROUP BY CUR_STS ORDER BY cnt DESC
+""").fetchall()
+
+# Invoice lifecycle
+inv_posted = db.execute("SELECT COUNT(*) FROM bkpf WHERE BLART IN ('KR','RE','KG') AND BUDAT >= '20240101'").fetchone()[0]
+vendors_cleared = db.execute("SELECT COUNT(DISTINCT BUKRS||BELNR||GJAHR) FROM bsak WHERE BUDAT >= '20240101' AND LIFNR != ''").fetchone()[0]
+still_open = db.execute("SELECT COUNT(*) FROM bsik WHERE BUDAT >= '20240101'").fetchone()[0]
+
+# ── Bank Statement & Reconciliation (Session #028) ───────────────────────────
+
+# Bank landscape
+unes_banks = db.execute("SELECT COUNT(DISTINCT HBKID) FROM T012K WHERE BUKRS='UNES'").fetchone()[0]
+unes_accts = db.execute("SELECT COUNT(*) FROM T012K WHERE BUKRS='UNES'").fetchone()[0]
+unes_ccys = db.execute("SELECT COUNT(DISTINCT WAERS) FROM T012K WHERE BUKRS='UNES'").fetchone()[0]
+
+# Bank statement volumes
+bs_volumes = {}
+for blart in ['Z1','Z2','Z3','Z5','Z6','Z7']:
+    bs_volumes[blart] = db.execute(f"SELECT COUNT(*) FROM bkpf WHERE BLART='{blart}' AND BUDAT >= '20240101'").fetchone()[0]
+bs_total = sum(bs_volumes.values())
+
+# Automation
+bs_auto = db.execute("SELECT COUNT(*) FROM bkpf WHERE BLART='Z1' AND USNAM='JOBBATCH' AND BUDAT >= '20240101'").fetchone()[0]
+bs_manual = db.execute("SELECT COUNT(*) FROM bkpf WHERE BLART='Z1' AND USNAM != 'JOBBATCH' AND BUDAT >= '20240101'").fetchone()[0]
+
+# Open bank items
+bank_open = db.execute("SELECT COUNT(*), ROUND(SUM(CAST(DMBTR AS REAL)),2) FROM bsis WHERE HKONT LIKE '0001%' AND BUKRS='UNES'").fetchone()
+bank_cleared = db.execute("SELECT COUNT(*), ROUND(SUM(CAST(DMBTR AS REAL)),2) FROM bsas WHERE HKONT LIKE '0001%' AND BUKRS='UNES'").fetchone()
+
+# Top open GL accounts
+bank_open_top = db.execute("""
+    SELECT SUBSTR(s.HKONT,5,7) gl, COUNT(*) cnt, ROUND(SUM(CAST(s.DMBTR AS REAL)),2) amt,
+           s.WAERS, k.HBKID, k.HKTID
+    FROM bsis s LEFT JOIN T012K k ON s.BUKRS=k.BUKRS AND s.HKONT=k.HKONT
+    WHERE s.HKONT LIKE '0001%' AND s.BUKRS='UNES'
+    GROUP BY s.HKONT ORDER BY cnt DESC LIMIT 15
+""").fetchall()
+
+# Bank statement users
+bs_users = db.execute("""
+    SELECT USNAM, COUNT(*) cnt, GROUP_CONCAT(DISTINCT BLART) types
+    FROM bkpf WHERE BLART IN ('Z1','Z2','Z3','Z5','Z6','Z7') AND BUDAT >= '20240101'
+    GROUP BY USNAM ORDER BY cnt DESC LIMIT 12
+""").fetchall()
+
+# Monthly bank statement
+monthly_bs = db.execute("""
+    SELECT SUBSTR(BUDAT,1,6) ym,
+           SUM(CASE WHEN BLART='Z1' THEN 1 ELSE 0 END) z1,
+           SUM(CASE WHEN BLART='Z5' THEN 1 ELSE 0 END) z5,
+           SUM(CASE WHEN BLART IN ('Z2','Z3','Z6','Z7') THEN 1 ELSE 0 END) other_z
+    FROM bkpf WHERE BLART IN ('Z1','Z2','Z3','Z5','Z6','Z7') AND BUDAT >= '20240101'
+    GROUP BY SUBSTR(BUDAT,1,6) ORDER BY ym
+""").fetchall()
+
+# Active vs dormant accounts
+active_accts = db.execute("""
+    SELECT COUNT(DISTINCT k.HBKID||k.HKTID) FROM T012K k
+    JOIN bsis s ON k.BUKRS=s.BUKRS AND k.HKONT=s.HKONT WHERE k.BUKRS='UNES'
+""").fetchone()[0]
+
+# Aging
+bank_aging = db.execute("""
+    SELECT
+        CASE WHEN BUDAT >= '20260301' THEN '0-30d'
+             WHEN BUDAT >= '20260101' THEN '1-3m'
+             WHEN BUDAT >= '20250701' THEN '3-9m'
+             WHEN BUDAT >= '20250101' THEN '9-15m'
+             ELSE '15m+' END bucket,
+        COUNT(*) cnt, ROUND(SUM(CAST(DMBTR AS REAL)),2) amt
+    FROM bsis WHERE HKONT LIKE '0001%'
+    GROUP BY bucket ORDER BY MIN(BUDAT) DESC
+""").fetchall()
+
 db.close()
 
 # ── 2. Static knowledge (from PDF analysis) ──────────────────────────────────
@@ -813,6 +956,8 @@ code{{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace
   <div class="tab" onclick="show('notes',this)">Go-Live &amp; Notes</div>
   <div class="tab" onclick="show('roles',this)">Roles &amp; Auth</div>
   <div class="tab" onclick="show('infra',this)">Infrastructure</div>
+  <div class="tab" onclick="show('deep',this)">Deep Analysis</div>
+  <div class="tab" onclick="show('recon',this)">Bank Recon</div>
 </div>
 
 <!-- TAB: E2E Flow -->
@@ -1446,6 +1591,198 @@ code{{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- TAB: Bank Statement & Reconciliation (Session #028) -->
+<div id="tab-recon" class="content">
+  <div class="section">
+    <h3>Bank Account Landscape</h3>
+    <div class="info">UNES: {unes_banks} house banks | {unes_accts} accounts | {unes_ccys} currencies | {active_accts} active / {unes_accts - active_accts} dormant</div>
+    <div class="grid2">
+      <div>
+        <h4>Bank Statement Volumes (2024-2026)</h4>
+        <table>
+          <tr><th>Type</th><th>Count</th><th>Description</th></tr>
+          <tr><td><code>Z1</code></td><td>{bs_volumes['Z1']:,}</td><td>Bank statement posting (GL reconciliation)</td></tr>
+          <tr><td><code>Z5</code></td><td>{bs_volumes['Z5']:,}</td><td>Cash journal entries (FBCJ)</td></tr>
+          <tr><td><code>Z2</code></td><td>{bs_volumes['Z2']:,}</td><td>Memo / adjustment</td></tr>
+          <tr><td><code>Z7</code></td><td>{bs_volumes['Z7']:,}</td><td>Bank statement clearing (FB05)</td></tr>
+          <tr><td><code>Z6</code></td><td>{bs_volumes['Z6']:,}</td><td>Bank statement reversal</td></tr>
+          <tr><td><code>Z3</code></td><td>{bs_volumes['Z3']:,}</td><td>Reference document</td></tr>
+          <tr style="font-weight:bold"><td>TOTAL</td><td>{bs_total:,}</td><td></td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>Automation Level</h4>
+        <table>
+          <tr><th>Source</th><th>Count</th><th>Share</th></tr>
+          <tr style="background:#1a3a2a"><td>JOBBATCH (EBS auto-import)</td><td>{bs_auto:,}</td><td>{100*bs_auto/(bs_auto+bs_manual):.1f}%</td></tr>
+          <tr><td>Manual (named users)</td><td>{bs_manual:,}</td><td>{100*bs_manual/(bs_auto+bs_manual):.1f}%</td></tr>
+        </table>
+        <h4 style="margin-top:12px">Reconciliation Status</h4>
+        <table>
+          <tr><th>Status</th><th>Items</th><th>Amount (USD)</th></tr>
+          <tr><td>Open (BSIS)</td><td>{bank_open[0]:,}</td><td>{bank_open[1]:,.0f}</td></tr>
+          <tr><td>Cleared (BSAS)</td><td>{bank_cleared[0]:,}</td><td>{bank_cleared[1]:,.0f}</td></tr>
+          <tr><td>Recon Rate</td><td colspan="2">{100*bank_cleared[0]/(bank_open[0]+bank_cleared[0]):.1f}%</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Discovered Bank Statement Process (from system logs)</h3>
+    <div style="background:#12202e;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;line-height:2">
+      <span style="color:#3498db">INBOUND (Bank to SAP):</span><br>
+      &nbsp; Bank &rarr; SWIFT Alliance Lite2 &rarr; SIL &rarr; <code>\\hq-sapitf\\SWIFT$\\output</code><br>
+      &nbsp;&nbsp; &rarr; <span style="color:#f39c12">SAP EBS Auto-Import (JOBBATCH, 91.2%)</span> &rarr; <strong>FB01/Z1</strong> &rarr; Bank GL (BSIS open)<br>
+      <br>
+      <span style="color:#1abc9c">RECONCILIATION:</span><br>
+      &nbsp; Open bank items (BSIS) &rarr; <span style="color:#f39c12">Manual clearing</span> (T_ENG, EG_STREIDWOL, L_NEVES)<br>
+      &nbsp;&nbsp; &rarr; <strong>FB05/Z7</strong> (Z1 matched to ZP/OP payment doc) &rarr; Cleared (BSAS)<br>
+      <br>
+      <span style="color:#e74c3c">OUTBOUND (SAP to Bank):</span><br>
+      &nbsp; F110 &rarr; BCM Batch &rarr; DMEE XML &rarr; SFTP (every 15 min) &rarr; SIL &rarr; SWIFT &rarr; Bank
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Top Open Bank GL Accounts (unreconciled)</h3>
+    <table>
+      <tr><th>GL Account</th><th>Bank</th><th>AcctID</th><th>Open Items</th><th>Amount</th><th>CCY</th></tr>
+      {''.join(f"<tr><td><code>{r[0]}</code></td><td><code>{r[4] or ''}</code></td><td>{r[5] or ''}</td><td>{r[1]:,}</td><td>{r[2]:,.0f}</td><td>{r[3] or ''}</td></tr>" for r in bank_open_top)}
+    </table>
+  </div>
+
+  <div class="grid2">
+    <div class="section">
+      <h3>Open Items Aging</h3>
+      <table>
+        <tr><th>Age</th><th>Items</th><th>Amount</th></tr>
+        {''.join(f"<tr><td>{r[0]}</td><td>{r[1]:,}</td><td>{r[2]:,.0f}</td></tr>" for r in bank_aging)}
+      </table>
+      <div class="alert" style="margin-top:8px">&#9888; {sum(r[1] for r in bank_aging if '15' in r[0]):,} items older than 15 months remain unreconciled</div>
+    </div>
+    <div class="section">
+      <h3>Bank Statement Users</h3>
+      <table>
+        <tr><th>User</th><th>Documents</th><th>Doc Types</th></tr>
+        {''.join(f"<tr><td><code>{r[0]}</code></td><td>{r[1]:,}</td><td>{r[2]}</td></tr>" for r in bs_users)}
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Monthly Bank Statement Volume</h3>
+    <table>
+      <tr><th>Month</th><th>Z1 (Posting)</th><th>Z5 (Cash)</th><th>Z2/3/6/7 (Other)</th></tr>
+      {''.join(f"<tr><td>{r[0]}</td><td>{r[1]:,}</td><td>{r[2]:,}</td><td>{r[3]:,}</td></tr>" for r in monthly_bs)}
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Configuration Validation</h3>
+    <table>
+      <tr><th>Check</th><th>Result</th><th>Status</th></tr>
+      <tr><td>Active bank accounts (have BSIS items)</td><td>{active_accts} / {unes_accts}</td><td style="color:#1abc9c">&#10004;</td></tr>
+      <tr><td>Dormant accounts (no activity 2024-2026)</td><td>{unes_accts - active_accts} accounts</td><td style="color:#f39c12">&#9888;</td></tr>
+      <tr><td>EBS auto-import rate (JOBBATCH)</td><td>{100*bs_auto/(bs_auto+bs_manual):.1f}%</td><td style="color:#1abc9c">&#10004;</td></tr>
+      <tr><td>Bank GL open items (unreconciled)</td><td>{bank_open[0]:,} items</td><td style="color:#f39c12">&#9888;</td></tr>
+      <tr><td>Items older than 15 months</td><td>{sum(r[1] for r in bank_aging if '15' in r[0]):,}</td><td style="color:#e74c3c">&#10008;</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: Deep Analysis (Session #028) -->
+<div id="tab-deep" class="content">
+  <div class="section">
+    <h3>Payment E2E Process Mining — 4-Stream Model (Session #028)</h3>
+    <div class="info">1,848,699 events | 550,993 cases | 187,429 invoices | 98.5% clearance rate | 23.3 F110 runs/day</div>
+    <div class="grid2">
+      <div>
+        <h4>4 Clearing Streams</h4>
+        <table>
+          <tr><th>Stream</th><th>BLART</th><th>Volume</th><th>Share</th></tr>
+          <tr><td>1: F110/BCM (HQ auto)</td><td>ZP</td><td>{stream_counts['zp']:,}</td><td>{100*stream_counts['zp']/(stream_counts['zp']+stream_counts['op_field']+stream_counts['ab']+stream_counts['op_other']):.0f}%</td></tr>
+          <tr style="background:#1a3a2a"><td>2: Field Office Sub-Bank</td><td>OP</td><td>{stream_counts['op_field']:,}</td><td>{100*stream_counts['op_field']/(stream_counts['zp']+stream_counts['op_field']+stream_counts['ab']+stream_counts['op_other']):.0f}%</td></tr>
+          <tr><td>3: Internal Netting</td><td>AB</td><td>{stream_counts['ab']:,}</td><td>{100*stream_counts['ab']/(stream_counts['zp']+stream_counts['op_field']+stream_counts['ab']+stream_counts['op_other']):.0f}%</td></tr>
+          <tr><td>4: Tier 3 + Other OP</td><td>OP</td><td>{stream_counts['op_other']:,}</td><td>{100*stream_counts['op_other']/(stream_counts['zp']+stream_counts['op_field']+stream_counts['ab']+stream_counts['op_other']):.0f}%</td></tr>
+        </table>
+        <div class="alert" style="margin-top:8px">&#9888; Field Office OP is the LARGEST stream (38%), not F110/BCM.</div>
+      </div>
+      <div>
+        <h4>Invoice Lifecycle</h4>
+        <table>
+          <tr><th>Metric</th><th>Count</th></tr>
+          <tr><td>Invoices Posted (KR/RE/KG)</td><td>{inv_posted:,}</td></tr>
+          <tr><td>Vendors Cleared</td><td>{vendors_cleared:,}</td></tr>
+          <tr><td>Still Open</td><td>{still_open:,}</td></tr>
+          <tr><td>Clearance Rate</td><td>{100*vendors_cleared/(vendors_cleared+still_open):.1f}%</td></tr>
+        </table>
+        <h4 style="margin-top:12px">Cycle Times</h4>
+        <table>
+          <tr><th>Metric</th><th>Median</th><th>P90</th></tr>
+          <tr><td>Invoice to Payment</td><td>2 days</td><td>8 days</td></tr>
+          <tr><td>Invoice to Clearing</td><td>2 days</td><td>10 days</td></tr>
+          <tr><td>Payment to Clearing</td><td>0 days (same day)</td><td>0 days</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 style="color:#e74c3c">Segregation of Duties — BCM Dual Control Gaps</h3>
+    <div class="alert">&#9888; {sum(r[1] for r in sod_by_rule):,} batches processed without dual control (CRUSR=CHUSR) in 2024-2026</div>
+    <div class="grid2">
+      <div>
+        <h4>By BCM Rule</h4>
+        <table>
+          <tr><th>Rule</th><th>Same-User Batches</th><th>Amount (USD)</th></tr>
+          {''.join(f"<tr><td><code>{r[0]}</code></td><td>{r[1]:,}</td><td>{r[2]:,.0f}</td></tr>" for r in sod_by_rule)}
+        </table>
+      </div>
+      <div>
+        <h4>By Person + Rule</h4>
+        <table>
+          <tr><th>User</th><th>Rule</th><th>Count</th><th>Amount</th></tr>
+          {''.join(f"<tr><td><code>{r[0]}</code></td><td>{r[1]}</td><td>{r[2]:,}</td><td>{r[3]:,.0f}</td></tr>" for r in sod_by_person)}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Approval Matrix (Properly Dual-Controlled)</h3>
+    <table>
+      <tr><th>Creator</th><th>Approver</th><th>Batches</th><th>Amount (USD)</th></tr>
+      {''.join(f"<tr><td><code>{r[0]}</code></td><td><code>{r[1]}</code></td><td>{r[2]:,}</td><td>{r[3]:,.0f}</td></tr>" for r in approval_matrix)}
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Monthly Clearing Stream Volumes</h3>
+    <table>
+      <tr><th>Month</th><th>ZP (BCM)</th><th>OP (Field Office)</th><th>AB (Netting)</th><th>Others</th></tr>
+      {''.join(f"<tr><td>{r[0]}</td><td>{r[1]:,}</td><td>{r[2]:,}</td><td>{r[3]:,}</td><td>{r[4]:,}</td></tr>" for r in monthly_streams)}
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>House Bank by BCM Rule</h3>
+    <table>
+      <tr><th>Bank</th><th>Rule</th><th>Batches</th><th>Amount (USD)</th></tr>
+      {''.join(f"<tr><td><code>{r[0]}</code></td><td>{r[1]}</td><td>{r[2]:,}</td><td>{r[3]:,.0f}</td></tr>" for r in hb_by_rule)}
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>BCM Status Distribution (2024-2026)</h3>
+    <table>
+      <tr><th>Status</th><th>Batches</th><th>Amount (USD)</th></tr>
+      {''.join(f"<tr><td><code>{r[0] or '(empty)'}</code></td><td>{r[1]:,}</td><td>{r[2]:,.0f}</td></tr>" for r in bcm_status_dist)}
+    </table>
+    <div class="info" style="margin-top:8px">IBC15=Completed | IBC11=In Process | IBC20=Reversed | IBC17=Failed (zero in 2024-2026)</div>
   </div>
 </div>
 

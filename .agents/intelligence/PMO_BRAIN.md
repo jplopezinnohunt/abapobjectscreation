@@ -1,6 +1,6 @@
 # UNESCO SAP — Project Brain + PMO Brain
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
-> **Last reconciled**: Session #023 (2026-03-27) — PDF coverage 100%, H5/G25/H2/H3/H4 closed, B10 partial (3/10 skills updated)
+> **Last reconciled**: Session #030 (2026-03-31) — H20/H27/H28 closed, H22/H23/H24 partial
 
 ---
 
@@ -74,16 +74,16 @@ Each layer FEEDS the others:
 
 | # | Task | First raised | Blocks | Notes |
 |---|------|-------------|--------|-------|
-| B1 | **FMIFIIT OBJNRZ enrichment 2024+2026** | #016 | Golden Query WBS coverage | Script proven on 2025 (976K rows). Just re-run for 2024+2026 |
-| B2 | **BSEG PROJK extraction** | #016 | WBS for non-FM documents | BSEG declustered in P01. No MANDT in WHERE. Direct RFC_READ_TABLE |
+| ~~B1~~ | ~~FMIFIIT OBJNRZ enrichment 2024+2026~~ | ~~#016~~ | ~~Golden Query WBS coverage~~ | ~~Done #028: 2024 (16 periods, 27 min) + 2026 (3 periods, 4 min). All years now enriched.~~ |
+| B2 | **BSEG PROJK extraction** | #016 | WBS for ~9.5% non-FM docs | Demoted #028: Golden Query covers 85.9% WBS via OBJNRZ. PROJK only adds coverage for clearing lines without FMIFIIT match. Script ready but low marginal value. |
 | B3 | **CO tables: COOI, COEP, RPSCO** | #005 | Entire CO cost layer missing | ~1.6M rows total. No extraction script yet |
-| B4 | **B2R tables: FMIOI+FMBH+FMBL verification** | #009 | B2R lifecycle mining | Returned 0 rows initially (date filter bug). Extracted in #013 but verify data quality |
-| B5 | **SES gap: ESSR↔ESLL PACKNO mismatch** | #011 | P2P service receipts | ESLL extracted (2.9M in #013) but JOIN=0 events. Debug join keys |
-| B6 | **EKBE BUDAT enrichment** | #018 | P2P temporal precision | Currently GJAHR proxy. Need real posting dates |
-| B7 | **CDHDR process mining** | #011 | Audit trail analysis | 7.8M rows extracted but NEVER processed with pm4py |
-| B8 | **P2P bottleneck/temporal analysis** | #009 | P2P insights | 848K event log built but no time analysis run |
-| B9 | **Fix STEM FBZP chain** | #019 | Company code unusable for payments | T042C+T042I missing. House bank CBE01 question |
-| B10 | **Update remaining stale skills** | #017 | Agents using outdated instructions | #023 partial: skill_creator (12→33 skills), unicode_filter_registry (+BLART_FI+BCM_RULE), sap_debugging_and_healing (+real patterns). Still need: sap_bdc_intelligence, sap_job_intelligence, sap_interface_intelligence, sap_enhancement_extraction, sap_process_mining, sap_native_desktop, sap_automated_testing |
+| ~~B4~~ | ~~B2R tables: FMIOI+FMBH+FMBL verification~~ | ~~#009~~ | ~~B2R lifecycle mining~~ | ~~Done — verified #028: FMIOI=1.8M, FMBH=287K, FMBL=319K rows~~ |
+| ~~B5~~ | ~~SES gap: ESSR↔ESLL PACKNO mismatch~~ | ~~#011~~ | ~~P2P service receipts~~ | ~~Done — verified #028: 707K PACKNO matched (99.99% of ESSR)~~ |
+| ~~B6~~ | ~~EKBE BUDAT enrichment~~ | ~~#018~~ | ~~P2P temporal precision~~ | ~~Done #028: 363K rows enriched (BUDAT+BLDAT+BEWTP+MENGE+DMBTR+WRBTR+WAERS). 2024=161K, 2025=175K, 2026=27K. MEINS auth-restricted. GJAHR=0000 (119K delivery notes) skipped.~~ |
+| ~~B7~~ | ~~CDHDR process mining~~ | ~~#011~~ | ~~Audit trail analysis~~ | ~~Done — verified #028: cdhdr_activity_mapping.py exists with pm4py integration~~ |
+| ~~B8~~ | ~~P2P bottleneck/temporal analysis~~ | ~~#009~~ | ~~P2P insights~~ | ~~Done — verified #028: p2p_process_mining.py + HTML dashboard built~~ |
+| ~~B9~~ | ~~Fix STEM FBZP chain~~ | ~~#019~~ | ~~N/A~~ | ~~Closed #028: STEM not in T001. 9 real co codes (IBE,ICBA,ICTP,IIEP,MGIE,UBO,UIL,UIS,UNES) all configured~~ |
+| B10 | **Update remaining stale skills** | #017 | Agents using outdated instructions | #028 verified: sap_process_mining, sap_job_intelligence, sap_interface_intelligence, sap_bdc_intelligence updated. **Still stale (3):** sap_native_desktop, sap_automated_testing, sap_enhancement_extraction |
 
 ### 🟡 HIGH — Next available session
 
@@ -95,17 +95,27 @@ Each layer FEEDS the others:
 | ~~H4~~ | ~~BSEG UNION view in SQLite~~ | ~~#011~~ | ~~Data~~ | ~~Done — bseg_union VIEW exists, 4.7M rows (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). Verified #023~~ |
 | ~~H5~~ | ~~Merge sap_segw + segw_automation~~ | ~~#018~~ | ~~Skill~~ | ~~Done #023 — sap_segw now comprehensive (5 workflows, element IDs, full troubleshooting). segw_automation redirects.~~ |
 | H6 | **Brain integration of P2P** | #009 | Brain | PROCESS_VARIANT/BOTTLENECK/ANOMALY nodes |
-| H7 | **Design Fiori replacement for PRAA*** | #005 | App | PA30 infotype update app. BAPI: BAPI_EMPLOYEE_ENQUEUE + HR_MAINTAIN_MASTERDATA |
-| H8 | **P01 transaction usage report** | #005b | Monitoring | `--report transactions --system P01` |
-| H9 | **P01 runtime dumps report** | #005b | Monitoring | `--report dumps --system P01` — what's breaking in prod? |
+| H7 | **Design Fiori replacement for PRAA*** | #005 | App | Deprioritized #028 — moved to backlog focus. PA30 infotype update app. BAPI: BAPI_EMPLOYEE_ENQUEUE + HR_MAINTAIN_MASTERDATA |
+| ~~H8~~ | ~~P01 transaction usage report~~ | ~~#005b~~ | ~~Monitoring~~ | ~~Done — verified #028: sap_system_monitor.py --report transactions works~~ |
+| ~~H9~~ | ~~P01 runtime dumps report~~ | ~~#005b~~ | ~~Monitoring~~ | ~~Done — verified #028: sap_system_monitor.py --report dumps works~~ |
 | H10 | **Document Coupa integration** | #002 | Analysis | COUPA* sessions doing PA30 BDC — needs proper BAPI endpoint |
 | H11 | **Extract Benefits BSP app** | #005b | Code | Find BSP name from `ZCL_ZHCMFAB_MYFAMILYME_DPC_EXT` manifest |
 | H12 | **Populate HCM/Reports folder** | #005b | Code | Extract Z-reports in HCM namespace |
 | H13 | **BCM dual-control gap remediation** | #021/#027 | Audit | **REVISED #027**: Total confirmed = **3,394 completed/sent batches** where CRUSR=CHUSR (not 1,557 as originally counted). Breakdown: UNES_AP_10=1,754 · UBO_AP_MAX=627 · **UNES_AP_EX=317** (🔴 exception-list countries AE/JO/embargo — highest risk) · UNES_AP_ST=299 · PAYROLL=276 (F_DERAKHSHAN alone = 259 payroll batches, single person ran payroll BCM start-to-finish) · UNES_AP_IK=119 · IIEP=2. At avg $514K/batch, ~$1.7B processed without dual control. UNES_AP_EX same-user = critical: exception batch for UAE/Jordan/Mexico must never have single-user approval. |
 | H14 | **Extract YWFI package source from D01** | #021 | Code | Z_GET_CERTIF_OFFICER_UNESDIR, Z_WF_GET_CERTIFYING_OFFICER etc. D01 HTTP blocked via VPN — needs on-site or VPN route |
-| H16 | **Investigate 229 PAYROLL IBC17 (Failed) BCM batches** | #026 | Audit | 229 payroll batches failed = staff not paid on time. Query BNK_BATCH_ITEM for failed batches, cross-reference REGUH LAUFD for affected pay periods. Also: 869 UNES_AP_ST failures (avg $1.2M). Root causes unknown. |
-| H17 | **Rebuild payment event log: model all 4 clearing streams** | #026/#027 | Analytics | **REVISED #027**: 4 distinct clearing streams identified. ZP=138K (F110/BCM/HQ), OP=267K (field office sub-bank GLs 2021xxx — structurally separate, REGUH→OP=0), AB=183K (credit netting BSCHL=31 + advance offset BSCHL=29 — no bank transfer), others=17K. Current event log only models ZP (Stream 1). Model must be rebuilt as 4 parallel case types. AB stream = "Invoice Netted" not "Payment Executed". |
+| ~~H16~~ | ~~Investigate 229 PAYROLL IBC17 (Failed) BCM batches~~ | ~~#026~~ | ~~Audit~~ | ~~Closed #028: ALL 2,056 IBC17 failures are 2021-2022 (BCM activation outage Jul21-Dec22). Zero failures in 2024-2026. Root cause: BCM activated mid-2021, misconfigured for 15 months, fixed Oct-Dec 2022. Out of data scope.~~ |
+| ~~H17~~ | ~~Rebuild payment event log: model all 4 clearing streams~~ | ~~#026/#027~~ | ~~Analytics~~ | ~~Done #028: 4-stream model implemented. 1,848,699 events / 550,993 cases. Stream 2 (OP field office): 274,863 events. Stream 3 (AB netting): 138,378 events. Stream 4 (Tier 3 OP): 82 events. Dashboard + CSV rebuilt. Brain rebuilt (73,922 nodes).~~ |
 | H18 | **Read YCL_IDFI_CGI_DMEE_AE/BH source — confirm XML PurpCd value** | #026 | Code | PPC architecture confirmed in config but XML output value unknown. Does <Purp><Cd> contain "AE5", "SAL", or something else? Needs D01 ADT (password needs update). |
+| H19 | **Bank recon aging investigation** | #028 | Audit | **REFRAMED #029**: 199K items on 10xxxxx are NOT unreconciled — they are the bank's permanent ledger (never cleared by design). Real unreconciled = **2,737 items on 11xxxxx** (0.6% gap). Field offices (ECO08=14K, SCB04=12K) drive aging on 10xxxxx due to simplified posting (101I, no auto-clearing). Knowledge doc created: `bank_statement_ebs_architecture.md`. |
+| ~~H20~~ | ~~BSAS AUGBL re-enrichment for bank statements~~ | ~~#028~~ | ~~Data~~ | ~~Done #030: 553,781 items enriched with AUGBL+AUGDT (100% fill rate). Year 2024=247K, 2025=267K, 2026=49K. Clearing chain now fully traceable.~~ |
+| H21 | **Bank recon amounts: currency conversion** | #028 | Analytics | 199K open items "$13.9B" is DMBTR (local ccy). Need currency conversion for accurate USD reporting. XOF/TZS/KZT inflate numbers. |
+| H22 | **FEBEP full fields extraction** | #029 | Data | **PARTIAL #030**: Re-extracted with 27 fields (133,638 rows). Missing months Feb/Apr/Jun/Sep/Nov due to SAPSQL_DATA_LOSS. 60% coverage. First production analysis done: 85.7% algo 015, 97% outgoing clearing, 46.5% incoming. Need to fix missing months with offset-based parsing. |
+| H23 | **FEBKO full fields extraction** | #029 | Data | **PARTIAL #030**: Re-extracted with 11 fields (31,416 rows). Got BUKRS, HKTID, EFART. Missing HBKID (wrong field name used). Need correct DD03L field names for full re-extract. |
+| ~~H24~~ | ~~FEBRE extraction (Note-to-payee / Tag 86 text)~~ | ~~#029~~ | ~~Data~~ | ~~Done #030: 964,055 rows (KUKEY-filtered 2024-2026). 211K match FEBEP. Tag 86 analysis completed: 102I root cause = ACH returns (BELNR=*). Search string effectiveness validated.~~ |
+| H25 | **T028A + T028E extraction (account symbol definitions)** | #029 | Config | T028A = symbol-to-GL mapping (BANK→10xxxxx, BANK_SUB→11xxxxx). T028E = posting key definitions. Validates the account symbol configuration. |
+| H26 | **T012K UKONT re-extraction** | #029 | Config | T012K missing UKONT field (sub-bank GL paired with bank GL). Need to re-extract with all fields to validate 10xxx↔11xxx pairing. |
+| ~~H27~~ | ~~TCURR/TCURF extraction (exchange rates)~~ | ~~#029~~ | ~~Analytics~~ | ~~Done #030: TCURR 54,993 rates + TCURF 2,614 factors loaded. Ready for H21 currency conversion.~~ |
+| ~~H28~~ | ~~Bank Statement EBS Companion HTML~~ | ~~#029~~ | ~~Viz~~ | ~~Done #030: `bank_statement_ebs_companion.html` — 10 tabs (Overview, E2E Chain, Config Tiers, Posting Rules, Algorithms, GL Structure, BA Determination, Production Reality, Interactive Map, Glossary). Includes production analysis: 97% outgoing clearing, 46.5% incoming, 85.7% algo 015. SVG network diagram.~~ |
 | ~~H15~~ | ~~Read Blueprint BCM pages 21-47~~ | ~~#021~~ | ~~Knowledge~~ | ~~Done #022 — Full 21 SAP Notes, Delegation of Authority table, grouping rules, XML char handling all extracted~~ |
 
 ### 🟢 BACKLOG — When blocking/high are clear
@@ -214,6 +224,17 @@ Items completed across all 19 sessions — kept for audit trail.
 | ~~26~~ | Payment BCM companion HTML (664KB) | 2026-03-27 | #021 |
 | ~~27~~ | Payment process mining HTML (694KB, 1.4M events) | 2026-03-27 | #021 |
 | ~~28~~ | Gold DB +9 tables (BNK_BATCH_HEADER/ITEM, REGUH, PAYR, T042*, T012*, T001) | 2026-03-27 | #021 |
+| ~~29~~ | PMO audit: 11 items closed (B1,B4-B9,H8,H9,H16,H17) | 2026-03-31 | #028 |
+| ~~30~~ | FMIFIIT OBJNRZ enrichment 2024+2026 (all years complete) | 2026-03-31 | #028 |
+| ~~31~~ | EKBE BUDAT+6 fields enrichment (363K rows, 2-pass) | 2026-03-31 | #028 |
+| ~~32~~ | 4-stream payment event log (1.85M events, 550K cases) | 2026-03-31 | #028 |
+| ~~33~~ | Bank recon process discovery (239K docs, 91.2% auto) | 2026-03-31 | #028 |
+| ~~34~~ | Companion v8 (14 tabs: +Deep Analysis, +Bank Recon, 794KB) | 2026-03-31 | #028 |
+| ~~35~~ | Brain 73,935 nodes (+10 Source 9: streams, findings, bank recon) | 2026-03-31 | #028 |
+| ~~36~~ | BSAS AUGBL enrichment (553K items, 100% fill) | 2026-03-31 | #030 |
+| ~~37~~ | TCURR (55K) + TCURF (2.6K) exchange rates extracted | 2026-03-31 | #030 |
+| ~~38~~ | Bank Statement EBS Companion v1 (10 tabs, production analysis) | 2026-03-31 | #030 |
+| ~~39~~ | FEBEP re-extracted 27 fields (133K rows, E2E chain analysis) | 2026-03-31 | #030 |
 
 ---
 

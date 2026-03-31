@@ -18,6 +18,9 @@
 
 | Session | Date | Type | Summary | Retro File |
 |---------|------|------|---------|------------|
+| **#030** | 2026-03-31 | Bank Statement Full Domain Creation | FEBEP 223K/100%. FEBKO 62 fields. FEBRE 964K targeted. BSAS AUGBL 100%. **102I corrected: 99.6% (not 29.2%)**. Process mining: 263K events, UNES=B, MGIE=C, Treasury 132-day median. New skill #34 `sap_bank_statement_recon`. Companion v3 (14 tabs). Brain 73,968 nodes. | [session_030_retro.md](../../knowledge/session_retros/session_030_retro.md) |
+| **#029** | 2026-03-31 | Bank Statement & EBS Deep Knowledge | **CRITICAL CORRECTION: FEBEP=0 was WRONG** — 223K items, EBS fully active. 11 docs + 3 Excel ingested. 7 config tables extracted (T028B/G/D, YBASUBST, YTFI_BA_SUBST, FEBEP, FEBKO). 10xxxxx=permanent ledger (not unreconciled). Real gap=2,737 items on 11xxxxx. Brain 73,948 nodes. | [session_029_retro.md](../../knowledge/session_retros/session_029_retro.md) |
+| **#028** | 2026-03-31 | PMO Audit + Enrichment + Process Discovery | PMO audit: 11 items closed. B1+B6 enriched (1.5M rows). 4-stream event log (1.85M events). Bank recon discovery (239K docs, 199K open items). Companion v8 (14 tabs). Brain 73,935 nodes. | [session_028_retro.md](../../knowledge/session_retros/session_028_retro.md) |
 | **#027** | 2026-03-27 | Analysis / Fix | 4-stream payment architecture. REGUH→OP=0 confirmed. Companion Discovery #1 rewritten. F_DERAKHSHAN SoD finding. | [session_027_retro.md](../../knowledge/session_retros/session_027_retro.md) |
 | **#026** | 2026-03-27 | Critical Review | 6 discoveries. On-time 1.1% = artifact. OP>ZP finding. 229 payroll failures. Companion v7 + Discoveries tab. | [session_026_retro.md](../../knowledge/session_retros/session_026_retro.md) |
 | **#025** | 2026-03-27 | Live Validation | T015L P01 query. PDF country tables wrong → replaced with real LZBKZ values. AE/BH BAdIs absent from P01. | [session_025_retro.md](../../knowledge/session_retros/session_025_retro.md) |
@@ -42,6 +45,6 @@
 ---
 
 ## Current PMO Status
-**9 Blocking | 14 High | 40 Backlog = 63 items**
+**2 Blocking | 13 High | 40 Backlog = 55 items**
 Full list: `.agents/intelligence/PMO_BRAIN.md`
-Last reconciled: Session #027 (2026-03-27)
+Last reconciled: Session #030 (2026-03-31)

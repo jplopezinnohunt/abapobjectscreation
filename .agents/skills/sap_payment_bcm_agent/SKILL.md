@@ -28,7 +28,7 @@ The **coordinator** should route to this agent when the user asks about:
 - Vendor payment status (open items, clearing)
 - Advance/down payments (FBA6, KA document type)
 - Payment medium programs (DMEE, RFFOUS_T)
-- Bank statements and reconciliation
+- Bank statements and reconciliation → **REDIRECT to `sap_bank_statement_recon`** (dedicated agent since Session #030)
 - Payment process mining results
 - Company code payment capability assessment
 
@@ -38,7 +38,7 @@ The **coordinator** should route to this agent when the user asks about:
 2. **Never assume FCLM_BAM_* tables exist** — UNESCO uses `BNK_BATCH_HEADER/ITEM`, NOT the FSCM BAM tables.
 3. **Never assume central payment** — All 9 company codes pay for themselves (T042 BUKRS=ZBUKR).
 4. **Never tell users IBE/MGIE/ICBA can run F110** — They pay OUTSIDE SAP (manual transfer/check in local banking system). [VERIFIED from handover docs]
-5. **Never assume FEBEP has data** — 0 rows. BCM handles bank reconciliation, not classic electronic bank statements.
+5. **~~Never assume FEBEP has data~~** — **CORRECTED Session #029**: FEBEP has **223,710 items** (2024-2026), 99.9% posted. FEBKO has 84,972 statement headers. EBS is FULLY active in P01. BCM handles outbound payments; EBS handles inbound bank statement import/reconciliation. They are complementary, not alternatives. See `knowledge/domains/FI/bank_statement_ebs_architecture.md` for full EBS architecture.
 6. **Never skip BCM when analyzing payments** — BCM sits between F110 and bank. 374K items routed through BCM batches.
 7. **Never assign Y_XXXX_FI_AP_PAYMENTS + YS:FI:M:BCM_MON_APP together ON THE SAME USER** — This allows bypassing BCM validation entirely. 2023 INCIDENT: payment went to Coupa→bank without BCM approval. [VERIFIED from handover docs] Note: UNES Process 4 legitimately uses BOTH roles — but on DIFFERENT users (initiator ≠ approver). The risk is one person holding both.
 8. **Never use F110 run ID starting with B* for non-BCM payments** — B* prefix triggers BCM routing. Use any other ID for direct processing.
@@ -1243,6 +1243,15 @@ Full end-to-end flow for payroll bank payments:
 - **EBS posting rules**: SUBE (Income MT940 clearing), SUBF (Payment MT940 clearing)
 - **Posting Type 4** = Clear debit G/L, **Type 8** = Clear credit sub-ledger (vendor)
 - Transaction types: **BAE01_CL** (Bank of Chile / Santiago), **CIT23_SN** (Citibank / Dakar)
+
+> **FULL EBS REFERENCE**: See `knowledge/domains/FI/bank_statement_ebs_architecture.md` (Session #029)
+> 22 sections covering: posting rules (T028G: 1,025 rules, 23 transaction types), search strings (6 patterns),
+> account symbols (BANK/BANK_SUB/BANK_TECH/OFFSET_TECH_SUB), BA determination (YBASUBST→YTFI_BA_SUBST),
+> user exit chain (CMOD YTFBE001), incoming payment classification (CONT/WHF/ICH/BC/MBF rules),
+> and production reality: FEBEP=223K items, FEBKO=85K statements, 11xxxxx clearing rate=99.4%.
+>
+> **Key Session #029 corrections**: FEBEP≠0 (EBS fully active), 10xxxxx items are permanent ledger (not unreconciled),
+> real gap = 2,737 items on 11xxxxx, Z7 clearing = 100% manual (0 automated).
 
 ---
 
