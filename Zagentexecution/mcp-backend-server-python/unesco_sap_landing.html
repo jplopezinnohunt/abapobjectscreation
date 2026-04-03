@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP Intelligence Platform — Knowledge Hub</title>
+<style>
+:root {
+  --bg: #080c14; --surf: #0d1320; --card: #111827; --card-hover: #162032;
+  --b: #1a2540; --b2: #1e2d4a; --txt: #dde5f5; --mu: #4c6490; --mu2: #7892c0;
+  --acc: #4f8ef7; --grn: #22c55e; --org: #fb923c; --red: #ef4444;
+  --pur: #a78bfa; --cyan: #22d3ee; --yel: #f59e0b; --teal: #34d399;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; }
+
+/* Hero */
+.hero { background: linear-gradient(135deg, #0a1628 0%, #0d2247 40%, #1a0d3a 70%, #0a1628 100%); padding: 48px 40px 40px; border-bottom: 1px solid var(--b); position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(79,142,247,0.06) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(167,139,250,0.04) 0%, transparent 40%); pointer-events: none; }
+.hero-inner { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+.hero h1 { font-size: 2.2em; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #a0c4ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; letter-spacing: -0.5px; }
+.hero .sub { color: var(--mu2); font-size: 1.05em; margin-bottom: 24px; }
+.hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+.hero-stat { text-align: center; }
+.hero-stat .v { font-size: 1.8em; font-weight: 800; font-family: 'Consolas', monospace; }
+.hero-stat .l { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mu); margin-top: 2px; }
+.hero-stat.blue .v { color: var(--acc); }
+.hero-stat.green .v { color: var(--grn); }
+.hero-stat.purple .v { color: var(--pur); }
+.hero-stat.orange .v { color: var(--org); }
+.hero-stat.cyan .v { color: var(--cyan); }
+.hero-stat.teal .v { color: var(--teal); }
+
+/* Search */
+.search-bar { max-width: 1400px; margin: -20px auto 0; padding: 0 40px; position: relative; z-index: 10; }
+.search-input { width: 100%; padding: 14px 20px 14px 48px; background: var(--card); border: 1px solid var(--b); border-radius: 12px; color: var(--txt); font-size: 0.95em; outline: none; transition: border-color 0.2s; }
+.search-input:focus { border-color: var(--acc); }
+.search-icon { position: absolute; left: 56px; top: 50%; transform: translateY(-50%); color: var(--mu); font-size: 1.1em; }
+
+/* Domain Sections */
+.domains { max-width: 1400px; margin: 0 auto; padding: 32px 40px 80px; }
+.domain-section { margin-bottom: 40px; }
+.domain-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--b); }
+.domain-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.domain-header h2 { font-size: 1.25em; font-weight: 700; }
+.domain-header .count { font-size: 0.75em; color: var(--mu); background: var(--card); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--b); }
+
+/* Cards Grid */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--b); border-radius: 12px; padding: 24px; cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block; }
+.card:hover { background: var(--card-hover); border-color: var(--b2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+.card.finance::before { background: linear-gradient(90deg, var(--grn), var(--teal)); }
+.card.transport::before { background: linear-gradient(90deg, var(--acc), var(--pur)); }
+.card.process::before { background: linear-gradient(90deg, var(--org), var(--yel)); }
+.card.infra::before { background: linear-gradient(90deg, var(--cyan), var(--acc)); }
+
+.card-title { font-size: 1.05em; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.card-title .badge { font-size: 0.65em; padding: 2px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.badge.tabs { background: rgba(79,142,247,0.15); color: var(--acc); }
+.card-desc { color: var(--mu2); font-size: 0.85em; margin-bottom: 16px; line-height: 1.5; }
+
+.card-metrics { display: flex; flex-wrap: wrap; gap: 12px; }
+.metric { background: rgba(255,255,255,0.03); border: 1px solid var(--b); border-radius: 8px; padding: 8px 12px; min-width: 80px; }
+.metric .mv { font-size: 1em; font-weight: 700; font-family: 'Consolas', monospace; }
+.metric .ml { font-size: 0.65em; color: var(--mu); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--b); }
+.card-size { font-size: 0.75em; color: var(--mu); }
+.card-arrow { color: var(--acc); font-size: 1.2em; transition: transform 0.2s; }
+.card:hover .card-arrow { transform: translateX(4px); }
+
+/* Status bar */
+.status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surf); border-top: 1px solid var(--b); padding: 8px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; color: var(--mu); z-index: 100; }
+.status-bar a { color: var(--acc); text-decoration: none; }
+
+/* Filter pills */
+.filters { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.filter-pill { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--b); background: var(--card); color: var(--mu2); font-size: 0.8em; cursor: pointer; transition: all 0.2s; }
+.filter-pill:hover, .filter-pill.active { border-color: var(--acc); color: var(--acc); background: rgba(79,142,247,0.1); }
+
+/* Responsive */
+@media (max-width: 860px) {
+  .cards { grid-template-columns: 1fr; }
+  .hero { padding: 32px 20px; }
+  .domains { padding: 24px 20px 80px; }
+  .hero-stats { gap: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>UNESCO SAP Intelligence Platform</h1>
+    <p class="sub">Knowledge Hub — 14 Interactive Companions across 5 Domains</p>
+    <div class="hero-stats">
+      <div class="hero-stat blue"><div class="v">14</div><div class="l">Companions</div></div>
+      <div class="hero-stat green"><div class="v">24M+</div><div class="l">Rows Extracted</div></div>
+      <div class="hero-stat purple"><div class="v">73.9K</div><div class="l">Brain Nodes</div></div>
+      <div class="hero-stat orange"><div class="v">68</div><div class="l">Gold DB Tables</div></div>
+      <div class="hero-stat cyan"><div class="v">34</div><div class="l">Skills Built</div></div>
+      <div class="hero-stat teal"><div class="v">30</div><div class="l">Sessions</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="search-bar">
+  <span class="search-icon">&#x1F50D;</span>
+  <input type="text" class="search-input" placeholder="Search companions by name, domain, or keyword..." id="search">
+</div>
+
+<div class="domains" id="domains">
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-pill active" data-filter="all">All</div>
+    <div class="filter-pill" data-filter="finance">Finance & Payments</div>
+    <div class="filter-pill" data-filter="process">Process Mining</div>
+    <div class="filter-pill" data-filter="transport">Transport Intelligence</div>
+    <div class="filter-pill" data-filter="infra">Infrastructure</div>
+    <div class="filter-pill" data-filter="support">Support & Maintenance</div>
+  </div>
+
+  <!-- FINANCE & PAYMENTS -->
+  <div class="domain-section" data-domain="finance">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:linear-gradient(135deg,#22c55e,#34d399);">&#x1F4B0;</div>
+      <h2>Finance & Payments</h2>
+      <span class="count">5 companions</span>
+    </div>
+    <div class="cards">
+
+      <a class="card finance" href="payment_bcm_companion.html" data-keywords="payment bcm bank communication f110 dmee house banks workflow roles">
+        <div class="card-title">Payment & BCM Intelligence <span class="badge tabs">14 tabs</span></div>
+        <div class="card-desc">Complete end-to-end payment flow: F110, BCM config, DMEE trees, house banks, workflow architecture, named validators, 82 variants, and audit findings.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--grn)">942K</div><div class="ml">F110 Items</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">592K</div><div class="ml">BCM Items</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">16</div><div class="ml">DMEE Trees</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">561</div><div class="ml">CTS Objects</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">796 KB &middot; v4</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card finance" href="bank_statement_ebs_companion.html" data-keywords="bank statement ebs reconciliation mt940 clearing febep febre gl posting">
+        <div class="card-title">Bank Statement & Reconciliation <span class="badge tabs">15 tabs</span></div>
+        <div class="card-desc">MT940 import through EBS posting, clearing chain, GL structure, posting algorithms. 102I coverage at 99.6%. Open items analysis across 144 bank accounts.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--grn)">793K</div><div class="ml">Bank Items</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">223K</div><div class="ml">FEBEP</div></div>
+          <div class="metric"><div class="mv" style="color:var(--red)">2,996</div><div class="ml">Open Gap</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">1,025</div><div class="ml">Transform Rules</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">84 KB &middot; v3.1</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card finance" href="epiuse_companion.html" data-keywords="epiuse epi-use labs abap classes deployment waves third-party">
+        <div class="card-title">EPI-USE Labs Intelligence <span class="badge tabs">6 sections</span></div>
+        <div class="card-desc">What EPI-USE Labs installed: 37 transports, 9 deployment waves (2017-2025). 10,756 ABAP classes (88.5%), source system E9BK. Strategic implications.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--grn)">12,148</div><div class="ml">Objects</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">37</div><div class="ml">Transports</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">9</div><div class="ml">Waves</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">32 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card finance" href="fi_maintenance.html" data-keywords="finance operations support reference jobs document types config tables rfc api volume ap ar gl bank">
+        <div class="card-title">Finance Operations Reference <span class="badge tabs">6 tabs</span></div>
+        <div class="card-desc">Support reference: 121 FI jobs, 56 document types, 19 config tables, 124 RFC FMs. Periodic jobs (F110, PRAA, closing), volume metrics, API surface per sub-domain.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--grn)">121</div><div class="ml">FI Jobs</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">56</div><div class="ml">Doc Types</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">1.67M</div><div class="ml">Documents</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">34 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card finance" href="../transport_companion_D01K9B0CBF_v2.html" data-keywords="transport companion company code stem china institute gl accounts fm commitment">
+        <div class="card-title">Company Code STEM Creation <span class="badge tabs">1 page</span></div>
+        <div class="card-desc">Transport D01K9B0CBF: STEM/China Institute company code setup. 541 GL accounts, 53 number ranges, house banks. 2 critical discoveries (commitment items gap, cost elements missing).</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--grn)">541</div><div class="ml">GL Accounts</div></div>
+          <div class="metric"><div class="mv" style="color:var(--red)">2</div><div class="ml">Discoveries</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">4</div><div class="ml">Transports</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">136 KB &middot; v2</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- PROCESS MINING -->
+  <div class="domain-section" data-domain="process">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:linear-gradient(135deg,#fb923c,#f59e0b);">&#x26A1;</div>
+      <h2>Process Mining</h2>
+      <span class="count">3 companions</span>
+    </div>
+    <div class="cards">
+
+      <a class="card process" href="payment_process_mining.html" data-keywords="payment process mining invoice reconciliation cycle times company codes fbzp bkpf bsak">
+        <div class="card-title">Payment Process Mining <span class="badge tabs">9 tabs</span></div>
+        <div class="card-desc">Invoice-to-Reconciliation: 1.85M events, 550K cases, 16 activity types. Cycle time analysis, company code comparison, FBZP chain, BCM flow visualization.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--org)">1.85M</div><div class="ml">Events</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">550K</div><div class="ml">Cases</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">4.1d</div><div class="ml">Avg Cycle</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">9</div><div class="ml">Co. Codes</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">680 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card process" href="p2p_process_mining.html" data-keywords="p2p procure to pay procurement eban ekko ekpo essr esll rbkp rseg ekbe vendors">
+        <div class="card-title">P2P Process Mining <span class="badge tabs">6 tabs</span></div>
+        <div class="card-desc">Procure-to-Pay: EBAN &rarr; EKKO/EKPO &rarr; ESSR/ESLL &rarr; RBKP/RSEG &rarr; EKBE. DFG visualization, variant analysis, vendor intelligence, timeline.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--org)">848K</div><div class="ml">Events</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">193K</div><div class="ml">Cases</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">2,626</div><div class="ml">Variants</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">41</div><div class="ml">DFG Transitions</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">648 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card process" href="../process-intelligence.html" data-keywords="signavio process intelligence discover analyze design implement operate bpm conformance">
+        <div class="card-title">Process Intelligence Suite <span class="badge tabs">7 tabs</span></div>
+        <div class="card-desc">SAP Signavio-style: DFG mining, conformance analysis, rework detection across 6 SAP processes. Best Run Score benchmarking, AI-driven insights.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--org)">6</div><div class="ml">Processes</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">7</div><div class="ml">Views</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">DFG</div><div class="ml">Mining</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">300 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- TRANSPORT INTELLIGENCE -->
+  <div class="domain-section" data-domain="transport">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:linear-gradient(135deg,#4f8ef7,#a78bfa);">&#x1F4E6;</div>
+      <h2>Transport Intelligence</h2>
+      <span class="count">2 companions</span>
+    </div>
+    <div class="cards">
+
+      <a class="card transport" href="cts_dashboard.html" data-keywords="cts transport d01 objects domains packages team profiles hotspot config year timeline">
+        <div class="card-title">CTS Dashboard (2017-2026) <span class="badge tabs">11 pages</span></div>
+        <div class="card-desc">10 years of transport history: 7,745 transports, 27,938 unique objects, domain classification, team profiles, package browser, hotspot analysis, config elements.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--acc)">7,745</div><div class="ml">Transports</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">27,938</div><div class="ml">Unique Objects</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">3.3x</div><div class="ml">Re-mod Rate</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">21</div><div class="ml">Modules</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">2.2 MB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card transport" href="sap_taxonomy_companion.html" data-keywords="taxonomy object classification layers nature technical functional abap types">
+        <div class="card-title">Object Taxonomy <span class="badge tabs">1 page</span></div>
+        <div class="card-desc">3-layer classification of 108K SAP objects: Layer 1 (Object Nature), Layer 2 (Technical ABAP Sub-types), Layer 3 (Functional Domain). Team profiles.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--acc)">108K</div><div class="ml">Objects</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">22,866</div><div class="ml">Dev Objects</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">3</div><div class="ml">Layers</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">40 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- INFRASTRUCTURE -->
+  <div class="domain-section" data-domain="infra">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:linear-gradient(135deg,#22d3ee,#4f8ef7);">&#x1F310;</div>
+      <h2>Infrastructure & Connectivity</h2>
+      <span class="count">4 companions</span>
+    </div>
+    <div class="cards">
+
+      <a class="card infra" href="connectivity_diagram.html" data-keywords="connectivity systems rfc destinations idocs interfaces sm59 icf landscape hub spoke">
+        <div class="card-title">System Connectivity Map <span class="badge tabs">Interactive</span></div>
+        <div class="card-desc">Hub-and-spoke architecture diagram. 31 systems across 7 zones: External, Core, Infrastructure, SolMan, Dev/Test/Val, BW. Orthogonal 90&deg; connections.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--cyan)">31</div><div class="ml">Systems</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">239</div><div class="ml">RFC Dest.</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">19.4K</div><div class="ml">IDocs</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">15 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card infra" href="system_inventory.html" data-keywords="inventory systems direction inbound outbound bidirectional rfcdes dbcon icf tms trusted integration">
+        <div class="card-title">System Inventory <span class="badge tabs">4 tabs</span></div>
+        <div class="card-desc">Complete system catalog with direction map (IN/OUT/BIDIR per system), 4 integration types (RFC, IDoc, DBCON, ICF), TMS transport domain, enriched descriptions.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--cyan)">31</div><div class="ml">Systems</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">4</div><div class="ml">Int. Types</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">8</div><div class="ml">Bidir</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">35 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card infra" href="rfc_analysis.html" data-keywords="rfc destinations sm59 analysis type abap extprg tcp http internal trusted fiori purpose direction">
+        <div class="card-title">RFC Destination Analysis <span class="badge tabs">5 tabs</span></div>
+        <div class="card-desc">Deep analysis of all 239 RFC destinations: by type (7), by target system, by purpose, direction map. Key findings on Fiori GW, Trusted RFC, MuleSoft.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--cyan)">239</div><div class="ml">RFC Dest.</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">7</div><div class="ml">Types</div></div>
+          <div class="metric"><div class="mv" style="color:var(--org)">5</div><div class="ml">Findings</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">38 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- SUPPORT & MAINTENANCE -->
+  <div class="domain-section" data-domain="support">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">&#x1F527;</div>
+      <h2>Support & Maintenance</h2>
+      <span class="count">2 companions</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" style="border-color:var(--org);" href="#" data-keywords="basis monitoring sm04 sm35 sm37 st22 users sessions dumps jobs batch input system health">
+        <div class="card-title" style="color:var(--org);">Basis Monitoring <span class="badge tabs">planned</span></div>
+        <div class="card-desc">System health: active users (SM04), background jobs (SM37), batch input sessions (SM35), runtime dumps (ST22), workload distribution. Script: sap_system_monitor.py ready.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--org)">SM04</div><div class="ml">Users</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">SM37</div><div class="ml">Jobs</div></div>
+          <div class="metric"><div class="mv" style="color:var(--red)">ST22</div><div class="ml">Dumps</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">SM35</div><div class="ml">BDC</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">Script ready &middot; Companion next</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="card" style="border-color:var(--org);" href="fi_maintenance.html" data-keywords="finance operations support maintenance jobs f110 clearing bank statements month-end closing document types config vendor coupa">
+        <div class="card-title" style="color:var(--org);">Finance Operations <span class="badge tabs">6 tabs</span></div>
+        <div class="card-desc">FI maintenance reference: 121 periodic jobs (F110, PRAA, closing, COUPA), 56 doc types, 19 config tables, 124 RFC FMs, volume metrics across 9 company codes.</div>
+        <div class="card-metrics">
+          <div class="metric"><div class="mv" style="color:var(--org)">121</div><div class="ml">FI Jobs</div></div>
+          <div class="metric"><div class="mv" style="color:var(--grn)">9</div><div class="ml">Co. Codes</div></div>
+          <div class="metric"><div class="mv" style="color:var(--pur)">56</div><div class="ml">Doc Types</div></div>
+          <div class="metric"><div class="mv" style="color:var(--cyan)">942K</div><div class="ml">Payments</div></div>
+        </div>
+        <div class="card-footer"><span class="card-size">34 KB</span><span class="card-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span>UNESCO SAP Intelligence Platform &middot; 32 Sessions &middot; Last updated: 2026-04-03</span>
+  <span>Gold DB: 68 tables &middot; 24M+ rows &middot; Brain: 73,968 nodes</span>
+</div>
+
+<script>
+// Search
+const searchInput = document.getElementById('search');
+searchInput.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.card').forEach(card => {
+    const text = (card.textContent + ' ' + (card.dataset.keywords || '')).toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+  });
+  // Show all domain sections, hide empty ones
+  document.querySelectorAll('.domain-section').forEach(section => {
+    const visible = section.querySelectorAll('.card:not([style*="display: none"])').length;
+    section.style.display = visible ? '' : 'none';
+  });
+});
+
+// Filter pills
+document.querySelectorAll('.filter-pill').forEach(pill => {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.domain-section').forEach(section => {
+      section.style.display = (filter === 'all' || section.dataset.domain === filter) ? '' : 'none';
+    });
+    searchInput.value = '';
+    document.querySelectorAll('.card').forEach(c => c.style.display = '');
+  });
+});
+
+// Keyboard shortcut: / to focus search
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== searchInput) {
+    e.preventDefault();
+    searchInput.focus();
+  }
+});
+</script>
+</body>
+</html>

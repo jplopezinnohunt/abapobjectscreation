@@ -334,6 +334,12 @@ ORDER BY RFCSYSID;
 ### EDIDC DATA_LOSS Note
 Same pagination bug as FMIOI — even months fail. Use day-by-day workaround for complete extraction.
 
+## Visualization Standard
+
+**Use the `integration_diagram` skill** — see `.agents/skills/integration_diagram/SKILL.md`.
+
+Pure CSS/SVG, no vis.js. Hub-and-spoke with functional zones, orthogonal 90° connections, dark theme + neon accents. Reference implementation: `Zagentexecution/mcp-backend-server-python/connectivity_diagram.html`.
+
 ## Pending Work
 
 1. **Interface deep dive** — for each RFCDEST type 3 (75 SAP-to-SAP), identify target system, purpose

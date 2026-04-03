@@ -1,6 +1,6 @@
 # UNESCO SAP — Project Brain + PMO Brain
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
-> **Last reconciled**: Session #030 (2026-03-31) — H20/H27/H28 closed, H22/H23/H24 partial
+> **Last reconciled**: Session #032 (2026-04-03) — Integration archaeology complete
 
 ---
 
@@ -9,9 +9,9 @@
 ### The System (as of 2026-03-26)
 
 ```
-UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 33 Skills
+UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 37 Skills
 ├── L1: SAP Connectivity      → pyrfc + SNC/SSO (D01 dev / P01 prod)
-├── L2: Data Extraction       → ~2.5GB gold SQLite DB, 24M+ rows, 42 tables
+├── L2: Data Extraction       → ~2.5GB gold SQLite DB, 24M+ rows, 68 tables
 ├── L3: Validation/Domain     → sap_brain.py (73.9K nodes, 3-level access), 4 domain agents + coordinator
 ├── L4: Code Extraction       → ADT API, BSP/OData/Enhancement extraction
 ├── L5: Transport Intel       → CTS dashboard, 7,745 transports analyzed
@@ -19,10 +19,11 @@ UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 33 Skills
 ├── L7: Process Intelligence  → process-intelligence.html + pm4py (848K P2P events)
 ├── L8: System Monitoring     → sap_system_monitor.py (SM04/SM35/SM37/ST22)
 ├── L9: Class Deployment      → 16 scripts (create, deploy, verify ABAP classes)
-└── L10: BDC Intelligence     → bdc_full_inventory.py (Allos/Y1 payroll forensics)
+├── L10: BDC Intelligence     → bdc_full_inventory.py (Allos/Y1 payroll forensics)
+└── L11: Integration Intel    → 38 systems, 334 RFC FMs, 7 UNESCO .NET apps mapped
 
-Governance: .agents/GOVERNANCE.md + SKILL_MATURITY.md (33 skills scored)
-Maturity: 13 Production (42%) | 10 Functional (32%) | 4 Draft | 4 Stub
+Governance: .agents/GOVERNANCE.md + SKILL_MATURITY.md (37 skills scored)
+Companions: 15 HTML (landing page + 14 domain companions)
 
 Each layer FEEDS the others:
   L2→L3 (data validates domain), L5→L4 (transports→code targets),
@@ -166,6 +167,17 @@ Each layer FEEDS the others:
 | ~~G25~~ | ~~Archive legacy root docs~~ | ~~#005b~~ | ~~Done #023 — ROADMAP.md + SESSION_LOG.md (root) have SUPERSEDED banners pointing to PMO_BRAIN.md and .agents/intelligence/SESSION_LOG.md~~ |
 | G26 | **Brain auto-refresh workflow** | #006 | `--build` after every extraction automatically |
 | G27 | **Notion PMO sync** | #006 | Write PMO Brain to Notion database via MCP |
+
+#### Integration & Connectivity (Session #032)
+| # | Task | First raised | Notes |
+|---|------|-------------|-------|
+| G37 | **Build Basis Monitoring HTML companion** | #032 | Script `sap_system_monitor.py` ready, needs companion. SM04/SM37/SM35/ST22. |
+| G38 | **Update system_inventory.html with .NET apps** | #032 | 7 UNESCO .NET apps discovered but only in connectivity diagram, not inventory page |
+| G39 | **Add RFC API Surface tab to rfc_analysis.html** | #032 | 334 RFC-enabled FMs by domain. Data in tfdir_custom table. |
+| G40 | **Investigate TULIP + UNESDIR 93% job failures** | #032 | YHR_MANAGER_FROM_TULIP_UPDATE (14/15 failed), YHR_CREATE_MAIL_FROM_UNESDIR (28/30 failed) |
+| G41 | **Verify SuccessFactors EC migration status** | #032 | PYC_SFEC_SRV inactive, BizTalk middleware. Is SF live? Ask Basis team. |
+| G42 | **Build FI Support Agent skill** | #032 | Orchestrates fi_maintenance + payment_bcm + bank_statement + brain + Gold DB to resolve tickets |
+| G43 | **Confirm SAPBC/us0033 is decommissioned** | #032 | Legacy Business Connector. No jobs/code/IDocs. Check SM59 connection test. |
 
 #### Future Ideas
 | # | Task | First raised | Notes |
