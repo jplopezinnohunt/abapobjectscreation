@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transport Companion v2 — D01K9B0CBF</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+    --green: #4ade80; --yellow: #fbbf24; --red: #f87171; --orange: #fb923c;
+    --purple: #a78bfa; --border: #475569;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  .header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 2rem 3rem;
+  }
+  .header h1 { font-size: 1.8rem; color: var(--accent); margin-bottom: 0.5rem; }
+  .header .subtitle { color: var(--muted); font-size: 1rem; }
+  .header .meta { display: flex; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
+  .header .meta-item { display: flex; align-items: center; gap: 0.5rem; }
+  .header .meta-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .header .meta-value { color: var(--text); font-weight: 600; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 2rem 3rem; }
+
+  /* Summary cards */
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .summary-card {
+    background: var(--surface); border-radius: 12px; padding: 1.5rem;
+    border-left: 4px solid var(--accent);
+  }
+  .summary-card.critical { border-left-color: var(--red); }
+  .summary-card.high { border-left-color: var(--orange); }
+  .summary-card.medium { border-left-color: var(--yellow); }
+  .summary-card.low { border-left-color: var(--green); }
+  .summary-card .number { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .summary-card .label { color: var(--muted); font-size: 0.85rem; }
+
+  /* Executive summary */
+  .exec-summary {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%);
+    border-radius: 12px; padding: 2rem; margin-bottom: 2rem;
+    border: 1px solid var(--border);
+  }
+  .exec-summary h2 { color: var(--accent); margin-bottom: 1rem; font-size: 1.3rem; }
+  .exec-summary p { color: var(--text); margin-bottom: 0.8rem; font-size: 1rem; }
+
+  /* Section */
+  .section {
+    background: var(--surface); border-radius: 12px; padding: 2rem;
+    margin-bottom: 1.5rem; border: 1px solid var(--border);
+  }
+  .section h2 {
+    font-size: 1.2rem; margin-bottom: 1rem; display: flex;
+    align-items: center; gap: 0.75rem;
+  }
+  .section h2 .icon { font-size: 1.4rem; }
+  .section h3 { color: var(--accent); font-size: 1rem; margin: 1rem 0 0.5rem; }
+
+  /* Risk badge */
+  .risk {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .risk-critical { background: rgba(248,113,113,0.2); color: var(--red); }
+  .risk-high { background: rgba(251,146,60,0.2); color: var(--orange); }
+  .risk-medium { background: rgba(251,191,36,0.2); color: var(--yellow); }
+  .risk-low { background: rgba(74,222,128,0.2); color: var(--green); }
+  .risk-info { background: rgba(56,189,248,0.2); color: var(--accent); }
+
+  /* Object table */
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th { text-align: left; padding: 0.6rem 1rem; color: var(--muted); font-size: 0.75rem;
+       text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid rgba(71,85,105,0.3); font-size: 0.9rem; }
+  tr:hover { background: rgba(56,189,248,0.05); }
+  .mono { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; color: var(--purple); }
+
+  /* Explanation */
+  .explain {
+    background: var(--surface2); border-radius: 8px; padding: 1rem 1.25rem;
+    margin: 0.5rem 0; font-size: 0.9rem; border-left: 3px solid var(--accent);
+  }
+  .explain.warn { border-left-color: var(--yellow); }
+  .explain.danger { border-left-color: var(--red); }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding: 0.5rem 0; border-bottom: 1px solid rgba(71,85,105,0.2);
+    display: flex; align-items: flex-start; gap: 0.75rem;
+  }
+  .checklist .check-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+  .check-ok { color: var(--green); }
+  .check-warn { color: var(--yellow); }
+  .check-fail { color: var(--red); }
+
+  /* Collapsible */
+  details { margin: 0.5rem 0; }
+  summary {
+    cursor: pointer; padding: 0.5rem 0; font-weight: 600; color: var(--accent);
+    user-select: none;
+  }
+  summary:hover { color: var(--text); }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem;
+    border-top: 1px solid var(--border); margin-top: 2rem;
+  }
+
+  /* Functional area tag */
+  .area-tag {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 600; margin-right: 0.3rem;
+  }
+  .area-fi { background: rgba(56,189,248,0.15); color: var(--accent); }
+  .area-bank { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .area-mm { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .area-co { background: rgba(74,222,128,0.15); color: var(--green); }
+  .area-aa { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .area-ap { background: rgba(248,113,113,0.15); color: var(--red); }
+  .area-tech { background: rgba(148,163,184,0.15); color: var(--muted); }
+  .area-log { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .area-blueprint { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .flow-step {
+    background: var(--surface2); padding: 0.5rem 1rem; border-radius: 8px;
+    font-size: 0.85rem; border: 1px solid var(--border);
+  }
+  .flow-arrow { color: var(--muted); font-size: 1.2rem; }
+
+  /* Discovery card (new in v2) */
+  .discovery-card {
+    background: rgba(248,113,113,0.05);
+    border: 2px solid var(--red);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .discovery-card h3 {
+    color: var(--red);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .discovery-card .impact-chain {
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  .discovery-card .fix-box {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    border-left: 3px solid var(--green);
+  }
+
+  /* Version badge */
+  .version-badge {
+    display: inline-block;
+    background: rgba(248,113,113,0.2);
+    color: var(--red);
+    padding: 0.2rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .new-badge {
+    display: inline-block;
+    background: rgba(248,113,113,0.2);
+    color: var(--red);
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Transport Companion <span class="version-badge">v2</span></h1>
+  <div class="subtitle">Company Code <strong>STEM</strong> (China Institute) &mdash; Full Creation Package (4 Transports, 3 Owners)</div>
+  <div class="meta">
+    <div class="meta-item">
+      <span class="meta-label">Transport 1 (FI)</span>
+      <span class="meta-value mono">D01K9B0CBF</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Transport 2 (FM)</span>
+      <span class="meta-value mono">D01K9B0F3V</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Transport 3 (Task)</span>
+      <span class="meta-value mono">D01K9B0F4I</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Transport 4 (Logistics)</span>
+      <span class="meta-value mono">D01K9B0F40</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Type</span>
+      <span class="meta-value">Customizing (W)</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Owners</span>
+      <span class="meta-value">JP_LOPEZ + I_KONAKOV + R_RIOS</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Date</span>
+      <span class="meta-value">2026-04-01</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Target</span>
+      <span class="meta-value">TS3</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Status</span>
+      <span class="meta-value" style="color: var(--yellow)">Modifiable</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="exec-summary">
+  <h2>What Does This Transport Package Do?</h2>
+  <p>
+    This transport package creates a brand new company code <span class="mono">STEM</span> in SAP, representing the
+    <strong>UNESCO China Institute</strong>. <strong>D01K9B0CBF</strong> (JP_LOPEZ, 36 objects / 682 keys) is the FI core request:
+    legal entity definition, chart of accounts (541 GL accounts), house banking, payment processing, tolerance controls,
+    asset accounting, controlling area, and invoice verification. It includes tasks CBG (JP_LOPEZ) and F4I (R_RIOS, 2 objects / 6 keys
+    for posting period configuration). <strong>D01K9B0F3V</strong> (I_KONAKOV, 9 objects / 51 keys) creates the FM area and
+    hierarchy variants. <strong>D01K9B0F40</strong> (R_RIOS, Logistics) is a new transport currently being configured.
+  </p>
+  <p>
+    In plain terms: <strong>after D01K9B0CBF (with tasks CBG + F4I) and D01K9B0F3V are imported, STEM can post journal entries,
+    manage fixed assets, process invoices, and run the payment program. Logistics (D01K9B0F40) is still being configured
+    and must be completed before procurement is operational.</strong>
+  </p>
+  <p style="color: var(--red); font-weight: 600;">
+    v2 UPDATE: Two critical gaps were discovered during testing &mdash; commitment items are missing (FM budget checks will fail silently)
+    and cost elements were not created (all P&amp;L postings to CO will hard-fail). See Critical Discoveries section below.
+  </p>
+</div>
+
+<!-- ====================== CRITICAL DISCOVERIES (NEW IN V2) ====================== -->
+<div class="section" style="border: 3px solid var(--red); background: linear-gradient(135deg, rgba(248,113,113,0.08), var(--surface));">
+  <h2 style="color: var(--red);"><span class="icon">&#9888;</span> Critical Discoveries <span class="new-badge">NEW IN v2</span></h2>
+  <div class="explain danger">
+    <strong>These two gaps were discovered during real SAP testing by the project team.</strong>
+    They are not detectable by RFC validation alone &mdash; they only surface when you attempt actual postings.
+    Both must be resolved before STEM can be considered operational.
+  </div>
+
+  <!-- DISCOVERY 1: Commitment Items Gap -->
+  <div class="discovery-card">
+    <h3>&#128308; Discovery #1: GL Accounts Without Commitment Items</h3>
+    <p style="margin-bottom: 0.75rem;">
+      The Functional Area was created correctly. However, when the 541 GL company code accounts (SKB1) were
+      created/copied, the <strong>commitment items were NOT present</strong>. In UNESCO's PSM-FM model,
+      <strong>every GL account MUST have a commitment item assigned</strong> via derivation rules.
+    </p>
+
+    <div class="explain danger" style="margin: 0.75rem 0;">
+      <strong>Why this matters:</strong> In UNESCO's SAP landscape, Funds Management (PSM-FM) is the backbone
+      of budget control. Every financial posting flows through FM via commitment items. Without commitment items
+      mapped to GL accounts, the entire FM budget control layer is disconnected from FI postings for STEM.
+    </div>
+
+    <h4 style="color: var(--muted); margin: 1rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Impact Chain</h4>
+    <div class="impact-chain">
+      <div class="flow" style="justify-content: center;">
+        <div class="flow-step" style="border-color: var(--green);">
+          <strong>GL Account</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">541 in SKB1</span><br>
+          <span class="risk risk-low">EXISTS</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+          <strong>Commitment Item</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">FMCI mapping</span><br>
+          <span class="risk risk-critical">MISSING</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+          <strong>FM Derivation</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">FMDERIVE rules</span><br>
+          <span class="risk risk-critical">NO GL&rarr;CI RULE</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+          <strong>FM Budget Check</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">AVC / Availability</span><br>
+          <span class="risk risk-critical">SILENT FAILURE</span>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="color: var(--muted); margin: 1rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">What Breaks Without Commitment Items</h4>
+    <table>
+      <tr><th>Process</th><th>Impact</th><th>Symptom</th></tr>
+      <tr>
+        <td>FM Budget Availability Check</td>
+        <td><span class="risk risk-critical">CRITICAL</span></td>
+        <td>Checks fail silently &mdash; postings may go through without budget validation, or be rejected depending on AVC tolerance configuration</td>
+      </tr>
+      <tr>
+        <td>Commitment Postings</td>
+        <td><span class="risk risk-critical">CRITICAL</span></td>
+        <td>Purchase orders and funds reservations cannot generate FM commitment documents &mdash; no encumbrance tracking</td>
+      </tr>
+      <tr>
+        <td>Funds Reservation</td>
+        <td><span class="risk risk-high">HIGH</span></td>
+        <td>Manual funds reservations (FMX1) cannot be created without commitment items to post against</td>
+      </tr>
+      <tr>
+        <td>Budget vs Actual Reporting</td>
+        <td><span class="risk risk-high">HIGH</span></td>
+        <td>FM reports (S_ALR_87013611, FMAVCR01) show incomplete data &mdash; actuals without budget consumption line items</td>
+      </tr>
+    </table>
+
+    <h4 style="color: var(--muted); margin: 1rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">The GL &rarr; CI &rarr; FM Relationship</h4>
+    <div class="explain" style="border-left-color: var(--purple);">
+      <strong>How it works:</strong> In SAP PSM-FM, the chain is:
+      <strong>GL Account</strong> (SKA1/SKB1) &rarr; <strong>Commitment Item</strong> (FMCI) &rarr; <strong>FM Derivation</strong> (FMDERIVE).
+      When a user posts to a GL account, SAP's derivation engine (FMDERIVE) looks up which commitment item corresponds
+      to that GL account. The commitment item is the FM equivalent of the GL account &mdash; it is the budget line that
+      tracks spending. Without this mapping, FM does not know which budget line to check or consume.
+    </div>
+
+    <div class="fix-box">
+      <strong style="color: var(--green);">Fix Actions:</strong>
+      <ol style="margin: 0.5rem 0 0 1.5rem;">
+        <li><strong>Verify scope:</strong> Determine if STEM uses shared commitment items from FM Area 01 (other company codes) or needs its own set</li>
+        <li><strong>Create commitment items:</strong> Transaction <span class="mono">FMCI</span> &mdash; create commitment items for each GL account category (revenue, expense, balance sheet if needed)</li>
+        <li><strong>Update derivation rules:</strong> Transaction <span class="mono">FMDERIVE</span> &mdash; add rules that map GL accounts to commitment items for company code STEM</li>
+        <li><strong>Verify:</strong> Post a test document to a P&amp;L GL account and confirm the FM commitment item is derived correctly</li>
+      </ol>
+      <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.85rem;">
+        <strong>TCodes:</strong> FMCI (create commitment items), FMDERIVE (derivation rules), FMCID (display CI), S_ALR_87013611 (verify FM postings)
+      </p>
+    </div>
+  </div>
+
+  <!-- DISCOVERY 2: Missing Cost Elements -->
+  <div class="discovery-card">
+    <h3>&#128308; Discovery #2: No Cost Elements Created/Copied</h3>
+    <p style="margin-bottom: 0.75rem;">
+      EC01 (company code copy) duplicates customizing tables but does <strong>NOT copy cost element master data</strong>.
+      Cost elements are master data, not customizing. This means the controlling area STEM exists, cost centers can
+      be created, but <strong>no P&amp;L account can post to CO</strong> because the corresponding cost elements
+      do not exist.
+    </p>
+
+    <div class="explain danger" style="margin: 0.75rem 0;">
+      <strong>Why this matters:</strong> In SAP, every posting to a P&amp;L account (revenue or expense) that
+      requires a CO assignment (cost center, internal order, WBS element) MUST have a corresponding cost element.
+      Primary cost elements mirror GL accounts. Without them, SAP rejects the posting with a hard error:
+      <em>"Cost element XXXXXXXXXX does not exist in controlling area STEM"</em>. This blocks ALL expense and
+      revenue postings that require CO assignment &mdash; which in UNESCO's setup is virtually every P&amp;L posting.
+    </p>
+
+    <h4 style="color: var(--muted); margin: 1rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Impact Chain</h4>
+    <div class="impact-chain">
+      <div class="flow" style="justify-content: center;">
+        <div class="flow-step" style="border-color: var(--green);">
+          <strong>FI P&amp;L Posting</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">FB50 / MIRO / etc.</span><br>
+          <span class="risk risk-low">INITIATED</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--green);">
+          <strong>CO Assignment</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">Cost Center / Order</span><br>
+          <span class="risk risk-low">ENTERED</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+          <strong>Cost Element Check</strong><br>
+          <span style="font-size: 0.8rem; color: var(--muted);">CSKA / CSKB lookup</span><br>
+          <span class="risk risk-critical">NOT FOUND</span>
+        </div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.2);">
+          <strong>HARD ERROR</strong><br>
+          <span style="font-size: 0.8rem; color: var(--red);">"Cost element does not<br>exist in CO area STEM"</span>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="color: var(--muted); margin: 1rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">What Breaks Without Cost Elements</h4>
+    <table>
+      <tr><th>Cost Element Type</th><th>Category</th><th>Impact</th><th>What Fails</th></tr>
+      <tr>
+        <td><strong>Primary</strong> (Cat 1 &mdash; Revenue/Expense)</td>
+        <td>Mirror of P&amp;L GL accounts</td>
+        <td><span class="risk risk-critical">CRITICAL</span></td>
+        <td>ALL FI postings to P&amp;L accounts with CO assignment &mdash; expense reports, vendor invoices, revenue postings, journal entries</td>
+      </tr>
+      <tr>
+        <td><strong>Secondary</strong> (Cat 41 &mdash; Overhead/Assessment)</td>
+        <td>Internal cost allocation</td>
+        <td><span class="risk risk-high">HIGH</span></td>
+        <td>CO assessment cycles (KSV5) and distribution cycles (KSU5) cannot execute</td>
+      </tr>
+      <tr>
+        <td><strong>Secondary</strong> (Cat 42 &mdash; Settlement)</td>
+        <td>Internal order settlement</td>
+        <td><span class="risk risk-high">HIGH</span></td>
+        <td>Internal orders cannot settle costs to receivers (cost centers, assets, GL accounts)</td>
+      </tr>
+      <tr>
+        <td><strong>Secondary</strong> (Cat 43 &mdash; Internal Activity)</td>
+        <td>Activity allocation</td>
+        <td><span class="risk risk-medium">MEDIUM</span></td>
+        <td>Activity-based costing and internal activity allocations (KB21N) cannot post</td>
+      </tr>
+    </table>
+
+    <div class="fix-box">
+      <strong style="color: var(--green);">Fix Actions:</strong>
+      <ol style="margin: 0.5rem 0 0 1.5rem;">
+        <li><strong>Mass-create primary cost elements:</strong> Transaction <span class="mono">OKTZ</span> &mdash; automatic creation of primary cost elements from GL accounts in the chart of accounts. This maps each P&amp;L GL account to a cost element with the same number.</li>
+        <li><strong>Alternative:</strong> Transaction <span class="mono">KA06</span> &mdash; mass create cost elements with explicit control over category and attributes</li>
+        <li><strong>Create secondary cost elements:</strong> Transaction <span class="mono">KA01</span> or <span class="mono">KA06</span> &mdash; create category 41 (assessment), 42 (settlement), and 43 (activity) cost elements as needed for STEM's CO processes</li>
+        <li><strong>Verify:</strong> Transaction <span class="mono">KA03</span> &mdash; display cost elements. Then post a test FI document to a P&amp;L account with a cost center to confirm CO acceptance.</li>
+      </ol>
+      <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.85rem;">
+        <strong>TCodes:</strong> KA01 (create single), KA06 (mass create), OKTZ (auto-create from CoA), KA03 (display), KSV5/KSU5 (allocation cycles)
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSPORT IMPORT ORDER -->
+<div class="section" style="border: 2px solid var(--accent);">
+  <h2><span class="icon">&#128295;</span> Transport Import Order &mdash; CRITICAL</h2>
+  <div class="explain danger">
+    <strong>All four transports modify overlapping tables for company code STEM.</strong>
+    If imported in the wrong order, one will overwrite the other's changes.
+    The FI transport must go first because FM and Logistics depend on the company code existing.
+    D01K9B0F4I is a task under the FI request and carries additional customizing within that scope.
+  </div>
+
+  <div class="flow" style="justify-content: center; margin: 1.5rem 0;">
+    <div class="flow-step" style="border-color: var(--accent); min-width: 260px;">
+      <strong style="color: var(--accent);">STEP 1</strong><br>
+      <span class="mono" style="font-size: 0.9rem;">D01K9B0CBF</span><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">JP_LOPEZ &mdash; FI Core</span><br>
+      <span style="font-size: 0.85rem;">36 objects / 682 keys</span><br>
+      <div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(56,189,248,0.1); border-radius: 6px;">
+        <strong style="font-size: 0.8rem; color: var(--accent);">Task:</strong> <span class="mono" style="font-size: 0.8rem;">D01K9B0CBG</span><br>
+        <span style="font-size: 0.8rem;">JP_LOPEZ &mdash; FI Core config</span><br>
+        <span style="font-size: 0.75rem; color: var(--muted);">541 GL, banks, payments, tolerances, CO, AA, MM</span>
+      </div>
+      <div style="margin-top: 0.3rem; padding: 0.5rem; background: rgba(251,146,60,0.1); border-radius: 6px;">
+        <strong style="font-size: 0.8rem; color: var(--orange);">Task:</strong> <span class="mono" style="font-size: 0.8rem;">D01K9B0F4I</span><br>
+        <span style="font-size: 0.8rem;">R_RIOS &mdash; Posting periods: 2 obj / 6 keys</span><br>
+        <span style="font-size: 0.75rem; color: var(--muted);">T001B/T010O/T010P period variants</span>
+      </div>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--green); min-width: 240px;">
+      <strong style="color: var(--green);">STEP 2</strong><br>
+      <span class="mono" style="font-size: 0.9rem;">D01K9B0F3V</span><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">I_KONAKOV &mdash; FM Config</span><br>
+      <span style="font-size: 0.85rem;">9 objects / 51 keys</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">FM area, hierarchy variants, T001 FM assignment</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--yellow); min-width: 240px;">
+      <strong style="color: var(--yellow);">STEP 3</strong><br>
+      <span class="mono" style="font-size: 0.9rem;">D01K9B0F40</span><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">R_RIOS &mdash; Logistics</span><br>
+      <span style="font-size: 0.85rem;">In progress</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">Purchasing org, plant, storage location for STEM</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--yellow); min-width: 200px;">
+      <strong style="color: var(--yellow);">STEP 4</strong><br>
+      <span style="font-size: 0.85rem;">Manual post-copy tasks</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">OBH2 + OB52 + FMBS + OKP1 + FBZP + PFCG<br>+ FMCI + FMDERIVE + OKTZ</span>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Order</th><th>Transport</th><th>Type</th><th>Owner</th><th>Description</th><th>Objects</th><th>Keys</th><th>Status</th></tr>
+    <tr>
+      <td><strong style="color: var(--accent);">1st</strong></td>
+      <td class="mono">D01K9B0CBF</td>
+      <td>Request</td>
+      <td>JP_LOPEZ</td>
+      <td>C - FI New company code IISTEM (includes tasks CBG + F4I)</td>
+      <td><strong>36+2</strong></td>
+      <td><strong>682+6</strong></td>
+      <td>FI core: 541 GL, banks, payments, tolerances, CO, AA, MM + posting periods</td>
+    </tr>
+    <tr style="background: rgba(56,189,248,0.08);">
+      <td></td>
+      <td class="mono" style="padding-left: 2rem;">D01K9B0CBG</td>
+      <td>Task</td>
+      <td>JP_LOPEZ</td>
+      <td>cc (FI core creation)</td>
+      <td>36</td>
+      <td>682</td>
+      <td>FI core config task</td>
+    </tr>
+    <tr style="background: rgba(251,146,60,0.08);">
+      <td></td>
+      <td class="mono" style="padding-left: 2rem;">D01K9B0F4I</td>
+      <td>Task</td>
+      <td>R_RIOS</td>
+      <td>Posting periods</td>
+      <td>2</td>
+      <td>6</td>
+      <td>Posting period variants T001B/T010O/T010P</td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.08);">
+      <td><strong style="color: var(--green);">2nd</strong></td>
+      <td class="mono">D01K9B0F3V</td>
+      <td>Request</td>
+      <td>I_KONAKOV</td>
+      <td>FM for new Institute</td>
+      <td><strong>9</strong></td>
+      <td><strong>51</strong></td>
+      <td>FM area, hierarchy variants, T001 FM assignment</td>
+    </tr>
+    <tr style="background: rgba(251,191,36,0.08);">
+      <td><strong style="color: var(--yellow);">3rd</strong></td>
+      <td class="mono">D01K9B0F40</td>
+      <td>Request</td>
+      <td>R_RIOS</td>
+      <td>C - Logistic STEM Company Code</td>
+      <td>In progress</td>
+      <td>In progress</td>
+      <td>R_RIOS is currently configuring logistics for STEM</td>
+    </tr>
+  </table>
+
+  <div class="explain" style="margin-top: 1rem;">
+    <strong>Transport structure:</strong>
+    <ul style="margin: 0.3rem 0 0 1rem;">
+      <li><span class="mono">D01K9B0CBF</span> is a request with 2 tasks (CBG by JP_LOPEZ, F4I by R_RIOS). When imported, all task content is included. Total: <strong>36 objects / 682 keys</strong> + 2 objects / 6 keys from F4I.</li>
+      <li><span class="mono">D01K9B0F3V</span> (I_KONAKOV) is a separate request with <strong>9 objects / 51 keys</strong> for FM configuration.</li>
+      <li><span class="mono">D01K9B0F40</span> (R_RIOS) is a separate request for logistics, currently being configured.</li>
+      <li><span class="mono">ADDRESS</span> &mdash; Address data (addr 0000455631) is included as SAP artifact. Harmless.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="number">45</div>
+    <div class="label">Configuration Tables (CBF + F3V + F4I)</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">739</div>
+    <div class="label">Table Entries (682 + 51 + 6)</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">541</div>
+    <div class="label">GL Accounts (SKB1)</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">11</div>
+    <div class="label">Functional Areas Covered</div>
+  </div>
+  <div class="summary-card critical">
+    <div class="number">3</div>
+    <div class="label">High-Risk Tables (SKB1, T012K, T169G)</div>
+  </div>
+  <div class="summary-card" style="border-left-color: var(--accent);">
+    <div class="number">4</div>
+    <div class="label">Transports</div>
+  </div>
+  <div class="summary-card critical">
+    <div class="number">2</div>
+    <div class="label">Critical Discoveries (v2)</div>
+  </div>
+</div>
+
+<!-- PRE-IMPORT CHECKLIST -->
+<div class="section">
+  <h2><span class="icon">&#9745;</span> Pre-Import Safety Checklist (all transports)</h2>
+  <ul class="checklist">
+    <li>
+      <span class="check-icon check-ok">&#10004;</span>
+      <div><strong>Request type:</strong> All are Customizing (W) — correct for configuration data, client-specific scope</div>
+    </li>
+    <li>
+      <span class="check-icon check-ok">&#10004;</span>
+      <div><strong>No XPRA (post-import programs):</strong> No executable code runs after import in any transport</div>
+    </li>
+    <li>
+      <span class="check-icon check-ok">&#10004;</span>
+      <div><strong>No NROB (number ranges):</strong> No risk of overwriting document counters</div>
+    </li>
+    <li>
+      <span class="check-icon check-ok">&#10004;</span>
+      <div><strong>OBJFUNC = K (key-based) on all objects:</strong> Only specific rows for company code STEM — no mass delete, no full table overwrite</div>
+    </li>
+    <li>
+      <span class="check-icon check-ok">&#10004;</span>
+      <div><strong>No ALARM objects:</strong> No T001B, no PROJ/PRPS, no SWWWIHEAD, no RBKP_BLOCKED</div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">&#9888;</span>
+      <div><strong>Import order dependency:</strong> D01K9B0CBF (with tasks CBG + F4I, 36+2 obj / 682+6 keys) first &rarr; then D01K9B0F3V (FM, 9 obj / 51 keys) &rarr; then D01K9B0F40 (Logistics, in progress). See Import Order section above.</div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">&#9888;</span>
+      <div><strong>SKB1 (541 GL accounts):</strong> Large volume — verify chart of accounts alignment in target. <span style="color: var(--green);">Validated: 541/541 exist in SKA1 (CoA=UNES).</span></div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">&#10008;</span>
+      <div><strong>Commitment items NOT mapped to GL accounts:</strong> 541 GL accounts exist but have no commitment item derivation. FM budget checks will fail silently. <span style="color: var(--red);">CRITICAL &mdash; see Discovery #1.</span></div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">&#10008;</span>
+      <div><strong>Cost elements NOT created:</strong> EC01 does not copy cost element master data. All P&amp;L postings requiring CO assignment will hard-fail. <span style="color: var(--red);">CRITICAL &mdash; see Discovery #2.</span></div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">&#9888;</span>
+      <div><strong>T169G (13 tolerance keys):</strong> Invoice verification tolerances. Values copied from source &mdash; verify they match China office policy.</div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">&#9888;</span>
+      <div><strong>T012K (3 bank accounts):</strong> House bank CBE01 (Ethiopian). Bank account numbers are empty. <span style="color: var(--red);">Needs replacement for Chinese bank.</span></div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">&#9888;</span>
+      <div><strong>FM01 (FM Area):</strong> Transport 2 creates FM Area STEM. Verify FM derivation rules (FMDERIVE) include STEM after import.</div>
+    </li>
+  </ul>
+</div>
+
+<!-- ====================== FUNCTIONAL AREAS ====================== -->
+
+<!-- 1. COMPANY CODE DEFINITION -->
+<div class="section">
+  <h2><span class="icon">&#127970;</span> <span class="area-tag area-fi">FI</span> Company Code Definition</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Creates the fundamental legal entity "STEM" in SAP.
+    A company code is the smallest organizational unit for which a complete, self-contained set of
+    accounts can be drawn up (balance sheet + P&L). This is the foundation — everything else in this
+    transport depends on this entry existing.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T001</td>
+      <td>Company Code Master</td>
+      <td>3</td>
+      <td>Company code STEM: name, city, country, currency, chart of accounts, fiscal year variant, language</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">V_T001</td>
+      <td>Company Code View (VDAT)</td>
+      <td>&mdash;</td>
+      <td>Maintenance view wrapper &mdash; SAP uses this for SM30/SPRO editing. No separate config data.</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T001Q</td>
+      <td>FI Withholding Tax Settings</td>
+      <td>1</td>
+      <td>Withholding tax handling for company code STEM (section code 0002)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T001A</td>
+      <td>Group Currency Assignment</td>
+      <td>1</td>
+      <td>Assigns the <strong>group currency</strong> (GWAE2/GWAE3) for company code STEM. This determines which additional currencies SAP uses for parallel valuation in consolidated reporting. Required for multi-currency group reporting (e.g., UNESCO consolidation in USD/EUR).</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">V_T001A</td>
+      <td>Group Currency View (VDAT)</td>
+      <td>&mdash;</td>
+      <td>Maintenance view wrapper for T001A. SAP artifact, auto-included.</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 2. ADDRESS -->
+<div class="section">
+  <h2><span class="icon">&#128205;</span> <span class="area-tag area-tech">TECH</span> Company Code Address</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Stores the physical/mailing address of the STEM office.
+    SAP generates <strong>~40 address sub-tables automatically</strong> when you enter an address in the company code definition.
+    These are all linked to address number <span class="mono">0000455631</span>.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">ADRC / ADRCT</td>
+      <td>Central Address + Text</td>
+      <td>2</td>
+      <td>Main address record: street, city, postal code, country</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">ADR2&ndash;ADR13</td>
+      <td>Communication Types</td>
+      <td>12</td>
+      <td>Telephone, fax, email, URI, telex, pager, RFC dest, X.400, etc. One table per comm type.</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+    <tr>
+      <td class="mono">ADR*S2</td>
+      <td>Address Mapping Rules</td>
+      <td>15</td>
+      <td>SAP-generated: links T001.ADRNR &rarr; address 455631 for each comm type. Pure infrastructure.</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+    <tr>
+      <td class="mono">ADRG / ADRT / ADRU / ADRV</td>
+      <td>Address Groups/Types</td>
+      <td>4</td>
+      <td>Address grouping, type assignment, usage flags, version control</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+    <tr>
+      <td class="mono">ADDRESS / ADDRESS_4.6</td>
+      <td>Address Template (TDAT)</td>
+      <td>&mdash;</td>
+      <td>Template definitions for address maintenance. SAP standard, auto-included.</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+  </table>
+  <div class="explain" style="margin-top: 1rem; opacity: 0.8;">
+    <em>Note:</em> The ~40 address entries are <strong>SAP-generated artifacts</strong>. They are created automatically when
+    you fill in the company code address in OBY6/SPRO. They carry no independent configuration risk.
+    Total: ~50 address keys out of 682 = ~7.3% of D01K9B0CBG.
+  </div>
+</div>
+
+<!-- 3. GL ACCOUNTS -->
+<div class="section">
+  <h2><span class="icon">&#128209;</span> <span class="area-tag area-fi">FI</span> Chart of Accounts &mdash; GL Account Assignment</h2>
+  <div class="explain warn">
+    <strong>What this does:</strong> Assigns <strong>541 General Ledger accounts</strong> to company code STEM.
+    This is the <em>company code segment</em> of each GL account (SKB1) &mdash; it doesn't create the GL account
+    definition itself (that's SKA1, which is chart-of-accounts-level), but rather tells SAP:
+    "this GL account is <em>active</em> in company code STEM, with these posting rules."
+  </div>
+  <div class="explain">
+    <strong>In plain terms:</strong> Imagine a UNESCO-wide catalog of 2,000+ GL accounts.
+    This transport "activates" 541 of them for STEM, telling SAP what currency they post in,
+    whether they need tax codes, what field status group controls their posting screens, etc.
+  </div>
+
+  <!-- v2: COMMITMENT ITEM WARNING -->
+  <div class="explain danger" style="margin: 1rem 0; border-width: 4px;">
+    <strong style="color: var(--red);">WARNING (Discovery #1):</strong> These 541 GL accounts exist in SKB1 but
+    <strong>have NO commitment items mapped</strong> via FMDERIVE. In UNESCO's PSM-FM model, every GL account
+    must derive a commitment item for FM budget control. Without this mapping, FM budget availability checks
+    fail silently, commitment postings do not generate, and budget vs actual reporting is incomplete.
+    <br><br>
+    <strong>Action required:</strong> After import, create commitment items (<span class="mono">FMCI</span>) and
+    update derivation rules (<span class="mono">FMDERIVE</span>) to map GL accounts &rarr; commitment items for STEM.
+  </div>
+
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">SKB1</td>
+      <td>GL Account Master (Co. Code)</td>
+      <td><strong>541</strong></td>
+      <td>Each entry = one GL account activated for STEM. Contains: currency, tax category, field status group, open item management flag, line item display, sort key, authorization group.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+  </table>
+  <div class="explain warn" style="margin-top: 0.5rem;">
+    <strong>Verification needed:</strong> Confirm that the chart of accounts (e.g., UNES or INT) exists in the target system
+    and that these 541 accounts are defined at chart level (SKA1). If any account doesn't exist at chart level,
+    the transport will fail for that entry.
+  </div>
+
+  <details>
+    <summary>Sample GL accounts in this transport (first 20 of 541)</summary>
+    <table>
+      <tr><th>#</th><th>Account Key Pattern</th><th>Interpretation</th></tr>
+      <tr><td>1</td><td class="mono">350STEM0001044711</td><td>Client 350, Co.Code STEM, GL 0001044711</td></tr>
+      <tr><td>2</td><td class="mono">350STEM0001044714</td><td>Client 350, Co.Code STEM, GL 0001044714</td></tr>
+      <tr><td>3</td><td class="mono">350STEM0001044715</td><td>Client 350, Co.Code STEM, GL 0001044715</td></tr>
+      <tr><td>4</td><td class="mono">350STEM0001144711</td><td>Client 350, Co.Code STEM, GL 0001144711</td></tr>
+      <tr><td>5</td><td class="mono">350STEM0001144714</td><td>Client 350, Co.Code STEM, GL 0001144714</td></tr>
+      <tr><td colspan="3" style="color: var(--muted)">... +536 more GL account assignments</td></tr>
+    </table>
+  </details>
+</div>
+
+<!-- 4. ACCOUNT ASSIGNMENT OBJECTS (PSM-FM) -->
+<div class="section">
+  <h2><span class="icon">&#128200;</span> <span class="area-tag area-fi">PSM-FM</span> Account Assignment Objects</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Configures the <strong>Funds Management account assignment</strong> behavior for company code STEM.
+    These rules tell SAP which FM objects (Fund Center = FISTL, Fund = GEBER, Cost Center = KOSTL) are
+    required/optional during posting for STEM.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">AAACC_OBJ</td>
+      <td>Account Assignment Objects</td>
+      <td>7</td>
+      <td>FM Area 01: FISTL (Fund Center) status 01+02, GEBER (Fund) status 01+02, KOSTL (Cost Center) status 01+02, plus wildcard</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+  </table>
+  <div class="explain">
+    Status codes: <strong>01</strong> = required, <strong>02</strong> = optional.
+    This means postings in STEM will require/allow Fund Center and Fund assignments &mdash; standard for UNESCO PSM offices.
+  </div>
+</div>
+
+<!-- 4b. FM AREA DEFINITION (Transport 2: D01K9B0F3V) -->
+<div class="section" style="border-left: 4px solid var(--green);">
+  <h2><span class="icon">&#128200;</span> <span class="area-tag area-fi">PSM-FM</span> FM Area Definition
+    <span style="font-size: 0.75rem; color: var(--green); margin-left: 0.5rem; font-weight: normal;">Transport 2: D01K9B0F3V (I_KONAKOV)</span>
+  </h2>
+  <div class="explain">
+    <strong>What this does:</strong> Creates the <strong>Funds Management Area</strong> for company code STEM.
+    An FM Area is the organizational unit for budget management in the public sector. It defines
+    how budgets are structured, which hierarchy variants are used for fund centers, and how
+    FM integrates with FI postings. Without this, no budget postings, commitments, or funds
+    reservations can be created for STEM.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">FM01</td>
+      <td>FM Area Definition</td>
+      <td>4</td>
+      <td>FM Area STEM: currency, fiscal year variant, budget structure, status management, integration settings with FI/CO</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td class="mono">FM01D</td>
+      <td>FM Area Detail</td>
+      <td>1</td>
+      <td>FM Area STEM variant A &mdash; additional parameters (address assignment, cover groups, tolerance profiles)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">FM01T</td>
+      <td>FM Area Texts</td>
+      <td>3</td>
+      <td>Descriptions in 3 languages (EN, FR, PT)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">FMHIVARNT</td>
+      <td>FM Hierarchy Variants</td>
+      <td>2</td>
+      <td>
+        <strong>000</strong> &mdash; Standard fund center hierarchy<br>
+        <strong>0000</strong> &mdash; Extended hierarchy variant<br>
+        These define how fund centers are organized in tree structures for budget reporting.
+      </td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">FMHIVARNTT</td>
+      <td>Hierarchy Variant Texts</td>
+      <td>2</td>
+      <td>Descriptions for both variants in EN</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T001</td>
+      <td>Company Code (FM assignment)</td>
+      <td>1</td>
+      <td>Adds FM Area assignment to STEM's T001 record. <strong>Must import AFTER FI transport.</strong></td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T001Z</td>
+      <td>Company Code Additional Settings</td>
+      <td>1</td>
+      <td>Extended company code parameters (FM-specific flags)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T882</td>
+      <td>Consolidation Unit</td>
+      <td>1</td>
+      <td>Updates STEM consolidation unit (same as FI transport &mdash; harmless duplicate)</td>
+      <td><span class="risk risk-info">ARTIFACT</span></td>
+    </tr>
+  </table>
+
+  <div class="explain" style="margin-top: 0.5rem;">
+    <strong>Views in this transport (7):</strong> V_FM01_A, V_001_B, V_FM01_H, V_FM01_C, V_FMHIVAR, V_FMUP00_F, V_FM01D_F
+    &mdash; all are VDAT (maintenance view wrappers). No independent configuration data. SAP generates them when you
+    edit FM area settings via SPRO.
+  </div>
+
+  <div class="explain" style="margin-top: 0.5rem; opacity: 0.8;">
+    <strong>Address data (38 keys):</strong> Same address 0000455631 as in the FI transport. Duplicate &mdash; second import
+    overwrites identical data. No conflict.
+  </div>
+
+  <div class="explain" style="margin-top: 1rem; border-left-color: var(--green);">
+    <strong>D01K9B0F3V content (from v1 extraction):</strong> 9 objects / 51 keys &mdash;
+    FM01 (FM Area definition, 4 keys), FM01D (detail, 1), FM01T (texts, 3), FMHIVARNT (hierarchy variants, 2),
+    FMHIVARNTT (texts, 2), T001 (FM assignment, 1), T001Z (extended settings, 1), T882 (consolidation, 1),
+    + 7 VDAT views + 38 address keys (duplicate of FI transport).
+  </div>
+</div>
+
+<!-- 4c. R_RIOS POSTING PERIOD CONFIGURATION (UPDATED WITH REAL DATA) -->
+<div class="section" style="border-left: 4px solid var(--orange);">
+  <h2><span class="icon">&#128295;</span> <span class="area-tag area-fi">FI</span> Posting Period Configuration
+    <span style="font-size: 0.75rem; color: var(--orange); margin-left: 0.5rem; font-weight: normal;">D01K9B0F4I (R_RIOS) &mdash; Task under D01K9B0CBF &mdash; 2 objects / 6 keys</span>
+    <span class="new-badge">VERIFIED</span>
+  </h2>
+  <div class="explain">
+    <strong>What this does:</strong> Configures the <strong>posting period variants</strong> for company code STEM.
+    This task assigns which period control variant governs STEM, and provides the posting period variant
+    descriptions in 4 languages (German, English, French, Portuguese). Without this, FI cannot determine which
+    periods are open for STEM.
+  </div>
+
+  <table>
+    <tr><th>Table</th><th>Keys</th><th>TABKEYs</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T001B</td>
+      <td>1</td>
+      <td class="mono">3500UNES+</td>
+      <td>Opens posting periods for STEM using the <strong>UNES+</strong> variant (shared period control with UNES headquarters)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T010O</td>
+      <td>1</td>
+      <td class="mono">350STEM</td>
+      <td>Assigns the posting period variant to company code STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T010P</td>
+      <td>4</td>
+      <td>
+        <span class="mono">350DSTEM</span> &mdash; D = German (Deutsch) text<br>
+        <span class="mono">350ESTEM</span> &mdash; E = English text<br>
+        <span class="mono">350FSTEM</span> &mdash; F = French text<br>
+        <span class="mono">350PSTEM</span> &mdash; P = Portuguese text
+      </td>
+      <td>Posting period variant descriptions in 4 languages (D/E/F/P are SAP language keys, not period types)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+  </table>
+
+  <div class="explain" style="border-left-color: var(--green); margin-top: 1rem;">
+    <strong>Key insight:</strong> R_RIOS correctly assigned the <strong>UNES+</strong> variant, meaning STEM shares the
+    same period control as UNES headquarters. This is standard practice &mdash; when HQ opens/closes periods for UNES+,
+    STEM will follow the same schedule automatically. No separate period management needed for STEM.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--orange); margin-top: 0.5rem;">
+    <strong>Import note:</strong> Tasks are released independently but imported as part of request D01K9B0CBF.
+    When D01K9B0CBF is imported, task D01K9B0F4I's objects are included automatically.
+  </div>
+</div>
+
+<!-- 4d. LOGISTICS — IN PROGRESS -->
+<div class="section" style="border-left: 4px solid var(--yellow);">
+  <h2><span class="icon">&#128230;</span> <span class="area-tag area-log">LOGISTICS</span> Logistics Configuration &mdash; In Progress
+    <span style="font-size: 0.75rem; color: var(--yellow); margin-left: 0.5rem; font-weight: normal;">D01K9B0F40 (R_RIOS) &mdash; new request, 2026-03-27</span>
+  </h2>
+
+  <div class="explain warn">
+    <strong>Status:</strong> D01K9B0F40 is a new request created by R_RIOS on 2026-03-27, currently being configured.
+    Expected to contain purchasing organization, plant, and storage location assignments for company code STEM.
+    Will be ready before transport release.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--yellow); margin-top: 1rem;">
+    <strong>What SHOULD be in this transport (based on ICBA/ICTP blueprints):</strong>
+  </div>
+
+  <table>
+    <tr><th>Element</th><th>Description</th><th>TCode</th><th>Status</th></tr>
+    <tr>
+      <td><strong>Purchasing Organization</strong></td>
+      <td>Assignment to company code STEM (T024E/T024Z)</td>
+      <td class="mono">OX17</td>
+      <td><span class="risk risk-critical">NOT CONFIGURED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Plant</strong></td>
+      <td>Assignment to company code STEM (T001W/T001K)</td>
+      <td class="mono">OX10</td>
+      <td><span class="risk risk-critical">NOT CONFIGURED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Storage Location</strong></td>
+      <td>Sub-division per plant (T001L)</td>
+      <td class="mono">OX09</td>
+      <td><span class="risk risk-critical">NOT CONFIGURED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Shipping Point</strong></td>
+      <td>Assigned to plant (TVSTZ), if applicable</td>
+      <td class="mono">OVL2</td>
+      <td><span class="risk risk-medium">NOT CONFIGURED</span></td>
+    </tr>
+    <tr>
+      <td><strong>MRP Settings</strong></td>
+      <td>Material requirements planning per plant, if applicable</td>
+      <td class="mono">OMDU</td>
+      <td><span class="risk risk-low">NOT CONFIGURED</span></td>
+    </tr>
+  </table>
+
+  <div class="explain warn" style="margin-top: 1rem;">
+    <strong>Note:</strong> Without logistics configuration, <strong>PO creation (ME21N) and goods receipt (MIGO) will not work</strong>
+    for company code STEM. R_RIOS is working on this configuration. FI and FM operations are not affected by this transport.
+  </div>
+</div>
+
+<!-- 4e. D01K9B0CBG FULL INVENTORY (REAL RFC DATA) -->
+<div class="section" style="border: 2px solid var(--accent); background: linear-gradient(135deg, rgba(56,189,248,0.06), var(--surface));">
+  <h2><span class="icon">&#128220;</span> <span class="area-tag area-fi">FI</span> D01K9B0CBG &mdash; JP_LOPEZ FI Core Creation
+    <span style="font-size: 0.75rem; color: var(--accent); margin-left: 0.5rem; font-weight: normal;">36 objects / 682 keys &mdash; Task under D01K9B0CBF &mdash; Date: 2026-03-30 &mdash; Status: Modifiable</span>
+    <span class="new-badge">VERIFIED</span>
+  </h2>
+  <div class="explain" style="border-left-color: var(--accent);">
+    <strong>D01K9B0CBG is a task under request D01K9B0CBF.</strong> It contains the FI core configuration:
+    541 GL accounts, house banking, payment processing, tolerance controls, asset accounting,
+    controlling area, invoice verification, and more. When D01K9B0CBF is imported, all task content is included automatically.
+  </div>
+
+  <details open>
+    <summary>Full configuration table inventory (36 objects, 682 keys) &mdash; from E071K</summary>
+    <table>
+      <tr><th>Table</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+      <tr><td class="mono">SKB1</td><td><strong>541</strong></td><td>GL accounts (company code segment)</td><td><span class="risk risk-high">HIGH</span></td></tr>
+      <tr><td class="mono">T043T</td><td>13</td><td>Tolerance tiers (blank, 0005&ndash;0300, COUP)</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T169G</td><td>13</td><td>Invoice verification tolerances (AN, AP, BD, BR, BW, DQ, DW, KW, PE, PP, PS, ST, VP)</td><td><span class="risk risk-high">HIGH</span></td></tr>
+      <tr><td class="mono">T012T</td><td>9</td><td>Bank account texts (3 accounts x 3 languages E, F, P)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T035U</td><td>9</td><td>Cash planning group texts (3 groups x 3 languages)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">AAACC_OBJ</td><td>7</td><td>FM account assignment: FISTL(01,02), GEBER(01,02), KOSTL(01), PS_PSP_PNR(01), PS_PSP_PNR2(01)</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T001</td><td>4</td><td>Company code STEM master record</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T882</td><td>4</td><td>Consolidation unit STEM (4 entries)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T012K</td><td>3</td><td>Bank accounts: CBE01/ETB01, CBE01/ETB02, CBE01/USD01</td><td><span class="risk risk-high">HIGH</span></td></tr>
+      <tr><td class="mono">T035D</td><td>3</td><td>Cash planning groups: CBE01-ETB1, CBE01-ETB2, CBE01-USD1</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T042E</td><td>3</td><td>Payment methods: M, O, U</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T043GT</td><td>3</td><td>Tolerance group texts (3 languages)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T043ST</td><td>3</td><td>Employee tolerance texts (3 languages)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T093B</td><td>3</td><td>Depreciation areas: 01(Book), 02(Tax), 03(Group)</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T093U</td><td>3</td><td>Depreciation posting rules: areas 02, 04, 06</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">TKA01</td><td>2</td><td>Controlling area STEM</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T093V</td><td>2</td><td>Asset class valuation: A003, A010</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td>ADR* tables</td><td>~50</td><td>Address tables (SAP artifacts, address 0000455631)</td><td><span class="risk risk-info">ARTIFACT</span></td></tr>
+      <tr><td class="mono">T001A</td><td>1</td><td>Group currency assignment</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T001Q</td><td>1</td><td>Withholding tax (section 0002)</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T012</td><td>1</td><td>House bank CBE01 definition</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T012D</td><td>1</td><td>House bank detail</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T042</td><td>1</td><td>Paying company code = STEM (self)</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T042B</td><td>1</td><td>Payment methods per company code</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T042T</td><td>1</td><td>Payment program text</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T043G</td><td>1</td><td>Company code tolerance group</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T043S</td><td>1</td><td>Employee tolerance group</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T047</td><td>1</td><td>Dunning area</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T093C</td><td>1</td><td>Chart of depreciation</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T093D</td><td>1</td><td>AA control parameters area 01</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">T169P</td><td>1</td><td>IV global parameters</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">T169V</td><td>1</td><td>IV tolerance per company code</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">TKA00</td><td>1</td><td>CO area &harr; company code (fiscal year 2025)</td><td><span class="risk risk-medium">MEDIUM</span></td></tr>
+      <tr><td class="mono">TKA02</td><td>1</td><td>CO area text</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">TKA07</td><td>1</td><td>CO version 000</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">TKA09</td><td>1</td><td>CO version settings</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">TKT09</td><td>1</td><td>CO version text</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">TKVS</td><td>1</td><td>Version control</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">TKVST</td><td>1</td><td>Version control text</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">ATPRA</td><td>1</td><td>ATP relevance</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr><td class="mono">MARV</td><td>1</td><td>MM valuation parameters</td><td><span class="risk risk-low">LOW</span></td></tr>
+      <tr style="font-weight:700; border-top: 2px solid var(--accent);">
+        <td>TOTAL</td><td>682</td><td colspan="2"></td>
+      </tr>
+    </table>
+  </details>
+
+  <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+    <div style="background: rgba(56,189,248,0.1); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--accent); font-weight: 700;">541</span> <span style="color: var(--muted);">GL accounts (79.3%)</span>
+    </div>
+    <div style="background: rgba(167,139,250,0.1); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--purple); font-weight: 700;">~50</span> <span style="color: var(--muted);">Address artifacts (7.3%)</span>
+    </div>
+    <div style="background: rgba(251,191,36,0.1); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--yellow); font-weight: 700;">91</span> <span style="color: var(--muted);">Config tables (13.3%)</span>
+    </div>
+  </div>
+</div>
+
+<!-- 5. HOUSE BANKS -->
+<div class="section">
+  <h2><span class="icon">&#127974;</span> <span class="area-tag area-bank">BANK</span> House Banks &amp; Bank Accounts</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Sets up the <strong>house bank "CBE01"</strong> for STEM with <strong>3 bank accounts</strong>:
+    two in Ethiopian Birr (ETB) and one in US Dollars (USD). This is what SAP uses when running the
+    automatic payment program (F110) to know <em>which bank to pay from</em>.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T012</td>
+      <td>House Bank Definition</td>
+      <td>1</td>
+      <td>House bank CBE01 for STEM &mdash; bank key, country, SWIFT code</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T012D</td>
+      <td>House Bank Details</td>
+      <td>1</td>
+      <td>Additional bank details (branch, bank group)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T012K</td>
+      <td>House Bank Accounts</td>
+      <td>3</td>
+      <td>
+        <strong>ETB01</strong> &mdash; Ethiopian Birr account #1 (GL reconciliation account assigned)<br>
+        <strong>ETB02</strong> &mdash; Ethiopian Birr account #2<br>
+        <strong>USD01</strong> &mdash; US Dollar account
+      </td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T012T</td>
+      <td>House Bank Account Texts</td>
+      <td>9</td>
+      <td>Descriptions for each account in 3 languages (EN, FR, PT)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+  <div class="explain warn">
+    <strong>Verification:</strong> The GL reconciliation accounts referenced in T012K must exist in SKB1 for STEM.
+    They should be part of the 541 GL accounts in this same transport &mdash; but verify the cross-reference.
+  </div>
+</div>
+
+<!-- 6. PLANNING GROUPS -->
+<div class="section">
+  <h2><span class="icon">&#128202;</span> <span class="area-tag area-bank">BANK</span> Cash Management Planning Groups</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Assigns <strong>planning groups</strong> to the house bank accounts for cash management
+    and liquidity forecasting. Planning groups categorize expected cash flows (incoming vs outgoing,
+    by payment method).
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T035D</td>
+      <td>Planning Groups</td>
+      <td>3</td>
+      <td>Planning groups for CBE01-ETB1, CBE01-ETB2, CBE01-USD1</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T035U</td>
+      <td>Planning Group Texts</td>
+      <td>9</td>
+      <td>Texts in 3 languages (EN, FR, PT)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 7. AUTOMATIC PAYMENT PROGRAM (FBZP) -->
+<div class="section">
+  <h2><span class="icon">&#128179;</span> <span class="area-tag area-ap">AP/PAYMENTS</span> Automatic Payment Program (F110/FBZP)</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Configures the <strong>automatic payment program</strong> for company code STEM.
+    This is the SAP transaction F110 configuration &mdash; it tells SAP: "When running payments for STEM,
+    use these payment methods, these banks, this ranking order."
+  </div>
+
+  <div class="flow">
+    <div class="flow-step"><strong>T042</strong><br>Paying Co. Code</div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step"><strong>T042B</strong><br>Payment Methods/CoCode</div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step"><strong>T042E</strong><br>Payment Methods/Country</div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step"><strong>T012K</strong><br>Bank Accounts</div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step"><strong>F110</strong><br>Payment Run</div>
+  </div>
+
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T042</td>
+      <td>Paying Company Codes</td>
+      <td>1</td>
+      <td>STEM pays for itself (not delegated to another co. code)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T042B</td>
+      <td>Payment Methods per Co. Code</td>
+      <td>1</td>
+      <td>Which payment methods (check, wire, etc.) are allowed for STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T042E</td>
+      <td>Payment Methods per Country</td>
+      <td>3</td>
+      <td>Country-level payment methods: <strong>M</strong> (check), <strong>O</strong> (online/wire), <strong>U</strong> (urgent)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T042T</td>
+      <td>Payment Program Texts</td>
+      <td>1</td>
+      <td>Description text for STEM payment config</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 8. TOLERANCE GROUPS -->
+<div class="section">
+  <h2><span class="icon">&#9878;</span> <span class="area-tag area-fi">FI</span> Tolerance Groups (Posting &amp; Employee)</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Sets the <strong>maximum amounts</strong> that users can post in a single document
+    and the <strong>acceptable payment differences</strong> during clearing. Tolerance groups control:
+    how much money a user can move per posting, and how big a difference is "acceptable" when clearing open items.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T043G</td>
+      <td>Company Code Tolerance Group</td>
+      <td>1</td>
+      <td>Default tolerance group for STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T043S</td>
+      <td>Employee Tolerance Groups</td>
+      <td>1</td>
+      <td>Max posting amount per user group in STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T043T</td>
+      <td>Tolerance Group Assignment</td>
+      <td>13</td>
+      <td>13 tolerance tiers (0, 5, 10, 15, 20, ...) &mdash; graduated posting limits by employee authorization level</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T043GT / T043ST</td>
+      <td>Texts (3 languages)</td>
+      <td>6</td>
+      <td>Descriptions in EN, FR, PT</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 9. INVOICE VERIFICATION TOLERANCES -->
+<div class="section">
+  <h2><span class="icon">&#128196;</span> <span class="area-tag area-mm">MM/IV</span> Invoice Verification Tolerances</h2>
+  <div class="explain warn">
+    <strong>What this does:</strong> Defines <strong>13 tolerance keys</strong> that control when invoices are
+    <strong>automatically blocked</strong> during MIRO posting. These are the thresholds for price differences,
+    quantity differences, and other variances between the purchase order and the vendor invoice.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T169G</td>
+      <td>Tolerance Keys</td>
+      <td>13</td>
+      <td>
+        <strong>AN</strong> &mdash; Amount for item without order reference<br>
+        <strong>AP</strong> &mdash; Amount for item with order reference<br>
+        <strong>BD</strong> &mdash; Form small differences automatically<br>
+        <strong>BR</strong> &mdash; Percentage OPUn tolerance<br>
+        <strong>BW</strong> &mdash; Percentage OPUn tolerance<br>
+        <em>+ 8 more tolerance types</em> (DQ, DW, KW, PP, PS, ST, VP, etc.)
+      </td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T169P</td>
+      <td>IV Global Parameters</td>
+      <td>1</td>
+      <td>Invoice verification parameters for STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T169V</td>
+      <td>IV Tolerance per Co. Code</td>
+      <td>1</td>
+      <td>Company-code-specific tolerance settings</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+  </table>
+  <div class="explain warn">
+    <strong>AP Control Impact:</strong> If tolerances are too wide, invoices pass through without review.
+    If too narrow, legitimate invoices get blocked unnecessarily. Verify values match UNESCO AP policy.
+  </div>
+</div>
+
+<!-- 10. DUNNING -->
+<div class="section">
+  <h2><span class="icon">&#128232;</span> <span class="area-tag area-fi">FI-AR</span> Dunning Configuration</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Assigns a <strong>dunning procedure</strong> to company code STEM.
+    Dunning = the process of sending payment reminders to customers/vendors with overdue invoices.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T047</td>
+      <td>Dunning Area Assignment</td>
+      <td>1</td>
+      <td>Dunning area for company code STEM &mdash; links to dunning procedure (levels, intervals, forms)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 11. ASSET ACCOUNTING -->
+<div class="section">
+  <h2><span class="icon">&#127959;</span> <span class="area-tag area-aa">AA</span> Asset Accounting (Depreciation)</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Configures <strong>asset accounting</strong> for company code STEM &mdash;
+    the depreciation areas, chart of depreciation, and valuation rules. This controls how fixed assets
+    (buildings, vehicles, equipment) are depreciated over their useful life.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T093C</td>
+      <td>Chart of Depreciation</td>
+      <td>1</td>
+      <td>Assigns chart of depreciation to STEM</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T093B</td>
+      <td>Depreciation Areas</td>
+      <td>3</td>
+      <td>
+        <strong>01</strong> &mdash; Book depreciation (main/legal)<br>
+        <strong>02</strong> &mdash; Tax depreciation<br>
+        <strong>03</strong> &mdash; Group valuation (consolidation)
+      </td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T093D</td>
+      <td>AA Control Parameters</td>
+      <td>1</td>
+      <td>Asset accounting parameters for area 01 (e.g., fiscal year start, depreciation start convention)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T093U</td>
+      <td>Depreciation Posting Rules</td>
+      <td>3</td>
+      <td>Posting intervals for areas 02, 04, 06 &mdash; how often depreciation posts to FI (monthly, annually, etc.)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">T093V</td>
+      <td>Asset Class Valuation</td>
+      <td>2</td>
+      <td>Valuation parameters for asset classes A003 and A010 in STEM</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 12. CONTROLLING -->
+<div class="section">
+  <h2><span class="icon">&#128176;</span> <span class="area-tag area-co">CO</span> Controlling Area Assignment</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Links company code STEM to a <strong>Controlling Area</strong> &mdash; the organizational
+    unit for management accounting. This enables cost center accounting, internal orders, profitability
+    analysis, and all CO postings for STEM.
+  </div>
+
+  <!-- v2: COST ELEMENT WARNING -->
+  <div class="explain danger" style="margin: 0.75rem 0; border-width: 4px;">
+    <strong style="color: var(--red);">WARNING (Discovery #2):</strong> The controlling area STEM exists and cost centers
+    can be created, but <strong>NO cost elements have been created</strong>. EC01 does not copy cost element master data.
+    Without primary cost elements, ALL P&amp;L postings requiring CO assignment will fail with a hard error:
+    <em>"Cost element does not exist in controlling area STEM"</em>.
+    <br><br>
+    <strong>Action required:</strong> After import, mass-create primary cost elements via <span class="mono">OKTZ</span>
+    (auto-create from GL accounts) and create secondary cost elements via <span class="mono">KA01</span>/<span class="mono">KA06</span>.
+  </div>
+
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">TKA01</td>
+      <td>Controlling Area</td>
+      <td>2</td>
+      <td>Controlling area STEM definition (currency, fiscal year variant, CO version)</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKA00</td>
+      <td>CO Area &harr; Co. Code Assignment</td>
+      <td>1</td>
+      <td>Links STEM co. code to STEM controlling area, fiscal year 2025</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKA02</td>
+      <td>CO Area Texts</td>
+      <td>1</td>
+      <td>Description text for the controlling area</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKA07</td>
+      <td>CO Versions</td>
+      <td>1</td>
+      <td>Plan/actual version 000 (standard) for STEM</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKA09</td>
+      <td>CO Version Settings</td>
+      <td>1</td>
+      <td>Version 000 parameters (exclusive/cumulative, integrated planning flag)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKT09</td>
+      <td>CO Version Texts</td>
+      <td>1</td>
+      <td>Text for version 000 in EN</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">TKVS / TKVST</td>
+      <td>Version Control</td>
+      <td>2</td>
+      <td>Version control settings and texts</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 13. CONSOLIDATION -->
+<div class="section">
+  <h2><span class="icon">&#128203;</span> <span class="area-tag area-fi">FI-LC</span> Consolidation</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Registers company code STEM as a <strong>consolidation unit</strong> &mdash;
+    so it can participate in UNESCO's consolidated financial statements.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">T882</td>
+      <td>Consolidation Units</td>
+      <td>2</td>
+      <td>STEM registered as consolidation unit (00 = standard)</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 14. MATERIALS MANAGEMENT -->
+<div class="section">
+  <h2><span class="icon">&#128230;</span> <span class="area-tag area-mm">MM</span> Materials Management</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Initializes MM valuation and availability check settings for STEM &mdash;
+    basic prerequisites for any procurement activity.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">MARV</td>
+      <td>MM Valuation Parameters</td>
+      <td>1</td>
+      <td>Current period for material valuation in STEM</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td class="mono">ATPRA</td>
+      <td>ATP Relevance</td>
+      <td>1</td>
+      <td>Available-to-Promise check relevance for STEM</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 15. CREDIT MANAGEMENT -->
+<div class="section">
+  <h2><span class="icon">&#128179;</span> <span class="area-tag area-fi">FI</span> Credit Management</h2>
+  <div class="explain">
+    <strong>What this does:</strong> Initializes credit control area maintenance for STEM.
+  </div>
+  <table>
+    <tr><th>Table</th><th>Description</th><th>Keys</th><th>What It Configures</th><th>Risk</th></tr>
+    <tr>
+      <td class="mono">CAREAMAINT</td>
+      <td>Credit Area Maintenance (CDAT)</td>
+      <td>&mdash;</td>
+      <td>Cluster data for credit control area customizing</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- FULL OBJECT INVENTORY -->
+<div class="section">
+  <h2><span class="icon">&#128220;</span> Complete Object Inventory</h2>
+
+  <details>
+    <summary>All 36 objects &mdash; D01K9B0CBG / JP_LOPEZ FI Core Task (click to expand)</summary>
+    <table>
+      <tr><th>#</th><th>PGMID</th><th>Type</th><th>Object Name</th><th>OBJFUNC</th><th>Area</th><th>Risk</th><th>Keys</th></tr>
+      <tr><td>1</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">AAACC_OBJ</td><td>K</td><td><span class="area-tag area-fi">PSM-FM</span></td><td><span class="risk risk-medium">MED</span></td><td>7</td></tr>
+      <tr><td>2</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">ATPRA</td><td>K</td><td><span class="area-tag area-mm">MM</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>3</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">MARV</td><td>K</td><td><span class="area-tag area-mm">MM</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>4</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">SKB1</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-high">HIGH</span></td><td>541</td></tr>
+      <tr><td>5</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T001</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-medium">MED</span></td><td>3</td></tr>
+      <tr><td>6</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T001Q</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>7</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T012</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>8</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T012D</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>9</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T012K</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-high">HIGH</span></td><td>3</td></tr>
+      <tr><td>10</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T012T</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-low">LOW</span></td><td>9</td></tr>
+      <tr><td>11</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T035D</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-low">LOW</span></td><td>3</td></tr>
+      <tr><td>12</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T035U</td><td>K</td><td><span class="area-tag area-bank">BANK</span></td><td><span class="risk risk-low">LOW</span></td><td>9</td></tr>
+      <tr><td>13</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T042</td><td>K</td><td><span class="area-tag area-ap">AP</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>14</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T042B</td><td>K</td><td><span class="area-tag area-ap">AP</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>15</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T042E</td><td>K</td><td><span class="area-tag area-ap">AP</span></td><td><span class="risk risk-medium">MED</span></td><td>3</td></tr>
+      <tr><td>16</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T042T</td><td>K</td><td><span class="area-tag area-ap">AP</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>17</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T043G</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>18</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T043GT</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-low">LOW</span></td><td>3</td></tr>
+      <tr><td>19</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T043S</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>20</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T043ST</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-low">LOW</span></td><td>3</td></tr>
+      <tr><td>21</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T043T</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-medium">MED</span></td><td>13</td></tr>
+      <tr><td>22</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T047</td><td>K</td><td><span class="area-tag area-fi">FI-AR</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>23</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T093B</td><td>K</td><td><span class="area-tag area-aa">AA</span></td><td><span class="risk risk-medium">MED</span></td><td>3</td></tr>
+      <tr><td>24</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T093C</td><td>K</td><td><span class="area-tag area-aa">AA</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>25</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T093D</td><td>K</td><td><span class="area-tag area-aa">AA</span></td><td><span class="risk risk-low">LOW</span></td><td>1</td></tr>
+      <tr><td>26</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T093U</td><td>K</td><td><span class="area-tag area-aa">AA</span></td><td><span class="risk risk-medium">MED</span></td><td>3</td></tr>
+      <tr><td>27</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T093V</td><td>K</td><td><span class="area-tag area-aa">AA</span></td><td><span class="risk risk-low">LOW</span></td><td>2</td></tr>
+      <tr><td>28</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T169G</td><td>K</td><td><span class="area-tag area-mm">MM/IV</span></td><td><span class="risk risk-high">HIGH</span></td><td>13</td></tr>
+      <tr><td>29</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T169P</td><td>K</td><td><span class="area-tag area-mm">MM/IV</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>30</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T169V</td><td>K</td><td><span class="area-tag area-mm">MM/IV</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>31</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T882</td><td>K</td><td><span class="area-tag area-fi">FI-LC</span></td><td><span class="risk risk-low">LOW</span></td><td>2</td></tr>
+      <tr><td>32</td><td class="mono">R3TR</td><td class="mono">TDAT</td><td class="mono">ADDRESS</td><td>K</td><td><span class="area-tag area-tech">TECH</span></td><td><span class="risk risk-info">ART</span></td><td>&mdash;</td></tr>
+      <tr><td>33</td><td class="mono">R3TR</td><td class="mono">TDAT</td><td class="mono">ADDRESS_4.6</td><td>K</td><td><span class="area-tag area-tech">TECH</span></td><td><span class="risk risk-info">ART</span></td><td>&mdash;</td></tr>
+      <tr><td>34</td><td class="mono">R3TR</td><td class="mono">VDAT</td><td class="mono">V_T001</td><td>K</td><td><span class="area-tag area-tech">TECH</span></td><td><span class="risk risk-info">ART</span></td><td>&mdash;</td></tr>
+      <tr><td>35</td><td class="mono">R3TR</td><td class="mono">CDAT</td><td class="mono">CAREAMAINT</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-low">LOW</span></td><td>&mdash;</td></tr>
+      <tr><td>36</td><td class="mono">R3TR</td><td class="mono">TABU</td><td class="mono">T001A</td><td>K</td><td><span class="area-tag area-fi">FI</span></td><td><span class="risk risk-medium">MED</span></td><td>1</td></tr>
+      <tr><td>37</td><td class="mono">R3TR</td><td class="mono">VDAT</td><td class="mono">V_T001A</td><td>K</td><td><span class="area-tag area-tech">TECH</span></td><td><span class="risk risk-info">ART</span></td><td>&mdash;</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Key count breakdown by table (click to expand)</summary>
+    <table>
+      <tr><th>Table</th><th>Keys</th><th>% of Total</th><th>Category</th></tr>
+      <tr><td class="mono">SKB1</td><td><strong>541</strong></td><td>79.3%</td><td>GL Accounts</td></tr>
+      <tr><td>Address tables (40 tables)</td><td>38</td><td>5.6%</td><td>SAP Artifacts</td></tr>
+      <tr><td>Controlling (TKA*)</td><td>9</td><td>1.3%</td><td>CO Config</td></tr>
+      <tr><td class="mono">T043T</td><td>13</td><td>1.9%</td><td>Tolerance Groups</td></tr>
+      <tr><td class="mono">T169G</td><td>13</td><td>1.9%</td><td>IV Tolerances</td></tr>
+      <tr><td class="mono">T012T + T035U</td><td>18</td><td>2.6%</td><td>Bank Texts</td></tr>
+      <tr><td class="mono">T001A</td><td>1</td><td>0.1%</td><td>Group Currency</td></tr>
+      <tr><td>Everything else</td><td>49</td><td>7.2%</td><td>Config</td></tr>
+      <tr style="font-weight:700; border-top: 2px solid var(--accent)"><td>TOTAL (D01K9B0CBG)</td><td>682</td><td>100%</td><td></td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>D01K9B0F3V / I_KONAKOV &mdash; FM Configuration (9 objects / 51 keys)</summary>
+    <div class="explain" style="margin-top: 0.5rem; border-left-color: var(--green);">
+      <strong>Verified from v1 extraction:</strong> 9 objects / 51 keys. FM area definition, hierarchy variants, T001 FM assignment, address data.
+    </div>
+    <table style="margin-top: 0.5rem;">
+      <tr><th>Table</th><th>Keys</th><th>Category</th></tr>
+      <tr><td class="mono">FM01</td><td>4</td><td>FM Area definition</td></tr>
+      <tr><td class="mono">FM01D</td><td>1</td><td>FM Area detail</td></tr>
+      <tr><td class="mono">FM01T</td><td>3</td><td>FM Area texts (EN, FR, PT)</td></tr>
+      <tr><td class="mono">FMHIVARNT</td><td>2</td><td>Hierarchy variants</td></tr>
+      <tr><td class="mono">FMHIVARNTT</td><td>2</td><td>Hierarchy variant texts</td></tr>
+      <tr><td class="mono">T001</td><td>1</td><td>FM assignment to company code</td></tr>
+      <tr><td class="mono">T001Z</td><td>1</td><td>Extended company code settings</td></tr>
+      <tr><td class="mono">T882</td><td>1</td><td>Consolidation unit</td></tr>
+      <tr><td>+ 7 VDAT views + 38 address keys</td><td>&mdash;</td><td>Maintenance views + address artifacts</td></tr>
+      <tr style="font-weight:700; border-top: 2px solid var(--green)"><td>TOTAL (D01K9B0F3V)</td><td>51</td><td></td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>D01K9B0F4I / R_RIOS &mdash; Posting Period Configuration (2 objects / 6 keys &mdash; VERIFIED)</summary>
+    <table style="margin-top: 0.5rem;">
+      <tr><th>Table</th><th>Keys</th><th>TABKEYs</th><th>Category</th></tr>
+      <tr><td class="mono">T001B</td><td>1</td><td class="mono">3500UNES+</td><td>Posting period variant assignment</td></tr>
+      <tr><td class="mono">T010O</td><td>1</td><td class="mono">350STEM</td><td>Period variant &harr; company code</td></tr>
+      <tr><td class="mono">T010P</td><td>4</td><td class="mono">350DSTEM, 350ESTEM, 350FSTEM, 350PSTEM</td><td>Period variant descriptions in 4 languages (D=Deutsch, E=English, F=French, P=Portuguese)</td></tr>
+      <tr style="font-weight:700; border-top: 2px solid var(--orange)"><td>TOTAL (D01K9B0F4I)</td><td>6</td><td></td><td></td></tr>
+    </table>
+  </details>
+</div>
+
+<!-- POST-IMPORT ACTIONS -->
+<div class="section">
+  <h2><span class="icon">&#9989;</span> Post-Import Actions Required</h2>
+
+  <!-- Automated validation results -->
+  <div style="background: var(--surface2); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+    <strong style="color: var(--accent);">Automated Validation Results (run against D01 on 2026-03-26) + User Testing Discoveries (2026-04-01)</strong>
+  </div>
+
+  <table>
+    <tr><th>#</th><th>Check</th><th>Result</th><th>Detail</th><th>Post-Import Action</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>GL accounts exist at CoA level</strong></td>
+      <td><span class="risk risk-low">PASS</span></td>
+      <td>541/541 SKB1 accounts exist in SKA1 (Chart of Accounts = <span class="mono">UNES</span>, 2,431 total GL accounts)</td>
+      <td>None &mdash; verified automatically</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Bank GL reconciliation</strong></td>
+      <td><span class="risk risk-low">PASS</span></td>
+      <td>
+        ETB01 &rarr; GL 0001044714 &#10003;<br>
+        ETB02 &rarr; GL 0001044715 &#10003;<br>
+        USD01 &rarr; GL 0001044711 &#10003;<br>
+        All 3 reconciliation accounts exist in STEM's SKB1.
+      </td>
+      <td>None &mdash; verified automatically</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>3</td>
+      <td><strong>F110 payment run</strong></td>
+      <td><span class="risk risk-critical">BLOCKED</span></td>
+      <td>T042I (ranking order) and T042C (payment method/co code/country) are missing. FBZP chain broken at levels 4 and 5 of 6.</td>
+      <td>Fix T042I + T042C via <span class="mono">FBZP</span> <strong>before</strong> testing F110. See Mitigation Plan below.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Number ranges</strong></td>
+      <td><span class="risk risk-medium">MANUAL</span></td>
+      <td>
+        <strong>FI (RF_BELEG):</strong> 53 ranges exist (counters at 0 = fresh copy) &#10003;<br>
+        <strong>FM (FMRESERV):</strong> No ranges &mdash; needed for FM postings<br>
+        <strong>CO (RK_BELEG):</strong> No ranges &mdash; needed for CO postings<br>
+        <strong>AA (ANKR):</strong> No ranges &mdash; needed for asset creation
+      </td>
+      <td>
+        Run <span class="mono" style="color: var(--yellow); font-weight: 700;">OBH2</span> (Copy Number Ranges) in <strong>each target environment</strong> for:
+        <ul style="margin: 0.3rem 0 0 1rem;">
+          <li>FI document numbers (RF_BELEG) &mdash; already copied, verify</li>
+          <li>FM reservations (FMRESERV)</li>
+          <li>CO documents (RK_BELEG)</li>
+          <li>Asset numbers (ANKR)</li>
+        </ul>
+        <em style="color: var(--muted);">Manual task per environment &mdash; number ranges are NEVER transported (risk of counter overwrite).</em>
+      </td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Posting periods</strong></td>
+      <td><span class="risk risk-low">PASS</span></td>
+      <td>T001B correctly excluded from transport. Fiscal Year Variant = <span class="mono">K4</span>.</td>
+      <td>Open periods via <span class="mono">OB52</span> in each target environment. Manual task.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>User &rarr; tolerance group assignment</strong></td>
+      <td><span class="risk risk-low">PASS</span></td>
+      <td>13 tolerance tiers are in the transport (T043T). Groups will be created on import.</td>
+      <td>Assign FI users to tolerance groups via <span class="mono">OB57</span> in each target environment.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>7</td>
+      <td><strong>Commitment items &rarr; GL mapping</strong> <span class="new-badge">NEW</span></td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td>541 GL accounts have <strong>no commitment items mapped</strong> via FMDERIVE. FM budget availability checks will fail silently. Commitment postings will not generate.</td>
+      <td>Create commitment items via <span class="mono">FMCI</span> and update derivation rules via <span class="mono">FMDERIVE</span>. See Discovery #1.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>8</td>
+      <td><strong>Cost elements for CO</strong> <span class="new-badge">NEW</span></td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td><strong>No cost elements exist</strong> in controlling area STEM. EC01 does not copy cost element master data. All P&amp;L postings with CO assignment will hard-fail.</td>
+      <td>Mass-create primary cost elements via <span class="mono">OKTZ</span>. Create secondary cost elements via <span class="mono">KA01</span>/<span class="mono">KA06</span>. See Discovery #2.</td>
+    </tr>
+  </table>
+
+  <!-- Summary bar -->
+  <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+    <div style="background: rgba(74,222,128,0.15); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--green); font-weight: 700;">3 PASS</span> <span style="color: var(--muted);">&mdash; verified automatically</span>
+    </div>
+    <div style="background: rgba(248,113,113,0.15); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--red); font-weight: 700;">3 BLOCKED/MISSING</span> <span style="color: var(--muted);">&mdash; FBZP chain + commitment items + cost elements</span>
+    </div>
+    <div style="background: rgba(251,191,36,0.15); padding: 0.5rem 1rem; border-radius: 8px;">
+      <span style="color: var(--yellow); font-weight: 700;">2 MANUAL</span> <span style="color: var(--muted);">&mdash; OBH2 + OB52 + OB57 per environment</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MANUAL POST-COPY TASKS ====================== -->
+<div class="section" style="border: 2px solid var(--yellow);">
+  <h2><span class="icon">&#128221;</span> Manual Post-Copy Tasks (per environment)</h2>
+  <div class="explain warn">
+    <strong>Context:</strong> These tasks must be performed <strong>manually in each target environment</strong>
+    (D01 &rarr; TS3 &rarr; Production) after the transport is imported. They cannot be transported because
+    they either contain counter state (number ranges) or are environment-specific (periods, user assignments).
+  </div>
+
+  <!-- NUMBER RANGES -->
+  <h3 style="margin-top: 1.5rem;">Number Ranges &mdash; <span class="mono">OBH2</span> (Copy Number Ranges)</h3>
+  <div class="explain">
+    <strong>How to copy:</strong> Transaction <span class="mono">OBH2</span> &rarr; select source company code
+    (e.g., <span class="mono">IBE</span>) &rarr; target = <span class="mono">STEM</span>.
+    This copies all number range intervals from the source. Run <strong>once per environment</strong>.
+  </div>
+
+  <table>
+    <tr>
+      <th>NR Object</th>
+      <th>Description</th>
+      <th>Module</th>
+      <th>TCode</th>
+      <th>STEM</th>
+      <th>IBE (ref)</th>
+      <th>Status</th>
+      <th>What Fails Without It</th>
+    </tr>
+    <tr>
+      <td class="mono">RF_BELEG</td>
+      <td>FI Document Numbers</td>
+      <td><span class="area-tag area-fi">FI</span></td>
+      <td class="mono">FBN1</td>
+      <td>10 ranges</td>
+      <td>6</td>
+      <td><span class="risk risk-low">OK</span></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td class="mono">FM_BELEG2</td>
+      <td>FM Budget Monitoring Docs</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td>1 range</td>
+      <td>1</td>
+      <td><span class="risk risk-low">OK</span></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">ANLAGENNR</td>
+      <td>Asset Number Ranges</td>
+      <td><span class="area-tag area-aa">AA</span></td>
+      <td class="mono">AS08</td>
+      <td><strong>0</strong></td>
+      <td>24</td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td>Cannot create fixed assets (AS01). Asset master creation fails with "no number range".</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">FIAA-BELNR</td>
+      <td>Asset Accounting Documents</td>
+      <td><span class="area-tag area-aa">AA</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>2</td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td>Asset depreciation runs (AFAB) and asset postings fail &mdash; no document number assigned.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">RK_BELEG</td>
+      <td>CO Document Numbers</td>
+      <td><span class="area-tag area-co">CO</span></td>
+      <td class="mono">KANK</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td>Cost center postings, internal orders, and CO allocations fail &mdash; no CO document number.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">BUED_DOCNR</td>
+      <td>FM Entry Document Number</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>4</td>
+      <td><span class="risk risk-critical">MISSING</span></td>
+      <td>FM budget entries (FMBB) fail. No document number for budget postings.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">BUED_DOFAM</td>
+      <td>Budgeting Document Family</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-high">MISSING</span></td>
+      <td>Budget document family numbering. Required for structured budget entry.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">BULI_DOCNR</td>
+      <td>FM Budgeting Line Item Number</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-high">MISSING</span></td>
+      <td>FM budget line items cannot be created.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">FM_POSIT1</td>
+      <td>FM Commitment Item Position</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-high">MISSING</span></td>
+      <td>Internal position numbering for commitment items.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">CF_DOC</td>
+      <td>Fiscal Year Change Document</td>
+      <td><span class="area-tag area-fi">PSM-FM</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-high">MISSING</span></td>
+      <td>FM fiscal year change/carry forward cannot generate documents.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">CAJO_DOC2</td>
+      <td>Cash Journal Documents</td>
+      <td><span class="area-tag area-fi">FI</span></td>
+      <td class="mono">FBCJC0</td>
+      <td><strong>0</strong></td>
+      <td>1</td>
+      <td><span class="risk risk-medium">MISSING</span></td>
+      <td>Cash journal postings (FBCJ) fail. Only needed if STEM uses cash journal.</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td class="mono">RP_REINR</td>
+      <td>Trip Number Ranges</td>
+      <td><span class="area-tag area-tech">TRAVEL</span></td>
+      <td class="mono">SNUM</td>
+      <td><strong>0</strong></td>
+      <td>2</td>
+      <td><span class="risk risk-medium">MISSING</span></td>
+      <td>Travel expense creation fails. Only needed if STEM uses Travel Management.</td>
+    </tr>
+  </table>
+
+  <div style="background: rgba(251,191,36,0.1); border-radius: 8px; padding: 1rem; margin-top: 1rem; border: 1px solid var(--yellow);">
+    <strong style="color: var(--yellow);">Summary:</strong> STEM has <strong>2 of 12</strong> number range objects.
+    <strong>10 are missing</strong> (4 critical, 4 high, 2 medium).
+    Run <span class="mono" style="font-weight: 700;">OBH2</span> from reference company code <span class="mono">IBE</span>
+    to copy all missing ranges in one step. Then verify in <span class="mono">FBN1</span> / <span class="mono">SNUM</span>.
+  </div>
+
+  <!-- OPEN PERIODS -->
+  <h3 style="margin-top: 2rem;">Open Posting Periods (per module, per environment)</h3>
+  <div class="explain warn">
+    <strong>Critical:</strong> After transport import, <strong>all posting periods for STEM are closed by default</strong>.
+    No postings can be made in any module until periods are opened manually. This must be done in
+    <strong>every target environment</strong> independently.
+  </div>
+
+  <table>
+    <tr><th>Module</th><th>Transaction</th><th>Table</th><th>What To Open</th><th>Impact If Skipped</th></tr>
+    <tr>
+      <td><span class="area-tag area-fi">FI</span> <strong>Financial Accounting</strong></td>
+      <td class="mono">OB52</td>
+      <td class="mono">T001B</td>
+      <td>Open current + prior period for all account types (Assets, Vendors, Customers, GL). Fiscal Year Variant = <span class="mono">K4</span>.</td>
+      <td><span class="risk risk-critical">CRITICAL</span> &mdash; ALL FI postings blocked: "Posting period 003 2026 is not open"</td>
+    </tr>
+    <tr>
+      <td><span class="area-tag area-fi">PSM-FM</span> <strong>Funds Management</strong></td>
+      <td class="mono">FMBS</td>
+      <td class="mono">BPBKFM</td>
+      <td>Open budget periods for FM Area 01 / company code STEM. Controls budget entry (FMBB), budget transfers, carry-forward.</td>
+      <td><span class="risk risk-critical">CRITICAL</span> &mdash; No budget postings, no commitment creation, no funds reservation</td>
+    </tr>
+    <tr>
+      <td><span class="area-tag area-co">CO</span> <strong>Controlling</strong></td>
+      <td class="mono">OKP1</td>
+      <td class="mono">COKP</td>
+      <td>Open CO periods for controlling area STEM. Controls cost center postings, internal order postings, allocations.</td>
+      <td><span class="risk risk-high">HIGH</span> &mdash; CO postings blocked, but FI postings still create CO documents (they queue up)</td>
+    </tr>
+    <tr>
+      <td><span class="area-tag area-aa">PS</span> <strong>Project System</strong></td>
+      <td class="mono">OKP1</td>
+      <td class="mono">COKP</td>
+      <td>PS uses the same CO periods. If PS (WBS elements, networks) is used for STEM, verify CO periods cover PS fiscal years.</td>
+      <td><span class="risk risk-medium">MEDIUM</span> &mdash; Only if STEM uses Project System (WBS-based budgeting)</td>
+    </tr>
+    <tr>
+      <td><span class="area-tag area-aa">AA</span> <strong>Asset Accounting</strong></td>
+      <td class="mono">OAAQ</td>
+      <td class="mono">T093D</td>
+      <td>Verify fiscal year is open for asset depreciation. AA fiscal year close is separate from FI (run via AJAB).</td>
+      <td><span class="risk risk-medium">MEDIUM</span> &mdash; Depreciation runs (AFAB) fail if AA fiscal year not open</td>
+    </tr>
+  </table>
+
+  <div class="explain" style="margin-top: 0.5rem;">
+    <strong>Recommended order:</strong> FI (OB52) first &rarr; then FM (FMBS) &rarr; then CO (OKP1) &rarr; then AA (OAAQ).
+    FI must be open before any other module can post, since all modules generate FI documents.
+  </div>
+
+  <!-- ALL MANUAL TASKS — COMPLETE CHECKLIST -->
+  <h3 style="margin-top: 2rem;">Complete Manual Post-Copy Checklist</h3>
+  <div class="explain">
+    <strong>Instructions:</strong> Work through this checklist <strong>top to bottom</strong> in each target environment.
+    Tasks are grouped by functional area and ordered by dependency (do FI first, then FM, then CO, etc.).
+  </div>
+
+  <!-- FI CORE -->
+  <h3><span class="area-tag area-fi">FI</span> Financial Accounting</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>Assign users to tolerance groups</strong></td>
+      <td class="mono">OB57</td>
+      <td>Assign FI users to one of the 13 tolerance tiers for STEM. Without this, users get the default (most restrictive) tolerance &mdash; may block postings above a minimal amount.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Verify document type &harr; number range mapping</strong></td>
+      <td class="mono">OBA7</td>
+      <td>Confirm document types (SA, KR, RE, etc.) are mapped to the correct number ranges for STEM. The copy may reference ranges that don't exist in the target.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Verify automatic account determination</strong></td>
+      <td class="mono">OBYC</td>
+      <td>Check that GR/IR clearing account (WRX), exchange rate differences (KDF/KDB), cash discount (SKE), and tax accounts are correctly assigned for STEM. Copied values may reference GL accounts from the source.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Verify tax codes for country CN</strong></td>
+      <td class="mono">FTXP</td>
+      <td>Confirm tax codes exist for China (CN). Source company code (Ethiopia) may have different VAT/WHT structure. Check tax calculation procedure assignment via <span class="mono">OBBG</span>.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Set up withholding tax</strong></td>
+      <td class="mono">EWT</td>
+      <td>T001Q has section code 0002. Verify extended withholding tax types and codes are configured for CN tax regulations. Use <span class="mono">OBWP</span> / <span class="mono">OBWQ</span>.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Configure substitution / validation rules</strong></td>
+      <td class="mono">GGB1 / GGB0</td>
+      <td>Check existing FI substitution and validation rules. If they filter by company code, add STEM. If they use wildcards, verify they work correctly for STEM's GL structure.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>Verify exchange rate type</strong></td>
+      <td class="mono">OB08</td>
+      <td>STEM currency is USD but operates in China (CNY). Ensure exchange rates USD/CNY and USD/EUR are maintained. Check rate type assignment via <span class="mono">OB07</span>.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><strong>Correspondence &mdash; forms and programs</strong></td>
+      <td class="mono">OB77 / OB78</td>
+      <td>Verify correspondence types (account statements, open item lists, payment notices) are configured for STEM. Check form assignments match target SAP system's SAPscript/Smartforms.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- BANK / PAYMENTS -->
+  <h3><span class="area-tag area-bank">BANK</span> Banking &amp; Payments</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>9</td>
+      <td><strong>Replace house bank CBE01</strong></td>
+      <td class="mono">FI12</td>
+      <td>CBE01 = Commercial Bank of Ethiopia &mdash; wrong for China. Create correct house bank with Chinese bank details (SWIFT, bank key, country CN). Enter real bank account numbers (currently blank).</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><strong>Fix FBZP &mdash; T042C</strong></td>
+      <td class="mono">FBZP</td>
+      <td>"Payment methods in company code" &mdash; define which payment methods are active for STEM in country CN. Set min/max amounts, form assignments, DMEE format tree.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><strong>Fix FBZP &mdash; T042I</strong></td>
+      <td class="mono">FBZP</td>
+      <td>"Bank determination &rarr; Ranking order" &mdash; assign house bank accounts to payment methods with priority. Without this, F110 produces empty proposals.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td><strong>DMEE payment format tree</strong></td>
+      <td class="mono">DMEE</td>
+      <td>Verify payment medium format (DMEE tree) exists for the payment methods assigned to STEM. Chinese banks may require a different file format than Ethiopian banks. Check via <span class="mono">OBPM1</span>.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><strong>Recreate OBPM4 selection variants</strong></td>
+      <td class="mono">OBPM4</td>
+      <td>Payment medium selection variants are <strong>NEVER transported</strong>. Recreate in each target environment manually after verifying DMEE format.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><strong>Electronic bank statement config</strong></td>
+      <td class="mono">OT83 / FF.5</td>
+      <td>If STEM will use electronic bank statements, configure the bank statement mapping (account symbol &rarr; posting rule &rarr; GL account) for the new house bank.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td><strong>Update planning groups for correct currencies</strong></td>
+      <td class="mono">OT42</td>
+      <td>Change planning group descriptions from ETB1/ETB2 to reflect actual currencies (CNY/USD). Affects cash position reports (FF7A).</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- PSM-FM -->
+  <h3><span class="area-tag area-fi">PSM-FM</span> Funds Management</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>16</td>
+      <td><strong>Verify FM area assignment</strong></td>
+      <td class="mono">OF01</td>
+      <td>Confirm STEM is assigned to FM Area 01 (AAACC_OBJ in transport has FM Area 01). Verify FISTL/GEBER/KOSTL field status (required vs optional).</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td><strong>Verify FM derivation rules</strong></td>
+      <td class="mono">FMDERIVE</td>
+      <td>Check if existing derivation strategies include STEM. If not, create new derivation rules so FM account assignments are derived automatically during posting.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td><strong>Create fund centers</strong></td>
+      <td class="mono">FMSA</td>
+      <td>Create the fund center hierarchy for STEM. No fund centers are in this transport &mdash; must be created as master data.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td><strong>Create funds (GEBER)</strong></td>
+      <td class="mono">FM5I</td>
+      <td>Create fund master records for STEM. Required for budget postings and commitment tracking.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.1);">
+      <td>20</td>
+      <td><strong>Create commitment items and map to GL accounts</strong> <span class="new-badge">UPGRADED</span></td>
+      <td class="mono">FMCI / FMDERIVE</td>
+      <td><strong style="color: var(--red);">[CRITICAL &mdash; upgraded from MEDIUM based on Discovery #1]</strong><br>
+        Create commitment items for STEM via <span class="mono">FMCI</span>. Then update FM derivation rules via <span class="mono">FMDERIVE</span> to map GL accounts &rarr; commitment items. Without this: FM budget availability checks fail silently, commitment postings do not generate, funds reservations do not work, and budget vs actual reporting is incomplete. Every GL account that participates in FM must have a corresponding commitment item.
+      </td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td><strong>Verify AVC (budget check)</strong></td>
+      <td class="mono">FMBB / FM5T</td>
+      <td>Confirm Availability Control is active. Verify tolerance keys and budget profile are correctly mapped for STEM's FM Area.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td><strong>Budget carry-forward settings</strong></td>
+      <td class="mono">FMBN / 2KEC</td>
+      <td>Configure carry-forward rules for STEM if applicable. Verify fiscal year change settings (CF_DOC number range needed).</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- CO -->
+  <h3><span class="area-tag area-co">CO</span> Controlling</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>23</td>
+      <td><strong>Create cost centers</strong></td>
+      <td class="mono">KS01</td>
+      <td>Create cost center hierarchy and cost centers for STEM. No CO master data is in this transport.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td><strong>Verify default cost center / profit center</strong></td>
+      <td class="mono">OKB9</td>
+      <td>Set default account assignment (cost center / profit center) for GL accounts that require CO assignment. Without this, FI postings to P&amp;L accounts fail with "enter a cost center".</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td><strong>Create profit centers</strong></td>
+      <td class="mono">KE51</td>
+      <td>Create profit center hierarchy and profit centers for STEM if Profit Center Accounting is active.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td><strong>CO allocation cycle settings</strong></td>
+      <td class="mono">KSV5 / KSU5</td>
+      <td>If STEM participates in CO allocations (assessment/distribution), add STEM cost centers to existing cycles or create new ones.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.1);">
+      <td>42</td>
+      <td><strong>Create primary cost elements from GL accounts</strong> <span class="new-badge">NEW</span></td>
+      <td class="mono">OKTZ / KA06</td>
+      <td><strong style="color: var(--red);">[CRITICAL &mdash; Discovery #2]</strong><br>
+        EC01 does NOT copy cost element master data. Mass-create primary cost elements (category 1) via <span class="mono">OKTZ</span> (automatic creation from chart of accounts) or <span class="mono">KA06</span> (mass create with explicit control). Every P&amp;L GL account that posts to CO must have a corresponding cost element. Without this, ALL expense/revenue postings with CO assignment fail with: "Cost element does not exist in controlling area STEM".
+      </td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr style="background: rgba(251,146,60,0.1);">
+      <td>43</td>
+      <td><strong>Create secondary cost elements for CO allocations</strong> <span class="new-badge">NEW</span></td>
+      <td class="mono">KA01 / KA06</td>
+      <td><strong style="color: var(--orange);">[HIGH &mdash; Discovery #2]</strong><br>
+        Create secondary cost elements for internal CO processes:
+        <ul style="margin: 0.3rem 0 0 1rem;">
+          <li><strong>Category 41</strong> &mdash; Overhead/Assessment: needed for assessment cycles (KSV5)</li>
+          <li><strong>Category 42</strong> &mdash; Settlement: needed for internal order settlement to receivers</li>
+          <li><strong>Category 43</strong> &mdash; Internal Activity: needed for activity allocation (KB21N)</li>
+        </ul>
+        Without secondary cost elements, CO allocation and settlement processes cannot execute for STEM.
+      </td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+  </table>
+
+  <!-- AA -->
+  <h3><span class="area-tag area-aa">AA</span> Asset Accounting</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>27</td>
+      <td><strong>Verify account determination for assets</strong></td>
+      <td class="mono">AO90</td>
+      <td>Check that asset class &rarr; GL account mapping is correct for STEM. Acquisition, depreciation, and retirement accounts must reference GLs in STEM's SKB1.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td><strong>Verify depreciation keys</strong></td>
+      <td class="mono">AFAMS</td>
+      <td>Confirm depreciation methods and useful lives are correct for the 3 depreciation areas (01=Book, 02=Tax, 03=Group). Chinese tax depreciation rules may differ from Ethiopian.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td><strong>Create asset classes if needed</strong></td>
+      <td class="mono">OAOA</td>
+      <td>Verify existing asset classes (A003, A010 in transport) are sufficient. Create STEM-specific classes if needed.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- MM / IV -->
+  <h3><span class="area-tag area-mm">MM</span> Materials Management / Invoice Verification</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>30</td>
+      <td><strong>Verify invoice tolerance values</strong></td>
+      <td class="mono">OMR6</td>
+      <td>Review the 13 tolerance keys (T169G). Values copied from Ethiopia may not match Chinese invoice amounts and currency scale. Too wide = invoices auto-approved. Too narrow = excessive blocking.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>31</td>
+      <td><strong>Verify purchasing organization assignment</strong></td>
+      <td class="mono">OX17</td>
+      <td>Confirm STEM is assigned to a purchasing organization. Without this, purchase orders cannot reference STEM.</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>Verify GR/IR clearing account</strong></td>
+      <td class="mono">OBYC (WRX)</td>
+      <td>Confirm GR/IR clearing GL account exists in STEM's SKB1 and is correctly assigned in automatic posting config.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+  </table>
+
+  <!-- AR / DUNNING -->
+  <h3><span class="area-tag area-fi">FI-AR</span> Accounts Receivable / Dunning</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>33</td>
+      <td><strong>Verify dunning procedure assignment</strong></td>
+      <td class="mono">FBMP</td>
+      <td>T047 has a dunning area for STEM. Verify the dunning procedure (levels, intervals, forms) is correct for the China office context.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td><strong>Verify dunning form assignment</strong></td>
+      <td class="mono">OB96</td>
+      <td>Check dunning form (SAPscript/Smartform) exists in target system and is assigned to the dunning procedure for STEM.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- MASTER DATA -->
+  <h3><span class="area-tag area-tech">MASTER DATA</span> Vendors, Customers, Banks</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>35</td>
+      <td><strong>Extend vendors to STEM</strong></td>
+      <td class="mono">FK01 / XK01</td>
+      <td>Existing vendors need a company code segment for STEM (reconciliation account, payment terms, payment methods). Without this, no invoices can be posted for STEM.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>36</td>
+      <td><strong>Extend customers to STEM</strong></td>
+      <td class="mono">FD01 / XD01</td>
+      <td>If STEM issues invoices to external parties, extend customer master records with STEM company code segment.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+    <tr>
+      <td>37</td>
+      <td><strong>Create bank master data for CN</strong></td>
+      <td class="mono">FI01</td>
+      <td>Create bank directory entries for Chinese banks that STEM vendors will use. SAP needs bank keys for payment processing.</td>
+      <td><span class="risk risk-medium">MEDIUM</span></td>
+    </tr>
+  </table>
+
+  <!-- AUTHORIZATION -->
+  <h3><span class="area-tag area-tech">SECURITY</span> Authorization</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>38</td>
+      <td><strong>Update authorization roles</strong></td>
+      <td class="mono">PFCG</td>
+      <td>Add company code STEM to authorization object <span class="mono">F_BKPF_BUK</span> (and related objects) in user roles. Without this, users get "no authorization for company code STEM".</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td>39</td>
+      <td><strong>Assign users to roles</strong></td>
+      <td class="mono">SU01</td>
+      <td>Assign updated roles to users who will work with STEM. Verify via <span class="mono">SU53</span> after first posting attempt.</td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+    </tr>
+  </table>
+
+  <!-- CONSOLIDATION -->
+  <h3><span class="area-tag area-fi">FI-LC</span> Consolidation / Reporting</h3>
+  <table>
+    <tr><th>#</th><th>Task</th><th>TCode</th><th>What To Do</th><th>Priority</th></tr>
+    <tr>
+      <td>40</td>
+      <td><strong>Verify consolidation group assignment</strong></td>
+      <td class="mono">OC13</td>
+      <td>T882 registers STEM as consolidation unit. Verify it is assigned to the correct consolidation group for UNESCO consolidated reporting.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+    <tr>
+      <td>41</td>
+      <td><strong>Add STEM to reporting hierarchies</strong></td>
+      <td class="mono">SE16 / custom</td>
+      <td>Add STEM to any financial reporting hierarchies, drilldown reports, or BI extractors that filter by company code.</td>
+      <td><span class="risk risk-low">LOW</span></td>
+    </tr>
+  </table>
+
+  <!-- SUMMARY -->
+  <div style="background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(167,139,250,0.1)); border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; border: 1px solid var(--border);">
+    <h3 style="color: var(--accent); margin-bottom: 0.75rem;">Task Summary: 43 Manual Tasks <span class="new-badge">+2 NEW, +1 UPGRADED</span></h3>
+    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+      <div><span style="color: var(--red); font-weight: 700; font-size: 1.3rem;">9</span> <span style="color: var(--muted);">CRITICAL</span> <span style="color: var(--red); font-size: 0.75rem;">(was 7 &mdash; +1 upgraded CI, +1 new cost elements)</span></div>
+      <div><span style="color: var(--orange); font-weight: 700; font-size: 1.3rem;">13</span> <span style="color: var(--muted);">HIGH</span> <span style="color: var(--orange); font-size: 0.75rem;">(was 12 &mdash; +1 new secondary cost elements)</span></div>
+      <div><span style="color: var(--yellow); font-weight: 700; font-size: 1.3rem;">10</span> <span style="color: var(--muted);">MEDIUM</span> <span style="color: var(--yellow); font-size: 0.75rem;">(was 11 &mdash; CI moved to CRITICAL)</span></div>
+      <div><span style="color: var(--green); font-weight: 700; font-size: 1.3rem;">11</span> <span style="color: var(--muted);">LOW</span></div>
+    </div>
+    <p style="color: var(--muted); margin-top: 0.75rem; font-size: 0.85rem;">
+      Recommended approach: Complete all CRITICAL tasks first (1-2 days), then HIGH (2-3 days), then test with a sample FI posting + F110 payment run before proceeding with MEDIUM/LOW tasks.
+      <strong style="color: var(--red);">NEW in v2:</strong> Cost elements and commitment items must be created BEFORE any P&amp;L posting or FM budget check can succeed.
+    </p>
+  </div>
+</div>
+
+</div>
+
+<!-- ====================== COPY RISK VALIDATION ====================== -->
+
+<!-- VALIDATION RESULTS -->
+<div class="section" style="border: 2px solid var(--red);">
+  <h2><span class="icon">&#128680;</span> Copy Risk Validation &mdash; Automated Checks + User Testing</h2>
+  <div class="explain danger">
+    <strong>Context:</strong> This transport was created by <strong>copying an existing company code</strong>.
+    SAP's copy function (EC01) duplicates all customizing tables, but several critical settings need
+    manual adjustment. The automated checks below were run live against D01, and two additional discoveries
+    were made during user testing.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--muted); margin-bottom: 1.5rem;">
+    <strong>Company Code STEM:</strong> "China Institute" &bull; Country: <strong>CN</strong> (China) &bull; Currency: <strong>USD</strong>
+  </div>
+
+  <!-- Validation results table -->
+  <table>
+    <tr>
+      <th style="width: 40px;">#</th>
+      <th>Check</th>
+      <th>What It Validates</th>
+      <th style="width: 80px;">Result</th>
+      <th>Detail</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td><strong>GL Reconciliation</strong></td>
+      <td>Bank account GL accounts (T012K.HKONT) exist in STEM's chart of accounts (SKB1)</td>
+      <td><span class="risk risk-low" style="font-size: 0.8rem;">PASS</span></td>
+      <td>
+        ETB01 &rarr; GL 0001044714 &#10003;<br>
+        ETB02 &rarr; GL 0001044715 &#10003;<br>
+        USD01 &rarr; GL 0001044711 &#10003;<br>
+        <em style="color: var(--green);">All 3 reconciliation accounts exist in STEM's 541 GL accounts.</em>
+      </td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>2</td>
+      <td><strong>Ranking Order (T042I)</strong></td>
+      <td>F110 can automatically select which bank to pay from</td>
+      <td><span class="risk risk-critical" style="font-size: 0.8rem;">FAIL</span></td>
+      <td>
+        <strong>0 rows in T042I for STEM.</strong><br>
+        F110 payment run will generate an <strong>empty payment proposal</strong> &mdash; it cannot determine
+        which bank account to use for each payment method. Payments will silently fail with no error message.
+      </td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>3</td>
+      <td><strong>Payment Method Chain (T042C)</strong></td>
+      <td>Payment methods are fully configured per company code + country</td>
+      <td><span class="risk risk-critical" style="font-size: 0.8rem;">FAIL</span></td>
+      <td>
+        <strong>T042C not readable / 0 rows for STEM.</strong><br>
+        The FBZP dependency chain is: T042 &rarr; T042B &rarr; T042E &rarr; <span style="color:var(--red);font-weight:700;">T042C (MISSING)</span> &rarr; T042I &rarr; T012K.<br>
+        Without T042C, the chain is broken at level 4 of 6. F110 cannot process payments.
+      </td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>4</td>
+      <td><strong>Country Match</strong></td>
+      <td>Payment methods (T042E) are defined for STEM's country</td>
+      <td><span class="risk risk-critical" style="font-size: 0.8rem;">FAIL</span></td>
+      <td>
+        STEM country = <strong>CN</strong> (China).<br>
+        T042E payment methods (M, O, U) were copied but <strong>may reference the source country, not CN</strong>.<br>
+        If the source company code was in a different country (e.g., ET for Ethiopia &mdash; suggested by ETB bank accounts),
+        the payment methods won't match STEM's country key.
+      </td>
+    </tr>
+    <tr style="background: rgba(251,191,36,0.08);">
+      <td>5</td>
+      <td><strong>Bank Account Numbers</strong></td>
+      <td>T012K has real bank account numbers, not placeholders</td>
+      <td><span class="risk risk-medium" style="font-size: 0.8rem;">WARN</span></td>
+      <td>
+        <strong>All 3 bank account numbers are EMPTY:</strong><br>
+        ETB01: BANKN = (blank)<br>
+        ETB02: BANKN = (blank)<br>
+        USD01: BANKN = (blank)<br>
+        <em>This is expected for a copy in D01 (dev) &mdash; real account numbers should be entered before production transport.
+        However, F110 may fail or produce invalid payment files without real account numbers.</em>
+      </td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>6</td>
+      <td><strong>Commitment Items &rarr; GL Mapping</strong> <span class="new-badge">NEW v2</span></td>
+      <td>GL accounts have commitment items mapped via FMDERIVE for FM budget control</td>
+      <td><span class="risk risk-critical" style="font-size: 0.8rem;">FAIL</span></td>
+      <td>
+        <strong>541 GL accounts have NO commitment items mapped.</strong><br>
+        FM budget availability checks will fail silently. Commitment postings will not generate.
+        Budget vs actual reporting will be incomplete. This was discovered during actual SAP testing, not RFC validation.
+      </td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>7</td>
+      <td><strong>Cost Elements</strong> <span class="new-badge">NEW v2</span></td>
+      <td>Primary and secondary cost elements exist in controlling area STEM</td>
+      <td><span class="risk risk-critical" style="font-size: 0.8rem;">FAIL</span></td>
+      <td>
+        <strong>No cost elements exist in controlling area STEM.</strong><br>
+        EC01 copies customizing but not master data. All P&amp;L postings with CO assignment will fail with:
+        <em>"Cost element does not exist in controlling area STEM"</em>. This blocks virtually all expense/revenue postings.
+      </td>
+    </tr>
+  </table>
+
+  <!-- Overall verdict -->
+  <div style="background: rgba(248,113,113,0.15); border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; border: 1px solid var(--red);">
+    <h3 style="color: var(--red); margin-bottom: 0.5rem; font-size: 1.1rem;">
+      Verdict: 5 FAIL / 1 WARN / 1 PASS &mdash; Multiple Critical Gaps
+    </h3>
+    <p style="color: var(--text); font-size: 0.95rem;">
+      The automatic payment program (F110) for company code STEM <strong>will not work</strong> after importing this transport.
+      The FBZP configuration chain is broken at two levels (T042C and T042I are missing), and there is a
+      country mismatch between the company code definition (CN) and the payment method configuration.
+    </p>
+    <p style="color: var(--text); font-size: 0.95rem; margin-top: 0.5rem;">
+      <strong>Additionally (v2):</strong> ALL P&amp;L postings requiring CO assignment will fail because no cost elements exist.
+      FM budget checks will fail silently because commitment items are not mapped to GL accounts. These two discoveries
+      mean that <strong>STEM cannot perform any meaningful financial posting</strong> until cost elements are created
+      and commitment items are mapped.
+    </p>
+    <p style="color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;">
+      Balance sheet postings without CO assignment (e.g., bank transfers) will work.
+      Basic GL inquiry and reporting on the chart of accounts will work.
+    </p>
+  </div>
+</div>
+
+<!-- INCONSISTENCY ANALYSIS -->
+<div class="section" style="border: 2px solid var(--orange);">
+  <h2><span class="icon">&#128269;</span> Copy Inconsistency Analysis</h2>
+  <div class="explain warn">
+    <strong>Observation:</strong> The company code is defined as <strong>"China Institute" (CN, USD)</strong>,
+    but the house bank has <strong>Ethiopian Birr (ETB)</strong> accounts and a bank ID suggesting
+    <strong>Commercial Bank of Ethiopia (CBE)</strong>. This is a clear sign that the config was copied
+    from an <strong>Ethiopian field office</strong> and not yet adapted for China.
+  </div>
+
+  <h3>Inconsistencies Found</h3>
+  <table>
+    <tr><th>#</th><th>What</th><th>Expected (for China)</th><th>Found (copied)</th><th>Impact</th></tr>
+    <tr>
+      <td>1</td>
+      <td>House Bank ID</td>
+      <td>Chinese bank (e.g., BOC01, ICBC01)</td>
+      <td class="mono">CBE01</td>
+      <td>Wrong bank entirely &mdash; CBE is Commercial Bank of Ethiopia</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Bank Account Currency</td>
+      <td>CNY (Chinese Yuan) or USD</td>
+      <td>ETB (Ethiopian Birr) x2 + USD x1</td>
+      <td>ETB accounts are meaningless for a China office</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Bank Account Numbers</td>
+      <td>Real Chinese bank account numbers</td>
+      <td>(all empty)</td>
+      <td>Placeholders &mdash; need real numbers before go-live</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Planning Groups (T035D)</td>
+      <td>Groups for CNY/USD accounts</td>
+      <td>Groups for ETB1/ETB2/USD1</td>
+      <td>Cash management reports will show wrong currency labels</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Payment Methods (T042E)</td>
+      <td>CN-specific methods</td>
+      <td>Likely ET-specific (M/O/U)</td>
+      <td>Payment methods may not apply in Chinese banking context</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>6</td>
+      <td>Commitment Items <span class="new-badge">NEW</span></td>
+      <td>GL &rarr; CI mapping via FMDERIVE</td>
+      <td>No commitment items mapped</td>
+      <td>FM budget control completely disconnected from FI</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td>7</td>
+      <td>Cost Elements <span class="new-badge">NEW</span></td>
+      <td>Primary + secondary cost elements in CO area STEM</td>
+      <td>None exist (EC01 skips master data)</td>
+      <td>ALL P&amp;L postings to CO blocked with hard error</td>
+    </tr>
+  </table>
+</div>
+
+<!-- MITIGATION PLAN -->
+<div class="section" style="border: 2px solid var(--accent);">
+  <h2><span class="icon">&#128736;</span> Mitigation Plan &mdash; What Needs to Be Fixed</h2>
+
+  <div class="explain">
+    <strong>Priority order:</strong> Fix these items <em>before</em> releasing the transport to TS3.
+    All fixes should be recorded in the same task (D01K9B0CBG) to keep the transport self-contained.
+  </div>
+
+  <h3 style="color: var(--red);">Critical (blocks basic FI/CO/FM operations)</h3>
+  <ul class="checklist">
+    <li>
+      <span class="check-icon check-fail">1</span>
+      <div>
+        <strong>Create primary cost elements from GL accounts</strong> <span class="new-badge">NEW v2</span><br>
+        Transaction: <span class="mono">OKTZ</span> (auto-create) or <span class="mono">KA06</span> (mass create)<br>
+        Action: Create primary cost elements (category 1) for all P&amp;L GL accounts in controlling area STEM. OKTZ reads the chart of accounts and creates matching cost elements automatically.<br>
+        <em>Without this, ALL expense/revenue postings with CO assignment fail. This is the single highest-impact gap.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">2</span>
+      <div>
+        <strong>Create commitment items and map to GL accounts</strong> <span class="new-badge">UPGRADED v2</span><br>
+        Transaction: <span class="mono">FMCI</span> (create CIs) + <span class="mono">FMDERIVE</span> (derivation rules)<br>
+        Action: Create commitment items for each GL account category. Update FM derivation rules to map GL accounts &rarr; commitment items for company code STEM.<br>
+        <em>Without this, FM budget availability checks fail silently and commitment postings do not generate.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">3</span>
+      <div>
+        <strong>Configure T042I &mdash; Bank Ranking Order</strong><br>
+        Transaction: <span class="mono">FBZP</span> &rarr; "Bank determination" &rarr; Ranking order<br>
+        Action: Assign house bank accounts (CBE01/ETB01, CBE01/ETB02, CBE01/USD01) to payment methods (M, O, U) with ranking priority.<br>
+        <em>Without this, F110 produces empty proposals.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">4</span>
+      <div>
+        <strong>Configure T042C &mdash; Payment Methods per Co. Code per Country</strong><br>
+        Transaction: <span class="mono">FBZP</span> &rarr; "Payment methods in company code"<br>
+        Action: Define which payment methods are active for STEM in country CN. Set minimum/maximum amounts, bank optimization flags.<br>
+        <em>This is level 4 of the 6-level FBZP chain &mdash; chain is broken without it.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-fail">5</span>
+      <div>
+        <strong>Verify T042E country alignment</strong><br>
+        Transaction: <span class="mono">FBZP</span> &rarr; "Payment methods in country"<br>
+        Action: Confirm payment methods M, O, U are defined for country CN (not just the source country ET).
+        If not, create CN-specific payment method entries.<br>
+        <em>Country mismatch = F110 silently skips all line items.</em>
+      </div>
+    </li>
+  </ul>
+
+  <h3 style="color: var(--orange);">High (wrong bank for China + secondary cost elements)</h3>
+  <ul class="checklist">
+    <li>
+      <span class="check-icon check-warn">6</span>
+      <div>
+        <strong>Replace house bank CBE01 with correct Chinese bank</strong><br>
+        Transaction: <span class="mono">FI12</span> (House Banks)<br>
+        Action: Either rename CBE01 to the correct bank (e.g., BOC01 for Bank of China), or create a new house bank
+        with the correct SWIFT code, bank key, and country CN. Update T012K with real Chinese bank account numbers in CNY and USD.<br>
+        <em>CBE = Commercial Bank of Ethiopia &mdash; wrong institution for a China office.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">7</span>
+      <div>
+        <strong>Enter real bank account numbers in T012K</strong><br>
+        Transaction: <span class="mono">FI12</span> &rarr; Bank Accounts<br>
+        Action: Fill BANKN field for each account. Currently all 3 are blank.<br>
+        <em>Payment files (DMEE) will be invalid without real account numbers.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon check-warn">8</span>
+      <div>
+        <strong>Create secondary cost elements for CO allocations</strong> <span class="new-badge">NEW v2</span><br>
+        Transaction: <span class="mono">KA01</span> or <span class="mono">KA06</span><br>
+        Action: Create secondary cost elements (categories 41/42/43) for assessment, settlement, and activity allocation.<br>
+        <em>Without these, CO allocation and settlement processes cannot execute.</em>
+      </div>
+    </li>
+  </ul>
+
+  <h3 style="color: var(--yellow);">Medium (cash management / reporting)</h3>
+  <ul class="checklist">
+    <li>
+      <span class="check-icon" style="color: var(--yellow);">9</span>
+      <div>
+        <strong>Update planning groups (T035D/T035U) for correct currencies</strong><br>
+        Transaction: <span class="mono">OT42</span><br>
+        Action: Change planning group descriptions from ETB1/ETB2 to reflect actual currencies (CNY/USD).<br>
+        <em>Affects cash position reports (FF7A) only.</em>
+      </div>
+    </li>
+    <li>
+      <span class="check-icon" style="color: var(--yellow);">10</span>
+      <div>
+        <strong>Verify tolerance keys (T169G) match China AP policy</strong><br>
+        Transaction: <span class="mono">OMR6</span><br>
+        Action: Review the 13 tolerance thresholds. Values copied from Ethiopia may not match Chinese invoice amounts/currency scale.<br>
+        <em>Too wide = invoices auto-approved. Too narrow = excessive blocking.</em>
+      </div>
+    </li>
+  </ul>
+
+  <h3 style="color: var(--green);">Low (cleanup)</h3>
+  <ul class="checklist">
+    <li>
+      <span class="check-icon" style="color: var(--green);">11</span>
+      <div>
+        <strong>Update T012T bank account texts</strong><br>
+        Action: Change descriptions from Ethiopian context to Chinese context (all 3 languages).<br>
+        <em>Cosmetic &mdash; affects dropdown labels in FI12 and F110 only.</em>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- FBZP CHAIN DIAGRAM -->
+<div class="section">
+  <h2><span class="icon">&#128279;</span> FBZP Dependency Chain &mdash; Current State</h2>
+  <div class="explain">
+    The automatic payment program (F110) requires a complete 6-level configuration chain.
+    Two levels are missing for STEM:
+  </div>
+
+  <div class="flow" style="justify-content: center; margin: 1.5rem 0;">
+    <div class="flow-step" style="border-color: var(--green);">
+      <strong>Level 1</strong><br>T042<br>Paying CoCode<br><span class="risk risk-low">OK</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--green);">
+      <strong>Level 2</strong><br>T042B<br>Pmt Methods/CoCode<br><span class="risk risk-low">OK</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--yellow);">
+      <strong>Level 3</strong><br>T042E<br>Pmt Methods/Country<br><span class="risk risk-medium">CHECK</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+      <strong>Level 4</strong><br>T042C<br>Pmt/CoCode/Country<br><span class="risk risk-critical">MISSING</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--red); background: rgba(248,113,113,0.15);">
+      <strong>Level 5</strong><br>T042I<br>Bank Ranking<br><span class="risk risk-critical">MISSING</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--yellow);">
+      <strong>Level 6</strong><br>T012K<br>Bank Accounts<br><span class="risk risk-medium">EMPTY</span>
+    </div>
+  </div>
+
+  <div class="explain danger" style="text-align: center;">
+    <strong>Chain Status: BROKEN at levels 4 and 5.</strong> F110 payment runs will produce empty proposals until T042C and T042I are configured.
+  </div>
+</div>
+
+</div>
+
+<!-- ====================== BLUEPRINT: 3 LAST COMPANY CODES ====================== -->
+<div class="section" style="border-left: 4px solid #a855f7; border: 2px solid rgba(168,85,247,0.4); background: linear-gradient(135deg, rgba(168,85,247,0.06), var(--surface));">
+  <h2 style="color: #a855f7;"><span class="icon">&#128218;</span> <span class="area-tag area-blueprint">BLUEPRINT</span> 3 Last Company Codes Created in P01</h2>
+
+  <!-- Header Cards for all 3 -->
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="background: var(--surface2); padding: 1.25rem; border-radius: 8px; border-top: 3px solid var(--accent);">
+      <span style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">2011 &mdash; Oldest</span><br>
+      <strong style="font-size: 1.3rem; color: var(--accent);">ICTP</strong><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">Int&rsquo;l Centre for Theoretical Physics</span><br>
+      <span style="font-size: 0.85rem;"><strong>Trieste, Italy</strong> | IT | EUR | CoA: UNES | FY: K4</span><br>
+      <span style="font-size: 0.85rem; color: var(--green);">8,319 keys &bull; 6 transports &bull; 4 people</span>
+    </div>
+    <div style="background: var(--surface2); padding: 1.25rem; border-radius: 8px; border-top: 3px solid var(--yellow);">
+      <span style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">2013 &mdash; Middle</span><br>
+      <strong style="font-size: 1.3rem; color: var(--yellow);">MGIE</strong><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">Mahatma Gandhi Institute of Education</span><br>
+      <span style="font-size: 0.85rem;"><strong>New Delhi, India</strong> | IN | USD | CoA: UNES | FY: K4</span><br>
+      <span style="font-size: 0.85rem; color: var(--green);">4,853 keys &bull; 1 transport &bull; 1 person</span>
+    </div>
+    <div style="background: var(--surface2); padding: 1.25rem; border-radius: 8px; border-top: 3px solid #a855f7;">
+      <span style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">2016 &mdash; Most Recent</span><br>
+      <strong style="font-size: 1.3rem; color: #a855f7;">ICBA</strong><br>
+      <span style="color: var(--muted); font-size: 0.85rem;">Inst. Capacity Building Africa</span><br>
+      <span style="font-size: 0.85rem;"><strong>Addis Ababa, Ethiopia</strong> | ET | USD | CoA: UNES | FY: K4</span><br>
+      <span style="font-size: 0.85rem; color: var(--green);">5,122 keys &bull; 5 transports &bull; 3 people</span>
+    </div>
+  </div>
+
+  <div style="background: var(--surface2); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+    <span style="color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Source</span><br>
+    Reverse-engineered from P01 transport history (E071K) + Gold DB (24M+ rows, 52 tables)
+  </div>
+
+  <!-- Why This Matters -->
+  <div class="explain" style="border-left-color: #a855f7;">
+    <strong>Why this matters:</strong> These are the <strong>only 3 company codes ever created in UNESCO&rsquo;s SAP landscape</strong> (P01 production).
+    Together they provide the complete empirical record of how UNESCO creates institutes in SAP. By comparing all three against STEM,
+    we can identify not just gaps but <strong>patterns</strong> &mdash; what is always done, what varies, and what is always missing from transports.
+    Everything documented below was reverse-engineered from actual P01 transport history and Gold DB data &mdash; this is not theory, it is what actually happened.
+  </div>
+
+  <!-- ==================== ICTP SECTION ==================== -->
+  <h3 style="color: var(--accent); margin-top: 2rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+    ICTP &mdash; Trieste, Italy (December 2011)
+  </h3>
+
+  <div class="explain" style="border-left-color: var(--accent); margin-top: 1rem;">
+    <strong>The original blueprint.</strong> ICTP was created by copying UNES (UNESCO HQ) and is by far the largest and most complete
+    company code creation ever done. 4 specialists, 6 transports, and a <strong>true EC01 copy</strong> with 1,720 GL accounts &mdash;
+    the full UNES chart. ICTP is the only institute that uses <strong>F110 automatic payments</strong>.
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Creation Transports &mdash; 6 Transports, 4 People</h4>
+  <table>
+    <tr><th>Transport</th><th>Date</th><th>Owner</th><th>Role</th><th>Description</th><th>Obj</th><th>Keys</th></tr>
+    <tr>
+      <td class="mono">ICDK900002</td>
+      <td>2011-12-15</td>
+      <td>R_ORSARIA</td>
+      <td>FI Lead</td>
+      <td>FI - COPY OF UNES INTO ICTP AND MODIFICATIONS &mdash; Big bang: SKB1(1,720 GL), T012/T012K(289 banks/554 accounts), T042I(128 ranking), T035D/T035U(443/724 cash planning), T042A/T042E(payments), FM01</td>
+      <td>154</td>
+      <td><strong>7,039</strong></td>
+    </tr>
+    <tr>
+      <td class="mono">ICDK900004</td>
+      <td>2011-12-15</td>
+      <td>R_ORSARIA</td>
+      <td>CO</td>
+      <td>CO - COPY OF CONTROLLING AREA ICTP &mdash; TKA00-TKA09, T001</td>
+      <td>4</td>
+      <td>17</td>
+    </tr>
+    <tr>
+      <td class="mono">ICDK900014</td>
+      <td>2011-12-15</td>
+      <td>R_ORSARIA</td>
+      <td>AA</td>
+      <td>AA-CUSTOMIZING ICTP &mdash; ANKB(801 depreciation), T090N*(depreciation rules), T093*, AAACC_OBJ</td>
+      <td>28</td>
+      <td><strong>1,107</strong></td>
+    </tr>
+    <tr>
+      <td class="mono">ICDK900093</td>
+      <td>2011-12-15</td>
+      <td>M_FRANCIOLLO</td>
+      <td>MM</td>
+      <td>MM-PLA-001 &mdash; Plafond VAT letter, PO print customizing</td>
+      <td>5</td>
+      <td>41</td>
+    </tr>
+    <tr>
+      <td class="mono">ICDK900982</td>
+      <td>2011-12-15</td>
+      <td>C_PAOLO</td>
+      <td>Payments</td>
+      <td>Customizing new payment methods for SETIF &mdash; T042I(6), T042Z/T042ZA, T042A, T042E</td>
+      <td>7</td>
+      <td>71</td>
+    </tr>
+    <tr>
+      <td class="mono" style="color: var(--yellow);">D01K9B01GL</td>
+      <td>2016-11-15</td>
+      <td>L_CABALLE</td>
+      <td>Integration</td>
+      <td>CF-Integration ICTP &mdash; T001P, T500P (HR integration, <strong>5 years later</strong>)</td>
+      <td>13</td>
+      <td>44</td>
+    </tr>
+  </table>
+
+  <div class="explain" style="border-left-color: var(--accent); margin-top: 1rem;">
+    <strong>Key differences from ICBA/MGIE:</strong>
+    ICTP transported <strong>T042I = 134 keys</strong> (128 + 6) &mdash; F110 was fully configured.
+    Separate AA transport with 1,107 keys (ANKB = 801 depreciation area keys).
+    True EC01 copy of UNES with <strong>1,720 GL accounts</strong> (vs 575 for ICBA, 541 for STEM).
+    <strong>289 house banks</strong> and <strong>554 bank accounts</strong> copied from UNES (massive banking setup).
+    Payment methods configured by a <strong>dedicated payments specialist</strong> (C_PAOLO).
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Who Did What</h4>
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+      <strong style="color: var(--accent);">R_ORSARIA</strong><br>
+      <span style="font-size: 1.2rem; font-weight: 700; color: var(--text);">8,163</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">keys (FI + CO + AA)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+      <strong style="color: var(--accent);">C_PAOLO</strong><br>
+      <span style="font-size: 1.2rem; font-weight: 700; color: var(--text);">71</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">keys (payments)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+      <strong style="color: var(--accent);">M_FRANCIOLLO</strong><br>
+      <span style="font-size: 1.2rem; font-weight: 700; color: var(--text);">41</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">keys (MM/output)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+      <strong style="color: var(--accent);">L_CABALLE</strong><br>
+      <span style="font-size: 1.2rem; font-weight: 700; color: var(--text);">44</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">keys (HR, 5 yrs later)</span>
+    </div>
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Configuration &mdash; 5,300 keys, 47 tables</h4>
+  <table>
+    <tr><th>Table</th><th>Keys</th><th>What</th></tr>
+    <tr><td class="mono">SKB1</td><td><strong>1,720</strong></td><td>GL accounts (full UNES copy)</td></tr>
+    <tr><td class="mono">T012T</td><td>809</td><td>House bank text descriptions</td></tr>
+    <tr><td class="mono">T035U</td><td>724</td><td>Cash planning groups</td></tr>
+    <tr><td class="mono">T012K</td><td><strong>554</strong></td><td>Bank accounts</td></tr>
+    <tr><td class="mono">T035D</td><td>443</td><td>Cash planning determination</td></tr>
+    <tr><td class="mono">T012</td><td><strong>289</strong></td><td>House banks</td></tr>
+    <tr><td class="mono">T012D</td><td>289</td><td>House bank details</td></tr>
+    <tr><td class="mono">T042I</td><td><strong>134</strong></td><td>F110 bank ranking <span class="risk risk-low">FULLY CONFIGURED</span></td></tr>
+    <tr><td class="mono">T042A</td><td>131</td><td>Payment methods per co. code</td></tr>
+    <tr><td class="mono">T042E</td><td>47</td><td>Payment method supplementary</td></tr>
+    <tr><td class="mono">T042V</td><td>32</td><td>Payment method validation</td></tr>
+    <tr><td class="mono">T042Z</td><td>29</td><td>Payment method forms</td></tr>
+    <tr><td class="mono">T169G</td><td>13</td><td>Invoice verification tolerances</td></tr>
+  </table>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Gold DB Master Data (2024&ndash;2026)</h4>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">House Banks</span><br>
+      <strong>2</strong> <span style="font-size: 0.8rem; color: var(--muted);">(BPP01=France, UNI01=Italy)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">T042I (F110)</span><br>
+      <strong style="color: var(--green);">29 rows</strong> <span style="font-size: 0.8rem; color: var(--green);">ACTIVE</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">FI Documents</span><br>
+      <strong>72,258</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Vendors</span><br>
+      <strong>4,233</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Purchase Orders</span><br>
+      <strong>11,588</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">FMIFIIT</span><br>
+      <strong>66,656</strong> <span style="font-size: 0.8rem; color: var(--green);">active FM</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Fund Centers</span><br>
+      <strong>113</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Funds</span><br>
+      <strong>2,946</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">REGUH (payment runs)</span><br>
+      <strong style="color: var(--green);">24,078</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">PAYR (checks)</span><br>
+      <strong>898</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Asset Changes</span><br>
+      <strong>1,200</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Currency</span><br>
+      <strong>EUR</strong> <span style="font-size: 0.8rem; color: var(--muted);">(non-USD!)</span>
+    </div>
+  </div>
+  <div class="explain" style="border-left-color: var(--accent); font-size: 0.85rem;">
+    <strong>Top TCodes:</strong> FB1S(18,625), MIRO(12,253), FB01(12,089), <strong>F110(11,050)</strong>, MB01(9,159).
+    ICTP is the only non-USD UNESCO institute besides UBO, and the only one using F110 at scale.
+  </div>
+
+  <!-- ==================== MGIE SECTION ==================== -->
+  <h3 style="color: var(--yellow); margin-top: 2.5rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+    MGIE &mdash; New Delhi, India (July 2013)
+  </h3>
+
+  <div class="explain" style="border-left-color: var(--yellow); margin-top: 1rem;">
+    <strong>The minimalist approach.</strong> MGIE was created in a <strong>single transport by one person</strong> (M_SPRONK) &mdash;
+    the simplest company code creation ever done at UNESCO. All-in-one: T001, SKB1, T012/T012K, T042*, T043*, T093*, TKA*, T169*, FM01, AAACC_OBJ + address.
+    No separate FM, CO, AA, or payments transports. No F110 configured. Uses manual payments exclusively.
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Creation Transport &mdash; 1 Transport, 1 Person</h4>
+  <table>
+    <tr><th>Transport</th><th>Date</th><th>Owner</th><th>Description</th><th>Keys</th></tr>
+    <tr>
+      <td class="mono">D01K9A00FB</td>
+      <td>2013-07-18</td>
+      <td>M_SPRONK</td>
+      <td>CF-Delivery package MGIE Institute &mdash; ALL-IN-ONE: T001, SKB1, T012/T012K, T042*, T043*, T093*, TKA*, T169*, FM01, AAACC_OBJ + address</td>
+      <td><strong>4,801</strong></td>
+    </tr>
+    <tr style="color: var(--muted); font-size: 0.85rem;">
+      <td colspan="5"><em>Shared transports excluded &mdash; D01K9B09U7, M01K900019, P01K950280 touch multiple company codes</em></td>
+    </tr>
+  </table>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Configuration &mdash; 215 keys, 44 tables</h4>
+  <div class="explain" style="border-left-color: var(--yellow); font-size: 0.85rem;">
+    Much smaller than ICTP. T042I: <strong>0 rows</strong> &mdash; no F110 configured (same pattern as ICBA).
+    GRN01 house bank (India) with 2 accounts (INR01 + USD01) with real account numbers.
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Gold DB Master Data (2024&ndash;2026)</h4>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">House Bank</span><br>
+      <strong>GRN01</strong> <span style="font-size: 0.8rem; color: var(--muted);">(India)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">T042I (F110)</span><br>
+      <strong style="color: var(--red);">0 rows</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">FI Documents</span><br>
+      <strong>8,113</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Vendors</span><br>
+      <strong>291</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Purchase Orders</span><br>
+      <strong>181</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">FMIFIIT</span><br>
+      <strong>8,389</strong> <span style="font-size: 0.8rem; color: var(--yellow);">light FM</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Fund Centers</span><br>
+      <strong>7</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Funds</span><br>
+      <strong>269</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">REGUH (payment runs)</span><br>
+      <strong style="color: var(--red);">0</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">PAYR (checks)</span><br>
+      <strong style="color: var(--red);">0</strong>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Projects</span><br>
+      <strong>7</strong> <span style="font-size: 0.8rem; color: var(--muted);">(first: 2016-10-07)</span>
+    </div>
+    <div style="background: var(--surface2); padding: 0.75rem; border-radius: 6px;">
+      <span style="color: var(--muted); font-size: 0.75rem;">Currency</span><br>
+      <strong>USD</strong>
+    </div>
+  </div>
+  <div class="explain" style="border-left-color: var(--yellow); font-size: 0.85rem;">
+    <strong>Top TCodes:</strong> FB01(2,357), <strong>FBZ2(1,523)</strong>, ML81(972), MIRO(894).
+    Manual payments dominant (FBZ2). No F110 usage at all. REGUH=0 and PAYR=0 confirm no automatic payments.
+  </div>
+
+  <!-- ==================== ICBA SECTION ==================== -->
+  <h3 style="color: #a855f7; margin-top: 2.5rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+    ICBA &mdash; Addis Ababa, Ethiopia (December 2016)
+  </h3>
+
+  <div class="explain" style="border-left-color: #a855f7; margin-top: 1rem;">
+    <strong>The most recent blueprint and closest to STEM.</strong> ICBA was the last company code created before STEM.
+    3 people, 5 transports, 3-month timeline from first transport to post-go-live fixes. This is the pattern STEM most closely follows.
+  </div>
+
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Creation Timeline &mdash; 5 Transports, 3 People, 3 Months</h4>
+  <table>
+    <tr>
+      <th>Step</th><th>Transport</th><th>Date</th><th>Owner</th><th>Role</th><th>Description</th><th>Keys</th>
+    </tr>
+    <tr>
+      <td><strong style="color: #a855f7;">1</strong></td>
+      <td class="mono">D01K9B0194</td>
+      <td>2016-12-28</td>
+      <td>M_SPRONK</td>
+      <td>Basis/Config Lead</td>
+      <td>CF-New entity ICBA (company code, FM area, purch org etc) &mdash; <strong>THE BIG BANG</strong>: 165 objects, 4,992 keys. Includes: T001, SKB1 (575 GL), T012/T012K (banks), T042 (payments), T043 (tolerances), T093 (assets), TKA (controlling), T169 (invoice verification), AAACC_OBJ (FM assignment), + USR12/UST12/USR13 (authorization roles)</td>
+      <td><strong>4,992</strong></td>
+    </tr>
+    <tr>
+      <td><strong style="color: #a855f7;">2</strong></td>
+      <td class="mono">D01K9B01A5</td>
+      <td>2017-01-03</td>
+      <td>S_ROCHA</td>
+      <td>FM Consultant</td>
+      <td>FM Configuration IICBA &mdash; FM01 (FM area), FMHIVARNT (hierarchy), FMFUNDTYPE, TCJ4T (cash journal), TBPFD/TBPFE (budget profile)</td>
+      <td>47</td>
+    </tr>
+    <tr>
+      <td><strong style="color: #a855f7;">3</strong></td>
+      <td class="mono">D01K9B01PP</td>
+      <td>2017-01-03</td>
+      <td>S_ROCHA</td>
+      <td>FM Consultant</td>
+      <td>Field Status Variant Funds Management &mdash; T001 field status update for FM</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td><strong style="color: var(--yellow);">4</strong></td>
+      <td class="mono">P01K950173</td>
+      <td>2017-03-24</td>
+      <td>M_SPRONK</td>
+      <td>Basis/Config Lead</td>
+      <td>Update ICBA settings &mdash; T028B + address updates <span class="risk risk-medium">(done directly in P01)</span></td>
+      <td>41</td>
+    </tr>
+    <tr>
+      <td><strong style="color: var(--yellow);">5</strong></td>
+      <td class="mono">P01K950174</td>
+      <td>2017-03-24</td>
+      <td>M_SPRONK</td>
+      <td>Basis/Config Lead</td>
+      <td>Update ICBA settings (task under P01K950173)</td>
+      <td>41</td>
+    </tr>
+  </table>
+
+  <!-- Flow Diagram -->
+  <div class="flow" style="justify-content: center; margin: 1.5rem 0;">
+    <div class="flow-step" style="border-color: #a855f7; min-width: 180px;">
+      <strong style="color: #a855f7;">Big Bang</strong><br>
+      <span class="mono" style="font-size: 0.8rem;">D01K9B0194</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">M_SPRONK</span><br>
+      <span style="font-size: 0.8rem;">165 objects, 4,992 keys</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--green); min-width: 180px;">
+      <strong style="color: var(--green);">FM Config</strong><br>
+      <span class="mono" style="font-size: 0.8rem;">D01K9B01A5</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">S_ROCHA</span><br>
+      <span style="font-size: 0.8rem;">47 keys</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--green); min-width: 180px;">
+      <strong style="color: var(--green);">Field Status</strong><br>
+      <span class="mono" style="font-size: 0.8rem;">D01K9B01PP</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">S_ROCHA</span><br>
+      <span style="font-size: 0.8rem;">1 key</span>
+    </div>
+    <span class="flow-arrow">&#10132;</span>
+    <div class="flow-step" style="border-color: var(--yellow); min-width: 180px;">
+      <strong style="color: var(--yellow);">Post-go-live Fixes</strong><br>
+      <span class="mono" style="font-size: 0.8rem;">P01K950173/74</span><br>
+      <span style="font-size: 0.8rem; color: var(--muted);">M_SPRONK in P01</span><br>
+      <span style="font-size: 0.8rem;">82 keys (direct in prod)</span>
+    </div>
+  </div>
+
+  <!-- Config vs Master Data -->
+  <h4 style="color: var(--muted); margin: 1.5rem 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Configuration vs Master Data</h4>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+    <!-- CONFIGURATION column -->
+    <div style="background: var(--surface2); border-radius: 8px; padding: 1.5rem; border-top: 3px solid #a855f7;">
+      <h4 style="color: #a855f7; margin-bottom: 1rem;">CONFIGURATION (739 keys, 45 tables) &mdash; Transported</h4>
+      <table>
+        <tr><th>Table</th><th>Keys</th><th>What</th></tr>
+        <tr><td class="mono">T001</td><td>31</td><td>Company code master (across 5 transports)</td></tr>
+        <tr><td class="mono">SKB1</td><td>575</td><td>GL accounts &mdash; company code segment (ICBA had 575 at creation; STEM has 541)</td></tr>
+        <tr><td class="mono">T012/T012K</td><td>4</td><td>1 house bank (CBE01), 3 accounts: ETB01, ETB02, USD01 with REAL account numbers</td></tr>
+        <tr><td class="mono">T042/T042B/T042E</td><td>&mdash;</td><td>Payment program (partial &mdash; <span class="risk risk-high">T042I MISSING</span>)</td></tr>
+        <tr><td class="mono">T043G/T043S/T043T</td><td>&mdash;</td><td>Tolerance groups</td></tr>
+        <tr><td class="mono">T093B/C/D/U/V</td><td>&mdash;</td><td>Asset accounting (3 depreciation areas)</td></tr>
+        <tr><td class="mono">TKA00/01/02/07/09</td><td>&mdash;</td><td>Controlling area</td></tr>
+        <tr><td class="mono">T169G/T169P/T169V</td><td>13</td><td>Invoice verification (13 tolerance keys)</td></tr>
+        <tr><td class="mono">FM01/FMHIVARNT</td><td>&mdash;</td><td>FM Area + hierarchy</td></tr>
+        <tr><td class="mono">AAACC_OBJ</td><td>7</td><td>FM account assignment</td></tr>
+        <tr><td class="mono">USR12/UST12/USR13</td><td><strong>3,744</strong></td><td>Authorization role keys <span class="risk risk-high">security bundled with creation!</span></td></tr>
+      </table>
+    </div>
+
+    <!-- MASTER DATA column -->
+    <div style="background: var(--surface2); border-radius: 8px; padding: 1.5rem; border-top: 3px solid var(--green);">
+      <h4 style="color: var(--green); margin-bottom: 1rem;">MASTER DATA (post-import) &mdash; NOT Transported</h4>
+      <table>
+        <tr><th>Object</th><th>Count</th><th>Notes</th></tr>
+        <tr><td>Vendors extended</td><td>189</td><td>BSAK cleared items confirm vendor activity</td></tr>
+        <tr><td>Projects</td><td>19</td><td>First project: 2017-04-06 (~3 months after creation)</td></tr>
+        <tr><td>WBS Elements</td><td>108</td><td>Under 19 projects</td></tr>
+        <tr><td>Purchase Orders</td><td>233</td><td>Procurement activity</td></tr>
+        <tr><td>FI Documents</td><td>5,961</td><td>2024&ndash;2026 window</td></tr>
+        <tr><td>Active Users/month</td><td>8&ndash;17</td><td>Regular usage</td></tr>
+        <tr><td>House Bank</td><td>CBE01</td><td>Real numbers: ETB01=<span class="mono">1000003018877</span>, ETB02=<span class="mono">1000003012909</span>, USD01=<span class="mono">1000549500408</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== COMPARATIVE TABLES ==================== -->
+  <h3 style="color: #a855f7; margin-top: 2.5rem; font-size: 1.2rem; border-bottom: 2px solid #a855f7; padding-bottom: 0.5rem;">
+    Comparative Analysis &mdash; All 3 Blueprints vs STEM
+  </h3>
+
+  <div class="explain" style="border-left-color: #a855f7; margin-top: 1rem;">
+    <strong>Two separate tables below.</strong> Table 1 covers <strong>configuration objects transported via CTS</strong> (what you get from importing transports).
+    Table 2 covers <strong>master data created post-import</strong> (what exists in production today but was NEVER in any transport).
+    Understanding this split is critical &mdash; it defines what the transports give you vs what you must build manually.
+  </div>
+
+  <!-- TABLE 1: CONFIGURATION (Transported via CTS) -->
+  <h4 style="color: var(--accent); margin-top: 2rem; font-size: 1.05rem;">
+    Table 1: Configuration (Transported via CTS)
+  </h4>
+  <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+    These items were part of the creation transports. STEM's data comes from its 4 transports.
+  </p>
+
+  <div style="overflow-x: auto; margin-top: 0.5rem;">
+  <table style="min-width: 1050px;">
+    <tr>
+      <th style="min-width: 200px;">Aspect</th>
+      <th style="min-width: 130px; color: var(--accent);">ICTP (2011, Italy)</th>
+      <th style="min-width: 130px; color: var(--yellow);">MGIE (2013, India)</th>
+      <th style="min-width: 130px; color: #a855f7;">ICBA (2016, Ethiopia)</th>
+      <th style="min-width: 130px; color: var(--green);">STEM (2026, China)</th>
+      <th style="min-width: 220px;">Gap for STEM</th>
+    </tr>
+    <tr style="background: rgba(56,189,248,0.06);">
+      <td><strong>Controlling Area</strong></td>
+      <td>ICTP (EUR)</td>
+      <td>MGIE (USD)</td>
+      <td>ICBA (USD)</td>
+      <td>STEM (USD)</td>
+      <td><span style="color: var(--green);">Each institute has its own CO area</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>FM Area</strong></td>
+      <td>ICTP (own, 66K FMIFIIT)</td>
+      <td>MGIE (own, 8K FMIFIIT)</td>
+      <td>ICBA (own, not yet extracted)</td>
+      <td>STEM (own, in transport)</td>
+      <td><span style="color: var(--green);">OK</span> &mdash; each institute has its own FM area. STEM creates its own in D01K9B0F3V</td>
+    </tr>
+    <tr>
+      <td><strong>GL Accounts (SKB1)</strong></td>
+      <td>596</td>
+      <td>630</td>
+      <td>590</td>
+      <td>541</td>
+      <td><span class="risk risk-medium">-49 to -89 vs reference</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cost Centers (CSKS)</strong></td>
+      <td>107</td>
+      <td>6</td>
+      <td>1</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span> &mdash; must create hierarchy</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>House Banks (T012)</strong></td>
+      <td>2 (BPP01+UNI01, IT+FR)</td>
+      <td>1 (GRN01, India)</td>
+      <td>1 (CBE01, Ethiopia)</td>
+      <td><strong style="color: var(--red);">1 (CBE01, WRONG &mdash; Ethiopian)</strong></td>
+      <td><span class="risk risk-high">HIGH</span> &mdash; needs Chinese bank</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>Bank Accounts (T012K)</strong></td>
+      <td>3 (real numbers, EUR)</td>
+      <td>2 (real numbers, INR+USD)</td>
+      <td>3 (real numbers, ETB+USD)</td>
+      <td><strong style="color: var(--red);">3 (EMPTY numbers, ETB+USD)</strong></td>
+      <td><span class="risk risk-high">HIGH</span> &mdash; needs real Chinese bank numbers</td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.05);">
+      <td><strong>Payment: T042 (Paying CoCode)</strong></td>
+      <td>1 (self)</td>
+      <td>1 (self)</td>
+      <td>1 (self)</td>
+      <td>1 (self)</td>
+      <td><span style="color: var(--green);">OK</span></td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.05);">
+      <td><strong>Payment: T042B (Methods/CoCode)</strong></td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td><span style="color: var(--green);">OK</span></td>
+    </tr>
+    <tr>
+      <td><strong>Payment: T042E (Methods/CoCode)</strong></td>
+      <td>19 methods (1,2,4,5,6,E,F,G,H,I,J,K,L,M,O,P,R,S,U)</td>
+      <td>3 methods (M,O,U)</td>
+      <td>3 methods (M,O,U)</td>
+      <td>3 methods (M,O,U)</td>
+      <td>Verify CN methods. ICTP has 19 (Italy has many bank transfer types)</td>
+    </tr>
+    <tr>
+      <td><strong>Payment: T042I (Bank Ranking)</strong></td>
+      <td>29 entries (full F110)</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td><span class="risk risk-info">INFO</span> &mdash; ONLY ICTP uses F110. MGIE+ICBA = manual. Decide for STEM</td>
+    </tr>
+    <tr>
+      <td><strong>Payment: T042C (Method/CoCode/Country)</strong></td>
+      <td>TBD</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>Same pattern &mdash; missing for all field offices</td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.05);">
+      <td><strong>Tolerance Groups (T043T)</strong></td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td><strong style="color: var(--green);">13</strong></td>
+      <td><span style="color: var(--green);">OK</span> &mdash; STEM has more detail</td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.05);">
+      <td><strong>Invoice Tolerances (T169G)</strong></td>
+      <td>13</td>
+      <td>13</td>
+      <td>13</td>
+      <td>13</td>
+      <td><span style="color: var(--green);">OK</span> &mdash; same across all</td>
+    </tr>
+    <tr style="background: rgba(74,222,128,0.05);">
+      <td><strong>Asset Accounting (T093B)</strong></td>
+      <td>4 areas</td>
+      <td>4 areas</td>
+      <td>3 areas</td>
+      <td>3 areas</td>
+      <td><span style="color: var(--green);">OK</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>Security (USR12/UST12)</strong></td>
+      <td>Not included</td>
+      <td>Not included</td>
+      <td><strong>3,744 keys bundled</strong></td>
+      <td><strong style="color: var(--red);">Not included</strong></td>
+      <td><span class="risk risk-high">HIGH</span> &mdash; needs PFCG</td>
+    </tr>
+  </table>
+  </div>
+
+  <!-- TABLE 2: MASTER DATA (Created Post-Import) -->
+  <h4 style="color: var(--orange); margin-top: 2.5rem; font-size: 1.05rem;">
+    Table 2: Master Data (Created Post-Import &mdash; NOT in any transport)
+  </h4>
+  <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+    These items exist in production today. They were ALL created manually after transport import. STEM needs the same.
+  </p>
+
+  <div style="overflow-x: auto; margin-top: 0.5rem;">
+  <table style="min-width: 1200px;">
+    <tr>
+      <th style="min-width: 50px;">Category</th>
+      <th style="min-width: 140px;">Object</th>
+      <th style="min-width: 70px;">Table</th>
+      <th style="min-width: 130px; color: var(--accent);">ICTP</th>
+      <th style="min-width: 130px; color: var(--yellow);">MGIE</th>
+      <th style="min-width: 130px; color: #a855f7;">ICBA</th>
+      <th style="min-width: 80px; color: var(--green);">STEM</th>
+      <th style="min-width: 80px;">Priority</th>
+      <th style="min-width: 100px;">TCode</th>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>CO</strong></td>
+      <td><strong>Cost Elements</strong></td>
+      <td><span class="mono">CSKB</span></td>
+      <td>368 (326 primary, 33 revenue, 9 statistical)</td>
+      <td>362 (290 primary, 64 revenue, 8 statistical)</td>
+      <td>357 (292 primary, 64 revenue, 1 statistical)</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+      <td><span class="mono">OKTZ</span> / <span class="mono">KA06</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>CO</strong></td>
+      <td><strong>Cost Centers</strong></td>
+      <td><span class="mono">CSKS</span></td>
+      <td>107</td>
+      <td>6</td>
+      <td>1</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+      <td><span class="mono">KS01</span></td>
+    </tr>
+    <tr>
+      <td><strong>CO</strong></td>
+      <td>Profit Centers</td>
+      <td><span class="mono">CEPC</span></td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td><span style="color: var(--muted);">N/A</span></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td><strong>CO</strong></td>
+      <td>Internal Orders</td>
+      <td><span class="mono">AUFK</span></td>
+      <td>15 (7 RINV, 6 OEA, 2 ZBLD)</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td><span style="color: var(--muted);">LOW</span></td>
+      <td><span class="mono">KO01</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>FM</strong></td>
+      <td><strong>Commitment Items</strong></td>
+      <td><span class="mono">FMCI</span></td>
+      <td>25</td>
+      <td>22</td>
+      <td>22</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+      <td><span class="mono">FMCI</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>FM</strong></td>
+      <td><strong>Fund Centers</strong></td>
+      <td><span class="mono">FMFCTR</span></td>
+      <td>114</td>
+      <td>7</td>
+      <td>8</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+      <td><span class="mono">FMSA</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td><strong>FM</strong></td>
+      <td><strong>Funds</strong></td>
+      <td><span class="mono">FMFINT</span></td>
+      <td>2,957</td>
+      <td>269</td>
+      <td>53</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-high">HIGH</span></td>
+      <td><span class="mono">FM5I</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>FI</strong></td>
+      <td><strong>Vendors</strong></td>
+      <td><span class="mono">LFB1</span></td>
+      <td>35,432</td>
+      <td>1,592</td>
+      <td>714</td>
+      <td><strong style="color: var(--red);">0</strong></td>
+      <td><span class="risk risk-critical">CRITICAL</span></td>
+      <td><span class="mono">XK01</span> / <span class="mono">FK01</span></td>
+    </tr>
+    <tr>
+      <td><strong>FI</strong></td>
+      <td>Customers</td>
+      <td><span class="mono">KNB1</span></td>
+      <td>959</td>
+      <td>20</td>
+      <td>15</td>
+      <td>0</td>
+      <td><span style="color: var(--yellow);">MEDIUM</span></td>
+      <td><span class="mono">XD01</span> / <span class="mono">FD01</span></td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td><strong>AA</strong></td>
+      <td><strong>Fixed Assets</strong></td>
+      <td><span class="mono">ANLA</span></td>
+      <td>3,494 (class 00002100=1,693 dominant)</td>
+      <td>108 (class 00002100=74)</td>
+      <td>98 (class 00002100=63)</td>
+      <td>0</td>
+      <td><span class="risk risk-high">HIGH</span></td>
+      <td><span class="mono">AS01</span></td>
+    </tr>
+    <tr>
+      <td><strong>PS</strong></td>
+      <td>Projects</td>
+      <td><span class="mono">PROJ</span></td>
+      <td>0</td>
+      <td>7 (first: 2016-10)</td>
+      <td>19 (first: 2017-04)</td>
+      <td>0</td>
+      <td><span style="color: var(--yellow);">MEDIUM</span></td>
+      <td><span class="mono">CJ20N</span></td>
+    </tr>
+    <tr>
+      <td><strong>PS</strong></td>
+      <td>WBS Elements</td>
+      <td><span class="mono">PRPS</span></td>
+      <td>0</td>
+      <td>7</td>
+      <td>108</td>
+      <td>0</td>
+      <td><span style="color: var(--yellow);">MEDIUM</span></td>
+      <td><span class="mono">CJ20N</span></td>
+    </tr>
+  </table>
+  </div>
+
+  <!-- ==================== KEY INSIGHTS ==================== -->
+  <h3 style="color: #a855f7; margin-top: 2.5rem; font-size: 1.1rem;">Key Insights from All 3 Blueprints</h3>
+
+  <div class="explain" style="border-left-color: var(--accent); margin-top: 1rem;">
+    <strong>1. Cost Elements exist for ALL institutes</strong> &mdash; ICTP has 368 (326 primary, 33 revenue, 9 statistical), MGIE has 362 (290 primary, 64 revenue, 8 statistical), ICBA has 357 (292 primary, 64 revenue, 1 statistical).
+    They were created post-import. STEM needs ~350&ndash;400 cost elements. Use <span class="mono">OKTZ</span> to auto-create from GL accounts.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--yellow); margin-top: 0.75rem;">
+    <strong>2. Commitment Items are standardized</strong> &mdash; UNES has 26, all institutes have 22&ndash;25. This is a SHARED pattern
+    across UNESCO. STEM should get ~22 commitment items mirroring the existing structure.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--green); margin-top: 0.75rem;">
+    <strong>3. UNESCO does NOT use Profit Centers</strong> &mdash; CEPC = 0 for ALL 9 company codes including UNES.
+    Don't waste time creating them.
+  </div>
+
+  <div class="explain warn" style="margin-top: 0.75rem;">
+    <strong>4. Fund Centers vary by office size</strong> &mdash; ICTP=114 (large), MGIE=7 (small), ICBA=8 (small).
+    STEM should plan for 5&ndash;15 initially.
+  </div>
+
+  <div class="explain danger" style="margin-top: 0.75rem;">
+    <strong>5. Vendors are the biggest master data effort</strong> &mdash; ICTP has 35K vendors, but most are shared UNES vendors
+    extended. STEM needs to extend key vendors to its company code (<span class="mono">XK01</span>).
+  </div>
+
+  <div class="explain" style="border-left-color: #a855f7; margin-top: 0.75rem;">
+    <strong>6. Fixed assets are created organically</strong> &mdash; they accumulate over years (ICTP=3,494 in 13 years, class 00002100 dominant).
+    No need to pre-create. Assets are created via <span class="mono">AS01</span> as they're purchased.
+  </div>
+
+  <div class="explain warn" style="margin-top: 0.75rem;">
+    <strong>7. Funds table is FMFINT (not FMFINCODE)</strong> &mdash; FMFINCODE returned 0 for all areas via RFC. The Gold DB &ldquo;funds&rdquo; table (sourced from a different extraction) shows: ICTP=2,957, MGIE=269, ICBA=53 funds. STEM will need funds created via <span class="mono">FM5I</span>.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--orange); margin-top: 0.75rem;">
+    <strong>8. Payment configuration has 3 tiers:</strong>
+    <ul style="margin: 0.5rem 0 0 1.2rem; line-height: 1.8;">
+      <li><strong>Tier 1 (ICTP-style):</strong> Full F110 with 19 payment methods, 29 bank rankings &mdash; for offices that process thousands of payments automatically</li>
+      <li><strong>Tier 2 (UNES/IIEP/UIS/UBO-style):</strong> Partial F110 with 10&ndash;17 methods, 10&ndash;15 rankings &mdash; for medium offices</li>
+      <li><strong>Tier 3 (MGIE/ICBA-style):</strong> No F110, 3 methods (M,O,U), 0 rankings &mdash; manual payments only via FBZ2/FB60</li>
+    </ul>
+    <p style="margin-top: 0.5rem;">STEM is currently <strong>Tier 3</strong>. The question is: should it stay Tier 3 or upgrade to Tier 2?</p>
+  </div>
+
+  <div class="explain" style="border-left-color: var(--green); margin-top: 0.75rem;">
+    <strong>9. Each institute has its OWN Controlling Area AND FM Area</strong> &mdash; they are NOT shared with UNES. STEM correctly creates its own CO area and FM area in the transports.
+  </div>
+
+  <div class="explain" style="border-left-color: var(--yellow); margin-top: 0.75rem;">
+    <strong>10. CORRECTION: ALL institutes have their own FM area</strong> &mdash; confirmed by FM consultant.
+    ICBA's FMIFIIT showed 0 in our Gold DB because our extraction script did not include ICBA in the filter
+    (only UNES, UBO, IBE, ICTP, IIEP, MGIE, UIS were extracted). ICBA has its own FM area with its own
+    commitment items (22), fund centers (8), and funds (53). STEM will follow the same pattern: own FM area,
+    own master data. The commitment items gap (Discovery #1) is <strong>fully critical</strong> &mdash; STEM
+    needs its own ~22 commitment items created via <span class="mono">FMCI</span>.
+  </div>
+
+  <!-- ==================== UPDATED RECOMMENDATION ==================== -->
+  <h3 style="color: #a855f7; margin-top: 2rem;">Recommendation for STEM &mdash; Based on All 3 Blueprints</h3>
+
+  <!-- Phase 1 -->
+  <h4 style="color: #a855f7; margin-top: 1.5rem; font-size: 1rem;">Phase 1 &mdash; Transport Import (Week 1)</h4>
+  <div style="margin-top: 0.5rem; padding: 0.75rem 1rem; background: rgba(168,85,247,0.06); border-radius: 8px; border-left: 3px solid #a855f7;">
+    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.8;">
+      <li>Import 4 transports in order: <strong>FI</strong> &rarr; <strong>FM</strong> &rarr; <strong>R_RIOS Task</strong> &rarr; <strong>Logistics</strong></li>
+      <li>Run <span class="mono">OBH2</span> (number ranges), open posting periods (<span class="mono">OB52</span>, <span class="mono">FMBS</span>, <span class="mono">OKP1</span>)</li>
+    </ul>
+  </div>
+
+  <!-- Phase 2 -->
+  <h4 style="color: var(--orange); margin-top: 1.5rem; font-size: 1rem;">Phase 2 &mdash; Critical Master Data (Week 1&ndash;2)</h4>
+  <div style="overflow-x: auto; margin-top: 0.5rem;">
+  <table style="min-width: 700px;">
+    <tr>
+      <th style="width: 60px;">Priority</th>
+      <th style="min-width: 160px;">Object</th>
+      <th style="min-width: 120px;">Count Needed</th>
+      <th style="min-width: 120px;">TCode</th>
+      <th style="min-width: 120px;">Who</th>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>1</strong></td>
+      <td>Cost Elements</td>
+      <td>~350&ndash;400</td>
+      <td><span class="mono">OKTZ</span> / <span class="mono">KA06</span></td>
+      <td>CO Consultant</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.08);">
+      <td><strong>2</strong></td>
+      <td>Commitment Items</td>
+      <td>~22</td>
+      <td><span class="mono">FMCI</span></td>
+      <td>FM Consultant</td>
+    </tr>
+    <tr>
+      <td><strong>3</strong></td>
+      <td>Cost Centers</td>
+      <td>5&ndash;10 initial</td>
+      <td><span class="mono">KS01</span></td>
+      <td>CO Consultant</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong></td>
+      <td>Fund Centers</td>
+      <td>5&ndash;15</td>
+      <td><span class="mono">FMSA</span></td>
+      <td>FM Consultant</td>
+    </tr>
+    <tr>
+      <td><strong>5</strong></td>
+      <td>FMDERIVE rules</td>
+      <td>GL&rarr;CI mapping</td>
+      <td><span class="mono">FMDERIVE</span></td>
+      <td>FM Consultant</td>
+    </tr>
+  </table>
+  </div>
+
+  <!-- Phase 3 -->
+  <h4 style="color: var(--yellow); margin-top: 1.5rem; font-size: 1rem;">Phase 3 &mdash; Operational Master Data (Week 2&ndash;4)</h4>
+  <div style="overflow-x: auto; margin-top: 0.5rem;">
+  <table style="min-width: 600px;">
+    <tr>
+      <th style="width: 60px;">Priority</th>
+      <th style="min-width: 200px;">Object</th>
+      <th style="min-width: 120px;">TCode</th>
+      <th style="min-width: 120px;">Who</th>
+    </tr>
+    <tr>
+      <td><strong>1</strong></td>
+      <td>Extend vendors</td>
+      <td><span class="mono">XK01</span> / <span class="mono">FK01</span></td>
+      <td>AP Team</td>
+    </tr>
+    <tr>
+      <td><strong>2</strong></td>
+      <td>Security roles</td>
+      <td><span class="mono">PFCG</span> / <span class="mono">SU01</span></td>
+      <td>Basis</td>
+    </tr>
+    <tr style="background: rgba(248,113,113,0.05);">
+      <td><strong>3</strong></td>
+      <td>House bank replacement</td>
+      <td><span class="mono">FI12</span></td>
+      <td>Treasury</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong></td>
+      <td>Extend customers</td>
+      <td><span class="mono">XD01</span></td>
+      <td>AR Team</td>
+    </tr>
+  </table>
+  </div>
+
+  <!-- Phase 4 -->
+  <h4 style="color: var(--green); margin-top: 1.5rem; font-size: 1rem;">Phase 4 &mdash; Go-Live Validation (Month 2)</h4>
+  <div style="margin-top: 0.5rem; padding: 0.75rem 1rem; background: rgba(74,222,128,0.06); border-radius: 8px; border-left: 3px solid var(--green);">
+    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.8;">
+      <li>Test FI posting (<span class="mono">FB50</span>)</li>
+      <li>Test PO creation (<span class="mono">ME21N</span>)</li>
+      <li>Test FM budget entry (<span class="mono">FMBB</span>)</li>
+      <li>Test payment (<span class="mono">FB60</span> or <span class="mono">F110</span> if configured)</li>
+      <li>Expect correction transport within 3 months (normal for all 3 previous creations)</li>
+    </ul>
+  </div>
+
+  <div class="explain" style="border-left-color: #a855f7; margin-top: 1.5rem;">
+    <strong>Bottom line:</strong> The transports create the <strong>configuration shell</strong> (GL accounts, tolerance groups, payment methods, asset accounting).
+    Everything else &mdash; cost elements (~350), commitment items (~22), cost centers, fund centers, vendors, funds &mdash; is <strong>master data
+    that every institute created manually after import</strong>. This is standard UNESCO practice, not a STEM-specific gap.
+    The 4-phase plan above follows the proven pattern from ICTP, MGIE, and ICBA.
+  </div>
+</div>
+
+<!-- DILIGENCE STATEMENT -->
+<div class="section" style="border: 1px solid var(--border); opacity: 0.85;">
+  <h2><span class="icon">&#128220;</span> AI Diligence Statement</h2>
+  <table>
+    <tr><td style="width:140px; color: var(--muted);">AI Role</td><td>Extracted transport objects via RFC, classified using 21-module taxonomy, ran 6 automated validations (v1), generated HTML companion with explanations and action items. v2: integrated 2 critical discoveries from user testing, added 2 new transports (F4I + F40), expanded analysis to 4-transport package with blueprint comparison against ICTP/MGIE/ICBA.</td></tr>
+    <tr><td style="color: var(--muted);">Model</td><td>Claude Opus 4.6 (1M context) via Claude Code CLI</td></tr>
+    <tr><td style="color: var(--muted);">Human Role</td><td>JP Lopez directed analysis scope, validated findings against SAP domain knowledge, confirmed bank/payment chain gaps. <strong>v2: User team performed actual SAP testing that revealed the commitment item gap (Discovery #1) and missing cost elements (Discovery #2). These discoveries were NOT detectable by RFC validation alone &mdash; they were confirmed by attempting real postings in D01.</strong></td></tr>
+    <tr><td style="color: var(--muted);">Verification</td><td>
+      GL reconciliation [VERIFIED via RFC against SKA1/SKB1].<br>
+      FBZP chain gaps [VERIFIED via T042I/T042C queries].<br>
+      Company code identity [VERIFIED via T001].<br>
+      Bank identity "CBE = Commercial Bank of Ethiopia" [INFERRED from bank ID pattern + ETB currency].<br>
+      D01K9B0CBF: 36 objects / 682 keys [VERIFIED via v1 RFC extraction when transport was still modifiable].<br>
+      D01K9B0F3V: 9 objects / 51 keys [VERIFIED via v1 RFC extraction when transport was still modifiable].<br>
+      D01K9B0F4I: 2 objects / 6 keys [VERIFIED via RFC extraction].<br>
+      D01K9B0F40: in progress [R_RIOS confirmed, logistics configuration underway].<br>
+      Commitment item gap [CONFIRMED by user testing &mdash; not RFC-verifiable without FMDERIVE analysis].<br>
+      Missing cost elements [CONFIRMED by user testing &mdash; EC01 limitation is documented SAP behavior].<br>
+      GL field status/tax suitability for China [NOT CHECKED].
+    </td></tr>
+    <tr><td style="color: var(--muted);">Accountability</td><td>JP Lopez maintains full responsibility for all decisions based on this analysis</td></tr>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Generated by SAP Transport Companion Builder v2 &mdash; UNESCO SAP Intelligence Platform</p>
+  <p>Source: D01 (Development) via RFC_READ_TABLE on E070 + E071 + E071K + User Testing &bull; 2026-04-01</p>
+  <p>Transports analyzed: D01K9B0CBF (JP_LOPEZ, 36/682) + D01K9B0CBG (task, FI core) + D01K9B0F4I (R_RIOS task, 2/6) + D01K9B0F3V (I_KONAKOV, 9/51) + D01K9B0F40 (R_RIOS, logistics, in progress)</p>
+  <p style="margin-top: 0.5rem; font-size: 0.7rem;">
+    Skills: sap_transport_companion + sap_company_code_copy + sap_transport_intelligence &bull;
+    Transport Object Taxonomy: 21-module knowledge base &bull;
+    8 validation checks (6 automated + 2 user-confirmed) &bull; 43 manual post-copy tasks &bull;
+    2 critical discoveries (commitment items + cost elements)
+  </p>
+</div>
+
+</body>
+</html>
