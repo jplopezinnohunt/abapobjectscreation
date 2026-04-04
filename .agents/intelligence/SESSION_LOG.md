@@ -18,6 +18,9 @@
 
 | Session | Date | Type | Summary | Retro File |
 |---------|------|------|---------|------------|
+| **#035** | 2026-04-03/04 | CO Extraction + Integration Archaeology v2 | B2+B3 closed (0 blocking data gaps). CO tables: 3.45M rows (COOI 773K + COEP 2.55M + RPSCO 127K). **Third integration vector: file-based jobs** (8,700 runs, 9 systems). SF EC confirmed active (1,290 jobs). Complete integration map: 37 flows, 18+ systems, 8 channels, 10 open questions. New systems: UNJSPF, BOC, AWS, Data Hub, MBF. PMO: B2/B3/G41 closed, +G45-G47. | [session_035_retro.md](../../knowledge/session_retros/session_035_retro.md) |
+| **#034** | 2026-04-03 | Master Data Sync P01→D01 | GL+Cost Element sync: 880 records (69 SKA1, 69 SKAT, 450 SKB1, 26 CSKA, 92 CSKU, 174 CSKB). Method: RFC_ABAP_INSTALL_AND_RUN direct INSERT. 68 batches, 0 failures. Gap=0 verified. New skill #38 `sap_master_data_sync`. PMO: +H29 (SKAT texts), +G44 (extend to CC/PC/FA). | [session_034_retro.md](../../knowledge/session_retros/session_034_retro.md) |
+| **#033** | 2026-04-03 | Annual Carry Forward + Budget CF Issues | Annual carry forward assessment (30 sessions, 10 patterns, 5 anti-patterns). EML extractor tool built. 2 emails + 1 Word doc parsed: 10 budget CF issues/improvements (6 automatable). `carry_forward_2026.html` companion. Landing page 15 companions. | [session_033_retro.md](../../knowledge/session_retros/session_033_retro.md) |
 | **#032** | 2026-04-01/03 | Integration Archaeology + Knowledge Hub | Landing page (15 companions/5 domains). Connectivity rewrite (pure CSS/SVG, 38 systems). System inventory + RFC analysis + FI maintenance. **7 UNESCO .NET apps** (334 RFC FMs): SISTER, HR WF, CMT, UBO, Travel, Mouv, Procurement. BCU=Budget Control. MuleSoft→Core Mgr/Plnr. BizTalk→SuccessFactors (planned). Gold DB: tfdir_custom. New skill: integration_diagram. | [session_032_retro.md](session_032_retro.md) |
 | **#031** | 2026-04-01/03 | Company Code Companion v2 + Blueprint | STEM companion v2 (3,684 lines). 2 discoveries (commitment items, cost elements). Reverse-engineered ICTP/MGIE/ICBA from P01. Full master data comparison (CSKB, CSKS, AUFK, ANLA, KNB1, LFB1, FMCI, FMFCTR). 4 serious errors corrected (re-extraction of released transports, TABKEY language codes, false alarms, FMIFIIT filter gap). Payment 3-tier classification. | [session_031_retro.md](../../knowledge/session_retros/session_031_retro.md) |
 | **#030** | 2026-03-31 | Bank Statement Full Domain Creation | FEBEP 223K/100%. FEBKO 62 fields. FEBRE 964K targeted. BSAS AUGBL 100%. **102I corrected: 99.6% (not 29.2%)**. Process mining: 263K events, UNES=B, MGIE=C, Treasury 132-day median. New skill #34 `sap_bank_statement_recon`. Companion v3 (14 tabs). Brain 73,968 nodes. | [session_030_retro.md](../../knowledge/session_retros/session_030_retro.md) |
@@ -47,7 +50,6 @@
 ---
 
 ## Current PMO Status
-**2 Blocking | 8 High | 47 Backlog = 57 items**
+**1 Blocking | 12 High | 47 Backlog = 60 items**
 Full list: `.agents/intelligence/PMO_BRAIN.md`
-Last reconciled: Session #032 (2026-04-03)
-Last reconciled: Session #030 (2026-03-31)
+Last reconciled: Session #035 (2026-04-04)

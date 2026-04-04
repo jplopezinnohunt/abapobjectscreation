@@ -1,6 +1,6 @@
 # UNESCO SAP — Project Brain + PMO Brain
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
-> **Last reconciled**: Session #032 (2026-04-03) — Integration archaeology complete
+> **Last reconciled**: Session #035 (2026-04-04) — CO extraction (3.45M rows) + Integration archaeology v2 (37 flows, 18+ systems)
 
 ---
 
@@ -9,7 +9,7 @@
 ### The System (as of 2026-03-26)
 
 ```
-UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 37 Skills
+UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 38 Skills
 ├── L1: SAP Connectivity      → pyrfc + SNC/SSO (D01 dev / P01 prod)
 ├── L2: Data Extraction       → ~2.5GB gold SQLite DB, 24M+ rows, 68 tables
 ├── L3: Validation/Domain     → sap_brain.py (73.9K nodes, 3-level access), 4 domain agents + coordinator
@@ -22,7 +22,7 @@ UNESCO SAP Intelligence Toolkit — 10 Capability Layers, 37 Skills
 ├── L10: BDC Intelligence     → bdc_full_inventory.py (Allos/Y1 payroll forensics)
 └── L11: Integration Intel    → 38 systems, 334 RFC FMs, 7 UNESCO .NET apps mapped
 
-Governance: .agents/GOVERNANCE.md + SKILL_MATURITY.md (37 skills scored)
+Governance: .agents/GOVERNANCE.md + SKILL_MATURITY.md (38 skills scored)
 Companions: 15 HTML (landing page + 14 domain companions)
 
 Each layer FEEDS the others:
@@ -76,8 +76,8 @@ Each layer FEEDS the others:
 | # | Task | First raised | Blocks | Notes |
 |---|------|-------------|--------|-------|
 | ~~B1~~ | ~~FMIFIIT OBJNRZ enrichment 2024+2026~~ | ~~#016~~ | ~~Golden Query WBS coverage~~ | ~~Done #028: 2024 (16 periods, 27 min) + 2026 (3 periods, 4 min). All years now enriched.~~ |
-| B2 | **BSEG PROJK extraction** | #016 | WBS for ~9.5% non-FM docs | Demoted #028: Golden Query covers 85.9% WBS via OBJNRZ. PROJK only adds coverage for clearing lines without FMIFIIT match. Script ready but low marginal value. |
-| B3 | **CO tables: COOI, COEP, RPSCO** | #005 | Entire CO cost layer missing | ~1.6M rows total. No extraction script yet |
+| ~~B2~~ | ~~BSEG PROJK extraction~~ | ~~#016~~ | ~~WBS for ~9.5% non-FM docs~~ | ~~Closed #035: BSEG is not a table — it's a JOIN (bseg_union VIEW). Golden Query covers 85.9% WBS via FMIFIIT.OBJNRZ→PRPS. Remaining 9.5% = clearing lines without FM match, marginal value. Resolved by design.~~ |
+| ~~B3~~ | ~~CO tables: COOI, COEP, RPSCO~~ | ~~#005~~ | ~~Entire CO cost layer missing~~ | ~~Done #035: 3,451,708 rows (COOI 773K + COEP 2.55M + RPSCO 127K). DD03L-verified fields. Period-by-period extraction for VPN resilience. Gold DB loaded. Anchor estimate was 1.6M — actual 2x larger.~~ |
 | ~~B4~~ | ~~B2R tables: FMIOI+FMBH+FMBL verification~~ | ~~#009~~ | ~~B2R lifecycle mining~~ | ~~Done — verified #028: FMIOI=1.8M, FMBH=287K, FMBL=319K rows~~ |
 | ~~B5~~ | ~~SES gap: ESSR↔ESLL PACKNO mismatch~~ | ~~#011~~ | ~~P2P service receipts~~ | ~~Done — verified #028: 707K PACKNO matched (99.99% of ESSR)~~ |
 | ~~B6~~ | ~~EKBE BUDAT enrichment~~ | ~~#018~~ | ~~P2P temporal precision~~ | ~~Done #028: 363K rows enriched (BUDAT+BLDAT+BEWTP+MENGE+DMBTR+WRBTR+WAERS). 2024=161K, 2025=175K, 2026=27K. MEINS auth-restricted. GJAHR=0000 (119K delivery notes) skipped.~~ |
@@ -115,6 +115,7 @@ Each layer FEEDS the others:
 | ~~H24~~ | ~~FEBRE extraction (Note-to-payee / Tag 86 text)~~ | ~~#029~~ | ~~Data~~ | ~~Done #030: 964,055 rows (KUKEY-filtered 2024-2026). 211K match FEBEP. Tag 86 analysis completed: 102I root cause = ACH returns (BELNR=*). Search string effectiveness validated.~~ |
 | H25 | **T028A + T028E extraction (account symbol definitions)** | #029 | Config | T028A = symbol-to-GL mapping (BANK→10xxxxx, BANK_SUB→11xxxxx). T028E = posting key definitions. Validates the account symbol configuration. |
 | H26 | **T012K UKONT re-extraction** | #029 | Config | T012K missing UKONT field (sub-bank GL paired with bank GL). Need to re-extract with all fields to validate 10xxx↔11xxx pairing. |
+| H29 | **Update 510 SKAT text differences P01→D01** | #034 | Data Sync | 510 GL accounts have different TXT20/TXT50 between P01 and D01 (mostly "CLOSED-BK..." in P01 vs old active names in D01). Needs UPDATE statements, not INSERT. Separate confirmation cycle. |
 | ~~H27~~ | ~~TCURR/TCURF extraction (exchange rates)~~ | ~~#029~~ | ~~Analytics~~ | ~~Done #030: TCURR 54,993 rates + TCURF 2,614 factors loaded. Ready for H21 currency conversion.~~ |
 | ~~H28~~ | ~~Bank Statement EBS Companion HTML~~ | ~~#029~~ | ~~Viz~~ | ~~Done #030: `bank_statement_ebs_companion.html` — 10 tabs (Overview, E2E Chain, Config Tiers, Posting Rules, Algorithms, GL Structure, BA Determination, Production Reality, Interactive Map, Glossary). Includes production analysis: 97% outgoing clearing, 46.5% incoming, 85.7% algo 015. SVG network diagram.~~ |
 | ~~H15~~ | ~~Read Blueprint BCM pages 21-47~~ | ~~#021~~ | ~~Knowledge~~ | ~~Done #022 — Full 21 SAP Notes, Delegation of Authority table, grouping rules, XML char handling all extracted~~ |
@@ -175,9 +176,13 @@ Each layer FEEDS the others:
 | G38 | **Update system_inventory.html with .NET apps** | #032 | 7 UNESCO .NET apps discovered but only in connectivity diagram, not inventory page |
 | G39 | **Add RFC API Surface tab to rfc_analysis.html** | #032 | 334 RFC-enabled FMs by domain. Data in tfdir_custom table. |
 | G40 | **Investigate TULIP + UNESDIR 93% job failures** | #032 | YHR_MANAGER_FROM_TULIP_UPDATE (14/15 failed), YHR_CREATE_MAIL_FROM_UNESDIR (28/30 failed) |
-| G41 | **Verify SuccessFactors EC migration status** | #032 | PYC_SFEC_SRV inactive, BizTalk middleware. Is SF live? Ask Basis team. |
+| ~~G41~~ | ~~Verify SuccessFactors EC migration status~~ | ~~#032~~ | ~~Closed #035: SF EC IS ACTIVE. ECPAO_OM_OBJECT_EXTRACTION (43 parallel jobs, 1,290 runs) + ECPAO_EMPL_EXTRACTION (3 jobs, 51 runs). Massive OM+Employee extraction to EC Payroll. Not "planned" — live in production.~~ |
 | G42 | **Build FI Support Agent skill** | #032 | Orchestrates fi_maintenance + payment_bcm + bank_statement + brain + Gold DB to resolve tickets |
 | G43 | **Confirm SAPBC/us0033 is decommissioned** | #032 | Legacy Business Connector. No jobs/code/IDocs. Check SM59 connection test. |
+| G44 | **Extend `sap_master_data_sync` to CC/PC/FA** | #034 | Cost centers (CSKS/CSKT), profit centers (CEPC/CEPCT), functional areas (TFKB/TFKBT), fund centers (FMFCTR/FMFCTRT). Same 4-step pattern. |
+| G45 | **Update connectivity diagram with file-based integration tier** | #035 | 5 tiers: SWIFT/banks (7K runs), COUPA (348), SuccessFactors EC (1,340), TULIP/UNESDIR (45), Data Hub/BW (30+). New integration vector. |
+| G46 | **Update `sap_interface_intelligence` skill with file-based vector** | #035 | Add TBTCO/TBTCP job analysis as integration discovery method. Current skill only covers RFC destinations + IDocs. |
+| G47 | **Investigate Data Hub target system** | #035 | YFM_OUTPUT_INDIRECT_COSTS_DH + YHR_ORG_UNIT_COUNT_DH + YFM_STAFF_COST_DISTRIBUT_DH — "DH" suffix = Data Hub. What system is this? |
 
 #### Future Ideas
 | # | Task | First raised | Notes |
@@ -247,6 +252,9 @@ Items completed across all 19 sessions — kept for audit trail.
 | ~~37~~ | TCURR (55K) + TCURF (2.6K) exchange rates extracted | 2026-03-31 | #030 |
 | ~~38~~ | Bank Statement EBS Companion v1 (10 tabs, production analysis) | 2026-03-31 | #030 |
 | ~~39~~ | FEBEP re-extracted 27 fields (133K rows, E2E chain analysis) | 2026-03-31 | #030 |
+| ~~40~~ | GL + Cost Element P01→D01 sync (880 records, 6 tables, gap=0) | 2026-04-03 | #034 |
+| ~~41~~ | `sap_master_data_sync` skill created (#38) | 2026-04-03 | #034 |
+| ~~42~~ | CO tables extracted: COOI 773K + COEP 2.55M + RPSCO 127K = 3.45M rows | 2026-04-04 | #035 |
 
 ---
 

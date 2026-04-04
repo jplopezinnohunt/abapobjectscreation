@@ -116,7 +116,7 @@ n = len(result.get('DATA', []))
 
 ---
 
-## Gold DB Schema (Session #013 -- 42 tables + 1 view)
+## Gold DB Schema (Session #034 -- 42 tables + 1 view + 12 comparison tables)
 
 ### FI Tables (Session #010)
 
@@ -186,6 +186,26 @@ n = len(result.get('DATA', []))
 | View | Sources | Rows | Purpose |
 |---|---|---:|---|
 | `bseg_union` | bsad+bsak+bsas+bsid+bsik+bsis | 4,735,764 | 32 columns + source_table |
+
+### P01 vs D01 Comparison Tables (Session #034)
+
+| SQLite Table | SAP Source | System | Rows | Purpose |
+|---|---|---|---:|---|
+| `P01_SKA1` | SKA1 | P01 | 2,491 | GL master (Chart of Accounts) |
+| `D01_SKA1` | SKA1 | D01 | 2,500 | GL master (Chart of Accounts) |
+| `P01_SKAT` | SKAT | P01 | 2,491 | GL texts (English) |
+| `D01_SKAT` | SKAT | D01 | 2,500 | GL texts (English) |
+| `P01_SKB1` | SKB1 | P01 | 9,249 | GL per company code (38 fields) |
+| `D01_SKB1` | SKB1 | D01 | 9,802 | GL per company code (38 fields) |
+| `P01_CSKA` | CSKA | P01 | 535 | Cost element master |
+| `D01_CSKA` | CSKA | D01 | 541 | Cost element master |
+| `P01_CSKU` | CSKU | P01 | 1,599 | Cost element texts (all languages) |
+| `D01_CSKU` | CSKU | D01 | 1,607 | Cost element texts (all languages) |
+| `P01_CSKB` | CSKB | P01 | 3,800 | Cost element per CO area |
+| `D01_CSKB` | CSKB | D01 | 3,808 | Cost element per CO area |
+
+> **Naming convention:** `{SYSTEM}_{TABLE}` (e.g., P01_SKA1, D01_SKB1).
+> Gap = 0 after sync (2026-04-03). See `sap_master_data_sync` skill.
 
 ### Enriched Tables (Session #016)
 

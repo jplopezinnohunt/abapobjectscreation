@@ -46,7 +46,9 @@ origin: Session #019 — ad hoc analysis of D01K9B0CBF (STEM/China Institute cop
 |------|--------|---------------|
 | Company code definition | T001, T001Q, T001A | 1-4 entries |
 | Company code address | ADRC, ADR2-ADR13, ~40 sub-tables | ~38 entries (SAP artifacts) |
-| GL account assignment (co code segment) | SKB1 | 200-600 accounts |
+| GL account assignment (co code segment) | SKB1 | 200-600 accounts. **Sync P01→D01 via `sap_master_data_sync` skill** |
+| GL master (chart of accounts) | SKA1, SKAT | ~2,500 accounts. Sync P01→D01 first (69 accounts were missing #034) |
+| Cost elements | CSKA, CSKU, CSKB | ~535 master + ~3,800 CO area. Sync P01→D01 (26+92+174 were missing #034) |
 | Account assignment objects (FM) | AAACC_OBJ | 5-10 entries |
 | House banks + accounts | T012, T012D, T012K, T012T | 5-20 entries |
 | Cash planning groups | T035D, T035U | 3-12 entries |
