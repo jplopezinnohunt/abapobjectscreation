@@ -89,14 +89,22 @@ def check_1_pmo_count_consistency() -> CheckResult:
     mem_text = MEMORY_INDEX.read_text(encoding="utf-8", errors="ignore")
 
     # Count open items in PMO_BRAIN: rows in B/H/G tables not struck through (~~...~~)
-    # Blocking: B1..B10 lines
+    # Fix (#037): regex now tolerates markup between `|` and the ID. Previously
+    # rows like `| **H13** 🔥 |` were silently NOT counted because the regex
+    # expected the ID immediately after `|` with no bold/emoji markup. This bug
+    # hid H13 from the count for many sessions.
     def count_open(section_pattern: str, id_pattern: str) -> int:
         match = re.search(section_pattern, pmo_text, re.DOTALL)
         if not match:
             return 0
         section = match.group(0)
-        # Each table row starts with `| ` and has the ID. Strike = ~~ID~~
-        rows = re.findall(rf"^\|\s*(~~)?({id_pattern})(~~)?\s*\|", section, re.MULTILINE)
+        # Accept optional markup chars (`*`, emoji, whitespace) on either side of the ID.
+        # `.*?` lazy match absorbs bold markers, emojis, and other decorations.
+        rows = re.findall(
+            rf"^\|\s*(~~)?\**\s*({id_pattern})\s*\**(~~)?\s*(?:[^\|]*?)\|",
+            section,
+            re.MULTILINE,
+        )
         return sum(1 for strike_l, _id, strike_r in rows if not strike_l and not strike_r)
 
     # BACKLOG runs until "## COMPLETED" (top-level ##, not ###/####)
@@ -550,6 +558,26 @@ def main() -> int:
 
     checks = CHECKS_START if args.mode == "start" else CHECKS_CLOSE
     results = [run_check(fn, name) for name, fn in checks]
+
+    # In close --strict mode, escalate the symmetry-control WARNs to FAIL.
+    # Rationale (Session #037 retro audit Principle 8 finding):
+    #   S1 (plan file), S2 (state snapshot), S3 (zombie decisions), and SYM
+    #   (plan↔retro pairing) are the symmetry control. Letting them stay WARN
+    #   at close means a session can close with unresolved zombies and
+    #   text-only decisions — exactly the drift the retro agent caught.
+    #   In --strict, these become blocking. In non-strict they stay WARN
+    #   so that the initial run of a migrating project doesn't lock up.
+    STRICT_ESCALATE = {
+        "S1. Session plan file (Phase 4)",
+        "S2. Session state snapshot (Phase 2)",
+        "S3. Zombie decisions pending (Phase 3)",
+        "SYM. Start-close symmetry (plan<->retro)",
+    }
+    if args.strict and args.mode == "close":
+        for r in results:
+            if r.name in STRICT_ESCALATE and r.status == "WARN":
+                r.status = "FAIL"
+                r.message = "[STRICT] " + r.message
 
     if args.json:
         print(json.dumps(
