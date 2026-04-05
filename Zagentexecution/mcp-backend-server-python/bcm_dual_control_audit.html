@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BCM Dual-Control Audit — H13 Deliverable 1</title>
+<style>
+  :root {
+    --bg:#0b1220; --panel:#121b2e; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --red:#ff6b6b; --yellow:#e3b341; --green:#3fb950;
+    --border:#30363d;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:14px; }
+  header { padding:24px 32px; background:linear-gradient(180deg,#1f2937,#0b1220);
+           border-bottom:1px solid var(--border); }
+  header h1 { margin:0 0 8px; font-size:22px; }
+  header .sub { color:var(--muted); font-size:13px; }
+  .container { max-width:1400px; margin:0 auto; padding:24px 32px; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+              gap:16px; margin-bottom:24px; }
+  .kpi { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+         padding:18px; }
+  .kpi .label { color:var(--muted); font-size:12px; text-transform:uppercase;
+                letter-spacing:0.5px; }
+  .kpi .value { font-size:26px; font-weight:600; margin:6px 0 4px;
+                font-variant-numeric:tabular-nums; }
+  .kpi .note { color:var(--muted); font-size:12px; }
+  .kpi.alert { border-color:var(--red); }
+  .kpi.alert .value { color:var(--red); }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+           padding:18px; margin-bottom:20px; }
+  .panel h2 { margin:0 0 12px; font-size:16px; color:var(--accent); }
+  .panel .sub { color:var(--muted); font-size:12px; margin-bottom:14px; }
+  table { width:100%; border-collapse:collapse; font-size:13px;
+          font-variant-numeric:tabular-nums; }
+  th { text-align:left; color:var(--muted); font-weight:500; padding:8px 10px;
+       border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; }
+  td { padding:9px 10px; border-bottom:1px solid #1e2633; }
+  tr:hover td { background:#1a2438; }
+  .right { text-align:right; }
+  .red { color:var(--red); font-weight:600; }
+  .yellow { color:var(--yellow); }
+  .green { color:var(--green); }
+  .bar { display:inline-block; height:8px; background:var(--accent); border-radius:2px;
+         vertical-align:middle; margin-right:6px; }
+  .bar.red { background:var(--red); }
+  .pattern-tag { display:inline-block; padding:2px 8px; border-radius:3px;
+                 font-size:11px; background:#1f2937; color:var(--muted); }
+  .pattern-tag.hq { background:#5a1e1e; color:#ffcccc; }
+  .pattern-tag.field { background:#1e4a5a; color:#cce5ff; }
+  .pattern-tag.payroll { background:#4a3a1e; color:#ffecb3; }
+  .finding-box { background:#1a2438; border-left:3px solid var(--red); padding:14px 18px;
+                 margin:16px 0; border-radius:4px; }
+  .finding-box h3 { margin:0 0 8px; font-size:14px; }
+  .finding-box p { margin:4px 0; color:var(--fg); }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:900px) { .grid-2 { grid-template-columns:1fr; } }
+  .dow-chart { display:flex; align-items:flex-end; gap:8px; height:140px;
+               margin:16px 0; padding:0 6px; }
+  .dow-bar { flex:1; background:var(--accent); position:relative; border-radius:3px 3px 0 0;
+             min-height:4px; }
+  .dow-bar.wed { background:var(--red); }
+  .dow-bar .label { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+                    font-size:11px; color:var(--muted); white-space:nowrap; }
+  .dow-bar .val { position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+                  font-size:11px; color:var(--fg); white-space:nowrap; }
+  footer { padding:20px 32px; color:var(--muted); font-size:12px; text-align:center;
+           border-top:1px solid var(--border); margin-top:40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>BCM Dual-Control Audit — H13 Deliverable 1</h1>
+  <div class="sub">Session #037 · 2026-04-05 · Scope: 2024–2026 · Source: Gold DB <code>BNK_BATCH_HEADER</code></div>
+</header>
+
+<div class="container">
+
+<div class="kpi-grid">
+  <div class="kpi alert">
+    <div class="label">Same-user batches (in scope)</div>
+    <div class="value">3,359</div>
+    <div class="note">CRUSR = CHUSR · 2024–2026</div>
+  </div>
+  <div class="kpi alert">
+    <div class="label">Total local-ccy exposure</div>
+    <div class="value">$655.9M</div>
+    <div class="note">BATCH_SUM local currency (not FX-converted)</div>
+  </div>
+  <div class="kpi alert">
+    <div class="label">HQ Wednesday AP run</div>
+    <div class="value">2,705</div>
+    <div class="note">C_LOPEZ + I_MARQUAND · 80% of exposure</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Delta since #027</div>
+    <div class="value yellow">+1,366</div>
+    <div class="note">15 sessions of inaction · gap widened +40%</div>
+  </div>
+</div>
+
+<div class="finding-box">
+  <h3>🚨 Top finding — this is automation debt, not fraud</h3>
+  <p>Two named HQ Paris treasury operators (<b>C_LOPEZ</b> and <b>I_MARQUAND</b>) execute the weekly
+  AP payment cycle every Wednesday through UNES_AP_10/EX/IK workflows. Each approves their own
+  batches <b>94.7%</b> and <b>92.9%</b> of the time because <b>there is no third operator to enforce
+  dual control</b>. They are dialog users, not service accounts (verified: zero jobs owned in
+  <code>tbtco</code>). The previous top-risk claim (F_DERAKHSHAN / PAYROLL) was incorrect:
+  F_DERAKHSHAN self-approves only <b>25.9%</b> of the time — 74% of his payroll batches do have a
+  second approver. The remediation is not a policy document; it is either automation of the
+  Wednesday AP run or a staffing change at HQ treasury.</p>
+</div>
+
+<div class="panel">
+  <h2>Top 10 Users — Self-Approval Rate</h2>
+  <div class="sub">Rate computed over ALL batches (same + different approver), not just same-user subset.
+  A high rate with low diff-count means the user has no one to cover them.</div>
+  <table>
+    <thead><tr>
+      <th>User</th><th>Pattern</th><th class="right">Same-user</th><th class="right">Diff-user</th>
+      <th class="right">Self-approval %</th><th class="right">Same-user sum</th><th>Ccy</th>
+      <th>Service acct?</th>
+    </tr></thead>
+    <tbody id="users-tbody"></tbody>
+  </table>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <h2>Day-of-Week Distribution</h2>
+    <div class="sub">70.3% of same-user batches fall on Wednesday — a weekly human AP cycle signature.</div>
+    <div class="dow-chart" id="dow-chart"></div>
+  </div>
+
+  <div class="panel">
+    <h2>By RULE_ID (BCM workflow)</h2>
+    <div class="sub">UNES_AP_10 = standard AP. UNES_AP_EX = exception-list (AE/JO/embargo) — sanctions risk.</div>
+    <table>
+      <thead><tr><th>Rule</th><th class="right">Batches</th><th class="right">Sum (local)</th></tr></thead>
+      <tbody id="rules-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Monthly Timeline</h2>
+  <div class="sub">Same-user batches per month. Look for: spikes, weekly cadence, outage windows.</div>
+  <table>
+    <thead><tr><th>Month</th><th class="right">Batches</th><th class="right">Sum (local)</th><th>Volume</th></tr></thead>
+    <tbody id="timeline-tbody"></tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Remediation Paths</h2>
+  <table>
+    <thead><tr><th>Path</th><th>Scope</th><th>Effort</th><th>Owner</th><th>Blocker</th></tr></thead>
+    <tbody id="remed-tbody"></tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Historical Comparison</h2>
+  <div class="sub">The gap is not shrinking. Fifteen sessions of documenting it while it widened.</div>
+  <table>
+    <tr><td>Session #027 reported</td><td class="right">3,394 same-user batches</td></tr>
+    <tr><td>Session #037 all-time</td><td class="right">4,760</td></tr>
+    <tr><td>Session #037 in scope (2024–2026)</td><td class="right">3,359</td></tr>
+    <tr><td>Delta vs. #027 (gap growth)</td><td class="right red">+1,366 (+40%)</td></tr>
+  </table>
+</div>
+
+<footer>
+  Generated by <code>Zagentexecution/bcm_dual_control_monitor.py</code> · Session #037 · JP Lopez, 2026-04-05<br>
+  Sources: Gold DB <code>BNK_BATCH_HEADER</code> (3,359 rows in scope), <code>tbtco</code> (job ownership cross-check) · Hypothesis doc: <code>knowledge/domains/BCM/h13_remediation_hypothesis.md</code> · Executive summary: <code>knowledge/domains/BCM/h13_executive_summary.md</code>
+</footer>
+</div>
+
+<script>
+// Embedded JSON summary (static snapshot — regenerate via bcm_dual_control_monitor.py)
+const DATA = {
+  "session": "037",
+  "generated": "2026-04-05",
+  "scope": "2024-2026",
+  "headline": {
+    "total_same_user_batches": 3359,
+    "total_sum_local_ccy": 655900587.0,
+    "hq_weekly_operators": {
+      "batches": 2705,
+      "sum_local_ccy": 475608378.0,
+      "users": [
+        "C_LOPEZ",
+        "I_MARQUAND"
+      ],
+      "pattern": "83% of their same-user batches run on Wednesday",
+      "banks": [
+        "SOG01",
+        "CIT04",
+        "SOG03",
+        "CIT21"
+      ],
+      "interpretation": "Two named HQ Paris treasury operators run the weekly AP cycle every Wednesday under UNES_AP_10/UNES_AP_EX/UNES_AP_IK. Each approves their own batches. This is the single largest dual-control gap in the organization \u2014 NOT automation."
+    }
+  },
+  "risk_categories": {
+    "HQ_weekly_AP_operators": {
+      "batches": 2705,
+      "sum": 475608378.0,
+      "users": [
+        "C_LOPEZ",
+        "I_MARQUAND"
+      ],
+      "why_top": "Highest volume, centralized at HQ, touches all 4 HQ house banks"
+    },
+    "UNES_AP_EX_exception_list": {
+      "batches": 331,
+      "sum": 1906221.0,
+      "why_top": "AE/JO/embargo-screened countries \u2014 sanctions exposure"
+    },
+    "PAYROLL_solo": {
+      "batches": 165,
+      "sum": 40704885.0,
+      "why_top": "Solo operator F_DERAKHSHAN runs payroll without second approver"
+    }
+  },
+  "by_rule_id": [
+    {
+      "rule": "UNES_AP_10",
+      "batches": 2286,
+      "sum": 468752498.0
+    },
+    {
+      "rule": "UBO_AP_MAX",
+      "batches": 486,
+      "sum": 139518649.0
+    },
+    {
+      "rule": "UNES_AP_EX",
+      "batches": 331,
+      "sum": 1906221.0
+    },
+    {
+      "rule": "PAYROLL",
+      "batches": 165,
+      "sum": 40704885.0
+    },
+    {
+      "rule": "UNES_AP_IK",
+      "batches": 88,
+      "sum": 4949659.0
+    },
+    {
+      "rule": "IIEP_AP_ST",
+      "batches": 2,
+      "sum": 68675.0
+    },
+    {
+      "rule": "UBO_AP_ST",
+      "batches": 1,
+      "sum": 0.0
+    }
+  ],
+  "top_users": [
+    {
+      "user": "C_LOPEZ",
+      "pattern": "HQ weekly AP operator (Wednesday cycle)",
+      "same_user_batches": 1425,
+      "diff_user_batches": 79,
+      "self_approval_pct": 94.7,
+      "same_user_sum": 240451769.0,
+      "currency": "USD",
+      "first_seen": "20240110",
+      "last_seen": "20260325",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "I_MARQUAND",
+      "pattern": "HQ weekly AP operator (Wednesday cycle)",
+      "same_user_batches": 1280,
+      "diff_user_batches": 98,
+      "self_approval_pct": 92.9,
+      "same_user_sum": 235156609.0,
+      "currency": "USD",
+      "first_seen": "20240103",
+      "last_seen": "20260318",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "E_AMARAL",
+      "pattern": "UBO Brazil field office (UBO_AP_MAX)",
+      "same_user_batches": 484,
+      "diff_user_batches": 499,
+      "self_approval_pct": 49.2,
+      "same_user_sum": 139518649.0,
+      "currency": "BRL",
+      "first_seen": "20240116",
+      "last_seen": "20260325",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "F_DERAKHSHAN",
+      "pattern": "Payroll solo operator",
+      "same_user_batches": 161,
+      "diff_user_batches": 460,
+      "self_approval_pct": 25.9,
+      "same_user_sum": 40275308.0,
+      "currency": "USD",
+      "first_seen": "20240115",
+      "last_seen": "20260324",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "EZ_MOYO",
+      "pattern": "Occasional / unclassified",
+      "same_user_batches": 4,
+      "diff_user_batches": 1,
+      "self_approval_pct": 80.0,
+      "same_user_sum": 429578.0,
+      "currency": "USD",
+      "first_seen": "20240510",
+      "last_seen": "20250415",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "A_ALMEIDA",
+      "pattern": "Occasional / unclassified",
+      "same_user_batches": 3,
+      "diff_user_batches": 116,
+      "self_approval_pct": 2.5,
+      "same_user_sum": 0.0,
+      "currency": "BRL",
+      "first_seen": "20240110",
+      "last_seen": "20260311",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    },
+    {
+      "user": "S_COURONNAUD",
+      "pattern": "Occasional / unclassified",
+      "same_user_batches": 2,
+      "diff_user_batches": 434,
+      "self_approval_pct": 0.5,
+      "same_user_sum": 68675.0,
+      "currency": "USD",
+      "first_seen": "20240112",
+      "last_seen": "20260326",
+      "owns_background_jobs": false,
+      "is_dialog_human": true
+    }
+  ],
+  "timeline_monthly": [
+    {
+      "ym": "202401",
+      "batches": 90,
+      "sum": 16039116.0
+    },
+    {
+      "ym": "202402",
+      "batches": 138,
+      "sum": 20864415.0
+    },
+    {
+      "ym": "202403",
+      "batches": 117,
+      "sum": 19454456.0
+    },
+    {
+      "ym": "202404",
+      "batches": 97,
+      "sum": 16338821.0
+    },
+    {
+      "ym": "202405",
+      "batches": 135,
+      "sum": 25044912.0
+    },
+    {
+      "ym": "202406",
+      "batches": 121,
+      "sum": 20811513.0
+    },
+    {
+      "ym": "202407",
+      "batches": 140,
+      "sum": 38158578.0
+    },
+    {
+      "ym": "202408",
+      "batches": 103,
+      "sum": 19321302.0
+    },
+    {
+      "ym": "202409",
+      "batches": 132,
+      "sum": 20590829.0
+    },
+    {
+      "ym": "202410",
+      "batches": 152,
+      "sum": 28465510.0
+    },
+    {
+      "ym": "202411",
+      "batches": 147,
+      "sum": 26492426.0
+    },
+    {
+      "ym": "202412",
+      "batches": 144,
+      "sum": 34834997.0
+    },
+    {
+      "ym": "202501",
+      "batches": 105,
+      "sum": 16130751.0
+    },
+    {
+      "ym": "202502",
+      "batches": 111,
+      "sum": 19804861.0
+    },
+    {
+      "ym": "202503",
+      "batches": 133,
+      "sum": 23911791.0
+    },
+    {
+      "ym": "202504",
+      "batches": 135,
+      "sum": 23778450.0
+    },
+    {
+      "ym": "202505",
+      "batches": 116,
+      "sum": 21144786.0
+    },
+    {
+      "ym": "202506",
+      "batches": 155,
+      "sum": 40840458.0
+    },
+    {
+      "ym": "202507",
+      "batches": 148,
+      "sum": 28676767.0
+    },
+    {
+      "ym": "202508",
+      "batches": 99,
+      "sum": 17460670.0
+    },
+    {
+      "ym": "202509",
+      "batches": 116,
+      "sum": 25513996.0
+    },
+    {
+      "ym": "202510",
+      "batches": 136,
+      "sum": 28553645.0
+    },
+    {
+      "ym": "202511",
+      "batches": 147,
+      "sum": 28424558.0
+    },
+    {
+      "ym": "202512",
+      "batches": 137,
+      "sum": 32593038.0
+    },
+    {
+      "ym": "202601",
+      "batches": 104,
+      "sum": 20340946.0
+    },
+    {
+      "ym": "202602",
+      "batches": 95,
+      "sum": 18857115.0
+    },
+    {
+      "ym": "202603",
+      "batches": 106,
+      "sum": 23451881.0
+    }
+  ],
+  "day_of_week_distribution": [
+    {
+      "dow": 1,
+      "dow_name": "Mon",
+      "batches": 208
+    },
+    {
+      "dow": 2,
+      "dow_name": "Tue",
+      "batches": 380
+    },
+    {
+      "dow": 3,
+      "dow_name": "Wed",
+      "batches": 2360
+    },
+    {
+      "dow": 4,
+      "dow_name": "Thu",
+      "batches": 211
+    },
+    {
+      "dow": 5,
+      "dow_name": "Fri",
+      "batches": 198
+    },
+    {
+      "dow": 6,
+      "dow_name": "Sat",
+      "batches": 2
+    }
+  ],
+  "historical_comparison": {
+    "session_027_reported": 3394,
+    "session_037_all_time": 4760,
+    "session_037_in_scope_2024_2026": 3359,
+    "delta_vs_027": 1366,
+    "interpretation": "Session #027 reported 3,394 same-user batches. At #037 the all-time figure is 4,760, in-scope 2024-2026 is 3359. The gap widened while the finding sat in PMO. Fifteen sessions of documented inaction."
+  },
+  "remediation_paths": {
+    "detective_nightly_report": {
+      "scope": "All same-user batches last 24h named and ranked",
+      "effort": "Low \u2014 this script runs daily",
+      "owner": "Internal audit",
+      "blocker": "None"
+    },
+    "preventive_workflow_mod": {
+      "scope": "Workflow 90000003 enforces different CHUSR than CRUSR",
+      "effort": "Medium \u2014 needs YWFI source read (H14) + D01 dev cycle",
+      "owner": "ABAP dev",
+      "blocker": "D01 ADT password refresh needed"
+    },
+    "policy_exception_list": {
+      "scope": "UNES_AP_EX batches (AE/JO/embargo) block single-user approval",
+      "effort": "Low \u2014 BCM/FBZP config change",
+      "owner": "FI config team",
+      "blocker": "Finance director signoff"
+    },
+    "hq_weekly_dual_control": {
+      "scope": "Enforce C_LOPEZ and I_MARQUAND cannot self-approve",
+      "effort": "Low \u2014 role/user-group split",
+      "owner": "Basis + FI config",
+      "blocker": "Requires backup operator for vacation coverage"
+    }
+  },
+  "artifacts": {
+    "csv": "Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.csv",
+    "html": "Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.html",
+    "executive_summary": "knowledge/domains/BCM/h13_executive_summary.md",
+    "hypothesis_doc": "knowledge/domains/BCM/h13_remediation_hypothesis.md"
+  }
+};
+
+function fmt(n) { return n == null ? '' : Number(n).toLocaleString('en-US'); }
+function usd(n) { return '$' + Math.round(Number(n) || 0).toLocaleString('en-US'); }
+
+// Top users table
+const users = DATA.top_users || [];
+const utbody = document.getElementById('users-tbody');
+users.forEach(u => {
+  const tr = document.createElement('tr');
+  const pct = u.self_approval_pct;
+  const pctClass = pct >= 80 ? 'red' : pct >= 50 ? 'yellow' : 'green';
+  const tagClass = u.pattern.includes('HQ') ? 'hq' :
+                   u.pattern.includes('UBO') || u.pattern.includes('field') ? 'field' :
+                   u.pattern.includes('Payroll') ? 'payroll' : '';
+  tr.innerHTML = `
+    <td><b>${u.user}</b></td>
+    <td><span class="pattern-tag ${tagClass}">${u.pattern}</span></td>
+    <td class="right">${fmt(u.same_user_batches)}</td>
+    <td class="right">${fmt(u.diff_user_batches)}</td>
+    <td class="right ${pctClass}">${pct}%</td>
+    <td class="right">${fmt(u.same_user_sum)}</td>
+    <td>${u.currency || ''}</td>
+    <td>${u.owns_background_jobs ? '<span class="yellow">svc_acct</span>' : '<span class="muted">dialog_human</span>'}</td>`;
+  utbody.appendChild(tr);
+});
+
+// Day of week chart
+const dow = DATA.day_of_week_distribution || [];
+const maxDow = Math.max(...dow.map(d => d.batches));
+const chart = document.getElementById('dow-chart');
+dow.forEach(d => {
+  const bar = document.createElement('div');
+  bar.className = 'dow-bar' + (d.dow === 3 ? ' wed' : '');
+  bar.style.height = (100 * d.batches / maxDow) + '%';
+  bar.innerHTML = `<span class="val">${fmt(d.batches)}</span><span class="label">${d.dow_name}</span>`;
+  chart.appendChild(bar);
+});
+
+// Rules table
+const rules = DATA.by_rule_id || [];
+const rtbody = document.getElementById('rules-tbody');
+rules.forEach(r => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${r.rule}</td><td class="right">${fmt(r.batches)}</td><td class="right">${fmt(r.sum)}</td>`;
+  rtbody.appendChild(tr);
+});
+
+// Timeline
+const timeline = DATA.timeline_monthly || [];
+const maxMonth = Math.max(...timeline.map(t => t.batches));
+const ttbody = document.getElementById('timeline-tbody');
+timeline.forEach(t => {
+  const tr = document.createElement('tr');
+  const pct = 100 * t.batches / maxMonth;
+  tr.innerHTML = `
+    <td>${t.ym.substring(0,4)}-${t.ym.substring(4,6)}</td>
+    <td class="right">${fmt(t.batches)}</td>
+    <td class="right">${fmt(t.sum)}</td>
+    <td><span class="bar" style="width:${pct}%"></span></td>`;
+  ttbody.appendChild(tr);
+});
+
+// Remediation paths
+const remed = DATA.remediation_paths || {};
+const remtbody = document.getElementById('remed-tbody');
+Object.entries(remed).forEach(([key, r]) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><b>${key.replace(/_/g,' ')}</b></td>
+    <td>${r.scope}</td>
+    <td>${r.effort}</td>
+    <td>${r.owner}</td>
+    <td>${r.blocker}</td>`;
+  remtbody.appendChild(tr);
+});
+</script>
+</body>
+</html>

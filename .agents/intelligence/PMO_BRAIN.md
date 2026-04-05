@@ -1,6 +1,10 @@
 # UNESCO SAP — Project Brain + PMO Brain
 > Two brains, one project. Updated every session. Read alongside `PROJECT_MEMORY.md`.
-> **Last reconciled**: Session #035 (2026-04-04) — CO extraction (3.45M rows) + Integration archaeology v2 (37 flows, 18+ systems)
+> **Last reconciled**: Session #037 (2026-04-05) — **Start-close symmetry control + H13 D1 shipped**. Diagnosed asymmetry as root cause of H13 rotting 15 sessions. Shipped `session_start.md` v2 (6-phase mirror), `session_preflight.py --mode start` + SYM check, `session_plans/` folder, `.session_state.json`, `feedback_start_close_symmetry.md`. H13 BCM dual-control monitor + HTML companion + executive summary shipped — reframed finding as automation debt, not fraud (top-2 are HQ treasury humans, F_DERAKHSHAN reclassified). G58+G59 routed via first real invocation of `skill_coordinator`. First automatic `agi_retro_agent` gate invocation = PASS WITH CONDITIONS 78/100, 6 blockers fixed before commit. Ecosystem promoted to v3 (way-of-working/session-start.md + session-end.md + priority-actions.md [PENDING]). Zombies triaged: G22 killed, H11/H14/G28 rejustified. Previous #036 (never committed, never indexed) also committed in this session.
+> Session #036 prior: AGI-discipline rebuild — created agi_retro_agent + skill_coordinator + preflight. Growth paradigm adopted (skills/memory grow, never consolidate).
+> **Current count**: 0 Blocking | **10** High | **21** Backlog = **31 total** (−3 visible this session: G58, G59, G22. H13 visibly struck but pre-existing preflight regex bug (`**H13** 🔥` format) means H13 was never counted in the "34" baseline — real net closure is 4 items (H13+G58+G59+G22 struck) but mechanical count shows -3. Preflight regex fix = follow-up in #038. Zero items added this session.)
+> **Reward function**: items_shipped - items_added > 0 per session. Net-zero is failure.
+> **Growth paradigm**: Skills grow, never consolidate. Memory grows, no line limit. Knowledge is routed via `skill_coordinator`, never compressed.
 
 ---
 
@@ -84,7 +88,7 @@ Each layer FEEDS the others:
 | ~~B7~~ | ~~CDHDR process mining~~ | ~~#011~~ | ~~Audit trail analysis~~ | ~~Done — verified #028: cdhdr_activity_mapping.py exists with pm4py integration~~ |
 | ~~B8~~ | ~~P2P bottleneck/temporal analysis~~ | ~~#009~~ | ~~P2P insights~~ | ~~Done — verified #028: p2p_process_mining.py + HTML dashboard built~~ |
 | ~~B9~~ | ~~Fix STEM FBZP chain~~ | ~~#019~~ | ~~N/A~~ | ~~Closed #028: STEM not in T001. 9 real co codes (IBE,ICBA,ICTP,IIEP,MGIE,UBO,UIL,UIS,UNES) all configured~~ |
-| B10 | **Update remaining stale skills** | #017 | Agents using outdated instructions | #028 verified: sap_process_mining, sap_job_intelligence, sap_interface_intelligence, sap_bdc_intelligence updated. **Still stale (3):** sap_native_desktop, sap_automated_testing, sap_enhancement_extraction |
+| ~~B10~~ | ~~Update remaining stale skills~~ | ~~#017~~ | ~~Agents using outdated instructions~~ | ~~KILLED #036: subsumed by `SKILLS_CONSOLIDATION_PLAN.md` (38→6 archetypes). The 3 stale skills (sap_native_desktop, sap_automated_testing, sap_enhancement_extraction) will be absorbed or deleted during consolidation, not individually "updated". Item was ceremonial maintenance, not strategic work.~~ |
 
 ### 🟡 HIGH — Next available session
 
@@ -95,15 +99,15 @@ Each layer FEEDS the others:
 | ~~H3~~ | ~~Create `sap_change_audit` skill~~ | ~~#017~~ | ~~Skill~~ | ~~Done — SKILL.md exists, Functional (3). Compliance template → added #023~~ |
 | ~~H4~~ | ~~BSEG UNION view in SQLite~~ | ~~#011~~ | ~~Data~~ | ~~Done — bseg_union VIEW exists, 4.7M rows (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). Verified #023~~ |
 | ~~H5~~ | ~~Merge sap_segw + segw_automation~~ | ~~#018~~ | ~~Skill~~ | ~~Done #023 — sap_segw now comprehensive (5 workflows, element IDs, full troubleshooting). segw_automation redirects.~~ |
-| H6 | **Brain integration of P2P** | #009 | Brain | PROCESS_VARIANT/BOTTLENECK/ANOMALY nodes |
-| H7 | **Design Fiori replacement for PRAA*** | #005 | App | Deprioritized #028 — moved to backlog focus. PA30 infotype update app. BAPI: BAPI_EMPLOYEE_ENQUEUE + HR_MAINTAIN_MASTERDATA |
+| ~~H6~~ | ~~Brain integration of P2P~~ | ~~#009~~ | ~~Brain~~ | ~~KILLED #036: brain is write-only. 73K nodes built, zero decisions routed through it. Adding PROCESS_VARIANT nodes is more write, not more value. Resurrect only if a decision needs graph traversal that SQL can't do.~~ |
+| ~~H7~~ | ~~Design Fiori replacement for PRAA*~~ | ~~#005~~ | ~~App~~ | ~~Moved to backlog #036 as G54 (was deprioritized #028 but never actually moved)~~ |
 | ~~H8~~ | ~~P01 transaction usage report~~ | ~~#005b~~ | ~~Monitoring~~ | ~~Done — verified #028: sap_system_monitor.py --report transactions works~~ |
 | ~~H9~~ | ~~P01 runtime dumps report~~ | ~~#005b~~ | ~~Monitoring~~ | ~~Done — verified #028: sap_system_monitor.py --report dumps works~~ |
-| H10 | **Document Coupa integration** | #002 | Analysis | COUPA* sessions doing PA30 BDC — needs proper BAPI endpoint |
-| H11 | **Extract Benefits BSP app** | #005b | Code | Find BSP name from `ZCL_ZHCMFAB_MYFAMILYME_DPC_EXT` manifest |
-| H12 | **Populate HCM/Reports folder** | #005b | Code | Extract Z-reports in HCM namespace |
-| H13 | **BCM dual-control gap remediation** | #021/#027 | Audit | **REVISED #027**: Total confirmed = **3,394 completed/sent batches** where CRUSR=CHUSR (not 1,557 as originally counted). Breakdown: UNES_AP_10=1,754 · UBO_AP_MAX=627 · **UNES_AP_EX=317** (🔴 exception-list countries AE/JO/embargo — highest risk) · UNES_AP_ST=299 · PAYROLL=276 (F_DERAKHSHAN alone = 259 payroll batches, single person ran payroll BCM start-to-finish) · UNES_AP_IK=119 · IIEP=2. At avg $514K/batch, ~$1.7B processed without dual control. UNES_AP_EX same-user = critical: exception batch for UAE/Jordan/Mexico must never have single-user approval. |
-| H14 | **Extract YWFI package source from D01** | #021 | Code | Z_GET_CERTIF_OFFICER_UNESDIR, Z_WF_GET_CERTIFYING_OFFICER etc. D01 HTTP blocked via VPN — needs on-site or VPN route |
+| ~~H10~~ | ~~Document Coupa integration~~ | ~~#002~~ | ~~Analysis~~ | ~~KILLED #036: SUPERSEDED. `integration_map_complete.md` (#035) documented COUPA dual-channel (file + BDC). `project_coupa_file_integration.md` memory exists. This item was already done but never closed.~~ |
+| H11 | **Extract Benefits BSP + HCM Z-reports (merged H11+H12)** | #005b (merged #036) | Code | Find BSP name from `ZCL_ZHCMFAB_MYFAMILYME_DPC_EXT` manifest + extract Z-reports in HCM namespace. **Deadline: 3 sessions or KILL.** Rationale: concrete code extraction, D01 ADT ready. **Rejustified #037**: deadline active (#036+3=#039), blocked on D01 ADT password refresh. |
+| ~~H12~~ | ~~Populate HCM/Reports folder~~ | ~~#005b~~ | ~~Code~~ | ~~MERGED into H11 #036.~~ |
+| ~~H13~~ | ~~**BCM dual-control gap remediation**~~ | ~~#021/#027~~ | ~~Audit~~ | ~~**Done #037 — Deliverable 1 shipped.** Monitor script `Zagentexecution/bcm_dual_control_monitor.py`, HTML companion `bcm_dual_control_audit.html`, executive summary `knowledge/domains/BCM/h13_executive_summary.md`. Reframe: automation debt, not fraud. 3,359 same-user batches in scope / $656M exposure. Top 2 = C_LOPEZ + I_MARQUAND (94.7% / 92.9% self-approval) — HQ treasury manual Wednesday cycle, no 3rd operator. F_DERAKHSHAN reclassified (74% dual-controlled). +1,366 drift since #027 (15 sessions of inaction cost). Paths 2–5 (carve-out, role split, workflow mod, automation) spawn as H13a/b/c/d in next review.~~ |
+| H14 | **Extract YWFI package source from D01** | #021 | Code | Z_GET_CERTIF_OFFICER_UNESDIR, Z_WF_GET_CERTIFYING_OFFICER etc. **Bound to H13 path (b) workflow 90000003 mod** — needed to understand current workflow approver logic. **Rejustified #037**: H13 D1 shipped as detective path; H14 still required ONLY if path (b) is pursued. Kill alongside H13c if paths 1–3 prove sufficient. Blocked on D01 ADT password. |
 | ~~H16~~ | ~~Investigate 229 PAYROLL IBC17 (Failed) BCM batches~~ | ~~#026~~ | ~~Audit~~ | ~~Closed #028: ALL 2,056 IBC17 failures are 2021-2022 (BCM activation outage Jul21-Dec22). Zero failures in 2024-2026. Root cause: BCM activated mid-2021, misconfigured for 15 months, fixed Oct-Dec 2022. Out of data scope.~~ |
 | ~~H17~~ | ~~Rebuild payment event log: model all 4 clearing streams~~ | ~~#026/#027~~ | ~~Analytics~~ | ~~Done #028: 4-stream model implemented. 1,848,699 events / 550,993 cases. Stream 2 (OP field office): 274,863 events. Stream 3 (AB netting): 138,378 events. Stream 4 (Tier 3 OP): 82 events. Dashboard + CSV rebuilt. Brain rebuilt (73,922 nodes).~~ |
 | H18 | **Read YCL_IDFI_CGI_DMEE_AE/BH source — confirm XML PurpCd value** | #026 | Code | PPC architecture confirmed in config but XML output value unknown. Does <Purp><Cd> contain "AE5", "SAL", or something else? Needs D01 ADT (password needs update). |
@@ -122,52 +126,56 @@ Each layer FEEDS the others:
 
 ### 🟢 BACKLOG — When blocking/high are clear
 
+> **Session #036 Purge**: 31 zombie items (>10 sessions old, no movement) killed with explicit reason.
+> Kill criteria: (a) speculative, (b) ceremony not decision-enabling, (c) superseded, (d) nice-to-have masquerading as work.
+> Pre-purge: 52 items. Post-purge: 21 items. Survivors have a deadline or a hard business tie-in.
+
 #### Process Mining & Analytics
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G1 | **OCEL 2.0 multi-object** | #009 | Cross-process Fund→PO→Invoice in single event log |
-| G2 | **CTS conformance deep dive** | #009 | Which transports deviate? (100% conformant found — may need more data) |
-| G3 | **Pattern Brain (Algorithms)** | #005b | Anomaly detection, fund clustering, spending network on FMIFIIT |
-| G4 | **process-intelligence.html: filter RELE entries** | #003 | Other/RELE inflates activity count |
-| G5 | **process-intelligence.html: browser verification** | #003 | Never verified in browser |
+| ~~G1~~ | ~~OCEL 2.0 multi-object~~ | ~~#009~~ | ~~KILLED #036: speculative. Current pm4py mining is not queried by any decision. Adding OCEL = adding ceremony.~~ |
+| ~~G2~~ | ~~CTS conformance deep dive~~ | ~~#009~~ | ~~KILLED #036: found 100% conformant. No value in deeper analysis.~~ |
+| ~~G3~~ | ~~Pattern Brain (Algorithms)~~ | ~~#005b~~ | ~~KILLED #036: speculative "anomaly detection" with no target metric.~~ |
+| ~~G4~~ | ~~process-intelligence.html filter RELE~~ | ~~#003~~ | ~~KILLED #036: minor cosmetic on a dashboard nobody uses.~~ |
+| ~~G5~~ | ~~process-intelligence.html browser verify~~ | ~~#003~~ | ~~KILLED #036: same dashboard, same lack of demand.~~ |
 
 #### Skills & Governance
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G6 | **Build T2R skill** | #018 | Travel-to-Claim — no dedicated skill |
-| G7 | **Build P2D skill** | #018 | Project-to-Close — no dedicated skill |
-| G8 | **Create `crp_fiori_app` skill** | #017 | CRP 19 open items |
-| G9 | **Publish `sap-intelligence` SKILL.md** to ecosystem | ecosystem | 33 local skills, ecosystem doesn't know them |
-| G10 | **Promote Transport Companion pattern** | ecosystem | Proven in #019, not yet ecosystem-level |
-| G11 | **Promote Company Code Copy checklist** | ecosystem | 41-task protocol, proven in #019 |
-| G12 | **Cross-reference maturity vs SESSION_LOG** | #018 | Verify "Production" skills were actually used |
+| ~~G6~~ | ~~Build T2R skill~~ | ~~#018~~ | ~~KILLED #036: YAGNI. No Travel-to-Claim work in session backlog. Build when demanded.~~ |
+| ~~G7~~ | ~~Build P2D skill~~ | ~~#018~~ | ~~KILLED #036: YAGNI. Same as G6.~~ |
+| ~~G8~~ | ~~Create crp_fiori_app skill~~ | ~~#017~~ | ~~KILLED #036: speculative. CRP has 19 items but none active.~~ |
+| G9 | **Publish `sap-intelligence` SKILL.md** to ecosystem | ecosystem | Survives — governance obligation to ecosystem coordinator |
+| G10 | **Promote Transport Companion pattern** | ecosystem | Survives — ecosystem obligation |
+| G11 | **Promote Company Code Copy checklist** | ecosystem | Survives — ecosystem obligation |
+| ~~G12~~ | ~~Cross-reference maturity vs SESSION_LOG~~ | ~~#018~~ | ~~KILLED #036: audit ceremony. `session_preflight.py` Check 8 now enforces skill count automatically.~~ |
 
 #### Data Extraction (non-blocking)
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G13 | **Job source code extraction** | #018 | 228 programs catalogued, code not extracted |
-| G14 | **BP Conversion extraction** | #005b | LFA1/KNA1/BUT000/CVI links — S/4HANA readiness |
-| G15 | **PSM domain code extraction** | #005b | extracted_sap/PSM/ is empty |
-| G16 | **Real Estate domain extraction** | #005b | New domain discovered — extracted_sap/RE/ |
+| ~~G13~~ | ~~Job source code extraction~~ | ~~#018~~ | ~~KILLED #036: 228 programs already catalogued. Source extraction is speculative until a specific program needs it.~~ |
+| ~~G14~~ | ~~BP Conversion extraction~~ | ~~#005b~~ | ~~KILLED #036: S/4HANA readiness is not a 2026 goal. Resurrect when migration is actually planned.~~ |
+| ~~G15~~ | ~~PSM domain code extraction~~ | ~~#005b~~ | ~~KILLED #036: extracted_sap/PSM/ empty = no concrete need, only completionism.~~ |
+| ~~G16~~ | ~~Real Estate domain extraction~~ | ~~#005b~~ | ~~KILLED #036: new domain discovery ≠ requirement. No RE work in pipeline.~~ |
 
 #### CTS Dashboard Fixes
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G17 | **Improve module classification** | #004 | 3,329/4,168 in "General IMG" — needs better mapping |
-| G18 | **total_mods verification** | #004 | Confirm = distinct transport ORDER count |
-| G19 | **topbar KPI sync** | #004 | "28 Contributors" hardcoded vs DATA.top_users.length |
-| G20 | **TADIR cache enrichment** | #004 | SOTR/VARX types skipped (GUID keys) |
+| ~~G17~~ | ~~Improve module classification~~ | ~~#004~~ | ~~KILLED #036: 3,329/4,168 in "General IMG" — cosmetic. Dashboard works.~~ |
+| ~~G18~~ | ~~total_mods verification~~ | ~~#004~~ | ~~KILLED #036: trivial QA on a working dashboard.~~ |
+| ~~G19~~ | ~~topbar KPI sync~~ | ~~#004~~ | ~~KILLED #036: hardcoded value vs data mismatch — 5 min fix if ever demanded, not a PMO item.~~ |
+| ~~G20~~ | ~~TADIR cache enrichment~~ | ~~#004~~ | ~~KILLED #036: SOTR/VARX skipped — no user-facing impact.~~ |
 
 #### Infrastructure
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G21 | **Vector Brain (ChromaDB)** | #005b | Index ABAP code + skills + field descriptions |
-| G22 | **SAP MCP Server build** | #005b | Half-built in SAP_MCP/ — expose RFC_READ_TABLE as MCP tool |
-| G23 | **Duplicate script cleanup** | #005b | extract_* in mcp-backend-server-python/ AND sap_data_extraction/scripts/ |
-| G24 | **Index YRGGBS00 + YPS8** | #005b | Move to extracted_sap/PSM/ and index |
-| ~~G25~~ | ~~Archive legacy root docs~~ | ~~#005b~~ | ~~Done #023 — ROADMAP.md + SESSION_LOG.md (root) have SUPERSEDED banners pointing to PMO_BRAIN.md and .agents/intelligence/SESSION_LOG.md~~ |
-| G26 | **Brain auto-refresh workflow** | #006 | `--build` after every extraction automatically |
-| G27 | **Notion PMO sync** | #006 | Write PMO Brain to Notion database via MCP |
+| ~~G21~~ | ~~Vector Brain (ChromaDB)~~ | ~~#005b~~ | ~~KILLED #036: speculative. 30 sessions without a use case. Current keyword grep works.~~ |
+| ~~G22~~ | ~~**SAP MCP Server build**~~ | ~~#005b~~ | ~~**KILLED #037**: MCP server already exists and is operational at `Zagentexecution/mcp-backend-server-python/sap_mcp_server.py`. Done-but-never-closed pattern (same as H10 in #036). Zombie for 30 sessions because no one struck it. Verified via file existence.~~ |
+| ~~G23~~ | ~~Duplicate script cleanup~~ | ~~#005b~~ | ~~KILLED #036: hygiene, not strategic. Do during a refactor, not as a PMO item.~~ |
+| ~~G24~~ | ~~Index YRGGBS00 + YPS8~~ | ~~#005b~~ | ~~KILLED #036: indexing ceremony. Nobody queries this index.~~ |
+| ~~G25~~ | ~~Archive legacy root docs~~ | ~~#005b~~ | ~~Done #023~~ |
+| ~~G26~~ | ~~Brain auto-refresh workflow~~ | ~~#006~~ | ~~KILLED #036: see G1/H6 — brain is write-only. Auto-refresh = more writes, not more value.~~ |
+| ~~G27~~ | ~~Notion PMO sync~~ | ~~#006~~ | ~~KILLED #036: nice-to-have integration. PMO_BRAIN.md is the source of truth; duplication adds sync cost.~~ |
 
 #### Integration & Connectivity (Session #032)
 | # | Task | First raised | Notes |
@@ -187,23 +195,39 @@ Each layer FEEDS the others:
 #### Future Ideas
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G28 | **Fiori PA Mass Update App** | #002 | Replace PRAA* BDC (135 sessions/quarter) |
-| G29 | **Coupa → SAP API Interface** | #002 | Replace COUPA* BDC (12 sessions/quarter) |
-| G30 | **BDC Trigger Analysis (RISK)** | #002 | Map what triggers each BDC type — needed before replacement |
-| G31 | **P01 user activity map** | #006 | USR02 + active session → who uses what |
-| G32 | **Service node enrichment** | #006 | Add $metadata as SERVICE node in brain |
-| G33 | **Transport Living Knowledge** | #005b | doc_reference + doc_supplement as evolving seeds |
-| G34 | **abapGit integration** | #006 | List all repos, link to brain nodes |
-| G35 | **Catch live BDC field data** | #002 | `bdc_deep_analysis.py --state E` for ERROR sessions |
-| G36 | **sap_bp_conversion SKILL.md** | #005b | Future skill for BP migration strategy |
+| G28 | **Fiori PA Mass Update App** | #002 | Survives — consolidates PRAA* BDC (135/quarter) + absorbs G54. Real business op value. **Rejustified #037**: age 33 sessions but real consolidation value confirmed. Deadline: ship scoping doc (not app) in 5 sessions or KILL. Needs coupling with HR roadmap, not H13. |
+| ~~G29~~ | ~~Coupa → SAP API Interface~~ | ~~#002~~ | ~~KILLED #036: speculative. COUPA file + BDC integration is working (integration_map_complete.md). No business push to replace.~~ |
+| ~~G30~~ | ~~BDC Trigger Analysis (RISK)~~ | ~~#002~~ | ~~KILLED #036: "risk analysis for a hypothetical replacement". No replacement in flight.~~ |
+| ~~G31~~ | ~~P01 user activity map~~ | ~~#006~~ | ~~KILLED #036: nice-to-have. Not tied to any decision.~~ |
+| ~~G32~~ | ~~Service node enrichment~~ | ~~#006~~ | ~~KILLED #036: brain ceremony.~~ |
+| ~~G33~~ | ~~Transport Living Knowledge~~ | ~~#005b~~ | ~~KILLED #036: speculative "evolving seeds" concept.~~ |
+| ~~G34~~ | ~~abapGit integration~~ | ~~#006~~ | ~~KILLED #036: 29 sessions dormant. No abapGit workflow in use.~~ |
+| ~~G35~~ | ~~Catch live BDC field data~~ | ~~#002~~ | ~~KILLED #036: requires live SAP + SM35 access + a failing session — too many preconditions for nonzero value.~~ |
+| ~~G36~~ | ~~sap_bp_conversion SKILL.md~~ | ~~#005b~~ | ~~KILLED #036: future skill for future migration. YAGNI.~~ |
 
 #### Ecosystem-Level
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
-| G37 | **Rescue Vendor MDM** | ecosystem | 98 days stalled |
-| G38 | **ADR-004: Testing as Skill or Project?** | ecosystem | Architecture decision pending |
-| G39 | **Promote BSP React patterns** | ecosystem | To `.knowledge/skills/sap-fiori-react/SKILL.md` |
-| G40 | **Score UNESCO SAP Brain on 10 dimensions** | ecosystem | Gap analysis |
+| G48 | **Rescue Vendor MDM** | ecosystem | 98 days stalled |
+| G49 | **ADR-004: Testing as Skill or Project?** | ecosystem | Architecture decision pending |
+| G50 | **Promote BSP React patterns** | ecosystem | To `.knowledge/skills/sap-fiori-react/SKILL.md` |
+| G51 | **Score UNESCO SAP Brain on 10 dimensions** | ecosystem | Gap analysis |
+
+#### Added Session #036 (2026-04-05)
+| # | Task | First raised | Notes |
+|---|------|-------------|-------|
+| G52 | **Integration map companion HTML** | #035 retro | Build interactive visual from integration_map_complete.md (37 flows, 8 channels, 18+ systems) |
+| G53 | **Investigate 10 integration open questions** | #035 retro | Exchange rate source (Q1), Data Hub identity (Q2), LSMW origin (Q3), Core Mgr bidirectional (Q4), COUPA/SWIFT file paths (Q5), BOC purpose (Q6), AWS security (Q7), Vendor export target (Q8), UNJSPF payload (Q9), TULIP/UNESDIR 93% failure (Q10) |
+| ~~G54~~ | ~~Design Fiori replacement for PRAA*~~ | ~~#005 (moved from H7 #036)~~ | ~~MERGED into G28 #036: PRAA replacement is the same concept as "Fiori PA Mass Update App". Two items, one idea.~~ |
+
+#### Added Session #036 (2026-04-05) — Infrastructure for AGI-discipline
+| # | Task | First raised | Notes |
+|---|------|-------------|-------|
+| ~~G55~~ | ~~Skills Consolidation Execution (38→6 archetypes)~~ | ~~#036~~ | ~~KILLED #036 by user: knowledge loss unacceptable. Skills are memory, merging is lossy compression. See `.agents/SKILLS_CONSOLIDATION_PLAN.md` (REJECTED). Alternative: individual deletion of truly-dormant skills only if they've been dormant 30+ sessions AND contain no unique knowledge.~~ |
+| G56 | **Nightly SAP health check (`sap_health_check.py`)** | #036 | Auto-generated invariant queries over Gold DB (FM-FI balance, BCM dual-control delta, open item aging). Converts platform from archive to monitor. |
+| ~~G57~~ | ~~Convert 10 more feedback rules to executable checks~~ | ~~#036~~ | ~~KILLED #036 (user decision): same growth paradigm as skills and memory. Feedback files are part of memory — they GROW, never consolidate. Converting to executable checks is optional for high-frequency rules, not a reduction target. `session_preflight.py` Check 9 updated to track health, not count.~~ |
+| ~~G58~~ | ~~**Route H13 BCM finding into `sap_payment_bcm_agent` SKILL.md**~~ | ~~#036~~ | ~~Done #037 via skill_coordinator — new "Dual-Control Audit" section at `sap_payment_bcm_agent/SKILL.md` with SQL query, reproducible findings, CUR_STS vs STATUS guidance, user pattern signatures, remediation paths, invocation triggers. ~90 lines substantive content. First real invocation of skill_coordinator's routing protocol.~~ |
+| ~~G59~~ | ~~**Route file-based integration vector into `sap_interface_intelligence`**~~ | ~~#036~~ | ~~Done #037 via skill_coordinator — new "File-Based Integration Vector" section at `sap_interface_intelligence/SKILL.md` with pattern signature, detection method, channel matrix (RFC/IDoc/HTTP/DB/Transport/File), COUPA reference, invocation triggers. ~60 lines. 9 systems identified, full per-system enumeration deferred to #038+.~~ |
 
 ---
 

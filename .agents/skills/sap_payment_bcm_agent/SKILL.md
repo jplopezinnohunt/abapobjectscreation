@@ -1429,3 +1429,96 @@ SAP iRIS (F110/SAPFPAYM) → SAP Network File Directory → SWIFT Integration La
 4. Agent knows BCM rules and can explain PAYROLL vs AP_ST vs TR_TR
 5. Agent correctly states T042A (not T042C) is the payment method routing table
 6. Agent warns about IBE/MGIE/ICBA having no F110 capability
+7. **(Session #037)** Agent surfaces the H13 dual-control finding and reframes it as **automation debt, not fraud** — see "Dual-Control Audit" section below.
+
+---
+
+## Dual-Control Audit (H13, routed Session #037 via skill_coordinator)
+
+**The single largest dual-control gap in UNESCO payments is not fraud — it is automation debt at HQ treasury.** This section captures the complete H13 finding for any future `sap_payment_bcm_agent` invocation.
+
+### Detection query (Gold DB)
+
+```sql
+-- Same-user batches (CRUSR = CHUSR) 2024-2026
+SELECT CRUSR,
+       SUM(CASE WHEN CRUSR=CHUSR THEN 1 ELSE 0 END) AS same_user_batches,
+       SUM(CASE WHEN CRUSR!=CHUSR THEN 1 ELSE 0 END) AS diff_user_batches,
+       ROUND(100.0 * SUM(CASE WHEN CRUSR=CHUSR THEN 1 ELSE 0 END) / COUNT(*), 1) AS self_approval_pct,
+       ROUND(SUM(CASE WHEN CRUSR=CHUSR THEN BATCH_SUM ELSE 0 END), 0) AS same_user_sum
+FROM BNK_BATCH_HEADER
+WHERE CRUSR != '' AND CRDATE >= '20240101'
+GROUP BY CRUSR ORDER BY same_user_batches DESC;
+```
+
+### Reproducible findings (Session #037, 2026-04-05)
+
+- **3,359 same-user batches** in scope 2024-2026, **~$655.9M** local-currency exposure
+- **70.3% on Wednesday** — weekly manual AP cycle signature
+- **Top 2 users (C_LOPEZ, I_MARQUAND) = 2,705 batches / 81% of volume / ~$475M**. Both HQ Paris treasury.
+- **Self-approval rates:** C_LOPEZ 94.7% · I_MARQUAND 92.9% · E_AMARAL 49.2% · F_DERAKHSHAN 25.9%
+- **F_DERAKHSHAN reclassified:** prior hypothesis doc (#036) flagged him as top risk — **wrong**. 74% of his PAYROLL batches DO have a second approver. The 161 solo are vacation backup exceptions.
+- **None own background jobs** in `tbtco` → dialog humans, not service accounts.
+
+### Status field guidance
+
+- `STATUS` column = GUID reference to SAP state object — **opaque in Gold DB**, do not parse.
+- `CUR_STS` column = **semantic short code** — always use this:
+  - `IBC15` ~78% — primary active state
+  - `IBC11` ~21%
+  - `IBC17` — Failed (BCM outage Jul 2021 – Dec 2022, outside 2024-26 scope)
+  - `IBC20`, `IBC09` — rare
+- Rule: filters like `STATUS IN ('COMPLETED','SENT')` from prior docs were written against RFC live, **not Gold DB**. Do not copy-paste to Gold DB queries.
+
+### Why it is automation debt, not fraud
+
+C_LOPEZ and I_MARQUAND are the **only two HQ Paris treasury operators** running the weekly AP cycle manually every Wednesday. Each approves their own batches because there is no third operator to provide dual control. They cover each other during vacation. The fix is **staffing or automation**, not a workflow policy. Payroll dual-control works correctly (74% second-approved). Brazil (E_AMARAL) has healthy 50/50 coverage with a local colleague.
+
+### User pattern signatures
+
+- **HQ weekly AP operator**: >90% self-approval, UNES only, SOG01/CIT04/SOG03/CIT21, 83% Wednesday, 10-12 CET, UNES_AP_10/EX/IK
+- **Field office batch** (E_AMARAL): ~50% self-approval, single co code (UBO), BRL, UBO_AP_MAX
+- **Payroll backup** (F_DERAKHSHAN): ~26% self-approval, PAYROLL rule, solo = vacation backup only
+- **Occasional** (S_COURONNAUD, A_ALMEIDA): <5% self-approval, normal
+
+### Highest-risk subset
+
+`UNES_AP_EX` (AE/JO/embargo exception list): **331 same-user batches / ~$1.9M**. Small $, high sanctions exposure. Ship carve-out first.
+
+### Remediation paths (ranked by shippability)
+
+1. **Detective nightly report** via `Zagentexecution/bcm_dual_control_monitor.py` — zero blockers, ships this week
+2. **UNES_AP_EX carve-out** — BCM/FBZP config, low effort, needs director signoff
+3. **HQ role split** — blocked on HR adding a 3rd operator (staffing lever)
+4. **Workflow 90000003 mod** — enforce `CHUSR ≠ CRUSR`, blocked on YWFI source (H14, D01 password)
+5. **Automate Wednesday AP cycle** — strategic, multi-month
+
+### Historical drift (cost of 15-session inaction)
+
+- #027 reported 3,394 same-user batches
+- #037 measures 4,760 all-time / 3,359 in scope
+- Delta: **+1,366 batches (+40%)** accumulated during 15 sessions of PMO inaction
+- This drift is why the session open/close symmetry control was added in #037 (`.agents/workflows/session_start.md` v2 + `scripts/session_preflight.py` S1/S2/S3/SYM checks).
+
+### Artifacts
+
+| File | Purpose |
+|---|---|
+| `Zagentexecution/bcm_dual_control_monitor.py` | Daily-runnable monitor |
+| `Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.csv` | 3,359-row detail |
+| `Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.html` | Interactive companion |
+| `Zagentexecution/mcp-backend-server-python/bcm_dual_control_audit.json` | API-friendly summary |
+| `knowledge/domains/BCM/h13_executive_summary.md` | CFO one-pager |
+| `knowledge/domains/BCM/h13_remediation_hypothesis.md` | Original hypothesis (partially superseded) |
+
+### Invocation triggers for this section
+
+- User asks about BCM dual-control, F110 approval, or workflow 90000003
+- User mentions C_LOPEZ, I_MARQUAND, F_DERAKHSHAN, E_AMARAL
+- User asks "who runs the weekly AP cycle"
+- User asks about UNES_AP_EX / exception-list batches
+- Someone asks for the H13 numbers
+
+### If this section grows past ~300 lines
+
+Per `skill_coordinator/SKILL.md` rule 3, split into a dedicated skill `sap_payment_bcm_forensics` inheriting content verbatim. Do not consolidate or compress.

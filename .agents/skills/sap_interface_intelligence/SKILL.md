@@ -355,3 +355,74 @@ Pure CSS/SVG, no vis.js. Hub-and-spoke with functional zones, orthogonal 90° co
 4. OData catalog extracted — all registered Gateway services listed
 5. Cross-system map built — D01↔P01↔Y1↔BW↔PI connections visualized
 6. Connectivity diagram can answer: "If system X goes down, what breaks?"
+7. **(Session #037)** Agent recognizes file-based batch integration as a first-class channel — see "File-Based Integration Vector" section below.
+
+---
+
+## File-Based Integration Vector (routed Session #037 via skill_coordinator)
+
+Session #035 established a **third integration channel** alongside RFC and IDoc: **file-based batch interfaces** where SAP jobs read from or write to files in shared paths, consumed by external systems out of band. This is the channel UNESCO has historically used for systems that cannot support real-time RFC.
+
+### Scale
+
+- **~8,700 file-based job runs** discovered in `tbtco` where the owning program reads/writes files
+- **9 external systems** identified as file-integration partners
+- **COUPA** is the most prominent file-integration partner (dual-channel file + BDC). See `memory/project_coupa_file_integration.md`.
+
+### Pattern signature
+
+A file-based integration presents as:
+1. A scheduled SAP background job (`tbtco.AUTHCKNAM` = dialog or service account)
+2. Program reads/writes to a mounted path (AL11 locations, NFS mounts, Windows shares)
+3. **No RFC destination** involvement → invisible in `RFCDES`
+4. **No IDoc** involvement → invisible in `EDIDC`
+5. Counterparty pulls/pushes the file via cron, Windows task, or external scheduler
+
+### Why this matters
+
+Before Session #035, the integration landscape was mapped from five tables — `RFCDES`, `EDIDC`, `ICFSERVICE`, `DBCON`, `TMSCSYS` — covering RFC, IDoc, HTTP, DB link, and transport connections. **File integrations leave no trace in any of them.** A system consuming SAP data through file drops is invisible unless you cross-reference `tbtco` program names against known file-I/O patterns. This was the gap that hid COUPA's primary channel for multiple sessions.
+
+### How to detect
+
+1. **Grep `tbtco` job names and programs** for file-I/O patterns: `Z*FILE*`, `Z*EXPORT*`, `Z*IMPORT*`, `Z*IFACE*`, `Z*COUPA*`, etc.
+2. **Read program source** via `sap_adt_api` on D01, confirm `OPEN DATASET` / `TRANSFER` / `CLOSE DATASET` ABAP calls
+3. **Identify the path** — shared paths indicate external consumers
+4. **Cross-reference** with known external system inventories (CMT, SISTER, HR Workflow, Travel, COUPA, etc.)
+5. **Brain nodes:** add `INTERFACE` node with `channel=file`, `path=<p>`, `direction=in|out`, `counterparty=<system>`
+
+### Channel matrix
+
+| Channel | Detection table | Characteristic |
+|---|---|---|
+| RFC | `RFCDES` | Real-time, typed function module |
+| IDoc | `EDIDC` | Queued, partner-profile-driven |
+| HTTP/OData | `ICFSERVICE` | Request/response, Gateway catalog |
+| DB link | `DBCON` | Direct SQL to remote DB |
+| Transport | `TMSCSYS` | Cross-system code movement |
+| **File** | **`tbtco` + program source** | **Batch, async, out-of-band consumer** |
+
+### Known file integrations (Session #035 baseline)
+
+- **COUPA** — AP voucher feed (dual-channel file + BDC). Primary file channel. See `memory/project_coupa_file_integration.md`.
+- 8 additional external systems identified but not yet fully mapped per-system — see Session #035 retro and `knowledge/integration_map_complete.md` if present.
+
+### Why NOT a new skill
+
+Per `skill_coordinator/SKILL.md` rules:
+- File integration is a sub-vector of interface intelligence, not a separate specialty (criterion 3: no independent invocation trigger)
+- Adding a section to this skill (UPDATE action) is the correct routing, not CREATE
+- If content grows past ~500 lines in this SKILL.md, revisit the split decision per `skill_coordinator` rule 3
+
+### Invocation triggers for this section
+
+- User asks about COUPA, SISTER, CMT, or any UNESCO external system's SAP connection
+- User says "we send/receive a file to..."
+- User mentions cron, scheduled task, or file drop
+- User asks "what systems does SAP integrate with" — must include this vector alongside RFC/IDoc/HTTP
+- Someone asks about `tbtco` job programs that touch files
+
+### Open work (not shipped in #037)
+
+- Enumerate the full 9-system file-integration inventory into this skill with per-system signatures
+- Extract `OPEN DATASET` path constants from `tbtco` programs into a canonical path inventory
+- Build a dashboard view that fuses RFC + IDoc + File channels into a single integration map (candidate for #038+)
