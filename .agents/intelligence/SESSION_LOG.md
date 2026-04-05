@@ -18,6 +18,7 @@
 
 | Session | Date | Type | Summary | Retro File |
 |---------|------|------|---------|------------|
+| **#038** | 2026-04-05 | Tech-debt close + multi-lang SKAT sync + RFC code extraction + personal monitor | 15/15 deliverables. 3 zombies shipped en masse (H29 multi-lang 1,690 rows, H11 HCMFAB+BSPs, H14 YWFI). H18 hypothesis falsified — DMEE AE/BH classes don't exist; 3 real ones extracted, no Purp/Cd; next path = DMEE tree. G60 personal monitor shipped (BCM+Basis on-demand). Block 3 pivoted ADT→RFC after user pushback ("ya hicimos antes sin password") — correct, my detour cost 3 messages. Side-fixes: ABAP 72-char truncation safety rail + rfc_helpers RECONNECTABLE_ERRORS extended. Preflight close 8 PASS 3 WARN 0 FAIL. PMO 32→29, net +3. | [session_038_retro.md](../../knowledge/session_retros/session_038_retro.md) |
 | **#037** | 2026-04-05 | Start-Close Symmetry + H13 D1 + First agi_retro_agent gate | Diagnosed asymmetry as root cause of H13 rotting 15 sessions. Shipped: `session_start.md` v2 (6-phase mirror), `session_preflight.py --mode start` + SYM check, `session_plans/`, `.session_state.json`, `feedback_start_close_symmetry.md`. H13 Deliverable 1: `bcm_dual_control_monitor.py` + HTML companion + executive summary — reframed as automation debt (3,359 batches/$656M; C_LOPEZ+I_MARQUAND 94.7%/92.9% self-approval; F_DERAKHSHAN reclassified). G58+G59 routed via first real `skill_coordinator` invocation. First automatic `agi_retro_agent` audit = PASS WITH CONDITIONS 78/100, 6 blockers fixed. Ecosystem: session-start.md v3, session-end.md v3, priority-actions [PENDING]. Zombies: G22 killed, H11/H14/G28 rejustified. PMO −3 mechanical / −4 visible. | [session_037_retro.md](../../knowledge/session_retros/session_037_retro.md) + [audit](../../knowledge/session_retros/session_037_retro_audit.md) |
 | **#036** | 2026-04-05 | AGI-Discipline Rebuild (backfilled in #037) | Created `agi_retro_agent` + `skill_coordinator` + `skill_creator` meta-skills. Authored `session_close_protocol.md` + `session_preflight.py` (10 executable checks). Preflight caught 39 zombies → PMO purged 67→34. H13 promoted to top with hypothesis doc. Growth paradigm adopted (skills/memory grow, never consolidate). **Session never committed, never indexed — backfilled + committed in #037.** Ironic: invented the close protocol and failed to execute it on itself. | [session_036_retro.md](../../knowledge/session_retros/session_036_retro.md) + [audit](../../knowledge/session_retros/session_036_retro_audit.md) |
 | **#035** | 2026-04-03/04 | CO Extraction + Integration Archaeology v2 | B2+B3 closed (0 blocking data gaps). CO tables: 3.45M rows (COOI 773K + COEP 2.55M + RPSCO 127K). **Third integration vector: file-based jobs** (8,700 runs, 9 systems). SF EC confirmed active (1,290 jobs). Complete integration map: 37 flows, 18+ systems, 8 channels, 10 open questions. New systems: UNJSPF, BOC, AWS, Data Hub, MBF. PMO: B2/B3/G41 closed, +G45-G47. | [session_035_retro.md](../../knowledge/session_retros/session_035_retro.md) |
@@ -52,6 +53,6 @@
 ---
 
 ## Current PMO Status
-**1 Blocking | 12 High | 47 Backlog = 60 items**
+**0 Blocking | 7 High | 21 Backlog = 28 items**
 Full list: `.agents/intelligence/PMO_BRAIN.md`
-Last reconciled: Session #035 (2026-04-04)
+Last reconciled: Session #038 (2026-04-05)

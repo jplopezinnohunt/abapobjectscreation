@@ -58,6 +58,8 @@ class ConnectionGuard:
     """
 
     # Error substrings that indicate a dropped connection (VPN, timeout, etc.)
+    # Session #038 addition: RFC_CLOSED + "broken" + WSAE* for mid-RFC drops
+    # (connection succeeds, then gets reset by peer during the call).
     RECONNECTABLE_ERRORS = [
         "connection closed",
         "partner not reached",
@@ -67,6 +69,13 @@ class ConnectionGuard:
         "RFC_COMMUNICATION_FAILURE",
         "RFC_INVALID_HANDLE",
         "connection has been closed",
+        # Added #038 after h29_skat_update.py crashed at batch 31
+        "RFC_CLOSED",
+        "connection to partner",
+        "broken",
+        "WSAECONNRESET",
+        "WSAETIMEDOUT",
+        "connection reset",
     ]
 
     def __init__(self, system_id="P01", env_path=None):
