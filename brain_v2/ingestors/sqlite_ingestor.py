@@ -6,6 +6,18 @@ Source: BRAIN_V2_ARCHITECTURE.md Section A.2 (data objects), A.3 (join edges)
 import sqlite3
 
 
+def _safe_query(conn, table: str, columns: list, where: str = "") -> list:
+    """ALWAYS verify columns exist before querying. Never assume schema."""
+    actual_cols = {r[1].upper() for r in conn.execute(f"PRAGMA table_info('{table}')").fetchall()}
+    valid = [c for c in columns if c.upper() in actual_cols]
+    if not valid:
+        return []
+    sql = f"SELECT {', '.join(valid)} FROM {table}"
+    if where:
+        sql += f" WHERE {where}"
+    return conn.execute(sql).fetchall()
+
+
 # Proven join relationships (from Golden Query and skill docs)
 JOIN_MAP = [
     ("FMIFIIT", "KNBELNR",  "BKPF", "BELNR",   "FM-to-FI bridge (doc number)"),

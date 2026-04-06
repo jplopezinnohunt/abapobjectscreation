@@ -7,6 +7,11 @@ Reads from Gold DB: T042Z, T042A, T012, T012K, BNK_BATCH_HEADER, T001
 
 import sqlite3
 
+
+def _safe_columns(conn, table: str) -> set:
+    """ALWAYS check columns before querying. Never assume schema."""
+    return {r[1].upper() for r in conn.execute(f"PRAGMA table_info('{table}')").fetchall()}
+
 # Known DMEE tree -> BAdI exit class mappings (from extracted code analysis, Session #039)
 DMEE_EXIT_MAP = {
     "/CGI_XML_CT_UNESCO":    "YCL_IDFI_CGI_DMEE_FR",
