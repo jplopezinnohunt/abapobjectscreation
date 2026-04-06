@@ -35,6 +35,7 @@ def cmd_build():
     from brain_v2.ingestors.integration_ingestor import ingest_integration
     from brain_v2.ingestors.sqlite_ingestor import ingest_sqlite_schema, ingest_job_intelligence
     from brain_v2.ingestors.process_ingestor import ingest_processes
+    from brain_v2.ingestors.knowledge_ingestor import ingest_knowledge
 
     brain = BrainGraph()
     tracker = IncrementalTracker(brain)
@@ -66,6 +67,10 @@ def cmd_build():
     # Phase 3: Processes
     r = tracker.update_from_source("Processes", lambda b: ingest_processes(b))
     print(f"  Processes:        +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
+
+    # Phase 4: Knowledge (docs, skills, sessions → graph, zero dead text)
+    r = tracker.update_from_source("Knowledge", ingest_knowledge, str(PROJECT_ROOT))
+    print(f"  Knowledge:        +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
 
     print("=" * 60)
     print(f"  TOTAL:  {brain.node_count():,} nodes  {brain.edge_count():,} edges")
