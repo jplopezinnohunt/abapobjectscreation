@@ -46,13 +46,13 @@ def impact_analysis(brain, start_node_id: str, max_depth: int = 4,
         weight = RISK_WEIGHTS.get(etype, 0.5)
 
         if direction == "forward":
-            # A reads B → changing B breaks A → from B, reach A
+            # A --READS_TABLE--> B: changing B breaks A → from B, reach A
             neighbors.setdefault(edge["to"], []).append(
                 (edge["from"], etype, weight))
         elif direction == "backward":
-            # A implements BAdI B → changing B affects A → from B, reach A
-            neighbors.setdefault(edge["from"], []).append(
-                (edge["to"], etype, weight))
+            # A --IMPLEMENTS_BADI--> B: changing B affects A → from B, reach A
+            neighbors.setdefault(edge["to"], []).append(
+                (edge["from"], etype, weight))
         elif direction == "bidirectional":
             neighbors.setdefault(edge["to"], []).append(
                 (edge["from"], etype, weight))

@@ -549,6 +549,90 @@ CHECKS_START: list[tuple[str, Callable[[], CheckResult]]] = [
 ]
 
 
+# ----------------------------------------------------------------------------
+# Session #040 checks — prevent the 5 recurring failures
+# ----------------------------------------------------------------------------
+
+
+def check_s4_approved_architectures() -> CheckResult:
+    """If an architecture doc is APPROVED for execution but has no corresponding
+    DONE PMO item, it's the top priority. Catches the Brain v2 blind spot from #040."""
+    intel_dir = REPO / ".agents" / "intelligence"
+    if not intel_dir.exists():
+        return CheckResult("", "SKIP", "No intelligence directory")
+
+    approved = []
+    for md in intel_dir.glob("*ARCHITECTURE*.md"):
+        try:
+            text = md.read_text(encoding="utf-8", errors="ignore")[:2000]
+        except Exception:
+            continue
+        if re.search(r'status:\s*.*approved.*execution', text, re.IGNORECASE):
+            approved.append(md.name)
+
+    if not approved:
+        return CheckResult("", "PASS", "No pending approved architectures")
+
+    # Check if PMO has corresponding DONE items
+    pmo_text = ""
+    if PMO_BRAIN.exists():
+        pmo_text = PMO_BRAIN.read_text(encoding="utf-8", errors="ignore")
+
+    unexecuted = []
+    for arch in approved:
+        # Look for the architecture name referenced in a struck-through PMO line
+        arch_stem = arch.replace("_ARCHITECTURE.md", "").replace(".md", "")
+        if f"~~" in pmo_text and arch_stem.lower() in pmo_text.lower():
+            # Found struck = done
+            continue
+        unexecuted.append(arch)
+
+    if unexecuted:
+        return CheckResult(
+            "", "WARN",
+            f"APPROVED architectures NOT YET EXECUTED: {', '.join(unexecuted)}. "
+            f"These are TOP PRIORITY — execute before any other work.",
+            [f"File: .agents/intelligence/{a}" for a in unexecuted],
+        )
+    return CheckResult("", "PASS", "All approved architectures have been executed")
+
+
+def check_s5_no_dead_text() -> CheckResult:
+    """If brain_v2 exists, no new static inventory files (CSV, standalone .md lists)
+    should be created for data that belongs in the graph. Catches the
+    CODE_INVENTORY.csv mistake from #040."""
+    brain_exists = (REPO / "brain_v2" / "output" / "brain_v2_graph.json").exists()
+    if not brain_exists:
+        return CheckResult("", "SKIP", "Brain v2 not built yet")
+
+    # Check for static inventory files that should be graph nodes
+    violations = []
+    for pattern in ["*INVENTORY*.csv", "*INVENTORY*.md", "*REGISTRY*.csv"]:
+        for f in REPO.rglob(pattern):
+            if ".git" in str(f) or "node_modules" in str(f) or "venv" in str(f):
+                continue
+            violations.append(str(f.relative_to(REPO)))
+
+    # Also check for .csv files at project root or extracted_code/
+    for d in [REPO, REPO / "extracted_code"]:
+        for f in d.glob("*.csv"):
+            violations.append(str(f.relative_to(REPO)))
+
+    if violations:
+        return CheckResult(
+            "", "WARN",
+            f"Static inventory files found — brain v2 exists, data should be graph nodes: "
+            f"{', '.join(violations[:5])}",
+            ["Rule: if it has relationships, it's a node. No CSV, no standalone text."],
+        )
+    return CheckResult("", "PASS", "No static inventory files — all data in brain graph")
+
+
+# Append Session #040 checks to CHECKS_START (defined after functions to avoid NameError)
+CHECKS_START.append(("S4. Approved architectures must execute first", check_s4_approved_architectures))
+CHECKS_START.append(("S5. No static artifacts when brain exists", check_s5_no_dead_text))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Session preflight guardrails")
     ap.add_argument("--mode", choices=["start", "close"], default="close")
