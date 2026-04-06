@@ -3,7 +3,7 @@
 > **Last reconciled**: Session #039 (2026-04-06) — **H18 DMEE PurposeCode resolved (13-session zombie) + skill routing + payment companion DMEE deep dive.** H18 confirmed: `<Purp><Cd>` reads `FPAYP.XREF3` via BAdI `FI_CGI_DMEE_EXIT_W_BADI` in tree `/CGI_XML_CT_UNESCO`. 13 DMEE trees analyzed from P01 (8,308 nodes), 6 active / 7 inactive classified via T042Z.FORMI cross-reference. D01 vs P01 comparison: 12/13 identical. Skill routing from #038: 72-char truncation → sap_class_deployment, RECONNECTABLE_ERRORS → sap_data_extraction. Payment companion enriched with E2E DMEE explanation, 3 banking channels, new-country checklist. Feedback rule strengthened: ALL reads from P01 including config. AGI retro audit: FAIL on first pass (5 blockers), fixed.
 > Session #038 prior: H29 multi-lang SKAT sync (1,690 rows) + H11/H14 RFC extraction + G60 personal monitor. 15/15 deliverables.
 > Session #037 prior: Start-close symmetry control + H13 D1 shipped. AGI retro agent first invocation (PASS WITH CONDITIONS 78/100).
-> **Current count**: 0 Blocking | **6** High | **21** Backlog = **27 total** (Sessions #037-039 cumulative: 7 items closed (H13, H29, H11, H14, G22, G60, H18), 1 added+struck (G60). Net -7 from 34→27.)
+> **Current count**: 0 Blocking | **6** High | **25** Backlog = **31 total** (Sessions #037-039 cumulative: 7 items closed (H13, H29, H11, H14, G22, G60, H18), 5 added (G61-G64 from brain v2 + discovery patterns). Net -3 from 34→31.)
 > **Reward function**: items_shipped - items_added > 0 per session. Net-zero is failure.
 > **Growth paradigm**: Skills grow, never consolidate. Memory grows, no line limit. Knowledge is routed via `skill_coordinator`, never compressed.
 
