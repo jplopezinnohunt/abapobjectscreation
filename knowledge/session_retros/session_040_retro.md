@@ -24,12 +24,13 @@
 | 1 | brain_v2/ full implementation | SHIPPED | `brain_v2/` (22 Python files across core/parsers/ingestors/queries + CLI) |
 | 2 | brain_v2_graph.json (52K nodes, 112K edges) | SHIPPED | `brain_v2/output/` |
 | 3 | Project reorganization (4 clean modules) | SHIPPED | `extracted_code/{HCM,FI,UNESCO_CUSTOM_LOGIC,Gateway}` |
-| 4 | CODE_INVENTORY.csv | SHIPPED | `extracted_code/CODE_INVENTORY.csv` |
-| 5 | PMO H30/H31/H32 struck | SHIPPED | `.agents/intelligence/PMO_BRAIN.md` |
-| 6 | BRAIN_V2_ARCHITECTURE.md dual paradigm | SHIPPED | `.agents/intelligence/BRAIN_V2_ARCHITECTURE.md` (3 paradigms: existence + impact + discovery) |
-| 7 | session_040_plan.md + retro | SHIPPED | THIS FILE |
+| 4 | PMO H30/H31/H32 struck | SHIPPED | `.agents/intelligence/PMO_BRAIN.md` |
+| 5 | BRAIN_V2_ARCHITECTURE.md dual paradigm | SHIPPED | `.agents/intelligence/BRAIN_V2_ARCHITECTURE.md` (3 paradigms: existence + impact + discovery) |
+| 6 | Knowledge ingestor (zero dead text) | SHIPPED | `brain_v2/ingestors/knowledge_ingestor.py` — 153 nodes, 1,177 edges from 130 docs + 19 companions |
+| 7 | Executable guards for 5 recurring failures | SHIPPED | `scripts/session_preflight.py` (S4+S5), `_safe_query()`, `test_impact_direction.py` (3 tests), BAdI fix |
+| 8 | session_040_plan.md + retro | SHIPPED | THIS FILE |
 
-**7 / 7 deliverables shipped.** 3 hypotheses confirmed.
+**8 / 8 deliverables shipped.** 3 hypotheses confirmed.
 
 ---
 
@@ -112,9 +113,11 @@ scripts/legacy/          ← 12 legacy scripts
 
 3. **DMEE classes don't have SELECT statements** — They receive data via method parameters. The code parser correctly finds zero direct table reads. Config ingestor links DMEE trees to classes via T042Z + known mappings. This validates the dual-source approach.
 
-4. **Code extraction needs governance** — Each extracted ABAP file is as valuable as a Gold DB table. CODE_INVENTORY.csv created as first step. Future: add extraction session, source system, date, method.
+4. **Zero dead text** — User principle: everything with relationships is a node. No CSV, no standalone text inventories. CODE_INVENTORY.csv was created and deleted same session — replaced by brain nodes. Knowledge docs, skills, session retros, HTML companions all ingested as graph nodes with reference edges.
 
 5. **Discovery paradigm added to spec** — User insight: the graph doesn't just answer questions, it reveals connections nobody asked about. Gap analysis on first run found 2,931 findings including 61 unused config objects and 774 undocumented code objects.
+
+6. **Failures must become code, not text** — User principle: feedback rules written as .md are "promesas vacías". Every recurring failure must produce either: (a) a preflight check, (b) a regression test, (c) a code guard. This session produced 5 such guards.
 
 ---
 
@@ -143,8 +146,16 @@ scripts/legacy/          ← 12 legacy scripts
 
 ## Pending → Next Session
 
-1. **Enrich CODE_INVENTORY.csv** — Add extraction session #, source system (D01/P01), date, method (ADT/RFC/manual) for each file. Same governance as Gold DB tables.
+1. **H33: Absorb ALL remaining text into graph** — Code extraction provenance (session, system, date, method) as node metadata, not CSV. Remaining knowledge dirs, PMO items as nodes.
 2. **Reorganize 260 mcp-backend-server-python scripts** — Group into lib/ modules by domain (extraction, analysis, checks, builders).
 3. **Brain v2 gap analysis deep dive** — The 2,931 findings need triage. Priority: 61 unused config objects (are they truly unused or is data missing?).
 4. **Brain v2 Phase 4** — Session auto-ingest, confidence decay, changelog.
 5. **H19-H26** — Bank recon items remain open.
+
+## Principles Established This Session (enforced by code, not text)
+
+1. **Zero dead text** — if it has relationships, it's a node. Enforced by `check_s5_no_dead_text()`.
+2. **Approved architectures execute first** — enforced by `check_s4_approved_architectures()`.
+3. **PRAGMA before query** — enforced by `_safe_query()` / `_safe_columns()`.
+4. **Impact direction is reverse for forward edges** — enforced by `test_impact_direction.py`.
+5. **Failures become code** — this list itself is the last text version. Next time, skip the retro text and write the check directly.
