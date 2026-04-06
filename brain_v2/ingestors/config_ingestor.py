@@ -39,12 +39,21 @@ def ingest_config(brain, db_path: str):
 def _ingest_company_codes(brain, conn, stats):
     """T001 -> COMPANY_CODE nodes."""
     try:
-        rows = conn.execute("""
-            SELECT BUKRS, BUTXT, WAERS, LAND1
+        cols = _safe_columns(conn, 'T001')
+        if 'BUKRS' not in cols:
+            return
+        # Only select columns that exist
+        select_cols = [c for c in ['BUKRS', 'BUTXT', 'WAERS', 'LAND1'] if c in cols]
+        rows = conn.execute(f"""
+            SELECT {', '.join(select_cols)}
             FROM T001
             WHERE BUKRS IS NOT NULL AND BUKRS != ''
         """).fetchall()
-        for bukrs, butxt, waers, land1 in rows:
+        for row in rows:
+            bukrs = row[0]
+            butxt = row[1] if len(row) > 1 else ""
+            waers = row[2] if len(row) > 2 else ""
+            land1 = row[3] if len(row) > 3 else ""
             nid = f"COCODE:{bukrs}"
             brain.add_node(nid, "COMPANY_CODE", bukrs,
                            domain="FI", layer="org",
@@ -125,16 +134,22 @@ def _ingest_dmee_trees(brain, conn, stats):
 
 def _ingest_payment_methods(brain, conn, stats):
     """T042A -> PAYMENT_METHOD -> HOUSE_BANK routing."""
+    cols = _safe_columns(conn, 'T042A')
+    if not {'ZBUKR', 'ZLSCH', 'HBKID'}.issubset(cols):
+        return
+    hktid_col = ', HKTID' if 'HKTID' in cols else ''
     try:
-        rows = conn.execute("""
-            SELECT ZBUKR, ZLSCH, HBKID, HKTID
+        rows = conn.execute(f"""
+            SELECT ZBUKR, ZLSCH, HBKID{hktid_col}
             FROM T042A
             WHERE HBKID IS NOT NULL AND HBKID != ''
         """).fetchall()
     except Exception:
         return
 
-    for zbukr, zlsch, hbkid, hktid in rows:
+    for row in rows:
+        zbukr, zlsch, hbkid = row[0], row[1], row[2]
+        hktid = row[3] if len(row) > 3 else ""
         pm_id = f"PAYMETHOD:{zbukr}:{zlsch}"
         if not brain.has_node(pm_id):
             brain.add_node(pm_id, "PAYMENT_METHOD", f"{zbukr}-{zlsch}",

@@ -14,7 +14,7 @@
 | Plan Hypothesis | Status | Evidence |
 |---|---|---|
 | H1: Brain v2 all 3 phases in single session | **CONFIRMED** | `python -m brain_v2 build` → 52,313 nodes, 111,719 edges in 45s. 7 ingestors, 4 query engines, full CLI. |
-| H2: Code consolidation without losing artifacts | **CONFIRMED** | 682 duplicate files removed (30 root + 84 extracted_sap + 568 Zagentexecution). Zero data loss — verified all file counts match. CODE_INVENTORY.csv: 1,065 files, 147,942 lines. |
+| H2: Code consolidation without losing artifacts | **CONFIRMED** | 682 duplicate files removed (30 root + 84 extracted_sap + 568 Zagentexecution). Zero data loss — verified all file counts match post-move. 1,065 unique ABAP files across extracted_code/ (903) + extracted_sap/ (162). |
 | H3: Gap analysis produces actionable findings | **CONFIRMED** | First run: 2,931 findings. 61 configured_but_unused (6 DMEE trees, 55 payment methods). 774 undocumented code objects. 2,096 isolated nodes (mostly jobs without code link). |
 
 ### Deliverables
@@ -140,7 +140,7 @@ scripts/legacy/          ← 12 legacy scripts
 - **Assumption challenged:** "Brain v2 Phase 1 alone would take a full session" — FALSIFIED. All 3 phases completed in one session because the architecture spec had line-by-line code ready.
 - **Gap identified:** T042Z in Gold DB doesn't have DTFOR column (it's the country-level text table, not the DMEE assignment table). DMEE→PaymentMethod edges come from T042A + known mappings, not T042Z directly. The Gold DB may be missing the DMEE-specific config table.
 - **Gap identified:** 260 scripts in mcp-backend-server-python/ remain unorganized. This is the largest remaining tech debt.
-- **Claim probed:** "682 files removed = no data loss" — VERIFIED. All deleted files were exact duplicates (same file count in both locations). CODE_INVENTORY.csv confirms 1,065 unique ABAP files with 147,942 lines.
+- **Claim probed:** "682 files removed = no data loss" — VERIFIED. All deleted files were exact duplicates (same file count in both locations). Post-move count: 1,065 unique ABAP files (903 extracted_code + 162 extracted_sap). All tracked as brain_v2 nodes.
 
 ---
 

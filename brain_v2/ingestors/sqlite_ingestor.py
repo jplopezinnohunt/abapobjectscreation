@@ -126,8 +126,13 @@ def ingest_job_intelligence(brain, db_path: str):
     conn = sqlite3.connect(db_path)
     stats = {'nodes': 0, 'edges': 0}
 
+    # Verify PROGNAME column exists before querying
+    tbtcp_cols = {r[1].upper() for r in conn.execute("PRAGMA table_info('tbtcp')").fetchall()}
+    if 'PROGNAME' not in tbtcp_cols:
+        conn.close()
+        return stats
+
     try:
-        # Fast query: just get distinct programs from tbtcp (no expensive join)
         rows = conn.execute("""
             SELECT PROGNAME, COUNT(*) as exec_count
             FROM tbtcp
