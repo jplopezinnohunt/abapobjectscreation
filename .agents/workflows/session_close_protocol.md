@@ -41,6 +41,26 @@ Expected final state: 0 FAIL, minimal WARN, documented SKIPs.
 
 ---
 
+## Phase 0.75 — PMO Arithmetic Gate (NEW — Session #039 lesson)
+
+**Before the AGI retro audit, before any commit, do this manually:**
+
+```
+1. Count non-struck H items in PMO body         → H_count
+2. Count non-struck G items in PMO body          → G_count
+3. Compute: total = 0 + H_count + G_count
+4. Read PMO header "Current count" line          → header_total
+5. IF total != header_total → FIX HEADER NOW
+6. Verify: items_at_start + items_added - items_struck == total
+7. IF mismatch → find the gap before proceeding
+```
+
+**Why this exists:** Sessions #038 AND #039 both committed with stale PMO header counts. #038 said "10 High / 31 total" when it was 7/28. #039 said "27 total" when it was 31. Two consecutive sessions with the same error means the process doesn't catch it — the agent "forgets" to update the header after adding items mid-session. This gate makes it a numbered step, not a memory exercise.
+
+**This gate runs BEFORE the AGI retro audit (Phase 0).** If the header is wrong when the audit runs, the audit catches it as a Principle 1 failure and the session fails. Fixing it here prevents that round-trip.
+
+---
+
 ## Phase 1-7 (Legacy, kept verbatim)
 
 See `.agents/workflows/session_retro.md` for the existing 7-phase checklist:
