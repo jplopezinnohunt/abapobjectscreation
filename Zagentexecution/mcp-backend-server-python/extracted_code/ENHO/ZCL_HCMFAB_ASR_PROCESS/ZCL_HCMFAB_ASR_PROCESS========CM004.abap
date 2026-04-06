@@ -1,7 +1,0 @@
-  method IF_HCMFAB_ASR_PROCESS_CONFG~UPDATE_TABLE_BUTTON.
-
-   LOOP AT CT_FIELD_METADATA into DATA(ls_meta).
-
-   ENDLOOP.
-
-  endmethod.

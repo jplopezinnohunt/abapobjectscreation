@@ -53,6 +53,6 @@
 ---
 
 ## Current PMO Status
-**0 Blocking | 7 High | 21 Backlog = 28 items**
+**0 Blocking | 9 High | 25 Backlog = 34 items**
 Full list: `.agents/intelligence/PMO_BRAIN.md`
-Last reconciled: Session #038 (2026-04-05)
+Last reconciled: Session #040 (2026-04-06) — H30/H31/H32 added (Brain v2 Phases 1-3)

@@ -103,15 +103,47 @@ The brain_spec.yaml is domain-agnostic. SAP UNESCO is the first instance. The te
 
 ## Executive Summary
 
-Brain v1 answered "what exists." Brain v2 answers "what happens when you change it."
+### The Dual Paradigm (NON-NEGOTIABLE)
+
+Brain v2 serves **two equally important purposes**. Neither is secondary.
+
+**1. "What exists and how it works"** — The living map of the system. Who reads what table, who calls what function module, what config activates what code, how a payment flows end-to-end from invoice to bank file. This is the foundation for:
+- **Understanding the system** — A new consultant can ask "show me everything involved in the payment process" and get the complete dependency chain in seconds
+- **Planning tests** — Before testing a transport, know exactly which objects, tables, and processes are involved
+- **Preparing migrations** — S/4HANA readiness: which custom code reads which tables, which FMs are exposed to external systems, which BAdIs are implemented
+- **Onboarding and documentation** — The graph IS the living documentation, always current because it's parsed from real code and config
+
+**2. "What happens if you change something"** — Impact analysis. This comes FREE on top of the existence map because the same edges that say "YCL_IDFI_CGI_DMEE_FR reads FPAYP.XREF3" also answer "if you touch FPAYP.XREF3, YCL_IDFI_CGI_DMEE_FR breaks". The existence graph IS the impact graph — they are the same data structure.
+
+**These two are inseparable.** The graph of existence is the graph of impact. Every edge that describes "how it works" simultaneously describes "what breaks if you change it." This is why the brain must be built BEFORE continuing to evaluate more information — the new model will generate new conclusions from existing data simply by revealing connections that were previously invisible.
+
+---
+
+Brain v1 answered "what exists" as a flat taxonomy (HAS_FUND, BELONGS_TO). Brain v2 adds **behavioral edges** (CALLS_FM, READS_FIELD, CONFIGURES_FORMAT) that make both paradigms operational.
 
 The core insight: UNESCO's SAP landscape is already 90% extracted into local data. The missing piece is not more data -- it is the **edges between existing data**. We have 896 ABAP files with parseable SELECT/CALL FUNCTION statements. We have 68 SQLite tables with foreign key relationships. We have config tables (T042Z, DMEE, FBZP chain) that define runtime behavior. We have process mining event logs that define execution paths. None of this is connected.
 
 Brain v2 builds those connections. The result is an engine that can answer:
-- "If I change FPAYP.XREF3, what breaks?" (impact analysis)
+
+**Paradigm 1 — Existence & Function:**
 - "What does the payment process depend on end-to-end?" (dependency tracing)
-- "What config exists but is never executed?" (gap analysis)
 - "Show me everything similar to this DMEE exit" (similarity search)
+- "What config exists but is never executed?" (gap analysis)
+- "Which external systems call which function modules?" (integration map)
+
+**Paradigm 2 — Change Impact:**
+- "If I change FPAYP.XREF3, what breaks?" (impact analysis)
+- "If I deactivate this DMEE tree, which company codes lose payment capability?" (config impact)
+- "If I modify this BAdI, which processes are affected?" (code impact)
+
+**Paradigm 3 — Discovery (emergent from the graph itself):**
+The brain doesn't just answer questions — it **discovers use cases** by revealing connections nobody asked about. When you connect code → config → process → integration, patterns emerge that were invisible in isolation:
+- "This RFC-enabled FM is called by SISTER AND by a background job AND by a transport — it's a convergence point nobody documented"
+- "These 3 DMEE trees share the same BAdI exit but serve different banks — a change to the exit class affects all 3 banking channels simultaneously"
+- "This substitution rule feeds a field that 4 different processes read — it's a hidden single point of failure"
+- "These 12 custom reports all read the same 3 tables but are maintained by different teams — they're candidates for consolidation"
+
+Discovery is not a query you run — it's what happens when the graph exists. Gap analysis, community detection, centrality scoring, and orphan identification all produce findings that no one asked for but everyone needs. **The graph generates its own backlog of investigation targets.** This is why the brain must be built before continuing to evaluate information — every new edge potentially reveals a discovery that changes priorities.
 
 ### What Market Leaders Do (And What We Borrow)
 

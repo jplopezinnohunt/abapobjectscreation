@@ -1,0 +1,1179 @@
+
+
+========== FILE: FS_PDF ==========
+
+Total pages: 20
+
+--- PAGE 1 ---
+FUNCTIONAL SPECIFICATION:
+Payment Purpose code in /CGI_XML_CT_UNESCO payment file
+Project:
+Date:
+01/03/2024
+Version No:
+2.0
+1
+
+--- PAGE 2 ---
+HISTORY
+Document Location
+The source of the document can be found at this location:
+<Workspace link>
+Revision History
+Version Revision Date Status and Changes Author
+1.0 Initial Version to determine solution M. Spronk
+2.0 Update with the chosen solution M. Spronk
+Distribution
+Version Date of Issue Name Title
+Approvals
+Version Date of Issue Name Title Signature
+2
+
+[TABLE 1 on page 2]
+Version | Revision Date | Status and Changes | Author
+1.0 |  | Initial Version to determine solution | M. Spronk
+2.0 |  | Update with the chosen solution | M. Spronk
+ |  |  | 
+
+[TABLE 2 on page 2]
+Version | Date of Issue | Name | Title
+ |  |  | 
+ |  |  | 
+ |  |  | 
+
+[TABLE 3 on page 2]
+Version | Date of Issue | Name | Title | Signature
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+
+--- PAGE 3 ---
+TABLE OF CONTENTS
+1 General Description .................................................................................................................... 4
+1.1 Background ......................................................................................................................... 4
+1.2 Description of the current situation ................................................................................... 4
+1.3 Description of the target development .............................................................................. 4
+2 Specifications new development ............................................................................................... 7
+2.1 Detailed description of the specific development .............................................................. 7
+2.2 List of Management Rules ................................................................................................ 18
+2.3 Expected output and results ............................................................................................. 18
+2.4 Control on execution ........................................................................................................ 18
+3 Security and authorizations...................................................................................................... 19
+3.1 Concerned population ...................................................................................................... 19
+3.2 Authorizations ................................................................................................................... 19
+4 Appendix ................................................................................................................................... 20
+3
+
+--- PAGE 4 ---
+1 GENERAL DESCRIPTION
+1.1 Background
+The UNESCO payment process has transactions in many different currencies, banks and payment
+file formats.
+For the payments in USD by Societe Generale, the more and more beneficiary countries require a
+payment purpose code to indicate the origin of the payment. The payment purpose code (PPC)
+differs form country by country as well where the tag and it’s content to be used.
+When these codes are not part of the payment file, there is a high risk that the payment will be
+rejected.
+In the current version of SAP there is not a standard solution for this so we will create a custom
+solution to respond to the requirements.
+1.2 Description of the current situation
+N/a
+1.3 Description of the target development
+The payment purpose code should be indicated in the invoice by the user, who will enter the
+invoice. We will use the SCB indicator to for the PPC and with the use of a validation rule, the
+user will be required to fill out the PPC for the relevant countries.
+The payment program will be executed and the table REGUP will contain the SCB indicator (PPC)
+in field LZBKZ. The table REGUP represents each payable document that will be paid out.
+In a specific table, to be created, we will indicate how the tag where the PPC should be displayed
+per country. Another table will be created where it should be indicated for each beneficiary
+4
+
+--- PAGE 5 ---
+country what the content of the PPC is. This is can be done through fixed separators, flexible PPC,
+description PPC, fixed content, variable content which refers to a table field
+As each beneficiary country has different requirements, it should be determined by country
+which elements are fixed and which elements are flexible.
+The payments generated from the payroll, will need to have a PPC. It will need to be determined
+in advance which code will need to be used for each country so it will be taken into account
+during the generation of the payment file. The payroll payments can be identified in REGUP with
+the payment ID *P
+The payments generated from the payment request program (replenishments) will need to have
+a PPC for the respective countries. It will need to be determined in advance what code will be
+needed for each country to be taken into account during the generation of the file. The payment
+requests can be identified in REGUP with the payment ID *R
+During the generation of the payment file format /CGI…. It should be updated with the PPC. For
+each country, the format is different and could be in a different tag. The information will come
+from partly the table as from the country dependent exit.
+1.3.1 Principles
+1.3.2 Objectives to be reached
+The payment file contains the correct PPC so that the payment will not be rejected by the bank
+and the transfer will reach the beneficiary.
+1.3.3 Retained SAP scenario
+1.3.4 Accounting schemes
+N/A
+5
+
+--- PAGE 6 ---
+1.3.5 Impacts on environment and project
+N/A
+1.3.6 Responsibility for specific development
+DBS
+6
+
+--- PAGE 7 ---
+2 SPECIFICATIONS NEW DEVELOPMENT
+2.1 Detailed description of the specific development
+The SCB indicator code is stored in table T015L-LZBKZ and it’s description in T015L-ZWCK1. The
+code is freely assigned but the “reason for payment” contains the bank code and the banks’
+description.
+Based on the country requirements we will need to determine what elements we will need for
+the transfer to the payment file. As some countries will only need the PPC and others the
+description, we’ll need a table where we can indicate how the PPC should be build and in which
+tag
+See example below for Jordan:
+Ctry Tag ID Paym Type Order PPC Code Value Payment Payment
+PPC Table Field
+JO USTRD Other than payroll 01 Separator /
+and request
+JO USTRD Other than payroll 02 Fixed value PURP
+and request
+JO USTRD Other than payroll 03 Separator /
+and request
+JO USTRD Other than payroll 04 PPC variable
+and request
+JO USTRD Other than payroll 05 Separator /
+and request
+JO USTRD Other than payroll 06 Field from S t r u c t u r e X B L N R
+and request pay structure FPAYP
+JO USTRD Payroll payment 01 Separator /
+JO USTRD Payroll payment 02 Fixed value PURP
+JO USTRD Payroll payment 03 Separator /
+JO USTRD Payroll payment 04 Fixed value 206
+JO USTRD Payroll payment 05 Separator /
+JO USTRD Payroll payment 06 Field from S t r u c t u r e S G T X T
+pay structure FPAYP
+JO USTRD Payment request 01 Separator /
+7
+
+[TABLE 1 on page 7]
+Ctry | Tag ID | Paym Type | Order | PPC Code | Value
+PPC | Payment
+Table | Payment
+Field
+JO | USTRD | Other than payroll
+and request | 01 | Separator | / |  | 
+JO | USTRD | Other than payroll
+and request | 02 | Fixed value | PURP |  | 
+JO | USTRD | Other than payroll
+and request | 03 | Separator | / |  | 
+JO | USTRD | Other than payroll
+and request | 04 | PPC variable |  |  | 
+JO | USTRD | Other than payroll
+and request | 05 | Separator | / |  | 
+JO | USTRD | Other than payroll
+and request | 06 | Field from
+pay structure |  | S t r u c t u r e
+FPAYP | X B L N R
+JO | USTRD | Payroll payment | 01 | Separator | / |  | 
+JO | USTRD | Payroll payment | 02 | Fixed value | PURP |  | 
+JO | USTRD | Payroll payment | 03 | Separator | / |  | 
+JO | USTRD | Payroll payment | 04 | Fixed value | 206 |  | 
+JO | USTRD | Payroll payment | 05 | Separator | / |  | 
+JO | USTRD | Payroll payment | 06 | Field from
+pay structure |  | S t r u c t u r e
+FPAYP | S G T X T
+JO | USTRD | Payment request | 01 | Separator | / |  | 
+
+--- PAGE 8 ---
+JO USTRD Payment request 02 Fixed value PURP
+JO USTRD Payment request 03 Separator /
+JO USTRD Payment request 04 Fixed value 704
+JO USTRD Payment request 05 Separator /
+JO USTRD Payment request 06 Field from S t r u c t u r e S G T X T
+pay structure FPAYP
+8
+
+[TABLE 1 on page 8]
+JO | USTRD | Payment request | 02 | Fixed value | PURP |  | 
+JO | USTRD | Payment request | 03 | Separator | / |  | 
+JO | USTRD | Payment request | 04 | Fixed value | 704 |  | 
+JO | USTRD | Payment request | 05 | Separator | / |  | 
+JO | USTRD | Payment request | 06 | Field from
+pay structure |  | S t r u c t u r e
+FPAYP | S G T X T
+
+--- PAGE 9 ---
+United Arabic Emirates (AE):
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable PPC (3) Example (8)
+(5)
+/REC/ FIS /REC/FIS
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /REC/SAL
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: /REC/IGT
+Transfer to /CGI_XML_CT_UNESCO
+Tag: CdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf
+9
+
+[TABLE 1 on page 9]
+Fixed
+(5) | Variable PPC (3) | Example (8)
+/REC/ | FIS | /REC/FIS
+
+--- PAGE 10 ---
+Bahrein (BH)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable Description PPC Example
+(1) PPC (3) (1) (up to 50 characters)
+/ STR / Travel /STR/Travel
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /SAL/Salary (Compensation of employees)
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This is not relevant for BH as we don’t send any replenishments
+Transfer to /CGI_XML_CT_UNESCO
+Tag: CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+10
+
+[TABLE 1 on page 10]
+Fixed
+(1) | Variable
+PPC (3) | Fixed
+(1) | Variable Description PPC
+(up to 50 characters) | Example
+/ | STR | / | Travel | /STR/Travel
+
+--- PAGE 11 ---
+China (CN)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable PPC (6) Example (11)
+(5)
+/REC/ CSTRDR /REC/CSTRDR
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /REC/CSTRDR
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: /REC/COCADR
+Transfer to /CGI_XML_CT_UNESCO
+Tag: <CdtTrfTxInf><InstrForCdtrAgt><InstrInf>
+11
+
+[TABLE 1 on page 11]
+Fixed
+(5) | Variable PPC (6) | Example (11)
+/REC/ | CSTRDR | /REC/CSTRDR
+
+--- PAGE 12 ---
+Indonesia (ID)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable (18) Example
+(6) PPC (4) (1) REGUH – XBLNR
+/PURP/ 2490 / Consulting 03 04 /PURP/2490/Consulting 03 04
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /PURP/2150/Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: : /PURP/2299/Replenishment Jakarta
+Transfer to /CGI_XML_CT_UNESCO
+Tag CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+12
+
+[TABLE 1 on page 12]
+Fixed
+(6) | Variable
+PPC (4) | Fixed
+(1) | Variable (18)
+REGUH – XBLNR | Example
+/PURP/ | 2490 | / | Consulting 03 04 | /PURP/2490/Consulting 03 04
+ |  |  |  | 
+
+--- PAGE 13 ---
+India (IN)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Variable Fixed Variable Fixed Fixed Fixed Variable Example
+PPC (5) (1) Description (1) (3) (1) (18)
+PPC (up to REGUH –
+50 XBLNR
+characters)
+P0301 ; Purchases ; INV ; 6523486 P0301;Purchases
+towards Jones towards
+travel travel;INV;6523486
+Jones
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: P1401; Compensation of employees;INV; Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: P1203; Maintenance of international institutions;INV;Replenishment
+Bejing
+Transfer to /CGI_XML_CT_UNESCO
+Tag: CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+13
+
+[TABLE 1 on page 13]
+Variable
+PPC (5) | Fixed
+(1) | Variable
+Description
+PPC (up to
+50
+characters) | Fixed
+(1) | Fixed
+(3) | Fixed
+(1) | Variable
+(18)
+REGUH –
+XBLNR | Example
+P0301 | ; | Purchases
+towards
+travel | ; | INV | ; | 6523486
+Jones | P0301;Purchases
+towards
+travel;INV;6523486
+Jones
+ |  |  |  |  |  |  | 
+
+--- PAGE 14 ---
+Jordan (JO)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable (18) Example
+(6) PPC (3) (1) REGUH – XBLNR
+/PURP/ 804 / Consulting 03 04 /PURP/804/Consulting 03 04
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /PURP/206/ Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: /PURP/704/Replenishment Amman
+Transfer to /CGI_XML_CT_UNESCO
+Tag CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+14
+
+[TABLE 1 on page 14]
+Fixed
+(6) | Variable
+PPC (3) | Fixed
+(1) | Variable (18)
+REGUH – XBLNR | Example
+/PURP/ | 804 | / | Consulting 03 04 | /PURP/804/Consulting 03 04
+ |  |  |  | 
+
+--- PAGE 15 ---
+Morocco (MA)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable (18) Example
+(6) PPC (3- (1) REGUH – XBLNR
+4)
+/PURP/ 570 / Consulting 03 04 /PURP/570/Consulting 03 04
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /PURP/810/ Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This will be a fixed code: /PURP/820/Replenishment Rabat
+Transfer to /CGI_XML_CT_UNESCO
+Tag CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+15
+
+[TABLE 1 on page 15]
+Fixed
+(6) | Variable
+PPC (3-
+4) | Fixed
+(1) | Variable (18)
+REGUH – XBLNR | Example
+/PURP/ | 570 | / | Consulting 03 04 | /PURP/570/Consulting 03 04
+ |  |  |  | 
+
+--- PAGE 16 ---
+Malaysia (MY)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable (18) Example
+(6) PPC (5) (1) REGUH – XBLNR
+/PURP/ 16510 / Consulting 03 04 /PURP/16510/Consulting 03 04
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /PURP/14310/ Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This is not relevant for MY as we don’t send any replenishments
+Transfer to /CGI_XML_CT_UNESCO
+Tag CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+16
+
+[TABLE 1 on page 16]
+Fixed
+(6) | Variable
+PPC (5) | Fixed
+(1) | Variable (18)
+REGUH – XBLNR | Example
+/PURP/ | 16510 | / | Consulting 03 04 | /PURP/16510/Consulting 03 04
+ |  |  |  | 
+
+--- PAGE 17 ---
+Philippines (PH)
+1. For third party payments, the payment run ID (REGUP-LAUF1) should not end with a R or P:
+REGUP-LAUF1 <> +++++R or REGUP-LAUF1 <> +++++P
+Payment purpose code to be transferred to the payment file:
+Fixed Variable Fixed Variable (18) Example
+(6) PPC (4) (1) REGUH – XBLNR
+/PURP/ SUPP / Consulting 03 04 /PURP/SUPP/Consulting 03 04
+2. For Payroll payments, the payment run ID (REGUP-LAUF1) should end with a P:
+REGUP-LAUF1 = +++++P
+This will be a fixed code: /PURP/SALA/ Wage/salary 10xxxxxx/202xxx
+3. For payment requests / replenishments, the payment run ID (REGUP-LAUF1) should wend
+with a R:
+REGUP-LAUF1 = +++++R
+This is not relevant for PH as we don’t send any replenishments
+Transfer to /CGI_XML_CT_UNESCO
+Tag CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+17
+
+[TABLE 1 on page 17]
+Fixed
+(6) | Variable
+PPC (4) | Fixed
+(1) | Variable (18)
+REGUH – XBLNR | Example
+/PURP/ | SUPP | / | Consulting 03 04 | /PURP/SUPP/Consulting 03 04
+ |  |  |  | 
+
+--- PAGE 18 ---
+2.2 List of Management Rules
+2.3 Expected output and results
+2.4 Control on execution
+2.4.1 A priori control
+2.4.2 Control report
+18
+
+--- PAGE 19 ---
+3 SECURITY AND AUTHORIZATIONS
+3.1 Concerned population
+N/A
+3.2 Authorizations
+The relevant tables should be updated in D01 and transferred to P01 through a transport request
+19
+
+--- PAGE 20 ---
+4 APPENDIX
+20
+
+
+========== FILE: PPT_PDF ==========
+
+Total pages: 19
+
+--- PAGE 1 ---
+Payment Purpose Code
+21 March 2024
+
+[TABLE 1 on page 1]
+Payment Purpose Code
+21 March 2024
+
+
+--- PAGE 2 ---
+AGENDA
+1. Background
+2. Requirements
+3. Solution Proposal
+4. Actions & Decisions
+5. Follow up
+
+[TABLE 1 on page 2]
+AGENDA
+1.
+2.
+3.
+4.
+5. | Background
+Requirements
+Solution Proposal
+Actions & Decisions
+Follow up
+
+--- PAGE 3 ---
+Background
+• The UNESCO payment process has transactions in many different currencies, banks and
+payment file formats.
+• For the payments in USD by Societe Generale, the more and more beneficiary countries
+require a payment purpose code to indicate the origin of the payment.
+• The payment purpose code (PPC) differs form country by country as well where the tag
+and its’ content to be used.
+• When these codes are not part of the payment file, there is a high risk that the payment
+will be rejected.
+• In the current version of SAP there is not a standard solution for this so we will create a
+custom solution to respond to the requirements.
+
+[TABLE 1 on page 3]
+Background
+• The UNESCO payment process has transactions in many different currencies, banks and
+payment file formats.
+• For the payments in USD by Societe Generale, the more and more beneficiary countries
+require a payment purpose code to indicate the origin of the payment.
+• The payment purpose code (PPC) differs form country by country as well where the tag
+and its’ content to be used.
+• When these codes are not part of the payment file, there is a high risk that the payment
+will be rejected.
+• In the current version of SAP there is not a standard solution for this so we will create a
+custom solution to respond to the requirements.
+
+
+--- PAGE 4 ---
+Requirements
+• The main requirements come from the bank, SG, who provided different
+papers that do not always contains consistent information
+• Each beneficiary country has its’ own PPC
+• Each beneficiary country has its’ own rules related to the display of the PPC
+• Each beneficiary country determines which tag in the payment file should contain
+the PPC
+
+[TABLE 1 on page 4]
+Requirements
+• The main requirements come from the bank, SG, who provided different
+papers that do not always contains consistent information
+• Each beneficiary country has its’ own PPC
+• Each beneficiary country has its’ own rules related to the display of the PPC
+• Each beneficiary country determines which tag in the payment file should contain
+the PPC
+
+
+--- PAGE 5 ---
+Country Requirements
+• United Arabic Emirates (AE)
+• Payment Purpose Code Structure
+Fixed (5) Variable PPC (3) Example (8)
+/REC/ FIS /REC/FIS Country ISO Code Purpose Code
+UAE AE AE0 FIS Financial services
+UAE AE AE1 CHC Charitable Contributions (Charity and Aid)
+UAE AE AE2 IFS Information services
+UAE AE AE3 ITS Computer services
+UAE AE AE4 PMS Professional and management consulting service
+UAE AE AE5 SAL Salary (Compensation of employees)
+UAE AE AE6 RNT Rent Payments
+UAE AE AE7 STR Travel
+UAE AE AE8 TCS Telecommunication services
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf
+
+[TABLE 1 on page 5]
+Country Requirements
+• United Arabic Emirates (AE)
+• Payment Purpose Code Structure
+Fixed (5) Variable PPC (3) Example (8)
+/REC/ FIS /REC/FIS Country ISO Code Purpose Code
+UAE AE AE0 FIS Financial services
+UAE AE AE1 CHC Charitable Contributions (Charity and Aid)
+UAE AE AE2 IFS Information services
+UAE AE AE3 ITS Computer services
+UAE AE AE4 PMS Professional and management consulting service
+UAE AE AE5 SAL Salary (Compensation of employees)
+UAE AE AE6 RNT Rent Payments
+UAE AE AE7 STR Travel
+UAE AE AE8 TCS Telecommunication services
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf
+
+
+[TABLE 2 on page 5]
+Fixed (5) | Variable PPC (3) | Example (8) |  |  |  |  |  | 
+/REC/ | FIS | /REC/FIS Country ISO |  |  |  |  |  | 
+ |  |  | Country | ISO |  | Co | de | Purpose Code
+ |  |  |  |  |  |  |  | FIS Financial services
+ |  |  | UAE | AE |  |  |  | 
+ |  |  | UAE | AE |  | AE1 |  | CHC Charitable Contributions (Charity and Aid)
+ |  |  | UAE | AE |  | AE2 |  | IFS Information services
+ |  |  | UAE | AE |  | AE3 |  | ITS Computer services
+ |  |  | UAE | AE |  | AE4 |  | PMS Professional and management consulting service
+ |  |  | UAE | AE |  | AE5 |  | SAL Salary (Compensation of employees)
+ |  |  | UAE | AE |  | AE6 |  | RNT Rent Payments
+ |  |  | UAE | AE |  | AE7 |  | STR Travel
+ |  |  | UAE | AE |  | AE8 |  | TCS Telecommunication services
+
+--- PAGE 6 ---
+Country Requirements
+• Bahrein (BH)
+• Payment Purpose Code Structure
+Fixed Variable Fixed Variable Description PPC (up to 50 Example (8)
+(1) PPC (3) (1 characters)
+/ STR / Travel /STR/Travel
+ISO Code Purpose Code
+BH BH0 STR Travel
+BH BH1 FIS Financial services
+BH BH2 IFS Information services
+BH BH3 CHC Charitable Contributions
+BH BH4 PMS Professional and management consulting service
+BH BH5 SAL Salary (Compensation of employees)
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+
+[TABLE 1 on page 6]
+Country Requirements
+• Bahrein (BH)
+• Payment Purpose Code Structure
+Fixed Variable Fixed Variable Description PPC (up to 50 Example (8)
+(1) PPC (3) (1 characters)
+/ STR / Travel /STR/Travel
+ISO Code Purpose Code
+BH BH0 STR Travel
+BH BH1 FIS Financial services
+BH BH2 IFS Information services
+BH BH3 CHC Charitable Contributions
+BH BH4 PMS Professional and management consulting service
+BH BH5 SAL Salary (Compensation of employees)
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+
+
+[TABLE 2 on page 6]
+Fixed
+(1) | Variable
+PPC (3) | Fixed
+(1 | Variable Description PPC (up to 50
+characters) |  |  |  | Example (8) | 
+/ | STR | / | Travel |  |  |  | /STR/Travel | 
+ |  |  |  |  |  |  |  | 
+ |  |  |  | ISO | Code |  |  | 
+ |  |  |  | BH | BH0 | STR Travel |  | 
+ |  |  |  | BH | BH1 | FIS Financial services |  | 
+ |  |  |  | BH | BH2 | IFS Information services |  | 
+ |  |  |  | BH | BH3 | CHC Charitable Contributions |  | 
+ |  |  |  | BH | BH4 | PMS Professional and management consulting service |  | 
+ |  |  |  | BH | BH5 | SAL Salary (Compensation of employees) |  | 
+
+--- PAGE 7 ---
+Country Requirements
+• Chine (CN)
+• Payment Purpose Code Structure
+Fixed (5) Variable PPC (6) Example (11)
+/REC/ CSTRDR /REC/CSTRDR
+ISO Code Purpose Code
+CN CN0 /CSTRDR/ Reglement d'un service
+CN CN1 /CCDNDR/ Donation de charite
+CN CN2 /COCADR/ Autres transactions sur compte courant
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf
+
+[TABLE 1 on page 7]
+Country Requirements
+• Chine (CN)
+• Payment Purpose Code Structure
+Fixed (5) Variable PPC (6) Example (11)
+/REC/ CSTRDR /REC/CSTRDR
+ISO Code Purpose Code
+CN CN0 /CSTRDR/ Reglement d'un service
+CN CN1 /CCDNDR/ Donation de charite
+CN CN2 /COCADR/ Autres transactions sur compte courant
+• Transfer to payment file tag:
+CdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf
+
+
+[TABLE 2 on page 7]
+Fixed (5) | Variable PPC (6) | Example (11) | 
+/REC/ | CSTRDR | /REC/CSTRDR | 
+ |  |  | 
+
+[TABLE 3 on page 7]
+ | Code | Purpose Code
+CN | CN0 | /CSTRDR/ Reglement d'un service
+CN | CN1 | /CCDNDR/ Donation de charite
+CN | CN2 | /COCADR/ Autres transactions sur compte courant
+
+--- PAGE 8 ---
+Country Requirements
+• Indonesia (ID)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (4) (1) Invoice Reference
+/PURP/ 2490 / Consulting 03 04 /PURP/2490/Consulting 03 04
+ISO Code Purpose Code
+ID ID0 2461 Business Trip
+ID ID1 2468 Education/training in Indo
+ID ID2 2490 Computer Services
+ID ID3 2495 Information Services
+ID ID4 2550 Financial Service
+• Transfer to payment file tag:
+ID ID5 2570 Research and Development
+ID ID6 2580 Lgal, acc'ing, consulting, PR
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd ID ID7 2640 OtherBusiness Svs
+ID ID8 2670 Other transaction service
+
+[TABLE 1 on page 8]
+Country Requirements
+• Indonesia (ID)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (4) (1) Invoice Reference
+/PURP/ 2490 / Consulting 03 04 /PURP/2490/Consulting 03 04
+ISO Code Purpose Code
+ID ID0 2461 Business Trip
+ID ID1 2468 Education/training in Indo
+ID ID2 2490 Computer Services
+ID ID3 2495 Information Services
+ID ID4 2550 Financial Service
+• Transfer to payment file tag:
+ID ID5 2570 Research and Development
+ID ID6 2580 Lgal, acc'ing, consulting, PR
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd ID ID7 2640 OtherBusiness Svs
+ID ID8 2670 Other transaction service
+
+
+[TABLE 2 on page 8]
+Fixed
+(6) | Variable PPC
+(4) | Fixed
+(1) | Variable (18)
+Invoice Reference | Example | 
+/PURP/ | 2490 | / | Consulting 03 04 | /PURP/2490/Consulting 03 04 | 
+
+[TABLE 3 on page 8]
+ISO | Code | Purpose Code
+ID | ID0 | 2461 Business Trip
+ID | ID1 | 2468 Education/training in Indo
+ID | ID2 | 2490 Computer Services
+ID | ID3 | 2495 Information Services
+ID | ID4 | 2550 Financial Service
+ID | ID5 | 2570 Research and Development
+ID | ID6 | 2580 Lgal, acc'ing, consulting, PR
+ID | ID7 | 2640 OtherBusiness Svs
+ID | ID8 | 2670 Other transaction service
+
+--- PAGE 9 ---
+Country Requirements
+• India (IN)
+• Payment Purpose Code Structure
+Variable Fixed Variable Fixed Variable (18) Invoice Example
+PPC (5) (1) Description PPC (5) Reference
+PO301 ; Purchases ;INV; 6523486 Jones P0301;Purchases towards
+towards travel travel;INV;6523486 Jones
+ISO Code Purpose Code
+IN IN0 P0301 Purchases towards travel
+IN IN1 P0403 Telecommunication services
+IN IN2 P0802 Software consultancy/implementation
+IN IN3 P0804 Repair and maintenance of computer and softw
+• Transfer to payment file tag:
+IN IN4 P1004 Legal services
+IN IN5 P1005 Accounting, auditing, book keeping and tax c
+IN IN6 P1006 Business and management consultancy and publ
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+IN IN7 P1019 Other services not included elsewhere
+IN IN8 P1304 Grants and donations to governments and char
+IN IN9 P1401 Compensation of employees
+
+[TABLE 1 on page 9]
+Country Requirements
+• India (IN)
+• Payment Purpose Code Structure
+Variable Fixed Variable Fixed Variable (18) Invoice Example
+PPC (5) (1) Description PPC (5) Reference
+PO301 ; Purchases ;INV; 6523486 Jones P0301;Purchases towards
+towards travel travel;INV;6523486 Jones
+ISO Code Purpose Code
+IN IN0 P0301 Purchases towards travel
+IN IN1 P0403 Telecommunication services
+IN IN2 P0802 Software consultancy/implementation
+IN IN3 P0804 Repair and maintenance of computer and softw
+• Transfer to payment file tag:
+IN IN4 P1004 Legal services
+IN IN5 P1005 Accounting, auditing, book keeping and tax c
+IN IN6 P1006 Business and management consultancy and publ
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+IN IN7 P1019 Other services not included elsewhere
+IN IN8 P1304 Grants and donations to governments and char
+IN IN9 P1401 Compensation of employees
+
+[TABLE 2 on page 9]
+Variable
+PPC (5) | Fixed
+(1) | Variable
+Description PPC | Fixed
+(5) | Variable (18) Invoice
+Reference | Example | 
+PO301 | ; | Purchases
+towards travel | ;INV; | 6523486 Jones | P0301;Purchases towards
+travel;INV;6523486 Jones | 
+
+[TABLE 3 on page 9]
+ISO | Code | Purpose Code
+IN | IN0 | P0301 Purchases towards travel
+IN | IN1 | P0403 Telecommunication services
+IN | IN2 | P0802 Software consultancy/implementation
+IN | IN3 | P0804 Repair and maintenance of computer and softw
+IN | IN4 | P1004 Legal services
+IN | IN5 | P1005 Accounting, auditing, book keeping and tax c
+IN | IN6 | P1006 Business and management consultancy and publ
+IN | IN7 | P1019 Other services not included elsewhere
+IN | IN8 | P1304 Grants and donations to governments and char
+ |  | 
+IN | IN9 | P1401 Compensation of employees
+
+--- PAGE 10 ---
+Country Requirements
+• Jordan (JO)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (3) (1) Invoice Reference
+/PURP/ 804 / Consulting 03 04 /PURP/804/Consulting 03 04
+ISO Code Purpose Code
+JO JO0 206 Overseas Incoming Salaries
+JO JO1 404 Travel and Tourism
+JO JO2 705 Charity Communities Aid
+JO JO3 801 Telecommunications Services
+JO JO4 802 Financial Services
+• Transfer to payment file tag:
+JO JO5 803 Information Technology Services
+JO JO6 804 Consulting Services
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd JO JO7 807 Marketing & Media Services
+JO JO8 809 Medical & Health Services
+
+[TABLE 1 on page 10]
+Country Requirements
+• Jordan (JO)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (3) (1) Invoice Reference
+/PURP/ 804 / Consulting 03 04 /PURP/804/Consulting 03 04
+ISO Code Purpose Code
+JO JO0 206 Overseas Incoming Salaries
+JO JO1 404 Travel and Tourism
+JO JO2 705 Charity Communities Aid
+JO JO3 801 Telecommunications Services
+JO JO4 802 Financial Services
+• Transfer to payment file tag:
+JO JO5 803 Information Technology Services
+JO JO6 804 Consulting Services
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd JO JO7 807 Marketing & Media Services
+JO JO8 809 Medical & Health Services
+
+
+[TABLE 2 on page 10]
+Fixed
+(6) | Variable PPC
+(3) | Fixed
+(1) | Variable (18)
+Invoice Reference | Example | 
+/PURP/ | 804 | / | Consulting 03 04 | /PURP/804/Consulting 03 04 | 
+
+[TABLE 3 on page 10]
+ISO | Code | Purpose Code
+JO | JO0 | 206 Overseas Incoming Salaries
+JO | JO1 | 404 Travel and Tourism
+JO | JO2 | 705 Charity Communities Aid
+JO | JO3 | 801 Telecommunications Services
+JO | JO4 | 802 Financial Services
+JO | JO5 | 803 Information Technology Services
+JO | JO6 | 804 Consulting Services
+JO | JO7 | 807 Marketing & Media Services
+JO | JO8 | 809 Medical & Health Services
+
+--- PAGE 11 ---
+Country Requirements
+• Morocco (MA)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (3) (1) Invoice Reference
+/PURP/ 570 / Consulting 03 04 /PURP/570/Consulting 03 04
+ISO Code Purpose Code
+MA MA0 250 Transport aérien de passagers
+MA MA1 442 Loyers
+MA MA2 510 Marchés administratifs
+MA MA3 570 Services d'information
+MA MA4 585 Recherche et développement
+• Transfer to payment file tag:
+MA MA5 595 Divers services aux entreprises, spécialisés e
+MA MA6 720 Services de formation
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd MA MA7 725 Services de santé
+MA MA8 800 Postesdiplomatiques marocains
+
+[TABLE 1 on page 11]
+Country Requirements
+• Morocco (MA)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (3) (1) Invoice Reference
+/PURP/ 570 / Consulting 03 04 /PURP/570/Consulting 03 04
+ISO Code Purpose Code
+MA MA0 250 Transport aérien de passagers
+MA MA1 442 Loyers
+MA MA2 510 Marchés administratifs
+MA MA3 570 Services d'information
+MA MA4 585 Recherche et développement
+• Transfer to payment file tag:
+MA MA5 595 Divers services aux entreprises, spécialisés e
+MA MA6 720 Services de formation
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd MA MA7 725 Services de santé
+MA MA8 800 Postesdiplomatiques marocains
+
+
+[TABLE 2 on page 11]
+Fixed
+(6) | Variable PPC
+(3) | Fixed
+(1) | Variable (18)
+Invoice Reference | Example | 
+/PURP/ | 570 | / | Consulting 03 04 | /PURP/570/Consulting 03 04 | 
+
+[TABLE 3 on page 11]
+ISO | Code | Purpose Code
+MA | MA0 | 250 Transport aérien de passagers
+MA | MA1 | 442 Loyers
+MA | MA2 | 510 Marchés administratifs
+MA | MA3 | 570 Services d'information
+MA | MA4 | 585 Recherche et développement
+MA | MA5 | 595 Divers services aux entreprises, spécialisés e
+MA | MA6 | 720 Services de formation
+MA | MA7 | 725 Services de santé
+MA | MA8 | 800 Postesdiplomatiques marocains
+
+--- PAGE 12 ---
+Country Requirements
+• Malaysia (MY)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (5) (1) Invoice Reference
+/PURP/ 16510 / Consulting 03 04 /PURP/16510/Consulting 03 04
+ISO Code Purpose Code
+MY MY0 11210 Passenger by air
+MY MY1 12140 Postal and courier services
+MY MY2 14310 Wages and Salaries in cash
+MY MY3 15200 International Organisations
+MY MY4 16510 Computer Services
+• Transfer to payment file tag:
+MY MY5 16520 Information services
+MY MY6 16730 Research and Development
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd MY MY7 16760 Business Services
+MY MY8 16780 Rental Services
+
+[TABLE 1 on page 12]
+Country Requirements
+• Malaysia (MY)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (5) (1) Invoice Reference
+/PURP/ 16510 / Consulting 03 04 /PURP/16510/Consulting 03 04
+ISO Code Purpose Code
+MY MY0 11210 Passenger by air
+MY MY1 12140 Postal and courier services
+MY MY2 14310 Wages and Salaries in cash
+MY MY3 15200 International Organisations
+MY MY4 16510 Computer Services
+• Transfer to payment file tag:
+MY MY5 16520 Information services
+MY MY6 16730 Research and Development
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd MY MY7 16760 Business Services
+MY MY8 16780 Rental Services
+
+
+[TABLE 2 on page 12]
+Fixed
+(6) | Variable PPC
+(5) | Fixed
+(1) | Variable (18)
+Invoice Reference | Example | 
+/PURP/ | 16510 | / | Consulting 03 04 | /PURP/16510/Consulting 03 04 | 
+
+[TABLE 3 on page 12]
+ISO | Code | Purpose Code
+MY | MY0 | 11210 Passenger by air
+MY | MY1 | 12140 Postal and courier services
+MY | MY2 | 14310 Wages and Salaries in cash
+MY | MY3 | 15200 International Organisations
+MY | MY4 | 16510 Computer Services
+MY | MY5 | 16520 Information services
+MY | MY6 | 16730 Research and Development
+MY | MY7 | 16760 Business Services
+MY | MY8 | 16780 Rental Services
+
+--- PAGE 13 ---
+Country Requirements
+• Philippines (PH)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (4) (1) Invoice Reference
+/PURP/ SUPP / Consulting 03 04 /PURP/SUPP/Consulting 03 04
+ISO Code Purpose Code
+PH PH0 SUPP Supplier/Vendor payment
+PH PH1 SALA Payroll/Salaries
+PH PH2 BEXP Business Expenses
+PH PH3 TRVL Travel & Tour Expenses
+PH PH4 CHAR Charity Payment
+• Transfer to payment file tag:
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+
+[TABLE 1 on page 13]
+Country Requirements
+• Philippines (PH)
+• Payment Purpose Code Structure
+Fixed Variable PPC Fixed Variable (18) Example
+(6) (4) (1) Invoice Reference
+/PURP/ SUPP / Consulting 03 04 /PURP/SUPP/Consulting 03 04
+ISO Code Purpose Code
+PH PH0 SUPP Supplier/Vendor payment
+PH PH1 SALA Payroll/Salaries
+PH PH2 BEXP Business Expenses
+PH PH3 TRVL Travel & Tour Expenses
+PH PH4 CHAR Charity Payment
+• Transfer to payment file tag:
+• CdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Ustrd
+
+
+[TABLE 2 on page 13]
+Fixed
+(6) | Variable PPC
+(4) | Fixed
+(1) | Variable (18)
+Invoice Reference | Example | 
+/PURP/ | SUPP | / | Consulting 03 04 | /PURP/SUPP/Consulting 03 04 | 
+
+[TABLE 3 on page 13]
+ISO | Code | Purpose Code
+PH | PH0 | SUPP Supplier/Vendor payment
+PH | PH1 | SALA Payroll/Salaries
+PH | PH2 | BEXP Business Expenses
+PH | PH3 | TRVL Travel & Tour Expenses
+PH | PH4 | CHAR Charity Payment
+
+--- PAGE 14 ---
+Solution Proposal
+Payment Purpose code setup and entry
+• The use of SCB indicator to reflect the payment purpose code (PPC)
+• Each code is preceded by the country ISO code and 1 number
+• Only a maximum of 10 codes per country possible
+• The SCB indicator has to be entered for each invoice
+• A rule has been created that the SCB indicator (PPC) is required for the
+concerned countries
+• The list of PPC is provided by BFM and maintained by DBS in SAP
+• Only 1 working list should be managed to avoid double or missing entries
+
+[TABLE 1 on page 14]
+Solution Proposal
+Payment Purpose code setup and entry
+• The use of SCB indicator to reflect the payment purpose code (PPC)
+• Each code is preceded by the country ISO code and 1 number
+• Only a maximum of 10 codes per country possible
+• The SCB indicator has to be entered for each invoice
+• A rule has been created that the SCB indicator (PPC) is required for the
+concerned countries
+• The list of PPC is provided by BFM and maintained by DBS in SAP
+• Only 1 working list should be managed to avoid double or missing entries
+
+
+--- PAGE 15 ---
+Solution Proposal – Entry example
+
+[TABLE 1 on page 15]
+Solution Proposal – Entry example
+
+
+
+--- PAGE 16 ---
+Solution Proposal
+• The SCB indicator of the invoice is transferred when running the payment
+program
+• A specific development will be created to take the SCB indicator and translate this
+to the required PPC by country
+• The complete PPC will be transferred to the indicated tag in the payment file
+• Flexible solution in case country/bank requirements change
+• New countries can be easily added
+• Each payment will need to have an additional line with the “note to payee” for
+information for the beneficiary
+• The development is only for the XML file of Societé Generale. If Citibank requires
+this, all the requirements and developments should be reviewed
+
+[TABLE 1 on page 16]
+Solution Proposal
+• The SCB indicator of the invoice is transferred when running the payment
+program
+• A specific development will be created to take the SCB indicator and translate this
+to the required PPC by country
+• The complete PPC will be transferred to the indicated tag in the payment file
+• Flexible solution in case country/bank requirements change
+• New countries can be easily added
+• Each payment will need to have an additional line with the “note to payee” for
+information for the beneficiary
+• The development is only for the XML file of Societé Generale. If Citibank requires
+this, all the requirements and developments should be reviewed
+
+
+--- PAGE 17 ---
+Actions & Decisions
+• Countries require individual payments, meaning 1 payment by invoice
+• How to ensure this:
+• Indicate this in vendor master data?
+• Decide payment proposal?
+• Create a separate payment method which only allows individual payments only
+• How to manage Credit note:
+• Register as a partial payment and pay out the remaining amount only
+• Register with reference to invoice and pay out together
+• Decide on fixed code for HR payments by country
+• Decide on fixed code for replenishments by country
+• Instruct users on the use of the Payment Purpose Code entry
+
+[TABLE 1 on page 17]
+Actions & Decisions
+• Countries require individual payments, meaning 1 payment by invoice
+• How to ensure this:
+• Indicate this in vendor master data?
+• Decide payment proposal?
+• Create a separate payment method which only allows individual payments only
+• How to manage Credit note:
+• Register as a partial payment and pay out the remaining amount only
+• Register with reference to invoice and pay out together
+• Decide on fixed code for HR payments by country
+• Decide on fixed code for replenishments by country
+• Instruct users on the use of the Payment Purpose Code entry
+
+
+--- PAGE 18 ---
+Follow up
+• The specific development is foreseen to be finalized by the end of this week
+• Testing should take place in the coming weeks in V01
+• Marlies will send an email for this
+• Testing results should be discussed with the bank to ensure that the setup
+is correct and adapted where necessary.
+
+[TABLE 1 on page 18]
+Follow up
+• The specific development is foreseen to be finalized by the end of this week
+• Testing should take place in the coming weeks in V01
+• Marlies will send an email for this
+• Testing results should be discussed with the bank to ensure that the setup
+is correct and adapted where necessary.
+
+
+--- PAGE 19 ---
+Thank you
+
+[TABLE 1 on page 19]
+Thank you
+
