@@ -361,28 +361,188 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 <!-- TAB: DMEE Trees -->
 <div id="tab-dmee" class="content">
   <div class="section">
-    <h3>DMEE Format Trees (16 Trees in CTS)</h3>
+    <h3>What is a DMEE Tree? &mdash; Payment File Generation Explained</h3>
+    <div class="info" style="margin-bottom:12px">
+      A <strong>DMEE tree</strong> (Data Medium Exchange Engine) is SAP's way of defining the XML/file format that gets sent to a bank. Each tree is a template that says: "take the payment data from SAP tables, and render it into the exact XML structure that this specific bank expects." Think of it as a mapping: <strong>SAP payment data &rarr; Bank-specific XML file</strong>.
+    </div>
+    <div style="margin-bottom:16px;padding:16px;background:#12202e;border-radius:8px;border:1px solid #1e3a4a">
+      <h4 style="color:#1abc9c;margin-bottom:12px">UNESCO has 3 Active Banking Channels</h4>
+      <div class="grid3">
+        <div class="fm-card" style="border-color:#1abc9c">
+          <code style="color:#1abc9c;font-size:12px">/CGI_XML_CT_UNESCO</code>
+          <div class="desc" style="margin-top:6px"><strong>CGI pain.001 &mdash; Primary channel</strong><br>
+          Bank: Soci&eacute;t&eacute; G&eacute;n&eacute;rale (CGI gateway)<br>
+          Format: ISO 20022 pain.001 Credit Transfer<br>
+          Scope: International + EUR non-SEPA<br>
+          Countries: FR, DE (4 payment methods)<br>
+          631 nodes &middot; most complex tree</div>
+        </div>
+        <div class="fm-card" style="border-color:#e67e22">
+          <code style="color:#e67e22;font-size:12px">/CITI/XML/UNESCO/DC_V3_01</code>
+          <div class="desc" style="margin-top:6px"><strong>Citibank Direct Credit v3</strong><br>
+          Bank: Citibank<br>
+          Format: Citibank proprietary XML<br>
+          Scope: Americas + non-standard currencies<br>
+          Countries: BR, CA, FR (7 payment methods)<br>
+          610 nodes &middot; Citibank-specific tags</div>
+        </div>
+        <div class="fm-card" style="border-color:#3498db">
+          <code style="color:#3498db;font-size:12px">/SEPA_CT_UNES</code>
+          <div class="desc" style="margin-top:6px"><strong>SEPA Credit Transfer</strong><br>
+          Bank: Any SEPA bank<br>
+          Format: ISO 20022 SEPA pain.001<br>
+          Scope: EUR within SEPA zone<br>
+          Countries: FR, DE (2 payment methods)<br>
+          95 nodes &middot; simplest tree (SEPA standardized)</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;color:#7fb3d3;font-size:11px">
+        <strong>ICTP (Trieste) has its own set:</strong> <code>/SEPA_CT_ICTP_ISO</code> + <code>EXTRASEPA</code> variants (3 trees, IT only) &middot;
+        <strong>UBO (Brazil) uses:</strong> <code>/CITI/XML/UNESCO/DC_V3_01</code> via FR channel config &middot;
+        <strong>US ACH:</strong> Uses SAP standard <code>ACH</code>/<code>PPD</code>/<code>CTX</code> formats (not custom trees)
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;padding:16px;background:#12202e;border-radius:8px;border:1px solid #1e3a4a">
+      <h4 style="color:#1abc9c;margin-bottom:12px">E2E: How a Payment Becomes a Bank File</h4>
+      <ol class="steplist">
+        <li><strong>F110 Payment Run</strong> &rarr; SAP selects open invoices, groups by vendor/bank/currency, creates payment documents (PAYR table) and payment detail lines (FPAYP table)</li>
+        <li><strong>Payment Medium Workbench</strong> &rarr; SAP looks at T042Z for the country+payment method combination, finds FORMI = the DMEE tree ID (e.g., <code>/CGI_XML_CT_UNESCO</code>)</li>
+        <li><strong>DMEE Engine</strong> &rarr; Traverses the tree node by node. For each node: reads the source field from the payment tables (FPAYH header, FPAYP detail), applies BAdI exit if configured, renders the XML tag</li>
+        <li><strong>BAdI Processing</strong> &rarr; <code>FI_CGI_DMEE_EXIT_W_BADI</code> fires for nodes with exit configured. Per-country implementations (FR, DE, IT, AE, BH) apply country-specific transformations (address format, tax ID, purpose code)</li>
+        <li><strong>XML Output</strong> &rarr; Complete pain.001 / Citibank XML file written to SAP filesystem or sent via RFC to bank gateway</li>
+        <li><strong>BCM</strong> &rarr; Bank Confirmation Management receives status files back, matches against sent payments, updates clearing status</li>
+      </ol>
+    </div>
+
+    <div style="margin-bottom:16px;padding:16px;background:#2d1515;border:1px solid #e74c3c;border-radius:8px">
+      <h4 style="color:#e74c3c;margin-bottom:8px">Adding a New Country &mdash; What You Need to Configure</h4>
+      <ol class="steplist" style="font-size:11px">
+        <li><strong>Decide the banking channel:</strong> Which bank will process payments for this country? CGI/SocGen (/CGI_XML_CT_UNESCO), Citibank (/CITI/DC_V3_01), or a new channel?</li>
+        <li><strong>Create payment method in T042Z:</strong> New entry with LAND1=country code, ZLSCH=payment method letter, FORMI=DMEE tree ID</li>
+        <li><strong>Configure T042E:</strong> Assign the payment method to company code(s) + link SAPscript form (ZFORN) for payment advice</li>
+        <li><strong>Configure T042I:</strong> Assign house bank + bank account per company code for this payment method</li>
+        <li><strong>DMEE tree nodes (if needed):</strong> Add country-specific conditions on address nodes (PstlAdr), name nodes (Nm), and character filtering. Most nodes in /CGI_XML_CT_UNESCO already handle generic cases.</li>
+        <li><strong>BAdI implementation (if needed):</strong> Create <code>Y_IDFI_CGI_DMEE_COUNTRY_XX</code> enhancement implementation + <code>YCL_IDFI_CGI_DMEE_XX</code> class if the country has special requirements (tax ID format, IBAN rules, purpose code)</li>
+        <li><strong>Character handling:</strong> Verify the 3-layer char substitution works for the country's alphabet. Add custom chars to Layer 3 suppress list if needed.</li>
+        <li><strong>BCM rules:</strong> Add BCM rule if the country has validation requirements (IBAN mandatory, currency restrictions)</li>
+        <li><strong>OBPM4 variant:</strong> Create SAPFPAYM variant (NEVER transported &mdash; recreate manually in each system)</li>
+        <li><strong>Test in D01 with V01 variant</strong> &rarr; Bank confirms file accepted &rarr; Transport config to P01</li>
+      </ol>
+    </div>
+
+    <h3>DMEE Format Trees &mdash; Active vs Inactive (P01 Production)</h3>
+    <div class="alert" style="background:#1a2d3e;border-color:#1abc9c;color:#a9cce3;margin-bottom:12px">
+      <strong>Only trees referenced in T042Z.FORMI are active in production.</strong> Trees not assigned to any payment method are test/legacy/unused. Source: T042Z cross-referenced with DMEE_TREE (P01, 2026-04-06).
+    </div>
     <table>
-      <tr><th>DMEE Path</th><th>Name</th><th>Company</th><th>Description</th></tr>
-      <tr><td><code style="font-size:11px">PAYM/CGI_XML_CT_UNESCO</code></td><td>CGI XML</td><td>UNES + institutes</td><td style="color:#666">CGI pain.001 format</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CGI_XML_CT_UNESCO_1</code></td><td>CGI XML v1</td><td>UNES</td><td style="color:#666">Variant 1</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CITI/XML/UNESCO/DC_V3_01</code></td><td>Citi DC v3.01</td><td>UNES/UBO</td><td style="color:#666">Citibank Direct Credit XML</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CITI/XML/UNESCO/DIRECT_CREDIT</code></td><td>Citi DC</td><td>UNES</td><td style="color:#666">Citibank Direct Credit</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CITIPMW/CITI_XML_V2_50</code></td><td>Citi PMW v2.50</td><td>UNES</td><td style="color:#666">Citibank Payment Media Workbench</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CITIPMW/CITI_XML_V3_01</code></td><td>Citi PMW v3.01</td><td>UNES</td><td style="color:#666">Citibank PMW v3</td></tr>
-<tr><td><code style="font-size:11px">PAYM/CITIPMW/CSF_CITI_XML_01</code></td><td>Citi CSF</td><td>UNES</td><td style="color:#666">Citibank CSF format</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO</code></td><td>SEPA CT ICTP</td><td>ICTP</td><td style="color:#666">ISO 20022 SEPA Credit Transfer</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_1</code></td><td>SEPA CT ICTP 1</td><td>ICTP</td><td style="color:#666">Variant 1</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_2</code></td><td>SEPA CT ICTP 2</td><td>ICTP</td><td style="color:#666">Variant 2</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_EXCEE</code></td><td>SEPA CT Exceed</td><td>ICTP</td><td style="color:#666">Exceeding SEPA limit variant</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_EXTRASEPA</code></td><td>SEPA Extra</td><td>ICTP</td><td style="color:#666">Extra-SEPA international</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_EXTRASEPABA</code></td><td>SEPA Extra BA</td><td>ICTP</td><td style="color:#666">Extra-SEPA with bank address</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_EXTRASEPA_2</code></td><td>SEPA Extra 2</td><td>ICTP</td><td style="color:#666">Variant 2</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_ICTP_ISO_EXTRASEPA_I</code></td><td>SEPA Extra I</td><td>ICTP</td><td style="color:#666">Extra SEPA I</td></tr>
-<tr><td><code style="font-size:11px">PAYM/SEPA_CT_UNES</code></td><td>SEPA CT UNES</td><td>UNES</td><td style="color:#666">UNESCO SEPA Credit Transfer</td></tr>
-<tr><td colspan="4" style="background:#fff8e1;padding:8px"><strong>Country BAdIs:</strong> <code>Y_BADI_IDFI_CGI_DMEE_DE</code> (Germany) <code>Y_BADI_IDFI_CGI_DMEE_FR</code> (France) <code>Y_BADI_IDFI_CGI_DMEE_IT</code> (Italy) <code>Y_BADI_IDFI_CGI_DMEE_AE</code> (UAE) <code>Y_BADI_IDFI_CGI_DMEE_BH</code> (Bahrain)<br><strong>Enhancement:</strong> YENH_FI_DMEE (spot), YENH_FI_DMEE_CGI_FALLBACK (impl)<br><strong>Classes:</strong> YCL_IDFI_CGI_DMEE_AE/BH/CH/FR + CL_IDFI_CGI_DMEE_CH/FR</td></tr>
+      <tr><th>Status</th><th>DMEE Tree</th><th>Used By</th><th>Category</th><th>Nodes (P01)</th></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/CGI_XML_CT_UNESCO</code></td><td>FR-A, FR-N, FR-J, DE-N</td><td>CGI pain.001 &mdash; main international</td><td>631</td></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/SEPA_CT_UNES</code></td><td>FR-S, DE-S</td><td>SEPA Credit Transfer &mdash; UNES</td><td>95</td></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>BR-Q, BR-R, CA-C, CA-N, FR-C, FR-L, FR-X</td><td>Citibank Direct Credit XML v3</td><td>610</td></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/SEPA_CT_ICTP_ISO</code></td><td>IT-S</td><td>ICTP SEPA Credit Transfer</td><td>n/a</td></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA</code></td><td>IT-J (SWIFT)</td><td>ICTP Extra-SEPA international</td><td>n/a</td></tr>
+      <tr style="background:#0d2a1a"><td style="color:#27ae60;font-weight:bold">ACTIVE</td><td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA_I</code></td><td>IT-I (no SWIFT)</td><td>ICTP Extra-SEPA without SWIFT</td><td>n/a</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>&mdash;</td><td>Variant/test &mdash; not in T042Z</td><td>639</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>/CITI/XML/UNESCO/DIRECT_CREDIT</code></td><td>&mdash;</td><td>Superseded by DC_V3_01</td><td>377</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>CGI_FICA_XML_CT</code></td><td>&mdash;</td><td>FICA variant &mdash; not assigned</td><td>1,210</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>CGI_FICA_XML_DD</code></td><td>&mdash;</td><td>FICA Direct Debit &mdash; not assigned</td><td>790</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>CGI_XML_CT</code></td><td>&mdash;</td><td>Base CGI template &mdash; superseded by UNESCO version</td><td>1,274</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>CGI_XML_CT_V9</code></td><td>&mdash;</td><td>V9 variant &mdash; test/superseded</td><td>1,328</td></tr>
+      <tr style="background:#2d1515"><td style="color:#e74c3c;font-weight:bold">INACTIVE</td><td><code>CGI_XML_DD</code></td><td>&mdash;</td><td>Direct Debit &mdash; UNESCO does not use DD</td><td>1,092</td></tr>
+      <tr><td style="color:#f39c12;font-weight:bold">LEGACY</td><td><code>ZSETIF_FOR</code></td><td>&mdash;</td><td>SETIF format (custom Z) &mdash; IT uses /SEPA_CT_ICTP_ISO now</td><td>128</td></tr>
+      <tr><td style="color:#f39c12;font-weight:bold">LEGACY</td><td><code>ZSETIF_FOR_ICTP</code></td><td>&mdash;</td><td>ICTP SETIF variant &mdash; superseded</td><td>134</td></tr>
+      <tr><td style="color:#95a5a6">EMPTY</td><td><code>Z_SETIF</code></td><td>&mdash;</td><td>Shell only, 0 nodes</td><td>0</td></tr>
     </table>
+    <div class="alert" style="margin-top:12px;background:#2d1515;border-color:#e74c3c">
+      <strong>7 of 13 UNESCO trees are INACTIVE/LEGACY.</strong> They exist because DMEE trees cannot be easily deleted (transport dependencies). The active production set is only <strong>6 trees</strong> (3 categories: CGI pain.001, SEPA CT, Citibank XML). Plus IT SETIF (active via FORMI='SETIF' for IT-A and IT-H but mapped to a non-Z tree name).
+    </div>
+    <div class="info" style="margin-top:8px">
+      <strong>Country BAdIs:</strong> <code>Y_BADI_IDFI_CGI_DMEE_DE</code> (Germany) <code>Y_BADI_IDFI_CGI_DMEE_FR</code> (France) <code>Y_BADI_IDFI_CGI_DMEE_IT</code> (Italy) <code>Y_BADI_IDFI_CGI_DMEE_AE</code> (UAE) <code>Y_BADI_IDFI_CGI_DMEE_BH</code> (Bahrain)<br>
+      <strong>Enhancement:</strong> YENH_FI_DMEE (spot), YENH_FI_DMEE_CGI_FALLBACK (impl)<br>
+      <strong>Classes:</strong> YCL_IDFI_CGI_DMEE_FR (France), YCL_IDFI_CGI_DMEE_FALLBACK (default), YCL_IDFI_CGI_DMEE_UTIL (utilities) &mdash; <em>Note: AE/BH classes referenced in CTS do NOT exist in P01 as standalone (they may be enhancement implementations, not ABAP classes)</em>
+    </div>
   </div>
+  <div class="section">
+    <h3>Active DMEE Format per Payment Method (T042Z.FORMI &mdash; P01 Production)</h3>
+    <div class="alert" style="background:#1a2d3e;border-color:#1abc9c;color:#a9cce3;margin-bottom:12px">
+      <strong>Source: T042Z table in P01 (read 2026-04-06).</strong> This is the definitive mapping: which DMEE tree renders the XML for each country/payment method combination. 27 of 263 payment methods use DMEE trees.
+    </div>
+    <table>
+      <tr><th>Country</th><th>PayMethod</th><th>Description</th><th>DMEE Tree (FORMI)</th><th>Category</th></tr>
+      <tr><td>FR</td><td>A</td><td>Treasury Transfers</td><td><code>/CGI_XML_CT_UNESCO</code></td><td style="color:#1abc9c">CGI pain.001</td></tr>
+      <tr><td>FR</td><td>N</td><td>Non-EUR outside US</td><td><code>/CGI_XML_CT_UNESCO</code></td><td style="color:#1abc9c">CGI pain.001</td></tr>
+      <tr><td>FR</td><td>J</td><td>Outside SEPA zone</td><td><code>/CGI_XML_CT_UNESCO</code></td><td style="color:#1abc9c">CGI pain.001</td></tr>
+      <tr><td>DE</td><td>N</td><td>International Payments</td><td><code>/CGI_XML_CT_UNESCO</code></td><td style="color:#1abc9c">CGI pain.001</td></tr>
+      <tr style="background:#12293e"><td>FR</td><td>S</td><td>SEPA Payment</td><td><code>/SEPA_CT_UNES</code></td><td style="color:#3498db">SEPA CT</td></tr>
+      <tr style="background:#12293e"><td>DE</td><td>S</td><td>SEPA payments</td><td><code>/SEPA_CT_UNES</code></td><td style="color:#3498db">SEPA CT</td></tr>
+      <tr><td>BR</td><td>Q</td><td>Boleto Barcode (Citi)</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>BR</td><td>R</td><td>TED Online (Citi)</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>CA</td><td>C</td><td>Citi Domestic Transfer</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>CA</td><td>N</td><td>Citi Cross Border</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>FR</td><td>C</td><td>Citi XML Transfer</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>FR</td><td>L</td><td>Payments US/USD only</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr><td>FR</td><td>X</td><td>Non-standard currency</td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="color:#e67e22">Citibank XML</td></tr>
+      <tr style="background:#12293e"><td>IT</td><td>S</td><td>SEPA bank transfer</td><td><code>/SEPA_CT_ICTP_ISO</code></td><td style="color:#3498db">ICTP SEPA</td></tr>
+      <tr style="background:#12293e"><td>IT</td><td>I</td><td>SETIF Foreign (no SWIFT)</td><td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA_I</code></td><td style="color:#3498db">ICTP SEPA</td></tr>
+      <tr style="background:#12293e"><td>IT</td><td>J</td><td>SETIF Foreign (SWIFT)</td><td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA</code></td><td style="color:#3498db">ICTP SEPA</td></tr>
+      <tr><td>IT</td><td>A</td><td>TLQ Treasury</td><td><code>SETIF</code></td><td style="color:#95a5a6">Legacy</td></tr>
+      <tr><td>IT</td><td>H</td><td>TLQ Euro Domestic</td><td><code>SETIF</code></td><td style="color:#95a5a6">Legacy</td></tr>
+      <tr><td>US</td><td>Y</td><td>ACH PPD</td><td><code>ACH</code> / <code>PPD</code></td><td style="color:#9b59b6">ACH</td></tr>
+      <tr><td>US</td><td>Z</td><td>ACH CTX</td><td><code>ACH</code> / <code>CTX</code></td><td style="color:#9b59b6">ACH</td></tr>
+    </table>
+    <div class="info" style="margin-top:8px">
+      <strong>Key insight:</strong> <code>/CGI_XML_CT_UNESCO</code> is the primary payment tree (4 methods: FR-A, FR-N, FR-J, DE-N = international treasury transfers). This tree contains the <code>&lt;Purp&gt;&lt;Cd&gt;</code> node for SEPA PurposeCode.
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>PurposeCode (<code>&lt;Purp&gt;&lt;Cd&gt;</code>) &mdash; How It Works (Session #039 Finding)</h3>
+    <div class="alert" style="background:#2d1515;border-color:#e74c3c;margin-bottom:12px">
+      <strong>This was the hardest question in the payment domain (H18, 13 sessions to resolve).</strong><br>
+      The PurposeCode is NOT a literal in ABAP code, NOT a constant in the DMEE tree. It is a <strong>field reference</strong> read at runtime from the payment detail line.
+    </div>
+    <table>
+      <tr><th>XML Path</th><th>DMEE Node</th><th>Source Table</th><th>Source Field</th><th>BAdI Exit</th><th>Meaning</th></tr>
+      <tr><td><code>&lt;Purp&gt;&lt;Cd&gt;</code></td><td>N_9662041050</td><td><code>FPAYP</code></td><td><code>XREF3</code></td><td><code>FI_CGI_DMEE_EXIT_W_BADI</code></td><td>ISO 20022 PurposeCode (SUPP, SALA, GOVT...)</td></tr>
+      <tr><td><code>&lt;Purp&gt;&lt;Prtry&gt;</code></td><td>N_2524282270</td><td><code>FPAYP</code></td><td><code>STRFR</code></td><td><code>FI_CGI_DMEE_EXIT_W_BADI</code></td><td>Proprietary code (bank-specific fallback)</td></tr>
+      <tr><td><code>&lt;Purp&gt;&lt;-Cd&gt;</code></td><td>N_0383793140</td><td>&mdash;</td><td>&mdash;</td><td><code>FI_CGI_DMEE_EXIT_W_BADI</code></td><td>Condition: suppress Cd node when empty</td></tr>
+      <tr><td><code>&lt;Purp&gt;&lt;-Prtry&gt;</code></td><td>N_5023885600</td><td>&mdash;</td><td>&mdash;</td><td><code>FI_CGI_DMEE_EXIT_W_BADI</code></td><td>Condition: suppress Prtry node when empty</td></tr>
+    </table>
+    <div style="margin-top:12px;padding:12px;background:#12202e;border-radius:6px;font-family:monospace;font-size:11px;line-height:1.8">
+      <span style="color:#7fb3d3">/* Data flow */</span><br>
+      F110 payment run &rarr; <span style="color:#1abc9c">FPAYP</span> line created (XREF3 populated from vendor master or payment config)<br>
+      &nbsp;&nbsp;&rarr; DMEE tree <span style="color:#f39c12">/CGI_XML_CT_UNESCO</span> renders XML<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&rarr; Node <span style="color:#1abc9c">Purp &gt; Cd</span>: reads <span style="color:#e74c3c">FPAYP.XREF3</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&rarr; BAdI <span style="color:#f39c12">FI_CGI_DMEE_EXIT_W_BADI</span> post-processes (can override/suppress)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&rarr; If XREF3 empty &rarr; <span style="color:#e74c3c">-Cd</span> condition fires &rarr; Purp node suppressed entirely<br>
+      &nbsp;&nbsp;&rarr; Output: <span style="color:#27ae60">&lt;Purp&gt;&lt;Cd&gt;SUPP&lt;/Cd&gt;&lt;/Purp&gt;</span> (or omitted if no PurposeCode)
+    </div>
+    <div class="info" style="margin-top:8px">
+      <strong>To modify the PurposeCode:</strong> (1) Change what gets written to FPAYP.XREF3 during F110 &mdash; this is controlled by vendor master or payment config, OR (2) Modify the BAdI implementation <code>YCL_IDFI_CGI_DMEE_FR</code> / <code>_FALLBACK</code> to override the value at tree-rendering time.<br><br>
+      <strong>To add PurposeCode for a new country:</strong> The BAdI <code>FI_CGI_DMEE_EXIT_W_BADI</code> has per-country implementations (<code>Y_IDFI_CGI_DMEE_COUNTRY_*</code>). Each implementation filters by country. Add a new enhancement implementation for the new country code and implement <code>GET_CREDIT</code> method to populate/transform the Cd value.
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>D01 vs P01 DMEE Tree Comparison (Session #039)</h3>
+    <div class="info" style="margin-bottom:8px"><strong>12 of 13 UNESCO trees are identical between D01 and P01.</strong> Only <code>/CGI_XML_CT_UNESCO_1</code> diverges (address formatting nodes).</div>
+    <table>
+      <tr><th>Tree</th><th>D01</th><th>P01</th><th>Only D01</th><th>Only P01</th><th>Changed</th><th>Status</th></tr>
+      <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>631</td><td>631</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr style="background:#2d1515"><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>632</td><td>639</td><td>1</td><td>8</td><td>1</td><td style="color:#e74c3c">Diverged</td></tr>
+      <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>610</td><td>610</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr><td><code>/CITI/XML/UNESCO/DIRECT_CREDIT</code></td><td>377</td><td>377</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr><td><code>/SEPA_CT_UNES</code></td><td>95</td><td>95</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr><td><code>CGI_FICA_XML_CT</code></td><td>605</td><td>605</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr><td><code>CGI_XML_CT</code></td><td>637</td><td>637</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+      <tr><td><code>CGI_XML_CT_V9</code></td><td>664</td><td>664</td><td>0</td><td>0</td><td>0</td><td style="color:#27ae60">Identical</td></tr>
+    </table>
+    <div class="info" style="margin-top:8px">
+      <strong>Divergence detail (<code>/CGI_XML_CT_UNESCO_1</code>):</strong> D01 has 1 extra node (<code>SCB</code> — removed from P01). P01 has 8 extra address nodes (<code>AdrLine</code>, <code>AdrLine1</code>, <code>AdrLine2</code>) — applied directly in production without back-transport to D01. 1 node changed attributes. This is a minor address formatting update, not a structural change.
+    </div>
+  </div>
+
   <div class="section">
     <h3>DMEE Program Assignment</h3>
     <div class="info">DMEE trees are assigned to payment methods via transaction DMEE. SAPFPAYM calls the tree based on T042Z configuration (PROGN=RFFOM100 uses DMEE engine).</div>

@@ -183,6 +183,62 @@ ZCL_Z_CRP_SRV_DPC_EXT  (DPC Extension class)
 | `SIW_RFC not found` | Missing function module | Fall back to INSERT_REPORT |
 | `Lock conflict` | Object locked by another user | Check SM12, wait or break lock |
 
+## Common Failure Modes
+
+### ABAP 72-char Line Truncation — Silent Data Corruption (Session #038)
+
+**Symptom.** `RFC_ABAP_INSTALL_AND_RUN` executes but returns empty `WRITES`. No error. Re-reading the target rows shows pre-state unchanged. Test harness catches it only because post-state ≠ expected-state.
+
+**Root cause.** Every line sent to `RFC_ABAP_INSTALL_AND_RUN` is **silently truncated at 72 characters**. If a string literal straddles the boundary, the closing quote disappears → the ABAP source no longer compiles → the program fails silently → no OK, no KO, no error, nothing written. The RFC call returns 0 as if it succeeded.
+
+**Danger zone.** Any line that mixes indentation + field name + assignment + quoted literal. Example from #038 H29 SKAT sync (FAILED):
+
+```abap
+  UPDATE skat SET txt20 = 'Some 20-char text' txt50 = 'A 50-char translation of the GL account description' WHERE ...
+* ^ 13 spaces indent + UPDATE+SET+col1='…'+col2='…' easily exceeds 72
+```
+
+**Fix pattern — `SELECT SINGLE *` + modify struct + `UPDATE FROM ls`.**
+
+```abap
+CLEAR ls.
+SELECT SINGLE * FROM skat INTO ls
+  WHERE ktopl = 'UNES'
+    AND saknr = '123456'
+    AND spras = 'E'.
+IF sy-subrc = 0.
+  ls-txt20 = 'Some 20-char text'.
+  ls-txt50 = 'A 50-char translation of the GL account description'.
+  UPDATE skat FROM ls.
+ENDIF.
+```
+
+Each line is short, assignments are one-per-line, the WHERE is broken across lines. Proven on 1,690 SKAT rows (session #038, 141 batches, 0 KO).
+
+**Hard safety rail — refuse to submit overflowing ABAP.** Add this to every batch loop that feeds `RFC_ABAP_INSTALL_AND_RUN`:
+
+```python
+def run_batch(guard, abap_lines: list[str]) -> dict:
+    # Safety: assert no line overflowed 72 chars. Overflow = silent
+    # ABAP compile failure = empty WRITES = invisible data corruption.
+    for i, line in enumerate(abap_lines):
+        if len(line) > 72:
+            raise SystemExit(
+                f"ABAP line {i} overflows 72 chars ({len(line)}): {line!r}. "
+                f"Would be silently truncated — aborting to prevent corruption."
+            )
+    src = [{"LINE": line[:72]} for line in abap_lines]
+    return guard.call("RFC_ABAP_INSTALL_AND_RUN", PROGRAM=src)
+```
+
+**Why `raise SystemExit` instead of logging a warning.** Once silent truncation occurs, there is no recovery path — you don't know which rows were affected because the RFC returned success. The only safe behavior is abort before submission. The cost of a false positive (aborting on a line that would have worked) is zero; the cost of a false negative is a corrupted target system with no audit trail.
+
+**Reference implementation:** `Zagentexecution/mcp-backend-server-python/h29_skat_update.py` lines 152–189 (`truncate_lines` + `run_batch` with safety rail).
+
+**Discovered:** Session #038, during the single-row test gate before bulk H29 execution. The test harness post-state check was the only thing that caught it — without the test gate, 1,690 rows would have been "updated" to no-op.
+
+---
+
 ## Known Limitation: Inactive Metadata
 
 If a class exists in `SEOCLASSDF` with `state=1` (inactive) but **no CCIMP include**:

@@ -79,6 +79,35 @@ rows = rfc_read_paginated(conn, "BKPF", fields, where, batch_size=5000, throttle
 - **TABLE_WITHOUT_DATA handling**: Empty periods return this RFC error -- treated as 0 rows.
 - **Proven defaults**: batch_size=5000, throttle=3.0 (from 2M FMIFIIT extraction).
 
+### Reconnect Patterns — `RECONNECTABLE_ERRORS` (Session #038)
+
+`ConnectionGuard.call()` auto-reconnects only on errors whose string representation matches one of the patterns in `RECONNECTABLE_ERRORS`. Non-matching errors propagate immediately — that's by design, because a data-level error (DATA_BUFFER_EXCEEDED, SAPSQL_DATA_LOSS, TABLE_WITHOUT_DATA) should NOT trigger a reconnect.
+
+**Canonical list** (keep `rfc_helpers.py` as the source of truth; this table is a lagging documentation copy):
+
+| Pattern | Catches | Origin |
+|---|---|---|
+| `connection closed` | Clean-ish RFC close during idle | Pre-#038 |
+| `partner not reached` | Server unreachable mid-call | Pre-#038 |
+| `timeout` | Generic timeout on read | Pre-#038 |
+| `communication failure` | RFC_COMMUNICATION_FAILURE wrapped form | Pre-#038 |
+| `CPIC_` | CPIC transport layer errors | Pre-#038 |
+| `RFC_COMMUNICATION_FAILURE` | Direct RFCError class string | Pre-#038 |
+| `RFC_INVALID_HANDLE` | Handle recycled by server | Pre-#038 |
+| `connection has been closed` | Passive close notification | Pre-#038 |
+| **`RFC_CLOSED`** | Explicit server-side close mid-call | **#038** |
+| **`connection to partner`** | Partial match for "connection to partner … broken" | **#038** |
+| **`broken`** | Broad catch for pipe-broken variants | **#038** |
+| **`WSAECONNRESET`** | Windows socket reset by peer | **#038** |
+| **`WSAETIMEDOUT`** | Windows socket timeout | **#038** |
+| **`connection reset`** | Generic socket reset | **#038** |
+
+**Why the #038 additions exist.** During H29 SKAT sync (141 batches × 12 rows = 1,690 ops against D01 via `RFC_ABAP_INSTALL_AND_RUN`), the RFC connection was reset by the server at batch 31 with `RFC_CLOSED` / `WSAECONNRESET`. None of the pre-#038 patterns caught it, so the script crashed instead of reconnecting. Extending the list let the retry succeed and the full 1,690 ops finished cleanly. Any long-running write loop that calls `RFC_ABAP_INSTALL_AND_RUN` should expect this: the server closes the handle aggressively after a few dozen batches, and the client must treat it as transient.
+
+**Validating case:** 141 consecutive successful batches after the reconnect fix landed mid-session (#038 H29, 0 KO). See `Zagentexecution/mcp-backend-server-python/h29_skat_update.py` + `rfc_helpers.py` lines 63–79.
+
+**Rule for future edits.** If you need to add a new pattern, edit `rfc_helpers.py` first (it's the runtime source), then mirror into this table. Never add a pattern that is also used as a DATA error name — you don't want to auto-reconnect on a query bug.
+
 ---
 
 ## CRITICAL: SAPSQL_DATA_LOSS Pagination Bug (Session #013)
