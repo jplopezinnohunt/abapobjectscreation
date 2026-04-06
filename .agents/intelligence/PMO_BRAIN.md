@@ -230,6 +230,14 @@ Each layer FEEDS the others:
 | ~~G58~~ | ~~**Route H13 BCM finding into `sap_payment_bcm_agent` SKILL.md**~~ | ~~#036~~ | ~~Done #037 via skill_coordinator — new "Dual-Control Audit" section at `sap_payment_bcm_agent/SKILL.md` with SQL query, reproducible findings, CUR_STS vs STATUS guidance, user pattern signatures, remediation paths, invocation triggers. ~90 lines substantive content. First real invocation of skill_coordinator's routing protocol.~~ |
 | ~~G59~~ | ~~**Route file-based integration vector into `sap_interface_intelligence`**~~ | ~~#036~~ | ~~Done #037 via skill_coordinator — new "File-Based Integration Vector" section at `sap_interface_intelligence/SKILL.md` with pattern signature, detection method, channel matrix (RFC/IDoc/HTTP/DB/Transport/File), COUPA reference, invocation triggers. ~60 lines. 9 systems identified, full per-system enumeration deferred to #038+.~~ |
 
+#### Added Session #039 (2026-04-06)
+| # | Task | First raised | Notes |
+|---|------|-------------|-------|
+| G61 | **Brain v2: fix impact query direction + v1 migration (73K fund nodes)** | #039 | Impact query searches forward from changed node, but READS_FIELD points code→field. Need backward search for "who reads this field". Also migrate v1 funds/transports/knowledge nodes. |
+| G62 | **Brain v2: ingest DMEE→FPAYP.XREF3 edge from h18_dmee_tree_nodes.csv** | #039 | The H18 finding (PurposeCode chain) is documented but NOT in the brain as edges yet. Must parse DMEE_TREE_NODE CSV for READS_DMEE_FIELD edges. |
+| G63 | **Formalize Discovery Patterns as ecosystem skill** | #039 | 6 proven patterns (Payment E2E, P2P, Integration, Bank Recon, Code+BAdI tracing, Transport Impact). Create `.agents/skills/discovery_patterns/SKILL.md` + promote to ecosystem-coordinator as `enterprise-discovery` skill. Each pattern = reusable methodology for analyzing new domains. Enriched by both our sessions AND market tools (Celonis, Panaya, Signavio patterns). |
+| G64 | **Brain v2: self-improvement research track** | #039 | Investigate real self-improving KG models (Graphiti temporal, Agentic-KGR co-evolution, ARC Prize refinement). Not theory — find implementations. Apply to brain reasoning evolution. |
+
 #### Added Session #038 (2026-04-05)
 | # | Task | First raised | Notes |
 |---|------|-------------|-------|
