@@ -1,0 +1,790 @@
+# =============================================================================
+# BRAIN SPEC v2.0 — Universal Knowledge Graph + Impact Analysis Engine
+# =============================================================================
+# This is the SINGLE SOURCE OF TRUTH for the brain's structure, behavior, and
+# evolution. Every session that touches the brain reads this spec first.
+# Every node/edge must conform. The spec grows (append-only), never shrinks.
+#
+# First instance: SAP UNESCO (abapobjectscreation)
+# Template for: ecosystem-coordinator/enterprise-brain skill
+#
+# Created: Session #039 (2026-04-06)
+# Architecture doc: BRAIN_V2_ARCHITECTURE.md
+# Market validation: Graphiti, Celonis PI Graph, Agentic GraphRAG, Neo4j MCP
+# =============================================================================
+
+spec_version: "2.0"
+created: "2026-04-06"
+instance: "sap_unesco"
+
+# =============================================================================
+# DESIGN PRINCIPLES (non-negotiable)
+# =============================================================================
+principles:
+  - id: P1
+    name: "Living Organism"
+    rule: "Brain grows every session. No edge is deleted — superseded edges get valid_until."
+  - id: P2
+    name: "Companions Are Checkpoints"
+    rule: "Each companion is a versioned snapshot. Diff between versions = knowledge evolution."
+  - id: P3
+    name: "Continuous Enrichment"
+    rule: "Session close triggers brain ingestion. Retro findings become edges automatically."
+  - id: P4
+    name: "Confidence Decay"
+    rule: "Edges lose 0.05 confidence per 10 sessions without revalidation. Floor = 0.3."
+  - id: P5
+    name: "Append-Only Schema"
+    rule: "New node/edge types added to spec without migration. No rewrites."
+  - id: P6
+    name: "Object-Centric Process Mining"
+    rule: "Process events link to graph objects (OCEL 2.0), not just sequences."
+  - id: P7
+    name: "Self-Improving Reasoning"
+    rule: "3 loops: critique (per-query), co-evolution (per-session), refinement (per-feedback)."
+  - id: P8
+    name: "Platform Absorption"
+    rule: "MCP server + Agent Skills + Agent Teams = model upgrades improve brain for free."
+  - id: P9
+    name: "Ecosystem Replicability"
+    rule: "Spec is domain-agnostic. Instance defines parsers and sources."
+
+# =============================================================================
+# NODE TYPES (30 types, 6 categories)
+# =============================================================================
+node_types:
+  # --- Category 1: Code Objects ---
+  ABAP_CLASS:
+    description: "OO class (ZCL_*, YCL_*, CL_*)"
+    source: "extracted_code/ directories"
+    required_properties: [package, is_badi_impl]
+    optional_properties: [super_class, interfaces, method_count, line_count]
+
+  ABAP_METHOD:
+    description: "Individual method within a class"
+    source: "parsed from .abap files (CM* includes)"
+    required_properties: [class_name]
+    optional_properties: [tables_read, fms_called]
+
+  FUNCTION_MODULE:
+    description: "RFC-enabled or internal FM"
+    source: "TFDIR_CUSTOM (3,073 rows in Gold DB)"
+    required_properties: [rfc_enabled]
+    optional_properties: [fugr, calling_apps, app_domain]
+
+  ABAP_REPORT:
+    description: "Z/Y reports + includes"
+    source: "extracted_code/"
+    required_properties: []
+    optional_properties: [package, line_count]
+
+  ENHANCEMENT:
+    description: "BAdI implementation or user exit"
+    source: "extracted_code/ + CTS objects"
+    required_properties: [enhancement_type]  # badi_impl, user_exit, enhancement_spot
+    optional_properties: [badi_name]
+
+  BSP_APP:
+    description: "Fiori/UI5 BSP application"
+    source: "extracted_sap/"
+    required_properties: [package]
+    optional_properties: [app_type]  # fiori, bsp_classic
+
+  ODATA_SERVICE:
+    description: "Gateway OData service"
+    source: "known list + SICF"
+    required_properties: []
+    optional_properties: [dpc_class, mpc_class]
+
+  PACKAGE:
+    description: "ABAP development package (DEVC)"
+    source: "CTS objects"
+    required_properties: []
+    optional_properties: [object_count]
+
+  # --- Category 2: Data Objects ---
+  SAP_TABLE:
+    description: "Database table or view"
+    source: "Gold DB sqlite_master + DD03L"
+    required_properties: []
+    optional_properties: [row_count, field_count, gold_db_loaded]
+
+  TABLE_FIELD:
+    description: "Individual field within a table"
+    source: "PRAGMA table_info() on Gold DB"
+    required_properties: [table_name, data_type]
+    optional_properties: [length, is_key]
+
+  DOMAIN_VALUE:
+    description: "Fixed domain value that controls logic"
+    source: "Config tables (T042Z.FORMI, etc.)"
+    required_properties: [domain_table, domain_field]
+    optional_properties: []
+
+  # --- Category 3: Configuration Objects ---
+  DMEE_TREE:
+    description: "Payment medium format definition"
+    source: "T042Z.FORMI + DMEE_TREE_NODE"
+    required_properties: [active]  # true if referenced in T042Z
+    optional_properties: [node_count, exit_class, bank_channel]
+
+  PAYMENT_METHOD:
+    description: "Payment method per company code"
+    source: "T042Z"
+    required_properties: [company_code, country, method_code]
+    optional_properties: [description, dmee_tree]
+
+  BCM_RULE:
+    description: "BCM batch grouping rule"
+    source: "BNK_BATCH_HEADER"
+    required_properties: []
+    optional_properties: [batch_count]
+
+  HOUSE_BANK:
+    description: "Bank master for payments"
+    source: "T012/T012K"
+    required_properties: [company_code, bank_id]
+    optional_properties: [account_id, gl_account]
+
+  VALIDATION_RULE:
+    description: "OB28/FMDERIVE validation"
+    source: "to be extracted"
+    required_properties: [validation_type]
+    optional_properties: [callup_point, target_fields]
+
+  SUBSTITUTION_RULE:
+    description: "OBBH/GGB1 substitution"
+    source: "to be extracted"
+    required_properties: [substitution_type]
+    optional_properties: [source_fields, target_fields]
+
+  NUMBER_RANGE:
+    description: "NROB number range object"
+    source: "CTS objects"
+    required_properties: []
+    optional_properties: [object_type, company_codes]
+
+  JOB_DEFINITION:
+    description: "Background job schedule"
+    source: "TBTCO + TBTCP"
+    required_properties: [program_name]
+    optional_properties: [job_count, exec_count, domain]
+
+  # --- Category 4: Organizational / Master Data ---
+  COMPANY_CODE:
+    description: "Organizational unit"
+    source: "T001"
+    required_properties: []
+    optional_properties: [name, country, currency]
+
+  FUND:
+    description: "Budget fund"
+    source: "funds table (64,766 rows)"
+    required_properties: [fund_area]
+    optional_properties: [fund_type, status]
+
+  FUND_AREA:
+    description: "FM area"
+    source: "funds.FIKRS distinct"
+    required_properties: []
+    optional_properties: []
+
+  FUND_CENTER:
+    description: "Responsible unit"
+    source: "fund_centers (710 rows)"
+    required_properties: [fund_area]
+    optional_properties: []
+
+  GL_ACCOUNT:
+    description: "General ledger account"
+    source: "P01_SKA1 (2,491 rows)"
+    required_properties: [chart_of_accounts]
+    optional_properties: [account_group, text]
+
+  COST_ELEMENT:
+    description: "CO cost element"
+    source: "P01_CSKA (535 rows)"
+    required_properties: [co_area]
+    optional_properties: [element_type]
+
+  # --- Category 5: Integration / Infrastructure ---
+  SAP_SYSTEM:
+    description: "SAP system instance"
+    source: "RFCDES distinct systems"
+    required_properties: []
+    optional_properties: [host, client, snc]
+
+  EXTERNAL_SYSTEM:
+    description: "Non-SAP system"
+    source: "Integration map"
+    required_properties: [protocol]  # .NET_RFC, file, IDoc, HTTP, SQL
+    optional_properties: [fm_count, domain]
+
+  RFC_DESTINATION:
+    description: "SM59 RFC connection"
+    source: "rfcdes (239 rows)"
+    required_properties: []
+    optional_properties: [rfc_type, host, system_id]
+
+  ICF_SERVICE:
+    description: "HTTP endpoint in SAP"
+    source: "icfservice (6,477 rows)"
+    required_properties: []
+    optional_properties: [path, handler_class]
+
+  IDOC_TYPE:
+    description: "IDoc message type"
+    source: "edidc distinct"
+    required_properties: []
+    optional_properties: [direction, partner]
+
+  # --- Category 6: Process / Transport / Knowledge ---
+  PROCESS:
+    description: "End-to-end business process"
+    source: "Coordinator skill definitions"
+    required_properties: [process_type]  # B2R, H2R, P2P, T2R, P2D
+    optional_properties: [event_count, case_count]
+
+  PROCESS_STEP:
+    description: "Individual step in a process"
+    source: "Process mining event logs"
+    required_properties: [process_id, step_order]
+    optional_properties: [avg_duration_hours, tcodes, tables_involved]
+
+  TRANSPORT:
+    description: "CTS transport order"
+    source: "cts_transports (7,745 rows)"
+    required_properties: []
+    optional_properties: [owner, status, target_system]
+
+  SKILL:
+    description: "Agent skill document"
+    source: ".agents/skills/"
+    required_properties: [maturity]
+    optional_properties: [domain, trigger]
+
+  KNOWLEDGE_DOC:
+    description: "Domain analysis document"
+    source: "knowledge/**/*.md"
+    required_properties: [domain]
+    optional_properties: [session_created]
+
+# =============================================================================
+# EDGE TYPES (45 types, 8 categories)
+# Each edge carries: type, impact_direction, risk_weight, evidence_type
+# =============================================================================
+edge_types:
+  # --- Category 1: Code Dependencies (parsed from ABAP source) ---
+  CALLS_FM:
+    from: [ABAP_METHOD, ABAP_REPORT, FUNCTION_MODULE]
+    to: [FUNCTION_MODULE]
+    detection: "regex: CALL FUNCTION 'name'"
+    impact_direction: forward  # caller breaks if FM signature changes
+    risk_weight: 0.8
+
+  READS_TABLE:
+    from: [ABAP_METHOD, ABAP_REPORT, FUNCTION_MODULE]
+    to: [SAP_TABLE]
+    detection: "regex: SELECT * FROM table"
+    impact_direction: forward
+    risk_weight: 0.6
+
+  WRITES_TABLE:
+    from: [ABAP_METHOD, ABAP_REPORT, FUNCTION_MODULE]
+    to: [SAP_TABLE]
+    detection: "regex: INSERT|MODIFY|UPDATE|DELETE table"
+    impact_direction: forward
+    risk_weight: 0.95  # highest: data corruption risk
+
+  READS_FIELD:
+    from: [ABAP_METHOD, ABAP_REPORT, FUNCTION_MODULE]
+    to: [TABLE_FIELD]
+    detection: "regex: SELECT field FROM table or wa-field"
+    impact_direction: forward
+    risk_weight: 0.7
+
+  IMPLEMENTS_BADI:
+    from: [ABAP_CLASS]
+    to: [ENHANCEMENT]
+    detection: "class naming convention YCL_IM_* or INTERFACES if_ex_*"
+    impact_direction: backward  # BAdI framework calls implementor
+    risk_weight: 0.9
+
+  INHERITS_FROM:
+    from: [ABAP_CLASS]
+    to: [ABAP_CLASS]
+    detection: "regex: INHERITING FROM superclass"
+    impact_direction: bidirectional
+    risk_weight: 0.8
+
+  IMPLEMENTS_INTF:
+    from: [ABAP_CLASS]
+    to: [ABAP_CLASS]  # interface is also a class in ABAP
+    detection: "regex: INTERFACES if_name"
+    impact_direction: backward  # interface changes break all implementors
+    risk_weight: 0.85
+
+  BELONGS_TO_PACKAGE:
+    from: [ABAP_CLASS, ABAP_REPORT, FUNCTION_MODULE, ENHANCEMENT]
+    to: [PACKAGE]
+    detection: "TADIR DEVCLASS"
+    impact_direction: none  # organizational only
+    risk_weight: 0.0
+
+  # --- Category 2: Configuration Dependencies (from Gold DB) ---
+  USES_DMEE_TREE:
+    from: [PAYMENT_METHOD]
+    to: [DMEE_TREE]
+    detection: "T042Z: ZBUKR+ZLSCH -> FORMI"
+    impact_direction: forward  # changing tree changes payment file format
+    risk_weight: 0.95
+
+  ROUTES_TO_BANK:
+    from: [PAYMENT_METHOD]
+    to: [HOUSE_BANK]
+    detection: "T042I: ZLSCH -> HBKID+HKTID"
+    impact_direction: forward
+    risk_weight: 0.95
+
+  CONFIGURES_FORMAT:
+    from: [DMEE_TREE]
+    to: [ABAP_CLASS]
+    detection: "DMEE_TREE_NODE.MP_EXIT_FUNC -> BAdI exit class"
+    impact_direction: forward
+    risk_weight: 0.9
+
+  VALIDATES_FIELD:
+    from: [VALIDATION_RULE]
+    to: [TABLE_FIELD]
+    detection: "OB28 config"
+    impact_direction: forward  # changing validation blocks/allows postings
+    risk_weight: 0.85
+
+  SUBSTITUTES_FIELD:
+    from: [SUBSTITUTION_RULE]
+    to: [TABLE_FIELD]
+    detection: "OBBH/GGB1 config"
+    impact_direction: forward
+    risk_weight: 0.85
+
+  ASSIGNS_NUMBER_RANGE:
+    from: [NUMBER_RANGE]
+    to: [COMPANY_CODE]
+    detection: "NRIV config"
+    impact_direction: forward  # changing NR resets counters (CRITICAL)
+    risk_weight: 0.95
+
+  PROCESSES_VIA_BCM:
+    from: [PAYMENT_METHOD]
+    to: [BCM_RULE]
+    detection: "BNK_BATCH_HEADER rule assignment"
+    impact_direction: forward
+    risk_weight: 0.9
+
+  READS_DMEE_FIELD:
+    from: [DMEE_TREE]
+    to: [TABLE_FIELD]
+    detection: "DMEE_TREE_NODE: MP_SC_TAB + MP_SC_FLD"
+    impact_direction: forward
+    risk_weight: 0.9
+
+  # --- Category 3: Data Join Edges ---
+  JOINS_VIA:
+    from: [SAP_TABLE]
+    to: [SAP_TABLE]
+    detection: "Golden Query join definitions"
+    impact_direction: bidirectional
+    risk_weight: 0.5
+
+  FIELD_MAPS_TO:
+    from: [TABLE_FIELD]
+    to: [TABLE_FIELD]
+    detection: "FK spec (FMIFIIT.KNBELNR -> BKPF.BELNR)"
+    impact_direction: bidirectional
+    risk_weight: 0.6
+
+  # --- Category 4: Integration Edges ---
+  CALLS_SYSTEM:
+    from: [RFC_DESTINATION]
+    to: [SAP_SYSTEM]
+    detection: "rfcdes.RFCSYSID"
+    impact_direction: forward
+    risk_weight: 0.8
+
+  EXPOSES_FM:
+    from: [SAP_SYSTEM]
+    to: [FUNCTION_MODULE]
+    detection: "TFDIR_CUSTOM RFC_ENABLED"
+    impact_direction: backward  # external callers break if FM changes
+    risk_weight: 0.85
+
+  CALLS_VIA_RFC:
+    from: [EXTERNAL_SYSTEM]
+    to: [FUNCTION_MODULE]
+    detection: ".NET app inventory"
+    impact_direction: forward
+    risk_weight: 0.85
+
+  SENDS_IDOC:
+    from: [SAP_SYSTEM]
+    to: [IDOC_TYPE]
+    detection: "edidc SNDPRT/RCVPRT"
+    impact_direction: forward
+    risk_weight: 0.8
+
+  SERVES_HTTP:
+    from: [SAP_SYSTEM]
+    to: [ICF_SERVICE]
+    detection: "icfservice active"
+    impact_direction: backward
+    risk_weight: 0.7
+
+  RUNS_PROGRAM:
+    from: [JOB_DEFINITION]
+    to: [ABAP_REPORT]
+    detection: "TBTCP.PROGNAME"
+    impact_direction: forward
+    risk_weight: 0.7
+
+  # --- Category 5: Process Edges (OCEL 2.0 object-centric) ---
+  PROCESS_CONTAINS:
+    from: [PROCESS]
+    to: [PROCESS_STEP]
+    detection: "Process mining definitions"
+    impact_direction: none
+    risk_weight: 0.0
+
+  STEP_FOLLOWS:
+    from: [PROCESS_STEP]
+    to: [PROCESS_STEP]
+    detection: "Event log sequence analysis (DFG)"
+    impact_direction: forward
+    risk_weight: 0.5
+
+  STEP_READS:
+    from: [PROCESS_STEP]
+    to: [SAP_TABLE]
+    detection: "Event-to-table mapping"
+    impact_direction: forward
+    risk_weight: 0.6
+
+  STEP_USES_TCODE:
+    from: [PROCESS_STEP]
+    to: [DOMAIN_VALUE]  # tcode as domain value
+    detection: "BKPF.TCODE from event log"
+    impact_direction: forward
+    risk_weight: 0.5
+
+  # --- Category 6: Transport Edges ---
+  TRANSPORTS:
+    from: [TRANSPORT]
+    to: [ABAP_CLASS, ABAP_REPORT, FUNCTION_MODULE, ENHANCEMENT, SAP_TABLE, PACKAGE]
+    detection: "E071 PGMID+OBJECT+OBJ_NAME"
+    impact_direction: forward
+    risk_weight: 0.7
+
+  MODIFIES_CONFIG:
+    from: [TRANSPORT]
+    to: [SAP_TABLE]  # config table entry
+    detection: "E071 OBJECT=TABU + E071K keys"
+    impact_direction: forward
+    risk_weight: 0.8
+
+  CO_TRANSPORTED_WITH:
+    from: [ABAP_CLASS, ABAP_REPORT, FUNCTION_MODULE, ENHANCEMENT]
+    to: [ABAP_CLASS, ABAP_REPORT, FUNCTION_MODULE, ENHANCEMENT]
+    detection: "Same transport, different objects"
+    impact_direction: bidirectional  # co-change coupling
+    risk_weight: 0.4
+
+  # --- Category 7: Knowledge Edges ---
+  DOCUMENTED_IN:
+    from: ["*"]  # any node type
+    to: [KNOWLEDGE_DOC]
+    detection: "Regex match in .md files"
+    impact_direction: none
+    risk_weight: 0.0
+
+  SKILLED_IN:
+    from: [SKILL]
+    to: ["*"]
+    detection: "SKILL.md references"
+    impact_direction: none
+    risk_weight: 0.0
+
+  DISCOVERED_IN:
+    from: ["*"]
+    to: [KNOWLEDGE_DOC]  # session retro
+    detection: "Session ingestion"
+    impact_direction: none
+    risk_weight: 0.0
+
+  NEEDS_INVESTIGATION:
+    from: ["*"]
+    to: ["*"]
+    detection: "Co-evolution loop: gap identified by critique"
+    impact_direction: none
+    risk_weight: 0.0
+
+  # --- Category 8: Organizational Edges (from v1, kept) ---
+  BELONGS_TO:
+    from: [FUND]
+    to: [FUND_AREA]
+    detection: "funds.FIKRS"
+    impact_direction: none
+    risk_weight: 0.0
+
+  HAS_FUND_CENTER:
+    from: [FUND_AREA]
+    to: [FUND_CENTER]
+    detection: "fund_centers.FIKRS"
+    impact_direction: none
+    risk_weight: 0.0
+
+  POSTS_TO_GL:
+    from: [FUND]
+    to: [GL_ACCOUNT]
+    detection: "FMIFIIT.HKONT aggregated"
+    impact_direction: forward
+    risk_weight: 0.3
+
+# =============================================================================
+# TEMPORAL MODEL (Graphiti pattern)
+# =============================================================================
+temporal:
+  edge_properties:
+    valid_from:
+      type: string  # ISO date or session number
+      required: true
+      description: "When this edge became true"
+    valid_until:
+      type: string_or_null
+      required: false
+      description: "When superseded (null = still valid)"
+    superseded_by:
+      type: string_or_null
+      required: false
+      description: "Edge ID that replaced this one"
+    discovered_in:
+      type: string
+      required: true
+      description: "Session number where first found"
+    last_validated:
+      type: string
+      required: true
+      description: "Session number of last revalidation"
+
+  confidence_decay:
+    rate: 0.05  # per 10 sessions without revalidation
+    floor: 0.3  # minimum confidence
+    stale_threshold: 0.5  # below this = flagged in --stale report
+
+# =============================================================================
+# INGESTION SOURCES
+# =============================================================================
+ingestion:
+  sources:
+    - name: "v1_migration"
+      module: "brain_v2.ingestors.v1_migrator"
+      input: ".agents/intelligence/sap_brain.json"
+      produces: "73K nodes (funds, transports, code objects)"
+      incremental: false  # one-time migration
+
+    - name: "abap_parser"
+      module: "brain_v2.parsers.abap_parser"
+      input: "extracted_code/**/*.abap + extracted_sap/**/*.abap"
+      produces: "CALLS_FM, READS_TABLE, READS_FIELD, IMPLEMENTS_BADI, INHERITS_FROM edges"
+      incremental: true  # parse only new/changed files
+
+    - name: "config_ingestor"
+      module: "brain_v2.ingestors.config_ingestor"
+      input: "Gold DB (T042Z, T042E, T042I, DMEE_TREE_NODE, etc.)"
+      produces: "USES_DMEE_TREE, ROUTES_TO_BANK, CONFIGURES_FORMAT, READS_DMEE_FIELD edges"
+      incremental: true
+
+    - name: "integration_ingestor"
+      module: "brain_v2.ingestors.integration_ingestor"
+      input: "Gold DB (rfcdes, tfdir_custom, edidc, icfservice) + .NET app inventory"
+      produces: "CALLS_SYSTEM, EXPOSES_FM, CALLS_VIA_RFC, SENDS_IDOC edges"
+      incremental: true
+
+    - name: "transport_ingestor"
+      module: "brain_v2.ingestors.transport_ingestor"
+      input: "Gold DB (cts_transports, cts_objects)"
+      produces: "TRANSPORTS, MODIFIES_CONFIG, CO_TRANSPORTED_WITH edges"
+      incremental: true
+
+    - name: "process_ingestor"
+      module: "brain_v2.ingestors.process_ingestor"
+      input: "Process mining event logs (P2P, Payment E2E, Bank Statement)"
+      produces: "PROCESS_STEP nodes, STEP_FOLLOWS, STEP_READS edges"
+      incremental: true
+      model: "OCEL 2.0 (object-centric via pm4py)"
+
+    - name: "session_ingestor"
+      module: "brain_v2.ingestors.session_ingestor"
+      input: "Session retro + audit files"
+      produces: "DISCOVERED_IN, NEEDS_INVESTIGATION edges"
+      trigger: "session close protocol"
+      incremental: true
+
+# =============================================================================
+# QUERY ENGINE
+# =============================================================================
+query_engine:
+  builtin:
+    impact_analysis:
+      description: "BFS with risk decay — what breaks if I change X?"
+      algorithm: "Forward/backward BFS respecting impact_direction, cumulative risk = product of edge weights"
+      parameters: [node_id, max_depth, min_risk, as_of_date]
+      output: "Ranked list of affected nodes with cumulative risk score + path"
+
+    dependency_trace:
+      description: "Reverse BFS — what does Y depend on?"
+      algorithm: "Reverse traversal collecting all upstream dependencies"
+      parameters: [node_id, max_depth, domain_filter]
+      output: "Dependency tree with edge types"
+
+    similarity_search:
+      description: "Jaccard on typed neighbor sets — what's similar to Z?"
+      algorithm: "Compare outgoing edge type distributions between nodes"
+      parameters: [node_id, min_similarity, node_type_filter]
+      output: "Ranked list of similar nodes with Jaccard score"
+
+    gap_analysis:
+      description: "Configured-but-unused, used-but-undocumented, dead code"
+      algorithm: "Set operations on node properties (active, referenced, documented)"
+      parameters: [domain_filter, gap_type]
+      output: "List of gap nodes with gap type and severity"
+
+    stale_report:
+      description: "Nodes/edges below confidence threshold"
+      algorithm: "Filter by confidence < stale_threshold"
+      parameters: [threshold]
+      output: "List of stale edges with last_validated session"
+
+# =============================================================================
+# SELF-IMPROVEMENT (3 validated loops)
+# =============================================================================
+reasoning_evolution:
+  critique_loop:
+    trigger: "every query"
+    description: "Query result passes through self-check: missing edges, low confidence paths, unreachable nodes"
+    output: "gaps_found list appended to query result"
+    source: "Internal — no external dependency"
+
+  co_evolution:
+    trigger: "session close"
+    description: "Session retro gaps → NEEDS_INVESTIGATION edges on nodes with missing dependencies"
+    input: "Session retro 'gaps identified' section"
+    output: "New edges with evidence=session_NNN"
+    source: "Agentic-KGR pattern (arxiv 2510.09156)"
+
+  refinement_signal:
+    trigger: "user feedback on query result"
+    description: "Edge weights adjusted based on usage: useful paths +0.1, ignored paths -0.05"
+    input: "cli.py --feedback QUERY_ID useful|not_useful"
+    adjustment_up: 0.1
+    adjustment_down: -0.05
+    weight_floor: 0.3
+    source: "ARC Prize 2025 refinement loop pattern"
+
+# =============================================================================
+# PLATFORM INTEGRATION
+# =============================================================================
+platform:
+  mcp_server:
+    description: "Brain exposes itself as MCP resource — Claude queries impact/dependency/gaps mid-conversation"
+    protocol: "MCP 1.0"
+    endpoints:
+      - "brain://impact?node={node_id}"
+      - "brain://depends-on?node={node_id}"
+      - "brain://gaps?domain={domain}"
+      - "brain://similar-to?node={node_id}"
+      - "brain://stats"
+      - "brain://stale"
+    status: "phase_4"
+    reference: "Anthropic Knowledge Graph Memory MCP Server + Celonis MCP (2025)"
+
+  agent_skills:
+    description: "Brain invokes domain skills when query needs expert reasoning"
+    invokable_skills: 38
+    invocation_rule: "Query domain matches skill domain → skill loaded as context"
+    reference: "Anthropic Agent Skills standard (2026)"
+
+  agent_teams:
+    description: "Critique loop implemented as separate agent in Agent Teams"
+    pattern: "Agent 1: query traversal. Agent 2: critique + gap detection. Agent 3: gap filling."
+    status: "experimental (v2.1.32)"
+    reference: "Claude Code Agent Teams (2026)"
+
+  model_absorption:
+    principle: "Standard interfaces (MCP, Skills, Teams) → new model release = better reasoning automatically"
+    no_code_change_required: true
+
+# =============================================================================
+# COMPANION CHECKPOINTS
+# =============================================================================
+companion_versioning:
+  metadata_header: |
+    <!-- brain_checkpoint: {
+      "version": "vN",
+      "brain_hash": "sha256_of_brain_json",
+      "session": NNN,
+      "date": "YYYY-MM-DD",
+      "node_count": N,
+      "edge_count": N,
+      "spec_version": "2.0"
+    } -->
+  versioning_method: "git tag companion/{name}/vN before overwrite"
+  diff_protocol: "git diff between tags = knowledge evolution"
+
+# =============================================================================
+# EVOLUTION PROTOCOL
+# =============================================================================
+evolution:
+  extension_protocol:
+    steps:
+      - "Add new node/edge type to this YAML file (node_types or edge_types section)"
+      - "Register parser/ingestor module path in ingestion.sources"
+      - "Run brain_v2 build — auto-discovers and loads new source"
+      - "No migration needed — new types coexist with existing ones"
+
+  changelog:
+    - version: "2.0"
+      date: "2026-04-06"
+      session: "039"
+      changes:
+        - "Initial spec: 30 node types, 45 edge types"
+        - "Temporal model (Graphiti pattern)"
+        - "Confidence decay"
+        - "3 self-improvement loops"
+        - "Platform integration (MCP, Agent Skills, Agent Teams)"
+        - "Companion checkpoints"
+        - "OCEL 2.0 process mining"
+
+# =============================================================================
+# PERSISTENCE
+# =============================================================================
+persistence:
+  graph_format: "JSON (NetworkX node_link_data)"
+  graph_path: ".agents/intelligence/brain_v2.json"
+  backup_path: ".agents/intelligence/brain_v2_backup_{date}.json"
+  technology: "NetworkX (in-memory, no server)"
+  rationale: "80K nodes / 200K edges fits trivially in RAM. No Neo4j server overhead."
+
+# =============================================================================
+# INSTANCE CONFIGURATION (SAP UNESCO specific)
+# =============================================================================
+instance_config:
+  project: "abapobjectscreation"
+  system_landscape:
+    P01: {role: "production", auth: "SNC/SSO", use: "ALL reads (data + config)"}
+    D01: {role: "development", auth: "password", use: "code deployment ONLY"}
+  gold_db: "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db"
+  extracted_code: "extracted_code/"
+  extracted_sap: "extracted_sap/"
+  skills_path: ".agents/skills/"
+  knowledge_path: "knowledge/"
+  companions_path: "Zagentexecution/mcp-backend-server-python/"
+  brain_v1_path: ".agents/intelligence/sap_brain.json"
