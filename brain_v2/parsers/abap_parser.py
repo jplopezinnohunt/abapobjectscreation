@@ -42,11 +42,18 @@ class ABAPDependencyParser:
     """Extract dependencies from ABAP source code files."""
 
     # Pattern 1: SELECT statements -> READS_TABLE + READS_FIELD
-    # Handles: SELECT SINGLE f1 f2 FROM table, SELECT * FROM table, SELECT f1~f2 FROM table
+    # Handles: SELECT SINGLE f1 f2 FROM table, SELECT f1~f2 FROM table AS a JOIN table2 AS b
     RE_SELECT = re.compile(
         r'SELECT\s+(?:SINGLE\s+)?'
-        r'(?P<fields>[\w\s,*~]+?)\s+'
-        r'FROM\s+(?P<table>[A-Za-z]\w{2,30})',
+        r'(?P<fields>[\w\s,*~@]+?)\s+'
+        r'FROM\s+(?P<from_clause>[^\n.;]+)',
+        re.IGNORECASE
+    )
+
+    # Sub-pattern: extract table aliases from FROM clause
+    # Matches: table_name AS alias, table_name alias (without AS)
+    RE_FROM_ALIAS = re.compile(
+        r'(?P<table>[A-Za-z/]\w{2,30})\s+AS\s+(?P<alias>\w+)',
         re.IGNORECASE
     )
 
@@ -127,21 +134,43 @@ class ABAPDependencyParser:
             return False
         return True
 
-    def _extract_fields_from_select(self, fields_str: str, table: str) -> list:
-        """Parse field list from SELECT statement."""
+    def _parse_from_clause(self, from_clause: str) -> tuple:
+        """Parse FROM clause to extract primary table and alias→table map.
+
+        Returns (primary_table, alias_map) where alias_map maps alias→real_table.
+        Handles: FROM table, FROM table AS a, FROM table AS a JOIN table2 AS b ON ...
+        """
+        alias_map = {}
+        # Extract all aliased tables
+        for m in self.RE_FROM_ALIAS.finditer(from_clause):
+            alias_map[m.group('alias').upper()] = m.group('table').upper()
+
+        # Extract the primary table (first word after FROM, before AS/JOIN/INTO/WHERE)
+        primary_match = re.match(r'\s*(?P<table>[A-Za-z/]\w{2,30})', from_clause)
+        primary_table = primary_match.group('table').upper() if primary_match else ""
+
+        return primary_table, alias_map
+
+    def _extract_fields_from_select(self, fields_str: str, table: str,
+                                     alias_map: dict = None) -> list:
+        """Parse field list from SELECT statement, resolving aliases."""
         fields = []
-        if '*' in fields_str:
+        alias_map = alias_map or {}
+        if '*' in fields_str and '~' not in fields_str:
             return []  # SELECT * — we know the table but not specific fields
 
-        # Handle tilde notation: table~field
+        # Handle tilde notation: alias~field or table~field
         for token in re.split(r'[\s,]+', fields_str):
-            token = token.strip()
+            token = token.strip().lstrip('@')
             if not token:
                 continue
             if '~' in token:
                 parts = token.split('~')
                 if len(parts) == 2 and parts[1]:
-                    fields.append((parts[0].upper(), parts[1].upper()))
+                    tbl_or_alias = parts[0].upper()
+                    # Resolve alias to real table name
+                    real_table = alias_map.get(tbl_or_alias, tbl_or_alias)
+                    fields.append((real_table, parts[1].upper()))
             elif self._is_valid_table(token):
                 # Plain field name — associate with the FROM table
                 fields.append((table.upper(), token.upper()))
@@ -155,13 +184,20 @@ class ABAPDependencyParser:
         tables_read = set()
         fields_read = set()
         for m in self.RE_SELECT.finditer(clean):
-            table = m.group('table')
-            if self._is_valid_table(table):
-                tables_read.add(table.upper())
-                for tbl, fld in self._extract_fields_from_select(
-                        m.group('fields'), table):
-                    if self._is_valid_table(fld) or len(fld) >= 3:
-                        fields_read.add((tbl.upper(), fld.upper()))
+            from_clause = m.group('from_clause')
+            primary_table, alias_map = self._parse_from_clause(from_clause)
+            if not self._is_valid_table(primary_table):
+                continue
+            # Add primary table and all joined tables
+            tables_read.add(primary_table)
+            for real_table in alias_map.values():
+                if self._is_valid_table(real_table):
+                    tables_read.add(real_table)
+            # Extract fields with alias resolution
+            for tbl, fld in self._extract_fields_from_select(
+                    m.group('fields'), primary_table, alias_map):
+                if (self._is_valid_table(fld) or len(fld) >= 3) and self._is_valid_table(tbl):
+                    fields_read.add((tbl, fld))
 
         # FMs called
         fms_called = set()

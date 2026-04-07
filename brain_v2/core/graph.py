@@ -211,6 +211,65 @@ class BrainGraph:
         return [(nid, round(score, 4), self.G.nodes[nid].get("name", ""))
                 for nid, score in results if score > 0]
 
+    def decay_confidence(self, current_session: int, decay_rate: float = 0.05,
+                        decay_interval: int = 10, floor: float = 0.3) -> dict:
+        """Apply confidence decay to edges not revalidated recently.
+
+        Per Architecture Principle 4: edges lose -decay_rate per decay_interval
+        sessions without revalidation. Never drops below floor.
+
+        Returns summary of decayed edges.
+        """
+        decayed = 0
+        stale = 0
+        for u, v, d in self.G.edges(data=True):
+            last_val = d.get("last_validated", "")
+            if not last_val:
+                continue
+            # Parse session number from last_validated (could be "041" or "session_041")
+            try:
+                val_session = int("".join(c for c in str(last_val) if c.isdigit()) or "0")
+            except ValueError:
+                continue
+            sessions_since = current_session - val_session
+            if sessions_since <= 0:
+                continue
+            # Apply decay
+            intervals = sessions_since // decay_interval
+            if intervals > 0:
+                old_conf = d.get("confidence", 1.0)
+                new_conf = max(floor, old_conf - (decay_rate * intervals))
+                if new_conf < old_conf:
+                    d["confidence"] = round(new_conf, 2)
+                    decayed += 1
+                if new_conf <= floor:
+                    stale += 1
+
+        return {
+            "current_session": current_session,
+            "decayed_edges": decayed,
+            "stale_edges_at_floor": stale,
+            "decay_rate": decay_rate,
+            "decay_interval": decay_interval,
+            "floor": floor,
+        }
+
+    def stale_edges(self, threshold: float = 0.5) -> list:
+        """Return edges with confidence below threshold, sorted by confidence."""
+        results = []
+        for u, v, d in self.G.edges(data=True):
+            conf = d.get("confidence", 1.0)
+            if conf < threshold:
+                results.append({
+                    "from": u, "to": v,
+                    "type": d.get("type", ""),
+                    "confidence": conf,
+                    "last_validated": d.get("last_validated", ""),
+                    "evidence": d.get("evidence", ""),
+                })
+        results.sort(key=lambda x: x["confidence"])
+        return results
+
     def shortest_path(self, from_id: str, to_id: str):
         """Find shortest dependency chain between two nodes."""
         try:

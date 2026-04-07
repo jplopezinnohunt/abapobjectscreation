@@ -191,6 +191,99 @@ def get_class_methods(class_name: str, system_id: str = "D01") -> str:
     finally:
         conn.close()
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  BRAIN V2 TOOLS — Knowledge Graph queries exposed via MCP
+# ══════════════════════════════════════════════════════════════════════════════
+
+import json
+import sys
+from pathlib import Path
+
+BRAIN_V2_JSON = Path(__file__).parent.parent.parent / "brain_v2" / "output" / "brain_v2_graph.json"
+
+
+def _load_brain():
+    """Load brain v2 graph. Returns None if not built yet."""
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    try:
+        from brain_v2.core.graph import BrainGraph
+        if BRAIN_V2_JSON.exists():
+            return BrainGraph.load_json(str(BRAIN_V2_JSON))
+    except ImportError:
+        pass
+    return None
+
+
+@mcp.tool()
+def brain_impact(node_id: str, max_depth: int = 4) -> str:
+    """Analyze what breaks if a given SAP object changes.
+
+    Examples: brain_impact("FIELD:FPAYP.XREF3"), brain_impact("CLASS:YCL_IDFI_CGI_DMEE_FR")
+    """
+    brain = _load_brain()
+    if not brain:
+        return "Brain v2 not available. Run: python -m brain_v2.cli build"
+    from brain_v2.queries.impact import impact_analysis
+    result = impact_analysis(brain, node_id, max_depth)
+    return result.get("summary", json.dumps(result, indent=2, default=str))
+
+
+@mcp.tool()
+def brain_depends(node_id: str) -> str:
+    """Show complete dependency tree for an object or process.
+
+    Example: brain_depends("PROCESS:Payment_E2E")
+    """
+    brain = _load_brain()
+    if not brain:
+        return "Brain v2 not available. Run: python -m brain_v2.cli build"
+    from brain_v2.queries.dependency import dependency_tree
+    result = dependency_tree(brain, node_id)
+    return result.get("summary", json.dumps(result, indent=2, default=str))
+
+
+@mcp.tool()
+def brain_search(query: str) -> str:
+    """Search the brain for nodes matching a query string.
+
+    Example: brain_search("DMEE"), brain_search("payment")
+    """
+    brain = _load_brain()
+    if not brain:
+        return "Brain v2 not available. Run: python -m brain_v2.cli build"
+    query_upper = query.upper()
+    matches = []
+    for nid, d in brain.nodes.items():
+        name = d.get("name", "")
+        if query_upper in nid.upper() or query_upper in name.upper():
+            matches.append(f"{nid} ({d.get('type','')}, {d.get('domain','')})")
+    if not matches:
+        return f"No nodes found matching '{query}'"
+    result = f"Found {len(matches)} nodes matching '{query}':\n"
+    result += "\n".join(matches[:30])
+    if len(matches) > 30:
+        result += f"\n... +{len(matches)-30} more"
+    return result
+
+
+@mcp.tool()
+def brain_stats() -> str:
+    """Show brain v2 graph statistics (node/edge counts by type)."""
+    brain = _load_brain()
+    if not brain:
+        return "Brain v2 not available. Run: python -m brain_v2.cli build"
+    s = brain.stats()
+    lines = [f"Brain v2: {brain.node_count():,} nodes, {brain.edge_count():,} edges", ""]
+    lines.append("Top node types:")
+    for t, c in list(s["node_types"].items())[:10]:
+        lines.append(f"  {t}: {c:,}")
+    lines.append("")
+    lines.append("Top edge types:")
+    for t, c in list(s["edge_types"].items())[:10]:
+        lines.append(f"  {t}: {c:,}")
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     print("Starting SAP Backend MCP Server...")
     # By default, start with standard input/output transport for MCP

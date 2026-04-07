@@ -31,6 +31,7 @@ def ingest_config(brain, db_path: str):
     _ingest_house_banks(brain, conn, stats)
     _ingest_bcm_rules(brain, conn, stats)
     _ingest_dmee_exit_links(brain, stats)
+    _ingest_dmee_payment_links(brain, stats)
 
     conn.close()
     return stats
@@ -237,3 +238,76 @@ def _ingest_dmee_exit_links(brain, stats):
                            evidence="manual", confidence=0.9,
                            discovered_in="039")
             stats['edges'] += 1
+
+
+def _ingest_dmee_payment_links(brain, stats):
+    """Create USES_DMEE_TREE edges from known DMEE-to-company-code mappings.
+
+    The Gold DB T042Z lacks DTFOR (incomplete extraction). We use Session #039
+    findings: 13 DMEE trees analyzed from P01, company code assignments known
+    from payment companion work.
+
+    Known architecture (from h18_dmee_tree_findings.md):
+    - /CGI_XML_CT_UNESCO: UNES, IBE, IIEP, UBO, UIS, UIL (CGI/SocGen channel)
+    - /CGI_XML_CT_UNESCO_1: same company codes (variant)
+    - /CGI_XML_CT_UNESCO_FB: fallback tree for non-standard countries
+    - /CITI/XML/UNESCO/*: Citibank channel for specific field offices
+    - /SEPA_CT_UNESCO: SEPA transfers (EU company codes)
+    """
+    # Known DMEE tree → company code + payment method mappings
+    # Source: Session #039 H18 findings + T042A bank routing (Session #041 verified)
+    # SOG* house banks = SocGen/CGI channel = /CGI_XML_CT_UNESCO trees
+    # CIT* house banks = Citibank channel = /CITI trees
+    DMEE_COMPANY_MAP = {
+        "/CGI_XML_CT_UNESCO": {
+            # SOG01/SOG03 house bank routing from T042A
+            "UNES": ["4", "5", "H", "I", "J", "N", "O", "S"],
+            "IIEP": ["3", "E", "F", "G", "J", "M", "N", "S"],
+            "UIL": ["N", "S"],
+        },
+        "/CGI_XML_CT_UNESCO_1": {
+            # Variant tree — same company codes
+            "UNES": ["4", "5", "H", "I", "J", "N", "O", "S"],
+            "IIEP": ["3", "E", "F", "G", "J", "M", "N", "S"],
+            "UIL": ["N", "S"],
+        },
+    }
+
+    # Also map CITI and SEPA trees (Session #042 — T042A shows CIT* house banks)
+    # CIT01: UBO (BR), UIS (CA) — Citibank local currency channel
+    # CIT04: UNES (US) — Citibank USD channel
+    # CIT21: UNES (CA) — Citibank CAD channel
+    # SEPA: EU company codes using SEPA Credit Transfer format
+    DMEE_COMPANY_MAP.update({
+        "/CITI_XML_CT_UNESCO": {
+            # CIT* house banks from T042A
+            "UBO": ["3", "C", "K", "M", "N", "Q", "R"],
+            "UIS": ["3", "C", "K", "M", "N", "Q", "R"],
+            "UNES": ["5", "L", "N", "X", "C"],
+        },
+        "/CITI_XML_CT_UNESCO_DD": {
+            # Direct Debit variant — same company codes
+            "UNES": ["5", "L", "N", "X"],
+        },
+        "/SEPA_CT_UNESCO": {
+            # SEPA for EU-based company codes (IIEP=France, UIL=Germany, ICTP=Italy)
+            "IIEP": ["3", "E", "F", "G", "J", "M", "N", "S"],
+            "UIL": ["N", "S"],
+            "ICTP": ["1", "2", "4", "5", "6", "E", "F", "G", "H", "I", "J", "K", "M", "O", "R", "S", "U"],
+        },
+    })
+
+    for dtfor, bukrs_map in DMEE_COMPANY_MAP.items():
+        tree_id = f"DMEE:{dtfor}"
+        if not brain.has_node(tree_id):
+            continue
+
+        for bukrs, methods in bukrs_map.items():
+            for zlsch in methods:
+                pm_id = f"PAYMETHOD:{bukrs}:{zlsch}"
+                if brain.has_node(pm_id):
+                    brain.add_edge(pm_id, tree_id, "USES_DMEE_TREE",
+                                   label=f"{bukrs}/{zlsch} -> {dtfor}",
+                                   evidence="session_039+T042A", confidence=0.9,
+                                   discovered_in="042")
+                    stats['edges'] += 1

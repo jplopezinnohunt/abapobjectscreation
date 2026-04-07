@@ -67,7 +67,7 @@ IMPACT_DIRECTION = {
     "IMPLEMENTS_INTF":    "backward",
     "RAISES_EVENT":       "forward",
     "USES_DMEE_TREE":     "forward",
-    "ROUTES_TO_BANK":     "forward",
+    "ROUTES_TO_BANK":     "bidirectional",
     "CONFIGURES_FORMAT":  "forward",
     "VALIDATES_FIELD":    "forward",
     "SUBSTITUTES_FIELD":  "forward",

@@ -13,12 +13,14 @@ DEPENDENCY_EDGES = {
     "READS_TABLE", "READS_FIELD", "CALLS_FM", "USES_DMEE_TREE",
     "ROUTES_TO_BANK", "STEP_READS", "CALLS_VIA_RFC", "RUNS_PROGRAM",
     "CALLS_SYSTEM", "SERVES_HTTP",
+    "PROCESS_CONTAINS",  # Process depends on its steps
+    "STEP_FOLLOWS",      # Step depends on predecessor
+    "CONFIGURES_FORMAT", # DMEE tree depends on its exit class
 }
 
 # Reverse dependency edges (target depends on source)
 REVERSE_DEPENDENCY_EDGES = {
-    "IMPLEMENTS_BADI", "INHERITS_FROM", "CONFIGURES_FORMAT",
-    "PROCESS_CONTAINS", "STEP_FOLLOWS",
+    "IMPLEMENTS_BADI", "INHERITS_FROM",
 }
 
 

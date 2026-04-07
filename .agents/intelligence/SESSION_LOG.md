@@ -53,7 +53,10 @@
 
 ---
 
+| **#042** | 2026-04-06 | Brain v2 Explorer + Bank consolidation | 10 deliverables. Gap severity filter (2,908→56). Confidence decay (Principle 4). CITI/SEPA DMEE +44 edges. HTML companion (1,056KB/5 tabs). H21 currency conversion ($16.8B real — UZS=37%). H19/H22/H23 closed (PMO stale 12 sessions). E2E bank chain +60 edges. Brain: 52,491 nodes, 113,172 edges. H25/H26 blocked VPN. | [session_042_retro.md](../../knowledge/session_retros/session_042_retro.md) |
+| **#041** | 2026-04-06 | Brain v2 completion | Impact chain operational. FPAYP.XREF3→32 objects. 8 deliverables. G61+G62 struck. | [session_041_retro.md](../../knowledge/session_retros/session_041_retro.md) |
+
 ## Current PMO Status
-**0 Blocking | 6 High | 25 Backlog = 31 items**
+**0 Blocking | 2 High | 23 Backlog = 25 items**
 Full list: `.agents/intelligence/PMO_BRAIN.md`
-Last reconciled: Session #040 (2026-04-06) — H30/H31/H32/H33 added AND struck — H30/H31/H32 added AND struck (Brain v2 all phases shipped)
+Last reconciled: Session #042 (2026-04-06) — H19/H21/H22/H23 struck. Brain v2 Explorer shipped. Net closure +4.
