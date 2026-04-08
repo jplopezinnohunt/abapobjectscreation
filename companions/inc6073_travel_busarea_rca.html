@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INC-000006073 — Travel BusArea Root Cause Analysis</title>
+<style>
+  :root {
+    --sap-blue: #0a6ed1;
+    --sap-blue-dark: #085cad;
+    --sap-blue-deeper: #003b73;
+    --sap-shell: #354a5f;
+    --sap-shell-dark: #283848;
+    --sap-bg: #f7f8fa;
+    --sap-card: #ffffff;
+    --sap-border: #d9d9d9;
+    --sap-text: #32363a;
+    --sap-text-light: #6a6d70;
+    --sap-success: #107e3e;
+    --sap-success-bg: #f1fdf6;
+    --sap-success-border: #b6e8c8;
+    --sap-warning: #e9730c;
+    --sap-warning-bg: #fff8f0;
+    --sap-warning-border: #f9d8a7;
+    --sap-error: #bb0000;
+    --sap-error-bg: #fff0f0;
+    --sap-error-border: #f5c0c0;
+    --sap-highlight: #fff3b0;
+    --sap-accent: #0854a0;
+    --row-alt: #f0f5fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: '72', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--sap-bg);
+    color: var(--sap-text);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  /* Header Banner */
+  .header-banner {
+    background: linear-gradient(135deg, var(--sap-blue-deeper) 0%, var(--sap-shell) 100%);
+    color: #fff;
+    padding: 28px 32px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .header-banner h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: 0.3px;
+  }
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: center;
+    font-size: 13px;
+    opacity: 0.92;
+  }
+  .header-meta span { white-space: nowrap; }
+  .header-meta .label { opacity: 0.7; margin-right: 4px; }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-badge.resolved { background: #107e3e; color: #fff; }
+  .status-badge.open { background: var(--sap-warning); color: #fff; }
+
+  /* Tabs */
+  .tab-bar {
+    background: var(--sap-shell-dark);
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 16px;
+    gap: 2px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .tab-btn.active {
+    color: #fff;
+    border-bottom-color: var(--sap-blue);
+    background: rgba(255,255,255,0.08);
+    font-weight: 600;
+  }
+
+  .tab-content { display: none; padding: 24px 32px 40px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* Sections */
+  h2 { font-size: 20px; font-weight: 600; color: var(--sap-blue-deeper); margin-bottom: 16px; border-bottom: 2px solid var(--sap-blue); padding-bottom: 8px; }
+  h3 { font-size: 16px; font-weight: 600; color: var(--sap-shell); margin: 20px 0 10px; }
+  h4 { font-size: 14px; font-weight: 600; color: var(--sap-text); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+  strong { color: var(--sap-text); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    background: var(--sap-card);
+    border: 1px solid var(--sap-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  th {
+    background: var(--sap-shell);
+    color: #fff;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  tr:nth-child(even) td { background: var(--row-alt); }
+  tr:hover td { background: #e8f0fe; }
+
+  /* Code blocks */
+  pre {
+    background: #1e2733;
+    color: #e0e6ed;
+    padding: 16px 20px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin: 12px 0 20px;
+    border-left: 4px solid var(--sap-blue);
+  }
+  code {
+    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px;
+    background: #edf1f5;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--sap-accent);
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  /* Callouts */
+  .callout {
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+    border-left: 5px solid;
+    font-size: 13.5px;
+  }
+  .callout-error { background: var(--sap-error-bg); border-color: var(--sap-error); }
+  .callout-error .callout-title { color: var(--sap-error); font-weight: 700; }
+  .callout-success { background: var(--sap-success-bg); border-color: var(--sap-success); }
+  .callout-success .callout-title { color: var(--sap-success); font-weight: 700; }
+  .callout-warning { background: var(--sap-warning-bg); border-color: var(--sap-warning); }
+  .callout-warning .callout-title { color: var(--sap-warning); font-weight: 700; }
+  .callout-info { background: #e8f4fd; border-color: var(--sap-blue); }
+  .callout-info .callout-title { color: var(--sap-blue); font-weight: 700; }
+  .callout-title { display: block; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Highlight table (for definitive evidence) */
+  table.highlight-table { border: 2px solid var(--sap-blue); box-shadow: 0 2px 12px rgba(10,110,209,0.12); }
+  table.highlight-table th { background: var(--sap-blue); }
+  table.highlight-table tr.fail-row td { background: var(--sap-error-bg); font-weight: 600; }
+
+  /* Side-by-side comparison */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .comparison-box {
+    background: var(--sap-card);
+    border: 2px solid var(--sap-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .comparison-box.success-box { border-color: var(--sap-success); }
+  .comparison-box.fail-box { border-color: var(--sap-error); }
+  .comparison-box-header {
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #fff;
+  }
+  .success-box .comparison-box-header { background: var(--sap-success); }
+  .fail-box .comparison-box-header { background: var(--sap-error); }
+  .comparison-box pre { margin: 0; border-radius: 0; border-left: none; font-size: 12px; }
+
+  /* Safety net badges */
+  .safety-net-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .safety-net-card {
+    background: var(--sap-card);
+    border: 1px solid var(--sap-border);
+    border-radius: 6px;
+    padding: 14px;
+    border-top: 4px solid var(--sap-error);
+  }
+  .safety-net-card .sn-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: var(--sap-shell); }
+  .safety-net-card .sn-code { font-family: monospace; font-size: 12px; color: var(--sap-text-light); margin-bottom: 4px; }
+  .safety-net-card .sn-status { font-size: 12px; color: var(--sap-error); font-weight: 600; text-transform: uppercase; }
+  .safety-net-card .sn-reason { font-size: 12px; color: var(--sap-text-light); margin-top: 4px; }
+
+  /* Fix option cards */
+  .fix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .fix-card {
+    background: var(--sap-card);
+    border: 1px solid var(--sap-border);
+    border-radius: 6px;
+    padding: 14px;
+    position: relative;
+  }
+  .fix-card.recommended { border-color: var(--sap-success); border-width: 2px; }
+  .fix-card .fix-num { font-weight: 700; font-size: 18px; color: var(--sap-blue); }
+  .fix-card .fix-title { font-weight: 600; font-size: 13px; margin: 4px 0 8px; }
+  .fix-card .fix-detail { font-size: 12px; color: var(--sap-text-light); }
+  .fix-card .fix-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+  .fix-tag.immediate { background: #e8f5e9; color: var(--sap-success); }
+  .fix-tag.sameday { background: #fff3e0; color: var(--sap-warning); }
+  .fix-tag.days { background: #e3f2fd; color: var(--sap-blue); }
+  .fix-tag.rec-badge { background: var(--sap-success); color: #fff; position: absolute; top: -1px; right: -1px; border-radius: 0 6px 0 6px; padding: 3px 10px; }
+
+  /* Separator */
+  hr { border: none; border-top: 1px solid var(--sap-border); margin: 24px 0; }
+
+  /* Print */
+  @media print {
+    .tab-bar { display: none; }
+    .tab-content { display: block !important; page-break-inside: avoid; padding: 16px 0; }
+    .tab-content::before {
+      content: attr(data-tab-title);
+      display: block;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--sap-blue-deeper);
+      border-bottom: 2px solid var(--sap-blue);
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+    .header-banner { padding: 16px; }
+    body { font-size: 12px; }
+    pre { font-size: 11px; }
+    .comparison-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .tab-bar { padding: 0 4px; }
+    .tab-btn { padding: 8px 10px; font-size: 12px; }
+    .tab-content { padding: 16px; }
+    .comparison-grid { grid-template-columns: 1fr; }
+    .header-meta { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header-banner">
+  <h1>INC-000006073 — Travel Business Area Root Cause Analysis</h1>
+  <div class="header-meta">
+    <span><span class="label">Ticket:</span> INC-000006073</span>
+    <span><span class="label">Reporter:</span> Rita Doroszlai (FU/IEP)</span>
+    <span><span class="label">Transaction:</span> PRRW</span>
+    <span><span class="label">Date:</span> 2026-04-08</span>
+    <span><span class="label">Analyst:</span> JP Lopez</span>
+    <span class="status-badge resolved">Root Cause Identified</span>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('summary')">1. Summary</button>
+  <button class="tab-btn" onclick="showTab('chain')">2. Substitution Chain</button>
+  <button class="tab-btn" onclick="showTab('investigation')">3. Investigation</button>
+  <button class="tab-btn" onclick="showTab('exit')">4. Travel Exit</button>
+  <button class="tab-btn" onclick="showTab('rootcause')">5. Root Cause</button>
+  <button class="tab-btn" onclick="showTab('nextsteps')">6. Next Steps</button>
+  <button class="tab-btn" onclick="showTab('accountmap')">7. Account Map</button>
+  <button class="tab-btn" onclick="showTab('evidence')">8. Evidence</button>
+  <button class="tab-btn" onclick="showTab('fix')">9. Fix</button>
+  <button class="tab-btn" onclick="showTab('sources')">10. Data Sources</button>
+</div>
+
+<!-- ===================== TAB 1: SUMMARY ===================== -->
+<div class="tab-content active" id="tab-summary" data-tab-title="1. Issue Summary">
+  <h2>1. Issue Summary</h2>
+
+  <table>
+    <tr><th style="width:180px">Field</th><th>Value</th></tr>
+    <tr><td><strong>Ticket</strong></td><td>INC-000006073</td></tr>
+    <tr><td><strong>Reporter</strong></td><td>Rita Doroszlai (FU/IEP)</td></tr>
+    <tr><td><strong>Transaction</strong></td><td>PRRW (Travel Posting Run)</td></tr>
+    <tr><td><strong>Traveler</strong></td><td>10133079 — Katja HINZ (IIEP employee)</td></tr>
+    <tr><td><strong>Posting Run</strong></td><td>0100384694 (Ref: 0101004544-KH-TA)</td></tr>
+    <tr><td><strong>Date</strong></td><td>07.04.2026</td></tr>
+    <tr><td><strong>Scenario</strong></td><td>Intercompany trip: IIEP traveler on UNES budget</td></tr>
+    <tr><td><strong>Error</strong></td><td><code>RW609</code> + <code>ZFI020: For IIEP company code, only use business area PAR, IBA or FEL</code></td></tr>
+  </table>
+
+  <h3>The Posting (2 lines)</h3>
+  <table>
+    <tr><th>Line</th><th>Account</th><th>Name</th><th>Debit</th><th>Credit</th><th>CoCode</th><th>BusA</th><th>GL (from LFB1)</th></tr>
+    <tr><td>1</td><td>10133079</td><td>Katja HINZ</td><td>—</td><td>1,570.00 USD</td><td>IIEP</td><td style="color:var(--sap-error);font-weight:700">(empty)</td><td>0002021011</td></tr>
+    <tr><td>2</td><td>2022043</td><td>Adv staff travel exp</td><td>1,570.00</td><td>—</td><td>UNES</td><td>PFF</td><td>—</td></tr>
+  </table>
+
+  <h3>Error Chain</h3>
+  <pre><code>RW609  &rarr; Travel module rejects the document (IIEP line has empty Business Area)
+ZFI020 &rarr; Message text displayed to the user</code></pre>
+
+  <div class="callout callout-info">
+    <span class="callout-title">Note</span>
+    The GGB0 validation <code>ZFI020</code> itself <strong>allows empty BusA</strong> (proven in Section 3). The actual blocker is the Travel module's own document-level validation (<code>RW609</code>).
+  </div>
+</div>
+
+<!-- ===================== TAB 2: SUBSTITUTION CHAIN ===================== -->
+<div class="tab-content" id="tab-chain" data-tab-title="2. How Business Area Substitution Works at UNESCO">
+  <h2>2. How Business Area Substitution Works at UNESCO</h2>
+
+  <h3>Execution Chain</h3>
+  <pre><code>1. Travel module (PRRW/RPRAPA00) constructs posting lines
+2. Travel exit ZXTRVU05 runs &mdash; derives BusA per company code (see Section 4)
+3. GGB1 substitution rules fire (YRGGBS00 form U910)
+   &rarr; YCL_FI_ACCOUNT_SUBST_READ=&gt;READ(bukrs, blart, hkont)
+   &rarr; Looks up YTFI_BA_SUBST (range-based) with 2-tier fallback
+4. GGB0 validation rules fire (ZFI020 checks)
+5. Travel module validates complete document (RW609)</code></pre>
+
+  <h3>Custom Framework Components</h3>
+  <table>
+    <tr><th>Component</th><th>Object</th><th>Purpose</th></tr>
+    <tr><td><strong>Travel Exit</strong></td><td><code>ZXTRVU05</code></td><td>BusA derivation per company code (see Section 4)</td></tr>
+    <tr><td><strong>Substitution Exit</strong></td><td><code>YRGGBS00</code> form U910</td><td>Calls <code>YCL_FI_ACCOUNT_SUBST_READ</code></td></tr>
+    <tr><td><strong>Maintenance Tx</strong></td><td><code>YFI_BASU_MOD</code></td><td>User-friendly rule maintenance (no transport)</td></tr>
+    <tr><td><strong>Persistence</strong></td><td><code>YTFI_BA_SUBST</code></td><td>Range-based account&rarr;BusA mapping (129 entries)</td></tr>
+    <tr><td><strong>Legacy Table</strong></td><td><code>YBASUBST</code></td><td>Flat mapping (752 entries)</td></tr>
+  </table>
+</div>
+
+<!-- ===================== TAB 3: INVESTIGATION ===================== -->
+<div class="tab-content" id="tab-investigation" data-tab-title="3. Investigation: Why the IIEP Line Has Empty BusA">
+  <h2>3. Investigation: Why the IIEP Line Has Empty BusA</h2>
+
+  <h3>3.1 Vendor Reconciliation Account (LFB1)</h3>
+  <p>The screenshot shows "Acct no. 10133079" — this is the vendor/personnel number. The actual GL account comes from LFB1 (vendor master company code data):</p>
+  <table>
+    <tr><th>Vendor</th><th>Company Code</th><th>AKONT (Reconciliation GL)</th></tr>
+    <tr><td>10133079</td><td><strong>IIEP</strong></td><td><strong>0002021011</strong></td></tr>
+    <tr><td>10133079</td><td><strong>UNES</strong></td><td><strong>0002021042</strong></td></tr>
+  </table>
+  <p><strong>The IIEP line posts to GL <code>0002021011</code>.</strong> This is confirmed by all 4 previous travel documents for this vendor.</p>
+
+  <h3>3.2 GGB1 Substitution Rule 3IIEP###002</h3>
+  <pre><code>CONDITION [3IIEP###002]:
+  (BLART = 'TV' OR BLART = 'TF')
+  AND (HKONT = '2021042' OR HKONT = '2021061')
+  AND GSBER = ''
+RESULT: Sets GSBER = PAR [INFERRED from historical data]</code></pre>
+
+  <div class="callout callout-error">
+    <span class="callout-title">Critical Finding</span>
+    GL <code>2021011</code> is NOT in this rule. Only <code>2021042</code> and <code>2021061</code> are covered.
+  </div>
+
+  <h3>3.3 YTFI_BA_SUBST for IIEP</h3>
+  <p>IIEP has <strong>zero global rules</strong> in <code>YTFI_BA_SUBST</code>. All 12 entries are restricted to document type Z1 — they do NOT apply to TV (travel) documents.</p>
+  <table>
+    <tr><th>Company Code</th><th>Global Rules</th><th>Z1 Rules</th><th>Total</th></tr>
+    <tr><td>IBE, ICBA, ICTP, MGIE, UBO, UIL, UIS</td><td>9-11 each</td><td>3-10 each</td><td>13-21</td></tr>
+    <tr><td style="color:var(--sap-error);font-weight:700">IIEP</td><td style="color:var(--sap-error);font-weight:700">0</td><td>12</td><td>12</td></tr>
+  </table>
+
+  <h3>3.4 GGB0 Validation ZFI020</h3>
+  <pre><code>PREREQUISITE [1IIEP###001]: BUKRS = 'IIEP'
+CHECK [2IIEP###001]: GSBER &lt;&gt; 'DAE' AND &lt;&gt; 'GEF' AND &lt;&gt; 'MBF' AND &lt;&gt; 'OPF' AND &lt;&gt; 'PFF'</code></pre>
+  <div class="callout callout-success">
+    <span class="callout-title">Conclusion</span>
+    Empty BusA (<code>''</code>) passes this check — it's not equal to any of the rejected values. ZFI020 is NOT the blocker. The actual rejection comes from the Travel module (<code>RW609</code>).
+  </div>
+
+  <h3>3.5 PA0001 — HR Master Data</h3>
+  <table>
+    <tr><th>Period</th><th>BUKRS</th><th>GSBER</th><th>KOSTL</th><th>FISTL</th><th>GEBER (Fund)</th></tr>
+    <tr><td>2024-01 to 2025-06</td><td>IIEP</td><td><strong>PAR</strong></td><td>ADM</td><td>ADM</td><td>1130STF602 (IIEP fund)</td></tr>
+    <tr><td>2025-07 to 9999-12</td><td>IIEP</td><td><strong>PAR</strong></td><td><em>(empty)</em></td><td><em>(empty)</em></td><td><strong>707RMB0625</strong> (UNES fund)</td></tr>
+  </table>
+  <p><strong>GSBER=PAR has never changed</strong> (stable since 2016). Position change hypothesis ruled out.</p>
+  <div class="callout callout-warning">
+    <span class="callout-title">Key Observation</span>
+    The employee's fund changed from <code>1130STF602</code> (IIEP fund) to <code>707RMB0625</code> (UNES fund) on 2025-07-01. This is why the trip uses UNES budget — creating an intercompany posting.
+  </div>
+</div>
+
+<!-- ===================== TAB 4: TRAVEL EXIT ===================== -->
+<div class="tab-content" id="tab-exit" data-tab-title="4. Travel Exit ZXTRVU05">
+  <h2>4. Travel Exit ZXTRVU05 — The BusA Derivation Code</h2>
+  <p><strong>Source:</strong> <code>extracted_code/UNESCO_CUSTOM_LOGIC/TV_TRAVEL/ZXTRVU05_RPY.abap</code></p>
+  <p>This SAP user exit runs during travel posting and derives Business Area per company code:</p>
+
+  <pre><code>LOOP AT KONTI ASSIGNING &lt;KONTI&gt;.
+  CASE &lt;KONTI&gt;-BUKRS.
+    WHEN 'UNES'.
+      PERFORM FUND_BA_WBS_CC USING &lt;KONTI&gt;-GEBER ... &lt;KONTI&gt;-GSBER 'X'.
+    WHEN 'UBO'.
+      " empty &mdash; no derivation
+    WHEN OTHERS.
+*     perform inst_fund_ba_wbs_cc using &lt;KONTI&gt;-bukrs
+*                                       &lt;KONTI&gt;-geber ... &lt;KONTI&gt;-gsber 'X'.
+  ENDCASE.
+ENDLOOP.</code></pre>
+
+  <table>
+    <tr><th>Company Code</th><th>BusA Derivation in ZXTRVU05</th><th>Status</th></tr>
+    <tr><td><strong>UNES</strong></td><td><code>FUND_BA_WBS_CC</code> — derives BusA from fund/WBS/cost center</td><td style="color:var(--sap-success);font-weight:600">ACTIVE</td></tr>
+    <tr><td><strong>UBO</strong></td><td>Empty block — no derivation</td><td style="color:var(--sap-warning);font-weight:600">DISABLED</td></tr>
+    <tr><td><strong>IIEP, IBE, ICBA, ICTP, MGIE, UIL, UIS</strong> (WHEN OTHERS)</td><td><code>inst_fund_ba_wbs_cc</code></td><td style="color:var(--sap-error);font-weight:600">COMMENTED OUT</td></tr>
+  </table>
+
+  <div class="callout callout-error">
+    <span class="callout-title">Critical Finding</span>
+    For IIEP lines, the travel exit does NOT derive BusA. The institute-specific derivation (<code>inst_fund_ba_wbs_cc</code>) is commented out. This means IIEP relies entirely on GGB1 substitution or other upstream code to provide BusA.
+  </div>
+</div>
+
+<!-- ===================== TAB 5: ROOT CAUSE ===================== -->
+<div class="tab-content" id="tab-rootcause" data-tab-title="5. Root Cause">
+  <h2>5. Root Cause</h2>
+
+  <h3>5.1 The Chain</h3>
+  <ol style="margin: 12px 0 20px 20px; line-height: 2;">
+    <li>Employee's fund changed to <code>707RMB0625</code> (UNES fund) on 2025-07-01</li>
+    <li>First travel advance on UNES budget &rarr; creates a 2-line intercompany posting</li>
+    <li>IIEP line posts to GL <code>0002021011</code> (from LFB1 AKONT for IIEP)</li>
+    <li>Travel exit ZXTRVU05: BusA derivation for non-UNES company codes is <strong>commented out</strong> &rarr; IIEP line gets no BusA from the exit</li>
+    <li>GGB1 rule <code>3IIEP###002</code>: only covers GL <code>2021042</code>/<code>2021061</code> &rarr; does NOT match <code>2021011</code></li>
+    <li>YTFI_BA_SUBST: zero global rules for IIEP &rarr; no fallback</li>
+    <li>Other GGB1 rules (<code>3IIEP###004</code> TV general, <code>3IIEP###006</code> KOART=K, <code>3IIEP###008</code> date): conditions match, but results are unknown [UNVERIFIED]</li>
+    <li>IIEP line arrives with empty BusA &rarr; RW609 rejects &rarr; ZFI020 message displayed</li>
+  </ol>
+
+  <h3>5.2 The Code That Derives BusA — FOUND</h3>
+  <p><strong>BAdI <code>ZCL_IM_TRIP_POST_FI</code>, method <code>EX_ZWEP_ACCOUNT2</code> (include CM00A):</strong></p>
+  <pre><code>IF zwep-bukst IS INITIAL OR zwep-gsbst IS INITIAL.
+  " Read PA0027 (Cost Distribution) subtype 02
+  CALL FUNCTION 'HR_READ_INFOTYPE'
+    EXPORTING pernr = zwep-pernr  infty = '0027'
+              begda = zwep-datv1  endda = zwep-datv1
+    TABLES    infty_tab = lt_p0027.
+
+  LOOP AT lt_p0027 INTO ls_p0027 WHERE subty = '02'.
+  ENDLOOP.
+  CHECK sy-subrc IS INITIAL.  &larr; exits if no subtype 02 found
+
+  " Find the cost distribution line with highest percentage (kpr01-kpr25)
+  " Then copy: company code (kbu), Business Area (kgb), cost center (kst),
+  "            fund center (fct), fund (fcd), WBS (psp)
+  zwep-bukst = &lt;fs_kprnm&gt;.  " Company Code
+  zwep-gsbst = &lt;fs_kprnm&gt;.  " Business Area (target)
+  zwep-gsber = &lt;fs_kprnm&gt;.  " Business Area (actual posting field)</code></pre>
+  <p>This BAdI reads PA0027 infotype (Cost Distribution, subtype 02) and sets GSBER from the <code>KGB</code> field.</p>
+
+  <h3>5.3 PA0027 for Traveler 10133079 — The Root Cause</h3>
+  <table>
+    <tr><th>PERNR</th><th>Subtype</th><th>BEGDA</th><th>ENDDA</th><th>BUKRS</th><th>GSBER</th><th>KOSTL</th><th>Fund</th><th>%</th></tr>
+    <tr><td>10133079</td><td>01</td><td>2016-01-18</td><td>2016-12-31</td><td>IIEP</td><td>PAR</td><td>ADM</td><td>930STF0602</td><td>100%</td></tr>
+    <tr><td>10133079</td><td>01</td><td>2017-01-01</td><td>2017-01-31</td><td>IIEP</td><td>PAR</td><td>ADM</td><td>940STF0602</td><td>100%</td></tr>
+    <tr><td style="font-weight:700">10133079</td><td style="font-weight:700">02</td><td>2016-01-18</td><td style="color:var(--sap-error);font-weight:700">2021-01-31</td><td>IIEP</td><td style="font-weight:700">PAR</td><td>R&D</td><td>936GLO0303</td><td>100%</td></tr>
+  </table>
+
+  <div class="callout callout-error">
+    <span class="callout-title">Critical Finding</span>
+    <strong>Subtype 02 expired on 2021-01-31.</strong> There is no current record. When the BAdI runs for a trip in 2026:
+    <br>1. <code>HR_READ_INFOTYPE</code> with begda/endda = trip date (2026) &rarr; PA0027 subtype 02 has no valid record
+    <br>2. <code>LOOP...WHERE subty = '02'</code> &rarr; finds nothing &rarr; <code>sy-subrc &lt;&gt; 0</code>
+    <br>3. <code>CHECK sy-subrc IS INITIAL</code> &rarr; exits the method without setting GSBER
+    <br>4. BusA stays empty
+  </div>
+
+  <h3>5.4 Side-by-Side: Same Account, Same Traveler — Why One Works and One Doesn't</h3>
+
+  <div class="comparison-grid">
+    <div class="comparison-box success-box">
+      <div class="comparison-box-header">Last Successful Posting — Doc 6600000332, 2025-12-04 (IIEP-funded)</div>
+      <pre><code>Step 1: Trip cost assignment = IIEP budget (fund 1130STF602)
+Step 2: Travel standard builds posting lines:
+          IIEP | Vendor 10133079 &rarr; GL 2021011 | GSBER = PAR
+            &larr; filled by Travel (from PA0001/cost assignment)
+          IIEP | GL 2022043 (advance)         | GSBER = PAR
+            &larr; filled by Travel
+Step 3: BAdI EX_ZWEP_ACCOUNT2 checks:
+          gsbst = PAR (NOT initial) &rarr; SKIPPED
+Step 4: GGB1 rule 3IIEP###002:
+          GL 2021011 not in rule &rarr; no match
+          &rarr; but PAR already set &rarr; OK
+Step 5: ZXTRVU05: IIEP falls in WHEN OTHERS
+          &rarr; commented out &rarr; but PAR already set &rarr; OK
+Step 6: Posting succeeds with GSBER=PAR</code></pre>
+    </div>
+    <div class="comparison-box fail-box">
+      <div class="comparison-box-header">Rita's Failed Posting — 2026-04-07 (UNES-funded)</div>
+      <pre><code>Step 1: Trip cost assignment = UNES budget
+          (fund 707RMB0625, changed Jul 2025)
+Step 2: Travel standard builds posting lines:
+          IIEP | Vendor 10133079 &rarr; GL 2021011 | GSBER = (empty)
+            &larr; NOT filled (counterpart clearing line)
+          UNES | GL 2022043 (advance)         | GSBER = PFF
+            &larr; filled by Travel (UNES cost assignment)
+Step 3: BAdI EX_ZWEP_ACCOUNT2 checks:
+          gsbst = INITIAL &rarr; FIRES
+          &rarr; reads PA0027 subtype 02 for PERNR, trip 2026
+          &rarr; PA0027-02 expired 2021-01-31 &rarr; no record
+          &rarr; method exits &rarr; GSBER stays empty
+Step 4: GGB1 rule 3IIEP###002:
+          GL 2021011 not in rule &rarr; no match
+          &rarr; GSBER stays empty
+Step 5: ZXTRVU05: IIEP falls in WHEN OTHERS
+          &rarr; code commented out &rarr; GSBER stays empty
+Step 6: RW609 rejects (empty BusA) &rarr; ZFI020 shown</code></pre>
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <span class="callout-title">Key Conclusion</span>
+    <strong>The single variable that changed: the funding source.</strong> Everything else is identical — same traveler, same GL account, same expired PA0027, same missing GGB1 rule, same commented-out exit. In IIEP-funded trips, the Travel standard fills GSBER=PAR at Step 2 and none of the other steps matter. In UNES-funded trips, the Travel standard does NOT fill GSBER for the IIEP counterpart line, and all three fallback mechanisms fail.
+  </div>
+
+  <h3>5.5 Cross-Company Confirmation</h3>
+  <table>
+    <tr><th>Company Code</th><th>GL 2021011 GSBER</th><th>Institute Default BusA</th><th>Source</th></tr>
+    <tr><td><strong>IIEP</strong></td><td><strong>PAR</strong> (4 docs)</td><td>PAR</td><td>Travel standard (PA0001 GSBER)</td></tr>
+    <tr><td><strong>MGIE</strong></td><td><strong>PFF</strong> (24) / GEF (1)</td><td>PFF</td><td>Travel standard (PA0001 GSBER)</td></tr>
+    <tr><td><strong>ICBA</strong></td><td><strong>PFF</strong> (22 docs)</td><td>PFF</td><td>Travel standard (PA0001 GSBER)</td></tr>
+  </table>
+
+  <h3>5.6 Root Cause — Final</h3>
+  <div class="callout callout-error">
+    <span class="callout-title">Root Cause</span>
+    <strong>The Travel standard does NOT assign Business Area to the intercompany counterpart vendor clearing line.</strong> When a trip is funded by a different company code, the clearing line in the employee's home company code arrives with empty GSBER.
+  </div>
+
+  <p>Three fallback mechanisms exist but all fail for this case:</p>
+  <div class="safety-net-grid">
+    <div class="safety-net-card">
+      <div class="sn-title">1. GGB1 Rule 3IIEP###002</div>
+      <div class="sn-code">Substitutes PAR for GL 2021042/2021061 in TV docs</div>
+      <div class="sn-status">FAILS</div>
+      <div class="sn-reason">GL 2021011 is NOT in the rule</div>
+    </div>
+    <div class="safety-net-card">
+      <div class="sn-title">2. BAdI EX_ZWEP_ACCOUNT2</div>
+      <div class="sn-code">Reads PA0027-02 to derive BusA</div>
+      <div class="sn-status">FAILS</div>
+      <div class="sn-reason">PA0027-02 expired 2021-01-31</div>
+    </div>
+    <div class="safety-net-card">
+      <div class="sn-title">3. ZXTRVU05 Exit</div>
+      <div class="sn-code">inst_fund_ba_wbs_cc for non-UNES codes</div>
+      <div class="sn-status">COMMENTED OUT</div>
+      <div class="sn-reason">Code is disabled for IIEP (WHEN OTHERS)</div>
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <span class="callout-title">Conclusion</span>
+    <strong>Any single fix breaks the chain.</strong> The failure requires all three fallbacks to fail simultaneously.
+  </div>
+
+  <h3>5.7 Why the Travel Standard Worked Before and Not Now</h3>
+  <p><strong>The Travel standard did NOT change.</strong> What changed is the input — the employee's fund:</p>
+  <table>
+    <tr><th></th><th>Before (worked)</th><th>Now (fails)</th></tr>
+    <tr><td><strong>Employee fund (PA0001)</strong></td><td><code>1130STF602</code> (IIEP fund)</td><td><code>707RMB0625</code> (UNES fund, changed Jul 2025)</td></tr>
+    <tr><td><strong>Trip type</strong></td><td>Same-company (IIEP-funded)</td><td><strong>Intercompany</strong> (UNES-funded)</td></tr>
+    <tr><td><strong>Travel standard behavior</strong></td><td>Assigns PAR to ALL IIEP lines (from cost assignment)</td><td>Assigns PFF to UNES lines only. <strong>IIEP clearing line gets nothing</strong></td></tr>
+    <tr><td><strong>Fallbacks needed?</strong></td><td>No — PAR already set</td><td>Yes — but all 3 fail</td></tr>
+  </table>
+  <p>The Travel standard treats the IIEP vendor clearing line as an intercompany counterpart — a technical accounting entry, not a cost-assigned trip line. It doesn't inherit the employee's BusA from PA0001 because the cost assignment belongs to UNES, not IIEP.</p>
+  <p><strong>This is the first intercompany trip for this traveler</strong> (fund changed Jul 2025, first advance posted Apr 2026). The gap always existed but was never exposed because all previous trips were IIEP-funded.</p>
+
+  <h3>5.8 Fix Options</h3>
+  <div class="fix-grid">
+    <div class="fix-card recommended">
+      <span class="fix-tag rec-badge">RECOMMENDED</span>
+      <div class="fix-num">#1</div>
+      <div class="fix-title">HR master data</div>
+      <div class="fix-detail">Extend PA0027 subtype 02 for traveler 10133079 (IIEP/PAR, current dates)</div>
+      <div class="fix-detail"><strong>Scope:</strong> This traveler only</div>
+      <span class="fix-tag immediate">Immediate (PA30)</span>
+    </div>
+    <div class="fix-card recommended">
+      <span class="fix-tag rec-badge">RECOMMENDED</span>
+      <div class="fix-num">#2</div>
+      <div class="fix-title">FI config (no transport)</div>
+      <div class="fix-detail">Add GL 2021011 to YTFI_BA_SUBST via YFI_BASU_MOD</div>
+      <div class="fix-detail"><strong>Scope:</strong> All IIEP vendors on 2021011</div>
+      <span class="fix-tag sameday">Same day</span>
+    </div>
+    <div class="fix-card">
+      <div class="fix-num">#3</div>
+      <div class="fix-title">FI config (transport)</div>
+      <div class="fix-detail">Add GL 2021011 to GGB1 rule 3IIEP###002</div>
+      <div class="fix-detail"><strong>Scope:</strong> All IIEP vendors on 2021011</div>
+      <span class="fix-tag days">Days (transport)</span>
+    </div>
+    <div class="fix-card">
+      <div class="fix-num">#4</div>
+      <div class="fix-title">ABAP (transport)</div>
+      <div class="fix-detail">Uncomment inst_fund_ba_wbs_cc in ZXTRVU05</div>
+      <div class="fix-detail"><strong>Scope:</strong> All non-UNES company codes</div>
+      <span class="fix-tag days">Days + testing</span>
+    </div>
+  </div>
+
+  <h3>5.9 Definitive Evidence: Trip Cost Assignment (PTRV_SCOS)</h3>
+  <p>Extracted from P01 — the trip cost assignment for ALL 15 trips of traveler 10133079. Last 4 trips (the relevant ones):</p>
+
+  <table class="highlight-table">
+    <tr><th>Trip</th><th>Date</th><th>COMP_CODE</th><th>BUS_AREA</th><th>FUNDS_CTR</th><th>FUND</th><th>Amount</th><th>Result</th></tr>
+    <tr><td>0101004011</td><td>2024-02</td><td><strong>IIEP</strong></td><td><strong>PAR</strong></td><td>TEC</td><td>ULO2023</td><td>1,662.76</td><td style="color:var(--sap-success);font-weight:700">OK</td></tr>
+    <tr><td>0101004047</td><td>2024-11</td><td><strong>IIEP</strong></td><td><strong>PAR</strong></td><td>TEC</td><td>1135BDI401</td><td>2,908.02</td><td style="color:var(--sap-success);font-weight:700">OK</td></tr>
+    <tr><td>0101004446</td><td>2025-12</td><td><strong>IIEP</strong></td><td><strong>PAR</strong></td><td>ADM</td><td>707RMB0625</td><td>1,196.21</td><td style="color:var(--sap-success);font-weight:700">OK</td></tr>
+    <tr class="fail-row"><td><strong>0101004544</strong></td><td><strong>2026-04</strong></td><td><strong>UNES</strong></td><td><strong>PFF</strong></td><td>ESD</td><td>727GLO1007</td><td>3,183.40</td><td style="color:var(--sap-error);font-weight:700">FAIL</td></tr>
+  </table>
+
+  <div class="callout callout-warning">
+    <span class="callout-title">Key Observation</span>
+    All 13 previous trips had COMP_CODE=IIEP, BUS_AREA=PAR. Trip 0101004544 (Rita's) is the first and only with <strong>COMP_CODE=UNES, BUS_AREA=PFF</strong>.
+    <br><br>Trip 0101004446 (Dec 2025) used fund <code>707RMB0625</code> (a UNES fund from PA0001) but was still assigned to <strong>COMP_CODE=IIEP</strong>. This means the company code in the trip cost assignment is NOT automatically derived from the fund — it was entered as IIEP.
+  </div>
+
+  <h3>5.10 Root Cause — Final (With PTRV_SCOS Evidence)</h3>
+  <div class="callout callout-error">
+    <span class="callout-title">Definitive Root Cause</span>
+    <strong>The trip cost assignment was entered with COMP_CODE=UNES instead of IIEP.</strong> This is the direct cause.
+  </div>
+
+  <table>
+    <tr><th>What</th><th>Trip 0101004446 (worked)</th><th>Trip 0101004544 (failed)</th></tr>
+    <tr><td><strong>Cost assignment company code</strong></td><td><strong>IIEP</strong></td><td style="color:var(--sap-error);font-weight:700">UNES</td></tr>
+    <tr><td><strong>Cost assignment BusA</strong></td><td><strong>PAR</strong></td><td style="color:var(--sap-error);font-weight:700">PFF</td></tr>
+    <tr><td><strong>Fund</strong></td><td>707RMB0625</td><td>727GLO1007</td></tr>
+    <tr><td><strong>Fund center</strong></td><td>ADM</td><td>ESD</td></tr>
+    <tr><td><strong>Posting type</strong></td><td>Same-company (IIEP)</td><td>Intercompany (UNES+IIEP)</td></tr>
+    <tr><td><strong>IIEP vendor line BusA</strong></td><td>PAR (from cost assignment)</td><td style="color:var(--sap-error);font-weight:700">(empty) — not from cost assignment</td></tr>
+  </table>
+
+  <div class="callout callout-warning">
+    <span class="callout-title">Two Questions for Travel/HR Team</span>
+    <strong>1.</strong> Was the cost assignment to UNES/727GLO1007/ESD intentional? If the traveler should use an IIEP fund, the fix is to correct the trip cost assignment.<br>
+    <strong>2.</strong> If UNES-funded trips for IIEP employees are a valid scenario, then the system needs a fix (Options 1-4 in Section 5.8) to handle the IIEP clearing line BusA.
+  </div>
+
+  <h3>5.11 Why Each Company Code Behaves Differently</h3>
+  <table>
+    <tr><th>Company Code</th><th>ZXTRVU05 Exit</th><th>GGB1 Rule</th><th>PA0027 BAdI</th><th>Net Effect</th></tr>
+    <tr><td><strong>UNES</strong></td><td><code>FUND_BA_WBS_CC</code> <strong style="color:var(--sap-success)">ACTIVE</strong></td><td>Covers 2021042/2021061</td><td>Fires if gsbst initial</td><td style="color:var(--sap-success);font-weight:600">Fully covered</td></tr>
+    <tr><td><strong>IIEP</strong></td><td><code>inst_fund_ba_wbs_cc</code> <strong style="color:var(--sap-error)">COMMENTED OUT</strong></td><td>Covers 2021042/2021061 only</td><td>PA0027-02 expired</td><td style="color:var(--sap-error);font-weight:600">Gap for GL 2021011</td></tr>
+    <tr><td><strong>UBO</strong></td><td>Empty WHEN block</td><td>Covers 2021042/2021061</td><td>Fires if gsbst initial</td><td>Depends on PA0027</td></tr>
+    <tr><td><strong>IBE, ICBA, ICTP, MGIE, UIL, UIS</strong></td><td><code>inst_fund_ba_wbs_cc</code> <strong style="color:var(--sap-error)">COMMENTED OUT</strong></td><td>Covers 2021042 (some also 2021061)</td><td>Fires if gsbst initial</td><td style="color:var(--sap-warning)">Same gap for non-2021042 GLs</td></tr>
+  </table>
+
+  <h3>5.12 Where the Intercompany Logic Runs</h3>
+  <p>The intercompany posting is generated by <strong>SAP standard program RPRAPA00</strong> (Travel Posting Run). The custom code only has exits that run AFTER the standard builds the posting lines.</p>
+
+  <table>
+    <tr><th>Scenario</th><th>Cost Assignment</th><th>Standard Behavior</th><th>IIEP Line BusA</th></tr>
+    <tr><td>COMP_CODE=IIEP (trip 0101004446)</td><td>IIEP/PAR</td><td>IIEP is "home" &rarr; gets PAR. Intercompany to UNES &rarr; UNES is "partner"</td><td style="color:var(--sap-success);font-weight:700">PAR (from cost assignment)</td></tr>
+    <tr><td>COMP_CODE=UNES (trip 0101004544)</td><td>UNES/PFF</td><td>UNES is "home" &rarr; gets PFF. Intercompany to IIEP &rarr; IIEP is "partner"</td><td style="color:var(--sap-error);font-weight:700">(empty) — standard doesn't derive BusA for partner</td></tr>
+  </table>
+
+  <div class="callout callout-info">
+    <span class="callout-title">Key Finding</span>
+    The standard propagates BUS_AREA to the "home" company code lines only. The "partner" (counterpart) clearing line depends on the custom exits — which all fail for GL 2021011.
+  </div>
+
+  <h3>5.13 The User Input Factor</h3>
+  <p>The cost assignment in PTRV_SCOS shows the user (or the Travel system) entered <strong>COMP_CODE=UNES, BUS_AREA=PFF</strong> for trip 0101004544. The BusA value PFF IS present in the cost assignment — it is not missing.</p>
+  <p>The problem is what happens AFTER:</p>
+  <ul style="margin: 8px 0 16px 20px;">
+    <li>PFF goes to the UNES posting lines (correct — UNES lines get BusA from cost assignment)</li>
+    <li>The IIEP counterpart clearing line gets <strong>nothing</strong> — the system does not propagate PFF to IIEP (it can't — PFF is invalid for IIEP per validation ZFI020) and does not derive PAR from PA0001</li>
+  </ul>
+
+  <div class="callout callout-success">
+    <span class="callout-title">Both Answers Lead to Action</span>
+    <strong>If UNES is correct</strong> &rarr; system fix needed (add GL 2021011 to substitution, or extend PA0027, or uncomment ZXTRVU05)<br>
+    <strong>If IIEP was intended</strong> &rarr; correct the trip cost assignment and repost
+  </div>
+</div>
+
+<!-- ===================== TAB 6: NEXT STEPS ===================== -->
+<div class="tab-content" id="tab-nextsteps" data-tab-title="6. Next Steps">
+  <h2>6. Next Steps</h2>
+
+  <h3>Immediate (resolve Rita's ticket)</h3>
+  <ol style="margin: 8px 0 20px 20px; line-height: 2;">
+    <li><strong>Ask Travel team:</strong> Was COMP_CODE=UNES on trip 0101004544 intentional? Compare with trip 0101004446 which used COMP_CODE=IIEP for a similar scenario.</li>
+    <li><strong>If user error:</strong> Correct the trip cost assignment to IIEP/PAR and repost</li>
+    <li><strong>If correct:</strong> Apply fix Option 1 or 2 from Section 5.8</li>
+  </ol>
+
+  <h3>Future Session: Travel Data Extraction to Gold DB</h3>
+  <table>
+    <tr><th>Table</th><th>Content</th><th>Priority</th></tr>
+    <tr><td><code>PTRV_SCOS</code></td><td>Trip cost assignment (company code, BusA, fund, cost center)</td><td style="font-weight:700;color:var(--sap-error)">HIGH</td></tr>
+    <tr><td><code>PTRV_SHDR</code></td><td>Trip header summary (amounts, dates)</td><td style="font-weight:700;color:var(--sap-error)">HIGH</td></tr>
+    <tr><td><code>PTRV_A_SCOS</code></td><td>Advance cost assignment</td><td style="font-weight:700;color:var(--sap-error)">HIGH</td></tr>
+    <tr><td><code>PTRV_SCOS</code> for ALL company codes</td><td>Cross-company cost assignment patterns</td><td style="font-weight:700;color:var(--sap-warning)">MEDIUM</td></tr>
+  </table>
+  <p>This data enables:</p>
+  <ul style="margin: 8px 0 16px 20px;">
+    <li>Pattern analysis of intercompany travel across all institutes</li>
+    <li>Identification of other travelers who might hit the same issue</li>
+    <li>Travel domain knowledge creation (new skill)</li>
+  </ul>
+</div>
+
+<!-- ===================== TAB 7: ACCOUNT MAP ===================== -->
+<div class="tab-content" id="tab-accountmap" data-tab-title="7. IIEP Travel Account Map">
+  <h2>7. IIEP Travel Account Map</h2>
+  <p>All GL accounts used in IIEP TV documents (2024-2026) with their Business Area and source:</p>
+
+  <h3>Covered by GGB1 Substitution</h3>
+  <table>
+    <tr><th>GL Account</th><th>PK</th><th>BusA</th><th>Doc Count</th><th>Source</th></tr>
+    <tr><td>0002021042</td><td>21/31</td><td>PAR</td><td>545</td><td>GGB1 <code>3IIEP###002</code> [VERIFIED]</td></tr>
+    <tr><td>0002021061</td><td>21/31</td><td>PAR</td><td>15</td><td>GGB1 <code>3IIEP###002</code> [VERIFIED]</td></tr>
+  </table>
+
+  <h3>BusA Derived by Other Source (Travel BAPI / GGB1 rules 004-008)</h3>
+  <table>
+    <tr><th>GL Account</th><th>PK</th><th>BusA</th><th>Doc Count</th><th>Source</th></tr>
+    <tr><td>0002022043</td><td>40/50</td><td>PAR/PDK</td><td>~530</td><td>Travel module or GGB1 [INFERRED]</td></tr>
+    <tr><td>0002086092</td><td>40/50</td><td>PAR/PDK</td><td>~300</td><td>Travel module or GGB1 [INFERRED]</td></tr>
+    <tr><td>0006011501-514</td><td>40</td><td>PAR/PDK</td><td>~800</td><td>Travel module or GGB1 [INFERRED]</td></tr>
+    <tr style="background:var(--sap-highlight)"><td style="font-weight:700">0002021011</td><td style="font-weight:700">21/31</td><td style="font-weight:700">PAR</td><td style="font-weight:700">4</td><td style="font-weight:700;color:var(--sap-error)">Unknown — not in any substitution rule</td></tr>
+  </table>
+
+  <h3>No BusA (empty — tolerated in multi-line docs)</h3>
+  <table>
+    <tr><th>GL Account</th><th>PK</th><th>BusA</th><th>Doc Count</th><th>Note</th></tr>
+    <tr><td>0005098030</td><td>40/50</td><td>(empty)</td><td>217</td><td>Intercompany clearing — no rule, tolerated because other lines have BusA</td></tr>
+    <tr><td>0005098013</td><td>50</td><td>(empty)</td><td>2</td><td>Same pattern</td></tr>
+  </table>
+</div>
+
+<!-- ===================== TAB 8: EVIDENCE ===================== -->
+<div class="tab-content" id="tab-evidence" data-tab-title="8. Evidence: Traveler 10133079 History">
+  <h2>8. Evidence: Traveler 10133079 History</h2>
+
+  <h3>7.1 Previous Postings (all successful)</h3>
+  <table>
+    <tr><th>Date</th><th>Doc</th><th>Type</th><th>IIEP Lines</th><th>IIEP GL</th><th>BusA</th><th>Funding</th></tr>
+    <tr><td>2024-01-12</td><td>6600000005</td><td>TV</td><td>8 (1V+7GL)</td><td>2021011 + 2022043 + 601x</td><td style="color:var(--sap-success);font-weight:700">ALL=PAR</td><td>IIEP</td></tr>
+    <tr><td>2024-02-26</td><td>6600000047</td><td>TV</td><td>2 (1V+1GL)</td><td>2021011 + 2022043</td><td style="color:var(--sap-success);font-weight:700">ALL=PAR</td><td>IIEP</td></tr>
+    <tr><td>2024-11-09</td><td>6600000215</td><td>TV</td><td>6 (1V+5GL)</td><td>2021011 + 2022043 + 601x</td><td style="color:var(--sap-success);font-weight:700">ALL=PAR</td><td>IIEP</td></tr>
+    <tr><td>2025-12-04</td><td>6600000332</td><td>TV</td><td>2 (1V+1GL)</td><td>2021011 + 2022043</td><td style="color:var(--sap-success);font-weight:700">ALL=PAR</td><td>IIEP</td></tr>
+  </table>
+  <p>All 4 previous docs: GL <code>2021011</code> on the vendor line with GSBER=PAR, IIEP-funded (both vendor + GL lines in IIEP company code).</p>
+
+  <h3>7.2 Rita's Failed Posting</h3>
+  <pre><code>Line 1: IIEP | Vendor 10133079 (Katja HINZ) &rarr; GL 2021011 | Credit 1,570.00 | BusA = (empty)
+Line 2: UNES | GL 2022043 (Adv staff travel exp)          | Debit 1,570.00  | BusA = PFF</code></pre>
+
+  <p><strong>Differences from previous postings:</strong></p>
+  <ul style="margin: 8px 0 16px 20px;">
+    <li><strong>UNES-funded</strong> (fund <code>707RMB0625</code> changed Jul 2025) &rarr; GL 2022043 posts to UNES, not IIEP</li>
+    <li>IIEP side has vendor line on GL <code>2021011</code> with <strong>no BusA</strong></li>
+    <li>No other IIEP GL line in the document</li>
+  </ul>
+
+  <h3>7.3 Last Successful IIEP Intercompany Advances</h3>
+  <table>
+    <tr><th>Doc</th><th>BUDAT</th><th>IIEP Lines</th><th>IIEP GL(s)</th><th>BusA</th></tr>
+    <tr><td>6600000091</td><td>03-26</td><td>2021042(V)/PAR + 2086092/PAR + 5098030/empty</td><td>2021042</td><td>PAR</td></tr>
+    <tr><td>6600000092</td><td>03-31</td><td>2021042(V)/PAR + 2022043/PAR</td><td>2021042</td><td>PAR</td></tr>
+    <tr><td>6600000093</td><td>03-31</td><td>2021042(V)/PAR + 2022043/PAR</td><td>2021042</td><td>PAR</td></tr>
+  </table>
+  <p>All use GL <code>2021042</code> (covered by GGB1) — NOT <code>2021011</code>. The difference is the vendor's LFB1 reconciliation account.</p>
+</div>
+
+<!-- ===================== TAB 9: FIX ===================== -->
+<div class="tab-content" id="tab-fix" data-tab-title="9. Fix Recommendation">
+  <h2>9. Fix Recommendation</h2>
+
+  <h3>Immediate</h3>
+  <ol style="margin: 8px 0 20px 20px; line-height: 2;">
+    <li><strong>Add GL <code>2021011</code> to GGB1 substitution</strong> — Extend rule <code>3IIEP###002</code> in GGB1 to also cover HKONT='2021011' (transport required)</li>
+    <li><strong>OR add to <code>YTFI_BA_SUBST</code></strong> via <code>YFI_BASU_MOD</code> — Add IIEP global entry: <code>IIEP / '' / PAR / 01 / I / EQ / 0002021011</code> (no transport needed)</li>
+  </ol>
+
+  <h3>Investigate First</h3>
+  <ol start="3" style="margin: 8px 0 20px 20px; line-height: 2;">
+    <li><strong>Verify GGB1 rules <code>3IIEP###004</code>/<code>006</code>/<code>008</code></strong> — Extract their result assignments. If one of these already substitutes PAR for TV vendor lines, it may only need adjustment for the intercompany scenario</li>
+    <li><strong>Extract BAdI <code>ZCL_IM_BADI_EXITS_RPRAPA00</code></strong> source from D01 — Check if <code>SET_VALUES_FOR_BLFA1</code> (advance) reads PA0001 GSBER and passes it to the posting</li>
+  </ol>
+
+  <h3>Structural (MGIE/ICBA prevention)</h3>
+  <div class="callout callout-warning">
+    <span class="callout-title">Exposure Risk</span>
+    MGIE (25 TV docs on <code>2021011</code>) and ICBA (22 TV docs on <code>2021011</code>) could face the same issue if their travelers travel cross-funded — add <code>2021011</code> to their substitution rules too.
+  </div>
+</div>
+
+<!-- ===================== TAB 10: DATA SOURCES ===================== -->
+<div class="tab-content" id="tab-sources" data-tab-title="10. Data Sources">
+  <h2>10. Data Sources</h2>
+
+  <table>
+    <tr><th>Source</th><th>Tables/Objects</th><th>Method</th></tr>
+    <tr><td>Gold DB (P01)</td><td>YBASUBST, YTFI_BA_SUBST</td><td>SQLite query</td></tr>
+    <tr><td>Gold DB (P01)</td><td>bseg_union + BKPF (bsak for vendor lines)</td><td>SQLite join</td></tr>
+    <tr><td>Gold DB (P01)</td><td>cts_transports + cts_objects</td><td>Transport timeline</td></tr>
+    <tr><td>Gold DB (P01)</td><td>GB901 (583 rows), GB02C, T100_ZFI, T80D, GB903</td><td>RFC extraction (this session)</td></tr>
+    <tr><td>P01 Live RFC</td><td>LFB1 (vendor master)</td><td>RFC_READ_TABLE</td></tr>
+    <tr><td>P01 Live RFC</td><td>PA0001 (HR master data)</td><td>RFC_READ_TABLE</td></tr>
+    <tr><td>P01 Live RFC</td><td>BKPF + BSEG (recent TV docs)</td><td>RFC_READ_TABLE</td></tr>
+    <tr><td>Extracted Code</td><td>ZXTRVU05_RPY.abap (Travel exit)</td><td>Code analysis</td></tr>
+    <tr><td>Email</td><td>3 embedded screenshots (posting run, error log, posting lines)</td><td>Image analysis</td></tr>
+    <tr><td>Knowledge</td><td>basu_mod_technical_autopsy.md, finance_validations_and_substitutions_autopsy.md</td><td>Framework docs</td></tr>
+  </table>
+
+  <p><strong>New tables added to Gold DB this session:</strong> GB901 (583 rows), GB02C (10 rows), T100_ZFI (36 rows), T80D (8 rows), GB903 (3 rows).</p>
+  <p><strong>New knowledge created:</strong> <code>knowledge/domains/FI/travel_busarea_derivation.md</code> — documents the multi-layer BusA derivation chain for Travel postings.</p>
+
+  <hr>
+  <p style="text-align:center;color:var(--sap-text-light);font-size:12px;margin-top:24px;">
+    Generated 2026-04-08 | AI-assisted root cause analysis | UNESCO SAP Intelligence Platform
+  </p>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  // Find the button that matches
+  const tabs = ['summary','chain','investigation','exit','rootcause','nextsteps','accountmap','evidence','fix','sources'];
+  const idx = tabs.indexOf(id);
+  if (idx >= 0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+}
+</script>
+
+</body>
+</html>
