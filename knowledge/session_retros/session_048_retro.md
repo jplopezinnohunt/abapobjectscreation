@@ -19,7 +19,7 @@ INC-000006073 — IIEP traveler Katja HINZ's travel advance posting failed. Inve
 | 8 | Brain annotation framework (`brain_v2/annotations/`) — annotate, search, recover | Tool |
 | 9 | Annotation ingestor wired into Brain build (Phase 6 in cli.py) | Tool |
 | 10 | 30 objects annotated, 41 annotations seeded (session #048 + historical recovery) | Knowledge |
-| 11 | Code Brain Strategy doc (`knowledge/domains/Brain_Architecture/code_brain_strategy.md`) | Architecture |
+| 11 | Code Brain Strategy doc (`Brain_Architecture/code_brain_strategy.md`) | Architecture |
 | 12 | Historical annotation recovery plan (`brain_v2/annotations/recover_historical_annotations.md`) | Plan |
 | 13 | 6 feedback rules saved | Feedback |
 | 14 | PMO updated: H34 (HIGH) + G55-G58 (backlog) | PMO |
