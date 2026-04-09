@@ -1,0 +1,87 @@
+[
+  {
+    "id": "INC-000006073",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "PRRW Travel posting RW609 + ZFI020 for IIEP traveler on UNES-funded trip",
+    "reporter": "Rita Doroszlai (FU/IEP)",
+    "received_date": "2026-04-07",
+    "analyzed_session": 48,
+    "domain": "Travel",
+    "secondary_domains": ["FI", "HCM", "BusinessPartner"],
+    "transactions": ["PRRW", "PR02", "FK02", "PA30", "GGB1", "GGB0", "YFI_BASU_MOD"],
+    "primary_object_id": "0101004544",
+    "primary_subject": "Vendor 10133079 (Katja HINZ) — Posting Run 0100384694",
+    "company_codes_involved": ["IIEP", "UNES"],
+    "scenario": "intercompany_travel_advance",
+    "error_messages": [
+      {"id": "RW609", "text": "Error in document &1 &2 &3", "raised_at": "LHRTSU05.abap:155"},
+      {"id": "ZFI020", "text": "For IIEP company code, only use business area PAR, IBA or FEL", "raised_at": "GGB0 step 2IIEP###001"}
+    ],
+    "root_cause_summary": "Two independent factors converged: (1) NEW intercompany trip — first time the employee's UNES-fund posting created a cross-company-code document, exposing that LHRTSF01.abap:852 only fills GSBER for same-company lines; (2) OLD vendor master defect — vendor created in 2016 with KTOKK=SCSA → LFB1.AKONT=2021011 in IIEP, which is the only AKONT not covered by GGB1 substitution rule 3IIEP###002 (which covers 2021042/2021061). All three fallback safety nets are independently broken: BAdI PA0027-02 expired 2021-01-31, ZXTRVU05 inst_fund_ba_wbs_cc commented out for non-UNES, GGB1 rule has no entry for HKONT=2021011.",
+    "code_validation_chain": [
+      "LHRTSF01.abap:852 IF epk-bukst = epk-bukrs --> NO MATCH (IIEP <> UNES) --> GSBER stays empty",
+      "LHRTSF01.abap:1693 CLEAR epk-gsber on vendor lines (koart=K, ktosl=HRP)",
+      "ZCL_IM_TRIP_POST_FI_CM00A.abap:12-37 reads PA0027-02 --> expired 2021 --> CHECK sy-subrc exits",
+      "ZXTRVU05.abap:63 WHEN OTHERS --> inst_fund_ba_wbs_cc COMMENTED OUT",
+      "LHRTSU05.abap:155 BAPI_ACC_EMPLOYEE_PAY_POST returns error --> wrap as RW609 + ZFI020 text"
+    ],
+    "scope": {
+      "iiep_travelers_with_unes_funded_trips": 62,
+      "with_akont_2021042_OK": 61,
+      "with_akont_2021011_FAIL": 1,
+      "exposed_traveler": "10133079 Katja HINZ",
+      "preventive_check_targets": ["MGIE (25 docs use GL 2021011)", "ICBA (22 docs use GL 2021011)"]
+    },
+    "fix_path": {
+      "immediate": "PA30 — Extend PA0027 subtype 02 for vendor 10133079 (IIEP/PAR, current dates) — unblocks Rita today",
+      "structural": "FK02 — Change LFA1.KTOKK from SCSA to UNES for vendor 10133079 (corrects LFB1.AKONT IIEP from 2021011 to 2021042 which is GGB1-covered)",
+      "preventive": [
+        "YFI_BASU_MOD — Add HKONT=2021011 to YTFI_BA_SUBST for IIEP (no transport) so any future SCSA-GL exposure is auto-substituted",
+        "GGB1 — Add HKONT=2021011 to substitution rule 3IIEP###002 (transported)",
+        "ZXTRVU05 — Uncomment inst_fund_ba_wbs_cc in WHEN OTHERS branch (transported, requires testing)",
+        "Run vendor_master_integrity_check.py monthly to surface any other vendor with outlier AKONT vs same-KTOKK peers"
+      ]
+    },
+    "related_objects": [
+      "PA0001",
+      "PA0027",
+      "LFA1",
+      "LFB1",
+      "T077K",
+      "PTRV_SCOS",
+      "LHRTSF01",
+      "LHRTSU05",
+      "ZCL_IM_TRIP_POST_FI_CM00A",
+      "ZXTRVU05",
+      "YTFI_BA_SUBST",
+      "GB901",
+      "GB922"
+    ],
+    "related_claims": [
+      {"id": 11, "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"},
+      {"id": 12, "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"}
+    ],
+    "related_dq": ["DQ-001"],
+    "related_known_unknowns": ["KU-001", "KU-016", "KU-017", "KU-020"],
+    "analysis_doc": "knowledge/incidents/INC-000006073_travel_busarea.md",
+    "evidence_extracted_this_incident": {
+      "tables_added_to_gold_db": ["GB901 (583 rows)", "GB02C (10)", "T100_ZFI (36)", "T80D (8)", "GB903 (3)"],
+      "code_extracted": "34 SAP standard files (24,559 lines) in extracted_code/SAP_STANDARD/TV_TRAVEL/",
+      "knowledge_docs_created": [
+        "knowledge/domains/Travel/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "lessons": [
+      "When an incident exposes a NEW domain (Travel), create a dedicated knowledge/domains/<DOMAIN>/ folder before closing.",
+      "Always cross-check the configuration source-of-truth table. We checked YTFI_BA_SUBST (the user-friendly maintenance persistence) but the real GGB1 rules live in GB901/GB922 — which had to be extracted mid-incident.",
+      "An invisible 10-year defect can surface from a single new combination of inputs (employee fund change + intercompany scenario)."
+    ],
+    "open_followups": [
+      "Quantify MGIE/ICBA exposure (KU-017) — both have travelers using GL 2021011 in same-company mode today",
+      "Confirm with Travel/HR team whether intercompany was intentional in trip 0101004544 or a user error",
+      "Audit PA0027 subtype 02 expirations across all employees (BAdI safety net broken systemically?)"
+    ]
+  }
+]

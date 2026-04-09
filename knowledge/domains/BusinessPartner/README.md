@@ -33,6 +33,23 @@ LFA1.KTOKK (vendor account group)
 
 This chain is invisible in normal operations because same-company postings fill GSBER from the employee master before GGB1 needs to run. It only surfaces in intercompany scenarios.
 
+### Important — KTOKK is NOT enforced against AKONT
+
+T077K defines vendor account groups but does **not** store the AKONT mapping. AKONT is set on LFB1 manually at vendor creation. As a result, KTOKK and AKONT can drift across the master and there is **no SAP-enforced consistency check**. The "canonical mapping" is only observable from data (modal AKONT for each KTOKK across all vendors of that group).
+
+### Recurring integrity check
+
+[Zagentexecution/quality_checks/vendor_master_integrity_check.py](../../../Zagentexecution/quality_checks/vendor_master_integrity_check.py) — flags vendors whose `LFB1.AKONT` is an outlier vs the modal AKONT for the same `(KTOKK, BUKRS)` peer group, and cross-checks against `YTFI_BA_SUBST` for GGB1 coverage. **Run monthly** as part of housekeeping.
+
+```bash
+python Zagentexecution/quality_checks/vendor_master_integrity_check.py            # full scan
+python Zagentexecution/quality_checks/vendor_master_integrity_check.py --vendor 10133079  # one
+python Zagentexecution/quality_checks/vendor_master_integrity_check.py --ktokk SCSA --bukrs IIEP
+python Zagentexecution/quality_checks/vendor_master_integrity_check.py --json     # CI mode
+```
+
+DQ-001 in [brain_v2/agi/data_quality_issues.json](../../../brain_v2/agi/data_quality_issues.json) tracks this as `OPEN_RECURRING`.
+
 ## SAP Tables — Vendor Model
 
 ### Tier 1: Core Master Data (extract to Gold DB)

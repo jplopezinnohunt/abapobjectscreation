@@ -69,11 +69,65 @@ See `.agents/workflows/session_retro.md` for the existing 7-phase checklist:
 - Phase 2: PMO Reconciliation
 - Phase 3: Memory Update
 - Phase 4: Skill & Workflow Updates
+- Phase 4b: **Capture SAP Learnings** (added Session #050)
 - Phase 5: Ecosystem Sync
 - Phase 6: Commit
 - Phase 7: Confirm Closed
 
 **These phases remain mandatory and unchanged.** The AGI audit is additive.
+
+---
+
+## Phase 4b — Capture SAP Learnings (added Session #050)
+
+**Mandatory step before commit. Run this after Phase 4 (Skill & Workflow Updates).**
+
+Every session that touches SAP — investigation, extraction, configuration analysis,
+incident root cause — produces SAP knowledge that **must not stay only in the agent's
+context**. The session-end agent must explicitly ask:
+
+> "What did we learn about SAP itself this session that the next agent (or a fresh
+> investigator) needs to know? What did we get wrong? What was confusing? What
+> tables / classes / config behaviours surprised us?"
+
+### What counts as a SAP learning
+
+| Type | Promote to |
+|---|---|
+| A SAP table is NOT what its name suggests, OR carries a different field set than the standard | `knowledge/domains/<DOMAIN>/<topic>.md` + brain annotation + DQ entry if extraction is incomplete |
+| Two SAP tables are commonly confused (e.g., GB901/GB922 vs YTFI_BA_SUBST) | A dedicated `<topic>_distinction.md` knowledge doc |
+| A standard SAP behaviour differs from documentation (e.g., line-852 same-company-only) | Brain annotation on the affected object (cite `file.abap:line`) + add to relevant domain README |
+| A custom UNESCO mechanism (BAdI / Y/Z exit / substitution exit) | UNESCO custom enhancement registry + brain annotation |
+| A field is auto-restricted, declustered, missing, or behaves unexpectedly via RFC | DQ entry + `feedback_*` rule if it's a recurring pattern |
+| A transaction code, doc type, or company code has special handling | Domain README + brain annotation |
+| A config table value (T_*, V_*, GB_*) drives behaviour we didn't expect | Brain annotation on the table + cite the calling code |
+
+### Mandatory artifact updates
+
+Every Phase 4b run must answer YES or N/A to all of these:
+
+- [ ] Were any SAP tables, classes, or configurations encountered where my prior assumption was wrong? → If yes, document the correction.
+- [ ] Did any extracted code reveal a UNESCO-specific behaviour not in `.agents/rules/` or `knowledge/domains/`? → If yes, add it.
+- [ ] Did any annotation get added to brain_v2 that contradicts a previous annotation? → If yes, mark the previous one `superseded` (don't delete).
+- [ ] Are there SAP tables we cited but never extracted to Gold DB? → If yes, add to KU and to PMO.
+- [ ] Are there programs / classes we cited but never extracted to `extracted_code/`? → If yes, same.
+- [ ] Did the session show that a feedback rule is missing? → If yes, add it to `brain_v2/agent_rules/feedback_rules.json` (rule of the form: "next time you encounter X, do Y because Z").
+- [ ] Did we update CLAUDE.md with anything load-bearing for next session? → If yes, list it in the retro.
+
+### Output
+
+The retro file MUST contain a **"SAP Learnings This Session"** section listing
+every promoted item with file path. Empty section = explicit "N/A — no new SAP
+knowledge surfaced this session" with one-sentence justification. **Silent
+omission is a Phase 4b failure.**
+
+### Why this exists
+
+Session #050 spent half its time re-deriving INC-000006073 conclusions that
+were already in brain annotations, AND surfaced a major SAP-table-confusion
+(YTFI_BA_SUBST vs GB901/GB922) that would have stayed in chat memory if not
+explicitly captured. The brain v3 architecture only works if SAP knowledge
+makes it INTO the brain. This phase is the gate.
 
 ---
 

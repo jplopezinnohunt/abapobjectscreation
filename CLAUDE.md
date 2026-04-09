@@ -26,14 +26,34 @@ Zagentexecution/           # Task execution artifacts
 brain_v2/brain_state.json
 ```
 
-This single file contains:
-- 102 analyzed objects (with inline edges, annotations, claims, incidents)
-- 49 feedback rules (agent behavioral DNA)
-- 12 system-level claims with evidence trails
-- Cross-cutting indexes (by_incident, by_domain, uncertain_claims, superseded_claims)
-- **~28K tokens (2.8% of context)**
+This single file contains (Session #050 — 12 layers):
+- **Layer 1**: 136 analyzed objects with inline edges, annotations, claims, incidents
+- **Layer 2**: Cross-cutting indexes (by_incident — now enriched with status/doc/root_cause/fix, by_domain, uncertain_claims, superseded_claims)
+- **Layer 3**: 58 feedback rules (agent behavioral DNA)
+- **Layer 4**: 26 claims with evidence tier
+- **Layer 6**: 23 known_unknowns
+- **Layer 7**: 6 falsification predictions pending test
+- **Layer 8**: 15 superseded claims (anti-regression)
+- **Layer 9**: User questions (parked + answered)
+- **Layer 10**: Data quality issues (8 open)
+- **Layer 11**: First-class **incidents** (full root cause + fix path + analysis_doc inline) — added Session #050
+- **Layer 12**: **blind_spots** — names the brain talks about but does not classify as first-class objects (currently 20, all flavor MISSING) — added Session #050
+- `_coverage` — pct_classified metric (75.6%)
+- **~52K tokens (5.3% of context)**
 
 One Read call = full project intelligence. This REPLACES the old 50+ file session-start ceremony. NEVER skip this. If context compresses, re-read it.
+
+### Mandatory traversal order (rule `feedback_brain_first_then_grep`)
+
+When the user mentions an incident ID, transaction, or domain:
+1. **`brain_state.incidents`** → if ID matches, READ `incidents[id].analysis_doc` immediately
+2. **`brain_state.indexes.by_incident[id]`** → status, root_cause_summary, related_objects, doc
+3. **`brain_state.objects[X]`** for each related object → annotations, claims, knowledge_docs
+4. **`brain_state.blind_spots`** → if any related object is here, EXTRACT before continuing
+5. **`brain_state.data_quality`** + **`known_unknowns`** + **`rules`**
+6. **Only THEN** grep `knowledge/` as a fallback
+
+The brain is useless if you don't traverse it. Globbing for an incident file when the brain has the link is the failure mode this rule prevents.
 
 For mid-session queries without loading the full graph: `python brain_v2/graph_queries.py <command>`
 
@@ -308,26 +328,43 @@ Publishes: `sap-intelligence`, `sap-gui-automation` skills
 **Session end:** Follow `session-end.md` from ecosystem coordinator.
 **Propose new patterns to:** `ecosystem-coordinator/ecosystem/priority-actions.md`
 
-## Agent Knowledge Architecture (v3 — Session #049)
+## Agent Knowledge Architecture (v3 — Session #049, Layers 11+12 added Session #050)
 
 This project uses a **hybrid knowledge architecture** optimized for AI agent use.
 Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 
 ### Source of Truth (git-tracked, portable, irreplaceable)
-- `brain_v2/agent_rules/feedback_rules.json` — **46 behavioral rules** (severity-classified, with why + how_to_apply). Read at every session start.
+- `brain_v2/agent_rules/feedback_rules.json` — **58 behavioral rules** (severity-classified, with why + how_to_apply). Read at every session start.
 - `brain_v2/annotations/annotations.json` — Object-level findings from code analysis
 - `brain_v2/claims/claims.json` — System-level facts with evidence trails and confidence tiers
+- `brain_v2/incidents/incidents.json` — **First-class incident records** (added Session #050). Status, root cause, fix path, related objects, analysis_doc inline. Source for `brain_state.incidents`. Every incident processed via the `incident-analyst` subagent appends here.
 - `knowledge/domains/` — Rich domain documentation (15 domains)
+- `knowledge/incidents/` — **Canonical location for incident analysis docs** (added Session #050). All `INC-<id>_<slug>.md` files live here, NOT in domain folders.
 - `.agents/intelligence/PMO_BRAIN.md` — Pending work tracker
+- `.agents/skills/sap_incident_analyst/SKILL.md` — **Incident processing 7-step protocol** (added Session #050)
+- `.claude/agents/incident-analyst.md` — **Dedicated subagent for incidents** (added Session #050)
+- `Zagentexecution/quality_checks/` — **Recurring data quality checks** (added Session #050). Class-of-defect detectors promoted from incidents.
 
 ### Generated Artifacts (rebuildable)
 - `brain_v2/index/` — Text object index (one .md per analyzed object). Rebuild: `python -m brain_v2 index`
-- `brain_v2/output/brain_v2_graph.json` — NetworkX graph (52K nodes). Rebuild: `python -m brain_v2 build`
+- `brain_v2/output/brain_v2_graph.json` — NetworkX graph (53K nodes). Rebuild: `python -m brain_v2 build`
 - `brain_v2/output/brain_v2_active.db` — SQLite (PMO, claims, sessions). Rebuild: `python -m brain_v2 active-db`
+- `brain_v2/brain_state.json` — 12-layer agent state. Rebuild: `python brain_v2/rebuild_all.py`
 
 ### Session Start (2 reads, complete picture)
 1. Read this CLAUDE.md (overview)
-2. Read `brain_v2/agent_rules/feedback_rules.json` (behavioral detail)
+2. Read `brain_v2/brain_state.json` (full intelligence — 12 layers)
+
+### Brain v3 governance (rules learned Session #050)
+- `feedback_brain_first_then_grep` — CRITICAL. Traverse brain_state.incidents → by_incident → objects[X].knowledge_docs → blind_spots BEFORE any glob/grep.
+- `feedback_blind_spots_are_first_class` — HIGH. At session start, log `_coverage.pct_classified` and triage `blind_spots`. Don't let brain coverage decay.
+- `feedback_force_include_referenced_names` — HIGH. Any object referenced from annotations/claims/incidents is force-included in objects[]. Never let names we talk about fall out of the brain.
+
+### Incident processing
+When the user passes a support incident: invoke the `incident-analyst` subagent (or follow the `sap_incident_analyst` skill manually). The 7-step protocol is: PARSE → BRAIN LOOKUP → GOLD DB PULL → CODE TRACE → ROOT CAUSE → CLASS GENERALIZATION → BRAIN ANNOTATION. Output: `knowledge/incidents/INC-<id>_<slug>.md` + first-class record in `brain_v2/incidents/incidents.json`.
+
+### Session close — Phase 4b: Capture SAP Learnings (Session #050)
+Every session that touches SAP must explicitly answer: "What did we learn about SAP itself this session that the next agent needs to know?" See `.agents/workflows/session_close_protocol.md` Phase 4b for the mandatory checklist. Empty section in retro = explicit "N/A" with one-sentence justification. Silent omission is a Phase 4b failure.
 
 ### Legacy Memory (~/.claude/memory/)
 The `~/.claude/` memory files are a **cache**, not the source of truth. The authoritative knowledge lives in the project files above. If memory and project conflict, project wins.

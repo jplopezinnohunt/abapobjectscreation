@@ -1,13 +1,16 @@
 [
   {
     "id": "DQ-001",
-    "source": "LFB1 table",
-    "issue": "Vendor 200083534 has KTOKK=SCSA + AKONT=2021011, inconsistent with other employee vendors (expected 2021010 for PSCA)",
+    "source": "LFA1 + LFB1 + T077K (Vendor Master integrity)",
+    "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA → AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off — full vendor master never audited for KTOKK↔AKONT consistency.",
     "severity": "HIGH",
-    "impact": "Caused INC-000006073 — travel advance posting fails because GGB1 has no rule for 2021011",
-    "workaround": "Either change AKONT to 2021010, or add GGB1 substitution rule for 2021011",
+    "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEP↔UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
+    "workaround": "(a) Run vendor_master_integrity_check.py against Gold DB to list all LFB1 rows where AKONT does not match T077K canonical mapping for the LFA1.KTOKK. (b) For each violation, decide whether to correct AKONT (FK02) or extend GGB1 substitution (YFI_BASU_MOD). (c) Promote this to a recurring monthly check.",
     "discovered_session": 48,
-    "status": "OPEN"
+    "promoted_to_recurring_check": 50,
+    "related_check_script": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
+    "related_known_unknown": "KU-020",
+    "status": "OPEN_RECURRING"
   },
   {
     "id": "DQ-002",

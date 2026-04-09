@@ -117,6 +117,6 @@ PTRV_SCOS.COMP_CODE --DRIVES--> same-company vs intercompany posting
 
 ## References
 
-- [INC-000006073 Analysis](../FI/INC-000006073_travel_busarea_analysis.md)
+- [INC-000006073 Analysis](../../incidents/INC-000006073_travel_busarea.md)
 - [BusA Derivation Chain](../FI/travel_busarea_derivation.md)
 - [Session #048 Retro](../../knowledge/session_retros/session_048_retro.md)

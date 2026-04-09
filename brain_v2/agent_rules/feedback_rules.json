@@ -457,5 +457,68 @@
     "severity": "CRITICAL",
     "created_session": 49,
     "source_file": "feedback_commit_and_push_at_close.md"
+  },
+  {
+    "id": "feedback_incident_class_systemic_check",
+    "rule": "Every incident must be treated as a CLASS of defect, not a one-off. After identifying the root cause for the specific case (one vendor, one trip, one document), immediately ask: 'how many other rows in the same tables match this defect signature?' Promote the answer to a Gold DB query and a recurring data quality check.",
+    "why": "INC-000006073 found vendor 10133079 with KTOKK=SCSA + AKONT=2021011 mismatch. The user pointed out this is a class issue: vendor master KTOKK↔AKONT consistency is never audited. UNESCO has 316K vendors. Fixing only Katja's record leaves the same defect class lurking in the master data.",
+    "how_to_apply": "1. Root cause identified → distil it into a SQL signature (e.g., 'LFB1 rows where AKONT does not match T077K canonical mapping for the vendor LFA1.KTOKK')\n2. Run signature against Gold DB → count violations\n3. Add a DQ entry with status=OPEN_RECURRING\n4. Add a known_unknown if total exposure is unquantified\n5. Build a check script under Zagentexecution/quality_checks/ with CLI args (vendor_id, --all, --fix-mode)\n6. Add the check to monthly housekeeping\n7. Update the related skill so future agents trigger the same generalization automatically",
+    "severity": "CRITICAL",
+    "created_session": 50,
+    "source_file": "session_050_incident_methodology"
+  },
+  {
+    "id": "feedback_incident_processing_workflow",
+    "rule": "When the user passes a support incident (typically as .eml or pasted email text), follow the 7-step Incident Processing Protocol unprompted: (1) Parse, (2) Brain Lookup, (3) Gold DB Pull, (4) Code Trace, (5) Root Cause Reconstruction, (6) Class Generalization, (7) Brain Annotation. Produce the result as knowledge/incidents/INC-<id>_<slug>.md with the canonical structure.",
+    "why": "INC-000006073 took 2+ sessions because the methodology was being invented on the fly. The user formalized it at session #50 close: 'this will be a way of working once you are ready I will pass the next Incident'. The structure of INC-000006073_travel_busarea_analysis.md is the gold template — section 1 (issue as received), section 2 (executive summary), section 3 (domain primer), section 4 (component-by-component investigation), section 5 (fix path), section 6 (class generalization), section 7 (brain annotations).",
+    "how_to_apply": "Trigger conditions:\n- User pastes/attaches email with INC- number\n- User says 'incident', 'ticket', 'PRRW failure', 'F110 error', etc.\n\nMandatory sequence:\n1. PARSE: extract from email → ticket ID, reporter, transaction, document/object IDs, error messages, screenshots if any\n2. BRAIN LOOKUP: read brain_state.json → find related objects (by transaction, by table, by error code, by domain)\n3. GOLD DB PULL: query Gold DB for the offending records (master data + transaction data + config). If a needed table is missing, EXTRACT it before continuing.\n4. CODE TRACE: if a needed program/class is not in extracted_code/, EXTRACT it via sap_adt_api before continuing.\n5. ROOT CAUSE RECONSTRUCTION: walk the code line-by-line. Cite file:line in the document.\n6. CLASS GENERALIZATION (rule feedback_incident_class_systemic_check)\n7. BRAIN ANNOTATION: add DQ, KU, FALS, claims, and object annotations to brain_v2/. Run rebuild_all.py.\n\nNever skip steps. Never write the doc before code trace is complete. Never close the incident without brain annotations.",
+    "severity": "CRITICAL",
+    "created_session": 50,
+    "source_file": "session_050_incident_methodology"
+  },
+  {
+    "id": "feedback_incident_doc_canonical_structure",
+    "rule": "Incident analysis documents must follow the canonical 7-section structure proven on INC-000006073. Save under knowledge/incidents/INC-<id>_<slug>.md (move INC-000006073_travel_busarea.md there too — do not leave incidents scattered in domain folders).",
+    "why": "INC-000006073 was originally buried in knowledge/domains/FI/. Resolved Session #050: moved to knowledge/incidents/INC-000006073_travel_busarea.md even though the affected domain is Travel. Future incidents will have the same routing problem unless we standardize the location. Also: scattered incidents can't be indexed by the brain.",
+    "how_to_apply": "Canonical sections (in order):\n1. Issue — As Received (email text, screenshots, ticket header table)\n2. Executive Summary (root cause in 2-3 sentences + internal validation chain in code)\n3. Domain Primer (how the affected mechanism works at UNESCO — only the necessary background)\n4. Investigation (component-by-component, each subsection cites code file:line and Gold DB query)\n5. Fix Path (immediate / structural / preventive)\n6. Class Generalization (the SQL signature + count of other rows matching the same defect)\n7. Brain Annotations (list of DQ/KU/FALS/claims/object annotations queued for ingestion)\n\nFile location: knowledge/incidents/INC-<id>_<slug>.md\nIngestion: brain_v2/ingestors/incident_ingestor.py picks them up by glob.\nCross-link: each section that cites an object adds it to the by_incident index.",
+    "severity": "HIGH",
+    "created_session": 50,
+    "source_file": "session_050_incident_methodology"
+  },
+  {
+    "id": "feedback_extract_before_speculate",
+    "rule": "If the incident investigation needs a table or a program that is NOT yet in Gold DB or extracted_code/, STOP analysis and extract it first. Never speculate about what the code does or what the data looks like — extract, then analyze.",
+    "why": "INC-000006073 succeeded because we extracted LHRTSF01, LHRTSU05, ZCL_IM_TRIP_POST_FI_CM00A, ZXTRVU05, T077K, YTFI_BA_SUBST when we discovered we did not have them. Speculating would have produced a wrong root cause.",
+    "how_to_apply": "Decision rule:\n- Need a table? → PRAGMA gold DB → if missing, run sap_data_extraction skill\n- Need code? → ls extracted_code/ → if missing, run sap_adt_api skill\n- Need config? → query Gold DB → if missing, extract via RFC_READ_TABLE\nOnly resume the incident document AFTER the artifact is in the brain.",
+    "severity": "HIGH",
+    "created_session": 50,
+    "source_file": "session_050_incident_methodology"
+  },
+  {
+    "id": "feedback_brain_first_then_grep",
+    "rule": "When the user mentions an incident ID, transaction code, or domain, FIRST traverse brain_state.incidents, brain_state.objects[X].knowledge_docs, and brain_state.indexes.by_incident before any glob/grep. The brain holds the canonical pointer; grep is for last resort.",
+    "why": "Session #050: I had brain_state.json loaded with INC-000006073 in by_incident and the analysis_doc linked from ZCL_IM_TRIP_POST_FI_CM00A.knowledge_docs. I still globbed for the file and then RE-DERIVED conclusions that were already in the brain annotations. The brain doesn't fail because the data is wrong — it fails when the agent doesn't traverse it.",
+    "how_to_apply": "On every user prompt mentioning an incident/transaction/object:\n1. brain_state.incidents → if any record matches, READ incidents[id].analysis_doc immediately\n2. brain_state.indexes.by_incident[id] → lists status, root_cause_summary, related_objects, doc\n3. For each related object, read brain_state.objects[X].annotations and .claims\n4. ONLY if all of these are empty/insufficient, then grep/glob\n5. After acting, if you used grep where brain should have answered, raise a FALS or update brain to close the gap",
+    "severity": "CRITICAL",
+    "created_session": 50,
+    "source_file": "session_050_brain_v3_eval"
+  },
+  {
+    "id": "feedback_blind_spots_are_first_class",
+    "rule": "brain_state.blind_spots is the negative-space layer: object names the brain has talked about but does NOT carry as first-class objects. Every entry is a queue item: extract (MISSING flavor) or upgrade is_important() filter (GHOST flavor). At session start the agent must read coverage% and blind_spots before declaring 'brain loaded'.",
+    "why": "Session #050 found 20/82 referenced names (24%) absent from brain_state.objects — including PA0027 which is the root-cause table of the very incident the brain was indexing. The brain claimed 'full intelligence in one Read' but was missing first-class entries for objects whose annotations were already inlined elsewhere.",
+    "how_to_apply": "Session start protocol additions:\n1. After reading brain_state.json, log brain_state._coverage.pct_classified\n2. If coverage < 90%, list blind_spots and call out high-priority ones (PA0027, BAPI_*, ZCL_*)\n3. When investigating an incident, check if any blind_spot intersects the related_objects — if yes, treat extraction as a prerequisite (rule feedback_extract_before_speculate)\n4. When closing a session, every newly-extracted object should reduce blind_spots count. If blind_spots grows, something's slipping.",
+    "severity": "HIGH",
+    "created_session": 50,
+    "source_file": "session_050_brain_v3_eval"
+  },
+  {
+    "id": "feedback_force_include_referenced_names",
+    "rule": "build_brain_state.py is_important() must always force-include any object name referenced from annotations, claims, or incidents.related_objects. Object filtering heuristics are a layer ABOVE this base guarantee, never overriding it.",
+    "why": "Session #050: Without force-include, 4 of the 13 objects in INC-000006073's related_objects list were filtered out by SKIP_TYPES or by name-prefix rules — even though their annotations were the proof of root cause.",
+    "how_to_apply": "is_important(node, annotations, mandatory_names) signature — mandatory_names always wins. Build pipeline collects mandatory_names from annotations.json + claims.json + incidents/incidents.json before object selection.",
+    "severity": "HIGH",
+    "created_session": 50,
+    "source_file": "session_050_brain_v3_eval"
   }
 ]

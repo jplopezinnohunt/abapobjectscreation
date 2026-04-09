@@ -133,5 +133,41 @@
     "why_unknown": "Added in Session #049 without validation. Could be redundant with grep.",
     "raised_session": 49,
     "domain": "Brain_Architecture"
+  },
+  {
+    "id": "KU-020",
+    "question": "How many vendors in the 316K LFA1 master have an LFB1.AKONT that diverges from the canonical T077K mapping for their LFA1.KTOKK, and across which company codes?",
+    "why_unknown": "INC-000006073 surfaced ONE case (vendor 10133079, KTOKK=SCSA, AKONT=2021011 in IIEP). The full vendor master has never been audited for KTOKK↔AKONT consistency. Until the check runs we cannot know if this is 1 vendor, 100, or 10K.",
+    "raised_session": 50,
+    "domain": "BusinessPartner",
+    "priority": "HIGH",
+    "resolves_via": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
+    "related_dq": "DQ-001",
+    "related_incident": "INC-000006073"
+  },
+  {
+    "id": "KU-021",
+    "question": "Is the incident-processing way-of-working (parse email → extract → analyze with brain → write incident_analysis doc → annotate brain → propose fix) reproducible for the next incident, or did INC-000006073 succeed by luck?",
+    "why_unknown": "The pattern was synthesized retroactively from one successful incident. FALS-005 will test it on the next incident the user passes in.",
+    "raised_session": 50,
+    "domain": "Way_of_Working",
+    "priority": "MEDIUM"
+  },
+  {
+    "id": "KU-022",
+    "question": "Brain coverage of objects the brain itself talks about is only 75.6% (62/82). The 20 missing references include PA0027 (root cause of INC-000006073), bseg_union (golden query backbone), F110 (payment run transaction), LHRTSF01 line-level citations. Why is the gap so big and which gaps are real objects vs pseudo-references?",
+    "why_unknown": "The blind-spot detector was added in Session #050 and immediately surfaced 20 entries. Need to triage: which are real objects that need extraction (PA0027, ZCL_IM_TRIP_POST_FI_CM006, ZCL_IDFI_CGI_DMEE_FR), which are pseudo (LHRTSF01:852 is a code citation, inst_fund_ba_wbs_cc is a subroutine inside ZXTRVU05, GB901:2IIEP###001 is a config row).",
+    "raised_session": 50,
+    "domain": "Brain_Architecture",
+    "priority": "HIGH",
+    "blocked_on": "Triage of brain_state.blind_spots"
+  },
+  {
+    "id": "KU-023",
+    "question": "What is the brain's coverage of the FULL UNESCO landscape, not just the objects we've talked about? TADIR has hundreds of thousands of objects, the Gold DB has 68 of UNESCO's 100K+ tables, transports cover 7,745 objects across 21 modules. The 75.6% coverage metric only measures the closed loop (talked-about objects). What's the OPEN loop?",
+    "why_unknown": "We have no automated TADIR coverage scan. The 7,745 CTS transport objects represent the change-frequency view; TADIR covers the static view. Neither has been compared against brain_state.objects.",
+    "raised_session": 50,
+    "domain": "Brain_Architecture",
+    "priority": "HIGH"
   }
 ]

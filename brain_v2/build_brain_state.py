@@ -33,6 +33,9 @@ KNOWN_UNKNOWNS = BRAIN_V2 / "agi" / "known_unknowns.json"
 FALSIFICATION = BRAIN_V2 / "agi" / "falsification_log.json"
 USER_QUESTIONS = BRAIN_V2 / "agi" / "user_questions.json"
 DATA_QUALITY = BRAIN_V2 / "agi" / "data_quality_issues.json"
+# LAYER 11: First-class incident records (added Session #050 — fixes the
+# "agent has brain context but doesn't use it" failure mode)
+INCIDENTS = BRAIN_V2 / "incidents" / "incidents.json"
 
 SKIP_TYPES = {
     "FUND", "FUND_CENTER", "FUND_AREA", "TRANSPORT", "CODE_OBJECT",
@@ -48,12 +51,17 @@ KEY_TABLES = {
 }
 
 
-def is_important(node, annotations):
+def is_important(node, annotations, mandatory_names=frozenset()):
     """Criteria for including a node in brain_state.json."""
     name = node.get("name", "")
     ntype = node.get("type", "")
     meta = node.get("metadata", {})
 
+    if name in mandatory_names:
+        # Forced inclusion: referenced from incidents/annotations/claims.
+        # Even if SKIP_TYPES says no, an object the brain has talked about
+        # must remain queryable from the brain.
+        return True
     if ntype in SKIP_TYPES:
         return False
     if name in annotations:
@@ -66,6 +74,50 @@ def is_important(node, annotations):
     if ntype == "SAP_TABLE" and name in KEY_TABLES:
         return True
     return False
+
+
+def collect_referenced_names(annotations, claims, incidents_records):
+    """Walk every annotation/claim/incident record and gather every object
+    name referenced. Used both to FORCE inclusion in objects[] and to flag
+    blind spots (referenced but missing from the graph entirely)."""
+    names = set()
+    # From annotations
+    for obj_name, payload in annotations.items():
+        names.add(obj_name)
+        for ann in payload.get("annotations", []):
+            for rel in ann.get("related", []):
+                if rel:
+                    names.add(rel)
+    # From claims
+    for c in claims:
+        for rel in c.get("related_objects", []):
+            if rel:
+                names.add(rel)
+    # From incidents.json — related_objects + the names parsed from
+    # code_validation_chain (objects appear as ZCL_..., LHRTS..., GB901, etc)
+    for rec in incidents_records:
+        for rel in rec.get("related_objects", []):
+            if rel:
+                names.add(rel)
+    return names
+
+
+def detect_blind_spots(referenced_names, graph_node_names, objects):
+    """Blind spot = a name we have TALKED about (annotations / incidents /
+    claims) that is NOT present in the brain as an object. The agent should
+    treat these as 'extract me' priorities."""
+    in_objects = set(objects.keys())
+    in_graph = set(graph_node_names)
+    blind = []
+    for name in sorted(referenced_names):
+        if name in in_objects:
+            continue  # already classified
+        # Two flavors:
+        #   GHOST   — name appears in graph but was filtered out by is_important
+        #   MISSING — name does not exist in graph at all (not extracted)
+        flavor = "GHOST" if name in in_graph else "MISSING"
+        blind.append({"name": name, "flavor": flavor})
+    return blind
 
 
 def build_object_entry(node, out_edges, in_edges, annotations, claims):
@@ -154,18 +206,59 @@ def main():
         in_edges[e["to"]].append(e)
 
     print("Selecting important objects...")
+    # Pre-load incidents.json so we can FORCE-include any object referenced
+    # from a first-class incident record. Without this the brain stays blind
+    # to the very objects whose annotations explain past incidents.
+    def _load_optional_local(path):
+        if path.exists():
+            return json.load(open(path, encoding="utf-8"))
+        return []
+    incidents_pre = _load_optional_local(INCIDENTS)
+    referenced_names = collect_referenced_names(annotations, claims, incidents_pre)
+    print(f"  {len(referenced_names)} names referenced from annotations/claims/incidents")
+
     objects = {}
+    graph_node_names = set()
     for n in nodes:
-        if not is_important(n, annotations):
+        graph_node_names.add(n.get("name", ""))
+        if not is_important(n, annotations, mandatory_names=referenced_names):
             continue
         name = n.get("name", "")
         objects[name] = build_object_entry(n, out_edges, in_edges, annotations, claims)
 
+    # Detect blind spots: names we keep TALKING about but don't classify.
+    blind_spots = detect_blind_spots(referenced_names, graph_node_names, objects)
+    print(f"  {len(blind_spots)} blind spots detected (referenced but missing from objects[])")
+
     print("Building cross-cutting indexes...")
-    by_incident = defaultdict(list)
+    # by_incident now stores dict with related_objects + the first-class
+    # record fields (status, root_cause, doc, fix_path) so an agent that
+    # reads the index alone gets enough to act without grepping.
+    incidents_records_local = incidents_pre  # already loaded
+    inc_record_by_id = {r["id"]: r for r in incidents_records_local}
+
+    by_incident_objs = defaultdict(list)
     for name, obj in objects.items():
         for inc in obj.get("incidents", []):
-            by_incident[inc].append(name)
+            by_incident_objs[inc].append(name)
+
+    by_incident = {}
+    # Merge: every incident referenced from an object annotation OR from a
+    # first-class incidents.json record gets an entry.
+    all_inc_ids = set(by_incident_objs.keys()) | set(inc_record_by_id.keys())
+    for inc_id in sorted(all_inc_ids):
+        rec = inc_record_by_id.get(inc_id, {})
+        related = sorted(set(by_incident_objs.get(inc_id, []))
+                         | set(rec.get("related_objects", [])))
+        by_incident[inc_id] = {
+            "status": rec.get("status", "UNKNOWN"),
+            "title": rec.get("title", ""),
+            "domain": rec.get("domain", ""),
+            "analysis_doc": rec.get("analysis_doc", ""),
+            "root_cause_summary": rec.get("root_cause_summary", "")[:300],
+            "fix_immediate": rec.get("fix_path", {}).get("immediate", "") if isinstance(rec.get("fix_path"), dict) else "",
+            "related_objects": related,
+        }
 
     by_domain = defaultdict(list)
     for name, obj in objects.items():
@@ -197,22 +290,40 @@ def main():
     falsification = load_optional(FALSIFICATION)
     user_questions = load_optional(USER_QUESTIONS)
     data_quality = load_optional(DATA_QUALITY)
+    incidents_records = incidents_pre  # already loaded above
     superseded_full = [c for c in claims if c.get("claim_type") == "superseded"]
 
+    # Coverage metrics — what's the brain's percent-coverage of the objects
+    # it has TALKED about? This is what tells the agent at session-start
+    # "you don't know what you don't know".
+    coverage = {
+        "objects_in_brain": len(objects),
+        "names_referenced": len(referenced_names),
+        "names_classified": len(referenced_names & set(objects.keys())),
+        "blind_spots_total": len(blind_spots),
+        "blind_spots_ghosts": sum(1 for b in blind_spots if b["flavor"] == "GHOST"),
+        "blind_spots_missing": sum(1 for b in blind_spots if b["flavor"] == "MISSING"),
+    }
+    if referenced_names:
+        coverage["pct_classified"] = round(
+            100 * coverage["names_classified"] / len(referenced_names), 1
+        )
+
     brain_state = {
-        "_design": "Object-centric knowledge graph with 10 AGI layers. 1 Read = full self-aware intelligence.",
+        "_design": "Object-centric knowledge graph with 11 AGI layers. 1 Read = full self-aware intelligence. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode.",
         "_stats": {
             "objects": len(objects),
             "rules": len(rules),
             "claims": len(claims),
             "incidents": len(by_incident),
+            "incident_records": len(incidents_records),
             "domains": len(by_domain),
             "known_unknowns": len(known_unknowns),
             "falsification_pending": len([f for f in falsification if f.get("status") == "PENDING"]),
             "user_questions_open": len([q for q in user_questions if q.get("status") != "ANSWERED"]),
             "data_quality_open": len([d for d in data_quality if d.get("status") == "OPEN"]),
             "superseded": len(superseded_full),
-            "session": 49,
+            "session": 50,
         },
         # LAYER 1: Object-centric graph
         "objects": objects,
@@ -238,6 +349,17 @@ def main():
         "user_questions": user_questions,
         # LAYER 10: Data quality issues — source data bugs to flag
         "data_quality": data_quality,
+        # LAYER 11: First-class incident records — full root cause + fix path
+        # + analysis_doc inline. When user mentions an incident ID, the agent
+        # MUST read incidents[id].analysis_doc as the first action, not grep.
+        "incidents": incidents_records,
+        # LAYER 12: Blind spots — names the brain has talked about (in
+        # annotations / claims / incidents) but does NOT carry as first-class
+        # objects. Each is a queue item: extract or upgrade. The agent should
+        # read this at session start and treat MISSING flavor entries as
+        # extraction-priority work, GHOST entries as filter-tuning work.
+        "blind_spots": blind_spots,
+        "_coverage": coverage,
     }
 
     out = json.dumps(brain_state, indent=2, ensure_ascii=False)
@@ -250,6 +372,11 @@ def main():
     print(f"  {len(objects)} objects with inline relationships")
     print(f"  {len(rules)} rules | {len(claims)} claims")
     print(f"  {len(by_incident)} incidents | {len(by_domain)} domains indexed")
+    print(f"  {len(incidents_records)} first-class incident records")
+    print(f"  Coverage: {coverage.get('pct_classified', 0)}% "
+          f"({coverage['names_classified']}/{coverage['names_referenced']} referenced names classified)")
+    print(f"  Blind spots: {coverage['blind_spots_total']} "
+          f"(ghosts={coverage['blind_spots_ghosts']}, missing={coverage['blind_spots_missing']})")
 
 
 if __name__ == "__main__":

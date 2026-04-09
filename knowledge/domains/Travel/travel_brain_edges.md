@@ -129,6 +129,6 @@ python sap_brain.py --ingest-domain Travel \
   --code-dir extracted_code/UNESCO_CUSTOM_LOGIC/TV_TRAVEL/ \
   --edges knowledge/domains/Travel/travel_brain_edges.md \
   --knowledge knowledge/domains/Travel/README.md \
-  --knowledge knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md \
+  --knowledge knowledge/incidents/INC-000006073_travel_busarea.md \
   --knowledge knowledge/domains/FI/travel_busarea_derivation.md
 ```
