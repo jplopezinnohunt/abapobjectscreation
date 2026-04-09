@@ -18,14 +18,32 @@ Zagentexecution/           # Task execution artifacts
 
 **CRITICAL RULE:** Core modules (`lib/sap-webgui-core/`) must NEVER contain transaction-specific logic. They provide generic primitives that work across ALL SAP transactions.
 
-## 📚 Required Reading
+## 🧠 MANDATORY FIRST ACTION — Load Brain State
 
-Before making changes, read these files in order:
+**EVERY session, before ANY other action, read this ONE file:**
+
+```
+brain_v2/brain_state.json
+```
+
+This single file contains:
+- 102 analyzed objects (with inline edges, annotations, claims, incidents)
+- 49 feedback rules (agent behavioral DNA)
+- 12 system-level claims with evidence trails
+- Cross-cutting indexes (by_incident, by_domain, uncertain_claims, superseded_claims)
+- **~28K tokens (2.8% of context)**
+
+One Read call = full project intelligence. This REPLACES the old 50+ file session-start ceremony. NEVER skip this. If context compresses, re-read it.
+
+For mid-session queries without loading the full graph: `python brain_v2/graph_queries.py <command>`
+
+## 📚 Required Reading (after brain_state.json)
 
 1. **[lib/README.md](lib/README.md)** - Framework documentation
 2. **[.agents/rules/sapwebgui_framework_findings.md](.agents/rules/sapwebgui_framework_findings.md)** - 103 experiments consolidated
 3. **[.agents/rules/multi_agent_architecture.md](.agents/rules/multi_agent_architecture.md)** - Multi-agent design
 4. **[.agents/workflows/hybrid_orchestration.md](.agents/workflows/hybrid_orchestration.md)** - When to use WebGUI vs BAPI
+5. **[Brain_Architecture/brain_design_specification_v3.md](Brain_Architecture/brain_design_specification_v3.md)** - Brain v3 hybrid architecture (MANDATORY before any brain_v2/ changes)
 
 ## 🎓 Key Learnings (DO NOT IGNORE)
 
@@ -229,6 +247,15 @@ When you complete a task, the result should have:
 - ✅ Screenshots for major steps
 - ✅ Archived in `Zagentexecution/tasks/`
 
+## 📐 Companion & Report Quality Rules
+
+1. **Cross-reference rule:** When updating ANY artifact (report, companion, skill), grep for the entity name (HBKID, table name, etc.) across ALL companions and reports. Fix every stale reference — not just the file you're editing.
+2. **Gold DB before "not accessible":** Before claiming a table is not readable via RFC, check the Gold DB first (`SELECT name FROM sqlite_master WHERE type='table'`). The Gold DB has 68+ tables already extracted.
+3. **Key validation:** Never infer SAP key construction from naming patterns. Always verify against actual data (read 3 rows from the table).
+4. **Companion standard:** Every section needs: what is it, why it matters, who uses it, what happens if it's wrong, real examples with real data. A table without explanation is not documentation.
+5. **No pending on closed reports:** If all transports are released, the report is CLOSED. No "pending" language.
+6. **CLI tools accept arguments:** Scripts that check/compare specific entities (bank, transport, GL) must accept CLI arguments — never hardcode the entity and require file edits to change it.
+
 ## 💾 Preserving Knowledge
 
 After completing a task:
@@ -281,13 +308,26 @@ Publishes: `sap-intelligence`, `sap-gui-automation` skills
 **Session end:** Follow `session-end.md` from ecosystem coordinator.
 **Propose new patterns to:** `ecosystem-coordinator/ecosystem/priority-actions.md`
 
-## Memory Architecture
+## Agent Knowledge Architecture (v3 — Session #049)
 
-This project uses file-based memory with a strict architecture:
-- `memory/MEMORY.md` — **Index only** (under 150 lines). Lines after 200 are silently truncated.
-- `memory/topic_*.md` — Detail files read at every session start. No size limit.
-- `memory/feedback_*.md` — Corrections and preferences.
-- `memory/project_*.md` — Project state and decisions.
+This project uses a **hybrid knowledge architecture** optimized for AI agent use.
+Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 
-**Rule:** If you only read MEMORY.md, you are missing most of the project's memory.
-Read ALL files it points to.
+### Source of Truth (git-tracked, portable, irreplaceable)
+- `brain_v2/agent_rules/feedback_rules.json` — **46 behavioral rules** (severity-classified, with why + how_to_apply). Read at every session start.
+- `brain_v2/annotations/annotations.json` — Object-level findings from code analysis
+- `brain_v2/claims/claims.json` — System-level facts with evidence trails and confidence tiers
+- `knowledge/domains/` — Rich domain documentation (15 domains)
+- `.agents/intelligence/PMO_BRAIN.md` — Pending work tracker
+
+### Generated Artifacts (rebuildable)
+- `brain_v2/index/` — Text object index (one .md per analyzed object). Rebuild: `python -m brain_v2 index`
+- `brain_v2/output/brain_v2_graph.json` — NetworkX graph (52K nodes). Rebuild: `python -m brain_v2 build`
+- `brain_v2/output/brain_v2_active.db` — SQLite (PMO, claims, sessions). Rebuild: `python -m brain_v2 active-db`
+
+### Session Start (2 reads, complete picture)
+1. Read this CLAUDE.md (overview)
+2. Read `brain_v2/agent_rules/feedback_rules.json` (behavioral detail)
+
+### Legacy Memory (~/.claude/memory/)
+The `~/.claude/` memory files are a **cache**, not the source of truth. The authoritative knowledge lives in the project files above. If memory and project conflict, project wins.

@@ -1,0 +1,4507 @@
+{
+  "_design": "Object-centric knowledge graph with 10 AGI layers. 1 Read = full self-aware intelligence.",
+  "_stats": {
+    "objects": 102,
+    "rules": 50,
+    "claims": 26,
+    "incidents": 3,
+    "domains": 9,
+    "known_unknowns": 19,
+    "falsification_pending": 4,
+    "user_questions_open": 0,
+    "data_quality_open": 8,
+    "superseded": 15,
+    "session": 49
+  },
+  "objects": {
+    "YCL_IDFI_CGI_DMEE_UTIL": {
+      "type": "ABAP_CLASS",
+      "domain": "FI",
+      "reads_tables": [
+        "FPAYP",
+        "PAYR",
+        "REGUH",
+        "T012",
+        "T012K",
+        "T015L",
+        "T042Z",
+        "YTFI_PPC_STRUC",
+        "YTFI_PPC_TAG"
+      ],
+      "other_edges": [
+        {
+          "to": "YTFI_PPC_STRUC.CODE_ORD",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_STRUC.PAY_FIELD",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_STRUC.PAY_STRUC",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_STRUC.PAY_TYPE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_STRUC.PPC_CODE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_STRUC.PPC_VALUE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_TAG.DEB_CRE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_TAG.LAND1",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFI_PPC_TAG.TAG_FULL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "FPAYP.XREF3",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "Z_WF_FI_EXCLUDE_NOTIF_EMAIL": {
+      "type": "ABAP_REPORT",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "USR05"
+      ],
+      "other_edges": [
+        {
+          "to": "USR05.PARVA",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "Z_WF_FI_PR_WF_ACTOR1_DET": {
+      "type": "ABAP_REPORT",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "VBWF15",
+        "ZFI_PAYREL_EMAIL"
+      ],
+      "calls_fms": [
+        "OPEN_FI_PERFORM_00002220_P",
+        "RH_SAP_ORG_OBJEC_ACTORS_LIST",
+        "RH_STRUC_GET"
+      ],
+      "writes_tables": [
+        "ACTOR_TAB"
+      ]
+    },
+    "Z_WF_GET_CERTIFYING_OFFICER": {
+      "type": "ABAP_REPORT",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "ADR6",
+        "USR21",
+        "ZFI_PAYREL_EMAIL"
+      ],
+      "calls_fms": [
+        "Z_GET_CERTIF_OFFICER_UNESDIR",
+        "Z_UBC_USER_GET_BY_EMAIL"
+      ],
+      "knowledge_docs": [
+        "knowledge/session_plans/session_038_plan.md",
+        "knowledge/session_retros/session_038_retro.md"
+      ]
+    },
+    "YBSEG_REL": {
+      "type": "ABAP_REPORT",
+      "domain": "FI",
+      "calls_fms": [
+        "SGOS_NOTE_CREATE_DIALOG"
+      ],
+      "writes_tables": [
+        "BSEG",
+        "BSIK"
+      ]
+    },
+    "BSEG": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "annotations": [
+        {
+          "tag": "ARCHITECTURE",
+          "finding": "BSEG is declustered in P01. Can read via RFC_READ_TABLE. No MANDT in WHERE clause.",
+          "timestamp": "2026-04-09T08:57:54.596123",
+          "session": "#029",
+          "related": [
+            "RFC_READ_TABLE"
+          ]
+        },
+        {
+          "tag": "ARCHITECTURE",
+          "finding": "BSEG is NOT a table to extract — it is a JOIN via bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). 4.7M rows. Never extract or enrich BSEG directly.",
+          "timestamp": "2026-04-09T08:57:54.658680",
+          "impact": "Extracting BSEG wastes time and produces incomplete data. Use bseg_union VIEW in Gold DB.",
+          "session": "#035",
+          "related": [
+            "bseg_union",
+            "BSIS",
+            "BSAS",
+            "BSIK",
+            "BSAK",
+            "BSID",
+            "BSAD"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        }
+      ]
+    },
+    "ZNOTREJECT": {
+      "type": "ABAP_REPORT",
+      "domain": "FI",
+      "calls_fms": [
+        "SGOS_NOTE_DISPLAY"
+      ]
+    },
+    "PA0001": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "CREATE_REQUEST",
+        "IF_HRASR00GEN_SERVICE_DO_OPERATIONS",
+        "INIT_DEFAULT_VALUES_REQUEST",
+        "LHRTSU02",
+        "REQUESTSET_GET_ENTITYSET",
+        "RPRTRV10",
+        "YRPR_TRIP_HEADER_DATA",
+        "YRPR_TRIP_HEADER_DATA_EXTRACT",
+        "ZCL_HR_FIORI_OFFBOARDING_REQ",
+        "ZHRAUTOSTEP"
+      ],
+      "annotations": [
+        {
+          "tag": "KEY_DATA",
+          "finding": "HR org assignment. GSBER field = employee Business Area. GEBER = fund. Fund change from IIEP to UNES fund triggered INC-000006073.",
+          "timestamp": "2026-04-09T08:57:55.521439",
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "GSBER",
+          "related": [
+            "PA0027",
+            "PTRV_SCOS"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 1,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_design_specification_v3.md",
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md"
+      ]
+    },
+    "ZHRAUTOSTEP": {
+      "type": "ABAP_REPORT",
+      "domain": "HCM",
+      "reads_tables": [
+        "PA0001",
+        "T503",
+        "T510",
+        "T510M",
+        "T511",
+        "T7UNPAD_DSPA"
+      ],
+      "calls_fms": [
+        "HR_ECM_CONVERT_CURRENCY",
+        "HR_ENTRY_DATE",
+        "RP_EVALUATE_INDIRECTLY_P0008"
+      ],
+      "writes_tables": [
+        "I_510",
+        "I_510M",
+        "TBLGART"
+      ],
+      "other_edges": [
+        {
+          "to": "PA0001.PERSG",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.PLANS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.W_PLANS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T503.TRFKZ",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T503.W_TRFKZ",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "ZLHRTV_PTRA_ADDONF01": {
+      "type": "ABAP_REPORT",
+      "domain": "HCM",
+      "calls_fms": [
+        "RH_COSTCENTER_OF_OBJECT_GET"
+      ]
+    },
+    "ZNHR_LOAD_PAYSCALE_GROUPS": {
+      "type": "ABAP_REPORT",
+      "domain": "HCM",
+      "reads_tables": [
+        "T100",
+        "T510",
+        "T510F",
+        "TCURX"
+      ],
+      "calls_fms": [
+        "BDC_CLOSE_GROUP",
+        "BDC_INSERT",
+        "BDC_OPEN_GROUP",
+        "KD_GET_FILENAME_ON_F4",
+        "Z_FLS_FILE_UPLOAD_DOWNLOAD"
+      ],
+      "writes_tables": [
+        "ADJACENT"
+      ],
+      "other_edges": [
+        {
+          "to": "T100.TEXT",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "ZXHRTRVSTATU01": {
+      "type": "ENHANCEMENT",
+      "domain": "HCM",
+      "calls_fms": [
+        "Z_RFC_EXT_DEST_TRIP_DELETE"
+      ]
+    },
+    "ZZHRPAF02": {
+      "type": "ABAP_REPORT",
+      "domain": "HCM",
+      "reads_tables": [
+        "ADRP",
+        "T001P",
+        "T005T",
+        "T500P",
+        "T501T",
+        "T502T",
+        "T510",
+        "T510M",
+        "T512T",
+        "T547S",
+        "T577",
+        "T5UCF",
+        "USR21",
+        "YHR_PAFTXT"
+      ],
+      "calls_fms": [
+        "FILE_GET_NAME",
+        "HRWPC_RFC_MASSG_TEXT_GET",
+        "HRWPC_RFC_MASSN_TEXT_GET",
+        "HR_ENTRY_DATE",
+        "HR_PAYROLL_SIMULATION_SUBMIT",
+        "HR_PL_WORD_OLE_FORMLETTER",
+        "HR_READ_FOREIGN_OBJECT_TEXT",
+        "HR_UN_RECLASS_NEXT_INCR_DATE",
+        "LIST_FROM_MEMORY",
+        "LIST_TO_ASCI",
+        "RH_CHECK_WWORD_SUPPORT"
+      ],
+      "writes_tables": [
+        "P_LINES",
+        "YHR_PAFNUM"
+      ],
+      "other_edges": [
+        {
+          "to": "T001P.BTEXT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T001P.MOLGA",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T005T.LANDX",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T005T.NATIO",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T500P.NAME1",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T501T.PTEXT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T502T.FTEXT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T510.BETRG",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T547S.CTTXT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T577.INTKY",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "LHRTSF01": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "T706D",
+        "TA20SWITCH"
+      ],
+      "calls_fms": [
+        "BALW_BAPIRETURN_GET2",
+        "DDIF_FIELDINFO_GET",
+        "HRCA_CALCULATE_TAXES_GROSS",
+        "HRCA_CHECK_JURISDICTION_ACTIVE",
+        "HRCA_COMPANYCODE_GETDETAIL",
+        "HRCA_DC_ACTIVE_CHECK",
+        "HRCA_FIND_CUSTOMER_FOR_PERSNO",
+        "HRCA_FIND_VENDOR_FOR_PERSNO",
+        "HRCA_FI_ACCT_DET_CROSS_COMPANY",
+        "SAPGUI_PROGRESS_INDICATOR"
+      ],
+      "writes_tables": [
+        "ACCOUNTINGOBJECTS",
+        "EPK",
+        "INT_ROT_AWKEY",
+        "PTRV_ROT_AWKEY",
+        "ROT_EP",
+        "STORE_BZ",
+        "STORE_BZ_CAP",
+        "STORE_BZ_PDS",
+        "TAX_ITEM_OUT"
+      ],
+      "other_edges": [
+        {
+          "to": "GSBER",
+          "type": "CLEARS_FIELD"
+        }
+      ],
+      "annotations": [
+        {
+          "tag": "CRITICAL",
+          "finding": "IF epk-bukst = epk-bukrs — only propagates GSBER for same-company postings. Intercompany counterpart lines get NO GSBER.",
+          "timestamp": "2026-04-09T08:51:13.763601",
+          "impact": "Any intercompany posting where partner company has no fallback BusA derivation will fail",
+          "line": 852,
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "GSBER",
+          "related": [
+            "PA0001.GSBER",
+            "PTRV_SCOS.COMP_CODE"
+          ]
+        },
+        {
+          "tag": "SIDE_EFFECT",
+          "finding": "CLEAR epk-gsber on vendor lines with koart=K and ktosl=HRP/HRV",
+          "timestamp": "2026-04-09T08:51:13.806309",
+          "impact": "Vendor clearing lines lose GSBER even if set upstream",
+          "line": 1693,
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "GSBER"
+        },
+        {
+          "tag": "CROSS_COMPANY",
+          "finding": "epk-gsber = accountingobjects-bus_area_empl — restores GSBER for cross-company TAX lines only (stazf=X), NOT vendor clearing lines",
+          "timestamp": "2026-04-09T08:51:13.851801",
+          "impact": "Tax G/L lines get GSBER restored, vendor lines do not",
+          "line": 1550,
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "GSBER"
+        },
+        {
+          "tag": "CONTROL_FLAG",
+          "finding": "gsber_a parameter (I_GSBER_A) controls whether GSBER derivation runs at all. If not X, GSBER is cleared.",
+          "timestamp": "2026-04-09T08:51:13.894344",
+          "line": 848,
+          "session": "#048",
+          "field": "GSBER"
+        }
+      ],
+      "claims": [
+        {
+          "id": 1,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"
+        },
+        {
+          "id": 2,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "Three safety nets were broken for INC-000006073: BAdI PA0027-02 expired (2021), ZXTRVU05 commented out (Konakov 2018), GGB1 missing GL 2021011"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_design_specification_v3.md",
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "LHRTSF02": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "BALW_BAPIRETURN_GET2",
+        "DDIF_SHLP_GET",
+        "DDIF_VIEW_GET",
+        "HRCA_CHECK_JURISDICTION_ACTIVE",
+        "HRCA_COMPANYCODE_GETDETAIL",
+        "HRCA_FI_ACCT_DET_HR",
+        "READ_CUSTOMIZED_MESSAGE"
+      ],
+      "writes_tables": [
+        "BUV_HELP",
+        "POST_RESULT"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "LHRTSF03": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BALW_BAPIRETURN_GET2",
+        "HRCA_CODINGBLOCK_PRECHECK_HR",
+        "HRCA_READ_LINE_ITEM_TEXT",
+        "NUMBER_GET_NEXT",
+        "SAPGUI_PROGRESS_INDICATOR"
+      ],
+      "writes_tables": [
+        "BUV_LEADING_BUKRS",
+        "BZ_COPY",
+        "EPK",
+        "HELP_EPK",
+        "INT_ROT_AWKEY",
+        "PTRV_ROT_AWKEY",
+        "P_STORE",
+        "STORE_BZ_PDS"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSF04": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSF05": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "PTRV_DOC_IT",
+        "PTRV_DOC_TAX"
+      ],
+      "calls_fms": [
+        "BALW_BAPIRETURN_GET2",
+        "DB_COMMIT",
+        "HR_EVAL_RUN_HISTORY_GET"
+      ],
+      "writes_tables": [
+        "PEVSH",
+        "PTRV_DOC_HD",
+        "T_PEVSH",
+        "VAT_COMPARISON"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSF06": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSTOP": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "LHRTSU01": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "BALW_BAPIRETURN_GET2",
+        "SAPGUI_PROGRESS_INDICATOR"
+      ],
+      "writes_tables": [
+        "T_PTRV_POST_RESULT"
+      ],
+      "annotations": [
+        {
+          "tag": "FUNCTION_MODULE",
+          "finding": "PTRV_TRANSLATE is a FM in function group HRTS, not a standalone program. Sets gsber_a/gsber_g parameters that control GSBER derivation in LHRTSF01.",
+          "timestamp": "2026-04-09T08:51:13.989122",
+          "session": "#048",
+          "related": [
+            "LHRTSF01",
+            "LHRTSTOP"
+          ]
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "LHRTSU02": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "PA0001",
+        "PTRV_HEAD",
+        "PTRV_PERIO",
+        "T000",
+        "T001",
+        "T500P",
+        "T702O"
+      ],
+      "calls_fms": [
+        "BALW_BAPIRETURN_GET2",
+        "CONVERSION_EXIT_ALPHA_INPUT",
+        "HR_READ_INFOTYPE"
+      ],
+      "writes_tables": [
+        "ADJACENT",
+        "LIT_BELEG",
+        "LIT_PERNR"
+      ],
+      "other_edges": [
+        {
+          "to": "PA0001.BUKRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.PERNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.WERKS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_HEAD.HDVRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_HEAD.MOREI",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_HEAD.PERNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_HEAD.REINR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_PERIO.HDVRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_PERIO.PDVRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_PERIO.PERIO",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "T001": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "LHRTSU02",
+        "RPRTRV10"
+      ]
+    },
+    "LHRTSU03": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "F4UT_OPTIMIZE_COLWIDTH"
+      ],
+      "writes_tables": [
+        "ADJACENT"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSU04": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BAPI_ACC_DOCUMENT_RECORD",
+        "OWN_LOGICAL_SYSTEM_GET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "LHRTSU05": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_ACC_EMPLOYEE_PAY_POST",
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BALW_BAPIRETURN_GET2",
+        "BAPI_ACC_EMPLOYEE_PAY_POST",
+        "BAPI_TRANSACTION_COMMIT",
+        "HR_EVAL_STATUS_SET"
+      ],
+      "annotations": [
+        {
+          "tag": "ERROR_WRAPPER",
+          "finding": "RW609 is NOT a Travel validation — it wraps BAPI_ACC_EMPLOYEE_PAY_POST errors. The actual rejection is inside the BAPI during FI document simulation.",
+          "timestamp": "2026-04-09T08:51:13.939564",
+          "impact": "Misleading error message — looks like Travel module rejects, but its the FI BAPI",
+          "line": 155,
+          "session": "#048",
+          "incident": "INC-000006073"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/session_retros/session_048_retro.md"
+      ]
+    },
+    "LHRTSU06": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_ACC_EMPLOYEE_REC_POST",
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BALW_BAPIRETURN_GET2",
+        "BAPI_ACC_EMPLOYEE_REC_POST",
+        "BAPI_TRANSACTION_COMMIT",
+        "HR_EVAL_STATUS_SET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSU07": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_ACC_EMPLOYEE_EXP_POST",
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BALW_BAPIRETURN_GET2",
+        "BAPI_ACC_EMPLOYEE_EXP_POST",
+        "BAPI_TRANSACTION_COMMIT",
+        "HR_EVAL_STATUS_SET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSU08": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "calls_fms": [
+        "ALE_BAPI_GET_UNIQUE_RECEIVER",
+        "BALW_BAPIRETURN_GET2",
+        "BAPI_TRANSACTION_COMMIT",
+        "BAPI_TRANSACTION_ROLLBACK",
+        "HR_EVAL_STATUS_SET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md"
+      ]
+    },
+    "LHRTSUXX": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRAPA00": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "LFB1",
+        "LFB5"
+      ],
+      "calls_fms": [
+        "FILE_VALIDATE_NAME",
+        "FM_PSO43_PSOSD_READ",
+        "FUNCTION_EXISTS",
+        "HR_MAPNAME_VERIFY",
+        "HR_READ_INFOTYPE",
+        "HR_READ_INFOTYPE_AUTHC_DISABLE",
+        "RKD_WORD_WRAP",
+        "TH_SERVER_LIST"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "LFB1": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "RPRAPA00",
+        "RPRAPAFO_ALV"
+      ],
+      "annotations": [
+        {
+          "tag": "KEY_RELATIONSHIP",
+          "finding": "AKONT (reconciliation GL) is determined by LFA1.KTOKK (vendor account group). AKONT drives which GGB1 substitution rules match.",
+          "timestamp": "2026-04-09T08:51:14.539202",
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "AKONT",
+          "related": [
+            "LFA1.KTOKK",
+            "GB901:3IIEP###002"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 11,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ]
+    },
+    "RPRAPA00_PBO": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "T591A",
+        "T591S"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRAPADE_ALV": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRAPAEX": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRAPAEX_001": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRAPAFO_ALV": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "BBP_TSAD3HR",
+        "DD03L",
+        "LFA1",
+        "LFB1",
+        "LFB5",
+        "LFBK",
+        "LFBW",
+        "T005",
+        "T500L",
+        "T522T",
+        "TIBAN",
+        "TSAD3T"
+      ],
+      "calls_fms": [
+        "CONVERSION_EXIT_ALPHA_INPUT",
+        "FILE_VALIDATE_NAME",
+        "FI_IBAN_WO_ACCNO_CHECK",
+        "HRCA_COMPANYCODE_GETDETAIL",
+        "HR_DISPLAY_ERROR_LIST",
+        "HR_E_CONVERT_PERID_IN_CODIM",
+        "JOB_CLOSE",
+        "JOB_OPEN",
+        "LIST_FROM_MEMORY",
+        "READ_IBAN",
+        "REUSE_ALV_EVENTS_GET",
+        "REUSE_ALV_FIELDCATALOG_MERGE",
+        "REUSE_ALV_LIST_DISPLAY",
+        "TRAVEL_EXISTS",
+        "WRITE_LIST"
+      ],
+      "writes_tables": [
+        "ERRORTABLE",
+        "LOGTABLE",
+        "XT_EVENTS",
+        "XT_FIELDCAT"
+      ],
+      "other_edges": [
+        {
+          "to": "BBP_TSAD3HR.TITLE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFB1.ZWELS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "TIBAN.VALID_FROM",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "LFA1": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "RPRAPAFO_ALV"
+      ],
+      "annotations": [
+        {
+          "tag": "MASTER_DATA",
+          "finding": "316K vendors in P01. KTOKK field determines LFB1.AKONT (reconciliation GL). Wrong KTOKK = wrong GL = GGB1 miss.",
+          "timestamp": "2026-04-09T08:51:14.441758",
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "KTOKK",
+          "related": [
+            "LFB1.AKONT",
+            "T077K"
+          ]
+        },
+        {
+          "tag": "BP_GAP",
+          "finding": "316K vendors but only 559 BUT000 records and 0 CVI_VEND_LINK rows. BP conversion is less than 1% complete.",
+          "timestamp": "2026-04-09T08:51:14.492178",
+          "session": "#048",
+          "related": [
+            "BUT000",
+            "CVI_VEND_LINK"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ]
+    },
+    "RPRTB000": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "DD04T",
+        "T001P",
+        "T500P",
+        "T702G",
+        "T706A",
+        "T706B1",
+        "T706B2",
+        "T706B4",
+        "T706B4_ALTERN",
+        "T706D",
+        "T706F",
+        "T706H",
+        "T706L",
+        "T706M",
+        "T706P",
+        "T706S",
+        "T706U",
+        "T706V",
+        "T706_CONST",
+        "TCURR"
+      ],
+      "calls_fms": [
+        "CONVERT_TO_LOCAL_CURRENCY",
+        "DD_VIFD_GET",
+        "HRCA_COMPANYCODE_GETDETAIL"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTB000_ALV": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "DD04T",
+        "PTRV_PERIO",
+        "T001P",
+        "T500P",
+        "T702G",
+        "T706A",
+        "T706B1",
+        "T706B2",
+        "T706B4",
+        "T706B4_ALTERN",
+        "T706D",
+        "T706F",
+        "T706H",
+        "T706L",
+        "T706M",
+        "T706P",
+        "T706S",
+        "T706U",
+        "T706V",
+        "T706_CONST",
+        "TCURR"
+      ],
+      "calls_fms": [
+        "CONVERT_TO_LOCAL_CURRENCY",
+        "DD_VIFD_GET",
+        "HRCA_COMPANYCODE_GETDETAIL"
+      ],
+      "other_edges": [
+        {
+          "to": "PTRV_PERIO.ABREC",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTEC00": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTEF00": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTRV00": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "T549D",
+        "T702N"
+      ],
+      "calls_fms": [
+        "DDIF_NAMETAB_GET"
+      ],
+      "other_edges": [
+        {
+          "to": "T549D.FUNCT",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTRV01": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "DD04T",
+        "T000",
+        "T005T",
+        "T706B",
+        "T706F",
+        "T706H",
+        "T706T",
+        "T706U",
+        "T706V"
+      ],
+      "calls_fms": [
+        "APPEND_PROTOCOL"
+      ],
+      "writes_tables": [
+        "T702E",
+        "T702G",
+        "T702H",
+        "T702I",
+        "T702J",
+        "T702N",
+        "T702O",
+        "T702P",
+        "T702Q",
+        "T702R",
+        "T702V",
+        "T702W",
+        "T702X",
+        "T702Y",
+        "T706D",
+        "T706E",
+        "T706G",
+        "T706I",
+        "T706J",
+        "T706N",
+        "T706O",
+        "T706R",
+        "T706W",
+        "T706X",
+        "T706Y"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTRV10": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "PA0001",
+        "PCL1",
+        "T001",
+        "T549Q"
+      ],
+      "calls_fms": [
+        "DB_COMMIT",
+        "TR_APPEND_LOG",
+        "TR_FLUSH_LOG"
+      ],
+      "writes_tables": [
+        "AEND",
+        "PTRV_HEAD",
+        "PTRV_KMSUM",
+        "PTRV_PERIO",
+        "X0001"
+      ],
+      "other_edges": [
+        {
+          "to": "PA0001.ABKRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.BEGDA",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.BUKRS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.ENDDA",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PCL1.CLIENT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PCL1.RELID",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PCL1.SRTF2",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PCL1.SRTFD",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PCL1.VERSN",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T001.BUKRS",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTRV11": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "T000",
+        "T706B",
+        "T706C"
+      ],
+      "calls_fms": [
+        "TR_APPEND_LOG"
+      ],
+      "writes_tables": [
+        "T706A",
+        "T706B1",
+        "T706B2",
+        "T706B4",
+        "T706B5",
+        "T706D",
+        "T706Z"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPRTRVDT": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "RPUMKC00": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "reads_tables": [
+        "T549D"
+      ],
+      "calls_fms": [
+        "HR_FEATURE_BACKFIELD",
+        "HR_FEATURE_BACKTABLE"
+      ],
+      "other_edges": [
+        {
+          "to": "T549D.STRUC",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "SAPLHRTS": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "TSKHINCL": {
+      "type": "ABAP_REPORT",
+      "domain": "TV",
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "ZXRSAU01_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "BI",
+      "reads_tables": [
+        "BKPF",
+        "BPEJ",
+        "BSEG",
+        "CSKS",
+        "EKET",
+        "EKKO",
+        "FMFINCODE",
+        "FMIFIHD",
+        "FMIFIIT",
+        "FMIOI",
+        "HRP1018",
+        "HRP1516",
+        "KBLE",
+        "KBLK",
+        "KBLP",
+        "PRHI",
+        "PRPS"
+      ],
+      "calls_fms": [
+        "DATE_CHECK_PLAUSIBILITY",
+        "HR_IN_LAST_DAY_OF_MONTHS",
+        "RH_READ_INFTY_TABDATA"
+      ],
+      "writes_tables": [
+        "C_T_DATA",
+        "T_P1018"
+      ],
+      "other_edges": [
+        {
+          "to": "BKPF.BUDAT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "BKPF.W_PDATE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "CSKS.OBJNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "CSKS.W_OBJNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "EKET.EINDT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "EKET.W_EINDT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "EKKO.AEDAT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "EKKO.W_PO_CRDATE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "FMFINCODE.W_FTYPE",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "KBLK.W_XBLNR",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/domains/PSM/EXTENSIONS/bw_extraction_logics_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/posting_derivation_technical_autopsy.md",
+        "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "BKPF": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "BSIS",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 10,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+        }
+      ]
+    },
+    "EKKO": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "EKPO",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "annotations": [
+        {
+          "tag": "PROCESS_MINING",
+          "finding": "848K P2P events from EKKO+EKPO+EKBE+ESSR+ESLL+EBAN+RBKP+RSEG. Process mining dashboard built.",
+          "timestamp": "2026-04-09T08:57:55.417370",
+          "session": "#014",
+          "related": [
+            "EKPO",
+            "EKBE",
+            "ESSR",
+            "ESLL"
+          ]
+        }
+      ]
+    },
+    "FMIFIIT": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "BKPF",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "BSIS",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "FMFINCODE",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "FMFCTR",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "PRPS",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "annotations": [
+        {
+          "tag": "KEY_JOIN",
+          "finding": "FMIFIIT.KNBELNR = BKPF.BELNR — perfect 1:1 FM-to-FI join at line level.",
+          "timestamp": "2026-04-09T08:57:54.708312",
+          "impact": "This is the bridge between Funds Management and Financial Accounting. Critical for Golden Query.",
+          "session": "#016",
+          "field": "KNBELNR",
+          "related": [
+            "BKPF.BELNR"
+          ]
+        },
+        {
+          "tag": "KEY_JOIN",
+          "finding": "FMIFIIT.OBJNRZ = PRPS.OBJNR — WBS element recovery. 85.9% coverage for 2025.",
+          "timestamp": "2026-04-09T08:57:54.760057",
+          "session": "#016",
+          "field": "OBJNRZ",
+          "related": [
+            "PRPS.OBJNR",
+            "PRPS.POSID"
+          ]
+        },
+        {
+          "tag": "FIELD_NAMES",
+          "finding": "FM columns differ from FI: FKBTR (not HSL), PERIO (not POPER), FMBELNR (not BELNR).",
+          "timestamp": "2026-04-09T08:57:54.805846",
+          "impact": "Wrong field names = empty results. Always PRAGMA table_info first.",
+          "session": "#016"
+        }
+      ],
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 10,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/PSM/EXTENSIONS/bw_extraction_logics_autopsy.md",
+        "knowledge/domains/PSM/project_cost_recovery_analysis.md",
+        "knowledge/domains/Transport_Intelligence/process_discovery_research.md"
+      ]
+    },
+    "PRPS": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "PROJ",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "ZXFMDTU02_RPY",
+        "ZXFMYU22_RPY",
+        "ZXRSAU01_RPY",
+        "ZXRSAU02_RPY"
+      ],
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        }
+      ]
+    },
+    "ZXRSAU02_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "BI",
+      "reads_tables": [
+        "BPGE",
+        "FMBDT",
+        "FMFINCODE",
+        "FMFPO",
+        "FMHISV",
+        "FMPOSIT",
+        "HRP1005",
+        "HRP1018",
+        "JCDS",
+        "PROJ",
+        "PRPS",
+        "TJ02T",
+        "TJ30T",
+        "YBW_PSCOUNTRY",
+        "YTFM_FUND_C5"
+      ],
+      "calls_fms": [
+        "BAPI_0051_GET_TOTALS",
+        "CONVERSION_EXIT_ABPSP_INPUT",
+        "CONVERSION_EXIT_KONPD_INPUT",
+        "FM_TOTALS_READ_WITH_RANGES",
+        "HR_IN_LAST_DAY_OF_MONTHS",
+        "HR_READ_INFOTYPE",
+        "READ_TEXT",
+        "RH_READ_INFTY_NNNN",
+        "RH_READ_INFTY_TABDATA",
+        "STATUS_TEXT_EDIT"
+      ],
+      "writes_tables": [
+        "I_T_DATA",
+        "T_BUDGET",
+        "T_P1018",
+        "T_STATUS"
+      ],
+      "other_edges": [
+        {
+          "to": "FMFINCODE.PROFIL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFM_FUND_C5.C5_SEL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YTFM_FUND_C5.FM_OUTPUT",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/bw_extraction_logics_autopsy.md",
+        "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "ZXFMCU10_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "calls_fms": [
+        "DATE_CHECK_PLAUSIBILITY"
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md"
+      ]
+    },
+    "ZXFMCU17_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "reads_tables": [
+        "YXUSER"
+      ],
+      "other_edges": [
+        {
+          "to": "YXUSER.UNAME",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YXUSER.W_UNAME",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md"
+      ]
+    },
+    "ZXFMDTU02_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "reads_tables": [
+        "FMCI",
+        "FMFINCODE",
+        "PRPS",
+        "TJ01",
+        "YFMXCHK",
+        "YFMXCHKP",
+        "YXTCODE",
+        "YXUSER"
+      ],
+      "calls_fms": [
+        "AUTHORITY_CHECK"
+      ],
+      "other_edges": [
+        {
+          "to": "YFMXCHK.GEBER",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "ZXFMYU19_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "calls_fms": [
+        "FM_ACCOUNT_GET_COBL"
+      ]
+    },
+    "ZXFMYU22_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "reads_tables": [
+        "BPGE",
+        "BPJA",
+        "FMCI",
+        "FMFCTR",
+        "FMFINCODE",
+        "FMHISV",
+        "PRPS",
+        "TBP1C",
+        "TJ01",
+        "USR05",
+        "YFMXCHK"
+      ],
+      "writes_tables": [
+        "T_BDGDSTR"
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/domains/PSM/EXTENSIONS/fm_validation_technical_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/validation_substitution_autopsy.md",
+        "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md"
+      ]
+    },
+    "ZXFMYU33_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "calls_fms": [
+        "OBJECT_KEY_GET_KL"
+      ]
+    },
+    "YFM_COCKPITF01_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PSM",
+      "calls_fms": [
+        "BAPI_USER_GET_DETAIL",
+        "BDS_BUSINESSDOCUMENT_GET_INFO",
+        "BDS_BUSINESSDOCUMENT_GET_URL",
+        "POPUP_TO_CONFIRM"
+      ]
+    },
+    "ZXM06U22_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "MM",
+      "reads_tables": [
+        "ZICTP_PO_RELEASE"
+      ],
+      "calls_fms": [
+        "Z_RFC_EXT_DEST_PO_RELEASE"
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "YJWB001_RPY": {
+      "type": "ENHANCEMENT",
+      "domain": "PS",
+      "reads_tables": [
+        "YUSR00",
+        "YUSR01",
+        "YUSR02",
+        "YUSR03",
+        "YUSR04"
+      ],
+      "knowledge_docs": [
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/domains/PSM/EXTENSIONS/posting_derivation_technical_autopsy.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "YFI_LFBK_TRAVEL_UPDATE": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "LFBK",
+        "T005"
+      ],
+      "writes_tables": [
+        "REFERENCE",
+        "TRAVEL"
+      ],
+      "other_edges": [
+        {
+          "to": "LFBK.BANKL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.BANKN",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.BANKS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.BKONT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.BKREF",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.LIFNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "LFBK.YYTRAVEL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "T005.LAND1",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "YFI_YRGGBS00_EXIT": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "LFBK"
+      ],
+      "other_edges": [
+        {
+          "to": "LFBK.BVTYP",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md"
+      ]
+    },
+    "YPR_TRIP_COST_ASSIGNMENT_DATA2": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "CJPN_INTERN_TO_EXTERN_CONV",
+        "REUSE_ALV_GRID_DISPLAY",
+        "REUSE_ALV_LIST_DISPLAY"
+      ],
+      "writes_tables": [
+        "ADJACENT",
+        "COLTAB",
+        "ISCOS"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md",
+        "knowledge/session_retros/session_047_retro.md"
+      ]
+    },
+    "YPR_TRIP_DATA_FORM_ROUTINES": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "TA21P"
+      ],
+      "calls_fms": [
+        "DDIF_DOMA_GET",
+        "LVC_VARIANT_DEFAULT_GET",
+        "PTRV_COMPRESS_SELECT_OPTIONS",
+        "PTRV_DETERMINE_AUTHP",
+        "PTRV_GET_NAME_FOR_PERNR",
+        "PTRV_SELECT_DISPLAY_OBJECT"
+      ],
+      "writes_tables": [
+        "ADJACENT",
+        "IHEAD",
+        "ISCOS",
+        "ISREC",
+        "XWHERE_TAB"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md",
+        "knowledge/session_retros/session_047_retro.md"
+      ]
+    },
+    "YPR_TRIP_ROUT_1_4": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "REUSE_ALV_GRID_DISPLAY",
+        "REUSE_ALV_LIST_DISPLAY"
+      ],
+      "writes_tables": [
+        "COLTAB",
+        "FIELDCAT"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md",
+        "knowledge/session_retros/session_047_retro.md"
+      ]
+    },
+    "YRPR_TRIP_DATA_FORM_ROUTINES": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "TA21P"
+      ],
+      "calls_fms": [
+        "DDIF_DOMA_GET",
+        "LVC_VARIANT_DEFAULT_GET",
+        "PTRV_COMPRESS_SELECT_OPTIONS",
+        "PTRV_DETERMINE_AUTHP",
+        "PTRV_GET_NAME_FOR_PERNR",
+        "PTRV_SELECT_DISPLAY_OBJECT"
+      ],
+      "writes_tables": [
+        "ADJACENT",
+        "IHEAD",
+        "ISCOS",
+        "ISREC",
+        "XWHERE_TAB"
+      ]
+    },
+    "YRPR_TRIP_HEADER_DATA": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "PA0001",
+        "PTRV_HEAD",
+        "T706G"
+      ],
+      "calls_fms": [
+        "CA_CHECK_DATE",
+        "CA_USER_EXISTS",
+        "REUSE_ALV_GRID_DISPLAY",
+        "REUSE_ALV_LIST_DISPLAY"
+      ],
+      "writes_tables": [
+        "COLTAB",
+        "FIELDCAT",
+        "IHEAD",
+        "S_SECTOR"
+      ],
+      "other_edges": [
+        {
+          "to": "PTRV_HEAD.KZREA",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PTRV_HEAD.UNAME",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "YRPR_TRIP_HEADER_DATA_EXTRACT": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "PA0001",
+        "PTRV_HEAD",
+        "T005T",
+        "T706G"
+      ],
+      "calls_fms": [
+        "BAPI_TRIP_GET_DETAILS",
+        "CA_CHECK_DATE",
+        "CA_USER_EXISTS",
+        "FM_ALV_LAYOUT",
+        "REUSE_ALV_GRID_DISPLAY",
+        "REUSE_ALV_LIST_DISPLAY"
+      ],
+      "writes_tables": [
+        "COLTAB",
+        "FIELDCAT",
+        "IHEAD",
+        "S_SECTOR"
+      ],
+      "other_edges": [
+        {
+          "to": "PTRV_HEAD.UNAME",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "ZCL_IM_TRIP_POST_FI": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "reads_tables": [
+        "YFO_PAREA"
+      ],
+      "calls_fms": [
+        "HR_READ_INFOTYPE"
+      ],
+      "other_edges": [
+        {
+          "to": "YFO_PAREA.FOCOD",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "YFO_PAREA.USERS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "TRIP_POST_FI",
+          "type": "IMPLEMENTS_BADI"
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "ZCL_IM_TRIP_POST_FI_CM00A": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "HR_READ_INFOTYPE"
+      ],
+      "other_edges": [
+        {
+          "to": "TRIP_POST_FI_CM00A",
+          "type": "IMPLEMENTS_BADI"
+        }
+      ],
+      "annotations": [
+        {
+          "tag": "FALLBACK",
+          "finding": "BAdI reads PA0027 subtype 02 to derive GSBER when gsbst is initial. CHECK at line 37 EXITS if no subtype 02 record found — does not raise error, silently skips.",
+          "timestamp": "2026-04-09T08:51:14.037438",
+          "impact": "If PA0027-02 is expired or missing, GSBER stays empty with no warning",
+          "line": 12,
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "GSBER",
+          "related": [
+            "PA0027",
+            "HR_READ_INFOTYPE"
+          ]
+        },
+        {
+          "tag": "SILENT_EXIT",
+          "finding": "CHECK sy-subrc IS INITIAL — exits method without error if PA0027-02 not found. No log, no warning.",
+          "timestamp": "2026-04-09T08:51:14.087421",
+          "impact": "Invisible failure — BAdI appears to work but does nothing",
+          "line": 37,
+          "session": "#048",
+          "incident": "INC-000006073"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "ZENH_UNES_CALL_TRIP_BAPI2E": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "ZPTRM_UNES_FORM_GET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "ZENH_UNES_GET_TRIP_BAPIE": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "HRCA_COMPANYCODE_GETDETAIL",
+        "PTRA_UTIL_MEM_GLOBALS_GET",
+        "PTRA_WEB_EXPENSE_FORM_DATA_GET",
+        "ZPTRM_UNES_FORM_SET"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Travel/travel_brain_edges.md"
+      ]
+    },
+    "ZPR_TRIP_HEADER_DATA": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "REUSE_ALV_GRID_DISPLAY",
+        "REUSE_ALV_LIST_DISPLAY"
+      ],
+      "writes_tables": [
+        "COLTAB",
+        "FIELDCAT"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md"
+      ]
+    },
+    "ZXTRVU03_RPY": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "HR_READ_INFOTYPE"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/travel_management_enhancements_autopsy.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "ZXTRVU03_V2": {
+      "type": "ABAP_CLASS",
+      "domain": "CUSTOM",
+      "calls_fms": [
+        "HR_READ_INFOTYPE"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md"
+      ]
+    },
+    "ZCL_HR_FIORI_EDUCATION_GRANT": {
+      "type": "ABAP_CLASS",
+      "domain": "HCM",
+      "reads_tables": [
+        "T005T",
+        "T007S",
+        "T530F",
+        "T547S",
+        "T577S",
+        "T77PAD_GENDER_T",
+        "T7UNPAD_DS_T",
+        "T7UNPAD_EGADCR_T",
+        "T7UNPAD_EGCOS",
+        "T7UNPAD_EGCOS_T",
+        "T7UNPAD_EGRS_T",
+        "T7UNPAD_EGSG_T",
+        "T7UNPAD_EGSN",
+        "T7UNPAD_EGST_T",
+        "TCURT",
+        "ZTHRFIORI_BREQ",
+        "ZTHRFIORI_EG_MAI",
+        "ZTHR_EG_ADVANCE",
+        "ZTHR_EG_CLAIM"
+      ],
+      "calls_fms": [
+        "CONVERT_TO_LOCAL_CURRENCY",
+        "DD_DOMVALUES_GET",
+        "HRCM_TIME_PERIOD_CALCULATE",
+        "HR_EMPLOYEE_DEQUEUE",
+        "HR_EMPLOYEE_ENQUEUE",
+        "HR_INFOTYPE_OPERATION",
+        "HR_READ_INFOTYPE",
+        "RP_HIRE_FIRE",
+        "SWA_STRING_SPLIT"
+      ],
+      "writes_tables": [
+        "ADJACENT"
+      ],
+      "other_edges": [
+        {
+          "to": "ZTHRFIORI_EG_MAI.EGCUR",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/session_retros/session_040_retro.md"
+      ]
+    },
+    "ZCL_HR_FIORI_OFFBOARDING_REQ": {
+      "type": "ABAP_CLASS",
+      "domain": "HCM",
+      "reads_tables": [
+        "DD07T",
+        "PA0001",
+        "PA0016",
+        "PA0105",
+        "T501T",
+        "T542T",
+        "USR21",
+        "ZTHRFIORI_DAPPRV",
+        "ZTHRFIORI_HREQ",
+        "ZTHRFIORI_REQSTA",
+        "ZV_HRFIORI_REQ"
+      ],
+      "calls_fms": [
+        "BAL_LOG_MSG_ADD",
+        "DD_DOMVALUES_GET",
+        "HR_READ_INFOTYPE"
+      ],
+      "writes_tables": [
+        "ADJACENT"
+      ],
+      "other_edges": [
+        {
+          "to": "DD07T.DDTEXT",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0001.PERSG",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0016.CTTYP",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "PA0105.PERNR",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "USR21.PERSNUMBER",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "ZTHRFIORI_DAPPRV.COMMENTS",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "ZTHRFIORI_DAPPRV.DATE_APPROVAL",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "ZTHRFIORI_DAPPRV.GUID",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "ZTHRFIORI_DAPPRV.SEQNO",
+          "type": "READS_FIELD"
+        },
+        {
+          "to": "ZTHRFIORI_HREQ.CREATOR_PERNR",
+          "type": "READS_FIELD"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/HCM/Fiori Apps/hr_offboarding_analysis.md",
+        "knowledge/entity_brain_map.md",
+        "knowledge/fiori_reverse_engineering_strategy.md"
+      ]
+    },
+    "ZCL_HR_FIORI_RENTAL": {
+      "type": "ABAP_CLASS",
+      "domain": "HCM",
+      "reads_tables": [
+        "PA0105",
+        "T512T",
+        "T512Z",
+        "T530F",
+        "T7UNPAD_RSDR_T",
+        "T7UNPAD_RSRR",
+        "TCURC",
+        "TCURT",
+        "ZTHRFIORI_BREQ",
+        "ZTHRFIORI_RS_MAI"
+      ],
+      "calls_fms": [
+        "DAYS_BETWEEN_TWO_DATES",
+        "DD_DOMVALUES_GET",
+        "HRCM_TIME_PERIOD_CALCULATE",
+        "HR_99S_DATE_PLUS_TIME_UNIT",
+        "HR_APPL_T596C_READ",
+        "HR_ECM_GET_DATETYP_FROM_IT0041",
+        "HR_EMPLOYEE_DEQUEUE",
+        "HR_EMPLOYEE_ENQUEUE",
+        "HR_INFOTYPE_OPERATION",
+        "HR_READ_INFOTYPE",
+        "HR_UN_CALC_DATE"
+      ],
+      "other_edges": [
+        {
+          "to": "PA0105.PERNR",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "ZCL_ZHR_BENEFITS_REQUE_DPC_EXT": {
+      "type": "ABAP_CLASS",
+      "domain": "HCM",
+      "reads_tables": [
+        "PA0105",
+        "ZTHRFIORI_BREQ",
+        "ZTHRFIORI_REQTYP"
+      ],
+      "writes_tables": [
+        "ZTHRFIORI_EG_MAI",
+        "ZTHRFIORI_RS_MAI"
+      ],
+      "other_edges": [
+        {
+          "to": "PA0105.PERNR",
+          "type": "READS_FIELD"
+        }
+      ]
+    },
+    "YTFI_BA_SUBST": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "COVERAGE_GAP",
+          "finding": "IIEP has zero global rules. All 12 entries restricted to doc type Z1 — do NOT apply to TV/TF travel documents.",
+          "timestamp": "2026-04-09T08:51:14.691232",
+          "session": "#048",
+          "incident": "INC-000006073"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md",
+        "knowledge/domains/PSM/EXTENSIONS/basu_mod_technical_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md"
+      ]
+    },
+    "BSAS": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        }
+      ]
+    },
+    "BSIS": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "BSAS",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "RFEBKA30"
+      ],
+      "claims": [
+        {
+          "id": 7,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 10,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+        }
+      ]
+    },
+    "CDHDR": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "VOLUME",
+          "finding": "7.8M rows. PBC (OBJECTCLAS=FMRESERV) generates ~90% of volume. Filter FMRESERV for non-FM analysis.",
+          "timestamp": "2026-04-09T08:57:55.008429",
+          "impact": "Unfiltered CDHDR queries will timeout or return misleading results dominated by FM reservations.",
+          "session": "#011"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
+        "knowledge/domains/Transport_Intelligence/process_discovery_research.md",
+        "knowledge/pmo_tracker.md",
+        "knowledge/project_extraction_capabilities.md",
+        "knowledge/session_retros/session_008_retro.md"
+      ]
+    },
+    "RFCDES": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "LANDSCAPE",
+          "finding": "239 RFC destinations connecting 38 systems. 7 UNESCO .NET apps (334 RFC-enabled FMs): SISTER, HR Workflow, CMT, UBO Field Office, Travel, Mouv, Procurement.",
+          "timestamp": "2026-04-09T08:57:55.567155",
+          "session": "#032"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Integration/integration_map_complete.md",
+        "knowledge/project_discovery_patterns.md",
+        "knowledge/session_retros/session_035_retro.md"
+      ]
+    },
+    "T042A": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "T042Z",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Transport_Intelligence/transport_object_taxonomy.md",
+        "knowledge/session_retros/session_021_retro.md",
+        "knowledge/session_retros/session_040_retro.md",
+        "knowledge/session_retros/session_041_retro.md",
+        "knowledge/session_retros/session_042_retro.md"
+      ]
+    },
+    "T042I": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md",
+        "knowledge/domains/Transport_Intelligence/transport_object_taxonomy.md",
+        "knowledge/domains/Treasury/README.md",
+        "knowledge/domains/Treasury/house_bank_configuration.md"
+      ]
+    },
+    "T012": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "YCL_IDFI_CGI_DMEE_FALLBACK",
+        "YCL_IDFI_CGI_DMEE_FR",
+        "YCL_IDFI_CGI_DMEE_UTIL"
+      ],
+      "annotations": [
+        {
+          "tag": "ARCHITECTURE",
+          "finding": "House bank master: BUKRS+HBKID key. 211 entries across 9 company codes. Links to T012K (bank accounts), T012T (texts).",
+          "timestamp": "2026-04-09T08:57:55.055912",
+          "session": "#043",
+          "related": [
+            "T012K",
+            "T012T",
+            "BNKA"
+          ]
+        }
+      ]
+    },
+    "T012K": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "T028B",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "T012K.BUKRS",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "T012K.HBKID",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "T012K.HKTID",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "T012K.HKONT",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "T012K.BANKN",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "T012K.WAERS",
+          "type": "FIELD_MAPS_TO"
+        }
+      ],
+      "read_by": [
+        "YCL_IDFI_CGI_DMEE_FALLBACK",
+        "YCL_IDFI_CGI_DMEE_FR",
+        "YCL_IDFI_CGI_DMEE_UTIL"
+      ],
+      "annotations": [
+        {
+          "tag": "MISSING_FIELD",
+          "finding": "T012K extracted without UKONT field (sub-bank GL paired with bank GL). Need re-extraction with all fields to validate 10xxx-11xxx pairing.",
+          "timestamp": "2026-04-09T08:57:55.109869",
+          "session": "#029",
+          "field": "UKONT"
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md",
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/domains/Transport_Intelligence/README.md"
+      ]
+    },
+    "BNK_BATCH_HEADER": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "BNK_BATCH_ITEM",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "annotations": [
+        {
+          "tag": "AUDIT_FINDING",
+          "finding": "3,394 same-user BCM batches (creator=approver). Top: C_LOPEZ 94.7%, I_MARQUAND 92.9% self-approval. HQ treasury manual Wednesday cycle, no 3rd operator.",
+          "timestamp": "2026-04-09T08:57:55.155819",
+          "impact": "Dual-control gap — automation debt, not fraud. $656M exposure.",
+          "session": "#021",
+          "incident": "H13"
+        }
+      ],
+      "claims": [
+        {
+          "id": 6,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "BCM dual-control gap: 3,359 same-user batches, $656M exposure. Top 2 = C_LOPEZ + I_MARQUAND (94.7%/92.9% self-approval)"
+        }
+      ],
+      "incidents": [
+        "H13"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/BCM/h13_executive_summary.md",
+        "knowledge/domains/BCM/h13_remediation_hypothesis.md",
+        "knowledge/domains/Treasury/payment_full_landscape.md",
+        "knowledge/session_plans/session_037_plan.md",
+        "knowledge/session_retros/session027-payment-process-mining-learnings.md"
+      ]
+    },
+    "REGUH": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "BKPF",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "REGUP",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "PAYR",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "YCL_IDFI_CGI_DMEE_FALLBACK",
+        "YCL_IDFI_CGI_DMEE_FR",
+        "YCL_IDFI_CGI_DMEE_UTIL"
+      ],
+      "annotations": [
+        {
+          "tag": "PROCESS_MINING",
+          "finding": "4-stream payment model: 1.4M events, 550K cases, 9 company codes. Stream 1=domestic, 2=field office, 3=netting, 4=tier3.",
+          "timestamp": "2026-04-09T08:57:55.466695",
+          "session": "#028",
+          "related": [
+            "REGUP",
+            "PAYR",
+            "FPAYP"
+          ]
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/domains/Treasury/payment_full_landscape.md",
+        "knowledge/session_retros/session027-payment-process-mining-learnings.md",
+        "knowledge/session_retros/session_021_retro.md"
+      ]
+    },
+    "FEBKO": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "FEBEP",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "T012K",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "T012",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "FEBKO.KUKEY",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.HBKID",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.HKTID",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.BUKRS",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.HKONT",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.EFART",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBKO.WAERS",
+          "type": "FIELD_MAPS_TO"
+        }
+      ],
+      "read_by": [
+        "RFEBKA00",
+        "RFEBKA30",
+        "RFEBKORD"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/Treasury/README.md",
+        "knowledge/domains/Treasury/bank_statement_ebs_architecture.md",
+        "knowledge/domains/Treasury/house_bank_configuration.md",
+        "knowledge/project_discovery_patterns.md"
+      ]
+    },
+    "FEBEP": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "other_edges": [
+        {
+          "to": "T028G",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "BKPF",
+          "type": "JOINS_VIA"
+        },
+        {
+          "to": "FEBEP.KUKEY",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.ESNUM",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.ESTAT",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.BELNR",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.GJAHR",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.BUDAT",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.KWBTR",
+          "type": "FIELD_MAPS_TO"
+        },
+        {
+          "to": "FEBEP.VGEXT",
+          "type": "FIELD_MAPS_TO"
+        }
+      ],
+      "annotations": [
+        {
+          "tag": "DISCOVERY",
+          "finding": "Account 10xxxxx = permanent bank ledger (by design, never cleared). Account 11xxxxx = clearing sub-account. Real unreconciled = 2,737 items on 11xxxxx (0.6% gap).",
+          "timestamp": "2026-04-09T08:57:54.858181",
+          "impact": "Session #029 found FEBEP=0 was WRONG for 4 sessions. Always verify claims against actual data.",
+          "session": "#029",
+          "related": [
+            "FEBKO",
+            "FEBRE"
+          ]
+        },
+        {
+          "tag": "DATA_QUALITY",
+          "finding": "223,710 items in FEBEP_2024_2026 (27 fields). The unsuffixed FEBEP (50K/104cols) is truncated first attempt. Always use _2024_2026 suffix.",
+          "timestamp": "2026-04-09T08:57:54.907952",
+          "session": "#042"
+        }
+      ],
+      "claims": [
+        {
+          "id": 3,
+          "tier": "TIER_1",
+          "type": "superseded",
+          "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026"
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/domains/Treasury/README.md",
+        "knowledge/domains/Treasury/bank_statement_ebs_architecture.md"
+      ]
+    },
+    "PTRV_SCOS": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "EVIDENCE",
+          "finding": "Trip cost assignment table. COMP_CODE field drives same-company vs intercompany posting. Trip 0101004544 had COMP_CODE=UNES (first time for this traveler) — caused the failure.",
+          "timestamp": "2026-04-09T08:51:14.642121",
+          "session": "#048",
+          "incident": "INC-000006073",
+          "field": "COMP_CODE",
+          "related": [
+            "LHRTSF01:852"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 1,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_design_specification_v3.md",
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md"
+      ]
+    },
+    "KNA1": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL"
+    },
+    "T077K": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "CONFIG",
+          "finding": "47 vendor account group definitions. KTOKK=UNES maps to AKONT=2021042 (covered by GGB1). KTOKK=SCSA maps to AKONT=2021011 (NOT covered).",
+          "timestamp": "2026-04-09T08:51:14.737336",
+          "session": "#048",
+          "incident": "INC-000006073"
+        }
+      ],
+      "claims": [
+        {
+          "id": 11,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"
+        }
+      ],
+      "incidents": [
+        "INC-000006073"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/BusinessPartner/README.md",
+        "knowledge/session_retros/session_048_retro.md"
+      ]
+    },
+    "GB922": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "claims": [
+        {
+          "id": 11,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"
+        }
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/FI/INC-000006073_travel_busarea_analysis.md",
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/sap_custom_enhancement_registry.md"
+      ]
+    },
+    "FPAYP": {
+      "type": "SAP_TABLE",
+      "domain": "FI",
+      "other_edges": [
+        {
+          "to": "REGUH",
+          "type": "JOINS_VIA"
+        }
+      ],
+      "read_by": [
+        "YCL_IDFI_CGI_DMEE_FALLBACK",
+        "YCL_IDFI_CGI_DMEE_FR",
+        "YCL_IDFI_CGI_DMEE_UTIL"
+      ],
+      "annotations": [
+        {
+          "tag": "CRITICAL_FIELD",
+          "finding": "FPAYP.XREF3 carries the PurposeCode value for DMEE tree SEPA payments. Read by DMEE node N_9662041050. Not a static literal — runtime field mapping.",
+          "timestamp": "2026-04-09T08:57:54.958340",
+          "impact": "This is the source of the SEPA Purpose Code that was hunted for 5+ sessions.",
+          "session": "#039",
+          "incident": "H18",
+          "field": "XREF3",
+          "related": [
+            "DMEE:/CGI_XML_CT_UNESCO",
+            "ZCL_IDFI_CGI_DMEE_FR"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 5,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "FPAYP-XREF3 feeds DMEE tree PurposeCode via node N_9662041050 in /CGI_XML_CT_UNESCO"
+        }
+      ],
+      "incidents": [
+        "H18"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/Payment/h18_dmee_tree_findings.md",
+        "knowledge/domains/Treasury/payment_full_landscape.md",
+        "knowledge/project_discovery_patterns.md"
+      ]
+    }
+  },
+  "indexes": {
+    "by_incident": {
+      "INC-000006073": [
+        "PA0001",
+        "LHRTSF01",
+        "LHRTSU05",
+        "LFB1",
+        "LFA1",
+        "ZCL_IM_TRIP_POST_FI_CM00A",
+        "YTFI_BA_SUBST",
+        "PTRV_SCOS",
+        "T077K"
+      ],
+      "H13": [
+        "BNK_BATCH_HEADER"
+      ],
+      "H18": [
+        "FPAYP"
+      ]
+    },
+    "by_domain": {
+      "FI": [
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "YBSEG_REL",
+        "ZNOTREJECT",
+        "FPAYP"
+      ],
+      "CUSTOM": [
+        "Z_WF_FI_EXCLUDE_NOTIF_EMAIL",
+        "Z_WF_FI_PR_WF_ACTOR1_DET",
+        "Z_WF_GET_CERTIFYING_OFFICER",
+        "YFI_LFBK_TRAVEL_UPDATE",
+        "YFI_YRGGBS00_EXIT",
+        "YPR_TRIP_COST_ASSIGNMENT_DATA2",
+        "YPR_TRIP_DATA_FORM_ROUTINES",
+        "YPR_TRIP_ROUT_1_4",
+        "YRPR_TRIP_DATA_FORM_ROUTINES",
+        "YRPR_TRIP_HEADER_DATA",
+        "YRPR_TRIP_HEADER_DATA_EXTRACT",
+        "ZCL_IM_TRIP_POST_FI",
+        "ZCL_IM_TRIP_POST_FI_CM00A",
+        "ZENH_UNES_CALL_TRIP_BAPI2E",
+        "ZENH_UNES_GET_TRIP_BAPIE",
+        "ZPR_TRIP_HEADER_DATA",
+        "ZXTRVU03_RPY",
+        "ZXTRVU03_V2"
+      ],
+      "DATA_MODEL": [
+        "BSEG",
+        "PA0001",
+        "T001",
+        "LFB1",
+        "LFA1",
+        "BKPF",
+        "EKKO",
+        "FMIFIIT",
+        "PRPS",
+        "YTFI_BA_SUBST",
+        "BSAS",
+        "BSIS",
+        "CDHDR",
+        "RFCDES",
+        "T042A",
+        "T042I",
+        "T012",
+        "T012K",
+        "BNK_BATCH_HEADER",
+        "REGUH",
+        "FEBKO",
+        "FEBEP",
+        "PTRV_SCOS",
+        "KNA1",
+        "T077K",
+        "GB922"
+      ],
+      "HCM": [
+        "ZHRAUTOSTEP",
+        "ZLHRTV_PTRA_ADDONF01",
+        "ZNHR_LOAD_PAYSCALE_GROUPS",
+        "ZXHRTRVSTATU01",
+        "ZZHRPAF02",
+        "ZCL_HR_FIORI_EDUCATION_GRANT",
+        "ZCL_HR_FIORI_OFFBOARDING_REQ",
+        "ZCL_HR_FIORI_RENTAL",
+        "ZCL_ZHR_BENEFITS_REQUE_DPC_EXT"
+      ],
+      "TV": [
+        "LHRTSF01",
+        "LHRTSF02",
+        "LHRTSF03",
+        "LHRTSF04",
+        "LHRTSF05",
+        "LHRTSF06",
+        "LHRTSTOP",
+        "LHRTSU01",
+        "LHRTSU02",
+        "LHRTSU03",
+        "LHRTSU04",
+        "LHRTSU05",
+        "LHRTSU06",
+        "LHRTSU07",
+        "LHRTSU08",
+        "LHRTSUXX",
+        "RPRAPA00",
+        "RPRAPA00_PBO",
+        "RPRAPADE_ALV",
+        "RPRAPAEX",
+        "RPRAPAEX_001",
+        "RPRAPAFO_ALV",
+        "RPRTB000",
+        "RPRTB000_ALV",
+        "RPRTEC00",
+        "RPRTEF00",
+        "RPRTRV00",
+        "RPRTRV01",
+        "RPRTRV10",
+        "RPRTRV11",
+        "RPRTRVDT",
+        "RPUMKC00",
+        "SAPLHRTS",
+        "TSKHINCL"
+      ],
+      "BI": [
+        "ZXRSAU01_RPY",
+        "ZXRSAU02_RPY"
+      ],
+      "PSM": [
+        "ZXFMCU10_RPY",
+        "ZXFMCU17_RPY",
+        "ZXFMDTU02_RPY",
+        "ZXFMYU19_RPY",
+        "ZXFMYU22_RPY",
+        "ZXFMYU33_RPY",
+        "YFM_COCKPITF01_RPY"
+      ],
+      "MM": [
+        "ZXM06U22_RPY"
+      ],
+      "PS": [
+        "YJWB001_RPY"
+      ]
+    },
+    "uncertain_claims": [
+      {
+        "id": 4,
+        "tier": "TIER_3",
+        "claim": "SAPLYBAPI_SISTER reads 6+ custom tables: YDONOR, YBAPI_EXPENDITURE_DETAILS, YBAPI_GLACCOUNT_DETAILS,"
+      }
+    ],
+    "superseded_claims": [
+      {
+        "id": 3,
+        "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+        "resolution": "Always check _2024_2026 suffix tables. Unsuffixed tables are truncated first attempts."
+      },
+      {
+        "id": 13,
+        "claim": "OP documents bypass F110, BCM, DMEE, and SWIFT entirely",
+        "resolution": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed."
+      },
+      {
+        "id": 14,
+        "claim": "BCM same-user batches = 1,557 (the dual-control gap count)",
+        "resolution": "BCM same-user batches = 3,394 when including both IBC15 AND IBC05 statuses. Then grew to 3,359 by Session #037 (+1,366 drift)."
+      },
+      {
+        "id": 15,
+        "claim": "REGUH.VBLNR doesn't match BSAK.AUGBL directly (incomplete link)",
+        "resolution": "REGUH.VBLNR = BSAK.AUGBL works perfectly. 1,380,108 matched rows confirmed."
+      },
+      {
+        "id": 16,
+        "claim": "Payment on-time rate = 1.1% (critical performance problem)",
+        "resolution": "1.1% is a measurement artifact. 73% of invoices have ZTERM=0001 (set to BUDAT). Real on-time for actual-terms = 4.6%. Real late >100 days = 43%."
+      },
+      {
+        "id": 17,
+        "claim": "102I bank clearing posts at 29.2%",
+        "resolution": "102I clears at 99.6% of items that post. 82% of items have BELNR=* (ACH returns) by design."
+      },
+      {
+        "id": 18,
+        "claim": "199K bank items are unreconciled (high operational gap)",
+        "resolution": "199K items are on 10xxxxx (bank permanent ledger, never cleared by design). Real unreconciled = 2,737 on 11xxxxx = 0.6% of total."
+      },
+      {
+        "id": 19,
+        "claim": "D/E/F/P prefixes in T010P TABKEY are functional period types",
+        "resolution": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types."
+      },
+      {
+        "id": 20,
+        "claim": "FMIFIIT=0 for ICBA means ICBA shares UNES FM area for postings",
+        "resolution": "FMIFIIT extraction script filtered by 7 FM areas. ICBA and UIL were not in the filter. The 0 was an extraction gap."
+      },
+      {
+        "id": 21,
+        "claim": "CSKA cost element table is empty; cost elements are not configured",
+        "resolution": "CSKA exists but is the header table. CSKB (time-dependent detail) has the actual cost elements. All institutes have 350-490 cost elements in CSKB."
+      },
+      {
+        "id": 22,
+        "claim": "AE and BH DMEE currency BAdIs exist in P01",
+        "resolution": "AE and BH BAdI implementations (YCL_IDFI_CGI_DMEE_AE, _BH) do NOT exist in P01. They exist only in D01 CTS."
+      },
+      {
+        "id": 23,
+        "claim": "T015L PPC country codes are ISO 20022 standard codes",
+        "resolution": "T015L LZBKZ uses UNESCO-specific codes. China uses slash-notation (/CSTRDR/, /CCDNDR/), not numeric 001/002/003."
+      },
+      {
+        "id": 24,
+        "claim": "F_DERAKHSHAN is the highest segregation-of-duties risk in BCM",
+        "resolution": "F_DERAKHSHAN has second approver 74% of the time. Not the top risk when full approval chain analyzed. C_LOPEZ + I_MARQUAND are actual top risks (94.7%/92.9% self-approval)."
+      },
+      {
+        "id": 25,
+        "claim": "CO table sizes: COOI=385K, COEP=616K, RPSCO=637K (from Session #005 anchors)",
+        "resolution": "Actual: COOI=773K, COEP=2.55M, RPSCO=127K. Anchors were 2x wrong and inconsistent."
+      },
+      {
+        "id": 26,
+        "claim": "CBE01 = Commercial Bank of Ethiopia (for STEM company code)",
+        "resolution": "Never verified via T012 SWIFT code. Was an assumption from bank ID + ETB currency. Could be different bank."
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "feedback_adaptive_field_splitting",
+      "rule": "RFC_READ_TABLE has a 512-byte line buffer limit. When total field widths exceed this, SAP returns TABLE_WITHOUT_DATA or DATA_BUFFER_EXCEEDED.",
+      "why": "Fixed MAX_FIELDS_PER_CALL=8 works for most tables but fails on ESSR (which has very wide session description fields). Even 5 fields overflow the buffer.",
+      "how_to_apply": "`rfc_helpers.py` now auto-detects the right chunk size:\n1. Try 8 fields -> if TABLE_WITHOUT_DATA, halve to 4\n2. Try 4 fields -> if still fails, halve to 2\n3. If even 2 fields fail -> genuinely empty or auth issue\n\nThis is in `rfc_read_paginated()` in the split-field section. The adaptive logic runs once per table per WHERE clause, then uses that chunk size for all pages.\n\nAdditional learnings:\n- ESSR max fields = 4 (LOESSION field is ~200 bytes alone)\n- BSIS/BSAS max fields = 8 (works fine with 28 fields split into 4 chunks)\n- EKPO max fields = 8 (19 fields, 3 chunks)\n- BKPF max fields = ALL (12 fields fit in one call, no split needed)",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_adaptive_field_splitting.md"
+    },
+    {
+      "id": "feedback_auto_reconnect_vpn",
+      "rule": "VPN drops are normal during long SAP extractions at UNESCO. Without auto-reconnect, each drop kills the extraction thread and remaining months get 0-row checkpoints (which block retries).",
+      "why": "BSIS extraction (2.29M rows, ~2 hours) required 4+ restarts due to VPN drops. Each restart was manual and lost time.",
+      "how_to_apply": "- `get_connection(\"P01\")` returns a `ConnectionGuard` (not raw pyrfc.Connection)\n- ConnectionGuard.call() catches connection-closed/timeout/CPIC errors\n- Retries up to 3 times with escalating wait (10s, 20s, 30s)\n- Transparent to callers -- rfc_read_paginated works unchanged\n\nError substrings that trigger reconnect:\n- \"connection closed\", \"partner not reached\", \"timeout\"\n- \"communication failure\", \"CPIC_\", \"RFC_COMMUNICATION_FAILURE\"\n- \"RFC_INVALID_HANDLE\", \"connection has been closed\"\n\nPair with error-safe checkpoints: if a period errors with 0 rows, do NOT write checkpoint file. This allows the period to be retried on next run.",
+      "severity": "CRITICAL",
+      "created_session": null,
+      "source_file": "feedback_auto_reconnect_vpn.md"
+    },
+    {
+      "id": "feedback_bash_autonomy",
+      "rule": "User wants AUTONOMOUS execution. Stop asking for permission or confirmation before running bash commands.",
+      "why": "Every session the user says \"execute autonomously\" and then Claude still asks \"can I run this?\" or \"should I proceed?\". This wastes time and frustrates the user.",
+      "how_to_apply": "1. NEVER ask \"can I run this command?\" — just run it\n2. NEVER ask \"should I proceed?\" — just proceed\n3. NEVER ask \"is the VPN connected?\" — just try the connection and report results\n4. If a command fails, fix it and retry — don't ask what to do\n5. If P01 connection fails, say \"P01 unreachable — need VPN\" and stop (don't ask)",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_bash_autonomy.md"
+    },
+    {
+      "id": "feedback_brain_code_tables_are_backbone",
+      "rule": "Programs and tables are the system. Skills, companions, knowledge docs are interpretation. The Brain must center on code→table→config relationships as the backbone.",
+      "why": "Session #048 INC-000006073 took hours tracing LHRTSF01→PA0027→ZXTRVU05→GGB1→KTOKK→AKONT manually. If the Brain had program→table→config edges as its core, a single impact query would have shown the entire chain in seconds. The 52K fund nodes and 7K transport nodes are bulk — the ~1,200 code nodes and ~120 table nodes with their relationships are where the real intelligence lives.",
+      "how_to_apply": "1. Brain rebuild (H34) must prioritize: code nodes, table nodes, config nodes, and the edges between them\n2. Edge types that matter most:\n   - CALLS (program → program/FM)\n   - READS_TABLE (program → table)\n   - JOINS_WITH (table → table)\n   - CONFIGURES (config table → program behavior)\n   - DETERMINES (data field → data field, e.g., KTOKK→AKONT)\n   - DERIVES_FIELD (program:line → field value)\n   - ROOT_CAUSED_BY (incident → code:line + config)\n3. Auto-parser covers CALLS + READS_TABLE. Manual edges needed for CONFIGURES, DETERMINES, DERIVES_FIELD.\n4. Every incident resolution should produce new edges — INC-000006073 produced 48 edges. These compound over time.\n5. The Brain is valuable when it answers \"what happens if X changes?\" — that requires program→table→config as backbone.",
+      "severity": "HIGH",
+      "created_session": 48,
+      "source_file": "feedback_brain_code_tables_are_backbone.md"
+    },
+    {
+      "id": "feedback_bseg_celonis_pattern",
+      "rule": "Never extract BSEG cluster table directly via RFC_READ_TABLE. It has severe limitations:",
+      "why": "BSEG is a cluster table that references 6 transparent secondary index tables. Extracting the cluster is 10-50x slower and misses fields.",
+      "how_to_apply": "Use the Celonis replacement pattern:\n\n| Table | Content | KOART | Filter |\n|-------|---------|-------|--------|\n| BSIK | Vendor open items | K | BUDAT (NOT CPUDT) |\n| BSAK | Vendor cleared items | K | BUDAT (NOT CPUDT) |\n| BSID | Customer open items | D | BUDAT (NOT CPUDT) |\n| BSAD | Customer cleared items | D | BUDAT (NOT CPUDT) |\n| BSIS | GL open items | S | BUDAT (NOT CPUDT) |\n| BSAS | GL cleared items | S | BUDAT (NOT CPUDT) |",
+      "severity": "CRITICAL",
+      "created_session": 10,
+      "source_file": "feedback_bseg_celonis_pattern.md"
+    },
+    {
+      "id": "feedback_bseg_is_join_not_table",
+      "rule": "BSEG is NOT a table we extract or enrich. Stop treating it as one.",
+      "why": "BSEG is a cluster table. The secondary indexes (BSIS/BSAS etc.) ARE the data. The Golden Query covers 85.9% WBS via OBJNRZ. Enriching from BSEG = waste.",
+      "how_to_apply": "When someone says \"BSEG field is missing\", first check if it's available via Golden Query JOIN. Only if genuinely unavailable from any joined table should you consider BSEG — and even then, it's low priority.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_bseg_is_join_not_table.md"
+    },
+    {
+      "id": "feedback_bseg_is_readable",
+      "rule": "BSEG CAN be read via RFC_READ_TABLE in P01. It has been declustered (converted to transparent table).",
+      "why": "We assumed BSEG was a cluster table and couldn't be extracted. It's been declustered in this system. The TABLE_WITHOUT_DATA error was caused by including MANDT in the filter.",
+      "how_to_apply": "When you need WBS element, extract PROJK from BSEG using document keys, then JOIN PRPS.PSPNR = PROJK to get POSID + POST1.",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_bseg_is_readable.md"
+    },
+    {
+      "id": "feedback_classify_systems_properly",
+      "rule": "When discovering a new system in the landscape, NEVER guess its purpose from the hostname.",
+      "why": "Session #031 misclassified BCU as \"Business Connector\" (was actually Budget Control System), missed that MuleSoft was middleware (not the target system — Core Manager/Planner are), and didn't find SuccessFactors because it connects via HTTP/ICF not RFC.",
+      "how_to_apply": "",
+      "severity": "CRITICAL",
+      "created_session": 31,
+      "source_file": "feedback_classify_systems_properly.md"
+    },
+    {
+      "id": "feedback_data_before_visual",
+      "rule": "When building visual companions (diagrams, dashboards, analysis pages), ALWAYS follow this order:",
+      "why": "Session #031 rebuilt the connectivity diagram 4 times because we kept discovering missing systems (7→21→31→38). Each rebuild wasted 10-15 minutes. If we'd analyzed all 239 RFC destinations + DBCON + TMSCSYS + TFDIR first, we'd have built the diagram once.",
+      "how_to_apply": "- For system diagrams: query RFCDES + DBCON + TMSCSYS + EDIDC + ICFSERVICE + TFDIR BEFORE drawing anything\n- For any companion: collect ALL data, classify it, THEN build HTML\n- Never classify a system from hostname alone — check CTS objects, jobs, and code references",
+      "severity": "HIGH",
+      "created_session": 31,
+      "source_file": "feedback_data_before_visual.md"
+    },
+    {
+      "id": "feedback_data_p01_code_d01",
+      "rule": "ALL reads = P01 (prod). Only exception: code deployment writes = D01 (dev).",
+      "why": "D01 may have untransported config, draft trees, or test entries that don't exist in P01. Only P01 reflects what is real and in production. Session #039 error: ran DMEE tree probe against D01 because P01 was unreachable — user correctly rejected the results because D01 config is not trustworthy for analysis.",
+      "how_to_apply": "If P01 is unreachable, WAIT. Do not fall back to D01 for reads. The only valid D01 operation is writing code. When P01 is down, work on offline tasks (skill docs, analysis of already-extracted data, scripts for later execution).",
+      "severity": "MEDIUM",
+      "created_session": 39,
+      "source_file": "feedback_data_p01_code_d01.md"
+    },
+    {
+      "id": "feedback_data_scope_2024_2026",
+      "rule": "Data scope = 2024 to 2026 ONLY.",
+      "why": "Pre-2024 data is historical context, not actionable. The user wants current-state analysis, not archaeology.",
+      "how_to_apply": "When extracting, enriching, or analyzing data, filter to 2024-2026. Don't spend time investigating pre-2024 anomalies unless explicitly asked. Transport analysis is the only exception where longer periods are needed.",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_data_scope_2024_2026.md"
+    },
+    {
+      "id": "feedback_decision_logs",
+      "rule": "Rule: Decision Logs Required for Destructive Actions",
+      "why": "— the rationale\n3. **Who decided** — user request vs AI decision\n4. **Reversible?** — can it be undone",
+      "how_to_apply": "",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_decision_logs.md"
+    },
+    {
+      "id": "feedback_diagram_layout_standard",
+      "rule": "System connectivity and interface mapping diagrams must use the `integration_diagram` skill at `.agents/skills/integration_diagram/SKILL.md`.",
+      "why": "Physics/snowflake layouts look unprofessional. The user wants architecture-quality diagrams: container-based zones, hub-and-spoke, orthogonal 90° connections, dark theme + neon accents. No external libraries (vis.js, D3) — pure CSS + inline SVG.",
+      "how_to_apply": "- ALWAYS read `.agents/skills/integration_diagram/SKILL.md` before building any connectivity/architecture diagram\n- Reference implementation: `Zagentexecution/mcp-backend-server-python/connectivity_diagram.html`\n- Zones: External (top), Infrastructure (left), Core Hub (center), Management (right), Spokes (bottom), Analytics (bottom)\n- Connections: SVG overlay with L-shaped orthogonal routing, solid=internal, dashed=external\n- Node click shows info panel\n- File must be self-contained HTML < 30KB\n- NEVER re-derive the pattern from scratch — read the skill first",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_diagram_layout_standard.md"
+    },
+    {
+      "id": "feedback_efficiency",
+      "rule": "Efficiency Rules",
+      "why": "Don't waste time searching for things already in MEMORY.md. Don't repeat what user already knows. Go direct to analysis/action.",
+      "how_to_apply": "",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_efficiency.md"
+    },
+    {
+      "id": "feedback_enrich_missing_fields",
+      "rule": "When fields are missing from an already-extracted table, DO NOT re-extract the whole table. Use the existing document keys (BUKRS + BELNR + GJAHR + BUZEI) to fetch ONLY the missing fields from SAP, then ALTER TABLE + UPDATE to add them.",
+      "why": "Re-extracting 3.7M rows wastes hours when you only need to add 2-3 columns. The data we already have (amounts, dates, GL accounts) doesn't change.",
+      "how_to_apply": "1. ALTER TABLE to add the new column(s)\n2. For each period (MONAT/PERIO), query SAP with the existing keys to get only the missing field values\n3. UPDATE the existing rows with the new values\n4. Run **one period at a time** — never all at once (VPN/memory limits)\n5. Use checkpoints so interrupted runs can resume\n\nThis supersedes and extends `feedback_missing_fields_by_key.md` with the explicit \"per period\" requirement.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_enrich_missing_fields.md"
+    },
+    {
+      "id": "feedback_estimate_before_extract",
+      "rule": "Before extracting ANY table, ALWAYS:",
+      "why": "User got frustrated when ESLL (2.9M rows, 619MB) and FMIOI (1.8M rows) ran for 30+ minutes without warning. Launching blind extractions wastes time and blocks the session.",
+      "how_to_apply": "Every extraction script must have a probe phase first. For tables >100K rows, use streaming to SQLite (not accumulate in RAM). For tables >500K rows, warn user and suggest background execution.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_estimate_before_extract.md"
+    },
+    {
+      "id": "feedback_extraction_is_skill_not_code",
+      "rule": "When the user says \"extract\", \"extraer\", \"pull from SAP\", \"save to Gold DB\" — this is a SKILL INVOCATION, not a coding task.",
+      "why": "Session #048 spent 4+ iterations and 3 script versions to extract BP tables — work that the `sap_data_extraction` skill already handles. The agent wrote code from scratch instead of reusing the proven skill. This violates the AGI agent builder principle: skills are reusable capabilities, not suggestions.",
+      "how_to_apply": "1. **Data extraction** → use `sap_data_extraction` skill pattern:\n   - Fields: `DDIF_FIELDINFO_GET` (always)\n   - Extraction: `rfc_read_paginated()` (always)\n   - Storage: Gold DB at canonical path (always)\n   - Script: `extract_bp_full.py` is the canonical template\n   \n2. **Code extraction** → use `sap_adt_api` skill pattern:\n   - ADT REST for D01 (password auth)\n   - `RPY_PROGRAM_READ` via RFC/SNC for P01 or D01\n   - Storage: `extracted_code/{SAP_STANDARD|UNESCO_CUSTOM_LOGIC}/{domain}/`\n\n3. **NEVER:**\n   - Write inline Python in bash -c for extraction\n   - Create a new extraction script from scratch\n   - Debug RFC connection issues that rfc_helpers already handles\n   - Manually specify field lists when DDIF can get them all\n\n4. **The canonical extraction flow:**\n   ```\n   User says \"extract X\" →\n   Agent reads skill →\n   Agent calls: fields = DDIF(table), rows = rfc_read_paginated(table, fields, where), save(db, table, rows) →\n   Done\n   ```\n\n5. **For new domains (like BusinessPartner):** add table definitions to `extract_bp_full.py` pattern — table name + WHERE clause only. The skill handles everything else.",
+      "severity": "MEDIUM",
+      "created_session": 48,
+      "source_file": "feedback_extraction_is_skill_not_code.md"
+    },
+    {
+      "id": "feedback_extraction_scope",
+      "rule": "Only extract data from 2024-2026. Do NOT go back to 2015 or other years.",
+      "why": "User explicitly defined the scope as 2024-2026. Extracting older years wastes time and resources (RFC calls are slow, tables are huge). Going back to 2015 was a massive waste — FMIOI alone would have taken 25+ minutes for irrelevant data.",
+      "how_to_apply": "Every RFC extraction MUST default to 2024-2026 unless the user says otherwise. Before starting any extraction, confirm the year range matches this rule.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_extraction_scope.md"
+    },
+    {
+      "id": "feedback_memory_no_truncation",
+      "rule": "MEMORY.md has NO line limit. The 200-line truncation rule from auto-memory documentation does not apply.",
+      "why": "User confirmed (Session #035, 2026-04-04) that with 1M context window, MEMORY.md loads fully regardless of size. The truncation warning in the system prompt is outdated.",
+      "how_to_apply": "- Do NOT compress or remove content from MEMORY.md to stay under 200 lines\n- Session history, feedback pointers, and all sections can grow freely\n- Still keep entries concise (one-liners) for readability, but no hard limit\n- Topic files remain the right place for DETAIL, MEMORY.md for INDEX — this is a readability choice, not a size constraint",
+      "severity": "MEDIUM",
+      "created_session": 35,
+      "source_file": "feedback_memory_no_truncation.md"
+    },
+    {
+      "id": "feedback_missing_fields_by_key",
+      "rule": "When a table is already extracted but missing fields, do NOT re-extract the entire table.",
+      "why": "Re-extracting 3.7M rows just to add a few columns is wasteful. The keys are already there — use them to do a targeted enrichment. The year/period filter keeps the RFC call small and follows the same proven extraction pattern.",
+      "how_to_apply": "Any time a table in the Gold DB is missing fields (KOSTL, PS_PSP_PNR, SGTXT, etc.), build a targeted enrichment script that:\n- Loops year/period (same as original extraction)\n- Reads existing keys from SQLite for that period\n- Queries SAP by BUDAT year/period + BUKRS+BELNR+GJAHR+BUZEI for only the missing fields\n- Patches the missing columns in place via ALTER TABLE + UPDATE",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_missing_fields_by_key.md"
+    },
+    {
+      "id": "feedback_never_delete_extracted_code",
+      "rule": "Rule: NEVER delete extracted SAP code or data",
+      "why": "ABAP source files, extracted code, SQLite DBs, and RPY files are the project's most valuable assets — NEVER delete, move, or gitignore them",
+      "how_to_apply": "",
+      "severity": "CRITICAL",
+      "created_session": null,
+      "source_file": "feedback_never_delete_extracted_code.md"
+    },
+    {
+      "id": "feedback_never_leave_ideas_as_comments",
+      "rule": "Never leave lessons, rules, or discoveries as conversation comments. Always persist them to feedback/memory files immediately.",
+      "why": "Session #035 — autocritique identified 2 important rules (period-by-period extraction, don't trust old anchors) but only wrote them as chat text. User had to ask \"is this in the brain?\" — it wasn't. Conversation text is ephemeral and invisible to future sessions.",
+      "how_to_apply": "- When you identify a lesson or rule during work: write a `feedback_*.md` file IMMEDIATELY\n- When you discover something about the project: write a `project_*.md` file IMMEDIATELY\n- Add pointer to MEMORY.md index\n- The retro file is NOT enough — retros are read at session start but feedback files are the durable rules\n- If you say \"lesson learned\" or \"next time I should\" in conversation text without creating a file = violation of this rule",
+      "severity": "CRITICAL",
+      "created_session": 35,
+      "source_file": "feedback_never_leave_ideas_as_comments.md"
+    },
+    {
+      "id": "feedback_never_reextract_released_transports",
+      "rule": "NEVER re-extract E071/E071K for SAP transports that have already been released. SAP clears these tables after release — re-extraction returns 0 objects / 0 keys.",
+      "why": "Session #031 — re-extracted D01K9B0CBF and D01K9B0F3V, got 0/0, then REPLACED the correct v1 data (36/682 and 9/51) with wrong empty values. Created false alarms, wrong conclusions, and required multiple rewrites to fix.",
+      "how_to_apply": "If transport data was already captured in a previous extraction or companion:\n1. That data IS the source of truth\n2. Do NOT re-run RFC on E071/E071K for the same transport\n3. If you must verify, check E070.TRSTATUS — if 'R' (released), the transport is released and E071 will be empty\n4. Only extract E071K for transports in status 'D' (modifiable)",
+      "severity": "CRITICAL",
+      "created_session": 31,
+      "source_file": "feedback_never_reextract_released_transports.md"
+    },
+    {
+      "id": "feedback_never_trust_old_anchors",
+      "rule": "Never trust row count estimates from previous sessions. Always probe actual count before planning extraction time.",
+      "why": "Session #035 — CO table anchors from Session #005 said COOI=385K, COEP=616K, RPSCO=637K. Actual 2024-2026 extraction: COOI=773K, COEP=2.55M, RPSCO=127K. COEP was 4x the estimate. This caused incorrect time estimates and the wrong extraction strategy (year-at-once instead of period-by-period).",
+      "how_to_apply": "- Before extracting: quick count with `SELECT COUNT(*) ... GJAHR='YYYY'` (1 field, fast)\n- If count > 100K/year: use period-by-period extraction\n- Old anchors are informational only — they may have been counted without year filter, with object-scoped approach, or data may have grown\n- Document actual counts in retro for future reference",
+      "severity": "CRITICAL",
+      "created_session": 35,
+      "source_file": "feedback_never_trust_old_anchors.md"
+    },
+    {
+      "id": "feedback_no_correlated_subquery",
+      "rule": "Never use correlated subqueries (`WHERE col = (SELECT ... FROM same_table WHERE ...)`) on Gold DB tables with >10K rows.",
+      "why": "Session #042 — 7 consecutive failed attempts on TCURR (55K rows). SQLite optimizer doesn't handle correlated subqueries well on large tables. Each outer row re-scans the inner query. Process hangs/times out.",
+      "how_to_apply": "When you need \"latest/min/max per group\" from a large table:\n1. `fetchall()` into Python\n2. Build dict with the aggregation in Python\n3. Use the dict for lookups\n\nExample (BAD):\n```sql\nSELECT FCURR, UKURS FROM TCURR WHERE GDATU = (SELECT MIN(GDATU) FROM TCURR t2 WHERE t2.FCURR = TCURR.FCURR)\n```\n\nExample (GOOD):\n```python\nrows = db.execute(\"SELECT FCURR, UKURS, GDATU FROM TCURR ORDER BY FCURR, GDATU\").fetchall()\nlatest = {}\nfor fc, uk, gd in rows:\n    if fc not in latest or gd < latest[fc][1]:\n        latest[fc] = (uk, gd)\n```",
+      "severity": "CRITICAL",
+      "created_session": 42,
+      "source_file": "feedback_no_correlated_subquery.md"
+    },
+    {
+      "id": "feedback_no_subagent_for_direct_work",
+      "rule": "When the task is to UPDATE files (skills, docs, code), do it directly. Don't launch a subagent to \"investigate if they need updating\" first.",
+      "why": "User corrected this in Session #018. The session close protocol says \"update affected skills\" — that means open them, edit them, commit. Not \"research whether they need updating.\" The subagent added latency and no value.",
+      "how_to_apply": "If the action verb is \"update\", \"fix\", \"write\", \"create\" — use Read + Edit directly. Only use Explore subagents for genuine open-ended research where you don't know what you're looking for.",
+      "severity": "MEDIUM",
+      "created_session": 18,
+      "source_file": "feedback_no_subagent_for_direct_work.md"
+    },
+    {
+      "id": "feedback_p01_landscape_violation",
+      "rule": "Production customizing requests (P01K* with TRFUNCTION='W') are ALWAYS a landscape violation. The standard path is D01 → P01 via transport.",
+      "why": "During Upgrade 2026 (2026-04-07), open P01 customizing requests blocked transport imports. Worse, if not detected, D01→P01 transports silently overwrite P01-only changes, losing emergency fixes and audit corrections.",
+      "how_to_apply": "- When analyzing ANY transport order, first check WHERE it was created (system prefix)\n- P01K* customizing = violation. Always ask: why was it opened? does D01 have the change? will upgrade overwrite it?\n- Root cause categories: EMERGENCY, PERIOD_SENSITIVE, AUDIT_DRIVEN, CONFIGURATION_DRIFT, SYSTEM_FORCED\n- The transport companion skill (sap_transport_companion) now has Step 1b for landscape violation detection\n- Pre-upgrade checklist: scan P01 open requests 2 weeks before any import\n- Monthly P01 hygiene: zero tolerance for customizing requests older than 30 days",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_p01_landscape_violation.md"
+    },
+    {
+      "id": "feedback_parallel_companion_build",
+      "rule": "For multi-tab/page companion HTML files, use the parallel agent companion builder pattern:",
+      "why": "Building 10+ tabs sequentially wastes time. Each tab is independent (own queries, own HTML). Parallel build can 3-5x the speed.",
+      "how_to_apply": "When companion has >5 tabs, spawn one agent per tab with: (1) the data queries needed, (2) the HTML template for that tab, (3) the shared CSS/header. Merge results. For smaller companions (<5 tabs), single-agent build is fine.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_parallel_companion_build.md"
+    },
+    {
+      "id": "feedback_parallel_extraction",
+      "rule": "When extracting multiple SAP tables to Gold DB, run up to 5 tables in parallel — each with its own RFC connection.",
+      "why": "Session #048 extracted 22 tables sequentially. LFA1 alone (147 fields, 316K rows) took ~38 minutes. Sequential = hours. Parallel (5 at a time) = fraction of that.",
+      "how_to_apply": "1. Extraction scripts MUST support single-table CLI argument (e.g., `python extract_bp_full.py LFA1`)\n2. Launch up to 5 background processes in parallel: `python script.py TABLE1 & python script.py TABLE2 & ...`\n3. SQLite WAL mode handles concurrent writes — no conflict as long as each process writes to different tables\n4. Each process gets its own RFC connection (ConnectionGuard)\n5. Max 5 parallel = safe for SAP system (don't overload with too many RFC sessions)\n6. After first batch of 5 completes, launch next batch",
+      "severity": "MEDIUM",
+      "created_session": 48,
+      "source_file": "feedback_parallel_extraction.md"
+    },
+    {
+      "id": "feedback_period_by_period_extraction",
+      "rule": "Always use period-by-period extraction (GJAHR + PERIO) for tables with >100K rows per year. Never extract a full year in one call.",
+      "why": "Session #035 — COEP year-at-once (1.1M rows) accumulated in memory for 30+ min, then VPN dropped and lost everything. Period-by-period (17 periods —— ~90K rows) completed successfully with 3 VPN drops — each period persists to SQLite immediately, fresh RFC connection per period.",
+      "how_to_apply": "- If table has PERIO/MONAT field and estimated >100K rows/year: split by period\n- Fresh `get_connection()` per period (not reusing connection across periods)\n- `load_to_sqlite()` immediately after each period extraction\n- Check for existing data before extracting (skip already-loaded periods)\n- RPSCO-type tables (pivoted, no PERIO) can use year-at-once if <50K rows/year",
+      "severity": "CRITICAL",
+      "created_session": 35,
+      "source_file": "feedback_period_by_period_extraction.md"
+    },
+    {
+      "id": "feedback_pmo_count_before_close",
+      "rule": "When adding PMO items during a session, update the header count (`Current count: B=X H=Y G=Z = N total`) IMMEDIATELY after adding items — not as a separate fix commit after the fact.",
+      "why": "Session #039 added G61-G64 (4 items) but committed the session close with the old count (27 instead of 31). This is the exact same pattern that caused H13 to rot for 15 sessions — stale PMO state that nobody catches because the count looks clean. Session #038 had the same bug with the header saying \"10 High / 31 total\" when it was actually 7 High / 28 total. Two consecutive sessions with the same error = systemic, not accidental.",
+      "how_to_apply": "Before the FINAL commit of any session:\n1. Count non-struck H items manually\n2. Count non-struck G items manually\n3. Verify `total = B + H + G`\n4. Verify `items_at_start + items_added - items_struck = total`\n5. Update header line\n6. THEN commit\n\nThis is a pre-commit check, not a post-commit fix. If the AGI retro audit catches it, the session already failed once.",
+      "severity": "MEDIUM",
+      "created_session": 39,
+      "source_file": "feedback_pmo_count_before_close.md"
+    },
+    {
+      "id": "feedback_pmo_reconciliation",
+      "rule": "At session close, ALWAYS reconcile `.agents/intelligence/PMO_BRAIN.md` with all pending items from the session.",
+      "why": "Between sessions #009 and #020 (11 sessions), PMO_BRAIN.md was never reconciled. Pending items accumulated in individual SESSION_LOG entries but were never centralized. Result: 42 real pending items vs 8 tracked in MEMORY.md — 34 items invisible. User had to request a full 19-session audit to find them.",
+      "how_to_apply": "At the END of every session:\n1. List all NEW pending items discovered during the session\n2. Add each to PMO_BRAIN.md under appropriate section (B=Blocking, H=High, G=Backlog)\n3. Strike through any items completed during the session\n4. Write in SESSION_LOG: \"PMO reconciled: +N new, -N completed, N total pending\"\n5. Update MEMORY.md pending COUNT (not the list — list lives in PMO_BRAIN.md only)\n6. If you skip this step, items WILL get lost again",
+      "severity": "CRITICAL",
+      "created_session": 2,
+      "source_file": "feedback_pmo_reconciliation.md"
+    },
+    {
+      "id": "feedback_query_data_before_hardcoding",
+      "rule": "ALWAYS query the actual data before hardcoding configuration mappings.",
+      "why": "Session #041 wasted a round-trip creating DMEE_COMPANY_MAP with payment method codes [\"T\", \"U\"] for UNES. A single SQL query on T042A showed the real codes are [\"4\", \"5\", \"H\", \"I\", \"J\", \"N\", \"O\", \"S\"]. The wrong codes produced only 1 USES_DMEE_TREE edge instead of 36.",
+      "how_to_apply": "When creating config-to-config edges (USES_DMEE_TREE, ROUTES_TO_BANK, etc.), first `SELECT DISTINCT` from the Gold DB to get the real values. Never assume SAP configuration codes from memory or domain knowledge alone — they're arbitrary and country-specific.",
+      "severity": "CRITICAL",
+      "created_session": 41,
+      "source_file": "feedback_query_data_before_hardcoding.md"
+    },
+    {
+      "id": "feedback_reuse_extraction_pattern",
+      "rule": "NEVER write extraction scripts from scratch. The proven pattern exists and has been tested on 93 tables / 24M+ rows.",
+      "why": "Session #048 wasted 4+ iterations writing/debugging extraction scripts for BP tables when the exact same pattern was already working in `extract_co_tables.py`, `extract_bkpf_bseg_parallel.py`, etc. Reinventing caused: bash quote errors, wrong field probe (RFC_READ_TABLE ROWCOUNT=0 crashes on wide tables), missing field splitting, 3 script versions.",
+      "how_to_apply": "1. For field list: use `DDIF_FIELDINFO_GET` (NOT `RFC_READ_TABLE ROWCOUNT=0` — crashes on wide tables)\n2. For extraction: use `rfc_read_paginated()` from `rfc_helpers.py` — handles pagination, field splitting, reconnect\n3. For new tables: copy `extract_bp_full.py` as template — it has the correct pattern\n4. NEVER write inline Python in bash -c for extraction — use a .py file\n5. The canonical extraction script is `extract_bp_full.py` — 22 tables, all fields, DDIF probe, auto-split",
+      "severity": "CRITICAL",
+      "created_session": 48,
+      "source_file": "feedback_reuse_extraction_pattern.md"
+    },
+    {
+      "id": "feedback_reuse_proven_patterns",
+      "rule": "Feedback: Reuse proven patterns, don't reinvent (Session #010)",
+      "why": "When a similar task has been done before successfully, READ the working solution FIRST before touching new scripts. Don't reinvent.",
+      "how_to_apply": "",
+      "severity": "MEDIUM",
+      "created_session": 10,
+      "source_file": "feedback_reuse_proven_patterns.md"
+    },
+    {
+      "id": "feedback_rfc_data_loss_workaround",
+      "rule": "Bug: SAPSQL_DATA_LOSS during RFC_READ_TABLE pagination",
+      "why": "Reducing fields does NOT fix it. The error is in the ABAP kernel's cursor positioning, not the output buffer.",
+      "how_to_apply": "- ALL extraction scripts must use this pattern for large tables\n- If a month fails with DATA_LOSS, automatically fall back to day-by-day extraction\n- This should be built into `rfc_helpers.py` as a fallback strategy\n- Document in sap_data_extraction skill",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_rfc_data_loss_workaround.md"
+    },
+    {
+      "id": "feedback_session_close_annotations",
+      "rule": "At session close, BEFORE writing the retro, annotate every SAP object analyzed.",
+      "why": "47 sessions produced ~200+ learnings about specific programs, tables, and config objects. Only 41 were recovered in Session #048 because they were never tagged back to the objects. Intermediate conclusions get overwritten by later findings but the annotations may still carry the old version. Each annotation must be the FINAL conclusion, not a partial hypothesis.",
+      "how_to_apply": "",
+      "severity": "CRITICAL",
+      "created_session": 48,
+      "source_file": "feedback_session_close_annotations.md"
+    },
+    {
+      "id": "feedback_session_close_protocol",
+      "rule": "Before closing a session, ALWAYS:",
+      "why": "If only MEMORY.md is updated but skills are not, the next session will repeat the same mistakes because skills are what agents READ when executing tasks. MEMORY.md is context; skills are instructions.",
+      "how_to_apply": "At session close, grep for all skills that were used or affected, read their SKILL.md, and update with findings. This is NON-NEGOTIABLE.",
+      "severity": "HIGH",
+      "created_session": null,
+      "source_file": "feedback_session_close_protocol.md"
+    },
+    {
+      "id": "feedback_session_retro_files",
+      "rule": "SESSION_LOG.md must NOT accumulate full session content. It is an index only.",
+      "why": "SESSION_LOG reached 993 lines by session #027 — became unreadable and context-heavy. Individual retro files are self-contained, easy to read at session start, and don't bloat the shared index file.",
+      "how_to_apply": "- At session END: create retro file first, then add one row to SESSION_LOG index.\n- At session START: read SESSION_LOG index to find session number, then read the retro file directly.\n- Never write full session content into SESSION_LOG.\n- Template sections: accomplishments, discoveries, what failed/corrected, verification check, PMO reconciliation, pending→next.",
+      "severity": "HIGH",
+      "created_session": 27,
+      "source_file": "feedback_session_retro_files.md"
+    },
+    {
+      "id": "feedback_start_close_symmetry",
+      "rule": "# Rule",
+      "why": "Session open and session close must be mechanically symmetric. Asymmetry between the two generates cross-session inconsistencies (lost baselines, un-auditable closure, zombie accumulation, H-items rotting). The control must be executable, not prose.",
+      "how_to_apply": "",
+      "severity": "MEDIUM",
+      "created_session": 37,
+      "source_file": "feedback_start_close_symmetry.md"
+    },
+    {
+      "id": "feedback_stream_large_tables",
+      "rule": "For large tables (>100K rows):",
+      "why": "FMIOI extraction accumulated 2GB in RAM and had to be killed. ESLL JSON was 619MB and couldn't be loaded with json.load().",
+      "how_to_apply": "Any table expected >100K rows must use the stream-to-SQLite pattern. Check memory estimates: ~200 bytes/row in Python dicts.",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_stream_large_tables.md"
+    },
+    {
+      "id": "feedback_tabkey_language_codes",
+      "rule": "In SAP E071K TABKEYs, single-letter prefixes before client+company code are LANGUAGE KEYS (SPRAS), not functional categories.",
+      "why": "Session #031 — misinterpreted T010P keys 350DSTEM/350ESTEM/350FSTEM/350PSTEM as \"D=standard posting period, E=special period, F=fiscal year change, P=posting period\". They are actually the same posting period description in 4 languages.",
+      "how_to_apply": "When parsing TABKEYs:\n1. If you see single-letter prefix + MANDT(3) + BUKRS(4) → that letter is SPRAS (language)\n2. Text tables (*T suffix) always have SPRAS as part of the key\n3. T012T, T035U, T043GT, T043ST, TKT09, FM01T, FMHIVARNTT all follow this pattern\n4. The functional content is the SAME across all language variants — they're just translations",
+      "severity": "MEDIUM",
+      "created_session": 31,
+      "source_file": "feedback_tabkey_language_codes.md"
+    },
+    {
+      "id": "feedback_text_parsing_not_acceptable",
+      "rule": "Structured data (WBS element, cost center, fund center, fund) must ALWAYS come from proper database fields via JOINs. NEVER rely on parsing text fields (SGTXT, BKTXT, etc.) as a substitute.",
+      "why": "Text parsing is fragile — different users type different formats, abbreviations change, and coverage is never 100%. The user explicitly rejected SGTXT parsing for WBS element even though it had 89.5% coverage. A proper field via JOIN is the only acceptable approach.",
+      "how_to_apply": "- If a field is missing from the current table, look for it in related tables (FMIFIIT for FM data, PRPS for WBS, etc.)\n- Build the JOIN chain: BSIS.BUZEI = FMIFIIT.KNBUZEI, FMIFIIT.OBJNRZ = PRPS.OBJNR\n- If the field truly doesn't exist in any extractable table, say so — don't offer text parsing as an alternative",
+      "severity": "CRITICAL",
+      "created_session": null,
+      "source_file": "feedback_text_parsing_not_acceptable.md"
+    },
+    {
+      "id": "feedback_verify_empty_table_claims",
+      "rule": "NEVER trust \"table X has 0 rows\" claims from previous sessions without re-verifying against live system.",
+      "why": "Session #021 claimed FEBEP=0 rows. This was repeated in 4 subsequent sessions (#022-#028) and embedded in 2 SKILL.md files. Session #029 proved FEBEP has **223,710 items** (2024-2026), 99.9% posted. EBS is fully active. The original claim may have been from a wrong client, wrong system, or a query error.",
+      "how_to_apply": "When a table is claimed empty, especially if that claim drives architectural conclusions (e.g., \"BCM replaced EBS\"), always verify with a fresh `RFC_READ_TABLE` count before building on that assumption. One wrong \"0 rows\" claim cascaded into incorrect architecture understanding for 4 sessions.",
+      "severity": "CRITICAL",
+      "created_session": 21,
+      "source_file": "feedback_verify_empty_table_claims.md"
+    },
+    {
+      "id": "feedback_visjs_inline",
+      "rule": "HTML dashboards using vis-network.js must have the library inlined (embedded in a `<script>` tag), never loaded from a CDN URL.",
+      "why": "VSCode's webview (Simple Browser) blocks external CDN requests due to Content Security Policy. The graph canvas renders empty while the rest of the HTML (sidebar, tables) works fine — making it look like a data bug when it's actually a loading bug.",
+      "how_to_apply": "- Keep a local copy at `Zagentexecution/mcp-backend-server-python/vis-network.min.js` (644KB)\n- When generating HTML with vis.js, read the local file and embed it: `<script>{vis_js_content}</script>`\n- Also check for duplicate node IDs — vis.js silently fails on duplicates\n- Applies to: `connectivity_diagram.html`, `p2p_process_mining.html`, any future graph dashboards",
+      "severity": "CRITICAL",
+      "created_session": null,
+      "source_file": "feedback_visjs_inline.md"
+    },
+    {
+      "id": "feedback_visjs_no_duplicate_ids",
+      "rule": "vis.js `new vis.DataSet([...])` silently fails when two nodes share the same `id`. The network div renders blank — no error in console.",
+      "why": "In connectivity_diagram.html, the P01 node appeared twice (central hub + self-referencing RFC destination \"P01\"). The graph was empty but the sidebar rendered fine, making it look like a vis.js loading issue.",
+      "how_to_apply": "- When building nodes from RFC data, skip self-references (where target system == source system)\n- Always assert uniqueness before writing: `assert len(ids) == len(set(ids))`\n- Use `rebuild_connectivity.py` as the canonical builder — it has the dedup logic",
+      "severity": "MEDIUM",
+      "created_session": null,
+      "source_file": "feedback_visjs_no_duplicate_ids.md"
+    },
+    {
+      "id": "feedback_plans_in_project",
+      "rule": "Always copy plan files into session_plans/ immediately after plan mode creates them",
+      "why": "Plans in ~/.claude/plans/ are machine-specific and lost on machine change. Session plans are valuable design artifacts that must be portable.",
+      "how_to_apply": "After ExitPlanMode is approved, immediately copy the plan file to session_plans/MMDDYYYY_sessionNNN_{plan_name}.md. This was introduced in Session #049 when the plan file was lost from ~/.claude/plans/.",
+      "severity": "HIGH",
+      "created_session": 49,
+      "source_file": "feedback_plans_in_project.md"
+    },
+    {
+      "id": "feedback_agent_not_human_thinking",
+      "rule": "NEVER design brain architecture using human information patterns. The agent is an LLM, text-based, with a large context window.",
+      "why": "Human patterns: one-file-per-entity, organize into folders, pretty markdown, small focused files. Agent reality: bottleneck is tool calls not file size, 5000 lines = 1 Read call same as 50 lines, 1M context fits entire brain state at 8.5%, cross-referencing in context is the agent superpower — seeing patterns across rules+claims+annotations+edges simultaneously without additional tool calls. INC-000006073 proved this: root cause connected 5 domains, unpredictable which objects mattered. With everything loaded, agent finds unexpected connections in ONE reasoning pass. Cross-project feedback from unescore20-PPM-brain.",
+      "how_to_apply": "When designing ANY knowledge structure: (1) Can it be ONE file? If <100K tokens, YES. (2) Never create one-file-per-entity. (3) Use brain_state.json pattern: dense JSON, everything in one load. (4) File organization is for humans browsing folders. Agents browse context. (5) Exception: deep domain docs (knowledge/domains/) stay separate because they are 1000+ lines each and used on-demand, not at session start.",
+      "severity": "CRITICAL",
+      "created_session": 49,
+      "source_file": "feedback_agent_not_human_thinking.md"
+    },
+    {
+      "id": "feedback_design_for_growing_context",
+      "rule": "Design for growing context windows — be LESS conservative about loading, not more",
+      "why": "Context windows are doubling regularly. 85K tokens is 8.5% at 1M, 4.25% at 2M, 1.7% at 5M. What feels like a lot today is trivial tomorrow. The agent does not know when context will double — it could be next month. Design decisions should anticipate growth, not current limits. Never optimize for saving context space at the cost of tool calls.",
+      "how_to_apply": "When deciding what to include in brain_state.json or any session-start load: include MORE, not less. The cost of an extra 10K tokens in context is invisible. The cost of a missing connection (requiring an extra Read call or missed pattern) is real. Err on the side of loading too much.",
+      "severity": "HIGH",
+      "created_session": 49,
+      "source_file": "feedback_design_for_growing_context.md"
+    },
+    {
+      "id": "feedback_always_utf8_encoding",
+      "rule": "Always use explicit UTF-8 encoding when reading/writing JSON or text files in Python on Windows",
+      "why": "Windows default encoding is cp1252, not UTF-8. Python open() without encoding arg uses cp1252 on Windows, which corrupts em dashes, arrows, multiplication signs, and other non-ASCII chars. This causes silent data loss AND JSON decode errors later. Discovered in Session #049 when feedback_rules.json became unreadable after Python stdout writes.",
+      "how_to_apply": "ALWAYS: open(file, encoding='utf-8') for read, open(file, 'w', encoding='utf-8') for write. NEVER: open(file) or open(file, 'w') on Windows. When running python -c from bash, use << 'PYEOF' heredoc to avoid shell mangling. json.dump() should always include ensure_ascii=False with explicit utf-8 file handle.",
+      "severity": "CRITICAL",
+      "created_session": 49,
+      "source_file": "feedback_always_utf8_encoding.md"
+    }
+  ],
+  "claims": [
+    {
+      "id": 1,
+      "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Source code LHRTSF01.abap line 852: IF epk-bukst = epk-bukrs. Verified from extracted code in Session #048.",
+      "evidence_against": null,
+      "related_objects": [
+        "LHRTSF01",
+        "PA0001",
+        "PTRV_SCOS",
+        "GGB1"
+      ],
+      "domain": "Travel",
+      "created_session": 48,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "claim": "Three safety nets were broken for INC-000006073: BAdI PA0027-02 expired (2021), ZXTRVU05 commented out (Konakov 2018), GGB1 missing GL 2021011",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Source code analysis in Session #048. PA0027-02 has end date 2021. ZXTRVU05 line 63 is commented out. GGB1 has no rule for account 2021011.",
+      "evidence_against": null,
+      "related_objects": [
+        "LHRTSF01",
+        "ZXTRVU05",
+        "GGB1",
+        "PA0027"
+      ],
+      "domain": "Travel",
+      "created_session": 48,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 3,
+      "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Re-extraction in Session #029 revealed 223K rows. The _2024_2026 suffix table has the real data.",
+      "evidence_against": "Original extraction in Session #025 returned 0 rows (truncated first attempt with 50K limit and 104 columns).",
+      "related_objects": [
+        "FEBEP",
+        "FEBEP_2024_2026"
+      ],
+      "domain": "FI",
+      "created_session": 25,
+      "resolved_session": 29,
+      "resolution_notes": "Always check _2024_2026 suffix tables. Unsuffixed tables are truncated first attempts.",
+      "status": "superseded"
+    },
+    {
+      "id": 4,
+      "claim": "SAPLYBAPI_SISTER reads 6+ custom tables: YDONOR, YBAPI_EXPENDITURE_DETAILS, YBAPI_GLACCOUNT_DETAILS, YBAPI_GLAC_DETAILS, YBAPI_LINEITEM_BUDET_DETAILS, YBAPI_YFM2_GLACCOUNT_DETAILS",
+      "claim_type": "hypothesis",
+      "confidence": "TIER_3",
+      "evidence_for": "D010TAB filtered to YY* in SE16 screenshot, Session #049.",
+      "evidence_against": null,
+      "related_objects": [
+        "SAPLYBAPI_SISTER",
+        "YDONOR"
+      ],
+      "domain": "Integration",
+      "created_session": 49,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 5,
+      "claim": "FPAYP-XREF3 feeds DMEE tree PurposeCode via node N_9662041050 in /CGI_XML_CT_UNESCO",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Confirmed from P01 DMEE tree analysis, Session #039. 13 UNESCO DMEE trees analyzed (8,308 nodes). XREF3 mapped to Purp>Cd node.",
+      "evidence_against": null,
+      "related_objects": [
+        "FPAYP",
+        "DMEE_TREE:/CGI_XML_CT_UNESCO"
+      ],
+      "domain": "Payment",
+      "created_session": 39,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 6,
+      "claim": "BCM dual-control gap: 3,359 same-user batches, $656M exposure. Top 2 = C_LOPEZ + I_MARQUAND (94.7%/92.9% self-approval)",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "BNK_BATCH_HEADER analysis in Gold DB, Session #037. bcm_dual_control_monitor.py confirmed counts.",
+      "evidence_against": null,
+      "related_objects": [
+        "BNK_BATCH_HEADER",
+        "F110"
+      ],
+      "domain": "FI",
+      "created_session": 37,
+      "resolved_session": null,
+      "resolution_notes": "Reframed as automation debt, not fraud. HQ treasury manual Wednesday cycle.",
+      "status": "active"
+    },
+    {
+      "id": 7,
+      "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "BSEG is a cluster table. The Golden Query joins bseg_union + BKPF + FMIFIIT + PRPS for 85.9% WBS coverage. Session #035.",
+      "evidence_against": null,
+      "related_objects": [
+        "BSEG",
+        "BSIS",
+        "BSAS",
+        "BSIK",
+        "BSAK",
+        "BSID",
+        "BSAD",
+        "BKPF",
+        "FMIFIIT",
+        "PRPS"
+      ],
+      "domain": "FI",
+      "created_session": 35,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 8,
+      "claim": "SuccessFactors EC IS ACTIVE in P01 — not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs)",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "TBTCO job analysis, Session #035. Job names + run counts confirmed from Gold DB.",
+      "evidence_against": "Earlier assumption (pre-#035) that SF EC was 'planned, not live'.",
+      "related_objects": [
+        "ECPAO_OM_OBJECT_EXTRACTION",
+        "ECPAO_EMPL_EXTRACTION"
+      ],
+      "domain": "Integration",
+      "created_session": 35,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 9,
+      "claim": "P01 has 0 Fiori apps in production (13 exist in D01 only)",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_2",
+      "evidence_for": "ICF service scan + TADIR comparison, Session #005b. D01 has 13 ZHCM*/ZFIORI BSP apps, P01 has none.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "HCM",
+      "created_session": 5,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 10,
+      "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Join validation in Gold DB, Session #016. 100% match on test sample.",
+      "evidence_against": null,
+      "related_objects": [
+        "FMIFIIT",
+        "BSIS",
+        "BKPF"
+      ],
+      "domain": "PSM",
+      "created_session": 16,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 11,
+      "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "LFB1 query for vendor 200083534 (Katja HINZ's travel vendor) shows AKONT=2021011. GB922 has no entry for this GL. Session #048.",
+      "evidence_against": null,
+      "related_objects": [
+        "LFB1",
+        "GB922",
+        "GGB1",
+        "T077K"
+      ],
+      "domain": "Travel",
+      "created_session": 48,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 12,
+      "claim": "D010TAB/WBCROSSGT have 200M+ rows system-wide — never bulk extract. Query on-demand for specific Y*/Z* objects via RFC.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_2",
+      "evidence_for": "User confirmed from SE16 observation, Session #049. Filtered to YY* shows manageable rows for custom objects only.",
+      "evidence_against": null,
+      "related_objects": [
+        "D010TAB",
+        "WBCROSSGT"
+      ],
+      "domain": "Brain_Architecture",
+      "created_session": 49,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 13,
+      "claim": "OP documents bypass F110, BCM, DMEE, and SWIFT entirely",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "GL account range analysis (HKONT extraction). Direct join REGUH to BSAK confirmed no OP docs in REGUH.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed.",
+      "status": "superseded"
+    },
+    {
+      "id": 14,
+      "claim": "BCM same-user batches = 1,557 (the dual-control gap count)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BNK_BATCH_HEADER query on both statuses. H13 was understated for 7 sessions.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "BCM same-user batches = 3,394 when including both IBC15 AND IBC05 statuses. Then grew to 3,359 by Session #037 (+1,366 drift).",
+      "status": "superseded"
+    },
+    {
+      "id": 15,
+      "claim": "REGUH.VBLNR doesn't match BSAK.AUGBL directly (incomplete link)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Direct join executed in #027. Gap note was documented before running the join.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "REGUH.VBLNR = BSAK.AUGBL works perfectly. 1,380,108 matched rows confirmed.",
+      "status": "superseded"
+    },
+    {
+      "id": 16,
+      "claim": "Payment on-time rate = 1.1% (critical performance problem)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BSAK ZTERM analysis + FMBKP term extraction showed Z001 population.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 25,
+      "resolved_session": 26,
+      "resolution_notes": "1.1% is a measurement artifact. 73% of invoices have ZTERM=0001 (set to BUDAT). Real on-time for actual-terms = 4.6%. Real late >100 days = 43%.",
+      "status": "superseded"
+    },
+    {
+      "id": 17,
+      "claim": "102I bank clearing posts at 29.2%",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "FEBRE Tag 86 analysis showed return documents.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 29,
+      "resolved_session": 30,
+      "resolution_notes": "102I clears at 99.6% of items that post. 82% of items have BELNR=* (ACH returns) by design.",
+      "status": "superseded"
+    },
+    {
+      "id": 18,
+      "claim": "199K bank items are unreconciled (high operational gap)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BSAS analysis. 10xxxxx cleared=0, 11xxxxx cleared=99.4%. Architecture is correct.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 28,
+      "resolved_session": 29,
+      "resolution_notes": "199K items are on 10xxxxx (bank permanent ledger, never cleared by design). Real unreconciled = 2,737 on 11xxxxx = 0.6% of total.",
+      "status": "superseded"
+    },
+    {
+      "id": 19,
+      "claim": "D/E/F/P prefixes in T010P TABKEY are functional period types",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #031 TABKEY analysis. SAP standard practice for multi-language text variants.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 30,
+      "resolved_session": 31,
+      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types.",
+      "status": "superseded"
+    },
+    {
+      "id": 20,
+      "claim": "FMIFIIT=0 for ICBA means ICBA shares UNES FM area for postings",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "FM consultant confirmed all institutes have their own FM area. Script line 98 had incomplete filter.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "PSM",
+      "created_session": 30,
+      "resolved_session": 31,
+      "resolution_notes": "FMIFIIT extraction script filtered by 7 FM areas. ICBA and UIL were not in the filter. The 0 was an extraction gap.",
+      "status": "superseded"
+    },
+    {
+      "id": 21,
+      "claim": "CSKA cost element table is empty; cost elements are not configured",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #034 correction. Wrong field names used initially.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 33,
+      "resolved_session": 34,
+      "resolution_notes": "CSKA exists but is the header table. CSKB (time-dependent detail) has the actual cost elements. All institutes have 350-490 cost elements in CSKB.",
+      "status": "superseded"
+    },
+    {
+      "id": 22,
+      "claim": "AE and BH DMEE currency BAdIs exist in P01",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "TADIR query in P01. System uses UTIL fallback in production for these countries.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 24,
+      "resolved_session": 25,
+      "resolution_notes": "AE and BH BAdI implementations (YCL_IDFI_CGI_DMEE_AE, _BH) do NOT exist in P01. They exist only in D01 CTS.",
+      "status": "superseded"
+    },
+    {
+      "id": 23,
+      "claim": "T015L PPC country codes are ISO 20022 standard codes",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Live P01 T015L extraction in #025.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 24,
+      "resolved_session": 25,
+      "resolution_notes": "T015L LZBKZ uses UNESCO-specific codes. China uses slash-notation (/CSTRDR/, /CCDNDR/), not numeric 001/002/003.",
+      "status": "superseded"
+    },
+    {
+      "id": 24,
+      "claim": "F_DERAKHSHAN is the highest segregation-of-duties risk in BCM",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #037 full-data analysis. H13 hypothesis from #036 was partially wrong.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 36,
+      "resolved_session": 37,
+      "resolution_notes": "F_DERAKHSHAN has second approver 74% of the time. Not the top risk when full approval chain analyzed. C_LOPEZ + I_MARQUAND are actual top risks (94.7%/92.9% self-approval).",
+      "status": "superseded"
+    },
+    {
+      "id": 25,
+      "claim": "CO table sizes: COOI=385K, COEP=616K, RPSCO=637K (from Session #005 anchors)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #035 extraction showed 2x larger.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 34,
+      "resolved_session": 35,
+      "resolution_notes": "Actual: COOI=773K, COEP=2.55M, RPSCO=127K. Anchors were 2x wrong and inconsistent.",
+      "status": "superseded"
+    },
+    {
+      "id": 26,
+      "claim": "CBE01 = Commercial Bank of Ethiopia (for STEM company code)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "T012 not readable in second run. Session #019 verification check flagged as INFERRED.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Treasury",
+      "created_session": 18,
+      "resolved_session": 19,
+      "resolution_notes": "Never verified via T012 SWIFT code. Was an assumption from bank ID + ETB currency. Could be different bank.",
+      "status": "superseded"
+    }
+  ],
+  "known_unknowns": [
+    {
+      "id": "KU-001",
+      "question": "What is the exact validation point that generates RW609 error in Travel Business Area configuration?",
+      "why_unknown": "Vendor 10133079 has unique AKONT=2021011 triggering RW609. GGB1 9-step substitution mapped but final rejection point unknown.",
+      "raised_session": 47,
+      "domain": "Travel"
+    },
+    {
+      "id": "KU-002",
+      "question": "Does SuccessFactors EC Payroll actually PROCESS the extracted data, or only extract it?",
+      "why_unknown": "1,290+ ECPAO job runs confirmed extraction is active. Consumption/processing is inferred but unverified.",
+      "raised_session": 35,
+      "domain": "HCM"
+    },
+    {
+      "id": "KU-003",
+      "question": "What feeds the exchange rates into P01? Manual, ECB feed, or something else?",
+      "why_unknown": "P01 broadcasts rates to D01/V01 via IDoc. YFI_FILE_RATES_TMS ran once. Source of rates to P01 is unknown.",
+      "raised_session": 35,
+      "domain": "FI"
+    },
+    {
+      "id": "KU-004",
+      "question": "What is the target system for Data Hub FM/HR data exports?",
+      "why_unknown": "Data Hub is active in integration map but its downstream destination system is not identified.",
+      "raised_session": 35,
+      "domain": "Integration"
+    },
+    {
+      "id": "KU-005",
+      "question": "Are ~20 HTTP destinations with GUID names active integrations to unknown systems?",
+      "why_unknown": "RFCDES shows the destinations but investigation was deferred. Could be test or active.",
+      "raised_session": 35,
+      "domain": "Integration"
+    },
+    {
+      "id": "KU-006",
+      "question": "Is BSAS AUGBL truly empty in production or is it an extraction/enrichment gap?",
+      "why_unknown": "All 449K BSAS items have blank AUGBL. Unclear if system design (never populated) or data extraction incomplete.",
+      "raised_session": 29,
+      "domain": "FI"
+    },
+    {
+      "id": "KU-007",
+      "question": "What is the PPC XML output path? Configuration confirmed but PurposeCode value in XML output unconfirmed.",
+      "why_unknown": "T015L/LZBKZ configuration verified live. But actual XML tag population and downstream system reading unclear.",
+      "raised_session": 26,
+      "domain": "Payment"
+    },
+    {
+      "id": "KU-008",
+      "question": "Are AB stream documents (Stream 3) with BSCHL values other than 31/29 actually triggering bank transfers?",
+      "why_unknown": "~50K AB docs with non-31/29 BSCHL not individually validated. May include reversals that do transfer.",
+      "raised_session": 27,
+      "domain": "Payment"
+    },
+    {
+      "id": "KU-009",
+      "question": "Which specific method in BAdI YCL_IDFI_CGI_DMEE_FR handles the PurposeCode transformation?",
+      "why_unknown": "Class extracted in #038. GET_CREDIT method likely contains logic but exact implementation not traced.",
+      "raised_session": 39,
+      "domain": "Payment"
+    },
+    {
+      "id": "KU-010",
+      "question": "Are the 213 non-USD bank accounts without T030H valuation actually skipped in FAGL_FC_VAL, or does it use a fallback?",
+      "why_unknown": "Assumed skipped based on config logic. But actual month-end posting behavior not verified against real runs.",
+      "raised_session": 44,
+      "domain": "Treasury"
+    },
+    {
+      "id": "KU-011",
+      "question": "Does T042Z in Gold DB have the DMEE_ASSIGNMENT_TABLE column or is it missing from extraction?",
+      "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEE→PaymentMethod edges may need a different table source.",
+      "raised_session": 40,
+      "domain": "Payment"
+    },
+    {
+      "id": "KU-012",
+      "question": "How are 260 scripts in mcp-backend-server-python/ actually used / connected to skills and workflows?",
+      "why_unknown": "Scripts exist but organization unresolved. Classification and routing unclear.",
+      "raised_session": 40,
+      "domain": "Infrastructure"
+    },
+    {
+      "id": "KU-013",
+      "question": "Is Nigeria SCB09 bank 69% open rate a genuine processing gap or normal timing variation?",
+      "why_unknown": "Data shows 69% open items, lowest fast% of all banks. Root cause (connectivity, process, staffing) unverified.",
+      "raised_session": 30,
+      "domain": "FI"
+    },
+    {
+      "id": "KU-014",
+      "question": "What is the exact reason for the 30% >30-day delay in MGIE company code bank clearing?",
+      "why_unknown": "Process mining identified MGIE Grade C. Could be process problem, staffing, or config. Not investigated.",
+      "raised_session": 30,
+      "domain": "FI"
+    },
+    {
+      "id": "KU-015",
+      "question": "Do the 7 open customizing requests in P01 before upgrade actually have zero drift with D01?",
+      "why_unknown": "3 of 7 had zero drift (VBWF15, others). Comparison methodology used but full scope for all 7 fields unclear.",
+      "raised_session": 46,
+      "domain": "Transport_Intelligence"
+    },
+    {
+      "id": "KU-016",
+      "question": "Does PA0027-02 subtype still exist in PA0027 or was it renamed?",
+      "why_unknown": "Session #048 claimed 'BAdI PA0027-02 expired 2021' but we never verified this is the correct subtype ID.",
+      "raised_session": 49,
+      "domain": "Travel",
+      "priority": "HIGH"
+    },
+    {
+      "id": "KU-017",
+      "question": "What's the ACTUAL production count of items in INC-000006073 impact scope across all 9 company codes?",
+      "why_unknown": "Identified root cause for ONE traveler (Katja HINZ). Scope across all company codes never quantified.",
+      "raised_session": 49,
+      "domain": "Travel",
+      "priority": "HIGH"
+    },
+    {
+      "id": "KU-018",
+      "question": "Will brain_state.json approach actually reduce session-start time or just move complexity?",
+      "why_unknown": "Built in Session #049, never tested against real session start workflow. FALS-002 will answer.",
+      "raised_session": 49,
+      "domain": "Brain_Architecture"
+    },
+    {
+      "id": "KU-019",
+      "question": "Are the 326 knowledge_doc links in brain_state.json actually useful for incident investigation?",
+      "why_unknown": "Added in Session #049 without validation. Could be redundant with grep.",
+      "raised_session": 49,
+      "domain": "Brain_Architecture"
+    }
+  ],
+  "falsification": [
+    {
+      "id": "FALS-001",
+      "prediction": "brain_state.json at 3.3% of context is the right size — won't grow significantly without adding new object types",
+      "made_session": 49,
+      "test_criteria": "Measure brain_state.json size at session #54 (5 sessions later). If >5% without design changes, prediction falsified — indicates uncontrolled growth.",
+      "status": "PENDING",
+      "outcome": null
+    },
+    {
+      "id": "FALS-002",
+      "prediction": "Loading brain_state.json in ONE Read will make session start faster than reading CLAUDE.md + MEMORY.md + topic files",
+      "made_session": 49,
+      "test_criteria": "Next 3 sessions: track time-to-first-action (from session start to first meaningful work). Compare with historical average of ~3-5 minutes of file reading.",
+      "status": "PENDING",
+      "outcome": null
+    },
+    {
+      "id": "FALS-003",
+      "prediction": "Adding knowledge_docs links to brain_state.json objects will reduce the need to grep knowledge/ during incident investigation",
+      "made_session": 49,
+      "test_criteria": "Next incident investigation: did I use the knowledge_docs field to find the right doc, or did I grep? If grep, prediction falsified — links aren't helpful.",
+      "status": "PENDING",
+      "outcome": null
+    },
+    {
+      "id": "FALS-004",
+      "prediction": "The 50 feedback rules are enough behavioral coverage — won't need to add more than 5-10 new rules per year",
+      "made_session": 49,
+      "test_criteria": "Count rules added in sessions #50-#60. If >20 new rules, prediction falsified — indicates behavioral gaps still being discovered.",
+      "status": "PENDING",
+      "outcome": null
+    }
+  ],
+  "superseded": [
+    {
+      "id": 3,
+      "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Re-extraction in Session #029 revealed 223K rows. The _2024_2026 suffix table has the real data.",
+      "evidence_against": "Original extraction in Session #025 returned 0 rows (truncated first attempt with 50K limit and 104 columns).",
+      "related_objects": [
+        "FEBEP",
+        "FEBEP_2024_2026"
+      ],
+      "domain": "FI",
+      "created_session": 25,
+      "resolved_session": 29,
+      "resolution_notes": "Always check _2024_2026 suffix tables. Unsuffixed tables are truncated first attempts.",
+      "status": "superseded"
+    },
+    {
+      "id": 13,
+      "claim": "OP documents bypass F110, BCM, DMEE, and SWIFT entirely",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "GL account range analysis (HKONT extraction). Direct join REGUH to BSAK confirmed no OP docs in REGUH.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed.",
+      "status": "superseded"
+    },
+    {
+      "id": 14,
+      "claim": "BCM same-user batches = 1,557 (the dual-control gap count)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BNK_BATCH_HEADER query on both statuses. H13 was understated for 7 sessions.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "BCM same-user batches = 3,394 when including both IBC15 AND IBC05 statuses. Then grew to 3,359 by Session #037 (+1,366 drift).",
+      "status": "superseded"
+    },
+    {
+      "id": 15,
+      "claim": "REGUH.VBLNR doesn't match BSAK.AUGBL directly (incomplete link)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Direct join executed in #027. Gap note was documented before running the join.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 26,
+      "resolved_session": 27,
+      "resolution_notes": "REGUH.VBLNR = BSAK.AUGBL works perfectly. 1,380,108 matched rows confirmed.",
+      "status": "superseded"
+    },
+    {
+      "id": 16,
+      "claim": "Payment on-time rate = 1.1% (critical performance problem)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BSAK ZTERM analysis + FMBKP term extraction showed Z001 population.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 25,
+      "resolved_session": 26,
+      "resolution_notes": "1.1% is a measurement artifact. 73% of invoices have ZTERM=0001 (set to BUDAT). Real on-time for actual-terms = 4.6%. Real late >100 days = 43%.",
+      "status": "superseded"
+    },
+    {
+      "id": 17,
+      "claim": "102I bank clearing posts at 29.2%",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "FEBRE Tag 86 analysis showed return documents.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 29,
+      "resolved_session": 30,
+      "resolution_notes": "102I clears at 99.6% of items that post. 82% of items have BELNR=* (ACH returns) by design.",
+      "status": "superseded"
+    },
+    {
+      "id": 18,
+      "claim": "199K bank items are unreconciled (high operational gap)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "BSAS analysis. 10xxxxx cleared=0, 11xxxxx cleared=99.4%. Architecture is correct.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 28,
+      "resolved_session": 29,
+      "resolution_notes": "199K items are on 10xxxxx (bank permanent ledger, never cleared by design). Real unreconciled = 2,737 on 11xxxxx = 0.6% of total.",
+      "status": "superseded"
+    },
+    {
+      "id": 19,
+      "claim": "D/E/F/P prefixes in T010P TABKEY are functional period types",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #031 TABKEY analysis. SAP standard practice for multi-language text variants.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 30,
+      "resolved_session": 31,
+      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types.",
+      "status": "superseded"
+    },
+    {
+      "id": 20,
+      "claim": "FMIFIIT=0 for ICBA means ICBA shares UNES FM area for postings",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "FM consultant confirmed all institutes have their own FM area. Script line 98 had incomplete filter.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "PSM",
+      "created_session": 30,
+      "resolved_session": 31,
+      "resolution_notes": "FMIFIIT extraction script filtered by 7 FM areas. ICBA and UIL were not in the filter. The 0 was an extraction gap.",
+      "status": "superseded"
+    },
+    {
+      "id": 21,
+      "claim": "CSKA cost element table is empty; cost elements are not configured",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #034 correction. Wrong field names used initially.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 33,
+      "resolved_session": 34,
+      "resolution_notes": "CSKA exists but is the header table. CSKB (time-dependent detail) has the actual cost elements. All institutes have 350-490 cost elements in CSKB.",
+      "status": "superseded"
+    },
+    {
+      "id": 22,
+      "claim": "AE and BH DMEE currency BAdIs exist in P01",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "TADIR query in P01. System uses UTIL fallback in production for these countries.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 24,
+      "resolved_session": 25,
+      "resolution_notes": "AE and BH BAdI implementations (YCL_IDFI_CGI_DMEE_AE, _BH) do NOT exist in P01. They exist only in D01 CTS.",
+      "status": "superseded"
+    },
+    {
+      "id": 23,
+      "claim": "T015L PPC country codes are ISO 20022 standard codes",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Live P01 T015L extraction in #025.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Payment",
+      "created_session": 24,
+      "resolved_session": 25,
+      "resolution_notes": "T015L LZBKZ uses UNESCO-specific codes. China uses slash-notation (/CSTRDR/, /CCDNDR/), not numeric 001/002/003.",
+      "status": "superseded"
+    },
+    {
+      "id": 24,
+      "claim": "F_DERAKHSHAN is the highest segregation-of-duties risk in BCM",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #037 full-data analysis. H13 hypothesis from #036 was partially wrong.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 36,
+      "resolved_session": 37,
+      "resolution_notes": "F_DERAKHSHAN has second approver 74% of the time. Not the top risk when full approval chain analyzed. C_LOPEZ + I_MARQUAND are actual top risks (94.7%/92.9% self-approval).",
+      "status": "superseded"
+    },
+    {
+      "id": 25,
+      "claim": "CO table sizes: COOI=385K, COEP=616K, RPSCO=637K (from Session #005 anchors)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "Session #035 extraction showed 2x larger.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "FI",
+      "created_session": 34,
+      "resolved_session": 35,
+      "resolution_notes": "Actual: COOI=773K, COEP=2.55M, RPSCO=127K. Anchors were 2x wrong and inconsistent.",
+      "status": "superseded"
+    },
+    {
+      "id": 26,
+      "claim": "CBE01 = Commercial Bank of Ethiopia (for STEM company code)",
+      "claim_type": "superseded",
+      "confidence": "TIER_1",
+      "evidence_for": "T012 not readable in second run. Session #019 verification check flagged as INFERRED.",
+      "evidence_against": null,
+      "related_objects": [],
+      "domain": "Treasury",
+      "created_session": 18,
+      "resolved_session": 19,
+      "resolution_notes": "Never verified via T012 SWIFT code. Was an assumption from bank ID + ETB currency. Could be different bank.",
+      "status": "superseded"
+    }
+  ],
+  "user_questions": [
+    {
+      "id": "UQ-001",
+      "question": "Can we consolidate the 30+ individual feedback memory files into one structured file while preserving knowledge?",
+      "asked_session": 49,
+      "status": "ANSWERED",
+      "answer": "Yes — migrated to brain_v2/agent_rules/feedback_rules.json. 50 rules, one Read call, git-tracked, portable.",
+      "resolved_session": 49
+    },
+    {
+      "id": "UQ-002",
+      "question": "How do we preserve knowledge across machine changes when ~/.claude/memory/ is lost?",
+      "asked_session": 49,
+      "status": "ANSWERED",
+      "answer": "Migrated irreplaceable knowledge (feedback rules, project state docs) into brain_v2/agent_rules/ and knowledge/ inside the project. ~/.claude/memory/ is now a cache, not source of truth.",
+      "resolved_session": 49
+    },
+    {
+      "id": "UQ-003",
+      "question": "Should plans in ~/.claude/plans/ be copied into the project?",
+      "asked_session": 49,
+      "status": "ANSWERED",
+      "answer": "Yes — copied plan to session_plans/04092026_session049_brain_v3_hybrid_rebuild.md and added feedback rule #47 to always do this immediately after plan mode.",
+      "resolved_session": 49
+    },
+    {
+      "id": "UQ-004",
+      "question": "Will the brain_state.json approach scale when context window doubles to 2M+ tokens?",
+      "asked_session": 49,
+      "status": "ANSWERED",
+      "answer": "Yes — and we should be LESS conservative about loading, not more. Saved as feedback rule #49. Design for growing context.",
+      "resolved_session": 49
+    },
+    {
+      "id": "UQ-005",
+      "question": "Should we design brain architecture using human information patterns (one-file-per-entity)?",
+      "asked_session": 49,
+      "status": "ANSWERED",
+      "answer": "NEVER. Saved as feedback rule #48 (CRITICAL). Agent thinks in 1 dense file, not 50 scattered files. Deleted the 108 index/*.md files we initially created.",
+      "resolved_session": 49
+    }
+  ],
+  "data_quality": [
+    {
+      "id": "DQ-001",
+      "source": "LFB1 table",
+      "issue": "Vendor 200083534 has KTOKK=SCSA + AKONT=2021011, inconsistent with other employee vendors (expected 2021010 for PSCA)",
+      "severity": "HIGH",
+      "impact": "Caused INC-000006073 — travel advance posting fails because GGB1 has no rule for 2021011",
+      "workaround": "Either change AKONT to 2021010, or add GGB1 substitution rule for 2021011",
+      "discovered_session": 48,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-002",
+      "source": "T015L (Payment Purpose Codes)",
+      "issue": "Country-level PPC config codes are UNESCO-proprietary format, not ISO 20022. Documentation PDFs show wrong codes (001/002/003) instead of real (slash-notation).",
+      "severity": "HIGH",
+      "impact": "Payment configuration misunderstood. PDF documentation unusable for PPC mapping.",
+      "workaround": "Use live T015L extraction. Ignore PDF documentation for PPC codes.",
+      "discovered_session": 25,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-003",
+      "source": "EKBE (Goods Receipt Notes)",
+      "issue": "GJAHR=0000 on 119K delivery notes (VGABE=9). Not real GL years but ACH returns marked as 'delivery notes'.",
+      "severity": "MEDIUM",
+      "impact": "EKBE year filtering problematic. 119K phantom 'year 0000' records exist.",
+      "workaround": "Filter GJAHR=0000 OUT of delivery note analysis queries.",
+      "discovered_session": 28,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-004",
+      "source": "EKBE.MEINS (unit of measure)",
+      "issue": "Auth-restricted on P01. Cannot extract via RFC without buffer overflow.",
+      "severity": "LOW",
+      "impact": "GR field analysis incomplete. Cannot verify item quantities in GR chain.",
+      "workaround": "Query MEINS via different path or skip in bulk extractions.",
+      "discovered_session": 28,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-005",
+      "source": "SKAT (GL Account Text)",
+      "issue": "510 (later 1,690) GL descriptions inconsistent between P01 and D01. P01 has CLOSED-BK prefixes; D01 still has old active names. Text updates inconsistent.",
+      "severity": "MEDIUM",
+      "impact": "Master data sync incomplete until Session #038 ran multi-language sync (1,511 UPDATEs + 179 INSERTs).",
+      "workaround": "Use sap_master_data_sync skill pattern: SELECT SINGLE + UPDATE FROM ls (avoids 72-char ABAP truncation).",
+      "discovered_session": 34,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-006",
+      "source": "BSAS.AUGBL (clearing document reference)",
+      "issue": "All 449K BSAS items have blank AUGBL initially. Clearing chain cannot be traced via AUGBL.",
+      "severity": "HIGH",
+      "impact": "Clearing relationships hidden. Session #030 re-enrichment fixed 553K items with AUGBL+AUGDT (100% fill).",
+      "workaround": "Use BSAS_2024_2026 enriched table, not raw BSAS extraction.",
+      "discovered_session": 29,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-007",
+      "source": "FEBKO (Bank Statement Headers)",
+      "issue": "Only 8 of 62 DD03L fields extracted initially. BUKRS, HBKID, HKTID missing.",
+      "severity": "HIGH",
+      "impact": "Cannot link statements to banks without FEBKO_2024_2026 enriched table.",
+      "workaround": "Always query FEBKO_2024_2026 (31,416 rows, 62 fields), not unsuffixed FEBKO.",
+      "discovered_session": 29,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-008",
+      "source": "FEBEP (Bank Statement Line Items)",
+      "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
+      "severity": "HIGH",
+      "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
+      "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols — truncated first attempt).",
+      "discovered_session": 29,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-009",
+      "source": "T010P (Posting Period Variants)",
+      "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/Français/Portuguese), looks like functional types.",
+      "severity": "MEDIUM",
+      "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
+      "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
+      "discovered_session": 31,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-010",
+      "source": "FMIFIIT extraction script",
+      "issue": "Script filter missing ICBA and UIL FM areas. Only 7 of 9 institutes included initially. Zero postings for ICBA/UIL appeared as data finding (was extraction bug).",
+      "severity": "HIGH",
+      "impact": "Company code analysis wrong. Shared with team before verification (credibility hit).",
+      "workaround": "Always verify filter completeness against T001 BUKRS list before publishing findings.",
+      "discovered_session": 31,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-011",
+      "source": "BNK_BATCH_ITEM.IBC17 (BCM Failed Items)",
+      "issue": "2,056 IBC17 items all from 2021-2022 BCM outage (Jul2021-Dec2022). No failures 2024-2026.",
+      "severity": "LOW",
+      "impact": "Stale error state. BCM failure analysis weighted wrong if date range not checked.",
+      "workaround": "Always filter BCM data to 2024-2026 for current-state analysis.",
+      "discovered_session": 28,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-012",
+      "source": "T030H (Bank Valuation Configuration)",
+      "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
+      "severity": "CRITICAL",
+      "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
+      "workaround": "Requires remediation project. No workaround — structural config gap.",
+      "discovered_session": 44,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-013",
+      "source": "TADIR in P01 (DMEE AE/BH BAdI)",
+      "issue": "YCL_IDFI_CGI_DMEE_AE and YCL_IDFI_CGI_DMEE_BH classes don't exist in P01 TADIR. Only in D01 CTS. P01 uses UTIL fallback.",
+      "severity": "HIGH",
+      "impact": "AE and BH countries get default processing instead of custom logic. Configuration incomplete in production.",
+      "workaround": "Transport the classes to P01 if custom AE/BH logic needed. Currently UTIL fallback is working.",
+      "discovered_session": 25,
+      "status": "OPEN"
+    },
+    {
+      "id": "DQ-014",
+      "source": "E071/E071K (Transport Objects) in P01",
+      "issue": "SAP clears E071/E071K after transport release. Previous extraction is source of truth. Re-extraction of released transports returns empty.",
+      "severity": "CRITICAL",
+      "impact": "Can permanently destroy transport content data by re-extracting. Happened in Session #031 (destroyed 36/682, 9/51).",
+      "workaround": "NEVER re-extract released transports. Check status before extraction. Rule in feedback_never_reextract_released_transports.",
+      "discovered_session": 31,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-015",
+      "source": "BSIS on 10xxxxx accounts",
+      "issue": "199K 'open' items on 10xxxxx are actually permanent ledger entries (never cleared by design). Not a reconciliation gap.",
+      "severity": "LOW",
+      "impact": "Misinterpreted as operational crisis for 4 sessions. Real unreconciled = 2,737 on 11xxxxx (0.6%).",
+      "workaround": "Filter BSIS to 11xxxxx accounts only for reconciliation analysis.",
+      "discovered_session": 29,
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-016",
+      "source": "~/.claude/projects/*/memory/ files",
+      "issue": "Memory files got Windows-1252 encoding bytes injected during Python stdout writes on Windows, corrupting em dashes and arrows.",
+      "severity": "HIGH",
+      "impact": "feedback_rules.json became unreadable (UTF-8 decode errors) mid-Session #049, required cleanup.",
+      "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
+      "discovered_session": 49,
+      "status": "RESOLVED"
+    }
+  ]
+}

@@ -1,0 +1,452 @@
+[
+  {
+    "id": "feedback_adaptive_field_splitting",
+    "rule": "RFC_READ_TABLE has a 512-byte line buffer limit. When total field widths exceed this, SAP returns TABLE_WITHOUT_DATA or DATA_BUFFER_EXCEEDED.",
+    "why": "Fixed MAX_FIELDS_PER_CALL=8 works for most tables but fails on ESSR (which has very wide session description fields). Even 5 fields overflow the buffer.",
+    "how_to_apply": "`rfc_helpers.py` now auto-detects the right chunk size:\n1. Try 8 fields -> if TABLE_WITHOUT_DATA, halve to 4\n2. Try 4 fields -> if still fails, halve to 2\n3. If even 2 fields fail -> genuinely empty or auth issue\n\nThis is in `rfc_read_paginated()` in the split-field section. The adaptive logic runs once per table per WHERE clause, then uses that chunk size for all pages.\n\nAdditional learnings:\n- ESSR max fields = 4 (LOESSION field is ~200 bytes alone)\n- BSIS/BSAS max fields = 8 (works fine with 28 fields split into 4 chunks)\n- EKPO max fields = 8 (19 fields, 3 chunks)\n- BKPF max fields = ALL (12 fields fit in one call, no split needed)",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_adaptive_field_splitting.md"
+  },
+  {
+    "id": "feedback_auto_reconnect_vpn",
+    "rule": "VPN drops are normal during long SAP extractions at UNESCO. Without auto-reconnect, each drop kills the extraction thread and remaining months get 0-row checkpoints (which block retries).",
+    "why": "BSIS extraction (2.29M rows, ~2 hours) required 4+ restarts due to VPN drops. Each restart was manual and lost time.",
+    "how_to_apply": "- `get_connection(\"P01\")` returns a `ConnectionGuard` (not raw pyrfc.Connection)\n- ConnectionGuard.call() catches connection-closed/timeout/CPIC errors\n- Retries up to 3 times with escalating wait (10s, 20s, 30s)\n- Transparent to callers -- rfc_read_paginated works unchanged\n\nError substrings that trigger reconnect:\n- \"connection closed\", \"partner not reached\", \"timeout\"\n- \"communication failure\", \"CPIC_\", \"RFC_COMMUNICATION_FAILURE\"\n- \"RFC_INVALID_HANDLE\", \"connection has been closed\"\n\nPair with error-safe checkpoints: if a period errors with 0 rows, do NOT write checkpoint file. This allows the period to be retried on next run.",
+    "severity": "CRITICAL",
+    "created_session": null,
+    "source_file": "feedback_auto_reconnect_vpn.md"
+  },
+  {
+    "id": "feedback_bash_autonomy",
+    "rule": "User wants AUTONOMOUS execution. Stop asking for permission or confirmation before running bash commands.",
+    "why": "Every session the user says \"execute autonomously\" and then Claude still asks \"can I run this?\" or \"should I proceed?\". This wastes time and frustrates the user.",
+    "how_to_apply": "1. NEVER ask \"can I run this command?\" — just run it\n2. NEVER ask \"should I proceed?\" — just proceed\n3. NEVER ask \"is the VPN connected?\" — just try the connection and report results\n4. If a command fails, fix it and retry — don't ask what to do\n5. If P01 connection fails, say \"P01 unreachable — need VPN\" and stop (don't ask)",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_bash_autonomy.md"
+  },
+  {
+    "id": "feedback_brain_code_tables_are_backbone",
+    "rule": "Programs and tables are the system. Skills, companions, knowledge docs are interpretation. The Brain must center on code→table→config relationships as the backbone.",
+    "why": "Session #048 INC-000006073 took hours tracing LHRTSF01→PA0027→ZXTRVU05→GGB1→KTOKK→AKONT manually. If the Brain had program→table→config edges as its core, a single impact query would have shown the entire chain in seconds. The 52K fund nodes and 7K transport nodes are bulk — the ~1,200 code nodes and ~120 table nodes with their relationships are where the real intelligence lives.",
+    "how_to_apply": "1. Brain rebuild (H34) must prioritize: code nodes, table nodes, config nodes, and the edges between them\n2. Edge types that matter most:\n   - CALLS (program → program/FM)\n   - READS_TABLE (program → table)\n   - JOINS_WITH (table → table)\n   - CONFIGURES (config table → program behavior)\n   - DETERMINES (data field → data field, e.g., KTOKK→AKONT)\n   - DERIVES_FIELD (program:line → field value)\n   - ROOT_CAUSED_BY (incident → code:line + config)\n3. Auto-parser covers CALLS + READS_TABLE. Manual edges needed for CONFIGURES, DETERMINES, DERIVES_FIELD.\n4. Every incident resolution should produce new edges — INC-000006073 produced 48 edges. These compound over time.\n5. The Brain is valuable when it answers \"what happens if X changes?\" — that requires program→table→config as backbone.",
+    "severity": "HIGH",
+    "created_session": 48,
+    "source_file": "feedback_brain_code_tables_are_backbone.md"
+  },
+  {
+    "id": "feedback_bseg_celonis_pattern",
+    "rule": "Never extract BSEG cluster table directly via RFC_READ_TABLE. It has severe limitations:",
+    "why": "BSEG is a cluster table that references 6 transparent secondary index tables. Extracting the cluster is 10-50x slower and misses fields.",
+    "how_to_apply": "Use the Celonis replacement pattern:\n\n| Table | Content | KOART | Filter |\n|-------|---------|-------|--------|\n| BSIK | Vendor open items | K | BUDAT (NOT CPUDT) |\n| BSAK | Vendor cleared items | K | BUDAT (NOT CPUDT) |\n| BSID | Customer open items | D | BUDAT (NOT CPUDT) |\n| BSAD | Customer cleared items | D | BUDAT (NOT CPUDT) |\n| BSIS | GL open items | S | BUDAT (NOT CPUDT) |\n| BSAS | GL cleared items | S | BUDAT (NOT CPUDT) |",
+    "severity": "CRITICAL",
+    "created_session": 10,
+    "source_file": "feedback_bseg_celonis_pattern.md"
+  },
+  {
+    "id": "feedback_bseg_is_join_not_table",
+    "rule": "BSEG is NOT a table we extract or enrich. Stop treating it as one.",
+    "why": "BSEG is a cluster table. The secondary indexes (BSIS/BSAS etc.) ARE the data. The Golden Query covers 85.9% WBS via OBJNRZ. Enriching from BSEG = waste.",
+    "how_to_apply": "When someone says \"BSEG field is missing\", first check if it's available via Golden Query JOIN. Only if genuinely unavailable from any joined table should you consider BSEG — and even then, it's low priority.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_bseg_is_join_not_table.md"
+  },
+  {
+    "id": "feedback_bseg_is_readable",
+    "rule": "BSEG CAN be read via RFC_READ_TABLE in P01. It has been declustered (converted to transparent table).",
+    "why": "We assumed BSEG was a cluster table and couldn't be extracted. It's been declustered in this system. The TABLE_WITHOUT_DATA error was caused by including MANDT in the filter.",
+    "how_to_apply": "When you need WBS element, extract PROJK from BSEG using document keys, then JOIN PRPS.PSPNR = PROJK to get POSID + POST1.",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_bseg_is_readable.md"
+  },
+  {
+    "id": "feedback_classify_systems_properly",
+    "rule": "When discovering a new system in the landscape, NEVER guess its purpose from the hostname.",
+    "why": "Session #031 misclassified BCU as \"Business Connector\" (was actually Budget Control System), missed that MuleSoft was middleware (not the target system — Core Manager/Planner are), and didn't find SuccessFactors because it connects via HTTP/ICF not RFC.",
+    "how_to_apply": "",
+    "severity": "CRITICAL",
+    "created_session": 31,
+    "source_file": "feedback_classify_systems_properly.md"
+  },
+  {
+    "id": "feedback_data_before_visual",
+    "rule": "When building visual companions (diagrams, dashboards, analysis pages), ALWAYS follow this order:",
+    "why": "Session #031 rebuilt the connectivity diagram 4 times because we kept discovering missing systems (7→21→31→38). Each rebuild wasted 10-15 minutes. If we'd analyzed all 239 RFC destinations + DBCON + TMSCSYS + TFDIR first, we'd have built the diagram once.",
+    "how_to_apply": "- For system diagrams: query RFCDES + DBCON + TMSCSYS + EDIDC + ICFSERVICE + TFDIR BEFORE drawing anything\n- For any companion: collect ALL data, classify it, THEN build HTML\n- Never classify a system from hostname alone — check CTS objects, jobs, and code references",
+    "severity": "HIGH",
+    "created_session": 31,
+    "source_file": "feedback_data_before_visual.md"
+  },
+  {
+    "id": "feedback_data_p01_code_d01",
+    "rule": "ALL reads = P01 (prod). Only exception: code deployment writes = D01 (dev).",
+    "why": "D01 may have untransported config, draft trees, or test entries that don't exist in P01. Only P01 reflects what is real and in production. Session #039 error: ran DMEE tree probe against D01 because P01 was unreachable — user correctly rejected the results because D01 config is not trustworthy for analysis.",
+    "how_to_apply": "If P01 is unreachable, WAIT. Do not fall back to D01 for reads. The only valid D01 operation is writing code. When P01 is down, work on offline tasks (skill docs, analysis of already-extracted data, scripts for later execution).",
+    "severity": "MEDIUM",
+    "created_session": 39,
+    "source_file": "feedback_data_p01_code_d01.md"
+  },
+  {
+    "id": "feedback_data_scope_2024_2026",
+    "rule": "Data scope = 2024 to 2026 ONLY.",
+    "why": "Pre-2024 data is historical context, not actionable. The user wants current-state analysis, not archaeology.",
+    "how_to_apply": "When extracting, enriching, or analyzing data, filter to 2024-2026. Don't spend time investigating pre-2024 anomalies unless explicitly asked. Transport analysis is the only exception where longer periods are needed.",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_data_scope_2024_2026.md"
+  },
+  {
+    "id": "feedback_decision_logs",
+    "rule": "Rule: Decision Logs Required for Destructive Actions",
+    "why": "— the rationale\n3. **Who decided** — user request vs AI decision\n4. **Reversible?** — can it be undone",
+    "how_to_apply": "",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_decision_logs.md"
+  },
+  {
+    "id": "feedback_diagram_layout_standard",
+    "rule": "System connectivity and interface mapping diagrams must use the `integration_diagram` skill at `.agents/skills/integration_diagram/SKILL.md`.",
+    "why": "Physics/snowflake layouts look unprofessional. The user wants architecture-quality diagrams: container-based zones, hub-and-spoke, orthogonal 90° connections, dark theme + neon accents. No external libraries (vis.js, D3) — pure CSS + inline SVG.",
+    "how_to_apply": "- ALWAYS read `.agents/skills/integration_diagram/SKILL.md` before building any connectivity/architecture diagram\n- Reference implementation: `Zagentexecution/mcp-backend-server-python/connectivity_diagram.html`\n- Zones: External (top), Infrastructure (left), Core Hub (center), Management (right), Spokes (bottom), Analytics (bottom)\n- Connections: SVG overlay with L-shaped orthogonal routing, solid=internal, dashed=external\n- Node click shows info panel\n- File must be self-contained HTML < 30KB\n- NEVER re-derive the pattern from scratch — read the skill first",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_diagram_layout_standard.md"
+  },
+  {
+    "id": "feedback_efficiency",
+    "rule": "Efficiency Rules",
+    "why": "Don't waste time searching for things already in MEMORY.md. Don't repeat what user already knows. Go direct to analysis/action.",
+    "how_to_apply": "",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_efficiency.md"
+  },
+  {
+    "id": "feedback_enrich_missing_fields",
+    "rule": "When fields are missing from an already-extracted table, DO NOT re-extract the whole table. Use the existing document keys (BUKRS + BELNR + GJAHR + BUZEI) to fetch ONLY the missing fields from SAP, then ALTER TABLE + UPDATE to add them.",
+    "why": "Re-extracting 3.7M rows wastes hours when you only need to add 2-3 columns. The data we already have (amounts, dates, GL accounts) doesn't change.",
+    "how_to_apply": "1. ALTER TABLE to add the new column(s)\n2. For each period (MONAT/PERIO), query SAP with the existing keys to get only the missing field values\n3. UPDATE the existing rows with the new values\n4. Run **one period at a time** — never all at once (VPN/memory limits)\n5. Use checkpoints so interrupted runs can resume\n\nThis supersedes and extends `feedback_missing_fields_by_key.md` with the explicit \"per period\" requirement.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_enrich_missing_fields.md"
+  },
+  {
+    "id": "feedback_estimate_before_extract",
+    "rule": "Before extracting ANY table, ALWAYS:",
+    "why": "User got frustrated when ESLL (2.9M rows, 619MB) and FMIOI (1.8M rows) ran for 30+ minutes without warning. Launching blind extractions wastes time and blocks the session.",
+    "how_to_apply": "Every extraction script must have a probe phase first. For tables >100K rows, use streaming to SQLite (not accumulate in RAM). For tables >500K rows, warn user and suggest background execution.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_estimate_before_extract.md"
+  },
+  {
+    "id": "feedback_extraction_is_skill_not_code",
+    "rule": "When the user says \"extract\", \"extraer\", \"pull from SAP\", \"save to Gold DB\" — this is a SKILL INVOCATION, not a coding task.",
+    "why": "Session #048 spent 4+ iterations and 3 script versions to extract BP tables — work that the `sap_data_extraction` skill already handles. The agent wrote code from scratch instead of reusing the proven skill. This violates the AGI agent builder principle: skills are reusable capabilities, not suggestions.",
+    "how_to_apply": "1. **Data extraction** → use `sap_data_extraction` skill pattern:\n   - Fields: `DDIF_FIELDINFO_GET` (always)\n   - Extraction: `rfc_read_paginated()` (always)\n   - Storage: Gold DB at canonical path (always)\n   - Script: `extract_bp_full.py` is the canonical template\n   \n2. **Code extraction** → use `sap_adt_api` skill pattern:\n   - ADT REST for D01 (password auth)\n   - `RPY_PROGRAM_READ` via RFC/SNC for P01 or D01\n   - Storage: `extracted_code/{SAP_STANDARD|UNESCO_CUSTOM_LOGIC}/{domain}/`\n\n3. **NEVER:**\n   - Write inline Python in bash -c for extraction\n   - Create a new extraction script from scratch\n   - Debug RFC connection issues that rfc_helpers already handles\n   - Manually specify field lists when DDIF can get them all\n\n4. **The canonical extraction flow:**\n   ```\n   User says \"extract X\" →\n   Agent reads skill →\n   Agent calls: fields = DDIF(table), rows = rfc_read_paginated(table, fields, where), save(db, table, rows) →\n   Done\n   ```\n\n5. **For new domains (like BusinessPartner):** add table definitions to `extract_bp_full.py` pattern — table name + WHERE clause only. The skill handles everything else.",
+    "severity": "MEDIUM",
+    "created_session": 48,
+    "source_file": "feedback_extraction_is_skill_not_code.md"
+  },
+  {
+    "id": "feedback_extraction_scope",
+    "rule": "Only extract data from 2024-2026. Do NOT go back to 2015 or other years.",
+    "why": "User explicitly defined the scope as 2024-2026. Extracting older years wastes time and resources (RFC calls are slow, tables are huge). Going back to 2015 was a massive waste — FMIOI alone would have taken 25+ minutes for irrelevant data.",
+    "how_to_apply": "Every RFC extraction MUST default to 2024-2026 unless the user says otherwise. Before starting any extraction, confirm the year range matches this rule.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_extraction_scope.md"
+  },
+  {
+    "id": "feedback_memory_no_truncation",
+    "rule": "MEMORY.md has NO line limit. The 200-line truncation rule from auto-memory documentation does not apply.",
+    "why": "User confirmed (Session #035, 2026-04-04) that with 1M context window, MEMORY.md loads fully regardless of size. The truncation warning in the system prompt is outdated.",
+    "how_to_apply": "- Do NOT compress or remove content from MEMORY.md to stay under 200 lines\n- Session history, feedback pointers, and all sections can grow freely\n- Still keep entries concise (one-liners) for readability, but no hard limit\n- Topic files remain the right place for DETAIL, MEMORY.md for INDEX — this is a readability choice, not a size constraint",
+    "severity": "MEDIUM",
+    "created_session": 35,
+    "source_file": "feedback_memory_no_truncation.md"
+  },
+  {
+    "id": "feedback_missing_fields_by_key",
+    "rule": "When a table is already extracted but missing fields, do NOT re-extract the entire table.",
+    "why": "Re-extracting 3.7M rows just to add a few columns is wasteful. The keys are already there — use them to do a targeted enrichment. The year/period filter keeps the RFC call small and follows the same proven extraction pattern.",
+    "how_to_apply": "Any time a table in the Gold DB is missing fields (KOSTL, PS_PSP_PNR, SGTXT, etc.), build a targeted enrichment script that:\n- Loops year/period (same as original extraction)\n- Reads existing keys from SQLite for that period\n- Queries SAP by BUDAT year/period + BUKRS+BELNR+GJAHR+BUZEI for only the missing fields\n- Patches the missing columns in place via ALTER TABLE + UPDATE",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_missing_fields_by_key.md"
+  },
+  {
+    "id": "feedback_never_delete_extracted_code",
+    "rule": "Rule: NEVER delete extracted SAP code or data",
+    "why": "ABAP source files, extracted code, SQLite DBs, and RPY files are the project's most valuable assets — NEVER delete, move, or gitignore them",
+    "how_to_apply": "",
+    "severity": "CRITICAL",
+    "created_session": null,
+    "source_file": "feedback_never_delete_extracted_code.md"
+  },
+  {
+    "id": "feedback_never_leave_ideas_as_comments",
+    "rule": "Never leave lessons, rules, or discoveries as conversation comments. Always persist them to feedback/memory files immediately.",
+    "why": "Session #035 — autocritique identified 2 important rules (period-by-period extraction, don't trust old anchors) but only wrote them as chat text. User had to ask \"is this in the brain?\" — it wasn't. Conversation text is ephemeral and invisible to future sessions.",
+    "how_to_apply": "- When you identify a lesson or rule during work: write a `feedback_*.md` file IMMEDIATELY\n- When you discover something about the project: write a `project_*.md` file IMMEDIATELY\n- Add pointer to MEMORY.md index\n- The retro file is NOT enough — retros are read at session start but feedback files are the durable rules\n- If you say \"lesson learned\" or \"next time I should\" in conversation text without creating a file = violation of this rule",
+    "severity": "CRITICAL",
+    "created_session": 35,
+    "source_file": "feedback_never_leave_ideas_as_comments.md"
+  },
+  {
+    "id": "feedback_never_reextract_released_transports",
+    "rule": "NEVER re-extract E071/E071K for SAP transports that have already been released. SAP clears these tables after release — re-extraction returns 0 objects / 0 keys.",
+    "why": "Session #031 — re-extracted D01K9B0CBF and D01K9B0F3V, got 0/0, then REPLACED the correct v1 data (36/682 and 9/51) with wrong empty values. Created false alarms, wrong conclusions, and required multiple rewrites to fix.",
+    "how_to_apply": "If transport data was already captured in a previous extraction or companion:\n1. That data IS the source of truth\n2. Do NOT re-run RFC on E071/E071K for the same transport\n3. If you must verify, check E070.TRSTATUS — if 'R' (released), the transport is released and E071 will be empty\n4. Only extract E071K for transports in status 'D' (modifiable)",
+    "severity": "CRITICAL",
+    "created_session": 31,
+    "source_file": "feedback_never_reextract_released_transports.md"
+  },
+  {
+    "id": "feedback_never_trust_old_anchors",
+    "rule": "Never trust row count estimates from previous sessions. Always probe actual count before planning extraction time.",
+    "why": "Session #035 — CO table anchors from Session #005 said COOI=385K, COEP=616K, RPSCO=637K. Actual 2024-2026 extraction: COOI=773K, COEP=2.55M, RPSCO=127K. COEP was 4x the estimate. This caused incorrect time estimates and the wrong extraction strategy (year-at-once instead of period-by-period).",
+    "how_to_apply": "- Before extracting: quick count with `SELECT COUNT(*) ... GJAHR='YYYY'` (1 field, fast)\n- If count > 100K/year: use period-by-period extraction\n- Old anchors are informational only — they may have been counted without year filter, with object-scoped approach, or data may have grown\n- Document actual counts in retro for future reference",
+    "severity": "CRITICAL",
+    "created_session": 35,
+    "source_file": "feedback_never_trust_old_anchors.md"
+  },
+  {
+    "id": "feedback_no_correlated_subquery",
+    "rule": "Never use correlated subqueries (`WHERE col = (SELECT ... FROM same_table WHERE ...)`) on Gold DB tables with >10K rows.",
+    "why": "Session #042 — 7 consecutive failed attempts on TCURR (55K rows). SQLite optimizer doesn't handle correlated subqueries well on large tables. Each outer row re-scans the inner query. Process hangs/times out.",
+    "how_to_apply": "When you need \"latest/min/max per group\" from a large table:\n1. `fetchall()` into Python\n2. Build dict with the aggregation in Python\n3. Use the dict for lookups\n\nExample (BAD):\n```sql\nSELECT FCURR, UKURS FROM TCURR WHERE GDATU = (SELECT MIN(GDATU) FROM TCURR t2 WHERE t2.FCURR = TCURR.FCURR)\n```\n\nExample (GOOD):\n```python\nrows = db.execute(\"SELECT FCURR, UKURS, GDATU FROM TCURR ORDER BY FCURR, GDATU\").fetchall()\nlatest = {}\nfor fc, uk, gd in rows:\n    if fc not in latest or gd < latest[fc][1]:\n        latest[fc] = (uk, gd)\n```",
+    "severity": "CRITICAL",
+    "created_session": 42,
+    "source_file": "feedback_no_correlated_subquery.md"
+  },
+  {
+    "id": "feedback_no_subagent_for_direct_work",
+    "rule": "When the task is to UPDATE files (skills, docs, code), do it directly. Don't launch a subagent to \"investigate if they need updating\" first.",
+    "why": "User corrected this in Session #018. The session close protocol says \"update affected skills\" — that means open them, edit them, commit. Not \"research whether they need updating.\" The subagent added latency and no value.",
+    "how_to_apply": "If the action verb is \"update\", \"fix\", \"write\", \"create\" — use Read + Edit directly. Only use Explore subagents for genuine open-ended research where you don't know what you're looking for.",
+    "severity": "MEDIUM",
+    "created_session": 18,
+    "source_file": "feedback_no_subagent_for_direct_work.md"
+  },
+  {
+    "id": "feedback_p01_landscape_violation",
+    "rule": "Production customizing requests (P01K* with TRFUNCTION='W') are ALWAYS a landscape violation. The standard path is D01 → P01 via transport.",
+    "why": "During Upgrade 2026 (2026-04-07), open P01 customizing requests blocked transport imports. Worse, if not detected, D01→P01 transports silently overwrite P01-only changes, losing emergency fixes and audit corrections.",
+    "how_to_apply": "- When analyzing ANY transport order, first check WHERE it was created (system prefix)\n- P01K* customizing = violation. Always ask: why was it opened? does D01 have the change? will upgrade overwrite it?\n- Root cause categories: EMERGENCY, PERIOD_SENSITIVE, AUDIT_DRIVEN, CONFIGURATION_DRIFT, SYSTEM_FORCED\n- The transport companion skill (sap_transport_companion) now has Step 1b for landscape violation detection\n- Pre-upgrade checklist: scan P01 open requests 2 weeks before any import\n- Monthly P01 hygiene: zero tolerance for customizing requests older than 30 days",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_p01_landscape_violation.md"
+  },
+  {
+    "id": "feedback_parallel_companion_build",
+    "rule": "For multi-tab/page companion HTML files, use the parallel agent companion builder pattern:",
+    "why": "Building 10+ tabs sequentially wastes time. Each tab is independent (own queries, own HTML). Parallel build can 3-5x the speed.",
+    "how_to_apply": "When companion has >5 tabs, spawn one agent per tab with: (1) the data queries needed, (2) the HTML template for that tab, (3) the shared CSS/header. Merge results. For smaller companions (<5 tabs), single-agent build is fine.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_parallel_companion_build.md"
+  },
+  {
+    "id": "feedback_parallel_extraction",
+    "rule": "When extracting multiple SAP tables to Gold DB, run up to 5 tables in parallel — each with its own RFC connection.",
+    "why": "Session #048 extracted 22 tables sequentially. LFA1 alone (147 fields, 316K rows) took ~38 minutes. Sequential = hours. Parallel (5 at a time) = fraction of that.",
+    "how_to_apply": "1. Extraction scripts MUST support single-table CLI argument (e.g., `python extract_bp_full.py LFA1`)\n2. Launch up to 5 background processes in parallel: `python script.py TABLE1 & python script.py TABLE2 & ...`\n3. SQLite WAL mode handles concurrent writes — no conflict as long as each process writes to different tables\n4. Each process gets its own RFC connection (ConnectionGuard)\n5. Max 5 parallel = safe for SAP system (don't overload with too many RFC sessions)\n6. After first batch of 5 completes, launch next batch",
+    "severity": "MEDIUM",
+    "created_session": 48,
+    "source_file": "feedback_parallel_extraction.md"
+  },
+  {
+    "id": "feedback_period_by_period_extraction",
+    "rule": "Always use period-by-period extraction (GJAHR + PERIO) for tables with >100K rows per year. Never extract a full year in one call.",
+    "why": "Session #035 — COEP year-at-once (1.1M rows) accumulated in memory for 30+ min, then VPN dropped and lost everything. Period-by-period (17 periods —— ~90K rows) completed successfully with 3 VPN drops — each period persists to SQLite immediately, fresh RFC connection per period.",
+    "how_to_apply": "- If table has PERIO/MONAT field and estimated >100K rows/year: split by period\n- Fresh `get_connection()` per period (not reusing connection across periods)\n- `load_to_sqlite()` immediately after each period extraction\n- Check for existing data before extracting (skip already-loaded periods)\n- RPSCO-type tables (pivoted, no PERIO) can use year-at-once if <50K rows/year",
+    "severity": "CRITICAL",
+    "created_session": 35,
+    "source_file": "feedback_period_by_period_extraction.md"
+  },
+  {
+    "id": "feedback_pmo_count_before_close",
+    "rule": "When adding PMO items during a session, update the header count (`Current count: B=X H=Y G=Z = N total`) IMMEDIATELY after adding items — not as a separate fix commit after the fact.",
+    "why": "Session #039 added G61-G64 (4 items) but committed the session close with the old count (27 instead of 31). This is the exact same pattern that caused H13 to rot for 15 sessions — stale PMO state that nobody catches because the count looks clean. Session #038 had the same bug with the header saying \"10 High / 31 total\" when it was actually 7 High / 28 total. Two consecutive sessions with the same error = systemic, not accidental.",
+    "how_to_apply": "Before the FINAL commit of any session:\n1. Count non-struck H items manually\n2. Count non-struck G items manually\n3. Verify `total = B + H + G`\n4. Verify `items_at_start + items_added - items_struck = total`\n5. Update header line\n6. THEN commit\n\nThis is a pre-commit check, not a post-commit fix. If the AGI retro audit catches it, the session already failed once.",
+    "severity": "MEDIUM",
+    "created_session": 39,
+    "source_file": "feedback_pmo_count_before_close.md"
+  },
+  {
+    "id": "feedback_pmo_reconciliation",
+    "rule": "At session close, ALWAYS reconcile `.agents/intelligence/PMO_BRAIN.md` with all pending items from the session.",
+    "why": "Between sessions #009 and #020 (11 sessions), PMO_BRAIN.md was never reconciled. Pending items accumulated in individual SESSION_LOG entries but were never centralized. Result: 42 real pending items vs 8 tracked in MEMORY.md — 34 items invisible. User had to request a full 19-session audit to find them.",
+    "how_to_apply": "At the END of every session:\n1. List all NEW pending items discovered during the session\n2. Add each to PMO_BRAIN.md under appropriate section (B=Blocking, H=High, G=Backlog)\n3. Strike through any items completed during the session\n4. Write in SESSION_LOG: \"PMO reconciled: +N new, -N completed, N total pending\"\n5. Update MEMORY.md pending COUNT (not the list — list lives in PMO_BRAIN.md only)\n6. If you skip this step, items WILL get lost again",
+    "severity": "CRITICAL",
+    "created_session": 2,
+    "source_file": "feedback_pmo_reconciliation.md"
+  },
+  {
+    "id": "feedback_query_data_before_hardcoding",
+    "rule": "ALWAYS query the actual data before hardcoding configuration mappings.",
+    "why": "Session #041 wasted a round-trip creating DMEE_COMPANY_MAP with payment method codes [\"T\", \"U\"] for UNES. A single SQL query on T042A showed the real codes are [\"4\", \"5\", \"H\", \"I\", \"J\", \"N\", \"O\", \"S\"]. The wrong codes produced only 1 USES_DMEE_TREE edge instead of 36.",
+    "how_to_apply": "When creating config-to-config edges (USES_DMEE_TREE, ROUTES_TO_BANK, etc.), first `SELECT DISTINCT` from the Gold DB to get the real values. Never assume SAP configuration codes from memory or domain knowledge alone — they're arbitrary and country-specific.",
+    "severity": "CRITICAL",
+    "created_session": 41,
+    "source_file": "feedback_query_data_before_hardcoding.md"
+  },
+  {
+    "id": "feedback_reuse_extraction_pattern",
+    "rule": "NEVER write extraction scripts from scratch. The proven pattern exists and has been tested on 93 tables / 24M+ rows.",
+    "why": "Session #048 wasted 4+ iterations writing/debugging extraction scripts for BP tables when the exact same pattern was already working in `extract_co_tables.py`, `extract_bkpf_bseg_parallel.py`, etc. Reinventing caused: bash quote errors, wrong field probe (RFC_READ_TABLE ROWCOUNT=0 crashes on wide tables), missing field splitting, 3 script versions.",
+    "how_to_apply": "1. For field list: use `DDIF_FIELDINFO_GET` (NOT `RFC_READ_TABLE ROWCOUNT=0` — crashes on wide tables)\n2. For extraction: use `rfc_read_paginated()` from `rfc_helpers.py` — handles pagination, field splitting, reconnect\n3. For new tables: copy `extract_bp_full.py` as template — it has the correct pattern\n4. NEVER write inline Python in bash -c for extraction — use a .py file\n5. The canonical extraction script is `extract_bp_full.py` — 22 tables, all fields, DDIF probe, auto-split",
+    "severity": "CRITICAL",
+    "created_session": 48,
+    "source_file": "feedback_reuse_extraction_pattern.md"
+  },
+  {
+    "id": "feedback_reuse_proven_patterns",
+    "rule": "Feedback: Reuse proven patterns, don't reinvent (Session #010)",
+    "why": "When a similar task has been done before successfully, READ the working solution FIRST before touching new scripts. Don't reinvent.",
+    "how_to_apply": "",
+    "severity": "MEDIUM",
+    "created_session": 10,
+    "source_file": "feedback_reuse_proven_patterns.md"
+  },
+  {
+    "id": "feedback_rfc_data_loss_workaround",
+    "rule": "Bug: SAPSQL_DATA_LOSS during RFC_READ_TABLE pagination",
+    "why": "Reducing fields does NOT fix it. The error is in the ABAP kernel's cursor positioning, not the output buffer.",
+    "how_to_apply": "- ALL extraction scripts must use this pattern for large tables\n- If a month fails with DATA_LOSS, automatically fall back to day-by-day extraction\n- This should be built into `rfc_helpers.py` as a fallback strategy\n- Document in sap_data_extraction skill",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_rfc_data_loss_workaround.md"
+  },
+  {
+    "id": "feedback_session_close_annotations",
+    "rule": "At session close, BEFORE writing the retro, annotate every SAP object analyzed.",
+    "why": "47 sessions produced ~200+ learnings about specific programs, tables, and config objects. Only 41 were recovered in Session #048 because they were never tagged back to the objects. Intermediate conclusions get overwritten by later findings but the annotations may still carry the old version. Each annotation must be the FINAL conclusion, not a partial hypothesis.",
+    "how_to_apply": "",
+    "severity": "CRITICAL",
+    "created_session": 48,
+    "source_file": "feedback_session_close_annotations.md"
+  },
+  {
+    "id": "feedback_session_close_protocol",
+    "rule": "Before closing a session, ALWAYS:",
+    "why": "If only MEMORY.md is updated but skills are not, the next session will repeat the same mistakes because skills are what agents READ when executing tasks. MEMORY.md is context; skills are instructions.",
+    "how_to_apply": "At session close, grep for all skills that were used or affected, read their SKILL.md, and update with findings. This is NON-NEGOTIABLE.",
+    "severity": "HIGH",
+    "created_session": null,
+    "source_file": "feedback_session_close_protocol.md"
+  },
+  {
+    "id": "feedback_session_retro_files",
+    "rule": "SESSION_LOG.md must NOT accumulate full session content. It is an index only.",
+    "why": "SESSION_LOG reached 993 lines by session #027 — became unreadable and context-heavy. Individual retro files are self-contained, easy to read at session start, and don't bloat the shared index file.",
+    "how_to_apply": "- At session END: create retro file first, then add one row to SESSION_LOG index.\n- At session START: read SESSION_LOG index to find session number, then read the retro file directly.\n- Never write full session content into SESSION_LOG.\n- Template sections: accomplishments, discoveries, what failed/corrected, verification check, PMO reconciliation, pending→next.",
+    "severity": "HIGH",
+    "created_session": 27,
+    "source_file": "feedback_session_retro_files.md"
+  },
+  {
+    "id": "feedback_start_close_symmetry",
+    "rule": "# Rule",
+    "why": "Session open and session close must be mechanically symmetric. Asymmetry between the two generates cross-session inconsistencies (lost baselines, un-auditable closure, zombie accumulation, H-items rotting). The control must be executable, not prose.",
+    "how_to_apply": "",
+    "severity": "MEDIUM",
+    "created_session": 37,
+    "source_file": "feedback_start_close_symmetry.md"
+  },
+  {
+    "id": "feedback_stream_large_tables",
+    "rule": "For large tables (>100K rows):",
+    "why": "FMIOI extraction accumulated 2GB in RAM and had to be killed. ESLL JSON was 619MB and couldn't be loaded with json.load().",
+    "how_to_apply": "Any table expected >100K rows must use the stream-to-SQLite pattern. Check memory estimates: ~200 bytes/row in Python dicts.",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_stream_large_tables.md"
+  },
+  {
+    "id": "feedback_tabkey_language_codes",
+    "rule": "In SAP E071K TABKEYs, single-letter prefixes before client+company code are LANGUAGE KEYS (SPRAS), not functional categories.",
+    "why": "Session #031 — misinterpreted T010P keys 350DSTEM/350ESTEM/350FSTEM/350PSTEM as \"D=standard posting period, E=special period, F=fiscal year change, P=posting period\". They are actually the same posting period description in 4 languages.",
+    "how_to_apply": "When parsing TABKEYs:\n1. If you see single-letter prefix + MANDT(3) + BUKRS(4) → that letter is SPRAS (language)\n2. Text tables (*T suffix) always have SPRAS as part of the key\n3. T012T, T035U, T043GT, T043ST, TKT09, FM01T, FMHIVARNTT all follow this pattern\n4. The functional content is the SAME across all language variants — they're just translations",
+    "severity": "MEDIUM",
+    "created_session": 31,
+    "source_file": "feedback_tabkey_language_codes.md"
+  },
+  {
+    "id": "feedback_text_parsing_not_acceptable",
+    "rule": "Structured data (WBS element, cost center, fund center, fund) must ALWAYS come from proper database fields via JOINs. NEVER rely on parsing text fields (SGTXT, BKTXT, etc.) as a substitute.",
+    "why": "Text parsing is fragile — different users type different formats, abbreviations change, and coverage is never 100%. The user explicitly rejected SGTXT parsing for WBS element even though it had 89.5% coverage. A proper field via JOIN is the only acceptable approach.",
+    "how_to_apply": "- If a field is missing from the current table, look for it in related tables (FMIFIIT for FM data, PRPS for WBS, etc.)\n- Build the JOIN chain: BSIS.BUZEI = FMIFIIT.KNBUZEI, FMIFIIT.OBJNRZ = PRPS.OBJNR\n- If the field truly doesn't exist in any extractable table, say so — don't offer text parsing as an alternative",
+    "severity": "CRITICAL",
+    "created_session": null,
+    "source_file": "feedback_text_parsing_not_acceptable.md"
+  },
+  {
+    "id": "feedback_verify_empty_table_claims",
+    "rule": "NEVER trust \"table X has 0 rows\" claims from previous sessions without re-verifying against live system.",
+    "why": "Session #021 claimed FEBEP=0 rows. This was repeated in 4 subsequent sessions (#022-#028) and embedded in 2 SKILL.md files. Session #029 proved FEBEP has **223,710 items** (2024-2026), 99.9% posted. EBS is fully active. The original claim may have been from a wrong client, wrong system, or a query error.",
+    "how_to_apply": "When a table is claimed empty, especially if that claim drives architectural conclusions (e.g., \"BCM replaced EBS\"), always verify with a fresh `RFC_READ_TABLE` count before building on that assumption. One wrong \"0 rows\" claim cascaded into incorrect architecture understanding for 4 sessions.",
+    "severity": "CRITICAL",
+    "created_session": 21,
+    "source_file": "feedback_verify_empty_table_claims.md"
+  },
+  {
+    "id": "feedback_visjs_inline",
+    "rule": "HTML dashboards using vis-network.js must have the library inlined (embedded in a `<script>` tag), never loaded from a CDN URL.",
+    "why": "VSCode's webview (Simple Browser) blocks external CDN requests due to Content Security Policy. The graph canvas renders empty while the rest of the HTML (sidebar, tables) works fine — making it look like a data bug when it's actually a loading bug.",
+    "how_to_apply": "- Keep a local copy at `Zagentexecution/mcp-backend-server-python/vis-network.min.js` (644KB)\n- When generating HTML with vis.js, read the local file and embed it: `<script>{vis_js_content}</script>`\n- Also check for duplicate node IDs — vis.js silently fails on duplicates\n- Applies to: `connectivity_diagram.html`, `p2p_process_mining.html`, any future graph dashboards",
+    "severity": "CRITICAL",
+    "created_session": null,
+    "source_file": "feedback_visjs_inline.md"
+  },
+  {
+    "id": "feedback_visjs_no_duplicate_ids",
+    "rule": "vis.js `new vis.DataSet([...])` silently fails when two nodes share the same `id`. The network div renders blank — no error in console.",
+    "why": "In connectivity_diagram.html, the P01 node appeared twice (central hub + self-referencing RFC destination \"P01\"). The graph was empty but the sidebar rendered fine, making it look like a vis.js loading issue.",
+    "how_to_apply": "- When building nodes from RFC data, skip self-references (where target system == source system)\n- Always assert uniqueness before writing: `assert len(ids) == len(set(ids))`\n- Use `rebuild_connectivity.py` as the canonical builder — it has the dedup logic",
+    "severity": "MEDIUM",
+    "created_session": null,
+    "source_file": "feedback_visjs_no_duplicate_ids.md"
+  },
+  {
+    "id": "feedback_plans_in_project",
+    "rule": "Always copy plan files into session_plans/ immediately after plan mode creates them",
+    "why": "Plans in ~/.claude/plans/ are machine-specific and lost on machine change. Session plans are valuable design artifacts that must be portable.",
+    "how_to_apply": "After ExitPlanMode is approved, immediately copy the plan file to session_plans/MMDDYYYY_sessionNNN_{plan_name}.md. This was introduced in Session #049 when the plan file was lost from ~/.claude/plans/.",
+    "severity": "HIGH",
+    "created_session": 49,
+    "source_file": "feedback_plans_in_project.md"
+  },
+  {
+    "id": "feedback_agent_not_human_thinking",
+    "rule": "NEVER design brain architecture using human information patterns. The agent is an LLM, text-based, with a large context window.",
+    "why": "Human patterns: one-file-per-entity, organize into folders, pretty markdown, small focused files. Agent reality: bottleneck is tool calls not file size, 5000 lines = 1 Read call same as 50 lines, 1M context fits entire brain state at 8.5%, cross-referencing in context is the agent superpower — seeing patterns across rules+claims+annotations+edges simultaneously without additional tool calls. INC-000006073 proved this: root cause connected 5 domains, unpredictable which objects mattered. With everything loaded, agent finds unexpected connections in ONE reasoning pass. Cross-project feedback from unescore20-PPM-brain.",
+    "how_to_apply": "When designing ANY knowledge structure: (1) Can it be ONE file? If <100K tokens, YES. (2) Never create one-file-per-entity. (3) Use brain_state.json pattern: dense JSON, everything in one load. (4) File organization is for humans browsing folders. Agents browse context. (5) Exception: deep domain docs (knowledge/domains/) stay separate because they are 1000+ lines each and used on-demand, not at session start.",
+    "severity": "CRITICAL",
+    "created_session": 49,
+    "source_file": "feedback_agent_not_human_thinking.md"
+  },
+  {
+    "id": "feedback_design_for_growing_context",
+    "rule": "Design for growing context windows — be LESS conservative about loading, not more",
+    "why": "Context windows are doubling regularly. 85K tokens is 8.5% at 1M, 4.25% at 2M, 1.7% at 5M. What feels like a lot today is trivial tomorrow. The agent does not know when context will double — it could be next month. Design decisions should anticipate growth, not current limits. Never optimize for saving context space at the cost of tool calls.",
+    "how_to_apply": "When deciding what to include in brain_state.json or any session-start load: include MORE, not less. The cost of an extra 10K tokens in context is invisible. The cost of a missing connection (requiring an extra Read call or missed pattern) is real. Err on the side of loading too much.",
+    "severity": "HIGH",
+    "created_session": 49,
+    "source_file": "feedback_design_for_growing_context.md"
+  },
+  {
+    "id": "feedback_always_utf8_encoding",
+    "rule": "Always use explicit UTF-8 encoding when reading/writing JSON or text files in Python on Windows",
+    "why": "Windows default encoding is cp1252, not UTF-8. Python open() without encoding arg uses cp1252 on Windows, which corrupts em dashes, arrows, multiplication signs, and other non-ASCII chars. This causes silent data loss AND JSON decode errors later. Discovered in Session #049 when feedback_rules.json became unreadable after Python stdout writes.",
+    "how_to_apply": "ALWAYS: open(file, encoding='utf-8') for read, open(file, 'w', encoding='utf-8') for write. NEVER: open(file) or open(file, 'w') on Windows. When running python -c from bash, use << 'PYEOF' heredoc to avoid shell mangling. json.dump() should always include ensure_ascii=False with explicit utf-8 file handle.",
+    "severity": "CRITICAL",
+    "created_session": 49,
+    "source_file": "feedback_always_utf8_encoding.md"
+  }
+]

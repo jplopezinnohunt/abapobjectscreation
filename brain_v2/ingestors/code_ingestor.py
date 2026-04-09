@@ -81,11 +81,18 @@ def _scan_directory(brain, parser, directory: Path, stats: dict,
     if abap_files:
         # This directory has .abap files — decide how to ingest them
         class_groups = _group_files_by_class(abap_files)
-        if len(class_groups) > 1:
+
+        # Check if any real class grouping happened (multiple files share a prefix)
+        has_real_groups = any(len(files) > 1 for files in class_groups.values())
+
+        if len(class_groups) > 1 and has_real_groups:
             # Multiple classes sharing a flat directory (e.g., FI/DMEE/)
             for group_name, group_files in class_groups.items():
                 _ingest_file_group_as_class(brain, parser, group_name,
                                             group_files, directory, stats)
+        elif len(class_groups) > 1 and not has_real_groups:
+            # Many single-file groups = standalone includes/reports (e.g., SAP_STANDARD/)
+            _ingest_standalone_files(brain, parser, directory, stats)
         elif len(class_groups) == 1 and len(abap_files) > 1:
             # Single class directory (all files belong to one class)
             _ingest_class_dir(brain, parser, directory, stats)

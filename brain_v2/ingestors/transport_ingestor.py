@@ -93,8 +93,31 @@ def ingest_transports(brain, db_path: str):
         else:
             obj_id = f"{node_type}:{obj_name_clean}"
 
-        # Ensure object node exists (may already exist from code ingestor)
+        # ── Dedup: check if code_ingestor already created this node under a different prefix ──
+        # code_ingestor uses CLASS: prefix, transport uses ABAP_CLASS:
+        # Also check ABAP_REPORT: vs FUNCTION_MODULE: vs other prefixes
+        existing_id = None
         if not brain.has_node(obj_id):
+            # Check alternate prefixes from code_ingestor
+            alt_prefixes = {
+                "ABAP_CLASS": ["CLASS"],
+                "FUNCTION_MODULE": ["FM"],
+                "ABAP_REPORT": ["REPORT", "ENHANCEMENT"],
+            }
+            for alt in alt_prefixes.get(node_type, []):
+                alt_id = f"{alt}:{obj_name_clean}"
+                if brain.has_node(alt_id):
+                    existing_id = alt_id
+                    break
+
+        if existing_id:
+            # Merge transport metadata into existing node
+            obj_id = existing_id
+            existing_meta = brain.G.nodes[existing_id].get("metadata", {})
+            existing_meta["pgmid"] = pgmid or ""
+            existing_meta["object_type"] = obj_type or ""
+            existing_meta["transported"] = True
+        elif not brain.has_node(obj_id):
             brain.add_node(obj_id, node_type, obj_name_clean,
                            domain="CTS", layer="code",
                            source="gold_db",

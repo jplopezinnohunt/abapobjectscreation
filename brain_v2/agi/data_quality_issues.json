@@ -1,0 +1,162 @@
+[
+  {
+    "id": "DQ-001",
+    "source": "LFB1 table",
+    "issue": "Vendor 200083534 has KTOKK=SCSA + AKONT=2021011, inconsistent with other employee vendors (expected 2021010 for PSCA)",
+    "severity": "HIGH",
+    "impact": "Caused INC-000006073 — travel advance posting fails because GGB1 has no rule for 2021011",
+    "workaround": "Either change AKONT to 2021010, or add GGB1 substitution rule for 2021011",
+    "discovered_session": 48,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-002",
+    "source": "T015L (Payment Purpose Codes)",
+    "issue": "Country-level PPC config codes are UNESCO-proprietary format, not ISO 20022. Documentation PDFs show wrong codes (001/002/003) instead of real (slash-notation).",
+    "severity": "HIGH",
+    "impact": "Payment configuration misunderstood. PDF documentation unusable for PPC mapping.",
+    "workaround": "Use live T015L extraction. Ignore PDF documentation for PPC codes.",
+    "discovered_session": 25,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-003",
+    "source": "EKBE (Goods Receipt Notes)",
+    "issue": "GJAHR=0000 on 119K delivery notes (VGABE=9). Not real GL years but ACH returns marked as 'delivery notes'.",
+    "severity": "MEDIUM",
+    "impact": "EKBE year filtering problematic. 119K phantom 'year 0000' records exist.",
+    "workaround": "Filter GJAHR=0000 OUT of delivery note analysis queries.",
+    "discovered_session": 28,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-004",
+    "source": "EKBE.MEINS (unit of measure)",
+    "issue": "Auth-restricted on P01. Cannot extract via RFC without buffer overflow.",
+    "severity": "LOW",
+    "impact": "GR field analysis incomplete. Cannot verify item quantities in GR chain.",
+    "workaround": "Query MEINS via different path or skip in bulk extractions.",
+    "discovered_session": 28,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-005",
+    "source": "SKAT (GL Account Text)",
+    "issue": "510 (later 1,690) GL descriptions inconsistent between P01 and D01. P01 has CLOSED-BK prefixes; D01 still has old active names. Text updates inconsistent.",
+    "severity": "MEDIUM",
+    "impact": "Master data sync incomplete until Session #038 ran multi-language sync (1,511 UPDATEs + 179 INSERTs).",
+    "workaround": "Use sap_master_data_sync skill pattern: SELECT SINGLE + UPDATE FROM ls (avoids 72-char ABAP truncation).",
+    "discovered_session": 34,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-006",
+    "source": "BSAS.AUGBL (clearing document reference)",
+    "issue": "All 449K BSAS items have blank AUGBL initially. Clearing chain cannot be traced via AUGBL.",
+    "severity": "HIGH",
+    "impact": "Clearing relationships hidden. Session #030 re-enrichment fixed 553K items with AUGBL+AUGDT (100% fill).",
+    "workaround": "Use BSAS_2024_2026 enriched table, not raw BSAS extraction.",
+    "discovered_session": 29,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-007",
+    "source": "FEBKO (Bank Statement Headers)",
+    "issue": "Only 8 of 62 DD03L fields extracted initially. BUKRS, HBKID, HKTID missing.",
+    "severity": "HIGH",
+    "impact": "Cannot link statements to banks without FEBKO_2024_2026 enriched table.",
+    "workaround": "Always query FEBKO_2024_2026 (31,416 rows, 62 fields), not unsuffixed FEBKO.",
+    "discovered_session": 29,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-008",
+    "source": "FEBEP (Bank Statement Line Items)",
+    "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
+    "severity": "HIGH",
+    "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
+    "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols — truncated first attempt).",
+    "discovered_session": 29,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-009",
+    "source": "T010P (Posting Period Variants)",
+    "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/Français/Portuguese), looks like functional types.",
+    "severity": "MEDIUM",
+    "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
+    "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
+    "discovered_session": 31,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-010",
+    "source": "FMIFIIT extraction script",
+    "issue": "Script filter missing ICBA and UIL FM areas. Only 7 of 9 institutes included initially. Zero postings for ICBA/UIL appeared as data finding (was extraction bug).",
+    "severity": "HIGH",
+    "impact": "Company code analysis wrong. Shared with team before verification (credibility hit).",
+    "workaround": "Always verify filter completeness against T001 BUKRS list before publishing findings.",
+    "discovered_session": 31,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-011",
+    "source": "BNK_BATCH_ITEM.IBC17 (BCM Failed Items)",
+    "issue": "2,056 IBC17 items all from 2021-2022 BCM outage (Jul2021-Dec2022). No failures 2024-2026.",
+    "severity": "LOW",
+    "impact": "Stale error state. BCM failure analysis weighted wrong if date range not checked.",
+    "workaround": "Always filter BCM data to 2024-2026 for current-state analysis.",
+    "discovered_session": 28,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-012",
+    "source": "T030H (Bank Valuation Configuration)",
+    "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
+    "severity": "CRITICAL",
+    "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
+    "workaround": "Requires remediation project. No workaround — structural config gap.",
+    "discovered_session": 44,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-013",
+    "source": "TADIR in P01 (DMEE AE/BH BAdI)",
+    "issue": "YCL_IDFI_CGI_DMEE_AE and YCL_IDFI_CGI_DMEE_BH classes don't exist in P01 TADIR. Only in D01 CTS. P01 uses UTIL fallback.",
+    "severity": "HIGH",
+    "impact": "AE and BH countries get default processing instead of custom logic. Configuration incomplete in production.",
+    "workaround": "Transport the classes to P01 if custom AE/BH logic needed. Currently UTIL fallback is working.",
+    "discovered_session": 25,
+    "status": "OPEN"
+  },
+  {
+    "id": "DQ-014",
+    "source": "E071/E071K (Transport Objects) in P01",
+    "issue": "SAP clears E071/E071K after transport release. Previous extraction is source of truth. Re-extraction of released transports returns empty.",
+    "severity": "CRITICAL",
+    "impact": "Can permanently destroy transport content data by re-extracting. Happened in Session #031 (destroyed 36/682, 9/51).",
+    "workaround": "NEVER re-extract released transports. Check status before extraction. Rule in feedback_never_reextract_released_transports.",
+    "discovered_session": 31,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-015",
+    "source": "BSIS on 10xxxxx accounts",
+    "issue": "199K 'open' items on 10xxxxx are actually permanent ledger entries (never cleared by design). Not a reconciliation gap.",
+    "severity": "LOW",
+    "impact": "Misinterpreted as operational crisis for 4 sessions. Real unreconciled = 2,737 on 11xxxxx (0.6%).",
+    "workaround": "Filter BSIS to 11xxxxx accounts only for reconciliation analysis.",
+    "discovered_session": 29,
+    "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-016",
+    "source": "~/.claude/projects/*/memory/ files",
+    "issue": "Memory files got Windows-1252 encoding bytes injected during Python stdout writes on Windows, corrupting em dashes and arrows.",
+    "severity": "HIGH",
+    "impact": "feedback_rules.json became unreadable (UTF-8 decode errors) mid-Session #049, required cleanup.",
+    "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
+    "discovered_session": 49,
+    "status": "RESOLVED"
+  }
+]
