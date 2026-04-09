@@ -39,6 +39,7 @@ def cmd_build():
     from brain_v2.ingestors.process_ingestor import ingest_processes
     from brain_v2.ingestors.knowledge_ingestor import ingest_knowledge
     from brain_v2.ingestors.domain_knowledge_ingestor import ingest_domain_knowledge
+    from brain_v2.ingestors.annotation_ingestor import ingest_annotations
 
     brain = BrainGraph()
     tracker = IncrementalTracker(brain)
@@ -78,6 +79,11 @@ def cmd_build():
     # Phase 5: Domain knowledge (expert-verified edges parser can't find)
     r = tracker.update_from_source("Domain Knowledge", lambda b: ingest_domain_knowledge(b))
     print(f"  Domain Knowledge: +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
+
+    # Phase 6: Annotations (learnings from analysis sessions — makes objects smarter)
+    # Also materializes tables_read/fms_called metadata into real graph edges
+    r = tracker.update_from_source("Annotations", ingest_annotations, str(PROJECT_ROOT))
+    print(f"  Annotations:      +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
 
     print("=" * 60)
     print(f"  TOTAL:  {brain.node_count():,} nodes  {brain.edge_count():,} edges")

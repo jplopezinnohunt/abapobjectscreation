@@ -1,0 +1,587 @@
+{
+  "LHRTSF01": {
+    "annotations": [
+      {
+        "tag": "CRITICAL",
+        "finding": "IF epk-bukst = epk-bukrs — only propagates GSBER for same-company postings. Intercompany counterpart lines get NO GSBER.",
+        "timestamp": "2026-04-09T08:51:13.763601",
+        "impact": "Any intercompany posting where partner company has no fallback BusA derivation will fail",
+        "line": 852,
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "GSBER",
+        "related": [
+          "PA0001.GSBER",
+          "PTRV_SCOS.COMP_CODE"
+        ]
+      },
+      {
+        "tag": "SIDE_EFFECT",
+        "finding": "CLEAR epk-gsber on vendor lines with koart=K and ktosl=HRP/HRV",
+        "timestamp": "2026-04-09T08:51:13.806309",
+        "impact": "Vendor clearing lines lose GSBER even if set upstream",
+        "line": 1693,
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "GSBER"
+      },
+      {
+        "tag": "CROSS_COMPANY",
+        "finding": "epk-gsber = accountingobjects-bus_area_empl — restores GSBER for cross-company TAX lines only (stazf=X), NOT vendor clearing lines",
+        "timestamp": "2026-04-09T08:51:13.851801",
+        "impact": "Tax G/L lines get GSBER restored, vendor lines do not",
+        "line": 1550,
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "GSBER"
+      },
+      {
+        "tag": "CONTROL_FLAG",
+        "finding": "gsber_a parameter (I_GSBER_A) controls whether GSBER derivation runs at all. If not X, GSBER is cleared.",
+        "timestamp": "2026-04-09T08:51:13.894344",
+        "line": 848,
+        "session": "#048",
+        "field": "GSBER"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:13.763601",
+    "last_updated": "2026-04-09T08:51:13.894344"
+  },
+  "LHRTSU05": {
+    "annotations": [
+      {
+        "tag": "ERROR_WRAPPER",
+        "finding": "RW609 is NOT a Travel validation — it wraps BAPI_ACC_EMPLOYEE_PAY_POST errors. The actual rejection is inside the BAPI during FI document simulation.",
+        "timestamp": "2026-04-09T08:51:13.939564",
+        "impact": "Misleading error message — looks like Travel module rejects, but its the FI BAPI",
+        "line": 155,
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:13.939564",
+    "last_updated": "2026-04-09T08:51:13.939564"
+  },
+  "LHRTSU01": {
+    "annotations": [
+      {
+        "tag": "FUNCTION_MODULE",
+        "finding": "PTRV_TRANSLATE is a FM in function group HRTS, not a standalone program. Sets gsber_a/gsber_g parameters that control GSBER derivation in LHRTSF01.",
+        "timestamp": "2026-04-09T08:51:13.989122",
+        "session": "#048",
+        "related": [
+          "LHRTSF01",
+          "LHRTSTOP"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:13.989122",
+    "last_updated": "2026-04-09T08:51:13.989122"
+  },
+  "ZCL_IM_TRIP_POST_FI_CM00A": {
+    "annotations": [
+      {
+        "tag": "FALLBACK",
+        "finding": "BAdI reads PA0027 subtype 02 to derive GSBER when gsbst is initial. CHECK at line 37 EXITS if no subtype 02 record found — does not raise error, silently skips.",
+        "timestamp": "2026-04-09T08:51:14.037438",
+        "impact": "If PA0027-02 is expired or missing, GSBER stays empty with no warning",
+        "line": 12,
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "GSBER",
+        "related": [
+          "PA0027",
+          "HR_READ_INFOTYPE"
+        ]
+      },
+      {
+        "tag": "SILENT_EXIT",
+        "finding": "CHECK sy-subrc IS INITIAL — exits method without error if PA0027-02 not found. No log, no warning.",
+        "timestamp": "2026-04-09T08:51:14.087421",
+        "impact": "Invisible failure — BAdI appears to work but does nothing",
+        "line": 37,
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.037438",
+    "last_updated": "2026-04-09T08:51:14.087421"
+  },
+  "ZCL_IM_TRIP_POST_FI_CM006": {
+    "annotations": [
+      {
+        "tag": "BUSINESS_RULE",
+        "finding": "IIEP doc type: FR01 location gets TV, all others get TF. Changed by Konakov 2015-09-30.",
+        "timestamp": "2026-04-09T08:51:14.133934",
+        "line": 52,
+        "session": "#048",
+        "related": [
+          "PA0001.WERKS"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.133934",
+    "last_updated": "2026-04-09T08:51:14.133934"
+  },
+  "ZXTRVU05": {
+    "annotations": [
+      {
+        "tag": "DISABLED_CODE",
+        "finding": "WHEN OTHERS block — inst_fund_ba_wbs_cc is COMMENTED OUT for all non-UNES company codes (IIEP, IBE, ICBA, ICTP, MGIE, UIL, UIS). Commented by Konakov 2018.",
+        "timestamp": "2026-04-09T08:51:14.176051",
+        "impact": "Non-UNES company codes have no BusA derivation from fund/WBS in this exit. They rely entirely on SAP standard (line 852) or GGB1.",
+        "line": 63,
+        "session": "#048",
+        "incident": "INC-000006073",
+        "related": [
+          "FUND_BA_WBS_CC",
+          "inst_fund_ba_wbs_cc"
+        ]
+      },
+      {
+        "tag": "ACTIVE_CODE",
+        "finding": "UNES company code: FUND_BA_WBS_CC is ACTIVE — derives BusA from fund, WBS, cost center.",
+        "timestamp": "2026-04-09T08:51:14.226981",
+        "line": 25,
+        "session": "#048"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.176051",
+    "last_updated": "2026-04-09T08:51:14.228686"
+  },
+  "GB901:3IIEP###002": {
+    "annotations": [
+      {
+        "tag": "COVERAGE_GAP",
+        "finding": "GGB1 substitution rule for IIEP travel: only covers GL 2021042 and 2021061. GL 2021011 (SCSA vendor recon account) is NOT covered.",
+        "timestamp": "2026-04-09T08:51:14.277577",
+        "impact": "Any IIEP vendor with AKONT=2021011 in an intercompany posting will have empty GSBER",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "related": [
+          "LFB1.AKONT",
+          "LFA1.KTOKK"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.277577",
+    "last_updated": "2026-04-09T08:51:14.277577"
+  },
+  "GB922:Step003": {
+    "annotations": [
+      {
+        "tag": "TIMING_ISSUE",
+        "finding": "GGB1 Step 003 sets GSBER=PAR unconditionally for TV docs. But it runs inside the BAPI simulation — the BAPI mandatory field check may reject BEFORE this step completes.",
+        "timestamp": "2026-04-09T08:51:14.326502",
+        "impact": "Safety net exists but may fire too late",
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.326502",
+    "last_updated": "2026-04-09T08:51:14.326502"
+  },
+  "GB901:2IIEP###001": {
+    "annotations": [
+      {
+        "tag": "MISLEADING",
+        "finding": "GGB0 validation ZFI020: checks GSBER <> DAE/GEF/MBF/OPF/PFF. Empty GSBER PASSES this check. The message text says only use PAR/IBA/FEL but thats not what the code checks.",
+        "timestamp": "2026-04-09T08:51:14.387584",
+        "impact": "Error message misleads — suggests wrong BusA value, but the real problem is empty BusA",
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.387584",
+    "last_updated": "2026-04-09T08:51:14.387584"
+  },
+  "LFA1": {
+    "annotations": [
+      {
+        "tag": "MASTER_DATA",
+        "finding": "316K vendors in P01. KTOKK field determines LFB1.AKONT (reconciliation GL). Wrong KTOKK = wrong GL = GGB1 miss.",
+        "timestamp": "2026-04-09T08:51:14.441758",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "KTOKK",
+        "related": [
+          "LFB1.AKONT",
+          "T077K"
+        ]
+      },
+      {
+        "tag": "BP_GAP",
+        "finding": "316K vendors but only 559 BUT000 records and 0 CVI_VEND_LINK rows. BP conversion is less than 1% complete.",
+        "timestamp": "2026-04-09T08:51:14.492178",
+        "session": "#048",
+        "related": [
+          "BUT000",
+          "CVI_VEND_LINK"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.441758",
+    "last_updated": "2026-04-09T08:51:14.492178"
+  },
+  "LFB1": {
+    "annotations": [
+      {
+        "tag": "KEY_RELATIONSHIP",
+        "finding": "AKONT (reconciliation GL) is determined by LFA1.KTOKK (vendor account group). AKONT drives which GGB1 substitution rules match.",
+        "timestamp": "2026-04-09T08:51:14.539202",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "AKONT",
+        "related": [
+          "LFA1.KTOKK",
+          "GB901:3IIEP###002"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.539202",
+    "last_updated": "2026-04-09T08:51:14.539202"
+  },
+  "PA0027": {
+    "annotations": [
+      {
+        "tag": "DATA_DECAY",
+        "finding": "Subtype 02 (cost distribution) for traveler 10133079 expired 2021-01-31. BAdI ZCL_IM_TRIP_POST_FI reads this subtype — expired data = silent failure.",
+        "timestamp": "2026-04-09T08:51:14.590862",
+        "impact": "Any employee with expired PA0027-02 who travels intercompany will have no BusA fallback",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "SUBTY=02"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.590862",
+    "last_updated": "2026-04-09T08:51:14.592874"
+  },
+  "PTRV_SCOS": {
+    "annotations": [
+      {
+        "tag": "EVIDENCE",
+        "finding": "Trip cost assignment table. COMP_CODE field drives same-company vs intercompany posting. Trip 0101004544 had COMP_CODE=UNES (first time for this traveler) — caused the failure.",
+        "timestamp": "2026-04-09T08:51:14.642121",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "COMP_CODE",
+        "related": [
+          "LHRTSF01:852"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.642121",
+    "last_updated": "2026-04-09T08:51:14.642121"
+  },
+  "YTFI_BA_SUBST": {
+    "annotations": [
+      {
+        "tag": "COVERAGE_GAP",
+        "finding": "IIEP has zero global rules. All 12 entries restricted to doc type Z1 — do NOT apply to TV/TF travel documents.",
+        "timestamp": "2026-04-09T08:51:14.691232",
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.691232",
+    "last_updated": "2026-04-09T08:51:14.691232"
+  },
+  "T077K": {
+    "annotations": [
+      {
+        "tag": "CONFIG",
+        "finding": "47 vendor account group definitions. KTOKK=UNES maps to AKONT=2021042 (covered by GGB1). KTOKK=SCSA maps to AKONT=2021011 (NOT covered).",
+        "timestamp": "2026-04-09T08:51:14.737336",
+        "session": "#048",
+        "incident": "INC-000006073"
+      }
+    ],
+    "first_seen": "2026-04-09T08:51:14.737336",
+    "last_updated": "2026-04-09T08:51:14.737336"
+  },
+  "BSEG": {
+    "annotations": [
+      {
+        "tag": "ARCHITECTURE",
+        "finding": "BSEG is declustered in P01. Can read via RFC_READ_TABLE. No MANDT in WHERE clause.",
+        "timestamp": "2026-04-09T08:57:54.596123",
+        "session": "#029",
+        "related": [
+          "RFC_READ_TABLE"
+        ]
+      },
+      {
+        "tag": "ARCHITECTURE",
+        "finding": "BSEG is NOT a table to extract — it is a JOIN via bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). 4.7M rows. Never extract or enrich BSEG directly.",
+        "timestamp": "2026-04-09T08:57:54.658680",
+        "impact": "Extracting BSEG wastes time and produces incomplete data. Use bseg_union VIEW in Gold DB.",
+        "session": "#035",
+        "related": [
+          "bseg_union",
+          "BSIS",
+          "BSAS",
+          "BSIK",
+          "BSAK",
+          "BSID",
+          "BSAD"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:54.596123",
+    "last_updated": "2026-04-09T08:57:54.658680"
+  },
+  "FMIFIIT": {
+    "annotations": [
+      {
+        "tag": "KEY_JOIN",
+        "finding": "FMIFIIT.KNBELNR = BKPF.BELNR — perfect 1:1 FM-to-FI join at line level.",
+        "timestamp": "2026-04-09T08:57:54.708312",
+        "impact": "This is the bridge between Funds Management and Financial Accounting. Critical for Golden Query.",
+        "session": "#016",
+        "field": "KNBELNR",
+        "related": [
+          "BKPF.BELNR"
+        ]
+      },
+      {
+        "tag": "KEY_JOIN",
+        "finding": "FMIFIIT.OBJNRZ = PRPS.OBJNR — WBS element recovery. 85.9% coverage for 2025.",
+        "timestamp": "2026-04-09T08:57:54.760057",
+        "session": "#016",
+        "field": "OBJNRZ",
+        "related": [
+          "PRPS.OBJNR",
+          "PRPS.POSID"
+        ]
+      },
+      {
+        "tag": "FIELD_NAMES",
+        "finding": "FM columns differ from FI: FKBTR (not HSL), PERIO (not POPER), FMBELNR (not BELNR).",
+        "timestamp": "2026-04-09T08:57:54.805846",
+        "impact": "Wrong field names = empty results. Always PRAGMA table_info first.",
+        "session": "#016"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:54.708312",
+    "last_updated": "2026-04-09T08:57:54.805846"
+  },
+  "FEBEP": {
+    "annotations": [
+      {
+        "tag": "DISCOVERY",
+        "finding": "Account 10xxxxx = permanent bank ledger (by design, never cleared). Account 11xxxxx = clearing sub-account. Real unreconciled = 2,737 items on 11xxxxx (0.6% gap).",
+        "timestamp": "2026-04-09T08:57:54.858181",
+        "impact": "Session #029 found FEBEP=0 was WRONG for 4 sessions. Always verify claims against actual data.",
+        "session": "#029",
+        "related": [
+          "FEBKO",
+          "FEBRE"
+        ]
+      },
+      {
+        "tag": "DATA_QUALITY",
+        "finding": "223,710 items in FEBEP_2024_2026 (27 fields). The unsuffixed FEBEP (50K/104cols) is truncated first attempt. Always use _2024_2026 suffix.",
+        "timestamp": "2026-04-09T08:57:54.907952",
+        "session": "#042"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:54.858181",
+    "last_updated": "2026-04-09T08:57:54.907952"
+  },
+  "FPAYP": {
+    "annotations": [
+      {
+        "tag": "CRITICAL_FIELD",
+        "finding": "FPAYP.XREF3 carries the PurposeCode value for DMEE tree SEPA payments. Read by DMEE node N_9662041050. Not a static literal — runtime field mapping.",
+        "timestamp": "2026-04-09T08:57:54.958340",
+        "impact": "This is the source of the SEPA Purpose Code that was hunted for 5+ sessions.",
+        "session": "#039",
+        "incident": "H18",
+        "field": "XREF3",
+        "related": [
+          "DMEE:/CGI_XML_CT_UNESCO",
+          "ZCL_IDFI_CGI_DMEE_FR"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:54.958340",
+    "last_updated": "2026-04-09T08:57:54.958340"
+  },
+  "CDHDR": {
+    "annotations": [
+      {
+        "tag": "VOLUME",
+        "finding": "7.8M rows. PBC (OBJECTCLAS=FMRESERV) generates ~90% of volume. Filter FMRESERV for non-FM analysis.",
+        "timestamp": "2026-04-09T08:57:55.008429",
+        "impact": "Unfiltered CDHDR queries will timeout or return misleading results dominated by FM reservations.",
+        "session": "#011"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.008429",
+    "last_updated": "2026-04-09T08:57:55.008429"
+  },
+  "T012": {
+    "annotations": [
+      {
+        "tag": "ARCHITECTURE",
+        "finding": "House bank master: BUKRS+HBKID key. 211 entries across 9 company codes. Links to T012K (bank accounts), T012T (texts).",
+        "timestamp": "2026-04-09T08:57:55.055912",
+        "session": "#043",
+        "related": [
+          "T012K",
+          "T012T",
+          "BNKA"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.055912",
+    "last_updated": "2026-04-09T08:57:55.055912"
+  },
+  "T012K": {
+    "annotations": [
+      {
+        "tag": "MISSING_FIELD",
+        "finding": "T012K extracted without UKONT field (sub-bank GL paired with bank GL). Need re-extraction with all fields to validate 10xxx-11xxx pairing.",
+        "timestamp": "2026-04-09T08:57:55.109869",
+        "session": "#029",
+        "field": "UKONT"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.109869",
+    "last_updated": "2026-04-09T08:57:55.109869"
+  },
+  "BNK_BATCH_HEADER": {
+    "annotations": [
+      {
+        "tag": "AUDIT_FINDING",
+        "finding": "3,394 same-user BCM batches (creator=approver). Top: C_LOPEZ 94.7%, I_MARQUAND 92.9% self-approval. HQ treasury manual Wednesday cycle, no 3rd operator.",
+        "timestamp": "2026-04-09T08:57:55.155819",
+        "impact": "Dual-control gap — automation debt, not fraud. $656M exposure.",
+        "session": "#021",
+        "incident": "H13"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.155819",
+    "last_updated": "2026-04-09T08:57:55.155819"
+  },
+  "RFC_READ_TABLE": {
+    "annotations": [
+      {
+        "tag": "LIMITATION",
+        "finding": "512-byte line buffer limit. Wide tables need field splitting (MAX_FIELDS_PER_CALL=8). DATA_BUFFER_EXCEEDED = split fields. TABLE_WITHOUT_DATA = empty period (normal).",
+        "timestamp": "2026-04-09T08:57:55.209437",
+        "session": "#013",
+        "related": [
+          "rfc_helpers.py"
+        ]
+      },
+      {
+        "tag": "BUG",
+        "finding": "Pagination bug: when row count exceeds ~50K, some rows silently dropped. Workaround: extract by DAY when pagination fails.",
+        "timestamp": "2026-04-09T08:57:55.258160",
+        "session": "#013"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.209437",
+    "last_updated": "2026-04-09T08:57:55.258160"
+  },
+  "YRGGBS00": {
+    "annotations": [
+      {
+        "tag": "ARCHITECTURE",
+        "finding": "GGB1 substitution exit. Form U910 calls YCL_FI_ACCOUNT_SUBST_READ which reads YTFI_BA_SUBST (range-based, 129 entries) with fallback to YBASUBST (flat, 752 entries).",
+        "timestamp": "2026-04-09T08:57:55.313551",
+        "session": "#047",
+        "related": [
+          "YCL_FI_ACCOUNT_SUBST_READ",
+          "YTFI_BA_SUBST",
+          "YBASUBST",
+          "YFI_BASU_MOD"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.313551",
+    "last_updated": "2026-04-09T08:57:55.313551"
+  },
+  "DMEE:/CGI_XML_CT_UNESCO": {
+    "annotations": [
+      {
+        "tag": "DISCOVERY",
+        "finding": "13 UNESCO DMEE trees in P01 (8,308 nodes). D01 vs P01: 12/13 identical, only /CGI_XML_CT_UNESCO_1 diverges (9 address nodes).",
+        "timestamp": "2026-04-09T08:57:55.368760",
+        "session": "#039",
+        "related": [
+          "FPAYP.XREF3",
+          "ZCL_IDFI_CGI_DMEE_FR"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.368760",
+    "last_updated": "2026-04-09T08:57:55.368760"
+  },
+  "EKKO": {
+    "annotations": [
+      {
+        "tag": "PROCESS_MINING",
+        "finding": "848K P2P events from EKKO+EKPO+EKBE+ESSR+ESLL+EBAN+RBKP+RSEG. Process mining dashboard built.",
+        "timestamp": "2026-04-09T08:57:55.417370",
+        "session": "#014",
+        "related": [
+          "EKPO",
+          "EKBE",
+          "ESSR",
+          "ESLL"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.417370",
+    "last_updated": "2026-04-09T08:57:55.417370"
+  },
+  "REGUH": {
+    "annotations": [
+      {
+        "tag": "PROCESS_MINING",
+        "finding": "4-stream payment model: 1.4M events, 550K cases, 9 company codes. Stream 1=domestic, 2=field office, 3=netting, 4=tier3.",
+        "timestamp": "2026-04-09T08:57:55.466695",
+        "session": "#028",
+        "related": [
+          "REGUP",
+          "PAYR",
+          "FPAYP"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.466695",
+    "last_updated": "2026-04-09T08:57:55.466695"
+  },
+  "PA0001": {
+    "annotations": [
+      {
+        "tag": "KEY_DATA",
+        "finding": "HR org assignment. GSBER field = employee Business Area. GEBER = fund. Fund change from IIEP to UNES fund triggered INC-000006073.",
+        "timestamp": "2026-04-09T08:57:55.521439",
+        "session": "#048",
+        "incident": "INC-000006073",
+        "field": "GSBER",
+        "related": [
+          "PA0027",
+          "PTRV_SCOS"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.521439",
+    "last_updated": "2026-04-09T08:57:55.521439"
+  },
+  "RFCDES": {
+    "annotations": [
+      {
+        "tag": "LANDSCAPE",
+        "finding": "239 RFC destinations connecting 38 systems. 7 UNESCO .NET apps (334 RFC-enabled FMs): SISTER, HR Workflow, CMT, UBO Field Office, Travel, Mouv, Procurement.",
+        "timestamp": "2026-04-09T08:57:55.567155",
+        "session": "#032"
+      }
+    ],
+    "first_seen": "2026-04-09T08:57:55.567155",
+    "last_updated": "2026-04-09T08:57:55.567155"
+  }
+}
