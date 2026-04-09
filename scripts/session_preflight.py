@@ -633,6 +633,142 @@ CHECKS_START.append(("S4. Approved architectures must execute first", check_s4_a
 CHECKS_START.append(("S5. No static artifacts when brain exists", check_s5_no_dead_text))
 
 
+# ----------------------------------------------------------------------------
+# Session #048 checks — annotations, commit frequency, extraction reuse
+# ----------------------------------------------------------------------------
+
+ANNOTATIONS_FILE = REPO / "brain_v2" / "annotations" / "annotations.json"
+
+
+def check_11_annotations_updated() -> CheckResult:
+    """Session close GATE: if SAP objects were analyzed this session, annotations.json
+    MUST have been updated. Objects get smarter every session — no learnings lost.
+    Session #048 rule: annotate every object at close with FINAL conclusions."""
+    if not ANNOTATIONS_FILE.exists():
+        return CheckResult("", "FAIL",
+            "annotations.json does not exist — no object learnings captured. "
+            "Run: from brain_v2.annotations import annotate; annotate('OBJECT', tag='...', finding='...')")
+
+    try:
+        data = json.loads(ANNOTATIONS_FILE.read_text(encoding="utf-8"))
+    except Exception as e:
+        return CheckResult("", "FAIL", f"annotations.json parse error: {e}")
+
+    total_objects = len(data)
+    total_annotations = sum(len(v.get("annotations", [])) for v in data.values())
+
+    if total_annotations == 0:
+        return CheckResult("", "FAIL",
+            "annotations.json exists but has 0 annotations — session learnings not captured")
+
+    # Check if any annotations were added recently (within last 24h)
+    from datetime import datetime, timedelta
+    recent_cutoff = (datetime.now() - timedelta(hours=24)).isoformat()
+    recent = 0
+    for obj in data.values():
+        for ann in obj.get("annotations", []):
+            if ann.get("timestamp", "") > recent_cutoff:
+                recent += 1
+
+    if recent == 0:
+        return CheckResult("", "WARN",
+            f"{total_objects} objects / {total_annotations} annotations exist, "
+            f"but NONE added in last 24h — did this session analyze any objects?",
+            ["If SAP objects were analyzed, annotate them before closing"])
+
+    return CheckResult("", "PASS",
+        f"{total_objects} objects / {total_annotations} annotations — "
+        f"{recent} added this session")
+
+
+def check_12_commit_frequency() -> CheckResult:
+    """Session close check: uncommitted work should not accumulate for hours.
+    Session #048 lesson: 86 files uncommitted at session end = risky.
+    Rule: commit after each major deliverable, not at the end."""
+    try:
+        # Check time since last commit
+        out = subprocess.run(
+            ["git", "-C", str(REPO), "log", "-1", "--format=%ct"],
+            capture_output=True, text=True, timeout=10,
+        )
+        last_commit_ts = int(out.stdout.strip())
+        import time
+        hours_since = (time.time() - last_commit_ts) / 3600
+
+        # Check uncommitted file count
+        out2 = subprocess.run(
+            ["git", "-C", str(REPO), "status", "--porcelain"],
+            capture_output=True, text=True, timeout=10,
+        )
+        uncommitted = len([l for l in out2.stdout.splitlines() if l.strip()])
+
+        evidence = [
+            f"Hours since last commit: {hours_since:.1f}",
+            f"Uncommitted files: {uncommitted}",
+        ]
+
+        if hours_since > 2 and uncommitted > 20:
+            return CheckResult("", "FAIL",
+                f"{uncommitted} files uncommitted after {hours_since:.1f}h — "
+                f"commit incrementally after each deliverable",
+                evidence)
+        if hours_since > 1 and uncommitted > 10:
+            return CheckResult("", "WARN",
+                f"{uncommitted} files pending, {hours_since:.1f}h since commit — consider checkpoint",
+                evidence)
+        return CheckResult("", "PASS",
+            f"{uncommitted} files pending, {hours_since:.1f}h since commit", evidence)
+    except Exception as e:
+        return CheckResult("", "SKIP", f"Could not check: {e}")
+
+
+def check_13_extraction_reuse() -> CheckResult:
+    """Session close check: if new extract_*.py scripts were created this session,
+    they MUST use DDIF_FIELDINFO_GET (not RFC_READ_TABLE ROWCOUNT=0) and
+    rfc_read_paginated (not raw RFC calls).
+    Session #048 lesson: 4 script versions because pattern wasn't reused."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(REPO), "diff", "--name-only", "--diff-filter=A", "HEAD~1"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except Exception:
+        return CheckResult("", "SKIP", "Could not check git diff")
+
+    new_extract_scripts = [f for f in out.stdout.splitlines()
+                           if "extract" in f.lower() and f.endswith(".py")]
+
+    if not new_extract_scripts:
+        return CheckResult("", "PASS", "No new extraction scripts this session")
+
+    violations = []
+    for script_path in new_extract_scripts:
+        full_path = REPO / script_path
+        if not full_path.exists():
+            continue
+        text = full_path.read_text(encoding="utf-8", errors="ignore")
+
+        if "ROWCOUNT=0" in text and "DDIF_FIELDINFO_GET" not in text:
+            violations.append(f"{script_path}: uses ROWCOUNT=0 instead of DDIF_FIELDINFO_GET")
+
+        if "rfc_read_paginated" not in text and "RFC_READ_TABLE" in text:
+            violations.append(f"{script_path}: raw RFC_READ_TABLE instead of rfc_read_paginated")
+
+    if violations:
+        return CheckResult("", "FAIL",
+            f"New extraction scripts don't follow proven pattern",
+            violations + ["Template: Zagentexecution/sap_data_extraction/scripts/extract_bp_full.py"])
+
+    return CheckResult("", "PASS",
+        f"{len(new_extract_scripts)} new extraction scripts follow proven pattern")
+
+
+# Append Session #048 checks
+CHECKS_CLOSE.append(("11. Object annotations updated (session learnings)", check_11_annotations_updated))
+CHECKS_CLOSE.append(("12. Commit frequency (incremental, not batch)", check_12_commit_frequency))
+CHECKS_CLOSE.append(("13. Extraction script reuse (DDIF + rfc_read_paginated)", check_13_extraction_reuse))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Session preflight guardrails")
     ap.add_argument("--mode", choices=["start", "close"], default="close")
