@@ -13,10 +13,22 @@ sys.path.insert(0, os.path.dirname(__file__))
 from rfc_helpers import get_connection, rfc_read_paginated
 
 # ── INPUT PARAMETERS ──────────────────────────────────────────────
-SYSTEM = "D01"
-BUKRS  = "UNES"
-KTOPL  = "UNES"
-HBKID  = "UBA01"
+# Usage: python house_bank_compliance_checker.py [SYSTEM] [HBKID]
+#   e.g. python house_bank_compliance_checker.py P01 UBA01
+#        python house_bank_compliance_checker.py D01 NTB01
+import argparse
+_parser = argparse.ArgumentParser(description="House bank compliance checker")
+_parser.add_argument("system", nargs="?", default="D01", help="SAP system (D01/P01/V01)")
+_parser.add_argument("hbkid", nargs="?", default="UBA01", help="House bank ID (e.g., UBA01)")
+_parser.add_argument("--bukrs", default="UNES", help="Company code")
+_parser.add_argument("--ktopl", default="UNES", help="Chart of accounts")
+_parser.add_argument("--both", action="store_true", help="Run on both D01 and P01")
+_args = _parser.parse_args()
+
+SYSTEM = _args.system
+BUKRS  = _args.bukrs
+KTOPL  = _args.ktopl
+HBKID  = _args.hbkid
 # ──────────────────────────────────────────────────────────────────
 
 # Counters
@@ -337,33 +349,47 @@ def run():
                 status(9, f"G/L {gl} ({gtype}, {currency}): "
                           f"LSREA={lsrea}, LHREA={lhrea}")
 
-    # ── CHECK 10: Cash Management Account Name ───────────────────
-    print(f"\nCHECK 10: Cash Management Account Names")
-    # Try FDSB table (bank account planning)
-    fdsb = safe_read(conn, "FDSB",
-                     ["BUKRS", "HBKID", "HKTID", "DSART", "FDTEXT"],
-                     f"BUKRS = '{BUKRS}' AND HBKID = '{HBKID}'")
-    if fdsb is None:
-        # Try with fewer fields
-        fdsb = safe_read(conn, "FDSB",
-                         ["BUKRS", "HBKID", "HKTID", "FDTEXT"],
-                         f"BUKRS = '{BUKRS}' AND HBKID = '{HBKID}'")
-    if not fdsb:
-        # Try T035 (Cash mgmt positions)
-        t035 = safe_read(conn, "T035",
-                         ["FDLEV", "FDGRP"],
-                         f"FDLEV = 'B0'")
-        if t035:
-            status(10, f"T035 cash mgmt levels found ({len(t035)} entries)", "WARN")
-            for r in t035[:5]:
-                print(f"         {r}")
-        else:
-            status(10, "Cash management tables not accessible (FDSB, T035)", "WARN")
+    # ── CHECK 10: Cash Management — T035 Groups + T035D Account Names ─
+    print(f"\nCHECK 10: Cash Management (T035 groups + T035D account names)")
+    # T035: Cash management position groups
+    t035 = safe_read(conn, "T035",
+                     ["GRUPP", "EBENE", "TEXTL"],
+                     "")
+    if t035:
+        status(10, f"T035 cash mgmt groups: {len(t035)} entries")
     else:
-        for row in fdsb:
-            hktid = row.get("HKTID", "").strip()
-            fdtext = row.get("FDTEXT", "").strip()
-            status(10, f"Account {hktid}: {fdtext}")
+        # T035 may be auth-restricted; T035D check below is the real validation
+        print(f"  [INFO] T035 not readable via RFC (auth) — T035D check below")
+
+    # T035D: Verify DISKB entries exist for this house bank
+    # DISKB key = {HBKID}-{HKTID} (e.g., UBA01-MZN1 where MZN1 is the T012K account ID)
+    # Read ALL T035D for BUKRS and filter in Python (LIKE not reliable via RFC)
+    t035d_all = safe_read(conn, "T035D",
+                          ["BUKRS", "DISKB", "BNKKO"],
+                          f"BUKRS = '{BUKRS}'")
+    if t035d_all is None:
+        status(10, "T035D not readable", "WARN")
+    else:
+        t035d_hb = [r for r in t035d_all
+                    if r.get("DISKB", "").strip().startswith(HBKID)]
+        if not t035d_hb:
+            status(10, f"No T035D entries for {HBKID} "
+                      f"(expected DISKB={HBKID}-{{HKTID}})", "FAIL")
+        else:
+            for row in t035d_hb:
+                diskb = row.get("DISKB", "").strip()
+                bnkko = row.get("BNKKO", "").strip()
+                status(10, f"DISKB={diskb}, G/L={bnkko}")
+        # Verify each bank G/L (10*) has a matching T035D entry via BNKKO
+        for a in accounts:
+            gl = a["hkont"]
+            if not gl:
+                continue
+            found = any(r.get("BNKKO", "").strip() == gl
+                        for r in (t035d_hb if t035d_hb else []))
+            if not found:
+                status(10, f"G/L {gl} ({a['hktid']}): "
+                          f"no T035D entry (DISKB={HBKID}-{{HKTID}})", "FAIL")
 
     # ── CHECK 11: T035D — Electronic Bank Statement ──────────────
     print(f"\nCHECK 11: Electronic Bank Statement Config")
@@ -462,8 +488,13 @@ def run():
                       f"Currency={waers}, Clearing={ukont}")
 
     # ── CHECK 15: SETLEAF — GS02 Account Sets (YBANK) ────────────
-    print(f"\nCHECK 15: SETLEAF Account Sets (YBANK)")
-    # SETLEAF requires SETCLASS filter to avoid TABLE_WITHOUT_DATA
+    # Sets are transported via GRW_SET workbench object (full set, not delta).
+    # Only bank accounts (10*) go into YBANK sets — NOT clearing (11*).
+    # Currency determines which set:
+    #   USD → YBANK_ACCOUNTS_FO_USD (or HQ_USD for HQ banks)
+    #   EUR → YBANK_ACCOUNTS_FO_EUR (or HQ_EUR)
+    #   Other → YBANK_ACCOUNTS_FO_OTH (or HQ_OTH)
+    print(f"\nCHECK 15: SETLEAF Account Sets (YBANK) — transported via GRW_SET")
     setleaf = safe_read(conn, "SETLEAF",
                         ["SETNAME", "VALOPTION", "VALFROM", "VALTO"],
                         "SETCLASS = '0000' AND SETNAME LIKE 'YBANK%'")
@@ -484,6 +515,15 @@ def run():
         bank_gls = [gl for gl in all_gls if gl_type.get(gl) == "bank"]
         for gl in bank_gls:
             gl_short = gl.lstrip("0")
+            currency = gl_currency.get(gl, "")
+            # Determine expected set based on currency
+            if currency == "USD":
+                expected_sets = ["YBANK_ACCOUNTS_FO_USD", "YBANK_ACCOUNTS_HQ_USD"]
+            elif currency == "EUR":
+                expected_sets = ["YBANK_ACCOUNTS_FO_EUR", "YBANK_ACCOUNTS_HQ_EUR"]
+            else:
+                expected_sets = ["YBANK_ACCOUNTS_FO_OTH", "YBANK_ACCOUNTS_HQ_OTH"]
+
             found_in = []
             for sn, entries in sets.items():
                 for opt, vfrom, vto in entries:
@@ -496,9 +536,16 @@ def run():
                         found_in.append(sn)
                         break
             if found_in:
-                status(15, f"G/L {gl}: found in sets {found_in}")
+                correct = any(s in expected_sets for s in found_in)
+                if correct:
+                    status(15, f"G/L {gl} ({currency}): in {found_in} "
+                              f"(expected: {expected_sets[0]})")
+                else:
+                    status(15, f"G/L {gl} ({currency}): in {found_in} "
+                              f"but expected {expected_sets}", "WARN")
             else:
-                status(15, f"G/L {gl}: NOT in any YBANK set", "FAIL")
+                status(15, f"G/L {gl} ({currency}): NOT in any YBANK set "
+                          f"— add to {expected_sets[0]} via GS02", "FAIL")
 
     # ── SUMMARY ───────────────────────────────────────────────────
     print("\n" + "=" * 70)
@@ -516,4 +563,11 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    if _args.both:
+        for sys in ["D01", "P01"]:
+            SYSTEM = sys
+            PASS_COUNT = FAIL_COUNT = WARN_COUNT = 0
+            FAIL_ITEMS = []
+            run()
+    else:
+        run()

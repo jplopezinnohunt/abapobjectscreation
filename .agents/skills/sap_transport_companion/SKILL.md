@@ -42,6 +42,39 @@ depends_on: sap_transport_intelligence, sap_company_code_copy
 - E071K: TABKEY (actual row keys for TABU objects)
 - E07T: AS4TEXT (description) — note: E070T may not be readable, use E07T
 
+### Step 1b — Landscape Violation Detection
+
+Before classifying objects, check **WHERE** each request was created:
+
+| System | TRKORR Prefix | Expected Type | Violation? |
+|--------|--------------|---------------|------------|
+| D01 | D01K* | W (Customizing) or K (Workbench) | No — normal dev |
+| P01 | P01K* | K (Workbench emergency) rarely | **YES if W (Customizing)** |
+
+**Production Customizing Requests (P01K* + TRFUNCTION='W') are ALWAYS a landscape violation.**
+
+The standard transport path is D01 → P01. When someone creates a customizing request directly in P01, it means:
+1. They bypassed the dev/test/transport cycle
+2. The change exists ONLY in P01 — D01 is now **out of sync**
+3. Future D01 → P01 transports may **overwrite** the P01-only change silently
+
+**For every P01 customizing request, the companion MUST answer:**
+
+| Question | Why It Matters |
+|----------|---------------|
+| **Why was it opened in P01?** | Emergency fix? Lazy shortcut? SAP forced it? Audit requirement? |
+| **Was the change actually applied?** | Status D = modifiable. The change may be recorded but never saved. |
+| **Does D01 have the equivalent change?** | If not, next D01→P01 transport of the same object will REVERT the fix |
+| **Should D01 be updated to match?** | Almost always YES — otherwise the systems drift permanently |
+| **Is there a D01 transport that conflicts?** | Check E071 for same OBJ_NAME in open D01 requests |
+
+**Root cause categories for P01 direct changes:**
+- `EMERGENCY` — Production was broken, couldn't wait for transport cycle
+- `PERIOD_SENSITIVE` — Posting periods, CF deadlines that differ between D01/P01
+- `AUDIT_DRIVEN` — External auditors required immediate production correction
+- `CONFIGURATION_DRIFT` — Someone didn't know they should use D01 first
+- `SYSTEM_FORCED` — SAP auto-captured changes (e.g., SCC4 client copy side-effects)
+
 ### Step 2 — Classify Every Object
 
 Use `knowledge/domains/Transport_Intelligence/transport_object_taxonomy.md` to classify:
@@ -95,6 +128,12 @@ Self-contained HTML with:
 ```
 1. Header (transport IDs, type, owners, date, target, status)
 2. Executive Summary (what does this transport package do, in plain language)
+2b. [If any P01K* with TRFUNCTION='W'] LANDSCAPE VIOLATION section:
+    - Flag each production customizing request as a violation
+    - Root cause analysis (EMERGENCY / PERIOD_SENSITIVE / AUDIT_DRIVEN / CONFIGURATION_DRIFT / SYSTEM_FORCED)
+    - D01 sync status: does D01 have the same change? If not, flag as DRIFT RISK
+    - Cross-system conflict check: same OBJ_NAME in open D01 requests?
+    - Recommendation: replicate to D01, release, or delete — with justification
 3. [If multi-transport] Import Order section with flow diagram + conflict table
 4. Summary Cards (object count, key count, risk distribution, transport count)
 5. Pre-Import Safety Checklist (covers ALL transports — 10 standard checks)

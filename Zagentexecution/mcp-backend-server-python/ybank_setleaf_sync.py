@@ -376,6 +376,59 @@ def main() -> int:
     print(f"  SYNC COMPLETE — OK={grand_ok}  KO={grand_ko}")
     print(f"{'=' * 60}")
 
+    # --- Step 3b: Update SETHEADER audit trail for affected sets ---
+    affected_sets = set()
+    for r in to_insert + to_delete + to_update:
+        affected_sets.add(r.get("SETNAME", "").strip())
+
+    if affected_sets:
+        print(f"\n{'=' * 60}")
+        print(f"  PHASE 4 — UPDATE SETHEADER audit for {len(affected_sets)} sets")
+        print(f"{'=' * 60}")
+        guard = get_connection(TARGET_SYSTEM)
+        try:
+            for sn in sorted(affected_sets):
+                # Count actual SETLEAF entries for this set
+                abap = [
+                    "REPORT Z_YBANK_HDR.",
+                    "DATA: ls TYPE setheader,",
+                    "      lv_cnt TYPE i.",
+                    "",
+                    f"SELECT COUNT(*) FROM setleaf",
+                    f"  INTO lv_cnt",
+                    f"  WHERE setclass = '0000'",
+                    f"    AND setname = '{esc(sn)}'.",
+                    "",
+                    "SELECT SINGLE * FROM setheader",
+                    "  INTO ls",
+                    f"  WHERE setclass = '0000'",
+                    f"    AND setname = '{esc(sn)}'.",
+                    "IF sy-subrc = 0.",
+                    "  ls-upduser = sy-uname.",
+                    "  ls-upddate = sy-datum.",
+                    "  ls-updtime = sy-uzeit.",
+                    "  ls-setlines = lv_cnt.",
+                    "  UPDATE setheader FROM ls.",
+                    "  IF sy-subrc = 0.",
+                    "    COMMIT WORK.",
+                    "    WRITE: / 'HDR_OK:',",
+                    f"           '{esc(sn)}',",
+                    "           'LINES:', lv_cnt.",
+                    "  ELSE.",
+                    "    WRITE: / 'HDR_KO:',",
+                    f"           '{esc(sn)}'.",
+                    "  ENDIF.",
+                    "ELSE.",
+                    "  WRITE: / 'HDR_MISS:',",
+                    f"         '{esc(sn)}'.",
+                    "ENDIF.",
+                ]
+                res = run_batch(guard, abap, "HDR")
+                print(f"    {sn}: {res['output'][:200]}")
+                time.sleep(THROTTLE_SEC)
+        finally:
+            guard.close()
+
     # --- Step 4: Verify ---
     print(f"\n[VERIFY] Re-extracting D01 to confirm sync...")
     d01_after = extract_setleaf("D01")
