@@ -2,9 +2,12 @@
 
 > **Domain:** FI — Bank Accounting  
 > **Category:** Support & Maintenance (S&M)  
-> **Source:** Handover documentation + real configuration examples (NTB02/EUR02, Sogebank Haiti)  
-> **Last Updated:** 2026-04-07  
+> **Source:** Handover documentation + real config (NTB02/EUR02, Sogebank Haiti, UBA01 Mozambique)  
+> **Last Updated:** 2026-04-07 (enriched with ECO09 benchmark + UBA01 lessons)  
 > **Owner:** DBS Team — FAM  
+> **Skill:** `.agents/skills/sap_house_bank_configuration/SKILL.md`  
+> **Compliance Checker:** `Zagentexecution/mcp-backend-server-python/house_bank_compliance_checker.py`  
+> **Config Reports:** `knowledge/configuration_retros/`  
 
 ---
 
@@ -12,12 +15,59 @@
 
 House bank configuration is a **multi-step, cross-module** SAP configuration activity triggered when UNESCO opens a new bank account or closes an existing one. It touches:
 
-- **G/L Accounting** (FS00)
-- **Bank Accounting** (FI12 / SPRO)
-- **Cash Management** (TRM5, GS02)
-- **Payment Program** (FBZP / OBPM4)
-- **Bank Statement Processing** (FTE_BSM_CUST, V_T035D)
+- **G/L Accounting** (FS00) → SKA1, SKB1, SKAT
+- **Bank Accounting** (FI12 / SPRO) → T012, T012K, BNKA, TIBAN
+- **Cash Management** (TRM5, GS02) → SETLEAF, SETHEADER, SETNODE
+- **Payment Program** (FBZP / OBPM4) → T042I, T018V
+- **Bank Statement Processing** (FTE_BSM_CUST, V_T035D) → T035D, T028B
+- **Exchange Rate Management** (OBA1) → T030H
 - **Business Area Substitution** (YFI_BASU_MOD)
+
+### Relationships to Other Processes
+
+| Process | Connection | Tables Shared |
+|---------|-----------|---------------|
+| **Invoice to Pay (P2P)** | F110 uses T042I to select house bank for vendor payments | T042I, T042IY |
+| **Bank Reconciliation** | EBS uses T035D+T028B to post bank statements, FEBAN clears 11* sub-bank accounts | T035D, T028B, FEBKO, FEBEP |
+| **Cash Position** | TRM5 reports use ZCASH/ZCASHFO forms referencing bank G/L accounts | Report Painter forms |
+| **Average Balance** | GS02 uses YBANK_ACCOUNTS_ALL set hierarchy to calculate average daily balances | SETLEAF (YBANK_*) |
+| **FX Revaluation** | Month-end FAGL_FC_VAL uses T030H to post exchange rate differences on non-USD accounts | T030H |
+| **Payment File Generation** | OBPM4 links house bank to SAPFPAYM variant for XML/SEPA payment files | Variant table |
+| **Cash Flow Planning** | G/L accounts with XGKON=X and FDLEV=B0/B1 feed cash flow forecasting | SKB1 |
+
+### YBANK Account Sets — Where They Are Used
+
+The **YBANK_ACCOUNTS_ALL** set hierarchy is used by:
+
+1. **GS02 — Average Balance Interest Calculation**: Treasury runs this report to see average daily balances across all bank accounts. The hierarchy allows drill-down by HQ vs FO, by currency.
+2. **Report Painter forms (ZCASH, ZCASHFO, ZCASHFODET)**: Cash position reports reference individual G/L accounts, but the YBANK sets define which accounts are "bank accounts" for reporting purposes.
+3. **Treasury reporting**: Any report that needs to identify "all bank accounts" uses this set as the master list.
+
+**Set hierarchy:**
+```
+YBANK_ACCOUNTS_ALL (HQ & FO Accounts Total)
+├── YBANK_ACCOUNTS_HQ (HQ Accounts Total)
+│   ├── YBANK_ACCOUNTS_HQ_CA (HQ Current Accounts Total)
+│   │   ├── YBANK_ACCOUNTS_HQ_EUR
+│   │   ├── YBANK_ACCOUNTS_HQ_USD
+│   │   └── YBANK_ACCOUNTS_HQ_OTH
+│   ├── YBANK_ACCOUNTS_SIGHT (HQ At Sight Accounts)
+│   │   ├── YBANK_ACCOUNTS_SIGHT_EUR
+│   │   └── YBANK_ACCOUNTS_SIGHT_USD
+│   └── YBANK_ACCOUNTS_DEPOSIT (HQ Deposits Capital Account)
+└── YBANK_ACCOUNTS_FO (FO Current Accounts Total)
+    ├── YBANK_ACCOUNTS_FO_USD
+    ├── YBANK_ACCOUNTS_FO_EUR
+    ├── YBANK_ACCOUNTS_FO_XAFXOF
+    └── YBANK_ACCOUNTS_FO_OTH
+```
+
+**Key rules:**
+- Sets use **exact match** (EQ), not ranges — each G/L must be added individually
+- Maintained **manually per system** (D01, V01, P01) — not transportable
+- Only **bank accounts (10xxxxx)** go in sets — not clearing accounts (11xxxxx)
+- Currency determines the set: USD→FO_USD, EUR→FO_EUR, XAF/XOF→FO_XAFXOF, other→FO_OTH
+- Sync script available: `Zagentexecution/mcp-backend-server-python/ybank_setleaf_sync.py`
 
 ### Two Types of Bank Accounts
 | Type | Description | Payment Method Needed? |
