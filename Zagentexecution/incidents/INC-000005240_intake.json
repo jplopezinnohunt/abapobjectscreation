@@ -1,0 +1,111 @@
+{
+  "ticket": "INC-000005240",
+  "received_date": "2026-04-07",
+  "received_time_utc": "09:47:25",
+  "analyst": "JP Lopez (main agent, Session #051)",
+  "report_version": "v2",
+  "supersedes_version": "v1 (wrong mechanism — FMDERIVE / ZXFMDTU02_RPY)",
+  "status": "provisional_root_cause_pending_user_confirmation",
+  "reporter": {
+    "name": "Anthony Leonardo Jonathan",
+    "email": "al.jonathan@unesco.org",
+    "sap_uname": "AL_JONATHAN",
+    "department": "FU/JAK (Jakarta Field Unit)"
+  },
+  "priority": "Moderate",
+  "classification": "Core Applications / SAP / Report an Issue",
+  "transactions_from_user": ["F-53"],
+  "transactions_actual_bkpf_tcode": ["FBZ1", "FBZ2"],
+  "symptom_raw": "When posting F-53 the reference key becomes HQ instead of JAK even though there is no option for inputting the Reference 1 and 2",
+  "user_term_to_sap_field_mapping": {
+    "reference key": {
+      "sap_field": "BSEG-XREF1 and BSEG-XREF2",
+      "confidence": "HIGH",
+      "why": "User explicitly says 'Reference 1 and 2' in the same sentence — these are the literal labels of XREF1 / XREF2 on BSEG line items"
+    },
+    "Reference 1 and 2": {
+      "sap_field": "BSEG-XREF1 / BSEG-XREF2",
+      "confidence": "HIGH",
+      "why": "Exact match to SAP field labels"
+    },
+    "HQ": {
+      "sap_field": "Office code value 'HQ' (UNESCO Headquarters, Paris)",
+      "confidence": "HIGH",
+      "why": "Confirmed in YRGGBS00_SOURCE.txt:1093 as the expected XREF2 value for UNES HQ postings. Stored in USR05 PARVA for PARID='Y_USERFO'. NOT the same 'HQ' or 'UNESCO' as in INC-000006073 (which was an FM fund center).",
+      "anti_confusion_note": "INC-000006073 used the string 'UNESCO' for a fund center populated by FMDERIVE exit ZXFMDTU02_RPY. This incident uses the string 'HQ' for an office code populated by forms UXR1/UXR2 in YRGGBS00. Completely different mechanism. Do NOT conflate."
+    },
+    "JAK": {
+      "sap_field": "Office code value 'JAK' — Jakarta Field Unit",
+      "confidence": "HIGH",
+      "why": "Matches user's department FU/JAK. Other known field office codes in production: YAO (Yaoundé, CM), KAB (Kabul, AF), DAK (Dakar, SN)"
+    },
+    "no option for inputting": {
+      "meaning": "F-53 screen does not expose XREF1/XREF2 as editable fields",
+      "technical_impact": "BSEG-XREF2 = SPACE at substitution time → UXR2 form enters the USR05 branch (YRGGBS00_SOURCE.txt:1026)"
+    }
+  },
+  "no_screenshot": true,
+  "root_cause": {
+    "category": "MASTER_DATA_DEFECT",
+    "single_factor": true,
+    "description": "AL_JONATHAN's USR05 parameter Y_USERFO = 'HQ' instead of 'JAK'. Forms UXR1 (YRGGBS00_SOURCE.txt:996) and UXR2 (YRGGBS00_SOURCE.txt:1024) read this parameter and unconditionally assign its value to BSEG-XREF1/XREF2 when the fields are blank (always true for F-53). Code works as designed. Defect is master data only.",
+    "evidence": [
+      "Code: YRGGBS00_SOURCE.txt:1000-1004 (UXR1 reads USR05 Y_USERFO and assigns to bseg_xref1)",
+      "Code: YRGGBS00_SOURCE.txt:1028-1032 (UXR2 reads USR05 Y_USERFO and assigns to bseg_xref2)",
+      "Live RFC read 2026-04-09: USR05 WHERE BNAME='AL_JONATHAN' AND PARID='Y_USERFO' → PARVA='HQ'",
+      "Live RFC read 2026-04-09: 10 BSAK line items for AL_JONATHAN's FBZ2 docs in Dec/2025-March/2026 → ALL have XREF1='HQ', XREF2='HQ'",
+      "Comparison: field-office users JJ_YAKI-PAHI (YAO), O_RASHIDI (KAB), DA_ENGONGA (DAK) correctly have their office codes — mechanism works for them"
+    ]
+  },
+  "user_posting_history_window": {
+    "window": "2025-12-01 → 2026-03-31",
+    "source": "Gold DB bkpf + live RFC BSAK",
+    "docs_total": 14,
+    "docs_captured_bsak": 10,
+    "bkpf_tcodes": {"FBZ2": 10, "FBZ1": 4},
+    "blart_values": {"OP": 10, "IP": 4},
+    "all_bukrs": "UNES",
+    "observed_xref1_values": ["HQ"],
+    "observed_xref2_values": ["HQ"],
+    "xref_consistency": "100% — every captured line has HQ/HQ"
+  },
+  "diagnostic_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py",
+  "diagnostic_output": "Zagentexecution/incidents/INC-000005240_live_diagnostic.json",
+  "canonical_report": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+  "fix_path": {
+    "tactical": [
+      "1. Verify YFO_CODES contains FOCOD='JAK' (KU-027)",
+      "2. SU3/SU01 update AL_JONATHAN.Y_USERFO from 'HQ' to 'JAK'",
+      "3. Smoke test with a test F-53 posting"
+    ],
+    "strategic": [
+      "1. Audit all UNES users with Y_USERFO='HQ' vs HR master (PA0001.PERSA/ORGEH) to find more mis-configured field users",
+      "2. Add periodic validation job Y_USERFO vs HR master",
+      "3. Re-enable the commented-out IF bseg_xref1 = space guard in UXR1 (line 998)",
+      "4. Consider replacing SU3-parameter lookup with HR-master lookup"
+    ],
+    "questions_for_business": [
+      "Is Anthony's correct office code 'JAK' or a more granular value (JKT / JAKA / IDN)?",
+      "Should the fix cover only AL_JONATHAN or the full class of mis-configured users?"
+    ]
+  },
+  "known_unknowns_opened": [
+    "KU-027: does YFO_CODES contain FOCOD='JAK'?",
+    "KU-028: how many UNES users have Y_USERFO='HQ' but HR master says field-unit?",
+    "KU-029: downstream impact of wrong XREF2 on AL_JONATHAN's 14 docs (F110/BCM routing)?",
+    "KU-030: was UXR1's IF bseg_xref1 = space guard intentionally commented out, when, and why?"
+  ],
+  "prior_wrong_path_session": {
+    "session": "#050",
+    "attempted_mechanism": "FMDERIVE exit ZXFMDTU02_RPY hardcoding FUND_CENTER='UNESCO' for HKONT ∈ (0006045011, 0007045011, 0006045014)",
+    "was_delegated_to_subagent": true,
+    "tokens_burned": "~154K",
+    "disposition": "Wrong mechanism — FMDERIVE populates FICTR/FUND, not BSEG.XREF1/XREF2. May describe a real separate defect worth tracking as an observation. See §13 of canonical report."
+  },
+  "feedback_rules_captured_this_session": [
+    "feedback_main_agent_holds_incident_context (HIGH)",
+    "feedback_brain_rebuild_after_finalized (HIGH)",
+    "feedback_user_term_to_sap_field_translation (HIGH)",
+    "feedback_process_before_root_cause (HIGH)"
+  ]
+}

@@ -72,7 +72,7 @@
   {
     "id": "KU-011",
     "question": "Does T042Z in Gold DB have the DMEE_ASSIGNMENT_TABLE column or is it missing from extraction?",
-    "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEE→PaymentMethod edges may need a different table source.",
+    "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEEâ†’PaymentMethod edges may need a different table source.",
     "raised_session": 40,
     "domain": "Payment"
   },
@@ -137,7 +137,7 @@
   {
     "id": "KU-020",
     "question": "How many vendors in the 316K LFA1 master have an LFB1.AKONT that diverges from the canonical T077K mapping for their LFA1.KTOKK, and across which company codes?",
-    "why_unknown": "INC-000006073 surfaced ONE case (vendor 10133079, KTOKK=SCSA, AKONT=2021011 in IIEP). The full vendor master has never been audited for KTOKK↔AKONT consistency. Until the check runs we cannot know if this is 1 vendor, 100, or 10K.",
+    "why_unknown": "INC-000006073 surfaced ONE case (vendor 10133079, KTOKK=SCSA, AKONT=2021011 in IIEP). The full vendor master has never been audited for KTOKKâ†”AKONT consistency. Until the check runs we cannot know if this is 1 vendor, 100, or 10K.",
     "raised_session": 50,
     "domain": "BusinessPartner",
     "priority": "HIGH",
@@ -147,7 +147,7 @@
   },
   {
     "id": "KU-021",
-    "question": "Is the incident-processing way-of-working (parse email → extract → analyze with brain → write incident_analysis doc → annotate brain → propose fix) reproducible for the next incident, or did INC-000006073 succeed by luck?",
+    "question": "Is the incident-processing way-of-working (parse email â†’ extract â†’ analyze with brain â†’ write incident_analysis doc â†’ annotate brain â†’ propose fix) reproducible for the next incident, or did INC-000006073 succeed by luck?",
     "why_unknown": "The pattern was synthesized retroactively from one successful incident. FALS-005 will test it on the next incident the user passes in.",
     "raised_session": 50,
     "domain": "Way_of_Working",
@@ -169,5 +169,95 @@
     "raised_session": 50,
     "domain": "Brain_Architecture",
     "priority": "HIGH"
+  },
+  {
+    "id": "KU-024",
+    "question": "INC-000005240: user Anthony Jonathan calls the mis-tagged field 'reference key' without a screenshot. Is this FISTL (our working hypothesis, supported by code + data), BKPF-XBLNR, BSEG-ZUONR, or BSEG-GSBER?",
+    "why_unknown": "Ticket text is short and translated. No attachment. FISTL fits all the data evidence but needs user confirmation.",
+    "raised_session": 50,
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "resolution_path": "Reply to al.jonathan@unesco.org asking for a screenshot of the F-53 posting he considers wrong, highlighting the field he means.",
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+  },
+  {
+    "id": "KU-025",
+    "question": "Do any FMDERIVE (FMDT*) customer rules override or complement ZXFMDTU02_RPY.abap in the FI->FM derivation chain?",
+    "why_unknown": "FMDT001/FMDT002 and related tables (FMDERIVE rule base) are not in Gold DB. Without them we cannot prove the ABAP hardcode is the final word on FICTR for bank GLs.",
+    "raised_session": 50,
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "resolution_path": "Run sap_data_extraction skill targeting FMDT* tables in P01 and add to Gold DB. Then re-trace derivation for one AL_JONATHAN document.",
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+  },
+  {
+    "id": "KU-026",
+    "question": "Does USR05 contain any UNESCO-specific parameter (PARID) related to FM fund center or home office (e.g. ZFI_HOME_FICTR)?",
+    "why_unknown": "USR05 is not in Gold DB. Required to design the Option-A SU3-opt-in fix for INC-000005240.",
+    "raised_session": 50,
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "resolution_path": "Run sap_data_extraction targeting USR05 (full dump is small, 5-10 MB typical) and inspect distinct PARID values for FM-related parameters.",
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+  },
+  {
+    "id": "KU-027",
+    "question": "Does YFO_CODES contain FOCOD='JAK'? Critical before deploying AL_JONATHAN SU3 fix.",
+    "domain": "Treasury",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "HIGH - blocks tactical fix",
+    "why_unknown": "YFO_CODES is not in Gold DB. RFC extraction needed. Without verification, setting AL_JONATHAN.Y_USERFO='JAK' will trigger w018 ZFI warning on every posting (via UXR1) and e018 hard error if he ever manually types 'JAK' (via UXR2 ELSE branch).",
+    "follow_up": "One-shot RFC SE16N or RFC_READ_TABLE on YFO_CODES. If 'JAK' missing, add row via SM30 BEFORE the SU3 change."
+  },
+  {
+    "id": "KU-028",
+    "question": "How many other UNES users have Y_USERFO='HQ' but PA0001.WERKS/BTRTL indicates a field-unit assignment (drifted users)?",
+    "domain": "HCM",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "MEDIUM - sizes the class generalization",
+    "why_unknown": "USR05 + PA0105 + PA0001 are not in Gold DB. RFC-extract or query live to enumerate drift.",
+    "follow_up": "Run the PA0001×PA0105×USR05 query in knowledge/domains/Treasury/xref_office_tagging_model.md §7.2."
+  },
+  {
+    "id": "KU-029",
+    "question": "What is the downstream impact of wrong XREF on the 21,754 Q1 2026 manually-corrected UNES BELEG documents?",
+    "domain": "Treasury",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "LOW - historical reporting integrity",
+    "why_unknown": "Would need to trace each document through F110 / BCM / YWFI workflow / field-office reports to measure misrouting.",
+    "follow_up": "If UNESCO Finance/BI requests, build a dashboard that traces XREF changes through payment method and approval routing."
+  },
+  {
+    "id": "KU-030",
+    "question": "Why is the IF bseg_xref1 = space guard commented out in YRGGBS00_SOURCE.txt:998? When was it removed, by whom, and why?",
+    "domain": "FI",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "LOW - informational",
+    "why_unknown": "No git blame on YRGGBS00 source. Only the SROCHA 2010 comment marker visible elsewhere in the file.",
+    "follow_up": "Check TADIR / E071 transport history for YRGGBS00 changes. Or ask UNESCO ABAP team directly."
+  },
+  {
+    "id": "KU-031",
+    "question": "Where is the substitution step-to-prerequisite linkage stored at UNESCO? GB905 and GB921 are both empty via RFC_READ_TABLE broad probe.",
+    "domain": "FI",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "MEDIUM - framework understanding",
+    "why_unknown": "Standard SAP GGB1 expects step prerequisites in GB905. They are empty at UNESCO P01 (Session #051 probe). Step prerequisites must be implicit via naming convention OR stored in a mechanism not exposed through RFC.",
+    "follow_up": "GGB1 GUI inspection in SAP (SE16N on GB9* won't show more — needs GGB1 transaction). Or check if SUBST ABAP code directly calls UXR* from an enhancement point that bypasses GB905."
+  },
+  {
+    "id": "KU-032",
+    "question": "Why does F110 substitution fire on the vendor clearing line but NOT on the bank GL line, while F-53 fires on both? Empirically observed asymmetry with unknown mechanism.",
+    "domain": "Treasury",
+    "raised_session": "#51",
+    "related_incident": "INC-000005240",
+    "impact": "MEDIUM - explains F-53 vs F110 asymmetry",
+    "why_unknown": "Could be (a) F110 uses BAPI_ACC_DOCUMENT_POST which bypasses callpoint 3, (b) a step-level filter on F110 BLART='ZP', (c) F110 payment method program creates the bank GL line post-substitution. Without GB905 or GGB1 GUI access, can't distinguish.",
+    "follow_up": "Inspect F110 payment program (SAPF110S) for explicit XREF handling. Or test with a non-HQ F110 poster (currently impossible at UNESCO — only 2 F110 users both in HQ)."
   }
 ]

@@ -7,15 +7,38 @@
     "received_date": "2026-04-07",
     "analyzed_session": 48,
     "domain": "Travel",
-    "secondary_domains": ["FI", "HCM", "BusinessPartner"],
-    "transactions": ["PRRW", "PR02", "FK02", "PA30", "GGB1", "GGB0", "YFI_BASU_MOD"],
+    "secondary_domains": [
+      "FI",
+      "HCM",
+      "BusinessPartner"
+    ],
+    "transactions": [
+      "PRRW",
+      "PR02",
+      "FK02",
+      "PA30",
+      "GGB1",
+      "GGB0",
+      "YFI_BASU_MOD"
+    ],
     "primary_object_id": "0101004544",
     "primary_subject": "Vendor 10133079 (Katja HINZ) — Posting Run 0100384694",
-    "company_codes_involved": ["IIEP", "UNES"],
+    "company_codes_involved": [
+      "IIEP",
+      "UNES"
+    ],
     "scenario": "intercompany_travel_advance",
     "error_messages": [
-      {"id": "RW609", "text": "Error in document &1 &2 &3", "raised_at": "LHRTSU05.abap:155"},
-      {"id": "ZFI020", "text": "For IIEP company code, only use business area PAR, IBA or FEL", "raised_at": "GGB0 step 2IIEP###001"}
+      {
+        "id": "RW609",
+        "text": "Error in document &1 &2 &3",
+        "raised_at": "LHRTSU05.abap:155"
+      },
+      {
+        "id": "ZFI020",
+        "text": "For IIEP company code, only use business area PAR, IBA or FEL",
+        "raised_at": "GGB0 step 2IIEP###001"
+      }
     ],
     "root_cause_summary": "Two independent factors converged: (1) NEW intercompany trip — first time the employee's UNES-fund posting created a cross-company-code document, exposing that LHRTSF01.abap:852 only fills GSBER for same-company lines; (2) OLD vendor master defect — vendor created in 2016 with KTOKK=SCSA → LFB1.AKONT=2021011 in IIEP, which is the only AKONT not covered by GGB1 substitution rule 3IIEP###002 (which covers 2021042/2021061). All three fallback safety nets are independently broken: BAdI PA0027-02 expired 2021-01-31, ZXTRVU05 inst_fund_ba_wbs_cc commented out for non-UNES, GGB1 rule has no entry for HKONT=2021011.",
     "code_validation_chain": [
@@ -30,7 +53,10 @@
       "with_akont_2021042_OK": 61,
       "with_akont_2021011_FAIL": 1,
       "exposed_traveler": "10133079 Katja HINZ",
-      "preventive_check_targets": ["MGIE (25 docs use GL 2021011)", "ICBA (22 docs use GL 2021011)"]
+      "preventive_check_targets": [
+        "MGIE (25 docs use GL 2021011)",
+        "ICBA (22 docs use GL 2021011)"
+      ]
     },
     "fix_path": {
       "immediate": "PA30 — Extend PA0027 subtype 02 for vendor 10133079 (IIEP/PAR, current dates) — unblocks Rita today",
@@ -58,14 +84,33 @@
       "GB922"
     ],
     "related_claims": [
-      {"id": 11, "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"},
-      {"id": 12, "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"}
+      {
+        "id": 11,
+        "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"
+      },
+      {
+        "id": 12,
+        "claim": "Travel advance posting requires BUKRS=BUKST for GSBER propagation in LHRTSF01"
+      }
     ],
-    "related_dq": ["DQ-001"],
-    "related_known_unknowns": ["KU-001", "KU-016", "KU-017", "KU-020"],
+    "related_dq": [
+      "DQ-001"
+    ],
+    "related_known_unknowns": [
+      "KU-001",
+      "KU-016",
+      "KU-017",
+      "KU-020"
+    ],
     "analysis_doc": "knowledge/incidents/INC-000006073_travel_busarea.md",
     "evidence_extracted_this_incident": {
-      "tables_added_to_gold_db": ["GB901 (583 rows)", "GB02C (10)", "T100_ZFI (36)", "T80D (8)", "GB903 (3)"],
+      "tables_added_to_gold_db": [
+        "GB901 (583 rows)",
+        "GB02C (10)",
+        "T100_ZFI (36)",
+        "T80D (8)",
+        "GB903 (3)"
+      ],
       "code_extracted": "34 SAP standard files (24,559 lines) in extracted_code/SAP_STANDARD/TV_TRAVEL/",
       "knowledge_docs_created": [
         "knowledge/domains/Travel/travel_busarea_derivation.md",
@@ -83,5 +128,133 @@
       "Confirm with Travel/HR team whether intercompany was intentional in trip 0101004544 or a user error",
       "Audit PA0027 subtype 02 expirations across all employees (BAdI safety net broken systemically?)"
     ]
+  },
+  {
+    "id": "INC-000005240",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "F-53 manual payment writes XREF1/XREF2='HQ' instead of 'JAK' for Jakarta user",
+    "reporter": "Anthony Leonardo Jonathan (FU/JAK — AL_JONATHAN)",
+    "received_date": "2026-04-07",
+    "analyzed_session": 51,
+    "domain": "FI",
+    "secondary_domains": [
+      "Treasury",
+      "HCM",
+      "PSM"
+    ],
+    "transactions": [
+      "F-53",
+      "FBZ2",
+      "FBZ1",
+      "FBL3N",
+      "FB02",
+      "F110",
+      "FB1K"
+    ],
+    "primary_object_id": "AL_JONATHAN",
+    "primary_subject": "AL_JONATHAN USR05.Y_USERFO='HQ' → XREF tagging wrong on all his F-53 postings",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "scenario": "field_user_wrong_su3_parameter_for_office_code",
+    "error_messages": [],
+    "root_cause_summary": "AL_JONATHAN's USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. YRGGBS00 form UXR1 (line 996) writes bseg_xref1 = usr05-parva unconditionally (guard commented out). UXR2 (line 1024) writes bseg_xref2 = usr05-parva when XREF2 is blank (always true on F-53 since the screen hides the field). Both run at callpoint 3 under GB922 SUBSTID='UNESCO' steps 005/006 with empty GB905 prerequisites (fires unconditionally on every BSEG line). The code works as designed; the defect is master data only. Independent confirmation via A_HIZKIA (also Jakarta, Y_USERFO='JAK' verified) manually correcting his docs via FBL3N since 2026-02-16. End-to-end gap: VALID='UNES' (12 steps in GB931) has ZERO steps that check XREF fields; F-53/FBZ2 is in ZERO validation prerequisites; 21,754 manual FBL3N/FBL1N/FB02 corrections in Q1 2026 on UNES BELEG by 242 users show this is systemic.",
+    "code_validation_chain": [
+      "YRGGBS00_SOURCE.txt:230 exits-name='UXR1' (substitution exit registered)",
+      "YRGGBS00_SOURCE.txt:235 exits-name='UXR2' (substitution exit registered)",
+      "YRGGBS00_SOURCE.txt:996 FORM uxr1: SELECT usr05 WHERE parid='Y_USERFO' → bseg_xref1 = usr05-parva (guard IF bseg_xref1=space commented out at line 998 — always overwrites)",
+      "YRGGBS00_SOURCE.txt:1007 SELECT yfo_codes WHERE focod=bseg_xref1 → MESSAGE w018(zfi) warning if missing (non-blocking)",
+      "YRGGBS00_SOURCE.txt:1024 FORM uxr2: IF bseg_xref2=space → SELECT usr05 Y_USERFO → bseg_xref2 = usr05-parva (no validation in auto-write branch)",
+      "YRGGBS00_SOURCE.txt:1035 ELSE branch (user-typed XREF2) → SELECT yfo_codes → MESSAGE e018(zfi) hard error if missing",
+      "YRGGBS00_SOURCE.txt:1050-1119 FORM uzls: derives bseg_zlsch from bseg_xref2 per company code",
+      "Live RFC 2026-04-09: USR05 WHERE BNAME='AL_JONATHAN' AND PARID='Y_USERFO' → PARVA='HQ'",
+      "Live RFC 2026-04-09: PA0001 WHERE PERNR=10175236 → WERKS='ID00' BTRTL='JKT' (HR master says Jakarta)",
+      "Live RFC 2026-04-09: BSAK for 10 of his FBZ2 docs → ALL have XREF1='HQ' XREF2='HQ'",
+      "CDPOS 3100003438/2026 CHANGENR=0118205716: XREF1 'HQ'→'JAK' by A_HIZKIA via FBL3N on 2026-02-16 — proves substitution fired at posting time (VALUE_OLD='HQ')",
+      "CDPOS 3100003439/2026 CHANGENR=0118205748: same pattern",
+      "RFC extracted GB93 (17 rows) + GB931 (12 steps for VALID='UNES') on 2026-04-09: confirms F-53/FBZ2 in ZERO validation prerequisites",
+      "A_HIZKIA USR05 Y_USERFO='JAK' verified — independent confirmation of correct target value"
+    ],
+    "scope": {
+      "affected_documents": 10,
+      "affected_vendor_lines": 10,
+      "window": "2026-02-06 to 2026-03-16",
+      "user_is_new": true,
+      "manual_workaround_user": "A_HIZKIA (Jakarta, Y_USERFO='JAK')",
+      "manual_corrections_on_al_jonathan_docs": 2,
+      "systemic_q1_2026_edits_unes_beleg": 21754,
+      "systemic_users_editing": 242,
+      "systemic_docs_touched": 24597
+    },
+    "fix_path": {
+      "blocking_prerequisite": "Verify 'JAK' exists in YFO_CODES.FOCOD via SE16N. If not, add row via SM30 BEFORE SU3 change. Otherwise w018 warning fires on every posting and e018 hard error if user ever types 'JAK' manually (KU-027).",
+      "tactical": "SU3 / SU01 → AL_JONATHAN → Parameters → Y_USERFO: 'HQ' → 'JAK'. Smoke test with a test F-53 posting. Verify ZLSCH downstream behavior (will become 'O' for JAK — confirm with Jakarta treasury).",
+      "strategic_master_data": "Run PA0001×PA0105×USR05 audit query (knowledge/domains/Treasury/xref_office_tagging_model.md §7.2) to enumerate all AL_JONATHAN-class drifted users. Batch-correct.",
+      "strategic_validation": "Add 13th step to VALID='UNES' that checks BSEG-XREF1 against HR-derived expected office (see xref_office_tagging_model.md §7.3).",
+      "strategic_code": "Close UXR1 overwrite gap (re-enable IF bseg_xref1=space guard at line 998) — separate transport."
+    },
+    "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+    "related_objects": [
+      "YRGGBS00",
+      "YRGGBS00/UXR1",
+      "YRGGBS00/UXR2",
+      "YRGGBS00/UZLS",
+      "YRGGBS00/U915",
+      "YRGGBS00/U916",
+      "YRGGBS00/U917",
+      "USR05",
+      "USR05.Y_USERFO",
+      "YFO_CODES",
+      "PA0001",
+      "PA0105",
+      "PA0001.WERKS",
+      "PA0001.BTRTL",
+      "SUBSTID=UNESCO",
+      "GB922",
+      "VALID=UNES",
+      "GB93",
+      "GB931",
+      "GB901",
+      "T80D",
+      "BSEG.XREF1",
+      "BSEG.XREF2",
+      "BSEG.ZLSCH"
+    ],
+    "evidence_extracted_this_incident": [
+      "USR05 (per-user reads for 13 users)",
+      "PA0001 (7 users cross-reference)",
+      "PA0105 (7 users USRID→PERNR bridge)",
+      "BSAK (live RFC for 10 AL_JONATHAN docs)",
+      "BSAS/BSIS (live RFC for 36 line items)",
+      "CDPOS (2 A_HIZKIA FBL3N changes with XREF1 HQ→JAK proof)",
+      "CDHDR (full BELEG change scan for AL_JONATHAN window)",
+      "GB93 (17 rows — validation header)",
+      "GB931 (12 rows for VALID='UNES' — full validation step map)",
+      "UXR1/UXR2/U915/U916/U917 source code verbatim"
+    ],
+    "lessons": [
+      "feedback_main_agent_holds_incident_context: do not delegate the 7-step workflow to a subagent",
+      "feedback_read_emails_in_main_agent: read .eml directly in the main agent",
+      "feedback_user_term_to_sap_field_translation: section 1 of every incident report needs the terminology table",
+      "feedback_psm_extensions_is_fi_substitution_home: read PSM/EXTENSIONS autopsy docs at the start of any FI substitution/validation incident",
+      "feedback_bseg_union_has_no_xref: bseg_union does not carry XREF columns — use live RFC",
+      "feedback_empirical_over_theoretical_substitution: CDPOS/AUGBL/RFC beats BOOLEXP inference",
+      "feedback_metadata_vs_real_bseg_lines: BSCHL=27/37 zero-balance pair is metadata, not a real business line",
+      "feedback_extract_ggb_tables_for_substitution_incidents: extract GB93/GB931/GB905/GB921/T80D at start",
+      "feedback_process_before_root_cause: write 'how it should work' before 'why it fails'",
+      "feedback_no_learning_capture_mid_investigation: no knowledge capture until user confirms conclusions",
+      "feedback_brain_rebuild_after_finalized: rebuild is the LAST step"
+    ],
+    "wrong_path_session_050": {
+      "what_happened": "Session #050 subagent chased FMDERIVE exit ZXFMDTU02_RPY hardcoded FICTR='UNESCO' (a real but unrelated observation) instead of the actual XREF1/XREF2 substitution in YRGGBS00.",
+      "cost": "154K tokens burned, wrong root cause, needed full reset",
+      "observation_filed": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+      "brain_entries_to_retag": [
+        "annotations: ZXFMDTU02_RPY, fmifiit_full, fund_centers (review each)",
+        "claims: 27-30 (FMDERIVE-tied; re-tag as observation_only)",
+        "known_unknowns: KU-024/025/026 (mostly FMDERIVE; review each)",
+        "data_quality_issues: DQ-017 (review)"
+      ]
+    }
   }
 ]

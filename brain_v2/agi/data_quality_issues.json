@@ -2,9 +2,9 @@
   {
     "id": "DQ-001",
     "source": "LFA1 + LFB1 + T077K (Vendor Master integrity)",
-    "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA → AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off — full vendor master never audited for KTOKK↔AKONT consistency.",
+    "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA â†’ AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off â€” full vendor master never audited for KTOKKâ†”AKONT consistency.",
     "severity": "HIGH",
-    "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEP↔UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
+    "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEPâ†”UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
     "workaround": "(a) Run vendor_master_integrity_check.py against Gold DB to list all LFB1 rows where AKONT does not match T077K canonical mapping for the LFA1.KTOKK. (b) For each violation, decide whether to correct AKONT (FK02) or extend GGB1 substitution (YFI_BASU_MOD). (c) Promote this to a recurring monthly check.",
     "discovered_session": 48,
     "promoted_to_recurring_check": 50,
@@ -78,14 +78,14 @@
     "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
     "severity": "HIGH",
     "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
-    "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols — truncated first attempt).",
+    "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols â€” truncated first attempt).",
     "discovered_session": 29,
     "status": "RESOLVED"
   },
   {
     "id": "DQ-009",
     "source": "T010P (Posting Period Variants)",
-    "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/Français/Portuguese), looks like functional types.",
+    "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/FranÃ§ais/Portuguese), looks like functional types.",
     "severity": "MEDIUM",
     "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
     "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
@@ -118,7 +118,7 @@
     "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
     "severity": "CRITICAL",
     "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
-    "workaround": "Requires remediation project. No workaround — structural config gap.",
+    "workaround": "Requires remediation project. No workaround â€” structural config gap.",
     "discovered_session": 44,
     "status": "OPEN"
   },
@@ -161,5 +161,58 @@
     "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
     "discovered_session": 49,
     "status": "RESOLVED"
+  },
+  {
+    "id": "DQ-017",
+    "issue": "187,514 rows in fmifiit_full (UNES company code, bank clearing GLs 0006045011/0007045011/0006045014) have FISTL='UNESCO' due to the ZXFMDTU02_RPY.abap:99 hardcode. Zero rows on these GLs have FISTL='JAK' or any other field-office FICTR. This makes office-level cash-flow reporting impossible for the bank side of vendor payments.",
+    "severity": "MEDIUM",
+    "source": "Gold DB query Session #050 (INC-000005240)",
+    "domain": "FI",
+    "related_objects": [
+      "fmifiit_full",
+      "ZXFMDTU02_RPY",
+      "fund_centers"
+    ],
+    "incident": "INC-000005240",
+    "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side."
+  },
+  {
+    "id": "DQ-018",
+    "issue": "AL_JONATHAN (Jakarta Field Unit user) has USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. Every F-53/FBZ2 posting he makes carries BSEG-XREF1='HQ' BSEG-XREF2='HQ' instead of the correct 'JAK'. PA0001.WERKS='ID00' BTRTL='JKT' confirms HR has him assigned to Indonesia/Jakarta.",
+    "source": "USR05 live RFC 2026-04-09 + PA0001/PA0105 cross-reference",
+    "severity": "HIGH",
+    "impact": "10 documents in 2026-02/03 carry wrong XREF tag. No automated detection. Manual correction via FBL3N by A_HIZKIA on 2 of 10.",
+    "status": "OPEN - fix pending SU3 update after KU-027 YFO_CODES.JAK verification",
+    "discovered_session": "#51",
+    "related_incident": "INC-000005240",
+    "related_known_unknown": "KU-027",
+    "promoted_to_recurring_check": false,
+    "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py"
+  },
+  {
+    "id": "DQ-019",
+    "issue": "Systemic XREF drift at UNESCO: 21,754 manual post-posting edits via FBL3N/FBL1N/FB02/FBL5N in Q1 2026 on UNES BELEG documents, across 242 distinct users, touching 24,597 distinct documents. This is the operational workaround for missing XREF validation and signals a systemic gap rather than isolated errors.",
+    "source": "Gold DB cdhdr query 2026-04-09",
+    "severity": "MEDIUM",
+    "impact": "Ongoing operational burden. Users spend significant time manually correcting XREF values because no runtime validation catches wrong values.",
+    "status": "OPEN - strategic fix options in Treasury xref_office_tagging_model.md §7.3",
+    "discovered_session": "#51",
+    "related_incident": "INC-000005240",
+    "related_known_unknown": "KU-028",
+    "promoted_to_recurring_check": false,
+    "related_check_script": null
+  },
+  {
+    "id": "DQ-020",
+    "issue": "USR05.Y_USERFO (finance office code) and PA0001.BTRTL (HR personnel subarea) use different code systems at UNESCO with no enforced mapping. Example drift: Kabul is BTRTL='KBL' but Y_USERFO='KAB'; Dakar is BTRTL='DKR' but Y_USERFO='DAK'. A user's office in finance can drift from their HR assignment with no automated detection.",
+    "source": "Live RFC 2026-04-09 PA0001 + USR05 for 7 users",
+    "severity": "MEDIUM",
+    "impact": "Enables the DQ-018 class of issues to persist undetected. A user can be hired in Jakarta (HR correct) and still have wrong finance office code (USR05) forever.",
+    "status": "OPEN - needs HR/BASIS alignment process",
+    "discovered_session": "#51",
+    "related_incident": "INC-000005240",
+    "related_known_unknown": "KU-028",
+    "promoted_to_recurring_check": false,
+    "related_check_script": null
   }
 ]

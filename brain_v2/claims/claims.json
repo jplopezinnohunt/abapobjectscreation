@@ -39,7 +39,7 @@
   },
   {
     "id": 3,
-    "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+    "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026",
     "claim_type": "superseded",
     "confidence": "TIER_1",
     "evidence_for": "Re-extraction in Session #029 revealed 223K rows. The _2024_2026 suffix table has the real data.",
@@ -107,7 +107,7 @@
   },
   {
     "id": 7,
-    "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query",
+    "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": "BSEG is a cluster table. The Golden Query joins bseg_union + BKPF + FMIFIIT + PRPS for 85.9% WBS coverage. Session #035.",
@@ -132,7 +132,7 @@
   },
   {
     "id": 8,
-    "claim": "SuccessFactors EC IS ACTIVE in P01 — not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs)",
+    "claim": "SuccessFactors EC IS ACTIVE in P01 â€” not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs)",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": "TBTCO job analysis, Session #035. Job names + run counts confirmed from Gold DB.",
@@ -163,7 +163,7 @@
   },
   {
     "id": 10,
-    "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level.",
+    "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI â€” perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": "Join validation in Gold DB, Session #016. 100% match on test sample.",
@@ -200,7 +200,7 @@
   },
   {
     "id": 12,
-    "claim": "D010TAB/WBCROSSGT have 200M+ rows system-wide — never bulk extract. Query on-demand for specific Y*/Z* objects via RFC.",
+    "claim": "D010TAB/WBCROSSGT have 200M+ rows system-wide â€” never bulk extract. Query on-demand for specific Y*/Z* objects via RFC.",
     "claim_type": "verified_fact",
     "confidence": "TIER_2",
     "evidence_for": "User confirmed from SE16 observation, Session #049. Filtered to YY* shows manageable rows for custom objects only.",
@@ -226,7 +226,7 @@
     "domain": "Payment",
     "created_session": 26,
     "resolved_session": 27,
-    "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed.",
+    "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUHâ†’OP=0 confirmed.",
     "status": "superseded"
   },
   {
@@ -310,7 +310,7 @@
     "domain": "FI",
     "created_session": 30,
     "resolved_session": 31,
-    "resolution_notes": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types.",
+    "resolution_notes": "D/E/F/P are language keys (Deutsch, English, FranÃ§ais, Portuguese). Multi-language text variants, not functional types.",
     "status": "superseded"
   },
   {
@@ -410,5 +410,274 @@
     "resolved_session": 19,
     "resolution_notes": "Never verified via T012 SWIFT code. Was an assumption from bank ID + ETB currency. Could be different bank.",
     "status": "superseded"
+  },
+  {
+    "id": 27,
+    "claim": "ZXFMDTU02_RPY.abap line 99 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011, 0007045011, 0006045014) with FIKRS=UNES and FISTL=SPACE. The exit has no SY-UNAME-based or USR05-based override.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Source code ZXFMDTU02_RPY.abap:94-101 read directly from extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/. Full-file grep for SY-UNAME returned only developer breakpoint (line 62), commented-out P2 substitution (240-246), and YXUSER opt-out bypass (257-260) - none of which derive FICTR. Session #050.",
+    "evidence_against": null,
+    "related_objects": [
+      "ZXFMDTU02_RPY",
+      "fmifiit_full",
+      "fund_centers",
+      "USR05"
+    ],
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "session": "#050",
+    "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+  },
+  {
+    "id": 28,
+    "claim": "187,514 rows in fmifiit_full (P01 Gold DB) match the ZXFMDTU02_RPY:99 hardcode signature - BUKRS=UNES AND FISTL='UNESCO' AND HKONT in the three bank GLs. Zero rows on the same GLs have FISTL='JAK'. This makes the user's (AL_JONATHAN) expectation of FICTR='JAK' on his bank-clearing rows code-impossible under the current exit.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "SQL count against Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db run 2026-04-09 Session #050. Per-GL: 0006045011=92,845; 0006045014=2,661; 0007045011=92,008.",
+    "evidence_against": null,
+    "related_objects": [
+      "fmifiit_full",
+      "ZXFMDTU02_RPY"
+    ],
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "session": "#050",
+    "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+  },
+  {
+    "id": 29,
+    "claim": "261 distinct UNES users have mixed-FICTR posting history (proving non-HQ home office) but are affected by the ZXFMDTU02_RPY:99 hardcode on their bank-clearing rows. Top offenders: J_LA (47,090 rows), T_ENG (28,107), C_LOPEZ (14,435), I_MARQUAND (12,845), S_AGOSTO (8,247). AL_JONATHAN (the INC-000005240 reporter) is in this set but not in the top 20 - his 39 docs are a small subset of the larger systemic class.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py run output 2026-04-09 Session #050.",
+    "evidence_against": null,
+    "related_objects": [
+      "bkpf",
+      "fmifiit_full",
+      "ZXFMDTU02_RPY"
+    ],
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "session": "#050",
+    "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+  },
+  {
+    "id": 30,
+    "claim": "INC-000006073 and INC-000005240 belong to the same defect class: UNESCO FI user exits from the 2010-2018 SROCHA/KONAKOV era contain hardcoded C_FMDERIVE-* and C_SUBST-* literal assignments with no user-aware or table-driven override. Both incidents were invisible until a new reporting practice exposed them.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": "INC-000006073 (GSBER hardcode in GGB1 rule 3IIEP###002); INC-000005240 (FICTR hardcode in ZXFMDTU02 line 99). Both cite the same developer era and same 'hardcoded literal with no override' pattern.",
+    "evidence_against": null,
+    "related_objects": [
+      "ZXFMDTU02_RPY",
+      "ZXTRVU05",
+      "GB901:3IIEP###002"
+    ],
+    "domain": "FI",
+    "incident": "INC-000005240",
+    "session": "#050",
+    "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+  },
+  {
+    "id": 31,
+    "tier": "TIER_1",
+    "claim": "At UNESCO, BSEG-XREF1 and BSEG-XREF2 are repurposed as the originating office tag on every FI vendor line item. They are NOT the SAP-standard 'reference key' but UNESCO-specific office codes (HQ, JAK, YAO, KAB, DAK, BRZ, IIEP_PAR, UIS, IBE, UNDP-*).",
+    "claim_type": "verified_fact",
+    "domain": "Treasury",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "BSEG.XREF1",
+      "BSEG.XREF2",
+      "YFO_CODES",
+      "Y_USERFO"
+    ],
+    "evidence_for": "YRGGBS00_SOURCE.txt:230-243 (exits UXR1/UXR2 registration); YRGGBS00_SOURCE.txt:996-1041 (UXR1/UXR2 source code); YRGGBS00_SOURCE.txt:1090-1118 (UZLS special case IF bseg-xref2(4)<>'UNDP' CASE bukrs); Live RFC 2026-04-09 on 13 users + 10 AL_JONATHAN docs; INC-000005240 empirical data",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 32,
+    "tier": "TIER_1",
+    "claim": "YRGGBS00 FORM UXR1 unconditionally writes USR05.Y_USERFO to BSEG-XREF1 at posting time. The original guard 'IF bseg_xref1 = space' at line 998 is commented out — UXR1 overwrites even user-typed values.",
+    "claim_type": "verified_fact",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "YRGGBS00/UXR1",
+      "USR05.Y_USERFO",
+      "BSEG.XREF1"
+    ],
+    "evidence_for": "YRGGBS00_SOURCE.txt:996-1016 verbatim source",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 33,
+    "tier": "TIER_1",
+    "claim": "YRGGBS00 FORM UXR2 has asymmetric validation: (a) auto-write from USR05 is NOT validated against YFO_CODES — it trusts the user parameter blindly; (b) user-typed input IS validated with a hard error (e018 ZFI) if not in YFO_CODES. This asymmetry means wrong master data propagates silently while manual typing errors are caught.",
+    "claim_type": "verified_fact",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "YRGGBS00/UXR2",
+      "YFO_CODES",
+      "USR05.Y_USERFO"
+    ],
+    "evidence_for": "YRGGBS00_SOURCE.txt:1024-1041 verbatim source",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 34,
+    "tier": "TIER_1",
+    "claim": "UNESCO's VALID='UNES' validation rule (BOOLCLASS=009, FI line item) has 12 steps fully mapped in GB931. NONE of the 12 steps reference BSEG-XREF1 or BSEG-XREF2 at either CONDID or CHECKID level. Step 010 references XREF3 (customer expense-type memos only). Exit forms U915/U916/U917 check bank account mechanics, SCB indicators, and fund GL restrictions — none check XREF content.",
+    "claim_type": "verified_fact",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "VALID=UNES",
+      "GB93",
+      "GB931",
+      "YRGGBS00/U915",
+      "YRGGBS00/U916",
+      "YRGGBS00/U917"
+    ],
+    "evidence_for": "GB93 RFC extraction 2026-04-09 (17 rows total, 1 for VALID='UNES'); GB931 RFC extraction 2026-04-09 (12 steps for VALID='UNES', full CONDID/CHECKID map); U915/U916/U917 source code verbatim (YRGGBS00_SOURCE.txt:1499-1590)",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 35,
+    "tier": "TIER_1",
+    "claim": "Transaction F-53 (Post Outgoing Payments) and its commit-time TCODE FBZ2 are NOT in any prerequisite of VALID='UNES' validation steps. Manual outgoing payments pass through the UNES line-item validation layer completely uncovered — no UNES validation fires on F-53 / FBZ2.",
+    "claim_type": "verified_fact",
+    "domain": "Treasury",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "VALID=UNES",
+      "F-53",
+      "FBZ2",
+      "GB931"
+    ],
+    "evidence_for": "GB931 12 steps for VALID='UNES', grep for 'F-53' / 'FBZ2' in CONDID / CHECKID — zero matches; GB901 1UNES###/2UNES### BOOLEXPs — F-53/FBZ2 not listed in any TCODE filter",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 36,
+    "tier": "TIER_1",
+    "claim": "F-53 is a SAP parameter transaction that wraps FBZ2. When a user enters F-53 from the menu, SAP stores BKPF.TCODE='FBZ2' (the commit-time TCODE), NOT 'F-53'. At UNESCO's P01, zero rows in BKPF have TCODE='F-53'. This is visible in SE93 for F-53 which shows 'Default values for Transaction = FBZ2'.",
+    "claim_type": "verified_fact",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "F-53",
+      "FBZ2",
+      "BKPF.TCODE",
+      "TSTC"
+    ],
+    "evidence_for": "Gold DB bkpf: WHERE TCODE='F-53' returns 0 rows; Live RFC: SE93 screenshot of F-53 definition showing target FBZ2; User-confirmed via SE16N filter in the SAP GUI",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 37,
+    "tier": "TIER_1",
+    "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL, HKONT, SHKZG, DMBTR, DMBE2, WRBTR, WAERS, AUFNR, AUGBL, AUGDT, CPUDT, EBELN, EBELP, FKBER, GSBER, KOSTL, LIFNR, MWSKZ, PRCTR, PS_PSP_PNR, SGTXT, ZFBDT, ZTERM, source_table. Any XREF-related analysis must use live RFC on BSAK/BSAS/BSIS/BSIK/BSAD/BSID directly.",
+    "claim_type": "data_quality_gap",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "bseg_union",
+      "BSAK",
+      "BSAS",
+      "BSIS",
+      "BSIK",
+      "BSAD",
+      "BSID"
+    ],
+    "evidence_for": "PRAGMA table_info(bseg_union) 2026-04-09",
+    "evidence_against": null,
+    "resolution_notes": "Addressed by feedback_bseg_union_has_no_xref rule added in Session #051"
+  },
+  {
+    "id": 38,
+    "tier": "TIER_1",
+    "claim": "UNESCO's substitution SUBSTID='UNESCO' (GB922, 17 steps at callpoint 3 — complete document) does NOT have a step-to-prerequisite linking table accessible via RFC_READ_TABLE. GB905 and GB921 both return 0 rows for SUBSTID='UNESCO' via broad RFC probe. The step prerequisites are either implicit via BOOLID naming convention (3<SUBSTID>#<step> → GB901) or stored in a mechanism not exposed through standard RFC. Empty GB901 entries for a step are interpreted as 'no prerequisite → fires unconditionally'.",
+    "claim_type": "verified_fact",
+    "domain": "FI",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "GB905",
+      "GB921",
+      "GB922",
+      "SUBSTID=UNESCO",
+      "GB901"
+    ],
+    "evidence_for": "RFC probe 2026-04-09: GB905 WHERE SUBSTID='UNESCO' → 0 rows; GB921 WHERE SUBSTID='UNESCO' → 0 rows",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 39,
+    "tier": "TIER_1",
+    "claim": "F-53 / FBZ2 manual posting fires the XREF substitution on EVERY BSEG line (vendor + bank GL + expense), but F110 automatic payment run fires it only on the vendor line (leaving bank GL XREF blank). This asymmetry is empirically confirmed but its mechanism is unknown without access to GB905 or the SAP GGB1 GUI. Possible explanations: (a) F110 uses BAPI_ACC_DOCUMENT_POST which bypasses callpoint 3, (b) a step-level filter on F110 BLART='ZP', or (c) F110 payment method program creates the bank GL line post-substitution.",
+    "claim_type": "verified_fact",
+    "domain": "Treasury",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "F-53",
+      "FBZ2",
+      "F110",
+      "YRGGBS00/UXR1",
+      "YRGGBS00/UXR2"
+    ],
+    "evidence_for": "CDPOS 3100003438/2026 line 001 BSAS (bank GL) had XREF1='HQ' at time of FBL3N change — proves F-53 fires substitution on GL line; Live RFC 2026-04-09: F110 docs 0002003771/0002003828 bank GL lines (BSAS L002) have XREF1='' XREF2='' blank — proves F110 does NOT fire substitution on bank GL line",
+    "evidence_against": null,
+    "resolution_notes": "KU-032 — mechanism unknown, requires GGB1 GUI inspection or GB905 access"
+  },
+  {
+    "id": 40,
+    "tier": "TIER_1",
+    "claim": "At UNESCO, USR05.Y_USERFO and PA0001.BTRTL use DIFFERENT code systems for the same office. Empirical examples: Paris HQ is PA0001.BTRTL='PAR' but USR05.Y_USERFO='HQ'; Yaoundé is BTRTL='YAO'/Y_USERFO='YAO' (match); Kabul is BTRTL='KBL'/Y_USERFO='KAB' (mismatch); Dakar is BTRTL='DKR'/Y_USERFO='DAK' (mismatch); Jakarta is BTRTL='JKT'/Y_USERFO='JAK' (expected). The implicit BTRTL→Y_USERFO mapping is tribal knowledge — no table enforces it.",
+    "claim_type": "verified_fact",
+    "domain": "HCM",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "PA0001.BTRTL",
+      "USR05.Y_USERFO"
+    ],
+    "evidence_for": "Live RFC 2026-04-09: PA0001 + USR05 for 7 users (AL_JONATHAN, T_ENG, I_WETTIE, JJ_YAKI-PAHI, O_RASHIDI, DA_ENGONGA, L_HANGI)",
+    "evidence_against": null,
+    "resolution_notes": ""
+  },
+  {
+    "id": 41,
+    "tier": "TIER_1",
+    "claim": "UNESCO has a systemic manual workaround for missing XREF validation: 21,754 post-posting edits via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents in Q1 2026 by 242 distinct users, touching 24,597 distinct documents. Top editors include C_VINCENZI (2,075 FBL1N), R_MUSAKWA (1,422), M_AHMADI (550), L_HANGI (499), and the Jakarta cluster A_DELGADO+A_CARVE+A_HIZKIA+A_YEGIAZARIA+A_DEGA (~5,400 edits over 2 years). This is the operational cost of having zero automated XREF validation.",
+    "claim_type": "verified_fact",
+    "domain": "Treasury",
+    "confidence": "HIGH",
+    "created_session": "#51",
+    "related_objects": [
+      "CDHDR",
+      "FBL3N",
+      "FBL1N",
+      "FB02"
+    ],
+    "evidence_for": "Gold DB cdhdr query 2026-04-09: count of BELEG changes by TCODE and USNAM where OBJECTID matches '%UNES%' and UDATE in Q1 2026",
+    "evidence_against": null,
+    "resolution_notes": ""
   }
 ]
