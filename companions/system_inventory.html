@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP System Inventory — Complete Landscape</title>
+<style>
+:root {
+  --bg: #080b12; --surface: #0c1018; --card: #111827;
+  --border: #1a2540; --border-glow: #1e3a5f;
+  --text: #c8d6e5; --muted: #4a5f80; --white: #eef2f7;
+  --neon-blue: #4f8ef7; --neon-cyan: #22d3ee; --neon-green: #22c55e;
+  --neon-orange: #fb923c; --neon-red: #ef4444; --neon-purple: #a78bfa;
+  --neon-yellow: #f59e0b; --neon-teal: #2dd4bf; --neon-gray: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.header { background: linear-gradient(180deg, #0e1525 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 1.2em; font-weight: 700; color: var(--white); }
+.header h1 span { color: var(--neon-blue); }
+.header-stats { display: flex; gap: 24px; }
+.hstat { text-align: center; }
+.hstat .v { font-size: 1.1em; font-weight: 800; font-family: 'Consolas', monospace; }
+.hstat .l { font-size: 0.6em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px 32px 80px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+.tab { padding: 10px 20px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-size: 0.85em; font-weight: 600; white-space: nowrap; transition: all 0.2s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--neon-blue); border-bottom-color: var(--neon-blue); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Search */
+.search { width: 100%; padding: 10px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9em; margin-bottom: 20px; outline: none; }
+.search:focus { border-color: var(--neon-blue); }
+
+/* System Cards */
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(580px, 1fr)); gap: 16px; }
+.sys-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: relative; overflow: hidden; transition: all 0.2s; }
+.sys-card:hover { border-color: var(--border-glow); }
+.sys-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.sys-card.cat-prod::before { background: var(--neon-red); }
+.sys-card.cat-dev::before { background: var(--neon-blue); }
+.sys-card.cat-test::before { background: var(--neon-orange); }
+.sys-card.cat-val::before { background: var(--neon-purple); }
+.sys-card.cat-solman::before { background: var(--neon-yellow); }
+.sys-card.cat-bw::before { background: var(--neon-teal); }
+.sys-card.cat-ext::before { background: var(--neon-cyan); }
+.sys-card.cat-infra::before { background: var(--neon-gray); }
+.sys-card.cat-db::before { background: var(--neon-green); }
+.sys-card.cat-legacy::before { background: #444; }
+
+.sys-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.sys-name { font-size: 1.1em; font-weight: 700; }
+.sys-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { font-size: 0.6em; padding: 2px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge.dir-out { background: rgba(79,142,247,0.15); color: var(--neon-blue); }
+.badge.dir-in { background: rgba(34,211,238,0.15); color: var(--neon-cyan); }
+.badge.dir-both { background: rgba(167,139,250,0.15); color: var(--neon-purple); }
+.badge.cat { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+.sys-desc { color: var(--muted); font-size: 0.8em; margin-bottom: 12px; line-height: 1.5; }
+
+.sys-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75em; }
+.detail { display: flex; gap: 6px; }
+.detail .lbl { color: var(--muted); min-width: 70px; }
+.detail .val { color: var(--text); font-family: 'Consolas', monospace; word-break: break-all; }
+
+.sys-dests { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sys-dests summary { font-size: 0.75em; color: var(--muted); cursor: pointer; }
+.sys-dests .dest-list { font-size: 0.7em; color: var(--text); font-family: 'Consolas', monospace; margin-top: 6px; line-height: 1.8; }
+.dest-tag { display: inline-block; padding: 1px 8px; margin: 2px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+
+/* Direction arrows */
+.dir-arrow { font-size: 0.85em; font-weight: 700; }
+.dir-arrow.out { color: var(--neon-blue); }
+.dir-arrow.in { color: var(--neon-cyan); }
+.dir-arrow.both { color: var(--neon-purple); }
+
+/* Summary table */
+table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+th { background: rgba(79,142,247,0.08); color: var(--neon-blue); text-align: left; padding: 8px 12px; border: 1px solid var(--border); font-weight: 600; }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover td { background: rgba(79,142,247,0.03); }
+.mono { font-family: 'Consolas', monospace; font-size: 0.95em; }
+
+/* Integration types */
+.int-types { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.int-type { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 200px; }
+.int-type h3 { font-size: 0.85em; margin-bottom: 8px; }
+.int-type .count { font-size: 1.5em; font-weight: 800; font-family: 'Consolas', monospace; }
+.int-type .sub { font-size: 0.7em; color: var(--muted); margin-top: 4px; }
+
+@media (max-width: 700px) {
+  .sys-grid { grid-template-columns: 1fr; }
+  .sys-details { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <h1><span>&#9670;</span> UNESCO SAP System Inventory</h1>
+  <div class="header-stats">
+    <div class="hstat"><div class="v" style="color:var(--neon-blue)">31</div><div class="l">Systems</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-green)">239</div><div class="l">RFC Dest.</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-cyan)">4</div><div class="l">Integration Types</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-purple)">19.4K</div><div class="l">IDocs</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="tabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="systems">All Systems</div>
+    <div class="tab" data-tab="directions">Direction Map</div>
+    <div class="tab" data-tab="integration">Integration Types</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+
+    <div class="int-types">
+      <div class="int-type">
+        <h3 style="color:var(--neon-blue)">RFC Destinations</h3>
+        <div class="count" style="color:var(--neon-blue)">239</div>
+        <div class="sub">RFCDES table &middot; Types: ABAP(75), ExtPrg(38), TCP(50), HTTP(2), Internal(68)</div>
+      </div>
+      <div class="int-type">
+        <h3 style="color:var(--neon-cyan)">IDocs / ALE</h3>
+        <div class="count" style="color:var(--neon-cyan)">19,400</div>
+        <div class="sub">EDIDC table &middot; Top: RSINFO(9.4K), PROJECT(4.4K), EXCHANGE_RATE(988)</div>
+      </div>
+      <div class="int-type">
+        <h3 style="color:var(--neon-green)">Database Connections</h3>
+        <div class="count" style="color:var(--neon-green)">2</div>
+        <div class="sub">DBCON table &middot; TULIP + UNESDIR &rarr; HQ-DB-AG-APP (MS SQL Server)</div>
+      </div>
+      <div class="int-type">
+        <h3 style="color:var(--neon-yellow)">ICF Services</h3>
+        <div class="count" style="color:var(--neon-yellow)">6,477</div>
+        <div class="sub">ICFSERVICE table &middot; 5,822 active &middot; OData, BSP, WebGUI, ADT endpoints</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:12px;color:var(--white);">Direction Summary</h3>
+    <table>
+      <tr><th>Direction</th><th>#</th><th>Systems</th></tr>
+      <tr><td><span class="dir-arrow both">&#8596;</span> Bidirectional (Trusted RFC)</td><td class="mono">8</td><td>D01, TS1, TS3, V01, SBP, SMA, SMP, BRP</td></tr>
+      <tr><td><span class="dir-arrow out">&#8594;</span> Outbound only (P01 calls)</td><td class="mono">14</td><td>AWS, BWD, BWP, D11, Fiori GW, Harwich01, P11, Role Mgmt, SAP Support, SAP Walldorf, TS2, TS4, UNJSPF, V11</td></tr>
+      <tr><td><span class="dir-arrow in">&#8592;</span> Inbound only (calls P01)</td><td class="mono">2+</td><td>OPTSERVER, MuleSoft (RFC server reg), + 11 local RFC servers</td></tr>
+      <tr><td>&#128371; Database (DBCON)</td><td class="mono">2</td><td>TULIP, UNESDIR &rarr; HQ-DB-AG-APP</td></tr>
+      <tr><td>&#128309; Virtual (TMS)</td><td class="mono">2</td><td>VDE, VRT (transport domain DOMAIN_P01)</td></tr>
+    </table>
+  </div>
+
+  <!-- ALL SYSTEMS -->
+  <div class="panel" id="panel-systems">
+    <input type="text" class="search" id="sysSearch" placeholder="Search systems by name, host, purpose...">
+    <div class="sys-grid" id="sysGrid">
+
+      <!-- PRODUCTION -->
+      <div class="sys-card cat-prod" data-search="p01 production ecc hq-sap-p01 hub central">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-red)">P01 &mdash; Production ECC</div>
+          <div class="sys-badges"><span class="badge cat">PRODUCTION</span><span class="badge dir-both">HUB</span></div>
+        </div>
+        <div class="sys-desc">Central hub of UNESCO SAP landscape. ALL systems connect through P01. Hosts 52 Gold DB tables with 24M+ rows.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-p01</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">350 (Production), 000 (SAP AG)</span></div>
+          <div class="detail"><span class="lbl">SysNr</span><span class="val">00</span></div>
+          <div class="detail"><span class="lbl">RFC Total</span><span class="val">239 destinations configured</span></div>
+          <div class="detail"><span class="lbl">ICF Svc</span><span class="val">6,477 (5,822 active)</span></div>
+          <div class="detail"><span class="lbl">IDocs</span><span class="val">19,400 (2024+)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-prod" data-search="p11 s4 production hana hq-sap-p11">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-red)">P11 &mdash; S/4HANA Production</div>
+          <div class="sys-badges"><span class="badge cat">PRODUCTION</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">S/4HANA Production system. ALE/IDoc distribution from P01.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-P11</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">100</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">4 (P11MDT100, P11MDT100-2, P11OLD, hq-p11-old)</span></div>
+          <div class="detail"><span class="lbl">Direction</span><span class="val">P01 &rarr; P11 (outbound only)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-legacy" data-search="p11_old legacy decommissioned">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">P11_OLD &mdash; S/4 Legacy</div>
+          <div class="sys-badges"><span class="badge cat">DECOMMISSIONED</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Previous P11 instance. Legacy destination still configured. 1 RFC.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-p11-old</span></div>
+          <div class="detail"><span class="lbl">Status</span><span class="val">Decommissioned</span></div>
+        </div>
+      </div>
+
+      <!-- DEVELOPMENT -->
+      <div class="sys-card cat-dev" data-search="d01 ecc development hq-sap-d01 transport trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-blue)">D01 &mdash; ECC Development</div>
+          <div class="sys-badges"><span class="badge cat">DEVELOPMENT</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Primary development system. Trusted RFC with P01. Transport management, diagnostics/monitoring, ALE/IDoc.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-D01</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">350</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">8 (7 out + 1 trusted)</span></div>
+          <div class="detail"><span class="lbl">Direction</span><span class="val">P01 &#8596; D01 (trusted)</span></div>
+          <div class="detail"><span class="lbl">TMS</span><span class="val">DOMAIN_P01 (real system)</span></div>
+          <div class="detail"><span class="lbl">Users</span><span class="val">DSM_CONTROL, TMSADM, ALEREMOTE</span></div>
+        </div>
+        <div class="sys-dests"><details><summary>8 RFC destinations</summary><div class="dest-list">
+          <span class="dest-tag">D01MDT350</span><span class="dest-tag">D01LOGON</span><span class="dest-tag">TMSADM@D01.DOMAIN_P01</span><span class="dest-tag">TMSSUP@D01.DOMAIN_P01</span><span class="dest-tag">DSM3COMM-D01-350-*</span><span class="dest-tag">USE_DSM5-D01-*</span><span class="dest-tag">TRUSTING@D01_0020309457</span><span class="dest-tag">A01MDT350</span>
+        </div></details></div>
+      </div>
+
+      <div class="sys-card cat-dev" data-search="d11 s4 development hq-sap-d11">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-blue)">D11 &mdash; S/4HANA Development</div>
+          <div class="sys-badges"><span class="badge cat">DEVELOPMENT</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">S/4HANA development. ALE/IDoc distribution only.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-d11.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">100</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (D11MDT100)</span></div>
+        </div>
+      </div>
+
+      <!-- TEST/QA -->
+      <div class="sys-card cat-test" data-search="ts1 test qa hq-sap-ts1 diagnostics monitoring trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-orange)">TS1 &mdash; Test System 1</div>
+          <div class="sys-badges"><span class="badge cat">TEST/QA</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Primary test system. Diagnostics/monitoring, transport management, trusted RFC.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-TS1</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">350</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">7 (6 out + 1 trusted)</span></div>
+          <div class="detail"><span class="lbl">TMS</span><span class="val">DOMAIN_P01 (real system)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-test" data-search="ts2 test qa hq-sap-ts2 transport">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-orange)">TS2 &mdash; Test System 2</div>
+          <div class="sys-badges"><span class="badge cat">TEST/QA</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Secondary test. Transport management only (TMSADM).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-TS2</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">2 (TMSADM, TMSSUP)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-test" data-search="ts3 test qa hq-sap-ts3 diagnostics trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-orange)">TS3 &mdash; Test System 3</div>
+          <div class="sys-badges"><span class="badge cat">TEST/QA</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Test with diagnostics. Trusted RFC with P01. Transport management.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-TS3</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">6 (5 out + 1 trusted)</span></div>
+          <div class="detail"><span class="lbl">TMS</span><span class="val">DOMAIN_P01 (real system)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-test" data-search="ts4 test qa hq-sap-ts4 transport">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-orange)">TS4 &mdash; Test System 4</div>
+          <div class="sys-badges"><span class="badge cat">TEST/QA</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Test system. Transport management only.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-TS4</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">3 (TMSADM, TMSSUP + internal)</span></div>
+        </div>
+      </div>
+
+      <!-- VALIDATION -->
+      <div class="sys-card cat-val" data-search="v01 ecc validation hq-sap-v01 trusted diagnostics">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-purple)">V01 &mdash; ECC Validation</div>
+          <div class="sys-badges"><span class="badge cat">VALIDATION</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Pre-production validation. Trusted RFC. Diagnostics/monitoring, transport management, ALE/IDoc.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-V01</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">8 (6 out + 1 trusted + 1 internal)</span></div>
+          <div class="detail"><span class="lbl">TMS</span><span class="val">DOMAIN_P01 (real system)</span></div>
+          <div class="detail"><span class="lbl">IDoc</span><span class="val">494 EXCHANGE_RATE (outbound from P01)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-val" data-search="v11 s4 validation hq-sap-v11">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-purple)">V11 &mdash; S/4 Validation</div>
+          <div class="sys-badges"><span class="badge cat">VALIDATION</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">S/4HANA validation. ALE/IDoc distribution.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-v11.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (V11MDT100)</span></div>
+        </div>
+      </div>
+
+      <!-- SOLUTION MANAGER -->
+      <div class="sys-card cat-solman" data-search="sbp solman production solution manager hq-sap-sbp trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-yellow)">SBP &mdash; SolMan Production</div>
+          <div class="sys-badges"><span class="badge cat">SOLUTION MANAGER</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Solution Manager Production. Trusted RFC (3 bidir). Also hosts ADS (Adobe Document Services) and SLD.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-sbp.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">200</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">7 (4 out + 3 trusted)</span></div>
+          <div class="detail"><span class="lbl">Services</span><span class="val">ADS, SLD_DS_HTTP, SLD_DS_TARGET</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-solman" data-search="sma solman qa hq-sap-sma trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-yellow)">SMA &mdash; SolMan QA</div>
+          <div class="sys-badges"><span class="badge cat">SOLUTION MANAGER</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Solution Manager QA. Trusted RFC (3 bidir).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-sma.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">200</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">4 (1 out + 3 trusted)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-solman" data-search="smp solman dev cua hq-sap-smp trusted">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-yellow)">SMP &mdash; SolMan Dev</div>
+          <div class="sys-badges"><span class="badge cat">SOLUTION MANAGER</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Solution Manager Development. Trusted RFC (4 bidir). Central User Admin (CUA).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-SMP</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">200, 500</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">5 (1 out + 4 trusted)</span></div>
+          <div class="detail"><span class="lbl">Users</span><span class="val">SMB_P01, CUA_P01</span></div>
+        </div>
+      </div>
+
+      <!-- BW / ANALYTICS -->
+      <div class="sys-card cat-bw" data-search="brp bw reporting analytics hq-sap-brp rsinfo rsrqst idoc">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-teal)">BRP &mdash; BW Reporting</div>
+          <div class="sys-badges"><span class="badge cat">BW/ANALYTICS</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">BW Reporting/Production. Highest IDoc volume: 9,399 RSINFO outbound, 2,462 RSRQST inbound.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-BRP</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">370</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (BRPCLNT370)</span></div>
+          <div class="detail"><span class="lbl">IDocs OUT</span><span class="val">9,399 RSINFO (BW data transfer)</span></div>
+          <div class="detail"><span class="lbl">IDocs IN</span><span class="val">2,462 RSRQST (BW requests)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-bw" data-search="bwd bw development hq-sap-bwd">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-teal)">BWD &mdash; BW Development</div>
+          <div class="sys-badges"><span class="badge cat">BW/ANALYTICS</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">BW Development. ALE/IDoc distribution.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-BWD</span></div>
+          <div class="detail"><span class="lbl">Client</span><span class="val">370</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (BWDMDT370)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-bw" data-search="bwp bw production hq-sap-bwp">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-teal)">BWP &mdash; BW Production</div>
+          <div class="sys-badges"><span class="badge cat">BW/ANALYTICS</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">BW Production. ALE/IDoc distribution.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">hq-sap-bwp.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (BWPMDT370)</span></div>
+        </div>
+      </div>
+
+      <!-- EXTERNAL SERVICES -->
+      <div class="sys-card cat-ext" data-search="fiori gateway fabsprd odata bsp http launchpad ess mss">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">Fiori Gateway &mdash; fabsprd1-4</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">4 Fiori frontend servers (fabsprd1-4). Hosts ALL Fiori/UI5 apps, ESS/MSS, Launchpad. 23 RFC (16 HTTP connections). If down: ALL Fiori apps unavailable.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Hosts</span><span class="val">fabsprd1, fabsprd2, fabsprd3, fabsprd4</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">External Program (G)</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">23 destinations (GUID-based)</span></div>
+          <div class="detail"><span class="lbl">Critical</span><span class="val">YES &mdash; all Fiori apps depend on this</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="mulesoft integration api idoc rfc server inbound">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">MuleSoft &mdash; Integration Platform</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-both">&#8596; BIDIR</span></div>
+        </div>
+        <div class="sys-desc">Integration middleware. Outbound: MULESOFT_PROD (ExtPrg). Inbound: MULESOFT_P01_IDOC (RFC server registration = MuleSoft calls P01). Handles PROJECT02 IDocs (4,420 PS master data).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Outbound</span><span class="val">MULESOFT_PROD (type G)</span></div>
+          <div class="detail"><span class="lbl">Inbound</span><span class="val">MULESOFT_P01_IDOC (type T, RFC server)</span></div>
+          <div class="detail"><span class="lbl">IDoc Partner</span><span class="val">MULE_PROD: 4,420 PROJECT02 IDocs</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="aws cloud s3 ec2 storage csi amazonaws">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">AWS &mdash; Cloud Storage</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Amazon Web Services. CSI prefix = Cloud Storage Integration. Port 80 (HTTP, not HTTPS) suggests legacy or inactive.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">S3</span><span class="val">CSI_AWS_S3 &rarr; s3.amazonaws.com:80</span></div>
+          <div class="detail"><span class="lbl">EC2</span><span class="val">CSI_AWS_EC2 &rarr; ec2.amazonaws.com:80</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">External Program (G)</span></div>
+          <div class="detail"><span class="lbl">Note</span><span class="val">Port 80 (no HTTPS) &mdash; may be legacy</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="unjspf unicc pension fund xi interface">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">UNJSPF / UNICC &mdash; Pension Fund</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">UN Joint Staff Pension Fund via UNICC (UN computing centre). Two connections: RFC + HTTP/XI.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">RFC</span><span class="val">UNJSPF_INTERFACE1 (type G)</span></div>
+          <div class="detail"><span class="lbl">HTTP</span><span class="val">UNICC_XI (type H)</span></div>
+          <div class="detail"><span class="lbl">Host</span><span class="val">unjspfwdp1.sap.unicc.org</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="sap support oss portal saprouter notes">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">SAP Support &mdash; Portal + OSS</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">SAP Support via HTTP (portal, note downloads, parcelbox) and via SAPRouter (SAPOSS, SAPNET_RFC, SDCC_OSS).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">HTTP</span><span class="val">apps.support.sap.com, notesdownloads.sap.com</span></div>
+          <div class="detail"><span class="lbl">SAPRouter</span><span class="val">/H/192.168.1.133/.../oss001</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">7 (3 HTTP + 4 ABAP via router)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="role management provisioning svc-prod-role unesco">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">Role Mgmt &mdash; Provisioning Service</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">UNESCO internal role provisioning service. External program destination.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">svc-prod-role.hq.int.unesco.org</span></div>
+          <div class="detail"><span class="lbl">Dest</span><span class="val">005056BE59091ED9BEFB8CB619545146</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">External Program (G)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-ext" data-search="harwich01 rcc grid engine batch compute">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-cyan)">Harwich01 &mdash; Grid Engine</div>
+          <div class="sys-badges"><span class="badge cat">EXTERNAL</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">RCC Grid Engine for distributed processing. WSRF web service on port 55000. Manages O10N output jobs.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">harwich01:55000</span></div>
+          <div class="detail"><span class="lbl">Dest</span><span class="val">RCC_GRID_ENGINE</span></div>
+          <div class="detail"><span class="lbl">Service</span><span class="val">/wsrf/services/sap/grid/apps/O10NManager</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">External Program (G)</span></div>
+        </div>
+      </div>
+
+      <!-- INFRASTRUCTURE -->
+      <div class="sys-card cat-infra" data-search="a01 app server infrastructure ale idoc">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">A01 &mdash; App Server 01</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Application server for P01. ALE/IDoc distribution.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">Part of P01 cluster</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">3 (A01LOGON, A01MDT350)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="a11 app server infrastructure">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">A11 &mdash; App Server 11</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Additional P01 application server.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">1 (A11MDT100)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="ldcistm walldorf sap terminology glossary">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">LDCISTM &mdash; SAP Walldorf</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">SAP Walldorf data center. SAP Terminology services (SAPTERM_RFC_DIALOG, GLOSSARY_LINK).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">ldcistm.wdf.sap.corp</span></div>
+          <div class="detail"><span class="lbl">#RFC</span><span class="val">4</span></div>
+          <div class="detail"><span class="lbl">Users</span><span class="val">TERM_RFC, TERM_RFC_DIA, GLOS_RFC</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="sqlp01 sql server database hq-sqlp01">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">SQLP01 &mdash; SQL Server DB</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">P01's underlying SQL Server database server.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SQLP01</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">Internal (I)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="t01 transport domain controller tms">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">T01 &mdash; Transport Controller</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Transport Domain Controller. Manages DOMAIN_P01 (7 systems: D01, P01, TS1, TS3, V01 + VDE, VRT).</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-T01</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">Internal (I)</span></div>
+          <div class="detail"><span class="lbl">Domain</span><span class="val">DOMAIN_P01</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="irv unknown system hq-sap-irv">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">IRV &mdash; Unknown System</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">Unknown SAP system. Internal connection, purpose not yet identified.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-IRV</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">Internal (I)</span></div>
+          <div class="detail"><span class="lbl">Status</span><span class="val">Unknown &mdash; needs investigation</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-infra" data-search="optserver output management print o10n mip01 inbound">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">OPTSERVER &mdash; Output Management</div>
+          <div class="sys-badges"><span class="badge cat">INFRASTRUCTURE</span><span class="badge dir-in">&#8592; INBOUND</span></div>
+        </div>
+        <div class="sys-desc">MIP Output Server for print scheduling and distribution. Runs mipopsvr.exe. RFC server registration = inbound to P01.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">o10n</span></div>
+          <div class="detail"><span class="lbl">Dest</span><span class="val">OPTSERVER_MIP01</span></div>
+          <div class="detail"><span class="lbl">Executable</span><span class="val">f:\apoopt\mip\dev\mipopsvr.exe</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">TCP/IP (T) &mdash; RFC server = inbound</span></div>
+        </div>
+      </div>
+
+      <!-- DATABASE CONNECTIONS -->
+      <div class="sys-card cat-db" data-search="tulip database dbcon sql server hq-db-ag-app">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-green)">TULIP &mdash; External Database</div>
+          <div class="sys-badges"><span class="badge cat">DBCON</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">HR/Payroll integration database. P01 syncs manager data &amp; leave management. Class YCL_HR_TULIP_DATA, method GET_DATA_FROM_TULIP. <strong style="color:var(--neon-red)">93% job failure rate (14/15 failed).</strong></div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-DB-AG-APP</span></div>
+          <div class="detail"><span class="lbl">DBMS</span><span class="val">MS SQL Server (MSS)</span></div>
+          <div class="detail"><span class="lbl">Database</span><span class="val">Tulip</span></div>
+          <div class="detail"><span class="lbl">Job</span><span class="val">YHR_MANAGER_FROM_TULIP_UPDATE (14 failed / 1 ok)</span></div>
+          <div class="detail"><span class="lbl">ABAP Class</span><span class="val">YCL_HR_TULIP_DATA (pkg ZHR_DEV)</span></div>
+          <div class="detail"><span class="lbl">Type Def</span><span class="val">YTTHR_TULIP_LEAVE</span></div>
+          <div class="detail"><span class="lbl">Transports</span><span class="val">86 object references</span></div>
+          <div class="detail"><span class="lbl">Status</span><span class="val" style="color:var(--neon-red)">ACTIVE but failing &mdash; needs investigation</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-db" data-search="unesdir directory database dbcon sql server hq-db-ag-app">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-green)">UNESDIR &mdash; UNESCO Directory DB</div>
+          <div class="sys-badges"><span class="badge cat">DBCON</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">LDAP/Active Directory sync. Email creation from directory + staff data download. <strong style="color:var(--neon-red)">93% job failure rate (28/30 failed).</strong></div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-DB-AG-APP</span></div>
+          <div class="detail"><span class="lbl">DBMS</span><span class="val">MS SQL Server (MSS)</span></div>
+          <div class="detail"><span class="lbl">Database</span><span class="val">UNESDIR_ID</span></div>
+          <div class="detail"><span class="lbl">Jobs</span><span class="val">YHR_CREATE_MAIL_FROM_UNESDIR (14F/1ok), ZLFNA1_DOWNLOAD_FOR_UNESDIR (14F/1ok)</span></div>
+          <div class="detail"><span class="lbl">ABAP</span><span class="val">YCL_HR_UNESDIR_UTIL, Z_GET_CERTIF_OFFICER_UNESDIR</span></div>
+          <div class="detail"><span class="lbl">Types</span><span class="val">ZUNESDIR_RESLDAP_FILTER_TAB, ZUNESDIR_RESMESSAGE_TAB, +2</span></div>
+          <div class="detail"><span class="lbl">Transports</span><span class="val">110+ object references</span></div>
+          <div class="detail"><span class="lbl">Status</span><span class="val" style="color:var(--neon-red)">ACTIVE but failing &mdash; needs investigation</span></div>
+        </div>
+      </div>
+
+      <!-- LEGACY / VIRTUAL -->
+      <div class="sys-card cat-legacy" data-search="bcu budget control system 2018 sandbox konakov legacy">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">BCU &mdash; Budget Control System</div>
+          <div class="sys-badges"><span class="badge cat">LEGACY</span><span class="badge dir-out">P01 &rarr;</span></div>
+        </div>
+        <div class="sys-desc">SAP system used in 2018 BCS project. 598 transport objects (291 roles, FM/PS programs: YFM1_BCS, YPS3_BCS). Consultants: I_KONAKOV, C_ISAIA. Likely decommissioned.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Host</span><span class="val">HQ-SAP-BCU</span></div>
+          <div class="detail"><span class="lbl">SysNr</span><span class="val">00</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">Internal (I)</span></div>
+          <div class="detail"><span class="lbl">Transports</span><span class="val">10 BCSK* (2018-04 to 2018-05)</span></div>
+          <div class="detail"><span class="lbl">Objects</span><span class="val">598 (291 roles, 54 table entries, 44 variants)</span></div>
+          <div class="detail"><span class="lbl">Status</span><span class="val">Likely decommissioned (2018 project)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-legacy" data-search="vde virtual development transport tms domain">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">VDE &mdash; Virtual Development</div>
+          <div class="sys-badges"><span class="badge cat">VIRTUAL (TMS)</span></div>
+        </div>
+        <div class="sys-desc">Virtual system in DOMAIN_P01 transport landscape. Type V in TMSCSYS. Used for transport routing.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Domain</span><span class="val">DOMAIN_P01</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">V (Virtual)</span></div>
+        </div>
+      </div>
+
+      <div class="sys-card cat-legacy" data-search="vrt virtual runtime transport tms domain">
+        <div class="sys-head">
+          <div class="sys-name" style="color:var(--neon-gray)">VRT &mdash; Virtual Runtime</div>
+          <div class="sys-badges"><span class="badge cat">VIRTUAL (TMS)</span></div>
+        </div>
+        <div class="sys-desc">Virtual system in DOMAIN_P01 transport landscape. Type V in TMSCSYS. Used for transport routing.</div>
+        <div class="sys-details">
+          <div class="detail"><span class="lbl">Domain</span><span class="val">DOMAIN_P01</span></div>
+          <div class="detail"><span class="lbl">Type</span><span class="val">V (Virtual)</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DIRECTION MAP -->
+  <div class="panel" id="panel-directions">
+    <h3 style="margin-bottom:16px;color:var(--white);">Connection Direction Map</h3>
+    <table>
+      <tr>
+        <th>System</th><th>Category</th><th style="text-align:center">OUT<br><span style="font-weight:400;font-size:0.8em">P01 &rarr;</span></th>
+        <th style="text-align:center">IN<br><span style="font-weight:400;font-size:0.8em">&rarr; P01</span></th>
+        <th style="text-align:center">BIDIR<br><span style="font-weight:400;font-size:0.8em">&#8596;</span></th>
+        <th>Direction</th><th>Key Destinations</th>
+      </tr>
+      <tr><td class="mono">Fiori GW</td><td>External</td><td class="mono" style="text-align:center">16</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>fabsprd1-4 (23 GUID-based dests)</td></tr>
+      <tr><td class="mono">D01</td><td>Development</td><td class="mono" style="text-align:center">7</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">1</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>D01MDT350, TRUSTING@D01, TMSADM, DSM5</td></tr>
+      <tr><td class="mono">V01</td><td>Validation</td><td class="mono" style="text-align:center">6</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">1</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>V01MDT350, TRUSTING@V01, TMSADM, DSM5</td></tr>
+      <tr><td class="mono">SBP</td><td>SolMan Prod</td><td class="mono" style="text-align:center">4</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">3</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>SM_SBP*, TRUSTING@SBP, ADS, SLD</td></tr>
+      <tr><td class="mono">TS1</td><td>Test</td><td class="mono" style="text-align:center">6</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">1</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>BRUCLNT370, TRUSTING@TS1, TMSADM, DSM5</td></tr>
+      <tr><td class="mono">TS3</td><td>Test</td><td class="mono" style="text-align:center">5</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">1</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>TRUSTING@TS3, TMSADM, DSM5</td></tr>
+      <tr><td class="mono">SMP</td><td>SolMan Dev</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">4</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>SM_SMP*, TRUSTING@SMP, TRUSTING_SYSTEM</td></tr>
+      <tr><td class="mono">SMA</td><td>SolMan QA</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">3</td><td><span class="dir-arrow both">&#8596;</span> Bidirectional</td><td>SM_SMA*, TRUSTING@SMA</td></tr>
+      <tr><td class="mono">SAP Walldorf</td><td>Infrastructure</td><td class="mono" style="text-align:center">4</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>SAPTERM_RFC_*, GLOSSARY_LINK</td></tr>
+      <tr><td class="mono">SAP Support</td><td>External</td><td class="mono" style="text-align:center">7</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>SAP-SUPPORT_*, SAPOSS, SAPNET, SDCC</td></tr>
+      <tr><td class="mono">P11</td><td>Production</td><td class="mono" style="text-align:center">4</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>P11MDT100, P11MDT100-2, P11OLD</td></tr>
+      <tr><td class="mono">MuleSoft</td><td>External</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow both">&#8596;</span> Both</td><td>MULESOFT_PROD (out), MULESOFT_P01_IDOC (in)</td></tr>
+      <tr><td class="mono">BRP</td><td>BW</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow both">&#8596;</span> Both (IDoc)</td><td>BRPCLNT370 + IDoc: 9.4K out, 2.5K in</td></tr>
+      <tr><td class="mono">TS2</td><td>Test</td><td class="mono" style="text-align:center">2</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>TMSADM, TMSSUP</td></tr>
+      <tr><td class="mono">TS4</td><td>Test</td><td class="mono" style="text-align:center">3</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>TMSADM, TMSSUP</td></tr>
+      <tr><td class="mono">AWS</td><td>External</td><td class="mono" style="text-align:center">2</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>CSI_AWS_S3, CSI_AWS_EC2</td></tr>
+      <tr><td class="mono">UNJSPF</td><td>External</td><td class="mono" style="text-align:center">2</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>UNJSPF_INTERFACE1, UNICC_XI</td></tr>
+      <tr><td class="mono">BWD</td><td>BW</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>BWDMDT370</td></tr>
+      <tr><td class="mono">BWP</td><td>BW</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>BWPMDT370</td></tr>
+      <tr><td class="mono">D11</td><td>Development</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>D11MDT100</td></tr>
+      <tr><td class="mono">V11</td><td>Validation</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>V11MDT100</td></tr>
+      <tr><td class="mono">OPTSERVER</td><td>Infrastructure</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow in">&larr;</span> Inbound</td><td>OPTSERVER_MIP01 (RFC server)</td></tr>
+      <tr><td class="mono">TULIP</td><td>DBCON</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> DBCON</td><td>HQ-DB-AG-APP / Tulip (MSS)</td></tr>
+      <tr><td class="mono">UNESDIR</td><td>DBCON</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> DBCON</td><td>HQ-DB-AG-APP / UNESDIR_ID (MSS)</td></tr>
+      <tr><td class="mono">Role Mgmt</td><td>External</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>svc-prod-role.hq.int.unesco.org</td></tr>
+      <tr><td class="mono">Harwich01</td><td>External</td><td class="mono" style="text-align:center">1</td><td class="mono" style="text-align:center">0</td><td class="mono" style="text-align:center">0</td><td><span class="dir-arrow out">&rarr;</span> Outbound</td><td>RCC_GRID_ENGINE</td></tr>
+    </table>
+  </div>
+
+  <!-- INTEGRATION TYPES -->
+  <div class="panel" id="panel-integration">
+    <h3 style="margin-bottom:16px;color:var(--white);">Integration Types Discovered</h3>
+
+    <div class="sys-card cat-ext" style="margin-bottom:16px;">
+      <h3 style="color:var(--neon-blue);margin-bottom:12px;">1. RFC Destinations (RFCDES) &mdash; 239 total</h3>
+      <table>
+        <tr><th>Type Code</th><th>Description</th><th>Count</th><th>Direction</th><th>Examples</th></tr>
+        <tr><td class="mono">3</td><td>ABAP (SAP-to-SAP)</td><td class="mono">75</td><td>Outbound / Bidirectional</td><td>D01MDT350, TRUSTING@D01, TMSADM@*</td></tr>
+        <tr><td class="mono">G</td><td>External Program</td><td class="mono">38</td><td>Outbound</td><td>Fiori GW (fabsprd*), CSI_AWS_*, RCC_GRID_ENGINE</td></tr>
+        <tr><td class="mono">T</td><td>TCP/IP (RFC server)</td><td class="mono">50</td><td>Inbound (server calls P01)</td><td>BOC_INVOICE_WF, MULESOFT_P01_IDOC, OPTSERVER</td></tr>
+        <tr><td class="mono">H</td><td>HTTP/HTTPS</td><td class="mono">2</td><td>Outbound</td><td>UNICC_XI, SAP-SUPPORT_PORTAL</td></tr>
+        <tr><td class="mono">I</td><td>Internal</td><td class="mono">68</td><td>Self/Internal</td><td>P01 app servers, HQ-SAP-BCU, HQ-SAP-IRV</td></tr>
+        <tr><td class="mono">X</td><td>Queue/Recorder</td><td class="mono">3</td><td>Self</td><td>RECORDER, SAPGUI_QUEUE</td></tr>
+        <tr><td class="mono">L</td><td>Logical</td><td class="mono">2</td><td>Self</td><td>WORKFLOW_LOCAL_000, WORKFLOW_LOCAL_350</td></tr>
+      </table>
+    </div>
+
+    <div class="sys-card cat-ext" style="margin-bottom:16px;">
+      <h3 style="color:var(--neon-cyan);margin-bottom:12px;">2. IDocs / ALE (EDIDC) &mdash; 19,400 total</h3>
+      <table>
+        <tr><th>Direction</th><th>Partner</th><th>Message Type</th><th>IDoc Type</th><th>Count</th></tr>
+        <tr><td><span class="dir-arrow out">&rarr;</span> OUT</td><td class="mono">BRPCLNT370 (BRP)</td><td>RSINFO</td><td>RSINFO</td><td class="mono">9,399</td></tr>
+        <tr><td><span class="dir-arrow out">&rarr;</span> OUT</td><td class="mono">MULE_PROD (MuleSoft)</td><td>PROJECT</td><td>PROJECT02</td><td class="mono">4,420</td></tr>
+        <tr><td><span class="dir-arrow in">&larr;</span> IN</td><td class="mono">BRPCLNT370 (BRP)</td><td>RSRQST</td><td>RSREQUST</td><td class="mono">2,462</td></tr>
+        <tr><td><span class="dir-arrow out">&rarr;</span> OUT</td><td class="mono">D01MDT350 (D01)</td><td>EXCHANGE_RATE</td><td>EXCHANGE_RATE01</td><td class="mono">494</td></tr>
+        <tr><td><span class="dir-arrow out">&rarr;</span> OUT</td><td class="mono">V01MDT350 (V01)</td><td>EXCHANGE_RATE</td><td>EXCHANGE_RATE01</td><td class="mono">494</td></tr>
+      </table>
+    </div>
+
+    <div class="sys-card cat-ext" style="margin-bottom:16px;">
+      <h3 style="color:var(--neon-green);margin-bottom:12px;">3. Database Connections (DBCON) &mdash; 2 total</h3>
+      <table>
+        <tr><th>Connection</th><th>DBMS</th><th>Host</th><th>Database</th><th>Purpose</th></tr>
+        <tr><td class="mono">TULIP</td><td>MS SQL Server</td><td class="mono">HQ-DB-AG-APP</td><td class="mono">Tulip</td><td>Tulip application data</td></tr>
+        <tr><td class="mono">UNESDIR</td><td>MS SQL Server</td><td class="mono">HQ-DB-AG-APP</td><td class="mono">UNESDIR_ID</td><td>UNESCO staff directory</td></tr>
+      </table>
+    </div>
+
+    <div class="sys-card cat-ext" style="margin-bottom:16px;">
+      <h3 style="color:var(--neon-yellow);margin-bottom:12px;">4. ICF Services (ICFSERVICE) &mdash; 6,477 total</h3>
+      <p style="font-size:0.8em;color:var(--muted);line-height:1.6;">
+        5,822 active HTTP endpoints exposed BY P01 (inbound). These are how external systems call P01 via HTTP.<br>
+        Key paths: /sap/opu/odata (OData/Fiori), /sap/bc/bsp (BSP/UI5), /sap/bc/adt (ADT dev tools), /sap/bc/gui/sap/its/webgui (WebGUI).<br>
+        Notable active services: HL7_CONNECTOR, HTTP_CONNECTOR.
+      </p>
+    </div>
+
+    <div class="sys-card cat-ext">
+      <h3 style="color:var(--neon-purple);margin-bottom:12px;">5. Transport Domain (TMSCSYS) &mdash; 7 systems</h3>
+      <table>
+        <tr><th>System</th><th>Domain</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="mono">P01</td><td class="mono">DOMAIN_P01</td><td>R (Real)</td><td>Production ECC</td></tr>
+        <tr><td class="mono">D01</td><td class="mono">DOMAIN_P01</td><td>R (Real)</td><td>ECC Development</td></tr>
+        <tr><td class="mono">TS1</td><td class="mono">DOMAIN_P01</td><td>R (Real)</td><td>Test System 1</td></tr>
+        <tr><td class="mono">TS3</td><td class="mono">DOMAIN_P01</td><td>R (Real)</td><td>Test System 3</td></tr>
+        <tr><td class="mono">V01</td><td class="mono">DOMAIN_P01</td><td>R (Real)</td><td>ECC Validation</td></tr>
+        <tr><td class="mono">VDE</td><td class="mono">DOMAIN_P01</td><td>V (Virtual)</td><td>Virtual Development</td></tr>
+        <tr><td class="mono">VRT</td><td class="mono">DOMAIN_P01</td><td>V (Virtual)</td><td>Virtual Runtime</td></tr>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// Search
+const search = document.getElementById('sysSearch');
+if (search) {
+  search.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.sys-card').forEach(card => {
+      const text = (card.textContent + ' ' + (card.dataset.search || '')).toLowerCase();
+      card.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+}
+</script>
+</body>
+</html>

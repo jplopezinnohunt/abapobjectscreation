@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Operations — Support Reference</title>
+<style>
+:root {
+  --bg: #080b12; --surface: #0c1018; --card: #111827;
+  --border: #1a2540; --border-glow: #1e3a5f;
+  --text: #c8d6e5; --muted: #4a5f80; --white: #eef2f7;
+  --neon-blue: #4f8ef7; --neon-cyan: #22d3ee; --neon-green: #22c55e;
+  --neon-orange: #fb923c; --neon-red: #ef4444; --neon-purple: #a78bfa;
+  --neon-yellow: #f59e0b; --neon-teal: #2dd4bf; --neon-gray: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.header { background: linear-gradient(180deg, #0e1525 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.header h1 { font-size: 1.2em; font-weight: 700; color: var(--white); }
+.header h1 span { color: var(--neon-blue); }
+.header-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.hstat { text-align: center; }
+.hstat .v { font-size: 1.1em; font-weight: 800; font-family: 'Consolas', monospace; }
+.hstat .l { font-size: 0.6em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.header-links { font-size: 0.75em; display: flex; gap: 16px; flex-wrap: wrap; }
+.header-links a { color: var(--neon-cyan); text-decoration: none; }
+.header-links a:hover { text-decoration: underline; }
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px 32px 80px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+.tab { padding: 10px 20px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-size: 0.85em; font-weight: 600; white-space: nowrap; transition: all 0.2s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--neon-blue); border-bottom-color: var(--neon-blue); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* KPI Cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; text-align: center; transition: all 0.2s; }
+.kpi:hover { border-color: var(--border-glow); }
+.kpi .kv { font-size: 1.6em; font-weight: 800; font-family: 'Consolas', monospace; }
+.kpi .kl { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 4px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-bottom: 20px; }
+th { background: rgba(79,142,247,0.08); color: var(--neon-blue); text-align: left; padding: 8px 12px; border: 1px solid var(--border); font-weight: 600; }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover td { background: rgba(79,142,247,0.03); }
+.mono { font-family: 'Consolas', monospace; font-size: 0.95em; }
+
+/* Section headers */
+.section-title { font-size: 1em; font-weight: 700; color: var(--white); margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.section-title:first-child { margin-top: 0; }
+.section-subtitle { font-size: 0.85em; font-weight: 600; color: var(--neon-cyan); margin: 20px 0 10px; }
+.section-note { font-size: 0.75em; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+
+/* Bar chart */
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.bar-label { min-width: 36px; font-family: 'Consolas', monospace; font-size: 0.8em; font-weight: 700; color: var(--white); text-align: right; }
+.bar-track { flex: 1; height: 22px; background: rgba(255,255,255,0.03); border-radius: 4px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 0.7em; font-family: 'Consolas', monospace; color: var(--white); font-weight: 600; min-width: fit-content; }
+.bar-count { min-width: 70px; font-family: 'Consolas', monospace; font-size: 0.75em; color: var(--muted); text-align: right; }
+
+/* Group cards */
+.group-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+.group-card:hover { border-color: var(--border-glow); }
+.group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.group-name { font-size: 0.9em; font-weight: 700; color: var(--white); }
+.group-count { font-family: 'Consolas', monospace; font-size: 0.85em; font-weight: 700; }
+.group-desc { font-size: 0.75em; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
+/* RFC pills */
+.rfc-group { margin-bottom: 20px; }
+.rfc-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rfc-pill { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.7em; font-family: 'Consolas', monospace; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); }
+
+/* Badge */
+.badge { font-size: 0.65em; padding: 2px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge-blue { background: rgba(79,142,247,0.15); color: var(--neon-blue); }
+.badge-green { background: rgba(34,197,94,0.15); color: var(--neon-green); }
+.badge-orange { background: rgba(251,146,60,0.15); color: var(--neon-orange); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--neon-red); }
+.badge-purple { background: rgba(167,139,250,0.15); color: var(--neon-purple); }
+.badge-cyan { background: rgba(34,211,238,0.15); color: var(--neon-cyan); }
+
+/* Volume table highlight */
+.vol-high td:nth-child(2) { color: var(--neon-blue); font-weight: 700; }
+
+@media (max-width: 700px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <div>
+    <h1><span>&#9670;</span> Finance Operations &mdash; Support Reference</h1>
+    <div class="header-links" style="margin-top:8px;">
+      <a href="unesco_sap_landing.html">Landing Page</a>
+      <a href="payment_bcm_companion.html">Payment &amp; BCM Companion</a>
+      <a href="bank_statement_ebs_companion.html">Bank Statement &amp; EBS</a>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="v" style="color:var(--neon-blue)">9</div><div class="l">Co. Codes</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-green)">121</div><div class="l">Jobs</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-orange)">56</div><div class="l">Doc Types</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-cyan)">1.67M</div><div class="l">Documents</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(0)">Overview</div>
+  <div class="tab" onclick="switchTab(1)">Periodic Jobs</div>
+  <div class="tab" onclick="switchTab(2)">Document Types</div>
+  <div class="tab" onclick="switchTab(3)">Configuration</div>
+  <div class="tab" onclick="switchTab(4)">RFC API Surface</div>
+  <div class="tab" onclick="switchTab(5)">Volume Reference</div>
+</div>
+
+<!-- ==================== TAB 0: OVERVIEW ==================== -->
+<div class="panel active" id="p0">
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kv" style="color:var(--neon-blue)">9</div><div class="kl">Company Codes</div></div>
+  <div class="kpi"><div class="kv" style="color:var(--neon-green)">121</div><div class="kl">FI Jobs Scheduled</div></div>
+  <div class="kpi"><div class="kv" style="color:var(--neon-orange)">56</div><div class="kl">Document Types</div></div>
+  <div class="kpi"><div class="kv" style="color:var(--neon-purple)">19</div><div class="kl">Config Tables</div></div>
+  <div class="kpi"><div class="kv" style="color:var(--neon-cyan)">942K</div><div class="kl">Payment Items (F110)</div></div>
+  <div class="kpi"><div class="kv" style="color:var(--neon-yellow)">1.67M</div><div class="kl">FI Documents (2024+)</div></div>
+</div>
+
+<div class="section-title">Company Codes</div>
+<table>
+<thead><tr><th>Code</th><th>Name</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="mono">UNES</td><td>UNESCO</td><td>Main entity &mdash; headquarters Paris</td></tr>
+<tr><td class="mono">IBE</td><td>UNESCO Inter. Bur. of Edu.</td><td>International Bureau of Education</td></tr>
+<tr><td class="mono">ICBA</td><td>Inst. Capacity Build. Afr.</td><td>Institute for Capacity Building in Africa</td></tr>
+<tr><td class="mono">ICTP</td><td>ICTP</td><td>International Centre for Theoretical Physics &mdash; Trieste</td></tr>
+<tr><td class="mono">IIEP</td><td>Int. Inst. for Edu. Plan.</td><td>International Institute for Educational Planning &mdash; Paris</td></tr>
+<tr><td class="mono">MGIE</td><td>Mahatma Gandhi Institute</td><td>Mahatma Gandhi Institute of Education</td></tr>
+<tr><td class="mono">UBO</td><td>UNESCO Brazilian Office</td><td>UNESCO Office in Brazil</td></tr>
+<tr><td class="mono">UIL</td><td>UNESCO Inst. Lifel. Learn.</td><td>UNESCO Institute for Lifelong Learning</td></tr>
+<tr><td class="mono">UIS</td><td>UNESCO Instit. for Stat.</td><td>UNESCO Institute for Statistics</td></tr>
+</tbody>
+</table>
+
+<div class="section-note">
+  For payment processing details, see <a href="payment_bcm_companion.html" style="color:var(--neon-cyan)">Payment &amp; BCM Companion</a>.
+  For bank statement and EBS operations, see <a href="bank_statement_ebs_companion.html" style="color:var(--neon-cyan)">Bank Statement &amp; EBS Companion</a>.
+</div>
+
+</div>
+
+<!-- ==================== TAB 1: PERIODIC JOBS ==================== -->
+<div class="panel" id="p1">
+
+<div class="section-title">FI Periodic Jobs &mdash; 121 Scheduled Jobs</div>
+<div class="section-note">Jobs extracted from SM37 analysis. Grouped by functional area. Run counts reflect 2024&ndash;2026 execution history.</div>
+
+<!-- Payment Runs -->
+<div class="group-card">
+  <div class="group-head">
+    <div class="group-name">Payment Runs (F110)</div>
+    <span class="badge badge-blue">Core</span>
+  </div>
+  <div class="group-desc">
+    Naming convention: <code style="color:var(--neon-cyan)">F110-YYYYMMDD-XXXX</code> where XXXX = payment variant.
+    Executed via transaction F110.
+  </div>
+  <table>
+  <thead><tr><th>Variant Pattern</th><th>Description</th><th>Scope</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">BP03, BPA03, BPB03</td><td>Standard payment &mdash; UNES</td><td>Headquarters</td></tr>
+  <tr><td class="mono">BPAY</td><td>Bulk payment processing</td><td>Multi-entity</td></tr>
+  <tr><td class="mono">BT03</td><td>Transfer payments</td><td>UNES</td></tr>
+  <tr><td class="mono">BLT11, BLT12</td><td>Letter of credit payments</td><td>UNES</td></tr>
+  <tr><td class="mono">BUBO, BUBO1</td><td>UBO-specific payment runs</td><td>UBO</td></tr>
+  <tr><td class="mono">BUIS1, BUIS2</td><td>UIS-specific payment runs</td><td>UIS</td></tr>
+  <tr><td class="mono">MPFF1, MOPF1</td><td>MGIE payment runs</td><td>MGIE</td></tr>
+  <tr><td class="mono">TC01&ndash;TC04</td><td>ICTP payment runs</td><td>ICTP</td></tr>
+  <tr><td class="mono">BE03</td><td>IBE payment runs</td><td>IBE</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<!-- Bank Statement Processing -->
+<div class="group-card">
+  <div class="group-head">
+    <div class="group-name">Bank Statement Processing (PRAA)</div>
+    <span class="badge badge-cyan">EBS</span>
+  </div>
+  <div class="group-desc">Automated bank statement import and posting. PRAA_SCHEDULE_BANK_ALL runs 16 times for all codes; individual jobs per company code.</div>
+  <table>
+  <thead><tr><th>Job Name</th><th>Runs</th><th>Scope</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">PRAA_SCHEDULE_BANK_ALL</td><td>16</td><td>All company codes</td></tr>
+  <tr><td class="mono">PRAA_UNES_ST_BANK</td><td>&mdash;</td><td>UNES</td></tr>
+  <tr><td class="mono">PRAA_UBO_ST_BANK</td><td>&mdash;</td><td>UBO</td></tr>
+  <tr><td class="mono">PRAA_IBE_ST_BANK</td><td>&mdash;</td><td>IBE</td></tr>
+  <tr><td class="mono">PRAA_ICBA_ST_BANK</td><td>&mdash;</td><td>ICBA</td></tr>
+  <tr><td class="mono">PRAA_ICTP_ST_BANK</td><td>&mdash;</td><td>ICTP</td></tr>
+  <tr><td class="mono">PRAA_IIEP_ST_BANK</td><td>&mdash;</td><td>IIEP</td></tr>
+  <tr><td class="mono">PRAA_MGIE_ST_BANK</td><td>&mdash;</td><td>MGIE</td></tr>
+  <tr><td class="mono">PRAA_UIL_ST_BANK</td><td>&mdash;</td><td>UIL</td></tr>
+  <tr><td class="mono">PRAA_UIS_ST_BANK</td><td>&mdash;</td><td>UIS</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<!-- Month-End -->
+<div class="group-card">
+  <div class="group-head">
+    <div class="group-name">Month-End / Closing</div>
+    <span class="badge badge-orange">Closing</span>
+  </div>
+  <div class="group-desc">Period closing statements generated per company code. Each runs ~16 times in extraction period.</div>
+  <table>
+  <thead><tr><th>Job Pattern</th><th>Runs</th><th>Scope</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_UNES</td><td>16</td><td>UNES</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_IBE</td><td>16</td><td>IBE</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_ICBA</td><td>16</td><td>ICBA</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_ICTP</td><td>16</td><td>ICTP</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_IIEP</td><td>16</td><td>IIEP</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_MGIE</td><td>16</td><td>MGIE</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_UBO</td><td>16</td><td>UBO</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_UIL</td><td>16</td><td>UIL</td></tr>
+  <tr><td class="mono">YFI_POST_CLOSING_STATEMENT_UIS</td><td>16</td><td>UIS</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<!-- Reconciliation -->
+<div class="group-card">
+  <div class="group-head">
+    <div class="group-name">Reconciliation</div>
+    <span class="badge badge-purple">Recon</span>
+  </div>
+  <div class="group-desc">Project data reconciliation per company code.</div>
+  <table>
+  <thead><tr><th>Job Pattern</th><th>Scope</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">{BUKRS}_CJEN_RECON_PROJ_DATA</td><td>Per company code</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<!-- Other FI Jobs -->
+<div class="group-card">
+  <div class="group-head">
+    <div class="group-name">Other FI Jobs</div>
+    <span class="badge badge-green">Operations</span>
+  </div>
+  <table>
+  <thead><tr><th>Job Name</th><th>Runs</th><th>Notes</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">PAYMENT STATUS REPORTS</td><td style="color:var(--neon-red);font-weight:700">1,389</td><td>Very high frequency &mdash; status monitoring</td></tr>
+  <tr><td class="mono">COUPA FI POSTING INTEGRATION</td><td>348</td><td>External procurement integration</td></tr>
+  <tr><td class="mono">AUTOMATIC CLEARING SAPF124</td><td>15</td><td>Automatic GL clearing program</td></tr>
+  <tr><td class="mono">VENDORMASTERUPDATE</td><td>15</td><td>Vendor master data sync</td></tr>
+  <tr><td class="mono">UBO_EMAIL_VENDOR_PAYMENT</td><td>15</td><td>UBO vendor payment notifications</td></tr>
+  <tr><td class="mono">RFFMAVC_HANA_VIEW</td><td>7</td><td>FM availability control HANA view refresh</td></tr>
+  <tr><td class="mono">Y_RFFMEP1OX</td><td>4</td><td>Custom FM payment program</td></tr>
+  <tr><td class="mono">YCOUPA_POSTING_MAIL</td><td>3</td><td>Coupa posting email notifications</td></tr>
+  <tr><td class="mono">SWWCLEAR</td><td>3</td><td>Workflow work item cleanup</td></tr>
+  </tbody>
+  </table>
+</div>
+
+</div>
+
+<!-- ==================== TAB 2: DOCUMENT TYPES ==================== -->
+<div class="panel" id="p2">
+
+<div class="section-title">Document Types &mdash; 56 Types in BKPF (2024+)</div>
+<div class="section-note">Distribution of 1,677,531 FI documents by document type. Horizontal bars proportional to count.</div>
+
+<div style="max-width:900px;">
+
+<div class="bar-row"><div class="bar-label">AB</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--neon-blue);">Accounting Doc</div></div><div class="bar-count">367,211</div></div>
+<div class="bar-row"><div class="bar-label">Z1</div><div class="bar-track"><div class="bar-fill" style="width:56.7%;background:var(--neon-purple);">Custom Type 1</div></div><div class="bar-count">208,229</div></div>
+<div class="bar-row"><div class="bar-label">WE</div><div class="bar-track"><div class="bar-fill" style="width:46.6%;background:var(--neon-green);">Goods Receipt</div></div><div class="bar-count">171,160</div></div>
+<div class="bar-row"><div class="bar-label">JV</div><div class="bar-track"><div class="bar-fill" style="width:40.2%;background:var(--neon-cyan);">Journal Voucher</div></div><div class="bar-count">147,705</div></div>
+<div class="bar-row"><div class="bar-label">RE</div><div class="bar-track"><div class="bar-fill" style="width:31.9%;background:var(--neon-orange);">Invoice Received</div></div><div class="bar-count">117,326</div></div>
+<div class="bar-row"><div class="bar-label">OP</div><div class="bar-track"><div class="bar-fill" style="width:28.5%;background:var(--neon-red);">Outgoing Payment</div></div><div class="bar-count">104,826</div></div>
+<div class="bar-row"><div class="bar-label">ZP</div><div class="bar-track"><div class="bar-fill" style="width:27.8%;background:var(--neon-teal);">Custom Payment</div></div><div class="bar-count">102,297</div></div>
+<div class="bar-row"><div class="bar-label">R1</div><div class="bar-track"><div class="bar-fill" style="width:23.8%;background:var(--neon-yellow);">Custom Receipt</div></div><div class="bar-count">87,312</div></div>
+<div class="bar-row"><div class="bar-label">KR</div><div class="bar-track"><div class="bar-fill" style="width:19.0%;background:var(--neon-blue);">Vendor Invoice</div></div><div class="bar-count">69,925</div></div>
+<div class="bar-row"><div class="bar-label">PP</div><div class="bar-track"><div class="bar-fill" style="width:11.7%;background:var(--neon-purple);">Payment Program</div></div><div class="bar-count">42,984</div></div>
+
+<div style="margin:20px 0 10px;font-size:0.8em;color:var(--muted);font-weight:600;">Remaining 46 Document Types</div>
+
+<div class="bar-row"><div class="bar-label">MF</div><div class="bar-track"><div class="bar-fill" style="width:11.4%;background:var(--neon-gray);">MF</div></div><div class="bar-count">42,000</div></div>
+<div class="bar-row"><div class="bar-label">TF</div><div class="bar-track"><div class="bar-fill" style="width:8.2%;background:var(--neon-gray);">TF</div></div><div class="bar-count">30,000</div></div>
+<div class="bar-row"><div class="bar-label">SC</div><div class="bar-track"><div class="bar-fill" style="width:7.9%;background:var(--neon-gray);">SC</div></div><div class="bar-count">29,000</div></div>
+<div class="bar-row"><div class="bar-label">IO</div><div class="bar-track"><div class="bar-fill" style="width:6.0%;background:var(--neon-gray);">IO</div></div><div class="bar-count">22,000</div></div>
+<div class="bar-row"><div class="bar-label">PS</div><div class="bar-track"><div class="bar-fill" style="width:4.1%;background:var(--neon-gray);">PS</div></div><div class="bar-count">15,000</div></div>
+<div class="bar-row"><div class="bar-label">TV</div><div class="bar-track"><div class="bar-fill" style="width:3.3%;background:var(--neon-gray);">TV</div></div><div class="bar-count">12,000</div></div>
+<div class="bar-row"><div class="bar-label">Z5</div><div class="bar-track"><div class="bar-fill" style="width:3.3%;background:var(--neon-gray);">Z5</div></div><div class="bar-count">12,000</div></div>
+<div class="bar-row"><div class="bar-label">FO</div><div class="bar-track"><div class="bar-fill" style="width:3.0%;background:var(--neon-gray);">FO</div></div><div class="bar-count">11,000</div></div>
+<div class="bar-row"><div class="bar-label">Z2</div><div class="bar-track"><div class="bar-fill" style="width:2.7%;background:var(--neon-gray);">Z2</div></div><div class="bar-count">10,000</div></div>
+<div class="bar-row"><div class="bar-label">KX</div><div class="bar-track"><div class="bar-fill" style="width:2.5%;background:var(--neon-gray);">KX</div></div><div class="bar-count">9,000</div></div>
+<div class="bar-row"><div class="bar-label">IP</div><div class="bar-track"><div class="bar-fill" style="width:2.5%;background:var(--neon-gray);">IP</div></div><div class="bar-count">9,000</div></div>
+<div class="bar-row"><div class="bar-label">IT</div><div class="bar-track"><div class="bar-fill" style="width:1.1%;background:var(--neon-gray);">IT</div></div><div class="bar-count">4,000</div></div>
+<div class="bar-row"><div class="bar-label">VC</div><div class="bar-track"><div class="bar-fill" style="width:0.8%;background:var(--neon-gray);">VC</div></div><div class="bar-count">3,000</div></div>
+<div class="bar-row"><div class="bar-label">Z6</div><div class="bar-track"><div class="bar-fill" style="width:0.8%;background:var(--neon-gray);">Z6</div></div><div class="bar-count">3,000</div></div>
+<div class="bar-row"><div class="bar-label">TO</div><div class="bar-track"><div class="bar-fill" style="width:0.8%;background:var(--neon-gray);">TO</div></div><div class="bar-count">3,000</div></div>
+
+</div>
+
+<div class="section-note" style="margin-top:16px;">
+  Top 10 document types account for ~75% of all FI documents.
+  AB (Accounting Document) is the single largest type at 21.9%.
+  OP+ZP combined = 207K payment documents &mdash; detailed analysis in <a href="payment_bcm_companion.html" style="color:var(--neon-cyan)">Payment Companion</a>.
+</div>
+
+</div>
+
+<!-- ==================== TAB 3: CONFIGURATION ==================== -->
+<div class="panel" id="p3">
+
+<div class="section-title">FI Configuration Tables &mdash; 19 Tables</div>
+<div class="section-note">Core configuration tables extracted to Gold DB. These define the operational parameters for all FI processes.</div>
+
+<table>
+<thead><tr><th>Table</th><th style="text-align:right">Rows</th><th>Purpose</th><th>Domain</th></tr></thead>
+<tbody>
+<tr><td class="mono">T001</td><td style="text-align:right" class="mono">9</td><td>Company Codes</td><td><span class="badge badge-blue">Master</span></td></tr>
+<tr><td class="mono">T012</td><td style="text-align:right" class="mono">211</td><td>House Banks</td><td><span class="badge badge-cyan">Banking</span></td></tr>
+<tr><td class="mono">T012K</td><td style="text-align:right" class="mono">402</td><td>House Bank Accounts</td><td><span class="badge badge-cyan">Banking</span></td></tr>
+<tr><td class="mono">T028B</td><td style="text-align:right" class="mono">169</td><td>EBS Posting Rules</td><td><span class="badge badge-green">EBS</span></td></tr>
+<tr><td class="mono">T028D</td><td style="text-align:right" class="mono">331</td><td>EBS Account Determination</td><td><span class="badge badge-green">EBS</span></td></tr>
+<tr><td class="mono">T028E</td><td style="text-align:right" class="mono">1,316</td><td>EBS External Transaction Codes</td><td><span class="badge badge-green">EBS</span></td></tr>
+<tr><td class="mono">T028G</td><td style="text-align:right" class="mono">1,025</td><td>EBS Transformation Rules</td><td><span class="badge badge-green">EBS</span></td></tr>
+<tr><td class="mono">T042</td><td style="text-align:right" class="mono">9</td><td>Payment Program Configuration</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042A</td><td style="text-align:right" class="mono">76</td><td>Payment Methods per Company Code</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042B</td><td style="text-align:right" class="mono">9</td><td>Payment Program Parameters</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042E</td><td style="text-align:right" class="mono">89</td><td>Payment Methods per Country</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042I</td><td style="text-align:right" class="mono">76</td><td>Payment Medium Programs</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042Z</td><td style="text-align:right" class="mono">263</td><td>Payment Method Supplements</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">T042Z_FULL</td><td style="text-align:right" class="mono">263</td><td>Payment Method Supplements (full extract)</td><td><span class="badge badge-orange">Payments</span></td></tr>
+<tr><td class="mono">TCURF</td><td style="text-align:right" class="mono">2,614</td><td>Currency Conversion Factors</td><td><span class="badge badge-purple">Currency</span></td></tr>
+<tr><td class="mono">TCURR</td><td style="text-align:right" class="mono">54,993</td><td>Exchange Rates</td><td><span class="badge badge-purple">Currency</span></td></tr>
+<tr><td class="mono">YBASUBST</td><td style="text-align:right" class="mono">752</td><td>Custom Business Area Substitution</td><td><span class="badge badge-red">Custom</span></td></tr>
+<tr><td class="mono">YTFI_BA_SUBST</td><td style="text-align:right" class="mono">129</td><td>Custom FI Business Area Substitution</td><td><span class="badge badge-red">Custom</span></td></tr>
+<tr><td class="mono">ZFI_PAYREL_EMAIL</td><td style="text-align:right" class="mono">2</td><td>Payment Release Email Configuration</td><td><span class="badge badge-red">Custom</span></td></tr>
+</tbody>
+</table>
+
+<div class="section-note">
+  EBS tables (T028*) define bank statement posting logic &mdash; see <a href="bank_statement_ebs_companion.html" style="color:var(--neon-cyan)">Bank Statement &amp; EBS Companion</a> for detailed analysis.<br>
+  Payment tables (T042*) define F110 payment program behavior &mdash; see <a href="payment_bcm_companion.html" style="color:var(--neon-cyan)">Payment &amp; BCM Companion</a>.
+</div>
+
+</div>
+
+<!-- ==================== TAB 4: RFC API SURFACE ==================== -->
+<div class="panel" id="p4">
+
+<div class="section-title">RFC API Surface &mdash; 124 Finance Function Modules</div>
+<div class="section-note">RFC-enabled function modules relevant to FI operations, grouped by sub-domain. These are the programmatic entry points for SAP finance automation.</div>
+
+<!-- SISTER -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">SISTER &mdash; Budget Transfers &amp; Fund Management</div>
+      <div class="group-count" style="color:var(--neon-blue)">47 FMs</div>
+    </div>
+    <div class="group-desc">UNESCO-specific budget transfer, expenditure reporting, and fund management modules. The largest RFC group in FI.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">ZSISTER_*</span>
+      <span class="rfc-pill">Budget transfers</span>
+      <span class="rfc-pill">Expenditure queries</span>
+      <span class="rfc-pill">Fund reservations</span>
+      <span class="rfc-pill">Allotment management</span>
+    </div>
+  </div>
+</div>
+
+<!-- CMT/Vendor -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">CMT / Vendor Master</div>
+      <div class="group-count" style="color:var(--neon-green)">29 FMs</div>
+    </div>
+    <div class="group-desc">Vendor lifecycle management: create, read, update, search, bank data maintenance. Used by Coupa integration and manual vendor management.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">Vendor CRUD</span>
+      <span class="rfc-pill">Vendor search</span>
+      <span class="rfc-pill">Bank data</span>
+      <span class="rfc-pill">Vendor blocking</span>
+      <span class="rfc-pill">Coupa sync</span>
+    </div>
+  </div>
+</div>
+
+<!-- FM/Budget -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">FM / Budget</div>
+      <div class="group-count" style="color:var(--neon-orange)">17 FMs</div>
+    </div>
+    <div class="group-desc">Fund reservations, budget line items, availability control. Core FM modules for budget consumption tracking.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">Fund reservations</span>
+      <span class="rfc-pill">Budget line items</span>
+      <span class="rfc-pill">Availability control</span>
+      <span class="rfc-pill">FMIFIIT queries</span>
+    </div>
+  </div>
+</div>
+
+<!-- CMT/Master Data -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">CMT / Master Data</div>
+      <div class="group-count" style="color:var(--neon-purple)">15 FMs</div>
+    </div>
+    <div class="group-desc">Cost centers, funds, GL accounts, WBS elements, exchange rates. Reference data APIs for cross-module consumption.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">Cost centers</span>
+      <span class="rfc-pill">Funds</span>
+      <span class="rfc-pill">GL accounts</span>
+      <span class="rfc-pill">WBS elements</span>
+      <span class="rfc-pill">Exchange rates</span>
+    </div>
+  </div>
+</div>
+
+<!-- FI/Finance -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">FI / Finance</div>
+      <div class="group-count" style="color:var(--neon-cyan)">10 FMs</div>
+    </div>
+    <div class="group-desc">Customer CRUD, bank reconciliation, VAT balance calculations. Direct FI document operations.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">Customer CRUD</span>
+      <span class="rfc-pill">Bank reconciliation</span>
+      <span class="rfc-pill">VAT balance</span>
+      <span class="rfc-pill">Document posting</span>
+    </div>
+  </div>
+</div>
+
+<!-- Banking/Validation -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">Banking / Validation</div>
+      <div class="group-count" style="color:var(--neon-teal)">5 FMs</div>
+    </div>
+    <div class="group-desc">IBAN validation, SWIFT code check, bank account verification. Used in payment processing and vendor master maintenance.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">IBAN check</span>
+      <span class="rfc-pill">SWIFT check</span>
+      <span class="rfc-pill">Bank account validation</span>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboards -->
+<div class="rfc-group">
+  <div class="group-card">
+    <div class="group-head">
+      <div class="group-name">Dashboards</div>
+      <div class="group-count" style="color:var(--neon-yellow)">1 FM</div>
+    </div>
+    <div class="group-desc">GRNI (Goods Received Not Invoiced) dashboard data API.</div>
+    <div class="rfc-pills">
+      <span class="rfc-pill">GRNI dashboard</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-note" style="margin-top:8px;">
+  Total: <strong style="color:var(--white)">124</strong> RFC-enabled function modules across 7 sub-domains.
+  SISTER group (47) reflects UNESCO's custom budget management layer.
+</div>
+
+</div>
+
+<!-- ==================== TAB 5: VOLUME REFERENCE ==================== -->
+<div class="panel" id="p5">
+
+<div class="section-title">Volume Reference &mdash; Capacity Planning</div>
+<div class="section-note">Key data volumes from Gold DB. Use these for sizing estimates, performance planning, and extraction scheduling.</div>
+
+<table class="vol-high">
+<thead><tr><th>Data Object</th><th style="text-align:right">Volume</th><th>Period</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>FI Documents (BKPF)</td><td style="text-align:right" class="mono">1,677,531</td><td>2024&ndash;2026</td><td>Gold DB</td></tr>
+<tr><td>Open Items GL (BSIS)</td><td style="text-align:right" class="mono">2,291,246</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Cleared Items GL (BSAS)</td><td style="text-align:right" class="mono">1,480,715</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>FM Documents (FMIFIIT)</td><td style="text-align:right" class="mono">2,070,523</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>FM Budget (FMIOI)</td><td style="text-align:right" class="mono">1,813,943</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Bank Recon Items (FEBRE)</td><td style="text-align:right" class="mono">964,055</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>F110 Payment Items (REGUH)</td><td style="text-align:right" class="mono">942,011</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Vendor Cleared (BSAK)</td><td style="text-align:right" class="mono">739,910</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>BCM Items (BNK_BATCH_ITEM)</td><td style="text-align:right" class="mono">600,042</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Bank Statement Items (FEBEP)</td><td style="text-align:right" class="mono">223,710</td><td>2024&ndash;2026</td><td>Gold DB</td></tr>
+<tr><td>Customer Cleared (BSAD)</td><td style="text-align:right" class="mono">211,201</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Exchange Rates (TCURR)</td><td style="text-align:right" class="mono">54,993</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>BCM Batches (BNK_BATCH_HEADER)</td><td style="text-align:right" class="mono">27,443</td><td>All</td><td>Gold DB</td></tr>
+<tr><td>Vendor Open (BSIK)</td><td style="text-align:right" class="mono">8,015</td><td>Current</td><td>Gold DB</td></tr>
+<tr><td>Customer Open (BSID)</td><td style="text-align:right" class="mono">4,677</td><td>Current</td><td>Gold DB</td></tr>
+<tr><td>Payment Docs (PAYR)</td><td style="text-align:right" class="mono">4,431</td><td>All</td><td>Gold DB</td></tr>
+</tbody>
+</table>
+
+<div class="section-note">
+  <strong style="color:var(--white)">Key ratios:</strong><br>
+  &bull; BSIS (open) vs BSAS (cleared) = 61% open &mdash; indicates large balance of uncleared GL items<br>
+  &bull; BSIK (8K open) vs BSAK (740K cleared) = vendor items clear efficiently<br>
+  &bull; REGUH (942K) vs PAYR (4.4K) = most payment items are proposals, not executed checks<br>
+  &bull; FEBEP (224K) vs FEBRE (964K) = ~4.3 recon entries per bank statement item<br>
+  &bull; Total FI data footprint: ~12.1M rows across all tables
+</div>
+
+</div>
+
+</div><!-- /container -->
+
+<script>
+function switchTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', j===i));
+  document.querySelectorAll('.panel').forEach((p,j) => p.classList.toggle('active', j===i));
+}
+</script>
+
+</body>
+</html>

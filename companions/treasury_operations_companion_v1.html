@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treasury Operations Companion &mdash; UNESCO SAP</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9;
+  --accent: #58a6ff; --green: #3fb950; --yellow: #d29922; --red: #f85149;
+  --purple: #bc8cff; --orange: #f0883e; --cyan: #39d2c0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+.header { background: linear-gradient(135deg, #1a2332 0%, #0d2137 100%); padding: 24px 32px; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 1.6em; color: #fff; margin-bottom: 4px; }
+.header .sub { color: #8b949e; font-size: 0.9em; }
+.tabs { display: flex; gap: 0; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
+.tab { padding: 12px 20px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.85em; transition: all 0.2s; }
+.tab:hover { color: var(--text); background: rgba(88,166,255,0.05); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.card h3 { color: var(--accent); margin-bottom: 12px; font-size: 1.1em; }
+.card h4 { color: var(--purple); margin: 16px 0 8px; font-size: 0.95em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+th { background: rgba(88,166,255,0.1); color: var(--accent); text-align: left; padding: 8px 12px; border: 1px solid var(--border); white-space: nowrap; }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover { background: rgba(88,166,255,0.05); }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.kpi .val { font-size: 1.8em; font-weight: 700; color: #fff; }
+.kpi .label { font-size: 0.8em; color: #8b949e; margin-top: 4px; }
+.flow-diagram { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'Courier New', monospace; font-size: 0.82em; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--text); }
+.highlight { color: var(--accent); font-weight: bold; }
+.highlight-green { color: var(--green); font-weight: bold; }
+.highlight-yellow { color: var(--yellow); font-weight: bold; }
+.highlight-red { color: var(--red); font-weight: bold; }
+.highlight-purple { color: var(--purple); font-weight: bold; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.badge-green { background: rgba(63,185,80,0.2); color: var(--green); }
+.badge-yellow { background: rgba(210,153,34,0.2); color: var(--yellow); }
+.badge-red { background: rgba(248,81,73,0.2); color: var(--red); }
+.badge-blue { background: rgba(88,166,255,0.2); color: var(--accent); }
+.badge-purple { background: rgba(188,140,255,0.2); color: var(--purple); }
+.chain-step { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.chain-box { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 12px 16px; min-width: 160px; text-align: center; }
+.chain-box.source { border-color: var(--accent); }
+.chain-box.transform { border-color: var(--purple); }
+.chain-box.result { border-color: var(--green); }
+.chain-box.clearing { border-color: var(--yellow); }
+.chain-arrow { color: #8b949e; font-size: 1.4em; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+.tier { border-left: 4px solid; padding-left: 16px; margin: 12px 0; }
+.tier-hq { border-color: var(--accent); }
+.tier-fo { border-color: var(--green); }
+.tier-tr { border-color: var(--purple); }
+.note { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 6px; padding: 12px; margin: 12px 0; font-size: 0.85em; }
+.note::before { content: "Note: "; font-weight: bold; color: var(--yellow); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 6px 0; font-size: 0.9em; }
+.checklist li::before { content: "\2610 "; color: var(--yellow); font-size: 1.1em; margin-right: 6px; }
+.checklist li.done::before { content: "\2611 "; color: var(--green); }
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <h1>Treasury Operations Companion</h1>
+  <div class="sub">UNESCO SAP Intelligence Platform &mdash; House Banks, EBS, Payments, Cash Management &mdash; UBA01 Report: CLOSED 2026-04-08</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-panel="overview">Overview</div>
+  <div class="tab" data-panel="house-bank-config">House Bank Config</div>
+  <div class="tab" data-panel="bank-statement">Bank Statement (EBS)</div>
+  <div class="tab" data-panel="payment">Payment</div>
+  <div class="tab" data-panel="cash-reporting">Cash &amp; Reporting</div>
+  <div class="tab" data-panel="uba01-report">UBA01 Report</div>
+</div>
+
+<div class="content">
+
+<!-- TAB 1: OVERVIEW -->
+<div class="panel active" id="overview">
+  <div class="card" style="background:linear-gradient(135deg,#0d1520 0%,#0a1a30 100%);border-color:#1e3a5f;margin-bottom:20px">
+    <h3 style="color:#60a5fa;margin-bottom:8px">What Is This Companion?</h3>
+    <p>This companion documents UNESCO's entire Treasury operations domain in SAP &mdash; from opening a new bank account to processing payments, importing bank statements, and reporting cash positions. It is the single reference for anyone who needs to configure, operate, or audit house banks in UNESCO's SAP landscape.</p>
+    <p style="margin-top:8px"><strong>Who uses this:</strong> DBS/BFM configurators (house bank setup), Treasury operators (F110 payments, FEBAN reconciliation), auditors (OBA1 valuation, BCM dual-control), and support analysts (EBS troubleshooting).</p>
+    <p style="margin-top:8px"><strong>Sources:</strong> 45-page handover PDF (Marlies Spronk), Gold DB analysis of 211 house banks (P01, 24K+ config rows across 11 tables), UBA01 real configuration (2026-04-07/08, 7 issues found and fixed), ECO09 benchmark comparison, and 3 independent validation agents.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">211</div><div class="label">House Banks in P01</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">67</div><div class="label">Active Banks</div></div>
+    <div class="kpi"><div class="val" style="color:#8b949e">117</div><div class="label">Closed Banks</div></div>
+    <div class="kpi"><div class="val">158</div><div class="label">YBANK Set Entries</div></div>
+    <div class="kpi"><div class="val">402</div><div class="label">Bank Accounts (T012K)</div></div>
+    <div class="kpi"><div class="val" style="color:var(--red)">213</div><div class="label">Missing OBA1 (10*)</div></div>
+    <div class="kpi"><div class="val">13</div><div class="label">Config Steps</div></div>
+    <div class="kpi"><div class="val">10</div><div class="label">Paying Banks</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Treasury Domain Hierarchy</h3>
+    <p style="margin-bottom:12px">The Treasury domain spans 6 interconnected sub-domains, each with its own configuration tables, transactions, and operational processes.</p>
+    <table>
+      <tr><th>Sub-Domain</th><th>Scope</th><th>Key Tables</th><th>Key Transactions</th></tr>
+      <tr>
+        <td><span class="badge badge-blue">Bank Account Mgmt</span></td>
+        <td>House bank creation, GL mapping, IBAN, master data</td>
+        <td>T012, T012K, T012T, BNKA, TIBAN</td>
+        <td>FI12, FI12_HBANK</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">EBS</span></td>
+        <td>MT940 import, external code mapping, auto-posting</td>
+        <td>T028B, T035D, FEBEP, FEBRE</td>
+        <td>FF_5, FEBAN, OT83</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">Payment</span></td>
+        <td>F110 payment runs, bank determination, payment media</td>
+        <td>T042I, REGUH, REGUP</td>
+        <td>F110, OBPM4, FBZP</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">Cash Management</span></td>
+        <td>Cash position, liquidity forecast, YBANK sets</td>
+        <td>FDSR, FDSB, SETLEAF</td>
+        <td>FF7A, TRM5, GS02</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">FX (Foreign Exchange)</span></td>
+        <td>Currency revaluation, exchange rate maintenance</td>
+        <td>TCURR, TCURX</td>
+        <td>FAGL_FC_VAL, OB08</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Controls</span></td>
+        <td>Reconciliation, audit, compliance checks</td>
+        <td>T030H, SKA1, SKB1</td>
+        <td>OBA1, FEBAN, GS02</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>End-to-End Treasury Flow</h3>
+    <div class="flow-diagram"><span class="highlight">PHASE 1: SETUP</span>
+  Bank opens physical account (external)
+    &#8594; Treasury team receives account details (IBAN, SWIFT, currency)
+
+<span class="highlight">PHASE 2: HOUSE BANK CONFIGURATION</span>
+  FI12: Create House Bank (T012)
+    &#8594; Map GL accounts (T012K: 10xxxxx main bank, 11xxxxx sub-account)
+    &#8594; Set account master data (SKA1/SKB1/SKAT)
+    &#8594; Configure posting rules (OBA1 &#8594; T030H)
+    &#8594; Set up EBS mapping (T028B + T035D)
+    &#8594; Configure bank determination for payments (T042I)
+    &#8594; Add to YBANK sets for reporting (GS02 &#8594; SETLEAF)
+
+<span class="highlight">PHASE 3: DAILY OPERATIONS</span>
+  <span class="highlight-green">EBS:</span> MT940 file &#8594; FF_5 import &#8594; Auto-post to 10*/11* &#8594; FEBAN reconciliation
+  <span class="highlight-purple">Payments:</span> F110 run &#8594; T042I bank selection &#8594; XML generation &#8594; Bank processes
+
+<span class="highlight">PHASE 4: MONTH-END</span>
+  FX revaluation (FAGL_FC_VAL) &#8594; Adjust multi-currency accounts
+  Cash position reporting (FF7A / TRM5)
+
+<span class="highlight">PHASE 5: REPORTING</span>
+  Average balance reports (GS02 sets) &#8594; Treasury dashboards</div>
+  </div>
+
+  <div class="card">
+    <h3>Cross-Process Relationships</h3>
+    <table>
+      <tr><th>Process</th><th>Treasury Touchpoint</th><th>Direction</th><th>Key Link</th><th>Impact</th></tr>
+      <tr>
+        <td><span class="badge badge-blue">P2P (Procure-to-Pay)</span></td>
+        <td>F110 Payment Run</td>
+        <td>P2P &#8594; Treasury</td>
+        <td>Vendor invoices trigger payment proposals</td>
+        <td>Payment method + house bank selection determines outflow</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Bank Reconciliation</span></td>
+        <td>EBS + FEBAN</td>
+        <td>Bank &#8594; Treasury</td>
+        <td>MT940 items matched against sub-account (11*) postings</td>
+        <td>Unmatched items appear as open on 11* accounts</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">Cash Position</span></td>
+        <td>FF7A / TRM5</td>
+        <td>Treasury &#8594; Mgmt</td>
+        <td>YBANK sets define which accounts feed cash position forms</td>
+        <td>Missing accounts = incomplete liquidity picture</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">Average Balance</span></td>
+        <td>GS02 Account Sets</td>
+        <td>Treasury &#8594; Reporting</td>
+        <td>SETLEAF entries determine which 10* accounts are averaged</td>
+        <td>Missing entries = bank not included in balance reports</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">FX Revaluation</span></td>
+        <td>FAGL_FC_VAL</td>
+        <td>Treasury &#8594; FI</td>
+        <td>Multi-currency bank accounts revalued at month-end rates</td>
+        <td>Unrealized FX gains/losses posted to P&amp;L</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- TAB 2: HOUSE BANK CONFIG -->
+<div class="panel" id="house-bank-config">
+
+  <!-- SECTION 1: WHAT ARRIVES -->
+  <div class="card">
+    <h3>How a House Bank Request Arrives</h3>
+    <p style="margin-bottom:12px">Every house bank configuration starts with an email from Treasury (TRS) or Budget &amp; Financial Management (BFM). The email includes Excel forms and a bank confirmation letter. <strong>The forms drive EVERYTHING</strong> &mdash; each field maps to a specific configuration step.</p>
+
+    <div class="grid-2">
+      <div>
+        <h4>Two Scenarios</h4>
+        <table>
+          <tr><th>Scenario</th><th>What Arrives</th><th>Steps Required</th></tr>
+          <tr style="background:rgba(88,166,255,0.08)">
+            <td><strong style="color:var(--accent)">A: New Bank</strong><br><span style="font-size:0.8em;color:#8b949e">UNESCO opens account at a new bank (e.g., UBA in Mozambique)</span></td>
+            <td>&bull; 1 House bank form per account ID<br>&bull; 2 G/L forms (bank 10* + clearing 11*) per account<br>&bull; Bank confirmation letter (IBAN, SWIFT, address)</td>
+            <td><strong>ALL 13 steps</strong><br>Bank directory (BNKA), house bank master (T012), G/L creation (FS00), OBA1, EBS, GS02, etc.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--green)">B: New Account on Existing Bank</strong><br><span style="font-size:0.8em;color:#8b949e">Add a new currency account to an existing bank (e.g., add EUR to UBA01)</span></td>
+            <td>&bull; 1 House bank form for the new account ID<br>&bull; 2 G/L forms (bank + clearing)<br>&bull; Bank letter with new account number</td>
+            <td><strong>Steps 2-13 only</strong><br>Bank already exists in T012/BNKA. Add new T012K entry, new G/Ls, new OBA1/EBS/GS02 entries for the new currency.</td>
+          </tr>
+        </table>
+      </div>
+      <div>
+        <h4>The 3 Input Documents</h4>
+        <div class="tier tier-hq" style="margin-bottom:12px">
+          <strong style="color:var(--accent)">House Bank Form (.xls)</strong> &mdash; 1 per account ID<br>
+          <span style="font-size:0.85em;color:#8b949e">Naming: <code>{HBKID}-{AcctID}.xls</code> (e.g., UBA01-MZN01.xls)<br>
+          Contains: house bank ID, account ID, bank account number, currency, SWIFT, bank country, bank key, cash management name, EBS flag, replenishment flag</span>
+        </div>
+        <div class="tier tier-fo" style="margin-bottom:12px">
+          <strong style="color:var(--green)">G/L Creation Form (Form AM3-11, .xls)</strong> &mdash; 1 per G/L account<br>
+          <span style="font-size:0.85em;color:#8b949e">Naming: <code>Form AM3-11 - {GL}-{HBKID}-{AcctID}.xls</code><br>
+          Contains: account number (10* or 11*), reference GL to copy from, account group (Bank a/c), currency, texts, house bank ID, "GL to be revaluated" flag</span>
+        </div>
+        <div class="tier tier-tr">
+          <strong style="color:var(--purple)">Bank Confirmation Letter (PDF)</strong> &mdash; 1 per bank<br>
+          <span style="font-size:0.85em;color:#8b949e">From: the bank itself<br>
+          Contains: physical account numbers, IBAN, SWIFT/BIC code, bank name, address, authorized signatories</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: FORM FIELDS → CONFIG STEPS -->
+  <div class="card">
+    <h3>Form Fields That Drive Configuration Decisions</h3>
+    <p style="margin-bottom:12px">These key fields in the Excel forms determine which of the 13 steps apply and how to configure them. Read the forms FIRST, then follow the decision logic below.</p>
+    <table>
+      <tr><th>Form Field</th><th>Where Found</th><th>Values</th><th>If YES / Non-USD</th><th>Steps Triggered</th></tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td><strong style="color:var(--yellow)">Account Currency (other than USD)</strong></td>
+        <td>G/L form (AM3-11)</td>
+        <td>EUR, MZN, XAF, etc. or blank=USD</td>
+        <td><strong style="color:var(--red)">OBA1 REQUIRED</strong> &mdash; T030H entry with ALL 5 fields for both bank (10*) and clearing (11*) accounts</td>
+        <td>Step 9 (OBA1). Also determines YBANK set in step 13 (USD/EUR/OTH)</td>
+      </tr>
+      <tr style="background:rgba(88,166,255,0.05)">
+        <td><strong style="color:var(--accent)">Bank statement electronically uploaded?</strong></td>
+        <td>House bank form</td>
+        <td>Yes / No</td>
+        <td>EBS_CONFIG &mdash; needs bank statement monitor + T035D + T028B</td>
+        <td>Steps 5 (FTE_BSM_CUST), 10 (T028B), 11 (T035D)</td>
+      </tr>
+      <tr>
+        <td><strong>Replenishment Settings?</strong></td>
+        <td>House bank form</td>
+        <td>Yes / No</td>
+        <td>Internal transfer config needed &mdash; step 12b (account determination)</td>
+        <td>Step 12b (SPRO account determination for G/L payments)</td>
+      </tr>
+      <tr>
+        <td><strong>GL to be revaluated</strong></td>
+        <td>G/L form (AM3-11)</td>
+        <td>YES / NO</td>
+        <td>Confirms OBA1 with all 3 sections (Realized + Valuation + Correction)</td>
+        <td>Step 9 (OBA1)</td>
+      </tr>
+      <tr>
+        <td><strong>GL account to use as reference</strong></td>
+        <td>G/L form (AM3-11)</td>
+        <td>Existing GL (e.g., 1095012)</td>
+        <td>MD team copies field values from this account &mdash; <strong style="color:var(--red)">HBKID often NOT updated after copy!</strong></td>
+        <td>Step 1 (FS00). Risk: wrong HBKID in SKB1 if MD forgets to change</td>
+      </tr>
+      <tr>
+        <td><strong>Account group</strong></td>
+        <td>G/L form (AM3-11)</td>
+        <td>"Bank a/c" or "Other balance sheet"</td>
+        <td>"Bank a/c" &#8594; KTOKS=BANK (correct). "Other balance sheet" &#8594; KTOKS=OTHR (WRONG for bank G/Ls)</td>
+        <td>Step 1 (FS00 / SKA1)</td>
+      </tr>
+      <tr>
+        <td><strong>Cash Management Account Name</strong></td>
+        <td>House bank form</td>
+        <td>{HBKID}-{HKTID} or blank</td>
+        <td>If blank: derive as {HBKID}-{HKTID} (e.g., UBA01-MZN1 where MZN1 = T012K account ID)</td>
+        <td>Steps 10-11 (T035D DISKB key)</td>
+      </tr>
+    </table>
+    <div class="note"><strong>UBA01 lesson:</strong> The "Account Currency" and "GL to be revaluated" fields together determine OBA1 requirements. UBA01 had MZN (non-USD) + "YES" for revaluation, but the configurator initially only filled the Realized section of T030H &mdash; missing Valuation and Correction. This caused 2 correction transports. <strong>Rule: if currency is non-USD, fill ALL 5 T030H fields in one pass.</strong></div>
+  </div>
+
+  <!-- SECTION 3: DECISION FLOW -->
+  <div class="card">
+    <h3>Decision Flow: Forms &#8594; Bank Type &#8594; Steps Required</h3>
+    <p style="margin-bottom:12px">Read the form fields above, then follow this flow to determine which bank type you're configuring and which steps apply.</p>
+    <div class="flow-diagram"><span class="highlight">READ FORMS</span>
+  |
+  +-- Is this a <span class="highlight-green">NEW BANK</span> (no existing HBKID)?
+  |     YES &#8594; Scenario A: <span class="highlight">ALL 13 steps</span> (create BNKA, T012, T012K, G/Ls, all config)
+  |     NO  &#8594; Scenario B: Steps 2-13 (bank exists, add new account + G/L pair)
+  |
+  +-- "<span class="highlight-yellow">Bank statement electronically uploaded?</span>" = Yes?
+  |     YES &#8594; <span class="highlight-green">EBS_CONFIG</span> (56 of 67 active banks)
+  |           Steps 5 (FTE_BSM_CUST) + 10 (T028B) + 11 (T035D) all required
+  |     NO  &#8594; Skip EBS steps (rare &mdash; only special-purpose banks)
+  |
+  +-- Does TRS confirm "<span class="highlight-yellow">F110 payments</span>" from this bank?
+  |     HQ paying (wire/SEPA/Citi) &#8594; <span class="highlight-purple">HQ_PAYING</span> (~9 banks)
+  |           Steps 12a (T042I) + 12b (Account Det.) + 12c (OBPM4 variant)
+  |           <span class="highlight-red">OBPM4 must be created in V01 AND P01 manually!</span>
+  |     FO local (check) &#8594; <span class="highlight-green">FO_LOCAL</span> (1 bank: ECO09)
+  |           Step 12a only (T042I method 3). NO T042A. NO OBPM4.
+  |     No payments &#8594; Skip steps 12a-12c
+  |
+  +-- "<span class="highlight-yellow">Account Currency</span>" != USD?
+  |     YES &#8594; <span class="highlight-red">OBA1 REQUIRED</span> (step 9)
+  |           Fill ALL 5 fields: LKORR + LSREA + LHREA + LSBEW + LHBEW
+  |           For BOTH bank (10*) AND clearing (11*) accounts
+  |     NO  &#8594; OBA1 optional for USD (clearing only, if desired)
+  |
+  +-- Currency determines <span class="highlight-yellow">YBANK set</span> (step 13):
+        USD &#8594; YBANK_ACCOUNTS_FO_USD (or HQ_USD)
+        EUR &#8594; YBANK_ACCOUNTS_FO_EUR (or HQ_EUR)
+        Other (MZN, XAF, CHF...) &#8594; YBANK_ACCOUNTS_FO_OTH (or HQ_OTH)</div>
+  </div>
+
+  <!-- SECTION 4: 13 STEPS WITH FULL DETAIL -->
+  <div class="card">
+    <h3>13 Configuration Steps &mdash; Full Detail</h3>
+    <p style="margin-bottom:8px">Source: 45-page handover PDF (Marlies Spronk) + UBA01 real configuration (2026-04-07) + Gold DB analysis of 211 banks. Each step includes the SAP transaction, table fields, form source, and lessons learned.</p>
+    <p style="margin-bottom:16px;font-size:0.85em;color:#8b949e"><strong>For a new bank:</strong> ALL steps apply. <strong>For a new account on existing bank:</strong> Skip step 1 (bank already exists), start at step 2.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px">Step 1 &mdash; FS00: G/L Account Creation (MD team in P01)</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Create the G/L account pair &mdash; one bank account (10xxxxx) and one clearing/sub-bank account (11xxxxx). The last 5 digits are always the same (e.g., 1065421 + 1165421). Created by the Master Data team in P01 first, then copied to D01/V01.</p>
+    <p style="margin-bottom:8px"><strong>Form source:</strong> G/L Creation Form (AM3-11). One form per G/L account. The "GL account to use as reference" field tells MD which existing GL to copy field values from.</p>
+    <table style="margin-bottom:8px">
+      <tr><th>SKB1 Field</th><th>Bank Account (10*)</th><th>Clearing Account (11*)</th><th>What It Controls</th></tr>
+      <tr><td>KTOKS (Account Group)</td><td><strong>BANK</strong></td><td><strong>BANK</strong></td><td>Must be "Bank a/c" in form. OTHR = wrong &mdash; prevents bank-specific functions</td></tr>
+      <tr><td>FDLEV (Planning Level)</td><td><strong>B0</strong></td><td><strong>B1</strong></td><td>B0 = bank account level, B1 = sub-bank level. Drives cash management grouping</td></tr>
+      <tr><td>FSTAG (Field Status)</td><td><strong>UN03</strong></td><td><strong>UN03</strong></td><td>UNESCO standard. Controls which fields are required/optional/hidden in postings</td></tr>
+      <tr><td>ZUAWA (Sort Key)</td><td><strong>027</strong></td><td><strong>Z01</strong></td><td>027 = date sort on bank accounts. Z01 = assignment number sort on clearing (new banks). Legacy banks may use 027 on both</td></tr>
+      <tr><td>XOPVW (Open Item Mgmt)</td><td>&mdash; (empty)</td><td><strong>X</strong></td><td>Clearing accounts (11*) MUST have X &mdash; enables matching/clearing of bank statement lines against payment docs</td></tr>
+      <tr><td>XINTB (Post Auto Only)</td><td><strong>&mdash; (empty)</strong></td><td><strong>&mdash; (empty)</strong></td><td><strong>NEVER set X.</strong> Empty is the standard (only 1/353 exceptions). XINTB=X caused F5562 error on UBA01</td></tr>
+      <tr><td>HBKID (House Bank)</td><td>{HBKID}</td><td>{HBKID}</td><td><strong style="color:var(--red)">Common error:</strong> MD copies from reference GL and forgets to change this. 5 known mismatches in P01</td></tr>
+      <tr><td>SKAT texts</td><td>BK {BANK} {CITY} {CUR}</td><td>S-BK {BANK} {CITY} {CUR}</td><td>3 languages: E (English), F (French), P (Portuguese). S-BK prefix = sub-bank</td></tr>
+    </table>
+    <div class="note"><strong>Risk:</strong> The reference GL copy is the #1 source of configuration errors. When MD copies from an existing GL (e.g., ECO09's account), they inherit the old HBKID, old texts, and sometimes wrong field values. Always verify HBKID and texts after creation.</div>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 2 &mdash; FI12: House Bank Master + Account IDs</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Create the house bank record (T012) and its account IDs (T012K). This links the SAP house bank to the physical bank via bank country + bank key. Also creates the bank directory entry (BNKA) if the bank is new to SAP.</p>
+    <p style="margin-bottom:8px"><strong>Form source:</strong> House bank form fields: House Bank, Account ID, Bank Country, Bank Key, Bank Account Number, SWIFT, Currency, G/L Account.</p>
+    <table style="margin-bottom:8px">
+      <tr><th>Table</th><th>Field</th><th>Value</th><th>Source</th></tr>
+      <tr><td>T012</td><td>HBKID</td><td>5-char code (e.g., UBA01)</td><td>Form: "House Bank"</td></tr>
+      <tr><td>T012</td><td>BANKS / BANKL</td><td>Country ISO + bank key (e.g., MZ / SP0000001YCB)</td><td>Bank letter</td></tr>
+      <tr><td>T012K</td><td>HKTID</td><td>Account ID (e.g., MZN01, USD01)</td><td>Form: "Account ID"</td></tr>
+      <tr><td>T012K</td><td>BANKN</td><td>Physical bank account number</td><td>Bank letter</td></tr>
+      <tr><td>T012K</td><td>WAERS</td><td>Currency (MZN, USD, EUR)</td><td>Form: "Currency"</td></tr>
+      <tr><td>T012K</td><td>HKONT</td><td>G/L account (0001065421)</td><td>Form: "G/L Account"</td></tr>
+      <tr><td>T012K</td><td>DTAWS</td><td><strong>B2</strong> (DME key, standard)</td><td>PDF standard. Exception: DNB01 = B4</td></tr>
+      <tr><td>T012T</td><td>TEXT1</td><td>"UNESCO MAPUTO - MZN"</td><td>Form: "Account Description"</td></tr>
+      <tr><td>BNKA</td><td>BANKA / SWIFT</td><td>Bank name + BIC code</td><td>Bank letter</td></tr>
+    </table>
+    <p style="font-size:0.85em;color:#8b949e"><strong>Scenario B (new account on existing bank):</strong> T012 and BNKA already exist. Only create a new T012K entry + T012T text for the new account ID.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 3 &mdash; FTE_BSM_CUST: Bank Statement Monitor</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Add the bank account to the Bank Statement Monitor so SAP knows to expect and process MT940 files from this bank. Copy settings from a similar existing bank account.</p>
+    <p style="margin-bottom:8px"><strong>Required for:</strong> All EBS_CONFIG and HQ_PAYING banks (form: "Bank statement electronically uploaded?" = Yes).</p>
+    <table style="margin-bottom:8px">
+      <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+      <tr><td>Process Status</td><td>Copy from similar bank</td><td>Controls whether statements are processed automatically or held for review</td></tr>
+      <tr><td>Difference Status</td><td>Copy from similar bank</td><td>How to handle amount differences between expected and actual</td></tr>
+      <tr><td>Serial No. Status</td><td>Copy from similar bank</td><td>Validates statement sequence numbers to detect missing statements</td></tr>
+      <tr><td>Reconciliation Status</td><td>Copy from similar bank</td><td>Controls automatic clearing behavior</td></tr>
+      <tr><td>Interval</td><td>1 Calendar Days</td><td>How often to expect statements (daily for active banks)</td></tr>
+    </table>
+    <div class="note"><strong>Cannot automate:</strong> Table FCLM_BSM_CUST is not readable via RFC (requires special authorization). Manual verification required per EBS bank.</div>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 4 &mdash; OBA1: Exchange Rate Differences (T030H) &#9888;</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Tell SAP which P&amp;L accounts to use when FX rate changes create gains or losses. Required for ALL non-USD G/L accounts &mdash; both bank (10*) AND clearing (11*). See the OBA1 section below for the 3 scenarios and complete template.</p>
+    <p style="margin-bottom:8px"><strong>Form trigger:</strong> "Account Currency" != USD AND "GL to be revaluated" = YES.</p>
+    <p style="margin-bottom:8px;color:var(--red)"><strong>CRITICAL RULE: Fill ALL 5 fields in a single pass.</strong> UBA01 required 3 transports because OBA1 was filled partially each time. Use the T030H template in the OBA1 section below.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Steps 5-6 &mdash; T035D + T028B: EBS Integration (same SPRO screen, two tables)</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Two configurations in the same SPRO screen that together enable Electronic Bank Statement processing. Both are required &mdash; if either is missing, MT940 files from the bank will be rejected.</p>
+    <p style="margin-bottom:8px"><strong>Required for:</strong> All EBS_CONFIG banks (form: "Bank statement electronically uploaded?" = Yes).</p>
+
+    <div class="grid-2" style="margin-bottom:12px">
+      <div style="border:1px solid var(--accent);border-radius:6px;padding:12px">
+        <h4 style="color:var(--accent);margin-top:0">Step 5: T035D &mdash; Cash Management Account Name</h4>
+        <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px">Maps the house bank + account to a G/L. This is the "phone book" that tells SAP which GL to post to when a statement arrives.</p>
+        <table>
+          <tr><th>Field</th><th>Value</th><th>Source</th></tr>
+          <tr><td>DISKB</td><td><strong>{HBKID}-{HKTID}</strong></td><td>Constructed from T012K account ID. Example: UBA01-MZN1. <strong>NOT currency code.</strong></td></tr>
+          <tr><td>BNKKO</td><td>Bank G/L (10xxxxx)</td><td>From T012K.HKONT</td></tr>
+        </table>
+        <p style="font-size:0.8em;color:var(--red);margin-top:6px"><strong>If missing:</strong> FF_5 import cannot determine which GL to post to &#8594; posting fails.</p>
+      </div>
+      <div style="border:1px solid var(--purple);border-radius:6px;padding:12px">
+        <h4 style="color:var(--purple);margin-top:0">Step 6: T028B &mdash; Bank Account to Transaction Type</h4>
+        <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px">Maps the physical bank account (by bank key + account number) to the statement format and links to T035D. This is how SAP identifies which bank sent the MT940 file.</p>
+        <table>
+          <tr><th>Field</th><th>Value</th><th>Source</th></tr>
+          <tr><td>BANKL</td><td>Bank key (e.g., SP0000001YCB)</td><td>From T012. <strong>NOT HBKID!</strong></td></tr>
+          <tr><td>KTONR</td><td>Physical bank acct# (e.g., 070040004663)</td><td>From T012K.BANKN</td></tr>
+          <tr><td>VGTYP</td><td>XRT940 (standard) or bank-specific format</td><td>Confirm with bank team</td></tr>
+          <tr><td>BNKKO</td><td>DISKB key (e.g., UBA01-MZN1)</td><td><strong>Must match T035D.DISKB exactly</strong></td></tr>
+        </table>
+        <p style="font-size:0.8em;color:var(--red);margin-top:6px"><strong>If missing:</strong> FF_5 cannot identify the bank &#8594; MT940 file rejected. <strong>UBA01 lesson:</strong> T028B was initially missed because the compliance checker searched by HBKID (wrong key). T028B is keyed by BANKL + KTONR.</p>
+      </div>
+    </div>
+    <div class="note"><strong>The bridge:</strong> T028B.BNKKO must EXACTLY match T035D.DISKB. This is how the two tables are linked. The chain is: MT940 file &#8594; T028B (identifies bank) &#8594; T035D (finds GL) &#8594; posting to 10xxxxx.</div>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 7 &mdash; YFI_BASU_MOD: Business Area Substitution</h4>
+    <p style="margin-bottom:8px"><strong>Usually N/A.</strong> G/L range 1000000-1199999 is covered by a wildcard rule (Z1 AUTOMATIC BANK STAT / GEF). New bank accounts in this range are automatically assigned the correct business area. Only IIEP (10*=PDK, 11*=PAR) and UBO (10*=PFF) need individual entries.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 8 &mdash; T018V: Receiving Bank Clearing</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Configure the bank to receive incoming wire transfers. Maps house bank + account + payment method + currency to the clearing G/L (11xxxxx). 108 entries in P01, 100% method A (wire). Multi-currency: 69% USD, 20% EUR, 11% other.</p>
+    <table style="margin-bottom:8px">
+      <tr><th>Field</th><th>Value</th><th>Notes</th></tr>
+      <tr><td>HBKID + HKTID</td><td>UBA01 + USD01</td><td>Usually only USD account needs T018V. Local currency accounts may not receive wires.</td></tr>
+      <tr><td>ZLSCH</td><td><strong>A</strong> (wire transfer)</td><td>Standard method for incoming payments</td></tr>
+      <tr><td>WAERS</td><td>USD (or account currency)</td><td>T018V is multi-currency, not USD-only</td></tr>
+      <tr><td>GEHVK</td><td>Clearing G/L (11xxxxx)</td><td>Derived: bank GL 10xxxxx &#8594; clearing 11xxxxx (same last 5 digits)</td></tr>
+    </table>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Steps 9a-9c &mdash; Payment Configuration (Paying Banks Only)</h4>
+    <p style="margin-bottom:8px"><strong>Required for:</strong> HQ_PAYING banks (~9) and FO_LOCAL banks (ECO09). Skip entirely for EBS_CONFIG-only banks.</p>
+    <table style="margin-bottom:8px">
+      <tr><th>Sub-step</th><th>Transaction</th><th>Table</th><th>What</th><th>HQ_PAYING</th><th>FO_LOCAL</th></tr>
+      <tr><td><strong>9a</strong></td><td>FBZP</td><td>T042I</td><td>Bank determination: which bank pays for which currency + method. Ranking for failover.</td><td><span class="badge badge-green">Required</span></td><td><span class="badge badge-green">Required</span><br>Method 3 only</td></tr>
+      <tr><td><strong>9b</strong></td><td>SPRO</td><td>(Account Det.)</td><td>Internal transfer / replenishment. SPRO &#8594; Bank Accounting &#8594; Payment Handling &#8594; Bank Clearing Account Determination.</td><td><span class="badge badge-green">Required</span></td><td><span class="badge badge-yellow">If replenished</span></td></tr>
+      <tr><td><strong>9c</strong></td><td>SE38 + OBPM4</td><td>SAPFPAYM variant</td><td>Payment medium format variant. Links house bank to DMEE XML format. <strong style="color:var(--red)">NOT transportable &mdash; create in V01 AND P01.</strong></td><td><span class="badge badge-red">Required</span></td><td><span class="badge badge-blue">N/A</span><br>Check, no DMEE</td></tr>
+    </table>
+    <div class="note"><strong>ECO09 distinction:</strong> ECO09 has T042I (method 3, local check) but NO T042A (DMEE routing). This is correct &mdash; ECO09 is a field office bank that pays locally by physical check. It is replenished from HQ. Do NOT create T042A or OBPM4 variant for FO_LOCAL banks.</div>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 10 &mdash; GS02: YBANK Account Sets</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Add the bank G/L (10* only, NEVER 11*) to the correct YBANK reporting set. The currency from the form determines which set.</p>
+    <table style="margin-bottom:8px">
+      <tr><th>Account Currency</th><th>Bank Location</th><th>Add to YBANK Set</th></tr>
+      <tr><td>USD</td><td>Field Office</td><td><code>YBANK_ACCOUNTS_FO_USD</code></td></tr>
+      <tr><td>USD</td><td>HQ (paying)</td><td><code>YBANK_ACCOUNTS_HQ_USD</code></td></tr>
+      <tr><td>EUR</td><td>Field Office</td><td><code>YBANK_ACCOUNTS_FO_EUR</code></td></tr>
+      <tr><td>EUR</td><td>HQ</td><td><code>YBANK_ACCOUNTS_HQ_EUR</code></td></tr>
+      <tr><td>Other (MZN, XAF, XOF, CHF...)</td><td>Field Office</td><td><code>YBANK_ACCOUNTS_FO_OTH</code></td></tr>
+      <tr><td>Other</td><td>HQ</td><td><code>YBANK_ACCOUNTS_HQ_OTH</code></td></tr>
+    </table>
+    <p style="font-size:0.85em;color:#8b949e"><strong>How:</strong> GS02 &#8594; set name &#8594; set class 0000 &#8594; Change &#8594; add row: VALOPTION=EQ, VALFROM={bank GL number}. Uses exact match (EQ), not ranges.</p>
+    <p style="font-size:0.85em;color:#8b949e"><strong>Transport:</strong> GRW_SET workbench object carries the FULL set (overwrites target). D01 and P01 must be aligned BEFORE transport. Include in same transport as other config &mdash; do NOT create a separate transport.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 11 &mdash; ~~TRM5~~ ELIMINATED</h4>
+    <p style="margin-bottom:8px"><strong>NO LONGER REQUIRED</strong> as of 2026-04-07. Previously involved Report Painter forms (ZCASH/ZCASHFO/ZCASHFODET) with G/L pairs + formula updates. Do NOT perform for new banks.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 12 &mdash; SM30 V_T038: Statement Grouping</h4>
+    <p style="margin-bottom:8px"><strong>Usually N/A.</strong> Grouping uses wildcards (<code>+++10++0++</code> and <code>+++11++9++</code>) that auto-cover all 10*/11* G/Ls. Only needed for non-standard GL ranges.</p>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:24px">Step 13 &mdash; FI12 / TIBAN: IBAN Generation</h4>
+    <p style="margin-bottom:8px"><strong>What:</strong> Generate IBAN from bank account details (country + bank key + account number). Source: bank confirmation letter. Transport: Workbench (separate from customizing by nature).</p>
+  </div>
+
+  <!-- SECTION 5: TRANSPORT STRATEGY -->
+  <div class="card">
+    <h3>Transport Strategy &mdash; Target: 3 Transports Max</h3>
+    <p style="margin-bottom:12px">UBA01 required 6 transports because OBA1 was configured wrong 3 times and GS02 sets were done separately. Target for next bank:</p>
+    <table>
+      <tr><th>#</th><th>Type</th><th>Content</th><th>Rule</th></tr>
+      <tr><td>1</td><td><span class="badge badge-purple">Customizing (C)</span></td><td>ALL config in ONE request: T012/T012K/T012T + T030H + T035D + T028B + T018V + T042I + SETLEAF</td><td>Do NOT release until compliance checker shows 0 FAIL</td></tr>
+      <tr><td>2</td><td><span class="badge badge-blue">Workbench (W)</span></td><td>IBAN (TIBAN)</td><td>Separate by nature</td></tr>
+      <tr><td>3</td><td><span class="badge badge-yellow">Optional (C)</span></td><td>Only if TRS requests post-config changes</td><td>Should be rare if step 1 is done right</td></tr>
+    </table>
+    <div class="note"><strong>CORRECTED (2026-04-08):</strong> YBANK sets (GS02/SETLEAF) ARE transportable via GRW_SET workbench object. Transport carries the FULL set (overwrites target). D01 and P01 must be aligned BEFORE transport.</div>
+  </div>
+
+  <!-- SECTION 6: MODIFY SCENARIOS -->
+  <div class="card">
+    <h3>MODIFY Scenarios &mdash; Changes to Existing Accounts</h3>
+    <p style="margin-bottom:12px">Not all house bank work is new creation. Common modifications include name changes, IBAN updates, and address changes. The key is knowing which tables to touch and which to leave alone.</p>
+
+    <h4 style="color:var(--yellow);border-bottom:1px solid var(--border);padding-bottom:8px">Account Name / Description Change</h4>
+    <p style="margin-bottom:8px"><strong>When:</strong> Treasury renames an account (e.g., purpose changes, fund name changes, organizational restructure).</p>
+    <table style="margin-bottom:12px">
+      <tr><th>Table</th><th>What Changes</th><th>Transaction</th><th>Notes</th></tr>
+      <tr><td>T012T</td><td>Account description (TEXT1)</td><td>FI12</td><td>Update ALL 3 languages (E, F, P). Most common oversight: only English is updated.</td></tr>
+      <tr><td>T035D / T035U</td><td>Cash management text (TEXTL)</td><td>SM30 V_T035D</td><td>Only if DISKB entry exists for this account. If missing &mdash; this is a gap, add it.</td></tr>
+      <tr><td>SKAT</td><td>G/L account texts (TXT20/TXT50)</td><td>FS00</td><td>Only if the G/L account name also changes. MD team in P01.</td></tr>
+    </table>
+    <p style="margin-bottom:8px"><strong>What does NOT change:</strong> T012K (account number, currency, GL), SKA1/SKB1 (GL master data), T030H (OBA1), T028B (EBS format), T042I (payment), SETLEAF (YBANK sets).</p>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> 1 customizing request containing T012T + T035D changes.</p>
+
+    <div style="background:rgba(88,166,255,0.05);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:12px;margin-top:12px">
+      <h4 style="color:var(--accent);margin:0 0 8px 0;font-size:0.9em">Real Example &mdash; Transport D01K9B0F5U (2026-04-08)</h4>
+      <table>
+        <tr><th>Item</th><th>Detail</th></tr>
+        <tr><td>Bank</td><td><strong>NTB01</strong> (Northern Trust) &mdash; 6 USD accounts (investment bank)</td></tr>
+        <tr><td>Account</td><td><strong>USD02</strong> (bank acct 17-18206, GL 1095021)</td></tr>
+        <tr><td>T012T change</td><td>"UNESCO PFF GTF" &#8594; "UNESCO CASH POOL" (English text)</td></tr>
+        <tr><td>T035D added</td><td>DISKB=NTB01-USD1 &#8594; GL 0001095021 &mdash; <strong style="color:var(--red)">was MISSING in P01</strong></td></tr>
+        <tr><td>Gap found</td><td>NTB01 had zero T035D entries in P01. EBS import would have failed for this bank. The rename revealed the gap.</td></tr>
+        <tr><td>Pending</td><td>French + Portuguese T012T texts still say "PFF GTF" &mdash; should be updated to "CASH POOL"</td></tr>
+      </table>
+      <div class="note" style="margin-top:8px"><strong>Lesson:</strong> Name changes often reveal config gaps. When touching any account, run the compliance checker to verify all 15 checks &mdash; not just the text fields you're changing.</div>
+    </div>
+
+    <h4 style="color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:20px">Other Modification Types</h4>
+    <table>
+      <tr><th>Change Type</th><th>Tables</th><th>Transaction</th><th>Transport</th><th>Notes</th></tr>
+      <tr><td><strong>New IBAN</strong></td><td>TIBAN</td><td>FI12</td><td>Workbench</td><td>Regenerate IBAN from new bank letter</td></tr>
+      <tr><td><strong>Address change</strong></td><td>BNKA</td><td>FI12</td><td>Customizing</td><td>Bank street/city/postal. From new bank letter</td></tr>
+      <tr><td><strong>Bank account number change</strong></td><td>T012K.BANKN + T028B.KTONR</td><td>FI12 + SM30</td><td>Customizing</td><td>Also update T028B (EBS key uses BANKN). Rare.</td></tr>
+      <tr><td><strong>SWIFT/BIC change</strong></td><td>BNKA.SWIFT</td><td>FI12</td><td>Customizing</td><td>May affect T028B.BANKL if bank key changes</td></tr>
+      <tr><td><strong>Currency change</strong></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>Cannot change currency on existing GL. Create NEW account ID + new GL pair.</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>G/L Account Master Data Standards &mdash; from Gold DB analysis of 353 bank G/Ls</h3>
+    <p style="margin-bottom:12px">Validated against 353 KTOKS=BANK G/L accounts in P01. ECO09 is the reference bank for field offices. Session #044 (2026-04-07) corrected 3 wrong benchmark values.</p>
+    <table>
+      <tr><th>Field</th><th>Table</th><th>Bank Account (10*)</th><th>Clearing Account (11*)</th><th>Compliance</th><th>Notes</th></tr>
+      <tr><td>KTOKS</td><td>SKA1</td><td><strong>BANK</strong></td><td><strong>BANK</strong></td><td><span class="badge badge-green">99%</span></td><td>Must be BANK, never OTHR. 2 active EBS banks have OTHR (error). Investment/UNDP OTHR is intentional.</td></tr>
+      <tr><td>FDLEV</td><td>SKB1</td><td><strong>B0</strong></td><td><strong>B1</strong></td><td><span class="badge badge-green">100%</span></td><td>B0 = bank account level, B1 = sub-bank/clearing level. Fully consistent across all 346 bank G/Ls.</td></tr>
+      <tr><td>FSTAG</td><td>SKB1</td><td><strong>UN03</strong></td><td><strong>UN03</strong></td><td><span class="badge badge-green">100%</span></td><td>UNESCO standard field status group.</td></tr>
+      <tr><td>ZUAWA</td><td>SKB1</td><td><strong>027</strong></td><td><strong>Z01</strong> (new) / 027 (legacy)</td><td><span class="badge badge-green">84%</span></td><td>027 on bank, Z01 on clearing for new banks. 16 legacy banks use 027 on clearing &mdash; operational, not a failure.</td></tr>
+      <tr><td>XOPVW</td><td>SKB1</td><td>&mdash; (empty)</td><td><strong>X</strong></td><td><span class="badge badge-green">99%</span></td><td>Required on clearing (11*) for open item management. Empty on bank (10*) accounts.</td></tr>
+      <tr><td>XINTB</td><td>SKB1</td><td><strong>&mdash; (empty)</strong></td><td><strong>&mdash; (empty)</strong></td><td><span class="badge badge-green">99.7%</span></td><td><strong>CORRECTED:</strong> Empty IS the production standard. Only 1 of 353 has XINTB=X (NTB 1095022). UBA01 incident (F5562 error) proved XINTB=X causes problems. Do NOT set it.</td></tr>
+      <tr><td>XKRES</td><td>SKB1</td><td>X</td><td>X</td><td><span class="badge badge-green">99%</span></td><td>Line item display.</td></tr>
+      <tr><td>XGKON</td><td>SKB1</td><td>X</td><td>X</td><td><span class="badge badge-green">99%</span></td><td>Cash flow relevant.</td></tr>
+      <tr><td>FIPOS</td><td>SKB1</td><td>BANK</td><td>BANK</td><td><span class="badge badge-green">99%</span></td><td>Commitment item.</td></tr>
+      <tr><td>HBKID</td><td>SKB1</td><td>{HBKID}</td><td>{HBKID}</td><td><span class="badge badge-yellow">98%</span></td><td>5 known mismatches where MD team copied from reference G/L and forgot to change house bank ID.</td></tr>
+    </table>
+    <div class="note"><strong>XINTB correction (Session #044):</strong> The old ECO09 benchmark said XINTB=X. Gold DB analysis of 353 bank G/Ls proved only 1 exception exists. UBA01 was initially configured with XINTB=X following the wrong benchmark, causing F5562 error reported by Ingrid Wettie. Fixed same day. <strong>Rule: NEVER set XINTB=X on bank accounts.</strong></div>
+  </div>
+
+  <div class="card">
+    <h3>OBA1 &mdash; T030H Exchange Rate Difference Configuration</h3>
+    <p style="margin-bottom:12px"><strong>Required for ALL non-USD G/L accounts</strong> (both bank 10* and clearing 11*). OBA1 tells SAP which P&amp;L accounts to use when FX rate changes create gains or losses. There are 3 scenarios, each mapped to specific T030H fields:</p>
+
+    <h4>Scenario 1: Realized FX Differences (LSREA / LHREA)</h4>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px"><strong>When:</strong> An open item posted at exchange rate X is cleared at rate Y (e.g., FEBAN clears a bank statement line against a payment document). The difference is a realized FX gain or loss that must be booked to the income statement.</p>
+    <table>
+      <tr><th>Field</th><th>OBA1 Label</th><th>UNESCO Value</th><th>Meaning</th></tr>
+      <tr><td>LSREA</td><td>Exch.rate diff. realized &mdash; Loss</td><td><strong>6045011</strong></td><td>FX loss on clearing &rarr; P&amp;L expense</td></tr>
+      <tr><td>LHREA</td><td>Exch.rate diff. realized &mdash; Gain</td><td><strong>7045011</strong></td><td>FX gain on clearing &rarr; P&amp;L income</td></tr>
+    </table>
+
+    <h4>Scenario 2: Month-End Valuation (LSBEW / LHBEW) &mdash; MOST CRITICAL</h4>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px"><strong>When:</strong> At month-end, program FAGL_FC_VAL revalues all foreign currency balances at the closing exchange rate. This creates unrealized FX gains/losses that are posted and automatically reversed at the start of the next period. <strong style="color:var(--red)">WITHOUT these fields: FAGL_FC_VAL silently skips the account entirely.</strong> Cash on the balance sheet remains valued at the WRONG historical rate.</p>
+    <table>
+      <tr><th>Field</th><th>OBA1 Label</th><th>UNESCO Value</th><th>Meaning</th></tr>
+      <tr><td>LSBEW</td><td>Valuation &mdash; Val.loss 1</td><td><strong style="color:var(--red)">6045011</strong></td><td>Unrealized FX loss &rarr; reversed next period</td></tr>
+      <tr><td>LHBEW</td><td>Valuation &mdash; Val.gain 1</td><td><strong style="color:var(--red)">7045011</strong></td><td>Unrealized FX gain &rarr; reversed next period</td></tr>
+    </table>
+    <div class="note" style="background:rgba(248,81,73,0.1);border-color:rgba(248,81,73,0.3)"><strong style="color:var(--red)">CRITICAL GAP:</strong> 213 of 219 non-USD bank accounts (10*) have NO T030H valuation config (3% coverage). FAGL_FC_VAL skips these accounts at month-end. FX gains/losses on real cash balances in 80+ currencies across 80+ field offices are NOT reflected in financial statements. See <a href="house_bank_configuration_companion.html" style="color:var(--accent)">House Bank Config Companion &rarr; OBA1 Deep Dive tab</a> for full analysis.</div>
+
+    <h4>Scenario 3: Balance Sheet Adjustment (LKORR)</h4>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px"><strong>When:</strong> SAP posts any valuation or realized entry and needs a correction/offsetting account to balance the posting. Standard pattern: LKORR = the account itself (self-referencing).</p>
+    <table>
+      <tr><th>Field</th><th>OBA1 Label</th><th>UNESCO Value</th><th>Meaning</th></tr>
+      <tr><td>LKORR</td><td>Bal.sheet adj.1 / Correction acct</td><td><strong>The account itself</strong> (e.g., 1165424 &rarr; LKORR = 1165424)</td><td>Without this, SAP cannot complete ANY FX posting &mdash; transaction fails</td></tr>
+    </table>
+
+    <h4>Complete T030H Entry Template</h4>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px">Each non-USD G/L needs TWO currency type entries:</p>
+    <table>
+      <tr><th>Currency Type</th><th>LKORR</th><th>LSREA</th><th>LHREA</th><th>LSBEW</th><th>LHBEW</th></tr>
+      <tr><td><strong>CURTP=10</strong> (foreign currency)</td><td>Account itself</td><td>6045011</td><td>7045011</td><td>6045011</td><td>7045011</td></tr>
+      <tr><td><strong>CURTP=30</strong> (presentation)</td><td>&mdash;</td><td>5022012</td><td>5022012</td><td>&mdash;</td><td>&mdash;</td></tr>
+    </table>
+
+    <div class="note"><strong>UBA01 lesson (2026-04-07):</strong> Initial config only filled LSREA/LHREA (Realized section). LKORR, LSBEW, LHBEW were blank. This required 2 correction transports to fix. <strong>Rule: fill ALL 5 fields in a single pass.</strong> Use the template above &mdash; never configure OBA1 partially.</div>
+  </div>
+
+  <div class="card">
+    <h3>Common Pitfalls</h3>
+    <table>
+      <tr><th>#</th><th>Issue</th><th>Root Cause</th><th>Detection</th><th>Fix</th></tr>
+      <tr><td>1</td><td>GL account group set to OTHR instead of BANK</td><td>Manual entry error in FS00</td><td>SKB1.KTOKS check</td><td>Change KTOKS to BANK in FS00</td></tr>
+      <tr><td>2</td><td>XINTB=X set by mistake (F5562 error)</td><td>Followed old ECO09 benchmark that said XINTB=X</td><td>UBA01 incident: user reported F5562 posting error</td><td>Clear XINTB (empty IS the standard &mdash; only 1/353 has X). <strong>NEVER set XINTB=X.</strong></td></tr>
+      <tr><td>3</td><td>OBA1 posting rules incomplete</td><td>Only partial fields filled in T030H</td><td>T030H missing LSREA/LHREA/LSBEW/LHBEW</td><td>Fill all 5 fields via OBA1</td></tr>
+      <tr><td>4</td><td>T028B mapping missing for EBS</td><td>Bank account not mapped to format</td><td>FF_5 import fails to find format</td><td>Add BANKL+KTONR entry in OT83/SPRO</td></tr>
+      <tr><td>5</td><td>YBANK set missing new account</td><td>Account not added to GS02 set after creation</td><td>Cash position report incomplete</td><td>Add to correct currency sub-set in GS02</td></tr>
+      <tr><td>6</td><td>HBKID mismatch between D01 and P01</td><td>Different IDs used in dev vs prod</td><td>Transport comparison</td><td>Align HBKID naming across systems</td></tr>
+      <tr><td>7</td><td>IBAN not generated after bank creation</td><td>TIBAN_MASS step skipped</td><td>TIBAN query returns empty</td><td>Run TIBAN_MASS or manual IBAN entry</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Transport Requests</h3>
+    <table>
+      <tr><th>Type</th><th>Content</th><th>Tables Affected</th><th>Notes</th></tr>
+      <tr>
+        <td><span class="badge badge-purple">Customizing</span></td>
+        <td>Posting rules, EBS config, bank determination</td>
+        <td>T030H, T028B, T035D, T042I</td>
+        <td>Transported via standard customizing request</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Workbench</span></td>
+        <td>GL accounts, house bank master data</td>
+        <td>T012, T012K, SKA1, SKB1, SKAT, BNKA</td>
+        <td>Master data &mdash; may need manual replication to P01</td>
+      </tr>
+    </table>
+    <div class="note"><strong>CORRECTED (2026-04-08):</strong> YBANK sets (GS02/SETLEAF) ARE transportable via <strong>GRW_SET workbench object</strong>. Transport carries the FULL set definition (overwrites target). D01 and P01 must be aligned BEFORE transport. Established with transport D01K9B0F5F (2026-04-07). Run <code>ybank_sets_full_comparison.py</code> to verify alignment before transporting.</div>
+  </div>
+</div>
+
+<!-- TAB 3: BANK STATEMENT (EBS) -->
+<div class="panel" id="bank-statement">
+  <div class="card">
+    <h3>What is EBS?</h3>
+    <p style="margin-bottom:12px">Electronic Bank Statement (EBS) is the process of importing bank statement files (MT940 format) into SAP, automatically posting them to the correct G/L accounts, and reconciling them against existing payment documents. It replaces manual bank reconciliation.</p>
+    <p style="margin-bottom:12px"><strong>Why it matters:</strong> Without EBS, Treasury would have to manually enter every bank statement line. With ~223K bank statement items (FEBEP) and 964K reconciliation entries (FEBRE) in 2024-2026, automation is essential.</p>
+    <p><strong>Which banks use EBS?</strong> 56 of 67 active house banks are configured for EBS (category EBS_CONFIG). All HQ_PAYING banks also have EBS. Only special-purpose banks (investment, inter-agency, pending) and the FO_LOCAL bank (ECO09) may not use EBS for statement import.</p>
+  </div>
+
+  <div class="card">
+    <h3>EBS Processing Flow &mdash; End to End</h3>
+    <div class="flow-diagram"><span class="highlight">ELECTRONIC BANK STATEMENT (EBS) &mdash; END-TO-END FLOW</span>
+
+  <span class="highlight">STEP 1: FILE ARRIVAL</span>
+  <span class="highlight-green">MT940 file</span> arrives from bank via SWIFT Alliance network
+    &bull; MT940 is the international standard for bank statement data (ISO 15022)
+    &bull; Contains: opening balance, each transaction (debit/credit), closing balance
+    &bull; File identifies itself by: bank key (SWIFT/BIC) + physical account number
+
+  <span class="highlight">STEP 2: SAP IMPORT (FF_5)</span>
+  FF_5 background job reads the file and needs to answer 2 questions:
+    Q1: Which SAP house bank does this file belong to?
+    Q2: Which G/L account should receive the postings?
+
+  <span class="highlight">STEP 3: TABLE LOOKUPS (the config chain)</span>
+    &#8594; <span class="highlight-purple">T028B</span> lookup: bank key (<span class="highlight-yellow">BANKL</span>) + account number (<span class="highlight-yellow">KTONR</span>)
+       &#8594; Returns: format type (VGTYP, e.g., XRT940) + cash management key (<span class="highlight-green">BNKKO</span>)
+       &#8594; Example: BANKL=SP0000001YCB + KTONR=070040004663 &#8594; VGTYP=XRT940, BNKKO=UBA01-MZN1
+    &#8594; <span class="highlight-purple">T035D</span> lookup: DISKB = BNKKO from T028B
+       &#8594; Returns: G/L account number (<span class="highlight-green">BNKKO</span> = 10xxxxx)
+       &#8594; Example: DISKB=UBA01-MZN1 &#8594; BNKKO=0001065424
+
+    <span class="highlight-red">IF T028B ENTRY MISSING:</span> FF_5 cannot identify the bank &#8594; file rejected
+    <span class="highlight-red">IF T035D ENTRY MISSING:</span> FF_5 cannot determine G/L &#8594; posting fails
+
+  <span class="highlight">STEP 4: DUAL POSTING</span>
+    &#8594; <span class="highlight-green">Post to 10xxxxx</span> (main bank account &mdash; permanent ledger, NEVER cleared)
+    &#8594; Post to <span class="highlight-yellow">11xxxxx</span> (sub-account / clearing &mdash; reconciliation gap)
+
+  <span class="highlight">STEP 5: RECONCILIATION (FEBAN)</span>
+    &#8594; <span class="highlight-red">FEBAN</span> matches 11xxxxx items against payment/invoice documents
+    &#8594; When matched: 11xxxxx item is cleared &#8594; reconciliation gap shrinks
+    &#8594; Unmatched items remain open on 11xxxxx &#8594; manual investigation needed
+
+  <span class="highlight">KEY INSIGHT:</span>
+  10xxxxx items are <span class="highlight-green">NEVER cleared</span> &mdash; they are the bank's permanent ledger
+  11xxxxx items are the <span class="highlight-yellow">reconciliation gap</span> &mdash; should be cleared by matching
+  Open items on 11xxxxx = actual unreconciled difference between SAP and bank</div>
+  </div>
+
+  <div class="card">
+    <h3>EBS Configuration Tables</h3>
+    <div class="grid-2">
+      <div>
+        <h4>T028B &mdash; Bank Account to Format Mapping</h4>
+        <p style="font-size:0.85em;margin-bottom:8px;color:#8b949e">Maps the physical bank account number to an SAP house bank and statement format.</p>
+        <table>
+          <tr><th>BANKL</th><th>KTONR</th><th>VGTYP</th><th>BNKKO</th></tr>
+          <tr><td>SP0000001YCB</td><td>070340000190</td><td>XRT940</td><td>UBA01-USD1</td></tr>
+          <tr><td>SP0000001YCB</td><td>070040004663</td><td>XRT940</td><td>UBA01-MZN1</td></tr>
+          <tr><td>FRBNPAFRXXX</td><td>01752024A</td><td>SOG_FR</td><td>SOG01-EUR01</td></tr>
+          <tr><td>CIABORJ1XXX</td><td>6018291001</td><td>XRT940</td><td>ECO09-USD1</td></tr>
+        </table>
+        <div class="note">BANKL is the SWIFT/BIC or bank key. KTONR is the physical account number at the bank. Together they uniquely identify the account.</div>
+      </div>
+      <div>
+        <h4>T035D &mdash; Format to GL Mapping</h4>
+        <p style="font-size:0.85em;margin-bottom:8px;color:#8b949e">Maps the house bank + account key (DISKB = BNKKO) to the main bank GL account.</p>
+        <table>
+          <tr><th>DISKB (= BNKKO)</th><th>GL Account</th><th>Description</th></tr>
+          <tr><td>UBA01-USD1</td><td>1065421</td><td>BK UBA MOZAMBIQUE - UNESCO MAPUTO USD</td></tr>
+          <tr><td>UBA01-MZN1</td><td>1065424</td><td>BK UBA MOZAMBIQUE - UNESCO MAPUTO MZN</td></tr>
+          <tr><td>SOG01-EUR01</td><td>1010110</td><td>SocGen Paris EUR</td></tr>
+          <tr><td>ECO09-USD1</td><td>1065120</td><td>Ecobank USD</td></tr>
+        </table>
+        <div class="note">DISKB in T035D must exactly match BNKKO in T028B. This is the bridge between the two tables.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The Config Chain &mdash; How T028B and T035D Work Together</h3>
+    <p style="margin-bottom:12px">T028B and T035D are configured in the <strong>same SPRO screen</strong> (Electronic Bank Statement &#8594; Global Settings) but stored in <strong>different database tables</strong>. Understanding the chain is critical &mdash; if either link breaks, EBS fails silently.</p>
+    <div class="flow-diagram"><span class="highlight">THE EBS CONFIG CHAIN</span>
+
+  <span class="highlight-green">MT940 file arrives</span> with: SWIFT code (bank key) + physical account number
+      |
+      v
+  <span class="highlight-purple">T028B</span>: BANKL + KTONR &#8594; finds VGTYP (format) + <span class="highlight-yellow">BNKKO</span> (cash mgmt key)
+      |                         e.g., SP0000001YCB + 070040004663 &#8594; XRT940 + UBA01-MZN1
+      |
+      v  <span class="highlight-yellow">BNKKO must EXACTLY match DISKB</span> (this is the bridge)
+      |
+  <span class="highlight-purple">T035D</span>: <span class="highlight-yellow">DISKB</span> &#8594; finds BNKKO (G/L account 10xxxxx)
+      |                         e.g., UBA01-MZN1 &#8594; 0001065424
+      v
+  <span class="highlight-green">Posting to G/L</span>: 10xxxxx (permanent) + 11xxxxx (clearing)
+
+  <span class="highlight-red">COMMON FAILURES:</span>
+  &bull; T028B missing    &#8594; "Bank not found" &#8594; MT940 file rejected (not imported)
+  &bull; T035D missing    &#8594; "No GL account"  &#8594; file imported but posting fails
+  &bull; BNKKO mismatch   &#8594; T028B.BNKKO != T035D.DISKB &#8594; chain broken, posting fails
+  &bull; Wrong BANKL key  &#8594; searched by HBKID instead of bank key &#8594; entry not found (UBA01 lesson)</div>
+    <table>
+      <tr><th>Aspect</th><th>T028B</th><th>T035D</th></tr>
+      <tr><td>Purpose</td><td>Physical bank account &#8594; SAP format + house bank</td><td>House bank key &#8594; GL account number</td></tr>
+      <tr><td>Key Fields</td><td>BANKL + KTONR (bank key + physical acct#)</td><td>DISKB = {HBKID}-{HKTID} (e.g., UBA01-MZN1)</td></tr>
+      <tr><td>SPRO Path</td><td colspan="2">Financial Accounting &#8594; Bank Accounting &#8594; Bank Statements &#8594; Global Settings</td></tr>
+      <tr><td>Gold DB entries</td><td><strong>169</strong> (77% XRT940, 11% TR_TRNF, 5% SOG_FR)</td><td><strong>151</strong> (DISKB pattern 100% consistent)</td></tr>
+      <tr><td>Transport</td><td>Customizing request</td><td>Customizing request</td></tr>
+      <tr><td>Failure Mode</td><td>Missing &#8594; FF_5 cannot identify bank &#8594; file rejected</td><td>Missing &#8594; FF_5 cannot determine GL &#8594; posting fails</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>The Dual-Posting Logic &mdash; Why 10* and 11*?</h3>
+    <p style="margin-bottom:12px">Every bank statement line creates TWO postings in SAP. Understanding why is key to understanding reconciliation.</p>
+    <div class="grid-2">
+      <div style="border:1px solid var(--green);border-radius:6px;padding:12px">
+        <h4 style="color:var(--green);margin-top:0">10xxxxx &mdash; Bank Account (Permanent Ledger)</h4>
+        <p style="font-size:0.85em;color:#8b949e">The bank's view of reality. Each MT940 line becomes a line item here. These items are <strong>NEVER cleared</strong> &mdash; they are a permanent record of every bank transaction.</p>
+        <p style="font-size:0.85em;margin-top:8px"><strong>Balance on 10*</strong> = the bank's statement balance = how much cash is physically in the account.</p>
+        <p style="font-size:0.85em;margin-top:8px"><strong>Gold DB:</strong> 223K FEBEP items (2024-2026). The permanent bank ledger.</p>
+      </div>
+      <div style="border:1px solid var(--yellow);border-radius:6px;padding:12px">
+        <h4 style="color:var(--yellow);margin-top:0">11xxxxx &mdash; Clearing Account (Reconciliation Gap)</h4>
+        <p style="font-size:0.85em;color:#8b949e">SAP's reconciliation workspace. Each bank statement line also posts here, and then FEBAN tries to match (clear) it against the corresponding payment or invoice document.</p>
+        <p style="font-size:0.85em;margin-top:8px"><strong>Open items on 11*</strong> = unreconciled bank statement lines = the gap between what the bank says happened and what SAP can explain. Target: minimize to zero.</p>
+        <p style="font-size:0.85em;margin-top:8px"><strong>Gold DB:</strong> 964K FEBRE entries. Search strings (Tag 86) used for auto-matching. Algorithm 015 handles 85.7% of cases.</p>
+      </div>
+    </div>
+    <div class="note"><strong>Why this matters for house bank config:</strong> The 10* GL (bank account) must be configured in T035D with the correct DISKB key. The 11* GL (clearing) must have XOPVW=X in SKB1 (open item management) to enable clearing. If XOPVW is missing, FEBAN cannot clear items on 11* &mdash; they accumulate as false open items forever.</div>
+  </div>
+
+  <div class="card">
+    <h3>Reconciliation &mdash; How FEBAN Clears 11* Items</h3>
+    <p style="margin-bottom:12px">After EBS posts to 10* and 11*, the reconciliation process (FEBAN) attempts to match each 11* item against existing SAP documents (payment runs, manual postings, vendor invoices). Matching uses several strategies:</p>
+    <table>
+      <tr><th>Matching Method</th><th>How It Works</th><th>Coverage</th></tr>
+      <tr>
+        <td><span class="badge badge-green">Auto-clear (Algorithm 015)</span></td>
+        <td>SAP automatically matches 11* postings against payment documents using document number, amount, and reference fields. This handles the vast majority of cases.</td>
+        <td><strong>85.7%</strong> of incoming items</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Search String (Tag 86)</span></td>
+        <td>MT940 Tag 86 contains the note-to-payee text. SAP extracts reference numbers from this text and matches against open items. Substitution rules in YBASUBST/YTFI_BA_SUBST customize extraction per bank format.</td>
+        <td>Variable &mdash; depends on bank's Tag 86 format</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">Manual FEBAN</span></td>
+        <td>Treasury analyst opens FEBAN, reviews unmatched 11* items, and manually assigns them to the correct document or creates a new posting.</td>
+        <td>Remaining ~14% that auto-matching cannot resolve</td>
+      </tr>
+    </table>
+    <p style="margin-top:12px;font-size:0.85em;color:#8b949e"><strong>Production reality (Gold DB):</strong> 102I posting type = 99.6% of bank statement items (not 29.2% as initially claimed). ACH returns (BELNR=*) account for the remaining edge cases. The EBS processing is highly automated at UNESCO.</p>
+  </div>
+
+  <div class="card">
+    <h3>Month-End: FX Revaluation of Bank Accounts</h3>
+    <p style="margin-bottom:12px">At month-end, all non-USD bank account balances must be revalued at the closing exchange rate. This is where T030H (OBA1 configuration) is used. See the OBA1 section in the House Bank Config tab for the complete field template.</p>
+    <div class="flow-diagram"><span class="highlight">MONTH-END FX REVALUATION</span>
+
+  <span class="highlight-purple">FAGL_FC_VAL</span> runs for all non-USD accounts
+    &#8594; For each G/L account: look up <span class="highlight-purple">T030H</span> entry
+       &#8594; <span class="highlight-red">IF T030H MISSING: SILENTLY SKIP</span> (no error, no warning &mdash; just skipped)
+       &#8594; IF T030H exists: revalue balance at closing rate
+           &#8594; Post unrealized FX gain/loss to LSBEW/LHBEW accounts (6045011/7045011)
+           &#8594; Post balance sheet adjustment to LKORR (account itself)
+           &#8594; Auto-reverse at start of next period
+
+  <span class="highlight-red">CRITICAL GAP:</span>
+  213 of 219 non-USD bank accounts (10*) have NO T030H &#8594; <span class="highlight-red">3% coverage</span>
+  These accounts hold real cash in 80+ currencies at 80+ field offices
+  FAGL_FC_VAL silently skips them &#8594; FX gains/losses NOT in financial statements
+  &#8594; <span class="highlight-yellow">Material financial reporting gap</span></div>
+  </div>
+</div>
+
+<!-- TAB 4: PAYMENT -->
+<div class="panel" id="payment">
+  <div class="card">
+    <h3>What is the Payment Process?</h3>
+    <p style="margin-bottom:12px">UNESCO uses SAP's F110 automatic payment program to pay vendors, employees, and partners. F110 reads open invoices, determines which bank to pay from based on currency and payment method, groups items into payment documents, generates XML payment files (DMEE), and sends them to the bank. The bank confirms execution via MT940 bank statements, which are then reconciled via EBS.</p>
+    <p style="margin-bottom:12px"><strong>Who runs it:</strong> HQ Treasury runs F110 weekly (the "Wednesday cycle" &mdash; C_LOPEZ and I_MARQUAND are the primary operators). Field offices with local disbursement banks (e.g., ECO09 in Mozambique) pay locally by check.</p>
+    <p><strong>Scale:</strong> 550K payment cases, $16.8B total (2024-2026). 9 company codes (IBE, ICBA, ICTP, IIEP, MGIE, UBO, UIL, UIS, UNES).</p>
+  </div>
+
+  <div class="card">
+    <h3>Payment Processing Flow &mdash; End to End</h3>
+    <div class="flow-diagram"><span class="highlight">PAYMENT END-TO-END FLOW &mdash; 3 PHASES</span>
+
+  <span class="highlight">PHASE 1: PAYMENT PROPOSAL (F110)</span>
+  <span class="highlight-green">F110 Payment Run</span> (automatic payment program, run by Treasury)
+    &#8594; Selects open vendor invoices by: due date + payment method + company code
+    &#8594; <span class="highlight-purple">T042I</span> bank determination: which house bank pays?
+       &bull; Looks up: company code (UNES) + payment method (A/3/S/N/5/J) + currency
+       &bull; Returns: house bank (HBKID) + account ID (HKTID) + clearing G/L (11xxxxx)
+       &bull; Multiple banks can be ranked &mdash; if #1 has insufficient balance, tries #2
+    &#8594; Groups items into payment documents
+    &#8594; Posts clearing entries:
+        DEBIT:  <span class="highlight-yellow">11xxxxx</span> (clearing account &mdash; this is where the payment sits until bank confirms)
+        CREDIT: Vendor account (clears the vendor's open invoice)
+
+  <span class="highlight">PHASE 2: PAYMENT MEDIUM GENERATION (OBPM4 / SAPFPAYM)</span>
+    &#8594; <span class="highlight-purple">OBPM4</span> generates the payment medium (XML file sent to bank)
+    &#8594; Each house bank has a SAPFPAYM variant linking it to a DMEE format:
+        Wire (A/N)     &#8594; <span class="highlight-green">/GGI_XML_CT_UNESCO</span> (UNESCO custom XML pain.001)
+        SEPA (S)       &#8594; <span class="highlight-green">/SEPA_CT_UNES</span> (EU SEPA compliance format)
+        USD wire (5)   &#8594; <span class="highlight-green">/CITI/XML/UNESCO/DC_V3_01</span> (Citibank direct connect)
+        EUR wire (J)   &#8594; <span class="highlight-green">/CITI/XML/UNESCO/DC_V3_01</span> (Citibank direct connect)
+        Check (3)      &#8594; Check print program (no XML file &mdash; local FO banks like ECO09)
+    &#8594; XML file sent to bank via secure channel (SWIFT/CitiConnect)
+
+    <span class="highlight-red">WITHOUT OBPM4 VARIANT:</span> F110 runs but generates NO payment file &#8594; bank receives nothing
+    <span class="highlight-yellow">OBPM4 variants are NOT transportable</span> &mdash; must be created in V01 AND P01 manually
+
+  <span class="highlight">PHASE 3: BANK CONFIRMATION &amp; RECONCILIATION</span>
+    &#8594; Bank processes the payment (1-3 business days depending on method)
+    &#8594; Bank sends <span class="highlight-red">MT940 confirmation</span> (debit on bank account)
+    &#8594; EBS imports MT940 &#8594; posts to <span class="highlight-green">10xxxxx</span> (permanent bank ledger)
+    &#8594; FEBAN/auto-clear matches the 11xxxxx payment posting against the MT940 debit
+    &#8594; <span class="highlight-green">11xxxxx cleared</span> &mdash; reconciliation complete
+    &#8594; If no match: item stays open on 11xxxxx = unreconciled payment</div>
+  </div>
+
+  <div class="card">
+    <h3>Payment Methods</h3>
+    <table>
+      <tr><th>Code</th><th>Description</th><th>Format</th><th>Usage</th></tr>
+      <tr><td><span class="badge badge-blue">A</span></td><td>Wire Transfer (general)</td><td>/GGI_XML_CT_UNESCO</td><td>Standard international wires</td></tr>
+      <tr><td><span class="badge badge-blue">3</span></td><td>Check</td><td>Check print program</td><td>Physical checks (declining usage)</td></tr>
+      <tr><td><span class="badge badge-green">S</span></td><td>SEPA Transfer</td><td>/SEPA_CT_UNES</td><td>Euro-zone payments</td></tr>
+      <tr><td><span class="badge badge-purple">N</span></td><td>Single Wire Transfer</td><td>/GGI_XML_CT_UNESCO</td><td>Individual urgent payments</td></tr>
+      <tr><td><span class="badge badge-blue">5</span></td><td>USD Wire</td><td>/CITI/XML/UNESCO/DC_V3_01</td><td>USD-denominated wires via Citibank</td></tr>
+      <tr><td><span class="badge badge-green">J</span></td><td>EUR Wire</td><td>/CITI/XML/UNESCO/DC_V3_01</td><td>EUR-denominated wires via Citibank</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Payment Medium Formats</h3>
+    <table>
+      <tr><th>Format ID</th><th>Type</th><th>Bank</th><th>Usage</th></tr>
+      <tr><td><span class="badge badge-blue">/GGI_XML_CT_UNESCO</span></td><td>XML pain.001</td><td>Multiple</td><td>General wire transfers &mdash; UNESCO custom format</td></tr>
+      <tr><td><span class="badge badge-green">/SEPA_CT_UNES</span></td><td>XML pain.001 SEPA</td><td>Euro-zone banks</td><td>SEPA credit transfers &mdash; EU compliance</td></tr>
+      <tr><td><span class="badge badge-purple">/CITI/XML/UNESCO/DC_V3_01</span></td><td>XML CitiConnect</td><td>Citibank</td><td>Direct Citibank integration (USD + EUR wires)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Bank Determination (T042I) &mdash; 10 Paying Banks</h3>
+    <p style="margin-bottom:12px">T042I controls which house bank is selected for each payment method + currency combination. There are <strong>10 banks</strong> configured in T042I with 76 entries total. The system tries the highest-ranked bank first; if balance is insufficient, it falls back to the next-ranked bank.</p>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:12px"><strong>Two types of paying banks:</strong> HQ_PAYING (~9 banks) have T042I + T042A (DMEE routing) + OBPM4 variants &mdash; they generate XML payment files. FO_LOCAL (ECO09 only) has T042I method 3 (local check) but NO T042A &mdash; pays locally by physical check, replenished from HQ.</p>
+    <table>
+      <tr><th>Company Code</th><th>Payment Method</th><th>Currency</th><th>House Bank</th><th>Account</th><th>Bank Type</th></tr>
+      <tr><td>UNES</td><td>J (Wire)</td><td>USD</td><td>SOG01</td><td>USD01</td><td><span class="badge badge-blue">HQ_PAYING</span></td></tr>
+      <tr><td>UNES</td><td>N (Single)</td><td>USD</td><td>SOG03</td><td>USD01</td><td><span class="badge badge-blue">HQ_PAYING</span></td></tr>
+      <tr><td>UNES</td><td>S (SEPA)</td><td>EUR</td><td>SOG01</td><td>EUR01</td><td><span class="badge badge-blue">HQ_PAYING</span></td></tr>
+      <tr><td>UNES</td><td>5 (USD Wire)</td><td>USD</td><td>CIT04</td><td>USD01</td><td><span class="badge badge-blue">HQ_PAYING</span></td></tr>
+      <tr><td>UNES</td><td>C (Citibank)</td><td>USD</td><td>CIT21</td><td>USD01</td><td><span class="badge badge-blue">HQ_PAYING</span></td></tr>
+      <tr><td>UNES</td><td>3 (Local Check)</td><td>MZN</td><td>UBA01</td><td>MZN01</td><td><span class="badge badge-green">FO_LOCAL</span></td></tr>
+      <tr><td>UNES</td><td>3 (Local Check)</td><td>MZN</td><td>ECO09</td><td>MZN01</td><td><span class="badge badge-green">FO_LOCAL</span></td></tr>
+    </table>
+    <div class="note"><strong>ECO09 distinction:</strong> ECO09 has T042I (method 3, local check) but NO T042A. This is correct and intentional &mdash; FO local banks pay by physical check, not DMEE file. ECO09 is replenished from HQ centrally. Do NOT require T042A/OBPM4 for FO_LOCAL banks.</div>
+  </div>
+
+  <div class="card">
+    <h3>The Payment Config Chain &mdash; T042I &#8594; T042A &#8594; OBPM4</h3>
+    <p style="margin-bottom:12px">Three tables work together to route a payment from the invoice to the XML file sent to the bank. Understanding this chain is critical for configuring paying banks.</p>
+    <div class="flow-diagram"><span class="highlight">PAYMENT CONFIG CHAIN</span>
+
+  <span class="highlight-green">F110 Payment Run</span> asks: "Which bank pays this invoice?"
+      |
+      v
+  <span class="highlight-purple">T042I</span>: Company code + Payment method + Currency &#8594; House bank + Account
+      |     e.g., UNES + method A + USD &#8594; SOG01 + USD01 (rank 1)
+      |     76 entries, 10 banks. If bank #1 insufficient balance, tries bank #2.
+      v
+  <span class="highlight-purple">T042A</span>: House bank &#8594; DMEE format (which XML tree to use)
+      |     e.g., SOG01 &#8594; /GGI_XML_CT_UNESCO
+      |     Only HQ_PAYING banks (~9). ECO09 has NO T042A (correct &mdash; pays by check).
+      v
+  <span class="highlight-purple">OBPM4</span>: DMEE format + House bank &#8594; SAPFPAYM variant
+      |     Variant contains: dynamic selections (house bank, currency, account)
+      |     e.g., UNE_TRE_EURSOG01 &#8594; /GGI_XML_CT_UNESCO for EUR via SOG01
+      |     <span class="highlight-red">NOT transportable</span> &mdash; must create in V01 AND P01 manually!
+      v
+  <span class="highlight-green">XML pain.001 file generated</span> &#8594; sent to bank via SWIFT/CitiConnect
+      |
+      v
+  Bank processes payment (1-3 days) &#8594; sends MT940 confirmation &#8594; EBS imports &#8594; reconciles
+
+  <span class="highlight-red">IF T042I MISSING:</span> F110 cannot find a bank &#8594; invoice stays unpaid
+  <span class="highlight-red">IF T042A MISSING:</span> F110 runs but no DMEE format &#8594; no XML generated
+  <span class="highlight-red">IF OBPM4 MISSING:</span> DMEE format exists but no variant &#8594; no XML generated</div>
+  </div>
+
+  <div class="card">
+    <h3>DMEE Trees &mdash; The XML Templates</h3>
+    <p style="margin-bottom:12px">DMEE (Data Medium Exchange Engine) trees define the structure of the XML payment files. UNESCO has 13 DMEE trees in P01 with 8,308 nodes total. The trees read payment data from FPAYP/REGUH tables and generate ISO 20022 pain.001 XML files.</p>
+    <table>
+      <tr><th>DMEE Tree</th><th>Format</th><th>Banks Using It</th><th>Key Fields Read</th></tr>
+      <tr><td><code>/GGI_XML_CT_UNESCO</code></td><td>XML pain.001 (custom)</td><td>SOG01, SOG02, SOG03, SOG05, BRA01, CIT01, UNI01</td><td>FPAYP.XREF3 &#8594; Purpose Code, STRFR &#8594; Proprietary</td></tr>
+      <tr><td><code>/SEPA_CT_UNES</code></td><td>XML pain.001 (SEPA)</td><td>SOG01-EUR, NTB01/02-EUR, BNP01-EUR</td><td>EU SEPA compliance fields</td></tr>
+      <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>XML CitiConnect v3</td><td>CIT04, CIT21</td><td>Citibank-specific fields</td></tr>
+    </table>
+    <p style="margin-top:8px;font-size:0.85em;color:#8b949e"><strong>Key finding (Session #039):</strong> The PurposeCode in SEPA payments comes from FPAYP.XREF3, read by DMEE tree node N_9662041050. It is NOT a static literal &mdash; it's a runtime field mapping. BAdI FI_CGI_DMEE_EXIT_W_BADI post-processes the tree values. D01 vs P01 comparison: 12/13 trees identical, only /CGI_XML_CT_UNESCO_1 has 9 minor address node differences.</p>
+  </div>
+
+  <div class="card">
+    <h3>The Full Payment-to-Reconciliation Cycle</h3>
+    <p style="margin-bottom:12px">A payment is not "done" when F110 runs. It's done when the bank confirms execution AND the EBS import clears the 11* item. Here's the full lifecycle:</p>
+    <table>
+      <tr><th>Phase</th><th>Actor</th><th>SAP Transaction</th><th>What Happens</th><th>G/L Impact</th></tr>
+      <tr>
+        <td><span class="badge badge-blue">1. Invoice</span></td>
+        <td>AP / Procurement</td>
+        <td>FB60 / MIRO</td>
+        <td>Vendor invoice posted. Open item created on vendor account (BSIK).</td>
+        <td>Debit: Expense/Asset. Credit: Vendor (AP)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">2. Payment</span></td>
+        <td>Treasury (C_LOPEZ / I_MARQUAND)</td>
+        <td>F110</td>
+        <td>Payment proposal selects invoice. T042I determines bank. Document posted. XML generated via OBPM4.</td>
+        <td>Debit: <strong>11xxxxx</strong> (clearing). Credit: Vendor (clears invoice)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">3. XML to bank</span></td>
+        <td>SWIFT / CitiConnect</td>
+        <td>&mdash;</td>
+        <td>XML pain.001 file transmitted to bank. Bank processes payment (1-3 days).</td>
+        <td>No SAP impact yet &mdash; waiting for bank confirmation</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">4. Bank confirms</span></td>
+        <td>Bank (via MT940)</td>
+        <td>FF_5 (EBS import)</td>
+        <td>MT940 shows debit on bank account. EBS imports and posts dual entry.</td>
+        <td>Debit: <strong>10xxxxx</strong> (permanent bank ledger). Credit: <strong>11xxxxx</strong> (mirrors the payment)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">5. Reconciliation</span></td>
+        <td>Auto (FEBAN) or Treasury</td>
+        <td>FEBAN</td>
+        <td>11* item from step 2 is cleared against 11* item from step 4. Gap = zero.</td>
+        <td><strong>11xxxxx cleared</strong> &mdash; payment cycle complete</td>
+      </tr>
+    </table>
+    <div class="note"><strong>What stays on 11* (open items)?</strong> If FEBAN cannot match (wrong amount, missing reference, timing difference), the item stays open on 11*. Open 11* balance = "the bank says money moved but SAP can't explain it yet." Treasury investigates in FEBAN. Gold DB: 2,737 items on 11xxxxx accounts remain unreconciled (0.6% gap).</div>
+  </div>
+</div>
+
+<!-- TAB 5: CASH & REPORTING -->
+<div class="panel" id="cash-reporting">
+  <div class="card">
+    <h3>What Are YBANK Sets and Why Do They Matter?</h3>
+    <p style="margin-bottom:12px">YBANK sets are the backbone of UNESCO's cash management reporting. They are GS02 account sets (SETLEAF, class 0000) that group bank G/L accounts (10* only) by currency and location (HQ vs field office). Every cash position report, average balance calculation, and treasury dashboard depends on these sets being complete and accurate.</p>
+    <p style="margin-bottom:12px"><strong>What happens when an account is missing from a YBANK set?</strong> That bank account's balance is invisible to Treasury reporting. Cash position reports show an incomplete picture. Average balance calculations exclude the account. The field office appears to have less cash than it actually has. This is why step 10 (GS02) in the house bank creation process is critical &mdash; forgetting to add the new account to the correct set means it disappears from all reports.</p>
+    <p><strong>Who maintains them:</strong> DBS configurators (during house bank creation) and Treasury team (periodic reviews). 158 entries across 10 sets as of 2026-04-08. D01 and P01 are aligned via GRW_SET transport (established 2026-04-07).</p>
+  </div>
+
+  <div class="card">
+    <h3>YBANK Set Hierarchy</h3>
+    <div class="flow-diagram"><span class="highlight">YBANK_ACCOUNTS_ALL</span> (156 accounts)
+&#9500;&#9472;&#9472; <span class="highlight-green">YBANK_ACCOUNTS_HQ</span> (24 accounts)
+&#9474;   &#9500;&#9472;&#9472; <span class="highlight-green">HQ_EUR</span> (9)   &mdash; HQ Euro accounts
+&#9474;   &#9500;&#9472;&#9472; <span class="highlight-green">HQ_USD</span> (9)   &mdash; HQ US Dollar accounts
+&#9474;   &#9500;&#9472;&#9472; <span class="highlight-green">HQ_OTH</span> (6)   &mdash; HQ other currencies (GBP, CHF, JPY, etc.)
+&#9474;   &#9500;&#9472;&#9472; <span class="highlight-purple">SIGHT_EUR</span> (5) &mdash; Sight/demand deposit EUR
+&#9474;   &#9500;&#9472;&#9472; <span class="highlight-purple">SIGHT_USD</span> (2) &mdash; Sight/demand deposit USD
+&#9474;   &#9492;&#9472;&#9472; <span class="highlight-yellow">DEPOSIT</span> (4)   &mdash; Term deposits
+&#9474;
+&#9492;&#9472;&#9472; <span class="highlight-green">YBANK_ACCOUNTS_FO</span> (121 accounts)
+    &#9500;&#9472;&#9472; <span class="highlight-green">FO_USD</span> (50)  &mdash; Field office USD accounts
+    &#9500;&#9472;&#9472; <span class="highlight-green">FO_EUR</span> (4)   &mdash; Field office EUR accounts
+    &#9500;&#9472;&#9472; <span class="highlight-purple">FO_XAFXOF</span> (8) &mdash; Field office CFA Franc accounts
+    &#9492;&#9472;&#9472; <span class="highlight-yellow">FO_OTH</span> (59)  &mdash; Field office other currencies
+
+<span class="highlight">TOTAL:</span> 24 HQ + 121 FO + 11 sub-groups = 156 accounts across ~90 house banks</div>
+  </div>
+
+  <div class="card">
+    <h3>Where YBANK Sets Are Used</h3>
+    <table>
+      <tr><th>Consumer</th><th>Transaction</th><th>Set Used</th><th>Purpose</th></tr>
+      <tr>
+        <td><span class="badge badge-yellow">Average Balance</span></td>
+        <td>GS02</td>
+        <td>YBANK_ACCOUNTS_ALL + sub-sets</td>
+        <td>Calculate average daily balance per bank account for treasury reporting</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">Cash Position</span></td>
+        <td>TRM5 / FF7A</td>
+        <td>Via FDSB + FDSR forms</td>
+        <td>Real-time cash position across all bank accounts by currency</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Treasury Reporting</span></td>
+        <td>Custom reports</td>
+        <td>YBANK_ACCOUNTS_HQ / FO</td>
+        <td>HQ vs field office cash breakdown, currency exposure analysis</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Cash Position Forms</h3>
+    <table>
+      <tr><th>Form</th><th>Scope</th><th>Changed By</th><th>Description</th></tr>
+      <tr><td><span class="badge badge-blue">ZCASH</span></td><td>All company codes</td><td>M_SPRONK</td><td>Global cash position form &mdash; aggregates all bank accounts</td></tr>
+      <tr><td><span class="badge badge-green">ZCASHFO</span></td><td>Field offices only</td><td>M_SPRONK</td><td>Field office cash position &mdash; grouped by region</td></tr>
+      <tr><td><span class="badge badge-purple">ZCASHFODET</span></td><td>Field offices detail</td><td>M_SPRONK</td><td>Detailed field office view &mdash; individual account level</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Key Rules for YBANK Sets</h3>
+    <table>
+      <tr><th>Rule</th><th>Detail</th><th>Impact</th></tr>
+      <tr>
+        <td><span class="badge badge-red">Exact Match, Not Ranges</span></td>
+        <td>SETLEAF entries must be individual GL accounts, not ranges (10xxxxx to 10yyyyy)</td>
+        <td>Ranges would include non-bank accounts &mdash; always use exact values</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Transportable via GRW_SET</span></td>
+        <td>GS02 sets can be transported as GRW_SET workbench objects. Transport carries the <strong>FULL set</strong> (not delta) &mdash; overwrites target system completely.</td>
+        <td>D01 and P01 must be aligned BEFORE transport. If P01 has manual additions, transport will delete them. Run <code>ybank_sets_full_comparison.py</code> to verify alignment. Established 2026-04-07 with transport D01K9B0F5F.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">Only 10* Accounts</span></td>
+        <td>YBANK sets contain only main bank GLs (10xxxxx), never sub-accounts (11xxxxx)</td>
+        <td>Sub-accounts are clearing accounts &mdash; their balance is the unreconciled gap</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Sync Script Available</span></td>
+        <td><code>ybank_sets_full_comparison.py</code> compares D01 vs P01 SETLEAF entry-by-entry. <code>ybank_setleaf_sync.py</code> syncs P01&#8594;D01 via RFC with safety rails (batch 10, throttle 2s, D01 target only).</td>
+        <td>Automated detection and remediation of misaligned accounts</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>How Everything Connects &mdash; The Treasury Reporting Chain</h3>
+    <p style="margin-bottom:12px">Treasury reporting depends on a chain of correctly configured components. A missing link anywhere in the chain means incomplete or wrong reports.</p>
+    <div class="flow-diagram"><span class="highlight">THE TREASURY REPORTING CHAIN</span>
+
+  <span class="highlight-green">G/L Account (10xxxxx)</span>
+    |  Created in FS00 (Step 1). Balance = real bank cash.
+    v
+  <span class="highlight-purple">YBANK Set (GS02)</span>
+    |  Step 10: account added to FO_USD / FO_EUR / FO_OTH / HQ_* set
+    |  <span class="highlight-red">IF MISSING:</span> account invisible to ALL reports below
+    v
+  <span class="highlight-yellow">Cash Position Reports (ZCASH / ZCASHFO / ZCASHFODET)</span>
+    |  Report Painter forms read balances from accounts in YBANK sets
+    |  Show: available cash by currency, by region, by bank
+    |  <span class="highlight-red">IF ACCOUNT NOT IN SET:</span> its balance excluded &#8594; cash looks lower than reality
+    v
+  <span class="highlight-green">Average Balance Reports</span>
+    |  Calculate average daily balance per account for treasury performance
+    |  Used for: bank fee negotiations, liquidity planning, interest calculations
+    |  <span class="highlight-red">IF ACCOUNT NOT IN SET:</span> balance not averaged &#8594; wrong performance metrics
+    v
+  <span class="highlight-purple">Month-End FX Revaluation (FAGL_FC_VAL)</span>
+    |  Separate from YBANK sets &mdash; depends on T030H (OBA1) config
+    |  <span class="highlight-red">IF T030H MISSING:</span> account silently skipped &#8594; FX gains/losses not reported
+    v
+  <span class="highlight-yellow">Financial Statements</span>
+    |  Balance sheet shows bank account balances
+    |  P&amp;L shows FX gains/losses from OBA1 revaluation
+    |  <span class="highlight-red">213 non-USD bank accounts missing T030H = material reporting gap</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Step 11 &mdash; TRM5 Cash Position Reports: ELIMINATED</h3>
+    <p>As of 2026-04-07, step 11 (adding G/L pairs to Report Painter forms ZCASH/ZCASHFO/ZCASHFODET via TRM5) has been <strong>eliminated from the house bank creation process</strong>. These forms are maintained separately by Treasury (M_SPRONK) and no longer require per-bank configuration. Do NOT perform step 11 for new banks.</p>
+  </div>
+</div>
+
+<!-- TAB 6: UBA01 REPORT -->
+<div class="panel" id="uba01-report">
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:var(--green)">32</div><div class="label">PASS</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">0</div><div class="label">FAIL</div></div>
+    <div class="kpi"><div class="val" style="color:var(--yellow)">1</div><div class="label">WARN</div></div>
+  </div>
+
+  <div class="card" style="background:#0a1a0a;border-color:#14532d">
+    <h3 style="color:#4ade80">&#10003; CONFIGURATION COMPLETE &mdash; CLOSED 2026-04-08</h3>
+    <p>UBA01 (United Bank for Africa Mozambique) fully configured across D01, V01, and P01. All 6 transports released. 3-system comparison: ALL 15 CHECKS IDENTICAL.</p>
+    <p style="margin-top:8px"><strong>Bank:</strong> UBA MOCAMBIQUE, SA &nbsp;|&nbsp; <strong>Country:</strong> MZ &nbsp;|&nbsp; <strong>SWIFT:</strong> UNAFMZMA &nbsp;|&nbsp; <strong>Bank Key:</strong> SP0000001YCB</p>
+    <p><strong>Accounts:</strong> MZN01 (070040004663, MZN) + USD01 (070340000190, USD)</p>
+    <p><strong>G/Ls:</strong> 1065424/1165424 (MZN) + 1065421/1165421 (USD)</p>
+  </div>
+
+  <div class="card">
+    <h3>Compliance Check Results &mdash; Post-Transport Audit (2026-04-08)</h3>
+    <table>
+      <tr><th>#</th><th>Check</th><th>Table</th><th>What Was Verified</th><th>D01</th><th>P01</th></tr>
+      <tr><td>1</td><td>House Bank Master</td><td>T012</td><td>HBKID=UBA01, Country=MZ, BankKey=SP0000001YCB</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>2</td><td>Bank Directory</td><td>BNKA</td><td>UBA MOCAMBIQUE,SA, SWIFT=UNAFMZMA</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>3</td><td>Bank Accounts</td><td>T012K</td><td>MZN01 (070040004663) + USD01 (070340000190)</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>4</td><td>Account Descriptions</td><td>T012T</td><td>English: "UNESCO MAPUTO - MZN/USD"</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>5</td><td>GL Chart of Accounts</td><td>SKA1</td><td>All 4 G/Ls: KTOKS=BANK, XBILK=X</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>6</td><td>GL Company Code</td><td>SKB1</td><td>FDLEV=B0/B1, ZUAWA=027/Z01, HBKID=UBA01, XINTB=empty, FSTAG=UN03</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>7</td><td>GL Texts</td><td>SKAT</td><td>3 languages (E/F/P) on all 4 G/Ls</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>8</td><td>IBAN</td><td>TIBAN</td><td>Transport D01K9B0F58 released</td><td><span class="badge badge-yellow">WARN</span></td><td><span class="badge badge-yellow">WARN</span></td></tr>
+      <tr><td>9</td><td>OBA1 Valuation</td><td>T030H</td><td>MZN clearing COMPLETE, USD clearing COMPLETE (all 5 fields)</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>10</td><td>Cash Management</td><td>T035D</td><td>DISKB=UBA01-MZN1 &#8594; GL 1065424, DISKB=UBA01-USD1 &#8594; GL 1065421</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>11</td><td>EBS GL Mapping</td><td>T035D</td><td>Account symbols mapped to bank G/Ls</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>12</td><td>EBS Format Mapping</td><td>T028B</td><td>BANKL+KTONR &#8594; XRT940 format, both accounts</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>13</td><td>Receiving Bank</td><td>T018V</td><td>USD01: method A, clearing=1165421</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>14</td><td>Payment Bank</td><td>T042I</td><td>Method 3 (local check), MZN01</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+      <tr><td>15</td><td>YBANK Sets</td><td>SETLEAF</td><td>1065424 &#8594; FO_OTH, 1065421 &#8594; FO_USD</td><td><span class="badge badge-green">PASS</span></td><td><span class="badge badge-green">PASS</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Transport Chain &mdash; 6 Transports (lesson: target 3 next time)</h3>
+    <table>
+      <tr><th>#</th><th>Transport</th><th>Type</th><th>Description</th><th>Status</th></tr>
+      <tr><td>1</td><td>D01K9B0F56</td><td>C/350</td><td>New house bank and accounts UBA01</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+      <tr><td>2</td><td>D01K9B0F59</td><td>C/350</td><td>New mozambike bank OBA1</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+      <tr><td>3</td><td>D01K9B0F5B</td><td>C/350</td><td>OBA1 Correction New bank Mozambique</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+      <tr><td>4</td><td>D01K9B0F5F</td><td>C/350</td><td>Sets YBANK</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+      <tr><td>5</td><td>D01K9B0F5K</td><td>C/350</td><td>OBA1 Correction New bank Mozambique</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+      <tr><td>6</td><td>D01K9B0F58</td><td>W</td><td>IBAN New bank</td><td><span class="badge badge-green">RELEASED</span></td></tr>
+    </table>
+    <p style="margin-top:8px;color:#f59e0b;font-size:12px"><strong>Lesson learned:</strong> 6 transports is excessive. OBA1 was configured 3 times (learning by trial and error). Next bank: consolidate ALL customizing into 1 transport, verify with compliance checker BEFORE release. Target: 3 transports max.</p>
+  </div>
+
+  <div class="card">
+    <h3>Issues Found &amp; Fixed (7 total &mdash; all resolved)</h3>
+    <table>
+      <tr><th>#</th><th>Issue</th><th>Root Cause</th><th>Fix</th><th>Status</th></tr>
+      <tr><td>1</td><td>XINTB=X on all 4 accounts</td><td>Misread of ECO09 benchmark (only 1/353 has XINTB=X)</td><td>Cleared via RFC in D01. P01 fixed by MD team (Ingrid reported F5562)</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>2</td><td>OBA1 missing LKORR + valuation</td><td>Initial config only filled Realized section</td><td>Fixed by ECO09 field-by-field comparison. Transport D01K9B0F5K</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>3</td><td>T028B initially not found</td><td>Searched by HBKID instead of BANKL+BANKN</td><td>Corrected search key &mdash; T028B was present</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>4</td><td>SKAT texts "ECOBANK"</td><td>Copied from ECO09 reference without updating</td><td>Fixed via RFC &mdash; updated to "UBA"</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>5</td><td>P01 HBKID=ECO09</td><td>MD team copied from ECO09 and didn't update</td><td>Fixed by MD team after transport</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>6</td><td>GS02 sets missing</td><td>New accounts not added to YBANK sets</td><td>Added via GS02, transported D01K9B0F5F</td><td><span class="badge badge-green">FIXED</span></td></tr>
+      <tr><td>7</td><td>V01 G/L 1165421 missing</td><td>V01 out of sync</td><td>Created via RFC (SKA1+SKB1+SKAT)</td><td><span class="badge badge-green">FIXED</span></td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+</script>
+
+<div style="text-align:center;padding:20px;color:#8b949e;font-size:0.75em;border-top:1px solid var(--border);margin-top:40px">
+  Treasury Operations Companion v1.0 &mdash; 2026-04-07 &mdash; 6 tabs<br>
+  UNESCO SAP Intelligence Platform &mdash; Generated by Claude Opus
+</div>
+
+</body>
+</html>

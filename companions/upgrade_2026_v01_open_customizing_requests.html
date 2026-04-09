@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade 2026 v01 &mdash; Open Customizing Requests &mdash; UNESCO SAP</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9;
+  --accent: #58a6ff; --green: #3fb950; --yellow: #d29922; --red: #f85149;
+  --purple: #bc8cff; --orange: #f0883e; --cyan: #39d2c0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+.header { background: linear-gradient(135deg, #1a2332 0%, #0d2137 100%); padding: 24px 32px; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 1.6em; color: #fff; margin-bottom: 4px; }
+.header .sub { color: #8b949e; font-size: 0.9em; }
+.header .domain-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: rgba(248,81,73,0.2); color: var(--red); margin-top: 8px; }
+.tabs { display: flex; gap: 0; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
+.tab { padding: 12px 20px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.85em; transition: all 0.2s; }
+.tab:hover { color: var(--text); background: rgba(88,166,255,0.05); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.card h3 { color: var(--accent); margin-bottom: 12px; font-size: 1.1em; }
+.card h4 { color: var(--purple); margin: 16px 0 8px; font-size: 0.95em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+th { background: rgba(88,166,255,0.1); color: var(--accent); text-align: left; padding: 8px 12px; border: 1px solid var(--border); white-space: nowrap; }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover { background: rgba(88,166,255,0.05); }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.kpi .val { font-size: 1.8em; font-weight: 700; color: #fff; }
+.kpi .label { font-size: 0.8em; color: #8b949e; margin-top: 4px; }
+.flow-diagram { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'Courier New', monospace; font-size: 0.82em; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--text); }
+.highlight { color: var(--accent); font-weight: bold; }
+.highlight-green { color: var(--green); font-weight: bold; }
+.highlight-yellow { color: var(--yellow); font-weight: bold; }
+.highlight-red { color: var(--red); font-weight: bold; }
+.highlight-purple { color: var(--purple); font-weight: bold; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.badge-green { background: rgba(63,185,80,0.2); color: var(--green); }
+.badge-yellow { background: rgba(210,153,34,0.2); color: var(--yellow); }
+.badge-red { background: rgba(248,81,73,0.2); color: var(--red); }
+.badge-blue { background: rgba(88,166,255,0.2); color: var(--accent); }
+.badge-purple { background: rgba(188,140,255,0.2); color: var(--purple); }
+.note { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 6px; padding: 12px; margin: 12px 0; font-size: 0.85em; }
+.note::before { content: "Note: "; font-weight: bold; color: var(--yellow); }
+.alert { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); border-radius: 6px; padding: 12px; margin: 12px 0; font-size: 0.85em; }
+.alert::before { content: "ALERT: "; font-weight: bold; color: var(--red); }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 6px 0; font-size: 0.9em; }
+.checklist li::before { content: "\2610 "; color: var(--yellow); font-size: 1.1em; margin-right: 6px; }
+.checklist li.done::before { content: "\2611 "; color: var(--green); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Upgrade 2026 v01 &mdash; Open Customizing Requests</h1>
+  <div class="sub">UNESCO SAP Intelligence Platform &mdash; Support &amp; Maintenance &mdash; Pre-Import Readiness</div>
+  <div class="domain-badge">BLOCKER: 7 Open Production Requests Must Be Resolved</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-panel="situation">Situation</div>
+  <div class="tab" data-panel="violations">Landscape Violations</div>
+  <div class="tab" data-panel="request-detail">Request Detail (7)</div>
+  <div class="tab" data-panel="conflicts">Conflict Map</div>
+  <div class="tab" data-panel="resolution">Resolution Plan</div>
+  <div class="tab" data-panel="d01-comparison">D01 Comparison</div>
+  <div class="tab" data-panel="data-comparison">Data Comparison (P01 vs D01)</div>
+  <div class="tab" data-panel="prevention">Prevention Protocol</div>
+</div>
+
+<div class="content">
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 1: SITUATION -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel active" id="situation">
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:var(--red)">7</div><div class="label">Open Requests (P01)</div></div>
+    <div class="kpi"><div class="val">19</div><div class="label">Total Objects Locked</div></div>
+    <div class="kpi"><div class="val">4</div><div class="label">Distinct Owners</div></div>
+    <div class="kpi"><div class="val" style="color:var(--red)">3</div><div class="label">Cross-System Conflicts</div></div>
+    <div class="kpi"><div class="val" style="color:var(--red)">3</div><div class="label">CRITICAL Risk</div></div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3>What Happened</h3>
+    <p style="margin-bottom:12px">During the <strong>Upgrade 2026</strong> transport import pre-check (phase CHECK_REQUIREMENTS), SAP flagged <strong>"Open Data Extraction Requests"</strong> in P01 client 350 (Production). This blocks the entire import process &mdash; no transports can be imported until resolved.</p>
+    <p style="margin-bottom:12px"><strong>Error message:</strong> <em>"The system has found a number of open data extraction requests. These should be processed before starting the object import process, as changes to DDIC structures could prevent data extraction requests from being read after the import, thus causing them to terminate."</em></p>
+    <p style="margin-bottom:12px;color:var(--yellow)"><strong>SAP Notes:</strong> 1081287, 1083709, 328181</p>
+  </div>
+
+  <div class="card">
+    <h3>Root Cause</h3>
+    <p style="margin-bottom:12px"><strong>7 customizing requests were created directly in P01 (Production)</strong> instead of following the standard D01 &rarr; P01 transport path. These open requests hold locks on configuration objects, preventing the upgrade import.</p>
+    <div class="alert">All 7 requests are <strong>P01K* with TRFUNCTION='W' (Customizing)</strong> and status <strong>'D' (Modifiable)</strong>. Creating customizing requests directly in production is a <strong>landscape violation</strong> &mdash; it bypasses the dev/test/transport cycle and causes configuration drift between D01 and P01.</div>
+  </div>
+
+  <div class="card">
+    <h3>Client Settings</h3>
+    <table>
+      <tr><th>System</th><th>Client</th><th>Description</th><th>Category</th><th>Recording</th><th>Protection</th></tr>
+      <tr>
+        <td>P01</td><td>350</td><td>Production</td>
+        <td><span class="badge badge-red">P (Production)</span></td>
+        <td>2 (no recording)</td>
+        <td>3 (no cross-client changes)</td>
+      </tr>
+      <tr>
+        <td>D01</td><td>350</td><td>Development</td>
+        <td><span class="badge badge-green">C (Customizing)</span></td>
+        <td>1 (recording enabled)</td>
+        <td>(open)</td>
+      </tr>
+    </table>
+    <div class="note">P01 client 350 has Recording=2 (no automatic recording) and Protection=3 (no cross-client changes). Despite these settings, users were still able to create customizing requests by entering changes through SM30/SPRO and choosing "Create Request" when prompted.</div>
+  </div>
+
+  <div class="card">
+    <h3>Impact Summary</h3>
+    <table>
+      <tr><th>Domain</th><th>Requests</th><th>Max Risk</th><th>Key Concern</th></tr>
+      <tr>
+        <td><span class="badge badge-purple">HCM</span></td><td>2</td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Duplicate lock on Fiori closing view (V_T77HRFPM_CLSNG)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">PSM-FM</span></td><td>2</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>Carry-forward biennium 2023-24 config (TABADRH, FM views)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">WORKFLOW</span></td><td>1</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>Payment approval workflow (V_VBWF15) &mdash; audit-critical</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">FI-BANK</span></td><td>1</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>House bank names (VC_T012N) &mdash; Treasury operations</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">FI</span></td><td>1</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>Company code basic data (V_001_B) &mdash; audit-driven, overlaps D01</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 2: LANDSCAPE VIOLATIONS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="violations">
+
+  <div class="card" style="border-left:4px solid var(--red);background:rgba(248,81,73,0.05)">
+    <h3 style="color:var(--red)">What Is a Landscape Violation?</h3>
+    <div class="flow-diagram"><span class="highlight-green">CORRECT PATH (Standard Transport Landscape):</span>
+
+  Developer makes change in <span class="highlight">D01</span> (Development)
+    &rarr; Change recorded in transport request (D01K*)
+    &rarr; Request released
+    &rarr; Transport imported to <span class="highlight">P01</span> (Production) via STMS
+    &rarr; D01 and P01 are <span class="highlight-green">IN SYNC</span>
+
+<span class="highlight-red">VIOLATION (What happened here):</span>
+
+  User makes change directly in <span class="highlight-red">P01</span> (Production)
+    &rarr; Change recorded in P01 customizing request (P01K*)
+    &rarr; Request left open (never released)
+    &rarr; D01 does NOT have this change
+    &rarr; D01 and P01 are <span class="highlight-red">OUT OF SYNC (DRIFT)</span>
+
+<span class="highlight-red">THE DANGER:</span>
+
+  Next D01 &rarr; P01 transport of the same object
+    &rarr; <span class="highlight-red">SILENTLY OVERWRITES</span> the P01-only change
+    &rarr; Production fix disappears with NO warning
+    &rarr; Nobody knows until something breaks</div>
+  </div>
+
+  <div class="card">
+    <h3>Root Cause Analysis &mdash; Why Were These Opened in P01?</h3>
+    <table>
+      <tr>
+        <th>Transport</th>
+        <th>Owner</th>
+        <th>Root Cause</th>
+        <th>D01 Has Same Change?</th>
+        <th>Drift Risk</th>
+      </tr>
+      <tr>
+        <td>P01K950265</td>
+        <td>HIPER</td>
+        <td><span class="badge badge-yellow">CONFIGURATION_DRIFT</span><br>Junk description ("dqdQSd"). No business justification for direct P01 edit. Likely accidental &mdash; user entered SM30 in P01 instead of D01.</td>
+        <td><span class="badge badge-red">NO</span> &mdash; no D01 request for V_T77HRFPM_CLSNG</td>
+        <td><span class="badge badge-yellow">LOW</span><br>If change was never actually saved, no drift.</td>
+      </tr>
+      <tr>
+        <td>P01K950267</td>
+        <td>A_SEFIANI</td>
+        <td><span class="badge badge-yellow">CONFIGURATION_DRIFT</span><br>Same pattern. Junk description ("QDSQDSQ"). Same object as above &mdash; two users made the same mistake.</td>
+        <td><span class="badge badge-red">NO</span></td>
+        <td><span class="badge badge-yellow">LOW</span></td>
+      </tr>
+      <tr>
+        <td>P01K950269</td>
+        <td>HIPER</td>
+        <td><span class="badge badge-blue">PERIOD_SENSITIVE</span><br>Carry-forward config for biennium 2023-24. CF deadlines are time-critical and differ between D01/P01 &mdash; <strong>legitimate reason</strong> to configure directly in P01. Real budget data only exists in P01.</td>
+        <td><span class="badge badge-yellow">PARTIAL</span> &mdash; D01 has CF config but for different biennium periods. FM carry-forward is always P01-specific.</td>
+        <td><span class="badge badge-red">HIGH</span><br>8 objects. If upgrade overwrites FM CF rules, carry-forward breaks.</td>
+      </tr>
+      <tr>
+        <td>P01K950271</td>
+        <td>I_KONAKOV</td>
+        <td><span class="badge badge-blue">PERIOD_SENSITIVE</span><br>Same CF cycle, different user. V_T163K (MM tolerance) and V_T100C (message control) adjusted for CF processing.</td>
+        <td><span class="badge badge-yellow">PARTIAL</span> &mdash; D01K9B0C5M (R_RIOS, "FI: POSTINGS 2025") may cover V_T100C</td>
+        <td><span class="badge badge-yellow">MEDIUM</span><br>V_T163K tolerance values may differ P01 vs D01.</td>
+      </tr>
+      <tr>
+        <td>P01K950275</td>
+        <td>FP_SPEZZANO</td>
+        <td><span class="badge badge-red">EMERGENCY</span><br>Payment workflow change in production. Likely urgent fix to approval routing &mdash; a live payment process was blocked and couldn't wait for D01 &rarr; P01 cycle.</td>
+        <td><span class="badge badge-red">NO</span> &mdash; no D01 request for V_VBWF15. <strong>Highest drift risk of all 7.</strong></td>
+        <td><span class="badge badge-red">CRITICAL</span><br>If upgrade imports D01's version of V_VBWF15, the emergency WF fix is lost. Payment approvals could break.</td>
+      </tr>
+      <tr>
+        <td>P01K950277</td>
+        <td>HIPER</td>
+        <td><span class="badge badge-red">EMERGENCY</span><br>House bank rename directly in P01. Cross-references UBA01/ECO09 compliance issue. Production banking config can't wait for transport cycle.</td>
+        <td><span class="badge badge-yellow">PARTIAL</span> &mdash; D01K9B0DC5 (JP_LOPEZ) touches house bank config but different view (VC_T012N).</td>
+        <td><span class="badge badge-red">CRITICAL</span><br>D01 may have old bank names that overwrite P01 corrections.</td>
+      </tr>
+      <tr>
+        <td>P01K950279</td>
+        <td>HIPER</td>
+        <td><span class="badge badge-purple">AUDIT_DRIVEN</span><br>External audit recommendation required immediate company code correction in production. Audit findings can't wait for dev cycle.</td>
+        <td><span class="badge badge-red">CONFLICT</span> &mdash; D01K9B0CBF (JP_LOPEZ) modifies V_001_B + ADDRESS for IISTEM. Different purpose, same objects.</td>
+        <td><span class="badge badge-red">CRITICAL</span><br>D01K9B0CBF import will overwrite P01's audit-driven changes. Audit compliance lost.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>D01 Synchronization Requirements</h3>
+    <p style="margin-bottom:12px">For each P01-only change, determine whether D01 needs to be updated to prevent silent overwrite during future transports.</p>
+    <table>
+      <tr><th>Object</th><th>P01 Owner</th><th>D01 Sync Required?</th><th>Action</th></tr>
+      <tr>
+        <td>V_T77HRFPM_CLSNG</td><td>HIPER / A_SEFIANI</td>
+        <td><span class="badge badge-yellow">VERIFY</span></td>
+        <td>Compare values SM30 D01 vs P01. If different, update D01 to match P01.</td>
+      </tr>
+      <tr>
+        <td>TABADRH + 5 FM views</td><td>HIPER</td>
+        <td><span class="badge badge-yellow">CONDITIONAL</span></td>
+        <td>FM CF is period-specific. Only sync if same biennium config applies to D01 testing.</td>
+      </tr>
+      <tr>
+        <td>V_T163K</td><td>HIPER / I_KONAKOV</td>
+        <td><span class="badge badge-green">YES</span></td>
+        <td>MM tolerances should match. Compare and sync.</td>
+      </tr>
+      <tr>
+        <td>V_T100C</td><td>HIPER / I_KONAKOV</td>
+        <td><span class="badge badge-green">YES</span></td>
+        <td>Message suppression should be consistent. Sync to D01.</td>
+      </tr>
+      <tr>
+        <td>V_VBWF15</td><td>FP_SPEZZANO</td>
+        <td><span class="badge badge-red">MANDATORY</span></td>
+        <td><strong>BEFORE upgrade:</strong> Replicate P01 WF values to D01 via PFTC/SWI1. Otherwise upgrade kills the fix.</td>
+      </tr>
+      <tr>
+        <td>VC_T012N</td><td>HIPER</td>
+        <td><span class="badge badge-red">MANDATORY</span></td>
+        <td><strong>BEFORE upgrade:</strong> Compare T012/T012N D01 vs P01. Sync D01 to match P01 bank names.</td>
+      </tr>
+      <tr>
+        <td>V_001_B + ADDRESS</td><td>HIPER</td>
+        <td><span class="badge badge-red">MANDATORY</span></td>
+        <td><strong>BEFORE upgrade:</strong> Replicate audit values to D01. Release P01K950279. Only then import D01K9B0CBF.</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 3: REQUEST DETAIL -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="request-detail">
+
+  <!-- REQUEST 1 -->
+  <div class="card">
+    <h3><span class="badge badge-red">1</span> P01K950265 &mdash; HIPER &mdash; 2025-01-03</h3>
+    <p><strong>Description:</strong> "dqdQSd" (garbage text &mdash; likely accidental)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-yellow">CONFIGURATION_DRIFT</span> &mdash; User entered SM30 in P01 instead of D01. No business justification.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950266</td><td>HIPER</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-01-03</td></tr>
+    </table>
+    <h4>Objects (1)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T77HRFPM_CLSNG</td>
+        <td><span class="badge badge-purple">HCM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>
+          <strong>What:</strong> View cluster data for T77HRFPM_CLSNG &mdash; HCM Fiori People Manager closing/deadline configuration.<br>
+          <strong>Why it matters:</strong> Controls deadline settings in Fiori HCM apps (leave requests, approvals). If wrong, managers see incorrect closing dates.<br>
+          <strong>Risk:</strong> VDAT is a SAP maintenance artifact that records SM30 view contents. Leaving it open locks the view from other transports but does not affect runtime.<br>
+          <strong>Verdict:</strong> Junk description, single object, 15+ months old. <span class="badge badge-green">SAFE TO DELETE</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- REQUEST 2 -->
+  <div class="card">
+    <h3><span class="badge badge-red">2</span> P01K950267 &mdash; A_SEFIANI &mdash; 2025-01-06</h3>
+    <p><strong>Description:</strong> "QDSQDSQ" (garbage text &mdash; likely accidental)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-yellow">CONFIGURATION_DRIFT</span> &mdash; Duplicate of #1. Same object, different user.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950268</td><td>A_SEFIANI</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-01-06</td></tr>
+    </table>
+    <h4>Objects (1)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T77HRFPM_CLSNG</td>
+        <td><span class="badge badge-purple">HCM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>
+          <strong>What:</strong> Same HCM Fiori closing view as #1 &mdash; duplicate lock on the same object.<br>
+          <strong>Why it matters:</strong> Two requests locking the same view creates a transport conflict. Neither can be released cleanly until the other is resolved.<br>
+          <strong>Verdict:</strong> Duplicate of #1, junk description, 15+ months stale. <span class="badge badge-green">SAFE TO DELETE</span>
+        </td>
+      </tr>
+    </table>
+    <div class="note">Requests #1 and #2 lock the <strong>same object</strong> (V_T77HRFPM_CLSNG). Both must be deleted to release the lock.</div>
+  </div>
+
+  <!-- REQUEST 3 -->
+  <div class="card">
+    <h3><span class="badge badge-red">3</span> P01K950269 &mdash; HIPER &mdash; 2025-01-10</h3>
+    <p><strong>Description:</strong> "C - CF tasks" (Carry-Forward configuration)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-blue">PERIOD_SENSITIVE</span> &mdash; Biennium 2023-24 carry-forward. Legitimate reason: FM CF requires P01-specific config because real budget data only exists there.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950270</td><td>HIPER</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-01-10</td></tr>
+    </table>
+    <h4>Objects (8)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>TABU</td><td>TABADRH</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>
+          <strong>What:</strong> FM Address Hierarchy &mdash; maps organizational units to FM address structures for carry-forward reassignment.<br>
+          <strong>Key:</strong> <code>350FM 01FMYCUNESCO2023-24</code> &mdash; client 350, FM area 01, UNESCO biennium 2023-24.<br>
+          <strong>Why it matters:</strong> CF reassignment rules determine how budget commitments from 2023-24 map to the new biennium. Wrong mapping = commitments land in wrong funds/fund centers.<br>
+          <strong>Risk:</strong> If CF for 2023-24 is complete, this is stale. If not, deleting loses the reassignment rule.
+        </td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>VV_FMTABADRH_REASSIGNMENT</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>FM carry-forward reassignment maintenance view. Works with TABADRH above.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>VV_FMREAS_RULES_REASSIGNMENT</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Reassignment rules &mdash; which fund/fund center combinations get reassigned during biennium carry-forward.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_FMYC_CFC1_A</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>UNESCO-specific (Y namespace) CF control variant. Controls which document types are carried forward.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>VV_FMABP_CNTRL_BFC</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Availability Control settings for BFC processing. Budget check behavior during carry-forward.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>VV_FMABP_ED_DEF_BFC</td>
+        <td><span class="badge badge-blue">PSM-FM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>ABP Edit Defaults for BFC. Default values when creating budget entries during carry-forward.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T100C</td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Message control &mdash; suppresses known warnings during batch carry-forward processing.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T163K</td>
+        <td><span class="badge badge-green">MM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>MM tolerance limits for GR/IR. Adjusted during CF for prior-biennium commitment clearing.</td>
+      </tr>
+    </table>
+    <div class="note">Biennium 2023-24 CF should be complete by April 2026. Verify with HIPER. If complete: <span class="badge badge-green">SAFE TO DELETE</span>. If not: <span class="badge badge-red">RELEASE FIRST</span>.</div>
+  </div>
+
+  <!-- REQUEST 4 -->
+  <div class="card">
+    <h3><span class="badge badge-red">4</span> P01K950271 &mdash; I_KONAKOV &mdash; 2025-01-12</h3>
+    <p><strong>Description:</strong> "C - CF tasks" (companion to #3)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-blue">PERIOD_SENSITIVE</span> &mdash; Same CF cycle, different user. Coordination failure between HIPER and I_KONAKOV.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950272</td><td>I_KONAKOV</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-01-12</td></tr>
+    </table>
+    <h4>Objects (2)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T163K</td>
+        <td><span class="badge badge-green">MM</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Same MM tolerance view as #3 &mdash; <strong>duplicate lock</strong> between HIPER and I_KONAKOV.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_T100C</td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Same message control view as #3 &mdash; another duplicate lock.</td>
+      </tr>
+    </table>
+    <div class="note"><strong>Conflict with #3:</strong> V_T163K and V_T100C appear in BOTH #3 (HIPER) and #4 (I_KONAKOV). One must be released first, or both deleted together. <span class="badge badge-yellow">COORDINATE WITH BOTH USERS</span></div>
+  </div>
+
+  <!-- REQUEST 5 -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">5</span> P01K950275 &mdash; FP_SPEZZANO &mdash; 2025-01-29</h3>
+    <p><strong>Description:</strong> "Change on WF of payment" (Payment approval workflow)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-red">EMERGENCY</span> &mdash; Live payment process was blocked. Couldn't wait for D01 &rarr; P01 cycle. <strong>D01 does NOT have this fix.</strong></p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950276</td><td>FP_SPEZZANO</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-01-29</td></tr>
+    </table>
+    <h4>Objects (3)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_VBWF15</td>
+        <td><span class="badge badge-purple">WORKFLOW</span></td>
+        <td><span class="badge badge-red">HIGH</span></td>
+        <td>
+          <strong>What:</strong> Workflow task assignment (VBWF15) &mdash; maps tasks to agents/roles for payment approval.<br>
+          <strong>Why it matters:</strong> Core payment approval workflow. UNESCO uses WF 90000003 for payment release. Controls WHO can approve payments and at what thresholds.<br>
+          <strong>DANGER:</strong> D01 does NOT have this change. Upgrade will import D01's version and <strong>silently revert</strong> the emergency fix. Payment approvals could break.
+        </td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>TDAT</td><td>PDWS_LSO</td>
+        <td><span class="badge badge-purple">HCM-LSO</span></td>
+        <td><span class="badge badge-yellow">LOW</span></td>
+        <td>PD workflow step for LSO (Learning Solution). Auto-captured side-effect &mdash; not the real change.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>TDAT</td><td>PDST_LSO</td>
+        <td><span class="badge badge-purple">HCM-LSO</span></td>
+        <td><span class="badge badge-yellow">LOW</span></td>
+        <td>PD status profile for LSO. Same auto-capture as above.</td>
+      </tr>
+    </table>
+    <div class="alert"><strong>MANDATORY before upgrade:</strong> Compare V_VBWF15 values D01 vs P01 (PFTC/SWI1). Replicate P01 values to D01. Then release this request. If you skip this, the upgrade kills the payment workflow fix.</div>
+  </div>
+
+  <!-- REQUEST 6 -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">6</span> P01K950277 &mdash; HIPER &mdash; 2025-06-05</h3>
+    <p><strong>Description:</strong> "Change House Bamnls 06052025" (House Banks &mdash; typo)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-red">EMERGENCY</span> &mdash; House bank rename in production. Related to ECO09/UBA01 compliance issue. Banking config can't wait for transport cycle.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950278</td><td>HIPER</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-06-05</td></tr>
+    </table>
+    <h4>Objects (1)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>CDAT</td><td>VC_T012N</td>
+        <td><span class="badge badge-blue">FI-BANK</span></td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>
+          <strong>What:</strong> View cluster for house bank account names (T012N = language-dependent bank names).<br>
+          <strong>Why it matters:</strong> T012 is the central house bank master. T012N names appear in FI12, bank determination (T042I), payment runs (F110).<br>
+          <strong>Connection:</strong> May relate to ECO09 &rarr; UBA01 HBKID correction (see Treasury companion, UBA01 Report).<br>
+          <strong>DANGER:</strong> If D01 has old bank names, upgrade overwrites P01 corrections.
+        </td>
+      </tr>
+    </table>
+    <div class="alert"><strong>MANDATORY:</strong> Compare T012/T012N values D01 vs P01. Sync D01 to match P01 bank names before upgrade.</div>
+  </div>
+
+  <!-- REQUEST 7 -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">7</span> P01K950279 &mdash; HIPER &mdash; 2025-06-25</h3>
+    <p><strong>Description:</strong> "Change Compay Code productive Audit Recomendation" (Audit-driven)</p>
+    <p><strong>Root Cause:</strong> <span class="badge badge-purple">AUDIT_DRIVEN</span> &mdash; External auditors required immediate company code correction. Audit findings can't wait for dev cycle.</p>
+    <table>
+      <tr><th>Task</th><th>User</th><th>Status</th><th>Date</th></tr>
+      <tr><td>P01K950280</td><td>HIPER</td><td><span class="badge badge-yellow">Modifiable</span></td><td>2025-06-25</td></tr>
+    </table>
+    <h4>Objects (3)</h4>
+    <table>
+      <tr><th>PGMID</th><th>OBJECT</th><th>OBJ_NAME</th><th>Domain</th><th>Risk</th><th>Explanation</th></tr>
+      <tr>
+        <td>R3TR</td><td>VDAT</td><td>V_001_B</td>
+        <td><span class="badge badge-blue">FI</span></td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td>
+          <strong>What:</strong> Company code basic settings (T001). <strong>Most fundamental FI configuration object.</strong><br>
+          <strong>Why it matters:</strong> Defines chart of accounts, fiscal year variant, currency, country. Affects every FI posting.<br>
+          <strong>D01 conflict:</strong> D01K9B0CBF (JP_LOPEZ, IISTEM) also modifies V_001_B. <strong>Import order is critical.</strong>
+        </td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>TDAT</td><td>ADDRESS</td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td>Company code legal address. Auto-captured when editing in OBY6/T001. D01 conflict: same object in D01K9B0CBF.</td>
+      </tr>
+      <tr>
+        <td>R3TR</td><td>TDAT</td><td>ADDRESS_4.6</td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td><span class="badge badge-yellow">LOW</span></td>
+        <td>Extended address format. Companion artifact &mdash; always captured with ADDRESS. D01 conflict.</td>
+      </tr>
+    </table>
+    <div class="alert"><strong>MANDATORY import order:</strong> 1) Confirm audit changes applied in P01. 2) Replicate to D01. 3) Release P01K950279. 4) Only then import D01K9B0CBF. Reversing the order loses the audit fix.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 4: CONFLICT MAP -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="conflicts">
+
+  <div class="card">
+    <h3>Object Conflict Map</h3>
+    <p style="margin-bottom:12px">Objects locked by multiple open requests create transport conflicts. These must be resolved in a specific order.</p>
+    <table>
+      <tr><th>Object</th><th>Domain</th><th>Locked By</th><th>Conflict Type</th><th>Resolution</th></tr>
+      <tr>
+        <td>V_T77HRFPM_CLSNG</td>
+        <td><span class="badge badge-purple">HCM</span></td>
+        <td>P01K950265 (HIPER)<br>P01K950267 (A_SEFIANI)</td>
+        <td><span class="badge badge-yellow">Intra-P01 duplicate</span></td>
+        <td>Delete both &mdash; junk requests</td>
+      </tr>
+      <tr>
+        <td>V_T163K</td>
+        <td><span class="badge badge-green">MM</span></td>
+        <td>P01K950269 (HIPER)<br>P01K950271 (I_KONAKOV)</td>
+        <td><span class="badge badge-yellow">Intra-P01 duplicate</span></td>
+        <td>Coordinate: release one, delete the other</td>
+      </tr>
+      <tr>
+        <td>V_T100C</td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td>P01K950269 (HIPER)<br>P01K950271 (I_KONAKOV)</td>
+        <td><span class="badge badge-yellow">Intra-P01 duplicate</span></td>
+        <td>Same as V_T163K &mdash; coordinate</td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td><strong>V_001_B</strong></td>
+        <td><span class="badge badge-blue">FI</span></td>
+        <td>P01K950279 (HIPER)<br>D01K9B0CBF (JP_LOPEZ)</td>
+        <td><span class="badge badge-red">Cross-system P01/D01</span></td>
+        <td><strong>Resolve P01 first, then import D01</strong></td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td><strong>ADDRESS</strong></td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td>P01K950279 (HIPER)<br>D01K9B0CBF (JP_LOPEZ)</td>
+        <td><span class="badge badge-red">Cross-system P01/D01</span></td>
+        <td><strong>Resolve P01 first, then import D01</strong></td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td><strong>ADDRESS_4.6</strong></td>
+        <td><span class="badge badge-blue">BASIS</span></td>
+        <td>P01K950279 (HIPER)<br>D01K9B0CBF (JP_LOPEZ)</td>
+        <td><span class="badge badge-red">Cross-system P01/D01</span></td>
+        <td><strong>Resolve P01 first, then import D01</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Conflict Dependency Diagram</h3>
+    <div class="flow-diagram"><span class="highlight">INTRA-P01 CONFLICTS (resolve within P01):</span>
+
+  V_T77HRFPM_CLSNG: P01K950265 (HIPER) <span class="highlight-red">===</span> P01K950267 (A_SEFIANI)
+    Action: Delete both
+
+  V_T163K:           P01K950269 (HIPER) <span class="highlight-red">===</span> P01K950271 (I_KONAKOV)
+  V_T100C:           P01K950269 (HIPER) <span class="highlight-red">===</span> P01K950271 (I_KONAKOV)
+    Action: Release #3 first (has more objects), then delete #4
+
+<span class="highlight-red">CROSS-SYSTEM CONFLICTS (P01 must be resolved BEFORE D01 import):</span>
+
+  V_001_B:     P01K950279 (HIPER/audit) <span class="highlight-red">===&gt;</span> D01K9B0CBF (JP_LOPEZ/IISTEM)
+  ADDRESS:     P01K950279 (HIPER/audit) <span class="highlight-red">===&gt;</span> D01K9B0CBF (JP_LOPEZ/IISTEM)
+  ADDRESS_4.6: P01K950279 (HIPER/audit) <span class="highlight-red">===&gt;</span> D01K9B0CBF (JP_LOPEZ/IISTEM)
+
+    <span class="highlight-yellow">Step 1:</span> Replicate P01 audit values to D01
+    <span class="highlight-yellow">Step 2:</span> Release P01K950279
+    <span class="highlight-yellow">Step 3:</span> Import D01K9B0CBF to P01</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 5: RESOLUTION PLAN -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="resolution">
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>Resolution Plan &mdash; Ordered Steps</h3>
+    <div class="flow-diagram"><span class="highlight-green">STEP 1: Delete junk requests (no coordination needed)</span>
+  SE01 &rarr; Delete P01K950265 (HIPER, "dqdQSd")
+  SE01 &rarr; Delete P01K950267 (A_SEFIANI, "QDSQDSQ")
+  Result: V_T77HRFPM_CLSNG lock released
+
+<span class="highlight-yellow">STEP 2: Resolve carry-forward requests (coordinate with PSM team)</span>
+  Ask HIPER + I_KONAKOV: "Was 2023-24 carry-forward completed?"
+    If YES &rarr; Delete P01K950269 + P01K950271
+    If NO  &rarr; Release P01K950269 first, then delete P01K950271
+  Result: V_T163K, V_T100C, TABADRH, FM views unlocked
+
+<span class="highlight-yellow">STEP 3: Resolve payment workflow (coordinate with FP_SPEZZANO)</span>
+  <span class="highlight-red">MANDATORY:</span> Compare V_VBWF15 D01 vs P01 FIRST
+  If different: Replicate P01 values to D01 (PFTC/SWI1)
+  Ask FP_SPEZZANO: "Was the payment workflow change applied?"
+    If YES &rarr; Delete P01K950275 (after syncing to D01)
+    If NO  &rarr; Release P01K950275 (audit-critical!)
+  Result: V_VBWF15 unlocked, D01 in sync
+
+<span class="highlight-red">STEP 4: Sync Treasury config to D01 (coordinate with HIPER)</span>
+  <span class="highlight-red">MANDATORY:</span> Compare T012/T012N D01 vs P01
+  Sync D01 to match P01 bank names
+  Release or delete P01K950277
+  Result: VC_T012N unlocked, D01 in sync
+
+<span class="highlight-red">STEP 5: Sync audit fix to D01 (coordinate with HIPER)</span>
+  <span class="highlight-red">MANDATORY:</span> Replicate V_001_B + ADDRESS audit values to D01
+  Release P01K950279
+  Result: V_001_B, ADDRESS unlocked, D01 in sync
+
+<span class="highlight">STEP 6: Proceed with Upgrade 2026 import</span>
+  All 7 requests resolved
+  D01 synced with P01 production fixes
+  D01K9B0CBF (IISTEM) can now be imported without conflict
+  Re-run pre-check to verify zero open requests</div>
+  </div>
+
+  <div class="card">
+    <h3>Action Items Checklist</h3>
+    <ul class="checklist">
+      <li><strong>SE01:</strong> Delete P01K950265 + P01K950267 (junk, no business value)</li>
+      <li><strong>HIPER:</strong> Confirm 2023-24 carry-forward status for P01K950269</li>
+      <li><strong>I_KONAKOV:</strong> Confirm CF tasks status for P01K950271</li>
+      <li><strong>FP_SPEZZANO:</strong> Confirm payment workflow change status for P01K950275</li>
+      <li><strong>D01 SYNC:</strong> Replicate V_VBWF15 from P01 to D01 (payment workflow)</li>
+      <li><strong>D01 SYNC:</strong> Replicate T012N from P01 to D01 (house bank names)</li>
+      <li><strong>D01 SYNC:</strong> Replicate V_001_B + ADDRESS from P01 to D01 (audit fix)</li>
+      <li><strong>HIPER:</strong> Confirm house bank rename status for P01K950277</li>
+      <li><strong>HIPER:</strong> Confirm audit recommendation applied for P01K950279</li>
+      <li><strong>JP_LOPEZ:</strong> After all resolved + D01 synced, retry upgrade import</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 6: D01 COMPARISON -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="d01-comparison">
+
+  <div class="card">
+    <h3>D01 Open Customizing Requests &mdash; 54 Total</h3>
+    <p style="margin-bottom:12px">D01 (development) has <strong>54 open customizing requests</strong> vs 7 in P01. This is normal for a dev system (Category=C, Recording=1). Many are explicitly marked "don't transport" or "test".</p>
+    <table>
+      <tr><th>User</th><th>Count</th><th>Oldest</th><th>Notable Descriptions</th></tr>
+      <tr><td>R_RIOS</td><td>14</td><td>2024-09-05</td><td>RE-FX configuration, MM logistics, dunning, "NO DONT TRANSPORT IT"</td></tr>
+      <tr><td>A_SEFIANI</td><td>9</td><td>2024-11-14</td><td>HR PA/PY, UBO integration, DSN, "No transport Test"</td></tr>
+      <tr><td>JP_LOPEZ</td><td>8</td><td>2025-01-17</td><td>IISTEM company code, house banks, CRP workflows, "NO PASAR"</td></tr>
+      <tr><td>I_KONAKOV</td><td>6</td><td>2024-09-05</td><td>FM budgeting, posting periods, AVC tolerance, fund types</td></tr>
+      <tr><td>N_MENARD</td><td>5</td><td>2024-07-08</td><td>HR payroll, dunning forms, OAC0, workflows</td></tr>
+      <tr><td>FP_SPEZZANO</td><td>3</td><td>2025-01-13</td><td>Dunning/reminders (ARGA project), "not transport"</td></tr>
+      <tr><td>HIPER</td><td>0</td><td>&mdash;</td><td>No open requests in D01 (only works in P01 &mdash; part of the problem)</td></tr>
+      <tr><td>Others</td><td>9</td><td>2024-10-31</td><td>E_FRATNIK, A_DOOKHUN, N_VIDAL</td></tr>
+    </table>
+    <div class="note"><strong>D01 does not block upgrades</strong> &mdash; transport imports go INTO D01, not out of it. The 54 open requests are a housekeeping concern but not an upgrade blocker.</div>
+  </div>
+
+  <div class="card">
+    <h3>Key Observation: HIPER Works Only in P01</h3>
+    <p style="margin-bottom:12px">HIPER has <strong>4 of the 7 P01 open requests</strong> but <strong>0 open requests in D01</strong>. This confirms a pattern:</p>
+    <div class="alert">HIPER makes all customizing changes directly in production (P01), never in development (D01). This is the root cause of the landscape violations. Every change HIPER makes in P01 is invisible to D01 and at risk of being overwritten by future transports.</div>
+    <p style="margin-top:12px"><strong>Recommendation:</strong> Establish a process where HIPER's P01 changes are systematically replicated to D01 after each change. Alternatively, HIPER should create a D01 transport first and import it to P01 via STMS.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 7: DATA COMPARISON (P01 vs D01) — VERIFIED 2026-04-08 -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="data-comparison">
+
+  <div class="card" style="border-left:4px solid var(--cyan)">
+    <h3>Live Data Comparison &mdash; P01 vs D01</h3>
+    <p style="margin-bottom:12px">Actual table values extracted via RFC on <strong>2026-04-08</strong> from both systems. This replaces assumptions based on transport request presence with <strong>verified field-by-field comparison</strong>.</p>
+    <p style="color:var(--cyan);font-size:0.85em">Method: RFC_READ_TABLE on both P01 (172.16.4.100) and D01 (172.16.4.66), client 350, full table read, row-by-row diff by primary key.</p>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">7</div><div class="label">Tables Compared</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">3</div><div class="label">No Drift (Safe to Delete)</div></div>
+    <div class="kpi"><div class="val" style="color:var(--red)">4</div><div class="label">Real Drift (Must Sync)</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">0</div><div class="label">Payment WF Risk</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Verdict Summary</h3>
+    <table>
+      <tr><th>Table</th><th>View</th><th>Transport</th><th>P01 Rows</th><th>D01 Rows</th><th>Drift?</th><th>Action</th></tr>
+      <tr style="background:rgba(63,185,80,0.05)">
+        <td>T77HRFPM_CLOSING</td><td>V_T77HRFPM_CLSNG</td><td>P01K950265 + P01K950267</td>
+        <td>2</td><td>2</td>
+        <td><span class="badge badge-green">IDENTICAL</span></td>
+        <td>Delete both requests. No data was changed.</td>
+      </tr>
+      <tr style="background:rgba(63,185,80,0.05)">
+        <td>VBWF15</td><td>V_VBWF15</td><td>P01K950275</td>
+        <td>9</td><td>9</td>
+        <td><span class="badge badge-green">IDENTICAL</span></td>
+        <td>Delete request. Emergency WF fix was either never saved or already reverted.</td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td>T163K</td><td>V_T163K</td><td>P01K950269 + P01K950271</td>
+        <td>9</td><td>8</td>
+        <td><span class="badge badge-red">DRIFT</span></td>
+        <td>Sync KNTTP='S' row to D01 before upgrade.</td>
+      </tr>
+      <tr>
+        <td>T100C</td><td>V_T100C</td><td>P01K950269 + P01K950271</td>
+        <td>61</td><td>66</td>
+        <td><span class="badge badge-yellow">INVERSE</span></td>
+        <td>D01 has 4 extra rows. No P01 overwrite risk. D01 is ahead.</td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td>T012T</td><td>VC_T012N</td><td>P01K950277</td>
+        <td>500</td><td>500</td>
+        <td><span class="badge badge-red">DRIFT</span></td>
+        <td>Sync 3 "CLOSED" text labels + 6 new bank texts to D01.</td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td>T001</td><td>V_001_B</td><td>P01K950279</td>
+        <td>9</td><td>10</td>
+        <td><span class="badge badge-red">DRIFT</span></td>
+        <td>Sync XPROD flag for 4 company codes to D01. Audit-critical.</td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.05)">
+        <td>TABADRH</td><td>TABADRH</td><td>P01K950269</td>
+        <td>32</td><td>31</td>
+        <td><span class="badge badge-red">DRIFT</span></td>
+        <td>Sync biennium UNESCO2025-26 + 3 version updates to D01.</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══ DETAIL: T77HRFPM_CLOSING ═══ -->
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3><span class="badge badge-green">IDENTICAL</span> T77HRFPM_CLOSING &mdash; HCM Fiori People Manager Closing</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950265 (HIPER) + P01K950267 (A_SEFIANI) &mdash; view name was V_T77HRFPM_CLSNG, actual table is T77HRFPM_CLOSING</p>
+    <table>
+      <tr><th>COMPCODE</th><th>CLOSING_DATE</th><th>UPDATE_PBC</th><th>CONSUMPTION</th><th>CLOSE_FM_DOC</th><th>P01</th><th>D01</th></tr>
+      <tr><td>UBO</td><td>2025-12-31</td><td>X</td><td></td><td>X</td><td><span class="badge badge-green">match</span></td><td><span class="badge badge-green">match</span></td></tr>
+      <tr><td>UNES</td><td>2025-12-31</td><td>X</td><td></td><td>X</td><td><span class="badge badge-green">match</span></td><td><span class="badge badge-green">match</span></td></tr>
+    </table>
+    <p style="margin-top:12px;color:var(--green)"><strong>Conclusion:</strong> Both requests were opened with junk descriptions ("dqdQSd", "QDSQDSQ") and no data was ever changed. The 2 rows are byte-for-byte identical. <strong>Safe to delete both.</strong></p>
+  </div>
+
+  <!-- ═══ DETAIL: VBWF15 ═══ -->
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3><span class="badge badge-green">IDENTICAL</span> VBWF15 &mdash; Payment Workflow Task Assignment</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950275 (FP_SPEZZANO) &mdash; "Change on WF of payment"</p>
+    <table>
+      <tr><th>WFVAR</th><th>FRWEG</th><th>STUFE</th><th>HWBIS</th><th>P01</th><th>D01</th></tr>
+    </table>
+    <p style="margin-top:4px;color:#8b949e;font-size:0.85em">9 rows compared, all fields identical across both systems.</p>
+    <p style="margin-top:12px;color:var(--green)"><strong>Conclusion:</strong> The emergency payment workflow change was either never saved to the table, or was already replicated to D01 through another path. <strong>Zero drift risk. Safe to delete.</strong></p>
+    <div class="note">This overrides the earlier CRITICAL risk assessment for P01K950275. The original analysis assumed drift based on the transport request existence &mdash; actual data verification proves no drift.</div>
+  </div>
+
+  <!-- ═══ DETAIL: T163K ═══ -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">DRIFT</span> T163K &mdash; MM Tolerance Limits (GR/IR)</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950269 (HIPER) + P01K950271 (I_KONAKOV) &mdash; "C - CF tasks"</p>
+    <p style="margin-bottom:12px">P01 has <strong>9 rows</strong>, D01 has <strong>8 rows</strong>. One extra row in P01:</p>
+    <table>
+      <tr><th>Field</th><th>P01</th><th>D01</th></tr>
+      <tr>
+        <td>KNTTP (Account Assignment Category)</td>
+        <td><span class="badge badge-red">S</span> (present)</td>
+        <td><span class="badge badge-yellow">missing</span></td>
+      </tr>
+    </table>
+    <p style="margin-top:12px"><strong>What KNTTP='S' means:</strong> Tolerance limits for <strong>service entry sheets</strong> (SES). Without this row in D01, service entry sheet tolerance checks may behave differently between systems.</p>
+    <p style="color:var(--red)"><strong>Action:</strong> Add KNTTP='S' row to D01 T163K via SM30 before upgrade. Otherwise D01 &rarr; P01 import overwrites T163K and the service entry tolerance row disappears from production.</p>
+  </div>
+
+  <!-- ═══ DETAIL: T100C ═══ -->
+  <div class="card" style="border-left:4px solid var(--yellow)">
+    <h3><span class="badge badge-yellow">INVERSE DRIFT</span> T100C &mdash; Message Control</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950269 (HIPER) + P01K950271 (I_KONAKOV) &mdash; "C - CF tasks"</p>
+    <p style="margin-bottom:12px">P01 has <strong>61 rows</strong>, D01 has <strong>66 rows</strong>. D01 has 4 extra message suppressions not in P01:</p>
+    <table>
+      <tr><th>ARBGB (Msg Class)</th><th>MSGNR</th><th>Module</th><th>Present In</th></tr>
+      <tr><td>AA</td><td>303</td><td>Asset Accounting</td><td><span class="badge badge-yellow">D01 only</span></td></tr>
+      <tr><td>KI</td><td>235</td><td>Controlling</td><td><span class="badge badge-yellow">D01 only</span></td></tr>
+      <tr><td>FICUSTOM</td><td>171</td><td>FI Customizing</td><td><span class="badge badge-yellow">D01 only</span></td></tr>
+      <tr><td>RECAAR</td><td>100</td><td>Real Estate</td><td><span class="badge badge-yellow">D01 only</span></td></tr>
+    </table>
+    <p style="margin-top:12px;color:var(--yellow)"><strong>Conclusion:</strong> D01 is <em>ahead</em> of P01 &mdash; it has more message suppressions (likely added during dev/test). This is <strong>not a P01 risk</strong> &mdash; if D01 imports to P01, P01 gets the extra suppressions (additive, not destructive). The P01 open request did NOT add unique message suppressions.</p>
+    <p><strong>Action:</strong> No D01 sync needed. Delete P01 requests after confirming CF is complete.</p>
+  </div>
+
+  <!-- ═══ DETAIL: T012T ═══ -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">DRIFT</span> T012T &mdash; House Bank Account Texts</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950277 (HIPER) &mdash; "Change House Bamnls 06052025"</p>
+    <p style="margin-bottom:12px">Both systems have 500 rows. Differences found in 3 categories:</p>
+
+    <h4>1. Text Differences &mdash; 3 banks renamed with "CLOSED-----" prefix in P01</h4>
+    <table>
+      <tr><th>BUKRS</th><th>HBKID</th><th>HKTID</th><th>P01 TEXT1</th><th>D01 TEXT1</th></tr>
+      <tr>
+        <td>UNES</td><td>BST01</td><td>USD01</td>
+        <td><span style="color:var(--red)">CLOSED-----</span>UNESCO MAPUTO - USD</td>
+        <td>UNESCO MAPUTO - USD</td>
+      </tr>
+      <tr>
+        <td>UNES</td><td>BPO01</td><td>USD01</td>
+        <td><span style="color:var(--red)">CLOSED-----</span>UNESCO IESALC - USD</td>
+        <td>UNESCO IESALC - USD</td>
+      </tr>
+      <tr>
+        <td>UNES</td><td>BST01</td><td>MZM01</td>
+        <td><span style="color:var(--red)">CLOSED-----</span>UNESCO MAPUTO - MZN</td>
+        <td>UNESCO MAPUTO - MZN</td>
+      </tr>
+    </table>
+    <p style="margin-top:8px"><strong>Impact:</strong> P01 correctly marks these bank accounts as closed. D01 still shows them as active. If upgrade imports D01 version, the "CLOSED" markers disappear from P01 &mdash; users may try to use closed bank accounts for payments.</p>
+
+    <h4>2. Rows only in P01 &mdash; 6 French-language texts</h4>
+    <table>
+      <tr><th>BUKRS</th><th>HBKID</th><th>HKTID</th><th>SPRAS</th><th>TEXT1</th></tr>
+      <tr><td>UNES</td><td>BAE01</td><td>CLP01</td><td>F</td><td>UNESCO SANTIAGO - CLP</td></tr>
+      <tr><td>UNES</td><td>BAE01</td><td>CLP02</td><td>F</td><td>UNESCO SANTIAGO - CLP</td></tr>
+      <tr><td>UNES</td><td>BAE01</td><td>USD01</td><td>F</td><td>UNESCO SANTIAGO - USD</td></tr>
+      <tr><td>UNES</td><td>BAE01</td><td>USD02</td><td>F</td><td>UNESCO SANTIAGO - USD</td></tr>
+      <tr><td>UNES</td><td>BBM01</td><td>QAR01</td><td>F</td><td>UNESCO DOHA - QAR</td></tr>
+      <tr><td>UNES</td><td>BBV01</td><td>USDD1</td><td>F</td><td>A VUE - DEPOT - USD</td></tr>
+    </table>
+    <p style="margin-top:8px"><strong>Impact:</strong> French translations for Santiago, Doha, and BBV01 only exist in P01. Upgrade may delete them.</p>
+
+    <h4>3. Rows only in D01 &mdash; 6 STEM company code texts</h4>
+    <table>
+      <tr><th>BUKRS</th><th>HBKID</th><th>HKTID</th><th>SPRAS</th><th>TEXT1</th></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>ETB01</td><td>E</td><td>UNESCO IICBA ADDIS ABABA - NON RESIDENT - ETB</td></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>ETB01</td><td>F</td><td>UNESCO IICBA ADDIS ABABA - NON RESIDENT - ETB</td></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>ETB02</td><td>E</td><td>UNESCO IICBA ADDIS ABABA - RESIDENT - ETB</td></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>ETB02</td><td>F</td><td>UNESCO IICBA ADDIS ABABA - RESIDENT - ETB</td></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>USD01</td><td>E</td><td>UNESCO IICBA ADDIS ABABA- USD</td></tr>
+      <tr><td>STEM</td><td>CBE01</td><td>USD01</td><td>F</td><td>UNESCO IICBA ADDIS ABABA - NON RESIDENT - ETB</td></tr>
+    </table>
+    <p style="margin-top:8px"><strong>Impact:</strong> Expected &mdash; STEM company code only exists in D01 (IISTEM project). These will be added to P01 during upgrade import, which is correct.</p>
+
+    <p style="margin-top:16px;color:var(--red)"><strong>Action:</strong> Before upgrade, sync the 3 "CLOSED" text labels and 6 French translations from P01 to D01 via SM30 (T012T). This ensures the D01 &rarr; P01 import preserves the bank closure markers.</p>
+  </div>
+
+  <!-- ═══ DETAIL: T001 ═══ -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">DRIFT</span> T001 &mdash; Company Code Basic Data (Audit Recommendation)</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950279 (HIPER) &mdash; "Change Compay Code productive Audit Recomendation"</p>
+    <p style="margin-bottom:12px">P01 has <strong>9 company codes</strong>, D01 has <strong>10</strong> (extra: STEM). 4 company codes have value differences:</p>
+
+    <h4>XPROD Flag Differences (Productive System Indicator)</h4>
+    <table>
+      <tr><th>BUKRS</th><th>Company Name</th><th>P01 XPROD</th><th>D01 XPROD</th><th>Meaning</th></tr>
+      <tr>
+        <td><strong>ICTP</strong></td><td>Int'l Centre for Theoretical Physics</td>
+        <td><span class="badge badge-green">X</span></td>
+        <td><span class="badge badge-red">(blank)</span></td>
+        <td>P01 marks as productive, D01 does not</td>
+      </tr>
+      <tr>
+        <td><strong>MGIE</strong></td><td>Mahatma Gandhi Institute of Education</td>
+        <td><span class="badge badge-green">X</span></td>
+        <td><span class="badge badge-red">(blank)</span></td>
+        <td>P01 marks as productive, D01 does not</td>
+      </tr>
+      <tr>
+        <td><strong>UIL</strong></td><td>UNESCO Institute for Lifelong Learning</td>
+        <td><span class="badge badge-green">X</span></td>
+        <td><span class="badge badge-red">(blank)</span></td>
+        <td>P01 marks as productive, D01 does not</td>
+      </tr>
+      <tr>
+        <td><strong>ICBA</strong></td><td>Int'l Centre for Biosaline Agriculture</td>
+        <td><span class="badge badge-green">X</span></td>
+        <td><span class="badge badge-red">(blank)</span></td>
+        <td>P01 marks as productive, D01 does not</td>
+      </tr>
+    </table>
+
+    <h4>Extra Company Code in D01</h4>
+    <table>
+      <tr><th>BUKRS</th><th>Status</th><th>Notes</th></tr>
+      <tr><td>STEM</td><td><span class="badge badge-yellow">D01 only</span></td><td>Expected &mdash; IISTEM new company code, not yet imported to P01</td></tr>
+    </table>
+
+    <p style="margin-top:16px"><strong>What XPROD means:</strong> The "Productive" flag (T001-XPROD) indicates that a company code contains real financial data and should be treated as a live entity. External auditors recommended setting this flag for ICTP, MGIE, UIL, and ICBA. Without it, certain SAP checks and validations treat these company codes as test/non-productive.</p>
+
+    <p style="color:var(--red)"><strong>Action:</strong> <strong>MANDATORY</strong> &mdash; Set XPROD='X' for ICTP, MGIE, UIL, ICBA in D01 (OBY6/T001) before upgrade. If upgrade imports D01's version, the audit recommendation is reversed and all 4 company codes lose their productive flag. This is an <strong>audit compliance issue</strong>.</p>
+  </div>
+
+  <!-- ═══ DETAIL: TABADRH ═══ -->
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3><span class="badge badge-red">DRIFT</span> TABADRH &mdash; FM Address Hierarchy (Biennium Config)</h3>
+    <p style="margin-bottom:8px"><strong>Transport:</strong> P01K950269 (HIPER) &mdash; "C - CF tasks"</p>
+    <p style="margin-bottom:12px">P01 has <strong>32 rows</strong>, D01 has <strong>31 rows</strong>. 4 rows have different values, 1 row only in D01:</p>
+
+    <h4>Value Differences &mdash; Biennium and Version Updates</h4>
+    <table>
+      <tr><th>APPLCLASS</th><th>SUBCLASS</th><th>Field</th><th>P01</th><th>D01</th></tr>
+      <tr style="background:rgba(248,81,73,0.08)">
+        <td>FM</td><td><strong>01</strong></td><td>ABADRENV</td>
+        <td><span class="badge badge-red">UNESCO2025-26</span></td>
+        <td><span class="badge badge-yellow">UNESCO2020</span></td>
+      </tr>
+      <tr style="background:rgba(248,81,73,0.08)">
+        <td>FM</td><td><strong>01</strong></td><td>MODIFIED_BY</td>
+        <td>I_KONAKOV (2026-01-09)</td>
+        <td>S_ROCHA (2020-12-01)</td>
+      </tr>
+      <tr>
+        <td>FM</td><td>23</td><td>VERSION</td>
+        <td>P0120250112102302</td>
+        <td>D0120211109171148</td>
+      </tr>
+      <tr>
+        <td>FM</td><td>23</td><td>MODIFIED_BY</td>
+        <td>I_KONAKOV (2025-01-12)</td>
+        <td>S_ROCHA (2021-11-09)</td>
+      </tr>
+      <tr>
+        <td>FM</td><td>28</td><td>VERSION</td>
+        <td>P0120220927143009</td>
+        <td>D0120180406182747</td>
+      </tr>
+      <tr>
+        <td>FM</td><td>28</td><td>MODIFIED_BY</td>
+        <td>I_KONAKOV (2022-09-27)</td>
+        <td>C_ISAIA (2018-04-06)</td>
+      </tr>
+      <tr>
+        <td>FM</td><td>21</td><td>VERSION</td>
+        <td>BCU20180322143623</td>
+        <td>D0120180410124635</td>
+      </tr>
+    </table>
+
+    <h4>Extra Row in D01</h4>
+    <table>
+      <tr><th>APPLCLASS</th><th>SUBCLASS</th><th>Status</th></tr>
+      <tr><td>FM</td><td>25</td><td><span class="badge badge-yellow">D01 only</span></td></tr>
+    </table>
+
+    <p style="margin-top:16px"><strong>Critical finding:</strong> FM subclass 01 is the <strong>active biennium configuration</strong>. P01 has it set to <code>UNESCO2025-26</code> (current biennium), while D01 is stuck at <code>UNESCO2020</code> (6 years old). If the upgrade imports D01's version, P01's FM carry-forward and address hierarchy <strong>reverts to biennium 2020 rules</strong>.</p>
+
+    <p style="color:var(--red)"><strong>Action:</strong> <strong>MANDATORY</strong> &mdash; Update TABADRH subclass 01 in D01 to ABADRENV='UNESCO2025-26'. Also update subclasses 23, 28, and 21 versions to match P01. Without this, the upgrade destroys the current biennium configuration.</p>
+  </div>
+
+  <!-- ═══ REVISED RISK ASSESSMENT ═══ -->
+  <div class="card" style="border-left:4px solid var(--cyan)">
+    <h3>Revised Risk Assessment (Post-Verification)</h3>
+    <p style="margin-bottom:12px">The original analysis (based on transport request existence) assumed 3 CRITICAL risks. After data verification, the real picture is different:</p>
+    <table>
+      <tr><th>Transport</th><th>Original Risk</th><th>Verified Risk</th><th>Change</th></tr>
+      <tr>
+        <td>P01K950265 + P01K950267 (HCM closing)</td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td><span class="badge badge-green">NONE</span></td>
+        <td>Data identical. No change was ever made.</td>
+      </tr>
+      <tr>
+        <td>P01K950269 (CF tasks &mdash; TABADRH)</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td><span class="badge badge-red">CRITICAL CONFIRMED</span></td>
+        <td>Biennium 2020 vs 2025-26 &mdash; real and dangerous.</td>
+      </tr>
+      <tr>
+        <td>P01K950269 (CF tasks &mdash; T163K)</td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td><span class="badge badge-red">HIGH</span></td>
+        <td>Missing row confirmed. Service entries at risk.</td>
+      </tr>
+      <tr>
+        <td>P01K950269 + P01K950271 (T100C)</td>
+        <td><span class="badge badge-yellow">MEDIUM</span></td>
+        <td><span class="badge badge-green">LOW</span></td>
+        <td>D01 is ahead. No P01 data at risk.</td>
+      </tr>
+      <tr>
+        <td>P01K950275 (Payment WF)</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td><span class="badge badge-green">NONE</span></td>
+        <td><strong>Downgraded.</strong> Data identical &mdash; no WF change was saved.</td>
+      </tr>
+      <tr>
+        <td>P01K950277 (House banks)</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td><span class="badge badge-red">HIGH</span></td>
+        <td>"CLOSED" markers confirmed. Bank closures at risk.</td>
+      </tr>
+      <tr>
+        <td>P01K950279 (Company code audit)</td>
+        <td><span class="badge badge-red">CRITICAL</span></td>
+        <td><span class="badge badge-red">CRITICAL CONFIRMED</span></td>
+        <td>XPROD audit flag confirmed. Compliance at risk.</td>
+      </tr>
+    </table>
+    <div class="note"><strong>Key learning:</strong> Transport request existence does NOT prove data drift. 3 of 7 requests had zero actual changes. Always verify with live data comparison before planning remediation.</div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 8: PREVENTION PROTOCOL -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel" id="prevention">
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>Prevention Protocol &mdash; Never Get Blocked Again</h3>
+    <div class="flow-diagram"><span class="highlight-red">WHAT WENT WRONG (Upgrade 2026):</span>
+  7 P01 customizing requests discovered DURING upgrade import
+  3 have CRITICAL drift risk (payment WF, house banks, audit fix)
+  No prior detection mechanism existed
+
+<span class="highlight-green">PRE-UPGRADE CHECKLIST (run 2 weeks before any import):</span>
+
+  1. <span class="highlight">SCAN</span>
+     Query E070 WHERE TRKORR LIKE 'P01%' AND TRFUNCTION='W' AND TRSTATUS='D'
+     Tool: check_open_extraction_requests.py (already built)
+
+  2. <span class="highlight">CLASSIFY</span>
+     For each P01 request, determine root cause:
+     EMERGENCY | PERIOD_SENSITIVE | AUDIT_DRIVEN | CONFIGURATION_DRIFT | SYSTEM_FORCED
+
+  3. <span class="highlight">COMPARE</span>
+     For every object in P01 requests, compare values with D01:
+     SM30 export (P01) vs SM30 export (D01) &rarr; field-by-field diff
+
+  4. <span class="highlight">SYNC</span>
+     Replicate P01-only changes to D01 where applicable
+     This ensures D01 &rarr; P01 transport won't overwrite production fixes
+
+  5. <span class="highlight">RESOLVE</span>
+     Release or delete all P01 requests
+     Zero open requests in P01 = clean upgrade path
+
+  6. <span class="highlight">VERIFY</span>
+     Re-run scan to confirm zero open requests
+
+<span class="highlight-green">ONGOING GOVERNANCE:</span>
+
+  Monthly scan of P01 open requests (automate via scheduled job)
+  Any new P01K* customizing request = immediate review within 48h
+  Target: zero P01 customizing requests older than 30 days
+  HIPER changes: mandatory D01 sync within 1 week of P01 change</div>
+  </div>
+
+  <div class="card">
+    <h3>Tools Available</h3>
+    <table>
+      <tr><th>Script</th><th>Purpose</th><th>Location</th></tr>
+      <tr>
+        <td><code>check_open_extraction_requests.py</code></td>
+        <td>Scans P01 for open customizing requests (E070 query + SCC3 tables + T000 client settings)</td>
+        <td>Zagentexecution/mcp-backend-server-python/</td>
+      </tr>
+      <tr>
+        <td><code>analyze_open_transports.py</code></td>
+        <td>Deep analysis of specific transports (E071 objects + E071K keys + E07T descriptions)</td>
+        <td>Zagentexecution/mcp-backend-server-python/</td>
+      </tr>
+      <tr>
+        <td><code>compare_open_transports_d01.py</code></td>
+        <td>Cross-system comparison: D01 vs P01 open requests + overlap detection</td>
+        <td>Zagentexecution/mcp-backend-server-python/</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Governance Recommendations</h3>
+    <ul class="checklist">
+      <li><strong>Policy:</strong> No customizing requests in P01 without written justification and D01 sync plan</li>
+      <li><strong>Monthly:</strong> Automated P01 open request scan + report to SAP team lead</li>
+      <li><strong>Pre-upgrade:</strong> Full scan + classification + D01 sync 2 weeks before import</li>
+      <li><strong>HIPER protocol:</strong> Every P01 change must be replicated to D01 within 1 week</li>
+      <li><strong>Stale requests:</strong> Any P01 customizing request older than 30 days = escalation</li>
+      <li><strong>Audit trail:</strong> Document root cause for every P01 customizing request in this companion</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+</script>
+
+<div style="text-align:center;padding:20px;color:#8b949e;font-size:0.75em;border-top:1px solid var(--border);margin-top:40px">
+  Upgrade 2026 v01 &mdash; Open Customizing Requests &mdash; Support &amp; Maintenance &mdash; 2026-04-08 &mdash; 8 tabs<br>
+  UNESCO SAP Intelligence Platform &mdash; Generated by Claude Opus<br>
+  Source: P01 live RFC extraction (E070/E071/E071K/E07T) + D01 cross-system comparison
+</div>
+
+</body>
+</html>

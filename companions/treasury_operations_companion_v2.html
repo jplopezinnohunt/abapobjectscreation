@@ -1,0 +1,2118 @@
+The Monitor pages does not work
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasury Operations Companion v2 — UNESCO SAP</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+      --cyan: #39d2c0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a2332 0%, #0d2137 100%);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      font-size: 1.6em;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .header .sub {
+      color: #8b949e;
+      font-size: 0.9em;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      color: #8b949e;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      font-size: 0.85em;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .content {
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-size: 1.1em;
+    }
+
+    .card h4 {
+      color: var(--purple);
+      margin: 16px 0 8px;
+      font-size: 0.95em;
+    }
+
+    .card p {
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85em;
+    }
+
+    th {
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--accent);
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+    }
+
+    tr:hover {
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .kpi .val {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .kpi .label {
+      font-size: 0.8em;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    .flow-diagram {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text);
+    }
+
+    .highlight {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .highlight-green {
+      color: var(--green);
+      font-weight: bold;
+    }
+
+    .highlight-yellow {
+      color: var(--yellow);
+      font-weight: bold;
+    }
+
+    .highlight-red {
+      color: var(--red);
+      font-weight: bold;
+    }
+
+    .highlight-purple {
+      color: var(--purple);
+      font-weight: bold;
+    }
+
+    .highlight-cyan {
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75em;
+      font-weight: 600;
+    }
+
+    .badge-green {
+      background: rgba(63, 185, 80, 0.2);
+      color: var(--green);
+    }
+
+    .badge-yellow {
+      background: rgba(210, 153, 34, 0.2);
+      color: var(--yellow);
+    }
+
+    .badge-red {
+      background: rgba(248, 81, 73, 0.2);
+      color: var(--red);
+    }
+
+    .badge-blue {
+      background: rgba(88, 166, 255, 0.2);
+      color: var(--accent);
+    }
+
+    .badge-purple {
+      background: rgba(188, 140, 255, 0.2);
+      color: var(--purple);
+    }
+
+    .badge-cyan {
+      background: rgba(57, 210, 192, 0.2);
+      color: var(--cyan);
+    }
+
+    .chain-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+    }
+
+    .chain-box {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-width: 160px;
+      text-align: center;
+    }
+
+    .chain-box.source {
+      border-color: var(--accent);
+    }
+
+    .chain-box.transform {
+      border-color: var(--purple);
+    }
+
+    .chain-box.result {
+      border-color: var(--green);
+    }
+
+    .chain-box.clearing {
+      border-color: var(--yellow);
+    }
+
+    .chain-box.report {
+      border-color: var(--cyan);
+    }
+
+    .chain-arrow {
+      color: #8b949e;
+      font-size: 1.4em;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tier {
+      border-left: 4px solid;
+      padding-left: 16px;
+      margin: 12px 0;
+    }
+
+    .tier-receive {
+      border-color: var(--accent);
+    }
+
+    .tier-pay {
+      border-color: var(--green);
+    }
+
+    .tier-report {
+      border-color: var(--cyan);
+    }
+
+    .tier-close {
+      border-color: var(--yellow);
+    }
+
+    .tier-reconcile {
+      border-color: var(--purple);
+    }
+
+    .note {
+      background: rgba(210, 153, 34, 0.1);
+      border: 1px solid rgba(210, 153, 34, 0.3);
+      border-radius: 6px;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 0.85em;
+    }
+
+    .note::before {
+      content: "Note: ";
+      font-weight: bold;
+      color: var(--yellow);
+    }
+
+    .insight {
+      background: rgba(88, 166, 255, 0.08);
+      border: 1px solid rgba(88, 166, 255, 0.25);
+      border-radius: 6px;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 0.85em;
+    }
+
+    .insight::before {
+      content: "Key Insight: ";
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .story {
+      background: rgba(188, 140, 255, 0.08);
+      border: 1px solid rgba(188, 140, 255, 0.25);
+      border-radius: 6px;
+      padding: 16px;
+      margin: 16px 0;
+      font-size: 0.9em;
+      line-height: 1.7;
+    }
+
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .step-card .step-num {
+      font-size: 0.75em;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .step-card h3 {
+      color: #fff;
+      margin-bottom: 12px;
+      font-size: 1.05em;
+    }
+
+    .step-card .what {
+      margin-bottom: 10px;
+    }
+
+    .step-card .why {
+      background: rgba(248, 81, 73, 0.08);
+      border-left: 3px solid var(--red);
+      padding: 8px 12px;
+      margin: 10px 0;
+      font-size: 0.88em;
+    }
+
+    .step-card .connects {
+      margin: 10px 0;
+    }
+
+    .step-card .tech-ref {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.8em;
+      color: #8b949e;
+    }
+
+    .capability-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .capability-card .cap-icon {
+      font-size: 1.8em;
+      margin-bottom: 8px;
+    }
+
+    .capability-card .cap-name {
+      font-size: 1em;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .capability-card .cap-desc {
+      font-size: 0.82em;
+      color: #8b949e;
+      margin-bottom: 8px;
+    }
+
+    .capability-card .cap-steps {
+      font-size: 0.75em;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8em;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+  <div class="header">
+    <h1>Treasury Operations Companion</h1>
+    <div class="sub">UNESCO SAP Intelligence Platform &mdash; How a New Bank Account Comes to Life in SAP &mdash; 13
+      Configuration Steps Explained</div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-panel="big-picture">The Big Picture</div>
+    <div class="tab" data-panel="thirteen-steps">The 13 Steps</div>
+    <div class="tab" data-panel="bank-statements">Bank Statements</div>
+    <div class="tab" data-panel="payments">Payments</div>
+    <div class="tab" data-panel="treasury-reporting">Treasury Reporting</div>
+    <div class="tab" data-panel="uba01-report">UBA01 Report</div>
+  </div>
+
+  <div class="content">
+
+    <!-- =========================================================================
+     TAB 1: THE BIG PICTURE
+     ========================================================================= -->
+    <div class="panel active" id="big-picture">
+
+      <div class="card">
+        <h3>The Story: Opening a New Bank Account</h3>
+        <div class="story">
+          <p>UNESCO has just opened a new bank account at <strong>UBA Mozambique</strong> in Maputo. The physical
+            account exists at the bank. Money can be deposited into it. But SAP doesn't know it exists yet.</p>
+          <p>Until SAP is configured, this account is invisible. No bank statement can be processed. No payment can be
+            sent through it. Treasury can't see its balance. Month-end revaluation skips it. Reconciliation is
+            impossible.</p>
+          <p><strong>13 configuration steps</strong> bring this account to life inside SAP. Each step enables a specific
+            capability. Miss one, and that capability doesn't work &mdash; sometimes silently, which is worse than a
+            hard error.</p>
+          <p>This companion explains each step in business language: what it does, why it matters, and what breaks
+            without it.</p>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="val">~90</div>
+          <div class="label">House Banks in UNESCO SAP</div>
+        </div>
+        <div class="kpi">
+          <div class="val">156</div>
+          <div class="label">Bank Accounts in Report Sets</div>
+        </div>
+        <div class="kpi">
+          <div class="val" style="color:var(--green)">5</div>
+          <div class="label">Capabilities Enabled</div>
+        </div>
+        <div class="kpi">
+          <div class="val" style="color:var(--accent)">13</div>
+          <div class="label">Configuration Steps</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Five Capabilities &mdash; What SAP Must Be Able to Do</h3>
+        <p style="margin-bottom:16px">Every bank account needs these five capabilities. Each one depends on specific
+          configuration steps.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+          <div class="capability-card" style="border-top: 3px solid var(--accent);">
+            <div class="cap-icon" style="color:var(--accent);">&#8595;</div>
+            <div class="cap-name">RECEIVE</div>
+            <div class="cap-desc">Process incoming bank statements (MT940). Recognize the file, post transactions,
+              update the ledger.</div>
+            <div class="cap-steps"><span class="badge badge-blue">Step 3</span> <span class="badge badge-blue">Step
+                5</span> <span class="badge badge-blue">Step 6</span></div>
+          </div>
+          <div class="capability-card" style="border-top: 3px solid var(--green);">
+            <div class="cap-icon" style="color:var(--green);">&#8593;</div>
+            <div class="cap-name">PAY</div>
+            <div class="cap-desc">Send payments through this bank. Generate payment files in the bank's format and track
+              them.</div>
+            <div class="cap-steps"><span class="badge badge-green">Step 8</span> <span class="badge badge-green">Step
+                9</span> <span class="badge badge-green">Step 13</span></div>
+          </div>
+          <div class="capability-card" style="border-top: 3px solid var(--cyan);">
+            <div class="cap-icon" style="color:var(--cyan);">&#9783;</div>
+            <div class="cap-name">REPORT</div>
+            <div class="cap-desc">See this account's balance in daily cash position and average balance reports.</div>
+            <div class="cap-steps"><span class="badge badge-cyan">Step 10</span> <span class="badge badge-cyan">Step
+                11</span> <span class="badge badge-cyan">Step 12</span></div>
+          </div>
+          <div class="capability-card" style="border-top: 3px solid var(--yellow);">
+            <div class="cap-icon" style="color:var(--yellow);">&#8644;</div>
+            <div class="cap-name">CLOSE</div>
+            <div class="cap-desc">Revalue foreign currency balances at month-end. Post exchange rate gains and losses.
+            </div>
+            <div class="cap-steps"><span class="badge badge-yellow">Step 4</span></div>
+          </div>
+          <div class="capability-card" style="border-top: 3px solid var(--purple);">
+            <div class="cap-icon" style="color:var(--purple);">&#10003;</div>
+            <div class="cap-name">RECONCILE</div>
+            <div class="cap-desc">Match outgoing payments against bank confirmations. Flag unmatched items for
+              investigation.</div>
+            <div class="cap-steps"><span class="badge badge-purple">Step 1</span> <span class="badge badge-purple">Step
+                6</span></div>
+          </div>
+        </div>
+        <p style="margin-top:12px;color:#8b949e;font-size:0.82em">Steps 1, 2, and 7 are foundational &mdash; they enable
+          ALL capabilities.</p>
+      </div>
+
+      <div class="card">
+        <h3>The Lifecycle Flow</h3>
+        <div class="flow-diagram">
+          <span class="highlight">PHASE 1: SETUP</span>
+          Bank opens physical account (UBA Mozambique, Maputo)
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight-green">SAP House Bank Configuration (13 steps)</span>
+          Steps 1-2: Foundation (G/L accounts + bank registration)
+          Steps 3-7: Statement processing + accounting controls
+          Steps 8-9: Payment program setup
+          Steps 10-13: Reporting + IBAN
+
+          <span class="highlight">PHASE 2: DAILY OPERATIONS</span>
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight">RECEIVE</span>: Bank sends MT940 file every morning
+          SAP identifies the bank, posts each transaction automatically
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight-green">PAY</span>: Treasury runs F110 for due invoices
+          SAP selects this bank for MZN payments, generates XML file
+          File sent to UBA via secure channel (BCM)
+
+          <span class="highlight">PHASE 3: MONTHLY CLOSE</span>
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight-yellow">CLOSE</span>: FX revaluation (FAGL_FC_VAL)
+          MZN balance revalued at current exchange rate
+          Gain/loss posted to configured accounts
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight-purple">RECONCILE</span>: Match payments against bank confirmations
+          Open items on clearing account (11*) should clear
+          Unmatched items flagged in FEBAN for investigation
+
+          <span class="highlight">PHASE 4: REPORTING</span>
+          <span class="highlight-yellow">|</span>
+          <span class="highlight-yellow">v</span>
+          <span class="highlight-cyan">REPORT</span>: Cash position (ZCASH) + Average balance (GS02)
+          Treasury sees this account alongside all others worldwide
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>How the 13 Steps Map to Capabilities</h3>
+        <table>
+          <tr>
+            <th>Step</th>
+            <th>Name</th>
+            <th style="text-align:center">RECEIVE</th>
+            <th style="text-align:center">PAY</th>
+            <th style="text-align:center">REPORT</th>
+            <th style="text-align:center">CLOSE</th>
+            <th style="text-align:center">RECONCILE</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>G/L Account Creation (FS00)</td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Bank Registration (FI12)</td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Bank Statement Monitor</td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Exchange Rate Config (OBA1)</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-yellow">*</span></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Cash Management Name</td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-cyan">*</span></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Electronic Bank Statement (T035D + T028B)</td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-purple">*</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Business Area Assignment</td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+            <td style="text-align:center"><span class="badge badge-blue">*</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Receiving Bank Clearing</td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Payment Program (F110)</td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Average Balance Sets (GS02)</td>
+            <td></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-cyan">*</span></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Cash Position (TRM5)</td>
+            <td></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-cyan">*</span></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Cash Management Grouping</td>
+            <td></td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-cyan">*</span></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>IBAN Generation</td>
+            <td></td>
+            <td style="text-align:center"><span class="badge badge-green">*</span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+     TAB 2: THE 13 STEPS - EXPLAINED
+     ========================================================================= -->
+    <div class="panel" id="thirteen-steps">
+
+      <div class="card">
+        <h3>The 13 Configuration Steps &mdash; In Business Language</h3>
+        <p>Each step is explained functionally first. Technical references are at the bottom of each card in muted text.
+          Read the "What" and "Why" to understand the purpose; skip the tech reference unless you need to configure it
+          yourself.</p>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step-card" style="border-left-color: var(--purple);">
+        <div class="step-num">Step 1 &mdash; Foundation</div>
+        <h3>Creating the Bank Accounts in SAP</h3>
+        <div class="what">
+          <p>Creates <strong>two G/L accounts</strong> per bank &mdash; one for the actual bank balance (10* range), and
+            one for payments in transit (11* range). Think of it like having a main account and a clearing account in
+            your personal banking.</p>
+          <p>The main account (10*) records the bank's true balance: deposits, withdrawals, fees, interest. The clearing
+            account (11*) tracks payments that SAP has sent but the bank hasn't confirmed yet.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> There's literally nowhere to record transactions. Every
+          posting needs a destination G/L account. Without these, no bank statement can be processed, no payment can be
+          posted.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">ALL CAPABILITIES</span>
+        </div>
+        <div class="insight">The clearing account (11*) has <strong>Open Item Management</strong> enabled &mdash; this
+          is what makes reconciliation possible. Each outgoing payment creates an "open item" on 11*. When the bank
+          statement confirms the payment cleared, that item gets matched and closed. If it doesn't match, it stays open
+          for investigation.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01 Mozambique</h4>
+          <table><tr><th>Account</th><th>Type</th><th>Description</th><th>Currency</th><th>Key Settings</th></tr>
+          <tr><td>1065421</td><td>Bank (10*)</td><td>BK UBA MOZAMBIQUE - UNESCO MAPUTO USD</td><td>USD</td><td>FDLEV=B0, Sort=027, No Open Items</td></tr>
+          <tr><td>1165421</td><td>Clearing (11*)</td><td>S-BK UBA MOZAMBIQUE - UNESCO MAPUTO USD</td><td>USD</td><td>FDLEV=B1, Sort=Z01, <strong>Open Item Mgmt=YES</strong></td></tr>
+          <tr><td>1065424</td><td>Bank (10*)</td><td>BK UBA MOZAMBIQUE - UNESCO MAPUTO MZN</td><td>MZN</td><td>FDLEV=B0, Sort=027, No Open Items</td></tr>
+          <tr><td>1165424</td><td>Clearing (11*)</td><td>S-BK UBA MOZAMBIQUE - UNESCO MAPUTO MZN</td><td>MZN</td><td>FDLEV=B1, Sort=Z01, <strong>Open Item Mgmt=YES</strong></td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;">Reference: ECO09 (Ecobank Maputo) uses the same pattern — 1094421/1194421 (USD), 1094424/1194424 (MZN)</p>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> FS00 &nbsp;|&nbsp; <strong>Tables:</strong> SKA1 (chart of accounts, KTOKS=BANK), SKB1 (company code, FDLEV/ZUAWA/XOPVW), SKAT (texts in E/F/P)
+          &nbsp;|&nbsp; <strong>Created by:</strong> MD Team in PRD, copied to D01/V01
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step-card" style="border-left-color: var(--purple);">
+        <div class="step-num">Step 2 &mdash; Foundation</div>
+        <h3>Registering the Bank in SAP</h3>
+        <div class="what">
+          <p>Tells SAP <em>"we have a bank account at UBA Mozambique, here's the account number, SWIFT code, and
+              address."</em> Like adding a new bank to your phone's banking app &mdash; you're registering its identity
+            so the system can reference it.</p>
+          <p>This creates the "house bank" and "account ID" combination that every other configuration step references.
+          </p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> SAP doesn't know this bank exists. Every subsequent step
+          references the house bank ID. Without it, nothing else can be configured.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">ALL CAPABILITIES</span>
+        </div>
+        <div class="insight">The <strong>DME instruction key</strong> (e.g., B2) controls the format of payment files
+          sent to the bank. Getting this wrong means the bank rejects payment files &mdash; the payments stay in SAP but
+          never actually reach the bank.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01</h4>
+          <table><tr><th>Field</th><th>USD Account</th><th>MZN Account</th></tr>
+          <tr><td>House Bank</td><td colspan="2">UBA01</td></tr>
+          <tr><td>Account ID</td><td>USD01</td><td>MZN01</td></tr>
+          <tr><td>Bank Account Number</td><td>070340000190</td><td>070040004663</td></tr>
+          <tr><td>IBAN</td><td>MZ59004206077034000019028</td><td>MZ59004206077004000466345</td></tr>
+          <tr><td>Bank Country</td><td colspan="2">MZ (Mozambique)</td></tr>
+          <tr><td>Bank Key</td><td colspan="2">SP0000001YCB</td></tr>
+          <tr><td>SWIFT</td><td colspan="2">UNAFMZMA</td></tr>
+          <tr><td>DME Instruction Key</td><td colspan="2">B2 (standard — except DNB01 which uses B4)</td></tr>
+          </table>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> FI12 &nbsp;|&nbsp; <strong>Tables:</strong> T012 (house bank master), T012K (bank accounts), T012T (descriptions), BNKA (bank directory), TIBAN (IBAN)
+          &nbsp;|&nbsp; <strong>Transport:</strong> Customizing request
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step-card" style="border-left-color: var(--accent);">
+        <div class="step-num">Step 3 &mdash; Monitoring</div>
+        <h3>Bank Statement Monitor</h3>
+        <div class="what">
+          <p>Adds this account to the <strong>daily monitoring dashboard</strong>. Treasury can see at a glance whether
+            today's bank statement from UBA Maputo arrived and was processed successfully.</p>
+          <p>The monitor shows a traffic-light status for each configured account: green (received and posted), yellow
+            (received but errors), red (not received).</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> A missing bank statement goes unnoticed. The bank might
+          have sent it, but it failed during import &mdash; nobody would know until reconciliation gaps appear weeks
+          later. By then, the trail is cold.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">RECEIVE</span>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> FTE_BSM_CUST &nbsp;|&nbsp; <strong>Purpose:</strong> Bank Statement Monitor
+          customizing
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step-card" style="border-left-color: var(--yellow);">
+        <div class="step-num">Step 4 &mdash; Month-End</div>
+        <h3>Exchange Rate Configuration</h3>
+        <div class="what">
+          <p>Tells SAP which accounts to use when posting exchange rate gains or losses. Only needed for <strong>non-USD
+              accounts</strong> (MZN in the case of UBA Mozambique).</p>
+          <p>At month-end, all foreign currency balances are revalued at the current exchange rate. If UBA held 50M MZN
+            last month when the rate was 63.5 MZN/USD, and this month it's 64.0 MZN/USD, that's a loss. SAP calculates
+            it and posts it &mdash; but it needs to know <em>where</em> to post it.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> The revaluation program (FAGL_FC_VAL) fails for this
+          account. The foreign currency balance is never adjusted, financial statements show stale exchange rates, and
+          the balance sheet is inaccurate.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-yellow">CLOSE</span>
+        </div>
+        <div class="insight">You must fill <strong>ALL 3 sections</strong>: Realized gains/losses + Valuation
+          differences + Correction accounts. If you only fill Realized, month-end revaluation is incomplete. This
+          mistake was discovered during UBA01 configuration by comparing with the existing ECO09 bank setup.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01 MZN Clearing Account (1165424)</h4>
+          <table><tr><th>T030H Field</th><th>OBA1 Screen Section</th><th>Account</th><th>Purpose</th></tr>
+          <tr><td>LKORR</td><td>Bal.sheet adjustment</td><td>1165424 (itself)</td><td>Correction postings go back to same account</td></tr>
+          <tr><td>LSREA</td><td>Realized FX — Loss</td><td>6045011</td><td>When a payment settles at worse rate than booked</td></tr>
+          <tr><td>LHREA</td><td>Realized FX — Gain</td><td>7045011</td><td>When a payment settles at better rate than booked</td></tr>
+          <tr><td>LSBEW</td><td>Valuation — Loss</td><td>6045011</td><td>Month-end revaluation shows loss vs booking rate</td></tr>
+          <tr><td>LHBEW</td><td>Valuation — Gain</td><td>7045011</td><td>Month-end revaluation shows gain vs booking rate</td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;"><strong>Lesson learned:</strong> UBA01 was initially configured with only LSREA/LHREA (Realized section). LKORR, LSBEW, LHBEW were blank. Discovered by field-by-field comparison with ECO09 reference (1194424). USD accounts (1065421, 1165421) do NOT need OBA1 entries — only non-USD clearing accounts.</p>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> OBA1 &nbsp;|&nbsp; <strong>Table:</strong> T030H &nbsp;|&nbsp;
+          <strong>Rule:</strong> Only non-USD clearing accounts (11*) strictly need entries. USD = company code currency, no FX revaluation needed.
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="step-card" style="border-left-color: var(--cyan);">
+        <div class="step-num">Step 5 &mdash; Identity</div>
+        <h3>Cash Management Name</h3>
+        <div class="what">
+          <p>Gives the account a <strong>short, human-readable name</strong> like "UBA01-USD1" that appears in cash
+            management reports and bank statement processing screens.</p>
+          <p>Without it, Treasury sees a raw G/L number (1065421) instead of a meaningful name. When you have 90+ house
+            banks, that makes reports unreadable.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> The account shows as a cryptic G/L number in all
+          reports. Treasury can't quickly identify which bank it is when scanning daily cash positions.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-cyan">REPORT</span> <span class="badge badge-blue">RECEIVE</span>
+        </div>
+        <div class="tech-ref">
+          <strong>Path:</strong> SPRO &rarr; Cash Management &rarr; G/L Account Name &nbsp;|&nbsp;
+          <strong>Purpose:</strong> Display name for reporting
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="step-card" style="border-left-color: var(--accent);">
+        <div class="step-num">Step 6 &mdash; Critical</div>
+        <h3>Electronic Bank Statement Setup</h3>
+        <div class="what">
+          <p>This is actually <strong>two configurations in one screen</strong>, and missing either one is a common
+            mistake:</p>
+          <p><strong>Part A (T035D):</strong> <em>"When a statement arrives for account UBA01-USD1, post to G/L account
+              1065421."</em> This is the mapping from the house bank account ID to the actual G/L account number.</p>
+          <p><strong>Part B (T028B):</strong> <em>"When we receive a file from bank key SP0000001YCB with account number
+              070340000190, it's an MT940 format and belongs to UBA01-USD1."</em> This is how SAP identifies the
+            physical bank file.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If Part A missing:</strong> SAP knows the file belongs to UBA01 but doesn't
+          know which G/L account to post to. Statement import fails.
+          <br><strong style="color:var(--red)">If Part B missing:</strong> SAP doesn't even recognize the file. The
+          MT940 arrives but SAP says <em>"I don't know this bank account"</em> and rejects it entirely.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">RECEIVE</span> <span class="badge badge-purple">RECONCILE</span>
+        </div>
+        <div class="insight">These are <strong>TWO different tables</strong> (T035D and T028B) configured in the
+          <strong>SAME SPRO screen</strong>. Having one without the other is a common trap. During UBA01 configuration,
+          T028B was missing while T035D was present &mdash; the bank statement arrived but SAP couldn't identify which
+          bank sent it.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01 EBS Configuration</h4>
+          <p style="margin-bottom:8px;"><strong>Table 1 — T035D</strong> (What SAP does with the statement)</p>
+          <table><tr><th>DISKB (CM Name)</th><th>BNKKO (G/L Account)</th><th>Meaning</th></tr>
+          <tr><td>UBA01-USD1</td><td>1065421</td><td>USD statement items → post to G/L 1065421</td></tr>
+          <tr><td>UBA01-MZN1</td><td>1065424</td><td>MZN statement items → post to G/L 1065424</td></tr>
+          </table>
+          <p style="margin:12px 0 8px;"><strong>Table 2 — T028B</strong> (How SAP identifies the file)</p>
+          <table><tr><th>Bank Key</th><th>Bank Account</th><th>Format</th><th>Maps To</th></tr>
+          <tr><td>SP0000001YCB</td><td>070340000190</td><td>XRT940</td><td>UBA01-USD1</td></tr>
+          <tr><td>SP0000001YCB</td><td>070040004663</td><td>XRT940</td><td>UBA01-MZN1</td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;"><strong>Lesson learned:</strong> T028B was missing during initial UBA01 config. The compliance checker searched by HBKID (wrong — T028B is keyed by BANKL). Bank statement files would have been rejected. ECO09 reference (bank key XX001877) showed the correct pattern.</p>
+        </div>
+        <div class="tech-ref">
+          <strong>SPRO Path:</strong> Financial Accounting &rarr; Bank Accounting &rarr; Business Transactions &rarr; Payment Transactions &rarr; Electronic Bank Statement &rarr; Make Global Settings
+          &nbsp;|&nbsp; <strong>T035D:</strong> various dialog nodes &nbsp;|&nbsp; <strong>T028B:</strong> last node "Assign Bank Accounts to Transaction Types"
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="step-card" style="border-left-color: #8b949e;">
+        <div class="step-num">Step 7 &mdash; Accounting Control</div>
+        <h3>Business Area Assignment</h3>
+        <div class="what">
+          <p>Ensures bank postings are automatically assigned to the correct <strong>fund</strong> (GEF = General Fund).
+            UNESCO uses business areas to track which fund owns each transaction.</p>
+          <p>All bank accounts in the range 1000000&ndash;1199999 are covered by an existing rule, so new accounts in
+            this range are automatically included.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> Postings would lack a business area, requiring manual
+          intervention or failing budget checks during period close.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">ALL CAPABILITIES</span> <span class="badge badge-green">Usually N/A &mdash;
+            range rule covers automatically</span>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> YFI_BASU_MOD &nbsp;|&nbsp; <strong>Rule:</strong> G/L range
+          1000000&ndash;1199999 &rarr; Business Area GEF
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="step-card" style="border-left-color: var(--accent);">
+        <div class="step-num">Step 8 &mdash; Internal Transfers</div>
+        <h3>Receiving Bank Clearing</h3>
+        <div class="what">
+          <p>When money arrives at UBA Mozambique from <strong>another UNESCO bank account</strong> (an internal
+            transfer), SAP needs to know which clearing account to use for the receiving side.</p>
+          <p>Internal transfers are two-sided: the sending bank debits its clearing account, and the receiving bank
+            needs to clear on its side too.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> Internal transfers post on the sending side but the
+          receiving side doesn't clear properly. The receiving bank shows unmatched open items that should have cleared
+          automatically.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-blue">RECEIVE</span>
+        </div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01 in T018V</h4>
+          <table><tr><th>CoCode</th><th>House Bank</th><th>Pmt Method</th><th>Currency</th><th>Account ID</th><th>Clearing Acct</th></tr>
+          <tr><td>UNES</td><td>UBA01</td><td>A (wire)</td><td>USD</td><td>USD01</td><td><strong>1165421</strong></td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;">Pattern: bank account 10xxxxx → clearing 11xxxxx (same last 5 digits). ECO09 reference: 1094421 → 1194421.</p>
+        </div>
+        <div class="tech-ref">
+          <strong>Path:</strong> SM30 V_T018V &nbsp;|&nbsp; <strong>Table:</strong> T018V &nbsp;|&nbsp; <strong>Fields:</strong> BUKRS, HBKID, ZLSCH, WAERS, HKTID, GEHVK (clearing G/L)
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div class="step-card" style="border-left-color: var(--green);">
+        <div class="step-num">Step 9 &mdash; Payment Engine</div>
+        <h3>Payment Program Setup</h3>
+        <div class="what">
+          <p>This is actually <strong>three sub-steps</strong> that make the bank available for outgoing payments:</p>
+          <p><strong>9.1 &mdash; Register as Paying Bank (T042I):</strong> Tell the payment program (F110) <em>"you can
+              use UBA01 for MZN payments, and use clearing account 1165424."</em></p>
+          <p><strong>9.2 &mdash; Internal Transfer Method:</strong> Add to the internal transfer payment method so
+            UNESCO-to-UNESCO transfers can use this bank.</p>
+          <p><strong>9.3 &mdash; Payment File Template (OBPM4):</strong> Create the variant that tells SAP how to
+            generate the XML file in the format UBA accepts.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If 9.1 missing:</strong> F110 will never select this bank for payments
+          &mdash; it doesn't know it exists as a paying bank. Invoices due in MZN will fail to find a bank.
+          <br><strong style="color:var(--red)">If 9.3 missing:</strong> Even if F110 selects the bank, no payment file
+          is generated. The payment stays in SAP but never reaches the bank. The vendor doesn't get paid.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-green">PAY</span>
+        </div>
+        <div class="insight">OBPM4 variants must be created in <strong>V01 AND P01 separately</strong> &mdash; they are
+          NOT transportable. If you only create them in D01, the payment file generation works in development but fails
+          silently in production.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">Real Example: UBA01 Payment Setup</h4>
+          <p><strong>T042I — Bank Determination:</strong></p>
+          <table><tr><th>House Bank</th><th>Pmt Method</th><th>Currency</th><th>Account ID</th><th>Clearing G/L</th></tr>
+          <tr><td>UBA01</td><td>3 (pre-numbered check)</td><td>MZN</td><td>MZN01</td><td><strong>1165424</strong></td></tr>
+          </table>
+          <p style="margin-top:8px;"><strong>Payment Medium Formats:</strong></p>
+          <table><tr><th>Format</th><th>Usage</th><th>House Banks</th></tr>
+          <tr><td>/GGI_XML_CT_UNESCO</td><td>All currencies + internal transfers</td><td>Most banks including UBA01</td></tr>
+          <tr><td>/SEPA_CT_UNES</td><td>Euro SEPA payments</td><td>SOG01, BNP01, CIC01</td></tr>
+          <tr><td>/CITI/XML/UNESCO/DC_V3_01</td><td>USD payments via Citibank</td><td>CIT04</td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;">ECO09 uses same pattern: Method 3 / MZN / MZN01 / clearing 1194424. Variant naming: UNE_TRE_{CURRENCY}{HOUSEBANK}.</p>
+        </div>
+        <div class="tech-ref">
+          <strong>Transactions:</strong> FBZP (T042I), SE38 + OBPM4 (variant) &nbsp;|&nbsp; <strong>Note:</strong> OBPM4 variants must be created in V01 AND P01 — not transportable
+        </div>
+      </div>
+
+      <!-- STEP 10 -->
+      <div class="step-card" style="border-left-color: var(--cyan);">
+        <div class="step-num">Step 10 &mdash; Reporting</div>
+        <h3>Average Balance Report Sets</h3>
+        <div class="what">
+          <p>Adds the bank account to the <strong>YBANK set hierarchy</strong> (maintained via GS02). This is a master
+            list of all bank accounts, organized by HQ vs Field Office, and by currency.</p>
+          <p>Treasury uses this to run the Average Balance report &mdash; how much money sits in each bank on average
+            over a period.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> The account is invisible to the Average Balance report.
+          Treasury might not know there's $2M sitting idle in Maputo when they're looking for funds to deploy.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-cyan">REPORT</span>
+        </div>
+        <div class="insight">Sets use <strong>exact match</strong>, not ranges. Each new bank account must be added
+          manually to the set in <strong>each system separately</strong> (D01, V01, P01). This is one of the few steps
+          that truly cannot be transported.</div>
+        <div class="card" style="background:rgba(88,166,255,0.05);margin-top:12px;">
+          <h4 style="color:var(--cyan)">UBA01 in YBANK Sets</h4>
+          <table><tr><th>Account</th><th>Currency</th><th>Target Set</th><th>Status</th></tr>
+          <tr><td>1065421</td><td>USD</td><td>YBANK_ACCOUNTS_FO_USD (50 accounts)</td><td><span class="badge badge-red">Not yet added</span></td></tr>
+          <tr><td>1065424</td><td>MZN</td><td>YBANK_ACCOUNTS_FO_OTH (59 accounts)</td><td><span class="badge badge-red">Not yet added</span></td></tr>
+          </table>
+          <p style="color:var(--muted);font-size:0.8em;margin-top:8px;">Total: 156 accounts across 10 leaf sets. Sync script available: ybank_setleaf_sync.py (syncs P01→D01 via RFC). Full alignment verified 2026-04-07.</p>
+        </div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> GS02 &nbsp;|&nbsp; <strong>Table:</strong> SETLEAF (entries), SETHEADER (set definitions), SETNODE (hierarchy)
+          &nbsp;|&nbsp; <strong>Rule:</strong> Only bank accounts (10*) go in sets, not clearing accounts (11*)
+        </div>
+      </div>
+
+      <!-- STEP 11 -->
+      <div class="step-card" style="border-left-color: var(--cyan);">
+        <div class="step-num">Step 11 &mdash; Reporting</div>
+        <h3>Cash Position Reports</h3>
+        <div class="what">
+          <p>Adds the account to the <strong>daily Cash Position form</strong>. This is the report Treasury looks at
+            every morning to answer: <em>"How much cash do we have, and where is it?"</em></p>
+          <p>UNESCO uses two forms: <strong>ZCASH</strong> for the global overview and <strong>ZCASHFODET</strong> for
+            field office detail. The new UBA account needs to appear in the correct form.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> Treasury doesn't see this account in their daily cash
+          view. They might miss that there's $2M sitting in Maputo, leading to suboptimal cash deployment decisions.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-cyan">REPORT</span>
+        </div>
+        <div class="note">Requires TRS confirmation on which form (ZCASH or ZCASHFODET) and where to place the account
+          within the form's structure.</div>
+        <div class="tech-ref">
+          <strong>Transaction:</strong> TRM5 &nbsp;|&nbsp; <strong>Forms:</strong> ZCASH (global), ZCASHFODET (field
+          office detail)
+        </div>
+      </div>
+
+      <!-- STEP 12 -->
+      <div class="step-card" style="border-left-color: var(--cyan);">
+        <div class="step-num">Step 12 &mdash; Reporting</div>
+        <h3>Cash Management Grouping</h3>
+        <div class="what">
+          <p>Verifies the account is covered by the <strong>grouping structure</strong> for cash management reporting.
+            This controls how accounts are aggregated in the cash management module.</p>
+          <p>In most cases, existing patterns cover new accounts automatically &mdash; this is a verification step
+            rather than a new configuration.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> The account might not appear in certain cash management
+          aggregations, though individual reporting still works.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-cyan">REPORT</span> <span class="badge badge-green">Usually covered by existing
+            patterns</span>
+        </div>
+        <div class="tech-ref">
+          <strong>Table:</strong> V_T038 &nbsp;|&nbsp; <strong>Purpose:</strong> Cash management grouping structure
+        </div>
+      </div>
+
+      <!-- STEP 13 -->
+      <div class="step-card" style="border-left-color: var(--green);">
+        <div class="step-num">Step 13 &mdash; Payments</div>
+        <h3>IBAN Generation</h3>
+        <div class="what">
+          <p>Registers the <strong>IBAN</strong> (International Bank Account Number) in SAP. This is what appears on
+            payment documents and enables SEPA and international transfers through the SWIFT network.</p>
+          <p>The IBAN is the globally standardized format that intermediary banks use to route payments. Without it, a
+            payment from UNESCO HQ to UBA Mozambique might be rejected by an intermediary bank in the chain.</p>
+        </div>
+        <div class="why">
+          <strong style="color:var(--red)">If missing:</strong> International payments might be rejected by intermediary
+          banks. SWIFT/BIC alone is not sufficient for many payment networks, especially in Europe and increasingly in
+          Africa.
+        </div>
+        <div class="connects" style="margin-top:10px;">
+          <span class="badge badge-green">PAY</span>
+        </div>
+        <div class="tech-ref">
+          <strong>Table:</strong> TIBAN &nbsp;|&nbsp; <strong>Key:</strong> Bank country + bank key + account number
+          &rarr; IBAN
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+     TAB 3: BANK STATEMENTS - HOW MONEY COMES IN
+     ========================================================================= -->
+    <div class="panel" id="bank-statements">
+
+      <div class="card">
+        <h3>Bank Statements &mdash; How Money Comes In</h3>
+        <div class="story">
+          <p>Every morning at 7:00 AM, UBA Mozambique sends a file to UNESCO. This file, in <strong>MT940
+              format</strong> (a SWIFT banking standard), contains every transaction from yesterday: deposits received,
+            payments confirmed, fees charged, interest credited.</p>
+          <p>SAP picks up the file automatically from a shared folder. Then it asks three questions:</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>The Three Questions SAP Asks</h3>
+        <div class="flow-diagram">
+          <span class="highlight">QUESTION 1: "Who sent this?"</span>
+
+          The MT940 file header contains the bank's physical account information:
+          Bank key: <span class="highlight-green">SP0000001YCB</span> Account: <span
+            class="highlight-green">070340000190</span>
+
+          SAP looks this up in <span class="highlight-purple">T028B</span> (Electronic Bank Statement mapping):
+          SP0000001YCB + 070340000190 &rarr; House Bank: <span class="highlight">UBA01</span> Account ID: <span
+            class="highlight">USD1</span>
+          Format: <span class="highlight-purple">XRT940</span>
+
+          <span class="highlight-red">If T028B is not configured:</span>
+          SAP says "I don't know this bank account" and <span class="highlight-red">rejects the entire file</span>.
+          The statement sits unprocessed. Nobody is notified unless Step 3 (Monitor) is set up.
+
+
+          <span class="highlight">QUESTION 2: "Where do I post it?"</span>
+
+          Now SAP knows this is UBA01-USD1. But which G/L account?
+
+          SAP looks this up in <span class="highlight-purple">T035D</span> (Account determination):
+          House Bank UBA01 + Account USD1 &rarr; G/L Account: <span class="highlight">1065421</span>
+
+          <span class="highlight-red">If T035D is not configured:</span>
+          SAP knows the file is from UBA01 but has nowhere to post.
+          Import fails with "No account determination found."
+
+
+          <span class="highlight">QUESTION 3: "How do I categorize each line?"</span>
+
+          Each transaction in the MT940 has a type code (NTRF = transfer, NCHG = charge, etc.)
+
+          SAP looks up posting rules in <span class="highlight-purple">T028G</span>:
+          Format XRT940 + Code NTRF + Direction "-" &rarr; Rule: <span class="highlight-yellow">SUBD</span> Algorithm:
+          <span class="highlight-yellow">015</span>
+
+          The posting rule determines:
+          - Which side is debited/credited
+          - Whether to attempt automatic clearing
+          - What document type to use
+
+          Each line becomes a journal entry in SAP.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>The T035D + T028B Relationship</h3>
+        <p style="margin-bottom:16px">These two tables work together but serve different purposes. Both are configured
+          in the same SPRO screen, which makes it easy to configure one and forget the other.</p>
+        <div style="display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+          <div style="flex:1; min-width:280px;">
+            <div class="card" style="border-left: 3px solid var(--accent); margin-bottom:0;">
+              <h4 style="color:var(--accent); margin-top:0;">T028B &mdash; File Identification</h4>
+              <p style="font-size:0.88em"><strong>Question it answers:</strong> <em>"Which of our 90+ bank accounts does
+                  this MT940 file belong to?"</em></p>
+              <table>
+                <tr>
+                  <th>Input</th>
+                  <th>Output</th>
+                </tr>
+                <tr>
+                  <td>Bank key (BANKL)</td>
+                  <td>House Bank ID (HBKID)</td>
+                </tr>
+                <tr>
+                  <td>Account number (BANKN)</td>
+                  <td>Account ID (HKTID)</td>
+                </tr>
+                <tr>
+                  <td>&mdash;</td>
+                  <td>Format type (VGTYP)</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <div style="flex:0 0 40px; text-align:center; padding-top:40px; font-size:1.4em; color:#8b949e;">&rarr;</div>
+          <div style="flex:1; min-width:280px;">
+            <div class="card" style="border-left: 3px solid var(--green); margin-bottom:0;">
+              <h4 style="color:var(--green); margin-top:0;">T035D &mdash; Account Determination</h4>
+              <p style="font-size:0.88em"><strong>Question it answers:</strong> <em>"Now that I know it's UBA01-USD1,
+                  which G/L account do I post to?"</em></p>
+              <table>
+                <tr>
+                  <th>Input</th>
+                  <th>Output</th>
+                </tr>
+                <tr>
+                  <td>House Bank ID</td>
+                  <td>G/L Account (main)</td>
+                </tr>
+                <tr>
+                  <td>Account ID</td>
+                  <td>G/L Account (clearing)</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>The Reconciliation Flow</h3>
+        <p>This is where the clearing account (11*) does its magic:</p>
+        <div class="flow-diagram">
+          <span class="highlight">DAY 1: Payment Goes Out</span>
+
+          Treasury runs F110 to pay a vendor in Maputo.
+          SAP creates the payment:
+          <span class="highlight-red">DEBIT</span> Vendor account (clears the invoice)
+          <span class="highlight-green">CREDIT</span> Clearing account <span class="highlight-yellow">1165424</span>
+          (11*)
+          &uarr;
+          This creates an <span class="highlight-yellow">OPEN ITEM</span>
+          It means: "We told the bank to pay, but the bank hasn't confirmed yet."
+
+
+          <span class="highlight">DAY 2: Bank Statement Arrives</span>
+
+          The MT940 file contains a debit line: "Payment to vendor XYZ, 500,000 MZN"
+          SAP processes the statement:
+          <span class="highlight-red">DEBIT</span> Bank account <span class="highlight">1065421</span> (10*) &mdash;
+          bank balance goes down
+          <span class="highlight-green">CREDIT</span> Clearing account <span class="highlight-yellow">1165424</span>
+          (11*) &mdash; <span class="highlight-green">matches and CLEARS the open item</span>
+
+          Result: The open item from Day 1 is now closed.
+          The payment is fully reconciled.
+
+
+          <span class="highlight-red">WHAT IF IT DOESN'T MATCH?</span>
+
+          If the bank charged a fee (500,000 MZN sent, but bank debited 500,150 MZN):
+          The amounts don't match &rarr; the open item stays on 1165424
+          It appears in <span class="highlight-purple">FEBAN</span> (Electronic Bank Statement processing)
+          Treasury investigates and either:
+          - Posts the fee separately and clears manually
+          - Adjusts the tolerance and re-runs clearing
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Bank Statement Processing Chain</h3>
+        <div
+          style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 16px 0;">
+          <div class="chain-box source"><strong>MT940 File</strong><br><span style="font-size:0.8em;color:#8b949e">From
+              UBA daily</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box source"><strong>T028B</strong><br><span style="font-size:0.8em;color:#8b949e">Identify
+              bank</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box transform"><strong>T035D</strong><br><span style="font-size:0.8em;color:#8b949e">Map to
+              G/L</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box transform"><strong>T028G</strong><br><span style="font-size:0.8em;color:#8b949e">Posting
+              rules</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box result"><strong>Journal Entry</strong><br><span
+              style="font-size:0.8em;color:#8b949e">10* + 11*</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box clearing"><strong>FEBAN</strong><br><span
+              style="font-size:0.8em;color:#8b949e">Reconcile</span></div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+     TAB 4: PAYMENTS - HOW MONEY GOES OUT
+     ========================================================================= -->
+    <div class="panel" id="payments">
+
+      <div class="card">
+        <h3>Payments &mdash; How Money Goes Out</h3>
+        <div class="story">
+          <p>A vendor in Maputo delivered office supplies and sent an invoice for <strong>500,000 MZN</strong>. The
+            invoice has been approved, entered into SAP, and its payment due date has arrived.</p>
+          <p>Treasury runs the <strong>Automatic Payment Program (F110)</strong> &mdash; this is the engine that
+            processes all due payments across UNESCO's global operations.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>The Payment Journey</h3>
+        <div class="flow-diagram">
+          <span class="highlight">STEP 1: F110 SCANS FOR DUE INVOICES</span>
+
+          The payment program looks at all vendor invoices where:
+          - Payment due date has arrived (or is within the run's horizon)
+          - Invoice is approved and not blocked
+          - Vendor is not on a payment hold
+
+          It finds: <span class="highlight-green">Vendor 12345 — 500,000 MZN — due today</span>
+
+
+          <span class="highlight">STEP 2: SELECT THE PAYING BANK</span>
+
+          F110 asks: "Which bank can pay 500,000 MZN to a vendor in Mozambique?"
+
+          It looks in <span class="highlight-purple">T042I</span> (Paying bank configuration):
+          Payment method T (bank transfer) + Currency MZN
+          &rarr; House Bank: <span class="highlight">UBA01</span> Account: <span class="highlight">MZN01</span>
+          &rarr; Clearing account: <span class="highlight-yellow">1165424</span>
+
+          <span class="highlight-red">If T042I is not configured for UBA01:</span>
+          F110 says "No bank found for MZN payments" and the invoice goes unpaid.
+          The vendor calls. Treasury scrambles.
+
+
+          <span class="highlight">STEP 3: POST THE PAYMENT</span>
+
+          SAP creates the accounting entry:
+          <span class="highlight-red">DEBIT</span> Vendor 12345 — 500,000 MZN (clears the open invoice)
+          <span class="highlight-green">CREDIT</span> Clearing account 1165424 — 500,000 MZN (creates open item)
+
+          The invoice is now marked as "paid" in SAP.
+          But the money hasn't actually left the bank yet.
+          The open item on 1165424 means: "We promised to pay, bank hasn't executed yet."
+
+
+          <span class="highlight">STEP 4: GENERATE THE PAYMENT FILE</span>
+
+          SAP runs the <span class="highlight-purple">OBPM4 variant</span> for UBA01:
+          Format: <span class="highlight">/GGI_XML_CT_UNESCO</span> (XML credit transfer)
+          Output: An XML file containing:
+          - Sender: UNESCO UBA account
+          - Beneficiary: Vendor 12345
+          - Amount: 500,000 MZN
+          - Bank routing details
+
+          <span class="highlight-red">If OBPM4 variant is missing:</span>
+          The payment is posted in SAP (vendor shows "paid")
+          But NO file is generated. The bank never receives the instruction.
+          The vendor never gets the money. The open item on 1165424 never clears.
+          This is the <span class="highlight-red">worst failure mode</span> — SAP thinks it's done, but nothing
+          happened.
+
+
+          <span class="highlight">STEP 5: SEND TO BANK VIA BCM</span>
+
+          The XML file is picked up by <span class="highlight-purple">BCM</span> (Bank Communication Management):
+          - File is signed with UNESCO's digital certificate
+          - Transmitted to UBA via secure channel (SWIFT or EBICS)
+          - BCM tracks the file status: sent, acknowledged, rejected
+
+          If the bank rejects the file (wrong format, invalid IBAN, etc.):
+          BCM shows the rejection reason
+          Treasury must fix and resend
+
+
+          <span class="highlight">STEP 6: BANK EXECUTES THE PAYMENT</span>
+
+          UBA Mozambique processes the transfer.
+          The vendor receives 500,000 MZN in their bank account.
+
+
+          <span class="highlight">STEP 7: NEXT-DAY RECONCILIATION</span>
+
+          Next morning, the MT940 statement arrives.
+          It contains a debit: "Transfer to vendor 12345 — 500,000 MZN"
+
+          SAP matches this against the open item on 1165424:
+          Amount matches &rarr; <span class="highlight-green">Item cleared automatically</span>
+
+          The cycle is complete. The payment is fully reconciled.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Payment Methods at UNESCO</h3>
+        <table>
+          <tr>
+            <th>Method</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Use Case</th>
+          </tr>
+          <tr>
+            <td>Bank Transfer</td>
+            <td>T</td>
+            <td>Standard electronic transfer</td>
+            <td>Most vendor payments, international transfers</td>
+          </tr>
+          <tr>
+            <td>Internal Transfer</td>
+            <td>U</td>
+            <td>UNESCO bank to UNESCO bank</td>
+            <td>Cash repositioning between field offices</td>
+          </tr>
+          <tr>
+            <td>Check</td>
+            <td>C</td>
+            <td>Physical check (rare)</td>
+            <td>Specific vendor requirements, legacy</td>
+          </tr>
+          <tr>
+            <td>Wire (urgent)</td>
+            <td>W</td>
+            <td>Same-day value wire</td>
+            <td>Emergency payments, time-sensitive</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Payment File Formats</h3>
+        <table>
+          <tr>
+            <th>Format</th>
+            <th>Standard</th>
+            <th>Used For</th>
+          </tr>
+          <tr>
+            <td>/GGI_XML_CT_UNESCO</td>
+            <td>ISO 20022 XML (pain.001)</td>
+            <td>Credit transfers — the standard for most payments</td>
+          </tr>
+          <tr>
+            <td>/GGI_XML_DD_UNESCO</td>
+            <td>ISO 20022 XML (pain.008)</td>
+            <td>Direct debits (rare at UNESCO)</td>
+          </tr>
+          <tr>
+            <td>SWIFT MT101</td>
+            <td>SWIFT FIN</td>
+            <td>Legacy format for banks not supporting ISO 20022</td>
+          </tr>
+        </table>
+        <div class="note">Each bank has a specific DME instruction key (configured in Step 2, FI12) that determines
+          which format to use. UBA uses the XML credit transfer format.</div>
+      </div>
+
+      <div class="card">
+        <h3>Payment Flow &mdash; Visual</h3>
+        <div
+          style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 16px 0;">
+          <div class="chain-box source"><strong>Due Invoice</strong><br><span
+              style="font-size:0.8em;color:#8b949e">Vendor 500K MZN</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box source"><strong>F110</strong><br><span style="font-size:0.8em;color:#8b949e">Select bank
+              (T042I)</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box transform"><strong>Post Payment</strong><br><span
+              style="font-size:0.8em;color:#8b949e">Dr Vendor / Cr 11*</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box transform"><strong>OBPM4</strong><br><span
+              style="font-size:0.8em;color:#8b949e">Generate XML</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box result"><strong>BCM</strong><br><span style="font-size:0.8em;color:#8b949e">Send to
+              bank</span></div>
+          <div class="chain-arrow">&rarr;</div>
+          <div class="chain-box clearing"><strong>MT940</strong><br><span style="font-size:0.8em;color:#8b949e">Confirm
+              + clear</span></div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+     TAB 5: TREASURY REPORTING
+     ========================================================================= -->
+    <div class="panel" id="treasury-reporting">
+
+      <div class="card">
+        <h3>Treasury Reporting &mdash; The Daily and Monthly View</h3>
+        <div class="story">
+          <p>Every morning, the Treasury team at UNESCO HQ in Paris needs answers to three questions:</p>
+          <p><strong>"How much cash do we have globally?"</strong> &mdash; The Cash Position report (ZCASH)</p>
+          <p><strong>"How much in each field office?"</strong> &mdash; The Field Office Cash Detail (ZCASHFODET)</p>
+          <p><strong>"What's the average balance in each bank?"</strong> &mdash; The Average Balance report (YBANK sets)
+          </p>
+          <p>If a bank account isn't configured in these reports, Treasury is flying blind for that location. They might
+            not know there's $2M sitting idle in Maputo when they're looking for funds to deploy elsewhere.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Daily: Cash Position (ZCASH)</h3>
+          <p>The morning dashboard. Shows all bank balances grouped by region, currency, and type.</p>
+          <div class="flow-diagram">
+            <span class="highlight">What Treasury Sees Every Morning:</span>
+
+            ZCASH — Global Cash Position
+            ================================
+            Region Bank Currency Balance
+            ──────────────────────────────────────────────
+            HQ Paris SOG01 EUR 12,450,000
+            HQ Paris SOG01 USD 8,320,000
+            East Africa ECO09 KES 2,100,000
+            <span class="highlight-green">Mozambique UBA01 MZN 50,000,000</span> &larr; NEW
+            <span class="highlight-green">Mozambique UBA01 USD 1,200,000</span> &larr; NEW
+            West Africa ECO05 XOF 3,400,000
+            ...
+            ================================
+            TOTAL (USD equivalent): $187,250,000
+          </div>
+          <div class="note">Configured via <strong>TRM5</strong> (Step 11). The new UBA accounts must be added to the
+            correct form — ZCASHFODET for field offices.</div>
+        </div>
+        <div class="card">
+          <h3>Monthly: Average Balance</h3>
+          <p>Shows how much money sat in each bank on average. Used for cash management decisions and bank fee
+            negotiations.</p>
+          <div class="flow-diagram">
+            <span class="highlight">Average Balance Report — March 2026:</span>
+
+            Bank Avg Balance Days Interest
+            ────────────────────────────────────────────
+            SOG01-EUR 11,200,000 31 neg rate
+            SOG01-USD 7,800,000 31 0.05%
+            ECO09-KES 1,950,000 31 4.2%
+            <span class="highlight-green">UBA01-MZN 48,500,000 31 TBD</span> &larr; NEW
+            <span class="highlight-green">UBA01-USD 1,150,000 31 TBD</span> &larr; NEW
+            ────────────────────────────────────────────
+
+            <span class="highlight-yellow">If UBA01 is NOT in the YBANK set:</span>
+            These rows simply don't appear.
+            Treasury doesn't know the average balance.
+            Can't negotiate bank fees. Can't optimize cash.
+          </div>
+          <div class="note">Configured via <strong>GS02</strong> (Step 10). Sets use exact match — each account must be
+            added individually in each system.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>The YBANK Set Hierarchy</h3>
+        <p>The YBANK set is a tree structure that organizes all bank accounts for reporting. Here's how it's structured:
+        </p>
+        <div class="flow-diagram">
+          <span class="highlight">YBANK</span> (Root — All UNESCO Bank Accounts)
+          <span class="highlight-purple">|</span>
+          <span class="highlight-purple">+-- YBANK_HQ</span> (Headquarters Banks)
+          <span class="highlight-purple">| |</span>
+          <span class="highlight-purple">| +-- YBANK_HQ_EUR</span> (HQ Euro Accounts)
+          <span class="highlight-purple">| | +--</span> 1065101 SOG01-EUR01
+          <span class="highlight-purple">| | +--</span> 1065102 SOG01-EUR02
+          <span class="highlight-purple">| |</span>
+          <span class="highlight-purple">| +-- YBANK_HQ_USD</span> (HQ Dollar Accounts)
+          <span class="highlight-purple">| +--</span> 1065201 SOG01-USD01
+          <span class="highlight-purple">| +--</span> 1065202 CIT01-USD01
+          <span class="highlight-purple">|</span>
+          <span class="highlight-purple">+-- YBANK_FO</span> (Field Office Banks)
+          <span class="highlight-purple">|</span>
+          <span class="highlight-purple">+-- YBANK_FO_AFR</span> (Africa)
+          <span class="highlight-purple">| +--</span> 1065301 ECO09-KES01
+          <span class="highlight-purple">| +--</span> 1065302 ECO05-XOF01
+          <span class="highlight-purple">| +--</span> <span class="highlight-green">1065421 UBA01-USD01</span> &larr;
+          ADD HERE
+          <span class="highlight-purple">| +--</span> <span class="highlight-green">1065422 UBA01-MZN01</span> &larr;
+          ADD HERE
+          <span class="highlight-purple">|</span>
+          <span class="highlight-purple">+-- YBANK_FO_ASIA</span> (Asia-Pacific)
+          <span class="highlight-purple">| +--</span> ...
+          <span class="highlight-purple">|</span>
+          <span class="highlight-purple">+-- YBANK_FO_LAC</span> (Latin America & Caribbean)
+          <span class="highlight-purple">+--</span> ...
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Monthly Close: FX Revaluation</h3>
+        <div class="story">
+          <p>At month-end, UBA Mozambique holds 50,000,000 MZN. Last month, the exchange rate was 63.5 MZN per USD,
+            making this balance worth approximately $787,402 USD. This month, the rate moved to 64.0 MZN/USD, making it
+            worth $781,250 USD.</p>
+          <p>That's a <strong>$6,152 unrealized loss</strong> due to exchange rate movement. SAP must calculate and post
+            this difference so the balance sheet reflects the true USD-equivalent value.</p>
+        </div>
+        <div class="flow-diagram">
+          <span class="highlight">FX REVALUATION PROCESS (FAGL_FC_VAL)</span>
+
+          1. Program reads all foreign currency G/L balances
+          2. For each account, it calculates:
+          Local balance: 50,000,000 MZN
+          Old rate: 63.5 MZN/USD &rarr; $787,402
+          New rate: 64.0 MZN/USD &rarr; $781,250
+          <span class="highlight-red">Difference: -$6,152 (unrealized loss)</span>
+
+          3. Posts the adjustment:
+          <span class="highlight-red">DEBIT</span> FX Loss account (from T030H config) $6,152
+          <span class="highlight-green">CREDIT</span> Balance sheet adjustment account $6,152
+
+          <span class="highlight-red">If OBA1 (Step 4) is not configured for 1065421:</span>
+          Program skips this account entirely.
+          Balance sheet shows stale exchange rate.
+          Financial statements are inaccurate.
+
+          <span class="highlight-yellow">Common mistake:</span> Only filling "Realized" gains/losses in T030H.
+          Must fill ALL 3: Realized + Valuation + Correction.
+          Discovered during UBA01 config by comparing with ECO09.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Reconciliation: FEBAN</h3>
+        <p>FEBAN (Electronic Bank Statement Post-Processing) is where Treasury investigates items that didn't clear
+          automatically.</p>
+        <table>
+          <tr>
+            <th>Situation</th>
+            <th>What Shows in FEBAN</th>
+            <th>Action Required</th>
+          </tr>
+          <tr>
+            <td>Payment matches exactly</td>
+            <td>Nothing (auto-cleared)</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>Bank charged a fee</td>
+            <td>Amount mismatch on clearing account</td>
+            <td>Post fee separately, re-clear</td>
+          </tr>
+          <tr>
+            <td>Payment rejected by bank</td>
+            <td>Open item on clearing account, no matching bank debit</td>
+            <td>Investigate rejection, resend or reverse</td>
+          </tr>
+          <tr>
+            <td>Unknown deposit received</td>
+            <td>Bank credit with no matching SAP document</td>
+            <td>Research and post manually</td>
+          </tr>
+          <tr>
+            <td>Statement not received</td>
+            <td>Shows in FTE_BSM monitor (Step 3)</td>
+            <td>Contact bank, re-request statement</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+     TAB 6: UBA01 CONFIGURATION REPORT
+     ========================================================================= -->
+    <div class="panel" id="uba01-report">
+
+      <div class="card">
+        <h3>UBA01 &mdash; Configuration Compliance Report</h3>
+        <p>Specific results from the UBA Mozambique (UBA01) bank account configuration review. This is the technical
+          reference tab.</p>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="val" style="color:var(--green)">28</div>
+          <div class="label">Checks PASSED</div>
+        </div>
+        <div class="kpi">
+          <div class="val" style="color:var(--red)">2</div>
+          <div class="label">Checks FAILED</div>
+        </div>
+        <div class="kpi">
+          <div class="val" style="color:var(--yellow)">2</div>
+          <div class="label">Checks WARN</div>
+        </div>
+        <div class="kpi">
+          <div class="val" style="color:var(--accent)">15</div>
+          <div class="label">Total Checks</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>15-Check Configuration Matrix</h3>
+        <table>
+          <tr>
+            <th>#</th>
+            <th>Step</th>
+            <th>Check Description</th>
+            <th>Account</th>
+            <th>Status</th>
+            <th>Detail</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>Step 1</td>
+            <td>G/L Account exists (10* bank balance)</td>
+            <td>1065421</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Created in FS00, USD denomination</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Step 1</td>
+            <td>G/L Account exists (11* clearing)</td>
+            <td>1165424</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Open Item Management enabled</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Step 2</td>
+            <td>House bank registered (FI12)</td>
+            <td>UBA01</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>SWIFT code, bank key, address configured</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Step 2</td>
+            <td>Account ID configured</td>
+            <td>USD1 / MZN01</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>DME instruction key = B2</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Step 3</td>
+            <td>Bank Statement Monitor</td>
+            <td>&mdash;</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Added to FTE_BSM_CUST</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Step 4</td>
+            <td>OBA1 &mdash; Realized gains/losses</td>
+            <td>1065421</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>KDB/KDF accounts set</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Step 4</td>
+            <td>OBA1 &mdash; Valuation differences</td>
+            <td>1065421</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>KDG/KDH accounts set (was initially missing &mdash; FIXED)</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Step 4</td>
+            <td>OBA1 &mdash; Correction accounts</td>
+            <td>1065421</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>KDM/KDN accounts set (was initially missing &mdash; FIXED)</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Step 5</td>
+            <td>Cash Management name assigned</td>
+            <td>UBA01-USD1</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Name visible in reports</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Step 6</td>
+            <td>T035D &mdash; Account determination</td>
+            <td>UBA01-USD1 &rarr; 1065421</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>G/L mapping in place</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Step 6</td>
+            <td>T028B &mdash; Bank file identification</td>
+            <td>SP0000001YCB</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>Was initially MISSING &mdash; FIXED. Without it, MT940 files were rejected.</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Step 9</td>
+            <td>T042I &mdash; Paying bank registered</td>
+            <td>UBA01-MZN01</td>
+            <td><span class="badge badge-green">PASS</span></td>
+            <td>MZN payment method T configured</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Step 9</td>
+            <td>OBPM4 &mdash; Payment file variant (P01)</td>
+            <td>UBA01</td>
+            <td><span class="badge badge-yellow">WARN</span></td>
+            <td>Variant exists in D01/V01 but needs verification in P01 (not transportable)</td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td>Step 10</td>
+            <td>GS02 &mdash; YBANK set membership</td>
+            <td>1065421, 1065422</td>
+            <td><span class="badge badge-red">FAIL</span></td>
+            <td>Not yet added to YBANK_FO_AFR set. Must be added in D01, V01, and P01.</td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td>Step 11</td>
+            <td>TRM5 &mdash; Cash Position form</td>
+            <td>UBA01</td>
+            <td><span class="badge badge-yellow">WARN</span></td>
+            <td>Pending TRS confirmation on which form (ZCASH vs ZCASHFODET) and placement</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Issues Found and Fixed During Configuration</h3>
+        <table>
+          <tr>
+            <th>#</th>
+            <th>Issue</th>
+            <th>Impact</th>
+            <th>Resolution</th>
+            <th>Status</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>T028B missing for UBA01</td>
+            <td>MT940 files rejected — SAP couldn't identify the bank</td>
+            <td>Added bank key SP0000001YCB + account mapping</td>
+            <td><span class="badge badge-green">FIXED</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>OBA1 only had Realized section filled</td>
+            <td>FX revaluation incomplete — Valuation and Correction accounts missing</td>
+            <td>Copied pattern from ECO09, filled all 3 sections</td>
+            <td><span class="badge badge-green">FIXED</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>T035D had wrong clearing account</td>
+            <td>Bank statement postings would go to wrong G/L</td>
+            <td>Corrected to 1165424</td>
+            <td><span class="badge badge-green">FIXED</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Cash Management name not assigned</td>
+            <td>Account showed as raw G/L number in reports</td>
+            <td>Assigned name UBA01-USD1</td>
+            <td><span class="badge badge-green">FIXED</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>OBPM4 variant not in P01</td>
+            <td>Payment files would generate in D01 but not production</td>
+            <td>Needs manual creation in P01</td>
+            <td><span class="badge badge-yellow">PENDING</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>YBANK set missing UBA01 accounts</td>
+            <td>Average balance report doesn't show UBA01</td>
+            <td>Must add in GS02 in all 3 systems</td>
+            <td><span class="badge badge-red">OPEN</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Cash Position form placement TBD</td>
+            <td>Daily cash position doesn't show UBA01</td>
+            <td>Awaiting TRS decision on form placement</td>
+            <td><span class="badge badge-red">OPEN</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Remaining Tasks</h3>
+        <div class="grid-2">
+          <div>
+            <h4 style="color:var(--red)">Must Do (Capabilities Affected)</h4>
+            <table>
+              <tr>
+                <th>Task</th>
+                <th>System</th>
+                <th>Capability</th>
+              </tr>
+              <tr>
+                <td>Add to YBANK set (GS02)</td>
+                <td>D01, V01, P01</td>
+                <td><span class="badge badge-cyan">REPORT</span></td>
+              </tr>
+              <tr>
+                <td>Add to Cash Position form (TRM5)</td>
+                <td>D01, V01, P01</td>
+                <td><span class="badge badge-cyan">REPORT</span></td>
+              </tr>
+              <tr>
+                <td>Create OBPM4 variant in P01</td>
+                <td>P01</td>
+                <td><span class="badge badge-green">PAY</span></td>
+              </tr>
+            </table>
+          </div>
+          <div>
+            <h4 style="color:var(--yellow)">Verify (Low Risk)</h4>
+            <table>
+              <tr>
+                <th>Task</th>
+                <th>System</th>
+                <th>Capability</th>
+              </tr>
+              <tr>
+                <td>V_T038 cash mgmt grouping</td>
+                <td>P01</td>
+                <td><span class="badge badge-cyan">REPORT</span></td>
+              </tr>
+              <tr>
+                <td>TIBAN generation</td>
+                <td>P01</td>
+                <td><span class="badge badge-green">PAY</span></td>
+              </tr>
+              <tr>
+                <td>T018V receiving bank clearing</td>
+                <td>P01</td>
+                <td><span class="badge badge-blue">RECEIVE</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Comparison: UBA01 vs Reference Bank (ECO09)</h3>
+        <p>ECO09 (Ecobank Kenya) was used as the reference model for UBA01 configuration. Key differences:</p>
+        <table>
+          <tr>
+            <th>Configuration</th>
+            <th>ECO09 (Reference)</th>
+            <th>UBA01 (New)</th>
+            <th>Notes</th>
+          </tr>
+          <tr>
+            <td>Currency</td>
+            <td>KES</td>
+            <td>MZN + USD</td>
+            <td>UBA01 has two currency accounts</td>
+          </tr>
+          <tr>
+            <td>Statement format</td>
+            <td>XRT940</td>
+            <td>XRT940</td>
+            <td>Same — standard field office format</td>
+          </tr>
+          <tr>
+            <td>Payment method</td>
+            <td>T (transfer)</td>
+            <td>T (transfer)</td>
+            <td>Same</td>
+          </tr>
+          <tr>
+            <td>OBA1 sections</td>
+            <td>All 3 filled</td>
+            <td>All 3 filled (after fix)</td>
+            <td>Initially only Realized was filled</td>
+          </tr>
+          <tr>
+            <td>YBANK set</td>
+            <td>In YBANK_FO_AFR</td>
+            <td><span class="badge badge-red">Missing</span></td>
+            <td>Must be added</td>
+          </tr>
+          <tr>
+            <td>Cash Position</td>
+            <td>In ZCASHFODET</td>
+            <td><span class="badge badge-yellow">Pending</span></td>
+            <td>Awaiting TRS</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+  </div> <!-- end .content -->
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.panel).classList.add('active');
+      });
+    });
+  </script>
+
+  <div
+    style="text-align:center;padding:20px;color:#8b949e;font-size:0.75em;border-top:1px solid var(--border);margin-top:40px">
+    Treasury Operations Companion v2.0 &mdash; Storytelling Edition &mdash; 6 tabs<br>
+    UNESCO SAP Intelligence Platform &mdash; Generated by Claude Opus
+  </div>
+
+</body>
+
+</html>

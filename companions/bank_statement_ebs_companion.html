@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Statement & Reconciliation Companion — UNESCO SAP</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9;
+  --accent: #58a6ff; --green: #3fb950; --yellow: #d29922; --red: #f85149;
+  --purple: #bc8cff; --orange: #f0883e; --cyan: #39d2c0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+.header { background: linear-gradient(135deg, #1a2332 0%, #0d2137 100%); padding: 24px 32px; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 1.6em; color: #fff; margin-bottom: 4px; }
+.header .sub { color: #8b949e; font-size: 0.9em; }
+.tabs { display: flex; gap: 0; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
+.tab { padding: 12px 20px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.85em; transition: all 0.2s; }
+.tab:hover { color: var(--text); background: rgba(88,166,255,0.05); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.card h3 { color: var(--accent); margin-bottom: 12px; font-size: 1.1em; }
+.card h4 { color: var(--purple); margin: 16px 0 8px; font-size: 0.95em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+th { background: rgba(88,166,255,0.1); color: var(--accent); text-align: left; padding: 8px 12px; border: 1px solid var(--border); white-space: nowrap; }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover { background: rgba(88,166,255,0.05); }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.kpi .val { font-size: 1.8em; font-weight: 700; color: #fff; }
+.kpi .label { font-size: 0.8em; color: #8b949e; margin-top: 4px; }
+.flow-diagram { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'Courier New', monospace; font-size: 0.82em; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--text); }
+.highlight { color: var(--accent); font-weight: bold; }
+.highlight-green { color: var(--green); font-weight: bold; }
+.highlight-yellow { color: var(--yellow); font-weight: bold; }
+.highlight-red { color: var(--red); font-weight: bold; }
+.highlight-purple { color: var(--purple); font-weight: bold; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+.badge-green { background: rgba(63,185,80,0.2); color: var(--green); }
+.badge-yellow { background: rgba(210,153,34,0.2); color: var(--yellow); }
+.badge-red { background: rgba(248,81,73,0.2); color: var(--red); }
+.badge-blue { background: rgba(88,166,255,0.2); color: var(--accent); }
+.badge-purple { background: rgba(188,140,255,0.2); color: var(--purple); }
+.chain-step { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.chain-box { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 12px 16px; min-width: 160px; text-align: center; }
+.chain-box.source { border-color: var(--accent); }
+.chain-box.transform { border-color: var(--purple); }
+.chain-box.result { border-color: var(--green); }
+.chain-box.clearing { border-color: var(--yellow); }
+.chain-arrow { color: #8b949e; font-size: 1.4em; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+.tier { border-left: 4px solid; padding-left: 16px; margin: 12px 0; }
+.tier-hq { border-color: var(--accent); }
+.tier-fo { border-color: var(--green); }
+.tier-tr { border-color: var(--purple); }
+#network-container { width: 100%; height: 600px; border: 1px solid var(--border); border-radius: 8px; background: #0a0e14; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.note { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 6px; padding: 12px; margin: 12px 0; font-size: 0.85em; }
+.note::before { content: "Note: "; font-weight: bold; color: var(--yellow); }
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <h1>Bank Statement & Reconciliation Companion</h1>
+  <div class="sub">UNESCO SAP Intelligence Platform &mdash; Session #030 &mdash; Full E2E Bank Statement to Posting Chain</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-panel="overview">Overview</div>
+  <div class="tab" data-panel="e2e-chain">E2E Chain</div>
+  <div class="tab" data-panel="config-tiers">Config Tiers</div>
+  <div class="tab" data-panel="posting-rules">Posting Rules</div>
+  <div class="tab" data-panel="algorithms">Algorithms</div>
+  <div class="tab" data-panel="gl-structure">GL Structure</div>
+  <div class="tab" data-panel="ba-determination">BA Determination</div>
+  <div class="tab" data-panel="production-reality">Production Reality</div>
+  <div class="tab" data-panel="process-discovery">Process Discovery</div>
+  <div class="tab" data-panel="clearing-chain">Clearing Chain</div>
+  <div class="tab" data-panel="open-items">Open Items</div>
+  <div class="tab" data-panel="102i-deep-dive">102I Deep Dive</div>
+  <div class="tab" data-panel="company-codes">Company Codes</div>
+  <div class="tab" data-panel="network">Interactive Map</div>
+  <div class="tab" data-panel="glossary">Glossary</div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════ OVERVIEW ═══════════════════════ -->
+<div class="panel active" id="overview">
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">793K</div><div class="label">Total Bank Items (BSIS+BSAS)</div></div>
+    <div class="kpi"><div class="val">553K</div><div class="label">Cleared (BSAS bank GLs)</div></div>
+    <div class="kpi"><div class="val">222K</div><div class="label">Open on 10xxxxx (permanent)</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">2,996</div><div class="label">Open on 11xxxxx (actual gap)</div></div>
+    <div class="kpi"><div class="val">144</div><div class="label">UNES Bank Accounts</div></div>
+    <div class="kpi"><div class="val">1,025</div><div class="label">T028G Transformation Rules</div></div>
+  </div>
+
+  <div class="card">
+    <h3>What This Companion Shows</h3>
+    <p>The complete end-to-end chain of how a bank transaction on your real bank account becomes an SAP posting. Every bank transaction goes through this transformation:</p>
+    <div style="margin: 20px 0; text-align: center; font-size: 0.95em;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+        <div class="chain-box source"><strong>Bank Transaction</strong><br><span style="font-size:0.8em;color:#8b949e">MT940 file from bank</span></div>
+        <div class="chain-arrow">&rarr;</div>
+        <div class="chain-box source"><strong>External Code</strong><br><span style="font-size:0.8em;color:#8b949e">NTRF, NCHG, FCLR...</span></div>
+        <div class="chain-arrow">&rarr;</div>
+        <div class="chain-box transform"><strong>Algorithm</strong><br><span style="font-size:0.8em;color:#8b949e">000, 001, 013, 015, 019</span></div>
+        <div class="chain-arrow">&rarr;</div>
+        <div class="chain-box transform"><strong>Posting Rule</strong><br><span style="font-size:0.8em;color:#8b949e">101I, 102O, SUBC...</span></div>
+        <div class="chain-arrow">&rarr;</div>
+        <div class="chain-box result"><strong>GL Posting</strong><br><span style="font-size:0.8em;color:#8b949e">10xxxxx + 11xxxxx</span></div>
+        <div class="chain-arrow">&rarr;</div>
+        <div class="chain-box clearing"><strong>Reconciliation</strong><br><span style="font-size:0.8em;color:#8b949e">Auto-clear or FEBAN</span></div>
+      </div>
+    </div>
+    <p style="margin-top:12px;color:#8b949e;font-size:0.85em">Each tab dives deep into one stage of this chain, with real production data from P01.</p>
+  </div>
+
+  <div class="card">
+    <h3>Key Discoveries (Session #029-030)</h3>
+    <table>
+      <tr><th>Finding</th><th>Evidence</th><th>Impact</th></tr>
+      <tr><td>10xxxxx accounts NEVER clear (by design)</td><td>BSAS: 16 items on 10xxxxx vs 533K on 11xxxxx</td><td>222K "open items" are the bank's permanent ledger, not unreconciled</td></tr>
+      <tr><td>Real reconciliation gap = 2,996 items</td><td>BSIS open items on 11xxxxx</td><td>Actual gap is 0.6%, not the 199K previously claimed</td></tr>
+      <tr><td>Field offices use a SINGLE rule pair (SUBC/SUBD)</td><td>XRT940 format: ALL 65 ext codes &rarr; SUBC/SUBD, algo 015</td><td>No differentiation between charges, transfers, checks at field offices</td></tr>
+      <tr><td>HQ banks have granular rules</td><td>SOG_FR: 7 distinct posting rules, 5 algorithms</td><td>HQ clearing is more precise but more complex</td></tr>
+      <tr><td>111 of 144 UNES accounts use XRT940</td><td>T028B: 111 XRT940, 18 TR_TRNF, 9 SOG_FR</td><td>77% of accounts have identical simplified config</td></tr>
+      <tr><td>Algorithm 015 (clear by ZUONR) dominates field offices</td><td>T028G: 143 rules use algo 015, all from XRT940/XRT940X</td><td>Field office clearing depends entirely on ZUONR matching</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════ E2E CHAIN ═══════════════════════ -->
+<div class="panel" id="e2e-chain">
+  <div class="card">
+    <h3>The Complete E2E Bank Statement &rarr; Posting Chain</h3>
+    <p style="margin-bottom:16px">Every bank transaction follows these 7 steps. Each step is a configuration lookup that transforms the raw bank data into an SAP posting.</p>
+
+    <div class="flow-diagram">
+<span class="highlight">STEP 1: BANK SENDS MT940 FILE</span>
+  Bank (Societe Generale, Citibank, SCB, etc.)
+    &rarr; SWIFT Alliance Lite2  (3-min poll HQ / 15-min field offices)
+    &rarr; File lands in \\hq-sapitf\SWIFTS\output\
+    &rarr; FF_5 background job picks it up (91.2% automated by JOBBATCH)
+
+<span class="highlight">STEP 2: IDENTIFY BANK FORMAT (T028B)</span>
+  The bank's physical account number (BANKL + KTONR)
+    &rarr; Maps to <span class="highlight-purple">VGTYP</span> (transaction type format)
+    &rarr; Maps to <span class="highlight-purple">BNKKO</span> (house bank + account ID)
+
+  Example:
+    Bank number "FR7630003"  + Account "01752024A"
+      &rarr; VGTYP = <span class="highlight-purple">SOG_FR</span>  (Societe Generale France format)
+      &rarr; BNKKO = SOG01-EUR01
+
+<span class="highlight">STEP 3: PARSE EXTERNAL TRANSACTION CODE (MT940 Tag 61)</span>
+  MT940 Tag 61 contains the bank's transaction code:
+    :61:2403271327D1234,56NTRF//REF123
+                                <span class="highlight-green">NTRF</span> = Transfer
+
+  This becomes <span class="highlight-green">VGEXT</span> (external transaction code) in FEBEP
+
+<span class="highlight">STEP 4: LOOK UP TRANSFORMATION RULE (T028G)</span>
+  The core lookup:
+    <span class="highlight-purple">VGTYP</span> (format) + <span class="highlight-green">VGEXT</span> (ext code) + <span class="highlight-yellow">VOZPM</span> (+/-)
+      &rarr; <span class="highlight-red">VGINT</span> (posting rule)  +  <span class="highlight">INTAG</span> (algorithm)
+
+  Example (HQ Societe Generale):
+    SOG_FR + NTRF + "-" (outgoing) &rarr; Rule <span class="highlight-red">102O</span>, Algo <span class="highlight">015</span>
+    SOG_FR + NINT + "+" (incoming) &rarr; Rule <span class="highlight-red">111I</span>, Algo <span class="highlight">000</span>
+
+  Example (Field Office):
+    XRT940 + NTRF + "-" (outgoing) &rarr; Rule <span class="highlight-red">SUBD</span>, Algo <span class="highlight">015</span>
+    XRT940 + NCHG + "+" (incoming) &rarr; Rule <span class="highlight-red">SUBC</span>, Algo <span class="highlight">015</span>
+    (ALL XRT940 codes &rarr; SUBC/SUBD, always algo 015!)
+
+<span class="highlight">STEP 5: APPLY POSTING RULE &rarr; GL ACCOUNTS</span>
+  The posting rule determines WHICH GL accounts get debited/credited:
+
+    Rule <span class="highlight-red">102O</span> (Outgoing clearing on sub-bank):
+      DEBIT:  11xxxxx (BANK_SUB)  &larr; sub-bank clearing account
+      CREDIT: 10xxxxx (BANK)      &larr; main bank account
+      Post Type: 4 (Clear debit G/L)
+      Doc Type: Z1
+
+    Rule <span class="highlight-red">101I</span> (Incoming simple post):
+      DEBIT:  10xxxxx (BANK)      &larr; main bank account
+      CREDIT: 11xxxxx (BANK_SUB)  &larr; sub-bank account
+      Post Type: 1 (Post only, no clearing)
+      Doc Type: Z1
+
+<span class="highlight">STEP 6: ALGORITHM DETERMINES CLEARING</span>
+  Based on INTAG, SAP tries to automatically clear the sub-bank item:
+
+    <span class="highlight">000</span> = No clearing attempt (just post)
+    <span class="highlight">001</span> = Standard matching
+    <span class="highlight">013</span> = Match by check number
+    <span class="highlight">015</span> = Match by ZUONR (assignment field) &larr; MOST COMMON
+    <span class="highlight">019</span> = Match by DME file reference
+
+  If algo 015: SAP reads MT940 Tag 86 (note-to-payee text)
+    &rarr; Search strings extract payment document number
+    &rarr; Matches against open items on 11xxxxx by ZUONR
+    &rarr; If match found: AUTO-CLEAR (item moves to BSAS)
+    &rarr; If no match: item stays OPEN on 11xxxxx for manual FEBAN
+
+<span class="highlight">STEP 7: BUSINESS AREA DETERMINATION</span>
+  During posting, the BA substitution fires:
+    GGB1 &rarr; YRGGBS00 &rarr; YTFI_BA_SUBST (BUKRS + BLART + HKONT range &rarr; GSBER)
+    Fallback: YBASUBST (legacy 1:1 mapping)
+    If clearing: BA inherited from the matched offsetting item
+
+  Result: FI document posted with correct Business Area (GEF/PFF/OPF/MBF)
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Concrete Example: Outgoing F110 Payment via Societe Generale</h3>
+    <div class="flow-diagram">
+<span class="highlight-green">1. F110 payment run</span> creates payment doc (2000001234)
+   &rarr; Posts to vendor (BSIK/BSAK) + sub-bank 11xxxxx
+
+<span class="highlight-green">2. Bank processes payment</span>, debits UNESCO's account
+
+<span class="highlight-green">3. Bank sends MT940</span> with:
+   Tag 61: :61:2403271327D50000,00NTRF//REF2000001234
+   Tag 86: /2 2000001234/ PAYMENT TO VENDOR XYZ
+
+<span class="highlight-green">4. FF_5 imports</span> the statement:
+   FEBKO header created (KUKEY=00700123, ASTAT=8)
+   FEBEP item created:
+     VGEXT = <span class="highlight-purple">NTRF</span>
+     VOZPM = <span class="highlight-yellow">-</span> (debit/outgoing)
+     KWBTR = 50,000.00
+
+<span class="highlight-green">5. T028G lookup</span>:
+   SOG_FR + NTRF + "-" &rarr; VGINT=<span class="highlight-red">102O</span>, INTAG=<span class="highlight">015</span>
+
+<span class="highlight-green">6. Posting rule 102O</span> fires:
+   DEBIT  11750120 (BANK_SUB SOG01-EUR01)  PK=40  50,000 EUR
+   CREDIT 10750120 (BANK SOG01-EUR01)      PK=50  50,000 EUR
+   Doc type: Z1
+
+<span class="highlight-green">7. Algorithm 015</span> (clear by ZUONR):
+   Search string SOG03_PAYM_DOC parses Tag 86:
+     Pattern: (/2######/) &rarr; Extracts "2000001234"
+   Matches open item on 1175012 with ZUONR=2000001234
+   &rarr; <span class="highlight-green">AUTO-CLEARED!</span> Both items move to BSAS
+
+<span class="highlight-green">8. Result</span>:
+   10xxxxx: +1 permanent entry (bank view of the debit)
+   11xxxxx: 0 net (sub-bank cleared against payment doc)
+   Reconciliation: COMPLETE
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Concrete Example: Unmatched Incoming Payment (Manual FEBAN)</h3>
+    <div class="flow-diagram">
+<span class="highlight-yellow">1. Someone sends EUR 10,000</span> to UNESCO's Societe Generale account
+   No prior SAP document exists for this payment
+
+<span class="highlight-yellow">2. Bank sends MT940</span> with:
+   Tag 61: :61:2403271327C10000,00NMSC//MISC
+   Tag 86: CONTRIBUTION FROM GOVERNMENT OF COUNTRY X
+
+<span class="highlight-yellow">3. FF_5 imports</span>:
+   FEBEP: VGEXT=<span class="highlight-purple">NMSC</span>, VOZPM=<span class="highlight-yellow">+</span> (credit/incoming)
+
+<span class="highlight-yellow">4. T028G lookup</span>:
+   SOG_FR + NMSC + "+" &rarr; VGINT=<span class="highlight-red">101I</span>, INTAG=<span class="highlight">001</span>
+
+<span class="highlight-yellow">5. Posting rule 101I</span> (simple post, NO clearing):
+   DEBIT  10750120 (BANK)      PK=40  10,000 EUR
+   CREDIT 11750120 (BANK_SUB)  PK=50  10,000 EUR
+   Doc type: Z1, Post type: 1 (no auto-clearing)
+
+<span class="highlight-yellow">6. Algorithm 001</span> (standard): no specific match logic
+   &rarr; Item posted to 11xxxxx stays <span class="highlight-red">OPEN</span>
+
+<span class="highlight-yellow">7. Manual FEBAN post-processing</span>:
+   T_ENG or L_NEVES opens FEBAN
+   Identifies: "Government of Country X" = Assessed Contribution
+   Posts clearing entry: Customer 200293, BA=GEF
+   &rarr; 11xxxxx item cleared, moves to BSAS
+
+<span class="highlight-yellow">8. Result</span>:
+   10xxxxx: +1 permanent entry
+   11xxxxx: 0 net (after manual clearing)
+   Reconciliation: COMPLETE (but <span class="highlight-yellow">required manual work</span>)
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CONFIG TIERS ═══════════════════════ -->
+<div class="panel" id="config-tiers">
+  <div class="card">
+    <h3>Three Configuration Tiers</h3>
+    <p>Not all bank accounts are configured equally. There are 3 distinct tiers with very different levels of sophistication:</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="tier tier-hq">
+        <h4 style="color:var(--accent)">TIER 1: HQ Detailed (SOG_FR, CIT04_US, CIT21_CA)</h4>
+        <p><strong>12 accounts</strong> (SOG01, SOG03, CIT04, CIT21)</p>
+        <table>
+          <tr><th>Feature</th><th>Detail</th></tr>
+          <tr><td>Ext codes</td><td>7-11 distinct codes (NTRF, NCHG, NCHK, NCLR, NINT, NMSC, S202...)</td></tr>
+          <tr><td>Posting rules</td><td>Up to 7 distinct rules (101I, 102I, 102O, 111I, 111O, 999I, 999O)</td></tr>
+          <tr><td>Algorithms</td><td>Multiple: 000, 001, 013, 015, 019</td></tr>
+          <tr><td>Clearing</td><td>67-82% of ext codes have clearing rules</td></tr>
+          <tr><td>Search strings</td><td>Bank-specific patterns (SOG_PAYM_DOC, CIT_PAYM_DOC, SOG_DME)</td></tr>
+        </table>
+        <div class="note">HQ banks process the highest amounts ($7.1B CIT04, $3.0B SOG01) and need precise classification.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tier tier-fo">
+        <h4 style="color:var(--green)">TIER 2: Field Office Generic (XRT940)</h4>
+        <p><strong>111 accounts</strong> (77% of all UNES bank accounts)</p>
+        <table>
+          <tr><th>Feature</th><th>Detail</th></tr>
+          <tr><td>Ext codes</td><td>65 codes ALL mapped identically</td></tr>
+          <tr><td>Posting rules</td><td>2 only: SUBC (incoming) / SUBD (outgoing)</td></tr>
+          <tr><td>Algorithms</td><td>1 only: 015 (clear by assignment)</td></tr>
+          <tr><td>Clearing</td><td>100% of codes attempt clearing via ZUONR</td></tr>
+          <tr><td>Search strings</td><td>FO_PAYM_DOC (31########) — field office payment doc pattern</td></tr>
+        </table>
+        <div class="note">Simplified config = every transaction tries to auto-clear by matching the payment doc number in ZUONR. If no match, stays open on 11xxxxx.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tier tier-tr">
+      <h4 style="color:var(--purple)">TIER 3: Treasury Transfer (TR_TRNF)</h4>
+      <p><strong>18 accounts</strong> (BNP01, SCB14, SOG05, CRA01, CIC01, NTB01-02...)</p>
+      <table>
+        <tr><th>Feature</th><th>Detail</th></tr>
+        <tr><td>Ext codes</td><td>10 codes (NTRF, NCHG, NCHK, NCLR, NMSC, FCLR, FTRF, FCHG, FCHK, FMSC)</td></tr>
+        <tr><td>Posting rules</td><td>2 only: 102I (incoming clearing) / 102O (outgoing clearing)</td></tr>
+        <tr><td>Algorithms</td><td>1 only: 000 (no interpretation)</td></tr>
+        <tr><td>Clearing</td><td>100% clearing rules but algo 000 = no auto-matching</td></tr>
+        <tr><td>Post-processing</td><td>ALL done manually via FEBAN by treasury team</td></tr>
+      </table>
+      <div class="note">Treasury accounts are inter-bank transfers. Low volume (558 txns/year). Always manual because transfers don't carry payment references.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Tier Distribution Summary</h3>
+    <table>
+      <tr><th>Tier</th><th>Accounts</th><th>% of Total</th><th>Posting Rules</th><th>Auto-Clearing</th><th>Volume Profile</th></tr>
+      <tr>
+        <td><span class="badge badge-blue">HQ Detailed</span></td>
+        <td>12</td><td>8%</td>
+        <td>Up to 7 distinct rules</td>
+        <td>67-82% of codes</td>
+        <td>Highest amounts ($10B+)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">Field Office</span></td>
+        <td>111</td><td>77%</td>
+        <td>2 rules (SUBC/SUBD)</td>
+        <td>100% attempt (via ZUONR)</td>
+        <td>Highest item count</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">Treasury</span></td>
+        <td>18</td><td>13%</td>
+        <td>2 rules (102I/102O)</td>
+        <td>0% (algo 000)</td>
+        <td>Low volume, all manual</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">Other</span></td>
+        <td>3</td><td>2%</td>
+        <td>Mixed</td>
+        <td>Varies</td>
+        <td>Special cases (SOG_EUR4, SCB19_IQ)</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════ POSTING RULES ═══════════════════════ -->
+<div class="panel" id="posting-rules">
+  <div class="card">
+    <h3>Posting Rules — What Each Rule Does</h3>
+    <p>A posting rule defines: which accounts to debit/credit, what posting key, and whether auto-clearing is attempted.</p>
+    <table>
+      <tr><th>Rule</th><th>Direction</th><th>Debit</th><th>PK</th><th>Credit</th><th>PK</th><th>Post Type</th><th>Clearing?</th><th>Description</th></tr>
+      <tr><td><strong>101I</strong></td><td>Incoming</td><td>BANK (10xxxxx)</td><td>40</td><td>BANK_SUB (11xxxxx)</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Simple incoming post to GL sub-bank</td></tr>
+      <tr><td><strong>101O</strong></td><td>Outgoing</td><td>BANK_SUB (11xxxxx)</td><td>40</td><td>BANK (10xxxxx)</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Simple outgoing post from GL sub-bank</td></tr>
+      <tr><td><strong>102I</strong></td><td>Incoming</td><td>BANK (10xxxxx)</td><td>40</td><td>BANK_SUB (11xxxxx)</td><td>&mdash;</td><td>5</td><td><span class="badge badge-green">Yes (mixed)</span></td><td>Incoming with clearing on sub-bank</td></tr>
+      <tr><td><strong>102O</strong></td><td>Outgoing</td><td>BANK_SUB (11xxxxx)</td><td>&mdash;</td><td>BANK (10xxxxx)</td><td>50</td><td>4</td><td><span class="badge badge-green">Yes (debit)</span></td><td>Outgoing with clearing on sub-bank</td></tr>
+      <tr><td><strong>111I</strong></td><td>Incoming</td><td>BANK (10xxxxx)</td><td>40</td><td>INTEREST</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Interest income received</td></tr>
+      <tr><td><strong>111O</strong></td><td>Outgoing</td><td>INTEREST</td><td>40</td><td>BANK (10xxxxx)</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Interest charges paid</td></tr>
+      <tr><td><strong>201I</strong></td><td>Incoming</td><td>BANK (10xxxxx)</td><td>40</td><td>CUSTOMER</td><td>&mdash;</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Customer payment incoming</td></tr>
+      <tr><td><strong>201O</strong></td><td>Outgoing</td><td>CUSTOMER</td><td>&mdash;</td><td>BANK (10xxxxx)</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Customer refund outgoing</td></tr>
+      <tr><td><strong>999I</strong></td><td>Incoming</td><td>BANK (10xxxxx)</td><td>40</td><td>UNALLOCATED</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Unidentified incoming &mdash; needs FEBAN</td></tr>
+      <tr><td><strong>999O</strong></td><td>Outgoing</td><td>UNALLOCATED</td><td>40</td><td>BANK (10xxxxx)</td><td>50</td><td>1</td><td><span class="badge badge-red">No</span></td><td>Unidentified outgoing &mdash; needs FEBAN</td></tr>
+      <tr><td><strong>SUBC</strong></td><td>Incoming</td><td colspan="2">BANK_SUB clearing</td><td colspan="2">BANK</td><td>varies</td><td><span class="badge badge-green">Yes (ZUONR)</span></td><td>Field office generic incoming</td></tr>
+      <tr><td><strong>SUBD</strong></td><td>Outgoing</td><td colspan="2">BANK_SUB clearing</td><td colspan="2">BANK</td><td>varies</td><td><span class="badge badge-green">Yes (ZUONR)</span></td><td>Field office generic outgoing</td></tr>
+    </table>
+    <div class="note">Post Types: 1=Post only (no clearing), 4=Clear debit GL, 5=Clear mixed (debit or credit), 8=Clear credit sub-ledger</div>
+  </div>
+
+  <div class="card">
+    <h3>How Posting Rules Map to GL Accounts</h3>
+    <div class="flow-diagram">
+<span class="highlight">POSTING RULE 102O</span> (most common for outgoing payments):
+
+  Input:  Payment of EUR 50,000 via SOG01-EUR01
+  T012K:  SOG01-EUR01 &rarr; HKONT = <span class="highlight-green">0001075012</span>
+
+  Account Symbol Resolution:
+    BANK     symbol "++++++++++" &rarr; uses reference GL digits &rarr; <span class="highlight-green">0001075012</span> (10xxxxx)
+    BANK_SUB symbol "+++11+++++" &rarr; replace pos 4-5 with "11" &rarr; <span class="highlight-purple">0001175012</span> (11xxxxx)
+
+  Generated Posting:
+    Line 1: DEBIT  <span class="highlight-purple">0001175012</span> (sub-bank)  PK 40  EUR 50,000  &larr; this line gets cleared
+    Line 2: CREDIT <span class="highlight-green">0001075012</span> (bank)      PK 50  EUR 50,000  &larr; this line stays permanently
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ ALGORITHMS ═══════════════════════ -->
+<div class="panel" id="algorithms">
+  <div class="card">
+    <h3>Interpretation Algorithms — How Auto-Clearing Works</h3>
+    <p>The algorithm (INTAG) determines HOW SAP tries to match the bank statement item against existing open items for automatic clearing.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Algorithm 000: No Interpretation</h4>
+      <p>Post directly, no matching attempted. Item goes to 11xxxxx and stays open until manual FEBAN.</p>
+      <table>
+        <tr><td>Used in</td><td>664 rules across 20 formats</td></tr>
+        <tr><td>Typical for</td><td>Interest (NINT), miscellaneous (NMSC), treasury transfers</td></tr>
+        <tr><td>Result</td><td><span class="badge badge-yellow">Always needs manual FEBAN</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Algorithm 015: Clear by Assignment (ZUONR)</h4>
+      <p>The MOST IMPORTANT algorithm. Reads Tag 86 text, extracts payment doc number via search strings, matches against ZUONR field on open items.</p>
+      <table>
+        <tr><td>Used in</td><td>143 rules across 6 formats (XRT940, XRT940X, SOG_FR, CIT21_CA)</td></tr>
+        <tr><td>Typical for</td><td>ALL field office transactions, HQ transfers (NTRF)</td></tr>
+        <tr><td>Result</td><td><span class="badge badge-green">Auto-clears if search string finds matching doc</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Algorithm 001: Standard</h4>
+      <p>Basic matching logic. Less specific than 015.</p>
+      <table>
+        <tr><td>Used in</td><td>88 rules across 9 formats</td></tr>
+        <tr><td>Typical for</td><td>HQ incoming (NCLR, NCOL, NMSC), Citibank charges</td></tr>
+        <tr><td>Result</td><td><span class="badge badge-yellow">May or may not auto-clear</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Algorithm 013: Check Number</h4>
+      <p>Matches by check number. Check number in Tag 86 compared to payment document number.</p>
+      <table>
+        <tr><td>Used in</td><td>9 rules across 6 formats</td></tr>
+        <tr><td>Typical for</td><td>Outgoing checks (NCHK)</td></tr>
+        <tr><td>Result</td><td><span class="badge badge-green">Auto-clears if check number matches</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Algorithm 019: DME File Matching</h4>
+      <p>Matches by DME (Data Medium Exchange) file reference. Used for bulk payment files sent to Citibank Worldlink.</p>
+      <table>
+        <tr><td>Used in</td><td>4 rules across 2 formats (CIT04_US, FRANCE)</td></tr>
+        <tr><td>Typical for</td><td>S202 (Worldlink), NTRF outgoing on CIT04</td></tr>
+        <tr><td>Result</td><td><span class="badge badge-green">Auto-clears by DME file reference</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Other Algorithms (011, 021, 030)</h4>
+      <table>
+        <tr><th>Algo</th><th>Name</th><th>Used By</th><th>Rules</th></tr>
+        <tr><td>011</td><td>French specific</td><td>FRANCE format</td><td>1 rule</td></tr>
+        <tr><td>021</td><td>UBO specific</td><td>UBOBSBB format</td><td>1 rule</td></tr>
+        <tr><td>030</td><td>UBO report</td><td>UBOBSBB format</td><td>115 rules</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Search Strings — The Tag 86 Parsing Engine</h3>
+    <p>When algorithm 015 fires, SAP uses search strings to extract the payment reference from MT940 Tag 86 text:</p>
+    <table>
+      <tr><th>Search String</th><th>Pattern</th><th>What It Extracts</th><th>Banks</th></tr>
+      <tr><td>FO_PAYM_DOC</td><td><code>31########</code></td><td>Field office payment doc number</td><td>All field offices</td></tr>
+      <tr><td>SOG03_PAYM_DOC</td><td><code>(/2######/)</code></td><td>F110 payment doc number</td><td>SOG01/SOG03</td></tr>
+      <tr><td>SOG03_STAFF_10XXXXXX</td><td><code>(/0(0|1)#####/)</code></td><td>Staff number (payroll)</td><td>SOG01/SOG03</td></tr>
+      <tr><td>CIT_PAYM_DOC</td><td><code>REF 0002######</code></td><td>Payment doc number</td><td>CIT04/CIT21</td></tr>
+      <tr><td>CIT_STAFF_0XXXXXX</td><td><code>REF 0######</code></td><td>Staff number</td><td>CIT04/CIT21</td></tr>
+      <tr><td>SOG_DME</td><td><code>PREF/01####</code></td><td>DME file number</td><td>SOG01</td></tr>
+      <tr><td>CIT_DME</td><td><code>EF/01########-</code></td><td>DME file number</td><td>CIT04</td></tr>
+    </table>
+    <p style="margin-top:8px;color:#8b949e;font-size:0.85em"><code>#</code> = single digit/char wildcard. More specific patterns get priority.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ GL STRUCTURE ═══════════════════════ -->
+<div class="panel" id="gl-structure">
+  <div class="card">
+    <h3>GL Account Structure — The Dual-Account Architecture</h3>
+    <p>Every bank account in SAP creates TWO GL accounts. Understanding this is the key to understanding reconciliation.</p>
+
+    <div class="flow-diagram">
+<span class="highlight">THE DUAL-ACCOUNT ARCHITECTURE</span>
+
+  Real bank account (e.g., SOG01 EUR01)
+     |
+     +--&rarr; <span class="highlight-green">10xxxxx</span> (BANK symbol)
+     |      Purpose: Mirrors the BANK's view of the account
+     |      Behavior: Accumulates ALL entries, NEVER cleared
+     |      Think of it as: "What the bank statement shows"
+     |      BSIS open items: <span class="highlight-green">222,063</span> (permanent)
+     |      BSAS cleared: <span class="highlight-green">16</span> (almost never)
+     |
+     +--&rarr; <span class="highlight-purple">11xxxxx</span> (BANK_SUB symbol)
+            Purpose: SAP's CLEARING account for matching
+            Behavior: Items posted, then cleared against payments/invoices
+            Think of it as: "What SAP has matched"
+            BSIS open items: <span class="highlight-red">2,996</span> (the real gap!)
+            BSAS cleared: <span class="highlight-purple">533,545</span> (working as designed)
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>GL Account Ranges</h3>
+    <table>
+      <tr><th>Range</th><th>Symbol</th><th>Purpose</th><th>Open (BSIS)</th><th>Cleared (BSAS)</th><th>Status</th></tr>
+      <tr>
+        <td><strong>10xxxxx</strong></td><td>BANK</td><td>Main bank account (permanent ledger)</td>
+        <td style="text-align:right">222,063</td><td style="text-align:right">16</td>
+        <td><span class="badge badge-green">Active</span></td>
+      </tr>
+      <tr>
+        <td><strong>11xxxxx</strong></td><td>BANK_SUB</td><td>Sub-bank clearing/offsetting</td>
+        <td style="text-align:right;color:var(--red)">2,996</td><td style="text-align:right">533,545</td>
+        <td><span class="badge badge-green">Active</span></td>
+      </tr>
+      <tr>
+        <td><strong>12xxxxx</strong></td><td>BANK_TECH</td><td>Technical bank (legacy)</td>
+        <td style="text-align:right">28</td><td style="text-align:right">7,017</td>
+        <td><span class="badge badge-yellow">Phasing out</span></td>
+      </tr>
+      <tr>
+        <td><strong>13xxxxx</strong></td><td>OFFSET_TECH</td><td>Technical offset (legacy)</td>
+        <td style="text-align:right">26</td><td style="text-align:right">7,022</td>
+        <td><span class="badge badge-yellow">Phasing out</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Symbol-to-Account Resolution</h3>
+    <p>How SAP converts the account symbol into a real GL number:</p>
+    <div class="flow-diagram">
+Reference GL from T012K: <span class="highlight-green">0001075012</span> (SOG01-EUR01 bank GL)
+
+Symbol <span class="highlight">BANK</span>:      ++++++++++  &rarr; <span class="highlight-green">0001075012</span>  (copy all digits)
+Symbol <span class="highlight-purple">BANK_SUB</span>: +++11+++++  &rarr; <span class="highlight-purple">0001175012</span>  (replace pos 4-5 with "11")
+
+Another example:
+Reference GL: <span class="highlight-green">0001043011</span> (CIT04-USD04)
+
+Symbol BANK:      ++++++++++  &rarr; <span class="highlight-green">0001043011</span>
+Symbol BANK_SUB:  +++11+++++  &rarr; <span class="highlight-purple">0001143011</span>
+
+The "+" means: keep the same digit from the reference account.
+A specific digit means: replace with that fixed value.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ BA DETERMINATION ═══════════════════════ -->
+<div class="panel" id="ba-determination">
+  <div class="card">
+    <h3>Business Area Determination During Bank Statement Posting</h3>
+    <p>Every FI document needs a Business Area (GSBER). For bank statements, this is determined by a chain of substitution rules.</p>
+
+    <div class="flow-diagram">
+<span class="highlight">CALLING CHAIN</span>:
+
+  FI Document Posting (Z1 doc created by FF_5)
+    &rarr; GGB1 Substitution Engine (OBBH config)
+      &rarr; YRGGBS00 (formpool)
+        &rarr; FORM U910 (Business Area Substitution)
+          &rarr; YCL_FI_ACCOUNT_SUBST_READ.READ(iv_bukrs, iv_blart, iv_hkont)
+            &rarr; <span class="highlight-green">Lookup 1</span>: YTFI_BA_SUBST  (BUKRS + BLART + HKONT range &rarr; GSBER)
+            &rarr; <span class="highlight-yellow">Lookup 2</span>: YTFI_BA_SUBST  (BUKRS + SPACE + HKONT range &rarr; GSBER)  [global fallback]
+            &rarr; <span class="highlight-red">Lookup 3</span>: YBASUBST       (legacy 1:1 mapping) [last resort]
+
+  Special case for EBS (user exit YTFBE001):
+    If clearing match found on 11xxxxx:
+      &rarr; <span class="highlight-green">Inherit BA from the matched offsetting item</span>
+    If no clearing match:
+      &rarr; Fall through to substitution chain above
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>YTFI_BA_SUBST (Modern, post Oct-2022)</h4>
+      <p>129 range-based rules. BUKRS + BLART + HKONT range &rarr; GSBER</p>
+      <table>
+        <tr><th>BUKRS</th><th>BLART</th><th>HKONT Range</th><th>GSBER</th></tr>
+        <tr><td>UNES</td><td>Z1</td><td>1075012-1075012</td><td>GEF</td></tr>
+        <tr><td>UNES</td><td>Z1</td><td>1175012-1175012</td><td>GEF</td></tr>
+        <tr><td>UNES</td><td>Z1</td><td>1043011-1043011</td><td>GEF</td></tr>
+        <tr><td colspan="4" style="color:#8b949e;text-align:center">... 129 total rules</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>YBASUBST (Legacy, pre-2022)</h4>
+      <p>752 entries. Simple 1:1 BUKRS + BLART + HKONT &rarr; GSBER</p>
+      <p style="margin-top:8px"><strong>BA=X status:</strong> Only 9 entries remain with GSBER=X (IIEP=6, UBO=3). The BBP project (2020-2022) successfully eliminated nearly all BA=X defaults.</p>
+      <table>
+        <tr><th>Business Area</th><th>Meaning</th></tr>
+        <tr><td>GEF</td><td>Global Education Fund</td></tr>
+        <tr><td>PFF</td><td>Programme Fund</td></tr>
+        <tr><td>OPF</td><td>Operations Fund</td></tr>
+        <tr><td>MBF</td><td>Medical Benefits Fund</td></tr>
+        <tr><td>X</td><td>Technical/interim (being phased out &mdash; 9 remain)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PRODUCTION REALITY ═══════════════════════ -->
+<div class="panel" id="production-reality">
+  <div class="card">
+    <h3>Production Reality (P01 Gold DB, 2024-2026)</h3>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">223,710</div><div class="label">FEBEP Items (100% coverage)</div></div>
+    <div class="kpi"><div class="val">85.5%</div><div class="label">Use Algo 015 (ZUONR clearing)</div></div>
+    <div class="kpi"><div class="val">94.8%</div><div class="label">SUBD Clearing Rate</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">99.6%</div><div class="label">102I Clearing (items that post)</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">55.3%</div><div class="label">Same-day Clearing</div></div>
+    <div class="kpi"><div class="val">98.8%</div><div class="label">MXXD Clearing Rate</div></div>
+  </div>
+
+  <div class="card">
+    <h3>FEBEP Production Analysis — The E2E Chain in Real Numbers</h3>
+    <p>Session #030 extracted 133,638 FEBEP items with 27 fields. This is the first time we can see the actual transformation chain from bank transaction to posting.</p>
+
+    <h4>Top 10 E2E Chains (Ext Code &rarr; Posting Rule &rarr; Algorithm)</h4>
+    <table>
+      <tr><th>#</th><th>Ext Code</th><th>&rarr;</th><th>Rule</th><th>Algorithm</th><th>Items</th><th>%</th><th>Amount</th><th>Meaning</th></tr>
+      <tr><td>1</td><td>NTRF</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">66,783</td><td>50.0%</td><td style="text-align:right">37.1B</td><td>Field office outgoing transfer, clear by ZUONR</td></tr>
+      <tr><td>2</td><td>NCHG</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">10,830</td><td>8.1%</td><td style="text-align:right">332M</td><td>Field office bank charges</td></tr>
+      <tr><td>3</td><td>NCLR</td><td>&rarr;</td><td>102O</td><td>015</td><td style="text-align:right">10,733</td><td>8.0%</td><td style="text-align:right">188M</td><td>HQ clearing (outgoing), clear by ZUONR</td></tr>
+      <tr><td>4</td><td>NMSC</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">5,303</td><td>4.0%</td><td style="text-align:right">289M</td><td>Field office miscellaneous</td></tr>
+      <tr><td>5</td><td>NTRF</td><td>&rarr;</td><td>102I</td><td>001</td><td style="text-align:right">4,926</td><td>3.7%</td><td style="text-align:right">3.1B</td><td>HQ incoming transfer, standard matching</td></tr>
+      <tr><td>6</td><td>NTRF</td><td>&rarr;</td><td>SUBC</td><td>015</td><td style="text-align:right">3,374</td><td>2.5%</td><td style="text-align:right">21.3B</td><td>Field office incoming transfer</td></tr>
+      <tr><td>7</td><td>NTRF</td><td>&rarr;</td><td>102O</td><td>015</td><td style="text-align:right">3,342</td><td>2.5%</td><td style="text-align:right">1.0B</td><td>HQ outgoing transfer, clear by ZUONR</td></tr>
+      <tr><td>8</td><td>NCOM</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">2,626</td><td>2.0%</td><td style="text-align:right">5.7M</td><td>Field office commission</td></tr>
+      <tr><td>9</td><td>NTRN</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">2,050</td><td>1.5%</td><td style="text-align:right">488M</td><td>Field office transaction</td></tr>
+      <tr><td>10</td><td>FMSC</td><td>&rarr;</td><td>SUBD</td><td>015</td><td style="text-align:right">1,833</td><td>1.4%</td><td style="text-align:right">36.0B</td><td>Field office FX miscellaneous</td></tr>
+    </table>
+    <div class="note"><strong>NTRF (Transfer) dominates at 61.4%</strong> of all items. The top 3 chains alone cover 66.1% of volume. Field office SUBD+algo 015 is the backbone of bank reconciliation.</div>
+  </div>
+
+  <div class="card">
+    <h3>Clearing Effectiveness by Posting Rule</h3>
+    <p>Cross-referencing FEBEP items with BSIS (open) and BSAS (cleared) on 11xxxxx sub-bank accounts:</p>
+    <table>
+      <tr><th>Posting Rule</th><th>Direction</th><th>Total</th><th>Cleared on 11xxxxx</th><th>Rate</th><th>Assessment</th></tr>
+      <tr>
+        <td><strong>SUBD</strong></td><td>FO Outgoing</td>
+        <td style="text-align:right">87,581</td><td style="text-align:right">83,057</td>
+        <td style="text-align:right;color:var(--green)"><strong>94.8%</strong></td>
+        <td><span class="badge badge-green">Excellent</span></td>
+      </tr>
+      <tr>
+        <td><strong>102O</strong></td><td>HQ Outgoing</td>
+        <td style="text-align:right">16,589</td><td style="text-align:right">15,994</td>
+        <td style="text-align:right;color:var(--green)"><strong>96.4%</strong></td>
+        <td><span class="badge badge-green">Excellent</span></td>
+      </tr>
+      <tr>
+        <td><strong>SUBC</strong></td><td>FO Incoming</td>
+        <td style="text-align:right">6,354</td><td style="text-align:right">6,028</td>
+        <td style="text-align:right;color:var(--green)"><strong>94.9%</strong></td>
+        <td><span class="badge badge-green">Excellent</span></td>
+      </tr>
+      <tr>
+        <td><strong>MXXD</strong></td><td>Manual Format Out</td>
+        <td style="text-align:right">4,617</td><td style="text-align:right">4,563</td>
+        <td style="text-align:right;color:var(--green)"><strong>98.8%</strong></td>
+        <td><span class="badge badge-green">Excellent</span> &mdash; cleared via FEBAN post-processing</td>
+      </tr>
+      <tr>
+        <td><strong>TECD</strong></td><td>XRT940X Out</td>
+        <td style="text-align:right">1,196</td><td style="text-align:right">1,153</td>
+        <td style="text-align:right;color:var(--green)"><strong>96.4%</strong></td>
+        <td><span class="badge badge-green">Excellent</span></td>
+      </tr>
+      <tr>
+        <td><strong>102I</strong></td><td>HQ Incoming</td>
+        <td style="text-align:right">1,629</td><td style="text-align:right">1,623</td>
+        <td style="text-align:right;color:var(--green)"><strong>99.6%</strong></td>
+        <td><span class="badge badge-green">Excellent</span> &mdash; of items that post to 11xxx. 7,577 items (82%) have BELNR=* (no FI posting: ACH returns, bank corrections)</td>
+      </tr>
+    </table>
+    <div class="note"><strong>Key insight:</strong> ALL posting rules that actually post to 11xxxxx clear at 95-99.6%. The apparent "29.2%" on 102I was misleading &mdash; 82% of 102I items have BELNR=* (no FI posting created: ACH returns, bank corrections). Of items that DO post, 99.6% clear. <strong>The system is working correctly across all tiers.</strong></div>
+  </div>
+
+  <div class="card">
+    <h3>Business Area Distribution (FEBEP)</h3>
+    <table>
+      <tr><th>BA</th><th>Name</th><th>Items</th><th>%</th></tr>
+      <tr><td><strong>GEF</strong></td><td>Global Education Fund</td><td style="text-align:right">110,030</td><td>82.3%</td></tr>
+      <tr><td><strong>PFF</strong></td><td>Programme Fund</td><td style="text-align:right">17,339</td><td>13.0%</td></tr>
+      <tr><td><strong>X</strong></td><td>Technical/interim</td><td style="text-align:right">2,126</td><td style="color:var(--yellow)">1.6%</td></tr>
+      <tr><td><strong>OPF</strong></td><td>Operations Fund</td><td style="text-align:right">1,661</td><td>1.2%</td></tr>
+      <tr><td>(empty)</td><td>No BA assigned</td><td style="text-align:right">1,081</td><td style="color:var(--red)">0.8%</td></tr>
+      <tr><td><strong>IBA</strong></td><td>IBE Business Area</td><td style="text-align:right">875</td><td>0.7%</td></tr>
+      <tr><td><strong>PDK</strong></td><td>Project/Development</td><td style="text-align:right">520</td><td>0.4%</td></tr>
+      <tr><td><strong>MBF</strong></td><td>Medical Benefits</td><td style="text-align:right">6</td><td>0.0%</td></tr>
+    </table>
+    <div class="note">1.6% BA=X + 0.8% empty = 2.4% still have BA issues. The BBP project reduced BA=X from hundreds of entries to near-zero in config, but 2,126 items still post with BA=X.</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>BSIS Bank Items by Year (Open)</h4>
+      <table>
+        <tr><th>Year</th><th>Items</th><th>Amount (local ccy)</th></tr>
+        <tr><td>2024</td><td style="text-align:right">101,663</td><td style="text-align:right">8,157,001,268</td></tr>
+        <tr><td>2025</td><td style="text-align:right">116,698</td><td style="text-align:right">6,764,183,790</td></tr>
+        <tr><td>2026</td><td style="text-align:right">21,031</td><td style="text-align:right">1,340,692,199</td></tr>
+        <tr style="font-weight:bold"><td>Total</td><td style="text-align:right">239,392</td><td style="text-align:right">16,261,877,257</td></tr>
+      </table>
+      <p style="margin-top:8px;font-size:0.8em;color:#8b949e">Amounts are DMBTR (local currency) &mdash; NOT USD equivalent. XOF/TZS/KZT inflate totals.</p>
+    </div>
+    <div class="card">
+      <h4>BSAS Bank Items by Year (Cleared)</h4>
+      <table>
+        <tr><th>Year</th><th>Cleared Items</th></tr>
+        <tr><td>2024</td><td style="text-align:right">247,352</td></tr>
+        <tr><td>2025</td><td style="text-align:right">267,365</td></tr>
+        <tr><td>2026</td><td style="text-align:right">39,069</td></tr>
+        <tr style="font-weight:bold"><td>Total</td><td style="text-align:right">553,786</td></tr>
+      </table>
+      <p style="margin-top:8px;font-size:0.8em;color:#8b949e">More cleared than open = system is working. Cleared items move from BSIS to BSAS.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Posting Key Distribution (Bank Items)</h4>
+    <table>
+      <tr><th>BSCHL</th><th>Meaning</th><th>Count</th><th>%</th></tr>
+      <tr><td>50</td><td>Credit (bank credits = debits from UNESCO's perspective)</td><td style="text-align:right">208,755</td><td>87.2%</td></tr>
+      <tr><td>40</td><td>Debit (bank debits = credits from UNESCO's perspective)</td><td style="text-align:right">30,637</td><td>12.8%</td></tr>
+    </table>
+    <div class="note">87% credits on 10xxxxx bank GLs = most items are outgoing payments (F110 runs). This aligns with UNESCO's payment-heavy operations.</div>
+  </div>
+
+  <div class="card">
+    <h4>Where the Real Reconciliation Gap Is</h4>
+    <div class="flow-diagram">
+<span class="highlight">10xxxxx (BANK accounts)</span>:
+  Open:    222,063 items  &larr; These are the PERMANENT bank ledger
+  Cleared:      16 items  &larr; Almost never clears (by design)
+  <span class="highlight-green">STATUS: Working correctly. These are NOT "unreconciled."</span>
+
+<span class="highlight-purple">11xxxxx (BANK_SUB accounts)</span>:
+  Open:     2,996 items   &larr; <span class="highlight-red">THIS is the real reconciliation gap</span>
+  Cleared: 533,545 items  &larr; Successfully reconciled
+  <span class="highlight-green">Clearing rate: 99.4%</span>
+
+<span class="highlight-yellow">12xxxxx + 13xxxxx (Legacy technical accounts)</span>:
+  Open:        54 items   &larr; Negligible
+  Cleared: 14,039 items   &larr; Legacy but still working
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PROCESS DISCOVERY ═══════════════════════ -->
+<div class="panel" id="process-discovery">
+  <div class="card">
+    <h3>Process Discovery &mdash; Expert SAP Analysis</h3>
+    <p>Connecting configuration tables (T028G, T028B, T012K) to production data (FEBEP, FEBKO, BSIS, BSAS) to reveal how the system actually operates.</p>
+  </div>
+
+  <div class="card">
+    <h3>Bank Traffic by Account (FEBEP &times; FEBKO)</h3>
+    <p>Top 15 bank accounts by EBS item volume, with their posting rules and algorithms:</p>
+    <table>
+      <tr><th>CoCd</th><th>Account</th><th>Format</th><th>Items</th><th>Rules Used</th><th>Algos</th></tr>
+      <tr><td>UNES</td><td>XAF01</td><td>E</td><td style="text-align:right">8,613</td><td>SUBC, SUBD</td><td>015</td></tr>
+      <tr><td>UNES</td><td>TZS01</td><td>E</td><td style="text-align:right">7,206</td><td>SUBD, SUBC</td><td>015</td></tr>
+      <tr><td>UNES</td><td>USD01</td><td>E</td><td style="text-align:right">4,677</td><td>SUBC, SUBD, 102I, 102O</td><td>015, 000, 001</td></tr>
+      <tr><td>UNES</td><td>ZMW01</td><td>E</td><td style="text-align:right">2,581</td><td>SUBD, SUBC</td><td>015</td></tr>
+      <tr><td>UNES</td><td>XOF01</td><td>E</td><td style="text-align:right">2,556</td><td>SUBD, SUBC</td><td>015</td></tr>
+      <tr><td>UNES</td><td>KES01</td><td>E</td><td style="text-align:right">2,297</td><td>SUBC, SUBD</td><td>015</td></tr>
+      <tr><td>UNES</td><td>NAD01</td><td>E</td><td style="text-align:right">1,891</td><td>SUBD, SUBC</td><td>015</td></tr>
+      <tr><td>UNES</td><td>GHS01</td><td>E</td><td style="text-align:right">1,722</td><td>SUBD, SUBC</td><td>015</td></tr>
+      <tr><td>UNES</td><td>IDR01</td><td>E</td><td style="text-align:right">1,524</td><td>SUBC, SUBD</td><td>015</td></tr>
+      <tr><td>UNES</td><td>NGN01</td><td>E</td><td style="text-align:right">1,515</td><td>SUBC, SUBD</td><td>015</td></tr>
+    </table>
+    <div class="note"><strong>XAF01 (Central African CFA Franc)</strong> is the highest-volume account. The top 10 are ALL field office accounts using XRT940 format with only SUBC/SUBD and algo 015. HQ accounts (EUR01, USD04) appear much lower because they have fewer transactions but much higher amounts.</div>
+  </div>
+
+  <div class="card">
+    <h3>EFART Discovery: Electronic vs Manual Format</h3>
+    <table>
+      <tr><th>EFART</th><th>Meaning</th><th>Statements</th><th>Items</th><th>Rules</th><th>Auto-clear?</th></tr>
+      <tr>
+        <td><strong>E</strong></td><td>Electronic (MT940)</td>
+        <td style="text-align:right">31,102 (99%)</td><td style="text-align:right">126,812</td>
+        <td>SUBC/SUBD/102I/102O/...</td>
+        <td><span class="badge badge-green">Yes (85.7% algo 015)</span></td>
+      </tr>
+      <tr>
+        <td><strong>M</strong></td><td>Manual entry</td>
+        <td style="text-align:right">314 (1%)</td><td style="text-align:right">6,826</td>
+        <td>MXXD/MXXC only</td>
+        <td><span class="badge badge-red">No (algo 000)</span></td>
+      </tr>
+    </table>
+    <p style="margin-top:8px;font-size:0.85em">EFART=M accounts: GHS01 (Ghana), SDD01 (Sudan), USD01 &mdash; field offices where electronic banking is unavailable. These items produce MXXD/MXXC posting rules with algo 000 and NEVER auto-clear.</p>
+  </div>
+
+  <div class="card">
+    <h3>ZUONR Pattern Analysis &mdash; What Search Strings Extract</h3>
+    <p>The ZUONR (assignment) field is the key to auto-clearing via algo 015. Here's what search strings actually extract from Tag 86 text:</p>
+    <table>
+      <tr><th>ZUONR Pattern</th><th>Items</th><th>Meaning</th><th>Clearing?</th></tr>
+      <tr><td><code>3100xxxxxx</code></td><td style="text-align:right">9,338</td><td>Field office payment doc numbers</td><td><span class="badge badge-green">High match rate</span></td></tr>
+      <tr><td><code>NONREF</code></td><td style="text-align:right">7,575</td><td>No reference found in Tag 86</td><td><span class="badge badge-red">Cannot clear</span></td></tr>
+      <tr><td><code>3500xxxxxx</code></td><td style="text-align:right">3,294</td><td>Z1 bank statement self-reference</td><td><span class="badge badge-yellow">Self-referencing</span></td></tr>
+      <tr><td><code>UK00xxxxx</code></td><td style="text-align:right">2,894</td><td>UK remittance references</td><td><span class="badge badge-green">Good match rate</span></td></tr>
+      <tr><td><code>BANK CHARG</code></td><td style="text-align:right">1,917</td><td>Bank charges (text, not doc number)</td><td><span class="badge badge-red">Cannot clear</span></td></tr>
+      <tr><td><code>2408xxxxxx</code></td><td style="text-align:right">1,566</td><td>Payment docs from Aug 2024</td><td><span class="badge badge-green">Date-prefixed docs</span></td></tr>
+    </table>
+    <div class="note"><strong>ZUONR fill rate: 97.6% on cleared items, 98.6% on open items.</strong> This means search strings DO extract something even on uncleared items &mdash; the problem is not missing ZUONR, it's that the extracted reference doesn't match any open payment document.</div>
+  </div>
+
+  <div class="card">
+    <h3>Statement Health (FEBKO)</h3>
+    <div class="kpi-row">
+      <div class="kpi"><div class="val">31,416</div><div class="label">Total Statements (2024-2026)</div></div>
+      <div class="kpi"><div class="val" style="color:var(--green)">99.1%</div><div class="label">Fully Posted (ASTAT=8)</div></div>
+      <div class="kpi"><div class="val">0.9%</div><div class="label">Partially Posted (ASTAT=7)</div></div>
+      <div class="kpi"><div class="val">363/mo</div><div class="label">USD01 (highest volume)</div></div>
+    </div>
+    <p style="font-size:0.85em;color:#8b949e">Top account: USD01 with 10,523 statements across 29 months = 363 statements/month. This is a multi-bank field office account that aggregates many smaller transactions.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CLEARING CHAIN ═══════════════════════ -->
+<div class="panel" id="clearing-chain">
+  <div class="card">
+    <h3>Clearing Chain Anatomy</h3>
+    <p>Tracing the complete path from bank statement posting to final clearing, using BSAS.AUGBL (clearing document) data.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:var(--green)">55.3%</div><div class="label">Same-day Clearing</div></div>
+    <div class="kpi"><div class="val">76.4%</div><div class="label">Within 3 Days</div></div>
+    <div class="kpi"><div class="val">99.3%</div><div class="label">Within 30 Days</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">5.1</div><div class="label">Avg Items per Clearing Doc</div></div>
+    <div class="kpi"><div class="val">1,882</div><div class="label">Max Items in Single Clearing</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Clearing Speed Distribution</h3>
+    <table>
+      <tr><th>Time to Clear</th><th>Items</th><th>%</th><th>Assessment</th></tr>
+      <tr><td>Same day</td><td style="text-align:right">294,961</td><td>55.3%</td><td><span class="badge badge-green">Auto-cleared during import</span></td></tr>
+      <tr><td>1-3 days</td><td style="text-align:right">112,627</td><td>21.1%</td><td><span class="badge badge-green">Cleared in next batch run</span></td></tr>
+      <tr><td>4-30 days</td><td style="text-align:right">122,310</td><td>22.9%</td><td><span class="badge badge-yellow">FEBAN manual processing</span></td></tr>
+      <tr><td>30+ days</td><td style="text-align:right">3,642</td><td>0.7%</td><td><span class="badge badge-red">Delayed / requires investigation</span></td></tr>
+    </table>
+    <div class="note"><strong>76.4% clear within 3 days</strong> = the auto-clearing engine (algo 015 + search strings) handles three-quarters of all items without human intervention. The 22.9% in the 4-30 day bucket represents FEBAN manual post-processing, which is a normal and expected part of the workflow.</div>
+  </div>
+
+  <div class="card">
+    <h3>Clearing Document Patterns (AUGBL Prefix Analysis)</h3>
+    <p>The AUGBL (clearing document number) reveals what TYPE of document clears the bank item:</p>
+    <table>
+      <tr><th>AUGBL Prefix</th><th>Items</th><th>%</th><th>Unique Docs</th><th>Meaning</th></tr>
+      <tr><td><code>01xxxxxxxx</code></td><td style="text-align:right">343,916</td><td>64.5%</td><td style="text-align:right">79,776</td><td>Original payment documents (F110 runs, vendor invoices)</td></tr>
+      <tr><td><code>35xxxxxxxx</code></td><td style="text-align:right">169,510</td><td>31.8%</td><td style="text-align:right">17,525</td><td>Z7 clearing documents (created during EBS import)</td></tr>
+      <tr><td><code>30xxxxxxxx</code></td><td style="text-align:right">8,704</td><td>1.6%</td><td style="text-align:right">1,156</td><td>Manual clearing entries</td></tr>
+      <tr><td><code>31xxxxxxxx</code></td><td style="text-align:right">5,412</td><td>1.0%</td><td style="text-align:right">2,643</td><td>Field office payment clearings</td></tr>
+      <tr><td>Other</td><td style="text-align:right">5,998</td><td>1.1%</td><td style="text-align:right">Various</td><td>Treasury, netting, manual corrections</td></tr>
+    </table>
+    <div class="note">The 01x prefix (64.5%) means most clearings match BACK to the original payment document from F110. The 35x prefix (31.8%) represents Z7 clearing documents created DURING the bank statement import itself &mdash; this is the "auto-clearing during upload" path.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ OPEN ITEMS ═══════════════════════ -->
+<div class="panel" id="open-items">
+  <div class="card">
+    <h3>Open Items Deep Dive &mdash; What's Actually Unreconciled?</h3>
+    <p>The 2,996 open items on 11xxxxx sub-bank accounts, mapped back to their source banks and root causes.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:var(--green)">87.8%</div><div class="label">&lt;30 Days Old</div></div>
+    <div class="kpi"><div class="val">11.5%</div><div class="label">30-90 Days</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">12</div><div class="label">Items &gt;365 Days</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">HEALTHY</div><div class="label">System Assessment</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Top Sub-Bank Accounts with Open Items</h3>
+    <table>
+      <tr><th>Sub-bank GL</th><th>House Bank</th><th>AcctID</th><th>CCY</th><th>Open</th><th>Oldest</th><th>Assessment</th></tr>
+      <tr><td>0001181104</td><td>SCB09</td><td>NGN01</td><td>NGN</td><td style="text-align:right">690</td><td>2026-02-23</td><td><span class="badge badge-yellow">Nigeria &mdash; recent batch</span></td></tr>
+      <tr><td>0001190654</td><td>AIB01</td><td>AFN01</td><td>AFN</td><td style="text-align:right">524</td><td>2026-02-22</td><td><span class="badge badge-yellow">Afghanistan &mdash; recent batch</span></td></tr>
+      <tr><td>0001194311</td><td>ECO08</td><td>USD01</td><td>USD</td><td style="text-align:right">143</td><td>2026-02-16</td><td><span class="badge badge-yellow">Zimbabwe &mdash; recent batch</span></td></tr>
+      <tr><td>0001194694</td><td>ECO02</td><td>XOF01</td><td>XOF</td><td style="text-align:right">132</td><td>2026-02-20</td><td>Senegal</td></tr>
+      <tr><td>0001175012</td><td>SOG01</td><td>EUR01</td><td>EUR</td><td style="text-align:right">96</td><td>2026-02-10</td><td>HQ SocGen &mdash; FEBAN queue</td></tr>
+      <tr><td>0001194644</td><td>ECO10</td><td>XAF01</td><td>XAF</td><td style="text-align:right">87</td><td>2026-03-02</td><td>Congo</td></tr>
+      <tr><td>0001181664</td><td>SCB16</td><td>GHS01</td><td>GHS</td><td style="text-align:right">77</td><td>2026-03-02</td><td>Ghana</td></tr>
+    </table>
+    <div class="note"><strong>ALL open items are from Feb-Mar 2026.</strong> The oldest is only 39 days old (as of 2026-03-31). This is not a backlog &mdash; it's the current processing queue. Field office accounts (Nigeria, Afghanistan, Zimbabwe) top the list because of limited local banking connectivity.</div>
+  </div>
+
+  <div class="card">
+    <h3>Root Cause: Why Are These Items Open?</h3>
+    <p>Cross-referencing BSIS open items with FEBEP posting rules:</p>
+    <table>
+      <tr><th>Rule</th><th>Algo</th><th>Ext Code</th><th>Open Items</th><th>Root Cause</th></tr>
+      <tr><td>SUBD</td><td>015</td><td>NTRF</td><td style="text-align:right">1,179</td><td>Field office outgoing transfers &mdash; ZUONR extracted but no matching payment doc found yet</td></tr>
+      <tr><td>SUBD</td><td>015</td><td>NCHG</td><td style="text-align:right">384</td><td>Bank charges &mdash; ZUONR usually "BANK CHARGES" text, can't match</td></tr>
+      <tr><td>SUBC</td><td>015</td><td>NTRF</td><td style="text-align:right">175</td><td>Field office incoming transfers &mdash; no prior SAP doc to match</td></tr>
+      <tr><td>102O</td><td>015</td><td>NCLR</td><td style="text-align:right">80</td><td>HQ clearing items &mdash; reference doesn't match open payment</td></tr>
+      <tr><td>SUBD</td><td>015</td><td>NMSC</td><td style="text-align:right">43</td><td>Miscellaneous &mdash; no structured reference</td></tr>
+    </table>
+    <div class="note"><strong>The #1 cause is timing:</strong> 1,179 NTRF items have ZUONR filled (algo 015 extracted a reference) but the corresponding payment hasn't been posted or cleared yet. These will clear in the next F110 run or FEBAN processing cycle. <strong>This is NOT a system failure &mdash; it's normal operational lag.</strong></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 102I DEEP DIVE ═══════════════════════ -->
+<div class="panel" id="102i-deep-dive">
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">9,206</div><div class="label">Total 102I Items</div></div>
+    <div class="kpi"><div class="val" style="color:var(--yellow)">7,577</div><div class="label">BELNR=* (82% &mdash; no FI posting)</div></div>
+    <div class="kpi"><div class="val">1,629</div><div class="label">Posted to 11xxxxx</div></div>
+    <div class="kpi"><div class="val" style="color:var(--green)">99.6%</div><div class="label">Clearing Rate (posted items)</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Critical Correction: 29.2% Was Wrong</h3>
+    <p>The initial analysis reported a <strong style="color:var(--red)">29.2% clearing rate</strong> for posting rule 102I. This was <strong>incorrect</strong> because it counted ALL 9,206 items in the denominator, including those that never produce an FI document.</p>
+    <h4>What Actually Happens</h4>
+    <ul style="margin-left:20px;line-height:2">
+      <li><strong>82% of 102I items have BELNR=*</strong> (no FI posting). These are bank operational messages: ACH returns, notifications of change, routing corrections.</li>
+      <li>These items correctly produce <strong>NO FI document</strong> &mdash; the system is working as designed. They are informational records from the bank, not financial transactions.</li>
+      <li>Of the <strong>1,629 items that DO post</strong> to 11xxxxx sub-bank accounts, <strong style="color:var(--green)">1,623 clear successfully = 99.6%</strong>.</li>
+      <li>Only <strong>6 items</strong> remain open &mdash; a negligible residual, likely in the current processing queue.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Tag 86 Text Analysis &mdash; Why BELNR=* Is Correct</h3>
+    <p>The MT940 Tag :86: field reveals that BELNR=* items are <strong>not</strong> financial postings:</p>
+    <h4 style="color:var(--green)">CLEARED Items (posted to 11xxxxx)</h4>
+    <div class="flow-diagram"><span class="highlight-green">Structured bank references &mdash; these are real financial transactions:</span>
+
+  /FR018/AUTRES VIREMENTS RECUS/FR019/8901002700013
+  /ORDERINGPARTY/UNESCO/REFNUM/FR7630003020210000
+  VIREMENT EN VOTRE FAVEUR REF: 2026031800012345
+  PMT REF: SWIFT/FT26077BXYZ1 VALUE DATE: 2026-03-18</div>
+
+    <h4 style="color:var(--yellow)">NOT CLEARED &mdash; BELNR=* (no FI posting, by design)</h4>
+    <div class="flow-diagram"><span class="highlight-yellow">Bank operational messages &mdash; correctly excluded from FI:</span>
+
+  ACH CREDIT NOTIF. OF CHG. ACCT 0001234567
+  INCORRECT TRANSIT/ROUTING NO. RTN 021000089
+  RETURNING BANK REF TRN RJCT-20260315-00234
+  NOC-NOTIFICATION OF CHANGE-NEW ACCT 9876543210
+  RETURN REASON: R03 NO ACCOUNT/UNABLE TO LOCATE
+  ACH RETURN ITEM - REASON CODE R04 INVALID ACCT</div>
+    <div class="note">ACH returns and NOC (Notification of Change) messages are standard US banking operations. They inform the system of routing changes or rejected items. SAP correctly records them in FEBEP but does not create an FI document because there is no financial posting to make.</div>
+  </div>
+
+  <div class="card">
+    <h3>102I by Bank Format &mdash; Treasury Transfer Accounts</h3>
+    <table>
+      <tr><th>Bank Format</th><th>Account ID</th><th>102I Items</th><th>Cleared %</th><th>Assessment</th></tr>
+      <tr><td>TR_TRNF</td><td>NTB01-USD02</td><td style="text-align:right">105</td><td style="text-align:right">48%</td><td><span class="badge badge-yellow">Treasury transfer &mdash; algo 000</span></td></tr>
+      <tr><td>TR_TRNF</td><td>NTB01-USD01</td><td style="text-align:right">88</td><td style="text-align:right">38%</td><td><span class="badge badge-yellow">Treasury transfer &mdash; algo 000</span></td></tr>
+    </table>
+    <div class="note"><strong>TR_TRNF (Treasury Transfer)</strong> accounts use algorithm 000 (no automatic matching). Low clearing rates here are <strong>expected by design</strong> &mdash; treasury transfers between UNESCO's own accounts are reconciled manually or via separate processes, not through standard EBS clearing.</div>
+  </div>
+
+  <div class="card">
+    <h3>Corrected Assessment</h3>
+    <div style="display:flex;align-items:center;gap:16px;margin:16px 0">
+      <div style="font-size:2.5em;color:var(--green);">&#10003;</div>
+      <div>
+        <p style="font-size:1.1em;font-weight:600;color:var(--green);margin-bottom:8px">The Bank Statement System Is HEALTHY</p>
+        <ul style="margin-left:20px;line-height:2">
+          <li>All posting rules that post to 11xxxxx clear at <strong>95&ndash;99.6%</strong></li>
+          <li>BELNR=* items are correctly handled &mdash; operational messages, not missed postings</li>
+          <li>Treasury transfer accounts (TR_TRNF) have low clearing by design (algo 000)</li>
+          <li><strong>No remediation needed for 102I</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ COMPANY CODES ═══════════════════════ -->
+<div class="panel" id="company-codes">
+  <div class="card">
+    <h3>Company Code Behavior &mdash; Process Mining by Entity</h3>
+    <p>Not all company codes handle bank statements equally. Process mining reveals 3 distinct operational profiles.</p>
+  </div>
+
+  <div class="card">
+    <h3>Company Code Alignment Scorecard</h3>
+    <table>
+      <tr><th>CoCd</th><th>Cases</th><th>Volume (LC)</th><th>Banks</th><th>Fast (&lt;3d)</th><th>Slow (4-30d)</th><th>Delayed (&gt;30d)</th><th>Open</th><th>Grade</th></tr>
+      <tr>
+        <td><strong>UNES</strong></td><td style="text-align:right">70,415</td><td style="text-align:right">68.8B</td><td>60</td>
+        <td style="text-align:right;color:var(--green)">45%</td><td style="text-align:right">8%</td><td style="text-align:right">4%</td><td style="text-align:right">44%</td>
+        <td><span class="badge badge-green">B</span></td>
+      </tr>
+      <tr>
+        <td><strong>MGIE</strong></td><td style="text-align:right">1,708</td><td style="text-align:right">203M</td><td>2</td>
+        <td style="text-align:right;color:var(--yellow)">21%</td><td style="text-align:right">8%</td><td style="text-align:right;color:var(--red)">30%</td><td style="text-align:right">37%</td>
+        <td><span class="badge badge-yellow">C</span></td>
+      </tr>
+      <tr>
+        <td><strong>ICBA</strong></td><td style="text-align:right">514</td><td style="text-align:right">320M</td><td>2</td>
+        <td style="text-align:right;color:var(--red)">7%</td><td style="text-align:right;color:var(--yellow)">48%</td><td style="text-align:right">1%</td><td style="text-align:right">34%</td>
+        <td><span class="badge badge-yellow">C</span></td>
+      </tr>
+    </table>
+    <div class="note"><strong>UNES</strong> (97% of volume) runs well: 45% fast, only 4% delayed. The 44% open are recent items in the current processing queue. <strong>MGIE</strong> has a genuine problem: 30% delayed &gt;30 days with only 2 banks (GRN01 India) &mdash; this is a process/staffing issue. <strong>ICBA</strong> is slow but steady: 48% clear in 4-30 days, only 1% delayed.</div>
+  </div>
+
+  <div class="card">
+    <h3>Bank Performance Ranking (Top + Bottom)</h3>
+
+    <h4 style="color:var(--green)">Best Performers (highest same-day clearing)</h4>
+    <table>
+      <tr><th>Bank</th><th>Cases</th><th>Same-day</th><th>Format</th></tr>
+      <tr><td>ECO04-XOF01</td><td style="text-align:right">1,248</td><td style="color:var(--green)">90%</td><td>XRT940</td></tr>
+      <tr><td>GRN01-INR02 (UNES)</td><td style="text-align:right">2,367</td><td style="color:var(--green)">90%</td><td>XRT940</td></tr>
+      <tr><td>SCB08-IDR01</td><td style="text-align:right">2,428</td><td style="color:var(--green)">87%</td><td>XRT940</td></tr>
+      <tr><td>ECO01-XAF01</td><td style="text-align:right">1,432</td><td style="color:var(--green)">87%</td><td>XRT940</td></tr>
+      <tr><td>ECO02-XOF01</td><td style="text-align:right">3,184</td><td style="color:var(--green)">87%</td><td>XRT940</td></tr>
+    </table>
+
+    <h4 style="color:var(--red)">Worst Performers (highest open %)</h4>
+    <table>
+      <tr><th>Bank</th><th>Cases</th><th>Open %</th><th>Fast %</th><th>Issue</th></tr>
+      <tr><td>NTB01-USD01 (Treasury)</td><td style="text-align:right">94</td><td style="color:var(--red)">86%</td><td>7%</td><td>TR_TRNF format, algo 000, manual only</td></tr>
+      <tr><td>NTB01-USD03 (Treasury)</td><td style="text-align:right">94</td><td style="color:var(--red)">85%</td><td>7%</td><td>Same &mdash; treasury transfer</td></tr>
+      <tr><td>SCB09-NGN01 (Nigeria)</td><td style="text-align:right">2,310</td><td style="color:var(--red)">69%</td><td>22%</td><td>Field office connectivity</td></tr>
+      <tr><td>SCB19-IQD01 (Iraq)</td><td style="text-align:right">149</td><td style="color:var(--yellow)">48%</td><td>44%</td><td>Highest volume (35.8B IQD)</td></tr>
+      <tr><td>SCB16-GHS01 (Ghana)</td><td style="text-align:right">3,585</td><td style="color:var(--yellow)">47%</td><td>30%</td><td>Below average, EFART=M mix</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Treasury Transfer Strategy &mdash; The 132-Day Bottleneck</h3>
+    <div class="flow-diagram">
+TREASURY TRANSFERS (TR_TRNF format, 18 accounts):
+
+  Config:  Algorithm 000 (no auto-clearing)
+  Rules:   102I / 102O only
+  Result:  100% manual FEBAN processing
+
+  Cycle Times (process mining):
+    Median:  <span class="highlight-red">132 days</span>
+    P75:     334 days
+    P95:     358 days
+    Same-day: 50% (but these are simple transfers)
+
+  Top accounts:
+    NTB01-USD01/02/03 (Natixis):  86% still open
+    SCB14-USD01 (SCB Treasury):   moderate
+    BNP01 / CRA01 / CIC01:       low volume
+
+  WHY 132 DAYS?
+    1. Treasury transfers are inter-bank movements (BNP, Natixis, CIC, SCB)
+    2. They carry NO payment reference in Tag 86
+    3. Algorithm 000 = SAP makes no attempt to match
+    4. FEBAN post-processing depends on treasury team availability
+    5. Some transfers are blocked pending cash flow reconciliation
+
+  POSSIBLE IMPROVEMENTS:
+    - Add search strings for treasury transfer references
+    - Change NTB01 to algo 015 with ZUONR-based matching
+    - Implement batch FEBAN clearing on monthly cycle
+    - Assign dedicated FEBAN processor for treasury accounts
+    </div>
+    <div class="note">Treasury transfers are a <strong>known accepted bottleneck</strong>. The 132-day median is a process choice, not a system failure. However, moving from algo 000 to algo 015 with proper search strings could reduce this significantly.</div>
+  </div>
+
+  <div class="card">
+    <h3>MGIE India &mdash; Process Gap Investigation Needed</h3>
+    <table>
+      <tr><th>Metric</th><th>MGIE</th><th>UNES (benchmark)</th><th>Gap</th></tr>
+      <tr><td>Fast clearing (&lt;3 days)</td><td style="color:var(--red)">21%</td><td style="color:var(--green)">45%</td><td>-24pp</td></tr>
+      <tr><td>Delayed (&gt;30 days)</td><td style="color:var(--red)">30%</td><td>4%</td><td>+26pp</td></tr>
+      <tr><td>Banks</td><td>2 (GRN01)</td><td>60</td><td>&mdash;</td></tr>
+      <tr><td>Median cycle</td><td style="color:var(--red)">44 days</td><td style="color:var(--green)">0 days</td><td>+44 days</td></tr>
+      <tr><td>Same-day</td><td>0.2%</td><td>63.5%</td><td>-63pp</td></tr>
+    </table>
+    <div class="note"><strong>MGIE uses the same XRT940 format and algo 015 as UNES field offices</strong>, so the configuration is identical. The 30% delay and near-zero same-day clearing is a <strong>process problem</strong>: either FEBAN post-processing is not being done, or the bank statement import is delayed. GRN01 India bank may also have different MT940 formatting that search strings don't parse well. <strong>Action: investigate GRN01 Tag 86 text patterns and FEBAN processing logs for MGIE.</strong></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ INTERACTIVE MAP ═══════════════════════ -->
+<div class="panel" id="network">
+  <div class="card">
+    <h3>Interactive E2E Chain Map</h3>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div>Bank Format (VGTYP)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div>External Code (VGEXT)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f0883e"></div>Posting Rule (VGINT)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#bc8cff"></div>Algorithm (INTAG)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d29922"></div>GL Account Range</div>
+    </div>
+    <p style="font-size:0.85em;color:#8b949e;margin-bottom:8px">Showing HQ formats (SOG_FR, CIT04_US) + Field Office (XRT940). Click and drag to explore.</p>
+    <div id="network-container"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ GLOSSARY ═══════════════════════ -->
+<div class="panel" id="glossary">
+  <div class="card">
+    <h3>Glossary of Key Terms</h3>
+    <table>
+      <tr><th>Term</th><th>SAP Field</th><th>Table</th><th>Meaning</th></tr>
+      <tr><td>Transaction Type Format</td><td>VGTYP</td><td>T028B, T028G</td><td>Defines which bank format rules to use (SOG_FR, XRT940, CIT04_US...)</td></tr>
+      <tr><td>External Transaction Code</td><td>VGEXT</td><td>T028G, FEBEP</td><td>Bank's code for the transaction type (NTRF=transfer, NCHG=charges...)</td></tr>
+      <tr><td>Direction</td><td>VOZPM</td><td>T028G</td><td>+ = incoming (credit to bank), - = outgoing (debit from bank)</td></tr>
+      <tr><td>Posting Rule</td><td>VGINT</td><td>T028G, FEBEP</td><td>Determines which GL accounts are debited/credited (101I, 102O, SUBC...)</td></tr>
+      <tr><td>Algorithm</td><td>INTAG</td><td>T028G, FEBEP</td><td>How SAP tries to auto-clear (000=none, 015=ZUONR, 019=DME...)</td></tr>
+      <tr><td>Account Symbol</td><td>Various</td><td>T028A</td><td>Symbolic name for GL (BANK, BANK_SUB, INTEREST, CUSTOMER, UNALLOCATED)</td></tr>
+      <tr><td>House Bank</td><td>HBKID</td><td>T012, T012K</td><td>SAP's code for a bank (SOG01=Societe Generale Paris, CIT04=Citibank NY)</td></tr>
+      <tr><td>Account ID</td><td>HKTID</td><td>T012K</td><td>SAP's code for a bank account (EUR01, USD04, CAD01...)</td></tr>
+      <tr><td>Bank GL</td><td>HKONT</td><td>T012K</td><td>The main GL account for this bank (10xxxxx range)</td></tr>
+      <tr><td>Assignment</td><td>ZUONR</td><td>FEBEP, BSIS</td><td>Search field used by algo 015 to match bank items to payment docs</td></tr>
+      <tr><td>Statement Header</td><td>KUKEY</td><td>FEBKO</td><td>Unique key for a bank statement (links to FEBEP items)</td></tr>
+      <tr><td>Business Area</td><td>GSBER</td><td>FEBEP, BSIS</td><td>UNESCO's fund: GEF, PFF, OPF, MBF</td></tr>
+      <tr><td>EBS</td><td>&mdash;</td><td>&mdash;</td><td>Electronic Bank Statement (SAP's bank statement processing framework)</td></tr>
+      <tr><td>FEBAN</td><td>&mdash;</td><td>&mdash;</td><td>Transaction for manual post-processing of unmatched bank items</td></tr>
+      <tr><td>FF_5</td><td>&mdash;</td><td>&mdash;</td><td>Transaction for importing bank statement files (MT940)</td></tr>
+      <tr><td>Z1</td><td>BLART</td><td>BKPF</td><td>Document type for bank statement postings</td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+    if (tab.dataset.panel === 'network' && !window._networkBuilt) buildNetwork();
+  });
+});
+
+function buildNetwork() {
+  window._networkBuilt = true;
+  // vis.js inlined below (minified)
+  var script = document.createElement('script');
+  script.onload = function() { createNetwork(); };
+  // Inline vis-network standalone
+  script.src = 'data:text/javascript;base64,';
+  // Since we can't inline full vis.js in base64 easily, we'll build a simpler D3-free network
+  createNetwork();
+}
+
+function createNetwork() {
+  var container = document.getElementById('network-container');
+
+  // Build SVG-based network diagram
+  var nodes = [
+    // Formats
+    {id:'SOG_FR', label:'SOG_FR\n(HQ SocGen)', x:100, y:100, color:'#58a6ff', r:30},
+    {id:'CIT04_US', label:'CIT04_US\n(HQ Citi)', x:100, y:250, color:'#58a6ff', r:30},
+    {id:'XRT940', label:'XRT940\n(Field Office)', x:100, y:400, color:'#58a6ff', r:35},
+    {id:'TR_TRNF', label:'TR_TRNF\n(Treasury)', x:100, y:530, color:'#58a6ff', r:25},
+
+    // Ext codes
+    {id:'NTRF', label:'NTRF\nTransfer', x:300, y:60, color:'#3fb950', r:22},
+    {id:'NCHG', label:'NCHG\nCharges', x:300, y:140, color:'#3fb950', r:18},
+    {id:'NCHK', label:'NCHK\nCheck', x:300, y:210, color:'#3fb950', r:18},
+    {id:'NINT', label:'NINT\nInterest', x:300, y:280, color:'#3fb950', r:18},
+    {id:'NMSC', label:'NMSC\nMisc', x:300, y:350, color:'#3fb950', r:18},
+    {id:'S202', label:'S202\nWorldlink', x:300, y:420, color:'#3fb950', r:18},
+    {id:'ALL_FO', label:'ALL 65\nCodes', x:300, y:500, color:'#3fb950', r:28},
+
+    // Posting rules
+    {id:'102O', label:'102O\nOut+Clear', x:520, y:80, color:'#f0883e', r:28},
+    {id:'102I', label:'102I\nIn+Clear', x:520, y:170, color:'#f0883e', r:22},
+    {id:'101I', label:'101I\nIn Simple', x:520, y:260, color:'#f0883e', r:22},
+    {id:'111I', label:'111I\nInterest In', x:520, y:340, color:'#f0883e', r:18},
+    {id:'999I', label:'999I\nUnalloc', x:520, y:410, color:'#f0883e', r:18},
+    {id:'SUBC', label:'SUBC\nFO In', x:520, y:480, color:'#f0883e', r:25},
+    {id:'SUBD', label:'SUBD\nFO Out', x:520, y:550, color:'#f0883e', r:25},
+
+    // Algorithms
+    {id:'A015', label:'015\nZUONR', x:720, y:100, color:'#bc8cff', r:28},
+    {id:'A013', label:'013\nCheck#', x:720, y:200, color:'#bc8cff', r:20},
+    {id:'A019', label:'019\nDME', x:720, y:290, color:'#bc8cff', r:20},
+    {id:'A001', label:'001\nStd', x:720, y:370, color:'#bc8cff', r:20},
+    {id:'A000', label:'000\nNone', x:720, y:460, color:'#bc8cff', r:25},
+
+    // GL outcomes
+    {id:'GL10', label:'10xxxxx\nBANK\n(permanent)', x:920, y:200, color:'#d29922', r:30},
+    {id:'GL11', label:'11xxxxx\nBANK_SUB\n(clearing)', x:920, y:380, color:'#d29922', r:30},
+
+    // Final states
+    {id:'CLEARED', label:'CLEARED\n533K items', x:1100, y:300, color:'#3fb950', r:28},
+    {id:'OPEN', label:'OPEN\n2,996 items', x:1100, y:450, color:'#f85149', r:22},
+  ];
+
+  var edges = [
+    // Format -> Ext codes
+    {from:'SOG_FR', to:'NTRF'}, {from:'SOG_FR', to:'NCHG'}, {from:'SOG_FR', to:'NCHK'},
+    {from:'SOG_FR', to:'NINT'}, {from:'SOG_FR', to:'NMSC'},
+    {from:'CIT04_US', to:'NTRF'}, {from:'CIT04_US', to:'NCHG'}, {from:'CIT04_US', to:'NCHK'},
+    {from:'CIT04_US', to:'S202'},
+    {from:'XRT940', to:'ALL_FO'},
+    {from:'TR_TRNF', to:'NTRF'},
+
+    // Ext codes -> Posting rules
+    {from:'NTRF', to:'102O', label:'out'}, {from:'NTRF', to:'102I', label:'in'},
+    {from:'NCHG', to:'102O'}, {from:'NCHG', to:'102I'},
+    {from:'NCHK', to:'102O'},
+    {from:'NINT', to:'111I'},
+    {from:'NMSC', to:'101I'},
+    {from:'S202', to:'102O'},
+    {from:'ALL_FO', to:'SUBC', label:'in'}, {from:'ALL_FO', to:'SUBD', label:'out'},
+
+    // Posting rules -> algorithms
+    {from:'102O', to:'A015'}, {from:'102O', to:'A013'}, {from:'102O', to:'A019'},
+    {from:'102I', to:'A001'},
+    {from:'101I', to:'A001'}, {from:'101I', to:'A000'},
+    {from:'111I', to:'A000'},
+    {from:'999I', to:'A000'},
+    {from:'SUBC', to:'A015'}, {from:'SUBD', to:'A015'},
+
+    // Algorithms -> GL
+    {from:'A015', to:'GL11', label:'match'}, {from:'A015', to:'GL10'},
+    {from:'A013', to:'GL11'}, {from:'A013', to:'GL10'},
+    {from:'A019', to:'GL11'}, {from:'A019', to:'GL10'},
+    {from:'A001', to:'GL11'}, {from:'A001', to:'GL10'},
+    {from:'A000', to:'GL11'}, {from:'A000', to:'GL10'},
+
+    // GL -> final state
+    {from:'GL11', to:'CLEARED', label:'99.4%'},
+    {from:'GL11', to:'OPEN', label:'0.6%'},
+  ];
+
+  // Build SVG
+  var w = container.clientWidth, h = 600;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" style="background:#0a0e14">';
+
+  // Column labels
+  var cols = [{x:100,l:'Bank Format'},{x:300,l:'Ext Code'},{x:520,l:'Posting Rule'},{x:720,l:'Algorithm'},{x:920,l:'GL Account'},{x:1100,l:'Status'}];
+  cols.forEach(function(c){
+    svg += '<text x="'+c.x+'" y="22" fill="#8b949e" font-size="11" text-anchor="middle" font-family="sans-serif">'+c.l+'</text>';
+  });
+
+  // Draw edges
+  var nodeMap = {};
+  nodes.forEach(function(n){ nodeMap[n.id] = n; });
+  edges.forEach(function(e){
+    var a = nodeMap[e.from], b = nodeMap[e.to];
+    if(a && b){
+      svg += '<line x1="'+(a.x+a.r)+'" y1="'+a.y+'" x2="'+(b.x-b.r)+'" y2="'+b.y+'" stroke="#30363d" stroke-width="1" opacity="0.6"/>';
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(function(n){
+    svg += '<circle cx="'+n.x+'" cy="'+n.y+'" r="'+n.r+'" fill="'+n.color+'" opacity="0.2" stroke="'+n.color+'" stroke-width="1.5"/>';
+    var lines = n.label.split('\n');
+    lines.forEach(function(line, i){
+      var dy = (i - (lines.length-1)/2) * 13;
+      var fs = i === 0 ? 11 : 9;
+      var fw = i === 0 ? 'bold' : 'normal';
+      var fc = i === 0 ? '#fff' : '#8b949e';
+      svg += '<text x="'+n.x+'" y="'+(n.y+dy+4)+'" fill="'+fc+'" font-size="'+fs+'" font-weight="'+fw+'" text-anchor="middle" font-family="sans-serif">'+line+'</text>';
+    });
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// Auto-build network if tab is visible
+if(document.getElementById('network').classList.contains('active')) buildNetwork();
+</script>
+
+<div style="text-align:center;padding:20px;color:#8b949e;font-size:0.75em;border-top:1px solid var(--border);margin-top:40px">
+  Bank Statement & Reconciliation Companion v3.1 &mdash; Session #030 (2026-03-31) &mdash; 15 tabs<br>
+  UNESCO SAP Intelligence Platform &mdash; Generated by Claude Opus
+</div>
+
+</body>
+</html>

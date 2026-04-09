@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPI-USE Labs — UNESCO SAP Intelligence Companion</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --card: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --orange: #ffa657;
+            --purple: #d2a8ff;
+            --red: #f85149;
+            --yellow: #e3b341;
+            --epi: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0a1628 0%, #0d2040 50%, #0a1628 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 48px 60px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(14, 165, 233, .15);
+            border: 1px solid rgba(14, 165, 233, .4);
+            color: var(--epi);
+            font-size: .75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--epi), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 1rem;
+            max-width: 700px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 40px 80px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-size: .72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Cards grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media(max-width:800px) {
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card:hover {
+            border-color: var(--epi);
+            transition: border-color .2s;
+        }
+
+        .card-title {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--epi);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card p {
+            font-size: .85rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* KPI row */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 40px;
+        }
+
+        .kpi {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+        }
+
+        .kpi-val {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .kpi-lbl {
+            font-size: .72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-top: 6px;
+        }
+
+        .kpi-sub {
+            font-size: .78rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        /* Timeline */
+        .timeline {
+            list-style: none;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline li {
+            position: relative;
+            padding: 0 0 24px 48px;
+        }
+
+        .timeline li::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--epi);
+            border: 2px solid var(--bg);
+        }
+
+        .timeline .t-date {
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--epi);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .timeline .t-title {
+            font-weight: 600;
+            margin: 2px 0;
+        }
+
+        .timeline .t-desc {
+            font-size: .83rem;
+            color: var(--muted);
+        }
+
+        .timeline .t-stat {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: .72rem;
+            background: rgba(14, 165, 233, .12);
+            border: 1px solid rgba(14, 165, 233, .3);
+            color: var(--epi);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        /* Product cards */
+        .product-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid var(--epi);
+        }
+
+        .product-card h3 {
+            font-size: .95rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .product-card p {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: .68rem;
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin: 2px;
+            font-weight: 600;
+        }
+
+        .tag-blue {
+            background: rgba(88, 166, 255, .15);
+            color: #58a6ff;
+            border: 1px solid rgba(88, 166, 255, .3);
+        }
+
+        .tag-green {
+            background: rgba(63, 185, 80, .15);
+            color: #3fb950;
+            border: 1px solid rgba(63, 185, 80, .3);
+        }
+
+        .tag-orange {
+            background: rgba(255, 166, 87, .15);
+            color: #ffa657;
+            border: 1px solid rgba(255, 166, 87, .3);
+        }
+
+        .tag-purple {
+            background: rgba(210, 168, 255, .15);
+            color: #d2a8ff;
+            border: 1px solid rgba(210, 168, 255, .3);
+        }
+
+        .tag-red {
+            background: rgba(248, 81, 73, .15);
+            color: #f85149;
+            border: 1px solid rgba(248, 81, 73, .3);
+        }
+
+        /* Alert boxes */
+        .alert {
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            font-size: .85rem;
+            line-height: 1.6;
+        }
+
+        .alert-info {
+            background: rgba(14, 165, 233, .08);
+            border: 1px solid rgba(14, 165, 233, .25);
+        }
+
+        .alert-warn {
+            background: rgba(255, 166, 87, .08);
+            border: 1px solid rgba(255, 166, 87, .25);
+        }
+
+        .alert-success {
+            background: rgba(63, 185, 80, .08);
+            border: 1px solid rgba(63, 185, 80, .25);
+        }
+
+        .alert-label {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .alert-info .alert-label {
+            color: var(--epi);
+        }
+
+        .alert-warn .alert-label {
+            color: var(--orange);
+        }
+
+        .alert-success .alert-label {
+            color: var(--green);
+        }
+
+        /* Object table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+        th {
+            font-size: .7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--muted);
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid rgba(48, 54, 61, .5);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(14, 165, 233, .04);
+        }
+
+        /* Bar chart */
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: .8rem;
+        }
+
+        .bar-label {
+            width: 200px;
+            flex-shrink: 0;
+            color: var(--muted);
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 8px;
+            background: var(--surface);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--epi);
+        }
+
+        .bar-val {
+            width: 60px;
+            text-align: right;
+            font-weight: 600;
+            font-size: .78rem;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 20px 40px;
+            text-align: center;
+            color: var(--muted);
+            font-size: .75rem;
+        }
+    </style>
+</head>
+
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+    <div class="hero">
+        <div class="hero-badge">Third-Party Software — HCM Domain</div>
+        <h1>EPI-USE Labs at UNESCO SAP</h1>
+        <p>Intelligence companion documenting what EPI-USE Labs installed, when, why each deployment happened, and the
+            risk/opportunity implications for UNESCO's SAP HCM landscape.</p>
+    </div>
+
+    <main>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--epi)">37</div>
+                <div class="kpi-lbl">Transports Delivered</div>
+                <div class="kpi-sub">2017 – 2025</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--purple)">12,148</div>
+                <div class="kpi-lbl">ABAP Objects Installed</div>
+                <div class="kpi-sub">Avg 328 objects/transport</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--green)">9</div>
+                <div class="kpi-lbl">Deployment Waves</div>
+                <div class="kpi-sub">Major updates + patches</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--orange)">99.9%</div>
+                <div class="kpi-lbl">SAP Standard Namespace</div>
+                <div class="kpi-sub">Not Z-objects — licensed code</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--yellow)">E9BK</div>
+                <div class="kpi-lbl">Source SAP System ID</div>
+                <div class="kpi-sub">EPI-USE own development system</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" style="color:var(--red)">10,756</div>
+                <div class="kpi-lbl">CLAS Objects (ABAP Classes)</div>
+                <div class="kpi-sub">88.5% of all objects installed</div>
+            </div>
+        </div>
+
+        <!-- What is EPI-USE Labs -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--epi)"></span>Who is EPI-USE Labs</div>
+            <div class="alert alert-info">
+                <span class="alert-label">About EPI-USE Labs</span>
+                EPI-USE Labs is a global technology company specializing in SAP HCM (Human Capital Management) product
+                extensions. They build certified SAP add-on software delivered entirely as ABAP classes into the SAP
+                standard namespace. Their products are used by large enterprises and international organizations to
+                manage HR data privacy, payroll testing, system landscape optimization, and HCM reporting without custom
+                Z-development.
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-title">🏢 Company</div>
+                    <p>South African-origin global SAP partner. SAP-certified solution provider. Specializes exclusively
+                        in SAP HCM/Payroll add-ons.</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">📦 Delivery Model</div>
+                    <p>Transport-based installation. Delivered via their own SAP system (<strong>E9BK</strong>). Split
+                        into 500-object transport chunks due to SAP limits.</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">⚖️ Licensing</div>
+                    <p>Licensed commercial software. UNESCO pays per-product license. Updates released periodically
+                        requiring re-transport into client system.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- What they installed at UNESCO -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--purple)"></span>What Was Installed at
+                UNESCO</div>
+            <p style="color:var(--muted); font-size:.85rem; margin-bottom:20px;">Based on transport object analysis:
+                10,756 CLAS + 465 PROG + 145 ACID + 111 AUTH + 72 TABU + 78 DOCT objects</p>
+
+            <div class="grid-2">
+                <div class="product-card">
+                    <h3>🔄 Data Sync Manager (DSM) for HCM</h3>
+                    <p>Primary product. Allows copying employee/payroll data between SAP systems (PROD → QAS → DEV)
+                        while masking sensitive personal data (GDPR compliance). Used to keep test systems current with
+                        real data shapes without real data exposure.</p>
+                    <span class="tag tag-blue">HR Data Copying</span>
+                    <span class="tag tag-green">GDPR Compliance</span>
+                    <span class="tag tag-orange">Payroll Testing</span>
+                    <span class="tag tag-purple">System Refresh</span>
+                </div>
+                <div class="product-card">
+                    <h3>🔒 Data Secure</h3>
+                    <p>Data masking and scrambling engine. Works with DSM to anonymize employee names, salaries, bank
+                        accounts, and personal identifiers when copying data to non-production systems. Explains the
+                        <strong>ACID</strong> (Authorization Check ID) and <strong>AUTH</strong> objects in the
+                        transports.</p>
+                    <span class="tag tag-red">Data Masking</span>
+                    <span class="tag tag-green">GDPR</span>
+                    <span class="tag tag-blue">Authorization Objects</span>
+                </div>
+                <div class="product-card">
+                    <h3>📊 Query Manager / Variance Monitor</h3>
+                    <p>Reporting layer over SAP HCM/Payroll data. Enables non-technical HR staff to run structured
+                        queries on payroll results and employee data without needing SE16/SAP transaction access.
+                        Explains the <strong>DOCT</strong> (documentation) and report program objects.</p>
+                    <span class="tag tag-purple">HR Reporting</span>
+                    <span class="tag tag-orange">Payroll Variance</span>
+                </div>
+                <div class="product-card">
+                    <h3>⚙️ EPI-USE Framework Classes</h3>
+                    <p>Core ABAP class library shared across all EPI-USE products. The 10,756 CLAS objects are this
+                        framework — utility classes for UI rendering, RFC handling, data transformation, and SAP Fiori
+                        integration. Re-installed with every product update.</p>
+                    <span class="tag tag-blue">ABAP OO Framework</span>
+                    <span class="tag tag-purple">Shared Library</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Timeline -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--yellow)"></span>Deployment Timeline at
+                UNESCO</div>
+            <ul class="timeline">
+                <li>
+                    <span class="t-date">2017 — Q2 & Q4</span>
+                    <div class="t-title">Initial Installation</div>
+                    <div class="t-desc">First deployment of EPI-USE suite. 7 transports, 2,007 objects. This is the
+                        go-live of DSM and Data Secure at UNESCO. Likely related to the start of SAP HCM usage or a
+                        compliance project requiring data masking.</div>
+                    <span class="t-stat">7 transports · 2,007 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2019 — Q2 & Q4</span>
+                    <div class="t-title">Major Version Upgrade</div>
+                    <div class="t-desc">Largest wave: 6 transports, 3,000 objects. Likely a major product version (DSM
+                        5.x → 6.x). The Q4 burst suggests year-end testing for payroll runs. The 500-object cap confirms
+                        these are direct EPI-USE product deliveries.</div>
+                    <span class="t-stat">6 transports · 3,000 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2020 — Q1 & Q2</span>
+                    <div class="t-title">COVID-19 Period — System Stabilization</div>
+                    <div class="t-desc">Highest frequency (10 transports) but lower object count (1,580 objects). Likely
+                        hot-fixes and patches during the shift to remote work, ensuring data masking and HR system
+                        access worked correctly for distributed operations.</div>
+                    <span class="t-stat">10 transports · 1,580 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2021 — Q2</span>
+                    <div class="t-title">Minor Update / Patch</div>
+                    <div class="t-desc">Small update: 2 transports, 1,000 objects. Routine product maintenance.</div>
+                    <span class="t-stat">2 transports · 1,000 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2022 — Q2</span>
+                    <div class="t-title">Feature Release</div>
+                    <div class="t-desc">4 transports, 1,514 objects. Possibly new Fiori integration or SuccessFactors
+                        connector release.</div>
+                    <span class="t-stat">4 transports · 1,514 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2023 — Q4</span>
+                    <div class="t-title">Latest Major Upgrade</div>
+                    <div class="t-desc">5 transports, 2,044 objects. Year-end timing again — consistent with payroll
+                        cycle preparation. Largest update since 2019.</div>
+                    <span class="t-stat">5 transports · 2,044 objects</span>
+                </li>
+                <li>
+                    <span class="t-date">2025 — Q3</span>
+                    <div class="t-title">Recent Patch</div>
+                    <div class="t-desc">3 transports, 1,003 objects. Most recent activity. Indicates the license is
+                        active and product is still being maintained. System is current.</div>
+                    <span class="t-stat">3 transports · 1,003 objects</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Object anatomy -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--green)"></span>Object Anatomy — What
+                12,148 Objects Mean</div>
+            <div style="margin-bottom:20px">
+                <div class="bar-row"><span class="bar-label">CLAS — ABAP Classes</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:88.5%"></div>
+                    </div><span class="bar-val">10,756</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">PROG — Programs/Reports</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:3.8%; background:#d2a8ff"></div>
+                    </div><span class="bar-val">465</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">DOMA — Data Domains</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:1.8%; background:#3fb950"></div>
+                    </div><span class="bar-val">216</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">ACID — Auth. Check IDs</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:1.2%; background:#f85149"></div>
+                    </div><span class="bar-val">145</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">DEVC — Packages</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:1.1%; background:#ffa657"></div>
+                    </div><span class="bar-val">133</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">AUTH — Auth. Objects</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0.9%; background:#e3b341"></div>
+                    </div><span class="bar-val">111</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">DOCT — Documentation</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0.6%; background:#79c0ff"></div>
+                    </div><span class="bar-val">78</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">DTEL — Data Elements</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0.7%; background:#56d364"></div>
+                    </div><span class="bar-val">88</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">TABU — Table Contents</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0.6%; background:#ff7b72"></div>
+                    </div><span class="bar-val">72</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">TRAN — Transactions</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0.2%; background:#cae8ff"></div>
+                    </div><span class="bar-val">26</span>
+                </div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-label">Interpretation</span>
+                The dominance of CLAS (88.5%) confirms this is a pure <strong>object-oriented ABAP framework</strong>.
+                EPI-USE delivers their entire product as reusable class libraries. The ACID + AUTH objects confirm a
+                dedicated authorization concept. TABU entries are product configuration defaults. DEVC packages show
+                they organize code into named SAP packages (visible in SE80). The 26 TRAN entries are the actual
+                user-facing transactions (e.g., the DSM copy cockpit, Data Secure configuration screen).
+            </div>
+        </div>
+
+        <!-- Implications -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--orange)"></span>Strategic Implications
+                for UNESCO</div>
+            <div class="grid-2">
+                <div>
+                    <div class="alert alert-warn">
+                        <span class="alert-label">⚠️ Upgrade Dependency Risk</span>
+                        EPI-USE delivers updates quarterly/annually. Each upgrade touches 1,000–3,000 objects. If
+                        UNESCO's own Z-code extends or calls EPI-USE classes directly, upgrades can break custom code.
+                        Dependency map should be created.
+                    </div>
+                    <div class="alert alert-warn">
+                        <span class="alert-label">⚠️ License continuity</span>
+                        The most recent activity is 2025-Q3. If the license expires or EPI-USE deprioritizes SAP ECC (in
+                        favor of S/4HANA), UNESCO will be running unsupported HCM tooling. This is an S/4HANA migration
+                        risk factor.
+                    </div>
+                </div>
+                <div>
+                    <div class="alert alert-success">
+                        <span class="alert-label">✅ GDPR Compliance Asset</span>
+                        DSM + Data Secure are actively used for HR data masking between systems. This is a compliance
+                        requirement. The 2020 COVID spike shows it was critical during emergency remote operations.
+                    </div>
+                    <div class="alert alert-info">
+                        <span class="alert-label">🔍 Next Investigation</span>
+                        Extract the actual EPI-USE transaction codes from the 26 TRAN objects to map what HR users are
+                        actively doing with this suite. Cross-reference with SU53 authorization failures to understand
+                        adoption.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classification note -->
+        <div class="section">
+            <div class="section-title"><span class="dot" style="background:var(--accent)"></span>CTS Classification —
+                How to Treat in Transport Analysis</div>
+            <div class="alert alert-info">
+                <span class="alert-label">Classification Rule Added</span>
+                EPI-USE transports are now classified as <strong>THIRD_PARTY_HCM</strong> in cts_analyze.py. Detection
+                rule: TRKORR starts with <code>E9BK</code> (EPI-USE source system). This separates them from UNESCO
+                CUSTOM_DEV (Z-namespace) and SAP_CONFIG (standard config), giving an accurate picture of genuine UNESCO
+                team productivity.
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Detection Signal</th>
+                        <th>Meaning</th>
+                        <th>Count (10yr)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="tag tag-blue">CUSTOM_DEV</span></td>
+                        <td>Z/Y/UNESCO namespace objects</td>
+                        <td>UNESCO developer work</td>
+                        <td>~3,500</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-green">SAP_CONFIG</span></td>
+                        <td>Standard namespace, real user</td>
+                        <td>Functional consultant config</td>
+                        <td>~3,050</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-orange">THIRD_PARTY_HCM</span></td>
+                        <td>TRKORR starts E9BK*</td>
+                        <td>EPI-USE Labs product delivery</td>
+                        <td>37</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-red">SAP_UPGRADE</span></td>
+                        <td>SAPK*/SP* TRKORR + SAP user</td>
+                        <td>SAP Support Packages</td>
+                        <td>~15</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-purple">UNKNOWN</span></td>
+                        <td>Low-signal transports</td>
+                        <td>Needs further classification</td>
+                        <td>~1,140</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <footer>
+        EPI-USE Labs Intelligence Companion — UNESCO SAP Transport Analysis · Generated 2026-03-12 · Source:
+        cts_10yr_raw.json
+    </footer>
+</body>
+
+</html>

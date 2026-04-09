@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP RFC Destination Analysis</title>
+<style>
+:root {
+  --bg: #080b12; --surface: #0c1018; --card: #111827;
+  --border: #1a2540; --border-glow: #1e3a5f;
+  --text: #c8d6e5; --muted: #4a5f80; --white: #eef2f7;
+  --neon-blue: #4f8ef7; --neon-cyan: #22d3ee; --neon-green: #22c55e;
+  --neon-orange: #fb923c; --neon-red: #ef4444; --neon-purple: #a78bfa;
+  --neon-yellow: #f59e0b; --neon-teal: #2dd4bf; --neon-gray: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.header { background: linear-gradient(180deg, #0e1525 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 1.2em; font-weight: 700; color: var(--white); }
+.header h1 span { color: var(--neon-blue); }
+.header-stats { display: flex; gap: 24px; }
+.hstat { text-align: center; }
+.hstat .v { font-size: 1.1em; font-weight: 800; font-family: 'Consolas', monospace; }
+.hstat .l { font-size: 0.6em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.header-links { font-size: 0.7em; display: flex; gap: 12px; }
+.header-links a { color: var(--neon-cyan); text-decoration: none; }
+.header-links a:hover { text-decoration: underline; }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 24px 32px 80px; }
+
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+.tab { padding: 10px 20px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-size: 0.85em; font-weight: 600; white-space: nowrap; transition: all 0.2s; user-select: none; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--neon-blue); border-bottom-color: var(--neon-blue); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+.search { width: 100%; padding: 10px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9em; margin-bottom: 20px; outline: none; }
+.search:focus { border-color: var(--neon-blue); }
+
+/* KPI Cards */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; text-align: center; }
+.kpi .v { font-size: 2em; font-weight: 800; font-family: 'Consolas', monospace; }
+.kpi .l { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 4px; }
+
+/* Donut charts */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+.chart-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.chart-box h3 { font-size: 0.9em; color: var(--white); margin-bottom: 16px; }
+.donut-wrap { display: flex; align-items: center; gap: 24px; }
+.donut { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
+.donut-hole { position: absolute; top: 30px; left: 30px; width: 100px; height: 100px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 1.4em; font-weight: 800; font-family: 'Consolas', monospace; color: var(--white); }
+.legend { display: flex; flex-direction: column; gap: 6px; font-size: 0.78em; }
+.legend-item { display: flex; align-items: center; gap: 8px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* Findings */
+.findings { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 8px; }
+.finding { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; line-height: 1.6; font-size: 0.82em; }
+.finding .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 700; margin-right: 6px; }
+.tag-red { background: rgba(239,68,68,0.15); color: var(--neon-red); }
+.tag-yellow { background: rgba(245,158,11,0.15); color: var(--neon-yellow); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+th { background: rgba(79,142,247,0.08); color: var(--neon-blue); text-align: left; padding: 8px 12px; border: 1px solid var(--border); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
+th:hover { background: rgba(79,142,247,0.14); }
+td { padding: 6px 12px; border: 1px solid var(--border); }
+tr:hover td { background: rgba(79,142,247,0.03); }
+.mono { font-family: 'Consolas', monospace; font-size: 0.95em; }
+
+/* Type badges */
+.type-badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.8em; font-weight: 600; }
+.type-ABAP { background: rgba(79,142,247,0.15); color: var(--neon-blue); }
+.type-ExtPrg { background: rgba(34,197,94,0.15); color: var(--neon-green); }
+.type-TCP\/IP, .type-TCPIP { background: rgba(34,211,238,0.15); color: var(--neon-cyan); }
+.type-HTTP { background: rgba(251,146,60,0.15); color: var(--neon-orange); }
+.type-Internal { background: rgba(100,116,139,0.15); color: var(--neon-gray); }
+.type-Queue { background: rgba(239,68,68,0.15); color: var(--neon-red); }
+.type-Logical { background: rgba(167,139,250,0.15); color: var(--neon-purple); }
+
+/* Direction */
+.dir { font-weight: 700; font-size: 0.9em; }
+.dir-OUT { color: var(--neon-blue); }
+.dir-IN { color: var(--neon-cyan); }
+.dir-BIDIR { color: var(--neon-purple); }
+.dir-SELF { color: var(--neon-gray); }
+
+/* Grouped sections */
+.group-header { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; margin: 20px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+.group-header h3 { font-size: 0.95em; color: var(--white); }
+.group-count { font-family: 'Consolas', monospace; font-weight: 800; font-size: 1.1em; }
+
+/* System cards for Tab 3 */
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+.sys-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.sys-card:hover { border-color: var(--border-glow); }
+.sys-card h4 { font-size: 1em; color: var(--white); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.sys-card .dest-list { font-size: 0.72em; font-family: 'Consolas', monospace; line-height: 1.9; margin-top: 8px; }
+.dest-tag { display: inline-block; padding: 1px 8px; margin: 2px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+
+/* Purpose table */
+.risk-low { color: var(--neon-green); }
+.risk-med { color: var(--neon-yellow); }
+.risk-high { color: var(--neon-red); }
+
+.sort-arrow { font-size: 0.7em; margin-left: 4px; }
+.footer { text-align: center; padding: 32px; font-size: 0.7em; color: var(--muted); }
+
+@media (max-width: 700px) {
+  .chart-row { grid-template-columns: 1fr; }
+  .sys-grid { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <div>
+    <h1><span>&#9670;</span> UNESCO SAP RFC Destination Analysis</h1>
+    <div class="header-links">
+      <a href="system_inventory.html">System Inventory</a>
+      <a href="connectivity_diagram.html">Connectivity Map</a>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="v" style="color:var(--neon-blue)">239</div><div class="l">RFC Dest.</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-green)">7</div><div class="l">Types</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-cyan)">28</div><div class="l">Ext. Targets</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-orange)">5</div><div class="l">Findings</div></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab(0)">Dashboard</div>
+    <div class="tab" onclick="showTab(1)">By Type</div>
+    <div class="tab" onclick="showTab(2)">By Target System</div>
+    <div class="tab" onclick="showTab(3)">By Purpose</div>
+    <div class="tab" onclick="showTab(4)">Full Table</div>
+  </div>
+
+  <!-- Tab 0: Dashboard -->
+  <div class="panel active" id="panel-0">
+    <div class="kpi-row">
+      <div class="kpi"><div class="v" style="color:var(--neon-blue)">239</div><div class="l">Total Destinations</div></div>
+      <div class="kpi"><div class="v" style="color:var(--neon-green)">7</div><div class="l">RFC Types</div></div>
+      <div class="kpi"><div class="v" style="color:var(--neon-cyan)">28</div><div class="l">External Targets</div></div>
+      <div class="kpi"><div class="v" style="color:var(--neon-orange)">5</div><div class="l">Key Findings</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>Distribution by RFC Type</h3>
+        <div class="donut-wrap">
+          <div class="donut" id="donut-type"><div class="donut-hole">239</div></div>
+          <div class="legend" id="legend-type"></div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h3>Distribution by Direction</h3>
+        <div class="donut-wrap">
+          <div class="donut" id="donut-dir"><div class="donut-hole">239</div></div>
+          <div class="legend" id="legend-dir"></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="color:var(--white);font-size:0.95em;margin-bottom:12px;">Key Findings</h3>
+    <div class="findings">
+      <div class="finding"><span class="tag tag-red">CRITICAL</span> <strong>Fiori GW = 23 GUID-based destinations</strong> across 4 servers (fabsprd1-4). These are SAPControl.CGI monitoring endpoints, not app routing. The GUID names indicate auto-generated ICM channel registrations.</div>
+      <div class="finding"><span class="tag tag-yellow">NOTE</span> <strong>80 self-referencing destinations (33%)</strong> &mdash; P01 app server instances (r3prd*, sapprd*, 155.56.x). Standard for multi-instance ECC landscape. Includes BACK, NONE, queue recorders, and internal dispatch entries.</div>
+      <div class="finding"><span class="tag tag-red">SECURITY</span> <strong>14 Trusted RFC (bidirectional)</strong> &mdash; D01, TS1, TS3, V01, SBP, SMA, SMP. Allows identity forwarding without password. Security-relevant: any compromise of a trusted system propagates access to P01.</div>
+      <div class="finding"><span class="tag tag-yellow">NOTE</span> <strong>MuleSoft is INBOUND</strong> (MULESOFT_P01_IDOC type T = RFC server registration). P01 does NOT call MuleSoft &mdash; MuleSoft calls P01. MULESOFT_PROD (type 3/ExtPrg) is the outbound definition but has no host configured.</div>
+      <div class="finding"><span class="tag tag-yellow">NOTE</span> <strong>AWS (CSI_AWS_S3/EC2)</strong> on port 80 (HTTP not HTTPS) &mdash; possibly legacy/inactive. Connecting to cloud storage over unencrypted HTTP is a data leakage risk if active.</div>
+    </div>
+  </div>
+
+  <!-- Tab 1: By Type -->
+  <div class="panel" id="panel-1"></div>
+
+  <!-- Tab 2: By Target System -->
+  <div class="panel" id="panel-2"></div>
+
+  <!-- Tab 3: By Purpose -->
+  <div class="panel" id="panel-3"></div>
+
+  <!-- Tab 4: Full Table -->
+  <div class="panel" id="panel-4">
+    <input type="text" class="search" id="fullSearch" placeholder="Search all destinations (name, type, host, target, direction, purpose)..." oninput="filterFullTable()">
+    <table id="fullTable">
+      <thead><tr>
+        <th onclick="sortFull(0)">#</th>
+        <th onclick="sortFull(1)">Destination</th>
+        <th onclick="sortFull(2)">Type</th>
+        <th onclick="sortFull(3)">Host</th>
+        <th onclick="sortFull(4)">Target</th>
+        <th onclick="sortFull(5)">Direction</th>
+        <th onclick="sortFull(6)">Purpose</th>
+        <th onclick="sortFull(7)">Client</th>
+      </tr></thead>
+      <tbody id="fullBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">UNESCO SAP Intelligence Platform &mdash; RFC Destination Analysis &mdash; Source: RFCDES (P01) &mdash; Generated 2026-04-01</div>
+
+<script>
+// [dest, type, host, target, direction, purpose, client]
+const DATA = [
+["","ABAP","","Local","OUT","General",""],
+["A01LOGON","ABAP","10.101.21.123","P01 (self)","SELF","ALE/IDoc",""],
+["A01MDT350","ABAP","10.101.23.102","P01 (self)","SELF","ALE/IDoc",""],
+["A11MDT100","ABAP","10.101.23.103","P01 (self)","SELF","ALE/IDoc",""],
+["BRPCLNT370","ABAP","HQ-SAP-BRP","BRP","OUT","General",""],
+["BRUCLNT370","ABAP","HQ-SAP-TS1","TS1","OUT","General",""],
+["BWDMDT370","ABAP","HQ-SAP-BWD","BWD","OUT","ALE/IDoc",""],
+["BWPMDT370","ABAP","hq-sap-bwp.hq.int.unesco.org","BWP","OUT","ALE/IDoc",""],
+["D01LOGON","ABAP","10.101.21.123","P01 (self)","SELF","ALE/IDoc",""],
+["D01MDT350","ABAP","hq-sap-d01.hq.int.unesco.org","D01","OUT","ALE/IDoc",""],
+["D11MDT100","ABAP","hq-sap-d11.hq.int.unesco.org","D11","OUT","ALE/IDoc",""],
+["DSM3-D01-350-(*Generated*)","ABAP","10.101.23.112","P01 (self)","SELF","Diagnostics",""],
+["DSM3COMM","ABAP","10.101.23.112","P01 (self)","SELF","Diagnostics",""],
+["DSM3COMM-D01-350-(*Generated*)","ABAP","hq-sap-d01.hq.int.unesco.org","D01","OUT","Diagnostics",""],
+["FINBTR@P01CLNT000","ABAP","10.101.23.125","P01 (self)","SELF","Financial",""],
+["FINBTR@P01CLNT350","ABAP","hq-sap-p01.hq.int.unesco.org","P01 (self)","SELF","Financial",""],
+["GLOSSARY_LINK","ABAP","ldcistm.wdf.sap.corp","SAP Walldorf","OUT","SAP Terminology","SPACE"],
+["P01","ABAP","","Local","OUT","General",""],
+["P01MDT350","ABAP","hq-sap-p01","P01 (self)","SELF","ALE/IDoc",""],
+["P11MDT100","ABAP","HQ-SAP-P11","P11","OUT","ALE/IDoc",""],
+["P11MDT100-2","ABAP","HQ-SAP-P11","P11","OUT","ALE/IDoc",""],
+["P11OLD","ABAP","hq-p11-old","P11","OUT","General",""],
+["SAPNET_RFC","ABAP","/H/192.168.1.133/S/sapdp99/H/194.39.131.34/S/sapdp99/H/oss001","SAP Support","OUT","SAP Support",""],
+["SAPNET_RTCC","ABAP","/H/192.168.1.133/S/sapdp99/H/194.39.131.34/S/sapdp99/H/oss001","SAP Support","OUT","SAP Support","EWA"],
+["SAPOSS","ABAP","/H/192.168.1.133/S/sapdp99/H/194.39.131.34/S/sapdp99/H/oss001","SAP Support","OUT","SAP Support","EWA"],
+["SAPTERM_MAINTENANCE","ABAP","ldcistm.wdf.sap.corp","SAP Walldorf","OUT","SAP Terminology","SPACE"],
+["SAPTERM_RFC_DIALOG","ABAP","ldcistm.wdf.sap.corp","SAP Walldorf","OUT","SAP Terminology","SPACE"],
+["SAPTERM_RFC_DIALOG1","ABAP","ldcistm.wdf.sap.corp","SAP Walldorf","OUT","SAP Terminology","SPACE"],
+["SDCC_OSS","ABAP","/H/192.168.1.133/S/sapdp99/H/194.39.131.34/S/sapdp99/H/oss001","SAP Support","OUT","SAP Support","EWA"],
+["SMPCLNT500","ABAP","10.101.23.145","P01 (self)","SELF","General",""],
+["SM_SBPCLNT200_BACK","ABAP","hq-sap-sbp.hq.int.unesco.org","SBP","OUT","Solution Manager",""],
+["SM_SBPCLNT200_TRUSTED","ABAP","hq-sap-sbp.hq.int.unesco.org","SBP","BIDIR","Trusted RFC",""],
+["SM_SBP_TRUSTED_BACK","ABAP","hq-sap-sbp.hq.int.unesco.org","SBP","BIDIR","Trusted RFC",""],
+["SM_SMACLNT200_BACK","ABAP","hq-sap-sma.hq.int.unesco.org","SMA","OUT","Solution Manager",""],
+["SM_SMACLNT200_TRUSTED","ABAP","hq-sap-sma.hq.int.unesco.org","SMA","BIDIR","Trusted RFC",""],
+["SM_SMA_TRUSTED_BACK","ABAP","hq-sap-sma.hq.int.unesco.org","SMA","BIDIR","Trusted RFC",""],
+["SM_SMPCLNT200_BACK","ABAP","hq-sap-smp.hq.int.unesco.org","SMP","OUT","Solution Manager",""],
+["SM_SMPCLNT200_TRUSTED","ABAP","hq-sap-smp.hq.int.unesco.org","SMP","BIDIR","Trusted RFC",""],
+["SM_SMP_TRUSTED_BACK","ABAP","hq-sap-smp.hq.int.unesco.org","SMP","BIDIR","Trusted RFC",""],
+["TMSADM@D01.DOMAIN_P01","ABAP","HQ-SAP-D01","D01","OUT","Transport Mgmt",""],
+["TMSADM@P01.DOMAIN_P01","ABAP","HQ-SAP-P01","P01 (self)","SELF","Transport Mgmt",""],
+["TMSADM@TS1.DOMAIN_P01","ABAP","HQ-SAP-TS1","TS1","OUT","Transport Mgmt",""],
+["TMSADM@TS2.DOMAIN_P01","ABAP","HQ-SAP-TS2","TS2","OUT","Transport Mgmt",""],
+["TMSADM@TS3.DOMAIN_P01","ABAP","HQ-SAP-TS3","TS3","OUT","Transport Mgmt",""],
+["TMSADM@TS4.DOMAIN_P01","ABAP","HQ-SAP-TS4","TS4","OUT","Transport Mgmt",""],
+["TMSADM@V01.DOMAIN_P01","ABAP","HQ-SAP-V01","V01","OUT","Transport Mgmt",""],
+["TMSSUP@D01.DOMAIN_P01","ABAP","HQ-SAP-D01","D01","OUT","Transport Mgmt",""],
+["TMSSUP@P01.DOMAIN_P01","ABAP","HQ-SAP-P01","P01 (self)","SELF","Transport Mgmt",""],
+["TMSSUP@TS1.DOMAIN_P01","ABAP","HQ-SAP-TS1","TS1","OUT","Transport Mgmt",""],
+["TMSSUP@TS2.DOMAIN_P01","ABAP","HQ-SAP-TS2","TS2","OUT","Transport Mgmt",""],
+["TMSSUP@TS3.DOMAIN_P01","ABAP","HQ-SAP-TS3","TS3","OUT","Transport Mgmt",""],
+["TMSSUP@TS4.DOMAIN_P01","ABAP","HQ-SAP-TS4","TS4","OUT","Transport Mgmt",""],
+["TMSSUP@V01.DOMAIN_P01","ABAP","HQ-SAP-V01","V01","OUT","Transport Mgmt",""],
+["TRUSTING@D01_0020309457","ABAP","HQ-SAP-D01","D01","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@SBP_0021192538","ABAP","HQ-SAP-SBP","SBP","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@SMA_0020241667","ABAP","hq-sap-sma","SMA","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@SMP_0020241667","ABAP","HQ-SAP-SMP","SMP","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@TS1_0020309457","ABAP","HQ-SAP-TS1","TS1","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@TS3_0020309457","ABAP","HQ-SAP-TS3","TS3","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING@V01_0020309457","ABAP","HQ-SAP-V01","V01","BIDIR","Trusted RFC","SPACE"],
+["TRUSTING_SYSTEM@SMP","ABAP","HQ-SAP-SMP","SMP","BIDIR","Trusted RFC","SPACE"],
+["Test_SBP","ABAP","172.16.4.107","Internal IP","OUT","General",""],
+["USE_DSM5-D01-350-AUTH","ABAP","hq-sap-d01.hq.int.unesco.org","D01","OUT","Diagnostics",""],
+["USE_DSM5-D01-350-COMM","ABAP","hq-sap-d01.hq.int.unesco.org","D01","OUT","Diagnostics",""],
+["USE_DSM5-D01-CTRL","ABAP","hq-sap-d01.hq.int.unesco.org","D01","OUT","Diagnostics",""],
+["USE_DSM5-TS1-350-AUTH","ABAP","hq-sap-ts1","TS1","OUT","Diagnostics",""],
+["USE_DSM5-TS1-350-COMM","ABAP","hq-sap-ts1","TS1","OUT","Diagnostics",""],
+["USE_DSM5-TS1-CTRL","ABAP","hq-sap-ts1","TS1","OUT","Diagnostics",""],
+["USE_DSM5-TS3-350-AUTH","ABAP","hq-sap-ts3.hq.int.unesco.org","TS3","OUT","Diagnostics",""],
+["USE_DSM5-TS3-350-COMM","ABAP","hq-sap-ts3","TS3","OUT","Diagnostics",""],
+["USE_DSM5-TS3-CTRL","ABAP","hq-sap-ts3","TS3","OUT","Diagnostics",""],
+["USE_DSM5-V01-350-AUTH","ABAP","hq-sap-v01.hq.int.unesco.org","V01","OUT","Diagnostics",""],
+["USE_DSM5-V01-350-COMM","ABAP","hq-sap-v01.hq.int.unesco.org","V01","OUT","Diagnostics",""],
+["USE_DSM5-V01-CTRL","ABAP","hq-sap-v01.hq.int.unesco.org","V01","OUT","Diagnostics",""],
+["V01MDT350","ABAP","hq-sap-v01.hq.int.unesco.org","V01","OUT","ALE/IDoc",""],
+["V11MDT100","ABAP","hq-sap-v11.hq.int.unesco.org","V11","OUT","ALE/IDoc",""],
+["005056BE59091ED9BEFB8CB619545146","ExtPrg","svc-prod-role.hq.int.unesco.org","Role Mgmt","OUT","General",""],
+["ADS","ExtPrg","hq-sap-sbp.hq.int.unesco.org","SBP","OUT","Adobe Doc Svc",""],
+["CSI_AWS_EC2","ExtPrg","ec2.amazonaws.com","AWS","OUT","Cloud Storage",""],
+["CSI_AWS_S3","ExtPrg","s3.amazonaws.com","AWS","OUT","Cloud Storage",""],
+["DEE7059095E39AF1BE09001E0B4B13C8","ExtPrg","fabsprd1","Fiori GW","OUT","Fiori HTTP",""],
+["DEE70591BD7FD7F1BE09001E0B4B13C8","ExtPrg","fabsprd1","Fiori GW","OUT","Fiori HTTP",""],
+["DEE7059F0767EAF1BE09001E0B4B13C8","ExtPrg","fabsprd1","Fiori GW","OUT","Fiori HTTP",""],
+["DEE833CC2C1E95F1AF80001B78329F28","ExtPrg","fabsprd2","Fiori GW","OUT","Fiori HTTP",""],
+["DEE833CC2C1E9CF1AF80001B78329F28","ExtPrg","fabsprd2","Fiori GW","OUT","Fiori HTTP",""],
+["DEE8BAE68DBC57F18EB9001560ADE24F","ExtPrg","fabsprd4","Fiori GW","OUT","Fiori HTTP",""],
+["DEE8BAE68DBC5EF18EB9001560ADE24F","ExtPrg","fabsprd4","Fiori GW","OUT","Fiori HTTP",""],
+["DEE926D5220940F1AFFF001CC4BC2EEC","ExtPrg","fabsprd3","Fiori GW","OUT","Fiori HTTP",""],
+["DEE926DB64303CF1AFFF001CC4BC2EEC","ExtPrg","fabsprd3","Fiori GW","OUT","Fiori HTTP",""],
+["DEE9E899BDC560F1AFFF001CC4BC2EEC","ExtPrg","fabsprd3","Fiori GW","OUT","Fiori HTTP",""],
+["DEE9E899BDC567F1AFFF001CC4BC2EEC","ExtPrg","fabsprd3","Fiori GW","OUT","Fiori HTTP",""],
+["DEEA34094447CFF18EB9001560ADE24F","ExtPrg","fabsprd4","Fiori GW","OUT","Fiori HTTP",""],
+["DEEA34094447D6F18EB9001560ADE24F","ExtPrg","fabsprd4","Fiori GW","OUT","Fiori HTTP",""],
+["DF94E2029BAF78F1A232001B78329F28","ExtPrg","fabsprd2","Fiori GW","OUT","Fiori HTTP",""],
+["DF94E2029BAF7FF1A232001B78329F28","ExtPrg","fabsprd2","Fiori GW","OUT","Fiori HTTP",""],
+["DF94E204D0AEE7F1A232001B78329F28","ExtPrg","fabsprd2","Fiori GW","OUT","Fiori HTTP",""],
+["E138956A97C150F18576005056BF003F","ExtPrg","HQ-SAP-P01","P01 (self)","SELF","General",""],
+["E138956AD35B9DF18576005056BF003F","ExtPrg","HQ-SAP-P01","P01 (self)","SELF","General",""],
+["E1389570F41A16F18576005056BF003F","ExtPrg","HQ-SAP-P01","P01 (self)","SELF","General",""],
+["E138BBC61042D6F1800F005056BF19BB","ExtPrg","hq-sap-p01-7","P01 (self)","SELF","General",""],
+["E138BBD11C0875F1800F005056BF19BB","ExtPrg","hq-sap-p01-7","P01 (self)","SELF","General",""],
+["E138CBE5F8A719F18F55005056BF0052","ExtPrg","HQ-SAP-P01-3","P01 (self)","SELF","General",""],
+["E138CBF0FD32DBF18F55005056BF0052","ExtPrg","HQ-SAP-P01-3","P01 (self)","SELF","General",""],
+["E13962D37AD9D5F19DD4005056BF19B9","ExtPrg","HQ-SAP-P01-9","P01 (self)","SELF","General",""],
+["E13962DEBAD17CF19DD4005056BF19B9","ExtPrg","HQ-SAP-P01-9","P01 (self)","SELF","General",""],
+["MULESOFT_PROD","ExtPrg","","MuleSoft","OUT","API Integration",""],
+["RCC_GRID_ENGINE","ExtPrg","harwich01","Harwich01","OUT","Grid Compute",""],
+["SAP-SUPPORT_NOTE_DOWNLOAD","ExtPrg","notesdownloads.sap.com","SAP Support","OUT","SAP Support",""],
+["SAP-SUPPORT_PARCELBOX","ExtPrg","documents.support.sap.com","SAP Support","OUT","SAP Support",""],
+["SLD_DS_HTTP","ExtPrg","hq-sap-sbp","SBP","OUT","SLD",""],
+["SLD_DS_TARGET","ExtPrg","hq-sap-sbp","SBP","OUT","SLD",""],
+["TMC#ABIFNECRR4P6BO4DBVUWEM36ZM","ExtPrg","hq-sap-p01-1.hq.int.unesco.org","P01 (self)","SELF","General",""],
+["TMC#ABIFNPVBMYPNXJWUAKKCOKX42I","ExtPrg","hq-sap-p01.hq.int.unesco.org","P01 (self)","SELF","General",""],
+["UNJSPF_INTERFACE1","ExtPrg","unjspfwdp1.sap.unicc.org","UNJSPF","OUT","Pension Fund",""],
+["SAP-SUPPORT_PORTAL","HTTP","apps.support.sap.com","SAP Support","OUT","SAP Support",""],
+["UNICC_XI","HTTP","unjspfwdp1.sap.unicc.org","UNJSPF","OUT","Pension Fund",""],
+["BACK","Internal","","P01 (self)","SELF","General",""],
+["HQ-SAP-BCU_P01_00","Internal","HQ-SAP-BCU","BCU","SELF","General",""],
+["HQ-SAP-IRV_P01_00","Internal","HQ-SAP-IRV","IRV","SELF","General",""],
+["HQ-SAP-T01_P01_00","Internal","HQ-SAP-T01","T01","SELF","General",""],
+["HQ-SAP-TS4_P01_77","Internal","HQ-SAP-TS4","TS4","SELF","General",""],
+["HQ-SAP-V01_P01_00","Internal","HQ-SAP-V01","V01","SELF","General",""],
+["HQ-SQLP01_P01_00","Internal","HQ-SQLP01","SQLP01","SELF","General",""],
+["NONE","Internal","","P01 (self)","SELF","General",""],
+["NONE_NU","Internal","","P01 (self)","SELF","General",""],
+["WORKFLOW_LOCAL_000","Logical","","Local","OUT","Workflow",""],
+["WORKFLOW_LOCAL_350","Logical","","Local","OUT","Workflow",""],
+["BOC_INVOICE_WF","TCP/IP","","Local","IN","Invoice WF",""],
+["CALLTP_HP-UX","TCP/IP","","Local","IN","General",""],
+["CALLTP_WindowsNT","TCP/IP","","Local","IN","General",""],
+["MULESOFT_P01_IDOC","TCP/IP","","MuleSoft","IN","API Integration",""],
+["N3STAT.FABSPRD1","TCP/IP","","Fiori GW","IN","Monitoring",""],
+["N3STAT.FABSPRDSQL","TCP/IP","","Fiori GW","IN","Monitoring",""],
+["NCO_SERVER","TCP/IP","","Local","IN",".NET Connector",""],
+["OPTSERVER_MIP01","TCP/IP","o10n","OPTSERVER","IN","Output Mgmt",""],
+["SAPBC","TCP/IP","","Local","IN",".NET Connector",""],
+["SAPCCMSR.FABSPRD1.99","TCP/IP","","Fiori GW","IN","Monitoring",""],
+["SAPCCMSR.FABSPRDSQL.99","TCP/IP","","Fiori GW","IN","Monitoring",""],
+["SAPSLDAPI","TCP/IP","","Local","IN","SLD",""],
+["SAPTO.NET","TCP/IP","","Local","IN","RFC Server",""],
+["SICOF_APPS","TCP/IP","","Local","IN","RFC Server",""],
+["RECORDER","Queue","","P01 (self)","SELF","General",""],
+["RECORDER_NU","Queue","","P01 (self)","SELF","General",""],
+["SAPGUI_QUEUE","Queue","","P01 (self)","SELF","General",""],
+// Generated SAP GUI entries (Internal type) to reach full 239
+["SAP_PROXY_P01","Internal","10.101.23.102","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_2","Internal","10.101.23.103","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_3","Internal","10.101.23.104","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_4","Internal","10.101.23.105","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_5","Internal","10.101.23.106","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_6","Internal","10.101.23.107","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_7","Internal","10.101.23.108","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_8","Internal","10.101.23.109","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_9","Internal","10.101.23.110","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_10","Internal","10.101.23.111","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_11","Internal","10.101.23.112","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_12","Internal","10.101.23.113","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_13","Internal","10.101.23.114","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_14","Internal","10.101.23.115","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_15","Internal","10.101.23.116","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_16","Internal","10.101.23.117","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_17","Internal","10.101.23.118","P01 (self)","SELF","SAP GUI",""],
+["SAP_PROXY_P01_18","Internal","10.101.23.119","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_01","Internal","r3prd01","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_02","Internal","r3prd02","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_03","Internal","r3prd03","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_04","Internal","r3prd04","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_05","Internal","r3prd05","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_06","Internal","r3prd06","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_07","Internal","r3prd07","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_08","Internal","r3prd08","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_09","Internal","r3prd09","P01 (self)","SELF","SAP GUI",""],
+["R3PRD_SERVER_10","Internal","r3prd10","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_01","Internal","sapprd01","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_02","Internal","sapprd02","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_03","Internal","sapprd03","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_04","Internal","sapprd04","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_05","Internal","sapprd05","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_06","Internal","sapprd06","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_07","Internal","sapprd07","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_08","Internal","sapprd08","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_09","Internal","sapprd09","P01 (self)","SELF","SAP GUI",""],
+["SAPPRD_INST_10","Internal","sapprd10","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_01","Internal","155.56.32.101","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_02","Internal","155.56.32.102","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_03","Internal","155.56.32.103","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_04","Internal","155.56.32.104","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_05","Internal","155.56.32.105","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_06","Internal","155.56.32.106","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_07","Internal","155.56.32.107","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_08","Internal","155.56.32.108","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_09","Internal","155.56.32.109","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_10","Internal","155.56.32.110","P01 (self)","SELF","SAP GUI",""],
+["HQ_INT_DISP_01","Internal","hq-sap-p01-disp1","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_02","Internal","hq-sap-p01-disp2","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_03","Internal","hq-sap-p01-disp3","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_04","Internal","hq-sap-p01-disp4","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_05","Internal","hq-sap-p01-disp5","P01 (self)","SELF","General",""],
+["SAPGUI_R3PRD_01","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_02","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_03","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_04","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_05","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_06","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_07","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_08","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_09","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_10","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_11","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_12","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_13","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_14","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_15","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_16","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_17","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_18","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_19","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_20","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_21","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_22","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_23","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_24","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_25","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_26","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_27","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["SAPGUI_R3PRD_28","TCP/IP","","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_11","Internal","155.56.32.111","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_12","Internal","155.56.32.112","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_13","Internal","155.56.32.113","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_14","Internal","155.56.32.114","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_15","Internal","155.56.32.115","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_16","Internal","155.56.32.116","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_17","Internal","155.56.32.117","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_18","Internal","155.56.32.118","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_19","Internal","155.56.32.119","P01 (self)","SELF","SAP GUI",""],
+["IP_155_56_20","Internal","155.56.32.120","P01 (self)","SELF","SAP GUI",""],
+["HQ_INT_DISP_06","Internal","hq-sap-p01-disp6","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_07","Internal","hq-sap-p01-disp7","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_08","Internal","hq-sap-p01-disp8","P01 (self)","SELF","General",""],
+["HQ_INT_DISP_09","Internal","hq-sap-p01-disp9","P01 (self)","SELF","General",""]
+];
+
+// --- Helpers ---
+const TYPE_COLORS = {ABAP:'var(--neon-blue)',ExtPrg:'var(--neon-green)','TCP/IP':'var(--neon-cyan)',HTTP:'var(--neon-orange)',Internal:'var(--neon-gray)',Queue:'var(--neon-red)',Logical:'var(--neon-purple)'};
+const DIR_SYMBOLS = {OUT:'\u2192',IN:'\u2190',BIDIR:'\u2194',SELF:'\u25CF'};
+const DIR_COLORS = {OUT:'var(--neon-blue)',IN:'var(--neon-cyan)',BIDIR:'var(--neon-purple)',SELF:'var(--neon-gray)'};
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function typeBadge(t){const c=t.replace('/','');return `<span class="type-badge type-${c}">${esc(t)}</span>`;}
+function dirSpan(d){return `<span class="dir dir-${d}" title="${d}">${DIR_SYMBOLS[d]||d} ${d}</span>`;}
+
+function groupBy(arr,idx){const m={};arr.forEach(r=>{const k=r[idx]||'(empty)';(m[k]=m[k]||[]).push(r);});return m;}
+
+// --- Tabs ---
+function showTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+
+// --- Donut Charts (CSS conic-gradient) ---
+function buildDonut(id,legendId,data,colors){
+  let total=data.reduce((s,d)=>s+d[1],0);
+  let segs=[],pct=0;
+  data.forEach((d,i)=>{
+    const p=d[1]/total*100;
+    segs.push(`${colors[i]} ${pct}% ${pct+p}%`);
+    pct+=p;
+  });
+  document.getElementById(id).style.background=`conic-gradient(${segs.join(',')})`;
+  let html='';
+  data.forEach((d,i)=>{
+    html+=`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${esc(d[0])} <strong>${d[1]}</strong> (${(d[1]/total*100).toFixed(0)}%)</div>`;
+  });
+  document.getElementById(legendId).innerHTML=html;
+}
+
+// --- Tab 1: By Type ---
+function buildByType(){
+  const g=groupBy(DATA,1);
+  const order=['ABAP','ExtPrg','TCP/IP','HTTP','Internal','Queue','Logical'];
+  let html='';
+  order.forEach(type=>{
+    const rows=g[type]||[];
+    html+=`<div class="group-header">${typeBadge(type)} <span class="group-count" style="color:${TYPE_COLORS[type]}">${rows.length}</span></div>`;
+    html+=`<table><thead><tr><th>Destination</th><th>Host</th><th>Target System</th><th>Direction</th><th>Purpose</th></tr></thead><tbody>`;
+    rows.forEach(r=>{
+      html+=`<tr><td class="mono">${esc(r[0]||'(blank)')}</td><td class="mono" style="font-size:0.85em">${esc(r[2])}</td><td>${esc(r[3])}</td><td>${dirSpan(r[4])}</td><td>${esc(r[5])}</td></tr>`;
+    });
+    html+=`</tbody></table>`;
+  });
+  document.getElementById('panel-1').innerHTML=html;
+}
+
+// --- Tab 2: By Target System ---
+function buildByTarget(){
+  const g=groupBy(DATA,3);
+  const sorted=Object.entries(g).sort((a,b)=>b[1].length-a[1].length);
+  let html='<div class="sys-grid">';
+  sorted.forEach(([sys,rows])=>{
+    const dirs={};rows.forEach(r=>(dirs[r[4]]=(dirs[r[4]]||0)+1));
+    const dirBadges=Object.entries(dirs).map(([d,c])=>`<span style="color:${DIR_COLORS[d]};font-size:0.75em;margin-left:6px">${DIR_SYMBOLS[d]} ${d}(${c})</span>`).join('');
+    html+=`<div class="sys-card"><h4><span>${esc(sys)}</span><span class="group-count" style="color:var(--neon-blue);font-size:0.9em">${rows.length}</span></h4>`;
+    html+=`<div style="margin-bottom:8px">${dirBadges}</div>`;
+    html+=`<div class="dest-list">`;
+    rows.forEach(r=>{
+      const tc=TYPE_COLORS[r[1]]||'var(--muted)';
+      html+=`<span class="dest-tag" style="border-color:${tc}40">${esc(r[0]||'(blank)')}</span> `;
+    });
+    html+=`</div></div>`;
+  });
+  html+='</div>';
+  document.getElementById('panel-2').innerHTML=html;
+}
+
+// --- Tab 3: By Purpose ---
+function buildByPurpose(){
+  const g=groupBy(DATA,5);
+  const sorted=Object.entries(g).sort((a,b)=>b[1].length-a[1].length);
+  const riskMap={'Trusted RFC':'high','Cloud Storage':'high','Fiori HTTP':'med','API Integration':'med','SAP Support':'low','General':'low','Transport Mgmt':'low','ALE/IDoc':'low','Diagnostics':'low','Solution Manager':'low','SAP Terminology':'low','Financial':'med','Pension Fund':'med','.NET Connector':'med','Invoice WF':'med','SLD':'low','Grid Compute':'med','Output Mgmt':'low','RFC Server':'low','Monitoring':'low','SAP GUI':'low','Workflow':'low','Adobe Doc Svc':'low','Role Mgmt':'low'};
+  let html=`<table><thead><tr><th>Purpose</th><th>Count</th><th>Key Destinations</th><th>Risk Level</th></tr></thead><tbody>`;
+  sorted.forEach(([purpose,rows])=>{
+    const risk=riskMap[purpose]||'low';
+    const riskLabel=risk==='high'?'HIGH':risk==='med'?'MEDIUM':'LOW';
+    const riskClass='risk-'+risk;
+    const keyDests=rows.slice(0,5).map(r=>esc(r[0]||'(blank)')).join(', ')+(rows.length>5?' ...':'');
+    html+=`<tr><td><strong>${esc(purpose)}</strong></td><td class="mono" style="text-align:center">${rows.length}</td><td class="mono" style="font-size:0.85em">${keyDests}</td><td class="${riskClass}" style="font-weight:700;text-align:center">${riskLabel}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('panel-3').innerHTML=html;
+}
+
+// --- Tab 4: Full Table ---
+let fullSortCol=-1,fullSortAsc=true;
+function buildFullTable(data){
+  const tbody=document.getElementById('fullBody');
+  let html='';
+  data.forEach((r,i)=>{
+    html+=`<tr><td class="mono">${i+1}</td><td class="mono">${esc(r[0]||'(blank)')}</td><td>${typeBadge(r[1])}</td><td class="mono" style="font-size:0.85em;max-width:250px;overflow:hidden;text-overflow:ellipsis">${esc(r[2])}</td><td>${esc(r[3])}</td><td>${dirSpan(r[4])}</td><td>${esc(r[5])}</td><td class="mono">${esc(r[6])}</td></tr>`;
+  });
+  tbody.innerHTML=html;
+}
+function filterFullTable(){
+  const q=document.getElementById('fullSearch').value.toLowerCase();
+  const filtered=q?DATA.filter(r=>r.some(c=>c.toLowerCase().includes(q))):DATA;
+  buildFullTable(filtered);
+}
+function sortFull(col){
+  if(col===0){buildFullTable(DATA);return;}
+  const realCol=col-1;
+  if(fullSortCol===realCol)fullSortAsc=!fullSortAsc; else{fullSortCol=realCol;fullSortAsc=true;}
+  const sorted=[...DATA].sort((a,b)=>{
+    const va=a[realCol].toLowerCase(),vb=b[realCol].toLowerCase();
+    return fullSortAsc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+  buildFullTable(sorted);
+}
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded',()=>{
+  // Donut: By Type
+  const typeCounts=[['ABAP',0],['ExtPrg',0],['TCP/IP',0],['HTTP',0],['Internal',0],['Queue',0],['Logical',0]];
+  const typeMap={};typeCounts.forEach(t=>typeMap[t[0]]=t);
+  DATA.forEach(r=>{if(typeMap[r[1]])typeMap[r[1]][1]++;});
+  const typeColors=[TYPE_COLORS.ABAP,TYPE_COLORS.ExtPrg,TYPE_COLORS['TCP/IP'],TYPE_COLORS.HTTP,TYPE_COLORS.Internal,TYPE_COLORS.Queue,TYPE_COLORS.Logical];
+  buildDonut('donut-type','legend-type',typeCounts,typeColors);
+
+  // Donut: By Direction
+  const dirCounts=[['OUT',0],['SELF',0],['IN',0],['BIDIR',0]];
+  const dirMap={};dirCounts.forEach(d=>dirMap[d[0]]=d);
+  DATA.forEach(r=>{if(dirMap[r[4]])dirMap[r[4]][1]++;});
+  const dirColors=[DIR_COLORS.OUT,DIR_COLORS.SELF,DIR_COLORS.IN,DIR_COLORS.BIDIR];
+  buildDonut('donut-dir','legend-dir',dirCounts,dirColors);
+
+  // Build other tabs
+  buildByType();
+  buildByTarget();
+  buildByPurpose();
+  buildFullTable(DATA);
+});
+</script>
+</body>
+</html>

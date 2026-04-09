@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP System Connectivity Map</title>
+<style>
+:root {
+  --bg: #080b12; --surface: #0c1018; --card: #111827;
+  --border: #1a2540; --border-glow: #1e3a5f;
+  --text: #c8d6e5; --muted: #4a5f80; --white: #eef2f7;
+  --neon-blue: #4f8ef7; --neon-cyan: #22d3ee; --neon-green: #22c55e;
+  --neon-orange: #fb923c; --neon-red: #ef4444; --neon-purple: #a78bfa;
+  --neon-yellow: #f59e0b; --neon-teal: #2dd4bf; --neon-gray: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* Header */
+.header { background: linear-gradient(180deg, #0e1525 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 1.15em; font-weight: 700; color: var(--white); letter-spacing: -0.3px; }
+.header h1 span { color: var(--neon-blue); }
+.header-stats { display: flex; gap: 24px; }
+.hstat { text-align: center; }
+.hstat .v { font-size: 1.1em; font-weight: 800; font-family: 'Consolas', monospace; }
+.hstat .l { font-size: 0.6em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+/* Environment Container */
+.env { position: relative; margin: 24px auto; max-width: 1200px; padding: 0 24px 24px; }
+.env-border { border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(180deg, rgba(15,20,35,0.8) 0%, rgba(8,11,18,0.95) 100%); padding: 20px 24px 28px; position: relative; }
+.env-label { position: absolute; top: -10px; left: 28px; background: var(--bg); padding: 0 12px; font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.12em; color: var(--neon-blue); font-weight: 600; }
+
+/* Zones */
+.zone { border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 12px; position: relative; background: rgba(17,24,39,0.4); margin-bottom: 16px; }
+.zone-label { position: absolute; top: -9px; left: 16px; background: var(--surface); padding: 0 8px; font-size: 0.6em; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.zone.external .zone-label { color: var(--neon-cyan); }
+.zone.external { border-color: rgba(34,211,238,0.15); box-shadow: 0 0 20px rgba(34,211,238,0.03); }
+.zone.core .zone-label { color: var(--neon-blue); }
+.zone.core { border-color: rgba(79,142,247,0.2); box-shadow: 0 0 30px rgba(79,142,247,0.04); }
+.zone.spokes .zone-label { color: var(--neon-green); }
+.zone.spokes { border-color: rgba(34,197,94,0.15); }
+.zone.mgmt .zone-label { color: var(--neon-yellow); }
+.zone.mgmt { border-color: rgba(245,158,11,0.15); }
+.zone.bw .zone-label { color: var(--neon-teal); }
+.zone.bw { border-color: rgba(45,212,191,0.15); }
+
+/* Grid Layout */
+.middle-row { display: grid; grid-template-columns: 200px 1fr 200px; gap: 16px; margin-bottom: 16px; }
+.spoke-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* Nodes */
+.nodes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.node { padding: 10px 16px; border-radius: 8px; text-align: center; cursor: default; transition: all 0.25s; position: relative; min-width: 90px; border: 1px solid; }
+.node:hover { transform: translateY(-2px); z-index: 10; }
+.node .name { font-size: 0.8em; font-weight: 700; letter-spacing: 0.02em; }
+.node .desc { font-size: 0.6em; color: var(--muted); margin-top: 2px; }
+.node .rfc-count { position: absolute; top: -6px; right: -6px; background: var(--neon-blue); color: #fff; font-size: 0.55em; font-weight: 700; padding: 1px 5px; border-radius: 8px; font-family: 'Consolas', monospace; }
+
+/* Node Colors */
+.node.prod { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.35); color: var(--neon-red); box-shadow: 0 0 15px rgba(239,68,68,0.08); }
+.node.prod:hover { box-shadow: 0 0 25px rgba(239,68,68,0.15); }
+.node.hub { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1)); border-color: rgba(239,68,68,0.5); color: #fff; box-shadow: 0 0 30px rgba(239,68,68,0.12), 0 0 60px rgba(239,68,68,0.05); padding: 16px 28px; }
+.node.hub .name { font-size: 1.1em; }
+.node.hub .desc { color: rgba(255,255,255,0.6); }
+.node.dev { background: rgba(79,142,247,0.1); border-color: rgba(79,142,247,0.3); color: var(--neon-blue); }
+.node.dev:hover { box-shadow: 0 0 20px rgba(79,142,247,0.12); }
+.node.test { background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.3); color: var(--neon-orange); }
+.node.test:hover { box-shadow: 0 0 20px rgba(251,146,60,0.12); }
+.node.val { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); color: var(--neon-purple); }
+.node.val:hover { box-shadow: 0 0 20px rgba(167,139,250,0.12); }
+.node.solman { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: var(--neon-yellow); }
+.node.solman:hover { box-shadow: 0 0 20px rgba(245,158,11,0.12); }
+.node.bwn { background: rgba(45,212,191,0.1); border-color: rgba(45,212,191,0.3); color: var(--neon-teal); }
+.node.bwn:hover { box-shadow: 0 0 20px rgba(45,212,191,0.12); }
+.node.infra { background: rgba(100,116,139,0.1); border-color: rgba(100,116,139,0.3); color: var(--neon-gray); }
+.node.ext { background: rgba(34,211,238,0.08); border-color: rgba(34,211,238,0.25); color: var(--neon-cyan); }
+.node.ext:hover { box-shadow: 0 0 20px rgba(34,211,238,0.12); }
+.node.legacy { background: rgba(100,116,139,0.06); border-color: rgba(100,116,139,0.2); color: #556; opacity: 0.7; }
+
+/* SVG Overlay */
+.svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+.conn-primary { stroke-width: 1.5; fill: none; opacity: 0.5; }
+.conn-secondary { stroke-width: 1; fill: none; stroke-dasharray: 6,4; opacity: 0.4; }
+.conn-primary:hover, .conn-secondary:hover { opacity: 0.9; pointer-events: auto; }
+
+/* Hub Connector Lines (CSS-based) */
+.hub-line { position: absolute; z-index: 2; }
+.hub-line.v { width: 1px; left: 50%; transform: translateX(-50%); }
+.hub-line.h { height: 1px; top: 50%; transform: translateY(-50%); }
+
+/* Info Panel */
+.info-panel { position: fixed; bottom: 16px; right: 16px; width: 320px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 0.8em; z-index: 100; display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.info-panel.visible { display: block; }
+.info-panel h3 { color: var(--neon-blue); margin-bottom: 8px; font-size: 1em; }
+.info-panel .info-body { white-space: pre-line; line-height: 1.6; color: var(--text); }
+.info-panel .close-btn { position: absolute; top: 8px; right: 12px; cursor: pointer; color: var(--muted); font-size: 1.2em; }
+
+/* Legend */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.65em; color: var(--muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; border: 1px solid; }
+.legend-line { width: 20px; height: 0; border-top: 2px solid; }
+.legend-line.dashed { border-top-style: dashed; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .middle-row { grid-template-columns: 1fr; }
+  .spoke-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<!-- Header -->
+<div class="header">
+  <h1><span>&#9670;</span> UNESCO SAP System Connectivity Map</h1>
+  <div class="header-stats">
+    <div class="hstat"><div class="v" style="color:var(--neon-blue)">38</div><div class="l">Systems</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-cyan)">38</div><div class="l">Connections</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-green)">239</div><div class="l">RFC Dest.</div></div>
+    <div class="hstat"><div class="v" style="color:var(--neon-purple)">19.4K</div><div class="l">IDocs</div></div>
+    <a href="system_inventory.html" style="display:flex;align-items:center;gap:6px;padding:6px 16px;border-radius:8px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);color:var(--neon-blue);text-decoration:none;font-size:0.75em;font-weight:600;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(79,142,247,0.2)'" onmouseout="this.style.background='rgba(79,142,247,0.1)'">System Inventory &rarr;</a>
+  </div>
+</div>
+
+<!-- Environment -->
+<div class="env">
+  <div class="env-border">
+    <div class="env-label">UNESCO SAP LANDSCAPE &mdash; P01 PRODUCTION ENVIRONMENT</div>
+
+    <!-- EXTERNAL SERVICES (Top) -->
+    <div class="zone external">
+      <div class="zone-label">External Services</div>
+      <div class="nodes">
+        <div class="node ext" data-info="Fiori GW&#10;Connections: fabsprd1-4 (16 HTTP)&#10;Protocol: HTTP/HTTPS&#10;&#10;IF DOWN:&#10;  ALL Fiori apps + ESS/MSS down" data-rfc="16">
+          <div class="name">Fiori GW</div><div class="desc">Gateway</div>
+          <div class="rfc-count">16</div>
+        </div>
+        <div class="node ext" data-info="Core Manager / Core Planner&#10;Connected via MuleSoft middleware&#10;&#10;RFC: MULESOFT_PROD (type G, outbound)&#10;RFC: MULESOFT_P01_IDOC (type T, inbound RFC server)&#10;IDoc: 4,420 PROJECT02 IDocs (PS master data)&#10;&#10;MuleSoft = integration layer (API gateway)&#10;Core Manager = project/grants management&#10;Core Planner = planning/budgeting&#10;&#10;IF DOWN:&#10;  Project data sync stops&#10;  PS master data replication fails">
+          <div class="name">Core Mgr/Plnr</div><div class="desc">via MuleSoft</div>
+          <div class="rfc-count">2</div>
+        </div>
+        <div class="node ext" data-info="AWS&#10;Connections: CSI_AWS_S3, CSI_AWS_EC2&#10;Protocol: HTTP/S3&#10;&#10;IF DOWN:&#10;  Cloud storage + compute unavailable">
+          <div class="name">AWS</div><div class="desc">Cloud</div>
+          <div class="rfc-count">2</div>
+        </div>
+        <div class="node ext" data-info="UNJSPF&#10;Connections: UNJSPF_INTERFACE1, UNICC_XI&#10;Protocol: RFC/XI&#10;&#10;IF DOWN:&#10;  Pension fund interface fails">
+          <div class="name">UNJSPF</div><div class="desc">Pension Fund</div>
+          <div class="rfc-count">2</div>
+        </div>
+        <div class="node ext" data-info="SAP Support Portal + OSS&#10;Connections: SAP-SUPPORT_PORTAL, SAP-SUPPORT_NOTE_DOWNLOAD,&#10;SAP-SUPPORT_PARCELBOX, SAPOSS, SAPNET_RFC, SAPNET_RTCC, SDCC_OSS&#10;Protocol: HTTP + ABAP (via SAPRouter)&#10;&#10;IF DOWN:&#10;  SAP notes + support access lost">
+          <div class="name">SAP Support</div><div class="desc">Portal + OSS</div>
+          <div class="rfc-count">7</div>
+        </div>
+        <div class="node ext" style="opacity:0.65;border-style:dashed;" data-info="SuccessFactors Employee Central&#10;Connected via BizTalk middleware&#10;STATUS: NOT YET LIVE — preparing migration&#10;&#10;Middleware: Microsoft BizTalk Server&#10;  ZBIZTALK enhancement (transport D01K9B06Y5)&#10;  ZMMG_SEND_MESSAGE_BIZTALK function group&#10;  ZRFC_PR_ITEM_DELETE (via BizTalk)&#10;&#10;SF Evidence in D01 (dev):&#10;  PYC_SFEC_SRV (ICF — INACTIVE)&#10;  /USE/CL_PQM4_DSRC_SFSF_BIZX (EPI-USE, 10 transports)&#10;  YO:HR:SUCCESS_FCTRS_IT105:ALL (auth role)&#10;  SF_WEBFORM_01-04, SFINT_DEMO01-04&#10;&#10;BizTalk = middleware (how)&#10;SuccessFactors = target system (what)">
+          <div class="name">SuccessFactors</div><div class="desc">via BizTalk (planned)</div>
+          <div class="rfc-count" style="background:var(--neon-orange)">9</div>
+        </div>
+        <div class="node ext" data-info="Role Management Service&#10;Host: svc-prod-role.hq.int.unesco.org&#10;Destination: 005056BE59091ED9BEFB8CB619545146&#10;Protocol: External Program (type G)&#10;&#10;IF DOWN:&#10;  Role provisioning fails">
+          <div class="name">Role Mgmt</div><div class="desc">Provisioning</div>
+          <div class="rfc-count">1</div>
+        </div>
+        <div class="node ext" data-info="Harwich01 - RCC Grid Engine&#10;Host: harwich01&#10;Destination: RCC_GRID_ENGINE&#10;Protocol: External Program (type G)&#10;&#10;IF DOWN:&#10;  Batch compute jobs fail">
+          <div class="name">Harwich01</div><div class="desc">Grid Engine</div>
+          <div class="rfc-count">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- .NET APPLICATIONS (via NCO/SAPBC/SAPTO.NET) -->
+    <div class="zone" style="border-color:rgba(167,139,250,0.2);box-shadow:0 0 20px rgba(167,139,250,0.03);">
+      <div class="zone-label" style="color:var(--neon-purple)">UNESCO Apps (via .NET Connector &mdash; 334 RFC-enabled FMs)</div>
+      <div class="nodes">
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="SISTER — Financial Reporting &amp; Budget&#10;47 RFC-enabled FMs across 8 function groups&#10;&#10;Key groups:&#10;  YBAPI_SISTER (24 FMs): expenditure, funds, donors, sectors&#10;  YRFC_SISTER (11 FMs): WBS, budget, fund management&#10;  ZBGI (7 FMs): budget transfer, classification&#10;&#10;UNESCO's main .NET reporting application&#10;Calls: Y_BAPI_EXPEND, Y_BAPI_TRANSFER_FUNDS, Y_BAPI_GETFUND...&#10;&#10;IF DOWN:&#10;  Financial reporting unavailable&#10;  Budget transfers blocked">
+          <div class="name">SISTER</div><div class="desc">Financial Reporting</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">47</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="HR Workflow — Employee Lifecycle&#10;87 RFC-enabled FMs across 11 function groups&#10;&#10;Key groups:&#10;  ZWFHRPA_READ (36 FMs): read 36 infotypes (0000-3411)&#10;  ZHROMRFC (21 FMs): org management, position, structure&#10;  ZHRPARFC (8 FMs): address, overtime, separation, SPA&#10;  ZWFHRPD_READ (9 FMs): OM infotypes (1000-1081)&#10;&#10;IF DOWN:&#10;  HR self-service broken&#10;  Employee workflows blocked">
+          <div class="name">HR Workflow</div><div class="desc">Employee Lifecycle</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">87</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="CMT — Contract &amp; Vendor Management&#10;44 RFC-enabled FMs (29 vendor + 15 master data)&#10;&#10;Key groups:&#10;  ZCMT_VENDOR (10 FMs): vendor search (5 variants), bank data&#10;  ZFI_VENDOR_MGMT (8 FMs): create, change vendors&#10;  ZCMT_MASTER_DATA (12 FMs): cost centers, funds, GL, WBS, rates&#10;  ZCMT_MATERIAL (3 FMs): catalog items, LTA&#10;&#10;IF DOWN:&#10;  Vendor creation/maintenance blocked&#10;  Master data lookups fail">
+          <div class="name">CMT</div><div class="desc">Vendor &amp; Master Data</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">44</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="UBO Field Office — Budget Operations&#10;15 RFC-enabled FMs across 2 function groups&#10;&#10;Key FMs:&#10;  Y_RFC_FO_FB50: FI document posting&#10;  Y_RFC_FO_FMX1/FMX2: FM commitment items&#10;  Y_RFC_GET_PO_UBO: Purchase order retrieval&#10;  Y_RFC_UBO_YEBUR003: Budget execution report&#10;&#10;IF DOWN:&#10;  Field office FI posting blocked&#10;  Budget execution reports unavailable">
+          <div class="name">UBO</div><div class="desc">Field Office</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">15</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="Travel &amp; DSA Management&#10;21 RFC-enabled FMs across 10 function groups&#10;&#10;Key FMs:&#10;  ZBAPI_TRIP_CREATE_FROM_DATA: trip creation&#10;  ZRFC_DSA_RATE: DSA rate lookup&#10;  YRFC_DSA_706*: daily subsistence by country&#10;  Y_TV_XML_CURRENCY/DESTINATION: travel XML&#10;  ZRFC_TRAVEL_DELETE: trip cancellation&#10;&#10;IF DOWN:&#10;  Travel requests blocked&#10;  DSA calculations unavailable">
+          <div class="name">Travel</div><div class="desc">DSA &amp; Trips</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">21</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="Mouv — Asset &amp; Equipment Management&#10;12 RFC-enabled FMs across 4 function groups&#10;&#10;Key FMs:&#10;  ZPM_MYEQUIPMENT: equipment lookup&#10;  ZINV_CONFASSET_FIORI: asset confirmation&#10;  Y_AM_CREATE_ASSET: asset creation&#10;  Y_AM_ASSET_CHANGE: asset modification&#10;  ZPM_ASSIGN_OWNER: ownership assignment&#10;  ZBAPI_ASSETCLASS_GETLIST: asset class catalog&#10;&#10;IF DOWN:&#10;  Asset/equipment management blocked">
+          <div class="name">Mouv</div><div class="desc">Asset/Equipment</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">12</div>
+        </div>
+        <div class="node ext" style="border-color:rgba(167,139,250,0.35);color:var(--neon-purple);background:rgba(167,139,250,0.08);" data-info="Procurement — PO, GR, Entry Sheets&#10;13 RFC-enabled FMs across 9 function groups&#10;&#10;Key FMs:&#10;  ZRFC_PO_RELEASE: PO release&#10;  ZRFC_PO_ITEM_UPDATE: PO item update&#10;  ZBAPI_ENTRYSHEET_RELEASE/CHECK: service entry&#10;  ZRFC_GR_SES_CANCEL: GR/SES cancellation&#10;  ZRFC_QUOTATION: quotation processing&#10;&#10;IF DOWN:&#10;  PO release/processing blocked">
+          <div class="name">Procurement</div><div class="desc">PO &amp; Entry Sheets</div>
+          <div class="rfc-count" style="background:var(--neon-purple)">13</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE: Infrastructure | CORE HUB | Management -->
+    <div class="middle-row">
+
+      <!-- Left: Infrastructure -->
+      <div class="zone" style="border-color:rgba(100,116,139,0.2);">
+        <div class="zone-label" style="color:var(--neon-gray)">Infrastructure</div>
+        <div class="nodes" style="flex-direction:column;align-items:stretch;">
+          <div class="node infra" data-info="A01 - App Server 01&#10;Category: Infrastructure&#10;Connections: 3&#10;Purposes: ALE/IDoc Distribution, General&#10;Users: ALEREMOTE, SAP&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+            <div class="name">A01</div><div class="desc">App Server 01</div>
+            <div class="rfc-count">3</div>
+          </div>
+          <div class="node infra" data-info="A11 - App Server 11&#10;Category: Infrastructure&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+            <div class="name">A11</div><div class="desc">App Server 11</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node infra" data-info="LDCISTM.WDF.SAP.CORP&#10;Category: SAP Walldorf&#10;Connections: 4&#10;Purposes: SAP Terminology, General&#10;Users: TERM_RFC, TERM_RFC_DIA, GLOS_RFC">
+            <div class="name">LDCISTM</div><div class="desc">SAP Walldorf</div>
+            <div class="rfc-count">4</div>
+          </div>
+          <div class="node infra" data-info="SQLP01 - SQL Server Database&#10;Host: HQ-SQLP01&#10;Type: Internal (I)&#10;&#10;IF DOWN:&#10;  Database layer unavailable">
+            <div class="name">SQLP01</div><div class="desc">SQL Server DB</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node infra" data-info="T01 - Transport Domain Controller&#10;Host: HQ-SAP-T01&#10;Type: Internal (I)&#10;&#10;IF DOWN:&#10;  Transport management breaks">
+            <div class="name">T01</div><div class="desc">Transport Ctrl</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node legacy" data-info="BCU - Budget Control System&#10;Host: HQ-SAP-BCU&#10;Type: Internal (I), SysNr 00&#10;&#10;Used in 2018 BCS project (I_KONAKOV, C_ISAIA)&#10;598 transport objects: 291 roles, FM/PS programs&#10;Programs: YFM1_BCS, YPS3_BCS, Y_RFC_UBO_YEBUR003_BCS&#10;&#10;Likely legacy/decommissioned sandbox">
+            <div class="name">BCU</div><div class="desc">Budget Control (2018)</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node infra" data-info="IRV - Unknown System&#10;Host: HQ-SAP-IRV&#10;Type: Internal (I)&#10;Purpose: Unknown">
+            <div class="name">IRV</div><div class="desc">Unknown</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node infra" data-info="OPTSERVER - Output Management&#10;Host: o10n (MIP01)&#10;Type: TCP/IP (T)&#10;&#10;IF DOWN:&#10;  Print/output processing fails">
+            <div class="name">OPTSERVER</div><div class="desc">Output Mgmt</div>
+            <div class="rfc-count">1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left-2: Database & Virtual -->
+      <div class="zone" style="border-color:rgba(34,197,94,0.2);margin-top:-16px;">
+        <div class="zone-label" style="color:var(--neon-green)">Database / DBCON</div>
+        <div class="nodes" style="flex-direction:column;align-items:stretch;">
+          <div class="node dev" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.25);color:var(--neon-green);" data-info="TULIP Database&#10;Type: DBCON (External DB)&#10;DBMS: MS SQL Server&#10;Host: HQ-DB-AG-APP&#10;Database: Tulip&#10;&#10;Direct SQL Server connection from SAP">
+            <div class="name">TULIP</div><div class="desc">SQL Server DB</div>
+            <div class="rfc-count" style="background:var(--neon-green)">DB</div>
+          </div>
+          <div class="node dev" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.25);color:var(--neon-green);" data-info="UNESDIR Database&#10;Type: DBCON (External DB)&#10;DBMS: MS SQL Server&#10;Host: HQ-DB-AG-APP&#10;Database: UNESDIR_ID&#10;&#10;UNESCO Directory — direct SQL Server connection">
+            <div class="name">UNESDIR</div><div class="desc">UNESCO Directory</div>
+            <div class="rfc-count" style="background:var(--neon-green)">DB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Core Hub -->
+      <div class="zone core" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:240px;">
+        <div class="zone-label">Core &mdash; Production</div>
+
+        <!-- P01 Hub -->
+        <div class="node hub" data-info="P01 - UNESCO Production ECC&#10;Host: hq-sap-p01&#10;Client: 350&#10;38 tables in Gold DB&#10;&#10;Central hub: ALL systems connect here&#10;239 RFC destinations configured&#10;19,400 IDocs (2024+)&#10;6,477 ICF services (5,822 active)">
+          <div class="name">P01</div>
+          <div class="desc">Production ECC</div>
+        </div>
+
+        <!-- Production satellites -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <div class="node prod" data-info="P11 - S/4 Production&#10;Category: Production&#10;Connections: 4&#10;Hosts: HQ-SAP-P11, HQ-SAP-P11-3, hq-p11-old&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE, ALE_REMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+            <div class="name">P11</div><div class="desc">S/4 Prod</div>
+            <div class="rfc-count">4</div>
+          </div>
+          <div class="node legacy" data-info="P11_OLD - P11 Legacy&#10;Category: Decommissioned&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE">
+            <div class="name">P11_OLD</div><div class="desc">Legacy</div>
+            <div class="rfc-count">1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Management -->
+      <div class="zone mgmt">
+        <div class="zone-label">Solution Manager</div>
+        <div class="nodes" style="flex-direction:column;align-items:stretch;">
+          <div class="node solman" data-info="SBP - SolMan Production&#10;Category: Solution Manager&#10;Connections: 5&#10;Purposes: Solution Manager, Trusted RFC, General&#10;Users: SMB_P01, %_LOG01%">
+            <div class="name">SBP</div><div class="desc">SolMan Prod</div>
+            <div class="rfc-count">5</div>
+          </div>
+          <div class="node solman" data-info="SMA - SolMan QA&#10;Category: Solution Manager&#10;Connections: 4&#10;Purposes: Solution Manager, Trusted RFC, General&#10;Users: SMB_P01, %_LOG01%">
+            <div class="name">SMA</div><div class="desc">SolMan QA</div>
+            <div class="rfc-count">4</div>
+          </div>
+          <div class="node solman" data-info="SMP - SolMan Dev&#10;Category: Solution Manager&#10;Connections: 6&#10;Purposes: Solution Manager, Central User Admin, Trusted RFC, General&#10;Users: SMB_P01, CUA_P01, %_LOG01%">
+            <div class="name">SMP</div><div class="desc">SolMan Dev</div>
+            <div class="rfc-count">6</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPOKES (Bottom) -->
+    <div class="spoke-row">
+
+      <!-- Development -->
+      <div class="zone spokes" style="border-color:rgba(79,142,247,0.2);">
+        <div class="zone-label" style="color:var(--neon-blue)">Development</div>
+        <div class="nodes">
+          <div class="node dev" data-info="D01 - ECC Development&#10;Category: Development&#10;Connections: 10&#10;Purposes: Diagnostics/Monitoring, Transport Management, Trusted RFC, ALE/IDoc&#10;Users: DSM_CONTROL, DSM_COMM_P01, TMSADM, ALEREMOTE&#10;&#10;IF DOWN:&#10;  System monitoring blind&#10;  Transport chain breaks&#10;  IDoc distribution fails">
+            <div class="name">D01</div><div class="desc">ECC Dev</div>
+            <div class="rfc-count">10</div>
+          </div>
+          <div class="node dev" data-info="D11 - S/4 Development&#10;Category: Development&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+            <div class="name">D11</div><div class="desc">S/4 Dev</div>
+            <div class="rfc-count">1</div>
+          </div>
+          <div class="node legacy" data-info="VDE - Virtual Development&#10;Category: Virtual System (TMSCSYS type V)&#10;Transport Domain: DOMAIN_P01&#10;&#10;Virtual system in transport landscape">
+            <div class="name">VDE</div><div class="desc">Virtual Dev</div>
+          </div>
+          <div class="node legacy" data-info="VRT - Virtual Runtime&#10;Category: Virtual System (TMSCSYS type V)&#10;Transport Domain: DOMAIN_P01&#10;&#10;Virtual system in transport landscape">
+            <div class="name">VRT</div><div class="desc">Virtual RT</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test/QA -->
+      <div class="zone spokes">
+        <div class="zone-label">Test / QA</div>
+        <div class="nodes">
+          <div class="node test" data-info="TS1 - Test System 1&#10;Category: Test/QA&#10;Connections: 7&#10;Purposes: Diagnostics/Monitoring, Transport Management, Trusted RFC, General&#10;Users: %_LOG01%, DSM_COMM_P01, DSM_CONTROL, TMSADM&#10;&#10;IF DOWN:&#10;  System monitoring blind&#10;  Transport chain breaks">
+            <div class="name">TS1</div><div class="desc">Test 1</div>
+            <div class="rfc-count">7</div>
+          </div>
+          <div class="node test" data-info="TS2 - Test System 2&#10;Category: Test/QA&#10;Connections: 2&#10;Purposes: Transport Management&#10;Users: %_LOG01%, TMSADM&#10;&#10;IF DOWN:&#10;  Transport chain breaks">
+            <div class="name">TS2</div><div class="desc">Test 2</div>
+            <div class="rfc-count">2</div>
+          </div>
+          <div class="node test" data-info="TS3 - Test System 3&#10;Category: Test/QA&#10;Connections: 6&#10;Purposes: Diagnostics/Monitoring, Transport Management, Trusted RFC&#10;Users: %_LOG01%, DSM_COMM_P01, DSM_CONTROL, TMSADM&#10;&#10;IF DOWN:&#10;  System monitoring blind&#10;  Transport chain breaks">
+            <div class="name">TS3</div><div class="desc">Test 3</div>
+            <div class="rfc-count">6</div>
+          </div>
+          <div class="node test" data-info="TS4 - Test System 4&#10;Category: Test/QA&#10;Connections: 2&#10;Purposes: Transport Management&#10;Users: %_LOG01%, TMSADM&#10;&#10;IF DOWN:&#10;  Transport chain breaks">
+            <div class="name">TS4</div><div class="desc">Test 4</div>
+            <div class="rfc-count">2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validation -->
+      <div class="zone spokes" style="border-color:rgba(167,139,250,0.2);">
+        <div class="zone-label" style="color:var(--neon-purple)">Validation</div>
+        <div class="nodes">
+          <div class="node val" data-info="V01 - ECC Validation&#10;Category: Validation&#10;Connections: 7&#10;Purposes: Diagnostics/Monitoring, Transport Management, Trusted RFC, ALE/IDoc&#10;Users: DSM_CONTROL, DSM_COMM_P01, TMSADM, ALEREMOTE&#10;&#10;IF DOWN:&#10;  System monitoring blind&#10;  Transport chain breaks&#10;  IDoc distribution fails">
+            <div class="name">V01</div><div class="desc">ECC Val</div>
+            <div class="rfc-count">7</div>
+          </div>
+          <div class="node val" data-info="V11 - S/4 Validation&#10;Category: Validation&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+            <div class="name">V11</div><div class="desc">S/4 Val</div>
+            <div class="rfc-count">1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BW / Analytics -->
+    <div class="zone bw">
+      <div class="zone-label">BW / Analytics</div>
+      <div class="nodes">
+        <div class="node bwn" data-info="BWP - BW Production&#10;Category: BW/Analytics&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+          <div class="name">BWP</div><div class="desc">BW Prod</div>
+          <div class="rfc-count">1</div>
+        </div>
+        <div class="node bwn" data-info="BRP - BW Reporting&#10;Category: BW/Analytics&#10;Connections: 1&#10;Purposes: BW Data Transfer&#10;Users: BWREMOTE&#10;&#10;IF DOWN:&#10;  BW reporting stale">
+          <div class="name">BRP</div><div class="desc">BW Reporting</div>
+          <div class="rfc-count">1</div>
+        </div>
+        <div class="node bwn" data-info="BWD - BW Development&#10;Category: BW/Analytics&#10;Connections: 1&#10;Purposes: ALE/IDoc Distribution&#10;Users: ALEREMOTE&#10;&#10;IF DOWN:&#10;  IDoc distribution fails">
+          <div class="name">BWD</div><div class="desc">BW Dev</div>
+          <div class="rfc-count">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.5);"></div>Production</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(79,142,247,0.2);border-color:rgba(79,142,247,0.5);"></div>Development</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(251,146,60,0.2);border-color:rgba(251,146,60,0.5);"></div>Test/QA</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);"></div>Validation</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.2);border-color:rgba(245,158,11,0.5);"></div>SolMan</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(45,212,191,0.2);border-color:rgba(45,212,191,0.5);"></div>BW/Analytics</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(34,211,238,0.2);border-color:rgba(34,211,238,0.5);"></div>External</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(100,116,139,0.2);border-color:rgba(100,116,139,0.5);"></div>Infrastructure</div>
+      <div class="legend-item"><div class="legend-line" style="border-color:var(--neon-blue);"></div>Primary RFC</div>
+      <div class="legend-item"><div class="legend-line dashed" style="border-color:var(--neon-cyan);"></div>External/HTTP</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.5);"></div>UNESCO Apps (.NET)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.2);border-color:rgba(34,197,94,0.5);"></div>DBCON (SQL)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(100,116,139,0.06);border-color:rgba(100,116,139,0.2);"></div>Virtual/Legacy</div>
+    </div>
+
+    <!-- SVG Connection Overlay -->
+    <svg class="svg-overlay" id="connections"></svg>
+
+  </div>
+</div>
+
+<!-- Info Panel -->
+<div class="info-panel" id="infoPanel">
+  <span class="close-btn" onclick="this.parentElement.classList.remove('visible')">&times;</span>
+  <h3 id="infoTitle"></h3>
+  <div class="info-body" id="infoBody"></div>
+</div>
+
+<script>
+// Click handler for nodes
+document.querySelectorAll('.node[data-info]').forEach(node => {
+  node.addEventListener('click', function() {
+    const info = this.dataset.info;
+    const name = this.querySelector('.name').textContent;
+    document.getElementById('infoTitle').textContent = name;
+    document.getElementById('infoBody').textContent = info;
+    document.getElementById('infoPanel').classList.add('visible');
+  });
+});
+
+// Draw SVG connections
+function drawConnections() {
+  const svg = document.getElementById('connections');
+  const envBorder = document.querySelector('.env-border');
+  const rect = envBorder.getBoundingClientRect();
+  svg.setAttribute('width', rect.width);
+  svg.setAttribute('height', rect.height);
+
+  // Find the hub (P01)
+  const hub = document.querySelector('.node.hub');
+  if (!hub) return;
+  const hubRect = hub.getBoundingClientRect();
+  const hubCx = hubRect.left + hubRect.width / 2 - rect.left;
+  const hubCy = hubRect.top + hubRect.height / 2 - rect.top;
+
+  // Connection definitions: [selector, color, dashed]
+  const connections = [
+    // External (dashed)
+    ['.zone.external .node', '#22d3ee', true],
+    // Infrastructure
+    ['.zone:not(.external):not(.core):not(.spokes):not(.mgmt):not(.bw) .node.infra', '#64748b', false],
+    // SolMan
+    ['.zone.mgmt .node', '#f59e0b', false],
+    // Development
+    ['.zone.spokes .node.dev', '#4f8ef7', false],
+    // Test
+    ['.zone.spokes .node.test', '#fb923c', false],
+    // Validation
+    ['.zone.spokes .node.val', '#a78bfa', false],
+    // BW
+    ['.zone.bw .node', '#2dd4bf', false],
+    // Production satellites
+    ['.node.prod, .node.legacy', '#ef4444', false],
+  ];
+
+  let svgContent = '';
+  connections.forEach(([selector, color, dashed]) => {
+    document.querySelectorAll(selector).forEach(node => {
+      if (node.classList.contains('hub')) return;
+      const nr = node.getBoundingClientRect();
+      const nx = nr.left + nr.width / 2 - rect.left;
+      const ny = nr.top + nr.height / 2 - rect.top;
+
+      // Orthogonal routing: vertical then horizontal (or vice versa)
+      const dx = Math.abs(nx - hubCx);
+      const dy = Math.abs(ny - hubCy);
+      let path;
+
+      if (dy > dx) {
+        // Mostly vertical: go vertical first, then horizontal
+        const midY = hubCy + (ny - hubCy) * 0.5;
+        path = `M${nx},${ny} L${nx},${midY} L${hubCx},${midY} L${hubCx},${hubCy}`;
+      } else {
+        // Mostly horizontal: go horizontal first, then vertical
+        const midX = hubCx + (nx - hubCx) * 0.5;
+        path = `M${nx},${ny} L${midX},${ny} L${midX},${hubCy} L${hubCx},${hubCy}`;
+      }
+
+      const dashAttr = dashed ? 'stroke-dasharray="6,4"' : '';
+      const cls = dashed ? 'conn-secondary' : 'conn-primary';
+      svgContent += `<path d="${path}" stroke="${color}" ${dashAttr} class="${cls}"/>`;
+    });
+  });
+
+  svg.innerHTML = svgContent;
+}
+
+// Draw on load and resize
+window.addEventListener('load', () => setTimeout(drawConnections, 100));
+window.addEventListener('resize', drawConnections);
+</script>
+</body>
+</html>

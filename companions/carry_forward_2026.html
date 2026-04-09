@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP — Budget Carry Forward 2026: Issues & Improvements</title>
+<style>
+:root {
+  --bg: #080c14; --surf: #0d1320; --card: #111827; --card-hover: #162032;
+  --b: #1a2540; --b2: #1e2d4a; --txt: #dde5f5; --mu: #4c6490; --mu2: #7892c0;
+  --acc: #4f8ef7; --grn: #22c55e; --org: #fb923c; --red: #ef4444;
+  --pur: #a78bfa; --cyan: #22d3ee; --yel: #f59e0b; --teal: #34d399;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; line-height: 1.6; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #0a1628 0%, #1a0d3a 50%, #0d2247 100%); padding: 48px 40px 40px; border-bottom: 1px solid var(--b); position: relative; }
+.header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 40% 50%, rgba(251,146,60,0.06) 0%, transparent 50%); pointer-events: none; }
+.header-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.back-link { color: var(--acc); text-decoration: none; font-size: 0.85em; display: inline-block; margin-bottom: 16px; }
+.back-link:hover { text-decoration: underline; }
+.header h1 { font-size: 2em; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+.header .sub { color: var(--mu2); font-size: 1em; margin-bottom: 24px; }
+.header-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+.header-stat { text-align: center; }
+.header-stat .v { font-size: 1.6em; font-weight: 800; font-family: 'Consolas', monospace; }
+.header-stat .l { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mu); margin-top: 2px; }
+
+/* Content */
+.content { max-width: 1200px; margin: 0 auto; padding: 32px 40px 100px; }
+
+/* Section Headers */
+.section-header { display: flex; align-items: center; gap: 12px; margin: 40px 0 20px; padding-bottom: 12px; border-bottom: 1px solid var(--b); }
+.section-header:first-child { margin-top: 0; }
+.section-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.section-header h2 { font-size: 1.25em; font-weight: 700; }
+.section-header .count { font-size: 0.75em; color: var(--mu); background: var(--card); padding: 3px 10px; border-radius: 12px; border: 1px solid var(--b); }
+
+/* Issue Cards */
+.issue-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.issue-card { background: var(--card); border: 1px solid var(--b); border-radius: 12px; padding: 24px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+.issue-card:hover { border-color: var(--b2); }
+.issue-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+.issue-card.bug::before { background: linear-gradient(90deg, var(--red), var(--org)); }
+.issue-card.infra::before { background: linear-gradient(90deg, var(--cyan), var(--acc)); }
+.issue-card.process::before { background: linear-gradient(90deg, var(--yel), var(--org)); }
+.issue-card.enhance::before { background: linear-gradient(90deg, var(--grn), var(--teal)); }
+
+.issue-number { position: absolute; top: 16px; right: 20px; font-size: 2em; font-weight: 800; font-family: 'Consolas', monospace; color: rgba(255,255,255,0.04); }
+.issue-meta { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.issue-type { font-size: 0.7em; padding: 3px 10px; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.issue-type.bug { background: rgba(239,68,68,0.15); color: var(--red); }
+.issue-type.infra { background: rgba(34,211,238,0.15); color: var(--cyan); }
+.issue-type.process { background: rgba(245,158,11,0.15); color: var(--yel); }
+.issue-type.enhance { background: rgba(34,197,94,0.15); color: var(--grn); }
+.issue-source { font-size: 0.75em; color: var(--mu); }
+.issue-auto { font-size: 0.7em; padding: 3px 10px; border-radius: 6px; font-weight: 600; background: rgba(79,142,247,0.15); color: var(--acc); }
+
+.issue-title { font-size: 1.1em; font-weight: 700; margin-bottom: 8px; }
+.issue-desc { color: var(--mu2); font-size: 0.9em; margin-bottom: 16px; }
+.issue-desc strong { color: var(--txt); font-weight: 600; }
+
+.issue-action { background: rgba(255,255,255,0.03); border: 1px solid var(--b); border-radius: 8px; padding: 12px 16px; }
+.issue-action-label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grn); font-weight: 600; margin-bottom: 4px; }
+.issue-action-text { font-size: 0.85em; color: var(--mu2); }
+
+/* Evidence Table */
+.evidence { margin: 12px 0; overflow-x: auto; }
+.evidence table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+.evidence th { background: rgba(255,255,255,0.03); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--b); color: var(--mu2); font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.05em; }
+.evidence td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--mu2); }
+.evidence tr:last-child td { border-bottom: none; }
+
+/* Summary Box */
+.summary-box { background: var(--card); border: 1px solid var(--b); border-radius: 12px; padding: 24px; margin-top: 40px; }
+.summary-box h3 { font-size: 1.1em; font-weight: 700; margin-bottom: 16px; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.summary-item { background: rgba(255,255,255,0.03); border: 1px solid var(--b); border-radius: 8px; padding: 16px; text-align: center; }
+.summary-item .sv { font-size: 1.8em; font-weight: 800; font-family: 'Consolas', monospace; }
+.summary-item .sl { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mu); margin-top: 4px; }
+
+/* Source info */
+.source-info { margin-top: 40px; background: var(--card); border: 1px solid var(--b); border-radius: 12px; padding: 24px; font-size: 0.85em; color: var(--mu2); }
+.source-info h3 { font-size: 1em; font-weight: 700; color: var(--txt); margin-bottom: 12px; }
+.source-info ul { list-style: none; padding: 0; }
+.source-info li { padding: 4px 0; }
+.source-info li::before { content: '\2022'; color: var(--acc); margin-right: 8px; }
+
+/* Status bar */
+.status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surf); border-top: 1px solid var(--b); padding: 8px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; color: var(--mu); z-index: 100; }
+.status-bar a { color: var(--acc); text-decoration: none; }
+
+@media (max-width: 860px) {
+  .header { padding: 32px 20px; }
+  .content { padding: 24px 20px 80px; }
+  .header-stats { gap: 20px; }
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0a0e17;border-bottom:1px solid #30363d;padding:6px 20px;display:flex;gap:16px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:0.8em;">
+  <a href="unesco_sap_landing.html" style="color:#58a6ff;text-decoration:none;font-weight:600;">&#8592; Landing Page</a>
+  <span style="color:#30363d;">|</span>
+  <a href="treasury_operations_companion_v2.html" style="color:#ffa657;text-decoration:none;">Treasury Config</a>
+  <a href="payment_bcm_companion.html" style="color:#3fb950;text-decoration:none;">Payments &amp; BCM</a>
+  <a href="bank_statement_ebs_companion.html" style="color:#d29922;text-decoration:none;">Bank Statements</a>
+  <a href="cts_dashboard.html" style="color:#bc8cff;text-decoration:none;">Transports</a>
+  <a href="connectivity_diagram.html" style="color:#39d2c0;text-decoration:none;">Infrastructure</a>
+</div>
+
+
+<div class="header">
+  <div class="header-inner">
+    <a class="back-link" href="unesco_sap_landing.html">&larr; Back to Knowledge Hub</a>
+    <h1>Budget Carry Forward 2026</h1>
+    <p class="sub">Issues & Improvements from the 2025 Exercise &mdash; To Be Considered for 2026</p>
+    <div class="header-stats">
+      <div class="header-stat"><div class="v" style="color:var(--red)">7</div><div class="l">Issues</div></div>
+      <div class="header-stat"><div class="v" style="color:var(--grn)">3</div><div class="l">Enhancements</div></div>
+      <div class="header-stat"><div class="v" style="color:var(--acc)">6</div><div class="l">Automatable</div></div>
+      <div class="header-stat"><div class="v" style="color:var(--org)">4</div><div class="l">Contributors</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- BUGS / DATA ISSUES -->
+  <div class="section-header">
+    <div class="section-icon" style="background:linear-gradient(135deg,#ef4444,#fb923c);">&#x26A0;</div>
+    <h2>Bugs & Data Issues</h2>
+    <span class="count">2 issues</span>
+  </div>
+  <div class="issue-grid">
+
+    <div class="issue-card bug">
+      <div class="issue-number">#1</div>
+      <div class="issue-meta">
+        <span class="issue-type bug">Bug</span>
+        <span class="issue-source">Pablo Lopez (DBS) &middot; Jan 16, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Commitments Closed with Balance &mdash; Not Carried Forward</div>
+      <div class="issue-desc">
+        4 Purchase Order items and 1 Trip were <strong>not carried forward despite having available balance</strong>.
+        SAP closed them automatically due to the delivery completed indicator (ERLKZ) being set by technical reason.
+      </div>
+      <div class="evidence">
+        <table>
+          <tr><th>Type</th><th>Document</th><th>Item</th><th>Amount</th><th>Currency</th><th>Reason</th></tr>
+          <tr><td>PO</td><td>4500526175</td><td>10</td><td>41.23</td><td>USD</td><td>Service Invoice ERLKZ marked as F or X</td></tr>
+          <tr><td>PO</td><td>4500526400</td><td>20</td><td>0.01</td><td>USD</td><td>Service Invoice ERLKZ marked as F or X</td></tr>
+          <tr><td>PO</td><td>4500530878</td><td>10</td><td>1,402.55</td><td>USD</td><td>Service Invoice ERLKZ marked as F or X</td></tr>
+          <tr><td>PO</td><td>4500536085</td><td>20</td><td>-7.80</td><td>USD</td><td>Closing program</td></tr>
+          <tr><td>PO</td><td>4500551402</td><td>10</td><td>0.54</td><td>USD</td><td>Service Invoice ERLKZ marked as F or X</td></tr>
+          <tr><td>Trip</td><td>15002019</td><td>&mdash;</td><td>-30.00</td><td>USD</td><td>Statistical commitment</td></tr>
+        </table>
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Monitor during the year. Build a <strong>pre-CF detection report</strong> to identify closed commitments with remaining balance before the exercise starts. Data available in FMIFIIT + EKBE (Gold DB).</div>
+      </div>
+    </div>
+
+    <div class="issue-card bug">
+      <div class="issue-number">#2</div>
+      <div class="issue-meta">
+        <span class="issue-type bug">Bug</span>
+        <span class="issue-source">Yimiao Guo (RPMR) &middot; Jan 30, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Statistical Commitment Carried Forward Without Budget Consumption</div>
+      <div class="issue-desc">
+        A trip financed by regular budget was incorrectly identified as a <strong>"Statistical Commitment"</strong>.
+        It was carried forward but consumed zero budget, impacting reporting.
+        The AO was advised to use the current biennium budget to cover the cost.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Detect statistical commitments <strong>early, before the reconciliation phase</strong>, with support from AP and DBS. WRTTP filtering in FMIFIIT distinguishes statistical vs. real commitments.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- INFRASTRUCTURE -->
+  <div class="section-header">
+    <div class="section-icon" style="background:linear-gradient(135deg,#22d3ee,#4f8ef7);">&#x1F5A5;</div>
+    <h2>Infrastructure & Server</h2>
+    <span class="count">3 issues</span>
+  </div>
+  <div class="issue-grid">
+
+    <div class="issue-card infra">
+      <div class="issue-number">#3</div>
+      <div class="issue-meta">
+        <span class="issue-type infra">Infrastructure</span>
+        <span class="issue-source">Jeannette La (DBS) &middot; Jan 14, 2026</span>
+      </div>
+      <div class="issue-title">Server Memory Saturation During Carry Forward</div>
+      <div class="issue-desc">
+        All institutes running carry forward <strong>simultaneously caused SAP to block</strong>.
+        The server cannot handle concurrent access to the same large tables with different selection criteria.
+        "SAP is clearly not meant to have such similar huge access to same tables."
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Define a <strong>staggered schedule</strong> with precise planning so institutes do not run carry forward at the same time.</div>
+      </div>
+    </div>
+
+    <div class="issue-card infra">
+      <div class="issue-number">#4</div>
+      <div class="issue-meta">
+        <span class="issue-type infra">Infrastructure</span>
+        <span class="issue-source">Jeannette La (DBS) &middot; Jan 14, 2026</span>
+      </div>
+      <div class="issue-title">P01 Full Backup Not in the Agreed Plan</div>
+      <div class="issue-desc">
+        A <strong>full backup of the production system</strong> was not included in the agreed carry forward plan, causing delays.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Always include P01 full backup in the carry forward plan.</div>
+      </div>
+    </div>
+
+    <div class="issue-card infra">
+      <div class="issue-number">#5</div>
+      <div class="issue-meta">
+        <span class="issue-type infra">Infrastructure</span>
+        <span class="issue-source">DBS &middot; Jan 30, 2026</span>
+      </div>
+      <div class="issue-title">P01 Not Restarted Before/After Carry Forward</div>
+      <div class="issue-desc">
+        Performance degradation after carry forward because <strong>SAP buffers were not cleaned</strong>.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text"><strong>Always restart P01 before and after</strong> the carry forward exercise to clean all buffers from CF activities.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROCESS -->
+  <div class="section-header">
+    <div class="section-icon" style="background:linear-gradient(135deg,#f59e0b,#fb923c);">&#x1F4CB;</div>
+    <h2>Process Issues</h2>
+    <span class="count">2 issues</span>
+  </div>
+  <div class="issue-grid">
+
+    <div class="issue-card process">
+      <div class="issue-number">#6</div>
+      <div class="issue-meta">
+        <span class="issue-type process">Process</span>
+        <span class="issue-source">Yimiao Guo (RPMR) &middot; Jan 16, 2026</span>
+      </div>
+      <div class="issue-title">Voluntary Contribution Testing Started Too Late</div>
+      <div class="issue-desc">
+        Budget carry forward testing on voluntary contributions <strong>only started in January 2026</strong>.
+        All budget types should be tested together in December.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Communicate the timeline clearly to BSP so that <strong>all budget types are tested together in December</strong>.</div>
+      </div>
+    </div>
+
+    <div class="issue-card process">
+      <div class="issue-number">#7</div>
+      <div class="issue-meta">
+        <span class="issue-type process">Process</span>
+        <span class="issue-source">Pablo Lopez (DBS) &middot; Jan 19, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Fund Validity Period &mdash; No Automated Update Mechanism</div>
+      <div class="issue-desc">
+        A program to extend fund validity periods <strong>was planned but did not work</strong>.
+        Updates were done <strong>manually using ALIOS</strong> (batch input).
+        Some institutes faced <strong>licence issues</strong> delaying the fund extension.
+        A universal mechanism usable by all institutes is needed.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Build an <strong>automated fund validity update mechanism</strong> (RFC-based or improved program) that can be used by all institutes without licence dependency. Gold DB has all 64K funds for validation.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ENHANCEMENTS -->
+  <div class="section-header">
+    <div class="section-icon" style="background:linear-gradient(135deg,#22c55e,#34d399);">&#x1F680;</div>
+    <h2>Enhancements Proposed</h2>
+    <span class="count">3 enhancements</span>
+  </div>
+  <div class="issue-grid">
+
+    <div class="issue-card enhance">
+      <div class="issue-number">#8</div>
+      <div class="issue-meta">
+        <span class="issue-type enhance">Enhancement</span>
+        <span class="issue-source">Pablo Lopez (DBS) &middot; Jan 16, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Automated "Check 0" Commitment Report</div>
+      <div class="issue-desc">
+        At year-end, every commitment document must net to zero: <strong>pending amount + carry forward in period 16 = 0</strong>.
+        Currently requires manual data download and comparison.
+        An automated report would replace this and significantly speed up post-CF closing.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Build an <strong>automated "Check 0" validation report</strong> per commitment document. Can be implemented as a SQLite query against FMIFIIT + FMIOI in the Gold DB.</div>
+      </div>
+    </div>
+
+    <div class="issue-card enhance">
+      <div class="issue-number">#9</div>
+      <div class="issue-meta">
+        <span class="issue-type enhance">Enhancement</span>
+        <span class="issue-source">Pablo Lopez (DBS) &middot; Jan 16, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Full Background Execution of Carry Forward</div>
+      <div class="issue-desc">
+        In 2025, commitment simulation in background <strong>worked very well</strong>.
+        The balance carry forward was still manual. For 2026, the full process should run in background:
+      </div>
+      <div class="evidence">
+        <table>
+          <tr><th>Step</th><th>Action</th><th>Status</th></tr>
+          <tr><td>1</td><td>Run Commitment Carry Forward in Background</td><td style="color:var(--grn)">Proven in 2025</td></tr>
+          <tr><td>2</td><td>Check 0 Open Commitment Balance (new report)</td><td style="color:var(--yel)">To be built</td></tr>
+          <tr><td>3</td><td>Run Residual Balance Carry Forward in Background</td><td style="color:var(--yel)">To be implemented</td></tr>
+        </table>
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">If confident in the Check 0 report, the <strong>entire carry forward process can be completed in one morning</strong>.</div>
+      </div>
+    </div>
+
+    <div class="issue-card enhance">
+      <div class="issue-number">#10</div>
+      <div class="issue-meta">
+        <span class="issue-type enhance">Enhancement</span>
+        <span class="issue-source">Pablo Lopez (DBS) &middot; Jan 16, 2026</span>
+        <span class="issue-auto">Automatable</span>
+      </div>
+      <div class="issue-title">Project Carry Forward Controls</div>
+      <div class="issue-desc">
+        No specific controls for project-related carry forward exist.
+        Learnings from 2025 need to be formalized into a plan.
+      </div>
+      <div class="issue-action">
+        <div class="issue-action-label">Improvement Action</div>
+        <div class="issue-action-text">Define project-specific CF control plan based on 2025 learnings. <strong>Owner: Pablo Lopez + Leandre Francisco.</strong> Golden Query (FMIFIIT.OBJNRZ to PRPS.POSID) enables WBS-level commitment tracking.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-box">
+    <h3>Summary</h3>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="sv" style="color:var(--red)">2</div>
+        <div class="sl">Bugs / Data Issues</div>
+      </div>
+      <div class="summary-item">
+        <div class="sv" style="color:var(--cyan)">3</div>
+        <div class="sl">Infrastructure</div>
+      </div>
+      <div class="summary-item">
+        <div class="sv" style="color:var(--yel)">2</div>
+        <div class="sl">Process Issues</div>
+      </div>
+      <div class="summary-item">
+        <div class="sv" style="color:var(--grn)">3</div>
+        <div class="sl">Enhancements</div>
+      </div>
+      <div class="summary-item">
+        <div class="sv" style="color:var(--acc)">6</div>
+        <div class="sl">Automatable Items</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOURCE -->
+  <div class="source-info">
+    <h3>Sources</h3>
+    <ul>
+      <li><strong>Email thread:</strong> "carry forward exercise" (Jan 14-19, 2026)</li>
+      <li><strong>Email:</strong> "Fw: carry forward list of issues faced and to improve" (Jan 30, 2026)</li>
+      <li><strong>Word attachment:</strong> "LIST OF ISSUES HILIGHTED DURING 2025 BUDGET CARRY FORWARD TO BE CONSIDERED FOR 2026 EXERCISE.docx"</li>
+    </ul>
+    <p style="margin-top: 12px;"><strong>Contributors:</strong> Jeannette La, Pablo Lopez, Yimiao Guo, Lionel Chabeau, Illya Konakov, Leandre Francisco, Vincent Vaurette, Patrick Ikouna, Gulnara Kapekova</p>
+    <p style="margin-top: 8px; font-size: 0.85em; color: var(--mu);">Generated from .eml files by SAP Intelligence Platform &middot; Session #033 &middot; 2026-04-03</p>
+  </div>
+
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span><a href="unesco_sap_landing.html">&larr; Knowledge Hub</a> &middot; Budget Carry Forward 2026</span>
+  <span>7 Issues &middot; 3 Enhancements &middot; 6 Automatable</span>
+</div>
+
+</body>
+</html>
