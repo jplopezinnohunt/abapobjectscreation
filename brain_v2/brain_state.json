@@ -1,16 +1,16 @@
 {
   "_design": "Object-centric knowledge graph with 11 AGI layers. 1 Read = full self-aware intelligence. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode.",
   "_stats": {
-    "objects": 136,
-    "rules": 58,
-    "claims": 26,
-    "incidents": 3,
-    "incident_records": 1,
-    "domains": 12,
-    "known_unknowns": 23,
+    "objects": 167,
+    "rules": 81,
+    "claims": 46,
+    "incidents": 6,
+    "incident_records": 4,
+    "domains": 13,
+    "known_unknowns": 34,
     "falsification_pending": 6,
     "user_questions_open": 0,
-    "data_quality_open": 7,
+    "data_quality_open": 8,
     "superseded": 15,
     "session": 50
   },
@@ -72,17 +72,70 @@
         }
       ]
     },
+    "YTFI_PPC_STRUC": {
+      "type": "FUNCTION_MODULE",
+      "domain": "CTS",
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md"
+      ]
+    },
     "Z_WF_FI_EXCLUDE_NOTIF_EMAIL": {
-      "type": "ABAP_REPORT",
-      "domain": "CUSTOM",
-      "reads_tables": [
-        "USR05"
+      "type": "FUNCTION_MODULE",
+      "domain": "CUSTOM"
+    },
+    "USR05": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "LZ_WF_FI_EXCLUDE_NOTIFU01",
+        "ZXFMYU22_RPY",
+        "Z_WF_FI_EXCLUDE_NOTIF_EMAIL"
       ],
-      "other_edges": [
+      "annotations": [
         {
-          "to": "USR05.PARVA",
-          "type": "READS_FIELD"
+          "tag": "BLIND_SPOT",
+          "finding": "USR05 (SAP user parameters, PARID/PARVA per user) not in Gold DB. Cannot verify whether AL_JONATHAN has a home FICTR parameter. Needed to design the INC-000005240 fix (SU3-based opt-in).",
+          "timestamp": "2026-04-09T13:02:10.434249",
+          "session": "#050",
+          "incident": "INC-000005240",
+          "field": "PARVA",
+          "related": [
+            "Z_WF_FI_EXCLUDE_NOTIF_EMAIL",
+            "SU3"
+          ]
+        },
+        {
+          "tag": "DATA_MODEL",
+          "finding": "User parameters table (SU3). At UNESCO, the Y_USERFO parameter on USR05 drives office-code substitution on BSEG.XREF1/XREF2 via YRGGBS00 forms UXR1/UXR2. There is NO mechanism that keeps USR05.Y_USERFO in sync with HR master (PA0001.WERKS/BTRTL). A user's finance office code can drift from their HR personnel area with no detection.",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "related": [
+            "USR05.Y_USERFO",
+            "YRGGBS00/UXR1",
+            "YRGGBS00/UXR2"
+          ]
         }
+      ],
+      "claims": [
+        {
+          "id": 27,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "ZXFMDTU02_RPY.abap line 99 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011, 0007045011, 0006045014) with FIKRS=UNES and FISTL=SPACE"
+        }
+      ],
+      "incidents": [
+        "INC-000005240"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "knowledge/domains/Treasury/xref_office_tagging_model.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+        "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+        "knowledge/session_retros/session_051_retro.md"
       ]
     },
     "Z_WF_FI_PR_WF_ACTOR1_DET": {
@@ -144,7 +197,7 @@
         },
         {
           "tag": "ARCHITECTURE",
-          "finding": "BSEG is NOT a table to extract — it is a JOIN via bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). 4.7M rows. Never extract or enrich BSEG directly.",
+          "finding": "BSEG is NOT a table to extract â€” it is a JOIN via bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD). 4.7M rows. Never extract or enrich BSEG directly.",
           "timestamp": "2026-04-09T08:57:54.658680",
           "impact": "Extracting BSEG wastes time and produces incomplete data. Use bseg_union VIEW in Gold DB.",
           "session": "#035",
@@ -164,7 +217,7 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
         }
       ]
     },
@@ -182,7 +235,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -220,6 +279,19 @@
             "PA0027",
             "PTRV_SCOS"
           ]
+        },
+        {
+          "tag": "AUTHORITATIVE_SOURCE",
+          "finding": "HR master Organizational Assignment infotype. At UNESCO, PA0001.WERKS (personnel area, e.g., FR00=France, ID00=Indonesia, CM00=Cameroon) + PA0001.BTRTL (personnel subarea, e.g., PAR=Paris, JKT=Jakarta, YAO=Yaoundé, KBL=Kabul, DKR=Dakar) is the HR-authoritative office identifier. NOT synchronized with USR05.Y_USERFO — users can drift from HR without detection. Cross-reference via PA0105 SUBTY='0001' USRID=SY-UNAME → PERNR → PA0001.",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "impact": "The audit query PA0001 × PA0105 × USR05 is the definitive class-generalization tool for detecting drifted office codes (KU-028).",
+          "related": [
+            "PA0105",
+            "USR05.Y_USERFO"
+          ]
         }
       ],
       "claims": [
@@ -231,6 +303,7 @@
         }
       ],
       "incidents": [
+        "INC-000005240",
         "INC-000006073"
       ],
       "knowledge_docs": [
@@ -239,6 +312,56 @@
         "Brain_Architecture/code_brain_strategy.md",
         "knowledge/domains/FI/travel_busarea_derivation.md",
         "knowledge/domains/HCM/Fiori Apps/hcm_personal_data_analysis.md"
+      ]
+    },
+    "PA0105": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "EMPLOYEESET_GET_ENTITYSET",
+        "FILTER_PROCESS_LIST",
+        "GET_ACTOR_INFOS",
+        "ZCL_HR_FIORI_OFFBOARDING_REQ",
+        "ZCL_HR_FIORI_RENTAL",
+        "ZCL_ZHR_BENEFITS_REQUE_DPC_EXT"
+      ],
+      "annotations": [
+        {
+          "tag": "BRIDGE",
+          "finding": "HR Communications infotype. SUBTY='0001' rows contain USRID = the user's SAP BNAME. This is the canonical bridge from SY-UNAME → PERNR for any HR cross-reference. Used in the INC-000005240 PA0001 lookups to get AL_JONATHAN's personnel area/subarea from his BNAME.",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "related": [
+            "PA0001",
+            "USR05"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 42,
+          "tier": "VERIFIED",
+          "type": "config_structure",
+          "claim": "At UNESCO P01, BCM workflow responsibility groups (rules 90000004 BNK_COM and 90000005 BNK_INI) are stored as PD objects OTYPE='RY' under PLVAR='01'. "
+        },
+        {
+          "id": 43,
+          "tier": "VERIFIED",
+          "type": "defect",
+          "claim": "PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures for all transfers / UIS Validation) with "
+        }
+      ],
+      "incidents": [
+        "INC-000005240"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/HCM/Fiori Apps/hcm_personal_data_analysis.md",
+        "knowledge/domains/HCM/Fiori Apps/hr_offboarding_analysis.md",
+        "knowledge/domains/PSM/FIORI APPS/zaw_crp_architecture.md",
+        "knowledge/domains/Treasury/bcm_signatory_rules.md",
+        "knowledge/domains/Treasury/xref_office_tagging_model.md"
       ]
     },
     "HR_READ_INFOTYPE": {
@@ -267,9 +390,75 @@
         "knowledge/session_retros/session_048_retro.md"
       ]
     },
+    "PA0002": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "INIT_DEFAULT_VALUES_REQUEST"
+      ],
+      "claims": [
+        {
+          "id": 42,
+          "tier": "VERIFIED",
+          "type": "config_structure",
+          "claim": "At UNESCO P01, BCM workflow responsibility groups (rules 90000004 BNK_COM and 90000005 BNK_INI) are stored as PD objects OTYPE='RY' under PLVAR='01'. "
+        },
+        {
+          "id": 43,
+          "tier": "VERIFIED",
+          "type": "defect",
+          "claim": "PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures for all transfers / UIS Validation) with "
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/HCM/Fiori Apps/hcm_connectivity_map.md",
+        "knowledge/domains/HCM/Fiori Apps/hcm_family_management_analysis.md",
+        "knowledge/domains/HCM/Fiori Apps/hcm_personal_data_analysis.md",
+        "knowledge/domains/PSM/FIORI APPS/crp_management.md",
+        "knowledge/domains/PSM/FIORI APPS/zaw_crp_architecture.md"
+      ]
+    },
+    "PA0001.BTRTL": {
+      "type": "TABLE_FIELD",
+      "domain": "DATA_MODEL",
+      "annotations": [
+        {
+          "tag": "MAPPING_GAP",
+          "finding": "Personnel subarea code. At UNESCO, this is the HR-authoritative office code. Observed values and mapping to USR05.Y_USERFO: PAR→HQ (Paris), JKT→JAK (Jakarta), YAO→YAO (Yaoundé, match), KBL→KAB (Kabul, mismatch), DKR→DAK (Dakar, mismatch). The BTRTL→Y_USERFO mapping is tribal knowledge — NOT enforced by any table. This is DQ-020.",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "related": [
+            "PA0001",
+            "USR05.Y_USERFO"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 40,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "At UNESCO, USR05.Y_USERFO and PA0001.BTRTL use DIFFERENT code systems for the same office. Empirical examples: Paris HQ is PA0001.BTRTL='PAR' but USR0"
+        }
+      ],
+      "incidents": [
+        "INC-000005240"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Treasury/xref_office_tagging_model.md",
+        "knowledge/session_retros/session_051_retro.md"
+      ]
+    },
     "PA0001.WERKS": {
       "type": "TABLE_FIELD",
-      "domain": "DATA_MODEL"
+      "domain": "DATA_MODEL",
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "knowledge/domains/Treasury/xref_office_tagging_model.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md"
+      ]
     },
     "ZHRAUTOSTEP": {
       "type": "ABAP_REPORT",
@@ -473,7 +662,7 @@
       "annotations": [
         {
           "tag": "CRITICAL",
-          "finding": "IF epk-bukst = epk-bukrs — only propagates GSBER for same-company postings. Intercompany counterpart lines get NO GSBER.",
+          "finding": "IF epk-bukst = epk-bukrs â€” only propagates GSBER for same-company postings. Intercompany counterpart lines get NO GSBER.",
           "timestamp": "2026-04-09T08:51:13.763601",
           "impact": "Any intercompany posting where partner company has no fallback BusA derivation will fail",
           "line": 852,
@@ -497,7 +686,7 @@
         },
         {
           "tag": "CROSS_COMPANY",
-          "finding": "epk-gsber = accountingobjects-bus_area_empl — restores GSBER for cross-company TAX lines only (stazf=X), NOT vendor clearing lines",
+          "finding": "epk-gsber = accountingobjects-bus_area_empl â€” restores GSBER for cross-company TAX lines only (stazf=X), NOT vendor clearing lines",
           "timestamp": "2026-04-09T08:51:13.851801",
           "impact": "Tax G/L lines get GSBER restored, vendor lines do not",
           "line": 1550,
@@ -777,9 +966,9 @@
       "annotations": [
         {
           "tag": "ERROR_WRAPPER",
-          "finding": "RW609 is NOT a Travel validation — it wraps BAPI_ACC_EMPLOYEE_PAY_POST errors. The actual rejection is inside the BAPI during FI document simulation.",
+          "finding": "RW609 is NOT a Travel validation â€” it wraps BAPI_ACC_EMPLOYEE_PAY_POST errors. The actual rejection is inside the BAPI during FI document simulation.",
           "timestamp": "2026-04-09T08:51:13.939564",
-          "impact": "Misleading error message — looks like Travel module rejects, but its the FI BAPI",
+          "impact": "Misleading error message â€” looks like Travel module rejects, but its the FI BAPI",
           "line": 155,
           "session": "#048",
           "incident": "INC-000006073"
@@ -1035,6 +1224,15 @@
         "INC-000006073"
       ]
     },
+    "LFBK": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "RPRAPAFO_ALV",
+        "YFI_LFBK_TRAVEL_UPDATE",
+        "YFI_YRGGBS00_EXIT"
+      ]
+    },
     "RPRTB000": {
       "type": "ABAP_REPORT",
       "domain": "TV",
@@ -1069,6 +1267,21 @@
         "knowledge/domains/Travel/README.md",
         "knowledge/domains/Travel/travel_brain_edges.md",
         "knowledge/incidents/INC-000006073_travel_busarea.md"
+      ]
+    },
+    "TCURR": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "RPRTB000",
+        "RPRTB000_ALV"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Integration/integration_map_complete.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+        "knowledge/session_retros/session_029_retro.md"
       ]
     },
     "RPRTB000_ALV": {
@@ -1438,13 +1651,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
         },
         {
           "id": 10,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI â€” perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
         }
       ]
     },
@@ -1473,6 +1686,23 @@
             "ESLL"
           ]
         }
+      ]
+    },
+    "FMFINCODE": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXFMDTU02_RPY",
+        "ZXFMYU22_RPY",
+        "ZXRSAU01_RPY",
+        "ZXRSAU02_RPY"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/avc_derivation_technical_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/domains/PSM/EXTENSIONS/fm_validation_technical_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/ibf_metadata_technical_autopsy.md",
+        "knowledge/domains/PSM/EXTENSIONS/posting_derivation_technical_autopsy.md"
       ]
     },
     "FMIFIIT": {
@@ -1506,7 +1736,7 @@
       "annotations": [
         {
           "tag": "KEY_JOIN",
-          "finding": "FMIFIIT.KNBELNR = BKPF.BELNR — perfect 1:1 FM-to-FI join at line level.",
+          "finding": "FMIFIIT.KNBELNR = BKPF.BELNR â€” perfect 1:1 FM-to-FI join at line level.",
           "timestamp": "2026-04-09T08:57:54.708312",
           "impact": "This is the bridge between Funds Management and Financial Accounting. Critical for Golden Query.",
           "session": "#016",
@@ -1517,7 +1747,7 @@
         },
         {
           "tag": "KEY_JOIN",
-          "finding": "FMIFIIT.OBJNRZ = PRPS.OBJNR — WBS element recovery. 85.9% coverage for 2025.",
+          "finding": "FMIFIIT.OBJNRZ = PRPS.OBJNR â€” WBS element recovery. 85.9% coverage for 2025.",
           "timestamp": "2026-04-09T08:57:54.760057",
           "session": "#016",
           "field": "OBJNRZ",
@@ -1539,21 +1769,106 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
         },
         {
           "id": 10,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI â€” perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+        },
+        {
+          "id": 46,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "AVC available is a fund/cover-group level metric, not an FR-line-level metric. All FR lines on the same (FONDS, FUNDSCTR, CMMTITEM-rolled-to-control-o"
         }
       ],
       "knowledge_docs": [
         "Brain_Architecture/brain_v3_rebuild_plan.md",
         "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
         "knowledge/domains/PSM/EXTENSIONS/bw_extraction_logics_autopsy.md",
-        "knowledge/domains/PSM/project_cost_recovery_analysis.md",
-        "knowledge/domains/Transport_Intelligence/process_discovery_research.md"
+        "knowledge/domains/PSM/project_cost_recovery_analysis.md"
+      ]
+    },
+    "FMIOI": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "annotations": [
+        {
+          "tag": "WRTTP_81_CARRYFORWARD_PATTERN",
+          "finding": "Earmarked-fund commitment rows: original creation (positive), period-specific consumption reductions (negative), period-016 year-end reversal (positive equal to remaining), period-000 carryforward-IN to next year. Naive sign-sum across all years does NOT equal 'open balance'. For 'open' filter by current GJAHR + signed sum. For 'lifetime consumed' use KBLE/KBLEW NOT FMIOI. Rows with ratio=1.0 + amount $0.01-0.02 are SAP rounding plugs, NOT cross-currency consumption signatures.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "3 wrong interpretations in Session #053 came from skipping raw-row inspection on FMIOI. Always sample 3 raw WRTTP=81 rows for any FR before computing per-line metrics.",
+          "related": [
+            "KBLE",
+            "KBLEW",
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 46,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "AVC available is a fund/cover-group level metric, not an FR-line-level metric. All FR lines on the same (FONDS, FUNDSCTR, CMMTITEM-rolled-to-control-o"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+        "knowledge/pmo_tracker.md"
+      ]
+    },
+    "KBLE": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ],
+      "annotations": [
+        {
+          "tag": "CLUSTER_TABLE_RFC_PATTERN",
+          "finding": "Cluster table — RFC_READ_TABLE returns TABLE_WITHOUT_DATA. Use RFC-enabled wrapper FM '/SAPPSPRO/PD_GM_FMR2_READ_KBLE' with parameter I_BELNR=<FR doc number>. Returns T_KBLE (consumption events with RBELNR/RBUZEI = consumer FI doc/line — the canonical FR↔FI traceability link without needing BSEG.KBLNR access) AND T_KBLEW (per-currency split CURTP=00 transaction currency, CURTP=10 local USD).",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Without this wrapper FM, FR consumption history is unreachable via standard RFC. Use it whenever you need to know which FI documents consumed a specific FR line.",
+          "related": [
+            "KBLEW",
+            "/SAPPSPRO/PD_GM_FMR2_READ_KBLE",
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ]
+    },
+    "KBLK": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXRSAU01_RPY"
+      ]
+    },
+    "KBLP": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL",
+      "read_by": [
+        "ZXRSAU01_RPY"
       ]
     },
     "PRPS": {
@@ -1576,7 +1891,7 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
         }
       ]
     },
@@ -1694,8 +2009,85 @@
           "type": "READS_FIELD"
         }
       ],
+      "annotations": [
+        {
+          "tag": "HARDCODED_DEFAULT",
+          "finding": "Line 94-101 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011,0007045011,0006045014) x FIKRS=UNES x FISTL=SPACE. No SY-UNAME or USR05 branch. Author SROCHA 16.11.2010. Spronk removed 6044011 on 18.02.2021.",
+          "timestamp": "2026-04-09T13:02:10.434249",
+          "impact": "Every non-HQ UNES user gets FICTR='UNESCO' on bank-clearing rows of F-53/FBZ2/F110 - 187,514 rows affected across 261 users with mixed-FICTR posting history",
+          "line": 99,
+          "session": "#050",
+          "incident": "INC-000005240",
+          "field": "FUND_CENTER",
+          "related": [
+            "fmifiit_full.FISTL",
+            "fund_centers",
+            "USR05",
+            "EXIT_SAPLFMDT_004"
+          ],
+          "session_note": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240.",
+          "observation_only": true,
+          "linked_observation": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+          "not_linked_to": "INC-000005240"
+        },
+        {
+          "tag": "MULTIPLE_HARDCODES",
+          "finding": "File contains 10+ hardcoded C_FMDERIVE-FUND_CENTER and C_FMDERIVE-FUND assignments (lines 85,99,125,137,158,162,179,183,204-216). Each is a potential INC-000005240 class incident waiting to surface.",
+          "timestamp": "2026-04-09T13:02:10.434249",
+          "impact": "Hidden systemic debt: any new reporting practice that groups by FICTR/FOND will expose one of these.",
+          "session": "#050",
+          "incident": "INC-000005240",
+          "session_note": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240.",
+          "observation_only": true,
+          "linked_observation": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+          "not_linked_to": "INC-000005240"
+        },
+        {
+          "tag": "UNESCO_DEV_ERA",
+          "finding": "Authored by S. ROCHA (2010) and I. KONAKOV (2015-2025). Style: nested CASE on FIKRS/GSBER/HKONT with literal string targets. Never refactored into FMDERIVE customer rules despite SROCHA26072010 comment 'Replaced by Derivation Rule' suggesting the intent was to migrate out.",
+          "timestamp": "2026-04-09T13:02:10.434249",
+          "session": "#050",
+          "incident": "INC-000005240",
+          "session_note": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240.",
+          "observation_only": true,
+          "linked_observation": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+          "not_linked_to": "INC-000005240"
+        }
+      ],
+      "claims": [
+        {
+          "id": 27,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "ZXFMDTU02_RPY.abap line 99 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011, 0007045011, 0006045014) with FIKRS=UNES and FISTL=SPACE"
+        },
+        {
+          "id": 28,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "187,514 rows in fmifiit_full (P01 Gold DB) match the ZXFMDTU02_RPY:99 hardcode signature - BUKRS=UNES AND FISTL='UNESCO' AND HKONT in the three bank G"
+        },
+        {
+          "id": 29,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "261 distinct UNES users have mixed-FICTR posting history (proving non-HQ home office) but are affected by the ZXFMDTU02_RPY:99 hardcode on their bank-"
+        },
+        {
+          "id": 30,
+          "tier": "TIER_2",
+          "type": "verified_fact",
+          "claim": "INC-000006073 and INC-000005240 belong to the same defect class: UNESCO FI user exits from the 2010-2018 SROCHA/KONAKOV era contain hardcoded C_FMDERI"
+        }
+      ],
+      "incidents": [
+        "INC-000005240"
+      ],
       "knowledge_docs": [
         "knowledge/code_analysis_control_matrix.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+        "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
         "knowledge/sap_custom_enhancement_registry.md"
       ]
     },
@@ -2045,7 +2437,7 @@
       "annotations": [
         {
           "tag": "FALLBACK",
-          "finding": "BAdI reads PA0027 subtype 02 to derive GSBER when gsbst is initial. CHECK at line 37 EXITS if no subtype 02 record found — does not raise error, silently skips.",
+          "finding": "BAdI reads PA0027 subtype 02 to derive GSBER when gsbst is initial. CHECK at line 37 EXITS if no subtype 02 record found â€” does not raise error, silently skips.",
           "timestamp": "2026-04-09T08:51:14.037438",
           "impact": "If PA0027-02 is expired or missing, GSBER stays empty with no warning",
           "line": 12,
@@ -2059,9 +2451,9 @@
         },
         {
           "tag": "SILENT_EXIT",
-          "finding": "CHECK sy-subrc IS INITIAL — exits method without error if PA0027-02 not found. No log, no warning.",
+          "finding": "CHECK sy-subrc IS INITIAL â€” exits method without error if PA0027-02 not found. No log, no warning.",
           "timestamp": "2026-04-09T08:51:14.087421",
-          "impact": "Invisible failure — BAdI appears to work but does nothing",
+          "impact": "Invisible failure â€” BAdI appears to work but does nothing",
           "line": 37,
           "session": "#048",
           "incident": "INC-000006073"
@@ -2329,7 +2721,23 @@
             "YBASUBST",
             "YFI_BASU_MOD"
           ]
+        },
+        {
+          "tag": "ARCHITECTURE",
+          "finding": "Custom form pool registered via T80D ARBGB='GBLS' (substitution) AND ARBGB='GBLR' (validation) for the FI module. Both the GGB1 substitution framework (SUBSTID='UNESCO') and the GGB0 validation framework (VALID='UNES') dispatch exit-call steps to forms in this pool. Forms include UXR1/UXR2/UZLS (XREF office tagging), U915/U916/U917 (validation checks), UAEP/UATF (asset), U910 (business area), U901/U902/U904/U908 (treasury/payment), UIT1-4 (ICTP MM postings).",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "related": [
+            "T80D",
+            "SUBSTID=UNESCO",
+            "VALID=UNES"
+          ]
         }
+      ],
+      "incidents": [
+        "INC-000005240"
       ],
       "knowledge_docs": [
         "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
@@ -2375,12 +2783,20 @@
           "session": "#011"
         }
       ],
+      "claims": [
+        {
+          "id": 41,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "UNESCO has a systemic manual workaround for missing XREF validation: 21,754 post-posting edits via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents in Q"
+        }
+      ],
       "knowledge_docs": [
         "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
         "knowledge/domains/Transport_Intelligence/process_discovery_research.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md",
         "knowledge/pmo_tracker.md",
-        "knowledge/project_extraction_capabilities.md",
-        "knowledge/session_retros/session_008_retro.md"
+        "knowledge/project_extraction_capabilities.md"
       ]
     },
     "ZXTRVU05": {
@@ -2389,7 +2805,7 @@
       "annotations": [
         {
           "tag": "DISABLED_CODE",
-          "finding": "WHEN OTHERS block — inst_fund_ba_wbs_cc is COMMENTED OUT for all non-UNES company codes (IIEP, IBE, ICBA, ICTP, MGIE, UIL, UIS). Commented by Konakov 2018.",
+          "finding": "WHEN OTHERS block â€” inst_fund_ba_wbs_cc is COMMENTED OUT for all non-UNES company codes (IIEP, IBE, ICBA, ICTP, MGIE, UIL, UIS). Commented by Konakov 2018.",
           "timestamp": "2026-04-09T08:51:14.176051",
           "impact": "Non-UNES company codes have no BusA derivation from fund/WBS in this exit. They rely entirely on SAP standard (line 852) or GGB1.",
           "line": 63,
@@ -2402,7 +2818,7 @@
         },
         {
           "tag": "ACTIVE_CODE",
-          "finding": "UNES company code: FUND_BA_WBS_CC is ACTIVE — derives BusA from fund, WBS, cost center.",
+          "finding": "UNES company code: FUND_BA_WBS_CC is ACTIVE â€” derives BusA from fund, WBS, cost center.",
           "timestamp": "2026-04-09T08:51:14.226981",
           "line": 25,
           "session": "#048"
@@ -2414,6 +2830,12 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "claim": "Three safety nets were broken for INC-000006073: BAdI PA0027-02 expired (2021), ZXTRVU05 commented out (Konakov 2018), GGB1 missing GL 2021011"
+        },
+        {
+          "id": 30,
+          "tier": "TIER_2",
+          "type": "verified_fact",
+          "claim": "INC-000006073 and INC-000005240 belong to the same defect class: UNESCO FI user exits from the 2010-2018 SROCHA/KONAKOV era contain hardcoded C_FMDERI"
         }
       ],
       "incidents": [
@@ -2441,7 +2863,7 @@
           "tag": "AUDIT_FINDING",
           "finding": "3,394 same-user BCM batches (creator=approver). Top: C_LOPEZ 94.7%, I_MARQUAND 92.9% self-approval. HQ treasury manual Wednesday cycle, no 3rd operator.",
           "timestamp": "2026-04-09T08:57:55.155819",
-          "impact": "Dual-control gap — automation debt, not fraud. $656M exposure.",
+          "impact": "Dual-control gap â€” automation debt, not fraud. $656M exposure.",
           "session": "#021",
           "incident": "H13"
         }
@@ -2460,9 +2882,9 @@
       "knowledge_docs": [
         "knowledge/domains/BCM/h13_executive_summary.md",
         "knowledge/domains/BCM/h13_remediation_hypothesis.md",
+        "knowledge/domains/Treasury/bcm_signatory_rules.md",
         "knowledge/domains/Treasury/payment_full_landscape.md",
-        "knowledge/session_plans/session_037_plan.md",
-        "knowledge/session_retros/session027-payment-process-mining-learnings.md"
+        "knowledge/session_plans/session_037_plan.md"
       ]
     },
     "YBASUBST": {
@@ -2508,11 +2930,11 @@
         }
       ],
       "knowledge_docs": [
+        "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
         "knowledge/domains/PSM/REPORTS/yfm1_technical_analysis.md",
         "knowledge/domains/Transport_Intelligence/process_discovery_research.md",
-        "knowledge/domains/financials.md",
-        "knowledge/entity_brain_map.md",
-        "knowledge/incidents/INC-000006073_travel_busarea.md"
+        "knowledge/domains/Treasury/bcm_signatory_rules.md",
+        "knowledge/domains/financials.md"
       ]
     },
     "YCL_FI_ACCOUNT_SUBST_READ": {
@@ -2532,7 +2954,7 @@
       "annotations": [
         {
           "tag": "COVERAGE_GAP",
-          "finding": "IIEP has zero global rules. All 12 entries restricted to doc type Z1 — do NOT apply to TV/TF travel documents.",
+          "finding": "IIEP has zero global rules. All 12 entries restricted to doc type Z1 â€” do NOT apply to TV/TF travel documents.",
           "timestamp": "2026-04-09T08:51:14.691232",
           "session": "#048",
           "incident": "INC-000006073"
@@ -2549,6 +2971,504 @@
         "knowledge/domains/PSM/EXTENSIONS/basu_mod_technical_autopsy.md"
       ]
     },
+    "YFO_CODES": {
+      "type": "CODE_OBJECT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "DICTIONARY",
+          "finding": "UNESCO custom whitelist table for valid Field Office codes. Minimum columns FOCOD (office code) + PAYMT (payment method). Used by YRGGBS00 UXR1 (after writing XREF1, validates against FOCOD; warns w018 ZFI if missing) and YRGGBS00 UXR2 (only in the user-typed ELSE branch; hard error e018 ZFI if missing). Not in Gold DB (KU-027). Contents not yet verified — the JAK code's presence is critical to the AL_JONATHAN fix. Maintained by UNESCO BASIS via SM30.",
+          "timestamp": "2026-04-09T14:39:18.553501Z",
+          "session": "#51",
+          "incident": "INC-000005240",
+          "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+          "impact": "If FOCOD='JAK' is missing when AL_JONATHAN's Y_USERFO is updated to 'JAK', UXR1 will raise w018 warnings on every posting and UXR2 ELSE branch will throw e018 hard errors if he ever manually types 'JAK' on an invoice screen.",
+          "related": [
+            "YRGGBS00/UXR1",
+            "YRGGBS00/UXR2",
+            "USR05.Y_USERFO"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 31,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "At UNESCO, BSEG-XREF1 and BSEG-XREF2 are repurposed as the originating office tag on every FI vendor line item. They are NOT the SAP-standard 'referen"
+        },
+        {
+          "id": 33,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "YRGGBS00 FORM UXR2 has asymmetric validation: (a) auto-write from USR05 is NOT validated against YFO_CODES — it trusts the user parameter blindly; (b)"
+        }
+      ],
+      "incidents": [
+        "INC-000005240"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "knowledge/domains/Treasury/xref_office_tagging_model.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+        "knowledge/session_retros/session_051_retro.md"
+      ]
+    },
+    "YCL_FM_BR_EXCHANGE_RATE_BL": {
+      "type": "CODE_OBJECT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CRITICAL",
+          "finding": "Constructor (CM00A line 8) hardcodes mr_waers = ['EUR']. This is the gate that blocks cross-currency consumption from getting BR treatment in Camp B enhancements. mr_waers2 (Staff variant) includes both EUR + USD but is dead code (only called from IF 1=2 branches). The complete cross-currency method convert_to_currency_2 (CM002) exists, is production-transported, but never runs.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Every USD consumption posting against an EUR-loaded BR fund silently bypasses BR conversion and persists at identity, drifting the AVC pool fund-by-fund until FMAVC005 fires.",
+          "line": 8,
+          "related": [
+            "ZFIX_EXCHANGERATE_AVC",
+            "ZFIX_EXCHANGERATE_FI",
+            "ZFIX_EXCHANGERATE_NEW_ITEM",
+            "ZFIX_EXCHANGERATE_KBLEW",
+            "ZFIX_EXCHANGERATE_PAYCOMMIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "knowledge_docs": [
+        "knowledge/domains/FI/fi_enhancements_analysis.md",
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/entity_brain_map.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_BR_BAPI_EMPLOYEE_POST": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_D_AUXILIARY",
+          "finding": "ZFIX_BR_BAPI_EMPLOYEE_POST is Camp D: payroll/BAPI bridge. Out of scope for the cross-currency bug. Handles HRPAY runid bookkeeping and BAPI account data setting respectively.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_BR_REVALUATION": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_C_FILTER",
+          "finding": "Camp C: filter-only enhancement, no BR conversion. Fires only on FMN4N (PO commitment recalc). DELETES rows from t_fmoi/u_t_fmioi_buf where fikrs<>'UNES' OR twaer<>'EUR' OR bus_area<>'GEF' OR ftype not in mr_fund_type. Effect: revaluation excludes USD rows on EUR-loaded funds → drift cleanup tools cannot fix the cross-currency gap.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "If you try to run FMN4N to clean up drift, this enhancement removes the very rows that need cleaning. Need to either temporarily deactivate this enhancement or extend H39 to handle USD rows on EUR-loaded funds.",
+          "related": [
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_BR_REVAL_RESFUND": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_C_FILTER",
+          "finding": "Camp C: filter-only. Fires on FMZZ (Reservation Fund Revaluation report). Sets testlauf='X' (TEST RUN ONLY — never persists). Filters non-EUR rows out. Inert in production except for reporting purposes.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "related": [
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_EF_FUND_RESERVATION": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_A_FR_ANCHORED",
+          "finding": "ZFIX_EF_FUND_RESERVATION is Camp A: gate input iv_waers reads the FR's own currency (kblk-waers/kbld-waers). Always passes for EUR FRs regardless of consumption posting currency. SAFE for the cross-currency bug — it does not contribute to drift. CHECK_CONS specifically uses SAVE/RESTORE pattern (Enh1 saves m_t_addref, recalcs at BR; Enh2 restores) — nothing persisted, only EF check sees BR.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Reading these enhancements alone gives a misleading picture that BR works correctly. The bug is in Camp B (NEW_ITEM/AVC/KBLEW/FI/PAYCOMMIT) which use posting-currency for the gate.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_AVC": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_B_POSTING_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_AVC is Camp B: gate input iv_waers reads the per-row posting currency (twaer/<*>-waers). FAILS silently when consumption is non-EUR. Standard SAP then persists the row at identity (FKBTR=TRBTR for USD) or at standard M-rate. This is the silent drift-injector.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Each non-EUR consumption posting that hits this enhancement contributes drift to the AVC pool. Across 458 funds in P01, lifetime drift volume is ~$375M with ~$35.7M estimated drift exposure.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG",
+            "FMAVCT",
+            "FMIOI",
+            "FMIFIIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_CHECK_CONS": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_A_FR_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_CHECK_CONS is Camp A: gate input iv_waers reads the FR's own currency (kblk-waers/kbld-waers). Always passes for EUR FRs regardless of consumption posting currency. SAFE for the cross-currency bug — it does not contribute to drift. CHECK_CONS specifically uses SAVE/RESTORE pattern (Enh1 saves m_t_addref, recalcs at BR; Enh2 restores) — nothing persisted, only EF check sees BR.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Reading these enhancements alone gives a misleading picture that BR works correctly. The bug is in Camp B (NEW_ITEM/AVC/KBLEW/FI/PAYCOMMIT) which use posting-currency for the gate.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_FI": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_B_POSTING_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_FI is Camp B: gate input iv_waers reads the per-row posting currency (twaer/<*>-waers). FAILS silently when consumption is non-EUR. Standard SAP then persists the row at identity (FKBTR=TRBTR for USD) or at standard M-rate. This is the silent drift-injector.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Each non-EUR consumption posting that hits this enhancement contributes drift to the AVC pool. Across 458 funds in P01, lifetime drift volume is ~$375M with ~$35.7M estimated drift exposure.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG",
+            "FMAVCT",
+            "FMIOI",
+            "FMIFIIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_FUNDBLOCK": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_A_FR_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_FUNDBLOCK is Camp A: gate input iv_waers reads the FR's own currency (kblk-waers/kbld-waers). Always passes for EUR FRs regardless of consumption posting currency. SAFE for the cross-currency bug — it does not contribute to drift. CHECK_CONS specifically uses SAVE/RESTORE pattern (Enh1 saves m_t_addref, recalcs at BR; Enh2 restores) — nothing persisted, only EF check sees BR.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Reading these enhancements alone gives a misleading picture that BR works correctly. The bug is in Camp B (NEW_ITEM/AVC/KBLEW/FI/PAYCOMMIT) which use posting-currency for the gate.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_KBLEW": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_B_POSTING_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_KBLEW is Camp B: gate input iv_waers reads the per-row posting currency (twaer/<*>-waers). FAILS silently when consumption is non-EUR. Standard SAP then persists the row at identity (FKBTR=TRBTR for USD) or at standard M-rate. This is the silent drift-injector.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Each non-EUR consumption posting that hits this enhancement contributes drift to the AVC pool. Across 458 funds in P01, lifetime drift volume is ~$375M with ~$35.7M estimated drift exposure.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG",
+            "FMAVCT",
+            "FMIOI",
+            "FMIFIIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_NEW_ITEM": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_B_POSTING_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_NEW_ITEM is Camp B: gate input iv_waers reads the per-row posting currency (twaer/<*>-waers). FAILS silently when consumption is non-EUR. Standard SAP then persists the row at identity (FKBTR=TRBTR for USD) or at standard M-rate. This is the silent drift-injector.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Each non-EUR consumption posting that hits this enhancement contributes drift to the AVC pool. Across 458 funds in P01, lifetime drift volume is ~$375M with ~$35.7M estimated drift exposure.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG",
+            "FMAVCT",
+            "FMIOI",
+            "FMIFIIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ]
+    },
+    "ZFIX_EXCHANGERATE_PAYCOMMIT": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_B_POSTING_ANCHORED",
+          "finding": "ZFIX_EXCHANGERATE_PAYCOMMIT is Camp B: gate input iv_waers reads the per-row posting currency (twaer/<*>-waers). FAILS silently when consumption is non-EUR. Standard SAP then persists the row at identity (FKBTR=TRBTR for USD) or at standard M-rate. This is the silent drift-injector.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Each non-EUR consumption posting that hits this enhancement contributes drift to the AVC pool. Across 458 funds in P01, lifetime drift volume is ~$375M with ~$35.7M estimated drift exposure.",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL",
+            "INC-BUDGETRATE-EQG",
+            "FMAVCT",
+            "FMIOI",
+            "FMIFIIT"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md"
+      ]
+    },
+    "ZFIX_FM_BR_POST_FROM_PY_AUTO": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "CAMP_D_AUXILIARY",
+          "finding": "ZFIX_FM_BR_POST_FROM_PY_AUTO is Camp D: payroll/BAPI bridge. Out of scope for the cross-currency bug. Handles HRPAY runid bookkeeping and BAPI account data setting respectively.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "related": [
+            "YCL_FM_BR_EXCHANGE_RATE_BL"
+          ]
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
+    "ZFIX_BR_AVC_EXCLUSIONS": {
+      "type": "ENHANCEMENT",
+      "domain": "CTS",
+      "annotations": [
+        {
+          "tag": "DEAD_CODE_IN_PROD",
+          "finding": "BAdI implementation of FMAVC_ENTRY_FILTER. Created 2025-05-14 in D01 (transports D01K9B0D4Z + D01K9B0D50). Deactivated next day 2025-05-15 (transports D01K9B0D54 + D01K9B0D55). Exists only in D01 + V01 — absent from TS1, TS3, P01. Logic only in BUDGET_FILTER (wrong method — should be POSTING_FILTER for consumption); whitelist hardcoded to MIRO + F110. POSTING_FILTER is empty stub. NEVER affected production AVC behavior. PMO H38 to delete from D01+V01.",
+          "timestamp": "2026-04-13T17:36:53.424754",
+          "session": "#053",
+          "incident": "INC-BUDGETRATE-EQG",
+          "impact": "Do NOT cite this BAdI as evidence that 'MIRO/F110 are silenced in production'. They are not. AVC fires equally for all tcodes in P01.",
+          "related": [
+            "FMAVC_ENTRY_FILTER",
+            "IF_EX_FMAVC_ENTRY_FILTER",
+            "INC-BUDGETRATE-EQG",
+            "PMO_H38"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "id": 45,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "ZFIX_BR_AVC_EXCLUSIONS BAdI is dead code in P01 production. Created by JP_LOPEZ on 2025-05-14 in D01 (transports D01K9B0D4Z + D01K9B0D50, 'BR - AVC Ex"
+        }
+      ],
+      "incidents": [
+        "INC-BUDGETRATE-EQG"
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
+    },
     "PRPS.POSID": {
       "type": "TABLE_FIELD",
       "domain": "DATA_MODEL"
@@ -2560,6 +3480,22 @@
         "knowledge/project_extraction_capabilities.md"
       ]
     },
+    "BKPF.TCODE": {
+      "type": "TABLE_FIELD",
+      "domain": "DATA_MODEL",
+      "claims": [
+        {
+          "id": 36,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "F-53 is a SAP parameter transaction that wraps FBZ2. When a user enters F-53 from the menu, SAP stores BKPF.TCODE='FBZ2' (the commit-time TCODE), NOT "
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/domains/Treasury/xref_office_tagging_model.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md"
+      ]
+    },
     "BSAK": {
       "type": "SAP_TABLE",
       "domain": "DATA_MODEL",
@@ -2568,7 +3504,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -2586,7 +3528,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -2598,7 +3546,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -2610,7 +3564,13 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -2631,13 +3591,19 @@
           "id": 7,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
+          "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query"
         },
         {
           "id": 10,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+          "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI â€” perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level."
+        },
+        {
+          "id": 37,
+          "tier": "HIGH",
+          "type": "data_quality_gap",
+          "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL"
         }
       ]
     },
@@ -2974,7 +3940,7 @@
           "id": 3,
           "tier": "TIER_1",
           "type": "superseded",
-          "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026"
+          "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026"
         }
       ],
       "knowledge_docs": [
@@ -2993,7 +3959,7 @@
           "id": 3,
           "tier": "TIER_1",
           "type": "superseded",
-          "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026"
+          "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026"
         }
       ],
       "knowledge_docs": [
@@ -3046,13 +4012,25 @@
     "GB901": {
       "type": "SAP_TABLE",
       "domain": "DATA_MODEL",
+      "claims": [
+        {
+          "id": 38,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "UNESCO's substitution SUBSTID='UNESCO' (GB922, 17 steps at callpoint 3 — complete document) does NOT have a step-to-prerequisite linking table accessi"
+        }
+      ],
       "knowledge_docs": [
         "Brain_Architecture/code_brain_strategy.md",
         "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
         "knowledge/domains/Travel/README.md",
         "knowledge/domains/Travel/travel_brain_edges.md",
-        "knowledge/incidents/INC-000006073_travel_busarea.md"
+        "knowledge/domains/Treasury/xref_office_tagging_model.md"
       ]
+    },
+    "T80D": {
+      "type": "SAP_TABLE",
+      "domain": "DATA_MODEL"
     },
     "PTRV_SCOS": {
       "type": "SAP_TABLE",
@@ -3060,7 +4038,7 @@
       "annotations": [
         {
           "tag": "EVIDENCE",
-          "finding": "Trip cost assignment table. COMP_CODE field drives same-company vs intercompany posting. Trip 0101004544 had COMP_CODE=UNES (first time for this traveler) — caused the failure.",
+          "finding": "Trip cost assignment table. COMP_CODE field drives same-company vs intercompany posting. Trip 0101004544 had COMP_CODE=UNES (first time for this traveler) â€” caused the failure.",
           "timestamp": "2026-04-09T08:51:14.642121",
           "session": "#048",
           "incident": "INC-000006073",
@@ -3177,14 +4155,20 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "claim": "VENDOR account group KTOKK=SCSA uses AKONT=2021011 which has NO GGB1 substitution rule for business area"
+        },
+        {
+          "id": 38,
+          "tier": "HIGH",
+          "type": "verified_fact",
+          "claim": "UNESCO's substitution SUBSTID='UNESCO' (GB922, 17 steps at callpoint 3 — complete document) does NOT have a step-to-prerequisite linking table accessi"
         }
       ],
       "knowledge_docs": [
         "Brain_Architecture/code_brain_strategy.md",
         "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
+        "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
         "knowledge/domains/Travel/README.md",
-        "knowledge/domains/Travel/travel_brain_edges.md",
-        "knowledge/incidents/INC-000006073_travel_busarea.md"
+        "knowledge/domains/Travel/travel_brain_edges.md"
       ]
     },
     "ECPAO_OM_OBJECT_EXTRACTION": {
@@ -3195,7 +4179,7 @@
           "id": 8,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "SuccessFactors EC IS ACTIVE in P01 — not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs"
+          "claim": "SuccessFactors EC IS ACTIVE in P01 â€” not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 ru"
         }
       ],
       "knowledge_docs": [
@@ -3212,7 +4196,7 @@
           "id": 8,
           "tier": "TIER_1",
           "type": "verified_fact",
-          "claim": "SuccessFactors EC IS ACTIVE in P01 — not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs"
+          "claim": "SuccessFactors EC IS ACTIVE in P01 â€” not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 ru"
         }
       ],
       "knowledge_docs": [
@@ -3238,7 +4222,7 @@
       "annotations": [
         {
           "tag": "CRITICAL_FIELD",
-          "finding": "FPAYP.XREF3 carries the PurposeCode value for DMEE tree SEPA payments. Read by DMEE node N_9662041050. Not a static literal — runtime field mapping.",
+          "finding": "FPAYP.XREF3 carries the PurposeCode value for DMEE tree SEPA payments. Read by DMEE node N_9662041050. Not a static literal â€” runtime field mapping.",
           "timestamp": "2026-04-09T08:57:54.958340",
           "impact": "This is the source of the SEPA Purpose Code that was hunted for 5+ sessions.",
           "session": "#039",
@@ -3288,6 +4272,71 @@
         "knowledge/domains/Treasury/payment_full_landscape.md",
         "knowledge/session_retros/session_026_retro.md"
       ]
+    },
+    "INC-BUDGETRATE-EQG": {
+      "type": "INCIDENT",
+      "domain": "Support",
+      "other_edges": [
+        {
+          "to": "YCL_FM_BR_EXCHANGE_RATE_BL",
+          "type": "ROOT_CAUSED_BY"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_CHECK_CONS",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EF_FUND_RESERVATION",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_FUNDBLOCK",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_AVC",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_FI",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_NEW_ITEM",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_KBLEW",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_EXCHANGERATE_PAYCOMMIT",
+          "type": "CONTRIBUTING_FACTOR"
+        },
+        {
+          "to": "ZFIX_BR_REVALUATION",
+          "type": "CONTRIBUTING_FACTOR"
+        }
+      ],
+      "claims": [
+        {
+          "id": 44,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION /"
+        },
+        {
+          "id": 46,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "AVC available is a fund/cover-group level metric, not an FR-line-level metric. All FR lines on the same (FONDS, FUNDSCTR, CMMTITEM-rolled-to-control-o"
+        }
+      ],
+      "knowledge_docs": [
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+        "knowledge/session_retros/session_053_retro.md"
+      ]
     }
   },
   "indexes": {
@@ -3314,6 +4363,41 @@
           "FPAYP"
         ]
       },
+      "INC-000005240": {
+        "status": "ROOT_CAUSE_CONFIRMED",
+        "title": "F-53 manual payment writes XREF1/XREF2='HQ' instead of 'JAK' for Jakarta user",
+        "domain": "FI",
+        "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+        "root_cause_summary": "AL_JONATHAN's USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. YRGGBS00 form UXR1 (line 996) writes bseg_xref1 = usr05-parva unconditionally (guard commented out). UXR2 (line 1024) writes bseg_xref2 = usr05-parva when XREF2 is blank (always true on F-53 since the screen hides the field). Both run",
+        "fix_immediate": "",
+        "related_objects": [
+          "BSEG.XREF1",
+          "BSEG.XREF2",
+          "BSEG.ZLSCH",
+          "GB901",
+          "GB922",
+          "GB93",
+          "GB931",
+          "PA0001",
+          "PA0001.BTRTL",
+          "PA0001.WERKS",
+          "PA0105",
+          "SUBSTID=UNESCO",
+          "T80D",
+          "USR05",
+          "USR05.Y_USERFO",
+          "VALID=UNES",
+          "YFO_CODES",
+          "YRGGBS00",
+          "YRGGBS00/U915",
+          "YRGGBS00/U916",
+          "YRGGBS00/U917",
+          "YRGGBS00/UXR1",
+          "YRGGBS00/UXR2",
+          "YRGGBS00/UZLS",
+          "ZXFMDTU02_RPY"
+        ]
+      },
       "INC-000006073": {
         "status": "ROOT_CAUSE_CONFIRMED",
         "title": "PRRW Travel posting RW609 + ZFI020 for IIEP traveler on UNES-funded trip",
@@ -3336,6 +4420,53 @@
           "ZCL_IM_TRIP_POST_FI_CM00A",
           "ZXTRVU05"
         ]
+      },
+      "INC-000006313": {
+        "status": "CLOSED",
+        "title": "Add Said OULD AHMEDOU VOFFAL to UIS BCM signatory panel",
+        "domain": "Treasury",
+        "analysis_doc": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md",
+        "root_cause_summary": "Not a defect. Operational change request forwarded from TRS. Said returned as UNESCO staff on 2026-03-22 (PA0002 new record) and was reinstated on the UIS Citibank Canada authorized signatory panel by TRS letter FIN.8/MOD/10.0000003625 dated 02/04/2026. His prior UIS BCM assignments had expired betw",
+        "fix_immediate": "DBS added 2 HRP1001 rows via OOCU_RESP in P01 (SOBID=10092400, BEGDA=20260409, ENDDA=99991231) on 2026-04-09. BEGDA used execution date instead of letter date 2026-04-02 (7-day audit gap, low material risk).",
+        "related_objects": []
+      },
+      "INC-BUDGETRATE-EQG": {
+        "status": "ROOT_CAUSE_CONFIRMED",
+        "title": "Budget Rate custom solution allows cross-currency consumption against EUR-reserved FR -> AVC pool drift -> FMAVC005",
+        "domain": "PSM",
+        "analysis_doc": "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "root_cause_summary": "15-member ZFIX_EXCHANGERATE composite has gate-input asymmetry: Camp A (FR-anchored: CHECK_CONS, EF_FUND_RESERVATION, FUNDBLOCK) always fires for EUR FRs; Camp B (posting-anchored: PAYCOMMIT, NEW_ITEM, AVC, KBLEW, FI) silently skips when posting currency is not EUR. FR persisted at BR (1.09529); con",
+        "fix_immediate": "",
+        "related_objects": [
+          "/SAPPSPRO/PD_GM_FMR2_READ_KBLE",
+          "CL_FM_EF_POSITION",
+          "FMAVCT",
+          "FMFINCODE",
+          "FMFUNDTYPE.ZZFIX_RATE",
+          "FMIFIIT",
+          "FMIOI",
+          "KBLE",
+          "KBLEW",
+          "KBLK",
+          "KBLP",
+          "TCURR",
+          "TVARVC.Y_FM_FIXED_RATE_START",
+          "YCL_FM_BR_EXCHANGE_RATE_BL",
+          "ZFIX_BR_AVC_EXCLUSIONS",
+          "ZFIX_BR_BAPI_EMPLOYEE_POST",
+          "ZFIX_BR_REVALUATION",
+          "ZFIX_BR_REVAL_RESFUND",
+          "ZFIX_EF_FUND_RESERVATION",
+          "ZFIX_EXCHANGERATE",
+          "ZFIX_EXCHANGERATE_AVC",
+          "ZFIX_EXCHANGERATE_CHECK_CONS",
+          "ZFIX_EXCHANGERATE_FI",
+          "ZFIX_EXCHANGERATE_FUNDBLOCK",
+          "ZFIX_EXCHANGERATE_KBLEW",
+          "ZFIX_EXCHANGERATE_NEW_ITEM",
+          "ZFIX_EXCHANGERATE_PAYCOMMIT",
+          "ZFIX_FM_BR_POST_FROM_PY_AUTO"
+        ]
       }
     },
     "by_domain": {
@@ -3346,6 +4477,32 @@
         "FPAYP",
         "FPAYP.XREF3",
         "REGUP"
+      ],
+      "CTS": [
+        "YTFI_PPC_STRUC",
+        "BSEG",
+        "YRGGBS00",
+        "GGB1",
+        "ZXTRVU05",
+        "YFI_BASU_MOD",
+        "RFC_READ_TABLE",
+        "YCL_FI_ACCOUNT_SUBST_READ",
+        "YFO_CODES",
+        "YCL_FM_BR_EXCHANGE_RATE_BL",
+        "ZFIX_EXCHANGERATE",
+        "ZFIX_BR_BAPI_EMPLOYEE_POST",
+        "ZFIX_BR_REVALUATION",
+        "ZFIX_BR_REVAL_RESFUND",
+        "ZFIX_EF_FUND_RESERVATION",
+        "ZFIX_EXCHANGERATE_AVC",
+        "ZFIX_EXCHANGERATE_CHECK_CONS",
+        "ZFIX_EXCHANGERATE_FI",
+        "ZFIX_EXCHANGERATE_FUNDBLOCK",
+        "ZFIX_EXCHANGERATE_KBLEW",
+        "ZFIX_EXCHANGERATE_NEW_ITEM",
+        "ZFIX_EXCHANGERATE_PAYCOMMIT",
+        "ZFIX_FM_BR_POST_FROM_PY_AUTO",
+        "ZFIX_BR_AVC_EXCLUSIONS"
       ],
       "CUSTOM": [
         "Z_WF_FI_EXCLUDE_NOTIF_EMAIL",
@@ -3367,25 +4524,27 @@
         "ZXTRVU03_RPY",
         "ZXTRVU03_V2"
       ],
-      "CTS": [
-        "BSEG",
-        "YRGGBS00",
-        "GGB1",
-        "ZXTRVU05",
-        "YFI_BASU_MOD",
-        "RFC_READ_TABLE",
-        "YCL_FI_ACCOUNT_SUBST_READ"
-      ],
       "DATA_MODEL": [
+        "USR05",
         "BSIK",
         "PA0001",
+        "PA0105",
+        "PA0002",
+        "PA0001.BTRTL",
         "PA0001.WERKS",
         "T001",
         "LFB1",
         "LFA1",
+        "LFBK",
+        "TCURR",
         "BKPF",
         "EKKO",
+        "FMFINCODE",
         "FMIFIIT",
+        "FMIOI",
+        "KBLE",
+        "KBLK",
+        "KBLP",
         "PRPS",
         "PRPS.OBJNR",
         "CDHDR",
@@ -3394,6 +4553,7 @@
         "YTFI_BA_SUBST",
         "PRPS.POSID",
         "BKPF.BELNR",
+        "BKPF.TCODE",
         "BSAK",
         "BSID",
         "BSAD",
@@ -3416,6 +4576,7 @@
         "FEBRE",
         "T012T",
         "GB901",
+        "T80D",
         "PTRV_SCOS",
         "PTRV_SCOS.COMP_CODE",
         "BNKA",
@@ -3498,6 +4659,9 @@
       "BASIS": [
         "ECPAO_OM_OBJECT_EXTRACTION",
         "ECPAO_EMPL_EXTRACTION"
+      ],
+      "Support": [
+        "INC-BUDGETRATE-EQG"
       ]
     },
     "uncertain_claims": [
@@ -3510,13 +4674,13 @@
     "superseded_claims": [
       {
         "id": 3,
-        "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+        "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026",
         "resolution": "Always check _2024_2026 suffix tables. Unsuffixed tables are truncated first attempts."
       },
       {
         "id": 13,
         "claim": "OP documents bypass F110, BCM, DMEE, and SWIFT entirely",
-        "resolution": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed."
+        "resolution": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUHâ†’OP=0 confirmed."
       },
       {
         "id": 14,
@@ -3546,7 +4710,7 @@
       {
         "id": 19,
         "claim": "D/E/F/P prefixes in T010P TABKEY are functional period types",
-        "resolution": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types."
+        "resolution": "D/E/F/P are language keys (Deutsch, English, FranÃ§ais, Portuguese). Multi-language text variants, not functional types."
       },
       {
         "id": 20,
@@ -4107,6 +5271,213 @@
       "severity": "HIGH",
       "created_session": 50,
       "source_file": "session_050_brain_v3_eval"
+    },
+    {
+      "id": "feedback_main_agent_holds_incident_context",
+      "rule": "The MAIN agent executes the incident-analyst 7-step workflow directly. Do NOT delegate parse / brain lookup / code trace / root cause to a subagent.",
+      "why": "On INC-000005240, delegating to a subagent cost 154K tokens, lost the raw .eml source, and produced a wrong root cause. The subagent conflated 'HQ' (office code, current incident) with 'UNESCO' (fund center default from INC-000006073 in brain memory) and pursued an unrelated FMDERIVE hardcoding defect. Main agent loses context when it hands the whole workflow to a subagent, and user corrections cannot reach the subagent mid-flight.",
+      "how_to_apply": "1. Main agent reads the .eml directly. No Agent tool call for PARSE.\n2. Main agent reads brain_state.json, annotations, claims, incidents directly.\n3. Main agent reads extracted code files directly (Read tool) and cites lines.\n4. Main agent writes the analysis doc in its own turn.\n5. Subagents are only used for narrow mechanical sub-tasks (e.g., 'grep all forms in YRGGBS00 that write XREF2') where the output is a deterministic list, not a judgment call.\n6. Never: Agent(subagent_type='incident-analyst', prompt='process this incident end-to-end').",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_main_agent_holds_incident_context.md"
+    },
+    {
+      "id": "feedback_brain_rebuild_after_finalized",
+      "rule": "python brain_v2/rebuild_all.py runs ONLY as the LAST step of the incident workflow, AFTER the user has explicitly confirmed the root cause. Never mid-investigation.",
+      "why": "On INC-000005240, the subagent planned to run rebuild_all.py with provisional claims in place. This would have baked a wrong hypothesis (FMDERIVE fund center hardcoding) into brain_state.json as if it were a confirmed fact, poisoning future queries and wasting the rebuild cost. Rebuild is expensive and destructive — it overwrites the current brain_state with the latest provisional state.",
+      "how_to_apply": "1. Every claim/annotation/incident written during investigation carries status: 'provisional' (or TIER_3_provisional for claims).\n2. Present findings to the user. Wait for explicit approval.\n3. Only after approval: flip every provisional flag to confirmed, then run rebuild_all.py.\n4. Validate _coverage.pct_classified did not decrease and blind_spots did not grow.\n5. If the user corrects direction, revert provisional entries to status: wrong_mechanism before rebuild.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_brain_rebuild_after_finalized.md"
+    },
+    {
+      "id": "feedback_user_term_to_sap_field_translation",
+      "rule": "Section 1 of every incident report must contain a 'user term → SAP field' translation table BEFORE any code search begins. Never assume a keyword in this incident means the same thing as in a past one.",
+      "why": "On INC-000005240, 'HQ' was the office code written to BSEG.XREF2 by substitution form UXR2 reading USR05-PARVA. On INC-000006073, 'UNESCO' was the fund center default hardcoded in ZXFMDTU02_RPY FMDERIVE exit. Both were UNESCO-related defaults, both involved USR05, both lived in the FI stack — but they were completely different mechanisms with completely different fixes. The subagent crossed the wires because it read INC-000006073 from brain memory and assumed the same mechanism applied.",
+      "how_to_apply": "1. Before grepping code or reading brain objects, write a three-column table: [user's literal words] → [candidate SAP field/object] → [confidence: LOW/MEDIUM/HIGH].\n2. If a keyword has multiple plausible mappings, list all of them. Eliminate through the code trace, not through brain-memory recall.\n3. Every incident report (Section 1.5) must include this table.\n4. When investigating an incident whose keywords overlap with a prior incident, explicitly reject the assumption that the mechanism is the same. Start the code trace from zero.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_user_term_to_sap_field_translation.md"
+    },
+    {
+      "id": "feedback_process_before_root_cause",
+      "rule": "Write 'How it should work' (the intended process flow, with file:line citations) BEFORE writing 'Why it fails'. If you cannot draw the intended flow, you haven't earned a root cause.",
+      "why": "On INC-000005240, the subagent jumped directly from email parse to root cause hypothesis, landing on a mechanism (FMDERIVE fund center) that doesn't even touch the fields mentioned in the symptom (BSEG.XREF1/XREF2). Understanding the process first is what separates a code review from a root cause analysis.",
+      "how_to_apply": "1. The canonical incident document has Section 3 'How [mechanism] Works' BEFORE Section 4 'Investigation'. Write them in order.\n2. Section 3 is a numbered narrative: 'Step 1: user opens TCODE → SAP builds draft BKPF. Step 2: substitution callpoint 0002 fires → walks the step chain. Step 3: form UXR2 reads USR05 WHERE PARID=Y_USERFO → sets BSEG.XREF2.' etc. Every step cites a file:line.\n3. Only after Section 3 is complete, allow yourself to hypothesize 'why it fails'.\n4. If you find yourself writing the root cause first, stop, delete it, and start with the process flow.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_process_before_root_cause.md"
+    },
+    {
+      "id": "feedback_psm_extensions_is_fi_substitution_home",
+      "rule": "FI substitution and validation autopsy knowledge lives under knowledge/domains/PSM/EXTENSIONS/ - NOT under knowledge/domains/FI/. Before investigating any FI substitution/validation/BTE/exit incident, read finance_validations_and_substitutions_autopsy.md, validation_substitution_matrix.md, validation_substitution_autopsy.md, basu_mod_technical_autopsy.md, and posting_derivation_technical_autopsy.md from that folder.",
+      "why": "INC-000005240 lost hours re-deriving YRGGBS00 structure, YXUSER bypass, U904/U915/U917, BASU framework - all of which were already documented in PSM/EXTENSIONS. The docs were misfiled under PSM historically because FI validation was originally extended by the PSM team, but they are the authoritative FI substitution/validation reference.",
+      "how_to_apply": "For any incident mentioning substitution, validation, YRGGBS00, GGB0, GGB1, BOOLEXP, GB901, GB922, GB93, GB931, UXR*, U9*, UAEP, UATF, BASU, YTFI_BA_SUBST, YXUSER, or any FI derivation topic: grep knowledge/domains/PSM/EXTENSIONS/ and knowledge/domains/FI/ at the start of the investigation (Step 2 BRAIN LOOKUP). Read every autopsy doc in PSM/EXTENSIONS whose title matches. Document in the incident report which existing docs filled which gaps and which gaps this incident fills.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_psm_extensions_is_fi_substitution_home.md"
+    },
+    {
+      "id": "feedback_bseg_union_has_no_xref",
+      "rule": "The Gold DB view bseg_union does NOT carry BSEG-XREF1 / BSEG-XREF2 / BSEG-XREF3 columns. Never claim XREF is blank or XREF is set to X based on a bseg_union query - those columns do not exist in the view.",
+      "why": "INC-000005240 claimed substitution fires only on vendor lines, GL lines have blank XREF based on reading bseg_union. The claim was wrong because bseg_union's schema does not include XREF1/XREF2/XREF3. I was reading an empty value from a non-existent field and misinterpreting it as blank in live data. CDPOS then contradicted the claim.",
+      "how_to_apply": "1. PRAGMA table_info(bseg_union) at the start of any XREF-related query to confirm the schema. 2. If the investigation needs XREF values, go directly to live RFC on BSAK / BSAS / BSIS / BSIK / BSAD / BSID (the view's source tables, which DO carry XREF). 3. If the Gold DB must carry XREF values, enrich bseg_union with a targeted re-extraction (KU-028 class). 4. Never cite a bseg_union query result as proof of XREF state.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_bseg_union_has_no_xref.md"
+    },
+    {
+      "id": "feedback_empirical_over_theoretical_substitution",
+      "rule": "For substitution/validation rule behavior, empirical evidence (CDPOS change history, AUGBL trace, live RFC BSAK reads) always beats theoretical inference from BOOLID naming conventions or GB901 BOOLEXP parsing. The GGB framework has multiple configuration layers and some may be inaccessible via RFC_READ_TABLE.",
+      "why": "INC-000005240 speculated for hours about whether the UXR1/UXR2 step prerequisite was 3UNESCO#013 (KOART=K) or 3UNESCO#017 (always-true) or an empty prerequisite (always fires). Each hypothesis produced a different prediction about F-53 vs F110 behavior. The answer came from CDPOS on one specific doc (3100003438 line 001 had VALUE_OLD=HQ on the bank GL line) - empirical proof trumped multiple rounds of inference. GB905/GB921 were empty in the RFC probe, confirming the step-prerequisite linking is not in standard tables at UNESCO.",
+      "how_to_apply": "1. When investigating a substitution/validation behavior, run the EMPIRICAL test first: CDPOS on one representative document, AUGBL trace for clearing, RFC BSAK for the actual XREF values. 2. Use GB901/GB922/GB93/GB931 content to EXPLAIN the observation, not to PREDICT it. 3. If empirical and theoretical disagree, trust the empirical result - theoretical gaps usually mean the GGB configuration uses a mechanism not in the tables we can see (custom code, BAdI, BTE, or a table that is inaccessible). 4. Before claiming a step does or does not fire, pull at least ONE live document through CDPOS.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_empirical_over_theoretical_substitution.md"
+    },
+    {
+      "id": "feedback_metadata_vs_real_bseg_lines",
+      "rule": "Distinguish REAL business BSEG lines from METADATA / linkage-only BSEG lines when analyzing substitution, XREF, or any line-level financial attribution. BSCHL=27/37 zero-balancing clearing pairs, technical offsets in zero-net clearings, and similar engine-generated linkage records are metadata, not real business events - their XREF/GSBER/KOSTL values are cosmetic.",
+      "why": "INC-000005240 initially flagged L_HANGI's 18K FB1K documents as a 1300x blast radius structural risk based on the clearing-pair BSEG lines carrying the clearing user XREF. The claim was correct in the strict sense (the BSEG records do exist with wrong XREF), but overstated because the clearing pair (BSCHL=27/37) is a zero-balancing metadata pattern that has no financial impact - the original invoice line XREF is preserved unchanged. Downstream consumers that correctly filter BSCHL or join via AUGBL to the original open item see the correct attribution.",
+      "how_to_apply": "1. When counting affected documents, distinguish BSCHL=25 (real outgoing payment), BSCHL=31 (real vendor credit/invoice), BSCHL=50 (real bank side on F110/F-53) from BSCHL=27/37 (metadata zero-balancing pair for FB1K/SAPF124 clearings). 2. Severity HIGH applies to real lines; severity LOW to metadata. 3. For FB1K zero-balancing clearings, trace through AUGBL to the ORIGINAL invoice line - the invoice XREF is the business-meaningful value, not the clearing pair. 4. Document the distinction explicitly in the incident report so consumers know which numbers matter.",
+      "severity": "MEDIUM",
+      "created_session": "#051",
+      "source_file": "feedback_metadata_vs_real_bseg_lines.md"
+    },
+    {
+      "id": "feedback_no_learning_capture_mid_investigation",
+      "rule": "Do NOT update knowledge domain docs, do NOT write feedback rules, do NOT update brain_v2 layers, and do NOT run rebuild_all.py while the investigation is still in flight. All knowledge capture happens at the finalization stage, after the user has confirmed the root cause and conclusions.",
+      "why": "On INC-000005240, the main agent tried to write process learnings and update the incident-analyst SKILL mid-investigation, before the conclusions were finalized. The user stopped it with 'you cannot capture learning until we finish'. The reason: premature capture enshrines hypotheses as facts, poisons future queries, and may need to be reverted when the investigation pivots. Only at the end, when all conclusions are confirmed, should knowledge artifacts be written.",
+      "how_to_apply": "1. Throughout the investigation, keep learnings as working memory (within the conversation context) only. 2. The incident report (knowledge/incidents/INC-id_slug.md) is the ONE exception - it is the active working document and can be updated continuously. 3. All OTHER artifacts (knowledge/domains/, .agents/skills/, brain_v2/*) are held until the user confirms conclusions. 4. When the user says investigation finished or update everything, execute the full finalization pass: feedback rules -> wrong-path triage -> domain docs -> brain layers -> rebuild. 5. Never rebuild brain_state.json mid-investigation - it is the last step always.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_no_learning_capture_mid_investigation.md"
+    },
+    {
+      "id": "feedback_extract_ggb_tables_for_substitution_incidents",
+      "rule": "For any incident touching FI substitution or validation, extract GB93 (validation header), GB931 (validation steps), GB905 (substitution step header, if present), GB921 (substitution rule header, if present), GB01/GB02/GB02C (Boolean class definitions), GB901 (Boolean expressions), GB922 (substitution values), and T80D (form pool registration) at the START of the investigation. Check Gold DB first; RFC what is missing.",
+      "why": "INC-000005240 wasted significant effort speculating about which GB901 BOOLEXP was the prerequisite for which GB922 step because Gold DB only had GB01/GB02C/GB901/GB903/GB922. GB93 (validation header) was pullable via RFC and contained the row VALID=UNES BOOLCLASS=009 - critical context for understanding the UNES validation. GB931 (validation steps) was pullable and contained the full 12-step validation map with CONDID/CHECKID/severity - the most important single piece of evidence for the investigation. GB905/GB921 were empty at UNESCO (step linkage not in standard tables), but that itself is a finding.",
+      "how_to_apply": "1. At investigation Step 3 (Gold DB pull), first check which GGB tables are in Gold DB via SELECT name FROM sqlite_master. 2. RFC-extract any missing GGB tables at the start: GB93, GB931, GB905, GB921, T80D. 3. Client-side filter for the relevant VALID or SUBSTID to see the rule set. 4. Cross-reference BOOLID naming convention: prefix 1 name ### X = CONDID, prefix 2 name ### X = CHECKID, prefix 3 name # X = substitution step prerequisite. 5. Document the extracted tables as evidence in the incident report Evidence section.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_extract_ggb_tables_for_substitution_incidents.md"
+    },
+    {
+      "id": "feedback_read_emails_in_main_agent",
+      "rule": "Always read the .eml file directly in the main agent before doing anything else with an incident. Never hand a file path to a subagent and rely on its summary of the content.",
+      "why": "INC-000005240 Session #050 handed the .eml path to an incident-analyst subagent. The subagent read the file but produced a wrong intake parsing (mapped reference key to XBLNR/ZUONR/FISTL, HQ to UNESCO fund center). The main agent never saw the email body and had no way to catch the misinterpretation. By the time the user rejected the root cause, 154K tokens had been burned chasing the wrong mechanism.",
+      "how_to_apply": "1. When a ticket / email / .eml is handed to you as a file path or attachment, use the Read tool in the main agent immediately. Read the full body, parse the terminology, build the User-term -> SAP-field translation table yourself. 2. Only AFTER you have the terminology nailed down can narrow sub-tasks (e.g., grep YRGGBS00 for XREF2 write sites) be delegated to subagents. 3. The .eml body is the ground truth - never rely on anyone else summary of it, including your own earlier summary.",
+      "severity": "HIGH",
+      "created_session": "#051",
+      "source_file": "feedback_read_emails_in_main_agent.md"
+    },
+    {
+      "id": "feedback_p01_readonly_absolute",
+      "rule": "P01 is strictly read-only for the AI agent. Never attempt INSERT/UPDATE/DELETE on P01 via RFC, BAPI, RFC_ABAP_INSTALL_AND_RUN, OOCU_RESP WebGUI automation, or any other path.",
+      "why": "P01 is production. Signatory changes, master data updates, and config changes are executed by DBS via direct OOCU_RESP/SPRO/PA30 access in P01 after TRS/business authorization. An AI write to P01 bypasses the CFO delegation chain and the audit trail. Confirmed by user during INC-000006313 (2026-04-09) with an emphatic 'you can not do any insert'.",
+      "how_to_apply": "Agent scope on any P01 change request is: (1) read-only analysis via RFC_READ_TABLE, (2) produce a written change spec for DBS, (3) post-change verification via RFC_READ_TABLE and Gold DB refresh. Never write a script with a --execute flag targeting P01. Never call write BAPIs. Never run RFC_ABAP_INSTALL_AND_RUN with INSERT/UPDATE/MODIFY/DELETE. If the user asks 'update it', the answer is 'spec for DBS + verify after'. D01 writes are still allowed.",
+      "severity": "CRITICAL",
+      "created_session": 52,
+      "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
+    },
+    {
+      "id": "feedback_bcm_signatory_ry_otype",
+      "rule": "BCM signatory responsibility groups are PD objects of OTYPE='RY' (not 'AC'). HRP1000.SHORT holds the rule class ('BNK_01_01_03' = rule 90000004, 'BNK_01_01_04' = rule 90000005). User assignments live in HRP1001 with RELAT='007' SCLAS='P' SOBID=<PERNR>. Resolve names via PA0002, SAP user via PA0105 SUBTY='0001', email via PA0105 SUBTY='0010'. PA0001 is blocked.",
+      "why": "Session #051 (INC-000006313) discovered that querying HRP1000 OTYPE='AC' for PFAC workflow rules returns zero rows for our SNC user, while OTYPE='RY' works. Without this documented path, a future agent wastes significant time re-discovering the schema from scratch. The RY -> HRP1001/007/P -> PA0002/PA0105 chain was verified against the OOCU_RESP screens provided by the user.",
+      "how_to_apply": "For any BCM signatory question: (1) list groups via HRP1000 OTYPE='RY' SHORT IN ('BNK_01_01_03','BNK_01_01_04'), (2) list assignments via HRP1001 OTYPE='RY' OBJID=<ry_objid> then filter RELAT='007' SCLAS='P' in Python, (3) resolve PERNRs via PA0002 for name and PA0105 SUBTY='0001' for SAP user + SUBTY='0010' for email. RFC_READ_TABLE rejects IN() and more than ~3 AND clauses on HR tables, so keep WHERE simple.",
+      "severity": "HIGH",
+      "created_session": 52,
+      "source_file": "knowledge/domains/Treasury/bcm_signatory_rules.md"
+    },
+    {
+      "id": "feedback_bcm_ghost_pernr_check",
+      "rule": "When investigating a BCM signatory, always cross-check that HRP1001.SOBID has a non-empty PA0105 SUBTY='0001' USRID. An empty USRID means the PERNR is a ghost shell and the signatory cannot be routed work items by workflow 90000003 even though they appear in OOCU_RESP and on the bank carton.",
+      "why": "Session #051 (INC-000006313) discovered a ghost PERNR 10567156 for Svein OESTTVEIT active on UIS rules 90000004 + 90000005 since 2025-10-04. Real PERNR is 10067156 (user S_OESTTVEIT). Ghost has no PA0105/0001, so Svein silently cannot sign UIS payments in BNK_APP. This is a production defect that was invisible until the bank's carton des signatures was compared PERNR-by-PERNR against HRP1001.",
+      "how_to_apply": "Run `python Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` at session start when the user asks about BCM signatories, AND after any DBS signatory update. Check 1 of the script detects ghost PERNRs. Treat any ghost as CRITICAL data quality defect and log to data_quality_issues.json. Always compare against the PERNR on the HEPATUS carton des signatures page (last page of a TRS letter), not the cover letter which uses names only.",
+      "severity": "HIGH",
+      "created_session": 52,
+      "source_file": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py"
+    },
+    {
+      "id": "feedback_br_camp_asymmetry",
+      "rule": "When analyzing UNESCO BR custom solution (ENHC ZFIX_EXCHANGERATE), classify enhancements by gate-input source: Camp A (FR-currency anchored: CHECK_CONS, EF_FUND_RESERVATION, FUNDBLOCK), Camp B (posting-currency anchored: PAYCOMMIT, NEW_ITEM, AVC, KBLEW, FI), Camp C (filters: BR_REVALUATION, BR_REVAL_RESFUND, BR_AVC_EXCLUSIONS BAdI), Camp D (auxiliary: FM_BR_POST_FROM_PY_AUTO, BR_BAPI_EMPLOYEE_POST). The asymmetry between Camp A (always BR for EUR FR) and Camp B (skips when posting is non-EUR) is the cross-currency drift bug surface.",
+      "why": "Session #053 (INC-BUDGETRATE-EQG): the prior 8-member framing was incomplete. Real composite has 15 members + 1 BAdI. Bug isn't 'gate rejects USD everywhere' - it's gate input source asymmetry. Only Camp B mis-handles cross-currency.",
+      "how_to_apply": "When triaging FMAVC005 or any BR-related question, list all 15 composite members + classify into camps before reasoning about behavior. Don't trust prior 8-member docs.",
+      "severity": "HIGH",
+      "created_session": 53,
+      "source_file": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md"
+    },
+    {
+      "id": "feedback_check_landscape_before_root_cause",
+      "rule": "Before claiming any custom Z/Y object affects production behavior, query TADIR + REPOSRC against P01 (production) directly via RFC. D01-only or V01-only objects do NOT affect production no matter how interesting their source code looks. Cross-check via: SELECT FROM TADIR WHERE OBJ_NAME=<X> on every system in the landscape (D01/V01/TS1/TS3/P01).",
+      "why": "Session #053: I claimed BR_AVC_EXCLUSIONS BAdI was suppressing AVC for MIRO/F110 in production based on D01 source. User caught it: 'I do not see it in TS3'. Cross-check confirmed it lives only in D01+V01, was deactivated 1 day after creation, never transported. Wrong claim wasted user time.",
+      "how_to_apply": "For any custom object analysis: (1) confirm presence in P01 first, (2) check ENHLOG for deactivation, (3) check transports in E070/E07T for release status, (4) only THEN claim it affects production behavior.",
+      "severity": "CRITICAL",
+      "created_session": 53,
+      "source_file": "PMO H38"
+    },
+    {
+      "id": "feedback_kble_via_pspro_wrapper",
+      "rule": "KBLE / KBLEW (Earmarked Fund consumption history) are cluster tables - RFC_READ_TABLE returns TABLE_WITHOUT_DATA. Use RFC-enabled wrapper: conn.call('/SAPPSPRO/PD_GM_FMR2_READ_KBLE', I_BELNR=<FR_doc>) which returns T_KBLE (consumption events with RBELNR/RBUZEI = consumer FI doc/line) AND T_KBLEW (per-currency split with CURTP=00 transaction currency, CURTP=10 local USD).",
+      "why": "Session #053: needed FR<->FI consumption traceability without BSEG.KBLNR. Wrapper found via /SAPPSPRO/ namespace probe. Returns 263 rows for one FR including the RBELNR linkage we couldn't get any other way.",
+      "how_to_apply": "For any FR consumption analysis: use wrapper FM, not RFC_READ_TABLE. KBLEW.CURTP=10 gives local-currency (USD) view directly; CURTP=00 gives transaction currency.",
+      "severity": "MEDIUM",
+      "created_session": 53,
+      "source_file": "Zagentexecution/quality_checks/budget_rate_consumption_audit.py"
+    },
+    {
+      "id": "feedback_fmavct_query_pattern",
+      "rule": "FMAVCT (BCS AVC totals) is a wide table (>512 bytes per row). RFC_READ_TABLE with FIELDS=[] returns DATA_BUFFER_EXCEEDED. Workaround: pass narrow FIELDS list (max 10-15 columns); split WHERE conditions into multiple OPTIONS entries (single complex boolean WHERE rejected with OPTION_NOT_VALID). Dedup result rows by full-row signature (RVERS/RPMAX often produce duplicates that double-count if summed naively). For AVC available calc: ALLOCTYPE_9='KBFC' = carryforward allotment (UNESCO ledger 9H 2026). HSL01-HSL16 are per-period local-currency values; HSLVT is yearly total.",
+      "why": "Session #053: needed AVC budget per fund for 26 funds. First attempts failed with parser errors. Final pattern works reliably: split WHERE + narrow FIELDS + dedup.",
+      "how_to_apply": "For any FMAVCT query in a script: (1) use DDIF_FIELDINFO_GET first to confirm column names, (2) pick max 12 fields, (3) split WHERE into multiple OPTIONS lines, (4) dedup by row signature before summing. ALLOCTYPE_9 dimension distinguishes budget vs. consumption rows.",
+      "severity": "MEDIUM",
+      "created_session": 53,
+      "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    },
+    {
+      "id": "feedback_fmioi_carryforward_pairs",
+      "rule": "FMIOI WRTTP=81 rows for an Earmarked Fund include: original creation (positive), period-specific consumption reductions (negative), period-016 year-end reversal (positive equal to remaining), period-000 carryforward-IN to next year. Naive sign-sum across all years does NOT equal 'open balance'. For 'open' filter by current GJAHR + signed sum. For 'lifetime consumed' use KBLE/KBLEW (the consumption history), NOT FMIOI. FMIOI rows with ratio=1.0 and tiny amounts ($0.01-0.02) are SAP rounding plugs, NOT cross-currency consumption signatures.",
+      "why": "Session #053: misread the AFFECTED 20 lines as 'cross-currency consumption already fired' when they were actually rounding plugs. Also computed wrong open balance from FMIOI by naive subtraction. User caught both errors.",
+      "how_to_apply": "Always sample 3 raw FMIOI WRTTP=81 rows for any FR before computing per-line metrics. Identity-ratio rows with sub-cent amounts = rounding plugs, ignore. For consumption history, use KBLEW filtered by CURTP - not FMIOI signed sums.",
+      "severity": "MEDIUM",
+      "created_session": 53,
+      "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    },
+    {
+      "id": "feedback_table_columns_never_drop",
+      "rule": "When iterating on a wide table (markdown/excel/report), NEVER remove existing columns when adding new ones. Build the wider table by extending the previous column set in a single canonical script. If a column becomes irrelevant, mark it 'deprecated' but keep displaying it for one session before removing.",
+      "why": "Session #053: I removed columns 'actual EUR cons USD-eq', 'actual nonEUR USD cons', 'non-EUR breakdown' when adding 'AVC budget USD' + 'AVC available USD'. User caught it twice (the 2nd time with 'PUTA MADRE / me haces perder el tiempo / me reago' — strong frustration signal). This is a costly mistake that breaks user trust.",
+      "how_to_apply": "When updating a previously-shown table: (1) read the user's last shown column list, (2) the new table MUST contain >= those columns + the additions, (3) if you must restructure, show the column-mapping diff explicitly first and ask. Use a single source-of-truth script that builds incrementally so columns can never silently drop.",
+      "severity": "HIGH",
+      "created_session": 53,
+      "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+    },
+    {
+      "id": "feedback_aggregation_scope_explicit",
+      "rule": "Every aggregation column in a report must explicitly state its filter scope in the header AND in any explanatory note. Allowed scopes: 'per-line' (REFBN+RFPOS), 'per-FONDS+FIPEX' (cover-group context), 'per-fund' (FONDS only), 'system-wide'. NEVER label an aggregation column 'total' without specifying 'total of WHAT'.",
+      "why": "Session #053: I labeled fund+FIPEX consumption as 'pool EUR cons' and the user reasonably assumed it was per-FR consumption ($170K vs €4,400 line). Caused 3 round-trips of clarification. The right column name was 'fund+FIPEX EUR cons (USD-equiv, broader cover-group context)'.",
+      "how_to_apply": "For any column derived from SUM/COUNT: name it with explicit scope marker. Examples: 'line cons EUR (this REFBN+RFPOS only)', 'pool USD cons (same FONDS+FIPEX, all FRs)'. Never use bare 'total' or 'cons' without scope qualifier.",
+      "severity": "HIGH",
+      "created_session": 53,
+      "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+    },
+    {
+      "id": "feedback_no_silent_except_pass",
+      "rule": "In data-extraction scripts (RFC, SQL, file I/O) NEVER use 'except: pass' or 'except Exception: pass'. Silent failures cause downstream tables to show 0 / null without explanation, leading to wrong conclusions. ALWAYS at minimum: 'except Exception as e: print(f\"ERROR <context>: {e}\", file=sys.stderr)'. For RFC calls in particular, log the WHERE clause and parameters that failed.",
+      "why": "Session #053: my background FMAVCT script used 'except: pass' to swallow per-fund RFC errors. Result: AVC budget column showed 0 for ALL 64 rows (the WHERE clause syntax differed from earlier successful runs). User caught it ('AVC budget 0 doesn't make sense'). I would have spotted it instantly if errors had been printed.",
+      "how_to_apply": "grep -n 'except.*pass' on every extraction script before running. Replace with explicit error logging. For batch operations across N entities, log ERR + entity ID so you know which entity failed without re-running.",
+      "severity": "CRITICAL",
+      "created_session": 53,
+      "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    },
+    {
+      "id": "feedback_sample_raw_rows_before_aggregating",
+      "rule": "Before computing any metric over a SAP table (FMIOI, FMIFIIT, FMAVCT, BSEG, etc.), sample 3-5 RAW rows for one specific key and inspect them. This catches: (a) sign convention surprises (FMIOI carryforward pairs), (b) duplicate-row patterns (FMAVCT RVERS), (c) rounding-plug rows ($0.01-0.02 ratio=1.0 in FMIOI), (d) trailing-minus number formats ('1234.56-'). Skipping this step caused 3 wrong interpretations in Session #053.",
+      "why": "Session #053 mistakes: (1) interpreted $0.01 ratio=1.0 rows as cross-currency consumption (they were rounding plugs), (2) computed open balance as orig-consumed (sign convention wrong for carryforwards), (3) double-counted FMAVCT due to RVERS duplicates. All three would have been caught by 5 minutes of raw-row inspection upfront.",
+      "how_to_apply": "First action when querying a new table or new key: SELECT * FROM <table> WHERE <key>=<sample> ORDER BY ... LIMIT 10. Print rows. Read them. THEN write the aggregation. Total cost: 30 seconds. Total savings: hours of wrong analysis.",
+      "severity": "HIGH",
+      "created_session": 53,
+      "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
     }
   ],
   "claims": [
@@ -4150,7 +5521,7 @@
     },
     {
       "id": 3,
-      "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+      "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026",
       "claim_type": "superseded",
       "confidence": "TIER_1",
       "evidence_for": "Re-extraction in Session #029 revealed 223K rows. The _2024_2026 suffix table has the real data.",
@@ -4218,7 +5589,7 @@
     },
     {
       "id": 7,
-      "claim": "BSEG is NOT a table to extract — use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query",
+      "claim": "BSEG is NOT a table to extract â€” use bseg_union VIEW (BSIS+BSAS+BSIK+BSAK+BSID+BSAD, 4.7M rows) via Golden Query",
       "claim_type": "verified_fact",
       "confidence": "TIER_1",
       "evidence_for": "BSEG is a cluster table. The Golden Query joins bseg_union + BKPF + FMIFIIT + PRPS for 85.9% WBS coverage. Session #035.",
@@ -4243,7 +5614,7 @@
     },
     {
       "id": 8,
-      "claim": "SuccessFactors EC IS ACTIVE in P01 — not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs)",
+      "claim": "SuccessFactors EC IS ACTIVE in P01 â€” not planned. ECPAO_OM_OBJECT_EXTRACTION runs 43 parallel jobs (1,290 runs), ECPAO_EMPL_EXTRACTION 3 jobs (51 runs)",
       "claim_type": "verified_fact",
       "confidence": "TIER_1",
       "evidence_for": "TBTCO job analysis, Session #035. Job names + run counts confirmed from Gold DB.",
@@ -4274,7 +5645,7 @@
     },
     {
       "id": 10,
-      "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI — perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level.",
+      "claim": "FMIFIIT.KNBUZEI = BSIS.BUZEI â€” perfect 1:1 line-level FM-FI join. FMIFIIT.KNBELNR = BKPF.BELNR for doc-level.",
       "claim_type": "verified_fact",
       "confidence": "TIER_1",
       "evidence_for": "Join validation in Gold DB, Session #016. 100% match on test sample.",
@@ -4311,7 +5682,7 @@
     },
     {
       "id": 12,
-      "claim": "D010TAB/WBCROSSGT have 200M+ rows system-wide — never bulk extract. Query on-demand for specific Y*/Z* objects via RFC.",
+      "claim": "D010TAB/WBCROSSGT have 200M+ rows system-wide â€” never bulk extract. Query on-demand for specific Y*/Z* objects via RFC.",
       "claim_type": "verified_fact",
       "confidence": "TIER_2",
       "evidence_for": "User confirmed from SE16 observation, Session #049. Filtered to YY* shows manageable rows for custom objects only.",
@@ -4337,7 +5708,7 @@
       "domain": "Payment",
       "created_session": 26,
       "resolved_session": 27,
-      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed.",
+      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUHâ†’OP=0 confirmed.",
       "status": "superseded"
     },
     {
@@ -4421,7 +5792,7 @@
       "domain": "FI",
       "created_session": 30,
       "resolved_session": 31,
-      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types.",
+      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, FranÃ§ais, Portuguese). Multi-language text variants, not functional types.",
       "status": "superseded"
     },
     {
@@ -4521,6 +5892,379 @@
       "resolved_session": 19,
       "resolution_notes": "Never verified via T012 SWIFT code. Was an assumption from bank ID + ETB currency. Could be different bank.",
       "status": "superseded"
+    },
+    {
+      "id": 27,
+      "claim": "ZXFMDTU02_RPY.abap line 99 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011, 0007045011, 0006045014) with FIKRS=UNES and FISTL=SPACE. The exit has no SY-UNAME-based or USR05-based override.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Source code ZXFMDTU02_RPY.abap:94-101 read directly from extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/. Full-file grep for SY-UNAME returned only developer breakpoint (line 62), commented-out P2 substitution (240-246), and YXUSER opt-out bypass (257-260) - none of which derive FICTR. Session #050.",
+      "evidence_against": null,
+      "related_objects": [
+        "ZXFMDTU02_RPY",
+        "fmifiit_full",
+        "fund_centers",
+        "USR05"
+      ],
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "session": "#050",
+      "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+    },
+    {
+      "id": 28,
+      "claim": "187,514 rows in fmifiit_full (P01 Gold DB) match the ZXFMDTU02_RPY:99 hardcode signature - BUKRS=UNES AND FISTL='UNESCO' AND HKONT in the three bank GLs. Zero rows on the same GLs have FISTL='JAK'. This makes the user's (AL_JONATHAN) expectation of FICTR='JAK' on his bank-clearing rows code-impossible under the current exit.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "SQL count against Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db run 2026-04-09 Session #050. Per-GL: 0006045011=92,845; 0006045014=2,661; 0007045011=92,008.",
+      "evidence_against": null,
+      "related_objects": [
+        "fmifiit_full",
+        "ZXFMDTU02_RPY"
+      ],
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "session": "#050",
+      "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+    },
+    {
+      "id": 29,
+      "claim": "261 distinct UNES users have mixed-FICTR posting history (proving non-HQ home office) but are affected by the ZXFMDTU02_RPY:99 hardcode on their bank-clearing rows. Top offenders: J_LA (47,090 rows), T_ENG (28,107), C_LOPEZ (14,435), I_MARQUAND (12,845), S_AGOSTO (8,247). AL_JONATHAN (the INC-000005240 reporter) is in this set but not in the top 20 - his 39 docs are a small subset of the larger systemic class.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py run output 2026-04-09 Session #050.",
+      "evidence_against": null,
+      "related_objects": [
+        "bkpf",
+        "fmifiit_full",
+        "ZXFMDTU02_RPY"
+      ],
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "session": "#050",
+      "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+    },
+    {
+      "id": 30,
+      "claim": "INC-000006073 and INC-000005240 belong to the same defect class: UNESCO FI user exits from the 2010-2018 SROCHA/KONAKOV era contain hardcoded C_FMDERIVE-* and C_SUBST-* literal assignments with no user-aware or table-driven override. Both incidents were invisible until a new reporting practice exposed them.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_2",
+      "evidence_for": "INC-000006073 (GSBER hardcode in GGB1 rule 3IIEP###002); INC-000005240 (FICTR hardcode in ZXFMDTU02 line 99). Both cite the same developer era and same 'hardcoded literal with no override' pattern.",
+      "evidence_against": null,
+      "related_objects": [
+        "ZXFMDTU02_RPY",
+        "ZXTRVU05",
+        "GB901:3IIEP###002"
+      ],
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "session": "#050",
+      "resolution_notes": "[Session #51 triage] Originally captured by INC-000005240 Session #50 subagent pursuing FMDERIVE/ZXFMDTU02_RPY FICTR='UNESCO' hypothesis that was LATER REJECTED as the wrong mechanism for INC-000005240 (the real root cause is XREF1/XREF2 substitution via YRGGBS00 UXR1/UXR2 — see knowledge/incidents/INC-000005240_xref_office_substitution.md). The finding itself may be a real standalone observation — filed as knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link this entry to INC-000005240."
+    },
+    {
+      "id": 31,
+      "tier": "TIER_1",
+      "claim": "At UNESCO, BSEG-XREF1 and BSEG-XREF2 are repurposed as the originating office tag on every FI vendor line item. They are NOT the SAP-standard 'reference key' but UNESCO-specific office codes (HQ, JAK, YAO, KAB, DAK, BRZ, IIEP_PAR, UIS, IBE, UNDP-*).",
+      "claim_type": "verified_fact",
+      "domain": "Treasury",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "BSEG.XREF1",
+        "BSEG.XREF2",
+        "YFO_CODES",
+        "Y_USERFO"
+      ],
+      "evidence_for": "YRGGBS00_SOURCE.txt:230-243 (exits UXR1/UXR2 registration); YRGGBS00_SOURCE.txt:996-1041 (UXR1/UXR2 source code); YRGGBS00_SOURCE.txt:1090-1118 (UZLS special case IF bseg-xref2(4)<>'UNDP' CASE bukrs); Live RFC 2026-04-09 on 13 users + 10 AL_JONATHAN docs; INC-000005240 empirical data",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 32,
+      "tier": "TIER_1",
+      "claim": "YRGGBS00 FORM UXR1 unconditionally writes USR05.Y_USERFO to BSEG-XREF1 at posting time. The original guard 'IF bseg_xref1 = space' at line 998 is commented out — UXR1 overwrites even user-typed values.",
+      "claim_type": "verified_fact",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "YRGGBS00/UXR1",
+        "USR05.Y_USERFO",
+        "BSEG.XREF1"
+      ],
+      "evidence_for": "YRGGBS00_SOURCE.txt:996-1016 verbatim source",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 33,
+      "tier": "TIER_1",
+      "claim": "YRGGBS00 FORM UXR2 has asymmetric validation: (a) auto-write from USR05 is NOT validated against YFO_CODES — it trusts the user parameter blindly; (b) user-typed input IS validated with a hard error (e018 ZFI) if not in YFO_CODES. This asymmetry means wrong master data propagates silently while manual typing errors are caught.",
+      "claim_type": "verified_fact",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "YRGGBS00/UXR2",
+        "YFO_CODES",
+        "USR05.Y_USERFO"
+      ],
+      "evidence_for": "YRGGBS00_SOURCE.txt:1024-1041 verbatim source",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 34,
+      "tier": "TIER_1",
+      "claim": "UNESCO's VALID='UNES' validation rule (BOOLCLASS=009, FI line item) has 12 steps fully mapped in GB931. NONE of the 12 steps reference BSEG-XREF1 or BSEG-XREF2 at either CONDID or CHECKID level. Step 010 references XREF3 (customer expense-type memos only). Exit forms U915/U916/U917 check bank account mechanics, SCB indicators, and fund GL restrictions — none check XREF content.",
+      "claim_type": "verified_fact",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "VALID=UNES",
+        "GB93",
+        "GB931",
+        "YRGGBS00/U915",
+        "YRGGBS00/U916",
+        "YRGGBS00/U917"
+      ],
+      "evidence_for": "GB93 RFC extraction 2026-04-09 (17 rows total, 1 for VALID='UNES'); GB931 RFC extraction 2026-04-09 (12 steps for VALID='UNES', full CONDID/CHECKID map); U915/U916/U917 source code verbatim (YRGGBS00_SOURCE.txt:1499-1590)",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 35,
+      "tier": "TIER_1",
+      "claim": "Transaction F-53 (Post Outgoing Payments) and its commit-time TCODE FBZ2 are NOT in any prerequisite of VALID='UNES' validation steps. Manual outgoing payments pass through the UNES line-item validation layer completely uncovered — no UNES validation fires on F-53 / FBZ2.",
+      "claim_type": "verified_fact",
+      "domain": "Treasury",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "VALID=UNES",
+        "F-53",
+        "FBZ2",
+        "GB931"
+      ],
+      "evidence_for": "GB931 12 steps for VALID='UNES', grep for 'F-53' / 'FBZ2' in CONDID / CHECKID — zero matches; GB901 1UNES###/2UNES### BOOLEXPs — F-53/FBZ2 not listed in any TCODE filter",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 36,
+      "tier": "TIER_1",
+      "claim": "F-53 is a SAP parameter transaction that wraps FBZ2. When a user enters F-53 from the menu, SAP stores BKPF.TCODE='FBZ2' (the commit-time TCODE), NOT 'F-53'. At UNESCO's P01, zero rows in BKPF have TCODE='F-53'. This is visible in SE93 for F-53 which shows 'Default values for Transaction = FBZ2'.",
+      "claim_type": "verified_fact",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "F-53",
+        "FBZ2",
+        "BKPF.TCODE",
+        "TSTC"
+      ],
+      "evidence_for": "Gold DB bkpf: WHERE TCODE='F-53' returns 0 rows; Live RFC: SE93 screenshot of F-53 definition showing target FBZ2; User-confirmed via SE16N filter in the SAP GUI",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 37,
+      "tier": "TIER_1",
+      "claim": "The Gold DB view bseg_union does NOT carry XREF1 / XREF2 / XREF3 columns. Its schema is: MANDT, BUKRS, BELNR, GJAHR, BUZEI, BUDAT, BLDAT, MONAT, BSCHL, HKONT, SHKZG, DMBTR, DMBE2, WRBTR, WAERS, AUFNR, AUGBL, AUGDT, CPUDT, EBELN, EBELP, FKBER, GSBER, KOSTL, LIFNR, MWSKZ, PRCTR, PS_PSP_PNR, SGTXT, ZFBDT, ZTERM, source_table. Any XREF-related analysis must use live RFC on BSAK/BSAS/BSIS/BSIK/BSAD/BSID directly.",
+      "claim_type": "data_quality_gap",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "bseg_union",
+        "BSAK",
+        "BSAS",
+        "BSIS",
+        "BSIK",
+        "BSAD",
+        "BSID"
+      ],
+      "evidence_for": "PRAGMA table_info(bseg_union) 2026-04-09",
+      "evidence_against": null,
+      "resolution_notes": "Addressed by feedback_bseg_union_has_no_xref rule added in Session #051"
+    },
+    {
+      "id": 38,
+      "tier": "TIER_1",
+      "claim": "UNESCO's substitution SUBSTID='UNESCO' (GB922, 17 steps at callpoint 3 — complete document) does NOT have a step-to-prerequisite linking table accessible via RFC_READ_TABLE. GB905 and GB921 both return 0 rows for SUBSTID='UNESCO' via broad RFC probe. The step prerequisites are either implicit via BOOLID naming convention (3<SUBSTID>#<step> → GB901) or stored in a mechanism not exposed through standard RFC. Empty GB901 entries for a step are interpreted as 'no prerequisite → fires unconditionally'.",
+      "claim_type": "verified_fact",
+      "domain": "FI",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "GB905",
+        "GB921",
+        "GB922",
+        "SUBSTID=UNESCO",
+        "GB901"
+      ],
+      "evidence_for": "RFC probe 2026-04-09: GB905 WHERE SUBSTID='UNESCO' → 0 rows; GB921 WHERE SUBSTID='UNESCO' → 0 rows",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 39,
+      "tier": "TIER_1",
+      "claim": "F-53 / FBZ2 manual posting fires the XREF substitution on EVERY BSEG line (vendor + bank GL + expense), but F110 automatic payment run fires it only on the vendor line (leaving bank GL XREF blank). This asymmetry is empirically confirmed but its mechanism is unknown without access to GB905 or the SAP GGB1 GUI. Possible explanations: (a) F110 uses BAPI_ACC_DOCUMENT_POST which bypasses callpoint 3, (b) a step-level filter on F110 BLART='ZP', or (c) F110 payment method program creates the bank GL line post-substitution.",
+      "claim_type": "verified_fact",
+      "domain": "Treasury",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "F-53",
+        "FBZ2",
+        "F110",
+        "YRGGBS00/UXR1",
+        "YRGGBS00/UXR2"
+      ],
+      "evidence_for": "CDPOS 3100003438/2026 line 001 BSAS (bank GL) had XREF1='HQ' at time of FBL3N change — proves F-53 fires substitution on GL line; Live RFC 2026-04-09: F110 docs 0002003771/0002003828 bank GL lines (BSAS L002) have XREF1='' XREF2='' blank — proves F110 does NOT fire substitution on bank GL line",
+      "evidence_against": null,
+      "resolution_notes": "KU-032 — mechanism unknown, requires GGB1 GUI inspection or GB905 access"
+    },
+    {
+      "id": 40,
+      "tier": "TIER_1",
+      "claim": "At UNESCO, USR05.Y_USERFO and PA0001.BTRTL use DIFFERENT code systems for the same office. Empirical examples: Paris HQ is PA0001.BTRTL='PAR' but USR05.Y_USERFO='HQ'; Yaoundé is BTRTL='YAO'/Y_USERFO='YAO' (match); Kabul is BTRTL='KBL'/Y_USERFO='KAB' (mismatch); Dakar is BTRTL='DKR'/Y_USERFO='DAK' (mismatch); Jakarta is BTRTL='JKT'/Y_USERFO='JAK' (expected). The implicit BTRTL→Y_USERFO mapping is tribal knowledge — no table enforces it.",
+      "claim_type": "verified_fact",
+      "domain": "HCM",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "PA0001.BTRTL",
+        "USR05.Y_USERFO"
+      ],
+      "evidence_for": "Live RFC 2026-04-09: PA0001 + USR05 for 7 users (AL_JONATHAN, T_ENG, I_WETTIE, JJ_YAKI-PAHI, O_RASHIDI, DA_ENGONGA, L_HANGI)",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 41,
+      "tier": "TIER_1",
+      "claim": "UNESCO has a systemic manual workaround for missing XREF validation: 21,754 post-posting edits via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents in Q1 2026 by 242 distinct users, touching 24,597 distinct documents. Top editors include C_VINCENZI (2,075 FBL1N), R_MUSAKWA (1,422), M_AHMADI (550), L_HANGI (499), and the Jakarta cluster A_DELGADO+A_CARVE+A_HIZKIA+A_YEGIAZARIA+A_DEGA (~5,400 edits over 2 years). This is the operational cost of having zero automated XREF validation.",
+      "claim_type": "verified_fact",
+      "domain": "Treasury",
+      "confidence": "HIGH",
+      "created_session": "#51",
+      "related_objects": [
+        "CDHDR",
+        "FBL3N",
+        "FBL1N",
+        "FB02"
+      ],
+      "evidence_for": "Gold DB cdhdr query 2026-04-09: count of BELEG changes by TCODE and USNAM where OBJECTID matches '%UNES%' and UDATE in Q1 2026",
+      "evidence_against": null,
+      "resolution_notes": ""
+    },
+    {
+      "id": 42,
+      "claim": "At UNESCO P01, BCM workflow responsibility groups (rules 90000004 BNK_COM and 90000005 BNK_INI) are stored as PD objects OTYPE='RY' under PLVAR='01'. HRP1000.SHORT = rule class, HRP1000.STEXT = group name. HRP1001 RELAT='007' SCLAS='P' SOBID=<PERNR> assigns users. Workflow 90000003 resolves rule 90000005 first (validators) then 90000004 (committers).",
+      "claim_type": "config_structure",
+      "confidence": "VERIFIED",
+      "evidence_for": "HRP1000 SHORT LIKE 'BNK%' returned 20 RY objects including the 7 live UIS/UNES/IIEP/UBO/UIL groups (Session #051 probe) | HRP1001 RELAT='007' SCLAS='P' returned 253 rows (now 255 post-INC6313) across the 24 RY groups | Counts per group match the OOCU_RESP screens provided by user for rule 90000004: 13/13 UNES, 20/20 UIS, 16/16 IIEP, 11/11 UBO<=10K, 15/15 UIS<=10K, 10/10 UBO>10K, 8/8 UIL | PA0002 VORNA/NACHN for resolved PERNRs match the names on the OOCU_RESP screenshots and the UIS carton des signatures (INC-000006313 PDF page 4)",
+      "evidence_against": "",
+      "related_objects": [
+        "HRP1000",
+        "HRP1001",
+        "PA0002",
+        "PA0105",
+        "OOCU_RESP",
+        "BNK_COM_01_01_03",
+        "BNK_INI_01_01_04"
+      ],
+      "domain": "Treasury",
+      "created_session": 52,
+      "resolved_session": 52,
+      "slug": "claim_bcm_ry_otype"
+    },
+    {
+      "id": 43,
+      "claim": "PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures for all transfers / UIS Validation) with BEGDA=2025-10-04 ENDDA=99991231. It has a PA0002 record with name 'Svein OESTTVEIT' but NO PA0105 SUBTY='0001' SAP user and NO PA0105 SUBTY='0010' work email. The real Svein OESTTVEIT is PERNR 10067156 (user S_OESTTVEIT). Impact: workflow 90000003 cannot route a BNK_APP work item to PERNR 10567156, so Svein is silently unable to sign UIS payments in SAP despite appearing on OOCU_RESP and on the Citibank Canada carton.",
+      "claim_type": "defect",
+      "confidence": "VERIFIED",
+      "evidence_for": "PA0002 read for 10067156 returned 5 continuous employment records 1955 -> 9999 | PA0002 read for 10567156 returned 1 flat record 1955-12-16 -> 9999-12-31 with same name | PA0105 for 10067156 returned SUBTY='0001' USRID='S_OESTTVEIT' and SUBTY='0010' USRID_LONG='S.OESTTVEIT@UNESCO.ORG' | PA0105 for 10567156 returned only SUBTY='0030' private email 'svein.osttveit@orange.fr' | HEPATUS carton des signatures (UIS Citibank Canada 02/04/2026, INC-000006313 PDF page 4) lists PERNR 10067156 for Svein OESTTVEIT, not 10567156",
+      "evidence_against": "",
+      "related_objects": [
+        "HRP1001",
+        "PA0002",
+        "PA0105",
+        "50010054",
+        "50036801",
+        "BNK_COM_01_01_03",
+        "BNK_INI_01_01_04"
+      ],
+      "domain": "Treasury",
+      "created_session": 52,
+      "resolved_session": null,
+      "slug": "claim_ghost_pernr_oesttveit"
+    },
+    {
+      "id": 44,
+      "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION / FUNDBLOCK) gates on FR's own EUR currency and always fires. Camp B (PAYCOMMIT / NEW_ITEM / AVC / KBLEW / FI) gates on per-row posting currency and silently skips when posting is non-EUR. The two camps thus produce divergent ledger states: FR side at BR (1.09529), consumption side at identity / M-rate. AVC pool drifts fund-by-fund until cover-group hits zero headroom => FMAVC005.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Source code: extracted_code/ENHO/ZFIX_EXCHANGERATE/ (15 enhancement files inspected line-by-line in Session #053). Production data: 64 BR-applicable open FR lines in P01 ledger 9H 2026, 35 with non-EUR consumption pool drift documented in Zagentexecution/incidents/INC_budget_rate_eq_guinea/br_lines_FINAL.xlsx.",
+      "evidence_against": null,
+      "related_objects": [
+        "YCL_FM_BR_EXCHANGE_RATE_BL",
+        "ZFIX_EXCHANGERATE_CHECK_CONS",
+        "ZFIX_EXCHANGERATE_AVC",
+        "ZFIX_EXCHANGERATE_FI",
+        "ZFIX_EXCHANGERATE_KBLEW",
+        "ZFIX_EXCHANGERATE_NEW_ITEM",
+        "ZFIX_EXCHANGERATE_PAYCOMMIT",
+        "ZFIX_EF_FUND_RESERVATION",
+        "ZFIX_EXCHANGERATE_FUNDBLOCK",
+        "INC-BUDGETRATE-EQG"
+      ],
+      "domain": "PSM",
+      "created_session": 53,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 45,
+      "claim": "ZFIX_BR_AVC_EXCLUSIONS BAdI is dead code in P01 production. Created by JP_LOPEZ on 2025-05-14 in D01 (transports D01K9B0D4Z + D01K9B0D50, 'BR - AVC Exlclusion MIRO F110'), deactivated next day 2025-05-15 (transports D01K9B0D54 + D01K9B0D55, 'BR Deactivate AVC exclusion'). Exists in D01 + V01 only (TADIR + REPOSRC confirmed). Absent from TS1, TS3, P01. The implementation only places skip logic in BUDGET_FILTER (wrong method) for tcodes MIRO + F110, and POSTING_FILTER is an empty stub. Never affected production AVC behavior.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "Cross-system TADIR/REPOSRC query Session #053. Transports E070/E07T headers. Source code at extracted_code/ENHO/ZFIX_EXCHANGERATE/AVC_EXCLUSIONS/.",
+      "evidence_against": null,
+      "related_objects": [
+        "ZFIX_BR_AVC_EXCLUSIONS",
+        "FMAVC_ENTRY_FILTER",
+        "IF_EX_FMAVC_ENTRY_FILTER"
+      ],
+      "domain": "PSM",
+      "created_session": 53,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
+    },
+    {
+      "id": 46,
+      "claim": "AVC available is a fund/cover-group level metric, not an FR-line-level metric. All FR lines on the same (FONDS, FUNDSCTR, CMMTITEM-rolled-to-control-object) draw from a single shared AVC pool. The pool is calculated as: Available = FMAVCT.allotment - sum(open FMIOI commitments) - sum(FMIFIIT actuals) on the same key. FMAVC005 fires when Available <= 0 + new posting amount > 0. The triggering FR line is incidental; the constraint is the fund pool.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": "FMAVCT structure inspection + Vonthron's case empirical confirmation: fund 3110111021/PAX/TC 2026 has $12,897.80 carryforward allotment exactly matching the 5 carryforward FRs sum => Available = 0 => any USD posting on any of the 5 lines triggers FMAVC005.",
+      "evidence_against": null,
+      "related_objects": [
+        "FMAVCT",
+        "FMIOI",
+        "FMIFIIT",
+        "INC-BUDGETRATE-EQG"
+      ],
+      "domain": "PSM",
+      "created_session": 53,
+      "resolved_session": null,
+      "resolution_notes": null,
+      "status": "active"
     }
   ],
   "known_unknowns": [
@@ -4597,7 +6341,7 @@
     {
       "id": "KU-011",
       "question": "Does T042Z in Gold DB have the DMEE_ASSIGNMENT_TABLE column or is it missing from extraction?",
-      "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEE→PaymentMethod edges may need a different table source.",
+      "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEEâ†’PaymentMethod edges may need a different table source.",
       "raised_session": 40,
       "domain": "Payment"
     },
@@ -4662,7 +6406,7 @@
     {
       "id": "KU-020",
       "question": "How many vendors in the 316K LFA1 master have an LFB1.AKONT that diverges from the canonical T077K mapping for their LFA1.KTOKK, and across which company codes?",
-      "why_unknown": "INC-000006073 surfaced ONE case (vendor 10133079, KTOKK=SCSA, AKONT=2021011 in IIEP). The full vendor master has never been audited for KTOKK↔AKONT consistency. Until the check runs we cannot know if this is 1 vendor, 100, or 10K.",
+      "why_unknown": "INC-000006073 surfaced ONE case (vendor 10133079, KTOKK=SCSA, AKONT=2021011 in IIEP). The full vendor master has never been audited for KTOKKâ†”AKONT consistency. Until the check runs we cannot know if this is 1 vendor, 100, or 10K.",
       "raised_session": 50,
       "domain": "BusinessPartner",
       "priority": "HIGH",
@@ -4672,7 +6416,7 @@
     },
     {
       "id": "KU-021",
-      "question": "Is the incident-processing way-of-working (parse email → extract → analyze with brain → write incident_analysis doc → annotate brain → propose fix) reproducible for the next incident, or did INC-000006073 succeed by luck?",
+      "question": "Is the incident-processing way-of-working (parse email â†’ extract â†’ analyze with brain â†’ write incident_analysis doc â†’ annotate brain â†’ propose fix) reproducible for the next incident, or did INC-000006073 succeed by luck?",
       "why_unknown": "The pattern was synthesized retroactively from one successful incident. FALS-005 will test it on the next incident the user passes in.",
       "raised_session": 50,
       "domain": "Way_of_Working",
@@ -4694,6 +6438,116 @@
       "raised_session": 50,
       "domain": "Brain_Architecture",
       "priority": "HIGH"
+    },
+    {
+      "id": "KU-024",
+      "question": "INC-000005240: user Anthony Jonathan calls the mis-tagged field 'reference key' without a screenshot. Is this FISTL (our working hypothesis, supported by code + data), BKPF-XBLNR, BSEG-ZUONR, or BSEG-GSBER?",
+      "why_unknown": "Ticket text is short and translated. No attachment. FISTL fits all the data evidence but needs user confirmation.",
+      "raised_session": 50,
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "resolution_path": "Reply to al.jonathan@unesco.org asking for a screenshot of the F-53 posting he considers wrong, highlighting the field he means.",
+      "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    },
+    {
+      "id": "KU-025",
+      "question": "Do any FMDERIVE (FMDT*) customer rules override or complement ZXFMDTU02_RPY.abap in the FI->FM derivation chain?",
+      "why_unknown": "FMDT001/FMDT002 and related tables (FMDERIVE rule base) are not in Gold DB. Without them we cannot prove the ABAP hardcode is the final word on FICTR for bank GLs.",
+      "raised_session": 50,
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "resolution_path": "Run sap_data_extraction skill targeting FMDT* tables in P01 and add to Gold DB. Then re-trace derivation for one AL_JONATHAN document.",
+      "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    },
+    {
+      "id": "KU-026",
+      "question": "Does USR05 contain any UNESCO-specific parameter (PARID) related to FM fund center or home office (e.g. ZFI_HOME_FICTR)?",
+      "why_unknown": "USR05 is not in Gold DB. Required to design the Option-A SU3-opt-in fix for INC-000005240.",
+      "raised_session": 50,
+      "domain": "FI",
+      "incident": "INC-000005240",
+      "resolution_path": "Run sap_data_extraction targeting USR05 (full dump is small, 5-10 MB typical) and inspect distinct PARID values for FM-related parameters.",
+      "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    },
+    {
+      "id": "KU-027",
+      "question": "Does YFO_CODES contain FOCOD='JAK'? Critical before deploying AL_JONATHAN SU3 fix.",
+      "domain": "Treasury",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "HIGH - blocks tactical fix",
+      "why_unknown": "YFO_CODES is not in Gold DB. RFC extraction needed. Without verification, setting AL_JONATHAN.Y_USERFO='JAK' will trigger w018 ZFI warning on every posting (via UXR1) and e018 hard error if he ever manually types 'JAK' (via UXR2 ELSE branch).",
+      "follow_up": "One-shot RFC SE16N or RFC_READ_TABLE on YFO_CODES. If 'JAK' missing, add row via SM30 BEFORE the SU3 change."
+    },
+    {
+      "id": "KU-028",
+      "question": "How many other UNES users have Y_USERFO='HQ' but PA0001.WERKS/BTRTL indicates a field-unit assignment (drifted users)?",
+      "domain": "HCM",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "MEDIUM - sizes the class generalization",
+      "why_unknown": "USR05 + PA0105 + PA0001 are not in Gold DB. RFC-extract or query live to enumerate drift.",
+      "follow_up": "Run the PA0001×PA0105×USR05 query in knowledge/domains/Treasury/xref_office_tagging_model.md §7.2."
+    },
+    {
+      "id": "KU-029",
+      "question": "What is the downstream impact of wrong XREF on the 21,754 Q1 2026 manually-corrected UNES BELEG documents?",
+      "domain": "Treasury",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "LOW - historical reporting integrity",
+      "why_unknown": "Would need to trace each document through F110 / BCM / YWFI workflow / field-office reports to measure misrouting.",
+      "follow_up": "If UNESCO Finance/BI requests, build a dashboard that traces XREF changes through payment method and approval routing."
+    },
+    {
+      "id": "KU-030",
+      "question": "Why is the IF bseg_xref1 = space guard commented out in YRGGBS00_SOURCE.txt:998? When was it removed, by whom, and why?",
+      "domain": "FI",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "LOW - informational",
+      "why_unknown": "No git blame on YRGGBS00 source. Only the SROCHA 2010 comment marker visible elsewhere in the file.",
+      "follow_up": "Check TADIR / E071 transport history for YRGGBS00 changes. Or ask UNESCO ABAP team directly."
+    },
+    {
+      "id": "KU-031",
+      "question": "Where is the substitution step-to-prerequisite linkage stored at UNESCO? GB905 and GB921 are both empty via RFC_READ_TABLE broad probe.",
+      "domain": "FI",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "MEDIUM - framework understanding",
+      "why_unknown": "Standard SAP GGB1 expects step prerequisites in GB905. They are empty at UNESCO P01 (Session #051 probe). Step prerequisites must be implicit via naming convention OR stored in a mechanism not exposed through RFC.",
+      "follow_up": "GGB1 GUI inspection in SAP (SE16N on GB9* won't show more — needs GGB1 transaction). Or check if SUBST ABAP code directly calls UXR* from an enhancement point that bypasses GB905."
+    },
+    {
+      "id": "KU-032",
+      "question": "Why does F110 substitution fire on the vendor clearing line but NOT on the bank GL line, while F-53 fires on both? Empirically observed asymmetry with unknown mechanism.",
+      "domain": "Treasury",
+      "raised_session": "#51",
+      "related_incident": "INC-000005240",
+      "impact": "MEDIUM - explains F-53 vs F110 asymmetry",
+      "why_unknown": "Could be (a) F110 uses BAPI_ACC_DOCUMENT_POST which bypasses callpoint 3, (b) a step-level filter on F110 BLART='ZP', (c) F110 payment method program creates the bank GL line post-substitution. Without GB905 or GGB1 GUI access, can't distinguish.",
+      "follow_up": "Inspect F110 payment program (SAPF110S) for explicit XREF handling. Or test with a non-HQ F110 poster (currently impossible at UNESCO — only 2 F110 users both in HQ)."
+    },
+    {
+      "id": "uq_uis_non_citibank_signatories",
+      "question": "Does UIS have bank accounts besides Citibank Canada (USD 2017588014, CAD 2017588006)? If yes, are Ophelia STEPHENSON-ODLE (PERNR 10136066) and Yanhong ZHANG (PERNR 10098989) authorized signatories on any of those other cartons? They are currently active in SAP RY 50010054 (UIS signatures for all transfers) but not on the 2026-04-02 Citibank Canada carton.",
+      "why_unknown": "SAP BCM responsibility groups are entity-level, not bank-account-level. One group 'UIS signatures for all transfers' covers every UIS bank account at every bank. We only have the Citibank Canada carton on file. Without all UIS cartons we cannot distinguish legitimate multi-bank coverage from stale SAP config.",
+      "raised_session": 52,
+      "domain": "Treasury",
+      "source_incident": "INC-000006313",
+      "addressed_to": "TRS (Ingrid Wettie / BFM-TRS-MO)",
+      "blocks_action": "SAP cleanup delimit for STEPHENSON/ZHANG on UIS groups"
+    },
+    {
+      "id": "uq_uis_bcm_role_split_consistency",
+      "question": "Is the role split on UIS BCM rules intentional? Anssi YLI-HIETANEN (10097358, Treasurer) is on rule 90000004 (Commit) but not on rule 90000005 (Validation). Lamin SANNEH (10150918) is on rule 90000005 but not on rule 90000004. The Citibank Canada carton lists both flatly as 'authorized to sign jointly two by two' without distinguishing validator vs committer. Is the SAP split deliberate (e.g., Treasurer commits only) or a maintenance accident?",
+      "why_unknown": "The carton does not carry SAP rule semantics. The business rule for the validator/committer split is oral/undocumented and must be confirmed by TRS.",
+      "raised_session": 52,
+      "domain": "Treasury",
+      "source_incident": "INC-000006313",
+      "addressed_to": "TRS (Ingrid Wettie)",
+      "blocks_action": "Any role-mirroring cleanup on UIS BCM panel"
     }
   ],
   "falsification": [
@@ -4749,7 +6603,7 @@
   "superseded": [
     {
       "id": 3,
-      "claim": "FEBEP=0 was wrong — actual count is 223,710 items in FEBEP_2024_2026",
+      "claim": "FEBEP=0 was wrong â€” actual count is 223,710 items in FEBEP_2024_2026",
       "claim_type": "superseded",
       "confidence": "TIER_1",
       "evidence_for": "Re-extraction in Session #029 revealed 223K rows. The _2024_2026 suffix table has the real data.",
@@ -4775,7 +6629,7 @@
       "domain": "Payment",
       "created_session": 26,
       "resolved_session": 27,
-      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUH→OP=0 confirmed.",
+      "resolution_notes": "OP documents clear via GL 2021xxx (field office sub-bank accounts). This is a structural component, not a bypass. REGUHâ†’OP=0 confirmed.",
       "status": "superseded"
     },
     {
@@ -4859,7 +6713,7 @@
       "domain": "FI",
       "created_session": 30,
       "resolved_session": 31,
-      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, Français, Portuguese). Multi-language text variants, not functional types.",
+      "resolution_notes": "D/E/F/P are language keys (Deutsch, English, FranÃ§ais, Portuguese). Multi-language text variants, not functional types.",
       "status": "superseded"
     },
     {
@@ -5007,9 +6861,9 @@
     {
       "id": "DQ-001",
       "source": "LFA1 + LFB1 + T077K (Vendor Master integrity)",
-      "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA → AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off — full vendor master never audited for KTOKK↔AKONT consistency.",
+      "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA â†’ AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off â€” full vendor master never audited for KTOKKâ†”AKONT consistency.",
       "severity": "HIGH",
-      "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEP↔UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
+      "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEPâ†”UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
       "workaround": "(a) Run vendor_master_integrity_check.py against Gold DB to list all LFB1 rows where AKONT does not match T077K canonical mapping for the LFA1.KTOKK. (b) For each violation, decide whether to correct AKONT (FK02) or extend GGB1 substitution (YFI_BASU_MOD). (c) Promote this to a recurring monthly check.",
       "discovered_session": 48,
       "promoted_to_recurring_check": 50,
@@ -5083,14 +6937,14 @@
       "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
       "severity": "HIGH",
       "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
-      "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols — truncated first attempt).",
+      "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols â€” truncated first attempt).",
       "discovered_session": 29,
       "status": "RESOLVED"
     },
     {
       "id": "DQ-009",
       "source": "T010P (Posting Period Variants)",
-      "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/Français/Portuguese), looks like functional types.",
+      "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/FranÃ§ais/Portuguese), looks like functional types.",
       "severity": "MEDIUM",
       "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
       "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
@@ -5123,7 +6977,7 @@
       "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
       "severity": "CRITICAL",
       "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
-      "workaround": "Requires remediation project. No workaround — structural config gap.",
+      "workaround": "Requires remediation project. No workaround â€” structural config gap.",
       "discovered_session": 44,
       "status": "OPEN"
     },
@@ -5166,6 +7020,73 @@
       "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
       "discovered_session": 49,
       "status": "RESOLVED"
+    },
+    {
+      "id": "DQ-017",
+      "issue": "187,514 rows in fmifiit_full (UNES company code, bank clearing GLs 0006045011/0007045011/0006045014) have FISTL='UNESCO' due to the ZXFMDTU02_RPY.abap:99 hardcode. Zero rows on these GLs have FISTL='JAK' or any other field-office FICTR. This makes office-level cash-flow reporting impossible for the bank side of vendor payments.",
+      "severity": "MEDIUM",
+      "source": "Gold DB query Session #050 (INC-000005240)",
+      "domain": "FI",
+      "related_objects": [
+        "fmifiit_full",
+        "ZXFMDTU02_RPY",
+        "fund_centers"
+      ],
+      "incident": "INC-000005240",
+      "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side."
+    },
+    {
+      "id": "DQ-018",
+      "issue": "AL_JONATHAN (Jakarta Field Unit user) has USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. Every F-53/FBZ2 posting he makes carries BSEG-XREF1='HQ' BSEG-XREF2='HQ' instead of the correct 'JAK'. PA0001.WERKS='ID00' BTRTL='JKT' confirms HR has him assigned to Indonesia/Jakarta.",
+      "source": "USR05 live RFC 2026-04-09 + PA0001/PA0105 cross-reference",
+      "severity": "HIGH",
+      "impact": "10 documents in 2026-02/03 carry wrong XREF tag. No automated detection. Manual correction via FBL3N by A_HIZKIA on 2 of 10.",
+      "status": "OPEN - fix pending SU3 update after KU-027 YFO_CODES.JAK verification",
+      "discovered_session": "#51",
+      "related_incident": "INC-000005240",
+      "related_known_unknown": "KU-027",
+      "promoted_to_recurring_check": false,
+      "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py"
+    },
+    {
+      "id": "DQ-019",
+      "issue": "Systemic XREF drift at UNESCO: 21,754 manual post-posting edits via FBL3N/FBL1N/FB02/FBL5N in Q1 2026 on UNES BELEG documents, across 242 distinct users, touching 24,597 distinct documents. This is the operational workaround for missing XREF validation and signals a systemic gap rather than isolated errors.",
+      "source": "Gold DB cdhdr query 2026-04-09",
+      "severity": "MEDIUM",
+      "impact": "Ongoing operational burden. Users spend significant time manually correcting XREF values because no runtime validation catches wrong values.",
+      "status": "OPEN - strategic fix options in Treasury xref_office_tagging_model.md §7.3",
+      "discovered_session": "#51",
+      "related_incident": "INC-000005240",
+      "related_known_unknown": "KU-028",
+      "promoted_to_recurring_check": false,
+      "related_check_script": null
+    },
+    {
+      "id": "DQ-020",
+      "issue": "USR05.Y_USERFO (finance office code) and PA0001.BTRTL (HR personnel subarea) use different code systems at UNESCO with no enforced mapping. Example drift: Kabul is BTRTL='KBL' but Y_USERFO='KAB'; Dakar is BTRTL='DKR' but Y_USERFO='DAK'. A user's office in finance can drift from their HR assignment with no automated detection.",
+      "source": "Live RFC 2026-04-09 PA0001 + USR05 for 7 users",
+      "severity": "MEDIUM",
+      "impact": "Enables the DQ-018 class of issues to persist undetected. A user can be hired in Jakarta (HR correct) and still have wrong finance office code (USR05) forever.",
+      "status": "OPEN - needs HR/BASIS alignment process",
+      "discovered_session": "#51",
+      "related_incident": "INC-000005240",
+      "related_known_unknown": "KU-028",
+      "promoted_to_recurring_check": false,
+      "related_check_script": null
+    },
+    {
+      "id": "dq_ghost_pernr_bcm_oesttveit",
+      "source": "HRP1001 (P01) via bcm_signatory_assignment (Gold DB)",
+      "issue": "Ghost PERNR 10567156 active in UIS BCM rules 90000004 + 90000005 since 2025-10-04. PA0105/0001 empty -> workflow 90000003 cannot route BNK_APP work items -> Svein OESTTVEIT silently cannot sign UIS payments even though he appears on the Citibank Canada carton des signatures as PERNR 10067156.",
+      "severity": "HIGH",
+      "impact": "Production payment routing for UIS is understaffed by one committer. If Svein would have been the deciding signatory, the batch waits or a different user approves. The real PERNR 10067156 (user S_OESTTVEIT, email S.OESTTVEIT@UNESCO.ORG) should have been used in OOCU_RESP.",
+      "workaround": "None automated. DBS must delimit HRP1001 SOBID=10567156 and insert fresh rows with SOBID=10067156 after TRS authorization. Until then, the other 7 UIS signatories on the carton must cover Svein's work.",
+      "discovered_session": 52,
+      "promoted_to_recurring_check": true,
+      "related_check_script": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+      "related_known_unknown": null,
+      "first_seen_date": "2025-10-04",
+      "status": "OPEN"
     }
   ],
   "incidents": [
@@ -5298,15 +7219,366 @@
         "Confirm with Travel/HR team whether intercompany was intentional in trip 0101004544 or a user error",
         "Audit PA0027 subtype 02 expirations across all employees (BAdI safety net broken systemically?)"
       ]
+    },
+    {
+      "id": "INC-000005240",
+      "status": "ROOT_CAUSE_CONFIRMED",
+      "title": "F-53 manual payment writes XREF1/XREF2='HQ' instead of 'JAK' for Jakarta user",
+      "reporter": "Anthony Leonardo Jonathan (FU/JAK — AL_JONATHAN)",
+      "received_date": "2026-04-07",
+      "analyzed_session": 51,
+      "domain": "FI",
+      "secondary_domains": [
+        "Treasury",
+        "HCM",
+        "PSM"
+      ],
+      "transactions": [
+        "F-53",
+        "FBZ2",
+        "FBZ1",
+        "FBL3N",
+        "FB02",
+        "F110",
+        "FB1K"
+      ],
+      "primary_object_id": "AL_JONATHAN",
+      "primary_subject": "AL_JONATHAN USR05.Y_USERFO='HQ' → XREF tagging wrong on all his F-53 postings",
+      "company_codes_involved": [
+        "UNES"
+      ],
+      "scenario": "field_user_wrong_su3_parameter_for_office_code",
+      "error_messages": [],
+      "root_cause_summary": "AL_JONATHAN's USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. YRGGBS00 form UXR1 (line 996) writes bseg_xref1 = usr05-parva unconditionally (guard commented out). UXR2 (line 1024) writes bseg_xref2 = usr05-parva when XREF2 is blank (always true on F-53 since the screen hides the field). Both run at callpoint 3 under GB922 SUBSTID='UNESCO' steps 005/006 with empty GB905 prerequisites (fires unconditionally on every BSEG line). The code works as designed; the defect is master data only. Independent confirmation via A_HIZKIA (also Jakarta, Y_USERFO='JAK' verified) manually correcting his docs via FBL3N since 2026-02-16. End-to-end gap: VALID='UNES' (12 steps in GB931) has ZERO steps that check XREF fields; F-53/FBZ2 is in ZERO validation prerequisites; 21,754 manual FBL3N/FBL1N/FB02 corrections in Q1 2026 on UNES BELEG by 242 users show this is systemic.",
+      "code_validation_chain": [
+        "YRGGBS00_SOURCE.txt:230 exits-name='UXR1' (substitution exit registered)",
+        "YRGGBS00_SOURCE.txt:235 exits-name='UXR2' (substitution exit registered)",
+        "YRGGBS00_SOURCE.txt:996 FORM uxr1: SELECT usr05 WHERE parid='Y_USERFO' → bseg_xref1 = usr05-parva (guard IF bseg_xref1=space commented out at line 998 — always overwrites)",
+        "YRGGBS00_SOURCE.txt:1007 SELECT yfo_codes WHERE focod=bseg_xref1 → MESSAGE w018(zfi) warning if missing (non-blocking)",
+        "YRGGBS00_SOURCE.txt:1024 FORM uxr2: IF bseg_xref2=space → SELECT usr05 Y_USERFO → bseg_xref2 = usr05-parva (no validation in auto-write branch)",
+        "YRGGBS00_SOURCE.txt:1035 ELSE branch (user-typed XREF2) → SELECT yfo_codes → MESSAGE e018(zfi) hard error if missing",
+        "YRGGBS00_SOURCE.txt:1050-1119 FORM uzls: derives bseg_zlsch from bseg_xref2 per company code",
+        "Live RFC 2026-04-09: USR05 WHERE BNAME='AL_JONATHAN' AND PARID='Y_USERFO' → PARVA='HQ'",
+        "Live RFC 2026-04-09: PA0001 WHERE PERNR=10175236 → WERKS='ID00' BTRTL='JKT' (HR master says Jakarta)",
+        "Live RFC 2026-04-09: BSAK for 10 of his FBZ2 docs → ALL have XREF1='HQ' XREF2='HQ'",
+        "CDPOS 3100003438/2026 CHANGENR=0118205716: XREF1 'HQ'→'JAK' by A_HIZKIA via FBL3N on 2026-02-16 — proves substitution fired at posting time (VALUE_OLD='HQ')",
+        "CDPOS 3100003439/2026 CHANGENR=0118205748: same pattern",
+        "RFC extracted GB93 (17 rows) + GB931 (12 steps for VALID='UNES') on 2026-04-09: confirms F-53/FBZ2 in ZERO validation prerequisites",
+        "A_HIZKIA USR05 Y_USERFO='JAK' verified — independent confirmation of correct target value"
+      ],
+      "scope": {
+        "affected_documents": 10,
+        "affected_vendor_lines": 10,
+        "window": "2026-02-06 to 2026-03-16",
+        "user_is_new": true,
+        "manual_workaround_user": "A_HIZKIA (Jakarta, Y_USERFO='JAK')",
+        "manual_corrections_on_al_jonathan_docs": 2,
+        "systemic_q1_2026_edits_unes_beleg": 21754,
+        "systemic_users_editing": 242,
+        "systemic_docs_touched": 24597
+      },
+      "fix_path": {
+        "blocking_prerequisite": "Verify 'JAK' exists in YFO_CODES.FOCOD via SE16N. If not, add row via SM30 BEFORE SU3 change. Otherwise w018 warning fires on every posting and e018 hard error if user ever types 'JAK' manually (KU-027).",
+        "tactical": "SU3 / SU01 → AL_JONATHAN → Parameters → Y_USERFO: 'HQ' → 'JAK'. Smoke test with a test F-53 posting. Verify ZLSCH downstream behavior (will become 'O' for JAK — confirm with Jakarta treasury).",
+        "strategic_master_data": "Run PA0001×PA0105×USR05 audit query (knowledge/domains/Treasury/xref_office_tagging_model.md §7.2) to enumerate all AL_JONATHAN-class drifted users. Batch-correct.",
+        "strategic_validation": "Add 13th step to VALID='UNES' that checks BSEG-XREF1 against HR-derived expected office (see xref_office_tagging_model.md §7.3).",
+        "strategic_code": "Close UXR1 overwrite gap (re-enable IF bseg_xref1=space guard at line 998) — separate transport."
+      },
+      "analysis_doc": "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+      "related_objects": [
+        "YRGGBS00",
+        "YRGGBS00/UXR1",
+        "YRGGBS00/UXR2",
+        "YRGGBS00/UZLS",
+        "YRGGBS00/U915",
+        "YRGGBS00/U916",
+        "YRGGBS00/U917",
+        "USR05",
+        "USR05.Y_USERFO",
+        "YFO_CODES",
+        "PA0001",
+        "PA0105",
+        "PA0001.WERKS",
+        "PA0001.BTRTL",
+        "SUBSTID=UNESCO",
+        "GB922",
+        "VALID=UNES",
+        "GB93",
+        "GB931",
+        "GB901",
+        "T80D",
+        "BSEG.XREF1",
+        "BSEG.XREF2",
+        "BSEG.ZLSCH"
+      ],
+      "evidence_extracted_this_incident": [
+        "USR05 (per-user reads for 13 users)",
+        "PA0001 (7 users cross-reference)",
+        "PA0105 (7 users USRID→PERNR bridge)",
+        "BSAK (live RFC for 10 AL_JONATHAN docs)",
+        "BSAS/BSIS (live RFC for 36 line items)",
+        "CDPOS (2 A_HIZKIA FBL3N changes with XREF1 HQ→JAK proof)",
+        "CDHDR (full BELEG change scan for AL_JONATHAN window)",
+        "GB93 (17 rows — validation header)",
+        "GB931 (12 rows for VALID='UNES' — full validation step map)",
+        "UXR1/UXR2/U915/U916/U917 source code verbatim"
+      ],
+      "lessons": [
+        "feedback_main_agent_holds_incident_context: do not delegate the 7-step workflow to a subagent",
+        "feedback_read_emails_in_main_agent: read .eml directly in the main agent",
+        "feedback_user_term_to_sap_field_translation: section 1 of every incident report needs the terminology table",
+        "feedback_psm_extensions_is_fi_substitution_home: read PSM/EXTENSIONS autopsy docs at the start of any FI substitution/validation incident",
+        "feedback_bseg_union_has_no_xref: bseg_union does not carry XREF columns — use live RFC",
+        "feedback_empirical_over_theoretical_substitution: CDPOS/AUGBL/RFC beats BOOLEXP inference",
+        "feedback_metadata_vs_real_bseg_lines: BSCHL=27/37 zero-balance pair is metadata, not a real business line",
+        "feedback_extract_ggb_tables_for_substitution_incidents: extract GB93/GB931/GB905/GB921/T80D at start",
+        "feedback_process_before_root_cause: write 'how it should work' before 'why it fails'",
+        "feedback_no_learning_capture_mid_investigation: no knowledge capture until user confirms conclusions",
+        "feedback_brain_rebuild_after_finalized: rebuild is the LAST step"
+      ],
+      "wrong_path_session_050": {
+        "what_happened": "Session #050 subagent chased FMDERIVE exit ZXFMDTU02_RPY hardcoded FICTR='UNESCO' (a real but unrelated observation) instead of the actual XREF1/XREF2 substitution in YRGGBS00.",
+        "cost": "154K tokens burned, wrong root cause, needed full reset",
+        "observation_filed": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
+        "brain_entries_to_retag": [
+          "annotations: ZXFMDTU02_RPY, fmifiit_full, fund_centers (review each)",
+          "claims: 27-30 (FMDERIVE-tied; re-tag as observation_only)",
+          "known_unknowns: KU-024/025/026 (mostly FMDERIVE; review each)",
+          "data_quality_issues: DQ-017 (review)"
+        ]
+      }
+    },
+    {
+      "id": "INC-000006313",
+      "status": "CLOSED",
+      "title": "Add Said OULD AHMEDOU VOFFAL to UIS BCM signatory panel",
+      "reporter": "Ingrid Wettie (BFM-TRS-MO / Middle Office)",
+      "received_date": "2026-04-09",
+      "analyzed_session": 52,
+      "domain": "Treasury",
+      "secondary_domains": [
+        "BCM",
+        "HR"
+      ],
+      "transactions": [
+        "OOCU_RESP",
+        "BNK_APP",
+        "PA30"
+      ],
+      "primary_object_id": "10092400",
+      "primary_subject": "PERNR 10092400 Said OULD AHMEDOU VOFFAL (SAP user S_VOFFAL)",
+      "company_codes_involved": [
+        "UIS"
+      ],
+      "scenario": "signatory_panel_change",
+      "incident_type": "operational_change",
+      "error_messages": [],
+      "root_cause_summary": "Not a defect. Operational change request forwarded from TRS. Said returned as UNESCO staff on 2026-03-22 (PA0002 new record) and was reinstated on the UIS Citibank Canada authorized signatory panel by TRS letter FIN.8/MOD/10.0000003625 dated 02/04/2026. His prior UIS BCM assignments had expired between 2023-10-04 and 2024-01-17 during his absence.",
+      "code_validation_chain": [
+        "PA0002 PERNR=10092400 -> new record BEGDA=20260322 ENDDA=99991231 (returning employee)",
+        "PA0105 SUBTY=0001 PERNR=10092400 -> USRID=S_VOFFAL",
+        "USR02 BNAME=S_VOFFAL -> UFLAG=0 GLTGV=20260402 GLTGB=20280319 USTYP=A",
+        "HRP1001 RY=50010054 SOBID=10092400 historical row BEGDA=20160303 ENDDA=20231004 (expired)",
+        "HRP1001 RY=50036801 SOBID=10092400 historical row BEGDA=20211018 ENDDA=20231004 (expired)",
+        "Post-change HRP1001 RY=50010054 SOBID=10092400 BEGDA=20260409 ENDDA=99991231 (verified)",
+        "Post-change HRP1001 RY=50036801 SOBID=10092400 BEGDA=20260409 ENDDA=99991231 (verified)"
+      ],
+      "scope": {
+        "person_added": "10092400 Said OULD AHMEDOU VOFFAL",
+        "rules_affected": [
+          "90000004",
+          "90000005"
+        ],
+        "ry_objids_affected": [
+          "50010054",
+          "50036801"
+        ],
+        "bank_accounts_affected": [
+          "Citibank Canada USD 2017588014",
+          "Citibank Canada CAD 2017588006"
+        ],
+        "bank_confirmation_deadline": "2026-04-22"
+      },
+      "fix_path": {
+        "immediate": "DBS added 2 HRP1001 rows via OOCU_RESP in P01 (SOBID=10092400, BEGDA=20260409, ENDDA=99991231) on 2026-04-09. BEGDA used execution date instead of letter date 2026-04-02 (7-day audit gap, low material risk).",
+        "structural": "None - operational change.",
+        "preventive": [
+          "Run bcm_signatory_reconciliation_check.py after every BCM signatory change to catch drift automatically",
+          "Store each bank carton under Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt for future diffs",
+          "When executing future changes, use TRS letter effective date as BEGDA, not execution date"
+        ]
+      },
+      "side_findings": [
+        "Ghost PERNR 10567156 for Svein OESTTVEIT on RY 50010054 + 50036801 (logged as dq_ghost_pernr_bcm_oesttveit)",
+        "Possible UIS panel drift STEPHENSON/ZHANG vs Citibank Canada carton (logged as uq_uis_non_citibank_signatories)",
+        "Role-split inconsistency YLI-HIETANEN/SANNEH on UIS rules (logged as uq_uis_bcm_role_split_consistency)"
+      ],
+      "analysis_doc": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
+    },
+    {
+      "id": "INC-BUDGETRATE-EQG",
+      "status": "ROOT_CAUSE_CONFIRMED",
+      "title": "Budget Rate custom solution allows cross-currency consumption against EUR-reserved FR -> AVC pool drift -> FMAVC005",
+      "reporter": "Laetitia Vonthron (adm.cad) -> Christina Lopez-Chemouny -> Yimiao Guo -> Illya Konakov -> Pablo Lopez",
+      "received_date": "2026-03-26",
+      "analyzed_session": 53,
+      "domain": "PSM",
+      "secondary_domains": [
+        "FI",
+        "Treasury"
+      ],
+      "transactions": [
+        "FB60",
+        "MIRO",
+        "F110",
+        "FMX1",
+        "FMX2",
+        "FMN4N",
+        "FMZZ",
+        "FMAVCREINIT"
+      ],
+      "primary_subject": "FR 3250117351 line 39 (EUR carryforward to 2026, fund 3110111021 / FUNDSCTR PAX / CMMTITEM TC); EqG ticket reimbursement for SG Bivini Mangue",
+      "company_codes_involved": [
+        "UNES"
+      ],
+      "scenario": "cross_currency_consumption_against_BR_FR",
+      "incident_type": "defect",
+      "error_messages": [
+        "FMAVC005 Annual budget exceeded by 0,87 USD (FM Availability Control) for document item 00002"
+      ],
+      "root_cause_summary": "15-member ZFIX_EXCHANGERATE composite has gate-input asymmetry: Camp A (FR-anchored: CHECK_CONS, EF_FUND_RESERVATION, FUNDBLOCK) always fires for EUR FRs; Camp B (posting-anchored: PAYCOMMIT, NEW_ITEM, AVC, KBLEW, FI) silently skips when posting currency is not EUR. FR persisted at BR (1.09529); consumption persisted at identity. AVC pool drifts fund-by-fund until cover-group hits zero headroom. Vonthron's fund 3110111021/PAX/TC has $12,897.80 budget exactly matched by $12,897.80 of carryforward FR commitments -> Available=0 -> any new USD posting fires FMAVC005.",
+      "code_validation_chain": [
+        "extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A line 8: APPEND 'EUR' to mr_waers (the perimeter line)",
+        "extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM004: check_conditions exits abap_false if iv_waers NOT IN mr_waers",
+        "ZFIX_EXCHANGERATE_CHECK_CONS Enh1 (Camp A): iv_waers = m_r_doc->m_f_kblk-waers (FR header EUR) -> PASS -> recalc -> Enh2 RESTORE original (in-memory only, no persistence)",
+        "ZFIX_EXCHANGERATE_NEW_ITEM (Camp B): iv_waers = c_f_fmoi-twaer (USD for USD posting) -> FAIL -> no recalc",
+        "ZFIX_EXCHANGERATE_AVC Enh1+3 (Camp B): iv_waers = <ls_fmioi>-twaer / <ls_fmifiit>-twaer per-row -> mixed, USD rows skip",
+        "ZFIX_EXCHANGERATE_KBLEW (Camp B): iv_waers = ls_tr_kblew-waers (USD) -> FAIL -> no recalc",
+        "ZFIX_EXCHANGERATE_FI (Camp B): iv_waers = <ls_fmifiit>-twaer (USD) -> FAIL -> no recalc + no audit + mt_avc_fund not appended -> fmavc_reinit_on_event handler never registered",
+        "FMAVCT(RLDNR=9H,RFIKRS=UNES,RYEAR=2026,RFUND=3110111021,RFUNDSCTR=PAX,RCMMTITEM=TC) ALLOCTYPE_9=KBFC HSL01=12,897.80 USD",
+        "Open FR commitments same key: 5 lines (RFPOS 38/39/40/43/45 of FR 3250117351) summing to $12,897.80",
+        "Available = 12,897.80 - 12,897.80 = 0 -> FMAVC005 fires on any positive posting"
+      ],
+      "scope": {
+        "br_applicable_open_fr_lines_in_P01_2026": 64,
+        "distinct_funds_at_risk": 26,
+        "lines_with_AVC_available_zero": [
+          "3250117351/00038",
+          "3250117351/00039",
+          "3250117351/00040",
+          "3250117351/00043",
+          "3250117351/00045",
+          "3260008383/00001",
+          "3260008383/00002",
+          "3260008383/00007",
+          "3250117154/00002",
+          "3250118228/00003",
+          "3250118228/00004"
+        ],
+        "lifetime_USD_bypass_volume_USD": 375011484.95,
+        "estimated_drift_exposure_USD": 35734844.4,
+        "system_landscape": {
+          "D01": "BAdI ZFIX_BR_AVC_EXCLUSIONS exists (DEAD)",
+          "V01": "BAdI exists (DEAD)",
+          "TS1": "absent",
+          "TS3": "absent",
+          "P01": "absent"
+        }
+      },
+      "fix_path": {
+        "immediate_workaround": "Post the EqG invoice in EUR (validated by Konakov 2026-03-30 'when I try to post the invoice in EUR instead of USD it works fine'). Use XOF->EUR rate at translation date.",
+        "preventive_recommended": "Add validation in CL_FM_EF_POSITION->CHECK_CONSUMPTION: IF check_br_is_active() AND m_r_doc->m_f_kblk-waers='EUR' AND m_f_kblp-gsber='GEF' AND fund_type IN mr_fund_type AND consumption_doc-waers <> 'EUR' THEN MESSAGE 'Z_BR_001' TYPE 'E'. Stops drift at user-input layer.",
+        "corrective_alternative": "Activate convert_to_currency_2 (Staff logic) in Camp B enhancements to dispatch USD through USD-UNORE -> EUR @ M -> USD @ EURX double-hop. Method exists, complete, only called from IF 1=2 dead branches today.",
+        "cleanup": "After preventive validation deploys: one-time FMAVCREINIT on 26 affected funds for 2026 GJAHR ledger 9H to clear accumulated drift.",
+        "PMO_items": [
+          "H38: Cleanup ZFIX_BR_AVC_EXCLUSIONS dead code from D01+V01",
+          "H39 (new): Build preventive validation enhancement",
+          "H40 (new): One-time FMAVCREINIT cleanup"
+        ]
+      },
+      "analysis_doc": "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+      "executive_brief": "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+      "inventory_xlsx": "Zagentexecution/incidents/INC_budget_rate_eq_guinea/br_lines_FINAL.xlsx",
+      "trace_evidence": "Zagentexecution/incidents/INC_budget_rate_eq_guinea/dev_w5_trace_TS3.txt + body.txt + image*.png + br_consumption_audit.json",
+      "related_objects": [
+        "YCL_FM_BR_EXCHANGE_RATE_BL",
+        "ZFIX_EXCHANGERATE",
+        "ZFIX_EXCHANGERATE_CHECK_CONS",
+        "ZFIX_EXCHANGERATE_AVC",
+        "ZFIX_EXCHANGERATE_FI",
+        "ZFIX_EXCHANGERATE_KBLEW",
+        "ZFIX_EXCHANGERATE_NEW_ITEM",
+        "ZFIX_EXCHANGERATE_PAYCOMMIT",
+        "ZFIX_EXCHANGERATE_FUNDBLOCK",
+        "ZFIX_EF_FUND_RESERVATION",
+        "ZFIX_BR_REVALUATION",
+        "ZFIX_BR_REVAL_RESFUND",
+        "ZFIX_BR_AVC_EXCLUSIONS",
+        "ZFIX_FM_BR_POST_FROM_PY_AUTO",
+        "ZFIX_BR_BAPI_EMPLOYEE_POST",
+        "CL_FM_EF_POSITION",
+        "FMAVCT",
+        "FMIOI",
+        "FMIFIIT",
+        "KBLE",
+        "KBLEW",
+        "KBLK",
+        "KBLP",
+        "TCURR",
+        "TVARVC.Y_FM_FIXED_RATE_START",
+        "FMFINCODE",
+        "FMFUNDTYPE.ZZFIX_RATE",
+        "/SAPPSPRO/PD_GM_FMR2_READ_KBLE"
+      ]
     }
   ],
   "blind_spots": [
+    {
+      "name": "/SAPPSPRO/PD_GM_FMR2_READ_KBLE",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "50010054",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "50036801",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "BNK_COM_01_01_03",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "BNK_INI_01_01_04",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "BSEG.XREF1",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "BSEG.XREF2",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "BSEG.ZLSCH",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "CL_FM_EF_POSITION",
+      "flavor": "MISSING"
+    },
     {
       "name": "CVI_VEND_LINK",
       "flavor": "MISSING"
     },
     {
       "name": "D010TAB",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "DMEE",
       "flavor": "MISSING"
     },
     {
@@ -5318,7 +7590,43 @@
       "flavor": "MISSING"
     },
     {
+      "name": "EXIT_SAPLFMDT_004",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "F-53",
+      "flavor": "MISSING"
+    },
+    {
       "name": "F110",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FB02",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FBL1N",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FBL3N",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FBZ2",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FMAVCT",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FMAVC_ENTRY_FILTER",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "FMFUNDTYPE.ZZFIX_RATE",
       "flavor": "MISSING"
     },
     {
@@ -5334,11 +7642,47 @@
       "flavor": "MISSING"
     },
     {
+      "name": "GB905",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "GB921",
+      "flavor": "MISSING"
+    },
+    {
       "name": "GB922:Step003",
       "flavor": "MISSING"
     },
     {
+      "name": "GB93",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "GB931",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "HRP1000",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "HRP1001",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "IF_EX_FMAVC_ENTRY_FILTER",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "KBLEW",
+      "flavor": "MISSING"
+    },
+    {
       "name": "LHRTSF01:852",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "OOCU_RESP",
       "flavor": "MISSING"
     },
     {
@@ -5350,7 +7694,39 @@
       "flavor": "MISSING"
     },
     {
+      "name": "PMO_H38",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "PMO_H39",
+      "flavor": "MISSING"
+    },
+    {
       "name": "SAPLYBAPI_SISTER",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "SU3",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "SUBSTID=UNESCO",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "TSTC",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "TVARVC.Y_FM_FIXED_RATE_START",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "USR05.Y_USERFO",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "VALID=UNES",
       "flavor": "MISSING"
     },
     {
@@ -5362,6 +7738,34 @@
       "flavor": "MISSING"
     },
     {
+      "name": "YRGGBS00/U915",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "YRGGBS00/U916",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "YRGGBS00/U917",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "YRGGBS00/UXR1",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "YRGGBS00/UXR2",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "YRGGBS00/UZLS",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "Y_USERFO",
+      "flavor": "MISSING"
+    },
+    {
       "name": "ZCL_IDFI_CGI_DMEE_FR",
       "flavor": "MISSING"
     },
@@ -5370,7 +7774,23 @@
       "flavor": "MISSING"
     },
     {
+      "name": "bkpf",
+      "flavor": "MISSING"
+    },
+    {
       "name": "bseg_union",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "fmifiit_full",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "fmifiit_full.FISTL",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "fund_centers",
       "flavor": "MISSING"
     },
     {
@@ -5383,12 +7803,12 @@
     }
   ],
   "_coverage": {
-    "objects_in_brain": 136,
-    "names_referenced": 82,
-    "names_classified": 62,
-    "blind_spots_total": 20,
+    "objects_in_brain": 167,
+    "names_referenced": 162,
+    "names_classified": 95,
+    "blind_spots_total": 67,
     "blind_spots_ghosts": 0,
-    "blind_spots_missing": 20,
-    "pct_classified": 75.6
+    "blind_spots_missing": 67,
+    "pct_classified": 58.6
   }
 }

@@ -256,5 +256,217 @@
         "data_quality_issues: DQ-017 (review)"
       ]
     }
+  },
+  {
+    "id": "INC-000006313",
+    "status": "CLOSED_WITH_CLEANUP",
+    "title": "Add Said OULD AHMEDOU VOFFAL to UIS BCM signatory panel",
+    "reporter": "Ingrid Wettie (BFM-TRS-MO / Middle Office)",
+    "received_date": "2026-04-09",
+    "analyzed_session": 52,
+    "domain": "Treasury",
+    "secondary_domains": [
+      "BCM",
+      "HR"
+    ],
+    "transactions": [
+      "OOCU_RESP",
+      "BNK_APP",
+      "PA30"
+    ],
+    "primary_object_id": "10092400",
+    "primary_subject": "PERNR 10092400 Said OULD AHMEDOU VOFFAL (SAP user S_VOFFAL)",
+    "company_codes_involved": [
+      "UIS"
+    ],
+    "scenario": "signatory_panel_change",
+    "incident_type": "operational_change",
+    "error_messages": [],
+    "root_cause_summary": "Not a defect. Operational change request forwarded from TRS. Said returned as UNESCO staff on 2026-03-22 (PA0002 new record) and was reinstated on the UIS Citibank Canada authorized signatory panel by TRS letter FIN.8/MOD/10.0000003625 dated 02/04/2026. His prior UIS BCM assignments had expired between 2023-10-04 and 2024-01-17 during his absence.",
+    "code_validation_chain": [
+      "PA0002 PERNR=10092400 -> new record BEGDA=20260322 ENDDA=99991231 (returning employee)",
+      "PA0105 SUBTY=0001 PERNR=10092400 -> USRID=S_VOFFAL",
+      "USR02 BNAME=S_VOFFAL -> UFLAG=0 GLTGV=20260402 GLTGB=20280319 USTYP=A",
+      "HRP1001 RY=50010054 SOBID=10092400 historical row BEGDA=20160303 ENDDA=20231004 (expired)",
+      "HRP1001 RY=50036801 SOBID=10092400 historical row BEGDA=20211018 ENDDA=20231004 (expired)",
+      "Post-change HRP1001 RY=50010054 SOBID=10092400 BEGDA=20260409 ENDDA=99991231 (verified)",
+      "Post-change HRP1001 RY=50036801 SOBID=10092400 BEGDA=20260409 ENDDA=99991231 (verified)"
+    ],
+    "scope": {
+      "person_added": "10092400 Said OULD AHMEDOU VOFFAL",
+      "rules_affected": [
+        "90000004",
+        "90000005"
+      ],
+      "ry_objids_affected": [
+        "50010054",
+        "50036801"
+      ],
+      "bank_accounts_affected": [
+        "Citibank Canada USD 2017588014",
+        "Citibank Canada CAD 2017588006"
+      ],
+      "bank_confirmation_deadline": "2026-04-22"
+    },
+    "fix_path": {
+      "immediate": "DBS added 2 HRP1001 rows via OOCU_RESP in P01 (SOBID=10092400, BEGDA=20260409, ENDDA=99991231) on 2026-04-09. BEGDA used execution date instead of letter date 2026-04-02 (7-day audit gap, low material risk).",
+      "structural": "None - operational change.",
+      "preventive": [
+        "Run bcm_signatory_reconciliation_check.py after every BCM signatory change to catch drift automatically",
+        "Store each bank carton under Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt for future diffs",
+        "When executing future changes, use TRS letter effective date as BEGDA, not execution date"
+      ]
+    },
+    "side_findings": [
+      "Ghost PERNR 10567156 for Svein OESTTVEIT on RY 50010054 + 50036801 (logged as dq_ghost_pernr_bcm_oesttveit)",
+      "Possible UIS panel drift STEPHENSON/ZHANG vs Citibank Canada carton (logged as uq_uis_non_citibank_signatories)",
+      "Role-split inconsistency YLI-HIETANEN/SANNEH on UIS rules (logged as uq_uis_bcm_role_split_consistency)"
+    ],
+    "analysis_doc": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md",
+    "part2_cleanup": {
+      "date": "2026-04-13",
+      "trigger": "Business confirmation to align SAP exactly with Citibank Canada carton 02/04/2026",
+      "operations_executed": 9,
+      "operations_breakdown": {
+        "rule_90000004_commit": [
+          "DELIMIT ghost 10567156 Svein OESTTVEIT",
+          "ADD real 10067156 Svein OESTTVEIT (user S_OESTTVEIT)",
+          "DELIMIT 10136066 STEPHENSON-ODLE (not on carton)",
+          "DELIMIT 10098989 ZHANG (not on carton)",
+          "ADD 10150918 SANNEH (was validator-only)"
+        ],
+        "rule_90000005_validation": [
+          "DELIMIT ghost 10567156 Svein OESTTVEIT",
+          "DELIMIT 10098989 ZHANG",
+          "ADD real 10067156 Svein OESTTVEIT",
+          "ADD 10097358 YLI-HIETANEN (was committer-only)"
+        ]
+      },
+      "intermediate_error_caught": "DBS first added Svein 10067156 to IIEP Validation (RY 50010087) instead of UIS Validation (RY 50036801). Caught by reconciliation check (role-split warning flagged Svein on COM but not on INI for UIS; manual P01 read showed he was on IIEP instead). DBS reversed and redid correctly.",
+      "final_state_verified": "2026-04-13 via RFC_READ_TABLE: both rules 8/8 match carton, 0 ghosts, 0 role splits, carton diff exit code 0",
+      "side_findings_closed": [
+        "dq_ghost_pernr_bcm_oesttveit -> RESOLVED",
+        "uq_uis_bcm_role_split_consistency -> ANSWERED (was drift, not intentional)"
+      ],
+      "side_findings_still_open": [
+        "uq_uis_non_citibank_signatories (TRS must confirm if UIS has other bank accounts)"
+      ]
+    }
+  },
+  {
+    "id": "INC-BUDGETRATE-EQG",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "Budget Rate custom solution allows cross-currency consumption against EUR-reserved FR -> AVC pool drift -> FMAVC005",
+    "reporter": "Laetitia Vonthron (adm.cad) -> Christina Lopez-Chemouny -> Yimiao Guo -> Illya Konakov -> Pablo Lopez",
+    "received_date": "2026-03-26",
+    "analyzed_session": 53,
+    "domain": "PSM",
+    "secondary_domains": [
+      "FI",
+      "Treasury"
+    ],
+    "transactions": [
+      "FB60",
+      "MIRO",
+      "F110",
+      "FMX1",
+      "FMX2",
+      "FMN4N",
+      "FMZZ",
+      "FMAVCREINIT"
+    ],
+    "primary_subject": "FR 3250117351 line 39 (EUR carryforward to 2026, fund 3110111021 / FUNDSCTR PAX / CMMTITEM TC); EqG ticket reimbursement for SG Bivini Mangue",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "scenario": "cross_currency_consumption_against_BR_FR",
+    "incident_type": "defect",
+    "error_messages": [
+      "FMAVC005 Annual budget exceeded by 0,87 USD (FM Availability Control) for document item 00002"
+    ],
+    "root_cause_summary": "15-member ZFIX_EXCHANGERATE composite has gate-input asymmetry: Camp A (FR-anchored: CHECK_CONS, EF_FUND_RESERVATION, FUNDBLOCK) always fires for EUR FRs; Camp B (posting-anchored: PAYCOMMIT, NEW_ITEM, AVC, KBLEW, FI) silently skips when posting currency is not EUR. FR persisted at BR (1.09529); consumption persisted at identity. AVC pool drifts fund-by-fund until cover-group hits zero headroom. Vonthron's fund 3110111021/PAX/TC has $12,897.80 budget exactly matched by $12,897.80 of carryforward FR commitments -> Available=0 -> any new USD posting fires FMAVC005.",
+    "code_validation_chain": [
+      "extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A line 8: APPEND 'EUR' to mr_waers (the perimeter line)",
+      "extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM004: check_conditions exits abap_false if iv_waers NOT IN mr_waers",
+      "ZFIX_EXCHANGERATE_CHECK_CONS Enh1 (Camp A): iv_waers = m_r_doc->m_f_kblk-waers (FR header EUR) -> PASS -> recalc -> Enh2 RESTORE original (in-memory only, no persistence)",
+      "ZFIX_EXCHANGERATE_NEW_ITEM (Camp B): iv_waers = c_f_fmoi-twaer (USD for USD posting) -> FAIL -> no recalc",
+      "ZFIX_EXCHANGERATE_AVC Enh1+3 (Camp B): iv_waers = <ls_fmioi>-twaer / <ls_fmifiit>-twaer per-row -> mixed, USD rows skip",
+      "ZFIX_EXCHANGERATE_KBLEW (Camp B): iv_waers = ls_tr_kblew-waers (USD) -> FAIL -> no recalc",
+      "ZFIX_EXCHANGERATE_FI (Camp B): iv_waers = <ls_fmifiit>-twaer (USD) -> FAIL -> no recalc + no audit + mt_avc_fund not appended -> fmavc_reinit_on_event handler never registered",
+      "FMAVCT(RLDNR=9H,RFIKRS=UNES,RYEAR=2026,RFUND=3110111021,RFUNDSCTR=PAX,RCMMTITEM=TC) ALLOCTYPE_9=KBFC HSL01=12,897.80 USD",
+      "Open FR commitments same key: 5 lines (RFPOS 38/39/40/43/45 of FR 3250117351) summing to $12,897.80",
+      "Available = 12,897.80 - 12,897.80 = 0 -> FMAVC005 fires on any positive posting"
+    ],
+    "scope": {
+      "br_applicable_open_fr_lines_in_P01_2026": 64,
+      "distinct_funds_at_risk": 26,
+      "lines_with_AVC_available_zero": [
+        "3250117351/00038",
+        "3250117351/00039",
+        "3250117351/00040",
+        "3250117351/00043",
+        "3250117351/00045",
+        "3260008383/00001",
+        "3260008383/00002",
+        "3260008383/00007",
+        "3250117154/00002",
+        "3250118228/00003",
+        "3250118228/00004"
+      ],
+      "lifetime_USD_bypass_volume_USD": 375011484.95,
+      "estimated_drift_exposure_USD": 35734844.4,
+      "system_landscape": {
+        "D01": "BAdI ZFIX_BR_AVC_EXCLUSIONS exists (DEAD)",
+        "V01": "BAdI exists (DEAD)",
+        "TS1": "absent",
+        "TS3": "absent",
+        "P01": "absent"
+      }
+    },
+    "fix_path": {
+      "immediate_workaround": "Post the EqG invoice in EUR (validated by Konakov 2026-03-30 'when I try to post the invoice in EUR instead of USD it works fine'). Use XOF->EUR rate at translation date.",
+      "preventive_recommended": "Add validation in CL_FM_EF_POSITION->CHECK_CONSUMPTION: IF check_br_is_active() AND m_r_doc->m_f_kblk-waers='EUR' AND m_f_kblp-gsber='GEF' AND fund_type IN mr_fund_type AND consumption_doc-waers <> 'EUR' THEN MESSAGE 'Z_BR_001' TYPE 'E'. Stops drift at user-input layer.",
+      "corrective_alternative": "Activate convert_to_currency_2 (Staff logic) in Camp B enhancements to dispatch USD through USD-UNORE -> EUR @ M -> USD @ EURX double-hop. Method exists, complete, only called from IF 1=2 dead branches today.",
+      "cleanup": "After preventive validation deploys: one-time FMAVCREINIT on 26 affected funds for 2026 GJAHR ledger 9H to clear accumulated drift.",
+      "PMO_items": [
+        "H38: Cleanup ZFIX_BR_AVC_EXCLUSIONS dead code from D01+V01",
+        "H39 (new): Build preventive validation enhancement",
+        "H40 (new): One-time FMAVCREINIT cleanup"
+      ]
+    },
+    "analysis_doc": "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+    "executive_brief": "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
+    "inventory_xlsx": "Zagentexecution/incidents/INC_budget_rate_eq_guinea/br_lines_FINAL.xlsx",
+    "trace_evidence": "Zagentexecution/incidents/INC_budget_rate_eq_guinea/dev_w5_trace_TS3.txt + body.txt + image*.png + br_consumption_audit.json",
+    "related_objects": [
+      "YCL_FM_BR_EXCHANGE_RATE_BL",
+      "ZFIX_EXCHANGERATE",
+      "ZFIX_EXCHANGERATE_CHECK_CONS",
+      "ZFIX_EXCHANGERATE_AVC",
+      "ZFIX_EXCHANGERATE_FI",
+      "ZFIX_EXCHANGERATE_KBLEW",
+      "ZFIX_EXCHANGERATE_NEW_ITEM",
+      "ZFIX_EXCHANGERATE_PAYCOMMIT",
+      "ZFIX_EXCHANGERATE_FUNDBLOCK",
+      "ZFIX_EF_FUND_RESERVATION",
+      "ZFIX_BR_REVALUATION",
+      "ZFIX_BR_REVAL_RESFUND",
+      "ZFIX_BR_AVC_EXCLUSIONS",
+      "ZFIX_FM_BR_POST_FROM_PY_AUTO",
+      "ZFIX_BR_BAPI_EMPLOYEE_POST",
+      "CL_FM_EF_POSITION",
+      "FMAVCT",
+      "FMIOI",
+      "FMIFIIT",
+      "KBLE",
+      "KBLEW",
+      "KBLK",
+      "KBLP",
+      "TCURR",
+      "TVARVC.Y_FM_FIXED_RATE_START",
+      "FMFINCODE",
+      "FMFUNDTYPE.ZZFIX_RATE",
+      "/SAPPSPRO/PD_GM_FMR2_READ_KBLE"
+    ]
   }
 ]

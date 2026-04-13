@@ -1,0 +1,2 @@
+  method IF_EX_FMAVC_ENTRY_FILTER~POSTING_FILTER.
+  endmethod.

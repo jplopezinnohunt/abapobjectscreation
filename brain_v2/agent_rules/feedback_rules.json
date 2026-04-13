@@ -619,5 +619,122 @@
     "severity": "HIGH",
     "created_session": "#051",
     "source_file": "feedback_read_emails_in_main_agent.md"
+  },
+  {
+    "id": "feedback_p01_readonly_absolute",
+    "rule": "P01 is strictly read-only for the AI agent. Never attempt INSERT/UPDATE/DELETE on P01 via RFC, BAPI, RFC_ABAP_INSTALL_AND_RUN, OOCU_RESP WebGUI automation, or any other path.",
+    "why": "P01 is production. Signatory changes, master data updates, and config changes are executed by DBS via direct OOCU_RESP/SPRO/PA30 access in P01 after TRS/business authorization. An AI write to P01 bypasses the CFO delegation chain and the audit trail. Confirmed by user during INC-000006313 (2026-04-09) with an emphatic 'you can not do any insert'.",
+    "how_to_apply": "Agent scope on any P01 change request is: (1) read-only analysis via RFC_READ_TABLE, (2) produce a written change spec for DBS, (3) post-change verification via RFC_READ_TABLE and Gold DB refresh. Never write a script with a --execute flag targeting P01. Never call write BAPIs. Never run RFC_ABAP_INSTALL_AND_RUN with INSERT/UPDATE/MODIFY/DELETE. If the user asks 'update it', the answer is 'spec for DBS + verify after'. D01 writes are still allowed.",
+    "severity": "CRITICAL",
+    "created_session": 52,
+    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
+  },
+  {
+    "id": "feedback_bcm_signatory_ry_otype",
+    "rule": "BCM signatory responsibility groups are PD objects of OTYPE='RY' (not 'AC'). HRP1000.SHORT holds the rule class ('BNK_01_01_03' = rule 90000004, 'BNK_01_01_04' = rule 90000005). User assignments live in HRP1001 with RELAT='007' SCLAS='P' SOBID=<PERNR>. Resolve names via PA0002, SAP user via PA0105 SUBTY='0001', email via PA0105 SUBTY='0010'. PA0001 is blocked.",
+    "why": "Session #051 (INC-000006313) discovered that querying HRP1000 OTYPE='AC' for PFAC workflow rules returns zero rows for our SNC user, while OTYPE='RY' works. Without this documented path, a future agent wastes significant time re-discovering the schema from scratch. The RY -> HRP1001/007/P -> PA0002/PA0105 chain was verified against the OOCU_RESP screens provided by the user.",
+    "how_to_apply": "For any BCM signatory question: (1) list groups via HRP1000 OTYPE='RY' SHORT IN ('BNK_01_01_03','BNK_01_01_04'), (2) list assignments via HRP1001 OTYPE='RY' OBJID=<ry_objid> then filter RELAT='007' SCLAS='P' in Python, (3) resolve PERNRs via PA0002 for name and PA0105 SUBTY='0001' for SAP user + SUBTY='0010' for email. RFC_READ_TABLE rejects IN() and more than ~3 AND clauses on HR tables, so keep WHERE simple.",
+    "severity": "HIGH",
+    "created_session": 52,
+    "source_file": "knowledge/domains/Treasury/bcm_signatory_rules.md"
+  },
+  {
+    "id": "feedback_bcm_ghost_pernr_check",
+    "rule": "When investigating a BCM signatory, always cross-check that HRP1001.SOBID has a non-empty PA0105 SUBTY='0001' USRID. An empty USRID means the PERNR is a ghost shell and the signatory cannot be routed work items by workflow 90000003 even though they appear in OOCU_RESP and on the bank carton.",
+    "why": "Session #051 (INC-000006313) discovered a ghost PERNR 10567156 for Svein OESTTVEIT active on UIS rules 90000004 + 90000005 since 2025-10-04. Real PERNR is 10067156 (user S_OESTTVEIT). Ghost has no PA0105/0001, so Svein silently cannot sign UIS payments in BNK_APP. This is a production defect that was invisible until the bank's carton des signatures was compared PERNR-by-PERNR against HRP1001.",
+    "how_to_apply": "Run `python Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` at session start when the user asks about BCM signatories, AND after any DBS signatory update. Check 1 of the script detects ghost PERNRs. Treat any ghost as CRITICAL data quality defect and log to data_quality_issues.json. Always compare against the PERNR on the HEPATUS carton des signatures page (last page of a TRS letter), not the cover letter which uses names only.",
+    "severity": "HIGH",
+    "created_session": 52,
+    "source_file": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py"
+  },
+  {
+    "id": "feedback_br_camp_asymmetry",
+    "rule": "When analyzing UNESCO BR custom solution (ENHC ZFIX_EXCHANGERATE), classify enhancements by gate-input source: Camp A (FR-currency anchored: CHECK_CONS, EF_FUND_RESERVATION, FUNDBLOCK), Camp B (posting-currency anchored: PAYCOMMIT, NEW_ITEM, AVC, KBLEW, FI), Camp C (filters: BR_REVALUATION, BR_REVAL_RESFUND, BR_AVC_EXCLUSIONS BAdI), Camp D (auxiliary: FM_BR_POST_FROM_PY_AUTO, BR_BAPI_EMPLOYEE_POST). The asymmetry between Camp A (always BR for EUR FR) and Camp B (skips when posting is non-EUR) is the cross-currency drift bug surface.",
+    "why": "Session #053 (INC-BUDGETRATE-EQG): the prior 8-member framing was incomplete. Real composite has 15 members + 1 BAdI. Bug isn't 'gate rejects USD everywhere' - it's gate input source asymmetry. Only Camp B mis-handles cross-currency.",
+    "how_to_apply": "When triaging FMAVC005 or any BR-related question, list all 15 composite members + classify into camps before reasoning about behavior. Don't trust prior 8-member docs.",
+    "severity": "HIGH",
+    "created_session": 53,
+    "source_file": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md"
+  },
+  {
+    "id": "feedback_check_landscape_before_root_cause",
+    "rule": "Before claiming any custom Z/Y object affects production behavior, query TADIR + REPOSRC against P01 (production) directly via RFC. D01-only or V01-only objects do NOT affect production no matter how interesting their source code looks. Cross-check via: SELECT FROM TADIR WHERE OBJ_NAME=<X> on every system in the landscape (D01/V01/TS1/TS3/P01).",
+    "why": "Session #053: I claimed BR_AVC_EXCLUSIONS BAdI was suppressing AVC for MIRO/F110 in production based on D01 source. User caught it: 'I do not see it in TS3'. Cross-check confirmed it lives only in D01+V01, was deactivated 1 day after creation, never transported. Wrong claim wasted user time.",
+    "how_to_apply": "For any custom object analysis: (1) confirm presence in P01 first, (2) check ENHLOG for deactivation, (3) check transports in E070/E07T for release status, (4) only THEN claim it affects production behavior.",
+    "severity": "CRITICAL",
+    "created_session": 53,
+    "source_file": "PMO H38"
+  },
+  {
+    "id": "feedback_kble_via_pspro_wrapper",
+    "rule": "KBLE / KBLEW (Earmarked Fund consumption history) are cluster tables - RFC_READ_TABLE returns TABLE_WITHOUT_DATA. Use RFC-enabled wrapper: conn.call('/SAPPSPRO/PD_GM_FMR2_READ_KBLE', I_BELNR=<FR_doc>) which returns T_KBLE (consumption events with RBELNR/RBUZEI = consumer FI doc/line) AND T_KBLEW (per-currency split with CURTP=00 transaction currency, CURTP=10 local USD).",
+    "why": "Session #053: needed FR<->FI consumption traceability without BSEG.KBLNR. Wrapper found via /SAPPSPRO/ namespace probe. Returns 263 rows for one FR including the RBELNR linkage we couldn't get any other way.",
+    "how_to_apply": "For any FR consumption analysis: use wrapper FM, not RFC_READ_TABLE. KBLEW.CURTP=10 gives local-currency (USD) view directly; CURTP=00 gives transaction currency.",
+    "severity": "MEDIUM",
+    "created_session": 53,
+    "source_file": "Zagentexecution/quality_checks/budget_rate_consumption_audit.py"
+  },
+  {
+    "id": "feedback_fmavct_query_pattern",
+    "rule": "FMAVCT (BCS AVC totals) is a wide table (>512 bytes per row). RFC_READ_TABLE with FIELDS=[] returns DATA_BUFFER_EXCEEDED. Workaround: pass narrow FIELDS list (max 10-15 columns); split WHERE conditions into multiple OPTIONS entries (single complex boolean WHERE rejected with OPTION_NOT_VALID). Dedup result rows by full-row signature (RVERS/RPMAX often produce duplicates that double-count if summed naively). For AVC available calc: ALLOCTYPE_9='KBFC' = carryforward allotment (UNESCO ledger 9H 2026). HSL01-HSL16 are per-period local-currency values; HSLVT is yearly total.",
+    "why": "Session #053: needed AVC budget per fund for 26 funds. First attempts failed with parser errors. Final pattern works reliably: split WHERE + narrow FIELDS + dedup.",
+    "how_to_apply": "For any FMAVCT query in a script: (1) use DDIF_FIELDINFO_GET first to confirm column names, (2) pick max 12 fields, (3) split WHERE into multiple OPTIONS lines, (4) dedup by row signature before summing. ALLOCTYPE_9 dimension distinguishes budget vs. consumption rows.",
+    "severity": "MEDIUM",
+    "created_session": 53,
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+  },
+  {
+    "id": "feedback_fmioi_carryforward_pairs",
+    "rule": "FMIOI WRTTP=81 rows for an Earmarked Fund include: original creation (positive), period-specific consumption reductions (negative), period-016 year-end reversal (positive equal to remaining), period-000 carryforward-IN to next year. Naive sign-sum across all years does NOT equal 'open balance'. For 'open' filter by current GJAHR + signed sum. For 'lifetime consumed' use KBLE/KBLEW (the consumption history), NOT FMIOI. FMIOI rows with ratio=1.0 and tiny amounts ($0.01-0.02) are SAP rounding plugs, NOT cross-currency consumption signatures.",
+    "why": "Session #053: misread the AFFECTED 20 lines as 'cross-currency consumption already fired' when they were actually rounding plugs. Also computed wrong open balance from FMIOI by naive subtraction. User caught both errors.",
+    "how_to_apply": "Always sample 3 raw FMIOI WRTTP=81 rows for any FR before computing per-line metrics. Identity-ratio rows with sub-cent amounts = rounding plugs, ignore. For consumption history, use KBLEW filtered by CURTP - not FMIOI signed sums.",
+    "severity": "MEDIUM",
+    "created_session": 53,
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+  },
+  {
+    "id": "feedback_table_columns_never_drop",
+    "rule": "When iterating on a wide table (markdown/excel/report), NEVER remove existing columns when adding new ones. Build the wider table by extending the previous column set in a single canonical script. If a column becomes irrelevant, mark it 'deprecated' but keep displaying it for one session before removing.",
+    "why": "Session #053: I removed columns 'actual EUR cons USD-eq', 'actual nonEUR USD cons', 'non-EUR breakdown' when adding 'AVC budget USD' + 'AVC available USD'. User caught it twice (the 2nd time with 'PUTA MADRE / me haces perder el tiempo / me reago' — strong frustration signal). This is a costly mistake that breaks user trust.",
+    "how_to_apply": "When updating a previously-shown table: (1) read the user's last shown column list, (2) the new table MUST contain >= those columns + the additions, (3) if you must restructure, show the column-mapping diff explicitly first and ask. Use a single source-of-truth script that builds incrementally so columns can never silently drop.",
+    "severity": "HIGH",
+    "created_session": 53,
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+  },
+  {
+    "id": "feedback_aggregation_scope_explicit",
+    "rule": "Every aggregation column in a report must explicitly state its filter scope in the header AND in any explanatory note. Allowed scopes: 'per-line' (REFBN+RFPOS), 'per-FONDS+FIPEX' (cover-group context), 'per-fund' (FONDS only), 'system-wide'. NEVER label an aggregation column 'total' without specifying 'total of WHAT'.",
+    "why": "Session #053: I labeled fund+FIPEX consumption as 'pool EUR cons' and the user reasonably assumed it was per-FR consumption ($170K vs €4,400 line). Caused 3 round-trips of clarification. The right column name was 'fund+FIPEX EUR cons (USD-equiv, broader cover-group context)'.",
+    "how_to_apply": "For any column derived from SUM/COUNT: name it with explicit scope marker. Examples: 'line cons EUR (this REFBN+RFPOS only)', 'pool USD cons (same FONDS+FIPEX, all FRs)'. Never use bare 'total' or 'cons' without scope qualifier.",
+    "severity": "HIGH",
+    "created_session": 53,
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+  },
+  {
+    "id": "feedback_no_silent_except_pass",
+    "rule": "In data-extraction scripts (RFC, SQL, file I/O) NEVER use 'except: pass' or 'except Exception: pass'. Silent failures cause downstream tables to show 0 / null without explanation, leading to wrong conclusions. ALWAYS at minimum: 'except Exception as e: print(f\"ERROR <context>: {e}\", file=sys.stderr)'. For RFC calls in particular, log the WHERE clause and parameters that failed.",
+    "why": "Session #053: my background FMAVCT script used 'except: pass' to swallow per-fund RFC errors. Result: AVC budget column showed 0 for ALL 64 rows (the WHERE clause syntax differed from earlier successful runs). User caught it ('AVC budget 0 doesn't make sense'). I would have spotted it instantly if errors had been printed.",
+    "how_to_apply": "grep -n 'except.*pass' on every extraction script before running. Replace with explicit error logging. For batch operations across N entities, log ERR + entity ID so you know which entity failed without re-running.",
+    "severity": "CRITICAL",
+    "created_session": 53,
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+  },
+  {
+    "id": "feedback_sample_raw_rows_before_aggregating",
+    "rule": "Before computing any metric over a SAP table (FMIOI, FMIFIIT, FMAVCT, BSEG, etc.), sample 3-5 RAW rows for one specific key and inspect them. This catches: (a) sign convention surprises (FMIOI carryforward pairs), (b) duplicate-row patterns (FMAVCT RVERS), (c) rounding-plug rows ($0.01-0.02 ratio=1.0 in FMIOI), (d) trailing-minus number formats ('1234.56-'). Skipping this step caused 3 wrong interpretations in Session #053.",
+    "why": "Session #053 mistakes: (1) interpreted $0.01 ratio=1.0 rows as cross-currency consumption (they were rounding plugs), (2) computed open balance as orig-consumed (sign convention wrong for carryforwards), (3) double-counted FMAVCT due to RVERS duplicates. All three would have been caught by 5 minutes of raw-row inspection upfront.",
+    "how_to_apply": "First action when querying a new table or new key: SELECT * FROM <table> WHERE <key>=<sample> ORDER BY ... LIMIT 10. Print rows. Read them. THEN write the aggregation. Total cost: 30 seconds. Total savings: hours of wrong analysis.",
+    "severity": "HIGH",
+    "created_session": 53,
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+  },
+  {
+    "id": "feedback_bcm_spec_must_include_rule_ry_stext",
+    "rule": "When producing a BCM signatory change spec for DBS, ALWAYS include ALL THREE identifiers: Rule number (90000004/90000005), RY OBJID (8-digit), and STEXT (exact group name). Never describe the target group by entity name alone.",
+    "why": "During INC-000006313 Part 2 cleanup (Session #052, 2026-04-13), DBS almost added Svein OESTTVEIT to IIEP Validation (RY 50010087) instead of UIS Validation (RY 50036801) — the two groups sit next to each other under rule 90000005, both end with the word 'Validation', and differ only by the prefix. Without the RY OBJID in the spec, DBS picked IIEP by mistake. Had the mis-add gone undetected, Svein would have been authorized to approve IIEP payments against the wrong bank carton (compliance breach). The mis-add was caught because the reconciliation check includes an off-entity ghost scan via the carton file.",
+    "how_to_apply": "Every change spec row must be a 5-tuple: (Action, Rule, RY_OBJID, STEXT, PERNR). Example: 'ADD, 90000005, 50036801, UIS Validation, 10097358'. When writing the spec, present RY OBJID prominently (not only in a footnote). Warn DBS explicitly about lookalike groups that sit next to the target in the OOCU_RESP tree — name at least one specific adjacent trap (e.g. 'do NOT pick IIEP Validation'). After DBS confirms execution, always re-run bcm_signatory_reconciliation_check.py — if the target RY has the expected members AND the adjacent-entity RYs (same rule, different prefix) are unchanged compared to the previous snapshot, the change was applied to the correct group.",
+    "severity": "HIGH",
+    "created_session": 52,
+    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
   }
 ]

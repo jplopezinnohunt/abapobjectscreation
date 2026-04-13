@@ -679,5 +679,109 @@
     "evidence_for": "Gold DB cdhdr query 2026-04-09: count of BELEG changes by TCODE and USNAM where OBJECTID matches '%UNES%' and UDATE in Q1 2026",
     "evidence_against": null,
     "resolution_notes": ""
+  },
+  {
+    "id": 42,
+    "claim": "At UNESCO P01, BCM workflow responsibility groups (rules 90000004 BNK_COM and 90000005 BNK_INI) are stored as PD objects OTYPE='RY' under PLVAR='01'. HRP1000.SHORT = rule class, HRP1000.STEXT = group name. HRP1001 RELAT='007' SCLAS='P' SOBID=<PERNR> assigns users. Workflow 90000003 resolves rule 90000005 first (validators) then 90000004 (committers).",
+    "claim_type": "config_structure",
+    "confidence": "VERIFIED",
+    "evidence_for": "HRP1000 SHORT LIKE 'BNK%' returned 20 RY objects including the 7 live UIS/UNES/IIEP/UBO/UIL groups (Session #051 probe) | HRP1001 RELAT='007' SCLAS='P' returned 253 rows (now 255 post-INC6313) across the 24 RY groups | Counts per group match the OOCU_RESP screens provided by user for rule 90000004: 13/13 UNES, 20/20 UIS, 16/16 IIEP, 11/11 UBO<=10K, 15/15 UIS<=10K, 10/10 UBO>10K, 8/8 UIL | PA0002 VORNA/NACHN for resolved PERNRs match the names on the OOCU_RESP screenshots and the UIS carton des signatures (INC-000006313 PDF page 4)",
+    "evidence_against": "",
+    "related_objects": [
+      "HRP1000",
+      "HRP1001",
+      "PA0002",
+      "PA0105",
+      "OOCU_RESP",
+      "BNK_COM_01_01_03",
+      "BNK_INI_01_01_04"
+    ],
+    "domain": "Treasury",
+    "created_session": 52,
+    "resolved_session": 52,
+    "slug": "claim_bcm_ry_otype"
+  },
+  {
+    "id": 43,
+    "claim": "PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures for all transfers / UIS Validation) with BEGDA=2025-10-04 ENDDA=99991231. It has a PA0002 record with name 'Svein OESTTVEIT' but NO PA0105 SUBTY='0001' SAP user and NO PA0105 SUBTY='0010' work email. The real Svein OESTTVEIT is PERNR 10067156 (user S_OESTTVEIT). Impact: workflow 90000003 cannot route a BNK_APP work item to PERNR 10567156, so Svein is silently unable to sign UIS payments in SAP despite appearing on OOCU_RESP and on the Citibank Canada carton.",
+    "claim_type": "defect",
+    "confidence": "VERIFIED",
+    "evidence_for": "PA0002 read for 10067156 returned 5 continuous employment records 1955 -> 9999 | PA0002 read for 10567156 returned 1 flat record 1955-12-16 -> 9999-12-31 with same name | PA0105 for 10067156 returned SUBTY='0001' USRID='S_OESTTVEIT' and SUBTY='0010' USRID_LONG='S.OESTTVEIT@UNESCO.ORG' | PA0105 for 10567156 returned only SUBTY='0030' private email 'svein.osttveit@orange.fr' | HEPATUS carton des signatures (UIS Citibank Canada 02/04/2026, INC-000006313 PDF page 4) lists PERNR 10067156 for Svein OESTTVEIT, not 10567156",
+    "evidence_against": "",
+    "related_objects": [
+      "HRP1001",
+      "PA0002",
+      "PA0105",
+      "50010054",
+      "50036801",
+      "BNK_COM_01_01_03",
+      "BNK_INI_01_01_04"
+    ],
+    "domain": "Treasury",
+    "created_session": 52,
+    "resolved_session": null,
+    "slug": "claim_ghost_pernr_oesttveit"
+  },
+  {
+    "id": 44,
+    "claim": "UNESCO BR cross-currency drift bug = gate-input asymmetry across the 15-member ZFIX_EXCHANGERATE composite. Camp A (CHECK_CONS / EF_FUND_RESERVATION / FUNDBLOCK) gates on FR's own EUR currency and always fires. Camp B (PAYCOMMIT / NEW_ITEM / AVC / KBLEW / FI) gates on per-row posting currency and silently skips when posting is non-EUR. The two camps thus produce divergent ledger states: FR side at BR (1.09529), consumption side at identity / M-rate. AVC pool drifts fund-by-fund until cover-group hits zero headroom => FMAVC005.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Source code: extracted_code/ENHO/ZFIX_EXCHANGERATE/ (15 enhancement files inspected line-by-line in Session #053). Production data: 64 BR-applicable open FR lines in P01 ledger 9H 2026, 35 with non-EUR consumption pool drift documented in Zagentexecution/incidents/INC_budget_rate_eq_guinea/br_lines_FINAL.xlsx.",
+    "evidence_against": null,
+    "related_objects": [
+      "YCL_FM_BR_EXCHANGE_RATE_BL",
+      "ZFIX_EXCHANGERATE_CHECK_CONS",
+      "ZFIX_EXCHANGERATE_AVC",
+      "ZFIX_EXCHANGERATE_FI",
+      "ZFIX_EXCHANGERATE_KBLEW",
+      "ZFIX_EXCHANGERATE_NEW_ITEM",
+      "ZFIX_EXCHANGERATE_PAYCOMMIT",
+      "ZFIX_EF_FUND_RESERVATION",
+      "ZFIX_EXCHANGERATE_FUNDBLOCK",
+      "INC-BUDGETRATE-EQG"
+    ],
+    "domain": "PSM",
+    "created_session": 53,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active"
+  },
+  {
+    "id": 45,
+    "claim": "ZFIX_BR_AVC_EXCLUSIONS BAdI is dead code in P01 production. Created by JP_LOPEZ on 2025-05-14 in D01 (transports D01K9B0D4Z + D01K9B0D50, 'BR - AVC Exlclusion MIRO F110'), deactivated next day 2025-05-15 (transports D01K9B0D54 + D01K9B0D55, 'BR Deactivate AVC exclusion'). Exists in D01 + V01 only (TADIR + REPOSRC confirmed). Absent from TS1, TS3, P01. The implementation only places skip logic in BUDGET_FILTER (wrong method) for tcodes MIRO + F110, and POSTING_FILTER is an empty stub. Never affected production AVC behavior.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Cross-system TADIR/REPOSRC query Session #053. Transports E070/E07T headers. Source code at extracted_code/ENHO/ZFIX_EXCHANGERATE/AVC_EXCLUSIONS/.",
+    "evidence_against": null,
+    "related_objects": [
+      "ZFIX_BR_AVC_EXCLUSIONS",
+      "FMAVC_ENTRY_FILTER",
+      "IF_EX_FMAVC_ENTRY_FILTER"
+    ],
+    "domain": "PSM",
+    "created_session": 53,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active"
+  },
+  {
+    "id": 46,
+    "claim": "AVC available is a fund/cover-group level metric, not an FR-line-level metric. All FR lines on the same (FONDS, FUNDSCTR, CMMTITEM-rolled-to-control-object) draw from a single shared AVC pool. The pool is calculated as: Available = FMAVCT.allotment - sum(open FMIOI commitments) - sum(FMIFIIT actuals) on the same key. FMAVC005 fires when Available <= 0 + new posting amount > 0. The triggering FR line is incidental; the constraint is the fund pool.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "FMAVCT structure inspection + Vonthron's case empirical confirmation: fund 3110111021/PAX/TC 2026 has $12,897.80 carryforward allotment exactly matching the 5 carryforward FRs sum => Available = 0 => any USD posting on any of the 5 lines triggers FMAVC005.",
+    "evidence_against": null,
+    "related_objects": [
+      "FMAVCT",
+      "FMIOI",
+      "FMIFIIT",
+      "INC-BUDGETRATE-EQG"
+    ],
+    "domain": "PSM",
+    "created_session": 53,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active"
   }
 ]
