@@ -3,7 +3,7 @@
   "_stats": {
     "core_principles": 3,
     "objects": 200,
-    "rules": 86,
+    "rules": 87,
     "claims": 49,
     "incidents": 6,
     "incident_records": 4,
@@ -7077,6 +7077,16 @@
           "incident": "$170K pool vs per-line consumption ambiguity, required correction"
         }
       ]
+    },
+    {
+      "id": "feedback_never_write_production_without_explicit_request",
+      "rule": "NEVER execute writes (INSERT/UPDATE/DELETE/BAPI commits/RFM calls with side effects) against P01 or any production system unless the user EXPLICITLY and unambiguously asks for that specific change on that specific day. 'Unblocked', 'executable', 'ready', 'recommended fix' describe STATE — they are NOT authorization to act. Default mode is evaluation / read-only.",
+      "why": "Session #055 (2026-04-14): when investigating H48, agent listed H45 as 'unblocked, executable'. User reacted with strong pushback: 'NO actualices NADA en PRD!!! SOlo estas evaluando!!!'. The framing of a task as 'executable' was being read as intent-to-execute. Production writes are high-blast-radius and irreversible — misreading state-language as authorization is a class of defect that must be prevented structurally.",
+      "how_to_apply": "1) Any language about production fixes (H45/H46/H48 etc.) is EVALUATION only. 2) Before any RFC call that is not RFC_READ_TABLE, ask 'is this a write?'. If yes, stop and confirm in an explicit question to the user. 3) State writes in the FUTURE CONDITIONAL: 'si ejecutas', 'cuando decidas', never 'ejecuto', 'actualizo'. 4) Presentation of a fix (code diff, SQL INSERT, BAPI call) = design deliverable, never auto-implementation. 5) When user says 'ok proceder', verify they mean execute-write vs continue-investigation — if ambiguous, ask. 6) Applies to: P01 always. D01 if change is destructive or affects shared dev state. Quality_gate: any PR or script that writes to P01 must be approved line-by-line in chat before running.",
+      "severity": "CRITICAL",
+      "created_session": 55,
+      "derives_from_core_principle": "CP-003",
+      "source_file": "session_055_retro.md"
     }
   ],
   "claims": [
