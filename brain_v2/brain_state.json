@@ -4,7 +4,7 @@
     "core_principles": 3,
     "objects": 200,
     "rules": 86,
-    "claims": 46,
+    "claims": 47,
     "incidents": 6,
     "incident_records": 4,
     "domains": 14,
@@ -221,6 +221,12 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "claim": "ZXFMDTU02_RPY.abap line 99 hardcodes C_FMDERIVE-FUND_CENTER='UNESCO' for HKONT in (0006045011, 0007045011, 0006045014) with FIKRS=UNES and FISTL=SPACE"
+        },
+        {
+          "id": 47,
+          "tier": "TIER_1",
+          "type": "defect",
+          "claim": "YRGGBS00 UXR1 (XREF1 substitution) has the guard `IF bseg_xref1 = space` COMMENTED OUT at line 998, while UXR2 (XREF2 substitution) at line 1026 KEEPS"
         }
       ],
       "incidents": [
@@ -2838,6 +2844,29 @@
             "SUBSTID=UNESCO",
             "VALID=UNES"
           ]
+        },
+        {
+          "tag": "CRITICAL",
+          "finding": "UXR1 guard commented out (line 998) while UXR2 guard active (line 1026) — silent overwrite of user-typed XREF1. Asymmetric defect, root cause of DQ-019 systemic drift.",
+          "timestamp": "2026-04-14T22:00:00Z",
+          "session": "#054",
+          "incident": "INC-000005240",
+          "line": 998,
+          "related": [
+            "USR05.Y_USERFO",
+            "YFO_CODES",
+            "BSEG.XREF1",
+            "UXR2"
+          ],
+          "impact": "Every FI posting by a user with USR05.Y_USERFO populated has XREF1 silently overwritten, regardless of whether the user typed a value. Post-posting manual edits (FB02) become the de-facto correction mechanism."
+        }
+      ],
+      "claims": [
+        {
+          "id": 47,
+          "tier": "TIER_1",
+          "type": "defect",
+          "claim": "YRGGBS00 UXR1 (XREF1 substitution) has the guard `IF bseg_xref1 = space` COMMENTED OUT at line 998, while UXR2 (XREF2 substitution) at line 1026 KEEPS"
         }
       ],
       "incidents": [
@@ -4439,7 +4468,8 @@
       "knowledge_docs": [
         "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
         "knowledge/incidents/INC-BUDGETRATE-EQG_executive_brief.md",
-        "knowledge/session_retros/session_053_retro.md"
+        "knowledge/session_retros/session_053_retro.md",
+        "knowledge/session_retros/session_054_retro.md"
       ]
     },
     "HRP1000": {
@@ -8310,6 +8340,43 @@
       "resolution_notes": null,
       "status": "active",
       "evidence_legacy_text_for": "FMAVCT structure inspection + Vonthron's case empirical confirmation: fund 3110111021/PAX/TC 2026 has $12,897.80 carryforward allotment exactly matching the 5 carryforward FRs sum => Available = 0 => any USD posting on any of the 5 lines triggers FMAVC005."
+    },
+    {
+      "id": 47,
+      "claim": "YRGGBS00 UXR1 (XREF1 substitution) has the guard `IF bseg_xref1 = space` COMMENTED OUT at line 998, while UXR2 (XREF2 substitution) at line 1026 KEEPS the equivalent guard `IF bseg_xref2 = space`. Consequence: UXR1 unconditionally overwrites user-typed XREF1 with USR05.Y_USERFO whenever the posting user has that SU3 param; UXR2 only auto-writes when blank. This asymmetry is the root cause of the systemic XREF drift pattern observed in DQ-019 (21,754 manual Q1 2026 XREF edits via FBL3N/FB02/FBL5N).",
+      "claim_type": "defect",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        {
+          "type": "source_code",
+          "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:998",
+          "cite": "`*  if bseg_xref1 = space.` — line commented out, breaking the guard. UXR1 then falls through to unconditional USR05 select + overwrite at line 1004.",
+          "added_session": 54
+        },
+        {
+          "type": "source_code",
+          "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1026",
+          "cite": "`IF bseg_xref2 = space.` — line active in UXR2, maintaining the guard. UXR2 only enters USR05 select when XREF2 is blank.",
+          "added_session": 54
+        },
+        {
+          "type": "production_data",
+          "ref": "DQ-019 finding",
+          "cite": "21,754 manual XREF post-posting edits in Q1 2026 on UNES BELEG documents via FBL3N/FBL1N/FB02/FBL5N — consistent with users correcting silently-overwritten XREF1.",
+          "added_session": 54
+        }
+      ],
+      "evidence_against": null,
+      "related_objects": [
+        "YRGGBS00",
+        "USR05",
+        "BSEG.XREF1",
+        "BSEG.XREF2"
+      ],
+      "domain": "FI",
+      "created_session": 54,
+      "resolved_session": null,
+      "status": "active"
     }
   ],
   "known_unknowns": [
@@ -8702,7 +8769,12 @@
       "investigation_cost_estimate": "LOW",
       "owner_session": null,
       "notes": "YRGGBS00 version history via SE38 version comparison. H48 scope.",
-      "enriched_session": 54
+      "enriched_session": 54,
+      "status": "PARTIALLY_ANSWERED",
+      "answered_session": 54,
+      "answer_partial": "Confirmed via code read (YRGGBS00_SOURCE.txt:998): line `* if bseg_xref1 = space.` IS commented out. UXR1 therefore unconditionally overwrites bseg_xref1 with USR05.Y_USERFO whenever the user has that param, silently losing any user-typed value. ASYMMETRY DISCOVERED: UXR2 (line 1026) STILL has the guard `IF bseg_xref2 = space` — only UXR1 is unguarded. This is the root cause of manual XREF drift observed in DQ-019 (21,754 Q1 2026 edits).",
+      "still_unknown": "WHEN the guard was commented out and BY WHOM. Requires SE38 version history (SAP session, not available via RFC).",
+      "findings_location": "YRGGBS00_SOURCE.txt:998 (line commented), YRGGBS00_SOURCE.txt:1026 (UXR2 guard intact)"
     },
     {
       "id": "KU-031",
@@ -8717,7 +8789,11 @@
       "investigation_cost_estimate": "MEDIUM",
       "owner_session": null,
       "notes": "Check GB01 / GGB1 tables via RFC + GCTAB/GCSTR secondary tables. H48 scope.",
-      "enriched_session": 54
+      "enriched_session": 54,
+      "status": "ANSWERED",
+      "answered_session": 54,
+      "answer": "Substitution step prerequisites at UNESCO are PROCEDURAL (inside YRGGBS00 FORM bodies UXR1/UXR2/U910/UGLS/etc. via IF/SELECT logic), NOT declarative. GB922 stores the step sequence (SUBSTID+SUBSEQNR+CONSEQNR) and points to EXITSUBST=form_name. GB901 stores BOOLEAN expressions used by VALIDATIONS (VALID='UNES' has 12 steps in GB931), not by substitutions. GB905 and GB921 are SAP dictionary tables, not populated in P01 (the storage model for this SAP version uses GB922+GB901+GB903).",
+      "findings_location": "Gold DB: GB922 (17 UNES rows), GB901 (583 rows with BOOLEXP), GB903 (3 rows); YRGGBS00_SOURCE.txt FORM bodies"
     },
     {
       "id": "KU-032",
@@ -8732,7 +8808,11 @@
       "investigation_cost_estimate": "HIGH",
       "owner_session": null,
       "notes": "Empirical ST05 trace of F110 vs F-53 substitution callpoint firing in TS3. Requires live test posting. H48 scope.",
-      "enriched_session": 54
+      "enriched_session": 54,
+      "status": "INVESTIGATION_BLOCKED_LIVE_TRACE_REQUIRED",
+      "scoped_session": 54,
+      "scope": "UXR1 has NO filter by TCODE/BUKRS/callpoint context within the FORM body. Both UXR1 and UXR2 are registered as callpoint-3 (complete document) substitutions for UNES. Therefore the F110 vs F-53 asymmetry cannot come from the FORM itself. Two remaining hypotheses: (a) F110 batch context iterates BSEG lines differently, applying substitution only to vendor lines (SAP standard behavior with bseg-lifnr filter inside the callpoint dispatcher), (b) GGB1 or GB921 callpoint-level prerequisites filter tcode but are not extracted to Gold DB. Definitive answer needs ST05 SQL trace in TS3 with one F110 run + one F-53 posting to capture the actual substitution call sequence per BSEG line.",
+      "blocks_on": "Live SAP session in TS3 — user-assisted work required. Cannot proceed autonomously via RFC."
     },
     {
       "id": "uq_uis_non_citibank_signatories",
@@ -10361,6 +10441,10 @@
       "flavor": "MISSING"
     },
     {
+      "name": "UXR2",
+      "flavor": "MISSING"
+    },
+    {
       "name": "VALID=UNES",
       "flavor": "MISSING"
     },
@@ -10439,11 +10523,11 @@
   ],
   "_coverage": {
     "objects_in_brain": 200,
-    "names_referenced": 199,
+    "names_referenced": 200,
     "names_classified": 128,
-    "blind_spots_total": 71,
+    "blind_spots_total": 72,
     "blind_spots_ghosts": 0,
-    "blind_spots_missing": 71,
-    "pct_classified": 64.3
+    "blind_spots_missing": 72,
+    "pct_classified": 64.0
   }
 }

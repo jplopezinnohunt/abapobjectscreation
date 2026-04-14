@@ -1316,5 +1316,42 @@
     "resolution_notes": null,
     "status": "active",
     "evidence_legacy_text_for": "FMAVCT structure inspection + Vonthron's case empirical confirmation: fund 3110111021/PAX/TC 2026 has $12,897.80 carryforward allotment exactly matching the 5 carryforward FRs sum => Available = 0 => any USD posting on any of the 5 lines triggers FMAVC005."
+  },
+  {
+    "id": 47,
+    "claim": "YRGGBS00 UXR1 (XREF1 substitution) has the guard `IF bseg_xref1 = space` COMMENTED OUT at line 998, while UXR2 (XREF2 substitution) at line 1026 KEEPS the equivalent guard `IF bseg_xref2 = space`. Consequence: UXR1 unconditionally overwrites user-typed XREF1 with USR05.Y_USERFO whenever the posting user has that SU3 param; UXR2 only auto-writes when blank. This asymmetry is the root cause of the systemic XREF drift pattern observed in DQ-019 (21,754 manual Q1 2026 XREF edits via FBL3N/FB02/FBL5N).",
+    "claim_type": "defect",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:998",
+        "cite": "`*  if bseg_xref1 = space.` — line commented out, breaking the guard. UXR1 then falls through to unconditional USR05 select + overwrite at line 1004.",
+        "added_session": 54
+      },
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1026",
+        "cite": "`IF bseg_xref2 = space.` — line active in UXR2, maintaining the guard. UXR2 only enters USR05 select when XREF2 is blank.",
+        "added_session": 54
+      },
+      {
+        "type": "production_data",
+        "ref": "DQ-019 finding",
+        "cite": "21,754 manual XREF post-posting edits in Q1 2026 on UNES BELEG documents via FBL3N/FBL1N/FB02/FBL5N — consistent with users correcting silently-overwritten XREF1.",
+        "added_session": 54
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YRGGBS00",
+      "USR05",
+      "BSEG.XREF1",
+      "BSEG.XREF2"
+    ],
+    "domain": "FI",
+    "created_session": 54,
+    "resolved_session": null,
+    "status": "active"
   }
 ]

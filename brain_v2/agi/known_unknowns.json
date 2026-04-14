@@ -388,7 +388,12 @@
     "investigation_cost_estimate": "LOW",
     "owner_session": null,
     "notes": "YRGGBS00 version history via SE38 version comparison. H48 scope.",
-    "enriched_session": 54
+    "enriched_session": 54,
+    "status": "PARTIALLY_ANSWERED",
+    "answered_session": 54,
+    "answer_partial": "Confirmed via code read (YRGGBS00_SOURCE.txt:998): line `* if bseg_xref1 = space.` IS commented out. UXR1 therefore unconditionally overwrites bseg_xref1 with USR05.Y_USERFO whenever the user has that param, silently losing any user-typed value. ASYMMETRY DISCOVERED: UXR2 (line 1026) STILL has the guard `IF bseg_xref2 = space` — only UXR1 is unguarded. This is the root cause of manual XREF drift observed in DQ-019 (21,754 Q1 2026 edits).",
+    "still_unknown": "WHEN the guard was commented out and BY WHOM. Requires SE38 version history (SAP session, not available via RFC).",
+    "findings_location": "YRGGBS00_SOURCE.txt:998 (line commented), YRGGBS00_SOURCE.txt:1026 (UXR2 guard intact)"
   },
   {
     "id": "KU-031",
@@ -403,7 +408,11 @@
     "investigation_cost_estimate": "MEDIUM",
     "owner_session": null,
     "notes": "Check GB01 / GGB1 tables via RFC + GCTAB/GCSTR secondary tables. H48 scope.",
-    "enriched_session": 54
+    "enriched_session": 54,
+    "status": "ANSWERED",
+    "answered_session": 54,
+    "answer": "Substitution step prerequisites at UNESCO are PROCEDURAL (inside YRGGBS00 FORM bodies UXR1/UXR2/U910/UGLS/etc. via IF/SELECT logic), NOT declarative. GB922 stores the step sequence (SUBSTID+SUBSEQNR+CONSEQNR) and points to EXITSUBST=form_name. GB901 stores BOOLEAN expressions used by VALIDATIONS (VALID='UNES' has 12 steps in GB931), not by substitutions. GB905 and GB921 are SAP dictionary tables, not populated in P01 (the storage model for this SAP version uses GB922+GB901+GB903).",
+    "findings_location": "Gold DB: GB922 (17 UNES rows), GB901 (583 rows with BOOLEXP), GB903 (3 rows); YRGGBS00_SOURCE.txt FORM bodies"
   },
   {
     "id": "KU-032",
@@ -418,7 +427,11 @@
     "investigation_cost_estimate": "HIGH",
     "owner_session": null,
     "notes": "Empirical ST05 trace of F110 vs F-53 substitution callpoint firing in TS3. Requires live test posting. H48 scope.",
-    "enriched_session": 54
+    "enriched_session": 54,
+    "status": "INVESTIGATION_BLOCKED_LIVE_TRACE_REQUIRED",
+    "scoped_session": 54,
+    "scope": "UXR1 has NO filter by TCODE/BUKRS/callpoint context within the FORM body. Both UXR1 and UXR2 are registered as callpoint-3 (complete document) substitutions for UNES. Therefore the F110 vs F-53 asymmetry cannot come from the FORM itself. Two remaining hypotheses: (a) F110 batch context iterates BSEG lines differently, applying substitution only to vendor lines (SAP standard behavior with bseg-lifnr filter inside the callpoint dispatcher), (b) GGB1 or GB921 callpoint-level prerequisites filter tcode but are not extracted to Gold DB. Definitive answer needs ST05 SQL trace in TS3 with one F110 run + one F-53 posting to capture the actual substitution call sequence per BSEG line.",
+    "blocks_on": "Live SAP session in TS3 — user-assisted work required. Cannot proceed autonomously via RFC."
   },
   {
     "id": "uq_uis_non_citibank_signatories",
