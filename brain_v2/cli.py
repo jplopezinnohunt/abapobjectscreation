@@ -40,6 +40,7 @@ def cmd_build():
     from brain_v2.ingestors.knowledge_ingestor import ingest_knowledge
     from brain_v2.ingestors.domain_knowledge_ingestor import ingest_domain_knowledge
     from brain_v2.ingestors.annotation_ingestor import ingest_annotations
+    from brain_v2.ingestors.bcm_domain_ingestor import ingest_bcm_domain
 
     brain = BrainGraph()
     tracker = IncrementalTracker(brain)
@@ -84,6 +85,12 @@ def cmd_build():
     # Also materializes tables_read/fms_called metadata into real graph edges
     r = tracker.update_from_source("Annotations", ingest_annotations, str(PROJECT_ROOT))
     print(f"  Annotations:      +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
+
+    # Phase 7: BCM signatory domain (Session #052 — INC-000006313)
+    # Registers HRP1000/HRP1001/OOCU_RESP/workflow rules/RY groups/Gold DB tables/
+    # quality check scripts and the relationships between them.
+    r = tracker.update_from_source("BCM Domain", lambda b: ingest_bcm_domain(b, str(PROJECT_ROOT)))
+    print(f"  BCM Domain:       +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
 
     print("=" * 60)
     print(f"  TOTAL:  {brain.node_count():,} nodes  {brain.edge_count():,} edges")

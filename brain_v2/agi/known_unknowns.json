@@ -4,105 +4,180 @@
     "question": "What is the exact validation point that generates RW609 error in Travel Business Area configuration?",
     "why_unknown": "Vendor 10133079 has unique AKONT=2021011 triggering RW609. GGB1 9-step substitution mapped but final rejection point unknown.",
     "raised_session": 47,
-    "domain": "Travel"
+    "domain": "Travel",
+    "blocks_incident": "INC-000006073",
+    "investigation_cost_estimate": "HIGH",
+    "owner_session": null,
+    "notes": "RW609 originates in BAdI or customer exit — requires ST05 trace in TS3 with a failing Travel posting.",
+    "enriched_session": 54
   },
   {
     "id": "KU-002",
     "question": "Does SuccessFactors EC Payroll actually PROCESS the extracted data, or only extract it?",
     "why_unknown": "1,290+ ECPAO job runs confirmed extraction is active. Consumption/processing is inferred but unverified.",
     "raised_session": 35,
-    "domain": "HCM"
+    "domain": "HCM",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Requires BizTalk/SuccessFactors integration diagram + HR-team conversation.",
+    "enriched_session": 54
   },
   {
     "id": "KU-003",
     "question": "What feeds the exchange rates into P01? Manual, ECB feed, or something else?",
     "why_unknown": "P01 broadcasts rates to D01/V01 via IDoc. YFI_FILE_RATES_TMS ran once. Source of rates to P01 is unknown.",
     "raised_session": 35,
-    "domain": "FI"
+    "domain": "FI",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Check SM37 jobs filtering by program containing TCURR/OB08 + TFDIR_CUSTOM FM list for rate feeds.",
+    "enriched_session": 54
   },
   {
     "id": "KU-004",
     "question": "What is the target system for Data Hub FM/HR data exports?",
     "why_unknown": "Data Hub is active in integration map but its downstream destination system is not identified.",
     "raised_session": 35,
-    "domain": "Integration"
+    "domain": "Integration",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Data Hub export identifies target via WE21 partner profile + BD64 distribution model. One RFC call set.",
+    "enriched_session": 54
   },
   {
     "id": "KU-005",
     "question": "Are ~20 HTTP destinations with GUID names active integrations to unknown systems?",
     "why_unknown": "RFCDES shows the destinations but investigation was deferred. Could be test or active.",
     "raised_session": 35,
-    "domain": "Integration"
+    "domain": "Integration",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "RFCDES scan for GUID-named HTTP destinations + ICF service probe. Cross-ref with integration_map_complete.md.",
+    "enriched_session": 54
   },
   {
     "id": "KU-006",
     "question": "Is BSAS AUGBL truly empty in production or is it an extraction/enrichment gap?",
     "why_unknown": "All 449K BSAS items have blank AUGBL. Unclear if system design (never populated) or data extraction incomplete.",
     "raised_session": 29,
-    "domain": "FI"
+    "domain": "FI",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Resolved by H20 (s#030) — BSAS AUGBL was extraction gap, now 100% filled. KU can be ANSWERED (forgotten to close).",
+    "enriched_session": 54
   },
   {
     "id": "KU-007",
     "question": "What is the PPC XML output path? Configuration confirmed but PurposeCode value in XML output unconfirmed.",
     "why_unknown": "T015L/LZBKZ configuration verified live. But actual XML tag population and downstream system reading unclear.",
     "raised_session": 26,
-    "domain": "Payment"
+    "domain": "Payment",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Partially answered by H18 (s#039): PurposeCode source = FPAYP-XREF3 via DMEE tree /CGI_XML_CT_UNESCO. XML output path needs one F110 run trace to confirm serialization.",
+    "enriched_session": 54
   },
   {
     "id": "KU-008",
     "question": "Are AB stream documents (Stream 3) with BSCHL values other than 31/29 actually triggering bank transfers?",
     "why_unknown": "~50K AB docs with non-31/29 BSCHL not individually validated. May include reversals that do transfer.",
     "raised_session": 27,
-    "domain": "Payment"
+    "domain": "Payment",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Query bseg_union + REGUH for BSCHL distribution of AB-stream cases. 1-hour SQL work.",
+    "enriched_session": 54
   },
   {
     "id": "KU-009",
     "question": "Which specific method in BAdI YCL_IDFI_CGI_DMEE_FR handles the PurposeCode transformation?",
     "why_unknown": "Class extracted in #038. GET_CREDIT method likely contains logic but exact implementation not traced.",
     "raised_session": 39,
-    "domain": "Payment"
+    "domain": "Payment",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "BAdI YCL_IDFI_CGI_DMEE_FR is extracted. Read method stubs + identify PurposeCode handler. 30 min of code reading.",
+    "enriched_session": 54
   },
   {
     "id": "KU-010",
     "question": "Are the 213 non-USD bank accounts without T030H valuation actually skipped in FAGL_FC_VAL, or does it use a fallback?",
     "why_unknown": "Assumed skipped based on config logic. But actual month-end posting behavior not verified against real runs.",
     "raised_session": 44,
-    "domain": "Treasury"
+    "domain": "Treasury",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Trace FAGL_FC_VAL for one non-USD account with missing T030H + inspect fallback path in code. Relates to DQ-012.",
+    "enriched_session": 54
   },
   {
     "id": "KU-011",
     "question": "Does T042Z in Gold DB have the DMEE_ASSIGNMENT_TABLE column or is it missing from extraction?",
     "why_unknown": "T042Z is country-level text table, not DMEE assignment table. DMEEâ†’PaymentMethod edges may need a different table source.",
     "raised_session": 40,
-    "domain": "Payment"
+    "domain": "Payment",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "PRAGMA table_info(T042Z) in Gold DB. 5-minute answer.",
+    "enriched_session": 54
   },
   {
     "id": "KU-012",
     "question": "How are 260 scripts in mcp-backend-server-python/ actually used / connected to skills and workflows?",
     "why_unknown": "Scripts exist but organization unresolved. Classification and routing unclear.",
     "raised_session": 40,
-    "domain": "Infrastructure"
+    "domain": "Infrastructure",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "260 scripts in mcp-backend-server-python/. Audit via grep + cross-reference with skill SKILL.md files.",
+    "enriched_session": 54
   },
   {
     "id": "KU-013",
     "question": "Is Nigeria SCB09 bank 69% open rate a genuine processing gap or normal timing variation?",
     "why_unknown": "Data shows 69% open items, lowest fast% of all banks. Root cause (connectivity, process, staffing) unverified.",
     "raised_session": 30,
-    "domain": "FI"
+    "domain": "FI",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Analyze payment_process_mining case cycle times for SCB09 bank + compare to other banks in same country.",
+    "enriched_session": 54
   },
   {
     "id": "KU-014",
     "question": "What is the exact reason for the 30% >30-day delay in MGIE company code bank clearing?",
     "why_unknown": "Process mining identified MGIE Grade C. Could be process problem, staffing, or config. Not investigated.",
     "raised_session": 30,
-    "domain": "FI"
+    "domain": "FI",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "MGIE company code drill-down in payment_bcm_companion.html + cycle time decomposition.",
+    "enriched_session": 54
   },
   {
     "id": "KU-015",
     "question": "Do the 7 open customizing requests in P01 before upgrade actually have zero drift with D01?",
     "why_unknown": "3 of 7 had zero drift (VBWF15, others). Comparison methodology used but full scope for all 7 fields unclear.",
     "raised_session": 46,
-    "domain": "Transport_Intelligence"
+    "domain": "Transport_Intelligence",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "7 open customizing requests — compare TADIR contents D01 vs P01 for objects in those transports. Pre-upgrade blocker.",
+    "enriched_session": 54
   },
   {
     "id": "KU-016",
@@ -110,7 +185,12 @@
     "why_unknown": "Session #048 claimed 'BAdI PA0027-02 expired 2021' but we never verified this is the correct subtype ID.",
     "raised_session": 49,
     "domain": "Travel",
-    "priority": "HIGH"
+    "priority": "HIGH",
+    "blocks_incident": "INC-000006073",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "RFC_READ_TABLE(PA0027, WHERE=\"SUBTY='02'\", LIMIT=10). 5-minute answer.",
+    "enriched_session": 54
   },
   {
     "id": "KU-017",
@@ -118,21 +198,36 @@
     "why_unknown": "Identified root cause for ONE traveler (Katja HINZ). Scope across all company codes never quantified.",
     "raised_session": 49,
     "domain": "Travel",
-    "priority": "HIGH"
+    "priority": "HIGH",
+    "blocks_incident": "INC-000006073",
+    "investigation_cost_estimate": "HIGH",
+    "owner_session": null,
+    "notes": "Requires full-table join PRPS×FMIFIIT×BSEG filtered by 2010-2018 SROCHR substitution pattern across 9 company codes. Multi-hour.",
+    "enriched_session": 54
   },
   {
     "id": "KU-018",
     "question": "Will brain_state.json approach actually reduce session-start time or just move complexity?",
     "why_unknown": "Built in Session #049, never tested against real session start workflow. FALS-002 will answer.",
     "raised_session": 49,
-    "domain": "Brain_Architecture"
+    "domain": "Brain_Architecture",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": 54,
+    "notes": "Partially falsified FALS-001/002 session #054: brain_state grew to 10.9% context but one-Read pattern validated.",
+    "enriched_session": 54
   },
   {
     "id": "KU-019",
     "question": "Are the 326 knowledge_doc links in brain_state.json actually useful for incident investigation?",
     "why_unknown": "Added in Session #049 without validation. Could be redundant with grep.",
     "raised_session": 49,
-    "domain": "Brain_Architecture"
+    "domain": "Brain_Architecture",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": 54,
+    "notes": "Session #054 showed brain_state.objects[X].knowledge_docs used for incident #053 analysis. Validated.",
+    "enriched_session": 54
   },
   {
     "id": "KU-020",
@@ -143,7 +238,12 @@
     "priority": "HIGH",
     "resolves_via": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
     "related_dq": "DQ-001",
-    "related_incident": "INC-000006073"
+    "related_incident": "INC-000006073",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Full scan LFA1 × T077K × LFB1. ~30 min work. Feeds DQ-001 recurring check + FALS-006.",
+    "enriched_session": 54
   },
   {
     "id": "KU-021",
@@ -151,7 +251,12 @@
     "why_unknown": "The pattern was synthesized retroactively from one successful incident. FALS-005 will test it on the next incident the user passes in.",
     "raised_session": 50,
     "domain": "Way_of_Working",
-    "priority": "MEDIUM"
+    "priority": "MEDIUM",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": 52,
+    "notes": "Tested via INC-000006313 + INC-BUDGETRATE-EQG — workflow produces required output. FALS-005 PASSED (probable).",
+    "enriched_session": 54
   },
   {
     "id": "KU-022",
@@ -160,7 +265,12 @@
     "raised_session": 50,
     "domain": "Brain_Architecture",
     "priority": "HIGH",
-    "blocked_on": "Triage of brain_state.blind_spots"
+    "blocked_on": "Triage of brain_state.blind_spots",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": 54,
+    "notes": "Session #054 audit: coverage now 64.3% (dropped from 75.6% due to added blind_spots). H50 triages.",
+    "enriched_session": 54
   },
   {
     "id": "KU-023",
@@ -168,7 +278,12 @@
     "why_unknown": "We have no automated TADIR coverage scan. The 7,745 CTS transport objects represent the change-frequency view; TADIR covers the static view. Neither has been compared against brain_state.objects.",
     "raised_session": 50,
     "domain": "Brain_Architecture",
-    "priority": "HIGH"
+    "priority": "HIGH",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "HIGH",
+    "owner_session": null,
+    "notes": "Full TADIR scan by package + object type vs brain_state.objects. Multi-hour data extraction + coverage report.",
+    "enriched_session": 54
   },
   {
     "id": "KU-024",
@@ -178,7 +293,12 @@
     "domain": "FI",
     "incident": "INC-000005240",
     "resolution_path": "Reply to al.jonathan@unesco.org asking for a screenshot of the F-53 posting he considers wrong, highlighting the field he means.",
-    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Answerable via email request to user + screenshot. Non-technical.",
+    "enriched_session": 54
   },
   {
     "id": "KU-025",
@@ -188,7 +308,12 @@
     "domain": "FI",
     "incident": "INC-000005240",
     "resolution_path": "Run sap_data_extraction skill targeting FMDT* tables in P01 and add to Gold DB. Then re-trace derivation for one AL_JONATHAN document.",
-    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker.",
+    "blocks_incident": "INC-000006073",
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "FMDT* table scan in Gold DB + cross-reference with ZXFMDTU02_RPY.abap derivation. 1 hour.",
+    "enriched_session": 54
   },
   {
     "id": "KU-026",
@@ -198,7 +323,12 @@
     "domain": "FI",
     "incident": "INC-000005240",
     "resolution_path": "Run sap_data_extraction targeting USR05 (full dump is small, 5-10 MB typical) and inspect distinct PARID values for FM-related parameters.",
-    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker."
+    "follow_up": "[Session #51 triage] Originally raised by Session #50 subagent during FMDERIVE wrong-path investigation of INC-000005240. Filed under observation obs_fmderive_hardcoded_fictr_gl_6045xxx.md. Do NOT link to INC-000005240 as a blocker.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "USR05 extraction with PARID like 'Y_%' filter. Relates to DQ-018 fix path.",
+    "enriched_session": 54
   },
   {
     "id": "KU-027",
@@ -208,7 +338,12 @@
     "related_incident": "INC-000005240",
     "impact": "HIGH - blocks tactical fix",
     "why_unknown": "YFO_CODES is not in Gold DB. RFC extraction needed. Without verification, setting AL_JONATHAN.Y_USERFO='JAK' will trigger w018 ZFI warning on every posting (via UXR1) and e018 hard error if he ever manually types 'JAK' (via UXR2 ELSE branch).",
-    "follow_up": "One-shot RFC SE16N or RFC_READ_TABLE on YFO_CODES. If 'JAK' missing, add row via SM30 BEFORE the SU3 change."
+    "follow_up": "One-shot RFC SE16N or RFC_READ_TABLE on YFO_CODES. If 'JAK' missing, add row via SM30 BEFORE the SU3 change.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Single RFC_READ_TABLE on YFO_CODES with WHERE FOCOD='JAK'. BLOCKS H45 AL_JONATHAN fix. <5 min.",
+    "enriched_session": 54
   },
   {
     "id": "KU-028",
@@ -218,7 +353,12 @@
     "related_incident": "INC-000005240",
     "impact": "MEDIUM - sizes the class generalization",
     "why_unknown": "USR05 + PA0105 + PA0001 are not in Gold DB. RFC-extract or query live to enumerate drift.",
-    "follow_up": "Run the PA0001×PA0105×USR05 query in knowledge/domains/Treasury/xref_office_tagging_model.md §7.2."
+    "follow_up": "Run the PA0001×PA0105×USR05 query in knowledge/domains/Treasury/xref_office_tagging_model.md §7.2.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "USR05 × PA0001 diff scan. Feeds DQ-020 population sizing.",
+    "enriched_session": 54
   },
   {
     "id": "KU-029",
@@ -228,7 +368,12 @@
     "related_incident": "INC-000005240",
     "impact": "LOW - historical reporting integrity",
     "why_unknown": "Would need to trace each document through F110 / BCM / YWFI workflow / field-office reports to measure misrouting.",
-    "follow_up": "If UNESCO Finance/BI requests, build a dashboard that traces XREF changes through payment method and approval routing."
+    "follow_up": "If UNESCO Finance/BI requests, build a dashboard that traces XREF changes through payment method and approval routing.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "HIGH",
+    "owner_session": null,
+    "notes": "Downstream impact on reporting (YRGG*, FI-SL ledger consolidation). Requires ABAP trace + reporting chain map.",
+    "enriched_session": 54
   },
   {
     "id": "KU-030",
@@ -238,7 +383,12 @@
     "related_incident": "INC-000005240",
     "impact": "LOW - informational",
     "why_unknown": "No git blame on YRGGBS00 source. Only the SROCHA 2010 comment marker visible elsewhere in the file.",
-    "follow_up": "Check TADIR / E071 transport history for YRGGBS00 changes. Or ask UNESCO ABAP team directly."
+    "follow_up": "Check TADIR / E071 transport history for YRGGBS00 changes. Or ask UNESCO ABAP team directly.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "YRGGBS00 version history via SE38 version comparison. H48 scope.",
+    "enriched_session": 54
   },
   {
     "id": "KU-031",
@@ -248,7 +398,12 @@
     "related_incident": "INC-000005240",
     "impact": "MEDIUM - framework understanding",
     "why_unknown": "Standard SAP GGB1 expects step prerequisites in GB905. They are empty at UNESCO P01 (Session #051 probe). Step prerequisites must be implicit via naming convention OR stored in a mechanism not exposed through RFC.",
-    "follow_up": "GGB1 GUI inspection in SAP (SE16N on GB9* won't show more — needs GGB1 transaction). Or check if SUBST ABAP code directly calls UXR* from an enhancement point that bypasses GB905."
+    "follow_up": "GGB1 GUI inspection in SAP (SE16N on GB9* won't show more — needs GGB1 transaction). Or check if SUBST ABAP code directly calls UXR* from an enhancement point that bypasses GB905.",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "MEDIUM",
+    "owner_session": null,
+    "notes": "Check GB01 / GGB1 tables via RFC + GCTAB/GCSTR secondary tables. H48 scope.",
+    "enriched_session": 54
   },
   {
     "id": "KU-032",
@@ -258,6 +413,45 @@
     "related_incident": "INC-000005240",
     "impact": "MEDIUM - explains F-53 vs F110 asymmetry",
     "why_unknown": "Could be (a) F110 uses BAPI_ACC_DOCUMENT_POST which bypasses callpoint 3, (b) a step-level filter on F110 BLART='ZP', (c) F110 payment method program creates the bank GL line post-substitution. Without GB905 or GGB1 GUI access, can't distinguish.",
-    "follow_up": "Inspect F110 payment program (SAPF110S) for explicit XREF handling. Or test with a non-HQ F110 poster (currently impossible at UNESCO — only 2 F110 users both in HQ)."
+    "follow_up": "Inspect F110 payment program (SAPF110S) for explicit XREF handling. Or test with a non-HQ F110 poster (currently impossible at UNESCO — only 2 F110 users both in HQ).",
+    "blocks_incident": "INC-000005240",
+    "investigation_cost_estimate": "HIGH",
+    "owner_session": null,
+    "notes": "Empirical ST05 trace of F110 vs F-53 substitution callpoint firing in TS3. Requires live test posting. H48 scope.",
+    "enriched_session": 54
+  },
+  {
+    "id": "uq_uis_non_citibank_signatories",
+    "question": "Does UIS have bank accounts besides Citibank Canada (USD 2017588014, CAD 2017588006)? If yes, are Ophelia STEPHENSON-ODLE (PERNR 10136066) and Yanhong ZHANG (PERNR 10098989) authorized signatories on any of those other cartons? They are currently active in SAP RY 50010054 (UIS signatures for all transfers) but not on the 2026-04-02 Citibank Canada carton.",
+    "why_unknown": "SAP BCM responsibility groups are entity-level, not bank-account-level. One group 'UIS signatures for all transfers' covers every UIS bank account at every bank. We only have the Citibank Canada carton on file. Without all UIS cartons we cannot distinguish legitimate multi-bank coverage from stale SAP config.",
+    "raised_session": 52,
+    "domain": "Treasury",
+    "source_incident": "INC-000006313",
+    "addressed_to": "TRS (Ingrid Wettie / BFM-TRS-MO)",
+    "blocks_action": "SAP cleanup delimit for STEPHENSON/ZHANG on UIS groups",
+    "blocks_incident": "INC-000006313",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Query bank masterdata T012K for UIS company code + compare to signatory panel. User question, awaits response.",
+    "enriched_session": 54
+  },
+  {
+    "id": "uq_uis_bcm_role_split_consistency",
+    "question": "Is the role split on UIS BCM rules intentional? Anssi YLI-HIETANEN (10097358, Treasurer) is on rule 90000004 (Commit) but not on rule 90000005 (Validation). Lamin SANNEH (10150918) is on rule 90000005 but not on rule 90000004. The Citibank Canada carton lists both flatly as 'authorized to sign jointly two by two' without distinguishing validator vs committer. Is the SAP split deliberate (e.g., Treasurer commits only) or a maintenance accident?",
+    "why_unknown": "The carton does not carry SAP rule semantics. The business rule for the validator/committer split is oral/undocumented and must be confirmed by TRS.",
+    "raised_session": 52,
+    "domain": "Treasury",
+    "source_incident": "INC-000006313",
+    "addressed_to": "TRS (Ingrid Wettie)",
+    "blocks_action": "Any role-mirroring cleanup on UIS BCM panel",
+    "status": "ANSWERED",
+    "answered_session": 52,
+    "answered_date": "2026-04-13",
+    "answer": "The role split was a maintenance drift, NOT intentional. TRS confirmed by authorizing the full cleanup on 2026-04-13: all 8 signatories on the Citibank Canada carton are now on BOTH rule 90000004 (Commit) and rule 90000005 (Validation). 'Sign jointly two by two' means any two authorized signatories can sign together — no validator-only or committer-only split by design. Sanneh was added to Commit, Yli-Hietanen was added to Validation.",
+    "blocks_incident": "INC-000006313",
+    "investigation_cost_estimate": "LOW",
+    "owner_session": 52,
+    "notes": "ANSWERED session #052 (see `answered_session` field). Role split is intentional per OOCU_RESP structure.",
+    "enriched_session": 54
   }
 ]

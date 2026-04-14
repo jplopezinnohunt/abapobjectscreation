@@ -1,5 +1,22 @@
 # CLAUDE.md - Instructions for AI Agents
 
+## 🏛️ CORE PRINCIPLES (constitutional — session #054)
+
+Before any work, the agent operates under three **Core Principles** that govern HOW it decides, stores, and compresses. Every feedback rule derives from one of these. Full definitions in `brain_v2/core_principles/core_principles.json`. Loaded as Layer 0 of `brain_state.json`.
+
+### CP-001 — Knowledge over velocity
+**Never sacrifice traceability or knowledge for velocity.** Velocity ≠ knowledge. Losing traceability is irreversible; being slow is reversible. Terseness in conversation ≠ terseness in brain — the brain always preserves; the conversation can be short because the brain is behind.
+
+### CP-002 — Preserve first, context is cheap
+**With 1M context (Opus 4.6), size is no longer a constraint.** The real bottleneck is findability, solved with structure, not compression. Lossy compression only at query-time, never at storage-time. Structure lossless > prose when entities are repeatable; prose > structure when there is causal reasoning.
+
+### CP-003 — Precision, evidence, facts
+**Every decision, claim or recommendation must be anchored in maximum precision + verifiable evidence + checkable facts.** Opinion without evidence ≠ analysis. Approximation without measuring ≠ precision. Exact numbers, citable sources (path:line), explicit tiers (TIER_1/2/3).
+
+These three override any other behavior. Violating a CP is higher-severity than violating a feedback_rule.
+
+---
+
 ## 🎯 Project Overview
 
 This is an **enterprise SAP automation framework** for automating SAP GUI (Web and Native) transactions using Playwright, with support for direct RFC/BAPI calls when appropriate.

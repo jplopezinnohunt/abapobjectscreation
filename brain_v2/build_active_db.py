@@ -42,8 +42,12 @@ def create_schema(conn):
             claim TEXT NOT NULL,
             claim_type TEXT NOT NULL,
             confidence TEXT NOT NULL,
-            evidence_for TEXT,
-            evidence_against TEXT,
+            evidence_for TEXT,                -- JSON-serialized list of {type, ref, cite, added_session}
+            evidence_against TEXT,            -- JSON-serialized list (same schema) or NULL
+            evidence_count_for INTEGER DEFAULT 0,    -- count of structured evidence items (CP-003: weakness detector)
+            evidence_count_against INTEGER DEFAULT 0,
+            evidence_legacy_text_for TEXT,    -- original pre-session-054 string (CP-001: preserve)
+            evidence_legacy_text_against TEXT,
             related_objects TEXT,
             domain TEXT,
             created_session INTEGER,
@@ -52,6 +56,7 @@ def create_schema(conn):
         );
         CREATE INDEX idx_claims_type ON claims(claim_type);
         CREATE INDEX idx_claims_confidence ON claims(confidence);
+        CREATE INDEX idx_claims_evidence_count_for ON claims(evidence_count_for);
 
         CREATE TABLE sessions (
             session_number INTEGER PRIMARY KEY,
@@ -82,12 +87,27 @@ def load_claims(conn):
     claims = json.load(open(CLAIMS_PATH, encoding="utf-8"))
     count = 0
     for c in claims:
+        # Evidence is now a structured list (session #054 H42 migration).
+        # Serialize to JSON for SQLite TEXT storage; keep a count column for
+        # CP-003 weakness detection (claims with evidence_count_for < 2 are suspect).
+        ef = c.get("evidence_for")
+        ea = c.get("evidence_against")
+        ef_json = json.dumps(ef, ensure_ascii=False) if ef is not None else None
+        ea_json = json.dumps(ea, ensure_ascii=False) if ea is not None else None
+        ef_count = len(ef) if isinstance(ef, list) else (1 if ef else 0)
+        ea_count = len(ea) if isinstance(ea, list) else (1 if ea else 0)
+
         conn.execute("""INSERT OR REPLACE INTO claims
-            (id, claim, claim_type, confidence, evidence_for, evidence_against,
+            (id, claim, claim_type, confidence,
+             evidence_for, evidence_against,
+             evidence_count_for, evidence_count_against,
+             evidence_legacy_text_for, evidence_legacy_text_against,
              related_objects, domain, created_session, resolved_session, status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (c["id"], c["claim"], c["claim_type"], c["confidence"],
-             c.get("evidence_for"), c.get("evidence_against"),
+             ef_json, ea_json,
+             ef_count, ea_count,
+             c.get("evidence_legacy_text_for"), c.get("evidence_legacy_text_against"),
              json.dumps(c.get("related_objects", [])),
              c.get("domain"), c.get("created_session"),
              c.get("resolved_session"), c.get("status", "active")))

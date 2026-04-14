@@ -6,7 +6,9 @@
     "how_to_apply": "`rfc_helpers.py` now auto-detects the right chunk size:\n1. Try 8 fields -> if TABLE_WITHOUT_DATA, halve to 4\n2. Try 4 fields -> if still fails, halve to 2\n3. If even 2 fields fail -> genuinely empty or auth issue\n\nThis is in `rfc_read_paginated()` in the split-field section. The adaptive logic runs once per table per WHERE clause, then uses that chunk size for all pages.\n\nAdditional learnings:\n- ESSR max fields = 4 (LOESSION field is ~200 bytes alone)\n- BSIS/BSAS max fields = 8 (works fine with 28 fields split into 4 chunks)\n- EKPO max fields = 8 (19 fields, 3 chunks)\n- BKPF max fields = ALL (12 fields fit in one call, no split needed)",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_adaptive_field_splitting.md"
+    "source_file": "feedback_adaptive_field_splitting.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_auto_reconnect_vpn",
@@ -15,7 +17,9 @@
     "how_to_apply": "- `get_connection(\"P01\")` returns a `ConnectionGuard` (not raw pyrfc.Connection)\n- ConnectionGuard.call() catches connection-closed/timeout/CPIC errors\n- Retries up to 3 times with escalating wait (10s, 20s, 30s)\n- Transparent to callers -- rfc_read_paginated works unchanged\n\nError substrings that trigger reconnect:\n- \"connection closed\", \"partner not reached\", \"timeout\"\n- \"communication failure\", \"CPIC_\", \"RFC_COMMUNICATION_FAILURE\"\n- \"RFC_INVALID_HANDLE\", \"connection has been closed\"\n\nPair with error-safe checkpoints: if a period errors with 0 rows, do NOT write checkpoint file. This allows the period to be retried on next run.",
     "severity": "CRITICAL",
     "created_session": null,
-    "source_file": "feedback_auto_reconnect_vpn.md"
+    "source_file": "feedback_auto_reconnect_vpn.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bash_autonomy",
@@ -24,7 +28,9 @@
     "how_to_apply": "1. NEVER ask \"can I run this command?\" — just run it\n2. NEVER ask \"should I proceed?\" — just proceed\n3. NEVER ask \"is the VPN connected?\" — just try the connection and report results\n4. If a command fails, fix it and retry — don't ask what to do\n5. If P01 connection fails, say \"P01 unreachable — need VPN\" and stop (don't ask)",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_bash_autonomy.md"
+    "source_file": "feedback_bash_autonomy.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_brain_code_tables_are_backbone",
@@ -33,7 +39,9 @@
     "how_to_apply": "1. Brain rebuild (H34) must prioritize: code nodes, table nodes, config nodes, and the edges between them\n2. Edge types that matter most:\n   - CALLS (program → program/FM)\n   - READS_TABLE (program → table)\n   - JOINS_WITH (table → table)\n   - CONFIGURES (config table → program behavior)\n   - DETERMINES (data field → data field, e.g., KTOKK→AKONT)\n   - DERIVES_FIELD (program:line → field value)\n   - ROOT_CAUSED_BY (incident → code:line + config)\n3. Auto-parser covers CALLS + READS_TABLE. Manual edges needed for CONFIGURES, DETERMINES, DERIVES_FIELD.\n4. Every incident resolution should produce new edges — INC-000006073 produced 48 edges. These compound over time.\n5. The Brain is valuable when it answers \"what happens if X changes?\" — that requires program→table→config as backbone.",
     "severity": "HIGH",
     "created_session": 48,
-    "source_file": "feedback_brain_code_tables_are_backbone.md"
+    "source_file": "feedback_brain_code_tables_are_backbone.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bseg_celonis_pattern",
@@ -42,7 +50,9 @@
     "how_to_apply": "Use the Celonis replacement pattern:\n\n| Table | Content | KOART | Filter |\n|-------|---------|-------|--------|\n| BSIK | Vendor open items | K | BUDAT (NOT CPUDT) |\n| BSAK | Vendor cleared items | K | BUDAT (NOT CPUDT) |\n| BSID | Customer open items | D | BUDAT (NOT CPUDT) |\n| BSAD | Customer cleared items | D | BUDAT (NOT CPUDT) |\n| BSIS | GL open items | S | BUDAT (NOT CPUDT) |\n| BSAS | GL cleared items | S | BUDAT (NOT CPUDT) |",
     "severity": "CRITICAL",
     "created_session": 10,
-    "source_file": "feedback_bseg_celonis_pattern.md"
+    "source_file": "feedback_bseg_celonis_pattern.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bseg_is_join_not_table",
@@ -51,7 +61,9 @@
     "how_to_apply": "When someone says \"BSEG field is missing\", first check if it's available via Golden Query JOIN. Only if genuinely unavailable from any joined table should you consider BSEG — and even then, it's low priority.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_bseg_is_join_not_table.md"
+    "source_file": "feedback_bseg_is_join_not_table.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bseg_is_readable",
@@ -60,7 +72,9 @@
     "how_to_apply": "When you need WBS element, extract PROJK from BSEG using document keys, then JOIN PRPS.PSPNR = PROJK to get POSID + POST1.",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_bseg_is_readable.md"
+    "source_file": "feedback_bseg_is_readable.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_classify_systems_properly",
@@ -69,7 +83,9 @@
     "how_to_apply": "",
     "severity": "CRITICAL",
     "created_session": 31,
-    "source_file": "feedback_classify_systems_properly.md"
+    "source_file": "feedback_classify_systems_properly.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_data_before_visual",
@@ -78,7 +94,9 @@
     "how_to_apply": "- For system diagrams: query RFCDES + DBCON + TMSCSYS + EDIDC + ICFSERVICE + TFDIR BEFORE drawing anything\n- For any companion: collect ALL data, classify it, THEN build HTML\n- Never classify a system from hostname alone — check CTS objects, jobs, and code references",
     "severity": "HIGH",
     "created_session": 31,
-    "source_file": "feedback_data_before_visual.md"
+    "source_file": "feedback_data_before_visual.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_data_p01_code_d01",
@@ -87,7 +105,9 @@
     "how_to_apply": "If P01 is unreachable, WAIT. Do not fall back to D01 for reads. The only valid D01 operation is writing code. When P01 is down, work on offline tasks (skill docs, analysis of already-extracted data, scripts for later execution).",
     "severity": "MEDIUM",
     "created_session": 39,
-    "source_file": "feedback_data_p01_code_d01.md"
+    "source_file": "feedback_data_p01_code_d01.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_data_scope_2024_2026",
@@ -96,7 +116,9 @@
     "how_to_apply": "When extracting, enriching, or analyzing data, filter to 2024-2026. Don't spend time investigating pre-2024 anomalies unless explicitly asked. Transport analysis is the only exception where longer periods are needed.",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_data_scope_2024_2026.md"
+    "source_file": "feedback_data_scope_2024_2026.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_decision_logs",
@@ -105,7 +127,9 @@
     "how_to_apply": "",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_decision_logs.md"
+    "source_file": "feedback_decision_logs.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_diagram_layout_standard",
@@ -114,7 +138,9 @@
     "how_to_apply": "- ALWAYS read `.agents/skills/integration_diagram/SKILL.md` before building any connectivity/architecture diagram\n- Reference implementation: `Zagentexecution/mcp-backend-server-python/connectivity_diagram.html`\n- Zones: External (top), Infrastructure (left), Core Hub (center), Management (right), Spokes (bottom), Analytics (bottom)\n- Connections: SVG overlay with L-shaped orthogonal routing, solid=internal, dashed=external\n- Node click shows info panel\n- File must be self-contained HTML < 30KB\n- NEVER re-derive the pattern from scratch — read the skill first",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_diagram_layout_standard.md"
+    "source_file": "feedback_diagram_layout_standard.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_efficiency",
@@ -123,7 +149,9 @@
     "how_to_apply": "",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_efficiency.md"
+    "source_file": "feedback_efficiency.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_enrich_missing_fields",
@@ -132,7 +160,9 @@
     "how_to_apply": "1. ALTER TABLE to add the new column(s)\n2. For each period (MONAT/PERIO), query SAP with the existing keys to get only the missing field values\n3. UPDATE the existing rows with the new values\n4. Run **one period at a time** — never all at once (VPN/memory limits)\n5. Use checkpoints so interrupted runs can resume\n\nThis supersedes and extends `feedback_missing_fields_by_key.md` with the explicit \"per period\" requirement.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_enrich_missing_fields.md"
+    "source_file": "feedback_enrich_missing_fields.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_estimate_before_extract",
@@ -141,7 +171,9 @@
     "how_to_apply": "Every extraction script must have a probe phase first. For tables >100K rows, use streaming to SQLite (not accumulate in RAM). For tables >500K rows, warn user and suggest background execution.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_estimate_before_extract.md"
+    "source_file": "feedback_estimate_before_extract.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_extraction_is_skill_not_code",
@@ -150,7 +182,9 @@
     "how_to_apply": "1. **Data extraction** → use `sap_data_extraction` skill pattern:\n   - Fields: `DDIF_FIELDINFO_GET` (always)\n   - Extraction: `rfc_read_paginated()` (always)\n   - Storage: Gold DB at canonical path (always)\n   - Script: `extract_bp_full.py` is the canonical template\n   \n2. **Code extraction** → use `sap_adt_api` skill pattern:\n   - ADT REST for D01 (password auth)\n   - `RPY_PROGRAM_READ` via RFC/SNC for P01 or D01\n   - Storage: `extracted_code/{SAP_STANDARD|UNESCO_CUSTOM_LOGIC}/{domain}/`\n\n3. **NEVER:**\n   - Write inline Python in bash -c for extraction\n   - Create a new extraction script from scratch\n   - Debug RFC connection issues that rfc_helpers already handles\n   - Manually specify field lists when DDIF can get them all\n\n4. **The canonical extraction flow:**\n   ```\n   User says \"extract X\" →\n   Agent reads skill →\n   Agent calls: fields = DDIF(table), rows = rfc_read_paginated(table, fields, where), save(db, table, rows) →\n   Done\n   ```\n\n5. **For new domains (like BusinessPartner):** add table definitions to `extract_bp_full.py` pattern — table name + WHERE clause only. The skill handles everything else.",
     "severity": "MEDIUM",
     "created_session": 48,
-    "source_file": "feedback_extraction_is_skill_not_code.md"
+    "source_file": "feedback_extraction_is_skill_not_code.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_extraction_scope",
@@ -159,7 +193,9 @@
     "how_to_apply": "Every RFC extraction MUST default to 2024-2026 unless the user says otherwise. Before starting any extraction, confirm the year range matches this rule.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_extraction_scope.md"
+    "source_file": "feedback_extraction_scope.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_memory_no_truncation",
@@ -168,7 +204,9 @@
     "how_to_apply": "- Do NOT compress or remove content from MEMORY.md to stay under 200 lines\n- Session history, feedback pointers, and all sections can grow freely\n- Still keep entries concise (one-liners) for readability, but no hard limit\n- Topic files remain the right place for DETAIL, MEMORY.md for INDEX — this is a readability choice, not a size constraint",
     "severity": "MEDIUM",
     "created_session": 35,
-    "source_file": "feedback_memory_no_truncation.md"
+    "source_file": "feedback_memory_no_truncation.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_missing_fields_by_key",
@@ -177,7 +215,9 @@
     "how_to_apply": "Any time a table in the Gold DB is missing fields (KOSTL, PS_PSP_PNR, SGTXT, etc.), build a targeted enrichment script that:\n- Loops year/period (same as original extraction)\n- Reads existing keys from SQLite for that period\n- Queries SAP by BUDAT year/period + BUKRS+BELNR+GJAHR+BUZEI for only the missing fields\n- Patches the missing columns in place via ALTER TABLE + UPDATE",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_missing_fields_by_key.md"
+    "source_file": "feedback_missing_fields_by_key.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_never_delete_extracted_code",
@@ -186,7 +226,9 @@
     "how_to_apply": "",
     "severity": "CRITICAL",
     "created_session": null,
-    "source_file": "feedback_never_delete_extracted_code.md"
+    "source_file": "feedback_never_delete_extracted_code.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_never_leave_ideas_as_comments",
@@ -195,7 +237,9 @@
     "how_to_apply": "- When you identify a lesson or rule during work: write a `feedback_*.md` file IMMEDIATELY\n- When you discover something about the project: write a `project_*.md` file IMMEDIATELY\n- Add pointer to MEMORY.md index\n- The retro file is NOT enough — retros are read at session start but feedback files are the durable rules\n- If you say \"lesson learned\" or \"next time I should\" in conversation text without creating a file = violation of this rule",
     "severity": "CRITICAL",
     "created_session": 35,
-    "source_file": "feedback_never_leave_ideas_as_comments.md"
+    "source_file": "feedback_never_leave_ideas_as_comments.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_never_reextract_released_transports",
@@ -204,7 +248,9 @@
     "how_to_apply": "If transport data was already captured in a previous extraction or companion:\n1. That data IS the source of truth\n2. Do NOT re-run RFC on E071/E071K for the same transport\n3. If you must verify, check E070.TRSTATUS — if 'R' (released), the transport is released and E071 will be empty\n4. Only extract E071K for transports in status 'D' (modifiable)",
     "severity": "CRITICAL",
     "created_session": 31,
-    "source_file": "feedback_never_reextract_released_transports.md"
+    "source_file": "feedback_never_reextract_released_transports.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_never_trust_old_anchors",
@@ -213,7 +259,9 @@
     "how_to_apply": "- Before extracting: quick count with `SELECT COUNT(*) ... GJAHR='YYYY'` (1 field, fast)\n- If count > 100K/year: use period-by-period extraction\n- Old anchors are informational only — they may have been counted without year filter, with object-scoped approach, or data may have grown\n- Document actual counts in retro for future reference",
     "severity": "CRITICAL",
     "created_session": 35,
-    "source_file": "feedback_never_trust_old_anchors.md"
+    "source_file": "feedback_never_trust_old_anchors.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_no_correlated_subquery",
@@ -222,7 +270,9 @@
     "how_to_apply": "When you need \"latest/min/max per group\" from a large table:\n1. `fetchall()` into Python\n2. Build dict with the aggregation in Python\n3. Use the dict for lookups\n\nExample (BAD):\n```sql\nSELECT FCURR, UKURS FROM TCURR WHERE GDATU = (SELECT MIN(GDATU) FROM TCURR t2 WHERE t2.FCURR = TCURR.FCURR)\n```\n\nExample (GOOD):\n```python\nrows = db.execute(\"SELECT FCURR, UKURS, GDATU FROM TCURR ORDER BY FCURR, GDATU\").fetchall()\nlatest = {}\nfor fc, uk, gd in rows:\n    if fc not in latest or gd < latest[fc][1]:\n        latest[fc] = (uk, gd)\n```",
     "severity": "CRITICAL",
     "created_session": 42,
-    "source_file": "feedback_no_correlated_subquery.md"
+    "source_file": "feedback_no_correlated_subquery.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_no_subagent_for_direct_work",
@@ -231,7 +281,9 @@
     "how_to_apply": "If the action verb is \"update\", \"fix\", \"write\", \"create\" — use Read + Edit directly. Only use Explore subagents for genuine open-ended research where you don't know what you're looking for.",
     "severity": "MEDIUM",
     "created_session": 18,
-    "source_file": "feedback_no_subagent_for_direct_work.md"
+    "source_file": "feedback_no_subagent_for_direct_work.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_p01_landscape_violation",
@@ -240,7 +292,9 @@
     "how_to_apply": "- When analyzing ANY transport order, first check WHERE it was created (system prefix)\n- P01K* customizing = violation. Always ask: why was it opened? does D01 have the change? will upgrade overwrite it?\n- Root cause categories: EMERGENCY, PERIOD_SENSITIVE, AUDIT_DRIVEN, CONFIGURATION_DRIFT, SYSTEM_FORCED\n- The transport companion skill (sap_transport_companion) now has Step 1b for landscape violation detection\n- Pre-upgrade checklist: scan P01 open requests 2 weeks before any import\n- Monthly P01 hygiene: zero tolerance for customizing requests older than 30 days",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_p01_landscape_violation.md"
+    "source_file": "feedback_p01_landscape_violation.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_parallel_companion_build",
@@ -249,7 +303,9 @@
     "how_to_apply": "When companion has >5 tabs, spawn one agent per tab with: (1) the data queries needed, (2) the HTML template for that tab, (3) the shared CSS/header. Merge results. For smaller companions (<5 tabs), single-agent build is fine.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_parallel_companion_build.md"
+    "source_file": "feedback_parallel_companion_build.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_parallel_extraction",
@@ -258,7 +314,9 @@
     "how_to_apply": "1. Extraction scripts MUST support single-table CLI argument (e.g., `python extract_bp_full.py LFA1`)\n2. Launch up to 5 background processes in parallel: `python script.py TABLE1 & python script.py TABLE2 & ...`\n3. SQLite WAL mode handles concurrent writes — no conflict as long as each process writes to different tables\n4. Each process gets its own RFC connection (ConnectionGuard)\n5. Max 5 parallel = safe for SAP system (don't overload with too many RFC sessions)\n6. After first batch of 5 completes, launch next batch",
     "severity": "MEDIUM",
     "created_session": 48,
-    "source_file": "feedback_parallel_extraction.md"
+    "source_file": "feedback_parallel_extraction.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_period_by_period_extraction",
@@ -267,7 +325,9 @@
     "how_to_apply": "- If table has PERIO/MONAT field and estimated >100K rows/year: split by period\n- Fresh `get_connection()` per period (not reusing connection across periods)\n- `load_to_sqlite()` immediately after each period extraction\n- Check for existing data before extracting (skip already-loaded periods)\n- RPSCO-type tables (pivoted, no PERIO) can use year-at-once if <50K rows/year",
     "severity": "CRITICAL",
     "created_session": 35,
-    "source_file": "feedback_period_by_period_extraction.md"
+    "source_file": "feedback_period_by_period_extraction.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_pmo_count_before_close",
@@ -276,7 +336,9 @@
     "how_to_apply": "Before the FINAL commit of any session:\n1. Count non-struck H items manually\n2. Count non-struck G items manually\n3. Verify `total = B + H + G`\n4. Verify `items_at_start + items_added - items_struck = total`\n5. Update header line\n6. THEN commit\n\nThis is a pre-commit check, not a post-commit fix. If the AGI retro audit catches it, the session already failed once.",
     "severity": "MEDIUM",
     "created_session": 39,
-    "source_file": "feedback_pmo_count_before_close.md"
+    "source_file": "feedback_pmo_count_before_close.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_pmo_reconciliation",
@@ -285,7 +347,9 @@
     "how_to_apply": "At the END of every session:\n1. List all NEW pending items discovered during the session\n2. Add each to PMO_BRAIN.md under appropriate section (B=Blocking, H=High, G=Backlog)\n3. Strike through any items completed during the session\n4. Write in SESSION_LOG: \"PMO reconciled: +N new, -N completed, N total pending\"\n5. Update MEMORY.md pending COUNT (not the list — list lives in PMO_BRAIN.md only)\n6. If you skip this step, items WILL get lost again",
     "severity": "CRITICAL",
     "created_session": 2,
-    "source_file": "feedback_pmo_reconciliation.md"
+    "source_file": "feedback_pmo_reconciliation.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_query_data_before_hardcoding",
@@ -294,7 +358,9 @@
     "how_to_apply": "When creating config-to-config edges (USES_DMEE_TREE, ROUTES_TO_BANK, etc.), first `SELECT DISTINCT` from the Gold DB to get the real values. Never assume SAP configuration codes from memory or domain knowledge alone — they're arbitrary and country-specific.",
     "severity": "CRITICAL",
     "created_session": 41,
-    "source_file": "feedback_query_data_before_hardcoding.md"
+    "source_file": "feedback_query_data_before_hardcoding.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_reuse_extraction_pattern",
@@ -303,7 +369,9 @@
     "how_to_apply": "1. For field list: use `DDIF_FIELDINFO_GET` (NOT `RFC_READ_TABLE ROWCOUNT=0` — crashes on wide tables)\n2. For extraction: use `rfc_read_paginated()` from `rfc_helpers.py` — handles pagination, field splitting, reconnect\n3. For new tables: copy `extract_bp_full.py` as template — it has the correct pattern\n4. NEVER write inline Python in bash -c for extraction — use a .py file\n5. The canonical extraction script is `extract_bp_full.py` — 22 tables, all fields, DDIF probe, auto-split",
     "severity": "CRITICAL",
     "created_session": 48,
-    "source_file": "feedback_reuse_extraction_pattern.md"
+    "source_file": "feedback_reuse_extraction_pattern.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_reuse_proven_patterns",
@@ -312,7 +380,9 @@
     "how_to_apply": "",
     "severity": "MEDIUM",
     "created_session": 10,
-    "source_file": "feedback_reuse_proven_patterns.md"
+    "source_file": "feedback_reuse_proven_patterns.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_rfc_data_loss_workaround",
@@ -321,7 +391,9 @@
     "how_to_apply": "- ALL extraction scripts must use this pattern for large tables\n- If a month fails with DATA_LOSS, automatically fall back to day-by-day extraction\n- This should be built into `rfc_helpers.py` as a fallback strategy\n- Document in sap_data_extraction skill",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_rfc_data_loss_workaround.md"
+    "source_file": "feedback_rfc_data_loss_workaround.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_session_close_annotations",
@@ -330,7 +402,9 @@
     "how_to_apply": "",
     "severity": "CRITICAL",
     "created_session": 48,
-    "source_file": "feedback_session_close_annotations.md"
+    "source_file": "feedback_session_close_annotations.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_session_close_protocol",
@@ -339,7 +413,9 @@
     "how_to_apply": "At session close, grep for all skills that were used or affected, read their SKILL.md, and update with findings. This is NON-NEGOTIABLE.",
     "severity": "HIGH",
     "created_session": null,
-    "source_file": "feedback_session_close_protocol.md"
+    "source_file": "feedback_session_close_protocol.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_session_retro_files",
@@ -348,7 +424,9 @@
     "how_to_apply": "- At session END: create retro file first, then add one row to SESSION_LOG index.\n- At session START: read SESSION_LOG index to find session number, then read the retro file directly.\n- Never write full session content into SESSION_LOG.\n- Template sections: accomplishments, discoveries, what failed/corrected, verification check, PMO reconciliation, pending→next.",
     "severity": "HIGH",
     "created_session": 27,
-    "source_file": "feedback_session_retro_files.md"
+    "source_file": "feedback_session_retro_files.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_start_close_symmetry",
@@ -357,7 +435,9 @@
     "how_to_apply": "",
     "severity": "MEDIUM",
     "created_session": 37,
-    "source_file": "feedback_start_close_symmetry.md"
+    "source_file": "feedback_start_close_symmetry.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_stream_large_tables",
@@ -366,7 +446,9 @@
     "how_to_apply": "Any table expected >100K rows must use the stream-to-SQLite pattern. Check memory estimates: ~200 bytes/row in Python dicts.",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_stream_large_tables.md"
+    "source_file": "feedback_stream_large_tables.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_tabkey_language_codes",
@@ -375,7 +457,9 @@
     "how_to_apply": "When parsing TABKEYs:\n1. If you see single-letter prefix + MANDT(3) + BUKRS(4) → that letter is SPRAS (language)\n2. Text tables (*T suffix) always have SPRAS as part of the key\n3. T012T, T035U, T043GT, T043ST, TKT09, FM01T, FMHIVARNTT all follow this pattern\n4. The functional content is the SAME across all language variants — they're just translations",
     "severity": "MEDIUM",
     "created_session": 31,
-    "source_file": "feedback_tabkey_language_codes.md"
+    "source_file": "feedback_tabkey_language_codes.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_text_parsing_not_acceptable",
@@ -384,7 +468,9 @@
     "how_to_apply": "- If a field is missing from the current table, look for it in related tables (FMIFIIT for FM data, PRPS for WBS, etc.)\n- Build the JOIN chain: BSIS.BUZEI = FMIFIIT.KNBUZEI, FMIFIIT.OBJNRZ = PRPS.OBJNR\n- If the field truly doesn't exist in any extractable table, say so — don't offer text parsing as an alternative",
     "severity": "CRITICAL",
     "created_session": null,
-    "source_file": "feedback_text_parsing_not_acceptable.md"
+    "source_file": "feedback_text_parsing_not_acceptable.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_verify_empty_table_claims",
@@ -393,7 +479,9 @@
     "how_to_apply": "When a table is claimed empty, especially if that claim drives architectural conclusions (e.g., \"BCM replaced EBS\"), always verify with a fresh `RFC_READ_TABLE` count before building on that assumption. One wrong \"0 rows\" claim cascaded into incorrect architecture understanding for 4 sessions.",
     "severity": "CRITICAL",
     "created_session": 21,
-    "source_file": "feedback_verify_empty_table_claims.md"
+    "source_file": "feedback_verify_empty_table_claims.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_visjs_inline",
@@ -402,7 +490,9 @@
     "how_to_apply": "- Keep a local copy at `Zagentexecution/mcp-backend-server-python/vis-network.min.js` (644KB)\n- When generating HTML with vis.js, read the local file and embed it: `<script>{vis_js_content}</script>`\n- Also check for duplicate node IDs — vis.js silently fails on duplicates\n- Applies to: `connectivity_diagram.html`, `p2p_process_mining.html`, any future graph dashboards",
     "severity": "CRITICAL",
     "created_session": null,
-    "source_file": "feedback_visjs_inline.md"
+    "source_file": "feedback_visjs_inline.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_visjs_no_duplicate_ids",
@@ -411,7 +501,9 @@
     "how_to_apply": "- When building nodes from RFC data, skip self-references (where target system == source system)\n- Always assert uniqueness before writing: `assert len(ids) == len(set(ids))`\n- Use `rebuild_connectivity.py` as the canonical builder — it has the dedup logic",
     "severity": "MEDIUM",
     "created_session": null,
-    "source_file": "feedback_visjs_no_duplicate_ids.md"
+    "source_file": "feedback_visjs_no_duplicate_ids.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_plans_in_project",
@@ -420,7 +512,9 @@
     "how_to_apply": "After ExitPlanMode is approved, immediately copy the plan file to session_plans/MMDDYYYY_sessionNNN_{plan_name}.md. This was introduced in Session #049 when the plan file was lost from ~/.claude/plans/.",
     "severity": "HIGH",
     "created_session": 49,
-    "source_file": "feedback_plans_in_project.md"
+    "source_file": "feedback_plans_in_project.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_agent_not_human_thinking",
@@ -429,7 +523,9 @@
     "how_to_apply": "When designing ANY knowledge structure: (1) Can it be ONE file? If <100K tokens, YES. (2) Never create one-file-per-entity. (3) Use brain_state.json pattern: dense JSON, everything in one load. (4) File organization is for humans browsing folders. Agents browse context. (5) Exception: deep domain docs (knowledge/domains/) stay separate because they are 1000+ lines each and used on-demand, not at session start.",
     "severity": "CRITICAL",
     "created_session": 49,
-    "source_file": "feedback_agent_not_human_thinking.md"
+    "source_file": "feedback_agent_not_human_thinking.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_design_for_growing_context",
@@ -438,7 +534,9 @@
     "how_to_apply": "When deciding what to include in brain_state.json or any session-start load: include MORE, not less. The cost of an extra 10K tokens in context is invisible. The cost of a missing connection (requiring an extra Read call or missed pattern) is real. Err on the side of loading too much.",
     "severity": "HIGH",
     "created_session": 49,
-    "source_file": "feedback_design_for_growing_context.md"
+    "source_file": "feedback_design_for_growing_context.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_always_utf8_encoding",
@@ -447,7 +545,9 @@
     "how_to_apply": "ALWAYS: open(file, encoding='utf-8') for read, open(file, 'w', encoding='utf-8') for write. NEVER: open(file) or open(file, 'w') on Windows. When running python -c from bash, use << 'PYEOF' heredoc to avoid shell mangling. json.dump() should always include ensure_ascii=False with explicit utf-8 file handle.",
     "severity": "CRITICAL",
     "created_session": 49,
-    "source_file": "feedback_always_utf8_encoding.md"
+    "source_file": "feedback_always_utf8_encoding.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_commit_and_push_at_close",
@@ -456,7 +556,9 @@
     "how_to_apply": "Session close protocol must include: (1) Commit YOUR session work, (2) Audit ANY pending files from prior sessions and group-commit them, (3) Push to remote (git push) so history is durable beyond this machine. NEVER end a session with pending uncommitted files unless explicitly out of scope. If files are out of scope, document them in the next session plan.",
     "severity": "CRITICAL",
     "created_session": 49,
-    "source_file": "feedback_commit_and_push_at_close.md"
+    "source_file": "feedback_commit_and_push_at_close.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_incident_class_systemic_check",
@@ -465,7 +567,9 @@
     "how_to_apply": "1. Root cause identified → distil it into a SQL signature (e.g., 'LFB1 rows where AKONT does not match T077K canonical mapping for the vendor LFA1.KTOKK')\n2. Run signature against Gold DB → count violations\n3. Add a DQ entry with status=OPEN_RECURRING\n4. Add a known_unknown if total exposure is unquantified\n5. Build a check script under Zagentexecution/quality_checks/ with CLI args (vendor_id, --all, --fix-mode)\n6. Add the check to monthly housekeeping\n7. Update the related skill so future agents trigger the same generalization automatically",
     "severity": "CRITICAL",
     "created_session": 50,
-    "source_file": "session_050_incident_methodology"
+    "source_file": "session_050_incident_methodology",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_incident_processing_workflow",
@@ -474,7 +578,9 @@
     "how_to_apply": "Trigger conditions:\n- User pastes/attaches email with INC- number\n- User says 'incident', 'ticket', 'PRRW failure', 'F110 error', etc.\n\nMandatory sequence:\n1. PARSE: extract from email → ticket ID, reporter, transaction, document/object IDs, error messages, screenshots if any\n2. BRAIN LOOKUP: read brain_state.json → find related objects (by transaction, by table, by error code, by domain)\n3. GOLD DB PULL: query Gold DB for the offending records (master data + transaction data + config). If a needed table is missing, EXTRACT it before continuing.\n4. CODE TRACE: if a needed program/class is not in extracted_code/, EXTRACT it via sap_adt_api before continuing.\n5. ROOT CAUSE RECONSTRUCTION: walk the code line-by-line. Cite file:line in the document.\n6. CLASS GENERALIZATION (rule feedback_incident_class_systemic_check)\n7. BRAIN ANNOTATION: add DQ, KU, FALS, claims, and object annotations to brain_v2/. Run rebuild_all.py.\n\nNever skip steps. Never write the doc before code trace is complete. Never close the incident without brain annotations.",
     "severity": "CRITICAL",
     "created_session": 50,
-    "source_file": "session_050_incident_methodology"
+    "source_file": "session_050_incident_methodology",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_incident_doc_canonical_structure",
@@ -483,7 +589,9 @@
     "how_to_apply": "Canonical sections (in order):\n1. Issue — As Received (email text, screenshots, ticket header table)\n2. Executive Summary (root cause in 2-3 sentences + internal validation chain in code)\n3. Domain Primer (how the affected mechanism works at UNESCO — only the necessary background)\n4. Investigation (component-by-component, each subsection cites code file:line and Gold DB query)\n5. Fix Path (immediate / structural / preventive)\n6. Class Generalization (the SQL signature + count of other rows matching the same defect)\n7. Brain Annotations (list of DQ/KU/FALS/claims/object annotations queued for ingestion)\n\nFile location: knowledge/incidents/INC-<id>_<slug>.md\nIngestion: brain_v2/ingestors/incident_ingestor.py picks them up by glob.\nCross-link: each section that cites an object adds it to the by_incident index.",
     "severity": "HIGH",
     "created_session": 50,
-    "source_file": "session_050_incident_methodology"
+    "source_file": "session_050_incident_methodology",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_extract_before_speculate",
@@ -492,7 +600,9 @@
     "how_to_apply": "Decision rule:\n- Need a table? → PRAGMA gold DB → if missing, run sap_data_extraction skill\n- Need code? → ls extracted_code/ → if missing, run sap_adt_api skill\n- Need config? → query Gold DB → if missing, extract via RFC_READ_TABLE\nOnly resume the incident document AFTER the artifact is in the brain.",
     "severity": "HIGH",
     "created_session": 50,
-    "source_file": "session_050_incident_methodology"
+    "source_file": "session_050_incident_methodology",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_brain_first_then_grep",
@@ -501,7 +611,9 @@
     "how_to_apply": "On every user prompt mentioning an incident/transaction/object:\n1. brain_state.incidents → if any record matches, READ incidents[id].analysis_doc immediately\n2. brain_state.indexes.by_incident[id] → lists status, root_cause_summary, related_objects, doc\n3. For each related object, read brain_state.objects[X].annotations and .claims\n4. ONLY if all of these are empty/insufficient, then grep/glob\n5. After acting, if you used grep where brain should have answered, raise a FALS or update brain to close the gap",
     "severity": "CRITICAL",
     "created_session": 50,
-    "source_file": "session_050_brain_v3_eval"
+    "source_file": "session_050_brain_v3_eval",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_blind_spots_are_first_class",
@@ -510,7 +622,9 @@
     "how_to_apply": "Session start protocol additions:\n1. After reading brain_state.json, log brain_state._coverage.pct_classified\n2. If coverage < 90%, list blind_spots and call out high-priority ones (PA0027, BAPI_*, ZCL_*)\n3. When investigating an incident, check if any blind_spot intersects the related_objects — if yes, treat extraction as a prerequisite (rule feedback_extract_before_speculate)\n4. When closing a session, every newly-extracted object should reduce blind_spots count. If blind_spots grows, something's slipping.",
     "severity": "HIGH",
     "created_session": 50,
-    "source_file": "session_050_brain_v3_eval"
+    "source_file": "session_050_brain_v3_eval",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_force_include_referenced_names",
@@ -519,7 +633,9 @@
     "how_to_apply": "is_important(node, annotations, mandatory_names) signature — mandatory_names always wins. Build pipeline collects mandatory_names from annotations.json + claims.json + incidents/incidents.json before object selection.",
     "severity": "HIGH",
     "created_session": 50,
-    "source_file": "session_050_brain_v3_eval"
+    "source_file": "session_050_brain_v3_eval",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_main_agent_holds_incident_context",
@@ -528,7 +644,9 @@
     "how_to_apply": "1. Main agent reads the .eml directly. No Agent tool call for PARSE.\n2. Main agent reads brain_state.json, annotations, claims, incidents directly.\n3. Main agent reads extracted code files directly (Read tool) and cites lines.\n4. Main agent writes the analysis doc in its own turn.\n5. Subagents are only used for narrow mechanical sub-tasks (e.g., 'grep all forms in YRGGBS00 that write XREF2') where the output is a deterministic list, not a judgment call.\n6. Never: Agent(subagent_type='incident-analyst', prompt='process this incident end-to-end').",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_main_agent_holds_incident_context.md"
+    "source_file": "feedback_main_agent_holds_incident_context.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_brain_rebuild_after_finalized",
@@ -537,7 +655,9 @@
     "how_to_apply": "1. Every claim/annotation/incident written during investigation carries status: 'provisional' (or TIER_3_provisional for claims).\n2. Present findings to the user. Wait for explicit approval.\n3. Only after approval: flip every provisional flag to confirmed, then run rebuild_all.py.\n4. Validate _coverage.pct_classified did not decrease and blind_spots did not grow.\n5. If the user corrects direction, revert provisional entries to status: wrong_mechanism before rebuild.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_brain_rebuild_after_finalized.md"
+    "source_file": "feedback_brain_rebuild_after_finalized.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_user_term_to_sap_field_translation",
@@ -546,7 +666,9 @@
     "how_to_apply": "1. Before grepping code or reading brain objects, write a three-column table: [user's literal words] → [candidate SAP field/object] → [confidence: LOW/MEDIUM/HIGH].\n2. If a keyword has multiple plausible mappings, list all of them. Eliminate through the code trace, not through brain-memory recall.\n3. Every incident report (Section 1.5) must include this table.\n4. When investigating an incident whose keywords overlap with a prior incident, explicitly reject the assumption that the mechanism is the same. Start the code trace from zero.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_user_term_to_sap_field_translation.md"
+    "source_file": "feedback_user_term_to_sap_field_translation.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_process_before_root_cause",
@@ -555,7 +677,9 @@
     "how_to_apply": "1. The canonical incident document has Section 3 'How [mechanism] Works' BEFORE Section 4 'Investigation'. Write them in order.\n2. Section 3 is a numbered narrative: 'Step 1: user opens TCODE → SAP builds draft BKPF. Step 2: substitution callpoint 0002 fires → walks the step chain. Step 3: form UXR2 reads USR05 WHERE PARID=Y_USERFO → sets BSEG.XREF2.' etc. Every step cites a file:line.\n3. Only after Section 3 is complete, allow yourself to hypothesize 'why it fails'.\n4. If you find yourself writing the root cause first, stop, delete it, and start with the process flow.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_process_before_root_cause.md"
+    "source_file": "feedback_process_before_root_cause.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_psm_extensions_is_fi_substitution_home",
@@ -564,7 +688,9 @@
     "how_to_apply": "For any incident mentioning substitution, validation, YRGGBS00, GGB0, GGB1, BOOLEXP, GB901, GB922, GB93, GB931, UXR*, U9*, UAEP, UATF, BASU, YTFI_BA_SUBST, YXUSER, or any FI derivation topic: grep knowledge/domains/PSM/EXTENSIONS/ and knowledge/domains/FI/ at the start of the investigation (Step 2 BRAIN LOOKUP). Read every autopsy doc in PSM/EXTENSIONS whose title matches. Document in the incident report which existing docs filled which gaps and which gaps this incident fills.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_psm_extensions_is_fi_substitution_home.md"
+    "source_file": "feedback_psm_extensions_is_fi_substitution_home.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bseg_union_has_no_xref",
@@ -573,7 +699,9 @@
     "how_to_apply": "1. PRAGMA table_info(bseg_union) at the start of any XREF-related query to confirm the schema. 2. If the investigation needs XREF values, go directly to live RFC on BSAK / BSAS / BSIS / BSIK / BSAD / BSID (the view's source tables, which DO carry XREF). 3. If the Gold DB must carry XREF values, enrich bseg_union with a targeted re-extraction (KU-028 class). 4. Never cite a bseg_union query result as proof of XREF state.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_bseg_union_has_no_xref.md"
+    "source_file": "feedback_bseg_union_has_no_xref.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_empirical_over_theoretical_substitution",
@@ -582,7 +710,9 @@
     "how_to_apply": "1. When investigating a substitution/validation behavior, run the EMPIRICAL test first: CDPOS on one representative document, AUGBL trace for clearing, RFC BSAK for the actual XREF values. 2. Use GB901/GB922/GB93/GB931 content to EXPLAIN the observation, not to PREDICT it. 3. If empirical and theoretical disagree, trust the empirical result - theoretical gaps usually mean the GGB configuration uses a mechanism not in the tables we can see (custom code, BAdI, BTE, or a table that is inaccessible). 4. Before claiming a step does or does not fire, pull at least ONE live document through CDPOS.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_empirical_over_theoretical_substitution.md"
+    "source_file": "feedback_empirical_over_theoretical_substitution.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_metadata_vs_real_bseg_lines",
@@ -591,7 +721,9 @@
     "how_to_apply": "1. When counting affected documents, distinguish BSCHL=25 (real outgoing payment), BSCHL=31 (real vendor credit/invoice), BSCHL=50 (real bank side on F110/F-53) from BSCHL=27/37 (metadata zero-balancing pair for FB1K/SAPF124 clearings). 2. Severity HIGH applies to real lines; severity LOW to metadata. 3. For FB1K zero-balancing clearings, trace through AUGBL to the ORIGINAL invoice line - the invoice XREF is the business-meaningful value, not the clearing pair. 4. Document the distinction explicitly in the incident report so consumers know which numbers matter.",
     "severity": "MEDIUM",
     "created_session": "#051",
-    "source_file": "feedback_metadata_vs_real_bseg_lines.md"
+    "source_file": "feedback_metadata_vs_real_bseg_lines.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_no_learning_capture_mid_investigation",
@@ -600,7 +732,9 @@
     "how_to_apply": "1. Throughout the investigation, keep learnings as working memory (within the conversation context) only. 2. The incident report (knowledge/incidents/INC-id_slug.md) is the ONE exception - it is the active working document and can be updated continuously. 3. All OTHER artifacts (knowledge/domains/, .agents/skills/, brain_v2/*) are held until the user confirms conclusions. 4. When the user says investigation finished or update everything, execute the full finalization pass: feedback rules -> wrong-path triage -> domain docs -> brain layers -> rebuild. 5. Never rebuild brain_state.json mid-investigation - it is the last step always.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_no_learning_capture_mid_investigation.md"
+    "source_file": "feedback_no_learning_capture_mid_investigation.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_extract_ggb_tables_for_substitution_incidents",
@@ -609,7 +743,9 @@
     "how_to_apply": "1. At investigation Step 3 (Gold DB pull), first check which GGB tables are in Gold DB via SELECT name FROM sqlite_master. 2. RFC-extract any missing GGB tables at the start: GB93, GB931, GB905, GB921, T80D. 3. Client-side filter for the relevant VALID or SUBSTID to see the rule set. 4. Cross-reference BOOLID naming convention: prefix 1 name ### X = CONDID, prefix 2 name ### X = CHECKID, prefix 3 name # X = substitution step prerequisite. 5. Document the extracted tables as evidence in the incident report Evidence section.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_extract_ggb_tables_for_substitution_incidents.md"
+    "source_file": "feedback_extract_ggb_tables_for_substitution_incidents.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_read_emails_in_main_agent",
@@ -618,7 +754,9 @@
     "how_to_apply": "1. When a ticket / email / .eml is handed to you as a file path or attachment, use the Read tool in the main agent immediately. Read the full body, parse the terminology, build the User-term -> SAP-field translation table yourself. 2. Only AFTER you have the terminology nailed down can narrow sub-tasks (e.g., grep YRGGBS00 for XREF2 write sites) be delegated to subagents. 3. The .eml body is the ground truth - never rely on anyone else summary of it, including your own earlier summary.",
     "severity": "HIGH",
     "created_session": "#051",
-    "source_file": "feedback_read_emails_in_main_agent.md"
+    "source_file": "feedback_read_emails_in_main_agent.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_p01_readonly_absolute",
@@ -627,7 +765,9 @@
     "how_to_apply": "Agent scope on any P01 change request is: (1) read-only analysis via RFC_READ_TABLE, (2) produce a written change spec for DBS, (3) post-change verification via RFC_READ_TABLE and Gold DB refresh. Never write a script with a --execute flag targeting P01. Never call write BAPIs. Never run RFC_ABAP_INSTALL_AND_RUN with INSERT/UPDATE/MODIFY/DELETE. If the user asks 'update it', the answer is 'spec for DBS + verify after'. D01 writes are still allowed.",
     "severity": "CRITICAL",
     "created_session": 52,
-    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
+    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bcm_signatory_ry_otype",
@@ -636,7 +776,9 @@
     "how_to_apply": "For any BCM signatory question: (1) list groups via HRP1000 OTYPE='RY' SHORT IN ('BNK_01_01_03','BNK_01_01_04'), (2) list assignments via HRP1001 OTYPE='RY' OBJID=<ry_objid> then filter RELAT='007' SCLAS='P' in Python, (3) resolve PERNRs via PA0002 for name and PA0105 SUBTY='0001' for SAP user + SUBTY='0010' for email. RFC_READ_TABLE rejects IN() and more than ~3 AND clauses on HR tables, so keep WHERE simple.",
     "severity": "HIGH",
     "created_session": 52,
-    "source_file": "knowledge/domains/Treasury/bcm_signatory_rules.md"
+    "source_file": "knowledge/domains/Treasury/bcm_signatory_rules.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bcm_ghost_pernr_check",
@@ -645,7 +787,9 @@
     "how_to_apply": "Run `python Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py` at session start when the user asks about BCM signatories, AND after any DBS signatory update. Check 1 of the script detects ghost PERNRs. Treat any ghost as CRITICAL data quality defect and log to data_quality_issues.json. Always compare against the PERNR on the HEPATUS carton des signatures page (last page of a TRS letter), not the cover letter which uses names only.",
     "severity": "HIGH",
     "created_session": 52,
-    "source_file": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py"
+    "source_file": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_br_camp_asymmetry",
@@ -654,7 +798,9 @@
     "how_to_apply": "When triaging FMAVC005 or any BR-related question, list all 15 composite members + classify into camps before reasoning about behavior. Don't trust prior 8-member docs.",
     "severity": "HIGH",
     "created_session": 53,
-    "source_file": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md"
+    "source_file": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_check_landscape_before_root_cause",
@@ -663,7 +809,9 @@
     "how_to_apply": "For any custom object analysis: (1) confirm presence in P01 first, (2) check ENHLOG for deactivation, (3) check transports in E070/E07T for release status, (4) only THEN claim it affects production behavior.",
     "severity": "CRITICAL",
     "created_session": 53,
-    "source_file": "PMO H38"
+    "source_file": "PMO H38",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_kble_via_pspro_wrapper",
@@ -672,7 +820,9 @@
     "how_to_apply": "For any FR consumption analysis: use wrapper FM, not RFC_READ_TABLE. KBLEW.CURTP=10 gives local-currency (USD) view directly; CURTP=00 gives transaction currency.",
     "severity": "MEDIUM",
     "created_session": 53,
-    "source_file": "Zagentexecution/quality_checks/budget_rate_consumption_audit.py"
+    "source_file": "Zagentexecution/quality_checks/budget_rate_consumption_audit.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_fmavct_query_pattern",
@@ -681,7 +831,9 @@
     "how_to_apply": "For any FMAVCT query in a script: (1) use DDIF_FIELDINFO_GET first to confirm column names, (2) pick max 12 fields, (3) split WHERE into multiple OPTIONS lines, (4) dedup by row signature before summing. ALLOCTYPE_9 dimension distinguishes budget vs. consumption rows.",
     "severity": "MEDIUM",
     "created_session": 53,
-    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_fmioi_carryforward_pairs",
@@ -690,7 +842,9 @@
     "how_to_apply": "Always sample 3 raw FMIOI WRTTP=81 rows for any FR before computing per-line metrics. Identity-ratio rows with sub-cent amounts = rounding plugs, ignore. For consumption history, use KBLEW filtered by CURTP - not FMIOI signed sums.",
     "severity": "MEDIUM",
     "created_session": 53,
-    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_table_columns_never_drop",
@@ -699,7 +853,9 @@
     "how_to_apply": "When updating a previously-shown table: (1) read the user's last shown column list, (2) the new table MUST contain >= those columns + the additions, (3) if you must restructure, show the column-mapping diff explicitly first and ask. Use a single source-of-truth script that builds incrementally so columns can never silently drop.",
     "severity": "HIGH",
     "created_session": 53,
-    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_aggregation_scope_explicit",
@@ -708,7 +864,9 @@
     "how_to_apply": "For any column derived from SUM/COUNT: name it with explicit scope marker. Examples: 'line cons EUR (this REFBN+RFPOS only)', 'pool USD cons (same FONDS+FIPEX, all FRs)'. Never use bare 'total' or 'cons' without scope qualifier.",
     "severity": "HIGH",
     "created_session": 53,
-    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_no_silent_except_pass",
@@ -717,7 +875,9 @@
     "how_to_apply": "grep -n 'except.*pass' on every extraction script before running. Replace with explicit error logging. For batch operations across N entities, log ERR + entity ID so you know which entity failed without re-running.",
     "severity": "CRITICAL",
     "created_session": 53,
-    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py"
+    "source_file": "Zagentexecution/quality_checks/br_line_level_inconsistency_check.py",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_sample_raw_rows_before_aggregating",
@@ -726,7 +886,9 @@
     "how_to_apply": "First action when querying a new table or new key: SELECT * FROM <table> WHERE <key>=<sample> ORDER BY ... LIMIT 10. Print rows. Read them. THEN write the aggregation. Total cost: 30 seconds. Total savings: hours of wrong analysis.",
     "severity": "HIGH",
     "created_session": 53,
-    "source_file": "knowledge/session_retros/session_053_retro.md (§10)"
+    "source_file": "knowledge/session_retros/session_053_retro.md (§10)",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
   },
   {
     "id": "feedback_bcm_spec_must_include_rule_ry_stext",
@@ -735,6 +897,77 @@
     "how_to_apply": "Every change spec row must be a 5-tuple: (Action, Rule, RY_OBJID, STEXT, PERNR). Example: 'ADD, 90000005, 50036801, UIS Validation, 10097358'. When writing the spec, present RY OBJID prominently (not only in a footnote). Warn DBS explicitly about lookalike groups that sit next to the target in the OOCU_RESP tree — name at least one specific adjacent trap (e.g. 'do NOT pick IIEP Validation'). After DBS confirms execution, always re-run bcm_signatory_reconciliation_check.py — if the target RY has the expected members AND the adjacent-entity RYs (same rule, different prefix) are unchanged compared to the previous snapshot, the change was applied to the correct group.",
     "severity": "HIGH",
     "created_session": 52,
-    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md"
+    "source_file": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "heuristic_session_054"
+  },
+  {
+    "id": "feedback_retro_to_pmo_bridge",
+    "rule": "At session close, every 'commitment', 'open follow-up', 'what's next', or 'consider building X' mentioned in the retro MUST have a corresponding PMO H-item before the session is closed. If a retro mentions N follow-up items, PMO must show N new/updated entries traceable to that retro.",
+    "why": "Session #053 generated 16 follow-up items in retro sections §7/§11/§13 (Brain updates, Knowledge graph edges, skill sap_fm_avc_intelligence, ZFIX object promotions, table registrations). Only 3 were formalized (H38/H39/H40). The other 13 quietly disappeared — discovered only at session #054 audit by the user. This is a systemic trap: retros are written with flow-of-thought commitment language but PMO is the enforcement layer. Without a bridge check, velocity-mode sessions erode the knowledge base silently.",
+    "how_to_apply": "Before marking a session closed, grep the retro for verbs of commitment (should, need to, must, will, consider, propose, promote, register) and for sections titled 'Open follow-ups', 'Brain updates needed', 'PMO updates', 'What's next'. For each unique action noun phrase, verify a matching H-item exists in PMO_BRAIN.md with session tag. If missing, either (a) add the H-item now, or (b) explicitly write 'DECIDED NOT TO TRACK: <reason>' in the retro so the absence is evidence of decision, not omission. When in doubt, formalize — a false-positive H-item can be killed; a false-negative follow-up is irreversible memory loss.",
+    "severity": "CRITICAL",
+    "derives_from_core_principle": "CP-001",
+    "created_session": 54,
+    "source_file": "knowledge/session_retros/session_053_retro.md",
+    "evidence_of_violation": [
+      {
+        "session": 53,
+        "items_committed_in_retro": 16,
+        "items_formalized_in_pmo": 3,
+        "gap_detected_session": 54
+      }
+    ]
+  },
+  {
+    "id": "feedback_never_drop_columns",
+    "rule": "When extending a table, DataFrame, SQLite schema, Excel sheet, or any tabular artifact, NEVER drop existing columns while adding new ones. Use a single canonical script that all queries extend; columns are append-only unless the user explicitly asks to remove one.",
+    "why": "Session #053 retro §10 identified this as a 'did worse' pattern, observed twice in the same session: while building br_lines_FINAL.xlsx (INC-BUDGETRATE-EQG inventory), the agent added new analytical columns and silently dropped 3-4 existing ones the user had asked for. The user had to re-request and re-validate, which broke trust in the iteration. Root cause: agent was regenerating the whole DataFrame each iteration from a narrower column list instead of augmenting the existing one. Cost: loss of fidelity + wasted user time.",
+    "how_to_apply": "Maintain a canonical column list variable at the top of the extraction/build script. When adding a new column: append to the list, never replace it. When tempted to simplify: don't — preserve every column the user has ever asked for. If a column is truly obsolete, ask the user explicitly before dropping. In Excel output: pd.concat([existing_df, new_cols], axis=1), not pd.DataFrame(new_data_only). In SQLite: ALTER TABLE ADD COLUMN, never DROP TABLE + CREATE TABLE. Verify column count is >= previous before saving.",
+    "severity": "HIGH",
+    "derives_from_core_principle": "CP-001",
+    "created_session": 54,
+    "source_file": "knowledge/session_retros/session_053_retro.md",
+    "evidence_of_violation": [
+      {
+        "session": 53,
+        "artifact": "Zagentexecution/incidents/INC_budget_rate_eq_guinea/br_lines_FINAL.xlsx",
+        "incident": "dropped columns twice during iteration"
+      }
+    ]
+  },
+  {
+    "id": "feedback_sample_before_aggregating",
+    "rule": "Before computing aggregates (sum, avg, count, groupby) on an unfamiliar table or data shape, ALWAYS read 3+ raw rows first to verify sign convention, units, scale, and duplicate semantics. Write the aggregation ONLY after the raw sample is understood.",
+    "why": "Session #053 retro §10: the agent misinterpreted FMIOI sign convention twice — took absolute sums assuming all rows were positive, when in reality FMIOI WRTTP=81 rows for an FR include creation (positive), period-016 year-end reversal (negative), and period-000 carryforward-in (positive). Naive sum returned inflated commitment numbers. Same pattern with FMAVCT duplicates by RVERS/RPMAX. Root cause: the agent wrote the aggregation SQL before reading any raw row. For unfamiliar SAP tables with cluster or time-dependent semantics, this is guaranteed to produce wrong numbers.",
+    "how_to_apply": "For any new SAP table the agent queries for the first time in a session: (1) SELECT * FROM table LIMIT 5 with all fields visible; (2) inspect sign patterns of amount fields (HSL*, WRBTR, FKBTR) for the same key across rows; (3) check for version/status columns (RVERS, RPMAX, WRTTP, STATUS); (4) document sign convention in a comment before the aggregation SQL. For FMIOI specifically: always filter by GJAHR + WRTTP and trace by BUDAT for carryforward interpretation. For FMAVCT: dedup by RVERS/RPMAX before summing. For cluster tables (BSEG, KBLE, KBLEW): use the appropriate wrapper FM, never raw RFC_READ_TABLE.",
+    "severity": "MEDIUM",
+    "derives_from_core_principle": "CP-003",
+    "created_session": 54,
+    "source_file": "knowledge/session_retros/session_053_retro.md",
+    "evidence_of_violation": [
+      {
+        "session": 53,
+        "artifact": "br_consumption_audit.py v1",
+        "incident": "FMIOI absolute-sum bug, 2 iterations"
+      }
+    ]
+  },
+  {
+    "id": "feedback_explicit_aggregation_filter",
+    "rule": "Every aggregation column in a report, Excel sheet, or companion MUST explicitly state its filter in the column name or header comment: per-line, per-FR, per-fund, per-FONDS+FIPEX, per-year, per-company-code, per-ledger. Ambiguous 'total' or 'sum' is forbidden.",
+    "why": "Session #053 retro §10: during the INC-BUDGETRATE-EQG investigation, the agent presented a $170K number as if it were per-FR-line consumption when it was actually per-cover-group pool consumption (FONDS+FIPEX). The user asked 'but that doesn't match the Vonthron case which is one line' — this forced a correction and a re-explanation. The ambiguity was in a column named Total_Consumed which could have meant 4 different things. Unambiguous names at report time prevent misinterpretation at review time.",
+    "how_to_apply": "Column naming template: <metric>_<filter>_<unit>. Examples: committed_per_FR_USD, available_per_FONDS_FIPEX_USD, actual_per_line_EUR_2026_9H. In Excel headers: freeze row 1 + add a comment explaining the filter. In markdown tables: include filter in the column header, or add a one-line caption below. When in doubt, make the name longer, not shorter. At review: if the user asks 'but is this per X or per Y', the name failed — rename before answering.",
+    "severity": "MEDIUM",
+    "derives_from_core_principle": "CP-003",
+    "created_session": 54,
+    "source_file": "knowledge/session_retros/session_053_retro.md",
+    "evidence_of_violation": [
+      {
+        "session": 53,
+        "artifact": "br_lines_FINAL_table.md v1",
+        "incident": "$170K pool vs per-line consumption ambiguity, required correction"
+      }
+    ]
   }
 ]

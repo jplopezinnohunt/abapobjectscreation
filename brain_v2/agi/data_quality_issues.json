@@ -10,7 +10,12 @@
     "promoted_to_recurring_check": 50,
     "related_check_script": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
     "related_known_unknown": "KU-020",
-    "status": "OPEN_RECURRING"
+    "status": "OPEN_RECURRING",
+    "affected_count": null,
+    "affected_count_note": "Full LFA1×T077K scan not yet run — tracked as KU-020",
+    "resolution_path": "Promoted to recurring check Zagentexecution/quality_checks/vendor_master_integrity_check.py (s#050). Runs weekly against Gold DB. FALS-006 predicts ≥5 new drifters on first full scan.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-002",
@@ -20,7 +25,12 @@
     "impact": "Payment configuration misunderstood. PDF documentation unusable for PPC mapping.",
     "workaround": "Use live T015L extraction. Ignore PDF documentation for PPC codes.",
     "discovered_session": 25,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 47,
+    "affected_count_note": "47 distinct UNESCO PPC codes in T015L (proprietary format, not ISO 20022)",
+    "resolution_path": "Documented in payment_bcm_companion.html + epiuse_companion.html. PurposeCode source = FPAYP-XREF3 via BAdI FI_CGI_DMEE_EXIT_W_BADI (see claim #5). No migration planned — UNESCO uses proprietary codes intentionally.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-003",
@@ -30,7 +40,12 @@
     "impact": "EKBE year filtering problematic. 119K phantom 'year 0000' records exist.",
     "workaround": "Filter GJAHR=0000 OUT of delivery note analysis queries.",
     "discovered_session": 28,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 119000,
+    "affected_count_note": "119K EKBE delivery notes with GJAHR=0000 (VGABE=9)",
+    "resolution_path": "H6 closure (s#028): GJAHR=0000 rows are ACH returns marked as delivery notes. Skipped in BUDAT enrichment. Documented in Payment process mining.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-004",
@@ -40,7 +55,12 @@
     "impact": "GR field analysis incomplete. Cannot verify item quantities in GR chain.",
     "workaround": "Query MEINS via different path or skip in bulk extractions.",
     "discovered_session": 28,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": null,
+    "affected_count_note": "Auth-restricted tables — count unknown without SAP Basis escalation",
+    "resolution_path": "Document per-table in extraction log. Some tables extractable via chunked WHERE clauses + DDIF_FIELDINFO_GET introspection. FMAVCT handled this way (s#053 retro).",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-005",
@@ -50,7 +70,12 @@
     "impact": "Master data sync incomplete until Session #038 ran multi-language sync (1,511 UPDATEs + 179 INSERTs).",
     "workaround": "Use sap_master_data_sync skill pattern: SELECT SINGLE + UPDATE FROM ls (avoids 72-char ABAP truncation).",
     "discovered_session": 34,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 1690,
+    "affected_count_note": "1,690 SKAT rows resolved (518 E + 500 F + 493 P languages + 179 new INSERTs)",
+    "resolution_path": "H29 closure (s#038): sync script rfc_helpers.py with SELECT SINGLE + UPDATE FROM ls pattern. All 1,690 rows UPDATE ok=1690/ko=0. Log: knowledge/domains/FI/h29_skat_sync_log.md.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-006",
@@ -60,7 +85,12 @@
     "impact": "Clearing relationships hidden. Session #030 re-enrichment fixed 553K items with AUGBL+AUGDT (100% fill).",
     "workaround": "Use BSAS_2024_2026 enriched table, not raw BSAS extraction.",
     "discovered_session": 29,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 553781,
+    "affected_count_note": "553,781 BSAS items re-enriched with AUGBL+AUGDT",
+    "resolution_path": "H20 closure (s#030): 100% fill rate via targeted enrichment. Documented in bank_statement_ebs_architecture.md.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-007",
@@ -70,7 +100,12 @@
     "impact": "Cannot link statements to banks without FEBKO_2024_2026 enriched table.",
     "workaround": "Always query FEBKO_2024_2026 (31,416 rows, 62 fields), not unsuffixed FEBKO.",
     "discovered_session": 29,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 62,
+    "affected_count_note": "62 DD03L fields (incl. BUKRS/HBKID/HKTID)",
+    "resolution_path": "Re-extracted with explicit FIELDS list (not default 8). Pattern now standard.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-008",
@@ -80,7 +115,12 @@
     "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
     "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols â€” truncated first attempt).",
     "discovered_session": 29,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 104,
+    "affected_count_note": "104 FEBEP fields including VGEXT/VGINT/GSBER/ZUONR/INTAG/XBLNR/BUTXT",
+    "resolution_path": "H22 closure (s#042): FEBEP_2024_2026 table has all 27 critical fields filled. Pattern: always check _2024_2026 suffix, not unsuffixed FEBEP.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-009",
@@ -90,7 +130,12 @@
     "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
     "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
     "discovered_session": 31,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 4,
+    "affected_count_note": "4 language keys (D/E/F/P)",
+    "resolution_path": "Superseded claim #19 (s#031): these are LANGUAGE keys, not period types. No fix needed — documentation correction only.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-010",
@@ -100,7 +145,12 @@
     "impact": "Company code analysis wrong. Shared with team before verification (credibility hit).",
     "workaround": "Always verify filter completeness against T001 BUKRS list before publishing findings.",
     "discovered_session": 31,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 2,
+    "affected_count_note": "2 FM areas missing (ICBA + UIL)",
+    "resolution_path": "Filter list extended. Re-extraction completed. All 9 institutes now included.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-011",
@@ -110,7 +160,12 @@
     "impact": "Stale error state. BCM failure analysis weighted wrong if date range not checked.",
     "workaround": "Always filter BCM data to 2024-2026 for current-state analysis.",
     "discovered_session": 28,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 2056,
+    "affected_count_note": "2,056 IBC17 items, all 2021-2022 BCM outage",
+    "resolution_path": "H16 closure (s#028): out of data scope (2024-2026). Historical record only. Root cause documented: BCM activation Jul2021 misconfigured until Oct2022.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-012",
@@ -120,7 +175,12 @@
     "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
     "workaround": "Requires remediation project. No workaround â€” structural config gap.",
     "discovered_session": 44,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 261,
+    "affected_count_note": "213 non-USD bank accts + 48 non-USD clearing accts missing T030H entries",
+    "resolution_path": "Tracked as KU-010 (does FAGL_FC_VAL use fallback?). Needs P01 config check before deciding fix path. May not be a bug — could be intentional (USD-only valuation).",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-013",
@@ -130,7 +190,12 @@
     "impact": "AE and BH countries get default processing instead of custom logic. Configuration incomplete in production.",
     "workaround": "Transport the classes to P01 if custom AE/BH logic needed. Currently UTIL fallback is working.",
     "discovered_session": 25,
-    "status": "OPEN"
+    "status": "OPEN",
+    "affected_count": 2,
+    "affected_count_note": "2 classes (YCL_IDFI_CGI_DMEE_AE + YCL_IDFI_CGI_DMEE_BH) exist in D01 TADIR but not P01",
+    "resolution_path": "Superseded claim #22 (s#039, H18 closure): PurposeCode comes from FPAYP-XREF3 via DMEE tree + BAdI FI_CGI_DMEE_EXIT_W_BADI, not from AE/BH classes. P01 uses UTIL fallback. No migration needed.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-014",
@@ -140,7 +205,12 @@
     "impact": "Can permanently destroy transport content data by re-extracting. Happened in Session #031 (destroyed 36/682, 9/51).",
     "workaround": "NEVER re-extract released transports. Check status before extraction. Rule in feedback_never_reextract_released_transports.",
     "discovered_session": 31,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": null,
+    "affected_count_note": "Applies to all released transports — structural SAP behavior",
+    "resolution_path": "Documented as extraction pattern: always extract transport contents BEFORE release. Previous extraction is source of truth.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-015",
@@ -150,7 +220,12 @@
     "impact": "Misinterpreted as operational crisis for 4 sessions. Real unreconciled = 2,737 on 11xxxxx (0.6%).",
     "workaround": "Filter BSIS to 11xxxxx accounts only for reconciliation analysis.",
     "discovered_session": 29,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": 199000,
+    "affected_count_note": "199K permanent ledger items on 10xxxxx GLs (by design)",
+    "resolution_path": "Superseded claim #18 (s#029): these are permanent ledger entries, never cleared. Real unreconciled = 2,737 on 11xxxxx (0.6% gap). H28 closure documented in bank_statement_ebs_architecture.md.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-016",
@@ -160,7 +235,12 @@
     "impact": "feedback_rules.json became unreadable (UTF-8 decode errors) mid-Session #049, required cleanup.",
     "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
     "discovered_session": 49,
-    "status": "RESOLVED"
+    "status": "RESOLVED",
+    "affected_count": null,
+    "affected_count_note": "Multiple memory files on Windows stdout path",
+    "resolution_path": "Pattern: always use open(..., encoding='utf-8') + sys.stdout.reconfigure(encoding='utf-8') on Windows. Python scripts retrofitted.",
+    "related_incidents": [],
+    "enriched_session": 54
   },
   {
     "id": "DQ-017",
@@ -174,7 +254,14 @@
       "fund_centers"
     ],
     "incident": "INC-000005240",
-    "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side."
+    "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side.",
+    "affected_count": 187514,
+    "affected_count_note": "187,514 fmifiit_full rows UNES + bank clearing GLs + FISTL='UNESCO' hardcode signature",
+    "related_incidents": [
+      "INC-000006073"
+    ],
+    "discovered_session": 48,
+    "enriched_session": 54
   },
   {
     "id": "DQ-018",
@@ -187,7 +274,14 @@
     "related_incident": "INC-000005240",
     "related_known_unknown": "KU-027",
     "promoted_to_recurring_check": false,
-    "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py"
+    "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py",
+    "affected_count": 1,
+    "affected_count_note": "1 user (AL_JONATHAN) with Y_USERFO='HQ' instead of 'JAK'",
+    "resolution_path": "H45 (s#054). Blocked by KU-027 (verify YFO_CODES has FOCOD='JAK') before SU3 update. See knowledge/incidents/INC-000005240_xref_office_substitution.md.",
+    "related_incidents": [
+      "INC-000005240"
+    ],
+    "enriched_session": 54
   },
   {
     "id": "DQ-019",
@@ -200,7 +294,14 @@
     "related_incident": "INC-000005240",
     "related_known_unknown": "KU-028",
     "promoted_to_recurring_check": false,
-    "related_check_script": null
+    "related_check_script": null,
+    "affected_count": 21754,
+    "affected_count_note": "21,754 manual XREF edits Q1 2026 via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents",
+    "resolution_path": "H46 (s#054). Strategic fix options in knowledge/domains/Treasury/xref_office_tagging_model.md §7.3. Decision pending between preventive substitution fix / opt-in SU3 model / periodic reconciliation / tolerate. Blocked by H48.",
+    "related_incidents": [
+      "INC-000005240"
+    ],
+    "enriched_session": 54
   },
   {
     "id": "DQ-020",
@@ -213,6 +314,37 @@
     "related_incident": "INC-000005240",
     "related_known_unknown": "KU-028",
     "promoted_to_recurring_check": false,
-    "related_check_script": null
+    "related_check_script": null,
+    "affected_count": null,
+    "affected_count_note": "Unknown drift count without full USR05×PA0001 diff — tracked as KU-028",
+    "resolution_path": "H47 (s#054). Organizational process gap. Needs HR→BASIS alert mechanism + periodic diff report + policy for mandatory SU3 update on HR transfer. Cross-domain item.",
+    "related_incidents": [
+      "INC-000005240"
+    ],
+    "enriched_session": 54
+  },
+  {
+    "id": "dq_ghost_pernr_bcm_oesttveit",
+    "source": "HRP1001 (P01) via bcm_signatory_assignment (Gold DB)",
+    "issue": "Ghost PERNR 10567156 active in UIS BCM rules 90000004 + 90000005 since 2025-10-04. PA0105/0001 empty -> workflow 90000003 cannot route BNK_APP work items -> Svein OESTTVEIT silently cannot sign UIS payments even though he appears on the Citibank Canada carton des signatures as PERNR 10067156.",
+    "severity": "HIGH",
+    "impact": "Production payment routing for UIS is understaffed by one committer. If Svein would have been the deciding signatory, the batch waits or a different user approves. The real PERNR 10067156 (user S_OESTTVEIT, email S.OESTTVEIT@UNESCO.ORG) should have been used in OOCU_RESP.",
+    "workaround": "None automated. DBS must delimit HRP1001 SOBID=10567156 and insert fresh rows with SOBID=10067156 after TRS authorization. Until then, the other 7 UIS signatories on the carton must cover Svein's work.",
+    "discovered_session": 52,
+    "promoted_to_recurring_check": true,
+    "related_check_script": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+    "related_known_unknown": null,
+    "first_seen_date": "2025-10-04",
+    "status": "RESOLVED",
+    "resolved_session": 52,
+    "resolved_date": "2026-04-13",
+    "resolution": "DBS delimited HRP1001 SOBID=10567156 on RY 50010054 + RY 50036801 (ENDDA set pre-20260413), inserted new rows with SOBID=10067156 (real Svein OESTTVEIT, user S_OESTTVEIT, BEGDA=20260413 ENDDA=99991231). Verified 2026-04-13 via RFC_READ_TABLE: 0 ghosts remain. Carton diff exit=0.",
+    "affected_count": 1,
+    "affected_count_note": "1 ghost PERNR (10567156 / Svein OESTTVEIT) active in 2 BCM rules",
+    "resolution_path": "INC-000006313 closure (s#052). Reconciliation check Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py added as recurring detector. PERNR removed from rules.",
+    "related_incidents": [
+      "INC-000006313"
+    ],
+    "enriched_session": 54
   }
 ]

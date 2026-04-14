@@ -36,6 +36,10 @@ DATA_QUALITY = BRAIN_V2 / "agi" / "data_quality_issues.json"
 # LAYER 11: First-class incident records (added Session #050 — fixes the
 # "agent has brain context but doesn't use it" failure mode)
 INCIDENTS = BRAIN_V2 / "incidents" / "incidents.json"
+# LAYER 0: Core principles — constitutional layer above all rules/claims.
+# Added Session #054. Governs HOW the agent decides, stores, compresses.
+# Every feedback_rule should derive_from one of these. Zero-tolerance violations.
+CORE_PRINCIPLES = BRAIN_V2 / "core_principles" / "core_principles.json"
 
 SKIP_TYPES = {
     "FUND", "FUND_CENTER", "FUND_AREA", "TRANSPORT", "CODE_OBJECT",
@@ -291,6 +295,7 @@ def main():
     user_questions = load_optional(USER_QUESTIONS)
     data_quality = load_optional(DATA_QUALITY)
     incidents_records = incidents_pre  # already loaded above
+    core_principles = load_optional(CORE_PRINCIPLES)  # LAYER 0 — constitutional
     superseded_full = [c for c in claims if c.get("claim_type") == "superseded"]
 
     # Coverage metrics — what's the brain's percent-coverage of the objects
@@ -310,8 +315,9 @@ def main():
         )
 
     brain_state = {
-        "_design": "Object-centric knowledge graph with 11 AGI layers. 1 Read = full self-aware intelligence. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode.",
+        "_design": "Object-centric knowledge graph with 13 layers (0-12). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode.",
         "_stats": {
+            "core_principles": len(core_principles),
             "objects": len(objects),
             "rules": len(rules),
             "claims": len(claims),
@@ -323,8 +329,13 @@ def main():
             "user_questions_open": len([q for q in user_questions if q.get("status") != "ANSWERED"]),
             "data_quality_open": len([d for d in data_quality if d.get("status") == "OPEN"]),
             "superseded": len(superseded_full),
-            "session": 50,
+            "session": 54,
         },
+        # LAYER 0: Core principles — constitutional tier above all rules/claims.
+        # Governs HOW the agent decides, stores, compresses. Zero-tolerance
+        # violations. Every feedback_rule should derive_from one of these.
+        # Read this BEFORE any other layer. Established Session #054.
+        "core_principles": core_principles,
         # LAYER 1: Object-centric graph
         "objects": objects,
         # LAYER 2: Cross-cutting indexes

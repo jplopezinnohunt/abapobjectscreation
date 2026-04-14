@@ -388,25 +388,176 @@ Financial Accounting → Accounts Receivable and Accounts Payable
 5. Add to TRS role: FTE_BSM (bank statement monitor), payment file creation
 6. Add to AR role: FTE_BSM (bank statement monitor)
 
-### BCM Signatory Management
-- Transaction: `OOCU_RESP` (Organization → Responsibility)
-- Rules: **90000004** (BNK_COM_01_01_03) and **90000005** (BNK_INI_01_01_04)
-- HQ signatories: CFO delegation of authority → updated by DBS on BFM/TRS request
-- Institute/UBO signatories: bank signatory letters → updated by DBS
-- **Changes done directly in production** (HR org structure not up to date in dev)
-- To remove: **delimit validity** (never delete)
+### BCM Signatory Management [VERIFIED 2026-04-09 — direct P01 extraction]
 
-### BCM Validation Tiers (from Rule 90000005)
-| Validation Group | Code | Threshold |
-|------------------|------|-----------|
-| UIS AP Validation up to 10,000 USD | BNK_01_01_04 | $10,000 |
-| UIS AP Validation up to 5,000,000 USD N/ | BNK_01_01_04 | $5,000,000 |
-| UNES FAS/PAP/AP Validation to 500,000 | BNK_01_01_04 | $500,000 |
-| UNES FAS/PAP/AP Validation to 5,000,000 | BNK_01_01_04 | $5,000,000 |
-| UNES FAS/PAP/AP Validation to 50,000,000 | BNK_01_01_04 | $50,000,000 |
-| UNES TRS Validation up to 50,000,000 | BNK_01_01_04 | $50,000,000 |
-| UNESCO bank to bank transfers | BNK_01_01_04 | Unlimited |
-| UNES AP Validation up to 10,000,000 USD | BNK_01_01_04 | $10,000,000 |
+**Source of truth**: transaction `OOCU_RESP` (Organization → Responsibility).
+**Storage**: SAP PD infotypes HRP1000 (object header) / HRP1001 (relationships). Responsibility groups are **OTYPE='RY'** objects; assignments to users are HRP1001 with **RELAT='007' SCLAS='P'** (RY → Person → PERNR).
+**Extraction script**: `Zagentexecution/mcp-backend-server-python/extract_bcm_signatories.py` (runs on P01, joins PA0002 + PA0105 for name/user/email).
+**Gold DB tables**: `bcm_signatory_responsibility`, `bcm_signatory_assignment`.
+**Knowledge doc**: [`knowledge/domains/Treasury/bcm_signatory_rules.md`](../../../knowledge/domains/Treasury/bcm_signatory_rules.md).
+
+#### The two rules
+| Rule # | Rule class | Role | SHORT in HRP1000 |
+|--------|------------|------|------------------|
+| **90000004** | `BNK_COM_01_01_03` | **COMMIT** — final release ("2nd signature" that lets the file go to the bank) | `BNK_01_01_03` |
+| **90000005** | `BNK_INI_01_01_04` | **INITIATE / VALIDATE** — 1st approval of the BCM batch | `BNK_01_01_04` |
+
+Each rule is a PFAC rule (returns a list of agents to the workflow). The workflow is `90000003` — BNK_BATCH_HEADER approval. It calls 90000005 first to obtain validators, then 90000004 to obtain committers.
+
+#### Rule 90000004 (COMMIT) — 7 responsibility groups, 62 distinct signatories over time
+| Responsibility group (STEXT) | RY OBJID | Total rows | **Currently active (2026-04-09)** |
+|------------------------------|----------|------------|-----------------------------------|
+| UNES signatures for all transfers | 50010052 | 13 | **0** — all delimited 2023-01-20 |
+| UIS signatures for all transfers | 50010054 | 20 | 8 |
+| UIS signatures up to 10.000 | 50036326 | 15 | 0 — tier discontinued |
+| IIEP signatures for all transfers | 50010088 | 16 | 6 |
+| UBO signatures up to 10.000 | 50034894 | 11 | 8 |
+| UBO signatures for transfers over 10.000 | 50036737 | 10 | 7 |
+| UIL signatures for all transfers | 50037531 | 8 | 4 |
+
+**CRITICAL finding**: UNES has **zero currently active committers under rule 90000004** — the entire group was delimited to 2023-01-20 when UNES migrated to **Process 4** (F110 + BCM 1 validation → Coupa 2nd validation → bank). For UNES, Coupa performs the commit step externally; SAP BCM only runs the INITIATE step via rule 90000005. UIS ≤10.000 tier is also fully delimited (2024-01-17).
+
+#### Rule 90000005 (INITIATE / VALIDATE) — 15 responsibility groups, tiered by entity + amount
+| Responsibility group | RY OBJID | Rows |
+|----------------------|----------|------|
+| UIS AP Validation up to 10.000 USD | 50010051 | 19 |
+| UIS AP Validation up to 5.000.000 USD N/ | 50010053 | 12 |
+| UIS Validation | 50036801 | 16 |
+| UNES FAS/PAP/AP Validation to 500.000 | 50010075 | 12 |
+| UNES FAS/PAP/AP Validation to 5.000.000 | 50010076 | 10 |
+| UNES FAS/PAP/AP Validation to 50.000.000 | 50010077 | 5 |
+| UNES FAS/PAP/AP Validation to 7.500.000 | 50038878 | 1 |
+| UNES AP Validation up to 10.000.000 USD | 50036716 | 2 |
+| UNES FAS/PAP/PAY Validation | 50032363 | 8 |
+| UNES TRS Validation up to 50.000.000 | 50010078 | 15 |
+| UNESCO bank to bank transfers | 50010079 | 13 |
+| IIEP Validation | 50010087 | 16 |
+| UBO Validation up to 10.000 USD | 50034892 | 11 |
+| UBO Validation up up to 5.000.000 USD | 50034893 | 11 |
+| UIL Validation | 50037530 | 9 |
+
+Totals: **24 responsibility groups, 253 assignments (all periods), 76 unique signatories across both rules**.
+
+#### Signatory change process
+- **HQ (UNES) signatories**: CFO delegation of authority letter → DBS updates directly in P01 on BFM/TRS request. HR org structure is NOT maintained in D01.
+- **Institute / UBO signatories**: bank signatory letters from the institute → DBS updates directly in P01.
+- **Removal**: always **delimit validity** (`ENDDA`). Never delete the HRP1001 row — history must survive for audit.
+- **Adding a new signatory**: DBS uses OOCU_RESP in P01, selects the right RY object, adds a P (Person) row with BEGDA = today and ENDDA = 99991231.
+
+#### How to read the current active list from the Gold DB
+```sql
+SELECT stext, pernr, firstname || ' ' || lastname AS name, uname, email, begda, endda
+FROM bcm_signatory_assignment
+WHERE rule_number = '90000004'          -- or '90000005'
+  AND endda >= strftime('%Y%m%d','now')
+ORDER BY stext, lastname;
+```
+
+#### Never do this
+- **Never assume HRP1000 `OTYPE='AC'`** — BCM responsibility groups are OTYPE='RY' (not the generic PFAC 'AC' object). Our SNC user cannot read 'AC' objects but CAN read 'RY' via RFC_READ_TABLE.
+- **Never query HRP1001 with `IN (...)`** — SAP security rejects multi-value WHERE clauses on HR tables. Loop one OBJID per call.
+- **Never chain more than ~3 `AND` clauses** in RFC_READ_TABLE WHERE against HR tables — the parser errors out with `DB_Error on HRP1001: "AN" is not valid`. Split the filter or apply the rest in Python.
+- **Never use PA0001 for name resolution from this SNC user** — blocked by structural authorization. Use **PA0002** (VORNA/NACHN) + **PA0105 SUBTY=0001** (USRID → SAP user) + **PA0105 SUBTY=0010** (USRID_LONG → email) instead.
+- **Never trust the screenshot begin date as the first-ever assignment** — OOCU_RESP consolidates overlapping periods. The HRP1001 rows are the authoritative per-period truth.
+- **Never write to P01** — the AI agent is strictly read-only on P01. OOCU_RESP changes are executed by DBS. Agent scope = analysis + spec + post-change verification via RFC_READ_TABLE only. Even if the user asks "update it", the answer is "spec for DBS + verify after".
+
+#### BCM Signatory Reconciliation Protocol [ADDED Session #052 — INC-000006313]
+
+When the user brings a signatory change request (add/remove/update to a BCM panel), **follow this 7-step path in order**. It takes ~3 minutes and catches the 3 known classes of defect (ghost PERNR, panel drift, role split).
+
+**Step 1 — Parse the request**
+Identify: entity (UNES/UIS/IIEP/UBO/UIL), bank (optional — implies a carton), person name, action (add/remove). If the request came with a TRS instruction letter PDF, extract attachments and **read the `Carton des signatures` page** (last page, HEPATUS V10.x). That page has the authoritative PERNRs, not the cover letter which uses names only.
+
+**Step 2 — Brain lookup**
+Read `brain_state.incidents` for any prior incident involving the same person/entity. Read `brain_state.data_quality` for any open ghost-PERNR warnings for that entity. Read the relevant RY OBJIDs from [bcm_signatory_rules.md](../../../knowledge/domains/Treasury/bcm_signatory_rules.md).
+
+**Step 3 — Identify target RY groups by name semantics**
+The responsibility group STEXT carries the tier: `"for all transfers"` = no amount limit (the live group). `"up to X"` = amount-tier sibling — **check Gold DB to see if it still has active members** before acting; most tier-limited groups are retired with zero active members. When in doubt, the `"for all transfers"` group is the one TRS means.
+
+**Step 4 — Gold DB pre-check (the person's current state)**
+```sql
+SELECT rule_number, stext, begda, endda
+FROM bcm_signatory_assignment
+WHERE pernr = '<PERNR>'
+ORDER BY rule_number, begda;
+```
+Identify expired vs active rows. Never re-insert a currently active assignment.
+
+**Step 5 — P01 person validation**
+Read-only via RFC_READ_TABLE:
+- `PA0002 PERNR=<P>` → confirm VORNA/NACHN match the request
+- `PA0105 PERNR=<P>` → confirm SUBTY='0001' has a non-empty USRID (if empty, the PERNR is a **ghost** and you must find the correct one)
+- `USR02 BNAME=<USRID>` → UFLAG=0 (not locked), GLTGV/GLTGB covers the requested period
+
+**Step 6 — Run the reconciliation check**
+```bash
+python Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py \
+    --entity UIS \
+    --carton Zagentexecution/quality_checks/cartons/uis_citibank_canada_YYYYMMDD.txt
+```
+This script detects:
+1. **Ghost PERNRs** (active SAP row with empty PA0105/0001 SAP user)
+2. **Role-split inconsistency** (user on only one of INI/COM rules)
+3. **Carton diff** (extras in SAP, missing from SAP) when a `--carton` file is provided
+4. Exit code 1 if any defect, 0 if clean — suitable for CI
+
+Save each carton file under `Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt` with one PERNR per line (`#` for comments). One file per bank account carton, not per entity.
+
+**Step 7 — Produce the spec for DBS (no execution)**
+Deliver a 5-column change spec: `Rule | RY OBJID | Group STEXT | Action (ADD/DELIMIT) | PERNR`. **All five columns mandatory — never describe the target by entity name or STEXT alone** (see lookalike-group trap below). Use **BEGDA = TRS letter effective date** ("as of immediate effect" → the letter date, NOT today), ENDDA = 99991231 or letter-specified term. Hand to DBS. Wait for execution confirmation.
+
+#### Lookalike-group trap (INC-000006313 Part 2, Session #052)
+In OOCU_RESP rule 90000005, several groups sit adjacent in the tree and end with the word `Validation`:
+- `IIEP Validation` — RY **50010087** — entity IIEP Paris
+- `UIS Validation` — RY **50036801** — entity UIS Montreal
+- `UNES TRS Validation up to 50.000.000` — RY 50010078 — entity UNES HQ
+- `UBO Validation up to 10.000 USD` — RY 50034892 — entity UBO Brazil
+
+During INC-000006313 Part 2, DBS first added Svein OESTTVEIT to `IIEP Validation` by mistake because the agent's spec used the word "UIS Validation" without the RY OBJID. Had this gone undetected, Svein would have been able to approve **IIEP payments** (wrong entity, wrong carton, compliance breach). The reconciliation check caught it the same day via the role-split warning, and DBS corrected.
+
+**Mitigation in every spec**:
+1. Present RY OBJID prominently — not as a footnote. Bold it.
+2. Name the specific adjacent trap explicitly: "do NOT pick `IIEP Validation` (RY 50010087)".
+3. After DBS confirms execution, re-run `bcm_signatory_reconciliation_check.py` AND directly verify via RFC that:
+   - the target RY has the expected new members
+   - the adjacent-entity RYs (same rule, different entity prefix) are unchanged vs the previous snapshot
+
+#### Validation-against-bank protocol
+When the incident explicitly asks SAP to mirror a specific bank carton (as opposed to just adding one person):
+1. Save the carton to `Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt` (one PERNR per line, `#` comments). Use the letter date as the filename date, not the execution date.
+2. Run the reconciliation check with `--carton <path>` and capture exit code.
+3. Apply the full spec (delimits + adds, always BEGDA = letter date, ENDDA = 99991231) via DBS.
+4. After DBS executes, **run the check TWICE**:
+   - Once with the carton file → expect MATCH=full-carton-size, EXTRAS=0, MISSING=0, exit 0
+   - Once without `--entity` (global) → ghost check + role-split scan across all entities, to confirm no adjacent-group collateral damage
+5. Mirror the spec into `knowledge/incidents/<INC>.md` with the carton filename, pre-state table, post-state table, reconciliation exit codes. Use this artifact as evidence for the audit.
+
+**Do not mark the incident as CLOSED until both reconciliation runs return exit 0.**
+
+**After DBS executes**
+- Re-run `extract_bcm_signatories.py` to refresh the Gold DB
+- Re-run the reconciliation check — the specific items you requested should now be resolved, pre-existing defects will still show
+- Verify the new HRP1001 rows match the spec (BEGDA might have drifted from letter date to execution date — flag any gap)
+- Close the incident in the brain with before/after diff
+
+#### Known data quality defects [status as of 2026-04-13]
+- ~~**Ghost PERNR 10567156 (Svein OESTTVEIT) on UIS rules**~~ — **RESOLVED 2026-04-13**. DBS delimited ghost and inserted real PERNR 10067156 (user `S_OESTTVEIT`) on both RY 50010054 and RY 50036801. Verified via reconciliation check exit=0.
+- ~~**Role-split inconsistency on UIS**~~ — **ANSWERED/CLOSED 2026-04-13**. Was maintenance drift, not intentional. All 8 Citibank Canada carton signatories now on both rules. Confirmed: the carton's "sign jointly two by two" has NO role semantics — any two signatories can sign together.
+- **SAP↔carton drift on UIS — other banks (still open)**: Stephenson-Odle and Zhang were removed from SAP UIS rules on 2026-04-13 as part of the full cleanup. If UIS has other bank accounts at other banks where they are still signatories, that would need separate TRS cartons. Parked as `uq_uis_non_citibank_signatories`.
+
+#### Verified UIS Citibank Canada panel (live, 2026-04-13)
+Both rule 90000004 (RY 50010054) and rule 90000005 (RY 50036801) now hold exactly these 8 PERNRs, matching the 02/04/2026 carton:
+```
+10050037  O_LABE        Olivier LABE
+10067156  S_OESTTVEIT   Svein OESTTVEIT
+10069500  J_PESSOA      Jose PESSOA
+10092400  S_VOFFAL      Said OULD AHMEDOU VOFFAL
+10097358  A_YLI-HIETAN  Anssi YLI-HIETANEN
+10105832  N_REUGE       Nicolas REUGE
+10107946  AG_IMHOF      Adolfo Gustavo IMHOF
+10150918  L_SANNEH      Lamin SANNEH
+```
+Canonical carton file: `Zagentexecution/quality_checks/cartons/uis_citibank_canada_20260402.txt`.
 
 ## Exotic Currency Payments [VERIFIED]
 
