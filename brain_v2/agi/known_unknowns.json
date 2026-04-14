@@ -343,7 +343,10 @@
     "investigation_cost_estimate": "LOW",
     "owner_session": null,
     "notes": "Single RFC_READ_TABLE on YFO_CODES with WHERE FOCOD='JAK'. BLOCKS H45 AL_JONATHAN fix. <5 min.",
-    "enriched_session": 54
+    "enriched_session": 54,
+    "status": "ANSWERED",
+    "answered_session": 55,
+    "answer": "YFO_CODES contains FOCOD='JAK' with FOTXT='JAKARTA' (verified via RFC_READ_TABLE on P01 session #055). The list of valid FOCODs includes: HQ, JAK, IBE, ICB, ICTP, UIL, UIS, IIEP_BUA, IIEP_PAR, IIEP_PDK + many UNDP-XX codes + city codes (ABJ, BEI, CAI, etc.). H45 is UNBLOCKED — AL_JONATHAN SU3 update from 'HQ' to 'JAK' is safe."
   },
   {
     "id": "KU-028",
@@ -389,11 +392,12 @@
     "owner_session": null,
     "notes": "YRGGBS00 version history via SE38 version comparison. H48 scope.",
     "enriched_session": 54,
-    "status": "PARTIALLY_ANSWERED",
-    "answered_session": 54,
+    "status": "MOSTLY_ANSWERED",
+    "answered_session": 55,
     "answer_partial": "Confirmed via code read (YRGGBS00_SOURCE.txt:998): line `* if bseg_xref1 = space.` IS commented out. UXR1 therefore unconditionally overwrites bseg_xref1 with USR05.Y_USERFO whenever the user has that param, silently losing any user-typed value. ASYMMETRY DISCOVERED: UXR2 (line 1026) STILL has the guard `IF bseg_xref2 = space` — only UXR1 is unguarded. This is the root cause of manual XREF drift observed in DQ-019 (21,754 Q1 2026 edits).",
-    "still_unknown": "WHEN the guard was commented out and BY WHOM. Requires SE38 version history (SAP session, not available via RFC).",
-    "findings_location": "YRGGBS00_SOURCE.txt:998 (line commented), YRGGBS00_SOURCE.txt:1026 (UXR2 guard intact)"
+    "still_unknown": "Exact transport that commented the IF bseg_xref1 = space guard. Narrowed to I_KONAKOV transports 2009-2010. To definitively close: SE38 diff between D01K951442 and its predecessor D01K951407 (also KONAKOV, 2009-08-27 different hour) on lines 996-1016.",
+    "findings_location": "YRGGBS00_SOURCE.txt:998 (line commented), YRGGBS00_SOURCE.txt:1026 (UXR2 guard intact)",
+    "answer_update": "Transport history via E071 + E070 extracted: 57 transports modified YRGGBS00 between 2002-2026. Main editor: I_KONAKOV (~20 transports spanning 2008-2023, including the 2015-2017 era when substitution mods were heavy). Other editors: MAGAL/PARENT-DU (2002 initial), AHOUNOU (2003-2006), MENARD (2022-2026), RIOS (2025). CLUSTER of substitution-related transports: D01K951442 (2009-08-27 'WF - FI substitutions user-exit correction' by KONAKOV), D01K951618 (2009-08-27 'WF - FI Substitution rules' by KONAKOV), D01K960319 (2010-04-26 'WF - FI substitutions' by KONAKOV). The guard was most likely commented in one of these KONAKOV transports. Definitive identification requires diff-by-diff compare of YRGGBS00 source between transport versions (VRSD returned TABLE_WITHOUT_DATA via RFC — would need SE38 Version Management GUI)."
   },
   {
     "id": "KU-031",
@@ -409,10 +413,11 @@
     "owner_session": null,
     "notes": "Check GB01 / GGB1 tables via RFC + GCTAB/GCSTR secondary tables. H48 scope.",
     "enriched_session": 54,
-    "status": "ANSWERED",
-    "answered_session": 54,
-    "answer": "Substitution step prerequisites at UNESCO are PROCEDURAL (inside YRGGBS00 FORM bodies UXR1/UXR2/U910/UGLS/etc. via IF/SELECT logic), NOT declarative. GB922 stores the step sequence (SUBSTID+SUBSEQNR+CONSEQNR) and points to EXITSUBST=form_name. GB901 stores BOOLEAN expressions used by VALIDATIONS (VALID='UNES' has 12 steps in GB931), not by substitutions. GB905 and GB921 are SAP dictionary tables, not populated in P01 (the storage model for this SAP version uses GB922+GB901+GB903).",
-    "findings_location": "Gold DB: GB922 (17 UNES rows), GB901 (583 rows with BOOLEXP), GB903 (3 rows); YRGGBS00_SOURCE.txt FORM bodies"
+    "status": "ANSWERED_CORRECTED",
+    "answered_session": 55,
+    "answer": "Substitution step prerequisites at UNESCO ARE DECLARATIVE via 3-table chain: GB922 (step definition: SUBSTID+SUBSEQNR+CONDID implicit via exit name) -> GB921 (step-to-CONDID linkage: 16 rows for SUBSTID='UNESCO') -> GB901 (boolean expressions indexed by CONDID, 583 rows total, 56 rows for BOOLID LIKE '3UNESCO%'). My prior session #054 claim that prerequisites were 'procedural in FORM bodies' was WRONG — they are declarative. Correction: the FORM body contains the ACTION logic once the declarative prereq passes. KEY FINDING: step 005 (UXR1/XREF1) has NO prerequisite row in GB901 — fires UNCONDITIONALLY for every BSEG line. Step 006 (UXR2/XREF2) has a prerequisite: `HKONT IN ('1375012','1375022','1375032','1375052','1341011','1341021')` — only fires for specific GL accounts. GB905 exists but returned 0 rows for UNES-related BOOLIDs.",
+    "findings_location": "Gold DB: GB922 (17 UNES rows), GB901 (583 rows with BOOLEXP), GB903 (3 rows); YRGGBS00_SOURCE.txt FORM bodies",
+    "tables_architecture": "GB922 = step definition. GB921 = step-to-condition linkage (MANDT+SUBSTID+SUBSEQNR -> CONDID). GB901 = boolean expression body (BOOLID+SEQNR -> BOOLEXP multi-line text). GB903 = boolean header (BOOLID -> SHORTNAME+SETID). GB931 = VALIDATION step-to-condition for VALID='UNES' (12 rows, separate from substitutions). GB02C = message class mapping."
   },
   {
     "id": "KU-032",
@@ -428,10 +433,12 @@
     "owner_session": null,
     "notes": "Empirical ST05 trace of F110 vs F-53 substitution callpoint firing in TS3. Requires live test posting. H48 scope.",
     "enriched_session": 54,
-    "status": "INVESTIGATION_BLOCKED_LIVE_TRACE_REQUIRED",
+    "status": "ENRICHED_NOT_CLOSED",
     "scoped_session": 54,
     "scope": "UXR1 has NO filter by TCODE/BUKRS/callpoint context within the FORM body. Both UXR1 and UXR2 are registered as callpoint-3 (complete document) substitutions for UNES. Therefore the F110 vs F-53 asymmetry cannot come from the FORM itself. Two remaining hypotheses: (a) F110 batch context iterates BSEG lines differently, applying substitution only to vendor lines (SAP standard behavior with bseg-lifnr filter inside the callpoint dispatcher), (b) GGB1 or GB921 callpoint-level prerequisites filter tcode but are not extracted to Gold DB. Definitive answer needs ST05 SQL trace in TS3 with one F110 run + one F-53 posting to capture the actual substitution call sequence per BSEG line.",
-    "blocks_on": "Live SAP session in TS3 — user-assisted work required. Cannot proceed autonomously via RFC."
+    "blocks_on": "Live SAP session in TS3 — user-assisted work required. Cannot proceed autonomously via RFC.",
+    "enrichment_session": 55,
+    "enrichment": "New data reduces the asymmetry mystery but does not fully explain F110 vs F-53. Finding: UXR1 has NO declarative prereq (fires on every BSEG line of every UNESCO posting). UXR2 has declarative prereq HKONT IN (bank-related GL list). So XREF1 auto-write should fire for EVERY line in EVERY tcode (F110, F-53, FB60, MIRO, etc.). The asymmetry observed in INC-000005240 (F110 fires on vendor clearing line but not bank GL line) must therefore come from either (a) SAP standard F110 batch context only iterating certain lines through callpoint 3, or (b) a downstream filter on bseg-hkont within substitution dispatcher. ST05 trace still required to resolve."
   },
   {
     "id": "uq_uis_non_citibank_signatories",

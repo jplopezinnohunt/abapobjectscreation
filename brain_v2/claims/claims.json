@@ -1319,38 +1319,129 @@
   },
   {
     "id": 47,
-    "claim": "YRGGBS00 UXR1 (XREF1 substitution) has the guard `IF bseg_xref1 = space` COMMENTED OUT at line 998, while UXR2 (XREF2 substitution) at line 1026 KEEPS the equivalent guard `IF bseg_xref2 = space`. Consequence: UXR1 unconditionally overwrites user-typed XREF1 with USR05.Y_USERFO whenever the posting user has that SU3 param; UXR2 only auto-writes when blank. This asymmetry is the root cause of the systemic XREF drift pattern observed in DQ-019 (21,754 manual Q1 2026 XREF edits via FBL3N/FB02/FBL5N).",
+    "claim": "YRGGBS00 UXR1 (XREF1 substitution, step 005) has DOUBLE ASYMMETRY vs UXR2 (XREF2, step 006): (1) CODE-LEVEL: line 998 has `IF bseg_xref1 = space` guard commented out, while UXR2 line 1026 keeps its guard intact; (2) CONFIG-LEVEL: UXR1 has NO declarative prerequisite in GB901 — fires unconditionally for every BSEG line, while UXR2 has prereq `HKONT IN ('1375012','1375022','1375032','1375052','1341011','1341021')` restricting to 6 specific GL accounts. Combined effect: UXR1 fires on EVERY posting line of EVERY user at UNESCO and unconditionally overwrites user-typed XREF1 with USR05.Y_USERFO. This is the root cause of the systemic XREF drift pattern observed in DQ-019 (21,754 manual Q1 2026 XREF edits via FBL3N/FB02/FBL5N). The manual edits are predominantly on XREF1 (universal), not XREF2 (targeted 6 accounts).",
     "claim_type": "defect",
     "confidence": "TIER_1",
     "evidence_for": [
       {
         "type": "source_code",
         "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:998",
-        "cite": "`*  if bseg_xref1 = space.` — line commented out, breaking the guard. UXR1 then falls through to unconditional USR05 select + overwrite at line 1004.",
+        "cite": "`*  if bseg_xref1 = space.` commented out — UXR1 falls through to unconditional USR05 select + overwrite at line 1004",
         "added_session": 54
       },
       {
         "type": "source_code",
         "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1026",
-        "cite": "`IF bseg_xref2 = space.` — line active in UXR2, maintaining the guard. UXR2 only enters USR05 select when XREF2 is blank.",
+        "cite": "`IF bseg_xref2 = space.` active in UXR2 — guard maintained",
         "added_session": 54
+      },
+      {
+        "type": "config_data",
+        "ref": "GB901 BOOLID '3UNESCO#005' (step 005 UXR1 prereq)",
+        "cite": "RFC_READ_TABLE returns 0 rows — step 005 fires unconditionally (verified session #055)",
+        "added_session": 55
+      },
+      {
+        "type": "config_data",
+        "ref": "GB901 BOOLID '3UNESCO#006' (step 006 UXR2 prereq)",
+        "cite": "RFC_READ_TABLE returns 3 rows: HKONT IN ('1375012','1375022','1375032','1375052','1341011','1341021') — step 006 only fires for 6 bank-related GLs (verified session #055)",
+        "added_session": 55
+      },
+      {
+        "type": "config_data",
+        "ref": "GB921 SUBSTID='UNESCO' (verified session #055)",
+        "cite": "16 substitution steps mapped to CONDID — confirms declarative architecture. Step 005=3UNESCO#005 (XREF1 prereq), Step 006=3UNESCO#006 (XREF2 prereq)",
+        "added_session": 55
       },
       {
         "type": "production_data",
         "ref": "DQ-019 finding",
-        "cite": "21,754 manual XREF post-posting edits in Q1 2026 on UNES BELEG documents via FBL3N/FBL1N/FB02/FBL5N — consistent with users correcting silently-overwritten XREF1.",
+        "cite": "21,754 manual XREF post-posting edits in Q1 2026 on UNES BELEG documents via FBL3N/FBL1N/FB02/FBL5N — consistent with users correcting silently-overwritten XREF1 on every posting",
         "added_session": 54
       }
     ],
-    "evidence_against": null,
+    "evidence_against": [],
     "related_objects": [
       "YRGGBS00",
       "USR05",
       "BSEG.XREF1",
-      "BSEG.XREF2"
+      "BSEG.XREF2",
+      "GB901",
+      "GB921",
+      "GB922"
     ],
     "domain": "FI",
     "created_session": 54,
+    "updated_session": 55,
+    "resolved_session": null,
+    "status": "active"
+  },
+  {
+    "id": 48,
+    "claim": "YRGGBS00 UXR2 (XREF2 substitution, step 006) has a GL-account-restricted prerequisite: fires ONLY when BSEG.HKONT IN ('1375012','1375022','1375032','1375052','1341011','1341021') — 6 specific GL accounts stored in GB901 BOOLID '3UNESCO#006'. These 6 accounts are likely foreign-currency or bank-clearing accounts (GL pattern 137xxxx = intra-group, 1341xxx = bank-clearing). This selective firing explains why XREF2 auto-write only affects specific posting contexts, while XREF1 (step 005) fires universally (no prerequisite).",
+    "claim_type": "config_structure",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config_data",
+        "ref": "GB901 BOOLID '3UNESCO#006'",
+        "cite": "SEQNR 01-03: HKONT = '1375012' OR HKONT = '1375022' OR HKONT = '1375032' OR HKONT = '1375052' OR HKONT = '1341011' OR HKONT = '1341021' (verified session #055 via RFC_READ_TABLE)",
+        "added_session": 55
+      },
+      {
+        "type": "config_data",
+        "ref": "GB921 SUBSTID='UNESCO' SUBSEQNR='006'",
+        "cite": "CONDID='3UNESCO#006' links UXR2 step to the HKONT boolean",
+        "added_session": 55
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "YRGGBS00",
+      "UXR2",
+      "BSEG.HKONT",
+      "GB901",
+      "GB921"
+    ],
+    "domain": "FI",
+    "created_session": 55,
+    "resolved_session": null,
+    "status": "active"
+  },
+  {
+    "id": 49,
+    "claim": "YRGGBS00 has been modified by 57 distinct transports between 2002 and 2026. Primary maintainer: I_KONAKOV (~20 transports spanning 2008-2023). Other notable editors: MAGAL/PARENT-DU (initial 2002), AHOUNOU (2003-2006), MENARD (2022-2026, recent), RIOS (2025). CLUSTER of substitution-specific changes by KONAKOV in 2009-08-27 (D01K951407, D01K951442, D01K951618 — three transports same day, all with substitution-related descriptions). The UXR1 guard comment-out is almost certainly in one of these KONAKOV substitution transports — narrowed search scope for KU-030 definitive closure.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "E071 WHERE OBJ_NAME='YRGGBS00' AND OBJECT='REPS'",
+        "cite": "57 distinct TRKORR values on P01",
+        "added_session": 55
+      },
+      {
+        "type": "production_data",
+        "ref": "E070 headers for 57 TRKORRs",
+        "cite": "AS4USER dimension: I_KONAKOV dominant 2008-2023. Earliest 2002-01-18 (MAGAL). Most recent 2026-01-11 (MENARD 'W - FI - Substitution rule update for Travel (YRGGBS00)')",
+        "added_session": 55
+      },
+      {
+        "type": "production_data",
+        "ref": "E07T descriptions",
+        "cite": "D01K951442 = 'WF - FI substitutions user-exit correction' (KONAKOV 2009-08-27), D01K951618 = 'WF - FI Substitution rules' (KONAKOV 2009-08-27), D01K960319 = 'WF - FI substitutions' (KONAKOV 2010-04-26)",
+        "added_session": 55
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "YRGGBS00",
+      "E070",
+      "E071",
+      "E07T"
+    ],
+    "domain": "FI",
+    "created_session": 55,
     "resolved_session": null,
     "status": "active"
   }
