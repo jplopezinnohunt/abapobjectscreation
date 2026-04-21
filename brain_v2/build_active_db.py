@@ -255,8 +255,12 @@ def parse_incidents(conn):
 
     count = 0
     for inc_id, data in incidents.items():
-        sm = re.search(r"#(\d+)", data["session"])
-        session_num = int(sm.group(1)) if sm else None
+        session_val = data.get("session", "")
+        if isinstance(session_val, int):
+            session_num = session_val
+        else:
+            sm = re.search(r"#?(\d+)", str(session_val))
+            session_num = int(sm.group(1)) if sm else None
         conn.execute("""INSERT OR REPLACE INTO incidents
             (id, description, root_cause_objects, contributing_objects,
              session_discovered, status)

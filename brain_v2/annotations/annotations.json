@@ -440,15 +440,33 @@
   "T012K": {
     "annotations": [
       {
-        "tag": "MISSING_FIELD",
-        "finding": "T012K extracted without UKONT field (sub-bank GL paired with bank GL). Need re-extraction with all fields to validate 10xxx-11xxx pairing.",
-        "timestamp": "2026-04-09T08:57:55.109869",
-        "session": "#029",
-        "field": "UKONT"
+        "annotations": [
+          {
+            "tag": "MISSING_FIELD",
+            "finding": "T012K extracted without UKONT field (sub-bank GL paired with bank GL). Need re-extraction with all fields to validate 10xxx-11xxx pairing.",
+            "timestamp": "2026-04-09T08:57:55.109869",
+            "session": "#029",
+            "field": "UKONT"
+          }
+        ],
+        "first_seen": "2026-04-09T08:57:55.109869",
+        "last_updated": "2026-04-09T08:57:55.109869",
+        "tag": "finding",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "402 rows, 383 distinct HKONTs. 233 (60.8 percent) of distinct HKONTs NOT in any YBANK_* SETLEAF set. 107 HBKIDs have 0 percent coverage. 25 uncovered HKONTs have active 2026 BSIS totaling 1,996 rows. This is the first UNESCO-wide audit of T012K-vs-YBANK coverage (prior incidents INC-000005586 / INC-000005240 / INC-000006073 / INC-000006313 did not perform this join).",
+        "flavor": "MASTER_DATA",
+        "blind_spot": false,
+        "tag": "MASTER_DATA",
+        "timestamp": "2026-04-20T13:48:37.001322"
       }
     ],
-    "first_seen": "2026-04-09T08:57:55.109869",
-    "last_updated": "2026-04-09T08:57:55.109869"
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
   },
   "BNK_BATCH_HEADER": {
     "annotations": [
@@ -1454,6 +1472,621 @@
           "INC-BUDGETRATE-EQG",
           "PMO_H39"
         ]
+      }
+    ]
+  },
+  "YBANK_ACCOUNTS_FO_OTH": {
+    "annotations": [
+      {
+        "annotations": [
+          {
+            "tag": "SET_MEMBERSHIP_LIVE_2026-04-20",
+            "finding": "60 GL leaves, SETCLASS=0000 / TABNAME=GLT0 / FIELDNAME=RACCT. Last update 2026-04-07 by JP_LOPEZ adding UBA01 MZN GL 0001065424 at line 0077 (transport D01K9B0F5F). All leaves are VALSIGN=I VALOPTION=EQ (single-GL equality, no ranges).",
+            "timestamp": "2026-04-20T00:00:00.000000",
+            "session": "#056",
+            "incident": "INC-000006906",
+            "tier": "TIER_1",
+            "source": "Live RFC_READ_TABLE SETLEAF + SETNODE + SETHEADER on P01 2026-04-20",
+            "related": [
+              "INC-000006906",
+              "INC-000005586",
+              "UBA01",
+              "ECO09",
+              "BST01",
+              "YFI_BANK_RECONCILIATION",
+              "ZCASHFODET"
+            ]
+          },
+          {
+            "tag": "COVERAGE_GAP_ECO09_MZN",
+            "finding": "ECO09 MZN main GL 0001094424 is NOT in any YBANK set despite 238 bseg_union lines in 2026 (47 on main + 100 on sub-bank 0001194424 + 91 on sub-recon 0001194421). The ONLY ECO09 GL in any YBANK set is the reconciliation account 0001094421 placed in YBANK_ACCOUNTS_FO_USD line 0063 (wrong currency subset — it's a MZN reconciliation GL). Anomalies A1+A2+A3 from INC-000006906 §3c.3.",
+            "timestamp": "2026-04-20T00:00:00.000000",
+            "session": "#056",
+            "incident": "INC-000006906",
+            "tier": "TIER_1",
+            "severity": "HIGH",
+            "source": "Live RFC SETLEAF probe — VALFROM exact match with padding",
+            "implication": "If YFI_BANK_RECONCILIATION resolves bank GL scope via SETLEAF on YBANK_ACCOUNTS_FO_OTH (like ZCASHFODET), ECO09 MZN postings are INVISIBLE to the report. This pre-dates UBA01 rollout and is a latent config defect.",
+            "related": [
+              "0001094424",
+              "0001194424",
+              "0001194421",
+              "ECO09",
+              "YFI_BANK_RECONCILIATION"
+            ]
+          },
+          {
+            "tag": "PAIRED_GL_CONVENTION_BROKEN",
+            "finding": "Paired-GL convention (10xxxxx main + 11xxxxx reconciliation in same subset) is broken: ECO09 main 0001094424 NOT in any set, ECO09 recon 0001094421 in FO_USD; UBA01 main 0001065424 in FO_OTH, UBA01 recon 0001165424 NOT in any set; UBA01 USD main 0001065421 in FO_USD, USD recon 0001165421 NOT in any set. Either the report does not rely on paired-GLs, or a long-standing manual-maintenance error across all multi-currency FO banks.",
+            "timestamp": "2026-04-20T00:00:00.000000",
+            "session": "#056",
+            "incident": "INC-000006906",
+            "tier": "TIER_1",
+            "severity": "MED",
+            "related": [
+              "YBANK_ACCOUNTS_FO_USD",
+              "SETLEAF",
+              "ECO09",
+              "UBA01"
+            ]
+          }
+        ],
+        "first_seen": "2026-04-20T00:00:00.000000",
+        "last_updated": "2026-04-20T00:00:00.000000",
+        "tag": "finding",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "60 leaf GL accounts. Missing ECO09/MZN01 main GL 0001094424 despite 47 BSIS rows in 2026 (anomaly A1). Paired-GL convention broken for ECO09 (MZN main not listed, USD recon 0001094421 listed in FO_USD). UBA01/MZN1 main GL 0001065424 correctly added line 77 on 2026-04-07 by JP_LOPEZ via transport D01K9B0F5F.",
+        "flavor": "CONFIG_SET",
+        "blind_spot": false,
+        "tag": "CONFIG_SET",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_2",
+        "tag": "NOT_CAUSAL_FOR_YTBAE002",
+        "finding": "The YBANK_* set-coverage gap (233/383 T012K HKONTs uncovered, 61%) is a REAL audit finding for Report-Painter programs (ZCASHFODET family) but it is NOT the mechanism behind INC-000006906. YTBAE002 resolves HKONT scope via SKB1 (YTBAE002.abap:1098), zero hits for RS_SET_VALUES_READ / G_SET_GET_ALL_VALUES / K_HIERARCHY_TABLES_READ / G_SET_LIST_READ / G_SET_FETCH in the 3,422-line corpus. Claim 52 stays active as a preventive audit class for OTHER programs; claim 54 (MODE 'E' BDC network coupling) is the actual root-cause class for this incident.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "SETLEAF": {
+    "annotations": [
+      {
+        "tag": "NEWLY_EXTRACTED_2026-04-20",
+        "finding": "SETLEAF was a Gold DB blind spot until INC-000006906. Extraction script at Zagentexecution/sap_data_extraction/scripts/extract_setleaf_ybank.py pulls SETLEAF + SETNODE + SETHEADER + SETHEADERT for SETNAME LIKE 'YBANK%' (158 + 14 + 15 + 45 rows). Key fact: client field is MANDT (not CLIENT — RFC_READ_TABLE returns TABLE_WITHOUT_DATA if CLIENT supplied as an explicit field). Underscore in LIKE pattern behaves as a wildcard — use YBANK% not YBANK_ACCOUNTS%.",
+        "timestamp": "2026-04-20T00:00:00.000000",
+        "session": "#056",
+        "incident": "INC-000006906",
+        "tier": "TIER_1",
+        "related": [
+          "SETNODE",
+          "SETHEADER",
+          "SETHEADERT",
+          "YBANK_ACCOUNTS_FO_OTH",
+          "RFC_READ_TABLE"
+        ]
+      }
+    ],
+    "first_seen": "2026-04-20T00:00:00.000000",
+    "last_updated": "2026-04-20T00:00:00.000000"
+  },
+  "YTR3": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "Dialog TCODE that launches custom program YTBAE002 and drives SAP logical database SAPDBSDF. Not in Gold DB tadir_enrichment; not in extracted_code/. Confirmed via user-provided ST22 screenshot (2026-04-20 13:51:49, user J_DAVANE, P01 client 350).",
+        "flavor": "MISSING",
+        "blind_spot": true,
+        "resolution": "Extract via sap_adt_api / RFC lookup TSTC.",
+        "tag": "MISSING",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "TSTC_BINDING_LIVE_2026-04-20",
+        "finding": "Live TSTC row (RFC_READ_TABLE TSTC WHERE TCODE='YTR3'): TCODE=YTR3 PGMNA=YTBAE002 DYPNO=1000 CINFO=9. Plain REPORT-backed TCODE, one-to-one binding to YTBAE002 screen 1000. No parameter-transaction, no variant-only launch. Domain: Treasury / Bank Reconciliation. Used for MT940-driven reversal/clearing posting from YTBAE002.",
+        "domain": "Treasury",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_2",
+        "tag": "ROOT_CAUSE_CONFIRMED",
+        "finding": "YTR3 is the dialog entry point for UNESCO's custom bank reconciliation POSTING program YTBAE002. Fails with TIME_OUT in SAPDBSDF:1983 PUT_BSIS on slow WAN paths (Maputo) due to MODE 'E' BDC inside an LDB loop — see YTBAE002.abap:27 annotation. Runs in ~2 seconds from HQ (user reproduced). Fix proposed at YTBAE002.abap:27 ('E'→'N').",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "SKB1": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "XOPVW_OPEN_ITEM_MGMT_FLAG",
+        "finding": "Standard SAP table linking company-code-specific GL master data. The XOPVW field ('Open-item management') is the KEY flag YTBAE002 uses to identify which GLs of a bank need open-item clearing: at YTBAE002.abap:1098-1101 the program SELECTs SAKNR, XOPVW FROM SKB1 WHERE BUKRS+HBKID+HKTID; at :1115 it filters XOPVW='X' before appending to GR_SAKNR_OI (the OI range fed to LDB SDF). Bank sub-bank GLs (11xxxxx/13xxxxx/15xxxxx) must have XOPVW='X' for automatic reconciliation. If XOPVW is blank on a sub-bank GL, YTBAE002 emits zero entries into the OI range — triggering the empty-range latent at :1366.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "domain": "FI",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "FB08": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CALLED_VIA_BDC_BY_YTBAE002",
+        "finding": "Standard SAP reversal TCODE (Reverse Document). Called via BDC from YTBAE002 at two sites: YTBAE002.abap:723 and :853, both as CALL TRANSACTION 'FB08' USING BDCDTAB MODE GC_MOD MESSAGES INTO Y_MESSTAB. Because GC_MOD='E' at :27, any BDC error opens SAPGUI on the user's workstation. Root cause of INC-000006906 TIME_OUT on slow WAN paths.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "domain": "FI",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "F-04": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CALLED_VIA_BDC_BY_YTBAE002",
+        "finding": "Standard SAP TCODE (Post with Clearing). Called via BDC from YTBAE002 at :771 as CALL TRANSACTION 'F-04' USING BDCDTAB MODE GC_MOD MESSAGES INTO Y_MESSTAB. Because GC_MOD='E' at :27, any BDC error opens SAPGUI on the user's workstation. Contributes to INC-000006906 TIME_OUT on slow WAN paths.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "domain": "FI",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "FBRA": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CALLED_VIA_BDC_BY_YTBAE002",
+        "finding": "Standard SAP TCODE (Reset Cleared Items). Called via BDC from YTBAE002 at :819 as CALL TRANSACTION 'FBRA' USING BDCDTAB MODE GC_MOD MESSAGES INTO Y_MESSTAB. Because GC_MOD='E' at :27, any BDC error opens SAPGUI on the user's workstation. Contributes to INC-000006906 TIME_OUT on slow WAN paths.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "domain": "FI",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "YTBAE002": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "Custom Y-program invoked by TCODE YTR3. Drives SAPDBSDF (Financial Documents logical database). Terminated in dialog on 2026-04-20 13:51:49 with runtime error TIME_OUT at SAPDBSDF form PUT_BSIS include line 1983. Batch path (TBTCO) shows 5 Finished runs on 2026-03-04/05, proving batch executes successfully (no dispatcher time cap).",
+        "flavor": "CUSTOM_Y_PROGRAM",
+        "blind_spot": false,
+        "resolution": "RESOLVED Session #057: source extracted to extracted_code/CUSTOM/YTBAE002/YTBAE002.abap (3,422 lines, monolithic, zero INCLUDEs, zero Y/Z dependencies). Extraction method: pyrfc RPY_PROGRAM_READ over SNC/SSO because D01 password is locked. See claim-006906-empty-range-ldb-scan-ytbae002 for the root-cause mechanism.",
+        "tag": "CUSTOM_Y_PROGRAM",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "line": "297-300",
+        "tag": "SELECTION_SCREEN",
+        "finding": "Selection screen BLOCK10: GP_BUKRS (LIKE BSEG-BUKRS, DEFAULT 'UNES', OBLIGATORY), GP_HBKID (LIKE T012-HBKID, OBLIGATORY), GP_HKTID (LIKE T012K-HKTID, OBLIGATORY), GP_BUDAT (LIKE BSIS-BUDAT, OBLIGATORY, DEFAULT SY-DATUM). All four are PARAMETERS — no SELECT-OPTIONS anywhere. GJAHR is derived as GP_BUDAT(4) at :369, so one fiscal year per run. Blocks 20/30: GP_STATE/GP_RECON radio + GP_AUGDT (hidden unless GP_RECON='X').",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "line": "1098-1127",
+        "tag": "SCOPE_RESOLUTION",
+        "finding": "FORM HOUSE_BANK_ACCOUNTS_GET resolves HKONT scope by SELECT SAKNR XOPVW FROM SKB1 WHERE BUKRS=GP_BUKRS AND HBKID=GP_HBKID AND HKTID=GP_HKTID. Matches are routed by substring: SAKNR+3(2) IN ('10','12','14') → GR_SAKNR (balance range); SAKNR+3(2) IN ('11','13','15') AND XOPVW='X' → GR_SAKNR_OI (open-items range). Mechanism is T012K-adjacent via SKB1, NOT Report-Painter SET. Zero hits for RS_SET_VALUES_READ / G_SET_GET_ALL_VALUES / K_HIERARCHY_TABLES_READ in the full 3,422-line corpus.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "line": "1366-1370",
+        "tag": "DEFECT_EMPTY_RANGE",
+        "finding": "CRITICAL defect: LOOP AT LR_SAKNR that APPENDs each RANGE entry to the COSEL/RSPARAMS table has NO `IF lr_saknr IS NOT INITIAL` guard. If GR_SAKNR_OI resolves empty at :1098 (SKB1 no OI rows), zero SD_SAKNR params reach the LDB at :1509 and LDB SDF scans BSIS with only BUKRS+GJAHR as filters (228,242 rows at UNESCO for UNES/2026 — live RFC 2026-04-20), triggering TIME_OUT at SAPDBSDF:1983 PUT_BSIS. Fallback IF SY-SUBRC NE 0 at :1390-1396 only covers GSBER, not SAKNR. This is the PRIMARY root-cause mechanism for INC-000006906.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "line": "1509-1517",
+        "tag": "LDB_CALL",
+        "finding": "CALL FUNCTION 'LDB_PROCESS' LDBNAME='SDF' passes LT_PARAMS (built at :1415-1444 from LT_COSEL at :1337-1411) and LT_CALLBACKS. SELNAMEs are 'SD_' + field (BUKRS/SAKNR/GJAHR/AUGDT/CURTP/STIDA/RTCUR) plus literal 'SD_GSB_S' for GSBER. The callback PROC_LDB_CALLBACK at :1448-1475 receives each BSIS row and forwards to PROC_BSIS (:1144-1154) which filters HKONT+3(2) IN (11,13) AFTER the LDB has already read the row — so the filter does NOT reduce LDB scan volume.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "line": "1553-1603",
+        "tag": "SECONDARY_LOOP",
+        "finding": "FORM PROC_SET_CORRESPONDANCE loops over GT_BSIS_ALL and for each row with ZUONR(3)='DME' calls FM GET_DOCUMENTS (from SAPLF110, SAP standard), for ZUONR(3)='CHQ' runs SELECT ... FROM PAYR INTO LS_PAYR WHERE ZBUKR+HBKID+HKTID+CHECT ENDSELECT. Second potential timeout vector if GT_BSIS_ALL is large (>10K rows) and CHQ branch executes many PAYR scans.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "line": "27",
+        "tag": "ROOT_CAUSE_MODE_E_BDC",
+        "finding": "PRIMARY root cause of INC-000006906. CONSTANTS: GC_MOD TYPE C VALUE 'E' — MODE 'E' for CALL TRANSACTION opens SAPGUI on any BDC error. YTBAE002 issues four CALL TRANSACTION ... USING BDCDTAB MODE GC_MOD MESSAGES INTO Y_MESSTAB calls inside the GET bsis / LDB_PROCESS loop: :723 (FB08 reverse), :771 (F-04 post-with-clearing), :819 (FBRA reset cleared), :853 (FB08 reverse, second branch). On slow WAN paths (Maputo field office) the cumulative GUI handshake time exceeds rdisp/max_wprun_time → dispatcher aborts with TIME_OUT. Stack blames SAPDBSDF:1983 because that's where the WP was waiting in the GET bsis iteration, but the consumed clock is in the BDC dialog. User confirmed: same program runs ~2 seconds from HQ (fast LAN), no dump. Fix: change 'E' → 'N' (silent mode). Errors already captured in Y_MESSTAB at each call site and surfaced via PROC_RECONCIL_MESS_ADD (:754, :795, :840, :874) — no functional regression.",
+        "severity": "HIGH",
+        "fix_file": "Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap",
+        "related_claim": "claim-006906-mode-e-bdc-network-coupling",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CLASSIFICATION",
+        "finding": "YTBAE002 is a bank-reconciliation POSTING program (not a read-only report). Drives reversal (FB08), clearing (F-04), and reset-cleared (FBRA) decisions automatically from BSIS row content + PAYR/BKPF correlation. Output: classical list report via WRITE statements + CALL SCREEN 9000. No ALV, no CL_GUI_* (grep confirmed). Package YA. Frozen code since 2023-06-29 (10 transports by N_MENARD, April–June 2023). Domain: Treasury / Bank Reconciliation.",
+        "domain": "Treasury",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "finding": "Class-generalization scan (Session #057): MODE 'E' + CALL TRANSACTION sibling search for the full bank-recon family found TWO additional inherited cases — YTBAE001 (C_MOD='E' at :118, via YTBAM002) and YTBAE001_HR (C_MOD='E' at :122, via YTBAM002_HR). Both are DORMANT (YTBAE001 has one stale TBTCO entry with STATUS=NULL; YTBAE001_HR has zero runs). YTBAE002 remains the only ACTIVE case of the anti-pattern (5 batch runs in Mar 2026 + J_DAVANE dialog dump 2026-04-20). Recommendation: prioritize YTBAE002 fix transport now; defer YTBAE001/_HR fix behind a decommission review (KU-2026-057-02 checks STAD for recent usage of YTR1/YTR2/YTR2_HR).",
+        "tag": "CLASS_GENERALIZATION",
+        "line": "27",
+        "related_objects": [
+          "YTBAE001",
+          "YTBAE001_HR",
+          "YTBAM002",
+          "YTBAM002_HR"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "SAPDBSDF": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "SAP-standard Logical Database for Financial Documents. Form PUT_BSIS at include line 1983 is the SELECT against table BSIS. Subject of dump 2026-04-20. Embedded SAP-note hint in dump: access without suitable index / result set too large / use SELECT INTO TABLE instead of SELECT ... ENDSELECT.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "tag": "SAP_STANDARD",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CALLER_SIDE_TIME_OUT_DISCLAIMER",
+        "finding": "SAPDBSDF is SAP-owned. A TIME_OUT at SAPDBSDF:1983 PUT_BSIS does NOT indicate a defect in the LDB or in SAP indexing. It reflects caller-side WP-time consumption during the GET bsis iteration. In INC-000006906 the actual clock was consumed by four MODE 'E' CALL TRANSACTION statements in YTBAE002 (FB08/F-04/FBRA) that opened SAPGUI on slow-WAN BDC errors. When investigating a TIME_OUT named against SAPDBSDF, ALWAYS look at what the caller does between successive GET events, not at the LDB SELECT itself.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "PUT_BSIS": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "Internal form of SAPDBSDF that fetches open GL items (BSIS) into the logical-database buffer. Line 1983 of SAPDBSDF is the failing SELECT. When caller program does not supply selective HKONT + BUDAT predicates, scan degrades and dialog dispatcher aborts with TIME_OUT.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "tag": "SAP_STANDARD",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      },
+      {
+        "incident": "INC-000006906",
+        "session": 58,
+        "evidence_tier": "TIER_1",
+        "tag": "CALLER_TIME_CONSUMPTION_DISCLAIMER",
+        "finding": "SAP-standard row-delivery callback. A TIME_OUT blamed on PUT_BSIS:1983 means the work-process elapsed its rdisp/max_wprun_time cap while waiting in the caller's GET handler. The caller's shape (filter predicates) is only one axis of cost; the caller's GET-body work (BDC calls, FM calls, nested SELECTs) is an equal-or-larger axis. For INC-000006906 the latter dominates: GR_SAKNR_OI was non-empty (13 BSIS rows on 0001194424 live) but MODE 'E' BDC calls to FB08/F-04/FBRA in the GET loop consumed the clock.",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "BSIS": {
+    "annotations": [
+      {
+        "incident": "INC-000006906",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "finding": "Gold DB snapshot: 2,291,246 rows total; 2,005,304 rows BUKRS=UNES alone. Primary index: MANDT+BUKRS+HKONT+AUGDT+AUGBL+ZUONR+GJAHR. SELECT that supplies BUKRS only and not HKONT scans the 2M-row UNES partition, guaranteed TIME_OUT in dialog. Subject of INC-000006906 YTBAE002 dump at SAPDBSDF:1983 form PUT_BSIS.",
+        "flavor": "SAP_STANDARD",
+        "blind_spot": false,
+        "tag": "SAP_STANDARD",
+        "timestamp": "2026-04-20T13:48:37.001322"
+      }
+    ],
+    "first_seen": "2026-04-20T13:48:37.001322",
+    "last_updated": "2026-04-20T13:48:37.001322"
+  },
+  "YTBAE001": {
+    "annotations": [
+      {
+        "finding": "Interactive bank-clearing executable bound to TCODE YTR1 (variant BK REC STATMT2) and YTR2 (variant BANK_RECONCIL). Uses AT LINE-SELECTION event to trigger PERFORM 19_CALL_TRANSACTION (defined in include YTBAM002) which fires BDC against FB08 + F-04. Declares C_MOD TYPE C VALUE 'E' at YTBAE001.abap:118 which is picked up by YTBAM002's CALL TRANSACTION sites. Authored A.ELMOUCH 2002-01-18, last modified A_AHOUNOU 2007-01-30, devclass YT, 312 LOC. DORMANT: only 1 TBTCO entry and it has STATUS=NULL/STRTDATE=NULL (never actually ran). Inherited MODE 'E' anti-pattern (Claim 54 pattern, milder form — dialog-only, not batch).",
+        "tag": "CUSTOM_Y_PROGRAM",
+        "flavor": "CUSTOM_Y_PROGRAM",
+        "line": "118, 530-532",
+        "related_objects": [
+          "YTBAM002",
+          "YTBAM003",
+          "YTBAM004",
+          "YTBAE002"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAE001_HR": {
+    "annotations": [
+      {
+        "finding": "HR/payroll variant of YTBAE001, bound to TCODE YTR2_HR (variant BANK_RECONCIL). Includes YTBAM002_HR + YTBAM003_HR + YTBAM004_HR (YTBAE001_HR.abap:567-571). C_MOD TYPE C VALUE 'E' at :122. Tracks ZUONR_HR (HR assignment-number suffix) alongside standard ZUONR in T_BSIS workstruct. Authored A_AHOUNOU 2007-04-23. 331 LOC. DORMANT: zero TBTCO entries. Inherited MODE 'E' anti-pattern (Claim 54 pattern, milder form).",
+        "tag": "CUSTOM_Y_PROGRAM",
+        "flavor": "CUSTOM_Y_PROGRAM",
+        "line": "122, 567-571",
+        "related_objects": [
+          "YTBAM002_HR",
+          "YTBAM003_HR",
+          "YTBAM004_HR",
+          "YTBAE001",
+          "YTBAE002"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAI001": {
+    "annotations": [
+      {
+        "finding": "SMARTLINK CMI940 → MT940 file-format conversion report. Bound to TCODE YTR0 (variant YTBAI001). Reads OPEN DATASET from /usr/sap/D01/conversion/input/TITRBK03/sg2707.txt, writes to /usr/sap/D01/conversion/output/TITRBK03/sg2707out.txt. Filters header with constant C_SOG = ':25:SOGEFRPP/'. Authored A.ELMOUCH 2001-11-05 (the oldest source in the family). No BDC, no CALL TRANSACTION, no DB writes. 197 LOC. DORMANT: zero TBTCO runs AND the hardcoded filesystem path points to /usr/sap/D01/ which suggests this was deployed on D01 only, never promoted to P01 with a path rewrite. Open KU-2026-057-01: is SMARTLINK still in production use?",
+        "tag": "CUSTOM_Y_PROGRAM",
+        "flavor": "CUSTOM_Y_PROGRAM",
+        "line": "29, 50-53",
+        "related_objects": [],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM001": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — flow-control helpers for YTBAE001 family. 243 LOC. DORMANT / LEGACY: referenced only in historical SE38 F4 listing but NOT included by the current YTBAE001 source (YTBAE001 includes only YTBAM002/003/004 per :530-532). Authored A.ELMOUCH 2002-01-18, last modified N_MENARD 2023-10-11 (some 2023 maintenance touch though the include is no longer wired in).",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "related_objects": [
+          "YTBAE001"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM002": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — contains FORM 19_CALL_TRANSACTION (the FB08/F-04 BDC switchboard) used by YTBAE001. 4 CALL TRANSACTION sites at lines 214, 262, 310, 344 firing against FB08 (x2) and F-04 (x2). Inherits MODE from caller's C_MOD constant (no local MODE declaration in this specific extracted copy — verify vs live P01 if source diverges). 734 LOC. S.MAGAL 2002-01-18, A_AHOUNOU 2007-01-30. Devclass YT. Reachable only via YTBAE001 AT LINE-SELECTION event.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "line": "214, 262, 310, 344",
+        "related_objects": [
+          "YTBAE001",
+          "YTBAM002_HR"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM002_HR": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — HR variant of YTBAM002. 4 CALL TRANSACTION sites at 228, 276, 324, 358, each with MODE C_MOD explicit (C_MOD comes from YTBAE001_HR.abap:122 = 'E'). Hardcodes BDCDTAB-FVAL = 'UNES' at :807 (company code of HQ). Tracks ZUONR_HR for HR assignment-number. 740 LOC. A_AHOUNOU 2007-04-23, last A_AHOUNOU 2009-02-02. Carries Claim 54 MODE 'E' pattern but DORMANT because YTBAE001_HR is dormant.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "line": "228, 276, 324, 358, 807",
+        "related_objects": [
+          "YTBAE001_HR",
+          "YTBAM002",
+          "YTBAM002_HR_UBO"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM002_HR_UBO": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — UBO field-office fork of YTBAM002_HR. Only functional diff vs YTBAM002_HR: BDCDTAB-FVAL = 'UBO' at :811 instead of 'UNES' (hardcoded company code). D_SIQUEIRA 2009-02-02 fork. Devclass YUBO. 740 LOC. LEGACY: NOT included by any executable today (YTBAE001_HR still includes YTBAM002_HR, not _HR_UBO). Candidate for TADIR-delete housekeeping. Same Claim 54 MODE 'E' pattern (inherited).",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "line": "231, 279, 327, 361, 811",
+        "related_objects": [
+          "YTBAM002_HR"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM003": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — contains FORM 01_SELECT_BSIS (:51-69) and FORM 03_SELECT_BSEG (:79-121). Drives BSIS/BSEG selection via LOOP AT TSAKO (config-table of accounts configured for reconciliation), which is safe-by-construction against the empty-range bug: if TSAKO has zero matches, the LOOP simply doesn't iterate, no SELECTs fire. Contrast: YTBAE002 uses LDB SDF without this safety. 895 LOC. S.MAGAL 2002-01-18, A_AHOUNOU 2010-05-20. Reachable via YTBAE001.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "line": "51-69, 79-121",
+        "related_objects": [
+          "YTBAE001",
+          "YTBAM003_HR"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM003_HR": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — HR variant of YTBAM003. Same TSAKO-driven BSIS/BSEG selection but with additional ZUONR_HR handling. 949 LOC. A_AHOUNOU 2007-04-23 → last A_AHOUNOU 2014-01-30. Safe-by-construction against empty-range.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "related_objects": [
+          "YTBAE001_HR",
+          "YTBAM003"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM004": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — table-control data (BDC screen-field constants, number-range helpers). 200 LOC. S.MAGAL (CREAT_USER: A.ARKWRIGHT) 2002-01-18. Byte-identical to YTBAM004_HR per diff.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "related_objects": [
+          "YTBAE001",
+          "YTBAM004_HR"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YTBAM004_HR": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — byte-identical copy of YTBAM004 per diff; only the header comment and author differ. 200 LOC. A_AHOUNOU 2007-04-23. Included by YTBAE001_HR.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "related_objects": [
+          "YTBAE001_HR",
+          "YTBAM004"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YFI_BANK_RECONCILIATION": {
+    "annotations": [
+      {
+        "finding": "Modern (2023) read-only bank-reconciliation report. Bound to TCODE YFI_BANK1 (direct binding, no variant). 34 LOC main + 2 includes (DATA, SEL). Delegates all logic to OOP class YCL_FI_BANK_RECONCILIATION_BL (not yet extracted — KU-2026-057-03). Two output modes: P_DETAIL (ALV list) or P_DASH (ALV dashboard). NO BDC, NO CALL TRANSACTION, NO LDB. Authored N_MENARD 2023-04-07, last 2023-04-14. Devclass YA. ACTIVE (interactive only, no TBTCO jobs). NOT a replacement for YTBAE002 — complementary reporting view, not an action program.",
+        "tag": "CUSTOM_Y_PROGRAM",
+        "flavor": "CUSTOM_Y_PROGRAM",
+        "related_objects": [
+          "YFI_BANK_RECONCILIATION_DATA",
+          "YFI_BANK_RECONCILIATION_SEL",
+          "YCL_FI_BANK_RECONCILIATION_BL"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YFI_BANK_RECONCILIATION_DATA": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — 3-line DATA declarations: GS_BSIS TYPE BSIS, GV_REPORT_TYPE(1) TYPE C, GO_BANK_RECONCILIATION_BL TYPE REF TO YCL_FI_BANK_RECONCILIATION_BL. N_MENARD 2023-04-07.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "related_objects": [
+          "YFI_BANK_RECONCILIATION"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
+      }
+    ]
+  },
+  "YFI_BANK_RECONCILIATION_SEL": {
+    "annotations": [
+      {
+        "finding": "INCLUDE — selection-screen definition + INITIALIZATION event. Params P_BUKRS, S_HKONT (SELECT-OPTIONS for HKONT), P_DATE_Z, P_DATE_O, radio P_DETAIL/P_DASH. INITIALIZATION calls YCL_FI_BANK_RECONCILIATION_BL=>INITIALIZE_HKONT( ) to auto-populate S_HKONT range (at :20) and auto-computes P_DATE_Z = last day of previous month and P_DATE_O = last day of two months ago (the 'O' = 'older' key date). N_MENARD 2023-04-07, last 2023-06-07.",
+        "tag": "INCLUDE",
+        "flavor": "CUSTOM_Y_INCLUDE",
+        "line": "20, 22-41",
+        "related_objects": [
+          "YFI_BANK_RECONCILIATION",
+          "YCL_FI_BANK_RECONCILIATION_BL"
+        ],
+        "timestamp": "2026-04-20T18:24:50.430318",
+        "session": 57,
+        "evidence_tier": "TIER_1",
+        "incident": "INC-000006906"
       }
     ]
   }

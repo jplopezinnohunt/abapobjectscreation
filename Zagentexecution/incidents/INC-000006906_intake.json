@@ -1,0 +1,139 @@
+{
+  "ticket_id": "INC-000006906",
+  "received_date": "2026-04-16T14:42:27Z",
+  "source_eml": "C:\\Users\\jp_lopez\\Downloads\\Ticket INC-000006906_ has been assigned to you or your team_a été attribué à vous ou à votre équipe.eml",
+  "channel": "UNESCO ServiceDesk (salesforce.com smartunesco) → Outlook email",
+  "reporter": {
+    "name": "Davane, Josina",
+    "email": "j.davane@unesco.org",
+    "sap_bname": "J_DAVANE",
+    "department": "FU/MAP (Field Unit / Maputo — UNESCO Mozambique office)",
+    "phone": "+258 21 481 703",
+    "location": "Maputo, Mozambique",
+    "role_observed": "Field-office FI accountant — TCODE inventory: MIRO(323) FB60(248) FBZ2(560) FB08(40) MR8M(5) FB01(66) FBA6(6) FB65(5) FBZ4(40) FB50(61) FBA7(1) FBZ1(9)"
+  },
+  "affected_user_same_as_reporter": true,
+  "priority": "High",
+  "classification": "Core Applications → SAP → Report an Issue",
+  "verbatim_description": "Dear Colleagues, I am accounting difficulties in downloading MZN Bank reconciliation. It happened last month and only managed almost the end of the month. Your support will very much appreciated. Best regards Josina",
+  "attachments": [],
+  "embedded_screenshots": [],
+  "parsed_symptoms": {
+    "user_verb": "downloading",
+    "user_noun_phrase": "MZN Bank reconciliation",
+    "timeline": {
+      "first_occurrence": "March 2026 (user said 'last month' from ticket date 2026-04-16)",
+      "partial_resolution": "late March 2026 ('only managed almost the end of the month')",
+      "recurrence": "April 2026 (implied by ticket being filed now)"
+    }
+  },
+  "user_term_to_sap_field_translation": [
+    {
+      "user_term": "MZN",
+      "plausible_sap_mappings": [
+        "WAERS=MZN (ISO currency code, Mozambican Metical)",
+        "T012K.WAERS='MZN' (the 2 UNES MZN bank accounts: BST01/MZM01 and ECO09/MZN01; UBA01 MZN1 pending)"
+      ],
+      "confidence": "HIGH",
+      "note": "BST02/MZM01 uses deprecated WAERS='MZM' code (pre-2006 Mozambique redenomination)"
+    },
+    {
+      "user_term": "Bank reconciliation",
+      "plausible_sap_mappings": [
+        "FEBAN (EBS post-processing of unmatched bank statement items)",
+        "FF_5 / FEB_BSPROC (MT940 import / statement processing)",
+        "FBL3N + export to Excel (GL line-item reconciliation vs bank portal PDF)",
+        "S_ALR_87012309 / S_ALR_87012326 (GL balance reports)",
+        "Report Painter ZCASH / ZCASHFO / ZCASHFODET (cash position forms using YBANK_* sets)",
+        "F.50 / SAPF181 (GL account balance carry-forward / reconciliation)",
+        "Custom field-office monthly recon report (Y_*? not yet identified)"
+      ],
+      "confidence": "LOW — needs screenshot or TCODE from user to narrow",
+      "note": "At UNESCO, Mozambique banks have NO MT940 auto-feed in Gold DB; so FEBAN is unlikely unless she is accessing HQ-fed banks for an HQ-hosted reconciliation."
+    },
+    {
+      "user_term": "downloading",
+      "plausible_sap_mappings": [
+        "GUI export to Excel / .txt (ALV toolbar button, SE16N list export, etc.)",
+        "F110 payment medium file download to local (SAPFPAYM output)",
+        "MT940 file download from bank portal THEN FF_5 upload (the reverse direction)",
+        "Spool retrieval / PDF export from SP01",
+        "Downloading the output of a recon report to her PC"
+      ],
+      "confidence": "MEDIUM",
+      "note": "She is a field-office accountant; most likely meaning = Excel/ALV export of a reconciliation report OR the MT940 file import cycle."
+    },
+    {
+      "user_term": "FU/MAP",
+      "sap_mapping": "Field Unit / Maputo. At UNESCO, Maputo office operates under BUKRS='UNES' (HQ company code) — there is NO separate Mozambique company code in T001. Field-office identity is carried via PA0001.BTRTL, USR05.Y_USERFO, and BUSINESS AREA assignments per YTFI_BA_SUBST / YBASUBST.",
+      "confidence": "HIGH",
+      "note": "No Mozambique BUKRS exists. All MAP office postings use UNES BUKRS."
+    }
+  ],
+  "known_facts_from_brain_and_gold_db": {
+    "company_code": {
+      "bukrs": "UNES",
+      "land1": "FR",
+      "mozambique_is_dedicated_bukrs": false
+    },
+    "mozambique_house_banks": [
+      {
+        "hbkid": "BST01",
+        "bankl": "SP0000001REJ",
+        "wsers_accounts": ["MZN (GL 1022424)", "USD (GL 1022421)"],
+        "febko_last": "2025-04-17",
+        "febko_count_2026": 0,
+        "gl_posts_2026": 0,
+        "status_inference": "LEGACY — feed stopped a year ago; 1,043 BSIS open items never cleared"
+      },
+      {
+        "hbkid": "BST02",
+        "bankl": "113",
+        "wsers_accounts": ["MZM (GL 1022814, deprecated ISO code)", "USD (GL 1022811)"],
+        "febko_count_ever": 0,
+        "gl_posts_2026": 0,
+        "status_inference": "DORMANT / DATA QUALITY — WAERS='MZM' is the pre-2006 currency code, replaced by MZN"
+      },
+      {
+        "hbkid": "ECO09",
+        "bankl": "XX001877",
+        "wsers_accounts": ["MZN (GL 1094424)", "USD (GL 1094421)"],
+        "febko_count_ever": 0,
+        "gl_posts_2026_main": 93,
+        "gl_posts_2026_subbank": 191,
+        "status_inference": "ACTIVE in 2026 for GL postings; NO MT940 feed in Gold DB (may exist in P01 but not extracted, or truly never configured)"
+      },
+      {
+        "hbkid": "UBA01",
+        "bankl": "SP0000001YCB",
+        "wsers_accounts": ["MZN (GL 1065424)", "USD (GL 1065421)"],
+        "febko_count_ever": 0,
+        "gl_posts_2026": 0,
+        "status_inference": "NEW — configured via INC-000005586 during 2026-04-07/08 (6 transports in D01, P01 compliance achieved 2026-04-08 per knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md); ZERO postings yet"
+      }
+    ],
+    "recent_activity_j_davane": {
+      "last_bkpf_doc": "5100006390 / 2026 / MIRO / 2026-03-12 14:37:23 / MAP INV # IN070585",
+      "window_active": "2024-01-15 through 2026-03-12",
+      "april_2026_activity_in_gold_db": 0,
+      "march_2026_docs": "24 distinct documents, all tagged 'MAP ...' bkTXT",
+      "observed_offset_bank_gls": "NONE — her March docs post AP (2021011), expense (2031420), staff reimbursement (2100420). The bank offset happens downstream (Treasury HQ F110 or F-53) which credits the MZN bank GL."
+    },
+    "gold_db_2026_03_summary": {
+      "eco09_mzn_subbank_open_items": 2,
+      "eco09_usd_subbank_open_items": 1,
+      "jan_feb_2026_sub_bank_clearing_rate": "100%",
+      "mar_2026_sub_bank_clearing_rate": "ECO09/MZN: 92.3% (24/26); ECO09/USD: 66.7% (2/3)",
+      "interpretation": "3 items posted late March 2026 have NOT cleared — these are the items forcing Josina to manual FEBAN / Excel reconciliation"
+    },
+    "recent_related_incident": {
+      "id": "INC-000005586",
+      "title": "UBA01 new house bank (UBA Mozambique) creation",
+      "date_closed": "2026-04-08",
+      "artifact": "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md",
+      "6_transports": ["D01K9B0F56", "D01K9B0F59", "D01K9B0F5B", "D01K9B0F5F", "D01K9B0F5K", "D01K9B0F58"],
+      "final_state": "D01=V01=P01 fully compliant, 32 PASS / 0 FAIL / 1 WARN (TIBAN)",
+      "relevance_to_006906": "Bank migration in progress (ECO09 → UBA01) coincides exactly with Josina's reported pain window. New bank config WAS rolled through multiple correction cycles which may have temporarily broken reports for UNES/MZN accounts."
+    }
+  }
+}

@@ -542,6 +542,121 @@ However, the 10xxxxx accumulation DOES matter for:
 
 6. **Currency inflation** [VERIFIED] — XOF, TZS, KZT, IDR inflate local currency amounts. The "$13.9B" figure is meaningless without USD conversion. H21 remains open.
 
+### 20b. Custom Programs in Use
+
+**YTR3 / YTBAE002 — UNESCO's custom bank-reconciliation reversal/clearing program** (added 2026-04-20 after INC-000006906).
+
+| Attribute | Value |
+|---|---|
+| TCODE | `YTR3` (live TSTC: `PGMNA=YTBAE002 DYPNO=1000 CINFO=9`) |
+| Program | `YTBAE002` (package `YA`, 3,422 lines, monolithic, no INCLUDEs, no Y/Z deps) |
+| Author history | 10 transports by N_MENARD, 2023-04-14 → 2023-06-29. Frozen since. |
+| Source | `extracted_code/CUSTOM/YTBAE002/YTBAE002.abap` (Session #057 extraction) |
+| Output | Classical list report (`WRITE` + `CALL SCREEN 9000`). No ALV. |
+
+**What it does (NOT a read-only report):**
+It decides, from BSIS row content + PAYR/BKPF correlation, whether each
+open bank sub-bank line needs to be reversed, cleared, or reset-cleared.
+It then drives three standard FI clearing TCODEs via BDC:
+
+| TCODE | Call site | Purpose |
+|---|---|---|
+| `FB08` | `YTBAE002.abap:723, :853` | Reverse document |
+| `F-04` | `YTBAE002.abap:771` | Post with clearing |
+| `FBRA` | `YTBAE002.abap:819` | Reset cleared items |
+
+All four CALL TRANSACTIONs pass `USING BDCDTAB MODE GC_MOD MESSAGES INTO
+Y_MESSTAB`, and each is followed by `PROC_RECONCIL_MESS_ADD` (:754, :795,
+:840, :874) which persists the message table into `GT_RECONCIL_MESS` for
+the list output.
+
+**Selection screen (YTBAE002.abap:297-310):**
+
+| Param | Default | Obligatory |
+|---|---|---|
+| `GP_BUKRS` | `UNES` | YES |
+| `GP_HBKID` | — | YES |
+| `GP_HKTID` | — | YES |
+| `GP_BUDAT` | `SY-DATUM` | YES |
+
+No SELECT-OPTIONS, no date ranges. One fiscal year per run
+(`GJAHR = GP_BUDAT(4)` at :369).
+
+**Scope resolution (YTBAE002.abap:1098-1127):**
+- `SELECT SAKNR XOPVW FROM SKB1 WHERE BUKRS+HBKID+HKTID`
+- Route to `GR_SAKNR` (balance range) if `SAKNR+3(2) IN ('10','12','14')`
+- Route to `GR_SAKNR_OI` (open-items range) if `SAKNR+3(2) IN ('11','13','15')`
+  **AND** `SKB1.XOPVW = 'X'` (open-item managed)
+- **Dependency:** bank sub-bank GLs MUST have `XOPVW='X'` on `SKB1`, else
+  the OI range is empty and the LDB scan degrades.
+- Does NOT use YBANK_* Report-Painter sets (grep-confirmed over the full
+  corpus).
+
+**Known defects:**
+
+| Defect | Location | Severity | Status |
+|---|---|---|---|
+| **MODE 'E' BDC network coupling** | `YTBAE002.abap:27` (`GC_MOD='E'`) | HIGH | INC-000006906 — TIME_OUT on slow WAN (Maputo). Fix at `Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap` ('E'→'N'). See anti-pattern below. |
+| **Empty-range unbounded LDB scan** | `YTBAE002.abap:1366-1370` | MED (latent) | LOOP AT LR_SAKNR without `IS NOT INITIAL` guard. If SKB1 returns no `XOPVW='X'` rows, LDB scans BSIS with only `BUKRS+GJAHR`. Not triggered by INC-000006906's input but real. Optional fix `FIX_C` in the same fix file. |
+
+**TCODEs called (via BDC from this program):** `FB08`, `F-04`, `FBRA` —
+standard FI clearing transactions. Authorization on those TCODEs is
+required for the user running `YTR3`.
+
+---
+
+### 20c. Anti-Pattern — MODE 'E' CALL TRANSACTION in Reconciliation Loops
+
+**Pattern:** any custom ABAP program that issues
+`CALL TRANSACTION '<t>' USING <bdc> MODE 'E'` inside a `GET <table>` /
+`LDB_PROCESS` / large-LOOP path will open SAPGUI on every BDC error. MODE
+`'E'` is documented as *"Only display if error — opens SAPGUI so the user
+can correct interactively"*. On slow WAN paths (field offices) the
+cumulative GUI round-trip adds hundreds of milliseconds per error and can
+exceed `rdisp/max_wprun_time`. The work-process aborts with `TIME_OUT` in
+whatever `SELECT` is currently waiting — typically the caller's logical
+database (e.g., `SAPDBSDF:1983 PUT_BSIS`), which obfuscates the real cause.
+
+**Canonical instance:** INC-000006906 — YTBAE002 at `line 27` plus four
+CALL TRANSACTION sites (`:723 FB08`, `:771 F-04`, `:819 FBRA`, `:853
+FB08`). User reproduced from HQ (fast LAN) in ~2 s; from Maputo (slow
+WAN) TIME_OUTs.
+
+**Why it's lethal (and silent at HQ):** the code "works" at HQ forever
+because the GUI handshake round-trips in microseconds on LAN. It
+degrades in direct proportion to WAN RTT, which is why field offices
+suffer while HQ does not.
+
+**The correct pattern:**
+
+```abap
+" WRONG — network-coupled
+CALL TRANSACTION 'FB08' USING bdc_tab MODE 'E'
+                              MESSAGES INTO messtab.
+
+" RIGHT — silent, errors captured for post-loop reporting
+CALL TRANSACTION 'FB08' USING bdc_tab MODE 'N'
+                              MESSAGES INTO messtab.
+" ... then at end of loop, surface messtab in the list / ALV.
+```
+
+MODE `'N'` runs the BDC with no GUI interaction. `MESSAGES INTO` captures
+every message silently. Errors become visible in the list output after
+the loop finishes.
+
+**Falsification:** if a program with MODE `'E'` BDC inside an LDB loop
+runs from HQ without dumping, that is NOT evidence the program is safe —
+it is evidence that the WAN handshake has not yet been triggered. Test
+from a field-office VPN.
+
+**Detection (systemic):** see Claim 54 (`claim-006906-mode-e-bdc-
+network-coupling`). Proposed recurring check
+`Zagentexecution/quality_checks/mode_e_bdc_in_loop_check.py` to scan
+Y*/Z* REPOSRC for the pattern once TSTC/TRDIR/REPOSRC are in Gold DB
+(KU-new-10).
+
+---
+
 ### 21. Known Issues & Data Gaps
 
 | Issue | Status | Impact |

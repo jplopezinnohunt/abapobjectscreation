@@ -1,0 +1,46 @@
+*&---------------------------------------------------------------------*
+*& Report YFI_BANK_RECONCILIATION
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT YFI_BANK_RECONCILIATION.
+
+INCLUDE YFI_BANK_RECONCILIATION_DATA.
+INCLUDE YFI_BANK_RECONCILIATION_SEL.
+
+START-OF-SELECTION.
+
+  IF P_DETAIL = ABAP_TRUE.
+    GV_REPORT_TYPE = 'L'.
+  ELSEIF P_DASH = ABAP_TRUE.
+    GV_REPORT_TYPE = 'D'.
+  ENDIF.
+
+  "Instanciate business class
+  GO_BANK_RECONCILIATION_BL = NEW YCL_FI_BANK_RECONCILIATION_BL( ).
+  "check global authorizations
+  GO_BANK_RECONCILIATION_BL->CHECK_GLOBAL_AUTHORITY( EXPORTING IV_BUKRS = P_BUKRS
+                                                     EXCEPTIONS NO_AUTHORIZATION = 1 ).
+  IF SY-SUBRC <> 0.
+    MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    EXIT.
+  ENDIF.
+
+  "Set selection criteria
+  GO_BANK_RECONCILIATION_BL->SET_SELECTION_VALUES( IV_SELNAME = 'P_BUKRS' IV_KIND = 'P' IV_VALUE = P_BUKRS ).
+  GO_BANK_RECONCILIATION_BL->SET_SELECTION_VALUES( IV_SELNAME = 'S_HKONT' IV_KIND = 'S' IT_VALUE = S_HKONT[] ).
+
+  "Get data
+  GO_BANK_RECONCILIATION_BL->GET_DATA( IV_KEY_DATE_Z = P_DATE_Z
+                                       IV_KEY_DATE_O = P_DATE_O
+                                       IV_REPORT_TYPE = GV_REPORT_TYPE ).
+  IF P_DETAIL = ABAP_TRUE.
+    "Display ALV detailed list
+    GO_BANK_RECONCILIATION_BL->PREPARE_DETAILED_DATA( ).
+    GO_BANK_RECONCILIATION_BL->DISPLAY_ALV_DETAIL( IV_REPID = SY-REPID ).
+  ENDIF.
+
+  IF P_DASH = ABAP_TRUE.
+    GO_BANK_RECONCILIATION_BL->PREPARE_DASHBOARD_DATA( IV_ALV_DASHBOARD = ABAP_TRUE ).
+    GO_BANK_RECONCILIATION_BL->DISPLAY_ALV_DASHBOARD( IV_REPID = SY-REPID ).
+  ENDIF.
