@@ -1,6 +1,10 @@
 ---
 name: UNESCO ABAP Filter Logic Registry
 description: Living database of hardcoded and metadata-driven filter logic discovered inside UNESCO SAP programs and reports. Used to avoid redundant analysis and enable cross-program reuse of filter mappings.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # UNESCO ABAP Filter Logic Registry

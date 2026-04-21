@@ -6,6 +6,10 @@ maturity: 4
 owner: AGI-discipline
 trigger: session close, before git commit
 author: Session #036 (2026-04-05)
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # agi_retro_agent — The AGI Retrospective Agent

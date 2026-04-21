@@ -1,0 +1,646 @@
+{
+  "_design": "Layer 14 — Domain registry with reverse indexes and 3-axis taxonomy. Every entity knows its domain; every domain knows its entities. Zero compression: sub-topics within a domain are preserved as first-class children, not flattened. Three axes per entity: functional (business), module (SAP module code), process (UNESCO process B2R/H2R/P2P/T2R/P2D). Established Session #056.",
+  "_version": "1.0.0",
+  "_created_session": 56,
+  "_axes": {
+    "functional": "Business-meaning domain from knowledge/domains/ folders",
+    "module": "SAP module code from brain_state.json (FI/CO/HCM/...)",
+    "process": "UNESCO end-to-end process chain (B2R/H2R/P2P/T2R/P2D/FM)"
+  },
+  "domains": {
+    "BCM": {
+      "axis": "functional",
+      "description": "Bank Communication Management — payment batch orchestration, dual-control workflow (90000003 main, 90000004 BNK_COM, 90000005 BNK_INI), signatory/approver rules stored as PD objects OTYPE='RY' under PLVAR='01', exception-list governance (AE/JO/embargo).",
+      "parent_domain": "Treasury",
+      "knowledge_doc_path": "knowledge/domains/BCM/",
+      "knowledge_docs": [
+        "knowledge/domains/BCM/h13_executive_summary.md",
+        "knowledge/domains/BCM/h13_remediation_hypothesis.md",
+        "knowledge/domains/Treasury/bcm_signatory_rules.md"
+      ],
+      "companions": [
+        "companions/bcm_dual_control_audit.html",
+        "companions/payment_bcm_companion.html"
+      ],
+      "skills": [
+        "sap_payment_bcm_agent",
+        "sap_payment_e2e"
+      ],
+      "subtopics": {
+        "dual_control_gap": {
+          "description": "3,359 same-user batches 2024-2026 (CRUSR=CHUSR), $656M exposure. Root cause: structural understaffing of HQ treasury (only 2 operators: C_LOPEZ 94.7%, I_MARQUAND 92.9%). Not fraud — automation debt.",
+          "status": "ACTIVE_MONITORING",
+          "key_users": ["C_LOPEZ", "I_MARQUAND", "E_AMARAL", "F_DERAKHSHAN"],
+          "top_risk_subset": "UNES_AP_EX (331 batches, $1.9M, sanctions-jurisdiction AE/JO/embargo)",
+          "batch_types": ["UNES_AP_10", "UBO_AP_MAX", "UNES_AP_EX", "UNES_AP_ST", "PAYROLL", "UNES_AP_IK", "IIEP"],
+          "remediation_paths": ["1=detective_nightly", "2=UNES_AP_EX_carveout", "3=HQ_3rd_operator", "4=workflow_90000003_mod", "5=automate_wed_AP_cycle"],
+          "docs": ["knowledge/domains/BCM/h13_executive_summary.md", "knowledge/domains/BCM/h13_remediation_hypothesis.md"],
+          "companion": "companions/bcm_dual_control_audit.html",
+          "script": "Zagentexecution/bcm_dual_control_monitor.py"
+        },
+        "signatory_rules": {
+          "description": "Workflow responsibility groups 90000004 BNK_COM / 90000005 BNK_INI stored as PD objects (HRP1000/HRP1001) OTYPE='RY', PLVAR='01'. Every BCM spec for a new office or rule must include both RY STEXT and the OTYPE='RY' PLVAR='01' keys.",
+          "pd_otype": "RY",
+          "plvar": "01",
+          "related_tables": ["HRP1000", "HRP1001", "HRP1002"],
+          "derived_rule": "feedback_bcm_spec_must_include_rule_ry_stext",
+          "docs": ["knowledge/domains/Treasury/bcm_signatory_rules.md"],
+          "related_incident": "INC-000006313"
+        },
+        "workflow_mod_path": {
+          "description": "Path 4 remediation — preventive workflow 90000003 modification to enforce CHUSR != CRUSR at SAP level. Blocked on YWFI package source extraction (H14).",
+          "status": "BLOCKED_ON_H14",
+          "package": "YWFI"
+        }
+      },
+      "objects": ["BNK_BATCH_HEADER", "BNK_BATCH_ITEM", "USR02"],
+      "claims_ids": [6],
+      "rules_ids": ["feedback_bcm_spec_must_include_rule_ry_stext"],
+      "incidents": ["INC-000006313"],
+      "known_unknowns": ["H14 (YWFI source read pending)"],
+      "falsification_pending": [],
+      "data_quality_open": ["dual_control_gap_growing_40pct_in_15_sessions"],
+      "blind_spots": [],
+      "owner_role": "Finance Director + Treasury Operations",
+      "coverage_pct": 82,
+      "last_session_touched": 55,
+      "related_scripts": [
+        "Zagentexecution/bcm_dual_control_monitor.py",
+        "Zagentexecution/extract_bcm_signatories.py"
+      ]
+    },
+
+    "Treasury": {
+      "axis": "functional",
+      "description": "Treasury operations — house bank configuration, electronic bank statement (EBS) import and posting, payment execution (F110 + BCM), cash management. Integrates 9 company codes, 2 currencies, and 6+ house banks.",
+      "knowledge_doc_path": "knowledge/domains/Treasury/",
+      "knowledge_docs": [
+        "knowledge/domains/Treasury/README.md",
+        "knowledge/domains/Treasury/house_bank_configuration.md",
+        "knowledge/domains/Treasury/bank_statement_ebs_architecture.md",
+        "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
+        "knowledge/domains/Treasury/bcm_signatory_rules.md",
+        "knowledge/domains/Treasury/payment_full_landscape.md",
+        "knowledge/domains/Treasury/xref_office_tagging_model.md"
+      ],
+      "companions": [
+        "companions/treasury_operations_companion_v1.html",
+        "companions/treasury_operations_companion_v2.html",
+        "companions/payment_bcm_companion.html",
+        "companions/bank_statement_ebs_companion.html",
+        "companions/payment_process_mining.html",
+        "companions/epiuse_companion.html",
+        "companions/house_bank_configuration_companion.html",
+        "companions/carry_forward_2026.html"
+      ],
+      "companions_status": {
+        "treasury_operations_companion_v2.html": "DORMANT — monitor pages do not work (flagged session #059)"
+      },
+      "configuration_retros_folder": "knowledge/configuration_retros/",
+      "configuration_retros_known": [
+        "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md (Maputo)",
+        "knowledge/configuration_retros/STEM_skb1_align_2026-04-14.md",
+        "knowledge/configuration_retros/MGIE_vs_STEM_gap_2026-04-15.md"
+      ],
+      "skills": [
+        "sap_house_bank_configuration",
+        "sap_bank_statement_recon",
+        "sap_payment_bcm_agent",
+        "sap_payment_e2e",
+        "sap_account_comparison"
+      ],
+      "child_domains": ["BCM"],
+      "subtopics": {
+        "house_bank_configuration": {
+          "description": "13 config steps for house bank create/modify/close, 15 compliance checks, cross-system D01↔P01 comparison, ECO09 benchmark patterns. Tables: T012 (house bank), T012K (account ID), SKA1/SKB1/SKAT (G/L), T030H (posting keys), T035D (posting string), T018V (reason codes), T042I (bank clearing), TIBAN (IBAN), SETLEAF (hierarchy).",
+          "tables": ["T012", "T012K", "SKA1", "SKB1", "SKAT", "T030H", "T035D", "T018V", "T042I", "SETLEAF", "TIBAN"],
+          "docs": ["knowledge/domains/Treasury/house_bank_configuration.md"],
+          "skill": "sap_house_bank_configuration",
+          "benchmark": "ECO09"
+        },
+        "bank_statement_ebs": {
+          "description": "E2E bank statement processing: MT940 import, EBS posting (FEB_BSPROC), clearing, FEBAN reconciliation. 3 config tiers (basic/posting-rules/interpretation algorithms). Volumes: 223K FEBEP (statement items), 964K FEBRE (line items). Process mining: 263K events.",
+          "tables": ["FEBEP", "FEBRE", "FEBPE", "FEBKO", "T028G", "T028A", "T028B"],
+          "programs": ["RFEBKA00", "RFEBKA_BATCH", "FEB_BSPROC"],
+          "volumes": {"FEBEP_rows": 223000, "FEBRE_rows": 964000, "process_mining_events": 263000},
+          "docs": ["knowledge/domains/Treasury/bank_statement_ebs_architecture.md"],
+          "companion": "companions/bank_statement_ebs_companion.html",
+          "skill": "sap_bank_statement_recon"
+        },
+        "bank_reconciliation": {
+          "description": "Bank reconciliation program inventory + process model. Two tiers: (a) CENTRAL substitution chain YRGGBS00 XREF1/XREF2 (UXR1/UXR2 FORMs) with GB901 prerequisites; (b) FIELD-OFFICE custom Y-stack — 15 programs wrapping standard clearing TCODEs (FB08/F-04/FBRA) via BDC CALL TRANSACTION.",
+          "programs": ["YRGGBS00", "RFEBKA00"],
+          "forms": ["UXR1", "UXR2"],
+          "prereq_tables": ["GB922", "GB921", "GB901", "GB903", "GB905", "GB931"],
+          "docs": ["knowledge/domains/Treasury/bank_reconciliation_program_inventory.md"],
+          "skill": "sap_bank_statement_recon"
+        },
+        "field_office_custom_clearing": {
+          "description": "UNESCO Y-stack of 15 custom bank-reconciliation programs used by FIELD OFFICES (UBO/FU sites like Maputo MZN, Brasilia BRA, Eco09) to orchestrate selection + clearing. Wrap standard FI clearing TCODEs (FB08, F-04, FBRA) via BDC CALL TRANSACTION. NOT a replacement — a thin UNESCO-specific wrapper adding: SKB1 company-code scoping, batch iteration via LDB SAPDBSDF, MZN/ECO/UBA company-code-specific logic, list-output error reporting. Discovered in depth via INC-000006906 (Maputo MZN TIME_OUT, Session #058).",
+          "tcodes": {"YTR0": "central recon", "YTR1": "dormant", "YTR2": "dormant", "YTR2_HR": "HR-fork dormant", "YTR3": "MZN/field-office active", "YFI_BANK1": "OOP class backing (YCL_FI_BANK_RECONCILIATION_BL)"},
+          "programs_y_stack": [
+            "YTBAI001",
+            "YTBAE001", "YTBAE001_HR", "YTBAE002",
+            "YTBAM001", "YTBAM002", "YTBAM002_HR", "YTBAM002_HR_UBO",
+            "YTBAM003", "YTBAM003_HR", "YTBAM004", "YTBAM004_HR",
+            "YFI_BANK_RECONCILIATION", "YFI_BANK_RECONCILIATION_DATA", "YFI_BANK_RECONCILIATION_SEL"
+          ],
+          "backing_classes": ["YCL_FI_BANK_RECONCILIATION_BL"],
+          "standard_tcodes_wrapped": ["FB08", "F-04", "FBRA"],
+          "bdc_mode_risk": "MODE 'E' in CALL TRANSACTION inside LDB loop + slow WAN = cumulative dialog time > rdisp/max_wprun_time = TIME_OUT on field-office SAPGUI. Dormant siblings YTBAE001.abap:118 + YTBAE001_HR.abap:122 carry same defect (C_MOD='E'), kept as latent.",
+          "anti_patterns_R1_R6": "See sap_bank_statement_recon skill section 'UNESCO Custom Recon Programs (Y-Stack)' — 6 R-rules distilled from INC-000006906",
+          "central_vs_field_office": {
+            "central_process": "UNES accounts run by HQ treasury — YRGGBS00 substitution + RFEBKA00 EBS + F110 + BCM 90000003 dual-control",
+            "field_office_process": "UBO/FU accounts WITHIN UNES client but regionally operated — Y-stack recon TCODEs (YTR3) + local dashboards + BDC against FB08/F-04/FBRA",
+            "field_offices_known_full_roster": [
+              {"code": "MZN", "name": "Maputo", "country": "Mozambique", "house_bank": "UBA01 (UBA Mozambique S.A.)", "primary_user": "J_DAVANE", "incident": "INC-000006906"},
+              {"code": "BRA / BRZ / UBO", "name": "Brasilia", "country": "Brazil", "primary_user": "E_AMARAL (49.2% self-approval in BCM)", "y_stack_variant": "YTBAM002_HR_UBO (BDCDTAB-FVAL='UBO')"},
+              {"code": "ECO09", "name": "Ecobank benchmark", "country": "Senegal/regional", "status": "reference/benchmark — zero FEBKO rows ever — KU-2026-058-01"},
+              {"code": "IIEP / IIEP_PAR", "name": "International Institute for Educational Planning", "country": "Paris subset", "mentioned_in": "xref_office_tagging_model.md"},
+              {"code": "IBE", "name": "International Bureau of Education", "status": "config_retro pending", "mentioned_in": "MGIE_vs_STEM_gap_2026-04-15.md"},
+              {"code": "ICBA", "name": "unknown full name", "status": "runs without validation/substitution (MGIE/ICBA/IBE noted in MEMORY.md)"},
+              {"code": "MGIE", "name": "unknown full name", "status": "16 transports 2013 creation cluster — reference benchmark", "config_retro": "MGIE_vs_STEM_gap_2026-04-15.md"},
+              {"code": "STEM", "name": "unknown full name", "status": "5 transports 2026 creation cluster — live / pending", "config_retro": "STEM_skb1_align_2026-04-14.md"},
+              {"code": "JAK", "name": "Jakarta", "country": "Indonesia", "mentioned_in": "xref_office_tagging_model.md — full FOCOD universe 100 codes extracted session #055"},
+              {"code": "YAO", "name": "Yaoundé (presumed)", "country": "Cameroon (presumed)", "mentioned_in": "xref_office_tagging_model.md"},
+              {"code": "KAB", "name": "Kabul (presumed)", "country": "Afghanistan (presumed)", "mentioned_in": "xref_office_tagging_model.md"},
+              {"code": "DAK", "name": "Dakar (presumed)", "country": "Senegal (presumed)", "mentioned_in": "xref_office_tagging_model.md"},
+              {"code": "UIS", "name": "UNESCO Institute for Statistics", "mentioned_in": "xref_office_tagging_model.md + INC-000006313"},
+              {"code": "NTB01", "name": "NTB house-bank / office", "session": 48, "mentioned_in": "MEMORY.md house bank work session 46-48"}
+            ],
+            "dashboards_inventory_2026_04_21": {
+              "finding": "NO unified field-office operations dashboard exists. Knowledge fragmented across 5 layers.",
+              "fragmented_sources": [
+                "incident tickets (INC-000006906 Maputo, INC-000005240 XREF office-tagging)",
+                "configuration retros (knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md, STEM_skb1_align_2026-04-14.md, MGIE_vs_STEM_gap_2026-04-15.md)",
+                "HTML companions (bcm_dual_control_audit.html, house_bank_configuration_companion.html, payment_bcm_companion.html — lack field-office filtering)",
+                "domain reference docs (bank_reconciliation_program_inventory.md, xref_office_tagging_model.md — each isolated)",
+                "session retros (Zagentexecution/retros/session_058_retro.md)"
+              ],
+              "companions_with_field_office_data": [
+                "companions/bcm_dual_control_audit.html (796KB — all company codes incl field offices)",
+                "companions/house_bank_configuration_companion.html (all house banks incl UBA01/ECO09/STEM/MGIE)",
+                "companions/payment_bcm_companion.html (680KB — implicit field-office scope via ZLSCH routing)"
+              ],
+              "companions_DORMANT_or_incomplete": [
+                "companions/treasury_operations_companion_v2.html (monitor pages do not work)"
+              ],
+              "proactive_monitors_MISSING": [
+                "No real-time Y-stack program execution monitor (YTR0-3, YFI_BANK1 invocation tracking)",
+                "No per-office operational dashboard (Maputo, Brasilia, IIEP, etc. individually)",
+                "No email-based field-office operational digest inventoried"
+              ],
+              "likely_external_not_in_repo": [
+                "Power BI / Tableau dashboards (finance cube by office)",
+                "SharePoint FM Operations site",
+                "Excel tracker for transport-request management (per office)"
+              ],
+              "assessment": "Each field office maintains IMPLICIT shadows of HQ Y-stack programs (YTBAM002_HR_UBO hardcodes 'UBO'). No centralized execution monitor of these shadows. Incidents bubble up REACTIVELY (J_DAVANE timeout) rather than proactively."
+            }
+          },
+          "docs": [
+            "knowledge/incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md",
+            "knowledge/incidents/INC-000006906_full_history.md",
+            "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
+            "Zagentexecution/retros/session_058_retro.md"
+          ],
+          "extracted_code_folder": "extracted_code/CUSTOM/BANK_RECONCILIATION/",
+          "fix_file": "Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap",
+          "related_claims": [52, 53, 54],
+          "related_incident": "INC-000006906",
+          "related_rules": [
+            "feedback_mode_e_bdc_is_network_coupling_risk",
+            "feedback_time_out_stack_blames_ldb",
+            "feedback_d01_adt_locked_use_p01_rfc"
+          ],
+          "quality_checks": [
+            "Zagentexecution/quality_checks/ybank_set_coverage_check.py",
+            "Zagentexecution/quality_checks/empty_range_ldb_scan_check.py"
+          ],
+          "open_known_unknowns": [
+            {
+              "id": "KU-2026-057-01",
+              "question": "Is YTBAI001 (SMARTLINK CMI940 → MT940) still in production? File paths point to /usr/sap/D01/conversion/...; TBTCO has zero runs.",
+              "status": "OPEN"
+            },
+            {
+              "id": "KU-2026-057-02",
+              "question": "STAD trace for YTR1 / YTR2 / YTR2_HR to confirm zero interactive use before decommission proposal.",
+              "status": "OPEN"
+            },
+            {
+              "id": "KU-2026-057-03",
+              "question": "Extract YCL_FI_BANK_RECONCILIATION_BL (2023 OOP class backing YFI_BANK1) for autopsy.",
+              "status": "OPEN"
+            },
+            {
+              "id": "KU-2026-057-04",
+              "question": "YTBAM002_HR_UBO housekeeping — not included by any executable today; TADIR-delete candidate?",
+              "status": "OPEN"
+            },
+            {
+              "id": "KU-2026-058-01",
+              "question": "MT940 feed status for ECO09/MZ banks — BST01 stopped 2025-04-17, ECO09/UBA01 zero FEBKO rows ever. Structural — Treasury business decision required.",
+              "status": "OPEN"
+            },
+            {
+              "id": "KU-2026-058-02",
+              "question": "Why are these custom Y-stack programs needed at all vs running standard F-04/FB08/FBRA directly? User hypothesis: they wrap standard but add UNESCO field-office logic (SKB1 scoping, MZN01/ECO09 company-code branches, list-output error capture). Need explicit catalog of what Y-stack adds beyond standard clearing TCODEs — is the added value justified vs the defects it introduces (MODE 'E' TIME_OUT)?",
+              "status": "OPEN",
+              "raised_by": "user",
+              "raised_session": 59,
+              "priority": "HIGH"
+            },
+            {
+              "id": "KU-2026-058-03",
+              "question": "What custom DASHBOARDS do field offices (Maputo MZN, others) maintain to control their operations? Are these SAP transactions, external reports, or shadow tools?",
+              "status": "PARTIALLY_ANSWERED_2026_04_21",
+              "raised_by": "user",
+              "raised_session": 59,
+              "priority": "MEDIUM",
+              "findings_session_059": {
+                "unified_dashboard_exists": false,
+                "knowledge_fragmented_across": ["incident tickets", "configuration retros", "HTML companions (no field-office filter)", "domain reference docs", "session retros"],
+                "in_repo_artifacts_found": 13,
+                "companions_covering_field_offices_implicitly": ["bcm_dual_control_audit.html", "house_bank_configuration_companion.html", "payment_bcm_companion.html"],
+                "dormant_companion": "treasury_operations_companion_v2.html (monitor pages do not work)",
+                "proactive_monitors_missing": ["real-time Y-stack TCODE execution monitor", "per-office operational dashboard", "email digests"],
+                "external_artifacts_likely_outside_repo": ["Power BI / Tableau finance cube", "SharePoint FM Operations site", "Excel transport-request tracker"],
+                "detail_location": "Treasury.subtopics.field_office_custom_clearing.central_vs_field_office.dashboards_inventory_2026_04_21",
+                "follow_up_remaining": "Ask UNESCO treasury what dashboards they ACTUALLY use day-to-day at each field office (human-in-the-loop inventory, since code search cannot reach SharePoint/email/Excel)"
+              }
+            }
+          ]
+        },
+        "xref_office_tagging": {
+          "description": "Office-code XREF1/XREF2 substitution model — YRGGBS00 overwrites XREF fields with office codes. Session #055 discovered DOUBLE ASYMMETRY: UXR1 has no GB901 prereq + commented-out guard (fires unconditionally); UXR2 has HKONT-in-6-bank-GLs prereq + active guard.",
+          "docs": ["knowledge/domains/Treasury/xref_office_tagging_model.md"],
+          "related_claims": [47, 48, 49],
+          "discovery_session": 55
+        },
+        "payment_landscape": {
+          "description": "Full payment landscape: F110 run → BCM batch → DMEE file → bank. 1.4M process mining events, 550K cases, 9 company codes. 8 DMEE trees variations.",
+          "tables": ["REGUH", "REGUP", "PAYR", "BNK_BATCH_HEADER", "BNK_BATCH_ITEM"],
+          "transactions": ["F110", "F111", "F-53"],
+          "volumes": {"events": 1400000, "cases": 550000, "company_codes": 9},
+          "docs": ["knowledge/domains/Treasury/payment_full_landscape.md", "knowledge/domains/Payment/h18_dmee_tree_findings.md"],
+          "companion": "companions/payment_process_mining.html",
+          "skill": "sap_payment_e2e"
+        }
+      },
+      "objects": ["T012", "T012K", "FEBEP", "FEBRE", "BNK_BATCH_HEADER", "BNK_BATCH_ITEM", "YRGGBS00", "REGUH", "REGUP", "PAYR", "F110", "DMEE", "YTR3", "YTBAE002", "YTBAE001", "YTBAE001_HR", "YTBAI001", "YTBAM001", "YTBAM002", "YTBAM002_HR", "YTBAM002_HR_UBO", "YTBAM003", "YTBAM003_HR", "YTBAM004", "YTBAM004_HR", "YFI_BANK_RECONCILIATION", "YFI_BANK_RECONCILIATION_DATA", "YFI_BANK_RECONCILIATION_SEL", "YCL_FI_BANK_RECONCILIATION_BL", "SAPDBSDF", "PUT_BSIS", "SKB1", "FB08", "F-04", "FBRA", "YBANK_ACCOUNTS_FO_OTH"],
+      "claims_ids": [6, 47, 48, 49, 52, 53, 54],
+      "rules_ids": [
+        "feedback_never_write_production_without_explicit_request",
+        "feedback_bcm_spec_must_include_rule_ry_stext",
+        "feedback_mode_e_bdc_is_network_coupling_risk",
+        "feedback_time_out_stack_blames_ldb",
+        "feedback_d01_adt_locked_use_p01_rfc"
+      ],
+      "incidents": ["INC-000005240", "INC-000006313", "INC-000006906"],
+      "known_unknowns": ["KU-030", "KU-031", "KU-032", "H14", "H45", "H46", "KU-2026-057-01", "KU-2026-057-02", "KU-2026-057-03", "KU-2026-057-04", "KU-2026-058-01", "KU-2026-058-02", "KU-2026-058-03"],
+      "falsification_pending": [],
+      "data_quality_open": ["DQ-019"],
+      "blind_spots": [],
+      "owner_role": "Treasury Functional SME + FI Config Team + Field Office Accountants",
+      "coverage_pct": 78,
+      "last_session_touched": 58,
+      "primary_modules": ["FI", "TV"],
+      "primary_processes": ["T2R", "P2P"],
+      "operational_tiers": {
+        "central": "HQ Treasury operations — YRGGBS00 substitution, F110, BCM dual-control 90000003, Paris",
+        "field_office": "Regional accountants (MZN/BRA/ECO/UBA) using Y-stack TCODEs (YTR3, YFI_BANK1) that BDC-wrap standard FB08/F-04/FBRA. Own dashboards (not yet inventoried)."
+      }
+    },
+
+    "FI": {
+      "axis": "functional",
+      "description": "Financial Accounting — GL, AP, AR, posting rules, validations/substitutions (GGB0/GGB1), BusA derivation. Bridges to PSM via FMIFIIT.KNBELNR=BKPF.BELNR.",
+      "knowledge_doc_path": "knowledge/domains/FI/",
+      "knowledge_docs": [
+        "knowledge/domains/FI/fi_enhancements_analysis.md",
+        "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
+        "knowledge/domains/FI/h29_skat_sync_log.md",
+        "knowledge/domains/FI/ob28_obbh_assignment_catalog.md",
+        "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
+        "knowledge/domains/FI/travel_busarea_derivation.md"
+      ],
+      "companions": ["companions/fi_maintenance.html"],
+      "skills": [
+        "fi_domain_agent",
+        "sap_account_comparison",
+        "sap_master_data_sync",
+        "sap_change_audit"
+      ],
+      "subtopics": {
+        "validations_substitutions": {
+          "description": "GGB0 validations + GGB1 substitutions. OB28/OBBH assignment is OPTIONAL at UNESCO — 3 of 9 institutes (MGIE/ICBA/IBE) run without any. YRGGBS00 holds FORM bodies (UXR1/UXR2 etc.) + declarative prereqs in GB901.",
+          "tables": ["GB922", "GB921", "GB901", "GB903", "YBASUBST"],
+          "transactions": ["GGB0", "GGB1", "OB28", "OBBH"],
+          "programs": ["YRGGBS00"],
+          "docs": ["knowledge/domains/FI/ggb1_substitution_tables_distinction.md", "knowledge/domains/FI/ob28_obbh_assignment_catalog.md"]
+        },
+        "gl_master_data": {
+          "description": "G/L account master: SKA1 (chart of accounts), SKB1 (company-code-specific), SKAT (text). Account comparison script detects wrong HBKID/KTOKS/XINTB; UPDATE via RFC_ABAP_INSTALL_AND_RUN.",
+          "tables": ["SKA1", "SKB1", "SKAT"],
+          "skill": "sap_account_comparison"
+        },
+        "busa_derivation": {
+          "description": "Business Area derivation logic for Travel postings. Intercompany scenario exposes LHRTSF01.abap:852 only fills GSBER for same-company lines.",
+          "docs": ["knowledge/domains/FI/travel_busarea_derivation.md", "knowledge/domains/Travel/travel_busarea_derivation.md"],
+          "related_incident": "INC-000006073"
+        }
+      },
+      "objects": ["SKA1", "SKB1", "SKAT", "BKPF", "BSEG", "BSIS", "BSAS", "BSIK", "BSAK", "BSID", "BSAD", "YBASUBST"],
+      "claims_ids": [],
+      "rules_ids": ["feedback_bseg_celonis_pattern", "feedback_bseg_is_join_not_table", "feedback_bseg_is_readable"],
+      "incidents": ["INC-000006073"],
+      "known_unknowns": [],
+      "falsification_pending": [],
+      "data_quality_open": [],
+      "blind_spots": [],
+      "owner_role": "FI Functional SME",
+      "coverage_pct": 68,
+      "last_session_touched": 55,
+      "primary_modules": ["FI"],
+      "primary_processes": ["B2R", "P2P", "T2R"]
+    },
+
+    "HCM": {
+      "axis": "functional",
+      "description": "Human Capital Management — employee lifecycle, 36 infotypes, payroll, benefits, Fiori apps (Offboarding, Asr Framework), OM, travel integration.",
+      "knowledge_doc_path": "knowledge/domains/HCM/",
+      "knowledge_docs": [
+        "knowledge/domains/HCM/asr_framework_deep_dive.md",
+        "knowledge/domains/HCM/financials.md",
+        "knowledge/domains/HCM/hcm_ngo_specifics.md"
+      ],
+      "knowledge_subfolders": ["Benefits", "Fiori Apps", "Infotypes", "Payroll"],
+      "companions": [],
+      "skills": ["hcm_domain_agent", "sap_bdc_intelligence"],
+      "subtopics": {
+        "infotypes": {"description": "36 infotypes used by UNESCO HCM (PA0001-PA9999 range, PD-RY for workflow groups)", "tables": ["PA0027", "HRP1000", "HRP1001"]},
+        "payroll": {"description": "Payroll processing — Allos vs Y1 BDC pattern forensics", "skill": "sap_bdc_intelligence"},
+        "fiori_apps": {"description": "CL_HCMFAB_* extracted, Offboarding BSP", "extracted_code_path": "extracted_code/"}
+      },
+      "objects": ["PA0001", "PA0002", "PA0027", "HRP1000", "HRP1001"],
+      "claims_ids": [],
+      "rules_ids": [],
+      "incidents": ["INC-000006073"],
+      "known_unknowns": [],
+      "owner_role": "HCM Functional SME",
+      "coverage_pct": 55,
+      "last_session_touched": 48,
+      "primary_modules": ["HCM", "PD"],
+      "primary_processes": ["H2R"]
+    },
+
+    "PSM": {
+      "axis": "functional",
+      "description": "Public Sector Management / Fund Management — budget, commitments, FM-FI bridge via FMIFIIT, WRTTP filter, project cost recovery.",
+      "knowledge_doc_path": "knowledge/domains/PSM/",
+      "knowledge_docs": [
+        "knowledge/domains/PSM/psm_initial_analysis.md",
+        "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md",
+        "knowledge/domains/PSM/project_cost_recovery_analysis.md"
+      ],
+      "knowledge_subfolders": ["EXTENSIONS", "FIORI APPS", "REPORTS"],
+      "companions": [],
+      "skills": ["psm_domain_agent"],
+      "subtopics": {
+        "fm_fi_bridge": {"description": "Bridge via FMIFIIT.KNBELNR=BKPF.BELNR; FM uses FKBTR (not HSL), PERIO (not POPER), FMBELNR (not BELNR)"},
+        "ba_mod_extensions": {"description": "YFI_BASU_MOD + basu_mod technical autopsy", "docs": ["knowledge/domains/PSM/EXTENSIONS/basu_mod_technical_autopsy.md"]}
+      },
+      "objects": ["FMIFIIT", "PRPS", "YFI_BASU_MOD"],
+      "claims_ids": [],
+      "rules_ids": [],
+      "incidents": [],
+      "known_unknowns": [],
+      "owner_role": "PSM Functional SME",
+      "coverage_pct": 62,
+      "last_session_touched": 48,
+      "primary_modules": ["FM", "PS"],
+      "primary_processes": ["B2R"]
+    },
+
+    "Payment": {
+      "axis": "functional",
+      "description": "Payment execution sub-domain of Treasury — F110, DMEE trees, 8 DMEE variations, BCM batch orchestration, 1.4M events process mining.",
+      "parent_domain": "Treasury",
+      "knowledge_doc_path": "knowledge/domains/Payment/",
+      "knowledge_docs": [
+        "knowledge/domains/Payment/h18_dmee_tree_findings.md",
+        "knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv",
+        "knowledge/domains/Payment/h18_dmee_trees.csv",
+        "knowledge/domains/Payment/h18_dmee_tree_nodes.csv"
+      ],
+      "companions": ["companions/payment_bcm_companion.html", "companions/payment_process_mining.html"],
+      "skills": ["sap_payment_bcm_agent", "sap_payment_e2e"],
+      "objects": ["F110", "DMEE", "REGUH", "REGUP", "PAYR"],
+      "owner_role": "Treasury Functional SME",
+      "coverage_pct": 70,
+      "last_session_touched": 55,
+      "primary_modules": ["FI"],
+      "primary_processes": ["T2R", "P2P"]
+    },
+
+    "BusinessPartner": {
+      "axis": "functional",
+      "description": "Vendor/customer/BP master data — SCSA vendor category, KTOKK → AKONT mapping, intercompany BP scenarios.",
+      "knowledge_doc_path": "knowledge/domains/BusinessPartner/",
+      "knowledge_docs": ["knowledge/domains/BusinessPartner/README.md"],
+      "companions": [],
+      "skills": [],
+      "objects": ["LFA1", "LFB1", "KNA1", "KNB1"],
+      "incidents": ["INC-000006073"],
+      "owner_role": "Master Data Governance",
+      "coverage_pct": 40,
+      "last_session_touched": 48,
+      "primary_modules": ["FI"],
+      "primary_processes": ["P2D"]
+    },
+
+    "Travel": {
+      "axis": "functional",
+      "description": "Travel management — PRRW posting, PR02 trip create, BusA derivation, intercompany travel advance scenarios, PTRV tables.",
+      "knowledge_doc_path": "knowledge/domains/Travel/",
+      "knowledge_docs": [
+        "knowledge/domains/Travel/README.md",
+        "knowledge/domains/Travel/travel_brain_edges.md",
+        "knowledge/domains/Travel/travel_busarea_derivation.md"
+      ],
+      "companions": [],
+      "skills": [],
+      "objects": ["PRRW", "PR02", "PTRV_PERIO"],
+      "incidents": ["INC-000006073"],
+      "owner_role": "Travel Functional SME",
+      "coverage_pct": 58,
+      "last_session_touched": 48,
+      "primary_modules": ["TV", "FI", "HCM"],
+      "primary_processes": ["H2R"]
+    },
+
+    "Procurement": {
+      "axis": "functional",
+      "description": "Procurement — PO release, entry sheets, GR. Enhancements analysis document.",
+      "knowledge_doc_path": "knowledge/domains/Procurement/",
+      "knowledge_docs": ["knowledge/domains/Procurement/procurement_enhancements_analysis.md"],
+      "companions": [],
+      "skills": [],
+      "objects": ["EKKO", "EKPO", "ESSR"],
+      "owner_role": "Procurement Functional SME",
+      "coverage_pct": 45,
+      "last_session_touched": null,
+      "primary_modules": ["MM"],
+      "primary_processes": ["P2P"]
+    },
+
+    "Transport_Intelligence": {
+      "axis": "functional",
+      "description": "SAP Transport Order intelligence — 7,745 transports classified across 21 modules. Pre-import risk analysis, companion generation, module-level taxonomy.",
+      "knowledge_doc_path": "knowledge/domains/Transport_Intelligence/",
+      "knowledge_docs": [
+        "knowledge/domains/Transport_Intelligence/README.md",
+        "knowledge/domains/Transport_Intelligence/process_discovery_research.md",
+        "knowledge/domains/Transport_Intelligence/project_transport_intelligence_docs.md",
+        "knowledge/domains/Transport_Intelligence/transport_object_taxonomy.md"
+      ],
+      "companions": ["companions/cts_dashboard.html", "companions/sap_taxonomy_companion.html"],
+      "skills": ["sap_transport_intelligence", "sap_transport_companion"],
+      "objects": ["E070", "E071", "E07T"],
+      "owner_role": "CTS Admin",
+      "coverage_pct": 78,
+      "last_session_touched": 55,
+      "primary_modules": ["CTS", "BASIS"],
+      "primary_processes": []
+    },
+
+    "Integration": {
+      "axis": "functional",
+      "description": "Interface landscape — 239 RFC destinations, 38 systems, 19.4K IDocs. DBCON (SQL Server: TULIP, UNESDIR), .NET Connector (SISTER, HR Workflow, CMT, UBO, Travel, Mouv, Procurement), MuleSoft (PROJECT02), BizTalk (SuccessFactors planned).",
+      "knowledge_doc_path": "knowledge/domains/Integration/",
+      "knowledge_docs": [],
+      "companions": ["companions/connectivity_diagram.html", "companions/rfc_analysis.html", "companions/system_inventory.html"],
+      "skills": ["sap_interface_intelligence", "integration_diagram"],
+      "objects": ["RFCDES", "ICFSERVICE", "EDIDC", "DBCON", "TMSCSYS", "TFDIR"],
+      "owner_role": "Integration Architect",
+      "coverage_pct": 72,
+      "last_session_touched": 35,
+      "primary_modules": ["BASIS"],
+      "primary_processes": []
+    },
+
+    "Output": {
+      "axis": "functional",
+      "description": "Output determination — printing, forms, SmartForms, Adobe forms.",
+      "knowledge_doc_path": "knowledge/domains/Output/",
+      "knowledge_docs": [],
+      "companions": [],
+      "skills": [],
+      "coverage_pct": 20,
+      "last_session_touched": null,
+      "primary_modules": ["FI"]
+    },
+
+    "PS": {
+      "axis": "functional",
+      "description": "Project System — WBS elements, project master, FM-PS bridge via PRPS.OBJNR → POSID.",
+      "knowledge_doc_path": "knowledge/domains/PS/",
+      "knowledge_docs": [],
+      "companions": [],
+      "skills": [],
+      "objects": ["PRPS", "PROJ"],
+      "coverage_pct": 40,
+      "last_session_touched": null,
+      "primary_modules": ["PS"],
+      "primary_processes": ["B2R"]
+    },
+
+    "RE-FX": {
+      "axis": "functional",
+      "description": "Real Estate Flexible — lease contracts, property master, RE-FX specific posting.",
+      "knowledge_doc_path": "knowledge/domains/RE-FX/",
+      "knowledge_docs": [],
+      "companions": [],
+      "skills": [],
+      "coverage_pct": 15,
+      "last_session_touched": null,
+      "primary_modules": ["RE"]
+    },
+
+    "Support": {
+      "axis": "functional",
+      "description": "Cross-cutting incident & maintenance domain — INC tickets that span multiple functional domains, health checks, auth/SU53 issues.",
+      "knowledge_doc_path": "knowledge/incidents/",
+      "knowledge_docs": [],
+      "companions": ["companions/upgrade_2026_v01_open_customizing_requests.html"],
+      "skills": ["sap_incident_analyst", "sap_debugging_and_healing", "sap_st01_trace_reader", "sap_change_audit", "sap_system_monitor"],
+      "coverage_pct": null,
+      "last_session_touched": 55,
+      "primary_modules": ["BASIS"]
+    }
+  },
+
+  "process_map": {
+    "_design": "UNESCO end-to-end process chains — each maps to a set of functional domains that participate. Enables cross-domain queries.",
+    "P2P": {
+      "name": "Procure-to-Pay",
+      "domains": ["Procurement", "FI", "Treasury", "Payment", "BCM"],
+      "entry_skills": ["coordinator"]
+    },
+    "H2R": {
+      "name": "Hire-to-Retire",
+      "domains": ["HCM", "Travel", "FI", "Payment"]
+    },
+    "B2R": {
+      "name": "Budget-to-Report (Record-to-Report)",
+      "domains": ["FI", "PSM", "PS", "Treasury"]
+    },
+    "T2R": {
+      "name": "Treasury-to-Report",
+      "domains": ["Treasury", "Payment", "BCM", "FI"]
+    },
+    "P2D": {
+      "name": "Prospect-to-Data (Master data)",
+      "domains": ["BusinessPartner", "FI"]
+    }
+  },
+
+  "module_map": {
+    "_design": "SAP module codes used on objects[X].domain today. Kept non-overlapping with functional axis.",
+    "FI": {"functional_coverage": ["FI", "Treasury", "Payment", "BCM", "BusinessPartner"]},
+    "HCM": {"functional_coverage": ["HCM"]},
+    "PD": {"functional_coverage": ["HCM", "BCM"]},
+    "TV": {"functional_coverage": ["Travel"]},
+    "MM": {"functional_coverage": ["Procurement"]},
+    "FM": {"functional_coverage": ["PSM"]},
+    "PS": {"functional_coverage": ["PS", "PSM"]},
+    "RE": {"functional_coverage": ["RE-FX"]},
+    "CTS": {"functional_coverage": ["Transport_Intelligence"]},
+    "BASIS": {"functional_coverage": ["Integration", "Support"]},
+    "CUSTOM": {"functional_coverage": ["*"]},
+    "SAP_STANDARD": {"functional_coverage": ["*"]},
+    "DATA_MODEL": {"functional_coverage": ["*"]},
+    "BI": {"functional_coverage": ["*"]}
+  },
+
+  "session_activation_hints": {
+    "_design": "Keyword → domain activation routing used at session start. Triggers auto-load of relevant knowledge_docs, skills, open KUs/DQs.",
+    "bcm|dual.control|signatory|batch|CRUSR|CHUSR|payment.batch|90000003|90000004|90000005": ["BCM", "Treasury"],
+    "treasury|house.bank|T012|T012K|cash": ["Treasury"],
+    "bank.statement|EBS|FEBEP|FEBRE|MT940|FEBAN|FEB_BSPROC": ["Treasury", "FI"],
+    "reconciliation|recon|clearing|YRGGBS00|UXR1|UXR2|XREF": ["Treasury", "FI"],
+    "YTR0|YTR1|YTR2|YTR3|YTBAE|YTBAM|YTBAI|YFI_BANK|field.office|Maputo|MZN|Brasilia|UBO|FO_": ["Treasury", "FI", "Support"],
+    "INC-000006906|J_DAVANE|YTBAE002|MODE.E|TIME_OUT": ["Treasury", "Support"],
+    "payment|F110|DMEE|REGUH": ["Payment", "Treasury"],
+    "travel|PRRW|PR02|trip|PA0027": ["Travel", "HCM", "FI"],
+    "vendor|customer|LFA1|KNA1|BP": ["BusinessPartner", "FI"],
+    "GL|BKPF|BSEG|BSIS|BSAS|SKA1|SKB1": ["FI"],
+    "fund|FM|budget|FMIFIIT|WRTTP": ["PSM"],
+    "transport|CTS|E070|E071": ["Transport_Intelligence"],
+    "RFC|IDoc|interface|EDIDC": ["Integration"],
+    "incident|INC-|ST22|SU53|SM21|dump": ["Support"],
+    "HCM|payroll|infotype|PA00": ["HCM"],
+    "procurement|PO|ESSR|EKKO": ["Procurement"]
+  }
+}

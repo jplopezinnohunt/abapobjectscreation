@@ -1,6 +1,10 @@
 ---
 name: SAP ADT REST API Integration
 description: Guidelines for programmatically deploying ABAP objects (Classes, Programs, Includes, Function Groups, BSP, OData Services) via the SAP ABAP Development Tools (ADT) REST API — the same interface used by the VSCode ABAP extension and Eclipse ADT. This is the PREFERRED method over RFC hacks or browser automation for source code operations.
+domains:
+  functional: [*]
+  module: [BASIS, CTS]
+  process: []
 ---
 
 # SAP ADT REST API Integration

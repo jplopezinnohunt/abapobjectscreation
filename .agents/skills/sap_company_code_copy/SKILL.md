@@ -8,6 +8,10 @@ description: >
   is being created by copying from an existing one.
 maturity: production
 origin: Session #019 — ad hoc analysis of D01K9B0CBF (STEM/China Institute copy)
+domains:
+  functional: [FI, Treasury]
+  module: [FI, CTS]
+  process: [P2D]
 ---
 
 # SAP Company Code Copy Skill
@@ -28,6 +32,7 @@ origin: Session #019 — ad hoc analysis of D01K9B0CBF (STEM/China Institute cop
 > - **Never skip the country/currency consistency check** — copies inherit house banks from the source, which may be in a completely different country.
 > - **Never release the transport without validating the FBZP chain** — T042 → T042B → T042E → T042C → T042I → T012K. If any level is missing, F110 fails silently.
 > - **Never skip authorization role updates** — users get "no authorization for company code" until F_BKPF_BUK is updated in PFCG.
+> - **Never skip RGUGBR00 after OB28/OBBH changes** — the assignment exists in the DB but the generated Boolean class code is stale. Rules will NOT fire at posting time until RGUGBR00 regenerates. Verified via OBBH precedent: all 9 UNESCO institutes have a substitution assigned at CallPnt 2 ActLvl 1, each requires the generator re-run after any rule or assignment change.
 
 ---
 
@@ -156,6 +161,9 @@ When a company code is copied from a source in a different country, these mismat
 | 4 | Verify tax codes for target country | FTXP / OBBG | HIGH |
 | 5 | Set up withholding tax types/codes | OBWP / OBWQ | MEDIUM |
 | 6 | Check substitution / validation rules include new BUKRS | GGB1 / GGB0 | MEDIUM |
+| 6a | Verify OB28 (validation) assignment — optional per precedent (MGIE/ICBA/IBE have none) | OB28 / table `T001D` | MEDIUM |
+| 6b | Verify OBBH (substitution) assignment for new BUKRS — all 9 institutes have one at CallPnt 2 | OBBH | **HIGH** |
+| 6c | **Run RGUGBR00 to regenerate validation/substitution Boolean code** — mandatory after any OB28/OBBH change. For FAGL-New-GL also run RGUGBR30. Until this runs, assignments exist but rules do NOT fire at posting time. | SE38 → RGUGBR00 / RGUGBR30 | **CRITICAL** |
 | 7 | Verify exchange rate types and maintain rates | OB07 / OB08 | MEDIUM |
 | 8 | Verify correspondence forms and programs | OB77 / OB78 | LOW |
 

@@ -5,6 +5,10 @@ description: >
   to map all scheduled, periodic, and event-triggered jobs in UNESCO SAP (P01/D01).
   Identifies job chains, failure patterns, runtime anomalies, and job owners.
   Feeds brain with JOB_PATTERN nodes for operational intelligence.
+domains:
+  functional: [Support]
+  module: [BASIS]
+  process: []
 ---
 
 # SAP Job Intelligence

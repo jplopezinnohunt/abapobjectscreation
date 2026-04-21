@@ -4,6 +4,10 @@ description: >
   Complete skill for creating and automating SAP Gateway OData services via SEGW.
   Covers: interview protocol, Playwright automation patterns, element IDs, entity/property/association
   creation, service registration, transport handling. Consolidated from sap_segw + segw_automation.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # ABAP SEGW — OData Service Construction

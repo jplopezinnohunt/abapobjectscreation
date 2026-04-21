@@ -1,6 +1,10 @@
 ---
 name: Web SAP GUI Automation
 description: Best practices and guidelines for automating SAP GUI for HTML
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # Web SAP GUI Automation

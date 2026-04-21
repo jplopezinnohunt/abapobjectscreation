@@ -6,6 +6,10 @@ description: >
   cost centers, profit centers, functional areas, WBS elements. Proven pattern: extract both
   systems, compare in SQLite by key, INSERT missing records via RFC_ABAP_INSTALL_AND_RUN.
   Session 2026-04-03: 880 records synced (69 SKA1, 69 SKAT, 450 SKB1, 26 CSKA, 92 CSKU, 174 CSKB).
+domains:
+  functional: [FI]
+  module: [FI, CTS]
+  process: [P2D]
 ---
 
 # SAP Master Data Sync (P01 → D01)

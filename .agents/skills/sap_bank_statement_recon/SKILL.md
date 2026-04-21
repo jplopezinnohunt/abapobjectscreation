@@ -1,3 +1,18 @@
+---
+name: sap_bank_statement_recon
+description: Specialized domain agent for SAP Electronic Bank Statement + Reconciliation at UNESCO — MT940 import, FEBEP/FEBRE processing, clearing, UNESCO Y-stack custom recon programs (YTR0-YTR3, YFI_BANK1), 6 anti-pattern rules from INC-000006906.
+domains:
+  functional: [Treasury]
+  module: [FI]
+  process: [T2R]
+tier: project
+maturity: production
+origin_session: 29
+last_updated_session: 58
+triggers: [bank statements, EBS, FEBEP, FEBKO, FEBRE, FF_5, FEBAN, reconciliation, clearing accounts, MT940, Tag 86, posting rules, T028G, YTR3, YTBAE002, YTR0, YTBAI001, YFI_BANK1, Y-stack, field office reconciliation, Maputo, MZN, BDC clearing, UXR1, UXR2, XREF]
+subtopics: [central_substitution_YRGGBS00, field_office_custom_clearing_y_stack, mt940_import, posting_rules_T028G]
+---
+
 # SAP Bank Statement & Reconciliation Domain Agent
 
 ## Metadata
@@ -5,7 +20,7 @@
 - **Type**: Domain Agent (specialized)
 - **Maturity**: Production
 - **Origin**: Session #029-#030 — Full EBS configuration extraction + clearing analysis + Tag 86 forensics
-- **Triggers**: Questions about bank statements, EBS, FEBEP, FEBKO, FEBRE, FF_5, FEBAN, reconciliation, clearing accounts, 11xxxxx open items, MT940, Tag 86, posting rules, T028G, search strings, bank sub-accounts, BSAS clearing, algorithm 015, ZUONR matching
+- **Triggers**: Questions about bank statements, EBS, FEBEP, FEBKO, FEBRE, FF_5, FEBAN, reconciliation, clearing accounts, 11xxxxx open items, MT940, Tag 86, posting rules, T028G, search strings, bank sub-accounts, BSAS clearing, algorithm 015, ZUONR matching, Y-stack custom programs, YTR3, field office reconciliation
 
 ## Purpose
 
@@ -46,6 +61,60 @@ The **coordinator** should route to this agent when the user asks about:
 6. **Never parse FEBRE.VWEZW for structured data** -- It is free-text MT940 Tag 86 content that varies by bank. SocGen uses `/` delimiters, Citibank uses space-delimited text, field office banks have no standard. Use search strings (T028D) for pattern matching instead.
 7. **Never assume ZUONR=NONREF means "won't clear"** -- NONREF items (12,789) clear at 108% rate (cleared via other BSAS matching mechanisms, not ZUONR). The clearing happens through alternative algorithm paths.
 8. **Never confuse EFART=E (electronic MT940) with EFART=M (manual entry)** -- EFART=M produces MXXD/MXXC posting rules with algorithm 000 (no auto-clearing). EFART=E produces the standard algorithmic rules. Mixing them corrupts clearing rate analysis.
+9. **Never write `CALL TRANSACTION ... MODE 'E'` inside an LDB / GET / recon loop.** MODE 'E' opens SAPGUI on BDC error. On slow WAN paths (field offices) the cumulative GUI handshake exceeds `rdisp/max_wprun_time` and TIME_OUTs the caller's fetch. Use MODE 'N' + `MESSAGES INTO <tab>` + post-loop error reporting. Canonical instance: YTBAE002 (INC-000006906, Claim 54). See "UNESCO Custom Recon Programs" below and the "When implementing custom recon programs" section further down.
+
+## UNESCO Custom Recon Programs (Y-Stack) — full family
+
+UNESCO maintains **three distinct custom bank-reconciliation program families** on P01. Full inventory: `knowledge/domains/Treasury/bank_reconciliation_program_inventory.md` (Session #057). Brief table here:
+
+| Family | Executables | TCODEs | Role | Status | Known defects |
+|---|---|---|---|---|---|
+| **YTBAE / YTBAM** (original action stack) | YTBAE001, YTBAE001_HR, YTBAE002 + includes YTBAM001/2/3/4 (+ HR + _HR_UBO variants) | YTR1, YTR2, YTR2_HR, **YTR3** | Interactive bank-clearing via BDC chain to FB08 / F-04 / FBRA | YTBAE002 ACTIVE. YTBAE001 + YTBAE001_HR DORMANT | MODE 'E' + CALL TRANSACTION (Claim 54) on all three executables. Empty-range → unbounded-LDB-scan (Claim 53) on YTBAE002 ONLY. |
+| **YTBAI** (file pipeline) | YTBAI001 | YTR0 | SMARTLINK CMI940 → MT940 format conversion | DORMANT (hardcoded `/usr/sap/D01/conversion/...` paths, no TBTCO runs) — KU-2026-057-01 | — |
+| **YFI_BANK_RECONCILIATION** (modern reporting) | YFI_BANK_RECONCILIATION + DATA + SEL includes + YCL_FI_BANK_RECONCILIATION_BL class | YFI_BANK1 | Read-only ALV list/dashboard (OOP class-based) | ACTIVE interactive | None in the extracted includes; class not yet extracted (KU-2026-057-03) |
+
+### Primary active action program: `YTR3 / YTBAE002`
+
+- **TCODE**: `YTR3` → program `YTBAE002` (package `YA`, 3,422 lines, monolithic) — direct binding, no variant
+- **Source**: `extracted_code/CUSTOM/YTBAE002/YTBAE002.abap` (Session #057)
+- **Role**: NOT read-only. Decides from BSIS row content + PAYR/BKPF correlation whether each open sub-bank item needs reversal/clearing/reset-cleared, then drives 3 standard FI TCODEs via BDC:
+  - `FB08` (reverse) at `YTBAE002.abap:723, :853`
+  - `F-04` (post with clearing) at `:771`
+  - `FBRA` (reset cleared items) at `:819`
+- **Scope resolution**: `SELECT SAKNR XOPVW FROM SKB1 WHERE BUKRS+HBKID+HKTID` at `:1098-1101`, filter `SAKNR+3(2) IN ('11','13','15') AND XOPVW='X'` for open-item bank sub-bank GLs. **Does NOT use YBANK_* sets** (grep-confirmed). **Depends on `SKB1.XOPVW='X'` being set** on bank sub-bank GLs — else OI range is empty.
+- **LDB call**: `CALL FUNCTION 'LDB_PROCESS' LDBNAME='SDF'` at `:1509-1517` feeds BSIS rows via callback.
+- **Selection screen** (`:297-310`): `GP_BUKRS` (default UNES), `GP_HBKID`, `GP_HKTID`, `GP_BUDAT` (default SY-DATUM). Four mandatory PARAMETERS, no ranges.
+- **Output**: classical list via `WRITE` + `CALL SCREEN 9000` (no ALV).
+- **Known defects**:
+  - **MODE 'E' BDC network coupling** (`:27`, severity HIGH) — INC-000006906, fix proposed at `Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap`, Claim 54.
+  - **Empty-range unbounded LDB scan** (`:1366-1370`, severity MED, latent) — Claim 53. Optional fix `FIX_C` in same file.
+- **Dependencies on master data**: `SKB1.XOPVW='X'` must be maintained on every bank sub-bank GL that should be reconciled. Missing `XOPVW='X'` is a config-class source of latent bugs (program silently produces no output or, with the :1366 latent, triggers a full BSIS scan).
+
+### Legacy action programs: `YTR1 / YTR2 / YTR2_HR`
+
+- `YTR1` (variant `BK REC STATMT2`) → `YTBAE001` + includes YTBAM002/003/004
+- `YTR2` (variant `BANK_RECONCIL`) → same `YTBAE001` (alternate variant)
+- `YTR2_HR` (variant `BANK_RECONCIL`) → `YTBAE001_HR` + includes YTBAM002_HR/003_HR/004_HR
+- **Both executables are DORMANT** (YTBAE001 has 1 TBTCO entry with STATUS=NULL / STRTDATE=NULL, YTBAE001_HR has zero entries).
+- **Same MODE 'E' inherited pattern**: `C_MOD TYPE C VALUE 'E'` at `YTBAE001.abap:118` and `YTBAE001_HR.abap:122`, consumed by YTBAM002 / YTBAM002_HR's 4 `CALL TRANSACTION Y_TRANS USING BDCDTAB MODE C_MOD` sites.
+- **Different selection mechanism vs YTBAE002**: iterates a config table `TSAKO` (`LOOP AT TSAKO WHERE Y_BQ_AC = ' '.` at `YTBAM003.abap:53-59`) — safe-by-construction against the empty-range bug. Claim 53 does NOT apply to this family.
+- **Recommendation**: don't spend a transport slot today. File KU-2026-057-02 (check STAD for recent interactive usage of YTR1/YTR2/YTR2_HR); if zero, propose decommission. If non-zero, apply the same MODE 'E' → 'N' fix at `YTBAE001.abap:118` and `YTBAE001_HR.abap:122`.
+
+### Modern reporting view: `YFI_BANK1 / YFI_BANK_RECONCILIATION`
+
+- **TCODE**: `YFI_BANK1` → program `YFI_BANK_RECONCILIATION` (package `YA`, 34 LOC) — direct binding, no variant.
+- **Source**: `extracted_code/CUSTOM/BANK_RECONCILIATION/YFI_BANK_RECONCILIATION/` (+ `_DATA/` + `_SEL/` includes).
+- **Role**: **read-only** ALV report. Two output modes: `P_DETAIL` (detailed list) or `P_DASH` (dashboard). NO BDC. NO CALL TRANSACTION. NO LDB.
+- **Delegation**: all selection + rendering logic lives in `YCL_FI_BANK_RECONCILIATION_BL` (OOP class, not yet extracted — KU-2026-057-03).
+- **INITIALIZATION** (`YFI_BANK_RECONCILIATION_SEL.abap:17-41`) auto-populates `S_HKONT` via `YCL_FI_BANK_RECONCILIATION_BL=>INITIALIZE_HKONT( )` and sets `P_DATE_Z` = last day of previous month, `P_DATE_O` = last day of two months ago.
+- **Not a replacement** for YTBAE002 — it's a reporting/dashboard companion, not an action program. The team runs YTR3 (YTBAE002) for clearing actions and YFI_BANK1 for visibility.
+
+### File pipeline: `YTR0 / YTBAI001`
+
+- **TCODE**: `YTR0` (variant `YTBAI001`) → `YTBAI001`.
+- **Source**: `extracted_code/CUSTOM/BANK_RECONCILIATION/YTBAI001/YTBAI001.abap` (197 LOC).
+- **Role**: converts SMARTLINK CMI940 bank-statement files to MT940 format. Reads `/usr/sap/D01/conversion/input/TITRBK03/sg2707.txt`, writes `/usr/sap/D01/conversion/output/TITRBK03/sg2707out.txt`. Filter header `C_SOG = ':25:SOGEFRPP/'`.
+- **Status**: DORMANT. Authored A.ELMOUCH 2001-11-05, filesystem paths point to D01 (never promoted to P01 with updated paths). Open KU-2026-057-01 to confirm whether SMARTLINK is still incoming or has been superseded by the EBS MT940 direct-import pipeline.
 
 ## E2E Bank Statement Chain
 
@@ -526,6 +595,68 @@ When analyzing end-to-end payment lifecycle:
 2. T028B maps house bank to EFART (E=electronic, M=manual) and format group
 3. Format group determines which T028G rules apply
 4. XRT940 = field office generic, SOG_FR/CIT04_US = HQ detailed, TR_TRNF = treasury manual
+
+## When Implementing Custom Recon Programs (anti-patterns to avoid)
+
+These rules were distilled from INC-000006906 (Session #057–058) and the frozen YTBAE002 codebase. Any new or modified custom recon program must comply.
+
+### Rule R1 — No MODE 'E' CALL TRANSACTION inside any loop
+
+```abap
+" DO NOT WRITE:
+CALL TRANSACTION 'FB08' USING bdc_tab MODE 'E'
+                              MESSAGES INTO messtab.
+```
+
+MODE 'E' opens SAPGUI on BDC error. On slow-WAN paths (UNESCO field offices) the cumulative GUI handshake breaches `rdisp/max_wprun_time` and the caller's LDB fetch TIME_OUTs with a stack pointing at the LDB, not at the CALL TRANSACTION. See Claim 54 / INC-000006906. Use MODE 'N' + `MESSAGES INTO` + post-loop error reporting:
+
+```abap
+" DO WRITE:
+CALL TRANSACTION 'FB08' USING bdc_tab MODE 'N'
+                              MESSAGES INTO messtab.
+" ... collect messtab throughout the loop, surface in final list.
+```
+
+### Rule R2 — Guard every RANGE before feeding it to an LDB / SELECT
+
+```abap
+" DO NOT WRITE:
+LOOP AT lt_source INTO wa_source.
+  APPEND <range_entry> TO lr_hkont.
+ENDLOOP.
+CALL FUNCTION 'LDB_PROCESS' LDBNAME='SDF' ... .
+
+" DO WRITE:
+LOOP AT lt_source INTO wa_source.
+  APPEND <range_entry> TO lr_hkont.
+ENDLOOP.
+IF lr_hkont IS INITIAL.
+  MESSAGE 'No open-item GL found — aborting to avoid full BSIS scan.' TYPE 'I'.
+  RETURN.
+ENDIF.
+```
+
+SAP's contract for empty IN-lists is "no filter" — which is the opposite of the developer's intent. See Claim 53 (latent, YTBAE002.abap:1366).
+
+### Rule R3 — Do NOT resolve bank scope via YBANK_* sets if you don't need the Report-Painter hierarchy
+
+If the program only needs the GLs of one house bank account, use `SELECT ... FROM SKB1 WHERE BUKRS+HBKID+HKTID` (what YTBAE002 does at `:1098`). Do not call `RS_SET_VALUES_READ` / `G_SET_GET_ALL_VALUES` on `YBANK_*` — those sets have 61% coverage gap (Claim 52) and you'll silently exclude active bank GLs.
+
+If the program DOES need the hierarchy (cash-position by currency, etc.), the Report-Painter set API is correct — just understand Claim 52's preventive audit applies and run `ybank_set_coverage_check.py` after any config change.
+
+### Rule R4 — Respect SKB1.XOPVW='X' as the canonical "open-item managed" flag
+
+Bank sub-bank GLs (11xxxxx / 13xxxxx / 15xxxxx) MUST have `XOPVW='X'` on `SKB1` to participate in any open-item reconciliation. A missing `XOPVW` flag is a master-data bug that surfaces either as (a) the program silently produces no output, or (b) if the program has the R2 bug, as a TIME_OUT via an unbounded LDB scan. When diagnosing "why didn't this item clear?" check `SKB1.XOPVW` first.
+
+### Rule R5 — Test every new recon program from a field-office VPN, not from HQ
+
+A program that passes HQ testing (LAN RTT ~ microseconds) can still TIME_OUT from Maputo / IIEP / UIS if it has MODE 'E' BDC or any other network-coupled step. HQ reproduction is necessary but not sufficient. Always test with at least one slow-WAN user before release.
+
+### Rule R6 — Surface BDC errors in the list, never via dialog
+
+The pattern established by YTBAE002's `PROC_RECONCIL_MESS_ADD` (lines 754, 795, 840, 874) is correct: after each CALL TRANSACTION, copy `Y_MESSTAB` into an accumulator table (`GT_RECONCIL_MESS`), and at end of loop render the accumulator in the list output. This gives the user a complete view of all errors at once without any GUI interaction. Re-use this pattern.
+
+---
 
 ## Statement Format Mapping (T028B, 169 entries)
 

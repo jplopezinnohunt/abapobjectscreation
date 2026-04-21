@@ -4,6 +4,10 @@ description: >
   ABAP class creation and method deployment via RFC. Covers VSEOCLASS structure-based
   class creation, 6 CCIMP (implementation include) writing strategies, method deployment,
   and post-deployment verification. Proven on CRP OData service (ZCL_Z_CRP_SRV_DPC_EXT).
+domains:
+  functional: [*]
+  module: [CUSTOM, CTS]
+  process: []
 ---
 
 # SAP Class Deployment

@@ -1,6 +1,10 @@
 ---
 name: SAP Debugging and Autonomous Self-Healing
 description: Protocols for the AI to autonomously analyze SAP system dumps, authorization failures, and UI crashes to self-correct execution scripts.
+domains:
+  functional: [Support]
+  module: [BASIS, CUSTOM]
+  process: []
 ---
 
 # SAP Debugging and Autonomous Self-Healing

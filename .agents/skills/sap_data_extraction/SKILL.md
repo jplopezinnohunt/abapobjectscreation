@@ -5,6 +5,10 @@ description: >
   Covers FI (BKPF + Celonis BSEG replacement), MM (EKKO/EKPO/EKBE/ESSR),
   PSM (FMIFIIT, funds), and CTS transports. Uses pyrfc with SNC/SSO (P01).
   Gold DB: ~2.5 GB, 42 tables + 1 view, 24M+ rows.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # SAP Data Extraction Skill -- Layer 2

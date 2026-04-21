@@ -149,6 +149,139 @@ def object_detail(brain, name):
     return result
 
 
+def domain(brain, dom_name):
+    """Layer 14 domain registry lookup. Returns ALL reverse-indexed entities
+    for a functional domain: objects, claims, rules, KUs, incidents, skills,
+    companions, subtopics. Feeds session_activation_hints."""
+    registry = brain.get("domains_layer", {}).get("domains", {})
+    d = registry.get(dom_name)
+    if not d:
+        return {
+            "error": f"Domain '{dom_name}' not in registry.",
+            "available": sorted(registry.keys()),
+        }
+    # Also pull in objects by domain (Layer 2 index)
+    objects_in_domain = brain["indexes"]["by_domain"].get(dom_name, [])
+    result = {
+        "domain": dom_name,
+        "axis": d.get("axis"),
+        "description": d.get("description", "")[:200],
+        "knowledge_doc_path": d.get("knowledge_doc_path"),
+        "knowledge_docs": d.get("knowledge_docs", []),
+        "companions": d.get("companions", []),
+        "skills": d.get("skills", []),
+        "subtopics": list(d.get("subtopics", {}).keys()),
+        "objects_rich": d.get("objects", []),
+        "objects_layer2_index": objects_in_domain,
+        "claims_ids": d.get("claims_ids", []),
+        "rules_ids": d.get("rules_ids", []),
+        "incidents": d.get("incidents", []),
+        "known_unknowns": d.get("known_unknowns", []),
+        "falsification_pending": d.get("falsification_pending", []),
+        "data_quality_open": d.get("data_quality_open", []),
+        "coverage_pct": d.get("coverage_pct"),
+        "last_session_touched": d.get("last_session_touched"),
+        "owner_role": d.get("owner_role"),
+        "parent_domain": d.get("parent_domain"),
+        "child_domains": d.get("child_domains", []),
+        "primary_modules": d.get("primary_modules", []),
+        "primary_processes": d.get("primary_processes", []),
+    }
+    return result
+
+
+def domain_gap(brain):
+    """Find domains with missing coverage. Returns list ordered by severity."""
+    registry = brain.get("domains_layer", {}).get("domains", {})
+    gaps = []
+    for name, d in registry.items():
+        issues = []
+        if not d.get("knowledge_docs") and not d.get("knowledge_doc_path"):
+            issues.append("no_knowledge_doc")
+        if not d.get("skills"):
+            issues.append("no_skill")
+        if not d.get("companions"):
+            issues.append("no_companion")
+        cov = d.get("coverage_pct")
+        if cov is not None and cov < 50:
+            issues.append(f"coverage_{cov}pct")
+        if d.get("last_session_touched") is None:
+            issues.append("never_touched")
+        if issues:
+            gaps.append({
+                "domain": name,
+                "issues": issues,
+                "coverage_pct": cov,
+                "last_session_touched": d.get("last_session_touched"),
+            })
+    gaps.sort(key=lambda g: (-len(g["issues"]), g["coverage_pct"] or 0))
+    return {"gaps_found": len(gaps), "gaps": gaps}
+
+
+def process_view(brain, process_code):
+    """Show all domains in a UNESCO process chain (B2R/H2R/P2P/T2R/P2D)."""
+    registry = brain.get("domains_layer", {})
+    process_map = registry.get("process_map", {})
+    pm = process_map.get(process_code)
+    if not pm:
+        return {
+            "error": f"Process '{process_code}' not found.",
+            "available": [k for k in process_map.keys() if not k.startswith("_")],
+        }
+    doms = {}
+    for d in pm.get("domains", []):
+        entry = registry.get("domains", {}).get(d, {})
+        doms[d] = {
+            "description": entry.get("description", "")[:120],
+            "skills": entry.get("skills", []),
+            "objects_count": len(entry.get("objects", [])),
+            "incidents": entry.get("incidents", []),
+            "open_kus": len(entry.get("known_unknowns", [])),
+        }
+    return {
+        "process": process_code,
+        "name": pm.get("name"),
+        "domains": doms,
+    }
+
+
+def activate(brain, prompt_text):
+    """Domain activation: scan a prompt for session_activation_hints keywords,
+    return ordered list of activated domains + auto-load manifest."""
+    import re
+    registry = brain.get("domains_layer", {})
+    hints = registry.get("session_activation_hints", {})
+    activated = []
+    for pattern, domains in hints.items():
+        if pattern.startswith("_"):
+            continue
+        if re.search(pattern, prompt_text, flags=re.IGNORECASE):
+            for d in domains:
+                if d not in activated:
+                    activated.append(d)
+    if not activated:
+        return {
+            "activated_domains": [],
+            "warning": "No domain match — session scope UNCLASSIFIED. Consider adding to session_activation_hints or flag as blind_spot.",
+        }
+    manifest = {}
+    domains_reg = registry.get("domains", {})
+    for d in activated:
+        entry = domains_reg.get(d, {})
+        manifest[d] = {
+            "knowledge_doc_path": entry.get("knowledge_doc_path"),
+            "skills_to_load": entry.get("skills", []),
+            "companions": entry.get("companions", []),
+            "open_known_unknowns": entry.get("known_unknowns", []),
+            "open_data_quality": entry.get("data_quality_open", []),
+            "subtopics_available": list(entry.get("subtopics", {}).keys()),
+        }
+    return {
+        "activated_domains": activated,
+        "activation_manifest": manifest,
+    }
+
+
 def stats(brain):
     """Quick brain statistics with freshness check."""
     return {
@@ -177,6 +310,11 @@ COMMANDS = {
     "domain_summary": lambda b, args: domain_summary(b, args[0]),
     "object_detail": lambda b, args: object_detail(b, args[0]),
     "stats": lambda b, args: stats(b),
+    # Layer 14 (session #059+)
+    "domain": lambda b, args: domain(b, args[0]),
+    "domain_gap": lambda b, args: domain_gap(b),
+    "process": lambda b, args: process_view(b, args[0]),
+    "activate": lambda b, args: activate(b, " ".join(args) if args else ""),
 }
 
 if __name__ == "__main__":

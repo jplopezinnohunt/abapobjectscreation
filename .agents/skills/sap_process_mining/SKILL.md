@@ -5,6 +5,10 @@ description: >
   8 CLI commands covering CTS transport mining, FM budget lifecycle, P2P procurement,
   and CDHDR change audit. Generates DFG, variants, conformance, bottleneck, and
   temporal analysis. JSON-first output for brain integration, HTML for visual exploration.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # SAP Process Mining — pm4py Engine

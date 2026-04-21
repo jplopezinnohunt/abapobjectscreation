@@ -131,7 +131,29 @@
     "chain_anchor_type": "source_code",
     "chain_anchor_note": "Code-based incident — anchors are file:line in extracted_code/. All 5 steps validated against ABAP source.",
     "chain_anchor_coverage_pct": 100,
-    "chain_audited_session": 54
+    "chain_audited_session": 54,
+    "domain_axes": {
+      "functional": [
+        "Travel",
+        "FI",
+        "HCM",
+        "BusinessPartner",
+        "Treasury"
+      ],
+      "module": [
+        "TV",
+        "FI",
+        "HCM",
+        "PD"
+      ],
+      "process": [
+        "H2R",
+        "B2R",
+        "P2P",
+        "T2R",
+        "P2D"
+      ]
+    }
   },
   {
     "id": "INC-000005240",
@@ -263,7 +285,27 @@
     "chain_anchor_type": "mixed_source_and_data",
     "chain_anchor_note": "Hybrid incident — steps 0-6 are YRGGBS00_SOURCE.txt:line anchors (code), steps 7-13 are table:key=value anchors from Live RFC/CDPOS queries (data evidence). All 14 steps verifiable; step 13 uses BNAME+PARID filter pattern without a line number because it is a data lookup, not a code cite.",
     "chain_anchor_coverage_pct": 100,
-    "chain_audited_session": 54
+    "chain_audited_session": 54,
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Treasury",
+        "HCM",
+        "PSM"
+      ],
+      "module": [
+        "FI",
+        "HCM",
+        "PD",
+        "FM"
+      ],
+      "process": [
+        "B2R",
+        "P2P",
+        "T2R",
+        "H2R"
+      ]
+    }
   },
   {
     "id": "INC-000006313",
@@ -411,7 +453,20 @@
     "chain_anchor_type": "data",
     "chain_anchor_note": "Data/config incident — no code involvement, anchors are all SAP_TABLE + primary_key + field=value triples (PA0002/PA0105/USR02/HRP1001). Pattern: <table> <key1>=<v1> -> <field>=<value>. All 7 steps verifiable via RFC_READ_TABLE.",
     "chain_anchor_coverage_pct": 100,
-    "chain_audited_session": 54
+    "chain_audited_session": 54,
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "BCM"
+      ],
+      "module": [
+        "FI",
+        "PD"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
   },
   {
     "id": "INC-BUDGETRATE-EQG",
@@ -531,6 +586,504 @@
     "chain_anchor_type": "mixed_enho_and_data",
     "chain_anchor_note": "Mixed incident — steps 0-1 are file:line in extracted_code/CLAS/, steps 2-6 are ENHO_name + Enh_block references (valid: ENHO name is primary key in TADIR + line within ENHO is unambiguous per-member), step 7 is FMAVCT table+composite-key, steps 8-9 are derived aggregations. All 10 steps verifiable against extracted source or Gold DB.",
     "chain_anchor_coverage_pct": 100,
-    "chain_audited_session": 54
+    "chain_audited_session": 54,
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FI",
+        "Treasury"
+      ],
+      "module": [
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R",
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "INC-000006906",
+    "status": "RESOLVED_FIX_PROPOSED",
+    "root_cause": "TIER_1_CONFIRMED_CODE_AND_FIELD_REPRODUCED",
+    "root_cause_mechanism": "PUT_BSIS SELECT on table BSIS ran past rdisp/max_wprun_time via a non-selective access path. Two drivers: (1) HKONT scope possibly resolved from a YBANK_* set; J_DAVANEs primary GL 0001094424 (ECO09 MZN) is NOT in any YBANK_* set (233 of 383 distinct T012K HKONTs uncovered, 61 percent); empty set expansion degrades SELECT to BUKRS-only scan = 2,005,304 BSIS rows for UNES. (2) BUDAT / AUGDT range open combined with (1). SAP-note text embedded in the dump explicitly names access without suitable index and result set too large. Batch executions of YTBAE002 succeeded 5 times in March 2026 (TBTCO status F) because batch has no dispatcher time cap -- dialog vs batch is the trigger, not UBA01 config churn.",
+    "network_path_reproduction": {
+      "vpn": "works",
+      "paris_hq": "works",
+      "mozambique_direct": "TIME_OUT",
+      "added_session": 58,
+      "cite": "User-confirmed three-path A/B/C test 2026-04-20. Binary outcome correlates 1:1 with network path. Same program, same data, same P01 server. Promotes root_cause tier from TIER_2 (code + single reproduction) to TIER_1 (code + multi-path empirical)."
+    },
+    "fix_location": "YTBAE002.abap:27",
+    "fix_file": "Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap",
+    "class_generalization_classes": [
+      "MODE_E_BDC_NETWORK_COUPLING_ANTI_PATTERN",
+      "BANK_NOT_IN_YBANK_SET_COVERAGE_GAP",
+      "EMPTY_RANGE_UNBOUNDED_LDB_SCAN_LATENT"
+    ],
+    "provisional": false,
+    "finalized_session": 58,
+    "finalized_date": "2026-04-20",
+    "source_extracted_session": 57,
+    "source_extracted_date": "2026-04-20",
+    "source_extracted_method": "pyrfc SNC/SSO on D01 via RPY_PROGRAM_READ (D01 ADT HTTP Basic blocked — password locked)",
+    "root_cause_mechanism_detail": "YTBAE002.abap:27 declares CONSTANTS: GC_MOD TYPE C VALUE 'E' (SAP CALL TRANSACTION mode 'Display errors only, opens SAPGUI on BDC error'). The program issues four CALL TRANSACTION ... USING BDCDTAB MODE GC_MOD MESSAGES INTO Y_MESSTAB inside the GET bsis / LDB_PROCESS iteration body: YTBAE002.abap:723 (FB08 reverse), :771 (F-04 post-with-clearing), :819 (FBRA reset cleared), :853 (FB08 second branch). On slow WAN paths (Maputo field office) the cumulative GUI round-trip per BDC error exceeds rdisp/max_wprun_time → dispatcher aborts with TIME_OUT at whatever SELECT the work-process is waiting in (SAPDBSDF:1983 PUT_BSIS in this case). Errors are already captured in Y_MESSTAB at each call site and persisted by PROC_RECONCIL_MESS_ADD at :754/:795/:840/:874 into GT_RECONCIL_MESS for the list output — so silent capture is already wired. Fix: change line 27 'E' → 'N'.",
+    "root_cause_code_anchor": "YTBAE002.abap:27 (primary) + YTBAE002.abap:723, :771, :819, :853 (the four CALL TRANSACTION sites)",
+    "root_cause_evidence_tier": "TIER_2 (code + one observed incident + user HQ reproduction in ~2 s on fast LAN, same program same data)",
+    "root_cause_final_blocker": "NONE - user HQ reproduction in ~2 seconds decisively isolated network axis; no further input needed from J_DAVANE",
+    "fix_anchor": "YTBAE002.abap:27",
+    "fix_change": "'E' -> 'N' (one character)",
+    "fix_blast_radius": "zero behavioral change on happy path; edge case is a user who relied on interactive BDC dialog to correct on-the-fly — that user now sees captured error in list and re-runs",
+    "fix_evidence_tier": "TIER_2",
+    "related_claims_final": [
+      "claim-006906-mode-e-bdc-network-coupling (id=54, PRIMARY)",
+      "claim-006906-empty-range-ldb-scan-ytbae002 (id=53, LATENT, demoted)",
+      "claim-006906-bank-not-in-ybank-set (id=52, PREVENTIVE, orthogonal to this incident)"
+    ],
+    "root_cause_mechanism_superseded_provisional": "Empty-RANGE-to-unbounded-LDB-scan hypothesis (Session #057, Claim 53) was demoted Session #058. Falsifying evidence: (a) J_DAVANE plausible ECO09/MZN01 input returns non-empty GR_SAKNR_OI via SKB1:1098 (0001194424, XOPVW='X') — the empty-range branch does not fire; (b) live BSIS probe on 0001194424 = 13 rows (cannot TIME_OUT on volume); (c) user reproduced same program from HQ in ~2 seconds (isolates network, not scan volume, as the decisive axis). Claim 53 stays active as LATENT defect — real code pattern bug but did not trigger this dump.",
+    "title": "Maputo field-office accountant cannot complete monthly MZN bank reconciliation 'download' — likely UBA01 rollout collateral",
+    "reporter": "Davane, Josina (FU/MAP — j.davane@unesco.org, sap bname J_DAVANE)",
+    "affected_user": "J_DAVANE",
+    "affected_user_same_as_reporter": true,
+    "received_date": "2026-04-16T14:42:27Z",
+    "analyzed_session": 57,
+    "analyzed_date": "2026-04-20",
+    "domain": "Treasury",
+    "secondary_domains": [
+      "FI",
+      "MasterDataConfig"
+    ],
+    "transactions": [
+      "YTR3"
+    ],
+    "primary_object_id": "J_DAVANE",
+    "primary_subject": "J_DAVANE monthly MZN bank reconciliation download step fails",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "bukrs_mozambique": "UNES (Maputo is NOT a dedicated BUKRS — verified via T001)",
+    "scenario": "field_office_monthly_reconciliation_download_fails_during_or_after_house_bank_migration",
+    "incident_type": "user_productivity_issue_provisional",
+    "error_messages": [],
+    "verbatim_user_description": "I am accounting difficulties in downloading MZN Bank reconciliation. It happened last month and only managed almost the end of the month.",
+    "user_term_to_sap_field_translation_table_location": "Section 1.5 of knowledge/incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md",
+    "code_validation_chain": [
+      "PROVISIONAL - no file:line code trace yet - TCODE not confirmed",
+      "Gold DB T001 — confirmed no Mozambique BUKRS (0 rows with WAERS='MZN' OR LAND1='MZ')",
+      "Gold DB T012 BANKS='MZ' — 3 rows: BST01, BST02, ECO09 (UBA01 configured 2026-04-08 per INC-000005586 retro, not yet in Gold DB extraction)",
+      "Gold DB T012K WAERS IN ('MZN','MZM') — BST01/MZM01 MZN GL 1022424, BST02/MZM01 MZM (deprecated) GL 1022814, ECO09/MZN01 MZN GL 1094424",
+      "Gold DB FEBKO_2024_2026 for MZ banks — only BST01 has data (327 rows, stopped 2025-04-17); ECO09/BST02/UBA01 have ZERO rows ever",
+      "Gold DB bseg_union HKONT IN ('0001065424','0001165424','0001065421','0001165421') — ZERO postings on UBA01 GLs despite 2026-04-08 P01 config close",
+      "Gold DB bseg_union ECO09 sub-bank (1194424/1194421) 2026 — 191 items cleared in Jan+Feb, first open sub-bank items in March (3 uncleared)",
+      "Gold DB bkpf USNAM='J_DAVANE' — 1,412 docs, all MAP-tagged, active 2024-01-15 to 2026-03-12, pattern = MIRO/FB60/FBZ2 invoice+payment accountant",
+      "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md — 6 transports, 3 OBA1 correction cycles, YBANK set transport D01K9B0F5F; P01 closed 2026-04-08 (8 days before this ticket)",
+      "knowledge/domains/Treasury/house_bank_configuration.md:43 — 'YBANK sets define which accounts are bank accounts for reporting purposes' — explicit link between GS02 sets and Report Painter output"
+    ],
+    "scope": {
+      "affected_user_count_confirmed": 1,
+      "potentially_affected_user_count": "unknown — depends on who else runs the same report / saves the same variant",
+      "mz_house_banks_in_landscape": 4,
+      "mz_bank_gls_active_2026": 4,
+      "mz_bank_gls_with_february_to_march_drop": "ECO09 MZN main 1094424 dropped from 27 Feb posts to 12 Mar posts",
+      "uba01_postings_to_date": 0,
+      "class_generalization_dark_banks": {
+        "total_unes_house_bank_accounts": 366,
+        "active_febko_feed_2026": 51,
+        "feed_stopped": 11,
+        "never_fed": 304,
+        "never_fed_with_2026_gl_posts": 78,
+        "dark_bank_class_note": "78 UNES house bank accounts have GL postings in 2026 but no MT940 feed in Gold DB (including CIT04/USD04 and SOG01/EUR01 HQ banks — extraction scoping issue likely, so this is also a KU)"
+      }
+    },
+    "fix_path": {
+      "immediate_blocking": "DO NOT deploy any fix — reply to Josina with targeted questions: (1) TCODE she ran, (2) screenshot of failure, (3) which MZ bank, (4) exact error, (5) same for colleagues",
+      "tactical_after_tcode_confirmed": [
+        "If ZCASHFODET/ZCASH: verify SETLEAF YBANK_ACCOUNTS_FO_OTH contains GL 0001065424 (UBA01 MZN) and GL 0001094424 (ECO09 MZN) via live RFC. If UBA01 missing, escalate transport.",
+        "If FBL3N: check her saved variant HKONT range includes UBA01 GL 0001065424; check her role authorizes the UBA01 GL range",
+        "If MT940 portal/FF_5: escalate bank portal team (outside SAP)"
+      ],
+      "strategic_preventive": [
+        "Create knowledge/domains/Treasury/field_office_monthly_reconciliation.md — currently undocumented",
+        "Extend Zagentexecution/mcp-backend-server-python/house_bank_compliance_checker.py with a post-transport smoke test on ZCASHFODET output for affected BUKRS+WAERS",
+        "Build Zagentexecution/quality_checks/ybank_set_coverage_check.py to verify every active house-bank GL appears in the correct YBANK_* subset (generalizes this defect class)",
+        "Decision for business: should ECO09 and UBA01 get MT940 feed like other ECO* field offices (ECO03/04/05/06/07/08 all have active feeds)?"
+      ]
+    },
+    "analysis_doc": "knowledge/incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md",
+    "intake_json": "Zagentexecution/incidents/INC-000006906_intake.json",
+    "source_eml": "C:\\Users\\jp_lopez\\Downloads\\Ticket INC-000006906_ has been assigned to you or your team_a été attribué à vous ou à votre équipe.eml",
+    "related_objects": [
+      "J_DAVANE",
+      "T001",
+      "T012",
+      "T012K",
+      "FEBKO_2024_2026",
+      "FEBEP_2024_2026",
+      "FEBRE",
+      "bseg_union",
+      "bkpf",
+      "UBA01",
+      "ECO09",
+      "BST01",
+      "BST02",
+      "ZCASHFODET",
+      "ZCASH",
+      "ZCASHFO",
+      "YBANK_ACCOUNTS_FO_OTH",
+      "YBANK_ACCOUNTS_ALL",
+      "SETLEAF",
+      "YTFI_BA_SUBST",
+      "YBASUBST",
+      "T028B",
+      "T028G",
+      "T035D",
+      "T030H",
+      "house_bank_compliance_checker.py",
+      "INC-000005586",
+      "YTR3",
+      "YTBAE002",
+      "SAPDBSDF",
+      "PUT_BSIS",
+      "BSIS",
+      "YBANK_ACCOUNTS_FO_USD",
+      "SKB1",
+      "FB08",
+      "F-04",
+      "FBRA",
+      "LDB_PROCESS",
+      "GC_MOD",
+      "Y_MESSTAB",
+      "PROC_RECONCIL_MESS_ADD",
+      "YTBAE001",
+      "YTBAE001_HR",
+      "YTBAI001",
+      "YTBAM001",
+      "YTBAM002",
+      "YTBAM002_HR",
+      "YTBAM002_HR_UBO",
+      "YTBAM003",
+      "YTBAM003_HR",
+      "YTBAM004",
+      "YTBAM004_HR",
+      "YFI_BANK_RECONCILIATION",
+      "YFI_BANK_RECONCILIATION_DATA",
+      "YFI_BANK_RECONCILIATION_SEL",
+      "YCL_FI_BANK_RECONCILIATION_BL"
+    ],
+    "related_incidents": [
+      {
+        "id": "INC-000005586",
+        "relation": "house-bank-migration-context",
+        "description": "UBA01 UBA Mozambique creation — 6 transports, P01 closed 2026-04-08, 8 days before this ticket. Retro at knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md"
+      }
+    ],
+    "related_claims": [
+      "claim-006906-mode-e-bdc-network-coupling",
+      "claim-006906-empty-range-ldb-scan-ytbae002",
+      "claim-006906-bank-not-in-ybank-set"
+    ],
+    "related_known_unknowns": [
+      "KU-new-006906-1: Which TCODE does Josina run?",
+      "KU-new-006906-2: Does UNESCO have a custom Y_* field-office reconciliation program?",
+      "KU-new-006906-3: Is FEBKO extraction gap (ECO09/CIT04/SOG01) a Gold DB issue or a real P01 gap?",
+      "KU-new-006906-4: Who else runs ZCASHFODET and what variant?",
+      "KU-new-006906-5: Is UBA01 replacing or augmenting ECO09?",
+      "KU-new-9",
+      "KU-new-10",
+      "KU-new-11",
+      "KU-new-12"
+    ],
+    "related_data_quality": [
+      "DQ-new-006906-A: T012K BST02 WAERS='MZM' deprecated currency code",
+      "DQ-new-006906-B: Gold DB FEBKO_2024_2026 lacks rows for ECO09/CIT04/SOG01/UBA01 and 75 other banks — likely extraction scoping gap",
+      "DQ-new-C_tstc_not_in_gold_db",
+      "DQ-new-D_trdir_not_in_gold_db",
+      "DQ-new-E_reposrc_not_in_gold_db"
+    ],
+    "falsification_predictions_pending": [
+      "Prediction 1: Josina runs ZCASHFODET / ZCASH-family report — falsified if she says FBL3N / Y_* / FEBAN",
+      "Prediction 2: Failure started around 2026-04-07 — falsified if her screenshot is dated before 2026-04-07",
+      "Prediction 3: UBA01 MZN GL 0001065424 is missing from YBANK_ACCOUNTS_FO_OTH in P01 — falsified if live SETLEAF RFC shows it present",
+      "Prediction 4: BST02 is dormant — falsified if any 2026 BKPF posting on GL 1022814 or 1022811"
+    ],
+    "information_gaps_blocking_finalization": [
+      "TCODE or program Josina ran",
+      "Screenshot of the failure",
+      "Exact error message if any",
+      "Which MZ bank she was reconciling",
+      "Whether any other Maputo colleague has the same problem"
+    ],
+    "evidence_extracted_this_incident": {
+      "tables_queried_not_extracted": [
+        "T001 (confirmed no MZ BUKRS)",
+        "T012 BANKS='MZ' (3 rows)",
+        "T012K WAERS IN ('MZN','MZM') (3 rows)",
+        "FEBKO_2024_2026 per bank (confirmed MZ extraction gap)",
+        "bseg_union for MZ GLs (2026 activity confirmed ECO09 active + UBA01 zero)",
+        "bkpf USNAM='J_DAVANE' (1412 docs pattern)"
+      ],
+      "code_extracted": "None — TCODE unknown, extraction deferred until user confirms",
+      "knowledge_docs_created": [
+        "knowledge/incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md"
+      ],
+      "knowledge_docs_missing_identified": [
+        "knowledge/domains/Treasury/field_office_monthly_reconciliation.md (gap — to be written)"
+      ]
+    },
+    "lessons_pending_finalization": [
+      "feedback_read_emails_in_main_agent applied: main agent parsed the .eml directly, no subagent delegation",
+      "feedback_user_term_to_sap_field_translation applied: Section 1.5 translation table prepared BEFORE any code search",
+      "feedback_process_before_root_cause applied: Section 3 'how it should work' written BEFORE Section 4 'why it fails'",
+      "feedback_brain_first_then_grep applied: brain_state.incidents, T012/T012K/FEBKO Gold DB, configuration_retros read BEFORE any code grep",
+      "feedback_brain_rebuild_after_finalized applied: rebuild NOT run — provisional state preserved"
+    ],
+    "chain_anchor_type": "provisional_data_only",
+    "chain_anchor_note": "Provisional incident — chain is Gold DB query anchors (table + filter + row count) and configuration_retros path references. NO file:line code anchors yet because TCODE is not confirmed. Will be upgraded once user provides the missing information.",
+    "chain_anchor_coverage_pct": 65,
+    "chain_audited_session": 56,
+    "next_action": "1) sap_adt_api RPY_PROGRAM_READ on YTBAE002 (+ includes + dynp) into extracted_code/CUSTOM/YTBAE002/ to anchor mechanism at TIER_1. 2) Live RFC VARI WHERE REPORT=YTBAE002 AND UNAME=J_DAVANE for her selection variant. 3) Tactical: give J_DAVANE background execution (F9) to bypass dispatcher cap for April close. 4) Strategic: promote Zagentexecution/quality_checks/ybank_set_coverage_check.py. 5) Extend Gold DB with TSTC/TRDIR/REPOSRC Y* Z* prefix. 6) Decide treasury policy: must every T012K.HKONT be in >=1 YBANK_* set?",
+    "pivoted": true,
+    "pivot_date": "2026-04-20",
+    "pivot_session": 57,
+    "pivot_source": "user_provided_ST22_dump_screenshot_2026-04-20_PM",
+    "transactions_secondary_hypothesis": [
+      "ZCASHFODET / ZCASH (Report Painter, preserved as alternate)",
+      "FBL3N (preserved as alternate)"
+    ],
+    "related_programs": [
+      "YTBAE002",
+      "SAPDBSDF"
+    ],
+    "related_tcodes": [
+      "YTR3"
+    ],
+    "related_structures": [
+      "YSFI_BANK_RECONCILIATION",
+      "YSFI_BANK_RECONCILIATION_DASH",
+      "YSFI_BANK_RECONCILIATION_DET",
+      "YTTFI_BANK_RECONCILIATION_DASH",
+      "YTTFI_BANK_RECONCILIATION_DET"
+    ],
+    "related_transports_authoring": [
+      {
+        "trkorr": "D01K9B0AJD",
+        "date": "2023-04-14",
+        "author": "N_MENARD",
+        "role": "initial skeleton"
+      },
+      {
+        "trkorr": "D01K9B0AIH",
+        "date": "2023-04-20",
+        "author": "N_MENARD",
+        "role": "main creation transport"
+      },
+      {
+        "trkorr": "D01K9B0AMV",
+        "date": "2023-05-23",
+        "author": "N_MENARD",
+        "role": "method additions + CUAD screen"
+      },
+      {
+        "trkorr": "D01K9B0AN7",
+        "date": "2023-05-25",
+        "author": "N_MENARD",
+        "role": "GET_HKONT_NAME tweaks"
+      },
+      {
+        "trkorr": "D01K9B0AN9",
+        "date": "2023-05-25",
+        "author": "N_MENARD",
+        "role": "GET_CLOPE + PREPARE_DETAILED_DATA + SET_COLUMNS"
+      },
+      {
+        "trkorr": "D01K9B0AOB",
+        "date": "2023-06-12",
+        "author": "N_MENARD",
+        "role": "late-stage fixes"
+      },
+      {
+        "trkorr": "D01K9B0AQO",
+        "date": "2023-06-20",
+        "author": "N_MENARD",
+        "role": ""
+      },
+      {
+        "trkorr": "D01K9B0ARO",
+        "date": "2023-06-21",
+        "author": "N_MENARD",
+        "role": "minor"
+      },
+      {
+        "trkorr": "D01K9B0ASU",
+        "date": "2023-06-29",
+        "author": "N_MENARD",
+        "role": "final v1"
+      },
+      {
+        "trkorr": "D01K9B0AT0",
+        "date": "2023-06-29",
+        "author": "N_MENARD",
+        "role": "final v1 parallel"
+      }
+    ],
+    "related_transports_code_frozen_since": "2023-06-29",
+    "next_validation_step": "extract_YTBAE002_source_via_sap_adt_api",
+    "gold_db_freshness_gap": {
+      "incident_window": "2026-04-13 to 2026-04-17",
+      "bkpf_cpudt_max": "2026-03-16",
+      "tbtco_strtdate_max": "2026-03-18",
+      "febko_edate_max": "2026-03-31",
+      "febko_waers_mzn_max": "2025-04-18",
+      "cdhdr_udate_max": "2026-03-16",
+      "conclusion": "Entire incident window is post-Gold-DB-extract. No TIER_1 Gold DB evidence possible for 2026-04-13..17. Live RFC required."
+    },
+    "blind_spots_identified": [
+      "YFI_BANK_RECONCILIATION source -- object exists in Gold DB cts_objects but SOURCE NOT in extracted_code (force-include required)",
+      "YCL_FI_BANK_RECONCILIATION_BL source -- same (force-include)",
+      "SNAP/SNAPT (ST22 dumps) not extracted to Gold DB",
+      "SM20 / RSAU_BUF_DATA audit log not extracted to Gold DB",
+      "STAD workload statistics not extracted to Gold DB",
+      "REPOSRC / TRDIR / REPOTEXT source code tables not in Gold DB"
+    ],
+    "data_pathology_observed": {
+      "gl_0001022424_bst01_mzn": {
+        "bsis_open_items": 686,
+        "bsas_cleared_items": 0,
+        "budat_range": "2024-01-03..2025-04-17",
+        "notes": "feed stopped 1yr ago; 0 cleared"
+      },
+      "gl_0001094424_eco09_mzn": {
+        "febko_rows_ever": 0,
+        "notes": "ECO09 has NO MT940 feed at all"
+      },
+      "bst02_mzm01": {
+        "waers": "MZM (deprecated 2006 ISO code)",
+        "gl": "0001022814",
+        "notes": "dormant but present"
+      },
+      "gl_0001065424_uba01_mzn": {
+        "postings": 0,
+        "notes": "new 2026-04-08, zero activity"
+      }
+    },
+    "j_davane_profile_pre_pivot_reconfirmed": {
+      "bkpf_total_docs": 1364,
+      "bkpf_bukrs_waers_split": {
+        "UNES/MZN": 1016,
+        "UNES/USD": 348
+      },
+      "cdhdr_total_events": 1727,
+      "cdhdr_top_tcode": "FBL3N (1449 -- her #1 transaction)",
+      "bkpf_top_tcode": "FBZ2 (560 payments)",
+      "tbtco_background_jobs": 0,
+      "febko_statement_entries": 0,
+      "last_bkpf_posting": "2026-03-12 14:37 MIRO 5100006390 MZN BKTXT=MAP INV # IN070585",
+      "interpretation": "Dialog-mode AP/AR accountant for UNES/MZN. Profile consistent with running YFI_BANK1 in dialog and exporting to Excel. Does NOT create BKPF/CDHDR when running a read-only report -- so Gold-DB \"no YFI_BANK1 trace\" is expected, not disconfirming."
+    },
+    "runtime_error": "TIME_OUT",
+    "pivot_history": [
+      {
+        "pivot": 1,
+        "date": "2026-04-20",
+        "source": "user_chat",
+        "effect": "posting to report short dump"
+      },
+      {
+        "pivot": 2,
+        "date": "2026-04-20",
+        "source": "user_chat",
+        "effect": "named YFI_BANK_RECONCILIATION as candidate"
+      },
+      {
+        "pivot": 3,
+        "date": "2026-04-20",
+        "source": "user_chat",
+        "effect": "pull J_DAVANE execution logs; Gold DB freshness gap documented"
+      },
+      {
+        "pivot": 4,
+        "date": "2026-04-20",
+        "source": "user_screenshot_ST22",
+        "effect": "RUNTIME IDENTITY CONFIRMED AT TIER_1: TCODE=YTR3, program=YTBAE002, error=TIME_OUT, form=PUT_BSIS, include=SAPDBSDF line 1983, user=J_DAVANE, 2026-04-20 13:51:49. YFI_BANK_RECONCILIATION hypothesis FALSIFIED."
+      },
+      {
+        "pivot": 5,
+        "date": "2026-04-20",
+        "source": "source_extraction",
+        "session": 57,
+        "effect": "YTBAE002 source extracted via pyrfc SNC. 3,422 lines, no INCLUDEs, no Y/Z deps. Scope via SKB1 not YBANK sets. Claim 52 falsified as causal for this incident (orthogonal). Hypothesis became empty-range-unbounded-LDB-scan at :1366 (Claim 53)."
+      },
+      {
+        "pivot": 6,
+        "date": "2026-04-20",
+        "source": "code_trace_falsification",
+        "session": 58,
+        "effect": "For J_DAVANE's plausible input ECO09/MZN01, SKB1 returns 0001194424 with XOPVW='X' → GR_SAKNR_OI non-empty → empty-range path does not fire. Live BSIS on 0001194424 = 13 rows (trivial). Claim 53 demoted to LATENT defect."
+      },
+      {
+        "pivot": 7,
+        "date": "2026-04-20",
+        "source": "user_HQ_reproduction",
+        "session": 58,
+        "effect": "FINAL ROOT CAUSE. User reproduced same program same data from HQ (fast LAN) in ~2 seconds with no dump. Isolates NETWORK as the decisive axis. Combined with source trace of MODE 'E' + four CALL TRANSACTION sites in LDB loop → root cause: YTBAE002.abap:27 GC_MOD='E'. Claim 54 added (TIER_2 confirmed code-backed). Fix written at Zagentexecution/fixes/INC-000006906/YTBAE002_fix.abap."
+      }
+    ],
+    "transactions_wrong_program_red_herring_preserved_from_pivot_2": [
+      "YFI_BANK1 -> YFI_BANK_RECONCILIATION -> YCL_FI_BANK_RECONCILIATION_BL"
+    ],
+    "related_forms": [
+      "PUT_BSIS"
+    ],
+    "termination_point": {
+      "include": "SAPDBSDF",
+      "line": 1983,
+      "form": "PUT_BSIS",
+      "screen": "SAPMSSY0 1000 line 6",
+      "workprocess_class": "DIA"
+    },
+    "event_timestamp_utc": "2026-04-20T13:51:49Z",
+    "event_client": "350",
+    "event_system": "P01",
+    "sap_note_hint_in_dump": [
+      "Database where the result set is too large",
+      "Use SELECT * INTO internal table instead of SELECT * ... ENDSELECT",
+      "Database access without suitable index"
+    ],
+    "root_cause_runtime_identity_tier": "TIER_1",
+    "root_cause_runtime_identity": "J_DAVANE ran dialog TCODE YTR3 on P01/350 at 2026-04-20 13:51:49; YTR3 invokes custom Y-program YTBAE002 which drives SAP logical database SAPDBSDF. Terminated with runtime error TIME_OUT inside form PUT_BSIS at include SAPDBSDF line 1983 (the BSIS SELECT). Evidence: user-provided ST22 screenshot.",
+    "root_cause_mechanism_tier": "TIER_2",
+    "root_cause_summary_provisional_SUPERSEDED": "PIVOTED 2026-04-20: Josina runs YFI_BANK1 (YFI_BANK_RECONCILIATION) and hits an ABAP short dump at the ALV export (\"download\") step. The program plus class YCL_FI_BANK_RECONCILIATION_BL were built 2023-04 through 2023-06 by external consultant N_MENARD in 10 transports and have had ZERO changes since 2023-06-29 -- so this is a latent data-driven defect, not a regression. Rank-1 predicted dump: COMPUTE_INT_ZERODIVIDE inside GET_DELAY/aging calc when FEBKO has no rows for the selected period/bank (ECO09/MZN01 has 0 FEBKO rows ever; BST01/MZM01 stopped 2025-04-17). Rank-2: TSV_TNEW_PAGE_ALLOC_FAILED during PREPARE_DETAILED_DATA against 686 uncleared BSIS items on GL 0001022424. Rank-3: CONVT_NO_NUMBER if WAERS=MZM (deprecated) on BST02 is touched. Rank-4: OBJECTS_OBJREF_NOT_ASSIGNED in HANDLE_USER_COMMAND on empty ALV. SECONDARY (demoted): UBA01 / YBANK_ACCOUNTS_FO_OTH set transport collateral. REQUIRES: (a) source extraction of the 4 objects via sap_adt_api; (b) live ST22 dump read for J_DAVANE 2026-04-13..17.",
+    "class_generalization": {
+      "pattern_name": "MODE 'E' + CALL TRANSACTION + BDC chain during AT LINE-SELECTION or LDB fetch (Claim 54)",
+      "affected_executables": [
+        "YTBAE002 (ACTIVE, primary case)",
+        "YTBAE001 (DORMANT, TCODE YTR1/YTR2, inherited via C_MOD → YTBAM002)",
+        "YTBAE001_HR (DORMANT, TCODE YTR2_HR, inherited via C_MOD → YTBAM002_HR)"
+      ],
+      "empty_range_pattern_name": "Empty range → unbounded LDB SDF scan (Claim 53)",
+      "empty_range_affected": [
+        "YTBAE002 ONLY"
+      ],
+      "scanned_session": 57,
+      "inventory_doc": "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md"
+    },
+    "family_inventory_doc": "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
+    "family_inventory_session": 57,
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R",
+        "B2R",
+        "P2P"
+      ]
+    }
   }
 ]

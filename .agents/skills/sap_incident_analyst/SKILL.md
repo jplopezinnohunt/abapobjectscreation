@@ -18,6 +18,10 @@ mandatory_outputs:
   - brain_v2/annotations/annotations.json + claims.json + agi/* updated
   - brain_v2/rebuild_all.py executed and validated
   - PMO ticket and follow-up known_unknowns recorded
+domains:
+  functional: [Support]
+  module: [*]
+  process: [*]
 ---
 
 # SAP Incident Analyst — Skill Reference

@@ -5,6 +5,10 @@ description: >
   validations (OB28), substitutions (OBBH/YRGGBS00), account determination,
   and the FM-FI bridge (FMIFIIT.KNBELNR = BKPF.BELNR). Key for cross-domain
   analysis: every FM posting has a corresponding FI document.
+domains:
+  functional: [FI]
+  module: [FI]
+  process: [B2R, P2P, T2R]
 ---
 
 # FI Domain Agent — Financial Accounting Specialist

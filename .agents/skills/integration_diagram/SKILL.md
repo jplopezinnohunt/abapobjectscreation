@@ -6,6 +6,10 @@ description: >
   90° connections, functional zones, and interactive click-to-inspect nodes.
   Use this skill whenever building system connectivity maps, interface diagrams, or
   architecture visualizations.
+domains:
+  functional: [Integration]
+  module: [BASIS]
+  process: []
 ---
 
 # Integration Diagram Builder

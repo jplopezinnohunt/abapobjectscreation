@@ -1,6 +1,10 @@
 ---
 name: SAP Fiori Tools — App Modification & Service Reading
 description: Guidelines for using the SAP Fiori Tools VS Code extensions and their underlying CLI tools to read Fiori app structure, visualize OData services, modify page layouts, and scaffold new applications. This is the THIRD skill pillar alongside Python RFC and ADT API.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # SAP Fiori Tools — App Modification & Service Reading

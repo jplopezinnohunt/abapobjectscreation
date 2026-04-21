@@ -5,6 +5,10 @@ description: >
   and historical views of active users (SM04), transaction usage, batch inputs (SM35),
   background jobs (SM37), runtime dumps (ST22), obsolete programs, and system health.
   Dual-channel: Python RFC (SNC/SSO) + ADT REST (HTTP Basic).
+domains:
+  functional: [Support]
+  module: [BASIS]
+  process: []
 ---
 
 # SAP System Monitor

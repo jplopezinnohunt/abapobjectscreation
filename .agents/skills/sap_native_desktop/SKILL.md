@@ -1,6 +1,10 @@
 ---
 name: SAP Native Desktop Scripting (Thick Client Fallback)
 description: Guidelines on using win32com to automate the native Windows SAP Logon Desktop Client when Web GUI fails.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # SAP Native Desktop Scripting

@@ -1,3 +1,17 @@
+---
+name: sap_payment_bcm_agent
+description: Specialized domain agent for SAP payment & BCM (Bank Communication Management) at UNESCO — F110, FBZP, house banks, payment batches, dual-control workflow 90000003, signatory rules OTYPE='RY'.
+domains:
+  functional: [BCM, Payment, Treasury]
+  module: [FI, PD]
+  process: [T2R, P2P]
+tier: project
+maturity: production
+origin_session: 20
+last_updated_session: 55
+triggers: [payments, F110, BCM, FBZP, house banks, payment methods, bank communication, advance payments, payment runs, vendor clearing, dual control, 90000003, 90000004, 90000005, CRUSR, CHUSR]
+---
+
 # SAP Payment & BCM Domain Agent
 
 ## Metadata

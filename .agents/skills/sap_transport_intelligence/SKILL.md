@@ -7,6 +7,10 @@ description: >
   Covers transport anatomy, OBJFUNC semantics, module-specific risk, Fiori domain
   objects, Security objects, artifact detection, and AI classification pipeline.
   Use this skill whenever analyzing the content or impact of any SAP transport request.
+domains:
+  functional: [Transport_Intelligence]
+  module: [CTS, BASIS]
+  process: []
 ---
 
 # SAP Transport Order Intelligence Skill

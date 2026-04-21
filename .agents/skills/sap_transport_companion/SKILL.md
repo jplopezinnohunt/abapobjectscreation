@@ -9,6 +9,10 @@ description: >
 maturity: production
 origin: Session #019 — built for D01K9B0CBF (company code copy analysis)
 depends_on: sap_transport_intelligence, sap_company_code_copy
+domains:
+  functional: [Transport_Intelligence]
+  module: [CTS]
+  process: []
 ---
 
 # SAP Transport Companion Builder Skill

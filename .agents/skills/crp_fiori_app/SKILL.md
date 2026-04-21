@@ -5,6 +5,10 @@ description: >
   Fiori application. ASR Hybrid model: Z_CRP_SRV OData for CRUD + FM validation,
   ASR framework for approval workflow (Submit→Approve→Post). 19 open implementation
   items spanning DPC_EXT, ASR service, workflow config, and infrastructure.
+domains:
+  functional: [FI, PSM]
+  module: [FI, FM]
+  process: [B2R]
 ---
 
 # CRP Fiori App — Cost Recovery Program

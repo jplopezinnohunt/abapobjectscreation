@@ -5,6 +5,10 @@ description: >
   domain entities, and their interconnections. Routes questions to domain
   agents (PSM, HCM, FI, PS, Procurement) and synthesizes cross-domain answers.
   Reads the Living Knowledge Brain before every response.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # UNESCO SAP Intelligence Coordinator

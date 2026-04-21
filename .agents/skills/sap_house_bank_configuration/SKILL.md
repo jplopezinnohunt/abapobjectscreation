@@ -7,6 +7,16 @@ description: >
   Includes automated compliance checker, cross-system comparison (D01 vs P01),
   and ECO09-proven configuration patterns.
   Discovered Session 2026-04-07 from 45-page handover procedure + real UBA01 config.
+domains:
+  functional: [Treasury]
+  module: [FI]
+  process: [T2R]
+tier: project
+maturity: production
+origin_session: 46
+last_updated_session: 48
+triggers: [house bank, T012, T012K, FI12, FS00, FBZP, UBA01, ECO09, NTB01, HBKID, BKVID, IBAN, bank key, payment program, cash management]
+subtopics: [13_config_steps, compliance_checker, cross_system_comparison_D01_P01, ECO09_benchmark]
 ---
 
 # SAP House Bank Configuration — Create / Modify / Close

@@ -1,6 +1,10 @@
 ---
 name: SAP Backend Reverse Engineering (Code Extraction)
 description: Protocol for extracting OData service logic and ABAP method source code directly from SAP via RFC.
+domains:
+  functional: [*]
+  module: [CUSTOM]
+  process: []
 ---
 
 # SAP Backend Reverse Engineering: Python RFC Protocol (Gold Truth)

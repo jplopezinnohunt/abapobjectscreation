@@ -5,6 +5,10 @@ description: >
   Applies Anthropic's Constitutional AI and prompt engineering best practices
   to produce effective, testable, and maintainable SKILL.md files for this project.
   Use this skill before writing any new SKILL.md, or when improving an existing one.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # Skill Creator — Anthropic Framework

@@ -5,6 +5,10 @@ description: >
   Knows the complete budget lifecycle: Fund Areas → Funds → Fund Centers → Commitment Items
   → Budget Lines → FM Documents. Uses the 502MB SQLite gold DB (fmifiit_full: 2.07M rows).
   Always apply WRTTP filter. Always verify column names via DD03L before querying.
+domains:
+  functional: [PSM]
+  module: [FM]
+  process: [B2R]
 ---
 
 # PSM Domain Agent — Fund Management Specialist

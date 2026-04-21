@@ -1,3 +1,11 @@
+---
+name: sap_st01_trace_reader
+domains:
+  functional: [Support]
+  module: [BASIS]
+  process: []
+---
+
 # SAP ST01 Trace Reader — Skill Reference
 
 ## Purpose

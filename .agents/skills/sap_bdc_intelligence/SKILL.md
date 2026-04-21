@@ -5,6 +5,10 @@ description: >
   Identifies Allos tool sessions vs system-generated payroll postings (Y1),
   traces session creators, decodes PROGID/FORMID patterns, and supports
   Allos replacement strategy with Fiori + BAPI alternatives.
+domains:
+  functional: [HCM, Support]
+  module: [HCM, CUSTOM]
+  process: [H2R]
 ---
 
 # SAP BDC Intelligence

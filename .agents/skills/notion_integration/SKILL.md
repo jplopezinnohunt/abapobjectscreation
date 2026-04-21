@@ -1,6 +1,10 @@
 ---
 name: Notion Integration
 description: Guidelines on how the agent should read and interact with Notion to gather project requirements and documentation.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # Notion Integration Guidelines

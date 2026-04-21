@@ -5,6 +5,10 @@ description: >
   identify mismatches (account group, house bank, flags, texts), and adjust D01 to match P01.
   Extends sap_master_data_sync with UPDATE capability (not just INSERT). Handles KTOKS, XINTB,
   HBKID, multi-language SKAT texts. Used for house bank configuration alignment.
+domains:
+  functional: [FI]
+  module: [FI]
+  process: [B2R]
 ---
 
 # SAP Account Comparison & Adjustment Between Systems

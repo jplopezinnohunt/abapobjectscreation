@@ -1,6 +1,10 @@
 ---
 name: Parallel HTML Build
 description: Protocol for building large single-file HTML/JS web applications in parallel parts to avoid LLM token limits, then joining them into one final file. Use this whenever building any complex web tool, dashboard, or HTML application.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # Parallel HTML Build Skill

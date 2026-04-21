@@ -7,6 +7,10 @@ owner: AGI-discipline
 trigger: new knowledge discovered, new pattern identified, skill creation or update needed
 author: Session #036 (2026-04-05)
 supersedes: .agents/SKILLS_CONSOLIDATION_PLAN.md (REJECTED)
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # skill_coordinator — The Skill Arsenal Guardian

@@ -5,6 +5,10 @@ description: >
   Implementations (SE20 / ENHO object type) via Python RFC, and classifying
   them by functional domain and Fiori service impact. Use this skill whenever
   you need to reverse-engineer or knowledge-capture SAP enhancements.
+domains:
+  functional: [*]
+  module: [CUSTOM]
+  process: []
 ---
 
 # SAP Enhancement Extraction & Classification

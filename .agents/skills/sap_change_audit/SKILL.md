@@ -5,6 +5,10 @@ description: >
   and CDPOS (Change Document Items). Maps SAP transaction codes to human-readable activities
   via 100+ rules. Foundation for process mining event logs and compliance auditing.
   Gold DB: CDHDR 7.8M rows (2024-2026).
+domains:
+  functional: [Support, FI]
+  module: [*]
+  process: []
 ---
 
 # SAP Change Audit — CDHDR/CDPOS Intelligence

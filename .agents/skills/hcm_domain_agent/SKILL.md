@@ -5,6 +5,10 @@ description: >
   hire → infotypes → payroll → Fiori requests → BDC sessions → offboarding.
   Knows the Allos integration (PRAAUNESC_SC BDC sessions), Coupa-HR interface,
   and all UNESCO custom Fiori apps for HR. Key replacement target: PRAAUNESC_SC (89 sessions).
+domains:
+  functional: [HCM]
+  module: [HCM, PD]
+  process: [H2R]
 ---
 
 # HCM Domain Agent — HR Specialist

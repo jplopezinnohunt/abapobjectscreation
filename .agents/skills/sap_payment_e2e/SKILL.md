@@ -1,3 +1,18 @@
+---
+name: sap_payment_e2e
+description: End-to-end payment lifecycle process mining — Invoice → Due Date → F110 → BCM → Bank File → Cleared. 1.4M events, 550K cases, 9 company codes. BCM batch tracking, FBZP validation, cycle-time analysis, company-code comparison.
+domains:
+  functional: [Payment, Treasury, BCM]
+  module: [FI]
+  process: [T2R, P2P]
+tier: project
+maturity: production
+origin_session: 20
+last_updated_session: 55
+triggers: [payment process mining, F110, BCM batch, invoice-to-payment cycle time, company code comparison, BKPF, BSAK, BSIK, REGUH, REGUP, PAYR]
+subtopics: [process_mining_1_4M_events, company_code_comparison, fbzp_chain_validation]
+---
+
 # SAP Payment E2E — Invoice to Reconciliation
 
 ## Metadata

@@ -40,6 +40,86 @@ INCIDENTS = BRAIN_V2 / "incidents" / "incidents.json"
 # Added Session #054. Governs HOW the agent decides, stores, compresses.
 # Every feedback_rule should derive_from one of these. Zero-tolerance violations.
 CORE_PRINCIPLES = BRAIN_V2 / "core_principles" / "core_principles.json"
+# LAYER 13: Turn-level interaction records. Zero-compression preserved_full_text.
+# Retros are DERIVED from this layer. Added Session #059. Source of truth for
+# reasoning paths — if the agent ended a session with a tentative hypothesis,
+# that hypothesis lives here, not only in a retro summary.
+INTERACTIONS = BRAIN_V2 / "interactions" / "interactions.json"
+# LAYER 14: Domain registry with reverse indexes. 3-axis taxonomy
+# (functional / module / process). Every domain knows its objects, claims,
+# rules, KUs, incidents, skills, companions. Added Session #059.
+DOMAINS_REGISTRY = BRAIN_V2 / "domains" / "domains.json"
+
+# Legacy single-string domain -> 3-axis domain_axes. Derived at build time;
+# does NOT mutate the source graph. Keeps objects queryable by functional
+# axis + module axis simultaneously. (Session #059)
+LEGACY_TO_AXES = {
+    "Travel": {"functional": ["Travel"], "module": ["TV", "FI", "HCM"], "process": ["H2R"]},
+    "FI": {"functional": ["FI"], "module": ["FI"], "process": ["B2R", "P2P", "T2R"]},
+    "HCM": {"functional": ["HCM"], "module": ["HCM", "PD"], "process": ["H2R"]},
+    "Treasury": {"functional": ["Treasury"], "module": ["FI"], "process": ["T2R"]},
+    "PSM": {"functional": ["PSM"], "module": ["FM"], "process": ["B2R"]},
+    "BCM": {"functional": ["BCM", "Treasury"], "module": ["FI", "PD"], "process": ["T2R"]},
+    "Payment": {"functional": ["Payment", "Treasury"], "module": ["FI"], "process": ["T2R", "P2P"]},
+    "BusinessPartner": {"functional": ["BusinessPartner", "FI"], "module": ["FI"], "process": ["P2D"]},
+    "Procurement": {"functional": ["Procurement"], "module": ["MM"], "process": ["P2P"]},
+    "Transport_Intelligence": {"functional": ["Transport_Intelligence"], "module": ["CTS", "BASIS"], "process": []},
+    "Integration": {"functional": ["Integration"], "module": ["BASIS"], "process": []},
+    "Support": {"functional": ["Support"], "module": ["BASIS"], "process": []},
+    "BI": {"functional": ["Integration"], "module": ["BI"], "process": []},
+    "CTS": {"functional": ["Transport_Intelligence"], "module": ["CTS"], "process": []},
+    "CUSTOM": {"functional": [], "module": ["CUSTOM"], "process": []},
+    "SAP_STANDARD": {"functional": [], "module": ["SAP_STANDARD"], "process": []},
+    "DATA_MODEL": {"functional": [], "module": ["DATA_MODEL"], "process": []},
+    "BASIS": {"functional": ["Support", "Integration"], "module": ["BASIS"], "process": []},
+    "TV": {"functional": ["Travel"], "module": ["TV"], "process": ["H2R"]},
+    "MM": {"functional": ["Procurement"], "module": ["MM"], "process": ["P2P"]},
+    "PS": {"functional": ["PS"], "module": ["PS"], "process": ["B2R"]},
+    "RE-FX": {"functional": ["RE-FX"], "module": ["RE"], "process": []},
+    "Output": {"functional": ["Output"], "module": ["FI"], "process": []},
+}
+
+
+def derive_domain_axes(legacy: str, object_name: str = "", domain_registry: dict = None) -> dict:
+    """Translate legacy objects[X].domain string into 3-axis dict.
+
+    Resolution order (CP-002 — non-destructive):
+      1. Functional assignment from domains.json reverse index (most specific).
+         If object_name is listed in any domain.objects[], use that domain's
+         functional axis as primary.
+      2. Legacy map (technical module -> axes).
+      3. Fallback: only the raw legacy string as module.
+    """
+    axes = {"functional": [], "module": [], "process": []}
+    # Step 1: domains.json reverse index lookup
+    if domain_registry and object_name:
+        for dom_name, d in domain_registry.items():
+            if object_name in d.get("objects", []):
+                if dom_name not in axes["functional"]:
+                    axes["functional"].append(dom_name)
+                for m in d.get("primary_modules", []):
+                    if m not in axes["module"]:
+                        axes["module"].append(m)
+                for p in d.get("primary_processes", []):
+                    if p not in axes["process"]:
+                        axes["process"].append(p)
+    # Step 2: layer on legacy map (fills modules/processes if still empty)
+    if legacy in LEGACY_TO_AXES:
+        lm = LEGACY_TO_AXES[legacy]
+        for f in lm["functional"]:
+            if f not in axes["functional"]:
+                axes["functional"].append(f)
+        for m in lm["module"]:
+            if m not in axes["module"]:
+                axes["module"].append(m)
+        for p in lm["process"]:
+            if p not in axes["process"]:
+                axes["process"].append(p)
+    elif legacy:
+        if legacy not in axes["module"]:
+            axes["module"].append(legacy)
+    return axes
+
 
 SKIP_TYPES = {
     "FUND", "FUND_CENTER", "FUND_AREA", "TRANSPORT", "CODE_OBJECT",
@@ -124,13 +204,15 @@ def detect_blind_spots(referenced_names, graph_node_names, objects):
     return blind
 
 
-def build_object_entry(node, out_edges, in_edges, annotations, claims):
+def build_object_entry(node, out_edges, in_edges, annotations, claims, domain_registry=None):
     """Build object-centric entry with all relationships inline."""
     nid = node["id"]
     name = node.get("name", "")
+    legacy_domain = node.get("domain", "")
     obj = {
         "type": node.get("type", ""),
-        "domain": node.get("domain", ""),
+        "domain": legacy_domain,
+        "domain_axes": derive_domain_axes(legacy_domain, name, domain_registry),
     }
 
     reads, calls, writes, other_out = [], [], [], []
@@ -221,6 +303,15 @@ def main():
     referenced_names = collect_referenced_names(annotations, claims, incidents_pre)
     print(f"  {len(referenced_names)} names referenced from annotations/claims/incidents")
 
+    # Pre-load Layer 14 so domain_axes derivation can use the reverse index.
+    # This makes domains.json the source of truth for object -> functional
+    # assignment (e.g., BNK_BATCH_HEADER listed in domains.BCM.objects gets
+    # functional=['BCM', 'Treasury'] even though its legacy domain is DATA_MODEL).
+    domains_registry_preload = {}
+    if DOMAINS_REGISTRY.exists():
+        reg = json.load(open(DOMAINS_REGISTRY, encoding="utf-8"))
+        domains_registry_preload = reg.get("domains", {}) if isinstance(reg, dict) else {}
+
     objects = {}
     graph_node_names = set()
     for n in nodes:
@@ -228,7 +319,7 @@ def main():
         if not is_important(n, annotations, mandatory_names=referenced_names):
             continue
         name = n.get("name", "")
-        objects[name] = build_object_entry(n, out_edges, in_edges, annotations, claims)
+        objects[name] = build_object_entry(n, out_edges, in_edges, annotations, claims, domain_registry=domains_registry_preload)
 
     # Detect blind spots: names we keep TALKING about but don't classify.
     blind_spots = detect_blind_spots(referenced_names, graph_node_names, objects)
@@ -298,6 +389,19 @@ def main():
     core_principles = load_optional(CORE_PRINCIPLES)  # LAYER 0 — constitutional
     superseded_full = [c for c in claims if c.get("claim_type") == "superseded"]
 
+    # LAYER 13: Interactions — turn-level reasoning path (session #059+).
+    # These ARE a dict with interactions/indexes, not a list. Handle both.
+    interactions_raw = {}
+    if INTERACTIONS.exists():
+        interactions_raw = json.load(open(INTERACTIONS, encoding="utf-8"))
+    interactions_list = interactions_raw.get("interactions", []) if isinstance(interactions_raw, dict) else []
+
+    # LAYER 14: Domain registry (session #059+). Reverse indexes per domain
+    # (objects, claims, rules, KUs, incidents, skills, companions).
+    domains_registry = {}
+    if DOMAINS_REGISTRY.exists():
+        domains_registry = json.load(open(DOMAINS_REGISTRY, encoding="utf-8"))
+
     # Coverage metrics — what's the brain's percent-coverage of the objects
     # it has TALKED about? This is what tells the agent at session-start
     # "you don't know what you don't know".
@@ -315,7 +419,18 @@ def main():
         )
 
     brain_state = {
-        "_design": "Object-centric knowledge graph with 13 layers (0-12). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode.",
+        "_design": (
+            "Object-centric knowledge graph with 15 layers (0-14). 1 Read = full "
+            "self-aware intelligence. Layer 0 (core_principles) added Session #054 "
+            "— constitutional tier above rules. Layer 11 (incidents) added Session "
+            "#050 to fix 'context loaded but not used' failure mode. Layer 13 "
+            "(interactions) added Session #059 — turn-level reasoning path as "
+            "source of truth, zero-compression preserved_full_text; retros are "
+            "DERIVED from this layer. Layer 14 (domains) added Session #059 — "
+            "3-axis taxonomy {functional, module, process} with reverse indexes "
+            "(objects, claims, rules, KUs, incidents, skills, companions). Every "
+            "node must carry a domain (feedback_every_node_has_domain)."
+        ),
         "_stats": {
             "core_principles": len(core_principles),
             "objects": len(objects),
@@ -329,7 +444,9 @@ def main():
             "user_questions_open": len([q for q in user_questions if q.get("status") != "ANSWERED"]),
             "data_quality_open": len([d for d in data_quality if d.get("status") == "OPEN"]),
             "superseded": len(superseded_full),
-            "session": 54,
+            "interactions": len(interactions_list),
+            "domain_layer_entries": len(domains_registry.get("domains", {})) if isinstance(domains_registry, dict) else 0,
+            "session": 59,
         },
         # LAYER 0: Core principles — constitutional tier above all rules/claims.
         # Governs HOW the agent decides, stores, compresses. Zero-tolerance
@@ -370,6 +487,23 @@ def main():
         # read this at session start and treat MISSING flavor entries as
         # extraction-priority work, GHOST entries as filter-tuning work.
         "blind_spots": blind_spots,
+        # LAYER 13: Interactions — turn-level reasoning path. Zero-compression
+        # preserved_full_text. Every substantive agent<->user turn (hypothesis,
+        # correction, claim draft, decision, user pushback, user knowledge
+        # contribution) is a first-class record here. Session retros are
+        # DERIVED from this layer, not the other way around. Source of truth
+        # for reasoning path. Established Session #059.
+        # Rule: feedback_capture_interaction_layer (CRITICAL, derives CP-002).
+        "interactions": interactions_list,
+        # LAYER 14: Domains — 3-axis registry {functional / module / process}
+        # with reverse indexes per domain (objects, claims, rules, KUs,
+        # incidents, skills, companions, coverage_pct, last_session_touched).
+        # Routing substrate: knowledge IN (tag-on-write) and knowledge OUT
+        # (query-by-domain) use the same index. Every node must carry a
+        # domain (feedback_every_node_has_domain). Established Session #059.
+        # See brain_v2/domains/domains.json for the full registry incl.
+        # session_activation_hints + process_map + module_map.
+        "domains_layer": domains_registry,
         "_coverage": coverage,
     }
 
@@ -388,6 +522,9 @@ def main():
           f"({coverage['names_classified']}/{coverage['names_referenced']} referenced names classified)")
     print(f"  Blind spots: {coverage['blind_spots_total']} "
           f"(ghosts={coverage['blind_spots_ghosts']}, missing={coverage['blind_spots_missing']})")
+    print(f"  Layer 13 interactions: {len(interactions_list)}")
+    n_dom = len(domains_registry.get('domains', {})) if isinstance(domains_registry, dict) else 0
+    print(f"  Layer 14 domains registry: {n_dom} entries")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,10 @@
 ---
 name: SAP Fiori Extension Architecture Discovery
 description: Protocol for discovering how any SAP standard Fiori app is protected (frontend UI5/BSP layer and backend OData layer) and identifying the valid extension points. Use this before modifying, extending, or cloning any Fiori app.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # SAP Fiori Extension Architecture Discovery Skill

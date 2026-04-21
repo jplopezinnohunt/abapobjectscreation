@@ -1,6 +1,10 @@
 ---
 name: SAP Core Expert Knowledge
 description: Comprehensive expert guidelines for SAP Configuration (FI, Public Sector), ABAP Development, Workflows, and OData/Gateway Services.
+domains:
+  functional: [*]
+  module: [*]
+  process: [*]
 ---
 
 # SAP Core Expert Knowledge Base

@@ -1,6 +1,10 @@
 ---
 name: abapGit Integration
 description: Guidelines on how the agent should commit generated ABAP objects to version control using abapGit.
+domains:
+  functional: [*]
+  module: [CTS, CUSTOM]
+  process: []
 ---
 
 # abapGit Integration

@@ -1,6 +1,10 @@
 ---
 name: SEGW Automation (DEPRECATED)
 description: Merged into sap_segw skill. See .agents/skills/sap_segw/SKILL.md.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # DEPRECATED — Merged into `sap_segw`

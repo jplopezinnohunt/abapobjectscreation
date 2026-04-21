@@ -1,6 +1,10 @@
 ---
 name: SAP Automated OData Testing
 description: Protocol for mathematically verifying the successful generation and activation of OData services in SAP Gateway.
+domains:
+  functional: [*]
+  module: [*]
+  process: []
 ---
 
 # SAP Automated OData Testing
