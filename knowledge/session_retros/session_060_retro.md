@@ -90,3 +90,32 @@ Not in PMO — flagged here for visibility only:
 One file on disk changed by this session: `companions/payment_bcm_companion.html`. Other modified files in the working tree (`brain_v2/*`, `.agents/skills/hcm_domain_agent/SKILL.md`, `.agents/skills/sap_fiori_extension_architecture/SKILL.md`) are carryover from prior sessions and are **not** part of this commit — scoping narrowly to avoid mixing unrelated work.
 
 Memory files live outside the repo (`~/.claude/projects/.../memory/`) and are not git-tracked here.
+
+---
+
+## 8. Post-close learnings pass (what we can do better)
+
+Added after initial retro, explicit user request: "do the learnings and any adjustment and what we can do better."
+
+**Root-cause analysis of this session's friction:**
+
+1. **Library gap flagged too late (5 rounds of silent approximation).** User's spec vocabulary was React Flow from round 1 (`fitView({padding})`, `labelShowBg`, `type: 'smoothstep'`, `sourceHandle`, `EdgeLabelRenderer`). The impl is vis-network. I translated and approximated through rounds 2–6 before surfacing the structural mismatch in round 7. The tell — vocabulary — was present immediately. Cost: user saw "still not right" three times when the blocker was structural, not parametric.
+
+2. **Applied user-supplied edge label without semantic check.** `"LAUFI≠0/TM"` for edge `10→18` contradicts the original data `"LAUFI=0/T/M"` (Direct Pay IS taken when prefix = 0/T/M). A 1-line probe in the moment ("original says =, you wrote ≠; intentional or typo?") would have prevented shipping a potentially-inverted label.
+
+3. **Scope creep proposals.** Mid-session I pitched replicating the aesthetic to p2p/payment_process_mining/bank_statement/H2R companions. User's actual ask was "fix THIS diagram." Suggestions should arrive after current work lands, not during it.
+
+4. **Tool-use inefficiency.** First Grep for the flow title timed out against the whole repo; second attempt scoped to `companions/` worked. Should have scoped narrowly from the first call.
+
+**Three new memories written (persistent rules):**
+- `feedback_two_round_library_gap_rule.md` — two rounds of "still X" on the same visual axis triggers escalation to structural/library question. No third round of parameter tweaks.
+- `feedback_validate_user_value_vs_data.md` — before applying any user-supplied value that has an existing counterpart in data, compare the two and flag contradictions in the moment (CP-003 derivative).
+- `feedback_flow_diagram_react_flow_vocab.md` (written at initial close) — on process-flow diagram work, React Flow spec vocabulary needs the library-gap probe up front; default to React Flow for new flow diagrams going forward.
+
+**What the next agent should do differently on this file:**
+- **Before any edit:** open the file, name the library out loud, calibrate spec-vocabulary expectations. One sentence.
+- **After any round-2 "still X":** do not apply the next tweak. Surface the structural question in one sentence: "vis-network can't produce <specific feature> — (A) approximate, (B) migrate to React Flow. Which?"
+- **On user-supplied values with data counterparts:** probe the delta in one line before applying. Cost is cheap; the alternative is carrying a latent defect into the retro verification step.
+- **Scope discipline:** park replication/follow-up ideas in a "pending after current item" note. Pitch them only when the current artifact is confirmed correct by the user.
+- **Concrete next-session ask on this specific companion:** confirm the `10→18` label `"LAUFI≠0/TM"` is intentional or should be `"LAUFI=0/TM"` (positive form matching original data).
+
