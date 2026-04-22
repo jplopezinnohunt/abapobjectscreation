@@ -30,7 +30,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
 .info{background:#12293e;border:1px solid #1abc9c;border-radius:6px;padding:12px;margin:8px 0;color:#a9cce3}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-#flowCanvas{width:100%;height:520px;border:1px solid #1e3a4a;border-radius:8px;background:#12202e}
+#flowCanvas{width:100%;height:760px;border:1px solid #1e3a4a;border-radius:8px;background:#12202e}
 .wf-box{border:2px solid #1abc9c;border-radius:8px;padding:16px;background:#12293e;margin-bottom:12px}
 .wf-box h4{color:#1abc9c;font-size:12px;margin-bottom:8px}
 .fm-card{background:#0d1c28;border:1px solid #1e3a4a;border-radius:6px;padding:10px;margin:4px 0}
@@ -96,6 +96,7 @@ code{background:#12202e;padding:1px 4px;border-radius:3px;font-family:monospace;
     FI (blue) = Invoice posting &nbsp;|&nbsp; WF (green) = Workflow release &nbsp;|&nbsp; F110 (purple) = Payment program &nbsp;|&nbsp;
     DMEE (teal) = XML generation &nbsp;|&nbsp; BCM (orange) = Bank Communication Mgmt &nbsp;|&nbsp;
     SWIFT (red) = Bank transfer &nbsp;|&nbsp; Recon (gray) = Reconciliation &nbsp;|&nbsp; FO (yellow) = Field office path
+    <br><em style="color:#7fb3d3">Layout: Row 1 (top) L&rarr;R invoice&rarr;proposal &middot; Row 2 (middle) R&larr;L payment run&rarr;BCM release &middot; Row 3 (bottom) L&rarr;R SWIFT&rarr;reconciled. Side branches: Direct Pay (no BCM) and Method O (field office). Dashed = conditional/alternative. Hover a node for details.</em>
   </div>
   <div class="alert">
     <strong>&#9888; Field Office Exception (Method O):</strong> Invoices with Payment Method O bypass both HQ Workflow AND the HQ F110 run.
@@ -1468,23 +1469,124 @@ const groupColors = {
   fo:     { color: { background:'#4a4a00', border:'#f1c40f' }, font: { color:'#fff' } },
 };
 
+// Exact coordinates per user spec (2026-04-22, rev 2 — wider spacing).
+const snakePositions = {
+  1:  { x:   50, y: 200 },  // Invoice Posted
+  2:  { x:  320, y: 200 },  // Payment Block Set
+  3:  { x:  590, y: 200 },  // WF Started WS90000003
+  4:  { x:  590, y:  30 },  // Certifying Officer?   (fork UP, same X as WF Started)
+  5:  { x:  590, y: 370 },  // Group Validator       (fork DOWN, same X as WF Started)
+  6:  { x:  930, y: 200 },  // WF Approved
+  7:  { x: 1200, y: 200 },  // F110 Run
+  8:  { x: 1470, y: 200 },  // Payment Proposal
+  9:  { x: 1470, y: 580 },  // Payment Run           (row 2 R->L)
+  10: { x: 1200, y: 580 },  // DMEE XML Build
+  11: { x:  930, y: 580 },  // BCM Batch
+  12: { x:  660, y: 580 },  // BCM Release 1
+  13: { x:  390, y: 580 },  // BCM Release 2
+  14: { x:  390, y: 940 },  // SWIFT File            (row 3 L->R)
+  15: { x:  660, y: 940 },  // Bank Executes
+  16: { x:  930, y: 940 },  // Bank Statement
+  17: { x: 1200, y: 940 },  // Reconciled
+  18: { x:  930, y: 760 },  // Direct Pay (no BCM)
+  19: { x:  320, y: 370 },  // Method O Field Office (near Payment Block Set / below)
+};
+
+// Dashed styling for conditional/alternative paths (keeps data array untouched)
+const altPathEdges = { '1->19': true, '10->18': true, '18->14': true };
+
+// Explicit edge labels per spec — only these 8 edges show labels; others render clean.
+const edgeLabels = {
+  '3->4':   'KR/KA/MT/EOY',
+  '3->5':   'Other doc types',
+  '4->6':   'CO approves',
+  '5->6':   'Group approves',
+  '1->19':  'Meth=O',
+  '10->18': 'LAUFI≠0/TM',   // BCM Batch diversion → Direct Pay
+  '13->14': 'Release 2',
+  '18->14': 'Direct'            // Direct Pay → downstream (SWIFT/Bank Exec)
+};
+
 const vis_nodes = new vis.DataSet(nodes_data.map(function(n) {
   const gc = groupColors[n.group] || {};
-  return Object.assign({}, n, gc, { shape: 'box' });
+  const pos = snakePositions[n.id] || {};
+  const boldLabel = '<b>' + String(n.label).replace(/\n/g, '</b>\n<b>') + '</b>';
+  return Object.assign({}, n, gc, {
+    shape: 'box',
+    label: boldLabel,
+    x: pos.x, y: pos.y,
+    fixed: { x: true, y: true }
+  });
 }));
-const vis_edges = new vis.DataSet(edges_data);
+
+const vis_edges = new vis.DataSet(edges_data.map(function(e) {
+  const key = e.from + '->' + e.to;
+  // Wrap label in <b> for fontWeight: 600 equivalent (vis renders bold via multi:true)
+  var lbl = edgeLabels[key] || '';
+  if (lbl) lbl = '<b>' + lbl + '</b>';
+  const base = Object.assign({}, e, { label: lbl });
+  if (altPathEdges[key]) {
+    return Object.assign(base, {
+      dashes: true,
+      color: { color: '#90a4ae', highlight: '#ffd700', hover: '#ffd700' }
+    });
+  }
+  return Object.assign(base, {
+    dashes: false,
+    color: { color: '#4fc3f7', highlight: '#ffd700', hover: '#ffd700' }
+  });
+}));
 
 const container = document.getElementById('flowCanvas');
 const network = new vis.Network(container, { nodes: vis_nodes, edges: vis_edges }, {
-  layout: { hierarchical: { direction: 'LR', sortMethod: 'directed', levelSeparation: 160, nodeSpacing: 70 } },
+  layout: { randomSeed: 2 },
   physics: { enabled: false },
-  edges: { smooth: { type: 'cubicBezier', forceDirection: 'horizontal' },
-           color: '#7fb3d3', font: { color: '#ccc', size: 9 },
-           arrows: { to: { scaleFactor: 0.6 } } },
-  nodes: { borderWidth: 2, font: { size: 11, multi: true }, shape: 'box',
-           widthConstraint: { minimum: 80, maximum: 110 } },
-  interaction: { hover: true, tooltipDelay: 100 },
+  edges: {
+    width: 2.5,
+    // Straight grid-aligned routing — closest vis approximation of smoothstep orthogonal.
+    // Most edges here are already horizontal (same Y) or vertical (same X), so straight
+    // lines read like clean orthogonal routes. Rounded 90° bends need custom renderer.
+    smooth: { enabled: false },
+    color: { color: '#4fc3f7', highlight: '#ffd700', hover: '#ffd700' },
+    font: {
+      size: 11,
+      color: '#add8e6',
+      strokeWidth: 0,
+      background: '#0d1b2a',
+      face: 'Segoe UI',
+      align: 'top',    // labelStyle off-line equivalent — above the edge midpoint
+      vadjust: -12,    // extra push upward so badges float above the line
+      multi: true,
+      bold: { color: '#add8e6', size: 11, face: 'Segoe UI', mod: 'bold' }
+    },
+    arrows: { to: { enabled: true, type: 'arrow', scaleFactor: 0.9 } }
+  },
+  nodes: {
+    borderWidth: 2,
+    shape: 'box',
+    font: {
+      size: 15,
+      multi: true,
+      align: 'center',
+      color: '#fff',
+      face: 'Segoe UI',
+      bold: { color: '#fff', size: 15, face: 'Segoe UI', mod: 'bold' }
+    },
+    widthConstraint: 180,
+    heightConstraint: { minimum: 80, valign: 'middle' },
+    margin: 14
+  },
+  interaction: { hover: true, tooltipDelay: 100, minZoom: 0.4, maxZoom: 2.5, zoomView: true, dragView: true },
 });
+
+// fitView({ padding: 0.1 }) equivalent — scale to (1 - 2*0.1) = 0.80 of natural fit.
+function fitFlow() {
+  network.fit({ animation: false });
+  var s = network.getScale();
+  network.moveTo({ scale: s * 0.80, animation: false });
+}
+network.once('afterDrawing', fitFlow);
+window.addEventListener('resize', fitFlow);
 </script>
 </body>
 </html>
