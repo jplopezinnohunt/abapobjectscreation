@@ -34,7 +34,7 @@
 <body>
 <header>
   <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:14px;color:#7fb3d3">v1.0</span></h1>
-  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 16:58</div>
+  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 17:02</div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target DMEE trees</div></div>
     <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes probed (P01)</div></div>
@@ -100,7 +100,7 @@
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 16:58 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 17:02 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
@@ -682,6 +682,73 @@ Phase 5 cutover (Nov 2026):
 | 4 | F110 test: V000 (live) vs V001 (test) parallel runs | 2 files per batch during testing window |
 
 **Phase 2 compressed to 4 weeks, ZERO ABAP, version-safe rollback path end-to-end**.
+
+### Finding L — Custom ABAP must be version-aware (user-raised 2026-04-24)
+
+User directive: *"el código abap custom debe reconocer las versiones"*.
+
+**SAP-native versioning reality**: the BAdI `IF_IDFI_CGI_DMEE_COUNTRIES-&gt;GET_VALUE` **does NOT receive a VERSION parameter**. When DMEE activates V001, SAP traverses V001 nodes — the BAdI sees the nodes of the ACTIVE version but without explicit version context. Most BAdI logic is inherently version-scoped (because the nodes it receives come from the active version's DMEE_TREE_NODE rows).
+
+**But there is one case where version-awareness matters**: stateful BAdI with cross-WHEN buffer variables. Our `YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT` does exactly this:
+
+```abap
+" V000 behavior: name &gt; 35 chars → save overflow in mv_cdtr_name buffer
+" then at StrtNm node → prepend buffer to c_value
+WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;Nm&gt;'.
+  mv_cdtr_name = c_value.
+  ...
+WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   ← corrupts real structured street in V001!
+  ENDIF.
+```
+
+**In V001 (structured mode)**, StrtNm gets a REAL street value from FPAYP-REF01 (or similar). The BAdI's overflow-prepend would corrupt it. This is THE version-awareness issue in our stack.
+
+#### Resolution patterns
+
+**Pattern A (RECOMMENDED) — structure-aware, not version-aware**:
+
+```abap
+WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.                 "V001 guard — only prepend if StrtNm source is empty"
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.  "V000 legacy behavior preserved"
+  ENDIF.
+  IF c_value+70 IS NOT INITIAL.
+    CLEAR c_value+70.
+  ENDIF.
+```
+
+- 1-2 line change, backward-compatible, reviewer N_MENARD only validates 3 lines
+- No DMEE VERSION parameter needed (doesn't exist in BAdI signature)
+- Works across all current + future DMEE versions
+
+**Pattern B — Separate tree IDs**: `/SEPA_CT_UNES` (V000) + `/SEPA_CT_UNES_V2` (new tree). BAdI checks `I_TREE_ID` for overflow hack. Zero ABAP change but duplicates trees (no atomic version-activation benefit).
+
+**Pattern C — Dynamic version detection in BAdI**: `SELECT SINGLE EX_STATUS FROM DMEE_TREE_HEAD WHERE TREE_ID = X AND EX_STATUS = 'A'` per call. Per-node DB overhead → rejected for performance.
+
+**Recommendation**: Pattern A.
+
+#### Design consequence — ONE ABAP change IS needed
+
+Revising earlier claim of "ZERO ABAP needed" for Phase 2. **Pattern A fix to `YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT` is required** to make the existing BAdI structure-aware (safe across V000 and V001). This:
+- Unblocks Phase 2 Week 2-3 (CGI + CITI + SEPA V001 deployment can proceed)
+- Respects SAP-native versioning
+- Requires D01 retrofit of the 5 P01-only objects FIRST (Finding I blocker still holds)
+- Reviewer = N_MENARD (class owner, Finding C)
+- One transport `D01K-BADI-FIX-01` with 1 method + 3 lines changed
+
+#### Broader principle — stateful BAdI buffers must be idempotent across structure variants
+
+Added as a design rule for future DMEE work at UNESCO:
+- Any BAdI with MEMBER/GLOBAL buffers shared across nodes (like `mv_cdtr_name`, `mv_fpayh`) must guard buffer write-back with "is target value already populated?" checks
+- Structure-aware &gt; version-aware (fewer params, more resilient)
+- Applies to existing ZDMEE_EXIT_SEPA_21 + Z_DMEE_EXIT_TAX_NUMBER — need a quick audit of each for similar statefulness
 
 ### Remaining unknowns for this design
 
