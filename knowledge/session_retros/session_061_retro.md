@@ -108,3 +108,78 @@ This session touches 3 files:
 No skill edits, no rule changes, no claim additions, no incident writes.
 
 Stored at `knowledge/session_retros/session_061_retro.md`.
+
+---
+
+## Phase 2 — BCM routing TIER_1 finding (commit `e849dd0`)
+
+**Trigger:** User pushback on session #060's closing claim that `LAUFI suffix B ↔ BCM` was the routing rule. Exact words: *"Lero en la tabla REGUH deberia haber algo mas que el SUFIJO B....DEbe habcer una marca, y debe haber in tabla en BCM que relaciona con Laufy"* — correct instinct.
+
+### Discovery path
+1. **Gold DB existing REGUH was sparse** — 8 columns only (keys + house bank), no `RZAWE` (payment method). Could not answer causal question from local data alone.
+2. **P01 RFC re-extraction** — wrote `extract_payment_process_full.py` under `Zagentexecution/sap_data_extraction/scripts/` (gitignored). Pulled full REGUH 15 months (505,636 rows, 9,163 distinct runs), T042Z, T042E, T042, BNK_BATCH_HEADER/ITEM, REGUV 28 months (16,142 runs), PAYR, REGUA, REGUS. User-authorized ("ejecuta") after initial sandbox denial.
+3. **First hypothesis T042Z.XBKKT** — partial match: `XBKKT='' → 0/2,941 BCM` (100% clean negative cut) but `XBKKT='X' → 1,045/6,222 BCM` (16.8%, not sufficient).
+4. **Second hypothesis REGUV.X_WF_ACTIVE** — falsified: flag never set in 16,142 runs. UNESCO does not use the SAP-standard workflow activation flag.
+5. **SAP blog research** — `WebSearch` + SAPinsider article surfaced the real mechanism: **tcode `OBPM5`**, table **`TFIBLMPAYBLOCK`**, wildcard identifier + `XBATCH='X'` checkbox.
+6. **P01 RFC confirmation** — extracted TFIBLMPAYBLOCK (2 rows total):
+   - `MANDT=350, LAUFK=' ', LAUFI='*', XBATCH='X'` — all F110 runs to BCM
+   - `MANDT=350, LAUFK='P', LAUFI='*', XBATCH='X'` — all Payroll runs to BCM
+
+### Causal rule (claim #65 TIER_1)
+
+```
+F110 run (LAUFD, LAUFI, ZBUKR)
+  → Match LAUFI against TFIBLMPAYBLOCK (wildcard * → always match at UNESCO)
+  → Payment method must be DMEE (T042Z.XBKKT='X') — 100% clean filter
+  → Co code must not be ICTP (0/603 runs ever went BCM — structural exclusion)
+  → BCM grouping rule matches → assigns one of 14 UNESCO RULE_IDs
+  → BNK_BATCH_HEADER + BNK_BATCH_ITEM created
+```
+
+Observed `LAUFI suffix B` pattern from session #060 is a **symptom** of UNESCO F110-variant naming convention combined with OBPM5 wildcard match, NOT a SAP routing rule.
+
+### SAP learnings captured (Phase 4b)
+
+- **TFIBLMPAYBLOCK is the BCM entry-point config** (tcode OBPM5). 4 columns: MANDT, LAUFK, LAUFI-pattern, XBATCH flag. UNESCO has only 2 rows (wildcard for F110 + Payroll).
+- **T042Z.XBKKT = "use bank transfer"** flag is the DMEE filter. XBKKT='' (cheque/cash) is a 100% hard negative cut for BCM.
+- **REGUV.X_WF_ACTIVE is NOT used at UNESCO** — never set despite being SAP-standard workflow activation flag. UNESCO uses WS90000003 wired at event level instead.
+- **BCM pool/cluster tables inaccessible via RFC_READ_TABLE**: T74F_*, BNK_PAYM_FILE, BNK_BATCH_STATUS, BNK_APL_*, FPAYH, FDTA all return TABLE_NOT_AVAILABLE. For future deep-dive: custom RFC function module or Z program required.
+- **14 UNESCO BCM RULE_IDs** observed: UNES_AP_ST (8195), UNES_TR_TR (4305), PAYROLL (3518), UNES_AP_10 (2488), IIEP_AP_ST (2099), UNES_AR_BP (1585), UBO_AP_MAX (1337), UNES_AP_EX (1121), UIS_AP_MAX (938), UNES_AP_IK (505), UIL_AP_ST (435), UIS_AP_ST (420), UBO_AP_ST (359), UNES_AP_11 (138).
+
+### Artifacts
+
+- `companions/payment_bcm_companion.html` — tooltips nodes 7/11/18 updated with causal rule; edgeLabels `10→11`="OBPM5 + BCM rule", `10→18`="No BCM rule match" (the inverted "LAUFI≠0/TM" I had applied verbatim in session #060 is now corrected — catches the exact defect that feedback memory `feedback_validate_user_value_vs_data.md` predicts).
+- `brain_v2/claims/claims.json` — claim #65 TIER_1 added with 5 evidence items (Gold DB query, RFC extraction, 2 external SAP blog refs, falsification record).
+- `Zagentexecution/sap_data_extraction/extracted_data/payment_process_full/TFIBLMPAYBLOCK_full.json` — raw evidence (gitignored).
+- Extraction + analysis scripts under `Zagentexecution/sap_data_extraction/scripts/` (all gitignored).
+
+### Verification check (Principle 8) — Phase 2
+
+**Assumption probed in-session:** I proposed multiple times that a single flag in REGUV or REGUH would explain BCM routing (first XBKKT, then X_WF_ACTIVE). Both wrong as complete explanations. User's pushback ("NO PUEDE SER QUE NO LO SEPAS") forced me to search external documentation rather than continue brute-force querying. The SAP blog path closed the loop in <30 minutes what local data alone couldn't.
+
+**Lesson:** when an SAP config question lands, spend the first 5 minutes on official SAP Community / SAPinsider for the tcode pattern BEFORE building extraction queries. Avoids 2 hours of "try flag X then flag Y" on Gold DB.
+
+### Detour reverted
+
+User course-corrected away from an attempted extension that added a `BOR Authorize` node (UI Step 5 from a screenshot of an unrelated approval-routing workflow) to the BCM diagram. Reverted in-session; the payment_bcm_companion.html scope stays on F110→BCM→XML.
+
+### Commit
+
+`e849dd0` — `Session #61: BCM routing TIER_1 finding (OBPM5 / TFIBLMPAYBLOCK)`. Includes claim #65 plus carryover of claims #55-64 from prior sessions that were staged but never committed.
+
+### Phase 4b SAP learnings — captured above (NOT N/A this time)
+
+This was a SAP-deep session. Learnings explicit:
+1. TFIBLMPAYBLOCK / OBPM5 is the BCM routing entry point
+2. T042Z.XBKKT is the DMEE/transfer-PM filter
+3. REGUV.X_WF_ACTIVE unused at UNESCO
+4. BCM pool tables require non-RFC access (custom FM or Z program)
+5. 14 UNESCO BCM RULE_ID names observed
+
+### Open follow-ups
+
+- **Extract T74F_* BCM grouping rule detail** — needs custom RFC FM (candidates: `BNK_BATCH_GET_DETAILS` or similar) OR Z program deployment D01→P01. Would close the 16.8% variance within XBKKT='X' by showing exact criteria per RULE_ID.
+- **Physical XML file traceability** — BNK_PAYM_FILE + FPAYH/FDTA inaccessible via RFC. Same solution path.
+- **REGUP (payment line items)** — NOT extracted this session. Would answer per-invoice BCM routing. ~10× REGUH volume, ~8h overnight if needed.
+- **Confirm UNESCO BCM grouping rule definitions** with functional owner (N_MENARD or Finance team) — rule NAMES are descriptive but criteria formal spec would supersede inference.
+
