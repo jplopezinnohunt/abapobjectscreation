@@ -882,7 +882,8 @@ TABS = [
 
 def build():
     tabs_nav = "\n".join(
-        f'<div class="tab{" active" if i == 0 else ""}" onclick="show(\'{tid}\', this)">{label}</div>'
+        f'<div class="nav-item{" active" if i == 0 else ""}" onclick="show(\'{tid}\', this)" data-full="{label}" data-short="{label.split(chr(183))[0].strip()[:3] if chr(183) in label else label[:3]}">'
+        f'<span class="nav-label">{label}</span></div>'
         for i, (tid, label, _) in enumerate(TABS)
     )
     tabs_content = "\n".join(
@@ -896,20 +897,37 @@ def build():
 <meta charset="UTF-8">
 <title>UNESCO BCM Structured Address Change — {VERSION}</title>
 <style>
+  * {{ box-sizing: border-box; }}
   body {{ font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; margin: 0; background: #0a1520; color: #d6e5f5; font-size: 13px; line-height: 1.5; }}
-  header {{ background: #0c1926; padding: 20px 32px; border-bottom: 2px solid #1e3a4a; }}
-  h1 {{ margin: 0; font-size: 22px; color: #7fb3d3; }}
-  .sub {{ font-size: 12px; color: #5d7a92; margin-top: 6px; }}
-  .kpis {{ display: flex; gap: 24px; margin-top: 16px; }}
-  .kpi {{ background: #12202e; padding: 10px 16px; border-radius: 6px; border: 1px solid #1e3a4a; }}
-  .kpi .val {{ font-size: 20px; font-weight: 600; color: #7fb3d3; }}
-  .kpi .lbl {{ font-size: 11px; color: #5d7a92; }}
-  .tabs {{ display: flex; flex-wrap: wrap; background: #0c1926; padding: 0 32px; border-bottom: 2px solid #1e3a4a; overflow-x: auto; }}
-  .tab {{ padding: 12px 16px; cursor: pointer; border-bottom: 3px solid transparent; color: #8fa9be; white-space: nowrap; font-size: 12px; }}
-  .tab:hover {{ color: #7fb3d3; }}
-  .tab.active {{ border-bottom: 3px solid #1abc9c; color: #1abc9c; }}
-  .content {{ display: none; padding: 24px 32px; max-width: 1400px; }}
+  header {{ background: #0c1926; padding: 16px 32px; border-bottom: 2px solid #1e3a4a; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 20px; }}
+  .header-title {{ flex: 1; }}
+  h1 {{ margin: 0; font-size: 18px; color: #7fb3d3; }}
+  .sub {{ font-size: 11px; color: #5d7a92; margin-top: 4px; }}
+  .hamburger {{ cursor: pointer; padding: 8px 12px; background: #12202e; border: 1px solid #1e3a4a; border-radius: 6px; color: #1abc9c; font-size: 18px; line-height: 1; user-select: none; }}
+  .hamburger:hover {{ background: #1e3a4a; }}
+  .kpis {{ display: flex; gap: 12px; flex-wrap: wrap; }}
+  .kpi {{ background: #12202e; padding: 6px 10px; border-radius: 4px; border: 1px solid #1e3a4a; }}
+  .kpi .val {{ font-size: 14px; font-weight: 600; color: #7fb3d3; }}
+  .kpi .lbl {{ font-size: 10px; color: #5d7a92; }}
+
+  .layout {{ display: flex; min-height: calc(100vh - 70px); }}
+
+  /* Left sidebar — vertical, collapsible */
+  .sidebar {{ width: 260px; background: #0c1926; border-right: 2px solid #1e3a4a; padding: 16px 0; transition: width 0.25s ease; overflow-y: auto; flex-shrink: 0; position: sticky; top: 70px; height: calc(100vh - 70px); }}
+  .sidebar.collapsed {{ width: 56px; }}
+  .nav-item {{ padding: 12px 20px; cursor: pointer; color: #8fa9be; font-size: 13px; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.15s, color 0.15s, border-left 0.15s; display: flex; align-items: center; }}
+  .nav-item:hover {{ color: #7fb3d3; background: #12202e; }}
+  .nav-item.active {{ color: #1abc9c; background: #12202e; border-left: 3px solid #1abc9c; font-weight: 600; }}
+  .sidebar.collapsed .nav-label {{ opacity: 0; pointer-events: none; width: 0; }}
+  .sidebar.collapsed .nav-item {{ padding: 12px 0; justify-content: center; }}
+  .sidebar.collapsed .nav-item::before {{ content: attr(data-short); color: inherit; font-weight: 700; font-size: 11px; }}
+  .nav-label {{ transition: opacity 0.2s; }}
+
+  /* Main content area */
+  .main {{ flex: 1; padding: 24px 32px; max-width: 100%; min-width: 0; overflow-x: auto; }}
+  .content {{ display: none; }}
   .content.visible {{ display: block; }}
+
   .section {{ background: #12202e; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #1e3a4a; }}
   .section h3 {{ margin-top: 0; color: #1abc9c; font-size: 16px; }}
   .section h4 {{ color: #7fb3d3; font-size: 13px; margin-top: 18px; }}
@@ -921,32 +939,49 @@ def build():
   pre {{ background: #0c1926; padding: 12px; border-radius: 6px; border: 1px solid #1e3a4a; overflow-x: auto; font-size: 11px; color: #d6e5f5; }}
   a {{ color: #7fb3d3; }}
   ul li {{ margin-bottom: 4px; }}
+
+  @media (max-width: 900px) {{
+    .sidebar {{ width: 56px; }}
+    .sidebar .nav-label {{ opacity: 0; width: 0; }}
+    .sidebar .nav-item {{ padding: 12px 0; justify-content: center; }}
+    .sidebar .nav-item::before {{ content: attr(data-short); color: inherit; font-weight: 700; font-size: 11px; }}
+    .kpis {{ display: none; }}
+  }}
 </style>
 </head>
 <body>
 <header>
-  <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:14px;color:#7fb3d3">{VERSION}</span></h1>
-  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built {BUILD_TS}</div>
+  <div class="hamburger" onclick="toggleSidebar()" title="Collapse/expand menu">&#9776;</div>
+  <div class="header-title">
+    <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:12px;color:#7fb3d3">{VERSION}</span></h1>
+    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built {BUILD_TS}</div>
+  </div>
   <div class="kpis">
-    <div class="kpi"><div class="val">3</div><div class="lbl">Target DMEE trees</div></div>
-    <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes probed (P01)</div></div>
-    <div class="kpi"><div class="val">5/111,241</div><div class="lbl">Vendors missing mandatory</div></div>
-    <div class="kpi"><div class="val">0.005%</div><div class="lbl">DQ risk</div></div>
-    <div class="kpi"><div class="val">31</div><div class="lbl">Marlies DMEE transports 10y</div></div>
-    <div class="kpi"><div class="val">5</div><div class="lbl">P01-ONLY objects (D01 retrofit needed)</div></div>
-    <div class="kpi"><div class="val">Nov 2026</div><div class="lbl">CBPR+ deadline</div></div>
+    <div class="kpi"><div class="val">3</div><div class="lbl">Target trees</div></div>
+    <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes P01</div></div>
+    <div class="kpi"><div class="val">5/111k</div><div class="lbl">Vendor miss</div></div>
+    <div class="kpi"><div class="val">31</div><div class="lbl">Marlies 10y</div></div>
+    <div class="kpi"><div class="val">Nov 2026</div><div class="lbl">Deadline</div></div>
   </div>
 </header>
-<div class="tabs">
-  {tabs_nav}
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    {tabs_nav}
+  </aside>
+  <main class="main">
+    {tabs_content}
+  </main>
 </div>
-{tabs_content}
 <script>
 function show(id, el) {{
   document.querySelectorAll('.content').forEach(c => c.classList.remove('visible'));
   document.getElementById('tab-' + id).classList.add('visible');
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  window.scrollTo(0, 0);
+}}
+function toggleSidebar() {{
+  document.getElementById('sidebar').classList.toggle('collapsed');
 }}
 </script>
 </body>
