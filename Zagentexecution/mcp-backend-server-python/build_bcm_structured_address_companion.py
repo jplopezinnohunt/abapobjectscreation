@@ -22,7 +22,7 @@ Tabs:
 16  References
 """
 from __future__ import annotations
-import csv, json, sys, os
+import csv, sys
 from pathlib import Path
 from datetime import datetime
 
@@ -121,15 +121,22 @@ def tab_overview():
       <h3>Why this change</h3>
       <p><strong>Bank-driven + CBPR+ Nov 2026 mandate</strong>. Banks will reject XML payment files with only unstructured <code>&lt;AdrLine&gt;</code> addresses starting November 2026 (ISO 20022 CBPR+).</p>
       <p>UNESCO runs <strong>3 custom DMEE trees</strong> in P01 that emit Hybrid or Unstructured addresses today. The migration must ensure at least <code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> (mandatory) and preferably full 5-tag structured PstlAdr.</p>
-      <h3>Compliance states (3 states, not 2)</h3>
+      <h3>Compliance states (3 states, not 2) — for context only</h3>
       <table>
-        <tr><th>State</th><th>Validity after Nov 2026</th><th>UNESCO target</th></tr>
-        <tr><td>Unstructured (AdrLine only)</td><td>REJECTED</td><td>Must migrate away</td></tr>
-        <tr><td>Hybrid (TwnNm+Ctry + AdrLine)</td><td>OK — minimum viable</td><td>Default transition state</td></tr>
-        <tr><td>Fully structured (5 tags)</td><td>OK + future-proof</td><td>Long-term target</td></tr>
+        <tr><th>State</th><th>Validity after Nov 2026</th><th>UNESCO position</th></tr>
+        <tr><td>Unstructured (AdrLine only)</td><td>REJECTED</td><td>Current V000 state, migrate away</td></tr>
+        <tr><td>Hybrid (TwnNm+Ctry + AdrLine mixed)</td><td>OK — minimum viable</td><td><strong>Rejected as default</strong> — mixes legacy+new in one file; rollback + bank validation harder. Kept as fallback if V001 fails bank acceptance on specific vendors.</td></tr>
+        <tr><td>Fully structured (5 tags)</td><td>OK + future-proof</td><td><strong>OUR TARGET (V001)</strong> — clean file, future-proof, DMEE-native versioning enables parallel V000/V001 operation + atomic cutover</td></tr>
       </table>
-      <h3>Coexistence strategy</h3>
-      <p>User directive: run old + new formats in parallel during transition, not hard cutover. Enabled by DMEE <code>VERSION</code> column (multi-version coexistence) and potentially 2-file approach per bank (validation path).</p>
+      <h3>Coexistence strategy — 2-file + DMEE native versioning (user-directed)</h3>
+      <p>Instead of mixing structured+AdrLine in one file (Hybrid), we keep V000 (current, unstructured/hybrid) and V001 (new, fully structured) as <strong>TWO SEPARATE DMEE versions</strong> of each tree. SAP DMEE supports this natively via <code>DMEE_TREE_NODE.VERSION</code> column.</p>
+      <ul>
+        <li><strong>During Phase 2-4</strong>: V000 stays ACTIVE (prod), V001 INACTIVE. Z-payment method routes test F110 to V001 only → parallel files generated for bank validation via test gateway.</li>
+        <li><strong>At cutover (Phase 5)</strong>: atomic deactivate V000 / activate V001 in D01 → transport to P01. All F110 now produce V001 structured files.</li>
+        <li><strong>Rollback</strong>: flip activation back to V000 — instant, data-safe, no file corruption risk.</li>
+        <li><strong>After 30 days stable</strong>: decommission V000.</li>
+      </ul>
+      <p>This is SAP-native. Each DMEE_TREE_NODE row carries its own VERSION — V000's nodes are untouched while V001 is edited. The BAdI <code>FI_CGI_DMEE_EXIT_W_BADI</code> fires on the ACTIVE version's nodes — SAP auto-traverses the right version. <strong>Stateful BAdI logic must be structure-aware</strong> (see <em>User Exit</em> tab — Pattern A fix for <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</code> name-overflow-into-StrtNm guard).</p>
       <h3>Key people</h3>
       <ul>
         <li><strong>Marlies Spronk (M_SPRONK)</strong> — Treasury, business owner AND historical DMEE config author (31 transports 2017-2024)</li>
@@ -546,22 +553,329 @@ def tab_references():
     """
 
 
+def tab_phase0():
+    """Phase 0 — Discovery & 100% Code Inventory. COMPLETED 2026-04-24."""
+    return f"""
+    <div class="section" style="background:#0d2a1f;border-color:#1abc9c">
+      <h3 style="color:#1abc9c">Phase 0 — Discovery &amp; 100% Code Inventory <span style="font-size:12px;color:#7fb3d3">(COMPLETED · 2026-04-24)</span></h3>
+      <p><strong>Purpose</strong>: understand 100% of the code/config that touches XML payment output BEFORE proposing changes. Rule: no design decision without evidence.</p>
+      <p><strong>Inputs</strong>: Marlies email 2026-04-14 + Excel "XML Address un structured.xlsx" (10 production cases) + handoff doc UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0 + Session #039 DMEE baseline + Brain v2.</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — Reference Architecture (handoff doc interpreted)</h4>
+    {tab_ref_arch()}
+    <h4 style="color:#7fb3d3">Section 2 — The 3 target trees</h4>
+    {tab_three_trees()}
+    <h4 style="color:#7fb3d3">Section 3 — XML Before / After</h4>
+    {tab_before_after()}
+    <h4 style="color:#7fb3d3">Section 4 — SAP Architecture (E2E flow)</h4>
+    {tab_sap_arch()}
+    <h4 style="color:#7fb3d3">Section 5 — Code Inventory (100%) — every code point that touches XML</h4>
+    {tab_code_inventory()}
+    <h4 style="color:#7fb3d3">Section 6 — Francesco audit</h4>
+    {tab_francesco()}
+    <h4 style="color:#7fb3d3">Section 7 — Vendor master DQ</h4>
+    {tab_vendor_dq()}
+    <h4 style="color:#7fb3d3">Section 8 — Q1-Q8 status (from handoff doc)</h4>
+    {tab_q1_q8()}
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">✅ Phase 0 — CONCLUSION</h3>
+      <h4 style="color:#f1c40f">What we delivered</h4>
+      <ul>
+        <li><strong>Complete data-mutation chain decoded</strong>: F110 → PMW → OBPM4 Event 05 → SAP country factory → FPAYHX_FREF/FPAYP_FREF buffers → DMEE tree traversal → TECH switch nodes (-DBTRPSTLADR/-PSTLADRMOR1/2/3/etc.) → BAdI UNESCO impls → CV_RULE transformations → XSLT post-proc (CITI) → file → BCM → SWIFT</li>
+        <li><strong>5 of 8 gaps CLOSED, 2 PARKED, 0 blocking</strong>: GAP-003 (AE/BH don't exist in P01) · GAP-004 (FPAYHX Z-fields real names) · GAP-005 (zero UNESCO writes to Z-fields) · GAP-006 (1,975 nodes + 614 conditions + 26-field headers extracted) · GAP-008 (T042 mapping confirmed) · GAP-001/007 parked</li>
+        <li><strong>12 Findings A-L documented</strong> in plan with evidence tier (TIER_1)</li>
+        <li><strong>D01 vs P01 anomaly identified</strong>: 5 P01-ONLY objects (YCL_IDFI_CGI_DMEE_DE/IT + 3 ENHO) — D01 retrofit required before Phase 2</li>
+        <li><strong>Vendor DQ risk downgraded HIGH→LOW</strong>: only 5/111,241 vendors miss mandatory CITY1/COUNTRY</li>
+        <li><strong>Francesco classified</strong>: 5 transports 2025 Q1 are PMF variant config (VC_TFPM042F), not tree structure — ASSIST/IRRELEVANT</li>
+        <li>Brain v2 enriched: +7 claims (id 66-72, TIER_1), +3 feedback rules</li>
+        <li>Companion v1 built (16 original flat tabs → now restructured by phase)</li>
+        <li>4 local commits (f1d1598, e3bf312, a01857a, 5dff1e8)</li>
+      </ul>
+      <h4 style="color:#f1c40f">What we learned that changed the design</h4>
+      <ul>
+        <li><strong>Handoff doc §5 had wrong field names</strong>: FPAYHX-ZSTRA/ZHSNM/ZPSTL/ZORT1/ZLAND do NOT exist. Real fields: ZPFST/ZPLOR/ZLISO/ZLNDX/ZREGX/ZREF01..ZREF10. FPAYH has ZERO REF fields; buffers live in FPAYHX-ZREF01..ZREF10.</li>
+        <li><strong>Event 05 FMs already exist and are SAP-standard</strong>: FI_PAYMEDIUM_DMEE_CGI_05 + /CITIPMW/V3_PAYMEDIUM_DMEE_05 registered for CGI and CITI. SEPA has NO Event 05. UNESCO doesn't need to write Z_DMEE_UNESCO_DEBTOR_ADDR from scratch (handoff doc pattern was correct but unnecessary for CGI/CITI).</li>
+        <li><strong>PSTLADRMOR1/2/3 are TECH scaffolding nodes, not magic parameters</strong>: they group address sub-elements and emit conditional on FREF data availability — SAP-native multi-mode.</li>
+        <li><strong>DMEE VERSION column supports 2-file strategy natively</strong>: VERSION=000 current, create VERSION=001 structured in parallel, atomic activation/rollback.</li>
+        <li><strong>Hybrid (single file mixed) REJECTED</strong> per user directive — too risky, hard to rollback, parser confusion. 2-file + versioning chosen instead.</li>
+        <li><strong>BAdI version-awareness needed</strong>: YCL_IDFI_CGI_DMEE_FALLBACK_CM001 has stateful name-overflow-into-StrtNm quirk that would corrupt V001 structured StrtNm. Pattern A fix (structure-aware guard, 1-2 lines) required.</li>
+      </ul>
+      <h4 style="color:#f1c40f">Blockers for Phase 2 (to resolve in Phase 1)</h4>
+      <ul>
+        <li><strong>D01 retrofit from P01</strong>: 5 P01-only objects must be synced to D01 via pyrfc extraction + transport</li>
+        <li><strong>Extract YCL_IDFI_CGI_DMEE_DE + _IT source</strong> (currently blocked by RFC auth, use ADT/SE24 export)</li>
+        <li><strong>Extract XSLT CGI_XML_CT_XSLT</strong> content (SAP-std, devclass ID-DMEE)</li>
+        <li><strong>Q3 Worldlink UltmtCdtr data source</strong> (CITI WHO/ICC case) — needs Citi TRM + DBS input</li>
+        <li><strong>N_MENARD alignment</strong>: BAdI Pattern A fix review + D01 retrofit approval</li>
+        <li><strong>Francesco courtesy alignment</strong>: disclose his 2025 Q1 transports are context-only, no conflict</li>
+      </ul>
+      <h4 style="color:#f1c40f">Phase 1 starts from</h4>
+      <ol>
+        <li>Bank spec TRM outreach (SocGen / Citi / CGI-routed) — 7-day window</li>
+        <li>Resolve the 5 DQ vendors manually</li>
+        <li>Resolve Q3 data source</li>
+        <li>Schedule N_MENARD + Francesco alignment calls</li>
+        <li>Build <code>change_matrix.csv</code> with per-node action (ADD/MOD/DEL/KEEP) for V001</li>
+      </ol>
+    </div>
+    """
+
+
+def tab_phase1():
+    """Phase 1 — Config matrix + bank specs. PENDING."""
+    return f"""
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 1 — Config matrix + bank specs <span style="font-size:12px;color:#e67e22">(PENDING · 2026-04-27 → 04-30)</span></h3>
+      <p><strong>Purpose</strong>: lock the per-tree / per-node change matrix, resolve bank-specific strictness, handle pre-Phase-2 blockers.</p>
+      <p><strong>Owner</strong>: Pablo + Marlies + TRM network</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — Change Matrix (V001 per node per tree)</h4>
+    {tab_change_matrix()}
+    <h4 style="color:#7fb3d3">Section 2 — Bank Spec Matrix (to fill)</h4>
+    <div class="section">
+      <table>
+        <tr><th>Bank</th><th>Tree</th><th>Strictness required</th><th>Test gateway available?</th><th>TRM contact</th><th>Response date</th></tr>
+        <tr><td>Société Générale</td><td>SEPA_CT_UNES + CGI_XML_CT_UNESCO</td><td>TBD — ask</td><td>TBD</td><td>Marlies's SG TRM</td><td>Pending</td></tr>
+        <tr><td>Citibank</td><td>CITI/XML/UNESCO/DC_V3_01</td><td>TBD — ask</td><td>TBD (CitiConnect)</td><td>Marlies's Citi TRM</td><td>Pending</td></tr>
+        <tr><td>Shinhan Bank (KR)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+        <tr><td>Metro Bank (GB)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+        <tr><td>GT Bank (NG)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+      </table>
+    </div>
+    <h4 style="color:#7fb3d3">Section 3 — D01 retrofit plan (Finding I)</h4>
+    <div class="section">
+      <p>5 P01-ONLY objects to sync to D01 before Phase 2 DMEE edits:</p>
+      <table>
+        <tr><th>Object</th><th>Type</th><th>Author</th><th>Action</th></tr>
+        <tr><td>YCL_IDFI_CGI_DMEE_DE</td><td>CLAS</td><td>N_MENARD</td><td>Extract from P01 via ADT → deploy to D01</td></tr>
+        <tr><td>YCL_IDFI_CGI_DMEE_IT</td><td>CLAS</td><td>N_MENARD</td><td>Same</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_DE</td><td>ENHO</td><td>N_MENARD</td><td>Extract enhancement + re-implement in D01</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_FR</td><td>ENHO</td><td>N_MENARD</td><td>Same</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_IT</td><td>ENHO</td><td>N_MENARD</td><td>Same</td></tr>
+      </table>
+    </div>
+    <h4 style="color:#7fb3d3">Section 4 — Vendor DQ remediation (5 vendors)</h4>
+    <div class="section">
+      <p>Query to run in Phase 1 to get the 5 specific LIFNRs missing CITY1 or COUNTRY, then coordinate with Master Data team for manual LFA1/ADRC fix.</p>
+      <pre>SELECT l.LIFNR, l.NAME1, a.CITY1, a.COUNTRY, a.STREET, a.POST_CODE1
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+ORDER BY l.LIFNR;</pre>
+    </div>
+    <h4 style="color:#7fb3d3">Section 5 — Q3 UltmtCdtr Worldlink data source (BLOCKED Phase 2 Step 7)</h4>
+    <div class="section">
+      <p>The WHO→ICC case in Marlies Excel shows UltmtCdtr has Hybrid address (AdrLine "AVENUE APPIA 20"). Unknown where this data comes from. Options:</p>
+      <ul>
+        <li>Vendor master alt-payee (LFB1 / LFBK)</li>
+        <li>Separate Z-table</li>
+        <li>CITIPMW industry solution enriches from its own config</li>
+      </ul>
+      <p>Resolution: call with Citibank TRM + DBS to clarify Worldlink enriched-beneficiary data model.</p>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 1 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 1 close. Template:</em></p>
+      <ul>
+        <li>Change matrix signed by Pablo + Marlies with 0 UNKNOWN rows</li>
+        <li>Bank specs received: [count / 3 banks] — [strict / hybrid tolerant per bank]</li>
+        <li>D01 retrofit executed: [transport TRKORR] — 5 objects synced</li>
+        <li>Q3 UltmtCdtr resolved: [data source identified] OR [deferred to Phase 2 with AdrLine fallback]</li>
+        <li>Vendor DQ: 5 vendors fixed via [MM team / manual]</li>
+        <li>N_MENARD + Francesco alignment calls: [dates, decisions]</li>
+        <li>Phase 2 starts with: [ready / blocked on X]</li>
+      </ul>
+    </div>
+    """
+
+
+def tab_phase2():
+    """Phase 2 — Config D01 (DMEE V001 creation + BAdI Pattern A fix). PENDING."""
+    return f"""
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 2 — Config D01: DMEE V001 creation + BAdI Pattern A fix <span style="font-size:12px;color:#e67e22">(PENDING · May 2026)</span></h3>
+      <p><strong>Purpose</strong>: build V001 structured versions of the 4 trees (V000 unchanged) + apply Pattern A BAdI fix. 4 weeks, ~zero to minimal ABAP.</p>
+      <p><strong>Owner</strong>: Pablo (config) + N_MENARD (ABAP review) + Marlies (verification)</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — 2-file + DMEE versioning strategy (adopted)</h4>
+    <div class="section">
+      <p>Each target tree gets a V001 copy created via DMEE native Create Version. V000 stays INACTIVE-proof (kept active in prod through Phase 5). V001 dormant until cutover.</p>
+      <pre>Phase 2:
+  V000 ACTIVE  (current production, untouched)
+  V001 INACTIVE (new structured, deployed dormant)
+
+Phase 3-4 test:
+  Z-payment method → routes to V001 → test file to bank test gateway
+  Regular payment method → V000 → production file (untouched)
+
+Phase 5 cutover:
+  DMEE: deactivate V000 / activate V001 atomically
+  Rollback = flip back
+
+Phase 5+30:
+  Decommission V000</pre>
+    </div>
+    <h4 style="color:#7fb3d3">Section 2 — 17-step execution checklist (handoff §9 adapted for V001)</h4>
+    {tab_transport_plan()}
+    <h4 style="color:#7fb3d3">Section 3 — User exit + BAdI Pattern A fix</h4>
+    {tab_user_exit()}
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 2 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 2 close. Template:</em></p>
+      <ul>
+        <li>V001 created on all 4 trees: [transport TRKORRs, dates]</li>
+        <li>CGI V001: CdtrAgt fix [done / TRKORR]</li>
+        <li>CITI V001: Dbtr structured [done / TRKORR]; UltmtCdtr [done / deferred]</li>
+        <li>SEPA V001: Sub-option [A / B / C] chosen — rationale</li>
+        <li>Pattern A BAdI fix: [N_MENARD approved / TRKORR / date]</li>
+        <li>DMEE tree simulation tests passed on each V001</li>
+        <li>Phase 3 starts with: [ready / specific blockers]</li>
+      </ul>
+    </div>
+    """
+
+
+def tab_phase3():
+    """Phase 3 — Unit Test D01/V01. PENDING."""
+    return f"""
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 3 — Unit Test D01/V01 <span style="font-size:12px;color:#e67e22">(PENDING · June 2026)</span></h3>
+      <p><strong>Purpose</strong>: run V001 in DMEE simulation + F110 proposal mode, validate XML against pain.001.001.03 XSD, run BAdI regression on Pattern A fix.</p>
+      <p><strong>Owner</strong>: Pablo + DBS + Marlies</p>
+    </div>
+    <h4 style="color:#7fb3d3">Test matrix (UT scenarios from handoff §8.1)</h4>
+    {tab_test_matrix()}
+    <h4 style="color:#7fb3d3">Regression scenarios (V000 must still work)</h4>
+    <div class="section">
+      <p>During parallel operation (V000 + V001 both exist), regression tests ensure V000 unchanged behavior:</p>
+      <ul>
+        <li>F110 with production payment method → V000 → file matches baseline byte-for-byte</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V000 tree → overflow still prepends (legacy behavior preserved)</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V001 tree → overflow NOT prepended (StrtNm has real value)</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 3 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 3 close. Template:</em></p>
+      <ul>
+        <li>UT cases executed: [passed / total] — fail list with root cause</li>
+        <li>XSD validation: [100% pass / issues list]</li>
+        <li>Regression V000 vs baseline: [0 diff / diff count]</li>
+        <li>Pattern A fix behavior verified in both V000 and V001 contexts</li>
+        <li>Phase 4 starts with: [ready for UAT + pilot]</li>
+      </ul>
+    </div>
+    """
+
+
+def tab_phase4():
+    """Phase 4 — UAT V01 + bank pilot. PENDING."""
+    return f"""
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 4 — UAT V01 + bank pilot <span style="font-size:12px;color:#e67e22">(PENDING · July 2026)</span></h3>
+      <p><strong>Purpose</strong>: business users validate UAT scenarios; V001 files sent to bank TEST gateways for acceptance confirmation.</p>
+      <p><strong>Owner</strong>: Marlies + per-entity finance leads + bank TRMs</p>
+    </div>
+    <div class="section">
+      <h4>UAT scenarios (handoff §8.2)</h4>
+      <p>See Test Matrix — UAT section. Plus:</p>
+      <ul>
+        <li>Monthly EUR salary/vendor via SocGen (UNES + IIEP + UIL) — SEPA V001 output</li>
+        <li>USD international vendor payment via Citi — CITI V001 output</li>
+        <li>Worldlink TND (Tunisia) + MGA (Madagascar) + BRL (UBO) — CITI V001 output (if UltmtCdtr resolved)</li>
+        <li>Non-SocGen EUR via CGI — CGI V001 output</li>
+        <li>Non-Latin character vendor addresses (Arabic etc.) — char filter regression</li>
+      </ul>
+      <h4>Bank pilot validation</h4>
+      <ul>
+        <li>Send V001 file per bank to their TEST gateway (separate from live)</li>
+        <li>Collect written acceptance email per bank</li>
+        <li>If rejection: diagnose + fix in V001 + re-send</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 4 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 4 close. Template:</em></p>
+      <ul>
+        <li>UAT scenarios passed: [count / total] — sign-off per entity</li>
+        <li>Bank test-gateway acceptance: [SocGen OK/NO | Citi OK/NO | CGI-routed banks OK/NO]</li>
+        <li>Issues found and resolved: [list]</li>
+        <li>Phase 5 starts with: [ready to cutover / blocked on bank X]</li>
+      </ul>
+    </div>
+    """
+
+
+def tab_phase5():
+    """Phase 5 — Deploy P01 staged. PENDING."""
+    return f"""
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 5 — Deploy P01 staged <span style="font-size:12px;color:#e67e22">(PENDING · Aug-Nov 2026 · CBPR+ hard deadline Nov 1)</span></h3>
+      <p><strong>Purpose</strong>: staged cutover V000→V001 per tree. Atomic activation flip. 14-day monitoring per cutover. Rollback path ready.</p>
+      <p><strong>Owner</strong>: DBS (transport) + Pablo (monitoring) + Marlies (business confirmation)</p>
+    </div>
+    <div class="section">
+      <h4>Cutover order (staggered 2-week windows)</h4>
+      <ol>
+        <li><strong>CGI trees first</strong> — narrowest change scope (CdtrAgt only), lowest volume per week</li>
+        <li><strong>SEPA_CT_UNES</strong> — medium volume, Sub-option dependent on Phase 2 choice</li>
+        <li><strong>CITI/XML/UNESCO/DC_V3_01 last</strong> — highest volume, Worldlink edge cases</li>
+      </ol>
+      <h4>Rollback plan (per tree)</h4>
+      <pre>Trigger: &gt;2 bank rejects in 24h attributable to address format
+        OR XSD validation failure rate &gt;1%
+        OR Marlies/Treasury-head override
+
+Action:  DMEE activate V000 / deactivate V001 atomically in D01
+         Transport to P01 via emergency path
+         V001 preserved inactive for investigation
+         SLA: cutover &lt;60 minutes from decision
+
+Post-rollback:
+  Diagnosis of V001 failure
+  Fix in next V001 iteration (or V002)
+  Re-cutover in 2-week cycle</pre>
+      <h4>Post-go-live monitoring (14 days per tree)</h4>
+      <ul>
+        <li>Daily BCM batch reject count per tree (existing Zagentexecution/bcm_dual_control_monitor.py extended)</li>
+        <li>Schema validation fail rate (should be 0%)</li>
+        <li>Vendor-specific errors (expected &lt;0.01% per active-vendor pop)</li>
+        <li>Bank confirmations of file acceptance (daily check)</li>
+      </ul>
+      <h4>V000 decommission (Phase 5+30 days)</h4>
+      <ul>
+        <li>After 30 days of stable V001 in prod across all 4 trees</li>
+        <li>Delete V000 from DMEE tree headers</li>
+        <li>Clean transport to remove V000 nodes from all 3 systems</li>
+        <li>Final plan retrospective + brain session close</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 5 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 5 close. Template:</em></p>
+      <ul>
+        <li>Cutover dates per tree: [CGI YYYY-MM-DD | SEPA YYYY-MM-DD | CITI YYYY-MM-DD]</li>
+        <li>Rollbacks executed: [count / 0 ideal]</li>
+        <li>Bank rejects attributable to address: [0 / N]</li>
+        <li>CBPR+ Nov 2026 deadline: [MET / MISSED / partial]</li>
+        <li>V000 decommissioned: [date]</li>
+        <li>Brain session-close retro: [link]</li>
+      </ul>
+    </div>
+    """
+
+
 TABS = [
     ("overview", "Overview", tab_overview),
-    ("plan", "The Plan (live)", tab_plan),
-    ("ref-arch", "Reference Architecture", tab_ref_arch),
-    ("trees", "The 3 Trees", tab_three_trees),
-    ("matrix", "Change Matrix", tab_change_matrix),
-    ("before-after", "XML Before/After", tab_before_after),
-    ("sap-arch", "SAP Architecture", tab_sap_arch),
-    ("inventory", "Code Inventory (100%)", tab_code_inventory),
-    ("user-exit", "User Exit", tab_user_exit),
-    ("test-matrix", "Test Matrix", tab_test_matrix),
-    ("transport", "Transport Plan", tab_transport_plan),
-    ("francesco", "Francesco Audit", tab_francesco),
-    ("vendor-dq", "Vendor DQ", tab_vendor_dq),
-    ("q1-q8", "Q1-Q8 Status", tab_q1_q8),
+    ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
+    ("phase1", "Phase 1 · Matrix + Specs", tab_phase1),
+    ("phase2", "Phase 2 · Config D01", tab_phase2),
+    ("phase3", "Phase 3 · Unit Test", tab_phase3),
+    ("phase4", "Phase 4 · UAT + Pilot", tab_phase4),
+    ("phase5", "Phase 5 · Deploy", tab_phase5),
     ("timeline", "Timeline", tab_timeline),
+    ("plan", "The Plan (live)", tab_plan),
     ("references", "References", tab_references),
 ]
 

@@ -34,7 +34,7 @@
 <body>
 <header>
   <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:14px;color:#7fb3d3">v1.0</span></h1>
-  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 17:02</div>
+  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 17:12</div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target DMEE trees</div></div>
     <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes probed (P01)</div></div>
@@ -47,20 +47,14 @@
 </header>
 <div class="tabs">
   <div class="tab active" onclick="show('overview', this)">Overview</div>
-<div class="tab" onclick="show('plan', this)">The Plan (live)</div>
-<div class="tab" onclick="show('ref-arch', this)">Reference Architecture</div>
-<div class="tab" onclick="show('trees', this)">The 3 Trees</div>
-<div class="tab" onclick="show('matrix', this)">Change Matrix</div>
-<div class="tab" onclick="show('before-after', this)">XML Before/After</div>
-<div class="tab" onclick="show('sap-arch', this)">SAP Architecture</div>
-<div class="tab" onclick="show('inventory', this)">Code Inventory (100%)</div>
-<div class="tab" onclick="show('user-exit', this)">User Exit</div>
-<div class="tab" onclick="show('test-matrix', this)">Test Matrix</div>
-<div class="tab" onclick="show('transport', this)">Transport Plan</div>
-<div class="tab" onclick="show('francesco', this)">Francesco Audit</div>
-<div class="tab" onclick="show('vendor-dq', this)">Vendor DQ</div>
-<div class="tab" onclick="show('q1-q8', this)">Q1-Q8 Status</div>
+<div class="tab" onclick="show('phase0', this)">Phase 0 · Discovery ✅</div>
+<div class="tab" onclick="show('phase1', this)">Phase 1 · Matrix + Specs</div>
+<div class="tab" onclick="show('phase2', this)">Phase 2 · Config D01</div>
+<div class="tab" onclick="show('phase3', this)">Phase 3 · Unit Test</div>
+<div class="tab" onclick="show('phase4', this)">Phase 4 · UAT + Pilot</div>
+<div class="tab" onclick="show('phase5', this)">Phase 5 · Deploy</div>
 <div class="tab" onclick="show('timeline', this)">Timeline</div>
+<div class="tab" onclick="show('plan', this)">The Plan (live)</div>
 <div class="tab" onclick="show('references', this)">References</div>
 </div>
 <div id="tab-overview" class="content visible">
@@ -68,15 +62,22 @@
       <h3>Why this change</h3>
       <p><strong>Bank-driven + CBPR+ Nov 2026 mandate</strong>. Banks will reject XML payment files with only unstructured <code>&lt;AdrLine&gt;</code> addresses starting November 2026 (ISO 20022 CBPR+).</p>
       <p>UNESCO runs <strong>3 custom DMEE trees</strong> in P01 that emit Hybrid or Unstructured addresses today. The migration must ensure at least <code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> (mandatory) and preferably full 5-tag structured PstlAdr.</p>
-      <h3>Compliance states (3 states, not 2)</h3>
+      <h3>Compliance states (3 states, not 2) — for context only</h3>
       <table>
-        <tr><th>State</th><th>Validity after Nov 2026</th><th>UNESCO target</th></tr>
-        <tr><td>Unstructured (AdrLine only)</td><td>REJECTED</td><td>Must migrate away</td></tr>
-        <tr><td>Hybrid (TwnNm+Ctry + AdrLine)</td><td>OK — minimum viable</td><td>Default transition state</td></tr>
-        <tr><td>Fully structured (5 tags)</td><td>OK + future-proof</td><td>Long-term target</td></tr>
+        <tr><th>State</th><th>Validity after Nov 2026</th><th>UNESCO position</th></tr>
+        <tr><td>Unstructured (AdrLine only)</td><td>REJECTED</td><td>Current V000 state, migrate away</td></tr>
+        <tr><td>Hybrid (TwnNm+Ctry + AdrLine mixed)</td><td>OK — minimum viable</td><td><strong>Rejected as default</strong> — mixes legacy+new in one file; rollback + bank validation harder. Kept as fallback if V001 fails bank acceptance on specific vendors.</td></tr>
+        <tr><td>Fully structured (5 tags)</td><td>OK + future-proof</td><td><strong>OUR TARGET (V001)</strong> — clean file, future-proof, DMEE-native versioning enables parallel V000/V001 operation + atomic cutover</td></tr>
       </table>
-      <h3>Coexistence strategy</h3>
-      <p>User directive: run old + new formats in parallel during transition, not hard cutover. Enabled by DMEE <code>VERSION</code> column (multi-version coexistence) and potentially 2-file approach per bank (validation path).</p>
+      <h3>Coexistence strategy — 2-file + DMEE native versioning (user-directed)</h3>
+      <p>Instead of mixing structured+AdrLine in one file (Hybrid), we keep V000 (current, unstructured/hybrid) and V001 (new, fully structured) as <strong>TWO SEPARATE DMEE versions</strong> of each tree. SAP DMEE supports this natively via <code>DMEE_TREE_NODE.VERSION</code> column.</p>
+      <ul>
+        <li><strong>During Phase 2-4</strong>: V000 stays ACTIVE (prod), V001 INACTIVE. Z-payment method routes test F110 to V001 only → parallel files generated for bank validation via test gateway.</li>
+        <li><strong>At cutover (Phase 5)</strong>: atomic deactivate V000 / activate V001 in D01 → transport to P01. All F110 now produce V001 structured files.</li>
+        <li><strong>Rollback</strong>: flip activation back to V000 — instant, data-safe, no file corruption risk.</li>
+        <li><strong>After 30 days stable</strong>: decommission V000.</li>
+      </ul>
+      <p>This is SAP-native. Each DMEE_TREE_NODE row carries its own VERSION — V000's nodes are untouched while V001 is edited. The BAdI <code>FI_CGI_DMEE_EXIT_W_BADI</code> fires on the ACTIVE version's nodes — SAP auto-traverses the right version. <strong>Stateful BAdI logic must be structure-aware</strong> (see <em>User Exit</em> tab — Pattern A fix for <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</code> name-overflow-into-StrtNm guard).</p>
       <h3>Key people</h3>
       <ul>
         <li><strong>Marlies Spronk (M_SPRONK)</strong> — Treasury, business owner AND historical DMEE config author (31 transports 2017-2024)</li>
@@ -97,10 +98,885 @@
       </table>
     </div>
     </div>
+<div id="tab-phase0" class="content">
+    <div class="section" style="background:#0d2a1f;border-color:#1abc9c">
+      <h3 style="color:#1abc9c">Phase 0 — Discovery &amp; 100% Code Inventory <span style="font-size:12px;color:#7fb3d3">(COMPLETED · 2026-04-24)</span></h3>
+      <p><strong>Purpose</strong>: understand 100% of the code/config that touches XML payment output BEFORE proposing changes. Rule: no design decision without evidence.</p>
+      <p><strong>Inputs</strong>: Marlies email 2026-04-14 + Excel "XML Address un structured.xlsx" (10 production cases) + handoff doc UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0 + Session #039 DMEE baseline + Brain v2.</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — Reference Architecture (handoff doc interpreted)</h4>
+    
+    <div class="section">
+      <h3>Reference architecture — from UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0</h3>
+      <h4>3 compliance states</h4>
+      <table>
+        <tr><th>State</th><th>Example</th><th>Valid post Nov 2026</th></tr>
+        <tr><td>Unstructured</td><td><code>&lt;AdrLine&gt;...&lt;/AdrLine&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;</code></td><td>REJECTED</td></tr>
+        <tr><td>Hybrid</td><td><code>&lt;TwnNm&gt;Paris&lt;/TwnNm&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;&lt;AdrLine&gt;...&lt;/AdrLine&gt;</code></td><td>OK (TwnNm+Ctry only mandatory)</td></tr>
+        <tr><td>Fully Structured</td><td><code>&lt;StrtNm&gt;&lt;BldgNb&gt;&lt;PstCd&gt;&lt;TwnNm&gt;&lt;Ctry&gt;</code></td><td>OK + future-proof</td></tr>
+      </table>
+      <h4>3 asymmetric technical patterns by XML party</h4>
+      <table>
+        <tr><th>Party</th><th>Data source</th><th>Change mechanism</th></tr>
+        <tr><td>Cdtr (vendor)</td><td>SAP-standard populates FPAYHX from LFA1+ADRC</td><td>DMEE tree config only, no ABAP</td></tr>
+        <tr><td>Dbtr (UNESCO)</td><td>NOT in FPAYHX/FPAYH</td><td>NEW user exit Z_DMEE_UNESCO_DEBTOR_ADDR + OBPM4 Event 05 + FPAYHX-ZREF01..05 (CORRECTED from handoff doc's FPAYH-REF)</td></tr>
+        <tr><td>UltmtCdtr (Worldlink)</td><td>UNKNOWN (handoff Q3)</td><td>BLOCKED until data source resolved</td></tr>
+      </table>
+      <h4>17-step checklist (Phase 2 execution, from handoff §9)</h4>
+      <p>Adopted verbatim. See <strong>Tab 11 — Transport Plan</strong> for TRKORR tracking.</p>
+      <h4>Reference SAP Notes</h4>
+      <ol>
+        <li><strong>1665873</strong> — CGI_XML_CT full introduction guide (59 pages, canonical)</li>
+        <li>2795667 — ISO 20022 adoption / SEPA harmonization</li>
+        <li>2668719 — PMW format lifecycle</li>
+        <li>2819590 — Structured remittance in CGI XML (check applicability)</li>
+        <li>2845063 — CGI IDs config</li>
+      </ol>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 2 — The 3 target trees</h4>
+    
+    <div class="section">
+      <h3>The 3 target DMEE trees (+ 1 twin)</h3>
+      <table>
+        <tr><th>Tree (P01)</th><th>Nodes</th><th>Address+party nodes</th><th>Marlies Excel state</th><th>Change scope</th></tr>
+        <tr>
+          <td><code>/SEPA_CT_UNES</code></td><td>95</td><td>15</td>
+          <td>Dbtr Hybrid (Ctry+AdrLine PARIS only), Cdtr Hybrid (Ctry+2xAdrLine) — postal code missing</td>
+          <td><strong>P1 — structure Dbtr+Cdtr full</strong>, keep AdrLine as Hybrid fallback</td>
+        </tr>
+        <tr>
+          <td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>610</td><td>83</td>
+          <td>Dbtr Unstructured (AdrLine only, some cases no Ctry!), Cdtr mostly OK, CdtrAgt OK, UltmtCdtr WHO/ICC Hybrid</td>
+          <td><strong>P1 — fix Dbtr Ctry + structure</strong>; UltmtCdtr <strong>BLOCKED by Q3</strong> Worldlink data source</td>
+        </tr>
+        <tr>
+          <td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>631+639</td><td>124+132</td>
+          <td>Dbtr Structured OK (TEMPLATE), Cdtr Structured OK, <strong>CdtrAgt Unstructured</strong></td>
+          <td><strong>P2 — fix CdtrAgt only</strong>, Dbtr/Cdtr kept</td>
+        </tr>
+      </table>
+      <p><em>Source: Marlies Spronk Excel "XML Address un structured.xlsx" 10 real production cases + Session #039 H18 P01 baseline + Phase 0 Finding F (2026-04-24).</em></p>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 3 — XML Before / After</h4>
+    
+    <div class="section">
+      <h3>XML Before/After — from handoff doc §2.1 + Marlies Excel Tab 2</h3>
+      <h4>BEFORE — Unstructured (current SEPA/CITI, rejected Nov 2026)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;AdrLine&gt;123 Main Street, Paris 75001&lt;/AdrLine&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</pre>
+      <h4>HYBRID — minimum viable (TwnNm+Ctry mandatory)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;TwnNm&gt;Paris&lt;/TwnNm&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+  &lt;AdrLine&gt;123 Main Street&lt;/AdrLine&gt;
+&lt;/PstlAdr&gt;</pre>
+      <h4>AFTER — Fully structured (preferred, already in CGI for UNESCO Dbtr)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;StrtNm&gt;Place de Fontenoy&lt;/StrtNm&gt;
+  &lt;BldgNb&gt;7&lt;/BldgNb&gt;
+  &lt;PstCd&gt;75007&lt;/PstCd&gt;
+  &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</pre>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 4 — SAP Architecture (E2E flow)</h4>
+    
+    <div class="section">
+      <h3>SAP architecture — Payment file generation E2E</h3>
+      <pre>F110 (Automatic Payment Run)
+  │
+  ▼
+FBZP Configuration (Payment method → House bank → PMW format)
+  │
+  ▼
+OBPM1 (Payment Medium Format → DMEE tree mapping)
+  │
+  ▼
+DMEE Engine (tree traversal, reads FPAYHX / FPAYH / FPAYP)
+  │         ├── MP_SC_TAB/MP_SC_FLD = direct table-field read
+  │         ├── MP_CONST = constant value
+  │         └── MP_EXIT_FUNC = call BAdI / FM (794 nodes in our 4 trees)
+  │
+  ▼
+BAdI FI_CGI_DMEE_EXIT_W_BADI → dispatch by country to:
+  │         ├── YCL_IDFI_CGI_DMEE_FR    (France)
+  │         ├── YCL_IDFI_CGI_DMEE_DE    (Germany, P01-only)
+  │         ├── YCL_IDFI_CGI_DMEE_IT    (Italy, P01-only)
+  │         └── YCL_IDFI_CGI_DMEE_FALLBACK (default)
+  ▼
+XML output file written to \\hq-sapitf\SWIFT$\P01\input\
+  │
+  ▼
+BCM (Bank Communication Management — Claim #65: 100% routed via OBPM5/TFIBLMPAYBLOCK)
+  │
+  ▼
+Workflow 90000003 (dual-control approval, signatories from PD OTYPE='RY')
+  │
+  ▼
+SWIFT / Alliance Lite2 → Bank gateway
+  │
+  ▼
+Bank schema validation (pain.001.001.09 XSD + bank-specific rules)</pre>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 5 — Code Inventory (100%) — every code point that touches XML</h4>
+    
+    <div class="section">
+      <h3>Code Inventory (100%) — xml_touch_points_complete.md rendered</h3>
+      <h2>Complete XML Touch-Point Inventory</h2>
+<p>**Single source of truth for every code point that affects outgoing XML payment file content.**</p>
+<p>**Session #62** · **2026-04-24** · **Target trees**: `/SEPA_CT_UNES`, `/CITI/XML/UNESCO/DC_V3_01`, `/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</p>
+<p>---</p>
+<h3>Grouped by payment lifecycle stage</h3>
+<pre>
+[Vendor master read] → [F110 selection] → [FPAYHX population]
+  → [OBPM4 events] → [DMEE tree traversal] → [node EXIT_FUNC calls]
+  → [XML assembly] → [post-DMEE file handling] → [BCM batch] → [SWIFT delivery]
+</pre>
+<p>Each table below = one stage. Every asset that can mutate the XML appears in exactly one stage. "Change required" column is the output for the Phase 0 exit gate.</p>
+<p>---</p>
+<h4>Stage 1 — Vendor master / address source (data layer)</h4>
+<p>Data flows INTO F110, which copies into FPAYHX/FPAYH/FPAYP structures.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Path/location</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>LFA1</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor master, STRAS/ORT01/PSTLZ/LAND1/ADRNR</td><td>NO — data source</td></tr>
+<tr><td>ADRC</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Central address mgmt, STREET/HOUSE_NUM1/CITY1/POST_CODE1/COUNTRY</td><td>NO — data source; **DQ remediation for 5 vendors** missing CITY1/COUNTRY</td></tr>
+<tr><td>LFBK</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor bank account</td><td>NO</td></tr>
+<tr><td>T001</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Company code (UNESCO) master, ADRNR → ADRC for Dbtr address</td><td>NO — data source</td></tr>
+</table>
+<h4>Stage 2 — F110 payment run (standard SAP, not touched)</h4>
+<p>SAP standard F110 picks open items, groups by vendor/bank/currency, populates FPAYHX/FPAYH/FPAYP structures using vendor master + company code address + payment method config.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>F110 transaction</td><td>SAP_TCODE</td><td>Entry point</td><td>NO — used as-is for test</td></tr>
+<tr><td>SAPFPAYM</td><td>SAP_PROG</td><td>Payment medium generator</td><td>NO</td></tr>
+<tr><td>T042Z_FULL</td><td>TABL</td><td>country+method → DMEE tree (FORMI) mapping</td><td>NO — already configured</td></tr>
+<tr><td>T042A</td><td>TABL</td><td>payment method per co code</td><td>NO</td></tr>
+<tr><td>T042I</td><td>TABL</td><td>house bank per co code per method</td><td>NO</td></tr>
+</table>
+<h4>Stage 3 — FPAYHX / FPAYH / FPAYP population</h4>
+<p>SAP standard PMW auto-populates the structures at F110 runtime. No UNESCO custom code writes to Z-fields (verified: 0 writes in 986 ABAP files).</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>FPAYHX</td><td>STRU</td><td>432 fields, 25 Z-fields (ZPFST/ZPLOR/ZLISO/... + ZREF01..10)</td><td>NO — SAP-populated</td></tr>
+<tr><td>FPAYH</td><td>STRU</td><td>Payment header</td><td>NO — SAP-populated</td></tr>
+<tr><td>FPAYP</td><td>STRU</td><td>Payment line</td><td>NO — SAP-populated</td></tr>
+<tr><td>CI_FPAYHX</td><td>APPEND</td><td>Customer append structure defining Z-fields</td><td>NO for this change; **confirm membership** in Phase 1</td></tr>
+</table>
+<h4>Stage 4 — OBPM4 Event 05 (user exit hook)</h4>
+<p>Currently no UNESCO Event 05 handler exists for address. Phase 2 creates one.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>OBPM4 customizing (TFPM042FB)</td><td>TABL</td><td>Event registrations per format</td><td>**YES — register our new FM** (Step 10)</td></tr>
+<tr><td>`Z_DMEE_UNESCO_DEBTOR_ADDR`</td><td>FUGR/FM</td><td>**NEW** — reads T001→ADRC for Dbtr, writes FPAYHX-ZREF01..ZREF05</td><td>**YES — CREATE** (Step 9)</td></tr>
+<tr><td>Other Y/Z Event 05 handlers</td><td>FUGR</td><td>None found for address in P01</td><td>NO — only ZWFPAYROLL_STATUS for payroll</td></tr>
+</table>
+<h4>Stage 5 — DMEE tree traversal (per target tree)</h4>
+<p>4 target trees, 1,975 nodes total, 354 address+party-related. SAP standard DMEE engine walks each tree per payment, reading values from source fields and calling exits.</p>
+<table>
+<tr><th>Tree</th><th>Total nodes</th><th>Address+party</th><th>Change required?</th><th>Priority</th></tr>
+<tr><td>`/SEPA_CT_UNES`</td><td>95</td><td>15</td><td>**YES — add structured nodes to Dbtr+Cdtr**</td><td>P1 (Tier A)</td></tr>
+<tr><td>`/CITI/XML/UNESCO/DC_V3_01`</td><td>610</td><td>83</td><td>**YES — add Ctry to Dbtr, restructure Dbtr, verify UltmtCdtr Worldlink**</td><td>P1 + blocked by Q3</td></tr>
+<tr><td>`/CGI_XML_CT_UNESCO`</td><td>631</td><td>124</td><td>**YES — fix CdtrAgt Unstructured** (Dbtr already ok)</td><td>P2</td></tr>
+<tr><td>`/CGI_XML_CT_UNESCO_1`</td><td>639</td><td>132</td><td>**YES — same as CGI_XML_CT_UNESCO**</td><td>P2</td></tr>
+</table>
+<h4>Stage 6 — Node EXIT_FUNC calls (794 nodes mediated by BAdI)</h4>
+<p>When a node has `MP_EXIT_FUNC='FI_CGI_DMEE_EXIT_W_BADI'`, the value goes through one of our 5 country-class implementations. 146 address-related nodes have exits.</p>
+<table>
+<tr><th>Exit function</th><th>Node count</th><th>Extracted?</th><th>Change required?</th></tr>
+<tr><td>`FI_CGI_DMEE_EXIT_W_BADI` (dispatches to country)</td><td>794</td><td>BAdI def SAP, 3 impls extracted (FR/FALLBACK/UTIL), 2 not yet (DE/IT)</td><td>**MAYBE — each new structured node must decide: set EXIT_FUNC='' (skip BAdI) or let BAdI process**</td></tr>
+<tr><td>`/CITIPMW/V3_*` (12 prebuilt CITI exits)</td><td>18</td><td>SAP standard</td><td>NO — preserve</td></tr>
+<tr><td>`DMEE_EXIT_SEPA_*` (3 SEPA exits)</td><td>5</td><td>SAP standard</td><td>NO</td></tr>
+<tr><td>`Z_DMEE_EXIT_TAX_NUMBER`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
+<tr><td>`ZDMEE_EXIT_SEPA_21`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
+</table>
+<h4>Stage 7 — BAdI implementations (our 5 UNESCO classes)</h4>
+<table>
+<tr><th>Class</th><th>Extracted</th><th>Author</th><th>Change required?</th></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_FR</td><td>✅</td><td>N_MENARD</td><td>**MAYBE — review name-overflow-into-StrtNm quirk** (FALLBACK_CM001:13-31 semantics)</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_FALLBACK</td><td>✅</td><td>N_MENARD (2024-11-22)</td><td>**MAYBE — same quirk review**</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_UTIL</td><td>✅</td><td>N_MENARD</td><td>NO — utility only</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_DE</td><td>❌ (exists in P01, not extracted)</td><td>likely N_MENARD</td><td>**Extract in Phase 0 follow-up**</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_IT</td><td>❌ (exists in P01, not extracted)</td><td>likely N_MENARD</td><td>**Extract in Phase 0 follow-up**</td></tr>
+</table>
+<p>**N_MENARD = required code reviewer for Phase 2 Step 9** (`Z_DMEE_UNESCO_DEBTOR_ADDR`) and any changes to the BAdI classes.</p>
+<h4>Stage 8 — Post-DMEE file handling</h4>
+<p>XML file is written to directory per handoff doc §4.3 (Alliance Lite2 pickup).</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>File transmission code</td><td>PROG (not extracted)</td><td>Writes XML to `\\hq-sapitf\SWIFT$\P01\input\`</td><td>NO — address change is within XML content, not filename</td></tr>
+<tr><td>Alliance Lite2 client</td><td>External</td><td>SWIFT file pickup</td><td>NO</td></tr>
+<tr><td>File naming convention</td><td>DOC</td><td>`aaaa_bbbb_ccxxxxxxxxyyyy.in`</td><td>NO</td></tr>
+</table>
+<h4>Stage 9 — BCM (Bank Communication Management)</h4>
+<p>BCM receives the generated file, queues for dual-control approval, sends to bank.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>OBPM5 routing (TFIBLMPAYBLOCK)</td><td>TABL</td><td>100% F110+payroll routed through BCM (Claim #65)</td><td>NO — preserve routing</td></tr>
+<tr><td>BNK_BATCH_HEADER / BNK_BATCH_ITEM</td><td>SAP_TABLE</td><td>Batch records</td><td>NO — data</td></tr>
+<tr><td>Workflow 90000003</td><td>WF</td><td>Payment approval workflow</td><td>NO — out of scope</td></tr>
+<tr><td>BCM_BATCH_* BAdIs</td><td>BADI (not extracted)</td><td>Batch enhancement hooks</td><td>NO — address change does not affect batch-level logic</td></tr>
+<tr><td>BNK_APP signatory approval UI</td><td>SAP_TCODE</td><td>Where signatories see the batch</td><td>**MAYBE — verify UI renders structured tags correctly** (Phase 3 test)</td></tr>
+</table>
+<h4>Stage 10 — Supporting / governance / monitoring</h4>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>H13 dual-control monitor</td><td>PY_SCRIPT</td><td>`Zagentexecution/bcm_dual_control_monitor.py`</td><td>**NO change to script; EXTEND monitoring post-go-live** for address-related reject tracking</td></tr>
+<tr><td>`feedback_bcm_ghost_pernr_check`</td><td>RULE</td><td>Pre-test DQ check for UIS payments</td><td>NO</td></tr>
+<tr><td>`feedback_only_p01_for_config_analysis` #204</td><td>RULE</td><td>Decision anchor</td><td>NO</td></tr>
+</table>
+<p>---</p>
+<h3>Change locus summary</h3>
+<p>**Where the change physically happens**:</p>
+<table>
+<tr><th>Where</th><th>What</th><th>Who</th><th>Depends on</th></tr>
+<tr><td>**DMEE tree nodes (SEPA + CITI + CGI)** via tx DMEE</td><td>Add structured `&lt;StrtNm&gt;/&lt;BldgNb&gt;/&lt;PstCd&gt;/&lt;TwnNm&gt;/&lt;Ctry&gt;` nodes under Cdtr/Dbtr/UltmtCdtr PstlAdr; deactivate AdrLine or keep for Hybrid</td><td>Pablo</td><td>GAP-006 closed ✅</td></tr>
+<tr><td>**OBPM4 Event 05** via tx OBPM4</td><td>Register new FM `Z_DMEE_UNESCO_DEBTOR_ADDR` for all 3 PMW formats</td><td>Pablo</td><td>Step 9 complete</td></tr>
+<tr><td>**Function module** `Z_DMEE_UNESCO_DEBTOR_ADDR` in ABAP via tx SE37</td><td>New FM: reads T001→ADRC, writes `E_FPAYHX-ZREF01..ZREF05` (not FPAYH-REF)</td><td>Pablo + N_MENARD review</td><td>GAP-004 closed ✅</td></tr>
+<tr><td>**Optional — BAdI classes** `YCL_IDFI_CGI_DMEE_FALLBACK/_FR`</td><td>Review + possibly constrain name-overflow quirk</td><td>N_MENARD</td><td>Phase 2 decision</td></tr>
+<tr><td>**Vendor master** (LFA1+ADRC)</td><td>Fix 5 vendors missing CITY1 or COUNTRY</td><td>Master Data team</td><td>Phase 1</td></tr>
+</table>
+<p>**Where the change DOES NOT physically happen**:</p>
+<p>- F110 itself (standard SAP used as-is)</p>
+<p>- Payment medium programs SAPFPAYM / RFFO* (standard)</p>
+<p>- BCM workflow 90000003 (out of scope)</p>
+<p>- File transmission / SWIFT (not affected)</p>
+<p>- LFA1/ADRC populator code (SAP standard)</p>
+<p>- FPAYHX/FPAYH/FPAYP data model (append structures unchanged)</p>
+<p>---</p>
+<h3>Outstanding (Phase 0 follow-ups that don't block Phase 1)</h3>
+<p>1. **Extract `YCL_IDFI_CGI_DMEE_DE` and `_IT`** source via pyrfc RPY_CLASS_READ. Needed for Phase 3 German/Italian regression tests.</p>
+<p>2. **Extract source of `Z_DMEE_EXIT_TAX_NUMBER` and `ZDMEE_EXIT_SEPA_21`** to confirm they're unrelated to address.</p>
+<p>3. **Confirm `CI_FPAYHX` include structure** membership via DD03L probe (partial today — 25 Z-fields known, confirm they're all in CI_FPAYHX).</p>
+<p>4. **Resolve Q3 (Worldlink UltmtCdtr data source)** — doc blocker for Phase 2 Step 7.</p>
+<h3>Zero UNKNOWN in "Change required" column — Phase 0 exit gate met</h3>
+<p>Every asset above has a verdict: YES / NO / MAYBE (with decision point) / extraction-follow-up.</p>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 6 — Francesco audit</h4>
+    
+    <div class="section">
+      <h3>Francesco Audit — FP_SPEZZANO</h3>
+      <h2>Francesco Audit — FP_SPEZZANO DMEE transport history</h2>
+<p>**Phase 0 deliverable** · Session #62 · 2026-04-24 · Evidence tier: TIER_1 (parsed from `Zagentexecution/mcp-backend-server-python/cts_batch_*.json`)</p>
+<h3>Context</h3>
+<p>User statement: *"Francesco no sabía del proceso"* (structured address change). Audit goal: verify what FP_SPEZZANO touched historically in DMEE and classify each transport as BLOCK / ASSIST / IRRELEVANT for this project.</p>
+<h3>Verified facts</h3>
+<p>**FP_SPEZZANO = Francesco Spezzano**. Confirmed from CTS `summary.top_20_owners` field in `cts_batch_2024.json` + parsing all 10 year files.</p>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Total transports by FP_SPEZZANO, 2017-2026</td><td>**70**</td></tr>
+<tr><td>DMEE-touching transports</td><td>**5** (all 2025 Q1)</td></tr>
+<tr><td>Non-DMEE transports</td><td>65</td></tr>
+<tr><td>Target trees touched</td><td>`/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</td></tr>
+<tr><td>SEPA / CITI tree touches</td><td>**0**</td></tr>
+<tr><td>All DMEE transports status</td><td>Released (`R`)</td></tr>
+<tr><td>All DMEE transports type</td><td>Workbench</td></tr>
+</table>
+<h3>The 5 DMEE transports — detail</h3>
+<p>All have **empty description** field. Classification pending node-level inspection (requires pyrfc or manual DMEE tree version diff).</p>
+<table>
+<tr><th>Date</th><th>TRKORR</th><th>Target Tree</th><th>Obj count</th><th>Preliminary classification</th></tr>
+<tr><td>2025-03-20</td><td>D01K9B0CZ0</td><td>`/CGI_XML_CT_UNESCO`</td><td>3</td><td>PENDING — need node diff</td></tr>
+<tr><td>2025-03-07</td><td>D01K9B0CWS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
+<tr><td>2025-02-21</td><td>D01K9B0CUS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>1</td><td>PENDING</td></tr>
+<tr><td>2025-02-21</td><td>D01K9B0CUT</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
+<tr><td>2025-02-20</td><td>D01K9B0CTP</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>3</td><td>PENDING</td></tr>
+</table>
+<h3>Interpretation [INFERRED — needs validation]</h3>
+<p>- Francesco's 5 transports are on the **CGI trees only**, never touched SEPA or CITI</p>
+<p>- Marlies reported CGI Dbtr is **already structured** (per her Excel analysis). If Francesco's transports are Dbtr-related, they may have contributed to that structured state.</p>
+<p>- Small obj_count (1-3 per transport) = narrow changes, not full-tree rework</p>
+<p>- Clustered in 4 weeks (Feb 20 → Mar 20) = likely a focused mini-project</p>
+<p>- **User directive**: "Francesco no sabía del proceso" — we must not assume his work covers structured address broadly. It's likely tactical/reactive.</p>
+<h3>BLOCK/ASSIST/IRRELEVANT classification — procedure (to execute in Phase 0 continued)</h3>
+<p>For each of the 5 transports, need to:</p>
+<p>1. Fetch the transport's E071 object keys (pyrfc `RFC_READ_TABLE E071 WHERE TRKORR=X`)</p>
+<p>2. Fetch the DMEE tree node IDs in the transport (if any are PAYM tree entries)</p>
+<p>3. Compare node IDs against the `PstlAdr` subtree node IDs in `/CGI_XML_CT_UNESCO` and `/CGI_XML_CT_UNESCO_1`</p>
+<p>4. Classify:</p>
+<p>   - **BLOCK**: touches any PstlAdr node in Dbtr/Cdtr/CdtrAgt/UltmtCdtr hierarchy</p>
+<p>   - **ASSIST**: touches structure supporting address work (FPAYHX mapping, char filter nodes on address, condition suppressing AdrLine)</p>
+<p>   - **IRRELEVANT**: touches unrelated parts of the tree (Purp, payment amount tags, reference tags)</p>
+<h3>What to do about Francesco</h3>
+<p>Per user directive (2026-04-24): audit as context, don't assume pattern.</p>
+<p>- **Before any CGI tree edit in Phase 2**: alignment call with Francesco to disclose the 5 transports' scope — written agreement that our structured-address changes don't overwrite his WIP</p>
+<p>- If BLOCK: coordinate merge path; schedule a joint review</p>
+<p>- If ASSIST: treat as prerequisite; evaluate if his changes help or hinder</p>
+<p>- If IRRELEVANT: no coordination needed; log in the audit</p>
+<h3>Data source</h3>
+<p>- `Zagentexecution/mcp-backend-server-python/cts_batch_2017.json` through `cts_batch_2026.json`</p>
+<p>- Field names: `trkorr`, `owner`, `date`, `status`, `type`, `description`, `objects[{pgmid,obj_type,obj_name}]`</p>
+<p>- Parser: see Phase 0 implementation commit</p>
+<h3>Corrections to prior agent output</h3>
+<p>- Earlier Explore agent reported 5 transports (correct count, correct author ID)</p>
+<p>- Earlier Explore agent reported D01K9B0CZ0 2025-03-20 as most recent (correct)</p>
+<p>- Earlier Explore agent missed the 4 other dates and the 2025-02-21 duplicate-date pair</p>
+<p>- Prior user statement "Francesco no sabía" and Explore agent "Francesco authored" both need evidence-based reconciliation. This audit shows Francesco DID touch CGI DMEE trees but we don't know WHAT yet. Not inconsistent with "didn't know about the CBPR+ structured-address initiative specifically" — his changes may have been something else entirely.</p>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 7 — Vendor master DQ</h4>
+    
+    <div class="section">
+      <h3>Vendor Master Data Quality</h3>
+      <h2>Vendor Master Data Quality — ADRC Compliance Audit</h2>
+<p>**Phase 0 deliverable** · Session #62 · 2026-04-24 · Evidence tier: TIER_1 (SQL against Gold DB `p01_gold_master_data.db`)</p>
+<h3>Query — handoff doc §7.2 (adapted to Gold DB)</h3>
+<pre>
+SELECT COUNT(*)
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+</pre>
+<h3>Results — as of P01 snapshot Apr 2026</h3>
+<table>
+<tr><th>Metric</th><th>Count</th><th>% of active</th></tr>
+<tr><td>Total active LFA1 vendors (LOEVM blank)</td><td>111,241</td><td>100%</td></tr>
+<tr><td>Active vendors with valid ADRC join</td><td>111,238</td><td>99.997%</td></tr>
+<tr><td>**Missing CITY1 OR COUNTRY**</td><td>**5**</td><td>**0.005%**</td></tr>
+<tr><td>Missing CITY1</td><td>1</td><td>0.001%</td></tr>
+<tr><td>Missing COUNTRY</td><td>4</td><td>0.004%</td></tr>
+<tr><td>Missing STREET</td><td>5,570</td><td>5.01%</td></tr>
+<tr><td>Missing POST_CODE1</td><td>1,153</td><td>1.04%</td></tr>
+<tr><td>Missing HOUSE_NUM1</td><td>76,574</td><td>68.84%</td></tr>
+</table>
+<h3>CBPR+ compliance impact</h3>
+<p>Per handoff doc §2.1 and §7.2, **only `TwnNm` (=CITY1) and `Ctry` (=COUNTRY) are MANDATORY** under ISO 20022 structured or hybrid address. All other fields (StrtNm/BldgNb/PstCd) are recommended but their absence only downgrades to Hybrid mode, which is still CBPR+-valid through 2026 (and beyond, with stricter bank spec).</p>
+<table>
+<tr><th>Compliance level</th><th>Vendor count ready</th><th>Vendor count blocked</th></tr>
+<tr><td>**Survival (Hybrid minimum: TwnNm+Ctry)**</td><td>111,236 (99.995%)</td><td>**5**</td></tr>
+<tr><td>Preferred (full structured: all 5 fields)</td><td>~32,000</td><td>~79,000 (missing BldgNb/StrtNm/PstCd)</td></tr>
+</table>
+<h3>[VERIFIED] conclusion</h3>
+<p>**Compliance survival is secured.** Only 5 vendors need manual cleanup of CITY1/COUNTRY before go-live. This is a **hard-fail-if-missing** fix, not a systemic cleanup.</p>
+<p>The BldgNb (HOUSE_NUM1) 68.8% miss is cosmetic — under Hybrid mode, missing BldgNb does not reject the file. Some banks may push for fully-structured stricter compliance post-2026; in that case, vendor master cleanup becomes a separate project (out of scope here).</p>
+<h3>Implications for the plan</h3>
+<p>1. **Phase 1**: request the 5 specific vendor IDs from Master Data team; fix by manual LFA1/ADRC update before V01 UAT</p>
+<p>2. **Phase 2**: no data-cleanup blocker for config start</p>
+<p>3. **Phase 3-4**: Hybrid-mode tests will pass for 99.995% of vendors; the 5 are the known edge cases</p>
+<p>4. **Post-go-live**: monitor ADRC data quality; new vendors must have CITY1+COUNTRY populated or F110 rejects the item</p>
+<h3>Risk level: **LOW**</h3>
+<p>Previously in the plan this was flagged as a potential major risk gating Phase 3. This audit downgrades it to LOW.</p>
+<h3>Query for the 5 vendors (execute in Phase 1 for cleanup)</h3>
+<pre>
+SELECT l.LIFNR, l.NAME1, a.CITY1, a.COUNTRY, a.STREET, a.POST_CODE1, a.HOUSE_NUM1
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+ORDER BY l.LIFNR;
+</pre>
+<p>(Pending execution — will populate this doc with vendor list.)</p>
+<h3>Data source</h3>
+<p>- Database: `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db`</p>
+<p>- Tables: LFA1 (111,241 active) + ADRC (joined via LFA1.ADRNR = ADRC.ADDRNUMBER)</p>
+<p>- ADRC has additional temporal filter available (DATE_FROM/DATE_TO) — handoff SQL omits it but Gold DB snapshot was single point-in-time so the simple join is representative</p>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 8 — Q1-Q8 status (from handoff doc)</h4>
+    
+    <div class="section">
+      <h3>Q1-Q8 status — from handoff doc §11</h3>
+      <table>
+        <tr><th>Q#</th><th>Question</th><th>Priority</th><th>Status (2026-04-24)</th></tr>
+        <tr><td>Q1</td><td>Exact DMEE tree name for CITI format in PRD vs DEV</td><td>HIGH</td><td><strong>CLOSED</strong> — Session #039 + Phase 0 Finding G confirm /CITI/XML/UNESCO/DC_V3_01 in P01</td></tr>
+        <tr><td>Q2</td><td>CITI pain.001 variant tags (proprietary?)</td><td>HIGH</td><td>OPEN — Phase 1 via Citi TRM</td></tr>
+        <tr><td>Q3</td><td>Worldlink UltmtCdtr beneficiary address source</td><td>HIGH</td><td><strong>BLOCKED — gating Phase 2 Step 7</strong></td></tr>
+        <tr><td>Q4</td><td>IIEP/UIL separate PMW assignments in FBZP?</td><td>MEDIUM</td><td>OPEN — Phase 1 FBZP check</td></tr>
+        <tr><td>Q5</td><td>UBO/UIS separate OBPM4 Event 05 registrations?</td><td>MEDIUM</td><td>OPEN — Phase 1 check</td></tr>
+        <tr><td>Q6</td><td>Vendor master DQ count</td><td>HIGH</td><td><strong>CLOSED</strong> — Phase 0 Finding A: 5/111,241 missing mandatory = LOW risk</td></tr>
+        <tr><td>Q7</td><td>Formal bank deadline communications</td><td>MEDIUM</td><td>OPEN — Phase 1 TRM outreach</td></tr>
+        <tr><td>Q8</td><td>SEPA consolidation into CGI_XML_CT?</td><td>LOW</td><td>PARKED — post-go-live decision</td></tr>
+      </table>
+    </div>
+    
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">✅ Phase 0 — CONCLUSION</h3>
+      <h4 style="color:#f1c40f">What we delivered</h4>
+      <ul>
+        <li><strong>Complete data-mutation chain decoded</strong>: F110 → PMW → OBPM4 Event 05 → SAP country factory → FPAYHX_FREF/FPAYP_FREF buffers → DMEE tree traversal → TECH switch nodes (-DBTRPSTLADR/-PSTLADRMOR1/2/3/etc.) → BAdI UNESCO impls → CV_RULE transformations → XSLT post-proc (CITI) → file → BCM → SWIFT</li>
+        <li><strong>5 of 8 gaps CLOSED, 2 PARKED, 0 blocking</strong>: GAP-003 (AE/BH don't exist in P01) · GAP-004 (FPAYHX Z-fields real names) · GAP-005 (zero UNESCO writes to Z-fields) · GAP-006 (1,975 nodes + 614 conditions + 26-field headers extracted) · GAP-008 (T042 mapping confirmed) · GAP-001/007 parked</li>
+        <li><strong>12 Findings A-L documented</strong> in plan with evidence tier (TIER_1)</li>
+        <li><strong>D01 vs P01 anomaly identified</strong>: 5 P01-ONLY objects (YCL_IDFI_CGI_DMEE_DE/IT + 3 ENHO) — D01 retrofit required before Phase 2</li>
+        <li><strong>Vendor DQ risk downgraded HIGH→LOW</strong>: only 5/111,241 vendors miss mandatory CITY1/COUNTRY</li>
+        <li><strong>Francesco classified</strong>: 5 transports 2025 Q1 are PMF variant config (VC_TFPM042F), not tree structure — ASSIST/IRRELEVANT</li>
+        <li>Brain v2 enriched: +7 claims (id 66-72, TIER_1), +3 feedback rules</li>
+        <li>Companion v1 built (16 original flat tabs → now restructured by phase)</li>
+        <li>4 local commits (f1d1598, e3bf312, a01857a, 5dff1e8)</li>
+      </ul>
+      <h4 style="color:#f1c40f">What we learned that changed the design</h4>
+      <ul>
+        <li><strong>Handoff doc §5 had wrong field names</strong>: FPAYHX-ZSTRA/ZHSNM/ZPSTL/ZORT1/ZLAND do NOT exist. Real fields: ZPFST/ZPLOR/ZLISO/ZLNDX/ZREGX/ZREF01..ZREF10. FPAYH has ZERO REF fields; buffers live in FPAYHX-ZREF01..ZREF10.</li>
+        <li><strong>Event 05 FMs already exist and are SAP-standard</strong>: FI_PAYMEDIUM_DMEE_CGI_05 + /CITIPMW/V3_PAYMEDIUM_DMEE_05 registered for CGI and CITI. SEPA has NO Event 05. UNESCO doesn't need to write Z_DMEE_UNESCO_DEBTOR_ADDR from scratch (handoff doc pattern was correct but unnecessary for CGI/CITI).</li>
+        <li><strong>PSTLADRMOR1/2/3 are TECH scaffolding nodes, not magic parameters</strong>: they group address sub-elements and emit conditional on FREF data availability — SAP-native multi-mode.</li>
+        <li><strong>DMEE VERSION column supports 2-file strategy natively</strong>: VERSION=000 current, create VERSION=001 structured in parallel, atomic activation/rollback.</li>
+        <li><strong>Hybrid (single file mixed) REJECTED</strong> per user directive — too risky, hard to rollback, parser confusion. 2-file + versioning chosen instead.</li>
+        <li><strong>BAdI version-awareness needed</strong>: YCL_IDFI_CGI_DMEE_FALLBACK_CM001 has stateful name-overflow-into-StrtNm quirk that would corrupt V001 structured StrtNm. Pattern A fix (structure-aware guard, 1-2 lines) required.</li>
+      </ul>
+      <h4 style="color:#f1c40f">Blockers for Phase 2 (to resolve in Phase 1)</h4>
+      <ul>
+        <li><strong>D01 retrofit from P01</strong>: 5 P01-only objects must be synced to D01 via pyrfc extraction + transport</li>
+        <li><strong>Extract YCL_IDFI_CGI_DMEE_DE + _IT source</strong> (currently blocked by RFC auth, use ADT/SE24 export)</li>
+        <li><strong>Extract XSLT CGI_XML_CT_XSLT</strong> content (SAP-std, devclass ID-DMEE)</li>
+        <li><strong>Q3 Worldlink UltmtCdtr data source</strong> (CITI WHO/ICC case) — needs Citi TRM + DBS input</li>
+        <li><strong>N_MENARD alignment</strong>: BAdI Pattern A fix review + D01 retrofit approval</li>
+        <li><strong>Francesco courtesy alignment</strong>: disclose his 2025 Q1 transports are context-only, no conflict</li>
+      </ul>
+      <h4 style="color:#f1c40f">Phase 1 starts from</h4>
+      <ol>
+        <li>Bank spec TRM outreach (SocGen / Citi / CGI-routed) — 7-day window</li>
+        <li>Resolve the 5 DQ vendors manually</li>
+        <li>Resolve Q3 data source</li>
+        <li>Schedule N_MENARD + Francesco alignment calls</li>
+        <li>Build <code>change_matrix.csv</code> with per-node action (ADD/MOD/DEL/KEEP) for V001</li>
+      </ol>
+    </div>
+    </div>
+<div id="tab-phase1" class="content">
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 1 — Config matrix + bank specs <span style="font-size:12px;color:#e67e22">(PENDING · 2026-04-27 → 04-30)</span></h3>
+      <p><strong>Purpose</strong>: lock the per-tree / per-node change matrix, resolve bank-specific strictness, handle pre-Phase-2 blockers.</p>
+      <p><strong>Owner</strong>: Pablo + Marlies + TRM network</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — Change Matrix (V001 per node per tree)</h4>
+    
+    <div class="section">
+      <h3>Change Matrix — derived from DMEE tree probe (P01 2026-04-24)</h3>
+      <p><strong>80</strong> nodes shown (of 1,975 total in 4 target trees). Full CSV: <code>knowledge/domains/Payment/phase0/gap006_dmee_nodes_with_exit.csv</code></p>
+      <table>
+<tr><th>TREE_ID</th><th>NODE_ID</th><th>CK_EXIT_FUNC</th><th>MP_CONST</th><th>PARENT_ID</th><th>_tree_id</th><th>NODE_TYPE</th><th>TREE_TYPE</th><th>MP_SC_FLD</th><th>TECH_NAME</th><th>MP_SC_TAB</th><th>MP_EXIT_FUNC</th></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0176201200</td><td></td><td>                                                                                                                                    </td><td>N_0206686030</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>RWBTR                         </td><td>InstdAmt                                          </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0179888070</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CreDtTm                                           </td><td>                              </td><td>DMEE_EXIT_SE_DATE             </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0206686030</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Amt                                               </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0639541490</td><td></td><td>                                                                                                                                    </td><td>N_1725392490</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZIBAN                         </td><td>IBAN                                              </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0763355730</td><td></td><td>-                                                                                                                                   </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0843213020</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>MM                                                </td><td>SYST                          </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0856187240</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(4)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0875432660</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>RmtInf                                            </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_0933751040</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE3                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1114124980</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CdtrAcct                                          </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1307819380</td><td></td><td>                                                                                                                                    </td><td>N_1769383930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Id                                                </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1348246140</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>                              </td><td>xmlns:xsi                                         </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1374946860</td><td></td><td>                                                                                                                                    </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUSFD                         </td><td>MM                                                </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1420837010</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>DD                                                </td><td>SYST                          </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1489713350</td><td></td><td>                                                                                                                                    </td><td>N_7251154690</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtInf                                            </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1600557490</td><td></td><td>                                                                                                                                    </td><td>N_8123082880</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>FinInstnId                                        </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1725392490</td><td></td><td>                                                                                                                                    </td><td>N_1114124980</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Id                                                </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1761132200</td><td></td><td>                                                                                                                                    </td><td>N_4457909410</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Nm                                                </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1769383930</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>DbtrAcct                                          </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1781756050</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>UltmtCdtr                                         </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_1863004460</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>NbOfTxs                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2063037070</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CtrlSum                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2147266940</td><td></td><td>SEPA                                                                                                                                </td><td>N_5757152900</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Cd                                                </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2225536670</td><td></td><td>-                                                                                                                                   </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2225746230</td><td></td><td>                                                                                                                                    </td><td>N_9926185740</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>LAND1                         </td><td>Ctry                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2257360070</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(rest)                                       </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2378752350</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE4                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2411404380</td><td></td><td>                                                                                                                                    </td><td>N_9481469990</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>NAMEZ                         </td><td>Nm                                                </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2411930340</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>TECH</td><td>PAYM</td><td>                              </td><td>PmtRef                                            </td><td>                              </td><td>DMEE_EXIT_SEPA_31             </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2470231520</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>PAYD3                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2590134600</td><td></td><td>                                                                                                                                    </td><td>N_6025412550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>EndToEndId                                        </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_2790093090</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZLISO                         </td><td>Ctry                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3166789840</td><td></td><td>                                                                                                                                    </td><td>N_7315391560</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>BNAME                         </td><td>Nm                                                </td><td>FPAYP                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3212123950</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>ReqdExctnDt                                       </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3311263550</td><td></td><td>                                                                                                                                    </td><td>N_6389156500</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>XMLNS                         </td><td>Para                                              </td><td>FPM_SEPA                      </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3751282570</td><td></td><td>T                                                                                                                                   </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>T                                                 </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3895768940</td><td></td><td>SLEV                                                                                                                                </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>ChrgBr                                            </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3904828830</td><td></td><td>                                                                                                                                    </td><td>N_7631742550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>FinInstnId                                        </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_3963698540</td><td></td><td>                                                                                                                                    </td><td>N_1781756050</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>NAME1                         </td><td>Nm                                                </td><td>FPAYP                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4457909410</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>InitgPty                                          </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4604210940</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(1)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4754354180</td><td></td><td>                                                                                                                                    </td><td>N_4788773110</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PstlAdr                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4788773110</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Cdtr                                              </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4799051040</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE2                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4864286940</td><td></td><td>-                                                                                                                                   </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4880705930</td><td></td><td>                                                                                                                                    </td><td>ROOT        </td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Document                                          </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4907943150</td><td></td><td>                                                                                                                                    </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUSFD                         </td><td>DD                                                </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_4946758140</td><td></td><td>                                                                                                                                    </td><td>N_9926185740</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ORT1Z                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5068303050</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TIMLO                         </td><td>Time                                              </td><td>SYST                          </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5298508320</td><td></td><td>-                                                                                                                                   </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5323647340</td><td></td><td>                                                                                                                                    </td><td>N_7251154690</td><td>/SEPA_CT_UNES</td><td>TECH</td><td>PAYM</td><td>                              </td><td>PmtTrailer                                        </td><td>                              </td><td>DMEE_EXIT_SEPA_41             </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5566338990</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>RENUM                         </td><td>MsgId                                             </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5757152900</td><td></td><td>                                                                                                                                    </td><td>N_7192103500</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>SvcLvl                                            </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5832864770</td><td></td><td>                                                                                                                                    </td><td>N_1769383930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>UBWAE                         </td><td>Ccy                                               </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_5958302950</td><td></td><td>                                                                                                                                    </td><td>N_1761132200</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUST1                         </td><td>AUST1                                             </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6010401760</td><td></td><td>                                                                                                                                    </td><td>N_1348246140</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>XSI                           </td><td>Para                                              </td><td>FPM_SEPA                      </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6025412550</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtId                                             </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6048457700</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>SCHEMALOCATION                </td><td>xsi:schemaLocation                                </td><td>FPM_SEPA                      </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6054982000</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZPFST                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6289915400</td><td></td><td>                                                                                                                                    </td><td>N_6025412550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>InstrId                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6307338780</td><td></td><td>NOTPROVIDED                                                                                                                         </td><td>N_2590134600</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>NOTPROVIDED                                       </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6343458710</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZPLOR                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6389156500</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>                              </td><td>xmlns                                             </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6621347550</td><td></td><td>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03                                                                                      </td><td>N_6389156500</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>ISO                                               </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6647036830</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>YYYY                                              </td><td>SYST                          </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_6785781300</td><td></td><td>                                                                                                                                    </td><td>N_9218834580</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>KOINH                         </td><td>KOINH                                             </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7192103500</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtTpInf                                          </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7251154690</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CstmrCdtTrfInitn                                  </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7315391560</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>UltmtDbtr                                         </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7336576310</td><td></td><td>TRF                                                                                                                                 </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtMtd                                            </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7493536070</td><td></td><td>                                                                                                                                    </td><td>N_0875432660</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>TEXT                          </td><td>Ustrd                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7551683230</td><td></td><td>                                                                                                                                    </td><td>N_1307819380</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>UIBAN                         </td><td>IBAN                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7595589420</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1T                         </td><td>DOC1T                                             </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_7631742550</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>DbtrAgt                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8000297680</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(2)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8033474340</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(3)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8123082880</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CdtrAgt                                           </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8313338750</td><td></td><td>http://www.w3.org/2001/XMLSchema-instance                                                                                           </td><td>N_1348246140</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>ISO                                               </td><td>                              </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8516624060</td><td></td><td>                                                                                                                                    </td><td>N_0176201200</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>WAERS                         </td><td>Ccy                                               </td><td>FPAYHX                        </td><td>                              </td></tr>
+<tr><td>/SEPA_CT_UNES                 </td><td>N_8648256460</td><td></td><td>                                                                                                                                    </td><td>N_2590134600</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>PAYD2                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
+</table>
+      <p><em>Phase 1 will expand this into a full change_matrix.csv with target state + action + transport + test status per node.</em></p>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 2 — Bank Spec Matrix (to fill)</h4>
+    <div class="section">
+      <table>
+        <tr><th>Bank</th><th>Tree</th><th>Strictness required</th><th>Test gateway available?</th><th>TRM contact</th><th>Response date</th></tr>
+        <tr><td>Société Générale</td><td>SEPA_CT_UNES + CGI_XML_CT_UNESCO</td><td>TBD — ask</td><td>TBD</td><td>Marlies's SG TRM</td><td>Pending</td></tr>
+        <tr><td>Citibank</td><td>CITI/XML/UNESCO/DC_V3_01</td><td>TBD — ask</td><td>TBD (CitiConnect)</td><td>Marlies's Citi TRM</td><td>Pending</td></tr>
+        <tr><td>Shinhan Bank (KR)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+        <tr><td>Metro Bank (GB)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+        <tr><td>GT Bank (NG)</td><td>CGI_XML_CT_UNESCO (via FR)</td><td>TBD</td><td>TBD</td><td>via Marlies</td><td>Pending</td></tr>
+      </table>
+    </div>
+    <h4 style="color:#7fb3d3">Section 3 — D01 retrofit plan (Finding I)</h4>
+    <div class="section">
+      <p>5 P01-ONLY objects to sync to D01 before Phase 2 DMEE edits:</p>
+      <table>
+        <tr><th>Object</th><th>Type</th><th>Author</th><th>Action</th></tr>
+        <tr><td>YCL_IDFI_CGI_DMEE_DE</td><td>CLAS</td><td>N_MENARD</td><td>Extract from P01 via ADT → deploy to D01</td></tr>
+        <tr><td>YCL_IDFI_CGI_DMEE_IT</td><td>CLAS</td><td>N_MENARD</td><td>Same</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_DE</td><td>ENHO</td><td>N_MENARD</td><td>Extract enhancement + re-implement in D01</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_FR</td><td>ENHO</td><td>N_MENARD</td><td>Same</td></tr>
+        <tr><td>Y_IDFI_CGI_DMEE_COUNTRIES_IT</td><td>ENHO</td><td>N_MENARD</td><td>Same</td></tr>
+      </table>
+    </div>
+    <h4 style="color:#7fb3d3">Section 4 — Vendor DQ remediation (5 vendors)</h4>
+    <div class="section">
+      <p>Query to run in Phase 1 to get the 5 specific LIFNRs missing CITY1 or COUNTRY, then coordinate with Master Data team for manual LFA1/ADRC fix.</p>
+      <pre>SELECT l.LIFNR, l.NAME1, a.CITY1, a.COUNTRY, a.STREET, a.POST_CODE1
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+ORDER BY l.LIFNR;</pre>
+    </div>
+    <h4 style="color:#7fb3d3">Section 5 — Q3 UltmtCdtr Worldlink data source (BLOCKED Phase 2 Step 7)</h4>
+    <div class="section">
+      <p>The WHO→ICC case in Marlies Excel shows UltmtCdtr has Hybrid address (AdrLine "AVENUE APPIA 20"). Unknown where this data comes from. Options:</p>
+      <ul>
+        <li>Vendor master alt-payee (LFB1 / LFBK)</li>
+        <li>Separate Z-table</li>
+        <li>CITIPMW industry solution enriches from its own config</li>
+      </ul>
+      <p>Resolution: call with Citibank TRM + DBS to clarify Worldlink enriched-beneficiary data model.</p>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 1 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 1 close. Template:</em></p>
+      <ul>
+        <li>Change matrix signed by Pablo + Marlies with 0 UNKNOWN rows</li>
+        <li>Bank specs received: [count / 3 banks] — [strict / hybrid tolerant per bank]</li>
+        <li>D01 retrofit executed: [transport TRKORR] — 5 objects synced</li>
+        <li>Q3 UltmtCdtr resolved: [data source identified] OR [deferred to Phase 2 with AdrLine fallback]</li>
+        <li>Vendor DQ: 5 vendors fixed via [MM team / manual]</li>
+        <li>N_MENARD + Francesco alignment calls: [dates, decisions]</li>
+        <li>Phase 2 starts with: [ready / blocked on X]</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-phase2" class="content">
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 2 — Config D01: DMEE V001 creation + BAdI Pattern A fix <span style="font-size:12px;color:#e67e22">(PENDING · May 2026)</span></h3>
+      <p><strong>Purpose</strong>: build V001 structured versions of the 4 trees (V000 unchanged) + apply Pattern A BAdI fix. 4 weeks, ~zero to minimal ABAP.</p>
+      <p><strong>Owner</strong>: Pablo (config) + N_MENARD (ABAP review) + Marlies (verification)</p>
+    </div>
+    <h4 style="color:#7fb3d3">Section 1 — 2-file + DMEE versioning strategy (adopted)</h4>
+    <div class="section">
+      <p>Each target tree gets a V001 copy created via DMEE native Create Version. V000 stays INACTIVE-proof (kept active in prod through Phase 5). V001 dormant until cutover.</p>
+      <pre>Phase 2:
+  V000 ACTIVE  (current production, untouched)
+  V001 INACTIVE (new structured, deployed dormant)
+
+Phase 3-4 test:
+  Z-payment method → routes to V001 → test file to bank test gateway
+  Regular payment method → V000 → production file (untouched)
+
+Phase 5 cutover:
+  DMEE: deactivate V000 / activate V001 atomically
+  Rollback = flip back
+
+Phase 5+30:
+  Decommission V000</pre>
+    </div>
+    <h4 style="color:#7fb3d3">Section 2 — 17-step execution checklist (handoff §9 adapted for V001)</h4>
+    
+    <div class="section">
+      <h3>Transport Plan — 17-step checklist from handoff §9</h3>
+      <p><em>Status tracker. TRKORR will be filled as transports are created in Phase 2.</em></p>
+      <table>
+        <tr><th>#</th><th>Task</th><th>T-code</th><th>Owner</th><th>TRKORR</th><th>Status</th></tr>
+        <tr><td>1</td><td>Confirm DMEE tree names in DEV</td><td>DMEE</td><td>Pablo</td><td>—</td><td>CLOSED (Session #039 + Phase 0)</td></tr>
+        <tr><td>2</td><td>Create DEV transport request for DMEE changes</td><td>SE09</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>3</td><td>SEPA: Cdtr PstlAdr structured nodes (FPAYHX mapping)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>4</td><td>SEPA: Deactivate/keep AdrLine (per Hybrid strategy)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>5</td><td>SEPA: Dbtr PstlAdr structured nodes (REF field mapping)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending — uses FPAYHX-ZREF not FPAYH-REF</td></tr>
+        <tr><td>6</td><td>CITI: Cdtr PstlAdr structured nodes</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>7</td><td>CITI: UltmtCdtr Worldlink structured</td><td>DMEE</td><td>Pablo + DBS</td><td></td><td>BLOCKED by Q3</td></tr>
+        <tr><td>8</td><td>CGI: Cdtr + CdtrAgt fixes</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>9</td><td>Create user exit FM Z_DMEE_UNESCO_DEBTOR_ADDR</td><td>SE37</td><td>Pablo + N_MENARD review</td><td></td><td>Pending — requires D01 retrofit first</td></tr>
+        <tr><td>10</td><td>Register FM in OBPM4 Event 05 for all 3 formats</td><td>OBPM4</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>11</td><td>Verify OBPM1 format→tree links</td><td>OBPM1</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>12</td><td>Test F110 SEPA — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
+        <tr><td>13</td><td>Test F110 CITI — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
+        <tr><td>14</td><td>Test F110 CGI — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
+        <tr><td>15</td><td>Validate XSD pain.001.001.03</td><td>External</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>16</td><td>Before/after screenshots per tree</td><td>N/A</td><td>Pablo</td><td></td><td>Pending</td></tr>
+        <tr><td>17</td><td>Release transport to V01</td><td>SE10</td><td>Basis</td><td></td><td>Pending</td></tr>
+      </table>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Section 3 — User exit + BAdI Pattern A fix</h4>
+    
+    <div class="section">
+      <h3>User Exit — Z_DMEE_UNESCO_DEBTOR_ADDR (to be created Phase 2 Step 9)</h3>
+      <p><strong>[CORRECTED from handoff doc]</strong>: writes to <code>E_FPAYHX-ZREF01..ZREF05</code>, not <code>FPAYH-REF01..05</code>. FPAYH has zero REF fields (Phase 0 Finding E). FPAYHX has ZREF01..ZREF10 customer buffers (10 available, 5 needed for address).</p>
+      <h4>FM signature (revised)</h4>
+      <pre>FUNCTION z_dmee_unesco_debtor_addr.
+*"----------------------------------------------------------------------
+*"  IMPORTING
+*"     VALUE(I_FPAYH) TYPE  FPAYH
+*"     VALUE(I_FPAYP) TYPE  FPAYP
+*"  CHANGING
+*"     VALUE(CS_FPAYHX) TYPE  FPAYHX
+*"----------------------------------------------------------------------
+* Populate UNESCO debtor address fields from T001 company code ADRNR → ADRC
+* Writes to FPAYHX-ZREF01..ZREF05 buffer fields for DMEE tree consumption.
+* Called via OBPM4 Event 05, registered for all 3 PMW formats.
+*----------------------------------------------------------------------
+  DATA: ls_t001 TYPE t001,
+        ls_adrc TYPE adrc.
+
+  SELECT SINGLE adrnr, bukrs INTO @DATA(lv_adrnr)
+    FROM t001 WHERE bukrs = @i_fpayh-zbukr.
+  IF sy-subrc NE 0. RETURN. ENDIF.
+
+  SELECT SINGLE * INTO @ls_adrc
+    FROM adrc WHERE addrnumber = @lv_adrnr
+              AND   date_from <= @sy-datum
+              AND   nation    = @space.
+  IF sy-subrc NE 0. RETURN. ENDIF.
+
+  cs_fpayhx-zref01 = ls_adrc-street.       " StrtNm
+  cs_fpayhx-zref02 = ls_adrc-house_num1.   " BldgNb
+  cs_fpayhx-zref03 = ls_adrc-post_code1.   " PstCd
+  cs_fpayhx-zref04 = ls_adrc-city1.        " TwnNm
+  cs_fpayhx-zref05 = ls_adrc-country.      " Ctry
+ENDFUNCTION.</pre>
+      <h4>DMEE tree nodes for Dbtr (new nodes, point to REF buffers)</h4>
+      <pre>Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;
+  Source: Field — FPAYHX-ZREF01
+Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;BldgNb&gt;
+  Source: Field — FPAYHX-ZREF02
+Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;PstCd&gt;
+  Source: Field — FPAYHX-ZREF03
+Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;TwnNm&gt;
+  Source: Field — FPAYHX-ZREF04  (mandatory)
+Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;Ctry&gt;
+  Source: Field — FPAYHX-ZREF05  (mandatory)</pre>
+      <h4>Reviewer</h4>
+      <p><strong>N_MENARD</strong> (BAdI code owner per Phase 0 Finding C — 9 DMEE class transports 2024). Required code review for Phase 2 Step 9.</p>
+    </div>
+    
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 2 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 2 close. Template:</em></p>
+      <ul>
+        <li>V001 created on all 4 trees: [transport TRKORRs, dates]</li>
+        <li>CGI V001: CdtrAgt fix [done / TRKORR]</li>
+        <li>CITI V001: Dbtr structured [done / TRKORR]; UltmtCdtr [done / deferred]</li>
+        <li>SEPA V001: Sub-option [A / B / C] chosen — rationale</li>
+        <li>Pattern A BAdI fix: [N_MENARD approved / TRKORR / date]</li>
+        <li>DMEE tree simulation tests passed on each V001</li>
+        <li>Phase 3 starts with: [ready / specific blockers]</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-phase3" class="content">
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 3 — Unit Test D01/V01 <span style="font-size:12px;color:#e67e22">(PENDING · June 2026)</span></h3>
+      <p><strong>Purpose</strong>: run V001 in DMEE simulation + F110 proposal mode, validate XML against pain.001.001.03 XSD, run BAdI regression on Pattern A fix.</p>
+      <p><strong>Owner</strong>: Pablo + DBS + Marlies</p>
+    </div>
+    <h4 style="color:#7fb3d3">Test matrix (UT scenarios from handoff §8.1)</h4>
+    
+    <div class="section">
+      <h3>Test Matrix — from handoff doc §8.1 (UT) + §8.2 (UAT) + data-driven anchors</h3>
+      <h4>Unit Test scenarios (June 2026 — Phase 3)</h4>
+      <table>
+        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Pass criteria</th></tr>
+        <tr><td>UT-01</td><td>SEPA vendor with full address</td><td>SEPA</td><td>All 5 structured tags present, no AdrLine (if fully-structured target)</td></tr>
+        <tr><td>UT-02</td><td>SEPA vendor with city+country only (Hybrid min)</td><td>SEPA</td><td>TwnNm+Ctry populated, file generated without error</td></tr>
+        <tr><td>UT-03</td><td>SEPA vendor missing city (ORT1 blank)</td><td>SEPA</td><td>Hybrid falls back to AdrLine; no empty TwnNm tag</td></tr>
+        <tr><td>UT-04</td><td>CITI USD vendor with full address</td><td>CITI</td><td>Cdtr PstlAdr fully structured</td></tr>
+        <tr><td>UT-05</td><td>CITI Worldlink TND UltmtCdtr structured</td><td>CITI</td><td>BLOCKED by Q3 until data source resolved</td></tr>
+        <tr><td>UT-06</td><td>CGI non-EUR, non-USD currency payment</td><td>CGI</td><td>Structured Dbtr kept; CdtrAgt fix verified</td></tr>
+        <tr><td>UT-07</td><td>Debtor (UNESCO) address via user exit — all formats</td><td>All</td><td>FPAYHX-ZREF01..05 populated; structured Dbtr in XML</td></tr>
+        <tr><td>UT-08</td><td>Mixed payment run (some vendors missing postal)</td><td>All</td><td>XSD valid at file level; Hybrid fallback per vendor</td></tr>
+      </table>
+      <h4>UAT scenarios (July 2026 — Phase 4)</h4>
+      <table>
+        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Validator</th></tr>
+        <tr><td>UAT-01</td><td>EUR salary/vendor via SocGen monthly</td><td>SEPA</td><td>Finance/Treasury</td></tr>
+        <tr><td>UAT-02</td><td>USD payment to international vendor</td><td>CITI</td><td>Finance/Treasury</td></tr>
+        <tr><td>UAT-03</td><td>Worldlink TND (Tunisia staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
+        <tr><td>UAT-04</td><td>Worldlink MGA (Madagascar staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
+        <tr><td>UAT-05</td><td>Local UBO Brazil payment</td><td>CITI</td><td>UBO Finance</td></tr>
+        <tr><td>UAT-06</td><td>Local UIS payment</td><td>CITI</td><td>UIS Finance</td></tr>
+        <tr><td>UAT-07</td><td>EUR via CGI non-SocGen bank</td><td>CGI</td><td>Finance</td></tr>
+        <tr><td>UAT-08</td><td>Multi-currency batch</td><td>All</td><td>Treasury</td></tr>
+        <tr><td>UAT-09</td><td>IIEP payment SEPA</td><td>SEPA</td><td>IIEP Finance</td></tr>
+        <tr><td>UAT-10</td><td>UIL payment SEPA</td><td>SEPA</td><td>UIL Finance</td></tr>
+        <tr><td>UAT-11</td><td>Non-Latin characters (Arabic etc.)</td><td>CGI/CITI</td><td>Finance + IT</td></tr>
+        <tr><td>UAT-12</td><td>Bank pilot confirmation of structured format</td><td>All</td><td>Treasury + Bank TRM</td></tr>
+      </table>
+    </div>
+    
+    <h4 style="color:#7fb3d3">Regression scenarios (V000 must still work)</h4>
+    <div class="section">
+      <p>During parallel operation (V000 + V001 both exist), regression tests ensure V000 unchanged behavior:</p>
+      <ul>
+        <li>F110 with production payment method → V000 → file matches baseline byte-for-byte</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V000 tree → overflow still prepends (legacy behavior preserved)</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V001 tree → overflow NOT prepended (StrtNm has real value)</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 3 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 3 close. Template:</em></p>
+      <ul>
+        <li>UT cases executed: [passed / total] — fail list with root cause</li>
+        <li>XSD validation: [100% pass / issues list]</li>
+        <li>Regression V000 vs baseline: [0 diff / diff count]</li>
+        <li>Pattern A fix behavior verified in both V000 and V001 contexts</li>
+        <li>Phase 4 starts with: [ready for UAT + pilot]</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-phase4" class="content">
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 4 — UAT V01 + bank pilot <span style="font-size:12px;color:#e67e22">(PENDING · July 2026)</span></h3>
+      <p><strong>Purpose</strong>: business users validate UAT scenarios; V001 files sent to bank TEST gateways for acceptance confirmation.</p>
+      <p><strong>Owner</strong>: Marlies + per-entity finance leads + bank TRMs</p>
+    </div>
+    <div class="section">
+      <h4>UAT scenarios (handoff §8.2)</h4>
+      <p>See Test Matrix — UAT section. Plus:</p>
+      <ul>
+        <li>Monthly EUR salary/vendor via SocGen (UNES + IIEP + UIL) — SEPA V001 output</li>
+        <li>USD international vendor payment via Citi — CITI V001 output</li>
+        <li>Worldlink TND (Tunisia) + MGA (Madagascar) + BRL (UBO) — CITI V001 output (if UltmtCdtr resolved)</li>
+        <li>Non-SocGen EUR via CGI — CGI V001 output</li>
+        <li>Non-Latin character vendor addresses (Arabic etc.) — char filter regression</li>
+      </ul>
+      <h4>Bank pilot validation</h4>
+      <ul>
+        <li>Send V001 file per bank to their TEST gateway (separate from live)</li>
+        <li>Collect written acceptance email per bank</li>
+        <li>If rejection: diagnose + fix in V001 + re-send</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 4 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 4 close. Template:</em></p>
+      <ul>
+        <li>UAT scenarios passed: [count / total] — sign-off per entity</li>
+        <li>Bank test-gateway acceptance: [SocGen OK/NO | Citi OK/NO | CGI-routed banks OK/NO]</li>
+        <li>Issues found and resolved: [list]</li>
+        <li>Phase 5 starts with: [ready to cutover / blocked on bank X]</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-phase5" class="content">
+    <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
+      <h3 style="color:#7fb3d3">Phase 5 — Deploy P01 staged <span style="font-size:12px;color:#e67e22">(PENDING · Aug-Nov 2026 · CBPR+ hard deadline Nov 1)</span></h3>
+      <p><strong>Purpose</strong>: staged cutover V000→V001 per tree. Atomic activation flip. 14-day monitoring per cutover. Rollback path ready.</p>
+      <p><strong>Owner</strong>: DBS (transport) + Pablo (monitoring) + Marlies (business confirmation)</p>
+    </div>
+    <div class="section">
+      <h4>Cutover order (staggered 2-week windows)</h4>
+      <ol>
+        <li><strong>CGI trees first</strong> — narrowest change scope (CdtrAgt only), lowest volume per week</li>
+        <li><strong>SEPA_CT_UNES</strong> — medium volume, Sub-option dependent on Phase 2 choice</li>
+        <li><strong>CITI/XML/UNESCO/DC_V3_01 last</strong> — highest volume, Worldlink edge cases</li>
+      </ol>
+      <h4>Rollback plan (per tree)</h4>
+      <pre>Trigger: &gt;2 bank rejects in 24h attributable to address format
+        OR XSD validation failure rate &gt;1%
+        OR Marlies/Treasury-head override
+
+Action:  DMEE activate V000 / deactivate V001 atomically in D01
+         Transport to P01 via emergency path
+         V001 preserved inactive for investigation
+         SLA: cutover &lt;60 minutes from decision
+
+Post-rollback:
+  Diagnosis of V001 failure
+  Fix in next V001 iteration (or V002)
+  Re-cutover in 2-week cycle</pre>
+      <h4>Post-go-live monitoring (14 days per tree)</h4>
+      <ul>
+        <li>Daily BCM batch reject count per tree (existing Zagentexecution/bcm_dual_control_monitor.py extended)</li>
+        <li>Schema validation fail rate (should be 0%)</li>
+        <li>Vendor-specific errors (expected &lt;0.01% per active-vendor pop)</li>
+        <li>Bank confirmations of file acceptance (daily check)</li>
+      </ul>
+      <h4>V000 decommission (Phase 5+30 days)</h4>
+      <ul>
+        <li>After 30 days of stable V001 in prod across all 4 trees</li>
+        <li>Delete V000 from DMEE tree headers</li>
+        <li>Clean transport to remove V000 nodes from all 3 systems</li>
+        <li>Final plan retrospective + brain session close</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#1a2a1f;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 5 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 5 close. Template:</em></p>
+      <ul>
+        <li>Cutover dates per tree: [CGI YYYY-MM-DD | SEPA YYYY-MM-DD | CITI YYYY-MM-DD]</li>
+        <li>Rollbacks executed: [count / 0 ideal]</li>
+        <li>Bank rejects attributable to address: [0 / N]</li>
+        <li>CBPR+ Nov 2026 deadline: [MET / MISSED / partial]</li>
+        <li>V000 decommissioned: [date]</li>
+        <li>Brain session-close retro: [link]</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-timeline" class="content">
+    <div class="section">
+      <h3>Timeline — 5 phases (gated)</h3>
+      <table>
+        <tr><th>Phase</th><th>Period</th><th>Owner</th><th>Gate</th><th>Status</th></tr>
+        <tr><td>0 — 100% Code Inventory</td><td>2026-04-24 → 04-27</td><td>Pablo</td><td>xml_touch_points_complete.md signed</td><td><strong>IN EXECUTION</strong></td></tr>
+        <tr><td>1 — Config matrix + bank specs</td><td>2026-04-27 → 04-30</td><td>Pablo + Marlies</td><td>Matrix + specs + DQ signed</td><td>Pending</td></tr>
+        <tr><td>2 — Config D01</td><td>May 2026</td><td>Pablo + Marlies</td><td>Each transport signed</td><td>Pending; BLOCKED by D01 retrofit</td></tr>
+        <tr><td>3 — Unit Test D01/V01</td><td>June 2026</td><td>Pablo + DBS</td><td>100% XSD + BAdI regression green</td><td>Pending</td></tr>
+        <tr><td>4 — UAT V01</td><td>July 2026</td><td>Marlies + Pablo</td><td>3 bank acceptances + UAT sign-off</td><td>Pending</td></tr>
+        <tr><td>5 — Deploy</td><td>Aug-Nov 2026</td><td>DBS + Pablo</td><td>Nov 2026 CBPR+ compliance</td><td>Pending</td></tr>
+      </table>
+    </div>
+    </div>
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 17:02 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 17:12 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
@@ -1243,604 +2119,6 @@ When the plan changes, the companion updates in the same commit. Single source o
 | 5 — Deploy | 2026-08-01 → 11-01 | DBS (transport) + Pablo (monitoring) | Nov 2026 CBPR+ compliance |
 
       </div>
-    </div>
-    </div>
-<div id="tab-ref-arch" class="content">
-    <div class="section">
-      <h3>Reference architecture — from UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0</h3>
-      <h4>3 compliance states</h4>
-      <table>
-        <tr><th>State</th><th>Example</th><th>Valid post Nov 2026</th></tr>
-        <tr><td>Unstructured</td><td><code>&lt;AdrLine&gt;...&lt;/AdrLine&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;</code></td><td>REJECTED</td></tr>
-        <tr><td>Hybrid</td><td><code>&lt;TwnNm&gt;Paris&lt;/TwnNm&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;&lt;AdrLine&gt;...&lt;/AdrLine&gt;</code></td><td>OK (TwnNm+Ctry only mandatory)</td></tr>
-        <tr><td>Fully Structured</td><td><code>&lt;StrtNm&gt;&lt;BldgNb&gt;&lt;PstCd&gt;&lt;TwnNm&gt;&lt;Ctry&gt;</code></td><td>OK + future-proof</td></tr>
-      </table>
-      <h4>3 asymmetric technical patterns by XML party</h4>
-      <table>
-        <tr><th>Party</th><th>Data source</th><th>Change mechanism</th></tr>
-        <tr><td>Cdtr (vendor)</td><td>SAP-standard populates FPAYHX from LFA1+ADRC</td><td>DMEE tree config only, no ABAP</td></tr>
-        <tr><td>Dbtr (UNESCO)</td><td>NOT in FPAYHX/FPAYH</td><td>NEW user exit Z_DMEE_UNESCO_DEBTOR_ADDR + OBPM4 Event 05 + FPAYHX-ZREF01..05 (CORRECTED from handoff doc's FPAYH-REF)</td></tr>
-        <tr><td>UltmtCdtr (Worldlink)</td><td>UNKNOWN (handoff Q3)</td><td>BLOCKED until data source resolved</td></tr>
-      </table>
-      <h4>17-step checklist (Phase 2 execution, from handoff §9)</h4>
-      <p>Adopted verbatim. See <strong>Tab 11 — Transport Plan</strong> for TRKORR tracking.</p>
-      <h4>Reference SAP Notes</h4>
-      <ol>
-        <li><strong>1665873</strong> — CGI_XML_CT full introduction guide (59 pages, canonical)</li>
-        <li>2795667 — ISO 20022 adoption / SEPA harmonization</li>
-        <li>2668719 — PMW format lifecycle</li>
-        <li>2819590 — Structured remittance in CGI XML (check applicability)</li>
-        <li>2845063 — CGI IDs config</li>
-      </ol>
-    </div>
-    </div>
-<div id="tab-trees" class="content">
-    <div class="section">
-      <h3>The 3 target DMEE trees (+ 1 twin)</h3>
-      <table>
-        <tr><th>Tree (P01)</th><th>Nodes</th><th>Address+party nodes</th><th>Marlies Excel state</th><th>Change scope</th></tr>
-        <tr>
-          <td><code>/SEPA_CT_UNES</code></td><td>95</td><td>15</td>
-          <td>Dbtr Hybrid (Ctry+AdrLine PARIS only), Cdtr Hybrid (Ctry+2xAdrLine) — postal code missing</td>
-          <td><strong>P1 — structure Dbtr+Cdtr full</strong>, keep AdrLine as Hybrid fallback</td>
-        </tr>
-        <tr>
-          <td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>610</td><td>83</td>
-          <td>Dbtr Unstructured (AdrLine only, some cases no Ctry!), Cdtr mostly OK, CdtrAgt OK, UltmtCdtr WHO/ICC Hybrid</td>
-          <td><strong>P1 — fix Dbtr Ctry + structure</strong>; UltmtCdtr <strong>BLOCKED by Q3</strong> Worldlink data source</td>
-        </tr>
-        <tr>
-          <td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>631+639</td><td>124+132</td>
-          <td>Dbtr Structured OK (TEMPLATE), Cdtr Structured OK, <strong>CdtrAgt Unstructured</strong></td>
-          <td><strong>P2 — fix CdtrAgt only</strong>, Dbtr/Cdtr kept</td>
-        </tr>
-      </table>
-      <p><em>Source: Marlies Spronk Excel "XML Address un structured.xlsx" 10 real production cases + Session #039 H18 P01 baseline + Phase 0 Finding F (2026-04-24).</em></p>
-    </div>
-    </div>
-<div id="tab-matrix" class="content">
-    <div class="section">
-      <h3>Change Matrix — derived from DMEE tree probe (P01 2026-04-24)</h3>
-      <p><strong>80</strong> nodes shown (of 1,975 total in 4 target trees). Full CSV: <code>knowledge/domains/Payment/phase0/gap006_dmee_nodes_with_exit.csv</code></p>
-      <table>
-<tr><th>TREE_ID</th><th>NODE_ID</th><th>CK_EXIT_FUNC</th><th>MP_CONST</th><th>PARENT_ID</th><th>_tree_id</th><th>NODE_TYPE</th><th>TREE_TYPE</th><th>MP_SC_FLD</th><th>TECH_NAME</th><th>MP_SC_TAB</th><th>MP_EXIT_FUNC</th></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0176201200</td><td></td><td>                                                                                                                                    </td><td>N_0206686030</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>RWBTR                         </td><td>InstdAmt                                          </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0179888070</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CreDtTm                                           </td><td>                              </td><td>DMEE_EXIT_SE_DATE             </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0206686030</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Amt                                               </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0639541490</td><td></td><td>                                                                                                                                    </td><td>N_1725392490</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZIBAN                         </td><td>IBAN                                              </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0763355730</td><td></td><td>-                                                                                                                                   </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0843213020</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>MM                                                </td><td>SYST                          </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0856187240</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(4)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0875432660</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>RmtInf                                            </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_0933751040</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE3                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1114124980</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CdtrAcct                                          </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1307819380</td><td></td><td>                                                                                                                                    </td><td>N_1769383930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Id                                                </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1348246140</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>                              </td><td>xmlns:xsi                                         </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1374946860</td><td></td><td>                                                                                                                                    </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUSFD                         </td><td>MM                                                </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1420837010</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>DD                                                </td><td>SYST                          </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1489713350</td><td></td><td>                                                                                                                                    </td><td>N_7251154690</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtInf                                            </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1600557490</td><td></td><td>                                                                                                                                    </td><td>N_8123082880</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>FinInstnId                                        </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1725392490</td><td></td><td>                                                                                                                                    </td><td>N_1114124980</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Id                                                </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1761132200</td><td></td><td>                                                                                                                                    </td><td>N_4457909410</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Nm                                                </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1769383930</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>DbtrAcct                                          </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1781756050</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>UltmtCdtr                                         </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_1863004460</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>NbOfTxs                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2063037070</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CtrlSum                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2147266940</td><td></td><td>SEPA                                                                                                                                </td><td>N_5757152900</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Cd                                                </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2225536670</td><td></td><td>-                                                                                                                                   </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2225746230</td><td></td><td>                                                                                                                                    </td><td>N_9926185740</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>LAND1                         </td><td>Ctry                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2257360070</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(rest)                                       </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2378752350</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE4                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2411404380</td><td></td><td>                                                                                                                                    </td><td>N_9481469990</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>NAMEZ                         </td><td>Nm                                                </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2411930340</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>TECH</td><td>PAYM</td><td>                              </td><td>PmtRef                                            </td><td>                              </td><td>DMEE_EXIT_SEPA_31             </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2470231520</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>PAYD3                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2590134600</td><td></td><td>                                                                                                                                    </td><td>N_6025412550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>EndToEndId                                        </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_2790093090</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZLISO                         </td><td>Ctry                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3166789840</td><td></td><td>                                                                                                                                    </td><td>N_7315391560</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>BNAME                         </td><td>Nm                                                </td><td>FPAYP                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3212123950</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>ReqdExctnDt                                       </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3311263550</td><td></td><td>                                                                                                                                    </td><td>N_6389156500</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>XMLNS                         </td><td>Para                                              </td><td>FPM_SEPA                      </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3751282570</td><td></td><td>T                                                                                                                                   </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>T                                                 </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3895768940</td><td></td><td>SLEV                                                                                                                                </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>ChrgBr                                            </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3904828830</td><td></td><td>                                                                                                                                    </td><td>N_7631742550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>FinInstnId                                        </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_3963698540</td><td></td><td>                                                                                                                                    </td><td>N_1781756050</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>NAME1                         </td><td>Nm                                                </td><td>FPAYP                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4457909410</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>InitgPty                                          </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4604210940</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(1)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4754354180</td><td></td><td>                                                                                                                                    </td><td>N_4788773110</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PstlAdr                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4788773110</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Cdtr                                              </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4799051040</td><td></td><td>                                                                                                                                    </td><td>N_7493536070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>REFERENCE2                                        </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4864286940</td><td></td><td>-                                                                                                                                   </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4880705930</td><td></td><td>                                                                                                                                    </td><td>ROOT        </td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>Document                                          </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4907943150</td><td></td><td>                                                                                                                                    </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUSFD                         </td><td>DD                                                </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_4946758140</td><td></td><td>                                                                                                                                    </td><td>N_9926185740</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ORT1Z                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5068303050</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TIMLO                         </td><td>Time                                              </td><td>SYST                          </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5298508320</td><td></td><td>-                                                                                                                                   </td><td>N_3212123950</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>-                                                 </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5323647340</td><td></td><td>                                                                                                                                    </td><td>N_7251154690</td><td>/SEPA_CT_UNES</td><td>TECH</td><td>PAYM</td><td>                              </td><td>PmtTrailer                                        </td><td>                              </td><td>DMEE_EXIT_SEPA_41             </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5566338990</td><td></td><td>                                                                                                                                    </td><td>N_9961450310</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>RENUM                         </td><td>MsgId                                             </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5757152900</td><td></td><td>                                                                                                                                    </td><td>N_7192103500</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>SvcLvl                                            </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5832864770</td><td></td><td>                                                                                                                                    </td><td>N_1769383930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>UBWAE                         </td><td>Ccy                                               </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_5958302950</td><td></td><td>                                                                                                                                    </td><td>N_1761132200</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>AUST1                         </td><td>AUST1                                             </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6010401760</td><td></td><td>                                                                                                                                    </td><td>N_1348246140</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>XSI                           </td><td>Para                                              </td><td>FPM_SEPA                      </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6025412550</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtId                                             </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6048457700</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>SCHEMALOCATION                </td><td>xsi:schemaLocation                                </td><td>FPM_SEPA                      </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6054982000</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZPFST                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6289915400</td><td></td><td>                                                                                                                                    </td><td>N_6025412550</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>InstrId                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6307338780</td><td></td><td>NOTPROVIDED                                                                                                                         </td><td>N_2590134600</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>NOTPROVIDED                                       </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6343458710</td><td></td><td>                                                                                                                                    </td><td>N_4754354180</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>ZPLOR                         </td><td>AdrLine                                           </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6389156500</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>                              </td><td>xmlns                                             </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6621347550</td><td></td><td>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03                                                                                      </td><td>N_6389156500</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>ISO                                               </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6647036830</td><td></td><td>                                                                                                                                    </td><td>N_0179888070</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DATLO                         </td><td>YYYY                                              </td><td>SYST                          </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_6785781300</td><td></td><td>                                                                                                                                    </td><td>N_9218834580</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>KOINH                         </td><td>KOINH                                             </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7192103500</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtTpInf                                          </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7251154690</td><td></td><td>                                                                                                                                    </td><td>N_4880705930</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CstmrCdtTrfInitn                                  </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7315391560</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>UltmtDbtr                                         </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7336576310</td><td></td><td>TRF                                                                                                                                 </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>PmtMtd                                            </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7493536070</td><td></td><td>                                                                                                                                    </td><td>N_0875432660</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>TEXT                          </td><td>Ustrd                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7551683230</td><td></td><td>                                                                                                                                    </td><td>N_1307819380</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>UIBAN                         </td><td>IBAN                                              </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7595589420</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1T                         </td><td>DOC1T                                             </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_7631742550</td><td></td><td>                                                                                                                                    </td><td>N_1489713350</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>DbtrAgt                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8000297680</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(2)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8033474340</td><td></td><td>                                                                                                                                    </td><td>N_6289915400</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>DOC1R                         </td><td>DOC1R(3)                                          </td><td>FPAYH                         </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8123082880</td><td></td><td>                                                                                                                                    </td><td>N_9145273120</td><td>/SEPA_CT_UNES</td><td>ELEM</td><td>PAYM</td><td>                              </td><td>CdtrAgt                                           </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8313338750</td><td></td><td>http://www.w3.org/2001/XMLSchema-instance                                                                                           </td><td>N_1348246140</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>                              </td><td>ISO                                               </td><td>                              </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8516624060</td><td></td><td>                                                                                                                                    </td><td>N_0176201200</td><td>/SEPA_CT_UNES</td><td>XMAT</td><td>PAYM</td><td>WAERS                         </td><td>Ccy                                               </td><td>FPAYHX                        </td><td>                              </td></tr>
-<tr><td>/SEPA_CT_UNES                 </td><td>N_8648256460</td><td></td><td>                                                                                                                                    </td><td>N_2590134600</td><td>/SEPA_CT_UNES</td><td>ATOM</td><td>PAYM</td><td>TEXT                          </td><td>PAYD2                                             </td><td>DMEE_PAYD                     </td><td>                              </td></tr>
-</table>
-      <p><em>Phase 1 will expand this into a full change_matrix.csv with target state + action + transport + test status per node.</em></p>
-    </div>
-    </div>
-<div id="tab-before-after" class="content">
-    <div class="section">
-      <h3>XML Before/After — from handoff doc §2.1 + Marlies Excel Tab 2</h3>
-      <h4>BEFORE — Unstructured (current SEPA/CITI, rejected Nov 2026)</h4>
-      <pre>&lt;PstlAdr&gt;
-  &lt;AdrLine&gt;123 Main Street, Paris 75001&lt;/AdrLine&gt;
-  &lt;Ctry&gt;FR&lt;/Ctry&gt;
-&lt;/PstlAdr&gt;</pre>
-      <h4>HYBRID — minimum viable (TwnNm+Ctry mandatory)</h4>
-      <pre>&lt;PstlAdr&gt;
-  &lt;TwnNm&gt;Paris&lt;/TwnNm&gt;
-  &lt;Ctry&gt;FR&lt;/Ctry&gt;
-  &lt;AdrLine&gt;123 Main Street&lt;/AdrLine&gt;
-&lt;/PstlAdr&gt;</pre>
-      <h4>AFTER — Fully structured (preferred, already in CGI for UNESCO Dbtr)</h4>
-      <pre>&lt;PstlAdr&gt;
-  &lt;StrtNm&gt;Place de Fontenoy&lt;/StrtNm&gt;
-  &lt;BldgNb&gt;7&lt;/BldgNb&gt;
-  &lt;PstCd&gt;75007&lt;/PstCd&gt;
-  &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
-  &lt;Ctry&gt;FR&lt;/Ctry&gt;
-&lt;/PstlAdr&gt;</pre>
-    </div>
-    </div>
-<div id="tab-sap-arch" class="content">
-    <div class="section">
-      <h3>SAP architecture — Payment file generation E2E</h3>
-      <pre>F110 (Automatic Payment Run)
-  │
-  ▼
-FBZP Configuration (Payment method → House bank → PMW format)
-  │
-  ▼
-OBPM1 (Payment Medium Format → DMEE tree mapping)
-  │
-  ▼
-DMEE Engine (tree traversal, reads FPAYHX / FPAYH / FPAYP)
-  │         ├── MP_SC_TAB/MP_SC_FLD = direct table-field read
-  │         ├── MP_CONST = constant value
-  │         └── MP_EXIT_FUNC = call BAdI / FM (794 nodes in our 4 trees)
-  │
-  ▼
-BAdI FI_CGI_DMEE_EXIT_W_BADI → dispatch by country to:
-  │         ├── YCL_IDFI_CGI_DMEE_FR    (France)
-  │         ├── YCL_IDFI_CGI_DMEE_DE    (Germany, P01-only)
-  │         ├── YCL_IDFI_CGI_DMEE_IT    (Italy, P01-only)
-  │         └── YCL_IDFI_CGI_DMEE_FALLBACK (default)
-  ▼
-XML output file written to \\hq-sapitf\SWIFT$\P01\input\
-  │
-  ▼
-BCM (Bank Communication Management — Claim #65: 100% routed via OBPM5/TFIBLMPAYBLOCK)
-  │
-  ▼
-Workflow 90000003 (dual-control approval, signatories from PD OTYPE='RY')
-  │
-  ▼
-SWIFT / Alliance Lite2 → Bank gateway
-  │
-  ▼
-Bank schema validation (pain.001.001.09 XSD + bank-specific rules)</pre>
-    </div>
-    </div>
-<div id="tab-inventory" class="content">
-    <div class="section">
-      <h3>Code Inventory (100%) — xml_touch_points_complete.md rendered</h3>
-      <h2>Complete XML Touch-Point Inventory</h2>
-<p>**Single source of truth for every code point that affects outgoing XML payment file content.**</p>
-<p>**Session #62** · **2026-04-24** · **Target trees**: `/SEPA_CT_UNES`, `/CITI/XML/UNESCO/DC_V3_01`, `/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</p>
-<p>---</p>
-<h3>Grouped by payment lifecycle stage</h3>
-<pre>
-[Vendor master read] → [F110 selection] → [FPAYHX population]
-  → [OBPM4 events] → [DMEE tree traversal] → [node EXIT_FUNC calls]
-  → [XML assembly] → [post-DMEE file handling] → [BCM batch] → [SWIFT delivery]
-</pre>
-<p>Each table below = one stage. Every asset that can mutate the XML appears in exactly one stage. "Change required" column is the output for the Phase 0 exit gate.</p>
-<p>---</p>
-<h4>Stage 1 — Vendor master / address source (data layer)</h4>
-<p>Data flows INTO F110, which copies into FPAYHX/FPAYH/FPAYP structures.</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Path/location</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>LFA1</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor master, STRAS/ORT01/PSTLZ/LAND1/ADRNR</td><td>NO — data source</td></tr>
-<tr><td>ADRC</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Central address mgmt, STREET/HOUSE_NUM1/CITY1/POST_CODE1/COUNTRY</td><td>NO — data source; **DQ remediation for 5 vendors** missing CITY1/COUNTRY</td></tr>
-<tr><td>LFBK</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor bank account</td><td>NO</td></tr>
-<tr><td>T001</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Company code (UNESCO) master, ADRNR → ADRC for Dbtr address</td><td>NO — data source</td></tr>
-</table>
-<h4>Stage 2 — F110 payment run (standard SAP, not touched)</h4>
-<p>SAP standard F110 picks open items, groups by vendor/bank/currency, populates FPAYHX/FPAYH/FPAYP structures using vendor master + company code address + payment method config.</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>F110 transaction</td><td>SAP_TCODE</td><td>Entry point</td><td>NO — used as-is for test</td></tr>
-<tr><td>SAPFPAYM</td><td>SAP_PROG</td><td>Payment medium generator</td><td>NO</td></tr>
-<tr><td>T042Z_FULL</td><td>TABL</td><td>country+method → DMEE tree (FORMI) mapping</td><td>NO — already configured</td></tr>
-<tr><td>T042A</td><td>TABL</td><td>payment method per co code</td><td>NO</td></tr>
-<tr><td>T042I</td><td>TABL</td><td>house bank per co code per method</td><td>NO</td></tr>
-</table>
-<h4>Stage 3 — FPAYHX / FPAYH / FPAYP population</h4>
-<p>SAP standard PMW auto-populates the structures at F110 runtime. No UNESCO custom code writes to Z-fields (verified: 0 writes in 986 ABAP files).</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>FPAYHX</td><td>STRU</td><td>432 fields, 25 Z-fields (ZPFST/ZPLOR/ZLISO/... + ZREF01..10)</td><td>NO — SAP-populated</td></tr>
-<tr><td>FPAYH</td><td>STRU</td><td>Payment header</td><td>NO — SAP-populated</td></tr>
-<tr><td>FPAYP</td><td>STRU</td><td>Payment line</td><td>NO — SAP-populated</td></tr>
-<tr><td>CI_FPAYHX</td><td>APPEND</td><td>Customer append structure defining Z-fields</td><td>NO for this change; **confirm membership** in Phase 1</td></tr>
-</table>
-<h4>Stage 4 — OBPM4 Event 05 (user exit hook)</h4>
-<p>Currently no UNESCO Event 05 handler exists for address. Phase 2 creates one.</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>OBPM4 customizing (TFPM042FB)</td><td>TABL</td><td>Event registrations per format</td><td>**YES — register our new FM** (Step 10)</td></tr>
-<tr><td>`Z_DMEE_UNESCO_DEBTOR_ADDR`</td><td>FUGR/FM</td><td>**NEW** — reads T001→ADRC for Dbtr, writes FPAYHX-ZREF01..ZREF05</td><td>**YES — CREATE** (Step 9)</td></tr>
-<tr><td>Other Y/Z Event 05 handlers</td><td>FUGR</td><td>None found for address in P01</td><td>NO — only ZWFPAYROLL_STATUS for payroll</td></tr>
-</table>
-<h4>Stage 5 — DMEE tree traversal (per target tree)</h4>
-<p>4 target trees, 1,975 nodes total, 354 address+party-related. SAP standard DMEE engine walks each tree per payment, reading values from source fields and calling exits.</p>
-<table>
-<tr><th>Tree</th><th>Total nodes</th><th>Address+party</th><th>Change required?</th><th>Priority</th></tr>
-<tr><td>`/SEPA_CT_UNES`</td><td>95</td><td>15</td><td>**YES — add structured nodes to Dbtr+Cdtr**</td><td>P1 (Tier A)</td></tr>
-<tr><td>`/CITI/XML/UNESCO/DC_V3_01`</td><td>610</td><td>83</td><td>**YES — add Ctry to Dbtr, restructure Dbtr, verify UltmtCdtr Worldlink**</td><td>P1 + blocked by Q3</td></tr>
-<tr><td>`/CGI_XML_CT_UNESCO`</td><td>631</td><td>124</td><td>**YES — fix CdtrAgt Unstructured** (Dbtr already ok)</td><td>P2</td></tr>
-<tr><td>`/CGI_XML_CT_UNESCO_1`</td><td>639</td><td>132</td><td>**YES — same as CGI_XML_CT_UNESCO**</td><td>P2</td></tr>
-</table>
-<h4>Stage 6 — Node EXIT_FUNC calls (794 nodes mediated by BAdI)</h4>
-<p>When a node has `MP_EXIT_FUNC='FI_CGI_DMEE_EXIT_W_BADI'`, the value goes through one of our 5 country-class implementations. 146 address-related nodes have exits.</p>
-<table>
-<tr><th>Exit function</th><th>Node count</th><th>Extracted?</th><th>Change required?</th></tr>
-<tr><td>`FI_CGI_DMEE_EXIT_W_BADI` (dispatches to country)</td><td>794</td><td>BAdI def SAP, 3 impls extracted (FR/FALLBACK/UTIL), 2 not yet (DE/IT)</td><td>**MAYBE — each new structured node must decide: set EXIT_FUNC='' (skip BAdI) or let BAdI process**</td></tr>
-<tr><td>`/CITIPMW/V3_*` (12 prebuilt CITI exits)</td><td>18</td><td>SAP standard</td><td>NO — preserve</td></tr>
-<tr><td>`DMEE_EXIT_SEPA_*` (3 SEPA exits)</td><td>5</td><td>SAP standard</td><td>NO</td></tr>
-<tr><td>`Z_DMEE_EXIT_TAX_NUMBER`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
-<tr><td>`ZDMEE_EXIT_SEPA_21`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
-</table>
-<h4>Stage 7 — BAdI implementations (our 5 UNESCO classes)</h4>
-<table>
-<tr><th>Class</th><th>Extracted</th><th>Author</th><th>Change required?</th></tr>
-<tr><td>YCL_IDFI_CGI_DMEE_FR</td><td>✅</td><td>N_MENARD</td><td>**MAYBE — review name-overflow-into-StrtNm quirk** (FALLBACK_CM001:13-31 semantics)</td></tr>
-<tr><td>YCL_IDFI_CGI_DMEE_FALLBACK</td><td>✅</td><td>N_MENARD (2024-11-22)</td><td>**MAYBE — same quirk review**</td></tr>
-<tr><td>YCL_IDFI_CGI_DMEE_UTIL</td><td>✅</td><td>N_MENARD</td><td>NO — utility only</td></tr>
-<tr><td>YCL_IDFI_CGI_DMEE_DE</td><td>❌ (exists in P01, not extracted)</td><td>likely N_MENARD</td><td>**Extract in Phase 0 follow-up**</td></tr>
-<tr><td>YCL_IDFI_CGI_DMEE_IT</td><td>❌ (exists in P01, not extracted)</td><td>likely N_MENARD</td><td>**Extract in Phase 0 follow-up**</td></tr>
-</table>
-<p>**N_MENARD = required code reviewer for Phase 2 Step 9** (`Z_DMEE_UNESCO_DEBTOR_ADDR`) and any changes to the BAdI classes.</p>
-<h4>Stage 8 — Post-DMEE file handling</h4>
-<p>XML file is written to directory per handoff doc §4.3 (Alliance Lite2 pickup).</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>File transmission code</td><td>PROG (not extracted)</td><td>Writes XML to `\\hq-sapitf\SWIFT$\P01\input\`</td><td>NO — address change is within XML content, not filename</td></tr>
-<tr><td>Alliance Lite2 client</td><td>External</td><td>SWIFT file pickup</td><td>NO</td></tr>
-<tr><td>File naming convention</td><td>DOC</td><td>`aaaa_bbbb_ccxxxxxxxxyyyy.in`</td><td>NO</td></tr>
-</table>
-<h4>Stage 9 — BCM (Bank Communication Management)</h4>
-<p>BCM receives the generated file, queues for dual-control approval, sends to bank.</p>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>OBPM5 routing (TFIBLMPAYBLOCK)</td><td>TABL</td><td>100% F110+payroll routed through BCM (Claim #65)</td><td>NO — preserve routing</td></tr>
-<tr><td>BNK_BATCH_HEADER / BNK_BATCH_ITEM</td><td>SAP_TABLE</td><td>Batch records</td><td>NO — data</td></tr>
-<tr><td>Workflow 90000003</td><td>WF</td><td>Payment approval workflow</td><td>NO — out of scope</td></tr>
-<tr><td>BCM_BATCH_* BAdIs</td><td>BADI (not extracted)</td><td>Batch enhancement hooks</td><td>NO — address change does not affect batch-level logic</td></tr>
-<tr><td>BNK_APP signatory approval UI</td><td>SAP_TCODE</td><td>Where signatories see the batch</td><td>**MAYBE — verify UI renders structured tags correctly** (Phase 3 test)</td></tr>
-</table>
-<h4>Stage 10 — Supporting / governance / monitoring</h4>
-<table>
-<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
-<tr><td>H13 dual-control monitor</td><td>PY_SCRIPT</td><td>`Zagentexecution/bcm_dual_control_monitor.py`</td><td>**NO change to script; EXTEND monitoring post-go-live** for address-related reject tracking</td></tr>
-<tr><td>`feedback_bcm_ghost_pernr_check`</td><td>RULE</td><td>Pre-test DQ check for UIS payments</td><td>NO</td></tr>
-<tr><td>`feedback_only_p01_for_config_analysis` #204</td><td>RULE</td><td>Decision anchor</td><td>NO</td></tr>
-</table>
-<p>---</p>
-<h3>Change locus summary</h3>
-<p>**Where the change physically happens**:</p>
-<table>
-<tr><th>Where</th><th>What</th><th>Who</th><th>Depends on</th></tr>
-<tr><td>**DMEE tree nodes (SEPA + CITI + CGI)** via tx DMEE</td><td>Add structured `&lt;StrtNm&gt;/&lt;BldgNb&gt;/&lt;PstCd&gt;/&lt;TwnNm&gt;/&lt;Ctry&gt;` nodes under Cdtr/Dbtr/UltmtCdtr PstlAdr; deactivate AdrLine or keep for Hybrid</td><td>Pablo</td><td>GAP-006 closed ✅</td></tr>
-<tr><td>**OBPM4 Event 05** via tx OBPM4</td><td>Register new FM `Z_DMEE_UNESCO_DEBTOR_ADDR` for all 3 PMW formats</td><td>Pablo</td><td>Step 9 complete</td></tr>
-<tr><td>**Function module** `Z_DMEE_UNESCO_DEBTOR_ADDR` in ABAP via tx SE37</td><td>New FM: reads T001→ADRC, writes `E_FPAYHX-ZREF01..ZREF05` (not FPAYH-REF)</td><td>Pablo + N_MENARD review</td><td>GAP-004 closed ✅</td></tr>
-<tr><td>**Optional — BAdI classes** `YCL_IDFI_CGI_DMEE_FALLBACK/_FR`</td><td>Review + possibly constrain name-overflow quirk</td><td>N_MENARD</td><td>Phase 2 decision</td></tr>
-<tr><td>**Vendor master** (LFA1+ADRC)</td><td>Fix 5 vendors missing CITY1 or COUNTRY</td><td>Master Data team</td><td>Phase 1</td></tr>
-</table>
-<p>**Where the change DOES NOT physically happen**:</p>
-<p>- F110 itself (standard SAP used as-is)</p>
-<p>- Payment medium programs SAPFPAYM / RFFO* (standard)</p>
-<p>- BCM workflow 90000003 (out of scope)</p>
-<p>- File transmission / SWIFT (not affected)</p>
-<p>- LFA1/ADRC populator code (SAP standard)</p>
-<p>- FPAYHX/FPAYH/FPAYP data model (append structures unchanged)</p>
-<p>---</p>
-<h3>Outstanding (Phase 0 follow-ups that don't block Phase 1)</h3>
-<p>1. **Extract `YCL_IDFI_CGI_DMEE_DE` and `_IT`** source via pyrfc RPY_CLASS_READ. Needed for Phase 3 German/Italian regression tests.</p>
-<p>2. **Extract source of `Z_DMEE_EXIT_TAX_NUMBER` and `ZDMEE_EXIT_SEPA_21`** to confirm they're unrelated to address.</p>
-<p>3. **Confirm `CI_FPAYHX` include structure** membership via DD03L probe (partial today — 25 Z-fields known, confirm they're all in CI_FPAYHX).</p>
-<p>4. **Resolve Q3 (Worldlink UltmtCdtr data source)** — doc blocker for Phase 2 Step 7.</p>
-<h3>Zero UNKNOWN in "Change required" column — Phase 0 exit gate met</h3>
-<p>Every asset above has a verdict: YES / NO / MAYBE (with decision point) / extraction-follow-up.</p>
-    </div>
-    </div>
-<div id="tab-user-exit" class="content">
-    <div class="section">
-      <h3>User Exit — Z_DMEE_UNESCO_DEBTOR_ADDR (to be created Phase 2 Step 9)</h3>
-      <p><strong>[CORRECTED from handoff doc]</strong>: writes to <code>E_FPAYHX-ZREF01..ZREF05</code>, not <code>FPAYH-REF01..05</code>. FPAYH has zero REF fields (Phase 0 Finding E). FPAYHX has ZREF01..ZREF10 customer buffers (10 available, 5 needed for address).</p>
-      <h4>FM signature (revised)</h4>
-      <pre>FUNCTION z_dmee_unesco_debtor_addr.
-*"----------------------------------------------------------------------
-*"  IMPORTING
-*"     VALUE(I_FPAYH) TYPE  FPAYH
-*"     VALUE(I_FPAYP) TYPE  FPAYP
-*"  CHANGING
-*"     VALUE(CS_FPAYHX) TYPE  FPAYHX
-*"----------------------------------------------------------------------
-* Populate UNESCO debtor address fields from T001 company code ADRNR → ADRC
-* Writes to FPAYHX-ZREF01..ZREF05 buffer fields for DMEE tree consumption.
-* Called via OBPM4 Event 05, registered for all 3 PMW formats.
-*----------------------------------------------------------------------
-  DATA: ls_t001 TYPE t001,
-        ls_adrc TYPE adrc.
-
-  SELECT SINGLE adrnr, bukrs INTO @DATA(lv_adrnr)
-    FROM t001 WHERE bukrs = @i_fpayh-zbukr.
-  IF sy-subrc NE 0. RETURN. ENDIF.
-
-  SELECT SINGLE * INTO @ls_adrc
-    FROM adrc WHERE addrnumber = @lv_adrnr
-              AND   date_from <= @sy-datum
-              AND   nation    = @space.
-  IF sy-subrc NE 0. RETURN. ENDIF.
-
-  cs_fpayhx-zref01 = ls_adrc-street.       " StrtNm
-  cs_fpayhx-zref02 = ls_adrc-house_num1.   " BldgNb
-  cs_fpayhx-zref03 = ls_adrc-post_code1.   " PstCd
-  cs_fpayhx-zref04 = ls_adrc-city1.        " TwnNm
-  cs_fpayhx-zref05 = ls_adrc-country.      " Ctry
-ENDFUNCTION.</pre>
-      <h4>DMEE tree nodes for Dbtr (new nodes, point to REF buffers)</h4>
-      <pre>Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;
-  Source: Field — FPAYHX-ZREF01
-Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;BldgNb&gt;
-  Source: Field — FPAYHX-ZREF02
-Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;PstCd&gt;
-  Source: Field — FPAYHX-ZREF03
-Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;TwnNm&gt;
-  Source: Field — FPAYHX-ZREF04  (mandatory)
-Node: &lt;PmtInf&gt;&lt;Dbtr&gt;&lt;PstlAdr&gt;&lt;Ctry&gt;
-  Source: Field — FPAYHX-ZREF05  (mandatory)</pre>
-      <h4>Reviewer</h4>
-      <p><strong>N_MENARD</strong> (BAdI code owner per Phase 0 Finding C — 9 DMEE class transports 2024). Required code review for Phase 2 Step 9.</p>
-    </div>
-    </div>
-<div id="tab-test-matrix" class="content">
-    <div class="section">
-      <h3>Test Matrix — from handoff doc §8.1 (UT) + §8.2 (UAT) + data-driven anchors</h3>
-      <h4>Unit Test scenarios (June 2026 — Phase 3)</h4>
-      <table>
-        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Pass criteria</th></tr>
-        <tr><td>UT-01</td><td>SEPA vendor with full address</td><td>SEPA</td><td>All 5 structured tags present, no AdrLine (if fully-structured target)</td></tr>
-        <tr><td>UT-02</td><td>SEPA vendor with city+country only (Hybrid min)</td><td>SEPA</td><td>TwnNm+Ctry populated, file generated without error</td></tr>
-        <tr><td>UT-03</td><td>SEPA vendor missing city (ORT1 blank)</td><td>SEPA</td><td>Hybrid falls back to AdrLine; no empty TwnNm tag</td></tr>
-        <tr><td>UT-04</td><td>CITI USD vendor with full address</td><td>CITI</td><td>Cdtr PstlAdr fully structured</td></tr>
-        <tr><td>UT-05</td><td>CITI Worldlink TND UltmtCdtr structured</td><td>CITI</td><td>BLOCKED by Q3 until data source resolved</td></tr>
-        <tr><td>UT-06</td><td>CGI non-EUR, non-USD currency payment</td><td>CGI</td><td>Structured Dbtr kept; CdtrAgt fix verified</td></tr>
-        <tr><td>UT-07</td><td>Debtor (UNESCO) address via user exit — all formats</td><td>All</td><td>FPAYHX-ZREF01..05 populated; structured Dbtr in XML</td></tr>
-        <tr><td>UT-08</td><td>Mixed payment run (some vendors missing postal)</td><td>All</td><td>XSD valid at file level; Hybrid fallback per vendor</td></tr>
-      </table>
-      <h4>UAT scenarios (July 2026 — Phase 4)</h4>
-      <table>
-        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Validator</th></tr>
-        <tr><td>UAT-01</td><td>EUR salary/vendor via SocGen monthly</td><td>SEPA</td><td>Finance/Treasury</td></tr>
-        <tr><td>UAT-02</td><td>USD payment to international vendor</td><td>CITI</td><td>Finance/Treasury</td></tr>
-        <tr><td>UAT-03</td><td>Worldlink TND (Tunisia staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
-        <tr><td>UAT-04</td><td>Worldlink MGA (Madagascar staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
-        <tr><td>UAT-05</td><td>Local UBO Brazil payment</td><td>CITI</td><td>UBO Finance</td></tr>
-        <tr><td>UAT-06</td><td>Local UIS payment</td><td>CITI</td><td>UIS Finance</td></tr>
-        <tr><td>UAT-07</td><td>EUR via CGI non-SocGen bank</td><td>CGI</td><td>Finance</td></tr>
-        <tr><td>UAT-08</td><td>Multi-currency batch</td><td>All</td><td>Treasury</td></tr>
-        <tr><td>UAT-09</td><td>IIEP payment SEPA</td><td>SEPA</td><td>IIEP Finance</td></tr>
-        <tr><td>UAT-10</td><td>UIL payment SEPA</td><td>SEPA</td><td>UIL Finance</td></tr>
-        <tr><td>UAT-11</td><td>Non-Latin characters (Arabic etc.)</td><td>CGI/CITI</td><td>Finance + IT</td></tr>
-        <tr><td>UAT-12</td><td>Bank pilot confirmation of structured format</td><td>All</td><td>Treasury + Bank TRM</td></tr>
-      </table>
-    </div>
-    </div>
-<div id="tab-transport" class="content">
-    <div class="section">
-      <h3>Transport Plan — 17-step checklist from handoff §9</h3>
-      <p><em>Status tracker. TRKORR will be filled as transports are created in Phase 2.</em></p>
-      <table>
-        <tr><th>#</th><th>Task</th><th>T-code</th><th>Owner</th><th>TRKORR</th><th>Status</th></tr>
-        <tr><td>1</td><td>Confirm DMEE tree names in DEV</td><td>DMEE</td><td>Pablo</td><td>—</td><td>CLOSED (Session #039 + Phase 0)</td></tr>
-        <tr><td>2</td><td>Create DEV transport request for DMEE changes</td><td>SE09</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>3</td><td>SEPA: Cdtr PstlAdr structured nodes (FPAYHX mapping)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>4</td><td>SEPA: Deactivate/keep AdrLine (per Hybrid strategy)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>5</td><td>SEPA: Dbtr PstlAdr structured nodes (REF field mapping)</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending — uses FPAYHX-ZREF not FPAYH-REF</td></tr>
-        <tr><td>6</td><td>CITI: Cdtr PstlAdr structured nodes</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>7</td><td>CITI: UltmtCdtr Worldlink structured</td><td>DMEE</td><td>Pablo + DBS</td><td></td><td>BLOCKED by Q3</td></tr>
-        <tr><td>8</td><td>CGI: Cdtr + CdtrAgt fixes</td><td>DMEE</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>9</td><td>Create user exit FM Z_DMEE_UNESCO_DEBTOR_ADDR</td><td>SE37</td><td>Pablo + N_MENARD review</td><td></td><td>Pending — requires D01 retrofit first</td></tr>
-        <tr><td>10</td><td>Register FM in OBPM4 Event 05 for all 3 formats</td><td>OBPM4</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>11</td><td>Verify OBPM1 format→tree links</td><td>OBPM1</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>12</td><td>Test F110 SEPA — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
-        <tr><td>13</td><td>Test F110 CITI — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
-        <tr><td>14</td><td>Test F110 CGI — inspect XML</td><td>F110</td><td>Pablo + Marlies</td><td></td><td>Pending</td></tr>
-        <tr><td>15</td><td>Validate XSD pain.001.001.03</td><td>External</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>16</td><td>Before/after screenshots per tree</td><td>N/A</td><td>Pablo</td><td></td><td>Pending</td></tr>
-        <tr><td>17</td><td>Release transport to V01</td><td>SE10</td><td>Basis</td><td></td><td>Pending</td></tr>
-      </table>
-    </div>
-    </div>
-<div id="tab-francesco" class="content">
-    <div class="section">
-      <h3>Francesco Audit — FP_SPEZZANO</h3>
-      <h2>Francesco Audit — FP_SPEZZANO DMEE transport history</h2>
-<p>**Phase 0 deliverable** · Session #62 · 2026-04-24 · Evidence tier: TIER_1 (parsed from `Zagentexecution/mcp-backend-server-python/cts_batch_*.json`)</p>
-<h3>Context</h3>
-<p>User statement: *"Francesco no sabía del proceso"* (structured address change). Audit goal: verify what FP_SPEZZANO touched historically in DMEE and classify each transport as BLOCK / ASSIST / IRRELEVANT for this project.</p>
-<h3>Verified facts</h3>
-<p>**FP_SPEZZANO = Francesco Spezzano**. Confirmed from CTS `summary.top_20_owners` field in `cts_batch_2024.json` + parsing all 10 year files.</p>
-<table>
-<tr><th>Metric</th><th>Value</th></tr>
-<tr><td>Total transports by FP_SPEZZANO, 2017-2026</td><td>**70**</td></tr>
-<tr><td>DMEE-touching transports</td><td>**5** (all 2025 Q1)</td></tr>
-<tr><td>Non-DMEE transports</td><td>65</td></tr>
-<tr><td>Target trees touched</td><td>`/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</td></tr>
-<tr><td>SEPA / CITI tree touches</td><td>**0**</td></tr>
-<tr><td>All DMEE transports status</td><td>Released (`R`)</td></tr>
-<tr><td>All DMEE transports type</td><td>Workbench</td></tr>
-</table>
-<h3>The 5 DMEE transports — detail</h3>
-<p>All have **empty description** field. Classification pending node-level inspection (requires pyrfc or manual DMEE tree version diff).</p>
-<table>
-<tr><th>Date</th><th>TRKORR</th><th>Target Tree</th><th>Obj count</th><th>Preliminary classification</th></tr>
-<tr><td>2025-03-20</td><td>D01K9B0CZ0</td><td>`/CGI_XML_CT_UNESCO`</td><td>3</td><td>PENDING — need node diff</td></tr>
-<tr><td>2025-03-07</td><td>D01K9B0CWS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
-<tr><td>2025-02-21</td><td>D01K9B0CUS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>1</td><td>PENDING</td></tr>
-<tr><td>2025-02-21</td><td>D01K9B0CUT</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
-<tr><td>2025-02-20</td><td>D01K9B0CTP</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>3</td><td>PENDING</td></tr>
-</table>
-<h3>Interpretation [INFERRED — needs validation]</h3>
-<p>- Francesco's 5 transports are on the **CGI trees only**, never touched SEPA or CITI</p>
-<p>- Marlies reported CGI Dbtr is **already structured** (per her Excel analysis). If Francesco's transports are Dbtr-related, they may have contributed to that structured state.</p>
-<p>- Small obj_count (1-3 per transport) = narrow changes, not full-tree rework</p>
-<p>- Clustered in 4 weeks (Feb 20 → Mar 20) = likely a focused mini-project</p>
-<p>- **User directive**: "Francesco no sabía del proceso" — we must not assume his work covers structured address broadly. It's likely tactical/reactive.</p>
-<h3>BLOCK/ASSIST/IRRELEVANT classification — procedure (to execute in Phase 0 continued)</h3>
-<p>For each of the 5 transports, need to:</p>
-<p>1. Fetch the transport's E071 object keys (pyrfc `RFC_READ_TABLE E071 WHERE TRKORR=X`)</p>
-<p>2. Fetch the DMEE tree node IDs in the transport (if any are PAYM tree entries)</p>
-<p>3. Compare node IDs against the `PstlAdr` subtree node IDs in `/CGI_XML_CT_UNESCO` and `/CGI_XML_CT_UNESCO_1`</p>
-<p>4. Classify:</p>
-<p>   - **BLOCK**: touches any PstlAdr node in Dbtr/Cdtr/CdtrAgt/UltmtCdtr hierarchy</p>
-<p>   - **ASSIST**: touches structure supporting address work (FPAYHX mapping, char filter nodes on address, condition suppressing AdrLine)</p>
-<p>   - **IRRELEVANT**: touches unrelated parts of the tree (Purp, payment amount tags, reference tags)</p>
-<h3>What to do about Francesco</h3>
-<p>Per user directive (2026-04-24): audit as context, don't assume pattern.</p>
-<p>- **Before any CGI tree edit in Phase 2**: alignment call with Francesco to disclose the 5 transports' scope — written agreement that our structured-address changes don't overwrite his WIP</p>
-<p>- If BLOCK: coordinate merge path; schedule a joint review</p>
-<p>- If ASSIST: treat as prerequisite; evaluate if his changes help or hinder</p>
-<p>- If IRRELEVANT: no coordination needed; log in the audit</p>
-<h3>Data source</h3>
-<p>- `Zagentexecution/mcp-backend-server-python/cts_batch_2017.json` through `cts_batch_2026.json`</p>
-<p>- Field names: `trkorr`, `owner`, `date`, `status`, `type`, `description`, `objects[{pgmid,obj_type,obj_name}]`</p>
-<p>- Parser: see Phase 0 implementation commit</p>
-<h3>Corrections to prior agent output</h3>
-<p>- Earlier Explore agent reported 5 transports (correct count, correct author ID)</p>
-<p>- Earlier Explore agent reported D01K9B0CZ0 2025-03-20 as most recent (correct)</p>
-<p>- Earlier Explore agent missed the 4 other dates and the 2025-02-21 duplicate-date pair</p>
-<p>- Prior user statement "Francesco no sabía" and Explore agent "Francesco authored" both need evidence-based reconciliation. This audit shows Francesco DID touch CGI DMEE trees but we don't know WHAT yet. Not inconsistent with "didn't know about the CBPR+ structured-address initiative specifically" — his changes may have been something else entirely.</p>
-    </div>
-    </div>
-<div id="tab-vendor-dq" class="content">
-    <div class="section">
-      <h3>Vendor Master Data Quality</h3>
-      <h2>Vendor Master Data Quality — ADRC Compliance Audit</h2>
-<p>**Phase 0 deliverable** · Session #62 · 2026-04-24 · Evidence tier: TIER_1 (SQL against Gold DB `p01_gold_master_data.db`)</p>
-<h3>Query — handoff doc §7.2 (adapted to Gold DB)</h3>
-<pre>
-SELECT COUNT(*)
-FROM LFA1 l
-JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
-WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
-  AND (l.LOEVM IS NULL OR l.LOEVM = '')
-</pre>
-<h3>Results — as of P01 snapshot Apr 2026</h3>
-<table>
-<tr><th>Metric</th><th>Count</th><th>% of active</th></tr>
-<tr><td>Total active LFA1 vendors (LOEVM blank)</td><td>111,241</td><td>100%</td></tr>
-<tr><td>Active vendors with valid ADRC join</td><td>111,238</td><td>99.997%</td></tr>
-<tr><td>**Missing CITY1 OR COUNTRY**</td><td>**5**</td><td>**0.005%**</td></tr>
-<tr><td>Missing CITY1</td><td>1</td><td>0.001%</td></tr>
-<tr><td>Missing COUNTRY</td><td>4</td><td>0.004%</td></tr>
-<tr><td>Missing STREET</td><td>5,570</td><td>5.01%</td></tr>
-<tr><td>Missing POST_CODE1</td><td>1,153</td><td>1.04%</td></tr>
-<tr><td>Missing HOUSE_NUM1</td><td>76,574</td><td>68.84%</td></tr>
-</table>
-<h3>CBPR+ compliance impact</h3>
-<p>Per handoff doc §2.1 and §7.2, **only `TwnNm` (=CITY1) and `Ctry` (=COUNTRY) are MANDATORY** under ISO 20022 structured or hybrid address. All other fields (StrtNm/BldgNb/PstCd) are recommended but their absence only downgrades to Hybrid mode, which is still CBPR+-valid through 2026 (and beyond, with stricter bank spec).</p>
-<table>
-<tr><th>Compliance level</th><th>Vendor count ready</th><th>Vendor count blocked</th></tr>
-<tr><td>**Survival (Hybrid minimum: TwnNm+Ctry)**</td><td>111,236 (99.995%)</td><td>**5**</td></tr>
-<tr><td>Preferred (full structured: all 5 fields)</td><td>~32,000</td><td>~79,000 (missing BldgNb/StrtNm/PstCd)</td></tr>
-</table>
-<h3>[VERIFIED] conclusion</h3>
-<p>**Compliance survival is secured.** Only 5 vendors need manual cleanup of CITY1/COUNTRY before go-live. This is a **hard-fail-if-missing** fix, not a systemic cleanup.</p>
-<p>The BldgNb (HOUSE_NUM1) 68.8% miss is cosmetic — under Hybrid mode, missing BldgNb does not reject the file. Some banks may push for fully-structured stricter compliance post-2026; in that case, vendor master cleanup becomes a separate project (out of scope here).</p>
-<h3>Implications for the plan</h3>
-<p>1. **Phase 1**: request the 5 specific vendor IDs from Master Data team; fix by manual LFA1/ADRC update before V01 UAT</p>
-<p>2. **Phase 2**: no data-cleanup blocker for config start</p>
-<p>3. **Phase 3-4**: Hybrid-mode tests will pass for 99.995% of vendors; the 5 are the known edge cases</p>
-<p>4. **Post-go-live**: monitor ADRC data quality; new vendors must have CITY1+COUNTRY populated or F110 rejects the item</p>
-<h3>Risk level: **LOW**</h3>
-<p>Previously in the plan this was flagged as a potential major risk gating Phase 3. This audit downgrades it to LOW.</p>
-<h3>Query for the 5 vendors (execute in Phase 1 for cleanup)</h3>
-<pre>
-SELECT l.LIFNR, l.NAME1, a.CITY1, a.COUNTRY, a.STREET, a.POST_CODE1, a.HOUSE_NUM1
-FROM LFA1 l
-JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
-WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
-  AND (l.LOEVM IS NULL OR l.LOEVM = '')
-ORDER BY l.LIFNR;
-</pre>
-<p>(Pending execution — will populate this doc with vendor list.)</p>
-<h3>Data source</h3>
-<p>- Database: `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db`</p>
-<p>- Tables: LFA1 (111,241 active) + ADRC (joined via LFA1.ADRNR = ADRC.ADDRNUMBER)</p>
-<p>- ADRC has additional temporal filter available (DATE_FROM/DATE_TO) — handoff SQL omits it but Gold DB snapshot was single point-in-time so the simple join is representative</p>
-    </div>
-    </div>
-<div id="tab-q1-q8" class="content">
-    <div class="section">
-      <h3>Q1-Q8 status — from handoff doc §11</h3>
-      <table>
-        <tr><th>Q#</th><th>Question</th><th>Priority</th><th>Status (2026-04-24)</th></tr>
-        <tr><td>Q1</td><td>Exact DMEE tree name for CITI format in PRD vs DEV</td><td>HIGH</td><td><strong>CLOSED</strong> — Session #039 + Phase 0 Finding G confirm /CITI/XML/UNESCO/DC_V3_01 in P01</td></tr>
-        <tr><td>Q2</td><td>CITI pain.001 variant tags (proprietary?)</td><td>HIGH</td><td>OPEN — Phase 1 via Citi TRM</td></tr>
-        <tr><td>Q3</td><td>Worldlink UltmtCdtr beneficiary address source</td><td>HIGH</td><td><strong>BLOCKED — gating Phase 2 Step 7</strong></td></tr>
-        <tr><td>Q4</td><td>IIEP/UIL separate PMW assignments in FBZP?</td><td>MEDIUM</td><td>OPEN — Phase 1 FBZP check</td></tr>
-        <tr><td>Q5</td><td>UBO/UIS separate OBPM4 Event 05 registrations?</td><td>MEDIUM</td><td>OPEN — Phase 1 check</td></tr>
-        <tr><td>Q6</td><td>Vendor master DQ count</td><td>HIGH</td><td><strong>CLOSED</strong> — Phase 0 Finding A: 5/111,241 missing mandatory = LOW risk</td></tr>
-        <tr><td>Q7</td><td>Formal bank deadline communications</td><td>MEDIUM</td><td>OPEN — Phase 1 TRM outreach</td></tr>
-        <tr><td>Q8</td><td>SEPA consolidation into CGI_XML_CT?</td><td>LOW</td><td>PARKED — post-go-live decision</td></tr>
-      </table>
-    </div>
-    </div>
-<div id="tab-timeline" class="content">
-    <div class="section">
-      <h3>Timeline — 5 phases (gated)</h3>
-      <table>
-        <tr><th>Phase</th><th>Period</th><th>Owner</th><th>Gate</th><th>Status</th></tr>
-        <tr><td>0 — 100% Code Inventory</td><td>2026-04-24 → 04-27</td><td>Pablo</td><td>xml_touch_points_complete.md signed</td><td><strong>IN EXECUTION</strong></td></tr>
-        <tr><td>1 — Config matrix + bank specs</td><td>2026-04-27 → 04-30</td><td>Pablo + Marlies</td><td>Matrix + specs + DQ signed</td><td>Pending</td></tr>
-        <tr><td>2 — Config D01</td><td>May 2026</td><td>Pablo + Marlies</td><td>Each transport signed</td><td>Pending; BLOCKED by D01 retrofit</td></tr>
-        <tr><td>3 — Unit Test D01/V01</td><td>June 2026</td><td>Pablo + DBS</td><td>100% XSD + BAdI regression green</td><td>Pending</td></tr>
-        <tr><td>4 — UAT V01</td><td>July 2026</td><td>Marlies + Pablo</td><td>3 bank acceptances + UAT sign-off</td><td>Pending</td></tr>
-        <tr><td>5 — Deploy</td><td>Aug-Nov 2026</td><td>DBS + Pablo</td><td>Nov 2026 CBPR+ compliance</td><td>Pending</td></tr>
-      </table>
     </div>
     </div>
 <div id="tab-references" class="content">
