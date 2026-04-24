@@ -2108,5 +2108,53 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_structured_addr_hybrid_is_default_transition",
+    "rule": "When migrating an XML payment format to ISO 20022 structured address, default to Hybrid (TwnNm+Ctry mandatory + AdrLine fallback) unless each specific bank spec demands fully-structured. Never assume all banks have identical strictness.",
+    "why": "CBPR+ Nov 2026 mandate permits Hybrid (structured + AdrLine coexist) as a valid compliance state. The handoff doc for UNESCO session #62 explicitly confirms TwnNm+Ctry are the only hard-required fields. Defaulting to Hybrid preserves rollback safety and accommodates vendor master DQ gaps (UNESCO 5% missing STREET, 68% missing HOUSE_NUM1 but 99.995% have CITY1+COUNTRY). Going to fully-structured by default wastes effort on vendor master cleanup that may not be required by all banks.",
+    "how_to_apply": "Before committing to 'only structured' scope, (1) collect each bank's written spec for structured-address strictness, (2) measure vendor master DQ per field to know the cost of fully-structured, (3) default to Hybrid per bank unless bank spec is explicit. Re-evaluate stricter modes post-go-live on a per-bank basis.",
+    "severity": "MEDIUM",
+    "source_file": "knowledge/domains/Payment/phase0/gap_closure_report.md",
+    "derives_from_core_principle": "CP-003",
+    "added_session": 62,
+    "tag": [
+      "Payment",
+      "DMEE",
+      "CBPR",
+      "ISO20022"
+    ]
+  },
+  {
+    "id": "feedback_structured_addr_three_asymmetric_patterns",
+    "rule": "Structured-address migration in SAP DMEE has THREE distinct technical patterns by XML party, not one. Do not confuse them: (1) Cdtr address is SAP-auto-populated via FPAYHX Z-fields bound to vendor master LFA1+ADRC — DMEE tree config only, no ABAP needed. (2) Dbtr address is NOT in FPAYHX/FPAYH — requires ABAP user exit registered in OBPM4 Event 05 that reads T001→ADRC and writes FPAYHX-ZREF01..ZREF05 (NOT FPAYH-REF). (3) UltmtCdtr (alternative payee) may require a data source decision (vendor master / Z-table / separate user exit) per bank/format.",
+    "why": "UNESCO handoff doc §5 conflated the three patterns causing scope confusion in session #62. Dbtr requires a new FM while Cdtr does not. Mistaking the two leads to either unnecessary ABAP or missing ABAP — both are schedule-breakers for a Nov 2026 deadline.",
+    "how_to_apply": "When scoping a structured-address change, decompose per XML party (Dbtr/Cdtr/UltmtCdtr/CdtrAgt) and apply the correct pattern to each. Cdtr = tree-only. Dbtr = tree + user exit + OBPM4 registration. UltmtCdtr = decision-first, spec-second, code-third.",
+    "severity": "HIGH",
+    "source_file": "knowledge/domains/Payment/phase0/xml_touch_points_complete.md",
+    "derives_from_core_principle": "CP-003",
+    "added_session": 62,
+    "tag": [
+      "Payment",
+      "DMEE",
+      "CBPR",
+      "ISO20022",
+      "BCM"
+    ]
+  },
+  {
+    "id": "feedback_dmee_one_fm_three_pmw",
+    "rule": "A user exit FM for DMEE can be registered in multiple PMW formats via OBPM4 simultaneously. Write once, reuse across formats. Avoid per-format FM duplication.",
+    "why": "Handoff doc recommends this; UNESCO has 3 target DMEE trees (SEPA_CT_UNES, CITI DC_V3_01, CGI_XML_CT_UNESCO) that all need the same Dbtr address enrichment logic. Building 3 FMs triples maintenance and drift risk.",
+    "how_to_apply": "When creating Z_DMEE_UNESCO_DEBTOR_ADDR or similar FMs, register it in OBPM4 for all needed PMW formats using Event 05. Centralize logic; format-specific tweaks go behind IF statements keyed on format name, not in separate FMs.",
+    "severity": "MEDIUM",
+    "source_file": "C:/Users/jp_lopez/Downloads/UNESCO_BCM_StructuredAddress_AgentHandoff.docx",
+    "derives_from_core_principle": "CP-002",
+    "added_session": 62,
+    "tag": [
+      "Payment",
+      "DMEE",
+      "BCM"
+    ]
   }
 ]

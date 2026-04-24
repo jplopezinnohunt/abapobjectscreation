@@ -2991,5 +2991,282 @@
     "status": "active",
     "needs_validation": false,
     "evidence_legacy_text_for": null
+  },
+  {
+    "id": 66,
+    "claim": "At UNESCO P01 as of 2026-04-24, YCL_IDFI_CGI_DMEE_AE and _BH do NOT exist in TADIR. Only YCL_IDFI_CGI_DMEE_FR, _FALLBACK, _UTIL, _DE, _IT exist as UNESCO country-specific BAdI implementations of FI_CGI_DMEE_EXIT_W_BADI. Handoff doc speculation about AE/BH falsified.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Zagentexecution/mcp-backend-server-python/phase0_gap_probe.py",
+        "cite": "RFC_READ_TABLE TADIR on P01 2026-04-24 returned 0 rows for YCL_IDFI_CGI_DMEE_AE/_BH and Y_IDFI_CGI_DMEE_COUNTRY_AE/_BH.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_FALLBACK",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "YCL_IDFI_CGI_DMEE_DE",
+      "YCL_IDFI_CGI_DMEE_IT"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Closes GAP-003 of Phase 0.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "BCM"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 67,
+    "claim": "FPAYHX in P01 has 432 fields, 25 Z-fields. Handoff doc claim about FPAYHX-ZSTRA/ZHSNM/ZPSTL/ZORT1/ZLAND is WRONG - none exist. Actual: ZPFST, ZPLOR, ZLISO, ZLNDX, ZREGX, ZNM1S/2S, ZBANK, ZBNKL_EXT, ZFORN, ZREF01..ZREF10 (customer buffers - 10 not 5), ZSTCEG. FPAYH has ZERO REF fields; buffers live in FPAYHX-ZREF01..ZREF10.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Zagentexecution/mcp-backend-server-python/phase0_gap_probe.py",
+        "cite": "DDIF_FIELDINFO_GET TABNAME=FPAYHX on P01 2026-04-24 returned 432 fields, 25 Z-fields enumerated. TABNAME=FPAYH returned 0 REF fields.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FPAYHX",
+      "FPAYH",
+      "CI_FPAYHX"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Closes GAP-004 of Phase 0. MAJOR correction to handoff doc. Phase 2 user exit signature revised to write FPAYHX-ZREF01..05 not FPAYH-REF01..05.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 68,
+    "claim": "No UNESCO custom ABAP code writes to FPAYHX-Z* fields or FPAYH-REF fields. Static scan of 986 ABAP files in extracted_code/ with 8 write-pattern regexes returned 0 hits. FPAYHX Z-fields are SAP-standard populated by Payment Medium Workbench at F110 runtime via CI_FPAYHX append binding to vendor master LFA1+ADRC.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "knowledge/domains/Payment/phase0/gap_005_static_analysis.md",
+        "cite": "Scanned 986 abap files for FPAYHX/FPAYH write patterns. Zero matches in payment/DMEE code.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FPAYHX",
+      "FPAYH",
+      "YCL_IDFI_CGI_DMEE_FALLBACK",
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_UTIL"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Closes GAP-005 of Phase 0. Supersedes Phase 1 Explore-agent speculation that a UNESCO BAdI populates the Z-fields.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 69,
+    "claim": "Across the 4 target DMEE trees (/SEPA_CT_UNES, /CITI/XML/UNESCO/DC_V3_01, /CGI_XML_CT_UNESCO, /CGI_XML_CT_UNESCO_1), 794 of 1,975 nodes (40.2%) have MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI and dispatch through UNESCO country-class BAdI implementations at runtime. 146 of those 794 exit-invoking nodes are address-related (SEPA=0, CITI=4, CGI=69, CGI_1=73). 33 distinct MP_EXIT_FUNC values total.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/domains/Payment/phase0/gap006_dmee_nodes_with_exit.csv",
+        "cite": "RFC_READ_TABLE DMEE_TREE_NODE on P01 2026-04-24 for 4 target trees, 1,975 rows with MP_EXIT_FUNC + CK_EXIT_FUNC columns.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_FALLBACK",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "YCL_IDFI_CGI_DMEE_DE",
+      "YCL_IDFI_CGI_DMEE_IT"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Closes GAP-006 of Phase 0. New structured-address nodes in Phase 2 must decide per-node whether to set MP_EXIT_FUNC blank or route through BAdI.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 70,
+    "claim": "D01 (dev) is incomplete vs P01 (prod) for UNESCO DMEE BAdI ecosystem. 5 N_MENARD-authored (devclass=YA) objects exist in P01 TADIR but NOT in D01: YCL_IDFI_CGI_DMEE_DE (CLAS), _IT (CLAS), Y_IDFI_CGI_DMEE_COUNTRIES_DE (ENHO), _FR (ENHO), _IT (ENHO). Zero D01-only objects found. Blocks Phase 2: retrofit D01 from P01 is required before any BAdI-ecosystem modification.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/domains/Payment/phase0/d01_vs_p01_inventory.csv",
+        "cite": "RFC_READ_TABLE TADIR on both P01 and D01 2026-04-24 via phase0_d01_vs_p01_inventory.py.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YCL_IDFI_CGI_DMEE_DE",
+      "YCL_IDFI_CGI_DMEE_IT",
+      "Y_IDFI_CGI_DMEE_COUNTRIES_DE",
+      "Y_IDFI_CGI_DMEE_COUNTRIES_FR",
+      "Y_IDFI_CGI_DMEE_COUNTRIES_IT"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": null,
+    "resolution_notes": "Phase 0 finding. Resolution = Phase 0 follow-up Retrofit D01 from P01. Alignment call with N_MENARD required before Phase 2.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 71,
+    "claim": "UNESCO vendor master is CBPR+ compliance-ready for survival (Hybrid minimum). Of 111,241 active vendors (LOEVM blank) joined with ADRC via ADRNR, only 5 (0.005%) miss CITY1 or COUNTRY - the only MANDATORY fields under CBPR+ Hybrid (TwnNm+Ctry required). Non-mandatory missing: 5,570 STREET (5.0%), 1,153 POST_CODE1 (1.0%), 76,574 HOUSE_NUM1 (68.8%). Risk downgraded HIGH to LOW.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/domains/Payment/phase0/vendor_master_dq.md",
+        "cite": "SQL adapted from handoff doc §7.2 executed on Gold DB LFA1 JOIN ADRC 2026-04-24.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "LFA1",
+      "ADRC"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Phase 0 vendor DQ audit. Risk downgraded to LOW.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 72,
+    "claim": "At UNESCO, total DMEE-touching transports 2017-2026 = 53 by 8 users. M_SPRONK = 31 (primarily CITI DC_V3_01=27, SEPA_CT_UNES=7, CGI_XML_CT_UNESCO=4). N_MENARD = 9 all ABAP class code (YCL_IDFI_CGI_DMEE_*), code owner. FP_SPEZZANO = 5 all 2025 Q1 on CGI trees, all PMF VARIANT customizing (VC_TFPM042F) not tree node changes, classified ASSIST/IRRELEVANT. E_FRATNIK = 4 on ICTP (out of scope).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/domains/Payment/phase0/cts_dmee_authors.md",
+        "cite": "Parsed all 10 cts_batch_YYYY.json files 2017-2026 filtered for DMEE-touching transports.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "M_SPRONK",
+      "N_MENARD",
+      "FP_SPEZZANO"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Phase 0 Francesco audit + CTS author map. Supersedes Phase 1 Explore-agent claim of Marlies=28 transports (actual=31). N_MENARD identified as required reviewer for Phase 2 Step 9.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "CTS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
