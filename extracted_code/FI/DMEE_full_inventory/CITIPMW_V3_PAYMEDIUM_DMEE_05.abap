@@ -1,0 +1,1 @@
+[PNAME /CITIPMW/SAPLPMWV3 read err: 20 (rc=20): key=RFC_INVALID_PARAMETER, message=field 'WITH_INCLUDE' not found [MSG: class=, type=, number=, v1-4:=;;;]]

@@ -34,7 +34,7 @@
 <body>
 <header>
   <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:14px;color:#7fb3d3">v1.0</span></h1>
-  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 16:17</div>
+  <div class="sub">CBPR+ Nov 2026 DMEE migration · 3 trees · Hybrid coexistence · Built 2026-04-24 16:58</div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target DMEE trees</div></div>
     <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes probed (P01)</div></div>
@@ -100,7 +100,7 @@
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 16:17 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-24 16:58 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
@@ -533,6 +533,170 @@ Alternative 2-file strategy (user's preferred framing):
 - Steps 3-8 add structured nodes **to V2**, not to the current (V1) tree
 - Step 16 before/after screenshots compare V1 vs V2 output
 - Step 17 release promotes V2 to V01/P01 in INACTIVE state; activation is a separate customizing decision
+
+### Finding K — DMEE data-mutation chain fully decoded (2026-04-24, Phase 0 round 3)
+
+After extracting all 48 DMEE_TREE_NODE columns + DMEE_TREE_COND (614 rows) + DMEE_TREE_SORT (39 rows) + DMEE_TREE_HEAD (26 fields × 4 trees) + source of `FI_PAYMEDIUM_DMEE_CGI_05` + `FPAYHX_FREF` / `FPAYP_FREF` schemas + CL_IDFI_CGI_CALL05_* factory inventory (20+ country classes SAP-std), the complete data-mutation pipeline is now understood:
+
+```
+F110 payment run
+  ↓
+PMW auto-populates FPAYHX (SAP-standard, NO UNESCO code)
+  ↓
+OBPM4 Event 05 FM fires (table TFPM042FB registration):
+  /CGI_XML_CT_UNESCO        → FI_PAYMEDIUM_DMEE_CGI_05 (SAP std)
+  /CGI_XML_CT_UNESCO_1      → FI_PAYMEDIUM_DMEE_CGI_05 (SAP std)
+  /CITI/XML/UNESCO/DC_V3_01 → /CITIPMW/V3_PAYMEDIUM_DMEE_05 (CITI PMW)
+  /SEPA_CT_UNES             → NO EVENT 05 REGISTERED ⚠️
+  ↓
+FI_PAYMEDIUM_DMEE_CGI_05 = thin wrapper:
+  CALL METHOD cl_idfi_cgi_call05_factory=&gt;get_instance(...)
+  CALL METHOD instance-&gt;fill_fpay_fref(...)
+  ↓
+Factory dispatches to SAP country class CL_IDFI_CGI_CALL05_{AT|BE|CH|CZ|DE|DK|ES|FI|FR|GB|HR|IT|LU|PT|RO|SK|TH|GENERIC}
+Each implements interface IF_IDFI_CGI_CALL05
+Writes structured address components to FPAYHX_FREF + FPAYP_FREF buffer fields
+  ↓
+FPAYHX_FREF structure = 16 fields: REF01..REF15 (CHAR 264 each) + CURNO (NUMC 24)
+FPAYP_FREF structure  =  5 fields: REF01..REF05 (CHAR 264 each)
+Generic buffers — meaning of each REF is defined per DMEE tree configuration
+  ↓
+DMEE tree traversal — structured nodes read from FREF buffers:
+  (verified: CGI tree uses FPAYP-REF01 for StrtNm AND BldgNb AND PstCd — differentiated by MP_OFFSET / MP_SC_OFFSET substring positions)
+  ↓
+TECH switch nodes (NT=TECH, MP_SC_TAB empty) — structural scaffolding:
+  N_9020685600  REF=-DBTRPSTLADR   → Debtor PstlAdr
+  N_2938451040  REF=-CDAGPSTLADR   → Creditor Agent PstlAdr
+  N_6304594040  REF=-PSTLADRMOR2   → Creditor PstlAdr (Cdtr)
+  N_7541094900  REF=-PSTLADRMOR1   → Ultimate Debtor PstlAdr (UltmtDbtr)
+  N_4036970840  REF=-PSTLADRMOR3   → Ultimate Creditor PstlAdr (UltmtCdtr) ⬅ Marlies Q3 blocker
+  N_2326418530  REF=-PSTLADRMORE   → general PstlAdr_More_Nodes
+  N_6123792920  REF=-CTRYOFRES     → Country of Residence
+  N_4647535410  REF=-CTRYOFRES1    → CtryOfRes variant
+  ↓
+DMEE_TREE_COND: each structured element's emission gated by its parent TECH node's state
+  (parent TECH node "active" = FREF data available from Event 05)
+  ↓
+BAdI FI_CGI_DMEE_EXIT_W_BADI fires per-node (794 nodes / 40%) — UNESCO impls
+  IF_IDFI_CGI_DMEE_COUNTRIES interface — YCL_IDFI_CGI_DMEE_FR/FALLBACK/UTIL/DE/IT
+  Can mutate c_value per node (e.g., FALLBACK_CM001 name-overflow-into-StrtNm quirk)
+  ↓
+CV_RULE applied (426 nodes / 21.6%) — transformations like AL.2 (amount align), CL (lowercase), CL RP X (lowercase+replace), CL R0 (right-pad 0)
+  ↓
+For CITI: XSLT CGI_XML_CT_XSLT post-processes (author=SAP, devclass=ID-DMEE)
+  ↓
+File write to \\hq-sapitf\SWIFT$\P01\input\
+  ↓
+BCM batch (Claim #65 routing via OBPM5/TFIBLMPAYBLOCK)
+  ↓
+Alliance Lite2 → Bank
+```
+
+### Two separate UNESCO code layers, different interfaces
+
+| Hook | Interface | UNESCO impls | When |
+|---|---|---|---|
+| Event 05 | `IF_IDFI_CGI_CALL05` | **NONE** — SAP std `FI_PAYMEDIUM_DMEE_CGI_05` + country factory | Pre-tree (once per payment) |
+| BAdI FI_CGI_DMEE_EXIT_W_BADI | `IF_IDFI_CGI_DMEE_COUNTRIES` | YCL_IDFI_CGI_DMEE_FR / FALLBACK / UTIL / DE / IT | In-tree (per node with MP_EXIT_FUNC) |
+
+Our 5 UNESCO classes DO NOT touch Event 05. They are in-tree per-node mutators. Earlier plan assumption that Z_DMEE_UNESCO_DEBTOR_ADDR would be a new Event 05 handler was **correct pattern, wrong field names** (handoff doc said FPAYH-REF which doesn't exist; reality is FPAYHX_FREF / FPAYP_FREF). **But even that FM is likely unnecessary for CGI and CITI** — SAP already covers those via country factory.
+
+### Design recommendations — revised Phase 2 (user-directed 2-file + versioning strategy)
+
+**User feedback 2026-04-24**: "why Hybrid? why not 2 files and change configuration. No hay manejo de versiones en algo tan complejo?" → **Hybrid rejected. 2-file + DMEE versioning promoted to default**.
+
+**DMEE supports native versioning** (confirmed via `DMEE_TREE_NODE.VERSION` column + DMEE_TREE_HEAD.VERSION + standard tx DMEE Create/Activate Version). Currently `VERSION=000` in all 4 UNESCO trees. We create `VERSION=001` per tree with structured nodes. Only one version active at a time per tree; activation is atomic config.
+
+**Strategy**:
+
+```
+Phase 2 (May 2026):
+  /CGI_XML_CT_UNESCO  V000 ACTIVE (Francesco's 2025-03-20 state) → unchanged, still produces prod file
+  /CGI_XML_CT_UNESCO  V001 INACTIVE (our new structured work, deployed dormant)
+  /CGI_XML_CT_UNESCO_1 same pattern
+  /CITI/XML/UNESCO/DC_V3_01 same pattern
+  /SEPA_CT_UNES same pattern (V001 with structured add)
+
+Phase 3 unit test (June 2026):
+  Create Z-payment method routing V001
+  F110 with regular method → V000 (production output, untouched)
+  F110 with Z-method       → V001 (structured output, tested in isolation)
+
+Phase 4 UAT (July 2026):
+  Send V001 output via bank test gateway for schema + acceptance validation
+  V000 continues to handle live production payments
+  Zero production risk
+
+Phase 5 cutover (Nov 2026):
+  Once bank validates V001:
+    - Deactivate V000, Activate V001 atomically in D01 → transport to P01
+    - All F110 now produce structured
+  Rollback (if bank/BCM rejects):
+    - Activate V000, deactivate V001 → instant revert, no data loss
+```
+
+### Why 2-file + versioning beats Hybrid
+
+| Criterion | Hybrid (single file, mixed) | 2-file + DMEE versioning |
+|---|---|---|
+| Rollback | Config switch, mid-file risk | Atomic version flip — seconds |
+| Bank validation | All-or-nothing sent to live | Parallel via test gateway, zero prod risk |
+| File content | Structured + AdrLine coexist (parser confusion risk) | Clean single-mode file |
+| CBPR+ compliance | Minimum viable (TwnNm+Ctry) | Fully structured (future-proof) |
+| Testability pre-cutover | Production-risky | **Fully isolated — V001 dormant until activated** |
+| SAP-native | Manual dual-node hack | **Native — DMEE Create Version / Activate Version** |
+| Vendor DQ edge cases | Silent AdrLine fallback (wrong-file risk) | F110 errors clearly signal missing data |
+
+### Per-tree design with 2-file strategy
+
+**For CGI trees** (`/CGI_XML_CT_UNESCO` + `_1`):
+- Create V001 as copy of V000
+- In V001: fix CdtrAgt unstructured nodes (small change per Marlies Excel)
+- CGI already has SAP Event 05 + CL_IDFI_CGI_CALL05_* country factory populating FPAYHX_FREF → structured mode works natively once CdtrAgt is correctly configured
+- ZERO ABAP needed
+
+**For CITI tree** (`/CITI/XML/UNESCO/DC_V3_01`):
+- Create V001 as copy of V000
+- In V001: add TECH PstlAdr switch + structured Dbtr nodes reading from CITIPMW FREF
+- UltmtCdtr Worldlink → still BLOCKED by Q3 (data source) — may need to defer to V002 or keep as AdrLine in V001 if Q3 unresolved by Phase 2
+- ZERO ABAP likely — CITIPMW factory already provides infrastructure
+
+**For SEPA tree** (`/SEPA_CT_UNES`):
+- Create V001 as copy of V000
+- **Key decision**: does V001 add Event 05 infrastructure?
+  - **Sub-option A**: V001 also registers Event 05 FM (SAP-std `FVD_SEPA_OL_CT_DMEE_05` or `FI_PAYMEDIUM_DMEE_CGI_05`) — need to test compatibility in D01 first. If it works, SEPA gains full multi-mode parity with CGI. ZERO ABAP.
+  - **Sub-option B**: V001 has new direct-read structured nodes (StrtNm←ZPFST, Ctry←ZLISO, TwnNm+PstCd parsed from ZPLOR via CV_RULE/MP_OFFSET). Simpler but ZPLOR parsing reliability depends on vendor master consistency. ZERO ABAP.
+  - **Sub-option C**: V001 uses new UNESCO FM `Z_DMEE_UNESCO_SEPA_05`. Requires ABAP + D01 retrofit first. Skip unless A+B fail.
+
+**Recommended SEPA path**: try Sub-option A in D01 first (register `FVD_SEPA_OL_CT_DMEE_05` for `/SEPA_CT_UNES` V001 and test). If compatible → done. If not → fall back to Sub-option B (direct-read).
+
+### Revised Phase 2 sequencing
+
+| Week | Work | Output |
+|---|---|---|
+| 1 | Create V001 on all 4 trees (copy V000, transport) | V001 INACTIVE in all 3 systems |
+| 2 | CGI V001 — fix CdtrAgt structured nodes | DMEE test run generates clean CGI structured file |
+| 2 | CITI V001 — add Dbtr structured nodes (UltmtCdtr held for Q3) | DMEE test run generates clean CITI Dbtr-structured file |
+| 3 | SEPA V001 — test Sub-option A, fall back to B if needed | DMEE test run generates structured SEPA file |
+| 3 | Z-payment method created for V001 routing (for test) | Z_SEPA_V001, Z_CGI_V001, Z_CITI_V001 payment methods |
+| 4 | F110 test: V000 (live) vs V001 (test) parallel runs | 2 files per batch during testing window |
+
+**Phase 2 compressed to 4 weeks, ZERO ABAP, version-safe rollback path end-to-end**.
+
+### Remaining unknowns for this design
+
+1. **Does Sub-option A work for SEPA?** — requires D01 test registration + F110 run (Phase 2 Week 3 first task)
+2. **Does DMEE version activation transport cleanly between D01→V01→P01?** — SAP-standard, should work; to verify in Phase 2 Week 1
+3. **CITI UltmtCdtr Q3** — unchanged blocker; may keep as AdrLine in V001 if unresolved by Phase 2
+4. **XSLT `CGI_XML_CT_XSLT`** — does it process V001 output differently than V000? SAP-std XSLT typically reads the tree result structure, not version-dependent. To verify in Phase 3 test.
+
+### Remaining unknowns (legitimate, not gaps I can close in this session)
+
+1. **CITIPMW_V3_PAYMEDIUM_DMEE_05 source extraction failed** (RFC error on WITH_INCLUDE param). Need SAP authorization or alternative extraction. Blocks understanding of CITI UltmtCdtr/WHO→ICC case.
+2. **YCL_IDFI_CGI_DMEE_DE + _IT source** — RPY_CLASS_READ FU_NOT_FOUND. Need ADT extraction alternative.
+3. **XSLT `CGI_XML_CT_XSLT` source** — not extracted. SAP-std so content should be documented externally or read via SE80.
+4. **Q3 Worldlink UltmtCdtr data source** — still blocked, needs Citi TRM / DBS input.
+5. **SEPA Option A testability** — whether `FVD_SEPA_OL_CT_DMEE_05` works with `/SEPA_CT_UNES` tree — requires D01 test registration and F110 run.
 
 ### Artifacts produced in Phase 0 (so far)
 
