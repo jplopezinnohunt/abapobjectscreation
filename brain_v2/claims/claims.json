@@ -4211,5 +4211,89 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 96,
+    "claim": "Pattern A overflow logic at YCL_IDFI_CGI_DMEE_FALLBACK_CM001 lines 13-31 is NOT a legacy hack — it is a BANK-MANDATED requirement from Société Générale documented in TS DMEE CGI modifications 20240229.docx by N_MENARD. SocGen explicitly requires that names >35 chars must have characters 36-40 (Name1 overflow + Name2) prepended to the StrtNm tag. Removing this logic would break production for vendors with long names. Q1 of N_MENARD alignment is RESOLVED: A2 (guard for V001 only, preserve V000 behavior) is the only valid choice. Per Nicolas: \"I dont think this is a very clean solution but we asked confirmation by giving examples and they insist.\" Marlies + Nicolas previously discussed with bank.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "documentation",
+        "ref": "C:/tmp/dmee_attachments/TS DMEE CGI modifications 20240229.docx by N_MENARD",
+        "cite": "Functional + Technical specs by code owner",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YCL_IDFI_CGI_DMEE_FALLBACK",
+      "SOG01"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "Q1 RESOLVED: Pattern A2 (guard, not remove). Bank-mandated requirement. Q1bis (FR class CM001/CM002 swap) ALSO RESOLVED: CM002 is the PPC integration entry point, must retrofit P01->D01.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 97,
+    "claim": "Payment Purpose Code (PPC) infrastructure is a SECOND custom development on /CGI_XML_CT_UNESCO documented in N_MENARD 18/03/2024 specs (FS+TS Payment Purpose code XML.docx). Production-active in P01: 9 countries (AE/BH/CN/ID/IN/JO/MA/MY/PH) require PPC tags or payment is rejected by bank. Tables: YTFI_PPC_TAG (11 rows) maps (LAND1, TAG_ID, DEB_CRE) -> XML tag location (InstrForCdtrAgt/InstrInf or RmtInf/Ustrd). YTFI_PPC_STRUC (133 rows) builds tag value via positional building blocks (SEPARATOR/FIXED_VAL/PPC_VAR/PPC_DESCR/PAY_FIELD) per (LAND1, TAG_ID, PAY_TYPE, CODE_ORD). Pay types: O=third-party, P=payroll, R=replenishment, identified via REGUP-LAUF1 suffix. Entry point: YCL_IDFI_CGI_DMEE_FR===CM002 (P01-only) calls YCL_IDFI_CGI_DMEE_UTIL->GET_TAG_VALUE_FROM_CUSTO (CM003). PPC source: T015L.LZBKZ (SCB indicator) + ZWCK1 (description). Tables YTFI_PPC_TAG/STRUC are byte-identical D01<->P01 (11 + 133 rows each). The retrofit gap is purely the FR/CM002 method which dispatches PPC for FR co code.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "documentation",
+        "ref": "C:/tmp/dmee_attachments/FS Payment Purpose code XML.docx + TS Payment Purpose code XML.docx by N_MENARD",
+        "cite": "9-country PPC requirements + table structure",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "production_data",
+        "ref": "YTFI_PPC_TAG + YTFI_PPC_STRUC extracted to Gold DB 2026-04-29",
+        "cite": "11 + 133 rows confirmed both systems",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YTFI_PPC_TAG",
+      "YTFI_PPC_STRUC",
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "T015L",
+      "/CGI_XML_CT_UNESCO"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "V001 design must PRESERVE PPC integration. CGI tree V001 changes must not break the PPC tags. FR/CM002 retrofit is critical for D01 testing of any AE/BH/CN/ID/IN/JO/MA/MY/PH payment.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    }
   }
 ]
