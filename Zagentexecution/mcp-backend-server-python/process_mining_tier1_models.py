@@ -58,9 +58,9 @@ def model_8_bcm_lifecycle(cur):
 
 
 def model_9_house_bank_emission(cur):
-    """REGUH_FULL.HBKID + T012 — emission distribution per house bank."""
+    """REGUH_FAST.HBKID + T012 — emission distribution per house bank."""
     out = {'name': 'Model 9 — Per House Bank Emission'}
-    # Use REGUH (8-col) since REGUH_FULL may not be ready yet — HBKID is in both
+    # Use REGUH (8-col) since REGUH_FAST may not be ready yet — HBKID is in both
     cur.execute('SELECT HBKID, COUNT(*) FROM REGUH WHERE HBKID != "" GROUP BY HBKID ORDER BY 2 DESC LIMIT 30')
     hbk_dist = cur.fetchall()
     out['per_hbkid'] = hbk_dist
@@ -88,21 +88,21 @@ def model_9_house_bank_emission(cur):
 
 
 def model_10_worldlink_currencies(cur):
-    """REGUH_FULL.WAERS + HBKID — Worldlink CITI traffic (exotic currencies)."""
+    """REGUH_FAST.WAERS + HBKID — Worldlink CITI traffic (exotic currencies)."""
     out = {'name': 'Model 10 — Worldlink Currencies via CITI'}
-    # Need REGUH_FULL for WAERS column
+    # Need REGUH_FAST for WAERS column
     try:
-        cur.execute('SELECT WAERS, COUNT(*), SUM(CAST(RWBTR AS REAL)) FROM REGUH_FULL WHERE WAERS != "" GROUP BY WAERS ORDER BY 2 DESC LIMIT 30')
+        cur.execute('SELECT WAERS, COUNT(*), SUM(CAST(RWBTR AS REAL)) FROM REGUH_FAST WHERE WAERS != "" GROUP BY WAERS ORDER BY 2 DESC LIMIT 30')
         out['currency_distribution'] = cur.fetchall()
     except sqlite3.OperationalError:
-        out['error'] = 'REGUH_FULL not yet available (extraction in progress)'
+        out['error'] = 'REGUH_FAST not yet available (extraction in progress)'
         return out
 
     # Worldlink-specific (BRL, MGA, TND, ARS, ZAR, CDF, KES, NGN, MXN, INR, CNY)
     worldlink_cur = ('BRL','MGA','TND','ARS','ZAR','CDF','KES','NGN','MXN','INR','CNY','THB','MYR','IDR')
     placeholders = ','.join('?' * len(worldlink_cur))
     cur.execute(f"""
-        SELECT WAERS, COUNT(*) FROM REGUH_FULL
+        SELECT WAERS, COUNT(*) FROM REGUH_FAST
         WHERE WAERS IN ({placeholders})
         GROUP BY WAERS ORDER BY 2 DESC
     """, worldlink_cur)
@@ -110,7 +110,7 @@ def model_10_worldlink_currencies(cur):
 
     # WAERS × HBKID for Worldlink
     cur.execute(f"""
-        SELECT WAERS, HBKID, COUNT(*) FROM REGUH_FULL
+        SELECT WAERS, HBKID, COUNT(*) FROM REGUH_FAST
         WHERE WAERS IN ({placeholders})
         GROUP BY WAERS, HBKID ORDER BY 3 DESC LIMIT 30
     """, worldlink_cur)
@@ -131,15 +131,15 @@ def model_6_void_patterns(cur):
         cur.execute('SELECT XVORL, COUNT(*) FROM REGUH GROUP BY XVORL')
         out['xvorl_distribution'] = cur.fetchall()
 
-    # If REGUH_FULL has VOIDS/VOIDR/XAVIS/XEINZ
+    # If REGUH_FAST has VOIDS/VOIDR/XAVIS/XEINZ
     try:
-        cur.execute('PRAGMA table_info(REGUH_FULL)')
+        cur.execute('PRAGMA table_info(REGUH_FAST)')
         full_cols = [r[1] for r in cur.fetchall()]
         if 'VOIDS' in full_cols or 'XAVIS' in full_cols:
-            cur.execute('SELECT XAVIS, COUNT(*) FROM REGUH_FULL GROUP BY XAVIS')
+            cur.execute('SELECT XAVIS, COUNT(*) FROM REGUH_FAST GROUP BY XAVIS')
             out['xavis_distribution_full'] = cur.fetchall()
     except sqlite3.OperationalError:
-        out['note'] = 'REGUH_FULL not yet available — using REGUH 8-col only'
+        out['note'] = 'REGUH_FAST not yet available — using REGUH 8-col only'
 
     return out
 
@@ -155,7 +155,7 @@ def main():
     print('Model 9 — Per House Bank Emission...')
     m9 = model_9_house_bank_emission(cur)
 
-    print('Model 10 — Worldlink Currencies (needs REGUH_FULL)...')
+    print('Model 10 — Worldlink Currencies (needs REGUH_FAST)...')
     m10 = model_10_worldlink_currencies(cur)
 
     print('Model 6 — Reverse/Void Patterns...')

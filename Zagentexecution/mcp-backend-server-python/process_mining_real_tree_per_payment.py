@@ -2,11 +2,11 @@
 Definitive HBKID × Tree mapping — config-derived, NOT inferred.
 
 JOIN chain (anchored on P01 customizing):
-  REGUH_FULL.RZAWE (actual payment method per F110 run)
+  REGUH_FAST.RZAWE (actual payment method per F110 run)
   + T001.LAND1 (paying co code's country)
   → T042Z lookup → FORMI = the REAL DMEE tree used
 
-Plus per-year breakdown using REGUH_FULL.LAUFD (or ZALDT).
+Plus per-year breakdown using REGUH_FAST.LAUFD (or ZALDT).
 """
 import sqlite3, json, sys
 from pathlib import Path
@@ -23,13 +23,13 @@ def main():
     con = sqlite3.connect(DB)
     cur = con.cursor()
 
-    # Verify REGUH_FULL is ready
+    # Verify REGUH_FAST is ready
     try:
-        cur.execute('SELECT COUNT(*) FROM REGUH_FULL')
+        cur.execute('SELECT COUNT(*) FROM REGUH_FAST')
         cnt = cur.fetchone()[0]
-        print(f'REGUH_FULL has {cnt:,} rows')
+        print(f'REGUH_FAST has {cnt:,} rows')
     except sqlite3.OperationalError:
-        print('REGUH_FULL not yet ready — abort.')
+        print('REGUH_FAST not yet ready — abort.')
         return
 
     print('\n=== Definitive HBKID × Tree mapping (CONFIG-DERIVED) ===\n')
@@ -47,7 +47,7 @@ def main():
       COALESCE(t042z.TEXT1, '') as t042z_text,
       COUNT(*) as cnt,
       SUM(CAST(NULLIF(regu.RWBTR,'') AS REAL)) as total_amt
-    FROM REGUH_FULL regu
+    FROM REGUH_FAST regu
     JOIN T001 t001 ON regu.ZBUKR = t001.BUKRS
     LEFT JOIN T042Z t042z ON t042z.LAND1 = t001.LAND1 AND t042z.ZLSCH = regu.RZAWE
     GROUP BY regu.HBKID, regu.ZBUKR, regu.RZAWE
@@ -72,7 +72,7 @@ def main():
       SUBSTR(regu.LAUFD,1,4) as year,
       COALESCE(t042z.FORMI, 'NO_T042Z_MATCH') as tree,
       COUNT(*) as cnt
-    FROM REGUH_FULL regu
+    FROM REGUH_FAST regu
     JOIN T001 t001 ON regu.ZBUKR = t001.BUKRS
     LEFT JOIN T042Z t042z ON t042z.LAND1 = t001.LAND1 AND t042z.ZLSCH = regu.RZAWE
     WHERE regu.LAUFD != ''
@@ -82,9 +82,9 @@ def main():
 
     # Output
     md = ['# Definitive HBKID × Tree mapping — CONFIG-derived (no inference)\n',
-          '**Generated**: from P01 Gold DB JOIN REGUH_FULL × T001 × T042Z\n\n',
+          '**Generated**: from P01 Gold DB JOIN REGUH_FAST × T001 × T042Z\n\n',
           '## Method\n\n',
-          'For each F110 payment in REGUH_FULL:\n',
+          'For each F110 payment in REGUH_FAST:\n',
           '1. Lookup paying co code country: `T001.BUKRS = REGUH.ZBUKR → T001.LAND1`\n',
           '2. Lookup actual payment method: `REGUH.RZAWE`\n',
           '3. Config lookup: `T042Z WHERE LAND1=co_country AND ZLSCH=RZAWE → FORMI`\n',
@@ -134,8 +134,8 @@ def main():
     md.append('\n## Test matrix (CONFIG-derived priorities)\n\n')
     md.append('Tier 1 (mandatory: combinations >1000 payments routing to in-scope trees):\n\n')
     md.append('| # | HBKID | Tree | Volume |\n|---|---|---|---|\n')
-    for i, ((hbk, tree), years) in enumerate(target_combos[:15], 1):
-        total = sum(years.values())
+    for i, (hbk, tree) in enumerate(target_combos[:15], 1):
+        total = sum(by_year_tree[(hbk, tree)].values())
         if total > 1000:
             md.append(f"| T{i:02d} | {hbk} | `{tree}` | {total:,} |\n")
 

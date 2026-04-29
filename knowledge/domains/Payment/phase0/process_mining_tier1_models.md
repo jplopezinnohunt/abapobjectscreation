@@ -177,7 +177,79 @@
 
 ## Model 10 — Worldlink Currencies via CITI
 
-⏳ REGUH_FULL not yet available (extraction in progress)
+### Total currency distribution (top 20)
+
+| Currency | Payments | Total amount |
+|---|---|---|
+| EUR | 207,749 | 1,556,700,421 |
+| USD | 109,812 | 1,645,642,228 |
+| BRL | 47,174 | 862,231,310 |
+| XOF | 4,471 | 16,892,302 |
+| MGA | 3,663 | 471,108,652 |
+| CAD | 3,572 | 28,698,047 |
+| XAF | 3,354 | 7,796,022 |
+| GBP | 2,415 | 8,557,465 |
+| INR | 2,146 | 48,964,938 |
+| THB | 1,407 | 35,536,087 |
+| KES | 1,307 | 35,230,391 |
+| CHF | 1,274 | 14,703,091 |
+| TND | 1,182 | 113,899,513 |
+| IDR | 994 | 42,578,149 |
+| GHS | 890 | 5,388,083 |
+| NGN | 802 | 650,682,388 |
+| TZS | 800 | 433,756,474 |
+| CNY | 799 | 262,959 |
+| MXN | 789 | 0 |
+| ETB | 755 | 52,684,455 |
+
+### Worldlink-pattern currencies (BRL/MGA/TND/...)
+
+| Currency | Payments |
+|---|---|
+| BRL | 47,174 |
+| MGA | 3,663 |
+| INR | 2,146 |
+| THB | 1,407 |
+| KES | 1,307 |
+| TND | 1,182 |
+| IDR | 994 |
+| NGN | 802 |
+| CNY | 799 |
+| MXN | 789 |
+| ZAR | 180 |
+| ARS | 160 |
+
+### Worldlink Currency × HBKID
+
+| Currency | HBKID | Payments |
+|---|---|---|
+| BRL | CIT01 | 44,344 |
+| MGA | CIT04 | 3,647 |
+| INR | SOG01 | 2,098 |
+| BRL | SOG01 | 2,037 |
+| THB | SOG01 | 1,404 |
+| KES | SOG01 | 1,277 |
+| TND | CIT04 | 1,162 |
+| IDR | SOG01 | 990 |
+| NGN | SOG01 | 801 |
+| CNY | SOG01 | 796 |
+| BRL | BRA01 | 792 |
+| MXN | SOG01 | 789 |
+| ZAR | SOG01 | 180 |
+| ARS | CIT04 | 80 |
+| ARS | SOG01 | 80 |
+| TND | (empty) | 20 |
+| INR | CIT04 | 16 |
+| INR | GRN01 | 16 |
+| INR | SOG03 | 16 |
+| KES | CIT04 | 16 |
+| MGA | (empty) | 16 |
+| KES | SCB12 | 14 |
+| IDR | SCB08 | 4 |
+| CNY | CIT04 | 3 |
+| THB | CIT04 | 3 |
+| BRL | CIT04 | 1 |
+| NGN | SCB09 | 1 |
 
 ## Model 6 — Reverse/Void Payment Patterns
 
