@@ -866,8 +866,62 @@ Post-rollback:
     """
 
 
+def tab_components():
+    """Components Map — 31 components (CONFIG/CODE/DATA/DDIC/SAP-std)."""
+    import json
+    cm_path = Path(__file__).resolve().parents[2] / "knowledge" / "domains" / "Payment" / "phase0" / "components_map.json"
+    if not cm_path.exists():
+        return "<p>Components map not generated yet.</p>"
+    with open(cm_path, encoding="utf-8") as f:
+        data = json.load(f)
+    components = data["components"]
+    type_colors = {
+        "CONFIG": "#cfe2f3",
+        "CODE": "#fce5cd",
+        "CODE (SAP std)": "#ead1dc",
+        "DDIC": "#d9ead3",
+        "DATA": "#fff2cc",
+    }
+    rows = []
+    for c in components:
+        bg = type_colors.get(c["type"], "#f5f5f5")
+        abap = "<b style='color:#c0392b'>YES</b>" if c.get("abap_needed") else "no"
+        rows.append(
+            f"<tr style='background:{bg};color:#222'>"
+            f"<td><code>{esc(c['id'])}</code></td>"
+            f"<td><b>{esc(c['name'])}</b></td>"
+            f"<td>{esc(c['type'])}</td>"
+            f"<td>{esc(c['layer'])}</td>"
+            f"<td>{esc(c['owner'])}</td>"
+            f"<td>{esc(c['today_v000'])}</td>"
+            f"<td><b>{esc(c['v001_change'])}</b></td>"
+            f"<td>{esc(c['evidence'])}</td>"
+            f"<td>{esc(c['reviewer'])}</td>"
+            f"<td>{abap}</td>"
+            f"</tr>"
+        )
+    return f"""
+    <div class="section">
+      <h3>Components Map — config + code + data ({data['total']} components)</h3>
+      <p><em>Last update: {esc(data.get('last_update', '—'))} · Source of truth: <code>knowledge/domains/Payment/phase0/components_map.json</code></em></p>
+      <p>Color legend: <span style="background:#cfe2f3;padding:2px 8px;color:#222">CONFIG</span> &nbsp;
+         <span style="background:#fce5cd;padding:2px 8px;color:#222">CODE (UNESCO)</span> &nbsp;
+         <span style="background:#ead1dc;padding:2px 8px;color:#222">CODE (SAP std)</span> &nbsp;
+         <span style="background:#d9ead3;padding:2px 8px;color:#222">DDIC</span> &nbsp;
+         <span style="background:#fff2cc;padding:2px 8px;color:#222">DATA</span></p>
+      <table>
+        <tr><th>ID</th><th>Component</th><th>Type</th><th>Layer</th><th>Owner</th><th>Today (V000)</th><th>V001 change</th><th>Evidence</th><th>Reviewer</th><th>ABAP?</th></tr>
+        {chr(10).join(rows)}
+      </table>
+      <p style="margin-top:16px"><b>Summary</b>: of {data['total']} components, <b>1 needs ABAP</b> (Pattern A guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</code>, 3 lines), <b>5 need CONFIG</b> (DMEE V001 trees + TFPM042FB Event 05 row), the rest are <b>NO CHANGE</b> — SAP-std reused or out of scope.</p>
+      <p>Surgical change validated by independent expert agent re-evaluation 2026-04-25: <b>~80% customizing, ~20% code (1 method, 3 lines)</b>.</p>
+    </div>
+    """
+
+
 TABS = [
     ("overview", "Overview", tab_overview),
+    ("components", "Components Map", tab_components),
     ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
     ("phase1", "Phase 1 · Matrix + Specs", tab_phase1),
     ("phase2", "Phase 2 · Config D01", tab_phase2),

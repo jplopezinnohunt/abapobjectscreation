@@ -2156,5 +2156,21 @@
       "DMEE",
       "BCM"
     ]
+  },
+  {
+    "id": "feedback_dmee_address_via_event05_generic_layout",
+    "rule": "When designing a new ISO 20022 / pain.001 DMEE tree (or version) that needs structured address, source the structured nodes from FPAYHX-REF01/REF02/REF06 using SAP-std byte offsets — do NOT design a custom UNESCO BAdI for address. The SAP-std GENERIC class (CL_IDFI_CGI_CALL05_GENERIC) populates these REF buffers from ADRC at every Event 05 call: REF01[0..60]=street, [60..80]=building, [80..90]=post_code1, [90..100]=region, [100..110]=house_num1; REF02 has Cdtr equivalents; REF06[0..40]=city. Country classes (FR/DE/IT/GB) only ADD REF14 country-specific data, never override the address layout.",
+    "why": "Phase 0/1 expert re-evaluation discovered that SEPA structured address was thought to require new ABAP, but the SAP-std generic class already does the address-to-REF mapping universally. Avoiding custom address BAdI keeps the change surgical (config-only for SEPA) and aligned with SAP-supported pattern.",
+    "how_to_apply": "(1) For a new pain.001 tree: register a payment-medium FM (typically FI_PAYMEDIUM_DMEE_CGI_05) for Event 05 in TFPM042FB. (2) Add DMEE nodes for StrtNm/BldgNb/PstCd/TwnNm/Ctry sourced from FPAYHX-REF01 with the byte-offset layout above (use MP_SC_FLD=REF01 + MP_OFFSET + appropriate length). (3) Verify in DMEE Tx Test mode with a sample FPAYHX payload before deploying to D01.",
+    "severity": "HIGH",
+    "source_file": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap",
+    "derives_from_core_principle": "CP-003",
+    "added_session": 62,
+    "tag": [
+      "Payment",
+      "DMEE",
+      "ISO20022",
+      "CBPR"
+    ]
   }
 ]
