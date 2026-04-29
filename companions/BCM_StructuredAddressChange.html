@@ -61,7 +61,7 @@
   <div class="hamburger" onclick="toggleSidebar()" title="Collapse/expand menu">&#9776;</div>
   <div class="header-title">
     <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:12px;color:#7fb3d3">v1.0</span></h1>
-    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 15:03</div>
+    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 15:51</div>
   </div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target trees</div></div>
@@ -1005,6 +1005,67 @@ ORDER BY l.LIFNR;
         <li>Build <code>change_matrix.csv</code> with per-node action (ADD/MOD/DEL/KEEP) for V001</li>
       </ol>
     </div>
+
+    <div class="section" style="background:#1a2230;border-color:#7fb3d3;margin-top:30px">
+      <h3 style="color:#7fb3d3">📊 Update 2026-04-29 — Drift detection + Process mining + LIVE config map</h3>
+      <p>Three follow-up workstreams completed after Phase 0 v1:</p>
+
+      <h4 style="color:#7fb3d3">1. D01 vs P01 drift detection — D01-RETROFIT-01 transport scope</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/CONCLUSIONS_TABLES.md" style="color:#7fb3d3">CONCLUSIONS_TABLES.md</a> · <a href="../knowledge/domains/Payment/phase0/retrofit_diff_matrix.md" style="color:#7fb3d3">retrofit_diff_matrix.md</a></p>
+      <p>51 UNESCO custom DMEE includes byte-by-byte compared between D01 and P01:</p>
+      <ul>
+        <li><strong>30 IDENTICAL</strong> (skip — no retrofit needed)</li>
+        <li><strong>19 P01_ONLY</strong> — must retrofit P01→D01 (YCL_IDFI_CGI_DMEE_DE 9 includes + IT 9 includes + FR/CM002)</li>
+        <li><strong>2 D01_ONLY</strong> — Q1bis (FR/CM001 method swap with P01/CM002), Z_DMEE_EXIT_TAX_NUMBER====FT (2019 leftover)</li>
+        <li>Plus 3 ENHO (Y_IDFI_CGI_DMEE_COUNTRIES_DE/FR/IT) → <strong>22 objects total in D01-RETROFIT-01 transport</strong></li>
+        <li>Pattern A target file (FALLBACK CM001) verified byte-identical → fix safe to apply</li>
+        <li>Customizing extras in D01 (TFPM042FB +5 SocGen check rows, T042Z +3 China rows) are unrelated WIP — not in our scope</li>
+      </ul>
+
+      <h4 style="color:#7fb3d3">2. Process mining (anchored on P01 Gold DB)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/process_mining_dispatcher_usage.md" style="color:#7fb3d3">PM #1 Country dispatcher</a> · <a href="../knowledge/domains/Payment/phase0/process_mining_tier1_models.md" style="color:#7fb3d3">PM Tier 1 (BCM + house bank)</a> · <a href="../knowledge/domains/Payment/phase0/process_mining_model9_drilldown.md" style="color:#7fb3d3">PM Model 9 drilldown</a></p>
+      <ul>
+        <li><strong>942,011 REGUH payments analyzed</strong> covering 2024-01 → 2026-03 (range 2 years 3 months)</li>
+        <li><strong>18 country dispatchers ACTIVE</strong> (FR=148K, US=38K, IT=22K, DE=20K, GB=9K, BE=7K, ES=7K, CA=5K, CH=2.5K, CN=2.3K, AU=1.7K, MX=1.6K, PL=931, DK=871, PT=857, AT=545, SE=416, LT=377)</li>
+        <li><strong>10 country dispatchers DEAD</strong>: BG/CZ/EE/HK/HR/IE/LU/RO/SK/TW (zero traffic — extracted but never exercised)</li>
+        <li><strong>Top in-scope HBKIDs</strong>: SOG01 (UNES SocGen) 490K, CIT01 (UBO Citi BR) 76K, CIT04 (UNES Citi US) 61K, SOG05 (UIL DE) 9K, SOG02 (IIEP) 7K, SOG03 (UNES) 9K, CIT21 (UNES Canada) 5K. UNI01 (ICTP) 24K is OUT OF SCOPE.</li>
+        <li><strong>Worldlink confirmed</strong>: CIT04 emits to MG (4K) + TN (1.6K) + AR + CD + ZW (Worldlink exotic currencies)</li>
+        <li><strong>YoY growth ~7%</strong>, no seasonal anomalies — V001 cutover safe in any window</li>
+        <li><strong>F110 proposal pattern</strong>: 38% of all REGUH runs are XVORL=X (test proposal). Phase 3 testing leverages this — zero posting risk.</li>
+        <li><strong>BCM batches</strong>: 27,443 headers + 600,042 items. SOG01 alone = 41% of BCM batches (11,334).</li>
+      </ul>
+
+      <h4 style="color:#7fb3d3">3. LIVE configuration map — vendor → file → bank (all connected)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/LIVE_CONFIG_MAP.md" style="color:#7fb3d3">LIVE_CONFIG_MAP.md</a> — full chain documented</p>
+      <ul>
+        <li><strong>T042I = canonical house bank derivation</strong> (77 rules: ZBUKR + ZLSCH + WAERS → HBKID + HKTID). Multi-currency aware. Confirmed against REGUH traffic.</li>
+        <li><strong>Country dispatcher (FR/DE/IT classes) fires ONLY on CGI tree</strong> — not SEPA, not CITI. Two dispatcher mechanisms distinguished:
+          <ul>
+            <li>Event 05 factory (cl_idfi_cgi_call05_factory) — 18 SAP-std country classes, populates FPAYHX_FREF</li>
+            <li>Per-node BAdI (FI_CGI_DMEE_EXIT_W_BADI) — only 4 UNESCO Y classes (FALLBACK + FR + DE + IT), mutates output XML per node</li>
+          </ul>
+        </li>
+        <li><strong>What stays untouched in production</strong>: V000 of all 4 trees, 17 CITIPMW V3 FMs, FI_PAYMEDIUM_DMEE_CGI_05, SAP-std country classes, BCM workflow, file output path</li>
+      </ul>
+
+      <h4 style="color:#7fb3d3">4. Active vs Dead classification (P01-anchored)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/active_vs_dead_inventory.md" style="color:#7fb3d3">active_vs_dead_inventory.md</a></p>
+      <ul>
+        <li>4 DMEE trees + 1 bonus _BK active in P01</li>
+        <li>2 Event 05 FMs registered (TFPM042FB)</li>
+        <li>33 node-level FMs (MP_EXIT_FUNC) including 26 CITIPMW V3 + 4 SEPA + 2 Z customs + 1 BAdI dispatcher</li>
+        <li>5 UNESCO Y* classes active</li>
+        <li>17/17 CITIPMW V3 FMs extracted to <code>extracted_code/FI/DMEE_full_inventory/</code></li>
+        <li>Brain claims +6 (88-93)</li>
+      </ul>
+
+      <h4 style="color:#7fb3d3">5. Pending extractions (in progress)</h4>
+      <ul>
+        <li>REGUH_FULL (27 cols, 942K rows) — for RZAWE-based real tree mapping</li>
+        <li>REGUP (28 cols, ~3-5M rows) — for line-item analysis</li>
+        <li>Apenas terminen: Model 10 (Worldlink currencies) + PM v2 (real tree per payment via T001 × T042Z JOIN)</li>
+      </ul>
+    </div>
     </div>
 <div id="tab-phase1" class="content">
     <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
@@ -1489,7 +1550,7 @@ Post-rollback:
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 15:03 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 15:51 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
