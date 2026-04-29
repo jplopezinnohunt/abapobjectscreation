@@ -694,10 +694,55 @@ def tab_phase2():
     """Phase 2 — Config D01 (DMEE V001 creation + BAdI Pattern A fix). PENDING."""
     return f"""
     <div class="section" style="background:#0d1e2a;border-color:#7fb3d3">
-      <h3 style="color:#7fb3d3">Phase 2 — Config D01: DMEE V001 creation + BAdI Pattern A fix <span style="font-size:12px;color:#e67e22">(PENDING · May 2026)</span></h3>
-      <p><strong>Purpose</strong>: build V001 structured versions of the 4 trees (V000 unchanged) + apply Pattern A BAdI fix. 4 weeks, ~zero to minimal ABAP.</p>
+      <h3 style="color:#7fb3d3">Phase 2 — Config D01: D01-RETROFIT + V001 + Pattern A <span style="font-size:12px;color:#e67e22">(PENDING · May 2026)</span></h3>
+      <p><strong>Purpose</strong>: bring D01 to P01 parity (Step 0), then apply Pattern A fix (Step 1), then build V001 trees (Steps 2-4). User directive 2026-04-29: <em>"el primer target es para los componentes configuration detectar la base de cambio que es P01 y eliminar las diferencias para tener la base"</em>.</p>
       <p><strong>Owner</strong>: Pablo (config) + N_MENARD (ABAP review) + Marlies (verification)</p>
     </div>
+
+    <h4 style="color:#e67e22">Step 0 — D01-RETROFIT-01 (FIRST target, sequencing gate)</h4>
+    <div class="section" style="background:#1a1410;border-color:#e67e22">
+      <p><strong>Goal</strong>: P01 = canonical base. Eliminate all UNESCO custom DMEE drift between D01 and P01 BEFORE any V001 or Pattern A work.</p>
+      <p><strong>Source of truth</strong>: <code>extracted_code/FI/DMEE_p01_canonical/</code> (51 includes re-extracted clean from P01 via SOURCE_EXTENDED, 2026-04-29).</p>
+      <p><strong>D01 current state</strong>: <code>extracted_code/FI/DMEE_d01_state/</code> (parallel set for byte-level diff).</p>
+      <p><strong>Verdict matrix</strong>: <code>knowledge/domains/Payment/phase0/retrofit_diff_matrix.md</code></p>
+
+      <h5 style="color:#e67e22">Retrofit scope (verified 2026-04-29)</h5>
+      <table style="width:100%;border-collapse:collapse;margin:10px 0">
+        <tr style="background:#2a2417"><th>Verdict</th><th>Count</th><th>Action</th></tr>
+        <tr><td>IDENTICAL (byte-by-byte)</td><td>30</td><td>Skip — no retrofit</td></tr>
+        <tr><td>P01_ONLY (must retrofit P01→D01)</td><td>19</td><td>Include in transport</td></tr>
+        <tr><td>D01_ONLY (need N_MENARD review)</td><td>2</td><td>Decision required</td></tr>
+        <tr><td>Plus 3 ENHO (Y_IDFI_CGI_DMEE_COUNTRIES_DE/FR/IT)</td><td>3</td><td>Retrofit P01→D01</td></tr>
+      </table>
+
+      <h5 style="color:#e67e22">Mandatory P01→D01 retrofit (22 objects total)</h5>
+      <ul>
+        <li><strong>YCL_IDFI_CGI_DMEE_DE</strong> complete class — 9 includes (CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)</li>
+        <li><strong>YCL_IDFI_CGI_DMEE_IT</strong> complete class — 9 includes (CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)</li>
+        <li><strong>YCL_IDFI_CGI_DMEE_FR====CM002</strong> — P01 has it, D01 doesn't. Method-level swap with D01's CM001 (see anomaly below)</li>
+        <li><strong>Y_IDFI_CGI_DMEE_COUNTRIES_DE</strong> (ENHO)</li>
+        <li><strong>Y_IDFI_CGI_DMEE_COUNTRIES_FR</strong> (ENHO) — Francia es core, prioritario</li>
+        <li><strong>Y_IDFI_CGI_DMEE_COUNTRIES_IT</strong> (ENHO)</li>
+      </ul>
+
+      <h5 style="color:#e67e22">N_MENARD decisions BEFORE retrofit transport release</h5>
+      <ul>
+        <li><strong>YCL_IDFI_CGI_DMEE_FR====CM001</strong> — D01 has this method, P01 doesn't. Method-level swap: P01 has CM002 instead. Likely a rename in P01 that D01 never received. <strong>Decision</strong>: delete CM001 in D01 + add CM002 (align to P01) — or keep both? See N_MENARD Q1bis.</li>
+        <li><strong>Z_DMEE_EXIT_TAX_NUMBER====FT</strong> — D01 has it since 2019-07-26 (SAP* user), P01 never had it. 7-year leftover. Likely safe to leave as-is (no risk to scope).</li>
+      </ul>
+
+      <h5 style="color:#27ae60">What's NOT in retrofit (verified safe to skip)</h5>
+      <ul>
+        <li><strong>YCL_IDFI_CGI_DMEE_FALLBACK</strong> — all 10 includes byte-by-byte IDENTICAL between systems. Pattern A fix safe to apply.</li>
+        <li><strong>YCL_IDFI_CGI_DMEE_UTIL</strong> — all 11 includes IDENTICAL.</li>
+        <li><strong>YCL_IDFI_CGI_DMEE_FR</strong> core methods (CCDEF/CCIMP/CCMAC/CI/CO/CP/CT/CU) — IDENTICAL. Only CM001/CM002 swap differs.</li>
+        <li><strong>10 SAP-std + CITIPMW FMs</strong> — exist in both, drift is import-flow timestamp only.</li>
+      </ul>
+
+      <p style="color:#e67e22">After Step 0 release: re-run drift detector to confirm CRITICAL count = 0 before proceeding to Step 1.</p>
+    </div>
+
+    <h4 style="color:#7fb3d3">Step 1+ — V001 + Pattern A (sequenced after Step 0)</h4>
     <h4 style="color:#7fb3d3">Section 1 — 2-file + DMEE versioning strategy (adopted)</h4>
     <div class="section">
       <p>Each target tree gets a V001 copy created via DMEE native Create Version. V000 stays INACTIVE-proof (kept active in prod through Phase 5). V001 dormant until cutover.</p>

@@ -50,6 +50,27 @@ The name-overflow-into-StrtNm logic works in V000 (where StrtNm is empty/legacy 
 
 **My recommendation**: A2 (guard) — backward-compatible, preserves V000 behavior exactly, surgical 1-2 lines added. But I want your call.
 
+## Q1bis — `YCL_IDFI_CGI_DMEE_FR` method-level swap between D01 and P01
+
+**Discovery 2026-04-29 via byte-level extraction**: the FR class has DIFFERENT methods in each system:
+
+| System | Methods present in FR class |
+|---|---|
+| **P01** (production) | CCDEF, CCIMP, CCMAC, CI, CO, CP, CT, CU, **CM002** (created 2024-09-06 by N_MENARD) |
+| **D01** (dev) | CCDEF, CCIMP, CCMAC, CI, CO, CP, CT, CU, **CM001** (created 2024-03-22 by N_MENARD) |
+
+P01 has `CM002` but NOT `CM001`. D01 has `CM001` but NOT `CM002`.
+
+**My questions**:
+1. Did you rename `CM001` → `CM002` at some point in P01? If yes, why didn't D01 get the rename?
+2. Or are CM001 and CM002 different methods (not a rename)? What does each do?
+3. **What's the canonical shape we should align D01 to**? Options:
+   - (a) Bring P01's CM002 to D01 + delete D01's CM001 (= align to P01)
+   - (b) Keep CM001 in D01 + add CM002 from P01 (= D01 has both)
+   - (c) Other?
+
+**My recommendation**: option (a) — D01 mirrors P01 exactly. Production behavior anchored on P01.
+
 ## Q2 — D01 retrofit: why are 5 objects P01-only?
 
 Phase 0 inventory (`knowledge/domains/Payment/phase0/d01_vs_p01_inventory.csv`) shows 5 objects exist in P01 TADIR but NOT in D01:

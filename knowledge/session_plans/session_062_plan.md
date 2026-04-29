@@ -2,6 +2,86 @@
 
 > **⚠️ Phase 0 is IN EXECUTION. Major findings that supersede earlier assumptions are captured in the "Phase 0 execution findings" section below (between Reference architecture and Phase 0 spec). Read that section BEFORE the phase specs below — Phase 1-5 specs still reflect the original (pre-probe) assumption in some places; the "findings" section is the current source of truth.**
 
+## Update 2026-04-29 — D01-P01 alignment is the FIRST target (Phase 2 Step 0)
+
+User directive (2026-04-29): *"el primer target es para los componentes configuration detectar la base de cambio que es P01 y eliminar las diferencias para tener la base"*.
+
+**P01 = canonical base** for the change. Phase 2 must START with eliminating drift between D01 and P01 BEFORE any V001 or Pattern A work. This becomes new transport `D01-RETROFIT-01`, sequenced as Phase 2 Step 0.
+
+### Drift findings (verified 2026-04-29 via clean re-extraction)
+
+51 UNESCO custom DMEE includes analyzed via P01+D01 RPY_PROGRAM_READ SOURCE_EXTENDED + byte-level diff:
+
+| Verdict | Count | Action |
+|---|---|---|
+| IDENTICAL (byte-by-byte) | 30 | Skip — no retrofit needed |
+| P01_ONLY (must retrofit P01→D01) | 19 | Include in `D01-RETROFIT-01` |
+| D01_ONLY (need N_MENARD review) | 2 | Decision required before retrofit |
+
+### Retrofit transport scope `D01-RETROFIT-01`
+
+**Mandatory P01→D01 retrofit** (19 class includes + 3 ENHO):
+- `YCL_IDFI_CGI_DMEE_DE` complete class (9 includes: CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)
+- `YCL_IDFI_CGI_DMEE_IT` complete class (9 includes: CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)
+- `YCL_IDFI_CGI_DMEE_FR` method `CM002` (P01 only — D01 has CM001 instead)
+- `Y_IDFI_CGI_DMEE_COUNTRIES_DE` (ENHO)
+- `Y_IDFI_CGI_DMEE_COUNTRIES_FR` (ENHO) — Francia es core, prioritario
+- `Y_IDFI_CGI_DMEE_COUNTRIES_IT` (ENHO)
+
+**N_MENARD decisions required before retrofit**:
+- `YCL_IDFI_CGI_DMEE_FR=====CM001` — D01 has it, P01 doesn't. Method-level swap (renamed?). Delete in D01 or keep both? (See Q1bis added to alignment questions)
+- `Z_DMEE_EXIT_TAX_NUMBER=====FT` — D01 has it since 2019-07-26 (SAP* user), P01 never had it. 7-year leftover. Likely safe to leave.
+
+### Phase 2 sequencing (revised)
+
+| Step | Transport | Dependency | What |
+|---|---|---|---|
+| **0** | `D01-RETROFIT-01` | N_MENARD review of FR CM001/CM002 swap | Bring D01 to P01 parity for UNESCO custom code |
+| 1 | `D01-BADI-FIX-01` | Step 0 released | Pattern A 3-line guard at FALLBACK CM001 |
+| 2-4 | `D01-DMEE-V001-{SEPA,CITI,CGI}` | Step 1 released | V001 trees with structured address nodes |
+| 5 | `D01-OBPM4-SEPA-EVENT05` | (parallel) | Add 1 row to TFPM042FB for SEPA Event 05 |
+
+### What confirms Pattern A is safe to apply
+
+For `YCL_IDFI_CGI_DMEE_FALLBACK====CM001` (Pattern A target):
+- P01 last change: 2024-11-28 by N_MENARD
+- D01 last change: 2024-11-22 by N_MENARD
+- **Diff: byte-by-byte IDENTICAL**. The drift in TIMESTAMP is just a transport-import flow artifact. Code is the same. Pattern A fix WHEN block is at the same logical location in both systems.
+
+### Customizing drift (D01 has WIP NOT in our scope — non-blocking)
+
+| Table | Extra rows in D01 | Content | Our scope? |
+|---|---|---|---|
+| TFPM042FB | +5 rows | All `FORMI=/CHECK_SG` (SocGen check printing PMW WIP) | NO — different team, different transport |
+| T042Z | +3 rows | 1 SocGen check + 2 China manual transfers | NO |
+
+These don't ride along when we transport V001 to P01. Documented but not addressed by us.
+
+### DMEE tree 2x nodes in D01 (legacy versions, non-blocking)
+
+D01 has approximately double node count vs P01 across all 4 trees. Hypothesis: D01 retains older inactive/test versions; P01 cleaned up via refresh. The active V000 has same count in both. Our V001 strategy is unaffected because we create a NEW version atop the active one.
+
+### Artifacts produced 2026-04-29
+
+| Path | Purpose |
+|---|---|
+| `extracted_code/FI/DMEE_p01_canonical/` | P01 canonical source (51 .abap files) |
+| `extracted_code/FI/DMEE_d01_state/` | D01 current state (parallel set for diff) |
+| `knowledge/domains/Payment/phase0/retrofit_diff_matrix.md` | Per-include verdict table |
+| `knowledge/domains/Payment/phase0/drift_executive_summary.md` | Categorized findings + Phase 2 Step 0 guidance |
+| `knowledge/domains/Payment/phase0/d01_vs_p01_drift_*.md` | Drift detector outputs |
+| `Zagentexecution/mcp-backend-server-python/d01_vs_p01_drift_detector.py` | Reusable drift probe |
+| `Zagentexecution/mcp-backend-server-python/reextract_unesco_dmee_for_alignment.py` | P01-canonical re-extraction script |
+| Brain claims 85, 86, 87 | Drift detection protocol + retrofit base + FR method swap |
+
+### Updated N_MENARD alignment questions
+
+Q1bis added to `knowledge/domains/Payment/phase0/nmenard_alignment_questions.md`:
+
+> **Q1bis** — `YCL_IDFI_CGI_DMEE_FR` has methods CM001 in D01 and CM002 in P01 — but NOT both in the same system. Did you rename CM001 → CM002 at some point in P01 (and D01 never received the rename)? Or are these different methods that ended up scattered across systems? **What's the canonical FR class shape we should align D01 to?**
+
+
+
 ## Reading order for this document (history-preserving)
 
 This plan is written as a **combined history**: every step we did, every correction, every finding stays in place. Nothing is overwritten — later sections supersede earlier ones when they conflict, and we flag those conflicts explicitly (like the "Phase 0 execution findings" section). Per CP-001 ("Preserve first, context is cheap"), we add instead of consolidate.
