@@ -4,7 +4,7 @@
     "core_principles": 3,
     "objects": 261,
     "rules": 97,
-    "claims": 78,
+    "claims": 79,
     "incidents": 7,
     "incident_records": 5,
     "domains": 14,
@@ -16802,6 +16802,45 @@
           "T2R"
         ]
       }
+    },
+    {
+      "id": 79,
+      "claim": "CITIPMW V3 Event 05 FM /CITIPMW/V3_PAYMEDIUM_DMEE_05 (PNAME=/CITIPMW/SAPLPMWV3, INCLUDE=31) populates FPAYHX_FREF address using IDENTICAL byte layout as SAP-std CL_IDFI_CGI_CALL05_GENERIC: REF01[0..60]=ADRC.STREET, REF01[60..80]=BUILDING, REF01[80..90]=POST_CODE1, REF01[90..100]=REGION, REF01[100..110]=HOUSE_NUM1, REF06[0..40]=CITY1. Reads via FI_COMPANY_CODE_DATA → T001.ADRNR → ADDR_GET → ADRC. Iterates over T_FPAYP table to populate same offsets per line. CITI tree V001 design is therefore IDENTICAL pattern to CGI/SEPA. UltmtCdtr Worldlink case (Q3) is NOT covered in this FM — likely handled in another event or by Citi's UltmtCdtr-specific logic.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        {
+          "type": "source_code",
+          "ref": "extracted_code/FI/DMEE_full_inventory/CITIPMW_V3_PAYMEDIUM_DMEE_05.abap:56-75",
+          "cite": "FM source extracted via RPY_FUNCTIONMODULE_READ_NEW NEW_SOURCE field 2026-04-25, 5103 chars total. Byte-offset writes to es_fpayhx-ref01/06 confirmed line-by-line.",
+          "added_session": 62,
+          "migrated_from_legacy": false
+        }
+      ],
+      "evidence_against": null,
+      "related_objects": [
+        "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+        "FPAYHX_FREF",
+        "FPAYP_FREF",
+        "/CITI/XML/UNESCO/DC_V3_01"
+      ],
+      "domain": "Payment",
+      "created_session": 62,
+      "resolved_session": 62,
+      "resolution_notes": "Resolves the CITI extraction blocker (was thought to need ADT/SE80). Phase 2 V001 design now confirmed identical pattern for all 3 trees. RPY_FUNCTIONMODULE_READ_NEW + NEW_SOURCE field works for /CITIPMW/ namespace.",
+      "status": "active",
+      "domain_axes": {
+        "functional": [
+          "Payment"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      }
     }
   ],
   "known_unknowns": [
@@ -19409,6 +19448,10 @@
       "flavor": "MISSING"
     },
     {
+      "name": "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+      "flavor": "MISSING"
+    },
+    {
       "name": "/SAPPSPRO/PD_GM_FMR2_READ_KBLE",
       "flavor": "MISSING"
     },
@@ -21922,11 +21965,11 @@
   },
   "_coverage": {
     "objects_in_brain": 261,
-    "names_referenced": 333,
+    "names_referenced": 334,
     "names_classified": 192,
-    "blind_spots_total": 141,
+    "blind_spots_total": 142,
     "blind_spots_ghosts": 0,
-    "blind_spots_missing": 141,
-    "pct_classified": 57.7
+    "blind_spots_missing": 142,
+    "pct_classified": 57.5
   }
 }

@@ -44,8 +44,8 @@
       "type": "CONFIG",
       "layer": "DMEE tree",
       "owner": "Pablo + Marlies + Citi TRM (for Q3)",
-      "today_v000": "610 nodes · Event 05 = /CITIPMW/V3_PAYMEDIUM_DMEE_05 (CITIPMW industry solution) · Dbtr UNSTRUCTURED (no Ctry!) · Cdtr mostly OK · UltmtCdtr Hybrid (WHO/ICC case) · XSLT CGI_XML_CT_XSLT post-proc",
-      "v001_change": "Create V001 copy. Add Dbtr structured nodes including missing Ctry. UltmtCdtr Worldlink BLOCKED by Q3 (Citi TRM data source confirmation needed) — defer to V002 if unresolved by Phase 2 start.",
+      "today_v000": "610 nodes · Event 05=/CITIPMW/V3_PAYMEDIUM_DMEE_05 (extracted 2026-04-25 — same byte layout as SAP-std GENERIC: REF01[0..60]=street, [60..80]=building, [80..90]=postal, [90..100]=region, [100..110]=house, REF06[0..40]=city) · Dbtr UNSTRUCTURED · Cdtr mostly OK · UltmtCdtr Hybrid (WHO/ICC Q3 still open) · XSLT CGI_XML_CT_XSLT post-proc",
+      "v001_change": "Create V001 copy. Add Dbtr structured PstlAdr nodes sourcing FPAYHX-REF01 + REF06 with the same MP_OFFSET layout as CGI tree (now confirmed identical at code level). UltmtCdtr Worldlink (Q3) still TBD — defer to V002 or keep AdrLine fallback.",
       "evidence": "Marlies Excel rows 4,5,7 + Phase 0 Finding F",
       "reviewer": "Pablo + Marlies",
       "abap_needed": false
@@ -189,9 +189,9 @@
       "type": "CODE (SAP std)",
       "layer": "FM (Citibank PMW Industry Solution)",
       "owner": "SAP / Citi PMW",
-      "today_v000": "Event 05 for /CITI/XML/UNESCO/DC_V3_01 — populates Citi-specific REF fields.",
-      "v001_change": "NO CHANGE — keep using",
-      "evidence": "TFPM042FB probe",
+      "today_v000": "Event 05 for /CITI/XML/UNESCO/DC_V3_01. Reads T001-ADRNR → ADRC via ADDR_GET, populates FPAYHX_FREF using SAME byte layout as SAP-std GENERIC class. 5103 chars / ~80 lines extracted 2026-04-25.",
+      "v001_change": "NO CHANGE — keep using. Confirmed compatible with structured V001 design.",
+      "evidence": "Source extracted via RPY_FUNCTIONMODULE_READ_NEW NEW_SOURCE field. extracted_code/FI/DMEE_full_inventory/CITIPMW_V3_PAYMEDIUM_DMEE_05.abap",
       "reviewer": "—",
       "abap_needed": false
     },
@@ -376,5 +376,5 @@
       "abap_needed": false
     }
   ],
-  "last_update": "2026-04-25 — Phase 1 deep extraction integration"
+  "last_update": "2026-04-25 — CITIPMW V3 extracted, byte layout confirmed identical to GENERIC"
 }
