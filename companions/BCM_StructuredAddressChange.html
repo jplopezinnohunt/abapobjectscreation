@@ -61,7 +61,7 @@
   <div class="hamburger" onclick="toggleSidebar()" title="Collapse/expand menu">&#9776;</div>
   <div class="header-title">
     <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:12px;color:#7fb3d3">v1.0</span></h1>
-    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 16:30</div>
+    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 16:39</div>
   </div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target trees</div></div>
@@ -209,11 +209,52 @@ Phase 5 + 30 days stable:
         <tr><th>Tree</th><th>Empty-element handling</th><th>Why different</th></tr>
         <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>Emit all 5 nodes unconditionally. XSLT (CGI_XML_CT_XSLT) auto-removes empty.</td><td>XSLTDESC populated for this tree only — verified Phase 1.</td></tr>
         <tr><td><code>/SEPA_CT_UNES</code></td><td>Add explicit DMEE_TREE_COND per node: emit only if source field NE space</td><td>No XSLT for SEPA — empty nodes would be emitted as-is, breaking schema</td></tr>
-        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>NO change — Dbtr already structured with conditions in V000</td><td>Existing tree pattern works, no V001 tree edits needed</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>Fix CdtrAgt structured nodes (Marlies row issue). <strong>PRESERVE PPC tags untouched</strong>: <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> and <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td>Existing tree pattern works for Cdtr; PPC system requires those tags to dispatch correctly for AE/BH/CN/ID/IN/JO/MA/MY/PH</td></tr>
       </table>
 
-      <h4>Pattern A — the only ABAP change</h4>
+      <h4 style="color:#e67e22">⚠️ PPC preservation requirement — added 2026-04-29</h4>
+      <p>The /CGI_XML_CT_UNESCO V001 design must NOT alter the BAdI dispatch behavior on:</p>
+      <ul>
+        <li><code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (used by AE, CN PPC)</li>
+        <li><code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (used by BH/ID/IN/JO/MA/MY/PH PPC)</li>
+      </ul>
+      <p>Without PPC, banks for the 9 countries above reject USD payments via SocGen.</p>
+
+      <h4 style="color:#e67e22">PPC verification approach — READ P01, no need to SIMULATE D01</h4>
+      <p>User insight 2026-04-29: <em>"podemos leer todo lo que ya pasó"</em>. The PPC system is DETERMINISTIC — we don't need F110 simulation in D01 to verify behavior:</p>
+      <ol>
+        <li><strong>The algorithm is known</strong>: extracted source <code>YCL_IDFI_CGI_DMEE_UTIL_CM003</code> (79 lines, byte-identical D01↔P01)</li>
+        <li><strong>The data is known</strong>: YTFI_PPC_STRUC (133 rules) + T015L (73 SCB indicators) extracted to Gold DB</li>
+        <li><strong>For any (LAND1, LZBKZ, PAY_TYPE) tuple</strong>: predict the expected PPC tag content by replaying the algorithm in Python</li>
+        <li><strong>Validate against P01 production</strong>: sample REGUH for PPC-country payments → read actual XML output via REGUC.VARDATA or DTA file history</li>
+      </ol>
+      <p>D01 F110 simulation is only useful for verifying V001 STRUCTURAL changes (new PstlAdr nodes), NOT for re-confirming V000 PPC behavior. The PPC dispatch chain is already provably correct in P01 — we just need to ensure V001 tree changes don't alter the dispatch.</p>
+
+      <h4 style="color:#e67e22">PPC validation — concrete script approach</h4>
+      <pre style="font-size:11px">
+# Pseudo-code for PPC validation script (Python on Gold DB):
+for each REGUH row WHERE LIFNR has bank_country IN PPC_9_countries:
+    # 1. Predict expected PPC tag content
+    pay_type = derive_from_dorigin(fpayh.DORIGIN[0:2])  # HR→P, TR→R, otros→O
+    deb_cre = 'C'  # always credit
+    expected_value = ''
+    FOR row IN YTFI_PPC_STRUC WHERE land1=bank_ctry AND pay_type=pay_type
+                              AND tag_full=tag_xml_path
+                              ORDER BY code_ord:
+        if row.PPC_CODE = SEPARATOR/FIXED_VAL: append row.PPC_VALUE
+        if row.PPC_CODE = PPC_VAR: append T015L[invoice.LZBKZ].ZWCK1.first_token
+        if row.PPC_CODE = PPC_DESCR: append T015L[invoice.LZBKZ].ZWCK1.rest
+        if row.PPC_CODE = PAY_FIELD: append fpay_struc[row.PAY_FIELD]
+    # 2. Read actual XML output
+    actual_xml = read_xml_file(reguh.LAUFD, reguh.LAUFI, reguh.ZBUKR)
+    # 3. Compare
+    assert actual_xml.tag(tag_xml_path).content == expected_value
+      </pre>
+      <p>This validation can be done <strong>NOW</strong> on P01 data (no Phase 2 prerequisite). It confirms V000 PPC works correctly. Then in Phase 3, V001 simulation in D01 needs only to verify that the same dispatch chain still fires — not to re-validate the algorithm.</p>
+
+      <h4>Pattern A — the only ABAP change (BANK-MANDATED, confirmed 2026-04-29)</h4>
       <p>3-line guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Prevents V001 structured StrtNm from being corrupted by V000's legacy name-overflow logic. Backward-compatible: V000 behavior preserved.</p>
+      <p><strong>Origin confirmed (Q1 RESOLVED)</strong>: per N_MENARD doc <code>TS DMEE CGI modifications 20240229.docx</code>, this overflow logic is a <strong>Société Générale-mandated requirement</strong> — the bank explicitly insisted on prepending Name1 chars 36-40 + Name2 to <code>&lt;StrtNm&gt;</code> when name >35 chars. <strong>A1 (remove) is NOT acceptable</strong> — would break SocGen production. <strong>A2 (guard) is the only valid path</strong>. Quote: <em>"I don't think this is a very 'clean' solution but we asked confirmation by giving examples and they insist."</em></p>
       <pre>" Add this guard:
 WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
   IF i_fpayh = mv_fpayh
@@ -263,6 +304,10 @@ Data loss: zero (F110 idempotent on REGUH).</pre>
 
       <h4>Decisions baked into this strategy</h4>
       <ul>
+        <li><strong>Pattern A2 (guard, not remove)</strong> → Q1 RESOLVED. SocGen-mandated overflow logic must be preserved in V000. V001 guards prevents corruption.</li>
+        <li><strong>FR/CM002 retrofit P01→D01</strong> → Q1bis RESOLVED. Not a method swap — CM002 is the PPC dispatcher entry that was added to P01 in March 2024 but never came back to D01. Mandatory in D01-RETROFIT-01.</li>
+        <li><strong>PPC tags preserved in V001</strong> → CGI tree V001 must NOT alter dispatch on InstrForCdtrAgt/InstrInf or RmtInf/Ustrd nodes</li>
+        <li><strong>Verification = read P01, not D01 simulation</strong> → algorithm + data deterministic, sample P01 to validate expected output</li>
         <li>UltmtCdtr Worldlink (Q3) → V002 deferred unless Citi TRM resolves before Phase 2</li>
         <li>Per-bank strictness → confirmed Phase 1 (TRM responses)</li>
         <li>Vendor master cleanup → 5 mandatory-missing only (LOW risk per DQ)</li>
@@ -1660,7 +1705,7 @@ Post-rollback:
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 16:30 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 16:39 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
