@@ -15,27 +15,15 @@ Output:
 - knowledge/domains/Payment/phase0/d01_vs_p01_drift_data.json
 """
 import os, sys, json, hashlib
-from pyrfc import Connection
 from datetime import datetime
+from pathlib import Path
 
-sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-# Connection params (read from env or config)
-P01_PARAMS = {
-    'ashost': os.environ.get('P01_HOST', '172.16.4.100'),
-    'sysnr':  '00',
-    'client': '300',
-    'snc_qop': '8',
-    'snc_myname': os.environ.get('SNC_MYNAME', ''),
-    'snc_partnername': os.environ.get('P01_SNC_PARTNER', ''),
-}
-D01_PARAMS = {
-    'ashost': os.environ.get('D01_HOST', '172.16.4.66'),
-    'sysnr':  '00',
-    'client': '300',
-    'user':   os.environ.get('D01_USER', ''),
-    'passwd': os.environ.get('D01_PASS', ''),
-}
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from rfc_helpers import get_connection  # noqa
 
 # Comparison scope = "everything that could have been maintained directly
 # in P01 without flowing back through D01". Categories cover both
@@ -539,22 +527,44 @@ def main():
     print("=== D01 vs P01 Drift Detector ===")
     print(f"Started: {datetime.now().isoformat()}")
 
+    out_dir = 'knowledge/domains/Payment/phase0'
+    os.makedirs(out_dir, exist_ok=True)
+
+    p01 = None
+    d01 = None
+
     print("\nConnecting P01...")
-    p01_conn = Connection(**P01_PARAMS)
-    p01 = probe_system(p01_conn, 'P01')
-    p01_conn.close()
+    try:
+        p01_conn = get_connection('P01')
+        p01 = probe_system(p01_conn, 'P01')
+        p01_conn.close()
+        # Save P01 snapshot immediately so it's not lost if D01 fails
+        with open(os.path.join(out_dir, 'd01_vs_p01_drift_p01_snapshot.json'),
+                  'w', encoding='utf-8') as f:
+            json.dump(p01, f, indent=2, ensure_ascii=False)
+        print("  P01 snapshot saved to d01_vs_p01_drift_p01_snapshot.json")
+    except Exception as e:
+        print(f"  P01 FAILED: {e}")
+        return
 
     print("\nConnecting D01...")
-    d01_conn = Connection(**D01_PARAMS)
-    d01 = probe_system(d01_conn, 'D01')
-    d01_conn.close()
+    try:
+        d01_conn = get_connection('D01')
+        d01 = probe_system(d01_conn, 'D01')
+        d01_conn.close()
+        with open(os.path.join(out_dir, 'd01_vs_p01_drift_d01_snapshot.json'),
+                  'w', encoding='utf-8') as f:
+            json.dump(d01, f, indent=2, ensure_ascii=False)
+        print("  D01 snapshot saved to d01_vs_p01_drift_d01_snapshot.json")
+    except Exception as e:
+        print(f"  D01 FAILED: {e}")
+        print("\nProceeding with P01-only snapshot. To complete drift analysis,")
+        print("add D01 credentials to .env (SAP_D01_*) and re-run.")
+        return
 
     print("\nDiffing...")
     drifts = diff_systems(p01, d01)
-
-    out_dir = 'knowledge/domains/Payment/phase0'
     write_report(p01, d01, drifts, out_dir)
-
     print(f"\nDONE. {len(drifts)} drifts detected.")
 
 
