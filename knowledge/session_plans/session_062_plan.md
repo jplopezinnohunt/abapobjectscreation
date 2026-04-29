@@ -2,6 +2,74 @@
 
 > **⚠️ Phase 0 is IN EXECUTION. Major findings that supersede earlier assumptions are captured in the "Phase 0 execution findings" section below (between Reference architecture and Phase 0 spec). Read that section BEFORE the phase specs below — Phase 1-5 specs still reflect the original (pre-probe) assumption in some places; the "findings" section is the current source of truth.**
 
+## Update 2026-04-29 (late) — PPC system discovered + Q1+Q1bis RESOLVED
+
+User received N_MENARD email DMEE.eml 2026-04-29 12:00 UTC with 3 docx attachments
+documenting the existing DMEE customizations:
+
+### Q1 RESOLVED: Pattern A is BANK-MANDATED, not legacy hack
+
+The overflow logic at `YCL_IDFI_CGI_DMEE_FALLBACK_CM001` lines 13-31 is a
+**Société Générale requirement** (per N_MENARD doc TS DMEE CGI modifications 20240229):
+- Bank rejects truncated names
+- Solution: vendor name >35 chars → put chars 36-40 at start of `<StrtNm>`
+- N_MENARD quote: "I don't think this is a very 'clean' solution but we asked
+  confirmation by giving examples and they insist."
+
+→ **Pattern A2 (guard) is the only valid path for V001**. A1 (remove) would
+break SocGen production.
+
+### Q1bis RESOLVED: FR class CM001/CM002 swap = PPC dispatcher gap
+
+Discovered: a SECOND custom development stream on /CGI_XML_CT_UNESCO is the
+**Payment Purpose Code (PPC) system** (N_MENARD docs FS+TS Payment Purpose code XML
+01-18/03/2024).
+
+#### PPC system inventory (production-active in P01)
+
+| Layer | Object | D01 status |
+|---|---|---|
+| 11 DDIC objects (2 tables + 4 domains + 5 data elements) | YTFI_PPC_TAG, YTFI_PPC_STRUC, YD_FI_PPC_CODE/PAY_TYPE/PAY_STRUC/TAG_ID, YE_FI_PPC_CODE/TAG_ID/PAY_TYPE/PAY_STRUC/TAG_FULL | DDIC drift 6 months but structure + data IDENTICAL |
+| Customizing data | YTFI_PPC_TAG (11 rows) + YTFI_PPC_STRUC (133 rows) + T015L (73 rows SCB indicators) | Identical to P01 |
+| Dispatcher | YCL_IDFI_CGI_DMEE_UTIL_CM003 (79 lines) | Identical to P01 |
+| Entry point | YCL_IDFI_CGI_DMEE_FR===CM002 (calls UTIL→get_tag_value_from_custo) | **P01 ONLY — retrofit needed** |
+
+#### 9 countries with PPC requirements
+
+AE / BH / CN / ID / IN / JO / MA / MY / PH — without PPC, banks reject USD payments via SocGen.
+
+| LAND1 | Tag | Sample format |
+|---|---|---|
+| AE, CN | `<InstrForCdtrAgt><InstrInf>` | `/REC/<PPC>` |
+| BH, ID, IN, JO, MA, MY, PH | `<RmtInf><Ustrd>` | `/PURP/<PPC>/<description>` (or country-specific) |
+
+#### Connection to Worldlink dual-route
+
+Claim 95 (Worldlink dual-route) connects to PPC: SOG01 → /CGI tree carries
+INR/THB/KES/NGN/CNY treasury payments. PPC fires for IN/CN/MY/PH/JO/MA on
+this path. The CGI tree V001 changes affect these payments.
+
+### Implications for V001 design (CRITICAL — UPDATED)
+
+1. **Pattern A2 (guard)** confirmed correct — preserve V000 behavior
+2. **CGI tree V001 must PRESERVE** node `<InstrForCdtrAgt><InstrInf>` and
+   `<RmtInf><Ustrd>` — if V001 modifies their definitions, PPC breaks
+3. **Test matrix Phase 3 extends** with 27 PPC scenarios (9 countries × 3 pay types)
+4. **Retrofit transport `D01-RETROFIT-01`** must include FR/CM002 (PPC dispatcher entry)
+5. **D01 cannot test PPC scenarios accurately** until retrofit lands
+
+### Artifacts produced 2026-04-29 (late)
+
+| Path | Purpose |
+|---|---|
+| `Zagentexecution/incidents/xml_payment_structured_address/nmenard_email_2026-04-29/*.docx` | 3 N_MENARD specs (TS DMEE + FS PPC + TS PPC) |
+| `knowledge/domains/Payment/phase0/NMENARD_DMEE_specs_decoded.md` | Decoded analysis with 27-test matrix |
+| Gold DB: `YTFI_PPC_TAG` (11 rows), `YTFI_PPC_STRUC` (133 rows), `T015L` (73 rows) | Persistent PPC config |
+| Brain claims 96, 97, 98 | Pattern A bank-mandated + PPC system + DDIC inventory |
+| Companion: new 🆕 PPC System tab | End-to-end PPC documentation |
+
+---
+
 ## Update 2026-04-29 — D01-P01 alignment is the FIRST target (Phase 2 Step 0)
 
 User directive (2026-04-29): *"el primer target es para los componentes configuration detectar la base de cambio que es P01 y eliminar las diferencias para tener la base"*.

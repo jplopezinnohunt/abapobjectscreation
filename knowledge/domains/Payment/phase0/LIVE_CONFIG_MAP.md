@@ -326,13 +326,100 @@ Job: `ZWFPAYM_RUN` (custom) submits via SUBMIT statement with FORMI and batch ID
 
 ---
 
+## Section I — PPC integration (Payment Purpose Code) — discovered 2026-04-29 from N_MENARD email
+
+The CGI tree has a **second custom development stream** beyond Pattern A: the Payment Purpose Code system.
+Without PPC, banks for 9 countries (AE/BH/CN/ID/IN/JO/MA/MY/PH) reject USD payments via SocGen.
+
+### I.1 — DDIC inventory (11 objects, all N_MENARD 2024-09-06 in P01)
+
+| Object | Type | Purpose |
+|---|---|---|
+| `YTFI_PPC_TAG` | TABL (5 fields, 11 rows) | (LAND1, TAG_ID, DEB_CRE) → XML tag location |
+| `YTFI_PPC_STRUC` | TABL (9 fields, 133 rows) | (LAND1, TAG_ID, PAY_TYPE, CODE_ORD) → building blocks for tag value |
+| `YD_FI_PPC_CODE` | DOMA | Building block types: PPC_VAR, PPC_DESCR, SEPARATOR, FIXED_VAL, PAY_FIELD |
+| `YD_FI_PAY_TYPE` | DOMA | Pay type values: '', P (payroll), R (replenishment), O (third-party) |
+| `YD_FI_PAY_STRUC` | DOMA | Source structures: FPAYH, FPAYHX, FPAYP |
+| `YD_FI_TAG_ID` | DOMA | Free-text tag ID (e.g., USTRD, INSTRINF, -INSTRINF) |
+| `YE_FI_PPC_CODE` | DTEL | Data element wrapping YD_FI_PPC_CODE |
+| `YE_FI_TAG_ID` | DTEL | idem YD_FI_TAG_ID |
+| `YE_FI_PAY_TYPE` | DTEL | idem YD_FI_PAY_TYPE |
+| `YE_FI_PAY_STRUC` | DTEL | idem YD_FI_PAY_STRUC |
+| `YE_FI_TAG_FULL` | DTEL | Full XML tag path (e.g., `<PmtInf><CdtTrfTxInf><RmtInf><Ustrd>`) |
+
+**DDIC drift D01 vs P01**: timestamps 2024-03-18 (D01) vs 2024-09-06 (P01) = ~6 months. **Structure + data byte-identical**. Non-functional.
+
+### I.2 — 9 PPC countries with their tag location
+
+| LAND1 | Tag location | Format example |
+|---|---|---|
+| AE | `<InstrForCdtrAgt><InstrInf>` | `/REC/FIS` |
+| BH | `<RmtInf><Ustrd>` | `/STR/Travel` |
+| CN | `<InstrForCdtrAgt><InstrInf>` | `/REC/CSTRDR` |
+| ID | `<RmtInf><Ustrd>` | `/PURP/2490/Consulting` |
+| IN | `<RmtInf><Ustrd>` | `P0301;Purchases;INV;6523486` |
+| JO | `<RmtInf><Ustrd>` | `/PURP/801/Consulting` |
+| MA | `<RmtInf><Ustrd>` | `/PURP/510/Consulting` |
+| MY | `<RmtInf><Ustrd>` | `/PURP/16510/Consulting` |
+| PH | `<RmtInf><Ustrd>` | `/PURP/SUPP/Consulting` |
+
+### I.3 — Code chain (PPC dispatch in CGI tree)
+
+```
+F110 → /CGI_XML_CT_UNESCO traversal
+  ↓ DMEE node BAdI FI_CGI_DMEE_EXIT_W_BADI fires
+  ↓ filter dispatch by vendor bank country
+  ↓ for FR co code → YCL_IDFI_CGI_DMEE_FR ⚠️ P01-ONLY method CM002 retrofit needed
+       ↓ NEW ycl_idfi_cgi_dmee_util( )
+       ↓ lo_cgi_util->get_tag_value_from_custo(
+           iv_land1 = i_fpayh-zbnks,    "vendor's bank country
+           iv_tag_full = i_node_path,
+           iv_deb_cre = flt_val_debit_or_credit )
+         ↓ YCL_IDFI_CGI_DMEE_UTIL_CM003 (production-active in both systems)
+            ↓ Determine pay_type from i_fpayh-dorigin(2):
+              HR → P  (payroll)
+              TR → R  (replenishment)
+              OTHERS → O  (third-party)
+            ↓ READ TABLE mt_t015l (SCB indicators master, 73 rows)
+            ↓ LOOP YTFI_PPC_STRUC WHERE land1+pay_type+tag_full match (133 rows)
+            ↓ Build cv_value_c via positional concat:
+              SEPARATOR/FIXED_VAL → append literal
+              PPC_VAR → append T015L.ZWCK1 first space-token (the PPC code)
+              PPC_DESCR → append T015L.ZWCK1 rest after first space
+              PAY_FIELD → dynamic field assign IS_FPAYH/IS_FPAYHX/IS_FPAYP
+            ↓ RETURN populated o_value
+       ↓ DMEE writes o_value into the XML tag
+```
+
+### I.4 — Source data flow
+
+| Source | Field | Role |
+|---|---|---|
+| Vendor invoice (BSEG) | T015L.LZBKZ (SCB indicator) | User-entered code per invoice |
+| T015L master | LZBKZ + ZWCK1 (description with PPC code prefix) | Maps SCB → actual PPC value |
+| FPAYP (per-line) | LZBKZ | Pulled from invoice |
+| FPAYH (per-payment) | DORIGIN | Determines pay_type (HR/TR/other) |
+
+### I.5 — Impact on V001 design (CRITICAL)
+
+**The CGI tree V001 changes (CdtrAgt structured nodes) MUST PRESERVE these PPC tags**:
+- `<InstrForCdtrAgt><InstrInf>` (used by AE/CN PPC)
+- `<RmtInf><Ustrd>` (used by BH/ID/IN/JO/MA/MY/PH PPC)
+
+If V001 modifies these nodes' definitions or conditions in a way that suppresses PPC, payments to vendors with banks in those 9 countries will fail.
+
+**Verification step in Phase 2**: simulate V001 trees against test scenarios for each PPC country and verify the tag content matches V000 output exactly.
+
+---
+
 ## Cross-reference
 
-- Brain claims: 65, 80-93
+- Brain claims: 65, 80-98 (TIER_1)
 - Feedback rule: 98 (P01 canonical)
 - Source code: `extracted_code/FI/DMEE_full_inventory/` + `extracted_code/FI/DMEE_p01_canonical/`
 - Drift artifacts: `phase0/d01_vs_p01_drift_*.md`
 - PM artifacts: `phase0/process_mining_*.md`
-- N_MENARD questions: `phase0/nmenard_alignment_questions.md`
+- N_MENARD questions: `phase0/nmenard_alignment_questions.md` (Q1 + Q1bis RESOLVED)
+- N_MENARD specs: `phase0/NMENARD_DMEE_specs_decoded.md`
 - Plan: `knowledge/session_plans/session_062_plan.md`
 - Companion: `companions/BCM_StructuredAddressChange.html`

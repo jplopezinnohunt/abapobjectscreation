@@ -344,6 +344,74 @@ V001 cutover MUST cover both paths for exotic currencies. Test matrix Worldlink 
 
 ---
 
+## Section 12 — PPC system (Payment Purpose Code) — discovered 2026-04-29 from N_MENARD email
+
+### 12.1 — DDIC inventory (11 objects all by N_MENARD)
+
+| Object | Type | Rows | DDIC drift |
+|---|---|---|---|
+| `YTFI_PPC_TAG` | TABL | 11 | Identical structure + data D01↔P01 |
+| `YTFI_PPC_STRUC` | TABL | 133 | Identical structure + data D01↔P01 |
+| `YD_FI_PPC_CODE` | DOMA | values: PPC_VAR, PPC_DESCR, SEPARATOR, FIXED_VAL, PAY_FIELD | identical |
+| `YD_FI_PAY_TYPE` | DOMA | values: '', P, R, O | identical |
+| `YD_FI_PAY_STRUC` | DOMA | values: FPAYH, FPAYHX, FPAYP | identical |
+| `YD_FI_TAG_ID` | DOMA | (free text) | identical |
+| `YE_FI_PPC_CODE` / `YE_FI_TAG_ID` / `YE_FI_PAY_TYPE` / `YE_FI_PAY_STRUC` / `YE_FI_TAG_FULL` | DTEL × 5 | (data elements) | identical |
+
+DDIC drift: 6 months timestamp (P01 2024-09-06, D01 2024-03-18) — **non-functional**.
+
+### 12.2 — 9 PPC countries impact
+
+| LAND1 | Tag location | XML format example | Required for |
+|---|---|---|---|
+| AE | `<InstrForCdtrAgt><InstrInf>` | `/REC/FIS` | UAE bank acceptance |
+| BH | `<RmtInf><Ustrd>` | `/STR/Travel` | Bahrein |
+| CN | `<InstrForCdtrAgt><InstrInf>` | `/REC/CSTRDR` | China |
+| ID | `<RmtInf><Ustrd>` | `/PURP/2490/Consulting` | Indonesia |
+| IN | `<RmtInf><Ustrd>` | `P0301;Purchases;INV;6523486` | India |
+| JO | `<RmtInf><Ustrd>` | `/PURP/801/Consulting` | Jordan |
+| MA | `<RmtInf><Ustrd>` | `/PURP/510/Consulting` | Morocco |
+| MY | `<RmtInf><Ustrd>` | `/PURP/16510/Consulting` | Malaysia |
+| PH | `<RmtInf><Ustrd>` | `/PURP/SUPP/Consulting` | Philippines |
+
+### 12.3 — T015L SCB indicator master
+
+| | P01 | D01 |
+|---|---|---|
+| Total rows | 73 | 74 |
+| D01-only row | n/a | LZBKZ='DK1' "NOT VALID JUST TO AVOID ERROR" — dev placeholder, ignore |
+
+### 12.4 — Code chain CONFIRMED
+
+| Layer | Object | Status | Action |
+|---|---|---|---|
+| BAdI dispatcher | `FI_CGI_DMEE_EXIT_W_BADI` | Active in both | NO change |
+| FR country class | `YCL_IDFI_CGI_DMEE_FR` (CCDEF/CCIMP/CI/CO/CP/CT/CU + CM001 in D01 / CM002 in P01) | Drift: D01 has CM001, P01 has CM002 | **Retrofit P01's CM002 to D01** |
+| PPC entry method | `CM002.if_idfi_cgi_dmee_countries~get_value` | P01 only | Mandatory retrofit |
+| PPC dispatcher | `YCL_IDFI_CGI_DMEE_UTIL_CM003.get_tag_value_from_custo` | Identical D01↔P01 | NO change |
+| Source data | T015L (SCB) + YTFI_PPC_STRUC + YTFI_PPC_TAG | Identical content | NO change |
+
+### 12.5 — Connection to Worldlink dual-route (claim 95)
+
+Recall: PM Model 10 found that exotic currencies route via **two paths**:
+- Path A: Citi (CIT01/CIT04) → /CITI tree (BRL/MGA/TND)
+- Path B: SocGen (SOG01) → /CGI tree (INR/THB/KES/NGN/CNY)
+
+**PPC fires on Path B for IN/CN/MY/PH/JO/MA** payments. So the CGI tree carries:
+1. UNESCO HQ treasury via SocGen (INR, THB, KES, NGN, CNY) → PPC dispatched
+2. UNESCO HQ treasury (Euro outside SEPA) → no PPC
+3. Country-specific tax-receipt vendors in PPC countries → PPC mandatory
+
+→ **V001 cutover on /CGI_XML_CT_UNESCO directly affects PPC**. Test matrix MUST cover PPC country payments.
+
+### 12.6 — V001 design impact
+
+**MUST PRESERVE**: in V001 of /CGI_XML_CT_UNESCO, the nodes `<InstrForCdtrAgt><InstrInf>` and `<RmtInf><Ustrd>` MUST continue to fire the BAdI/PPC dispatcher AND emit the same content as V000.
+
+**Verification (Phase 2 Step 0+1)**: extract the YCL_IDFI_CGI_DMEE_FR_CM002 source, retrofit to D01, then run F110 proposal mode for each PPC country in D01 + V000 and compare PPC tag output to P01 baseline. After V001 changes, repeat — output must match.
+
+---
+
 ## Final Phase 0 conclusions (consolidated)
 
 | # | Finding | Verdict |
@@ -364,6 +432,11 @@ V001 cutover MUST cover both paths for exotic currencies. Test matrix Worldlink 
 | 14 | LIVE_CONFIG_MAP.md = end-to-end connected (vendor → file → bank) | Pre-Phase 2 reference |
 | 15 | Country dispatcher (FR/DE/IT) fires ONLY on CGI tree | NOT SEPA, NOT CITI |
 | 16 | Two dispatcher mechanisms (Event 05 factory + per-node BAdI) | Distinguished in plan |
+| **17** | **Pattern A is BANK-MANDATED** (SocGen requirement) — Q1 RESOLVED | **A2 (guard) only valid path** |
+| **18** | **PPC system = 11 DDIC objects + 2 tables (133+11 rows)** for 9 countries | **V001 must preserve** |
+| **19** | **FR/CM002 swap RESOLVED**: not a swap — it's PPC dispatcher entry never retrofitted to D01 | **Mandatory retrofit** |
+| **20** | **PPC + Worldlink overlap**: SOG01 → /CGI tree carries PPC payments to IN/CN/MY/PH | **27 test scenarios** (9 countries × 3 pay types) |
+| **21** | **PPC infrastructure data IDENTICAL** D01↔P01 (YTFI tables + T015L) | **Only code dispatcher missing in D01** |
 
 ---
 

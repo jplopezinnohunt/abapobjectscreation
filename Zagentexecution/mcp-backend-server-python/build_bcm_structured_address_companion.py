@@ -1133,6 +1133,119 @@ def tab_e2e_flow():
     """
 
 
+def tab_ppc_system():
+    """PPC system tab — discovered 2026-04-29 from N_MENARD email."""
+    return """
+    <div class="section" style="background:#1a1410;border-color:#e67e22">
+      <h3 style="color:#e67e22">🆕 PPC System (Payment Purpose Code) — discovered 2026-04-29</h3>
+      <p>Source: N_MENARD email <code>DMEE.eml</code> 2026-04-29 with 3 docx attachments saved to
+      <code>Zagentexecution/incidents/xml_payment_structured_address/nmenard_email_2026-04-29/</code>.</p>
+      <p><strong>This is a SECOND custom development stream</strong> on /CGI_XML_CT_UNESCO beyond
+      Pattern A. Without PPC tags, banks for 9 countries reject USD payments via SocGen.</p>
+
+      <h4 style="color:#e67e22">9 PPC countries</h4>
+      <table>
+        <tr><th>LAND1</th><th>Country</th><th>Tag location</th><th>Format example</th></tr>
+        <tr><td>AE</td><td>UAE</td><td><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code></td><td><code>/REC/FIS</code></td></tr>
+        <tr><td>BH</td><td>Bahrein</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/STR/Travel</code></td></tr>
+        <tr><td>CN</td><td>China</td><td><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code></td><td><code>/REC/CSTRDR</code></td></tr>
+        <tr><td>ID</td><td>Indonesia</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/2490/Consulting</code></td></tr>
+        <tr><td>IN</td><td>India</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>P0301;Purchases;INV;6523486</code></td></tr>
+        <tr><td>JO</td><td>Jordan</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/801/Consulting</code></td></tr>
+        <tr><td>MA</td><td>Morocco</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/510/Consulting</code></td></tr>
+        <tr><td>MY</td><td>Malaysia</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/16510/Consulting</code></td></tr>
+        <tr><td>PH</td><td>Philippines</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/SUPP/Consulting</code></td></tr>
+      </table>
+
+      <h4 style="color:#e67e22">DDIC inventory (11 objects, all by N_MENARD 2024-09-06 in P01)</h4>
+      <table>
+        <tr><th>Object</th><th>Type</th><th>Content</th><th>D01 vs P01</th></tr>
+        <tr><td><code>YTFI_PPC_TAG</code></td><td>TABL (5 fields)</td><td>11 rows mapping (LAND1, TAG_ID, DEB_CRE) → XML tag location</td><td>✅ Identical</td></tr>
+        <tr><td><code>YTFI_PPC_STRUC</code></td><td>TABL (9 fields)</td><td>133 rows building blocks (LAND1, TAG_ID, PAY_TYPE, CODE_ORD)</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PPC_CODE</code></td><td>DOMA</td><td>5 values: PPC_VAR / PPC_DESCR / SEPARATOR / FIXED_VAL / PAY_FIELD</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PAY_TYPE</code></td><td>DOMA</td><td>4 values: '' / P (payroll) / R (replenishment) / O (third-party)</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PAY_STRUC</code></td><td>DOMA</td><td>3 values: FPAYH / FPAYHX / FPAYP</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_TAG_ID</code></td><td>DOMA</td><td>Free text (e.g., USTRD, INSTRINF, -INSTRINF)</td><td>✅ Identical</td></tr>
+        <tr><td>5 data elements (YE_FI_*)</td><td>DTEL × 5</td><td>Wrappers for above domains</td><td>✅ Identical</td></tr>
+      </table>
+      <p><strong>DDIC drift</strong>: D01 timestamps 2024-03-18 vs P01 2024-09-06 (~6 months). Structure + data byte-identical = non-functional drift.</p>
+
+      <h4 style="color:#e67e22">Code chain (PPC dispatch)</h4>
+      <pre style="font-size:11px">
+F110 → /CGI_XML_CT_UNESCO traversal
+  ↓ DMEE node BAdI FI_CGI_DMEE_EXIT_W_BADI fires
+  ↓ for FR co code (UNES) → YCL_IDFI_CGI_DMEE_FR  ⚠️ method CM002 P01-ONLY (retrofit needed)
+       ↓ NEW ycl_idfi_cgi_dmee_util( )
+       ↓ lo_cgi_util->get_tag_value_from_custo(land1, tag_full, deb_cre, fpayh, fpayhx, fpayp)
+         ↓ YCL_IDFI_CGI_DMEE_UTIL_CM003 (identical D01↔P01)
+            ↓ pay_type from i_fpayh-dorigin(2): HR→P, TR→R, OTHERS→O
+            ↓ READ TABLE mt_t015l (SCB indicators master, 73 rows)
+            ↓ LOOP YTFI_PPC_STRUC WHERE land1+pay_type+tag_full match
+            ↓ Build via positional concat:
+                SEPARATOR/FIXED_VAL → append literal
+                PPC_VAR → T015L.ZWCK1 first space-token
+                PPC_DESCR → T015L.ZWCK1 rest after first space
+                PAY_FIELD → dynamic field assign IS_FPAYH/IS_FPAYHX/IS_FPAYP
+            ↓ RETURN populated o_value
+       ↓ DMEE writes o_value into the XML tag
+      </pre>
+
+      <h4 style="color:#e67e22">Why D01 testing of PPC is BROKEN today</h4>
+      <p>D01 has the YTFI_PPC tables + UTIL/CM003 dispatcher + T015L master. But D01's
+      <code>YCL_IDFI_CGI_DMEE_FR</code> has method <strong>CM001</strong> instead of P01's <strong>CM002</strong>.
+      The CM002 method is the entry point that calls UTIL→get_tag_value_from_custo. Without it:</p>
+      <ul>
+        <li>F110 in D01 to vendor in AE/BH/CN/ID/IN/JO/MA/MY/PH via /CGI tree</li>
+        <li>BAdI fires for <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> or <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> node</li>
+        <li>FR class CM001 (legacy) handles it → does NOT dispatch PPC</li>
+        <li>Output XML has the tag empty or with default value → bank would reject in production</li>
+      </ul>
+      <p>→ <strong>Q1bis (FR method swap) RESOLVED</strong>: CM002 is the PPC integration that was added
+      to P01 in March 2024 and never came back to D01. <strong>Retrofit to D01 is mandatory.</strong></p>
+
+      <h4 style="color:#e67e22">Connection to Worldlink dual-route (claim 95)</h4>
+      <p>PM Model 10 found exotic currencies route via two paths:</p>
+      <ul>
+        <li><strong>Path A: Citi (CIT01/CIT04) → /CITI tree</strong> — BRL/MGA/TND (no PPC)</li>
+        <li><strong>Path B: SocGen (SOG01) → /CGI tree</strong> — INR/THB/KES/NGN/CNY (PPC FIRES for IN/CN/MY/PH/JO/MA)</li>
+      </ul>
+      <p>The CGI tree carries treasury exotic-currency payments via SocGen which trigger PPC.
+      Volume per PPC country (REGUH 2025+): IN 2,098 · MY 800+ · PH 800+ · CN 796 · JO/MA hundreds.</p>
+
+      <h4 style="color:#e67e22">V001 design impact (CRITICAL)</h4>
+      <p>The CGI tree V001 changes (CdtrAgt structured nodes) MUST PRESERVE PPC tag locations:</p>
+      <ul>
+        <li><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (used by AE/CN PPC)</li>
+        <li><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (used by BH/ID/IN/JO/MA/MY/PH PPC)</li>
+      </ul>
+      <p>If V001 modifies these node definitions or conditions in a way that suppresses PPC dispatch,
+      payments to vendors with banks in 9 countries will fail in production.</p>
+
+      <h4 style="color:#e67e22">Test matrix extension — 27 PPC scenarios</h4>
+      <p>Phase 3 test matrix adds <strong>9 countries × 3 payment types (O/P/R)</strong> = 27 scenarios.
+      Each must verify the PPC tag content matches V000 baseline byte-for-byte after V001 changes.</p>
+      <table>
+        <tr><th>Test ID</th><th>LAND1</th><th>Pay type</th><th>Expected output</th></tr>
+        <tr><td>PPC-T01</td><td>AE</td><td>O (third-party)</td><td><code>/REC/&lt;PPC&gt;</code> in <code>&lt;InstrInf&gt;</code></td></tr>
+        <tr><td>PPC-T02</td><td>BH</td><td>O</td><td><code>/STR/&lt;description&gt;</code> in <code>&lt;Ustrd&gt;</code></td></tr>
+        <tr><td>PPC-T03</td><td>CN</td><td>O</td><td><code>/REC/&lt;PPC&gt;</code> in <code>&lt;InstrInf&gt;</code></td></tr>
+        <tr><td>PPC-T04..T09</td><td>ID/IN/JO/MA/MY/PH</td><td>O</td><td>Various PURP/PPC formats in <code>&lt;Ustrd&gt;</code></td></tr>
+        <tr><td>PPC-T10..T18</td><td>9 × P (payroll)</td><td>P</td><td>Fixed payroll PPC per country (e.g., AE → /REC/SAL)</td></tr>
+        <tr><td>PPC-T19..T27</td><td>9 × R (replenishment)</td><td>R</td><td>Fixed replenishment PPC per country (e.g., AE → /REC/IGT)</td></tr>
+      </table>
+
+      <h4 style="color:#e67e22">References</h4>
+      <ul>
+        <li>Brain claims: 96 (Pattern A bank-mandated), 97 (PPC system), 98 (DDIC inventory)</li>
+        <li>Source spec: <code>Zagentexecution/incidents/xml_payment_structured_address/nmenard_email_2026-04-29/</code> (3 docx)</li>
+        <li>Decoded analysis: <code>knowledge/domains/Payment/phase0/NMENARD_DMEE_specs_decoded.md</code></li>
+        <li>Source code: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_UTIL========CM003.abap</code> (79 lines, identical D01↔P01)</li>
+        <li>Source code: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_FR==========CM002.abap</code> (17 lines, P01-only, retrofit target)</li>
+      </ul>
+    </div>
+    """
+
+
 def tab_components():
     """Components Map — 31 components (CONFIG/CODE/DATA/DDIC/SAP-std)."""
     import json
@@ -1192,6 +1305,7 @@ TABS = [
     ("strategy", "Change Strategy", tab_change_strategy),
     ("e2e-flow", "E2E Flow", tab_e2e_flow),
     ("components", "Components Map", tab_components),
+    ("ppc", "🆕 PPC System", tab_ppc_system),
     ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
     ("phase1", "Phase 1 · Matrix + Specs", tab_phase1),
     ("phase2", "Phase 2 · Config D01", tab_phase2),
