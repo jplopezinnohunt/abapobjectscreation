@@ -866,6 +866,19 @@ Post-rollback:
     """
 
 
+def tab_e2e_flow():
+    """E2E Flow — connects all 27 components from F110 to bank in single logical pipeline."""
+    md = Path(__file__).resolve().parents[2] / "knowledge" / "domains" / "Payment" / "phase0" / "e2e_flow_components_connected.md"
+    return f"""
+    <div class="section">
+      <h3>End-to-End Flow Map — all components connected</h3>
+      <p>Per user directive 2026-04-25 "tenemos que conectar todos los elementos en un flow logico". Single canonical view of the pipeline from F110 to bank, showing where each of the 32 components sits.</p>
+      <p><em>Source: <code>knowledge/domains/Payment/phase0/e2e_flow_components_connected.md</code></em></p>
+    </div>
+    {md_to_html_table(md)}
+    """
+
+
 def tab_components():
     """Components Map — 31 components (CONFIG/CODE/DATA/DDIC/SAP-std)."""
     import json
@@ -921,6 +934,7 @@ def tab_components():
 
 TABS = [
     ("overview", "Overview", tab_overview),
+    ("e2e-flow", "E2E Flow", tab_e2e_flow),
     ("components", "Components Map", tab_components),
     ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
     ("phase1", "Phase 1 · Matrix + Specs", tab_phase1),

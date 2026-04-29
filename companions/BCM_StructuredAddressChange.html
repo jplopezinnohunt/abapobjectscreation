@@ -61,7 +61,7 @@
   <div class="hamburger" onclick="toggleSidebar()" title="Collapse/expand menu">&#9776;</div>
   <div class="header-title">
     <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:12px;color:#7fb3d3">v1.0</span></h1>
-    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 14:22</div>
+    <div class="sub">CBPR+ Nov 2026 · 3 DMEE trees · 2-file + DMEE versioning · Built 2026-04-29 14:24</div>
   </div>
   <div class="kpis">
     <div class="kpi"><div class="val">3</div><div class="lbl">Target trees</div></div>
@@ -74,6 +74,7 @@
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <div class="nav-item active" onclick="show('overview', this)" data-full="Overview" data-short="Ove"><span class="nav-label">Overview</span></div>
+<div class="nav-item" onclick="show('e2e-flow', this)" data-full="E2E Flow" data-short="E2E"><span class="nav-label">E2E Flow</span></div>
 <div class="nav-item" onclick="show('components', this)" data-full="Components Map" data-short="Com"><span class="nav-label">Components Map</span></div>
 <div class="nav-item" onclick="show('phase0', this)" data-full="Phase 0 · Discovery ✅" data-short="Pha"><span class="nav-label">Phase 0 · Discovery ✅</span></div>
 <div class="nav-item" onclick="show('phase1', this)" data-full="Phase 1 · Matrix + Specs" data-short="Pha"><span class="nav-label">Phase 1 · Matrix + Specs</span></div>
@@ -126,6 +127,255 @@
         <tr><td>5 — Deploy P01</td><td>Aug-Nov 2026</td><td>Pending — CBPR+ hard deadline</td></tr>
       </table>
     </div>
+    </div>
+<div id="tab-e2e-flow" class="content">
+    <div class="section">
+      <h3>End-to-End Flow Map — all components connected</h3>
+      <p>Per user directive 2026-04-25 "tenemos que conectar todos los elementos en un flow logico". Single canonical view of the pipeline from F110 to bank, showing where each of the 32 components sits.</p>
+      <p><em>Source: <code>knowledge/domains/Payment/phase0/e2e_flow_components_connected.md</code></em></p>
+    </div>
+    <h2>UNESCO BCM Structured Address — End-to-End Flow Map</h2>
+<p>**Session #62 · 2026-04-25 · Status: ALL components connected, no unknowns remaining for V001 design**</p>
+<p>This document connects every extracted component into a single logical flow,</p>
+<p>per user directive "tenemos que conectar todos los elementos en un flow logico".</p>
+<p>---</p>
+<h3>Master Flow Diagram (per tree)</h3>
+<pre>
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          F110 PAYMENT RUN                                │
+│  Inputs: open invoices, vendors, payment methods                         │
+└────────────────┬────────────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  T042Z LOOKUP — country+payment-method → tree FORMI                      │
+│  263 rows in P01 (verified Phase 0)                                      │
+│  XBKKT='X' = DMEE-enabled                                                │
+└────────────────┬────────────────────────────────────────────────────────┘
+                 │
+        ┌────────┴────────┬────────────────────┬──────────────────────────┐
+        │                 │                    │                          │
+        ▼                 ▼                    ▼                          ▼
+   ┌─────────┐      ┌───────────┐       ┌──────────────────┐    ┌──────────────────┐
+   │  SEPA   │      │   CGI     │       │  CGI variant 1   │    │   CITI           │
+   │ payment │      │ payment   │       │   payment        │    │   payment        │
+   └────┬────┘      └─────┬─────┘       └────────┬─────────┘    └────────┬─────────┘
+        │                 │                      │                       │
+        ▼                 ▼                      ▼                       ▼
+                 ─────── EVENT 05 (OBPM4 TFPM042FB lookup) ───────
+        │                 │                      │                       │
+   ╔════════╗      ╔═══════════════════╗  ╔═══════════════════╗   ╔══════════════════════╗
+   ║ V001:  ║      ║FI_PAYMEDIUM_      ║  ║FI_PAYMEDIUM_      ║   ║/CITIPMW/V3_         ║
+   ║ ADD    ║      ║DMEE_CGI_05        ║  ║DMEE_CGI_05        ║   ║PAYMEDIUM_DMEE_05    ║
+   ║ row    ║      ║(SAP std, already ║   ║(same FM)          ║   ║(CITI PMW Industry  ║
+   ║ here   ║      ║registered)       ║   ║                  ║    ║Solution)            ║
+   ║        ║      ╚═════════╤═════════╝  ╚═════════╤═════════╝   ╚══════════╤═══════════╝
+   ╚════════╝                │                      │                        │
+        │                    ▼                      ▼                        ▼
+        │         ┌────────────────────────────────────────┐  ┌────────────────────────┐
+        │         │ cl_idfi_cgi_call05_factory             │  │ Direct ADDR_GET via    │
+        │         │ ::get_instance                         │  │ T001-ADRNR + ZADNR     │
+        │         │   resolves country: format→ubiso→ubnks │  │ for one-time vendor    │
+        │         │   → CL_IDFI_CGI_CALL05_FR/DE/IT/GB     │  │ uses BSEC table        │
+        │         │   → fallback CL_IDFI_CGI_CALL05_GENERIC│  │                        │
+        │         └─────┬──────────────────────────────────┘  └──────────┬─────────────┘
+        │               │                                                 │
+        ├───────────────┴─────── BUFFER POPULATION ──────────────────────┤
+        │                                                                 │
+        ▼                                                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│       FPAYHX_FREF buffer (16 fields: REF01..REF15 + CURNO)                  │
+│                                                                             │
+│   Byte layout (UNIVERSAL — same in GENERIC and CITIPMW V3):                │
+│       REF01[0..60]   = ADRC.STREET                                          │
+│       REF01[60..80]  = ADRC.BUILDING                                        │
+│       REF01[80..90]  = ADRC.POST_CODE1                                      │
+│       REF01[90..100] = ADRC.REGION                                          │
+│       REF01[100..110]= ADRC.HOUSE_NUM1                                      │
+│       REF06[0..40]   = ADRC.CITY1                                           │
+│       REF02 = Cdtr post_code2 + house_num1 (one-time vendor BSEC path)      │
+│                                                                             │
+│   FPAYP_FREF (5 fields: REF01..REF05) — same Dbtr address per line         │
+│                                                                             │
+│   Country class extras (REF14):                                             │
+│     FR: SIRET 16 chars from SAPFR1 PPC param                                │
+│     DE: SUN+SeqTp from T042M/T042N                                          │
+│     IT: CUP+CIG+MGO from BSEG                                               │
+│     GB: bnkid+SeqTp from T042M/T042N                                        │
+│     SAP-std GENERIC writes nothing here                                     │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      DMEE TREE TRAVERSAL                                    │
+│                                                                             │
+│  V000 (current production):                                                 │
+│    SEPA_CT_UNES   → 95 nodes  · 18 conditions · NO StrtNm/BldgNb/PstCd/TwnNm│
+│    CITI DC_V3_01  → 610 nodes · 350 conditions · Dbtr unstructured          │
+│    CGI_XML_CT_UNESCO   → 631 · 123 cond · Dbtr STRUCTURED ✓                 │
+│    CGI_XML_CT_UNESCO_1 → 639 · 123 cond · same as parent (FIRSTNODE shared) │
+│                                                                             │
+│  V001 (NEW, to create):                                                     │
+│    SEPA: ADD 5 Dbtr structured nodes sourcing FPAYHX-REF01/06 + MP_OFFSET   │
+│    CITI: ADD 5 Dbtr structured nodes (Cdtr exits already produce structured)│
+│    CGI:  NO tree edits (already structured)                                 │
+│    CGI_1: SYNC from parent                                                  │
+│                                                                             │
+│  Per-node node-level processing during traversal:                           │
+│   • MP_SC_TAB + MP_SC_FLD + MP_OFFSET → read source                         │
+│   • CV_RULE → conversion (CL=lowercase, AL.2=amount align, RP=replace)      │
+│   • MP_EXIT_FUNC → call BAdI/FM if registered                               │
+│   • DMEE_TREE_COND → check parent TECH switch nodes (PSTLADRMOR1/2/3 etc.)  │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    BAdI FI_CGI_DMEE_EXIT_W_BADI                             │
+│                    (fires on 794 of 1,975 nodes = 40%)                      │
+│                                                                             │
+│  Dispatched by country to UNESCO impls:                                     │
+│    YCL_IDFI_CGI_DMEE_FR     get_value()  → PPC dispatcher (0 rows for FR)  │
+│    YCL_IDFI_CGI_DMEE_DE     get_credit() → SHELL: only ClrSysMmbId override │
+│    YCL_IDFI_CGI_DMEE_IT     get_credit() → SHELL: same as DE                │
+│    YCL_IDFI_CGI_DMEE_FALLBACK get_credit() → ⚠ NAME-OVERFLOW BUG (Pattern A)│
+│    YCL_IDFI_CGI_DMEE_UTIL   utility class (PPC reader, helpers)             │
+│                                                                             │
+│  CITI tree extra layer (per-node EXIT_FUNC FMs, called only on CITI nodes): │
+│    /CITIPMW/V3_CGI_CRED_STREET   → Cdtr StrtNm via BSEC or ADDR_GET          │
+│    /CITIPMW/V3_CGI_CRED_PO_CITY  → Cdtr postal+city                         │
+│    /CITIPMW/V3_CGI_CRED_REGION   → Cdtr CtrySubDvsn                         │
+│    /CITIPMW/V3_GET_CDTR_BLDG     → Cdtr BldgNb                              │
+│    /CITIPMW/V3_EXIT_CGI_CRED_NAME → Cdtr Nm                                 │
+│    /CITIPMW/V3_EXIT_CGI_CRED_CITY → Cdtr TwnNm                              │
+│    /CITIPMW/V3_EXIT_CGI_CRED_NM2  → Cdtr name continuation                  │
+│    /CITIPMW/V3_GET_BANKCODE       → ECSIC clearing system code              │
+│    /CITIPMW/V3_CGI_REGULATORY_INF → Regulatory info                         │
+│                                                                             │
+│  ⚠ Pattern A 3-line fix needed in YCL_IDFI_CGI_DMEE_FALLBACK_CM001:         │
+│    name-overflow-into-StrtNm logic corrupts V001 structured StrtNm.         │
+│    Add 'AND c_value IS INITIAL' guard. N_MENARD review required.            │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                XML ASSEMBLED IN MEMORY                                       │
+│   pain.001.001.03 envelope with:                                             │
+│     &lt;Dbtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/Dbtr&gt;                                      │
+│     &lt;Cdtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/Cdtr&gt;                                      │
+│     &lt;CdtrAgt&gt;&lt;FinInstnId&gt;...&lt;/FinInstnId&gt;&lt;/CdtrAgt&gt;                          │
+│     &lt;UltmtCdtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/UltmtCdtr&gt;  (if Worldlink)           │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                ┌────────────────────┴────────────────────┐
+                │                                         │
+                ▼                                         ▼
+   ┌──────────────────────────────┐        ┌────────────────────────────────┐
+   │  CITI tree → XSLT post-proc   │        │  SEPA + CGI trees → no XSLT    │
+   │                               │        │                                │
+   │  CGI_XML_CT_XSLT (12 lines)   │        │  Empty structured nodes        │
+   │  - Removes empty leaf nodes   │        │  emitted as-is unless          │
+   │  - Identity copy otherwise    │        │  DMEE_TREE_COND explicitly     │
+   │                               │        │  suppresses them               │
+   │  Effect: empty structured     │        │                                │
+   │  nodes auto-disappear → CITI  │        │  → V001 design must add        │
+   │  V001 emits all 5 nodes       │        │  COND rules per node           │
+   │  unconditionally              │        │  ('source field NE space')     │
+   └──────────────────────────────┘        └────────────────────────────────┘
+                │                                         │
+                └────────────────────┬────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   FILE WRITE                                                                │
+│     \\hq-sapitf\SWIFT$\P01\input\aaaa_bbbb_ccxxxxxxxxyyyy.in                │
+│     aaaa = company code (UNES/IIEP/UIL/...)                                 │
+│     bbbb = payment method (S/N/J/L/X/...)                                   │
+│     cc   = format (001=pain.001.001.02 / 002=mt101 / 003=pain.001.001.03)   │
+│     xxxxxxxx = date · yyyy = sequence                                       │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   BCM BATCH (Bank Communication Management)                                 │
+│   - Routing: 100% F110+payroll via OBPM5/TFIBLMPAYBLOCK (Claim #65)         │
+│   - Workflow 90000003: dual control approval                                │
+│   - Signatories: PD objects OTYPE='RY' (Claim #42/43)                       │
+│   - Status: IBC05 (Sent to Bank)                                            │
+└────────────────────────────────────┬────────────────────────────────────────┘
+                                     │
+                                     ▼
+                        ┌───────────────────────────┐
+                        │   ALLIANCE LITE2 → SWIFT  │
+                        │   → Bank (SocGen / Citi / │
+                        │   CGI-routed banks)       │
+                        └───────────────────────────┘
+</pre>
+<h3>Where each component sits in the flow</h3>
+<table>
+<tr><th>#</th><th>Component</th><th>Type</th><th>Layer</th><th>Touched by V001?</th></tr>
+<tr><td>1</td><td>T042Z mapping</td><td>DATA</td><td>Pre-tree config</td><td>NO</td></tr>
+<tr><td>2</td><td>TFPM042FB Event 05 reg</td><td>CONFIG</td><td>Pre-tree config</td><td>YES (add SEPA row)</td></tr>
+<tr><td>3</td><td>FI_PAYMEDIUM_DMEE_CGI_05</td><td>CODE (SAP std)</td><td>Event 05 wrapper</td><td>NO (reused)</td></tr>
+<tr><td>4</td><td>/CITIPMW/V3_PAYMEDIUM_DMEE_05</td><td>CODE (SAP std)</td><td>Event 05 (CITI)</td><td>NO (reused)</td></tr>
+<tr><td>5</td><td>CL_IDFI_CGI_CALL05_FACTORY</td><td>CODE (SAP std)</td><td>Country dispatcher</td><td>NO</td></tr>
+<tr><td>6</td><td>CL_IDFI_CGI_CALL05_GENERIC</td><td>CODE (SAP std)</td><td>Address mapper</td><td>NO</td></tr>
+<tr><td>7</td><td>CL_IDFI_CGI_CALL05_FR/DE/IT/GB</td><td>CODE (SAP std)</td><td>Country REF14 adders</td><td>NO</td></tr>
+<tr><td>8</td><td>FPAYHX_FREF + FPAYP_FREF</td><td>DDIC</td><td>Buffers</td><td>NO (read by V001)</td></tr>
+<tr><td>9</td><td>DMEE trees (4)</td><td>CONFIG</td><td>Tree traversal</td><td>YES (add V001 nodes)</td></tr>
+<tr><td>10</td><td>DMEE_TREE_NODE</td><td>DATA</td><td>Tree structure</td><td>YES (V001 rows)</td></tr>
+<tr><td>11</td><td>DMEE_TREE_COND</td><td>DATA</td><td>Emission gates</td><td>MAYBE (SEPA/CGI need empty-suppress conds)</td></tr>
+<tr><td>12</td><td>YCL_IDFI_CGI_DMEE_FALLBACK</td><td>CODE (UNESCO)</td><td>BAdI in-tree</td><td>YES (Pattern A 3 lines)</td></tr>
+<tr><td>13</td><td>YCL_IDFI_CGI_DMEE_FR/DE/IT</td><td>CODE (UNESCO)</td><td>BAdI in-tree</td><td>NO</td></tr>
+<tr><td>14</td><td>YCL_IDFI_CGI_DMEE_UTIL</td><td>CODE (UNESCO)</td><td>BAdI helper</td><td>NO</td></tr>
+<tr><td>15</td><td>YTFI_PPC_TAG / STRUC</td><td>DATA (Z)</td><td>PPC tables</td><td>NO (no rows for our countries)</td></tr>
+<tr><td>16</td><td>/CITIPMW/V3_CGI_CRED_*</td><td>CODE (SAP std)</td><td>CITI per-node exits</td><td>NO</td></tr>
+<tr><td>17</td><td>CGI_XML_CT_XSLT</td><td>CODE (SAP std)</td><td>XSLT post-proc</td><td>NO (only CITI uses it)</td></tr>
+<tr><td>18</td><td>LFA1+ADRC vendor master</td><td>DATA</td><td>Address source</td><td>YES (5 vendor cleanup)</td></tr>
+<tr><td>19</td><td>Z_DMEE_EXIT_TAX_NUMBER</td><td>CODE (UNESCO)</td><td>1-node tax exit</td><td>NO</td></tr>
+<tr><td>20</td><td>ZDMEE_EXIT_SEPA_21</td><td>CODE (UNESCO)</td><td>1-node batch_id exit</td><td>NO</td></tr>
+<tr><td>21</td><td>T012/T012K house bank</td><td>DATA</td><td>CdtrAgt source</td><td>NO</td></tr>
+<tr><td>22</td><td>BNKA bank master</td><td>DATA</td><td>CdtrAgt structured</td><td>NO</td></tr>
+<tr><td>23</td><td>Workflow 90000003</td><td>CONFIG</td><td>BCM approval</td><td>NO (out of scope)</td></tr>
+<tr><td>24</td><td>OBPM5/TFIBLMPAYBLOCK</td><td>CONFIG</td><td>BCM routing</td><td>NO (out of scope)</td></tr>
+<tr><td>25</td><td>TFPM042F variants (Francesco)</td><td>CONFIG</td><td>PMF variants</td><td>NO (parallel work)</td></tr>
+<tr><td>26</td><td>BCM_BATCH_* BAdIs</td><td>CODE</td><td>BCM hooks</td><td>NO</td></tr>
+<tr><td>27</td><td>File transmission (Alliance)</td><td>EXTERNAL</td><td>SWIFT delivery</td><td>NO</td></tr>
+</table>
+<h3>Total surgical change scope</h3>
+<p>**ABAP**: 1 method (YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT), 3 lines (Pattern A guard).</p>
+<p>**CONFIG (CUSTOMIZING)**:</p>
+<p>- TFPM042FB: +1 row for SEPA Event 05 registration</p>
+<p>- DMEE V001 trees:</p>
+<p>  - SEPA: +5 Dbtr structured nodes + COND rules to suppress empty</p>
+<p>  - CITI: +5 Dbtr structured nodes (XSLT auto-removes empty)</p>
+<p>  - CGI: NO tree edits</p>
+<p>  - CGI_1: NO tree edits</p>
+<p>**DATA**: 5 vendor master cleanup (LFA1/ADRC).</p>
+<p>**Risk: LOW**. All changes either additive (V001 new), backward-compatible (Pattern A guarded), or data-only (vendor cleanup).</p>
+<h3>Critical decisions baked into this flow</h3>
+<table>
+<tr><th>Decision</th><th>Status</th></tr>
+<tr><td>2-file + DMEE versioning (not Hybrid single-file)</td><td>✅ Adopted (user-directed)</td></tr>
+<tr><td>SEPA Sub-option A revised (FI_PAYMEDIUM_DMEE_CGI_05, not FVD_SEPA_OL)</td><td>✅ Confirmed (D01 probe)</td></tr>
+<tr><td>Pattern A BAdI fix for FALLBACK</td><td>✅ Locked (3 lines, N_MENARD review)</td></tr>
+<tr><td>CITI Cdtr untouched (EXIT_FUNCs already structured)</td><td>✅ Locked</td></tr>
+<tr><td>UltmtCdtr Worldlink → V002 deferred</td><td>✅ Q3 still open, defer</td></tr>
+<tr><td>XSLT empty-element auto-removal (CITI only)</td><td>✅ Verified</td></tr>
+<tr><td>SEPA + CGI need explicit empty-suppress conditions</td><td>⚠ Action item Phase 2</td></tr>
+</table>
+<h3>What is NOT in this flow (intentionally)</h3>
+<p>- Out of scope: pain.001.001.09 schema upgrade (separate project)</p>
+<p>- Out of scope: BCM workflow modifications</p>
+<p>- Out of scope: file naming convention changes</p>
+<p>- Out of scope: Alliance Lite2 integration</p>
+<p>- Out of scope: ICTP Trieste's separate trees (/SEPA_CT_ICTP_*)</p>
+<h3>Cross-references</h3>
+<p>- Components map JSON: `knowledge/domains/Payment/phase0/components_map.json` (32 components)</p>
+<p>- Brain claims: `brain_v2/claims/claims.json` ids 65-84 (BCM + structured-address related)</p>
+<p>- Source code extracted: `extracted_code/FI/DMEE/` (UNESCO BAdIs) + `extracted_code/FI/DMEE_full_inventory/` (SAP std + CITIPMW + DE/IT shells + XSLT)</p>
+<p>- Plan: `knowledge/session_plans/session_062_plan.md` + `~/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md`</p>
+<p>- Companion: `companions/BCM_StructuredAddressChange.html`</p>
+<p>- Excel tracker: `Zagentexecution/incidents/xml_payment_structured_address/BCM_StructuredAddress_Analysis.xlsx`</p>
     </div>
 <div id="tab-components" class="content">
     <div class="section">
@@ -1052,7 +1302,7 @@ Post-rollback:
 <div id="tab-plan" class="content">
     <div class="section">
       <h3>The Plan (live) — rendered from plan file</h3>
-      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 14:22 · Companion version: v1.0</em></p>
+      <p><em>Source: <code>C:/Users/jp_lopez/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md</code> · Last rebuilt: 2026-04-29 14:24 · Companion version: v1.0</em></p>
       <div style="background:#0c1926;padding:16px;border-radius:8px;border:1px solid #1e3a4a;max-height:700px;overflow-y:scroll;white-space:pre-wrap;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5">
         # Plan — UNESCO DMEE Structured Address Migration (CBPR+ Nov 2026)
 
