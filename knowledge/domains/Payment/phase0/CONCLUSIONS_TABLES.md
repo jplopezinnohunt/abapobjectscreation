@@ -412,6 +412,96 @@ Recall: PM Model 10 found that exotic currencies route via **two paths**:
 
 ---
 
+## Section 13 — Q3 (UltmtCdtr) RESOLVED via system data 2026-04-29
+
+User directive: "Q3 no puede depender de una persona — el sistema debe darnos la data necesaria para resolverlo".
+
+### 13.1 — UltmtCdtr config in CITI tree V000 (system-verified)
+
+NODE_ID `N_8838338720` (UltmtCdtr) has 21 descendant nodes. Active source field mappings:
+
+| Element | Source | Status V000 |
+|---|---|---|
+| `<Nm>` | `FPAYP-NAME1` | ✅ Vendor name from payment line |
+| `<PstlAdr><Ctry>` | `FPAYH-ZLAND` | ✅ Active |
+| `<PstlAdr><TwnNm>` | `FPAYH-ZORT1` | ✅ Active |
+| `<PstlAdr><PstCd>` | `FPAYH-ZPSTL` | ✅ Active |
+| `<PstlAdr><CtrySubDvsn>` | `FPAYH-ZREGI` | ✅ Active (region) |
+| `<PstlAdr><AdrLine1>` | `FPAYH-ZSTRA` | ✅ Active (street in AdrLine — Hybrid V000) |
+| `<PstlAdr><AdrLine2>` | `FPAYH-ZORT2` | ✅ Active (district in AdrLine) |
+| `<PstlAdr><StrtNm>` | (empty) | ⚪ **GAP — V001 fills from FPAYH-ZSTRA** |
+| `<Id>`, `<CtryOfRes>` | (empty) | ⚪ Not used (XSLT removes empty) |
+
+### 13.2 — Production data validation
+
+For 46K BRL Worldlink payments via CIT01: **45,917 (99.7%)** have FPAYP.NAME1 populated → UltmtCdtr/Nm fires in production. The XSLT `CGI_XML_CT_XSLT` removes UltmtCdtr only when ALL data is empty — confirmed via Claim #84.
+
+### 13.3 — V001 implication
+
+**UltmtCdtr is NOT a separate change**. Same Hybrid→Structured pattern as Cdtr/Dbtr:
+- V000: emits `<AdrLine1>=FPAYH-ZSTRA`, `<AdrLine2>=FPAYH-ZORT2`
+- V001: replace AdrLine with `<StrtNm>=FPAYH-ZSTRA`
+
+**Q3 deferred-to-V002 status reclassified: UNIFY into V001**. No bank TRM consult needed.
+
+---
+
+## Section 14 — Pure Python V000/V001 Simulator (commit 25e336c)
+
+### 14.1 — Tool
+
+`Zagentexecution/mcp-backend-server-python/xml_simulator.py` — pure Python, autonomous, no ABAP deployment needed.
+
+### 14.2 — Pipeline
+
+```
+Real P01 data (REGUH_FAST + REGUP + LFA1 + ADRC from Gold DB)
+  ↓ [Python templates per tree: SEPA, CITI, CGI]
+V000 pain.001 XML
+  ↓ [V001 transformer: insert structured PstlAdr per Marlies + N_MENARD spec]
+V001 pain.001 XML
+  ↓ [XSD validator]
+Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026)
+```
+
+### 14.3 — Results
+
+| Tree | Total samples | V000 → XSD .03 | V001 → XSD .03 | V001 → XSD .09 |
+|---|---|---|---|---|
+| /SEPA_CT_UNES | 166 | ✅ 166/166 | ✅ 166/166 | ✅ 166/166 |
+| /CGI_XML_CT_UNESCO + _1 | 320 | ✅ 320/320 | ✅ 320/320 | ✅ 320/320 |
+| /CITI/XML/UNESCO/DC_V3_01 | 308 | ✅ 308/308 | ✅ 308/308 | ✅ 308/308 |
+
+**Total: 794 scenarios × 3 validations = 2,382 PASS / 0 FAIL**
+
+### 14.4 — V001 transformer per tree
+
+| Tree | V001 transformation |
+|---|---|
+| SEPA | replace Hybrid AdrLine with full structured (StrtNm/PstCd/TwnNm/Ctry) for both Cdtr+Dbtr |
+| CITI | fix Dbtr: add Ctry + restructure to structured |
+| CGI | fix CdtrAgt: PstlAdr from AdrLine to structured (StrtNm/PstCd/TwnNm/Ctry) |
+| CITI UltmtCdtr (added Q3 res) | add `<StrtNm>=FPAYH-ZSTRA`, deprecate AdrLine |
+
+### 14.5 — XSD bridge for .09 validation
+
+The .03 → .09 schema differences automated:
+- Namespace: `pain.001.001.03` → `pain.001.001.09`
+- `<ReqdExctnDt>YYYY-MM-DD</ReqdExctnDt>` → `<ReqdExctnDt><Dt>YYYY-MM-DD</Dt></ReqdExctnDt>`
+- `<BIC>` → `<BICFI>` (renamed in .09)
+
+### 14.6 — Sample XMLs exported
+
+`Zagentexecution/incidents/xml_payment_structured_address/simulator_output/`:
+- 30 files: 5 V000+V001 pairs per tree (SEPA + CITI + CGI)
+- Available for inspection / banking team review / regression baseline
+
+### 14.7 — Tool reusability
+
+Any future DMEE change can be simulated by editing the V001 transformer rules in Python. Permanent regression test infrastructure for UNESCO DMEE.
+
+---
+
 ## Final Phase 0 conclusions (consolidated)
 
 | # | Finding | Verdict |
@@ -437,6 +527,9 @@ Recall: PM Model 10 found that exotic currencies route via **two paths**:
 | **19** | **FR/CM002 swap RESOLVED**: not a swap — it's PPC dispatcher entry never retrofitted to D01 | **Mandatory retrofit** |
 | **20** | **PPC + Worldlink overlap**: SOG01 → /CGI tree carries PPC payments to IN/CN/MY/PH | **27 test scenarios** (9 countries × 3 pay types) |
 | **21** | **PPC infrastructure data IDENTICAL** D01↔P01 (YTFI tables + T015L) | **Only code dispatcher missing in D01** |
+| **22** | **Q3 (UltmtCdtr) RESOLVED via system data** — sources are FPAYH-Z fields (ZLAND/ZORT1/ZPSTL/ZREGI/ZSTRA/ZORT2) + FPAYP-NAME1 | **No V002 deferral — unify into V001** |
+| **23** | **Pure Python V000/V001 simulator** built end-to-end | **794 scenarios × 3 XSDs = 2,382 PASS / 0 FAIL** |
+| **24** | **XSD validation harness** pain.001.001.03 + .09 | Reusable forever for any DMEE change |
 
 ---
 

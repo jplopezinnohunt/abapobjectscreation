@@ -1291,6 +1291,58 @@ F110 → /CGI_XML_CT_UNESCO traversal
     """
 
 
+def tab_simulator():
+    """V000/V001 simulator results."""
+    return """
+    <div class="section" style="background:#0d2a1f;border-color:#1abc9c">
+      <h3 style="color:#1abc9c">🧪 V000/V001 Simulator — Pure Python end-to-end (commit 25e336c)</h3>
+      <p>Tool: <code>Zagentexecution/mcp-backend-server-python/xml_simulator.py</code> — autonomous Python (no ABAP deploy needed). Reads real P01 data from Gold DB, renders V000 + V001 pain.001 XML per tree, validates against XSDs.</p>
+
+      <h4 style="color:#1abc9c">Pipeline</h4>
+      <pre style="font-size:11px">
+Real P01 data (REGUH_FAST + REGUP + LFA1 + ADRC from Gold DB)
+  ↓ [Python templates per tree: SEPA, CITI, CGI]
+V000 pain.001 XML
+  ↓ [V001 transformer: insert structured PstlAdr per Marlies + N_MENARD spec]
+V001 pain.001 XML
+  ↓ [XSD validator]
+Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026)
+      </pre>
+
+      <h4 style="color:#1abc9c">Results — 100% PASS</h4>
+      <table>
+        <tr><th>Tree</th><th>Total samples</th><th>V000 → XSD .03</th><th>V001 → XSD .03</th><th>V001 → XSD .09</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>166</td><td>✅ 166/166</td><td>✅ 166/166</td><td>✅ 166/166</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>320</td><td>✅ 320/320</td><td>✅ 320/320</td><td>✅ 320/320</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>308</td><td>✅ 308/308</td><td>✅ 308/308</td><td>✅ 308/308</td></tr>
+        <tr style="background:#0d3a2f"><td><b>TOTAL</b></td><td><b>794</b></td><td colspan="3"><b>2,382 / 2,382 PASS — 0 failures</b></td></tr>
+      </table>
+
+      <h4 style="color:#1abc9c">V001 transformer per tree</h4>
+      <table>
+        <tr><th>Tree</th><th>V001 transformation</th></tr>
+        <tr><td>SEPA</td><td>Replace Hybrid AdrLine with full structured (StrtNm/PstCd/TwnNm/Ctry) — both Cdtr + Dbtr</td></tr>
+        <tr><td>CITI</td><td>Fix Dbtr: add Ctry + restructure to structured</td></tr>
+        <tr><td>CGI</td><td>Fix CdtrAgt: PstlAdr from AdrLine to structured</td></tr>
+        <tr><td>CITI UltmtCdtr (Q3 res)</td><td>Add <code>&lt;StrtNm&gt;=FPAYH-ZSTRA</code>, deprecate AdrLine</td></tr>
+      </table>
+
+      <h4 style="color:#1abc9c">XSD bridge for .09 validation</h4>
+      <ul>
+        <li>Namespace: <code>pain.001.001.03</code> → <code>pain.001.001.09</code></li>
+        <li>ReqdExctnDt: simple date → complex with <code>&lt;Dt&gt;</code> sub-element</li>
+        <li><code>&lt;BIC&gt;</code> → <code>&lt;BICFI&gt;</code> (renamed in .09)</li>
+      </ul>
+
+      <h4 style="color:#1abc9c">Sample XMLs exported</h4>
+      <p><code>Zagentexecution/incidents/xml_payment_structured_address/simulator_output/</code> — 30 files (5 V000 + V001 pairs per tree). Inspectable by banking team / regression baseline.</p>
+
+      <h4 style="color:#1abc9c">Tool reusability</h4>
+      <p>Any future DMEE change can be simulated by editing the V001 transformer rules in Python. <strong>Permanent regression test infrastructure for UNESCO DMEE.</strong></p>
+    </div>
+    """
+
+
 def tab_components():
     """Components Map — 31 components (CONFIG/CODE/DATA/DDIC/SAP-std)."""
     import json
@@ -1351,6 +1403,7 @@ TABS = [
     ("e2e-flow", "E2E Flow", tab_e2e_flow),
     ("components", "Components Map", tab_components),
     ("ppc", "🆕 PPC System", tab_ppc_system),
+    ("simulator", "🧪 Simulator (100%)", tab_simulator),
     ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
     ("phase1", "Phase 1 · Matrix + Specs", tab_phase1),
     ("phase2", "Phase 2 · Config D01", tab_phase2),
