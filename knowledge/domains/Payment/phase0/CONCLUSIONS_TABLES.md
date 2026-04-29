@@ -265,26 +265,41 @@
 
 ---
 
-## Section 8 — Test matrix Tier 1 (data-driven from production)
+## Section 8 — Test matrix Tier 1 (CONFIG-DERIVED from production)
 
-Mandatory test scenarios (volume-prioritized, in-scope trees only):
+**Final** test scenarios anchored on REGUH_FAST × T001 × T042Z (567K payments 2025+):
 
-| # | HBKID | Co | Vendor bank country | Yearly volume | Tree (post-config-JOIN) |
-|---|---|---|---|---|---|
-| T01 | SOG01 | UNES | (empty) — domestic SEPA | 134K | /SEPA_CT_UNES |
-| T02 | SOG01 | UNES | FR | 41K | /SEPA_CT_UNES |
-| T03 | CIT01 | UBO | BR | 35K | /CITI/XML/UNESCO/DC_V3_01 |
-| T04 | CIT04 | UNES | (empty) Worldlink | 14K | /CITI/XML/UNESCO/DC_V3_01 |
-| T05 | SOG01 | UNES | IT | 5K | /SEPA_CT_UNES (IT class fires) |
-| T06 | CIT04 | UNES | US | 5K | /CITI/XML/UNESCO/DC_V3_01 |
-| T07 | SOG05 | UIL | DE | 4.5K | /SEPA_CT_UNES (DE class fires) |
-| T08 | SOG01 | UNES | UA | 4K | /SEPA_CT_UNES |
-| T09 | SOG01 | UNES | DE | 3K | /SEPA_CT_UNES (DE class fires) |
-| T10 | CIT04 | UNES | MG | 2K | /CITI/XML/UNESCO/DC_V3_01 (Worldlink) |
-| T11 | CIT04 | UNES | TN | 800 | /CITI/XML/UNESCO/DC_V3_01 (Worldlink) |
-| T12 | CIT01 | UBO | CA | 800 | /CITI/XML/UNESCO/DC_V3_01 |
+| # | HBKID | Tree (CONFIG) | 2025 vol | 2026 Q1 | Total | % of in-scope |
+|---|---|---|---|---|---|---|
+| **T01** | SOG01 | `/SEPA_CT_UNES` | 129,722 | 37,685 | **167,407** | 50% |
+| **T02** | SOG01 | `/CGI_XML_CT_UNESCO` | 54,998 | 15,541 | **70,539** | 21% |
+| **T03** | CIT01 | `/CITI/XML/UNESCO/DC_V3_01` | 34,677 | 11,122 | **45,799** | 14% |
+| **T04** | CIT04 | `/CITI/XML/UNESCO/DC_V3_01` | 28,139 | 8,275 | **36,414** | 11% |
+| T05 | SOG03 | `/CGI_XML_CT_UNESCO` | 3,893 | 1,114 | **5,007** | 1.5% |
+| T06 | SOG05 | `/SEPA_CT_UNES` | 3,783 | 945 | **4,728** | 1.4% |
+| T07 | SOG02 | `/SEPA_CT_UNES` | 2,976 | 793 | **3,769** | 1.1% |
+| T08 | CIT21 | `/CITI/XML/UNESCO/DC_V3_01` | 1,954 | 605 | **2,559** | 0.8% |
 
-**Conclusion 8**: 12 Tier-1 test cases cover ~85% of in-scope production traffic.
+**Conclusion 8**: 8 Tier-1 (HBKID, Tree) combinations cover **~336K of 567K REGUH** (60% of total payments). The TOP 4 alone cover **96% of in-scope traffic**.
+
+### Worldlink coverage (Model 10 — CONFIG-derived)
+
+| Currency | Primary HBKID | Volume | Tree route |
+|---|---|---|---|
+| BRL | CIT01 | 44,344 | /CITI/XML/UNESCO/DC_V3_01 |
+| MGA | CIT04 | 3,647 | /CITI/XML/UNESCO/DC_V3_01 |
+| TND | CIT04 | 1,162 | /CITI/XML/UNESCO/DC_V3_01 |
+| INR | SOG01 | 2,098 | /CGI_XML_CT_UNESCO (treasury route) |
+| THB | SOG01 | 1,404 | /CGI_XML_CT_UNESCO (treasury route) |
+| KES | SOG01 | 1,277 | /CGI_XML_CT_UNESCO (treasury route) |
+| NGN | SOG01 | 801 | /CGI_XML_CT_UNESCO (treasury route) |
+| CNY | SOG01 | 796 | /CGI_XML_CT_UNESCO (treasury route) |
+
+**Conclusion Worldlink**: Two routing paths confirmed.
+- Path 1: Citi → /CITI tree (BRL/MGA/TND, true Worldlink Citi)
+- Path 2: SocGen → /CGI tree (INR/THB/KES/NGN/CNY, treasury non-Citi route)
+
+V001 cutover MUST cover both paths for exotic currencies. Test matrix Worldlink subset adds T09–T13.
 
 ---
 
@@ -317,15 +332,15 @@ Mandatory test scenarios (volume-prioritized, in-scope trees only):
 
 ---
 
-## Section 11 — Pending work (data extractions in progress)
+## Section 11 — Pending work — UPDATED
 
 | Task | Status | Output |
 |---|---|---|
-| REGUH_FULL extraction (27 cols) | ⏳ Running ~30 min | Replaces 8-col version, includes RZAWE/UBNKS/WAERS/ZALDT |
-| REGUP extraction (28 cols) | ⏳ Running | Per-line items for amount detail |
-| Real tree mapping JOIN (T001 × T042Z) | 📋 Script ready, fires when REGUH_FULL ready | Replaces "Tree (inferido)" column with config-derived FORMI |
-| Model 10 — Worldlink currencies | 📋 Script ready | Confirms BRL/MGA/TND/etc volume per HBKID |
-| Test matrix table populate (Section 8) | 📋 Awaiting real tree column | Final Tier-1 test cases |
+| REGUH_FAST extraction (11 cols, 2025+) | ✅ DONE | 567,059 rows in Gold DB REGUH_FAST |
+| Real tree mapping JOIN | ✅ DONE | 8 Tier-1 (HBKID,Tree) combinations CONFIG-derived |
+| Model 10 — Worldlink currencies | ✅ DONE | Dual-route confirmed (Citi + SocGen) |
+| REGUH_FULL (27 cols full history) | ❌ Cancelled (RFC stalled 30+min) | REGUH_FAST gives 60% coverage in 4 min |
+| REGUP extraction | ❌ Cancelled | Not blocking Phase 2 design |
 
 ---
 
@@ -341,10 +356,14 @@ Mandatory test scenarios (volume-prioritized, in-scope trees only):
 | 6 | DQ healthy (5/111K) | Not a blocker |
 | 7 | 22 objects retrofit P01→D01 | `D01-RETROFIT-01` Phase 2 Step 0 |
 | 8 | Pattern A target (FALLBACK CM001) byte-identical D01 vs P01 | Fix safe to apply |
-| 9 | Test matrix Tier 1 = 12 scenarios cover 85% traffic | Data-driven priorities |
+| 9 | Test matrix Tier 1 = 8 (HBKID,Tree) combinations CONFIG-derived | TOP 4 cover 96% of in-scope |
 | 10 | F110 proposal mode (XVORL=X) used 38% — leverage for safe testing | Phase 3 strategy |
 | 11 | YoY growth ~7%, stable seasonality | V001 cutover safe any window |
-| 12 | UltmtCdtr Worldlink scope = MG/TN/AR/MM/CR/ZW/ET | Q3 resolution path |
+| 12 | Worldlink dual-route: Citi (BRL/MGA/TND) + SocGen (INR/THB/KES/NGN/CNY) | Both must be tested |
+| 13 | T042I = canonical house bank derivation (77 rules) | Used in real config JOIN |
+| 14 | LIVE_CONFIG_MAP.md = end-to-end connected (vendor → file → bank) | Pre-Phase 2 reference |
+| 15 | Country dispatcher (FR/DE/IT) fires ONLY on CGI tree | NOT SEPA, NOT CITI |
+| 16 | Two dispatcher mechanisms (Event 05 factory + per-node BAdI) | Distinguished in plan |
 
 ---
 
