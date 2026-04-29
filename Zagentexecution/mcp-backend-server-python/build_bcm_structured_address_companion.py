@@ -866,6 +866,154 @@ Post-rollback:
     """
 
 
+def tab_scope():
+    """Scope tab — clear what we change vs not change vs out of scope."""
+    return """
+    <div class="section">
+      <h3>Scope — what we change in V001</h3>
+      <h4 style="color:#1abc9c">✅ IN SCOPE — V001 changes (per tree)</h4>
+      <table>
+        <tr><th>Tree</th><th>Change</th><th>Type</th><th>Effort</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>+5 Dbtr structured nodes (StrtNm/BldgNb/PstCd/TwnNm/Ctry) reading FPAYHX-REF01/REF06 with MP_OFFSET. +5 empty-suppress conditions in DMEE_TREE_COND (no XSLT for SEPA).</td><td>CONFIG</td><td>~4 hours</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>+5 Dbtr structured nodes. NO conditions needed (XSLT auto-removes empty).</td><td>CONFIG</td><td>~3 hours</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>NO tree edits — Dbtr already structured</td><td>—</td><td>0</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>NO tree edits — Dbtr already structured</td><td>—</td><td>0</td></tr>
+        <tr><td><code>TFPM042FB</code> (OBPM4)</td><td>+1 row: SEPA tree → Event 05 = FI_PAYMEDIUM_DMEE_CGI_05</td><td>CONFIG</td><td>~30 min</td></tr>
+        <tr><td><code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></td><td>+3 lines (Pattern A guard) — prevents V001 StrtNm corruption from name-overflow</td><td>CODE</td><td>~1 hour code + 2 hour regression test</td></tr>
+        <tr><td>5 LFA1+ADRC vendors</td><td>Manual fix CITY1/COUNTRY OR LOEVM='X'</td><td>DATA</td><td>~30 min Master Data team</td></tr>
+      </table>
+      <p><b>Total ABAP</b>: 1 method, 3 lines. <b>Total CONFIG</b>: ~16 nodes + 1 OBPM4 row + 5 vendor fixes.</p>
+
+      <h4 style="color:#f39c12">⚖ STAYS THE SAME (V000 untouched)</h4>
+      <table>
+        <tr><th>Asset</th><th>Why preserved</th></tr>
+        <tr><td>All V000 DMEE trees</td><td>Production payment flow continues unchanged during transition. V000 only deactivates at Phase 5 cutover.</td></tr>
+        <tr><td>SAP-std FMs (FI_PAYMEDIUM_DMEE_CGI_05, /CITIPMW/V3_PAYMEDIUM_DMEE_05, GENERIC class, country classes FR/DE/IT/GB)</td><td>SAP-delivered, never modified. Reused by V001.</td></tr>
+        <tr><td>FPAYHX_FREF + FPAYP_FREF buffer structures</td><td>SAP-std DDIC. V001 reads from them.</td></tr>
+        <tr><td>Workflow 90000003 + BCM batch logic</td><td>Out of scope — change is XML-content only.</td></tr>
+        <tr><td>UNESCO BAdI classes _FR/_DE/_IT/_UTIL</td><td>Untouched. Only FALLBACK_CM001 gets the 3-line fix.</td></tr>
+        <tr><td>Z exits Z_DMEE_EXIT_TAX_NUMBER + ZDMEE_EXIT_SEPA_21</td><td>Not address-related, untouched.</td></tr>
+        <tr><td>YTFI_PPC_TAG / STRUC tables</td><td>0 rows for our target countries — no change needed.</td></tr>
+        <tr><td>Francesco's PMF variants (5 transports 2025)</td><td>Bank-variant config, parallel to our work, courtesy heads-up only.</td></tr>
+        <tr><td>XSLT CGI_XML_CT_XSLT</td><td>SAP-std, devclass=ID-DMEE. CITI tree uses it as-is.</td></tr>
+      </table>
+
+      <h4 style="color:#e74c3c">❌ OUT OF SCOPE</h4>
+      <ul>
+        <li><b>pain.001.001.09 schema migration</b> — separate project (current trees stay on .03)</li>
+        <li><b>BCM workflow 90000003 modification</b> — dual-control logic untouched</li>
+        <li><b>Bank file naming + transmission</b> — Alliance Lite2 + SWIFT delivery untouched</li>
+        <li><b>ICTP Trieste trees</b> (/SEPA_CT_ICTP_*) — separate from UNESCO HQ scope</li>
+        <li><b>UltmtCdtr Worldlink (Q3)</b> — DEFERRED to V002 unless Citi TRM clarifies data source by Phase 2 start</li>
+        <li><b>Vendor master cleanup beyond the 5 mandatory-missing</b> — fully-structured cleanup is a separate project (76,574 vendors missing HOUSE_NUM1, etc.)</li>
+        <li><b>BCM_BATCH_* BAdIs</b> — not extracted, not in change path</li>
+      </ul>
+    </div>
+    """
+
+
+def tab_change_strategy():
+    """Change Strategy tab — articulates HOW we make the change."""
+    return """
+    <div class="section">
+      <h3>Change Strategy — HOW we deploy V001</h3>
+
+      <h4>Why 2-file + DMEE versioning (not Hybrid single-file)</h4>
+      <table>
+        <tr><th>Approach</th><th>Adopted?</th><th>Why</th></tr>
+        <tr><td><b>Hybrid single file</b> (mixed structured + AdrLine in same XML)</td><td>❌ Rejected</td><td>Mixes legacy + new in one file → parser confusion, rollback hard, bank validation harder</td></tr>
+        <tr><td><b>2-file + DMEE native versioning</b> (V000 + V001 parallel)</td><td>✅ Adopted</td><td>Per user directive 2026-04-24. Atomic activation/rollback. SAP-native. Bank can validate V001 via test gateway without prod risk</td></tr>
+      </table>
+
+      <h4>How V000 + V001 coexist</h4>
+      <pre>Phase 2 (May 2026):
+  Tree V000 = ACTIVE (current production state, unchanged)
+  Tree V001 = INACTIVE (newly deployed dormant)
+
+Phase 3-4 testing:
+  Z-payment method routes test F110 → V001 only
+  Production payments → V000 (untouched)
+  Both files generated for parallel comparison
+
+Phase 5 cutover (atomic):
+  Deactivate V000, Activate V001 → instant
+  All F110 now produces V001 structured
+
+Rollback (instant if needed):
+  Activate V000, Deactivate V001 → seconds, no data loss
+
+Phase 5 + 30 days stable:
+  V000 decommissioned</pre>
+
+      <h4>Per-tree strategy nuances</h4>
+      <table>
+        <tr><th>Tree</th><th>Empty-element handling</th><th>Why different</th></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>Emit all 5 nodes unconditionally. XSLT (CGI_XML_CT_XSLT) auto-removes empty.</td><td>XSLTDESC populated for this tree only — verified Phase 1.</td></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>Add explicit DMEE_TREE_COND per node: emit only if source field NE space</td><td>No XSLT for SEPA — empty nodes would be emitted as-is, breaking schema</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>NO change — Dbtr already structured with conditions in V000</td><td>Existing tree pattern works, no V001 tree edits needed</td></tr>
+      </table>
+
+      <h4>Pattern A — the only ABAP change</h4>
+      <p>3-line guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Prevents V001 structured StrtNm from being corrupted by V000's legacy name-overflow logic. Backward-compatible: V000 behavior preserved.</p>
+      <pre>" Add this guard:
+WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.            "← V001 GUARD: only prepend if StrtNm empty
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   " V000 legacy preserved
+  ENDIF.
+  IF c_value+70 IS NOT INITIAL.
+    CLEAR c_value+70.
+  ENDIF.</pre>
+      <p><b>Reviewer</b>: N_MENARD (code owner). Pending alignment call (see Phase 1 tab).</p>
+
+      <h4>Test pyramid (4 levels of risk)</h4>
+      <table>
+        <tr><th>Level</th><th>Where</th><th>Risk</th><th>Examples</th></tr>
+        <tr><td><b>L0 — DMEE Tx Test simulation</b></td><td>D01 read-only</td><td>ZERO</td><td>Synthetic FPAYHX payload, validate XML output. Python XSD harness.</td></tr>
+        <tr><td><b>L1 — D01 simulation no transport</b></td><td>D01</td><td>Reversible (no transport)</td><td>F110 proposal mode with Z-payment method routed to V001</td></tr>
+        <tr><td><b>L2 — D01 transport, V01 test client</b></td><td>D01 → V01</td><td>Transport-revertable</td><td>Real F110 in V01 with Z-method, compare V000 vs V001 byte-by-byte</td></tr>
+        <tr><td><b>L3 — Bank pilot via test gateway</b></td><td>External</td><td>External dependency</td><td>Send V001 sample to bank's test gateway (separate from prod), get written acceptance</td></tr>
+      </table>
+
+      <h4>Cutover order (Phase 5)</h4>
+      <ol>
+        <li><b>CGI tree first</b> — only 3-line BAdI fix activates effects. Lowest blast radius. Validate.</li>
+        <li><b>SEPA second</b> — first tree with full V001 node additions. UNESCO + IIEP + UIL.</li>
+        <li><b>CITI last</b> — highest volume + Worldlink edge cases. Most exposed if anything fails.</li>
+      </ol>
+      <p>Each cutover: 14-day monitoring before next tree's cutover.</p>
+
+      <h4>Rollback protocol</h4>
+      <pre>Detection criteria:
+  - >2 bank rejects in 24h attributed to address structure
+  - XSD validation failure rate >1%
+  - Marlies/Treasury head override
+
+Action sequence (≤60 minutes from decision):
+  1. DMEE Tx → tree → V000 ACTIVE / V001 INACTIVE (atomic flag)
+  2. Tx FDTA: re-run 1-vendor F110 sample, verify V000 file emitted
+  3. Notify banks via BCM ops DL: "Reverted to V000 unstructured; new ETA TBD"
+  4. INC ticket open; preserve V001 inactive for forensics
+
+Decision authority: Marlies (BCM ops) + Pablo (technical) jointly.
+Data loss: zero (F110 idempotent on REGUH).</pre>
+
+      <h4>Decisions baked into this strategy</h4>
+      <ul>
+        <li>UltmtCdtr Worldlink (Q3) → V002 deferred unless Citi TRM resolves before Phase 2</li>
+        <li>Per-bank strictness → confirmed Phase 1 (TRM responses)</li>
+        <li>Vendor master cleanup → 5 mandatory-missing only (LOW risk per DQ)</li>
+        <li>pain.001.001.09 schema upgrade → SEPARATE project, not in V001</li>
+        <li>2-tree CGI variants (CGI + _1) → SYNC pattern, no independent design</li>
+      </ul>
+    </div>
+    """
+
+
 def tab_e2e_flow():
     """E2E Flow — connects all 27 components from F110 to bank in single logical pipeline."""
     md = Path(__file__).resolve().parents[2] / "knowledge" / "domains" / "Payment" / "phase0" / "e2e_flow_components_connected.md"
@@ -934,6 +1082,8 @@ def tab_components():
 
 TABS = [
     ("overview", "Overview", tab_overview),
+    ("scope", "Scope", tab_scope),
+    ("strategy", "Change Strategy", tab_change_strategy),
     ("e2e-flow", "E2E Flow", tab_e2e_flow),
     ("components", "Components Map", tab_components),
     ("phase0", "Phase 0 · Discovery ✅", tab_phase0),
