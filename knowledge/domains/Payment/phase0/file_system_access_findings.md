@@ -86,17 +86,70 @@ Read DMEE_TREE_NODE rows + apply known field-mapping rules + render valid pain.0
 - **Pros**: full control, deterministic
 - **Cons**: complex (re-implement SAP DMEE engine for 4 trees × ~2000 nodes)
 
-## Recommendation
+## Investigation: P01 error folder (576 failed transmissions)
 
-**Option 3 + Option 4 in parallel**:
-- **Option 3**: I draft a request email to Marlies/Nicolas asking for samples. You send it.
-- **Option 4 (lite)**: I build a synthetic V000 generator using ONE representative XML structure per tree (using N_MENARD's spec docs as template), enough to demonstrate V001 transformer + validator end-to-end.
+`\\hq-sapitf\SWIFT$\P01\output\psr\error` has **576 files** including:
+- **OCITI*** prefix: 452 files (Citi outbound that failed transmission)
+- **OSOGE*** prefix: 63 files (SocGen outbound failed)
+- UNES_CITI: 39 .processed files
+- UNES_SOGE: 19 .processed files
+- IIEP_SOGE: 2 (residual)
 
-When their samples arrive, swap synthetic → real, re-run pipeline.
+These are FAILED transmissions that retained payload — should contain pain.001 XML.
+
+**However**: all files in this folder return `NOT_FOUND` when reading via `RZL_READ_FILE_LOCAL`.
+
+## Root cause: RFC name truncation
+
+Diagnosis:
+- `RZL_READ_DIR_LOCAL` truncates NAME field to ~32 chars (FIXED-WIDTH RFC structure)
+- Real filenames are typically 40-50 chars (e.g., `OCITIFRPPXXXxxxTINA20210504085857.xml`)
+- The DIR listing returns truncated `OCITIFRPPXXXxxxTINA2021050408585` (32 chars)
+- `RZL_READ_FILE_LOCAL` rejects with NOT_FOUND because the truncated name doesn't exist on disk
+- No `FILE_MASK` parameter available, no alternative FMs accessible (`EPS_OPEN_FILE`, `SUBST_GET_FILE_ATTRIBUTES`, `RZL_DIR_LIST_LOCAL`, `C13S_FILE_GET_NAME` all return NO_FUNCTION_FOUND)
+- `SXPG_COMMAND_EXECUTE` exists but commands must be predefined in SM69 — auth-blocked
+
+**Net result**: cannot programmatically retrieve real pain.001 XML from the file system via standard SAP-std RFC FMs with our authorization.
+
+## Recommendation (final)
+
+**3 alternative paths** — **Option C is fastest**:
+
+### A. Custom RFC FM `Z_READ_LONG_FILE` (deploy to D01 via ADT)
+- Code: ABAP report that reads file using `OPEN DATASET` with explicit long filename + `READ DATASET` into XSTRING
+- Deploy: Pablo writes + ADT API or SE38 paste in D01
+- ETA: 2-4 hours dev + 1 day testing
+- Risk: requires production transport + S_DATASET auth verify
+
+### B. SAP DMEE Test mode via custom RFC FM
+- FM that wraps `cl_dmee_renderer=>render_xml( ... )` with synthetic FPAYHX
+- Generates fresh XML without depending on file system
+- ETA: 4-8 hours dev
+- Risk: needs to construct synthetic FPAYHX correctly
+
+### C. Email Marlies / Nicolas for samples ✅ FASTEST
+- Request: "10 anonymized pain.001 XMLs per tree (SEPA / CITI / CGI variants)"
+- They have direct access via SAP GUI (Tx DMEE Test or BCM batch download)
+- ETA: 1 day
+- Risk: zero
+- Bonus: their human selection might pick representative scenarios we'd miss
+
+### D. Build synthetic V000 from N_MENARD spec docs + DMEE config
+- Use N_MENARD's TS DMEE CGI modifications doc as ground truth XML structure
+- Apply YTFI_PPC_STRUC + DMEE node definitions to render synthetic
+- ETA: 1-2 days
+- Risk: synthetic ≠ real may miss edge cases
+
+## Recommended path
+
+**C (email) + D (synthetic)** in parallel:
+- You email Marlies/Nicolas for 10 XMLs per tree
+- I build synthetic V000 generator + V001 transformer + validator harness
+- When real XMLs arrive, swap synthetic → real → run full pipeline → validation report
 
 ## Cross-reference
 
-- Brain claim: file system access via UNC proven (record this discovery)
-- N_MENARD email: 3 docx attachments may already include sample XMLs (check)
+- Brain claim: file system access via UNC proven (record discovery — not blocking)
+- N_MENARD email DMEE.eml (2026-04-29): had 3 docx attachments (specs only, no sample XMLs)
 - Email draft: pending
-- V001 transformer + comparator: to build next regardless of source
+- V001 transformer + comparator: build next regardless of source
