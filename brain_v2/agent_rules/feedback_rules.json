@@ -2172,5 +2172,17 @@
       "ISO20022",
       "CBPR"
     ]
+  },
+  {
+    "id": "feedback_p01_canonical_for_active_classification",
+    "severity": "CRITICAL",
+    "rule": "When classifying any object as ACTIVE or DEAD, the verdict MUST be anchored on P01 runtime evidence — NEVER on D01 existence alone. D01 may carry stale/experimental code that is not active in production. Active = exists in P01 + has a runtime hook (DMEE_TREE_HEAD active version, TFPM042FB Event 05 registration, MP_EXIT_FUNC in DMEE_TREE_NODE, ENHO impl active for BAdI dispatch, T042Z payment method routing).",
+    "why": "Drift between D01 and P01 is normal in legacy SAP shops. Trust D01 only as a deployment target, not as truth. Multiple times during Phase 0 we found objects in one but not the other — the right question is always: does P01 use it today?",
+    "how_to_apply": "Before declaring an object active or dead: (1) check P01 DMEE_TREE_HEAD for trees, (2) check TFPM042FB for FM Event 05 registrations, (3) check DMEE_TREE_NODE.MP_EXIT_FUNC for node-level FM hooks, (4) check ENHHEADER/SXS_ATTR for ENHO impl active flag, (5) check T042Z for routing. If any layer confirms P01 use, mark ACTIVE. If no P01 layer references it, mark DEAD or NEEDS_VERIFY (do NOT mark ACTIVE based on D01 presence).",
+    "created_session": 62,
+    "examples": [
+      "Z_DMEE_EXIT_TAX_NUMBER initially flagged D01-only (no source FT include in P01) -> wrong verdict. Re-check via MP_EXIT_FUNC showed FM IS active in P01 CITI tree. The ====FT include is just D01 leftover; the FM proper exists in P01 via different include.",
+      "YCL_IDFI_CGI_DMEE_DE class is P01-only; we mark it ACTIVE because Y_IDFI_CGI_DMEE_COUNTRIES_DE ENHO + the class source from P01 prove dispatch. D01 absence is what triggers the retrofit transport need."
+    ]
   }
 ]

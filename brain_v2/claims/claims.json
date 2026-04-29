@@ -3885,5 +3885,87 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 88,
+    "claim": "P01 active inventory anchored 2026-04-29: 4 active DMEE trees (SEPA/CITI/CGI/CGI_1) + bonus /CGI_XML_CT_UNESCO_BK; 2 Event 05 FMs (CITIPMW V3_PAYMEDIUM_DMEE_05 for CITI, FI_PAYMEDIUM_DMEE_CGI_05 for CGI x2 + BK); 33 node-level FMs via MP_EXIT_FUNC (26 CITIPMW V3 + 4 SAP-std SEPA + 2 Z customs + 1 BAdI dispatcher); 5 UNESCO Y* classes (FALLBACK + FR + DE + IT + UTIL); 32 SAP-std country dispatcher classes (CL_IDFI_CGI_CALL05_*) loaded conditionally by vendor bank country. Z_DMEE_EXIT_TAX_NUMBER initially mis-flagged as D01-only is in fact ACTIVE in P01 (registered as MP_EXIT_FUNC in CITI tree). Open: 17 CITIPMW V3 FMs that we extracted now (12 OK, 6 RFC-blocked) — all confirmed active via MP_EXIT_FUNC.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "report",
+        "ref": "knowledge/domains/Payment/phase0/active_vs_dead_inventory.md",
+        "cite": "Anchored on P01 snapshot + DMEE_TREE_NODE MP_EXIT_FUNC analysis",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1",
+      "/CGI_XML_CT_UNESCO_BK",
+      "FI_PAYMEDIUM_DMEE_CGI_05",
+      "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+      "Z_DMEE_EXIT_TAX_NUMBER",
+      "ZDMEE_EXIT_SEPA_21"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "P01 = source of truth confirmed. Phase 2 retrofit scope locked.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "BCM"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 89,
+    "claim": "Vendor master DQ for active payment vendors is healthy. Only 19 vendors in P01 have missing LAND1, all are one-time vendors (KTOKK=OCCV/VOCC, XCPDK=X) and none received payments. Earlier PM model that flagged 5,022 active vendors with missing CITY/COUNTRY was a LEFT JOIN artifact (REGUH.LIFNR with no matching LFA1 record = deleted vendors or legacy IDs). Finding A original conclusion (5/111K vendors missing) is reaffirmed: DQ is not a Phase 2/3 blocker.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Gold DB LFA1 + REGUH JOIN 2026-04-29",
+        "cite": "Distinct active payment vendors=31,334. Only 19 in LFA1 have empty LAND1, all CPD one-time, zero in REGUH.",
+        "added_session": 62,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "LFA1",
+      "REGUH",
+      "ADRC"
+    ],
+    "domain": "Payment",
+    "created_session": 62,
+    "resolved_session": 62,
+    "resolution_notes": "DQ-driven blocker downgraded. 5 vendors flagged Phase 0 are inactive — manual cleanup task only.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    }
   }
 ]
