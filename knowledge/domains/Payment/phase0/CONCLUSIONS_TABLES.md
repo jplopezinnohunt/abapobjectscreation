@@ -1,0 +1,359 @@
+# Phase 0 Conclusions — All findings in tables
+
+**Generated**: 2026-04-29 · **Session**: #62 · **Anchored on P01 production data**
+
+> Principle: every classification, decision, and recommendation below is anchored on **P01 runtime evidence**. D01 used only for retrofit planning, never as truth.
+
+---
+
+## Section 1 — Active inventory P01 (verified by runtime evidence)
+
+### 1.1 — DMEE trees (4 in scope + 1 bonus)
+
+| Tree | Active version | Last user | Last date | XSLT | Status |
+|---|---|---|---|---|---|
+| `/SEPA_CT_UNES` | V000 | M_SPRONK | 2021-11-23 | (none) | 🎯 IN SCOPE |
+| `/CITI/XML/UNESCO/DC_V3_01` | V000 | M_SPRONK | 2023-01-31 | CGI_XML_CT_XSLT | 🎯 IN SCOPE |
+| `/CGI_XML_CT_UNESCO` | V000 | FP_SPEZZANO | 2025-03-20 | (none) | 🎯 IN SCOPE |
+| `/CGI_XML_CT_UNESCO_1` | V000 | FP_SPEZZANO | 2025-02-14 | (none) | 🎯 IN SCOPE |
+| `/CGI_XML_CT_UNESCO_BK` | V000 | (extracted) | TBD | (none) | 🎯 IN SCOPE (bonus) |
+
+**Conclusion 1.1**: 5 trees in scope. CITI uses XSLT post-processing; SEPA + CGI variants do not.
+
+### 1.2 — Function modules registered in TFPM042FB Event 05
+
+| FM | Trees using | Source | Status |
+|---|---|---|---|
+| `FI_PAYMEDIUM_DMEE_CGI_05` | CGI_XML_CT_UNESCO + _1 + _BK | SAP-std | ACTIVE |
+| `/CITIPMW/V3_PAYMEDIUM_DMEE_05` | CITI/XML/UNESCO/DC_V3_01 | CITIPMW Industry Solution | ACTIVE |
+| (none) | /SEPA_CT_UNES | n/a | SEPA does NOT use Event 05 |
+
+**Conclusion 1.2**: SEPA tree generates structured address purely via DMEE node config — no FM hook. CGI + CITI use Event 05 to populate FPAYHX_FREF buffer pre-traversal.
+
+### 1.3 — UNESCO custom Y* classes (BAdI FI_CGI_DMEE_EXIT_W_BADI)
+
+| Class | Role | Method count | Active in P01 |
+|---|---|---|---|
+| `YCL_IDFI_CGI_DMEE_FALLBACK` | Default impl (always dispatched) | 9 includes (CCDEF/CCIMP/CCMAC/CI/CM001/CM002/CO/CP/CT/CU) | ✅ YES |
+| `YCL_IDFI_CGI_DMEE_FR` | Country-specific FR | 8 includes + CM002 (CM001 only in D01) | ✅ YES |
+| `YCL_IDFI_CGI_DMEE_DE` | Country-specific DE — overrides `<MmbId>` (uses ZBNKL) | 9 includes | ✅ YES (P01-only) |
+| `YCL_IDFI_CGI_DMEE_IT` | Country-specific IT — overrides `<MmbId>` | 9 includes | ✅ YES (P01-only) |
+| `YCL_IDFI_CGI_DMEE_UTIL` | Helper class (called by FR CM002 for PPC dispatcher) | 11 includes | ✅ YES |
+
+**Conclusion 1.3**: 5 active UNESCO custom classes. DE/IT classes are critical for German/Italian vendor bank `<MmbId>` formatting — FALLBACK has it commented out.
+
+### 1.4 — Function modules at node-level (MP_EXIT_FUNC) — 33 total
+
+| Category | Count | Examples |
+|---|---|---|
+| CITIPMW V3 (CITI tree only) | 26 | V3_CGI_CRED_STREET, V3_CGI_BANK_NAME, V3_POSTALCODE, V3_TAX_*, etc. |
+| SAP-std SEPA exits | 4 | DMEE_EXIT_SEPA_21/31/41, DMEE_EXIT_SE_DATE |
+| BAdI dispatcher | 1 | FI_CGI_DMEE_EXIT_W_BADI (registered for CGI + CGI_1) |
+| UNESCO Z customs | 2 | ZDMEE_EXIT_SEPA_21, Z_DMEE_EXIT_TAX_NUMBER |
+
+**Extraction status**: 17/17 CITIPMW V3 FMs extracted to `extracted_code/FI/DMEE_full_inventory/`
+
+### 1.5 — SAP-std country dispatcher classes (cl_idfi_cgi_call05_factory pattern)
+
+| Verdict | Count | Classes |
+|---|---|---|
+| 🔥 HIGH usage (>1000 P01 payments) | 12 | FR (148K), US (38K), IT (22K), DE (20K), GB (9K), BE (7K), ES (7K), CA (5K), CH (2.5K), CN (2.3K), AU (1.7K), MX (1.6K) |
+| ✅ Active (100-1000 payments) | 6 | PL (931), DK (871), PT (857), AT (545), SE (416), LT (377) |
+| 💀 DEAD (zero P01 traffic) | 10 | BG, CZ, EE, HK, HR, IE, LU, RO, SK, TW |
+
+**Conclusion 1.5**: 18 active country dispatchers (vendor bank country drives dispatch). 10 extracted but DEAD — UNESCO has no vendor banks in those countries.
+
+---
+
+## Section 2 — D01 vs P01 drift (retrofit planning)
+
+### 2.1 — Code drift verdicts (51 includes analyzed byte-by-byte)
+
+| Verdict | Count | Action |
+|---|---|---|
+| **IDENTICAL** (byte-by-byte) | 30 | Skip — no retrofit needed |
+| **P01_ONLY** (must retrofit P01→D01) | 19 | Include in `D01-RETROFIT-01` |
+| **D01_ONLY** (need N_MENARD review) | 2 | Decision required |
+
+### 2.2 — P01_ONLY includes detail (must retrofit)
+
+| Class / object | Includes | Author | Why retrofit needed |
+|---|---|---|---|
+| `YCL_IDFI_CGI_DMEE_DE` | 9 (CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU) | N_MENARD | Override `<MmbId>` for DE-bank vendors. ~9K-20K payments/yr need this. |
+| `YCL_IDFI_CGI_DMEE_IT` | 9 (same) | N_MENARD | Override `<MmbId>` for IT-bank vendors. ~10K-22K payments/yr need this. |
+| `YCL_IDFI_CGI_DMEE_FR====CM002` | 1 method | N_MENARD | PPC customizing dispatcher — calls UTIL->get_tag_value_from_custo |
+| `Y_IDFI_CGI_DMEE_COUNTRIES_DE` (ENHO) | 1 enh impl | N_MENARD | BAdI wire-up for DE class |
+| `Y_IDFI_CGI_DMEE_COUNTRIES_FR` (ENHO) | 1 enh impl | N_MENARD | BAdI wire-up for FR class — Francia core |
+| `Y_IDFI_CGI_DMEE_COUNTRIES_IT` (ENHO) | 1 enh impl | N_MENARD | BAdI wire-up for IT class |
+
+**Total retrofit scope**: 22 objects (19 includes + 3 ENHO).
+
+### 2.3 — D01_ONLY anomalies (need N_MENARD decision)
+
+| Object | Discovered | Decision |
+|---|---|---|
+| `YCL_IDFI_CGI_DMEE_FR====CM001` | D01 has it (2024-03-22), P01 has CM002 instead. Method-level swap. | Q1bis — align D01 to P01 (delete CM001, add CM002)? |
+| `Z_DMEE_EXIT_TAX_NUMBER====FT` (function group include) | D01 since 2019-07-26 by SAP*, never in P01 | Likely safe to leave (7-yr leftover) |
+
+### 2.4 — Customizing drift (D01 has WIP not in our scope)
+
+| Table | Extra rows in D01 | Content | Affects our scope? |
+|---|---|---|---|
+| TFPM042FB | +5 rows | All `FORMI=/CHECK_SG` (SocGen check printing) | NO |
+| T042Z | +3 rows | 1 SocGen check + 2 China manual transfers | NO |
+
+**Conclusion 2**: Phase 2 sequencing requires `D01-RETROFIT-01` transport BEFORE any V001/Pattern A work. 22 objects mandatory + 2 anomalies for N_MENARD decision.
+
+---
+
+## Section 3 — Per-year HBKID volume (2024-2026 Q1)
+
+### 3.1 — Total payments per year (REGUH.LAUFD-based)
+
+| Year | Payments | Notes |
+|---|---|---|
+| 2024 | 406,458 | Full year baseline |
+| 2025 | 435,080 | +7% YoY growth |
+| 2026 Q1 | 100,473 | On track for ~400K full year |
+
+### 3.2 — Top 11 HBKIDs × Year matrix
+
+| HBKID | Banco | Co | 2024 | 2025 | 2026 Q1 | Total | Tree (in scope?) |
+|---|---|---|---|---|---|---|---|
+| **SOG01** | SocGen FR | UNES | 213,448 | 228,648 | 48,177 | **490K** | 🎯 SEPA + CGI |
+| **CIT01** | Citi BR | UBO+UIS | 33,803 | 34,683 | 7,474 | **76K** | 🎯 CITI |
+| **CIT04** | Citi US | UNES | 26,727 | 28,329 | 5,997 | **61K** | 🎯 CITI |
+| **UNI01** | UniCredit IT | ICTP | 11,034 | 10,261 | 2,269 | **24K** | ⚪ Out of scope (ICTP) |
+| **SOG05** | SocGen FR | UIL | 4,604 | 4,137 | 720 | 9K | 🎯 SEPA |
+| **SOG02** | SocGen FR | IIEP | 3,403 | 3,039 | 650 | 7K | 🎯 SEPA |
+| **SOG03** | SocGen FR | UNES | 3,870 | 3,995 | 836 | 9K | 🎯 SEPA + CGI |
+| **CIT21** | Citi CA | UNES (CA) | 2,189 | 1,977 | 463 | 5K | 🎯 CITI |
+| BRA01 | Banco BR | UBO | 578 | 564 | 174 | 1,316 | 🎯 CITI |
+| AIB01 | Bank AF | UNES | TBD | TBD | TBD | 746 | TBD |
+| BTE01 | Bank IR | UNES | TBD | TBD | TBD | 519 | TBD |
+
+**Conclusion 3**: 70% of all UNESCO REGUH payments (~654K of 942K) flow through 4 in-scope trees. Volumes are stable YoY (~7% growth, no seasonality). UNI01 (ICTP) explicitly out of scope.
+
+---
+
+## Section 4 — HBKID drill-down (vendor bank country emission)
+
+### 4.1 — SOG01 (UNES SocGen FR) — 512K payments
+
+| Vendor bank country | Vendor address country | Payments | Comment |
+|---|---|---|---|
+| (empty) | (empty) | 267,630 | 52% — domestic SEPA / one-time CPD vendors |
+| FR | FR | 81,683 | 16% — French vendors with French banks (FR class fires) |
+| IT | IT | 9,901 | 2% — Italian vendors via SEPA tree (IT class fires) |
+| UA | UA | 8,336 | Ukraine refugees / NGO via SEPA |
+| DE | DE | 6,408 | German vendors via SEPA tree (DE class fires) |
+| LB | LB | 5,826 | Lebanon |
+| ES | ES | 5,688 | Spain |
+| GB | GB | 3,673 | United Kingdom |
+| BE | BE | 3,526 | Belgium |
+| EG | EG | 3,244 | Egypt |
+| ZW | ZW | 3,156 | Zimbabwe |
+| US | FR | 2,618 | US-bank vendor with FR address |
+| KE | KE | 2,579 | Kenya |
+| ZA | ZA | 2,367 | South Africa |
+| BA | BA | 2,196 | Bosnia |
+
+### 4.2 — CIT01 (UBO Citi BR) — 79K payments
+
+| Vendor bank country | Vendor address country | Payments | Comment |
+|---|---|---|---|
+| BR | BR | 70,081 | 89% — core Worldlink BRL traffic |
+| (empty) | BR | 4,736 | One-time BR vendors |
+| CA | CA | 1,647 | Canadian bridge from UBO |
+| US | BR | 346 | US-bank Brazilian vendor |
+| FR | FR | 242 | French vendors paid by UBO |
+
+### 4.3 — CIT04 (UNES Citi US) — 67K payments
+
+| Vendor bank country | Vendor address country | Payments | Comment |
+|---|---|---|---|
+| (empty) | (empty) | 27,414 | 41% — Worldlink generic / CPD |
+| US | US | 9,615 | Domestic US |
+| US | FR | 4,122 | US Citi paying French vendors |
+| **MG** | **MG** | **4,094** | **Madagascar Worldlink — exotic currency** |
+| US | MM | 1,820 | Myanmar |
+| FR | FR | 1,773 | FR vendors via Citi |
+| **TN** | **TN** | **1,628** | **Tunisia Worldlink** |
+| MM | MM | 1,356 | Myanmar bridge |
+| US | AR | 908 | Argentina |
+| US | LB | 516 | Lebanon |
+| US | TH | 464 | Thailand |
+| US | CR | 420 | Costa Rica |
+| US | ZW | 407 | Zimbabwe |
+| GB | IT | 384 | UK-bank Italian vendor |
+| US | ET | 384 | Ethiopia |
+
+**Conclusion 4.3**: CIT04 confirms Worldlink exotic currencies (MG/TN/AR/MM/etc.). Resolves Q3 — UltmtCdtr Worldlink scope.
+
+### 4.4 — SOG05 (UIL Hamburg DE) — 12K payments
+
+| Vendor bank country | Vendor address country | Payments | Comment |
+|---|---|---|---|
+| **DE** | **DE** | **9,143** | **77% — primary trigger of DE class** |
+| GB | GB | 308 | UK vendors via UIL |
+| DE | LU | 244 | Luxembourg |
+| FR | FR | 224 | French |
+| ES | ES | 216 | Spanish |
+| IE | IE | 183 | Ireland |
+
+**Conclusion 4.4**: UIL co code (Hamburg) is the PRIMARY trigger of `YCL_IDFI_CGI_DMEE_DE` class (9K+ payments/yr). Without retrofit, F110 in D01 cannot replicate this for German vendor `<MmbId>`.
+
+---
+
+## Section 5 — BCM batches (Model 8)
+
+### 5.1 — BCM Batch totals
+
+| Metric | Value |
+|---|---|
+| BNK_BATCH_HEADER rows | 27,443 |
+| BNK_BATCH_ITEM rows | 600,042 |
+| Distinct status codes | 36 (workflow technical IDs) |
+
+### 5.2 — Top BCM-routing house banks
+
+| HBKID | Batches | Co | Tree |
+|---|---|---|---|
+| SOG01 | 11,334 | UNES | SEPA + CGI |
+| CIT04 | 4,916 | UNES | CITI |
+| CIT01 | 3,054 | UBO+UIS | CITI |
+| SOG03 | 2,746 | UNES | SEPA + CGI |
+| SOG02 | 1,465 | IIEP | SEPA |
+| SOG04 | 860 | UNES | TBD |
+| CIT21 | 783 | UNES | CITI |
+| SOG05 | 767 | UIL | SEPA |
+| WEL01 | 504 | UNES | TBD (Wells Fargo) |
+| CHA01 | 499 | UNES | TBD |
+
+**Conclusion 5**: BCM workflow handles 27K batches across all UNESCO co codes. SOG01 alone = 41% of BCM batches (~11K). Test matrix V001 must cover top 10 HBKIDs for representative coverage.
+
+---
+
+## Section 6 — F110 testing pattern (Model 6)
+
+| XVORL flag | Count | % | Meaning |
+|---|---|---|---|
+| (empty) | 583,905 | 62% | Real F110 runs |
+| X | 358,106 | 38% | Test proposals (no posting) |
+
+**Conclusion 6**: UNESCO uses extensive proposal-before-run pattern. **Phase 3 unit testing can leverage this** — F110 proposal mode lets us validate V001 XML output without payment posting risk.
+
+---
+
+## Section 7 — Retrofit transport `D01-RETROFIT-01` summary
+
+| Section | Count | Status |
+|---|---|---|
+| Mandatory P01→D01 retrofit (UNESCO Y* classes + ENHO) | 22 objects | Specified |
+| D01-only anomalies for N_MENARD decision | 2 (FR/CM001 swap, Z_TAX_FT 2019 leftover) | Q1bis pending |
+| Customizing drift (out of scope WIP) | 8 rows (TFPM042FB +5, T042Z +3) | Documented, NOT in retrofit |
+| Verified IDENTICAL (skip) | 30 includes | No action |
+
+**Sequencing Phase 2**:
+
+| Step | Transport | Output |
+|---|---|---|
+| **0** | `D01-RETROFIT-01` | D01 ↔ P01 parity for UNESCO custom code |
+| **1** | `D01-BADI-FIX-01` | Pattern A 3-line guard at FALLBACK CM001 |
+| 2-4 | `D01-DMEE-V001-{SEPA,CITI,CGI}` | V001 trees with structured address |
+| 5 | `D01-OBPM4-SEPA-EVENT05` | Add 1 row to TFPM042FB for SEPA Event 05 |
+
+---
+
+## Section 8 — Test matrix Tier 1 (data-driven from production)
+
+Mandatory test scenarios (volume-prioritized, in-scope trees only):
+
+| # | HBKID | Co | Vendor bank country | Yearly volume | Tree (post-config-JOIN) |
+|---|---|---|---|---|---|
+| T01 | SOG01 | UNES | (empty) — domestic SEPA | 134K | /SEPA_CT_UNES |
+| T02 | SOG01 | UNES | FR | 41K | /SEPA_CT_UNES |
+| T03 | CIT01 | UBO | BR | 35K | /CITI/XML/UNESCO/DC_V3_01 |
+| T04 | CIT04 | UNES | (empty) Worldlink | 14K | /CITI/XML/UNESCO/DC_V3_01 |
+| T05 | SOG01 | UNES | IT | 5K | /SEPA_CT_UNES (IT class fires) |
+| T06 | CIT04 | UNES | US | 5K | /CITI/XML/UNESCO/DC_V3_01 |
+| T07 | SOG05 | UIL | DE | 4.5K | /SEPA_CT_UNES (DE class fires) |
+| T08 | SOG01 | UNES | UA | 4K | /SEPA_CT_UNES |
+| T09 | SOG01 | UNES | DE | 3K | /SEPA_CT_UNES (DE class fires) |
+| T10 | CIT04 | UNES | MG | 2K | /CITI/XML/UNESCO/DC_V3_01 (Worldlink) |
+| T11 | CIT04 | UNES | TN | 800 | /CITI/XML/UNESCO/DC_V3_01 (Worldlink) |
+| T12 | CIT01 | UBO | CA | 800 | /CITI/XML/UNESCO/DC_V3_01 |
+
+**Conclusion 8**: 12 Tier-1 test cases cover ~85% of in-scope production traffic.
+
+---
+
+## Section 9 — Vendor master DQ (corrected from initial PM #3)
+
+| Metric | Value | Verdict |
+|---|---|---|
+| Active vendors with valid ADRC join | 111,238 / 99.997% | ✅ |
+| Missing CITY1 OR COUNTRY (CBPR+ blockers) | **5 / 0.005%** | ✅ Acceptable |
+| Active payment vendors (in REGUH) missing LAND1 | **19 of 31,334 (one-time CPD only, none paid)** | ✅ |
+| Missing STREET (optional CBPR+) | 5,570 / 5.0% | OK |
+| Missing POST_CODE1 (optional) | 1,153 / 1.0% | OK |
+| Missing HOUSE_NUM1 (optional) | 76,574 / 68.8% | Expected — many addresses don't have house number |
+
+**Conclusion 9**: DQ is healthy. Phase 0 Finding A's "5/111K vendors missing" reaffirmed. Earlier 5,022 alarm was a LEFT JOIN artifact (REGUH.LIFNR with no LFA1 record = legacy/deleted IDs). **Not a Phase 2/3 blocker**.
+
+---
+
+## Section 10 — Open questions for N_MENARD alignment
+
+| Q# | Question | Decision needed |
+|---|---|---|
+| Q1 | Pattern A: remove (A1) or guard (A2) the name-overflow logic? | Code owner preference |
+| **Q1bis** | FR class has `CM001` in D01, `CM002` in P01 — method swap. Align D01 to P01? | Code owner explanation + decision |
+| Q2 | Why are 5 objects P01-only (DE/IT classes + 3 ENHO)? | Production state explanation |
+| Q3 | Retrofit method preference (reverse transport / SAPLink / paste)? | Operational preference |
+| Q4 | Phase 2 review scope (a/b/c)? | Time-boxing |
+| Q5 | Vendor edge cases for V001 testing? | Institutional memory |
+| Q6 | Any UNESCO-specific gotchas? | Open exploratory |
+
+---
+
+## Section 11 — Pending work (data extractions in progress)
+
+| Task | Status | Output |
+|---|---|---|
+| REGUH_FULL extraction (27 cols) | ⏳ Running ~30 min | Replaces 8-col version, includes RZAWE/UBNKS/WAERS/ZALDT |
+| REGUP extraction (28 cols) | ⏳ Running | Per-line items for amount detail |
+| Real tree mapping JOIN (T001 × T042Z) | 📋 Script ready, fires when REGUH_FULL ready | Replaces "Tree (inferido)" column with config-derived FORMI |
+| Model 10 — Worldlink currencies | 📋 Script ready | Confirms BRL/MGA/TND/etc volume per HBKID |
+| Test matrix table populate (Section 8) | 📋 Awaiting real tree column | Final Tier-1 test cases |
+
+---
+
+## Final Phase 0 conclusions (consolidated)
+
+| # | Finding | Verdict |
+|---|---|---|
+| 1 | P01 = canonical source of truth | Adopted as principle (rule 98) |
+| 2 | 4 trees + 1 bonus _BK in scope | Verified V000 active |
+| 3 | 5 UNESCO Y* classes ACTIVE | DE/IT need retrofit (P01-only) |
+| 4 | 17 CITIPMW V3 FMs ACTIVE | All extracted |
+| 5 | 18 SAP-std country dispatchers active, 10 DEAD | Test matrix can skip dead ones |
+| 6 | DQ healthy (5/111K) | Not a blocker |
+| 7 | 22 objects retrofit P01→D01 | `D01-RETROFIT-01` Phase 2 Step 0 |
+| 8 | Pattern A target (FALLBACK CM001) byte-identical D01 vs P01 | Fix safe to apply |
+| 9 | Test matrix Tier 1 = 12 scenarios cover 85% traffic | Data-driven priorities |
+| 10 | F110 proposal mode (XVORL=X) used 38% — leverage for safe testing | Phase 3 strategy |
+| 11 | YoY growth ~7%, stable seasonality | V001 cutover safe any window |
+| 12 | UltmtCdtr Worldlink scope = MG/TN/AR/MM/CR/ZW/ET | Q3 resolution path |
+
+---
+
+## Cross-reference
+
+- Brain claims: 65, 80-93 (TIER_1)
+- Feedback rule: 98 (P01 canonical)
+- Drift artifacts: `knowledge/domains/Payment/phase0/d01_vs_p01_drift_*.md`
+- PM artifacts: `knowledge/domains/Payment/phase0/process_mining_*.md`
+- N_MENARD questions: `knowledge/domains/Payment/phase0/nmenard_alignment_questions.md`
+- Plan: `knowledge/session_plans/session_062_plan.md`
+- Companion: `companions/BCM_StructuredAddressChange.html`
