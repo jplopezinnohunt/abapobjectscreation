@@ -2250,5 +2250,16 @@
     "source_file": "feedback_p01_source_of_truth_retrofit_first_then_adjust.md",
     "derives_from_core_principle": "CP-003",
     "cp_link_reason": "CP-003 precision/evidence/facts: cannot make a precise change against an imprecise baseline. D01 with 2x cohabitation is an imprecise baseline. Also CP-001: skipping retrofit feels faster but loses byte-level traceability."
+  },
+  {
+    "id": "feedback_audit_5_layers_before_claiming_sap_enforcement",
+    "rule": "Before claiming a SAP business-rule field is enforced (validation/required/auto-derived), audit ALL 5 layers: (1) SAP-std F4-help/required-flag at field level, (2) GGB0 validation rules (BOOLCLASS-scoped), (3) GGB1 substitution rules, (4) custom Z-code (form pool / BAdI), (5) master-data discipline. Document each layer's verdict separately. A green at one layer does NOT imply enforcement; F4-help only validates entered values, it does not require entry.",
+    "why": "Session #63 LZBKZ-PPC audit: T015L has 73 codes for 9 PPC countries (looks like enforcement infrastructure exists), but full 5-layer audit revealed ZERO upstream validation. AP clerk can post invoices without LZBKZ to PPC-country vendors → F110 emits empty PPC tag → bank rejects. Without disciplined per-layer audit, the surface presence of master config (T015L populated) plus runtime infrastructure (YTFI_PPC_*, BAdI dispatch) created a false sense that the field was enforced. Same pattern likely exists for other country-bank-required fields (e.g., IBAN for PL, tax ID for BR, withholding for various jurisdictions).",
+    "how_to_apply": "When asked 'is field X enforced?' or before stating 'SAP requires Y at posting': run the 5-layer audit query — F4 (T-code SE11 → element check), GGB0 (Gold DB GB931 / SE38 RGUGBR00), GGB1 (Gold DB GB922 SUBSFIELD='X'), Z-code (grep YRGGBS00 + relevant BAdIs/exits), vendor master (LFB1/LFBK Z-fields + LFA1 mandatory flags). Report per-layer verdict. If <2 layers enforce → flag as GAP and propose hard-stop validation step in GGB0 as primary fix. Caveat: claim 39 — F110 BAPI_ACC_DOCUMENT_POST may bypass callpoints; verify callpoint 2 fires for BAPI postings before relying on GGB0 alone.",
+    "severity": "HIGH",
+    "created_session": 63,
+    "source_file": null,
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "Precision + evidence: claiming enforcement without per-layer audit is opinion masquerading as fact. The 5-layer audit forces evidence per layer, anchored in checkable Gold DB queries + extracted source greps."
   }
 ]

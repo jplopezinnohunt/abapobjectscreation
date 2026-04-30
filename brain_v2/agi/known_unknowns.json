@@ -578,5 +578,17 @@
     "priority": "LOW",
     "created_session": 64,
     "status": "open"
+  },
+  {
+    "id": "KU-2026-PPC-LZBKZ-VALIDATION",
+    "question": "Should UNESCO add a hard-stop validation (GGB0 BOOLCLASS=009 VALID='UNES' new step) that requires BSEG-LZBKZ at invoice posting time when the vendor's bank country (LFBK-BANKS) is in the PPC-mandate list (AE/BH/CN/ID/IN/JO/MA/MY/PH)?",
+    "why_unknown": "Session #63 audit confirmed there is currently NO validation, substitution, or custom code that enforces LZBKZ at posting time. Gold DB GB922 has zero rows with SUBSFIELD='LZBKZ'. YRGGBS00 1,592-line full-source grep returned zero matches for 'LZBKZ' / 'SCB' / 'stat\\w*\\s*bank' / 'reporting indicator' across all 69 FORMs (U100-U913, UXR1/UXR2, UZLS, UAEP, UIT1, etc.). SAP-std F4 only verifies entered code exists in T015L (73 codes covering exactly the 9 PPC countries) — it does NOT require entry. Result: an AP clerk can post FB01/FB60/MIRO/F-43 against a PPC-country vendor with empty LZBKZ; F110 then produces an empty <InstrInf>/<Ustrd> PPC tag and the receiving bank rejects the payment. Decision needed on which of 4 fix options (A: GGB0 hard-stop, B: GGB1 substitution default, C: F110/BCM pre-submit check, D: vendor master process discipline) — Option A recommended subject to claim 39 caveat (F110 BAPI bypasses callpoint 3; need to verify validation callpoint 2 also fires for BAPI-posted documents, otherwise A needs C as backstop).",
+    "raised_session": 63,
+    "domain": "Payment",
+    "blocks_incident": null,
+    "investigation_cost_estimate": "LOW",
+    "owner_session": null,
+    "notes": "Investigation steps: (1) confirm validation callpoint 2 fires for BAPI_ACC_DOCUMENT_POST and FB60/MIRO save-time; (2) draft the new GGB0 step pseudocode (LFBK-BANKS lookup against PPC list constant); (3) review with N_MENARD + Marlies; (4) test in D01 with vendors in each of 9 PPC countries; (5) mass-check P01 historical postings to PPC-country vendors with NULL LZBKZ to estimate the latent backlog. Brain anchors: claim 23 (T015L=ISO 20022 PPC codes), claim 34 (12-step UNES validation, no LZBKZ), claim 38 (UNESCO substitution — no LZBKZ target), claim 39 (F110 BAPI asymmetry — bypasses substitution callpoint 3), claim 97/98 (PPC infrastructure). Companion section: BCM_StructuredAddressChange.html tab-ppc § GAP — LZBKZ has no upstream validation today.",
+    "enriched_session": 63
   }
 ]

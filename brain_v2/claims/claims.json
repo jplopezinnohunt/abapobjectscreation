@@ -5052,5 +5052,229 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 112,
+    "claim": "Full 48-field byte-level verification of D01 vs P01 DMEE_TREE_NODE Session #63 2026-04-30 (upgrades claim 109 14-field sample to comprehensive). Methodology: 8 chunked RFC_READ_TABLE calls per (tree, system, version) covering all 48 columns of DMEE_TREE_NODE. Results: SEPA + CITI + CGI all 3 trees show D01 V000 = P01 V000 byte-equal (zero ONLY/CHANGED across 48 fields × 95/610/631 nodes). D01 V000 vs D01 V001 across all 4 trees shows the SOLE field difference is the VERSION field itself (every shared NODE_ID has VERSION=000 in V000 and VERSION=001 in V001) — confirms V001 is byte-clone of V000 by design (47/48 fields equal). CGI_1 D01 V000 vs P01 V000 = 1 ONLY_D01 (N_6366307580 SCB) + 8 ONLY_P01 (AdrLine variants) + 3 CHANGED nodes affecting 6 fields: BROTHER_ID (2 nodes), LENGTH (1), MP_SC_TAB (1), MP_SC_FLD (1), MP_IF_TP (1), MP_SELECTION (1). Confirms claim 109 result with full field coverage. Companion D01 ↔ P01 Checks tab Table 1 updated to reflect.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "rfc_query",
+        "ref": "D01 + P01 RFC_READ_TABLE on DMEE_TREE_NODE 8-chunk extraction Session #63 2026-04-30",
+        "cite": "Saved Zagentexecution/incidents/xml_payment_structured_address/full_47field_diff_session63.json (actually 48 fields). Per-tree per-pair diff with full field coverage.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "claim_chain",
+        "ref": "claims 109, 111",
+        "cite": "Claim 109 14-field sample = same conclusion at finer field granularity. Claim 111 narrative correction holds: D01 V001 is byte-clone of V000 (47/48 equal, VERSION differs by design).",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1",
+      "DMEE_TREE_NODE"
+    ],
+    "domain": "Payment",
+    "created_session": 63,
+    "resolved_session": 63,
+    "resolution_notes": "Closes the \"100% certainty\" gate per user directive 2026-04-30. Definition-Check verdict per row now appears in companion Table 1 of D01 ↔ P01 Checks tab.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 113,
+    "claim": "CBPR+ ISO 20022 PstlAdr classification (the regulatory standard banks enforce post-Nov 2026) — strict definitions: (1) UNSTRUCTURED = PstlAdr produces only <AdrLine> elements at runtime; banks REJECT post-Nov 2026. (2) HYBRID = both <TwnNm> AND <Ctry> structured-leaves exist and are populated, plus <AdrLine> for remaining content; CBPR+ MINIMUM viable, accepted post-Nov 2026 but flagged for some banks. (3) FULLY STRUCTURED = all 5 ISO 20022 structured leaves exist (StrtNm, BldgNb, PstCd, TwnNm, Ctry); future-proof. The classification is determined by WHICH LEAVES EXIST IN THE DMEE TREE (DMEE_TREE_NODE rows under each PstlAdr parent), not by what Marlies observed in 10 production XML samples. RFC-derived V000 state Session #63 per active tree per party: /SEPA_CT_UNES Cdtr = Unstructured-leaning (Ctry + 2×AdrLine, NO TwnNm leaf in tree → output never has <TwnNm>); /SEPA_CT_UNES Dbtr = Unstructured-leaning (Ctry + 1×AdrLine, NO TwnNm leaf); /CITI/XML/UNESCO/DC_V3_01 Dbtr-primary = Hybrid+ (PstCd + TwnNm + Ctry structured + 3×AdrLine, MISSING StrtNm + BldgNb leaves); /CITI Dbtr-altMor = Unstructured (3×AdrLine only); /CITI Cdtr = Fully Structured (all 5 leaves) + AdrLine residual; /CITI UltmtCdtr = Hybrid+ with empty StrtNm source (PstCd + TwnNm + Ctry + CtrySubDvsn structured, StrtNm leaf exists but no source); /CITI CdtrAgt = Hybrid+ (StrtNm + TwnNm + CtrySubDvsn structured, MISSING PstCd + BldgNb); /CGI_XML_CT_UNESCO Dbtr/Cdtr/UltmtCdtr/UltmtDbtr = Fully Structured; /CGI CdtrAgt = Unstructured (only Ctry structured + 2×AdrLine + 2×AdrLine BAdI). REJECTION RISK SUMMARY: SEPA Cdtr+Dbtr both at risk · CITI Dbtr-altMor at risk · CGI CdtrAgt at risk. Marlies's labels are sample-validation comments aligned with the CBPR+ definition but more lenient (she labelled SEPA \"Hybrid\" because the AdrLine carries semi-structured content — not the strict CBPR+ definition).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "standard",
+        "ref": "ISO 20022 CBPR+ Nov 2026 mandate",
+        "cite": "PstlAdr mandatory tags: TwnNm + Ctry. Optional: StrtNm, BldgNb, PstCd, CtrySubDvsn, AdrLine. Post-Nov 2026 banks (SocGen + Citi + CGI member banks) enforce structured minimum.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "rfc_query",
+        "ref": "D01 + P01 RFC_READ_TABLE Session #63 + badi_node_map_session63.json",
+        "cite": "Per-tree per-party leaf inventory with source binding determines V000 classification independent of XML-output observation.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "claim_chain",
+        "ref": "claims 105, 109, 112",
+        "cite": "V001 Fully-Structured commitment (claim 105) targets exactly the Unstructured + Hybrid+ branches identified here. Simulator pass on .09 schema (claim 105) confirms V001 design is forward-compatible with stricter enforcement.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1",
+      "DMEE_TREE_NODE"
+    ],
+    "domain": "Payment",
+    "created_session": 63,
+    "resolved_session": 63,
+    "resolution_notes": "Per CP-003 (precision/evidence/facts): V000 classification is system-data-derived, not comment-derived. Marlies file role is sample validation, not source of truth. Companion per-tree hierarchy section refreshed.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 114,
+    "claim": "Methodology for V001 classification + change-design (user directive 2026-04-30): TRUTH SOURCE = System Data (RFC-extracted DMEE_TREE_NODE leaf inventory per claim 109/112) + Bank Requirements (CBPR+ ISO 20022 PstlAdr definition per claim 113). Marlies XML-sample analysis (BCM_StructuredAddress_Analysis.xlsx claim 110) is VALIDATION, not source — her observations on 10 production samples confirm the classification at the user-visible layer but the AUTHORITATIVE state of each (tree, party) comes from system data + regulation. Conclusion-derivation order: (1) extract leaf inventory per (tree, party) via RFC; (2) apply CBPR+ definition (Unstructured / Hybrid / Fully Structured per which structured leaves exist + can be populated); (3) cross-validate against Marlies file — if her sample shows a defect on a party we classified as Fully-Structured, that exposes a runtime data-quality issue, not a tree-config issue. This methodology resolved Marlies \"SEPA Cdtr Hybrid\" label vs system-data \"SEPA Cdtr Unstructured\" classification: tree has Ctry leaf but no TwnNm leaf -> output never has structured TwnNm -> CBPR+ strict = Unstructured. Marlies labelled \"Hybrid\" because <AdrLine> contains semi-structured content readable by humans, but CBPR+ banks parse XML elements not AdrLine content. The strict definition wins under bank enforcement. Per CP-003 (precision/evidence/facts): system + regulation > comments.",
+    "claim_type": "methodology",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "user_directive",
+        "ref": "Session #63 2026-04-30",
+        "cite": "\"Ok we need to base our conclusion in system data. Marlies it is just a Comment. Structurated unstructurated is based on the bank regulations.\" + \"But the True is system plus bank requirements\"",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "claim_chain",
+        "ref": "claims 105 (V001 Fully-Structured), 109 (RFC-verified leaves), 110 (Marlies file role), 112 (full 48-field check), 113 (CBPR+ classification)",
+        "cite": "All claims align: V001 design derives from system + regulation; Marlies file is validation companion.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO"
+    ],
+    "domain": "Payment",
+    "created_session": 63,
+    "resolved_session": 63,
+    "resolution_notes": "Methodology rule applied retroactively to all V001 design decisions. Companion Change Strategy tab now starts with Understanding-the-problem section grounded in CBPR+ ISO 20022 + system-data classification table.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Methodology"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 115,
+    "claim": "Session #63 review-pass close-out (user directive 2026-04-30): all prior agent conclusions for V001 reconciled with the Session #63 findings (claims 109-114). Reviewed: claim 102 (zero V001 in 44 transports — STILL HOLDS for released-transport scope; refined narrative for in-system D01 via claim 111). Claim 105 (V001 Fully Structured commitment — STRENGTHENED by claim 113 CBPR+ rejection-risk analysis showing 4 hard-stop parties + 3 hybrid+ at future risk). Claim 104 (V001 change matrix 27 rows — EXTENDED to 29 rows by adding Step-0a PRECONDITION RETROFIT + Step-0b PRECONDITION CREATE V001). Strategy docs reviewed: dmee_versioning_procedure.md Step A revised (PURGE dormant D01 V001 first + CREATE fresh). Companion sections refreshed: 3 stale FIRST EVER references in companion + 2 in versioning procedure aligned with claims 109+111 nuance. Plan actions reviewed: Phase 2 readiness checklist Section G blocker #0 retrofit scope reduced to ~1-2h surgical (CGI_1 12-delta + V001 cleanup + 5 ABAP retrofit) per claim 109 row-level evidence. No prior conclusion reversed. No claim superseded post-110. The corpus is internally consistent: System Data (claim 109/112) + Bank Requirements (claim 113) = truth (claim 114) · Marlies XML samples = validation (claim 110) · V001 design = Fully Structured (claim 105) · retrofit = surgical (claim 109) · transport packaging = 8 transports + 2 preconditions = 10 transports total (counting Step-0 PURGE + RETROFIT bundles). Phase 2 W1 effort estimate now: ~2-3 hours surgical work (1-2h retrofit + ~1h V001 changes per matrix) + dry-run prep + transport import staging.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "consolidated_review",
+        "ref": "Session #63 review pass 2026-04-30",
+        "cite": "Walked through claims 65-114 V001-related, companion tabs Change Strategy + D01 P01 Checks + V001 Change Matrix + Evolution + Phase 2, plus dmee_retrofit_procedure.md + dmee_versioning_procedure.md + phase2_readiness_checklist.md + v001_change_matrix.csv. Identified 5 stale FIRST EVER references (3 in companion, 2 in versioning procedure) and refined them to distinguish released-transport scope vs in-system D01 scope.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      },
+      {
+        "type": "claim_chain",
+        "ref": "claims 102, 104, 105, 109, 111, 113, 114",
+        "cite": "No reversals. Refinements only. The corpus is internally consistent.",
+        "added_session": 63,
+        "migrated_from_legacy": false
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [],
+    "domain": "Payment",
+    "created_session": 63,
+    "resolved_session": 63,
+    "resolution_notes": "Review pass complete. No remaining stale claims or conclusions. Strategy + plan + V001 design = aligned with system + bank requirements. Phase 2 ready when (a) 5 vendor master fix done by Master Data team (b) D01-RETROFIT-01 transport executed (~1-2h) (c) N_MENARD reviews Pattern A 3-line guard.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 116,
+    "claim": "PPC LZBKZ field has no upstream validation in UNESCO P01 — confirmed Session #63. Full 5-layer audit: (1) SAP-std F4 only verifies entered code exists in T015L (73 codes covering exactly the 9 PPC countries AE/BH/CN/ID/IN/JO/MA/MY/PH); does NOT require entry. (2) GGB0 BOOLCLASS=009 VALID='UNES' (12 steps in GB931, claim 34): zero LZBKZ references. (3) GGB1 GB922 (218 rows, Gold DB verified): zero rows with SUBSFIELD='LZBKZ'. (4) YRGGBS00 custom code (1,592 lines, 69 FORMs U100-U913 + UXR1/UXR2/UZLS/UAEP/UIT1/...): zero matches for 'LZBKZ', 'SCB', 'stat\\w*\\s*bank', 'reporting indicator' in full-source grep. (5) Vendor master: LFB1 has no PPC-country flag, LFBK has BANKS but no auto-derive rule. Operational consequence: AP clerk can post FB01/FB60/MIRO/F-43 against PPC-country vendor with empty LZBKZ → F110 BAdI YCL_IDFI_CGI_DMEE_UTIL.CM003 line 48 'READ TABLE mt_t015l WITH KEY lzbkz = is_fpayp-lzbkz' returns sy-subrc<>0 → empty <InstrInf>/<Ustrd> PPC tag → receiving bank in 9 PPC countries rejects payment.",
+    "claim_type": "infrastructure_gap",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "brain_v2/agi/known_unknowns.json KU-2026-PPC-LZBKZ-VALIDATION",
+      "Gold DB GB922 SQL SELECT * FROM GB922 WHERE SUBSFIELD='LZBKZ' returned 0 rows (Session #63)",
+      "YRGGBS00 1592-line UTF-16 source full grep returned 0 matches for LZBKZ/SCB/stat-bank/reporting-indicator (Session #63)",
+      "extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_UTIL========CM003.abap line 48",
+      "T015L Gold DB: 73 rows distributed AE=9 BH=6 CN=3 ID=9 IN=11 JO=10 MA=10 MY=10 PH=5 (matches 9 PPC countries exactly)",
+      "claim 34 (12-step UNES validation focused on XREF1/XREF2/XREF3, no LZBKZ)",
+      "claim 39 (F110 BAPI bypasses substitution callpoint 3 — may also bypass validation callpoint 2; needs verification before relying on Option A alone)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "YRGGBS00",
+      "GB922",
+      "T015L",
+      "BSIK",
+      "BSAK",
+      "FPAYP",
+      "YTFI_PPC_TAG",
+      "YTFI_PPC_STRUC",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "LFBK"
+    ],
+    "domain": "Payment",
+    "created_session": 63,
+    "resolved_session": null,
+    "resolution_notes": "Tracked as KU-2026-PPC-LZBKZ-VALIDATION. 4 fix options (A: GGB0 hard-stop RECOMMENDED · B: GGB1 substitution default · C: F110/BCM pre-submit check · D: vendor master discipline). Decision needed Marlies + N_MENARD + Pablo. Phase 2 candidate (operational hardening complementary to V001 format-only changes).",
+    "status": "open_gap",
+    "domain_axes": [
+      "FI",
+      "Payment",
+      "PPC",
+      "validation",
+      "compliance"
+    ]
   }
 ]

@@ -120,6 +120,11 @@ Brain status: FRESH (rebuilt 2026-04-30).
 - 2026-04-30 · D01 2× cohabitation drift escalated to TOP gating blocker · claim 108 TIER_1 + new CRITICAL rule `feedback_p01_source_of_truth_retrofit_first_then_adjust`. Step 0 D01-RETROFIT-01 scope expanded from "5 P01-only ABAP objects" (Finding I) to "full byte-alignment of all 4 DMEE trees + 5 ABAP objects". Recommended Option A: purge D01 + re-import from P01.
 - 2026-04-30 · VPN restored mid-session · RFC verification on D01+P01 DMEE_TREE_NODE · claim 108 SUPERSEDED by claim 109 + 111: D01 has explicit V000+V001 cohabitation (V001 dormant clone of V000), not random drift. 3 of 4 trees byte-equal D01 V000 = P01 V000; only CGI_1 has 12 deltas. Retrofit scope reduced from "huge multi-tree" to "~1-2 hours surgical (CGI_1 + dormant V001 cleanup)". Companion Current Solution + Evolution Pattern 2 + retrofit procedure refreshed.
 - 2026-04-30 · Marlies Excel `BCM_StructuredAddress_Analysis.xlsx` (19 sheets) role formalized as historical snapshot 2026-04-24 + sign-off-format · claim 110 TIER_1.
+- 2026-04-30 · CBPR+ ISO 20022 PstlAdr classification methodology established · claim 113 TIER_1. Per-tree per-party V000 state derived from system-data leaf inventory (not Marlies-comments). Companion Change Strategy tab updated with "Understanding the problem" section.
+- 2026-04-30 · Methodology rule: Truth = System Data + Bank Requirements (CBPR+) · Marlies file = sample validation · claim 114 TIER_1.
+- 2026-04-30 · Hard-stop rejection-risk parties identified under V000 today: 4 (SEPA Cdtr · SEPA Dbtr · CITI Dbtr-altMor · CGI CdtrAgt). Hybrid+ at future-proof risk: 3 (CITI Dbtr-primary · CITI UltmtCdtr · CITI CdtrAgt). V001 lifts all 7 to Fully Structured.
+- 2026-04-30 · V001 Change Matrix updated with Step-0 PRECONDITION rows (0a + 0b): retrofit + dormant V001 purge + fresh Create Version BEFORE matrix rows 1-25 apply. CSV now 29 rows total (was 27).
+- 2026-04-30 · DMEE versioning procedure Step A revised: PURGE dormant D01 V001 first + CREATE fresh — recovers clean transport-trail.
 
 ---
 

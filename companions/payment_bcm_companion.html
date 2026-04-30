@@ -590,7 +590,7 @@ code{background:#ffffff;padding:1px 4px;border-radius:3px;font-family:monospace;
 <tr><td style="font-weight:bold">MG (Madagascar)</td><td><span style="background:#e74c3c;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">HIGH</span></td><td style="font-weight:bold;font-size:11px">IBAN + BCM special rule</td><td style="font-size:11px">MGA without IBAN → BCM rule UNES_AP_X catches → must be manually rejected.</td></tr>
 <tr><td style="font-weight:bold">TN (Tunisia)</td><td><span style="background:#f39c12;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">MEDIUM</span></td><td style="font-weight:bold;font-size:11px">TND 3 decimal places</td><td style="font-size:11px">ControlSum must match individual amounts with 3 decimals. SAP Note required for conversion function.</td></tr>
 <tr><td style="font-weight:bold">BR (Brazil)</td><td><span style="background:#e74c3c;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">HIGH</span></td><td style="font-weight:bold;font-size:11px">Tax ID + bank format</td><td style="font-size:11px">STCD2 for natural persons when STCD1 empty. Bank account "-" stripped. TAXID="TXID" constant in XML.</td></tr>
-<tr><td style="font-weight:bold">AE / BH (UAE/Bahrain)</td><td><span style="background:#f39c12;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">MEDIUM</span></td><td style="font-weight:bold;font-size:11px">Payment Purpose Code</td><td style="font-size:11px">InstrForCdtrAgt node required. Purpose code read from SGTXT via custom DMEE exit.</td></tr>
+<tr><td style="font-weight:bold">AE/BH/CN/ID/IN/JO/MA/MY/PH (9 PPC countries)</td><td><span style="background:#e74c3c;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">HIGH</span></td><td style="font-weight:bold;font-size:11px">Payment Purpose Code (PPC)</td><td style="font-size:11px"><b>CORRECTED Session #63</b>: Purpose code is read from <code>FPAYP-LZBKZ</code> (BSIK at posting → SAP-std F110 buffer → BAdI <code>YCL_IDFI_CGI_DMEE_UTIL.CM003</code> line 48). Lookup chain: <code>READ TABLE mt_t015l WITH KEY lzbkz = is_fpayp-lzbkz</code> → split <code>T015L.ZWCK1</code> at space → concat per <code>YTFI_PPC_STRUC</code> rules → emit into <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (AE/CN) or <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (other 7). NOT from SGTXT. Brain claims 23/97/98.</td></tr>
 <tr><td style="font-weight:bold">JP (Japan)</td><td><span style="background:#27ae60;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">LOW</span></td><td style="font-weight:bold;font-size:11px">JPY 0 decimal places</td><td style="font-size:11px">ControlSum adjustment needed for 0-decimal currency.</td></tr>
 <tr><td style="font-weight:bold">COP / ARS / IRR / MMK / SDG</td><td><span style="background:#8e44ad;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">BLOCKER</span></td><td style="font-weight:bold;font-size:11px">Out of scope / Embargo</td><td style="font-size:11px">Colombia (tax ID in file), Argentina (ARS), Iran/Myanmar/Sudan (embargo) — excluded entirely.</td></tr>
     </table>
@@ -605,6 +605,33 @@ code{background:#ffffff;padding:1px 4px;border-radius:3px;font-family:monospace;
       (7) Update BCM rules &rarr;
       (8) Create OBPM4 variant (NEVER transported — recreate manually)
     </div>
+  </div>
+
+  <div class="section" style="background:#fee2e2;border-left:4px solid #dc2626;border-radius:4px;padding:14px;margin-top:14px">
+    <h3 style="color:#dc2626;margin:0 0 8px 0">⛔ PENDING — PPC LZBKZ has no upstream validation today (Session #63 finding 2026-04-30)</h3>
+    <p style="font-size:13px;color:#1f2937">Brain anchor: <b>KU-2026-PPC-LZBKZ-VALIDATION</b> (registered Session #63, <code>brain_v2/agi/known_unknowns.json</code>) · cross-reference: <code>BCM_StructuredAddressChange.html</code> tab-ppc § GAP — LZBKZ has no upstream validation today.</p>
+    <p style="font-size:13px;color:#1f2937;background:#fff;padding:8px;border-radius:4px"><b>The risk in one sentence</b>: today an AP clerk can post FB01 / FB60 / MIRO / F-43 against a vendor whose bank is in AE/BH/CN/ID/IN/JO/MA/MY/PH <em>without entering LZBKZ</em>. At F110 time the BAdI looks up T015L with empty <code>FPAYP-LZBKZ</code> → no match → empty <code>&lt;InstrInf&gt;</code> / <code>&lt;Ustrd&gt;</code> PPC tag → bank rejects the payment.</p>
+    <p style="font-size:12px;color:#1f2937"><b>Audit evidence (Gold DB + YRGGBS00 source 1592 lines, full grep)</b>:</p>
+    <ul style="font-size:12px;color:#1f2937">
+      <li><b>SAP-std F4 check at field entry</b>: ✅ Verifies entered code EXISTS in T015L (73 codes for 9 PPC countries: AE×9 BH×6 CN×3 ID×9 IN×11 JO×10 MA×10 MY×10 PH×5) · ❌ Does NOT require entry.</li>
+      <li><b>UNESCO validation</b> (GGB0 BOOLCLASS=009 VALID='UNES', 12 steps in GB931): ❌ No step references LZBKZ (claim 34 — focus is XREF1/XREF2/XREF3).</li>
+      <li><b>UNESCO substitution</b> (GGB1 GB922, 218 rows): ❌ Zero rows with <code>SUBSFIELD='LZBKZ'</code> — Gold DB verified.</li>
+      <li><b>Custom code YRGGBS00</b> (1,592 lines, 69 FORMs U100-U913 + UXR1/UXR2/UZLS/UAEP/UIT1/...): ❌ Zero matches for "LZBKZ" or "SCB" / "stat\w*\s*bank" / "reporting indicator" in full-source grep.</li>
+      <li><b>Vendor master discipline</b>: ❌ LFB1 has no PPC-country flag · LFBK has BANKS but no auto-derive rule · No vendor-level LZBKZ default.</li>
+    </ul>
+    <p style="font-size:12px;color:#1f2937"><b>Fix candidates (4 options, ranked)</b>:</p>
+    <table style="width:100%;font-size:11px;border-collapse:collapse">
+      <thead style="background:#1e3a4a;color:#fff">
+        <tr><th>#</th><th>Where</th><th>What</th><th>Effort</th><th>Trade-off</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#dcfce7"><td><b>A · RECOMMENDED</b></td><td>GGB0 validation, BOOLCLASS=009 VALID='UNES' new step</td><td><code>IF LFBK-BANKS IN PPC list AND BSEG-LZBKZ IS INITIAL → BLOCK</code></td><td>~1 day config + N_MENARD review</td><td>Hard stop at posting · best UX · <em>caveat</em>: claim 39 — F110 BAPI bypasses callpoint 3; verify validation callpoint 2 also fires for BAPI postings</td></tr>
+        <tr><td>B</td><td>GGB1 substitution new step</td><td>Auto-derive LZBKZ from vendor-master default (requires LFB1-Z* field)</td><td>~2 days + Z-field</td><td>Soft enforcement; depends on vendor master</td></tr>
+        <tr><td>C</td><td>F110 / BCM pre-submit ABAP check</td><td>Reject batch if any item missing PPC-required LZBKZ</td><td>~3 days ABAP</td><td>Late catch (after invoice posted); useful as backstop</td></tr>
+        <tr><td>D</td><td>Master Data process discipline</td><td>BP creation/maintenance for PPC-country vendors mandates LZBKZ-default population</td><td>Process change only</td><td>No code; depends on people</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#475569;margin-top:8px"><b>Status</b>: PENDING decision (Marlies + N_MENARD + Pablo). Phase 2 candidate — V001 deals with format only; this gap is what makes V001 actually work end-to-end in production for PPC countries.</p>
   </div>
 </div>
 

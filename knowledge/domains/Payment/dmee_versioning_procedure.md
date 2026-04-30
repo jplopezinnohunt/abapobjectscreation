@@ -4,9 +4,15 @@
 
 ## Why this document exists
 
-Per brain claim 102: across all 44 DMEE-touching transports by M_SPRONK / N_MENARD / FP_SPEZZANO 2017-2025, <strong>zero used DMEE native versioning</strong>. All 4 target trees today carry `DMEE_TREE_HEAD.VERSION = 000`. **V001 will be the first ever DMEE version bump at UNESCO**.
+**REFINED 2026-04-30 post-VPN RFC verification (claims 109 + 111)**:
 
-The 2-file + DMEE-versioning strategy (per user directive 2026-04-24, plan §Design recommendations L500) requires operational competence with three SAP standard transactions never previously exercised by the team: *Create Version*, *Activate Version*, *Deactivate Version*. This document captures the canonical procedure plus a dry-run protocol so Phase 2 Week 1 doesn't surprise anyone.
+- **Released-transport scope** (claim 102 holds): zero V001 patterns in 44 released transports 2017-2024 — V001 has never been transport-shipped to V01/P01.
+- **In-system D01 scope** (claim 109): D01 already has `DMEE_TREE_NODE.VERSION=001` rows on all 4 in-scope trees. Someone ran *DMEE Tx → Create Version* in D01, leaving V001 as byte-identical clone of V000, dormant since.
+- **P01**: `VERSION=000` only on all 4 trees (production state).
+
+So: **V001 will be the first ever transport-released V001 at UNESCO** — but it is NOT the first time V001 entries exist in D01. Step A (Create Version) of this procedure is already partially done in D01 from an undated past event; the recommended path is to PURGE the dormant V001 + recreate fresh from aligned V000 (so the deployed V001 has a clean transport-trail).
+
+The 2-file + DMEE-versioning strategy (per user directive 2026-04-24, plan §Design recommendations L500) requires operational competence with three SAP standard transactions: *Create Version* (already exercised in D01 once dormantly), *Activate Version* (never exercised on UNESCO trees), *Deactivate Version* (never exercised). This document captures the canonical procedure plus a dry-run protocol so Phase 2 Week 1 doesn't surprise anyone.
 
 ## What "DMEE versioning" means in SAP
 
@@ -23,20 +29,25 @@ Source: extraction in `knowledge/domains/Payment/phase0/dmee_full/dmee_tree_head
 
 ## The 3-step canonical procedure
 
-### Step A — CREATE V001 as a copy of V000
+### Step A — PURGE existing dormant V001 + CREATE fresh V001 as a copy of V000 (REVISED post-Session #63)
+
+> **Important**: D01 already has dormant V001 entries on all 4 in-scope trees (claim 109 — byte-identical clone of V000, never released). Step A is therefore PURGE + CREATE, not just CREATE.
 
 In Tx **DMEE**:
 
 1. Open the tree (e.g. `/SEPA_CT_UNES`)
-2. Menu: **Tree → Versions → Create Version**
-3. Source version: 000 · Target version: 001
-4. Confirm copy. SAP duplicates all `DMEE_TREE_NODE` rows for `VERSION = 001`
-5. New version is created **INACTIVE** (`EX_STATUS` blank)
-6. Save. Capture the transport prompt → assign to V001 transport (e.g. `D01K-V001-SEPA-01`)
+2. **First**: Menu → **Tree → Versions → Delete Version** → select VERSION=001 → confirm. Removes the dormant clone.
+3. Save → captures DELETE in the transport prompt → assign to retrofit transport `D01K-RETROFIT-01-V001-PURGE`
+4. **Then**: Menu → **Tree → Versions → Create Version**
+5. Source version: 000 · Target version: 001
+6. Confirm copy. SAP duplicates all `DMEE_TREE_NODE` rows for `VERSION = 001` (fresh, clean transport-trail)
+7. New version is created **INACTIVE** (`EX_STATUS` blank)
+8. Save → captures CREATE in transport prompt → assign to V001 transport (e.g. `D01K-V001-SEPA-01`)
 
 **Verification after Step A**:
 - `RFC_READ_TABLE DMEE_TREE_HEAD WHERE TREE_ID = '/SEPA_CT_UNES'` should return 2 rows: VERSION=000 EX_STATUS='A' AND VERSION=001 EX_STATUS=''
 - `RFC_READ_TABLE DMEE_TREE_NODE WHERE TREE_ID = '/SEPA_CT_UNES' AND VERSION = '001'` should return the same node count as VERSION=000
+- The new V001 NODE_IDs should match V000's after the fresh CREATE (deterministic copy)
 
 ### Step B — EDIT V001 nodes per the V001 design
 
@@ -80,7 +91,7 @@ In Tx **DMEE**:
 
 ## Dry-run protocol (mandatory before Phase 2)
 
-Because this is the first ever DMEE version bump at UNESCO, run a **non-load-bearing dry run** to capture muscle memory:
+Because this is the first ever transport-released DMEE V001 at UNESCO (Activate Version + atomic V000↔V001 rollback never exercised — even though Create Version was done dormantly in D01), run a **non-load-bearing dry run** to capture muscle memory on the steps that ARE genuinely first-time:
 
 1. **Pick a sandbox tree** that's never been used in production (or create a Z-test-tree): e.g. `/Z_DMEE_VERSIONING_TEST`
 2. Execute Step A (Create Version) on it — capture screenshots of the dialog flow
