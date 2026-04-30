@@ -473,5 +473,110 @@
     "owner_session": 52,
     "notes": "ANSWERED session #052 (see `answered_session` field). Role split is intentional per OOCU_RESP structure.",
     "enriched_session": 54
+  },
+  {
+    "id": "KU-2026-063-01",
+    "question": "Did transport D01K9B0BN9 (2024-03-26, N_MENARD, 52 objects) carry YCL_IDFI_CGI_DMEE_AE and _BH classes to P01, and if so why does TADIR probe today show them as NOT FOUND?",
+    "context": "Transport-intelligence classification of D01K9B0BN9 lists CLAS objects YCL_IDFI_CGI_DMEE_AE + YCL_IDFI_CGI_DMEE_BH + YCL_IDFI_CGI_DMEE_DE + YCL_IDFI_CGI_DMEE_FR (along with ENHO Y_IDFI_CGI_DMEE_COUNTRIES_* spots). Phase 0 Finding D (claim chain) ran TADIR probe in P01 and reported AE/BH classes do NOT exist in P01. Possible explanations: (a) D01K9B0BN9 was never imported to P01 (only stayed in D01); (b) classes were deleted or renamed in a subsequent transport; (c) TADIR probe used wrong client/system; (d) the transport entries are class-shells that were never activated and got cleaned up. This matters because if AE/BH logic exists somewhere, the structured-address V001 design has to consider it; if truly absent, no impact.",
+    "how_to_resolve": "Three checks: (1) RFC E070 / E071 in P01 for D01K9B0BN9 → status code R (released) confirms import; (2) RFC TADIR in P01 for OBJ_NAME=YCL_IDFI_CGI_DMEE_AE / _BH → present/absent; (3) if absent, check E071 for any subsequent DELE entry against AE/BH class names.",
+    "related_objects": [
+      "YCL_IDFI_CGI_DMEE_AE",
+      "YCL_IDFI_CGI_DMEE_BH",
+      "D01K9B0BN9"
+    ],
+    "priority": "LOW",
+    "created_session": 63,
+    "status": "partial",
+    "evidence_added_session_63": "Gold DB cts_objects queried 2026-04-30: AE/BH classes have 1 cts entry each (only D01K9B0BN9 2024-03-26). DE/FR/IT/FALLBACK/UTIL have 2-4 entries each (re-touched). AE/BH never re-touched = consistent with \"created in D01 but never imported to P01 OR imported then deleted\". RFC TADIR probe still pending (VPN down 2026-04-30). Priority MEDIUM → LOW (V001 design excludes AE/BH)."
+  },
+  {
+    "id": "KU-2026-063-03",
+    "question": "For each historical DMEE-tree transport (R3TR DMEE / PAYM/* objects), which specific DMEE_TREE_NODE entries were created / modified / deleted? E071 only captures the tree-level object, not node-level diff.",
+    "context": "Session #63 transport-intelligence reading of the 44-transport cohort gave us PGMID + OBJECT_TYPE + OBJECT_NAME granularity. For ABAP transports (CLAS/METH/ENHO/FUNC) this is sufficient — we know the exact method/class touched. For DMEE tree transports (R3TR DMEE PAYM/<tree>), the granularity stops at the tree level: we cannot say from E071 whether a transport added new nodes, modified existing node sources, changed conditions, or deleted nodes. The DMEE_TREE_NODE.AS_TIME / VERSION fields on each row would let us reconstruct per-transport node-level diffs by comparing snapshots at transport release time.",
+    "how_to_resolve": "Three options: (1) RFC_READ_TABLE DMEE_TREE_NODE for each tree filtering by AS_TIME between adjacent transport release times — labor-intensive but reproducible. (2) Use SAP standard DMEE Tx version-history viewer (if active version snapshots are kept) — manual GUI step. (3) Replay each transport in a sandbox and capture the before/after diff — high cost. For V001 design this granularity is NOT blocking: surgical-pattern claim 102 + tree-level classification claim 101 are sufficient to confirm the operational pattern. Add this KU only if a Phase 4 regression surprises require historical node-level forensics.",
+    "related_objects": [
+      "DMEE_TREE_NODE",
+      "DMEE_TREE_HEAD",
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1"
+    ],
+    "priority": "LOW",
+    "created_session": 63,
+    "status": "open"
+  },
+  {
+    "id": "KU-2026-DMEE-A",
+    "question": "What is the minimum SAP authorization profile required to execute Tx DMEE menu Tree -> Versions -> Create Version / Activate Version / Deactivate Version?",
+    "context": "Session adding SAP-standard DMEE/PMW reference doc (knowledge/domains/Payment/dme_creation_payment.md). UNESCO has never bumped a DMEE tree past VERSION=000 (claim 102 TIER_1, all 44 historical transports). The 2-file + DMEE-versioning strategy in dmee_versioning_procedure.md requires Create/Activate/Deactivate Version operations, none of which the team has exercised. Some SAP installations lock these menu actions behind extra auth profiles beyond standard DMEE display/edit. M_SPRONK + N_MENARD need to know before Phase 2 Week 0 dry-run.",
+    "how_to_resolve": "Three converging probes: (1) Web search SAP-side for auth object F_DMEE_NDP (Format Tree Definition) activities 01/02/03/06 plus S_TABU_DIS for DMEE_TREE_*. (2) SU24 readout in P01 (or D01) for transaction DMEE -> default check-objects + activities. (3) Empirical: M_SPRONK runs the menu in D01 sandbox; if it fails, SU53 trace identifies the exact missing object. Output: 1-page auth requirements checklist appended to dmee_versioning_procedure.md.",
+    "related_objects": [
+      "DMEE",
+      "F_DMEE_NDP",
+      "S_TABU_DIS",
+      "DMEE_TREE_HEAD",
+      "DMEE_TREE_NODE",
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1"
+    ],
+    "priority": "MEDIUM",
+    "created_session": 64,
+    "status": "open"
+  },
+  {
+    "id": "KU-2026-DMEE-B",
+    "question": "When Tx DMEE menu Tree -> Versions -> Create Version copies V000 to V001, are all 26 DMEE_TREE_HEAD columns copied verbatim, or do any (HANDLE_BYTES, XMLEMPTYELEMENTPROCESSINGTYPE, CHARSET, XSLTDESC, etc.) get default-reset?",
+    "context": "dmee_versioning_procedure.md documents the canonical 3-step procedure (Create / Edit / Activate) but does not specify header-field semantics on copy. DMEE_TREE_HEAD has 26 columns including XML-behavior controls (XMLEMPTYELEMENTPROCESSINGTYPE, HANDLE_BYTES) that materially affect output. If any of these silently default-reset on V001 creation while V000 had non-default values, V001 output could diverge from V000 in non-obvious ways even before any node edits. Risk: bank-rejection or empty-element regression that surfaces only post-cutover.",
+    "how_to_resolve": "Two probes (run cheap one first): (1) Empirical, LOW cost: in D01 sandbox dry-run on Z_DMEE_VERSIONING_TEST tree (already planned in dmee_versioning_procedure.md), populate all 26 header fields with non-default values, execute Create Version, then RFC_READ_TABLE DMEE_TREE_HEAD WHERE TREE_ID=<test> for both V000 and V001 -> diff = authoritative answer. (2) Source-code, MEDIUM cost: ADT pull the SAP-std FM/method that performs version copy (likely DMEE_VERSION_CREATE or method on CL_DMEE_TREE) -> read the field-by-field copy logic. Output: annotated 26-column copy-map appended to dmee_versioning_procedure.md.",
+    "related_objects": [
+      "DMEE_TREE_HEAD",
+      "CL_DMEE_TREE",
+      "DMEE_VERSION_CREATE",
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1"
+    ],
+    "priority": "MEDIUM",
+    "created_session": 64,
+    "status": "open"
+  },
+  {
+    "id": "KU-2026-DMEE-C",
+    "question": "Are DMEE V001 changes packaged as Customizing transports (request type W) or Workbench transports (request type K)? Tree node edits are typically Customizing, but version create/activate may flag Workbench.",
+    "context": "Phase 2 transport-ID assignment table (dmee_versioning_procedure.md) lists 8 transports for V001 cutover, all marked TBD on type. Pre-allocating the wrong transport type forces a re-creation cycle and risks a partial release. SAP-side: DMEE format trees are listed under R3TR DMEE / PAYM<tree> in TADIR, but the request-type binding depends on the development class (TDEVC) and object-class flag.",
+    "how_to_resolve": "Two probes: (1) Single RFC call: SELECT KORRDEP, OBJ_NAME FROM TADIR WHERE PGMID='R3TR' AND OBJECT='DMEE' AND OBJ_NAME='/SEPA_CT_UNES' (or any UNESCO tree) -> KORRDEP value tells us C (Customizing) vs S (System/Workbench). (2) Empirical (preferred, captures version-operation specifics): on D01 sandbox dry-run of Z_DMEE_VERSIONING_TEST, observe the actual transport-prompt UX for each of Create / Edit / Activate -> SAP shows the request type when you save. Output: one-line confirmation added to dmee_versioning_procedure.md transport table.",
+    "related_objects": [
+      "TADIR",
+      "TDEVC",
+      "DMEE_TREE_HEAD",
+      "/SEPA_CT_UNES",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1"
+    ],
+    "priority": "LOW",
+    "created_session": 64,
+    "status": "open"
+  },
+  {
+    "id": "KU-2026-DMEE-D",
+    "question": "What does the body of SAP KBA help.sap.com/docs/SUPPORT_CONTENT/fiaccounting/3361880828.html (PMW: General Information and DMEE/DMEEX, parent 3361880730) actually say beyond what secondary-source synthesis covers?",
+    "context": "User shared the URL with a screenshot of the VIA PMW topic tree (ACH Formats, Checks, Country specific formats, Format IDOC, Modifying Standard PMW Formats, PMW formats: Codepage, PMW formats: Customizing, PMW: General Information and DMEE/DMEEX, Payment Advice Creation, Payment formats supported in S/4 HANA and in ERP, SEPA and CGI Format Tree). The page is a JS-rendered SPA -> WebFetch + curl both return only the HTML title shell, no body. The dme_creation_payment.md section synthesizes the same VIA PMW topic from public secondary sources (SAPinsider, SAP help Customizing Payment Methods for DMEE, AUMTECH, Techlorean, ERProof) and covers ~95% of DMEE concepts. The remaining 5% may carry the exact UNESCO-relevant gotcha that prompted the user to open this KBA.",
+    "how_to_resolve": "Only resolvable by user: (1) Log into SAP Support / SAP for Me with the user's account, (2) Open KBA 3361880828, (3) Paste the body text (or screenshot) into the conversation. Once received, integrate any new facts into knowledge/domains/Payment/dme_creation_payment.md section 8 and any specific notes (e.g. 1947527) under knowledge/domains/Payment/sap_standard_reference/sap_notes/. Cost: 2 minutes for user, zero for agent. Until then, this KU stays open and the secondary-source synthesis is treated as authoritative-but-incomplete.",
+    "related_objects": [
+      "DMEE",
+      "DMEEX",
+      "OBPM1",
+      "OBPM2",
+      "OBPM3",
+      "OBPM4"
+    ],
+    "priority": "LOW",
+    "created_session": 64,
+    "status": "open"
   }
 ]
