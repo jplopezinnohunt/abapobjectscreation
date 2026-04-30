@@ -87,8 +87,10 @@ per user directive "tenemos que conectar todos los elementos en un flow logico".
 │  V001 (NEW, to create):                                                     │
 │    SEPA: ADD 5 Dbtr structured nodes sourcing FPAYHX-REF01/06 + MP_OFFSET   │
 │    CITI: ADD 5 Dbtr structured nodes (Cdtr exits already produce structured)│
-│    CGI:  NO tree edits (already structured)                                 │
-│    CGI_1: SYNC from parent                                                  │
+│          + 1 UltmtCdtr <StrtNm> = FPAYH-ZSTRA (Q3 RESOLVED #62, claim 99)   │
+│    CGI:  FIX CdtrAgt (PstlAdr AdrLine -> structured StrtNm/PstCd/TwnNm/Ctry)│
+│          Dbtr + Cdtr already structured V000, no change there               │
+│    CGI_1: SYNC from parent (FIRSTNODE shared, CdtrAgt fix propagates)       │
 │                                                                             │
 │  Per-node node-level processing during traversal:                           │
 │   • MP_SC_TAB + MP_SC_FLD + MP_OFFSET → read source                         │
@@ -214,31 +216,32 @@ per user directive "tenemos que conectar todos los elementos en un flow logico".
 
 ## Total surgical change scope
 
-**ABAP**: 1 method (YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT), 3 lines (Pattern A guard).
+**ABAP**: 1 method (YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT), 3 lines (Pattern A guard) — transport `D01K-BADI-FIX-01`, reviewer N_MENARD.
 
 **CONFIG (CUSTOMIZING)**:
-- TFPM042FB: +1 row for SEPA Event 05 registration
-- DMEE V001 trees:
-  - SEPA: +5 Dbtr structured nodes + COND rules to suppress empty
-  - CITI: +5 Dbtr structured nodes (XSLT auto-removes empty)
-  - CGI: NO tree edits
-  - CGI_1: NO tree edits
+- TFPM042FB: +1 row for SEPA Event 05 registration (Sub-option A)
+- DMEE V001 trees (~24 nodes total):
+  - SEPA: +5 Dbtr structured nodes + 5 COND rules to suppress empty
+  - CITI: +5 Dbtr structured nodes (XSLT auto-removes empty) + 1 UltmtCdtr StrtNm node (Q3 RESOLVED #62, claim 99)
+  - CGI: **fix CdtrAgt** (PstlAdr from AdrLine to structured StrtNm/PstCd/TwnNm/Ctry, ~7 nodes)
+  - CGI_1: SYNC from parent (FIRSTNODE shared, 0 manual nodes)
 
 **DATA**: 5 vendor master cleanup (LFA1/ADRC).
 
-**Risk: LOW**. All changes either additive (V001 new), backward-compatible (Pattern A guarded), or data-only (vendor cleanup).
+**Risk: LOW**. All changes either additive (V001 new, V000 untouched), backward-compatible (Pattern A guarded), or data-only (vendor cleanup).
 
 ## Critical decisions baked into this flow
 
 | Decision | Status |
 |---|---|
-| 2-file + DMEE versioning (not Hybrid single-file) | ✅ Adopted (user-directed) |
+| 2-file + DMEE versioning (not Hybrid single-file) | ✅ Adopted (user-directed 2026-04-24) |
 | SEPA Sub-option A revised (FI_PAYMEDIUM_DMEE_CGI_05, not FVD_SEPA_OL) | ✅ Confirmed (D01 probe) |
-| Pattern A BAdI fix for FALLBACK | ✅ Locked (3 lines, N_MENARD review) |
+| Pattern A BAdI fix for FALLBACK | ✅ Locked (3 lines, N_MENARD review, transport D01K-BADI-FIX-01) |
 | CITI Cdtr untouched (EXIT_FUNCs already structured) | ✅ Locked |
-| UltmtCdtr Worldlink → V002 deferred | ✅ Q3 still open, defer |
+| CGI CdtrAgt fix (Dbtr/Cdtr already structured ✓) | ✅ Locked (Plan §Per-tree design line 550) |
+| UltmtCdtr Worldlink (Q3) — unified into V001 (NOT V002) | ✅ RESOLVED Session #62 (system-driven, brain claim 99) |
 | XSLT empty-element auto-removal (CITI only) | ✅ Verified |
-| SEPA + CGI need explicit empty-suppress conditions | ⚠ Action item Phase 2 |
+| SEPA needs explicit empty-suppress conds; CGI CdtrAgt uses TECH switch | ⚠ Action item Phase 2 |
 
 ## What is NOT in this flow (intentionally)
 

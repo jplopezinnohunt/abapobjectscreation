@@ -4,14 +4,16 @@
 
 ## Summary
 
-**53 DMEE-touching transports** across 10 years, **8 distinct authors**. The target trees (`/SEPA_CT_UNES`, `/CITI/XML/UNESCO/DC_V3_01`, `/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`) are primarily owned by two people: Marlies Spronk (M_SPRONK, configuration) and Nicolas Ménard (N_MENARD, ABAP code).
+**52 DMEE-touching transports** across 10 calendar years (2017-2026), **8 distinct authors**. The target trees (`/SEPA_CT_UNES`, `/CITI/XML/UNESCO/DC_V3_01`, `/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`) are primarily owned by two people: Marlies Spronk (M_SPRONK, configuration) and Nicolas Ménard (N_MENARD, ABAP code).
+
+> **Correction 2026-04-29 (Session #63)**: original count "53" included a phantom 9th N_MENARD transport that did not exist in CTS data. Re-grep of cts_batch_2017..2026.json for owner=N_MENARD + DMEE objects returned exactly 8 transports (the same 8 listed in §"N_MENARD DMEE transport list" below). Total adjusted 53 → 52. See companion `BCM_StructuredAddressChange.html` Evolution tab and brain claim 101.
 
 ## Author ranking (DMEE-touching only)
 
 | Author | DMEE transports | Role | Primary focus |
 |---|---|---|---|
 | **M_SPRONK** (Marlies Spronk) | **31** | DMEE tree configuration (FI/TRS Treasury) | CITI DC_V3_01 (27), SEPA_CT_UNES (7), CGI (4), some overlap |
-| **N_MENARD** (Nicolas Ménard) | **9** | ABAP BAdI code owner | `YCL_IDFI_CGI_DMEE_FALLBACK`/`_FR`/`_UTIL`/`_DE`/`_IT` class implementations |
+| **N_MENARD** (Nicolas Ménard) | **8** | ABAP BAdI code owner | `YCL_IDFI_CGI_DMEE_FALLBACK`/`_FR`/`_UTIL`/`_DE`/`_IT` class implementations (7 transports) + 1 ICTP tree (out-of-scope) |
 | **FP_SPEZZANO** (Francesco Spezzano) | **5** | Unknown — 2025 Q1 cluster | `/CGI_XML_CT_UNESCO` + `_1` only, empty descriptions |
 | **E_FRATNIK** | **4** | ICTP Trieste trees | `SEPA_CT_ICTP_ISO*` (out of our scope — ICTP separate) |
 | **I_KONAKOV** | 1 | Config | (One-off) |
@@ -59,7 +61,7 @@ Prior Explore agent reported "M_SPRONK authored **28** DMEE transports 2017-2024
 | 2018-09-04 | D01K9B0393 | CITI DC_V3_01 | 6 |
 | 2017-12-06 | D01K9B033V | CITI DC_V3_01 | 8 |
 
-## N_MENARD DMEE transport list (9) — **critical: owns the BAdI code**
+## N_MENARD DMEE transport list (8) — **critical: owns the BAdI code**
 
 | Date | TRKORR | What | obj_count |
 |---|---|---|---|
@@ -68,10 +70,9 @@ Prior Explore agent reported "M_SPRONK authored **28** DMEE transports 2017-2024
 | 2024-07-03 | D01K9B0BYP | METH `YCL_IDFI_CGI_DMEE_UTIL` `GET_TAG_VALUE_FROM_CUSTO` | 2 |
 | 2024-07-02 | D01K9B0BXH | CLAS `YCL_IDFI_CGI_DMEE_FALLBACK + _FR + _UTIL` | 48 |
 | 2024-06-21 | D01K9B0B5K | `/SEPA_CT_ICTP_ISO` tree (ICTP — out of scope) | 2 |
-| 2024-03-26 | D01K9B0BN9 | CLAS `YCL_IDFI_CGI_DMEE_DE + _FR + _IT` | 54 |
+| 2024-03-26 | D01K9B0BN9 | CLAS `YCL_IDFI_CGI_DMEE_AE + _BH + _DE + _FR` (KU-063-01: AE/BH not in P01 today) | 54 |
 | 2024-03-18 | D01K9B0BL9 | CLAS `YCL_IDFI_CGI_DMEE_FALLBACK` | 6 |
 | 2024-01-10 | D01K9B0BDM | CLAS `YCL_IDFI_CGI_DMEE_DE + _IT + _FR` | 16 |
-| (+ one ICTP transport from 2024-06-21) | | | |
 
 **N_MENARD has implemented country-specific classes `_DE`, `_IT`, `_FR`** — the handoff doc mentioned `_AE` and `_BH` as "possibly not in P01". Correction: the brain has confirmed `_DE`, `_FR`, `_IT` exist; `_AE`/`_BH` presence is still GAP-003.
 
