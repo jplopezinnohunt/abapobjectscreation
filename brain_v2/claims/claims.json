@@ -5276,5 +5276,120 @@
       "validation",
       "compliance"
     ]
+  },
+  {
+    "id": 117,
+    "claim": "DMEE tree node hierarchy collapses operationally: of 95 nodes in /SEPA_CT_UNES, only 2 are V001 INSERT targets - both named PstlAdr at different paths. INSERT TARGET #1 = Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr (level 5, batch debtor). INSERT TARGET #2 = Document > CstmrCdtTrfInitn > PmtInf > CdtTrfTxInf > Cdtr > PstlAdr (level 6, per-transaction beneficiary). 8 INSERT operations total (4 per PstlAdr * 2 PstlAdr containers): StrtNm/BldgNb/PstCd/TwnNm. The remaining ~93 nodes are either frozen wrapper structure (Document, CstmrCdtTrfInitn, GrpHdr, PmtInf, Dbtr, CdtTrfTxInf, Cdtr containers - never touched) or leaf data cloned untouched from V000 by Step A Create-Version. This stratification generalises: for any future bank-format change requesting new ISO 20022 atoms, the operation pattern is constant - find the parent container at the right level, INSERT child nodes, set source binding. No new ABAP, no new BAdI, no architectural drift.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "knowledge/domains/Payment/v001_change_matrix.csv rows 1-8 (SEPA INSERTs)",
+      "Zagentexecution/incidents/xml_payment_structured_address/badi_node_map_session63.json /SEPA_CT_UNES branches Cdtr (pst_id N_4754354180) and Dbtr (pst_id N_9926185740)",
+      "Zagentexecution/incidents/xml_payment_structured_address/node_usage_classification_session63.json /SEPA_CT_UNES total=95",
+      "tx DMEE Display Format Tree screenshots unesco_dmee_tree_top.png + tree_mid.png + tree_bottom.png + dbtr_pstladr_highlighted.png"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "DMEE_TREE_NODE",
+      "DMEE_TREE_HEAD",
+      "FPAYHX",
+      "FPAYH"
+    ],
+    "domain": "Payment",
+    "created_session": 65,
+    "resolved_session": null,
+    "resolution_notes": "Captures the operator-facing hierarchy stratification that simplifies V001 work mentally from '95-node tree' to '2 INSERT targets'. Used in companion BCM_StructuredAddressChange.html § Change Strategy > DMEE Configuration > Hierarchy collapse.",
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Payment",
+      "DMEE",
+      "V001",
+      "operator-facing"
+    ]
+  },
+  {
+    "id": 118,
+    "claim": "tx DMEE UI tree-pane indentation depth = XML output element nesting depth (1:1, no transformation). The DMEE tree IS the XML template, rendered as click-through hierarchy. F110 walks DMEE_TREE_NODE rows in tree order; for each row reads MP_SC_TAB+FLD+OFFSET+LENGTH, fetches the buffer slice, emits an XML element using TECH_NAME as tag. INSERT Element under PstlAdr in the UI = sibling of Ctry/AdrLine in the UI = sibling of <Ctry>/<AdrLine> inside <PstlAdr> in the XML (same nesting depth). No NODE_ID needs to surface to the operator; navigation is by path (indented click-through), and the resulting XML position is determined by that path. Verified 2026-04-30 from screenshots + RFC extraction.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "tx DMEE Display Format Tree (12 screenshots in knowledge/domains/Payment/sap_standard_reference/dme_screenshots/ taken 2026-04-30 from /SEPA_CT_UNES)",
+      "DMEE_TREE_NODE.PARENT_ID + BROTHER_ID + FIRSTCHILD_ID columns store the hierarchy",
+      "DMEE engine source CL_IDFI_CGI_CALL05_GENERIC (claim 73 + 101)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "DMEE_TREE_NODE",
+      "CL_IDFI_CGI_CALL05_GENERIC",
+      "FI_PAYMEDIUM_DMEE_CGI_05"
+    ],
+    "domain": "Payment",
+    "created_session": 65,
+    "resolved_session": null,
+    "resolution_notes": "Foundational rule for the DMEE Configuration submenu. Used in companion to bridge UI configuration to XML output without intermediate abstraction.",
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Payment",
+      "DMEE",
+      "UI",
+      "XML",
+      "mapping"
+    ]
+  },
+  {
+    "id": 119,
+    "claim": "TECH_NAME values repeat across DMEE tree levels and identify different XML elements depending on parent path. /SEPA_CT_UNES specific cases: Nm appears 4-5x (under InitgPty, Dbtr, Cdtr, UltmtCdtr, UltmtDbtr); NbOfTxs and CtrlSum appear 2x each (GrpHdr message-level and PmtInf batch-level); PstlAdr appears 2x (under Dbtr at PmtInf level, under Cdtr at CdtTrfTxInf level); Ctry and AdrLine appear multiple times (one set per PstlAdr instance). Therefore: addressing a DMEE node by TECH_NAME alone is ambiguous; the unique identifier in operator-facing artifacts is the path Document > ... > parent > TECH_NAME. NODE_IDs (e.g. N_4754354180) are unique but invisible to operators in the tree pane. RULE: in operator-facing documentation, address nodes by path; NODE_IDs reserved for technical reference (e.g. matrix CSV technical reference column).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "tx DMEE Display Format Tree screenshots /SEPA_CT_UNES showing repeated TECH_NAMEs at different indentation depths",
+      "RFC extraction badi_node_map_session63.json showing 2 distinct PstlAdr branches in /SEPA_CT_UNES with different pst_id"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "DMEE_TREE_NODE"
+    ],
+    "domain": "Payment",
+    "created_session": 65,
+    "resolved_session": null,
+    "resolution_notes": "Disambiguation rule for operator-facing artifacts. Codified in companion DMEE Configuration section 'Same TECH_NAME at different levels' table.",
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Payment",
+      "DMEE",
+      "operator-facing",
+      "disambiguation"
+    ]
+  },
+  {
+    "id": 120,
+    "claim": "/SEPA_CT_UNES Post Processing tab settings (verified by tx DMEE screenshot 2026-04-30): Empty Element Processing = 'Do Not Remove' + XSLT Program = (empty/none). Consequence for V001: any INSERT row whose source field resolves to space at runtime would emit empty <Tag></Tag> in the XML, breaking pain.001.001.03 schema validation at SocGen. THEREFORE V001 INSERTs (matrix rows 1-8) MUST each carry a DMEE_TREE_COND empty-suppress condition (only emit if source NE space). Alternative would be flipping tree-level Empty Element Processing to 'Remove all', but that has wider blast radius and is held back as fallback only. CITI tree uses different mechanism (XSLT post-processor CGI_XML_CT_XSLT). CGI tree behaviour TBD (likely Do-Not-Remove like SEPA, no XSLT - verify in Phase 2).",
+    "claim_type": "infrastructure_constraint",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_post_processing.png - verified 2026-04-30 tx DMEE Post Processing tab on /SEPA_CT_UNES V001",
+      "v001_change_matrix.csv rows 1-8 column DMEE_TREE_COND_NEEDED='empty-suppress'"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "DMEE_TREE_HEAD",
+      "DMEE_TREE_COND",
+      "CGI_XML_CT_XSLT"
+    ],
+    "domain": "Payment",
+    "created_session": 65,
+    "resolved_session": null,
+    "resolution_notes": "Validates the matrix design: empty-suppress conditions are not optional optimization, they are mandatory due to SEPA tree's empty-element setting. Captured in companion DMEE Configuration > Tab 6 Post Processing.",
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Payment",
+      "DMEE",
+      "V001",
+      "validation"
+    ]
   }
 ]

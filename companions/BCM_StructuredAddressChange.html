@@ -97,6 +97,11 @@
 <div class="nav-item" onclick="show('current-solution', this)" data-full="📊 Current Solution" data-short="Cur"><span class="nav-label">📊 Current Solution</span></div>
 <div class="nav-item" onclick="show('d01-p01-checks', this)" data-full="🔍 D01 ↔ P01 Checks" data-short="D↔P" style="padding-left:24px;font-size:12px"><span class="nav-label">🔍 D01 ↔ P01 Checks</span></div>
 <div class="nav-item" onclick="show('strategy', this)" data-full="Change Strategy" data-short="Cha"><span class="nav-label">Change Strategy</span></div>
+<div class="nav-item nav-subitem" onclick="show('strategy-dmee-config', this)" data-full="DMEE Configuration · foundations" data-short="C·1"><span class="nav-label">DMEE Configuration · foundations</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-sepa', this)" data-full="↳ Tree 1 · SEPA" data-short="T1S" style="padding-left:54px"><span class="nav-label">↳ Tree 1 · SEPA</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-citi', this)" data-full="↳ Tree 2 · CITI" data-short="T2C" style="padding-left:54px"><span class="nav-label">↳ Tree 2 · CITI</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi', this)" data-full="↳ Tree 3 · CGI" data-short="T3G" style="padding-left:54px"><span class="nav-label">↳ Tree 3 · CGI</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi1', this)" data-full="↳ Tree 4 · CGI_1" data-short="T4G" style="padding-left:54px"><span class="nav-label">↳ Tree 4 · CGI_1</span></div>
 <div class="nav-item" onclick="show('e2e-flow', this)" data-full="E2E Flow" data-short="E2E"><span class="nav-label">E2E Flow</span></div>
 <div class="nav-item" onclick="show('components', this)" data-full="Components Map" data-short="Com"><span class="nav-label">Components Map</span></div>
 <div class="nav-item" onclick="show('evolution', this)" data-full="Evolution (10y CTS)" data-short="Evo"><span class="nav-label">Evolution (10y CTS)</span></div>
@@ -956,6 +961,1181 @@ Data loss: zero (F110 idempotent on REGUH).</pre>
       </ul>
     </div>
     </div>
+<div id="tab-strategy-dmee-config" class="content">
+    <div class="section">
+      <h3>DMEE Configuration — the version thing, in plain English</h3>
+
+      <div style="background:#e8f5e9;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px">
+        <p style="margin:0;font-size:13px;color:#1f2937"><strong>The one-line takeaway</strong>: every change in V001 is a row added to or modified in <code>DMEE_TREE_NODE</code> — done in tx <strong>DMEE</strong>, captured as a <strong>customizing transport</strong>. No ABAP. The same XML segments (<code>&lt;Dbtr&gt;</code>, <code>&lt;CdtrAgt&gt;</code>, <code>&lt;Cdtr&gt;</code>, <code>&lt;UltmtCdtr&gt;</code>) stay where they are; we just put more children inside their <code>&lt;PstlAdr&gt;</code>.</p>
+      </div>
+
+      <h4>Why we need to talk about versions before we talk about changes</h4>
+      <p>If you have only seen DMEE once or twice, the natural mental model is "open the tree, edit the nodes, save". And that's basically right — except for one detail that changes everything: <strong>DMEE trees have a built-in versioning column</strong>. Every row in <code>DMEE_TREE_HEAD</code> and <code>DMEE_TREE_NODE</code> carries a <code>VERSION</code> field. UNESCO has been running on <code>VERSION='000'</code> for a decade. The Nov 2026 CBPR+ migration creates <code>VERSION='001'</code>.</p>
+
+      <p>This is the SAP-native way to ship a bank-format upgrade. It's the same mechanism a company would use to roll from pain.001.001.03 to .09, or to migrate from a regional format to a global one. The reason it matters here: <em>V001 cohabits with V000 inside the same tree, both fully active in the same DMEE_TREE_NODE table, and only one is "active" (EX_STATUS='A') at any moment</em>. The tree does not get cloned, replaced, or rebuilt. It gets a parallel sibling layer.</p>
+
+      <h4>Two names for the same thing — SAP UI vs table layer</h4>
+      <p>Before going further: SAP's tx DMEE screen uses different words from what I wrote in the matrix. Both describe the same concept, but the operator sees the UI words first and the matrix uses the table-level words. Bridge:</p>
+      <table style="margin-top:8px">
+        <tr><th>SAP UI label (what you see in tx DMEE)</th><th>Table-level label (DMEE_TREE_HEAD column)</th><th>What it actually is</th></tr>
+        <tr><td><strong>Active version</strong></td><td><code>VERSION='000'</code> with <code>EX_STATUS='A'</code></td><td>The version F110 actually reads to produce today's bank file. UNESCO's V000 since 2017.</td></tr>
+        <tr><td><strong>Maintenance version</strong></td><td><code>VERSION='001'</code> with <code>EX_STATUS=' '</code> (blank)</td><td>The draft / dormant copy. You edit it, test it, but it doesn't reach F110 until you activate it. Currently exists in D01 only (claim 109).</td></tr>
+      </table>
+      <p style="font-size:12px;color:#475569"><em>Read this in plain English: when SAP asks "Which version would you like to display? Active version / Maintenance version" — Active = V000, Maintenance = V001. The text below uses V000/V001 because it tracks back to the matrix CSV and the RFC verifications, but every time you read "V000" think "what tx DMEE calls Active version" and every time you read "V001" think "Maintenance version".</em></p>
+
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_step_a_01.png" alt="DME Engine Initial Screen with /SEPA_CT_UNES + Display format tree popup">
+      <div class="dme-shot-cap"><b>unesco_dmee_step_a_01.png — DME Engine Initial Screen.</b> Tree type=PAYM, Format tree=/SEPA_CT_UNES. Display button click triggers the popup "Which version would you like to display? — Active version / Maintenance version / Cancel". <strong>This popup is the operator's first interaction with the version concept</strong> and applies identically to all 4 in-scope trees. Active version = V000 in production; Maintenance version = the dormant V001 byte-clone (claim 109).</div>
+
+      <h4>Analogy that makes it click</h4>
+      <p>Think of a DMEE tree like a Microsoft Word document with <strong>track changes + saved versions</strong>:</p>
+      <ul>
+        <li><strong>V000 (Active version) is the published version</strong>. F110 has been reading it since 2017 and producing real bank files from it.</li>
+        <li><strong>V001 (Maintenance version) is a draft saved alongside</strong>. It exists in the same document, can be edited and tested, but doesn't get printed (= sent to the bank) until you switch the "active" pointer.</li>
+        <li><strong>The pointer flip is atomic</strong>. One config field (<code>EX_STATUS</code> on <code>DMEE_TREE_HEAD</code>) goes from V000='A' to V001='A'. From that second forward, every F110 reads V001.</li>
+        <li><strong>Rollback = flip the pointer back</strong>. If a bank rejects, you go back to V000 in seconds. No data loss because F110 is idempotent on REGUH.</li>
+      </ul>
+
+      <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>If you only remember one thing</strong>: V000 and V001 are not different trees. They are different layers of the same tree, controlled by one column (<code>VERSION</code>) and one switch (<code>EX_STATUS</code>). That's why this whole exercise is "configuration, not migration".</p>
+
+      <h4>What's already in D01 today (you'd be surprised)</h4>
+      <p>Until Session #63 we thought UNESCO had never touched V001 in any tree. Post-VPN RFC verification (claim 109) proved otherwise: <strong>D01 already has <code>VERSION='001'</code> rows on all 4 in-scope trees</strong>. Someone, at some undated past moment, ran tx DMEE → Tree → Versions → Create Version, and SAP duplicated every V000 row into V001. Those V001 rows are <em>byte-identical</em> to V000 (claim 109 — 0 differences across NODE_ID set + 7 sampled content fields). They've sat dormant ever since, never released to V01 or P01 (claim 102 — zero V001 patterns in 44 historical transports).</p>
+
+      <p>Read that in plain English: <em>the "Create Version" step has effectively already been done in D01 — but as a clean clone of V000, with no actual structured-address changes inside. The dormant V001 in D01 is a placeholder. Before we add V001's real content, we PURGE the dormant clone and re-CREATE fresh, so the deployed V001 has a clean transport-trail tied to the Phase 2 transports — not to whatever happened years ago that was never released</em>.</p>
+
+      <table style="margin-top:10px">
+        <tr><th>System</th><th>V000</th><th>V001</th><th>Note</th></tr>
+        <tr><td>P01 (production)</td><td>✓ Active (EX_STATUS='A')</td><td>— absent —</td><td>Live state. V001 has never reached P01.</td></tr>
+        <tr><td>D01 (dev)</td><td>✓ Active (mirror of P01)</td><td>✓ Dormant clone (byte-identical to V000)</td><td>Per claim 109. To PURGE+RECREATE in Phase 2.</td></tr>
+        <tr><td>D01 after Phase 2 Step 0</td><td>✓ Active (still mirror of P01)</td><td>✓ Dormant <strong>fresh</strong> clone (transport-trailed)</td><td>Same byte-identical content, but linked to Phase 2 transport ID.</td></tr>
+        <tr><td>D01 after Phase 2 Step B</td><td>✓ Active</td><td>✓ Dormant + structured-address nodes added</td><td>The 27-row change matrix is applied here.</td></tr>
+        <tr><td>D01 after Phase 5 cutover</td><td>✓ Dormant</td><td>✓ Active (EX_STATUS='A')</td><td>The atomic flip. F110 now reads V001.</td></tr>
+      </table>
+
+      <h4>Visual proof of claim 109 — V000 and V001 admin data are byte-identical</h4>
+      <p>The two screenshots below are tx <code>DMEE</code> → Display Format Tree <code>/SEPA_CT_UNES</code> → Administrative data tab, taken on 2026-04-30. Left side shows V000 (the Active version). Right side shows V001 (the Maintenance version). <strong>Every metadata field matches exactly</strong> — Tree type, Short Description, Documentation pointer, Author, Created on, Created at, Last Changed By, Changed on, Changed at — except for one column: Version (0 vs 1). This is what SAP's "Create Version" operation does at the DMEE_TREE_HEAD level: full row copy, increment Version, leave everything else untouched.</p>
+
+      <p style="background:#dcfce7;border-left:4px solid #1abc9c;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+        <strong>Two facts the screenshots add to the brain</strong>:
+        <br>(1) The SEPA tree was created by M_SPRONK on <strong>27.11.2013 18:32:02</strong> — i.e. 12 years ago. Last meaningful change was <strong>23.11.2021 10:36:24</strong>. Operationally frozen for 4+ years.
+        <br>(2) Both V000 and V001 share the <em>same</em> Changed timestamp (23.11.2021 10:36:24), which means Create Version was executed on or before that date. Consistent with claim 102 (zero V001 transports 2017–2024) — the dormant V001 has been sitting in D01 untouched for 4+ years, never released.
+      </p>
+
+      <div style="display:flex;gap:12px;margin:14px 0;flex-wrap:wrap">
+        <div style="flex:1;min-width:380px">
+          <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_v000_admin.png" alt="DMEE Display Format Tree /SEPA_CT_UNES — V000 Active version Administrative data">
+          <div class="dme-shot-cap"><b>unesco_dmee_v000_admin.png — V000 (Active version) admin data.</b> Tree type=PAYM · Format tree=/SEPA_CT_UNES · Version=<b>0</b> · Author=M_SPRONK · Created 27.11.2013 18:32:02 · Last Changed 23.11.2021 10:36:24. The version F110 reads in production every day.</div>
+        </div>
+        <div style="flex:1;min-width:380px">
+          <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_v001_admin.png" alt="DMEE Display Format Tree /SEPA_CT_UNES — V001 Maintenance version Administrative data">
+          <div class="dme-shot-cap"><b>unesco_dmee_v001_admin.png — V001 (Maintenance version) admin data.</b> Same tree, same Author, same Created/Changed timestamps. Only Version=<b>1</b> differs. <strong>Visual proof of claim 109 — byte-identical clone.</strong> This is the dormant V001 we PURGE in Phase 2 Step A before creating a fresh clone tied to the Phase 2 transport ID.</div>
+        </div>
+      </div>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>For the V000 baseline of each tree</strong> — including the actual tree structure, the 6-tabs settings (Format attributes / Levels / Sort-key / File Data / Post Processing), the SEPA tree-pane screenshots, and the hierarchy stratification — see the <a href="#" onclick="show('current-solution', document.querySelector('[onclick*=current-solution]'));return false">Current Solution → Per-tree current state</a> section. This DMEE Configuration tab focuses purely on the V001 changes per tree.</p>
+
+      <h4>The three operations on V001 (this is all there is)</h4>
+      <p>When you switch tx DMEE to V001 and start editing, every change you can make falls into one of three categories. There is no fourth. Understanding this categorisation is what unlocks "why this is config, not code":</p>
+      <table>
+        <tr><th>Operation</th><th>What happens at table level</th><th>When you'd do it</th><th>How many rows in our 27-row matrix</th></tr>
+        <tr><td><strong>INSERT row</strong> (ADD)</td><td>New row appended to <code>DMEE_TREE_NODE</code> with <code>VERSION='001'</code> + a fresh <code>NODE_ID</code> + <code>PARENT_ID</code> pointing to an existing parent (e.g. <code>&lt;PstlAdr&gt;</code>). Source binding (<code>MP_SC_TAB</code>/<code>MP_SC_FLD</code>/<code>MP_OFFSET</code>/<code>LENGTH</code>) is set on the same row.</td><td>The sub-node didn't exist in V000 at all. Most common case for SEPA (no structured atoms exist anywhere) and for CGI <code>&lt;CdtrAgt&gt;</code> (structured atoms missing for the bank).</td><td>~25 of the 27</td></tr>
+        <tr><td><strong>MODIFY row</strong> (UPDATE)</td><td>Existing V001 row gets an <code>UPDATE</code> on its source-binding columns (e.g. set <code>MP_SC_FLD='ZSTRA'</code> where it was empty).</td><td>The sub-node already exists in V001 (because it was cloned from V000) but its source binding was empty or wrong. Example: CITI <code>&lt;UltmtCdtr&gt;&lt;StrtNm&gt;</code> exists with no source — V001 sets <code>FPAYH-ZSTRA</code> as the binding (claim 99).</td><td>1 (row 17 — CITI UltmtCdtr StrtNm)</td></tr>
+        <tr><td><strong>SYNC propagation</strong></td><td>No direct edit — the change rides on a parent-tree edit because <code>FIRSTNODE_ID</code> is shared.</td><td>Two trees that share a root segment. Example: <code>/CGI_XML_CT_UNESCO_1</code> SYNC with parent <code>/CGI_XML_CT_UNESCO</code> (Phase 0 Finding D).</td><td>1 (row 25)</td></tr>
+      </table>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>SEPA tree V000 baseline reference</strong>: full /SEPA_CT_UNES ASCII rendering · 3 tree-pane screenshots · Dbtr/PstlAdr highlighted screenshot · 3 structural anchors (two PstlAdr instances, UltmtCdtr/UltmtDbtr Nm-only, Cdtr/Nm 2-atom concatenation) all live in <a href="#" onclick="show('current-solution', document.querySelector('[onclick*=current-solution]'));return false">Current Solution → Per-tree current state → Tree 1 of 4 · /SEPA_CT_UNES</a>.</p>
+
+      <h4>Where in the tree the V001 INSERTs land</h4>
+      <p>The V001 INSERTs from the matrix attach to existing parent nodes deep in the hierarchy. The path the operator navigates in tx DMEE Maintenance-version edit mode:</p>
+      <table style="margin-top:8px">
+        <tr><th>Matrix rows</th><th>Navigation path in tx DMEE</th><th>Parent NODE_ID</th><th>Existing children today</th><th>V001 inserts</th></tr>
+        <tr><td>1–4 (Cdtr)</td><td><code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr</code></td><td>N_4754354180</td><td>Ctry, AdrLine, AdrLine</td><td>+StrtNm, +BldgNb, +PstCd, +TwnNm</td></tr>
+        <tr><td>5–8 (Dbtr)</td><td><code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code></td><td>N_9926185740</td><td>Ctry, AdrLine</td><td>+StrtNm, +BldgNb, +PstCd, +TwnNm</td></tr>
+      </table>
+      <p style="font-size:12px;color:#475569"><em>Read this in plain English: the operator does NOT touch UltmtDbtr, UltmtCdtr, CdtrAgt, InitgPty, or any other party — only the two <code>PstlAdr</code> containers nested under Dbtr (5 clicks deep) and Cdtr (6 clicks deep). Everything else stays exactly as V000 has it.</em></p>
+
+      <h4>The bridge in one sentence</h4>
+
+      <div style="background:#e8f5e9;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px">
+        <p style="margin:0;font-size:14px;color:#1f2937"><strong>One row in <code>DMEE_TREE_NODE</code> = one tag in the output XML.</strong> The DMEE tree IS the XML template. F110 walks the tree top-to-bottom, and for each row it emits one XML element using <code>TECH_NAME</code> as the tag and the source-bound buffer slice as the value. <strong>That is the entire connection.</strong> No transformation, no codegen, no intermediate format. INSERT 4 rows under <code>&lt;PstlAdr&gt;</code> in V001 → 4 new tags appear in the XML file at cutover.</p>
+      </div>
+
+      <h4>Per-target simplified mapping — every V001 INSERT target in one place</h4>
+
+      <p>One block per target. Each block shows the path the operator navigates (top), then V000 today (DMEE rows on the left ↔ XML the bank receives on the right), then V001 (same rows + INSERTs ↔ updated XML output). Read each block independently — the bank only ever sees the XML on the right.</p>
+
+      <!-- TARGET #1 — SEPA Dbtr/PstlAdr -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #1 — SEPA <code>Dbtr/PstlAdr</code> (UNESCO HQ, batch level)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code></div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 2 rows under Dbtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1
+TECH_NAME=AdrLine   MP_SC_FLD=ORT1Z</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 2 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ORT1Z            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 5)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 6)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 7)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 8)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt;   ← new tag
+    &lt;BldgNb&gt;7&lt;/BldgNb&gt;                   ← new tag
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;                 ← new tag
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;                 ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #2 — SEPA Cdtr/PstlAdr -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #2 — SEPA <code>Cdtr/PstlAdr</code> (beneficiary, per-transaction)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr</code></div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 3 rows under Cdtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZLISO
+TECH_NAME=AdrLine   MP_SC_FLD=ZPFST
+TECH_NAME=AdrLine   MP_SC_FLD=ZPLOR</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Cdtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;...postal+city...&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Cdtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 3 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZLISO            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ZPFST            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=ZPLOR            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 1)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 2)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 3)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 4)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Cdtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                 ← new tag
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                 ← new tag
+    &lt;PstCd&gt;...&lt;/PstCd&gt;                   ← new tag
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;                   ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Cdtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #3 — CITI Dbtr-primary -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #3 — CITI <code>Dbtr/PstlAdr</code> (primary path, batch level)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code> (primary). Tree <code>/CITI/XML/UNESCO/DC_V3_01</code>. Already has TwnNm + PstCd + Ctry + 3 AdrLine; only missing StrtNm + BldgNb. CITI XSLT auto-removes empty leaves (no DMEE_TREE_COND needed).</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 6 rows under Dbtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1
+TECH_NAME=TwnNm     MP_SC_FLD=ORT1Z
+TECH_NAME=PstCd     MP_SC_FLD=REF01
+TECH_NAME=AdrLine   MP_SC_FLD=AUSTO
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;
+    &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 6 rows + 2 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← V000, kept
+TECH_NAME=TwnNm     MP_SC_FLD=ORT1Z            ← V000, kept
+TECH_NAME=PstCd     MP_SC_FLD=REF01            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=AUSTO            ← V000, suppressed by XSLT
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2            ← V000, suppressed by XSLT
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3            ← V000, suppressed by XSLT
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 10)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 11)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;
+    &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt; ← new tag
+    &lt;BldgNb&gt;7&lt;/BldgNb&gt;                 ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #4 — CITI Dbtr alt-mode -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #4 — CITI <code>Dbtr/PstlAdr</code> (alt-mode / PstlAdrMor)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: alternate Dbtr branch in <code>/CITI/XML/UNESCO/DC_V3_01</code>. Currently 3 AdrLine rows only — needs full 5-leaf structured subtree. CITI XSLT handles empty suppression.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 3 rows under Dbtr-alt/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=AdrLine   MP_SC_FLD=AUSTO
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt; (alt)
+  &lt;PstlAdr&gt;
+    &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 3 rows + 5 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=AdrLine   MP_SC_FLD=AUSTO            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 12)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 13)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 14)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 15)
+TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← INSERT (matrix row 16)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt; (alt)
+  &lt;PstlAdr&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                ← new tag
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+    &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;                  ← new tag
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;                     ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #5 — CITI UltmtCdtr (MODIFY, not INSERT) -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #5 — CITI <code>UltmtCdtr/StrtNm</code> (MODIFY existing empty node + 1 INSERT)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; UltmtCdtr &gt; PstlAdr</code> in <code>/CITI/XML/UNESCO/DC_V3_01</code>. The UltmtCdtr/StrtNm node already EXISTS (Worldlink BRL flow) but its source binding is empty — V001 sets MP_SC_FLD=ZSTRA. Plus +1 INSERT for BldgNb.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — UltmtCdtr/PstlAdr (StrtNm exists with empty binding)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Nm        MP_SC_FLD=NAME1            ← FPAYP
+TECH_NAME=Ctry      MP_SC_FLD=ZLAND            ← FPAYH
+TECH_NAME=TwnNm     MP_SC_FLD=ZORT1            ← FPAYH
+TECH_NAME=PstCd     MP_SC_FLD=ZPSTL            ← FPAYH
+TECH_NAME=CtrySubDvsn MP_SC_FLD=ZREGI         ← FPAYH
+TECH_NAME=AdrLine1  MP_SC_FLD=ZSTRA            ← FPAYH
+TECH_NAME=AdrLine2  MP_SC_FLD=ZORT2            ← FPAYH
+TECH_NAME=StrtNm    MP_SC_FLD=(empty!)         ← gap — exists but never fires</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;UltmtCdtr&gt;
+  &lt;Nm&gt;...&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;BR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+    &lt;PstCd&gt;...&lt;/PstCd&gt;
+    &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+    &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;...neighborhood...&lt;/AdrLine&gt;
+                                          ← StrtNm absent (empty source)
+  &lt;/PstlAdr&gt;
+&lt;/UltmtCdtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — 1 MODIFY (StrtNm gets source) + 1 INSERT (BldgNb)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Nm           ...                   ← V000, kept
+TECH_NAME=Ctry         ...                   ← V000, kept
+TECH_NAME=TwnNm        ...                   ← V000, kept
+TECH_NAME=PstCd        ...                   ← V000, kept
+TECH_NAME=CtrySubDvsn  ...                   ← V000, kept
+TECH_NAME=AdrLine1     MP_SC_FLD=ZSTRA       ← V000, suppressed
+TECH_NAME=AdrLine2     MP_SC_FLD=ZORT2       ← V000, suppressed
+TECH_NAME=StrtNm       MP_SC_FLD=ZSTRA       ← MODIFY (matrix row 17)
+TECH_NAME=BldgNb       MP_SC_FLD=ZSTRA[60..] ← INSERT (matrix row 18)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;UltmtCdtr&gt;
+  &lt;Nm&gt;...&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;BR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+    &lt;PstCd&gt;...&lt;/PstCd&gt;
+    &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                ← now populated
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/UltmtCdtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #6 — CITI CdtrAgt -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #6 — CITI <code>CdtrAgt/PstlAdr</code> (paying bank address)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code> in <code>/CITI/XML/UNESCO/DC_V3_01</code>. Has StrtNm + TwnNm + Ctry + CtrySubDvsn (4 leaves) but missing PstCd + BldgNb.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 4 rows + AdrLine</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=StrtNm       MP_SC_FLD=ZBSTR
+TECH_NAME=TwnNm        MP_SC_FLD=ZBORT
+TECH_NAME=CtrySubDvsn  MP_SC_FLD=ZBREGX
+TECH_NAME=Ctry         MP_SC_FLD=(bank country)
+TECH_NAME=AdrLine      MP_SC_FLD=(legacy)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+      &lt;AdrLine&gt;...&lt;/AdrLine&gt;
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same rows + 2 INSERTs (PstCd + BldgNb)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=StrtNm       MP_SC_FLD=ZBSTR        ← V000, kept
+TECH_NAME=TwnNm        MP_SC_FLD=ZBORT        ← V000, kept
+TECH_NAME=CtrySubDvsn  MP_SC_FLD=ZBREGX       ← V000, kept
+TECH_NAME=Ctry         ...                   ← V000, kept
+TECH_NAME=AdrLine      ...                   ← V000, suppressed
+TECH_NAME=PstCd        MP_SC_FLD=ZBPST        ← INSERT (matrix row 19)
+TECH_NAME=BldgNb       MP_SC_FLD=ZBSTR[60..]  ← INSERT (matrix row 20)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #7 — CGI CdtrAgt -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #7 — CGI <code>CdtrAgt/PstlAdr</code> (paying bank, full 4-leaf INSERT)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code> in <code>/CGI_XML_CT_UNESCO</code>. Currently only Ctry + AdrLine + AdrLine1/2 — missing all 4 structured atoms. /CGI_XML_CT_UNESCO_1 SYNCs from this parent (matrix row 25).</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 5 rows under CdtrAgt/.../PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZBISO
+TECH_NAME=AdrLine   MP_SC_FLD=ZBSTR
+TECH_NAME=AdrLine   MP_SC_FLD=ZBORT
+TECH_NAME=AdrLine1  (BAdI)
+TECH_NAME=AdrLine2  (BAdI)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;NG&lt;/Ctry&gt;
+      &lt;AdrLine&gt;635 AKIN ADESOLA STREET&lt;/AdrLine&gt;
+      &lt;AdrLine&gt;LAGOS&lt;/AdrLine&gt;
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 5 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZBISO            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ZBSTR            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=ZBORT            ← V000, suppressed
+TECH_NAME=AdrLine1  (BAdI)                    ← V000, suppressed
+TECH_NAME=AdrLine2  (BAdI)                    ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=ZBSTR            ← INSERT (matrix row 21)
+TECH_NAME=BldgNb    MP_SC_FLD=ZBSTR[60..]     ← INSERT (matrix row 22)
+TECH_NAME=PstCd     MP_SC_FLD=ZBPST            ← INSERT (matrix row 23)
+TECH_NAME=TwnNm     MP_SC_FLD=ZBORT            ← INSERT (matrix row 24)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;NG&lt;/Ctry&gt;
+      &lt;StrtNm&gt;635 AKIN ADESOLA&lt;/StrtNm&gt;    ← new tag
+      &lt;BldgNb&gt;635&lt;/BldgNb&gt;                ← new tag
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+      &lt;TwnNm&gt;LAGOS&lt;/TwnNm&gt;                ← new tag
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><em>Read this in plain English: each block above is independent — same pattern, different path. Per V001 cutover, the bank for that path receives the V001 XML on the right. Per matrix-row count: 8 INSERTs for SEPA (rows 1–8) + 9 for CITI (rows 10–18 + 19–20) + 4 for CGI (rows 21–24) + 1 SYNC for CGI_1 (row 25) = 22 tree-row operations across 7 paths. Plus 1 OBPM4 row (matrix row 9) for SEPA Event 05 registration, 1 BAdI guard (matrix row 26 — the only ABAP), and 1 master-data fix (matrix row 27).</em></p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>SEPA Tree 1 V001 work</strong> (bridge in parallel + Step A/B/C + verification + rollback + code-change indicator) lives in <a href="#" onclick="show('dmee-tree-sepa', document.querySelector('[onclick*=dmee-tree-sepa]'));return false">↳ Tree 1 · SEPA</a> sub-tab.</p>
+
+      <h4>Same connection, different formats — one rule across all 4 trees</h4>
+      <p>The bridge holds identically for every UNESCO DMEE tree. Each tree has its own row set and produces its own XML format. Same engine, same rule.</p>
+
+      <table style="margin-top:8px">
+        <tr><th>Tree</th><th>Output format</th><th>Bank receiving</th><th>V001 INSERT count (matrix rows)</th><th>New XML tags appearing in the output file</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>pain.001.001.03 SEPA</td><td>Société Générale</td><td>8 (rows 1–8)</td><td>4 new tags inside <code>&lt;Cdtr&gt;&lt;PstlAdr&gt;</code> + 4 new tags inside <code>&lt;Dbtr&gt;&lt;PstlAdr&gt;</code></td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>CITI proprietary XML</td><td>Citibank</td><td>9 (rows 10–18)</td><td>2 new tags in primary Dbtr/PstlAdr + 5 in alternate Dbtr path + 1 source-bind on existing UltmtCdtr/StrtNm + 1 added BldgNb on UltmtCdtr</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>CGI XML (cross-bank)</td><td>SocGen for non-SEPA</td><td>4 (rows 21–24)</td><td>4 new tags inside <code>&lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;PstlAdr&gt;</code> (StrtNm/BldgNb/PstCd/TwnNm)</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>CGI XML variant</td><td>SocGen / non-SEPA</td><td>SYNC (row 25)</td><td>Same 4 tags as parent — propagates automatically via shared FIRSTNODE_ID</td></tr>
+      </table>
+
+      <h4>Where the values come from at runtime</h4>
+      <p>The tags appear because the source-bound buffers are populated. UNESCO's already-populated buffers do all the work — no new ABAP fills any field for V001:</p>
+      <ul>
+        <li><code>FPAYHX-LAND1</code> / <code>FPAYHX-ZLISO</code> — 2-char ISO country code, populated by SAP-std PMW from <code>LFA1.LAND1</code> (vendor master).</li>
+        <li><code>FPAYHX-REF01[0..60]</code> = ADRC.STREET (street name slice). Populated by SAP-std <code>CL_IDFI_CGI_CALL05_GENERIC::GENERIC_CALL</code> when Event 05 fires (claim 101 byte-layout).</li>
+        <li><code>FPAYHX-REF01[60..80]</code> = ADRC.HOUSE_NUM1 (building number slice). Same writer.</li>
+        <li><code>FPAYHX-REF01[80..90]</code> = ADRC.POST_CODE1. Same writer.</li>
+        <li><code>FPAYHX-REF06[0..40]</code> = ADRC.CITY1. Same writer.</li>
+        <li><code>FPAYH-ZSTRA</code> / <code>FPAYH-ZBSTR</code> / <code>FPAYH-ZBORT</code> / <code>FPAYH-ZBPST</code> — UNESCO custom Z-fields filled by Event 05 user-exit. Already populated for CITI/CGI Cdtr today (claim 67 confirms the catalog of 25 Z-fields in FPAYHX). V001 reuses the same fields for new structured nodes.</li>
+      </ul>
+
+      <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>One precondition for SEPA</strong>: <code>FPAYHX-REF01..REF10</code> are populated by SAP-std Event 05 (<code>FI_PAYMEDIUM_DMEE_CGI_05</code>). Today TFPM042FB has Event 05 registered for CITI and CGI trees but <strong>not for SEPA</strong>. Matrix row 9 adds the missing TFPM042FB row so the buffer fills for SEPA the same way it does for CITI/CGI. After matrix row 9, REF01[0..60] etc. carry the structured atoms for every SEPA payment, and the new V001 nodes can read them.</p>
+
+      <p style="font-size:12px;color:#475569;font-style:italic">[Per-format V001 file deltas removed — same information now lives in the cross-tree summary table above and in each tree's sub-tab. Plan-agent-flagged duplicate dropped 2026-04-30.]</p>
+
+      <h4>Why this is configuration not code — proven by the bridge</h4>
+      <p>The bridge above shows that every new XML tag in V001 is produced by a new row in <code>DMEE_TREE_NODE</code> reading from a buffer field that SAP-std PMW already fills. <strong>No buffer is written by UNESCO custom code</strong> (claim 68 — static scan of 986 ABAP files returned 0 writes to FPAYHX-Z* / FPAYH-REF). <strong>No new BAdI method is implemented</strong> for the address structuralisation in V001. The matrix rows 1–25 are all <code>DMEE_TREE_NODE</code> / <code>DMEE_TREE_COND</code> / <code>TFPM042FB</code> INSERT or UPDATE statements — customizing transport class W. The single ABAP touch in V001 (matrix row 26 — Pattern A 3-line guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>) is orthogonal to address structuralisation: it protects an existing SocGen-mandated name-overflow path from being clobbered by the new StrtNm node, and is workbench class K only because it edits ABAP source.</p>
+
+      <h4>PMW program retrofit — pre-V001 D01 alignment scope (beyond DMEE tree)</h4>
+
+      <p>The DMEE tree is only one of several SAP objects F110 traverses to produce a payment file. Before V001 testing in D01 can be trusted, the surrounding PMW infrastructure that <em>invokes</em> the DMEE tree must also be byte-equal between D01 and P01. The current D01-RETROFIT-01 scope (claim 111) covers (a) DMEE tree drift on CGI_1, (b) dormant V001 PURGE on all 4 trees, (c) 5 P01-only BAdI classes (YCL_IDFI_CGI_DMEE_DE/_IT + 3 ENHOs + FR.CM002 method per claim 70). It does <strong>not</strong> cover the PMW configuration tables and program variants below. <strong>Adding D01-RETROFIT-02-PMW</strong> is recommended before Phase 3 unit testing.</p>
+
+      <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>The runtime chain F110 follows</strong>: F110 reads FBZP → looks up T042Z (payment method per country) → identifies the PMW format (FORMI) → looks up T042Y (PMW format definition) → invokes the SAPFPAYM_&lt;format&gt; program with the registered variant → that program reads TFPM042F/TFPM042FB (Event registrations) → fires Event 05 (FI_PAYMEDIUM_DMEE_CGI_05) → fills FPAYHX-FREF buffers → DMEE engine walks the tree → emits XML. <strong>Any of those tables/programs missing from D01 means F110 in D01 produces a different file from F110 in P01 — even if the DMEE tree is identical</strong>.</p>
+
+      <h5 style="color:#0369a1;margin-top:14px">PMW retrofit scope — what to byte-align between D01 and P01</h5>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th>Object</th><th>What it does</th><th>Why it matters for V001</th><th>Verification</th></tr>
+        <tr><td><code>T042Z</code> (V_T042Z via SM30)</td><td>Routes (ZBUKR, LAND1, ZLSCH, WAERS) → format ID. Per claim 103, no ZBUKR column — same routing cross-entity.</td><td>If D01 T042Z routes a test F110 run to a different format than P01 would, the V001 cutover validation is meaningless. <em>Specifically</em>: SOG01 EUR method S → /SEPA_CT_UNES; CIT04 USD method L → /CITI/XML/UNESCO/DC_V3_01; SOG01 USD method N → /CGI_XML_CT_UNESCO; etc.</td><td>RFC_READ_TABLE T042Z, hash columns, compare D01 vs P01. Expected: byte-equal for the 13 (LAND1, ZLSCH) → format combinations identified per claim 103.</td></tr>
+        <tr><td><code>T042Y</code> (V_T042Y / OBPM1)</td><td>PMW format definition: FORMI → SAPFPAYM_&lt;format&gt; program + the format-spec structure (FPM_SEPA, etc.) + tree type PAYM.</td><td>Defines the program SAPFPAYM uses to drive the format. Mismatch = different program runs in D01 vs P01, V001 outputs differ in non-tree ways.</td><td>RFC_READ_TABLE T042Y for the 4 in-scope FORMI values. Compare program name + format-spec structure columns.</td></tr>
+        <tr><td><code>TFPM042F</code> + <code>TFPM042FB</code> (OBPM4)</td><td>Event registration per format: which user-exit FM fires at which event (Event 05 = address fill via FI_PAYMEDIUM_DMEE_CGI_05).</td><td><strong>Direct V001 dependency</strong>: matrix row 9 ADDS Event 05 for SEPA. CITI and CGI presumably already have Event 05 in P01. If D01 lacks Event 05 for CITI/CGI, REF01..REF10 buffers stay empty in D01 testing → the V001 INSERTs that bind to REF01[0..60] etc. emit empty tags.</td><td>RFC_READ_TABLE TFPM042F and TFPM042FB filtered by FORMI in scope. Verify Event 05 registration exists in D01 for /CITI/XML/UNESCO/DC_V3_01 and /CGI_XML_CT_UNESCO and /CGI_XML_CT_UNESCO_1. If missing in D01, transport from P01 (export then import) before Phase 3.</td></tr>
+        <tr><td><code>SAPFPAYM_&lt;format&gt;</code> programs</td><td>The actual ABAP programs that read the DMEE tree and fire events. SAP-standard for SEPA/CITI/CGI but UNESCO may have customized variants.</td><td>If a UNESCO-modified SAPFPAYM_* exists in P01 but not D01, the call chain differs → V001 testing isn't representative.</td><td>SE38 → display SAPFPAYM_&lt;format&gt; in both systems. Check version + last-changed-on. ADT pull source if any UNESCO modifications exist.</td></tr>
+        <tr><td>Program variants (<code>VARI</code>/<code>VARID</code>)</td><td>Variants of SAPFPAYM_* used by F110 batch jobs in P01. Tied to (BUKRS, payment method, house bank) tuple.</td><td>F110 batch jobs in P01 reference specific variants; without them in D01, manual F110 runs in D01 use defaults that may not match production behavior.</td><td>RFC_READ_TABLE VARI WHERE REPORT LIKE 'SAPFPAYM%'. Identify the variants used by P01 F110 jobs (TBTCO + TBTCP). Transport missing ones to D01.</td></tr>
+        <tr><td><code>OBPM2</code> (V_TFPM2_FORMS)</td><td>Print form per format (less critical for XML-only; may be empty for our 4 trees).</td><td>If a print form is referenced but missing in D01, Save/run may fail with form-not-found.</td><td>RFC_READ_TABLE T042B / V_TFPM2 filtered by FORMI. Confirm empty or present in both systems.</td></tr>
+        <tr><td><code>YCL_IDFI_CGI_DMEE_*</code> classes</td><td>UNESCO BAdI implementations dispatching from FI_CGI_DMEE_EXIT_W_BADI (claim 69 — 794/1975 nodes route through this).</td><td><strong>Already in D01-RETROFIT-01 scope</strong> per matrix row 0a (5 P01-only objects retrofit per claim 70). No additional action — flagged here for completeness.</td><td>Already covered.</td></tr>
+        <tr><td><code>YTFI_PPC_STRUC</code> + <code>YTFI_PPC_TAG</code> + <code>T015L</code></td><td>PPC dispatch tables (Payment Purpose Code for 9 countries — claim 116).</td><td>If D01 lacks PPC config rows, PPC regression check on CGI tree V001 is invalid.</td><td>RFC_READ_TABLE YTFI_PPC_STRUC + YTFI_PPC_TAG + T015L. Compare row counts + content hash D01 vs P01.</td></tr>
+      </table>
+
+      <h5 style="color:#0369a1;margin-top:14px">Recommended retrofit transport — D01-RETROFIT-02-PMW</h5>
+
+      <p style="font-size:12px">Scope: identify all D01↔P01 deltas across the 8 objects above and either (a) transport missing rows from P01 to D01, or (b) flag explicit divergence as a known limitation of D01 testing. Run before Phase 3 unit-test. Owner: Pablo + N_MENARD (BAdI/code) + M_SPRONK (config tables).</p>
+
+      <ol style="font-size:12px">
+        <li><strong>Phase 2 Week 0 — Discovery</strong>: 8 RFC_READ_TABLE comparisons D01 vs P01 (T042Z, T042Y, TFPM042F, TFPM042FB, VARI for SAPFPAYM*, OBPM2, plus the PPC tables and class catalogs). Output: <code>knowledge/domains/Payment/d01_p01_pmw_alignment_session65.json</code> with row-level diffs.</li>
+        <li><strong>Phase 2 Week 0 — Triage</strong>: per delta, classify as RETROFIT (transport from P01 to D01), KEEP-DIFFERENT (intentional D01 test override), or INVESTIGATE (unclear).</li>
+        <li><strong>Phase 2 Week 0 — Execute</strong>: bundle the RETROFIT-class deltas in <code>D01K-RETROFIT-02-PMW</code>. Customizing transport (W) for tables; workbench (K) for any program variants that touch ABAP source.</li>
+        <li><strong>Phase 2 Week 0 — Verify</strong>: re-run the 8 hash comparisons. D01 = P01 byte-equal expected. Document residual KEEP-DIFFERENT items.</li>
+        <li><strong>Gate</strong>: Phase 3 unit-test cannot start until D01-RETROFIT-02-PMW completes OR explicit waivers are documented for residual deltas.</li>
+      </ol>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>New brain artifacts proposed for this retrofit</strong>: (1) <strong>KU-2026-PMW-D01-ALIGNMENT</strong> — open question on byte-equality of the 8 objects above; (2) <strong>claim 121</strong> (TIER_1 once verified) — D01↔P01 alignment status of T042Z/T042Y/TFPM042F/TFPM042FB for the 4 in-scope formats; (3) update to <code>v001_change_matrix.csv</code> — new precondition row 0c "PMW program retrofit" preceding row 0a (RETROFIT) and row 0b (CREATE-V001). Want me to write these now?</p>
+
+      <h4>Step-by-step in tx DMEE — the version dance, per tree</h4>
+      <p>The same 3-stage dance (Step A · prepare V001, Step B · edit V001, Step C · activate at cutover) is performed independently for each of the 4 in-scope trees. Steps A and C are mechanically identical across trees; <strong>Step B differs because each tree has different INSERT / MODIFY / SYNC operations</strong>. Below is each tree's specific walkthrough plus the explicit ABAP-vs-config indicator.</p>
+
+      <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>Code-change inventory (across all trees)</strong>: of the 4 trees, only ONE requires an ABAP code change — the CGI tree (<code>/CGI_XML_CT_UNESCO</code>) needs the Pattern A 3-line guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. SEPA, CITI, and CGI_1 are 100% configuration. Master-data fix (5 LIFNRs) is independent of any tree and owned by the Master Data team.</p>
+
+      <table style="margin-top:8px">
+        <tr><th>Tree</th><th>Step B operations</th><th>ABAP code change</th><th>Customizing TR</th><th>Special considerations</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>8 INSERTs + 8 DMEE_TREE_COND + 1 TFPM042FB Event-05 row</td><td><b>NO</b></td><td><code>D01K-V001-SEPA-01</code> + <code>D01K-V001-OBPM4-01</code></td><td>Empty Element Processing="Do Not Remove" — conditions mandatory (claim 120)</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>2 INSERTs Dbtr-primary + 5 INSERTs Dbtr-altMor + 1 MODIFY UltmtCdtr/StrtNm + 1 INSERT BldgNb + 2 INSERTs CdtrAgt</td><td><b>NO</b></td><td><code>D01K-V001-CITI-01</code></td><td>XSLT auto-removes empty — no DMEE_TREE_COND needed; 25 historical transports = highest regression risk (claim 72)</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>4 INSERTs CdtrAgt + 4 DMEE_TREE_COND + Pattern A guard</td><td><b>YES — 3-line guard</b> in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></td><td><code>D01K-V001-CGI-01</code> + <code>D01K-BADI-FIX-01</code> (workbench K)</td><td>PPC dispatch (<code>InstrInf</code>, <code>Ustrd</code>) MUST be preserved</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>SYNC verification (FIRSTNODE_ID inheritance from CGI parent)</td><td><b>NO</b></td><td><code>D01K-V001-CGI1-01</code> (verification only)</td><td>Drift retrofit (12 deltas) must complete first per claim 111</td></tr>
+        <tr><td>(LFA1+ADRC)</td><td>5 LIFNRs CITY1+COUNTRY fix</td><td><b>NO</b></td><td>(no transport — master-data team)</td><td>Phase 0 Finding A · <code>vendor_dq_5_specific.csv</code></td></tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>How to read this table</strong>: each tree's section below carries Step A (PURGE+CREATE) → Step B (the operations in the row above, click-by-click) → Step C (ACTIVATE) → Rollback note → explicit code-change-required line. <strong>Conclusion: only 1 of 4 trees needs ABAP</strong> (CGI tree, Pattern A guard, 3 lines, backward-compatible). The other 3 are 100% configuration. Master-data fix (5 LIFNRs) is independent of any tree.</p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>Per-tree V001 walkthroughs moved to dedicated sub-tabs</strong>: each tree's bridge in parallel + Step A/B/C + verification + rollback + code-change indicator now lives in its own left-sidebar sub-menu. <a href="#" onclick="show(&#39;dmee-tree-sepa&#39;, document.querySelector(&#39;[onclick*=dmee-tree-sepa]&#39;));return false">↳ Tree 1 · SEPA</a> · <a href="#" onclick="show(&#39;dmee-tree-citi&#39;, document.querySelector(&#39;[onclick*=dmee-tree-citi]&#39;));return false">↳ Tree 2 · CITI</a> · <a href="#" onclick="show(&#39;dmee-tree-cgi&#39;, document.querySelector(&#39;[onclick*=dmee-tree-cgi]&#39;));return false">↳ Tree 3 · CGI</a> · <a href="#" onclick="show(&#39;dmee-tree-cgi1&#39;, document.querySelector(&#39;[onclick*=dmee-tree-cgi1]&#39;));return false">↳ Tree 4 · CGI_1</a></p>
+
+      <h4>"And none of this is ABAP" — the headline insight</h4>
+      <p>Every operation in Steps A/B/C is a UI action in tx DMEE that translates to an INSERT or UPDATE on <code>DMEE_TREE_NODE</code>, <code>DMEE_TREE_HEAD</code>, or <code>DMEE_TREE_COND</code>. None of this writes a single line of ABAP. The transport request type is <strong>W (Customizing)</strong> — answered by analogy from the existing 44 historical DMEE transports. <code>KU-2026-DMEE-C</code> ("are V001 transports W or K?") resolves to <strong>W with one exception</strong>: the Pattern A 3-line BAdI guard (matrix row 26).</p>
+
+      <table style="margin-top:8px">
+        <tr><th>Change category</th><th>Transport type</th><th>Why</th><th>Rows in matrix</th></tr>
+        <tr><td>Tree node INSERT/UPDATE</td><td>W (Customizing)</td><td>DMEE_TREE_* are customizing tables</td><td>Rows 1–25 (all tree work)</td></tr>
+        <tr><td>OBPM4 row INSERT (TFPM042FB)</td><td>W (Customizing)</td><td>TFPM042FB is customizing</td><td>Row 9 (SEPA Event 05 registration, Sub-option A)</td></tr>
+        <tr><td>SYNC across CGI / CGI_1</td><td>W (Customizing)</td><td>FIRSTNODE_ID inheritance</td><td>Row 25</td></tr>
+        <tr><td><strong>BAdI source code edit</strong> (Pattern A guard)</td><td><strong>K (Workbench)</strong></td><td>YCL_IDFI_CGI_DMEE_FALLBACK_CM001 is ABAP</td><td>Row 26 — only ABAP touch in V001</td></tr>
+        <tr><td>Vendor master data fix (5 LIFNRs)</td><td>(no transport, master data)</td><td>LFA1 + ADRC are master-data tables</td><td>Row 27 — Master Data team owns</td></tr>
+      </table>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>Sanity check from history</strong>: claim 72 (TIER_1) — across 44 DMEE-touching transports 2017–2024, M_SPRONK authored 31. Every one of those was a customizing transport for tree-node configuration. The pattern of "open tx DMEE, edit, save, capture in customizing TR" is exactly what V001 follows. The only thing that's first-time-ever is the Activate-Version step at cutover (claim 102 — never exercised), which is why the dry-run protocol in <code>knowledge/domains/Payment/dmee_versioning_procedure.md</code> exists.</p>
+
+      <h4>What the 4 trees look like, before vs after V001</h4>
+      <p>Compact summary across all 4 trees, derived from the 27-row v001_change_matrix.csv. "INSERT" means a new row in DMEE_TREE_NODE; "MODIFY" means an existing V001 row gets its source-binding column updated; "SYNC" means the change rides on a parent-tree edit through shared FIRSTNODE_ID; "no V001 action" means the tree V000 already produces structured output for that branch and V001 carries it forward unchanged.</p>
+
+      <table>
+        <tr><th>Tree</th><th>Branch</th><th>V000 state</th><th>V001 action</th><th>Matrix rows</th></tr>
+        <tr><td rowspan="3"><code>/SEPA_CT_UNES</code></td><td><code>Cdtr</code> / PstlAdr</td><td>3 children: Ctry + 2 AdrLine</td><td>+4 INSERT (StrtNm/BldgNb/PstCd/TwnNm)</td><td>1–4</td></tr>
+        <tr><td><code>Dbtr</code> / PstlAdr</td><td>2 children: Ctry + 1 AdrLine</td><td>+4 INSERT</td><td>5–8</td></tr>
+        <tr><td>Event 05 registration</td><td>not registered</td><td>+1 row in TFPM042FB</td><td>9</td></tr>
+        <tr><td rowspan="4"><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td><code>Dbtr</code>-1 / PstlAdr</td><td>TwnNm + PstCd + Ctry + 3 AdrLine</td><td>+2 INSERT (StrtNm + BldgNb)</td><td>10–11</td></tr>
+        <tr><td><code>Dbtr</code>-2 / alt-mode</td><td>3 AdrLine only</td><td>+5 INSERT (full structured subtree)</td><td>12–16</td></tr>
+        <tr><td><code>UltmtCdtr</code> Worldlink</td><td>StrtNm exists, source empty</td><td>1 MODIFY (set source = FPAYH-ZSTRA, claim 99)</td><td>17–18</td></tr>
+        <tr><td><code>CdtrAgt</code></td><td>StrtNm + TwnNm + Ctry + CtrySubDvsn (PstCd + BldgNb missing)</td><td>+2 INSERT</td><td>19–20</td></tr>
+        <tr><td rowspan="2"><code>/CGI_XML_CT_UNESCO</code></td><td><code>CdtrAgt</code> / PstlAdr</td><td>Ctry + 2 AdrLine + AdrLine1 + AdrLine2 (no StrtNm/PstCd/TwnNm)</td><td>+4 INSERT (StrtNm/BldgNb/PstCd/TwnNm)</td><td>21–24</td></tr>
+        <tr><td>Dbtr / Cdtr / UltmtCdtr / UltmtDbtr</td><td>Already fully structured via BAdI</td><td>no V001 action</td><td>—</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td><code>CdtrAgt</code></td><td>same parent as CGI_XML_CT_UNESCO</td><td>SYNC (rides on row 21 via FIRSTNODE_ID)</td><td>25</td></tr>
+        <tr><td>(BAdI)</td><td><code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></td><td>SocGen overflow logic active</td><td>3-line guard (Pattern A)</td><td>26 — only ABAP</td></tr>
+        <tr><td>(LFA1+ADRC)</td><td>5 LIFNRs missing CITY1+COUNTRY</td><td>—</td><td>Master-data fix</td><td>27 — owned by Master Data team</td></tr>
+      </table>
+
+      <h4>What this configuration tab changes for V001</h4>
+      <p>Nothing on its own — this tab is the explanation, not the action. The actions live in <a href="#" onclick="show('phase2', document.querySelector(&quot;[onclick*=phase2]&quot;));return false">Phase 2 · Config D01</a> (the 17-step Phase 2 checklist) and the per-tree transport plan in <code>knowledge/domains/Payment/dmee_versioning_procedure.md</code>. What this tab anchors is the team's shared mental model: <em>same trees, same segments, same parents — only siblings added inside <code>&lt;PstlAdr&gt;</code>; activation is a one-column flip; rollback is the same flip in reverse</em>. If everyone walking into Phase 2 holds that picture, the operational risk is much smaller than it looks on paper.</p>
+
+      <h4>References for this tab</h4>
+      <ul>
+        <li><strong>claim 99</strong> TIER_1 — UltmtCdtr Worldlink resolved system-driven (matrix row 17 MODIFY)</li>
+        <li><strong>claim 101</strong> TIER_1 — CL_IDFI_CGI_CALL05_GENERIC byte layout for FPAYHX-REF01 (basis of all REF01-bound INSERTs)</li>
+        <li><strong>claim 102</strong> TIER_1 — zero V001 patterns in 44 historical transports (Activate-Version is first-time-ever)</li>
+        <li><strong>claim 105</strong> TIER_1 — V001 Fully-Structured commitment (this is why we INSERT all 5 leaves, not 2)</li>
+        <li><strong>claim 108</strong> + <strong>claim 109</strong> + <strong>claim 111</strong> + <strong>claim 112</strong> TIER_1 — D01 dormant V001 status, byte-equality with V000, post-VPN RFC verification, SHA-256 alignment</li>
+        <li><strong>v001_change_matrix.csv</strong> (29 rows incl. 2 PRECONDITIONs) — the authoritative spec</li>
+        <li><strong>dmee_versioning_procedure.md</strong> — the canonical 3-step procedure + dry-run protocol + verification SQL</li>
+        <li><strong>feedback_p01_source_of_truth_retrofit_first_then_adjust</strong> — why Step 0 RETROFIT is mandatory before any V001 work</li>
+      </ul>
+    </div>
+    </div>
+<div id="tab-dmee-tree-sepa" class="content">
+    <div class="section">
+      <h3>Tree 1 · /SEPA_CT_UNES — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for cross-tree concepts (version mechanic, three operations, V000 baseline cross-references). This sub-tab covers Tree 1 V001 work only.</p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>For the conceptual foundations</strong> — the hierarchy collapse (95 nodes → 2 INSERT targets), the level connection (UI indentation = XML nesting depth), and the path-disambiguation rule (same TECH_NAME at different levels means different things) — see <a href="#" onclick="show('current-solution', document.querySelector('[onclick*=current-solution]'));return false">Current Solution → Per-tree current state</a>. Below: the SEPA-specific V000 vs V001 parallel rendering as the worked example for Tree 1. CITI/CGI/CGI_1 each have their own bridge in their respective per-tree sections.</p>
+
+      <h4>SEPA Tree 1 of 4 — bridge in parallel — UI tree (left) ↔ XML output (right), aligned by level</h4>
+
+      <p>Read this top-to-bottom. Every line on the left has its mirror on the right. The indentation depth on the left = the nesting depth on the right. Same configuration shown two ways.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">V000 today — what the operator sees in tx DMEE vs what F110 writes to the bank file</p>
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — tree pane indentation (UI)</th><th style="width:50%">F110 output — XML nesting (bank file)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">CstmrCdtTrfInitn
+  GrpHdr                                  ← level 2
+    MsgId
+    CreDtTm
+    NbOfTxs                               ← file-total count
+    CtrlSum                               ← file-total sum
+    InitgPty
+      Nm                                  ← UNESCO @ message level
+        AUST1
+        NAMEZ
+  PmtInf                                  ← level 2 (batch)
+    PmtInfId
+    PmtMtd
+    NbOfTxs (TX2)                         ← batch count
+    CtrlSum (IA2)                         ← batch sum
+    PmtTpInf/SvcLvl/Cd
+    ReqdExctnDt (YYYY-MM-DD)
+    Dbtr                                  ← level 3 (batch debtor)
+      Nm
+      <strong>PstlAdr ←── INSERT TARGET #1</strong>
+        Ctry         (FPAYHX-LAND1)       ← level 5
+        AdrLine      (FPAYHX-ORT1Z)       ← level 5
+    DbtrAcct/Id/IBAN
+    DbtrAgt/FinInstnId/BIC
+    ChrgBr
+    CdtTrfTxInf (TX)                      ← level 3 (per tx)
+      PmtId/InstrId/EndToEndId
+      Amt/InstdAmt
+      UltmtDbtr/Nm                        ← Nm only, no PstlAdr
+      CdtrAgt/FinInstnId/BIC              ← BIC only, no PstlAdr
+      Cdtr                                ← level 4 (beneficiary)
+        Nm                                ← KOINH + ZNME1
+        <strong>PstlAdr ←── INSERT TARGET #2</strong>
+          Ctry      (FPAYHX-ZLISO)        ← level 6
+          AdrLine   (FPAYHX-ZPFST)        ← level 6
+          AdrLine   (FPAYHX-ZPLOR)        ← level 6
+      CdtrAcct/Id/IBAN
+      UltmtCdtr/Nm                        ← Nm only, no PstlAdr
+      RmtInf</pre></td>
+        <td><pre style="margin:0;font-size:10px">&lt;CstmrCdtTrfInitn&gt;
+  &lt;GrpHdr&gt;
+    &lt;MsgId&gt;...&lt;/MsgId&gt;
+    &lt;CreDtTm&gt;...&lt;/CreDtTm&gt;
+    &lt;NbOfTxs&gt;1703&lt;/NbOfTxs&gt;
+    &lt;CtrlSum&gt;10952619.81&lt;/CtrlSum&gt;
+    &lt;InitgPty&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+    &lt;/InitgPty&gt;
+  &lt;/GrpHdr&gt;
+  &lt;PmtInf&gt;
+    &lt;PmtInfId&gt;...&lt;/PmtInfId&gt;
+    &lt;PmtMtd&gt;TRF&lt;/PmtMtd&gt;
+    &lt;NbOfTxs&gt;1703&lt;/NbOfTxs&gt;
+    &lt;CtrlSum&gt;10952619.81&lt;/CtrlSum&gt;
+    &lt;PmtTpInf&gt;&lt;SvcLvl&gt;&lt;Cd&gt;SEPA&lt;/Cd&gt;...
+    &lt;ReqdExctnDt&gt;2025-05-22&lt;/ReqdExctnDt&gt;
+    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      <strong>&lt;PstlAdr&gt;</strong>
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+        &lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    &lt;DbtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;...
+    &lt;DbtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;SOGEFRPP&lt;/BIC&gt;
+    &lt;ChrgBr&gt;SLEV&lt;/ChrgBr&gt;
+    &lt;CdtTrfTxInf&gt;
+      &lt;PmtId&gt;...&lt;/PmtId&gt;
+      &lt;Amt&gt;&lt;InstdAmt&gt;...&lt;/InstdAmt&gt;...
+      &lt;UltmtDbtr&gt;&lt;Nm&gt;...&lt;/Nm&gt;&lt;/UltmtDbtr&gt;
+      &lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;BNPAFRPP&lt;/BIC&gt;
+      &lt;Cdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        <strong>&lt;PstlAdr&gt;</strong>
+          &lt;Ctry&gt;FR&lt;/Ctry&gt;
+          &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+          &lt;AdrLine&gt;...postal+city...&lt;/AdrLine&gt;
+        &lt;/PstlAdr&gt;
+      &lt;/Cdtr&gt;
+      &lt;CdtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;...
+      &lt;UltmtCdtr&gt;&lt;Nm&gt;...&lt;/Nm&gt;&lt;/UltmtCdtr&gt;
+      &lt;RmtInf&gt;...&lt;/RmtInf&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="margin-top:8px;font-size:12px"><strong>Notice the two PstlAdr instances</strong>: one at PmtInf level (batch debtor), one nested deeper at CdtTrfTxInf level (per-transaction beneficiary). They produce two separate <code>&lt;PstlAdr&gt;</code> blocks in the XML, at different depths, each with its own children. <strong>V001 has to INSERT 4 nodes into each one</strong> — that's why matrix row 1–4 (Cdtr/PstlAdr) and rows 5–8 (Dbtr/PstlAdr) are separate sets even though the TECH_NAMEs (StrtNm/BldgNb/PstCd/TwnNm) are identical.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">V001 — same parallel, same two PstlAdr containers, +4 INSERTs each</p>
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE Maintenance version (after Step B INSERTs)</th><th style="width:50%">F110 output after Phase 5 cutover</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">    Dbtr
+      Nm
+      <strong>PstlAdr ←── INSERT TARGET #1</strong>
+        Ctry        (FPAYHX-LAND1)        ← V000 kept
+        AdrLine     (FPAYHX-ORT1Z)        ← V000 suppressed
+        StrtNm      (FPAYHX-REF01[0..60]) ← INSERT row 5
+        BldgNb      (FPAYHX-REF01[60..80])← INSERT row 6
+        PstCd       (FPAYHX-REF01[80..90])← INSERT row 7
+        TwnNm       (FPAYHX-REF06[0..40]) ← INSERT row 8
+    ...
+      Cdtr
+        Nm
+        <strong>PstlAdr ←── INSERT TARGET #2</strong>
+          Ctry      (FPAYHX-ZLISO)        ← V000 kept
+          AdrLine   (FPAYHX-ZPFST)        ← V000 suppressed
+          AdrLine   (FPAYHX-ZPLOR)        ← V000 suppressed
+          StrtNm    (FPAYHX-REF01[0..60]) ← INSERT row 1
+          BldgNb    (FPAYHX-REF01[60..80])← INSERT row 2
+          PstCd     (FPAYHX-REF01[80..90])← INSERT row 3
+          TwnNm     (FPAYHX-REF06[0..40]) ← INSERT row 4</pre></td>
+        <td><pre style="margin:0;font-size:10px">    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      <strong>&lt;PstlAdr&gt;</strong>
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+        &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt;
+        &lt;BldgNb&gt;7&lt;/BldgNb&gt;
+        &lt;PstCd&gt;75007&lt;/PstCd&gt;
+        &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    ...
+      &lt;Cdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        <strong>&lt;PstlAdr&gt;</strong>
+          &lt;Ctry&gt;FR&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+                                          ← AdrLine suppressed
+          &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+          &lt;BldgNb&gt;...&lt;/BldgNb&gt;
+          &lt;PstCd&gt;...&lt;/PstCd&gt;
+          &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+        &lt;/PstlAdr&gt;
+      &lt;/Cdtr&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="margin-top:8px;font-size:13px"><strong>The connection now reads</strong>: each new line indented under PstlAdr in the UI (left) corresponds to one new tag inside <code>&lt;PstlAdr&gt;</code> in the XML (right). The 4 INSERTs at each PstlAdr produce 4 new XML tags at the matching nesting depth. The empty-suppress conditions (matrix rows 1–8) hide the legacy AdrLine entries from the output, so the bank receives clean Fully Structured PstlAdr blocks.</p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>The whole connection in one line</strong>: <strong>UI tree indentation = XML tag nesting</strong>. Configuring at level N in tx DMEE = emitting at depth N in the XML. INSERT Element under PstlAdr = new sibling of Ctry/AdrLine in the UI = new sibling of <code>&lt;Ctry&gt;</code>/<code>&lt;AdrLine&gt;</code> inside <code>&lt;PstlAdr&gt;</code> in the XML. Same operation, two views. No translation step.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 1 of 4 · <code>/SEPA_CT_UNES</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 95 nodes V000 → 103 nodes V001. Bank: Société Générale (SEPA-zone EUR payments). Format: pain.001.001.03. Empty Element Processing = "Do Not Remove" (claim 120) → <strong>per-node DMEE_TREE_COND empty-suppress mandatory</strong>. No XSLT post-processor.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:8px">SEPA Step A · PURGE existing dormant V001, then CREATE fresh V001</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → DME Engine: Initial Screen → Tree type = <code>PAYM</code> + Format tree = <code>/SEPA_CT_UNES</code> → click <strong>Display</strong></li>
+        <li>Popup "Which version would you like to display?" → <strong>Active version</strong> (inspect V000) → re-open with <strong>Maintenance version</strong> (confirm dormant V001 exists per claim 109)</li>
+        <li>Back to initial screen → <strong>Change</strong> → choose <strong>Maintenance version</strong></li>
+        <li>Menu: <strong>Tree → Versions → Delete Version</strong> → select <code>VERSION=001</code> → confirm. Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code></li>
+        <li>Menu: <strong>Tree → Versions → Create Version</strong> → Source 000, Target 001 → confirm. Save → transport <code>D01K-V001-SEPA-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step B · INSERT 8 structured nodes + 8 conditions + 1 OBPM4 row</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → switch tree view to <code>VERSION=001</code> (Maintenance)</li>
+        <li>Navigate to <strong>INSERT TARGET #1</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code></li>
+        <li>Right-click PstlAdr → <strong>Insert Element</strong> → set TECH_NAME=<code>StrtNm</code>, MP_SC_TAB=<code>FPAYHX</code>, MP_SC_FLD=<code>REF01</code>, MP_OFFSET=<code>0</code>, LENGTH=<code>60</code> (matrix row 5)</li>
+        <li>Repeat for BldgNb (REF01[60..80] · row 6) · PstCd (REF01[80..90] · row 7) · TwnNm (REF06[0..40] · row 8)</li>
+        <li>For each new node: add DMEE_TREE_COND row with empty-suppress (emit only if source NE space)</li>
+        <li>Navigate to <strong>INSERT TARGET #2</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr</code></li>
+        <li>Repeat the same 4 INSERTs (matrix rows 1–4) + 4 conditions</li>
+        <li>Save → transport <code>D01K-V001-SEPA-01</code> (single transport collects all 8 INSERTs + 8 conditions)</li>
+        <li>Outside tx DMEE: SM30 → V_T042Z or direct entry into TFPM042FB → INSERT row FORMI=<code>/SEPA_CT_UNES</code>, EVENT=<code>05</code>, FNAME=<code>FI_PAYMEDIUM_DMEE_CGI_05</code> (matrix row 9). Save → transport <code>D01K-V001-OBPM4-01</code></li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>SEPA Step B verification</strong>: <code>SELECT NODE_ID, MP_SC_FLD FROM DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' AND PARENT_ID IN ('&lt;Dbtr/PstlAdr&gt;','&lt;Cdtr/PstlAdr&gt;')</code> returns original 5 V000 children + 8 new children. V000 query returns unchanged 5.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step C · ACTIVATE V001 (Phase 5 cutover)</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → Menu: <strong>Tree → Versions → Activate Version</strong> → select VERSION=001 → confirm</li>
+        <li>SAP flips DMEE_TREE_HEAD.EX_STATUS atomically: V000 → blank, V001 → 'A'</li>
+        <li>Save → cutover transport <code>D01K-V001-CUTOVER-01</code> (collects activation for all 4 trees together OR staggered per tree per claim 102 surgical philosophy)</li>
+        <li>From this moment, every F110 SEPA run (SOG01 EUR, payment method S) produces V001 Fully Structured XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>SEPA rollback</strong>: same dialog, activate V000. Atomic flip back; F110 idempotent on REGUH.</p>
+      <p style="font-size:11px;color:#475569"><strong>SEPA code change required: NONE</strong>. All matrix rows 1–9 are customizing (DMEE_TREE_NODE, DMEE_TREE_COND, TFPM042FB).</p>
+    </div>
+    </div>
+<div id="tab-dmee-tree-citi" class="content">
+    <div class="section">
+      <h3>Tree 2 · /CITI/XML/UNESCO/DC_V3_01 — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for cross-tree concepts (version mechanic, three operations, V000 baseline cross-references). This sub-tab covers Tree 2 V001 work only.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 2 of 4 · <code>/CITI/XML/UNESCO/DC_V3_01</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 610 nodes V000 → 619 nodes V001. Bank: Citibank (USD/CAD/Worldlink BRL/MGA/TND). Format: CITI proprietary XML. Has CGI_XML_CT_XSLT post-processor → empty leaves auto-removed (no DMEE_TREE_COND needed). Most-touched tree historically: 25 transports 2017–2024 (claim 72) → highest regression-risk tree, despite zero ABAP changes.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI bridge in parallel — tx DMEE indentation (left) ↔ XML emitted (right), aligned by level</p>
+      <p style="font-size:12px;color:#475569">Focus on the 4 V001 INSERT entry points. CITI tree has 610 nodes total — only the PstlAdr-bearing parties are shown below; the surrounding wrapper structure (PmtInf, CdtTrfTxInf, CtrlSum etc.) is identical to V000.</p>
+
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — V000 today (UI)</th><th style="width:50%">F110 output — V000 today (XML)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    <strong>Dbtr</strong>                                   ← INSERT TARGET #1 (primary)
+      Nm
+      <strong>PstlAdr</strong>
+        Ctry        (FPAYHX-LAND1)
+        TwnNm       (FPAYHX-ORT1Z)
+        PstCd       (FPAYHX-REF01)
+        AdrLine     (FPAYHX-AUSTO)
+        AdrLine     (FPAYHX-AUST2)
+        AdrLine     (FPAYHX-AUST3)
+    ...
+    CdtTrfTxInf
+      Cdtr/...                              ← already structured
+      <strong>UltmtCdtr</strong>                            ← INSERT TARGET #3 (Worldlink)
+        Nm          (FPAYP-NAME1)
+        <strong>PstlAdr</strong>
+          Ctry      (FPAYH-ZLAND)
+          TwnNm     (FPAYH-ZORT1)
+          PstCd     (FPAYH-ZPSTL)
+          CtrySubDvsn (FPAYH-ZREGI)
+          AdrLine1  (FPAYH-ZSTRA)
+          AdrLine2  (FPAYH-ZORT2)
+          StrtNm    (empty — gap)           ← exists, never fires
+      <strong>CdtrAgt</strong>                              ← INSERT TARGET #4
+        FinInstnId
+          BIC
+          <strong>PstlAdr</strong>
+            StrtNm  (FPAYH-ZBSTR)
+            TwnNm   (FPAYH-ZBORT)
+            CtrySubDvsn (FPAYH-ZBREGX)
+            Ctry
+            AdrLine
+    ...
+    <strong>Dbtr (alt-mode/PstlAdrMor)</strong>             ← INSERT TARGET #2
+      <strong>PstlAdr</strong>
+        AdrLine     (FPAYHX-AUSTO)
+        AdrLine     (FPAYHX-AUST3)
+        AdrLine     (FPAYHX-AUST2)</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;PmtInf&gt;
+    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      &lt;PstlAdr&gt;
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+        &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+        &lt;PstCd&gt;75007&lt;/PstCd&gt;
+        &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    ...
+    &lt;CdtTrfTxInf&gt;
+      &lt;Cdtr&gt;...&lt;/Cdtr&gt;
+      &lt;UltmtCdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        &lt;PstlAdr&gt;
+          &lt;Ctry&gt;BR&lt;/Ctry&gt;
+          &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+          &lt;PstCd&gt;...&lt;/PstCd&gt;
+          &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+          &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+          &lt;AdrLine&gt;...neighborhood...&lt;/AdrLine&gt;
+                                          ← StrtNm absent
+        &lt;/PstlAdr&gt;
+      &lt;/UltmtCdtr&gt;
+      &lt;CdtrAgt&gt;
+        &lt;FinInstnId&gt;
+          &lt;BIC&gt;...&lt;/BIC&gt;
+          &lt;PstlAdr&gt;
+            &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+            &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+            &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+            &lt;Ctry&gt;...&lt;/Ctry&gt;
+            &lt;AdrLine&gt;...&lt;/AdrLine&gt;
+          &lt;/PstlAdr&gt;
+        &lt;/FinInstnId&gt;
+      &lt;/CdtrAgt&gt;
+    ...
+    &lt;Dbtr&gt; (alt PstlAdrMor)
+      &lt;PstlAdr&gt;
+        &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;</pre></td>
+        </tr>
+        <tr><th>tx DMEE — V001 (UI, after Step B)</th><th>F110 output — V001 (XML, after Phase 5 cutover)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    Dbtr/PstlAdr (primary)
+      Ctry/TwnNm/PstCd                      ← V000, kept
+      AdrLine × 3                           ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYHX-REF01[0..60])</strong>      ← INSERT row 10
+      <strong>BldgNb    (FPAYHX-REF01[60..80])</strong>     ← INSERT row 11
+    ...
+    UltmtCdtr/PstlAdr
+      Ctry/TwnNm/PstCd/CtrySubDvsn          ← V000, kept
+      AdrLine1/AdrLine2                     ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYH-ZSTRA, was empty)</strong>   ← MODIFY row 17
+      <strong>BldgNb    (FPAYH-ZSTRA[60..])</strong>        ← INSERT row 18
+    CdtrAgt/.../PstlAdr
+      StrtNm/TwnNm/CtrySubDvsn/Ctry         ← V000, kept
+      AdrLine                               ← V000, suppressed by XSLT
+      <strong>PstCd     (FPAYH-ZBPST)</strong>              ← INSERT row 19
+      <strong>BldgNb    (FPAYH-ZBSTR[60..])</strong>        ← INSERT row 20
+    ...
+    Dbtr (alt-mode)/PstlAdr
+      AdrLine × 3                           ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYHX-REF01[0..60])</strong>      ← INSERT row 12
+      <strong>BldgNb    (FPAYHX-REF01[60..80])</strong>     ← INSERT row 13
+      <strong>PstCd     (FPAYHX-REF01[80..90])</strong>     ← INSERT row 14
+      <strong>TwnNm     (FPAYHX-REF06[0..40])</strong>      ← INSERT row 15
+      <strong>Ctry      (FPAYHX-LAND1)</strong>             ← INSERT row 16</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;Dbtr&gt; (primary)
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;FR&lt;/Ctry&gt;
+      &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+      &lt;PstCd&gt;75007&lt;/PstCd&gt;
+                                          ← AdrLine × 3 suppressed
+      &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt; ← new
+      &lt;BldgNb&gt;7&lt;/BldgNb&gt;                 ← new
+    &lt;/PstlAdr&gt;
+  ...
+  &lt;UltmtCdtr&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;BR&lt;/Ctry&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;PstCd&gt;...&lt;/PstCd&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+                                          ← AdrLines suppressed
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;               ← now populated
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+    &lt;/PstlAdr&gt;
+  &lt;/UltmtCdtr&gt;
+  &lt;CdtrAgt&gt;&lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                 ← new
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;&lt;/CdtrAgt&gt;
+  ...
+  &lt;Dbtr&gt; (alt PstlAdrMor)
+    &lt;PstlAdr&gt;
+                                          ← AdrLines suppressed
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;               ← new
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                 ← new
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;                 ← new
+      &lt;Ctry&gt;FR&lt;/Ctry&gt;                    ← new
+    &lt;/PstlAdr&gt;
+  &lt;/Dbtr&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>CITI bridge read-back</strong>: 4 INSERT entry points + 1 MODIFY (UltmtCdtr/StrtNm gets ZSTRA source). Total: 9 tree-row operations = 9 new/changed XML tags. AdrLines stay in the tree but the CGI_XML_CT_XSLT post-processor strips them at output time — no DMEE_TREE_COND empty-suppress needed (unlike SEPA).</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">CITI Step A · PURGE + CREATE</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → Tree type = <code>PAYM</code> + Format tree = <code>/CITI/XML/UNESCO/DC_V3_01</code> → Display → confirm V000 (Active) + dormant V001 (Maintenance)</li>
+        <li>Change → Maintenance version → <strong>Tree → Versions → Delete Version</strong> 001 → Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code> (same retrofit transport as SEPA)</li>
+        <li><strong>Tree → Versions → Create Version</strong> 000 → 001 → Save → transport <code>D01K-V001-CITI-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step B · 2 INSERTs primary Dbtr + 5 INSERTs alt-Dbtr + 1 MODIFY UltmtCdtr/StrtNm + 1 INSERT UltmtCdtr/BldgNb + 2 INSERTs CdtrAgt</p>
+      <ol style="font-size:12px">
+        <li>Switch tree view to V001. Navigate to <strong>Dbtr-primary/PstlAdr</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code> (primary path)</li>
+        <li>INSERT StrtNm (FPAYHX REF01[0..60] · matrix row 10) + BldgNb (FPAYHX REF01[60..80] · row 11). <strong>NO DMEE_TREE_COND needed</strong> — XSLT auto-removes empty.</li>
+        <li>Navigate to <strong>Dbtr-altMor/PstlAdr</strong> (alternate path PstlAdrMor in same tree)</li>
+        <li>INSERT 5 nodes (matrix rows 12–16): StrtNm, BldgNb, PstCd, TwnNm, Ctry — full structured subtree, since alt-mode currently has only 3 AdrLines</li>
+        <li>Navigate to <strong>UltmtCdtr/PstlAdr</strong>: <code>... &gt; CdtTrfTxInf &gt; UltmtCdtr &gt; PstlAdr</code></li>
+        <li><strong>MODIFY existing StrtNm node</strong>: double-click the empty StrtNm row → set MP_SC_TAB=<code>FPAYH</code>, MP_SC_FLD=<code>ZSTRA</code>, LENGTH=<code>70</code> (matrix row 17, claim 99 — Worldlink BRL UltmtCdtr resolved system-driven)</li>
+        <li>INSERT BldgNb under UltmtCdtr/PstlAdr (FPAYH ZSTRA[60..75] · matrix row 18)</li>
+        <li>Navigate to <strong>CdtrAgt/.../PstlAdr</strong>: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code></li>
+        <li>INSERT PstCd (FPAYH ZBPST · matrix row 19) + BldgNb (FPAYH ZBSTR[60..] · row 20)</li>
+        <li>Save → transport <code>D01K-V001-CITI-01</code></li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CITI Step B verification</strong>: count of VERSION=001 nodes = 610 + 9 = 619. UltmtCdtr StrtNm node confirms MP_SC_FLD='ZSTRA' (was empty in V000). Run F110 simulator on a Worldlink BRL run to confirm UltmtCdtr/StrtNm now populates.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step C · ACTIVATE V001</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → open <code>/CITI/XML/UNESCO/DC_V3_01</code> → <strong>Tree → Versions → Activate Version</strong> → 001 → confirm</li>
+        <li>Save → cutover transport (recommended: stagger after SEPA cutover validates by ≥14 days)</li>
+        <li>From cutover, every F110 CITI run (CIT01/CIT04/CIT21, payment methods L/R) produces V001 XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>CITI rollback</strong>: same dialog, activate V000. Atomic flip back.</p>
+      <p style="font-size:11px;color:#475569"><strong>CITI code change required: NONE</strong>. The <code>/CITIPMW/V3_GET_CDTR_BLDG</code> exit and CGI_XML_CT_XSLT post-processor are SAP-standard and unchanged. Pattern A guard does NOT apply to CITI (CITI does not use YCL_IDFI_CGI_DMEE_FALLBACK).</p>
+    </div>
+    </div>
+<div id="tab-dmee-tree-cgi" class="content">
+    <div class="section">
+      <h3>Tree 3 · /CGI_XML_CT_UNESCO — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for cross-tree concepts (version mechanic, three operations, V000 baseline cross-references). This sub-tab covers Tree 3 V001 work only.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 3 of 4 · <code>/CGI_XML_CT_UNESCO</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 631 nodes V000 → 635 nodes V001. Bank: SocGen for non-SEPA (USD/EUR/GBP) + CGI member banks. Format: CGI XML cross-bank. Heavy BAdI dispatch — 239 nodes route through <code>FI_CGI_DMEE_EXIT_W_BADI</code> → <code>YCL_IDFI_CGI_DMEE_*</code> classes. <strong>This is the only tree requiring an ABAP code change (Pattern A guard).</strong> Empty Element Processing TBD (likely Do-Not-Remove like SEPA, no XSLT — verify Phase 2). PPC dispatch tags (<code>InstrInf</code>, <code>Ustrd</code>) MUST be preserved untouched.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI bridge in parallel — tx DMEE indentation (left) ↔ XML emitted (right), aligned by level</p>
+      <p style="font-size:12px;color:#475569">CGI tree has 631 nodes — only the CdtrAgt/PstlAdr branch changes in V001. Dbtr, Cdtr, UltmtCdtr, UltmtDbtr are already fully structured via BAdI dispatch and are not touched. PPC dispatch tags (<code>InstrInf</code>, <code>Ustrd</code>) sit elsewhere in the tree and MUST remain unchanged.</p>
+
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — V000 today (UI)</th><th style="width:50%">F110 output — V000 today (XML)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    Dbtr/PstlAdr                            ← already structured
+    DbtrAcct/Id/IBAN
+    DbtrAgt/FinInstnId
+    CdtTrfTxInf
+      Cdtr/PstlAdr                          ← already structured
+      <strong>CdtrAgt</strong>                              ← INSERT TARGET (only V001 work)
+        FinInstnId
+          BIC
+          Nm
+          <strong>PstlAdr</strong>
+            Ctry      (FPAYHX-ZBISO)
+            AdrLine   (FPAYH-ZBSTR)
+            AdrLine   (FPAYH-ZBORT)
+            AdrLine1  (BAdI FI_CGI_DMEE_EXIT_W_BADI)
+            AdrLine2  (BAdI FI_CGI_DMEE_EXIT_W_BADI)
+      UltmtCdtr/PstlAdr                     ← already structured
+      RmtInf/Ustrd  ← PPC tags, DO NOT TOUCH</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;PmtInf&gt;
+    &lt;Dbtr&gt;...&lt;/Dbtr&gt;
+    &lt;DbtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;
+    &lt;DbtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;...
+    &lt;CdtTrfTxInf&gt;
+      &lt;Cdtr&gt;...&lt;/Cdtr&gt;
+      &lt;CdtrAgt&gt;
+        &lt;FinInstnId&gt;
+          &lt;BIC&gt;GTBINGLA&lt;/BIC&gt;
+          &lt;Nm&gt;GUARANTY TRUST BANK PLC&lt;/Nm&gt;
+          &lt;PstlAdr&gt;
+            &lt;Ctry&gt;NG&lt;/Ctry&gt;
+            &lt;AdrLine&gt;635 AKIN ADESOLA STREET&lt;/AdrLine&gt;
+            &lt;AdrLine&gt;LAGOS&lt;/AdrLine&gt;
+          &lt;/PstlAdr&gt;
+        &lt;/FinInstnId&gt;
+      &lt;/CdtrAgt&gt;
+      &lt;UltmtCdtr&gt;...&lt;/UltmtCdtr&gt;
+      &lt;RmtInf&gt;&lt;Ustrd&gt;PPC...&lt;/Ustrd&gt;...   ← PPC dispatch
+    &lt;/CdtTrfTxInf&gt;</pre></td>
+        </tr>
+        <tr><th>tx DMEE — V001 (UI, after Step B)</th><th>F110 output — V001 (XML, after Phase 5 cutover)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">    Cdtr/PstlAdr                          ← unchanged
+    CdtrAgt/FinInstnId/<strong>PstlAdr</strong>
+      Ctry        (FPAYHX-ZBISO)            ← V000, kept
+      AdrLine     (FPAYH-ZBSTR)             ← V000, suppressed (cond)
+      AdrLine     (FPAYH-ZBORT)             ← V000, suppressed (cond)
+      AdrLine1    (BAdI)                    ← V000, suppressed (cond)
+      AdrLine2    (BAdI)                    ← V000, suppressed (cond)
+      <strong>StrtNm      (FPAYH-ZBSTR)</strong>             ← INSERT row 21
+      <strong>BldgNb      (FPAYH-ZBSTR[60..])</strong>       ← INSERT row 22
+      <strong>PstCd       (FPAYH-ZBPST)</strong>             ← INSERT row 23
+      <strong>TwnNm       (FPAYH-ZBORT)</strong>             ← INSERT row 24
+    UltmtCdtr/PstlAdr                       ← unchanged
+    RmtInf/Ustrd  ← PPC tags, UNCHANGED
+
+(BAdI: YCL_IDFI_CGI_DMEE_FALLBACK_CM001
+       Pattern A 3-line guard added — row 26)</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;CdtrAgt&gt;
+    &lt;FinInstnId&gt;
+      &lt;BIC&gt;GTBINGLA&lt;/BIC&gt;
+      &lt;Nm&gt;GUARANTY TRUST BANK PLC&lt;/Nm&gt;
+      &lt;PstlAdr&gt;
+        &lt;Ctry&gt;NG&lt;/Ctry&gt;
+                                          ← 4 AdrLines suppressed
+        &lt;StrtNm&gt;635 AKIN ADESOLA&lt;/StrtNm&gt; ← new
+        &lt;BldgNb&gt;635&lt;/BldgNb&gt;             ← new
+        &lt;PstCd&gt;...&lt;/PstCd&gt;               ← new
+        &lt;TwnNm&gt;LAGOS&lt;/TwnNm&gt;             ← new
+      &lt;/PstlAdr&gt;
+    &lt;/FinInstnId&gt;
+  &lt;/CdtrAgt&gt;
+  ...
+  &lt;RmtInf&gt;&lt;Ustrd&gt;PPC...&lt;/Ustrd&gt;...    ← UNCHANGED</pre></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>CGI bridge read-back</strong>: 1 INSERT entry point (CdtrAgt/.../PstlAdr) + 4 new tags + Pattern A BAdI guard (matrix row 26 — the only ABAP touch in V001). Empty-suppress condition required on each new node IF Empty Element Processing setting is "Do Not Remove" (TBD Phase 2 verification — see CGI tree-level tab settings stub above).</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">CGI Step A · PURGE + CREATE</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → Tree type = <code>PAYM</code> + Format tree = <code>/CGI_XML_CT_UNESCO</code> → Display → confirm V000 + dormant V001</li>
+        <li>Change → Maintenance → <strong>Delete Version</strong> 001 → Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code></li>
+        <li><strong>Create Version</strong> 000 → 001 → Save → transport <code>D01K-V001-CGI-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step B · 4 INSERTs CdtrAgt + 4 DMEE_TREE_COND + Pattern A BAdI guard (the ONLY ABAP change in V001)</p>
+      <ol style="font-size:12px">
+        <li>Switch tree view to V001. Navigate to <strong>CdtrAgt/.../PstlAdr</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code></li>
+        <li>INSERT StrtNm (FPAYH ZBSTR[0..70] · matrix row 21) + BldgNb (FPAYH ZBSTR[60..75] · row 22) + PstCd (FPAYH ZBPST · row 23) + TwnNm (FPAYH ZBORT · row 24)</li>
+        <li>For each of the 4 new nodes: add DMEE_TREE_COND empty-suppress condition (likely needed, verify Empty Element Processing setting first)</li>
+        <li>Save → transport <code>D01K-V001-CGI-01</code></li>
+        <li><strong>SEPARATE WORKBENCH TRANSPORT — Pattern A guard</strong>: SE24 → open class <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> → method <code>CM001::GET_CREDIT</code> → add 3-line guard around the SocGen Cdtr name-overflow logic (matrix row 26):
+          <pre style="font-size:10px;margin:4px 0">WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.            " ← V001 GUARD: only prepend if StrtNm empty
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   " V000 legacy preserved
+  ENDIF.</pre>
+        Activate → transport prompt (Workbench K) → assign to <code>D01K-BADI-FIX-01</code>. Reviewer: N_MENARD.</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CGI Step B verification</strong>: VERSION=001 node count = 631+4=635. CdtrAgt/PstlAdr now has 5+4=9 children. <strong>PPC regression check (CRITICAL)</strong>: confirm <code>InstrForCdtrAgt/InstrInf</code> and <code>RmtInf/Ustrd</code> dispatch behavior unchanged for AE/BH/CN/ID/IN/JO/MA/MY/PH country payments. Use the deterministic PPC validation script (Gold DB query against YTFI_PPC_STRUC + T015L) to compare V000 vs V001 expected outputs.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step C · ACTIVATE V001</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → open <code>/CGI_XML_CT_UNESCO</code> → <strong>Activate Version</strong> 001 → confirm</li>
+        <li>Save → cutover transport (recommend stagger after SEPA + CITI validate)</li>
+        <li>From cutover, every F110 CGI run (SOG01 USD/EUR/GBP, SOG03 GBP, payment methods N/J) produces V001 XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>CGI rollback</strong>: same dialog, activate V000. Pattern A guard is backward-compatible (V000 path unaffected by guard since c_value will not be initial under V000 — guard only fires for V001 structured emission).</p>
+      <p style="font-size:11px;color:#475569"><strong>CGI code change required: YES — Pattern A 3-line guard</strong> in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Workbench transport <code>D01K-BADI-FIX-01</code>. Reviewer N_MENARD. Backward-compatible with V000.</p>
+    </div>
+    </div>
+<div id="tab-dmee-tree-cgi1" class="content">
+    <div class="section">
+      <h3>Tree 4 · /CGI_XML_CT_UNESCO_1 — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for cross-tree concepts (version mechanic, three operations, V000 baseline cross-references). This sub-tab covers Tree 4 V001 work only.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 4 of 4 · <code>/CGI_XML_CT_UNESCO_1</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 632 nodes V000 (D01) / 639 nodes V000 (P01) → drift identified Session #63 (claim 111 — D01-RETROFIT-01 must reconcile 8 P01-only nodes + 1 D01-only + 3 changed before V001). After retrofit + V001: 643 nodes. Bank: same as CGI (SocGen for non-SEPA via the variant routing). Format: CGI XML variant. <strong>FIRSTNODE_ID identical to <code>/CGI_XML_CT_UNESCO</code></strong> → CdtrAgt fix from CGI parent propagates automatically. No separate INSERT operations needed.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI_1 bridge in parallel — tx DMEE indentation (left) ↔ XML emitted (right), aligned by level</p>
+      <p style="font-size:12px;color:#475569">CGI_1 is a SYNC twin of <code>/CGI_XML_CT_UNESCO</code> — FIRSTNODE_ID inheritance means the V001 structured CdtrAgt nodes propagate automatically when CGI parent saves. The XML output for CGI_1 is therefore IDENTICAL to CGI parent's V001 output (shown in Tree 3 above) — same tags, same source bindings, same ordering.</p>
+
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — V001 (UI, after CGI parent Step B propagates)</th><th style="width:50%">F110 output — V001 (XML, after Phase 5 cutover)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    Dbtr/PstlAdr                            ← unchanged (FIRSTNODE_ID twin of CGI)
+    CdtTrfTxInf
+      Cdtr/PstlAdr                          ← unchanged
+      <strong>CdtrAgt/FinInstnId/PstlAdr</strong>           ← SYNC from CGI parent
+        Ctry        (FPAYHX-ZBISO)
+        StrtNm      (FPAYH-ZBSTR)           ← inherited from CGI row 21
+        BldgNb      (FPAYH-ZBSTR[60..])     ← inherited from CGI row 22
+        PstCd       (FPAYH-ZBPST)           ← inherited from CGI row 23
+        TwnNm       (FPAYH-ZBORT)           ← inherited from CGI row 24
+      UltmtCdtr/PstlAdr                     ← unchanged
+      RmtInf/Ustrd  ← PPC tags, UNCHANGED
+
+PRECONDITION: D01-RETROFIT-01 must complete the
+12-delta surgical fix on CGI_1 V000 first (claim 111).
+Until then, V001 work on CGI_1 is blocked.</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;CdtrAgt&gt;
+    &lt;FinInstnId&gt;
+      &lt;BIC&gt;...&lt;/BIC&gt;
+      &lt;Nm&gt;...&lt;/Nm&gt;
+      &lt;PstlAdr&gt;
+        &lt;Ctry&gt;...&lt;/Ctry&gt;
+                                          ← AdrLines suppressed
+        &lt;StrtNm&gt;...&lt;/StrtNm&gt;             ← from CGI parent SYNC
+        &lt;BldgNb&gt;...&lt;/BldgNb&gt;             ← from CGI parent SYNC
+        &lt;PstCd&gt;...&lt;/PstCd&gt;               ← from CGI parent SYNC
+        &lt;TwnNm&gt;...&lt;/TwnNm&gt;               ← from CGI parent SYNC
+      &lt;/PstlAdr&gt;
+    &lt;/FinInstnId&gt;
+  &lt;/CdtrAgt&gt;
+  ...
+  &lt;RmtInf&gt;&lt;Ustrd&gt;PPC...&lt;/Ustrd&gt;...    ← UNCHANGED</pre></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>CGI_1 bridge read-back</strong>: zero direct tree-row operations on CGI_1 — the SYNC propagation handles it via FIRSTNODE_ID inheritance from <code>/CGI_XML_CT_UNESCO</code>. Step B verification SQL confirms the 4 atoms appear under CGI_1 CdtrAgt/PstlAdr after CGI parent's Save. Same Pattern A BAdI guard applies (same class — YCL_IDFI_CGI_DMEE_FALLBACK).</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">CGI_1 Step A · PURGE + CREATE (after CGI_1 drift retrofit)</p>
+      <ol style="font-size:12px">
+        <li><strong>PRECONDITION</strong>: D01-RETROFIT-01 must complete the CGI_1 12-delta surgical fix first (purge SCB N_6366307580 + restore 8 ONLY_P01 AdrLine nodes + revert N_0711160730 Nm Z-field source if Marlies confirms). Until this completes, V001 work on CGI_1 is blocked.</li>
+        <li>tx <code>DMEE</code> → Tree type = <code>PAYM</code> + Format tree = <code>/CGI_XML_CT_UNESCO_1</code> → Display → confirm V000 (post-retrofit) + dormant V001</li>
+        <li>Change → Maintenance → <strong>Delete Version</strong> 001 → Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code></li>
+        <li><strong>Create Version</strong> 000 → 001 → Save → transport <code>D01K-V001-CGI1-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI_1 Step B · SYNC verification (no separate INSERTs — rides on CGI parent)</p>
+      <ol style="font-size:12px">
+        <li>After saving CGI parent's V001 (Tree 3 above), open <code>/CGI_XML_CT_UNESCO_1</code> in V001 view</li>
+        <li>Navigate to <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code></li>
+        <li>Verify the 4 new structured atoms (StrtNm, BldgNb, PstCd, TwnNm) appear automatically — they propagate via FIRSTNODE_ID inheritance from <code>/CGI_XML_CT_UNESCO</code></li>
+        <li>If propagation works: no transport needed (CGI_1 picks up changes from CGI). If propagation does NOT work as expected (TBD verification): add the same 4 INSERTs manually under CGI_1 CdtrAgt/PstlAdr → transport <code>D01K-V001-CGI1-01</code></li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CGI_1 Step B verification</strong>: <code>SELECT NODE_ID, MP_SC_FLD FROM DMEE_TREE_NODE WHERE TREE_ID='/CGI_XML_CT_UNESCO_1' AND VERSION='001' AND PARENT_ID = N_0693479130</code> returns the 4 new atoms (matrix row 25 SYNC).</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI_1 Step C · ACTIVATE V001</p>
+      <ol style="font-size:12px">
+        <li>Same dialog as CGI parent. Activate Version 001 on <code>/CGI_XML_CT_UNESCO_1</code></li>
+        <li>Save → cutover transport (recommend bundle with CGI parent cutover)</li>
+        <li>From cutover, every F110 CGI_1 routed run produces V001 XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>CGI_1 rollback</strong>: same dialog, activate V000.</p>
+      <p style="font-size:11px;color:#475569"><strong>CGI_1 code change required: NONE</strong>. Pattern A guard from CGI parent applies automatically (same BAdI class).</p>
+    </div>
+    </div>
+
 <div id="tab-e2e-flow" class="content">
     <div class="section">
       <h3>End-to-End Flow Map — all components connected</h3>
@@ -1852,6 +3032,158 @@ OBPM4 selection variant ── exists for (paying-cocode, format)      [311 rows
        ▼
 File written via SAPFPAYM driver.</pre>
     <p>Read this in plain English: <em>SAP first asks T042Z "given this country and payment method, which format do I use?". If T042Z returns nothing, F110 cannot pay. If it returns a format, SAP confirms in OBPM1 that the format exists and is DMEE-flagged, looks up the actual tree in DMEE_TREE_HEAD, finds an OBPM4 variant with file-output settings, and finally writes the file.</em> Break any one of these steps and the chain fails.</p>
+  </div>
+
+  <div class="section">
+    <h3>Per-tree current state — how each DMEE tree is structured today (V000)</h3>
+
+    <p>Before talking about what V001 changes, this section captures <strong>how the 4 in-scope DMEE trees are wired and behaving in P01 today</strong>. The V001 deltas (in the <em>Change Strategy → DMEE Configuration</em> tab) only make sense once you can see V000 baseline. Each tree's subsection below covers: the actual tree structure as tx DMEE Display shows it, the tree-level tab settings (Format attributes / Levels / Sort-key / File Data / Post Processing), and the hierarchy stratification (how many nodes total vs how many actually carry data).</p>
+
+    <h4>Background — the 6 tabs on the DMEE Display Format Tree screen</h4>
+    <p>tx DMEE → Display Format Tree always shows 6 tabs: <strong>Administrative data · Format attributes · Levels · Sort/key fields · File Data · Post Processing</strong>. They govern how a tree behaves at runtime — the bind to ABAP source structures, the nesting depth, sort/grouping, character validation, and what happens to empty XML elements. These settings are <strong>tree-level</strong>, not node-level. They are part of the V000 contract and survive into V001 unchanged unless explicitly touched.</p>
+
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>One tab setting matters disproportionately for V001</strong>: <strong>Post Processing → Empty Element Processing</strong>. If set to "Do Not Remove" (as in /SEPA_CT_UNES, claim 120), empty XML tags ARE emitted to the file. V001 INSERTs that bind to source fields which can be empty for some payments must therefore carry per-node DMEE_TREE_COND empty-suppress conditions. CITI uses XSLT post-processing instead (CGI_XML_CT_XSLT auto-removes empty leaves) so DMEE_TREE_COND is not needed. CGI / CGI_1 settings TBD Phase 2 verification.</p>
+
+    <h4 style="color:#0369a1;margin-top:16px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 1 of 4 · <code>/SEPA_CT_UNES</code> current state</h4>
+
+    <p style="font-size:12px"><strong>95 nodes V000</strong> · pain.001.001.03 · SocGen SEPA-zone EUR (SOG01 method S) · 1,703-payment batches per cycle (claim 113). Empty Element Processing = "Do Not Remove" → empty tags emitted as-is.</p>
+
+    <h5 style="color:#0d9488">SEPA tree structure (ASCII view of tx DMEE Display)</h5>
+    <pre style="font-size:11px;line-height:1.4">DMEE tree: properties
+└── Document
+    ├── xmlns (ISO, Para)
+    ├── xmlns:xsi (ISO, Para)
+    ├── xsi:schemaLocation
+    └── CstmrCdtTrfInitn                  ← root of the credit-transfer message
+        ├── GrpHdr                        ← message-level header (1 per file)
+        │   ├── MsgId
+        │   ├── CreDtTm (YYYY-MM-DDTtime)
+        │   ├── NbOfTxs
+        │   ├── CtrlSum
+        │   └── InitgPty
+        │       └── Nm (AUST1, NAMEZ)     ← UNESCO identity, message-level
+        └── PmtInf                        ← payment-instruction batch (1 per run)
+            ├── PmtInfId
+            ├── PmtMtd
+            ├── NbOfTxs  (TX2)
+            ├── CtrlSum  (IA2)
+            ├── PmtTpInf → SvcLvl/Cd
+            ├── ReqdExctnDt
+            ├── <strong>Dbtr</strong>     ← BATCH-LEVEL DEBTOR (UNESCO at PmtInf level)
+            │   ├── Nm
+            │   └── <strong>PstlAdr</strong> (Ctry, AdrLine)   ← path: Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr
+            ├── DbtrAcct → Id/IBAN, Ccy
+            ├── DbtrAgt → FinInstnId/BIC
+            ├── ChrgBr
+            └── CdtTrfTxInf  (TX)         ← PER-TRANSACTION block (1 per payment)
+                ├── PmtId → InstrId (DOC1T-DOC1R(1..rest)), EndToEndId (PAYD2/NOTPROVIDED)
+                ├── Amt → InstdAmt (IA), Ccy
+                ├── UltmtDbtr → Nm        ← Name only — no PstlAdr (intentional)
+                ├── CdtrAgt → FinInstnId/BIC   ← Bank — BIC only (IBAN routing)
+                ├── <strong>Cdtr</strong>      ← BENEFICIARY at CdtTrfTxInf level
+                │   ├── Nm (KOINH, ZNME1)      ← Name = concatenation of 2 leaf atoms
+                │   └── <strong>PstlAdr</strong> (Ctry, AdrLine, AdrLine) ← path: Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr
+                ├── CdtrAcct → Id/IBAN
+                ├── UltmtCdtr → Nm        ← Name only — no PstlAdr (intentional)
+                └── RmtInf
+</pre>
+
+    <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+      <strong>Three structural details to anchor</strong>:
+      <br>(1) <strong><code>&lt;PstlAdr&gt;</code> appears twice in this tree</strong> — once at PmtInf level (UNESCO HQ for the whole batch) and once at CdtTrfTxInf level (per-transaction beneficiary). Different parents, independently configured.
+      <br>(2) <strong><code>&lt;UltmtDbtr&gt;</code> and <code>&lt;UltmtCdtr&gt;</code> only carry <code>&lt;Nm&gt;</code></strong> — no PstlAdr branch. ISO 20022 permits identifying a party by name alone for ultimate-debtor / ultimate-creditor.
+      <br>(3) <strong><code>&lt;Cdtr&gt;&lt;Nm&gt;</code> has two leaf atoms</strong> — KOINH (account-holder name from bank-master) and ZNME1 (UNESCO custom Z-name field). The Name produced is a concatenation, not a single bind.
+    </p>
+
+    <div style="display:flex;gap:8px;margin:14px 0;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_top.png" alt="SEPA tree top">
+        <div class="dme-shot-cap"><b>tree_top.png</b> — Document → CstmrCdtTrfInitn → GrpHdr (with InitgPty/Nm AUST1+NAMEZ) → start of PmtInf.</div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_mid.png" alt="SEPA tree mid">
+        <div class="dme-shot-cap"><b>tree_mid.png</b> — PmtInf body: Dbtr/PstlAdr (Ctry+AdrLine), DbtrAcct, DbtrAgt/BIC, CdtTrfTxInf entry.</div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_bottom.png" alt="SEPA tree bottom">
+        <div class="dme-shot-cap"><b>tree_bottom.png</b> — CdtTrfTxInf: UltmtDbtr/Nm, CdtrAgt/BIC, Cdtr/Nm (KOINH+ZNME1) + Cdtr/PstlAdr, CdtrAcct/IBAN, UltmtCdtr/Nm, RmtInf.</div>
+      </div>
+    </div>
+
+    <h5 style="color:#0d9488">SEPA — visual anchor: Dbtr/PstlAdr selected (V001 INSERT entry point #1)</h5>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_dbtr_pstladr_highlighted.png" alt="DMEE tree with Dbtr/PstlAdr highlighted">
+    <div class="dme-shot-cap"><b>unesco_dmee_dbtr_pstladr_highlighted.png — Dbtr/PstlAdr selected.</b> The operator clicked through <code>PmtInf → Dbtr → PstlAdr</code>; the orange highlight + arrow marker shows the current selection. Children (Ctry, AdrLine) at indentation depth 5 in the UI = nesting depth 5 in the XML output.</div>
+
+    <h5 style="color:#0d9488">SEPA — the 6 tabs detail (V000 settings)</h5>
+    <p style="font-size:12px;color:#475569">Tab 1 (Administrative data): Tree type=PAYM, Format tree=/SEPA_CT_UNES, Version=0, Author M_SPRONK, Created 27.11.2013, Last Changed 23.11.2021. Operationally frozen 4+ years.</p>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 2 · Format attributes — binding to the ABAP runtime structure</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_format_attributes.png" alt="DMEE Format attributes tab">
+    <div class="dme-shot-cap"><b>format_attributes.png</b> — <code>Fmt-spec.strct = FPM_SEPA</code>. The DMEE engine glues to ABAP via FPM_SEPA at the top + FPAYH/FPAYHX/FPAYP at per-node level. "Without accompanying sheet" — electronic-only, no paper.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 3 · Levels — nesting depth + repetition</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_levels.png" alt="DMEE Levels tab">
+    <div class="dme-shot-cap"><b>levels.png</b> — Level 0 = 9,999,999 · Level 1 = <strong>1</strong> (one CstmrCdtTrfInitn per file) · Level 2 = 9,999,999 (PmtInf unlimited) · Level 3 = 9,999,999 (CdtTrfTxInf unlimited per PmtInf). This is what supports 1,703-payment batches.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 4 · Sort/key fields — payment grouping</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_sort_key.png" alt="DMEE Sort/key tab">
+    <div class="dme-shot-cap"><b>sort_key.png</b> — 4 keys all from FPAYH: ZBUKR (Level 1) · AUSFD + HKTID (Level 2) · DOC1R (Level 3). F110 sorts open invoices by company code → date → house bank → document reference, then writes them into XML in that order.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 5 · File Data — character validation</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_file_data.png" alt="DMEE File Data tab">
+    <div class="dme-shot-cap"><b>file_data.png</b> — Disallowed chars: <code>^&quot;$%&amp;{}=`~!?º'+*\.:;,_()[]#&lt;&gt;</code>. Engine sanitises field values before emission to match SocGen's pain.001 character whitelist.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 6 · Post Processing (the load-bearing one)</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_post_processing.png" alt="DMEE Post Processing tab">
+    <div class="dme-shot-cap"><b>post_processing.png</b> — <strong>Empty Element Processing = "Do Not Remove"</strong> · XSLT Program empty. Empty tags ARE emitted. This is why V001 INSERTs need per-node DMEE_TREE_COND empty-suppress conditions (claim 120).</div>
+
+    <h5 style="color:#0d9488">SEPA — the hierarchy collapse (95 nodes stratified)</h5>
+    <p style="font-size:12px">tx DMEE shows /SEPA_CT_UNES with 95 rows. <strong>It looks like a lot — it isn't, because the tree is a hierarchy, not a flat list.</strong> Stratified by depth level:</p>
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>Level</th><th>What lives here</th><th>Approx node count</th></tr>
+      <tr><td><b>0</b></td><td><code>DMEE tree: properties</code> root</td><td>1</td></tr>
+      <tr><td><b>1</b></td><td><code>Document</code> + namespace declarations</td><td>~5</td></tr>
+      <tr><td><b>2</b></td><td><code>CstmrCdtTrfInitn</code></td><td>1</td></tr>
+      <tr><td><b>3</b></td><td><code>GrpHdr</code> + <code>PmtInf</code></td><td>2</td></tr>
+      <tr><td><b>4</b></td><td>GrpHdr children (5) + PmtInf children including Dbtr (~11)</td><td>~16</td></tr>
+      <tr style="background:#fef3c7"><td><b>5</b></td><td>Inside Dbtr: Nm + <strong>PstlAdr</strong>. Inside CdtTrfTxInf: PmtId, Amt, UltmtDbtr, CdtrAgt, Cdtr, CdtrAcct, UltmtCdtr, RmtInf (~10)</td><td>~12</td></tr>
+      <tr style="background:#fef3c7"><td><b>6</b></td><td>Inside Dbtr/PstlAdr: Ctry, AdrLine. Inside Cdtr: Nm + <strong>PstlAdr</strong></td><td>~25</td></tr>
+      <tr style="background:#dcfce7"><td><b>7</b></td><td>Leaves under PstlAdr containers + leaves under Nm/EndToEndId/PmtId</td><td>~33</td></tr>
+      <tr><td colspan="3" style="background:#f0f4f8"><b>Total V000</b> ≈ 95 nodes · <b>V001 INSERT targets</b> = 2 (the two PstlAdr containers)</td></tr>
+    </table>
+    <p style="background:#e8f5e9;border-left:5px solid #1abc9c;padding:10px 14px;margin:10px 0;border-radius:3px;font-size:12px"><strong>The mental simplification</strong>: 95 nodes, only 2 matter for V001 (the two PstlAdr). Everything above level 5 is frozen wrapper structure; everything else is leaf data, mostly cloned untouched in V001. <strong>Same principle generalises across all 4 trees</strong>: each has its own large total, but a small number of PstlAdr containers carry the entire V001 delta.</p>
+
+    <h5 style="color:#0d9488">SEPA — same TECH_NAME at different levels (path disambiguation)</h5>
+    <p style="font-size:12px">Looking at the tree screen carefully, you see <strong>repeated tag names at different depths</strong>. The DMEE engine emits exactly what the path says, so identifying a node by TECH_NAME alone is ambiguous. The level in the UI = the position in the XML.</p>
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>TECH_NAME</th><th>Where it appears (UI path)</th><th>What XML element</th></tr>
+      <tr><td><code>Nm</code></td><td>GrpHdr → InitgPty → Nm</td><td>UNESCO message-level identity</td></tr>
+      <tr><td><code>Nm</code></td><td>PmtInf → Dbtr → Nm</td><td>UNESCO batch-level debtor name</td></tr>
+      <tr><td><code>Nm</code></td><td>CdtTrfTxInf → Cdtr → Nm</td><td>Beneficiary name (per transaction)</td></tr>
+      <tr><td><code>Nm</code></td><td>CdtTrfTxInf → UltmtCdtr → Nm</td><td>Alternative payee name</td></tr>
+      <tr><td><code>NbOfTxs</code></td><td>GrpHdr → NbOfTxs</td><td>file-level total payment count</td></tr>
+      <tr><td><code>NbOfTxs</code></td><td>PmtInf → NbOfTxs (TX2 ref)</td><td>batch-level count</td></tr>
+      <tr style="background:#fef3c7"><td><code>PstlAdr</code></td><td>PmtInf → Dbtr → PstlAdr</td><td><strong>V001 INSERT TARGET #1</strong></td></tr>
+      <tr style="background:#fef3c7"><td><code>PstlAdr</code></td><td>CdtTrfTxInf → Cdtr → PstlAdr</td><td><strong>V001 INSERT TARGET #2</strong></td></tr>
+    </table>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 2 of 4 · <code>/CITI/XML/UNESCO/DC_V3_01</code> current state</h4>
+    <p style="font-size:12px"><strong>610 nodes V000</strong> · CITI proprietary XML · Citibank USD/CAD/Worldlink BRL/MGA/TND. Most-touched tree historically — 25 transports 2017-2024 (claim 72) → highest regression risk. Has CGI_XML_CT_XSLT post-processor → empty leaves auto-removed (no DMEE_TREE_COND needed). Heavy BAdI dispatch via FI_CGI_DMEE_EXIT_W_BADI for 31 nodes (~5%).</p>
+    <p style="font-size:12px;color:#475569"><strong>Existing structured parties in V000</strong>: Cdtr (full structured) · UltmtCdtr (Worldlink BRL — 7 source-bound nodes; StrtNm exists with empty source binding — Q3 RESOLVED via claim 99) · CdtrAgt (StrtNm + TwnNm + CtrySubDvsn + Ctry, missing PstCd + BldgNb). <strong>Existing unstructured parties</strong>: Dbtr-primary (TwnNm + PstCd + Ctry + 3 AdrLine, missing StrtNm + BldgNb), Dbtr-altMor / PstlAdrMor (3 AdrLine only).</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending</strong>: 6-tabs screenshots for CITI tree (especially Post Processing → confirm XSLT name + Empty-element setting), 4 tree-pane screenshots (one per V001 INSERT entry point). Hierarchy stratification analogous to SEPA: 610 nodes → ~6 PstlAdr-bearing parties (Dbtr-primary, Dbtr-altMor, Cdtr, UltmtCdtr, UltmtDbtr if used, CdtrAgt) → 4 V001 INSERT entry points. Full RFC analysis available in <code>knowledge/domains/Payment/phase0/dmee_full/</code>.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 3 of 4 · <code>/CGI_XML_CT_UNESCO</code> current state</h4>
+    <p style="font-size:12px"><strong>631 nodes V000</strong> · CGI XML cross-bank · SocGen for non-SEPA (USD/EUR/GBP) + CGI member banks. Heavy BAdI dispatch — 239 nodes route through FI_CGI_DMEE_EXIT_W_BADI → YCL_IDFI_CGI_DMEE_FR/_DE/_IT/_UTIL/_FALLBACK classes. Empty Element Processing TBD Phase 2 (likely Do-Not-Remove like SEPA, no XSLT — verify).</p>
+    <p style="font-size:12px;color:#475569"><strong>Existing structured parties in V000</strong>: Dbtr (fully structured via BAdI), Cdtr (fully structured via BAdI), UltmtCdtr (fully structured), UltmtDbtr (fully structured). <strong>Existing unstructured party</strong>: CdtrAgt/FinInstnId/PstlAdr (Ctry + AdrLine + AdrLine + AdrLine1 + AdrLine2 — missing all 4 structured atoms StrtNm/BldgNb/PstCd/TwnNm). <strong>PPC dispatch tags</strong> (<code>InstrForCdtrAgt/InstrInf</code> for AE/CN, <code>RmtInf/Ustrd</code> for BH/ID/IN/JO/MA/MY/PH) wired in V000 — claim 116 — and MUST remain unchanged in V001.</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending</strong>: 6-tabs screenshots for CGI tree (especially Post Processing — TBD setting drives whether V001 INSERTs need DMEE_TREE_COND), 1 tree-pane screenshot of CdtrAgt/.../PstlAdr highlighted. Hierarchy: 631 nodes → 1 PstlAdr-bearing party needs V001 work (CdtrAgt only) → 1 V001 INSERT entry point.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 4 of 4 · <code>/CGI_XML_CT_UNESCO_1</code> current state</h4>
+    <p style="font-size:12px"><strong>632 nodes D01 V000 / 639 nodes P01 V000</strong> · CGI variant. <strong>Drift identified Session #63 (claim 111)</strong>: 8 P01-only nodes + 1 D01-only + 3 changed nodes between systems. D01-RETROFIT-01 must reconcile this 12-delta drift before any V001 work. FIRSTNODE_ID identical to <code>/CGI_XML_CT_UNESCO</code> → CdtrAgt fix from CGI parent propagates automatically via SYNC.</p>
+    <p style="font-size:12px;color:#475569"><strong>Same structured-vs-unstructured pattern as CGI parent</strong>: Dbtr/Cdtr/UltmtCdtr/UltmtDbtr already structured; CdtrAgt unstructured. Tree-level tab settings expected identical to CGI parent (FIRSTNODE_ID twin) but RFC byte-equality verification pending Phase 2.</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending (post-retrofit)</strong>: tree-pane screenshot only meaningful AFTER D01-RETROFIT-01 lands. 6-tabs screenshots optional — expected identical to CGI parent.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">Where to find the V001 changes for each tree</h4>
+    <p style="font-size:12px">The V001 changes (per-tree INSERT/MODIFY/SYNC operations + Step A/B/C walkthroughs + UI↔XML parallel bridges) live in the <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">Change Strategy → DMEE Configuration</a> tab. Each tree's V001 section there assumes the V000 baseline documented above.</p>
   </div>
 
   <div class="section">

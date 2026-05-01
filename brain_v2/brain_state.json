@@ -3,12 +3,12 @@
   "_stats": {
     "core_principles": 3,
     "objects": 278,
-    "rules": 105,
-    "claims": 116,
+    "rules": 107,
+    "claims": 120,
     "incidents": 7,
     "incident_records": 5,
     "domains": 14,
-    "known_unknowns": 41,
+    "known_unknowns": 42,
     "falsification_pending": 6,
     "user_questions_open": 0,
     "data_quality_open": 7,
@@ -2444,6 +2444,12 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "claim": "CL_IDFI_CGI_CALL05_FACTORY::GET_INSTANCE dispatches by country resolved from is_fpayhx-formi → format_properties.land1 → fpayhx-ubiso → fpayhx-ubnks. "
+        },
+        {
+          "id": 118,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "tx DMEE UI tree-pane indentation depth = XML output element nesting depth (1:1, no transformation). The DMEE tree IS the XML template, rendered as cli"
         }
       ],
       "knowledge_docs": [
@@ -2648,6 +2654,12 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "claim": "P01 active inventory anchored 2026-04-29: 4 active DMEE trees (SEPA/CITI/CGI/CGI_1) + bonus /CGI_XML_CT_UNESCO_BK; 2 Event 05 FMs (CITIPMW V3_PAYMEDIU"
+        },
+        {
+          "id": 118,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "claim": "tx DMEE UI tree-pane indentation depth = XML output element nesting depth (1:1, no transformation). The DMEE tree IS the XML template, rendered as cli"
         }
       ],
       "knowledge_docs": [
@@ -14537,6 +14549,56 @@
       "source_file": null,
       "derives_from_core_principle": "CP-003",
       "cp_link_reason": "Precision + evidence: claiming enforcement without per-layer audit is opinion masquerading as fact. The 5-layer audit forces evidence per layer, anchored in checkable Gold DB queries + extracted source greps."
+    },
+    {
+      "id": "feedback_dmee_path_addressing_in_operator_artifacts",
+      "rule": "In operator-facing artifacts (companion HTML, plan documents, design specs, training material, dry-run procedures), address DMEE tree nodes by their full path (Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr > StrtNm), NOT by their internal NODE_ID (e.g. N_4754354180). NODE_IDs are unique technical identifiers but are invisible to operators in the tx DMEE tree pane - operators navigate the tree by clicking through indentation levels, and the path they click is what unambiguously identifies a node. NODE_IDs are reserved for technical reference channels (v001_change_matrix.csv 'technical reference' columns, RFC verification SQL, brain claim evidence anchors). Same TECH_NAME values repeat at multiple levels in any DMEE tree (e.g. Nm appears under InitgPty/Dbtr/Cdtr/UltmtCdtr/UltmtDbtr; PstlAdr appears under Dbtr at PmtInf level AND under Cdtr at CdtTrfTxInf level), so addressing by TECH_NAME alone is ambiguous - always include the parent path in operator-facing wording.",
+      "why": "Session #65 user pushback (2026-04-30) on companion BCM_StructuredAddressChange.html: the bridge mapping section used 'Cdtr/PstlAdr (parent N_4754354180)' as the addressing convention. User explicit corrections: 'screen is not correctly map, we have multiple levels and names', 'we have a total desconection between the UI way of configurate levels and the XML emited'. Root cause: NODE_IDs are an artifact of the DMEE_TREE_NODE table schema, not part of the operator's mental model. When the operator opens tx DMEE Display Format Tree, they see indentation + TECH_NAME labels - never NODE_IDs. Using NODE_IDs in operator-facing artifacts forces a translation step that breaks the connection between UI configuration and XML output. Failure mode this rule prevents: future agents (or this agent in future sessions) reverting to NODE_ID addressing when documenting V001 / V002 / future bank-format changes, making the artifacts unusable for operators.",
+      "how_to_apply": "When writing or editing any DMEE-related operator-facing artifact: 1. Address each node by its full path from Document down to the leaf, e.g. Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr. 2. If multiple instances of the same TECH_NAME exist in the same tree, ALWAYS distinguish them by path (PmtInf > Dbtr > PstlAdr versus CdtTrfTxInf > Cdtr > PstlAdr). 3. NODE_IDs are PERMITTED only in technical-reference columns of CSVs/JSONs (e.g. v001_change_matrix.csv) and in brain claim evidence anchors where they pin RFC-extracted data to specific rows. 4. When showing UI <-> XML mappings, render the UI side as indented hierarchy with explicit path breadcrumbs and the XML side with matching nesting depth. The 1:1 visual alignment is the bridge. 5. The hierarchy collapse pattern (95-node tree -> 2 INSERT targets at level 5/6) is the operator's mental model - use it in any new DMEE design content. 6. Brain anchors: claim 117 (hierarchy collapse), claim 118 (UI=XML 1:1), claim 119 (path disambiguation), claim 120 (empty-suppress).",
+      "severity": "HIGH",
+      "created_session": 65,
+      "source_file": "Session #65 user pushback on BCM_StructuredAddressChange.html DMEE Configuration submenu",
+      "derives_from_core_principle": "CP-001",
+      "cp_link_reason": "CP-001 'Knowledge over velocity' - using NODE_IDs in operator-facing artifacts is faster to write (just paste from CSV) but loses the connection to the operator's mental model and UI navigation. The investment of writing path-addressed documentation once amortises across every operator who opens the artifact, and survives future bank-format changes because the path pattern is durable while NODE_IDs are tree-extraction-specific.",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "DMEE"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      }
+    },
+    {
+      "id": "feedback_companion_split_v000_baseline_from_v001_changes",
+      "rule": "When documenting a SAP migration project in the companion HTML (or any operator-facing artifact), split content into two clearly-distinct zones: (1) Current Solution / V000 baseline — how the system is wired and behaving today, organized per object (per tree, per program, per workflow), and (2) Change Strategy / V001 changes — the specific deltas the project introduces, also organized per object. Cross-reference between the two zones with explicit links so a reader looking at a V001 delta can jump to the V000 baseline for that same object, and vice versa. Do NOT mix V000 baseline content with V001 delta content in the same section — the cognitive cost of switching context line-by-line is high, and operators reading for one specific object end up scrolling through unrelated other-object material.",
+      "why": "Session #65 user pushback on the DMEE Configuration tab: 'maybe some information should be moved to Current Solution and only keep the specific changes here'. Root cause: the original tab mixed V000 baseline material (tree structure ASCII, 6-tabs settings, hierarchy stratification, screenshots of the today-state) with V001 delta material (per-target INSERTs, Step A/B/C walkthroughs, code-change indicators). Operators reading for ONE tree had to scroll through both kinds of content for SEPA (used as worked example) before reaching their tree's specific deltas. The cleaner split: V000 baseline content lives in Current Solution per-tree; V001 delta content lives in Change Strategy → DMEE Configuration per-tree sub-tabs. Each tree's V001 sub-tab carries a back-link to its V000 baseline; each V000 baseline carries a forward-link to its V001 deltas. Result: operators reading one tree end-to-end open just two locations (V000 + V001) instead of scrolling through all-tree concept material first.",
+      "how_to_apply": "When creating or restructuring a companion that documents a SAP migration project: 1. Identify the units of work (trees, programs, workflows, configurations). 2. Allocate two zones: Current Solution (V000 baseline per unit) + Change Strategy (V001 deltas per unit). 3. For each unit, write a self-contained section in BOTH zones: V000 section describes how it works today;    V001 section describes the specific changes. 4. Add explicit cross-references at the top of each section pointing to its counterpart in the other zone. 5. Cross-tree concepts (rules that apply to all units — e.g. 'UI indentation = XML nesting depth') live in    the V001 zone foundations sub-tab OR in a shared concept page; not duplicated per unit. 6. When a V001 change explicitly references a V000 element (e.g. 'INSERT child under existing PstlAdr'),    the V001 prose says 'see Current Solution → Tree X for the V000 baseline of PstlAdr'. 7. Sub-tabs in the sidebar (one per unit) make navigation explicit — the operator clicks the unit they care    about and reads end-to-end. APPLIES TO: companion HTML pages, multi-page knowledge artifacts, project plans. DOES NOT APPLY TO: brain JSON, raw matrix CSVs, or any non-stakeholder-facing artifact.",
+      "severity": "HIGH",
+      "created_session": 65,
+      "source_file": "Session #65 BCM_StructuredAddressChange.html restructure (DMEE Configuration tab split into foundations + 4 per-tree sub-tabs; Current Solution gained per-tree V000 baseline section)",
+      "derives_from_core_principle": "CP-001",
+      "cp_link_reason": "CP-001 'Knowledge over velocity': mixing V000 baseline with V001 changes is faster to write because there's no second zone to maintain, but operators pay the cognitive cost on every read. Splitting once (zones + cross-references) amortises across every operator who reads the companion thereafter. Also CP-002 (preserve first): the V000 baseline IS knowledge that must survive even after V001 cutover — having it in its own zone protects it from being conflated with deltas.",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "DMEE",
+          "*"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R",
+          "*"
+        ]
+      }
     }
   ],
   "claims": [
@@ -19817,6 +19879,121 @@
         "validation",
         "compliance"
       ]
+    },
+    {
+      "id": 117,
+      "claim": "DMEE tree node hierarchy collapses operationally: of 95 nodes in /SEPA_CT_UNES, only 2 are V001 INSERT targets - both named PstlAdr at different paths. INSERT TARGET #1 = Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr (level 5, batch debtor). INSERT TARGET #2 = Document > CstmrCdtTrfInitn > PmtInf > CdtTrfTxInf > Cdtr > PstlAdr (level 6, per-transaction beneficiary). 8 INSERT operations total (4 per PstlAdr * 2 PstlAdr containers): StrtNm/BldgNb/PstCd/TwnNm. The remaining ~93 nodes are either frozen wrapper structure (Document, CstmrCdtTrfInitn, GrpHdr, PmtInf, Dbtr, CdtTrfTxInf, Cdtr containers - never touched) or leaf data cloned untouched from V000 by Step A Create-Version. This stratification generalises: for any future bank-format change requesting new ISO 20022 atoms, the operation pattern is constant - find the parent container at the right level, INSERT child nodes, set source binding. No new ABAP, no new BAdI, no architectural drift.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        "knowledge/domains/Payment/v001_change_matrix.csv rows 1-8 (SEPA INSERTs)",
+        "Zagentexecution/incidents/xml_payment_structured_address/badi_node_map_session63.json /SEPA_CT_UNES branches Cdtr (pst_id N_4754354180) and Dbtr (pst_id N_9926185740)",
+        "Zagentexecution/incidents/xml_payment_structured_address/node_usage_classification_session63.json /SEPA_CT_UNES total=95",
+        "tx DMEE Display Format Tree screenshots unesco_dmee_tree_top.png + tree_mid.png + tree_bottom.png + dbtr_pstladr_highlighted.png"
+      ],
+      "evidence_against": [],
+      "related_objects": [
+        "DMEE_TREE_NODE",
+        "DMEE_TREE_HEAD",
+        "FPAYHX",
+        "FPAYH"
+      ],
+      "domain": "Payment",
+      "created_session": 65,
+      "resolved_session": null,
+      "resolution_notes": "Captures the operator-facing hierarchy stratification that simplifies V001 work mentally from '95-node tree' to '2 INSERT targets'. Used in companion BCM_StructuredAddressChange.html § Change Strategy > DMEE Configuration > Hierarchy collapse.",
+      "status": "active",
+      "domain_axes": [
+        "FI",
+        "Payment",
+        "DMEE",
+        "V001",
+        "operator-facing"
+      ]
+    },
+    {
+      "id": 118,
+      "claim": "tx DMEE UI tree-pane indentation depth = XML output element nesting depth (1:1, no transformation). The DMEE tree IS the XML template, rendered as click-through hierarchy. F110 walks DMEE_TREE_NODE rows in tree order; for each row reads MP_SC_TAB+FLD+OFFSET+LENGTH, fetches the buffer slice, emits an XML element using TECH_NAME as tag. INSERT Element under PstlAdr in the UI = sibling of Ctry/AdrLine in the UI = sibling of <Ctry>/<AdrLine> inside <PstlAdr> in the XML (same nesting depth). No NODE_ID needs to surface to the operator; navigation is by path (indented click-through), and the resulting XML position is determined by that path. Verified 2026-04-30 from screenshots + RFC extraction.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        "tx DMEE Display Format Tree (12 screenshots in knowledge/domains/Payment/sap_standard_reference/dme_screenshots/ taken 2026-04-30 from /SEPA_CT_UNES)",
+        "DMEE_TREE_NODE.PARENT_ID + BROTHER_ID + FIRSTCHILD_ID columns store the hierarchy",
+        "DMEE engine source CL_IDFI_CGI_CALL05_GENERIC (claim 73 + 101)"
+      ],
+      "evidence_against": [],
+      "related_objects": [
+        "DMEE_TREE_NODE",
+        "CL_IDFI_CGI_CALL05_GENERIC",
+        "FI_PAYMEDIUM_DMEE_CGI_05"
+      ],
+      "domain": "Payment",
+      "created_session": 65,
+      "resolved_session": null,
+      "resolution_notes": "Foundational rule for the DMEE Configuration submenu. Used in companion to bridge UI configuration to XML output without intermediate abstraction.",
+      "status": "active",
+      "domain_axes": [
+        "FI",
+        "Payment",
+        "DMEE",
+        "UI",
+        "XML",
+        "mapping"
+      ]
+    },
+    {
+      "id": 119,
+      "claim": "TECH_NAME values repeat across DMEE tree levels and identify different XML elements depending on parent path. /SEPA_CT_UNES specific cases: Nm appears 4-5x (under InitgPty, Dbtr, Cdtr, UltmtCdtr, UltmtDbtr); NbOfTxs and CtrlSum appear 2x each (GrpHdr message-level and PmtInf batch-level); PstlAdr appears 2x (under Dbtr at PmtInf level, under Cdtr at CdtTrfTxInf level); Ctry and AdrLine appear multiple times (one set per PstlAdr instance). Therefore: addressing a DMEE node by TECH_NAME alone is ambiguous; the unique identifier in operator-facing artifacts is the path Document > ... > parent > TECH_NAME. NODE_IDs (e.g. N_4754354180) are unique but invisible to operators in the tree pane. RULE: in operator-facing documentation, address nodes by path; NODE_IDs reserved for technical reference (e.g. matrix CSV technical reference column).",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        "tx DMEE Display Format Tree screenshots /SEPA_CT_UNES showing repeated TECH_NAMEs at different indentation depths",
+        "RFC extraction badi_node_map_session63.json showing 2 distinct PstlAdr branches in /SEPA_CT_UNES with different pst_id"
+      ],
+      "evidence_against": [],
+      "related_objects": [
+        "DMEE_TREE_NODE"
+      ],
+      "domain": "Payment",
+      "created_session": 65,
+      "resolved_session": null,
+      "resolution_notes": "Disambiguation rule for operator-facing artifacts. Codified in companion DMEE Configuration section 'Same TECH_NAME at different levels' table.",
+      "status": "active",
+      "domain_axes": [
+        "FI",
+        "Payment",
+        "DMEE",
+        "operator-facing",
+        "disambiguation"
+      ]
+    },
+    {
+      "id": 120,
+      "claim": "/SEPA_CT_UNES Post Processing tab settings (verified by tx DMEE screenshot 2026-04-30): Empty Element Processing = 'Do Not Remove' + XSLT Program = (empty/none). Consequence for V001: any INSERT row whose source field resolves to space at runtime would emit empty <Tag></Tag> in the XML, breaking pain.001.001.03 schema validation at SocGen. THEREFORE V001 INSERTs (matrix rows 1-8) MUST each carry a DMEE_TREE_COND empty-suppress condition (only emit if source NE space). Alternative would be flipping tree-level Empty Element Processing to 'Remove all', but that has wider blast radius and is held back as fallback only. CITI tree uses different mechanism (XSLT post-processor CGI_XML_CT_XSLT). CGI tree behaviour TBD (likely Do-Not-Remove like SEPA, no XSLT - verify in Phase 2).",
+      "claim_type": "infrastructure_constraint",
+      "confidence": "TIER_1",
+      "evidence_for": [
+        "knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_post_processing.png - verified 2026-04-30 tx DMEE Post Processing tab on /SEPA_CT_UNES V001",
+        "v001_change_matrix.csv rows 1-8 column DMEE_TREE_COND_NEEDED='empty-suppress'"
+      ],
+      "evidence_against": [],
+      "related_objects": [
+        "DMEE_TREE_HEAD",
+        "DMEE_TREE_COND",
+        "CGI_XML_CT_XSLT"
+      ],
+      "domain": "Payment",
+      "created_session": 65,
+      "resolved_session": null,
+      "resolution_notes": "Validates the matrix design: empty-suppress conditions are not optional optimization, they are mandatory due to SEPA tree's empty-element setting. Captured in companion DMEE Configuration > Tab 6 Post Processing.",
+      "status": "active",
+      "domain_axes": [
+        "FI",
+        "Payment",
+        "DMEE",
+        "V001",
+        "validation"
+      ]
     }
   ],
   "known_unknowns": [
@@ -20411,6 +20588,42 @@
       "owner_session": null,
       "notes": "Investigation steps: (1) confirm validation callpoint 2 fires for BAPI_ACC_DOCUMENT_POST and FB60/MIRO save-time; (2) draft the new GGB0 step pseudocode (LFBK-BANKS lookup against PPC list constant); (3) review with N_MENARD + Marlies; (4) test in D01 with vendors in each of 9 PPC countries; (5) mass-check P01 historical postings to PPC-country vendors with NULL LZBKZ to estimate the latent backlog. Brain anchors: claim 23 (T015L=ISO 20022 PPC codes), claim 34 (12-step UNES validation, no LZBKZ), claim 38 (UNESCO substitution — no LZBKZ target), claim 39 (F110 BAPI asymmetry — bypasses substitution callpoint 3), claim 97/98 (PPC infrastructure). Companion section: BCM_StructuredAddressChange.html tab-ppc § GAP — LZBKZ has no upstream validation today.",
       "enriched_session": 63
+    },
+    {
+      "id": "KU-2026-PMW-D01-ALIGNMENT",
+      "question": "Are the PMW configuration tables and program variants invoked by F110 byte-equal between D01 and P01 for the 4 in-scope formats (/SEPA_CT_UNES, /CITI/XML/UNESCO/DC_V3_01, /CGI_XML_CT_UNESCO, /CGI_XML_CT_UNESCO_1)? Specifically: T042Z (payment routing), T042Y (PMW format definition), TFPM042F + TFPM042FB (Event registration), VARI/VARID (SAPFPAYM_* program variants), OBPM2 (print forms per format), YTFI_PPC_STRUC + YTFI_PPC_TAG + T015L (PPC dispatch). If any are missing in D01, V001 testing in D01 will produce different output from P01 even with identical DMEE trees. KU-2026-DMEE-C already resolved (transports are W); this KU is about alignment of the surrounding objects beyond the DMEE tree itself.",
+      "context": "Surfaced by user 2026-04-30 during DMEE Configuration tab restructure. The current D01-RETROFIT-01 scope (claim 111) covers (a) DMEE tree drift on /CGI_XML_CT_UNESCO_1, (b) dormant V001 PURGE on all 4 trees, (c) 5 P01-only BAdI classes (claim 70). It does NOT cover the PMW configuration tables and program variants that F110 invokes when generating a payment file. Adding D01-RETROFIT-02-PMW as a new precondition row 0c in v001_change_matrix.csv is recommended before Phase 3 unit testing.",
+      "evidence_for": [
+        "claim 70 TIER_1 — 5 N_MENARD-authored objects exist in P01 TADIR but NOT in D01 (proves D01 lags P01 in BAdI ecosystem)",
+        "claim 103 TIER_1 — T042Z has no ZBUKR column, routing uniform cross-entity (defines what T042Z must align)",
+        "claim 116 TIER_1 — PPC LZBKZ no upstream validation; YTFI_PPC_STRUC + T015L feed PPC dispatch (these tables must align in D01)",
+        "v001_change_matrix.csv row 9 — TFPM042FB Event-05 registration ADDED for /SEPA_CT_UNES (proves Event-05 was missing for SEPA)"
+      ],
+      "what_would_resolve": [
+        "Phase 2 Week 0 RFC discovery: 8 RFC_READ_TABLE comparisons D01 vs P01 (T042Z, T042Y, TFPM042F, TFPM042FB, VARI for SAPFPAYM*, OBPM2/V_TFPM2, YTFI_PPC_STRUC, YTFI_PPC_TAG)",
+        "Output: knowledge/domains/Payment/d01_p01_pmw_alignment_session65.json with row-level diffs",
+        "Triage per delta: RETROFIT (transport from P01 to D01) vs KEEP-DIFFERENT (intentional D01 override) vs INVESTIGATE (unclear)",
+        "Execute D01K-RETROFIT-02-PMW transport bundling RETROFIT-class deltas",
+        "Re-run hash comparisons; verify D01 = P01 byte-equal for the 8 objects"
+      ],
+      "owner": "Pablo + N_MENARD (BAdI/code) + M_SPRONK (config tables)",
+      "status": "open",
+      "priority": "HIGH",
+      "blocks": [
+        "Phase 3 unit-test"
+      ],
+      "related_claims": [
+        70,
+        103,
+        111,
+        116
+      ],
+      "related_rules": [
+        "feedback_p01_source_of_truth_retrofit_first_then_adjust"
+      ],
+      "domain": "Payment",
+      "created_session": 65,
+      "created_date": "2026-04-30"
     }
   ],
   "falsification": [
@@ -22702,6 +22915,10 @@
     },
     {
       "name": "DMEE_TREE:/CGI_XML_CT_UNESCO",
+      "flavor": "MISSING"
+    },
+    {
+      "name": "DMEE_TREE_COND",
       "flavor": "MISSING"
     },
     {
@@ -25130,11 +25347,11 @@
   },
   "_coverage": {
     "objects_in_brain": 278,
-    "names_referenced": 367,
+    "names_referenced": 368,
     "names_classified": 209,
-    "blind_spots_total": 158,
+    "blind_spots_total": 159,
     "blind_spots_ghosts": 0,
-    "blind_spots_missing": 158,
-    "pct_classified": 56.9
+    "blind_spots_missing": 159,
+    "pct_classified": 56.8
   }
 }

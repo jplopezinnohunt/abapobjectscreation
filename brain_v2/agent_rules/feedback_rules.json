@@ -2261,5 +2261,55 @@
     "source_file": null,
     "derives_from_core_principle": "CP-003",
     "cp_link_reason": "Precision + evidence: claiming enforcement without per-layer audit is opinion masquerading as fact. The 5-layer audit forces evidence per layer, anchored in checkable Gold DB queries + extracted source greps."
+  },
+  {
+    "id": "feedback_dmee_path_addressing_in_operator_artifacts",
+    "rule": "In operator-facing artifacts (companion HTML, plan documents, design specs, training material, dry-run procedures), address DMEE tree nodes by their full path (Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr > StrtNm), NOT by their internal NODE_ID (e.g. N_4754354180). NODE_IDs are unique technical identifiers but are invisible to operators in the tx DMEE tree pane - operators navigate the tree by clicking through indentation levels, and the path they click is what unambiguously identifies a node. NODE_IDs are reserved for technical reference channels (v001_change_matrix.csv 'technical reference' columns, RFC verification SQL, brain claim evidence anchors). Same TECH_NAME values repeat at multiple levels in any DMEE tree (e.g. Nm appears under InitgPty/Dbtr/Cdtr/UltmtCdtr/UltmtDbtr; PstlAdr appears under Dbtr at PmtInf level AND under Cdtr at CdtTrfTxInf level), so addressing by TECH_NAME alone is ambiguous - always include the parent path in operator-facing wording.",
+    "why": "Session #65 user pushback (2026-04-30) on companion BCM_StructuredAddressChange.html: the bridge mapping section used 'Cdtr/PstlAdr (parent N_4754354180)' as the addressing convention. User explicit corrections: 'screen is not correctly map, we have multiple levels and names', 'we have a total desconection between the UI way of configurate levels and the XML emited'. Root cause: NODE_IDs are an artifact of the DMEE_TREE_NODE table schema, not part of the operator's mental model. When the operator opens tx DMEE Display Format Tree, they see indentation + TECH_NAME labels - never NODE_IDs. Using NODE_IDs in operator-facing artifacts forces a translation step that breaks the connection between UI configuration and XML output. Failure mode this rule prevents: future agents (or this agent in future sessions) reverting to NODE_ID addressing when documenting V001 / V002 / future bank-format changes, making the artifacts unusable for operators.",
+    "how_to_apply": "When writing or editing any DMEE-related operator-facing artifact: 1. Address each node by its full path from Document down to the leaf, e.g. Document > CstmrCdtTrfInitn > PmtInf > Dbtr > PstlAdr. 2. If multiple instances of the same TECH_NAME exist in the same tree, ALWAYS distinguish them by path (PmtInf > Dbtr > PstlAdr versus CdtTrfTxInf > Cdtr > PstlAdr). 3. NODE_IDs are PERMITTED only in technical-reference columns of CSVs/JSONs (e.g. v001_change_matrix.csv) and in brain claim evidence anchors where they pin RFC-extracted data to specific rows. 4. When showing UI <-> XML mappings, render the UI side as indented hierarchy with explicit path breadcrumbs and the XML side with matching nesting depth. The 1:1 visual alignment is the bridge. 5. The hierarchy collapse pattern (95-node tree -> 2 INSERT targets at level 5/6) is the operator's mental model - use it in any new DMEE design content. 6. Brain anchors: claim 117 (hierarchy collapse), claim 118 (UI=XML 1:1), claim 119 (path disambiguation), claim 120 (empty-suppress).",
+    "severity": "HIGH",
+    "created_session": 65,
+    "source_file": "Session #65 user pushback on BCM_StructuredAddressChange.html DMEE Configuration submenu",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "CP-001 'Knowledge over velocity' - using NODE_IDs in operator-facing artifacts is faster to write (just paste from CSV) but loses the connection to the operator's mental model and UI navigation. The investment of writing path-addressed documentation once amortises across every operator who opens the artifact, and survives future bank-format changes because the path pattern is durable while NODE_IDs are tree-extraction-specific.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "DMEE"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_companion_split_v000_baseline_from_v001_changes",
+    "rule": "When documenting a SAP migration project in the companion HTML (or any operator-facing artifact), split content into two clearly-distinct zones: (1) Current Solution / V000 baseline — how the system is wired and behaving today, organized per object (per tree, per program, per workflow), and (2) Change Strategy / V001 changes — the specific deltas the project introduces, also organized per object. Cross-reference between the two zones with explicit links so a reader looking at a V001 delta can jump to the V000 baseline for that same object, and vice versa. Do NOT mix V000 baseline content with V001 delta content in the same section — the cognitive cost of switching context line-by-line is high, and operators reading for one specific object end up scrolling through unrelated other-object material.",
+    "why": "Session #65 user pushback on the DMEE Configuration tab: 'maybe some information should be moved to Current Solution and only keep the specific changes here'. Root cause: the original tab mixed V000 baseline material (tree structure ASCII, 6-tabs settings, hierarchy stratification, screenshots of the today-state) with V001 delta material (per-target INSERTs, Step A/B/C walkthroughs, code-change indicators). Operators reading for ONE tree had to scroll through both kinds of content for SEPA (used as worked example) before reaching their tree's specific deltas. The cleaner split: V000 baseline content lives in Current Solution per-tree; V001 delta content lives in Change Strategy → DMEE Configuration per-tree sub-tabs. Each tree's V001 sub-tab carries a back-link to its V000 baseline; each V000 baseline carries a forward-link to its V001 deltas. Result: operators reading one tree end-to-end open just two locations (V000 + V001) instead of scrolling through all-tree concept material first.",
+    "how_to_apply": "When creating or restructuring a companion that documents a SAP migration project: 1. Identify the units of work (trees, programs, workflows, configurations). 2. Allocate two zones: Current Solution (V000 baseline per unit) + Change Strategy (V001 deltas per unit). 3. For each unit, write a self-contained section in BOTH zones: V000 section describes how it works today;    V001 section describes the specific changes. 4. Add explicit cross-references at the top of each section pointing to its counterpart in the other zone. 5. Cross-tree concepts (rules that apply to all units — e.g. 'UI indentation = XML nesting depth') live in    the V001 zone foundations sub-tab OR in a shared concept page; not duplicated per unit. 6. When a V001 change explicitly references a V000 element (e.g. 'INSERT child under existing PstlAdr'),    the V001 prose says 'see Current Solution → Tree X for the V000 baseline of PstlAdr'. 7. Sub-tabs in the sidebar (one per unit) make navigation explicit — the operator clicks the unit they care    about and reads end-to-end. APPLIES TO: companion HTML pages, multi-page knowledge artifacts, project plans. DOES NOT APPLY TO: brain JSON, raw matrix CSVs, or any non-stakeholder-facing artifact.",
+    "severity": "HIGH",
+    "created_session": 65,
+    "source_file": "Session #65 BCM_StructuredAddressChange.html restructure (DMEE Configuration tab split into foundations + 4 per-tree sub-tabs; Current Solution gained per-tree V000 baseline section)",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "CP-001 'Knowledge over velocity': mixing V000 baseline with V001 changes is faster to write because there's no second zone to maintain, but operators pay the cognitive cost on every read. Splitting once (zones + cross-references) amortises across every operator who reads the companion thereafter. Also CP-002 (preserve first): the V000 baseline IS knowledge that must survive even after V001 cutover — having it in its own zone protects it from being conflated with deltas.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "DMEE",
+        "*"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R",
+        "*"
+      ]
+    }
   }
 ]

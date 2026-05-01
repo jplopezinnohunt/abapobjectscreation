@@ -590,5 +590,41 @@
     "owner_session": null,
     "notes": "Investigation steps: (1) confirm validation callpoint 2 fires for BAPI_ACC_DOCUMENT_POST and FB60/MIRO save-time; (2) draft the new GGB0 step pseudocode (LFBK-BANKS lookup against PPC list constant); (3) review with N_MENARD + Marlies; (4) test in D01 with vendors in each of 9 PPC countries; (5) mass-check P01 historical postings to PPC-country vendors with NULL LZBKZ to estimate the latent backlog. Brain anchors: claim 23 (T015L=ISO 20022 PPC codes), claim 34 (12-step UNES validation, no LZBKZ), claim 38 (UNESCO substitution — no LZBKZ target), claim 39 (F110 BAPI asymmetry — bypasses substitution callpoint 3), claim 97/98 (PPC infrastructure). Companion section: BCM_StructuredAddressChange.html tab-ppc § GAP — LZBKZ has no upstream validation today.",
     "enriched_session": 63
+  },
+  {
+    "id": "KU-2026-PMW-D01-ALIGNMENT",
+    "question": "Are the PMW configuration tables and program variants invoked by F110 byte-equal between D01 and P01 for the 4 in-scope formats (/SEPA_CT_UNES, /CITI/XML/UNESCO/DC_V3_01, /CGI_XML_CT_UNESCO, /CGI_XML_CT_UNESCO_1)? Specifically: T042Z (payment routing), T042Y (PMW format definition), TFPM042F + TFPM042FB (Event registration), VARI/VARID (SAPFPAYM_* program variants), OBPM2 (print forms per format), YTFI_PPC_STRUC + YTFI_PPC_TAG + T015L (PPC dispatch). If any are missing in D01, V001 testing in D01 will produce different output from P01 even with identical DMEE trees. KU-2026-DMEE-C already resolved (transports are W); this KU is about alignment of the surrounding objects beyond the DMEE tree itself.",
+    "context": "Surfaced by user 2026-04-30 during DMEE Configuration tab restructure. The current D01-RETROFIT-01 scope (claim 111) covers (a) DMEE tree drift on /CGI_XML_CT_UNESCO_1, (b) dormant V001 PURGE on all 4 trees, (c) 5 P01-only BAdI classes (claim 70). It does NOT cover the PMW configuration tables and program variants that F110 invokes when generating a payment file. Adding D01-RETROFIT-02-PMW as a new precondition row 0c in v001_change_matrix.csv is recommended before Phase 3 unit testing.",
+    "evidence_for": [
+      "claim 70 TIER_1 — 5 N_MENARD-authored objects exist in P01 TADIR but NOT in D01 (proves D01 lags P01 in BAdI ecosystem)",
+      "claim 103 TIER_1 — T042Z has no ZBUKR column, routing uniform cross-entity (defines what T042Z must align)",
+      "claim 116 TIER_1 — PPC LZBKZ no upstream validation; YTFI_PPC_STRUC + T015L feed PPC dispatch (these tables must align in D01)",
+      "v001_change_matrix.csv row 9 — TFPM042FB Event-05 registration ADDED for /SEPA_CT_UNES (proves Event-05 was missing for SEPA)"
+    ],
+    "what_would_resolve": [
+      "Phase 2 Week 0 RFC discovery: 8 RFC_READ_TABLE comparisons D01 vs P01 (T042Z, T042Y, TFPM042F, TFPM042FB, VARI for SAPFPAYM*, OBPM2/V_TFPM2, YTFI_PPC_STRUC, YTFI_PPC_TAG)",
+      "Output: knowledge/domains/Payment/d01_p01_pmw_alignment_session65.json with row-level diffs",
+      "Triage per delta: RETROFIT (transport from P01 to D01) vs KEEP-DIFFERENT (intentional D01 override) vs INVESTIGATE (unclear)",
+      "Execute D01K-RETROFIT-02-PMW transport bundling RETROFIT-class deltas",
+      "Re-run hash comparisons; verify D01 = P01 byte-equal for the 8 objects"
+    ],
+    "owner": "Pablo + N_MENARD (BAdI/code) + M_SPRONK (config tables)",
+    "status": "open",
+    "priority": "HIGH",
+    "blocks": [
+      "Phase 3 unit-test"
+    ],
+    "related_claims": [
+      70,
+      103,
+      111,
+      116
+    ],
+    "related_rules": [
+      "feedback_p01_source_of_truth_retrofit_first_then_adjust"
+    ],
+    "domain": "Payment",
+    "created_session": 65,
+    "created_date": "2026-04-30"
   }
 ]
