@@ -197,18 +197,50 @@ def write_case_tab(wb, case):
     c.font = Font(name="Calibri", size=10, italic=True, color="475569")
     ws.merge_cells("A2:L2")
 
-    # Instructions block
-    c = ws.cell(row=3, column=1, value=(
-        "📋 INSTRUCTIONS — Copy each table below into the matching grid in tx DMEE → /SEPA_CT_UNES → Display → Active version → Tree → Test (DMEE Test Data screen). "
-        "The 'Row' column is just a counter for this Excel — do NOT enter it in SAP. Headers match SAP screen labels exactly. "
+    # Run order header
+    c = ws.cell(row=3, column=1, value="🔢 EXECUTION ORDER FOR THIS CASE")
+    c.fill = PatternFill(start_color="1E3A4A", end_color="1E3A4A", fill_type="solid")
+    c.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    ws.merge_cells("A3:L3")
+
+    run_order = [
+        "STEP 1 (V000 baseline) — tx DMEE → Tree type=PAYM + Format tree=/SEPA_CT_UNES → click Display",
+        "STEP 2 — In the popup, click 'Active version' button → tree opens in V000 view",
+        "STEP 3 — Menu: Tree → Test (or Test button on toolbar) → 'DMEE Test Data' screen opens with 3 empty grids",
+        "STEP 4 — Copy the FPAYHX row from this Excel into the FPAYHX grid (skip the 'Row' column — it is just an Excel counter)",
+        "STEP 5 — Copy the FPAYH row into the FPAYH grid (Doc cat. value is critical — use the value shown below)",
+        "STEP 6 — Copy the FPAYP row into the FPAYP grid",
+        "STEP 7 — (Optional but recommended) Expand FPAYHX layout: right-click header → Settings → add columns ZLISO, ZPFST, ZPLOR, ZSTRA — populate with values from the Z-FIELDS section below",
+        "STEP 8 — Click Test/Run button (typically green-checkmark icon or Execute) → SAP renders V000 XML in a new screen",
+        "STEP 9 — Save the V000 XML as 'case_<N>_V000.xml' (or copy the full XML text into a text file)",
+        "STEP 10 (V001 comparison) — Press Back → return to DMEE Initial Screen",
+        "STEP 11 — Display again → this time click 'Maintenance version' button → tree opens in V001 view",
+        "STEP 12 — Tree → Test → enter the EXACT SAME values from this Excel into the 3 grids",
+        "STEP 13 — Click Test/Run → SAP renders V001 XML",
+        "STEP 14 — Save the V001 XML as 'case_<N>_V001.xml'",
+        "STEP 15 — Diff case_<N>_V000.xml vs case_<N>_V001.xml — V001 should show ADDITIONAL <StrtNm>, <BldgNb>, <PstCd>, <TwnNm> tags inside <Cdtr><PstlAdr> and <Dbtr><PstlAdr>; if those new tags appear with the same input → V001 design empirically validated for this case",
+    ]
+    next_row = 4
+    for step in run_order:
+        c = ws.cell(row=next_row, column=1, value=step)
+        c.font = Font(name="Calibri", size=10, color="1F2937")
+        c.alignment = Alignment(wrap_text=True, vertical="top")
+        ws.merge_cells(start_row=next_row, start_column=1, end_row=next_row, end_column=12)
+        ws.row_dimensions[next_row].height = 22
+        next_row += 1
+    next_row += 1  # blank line
+
+    # Original instructions block
+    c = ws.cell(row=next_row, column=1, value=(
+        "📋 NOTES — The 'Row' column in each table below is an Excel counter, do NOT enter it in SAP. "
+        "Headers match SAP screen labels exactly. "
         "The 'No. FPAYHX' / 'No. FPAYH' columns are foreign keys linking the 3 tables — keep them = 1 for a single-payment test."
     ))
     c.font = NOTE_FONT
     c.alignment = Alignment(wrap_text=True, vertical="top")
-    ws.merge_cells("A3:L3")
-    ws.row_dimensions[3].height = 60
-
-    next_row = 5
+    ws.merge_cells(start_row=next_row, start_column=1, end_row=next_row, end_column=12)
+    ws.row_dimensions[next_row].height = 50
+    next_row += 2
 
     # FPAYHX table
     next_row = write_table(ws, next_row, case["fpayhx"], "🟢 FPAYHX — payment medium · formatting of payment data (Dbtr / UNESCO HQ side)")
@@ -284,18 +316,35 @@ def write_overview_tab(wb):
         ("UNESCO V001 — SEPA_CT_UNES — DMEE Test Data Cases", 16, True, "0F172A"),
         ("3 representative test cases for the /SEPA_CT_UNES tree, derived from the top-15 production scenarios coverage (claim 106).", 11, False, "475569"),
         ("", 10, False, "000000"),
-        ("📋 How to use this workbook", 12, True, "0F172A"),
-        ("1. Open one of the 3 case tabs (Case_1_Standard_Vendor / Case_2_Payroll / Case_3_Cross_Border_ES)", 10, False, "1f2937"),
-        ("2. In SAP: tx DMEE → enter Tree type=PAYM + Format tree=/SEPA_CT_UNES → click Display", 10, False, "1f2937"),
-        ("3. In the popup, choose 'Active version' for V000 testing or 'Maintenance version' for V001 testing", 10, False, "1f2937"),
-        ("4. From the menu: Tree → Test (or button on toolbar) — opens the 'DMEE Test Data' screen", 10, False, "1f2937"),
-        ("5. Copy the row from each table in the case tab into the matching SAP grid (FPAYHX → FPAYH → FPAYP)", 10, False, "1f2937"),
-        ("   • Skip the 'Row' column from this Excel — it is just a counter for the worksheet", 10, False, "1f2937"),
-        ("   • Keep 'No. FPAYHX' = 1 and 'No. FPAYH' = 1 for a single-payment test", 10, False, "1f2937"),
-        ("6. For Cdtr address to render: expand the FPAYHX grid layout to add Z-fields (ZLISO, ZPFST, ZPLOR, ZSTRA, ZBSTR…) — see each case's Z-FIELDS section", 10, False, "1f2937"),
-        ("7. Click the Test/Run button → SAP engine produces the XML output", 10, False, "1f2937"),
-        ("8. Inspect the XML against the 'Expected XML output observations' section in each case tab", 10, False, "1f2937"),
-        ("9. To compare V000 vs V001 for the same case: re-open tx DMEE, this time pick Maintenance version, paste the same inputs, run, and diff XML outputs", 10, False, "1f2937"),
+        ("🔢 RECOMMENDED TEST EXECUTION ORDER", 13, True, "0F172A"),
+        ("Run the 3 cases in this order. Each case = ~10-15 min (V000 + V001 + diff). Total time = ~30-45 min for the full SEPA tree validation.", 10, False, "1f2937"),
+        ("", 10, False, "000000"),
+        ("STEP 1 — Run Case 1 (Standard Vendor) FIRST", 11, True, "15803D"),
+        ("   Reason: highest-volume scenario (118,678 payments / 18.4% volume) — establishes baseline V000 known-good output and the V001 reference for diff. If something fails here, no point running Cases 2-3.", 10, False, "475569"),
+        ("   1.1 — Open tab 'Case_1_Standard_Vendor' in this workbook", 10, False, "1f2937"),
+        ("   1.2 — Follow the 15-step EXECUTION ORDER section at the top of that tab", 10, False, "1f2937"),
+        ("   1.3 — Save outputs as case_1_V000.xml + case_1_V001.xml + diff observations", 10, False, "1f2937"),
+        ("", 10, False, "000000"),
+        ("STEP 2 — Run Case 2 (Payroll) SECOND", 11, True, "15803D"),
+        ("   Reason: second-highest-volume scenario (103,126 payments / 16% volume) and tests Doc cat=03 (Payroll) which differs from Case 1's Doc cat=01. Only point of variation: Doc cat. Validates the SEPA tree handles both invoice and payroll categories without format break.", 10, False, "475569"),
+        ("   2.1 — Open tab 'Case_2_Payroll'", 10, False, "1f2937"),
+        ("   2.2 — Follow the EXECUTION ORDER (same 15 steps, different values)", 10, False, "1f2937"),
+        ("   2.3 — Save outputs as case_2_V000.xml + case_2_V001.xml", 10, False, "1f2937"),
+        ("", 10, False, "000000"),
+        ("STEP 3 — Run Case 3 (Cross-border ES) THIRD", 11, True, "15803D"),
+        ("   Reason: tests SEPA-zone non-FR creditor — surfaces if the tree falls back to Dbtr-side country when Cdtr country is non-FR. This is the highest-information case for V001 design verification because it exercises Z-fields with non-FR data.", 10, False, "475569"),
+        ("   3.1 — Open tab 'Case_3_Cross_Border_ES'", 10, False, "1f2937"),
+        ("   3.2 — Follow the EXECUTION ORDER", 10, False, "1f2937"),
+        ("   3.3 — Save outputs as case_3_V000.xml + case_3_V001.xml", 10, False, "1f2937"),
+        ("", 10, False, "000000"),
+        ("STEP 4 — Consolidate findings", 11, True, "15803D"),
+        ("   Compile the 6 XML outputs (3 cases × 2 versions). Note any unexpected behaviors per case. Hand back to project agent for diff analysis vs Python simulator predictions and finding capture in the brain.", 10, False, "475569"),
+        ("", 10, False, "000000"),
+        ("📋 General workbook navigation", 12, True, "0F172A"),
+        ("Each case tab is self-contained — has the EXECUTION ORDER (15 steps) at the top + the 3 tables to copy + the Z-fields hint + expected XML observations + V001 testing reminder.", 10, False, "475569"),
+        ("Skip the 'Row' column from each table in the Excel — it is just a counter for the worksheet, not a SAP field.", 10, False, "475569"),
+        ("Keep 'No. FPAYHX' = 1 and 'No. FPAYH' = 1 for a single-payment test.", 10, False, "475569"),
+        ("For Cdtr address to render: expand the FPAYHX grid layout to add Z-fields (ZLISO, ZPFST, ZPLOR, ZSTRA, ZBSTR…) — see each case's Z-FIELDS section.", 10, False, "475569"),
         ("", 10, False, "000000"),
         ("📊 The 3 cases — coverage rationale", 12, True, "0F172A"),
         ("Case 1 — Standard SEPA vendor payment (FR vendor, EUR)", 11, True, "1f2937"),
