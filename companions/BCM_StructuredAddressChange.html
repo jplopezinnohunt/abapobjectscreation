@@ -635,7 +635,7 @@ Tag: a flat-file DME — line types <code>1</code> header, <code>2</code> paying
     <p>If you only read one table in this whole companion's DME submenu, read this one. Each row is a SAP-standard concept on the left, the UNESCO claim or document that uses it on the right. Click through to the file to see the evidence.</p>
     <table>
       <tr><th>SAP-standard concept</th><th>UNESCO claim / artifact</th><th>Where to read</th></tr>
-      <tr><td>DMEE_TREE_HEAD VERSION / EX_STATUS atomic flip</td><td>claim 102 (TIER_1) — first-ever <em>transport-released</em> V001 (claim 109: D01 already has dormant V001 clone from past Create-Version event); 3-step canonical procedure (PURGE + CREATE + ACTIVATE)</td><td><a href="../knowledge/domains/Payment/dmee_versioning_procedure.md">dmee_versioning_procedure.md</a></td></tr>
+      <tr><td>DMEE_TREE_HEAD VERSION semantics (V000=Active, V001=Maintenance per SAP-correct lifecycle — activation OVERWRITES V000 with V001 content; rollback via Generate Version snapshot to V002)</td><td>claim 102 (TIER_1) — first-ever <em>transport-released</em> V001 (claim 109: D01 already has dormant V001 clone from past Create-Version event); see <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the SAP-correct lifecycle</td><td><a href="../knowledge/domains/Payment/dmee_versioning_procedure.md">dmee_versioning_procedure.md</a></td></tr>
       <tr><td>DMEE_TREE_NODE Structure-Field mapping with offsets</td><td>h18 finding — <code>&lt;Purp&gt;&lt;Cd&gt;</code> = FPAYP-XREF3, post-processed by FI_CGI_DMEE_EXIT_W_BADI</td><td><a href="../knowledge/domains/Payment/h18_dmee_tree_findings.md">h18_dmee_tree_findings.md</a></td></tr>
       <tr><td>Exit module / BAdI dispatch</td><td>NMENARD Pattern A — bank-mandated <code>&lt;Cdtr&gt;&lt;Nm&gt;</code> overflow → <code>&lt;StrtNm&gt;</code>; <code>YCL_IDFI_CGI_DMEE_FR/DE/IT/FALLBACK</code></td><td><a href="../knowledge/domains/Payment/phase0/NMENARD_DMEE_specs_decoded.md">NMENARD_DMEE_specs_decoded.md</a></td></tr>
       <tr><td>Own mapping (atoms) + DMEE_TREE_COND</td><td>NMENARD PPC infrastructure — 9 countries × 11 routes × 133 positional rows</td><td>same file, Doc 2+3</td></tr>
@@ -925,19 +925,26 @@ WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;
       <p>Each cutover: 14-day monitoring before next tree's cutover. <strong>Total Phase 5 window: ~6 weeks</strong> from first cutover (CGI) to V000 decommissioning after CITI stable.</p>
 
       <h4>Rollback protocol</h4>
-      <p><strong>The single biggest reason we chose 2-file + DMEE versioning</strong> over Hybrid is right here: rollback is a single config flag flip, atomic, and zero data loss. The protocol below tells the on-call team exactly what to look for, what to do, and who decides:</p>
+      <p><strong>The single biggest reason we chose 2-file + DMEE versioning</strong> over Hybrid is right here: rollback is mechanical and reversible — Version Management retrieves the pre-cutover snapshot and re-activates it. <strong>NOT a flag flip — see <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the SAP-correct lifecycle (activation overwrites V000, rollback requires the V002 snapshot).</strong> The protocol below tells the on-call team exactly what to look for, what to do, and who decides:</p>
       <pre>Detection criteria:
   - >2 bank rejects in 24h attributed to address structure
   - XSD validation failure rate >1%
   - Marlies/Treasury head override
 
-Action sequence (≤60 minutes from decision):
-  1. DMEE Tx → tree → V000 ACTIVE / V001 INACTIVE (atomic flag)
-  2. Tx FDTA: re-run 1-vendor F110 sample, verify V000 file emitted
-  3. Notify banks via BCM ops DL: "Reverted to V000 unstructured; new ETA TBD"
-  4. INC ticket open; preserve V001 inactive for forensics
+Action sequence (~5–15 min per tree, NOT atomic — requires Version Management retrieve):
+  1. tx DMEE → /TREE_NAME → Display → Active version → confirm current state
+  2. Utilities → Versions → Version Management → select V002 snapshot
+     (the Generate Version archive taken in Phase 5 pre-cutover prep)
+  3. Click Retrieve → V002 content copies into V001 (Maintenance slot)
+  4. Tree → Activate → V001 (with snapshot content) overwrites current V000
+  5. tx FDTA: re-run 1-vendor F110 sample, verify V000-baseline file emitted
+  6. Notify banks via BCM ops DL: "Reverted to V000 unstructured; new ETA TBD"
+  7. INC ticket open; preserve V001 inactive for forensics
 
 Decision authority: Marlies (BCM ops) + Pablo (technical) jointly.
+Pre-requisite: V002 snapshot must have been Generated in pre-cutover prep
+              (see version-concept tab Phase 5·pre row). Without it, rollback
+              requires a separate transport-level recovery procedure.
 Data loss: zero (F110 idempotent on REGUH).</pre>
 
       <h4>Decisions baked into this strategy</h4>
@@ -1196,13 +1203,13 @@ Data loss: zero (F110 idempotent on REGUH).</pre>
               <td style="padding:10px;border:1px solid #86efac">Edit V000 directly in P01 (destructive — no rollback path) or build a separate parallel tree (much heavier, requires new T042Y + T042Z routing).</td>
             </tr>
             <tr style="background:#dcfce7">
-              <td style="padding:10px;border:1px solid #86efac"><strong>2. Atomic cutover</strong></td>
-              <td style="padding:10px;border:1px solid #86efac">The cutover is ONE UPDATE on one flag. Before the flip: all F110 use V000. After the flip: all F110 use V001. <strong>Zero in-between period</strong> where some payments are V000-output and others V001-output.</td>
+              <td style="padding:10px;border:1px solid #86efac"><strong>2. Clean cutover boundary</strong></td>
+              <td style="padding:10px;border:1px solid #86efac">Tree → Activate is a single atomic SAP transaction (overwrites V000 with V001 content per SAP-official model). Before activation: F110 uses V000. After: F110 uses the new V000 (= V001 content). <strong>Zero in-between period</strong> where some payments are V000-output and others V001-output.</td>
               <td style="padding:10px;border:1px solid #86efac">A multi-step deployment with a window of inconsistency, where in-flight F110 batches might hit half-old / half-new config.</td>
             </tr>
             <tr style="background:#dcfce7">
-              <td style="padding:10px;border:1px solid #86efac"><strong>3. Instant rollback</strong></td>
-              <td style="padding:10px;border:1px solid #86efac">Flip the flag back. V000 rows are still in DMEE_TREE_NODE (Activate did not touch them). <strong>Rollback in seconds.</strong> The "preservation of V000" is automatic — you do not preserve V000 by copying it; you preserve it by simply not deleting it.</td>
+              <td style="padding:10px;border:1px solid #86efac"><strong>3. Reversible deployment via Version Management</strong></td>
+              <td style="padding:10px;border:1px solid #86efac">Before activation, run <code>Generate Version</code> to archive the current V000 to V002. After activation (V001 content overwrites V000), if rollback needed: Version Management → Retrieve V002 → Activate → original V000 restored. <strong>Rollback in 5–15 min per tree.</strong> NOT a flag flip; the snapshot is what enables reversibility, not automatic preservation.</td>
               <td style="padding:10px;border:1px solid #86efac">Restore config from backup (hours), or re-edit V000 by hand to revert — and that's only possible if you didn't already touch V000 destructively in step 1.</td>
             </tr>
             <tr style="background:#fee2e2">
@@ -1257,7 +1264,7 @@ Data loss: zero (F110 idempotent on REGUH).</pre>
         <tr><td>D01 (dev)</td><td>✓ Active (mirror of P01)</td><td>✓ Dormant clone (byte-identical to V000)</td><td>Per claim 109. To PURGE+RECREATE in Phase 2.</td></tr>
         <tr><td>D01 after Phase 2 Step 0</td><td>✓ Active (still mirror of P01)</td><td>✓ Dormant <strong>fresh</strong> clone (transport-trailed)</td><td>Same byte-identical content, but linked to Phase 2 transport ID.</td></tr>
         <tr><td>D01 after Phase 2 Step B</td><td>✓ Active</td><td>✓ Dormant + structured-address nodes added</td><td>The 27-row change matrix is applied here.</td></tr>
-        <tr><td>D01 after Phase 5 cutover</td><td>✓ Dormant</td><td>✓ Active (EX_STATUS='A')</td><td>The atomic flip. F110 now reads V001.</td></tr>
+        <tr><td>D01 after Phase 5 cutover</td><td>(overwritten — old content saved to V002 if Generate Version was run pre-cutover)</td><td>(its content now in V000 slot, ✓ Active EX_STATUS='A')</td><td>The activation OVERWROTE V000 with V001 content. F110 now reads the new V000 (= V001 design). Pre-cutover snapshot to V002 is what enables rollback.</td></tr>
       </table>
 
       <h4>Visual proof of claim 109 — V000 and V001 admin data are byte-identical</h4>
@@ -1989,15 +1996,15 @@ TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 4)</pre></
 
       <p style="font-size:11px;color:#475569;margin-top:6px"><strong>SEPA Step B verification</strong>: <code>SELECT NODE_ID, MP_SC_FLD FROM DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' AND PARENT_ID IN ('&lt;Dbtr/PstlAdr&gt;','&lt;Cdtr/PstlAdr&gt;')</code> returns original 5 V000 children + 8 new children. V000 query returns unchanged 5.</p>
 
-      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step C · ACTIVATE V001 (Phase 5 cutover)</p>
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step C · ACTIVATE V001 (Phase 5 cutover) — SAP-correct procedure</p>
       <ol style="font-size:12px">
-        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → Menu: <strong>Tree → Versions → Activate Version</strong> → select VERSION=001 → confirm</li>
-        <li>SAP flips DMEE_TREE_HEAD.EX_STATUS atomically: V000 → blank, V001 → 'A'</li>
-        <li>Save → cutover transport <code>D01K-V001-CUTOVER-01</code> (collects activation for all 4 trees together OR staggered per tree per claim 102 surgical philosophy)</li>
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx <code>DMEE</code> → <code>/SEPA_CT_UNES</code> → Display → Maintenance → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → SAP archives current V000 to V002 (or next free number). <strong>Document the assigned version number</strong> — it is required for rollback.</li>
+        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → Format tree → Change → Tree → <strong>Activate</strong> → SAP runs consistency checks; if clean, V001 content is saved as V000 (overwrites previous V000 — but V002 snapshot from step 1 preserves it for rollback)</li>
+        <li>Save → cutover transport <code>D01K-V001-CUTOVER-01</code> (collects activation for all 4 trees together OR staggered per tree per claim 102 surgical philosophy). Transport class: <strong>Workbench (R3TR DMEE, K)</strong> — not Customizing.</li>
         <li>From this moment, every F110 SEPA run (SOG01 EUR, payment method S) produces V001 Fully Structured XML</li>
       </ol>
 
-      <p style="font-size:11px;color:#475569"><strong>SEPA rollback</strong>: same dialog, activate V000. Atomic flip back; F110 idempotent on REGUH.</p>
+      <p style="font-size:11px;color:#475569"><strong>SEPA rollback (5-15 min, NOT atomic flip)</strong>: tx DMEE → /SEPA_CT_UNES → Utilities → Versions → Version Management → select V002 (the pre-cutover snapshot from step 1 above) → <strong>Retrieve</strong> → V002 content copies into V001 → Tree → Activate → V001 (with snapshot content) overwrites V000 → F110 reads original V000 again. F110 idempotent on REGUH (zero data loss).</p>
       <p style="font-size:11px;color:#475569"><strong>SEPA code change required: NONE</strong>. All matrix rows 1–9 are customizing (DMEE_TREE_NODE, DMEE_TREE_COND, TFPM042FB).</p>
     </div>
     </div>
@@ -2399,14 +2406,15 @@ TECH_NAME=BldgNb       MP_SC_FLD=ZBSTR[60..]  ← INSERT (matrix row 20)</pre></
 
       <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CITI Step B verification</strong>: count of VERSION=001 nodes = 610 + 9 = 619. UltmtCdtr StrtNm node confirms MP_SC_FLD='ZSTRA' (was empty in V000). Run F110 simulator on a Worldlink BRL run to confirm UltmtCdtr/StrtNm now populates.</p>
 
-      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step C · ACTIVATE V001</p>
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step C · ACTIVATE V001 (SAP-correct procedure)</p>
       <ol style="font-size:12px">
-        <li>tx <code>DMEE</code> → open <code>/CITI/XML/UNESCO/DC_V3_01</code> → <strong>Tree → Versions → Activate Version</strong> → 001 → confirm</li>
-        <li>Save → cutover transport (recommended: stagger after SEPA cutover validates by ≥14 days)</li>
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx DMEE → /CITI/XML/UNESCO/DC_V3_01 → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → SAP archives current V000 to V002 (next free). Document the version number for rollback.</li>
+        <li>tx <code>DMEE</code> → open <code>/CITI/XML/UNESCO/DC_V3_01</code> → Format tree → Change → <strong>Tree → Activate</strong> → V001 content overwrites V000</li>
+        <li>Save → cutover transport (Workbench R3TR DMEE class K) — recommended: stagger after SEPA cutover validates by ≥14 days</li>
         <li>From cutover, every F110 CITI run (CIT01/CIT04/CIT21, payment methods L/R) produces V001 XML</li>
       </ol>
 
-      <p style="font-size:11px;color:#475569"><strong>CITI rollback</strong>: same dialog, activate V000. Atomic flip back.</p>
+      <p style="font-size:11px;color:#475569"><strong>CITI rollback (5-15 min)</strong>: tx DMEE → /CITI/XML/UNESCO/DC_V3_01 → Utilities → Versions → Version Management → select V002 snapshot → Retrieve → Activate → original V000 restored.</p>
       <p style="font-size:11px;color:#475569"><strong>CITI code change required: NONE</strong>. The <code>/CITIPMW/V3_GET_CDTR_BLDG</code> exit and CGI_XML_CT_XSLT post-processor are SAP-standard and unchanged. Pattern A guard does NOT apply to CITI (CITI does not use YCL_IDFI_CGI_DMEE_FALLBACK).</p>
     </div>
     </div>
@@ -2584,14 +2592,15 @@ TECH_NAME=TwnNm     MP_SC_FLD=ZBORT            ← INSERT (matrix row 24)</pre><
 
       <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CGI Step B verification</strong>: VERSION=001 node count = 631+4=635. CdtrAgt/PstlAdr now has 5+4=9 children. <strong>PPC regression check (CRITICAL)</strong>: confirm <code>InstrForCdtrAgt/InstrInf</code> and <code>RmtInf/Ustrd</code> dispatch behavior unchanged for AE/BH/CN/ID/IN/JO/MA/MY/PH country payments. Use the deterministic PPC validation script (Gold DB query against YTFI_PPC_STRUC + T015L) to compare V000 vs V001 expected outputs.</p>
 
-      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step C · ACTIVATE V001</p>
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step C · ACTIVATE V001 (SAP-correct procedure)</p>
       <ol style="font-size:12px">
-        <li>tx <code>DMEE</code> → open <code>/CGI_XML_CT_UNESCO</code> → <strong>Activate Version</strong> 001 → confirm</li>
-        <li>Save → cutover transport (recommend stagger after SEPA + CITI validate)</li>
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx DMEE → /CGI_XML_CT_UNESCO → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → V000 archived to V002 (next free). Document the version number.</li>
+        <li>tx <code>DMEE</code> → /CGI_XML_CT_UNESCO → Format tree → Change → <strong>Tree → Activate</strong> → V001 content overwrites V000</li>
+        <li>Save → cutover transport (Workbench R3TR DMEE class K) — recommend stagger after SEPA + CITI validate</li>
         <li>From cutover, every F110 CGI run (SOG01 USD/EUR/GBP, SOG03 GBP, payment methods N/J) produces V001 XML</li>
       </ol>
 
-      <p style="font-size:11px;color:#475569"><strong>CGI rollback</strong>: same dialog, activate V000. Pattern A guard is backward-compatible (V000 path unaffected by guard since c_value will not be initial under V000 — guard only fires for V001 structured emission).</p>
+      <p style="font-size:11px;color:#475569"><strong>CGI rollback (5-15 min)</strong>: Utilities → Versions → Version Management → select V002 snapshot → Retrieve → Activate → original V000 restored. Pattern A guard is backward-compatible (V000 path unaffected by guard since c_value will not be initial under V000 — guard only fires for V001 structured emission).</p>
       <p style="font-size:11px;color:#475569"><strong>CGI code change required: YES — Pattern A 3-line guard</strong> in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Workbench transport <code>D01K-BADI-FIX-01</code>. Reviewer N_MENARD. Backward-compatible with V000.</p>
     </div>
     </div>
@@ -2670,14 +2679,15 @@ Until then, V001 work on CGI_1 is blocked.</pre></td>
 
       <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CGI_1 Step B verification</strong>: <code>SELECT NODE_ID, MP_SC_FLD FROM DMEE_TREE_NODE WHERE TREE_ID='/CGI_XML_CT_UNESCO_1' AND VERSION='001' AND PARENT_ID = N_0693479130</code> returns the 4 new atoms (matrix row 25 SYNC).</p>
 
-      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI_1 Step C · ACTIVATE V001</p>
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI_1 Step C · ACTIVATE V001 (SAP-correct procedure)</p>
       <ol style="font-size:12px">
-        <li>Same dialog as CGI parent. Activate Version 001 on <code>/CGI_XML_CT_UNESCO_1</code></li>
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx DMEE → /CGI_XML_CT_UNESCO_1 → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → V000 archived to V002 (next free). Document the version number.</li>
+        <li>tx <code>DMEE</code> → /CGI_XML_CT_UNESCO_1 → Format tree → Change → <strong>Tree → Activate</strong> → V001 content overwrites V000</li>
         <li>Save → cutover transport (recommend bundle with CGI parent cutover)</li>
         <li>From cutover, every F110 CGI_1 routed run produces V001 XML</li>
       </ol>
 
-      <p style="font-size:11px;color:#475569"><strong>CGI_1 rollback</strong>: same dialog, activate V000.</p>
+      <p style="font-size:11px;color:#475569"><strong>CGI_1 rollback (5-15 min)</strong>: Utilities → Versions → Version Management → select V002 snapshot → Retrieve → Activate → original V000 restored.</p>
       <p style="font-size:11px;color:#475569"><strong>CGI_1 code change required: NONE</strong>. Pattern A guard from CGI parent applies automatically (same BAdI class).</p>
     </div>
     </div>
@@ -4778,7 +4788,7 @@ File written via SAPFPAYM driver.</pre>
             <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone, dormant)</td><td><b style="color:#e67e22">0</b></td></tr>
             <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone of dirty V000; V000=632 vs P01=639 = 12 deltas)</td><td><b style="color:#e67e22">0</b></td></tr>
           </table>
-          <p style="color:#f6c891;font-size:11px;margin:10px 0 0 0"><b>V001 will be the FIRST EVER DMEE version-bumped transport at UNESCO</b> (released-transport scope per claim 102). In-system D01 already has dormant V001 entries for all 4 trees per claim 109 — recommendation: PURGE the dormant V001 (it has been sitting since an undated DMEE Tx Create Version event, byte-identical clone of D01 V000) and recreate fresh as part of D01-RETROFIT-01 to recover a clean transport-trail. The first-ever experience for the team is therefore: (a) the released-transport V001 round-trip D01→V01→P01, (b) DMEE Tx → Activate Version atomic flip, (c) tested rollback V000↔V001. Brain claim 111.</p>
+          <p style="color:#f6c891;font-size:11px;margin:10px 0 0 0"><b>V001 will be the FIRST EVER DMEE version-bumped transport at UNESCO</b> (released-transport scope per claim 102). In-system D01 already has dormant V001 entries for all 4 trees per claim 109 — recommendation: PURGE the dormant V001 (it has been sitting since an undated DMEE Tx Create Version event, byte-identical clone of D01 V000) and recreate fresh as part of D01-RETROFIT-01 to recover a clean transport-trail. The first-ever experience for the team is therefore: (a) the released-transport V001 round-trip D01→V01→P01, (b) tx DMEE → Tree → Activate (V001 content overwrites V000 per SAP-correct lifecycle), (c) tested rollback via Generate Version snapshot + Version Management Retrieve. Brain claim 111. See <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the corrected lifecycle.</p>
           <p style="color:#475569;font-size:11px;margin:8px 0 0 0"><b>Why this matters for V001:</b> the 2-file + DMEE-versioning strategy adopted (per user directive 2026-04-24, plan §Design recommendations L500) is a <em>new operational practice</em> for the UNESCO team — neither M_SPRONK nor N_MENARD has done a version bump before. Phase 2 Week 1 deliverable explicitly: "V001 INACTIVE in all 3 systems" — first time exercising DMEE Tx Create Version + Activate Version steps in operations. Worth a dry run on a non-live tree first.</p>
         </div>
       </div>
@@ -5377,7 +5387,7 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
 
         <li><strong>Complementary, not duplicative, to the Python simulator</strong> — the Python simulator catches design errors (matrix-spec issues, wrong byte offset, wrong source-bind structure, missing DMEE_TREE_COND). The DMEE Test Data approach catches engine-implementation differences (anything Python implements differently from the SAP-standard DMEE engine — e.g., XSLT post-processing nuances on CITI tree, or per-node EXIT_FUNC behavior). <strong>Use both</strong>: simulator first for fast iteration, DMEE Test Data for a SAP-native confirmation pass on the top scenarios.</li>
 
-        <li><strong>D01 testing without activating V001 anywhere</strong> — the Test Data screen runs V001 even if V001 is in Maintenance mode (EX_STATUS=' '). No activation required. The test runs locally in tx DMEE memory without producing a real F110 file or BCM batch. Zero side effects.</li>
+        <li><strong>V000 testing in any system without activation; V001 testing in D01 only with activation ritual</strong> — per the F8 KEY CONSTRAINT above, the Test Data screen runs the Active version. V000 (current production) can be tested in D01/V01/P01 with zero side effects (no activation, no F110 file, no BCM batch). V001 testing requires Layer 4: Generate Version snapshot → Activate V001 in D01 → F8 Test → Retrieve snapshot → Activate to rollback. The "no activation needed" property applies only to V000 testing.</li>
       </ol>
 
       <h5 style="color:#0369a1;margin-top:14px">Combined testing methodology — the 4 layers in order</h5>
@@ -5433,7 +5443,26 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
 
       <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>The alignment principle in one sentence</strong>: <strong>same 4 templates × same 3 cases × same 794 sample inputs at L1, L2-3, and a sampled subset at L4</strong>. Coverage doesn't fragment across layers — it's the same matrix evaluated by progressively higher-fidelity validators. Anomalies at any layer reveal a specific class of error (design / simulator-equivalence / integration) without ambiguity. This is what makes the methodology operationally tight rather than just "we test multiple ways".</p>
 
-      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>Practical Phase 3 sequencing</strong>: layer 1 already done (claim 105). For layer 2-3, prioritize the top-15 scenarios (94.5% volume coverage) × 4 templates × 3 cases = 180 DMEE Test Data runs (~5 min each = ~15 hours of focused work, splittable across operators) before any V001 activation. After that, layer 4 sampled runs (top-3 scenarios per tree = 12 F110 batches) close the loop. Total Phase 3 effort = days of focused testing, not weeks of D01 cycles.</p>
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>Practical Phase 3 sequencing</strong>: layer 1 already done (claim 105). For layer 2-3 V000 baseline runs: prioritize the top-15 scenarios (94.5% volume coverage) × 4 templates × 1 case (V000) = 60 DMEE Test Data runs (~5 min each = ~5 hours of focused work, splittable across operators), no activation needed. For layer 4 V001 runs: top-15 × 4 templates × V001 activation cycle = 60 cases × ~30 min each = ~30 hours, in D01 only with snapshot+rollback ritual. Total Phase 3 effort = days of focused testing, not weeks of D01 cycles.</p>
+
+      <div style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px">
+        <p style="margin:0 0 6px 0;color:#15803d;font-weight:700">📊 Sister Excel — ready-to-execute test cases for SEPA tree</p>
+        <p style="margin:0 0 6px 0;color:#1f2937">The first SEPA tree test cases are pre-built and operator-ready: <code>Zagentexecution/incidents/xml_payment_structured_address/sepa_ct_unes_test_cases.xlsx</code>.</p>
+        <p style="margin:0 0 4px 0;color:#1f2937">Workbook structure:</p>
+        <ul style="margin:0 0 6px 22px;color:#1f2937">
+          <li><strong>README tab</strong> — recommended inter-case execution order (Case 1 → Case 2 → Case 3) + KEY CONSTRAINT (F8 tests Active only) + Phase A vs Phase B distinction</li>
+          <li><strong>Case_1_Standard_Vendor</strong> — Scenario #1 (FR vendor, EUR, Doc cat=01) — 18.4% volume</li>
+          <li><strong>Case_2_Payroll</strong> — Scenario #2 (FR employee, EUR, Doc cat=03) — 16% volume</li>
+          <li><strong>Case_3_Cross_Border_ES</strong> — SEPA-zone non-FR Cdtr (Spanish vendor, Doc cat=01) — exercises non-FR Cdtr country binding</li>
+        </ul>
+        <p style="margin:0 0 4px 0;color:#1f2937">Each case tab carries the full <strong>17-step procedure</strong> organised in 3 phases:</p>
+        <ul style="margin:0 0 6px 22px;color:#1f2937">
+          <li><strong>Phase A · steps 1-9</strong> — Test V000 (any system, no activation) — F8 against the Active version, save case_N_V000.xml</li>
+          <li><strong>Phase B · steps 10-15</strong> — Test V001 (D01 only) — Generate Version snapshot to V002 → Activate V001 (overwrites V000) → F8 → save case_N_V001.xml → Version Management Retrieve V002 → Activate (rollback)</li>
+          <li><strong>Phase C · steps 16-17</strong> — Diff case_N_V000.xml vs case_N_V001.xml + verify simulator equivalence</li>
+        </ul>
+        <p style="margin:0;color:#1f2937">Generator script (parametric) at <code>Zagentexecution/incidents/xml_payment_structured_address/generate_sepa_test_cases.py</code> — same pattern reusable for /CITI/XML/UNESCO/DC_V3_01, /CGI_XML_CT_UNESCO, /CGI_XML_CT_UNESCO_1 by adding case definitions to the CASES list.</p>
+      </div>
 
       <h4 style="color:#1abc9c;margin-top:24px">Where the volume goes — 81-scenario coverage (claim 106 TIER_1)</h4>
       <p style="color:#8aa4b8;font-size:13px">The 794 simulator samples were stratified across <b>81 distinct scenarios</b> exhaustively enumerated from P01 production REGUH 2025+2026Q1 (210,080 REGUP rows analysed). A scenario is a unique tuple of <code>(tree × paying_co × vendor_bank_country × currency × payment_method × pay_type)</code>. Source: <code>knowledge/domains/Payment/phase0/scenario_discovery.json</code>.</p>
@@ -6237,7 +6266,7 @@ ORDER BY l.LIFNR;</pre>
     <div class="section" style="background:#dcfce7;border-left:4px solid #1abc9c">
       <h4 style="color:#1abc9c">⚠ FIRST EVER released-transport V001 at UNESCO — operational dry-run mandatory</h4>
       <p style="font-size:13px;color:#475569">Per <b>brain claim 102 TIER_1</b>: zero V001/V002 patterns in any of 44 historical transports 2017-2025 (released-transport scope). Per <b>claim 109</b>: P01 is on <code>VERSION=000</code> only across all 4 trees; D01 already carries dormant V001 entries (byte-identical clone of V000, never released — to be PURGED at retrofit Step 0). Phase 2 Steps 2-4 (PURGE dormant V001 + CREATE fresh V001 + edit nodes) + Phase 5 Step (V001 activate) are: (a) PURGE — never exercised on UNESCO trees, (b) CREATE — was exercised once in D01 dormantly (different operators, undated), (c) ACTIVATE — never exercised on UNESCO trees. The transport-released round-trip D01→V01→P01 of V001 is also a first.</p>
-      <p style="font-size:13px;color:#475569">Mandatory pre-Phase-2 dry-run procedure: <a href="../knowledge/domains/Payment/dmee_versioning_procedure.md" style="color:#0066cc"><code>knowledge/domains/Payment/dmee_versioning_procedure.md</code></a>. Verifies (a) authorization profile allows Activate Version in D01, (b) transport prompt UX is understood, (c) reversibility (V000↔V001 atomic flip) works as designed.</p>
+      <p style="font-size:13px;color:#475569">Mandatory pre-Phase-2 dry-run procedure: <a href="../knowledge/domains/Payment/dmee_versioning_procedure.md" style="color:#0066cc"><code>knowledge/domains/Payment/dmee_versioning_procedure.md</code></a>. Verifies (a) authorization profile allows Activate Version in D01, (b) transport prompt UX is understood, (c) the SAP-correct reversibility procedure works as designed: Generate Version snapshot pre-activation → Activate (V001 content overwrites V000) → Version Management Retrieve V002 → Activate (original V000 content restored). Procedure file must reflect the SAP-correct lifecycle (NOT the older atomic-flip framing).</p>
       <p style="font-size:12px;color:#64748b;margin:4px 0 0 0"><b>Transport ID assignment table</b> (8 transports planned for V001 deployment): see linked procedure doc — this closes the missing-deliverables gap.</p>
     </div>
 
@@ -6405,7 +6434,9 @@ Phase 5+30:
       <p>Phase 3 is where developers and testers verify V001 produces correct XML — not where business users sign off (that is Phase 4). The distinction matters because the <strong>cost of a bug found in Phase 3 is hours; the cost of the same bug found in Phase 4 is days plus stakeholder confidence</strong>. Phase 3 catches everything mechanical: schema validation against pain.001.001.03 XSD, BAdI regression on Pattern A, byte-level diff of V000 vs V001 output. Phase 3 fails fast and loud so Phase 4 can focus on judgment calls (does the bank accept this in their test gateway? does Marlies confirm the field mapping matches the source XLS?).</p>
 
       <h4>Where Phase 3 runs</h4>
-      <p>Two environments: D01 for DMEE simulation (no real F110, no real REGUH) plus V01 for end-to-end F110 runs with the V001 dormant tree active for Z-payment-method test routes only. Production V000 stays untouched. Bug found = transport reverted in D01, regenerated, retested. Each test scenario from the matrix in this tab maps to one verifiable XML output.</p>
+      <p>Two environments: <strong>D01</strong> for the DMEE Test Data path (Phase A V000 testing without activation, plus Phase B V001 testing with the snapshot+activate+test+rollback ritual per <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> — F8 only tests the Active version, so V001 must be activated locally in D01 to be tested by the SAP engine). Plus <strong>V01</strong> for end-to-end F110 runs with V001 activated in V01 (after the Generate Version snapshot of V01's V000) for full-stack BCM/SWIFT integration. Production (P01) stays on V000 throughout Phase 3-4. Bug found = roll back via Version Management Retrieve in the affected D01/V01, fix V001 in D01, re-test. Each test scenario from the matrix in this tab maps to one verifiable XML output.</p>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:12px 16px;margin:14px 0;border-radius:4px;font-size:13px"><strong>📊 Operator-ready test cases (SEPA tree)</strong>: pre-built Excel workbook with 3 scenarios + 17-step Phase A/B/C procedure per case at <code>Zagentexecution/incidents/xml_payment_structured_address/sepa_ct_unes_test_cases.xlsx</code>. Use as the Phase 3 starter for /SEPA_CT_UNES — copy-paste rows into tx DMEE → Test Data → F8 → save XML outputs. Full description in <a href="#" onclick="show('simulator', document.querySelector('[onclick*=simulator]'));return false">🧪 Testing Simulation</a> tab "Sister Excel" subsection.</p>
 
       <p><strong>Owner</strong>: Pablo + DBS + Marlies</p>
     </div>
@@ -7104,6 +7135,8 @@ Alliance Lite2 → Bank
 Our 5 UNESCO classes DO NOT touch Event 05. They are in-tree per-node mutators. Earlier plan assumption that Z_DMEE_UNESCO_DEBTOR_ADDR would be a new Event 05 handler was **correct pattern, wrong field names** (handoff doc said FPAYH-REF which doesn't exist; reality is FPAYHX_FREF / FPAYP_FREF). **But even that FM is likely unnecessary for CGI and CITI** — SAP already covers those via country factory.
 
 ### Design recommendations — revised Phase 2 (user-directed 2-file + versioning strategy)
+
+> ⚠ **SUPERSEDED — read with caution.** The block below (down to "Per-tree design with 2-file strategy") was written before the SAP-OFFICIAL CORRECTION landed and uses the older "atomic flip / V001 dormant routable / instant revert" framing. **Per SAP ECC 6.0 official documentation: Activation OVERWRITES V000 with V001 content (not a flag flip). Rollback requires a Generate Version snapshot taken BEFORE activation (not automatic preservation). V001 cannot be routed-to by a Z-payment method in P01 (only the Active version is read by F110).** The correct model is documented in the [DMEE Configuration · the version thing](#) tab. This Plan-tab block is preserved as institutional record of how the strategy was understood pre-correction (per CP-001 knowledge over velocity); the operational truth is in the version-concept tab + the SEPA/CITI/CGI/CGI_1 per-tree Step C sections (already corrected).
 
 **User feedback 2026-04-24**: "why Hybrid? why not 2 files and change configuration. No hay manejo de versiones en algo tan complejo?" → **Hybrid rejected. 2-file + DMEE versioning promoted to default**.
 
