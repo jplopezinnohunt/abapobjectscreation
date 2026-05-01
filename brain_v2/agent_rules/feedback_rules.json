@@ -2311,5 +2311,111 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_biennium_donor_fund_avc_class",
+    "severity": "HIGH",
+    "session": 66,
+    "incident": "INC-000005638",
+    "statement": "When triaging UNESCO field-office support tickets reporting 'insufficient budget' or 'red notification' on SES/MIRO/F110 for donor (Type 101-112) funds, ALWAYS check whether the fund's project title contains an explicit biennium tag like '(2024-2025)' or '(2026-2027)'. If so, check whether a successor biennium fund exists by searching funds for FINCODE one digit higher (e.g. 196EAR4042 -> 196EAR4043) AND whether the successor's PROJ.POST1 explicitly names the new biennium. If both conditions hold, the predecessor fund is a biennium-end starvation candidate and the immediate workaround is FMAVCREINIT on (RLDNR=9H, predecessor fund, current RYEAR).",
+    "why": "INC-000005638 (2026-05-01): Without this rule, the analyst would burn cycles checking ZXFMYU22 10-digit hard link, ZXFMDTU02 hardcodes, ZXFMCU17 tolerance cap, and ZXM06U22 release strategy - all of which pass clean. The actual root cause is at the AVC pool / biennium-close-out process layer, not in custom code. UNESCO's biennium pattern is highly regular (196EAR4037 through 4043 covering 2014-2015 through 2026-2027 in 2-year increments) and reading PROJ.POST1 reveals it in seconds. The detector inc5638_avc_fipex_deficit.py confirms 2,153 of 2,708 (79.5pct) donor (FUND, FUNDSCTR) buckets fit this class signature - this is not a per-incident defect, it is a recurring class.",
+    "how_to_apply": "1. Confirm the user's reported PO/SES touches a fund. 2. Read funds.TYPE (must be 101-112 for donor scope). 3. Read proj.POST1 - look for biennium tag like '(YYYY-YYYY)'. 4. If biennium found, check whether successor fund exists: SELECT * FROM funds WHERE FINCODE = predecessor_FINCODE_with_last_digit_incremented. 5. If successor exists AND its proj.POST1 names the new biennium, you are likely in INC-000005638 class. 6. Confirm via Zagentexecution/quality_checks/inc5638_avc_fipex_deficit.py. 7. Recommend FMAVCREINIT and biennium-close-out review. 8. DO NOT spend cycles on ZXFMYU22 hardcodes / FMDERIVE / tolerance caps unless the predecessor fund is NOT a biennium type."
+  },
+  {
+    "id": "feedback_pull_both_avc_engines_before_root_cause",
+    "rule": "When an availability/budget incident is reported (TCODE in {ML81N, F110, F-53, MIRO, FB60, FBV0, FMBB, FMX1}, error class FMAVC*, BP6*, ZFI*, RW609 with a budget keyword), pull BOTH the FM-AVC pool AND the PS-AVC pool BEFORE declaring a root cause. Never conclude the firing engine on the basis of message vocabulary or domain-prefix alone.",
+    "why": "INC-000005638 first pass concluded FM-side root cause and built a class detector with 79.5% hit rate -- which the user correctly flagged as 'too broad'. Pulling BPJA/COSP/FMAVCT showed the actual firing engine is FM-AVC at the AVC-DERIVED bucket level, not at any FIPEX or fund level. Without the PS data we could not even rule out PS-AVC, and without FMAVCT proper (vs the useless fmavct_summary) we could not see the TC bucket starvation. The fund-level FM pool was +$11.83M while the actual TC bucket was -$1.56M -- the difference between 'looks healthy' and 'every SES blocks'.",
+    "how_to_apply": "1. Resolve the WBS (PS_PSP_PNR) for every PO line via EKKN.\n2. Compute PS-AVC pool at the project level (sum BPJA WRTTP=41 minus COSP WRTTP=04+22 across the biennium).\n3. Compute FM-AVC pool at the AVC-DERIVED bucket: revenue (FMIFIIT WRTTP=66 with FIPEX in the FMAFMAP013500109 derivation range for that fund) MINUS consumption (FMAVCT KBFC for the matching bucket).\n4. Tag the firing engine: BOTH if both pools < 0, FM if only FM, PS if only PS. Cite TIER_1 evidence: file:line for code, rfc_pull for data.\n5. Only after the engine is identified, recommend a fix path.",
+    "severity": "HIGH",
+    "established_session": 66,
+    "incident_anchor": "INC-000005638",
+    "domains": [
+      "PSM",
+      "PS",
+      "FI"
+    ]
+  },
+  {
+    "id": "feedback_avc_bucket_revenue_placeholder_misalignment",
+    "rule": "If revenue (WRTTP=66) is loaded on a placeholder FIPEX (commonly 'REVENUE') while consumption lands on operational FIPEX values, AND the AVC derivation rule (FMAFMAP013500109 step 0007) does NOT include the placeholder FIPEX in the same range as the operational ones, the AVC bucket sees zero revenue and full consumption — pool goes negative even though the fund-level pool is healthy. This is a SYSTEMIC pattern across UNESCO Type 101-112 funds (1,330 buckets in Tier 2 of the misalignment classifier as of 2026-05-01). It is NOT biennium-specific.",
+    "why": "INC-000005638 is the first concrete instance proven with TIER_1 RFC data. Without recognising this pattern, the agent will (a) chase per-fund or per-FIPEX deficits as the root cause, (b) recommend FMAVCREINIT or biennium close-out which do NOT fix the underlying mismatch, (c) miss the systemic scale of the issue (1,787 buckets affected across UNESCO).",
+    "how_to_apply": "When examining an FM-AVC pool deficit:\n1. Pull FMAFMAP013500109 entries for the fund and identify the AVC-derived range.\n2. Check whether revenue (WRTTP=66) FIPEX values ARE INCLUDED in any rule range. If they are loaded on a FIPEX that is NOT in any range (e.g. 'REVENUE'), the misalignment exists.\n3. Recommend either (a) extend the AVC derivation rule to include the revenue FIPEX, OR (b) refactor the revenue-posting integration (often MuleSoft for UNESCO) to apportion across operational FIPEX. Both fix the class at once.",
+    "severity": "HIGH",
+    "established_session": 66,
+    "incident_anchor": "INC-000005638",
+    "domains": [
+      "PSM"
+    ]
+  },
+  {
+    "id": "feedback_fmavct_pull_with_tracking_columns",
+    "rule": "When pulling FMAVCT, ALWAYS include RFUND, RFUNDSCTR, RCMMTITEM and ALLOCTYPE_9 in the field list -- they are non-key tracking columns but they are the ONLY way to identify which (Fund x FundCenter x AVC-bucket) the row belongs to. The primary key COBJNR is an opaque 36-char internal hash. RCMMTITEM holds the AVC-DERIVED bucket (PC/TC/NPC or literal FIPEX), NOT the original FIPEX from the posting.",
+    "why": "First INC-005638 extraction pulled (RLDNR, RFIKRS, COBJNR, RYEAR, ALLOCTYPE_9, RTCUR, HSL01, HSLVT) — 8 fields, the safe ceiling. Result: every row had identical opaque COBJNR and the data was useless for AVC bucket analysis. Re-pulling with (RFIKRS, RFUND, RFUNDSCTR, RCMMTITEM, RYEAR, ALLOCTYPE_9, HSL01) revealed the actual TC vs 80 vs literal-FIPEX bucket structure.",
+    "how_to_apply": "Slim 7-field set: RFIKRS, RFUND, RFUNDSCTR, RCMMTITEM, RYEAR, ALLOCTYPE_9, HSL01. If you need additional periods, do a second pull with HSL02-HSL16 keyed on the same row identifiers.",
+    "severity": "MEDIUM",
+    "established_session": 66,
+    "incident_anchor": "INC-000005638",
+    "domains": [
+      "PSM"
+    ]
+  },
+  {
+    "id": "feedback_no_kbfb_in_unesco_fmavct",
+    "rule": "UNESCO's FMAVCT only stores ALLOCTYPE_9='KBFC' (consumption) rows -- never KBFB (budget). The pool depth at any AVC bucket must be computed JOINING FMIFIIT (revenue side, WRTTP=66) and FMAVCT (consumption side, KBFC). Querying FMAVCT alone for 'budget vs consumption' is WRONG.",
+    "why": "Default mental model is FMAVCT has both budget and consumption rows. UNESCO's config does not. Several FM-AVC analyses across sessions inferred 'fund is depleted' from FMAVCT alone -- they were measuring consumption only, not pool depth.",
+    "how_to_apply": "Pool depth = sum(FMIFIIT FKBTR WHERE FONDS=F AND FISTL=FC AND WRTTP=66 AND GJAHR=Y AND FIPEX in derivation_range_for_bucket(B)) MINUS sum(FMAVCT HSL01 WHERE RFUND=F AND RFUNDSCTR=FC AND RCMMTITEM=B AND RYEAR=Y AND ALLOCTYPE_9='KBFC').",
+    "severity": "MEDIUM",
+    "established_session": 66,
+    "incident_anchor": "INC-000005638",
+    "domains": [
+      "PSM"
+    ]
+  },
+  {
+    "id": "feedback_ekkn_8_field_rfc_ceiling",
+    "rule": "RFC_READ_TABLE on EKKN has a hard 8-field ceiling. Pulling 9+ fields raises AD/E/718 (TABLE_WITHOUT_DATA / buffer overflow) even on tiny WHERE clauses. Same applies to BPJA, BPDJ, COSP, COSS — all wide tables.",
+    "why": "Discovered 2026-05-01 during INC-005638 extension. Initial extraction with 25 fields failed cryptically; the splitter fallback worked but required recursion. The cleanest path is to plan a slim 7-8 field set up front based on what the analysis actually needs.",
+    "how_to_apply": "When designing a new RFC extraction for any table with > 50 fields:\n1. Write down the 5-7 columns the analysis truly needs.\n2. Add 1-2 join-key columns to enable downstream JOINs.\n3. Verify total row width < ~250 bytes (each char field ~16-24 bytes, each CURR/QUAN ~16 bytes).\n4. If you need more, plan a second pull keyed on the same row identifiers. Do NOT rely on the recursive splitter -- it loses the row-alignment guarantee on heterogeneous WHEREs.",
+    "severity": "MEDIUM",
+    "established_session": 66,
+    "incident_anchor": "INC-000005638",
+    "domains": [
+      "DataExtraction"
+    ]
+  },
+  {
+    "id": "feedback_validate_sap_mechanics_against_official_docs_before_companion",
+    "rule": "Before describing SAP mechanism behavior in companions, specs, or operator playbooks, validate against SAP Help Portal + screenshots of the actual customer system. Brain claims, intuition, or session-derived models can be wrong on mechanisms that have not been exercised in production yet.",
+    "why": "Session #66 (2026-05-01): the companion's V001 deployment strategy was built on an 'atomic flag flip via EX_STATUS' model with 'rollback in seconds'. Deep research against SAP Help Portal (Version Management, Activating Format Trees, function module DMEE_GET_BACK_ACTIVE_TREE_ABA, R3TR DMEE workbench class confirmation) + 5 tx DMEE screenshots from UNESCO P01 revealed the real SAP-standard behavior is fundamentally different: V001 activation OVERWRITES V000 (content replacement, not flag flip); rollback requires a Generate Version snapshot taken BEFORE activation (not pre-positioned transport); transport class is Workbench (R3TR DMEE), not Customizing. Brain claim 102 said 'first-ever V001 transport at UNESCO' which was true but the team had built deployment mechanics on assumptions about how that transport would behave at activation — assumptions that did not match SAP standard. The wrong model would have caused: (a) V000 unrecoverable after Phase 5 cutover (no snapshot prep step), (b) failed rollback procedure under pressure, (c) misclassified transport-class approval chain (W vs K reviewer requirements differ). Caught this session because user pushed back on the magic-feeling explanation and demanded SAP-official sources.",
+    "how_to_apply": "When writing about SAP mechanism behavior (DMEE versioning, BAdI dispatch, transport semantics, F110 internals, BCM workflow logic, etc.) in any operator-facing artifact:\n1. Identify each load-bearing mechanism claim ('atomic flip', 'rollback in seconds', 'snapshot preserved', 'transport class W', etc.).\n2. For each claim, find SAP-Help-Portal-level evidence OR a screenshot from the actual customer system OR SAP-shipped function module documentation. Brain TIER_1 claims about UNESCO state are NOT sufficient evidence for SAP mechanism behavior — those are about UNESCO, not about SAP standard.\n3. If evidence is missing, mark the claim '[INFERRED]' or '[VERIFICATION PENDING]'. Do not present unverified mechanism claims as operational instructions.\n4. For Phase 5-style cutover plans specifically: validate the cutover and rollback procedure end-to-end against SAP-official docs before publishing to operators. Mistakes on cutover mechanics are high-impact (production payment files, bank acceptance, audit trail).\n5. When pushing back from a user surfaces a 'this looks like magic' / 'I do not see this in the UI' moment: take it seriously, do the deep research, do not defend the existing model.\n6. After a correction is applied, delete the contradicting content (do not leave it as 'historical') — the SAP-CORRECTION callout itself is the historical record.",
+    "severity": "HIGH",
+    "created_session": 66,
+    "created_date": "2026-05-01",
+    "source_file": "session_066_versioning_correction",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "explicit_session_066",
+    "cp_link_reason": "CP-003 (Precision, evidence, facts) — the rule is a direct application: every operational claim must be anchored in maximum precision + verifiable evidence + checkable facts. Brain claims are necessary but not sufficient when the claim is about SAP mechanism behavior; SAP-Help-Portal-level sources or live system screenshots are required. The session #66 correction (DMEE versioning model) was the second-order CP-003 violation: the brain had TIER_1 facts about UNESCO state (claim 109 V001 byte-equal V000) but the deployment strategy was layered on top with TIER_3 inferred mechanism behavior treated as TIER_1. The fix forces the verification gate at the boundary between project facts and SAP mechanism claims.",
+    "violations_observed": [
+      {
+        "session": 66,
+        "evidence": "Companion described V001 cutover as 'atomic flag flip on EX_STATUS, rollback in seconds via flip back, V000 preserved automatically' — all three claims contradicted by SAP Help Portal which says activation overwrites V000 with V001 content; rollback requires Version Management retrieve of a pre-saved snapshot; preservation requires manual Generate Version before activation. 380 lines of lifecycle/playbook content had to be deleted and replaced after deep research."
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration",
+        "Process"
+      ],
+      "module": [
+        "FI",
+        "TV",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
