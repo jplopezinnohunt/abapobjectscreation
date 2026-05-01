@@ -5251,27 +5251,27 @@ F110 → /CGI_XML_CT_UNESCO traversal
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #cbd5e1"><b>2</b></td>
-            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — hand-crafted</strong> — manual data entry into FPAYHX/FPAYH/FPAYP grids</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">Spot-check one specific edge case interactively; A/B compare V000 vs V001 for the same input</td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — hand-crafted (V000 only)</strong> — manual data entry into FPAYHX/FPAYH/FPAYP grids; F8 tests Active version</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Spot-check V000 engine output for one specific case; prove L1 simulator V000 ≡ L2 engine V000</td>
             <td style="padding:8px;border:1px solid #cbd5e1">~1 min per case</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate (real DMEE engine, single-payment scope)</td>
-            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate for V000 (cannot test V001 without activation per Test active version constraint)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No (V000 path)</b></td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #cbd5e1"><b>3</b></td>
-            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — F110 history replay</strong> — REGUH/REGUP reconstruction → paste into Test Data</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">Reproduce real production patterns under V001; top-15 scenarios = 94.5% volume coverage</td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — F110 history replay (V000 only)</strong> — REGUH/REGUP reconstruction → paste into Test Data; F8 tests Active version</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Reproduce real production patterns under V000; top-15 scenarios = 94.5% volume coverage; engine-level V000 baseline for diff vs simulator V000</td>
             <td style="padding:8px;border:1px solid #cbd5e1">~2-5 min per case</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate (real DMEE engine, real-data scenario)</td>
-            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate for V000 (V001 testing belongs to Layer 4)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No (V000 path)</b></td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #cbd5e1"><b>4</b></td>
-            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Activate V001 in D01 + run F110</strong> — full upstream chain (F110 + SAPFPAYM + Event 05 + DMEE + BCM)</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">Final integration test; end-to-end including BCM workflow + bank gateway</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">~30 min per F110 batch</td>
-            <td style="padding:8px;border:1px solid #cbd5e1">Full-stack accurate (SAP everything)</td>
-            <td style="padding:8px;border:1px solid #cbd5e1;color:#dc2626"><b>Yes — D01 only</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Activate V001 in D01 + run F110 (or F8)</strong> — D01-only V001 engine validation: snapshot V000 → activate V001 → test (F8 or F110) → rollback</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">V001 engine validation; final integration test if F110 used; required because L2-3 cannot test V001 directly</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~30 min per F110 batch (F8-only test = ~5 min, no BCM/SWIFT)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Full-stack accurate (F110+all) or DMEE-engine-only (F8 after activation)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#dc2626"><b>Yes — D01 only, with snapshot+rollback ritual</b></td>
           </tr>
         </tbody>
       </table>
@@ -5339,7 +5339,17 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
 
       <h4 style="color:#1abc9c;margin-top:24px">F110 history replay via DMEE Test Data — SAP-native testing complementary to the Python simulator</h4>
 
-      <p style="font-size:13px">The Python simulator above is one way to validate V001 without F110. SAP itself ships <strong>a second, complementary mechanism</strong> that runs the real DMEE engine against manually-entered test data — <strong>tx DMEE → Tree → Test (the "DMEE Test Data" screen)</strong>. The screen is the entry point of stages ⑤–⑦ in the <a href="#" onclick="show('e2e-flow', document.querySelector('[onclick*=e2e-flow]'));return false">E2E Flow</a> chain: it accepts the same buffer structures (FPAYHX / FPAYH / FPAYP) that F110 + Event 05 populate at runtime — but populated manually by the operator.</p>
+      <div style="background:#fef3c7;border:3px solid #b45309;padding:14px 18px;margin:14px 0;border-radius:6px;font-size:13px">
+        <p style="margin:0 0 8px 0;color:#b45309;font-weight:700;font-size:14px">⚠ KEY CONSTRAINT — DMEE Test mode tests ONLY the Active version</p>
+        <p style="margin:0 0 8px 0;color:#1f2937">tx DMEE menu exposes <strong>"Format tree → Test active version" (F8)</strong>. There is <strong>no "Test maintenance version" menu option</strong>. This means engine-level testing splits into two non-symmetric paths:</p>
+        <ul style="margin:0 0 8px 22px;color:#1f2937">
+          <li><strong>V000 testing (Phase A)</strong> — runs anywhere (D01/V01/P01) via F8 against the production active state. No activation needed. No risk. <em>Proves L1 (Python simulator) ↔ L2 (SAP engine) equivalence on V000.</em></li>
+          <li><strong>V001 testing (Phase B) — D01 ONLY</strong> — V001 cannot be tested in isolation via F8. To run F8 against V001 content, V001 must FIRST be activated (which per SAP-correct lifecycle overwrites V000 with V001 content). Therefore V001 testing requires the full snapshot+activate+test+rollback ritual: (a) Generate Version on D01 V000 → archives to V002 (rollback enabler); (b) Activate V001 → V001 content becomes the new D01 V000; (c) F8 Test active version → output is V001 engine output; (d) Retrieve V002 from Version Management → Activate → original V000 restored.</li>
+        </ul>
+        <p style="margin:0;color:#1f2937"><strong>Implication for the 4-layer methodology</strong>: Layer 2-3 as a "test V001 without activation" path does NOT exist for engine-level validation. What L2-3 actually delivers is engine-level validation of V000 (without activation, in any system). V001 engine testing requires Layer 4 (D01 with V001 activated). The Python simulator's V001 predictions are trusted transitively once L1 V000 ≡ L2 engine V000 is empirically confirmed for the same scenarios.</p>
+      </div>
+
+      <p style="font-size:13px">The Python simulator above is one way to validate V001 without F110. SAP itself ships <strong>a second, complementary mechanism</strong> that runs the real DMEE engine against manually-entered test data — <strong>tx DMEE → Format tree → Test active version (F8) — the "DMEE Test Data" screen</strong>. The screen is the entry point of stages ⑤–⑦ in the <a href="#" onclick="show('e2e-flow', document.querySelector('[onclick*=e2e-flow]'));return false">E2E Flow</a> chain: it accepts the same buffer structures (FPAYHX / FPAYH / FPAYP) that F110 + Event 05 populate at runtime — but populated manually by the operator. Per the constraint above, this F8 path tests whichever version is active at the moment of execution.</p>
 
       <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_test_data_input_buffers.png" alt="DMEE Test Data screen — FPAYHX / FPAYH / FPAYP input structures" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px;margin-top:8px">
       <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_test_data_input_buffers.png</strong> — DMEE Test Data screen showing the 3 input grids: <strong>FPAYHX (formatting of payment data)</strong>, <strong>FPAYH (data for payment)</strong>, <strong>FPAYP (data for paid items)</strong>. Each grid accepts manual row entry; the column names visible (ISO Code / Account No / Name / Street / Bank city / IBAN / SWIFT/BIC / Amount / Crcy / etc.) ARE the SAP-standard DDIC fields of these structures. <strong>What is NOT visible by default is UNESCO's append-structure extensions</strong> — the 25 custom Z-fields in <code>CI_FPAYHX</code> (<code>ZSTRA</code>, <code>ZBSTR</code>, <code>ZBORT</code>, <code>ZBPST</code>, <code>ZLAND</code>, <code>ZORT1</code>, <code>ZPSTL</code>, <code>ZREGI</code>, <code>ZLISO</code>, <code>ZPFST</code>, <code>ZPLOR</code>, etc., per claim 67) that V001 references for UltmtCdtr Worldlink and CdtrAgt cases. Those custom fields exist at the table level but require scrolling/expansion (or the operator using "More fields" in the test screen layout) to populate. <strong>This visual boundary is itself useful: it tells you which V001 bindings reference SAP-standard fields (low-risk, universally available) vs custom append fields (UNESCO-specific, need explicit handling in test scenarios).</strong></div>

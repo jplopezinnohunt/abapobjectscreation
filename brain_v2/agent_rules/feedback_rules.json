@@ -2451,5 +2451,96 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_avc_engine_disambiguation",
+    "severity": "HIGH",
+    "domain": "PSM",
+    "created_session": "2026-05-01-extension",
+    "title": "When user reports budget exceeded on UNESCO funds, ALWAYS test BOTH FM-AVC bucket and PS-AVC pool BEFORE attributing to one engine",
+    "why": "INC-000005638 demonstrated that 'insuffisance de budget' from a UNESCO user is ambiguous: PS-AVC project pool can be +$16M while FM-AVC TC bucket is in -$1.5M deficit on the SAME (Fund, FundCenter) tuple. Inferring engine from user terminology is unsafe.",
+    "how_to_apply": "Before attributing a 'budget exceeded' incident to PS-AVC OR FM-AVC, compute both pools: (a) PS-AVC = sum bpja_*.WTJHR WRTTP=41 over the project's WBS minus sum cosp_*.WTG001..WTG003 WRTTP IN ('04','22'); (b) FM-AVC bucket = sum fmifiit_full.FKBTR WRTTP=66 in AVC-derivation FIPEX range minus sum fmavct_*.HSL01 ALLOCTYPE_9=KBFC at the (RFIKRS, RFUND, RFUNDSCTR, RCMMTITEM) bucket. Run inc5638_per_po_engine_analysis.py-style logic and report verdict={FM | PS | BOTH | NEITHER}.",
+    "applies_to": [
+      "PSM",
+      "PS",
+      "FM-AVC",
+      "PS-AVC",
+      "incident_triage"
+    ],
+    "anti_pattern": "Defaulting to PS-AVC because the user said 'budget exceeded on a project' without testing FM-AVC at the AVC-derived bucket level."
+  },
+  {
+    "id": "feedback_avc_class_before_incident",
+    "severity": "HIGH",
+    "domain": "PSM",
+    "created_session": 67,
+    "created_date": "2026-05-01",
+    "source_file": "session_067_model_gap_class_rollout",
+    "title": "When triaging an AVC budget block, ALWAYS check the class detector first to determine if it is one-off or class-of-defect",
+    "rule": "When a user reports an FMAVC005 / FI 026 / 'insuffisance de budget' on a TYPE 101-112 donor fund, the FIRST action is to run the class detector inc5638_fm_ps_avc_misalignment.py against the latest Gold DB and check whether the affected (Fund, FundCenter) bucket is part of the 2,005-bucket MODEL-GAP-2026-001 class. If yes: stop investigating as a one-off, escalate as class instance. If no: proceed with per-incident analysis but capture the result in the recurring detector for future class-membership re-evaluation.",
+    "why": "Session #66/67 (INC-000005638) demonstrated that an apparent 'one-off' fund-level budget block was the canonical case of a 2,005-bucket structural class growing +4.1%/month. Without class-membership awareness, incident analysts are doomed to repeatedly re-discover the same root cause from scratch on every new ticket against a TYPE 101-112 donor fund. The detector+CSV pre-computes class membership; not consulting it is a velocity loss AND an evidence loss (one-off framing leaves the class footprint hidden from management). CP-001 (knowledge over velocity) and CP-003 (evidence-anchored).",
+    "how_to_apply": "1. On ticket arrival, parse the FONDS / FUNDSCTR / CommItem (or AVC-bucket) from the user's screenshot/SU53.\n2. Open Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.csv (latest run) and grep the (FUND, FUNDSCTR, BUCKET) tuple.\n3. If the tuple appears with Tier in {1, 2}: this is an instance of MODEL-GAP-2026-001. Annotate the incident accordingly, link to canonical doc knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md, propose the standard remediation (FMAVCREINIT / FMBB / TYPE 104->106 close). Do NOT redo full root-cause analysis from scratch.\n4. If the tuple does NOT appear (or appears with Tier in {3, 4}): proceed with per-incident analysis but log the result back into the detector so the next class-detector run captures it. Open a known_unknown if the bucket pattern is novel.\n5. Re-run the class detector at most weekly so CSV stays current. Log the run timestamp + Tier 1/2 counts in brain_state.data_quality and check growth rate vs 2026-05-01 baseline (+4.1%/month).",
+    "applies_to": [
+      "PSM",
+      "FM-AVC",
+      "incident_triage",
+      "donor_fund",
+      "biennium_close_out",
+      "MODEL-GAP-2026-001"
+    ],
+    "anti_pattern": "Re-running per-PO engine analysis from scratch on every new FMAVC005 ticket without first checking class-detector membership. Reporting an incident as 'one-off' when the (Fund, FundCenter, Bucket) is in the 2,005-bucket class.",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "CP-001 (knowledge over velocity) — the rule preserves class-of-defect knowledge across incident tickets so each new instance is a 30-second class-lookup, not a 30-minute re-discovery. Also touches CP-003 (precision/evidence) because class-membership lookup is anchored in a TIER_1 CSV, not analyst judgment.",
+    "domain_axes": {
+      "functional": [
+        "Finance",
+        "Process"
+      ],
+      "module": [
+        "FM",
+        "PS",
+        "FI"
+      ],
+      "process": [
+        "B2R",
+        "P2P",
+        "T2R"
+      ]
+    },
+    "related_companion": "companions/fm_ps_avc_model_gap_companion_v1.html"
+  },
+  {
+    "id": "feedback_dmee_test_mode_only_tests_active_version_v001_requires_activation",
+    "rule": "tx DMEE 'Format tree → Test active version' (F8) tests ONLY the version with EX_STATUS='A'. There is NO 'Test maintenance version' option in the standard menu. To test the Maintenance version (V001) with the SAP engine, V001 MUST be activated first — which (per SAP-correct lifecycle) overwrites V000 with V001 content. Therefore V001 engine-level testing requires activation, and activation requires a Generate Version snapshot of the prior V000 BEFORE activation as the rollback enabler. V001 testing is therefore a D01-only activity (never P01) with strict snapshot+activate+test+rollback discipline.",
+    "why": "Session #66 (2026-05-01): the user surfaced a screenshot of the tx DMEE Format tree menu. The only test option visible was 'Test active version (F8)'. Earlier guidance assumed V001 (Maintenance) could be tested in isolation by 'switching to Maintenance version and clicking Test' — that is not how the standard menu works. SAP's design assumption is: production-grade testing of a tree happens AFTER activation, on the active state. The maintenance version is for editing, not for production-grade test runs. This constrains the 4-layer testing methodology: Layer 2-3 (DMEE Test Data) tests V000 only without activation; testing V001 with the SAP engine requires Layer 4 (D01 activation with snapshot+rollback). The Python simulator (Layer 1) is therefore essential for V001 design iteration, with engine equivalence proven on V000 transitively.",
+    "how_to_apply": "1. When designing a DMEE test methodology, distinguish two separate engine-level test paths: (a) V000 testing — works directly in any system via F8 'Test active version' on the production state, no activation needed; (b) V001 testing — requires activation in a non-production system (D01) with the SAP-correct 4-step ritual: snapshot V000 to historical version (Generate Version → V002), activate V001 (overwrites V000), test the new V000 (= V001 content), retrieve V002 to restore original V000.\n2. NEVER attempt V001 engine testing in P01. The activation overwrite is the same in any system; only D01 has the rollback latitude (V01 is shared UAT, P01 is production).\n3. Maintain the Python simulator (or equivalent) as Layer 1 for V001 design iteration without engine testing. The simulator's V001 prediction is trusted by transitive equivalence once L1 V000 ≡ L2 (engine) V000 is empirically confirmed for the same scenarios.\n4. In test runbooks, label phases explicitly: 'Phase A — Test V000 (any system, no activation)' vs 'Phase B — Test V001 (D01 only, activation+rollback ritual mandatory)'. Do not let operators conflate the two.\n5. When documenting V001 test procedure, always include the snapshot pre-step and the rollback post-step — they are not optional.",
+    "severity": "HIGH",
+    "created_session": 66,
+    "created_date": "2026-05-01",
+    "source_file": "session_066_dmee_test_active_only_discovery",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "explicit_session_066",
+    "cp_link_reason": "CP-003 (Precision, evidence, facts) — the rule corrects an imprecise earlier claim. Initial guidance said 'switch to Maintenance version and run Test' as if both V000 and V001 testing were symmetric in tx DMEE. The screenshot from the user proved otherwise — SAP exposes only 'Test active version' (F8). The earlier framing was inferred from SAP help docs without checking the actual menu. The rule forces verification of the test-mode UI against the actual customer system before publishing operator-facing procedures, and explicitly distinguishes engine-level V000 testing (free) from engine-level V001 testing (requires activation+rollback discipline).",
+    "violations_observed": [
+      {
+        "session": 66,
+        "evidence": "Excel runbook (sepa_ct_unes_test_cases.xlsx, first version) instructed operators to test V001 by 'switching to Maintenance version and clicking Test/Run' — that path does not work in the standard tx DMEE menu. User pushed back with the menu screenshot showing 'Test active version' is the only option. Runbook re-issued with explicit 17-step procedure for each case: 9 steps for V000 (Phase A) + 6 steps for V001 activate/test/rollback in D01 (Phase B) + 2 steps for diff."
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI",
+        "TV",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
