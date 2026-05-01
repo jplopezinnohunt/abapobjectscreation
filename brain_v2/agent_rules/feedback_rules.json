@@ -2417,5 +2417,39 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": "feedback_explore_sap_native_test_simulate_modes_before_designing_test_strategy",
+    "rule": "Before settling on a Phase-3-style testing methodology for a SAP runtime change, systematically walk the tx-level Test/Simulate menu options of the affected module. SAP runtime engines (DMEE, SAPFPAYM, BAdI test harnesses, etc.) typically expose their runtime input structures directly in a built-in test mode. These test modes accept manual or copy-pasted data and run the engine against it without upstream stages — enabling history-replay testing without F110 (or equivalent upstream caller).",
+    "why": "Session #66 (2026-05-01): the project had a Python simulator (claim 105) for fast schema validation and a planned 'Activate V001 in D01 + F110' for full-stack validation. The middle ground — tx DMEE → Tree → Test with hand-crafted FPAYHX/FPAYH/FPAYP — was overlooked entirely until the user spotted the screen layout and pointed out that 'the columns ARE the runtime buffers, F110 just fills them automatically'. This unlocked layer 3 of the testing methodology: SAP-engine-accurate validation against historical production patterns (REGUH/REGUP reconstruction → paste → run) without requiring F110 in any system. Without this layer, Phase 3 testing was scheduled to depend on D01 F110 batch runs which are 30 min each and require the V001 activation transport. With layer 3, the top-15 scenarios (94.5% volume coverage) can be validated in ~30 min TOTAL using REGUH/REGUP reconstruction + paste-and-run in tx DMEE Test Data. As a derivative benefit, the test screen reveals which V001 MP_SC_FLD bindings are SAP-standard (visible) vs UNESCO-custom append (hidden in CI_FPAYHX) — a portability audit by inspection.",
+    "how_to_apply": "1. When designing a Phase-3 test strategy for any SAP runtime change, list the tx-codes that drive the runtime chain.\n2. For each tx-code, walk the menu items: look for Test, Simulate, Trial, 'Display Test Data', or similar — they are usually under Tree/Tools/Utilities/Goto menus.\n3. If a Test mode exposes input structures: those structures are the runtime entry point — testing can start there, skipping upstream stages.\n4. Document the test mode in the testing-methodology section of the spec/companion alongside any pure-software simulator and any full-stack integration test.\n5. Stratify test cases across the available layers (typical 4 layers): (a) fast/cheap simulator for design iteration; (b) SAP-native test mode hand-crafted for engine-accuracy spot-checks; (c) SAP-native test mode + database-reconstructed history for production-pattern coverage; (d) full-stack with real upstream invocation for final integration.\n6. Critically: examine which fields are visible in the test mode by default — they are the SAP-standard runtime structure. Fields hidden in 'More Fields' or append-structure layouts are customer extensions; bindings to those are non-portable to other systems.",
+    "severity": "MEDIUM",
+    "created_session": 66,
+    "created_date": "2026-05-01",
+    "source_file": "session_066_dmee_test_data_discovery",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "explicit_session_066",
+    "cp_link_reason": "CP-001 (Knowledge over velocity) — this is a discovery-discipline rule. The DMEE Test Data feature was always present in tx DMEE but never inspected during Phase 0-1 testing-methodology design. Velocity prioritised 'we have a Python simulator + D01 F110, that's enough' over the slower act of walking the SAP transaction menus to find what else was already available. The cost of that velocity was an avoidable gap in the testing layers (no SAP-engine-accurate middle layer between simulator and full F110). The rule forces a discovery pass before testing-methodology lock-in.",
+    "violations_observed": [
+      {
+        "session": 66,
+        "evidence": "Phase 0/1 testing methodology was designed with 2 layers (Python simulator + D01 F110) and the project shipped to Phase 2 build with that plan. The 3rd layer (tx DMEE → Tree → Test with FPAYHX/FPAYH/FPAYP buffer-paste) was discovered Session #66 only because the user took a screenshot of the DMEE Test Data screen and recognised the input structures as the runtime buffers F110 fills. Had this discovery happened in Phase 0, the testing matrix would have been planned differently and Phase 3 effort estimate would have been ~30 min for top-15 scenarios instead of N hours of D01 F110 batch coordination."
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "FI",
+        "TV",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R",
+        "*"
+      ]
+    }
   }
 ]

@@ -2703,7 +2703,30 @@ Until then, V001 work on CGI_1 is blocked.</pre></td>
     </div>
     <h2>UNESCO BCM Structured Address — End-to-End Flow Map</h2>
     <p style="color:#64748b;font-size:13px"><b>Status (2026-04-29): ALL components connected — V001 design closed (Q1, Q1bis, Q3 resolved)</b></p>
-    <p style="color:#64748b;font-size:12px">Per user directive 2026-04-25 "tenemos que conectar todos los elementos en un flow logico". This view shows the F110→Bank pipeline with V001-touched components highlighted in <span style="background:#1abc9c;color:#000;padding:2px 6px;border-radius:3px">teal</span>, Pattern A code change in <span style="background:#e67e22;color:#fff;padding:2px 6px;border-radius:3px">orange</span>, and out-of-scope components in <span style="background:#34495e;color:#475569;padding:2px 6px;border-radius:3px">grey</span>.</p>
+    <p style="color:#64748b;font-size:12px">Per user directive 2026-04-25 "tenemos que conectar todos los elementos en un flow logico". This view shows the F110→Bank pipeline with V001-touched components highlighted in <span style="background:#1abc9c;color:#000;padding:2px 6px;border-radius:3px">teal</span>, Pattern A code change in <span style="background:#e67e22;color:#fff;padding:2px 6px;border-radius:3px">orange</span>, and out-of-scope components in <span style="background:#475569;color:#f1f5f9;padding:2px 6px;border-radius:3px">grey</span>.</p>
+
+    <div class="section" style="background:#fef3c7;border-left:5px solid #b45309;padding:14px 18px;margin:14px 0;border-radius:4px">
+      <h4 style="color:#b45309;margin:0 0 8px 0">🔗 The runtime → testing bridge — same buffers, two source paths</h4>
+      <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0">A central insight of this E2E flow: the buffer-population stage ④ (FPAYHX/FPAYH/FPAYP) is also <strong>the entry point of SAP's built-in DMEE Test mode</strong> (tx DMEE → Tree → Test → "DMEE Test Data" screen). The same 3 structures that F110 + Event 05 fill at runtime can also be filled <em>manually</em> by the operator from F110 history — enabling SAP-engine-accurate testing without F110 ever running. <strong>This is why most V001 design risk can be retired before any V001 activation</strong> (see Testing Simulation tab → "F110 history replay via DMEE Test Data" for the full 4-layer methodology).</p>
+
+      <table style="margin:8px 0;font-size:11px;width:100%;border-collapse:collapse;background:#fff">
+        <thead>
+          <tr style="background:#1e3a4a;color:#fff">
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:25%">Test Data grid</th>
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:35%">Runtime path (stages ①–③ above fill this)</th>
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:40%">History-replay path (operator fills from)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYH</strong> grid<br><span style="font-size:10px;color:#64748b">header per payment</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUH at payment-medium build time</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUH</strong> — extract one persistent payment-header row per F110-generated payment</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYP</strong> grid<br><span style="font-size:10px;color:#64748b">line items</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUP per cleared invoice line</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUP</strong> — 1+ rows per REGUH header (one per paid line)</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYHX</strong> grid<br><span style="font-size:10px;color:#64748b">standard columns (REF01..REF15 byte-packed)</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">Stages ②–③: Event 05 country class reads ADRC for the company-code Dbtr, byte-packs into REF01..REF06 per claim 101 layout</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>ADRC + T001</strong> — for the originating company-code (UNES / UBO / IIEP / etc.), look up T001-ADRNR → ADRC, byte-pack STREET / HOUSE_NUM1 / POST_CODE1 / CITY1 / REGION into REF01[0..60]/[60..80]/[80..90]/[100..110]/[90..100] + REF06[0..40]</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYHX</strong> grid<br><span style="font-size:10px;color:#64748b">UNESCO-custom append columns (Z-fields, hidden by default)</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">Event 05 country class also writes Z-fields (ZSTRA, ZBSTR, ZBORT, ZBPST, ZORT1, ZPSTL, ZREGI, ZLISO, ZPFST, ZPLOR…) into the <strong>CI_FPAYHX</strong> append structure (claim 67 — 25 Z-fields total)</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUT</strong> (run-time formatting buffer, partially persisted) + reconstruction from Event 05 logic; or operator manually populates from vendor master / payment context</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:13px;color:#1f2937;margin:8px 0 0 0"><strong>Two implications</strong>: <em>(1)</em> Testing — pick the top-15 production scenarios (94.5% volume coverage), reconstruct one representative payment per scenario from REGUH/REGUP, paste into Test Data, run V001 → SAP-engine-accurate validation in ~2-5 min per scenario, no F110 needed. <em>(2)</em> Portability audit — every V001 binding (<code>MP_SC_FLD</code>) maps to a column on this screen. If it is in the <strong>visible default layout</strong> = SAP-standard, portable to any UNESCO-like SAP. If it is in the <strong>append-structure layout</strong> (Z-fields hidden by default) = depends on UNESCO's CI_FPAYHX extension being present.</p>
+    </div>
 
     <style>
       .flow-pipeline { display:flex; flex-direction:column; gap:0; align-items:stretch; margin:20px 0; font-family:'Segoe UI',sans-serif; }
@@ -2723,7 +2746,7 @@ Until then, V001 work on CGI_1 is blocked.</pre></td>
       .out-scope { border-color:#34495e; opacity:0.78; }
       .out-scope h4 { color:#7f8c9b; }
       .out-scope::after { content:"OUT OF SCOPE"; position:absolute; top:8px; right:10px; background:#34495e; color:#475569; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; }
-      .flow-stage code { background:#e0f2fe; color:#dadfe1; padding:1px 5px; border-radius:3px; font-size:11px; }
+      .flow-stage code { background:#0f172a; color:#fde68a; padding:2px 6px; border-radius:3px; font-size:11px; font-family:Consolas,Monaco,monospace; font-weight:600; border:1px solid #fbbf24; }
       .flow-stage ul { margin:6px 0 0 18px; padding:0; font-size:12px; line-height:1.55; }
       .flow-stage ul li { color:#475569; }
       .legend-row { display:flex; gap:6px; flex-wrap:wrap; font-size:11px; margin-top:6px; }
@@ -2821,6 +2844,30 @@ Until then, V001 work on CGI_1 is blocked.</pre></td>
           <li>Country REF14 extras: FR=SIRET 16 chars · DE=SUN+SeqTp · IT=CUP+CIG+MGO · GB=bnkid+SeqTp · GENERIC writes nothing</li>
         </ul>
         <div class="meta">DDIC structures · NOT touched by V001 (read-only consumers added in V001)</div>
+
+        <div style="background:#fef3c7;border-left:5px solid #1abc9c;padding:12px 16px;margin:14px 0;border-radius:4px;font-size:12px">
+          <p style="margin:0 0 6px 0;color:#15803d;font-weight:700">💡 Stage ④ is also the entry point of SAP's built-in DMEE Test mode — and the bridge between runtime and history-replay testing</p>
+          <p style="margin:0 0 8px 0;color:#1f2937">tx DMEE → Tree → Test (or via Display + Test button) opens the <strong>"DMEE Test Data"</strong> screen which accepts manual input rows for exactly these 3 structures: <code>FPAYHX</code>, <code>FPAYH</code>, <code>FPAYP</code>. <strong>The input columns of the test screen ARE the runtime buffer fields</strong> — populated automatically by stages ①–③ at F110 runtime, OR populated manually by the operator for testing. Once these 3 grids are filled, stages ⑤–⑦ run against the V001 tree without F110 ever executing.</p>
+
+          <p style="margin:8px 0 6px 0;color:#1f2937;font-weight:700">The bridge between F110 runtime and history-replay testing — same buffers, two source paths:</p>
+          <table style="margin:6px 0 8px 0;font-size:11px;width:100%;border-collapse:collapse;background:#fff">
+            <thead>
+              <tr style="background:#1e3a4a;color:#fff">
+                <th style="padding:6px;text-align:left;color:#fff;width:25%">Test Data grid</th>
+                <th style="padding:6px;text-align:left;color:#fff;width:35%">Runtime path (F110 fills this)</th>
+                <th style="padding:6px;text-align:left;color:#fff;width:40%">History-replay path (operator fills this from)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYH</code> grid (header per payment)</td><td style="padding:6px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUH at payment-medium build time</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUH</code> — extract one persistent payment-header row per F110-generated payment</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYP</code> grid (line items)</td><td style="padding:6px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUP per cleared invoice line</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUP</code> — 1+ rows per REGUH header (one per paid line)</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYHX</code> grid · standard columns (REF01..REF15 byte-packed)</td><td style="padding:6px;border:1px solid #cbd5e1">Stages ②–③ above: Event 05 country class reads ADRC for the company-code Dbtr, byte-packs into REF01..REF06 per claim 101 layout</td><td style="padding:6px;border:1px solid #cbd5e1"><code>ADRC</code> + <code>T001</code> — for the originating company-code (UNES / UBO / IIEP / etc.), look up T001-ADRNR → ADRC, byte-pack STREET/HOUSE_NUM1/POST_CODE1/CITY1/REGION into REF01[0..60]/[60..80]/[80..90]/[100..110]/[90..100] + REF06[0..40]</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYHX</code> grid · UNESCO-custom append columns (Z-fields, hidden by default)</td><td style="padding:6px;border:1px solid #cbd5e1">Event 05 country class also writes Z-fields (ZSTRA, ZBSTR, ZBORT, ZBPST, ZORT1, ZPSTL, ZREGI, ZLISO, ZPFST, ZPLOR…) into the <code>CI_FPAYHX</code> append structure (claim 67 — 25 Z-fields total)</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUT</code> (run-time formatting buffer, partially persisted) + reconstruction from Event 05 logic; or operator manually populates from vendor master / payment context</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:0 0 4px 0;color:#1f2937"><strong>Insight</strong>: every V001 binding (<code>MP_SC_FLD</code>) the matrix references must come from one of the two source paths above. If it references a column visible in the default Test Data grid layout → SAP-standard, portable, populates universally. If it references a column hidden in the append-structure layout → UNESCO-specific, depends on <code>CI_FPAYHX</code> extension being present in any target system.</p>
+          <p style="margin:0;color:#1f2937">Full strategy + 4-layer testing methodology in <a href="#" onclick="show('simulator', document.querySelector('[onclick*=simulator]'));return false">🧪 Testing Simulation</a> tab → "F110 history replay via DMEE Test Data".</p>
+        </div>
       </div>
 
       <div class="flow-arrow">▼</div>
@@ -3014,7 +3061,7 @@ Until then, V001 work on CGI_1 is blocked.</pre></td>
         .erm-ent { position:absolute; width:170px; height:46px; background:#e0f2fe; border:1px solid #2a4a64; border-radius:4px; padding:5px 8px; box-sizing:border-box; cursor:default; transition:transform 0.1s; z-index:2; }
         .erm-ent:hover { transform:translateY(-1px); border-color:#0066cc; z-index:3; }
         .erm-ent .ent-id { font-size:10px; font-family:'Consolas',monospace; color:#64748b; line-height:1; margin-bottom:2px; }
-        .erm-ent .ent-name { font-size:11px; color:#dadfe1; line-height:1.2; font-weight:600; }
+        .erm-ent .ent-name { font-size:11px; color:#0c4a6e; line-height:1.2; font-weight:700; }
         .erm-ent.cfg { border-left:4px solid #5c8db1; }
         .erm-ent.code-u { border-left:4px solid #d99b6b; }
         .erm-ent.code-sap { border-left:4px solid #b48fb6; }
@@ -5178,16 +5225,73 @@ F110 → /CGI_XML_CT_UNESCO traversal
     </div>
 <div id="tab-simulator" class="content">
     <div class="section" style="background:#dcfce7;border-color:#1abc9c">
-      <h3 style="color:#1abc9c">🧪 Testing Simulation — V000/V001 pure-Python end-to-end (commit 25e336c)</h3>
+      <h3 style="color:#1abc9c">🧪 Testing Simulation — V001 testing methodology in 4 complementary layers</h3>
+
+      <p style="font-size:13px">V001 is validated by 4 layers of testing — each layer catches a different class of error, runs at a different speed, and has a different fidelity. The Python simulator (claim 105) is layer 1; SAP-native tx DMEE Test Data (manual + history-replay) are layers 2 and 3; D01 F110 integration is layer 4. <strong>None of layers 1–3 require V001 activation anywhere</strong> — they are entirely build-time validation that retires most V001 design risk before any Phase 5-style activation.</p>
+
+      <table style="margin-top:10px;font-size:12px;border-collapse:collapse;width:100%">
+        <thead>
+          <tr style="background:#0d3a2f;color:#fff">
+            <th style="padding:8px;text-align:left;color:#fff;width:5%">Layer</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:25%">What it is</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:25%">Use case</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:12%">Speed</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:18%">Fidelity</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:15%">V001 activation needed?</th>
+          </tr>
+        </thead>
+        <tbody style="background:#fff;color:#1f2937">
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>1</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Python simulator</strong> (claim 105) — pure-Python re-implementation of the DMEE engine</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Fast design iteration during build; matrix-spec validation; XSD compliance check across schemas</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~seconds per scenario</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Schema-correctness only (Python implementation may differ from SAP engine on edge cases)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>2</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — hand-crafted</strong> — manual data entry into FPAYHX/FPAYH/FPAYP grids</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Spot-check one specific edge case interactively; A/B compare V000 vs V001 for the same input</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~1 min per case</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate (real DMEE engine, single-payment scope)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>3</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — F110 history replay</strong> — REGUH/REGUP reconstruction → paste into Test Data</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Reproduce real production patterns under V001; top-15 scenarios = 94.5% volume coverage</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~2-5 min per case</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate (real DMEE engine, real-data scenario)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>4</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Activate V001 in D01 + run F110</strong> — full upstream chain (F110 + SAPFPAYM + Event 05 + DMEE + BCM)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Final integration test; end-to-end including BCM workflow + bank gateway</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~30 min per F110 batch</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Full-stack accurate (SAP everything)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#dc2626"><b>Yes — D01 only</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:13px;margin-top:10px"><strong>Recommended order through Phase 3 / Phase 4</strong>: layer 1 first (catch design errors at code-review speed) → layer 2 second (sanity-check the simulator's predictions in real SAP for a few cases) → layer 3 third (top-15 scenarios = 94.5% volume coverage in ~30 min total) → layer 4 fourth (final integration). The earlier the layer, the cheaper the discovery — issues caught at layer 1 cost seconds; the same issues caught at layer 4 cost 30 minutes plus a transport rework.</p>
+
+      <p style="font-size:13px;margin-top:8px"><strong>Strategic implication</strong>: layers 1–3 are 100% build-time validation. They retire V001 design risk WITHOUT touching the SAP version-management lifecycle (no <code>Generate Version</code> snapshot, no Activate Version, no Workbench transport activation). Layer 4 is where D01-side activation enters — and the SAP-correct deployment lifecycle (snapshots, atomic activation = overwrite, Version-Management retrieve for rollback) only starts mattering at layer 4 and Phase 5. <strong>By the time Phase 5 cutover arrives, V001 design risk is already retired by layers 1–3</strong> — the cutover is mechanical, not exploratory.</p>
+
+      <h4 style="color:#1abc9c;margin-top:24px">Layer 1 — The Python simulator (claim 105)</h4>
+
+      <p style="font-size:13px">A pure-Python re-implementation of the DMEE engine that reads real P01 payment data from the Gold DB, renders V000 + V001 XML, and validates against ISO 20022 XSDs. <strong>Validated 794 production cases × 3 schemas = 2,382 PASS / 0 FAIL</strong>. Used for fast design iteration during V001 build — issues caught here cost seconds to fix.</p>
 
       <h4>Why simulate before touching SAP at all?</h4>
-      <p>Most SAP projects test by deploying ABAP to a sandbox client, running F110 with synthetic data, and inspecting the output XML. That works, but it has three drawbacks: <em>(1)</em> it requires a transport, <em>(2)</em> it requires sandbox SAP authorisation, <em>(3)</em> running 794 test scenarios serially through F110 takes hours per run. The simulator solves all three: <strong>it is pure Python, runs entirely on local Gold DB data, and renders V000 + V001 pain.001 XML in seconds per scenario</strong>. We can iterate on the V001 design at the speed of code review, not the speed of SAP transports.</p>
+      <p>Most SAP projects test by deploying ABAP to a sandbox client, running F110 with synthetic data, and inspecting the output XML. That works, but it has three drawbacks: <em>(1)</em> it requires a transport, <em>(2)</em> it requires sandbox SAP authorisation, <em>(3)</em> running 794 test scenarios serially through F110 takes hours per run. The Python simulator solves all three: <strong>it is pure Python, runs entirely on local Gold DB data, and renders V000 + V001 pain.001 XML in seconds per scenario</strong>. We can iterate on the V001 design at the speed of code review, not the speed of SAP transports.</p>
 
       <h4>What the simulator actually does</h4>
-      <p>The simulator implements every layer of the SAP-side pipeline in Python: it reads real P01 payment data from the Gold DB (REGUH_FAST + REGUP + LFA1 + ADRC), follows the same field mappings the DMEE tree would follow, builds V000 (current) and V001 (proposed) XML side-by-side, then validates both against the official ISO 20022 XSDs. <strong>The simulator is correctness-equivalent to F110 + DMEE for the address-tag scope</strong> — and that equivalence is itself a tested invariant (claim 105: 794/794 PASS on both pain.001.001.03 and pain.001.001.09 schemas).</p>
+      <p>The simulator implements every layer of the SAP-side pipeline in Python: it reads real P01 payment data from the Gold DB (REGUH_FAST + REGUP + LFA1 + ADRC), follows the same field mappings the DMEE tree would follow, builds V000 (current) and V001 (proposed) XML side-by-side, then validates both against the official ISO 20022 XSDs. <strong>The simulator is correctness-equivalent to F110 + DMEE for the address-tag scope</strong> — and that equivalence is itself a tested invariant (claim 105: 794/794 PASS on both pain.001.001.03 and pain.001.001.09 schemas). <strong>Layer 1 limit</strong>: the simulator is Python — any SAP-engine quirk Python doesn't reproduce will not be caught here. That gap is exactly what layers 2 and 3 close.</p>
 
-      <h4>What this enables for V001</h4>
-      <p>Three high-leverage outcomes: <em>(1)</em> design questions that would otherwise need bank confirmation (e.g., "does the bank accept the V001 tag layout?") become testable locally — the simulator validates against pain.001.001.09 (the CBPR+ Nov 2026 schema) so we know V001 is forward-compatible without sending a single test file; <em>(2)</em> per-tree per-vendor edge-cases (UltmtCdtr Worldlink, name-overflow, missing house-numbers) get exhaustive coverage in seconds; <em>(3)</em> the simulator becomes the <strong>regression baseline for Phase 3-4 testing</strong> — when D01 simulation produces a real V001 XML, we diff it against the simulator's expected output to catch any unexpected SAP-side behavior.</p>
+      <h4>What this layer enables for V001</h4>
+      <p>Three high-leverage outcomes: <em>(1)</em> design questions that would otherwise need bank confirmation (e.g., "does the bank accept the V001 tag layout?") become testable locally — the simulator validates against pain.001.001.09 (the CBPR+ Nov 2026 schema) so we know V001 is forward-compatible without sending a single test file; <em>(2)</em> per-tree per-vendor edge-cases (UltmtCdtr Worldlink, name-overflow, missing house-numbers) get exhaustive coverage in seconds; <em>(3)</em> the simulator becomes the <strong>regression baseline for layer 4 testing</strong> — when D01 F110 produces a real V001 XML, we diff it against the simulator's expected output to catch any unexpected SAP-side behavior.</p>
 
       <p style="color:#64748b;font-size:12px;margin-top:14px">Tool: <code>Zagentexecution/mcp-backend-server-python/xml_simulator.py</code> — autonomous Python (no ABAP deploy needed). Reads real P01 data from Gold DB, renders V000 + V001 pain.001 XML per tree, validates against XSDs.</p>
 
@@ -5232,6 +5336,54 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
 
       <h4 style="color:#1abc9c">Tool reusability</h4>
       <p>Any future DMEE change can be simulated by editing the V001 transformer rules in Python. <strong>Permanent regression test infrastructure for UNESCO DMEE.</strong></p>
+
+      <h4 style="color:#1abc9c;margin-top:24px">F110 history replay via DMEE Test Data — SAP-native testing complementary to the Python simulator</h4>
+
+      <p style="font-size:13px">The Python simulator above is one way to validate V001 without F110. SAP itself ships <strong>a second, complementary mechanism</strong> that runs the real DMEE engine against manually-entered test data — <strong>tx DMEE → Tree → Test (the "DMEE Test Data" screen)</strong>. The screen is the entry point of stages ⑤–⑦ in the <a href="#" onclick="show('e2e-flow', document.querySelector('[onclick*=e2e-flow]'));return false">E2E Flow</a> chain: it accepts the same buffer structures (FPAYHX / FPAYH / FPAYP) that F110 + Event 05 populate at runtime — but populated manually by the operator.</p>
+
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_test_data_input_buffers.png" alt="DMEE Test Data screen — FPAYHX / FPAYH / FPAYP input structures" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px;margin-top:8px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_test_data_input_buffers.png</strong> — DMEE Test Data screen showing the 3 input grids: <strong>FPAYHX (formatting of payment data)</strong>, <strong>FPAYH (data for payment)</strong>, <strong>FPAYP (data for paid items)</strong>. Each grid accepts manual row entry; the column names visible (ISO Code / Account No / Name / Street / Bank city / IBAN / SWIFT/BIC / Amount / Crcy / etc.) ARE the SAP-standard DDIC fields of these structures. <strong>What is NOT visible by default is UNESCO's append-structure extensions</strong> — the 25 custom Z-fields in <code>CI_FPAYHX</code> (<code>ZSTRA</code>, <code>ZBSTR</code>, <code>ZBORT</code>, <code>ZBPST</code>, <code>ZLAND</code>, <code>ZORT1</code>, <code>ZPSTL</code>, <code>ZREGI</code>, <code>ZLISO</code>, <code>ZPFST</code>, <code>ZPLOR</code>, etc., per claim 67) that V001 references for UltmtCdtr Worldlink and CdtrAgt cases. Those custom fields exist at the table level but require scrolling/expansion (or the operator using "More fields" in the test screen layout) to populate. <strong>This visual boundary is itself useful: it tells you which V001 bindings reference SAP-standard fields (low-risk, universally available) vs custom append fields (UNESCO-specific, need explicit handling in test scenarios).</strong></div>
+
+      <h5 style="color:#0369a1;margin-top:14px">The strategy — replay F110 history into the test screen</h5>
+
+      <p style="font-size:13px">Combine two artifacts UNESCO already has: <strong>(a) F110 history persisted in REGUH / REGUP / REGUT</strong> (every payment ever produced is reconstructable from these tables); <strong>(b) the same tx DMEE Test Data input shape on the screen above</strong>. Pick any historical F110 batch — for example, the SEPA Payroll run from 2025-Q4 with 103,126 line items (scenario #2 of the 81-scenario coverage above). Reverse-engineer the FPAYH / FPAYHX / FPAYP rows for one of those payments from REGUH/REGUP, paste them into the DMEE Test Data screen, switch to V001 view, click Test, and SAP runs the real DMEE engine against your manually-pasted buffers and renders the V001 XML. <strong>You see exactly what F110 would have produced for that historical payment under V001, without F110 ever executing.</strong></p>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th>Source table</th><th>What to extract</th><th>Maps to test-screen grid</th></tr>
+        <tr><td><code>REGUH</code> (payment header — 1 row per F110-generated payment)</td><td>ZBUKR, LIFNR, ZALDT, ZBETR, WAERS, ZBNKS, ZBNKL, ZBNKN, IBAN, SWIFT, KIDNO, NAME1, ORT01, STRAS, PSTLZ, REGUL, ZBNKL, etc.</td><td><code>FPAYH</code> grid (data for payment)</td></tr>
+        <tr><td><code>REGUP</code> (payment items — 1+ rows per REGUH record)</td><td>BELNR, BUZEI, WRBTR, SGTXT, KIDNO, ZUONR, etc. (per line)</td><td><code>FPAYP</code> grid (data for paid items)</td></tr>
+        <tr><td><code>ADRC</code> + <code>T001</code> (Dbtr/UNESCO HQ company-code address)</td><td>STREET, HOUSE_NUM1, POST_CODE1, CITY1, COUNTRY, REGION — byte-packed into REF01..REF15 (claim 101 layout)</td><td><code>FPAYHX</code> grid (formatting of payment data)</td></tr>
+        <tr><td><code>REGUT</code> (run-time formatting buffer, partially persisted) + Z-fields populated by Event 05 country class</td><td>ZSTRA, ZBSTR, ZORT1, ZPSTL etc. — UNESCO custom append fields for UltmtCdtr / CdtrAgt structured atoms</td><td><code>FPAYHX</code> grid (custom-extension columns — typically hidden by default; activate via screen layout)</td></tr>
+      </table>
+
+      <h5 style="color:#0369a1;margin-top:14px">Why this matters for the change strategy</h5>
+
+      <ol style="font-size:13px">
+        <li><strong>Validates V001 against real production patterns without F110</strong> — pick the top-15 scenarios (94.5% of volume per the table below), reconstruct one representative payment per scenario from REGUH/REGUP, paste into Test Data, simulate. If the V001 XML output is structurally correct and schema-valid, V001 is validated against 94.5% of production volume — without ever running F110 in any system.</li>
+
+        <li><strong>Reproduces specific bank-rejection scenarios deterministically</strong> — when Marlies's analysis or a bank reports a specific defect ("payment X to vendor Y to bank Z was rejected because..."), find that exact REGUH record, reconstruct its FPAYH/FPAYHX/FPAYP, paste into Test Data, run V001 → see if V001 still produces a problem-XML or fixes it. Same input + V000 vs V001 = direct A/B comparison.</li>
+
+        <li><strong>Field-visibility audit comes for free</strong> — when reconstructing FPAYHX, every field your V001 design references via MP_SC_FLD must be populated. If the field is in the visible part of the test screen, it is SAP-standard and universally available. If it is hidden in the append-structure section (Z-fields), <strong>that binding depends on UNESCO's CI_FPAYHX customization</strong> and won't work in any other UNESCO-like environment without the same extension. This audit is a derivative output of the testing exercise: the V001 design's portability gets characterized as a side effect.</li>
+
+        <li><strong>Complementary, not duplicative, to the Python simulator</strong> — the Python simulator catches design errors (matrix-spec issues, wrong byte offset, wrong source-bind structure, missing DMEE_TREE_COND). The DMEE Test Data approach catches engine-implementation differences (anything Python implements differently from the SAP-standard DMEE engine — e.g., XSLT post-processing nuances on CITI tree, or per-node EXIT_FUNC behavior). <strong>Use both</strong>: simulator first for fast iteration, DMEE Test Data for a SAP-native confirmation pass on the top scenarios.</li>
+
+        <li><strong>D01 testing without activating V001 anywhere</strong> — the Test Data screen runs V001 even if V001 is in Maintenance mode (EX_STATUS=' '). No activation required. The test runs locally in tx DMEE memory without producing a real F110 file or BCM batch. Zero side effects.</li>
+      </ol>
+
+      <h5 style="color:#0369a1;margin-top:14px">Combined testing methodology — the 4 layers in order</h5>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th>#</th><th>Layer</th><th>Purpose</th><th>Speed</th><th>Fidelity</th></tr>
+        <tr><td>1</td><td><strong>Python simulator</strong> (claim 105)</td><td>Catch design errors fast — matrix spec, byte offsets, source-bind</td><td>seconds per scenario</td><td>schema-correctness only</td></tr>
+        <tr><td>2</td><td><strong>tx DMEE Test Data</strong> with hand-crafted FPAYHX/FPAYH/FPAYP</td><td>Spot-check one specific edge case interactively in SAP</td><td>~1 minute per case</td><td>SAP-engine accurate (single payment)</td></tr>
+        <tr><td>3</td><td><strong>tx DMEE Test Data</strong> with F110-history-replay</td><td>Reproduce real production patterns with V001; A/B vs V000 for any historical payment</td><td>~2-5 minutes per case (data prep + paste + run)</td><td>SAP-engine accurate (real-data scenario)</td></tr>
+        <tr><td>4</td><td><strong>Activate V001 in D01 only</strong> + run real F110</td><td>Full integration: F110 + SAPFPAYM + Event 05 + DMEE + BCM end-to-end</td><td>~30 min per F110 batch</td><td>full-stack accurate</td></tr>
+      </table>
+
+      <p style="font-size:13px;margin-top:8px"><strong>Recommended Phase 3 sequence</strong>: layer 1 (simulator) for design iteration during build → layer 2 (Test Data hand-crafted) for sanity checks per matrix-row → layer 3 (Test Data F110-history replay) for the top-15 scenarios = 94.5% volume coverage → layer 4 (D01 F110) for the final integration cycle. Each layer catches a different class of error, and earlier layers find issues at lower cost.</p>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>Strategic implication</strong>: layers 1–3 do not require Phase 5-style activation, do not require Generate Version snapshots, and do not depend on the Workbench transport chain. They are <strong>build-time validation tools</strong>. The SAP-correct V001 deployment lifecycle (with mandatory <code>Generate Version</code> snapshots before activation per the version-concept tab) only kicks in at layer 4 and Phase 5. <strong>This means most V001 design risk is retire-able BEFORE any Generate Version snapshot has to be considered</strong> — which buys safety margin: by the time we activate V001 in P01, the design has already been validated by 794 simulator runs + DMEE Test Data spot checks + D01 F110 integration test. The activation step itself is then mechanical, not exploratory.</p>
+
       <h4 style="color:#1abc9c;margin-top:24px">Where the volume goes — 81-scenario coverage (claim 106 TIER_1)</h4>
       <p style="color:#8aa4b8;font-size:13px">The 794 simulator samples were stratified across <b>81 distinct scenarios</b> exhaustively enumerated from P01 production REGUH 2025+2026Q1 (210,080 REGUP rows analysed). A scenario is a unique tuple of <code>(tree × paying_co × vendor_bank_country × currency × payment_method × pay_type)</code>. Source: <code>knowledge/domains/Payment/phase0/scenario_discovery.json</code>.</p>
       <table style="font-size:12px">
