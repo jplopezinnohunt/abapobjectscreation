@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>INC-000005638 / MODEL-GAP-2026-001 — Executive Brief</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:920px;margin:30px auto;padding:0 20px;line-height:1.5}
+h1{color:#08305f;font-size:20px;border-bottom:3px solid #c5283d;padding-bottom:6px;margin:0 0 6px 0}
+.tag{display:inline-block;background:#c5283d;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:0.4px;margin-right:6px}
+h2{color:#08305f;font-size:14px;margin:18px 0 6px 0;border-bottom:1px solid #d4d9e0;padding-bottom:3px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.kpi{background:#f4f5f7;padding:10px;border-radius:5px;border-left:3px solid #08305f}
+.kpi.red{border-left-color:#c5283d}
+.kpi.amber{border-left-color:#ff9f1c}
+.kpi.green{border-left-color:#2a9d8f}
+.kpi .v{font-size:18px;font-weight:700;color:#08305f}
+.kpi.red .v{color:#c5283d}
+.kpi.amber .v{color:#a86c00}
+.kpi.green .v{color:#0a7e6e}
+.kpi .l{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+th{background:#e0ecf8;color:#08305f;text-align:left;padding:5px 8px;font-weight:600}
+td{padding:5px 8px;border-bottom:1px solid #d4d9e0;vertical-align:top}
+.callout{background:#fff4d6;border-left:4px solid #ff9f1c;padding:10px 14px;margin:10px 0;border-radius:3px;font-size:13px}
+.callout.red{background:#ffe4e6;border-left-color:#c5283d}
+.callout.green{background:#d9f2ee;border-left-color:#2a9d8f}
+.narrative{background:linear-gradient(180deg,#fff4d6 0%,#ffe4e6 100%);border:3px solid #c5283d;padding:14px 18px;border-radius:6px;margin:12px 0}
+.narrative h2{color:#c5283d;border:none;font-size:15px;margin-top:0}
+.narrative blockquote{margin:6px 0;padding:8px 12px;background:#fff;border-left:3px solid #c5283d;font-style:italic;font-size:13px}
+.decision{background:#08305f;color:#fff;padding:14px 18px;border-radius:6px;margin:14px 0}
+.decision h2{color:#fff;border-bottom:1px solid rgba(255,255,255,0.3);font-size:16px}
+.decision ul{margin:6px 0 0 20px;padding:0}
+.decision li{margin:4px 0}
+footer{margin-top:24px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;padding-top:6px}
+</style></head>
+<body>
+
+<h1><span class="tag">DECISION REQUIRED</span>UNESCO FM-AVC vs PS-AVC Model Gap — Executive Brief</h1>
+<p style="font-size:11px;color:#666;margin:4px 0 18px 0">Brief: INC-000005638 / MODEL-GAP-2026-001 · Audience: HQ Budget Office + FM/PS Config Team · Date: 2026-05-02 · 1 page</p>
+
+<div class="narrative">
+<h2>🎯 The central narrative (one sentence)</h2>
+<blockquote>SAP knew the fund had open commitments, but allowed them to be moved anyway because there is no AVC guardian configured to enforce — the system let it happen.</blockquote>
+<p style="font-size:12px;margin:8px 0 0 0">All 4 downstream layers we analyzed (Workplan / MULESOFT integration / FB01 manual postings / closure protocols) are symptoms or transport. The structural cause is the absence of effective AVC at the fund level. <strong>The fix is at the AVC config layer.</strong></p>
+</div>
+
+<h2>Situation</h2>
+<p style="font-size:13px">Three Purchase Orders at Bureau Libreville (Gabon) blocked at Service Entry posting on fund <strong>196EAR4042</strong>. The fund balance is not gone — $12.66M was moved to successor fund <strong>196EAR4043</strong> on 2026-01-31 by user A_BANSAL via FB01 R1 batch (257 docs total in one day). The system allowed the move despite knowing about 932 open commitments + 13 hardcoded EKKN PO lines on the legacy fund.</p>
+
+<div class="kpis">
+<div class="kpi red"><div class="v">−$12.66M</div><div class="l">Moved out 2026-01-31 (no AVC block)</div></div>
+<div class="kpi amber"><div class="v">932</div><div class="l">Open COOI commitments SAP knew about</div></div>
+<div class="kpi"><div class="v">6.5%</div><div class="l">UNESCO funds with any AVC rule</div></div>
+<div class="kpi red"><div class="v">705</div><div class="l">Class A projects at risk (same pattern)</div></div>
+</div>
+
+<h2>Why AVC failed (4 reasons compound)</h2>
+<table>
+<tr><th>Reason</th><th>Empirical fact</th><th>Effect</th></tr>
+<tr><td><strong>1. AVC missing on most funds</strong></td><td>3,576 of 55,428 UNESCO funds have an AVC derivation rule</td><td>93.5% of funds have no guardian at all</td></tr>
+<tr><td><strong>2. Granularity mismatch</strong></td><td>9 FIPEX in postings vs only 2 control objects (TC aggregator + 80)</td><td>Per-FIPEX deficits invisible to AVC</td></tr>
+<tr><td><strong>3. REVENUE in TC pool</strong></td><td><code>YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73</code> hardcodes preserve FIPEX='REVENUE' rows</td><td>REVENUE buffer hides operational deficits</td></tr>
+<tr><td><strong>4. No 10-digit rule for non-Earmarked</strong></td><td><code>ZXFMYU22</code> enforces only TYPE 101-112</td><td>Free-floating fund-WBS posting on most funds</td></tr>
+</table>
+
+<h2 style="color:#c5283d">⚠️ Why no Project Manager raised the alert beforehand</h2>
+<div style="background:#ffe4e6;border-left:4px solid #c5283d;padding:10px 14px;border-radius:4px;font-size:13px;margin:10px 0">
+<strong>UNESCO's primary monitoring tool — YPS8 "Project-Fund Glue" report — is structurally blind to the gap.</strong> The report uses the SAME <code>IS_COMMITMENT_ITEM_IN_AVC()</code> filter as the AVC engine itself (verified in <code>YCL_YPS8_BCS_BL===CM005_RPY.abap</code> line 48-51). For 196EAR4042, this means YPS8 only shows TC + 80 control objects; the per-FIPEX deficits in operational FIPEX 11/13/20/30/40/50/10' are filtered out before the Project Manager sees the report.
+</div>
+<table>
+<tr><th>FIPEX (real)</th><th>Cumulative balance</th><th>Visible in YPS8?</th><th>What the manager sees</th></tr>
+<tr><td>REVENUE</td><td style="color:#0a7e6e">+$6.1M (after reversal)</td><td>✓ visible</td><td>"Revenue still positive" — reassuring</td></tr>
+<tr style="background:#ffe4e6"><td>11 Personnel</td><td style="color:#c5283d">−$1.97M</td><td style="color:#c5283d"><strong>❌ NO</strong></td><td>invisible (collapsed in TC aggregator)</td></tr>
+<tr style="background:#ffe4e6"><td>13, 20, 30, 40, 50, 10'</td><td style="color:#c5283d">all negative</td><td style="color:#c5283d"><strong>❌ NO</strong></td><td>invisible (all collapsed in TC)</td></tr>
+<tr><td>80 PSC</td><td style="color:#c5283d">−$338K</td><td>✓ visible</td><td>"Small PSC deficit" — minor concern</td></tr>
+<tr style="background:#fff4d6"><td><strong>TC aggregator</strong></td><td style="color:#0a7e6e"><strong>+$1.56M</strong></td><td>✓ visible</td><td><strong>"TC pool healthy" — false reassurance hides $4.85M operational deficit</strong></td></tr>
+</table>
+<p style="font-size:12px;background:#f4f5f7;padding:8px 12px;border-radius:3px;margin:8px 0"><strong>Empirical proof of monitoring blindness</strong>: 71 of 139 WBSs in 196EAR4042 are flagged <code>I0093 ISBD</code> (Insufficient Budgeting) by SAP itself, but no Project Manager raised an alert because YPS8 never displayed the per-FIPEX deficit. SAP knew; the dashboard didn't show it. The monitoring blindness is structurally identical to the AVC engine blindness — both use the same filter.</p>
+<p style="font-size:12px;color:#666"><strong>Implication for D5</strong> (added decision below): YPS8/YFM1 reports must either be modified to also expose the per-FIPEX raw view, OR <code>committed_vs_available_detector.py</code> (already deployed) should be wired into Project Manager dashboards as a complementary monitoring layer. Brain claim #159.</p>
+
+<h2>Two paths forward — operational AND structural</h2>
+<table>
+<tr><th>Path</th><th>What</th><th>Cost</th><th>Resolves</th></tr>
+<tr><td><strong>Operational (THIS WEEK)</strong></td><td>ME22N redirect 13 EKKN lines on the 3 POs: GEBER=196EAR4043, PS_PSP_PNR=PR00058662 ("Decentralization Yaounde" twin in successor)</td><td>~2-4 hours FM team</td><td>The 3 stranded POs (and similar pattern for ~70 other affected WBSs on this fund)</td></tr>
+<tr><td><strong>Structural (1-2 sprints)</strong></td><td><strong>FIX-G1</strong> modify AVC derivation rule <code>FMAFMAP013500109</code> to validate per-FIPEX (granular) instead of TC aggregator. <strong>FIX-G2</strong> exclude REVENUE from TC pool. <strong>FIX-G3</strong> enable AVC for non-Earmarked TYPEs that need it (HQ policy decision).</td><td>~1 sprint config + UAT</td><td>The 705 Class A projects + future biennium-end events. Closes root cause.</td></tr>
+</table>
+
+<div class="decision">
+<h2>Decisions required from HQ Budget Office</h2>
+<ul style="font-size:13px">
+<li><strong>D1 — TACTICAL (this week)</strong>: Authorize ME22N redirect of the 3 Gabon POs to fund 196EAR4043 + WBS PR00058662. Resolves INC-005638.</li>
+<li><strong>D2 — STRUCTURAL (1-2 sprints)</strong>: Approve FIX-G1 (granular AVC config) + FIX-G2 (REVENUE exclusion). Closes root cause for 705 Class A projects.</li>
+<li><strong>D3 — POLICY (FIX-G4)</strong>: Classify which non-Earmarked TYPEs (001/005/etc) require AVC enablement. 51,852 funds (93.5%) currently have no AVC rule.</li>
+<li><strong>D4 — STRATEGIC (6 months)</strong>: Optionally commission Meta-AVC unified engine (FIX-F) for cross-engine consistency at every posting time.</li>
+<li><strong>D5 — MONITORING (this month)</strong>: Wire per-FIPEX detector (<code>committed_vs_available_detector.py</code>, already deployed) into Project Manager dashboards. OR modify YPS8/YFM1 reports to expose the per-FIPEX raw view alongside the AVC-scope view. Without this, even after AVC config is fixed, Project Managers will continue to monitor through a blind report.</li>
+</ul>
+</div>
+
+<h2>Cost of inaction</h2>
+<p style="font-size:13px">30 immediate ticket-risk pairs identified by detector (committed > available FM pool). 705 Class A projects exposed to same pattern. 567 Class D projects (incl. UNESCO Major Programmes Education/Sciences/Culture/SocHum, with 50K+ funds combined) operate without any AVC visibility — silent risk surface.</p>
+
+<div class="callout green">
+<strong>Already deployed (zero further work needed)</strong>: nightly detector job + diff alert (<code>schedule_nightly_detector.bat</code>), 5 quality-check scripts, 4 stakeholder companions, brain claims #135-157.
+</div>
+
+<h2>Supporting artifacts</h2>
+<table>
+<tr><th>Artifact</th><th>Path / role</th></tr>
+<tr><td>Master companion</td><td><code>fm_ps_avc_model_gap_companion_v1.html</code> (274 KB, 9 tabs, full narrative + detail tables + 7-chapter storytelling)</td></tr>
+<tr><td>Pool Health Matrix</td><td><code>fm_ps_pool_health_matrix_v1.html</code></td></tr>
+<tr><td>Temporal Forecast</td><td><code>fm_ps_avc_temporal_forecast_v1.html</code></td></tr>
+<tr><td>Detectors</td><td><code>committed_vs_available_detector.py</code>, <code>project_risk_classifier.py</code>, 3 others</td></tr>
+<tr><td>Canonical incident</td><td><code>knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code> (19 sections)</td></tr>
+</table>
+
+<footer>UNESCO SAP Intelligence Platform · Sessions #66-69 · Build 2026-05-02 · ROOT_CAUSE_CONFIRMED · Central narrative articulated by SME 2026-05-02</footer>
+</body></html>

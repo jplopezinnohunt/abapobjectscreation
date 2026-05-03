@@ -98,6 +98,53 @@ tr:hover { background: rgba(88,166,255,0.05); }
 
 <div class="content">
 
+<!-- ============================================================ -->
+<!-- FM-AVC vs PS-AVC MODEL GAP (MODEL-GAP-2026-001)              -->
+<!-- Inserted 2026-05-01 — after Funds Management intro, banner. -->
+<!-- ============================================================ -->
+<details open style="background:rgba(248,81,73,0.06); border:1px solid var(--red); border-radius:8px; padding:16px 20px; margin-bottom:20px;">
+  <summary style="cursor:pointer; font-size:1em; font-weight:700; color:var(--red); outline:none;">
+    &#x26A0; FM-AVC vs PS-AVC &mdash; Model Gap (MODEL-GAP-2026-001)
+    <span class="badge badge-red" style="margin-left:8px;">FUND ROUTING</span>
+  </summary>
+  <div style="margin-top:14px; font-size:0.88em; line-height:1.55;">
+    <p style="margin-bottom:10px; color:#8b949e;">
+      Treasury operates the bank/cash flow but the "fund insufficient" validation is OUTSIDE Treasury's domain.
+      When the user sees "insuffisance de budget" they often look at house bank / GL config &mdash; <strong>wrong direction</strong>.
+      Cross-references: <a href="fm_ps_avc_model_gap_companion_v1.html" style="color:var(--accent);">model gap companion</a> &middot;
+      <code>knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code>
+    </p>
+
+    <h4 style="color:var(--red); font-size:0.95em; margin:12px 0 6px;">1. The two-engine asymmetry <span class="badge badge-blue">TIER_1</span></h4>
+    <p style="margin-bottom:8px;">
+      UNESCO runs two independent AVC engines. FM-AVC enforces per <code>(FUND, FUNDSCTR, CommItem)</code>; PS-AVC enforces per WBS.
+      Two granularities, by design. They disagree at biennium close-out on TYPE 101-112 donor funds.
+    </p>
+
+    <h4 style="color:var(--red); font-size:0.95em; margin:12px 0 6px;">2. Footprint <span class="badge badge-blue">TIER_1</span></h4>
+    <p style="margin-bottom:8px;">
+      Class detector (<code>inc5638_fm_ps_avc_misalignment.csv</code>, 6,745 rows, 2026-05-01):
+      <strong>2,005 buckets at risk UNESCO-wide</strong> (488 Tier 1 + 1,517 Tier 2). Growth <strong>+4.1%/month</strong>.
+    </p>
+
+    <h4 style="color:var(--red); font-size:0.95em; margin:12px 0 6px;">3. Canonical case &mdash; INC-000005638 <span class="badge badge-blue">TIER_1</span></h4>
+    <p style="margin-bottom:8px;">
+      Fund <code>196EAR4042</code>, Gabon Bureau, 3 POs blocked at ML81N + F110.
+      FM-AVC TC bucket = <strong style="color:var(--red);">&minus;$1,561,560.89</strong>; PS pool +$48,898 (silent).
+    </p>
+
+    <h4 style="color:var(--red); font-size:0.95em; margin:12px 0 6px;">4. What this means for Treasury <span class="badge badge-purple">TIER_2</span></h4>
+    <p style="margin-bottom:8px;">
+      Treasury team owns the bank/fund flow (T012, T012K, OBA1, FEBAN) but the AVC validation runs in the FM module via
+      <code>FMDERIVE002/003</code> + <code>FMAVCT</code> &mdash; outside Treasury's tables. When the user reports
+      "fund insufficient" on a SES, MIRO, or F-53 against a donor fund, the issue is <strong>NOT</strong> a house bank misconfiguration,
+      <strong>NOT</strong> a GL determination problem, and <strong>NOT</strong> an OBA1 / T030H gap. Stop investigating Treasury config.
+      Route to the PSM domain agent for AVC bucket analysis. Treasury's role here is to confirm the bank/GL leg is healthy and hand over.
+      Educate field-office Treasury operators: a red <code>FMAVC005</code> on a TYPE 101-112 fund is always FM/PSM, never Treasury.
+    </p>
+  </div>
+</details>
+
 <!-- TAB 1: OVERVIEW -->
 <div class="panel active" id="overview">
   <div class="card" style="background:linear-gradient(135deg,#0d1520 0%,#0a1a30 100%);border-color:#1e3a5f;margin-bottom:20px">

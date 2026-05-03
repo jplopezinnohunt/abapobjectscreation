@@ -740,6 +740,13 @@
         "observation_only": true,
         "linked_observation": "knowledge/observations/obs_fmderive_hardcoded_fictr_gl_6045xxx.md",
         "not_linked_to": "INC-000005240"
+      },
+      {
+        "tag": "REVENUE_PLACEHOLDER_FIPEX_PATTERN",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "Per-FIPEX rollup for FONDS=196EAR4042 / FISTL=WHC shows revenue (WRTTP=66) is concentrated 99.8pct on FIPEX='REVENUE' placeholder ($32,041,000 of $32,097,566 cumulative 2024-2026), while consumption (WRTTP=54 actuals + WRTTP=51/52/65/81/82 commitments) lands on operational FIPEX (10', 11, 13, 20, 30, 40, 50, 80). This pattern is system-wide: 2,153 of 2,708 donor (TYPE 101-112) FUND/FUNDSCTR buckets in P01 exhibit the same signature. Detector at Zagentexecution/quality_checks/inc5638_avc_fipex_deficit.py."
       }
     ]
   },
@@ -1405,8 +1412,50 @@
           "FMIFIIT",
           "INC-BUDGETRATE-EQG"
         ]
+      },
+      {
+        "tag": "REQUIRED_FOR_INC005638_CONFIRMATION",
+        "tier": "TIER_2",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "Required: live RFC read of FMAVCT(RLDNR=9H, RFIKRS=UNES, RYEAR=2026, RFUND=196EAR4042, RFUNDSCTR=WHC, RCMMTITEM IN (20, 11)) to confirm AVC pool depletion. This is the source of the FMAVC005 'Annual budget exceeded' error. Pattern: feedback_fmavct_query_pattern."
+      },
+      {
+        "tag": "CRITICAL_SCHEMA",
+        "finding": "UNESCO FMAVCT primary key is (RLDNR, RFIKRS, RVERS, RYEAR, ROBJNR, COBJNR, SOBJNR, DRCRK, RPMAX, RTCUR). The columns RFUND/RFUNDSCTR/RCMMTITEM are NON-KEY tracking columns. RCMMTITEM holds the AVC-DERIVED commitment item bucket (PC, TC, NPC, or literal FIPEX), NOT the original FIPEX from the posting. Always pull with RFUND/RFUNDSCTR/RCMMTITEM in the field list to identify the bucket.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "If you query FMAVCT with only the canonical key fields you lose the (Fund, FundCenter, AVC-bucket) tracking and the result is useless for AVC pool computation.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "RFUND/RFUNDSCTR/RCMMTITEM",
+        "related": [
+          "FMAFMAP013500109",
+          "9HZ00001"
+        ]
+      },
+      {
+        "tag": "CONFIG_QUIRK",
+        "finding": "UNESCO FMAVCT contains ONLY ALLOCTYPE_9='KBFC' (consumption) entries -- NO 'KBFB' (budget) entries. This means the AVC pool depth is computed by the FM-AVC engine at runtime as revenue (from FMIFIIT WRTTP=66) MINUS consumption (from FMAVCT KBFC). There is no static pool record.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Computing AVC pool depth requires JOINING FMIFIIT (revenue side) and FMAVCT (consumption side) at the (Fund, FundCenter, DerivedCmtItem, Year) granularity. A naive query of FMAVCT alone shows only deficit, never surplus.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "ALLOCTYPE_9",
+        "related": [
+          "FMIFIIT",
+          "9HZ00001"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO FMAVCT proper extract: 38,709 rows total for 2024-2026 (15,890 + 13,288 + 9,531). Tracking columns RFUND, RFUNDSCTR, RCMMTITEM are NOT formal key fields but are populated and define the AVC bucket. ALLOCTYPE_9=KBFC means consumption (KOSTE+CMMT). HSL01 is the consumption amount. UNESCO never has an ALLOCTYPE_9=BUDG row in FMAVCT - the AVC engine derives budget at runtime from FMIFIIT WRTTP=66 (revenue postings).",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "FMAVCT"
       }
-    ]
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
   },
   "FMIOI": {
     "annotations": [
@@ -1422,6 +1471,13 @@
           "KBLEW",
           "INC-BUDGETRATE-EQG"
         ]
+      },
+      {
+        "tag": "PO_COMMITMENT_BRIDGE_FOR_INC005638",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "PO commitment table accessed via REFBN=EBELN. For the 3 INC-000005638 POs, all entries show identical FM coding: FONDS=196EAR4042, FISTL=WHC, BUKRS=UNES, WRTTP=51 (PO commitments). FIPEX is 20 for PO 4500543365 (services) or 11 for PO 4500540022/24 (consultancy). 2026 carryforward (PERIO=000) lines exist for all 3 POs but at smaller value than 2025 commitments (XAF 30K vs 270K for 4500543365 - only 1 of 6 items carried forward)."
       }
     ]
   },
@@ -2089,5 +2145,327 @@
         "incident": "INC-000006906"
       }
     ]
+  },
+  "196EAR4042": {
+    "annotations": [
+      {
+        "tag": "BIENNIUM_DRIFT",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "UNESCO Earmarked donor fund TYPE 104 (FIKRS=UNES, FINCODE=196EAR4042, ERFNAME=MULESOFT, 2024-01-25). Project title 'Earmarked Activities (2024-2025)' explicitly biennium-bound. Successor fund 196EAR4043 ('Earmarked Activities (2026-2027)') created 2025-12-07 by G_DARD but predecessor not deactivated (TYPE not flipped 104->106). Legacy POs from 2025-Q3 (4500543365, 4500540022, 4500540024) blocked when posting 2026 SES drafts because 2026 AVC pool on the predecessor fund cannot absorb the spillover. 139 WBS in PRPS hierarchy under PSPHI=00013092."
+      },
+      {
+        "tag": "ROOT_CAUSE_CONFIRMED",
+        "finding": "INC-000005638 root cause CONFIRMED 2026-05-01. The 3 incident POs (4500543365, 4500540022, 4500540024) all account-assign 13 lines to PS_PSP_PNR=00050949 (POSID 196EAR4042.23.2.10.1, Decentralization Yaounde). FM-AVC TC bucket pool = revenue $0 - KBFC $1,561,651.78 = -$1,561,651.78 -> FMAVC005 raised at every new SES on FIPEX 11/20. Mechanism: UNESCO MuleSoft posts donor revenue (WRTTP=66) on FIPEX=REVENUE placeholder, which falls outside the FMAFMAP013500109 derivation range '10''..'50' for this fund. Result: TC bucket sees $0 of the $12.66M revenue loaded for 2026.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Class is structural to UNESCO, NOT biennium-specific: 196EAR4043 (2026-2027 fund) shows the same pattern at lower magnitude. Detector found 1,330 (Tier 2) + 457 (Tier 1) = 1,787 buckets across UNESCO with the same misalignment.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "FONDS",
+        "related": [
+          "FMAVCT",
+          "FMAFMAP013500109",
+          "WHC",
+          "INC-000005638",
+          "00050949",
+          "PR00050949"
+        ]
+      }
+    ]
+  },
+  "196EAR4043": {
+    "annotations": [
+      {
+        "tag": "SUCCESSOR_FUND_ACTIVE",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "Successor donor fund TYPE 104 for biennium 2026-2027 (FIKRS=UNES, FINCODE=196EAR4043, ERFNAME=G_DARD, 2025-12-07). Project title 'Earmarked Activities (2026-2027)'. Operational in 2026: $257K USD actuals on FIPEX=11, $21K USD on FIPEX=20, $12.97M revenue (WRTTP=66) loaded. New POs and SES post here cleanly; legacy POs cannot be retroactively re-coded."
+      }
+    ]
+  },
+  "WHC": {
+    "annotations": [
+      {
+        "tag": "FUND_CENTER_WORLD_HERITAGE",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "FUNDSCTR='WHC' = World Heritage Centre at UNESCO HQ. Used as the FUNDSCTR component for the Earmarked Activities donor fund family (196EAR4042/4043). Field offices like Libreville (Gabon) post against this fund center via central HQ funding even when work is field-executed."
+      }
+    ]
+  },
+  "ZXFMYU22_RPY": {
+    "annotations": [
+      {
+        "tag": "PASSES_FOR_INC005638",
+        "tier": "TIER_1",
+        "incident": "INC-000005638",
+        "session": 66,
+        "finding": "10-digit FM-PS hard link at lines 362-369 passes for fund 196EAR4042 because all 139 WBS POSIDs start with the literal '196EAR4042'. ZFI/009 NOT raised. The error reported by the user (notification en rouge on ML81N) is NOT due to this exit. Other branches in the file (TRVL bypass line 53, FMW1/2/3 bypass lines 57-60, ZFMUCHK bypass lines 64-68, AA/AF skip line 73, fund types 099/299/399 require KOSTL lines 384-395) all do not apply to ML81N posting type WE on a TYPE 104 fund."
+      }
+    ]
+  },
+  "FMAFMAP013500109": {
+    "annotations": [
+      {
+        "tag": "CRITICAL_CONFIG",
+        "finding": "AVC derivation rule for UNESCO env 9HZ00001 step 0007 strategy AFMA. Maps (SOUR1=FundCenter, SOUR2=Fund, SOUR3=CmtItem range) -> TARGET1=AVC bucket. As of 2026-05-01: 4,675 rows. TARGET1 takes values PC (2,540 rows = Project Control), TC (2,053 = Travel Control), NPC (82 = Non-Project Control). For fund 196EAR4042: single rule (UNES, 196EAR4042, '10''..'50') -> TC. So FIPEX 10', 11, 13, 20, 30, 40, 50 ALL collapse to one TC bucket. FIPEX=80 and FIPEX=REVENUE fall outside any rule and use the literal FIPEX as the bucket key.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "AVC enforcement granularity at UNESCO is (Fund x FundCenter x AVC-bucket x Year), NOT (Fund x FundCenter x FIPEX x Year). Any fix to AVC mismatches must work at the bucket level, not FIPEX level.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "TARGET1",
+        "related": [
+          "FMAVCT",
+          "FMAFMTP013500110",
+          "9HZ00001"
+        ]
+      }
+    ]
+  },
+  "FMAFMTP013500110": {
+    "annotations": [
+      {
+        "tag": "CONFIG",
+        "finding": "AVC tolerance profile registry. 5 entries as of 2026-05-01: (633UBO1601, 633UBO4101, 633UBO7301 -> Z100 strict block) by HIPER, (GEF -> Z200 warning) by D_TAL, (PFF -> Z100) by S_ROCHA. Z100 = strict 100% block; Z200 = warning only. Most UNESCO donor funds use Z100 implicitly via FMAFMAP defaults.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Strict tolerance Z100 means any AVC bucket with pool < 0 raises FMAVC005 type 'E' (error/block). No grace allowance.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "TARGET1",
+        "related": [
+          "FMAFMAP013500109",
+          "FMAVCT"
+        ]
+      }
+    ]
+  },
+  "BPGE": {
+    "annotations": [
+      {
+        "tag": "SCHEMA",
+        "finding": "PS annual budget by value type. UNESCO usage: 654 rows for OBJNR LIKE 'PR%' across all years, dominated by WRTTP='01' (initial budget release). Sparse vs BPJA which has 134K cumulative rows for 2024-2026. UNESCO seems to drive PS-AVC primarily via BPJA cumulative, not BPGE annual. WTGES/WLGES are USD/local-currency totals.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "PS-AVC at UNESCO: read BPJA, not BPGE.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "WTGES/WLGES",
+        "related": [
+          "BPJA",
+          "PRPS"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO BPGE for projects (OBJNR LIKE PR%) holds only 654 rows total: WRTTP=01 (n=651) and WRTTP=41 (n=3). Broader buckets (42, 51, 54, 60, 61) are empty. UNESCO does NOT use BPGE as a primary PS-AVC pool source; cumulative pool lives in BPJA WRTTP=41.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "BPGE"
+      }
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "BPJA": {
+    "annotations": [
+      {
+        "tag": "SCHEMA",
+        "finding": "PS cumulative budget by value type and year. UNESCO usage 2026: 34,733 rows for OBJNR LIKE 'PR%'. Key columns: OBJNR (project WBS), WRTTP (41=current budget, 42=original), GJAHR, TWAER (USD), WTJHR (cumulative budget USD). Sign convention: positive = budget loaded; trailing '-' = budget removed/reversed. Multiple rows per OBJNR/WRTTP combo (one per VRGNG/SUBVO line).",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "PS pool depth = sum(BPJA WRTTP=41, with sign) - sum(COSP WRTTP=04 actuals) - sum(COSP WRTTP=22 commitments).",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "WTJHR/WRTTP",
+        "related": [
+          "COSP",
+          "PRPS",
+          "BPGE"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO BPJA WRTTP=41 (current budget) is the primary PS-AVC pool source. 134,139 rows for 2024-2026 across projects (48,956 + 50,450 + 34,733). Project pool computed by walking PRPS.POSID 10-digit prefix and joining BPJA on OBJNR.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "BPJA"
+      }
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "COSP": {
+    "annotations": [
+      {
+        "tag": "SCHEMA",
+        "finding": "CO totals primary on cost objects. UNESCO usage: 226K rows for OBJNR LIKE 'PR%' across 2024-2026. Key columns: OBJNR, GJAHR, WRTTP (04=actuals, 22=commitments, 24=plan, 2A=reservation), KSTAR (cost element), TWAER, WTG001-016 (period buckets in transaction currency). For PS-AVC pool computation use WRTTP=04 and 22, sum WTG001+002+003 for Q1 (or all 16 for full year).",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "PS consumption side. JOIN with BPJA on OBJNR for full pool picture.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "WTG001-016",
+        "related": [
+          "BPJA",
+          "PRPS",
+          "COSS"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO COSP for projects: 226,490 rows total 2024-2026. WRTTP=04 (actuals primary) and WRTTP=22 (commitments) are the relevant value types for PS-AVC consumption. Period buckets WTG001..WTG003 (Q1) sufficient for current-year analysis; full annual rollup uses WTG001..WTG016.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "COSP"
+      }
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "COSS": {
+    "annotations": [
+      {
+        "tag": "DATA_QUALITY",
+        "finding": "CO totals secondary. UNESCO usage 2024-2026: 0 rows for OBJNR LIKE 'PR%'. UNESCO does NOT use secondary CO posting on project objects. PS-AVC at UNESCO consumes only the COSP primary side. This simplifies pool computation but means any analysis that joins COSS will lose all UNESCO PS data.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Skip COSS for UNESCO PS analysis. Empty table is by-design, not a data quality bug.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "(empty)",
+        "related": [
+          "COSP",
+          "PRPS"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO COSS WHERE OBJNR LIKE PR% returns 0 rows for 2024, 2025, 2026. UNESCO does NOT allocate to projects via secondary cost ledgers. All PS consumption is in COSP. The COSS extracts are kept in Gold DB as empty placeholders for schema parity.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "COSS"
+      }
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "EKKN": {
+    "annotations": [
+      {
+        "tag": "RFC_QUIRK",
+        "finding": "RFC_READ_TABLE on EKKN has a hard 8-field ceiling — pulling 9+ fields raises AD/E/718 (TABLE_WITHOUT_DATA / buffer overflow) even on tiny WHERE clauses. Workarounds: (a) split into 8-field and remainder pulls then re-merge by EBELN+EBELP+ZEKKN, (b) use single-PO WHERE per call. The IN clause works fine for small lists. Slim 7-field set used for INC-005638: (EBELN, EBELP, PS_PSP_PNR, FISTL, GEBER, SAKTO, AEDAT). Discovered 2026-05-01.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Mass extraction of EKKN must use field splitting; cannot rely on default RFC_READ_TABLE behaviour.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "EBELN+EBELP+ZEKKN",
+        "related": [
+          "EKKO",
+          "EKPO",
+          "PRPS"
+        ]
+      },
+      {
+        "tag": "TIER_1",
+        "finding": "INC-000005638 confirms PO-line to WBS link via EKKN.PS_PSP_PNR (NOT PRPS.PSPID, NOT POSID). All 13 lines across the 3 incident POs map to PS_PSP_PNR=00050949 (WBS PR00050949 - Decentralization Yaounde). EKKN field width is narrow enough that 7-field slim set ([EBELN, EBELP, PS_PSP_PNR, FISTL, GEBER, SAKTO, AEDAT]) is the safe RFC ceiling.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "EKKN"
+      }
+    ],
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "PR00050949": {
+    "annotations": [
+      {
+        "tag": "INCIDENT_TARGET",
+        "finding": "Single WBS that all 3 INC-000005638 POs target. POSID = 196EAR4042.23.2.10.1 = 'Decentralization Yaounde'. Sub-WBS at 5 levels deep under top WBS PR00048352 (Earmarked Activities 2024-2025). PS-AVC pool at this WBS alone is +$23,164.18 (small but not blocking); the project-level cumulative pool is +$16.43M. PS-AVC is NOT the firing engine here.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Useful evidence anchor for the per-PO analysis.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "PSPNR=00050949 / OBJNR=PR00050949 / POSID=196EAR4042.23.2.10.1",
+        "related": [
+          "196EAR4042",
+          "WHC",
+          "INC-000005638"
+        ]
+      }
+    ]
+  },
+  "AVC_BUCKET_TC_196EAR4042_WHC_2026": {
+    "annotations": [
+      {
+        "tag": "AVC_BUCKET_FAILING",
+        "finding": "The AVC bucket where INC-000005638 fires. Composite key: RFIKRS=UNES, RFUND=196EAR4042, RFUNDSCTR=WHC, RCMMTITEM=TC, RYEAR=2026. Pool depth: revenue $0 - KBFC $1,561,651.78 = -$1,561,651.78. Constituent FIPEX (per FMAFMAP013500109 rule): 10', 11, 13, 20, 30, 40, 50.",
+        "timestamp": "2026-05-01T12:26:46.391108",
+        "impact": "Concrete identifier for the failing pool.",
+        "session": "#066",
+        "incident": "INC-000005638",
+        "field": "RCMMTITEM=TC",
+        "related": [
+          "FMAVCT",
+          "196EAR4042",
+          "WHC",
+          "FMAFMAP013500109"
+        ]
+      }
+    ]
+  },
+  "BPHI": {
+    "annotations": [
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO BPHI WHERE OBJNR LIKE PR% returns 0 rows. PS-AVC at UNESCO does NOT roll up via BPHI; hierarchy is walked through PRPS.POSID prefixes directly.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "BPHI"
+      }
+    ],
+    "first_seen": "2026-05-01T17:12:30.419791",
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "OPSV": {
+    "annotations": [
+      {
+        "tag": "TIER_1",
+        "finding": "OPSV table is not available via RFC on P01 (DA/E/131 TABLE_NOT_AVAILABLE). Either renamed in this S/4 release or transport-only customizing. PS-AVC profile config cannot be empirically verified - KU-2026-005638-OPSV open.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "OPSV"
+      }
+    ],
+    "first_seen": "2026-05-01T17:12:30.419791",
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "T185F": {
+    "annotations": [
+      {
+        "tag": "TIER_1",
+        "finding": "T185F has 0 rows on P01 client. Either no rows configured or table empty - verify via SE16 vs RFC_READ_TABLE for confirmation. Currently treated as configuration-only artefact.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "T185F"
+      }
+    ],
+    "first_seen": "2026-05-01T17:12:30.419791",
+    "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "TKA01": {
+    "annotations": [
+      {
+        "tag": "TIER_1",
+        "finding": "UNESCO controlling area config (KOKRS=UNES): 1 row. FIKRS=UNES, BEZEI=UNESCO, BPHINR=blank (UNESCO does not use a top-level budget hierarchy), CTYP/CVPROF set the FM/PS-AVC profile codes. Single source of truth for cross-system config questions.",
+        "timestamp": "2026-05-01",
+        "session": "66.b",
+        "incident": "INC-000005638",
+        "field": "TKA01"
+      }
+    ],
+    "first_seen": "2026-05-01T17:12:30.419791",
+    "last_updated": "2026-05-01T17:12:30.419791"
   }
 }

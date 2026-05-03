@@ -126,6 +126,68 @@ body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg)
 
 <div class="content">
 
+  <!-- ============================================================ -->
+  <!-- FM-AVC vs PS-AVC MODEL GAP (MODEL-GAP-2026-001) -->
+  <!-- Inserted 2026-05-01 per cross-cutting roll-out brief.       -->
+  <!-- Cross-link: companions/fm_ps_avc_model_gap_companion_v1.html -->
+  <!-- Canonical: knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md -->
+  <!-- ============================================================ -->
+  <details open style="background:linear-gradient(135deg,rgba(239,68,68,0.06) 0%, rgba(251,146,60,0.03) 100%); border:1px solid #ef4444; border-radius:12px; padding:20px 24px; margin-bottom:24px;">
+    <summary style="cursor:pointer; font-size:1.1em; font-weight:700; color:#ef4444; outline:none;">
+      &#x26A0; FM-AVC vs PS-AVC &mdash; Model Gap (MODEL-GAP-2026-001)
+      <span style="font-size:0.7em; padding:2px 8px; border-radius:6px; background:rgba(239,68,68,0.18); color:#ef4444; margin-left:8px;">HIGHEST RELEVANCE</span>
+    </summary>
+    <div style="margin-top:16px; color:var(--txt); font-size:0.9em; line-height:1.55;">
+      <p style="margin-bottom:14px; color:var(--mu2);">
+        Carry-forward 2026 is the trigger event for this class of incident. Read this section before designing the 2026 carry-forward run sequence.
+        Cross-references: <a href="fm_ps_avc_model_gap_companion_v1.html" style="color:#fb923c;">model gap companion</a> &middot;
+        <code style="color:var(--mu2);">knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code> &middot;
+        detector <code style="color:var(--mu2);">Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py</code>
+      </p>
+
+      <h4 style="color:#ef4444; font-size:0.95em; margin:14px 0 6px;">1. The two-engine asymmetry <span style="font-size:0.75em; color:#3b82f6; font-weight:600;">[TIER_1]</span></h4>
+      <p style="margin-bottom:10px;">
+        UNESCO has <strong>two independent budget-availability-control engines running in parallel</strong>. FM-AVC enforces availability per
+        <code>(FUND, FUNDSCTR, CommItem)</code> &mdash; i.e. per FIPEX bucket. PS-AVC enforces availability per WBS, summed across all FIPEX.
+        Two granularities, by design. They disagree at biennium close-out on TYPE 101-112 donor funds because revenue is loaded onto a placeholder
+        FIPEX (<code>REVENUE</code>) that does not match the AVC-derivation range, while consumption posts to operational FIPEX (11, 13, 20, 30, ...).
+      </p>
+
+      <h4 style="color:#ef4444; font-size:0.95em; margin:14px 0 6px;">2. Footprint <span style="font-size:0.75em; color:#3b82f6; font-weight:600;">[TIER_1]</span></h4>
+      <p style="margin-bottom:10px;">
+        Class-detector run 2026-05-01 (CSV: <code>inc5638_fm_ps_avc_misalignment.csv</code>, <strong>6,745 rows</strong>):
+        <strong>2,005 buckets at risk UNESCO-wide</strong> &mdash; 488 Tier 1 (both engines blocking) + 1,517 Tier 2 (FM-only blocking).
+        Growth measured Mar 31 &rarr; Apr 28 2026: <strong>+4.1%/month</strong>. Tier 2 added +60 buckets in 4 weeks.
+        The misalignment is actively widening, not stable.
+      </p>
+
+      <h4 style="color:#ef4444; font-size:0.95em; margin:14px 0 6px;">3. Canonical case &mdash; INC-000005638 <span style="font-size:0.75em; color:#3b82f6; font-weight:600;">[TIER_1]</span></h4>
+      <p style="margin-bottom:6px;">
+        Fund <code>196EAR4042</code> (Earmarked Activities 2024-2025), Gabon Bureau, FUNDSCTR=WHC. Three POs blocked at ML81N + F110:
+        4500543365, 4500540022, 4500540024. All target WBS <code>PR00050949</code> ("Decentralization Yaounde", POSID <code>196EAR4042.23.2.10.1</code>).
+      </p>
+      <p style="margin-bottom:10px;">
+        FM-AVC TC bucket = <strong style="color:#ef4444;">&minus;$1,561,560.89</strong> (exhausted). PS-AVC pool at WBS = <strong style="color:#22c55e;">+$48,898</strong> (silent). Cumulative project pool 196EAR4042 = +$16,430,198.98.
+        Status: <strong>CONFIRMED root cause</strong>, fix path = FMAVCREINIT or supplementary AVC budget on operational FIPEX.
+      </p>
+
+      <h4 style="color:#ef4444; font-size:0.95em; margin:14px 0 6px;">4. What this means for the 2026 Carry-Forward exercise <span style="font-size:0.75em; color:#a78bfa; font-weight:600;">[TIER_2]</span></h4>
+      <p style="margin-bottom:10px;">
+        Carry-forward postings (<code>VORGA=KBFC</code>) keep the PS budget pool <em>flat</em> (carry-fwd matches actuals, net = 0) while FM revenue
+        on the predecessor donor fund gets <strong>reversed</strong> in the new biennium (WRTTP=66 negative on 196EAR4042 in 2026 = &minus;$12.66M).
+        The two engines drift in opposite directions: PS sees no change, FM sees revenue evaporate. By the time the field office posts a 2026 SES against the
+        legacy fund, FM-AVC bucket is in deep deficit while PS-AVC project pool still shows healthy.
+      </p>
+      <p style="margin-bottom:10px;">
+        <strong>Recommended action:</strong> precede every 2026 carry-forward run with a class-detector check &mdash; run
+        <code>python Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py</code> against the latest Gold DB and triage
+        every bucket flagged Tier 1 or Tier 2 on a fund whose successor (4043) is now active. For each, decide:
+        (a) close the legacy fund (TYPE 104 &rarr; 106) before CF; or (b) load supplementary AVC budget on operational FIPEX via FMBB/FMX1; or
+        (c) run <code>FMAVCREINIT</code>. Add this step to the carry-forward checklist as item zero.
+      </p>
+    </div>
+  </details>
+
   <!-- BUGS / DATA ISSUES -->
   <div class="section-header">
     <div class="section-icon" style="background:linear-gradient(135deg,#ef4444,#fb923c);">&#x26A0;</div>

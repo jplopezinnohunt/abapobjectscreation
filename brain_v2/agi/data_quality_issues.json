@@ -354,5 +354,303 @@
     "status": "closed",
     "created_session": 63,
     "resolved_session": 63
+  },
+  {
+    "id": "DQ-2026-005638-01",
+    "session": 66,
+    "incident": "INC-000005638",
+    "issue": "UNESCO Earmarked Activities donor stream has NO carry-forward fund pattern (e.g. no 196EAR4142). Other UNESCO budget streams have these: 196RES4142 (Emergency Assistance carryforward), 196IAC4042 (International Assistance carryforward). The absence forces field offices with deliverables that span the biennium boundary to keep posting on the (now expired in spirit) predecessor biennium fund 196EAR4042, depleting its 2026 AVC pool and triggering FMAVC005 blocks on SES / MIRO / F110 postings.",
+    "severity": "HIGH",
+    "scope_count": 1,
+    "scope_unit": "missing fund / missing process",
+    "status": "OPEN - process gap; needs HQ Budget Office review (KU-2026-005638-02)"
+  },
+  {
+    "id": "MODEL-GAP-2026-001",
+    "session": 67,
+    "created_session": 67,
+    "discovered_session": 66,
+    "incident": "INC-000005638",
+    "source": "FM-AVC engine (FMAVCT + FMAFMAP013500109) vs PS-AVC engine (BPJA + COSP + PRPS) cross-engine reconciliation",
+    "issue": "Structural model gap: UNESCO runs two AVC engines (FM-AVC per (FUND, FUNDSCTR, CommItem); PS-AVC per WBS) at different granularities. They disagree at biennium close-out on TYPE 101-112 donor funds because revenue is loaded onto a placeholder FIPEX (REVENUE) that does not match the AVC-derivation range, while consumption posts to operational FIPEX (11, 13, 20, 30, ...). Result: FM-AVC blocks SES / MIRO / F110 postings while the PS-AVC project pool reports healthy. This is a configuration-level defect (FIPEX-derivation strategy + revenue-loading procedure), not a bug in custom code.",
+    "severity": "HIGH",
+    "impact": "2,005 buckets at risk UNESCO-wide (488 Tier 1 BOTH engines blocking + 1,517 Tier 2 FM-only blocking) per the 2026-05-01 class-detector run. Growth rate +4.1%/month measured Mar 31 -> Apr 28 2026 (+60 Tier 2 buckets in 4 weeks). Every biennium-end cycle on every Earmarked donor fund stream is structurally exposed. Symptom: red FMAVC005 / FI 026 abend at SES posting, invoice posting, or F110/F-53 payment time — independent of FBZP, BCM, or workflow configuration.",
+    "workaround": "Per affected bucket: (a) FMAVCREINIT on (RLDNR=9H, RFIKRS=UNES, RYEAR=current, RFUND=<legacy>); OR (b) load supplementary AVC budget on operational FIPEX via FMBB/FMX1; OR (c) close legacy fund (TYPE 104 -> 106) once successor is active. Pre-carry-forward gate: run inc5638_fm_ps_avc_misalignment.py against latest Gold DB and triage every Tier 1/Tier 2 bucket before the CF run.",
+    "scope_count": 2005,
+    "scope_unit": "(Fund, FundCenter, AVC-Bucket) buckets at risk",
+    "affected_count": 2005,
+    "affected_count_note": "488 Tier 1 + 1,517 Tier 2 = 2,005 buckets. Companion: companions/fm_ps_avc_model_gap_companion_v1.html",
+    "promoted_to_recurring_check": true,
+    "related_check_script": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
+    "csv_output": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.csv",
+    "canonical_doc": "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+    "canonical_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
+    "related_incidents": [
+      "INC-000005638"
+    ],
+    "related_known_unknowns": [
+      "DQ-2026-005638-01"
+    ],
+    "growth_rate_monthly_pct": 4.1,
+    "growth_rate_window": "2026-03-31 to 2026-04-28",
+    "status": "OPEN",
+    "status_detail": "OPEN_RECURRING - structural defect, not yet remediated UNESCO-wide. Each individual fund needs case-by-case triage at biennium close-out.",
+    "evidence_tier": "TIER_1",
+    "companions_updated_session_67": [
+      "companions/carry_forward_2026.html",
+      "companions/payment_bcm_companion.html",
+      "companions/treasury_operations_companion_v1.html",
+      "companions/p2p_process_mining.html",
+      "companions/payment_process_mining.html",
+      "companions/fi_maintenance.html",
+      "companions/unesco_sap_landing.html"
+    ],
+    "related_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
+    "extended_companion_session_67": "companions/fm_ps_pool_health_matrix_v1.html",
+    "extended_check_script_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
+    "extended_csv_output_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.csv",
+    "extended_outliers_csv_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix_outliers.csv",
+    "coverage_extension": "Coverage extended from 11,357 HARD-linked pairs (old detector) to 15,455 pairs (matrix) on 2026-05-01. State distribution: ALIGNED 4,363 / FM-EXHAUSTED 2,390 / PS-EXHAUSTED 991 / BOTH-EXHAUSTED 3,842. NEW BAD pairs found in DERIVED + DERIVED-MULTI tiers: 1,245 (invisible to old detector).",
+    "outlier_governance_pending": "10 multi-fund (>10 funds) WBSs flagged for HQ Budget Office governance review on AVC policy for common-cost objects. WBSs: PR00027627 (1211 funds), PR00000106 (592), PR00000107 (591), PR00000111 (448), PR00000109 (369), PR00000108 (275), PR00000110 (249), PR00008981 (68), PR00002724 (36), PR00008982 (30). Tracked under KU-2026-OUTLIER-WBS-AVC.",
+    "enriched_session": 69,
+    "proposed_controls": {
+      "parked_session": 68,
+      "parked_reason": "User explicitly deferred control-mechanism execution to live under MODEL-GAP-2026-001 governance, not as separate work item.",
+      "options": [
+        {
+          "id": "CONTROL-A",
+          "name": "In-line BAdI / enhancement validation",
+          "where": "BAdI FMAVC_CUSTOMER or enhancement on FMBB / FMBBT / FMJ2",
+          "logic": "Before posting a budget movement in FM, simulate the resulting (FUND, FUNDSCTR, CommItem) bucket state. If any bucket would cross zero while the corresponding PS-AVC pool stays positive, raise message ZFI/200 with Tier-2 misalignment evidence and block the posting.",
+          "effect": "Prevents desalignment from being created in the first place.",
+          "cost": "1 sprint config + UAT + transport",
+          "risk": "False positives until tolerance is calibrated; debug overhead in production.",
+          "recommendation_strength": "STRONG"
+        },
+        {
+          "id": "CONTROL-B",
+          "name": "Nightly batch detector + alert",
+          "where": "Job scheduler (SM37) running inc5638_fm_ps_avc_misalignment.py and fm_ps_pool_health_matrix.py",
+          "logic": "Detect overnight any (Fund, FundCenter, CommItem) bucket that transitioned Tier 4 -> Tier 2 between two consecutive runs. Email HQ Budget Office.",
+          "effect": "Detects within < 24h. Does NOT prevent.",
+          "cost": "2 hours config (job + email distro list)",
+          "risk": "Damage already done at detection time.",
+          "recommendation_strength": "IMMEDIATE"
+        },
+        {
+          "id": "CONTROL-C",
+          "name": "Pre-flight check companion (manual)",
+          "where": "Companion HTML the Budget Office consults before any FMBB / FMBBT posting",
+          "logic": "Interactive simulator showing per-bucket impact before committing.",
+          "effect": "Educational / advisory only.",
+          "cost": "Zero development.",
+          "risk": "Only effective if used voluntarily.",
+          "recommendation_strength": "FALLBACK"
+        }
+      ],
+      "recommendation": "A + B in parallel. CONTROL-B activates this week (cheap, prevents fire-after-detection). CONTROL-A activates in a 4-6 week sprint (the only one that prevents drift from being created).",
+      "decision_owner": "HQ Budget Office (UNESCO) + FM/PS config team",
+      "decision_status": "PENDING_HQ_DECISION",
+      "related_known_unknown": "KU-2026-MODEL-GAP-CONTROL"
+    },
+    "fix_paths_v3": {
+      "parked_session": 69,
+      "replaces": "fix_paths_v2 - now adds FIX-D (timing compression) and FIX-E (pre-flight hard block)",
+      "options": [
+        {
+          "id": "FIX-A-MULESOFT",
+          "phase": "biennium-START",
+          "cost": "3-5 days",
+          "coverage": "95% (prevents formation)",
+          "description": "MULESOFT distributes Allocation__c.Amount__c to operational FIPEX based on Commitment_Item__c instead of flattening to FIPEX=REVENUE",
+          "severity": "AUTO",
+          "related_ku": "KU-2026-MULESOFT-FIPEX-FLATTENING"
+        },
+        {
+          "id": "FIX-D-COMPRESS-WINDOW",
+          "phase": "biennium-END",
+          "cost": "1-2 weeks",
+          "coverage": "~95% biennium-end gap",
+          "description": "Trigger TYPE flip 104->106 simultaneously with FB01 R1 reversal. Closes the timing gap that produces tickets.",
+          "severity": "AUTO",
+          "priority": "HIGH-quick-win"
+        },
+        {
+          "id": "FIX-E-PREFLIGHT-HARD",
+          "phase": "PRE-FLIGHT",
+          "cost": "1-2 sprints",
+          "coverage": "true HARD BLOCK",
+          "description": "BAdI on FB01 that detects open POs/SES/commitments on source fund and HARD-BLOCKS the revenue transfer until they are resolved or override given by Budget Office.",
+          "severity": "BLOCK",
+          "recommended": "STRONG"
+        },
+        {
+          "id": "FIX-B-FULL-SYMMETRIC",
+          "phase": "biennium-END",
+          "cost": "2-3 weeks",
+          "coverage": "residual 5%",
+          "description": "Full 5-action synchronized biennium-end batch: FM revenue out + PS KBW1 + WBS TECO + ME22N PO reassign + Workplan update.",
+          "requires": "FIX-C",
+          "severity": "AUTO",
+          "related_ku": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT"
+        },
+        {
+          "id": "FIX-C-PROJECT-MAPPING",
+          "phase": "enabler",
+          "cost": "4-6 weeks",
+          "coverage": "enables FIX-B",
+          "description": "Cross-biennium project-mapping table linking legacy WBS to successor WBS for KBW2 cross-project transfers.",
+          "severity": "-"
+        }
+      ],
+      "recommended_order": "FIX-E (immediate hard control) -> FIX-A (root cause) -> FIX-D (timing) -> FIX-B+C (residual)",
+      "decision_owner": "HQ Budget Office (UNESCO) + Programme Office + IT (MULESOFT integration team) + FM/PS config team",
+      "evidence_chain": [
+        "INC-000005638 -> Pool Health Matrix (6,232 BAD pairs) -> Active filter (3,193 active BAD pairs) -> Pre-flight HARD-BLOCK (30 immediate)",
+        "Workplan PROD query confirms FIPEX granularity exists in SF Core Manager",
+        "BPJA verifies KBW1/KBW2 only used WITHIN projects, never cross-project",
+        "jest verifies TYPE flip 104->106 IS symmetric with WBS CLSD (gap is TIMING not absence)",
+        "committed_vs_available_detector.py classifies 4,115 active pairs by link_type and verdict"
+      ],
+      "ku_resolution_2026_05_01": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT closed: UNESCO has no SOP, no mapping table, no end-to-end owner. Therefore FIX-B and FIX-C require building organizational + master-data baselines from scratch (high cost, slow). Re-prioritized: FIX-E + FIX-F become load-bearing.",
+      "recommended_order_v2_2026_05_01": "1. FIX-E (Pre-flight HARD-BLOCK BAdI) — immediate, catches manual paths, does not require organizational SOP. 2. FIX-F (Meta-AVC unified engine) — strategic 6-month north star, closes model gap permanently. 3. FIX-A (MULESOFT FIPEX-aware) — quick win in parallel for automated path. 4. FIX-D (compress timing) — process win if Budget Office willing to coordinate. 5. FIX-B and FIX-C — DEFERRED until FIX-E/FIX-F land. UNESCO would need to BUILD the SOP and the mapping table from scratch, which is a multi-quarter governance project. Not blocking the technical fix.",
+      "critical_reframe_2026_05_01_part2": "User insight + empirical verification: desalignment is a CONTINUOUS risk, not a periodic biennium-end event. 14 revenue events + dozens of monthly operational adjustments on 196EAR4042 alone in 2024-2026. Therefore FIX-D (compress closure timing) is DEMOTED. FIX-E and FIX-F are PROMOTED as load-bearing.",
+      "final_recommended_order": "1. FIX-E (BAdI HARD-BLOCK on every FB01/FMBB/FMBBT/FMX1) — runs on EVERY posting, catches manual paths continuously. CRITICAL #1. 2. FIX-F (Meta-AVC unified engine, atomic validation per posting) — strategic permanent close. CRITICAL #2. 3. FIX-A (MULESOFT FIPEX-aware) — quick win parallel for automated path only (does not catch manual FB01). 4. FIX-D (compress closure timing) — DEMOTED to residual. Addresses 1 event/biennium = ~1% of risk surface. 5. FIX-B + FIX-C (symmetric closeout SOP + mapping table) — DEFERRED. Even with perfect SOP, mid-biennium adjustments would still create asymmetry. System-enforced consistency (FIX-E + FIX-F) is the only durable answer.",
+      "fix_g_root_config": {
+        "discovery_session": 69,
+        "discovery_date": "2026-05-01",
+        "description": "Root cause traced to AVC derivation rule FMAFMAP013500109 in env 9HZ00001 — collapses 8 FIPEX into 1 control object TC, hiding per-FIPEX deficits.",
+        "fix_g1": {
+          "name": "Granular AVC per-FIPEX",
+          "action": "Modify FMAFMAP013500109 so each FIPEX has its own control object",
+          "effort": "~1 sprint config + UAT",
+          "effect": "AVC blocks at first per-FIPEX deficit (granular control)"
+        },
+        "fix_g2": {
+          "name": "REVENUE exclusion from TC pool",
+          "action": "Keep TC aggregation but exclude FIPEX=REVENUE from TC pool — REVENUE has its own control object",
+          "effort": "~1 sprint config + UAT",
+          "effect": "REVENUE buffer no longer hides operational FIPEX deficits at AVC layer"
+        },
+        "priority": "FIX-G is now the cheapest structural fix and may obviate FIX-E and FIX-F if approved by HQ Budget Office",
+        "related_claim": 149
+      },
+      "session_69_final_synthesis": {
+        "date": "2026-05-02",
+        "project_classification_unesco_wide": {
+          "Class_A_Locked_controlled": {
+            "projects": 705,
+            "postings": 280693,
+            "pattern": "INC-005638 (TC aggregator + biennium-end trap)"
+          },
+          "Class_B_Locked_no_AVC": {
+            "projects": 255,
+            "postings": 32541,
+            "pattern": "Earmarked + locked + no AVC rule (worse than A)"
+          },
+          "Class_C_Process_dependent": {
+            "projects": 22,
+            "postings": 18638,
+            "pattern": "Multi-fund with partial AVC (PFF management cost type)"
+          },
+          "Class_D_Uncontrolled": {
+            "projects": 307,
+            "postings": 169075,
+            "pattern": "No AVC + non-Earmarked, fund can run negative without alarm"
+          }
+        },
+        "avc_coverage_global": "6.5% (3,576 / 55,428 UNES funds have any AVC rule)",
+        "fix_priority_final": "FIX-G4 (policy) -> FIX-G1 + FIX-G2 (Class A root cause) + FIX-G3 (Class B+D) -> FIX-E (BAdI tactical) -> FIX-F (Meta-AVC strategic)",
+        "detector_scripts": [
+          "inc5638_per_po_engine_analysis.py",
+          "inc5638_fm_ps_avc_misalignment.py",
+          "fm_ps_pool_health_matrix.py",
+          "committed_vs_available_detector.py",
+          "project_risk_classifier.py"
+        ],
+        "related_companions": [
+          "companions/fm_ps_avc_model_gap_companion_v1.html (master with AGI synthesis)",
+          "companions/fm_ps_avc_temporal_forecast_v1.html (temporal + Meta-AVC)",
+          "companions/fm_ps_pool_health_matrix_v1.html (pool health)"
+        ]
+      },
+      "session_69_user_correction_2026_05_02": {
+        "date": "2026-05-02",
+        "correction": "User SME confirmed MULESOFT is courier-only, not the leverage point. All structural fixes are SAP-side.",
+        "fix_a_demoted": {
+          "name": "FIX-A MULESOFT FIPEX-aware revenue load",
+          "reason_demoted": "MULESOFT only carries BOR; SAP custom code (YCL_YPS8_BCS_BL) is what decides REVENUE placeholder preservation. Fixing MULESOFT does not address the SAP-side hardcoded logic.",
+          "status": "DEPRECATED"
+        },
+        "fix_h_added": {
+          "name": "FIX-H Modify YCL_YPS8_BCS_BL to remove REVENUE placeholder preservation",
+          "description": "Modify the UNESCO custom PS budget BCS class YCL_YPS8_BCS_BL (lines 58/73) so that either: (a) revenue is distributed to operational FIPEX based on incoming Allocation context, or (b) the REVENUE placeholder preservation is removed so AVC validates per-operational-FIPEX directly. This is the SAP-side root-config fix that closes the gap at source.",
+          "effort": "~1 sprint config + UAT (low risk — single class, well-isolated)",
+          "effect": "Operational FIPEX get real budget allocation at fund creation; AVC blocks per-FIPEX correctly",
+          "recommendation_strength": "STRONG — cheapest structural fix yet identified",
+          "related_claim": 154,
+          "related_evidence": "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73"
+        },
+        "final_recommended_order_v4": "1. FIX-H (modify YCL_YPS8_BCS_BL) — cheapest SAP-side structural fix (1 sprint), addresses root cause. 2. FIX-G1 (granular AVC FMAFMAP013500109) — also SAP-side (1 sprint). 3. FIX-G2 (REVENUE exclusion from TC pool) — SAP config (1 sprint). 4. FIX-G3 + FIX-G4 (extend AVC to non-Earmarked TYPEs after policy decision). 5. FIX-E (BAdI HARD-BLOCK on FB01/FMBB) — tactical 1-2 sprints. 6. FIX-F (Meta-AVC unified) — strategic 6-month. FIX-A (MULESOFT) DEPRECATED."
+      },
+      "scope_clarification_2026_05_02": "All \"FIX\" entries in this file are OPTIONS for UNESCO teams to evaluate. The agent does not propose to execute code changes. The agent role is to document empirical evidence, classify risk, and structure options — UNESCO decides and executes. Per feedback_evaluate_dont_propose_code_changes (HIGH).",
+      "agent_scope": "EVALUATIVE_ONLY — empirical analysis + structured options + companion documentation",
+      "execution_owner": "UNESCO HQ Budget Office + FM/PS Config Team + MuleSoft Ops + Architecture Board",
+      "fix_i_workplan_driven_validation": {
+        "discovery_session": 69,
+        "discovery_date": "2026-05-03",
+        "attribution": "User SME 2026-05-03",
+        "description": "Replace the static 10-digit rule (POSID(10)=GEBER) in ZXFMYU22 with a dynamic 5-step lookup against Workplan Allocation__c. Uses the actual Programme intent (which funds + CommItems are allowed for this workplan) instead of the POSID convention.",
+        "variant_ia": {
+          "name": "Live read from Salesforce",
+          "how": "User-exit RFC/HTTP to MULESOFT/Salesforce at posting time",
+          "tradeoff": "Latency + external dependency",
+          "strength": "WEAK"
+        },
+        "variant_ib": {
+          "name": "Push Workplan data to SAP Z-table",
+          "how": "MULESOFT writes Z_WP_FUND_ALLOC table nightly or on Workplan change. User-exit reads Z-table at posting time.",
+          "tradeoff": "Z-table refresh cadence (~24h lag tolerable)",
+          "strength": "STRONG — preferred per user"
+        },
+        "works_for": "Multi-fund workplans, non-Earmarked TYPEs, all 4 mutation paths if combined with FIX-F",
+        "relationship_to_other_fixes": {
+          "FIX-G": "Complementary — different layer (FIX-G fixes AVC math, FIX-I fixes WBS/Fund pairing semantics)",
+          "FIX-F": "FIX-F can absorb FIX-I as Check 4 (Workplan reconciliation in Meta-AVC engine)",
+          "FIX-E": "Complementary — FIX-E catches paths, FIX-I checks semantic validity"
+        },
+        "related_claim": 158
+      },
+      "monitoring_blindness_2026_05_03": {
+        "finding": "UNESCO primary Project Manager dashboard (YPS8) and budget/expenditure report (YFM1) use the same IS_COMMITMENT_ITEM_IN_AVC filter as FM-AVC. Therefore the monitoring tool is as blind as the engine. Project Managers cannot pre-empt INC-005638-class incidents from YPS8 alone.",
+        "evidence_class": "YCL_YPS8_BCS_BL===CM005_RPY.abap (PREPARE_DATA method)",
+        "related_claim": 159,
+        "implication": "Any monitoring/alerting strategy must use a per-FIPEX detector (e.g., committed_vs_available_detector.py) INSTEAD OF or IN ADDITION TO YPS8/YFM1, because YPS8/YFM1 will not surface the gap. This is independent of fixes G/H/I/F — even after fixing AVC config, the reports themselves should be reviewed."
+      }
+    },
+    "related_companions_v2": [
+      "companions/fm_ps_avc_model_gap_companion_v1.html",
+      "companions/fm_ps_pool_health_matrix_v1.html",
+      "companions/fm_ps_avc_temporal_forecast_v1.html"
+    ],
+    "related_detector_scripts": [
+      "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
+      "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
+      "Zagentexecution/quality_checks/committed_vs_available_detector.py"
+    ],
+    "related_known_unknowns_v2": [
+      "KU-2026-005638-OPSV",
+      "KU-2026-MODEL-GAP-CONTROL",
+      "KU-2026-OUTLIER-WBS-AVC",
+      "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT",
+      "KU-2026-MULESOFT-FIPEX-FLATTENING",
+      "KU-2026-AGI-GAP-2",
+      "KU-2026-AGI-GAP-6",
+      "KU-2026-WP-INTENT",
+      "KU-2026-NET-DRIFT"
+    ],
+    "central_narrative_2026_05_02": "AVC absence/misconfiguration is the UPSTREAM root cause. Everything downstream (FB01 batches, closure protocols, workplan reprogramming, MULESOFT mappings, PO redirects) are symptoms or transport layers. SAP knew about the open commitments but had no guardian to enforce the constraint. The structural fix priority is therefore: FIX-G1 (granular AVC per-FIPEX) + FIX-G2 (exclude REVENUE from TC pool) + FIX-G3 (enable AVC for non-Earmarked TYPEs that need it) + FIX-H (remove REVENUE preservation in YCL_YPS8_BCS_BL). FIX-F Meta-AVC is the long-term strategic enhancement that ALSO adds cross-engine FM<->PS consistency check at every posting. FIX-A MULESOFT is deprecated. FIX-D/E/B are mitigations of symptoms.",
+    "narrative_credit": "User SME 2026-05-02",
+    "related_central_claim": 157
   }
 ]

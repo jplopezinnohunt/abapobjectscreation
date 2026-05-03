@@ -69,6 +69,50 @@ code{background:#ffffff;padding:1px 4px;border-radius:3px;font-family:monospace;
   <div class="kpi"><div class="val">4,431</div><div class="lbl">PAYR Records</div></div>
 </div>
 
+<!-- ============================================================ -->
+<!-- FM-AVC vs PS-AVC MODEL GAP (MODEL-GAP-2026-001) -->
+<!-- Inserted 2026-05-01 — after FBZP/BCM intro, before tabs.    -->
+<!-- ============================================================ -->
+<details open style="margin:16px 32px; background:#fff7ed; border:1px solid #f97316; border-radius:8px; padding:16px 20px; color:#1e293b;">
+  <summary style="cursor:pointer; font-size:14px; font-weight:700; color:#c2410c; outline:none;">
+    &#x26A0; FM-AVC vs PS-AVC &mdash; Model Gap (MODEL-GAP-2026-001)
+    <span style="font-size:10px; padding:2px 8px; border-radius:6px; background:#fee2e2; color:#b91c1c; margin-left:8px; text-transform:uppercase; letter-spacing:0.5px;">Pre-BCM block</span>
+  </summary>
+  <div style="margin-top:12px; font-size:12px; line-height:1.55;">
+    <p style="margin-bottom:10px; color:#475569;">
+      Where the user sees "insuffisance de budget" / red FMAVC005 on F110/F-53 &mdash; the abend originates upstream of BCM. <strong>BCM dual-control is irrelevant if AVC blocks first.</strong>
+      Cross-references: <a href="fm_ps_avc_model_gap_companion_v1.html" style="color:#0d9488;">model gap companion</a> &middot;
+      <code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code>
+    </p>
+
+    <h4 style="color:#c2410c; font-size:13px; margin:12px 0 6px;">1. The two-engine asymmetry <span style="font-size:10px; color:#0369a1; font-weight:600;">[TIER_1]</span></h4>
+    <p style="margin-bottom:8px;">
+      UNESCO has two independent AVC engines. FM-AVC enforces per <code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">(FUND, FUNDSCTR, CommItem)</code>; PS-AVC enforces per WBS.
+      Two granularities, by design. They disagree at biennium close-out on TYPE 101-112 donor funds.
+    </p>
+
+    <h4 style="color:#c2410c; font-size:13px; margin:12px 0 6px;">2. Footprint <span style="font-size:10px; color:#0369a1; font-weight:600;">[TIER_1]</span></h4>
+    <p style="margin-bottom:8px;">
+      Class-detector CSV (<code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">inc5638_fm_ps_avc_misalignment.csv</code>, 6,745 rows, 2026-05-01):
+      <strong>2,005 buckets at risk UNESCO-wide</strong> (488 Tier 1 BOTH blocking + 1,517 Tier 2 FM-only). Growth: <strong>+4.1%/month</strong>.
+    </p>
+
+    <h4 style="color:#c2410c; font-size:13px; margin:12px 0 6px;">3. Canonical case &mdash; INC-000005638 <span style="font-size:10px; color:#0369a1; font-weight:600;">[TIER_1]</span></h4>
+    <p style="margin-bottom:8px;">
+      Fund <code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">196EAR4042</code>, Gabon Bureau, 3 POs blocked at ML81N + F110.
+      FM-AVC TC bucket = <strong style="color:#dc2626;">&minus;$1,561,560.89</strong>; PS pool +$48,898 (silent on these POs).
+    </p>
+
+    <h4 style="color:#c2410c; font-size:13px; margin:12px 0 6px;">4. What this means for Treasury / BCM Support <span style="font-size:10px; color:#7c3aed; font-weight:600;">[TIER_2]</span></h4>
+    <p style="margin-bottom:8px;">
+      When a Treasury support agent gets a "F110 abend" or "F-53 budget exceeded" ticket on a TYPE 101-112 donor fund:
+      <strong>do not investigate FBZP, BCM workflow, or signatory rules first</strong>. The abend almost certainly fired in the FM-AVC engine, not in the BCM/payment chain.
+      Route the ticket to the PSM domain agent for FM-AVC bucket analysis (<code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">FMAVCT</code> read on <code style="background:#f1f5f9; padding:1px 4px; color:#0d9488;">(RFIKRS, RFUND, RFUNDSCTR, RCMMTITEM)</code>).
+      BCM dual-control rules apply only AFTER the document successfully clears AVC. If the user reports the block at SES (ML81N) or invoice posting (FB60/MIRO), it is 100% FM-AVC, not BCM.
+    </p>
+  </div>
+</details>
+
 <div class="tabs">
   <div class="tab active" onclick="show('e2e',this)">E2E Flow</div>
   <div class="tab" onclick="show('companies',this)">Companies</div>

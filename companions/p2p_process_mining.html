@@ -87,6 +87,42 @@ td{padding:3px 6px;border-bottom:1px solid #0d0d25}
   <div class="kpi"><div class="kpi-val">2626</div><div class="kpi-label">Process Variants</div></div>
   <div class="kpi"><div class="kpi-val">41</div><div class="kpi-label">DFG Transitions</div></div>
 </div>
+
+<!-- ============================================================ -->
+<!-- FM-AVC vs PS-AVC MODEL GAP (MODEL-GAP-2026-001) — 2026-05-01 -->
+<!-- ============================================================ -->
+<details open style="margin:16px 32px; background:rgba(239,68,68,0.07); border:1px solid #ef4444; border-radius:8px; padding:14px 18px; color:#e0e0e0; font-family:-apple-system,'Segoe UI',sans-serif;">
+  <summary style="cursor:pointer; font-size:13px; font-weight:700; color:#ef4444; outline:none;">
+    &#x26A0; FM-AVC vs PS-AVC &mdash; Model Gap (MODEL-GAP-2026-001) <span style="font-size:10px; padding:2px 7px; border-radius:6px; background:rgba(239,68,68,0.18); color:#ef4444; margin-left:6px; text-transform:uppercase;">New abend variant</span>
+  </summary>
+  <div style="margin-top:12px; font-size:12px; line-height:1.55; color:#bbb;">
+    <p style="margin-bottom:8px;">
+      Adds a new abend variant to P2P process mining: SES-time FM-AVC block on TYPE 101-112 donor funds at biennium close-out.
+      Cross-references: <a href="fm_ps_avc_model_gap_companion_v1.html" style="color:#3498DB;">model gap companion</a> &middot;
+      <code style="color:#bbb;">knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code>
+    </p>
+
+    <p style="margin-bottom:8px;"><span style="color:#ef4444;font-weight:700;">1. Two-engine asymmetry</span> <span style="color:#3498DB;font-size:10px;font-weight:700;">[TIER_1]</span> &mdash;
+      FM-AVC enforces per <code style="background:#222;padding:1px 4px;color:#3498DB;">(FUND, FUNDSCTR, CommItem)</code>; PS-AVC enforces per WBS. Disagree at biennium close-out on TYPE 101-112 donor funds.</p>
+
+    <p style="margin-bottom:8px;"><span style="color:#ef4444;font-weight:700;">2. Footprint</span> <span style="color:#3498DB;font-size:10px;font-weight:700;">[TIER_1]</span> &mdash;
+      Class detector (<code style="background:#222;padding:1px 4px;color:#3498DB;">inc5638_fm_ps_avc_misalignment.csv</code>, 6,745 rows, 2026-05-01):
+      <strong style="color:#fff;">2,005 buckets at risk UNESCO-wide</strong> (488 Tier 1 + 1,517 Tier 2). Growth <strong style="color:#fff;">+4.1%/month</strong>.</p>
+
+    <p style="margin-bottom:8px;"><span style="color:#ef4444;font-weight:700;">3. Canonical case &mdash; INC-000005638</span> <span style="color:#3498DB;font-size:10px;font-weight:700;">[TIER_1]</span> &mdash;
+      Fund <code style="background:#222;padding:1px 4px;color:#3498DB;">196EAR4042</code>, Gabon Bureau, 3 POs blocked at ML81N + F110.
+      FM-AVC TC bucket = <strong style="color:#ef4444;">&minus;$1,561,560.89</strong>; PS pool +$48,898 (silent).</p>
+
+    <p style="margin-bottom:8px;"><span style="color:#ef4444;font-weight:700;">4. What this means for P2P process mining</span> <span style="color:#A569BD;font-size:10px;font-weight:700;">[TIER_2]</span> &mdash;
+      Add a new event class <strong style="color:#fff;">"FM-AVC abend at SES" </strong> to the P2P DFG. The signal is <code style="background:#222;padding:1px 4px;color:#3498DB;">essr</code> rows where SES creation
+      failed before posting (no <code style="background:#222;padding:1px 4px;color:#3498DB;">essr.PACKNO</code> persists or status remains in &laquo;not posted&raquo; state) joined to <code style="background:#222;padding:1px 4px;color:#3498DB;">ekkn.GEBER</code> on the parent PO.
+      Group failures by <code style="background:#222;padding:1px 4px;color:#3498DB;">FONDS</code> &mdash; the volume cluster on TYPE 101-112 funds with active 4043 successor is the
+      INC-000005638 class. This is a P2P abend that the existing event log (<code style="background:#222;padding:1px 4px;color:#3498DB;">EKBE / RBKP / ESSR</code>) does not currently surface because the
+      SES never persists. To capture: query <code style="background:#222;padding:1px 4px;color:#3498DB;">SLG1 / BAL_*</code> tables, or hook the ESSR creation BAdI's failure log.
+      Suggested mining views: count SES-attempt-failures per FONDS per month; correlate with the 2,005-bucket class detector to confirm class membership.</p>
+  </div>
+</details>
+
 <div id="main">
   <div id="dfg-container"></div>
   <div id="sidebar">

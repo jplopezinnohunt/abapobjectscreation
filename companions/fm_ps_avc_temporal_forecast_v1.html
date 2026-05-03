@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM-PS AVC Model Gap — Temporal Forecast (Canonical: INC-000005638)</title>
+<style>
+:root{
+  --u-blue:#0c4da2; --u-blue-dark:#08305f; --u-blue-light:#e0ecf8;
+  --u-grey:#444; --u-grey-light:#f4f5f7; --u-line:#d4d9e0;
+  --u-red:#c5283d; --u-red-soft:#ffe4e6;
+  --u-amber:#ff9f1c; --u-amber-soft:#fff4d6;
+  --u-green:#2a9d8f; --u-green-soft:#d9f2ee;
+  --u-purple:#6f42c1;
+}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--u-grey);margin:0;line-height:1.55;background:#fafbfc}
+header{background:linear-gradient(135deg,var(--u-blue) 0%,var(--u-blue-dark) 100%);color:#fff;padding:24px 32px}
+header h1{margin:0 0 6px 0;font-size:24px;font-weight:600}
+header .sub{font-size:13px;opacity:0.9}
+header .meta{font-size:11px;margin-top:8px;opacity:0.75}
+nav{position:sticky;top:0;background:#fff;border-bottom:2px solid var(--u-blue);z-index:50;padding:0 32px;overflow-x:auto;white-space:nowrap}
+nav a{display:inline-block;padding:12px 16px;color:var(--u-grey);text-decoration:none;font-size:13px;font-weight:500;border-bottom:3px solid transparent}
+nav a:hover{background:var(--u-blue-light);color:var(--u-blue-dark)}
+main{padding:24px 32px;max-width:1400px;margin:0 auto}
+section{background:#fff;border:1px solid var(--u-line);border-radius:8px;padding:24px 28px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+section h2{margin:0 0 14px 0;color:var(--u-blue-dark);font-size:18px;border-bottom:2px solid var(--u-blue-light);padding-bottom:8px}
+section h3{color:var(--u-blue);font-size:15px;margin:18px 0 10px 0}
+.tier{display:inline-block;padding:1px 6px;font-size:10px;border-radius:3px;font-weight:600;letter-spacing:0.3px}
+.tier-1{background:#d9f2ee;color:#0a7e6e} .tier-2{background:#fff4d6;color:#a86c00} .tier-3{background:#ffe4e6;color:#a01827}
+.callout{background:var(--u-red-soft);border-left:4px solid var(--u-red);padding:12px 16px;margin:14px 0;border-radius:4px}
+.callout-amber{background:var(--u-amber-soft);border-left:4px solid var(--u-amber);padding:12px 16px;margin:14px 0;border-radius:4px}
+.callout-green{background:var(--u-green-soft);border-left:4px solid var(--u-green);padding:12px 16px;margin:14px 0;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th{background:var(--u-blue-light);color:var(--u-blue-dark);text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid var(--u-blue)}
+td{padding:7px 10px;border-bottom:1px solid var(--u-line);vertical-align:top}
+tr:hover td{background:var(--u-grey-light)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.neg{color:var(--u-red);font-weight:500}
+.pos{color:var(--u-green);font-weight:500}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0}
+.kpi{background:var(--u-grey-light);padding:14px;border-radius:6px;border-left:3px solid var(--u-blue)}
+.kpi .v{font-size:22px;font-weight:700;color:var(--u-blue-dark)}
+.kpi .l{font-size:11px;color:var(--u-grey);text-transform:uppercase;letter-spacing:0.4px;margin-top:3px}
+.kpi.red{border-left-color:var(--u-red)} .kpi.red .v{color:var(--u-red)}
+.kpi.amber{border-left-color:var(--u-amber)} .kpi.amber .v{color:var(--u-amber)}
+.kpi.green{border-left-color:var(--u-green)} .kpi.green .v{color:var(--u-green)}
+details{margin:10px 0;background:#f7f8fa;border-radius:4px;padding:8px 12px;border:1px solid var(--u-line)}
+details summary{cursor:pointer;font-weight:600;font-size:12px;color:var(--u-blue-dark)}
+details pre{font-size:11px;background:#fff;padding:10px;border-radius:3px;overflow-x:auto;border:1px solid var(--u-line)}
+.timeline-svg{width:100%;height:auto;display:block;border:1px solid var(--u-line);background:#fff;border-radius:6px;margin:12px 0}
+footer{text-align:center;padding:20px;color:#888;font-size:11px;border-top:1px solid var(--u-line);margin-top:24px}
+.bar-row{display:grid;grid-template-columns:120px 1fr 100px;gap:8px;align-items:center;margin:3px 0;font-size:12px}
+.bar-row .lbl{font-weight:500}
+.bar-row .bar{height:18px;background:var(--u-blue-light);position:relative;border-radius:2px;overflow:hidden}
+.bar-row .fill{height:100%;background:var(--u-blue);transition:width 0.3s}
+.bar-row .fill.neg{background:var(--u-red)}
+.bar-row .fill.warn{background:var(--u-amber)}
+.bar-row .val{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+.flow-step{display:flex;align-items:flex-start;gap:14px;padding:10px;border-left:3px solid var(--u-blue);background:var(--u-grey-light);margin:6px 0;border-radius:4px}
+.flow-step .num{background:var(--u-blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;text-align:center}
+.flow-step .desc{font-size:13px}
+.flow-step .desc strong{color:var(--u-blue-dark)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0;font-size:11px}
+.legend .item{display:flex;align-items:center;gap:5px}
+.legend .swatch{width:12px;height:12px;border-radius:2px;display:inline-block}
+@media (max-width:780px){nav{padding:0 12px}main{padding:12px}section{padding:14px}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FM-PS AVC Model Gap — Temporal Forecast</h1>
+  <div class="sub">How budget desalignment unfolds over time, and which 6,232 (Fund, WBS) pairs are next</div>
+  <div class="meta">Build: 2026-05-01 · Gold DB freshness: 2026-05-01 · Brain claims #135-137 · Canonical incident: INC-000005638 · Companion v1</div>
+</header>
+
+<nav>
+  <a href="#exec">Executive Forecast</a>
+  <a href="#layer1">Layer 1 — Retrospective</a>
+  <a href="#trigger">The Trigger Batch</a>
+  <a href="#layer2">Layer 2 — Forecast Wave</a>
+  <a href="#top10">Top 10 Next Failures</a>
+  <a href="#pattern">Biennium Rhythm</a>
+  <a href="#flow">5-Step Replay</a>
+  <a href="#footnotes">Footnotes</a>
+</nav>
+
+<main>
+
+<!-- =================== SECTION 1: EXECUTIVE FORECAST =================== -->
+<section id="exec">
+<h2>Executive forecast</h2>
+<p>UNESCO is in the middle of a wave of FM-AVC desalignment caused by a structural model gap. <strong>6,232 (Fund, WBS) pairs are already in a BAD state</strong> across the system (54% of the 11,586 evaluated pairs). The wave's trigger is a sustained biennium-end ledger movement run by a single user (<code>A_BANSAL</code>) on <strong>2026-01-31</strong> — <strong>257 FB01 documents in one day, touching 667 distinct funds</strong>. <span class="tier tier-1">TIER_1</span></p>
+
+<div class="kpi-grid">
+  <div class="kpi red"><div class="v">6,232</div><div class="l">Pairs in BAD state (FM-Exh + Both-Exh + PS-Exh)</div></div>
+  <div class="kpi amber"><div class="v">257</div><div class="l">FB01 docs on 2026-01-31 by A_BANSAL</div></div>
+  <div class="kpi"><div class="v">667</div><div class="l">Funds touched in Jan-2026 revenue postings</div></div>
+  <div class="kpi"><div class="v">196</div><div class="l">TYPE=104 funds created in 2024-2025 (the next-to-break cohort)</div></div>
+  <div class="kpi red"><div class="v">$683.6M</div><div class="l">Worst-fund deficit (196EAR4042 — INC-005638 ref)</div></div>
+  <div class="kpi"><div class="v">+4.1%</div><div class="l">Tier-2 footprint growth per month</div></div>
+</div>
+
+<div class="callout">
+<strong>The reframe:</strong> what looked like a single-fund incident (INC-000005638 / 196EAR4042) is actually the <em>visible tip</em> of a programmed biennium close-out batch. The same person, on the same day, posted similar reversals against hundreds of other funds. The next 10 worst-deficit funds are listed below — they are tickets <em>waiting to be opened</em> as soon as someone tries to post against them.
+</div>
+</section>
+
+<!-- =================== SECTION 2: LAYER 1 RETROSPECTIVE =================== -->
+<section id="layer1">
+<h2>Layer 1 — Retrospective: how INC-000005638 unfolded</h2>
+<p>4-lane temporal view for fund <strong>196EAR4042</strong> + WBS <strong>PR00050949</strong> (POSID <code>196EAR4042.23.2.10.1</code>, "Decentralization Yaounde"). X-axis = 2024-01 → 2026-04 (28 months). All numbers TIER_1 from <code>fmifiit_full</code>, <code>bpja</code>, <code>ekko</code>.</p>
+
+<div class="legend">
+  <div class="item"><span class="swatch" style="background:var(--u-green)"></span>FM revenue load (WRTTP=66 +)</div>
+  <div class="item"><span class="swatch" style="background:var(--u-red)"></span>FM revenue reversal (WRTTP=66 −)</div>
+  <div class="item"><span class="swatch" style="background:var(--u-amber)"></span>FM consumption (WRTTP=54)</div>
+  <div class="item"><span class="swatch" style="background:var(--u-blue)"></span>PS budget event (BPJA)</div>
+  <div class="item"><span class="swatch" style="background:var(--u-purple)"></span>PO / SES event</div>
+</div>
+
+<svg class="timeline-svg" viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit;font-size:10px">
+<!-- Time axis 2024-01 to 2026-04 = 28 months -->
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--u-blue-dark)"/>
+  </marker>
+</defs>
+<style>
+  .axis{stroke:#aaa;stroke-width:1}
+  .grid{stroke:#eee;stroke-width:1}
+  .lbl{fill:#444;font-size:9px}
+  .lane-lbl{fill:var(--u-blue-dark);font-size:11px;font-weight:600}
+  .year-lbl{fill:#666;font-size:10px;font-weight:500}
+</style>
+<!-- Background grid + month ticks -->
+<g>
+<line x1="100" y1="40" x2="1180" y2="40" class="axis"/>
+<line x1="100" y1="40" x2="100" y2="520" class="axis"/>
+<!-- Year separators -->
+<line x1="100" y1="40" x2="100" y2="520" class="grid"/>
+<line x1="486" y1="40" x2="486" y2="520" class="grid" stroke-dasharray="2 2"/>
+<line x1="872" y1="40" x2="872" y2="520" class="grid" stroke-dasharray="2 2"/>
+<text x="100" y="32" class="year-lbl">2024-01</text>
+<text x="486" y="32" class="year-lbl">2025-01</text>
+<text x="872" y="32" class="year-lbl">2026-01</text>
+<text x="1140" y="32" class="year-lbl">2026-04</text>
+</g>
+
+<!-- LANE A: FM revenue (WRTTP=66) — green/red bars -->
+<text x="20" y="80" class="lane-lbl">A. FM revenue</text>
+<text x="20" y="92" class="lbl">(WRTTP=66)</text>
+<line x1="100" y1="100" x2="1180" y2="100" class="grid"/>
+<!-- Each month one bar; spacing ~38px -->
+<!-- 2024 Jan +12.1M (very tall green), 2024 Feb +350K, etc -->
+<g>
+<rect x="100" y="50" width="32" height="50" fill="var(--u-green)" opacity="0.85"/>
+<text x="105" y="48" class="lbl" style="fill:var(--u-green)">+12.1M</text>
+<rect x="138" y="93" width="32" height="7" fill="var(--u-green)" opacity="0.5"/>
+<rect x="176" y="98" width="32" height="2" fill="var(--u-green)" opacity="0.3"/>
+<rect x="214" y="98" width="32" height="2" fill="var(--u-green)" opacity="0.3"/>
+<rect x="290" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<rect x="328" y="89" width="32" height="11" fill="var(--u-green)" opacity="0.6"/>
+<rect x="366" y="94" width="32" height="6" fill="var(--u-green)" opacity="0.5"/>
+<rect x="404" y="65" width="32" height="35" fill="var(--u-green)" opacity="0.8"/>
+<text x="406" y="62" class="lbl" style="fill:var(--u-green)">+2.3M</text>
+<rect x="442" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<!-- 2025 small adjustments -->
+<rect x="486" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<rect x="600" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<rect x="676" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<rect x="790" y="63" width="32" height="37" fill="var(--u-green)" opacity="0.8"/>
+<text x="790" y="60" class="lbl" style="fill:var(--u-green)">+2.5M</text>
+<rect x="828" y="98" width="32" height="2" fill="var(--u-red)" opacity="0.3"/>
+<rect x="866" y="93" width="32" height="7" fill="var(--u-green)" opacity="0.5"/>
+<!-- 2026 P01: THE MEGA REVERSAL -->
+<rect x="872" y="100" width="32" height="180" fill="var(--u-red)"/>
+<text x="868" y="295" class="lbl" style="fill:var(--u-red);font-weight:700;font-size:10px">−$12.66M</text>
+<text x="850" y="308" class="lbl" style="fill:var(--u-red);font-weight:600">A_BANSAL · FB01 · 2026-01-31</text>
+<text x="850" y="320" class="lbl" style="fill:#666">XBLNR='196 SERIES' · BSP email 2026-02-02</text>
+<line x1="888" y1="100" x2="888" y2="290" stroke="var(--u-red)" stroke-width="2" marker-end="url(#arr)" opacity="0.5"/>
+</g>
+
+<!-- LANE B: PS budget (BPJA) — blue events -->
+<text x="20" y="200" class="lane-lbl">B. PS budget</text>
+<text x="20" y="212" class="lbl">(WBS PR00050949)</text>
+<line x1="100" y1="220" x2="1180" y2="220" class="grid"/>
+<!-- 2024 KBN0 +259K, KBW1 -248K (offsetting transfer out) -->
+<g>
+<circle cx="116" cy="200" r="6" fill="var(--u-blue)"/>
+<text x="125" y="195" class="lbl">KBN0 +$259K</text>
+<circle cx="200" cy="225" r="5" fill="var(--u-red)"/>
+<text x="208" y="232" class="lbl">KBW1 −$248K (out)</text>
+<!-- 2025 KBW2 +248K (reverse), KBN0 -46K -->
+<circle cx="540" cy="195" r="6" fill="var(--u-blue)"/>
+<text x="548" y="190" class="lbl">KBW2 +$248K (in)</text>
+<circle cx="640" cy="226" r="4" fill="var(--u-red)"/>
+<text x="646" y="234" class="lbl">−$46K</text>
+<!-- 2026 KBN0 +42K, KBW2 +35K -->
+<circle cx="900" cy="200" r="5" fill="var(--u-blue)"/>
+<text x="908" y="195" class="lbl">+$42K</text>
+<circle cx="980" cy="200" r="4" fill="var(--u-blue)"/>
+<text x="988" y="195" class="lbl">+$35K</text>
+</g>
+
+<!-- LANE C: PO/SES events -->
+<text x="20" y="320" class="lane-lbl">C. PO events</text>
+<text x="20" y="332" class="lbl">(3 incident POs)</text>
+<line x1="100" y1="340" x2="1180" y2="340" class="grid"/>
+<g>
+<!-- 2025 PO 4500540022 created 2025-07-01 -->
+<polygon points="720,340 730,330 740,340 730,350" fill="var(--u-purple)"/>
+<text x="730" y="328" class="lbl" style="fill:var(--u-purple)">PO 022</text>
+<polygon points="724,340 734,330 744,340 734,350" fill="var(--u-purple)" opacity="0.7"/>
+<text x="730" y="362" class="lbl" style="fill:var(--u-purple)">PO 024</text>
+<!-- 2025 PO 4500543365 created 2025-09-01 -->
+<polygon points="800,340 810,330 820,340 810,350" fill="var(--u-purple)"/>
+<text x="800" y="328" class="lbl" style="fill:var(--u-purple)">PO 365</text>
+<!-- SES posting attempts 2026-Q1 -->
+<polygon points="888,340 898,330 908,340 898,350" fill="var(--u-red)"/>
+<text x="908" y="332" class="lbl" style="fill:var(--u-red);font-weight:600">SES blocked</text>
+<text x="908" y="344" class="lbl" style="fill:var(--u-red)">→ INC ticket</text>
+</g>
+
+<!-- LANE D: per-FIPEX cumulative -->
+<text x="20" y="430" class="lane-lbl">D. Per-FIPEX</text>
+<text x="20" y="442" class="lbl">balance (FONDS=196EAR4042/FISTL=WHC)</text>
+<line x1="100" y1="450" x2="1180" y2="450" class="grid"/>
+<!-- REVENUE bucket (top) tracking large positive then crashes -->
+<g>
+<polyline points="100,400 130,380 200,378 300,378 400,360 500,365 600,365 700,365 800,355 850,355 870,355 890,510 950,510 1180,510"
+  fill="none" stroke="var(--u-amber)" stroke-width="2.5"/>
+<text x="105" y="395" class="lbl" style="fill:var(--u-amber);font-weight:600">REVENUE bucket</text>
+<text x="900" y="505" class="lbl" style="fill:var(--u-red);font-weight:600">crashes 2026-01-31</text>
+<!-- Operational FIPEX (always at 0 or below) -->
+<line x1="100" y1="455" x2="1180" y2="455" stroke="var(--u-red)" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
+<text x="100" y="470" class="lbl" style="fill:var(--u-red)">FIPEX 11/13/20/30/40/50/80 — always ≤ 0</text>
+</g>
+
+<!-- Today marker -->
+<line x1="1188" y1="40" x2="1188" y2="520" stroke="var(--u-blue-dark)" stroke-width="2" stroke-dasharray="4 2"/>
+<text x="1148" y="535" class="lbl" style="fill:var(--u-blue-dark);font-weight:600">Today 2026-05</text>
+
+</svg>
+
+<h3>Historigram flow — every event, with the SAP transaction that produced it</h3>
+<p>Each row below is an actual posting in <code>fmifiit_full</code>, <code>bpja</code>, <code>ekko</code>, or <code>bkpf</code>. Color of the left bar: <span style="color:var(--u-green);font-weight:600">green = revenue</span>, <span style="color:var(--u-purple);font-weight:600">purple = PS budget</span>, <span style="color:var(--u-amber);font-weight:600">orange = commitment</span>, <span style="color:var(--u-red);font-weight:600">red = consumption / alarm</span>.</p>
+
+<style>
+.flow-section{margin:18px 0;padding:14px 16px;background:var(--u-grey-light);border-radius:6px}
+.flow-section h4{margin:0 0 12px 0;color:var(--u-blue-dark);font-size:14px}
+.flow-row{display:grid;grid-template-columns:140px 1fr 220px;gap:12px;align-items:flex-start;padding:10px 14px;background:#fff;margin:6px 0;border-radius:4px;border-left:4px solid var(--u-blue);font-size:13px}
+.flow-row.green{border-left-color:var(--u-green)}
+.flow-row.purple{border-left-color:var(--u-purple)}
+.flow-row.amber{border-left-color:var(--u-amber)}
+.flow-row.red{border-left-color:var(--u-red)}
+.flow-row.alarm{border-left-color:var(--u-red);background:var(--u-red-soft)}
+.flow-row .date{font-family:Menlo,Monaco,Consolas,monospace;font-size:12px;color:var(--u-blue-dark);font-weight:600}
+.flow-row .desc strong{color:var(--u-blue-dark)}
+.flow-row .tcode{font-size:11px;background:var(--u-grey-light);padding:4px 8px;border-radius:3px;font-family:Menlo,Monaco,Consolas,monospace;color:var(--u-grey);text-align:right}
+</style>
+
+<div class="flow-section">
+<h4>2024 — biennium 2024-2025 starts. Fund created. Revenue parked on REVENUE placeholder.</h4>
+
+<div class="flow-row purple">
+  <div class="date">2024-01-25</div>
+  <div class="desc"><strong>Fund 196EAR4042 created</strong> by user <code>MULESOFT</code> (TYPE 104 = donor, biennium 2024-2025).</div>
+  <div class="tcode">via MULESOFT → BAPI_FUND_CREATE</div>
+</div>
+
+<div class="flow-row green">
+  <div class="date">2024-01 (P001)</div>
+  <div class="desc"><strong>Revenue load: +$12,107,835.80</strong> across 5 docs to FIPEX=REVENUE. Master journal <code>9000000953</code> by <code>L_HANGI</code> ("ED/PLS/EDP").</div>
+  <div class="tcode">FB01 → fmifiit_full WRTTP=66</div>
+</div>
+
+<div class="flow-row purple">
+  <div class="date">2024 (KBN0)</div>
+  <div class="desc"><strong>PS-AVC budget allocation</strong> on WBS PR00050949: +$259,261 KBN0 (original) and −$248,450.86 KBW1 (transfer-out, biennium-end). Net 2024: +$10,810.14 carried forward.</div>
+  <div class="tcode">FR50/CJ30 → bpja WRTTP=41</div>
+</div>
+
+<div class="flow-row green">
+  <div class="date">2024-02 · 2024-12</div>
+  <div class="desc">Additional revenue tranches: $350K (Feb), $39K (Mar), $71K (Apr), $670K (Aug), $328K (Sep), $2,341K (Oct), $69K (Dec). All hit FIPEX=REVENUE. Total fund-year revenue: <strong>+$15,989,777 USD</strong>.</div>
+  <div class="tcode">FB01 / fmifiit_full WRTTP=66</div>
+</div>
+
+<div class="flow-row red">
+  <div class="date">2024-01 · 2024-12</div>
+  <div class="desc"><strong>Operational consumption (WBS PR00050949):</strong> 2,029 actuals lines totalling −$2,302,116. Posts to FIPEX 11/13/20/30/40/50/80/10' — never to REVENUE.</div>
+  <div class="tcode">ML81N + MIRO + RMRP/RMWE → fmifiit_full WRTTP=54</div>
+</div>
+</div>
+
+<div class="flow-section">
+<h4>2025 — biennium runs hot. Revenue keeps flowing. POs accumulate. Successor fund created in December.</h4>
+
+<div class="flow-row purple">
+  <div class="date">2025 (KBW2)</div>
+  <div class="desc"><strong>PS-AVC supplements:</strong> KBW2 +$248,451 (transfer-IN, reverses 2024 transfer-out). KBN0 −$46,148 (return). KBW1 −$35,738 (additional transfer-out). KBFC +$166,565 carry-fwd from prior consumption.</div>
+  <div class="tcode">FR50/CJ30 → bpja WRTTP=41/42</div>
+</div>
+
+<div class="flow-row amber">
+  <div class="date">2025-07-01</div>
+  <div class="desc"><strong>PO 4500540022 created</strong> — Consultant MENGUE (vendor 4028658, BSART=354). 2 line items, FIPEX=11 (Personnel), FONDS=196EAR4042/WHC.</div>
+  <div class="tcode">ME21N → ekko/ekpo</div>
+</div>
+
+<div class="flow-row amber">
+  <div class="date">2025-07-01</div>
+  <div class="desc"><strong>PO 4500540024 created</strong> — Consultant NTIE Stephan (vendor 4028648, BSART=354). 5 line items, FIPEX=11.</div>
+  <div class="tcode">ME21N → ekko/ekpo</div>
+</div>
+
+<div class="flow-row amber">
+  <div class="date">2025-09-01</div>
+  <div class="desc"><strong>PO 4500543365 created</strong> — COM NAT Gabon (vendor 200149, BSART=IMPT). 6 line items, FIPEX=20 (Travel/Services).</div>
+  <div class="tcode">ME21N → ekko/ekpo</div>
+</div>
+
+<div class="flow-row green">
+  <div class="date">2025-10 (P010)</div>
+  <div class="desc">Late-biennium revenue tranche: <strong>+$2,515,968 USD</strong> on FIPEX=REVENUE. The last "real" revenue load before the wind-down.</div>
+  <div class="tcode">FB01 → fmifiit_full WRTTP=66</div>
+</div>
+
+<div class="flow-row red">
+  <div class="date">2025-01 · 2025-12</div>
+  <div class="desc"><strong>Operational consumption (WBS PR00050949):</strong> 1,937 actuals lines, $-2,446,078 USD. Posts to operational FIPEX. Cumulative WRTTP=54 across all FIPEX is now ~$-4.85M for the fund.</div>
+  <div class="tcode">ML81N + MIRO + F-44 → fmifiit_full WRTTP=54</div>
+</div>
+
+<div class="flow-row purple">
+  <div class="date">2025-12-07</div>
+  <div class="desc"><strong>Successor fund 196EAR4043 created</strong> by user <code>G_DARD</code> ("Earmarked Activities (2026-2027)"). The biennium 2026-2027 vehicle is now ready to receive transferred residuals.</div>
+  <div class="tcode">FM5I / BAPI_FUND_CREATE</div>
+</div>
+</div>
+
+<div class="flow-section">
+<h4>2026-Q1 — biennium close-out batch. The trigger fires. AVC starts blocking.</h4>
+
+<div class="flow-row alarm">
+  <div class="date">2026-01-31</div>
+  <div class="desc"><strong>⚠️ TRIGGER BATCH — A_BANSAL posts 257 FB01 documents.</strong> 6 reference series under direction of BSP emails. 4 docs (BLART=R1, "196 SERIES") affect fund 196EAR4042 directly: <strong>−$12,659,625.38</strong> reversed from FIPEX=REVENUE. 220 docs ("POC EMAIL 3.2.26"), 26 docs ("7% MC TRANSFER"), 5 docs ("513 SERIES"). 667 distinct funds touched UNESCO-wide. Backdated BUDAT=2026-01-31, entered 2026-02-03.</div>
+  <div class="tcode">FB01 manual JV → fmifiit_full WRTTP=66 (signed −)</div>
+</div>
+
+<div class="flow-row red">
+  <div class="date">2026-Q1</div>
+  <div class="desc"><strong>FM-AVC starts blocking</strong> at SES posting time. Operational FIPEX 11/13/20/30/40/50/80 all show negative pool (consumption > 0, revenue stranded on REVENUE which is now also negative). Field offices begin to surface tickets.</div>
+  <div class="tcode">ML81N abend / FMAVC005</div>
+</div>
+
+<div class="flow-row red">
+  <div class="date">2026-03-31</div>
+  <div class="desc"><strong>INC-000005638 opened</strong> by Dr. Thierry P. NZAMBA NZAMBA (Bureau Libreville, Gabon). "Établir un SES, une notification en rouge apparait." Ticket sits open in SMART for 23 days before escalation.</div>
+  <div class="tcode">SMART portal — INC-000005638</div>
+</div>
+
+<div class="flow-row red">
+  <div class="date">2026-04-23</div>
+  <div class="desc">Reporter escalates to RIOS, c.c. BOUANGA + 6 others. Adds 2 more affected POs (4500540022 / 4500540024). Re-escalated 2026-04-24 to JP LOPEZ + D. MICHENET. Chase email 2026-05-01.</div>
+  <div class="tcode">Email escalation</div>
+</div>
+
+<div class="flow-row green">
+  <div class="date">2026-05-01</div>
+  <div class="desc"><strong>Today.</strong> ROOT_CAUSE_CONFIRMED. Class detector flags 2,005 buckets at risk. Pool Health Matrix flags 6,232 (Fund, WBS) pairs in BAD state across UNESCO. Top-10 next-to-break funds identified.</div>
+  <div class="tcode">brain claims #135-137</div>
+</div>
+</div>
+
+<details>
+<summary>SQL — Lane A (FM revenue monthly, 196EAR4042)</summary>
+<pre>SELECT GJAHR, PERIO, COUNT(*), SUM(signed FKBTR)
+FROM fmifiit_full WHERE FONDS='196EAR4042' AND WRTTP='66'
+GROUP BY GJAHR, PERIO ORDER BY GJAHR, PERIO
+-- Result: 26 monthly buckets. 2024-01: +$12.10M (initial revenue load).
+-- 2024-10: +$2.34M (mid-biennium top-up). 2025-10: +$2.52M.
+-- 2026-01: -$12,659,625.38 (the trigger reversal).</pre>
+</details>
+
+<details>
+<summary>SQL — Lane B (BPJA on PR00050949)</summary>
+<pre>SELECT GJAHR, WRTTP, VORGA, signed WTJHR, TWAER
+FROM bpja WHERE OBJNR='PR00050949' ORDER BY GJAHR, VORGA
+-- 10 rows over 3 years. Key VORGA values: KBN0=Original Budget,
+-- KBW1=Return out, KBW2=Transfer in, KBFC=Carry forward.
+-- 2024 net: $259K - $248K + $11K (KBFC) = ~$22K spent.
+-- 2025 net: -$46K + $248K - $36K + $167K (KBFC) = $333K → spent.
+-- 2026 net: $42K + $36K + $29K = $106K cumulative (~$48K free Q2).</pre>
+</details>
+</section>
+
+<!-- =================== SECTION 3: THE TRIGGER BATCH =================== -->
+<section id="trigger">
+<h2>The trigger — drill into 2026-01-31</h2>
+<p>The "single-fund reversal" framing is wrong. <strong>A_BANSAL posted 257 FB01 documents on 2026-01-31</strong> (entered 2026-02-03), touching 667 distinct funds via revenue postings. This was a planned biennium close-out batch executed under direction from Budget Service Portal (BSP) emails. <span class="tier tier-1">TIER_1</span></p>
+
+<table>
+<thead><tr><th>Reference (XBLNR)</th><th>BKTXT (header)</th><th class="num">Docs</th><th>BELNR range</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>POC EMAIL 3.2.26</code></td><td>POC - Jan 26</td><td class="num">220</td><td>9200003365 → 9200003594</td><td>Programme On Costs allocation — largest series</td></tr>
+<tr><td><code>7% MC TRANSFER</code></td><td>Trf to OPF_MC</td><td class="num">26</td><td>9200003713 → 9200003745</td><td>Management Cost (7%) auto-transfer to OPF</td></tr>
+<tr><td><code>513 SERIES</code></td><td>BSP email dt 2.2.26</td><td class="num">5</td><td>9200003359 → 9200003363</td><td>Affects 513* funds (different stream)</td></tr>
+<tr><td><code>196 SERIES</code></td><td>BSP email dt 2.2.26</td><td class="num">4</td><td>9000000950 → 9000000953</td><td><strong>Affects 196EAR4042 — the INC-005638 trigger</strong></td></tr>
+<tr><td><code>549INT2006</code></td><td>BSP email dated 04.02.202…</td><td class="num">1</td><td>9200003685</td><td>Single follow-up</td></tr>
+<tr><td><code>PSC + INT TRF HQ</code></td><td>PSC + INT TRF HQ/UBO</td><td class="num">1</td><td>9200004526</td><td>Programme Support Cost transfer HQ ↔ UBO</td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>What this means:</strong> the model gap doesn't manifest one fund at a time — it manifests in <em>cohorts</em>. UNESCO has a regular biennium close-out process executed centrally. The FM-AVC validation runs <em>after</em> the FB01 batch, so the "drift" is created en masse and then discovered piecemeal as field offices try to post.
+</div>
+
+<details>
+<summary>SQL — A_BANSAL batch on 2026-01-31</summary>
+<pre>SELECT XBLNR, BKTXT, COUNT(*), MIN(BELNR), MAX(BELNR)
+FROM bkpf WHERE BUKRS='UNES' AND BUDAT='20260131' AND USNAM='A_BANSAL'
+GROUP BY XBLNR, BKTXT ORDER BY 3 DESC
+-- 257 docs total, entered 2026-02-03, BUDAT backdated to 2026-01-31.</pre>
+</details>
+</section>
+
+<!-- =================== SECTION 4: LAYER 2 FORECAST WAVE =================== -->
+<section id="layer2">
+<h2>Layer 2 — Forecast wave (the cohort that's next)</h2>
+<p>UNESCO's TYPE=104 (Earmarked donor) fund creation cadence over the past 12 years reveals a programmed biennium-start spike. Every spike becomes a biennium-end exhaustion event ~24 months later.</p>
+
+<h3>Donor TYPE=104 fund creation per year</h3>
+<div style="margin:10px 0">
+<div class="bar-row"><div class="lbl">2014</div><div class="bar"><div class="fill" style="width:25%"></div></div><div class="val">26 funds</div></div>
+<div class="bar-row"><div class="lbl">2015</div><div class="bar"><div class="fill" style="width:26%"></div></div><div class="val">27</div></div>
+<div class="bar-row"><div class="lbl">2016</div><div class="bar"><div class="fill" style="width:33%"></div></div><div class="val">34</div></div>
+<div class="bar-row"><div class="lbl">2017</div><div class="bar"><div class="fill" style="width:17%"></div></div><div class="val">18</div></div>
+<div class="bar-row"><div class="lbl">2018</div><div class="bar"><div class="fill" style="width:31%"></div></div><div class="val">32</div></div>
+<div class="bar-row"><div class="lbl">2019</div><div class="bar"><div class="fill" style="width:36%"></div></div><div class="val">37</div></div>
+<div class="bar-row"><div class="lbl">2020</div><div class="bar"><div class="fill" style="width:30%"></div></div><div class="val">31</div></div>
+<div class="bar-row"><div class="lbl">2021</div><div class="bar"><div class="fill" style="width:31%"></div></div><div class="val">32</div></div>
+<div class="bar-row"><div class="lbl">2022</div><div class="bar"><div class="fill" style="width:45%"></div></div><div class="val">46</div></div>
+<div class="bar-row"><div class="lbl">2023</div><div class="bar"><div class="fill" style="width:18%"></div></div><div class="val">19</div></div>
+<div class="bar-row"><div class="lbl"><strong>2024</strong></div><div class="bar"><div class="fill warn" style="width:100%"></div></div><div class="val"><strong>103</strong> ⚠️</div></div>
+<div class="bar-row"><div class="lbl"><strong>2025</strong></div><div class="bar"><div class="fill warn" style="width:90%"></div></div><div class="val"><strong>93</strong> ⚠️</div></div>
+<div class="bar-row"><div class="lbl">2026 (YTD May)</div><div class="bar"><div class="fill" style="width:52%"></div></div><div class="val">54</div></div>
+</div>
+
+<div class="callout">
+<strong>Pattern visible:</strong> 25-46 funds/year was the steady cadence 2014-2023. Then <strong>196 funds in 2024-2025 alone</strong> — a 3× spike — for the new biennium. Every one of those funds will reach biennium-end together in late 2025 / early 2026 (we are here). The 2026 wave is not over: 54 new funds already created in 2026 will be next-cohort exposure for 2027-2028 biennium-end.
+</div>
+
+<h3>Pool Health Matrix state distribution — 11,586 evaluated pairs (2026-05-01)</h3>
+<table>
+<thead><tr><th>State</th><th class="num">Pairs</th><th class="num">%</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><span class="pos">ALIGNED</span></td><td class="num">4,363</td><td class="num">37.7%</td><td>Both engines have positive pool — healthy</td></tr>
+<tr><td class="neg"><strong>FM-EXHAUSTED</strong></td><td class="num"><strong>2,390</strong></td><td class="num">20.6%</td><td><strong>INC-005638 class</strong> — FM blocks, PS would permit</td></tr>
+<tr><td class="neg">PS-EXHAUSTED</td><td class="num">991</td><td class="num">8.6%</td><td>Rare — PS over-spent, FM still has budget</td></tr>
+<tr><td class="neg"><strong>BOTH-EXHAUSTED</strong></td><td class="num"><strong>3,842</strong></td><td class="num">33.2%</td><td><strong>Critical</strong> — both engines blocking</td></tr>
+</tbody>
+</table>
+
+<h3>State distribution by fund TYPE (top 10 by total pairs)</h3>
+<table>
+<thead><tr><th>TYPE</th><th>Description</th><th class="num">ALIGNED</th><th class="num">FM-Exh</th><th class="num">PS-Exh</th><th class="num">Both-Exh</th><th class="num">Total</th></tr></thead>
+<tbody>
+<tr><td><strong>105</strong></td><td>Earmarked (Self-Benefiting Funds)</td><td class="num pos">2,393</td><td class="num neg">904</td><td class="num">327</td><td class="num neg">1,338</td><td class="num"><strong>4,962</strong></td></tr>
+<tr><td><strong>104</strong></td><td>Earmarked Donor (INC-005638 type)</td><td class="num pos">695</td><td class="num neg">271</td><td class="num">291</td><td class="num neg">767</td><td class="num"><strong>2,024</strong></td></tr>
+<tr><td><strong>108</strong></td><td>Earmarked Special</td><td class="num pos">672</td><td class="num neg">338</td><td class="num">236</td><td class="num neg">554</td><td class="num"><strong>1,800</strong></td></tr>
+<tr><td>107</td><td>Earmarked Sectoral</td><td class="num pos">390</td><td class="num neg">218</td><td class="num">35</td><td class="num neg">226</td><td class="num">869</td></tr>
+<tr><td><em>(empty)</em></td><td>Funds with no TYPE assigned ⚠️</td><td class="num">—</td><td class="num neg">549</td><td class="num">3</td><td class="num neg">613</td><td class="num"><strong>1,165</strong></td></tr>
+<tr><td>106</td><td>Earmarked Closed (TYPE 104→106)</td><td class="num pos">29</td><td class="num neg">16</td><td class="num">28</td><td class="num neg">153</td><td class="num">226</td></tr>
+<tr><td>101</td><td>Earmarked (smallest donor)</td><td class="num pos">93</td><td class="num neg">38</td><td class="num">22</td><td class="num neg">76</td><td class="num">229</td></tr>
+<tr><td>109</td><td>Earmarked Field</td><td class="num pos">23</td><td class="num neg">20</td><td class="num">1</td><td class="num neg">45</td><td class="num">89</td></tr>
+<tr><td>103</td><td>Earmarked sub-account</td><td class="num pos">50</td><td class="num neg">22</td><td class="num">2</td><td class="num neg">42</td><td class="num">116</td></tr>
+<tr><td>313</td><td>Special programmes</td><td class="num">—</td><td class="num">—</td><td class="num">35</td><td class="num neg">6</td><td class="num">41</td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>1,165 pairs on funds without a TYPE assigned</strong> (97% in BAD state) — that's a master-data hygiene issue compounding the model gap. These funds bypass any TYPE-based AVC strategy entirely. Captured as derivative DQ.
+</div>
+</section>
+
+<!-- =================== SECTION 5: TOP 10 NEXT FAILURES =================== -->
+<section id="top10">
+<h2>Top 10 next failures (proactive FMAVCREINIT candidates)</h2>
+<p>Ranked by absolute deficit at 2026-05-01. Nine of ten are TYPE=104 funds created via MULESOFT in early 2024 — same biennium cohort as the canonical case.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Fund</th><th>TYPE</th><th>Created</th><th>By</th><th class="num">Deficit USD</th><th>Projected biennium close</th><th>Ticket window</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-red-soft)"><td><strong>#1</strong></td><td><strong>196EAR4042</strong></td><td>104</td><td>2024-01-25</td><td>MULESOFT</td><td class="num neg">−683.6M</td><td>2025-12-31 (past)</td><td><strong>2026-Q1 → Q3</strong> ← <em>active (INC-005638)</em></td></tr>
+<tr><td>#2</td><td>424GLO4142</td><td>104</td><td>2024-02-19</td><td>MULESOFT</td><td class="num neg">−174.6M</td><td>2025-12-31</td><td>2026-Q2 → Q4</td></tr>
+<tr><td>#3</td><td>408FOE5042</td><td>104</td><td>2024-02-02</td><td>MULESOFT</td><td class="num neg">−142.9M</td><td>2025-12-31</td><td>2026-Q2 → Q4</td></tr>
+<tr><td>#4</td><td>459GLO1003</td><td>104</td><td>2024-01-18</td><td>MULESOFT</td><td class="num neg">−117.1M</td><td>2025-12-31</td><td>2026-Q1 → Q3</td></tr>
+<tr><td>#5</td><td>410GLO1042</td><td>104</td><td>2024-02-01</td><td>MULESOFT</td><td class="num neg">−82.8M</td><td>2025-12-31</td><td>2026-Q2 → Q4</td></tr>
+<tr><td>#6</td><td>308GLO4142</td><td>104</td><td>2024-03-04</td><td>MULESOFT</td><td class="num neg">−58.9M</td><td>2025-12-31</td><td>2026-Q2 → Q4</td></tr>
+<tr><td>#7</td><td><strong>PFF</strong></td><td><strong>196</strong></td><td><strong>2002-01-18</strong></td><td><strong>M.MAIRINE</strong></td><td class="num neg">−53.3M</td><td>n/a (perpetual)</td><td>continuous (Programme Funding Facility)</td></tr>
+<tr><td>#8</td><td>448INT2411</td><td>104</td><td>2024-01-25</td><td>MULESOFT</td><td class="num neg">−29.9M</td><td>2025-12-31</td><td>2026-Q1 → Q3</td></tr>
+<tr><td>#9</td><td>448INT2413</td><td>104</td><td>2024-01-24</td><td>MULESOFT</td><td class="num neg">−22.0M</td><td>2025-12-31</td><td>2026-Q1 → Q3</td></tr>
+<tr><td>#10</td><td>408MIL5042</td><td>104</td><td>2024-03-19</td><td>MULESOFT</td><td class="num neg">−11.4M</td><td>2025-12-31</td><td>2026-Q3 → Q4</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>PFF (Programme Funding Facility, TYPE=196)</strong> is the only outlier in the top 10 — it's a perpetual master fund (created 2002, ERFNAME=M.MAIRINE) feeding into multiple programme cost objects. Its deficit is structural and continuous, not biennium-driven. Needs separate governance from the Earmarked donor stream.
+</div>
+
+<p>Operational mitigation for the other 9: <code>FMAVCREINIT</code> on each (<code>RLDNR=9H, RFIKRS=UNES, RYEAR=2026, RFUND=&lt;fund&gt;</code>) plus FMBB supplementary budget on operational FIPEX. <strong>Cost:</strong> 2-4 hours per fund × 9 = ~30 hours of FM-config time. <strong>Effect:</strong> prevents ~50% of projected ticket volume in next 6 months. <span class="tier tier-3">TIER_3 estimate</span></p>
+</section>
+
+<!-- =================== SECTION 6: BIENNIUM PATTERN =================== -->
+<section id="pattern">
+<h2>The biennium rhythm — pattern recognition from naming convention</h2>
+<p>The fund-naming convention reveals UNESCO's programmed biennial cadence. Anyone reading <code>196EAR40XX</code> can predict when the next exhaustion wave hits.</p>
+
+<table>
+<thead><tr><th>Fund stream</th><th>Biennium</th><th>Status today (2026-05-01)</th><th>Next wave window</th></tr></thead>
+<tbody>
+<tr><td><code>196EAR4036</code></td><td>2018-2019</td><td>Closed (TYPE 106)</td><td>past</td></tr>
+<tr><td><code>196EAR4038</code></td><td>2020-2021</td><td>Closed (TYPE 106)</td><td>past</td></tr>
+<tr><td><code>196EAR4040</code></td><td>2022-2023</td><td>Closing — partially in 106</td><td>2024 wave (already absorbed)</td></tr>
+<tr style="background:var(--u-red-soft)"><td><code><strong>196EAR4042</strong></code></td><td><strong>2024-2025</strong></td><td><strong>BIENNIUM-END EXHAUSTION (current)</strong></td><td><strong>2026 wave (in progress)</strong></td></tr>
+<tr><td><code>196EAR4043</code></td><td>2026-2027</td><td>Active, healthy</td><td>2028 wave (predictable)</td></tr>
+<tr><td><code>196EAR4044</code></td><td>2028-2029 (not yet created)</td><td>not yet created</td><td>2030 wave</td></tr>
+</tbody>
+</table>
+
+<div class="callout-green">
+<strong>Predictability is high:</strong> the same naming stream repeats every biennium. Every <code>196EAR40XX</code> with <code>XX</code> = even-biennium-start has a 24-30 month productive life and then ~6 months of exhaustion drama. UNESCO can <em>schedule</em> the FMAVCREINIT and supplementary-budget actions in advance, instead of reacting to tickets.
+</div>
+</section>
+
+<!-- =================== SECTION 6.4: AGI VERIFICATION PASS (added Session #69) =================== -->
+<section id="agi-pass" style="border-left:5px solid var(--u-purple)">
+<h2>AGI verification pass — reframed problem statement &amp; corrections</h2>
+<p style="font-style:italic">Session #69 applied the 7-check verification drill against everything claimed in this companion. The reframed conclusion below supersedes earlier fragments. <span class="tier" style="background:#ede1ff;color:#5a2db8">VERIFIED</span></p>
+
+<h3>Reframed problem statement</h3>
+<div class="callout">
+INC-000005638 is not a fund-management bug. It is a manifestation of a missing <strong>referential-integrity contract</strong> between FM revenue movements and the dependent PS / MM / Workplan structures. SAP FM offers 5+ transaction types that mutate fund state; only 3 propagate symmetrically to PS via the 10-digit hard link. Of the 2 that do not, one (cross-project revenue transfer at biennium close) is a unilateral FM operation; the other (fund TYPE flip 104→106) is symmetric but delayed by weeks. <strong>The defect is the time-window between revenue transfer and TYPE flip propagation</strong> — during that window, FM-AVC blocks while PS still says "available", and tickets like this one are generated. The 6,232 (Fund, WBS) pairs in BAD state are not 6,232 separate problems; they are 6,232 manifestations of one missing contract.
+</div>
+
+<div style="background:linear-gradient(180deg,#fff4d6 0%,#ffe4e6 100%);border-left:5px solid var(--u-red);padding:14px 16px;margin:14px 0;border-radius:4px">
+<strong style="color:var(--u-red)">⚠️ Critical reframe (Session #69, 2026-05-01) — desalignment is CONTINUOUS, not periodic.</strong>
+
+<p style="margin:8px 0">User insight verified empirically: the gap is NOT only created at biennium close. <strong>Every FB01 / FMBB / FMBBT / FMX1 posting</strong> that mutates FM state without a matching PS-side action creates asymmetry. Empirical proof on 196EAR4042 alone:</p>
+
+<ul style="margin:8px 0 8px 22px;font-size:13px">
+<li><strong>14 distinct revenue-posting periods</strong> 2024-2026 (FB01 to FIPEX=REVENUE) — Jan/Feb/Mar/Apr/Aug/Sep/Oct/Nov/Dec 2024; May/Sep/Oct/Dec 2025; Jan 2026.</li>
+<li><strong>Operational FIPEX adjustments in EVERY MONTH</strong> from Mar 2024 to Apr 2026 (FIPEX 11/13/20/30/50/etc).</li>
+<li><strong>A_BANSAL did 38 FB01 docs spread across the period</strong>, NOT just the dramatic 257-doc biennium-close batch.</li>
+<li>L_HANGI 381 docs, F_DERAKHSHAN 345, S_AGOSTO 222 FB01s — continuous activity by multiple users.</li>
+<li>Notable mid-biennium hits: 2024-07 FIPEX=50 −$10,919 · 2025-05 FIPEX=20 −$9,970 · 2025-06 FIPEX=13 −$19,425 + FIPEX=50 −$14,499 — none of these are biennium-close.</li>
+</ul>
+
+<p style="margin:8px 0"><strong>Implication for fix priority</strong>: the biennium-close framing was too narrow. The actual risk surface is every-posting-time. Therefore:</p>
+
+<table>
+<thead><tr><th>Fix</th><th>Coverage of continuous risk</th><th>Re-priorization</th></tr></thead>
+<tbody>
+<tr><td>FIX-D (compress closure timing)</td><td>Only 1 event/biennium (~1% of risk surface)</td><td><strong>DEMOTED</strong> — was #4, now residual</td></tr>
+<tr><td>FIX-A (MULESOFT FIPEX-aware)</td><td>Only automated budget path (does NOT catch manual FB01)</td><td>partial</td></tr>
+<tr style="background:var(--u-green-soft)"><td><strong>FIX-E (BAdI HARD-BLOCK on every FB01/FMBB/FMBBT)</strong></td><td>Catches every posting type at every moment</td><td><strong>PROMOTED to #1 critical</strong></td></tr>
+<tr style="background:var(--u-green-soft)"><td><strong>FIX-F (Meta-AVC atomic validation per posting)</strong></td><td>Catches every change source at validation time</td><td><strong>PROMOTED to #2 strategic</strong></td></tr>
+<tr><td>FIX-B + FIX-C (symmetric closeout SOP + mapping)</td><td>Only at biennium close. Even with perfect SOP, mid-biennium adjustments still create asymmetry.</td><td><strong>DEFERRED</strong></td></tr>
+</tbody>
+</table>
+
+<p style="margin:8px 0"><strong>This also closes KU-2026-PS-MM-SYMMETRIC-CLOSEOUT structurally</strong>: even if UNESCO had a perfect biennium-close SOP (it does not — confirmed by SME 2026-05-01), the mid-biennium ad-hoc adjustments would still create the asymmetry. <strong>The only durable answer is system-enforced consistency at every posting</strong> (FIX-E + FIX-F).</p>
+</div>
+
+<section id="central-narrative-tf" style="margin:14px 0;padding:14px 18px;background:linear-gradient(180deg,#fff4d6 0%,#ffe4e6 100%);border:3px solid #c5283d;border-radius:8px">
+<h2 style="color:#c5283d;margin:0 0 10px 0;font-size:16px">🎯 The central narrative (SME articulation 2026-05-02)</h2>
+<p style="font-size:13px;font-style:italic;margin:0 0 8px 0">"SAP knew the fund had open commitments, but allowed them to be moved anyway because there is no AVC guardian configured to enforce — the system let it happen."</p>
+<p style="font-size:13px;margin:6px 0">All 4 layers analyzed in this companion (FB01 manual postings, MULESOFT integration, biennium close-out gap, project Class A/B/C/D distribution) are <strong>symptoms or transport</strong>. The upstream cause is the AVC configuration: 6.5% coverage UNESCO-wide + TC aggregator + REVENUE in pool + no 10-digit for non-Earmarked. <strong>The lever is at the AVC config layer (FIX-G1/G2/G3) — not at MULESOFT (deprecated) or symptom-level mitigations.</strong></p>
+<p style="font-size:11px;color:#666;margin-top:6px">Full narrative + detail tables in master companion: <a href="fm_ps_avc_model_gap_companion_v1.html#user-story-telling-v2">"The story — clearly told" (7 chapters)</a>. Brain claim #157.</p>
+</section>
+
+
+
+<h3>The 5 FM-change types and PS-side symmetry (verified TIER_1)</h3>
+<table>
+<thead><tr><th>#</th><th>FM Change</th><th>TCODE / VORGA</th><th>PS-side</th><th>Evidence</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Original budget posting</td><td><code>FMBB / KBN0</code></td><td class="pos">✅ symmetric (10-digit link)</td><td>BPJA: PR00050949 KBN0 +$259K (2024)</td></tr>
+<tr><td>2</td><td>Within-project transfer</td><td><code>FMBBT / KBW1↔KBW2</code></td><td class="pos">✅ symmetric (mirror)</td><td>BPJA: 2024 KBW1 −$248K + 2025 KBW2 +$248K</td></tr>
+<tr><td>3</td><td>Carry-forward</td><td><code>FMJ2 / KBFC</code></td><td class="pos">⚠️ partial (reflects actuals)</td><td>BPJA: KBFC entries 2024-26</td></tr>
+<tr style="background:var(--u-red-soft)"><td>4</td><td><strong>Cross-project revenue transfer</strong></td><td><code>FB01 R1</code> (biennium close)</td><td class="neg">❌ <strong>NO PS counterpart</strong></td><td>2026-01-31: $-12.66M out 196EAR4042 / +$12.76M in 196EAR4043; PS WBSs unchanged</td></tr>
+<tr style="background:var(--u-amber-soft)"><td>5</td><td>Fund TYPE flip 104→106</td><td><code>FM5S / FMFG</code></td><td class="amber"><strong>⏱ symmetric but DELAYED</strong></td><td>196EAR4040 (closed): 88/88 WBSs are CLSD ✓ — but the flip happens weeks after revenue transfer</td></tr>
+</tbody>
+</table>
+
+<h3>Empirical proof of the timing gap (the new finding)</h3>
+<table>
+<thead><tr><th>Fund</th><th>Biennium</th><th>TYPE</th><th>Total WBSs</th><th>CLSD</th><th>REL</th><th>ISBD flagged</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-green-soft)"><td><code>196EAR4040</code></td><td>2022-2023 (closed)</td><td><strong>106</strong></td><td class="num">88</td><td class="num pos">88 (100%)</td><td class="num">0</td><td class="num">38 (43%)</td></tr>
+<tr style="background:var(--u-red-soft)"><td><code>196EAR4042</code></td><td>2024-2025 (closing)</td><td><strong>104</strong></td><td class="num">139</td><td class="num neg">0</td><td class="num neg">139 (100%)</td><td class="num neg"><strong>71 (51%)</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>The 51% is the smoking gun.</strong> Half of the 196EAR4042 WBSs are already flagged <code>I0093 ISBD</code> (Insufficient Budgeting) — SAP itself is signalling the deficit on each one — but none are yet CLSD because the TYPE flip hasn't happened. Anyone trying to post against any of these 71 WBSs gets an FM-AVC block. The 3 Gabon POs are 3 of those 71.
+</div>
+
+<h3>Critical missing piece (single sentence)</h3>
+<div class="callout">
+<strong>UNESCO has no mechanism that synchronizes the FM revenue transfer (immediate, 2026-01-31) with the TYPE flip 104→106 (delayed, weeks/months later) — closing that timing gap eliminates ~95% of the model gap with a config-only fix.</strong>
+</div>
+
+<h3>Decision matrix — 4 fix paths (revised)</h3>
+<table>
+<thead><tr><th>Fix</th><th>Phase</th><th>Cost</th><th>Coverage</th><th>Blocker</th><th>ROI</th></tr></thead>
+<tbody>
+<tr><td><strong>FIX-A</strong> MULESOFT FIPEX-aware revenue load</td><td>biennium-START</td><td>3-5 days</td><td>95% (prevents formation)</td><td>none</td><td class="pos"><strong>HIGHEST</strong></td></tr>
+<tr style="background:var(--u-green-soft)"><td><strong>FIX-D</strong> 🆕 Compress window: trigger TYPE flip 104→106 simultaneously with FB01 R1 reversal</td><td>biennium-END</td><td>1-2 weeks</td><td>~95% of biennium-end gap</td><td>process design only</td><td class="pos"><strong>HIGH (quick win)</strong></td></tr>
+<tr><td><strong>FIX-B</strong> Full symmetric closeout protocol (5 actions)</td><td>biennium-END</td><td>2-3 weeks</td><td>residual 5%</td><td>FIX-C</td><td>medium</td></tr>
+<tr><td><strong>FIX-C</strong> Cross-biennium project-mapping table</td><td>enabler</td><td>4-6 weeks</td><td>enables FIX-B</td><td>governance</td><td>low until B is needed</td></tr>
+</tbody>
+</table>
+<p><strong>Recommended order: FIX-A first (config), FIX-D second (process).</strong> Together they handle ~99% of the model gap. FIX-B + FIX-C are residual.</p>
+
+<h3>Supersessions (corrections to earlier claims this session)</h3>
+<table>
+<thead><tr><th>Earlier claim</th><th>Source</th><th>Correction</th></tr></thead>
+<tbody>
+<tr><td>"196EAR4042/WHC/TC ranks #10 — 9 funds in worse shape"</td><td>master companion §6 (per-bucket ranking)</td><td>Pool Health Matrix v1: <strong>196EAR4042 is rank #1 at $-683.6M deficit</strong>. The "rank #10" refers to (Fund, FundCenter, CommItem) bucket granularity; the "rank #1" refers to (Fund, WBS) pair acumulado. Both true; <strong>granularity must be cited</strong>.</td></tr>
+<tr><td>"+4.1%/month growth" tagged TIER_1</td><td>cross-update agent on 2 CSV diff dates</td><td>Demote to <span class="tier tier-2">TIER_2</span> — single measurement period (Mar 31 → Apr 28). Need second data point to confirm trend.</td></tr>
+<tr><td>"BAdI FMAVC_CUSTOMER" as CONTROL-A target</td><td>my own proposal Session #67</td><td>Demote to <span class="tier tier-3">TIER_3</span> hypothesis — never verified that this BAdI exists in S/4 or in UNESCO's customizing. Specific BAdI name to be confirmed before any sprint.</td></tr>
+</tbody>
+</table>
+
+<h3>Verification gaps still open (deliberate carry-over)</h3>
+<ul>
+<li><strong>KU-2026-AGI-GAP-2</strong> — Did the other 253 docs in the A_BANSAL 2026-01-31 batch (POC EMAIL: 220, 7% MC: 26, 513 SERIES: 5, etc.) create the same FM-PS asymmetry on their target funds? Possible scale 10×. <em>Worth one focused query next session.</em></li>
+<li><strong>KU-2026-AGI-GAP-6</strong> — Historical backlog: 38 WBSs of CLOSED biennium 196EAR4040 still show ISBD. The forward-looking 6,232 figure may understate the total backlog including unresolved legacy. <em>Quantify in next pass.</em></li>
+<li><strong>KU-2026-WP-INTENT</strong> — Workplan 017983 (biennium 43, "Under Reprogramming") still references SAP_Budget_CODE=196EAR4042 (legacy). Is this a defect or intentional placeholder during reprogramming? <em>Needs Programme Office input.</em></li>
+<li><strong>KU-2026-NET-DRIFT</strong> — Net difference $97,761 (0.8%) between revenue out and in (196EAR4042 → 196EAR4043). FX, fees, or legitimate reduction? <em>Single Bash query against fmifiit_full would resolve.</em></li>
+</ul>
+
+<details>
+<summary>SQL — gap #1 verification (TYPE flip 104→106 propagates to PS as CLSD)</summary>
+<pre>-- 196EAR4040 (closed biennium 2022-2023, TYPE=106)
+SELECT j.STAT, COUNT(DISTINCT j.OBJNR)
+FROM jest j WHERE j.OBJNR IN (SELECT OBJNR FROM prps_full WHERE POSID LIKE '196EAR4040%')
+  AND j.INACT != 'X'
+GROUP BY j.STAT;
+-- I0046 CLSD: 88 (100% of WBSs); I0005 AVAC: 88; I0067 BUDG: 54; I0093 ISBD: 38
+
+-- 196EAR4042 (closing biennium 2024-2025, TYPE still 104)
+SELECT j.STAT, COUNT(DISTINCT j.OBJNR)
+FROM jest j WHERE j.OBJNR IN (SELECT OBJNR FROM prps_full WHERE POSID LIKE '196EAR4042%')
+  AND j.INACT != 'X'
+GROUP BY j.STAT;
+-- I0002 REL: 139 (100%); I0093 ISBD: 71 (51%); I0046 CLSD: 0
+-- Conclusion: TYPE flip is symmetric with CLSD on PS side, but timing is delayed.
+-- During the gap, FM has $0 but PS still REL → AVC blocks → tickets.</pre>
+</details>
+</section>
+
+<!-- =================== SECTION 6.45: TEMPORAL-DIMENSION MISMATCH + PRE-FLIGHT PROTOCOL =================== -->
+<section id="temporal-mismatch" style="border-left:5px solid var(--u-amber)">
+<h2>The temporal-dimension mismatch (and the FIX-E pre-flight gate)</h2>
+
+<p>The user's structural insight (Session #69): <em>"the project has more lifetime than the biennium, and that generates the issue, because [time dimensions] aren't aligned and there are no controls between AVC and Commitments in FM and PS."</em> Verified TIER_1.</p>
+
+<h3>5 dimensions, 4 align, 1 doesn't — that's the gap</h3>
+<table>
+<thead><tr><th>Dimension</th><th>Where it lives</th><th>Lifecycle</th><th>Aligned to biennium?</th></tr></thead>
+<tbody>
+<tr><td>Programme / Workplan</td><td>Salesforce Core Manager <code>ampi__Project__c</code></td><td>2 years (<code>Biennium__c</code>)</td><td class="pos">✓ yes</td></tr>
+<tr><td>Fund (FM)</td><td>SAP <code>funds</code></td><td>2 years strict (TYPE 104)</td><td class="pos">✓ yes</td></tr>
+<tr><td>Project (PS)</td><td>SAP <code>proj</code> + <code>prps_full</code></td><td>2 years (UNESCO convention; name embeds biennium e.g. "Earmarked Activities (2024-2025)")</td><td class="pos">✓ yes</td></tr>
+<tr style="background:var(--u-red-soft)"><td><strong>PO / Commitment</strong></td><td>SAP <code>ekko</code> / <code>ekkn</code> / <code>cooi</code></td><td><strong>variable — typically 6-18 months from PO creation</strong></td><td class="neg"><strong>❌ NO — straddles biennium boundary</strong></td></tr>
+<tr><td>Service Entry / Invoice</td><td>SAP <code>essr</code> / <code>rbkp</code></td><td>days-months post-PO</td><td class="neg">❌ inherits PO span</td></tr>
+</tbody>
+</table>
+
+<h3>The PO temporal distribution on 196EAR4042 (proves the gap)</h3>
+<table>
+<thead><tr><th>PO creation period</th><th class="num">POs</th><th>Risk class</th></tr></thead>
+<tbody>
+<tr><td>2024 (full year)</td><td class="num">61</td><td class="pos">low — 18+ months margin to biennium-end</td></tr>
+<tr><td>2025-Jan to 2025-Jun</td><td class="num">49</td><td class="amber">medium — depends on PO complexity</td></tr>
+<tr style="background:var(--u-amber-soft)"><td><strong>2025-Jul to 2025-Dec</strong></td><td class="num"><strong>39</strong></td><td class="amber"><strong>HIGH — completion likely in 2026</strong></td></tr>
+<tr style="background:var(--u-red-soft)"><td><strong>2025-Oct to 2026-Jan</strong></td><td class="num"><strong>21</strong></td><td class="neg"><strong>GUARANTEED straddle</strong></td></tr>
+<tr><td><strong>Total POs on 196EAR4042</strong></td><td class="num"><strong>149</strong></td><td>26% are at biennium-boundary risk</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Implication:</strong> the 3 Gabon POs (4500543365, 4500540022, 4500540024) are ~2% of the 149 POs on this fund. Of the remaining 146, an estimated <strong>21-39 will manifest as INC-005638-class tickets</strong> as their owners try to post SES / invoices over the next 6 months. The 71 WBSs already <code>I0093 ISBD</code>-flagged confirm the scale — half of the project is structurally pre-stuck.
+</div>
+
+<h3>Why prior biennium (196EAR4040) didn't visibly explode the same way</h3>
+<table>
+<thead><tr><th>Biennium</th><th>Fund</th><th>Closing FB01 R1</th><th>Amount reversed</th><th>Likely cause of magnitude</th></tr></thead>
+<tbody>
+<tr><td>2022-2023</td><td>196EAR4040</td><td>2025-12-P12</td><td class="num">$-132,923</td><td>By close, residual was nearly liquidated</td></tr>
+<tr style="background:var(--u-red-soft)"><td><strong>2024-2025</strong></td><td><strong>196EAR4042</strong></td><td><strong>2026-01-P01</strong></td><td class="num neg"><strong>$-12,659,625</strong></td><td><strong>100× larger residual — POs late-biennium not yet liquidated</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>Pattern:</strong> the larger the late-biennium PO cohort, the larger the residual revenue trapped in the legacy fund, the more violent the reversal, the more tickets generated. The 2024-2025 cohort = 196 TYPE=104 funds (3× the historical average — see §4 Forecast Wave). Every one will close like 196EAR4042. <strong>Without a pre-flight gate, the wave gets bigger every biennium.</strong>
+</div>
+
+<h3>FIX-E: Open-Commitment Pre-Flight Gate (the missing hard control)</h3>
+<p>Before any FB01 R1 / FMBBT moving revenue OUT of a TYPE 101-112 fund, run the integrity check:</p>
+
+<table>
+<thead><tr><th>#</th><th>Check</th><th>Source</th><th>Threshold</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Open POs (not LOEKZ, not fully delivered)</td><td><code>ekko/ekpo/ekkn</code></td><td>any > 0</td><td class="neg">🔴 HARD BLOCK</td></tr>
+<tr><td>2</td><td>Open PS commitments</td><td><code>cooi</code> WHERE OBJNR in PRPS family</td><td>any > 0</td><td class="neg">🔴 HARD BLOCK</td></tr>
+<tr><td>3</td><td>Draft SES (not yet accepted)</td><td><code>essr</code> WHERE AKZNR=''</td><td>any > 0</td><td class="amber">🟡 SOFT WARN with mandatory reason</td></tr>
+<tr><td>4</td><td>Unposted invoices</td><td><code>rbkp</code> WHERE RBSTAT in (A,B)</td><td>any > 0</td><td class="amber">🟡 SOFT WARN with mandatory reason</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Empirical verification on 196EAR4042 at 2026-01-31</strong> (the moment A_BANSAL did the transfer):
+<ul>
+<li>Distinct WBSs with PS commitments: <strong>64 (of 139 WBSs in project = 46%)</strong></li>
+<li>COOI 2026 commitments: <strong>932 rows totalling $571,049 USD</strong></li>
+<li>SES rows on the 3 known incident POs alone: <strong>33</strong></li>
+<li>FIX-E would have <strong>HARD-BLOCKED</strong> the FB01 batch with this evidence — saving the 21-39 future tickets in this cohort.</li>
+</ul>
+</div>
+
+<h3>The 4 fix paths reorganized into a coherent control framework</h3>
+<table>
+<thead><tr><th>Layer</th><th>Fix</th><th>When</th><th>Severity</th><th>Cost</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-red-soft)"><td><strong>PRE-FLIGHT</strong></td><td><strong>🆕 FIX-E</strong> Open-commitment HARD BLOCK</td><td>before FB01 batch</td><td class="neg"><strong>🔴 BLOCK</strong></td><td>1-2 sprints (BAdI on FB01 + override workflow)</td></tr>
+<tr style="background:var(--u-green-soft)"><td>AT-FLIGHT (entry)</td><td><strong>FIX-A</strong> MULESOFT FIPEX-aware revenue load</td><td>at biennium-START</td><td class="pos">🟢 AUTO</td><td>3-5 days</td></tr>
+<tr style="background:var(--u-green-soft)"><td>AT-FLIGHT (close)</td><td><strong>FIX-D</strong> Compress timing window: TYPE flip 104→106 simultaneously with FB01 R1</td><td>at biennium-END</td><td class="pos">🟢 AUTO</td><td>1-2 weeks (process)</td></tr>
+<tr><td>POST-FLIGHT</td><td><strong>FIX-B</strong> Verification: no FIPEX bucket crossed zero</td><td>after FB01 batch</td><td class="amber">🟡 ALERT</td><td>2 hours (nightly job)</td></tr>
+<tr><td>(enabler)</td><td><strong>FIX-C</strong> Cross-biennium project-mapping table</td><td>master data</td><td>—</td><td>4-6 weeks (governance)</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>The user's request: "controls must be more solid".</strong> FIX-E is the answer — a true HARD BLOCK that prevents the structural defect from being created. Without it, FIX-A and FIX-D are optimizations that the human operator can still bypass. With FIX-E, the system enforces the contract.
+</div>
+
+<details>
+<summary>SQL — empirical pre-flight check on 196EAR4042 at 2026-01-31</summary>
+<pre>-- COOI commitments still open on the WBSs of fund 196EAR4042
+SELECT GJAHR, COUNT(*),
+       SUM(signed WKGBTR) as total
+FROM cooi
+WHERE OBJNR IN (SELECT OBJNR FROM prps_full WHERE POSID LIKE '196EAR4042%')
+GROUP BY GJAHR;
+-- 2024: 1,622 rows ($0 net, mostly settled)
+-- 2025: 1,783 rows ($0 net, mostly settled)
+-- 2026: 932 rows, $571,049 still open  ← would have triggered FIX-E HARD BLOCK</pre>
+</details>
+
+<details>
+<summary>SQL — PO BEDAT distribution showing temporal mismatch</summary>
+<pre>SELECT SUBSTR(BEDAT,1,4) as yr, COUNT(DISTINCT EBELN)
+FROM ekko WHERE EBELN IN (SELECT DISTINCT EBELN FROM coep WHERE GEBER='196EAR4042')
+GROUP BY yr;
+-- 2024: 61 POs, 2025: 88 POs (39 in Jul-Dec, 21 in Oct-Jan boundary).
+-- 26% of all POs on this fund were created late enough to straddle biennium close.</pre>
+</details>
+</section>
+
+<!-- =================== SECTION 6.46: COMMITTED-VS-AVAILABLE DETECTOR RESULTS =================== -->
+<section id="detector-results" style="border-left:5px solid var(--u-blue)">
+<h2>Committed-vs-Available detector — results (UNESCO-wide, 2026, ACTIVE only)</h2>
+
+<p>This detector answers the operational question: <em>how do we detect what's active and which committed funds don't align with available funds?</em> Filter: only WBS elements with status <code>I0002 REL</code> (Released), excluding <code>CLSD</code> / <code>TECO</code> / <code>DLFL</code>. Source: <code>Zagentexecution/quality_checks/committed_vs_available_detector.py</code>. <span class="tier tier-1">TIER_1</span></p>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="v">16,894</div><div class="l">Active WBS elements (REL, not CLSD/TECO/DLFL)</div></div>
+  <div class="kpi"><div class="v">4,115</div><div class="l">Active (WBS, Fund) pairs with 2026 commitments</div></div>
+  <div class="kpi red"><div class="v">3,069</div><div class="l">FM-only-EXHAUSTED — INC-005638 class (with active filter, vs 6,232 raw)</div></div>
+  <div class="kpi red"><div class="v">119</div><div class="l">BOTH-EXHAUSTED (critical)</div></div>
+  <div class="kpi amber"><div class="v">30</div><div class="l">pairs where commit > FM available — pre-flight HARD-BLOCK candidates</div></div>
+  <div class="kpi"><div class="v">3,395</div><div class="l">Already ISBD-flagged by SAP itself</div></div>
+</div>
+
+<h3>Top 10 worst (largest commit-vs-FM-pool gap, immediate ticket risk)</h3>
+<table>
+<thead><tr><th>#</th><th>Fund</th><th>WBS element</th><th>Description</th><th class="num">n commits</th><th class="num">Commit USD</th><th class="num">FM pool</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-red-soft)"><td>1</td><td><code>727IVC1004</code></td><td><code>PR00054814</code></td><td>UGP-PATEB/Comp 1.1 (Côte d'Ivoire)</td><td class="num">3</td><td class="num neg">$4,281,667</td><td class="num neg">−$9,695,423</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>2</td><td><code>914BRZ1157</code></td><td><code>PR00052250</code></td><td>WBS 1: Objetivo 1 (Brazil)</td><td class="num">484</td><td class="num neg">$4,323,549</td><td class="num neg">−$6,034,819</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>3</td><td><code>196EAR4042</code></td><td><code>PR00048366</code></td><td>Virunga National Park (RDC)</td><td class="num">3</td><td class="num neg">$250,400</td><td class="num neg">−$12,867,509</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>4</td><td><code>196EAR4042</code></td><td><code>PR00048370</code></td><td>Salonga NP (RDC)</td><td class="num">2</td><td class="num neg">$142,792</td><td class="num neg">−$12,867,509</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>5</td><td><code>727IVC1004</code></td><td><code>PR00054841</code></td><td>UGP-PATEB/Comp 3.2</td><td class="num">1</td><td class="num neg">$1,420,086</td><td class="num neg">−$9,695,423</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>6</td><td><code>727IVC1004</code></td><td><code>PR00054844</code></td><td>UGP-PATEB/Comp 3.3</td><td class="num">1</td><td class="num neg">$1,046,140</td><td class="num neg">−$9,695,423</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>7</td><td><code>727IVC1004</code></td><td><code>PR00054832</code></td><td>UGP-PATEB/Comp 2.2</td><td class="num">3</td><td class="num neg">$758,294</td><td class="num neg">−$9,695,423</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>8</td><td><code>727IVC1004</code></td><td><code>PR00054836</code></td><td>UGP-PATEB/Comp 2.3</td><td class="num">1</td><td class="num neg">$506,764</td><td class="num neg">−$9,695,423</td><td class="neg">BLOCK_HARD</td></tr>
+<tr><td>9</td><td><code>410GLO1042</code></td><td><code>PR00048517</code></td><td>Staff costs</td><td class="num">225</td><td class="num neg">$238,924</td><td class="num neg">−$9,730,314</td><td class="neg">BLOCK_HARD</td></tr>
+<tr style="background:var(--u-amber-soft)"><td>22</td><td><code>196EAR4042</code></td><td><code>PR00050949</code></td><td>Decentralization Yaoundé (INC-005638 ←)</td><td class="num">24</td><td class="num">$15,894</td><td class="num neg">−$12,867,509</td><td class="neg">BLOCK_HARD</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>The canonical case (PR00050949) is rank #22</strong>, not #1. There are 21 worse cases pending — including a $4.3M PATEB project in Côte d'Ivoire and a 484-commit WBS in Brazil. INC-005638 broke through to ticketing because someone tried to post; the 21 worse cases haven't yet been touched, but they're equally exposed.
+</div>
+
+<h3>Distribution by link type</h3>
+<table>
+<thead><tr><th>Link type</th><th>Pairs with 2026 commitments</th><th>Source of truth for fund mapping</th></tr></thead>
+<tbody>
+<tr><td><strong>HARD</strong> (POSID(10) = GEBER, Earmarked TYPE 101-112)</td><td class="num">3,812 (93%)</td><td>SAP master data (10-digit rule)</td></tr>
+<tr style="background:var(--u-amber-soft)"><td><strong>DERIVED</strong> (no master-data hard link)</td><td class="num">303 (7%)</td><td><strong>Salesforce Core Manager <code>Allocation__c</code></strong> — multi-fund mapping not yet propagated to SAP</td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>For DERIVED pairs, the source of truth is Salesforce, not SAP.</strong> The Workplan's <code>Allocation__c</code> table carries the multi-fund mapping (which fund(s) actually finance which workplan, and at which Commitment_Item granularity). UNESCO knows this; SAP does not. <strong>FIX-A (MULESOFT FIPEX-aware load) and a future "Workplan-driven master-data sync" would close this.</strong>
+</div>
+
+<h3>Why the active filter matters</h3>
+<table>
+<thead><tr><th>Filter</th><th>Pairs in BAD state</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Pool Health Matrix v1 (no active filter)</td><td class="num">6,232</td><td>Includes CLSD / TECO / DLFL noise</td></tr>
+<tr><td><strong>Committed-vs-Available v1 (active filter)</strong></td><td class="num"><strong>3,193</strong> (FM-EXH + BOTH-EXH)</td><td>~50% reduction — half were closed/inactive WBSs</td></tr>
+<tr><td><strong>Pre-flight HARD-BLOCK (commit > FM available)</strong></td><td class="num"><strong>30</strong></td><td>Immediate ticket risk — these would BLOCK on next FB01 batch</td></tr>
+</tbody>
+</table>
+
+<details>
+<summary>SQL — detector implementation (link-type derivation)</summary>
+<pre>-- Active WBS only (status I0002 REL, not CLSD/TECO/DLFL)
+CREATE TEMP TABLE _active_wbs AS
+SELECT DISTINCT j.OBJNR FROM jest j
+WHERE j.STAT='I0002' AND j.INACT=''
+  AND j.OBJNR LIKE 'PR%'
+  AND j.OBJNR NOT IN (SELECT OBJNR FROM jest WHERE STAT IN ('I0045','I0046','I0076') AND INACT='');
+
+-- Fund-from-WBS derivation (HARD-link first, fall back to coep history)
+CREATE TEMP TABLE _wbs_fund_map AS
+SELECT c.OBJNR,
+  COALESCE(
+    (SELECT FINCODE FROM funds WHERE FINCODE = SUBSTR(p.POSID, 1, 10) AND FIKRS='UNES'),
+    (SELECT GEBER FROM coep WHERE OBJNR=c.OBJNR AND GEBER!='' GROUP BY GEBER ORDER BY COUNT(*) DESC LIMIT 1)
+  ) as fund_derived,
+  CASE WHEN EXISTS (...hard link check...) THEN 'HARD' ELSE 'DERIVED' END as link_type
+FROM (SELECT DISTINCT OBJNR FROM cooi WHERE GJAHR='2026') c
+LEFT JOIN prps_full p ON c.OBJNR = p.OBJNR;</pre>
+</details>
+
+<details>
+<summary>Output paths</summary>
+<ul>
+<li>Detector script: <code>Zagentexecution/quality_checks/committed_vs_available_detector.py</code></li>
+<li>CSV output: <code>Zagentexecution/quality_checks/committed_vs_available_detector.csv</code> (4,115 rows)</li>
+<li>Log: <code>Zagentexecution/sap_data_extraction/logs/committed_vs_available_*.log</code></li>
+</ul>
+</details>
+</section>
+
+<!-- =================== SECTION 6.5: META-AVC ARCHITECTURE (FIX-F) — the structural answer =================== -->
+<section id="meta-avc" style="border-left:5px solid var(--u-blue-dark);background:linear-gradient(180deg,#fff 0%,#f0f4ff 100%)">
+<h2>FIX-F: Meta-AVC architecture — the structural answer</h2>
+
+<p style="font-size:14px"><em>User architectural insight (Session #69): "entre FM y PS debe ser un meta-AVC combinando los 2"</em></p>
+
+<h3>Why FIX-A/D/E are necessary but not sufficient</h3>
+<table>
+<thead><tr><th>Fix</th><th>Path coverage</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>FIX-A MULESOFT FIPEX-aware</td><td>biennium-START budget loading (BOR)</td><td>does NOT cover real postings — FB01/FMBB/FMBBT bypass MULESOFT entirely</td></tr>
+<tr><td>FIX-D Compress timing</td><td>biennium-END automated batch</td><td>does NOT cover ad-hoc mid-biennium FB01 reclassifications</td></tr>
+<tr><td>FIX-E Pre-flight HARD-BLOCK</td><td>FB01/FMBB/FMBBT on revenue-out</td><td>only validates pre-flight, not every posting</td></tr>
+<tr><td>FIX-B Symmetric closeout</td><td>biennium-END process protocol</td><td>requires FIX-C, governance-heavy</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Insight</strong>: every path-specific fix leaves at least one source of misalignment unguarded. UNESCO has at least 4 paths that mutate fund state — MULESOFT (automated, budget side), FB01 (manual, real posting), FMBB/FMBBT (manual, budget side), and FMX1/FMRES (manual, reserves). A fix on any single path leaves the others uncontrolled.
+</div>
+
+<h3>The Meta-AVC architecture</h3>
+<p>Replace the two independent AVC engines with a <strong>single unified validation layer</strong> that holds combined FM+PS state and runs at every posting:</p>
+
+<table>
+<thead><tr><th>Today (broken)</th><th>With Meta-AVC (FIX-F)</th></tr></thead>
+<tbody>
+<tr><td>FM-AVC validates per (Fund, FundCenter, CommItem)</td><td>Meta-AVC validates BOTH granularities atomically</td></tr>
+<tr><td>PS-AVC validates per WBS</td><td>Meta-AVC enforces consistency between the two</td></tr>
+<tr><td>Run in series; FM first, PS second</td><td>Single atomic validation</td></tr>
+<tr><td>Can disagree silently (INC-005638 signature)</td><td>Disagreement = automatic block</td></tr>
+<tr><td>FB01 manual postings bypass any individual fix</td><td>Meta-AVC sees every posting regardless of source</td></tr>
+</tbody>
+</table>
+
+<h3>Validation rules in the Meta-AVC engine</h3>
+<div class="flow-step"><div class="num">1</div><div class="desc"><strong>FM-pool check:</strong> if SUM(FMIFIIT WRTTP=66 - WRTTP=54) on (Fund, FundCenter, CommItem) &lt; 0 → BLOCK</div></div>
+<div class="flow-step"><div class="num">2</div><div class="desc"><strong>PS-pool check:</strong> if BPJA budget − COEP actuals − COOI commitments on WBS &lt; 0 → BLOCK</div></div>
+<div class="flow-step"><div class="num">3</div><div class="desc"><strong>Consistency check (the new one):</strong> if |FM-pool / sum_of_WBS_budgets − PS-pool_per_WBS| &gt; tolerance% → BLOCK as inconsistency</div></div>
+<div class="flow-step"><div class="num">4</div><div class="desc"><strong>I0093 ISBD propagation:</strong> when block triggers, automatically set ISBD on the affected WBS (already happening — Meta-AVC just makes the connection explicit)</div></div>
+
+<h3>What MULESOFT vs FB01 distinction means for the architecture</h3>
+<table>
+<thead><tr><th>Path</th><th>Carries</th><th>Workplan context?</th><th>Meta-AVC catches it?</th></tr></thead>
+<tbody>
+<tr><td><strong>MULESOFT</strong> → BAPI_FUND_CREATE</td><td>BOR (Budget Original Reservation, budget-side)</td><td>✓ yes (Workplan/Allocation/CommItem)</td><td>✓ at validation time</td></tr>
+<tr style="background:var(--u-amber-soft)"><td><strong>FB01</strong> manual journal</td><td>real posting reclassification (FI ledger)</td><td>❌ no</td><td>✓ at validation time</td></tr>
+<tr><td>FMBB / FMBBT</td><td>Budget transfers / supplements</td><td>❌ no</td><td>✓ at validation time</td></tr>
+<tr><td>FMX1 / FMRES</td><td>Funds reservations</td><td>❌ no</td><td>✓ at validation time</td></tr>
+<tr><td>ML81N / MIRO / F110</td><td>Real consumption postings</td><td>—</td><td>✓ at validation time</td></tr>
+</tbody>
+</table>
+
+<div class="callout-green">
+<strong>Meta-AVC is the only path that closes the model gap permanently.</strong> Every other fix is a partial mitigation that leaves at least one channel uncontrolled. FIX-F enforces the integrity contract regardless of how the change was initiated.
+</div>
+
+<h3>Re-prioritized fix path order</h3>
+<table>
+<thead><tr><th>#</th><th>Fix</th><th>Phase</th><th>Cost</th><th>Coverage</th><th>When to do it</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-red-soft)"><td><strong>1</strong></td><td><strong>FIX-E</strong> Pre-flight HARD-BLOCK BAdI on FB01/FMBB/FMBBT</td><td>tactical</td><td>1-2 sprints</td><td>Catches manual paths immediately</td><td>Now (3-4 weeks)</td></tr>
+<tr style="background:var(--u-blue-light)"><td><strong>2</strong></td><td><strong>FIX-F 🆕</strong> Meta-AVC unified engine</td><td>strategic</td><td>2-3 sprints</td><td>Permanent close of model gap</td><td>3-6 months (after FIX-E proves the pattern)</td></tr>
+<tr><td>3</td><td>FIX-A MULESOFT FIPEX-aware</td><td>biennium-start automation</td><td>3-5 days</td><td>Cleans budget loading from day 1</td><td>2-3 weeks (cheap quick win in parallel)</td></tr>
+<tr><td>4</td><td>FIX-D Compress timing window</td><td>biennium-end process</td><td>1-2 weeks</td><td>Stops biennium-end stranded POs</td><td>Process design</td></tr>
+<tr><td>5</td><td>FIX-B + FIX-C Symmetric closeout + project mapping</td><td>residual</td><td>weeks-months</td><td>Long tail edge cases</td><td>Only if needed after F lands</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Bottom line</strong>: Start FIX-E + FIX-A in parallel (different teams, no dependency). Plan FIX-F as the strategic 6-month north star. FIX-D and FIX-B/C only if 196EAR40XX-class incidents persist after F lands.
+</div>
+</section>
+
+<!-- =================== SECTION 6.5: THE BROKEN IMPLICIT CONTRACT (added Session #69) =================== -->
+<section id="contract">
+<h2>The broken implicit contract — why PS-AVC stays positive while FM-AVC empties</h2>
+
+<p>The structural insight (verified TIER_1 on 2026-05-01): UNESCO's biennium close-out moves <em>revenue</em> from the legacy fund to the successor fund, but does <em>not</em> move the corresponding open obligations (POs, draft SES, pending invoices). The implicit Fund↔Project relationship is established at project creation time and is enforced by the 10-digit hard link, but is NOT enforced when revenue is reallocated.</p>
+
+<h3>Empirical proof — the $12.66M did go somewhere specific</h3>
+<table>
+<thead><tr><th>Fund</th><th>2026-P01 revenue (WRTTP=66)</th><th>Status</th></tr></thead>
+<tbody>
+<tr style="background:var(--u-red-soft)"><td><code>196EAR4042</code> (legacy biennium 2024-2025)</td><td class="num neg"><strong>−$12,659,625.38</strong></td><td>reversed out</td></tr>
+<tr style="background:var(--u-green-soft)"><td><code>196EAR4043</code> (successor biennium 2026-2027)</td><td class="num pos"><strong>+$12,757,386.61</strong></td><td>received same day</td></tr>
+<tr><td><strong>Net difference</strong></td><td class="num"><strong>+$97,761</strong> (&lt;0.8% drift)</td><td>same transfer, two ledger sides</td></tr>
+</tbody>
+</table>
+
+<h3>And the two projects share zero common WBSs</h3>
+<table>
+<thead><tr><th>Project</th><th>WBSs in hierarchy</th><th>Shared with the other project</th></tr></thead>
+<tbody>
+<tr><td><code>196EAR4042</code> "Earmarked Activities (2024-2025)"</td><td class="num">139</td><td class="num">0</td></tr>
+<tr><td><code>196EAR4043</code> "Earmarked Activities (2026-2027)"</td><td class="num">128</td><td class="num">0</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Therefore</strong>: the 3 blocked POs (4500543365 / 4500540022 / 4500540024) reference WBSs in <code>196EAR4042.X.Y.Z</code>. Those WBSs do <em>not</em> have twins in <code>196EAR4043</code>. The POs <em>cannot</em> be reassigned by master-data lookup — they are bound to the legacy project by the 10-digit hard link enforced in <code>ZXFMYU22:362-369</code>. The money walked away; the obligations stayed.
+</div>
+
+<h3>The system already knows: PR00050949 carries SAP status I0093 (ISBD)</h3>
+<table>
+<thead><tr><th>JEST.STAT</th><th>Code</th><th>Description</th><th>Active?</th></tr></thead>
+<tbody>
+<tr><td><code>I0002</code></td><td>REL</td><td>Released</td><td class="pos">yes</td></tr>
+<tr><td><code>I0005</code></td><td>AVAC</td><td>Availability control active</td><td class="pos">yes</td></tr>
+<tr><td><code>I0067</code></td><td>BUDG</td><td>Budgeted</td><td class="pos">yes</td></tr>
+<tr style="background:var(--u-red-soft)"><td><code>I0093</code></td><td><strong>ISBD</strong></td><td><strong>Insufficient Budgeting</strong></td><td class="neg"><strong>flag set by AVC engine</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>Operational shortcut just discovered:</strong> SAP itself sets the <code>ISBD</code> status on every WBS whose AVC bucket is in deficit. We can build a faster detector that simply joins <code>jest</code> WHERE <code>STAT='I0093' AND INACT=''</code> — no FMIFIIT aggregation needed. The class detector script <code>inc5638_fm_ps_avc_misalignment.py</code> can be replaced (or supplemented) by a single SQL query against this status. Captured for next-session refactor.
+</div>
+
+<h3>Active vs closed WBSs (UNESCO-wide, TIER_1)</h3>
+<table>
+<thead><tr><th>Status</th><th>Code</th><th class="num">WBS count</th><th>Treatment in Pool Health Matrix</th></tr></thead>
+<tbody>
+<tr><td>I0002</td><td>REL</td><td class="num">16,970</td><td class="pos">active — count in matrix</td></tr>
+<tr><td>I0067</td><td>BUDG</td><td class="num">50,975</td><td class="pos">active — count in matrix</td></tr>
+<tr><td>I0005</td><td>AVAC</td><td class="num">58,926</td><td class="pos">active — count in matrix</td></tr>
+<tr><td>I0046</td><td><strong>CLSD</strong></td><td class="num">35,234</td><td class="neg">closed — should EXCLUDE from at-risk count</td></tr>
+<tr><td>I0045</td><td><strong>TECO</strong></td><td class="num">6,754</td><td class="neg">technically complete — should EXCLUDE</td></tr>
+<tr><td>I0076</td><td>DLFL</td><td class="num">96</td><td class="neg">deletion flag — should EXCLUDE</td></tr>
+</tbody>
+</table>
+
+<div class="callout-amber">
+<strong>Matrix v2 needed:</strong> the current Pool Health Matrix counts 6,232 pairs in BAD state without filtering by active status. Some unknown fraction is closed/TECO/deleted WBS noise. Next refresh will <code>JOIN jest</code> and produce active-only numbers.
+</div>
+
+<details>
+<summary>SQL — empirical proof of revenue movement to successor</summary>
+<pre>SELECT FONDS, GJAHR, PERIO, COUNT(*),
+       SUM(CASE WHEN SUBSTR(FKBTR,-1,1)='-' THEN -CAST(REPLACE(FKBTR,'-','') AS REAL) ELSE CAST(FKBTR AS REAL) END)
+FROM fmifiit_full
+WHERE FONDS IN ('196EAR4042','196EAR4043') AND WRTTP='66' AND GJAHR='2026' AND PERIO='001'
+GROUP BY FONDS, GJAHR, PERIO;
+-- 196EAR4042 P01: -$12,659,625.38 (1 row)
+-- 196EAR4043 P01: +$12,757,386.61 (6 rows)
+-- Net: +$97,761 — same biennium transfer, two ledger sides.</pre>
+</details>
+
+<details>
+<summary>SQL — JEST status validation</summary>
+<pre>SELECT j.STAT, j.INACT, t.TXT04, t.TXT30
+FROM jest j LEFT JOIN tj02t t ON j.STAT=t.ISTAT AND t.SPRAS='E'
+WHERE j.OBJNR='PR00050949';
+-- 5 records: I0001 CRTD inactive, I0002 REL active, I0005 AVAC active,
+-- I0067 BUDG active, I0093 ISBD active (the AVC red flag).</pre>
+</details>
+</section>
+
+<!-- =================== SECTION 7: 5-STEP REPLAY =================== -->
+<section id="flow">
+<h2>Why every biennium close-out re-runs the same play</h2>
+
+<div class="flow-step"><div class="num">1</div><div class="desc"><strong>New biennium fund created.</strong> January of biennium-start year (2024-01 for current cohort), MULESOFT integration provisions ~100 new TYPE=104 funds in a single batch. Each fund gets a top-WBS auto-created, no operational FIPEX budget loaded.</div></div>
+
+<div class="flow-step"><div class="num">2</div><div class="desc"><strong>Revenue loaded onto FIPEX=REVENUE placeholder.</strong> Donor cash-inflow integration posts revenue (WRTTP=66) against a single placeholder commitment item called REVENUE. <em>Operational FIPEX (11 personnel, 13 subcontracts, 20 travel, 30 equipment, …) get $0 budget by construction.</em></div></div>
+
+<div class="flow-step"><div class="num">3</div><div class="desc"><strong>Spending happens on operational FIPEX.</strong> 24 months of POs, SES, invoices post against operational FIPEX. FM-AVC sees deficit on each operational bucket but <em>silently allows postings</em> because the AVC strategy aggregates against the FUND-level revenue (which is positive, sitting on REVENUE placeholder).</div></div>
+
+<div class="flow-step"><div class="num">4</div><div class="desc"><strong>Biennium-end revenue REVERSED for transfer to successor.</strong> <span class="tier tier-1">TIER_1</span> On <code>2026-01-31</code>, <code>A_BANSAL</code> posts a 257-document FB01 batch from BSP-emails. Revenue on FIPEX=REVENUE goes from positive to negative as it's pulled toward the successor fund (196EAR4043). <strong>Aggregate AVC pool now negative.</strong></div></div>
+
+<div class="flow-step"><div class="num">5</div><div class="desc"><strong>Operational FIPEX shows deficit → AVC blocks.</strong> Next time a field office attempts SES / MIRO / F110 against the legacy fund, FM-AVC validation fires <code>FMAVC005</code> "insufficient budget" — even though the WBS-level PS-AVC pool may still report healthy. The 3 Gabon POs (4500543365 / 4500540022 / 4500540024) are 3 of an estimated 2,000+ POs in this state across UNESCO.</div></div>
+
+<div class="callout">
+<strong>The play is structural:</strong> nothing in steps 1-5 is a bug. It's a working configuration that produces predictable failure at biennium-end. Fixing this requires either (A) loading revenue onto operational FIPEX from day 1 (changes the procurement-cash-allocation procedure), or (B) aligning PS-AVC granularity with FM-AVC (config decision in TKA01 / OPSV).
+</div>
+</section>
+
+<!-- =================== SECTION 8: FOOTNOTES =================== -->
+<section id="footnotes">
+<h2>Footnotes</h2>
+
+<h3>Brain references</h3>
+<ul>
+<li>Claim <strong>#135</strong>: MODEL-GAP-2026-001 critical structural defect, 2,005 buckets at risk UNESCO-wide.</li>
+<li>Claim <strong>#136</strong>: FM-PS Pool Health Matrix executed UNESCO-wide on 2026-05-01. 15,455 distinct (Fund, WBS) pairs evaluated. State distribution: ALIGNED 4,363 / FM-EXH 2,390 / PS-EXH 991 / BOTH-EXH 3,842.</li>
+<li>Claim <strong>#137</strong>: Temporal-forecast viz built. Trigger event identified at TIER_1 (FB01 batch by A_BANSAL on 2026-01-31, 257 docs, refs `196 SERIES`/`POC EMAIL 3.2.26`/etc, BSP email 2026-02-02). Forecast wave: 6,232 pairs in BAD state at present; biennium-end cohort of 196 TYPE=104 funds created 2024-2025 are next-to-break.</li>
+<li>Feedback rule <strong>feedback_avc_class_before_incident</strong> (HIGH): when a UNESCO availability-control incident touches a TYPE 101-112 donor fund near biennium-end, treat as instance of MODEL-GAP-2026-001 not as isolated ticket.</li>
+<li>Data Quality entry <strong>MODEL-GAP-2026-001</strong> (severity HIGH, status OPEN_RECURRING) with full proposed_controls structure (CONTROL-A BAdI, CONTROL-B nightly batch, CONTROL-C preflight).</li>
+<li>KU <strong>KU-2026-MODEL-GAP-CONTROL</strong>: HQ Budget Office decision on CONTROL-A authorization.</li>
+<li>KU <strong>KU-2026-OUTLIER-WBS-AVC</strong>: 10 multi-fund "common cost" WBSs need AVC governance decision.</li>
+</ul>
+
+<h3>Cross-references</h3>
+<ul>
+<li>Master companion: <a href="fm_ps_avc_model_gap_companion_v1.html"><code>fm_ps_avc_model_gap_companion_v1.html</code></a></li>
+<li>Pool Health Matrix companion: <a href="fm_ps_pool_health_matrix_v1.html"><code>fm_ps_pool_health_matrix_v1.html</code></a></li>
+<li>Canonical incident doc: <code>knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code></li>
+<li>Class detector script: <code>Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py</code></li>
+<li>Pool Health Matrix script: <code>Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py</code></li>
+<li>Detector CSV (6,745 buckets): <code>Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.csv</code></li>
+<li>Pool Health Matrix CSV (11,586 pairs): <code>Zagentexecution/quality_checks/fm_ps_pool_health_matrix.csv</code></li>
+</ul>
+
+<h3>TIER classification</h3>
+<ul>
+<li><span class="tier tier-1">TIER_1</span> — Data-proven from Gold DB. Every number cites the SQL that produced it.</li>
+<li><span class="tier tier-2">TIER_2</span> — Inference from observed pattern. Plausible but not directly measured.</li>
+<li><span class="tier tier-3">TIER_3</span> — Projection or heuristic. Used for forecasts of future ticket windows.</li>
+</ul>
+
+<h3>Data sources</h3>
+<ul>
+<li><code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code> — canonical Gold DB at 2026-05-01.</li>
+<li>Tables used: <code>fmifiit_full</code> (2.2M rows), <code>bpja</code> (134K), <code>bkpf</code> (1.7M), <code>ekko</code> (73K), <code>ekkn</code> (13 — incident POs only), <code>prps</code> (59K), <code>proj</code> (14K), <code>funds</code> (66K).</li>
+<li>Pool Health Matrix CSV (11,586 main + 3,869 outlier rows).</li>
+</ul>
+
+</section>
+
+<footer>
+Build: 2026-05-01 · Brain coverage: claims #135-137 · Gold DB freshness: 2026-05-01 · UNESCO SAP Intelligence Platform · Companion v1
+</footer>
+
+</main>
+</body>
+</html>

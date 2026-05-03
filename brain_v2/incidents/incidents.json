@@ -1085,5 +1085,324 @@
         "P2P"
       ]
     }
+  },
+  {
+    "id": "INC-000005638",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "SES posting blocked + invoice payment blocked on Gabon donor fund 196EAR4042 (FIPEX-level AVC deficit on biennium 2024-2025 fund used in 2026)",
+    "reporter": "Dr. Thierry P. NZAMBA NZAMBA (Bureau Libreville, Gabon - tp.nzamba-nzamba@unesco.org)",
+    "received_date": "2026-03-31",
+    "escalated_dates": [
+      "2026-04-23 (Rios)",
+      "2026-04-24 (Lopez/Michenet)",
+      "2026-05-01 (chase)"
+    ],
+    "analyzed_session": 66,
+    "domain": "PSM",
+    "secondary_domains": [
+      "MM",
+      "Procurement",
+      "FI",
+      "Treasury"
+    ],
+    "transactions": [
+      "ML81N",
+      "MIRO",
+      "F110",
+      "F-53"
+    ],
+    "primary_object_id": "196EAR4042",
+    "primary_subject": "Donor fund 196EAR4042 'Earmarked Activities (2024-2025)' / FUNDSCTR=WHC (World Heritage Centre) - 3 Gabon-office POs (4500543365 COM NAT Gabon, 4500540022 MENGUE, 4500540024 NTIE) blocked when posting 2026 SES drafts and 2026 payments",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "scenario": "biennium_donor_fund_avc_starvation",
+    "error_messages": [
+      "text not captured in email; reporter described 'notification en rouge' on ML81N; most likely FMAVC005 'Annual budget exceeded' or analogous strict tolerance Z100 hit"
+    ],
+    "root_cause_summary": "CONFIRMED via TIER_1 RFC pull (P01, 2026-05-01). FM-AVC engine fires (NOT PS-AVC). The AVC derivation rule FMAFMAP013500109 collapses FIPEX 10'..50 into a single AVC control object TC for fund 196EAR4042. UNESCO loads donor revenue (WRTTP=66) entirely on FIPEX=REVENUE placeholder, which falls OUTSIDE the TC derivation range. Result: TC bucket sees /usr/bin/bash revenue while ,561,651.78 of KBFC consumption lands there → pool depth -,561,651.78 → FMAVC005 \"Annual budget exceeded\" raised for every new SES on FIPEX 11/20 (the three incident POs all hit the TC bucket). Fund-level pool is +1.83M and PS-AVC project pool is +6.43M — both healthy — but the FM-AVC enforces at the AVC-derived bucket level, not fund level. The class is REVENUE-PLACEHOLDER vs AVC-DERIVATION-BUCKET misalignment, structural to UNESCO config, present on 1,330+457 = 1,787 buckets across UNESCO (Tier 1+2 of the misalignment classifier).",
+    "code_validation_chain": [
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/ZXFMYU22_RPY.abap:362-369 - 10-digit FM-PS hard link for fund types 101-112: passes for 196EAR4042 (POSID(10) literally = GEBER for all 139 sub-WBS); ZFI/009 NOT raised",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/ZXFMYU22_RPY.abap:64-68 - USR05.PARID='ZFMUCHK' bypass: not active for the Libreville reporter",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/ZXFMYU22_RPY.abap:53 - TRVL bypass: irrelevant for ML81N",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/ZXFMDTU02_RPY.abap:99 - UNESCO-fund hardcode: only fires on HKONT in (0006045011, 0007045011, 0006045014); none apply to FIPEX=11/20 services",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_BUDGETING/ZXFMCU17_RPY.abap:32-67 - 2pct/$2000 tolerance cap: only fires on FMX1/FMX2 (Funds Reservation), not on ML81N",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/MM_PROCUREMENT/ZXM06U22_RPY.abap:42 - covers BSART='354' (4500540022/24) for release-strategy bypass; doesn't validate budget",
+      "extracted_code/UNESCO_CUSTOM_LOGIC/FM_COCKPIT/YFM_COCKPITTOP_RPY.abap:18-20 - confirms UNESCO AVC env 9HZ00001 + FMAVCDERIAOR/FMAVCREINIT/FMAVCR02 automation",
+      "Gold DB funds: ('UNES','196EAR4042','104','20240125','MULESOFT') - donor fund TYPE 104 still active",
+      "Gold DB proj: ('UNES','196EAR4042','Earmarked Activities (2024-2025)','10030120','20240124','00013092') - biennium 2024-2025 explicit in title",
+      "Gold DB funds: ('UNES','196EAR4043','104','20251207','G_DARD') - successor fund for 2026-2027 active",
+      "Gold DB fmifiit_full sum FONDS=196EAR4042 FISTL=WHC GJAHR=2026: WRTTP=66 (revenue) $12,659,625; WRTTP=54 (actuals) $199,876; implied 2026 fund-level available $11.33M",
+      "Gold DB fmioi sum FONDS=196EAR4042 FISTL=WHC: cumulative WRTTP=51 commitment $9.61M, WRTTP=65 $4.20M; total open consumption $14.68M cumulative",
+      "Gold DB fmifiit_full per-FIPEX: revenue concentrated on FIPEX='REVENUE' ($32.04M of $32.10M); operational FIPEX 11 has revenue $601 vs used $6.15M; FIPEX 20 has revenue $13K vs used $9.50M",
+      "Class detector inc5638_avc_fipex_deficit.py result: 2,153 of 2,708 donor (FUND, FUNDSCTR) buckets in P01 (TYPE 101-112) match the FIPEX-deficit signature; aggregate operational deficit $3.10B USD; 79.5pct of donor buckets",
+      "All 33 SES across the 3 POs have BUDAT=00000000, BELNR='', NETWR=0 - consistent with AVC roll-back at SES-accept time",
+      "Past successful GR/IR transactions on the POs: 2025-09-11 to 2026-02-02; covers the 2025 spend window plus carryforward consumption from PERIO=000 of 2026"
+    ],
+    "scope": {
+      "affected_pos_in_email": [
+        "4500543365",
+        "4500540022",
+        "4500540024"
+      ],
+      "affected_fund": "196EAR4042",
+      "affected_fundsctr": "WHC",
+      "affected_office": "Libreville (Gabon)",
+      "ses_drafts_blocked": 33,
+      "ses_drafts_per_po": {
+        "4500543365": 10,
+        "4500540022": 11,
+        "4500540024": 12
+      },
+      "po_total_value_xaf": {
+        "4500543365": 270595,
+        "4500540022": 8000,
+        "4500540024": 45000
+      },
+      "fund_2026_revenue_loaded_USD": 12659625.38,
+      "fund_2026_actuals_USD": 199876.38,
+      "fund_2026_implied_available_USD": 11325473.86,
+      "class_at_risk_donor_buckets": 2153,
+      "class_total_donor_buckets": 2708,
+      "class_aggregate_op_deficit_USD": 3103652941.42
+    },
+    "fix_path": "Code-level: NONE — no defect in custom code. Config-level (recommended): change AVC derivation rule FMAFMAP013500109 step 0007 to include FIPEX=REVENUE in the TC range (extend SOUR3_FROM/TO to include REVENUE), so that revenue and consumption land in the same AVC bucket. ALTERNATIVELY: change the MuleSoft revenue-loading job to apportion donor cash inflow across operational FIPEX (e.g. 70% to FIPEX=20, 25% to FIPEX=11, 5% to FIPEX=80) instead of the REVENUE placeholder. Either fix resolves the 1,330 Tier-2 buckets at once. Process-level: still relevant — flip 196EAR4042 TYPE 104→106 once the new biennium fund 196EAR4043 is fully transitioned, but this is hygiene rather than the root cause.",
+    "analysis_doc": "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+    "class_detector": "Zagentexecution/quality_checks/inc5638_avc_fipex_deficit.py",
+    "trace_evidence": "Gold DB queries documented in section 10 of analysis_doc; .eml plaintext at C:/Users/jp_lopez/Downloads/RE_ Service Desk ticket INC-000005638 cree.eml",
+    "related_objects": [
+      "196EAR4042",
+      "196EAR4043",
+      "WHC",
+      "ZXFMYU22_RPY",
+      "ZXFMDTU02_RPY",
+      "ZXFMCU17_RPY",
+      "ZXM06U22_RPY",
+      "YFM_COCKPITTOP_RPY",
+      "FMAVCT",
+      "FMAVCDERIAOR",
+      "FMAVCREINIT",
+      "FMAFMAP013500109",
+      "FMAFMTP013500110",
+      "9HZ00001",
+      "fmifiit_full",
+      "fmioi",
+      "funds",
+      "proj",
+      "prps",
+      "ekko",
+      "ekpo",
+      "essr",
+      "esll",
+      "ekbe",
+      "4500543365",
+      "4500540022",
+      "4500540024",
+      "MULESOFT",
+      "G_DARD",
+      "INC-BUDGETRATE-EQG"
+    ],
+    "chain_anchor_type": "configuration_and_process_data_quality",
+    "chain_anchor_note": "Closer to INC-BUDGETRATE-EQG than to INC-000005240 - both touch FM-AVC. But this incident's root cause is biennium drift + per-control-object granularity in AVC, not custom-code defect. Confirmation requires RFC FMAVCT read.",
+    "extension_step_b_ps_avc_data_pull": {
+      "appended_at": "2026-05-01",
+      "session": "post_66_re_extraction",
+      "context": "Block A (PS-AVC core) + Block B (2026 delta) full re-extraction after previous agent stalled at 600s. Re-confirms Session #66 conclusion against the 2026-05-01 ledger.",
+      "tables_extracted": {
+        "block_A_ps_avc_core": {
+          "ekkn_inc5638": {
+            "rows": 6,
+            "where": "EBELN='4500543365'"
+          },
+          "ekkn_inc5638_22": {
+            "rows": 2,
+            "where": "EBELN='4500540022'"
+          },
+          "ekkn_inc5638_24": {
+            "rows": 5,
+            "where": "EBELN='4500540024'"
+          },
+          "ekkn_consolidated": {
+            "rows": 13,
+            "where": "EBELN IN (3 incident POs)"
+          },
+          "cosp_2024": {
+            "rows": 90316,
+            "where": "OBJNR LIKE 'PR%' AND GJAHR='2024'"
+          },
+          "cosp_2025": {
+            "rows": 92640,
+            "where": "OBJNR LIKE 'PR%' AND GJAHR='2025'"
+          },
+          "cosp_2026": {
+            "rows": 43534,
+            "where": "OBJNR LIKE 'PR%' AND GJAHR='2026'",
+            "delta_vs_session66": 15
+          },
+          "coss_2024_2025_2026": {
+            "rows": 0,
+            "note": "UNESCO does not populate COSS for projects"
+          },
+          "bpge": {
+            "rows": 654,
+            "note": "Only WRTTP 01 (651) + 41 (3); broader buckets empty for projects"
+          },
+          "bphi": {
+            "rows": 0,
+            "note": "UNESCO does not populate BPHI for PR objects"
+          },
+          "bpja_2024": {
+            "rows": 48956
+          },
+          "bpja_2025": {
+            "rows": 50450
+          },
+          "bpja_2026": {
+            "rows": 34733
+          },
+          "fmavct_2024": {
+            "rows": 15890
+          },
+          "fmavct_2025": {
+            "rows": 13288
+          },
+          "fmavct_2026": {
+            "rows": 9531,
+            "delta_vs_session66": 1
+          },
+          "tka01": {
+            "rows": 1
+          },
+          "opsv": {
+            "rows": -1,
+            "status": "TABLE_NOT_AVAILABLE on P01 (DA/E/131)"
+          },
+          "t185f": {
+            "rows": 0,
+            "status": "no rows in client"
+          }
+        },
+        "block_B_delta_2026": {
+          "bsas_delta": {
+            "rows_added": 43718,
+            "post_2026": 134468,
+            "max_BUDAT": "20260501"
+          },
+          "bsik_delta": {
+            "rows_added": 7168,
+            "post_2026": 11376,
+            "max_CPUDT": "20260501"
+          },
+          "bsak_delta": {
+            "rows_added": 36153,
+            "post_2026": 87236,
+            "max_CPUDT": "20260501"
+          },
+          "bsid_delta": {
+            "rows_added": 595,
+            "post_2026": 4280,
+            "max_CPUDT": "20260501"
+          },
+          "bsad_delta": {
+            "rows_added": 7464,
+            "post_2026": 26763,
+            "max_CPUDT": "20260501"
+          },
+          "coep_p004_p005": {
+            "post_2026": 326530,
+            "delta": 295
+          },
+          "ekko_upsert": {
+            "post_total": 73080,
+            "max_AEDAT": "20260501"
+          },
+          "ekpo_upsert": {
+            "post_total": 201383,
+            "max_AEDAT": "20260501"
+          },
+          "rbkp_upsert": {
+            "post_2026": 17034,
+            "max_BUDAT": "20260501"
+          },
+          "fmifiit_full_p003_p004_p005": {
+            "post_2026": 274321,
+            "delta": 185
+          },
+          "bkpf_delta": {
+            "rows_added": 1622,
+            "post_2026": 208075,
+            "max_CPUDT": "20260501"
+          },
+          "bsis_delta": {
+            "rows_added": 499,
+            "post_2026": 272257,
+            "max_BUDAT": "20260501"
+          }
+        }
+      },
+      "root_cause_engine": "FM",
+      "engine_evidence_2026_05_01": {
+        "fm_avc_fund_level_available_usd": 11813609.46,
+        "fm_avc_TC_bucket_available_usd": -1561560.89,
+        "fm_avc_80_bucket_available_usd": -3512.01,
+        "ps_avc_project_pool_cumulative_usd": 16430198.98,
+        "verdict": "FM-only blocking. PS pool is healthy (+$16.4M). Both FM-AVC TC and 80 buckets are exhausted. The three incident POs target FIPEX 11/20 which AVC-derives to TC, so FM-AVC TC bucket fires for all three."
+      },
+      "findings_per_po": [
+        {
+          "po": "4500543365",
+          "vendor": "COM NAT Gabon (200149)",
+          "engine": "FM",
+          "fm_avc_TC_available_usd": -1561560.89,
+          "ps_pool_usd": 16430198.98,
+          "wbs": "196EAR4042.23.2.10.1"
+        },
+        {
+          "po": "4500540022",
+          "vendor": "MENGUE (4028658)",
+          "engine": "FM",
+          "fm_avc_TC_available_usd": -1561560.89,
+          "ps_pool_usd": 16430198.98,
+          "wbs": "196EAR4042.23.2.10.1"
+        },
+        {
+          "po": "4500540024",
+          "vendor": "NTIE Stephan (4028648)",
+          "engine": "FM",
+          "fm_avc_TC_available_usd": -1561560.89,
+          "ps_pool_usd": 16430198.98,
+          "wbs": "196EAR4042.23.2.10.1"
+        }
+      ],
+      "misalignment_class_count_tiers_2026_05_01": {
+        "tier_1_BOTH_FM_PS_blocking": 488,
+        "tier_2_FM_only_blocking": 1517,
+        "tier_3_PS_only_blocking": 90,
+        "tier_4_neither": 386,
+        "no_ps_link_FM_only": 4264,
+        "total_buckets": 6745,
+        "delta_vs_session_66": {
+          "tier_1": 31,
+          "tier_2": 60,
+          "tier_3": 14,
+          "tier_4": 0,
+          "no_ps_link": 6,
+          "total": 111
+        },
+        "interpretation": "Tier 2 (FM-only blocking; INC-000005638 class) grew +60 buckets (+4.1%) in 4 weeks. The structural misalignence is actively widening, not isolated."
+      },
+      "integrity_check": "ok (post-Block-A and post-Block-B)",
+      "gold_db_size_after_mb": 5996.2,
+      "kus_logged_or_open": [
+        "KU-2026-005638-OPSV (opsv table not available on P01 - cannot verify PS-AVC profile config empirically)",
+        "KU-2026-DELTA-EKKN-FULL (broader EBELN range deferred - 5 min cap)",
+        "KU-2026-005638-04 (PS-AVC tolerance - still pending OPSV/T185I read)",
+        "KU-2026-005638-06 (Outlier projects 410GLO1043, 727MYA1002 with negative PS pools - data quality)"
+      ],
+      "kus_closed": [
+        "KU-2026-005638-01 (FMAVCT proper extraction now resolved - fmavct_2024/25/26 hold correct RFUND/RFUNDSCTR/RCMMTITEM tracking columns)"
+      ]
+    },
+    "root_cause_engine": "FM"
   }
 ]

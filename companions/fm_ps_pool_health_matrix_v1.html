@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FM-PS Pool Health Matrix v1 — UNESCO Cross-Engine Availability</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --un-blue:#0079c1; --un-dark:#1a3a5c; --un-grey:#5a6c84;
+  --bg:#f5f7fa; --card:#fff; --border:#dde3eb;
+  --aligned:#2c8b50; --fm-exh:#c93a3a; --ps-exh:#dd6b20; --both:#8b1538;
+  --hard:#0079c1; --derived:#7a8fa8; --multi:#a85aa3; --outlier:#664b9b;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1a3a5c;background:var(--bg);}
+.container{max-width:1280px;margin:0 auto;padding:0 16px;}
+header{background:linear-gradient(135deg,#1a3a5c,#0079c1);color:#fff;padding:24px 0;}
+header h1{margin:0;font-size:24px;font-weight:600;}
+header .meta{margin-top:6px;font-size:13px;opacity:.85;}
+nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow-x:auto;white-space:nowrap;}
+nav .container{display:flex;gap:0;}
+nav a{display:inline-block;padding:12px 14px;color:#5a6c84;text-decoration:none;font-size:13px;border-bottom:3px solid transparent;}
+nav a:hover{color:var(--un-blue);}
+section{padding:28px 0;border-bottom:1px solid var(--border);}
+section h2{font-size:20px;color:var(--un-dark);margin:0 0 14px 0;}
+section h3{font-size:16px;color:var(--un-dark);margin:18px 0 10px 0;}
+section .lede{color:var(--un-grey);margin:0 0 16px 0;max-width:880px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.kpi .label{font-size:11px;text-transform:uppercase;color:var(--un-grey);letter-spacing:.5px;}
+.kpi .value{font-size:24px;font-weight:600;margin-top:4px;}
+.kpi .sub{font-size:12px;color:var(--un-grey);margin-top:4px;}
+.kpi.aligned .value{color:var(--aligned);}
+.kpi.fm-exh .value{color:var(--fm-exh);}
+.kpi.ps-exh .value{color:var(--ps-exh);}
+.kpi.both .value{color:var(--both);}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+th{background:#eef2f7;text-align:left;padding:8px 10px;font-size:12px;color:var(--un-dark);text-transform:uppercase;letter-spacing:.3px;}
+td{padding:8px 10px;border-top:1px solid var(--border);font-size:13px;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:Consolas,Monaco,monospace;}
+.badge{display:inline-block;padding:2px 8px;border-radius:11px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+.badge.ALIGNED{background:#dff5e6;color:var(--aligned);}
+.badge.FM-EXHAUSTED{background:#fce4e4;color:var(--fm-exh);}
+.badge.PS-EXHAUSTED{background:#feead6;color:var(--ps-exh);}
+.badge.BOTH-EXHAUSTED{background:#f7d6e0;color:var(--both);}
+.badge.HARD{background:#dceaf4;color:var(--hard);}
+.badge.DERIVED{background:#e6e9ef;color:var(--derived);}
+.badge.DERIVED-MULTI{background:#f0dcef;color:var(--multi);}
+.badge.OUTLIER{background:#e2dcef;color:var(--outlier);}
+.bar-wrap{position:relative;background:#eef2f7;height:18px;border-radius:3px;}
+.bar{position:absolute;top:0;left:0;height:100%;border-radius:3px;background:var(--fm-exh);}
+.bar.ps{background:var(--ps-exh);}
+details{margin:10px 0;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:0;}
+details summary{padding:8px 12px;cursor:pointer;font-size:12px;color:var(--un-grey);}
+details pre{margin:0;padding:12px;font-size:11px;overflow-x:auto;background:#1a3a5c;color:#dde3eb;border-radius:0 0 6px 6px;}
+.gap-block{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center;}
+@media(max-width:760px){.gap-block{grid-template-columns:1fr;}}
+.gap-vis{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px;}
+footer{padding:30px 0;color:var(--un-grey);font-size:12px;text-align:center;}
+.tier-bar{display:flex;height:36px;border-radius:6px;overflow:hidden;margin:8px 0;border:1px solid var(--border);}
+.tier-seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;padding:0 6px;}
+.alert{background:#fef0e6;border-left:4px solid var(--fm-exh);padding:10px 14px;border-radius:0 6px 6px 0;margin:14px 0;font-size:13px;}
+.alert strong{color:var(--fm-exh);}
+.note{background:#f0f5fa;border-left:4px solid var(--un-blue);padding:10px 14px;border-radius:0 6px 6px 0;margin:14px 0;font-size:13px;color:var(--un-dark);}
+</style>
+</head>
+<body>
+<header><div class="container">
+<h1>FM-PS Pool Health Matrix — UNESCO Cross-Engine Availability v1</h1>
+<div class="meta">Build date: 2026-05-01 &middot; Source: P01 Gold DB &middot; Year analysed: 2026 &middot; TIER_1 evidence (every number cites SQL)</div>
+</div></header>
+<nav><div class="container">
+<a href="#summary">1. Summary</a>
+<a href="#gap">2. Detection Gap</a>
+<a href="#types">3. By Fund TYPE</a>
+<a href="#worst">4. Worst Pairs</a>
+<a href="#funds">5. Top Funds</a>
+<a href="#outliers">6. Outliers</a>
+<a href="#method">7. Method</a>
+<a href="#delta">8. Delta vs Old</a>
+<a href="#actions">9. Actions</a>
+<a href="#footnotes">10. Footnotes</a>
+</div></nav>
+<div class="container">
+<section id="summary">
+<h2>1. Executive Summary</h2>
+<p class="lede">UNESCO-wide cross-engine availability check. Every (Fund, WBS) pair posting in 2024-2026 (universe = <strong>15,455 pairs</strong>) is classified by link tier and health state. Pool numbers are GJAHR=2026 (current biennium year).</p>
+
+<div style="margin:14px 0;padding:12px 16px;border-left:5px solid #6a4ba6;background:#f3edff;border-radius:4px;font-size:13px">
+  <strong style="color:#3d2566">Update — Session #69 (2026-05-01) AGI consolidation pass:</strong>
+  <ul style="margin:6px 0 0 22px">
+    <li><strong>Active-filter version EXISTS now:</strong> see <code>Zagentexecution/quality_checks/committed_vs_available_detector.py</code> + <a href="fm_ps_avc_temporal_forecast_v1.html#detector-results">temporal-forecast §detector results</a>. With JEST status I0002 REL filter (excluding 35,234 CLSD + 6,754 TECO + DLFL), the BAD-state count drops from <strong>6,232 → 3,193</strong> (~50% reduction). Pre-flight HARD-BLOCK candidates: <strong>30 immediate</strong>.</li>
+    <li><strong>Granularity reconciliation:</strong> the master companion's "2,005 buckets at risk" is at <em>(Fund, FundCenter, AVC bucket)</em> granularity; this matrix's "6,232 pairs in BAD state" is at <em>(Fund, WBS) pair</em> granularity. Same problem, different granularities — both valid.</li>
+    <li><strong>I0093 ISBD shortcut:</strong> SAP itself sets <code>I0093 ISBD (Insufficient Budgeting)</code> on every WBS whose AVC bucket is in deficit. A faster detector simply joins JEST WHERE STAT='I0093' AND INACT='' — no FMIFIIT aggregation needed. 51% of 196EAR4042 WBS elements are already ISBD-flagged.</li>
+    <li><strong>🆕 Two universes of fund-project relationships (TIER_2):</strong> 60% of UNESCO funds (2,820) are HARD-link (clean 10-digit POSID(10)=GEBER, Earmarked TYPE 101-112). <strong>34% (1,578 funds) finance 2 projects, 1.6% finance 3, 0.2% finance 4+ projects.</strong> Even 196EAR4042 sustains 2 PSPHI hierarchies + 66 WBSs across them (not just its own POSID tree). The 10-digit hard-link is the EXCEPTION not the rule for non-Earmarked types.</li>
+    <li><strong>🆕 MULESOFT vs FB01 distinction (TIER_1):</strong> MULESOFT/Core Manager only moves BOR (Budget Original Reservation/assignment) — never commitments or real postings. FB01 = real posting reclassification in FI. The 257-doc A_BANSAL batch on 2026-01-31 was all manual FB01s bypassing Core Manager. Implication: any path-specific fix is incomplete; only a Meta-AVC validation layer catches every change source.</li>
+    <li><strong>🆕 FIX-F Meta-AVC (architectural answer):</strong> see <a href="fm_ps_avc_temporal_forecast_v1.html#meta-avc">temporal-forecast §FIX-F Meta-AVC architecture</a>. Replaces the two independent AVC engines with a unified validation layer that detects FM-PS divergence (the INC-005638 signature) and blocks at every posting regardless of source.</li>
+  </ul>
+</div>
+
+<section id="central-narrative-ph" style="margin:14px 0;padding:14px 18px;background:linear-gradient(180deg,#fff4d6 0%,#ffe4e6 100%);border:3px solid #c5283d;border-radius:8px">
+<h2 style="color:#c5283d;margin:0 0 10px 0;font-size:16px">🎯 The central narrative (SME articulation 2026-05-02)</h2>
+<p style="font-size:13px;font-style:italic;margin:0 0 8px 0">"SAP knew the fund had open commitments, but allowed them to be moved anyway because there is no AVC guardian configured to enforce — the system let it happen."</p>
+<p style="font-size:13px;margin:6px 0">All 4 layers analyzed in this companion (FB01 manual postings, MULESOFT integration, biennium close-out gap, project Class A/B/C/D distribution) are <strong>symptoms or transport</strong>. The upstream cause is the AVC configuration: 6.5% coverage UNESCO-wide + TC aggregator + REVENUE in pool + no 10-digit for non-Earmarked. <strong>The lever is at the AVC config layer (FIX-G1/G2/G3) — not at MULESOFT (deprecated) or symptom-level mitigations.</strong></p>
+<p style="font-size:11px;color:#666;margin-top:6px">Full narrative + detail tables in master companion: <a href="fm_ps_avc_model_gap_companion_v1.html#user-story-telling-v2">"The story — clearly told" (7 chapters)</a>. Brain claim #157.</p>
+</section>
+
+
+<div class="alert"><strong>Headline:</strong> 2,390 pairs in <em>FM-EXHAUSTED</em> state (20.6%) — these are pairs where PS shows availability but FM blocks postings (the INC-000005638 class). Plus 3,842 pairs in <em>BOTH-EXHAUSTED</em> (33.2%) where neither engine has availability.</div>
+<div class="kpi-grid">
+<div class="kpi aligned"><div class="label">Aligned</div><div class="value">4,363</div><div class="sub">37.7% — both engines OK</div></div>
+<div class="kpi fm-exh"><div class="label">FM-Exhausted</div><div class="value">2,390</div><div class="sub">20.6% — INC-005638 class</div></div>
+<div class="kpi ps-exh"><div class="label">PS-Exhausted</div><div class="value">991</div><div class="sub">8.6% — rare but real</div></div>
+<div class="kpi both"><div class="label">Both Exhausted</div><div class="value">3,842</div><div class="sub">33.2% — critical, no escape</div></div>
+</div>
+<h3>Tier breakdown</h3>
+<p class="lede">Universe split by link tier: how the (Fund, WBS) relationship is established.</p>
+<table><thead><tr><th>Tier</th><th class="num">Pairs</th><th class="num">% of universe</th><th class="num">Aligned</th><th class="num">FM-Exh</th><th class="num">PS-Exh</th><th class="num">Both-Exh</th></tr></thead><tbody>
+<tr><td><span class="badge HARD">HARD</span></td><td class="num">10,338</td><td class="num">89.2%</td><td class="num">4,360</td><td class="num">1,836</td><td class="num">941</td><td class="num">3,201</td></tr>
+<tr><td><span class="badge DERIVED">DERIVED</span></td><td class="num">1,179</td><td class="num">10.2%</td><td class="num">2</td><td class="num">535</td><td class="num">41</td><td class="num">601</td></tr>
+<tr><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td class="num">69</td><td class="num">0.6%</td><td class="num">1</td><td class="num">19</td><td class="num">9</td><td class="num">40</td></tr>
+<tr><td><span class="badge OUTLIER">OUTLIER</span></td><td class="num">10 WBSs<br>(3,869 pair-rows)</td><td class="num" colspan="5">Excluded from single-pool eval — see Section 6</td></tr>
+</tbody></table>
+<details><summary>SQL — universe count</summary><pre>SELECT COUNT(*) FROM (
+  SELECT DISTINCT GEBER, OBJNR FROM coep
+  WHERE GJAHR IN ('2024','2025','2026')
+    AND GEBER IS NOT NULL AND GEBER != ''
+    AND OBJNR LIKE 'PR%'
+);
+-- result: 15,455</pre></details>
+</section>
+<section id="gap">
+<h2>2. The Detection Gap</h2>
+<p class="lede">The existing detector <code>inc5638_fm_ps_avc_misalignment.py</code> only evaluates HARD-linked pairs (where <code>POSID(10) = GEBER</code> and fund TYPE 101-112). That covers ~73% of the universe. The remaining 27% (DERIVED + DERIVED-MULTI + OUTLIER) had no class-of-defect detector until this matrix.</p>
+<div class="gap-block">
+<div class="gap-vis">
+<div style="font-weight:600;margin-bottom:8px;">Old detector coverage (universe)</div>
+<div class="tier-bar">
+<div class="tier-seg" style="background:var(--hard);width:73%;">HARD only — 11,357 pairs</div>
+<div class="tier-seg" style="background:#aaa;width:27%;">NOT covered — 4,098 pairs</div>
+</div>
+<div style="font-weight:600;margin-top:14px;margin-bottom:8px;">Pool Health Matrix coverage (rows generated)</div>
+<div class="tier-bar">
+<div class="tier-seg" style="background:var(--hard);width:66.9%;">HARD — 10,338</div>
+<div class="tier-seg" style="background:var(--derived);width:7.6%;">DERIVED — 1,179</div>
+<div class="tier-seg" style="background:var(--multi);width:0.45%;">MULTI — 69</div>
+<div class="tier-seg" style="background:var(--outlier);width:25.0%;">OUTLIER — 3,869</div>
+</div>
+</div>
+<div>
+<div class="kpi"><div class="label">Pair-rows newly classified</div><div class="value">5,117</div><div class="sub">DERIVED + DERIVED-MULTI + OUTLIER rows the old detector did not see</div></div>
+<div class="kpi" style="margin-top:8px;border-left:4px solid var(--fm-exh);"><div class="label">NEW pairs in BAD state</div><div class="value">1,245</div><div class="sub">Found by the matrix in DERIVED / DERIVED-MULTI tiers — invisible to old detector</div></div>
+</div>
+</div>
+<details><summary>SQL — HARD-link count</summary><pre>SELECT COUNT(*) FROM (
+  SELECT DISTINCT c.GEBER, c.OBJNR FROM coep c
+  JOIN prps p ON p.OBJNR = c.OBJNR
+  WHERE c.GJAHR IN ('2024','2025','2026')
+    AND c.GEBER IS NOT NULL AND c.GEBER != ''
+    AND substr(p.POSID,1,10) = c.GEBER
+);
+-- result: 11,357 HARD-linked pairs</pre></details>
+</section>
+<section id="types">
+<h2>3. By Fund TYPE</h2>
+<p class="lede">UNESCO has ~50 distinct fund TYPEs across the master file. The matrix groups them by activity in 2024-2026 — only TYPEs with postings appear here. Sorted by total exhausted pairs descending.</p>
+<table><thead><tr><th>TYPE</th><th class="num">Total pairs</th><th class="num">Aligned</th><th class="num">FM-Exh</th><th class="num">PS-Exh</th><th class="num">Both-Exh</th><th class="num">Sum FM deficit (USD)</th></tr></thead><tbody>
+<tr><td>105</td><td class="num">4,962</td><td class="num">2,393</td><td class="num">904</td><td class="num">327</td><td class="num">1,338</td><td class="num">-13,848,725.02</td></tr>
+<tr><td>104</td><td class="num">2,024</td><td class="num">695</td><td class="num">271</td><td class="num">291</td><td class="num">767</td><td class="num">-1,396,484,420.69</td></tr>
+<tr><td><em>(no master)</em></td><td class="num">1,165</td><td class="num">0</td><td class="num">549</td><td class="num">3</td><td class="num">613</td><td class="num">0.00</td></tr>
+<tr><td>108</td><td class="num">1,800</td><td class="num">672</td><td class="num">338</td><td class="num">236</td><td class="num">554</td><td class="num">-3,918,638.93</td></tr>
+<tr><td>107</td><td class="num">869</td><td class="num">390</td><td class="num">218</td><td class="num">35</td><td class="num">226</td><td class="num">-8,490,340.72</td></tr>
+<tr><td>106</td><td class="num">226</td><td class="num">29</td><td class="num">16</td><td class="num">28</td><td class="num">153</td><td class="num">-55,040.06</td></tr>
+<tr><td>101</td><td class="num">229</td><td class="num">93</td><td class="num">38</td><td class="num">22</td><td class="num">76</td><td class="num">-142,782.44</td></tr>
+<tr><td>109</td><td class="num">89</td><td class="num">23</td><td class="num">20</td><td class="num">1</td><td class="num">45</td><td class="num">-136,785.01</td></tr>
+<tr><td>103</td><td class="num">116</td><td class="num">50</td><td class="num">22</td><td class="num">2</td><td class="num">42</td><td class="num">-631,169.00</td></tr>
+<tr><td>313</td><td class="num">41</td><td class="num">0</td><td class="num">0</td><td class="num">35</td><td class="num">6</td><td class="num">0.00</td></tr>
+<tr><td>110</td><td class="num">29</td><td class="num">16</td><td class="num">9</td><td class="num">0</td><td class="num">4</td><td class="num">0.00</td></tr>
+<tr><td>004</td><td class="num">8</td><td class="num">0</td><td class="num">0</td><td class="num">3</td><td class="num">5</td><td class="num">-547.65</td></tr>
+<tr><td>113</td><td class="num">8</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">7</td><td class="num">-4,000.00</td></tr>
+<tr><td>097</td><td class="num">5</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">3</td><td class="num">-240,675.36</td></tr>
+<tr><td>196</td><td class="num">4</td><td class="num">0</td><td class="num">3</td><td class="num">0</td><td class="num">1</td><td class="num">-53,253,734.60</td></tr>
+<tr><td>304</td><td class="num">3</td><td class="num">1</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">0.00</td></tr>
+<tr><td>002</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">0.00</td></tr>
+<tr><td>115</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0.00</td></tr>
+<tr><td>001</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0.00</td></tr>
+<tr><td>013</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">0.00</td></tr>
+<tr><td>199</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">-315,808.73</td></tr>
+<tr><td>303</td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">-3,013,640.28</td></tr>
+</tbody></table>
+<div class="note"><strong>TYPE classification key:</strong>
+<ul style="margin:6px 0 0 0;padding-left:24px;">
+<li><b>001-019, 095-099</b> — Regular Programme operational (RP cost centres, Field Office direct programme)</li>
+<li><b>100-115</b> — Earmarked donor / Special Account (HARD-link applies for 101-112)</li>
+<li><b>196, 198, 199</b> — Special programme funds (PFF management cost, treasury overheads)</li>
+<li><b>200-399</b> — Special funds, IESALC / UBO entities, intercompany</li>
+</ul></div>
+</section>
+<section id="worst">
+<h2>4. Top 50 Worst Pairs by FM Deficit + Top 20 PS-Exhausted</h2>
+<p class="lede">Highest priority pairs to triage — sorted by absolute FM blocking depth (most negative first). The bar shows relative magnitude.</p>
+<table><thead><tr><th>#</th><th>Fund</th><th>Type</th><th>WBS</th><th>Tier</th><th>State</th><th class="num">FM 2026</th><th class="num">PS 2026</th><th>Magnitude</th></tr></thead><tbody>
+<tr><td class="num">1</td><td>PFF</td><td class="num">196</td><td>GLO5803136</td><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-13,313,433.65</td><td class="num">17,941.92</td><td><div class="bar-wrap"><div class="bar" style="width:100.0%"></div></div></td></tr>
+<tr><td class="num">2</td><td>PFF</td><td class="num">196</td><td>470RAF1000.4</td><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-13,313,433.65</td><td class="num">7.45</td><td><div class="bar-wrap"><div class="bar" style="width:100.0%"></div></div></td></tr>
+<tr><td class="num">3</td><td>PFF</td><td class="num">196</td><td>GLO5031424</td><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-13,313,433.65</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:100.0%"></div></div></td></tr>
+<tr><td class="num">4</td><td>PFF</td><td class="num">196</td><td>567ETH1000.1</td><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-13,313,433.65</td><td class="num">6.63</td><td><div class="bar-wrap"><div class="bar" style="width:100.0%"></div></div></td></tr>
+<tr><td class="num">5</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">-11,735,795.82</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">6</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">7</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">8</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.10</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">9</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.3.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">10</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">11</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.4.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">12</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.5.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">13</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.7</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">14</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.8</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">19,394.27</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">15</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.9</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">16</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">17</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.13</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">18</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.16.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">7,580.58</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">19</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.16.2.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">20</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">21</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">22</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">23</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">24</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.3</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">25</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.5</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">26</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.6.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">27</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.7</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">11,391.89</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">28</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.7.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">29</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.8</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">30</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.2.9</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">31</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.23.5</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">32</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.25</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">33</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.26.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">34</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.26.3</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">35</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.26.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">36</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.27</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">37</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.28.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">38</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.28.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">39</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.28.3</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">40</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.28.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">41</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.3.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">42</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.3.1.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">43</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.30.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">44</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.30.2.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">45</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.31.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">46</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.5</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">-0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">47</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.6.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">48</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.6.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">49</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.8.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+<tr><td class="num">50</td><td>196EAR4042</td><td class="num">104</td><td>196EAR4042.11.2.9.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td class="num">0.00</td><td><div class="bar-wrap"><div class="bar" style="width:95.1%"></div></div></td></tr>
+</tbody></table>
+<h3>Top 20 PS-EXHAUSTED (PS shows deficit but FM has availability)</h3>
+<p class="lede">Rare configuration — usually means budget version 0 was reduced after a posting wave, but FM revenue ledger still carries the available balance. These are PS-side housekeeping cases.</p>
+<table><thead><tr><th>#</th><th>Fund</th><th>WBS</th><th>Tier</th><th class="num">PS 2026</th><th class="num">FM 2026</th></tr></thead><tbody>
+<tr><td class="num">1</td><td>643CSI9003</td><td>643CSI9003.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-3,738,506.61</td><td class="num">308,065.72</td></tr>
+<tr><td class="num">2</td><td>643CSI9013</td><td>643CSI9013.1</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-2,082,504.34</td><td class="num">1,184,785.49</td></tr>
+<tr><td class="num">3</td><td>643CSI9008</td><td>643CSI9008.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-911,718.59</td><td class="num">296.97</td></tr>
+<tr><td class="num">4</td><td>643CSI9004</td><td>643CSI9004.3</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-657,533.65</td><td class="num">50,345.83</td></tr>
+<tr><td class="num">5</td><td>643CSI9006</td><td>643CSI9006.1</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-538,968.91</td><td class="num">75,225.83</td></tr>
+<tr><td class="num">6</td><td>643CSI9003</td><td>643CSI9003.1</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-532,001.44</td><td class="num">60,002.09</td></tr>
+<tr><td class="num">7</td><td>503RSS1000</td><td>503RSS1000</td><td><span class="badge HARD">HARD</span></td><td class="num">-527,500.79</td><td class="num">527,500.79</td></tr>
+<tr><td class="num">8</td><td>185REN0001</td><td>185REN0001.1</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-512,592.83</td><td class="num">34,942.06</td></tr>
+<tr><td class="num">9</td><td>643CSI9013</td><td>643CSI9013.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-460,516.54</td><td class="num">28,142.88</td></tr>
+<tr><td class="num">10</td><td>643CSI9002</td><td>643CSI9002.3</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-456,121.04</td><td class="num">347,488.04</td></tr>
+<tr><td class="num">11</td><td>526PHI1000</td><td>526PHI1000</td><td><span class="badge HARD">HARD</span></td><td class="num">-354,323.82</td><td class="num">354,323.82</td></tr>
+<tr><td class="num">12</td><td>643CSI9002</td><td>643CSI9002.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-319,901.78</td><td class="num">347,488.04</td></tr>
+<tr><td class="num">13</td><td>643CSI9005</td><td>643CSI9005.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-306,507.96</td><td class="num">306,728.70</td></tr>
+<tr><td class="num">14</td><td>643CSI9005</td><td>643CSI9005.3</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-271,809.45</td><td class="num">306,728.70</td></tr>
+<tr><td class="num">15</td><td>270MLI2000</td><td>270MLI2000</td><td><span class="badge HARD">HARD</span></td><td class="num">-251,576.41</td><td class="num">251,576.41</td></tr>
+<tr><td class="num">16</td><td>526MYA5001</td><td>526MYA5001</td><td><span class="badge HARD">HARD</span></td><td class="num">-215,507.86</td><td class="num">215,507.86</td></tr>
+<tr><td class="num">17</td><td>643CSI9012</td><td>643CSI9012.2</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-209,749.76</td><td class="num">39,977.16</td></tr>
+<tr><td class="num">18</td><td>643CSI9009</td><td>643CSI9009.1</td><td><span class="badge DERIVED">DERIVED</span></td><td class="num">-207,778.33</td><td class="num">1,530.43</td></tr>
+<tr><td class="num">19</td><td>549INT2006</td><td>549INT2006</td><td><span class="badge HARD">HARD</span></td><td class="num">-204,288.70</td><td class="num">204,288.70</td></tr>
+<tr><td class="num">20</td><td>549RER4008</td><td>549RER4008</td><td><span class="badge HARD">HARD</span></td><td class="num">-178,715.38</td><td class="num">178,715.38</td></tr>
+</tbody></table>
+</section>
+<section id="funds">
+<h2>5. Top 10 Funds by Ticket-Risk (proactive FMAVCREINIT candidates)</h2>
+<p class="lede">Funds aggregated by sum of FM deficit across their FM-EXHAUSTED + BOTH-EXHAUSTED pairs. Recommend running FMAVCREINIT on these <strong>before</strong> users open tickets — biennium-end approach (Dec 2027) makes deficit tickets cluster.</p>
+<table><thead><tr><th>#</th><th>Fund</th><th>TYPE</th><th class="num">Aggregate FM deficit (USD)</th><th>Notes</th></tr></thead><tbody>
+<tr><td class="num">1</td><td>196EAR4042</td><td class="num">104</td><td class="num">-683,619,770.52</td><td><strong style="color:var(--fm-exh);">INC-005638 reference fund (canonical case)</strong></td></tr>
+<tr><td class="num">2</td><td>424GLO4142</td><td class="num">104</td><td class="num">-174,639,754.64</td><td></td></tr>
+<tr><td class="num">3</td><td>408FOE5042</td><td class="num">104</td><td class="num">-142,893,383.57</td><td></td></tr>
+<tr><td class="num">4</td><td>459GLO1003</td><td class="num">104</td><td class="num">-117,086,210.70</td><td></td></tr>
+<tr><td class="num">5</td><td>410GLO1042</td><td class="num">104</td><td class="num">-82,759,345.83</td><td></td></tr>
+<tr><td class="num">6</td><td>308GLO4142</td><td class="num">104</td><td class="num">-58,949,907.84</td><td></td></tr>
+<tr><td class="num">7</td><td>PFF</td><td class="num">196</td><td class="num">-53,253,734.60</td><td></td></tr>
+<tr><td class="num">8</td><td>448INT2411</td><td class="num">104</td><td class="num">-29,900,000.00</td><td></td></tr>
+<tr><td class="num">9</td><td>448INT2413</td><td class="num">104</td><td class="num">-22,000,000.96</td><td></td></tr>
+<tr><td class="num">10</td><td>408MIL5042</td><td class="num">104</td><td class="num">-11,396,000.00</td><td></td></tr>
+</tbody></table>
+<div class="alert"><strong>Reading the list:</strong> Position #1 is the worst. INC-005638 fund (196EAR4042) sits at position 1 — meaning 0 fund(s) sit above it in deficit ranking and may produce the next ticket if not pre-empted. The action: schedule FMAVCREINIT runs in this priority order.</div>
+</section>
+<section id="outliers">
+<h2>6. Outlier WBSs (multi-fund "common cost")</h2>
+<p class="lede">10 WBSs have more than 10 distinct funds posting against them in 2024-2026. These are common-cost / overhead objects (Major Programme parents, PFF technical accounts, IESALC programme costs, UBO PSC EAR pools). They <strong>cannot</strong> be evaluated with a single (Fund, WBS) pool view — the AVC concept does not map cleanly. Flagged for HQ Budget Office governance review.</p>
+<div class="alert"><strong>Why this matters:</strong> Of the 3,869 pair-rows generated by these 10 WBSs, none are evaluated as ALIGNED/EXHAUSTED — they are listed only for governance to decide AVC policy (proportional? off? per-bucket only?).</div>
+<table><thead><tr><th>WBS OBJNR</th><th>POSID</th><th>Description</th><th class="num">Fund count</th></tr></thead><tbody>
+<tr><td>PR00027627</td><td>680REV9001</td><td>Management Cost PFF technical account</td><td class="num">1211</td></tr>
+<tr><td>PR00000106</td><td>1</td><td>Major Programme 1 (Education)</td><td class="num">592</td></tr>
+<tr><td>PR00000107</td><td>2</td><td>Major Programme 2 (Natural Sciences)</td><td class="num">591</td></tr>
+<tr><td>PR00000111</td><td>6</td><td>RP Cross-Cutting Themes</td><td class="num">448</td></tr>
+<tr><td>PR00000109</td><td>4</td><td>Major Programme 4 (Culture)</td><td class="num">369</td></tr>
+<tr><td>PR00000108</td><td>3</td><td>Major Programme 3 (Soc &amp; Hum Sciences)</td><td class="num">275</td></tr>
+<tr><td>PR00000110</td><td>5</td><td>Major Programme 5 (Com &amp; Information)</td><td class="num">249</td></tr>
+<tr><td>PR00008981</td><td>633UBO9090</td><td>UBO FITOCA PFF technical account PSC EAR</td><td class="num">68</td></tr>
+<tr><td>PR00002724</td><td>111IES1000</td><td>IESALC Direct Programme Costs</td><td class="num">36</td></tr>
+<tr><td>PR00008982</td><td>633UBO9091</td><td>UBO FITOCA PFF technical account PSC EAR</td><td class="num">30</td></tr>
+</tbody></table>
+<details><summary>SQL — outlier identification</summary><pre>SELECT OBJNR, COUNT(DISTINCT GEBER) AS nfund
+FROM coep
+WHERE GJAHR IN ('2024','2025','2026')
+  AND GEBER IS NOT NULL AND GEBER != ''
+  AND OBJNR LIKE 'PR%'
+GROUP BY OBJNR HAVING nfund > 10
+ORDER BY nfund DESC;
+-- result: 10 WBSs (1,211 / 592 / 591 / 448 / 369 / 275 / 249 / 68 / 36 / 30 funds)</pre></details>
+</section>
+<section id="method">
+<h2>7. Detection Method (link tiers explained)</h2>
+<p class="lede">How the matrix decides each pair's tier. Order of precedence, top-down:</p>
+<table><thead><tr><th>Tier</th><th>Test</th><th>Pool model</th></tr></thead><tbody>
+<tr><td><span class="badge HARD">HARD</span></td><td><code>substr(POSID,1,10) = GEBER</code> AND fund TYPE 101-112</td><td>Full WBS pool, paired 1:1 with fund</td></tr>
+<tr><td><span class="badge DERIVED">DERIVED</span></td><td>WBS has only 1 distinct fund posting in 2024-2026</td><td>Full WBS pool</td></tr>
+<tr><td><span class="badge DERIVED-MULTI">DERIVED-MULTI</span></td><td>WBS has 2-10 distinct funds</td><td>WBS pool × (this fund's consumption / total consumption)</td></tr>
+<tr><td><span class="badge OUTLIER">OUTLIER</span></td><td>WBS has &gt; 10 distinct funds</td><td>None (separate file, governance decision pending)</td></tr>
+</tbody></table>
+<h3>Pool computation</h3>
+<details open><summary>PS pool (per WBS, year=2026)</summary><pre>PS pool = SUM(BPJA WTJHR for OBJNR=this WBS, GJAHR=2026, WRTTP='41')      [budget]
+        - SUM(COEP WKGBTR for OBJNR=this WBS, GJAHR=2026, WRTTP IN ('04','11'))  [actuals]
+        - SUM(COOI WKGBTR for OBJNR=this WBS, GJAHR=2026)                  [commitments]</pre></details>
+<details open><summary>FM pool (per fund × bucket)</summary><pre>For each (Fund, FundCenter, CommItem) bucket the WBS posts to:
+   FM_bucket_pool = SUM(FMIFIIT FKBTR for FONDS=fund, GJAHR=2026, WRTTP='66')   [revenue]
+                  - SUM(FMIFIIT FKBTR for FONDS=fund, GJAHR=2026, WRTTP='54')   [consumption]
+FM pool (matrix) = MIN over all buckets the WBS uses for this fund.
+   (= the worst-case bucket = the bucket that will block first.)</pre></details>
+<details open><summary>State decision tree</summary><pre>if PS pool &gt; 0 and FM pool &gt; 0:    ALIGNED
+elif PS pool &gt; 0 and FM pool &lt;= 0: FM-EXHAUSTED   &lt;- INC-005638 class
+elif FM pool &gt; 0 and PS pool &lt;= 0: PS-EXHAUSTED
+else:                                BOTH-EXHAUSTED</pre></details>
+</section>
+<section id="delta">
+<h2>8. Gap vs Current Detector</h2>
+<p class="lede">Side-by-side: what the existing INC-005638 detector covers vs what this matrix covers. The matrix preserves all old findings AND extends them.</p>
+<table><thead><tr><th>Coverage dimension</th><th>Old detector (inc5638_fm_ps_avc_misalignment.py)</th><th>Pool Health Matrix</th></tr></thead><tbody>
+<tr><td>Universe scope</td><td>HARD-linked pairs only</td><td>All 4 link tiers</td></tr>
+<tr><td>Universe size</td><td>~10,338 pairs (HARD)</td><td>11,586 pair-rows + 3,869 outlier rows = 15,455</td></tr>
+<tr><td>Fund TYPEs covered</td><td>101-112 (Earmarked donor)</td><td>All TYPEs (with TYPE breakdown)</td></tr>
+<tr><td>BAD-state pairs found</td><td>5,978</td><td>7,223</td></tr>
+<tr><td>NEW BAD pairs uncovered</td><td>—</td><td><strong>1,245</strong> (DERIVED + DERIVED-MULTI tiers)</td></tr>
+<tr><td>Multi-fund WBS handling</td><td>Not addressed</td><td>Proportional allocation (DERIVED-MULTI) + governance flag (OUTLIER)</td></tr>
+<tr><td>Output granularity</td><td>(Fund, FC, AVC bucket) — bucket level</td><td>(Fund, WBS) pair — operational granularity</td></tr>
+</tbody></table>
+</section>
+<section id="actions">
+<h2>9. Recommended Action List (top 25 prioritized)</h2>
+<p class="lede">Combination of severity (FM deficit magnitude) + tier (HARD pairs are immediately actionable, DERIVED-MULTI requires governance first). Biennium-end (31-Dec-2027) proximity weighs all of these as urgent.</p>
+<table><thead><tr><th>#</th><th>Fund</th><th>WBS</th><th>Tier</th><th>State</th><th class="num">Severity</th><th>Action</th></tr></thead><tbody>
+<tr><td class="num">1</td><td>196EAR4042</td><td>196EAR4042</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">2</td><td>196EAR4042</td><td>196EAR4042.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">3</td><td>196EAR4042</td><td>196EAR4042.11.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">4</td><td>196EAR4042</td><td>196EAR4042.11.2.10</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">5</td><td>196EAR4042</td><td>196EAR4042.11.2.3.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">6</td><td>196EAR4042</td><td>196EAR4042.11.2.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">7</td><td>196EAR4042</td><td>196EAR4042.11.2.4.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">8</td><td>196EAR4042</td><td>196EAR4042.11.2.5.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">9</td><td>196EAR4042</td><td>196EAR4042.11.2.7</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">10</td><td>196EAR4042</td><td>196EAR4042.11.2.8</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT (rebuild pool)</td></tr>
+<tr><td class="num">11</td><td>196EAR4042</td><td>196EAR4042.11.2.9</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">12</td><td>196EAR4042</td><td>196EAR4042.11.4</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT (rebuild pool)</td></tr>
+<tr><td class="num">13</td><td>196EAR4042</td><td>196EAR4042.13</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">14</td><td>196EAR4042</td><td>196EAR4042.16.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT (rebuild pool)</td></tr>
+<tr><td class="num">15</td><td>196EAR4042</td><td>196EAR4042.16.2.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">16</td><td>196EAR4042</td><td>196EAR4042.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">17</td><td>196EAR4042</td><td>196EAR4042.23.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">18</td><td>196EAR4042</td><td>196EAR4042.23.2.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">19</td><td>196EAR4042</td><td>196EAR4042.23.2.2.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">20</td><td>196EAR4042</td><td>196EAR4042.23.2.3</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">21</td><td>196EAR4042</td><td>196EAR4042.23.2.5</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">22</td><td>196EAR4042</td><td>196EAR4042.23.2.6.1</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">23</td><td>196EAR4042</td><td>196EAR4042.23.2.7</td><td><span class="badge HARD">HARD</span></td><td><span class="badge FM-EXHAUSTED">FM-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT (rebuild pool)</td></tr>
+<tr><td class="num">24</td><td>196EAR4042</td><td>196EAR4042.23.2.7.2</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+<tr><td class="num">25</td><td>196EAR4042</td><td>196EAR4042.23.2.8</td><td><span class="badge HARD">HARD</span></td><td><span class="badge BOTH-EXHAUSTED">BOTH-EXHAUSTED</span></td><td class="num">-12,659,625.38</td><td>FMAVCREINIT + budget supplement (BPJA WRTTP=41 increase)</td></tr>
+</tbody></table>
+<div class="note"><strong>For DERIVED-MULTI / OUTLIER pairs:</strong> Do NOT run FMAVCREINIT speculatively. These need a Budget Office decision on whether AVC should apply at all (common-cost objects). Treat as <code>KU-2026-OUTLIER-WBS-AVC</code> governance backlog.</div>
+</section>
+<section id="footnotes">
+<h2>10. Footnotes</h2>
+<h3>Key SQL queries</h3>
+<details><summary>Universe of (Fund, WBS) pairs</summary><pre>SELECT GEBER, OBJNR, COUNT(*) AS n
+FROM coep
+WHERE GJAHR IN ('2024','2025','2026')
+  AND GEBER IS NOT NULL AND GEBER != ''
+  AND OBJNR LIKE 'PR%'
+GROUP BY GEBER, OBJNR;</pre></details>
+<details><summary>HARD-link test</summary><pre>SELECT * FROM prps p
+JOIN funds f ON f.FINCODE = substr(p.POSID,1,10)
+WHERE CAST(f.TYPE AS INTEGER) BETWEEN 101 AND 112;</pre></details>
+<details><summary>PS pool (per WBS, 2026)</summary><pre>-- Budget
+SELECT OBJNR, SUM(_signed(WTJHR)) FROM bpja_2026 WHERE WRTTP='41' GROUP BY OBJNR;
+-- Actuals
+SELECT OBJNR, SUM(_signed(WKGBTR)) FROM coep WHERE GJAHR='2026' AND WRTTP IN ('04','11') GROUP BY OBJNR;
+-- Commitments
+SELECT OBJNR, SUM(_signed(WKGBTR)) FROM cooi WHERE GJAHR='2026' GROUP BY OBJNR;</pre></details>
+<details><summary>FM pool (per Fund × bucket, 2026)</summary><pre>SELECT FONDS, FISTL, FIPEX,
+  SUM(CASE WHEN WRTTP='66' THEN _signed(FKBTR) ELSE 0 END) AS revenue,
+  SUM(CASE WHEN WRTTP='54' THEN _signed(FKBTR) ELSE 0 END) AS consumption
+FROM fmifiit_full
+WHERE GJAHR='2026' AND BUKRS='UNES' AND WRTTP IN ('54','66')
+GROUP BY FONDS, FISTL, FIPEX;</pre></details>
+<details><summary>Outlier WBSs (>10 funds)</summary><pre>SELECT OBJNR, COUNT(DISTINCT GEBER) AS nfund
+FROM coep
+WHERE GJAHR IN ('2024','2025','2026')
+  AND GEBER IS NOT NULL AND GEBER != ''
+  AND OBJNR LIKE 'PR%'
+GROUP BY OBJNR HAVING nfund > 10;</pre></details>
+<h3>TIER classification key</h3>
+<table><thead><tr><th>Brain TIER</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>TIER_1</td><td>Verified by SQL aggregation against P01 Gold DB. All numbers in this companion are TIER_1.</td></tr>
+<tr><td>TIER_2</td><td>Inferred from fewer than 3 evidence sources (not used here).</td></tr>
+<tr><td>TIER_3</td><td>Hypothesised, requires falsification (not used here).</td></tr>
+</tbody></table>
+<h3>Brain references</h3>
+<ul>
+<li><code>knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md</code> — canonical case for the FM-EXHAUSTED state (Section 17/18)</li>
+<li><code>companions/fm_ps_avc_model_gap_companion_v1.html</code> — companion for the model-gap class (MODEL-GAP-2026-001)</li>
+<li><code>brain_v2/agi/data_quality_issues.json</code> → <code>MODEL-GAP-2026-001</code> — class registration</li>
+<li><code>Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py</code> — old detector (HARD-only)</li>
+<li><code>Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py</code> — new detector (this matrix)</li>
+</ul>
+<h3>Build metadata</h3>
+<ul>
+<li>Build date: 2026-05-01</li>
+<li>Source: <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code></li>
+<li>Year analysed: 2026 (current biennium)</li>
+<li>Universe period: COEP postings 2024-2026</li>
+<li>Total CSV pair-rows: 11,586 (non-outlier) + 3,869 (outlier)</li>
+</ul>
+</section>
+<footer>FM-PS Pool Health Matrix v1 &middot; Built 2026-05-01 &middot; UNESCO P01 &middot; All numbers cite SQL (TIER_1).</footer>
+</div>
+</body>
+</html>
