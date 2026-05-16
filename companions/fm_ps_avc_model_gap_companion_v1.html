@@ -301,6 +301,62 @@
 <div id="tab-summary" class="tab-content active">
   <h2>1. Executive Summary</h2>
 
+  <!-- =================== SESSION #70 CORRECTION CALLOUT (TOP) =================== -->
+  <section id="session70-correction" style="margin:14px 0;padding:18px 22px;background:#ffe4e6;border:3px solid #c5283d;border-radius:8px">
+  <h3 style="color:#c5283d;margin:0 0 10px 0;font-size:16px">⚠️ Session #70 correction (2026-05-03) — methodology error superseded by SAP ground truth</h3>
+  <p style="font-size:13px;margin:6px 0">User/SME provided a screenshot of the actual SAP AVC view (FMAVCT live state) for fund 196EAR4042 / FundCenter WHC in 2026. The real numbers contradict prior claims of FM-AVC pool deficit:</p>
+  <table style="font-size:13px;width:100%;border-collapse:collapse;background:#fff;margin:8px 0">
+  <thead style="background:#ffd6dc"><tr>
+    <th style="text-align:left;padding:6px">CommItem</th>
+    <th style="text-align:right;padding:6px">Consumable Amt</th>
+    <th style="text-align:right;padding:6px">Consumed Amt</th>
+    <th style="text-align:right;padding:6px">Available Amt</th>
+  </tr></thead>
+  <tbody>
+  <tr><td style="padding:6px"><strong>TC</strong></td><td style="text-align:right;padding:6px">$7,700,000.00</td><td style="text-align:right;padding:6px">$5,448,314.79</td><td style="text-align:right;padding:6px;color:#0a7e6e;font-weight:700">+$2,251,685.21 (POSITIVE)</td></tr>
+  <tr><td style="padding:6px"><strong>80</strong></td><td style="text-align:right;padding:6px">$539,000.00</td><td style="text-align:right;padding:6px">$338,145.11</td><td style="text-align:right;padding:6px;color:#0a7e6e;font-weight:700">+$200,854.89 (POSITIVE)</td></tr>
+  </tbody>
+  </table>
+  <p style="font-size:13px;margin:6px 0"><strong>Both AVC control objects show POSITIVE availability.</strong> Prior claim of "<code>−$1,561,560.89</code> deficit on TC" was a methodology error — I summed <code>fmifiit_full WRTTP=66 minus WRTTP=54</code> raw, which does NOT equal AVC <code>Consumable − Consumed</code>. AVC uses pre-allocated control object budgets (not raw revenue) and registration rules that not all postings hit. Plus my <code>fmavct_2026</code> extract is partial (only <code>ALLOCTYPE_9='KBFC'</code> rows, ~$1.56M total — that's what I confused with the deficit).</p>
+
+  <h4 style="color:#c5283d;margin:10px 0 4px 0;font-size:14px">What the PS-FM consistency narrative needs to become</h4>
+  <table style="font-size:13px;width:100%;border-collapse:collapse;background:#fff">
+  <thead style="background:#ffd6dc"><tr>
+    <th style="text-align:left;padding:6px;width:30%">Aspect</th>
+    <th style="text-align:left;padding:6px;width:35%">Prior framing (SUPERSEDED)</th>
+    <th style="text-align:left;padding:6px;width:35%">Corrected framing (Session #70)</th>
+  </tr></thead>
+  <tbody>
+  <tr><td style="padding:6px">FM-AVC pool</td><td style="padding:6px;color:#a01827">−$1.56M deficit (FALSE)</td><td style="padding:6px;color:#0a7e6e">+$2.25M available (POSITIVE)</td></tr>
+  <tr><td style="padding:6px">PS-AVC pool</td><td style="padding:6px">+$48K available</td><td style="padding:6px">+$48K available (unchanged)</td></tr>
+  <tr><td style="padding:6px">Engine asymmetry</td><td style="padding:6px;color:#a01827">"FM blocks (deficit) vs PS allows (positive)"</td><td style="padding:6px;color:#0a7e6e">Both engines show available — the gap is something else</td></tr>
+  <tr><td style="padding:6px">Block cause</td><td style="padding:6px;color:#a01827">"FM-AVC pool exhausted"</td><td style="padding:6px;color:#a86c00">UNKNOWN — working hypothesis: timing-window failure (block occurred BEFORE KBFC carry-forward restored AVC; screenshot is post-restoration)</td></tr>
+  <tr><td style="padding:6px">Affected universe estimates (705 / 6,232 / etc)</td><td style="padding:6px;color:#a01827">Based on flawed detector</td><td style="padding:6px;color:#a86c00">SUSPECT — re-validate using corrected methodology</td></tr>
+  </tbody>
+  </table>
+
+  <h4 style="color:#c5283d;margin:10px 0 4px 0;font-size:14px">What still holds</h4>
+  <ul style="font-size:13px;line-height:1.6;margin:6px 0 0 22px">
+  <li><strong>The 3 Gabon POs DID block</strong> at SES posting — that empirical fact is unchanged (verified in SAP).</li>
+  <li><strong>71 of 139 WBSs ARE flagged <code>I0093 ISBD</code></strong> in <code>jest</code> — also unchanged.</li>
+  <li><strong>The 4-paths-of-mutation framing</strong> (MULESOFT / FB01 / FMBB / FMX1) remains correct.</li>
+  <li><strong>Workplan as master data</strong> (<code>ampi__Project__c</code> + <code>Allocation__c</code>) framing is unchanged.</li>
+  <li><strong>The 10-digit hard-link rule</strong> in <code>ZXFMYU22</code> code citation is correct.</li>
+  <li><strong>FIX-I (Workplan-driven validation)</strong> is unaffected.</li>
+  </ul>
+
+  <h4 style="color:#c5283d;margin:10px 0 4px 0;font-size:14px">Brain delta</h4>
+  <ul style="font-size:13px;line-height:1.6;margin:6px 0 0 22px">
+  <li>Claims #136, #142, #156, #157, #159 marked <strong>SUPERSEDED</strong></li>
+  <li>Claim #174 (TIER_1) added with the screenshot ground truth</li>
+  <li>3 new KUs opened: <code>KU-2026-AVC-MATH-METHODOLOGY</code> (CRITICAL), <code>KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE</code> (HIGH), <code>KU-2026-FMAVCT-FULL-EXTRACT</code> (HIGH)</li>
+  <li>MODEL-GAP-2026-001 enriched with <code>session_70_correction_2026_05_03</code> field</li>
+  </ul>
+
+  <p style="font-size:12px;color:#666;font-style:italic;margin-top:10px">All sections below this callout that reference "TC bucket deficit" or "FM-AVC pool exhausted" should be read with this correction in mind. The CONCEPTUAL framing (4 paths, time decoupling, Workplan layer, 10-digit rule, monitoring blindness, FIX-G/H/I/F evaluation) remains valid. Only the specific FM-pool numbers were wrong.</p>
+  </section>
+
+
   <!-- =================== END-TO-END CONCEPTUAL OPENING =================== -->
   <section id="end-to-end-concept" style="margin:14px 0;padding:18px 22px;background:linear-gradient(180deg,#e0ecf8 0%,#fff 100%);border:2px solid #08305f;border-radius:8px">
   <h3 style="color:#08305f;margin:0 0 12px 0;font-size:16px">📚 The end-to-end model — Fund ↔ WBS ↔ AVC (read this first)</h3>
@@ -710,24 +766,25 @@ INC-000005638 is a manifestation of a missing <strong>referential-integrity cont
           <!-- bottom -->
           <text x="730" y="220" text-anchor="middle" font-size="11" fill="#107e3e" font-weight="700">PS pool sees +$16,430,198.98</text>
           <text x="730" y="240" text-anchor="middle" font-size="11" fill="#107e3e">across 139 sub-WBS</text>
-          <text x="730" y="260" text-anchor="middle" font-size="11" fill="#bb0000" font-weight="700">but FM-AVC TC bucket: −$1,561,560.89</text>
+          <text x="730" y="260" text-anchor="middle" font-size="11" fill="#107e3e" font-weight="700">FM-AVC TC bucket: +$2,251,685.21 (CORRECTED 2026-05-03)</text>
 
-          <text x="730" y="295" text-anchor="middle" font-size="11" fill="#0a6ed1">FM is checked first → FMAVC005 → block</text>
-          <text x="730" y="315" text-anchor="middle" font-size="10" fill="#555" font-style="italic">PS-AVC never gets its turn to say "yes"</text>
+          <text x="730" y="295" text-anchor="middle" font-size="11" fill="#a86c00" font-weight="600">Both engines show available — block cause unknown (see §1 correction)</text>
+          <text x="730" y="315" text-anchor="middle" font-size="10" fill="#555" font-style="italic">Working hypothesis: timing-window failure (pre-KBFC carry-forward)</text>
         </g>
       </g>
     </svg>
-    <div class="caption">FM-AVC stores deficits per CommItem cubicle. PS-AVC rolls everything up to a project pool. Same fund, two answers.</div>
+    <div class="caption">[CORRECTED Session #70 2026-05-03] FM-AVC and PS-AVC both show positive availability. Prior framing of "FM cubicle deficit" was a methodology error (raw fmifiit_full ≠ AVC Consumable/Consumed). The cubicle-vs-rollup granularity difference still exists, but the asymmetry is not deficit-vs-surplus — it's about HOW each engine measures and registers consumption. The 3 PO block cause is now an open question (KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE).</div>
   </div>
 
-  <h3>Verdict on the two engines</h3>
+  <h3>Verdict on the two engines (CORRECTED Session #70 2026-05-03)</h3>
   <table>
     <thead><tr><th>Aspect</th><th>FM-AVC</th><th>PS-AVC</th></tr></thead>
     <tbody>
       <tr><td>Granularity</td><td>(Fund, FundCenter, CommItem) = many cells</td><td>WBS roll-up = one pool per project</td></tr>
       <tr><td>Sees revenue</td><td>Yes — but on the REVENUE CommItem only</td><td>No — only sees budget allocations</td></tr>
-      <tr><td>196EAR4042/WHC value (2026)</td><td class="neg">−$1,561,560.89 (TC bucket)</td><td class="pos">+$16,430,198.98 (project pool)</td></tr>
-      <tr><td>Posting verdict on ML81N</td><td class="neg">Block (FMAVC005)</td><td class="pos">Allow (BP603 not raised)</td></tr>
+      <tr><td>196EAR4042/WHC value (2026)</td><td class="pos"><strong>+$2,251,685.21 (TC available)</strong> / +$200,854.89 (80 available) — per SAP live AVC view</td><td class="pos">+$16,430,198.98 (project pool)</td></tr>
+      <tr><td>Posting verdict on ML81N</td><td class="neg">Block (per incident report 2026-03 to 2026-04)</td><td class="pos">Allow (BP603 not raised)</td></tr>
+      <tr><td>Why block if FM available?</td><td colspan="2">Unknown — open KU. Hypotheses: (a) period-specific check, (b) block was BEFORE KBFC carry-forward restored AVC, (c) different error message, (d) sub-bucket granularity</td></tr>
       <tr><td>Order in validation chain</td><td>1 (first)</td><td>2 (only if FM passes)</td></tr>
     </tbody>
   </table>

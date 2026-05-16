@@ -977,3 +977,63 @@ These tracks are independent. Track 1 unblocks the immediate ticket. Track 2 pre
 ### 20.7 Recommendation to UNESCO leadership (one paragraph)
 
 UNESCO has a structural defect at the AVC configuration layer. SAP holds all the data needed to enforce the constraint (commitments visible in COOI, postings in FMIFIIT, project structure in PRPS), but the AVC engine is configured to validate at coarse-grained TC aggregator instead of per-FIPEX. As a result, fund moves like the 2026-01-31 batch posted by A_BANSAL succeed even when they leave operational FIPEX in deficit. Track 1 (ME22N redirect) resolves the immediate ticket within the week. Track 2 (FIX-G1+G2 config change) closes the root cause within 1-2 sprints. Without Track 2, every biennium close-out from 2026 onward will produce another wave of stranded POs and "insuffisance de budget" tickets across an estimated 705 Class A projects.
+
+---
+
+## 21. Session #70 correction (2026-05-03) — methodology error superseded by SAP ground truth
+
+### 21.1 The correction
+
+User/SME provided a screenshot of the SAP live AVC view (FMAVCT) for fund 196EAR4042 / FundCenter WHC in 2026. The actual numbers contradict prior claims of FM-AVC pool deficit:
+
+| CommItem | Consumable Amt | Consumed Amt | Available Amt |
+|---|---:|---:|---:|
+| **TC** | $7,700,000.00 | $5,448,314.79 | **+$2,251,685.21 (POSITIVE)** |
+| **80** | $539,000.00 | $338,145.11 | **+$200,854.89 (POSITIVE)** |
+
+Both AVC control objects show POSITIVE availability. Prior claims #136, #142, #156, #157, #159 are SUPERSEDED.
+
+### 21.2 The methodology error
+
+| What I did wrong | What AVC actually does |
+|---|---|
+| Summed `fmifiit_full WRTTP=66 (revenue)` − `WRTTP=54 (consumption)` per (Fund, FundCenter, CommItem) | Uses pre-allocated control object budgets (Consumable Amt) — NOT raw revenue postings |
+| Assumed raw FMIFIIT aggregation equals AVC pool | AVC has registration rules — not all postings hit AVC; KBN0 + supplements + carry-forward all matter |
+| Used `fmavct_2026` extract that has only `ALLOCTYPE_9='KBFC'` rows (~$1.56M total) | Real AVC includes KBN0 original + KBW1/KBW2 transfers + KBP0 carry-overs + supplementary postings + period buckets HSL01-HSL16 |
+
+The KBFC carry-forward magnitude (~$1.56M) is what I confused with the deficit.
+
+### 21.3 What still holds
+
+- The 3 Gabon POs DID block at SES posting (verified)
+- 71 of 139 WBSs ARE flagged `I0093 ISBD` in jest (verified)
+- 4-paths-of-mutation framing (MULESOFT / FB01 / FMBB / FMX1) remains correct
+- Workplan as master data (Salesforce Core Manager) framing is correct
+- 10-digit hard-link rule citation in ZXFMYU22:362-369 is correct
+- YPS8/YFM1 monitoring blindness finding (claim #159) was superseded NOT because the YPS8 logic is wrong, but because my characterization of WHAT YPS8 hides (the deficit) was wrong. YPS8 still uses the AVC-scope filter. The blindness story is intact; the specific number it hides was different.
+- FIX-G/H/I/F evaluation framework is unchanged
+- Central narrative (Session #69, claim #145/#157) remains valid in spirit: AVC needs to be the guardian; whether configured granularly or not is the question
+
+### 21.4 The new working hypothesis: timing-window failure
+
+| Timeline | Event | Effect on AVC |
+|---|---|---|
+| 2026-01-31 | A_BANSAL FB01 R1 batch removes $-12.66M from REVENUE bucket | AVC TC pool drops momentarily |
+| 2026-Q1 | 3 Gabon POs attempt SES posting | AVC blocks because TC pool was below threshold at that moment |
+| 2026-Q1-Q2 | Someone runs KBFC carry-forward (or supplementary FMBB) | AVC TC pool restored to +$2.25M |
+| 2026-05-03 | User screenshot shows the post-restoration state | AVC pool now positive |
+
+If this hypothesis holds, INC-005638 may have been silently resolved by the carry-forward run. Verification required.
+
+### 21.5 Open KUs from Session #70
+
+| KU | Severity | Question |
+|---|---|---|
+| KU-2026-AVC-MATH-METHODOLOGY | CRITICAL | What is the EXACT formula SAP AVC uses for Consumable / Consumed / Available per (Fund, FundCenter, CommItem)? |
+| KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE | HIGH | Why DID the 3 Gabon POs block in March-April 2026 if AVC shows positive availability now? |
+| KU-2026-FMAVCT-FULL-EXTRACT | HIGH | Re-extract FMAVCT with full ALLOCTYPE_9 range and HSL01-HSL16 columns |
+
+### 21.6 Re-priorization implication
+
+The PS-FM consistency narrative is NOT "FM-exhausted vs PS-healthy". It is more nuanced: both engines may show available, yet a posting can still block because of timing, sub-period checks, or registration mechanics that we have not fully modelled. **The fix priority therefore shifts toward UNDERSTANDING the actual block mechanism BEFORE proposing structural changes.** FIX-D (compress timing window) gains weight as a candidate explanation; FIX-G (AVC config change) only makes sense after we understand whether the AVC engine is failing or working as designed.
+

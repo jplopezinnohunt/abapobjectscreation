@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FX Revaluation (F.05 / SAPF100) — UNESCO 2025 Deep Research</title>
+<style>
+:root{
+  --bg:#fafbfc; --panel:#ffffff; --ink:#1f2933; --muted:#5b6b7a;
+  --accent:#0b6e99; --accent-soft:#e3f1f8; --warn:#b06b00; --warn-soft:#fff5e0;
+  --bad:#a32d2d; --bad-soft:#fde8e8; --good:#2c7a4a; --good-soft:#e0f3e6;
+  --border:#dde3ea; --code-bg:#f3f5f7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:14px}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+nav.side{background:var(--panel);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav.side h1{font-size:14px;color:var(--accent);margin:0 0 4px 0;letter-spacing:.5px;text-transform:uppercase}
+nav.side .ver{font-size:11px;color:var(--muted);margin-bottom:18px}
+nav.side a{display:block;color:var(--ink);text-decoration:none;padding:6px 10px;font-size:13px;border-radius:4px;margin:2px 0}
+nav.side a:hover{background:var(--accent-soft);color:var(--accent)}
+nav.side a.sub{padding-left:24px;font-size:12px;color:var(--muted)}
+main{padding:30px 40px 80px;max-width:1200px}
+h1.page{font-size:22px;color:var(--accent);margin:0 0 6px 0}
+.subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
+section{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:22px 26px;margin-bottom:22px}
+section h2{font-size:18px;color:var(--accent);margin:0 0 12px 0;border-bottom:2px solid var(--accent-soft);padding-bottom:6px}
+section h3{font-size:15px;color:var(--ink);margin:18px 0 8px 0}
+section h4{font-size:13px;color:var(--muted);margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:.5px}
+section p{margin:8px 0}
+.muted{color:var(--muted);font-size:12.5px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);color:var(--accent);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",Consolas,monospace}
+code,kbd{background:var(--code-bg);padding:2px 5px;border-radius:3px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px}
+pre{background:var(--code-bg);padding:12px 16px;border-radius:4px;border:1px solid var(--border);overflow-x:auto;font-size:12.5px;line-height:1.5}
+.callout{padding:12px 16px;border-radius:5px;margin:12px 0;border-left:4px solid}
+.callout.ok{background:var(--good-soft);border-color:var(--good)}
+.callout.warn{background:var(--warn-soft);border-color:var(--warn)}
+.callout.bad{background:var(--bad-soft);border-color:var(--bad)}
+.callout.info{background:var(--accent-soft);border-color:var(--accent)}
+.callout strong{display:block;margin-bottom:4px;color:inherit}
+.tier{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.tier-1{background:var(--good-soft);color:var(--good)}
+.tier-2{background:var(--warn-soft);color:var(--warn)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:14px 0}
+.kpi .card{background:var(--accent-soft);padding:14px;border-radius:5px;border-left:3px solid var(--accent)}
+.kpi .v{font-size:22px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+
+/* Pipeline */
+.pipeline{display:flex;flex-direction:column;gap:18px;margin:18px 0;padding:22px;background:linear-gradient(180deg,#f7fafc 0%,#fff 100%);border:1px solid var(--border);border-radius:8px;overflow-x:auto}
+.pipeline-row{display:flex;align-items:stretch;gap:0;min-width:1100px}
+.pipe-step{flex:1;min-width:155px;background:#fff;border:1.5px solid var(--accent);border-radius:6px;padding:11px 12px;box-shadow:0 1px 3px rgba(11,110,153,.08);position:relative}
+.pipe-step .step-num{position:absolute;top:-9px;left:10px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.4px}
+.pipe-step .table-name{font-size:13.5px;font-weight:700;color:var(--accent);margin:6px 0 4px 0;text-align:center;font-family:"SF Mono",Consolas,monospace}
+.pipe-step .what{font-size:11.5px;color:var(--ink);text-align:center;margin-bottom:8px;font-weight:500}
+.pipe-step .fields{font-size:10.8px;color:var(--muted);font-family:"SF Mono",Consolas,monospace;line-height:1.45;background:var(--code-bg);padding:5px 7px;border-radius:3px;border:1px solid var(--border)}
+.pipe-step .fields strong{color:var(--accent);font-weight:600}
+.pipe-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:80px;position:relative}
+.pipe-arrow .tcode{font-size:10.5px;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:2px 8px;border-radius:3px;border:1px solid #f0d9a8;font-family:"SF Mono",Consolas,monospace;white-space:nowrap;margin-bottom:4px}
+.pipe-arrow::after{content:"";display:block;width:60px;height:0;border-top:2px solid var(--accent);position:relative}
+.pipe-arrow::before{content:"";position:absolute;right:8px;top:50%;margin-top:-1px;width:0;height:0;border-left:8px solid var(--accent);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.pipe-step.endpoint{border-color:var(--good);border-width:2px;background:var(--good-soft)}
+.pipe-step.endpoint .step-num{background:var(--good)}
+.pipe-step.endpoint .table-name{color:var(--good)}
+.pipe-down{display:flex;justify-content:flex-end;padding-right:75px}
+.pipe-down-arrow{width:40px;display:flex;flex-direction:column;align-items:center}
+.pipe-down-arrow .line{width:2px;height:32px;background:var(--good)}
+.pipe-down-arrow .head{width:0;height:0;border-top:8px solid var(--good);border-left:5px solid transparent;border-right:5px solid transparent}
+.pipe-endpoint-row{display:flex;justify-content:flex-end;padding-right:0}
+.pipe-endpoint-row .pipe-step{flex:0 0 220px}
+
+/* Petri-net visual (replaces ASCII) */
+.petri{padding:24px;background:linear-gradient(180deg,#f7fafc 0%,#fff 100%);border:1px solid var(--border);border-radius:8px;margin:20px 0}
+.petri-source{margin:0 auto;max-width:380px;background:#fff;border:2px solid var(--accent);border-radius:6px;padding:14px 18px;text-align:center;box-shadow:0 2px 4px rgba(11,110,153,.1)}
+.petri-source .label{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.petri-source .what{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.petri-source .meta{font-size:12px;color:var(--muted);font-family:"SF Mono",Consolas,monospace}
+.petri-arrow-down{display:flex;justify-content:center;margin:8px 0}
+.petri-arrow-down::after{content:"";width:0;height:0;border-top:14px solid var(--accent);border-left:7px solid transparent;border-right:7px solid transparent}
+.petri-arrow-vline{width:2px;height:18px;background:var(--accent);margin:0 auto}
+.petri-fanout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:8px}
+.petri-leg{background:#fff;border:1.5px solid var(--accent);border-radius:6px;padding:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.petri-leg.auto-reverse{border-color:var(--good);background:var(--good-soft)}
+.petri-leg.auto-reverse .label{color:var(--good)}
+.petri-leg.cleanup{border-color:var(--warn);background:var(--warn-soft)}
+.petri-leg.cleanup .label{color:var(--warn)}
+.petri-leg.realloc{border-color:var(--bad);background:var(--bad-soft)}
+.petri-leg.realloc .label{color:var(--bad)}
+.petri-leg .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:var(--accent)}
+.petri-leg .what{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.petri-leg .meta{font-size:11.5px;color:var(--muted);text-align:left;line-height:1.5}
+.petri-leg .meta li{margin-left:14px}
+
+/* Screenshots */
+figure.shot{margin:18px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+figure.shot img{display:block;width:100%;height:auto;border-bottom:1px solid var(--border)}
+figure.shot figcaption{padding:10px 14px;font-size:12.5px;color:var(--muted);background:var(--code-bg);line-height:1.5}
+figure.shot figcaption strong{color:var(--accent);display:block;margin-bottom:3px;font-size:13px}
+
+ul.bullets{margin:8px 0;padding-left:22px}
+ul.bullets li{margin:5px 0}
+.footer{font-size:12px;color:var(--muted);text-align:center;padding:30px;border-top:1px solid var(--border);margin-top:30px}
+mark{background:#fff3a8;padding:1px 3px;border-radius:2px}
+.legend{font-size:11.5px;color:var(--muted);margin-top:10px;display:flex;gap:18px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:2px}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0b6e99;color:#fff;padding:8px 20px;display:flex;gap:14px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;border-bottom:1px solid #084e6e">
+  <span style="font-weight:700;letter-spacing:.3px">🏦 Bank End-to-End</span>
+  <span style="opacity:.6">·</span>
+  <a href="bank_statement_ebs_companion.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">📚 Master Hub (Bank Statement)</a>
+  <span style="opacity:.4">·</span>
+  <a href="inc_000008088_interest_auto_posting_v1.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">📄 Interest Change (INC-000008088)</a>
+  <span style="opacity:.4">·</span>
+  <a href="fx_revaluation_f05_v1.html" style="color:#fff;text-decoration:none;padding:3px 10px;border-radius:3px;background:rgba(255,255,255,0.18);font-weight:600">📄 FX Revaluation (F.05) · YOU ARE HERE</a>
+</div>
+<div class="layout">
+  <nav class="side">
+    <h1>FX Revaluation</h1>
+    <div class="ver">F.05 / SAPF100<br>UNESCO 2025 Deep Research<br>v1 · 2026-05-04</div>
+
+    <a href="#disambiguation"><strong>🧭 Disambiguation (OBA1/OBV1/OBV2/OT83)</strong></a>
+    <a href="#oba1-architecture"><strong>🔬 OBA1 Architecture (6 procedures · KDF vs KDB)</strong></a>
+    <a href="#pl-origin"><strong>🎯 Where 6045011/7045011 come from</strong></a>
+    <a href="#summary"><strong>Executive Summary</strong></a>
+    <a href="#vocabulary">Vocabulary</a>
+    <a href="#fx-2025"><strong>2025 Execution History</strong></a>
+    <a href="#fx-2025-cadence" class="sub">↳ Cadence per institute</a>
+    <a href="#fx-2025-pl" class="sub">↳ P&amp;L magnitudes</a>
+    <a href="#fx-2025-mining" class="sub">↳ Manual adjustment mining</a>
+    <a href="#config"><strong>End-to-End Config</strong></a>
+    <a href="#config-pipeline" class="sub">↳ Pipeline (Bank → P&amp;L)</a>
+    <a href="#config-housebank" class="sub">↳ House Bank (T012)</a>
+    <a href="#config-account" class="sub">↳ Bank Account (T012K)</a>
+    <a href="#config-gl" class="sub">↳ G/L Master (SKA1/SKB1)</a>
+    <a href="#config-revaluation" class="sub">↳ Revaluation (T030H)</a>
+    <a href="#config-variants" class="sub">↳ F.05 Variants (VARI)</a>
+    <a href="#stepbystep"><strong>Step-by-Step Config</strong></a>
+    <a href="#brain"><strong>Brain Anchors</strong></a>
+
+    <p style="margin-top:24px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px">
+      <strong>In scope:</strong> F.05 / SAPF100 FX revaluation only (T030H + OBA1 + T044A + OB59).<br>
+      <strong>Not in scope:</strong> EBS interest auto-posting + F.52 accrued interest — see <a href="inc_000008088_interest_auto_posting_v1.html" style="color:var(--accent);text-decoration:none">inc_000008088_interest_auto_posting_v1.html</a>
+    </p>
+  </nav>
+
+  <main>
+    <h1 class="page">FX Revaluation — F.05 / SAPF100 — UNESCO 2025 Deep Research</h1>
+    <div class="subtitle">
+      Live evidence (P01 production) — 11,793 F.05 docs in 2025 across 9 institutes · €130.6M net unrealized FX gain · 590 manual JV reposts<br>
+      Brain anchors: claims 50–54, 160–164, 172 · KU-2026-070-01..07 · FALS-070-01..04
+    </div>
+
+    <!-- ═════════════════ DISAMBIGUATION · 4 BANK-RELATED PROCESSES ═════════════════ -->
+    <section id="disambiguation" style="margin-top:18px;padding:14px 18px;border:2px solid var(--accent);border-radius:8px;background:rgba(11,110,153,0.06)">
+      <h2 style="margin-top:0">🧭 4 procesos bank-related en UNESCO — no confundir</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:10px">
+        Esta companion cubre <strong>solo F.05 / FX Revaluation</strong>. Otros 3 procesos relacionados con bancos viven en TCODEs y programas distintos. Esta tabla los desambigua para evitar confusión durante el análisis.
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+        <thead>
+          <tr style="background:rgba(11,110,153,0.15)">
+            <th style="text-align:left;padding:8px;border:1px solid var(--border)">Proceso</th>
+            <th style="text-align:left;padding:8px;border:1px solid var(--border)">TCODE config</th>
+            <th style="text-align:left;padding:8px;border:1px solid var(--border)">Programa execution</th>
+            <th style="text-align:left;padding:8px;border:1px solid var(--border)">Status en UNESCO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:rgba(67,160,71,0.10)">
+            <td style="padding:8px;border:1px solid var(--border)"><strong>FX Revaluation</strong> (este companion)</td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>OBA1</code> (KDF/KDB/KDR/KDH) · <code>OB59</code> (methods)</td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>F.05</code> / <code>SAPF100</code> · <code>FAGL_FC_VAL</code></td>
+            <td style="padding:8px;border:1px solid var(--border)">✓ <strong>EN USO</strong> · 11,793 docs en 2025 across 9 BUKRS</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border)">Customer / Vendor balance interest (late payment)</td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>OBV1</code></td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>F.2A</code> (calc) · <code>F.2B</code> (post)</td>
+            <td style="padding:8px;border:1px solid var(--border)">✗ <strong>NO SE USA en UNESCO</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border)">G/L Account balance interest (savings, deposits)</td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>OBV2</code></td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>F.52</code> / <code>SAPF052</code></td>
+            <td style="padding:8px;border:1px solid var(--border)">✓ EN USO · 8 EUR-savings GLs flagged con <code>VZSKZ='Z1'</code> · Phase 1a redirected mask 7044011→7044014 (Aug 2025)</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border)">EBS bank statement auto-posting</td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>OT83</code></td>
+            <td style="padding:8px;border:1px solid var(--border)"><code>FF.5</code> · <code>FEBAN</code> · <code>RFEBBU10</code></td>
+            <td style="padding:8px;border:1px solid var(--border)">✓ EN USO · scope of <a href="inc_000008088_interest_auto_posting_v1.html" style="color:var(--accent);text-decoration:none">INC-000008088</a> · OT83 cloning in progress</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">
+        <strong>Cómo SAP decide cuál account determination usar dentro de OBA1:</strong> SAP evalúa el flag <code>SKB1.XOPVW</code> (Open Item Management) del HKONT siendo revaluado. Si XOPVW='X' → busca en <code>KDF</code> (T030H/T030HB · per HKONT). Si XOPVW='' → busca en <code>KDB</code> (T030S · per Exchange Rate Diff Key del GL master). Esta decisión es automática · no se configura por separado en F.05.
+      </p>
+    </section>
+
+    <!-- ═════════════════ OBA1 ARCHITECTURE — 6 procedures · KDF vs KDB ═════════════════ -->
+    <section id="oba1-architecture" style="margin-top:18px">
+      <h2>🔬 OBA1 Architecture · F.05 usa 2 de las 6 procedures (decisión por XOPVW)</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:10px">
+        OBA1 contiene <strong>6 procedures de account determination</strong>. F.05 sólo invoca <strong>2 de ellas</strong> (KDB / KDF), elegidas dinámicamente por SAP según el flag <code>SKB1.XOPVW</code> del HKONT siendo revaluado. Las otras 4 las invocan otros procesos.
+      </p>
+
+      <h3 style="margin-top:14px">Las 6 OBA1 procedures · cuáles toca F.05</h3>
+      <table style="font-size:13.5px">
+        <thead>
+          <tr><th style="width:90px">Tcode key</th><th>Description</th><th style="width:160px">¿F.05 la usa?</th><th>Quién la usa</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>CEX</code></td><td>Document Split for Currency Exchange</td><td>✗ No</td><td>NewGL doc-splitting</td></tr>
+          <tr style="background:rgba(67,160,71,0.08)"><td><code><strong>KDB</strong></code></td><td>Exch. Rate Diff. using Exch. Rate Key</td><td><strong>✓ SÍ</strong> (cuando XOPVW='')</td><td>F.05 / SAPF100 · FAGL_FC_VAL</td></tr>
+          <tr style="background:rgba(67,160,71,0.08)"><td><code><strong>KDF</strong></code></td><td>Exchange Rate Dif.: Open Items/GL Acct</td><td><strong>✓ SÍ</strong> (cuando XOPVW='X')</td><td>F.05 / SAPF100 · FAGL_FC_VAL</td></tr>
+          <tr><td><code>KDW</code></td><td>Payment difference for altern.currency</td><td>✗ No</td><td>F-28 / payment clearing</td></tr>
+          <tr><td><code>KDZ</code></td><td>Payment diff. for altern.curr. (offset)</td><td>✗ No</td><td>F-28 / payment clearing</td></tr>
+          <tr><td><code>RDF</code></td><td>Internal currencies rounding differences</td><td>⚠ Parcial</td><td>F.05 sólo si hay rounding en local crcy</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top:18px">La regla — KDF vs KDB la decide SAP automáticamente</h3>
+      <p style="font-size:13.5px">Para CADA HKONT que F.05 procesa:</p>
+      <div style="font-family:'SF Mono',Consolas,monospace;font-size:12.5px;background:var(--code-bg);padding:14px 18px;border-radius:6px;border:1px solid var(--border);line-height:1.5">
+┌─ Lee <strong>SKB1.XOPVW</strong> del GL master<br>
+│<br>
+├─ <strong>XOPVW = 'X'</strong>  →  Usa <strong style="color:#0b6e99">KDF</strong>  →  Tabla <code>T030H / T030HB</code>  →  Per-HKONT granularity<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┌────────────────────────────────────┐<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <strong>LSREA</strong> = Realized Loss&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <strong>LHREA</strong> = Realized Gain&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <strong>LSBEW</strong> = Val. Loss (unrealized)&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <strong>LHBEW</strong> = Val. Gain (unrealized)&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <strong>LKORR</strong> = B/S adjustment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└────────────────────────────────────┘<br>
+│<br>
+└─ <strong>XOPVW = ''</strong>&nbsp;&nbsp;&nbsp;→  Usa <strong style="color:#0b6e99">KDB</strong>  →  Tabla <code>T030S</code>          →  Per Exchange Rate Diff Key (chart-level)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┌────────────────────────────────────┐<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ Mismos campos que KDF              │<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ pero keyed por <strong>SKB1.KDFSL</strong>          │<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (FX rate diff key, no per-HKONT)  │<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└────────────────────────────────────┘
+      </div>
+
+      <h3 style="margin-top:18px">¿Qué accounts postea F.05 al P&amp;L?</h3>
+      <p style="font-size:13.5px">Per HKONT siendo revaluado, F.05 puede postear hasta <strong>5 cuentas</strong> (mismas en KDF y KDB):</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
+        <div style="padding:12px 14px;border:1.5px solid #b06b00;border-radius:6px;background:#fff7e8">
+          <h4 style="color:#b06b00;margin:0 0 6px 0;text-transform:none;font-size:13.5px">Realized accounts</h4>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 8px 0">Cuando un open item clears en moneda extranjera (no F.05; F-28, F-58, etc.)</p>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.6">
+            <li><code>LSREA</code> (loss)  → e.g. <code>0006045011</code></li>
+            <li><code>LHREA</code> (gain)  → e.g. <code>0007045011</code></li>
+          </ul>
+        </div>
+        <div style="padding:12px 14px;border:1.5px solid #2c7a4a;border-radius:6px;background:var(--good-soft)">
+          <h4 style="color:#2c7a4a;margin:0 0 6px 0;text-transform:none;font-size:13.5px">Unrealized accounts (F.05 specific)</h4>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 8px 0">Period-end revaluation. <strong>Esto es lo que F.05 toca.</strong></p>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.6">
+            <li><code>LSBEW</code> (val. loss) → P&amp;L unrealized FX loss</li>
+            <li><code>LHBEW</code> (val. gain) → P&amp;L unrealized FX gain</li>
+            <li><code>LKORR</code> (B/S adj.)  → balance sheet correction (offsetting)</li>
+          </ul>
+        </div>
+      </div>
+
+      <p style="font-size:13px;margin-top:12px;padding:8px 12px;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:4px">
+        <strong>Para F.05 específicamente</strong>, el P&amp;L impact viene de <code>LSBEW</code> + <code>LHBEW</code> (los unrealized) más <code>LKORR</code> (offsetting B/S adjustment). Las cuentas <code>LSREA</code>/<code>LHREA</code> sólo se tocan en el clearing de pago en moneda extranjera (otros tcodes).
+      </p>
+
+      <h3 style="margin-top:18px">Para UNESCO específicamente</h3>
+      <p style="font-size:13.5px">Mirando lo que vimos en <code>T030H</code> · <code>UNES</code> (1014 rows):</p>
+
+      <div style="font-family:'SF Mono',Consolas,monospace;font-size:12.5px;background:var(--code-bg);padding:12px 16px;border-radius:6px;border:1px solid var(--border);line-height:1.5">
+<strong>Ejemplo de fila típica:</strong><br>
+&nbsp;&nbsp;KTOPL=<code>UNES</code> · HKONT=<code>0001010571</code> · CURTP=<code>10</code><br>
+&nbsp;&nbsp;LKORR=<code>0001109571</code>  (balance sheet correction)<br>
+&nbsp;&nbsp;LSREA=<code>0006045011</code>  (realized loss)<br>
+&nbsp;&nbsp;LHREA=<code>0007045011</code>  (realized gain)<br>
+&nbsp;&nbsp;LSBEW=<code>0006045011</code>  (unrealized loss · F.05 P&amp;L)<br>
+&nbsp;&nbsp;LHBEW=<code>0007045011</code>  (unrealized gain · F.05 P&amp;L)
+      </div>
+
+      <p style="font-size:13.5px;margin-top:12px">
+        Significa que UNESCO concentra <strong>todo el FX P&amp;L (realized + unrealized) en 2 cuentas</strong>:
+      </p>
+      <ul style="font-size:13.5px;line-height:1.7">
+        <li><code>0006045011</code> = FX losses (realized + unrealized)</li>
+        <li><code>0007045011</code> = FX gains (realized + unrealized)</li>
+      </ul>
+      <p style="font-size:13.5px">Esto es lo que F.05 produce como impacto en P&amp;L.</p>
+
+      <div class="callout warn" style="margin-top:14px">
+        <strong>Para los 26 bank cash GLs Treasury HQ</strong>
+        Como vimos en el Excel <code>Automatic Interest postings updated.xlsx</code> (hoja <em>Group Bannk</em>) · <strong>NINGUNO</strong> de los 26 está en T030H. Significa que F.05 los maneja vía <strong>KDB chart-level</strong> (default key vacío) → <code>6045011</code>/<code>7045011</code>. Detalle de la evidencia: <a href="#pl-origin" style="color:var(--accent);text-decoration:none">sección "Where 6045011/7045011 come from" ↓</a>
+      </div>
+    </section>
+
+    <!-- ═════════════════ KEY FINDING · 6045011 / 7045011 origin ═════════════════ -->
+    <section id="pl-origin" style="margin-top:18px;padding:14px 18px;border:2px solid #43a047;border-radius:8px;background:rgba(67,160,71,0.06)">
+      <h2 style="margin-top:0;color:#43a047">🎯 Where 6045011 / 7045011 come from — TIER_1 (2026-05-05)</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:10px">
+        F.05's P&amp;L impact materializes in two specific GLs at UNESCO: <strong>0006045011</strong> (FX loss) and <strong>0007045011</strong> (FX gain). They originate from the OBA1 → <strong>KDB</strong> chart-level default — confirmed via screenshot below.
+      </p>
+
+      <figure style="margin:12px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;max-width:560px">
+        <img src="img/oba1/01_oba1_kdb_unes_default_6045011_7045011.png" alt="OBA1 KDB UNES — default exchange rate diff: 6045011 (Expense) + 7045011 (Gain)" style="display:block;width:100%;height:auto;max-height:200px;object-fit:contain;background:#fff">
+        <figcaption style="padding:6px 10px;font-size:11.5px;color:var(--muted);background:rgba(0,0,0,0.03);border-top:1px solid var(--border)">
+          <strong style="color:#43a047">OBA1 · Transaction KDB · Chart UNES</strong> ·
+          Default row (no Exchange Rate Diff Key): Expense=<code>6045011</code> · E/R Gains=<code>7045011</code>.
+          GRP key override: both → <code>5022012</code>. <em>Default applies to all UNES bank GLs not in T030H/KDF.</em>
+        </figcaption>
+      </figure>
+
+      <h3 style="margin-bottom:6px;font-size:14.5px">Why this matters</h3>
+      <ul class="bullets" style="font-size:13.5px;line-height:1.6">
+        <li><strong>26 Treasury HQ bank cash GLs · 0/26 in T030H (KDF)</strong> — verified via Excel "Automatic Interest postings updated" matrix. None has per-HKONT KDF config.</li>
+        <li>Therefore F.05 routes ALL 26 banks via <strong>KDB chart-level default</strong> (XOPVW='' implies KDB lookup).</li>
+        <li>KDB default for UNES (per screenshot) = <code>6045011</code> for FX expense/loss · <code>7045011</code> for FX gains.</li>
+        <li>The <strong>+€130.6M net unrealized FX gain in 2025</strong> reported in Executive Summary lands here — that's $76M+ of the annual rerouting.</li>
+      </ul>
+
+      <h3 style="margin-bottom:6px;font-size:14.5px;margin-top:14px">The decision tree (per HKONT)</h3>
+      <div style="font-family:monospace;font-size:12.5px;background:rgba(0,0,0,0.04);padding:10px 14px;border-radius:6px;line-height:1.55">
+F.05 reads <strong>SKB1.XOPVW</strong> for the HKONT being revalued:<br>
+&nbsp;&nbsp;├── <strong>XOPVW = 'X'</strong>  →  Use <strong>KDF</strong> (T030H · per HKONT)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LSREA / LHREA / LSBEW / LHBEW / LKORR per row (e.g., 0001010571 → 6045011/7045011)<br>
+&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;└── <strong>XOPVW = ''</strong>   →  Use <strong>KDB</strong> (T030S · per Exchange Rate Diff Key)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>For UNES default key = empty</strong>:&nbsp;&nbsp;Expense <code>6045011</code> · Gain <code>7045011</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For GRP key:&nbsp;&nbsp;both → <code>5022012</code> (combined)
+      </div>
+
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">
+        <strong>Brain:</strong> claim 172 (TIER_1 Session #71) captures this finding. Companion screenshot evidence: <code>img/oba1/01_oba1_kdb_unes_default_6045011_7045011.png</code>.
+      </p>
+    </section>
+
+    <!-- ═════════════════ EXECUTIVE SUMMARY ═════════════════ -->
+    <section id="summary">
+      <h2>Executive Summary</h2>
+      <div class="kpi">
+        <div class="card"><div class="v">11,793</div><div class="l">F.05 docs in 2025 (9 BUKRS)</div></div>
+        <div class="card"><div class="v">+€130.6M</div><div class="l">Net unrealized FX gain 2025</div></div>
+        <div class="card"><div class="v">12</div><div class="l">Variant runners (1-2 per institute)</div></div>
+        <div class="card"><div class="v">590</div><div class="l">Manual JV reposts in 2025</div></div>
+        <div class="card"><div class="v">200</div><div class="l">Defective T030H rows (config gap)</div></div>
+        <div class="card"><div class="v">$76M</div><div class="l">Annually rerouted to 0005049011/12</div></div>
+      </div>
+
+      <h3>Six headlines (TIER_1)</h3>
+      <ol>
+        <li><strong>F.05 / SAPF100 is the active FX-revaluation path</strong> at UNESCO. 11,793 docs across 9 institutes in 2025; UNES is 91.8% of activity. Brain claim 160.</li>
+        <li><strong>Variants run interactively, never as background jobs.</strong> Twelve named SAPGUI users drive ~98% of all valuations. UNES has a single point of failure: <code>J_LA</code> runs 5,806 of 5,872 (98.9%) UNES valuations. Brain claim 164.</li>
+        <li><strong>One universal P&amp;L pair.</strong> All 9 BUKRS share <code>KTOPL='UNES'</code>. T030H standard pair: <code>0006045011</code> (loss) / <code>0007045011</code> (gain). Brain claim 161.</li>
+        <li><strong>200 defective T030H rows</strong> have empty <code>LSBEW/LHBEW/LKORR</code> — silent valuation skip risk. Brain claim 162, falsifiable via FALS-070-04.</li>
+        <li><strong>The post-F.05 manual reposting is real and concentrates at year-end.</strong> 590 manual JVs/yr touch <code>0006045011/0007045011</code>; December 2025 = 129 docs, 3.06× the year average. Brain claim 165.</li>
+        <li><strong>Top destinations of post-F.05 reposts</strong>: <code>0005049011</code> ($46.4M), <code>0005049012</code> ($30.0M) — likely IFRS-reporting unrealized-FX-reserve accounts. Brain claim 166, falsifiable via FALS-070-02.</li>
+      </ol>
+    </section>
+
+    <!-- ═════════════════ VOCABULARY ═════════════════ -->
+    <section id="vocabulary">
+      <h2>Vocabulary (FX revaluation terms only)</h2>
+      <table>
+        <tr><th>Term</th><th>Tcode / Table</th><th>Meaning</th></tr>
+        <tr><td><strong>F.05 / SAPF100</strong></td><td>F.05 → program SAPF100</td><td>Classic FI Foreign Currency Valuation. Stamps <code>BKTXT='FC valuation SAPF100'</code> on creation, <code>'Reverse posting SAPF100'</code> on auto-reverse.</td></tr>
+        <tr><td><strong>FAGL_FC_VAL</strong></td><td>FAGL_FC_VAL</td><td>New-GL FX valuation. UNESCO does NOT use this — only the classic F.05 fires (verified 27,085 docs all stamped SAPF100).</td></tr>
+        <tr><td><strong>OBA1</strong></td><td>OBA1</td><td>"Define Foreign Exchange Gains/Losses Accounts" — multi-screen tcode covering KDF/KDR/KDB transaction keys + per-account H-tab. Writes T030H.</td></tr>
+        <tr><td><strong>OB09</strong></td><td>OB09</td><td>"Define Account Determination for Realized Foreign Currency Gains/Losses" — writes T030/T030B (KTOSL transaction keys at chart level). For UNESCO this only contains the FX gain/loss pair (0006045011 / 0007045011).</td></tr>
+        <tr><td><strong>OB59</strong></td><td>OB59</td><td>"Define Valuation Methods" → table T044A. UNESCO has 6 valuation methods.</td></tr>
+        <tr><td><strong>HKONT</strong></td><td>BSEG / T012K.HKONT</td><td>The G/L account number that tracks the bank account in the FI ledger.</td></tr>
+        <tr><td><strong>XOPVW</strong></td><td>SKB1.XOPVW</td><td>Open-item management flag. <code>'X'</code> = F.05 valuates each open item line by line; blank = balance-only valuation. UNES bank GLs: 18 with X, 332 blank.</td></tr>
+        <tr><td><strong>LSBEW / LHBEW / LKORR</strong></td><td>T030H</td><td>Unrealized <strong>L</strong>oss / <strong>H</strong>aben (gain) / <strong>Korr</strong>ection accounts. Per-HKONT override for F.05 routing.</td></tr>
+        <tr><td><strong>LSREA / LHREA</strong></td><td>T030H</td><td><strong>R</strong>ealized loss / gain (translation, used by FAGL_FC_TRANS, not F.05).</td></tr>
+        <tr><td><strong>BLART='JV'</strong></td><td>BKPF.BLART</td><td>UNESCO custom doc type: Journal Voucher. Used by F.05 doc creation + manual reposts.</td></tr>
+        <tr><td><strong>SHKZG</strong></td><td>BSEG.SHKZG</td><td>Sign indicator: 'S' = Soll (debit), 'H' = Haben (credit). DMBTR is always positive — sign comes from SHKZG.</td></tr>
+        <tr><td><strong>VARI / VARID</strong></td><td>VARI / VARID</td><td>Selection-screen variants for any program; F.05 stores per-institute presets here</td></tr>
+      </table>
+    </section>
+
+    <!-- ═════════════════ F.05 2025 HISTORY ═════════════════ -->
+    <section id="fx-2025">
+      <h2>F.05 / SAPF100 — 2025 Execution History</h2>
+      <p class="muted">Source: BKPF + bseg_union, P01 production. Filter <code>BKTXT IN ('FC valuation SAPF100','Reverse posting SAPF100')</code> with <code>substr(BUDAT,1,4)='2025'</code>.</p>
+
+      <div class="callout info">
+        <strong>Top-line numbers (TIER_1)</strong>
+        11,793 documents · 6,394 valuations + 5,399 reverses · Val/Rev ratio 1.184 · 9 BUKRS · 12 named users.
+        Brain claim <code>160</code>.
+      </div>
+
+      <h3 id="fx-2025-cadence">Cadence per institute (valuations only, no reverses)</h3>
+      <table>
+        <tr><th>BUKRS</th><th>Institute</th><th>Primary user</th><th>Backup</th><th>2025 valuations</th><th>Avg/month</th></tr>
+        <tr><td><strong>UNES</strong></td><td>HQ Paris</td><td><code>J_LA</code> (5,806)</td><td><code>E_GEBREMARIA</code> (66)</td><td class="num">5,872</td><td class="num">~489</td></tr>
+        <tr><td><strong>IIEP</strong></td><td>Paris</td><td><code>F_CADIO</code> (163)</td><td><code>S_COURONNAUD</code> (67)</td><td class="num">230</td><td class="num">~19</td></tr>
+        <tr><td><strong>ICTP</strong></td><td>Trieste</td><td><code>M_VENUTI</code> (60)</td><td>—</td><td class="num">60</td><td class="num">~5</td></tr>
+        <tr><td><strong>UIL</strong></td><td>Hamburg</td><td><code>DB_ABDI</code> (60)</td><td>—</td><td class="num">60</td><td class="num">~5</td></tr>
+        <tr><td><strong>ICBA</strong></td><td>Bahrain</td><td><code>A_MULUGETA</code> (22)</td><td><code>E_GEBREMARIA</code> (20)</td><td class="num">42</td><td class="num">~3.5</td></tr>
+        <tr><td><strong>UIS</strong></td><td>Montréal</td><td><code>N_MOUSSA</code> (38)</td><td>—</td><td class="num">38</td><td class="num">~3</td></tr>
+        <tr><td><strong>IBE</strong></td><td>Geneva</td><td><code>V_KOHEMUN</code> (38)</td><td>—</td><td class="num">38</td><td class="num">~3</td></tr>
+        <tr><td><strong>MGIE</strong></td><td>Mexico</td><td><code>P_ARORA</code> (29)</td><td>—</td><td class="num">29</td><td class="num">~2.4</td></tr>
+        <tr><td><strong>UBO</strong></td><td>Brasília</td><td><code>P_TUCKER</code> (25)</td><td>—</td><td class="num">25</td><td class="num">~2</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <strong>Continuity risk at HQ (claim 164)</strong>
+        UNES has a single point of failure: <code>J_LA</code> alone runs 98.9% of all UNES valuations. Backup <code>E_GEBREMARIA</code> activates only sporadically. If J_LA is unavailable mid-month, who closes the period?
+      </div>
+
+      <h3>Anomalies worth flagging</h3>
+      <ul class="bullets">
+        <li><strong>ICTP 2025 has zero cycles in July and November</strong> — was M_VENUTI on leave + no backup configured? <span class="tier tier-2">TIER_2</span> KU-2026-070-06.</li>
+        <li><strong>UIL Q4 dropped to 1-2 docs/month</strong> (vs typical 5-9). Activity break from DB_ABDI?</li>
+        <li><strong>UNES June 2025 = 567 docs</strong> (vs ~480 baseline). Mid-year fund-rebalancing or extra cycle.</li>
+        <li><strong>Val/Rev gap of ~425 unexplained</strong> — Dec-2025 reverses fell outside our extract window or some valuations were never reversed (FALS-070-01).</li>
+      </ul>
+
+      <h3 id="fx-2025-pl">2025 P&amp;L magnitudes per institute</h3>
+      <table>
+        <tr><th>BUKRS</th><th>0006045011 Loss DR</th><th>0007045011 Gain CR</th><th>Net (gain+)</th></tr>
+        <tr><td><strong>UNES</strong></td><td class="num">€738,234,328</td><td class="num">€853,067,947</td><td class="num"><strong>+€114.8M</strong></td></tr>
+        <tr><td>IIEP</td><td class="num">€2,421,182</td><td class="num">€17,340,026</td><td class="num">+€14.92M</td></tr>
+        <tr><td>UBO</td><td class="num">$4,235,764</td><td class="num">$4,323,564</td><td class="num">+$0.09M</td></tr>
+        <tr><td>ICTP</td><td class="num">€105,395</td><td class="num">€138,239</td><td class="num">+€33K</td></tr>
+        <tr><td>UIS</td><td class="num">$80,717</td><td class="num">$176,990</td><td class="num">+$96K</td></tr>
+        <tr><td>IBE</td><td class="num">CHF 48,415</td><td class="num">CHF 167,922</td><td class="num">+CHF 120K</td></tr>
+        <tr><td>UIL</td><td class="num">€8,347</td><td class="num">€26,799</td><td class="num">+€18K</td></tr>
+        <tr><td>ICBA</td><td class="num">$6,953</td><td class="num">$2,016</td><td class="num">-$5K</td></tr>
+        <tr><td>MGIE</td><td class="num">$4,045</td><td class="num">$3,207</td><td class="num">-$0.8K</td></tr>
+        <tr><th colspan="3">All-UNESCO net (gross, before reverses)</th><th class="num">+€130.6M unrealized FX gain</th></tr>
+      </table>
+
+      <h3 id="fx-2025-mining">Manual-adjustment process mining (post-F.05)</h3>
+      <p>After F.05 stamps unrealized FX to the universal pair, Treasury performs <strong>manual JV reposts</strong> to move the FX impact to fund-specific or IFRS-reporting destinations. <span class="tier tier-1">TIER_1</span> claim 165.</p>
+
+      <h4>Volume by month (2025)</h4>
+      <table>
+        <tr><th>Month</th><th>Manual JV docs touching 0006/0007045011</th><th>Multiplier vs avg</th></tr>
+        <tr><td>Jan</td><td class="num">27</td><td>0.65×</td></tr>
+        <tr><td>Feb</td><td class="num">35</td><td>0.83×</td></tr>
+        <tr><td>Mar</td><td class="num">47</td><td>1.12×</td></tr>
+        <tr><td>Apr</td><td class="num">39</td><td>0.93×</td></tr>
+        <tr><td>May</td><td class="num">44</td><td>1.05×</td></tr>
+        <tr><td>Jun</td><td class="num">52</td><td>1.24×</td></tr>
+        <tr><td>Jul</td><td class="num">39</td><td>0.93×</td></tr>
+        <tr><td>Aug</td><td class="num">38</td><td>0.90×</td></tr>
+        <tr><td>Sep</td><td class="num">39</td><td>0.93×</td></tr>
+        <tr><td>Oct</td><td class="num">45</td><td>1.07×</td></tr>
+        <tr><td>Nov</td><td class="num">56</td><td>1.33×</td></tr>
+        <tr style="background:var(--warn-soft)"><td><strong>Dec</strong></td><td class="num"><strong>129</strong></td><td><strong>3.06× — year-end spike</strong></td></tr>
+        <tr><th>Total 2025</th><th class="num">590</th><th>—</th></tr>
+      </table>
+
+      <h4>Four named patterns</h4>
+      <table>
+        <tr><th>Pattern</th><th>Sample BKTXT / XBLNR</th><th>User</th><th>Mechanism</th></tr>
+        <tr><td><strong>A — FOREX NET OFF</strong></td><td>"2025 forex net off" / XBLNR="FOREX NET OFF"</td><td>A_BANSAL</td><td>Year-end gross-up cancellation. Sample: doc UNES 9200060671/2025, 2026-12-31, FBR2 USD 10,164,973.45</td></tr>
+        <tr><td><strong>B — YE ADJUSTMENT</strong></td><td>"YE 2025 ADJUSTMENT" / XBLNR="NET FX"</td><td>P_TUCKER</td><td>Net FX consolidation. Sample: doc 9200060648 USD 9,224,637.91</td></tr>
+        <tr><td><strong>C — FX UBO INTERCO</strong></td><td>"FX UBO INTERCO"</td><td>P_TUCKER</td><td>Intercompany FX routing UNES↔UBO</td></tr>
+        <tr><td><strong>D — Fund-actuarial</strong></td><td>"AL/SPS/PFF/TWAS ACTUARIAL MERCER25"</td><td>EZ_MOYO</td><td>Reroute to programme-fund accounts (AL=Annual Leave, SPS=Separation, PFF=Permanent Fund, TWAS, GEF)</td></tr>
+      </table>
+
+      <h4>Counter-leg destinations (where the FX P&amp;L gets <em>moved to</em>)</h4>
+      <table>
+        <tr><th>Destination HKONT</th><th>Lines</th><th>Total moved</th><th>Likely role</th></tr>
+        <tr style="background:var(--accent-soft)"><td><strong>0005049011</strong></td><td class="num">25</td><td class="num"><strong>$46.4M</strong></td><td>Likely IFRS-reporting Unrealized FX Reserve <span class="tier tier-2">TIER_2</span> (FALS-070-02)</td></tr>
+        <tr style="background:var(--accent-soft)"><td><strong>0005049012</strong></td><td class="num">25</td><td class="num"><strong>$30.0M</strong></td><td>Sister IFRS reserve account</td></tr>
+        <tr><td>0006011606</td><td class="num">11</td><td class="num">$1.5M</td><td>Programme-specific P&amp;L</td></tr>
+        <tr><td>0006011604/5/6/12</td><td class="num">various</td><td class="num">several €M each</td><td>Programme-specific P&amp;L per fund</td></tr>
+        <tr><td>0002023018</td><td class="num">12</td><td class="num">$1.4M</td><td>BS reserve</td></tr>
+        <tr><td>0002086092</td><td class="num">127</td><td class="num">$40K</td><td>BS clearing pool</td></tr>
+      </table>
+
+      <h4>Petri-net intuition (visual)</h4>
+      <div class="petri">
+        <div class="petri-source">
+          <div class="label">Source — F.05 monthly variant</div>
+          <div class="what">6,394 unrealized FX docs</div>
+          <div class="meta">DR/CR 0006045011 / 0007045011 (universal pair)</div>
+        </div>
+        <div class="petri-arrow-vline"></div>
+        <div class="petri-arrow-down"></div>
+        <div class="petri-fanout">
+          <div class="petri-leg auto-reverse">
+            <div class="label">Auto-reverse</div>
+            <div class="what">Day 1 of next month</div>
+            <ul class="meta">
+              <li>5,399 reverses in 2025</li>
+              <li>Same pair, opposite sign</li>
+              <li>JOBBATCH user, BLART=JV</li>
+            </ul>
+          </div>
+          <div class="petri-leg cleanup">
+            <div class="label">Manual JV cleanup</div>
+            <div class="what">590 docs in 2025</div>
+            <ul class="meta">
+              <li>Pattern A — NetOff</li>
+              <li>Pattern B — YE adjust</li>
+              <li>Pattern C — Interco</li>
+              <li>Pattern D — Fund-actuarial</li>
+              <li>129 in Dec (3× normal)</li>
+            </ul>
+          </div>
+          <div class="petri-leg realloc">
+            <div class="label">Manual JV reallocation</div>
+            <div class="what">$76M annual to IFRS reserves</div>
+            <ul class="meta">
+              <li>P_TUCKER, A_BANSAL</li>
+              <li>→ 0005049011 ($46.4M)</li>
+              <li>→ 0005049012 ($30.0M)</li>
+              <li>→ fund-specific GLs</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════ END-TO-END CONFIG ═════════════════ -->
+    <section id="config">
+      <h2>End-to-End Configuration: Bank → Revaluation</h2>
+      <p class="muted">From bank master to F.05's posting accounts — every layer, every table, every transaction code. Note: the EBS layer is a separate downstream feeder that ensures the bank GL <em>balance</em> is current; it does not feed F.05's GL routing directly. See <a href="inc_000008088_interest_auto_posting_v1.html">EBS companion</a> for that path.</p>
+
+      <h3 id="config-pipeline">The pipeline (FX revaluation only)</h3>
+      <div class="pipeline">
+        <div class="pipeline-row">
+          <div class="pipe-step">
+            <span class="step-num">STEP 1</span>
+            <div class="table-name">BNKA</div>
+            <div class="what">Bank Master</div>
+            <div class="fields"><strong>BANKS</strong> country<br><strong>BANKL</strong> routing<br><strong>SWIFT</strong> code</div>
+          </div>
+          <div class="pipe-arrow"><span class="tcode">FI01</span></div>
+          <div class="pipe-step">
+            <span class="step-num">STEP 2</span>
+            <div class="table-name">T012</div>
+            <div class="what">House Bank</div>
+            <div class="fields"><strong>BUKRS</strong>+<strong>HBKID</strong><br>BANKL · NAME1<br>217 HBKIDs at UNESCO</div>
+          </div>
+          <div class="pipe-arrow"><span class="tcode">FI12</span></div>
+          <div class="pipe-step">
+            <span class="step-num">STEP 3</span>
+            <div class="table-name">T012K</div>
+            <div class="what">Bank Account</div>
+            <div class="fields">+<strong>HKTID</strong><br><strong>HKONT</strong> · BANKN<br>WAERS · REFZL<br>402 HKTIDs · 76 ccy</div>
+          </div>
+          <div class="pipe-arrow"><span class="tcode">FS00</span></div>
+          <div class="pipe-step">
+            <span class="step-num">STEP 4</span>
+            <div class="table-name">SKA1 + P01_SKB1</div>
+            <div class="what">G/L Master</div>
+            <div class="fields"><strong>XOPVW</strong> open-item<br>HBKID · HKTID<br>FDLEV · ZUAWA</div>
+          </div>
+          <div class="pipe-arrow"><span class="tcode">OBA1 / OB59</span></div>
+          <div class="pipe-step">
+            <span class="step-num">STEP 5</span>
+            <div class="table-name">T030H + T044A</div>
+            <div class="what">Revaluation Config</div>
+            <div class="fields"><strong>LSBEW</strong> loss<br><strong>LHBEW</strong> gain<br><strong>LKORR</strong> correction<br>1,014 rows (UNES)</div>
+          </div>
+        </div>
+        <div class="pipe-down">
+          <div class="pipe-down-arrow">
+            <div class="line"></div>
+            <div class="head"></div>
+          </div>
+        </div>
+        <div class="pipe-endpoint-row">
+          <div class="pipe-step endpoint">
+            <span class="step-num">EXECUTE</span>
+            <div class="table-name">F.05 / SAPF100</div>
+            <div class="what">per-BUKRS variant (VARI/VARID)</div>
+            <div class="fields">12 named users · 9 BUKRS<br>11,793 docs in 2025<br>+€130.6M net unrealized FX</div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--accent)"></span>Configuration layer</span>
+          <span><span class="dot" style="background:var(--warn)"></span>SAP transaction code</span>
+          <span><span class="dot" style="background:var(--good)"></span>Execution program</span>
+        </div>
+      </div>
+
+      <h3 id="config-housebank">Step 2 · House Bank (T012)</h3>
+      <table>
+        <tr><th>Where</th><th>What</th><th>UNESCO scope (live, P01)</th></tr>
+        <tr><td>Tcode <code>FI12</code> · SPRO → Bank Accounting → Bank Accounts → Define House Banks</td><td>Bank scoped to BUKRS+HBKID → links to BNKA</td><td><strong>217 HBKIDs</strong> across 9 BUKRS</td></tr>
+        <tr><td>Table <code>T012</code></td><td>Cols: BUKRS, HBKID, BANKS, BANKL, TELF1, STCD1, NAME1, SPRAS</td><td>UNES 187 · IIEP 9 · UBO 5 · UIS 2 · UIL 2 · ICTP 2 · IBE 2 · MGIE 1 · ICBA 1</td></tr>
+      </table>
+
+      <h3 id="config-account">Step 3 · Bank Account (T012K)</h3>
+      <table>
+        <tr><th>Where</th><th>What</th><th>UNESCO scope</th></tr>
+        <tr><td>Same screen as FI12, "Bank Accounts" sub-tab</td><td>Account at the house bank. Key (BUKRS, HBKID, HKTID). HKONT is the FI ledger account.</td><td><strong>402 HKTIDs</strong>, 76 currencies on UNES alone (351 distinct HKONT)</td></tr>
+        <tr><td>Table <code>T012K</code></td><td>BUKRS, HBKID, HKTID, BANKN, <strong>HKONT</strong>, BKONT, WAERS, REFZL, DTAAI</td><td>UNES 366 HKTIDs / 76 currencies. ICBA only 3.</td></tr>
+      </table>
+
+      <h3 id="config-gl">Step 4 · G/L Master (SKA1 + P01_SKB1)</h3>
+      <table>
+        <tr><th>Where</th><th>What</th><th>UNES bank-GL detail</th></tr>
+        <tr><td>Tcode <code>FS00</code> · <code>FSP0</code> · <code>FSS0</code></td><td>SKA1 = COA-level, P01_SKB1 = company-code-level</td><td>KTOPL='UNES' single COA across 9 BUKRS</td></tr>
+        <tr><td>Critical fields for F.05</td><td><code>XOPVW</code> (open-item mgmt) · HBKID, HKTID · FDLEV · ZUAWA</td><td>UNES bank GLs: 18 with XOPVW='X', 332 blank, 1 NULL</td></tr>
+      </table>
+      <div class="callout info">
+        <strong>Why XOPVW matters for F.05</strong>
+        XOPVW='X' → F.05 valuates <em>each open item line by line</em> (BSIS scan). XOPVW='' → F.05 valuates only the <em>currency balance</em> at period-end. UNES 2025 F.05-revalued GLs split: 85 X (open-item) + 141 blank (balance-only).
+      </div>
+
+      <h3 id="config-revaluation">Step 5 · Revaluation Configuration (T030H + OBA1)</h3>
+      <table>
+        <tr><th>Field</th><th>Purpose</th><th>UNES dominant value</th></tr>
+        <tr><td>HKONT</td><td>Bank GL being revalued</td><td>1xxxxxxxx range</td></tr>
+        <tr><td><strong>LKORR</strong></td><td>Balance-sheet correction (counter-posting)</td><td>per-account, e.g. 0001109571</td></tr>
+        <tr><td><strong>LSBEW</strong></td><td>Unrealized loss P&amp;L (BS-side gone)</td><td><code>0006045011</code></td></tr>
+        <tr><td><strong>LHBEW</strong></td><td>Unrealized gain P&amp;L</td><td><code>0007045011</code></td></tr>
+        <tr><td>LSREA / LHREA</td><td>Realized loss / gain (translation)</td><td>same 6/7045011</td></tr>
+      </table>
+
+      <h4>T030H key clusters</h4>
+      <table>
+        <tr><th>LKORR (correction account)</th><th>Pattern</th><th>HKONT count</th></tr>
+        <tr><td>(empty — defective)</td><td>Configured but no posting accounts <span class="tier tier-1">DEFECT</span></td><td><strong>200</strong></td></tr>
+        <tr><td>0002031800</td><td>Pooled correction (sub-bank receivables)</td><td>67</td></tr>
+        <tr><td>0002111800</td><td>Pooled correction (second pool)</td><td>54</td></tr>
+        <tr><td>0001109571, 0001109574 + long tail</td><td>Per-bank-GL correction</td><td>~250</td></tr>
+        <tr><th colspan="2">Total T030H rows (KTOPL=UNES)</th><th>1,014</th></tr>
+      </table>
+      <div class="callout bad">
+        <strong>200 defective T030H rows — claim 162</strong>
+        Configured but with all of <code>LSBEW / LHBEW / LKORR</code> empty. F.05 either silently skips these GLs OR inherits a default. Falsifiable via FALS-070-04 — probe BSEG to see if any of these 200 HKONTs received F.05 postings.
+      </div>
+
+      <h3 id="config-variants">Step 6 · F.05 Variants (VARI / VARID)</h3>
+      <p>Each institute saves its own selection variant in F.05 — company code, GL ranges, valuation method, posting parameters. <strong>VARI/VARID is not in our Gold DB</strong> (KU-2026-070-02). At minimum 9 variants in production (verified via 9-BUKRS distribution); some BUKRS have 2 (UNES, IIEP, ICBA).</p>
+    </section>
+
+    <!-- ═════════════════ STEP BY STEP CONFIGURATION ═════════════════ -->
+    <section id="stepbystep">
+      <h2>Step-by-step Configuration Walkthrough</h2>
+      <p class="muted">For an operator setting up FX revaluation on a brand-new bank account. Each step states <strong>tcode</strong>, <strong>what to enter</strong>, and <strong>what's persisted where</strong>.</p>
+
+      <h3>Step 1 · Create the bank in the master (BNKA)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode</td><td><code>FI01</code> (create) · <code>FI02</code> (change) · <code>FI03</code> (display)</td><td>—</td></tr>
+        <tr><td>Bank country</td><td>BANKS = e.g. <code>FR</code></td><td>BNKA.BANKS</td></tr>
+        <tr><td>Bank key (national routing)</td><td>BANKL</td><td>BNKA.BANKL</td></tr>
+        <tr><td>Bank name</td><td>BANKA</td><td>BNKA.BANKA</td></tr>
+        <tr><td>SWIFT/BIC</td><td>e.g. <code>SOGEFRPP</code></td><td>BNKA.SWIFT</td></tr>
+      </table>
+
+      <h3>Step 2 · Define the house bank (T012)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode</td><td><code>FI12</code> · SPRO → Bank Accounting → Bank Accounts → Define House Banks</td><td>—</td></tr>
+        <tr><td>Company code</td><td>BUKRS = <code>UNES</code> (or any of 9)</td><td>T012.BUKRS</td></tr>
+        <tr><td>House bank ID (UNESCO code)</td><td>HBKID = e.g. <code>SOG01</code></td><td>T012.HBKID</td></tr>
+        <tr><td>Link to BNKA</td><td>BANKS + BANKL match step 1</td><td>T012.BANKS, T012.BANKL</td></tr>
+      </table>
+
+      <h3>Step 3 · Define each bank account at the house bank (T012K)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode</td><td><code>FI12</code> (same screen, "Bank Accounts" sub-tab)</td><td>—</td></tr>
+        <tr><td>Account ID (UNESCO code)</td><td>HKTID = e.g. <code>EUR01</code></td><td>T012K.HKTID</td></tr>
+        <tr><td>Currency</td><td>WAERS = e.g. EUR / USD / JPY</td><td>T012K.WAERS</td></tr>
+        <tr><td><strong>FI G/L account that tracks this account</strong></td><td>HKONT = e.g. <code>0001075012</code></td><td>T012K.HKONT</td></tr>
+      </table>
+
+      <h3>Step 4 · Maintain the G/L master (SKA1 + P01_SKB1)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode</td><td><code>FS00</code> · <code>FSP0</code> · <code>FSS0</code></td><td>—</td></tr>
+        <tr><td>Chart of accounts</td><td>KTOPL = <code>UNES</code> (single COA across 9 BUKRS)</td><td>SKA1.KTOPL</td></tr>
+        <tr><td>G/L account number</td><td>SAKNR = e.g. <code>0001075012</code></td><td>SKA1.SAKNR</td></tr>
+        <tr><td><strong>Open-item managed</strong></td><td>XOPVW = <code>X</code> if F.05 should valuate per-line, blank if balance-only</td><td>P01_SKB1.XOPVW</td></tr>
+        <tr><td>House bank link</td><td>HBKID + HKTID (same as T012K)</td><td>P01_SKB1.HBKID, P01_SKB1.HKTID</td></tr>
+      </table>
+
+      <h3>Step 5 · Maintain valuation methods (T044A)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode <code>OB59</code></td><td>Pick valuation method (e.g. always-evaluate, lowest-value)</td><td>T044A</td></tr>
+      </table>
+
+      <h3>Step 6 · OBA1 — FX revaluation per-account override</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th><th>Persisted in</th></tr>
+        <tr><td>Tcode <code>OBA1</code></td><td>FX revaluation tab → per (KTOPL, HKONT, CURTP) → set LSBEW/LHBEW/LKORR</td><td>T030H</td></tr>
+      </table>
+
+      <h3>Step 7 · Save F.05 selection variant (VARI/VARID)</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th></tr>
+        <tr><td>Tcode</td><td><code>F.05</code> selection screen → enter parameters → menu: Goto → Variants → Save</td></tr>
+        <tr><td>Required parameters</td><td>BUKRS, GL range, posting period, valuation method, posting flag</td></tr>
+        <tr><td>Variant name</td><td>e.g. <code>F05_UNES_M</code> (one per institute, sometimes per scenario)</td></tr>
+      </table>
+    </section>
+
+    <!-- ═════════════════ BRAIN ANCHORS ═════════════════ -->
+    <section id="brain">
+      <h2>Brain Anchors (FX revaluation scope)</h2>
+      <h3>Claims (FX-relevant subset of session #070 anchors)</h3>
+      <table>
+        <tr><th>ID</th><th>Tier</th><th>Claim (excerpt)</th></tr>
+        <tr><td>160</td><td><span class="tier tier-1">TIER_1</span></td><td>F.05/SAPF100 in P01: 11,793 docs in 2025 across 9 BUKRS. UNES 91.8%.</td></tr>
+        <tr><td>161</td><td><span class="tier tier-1">TIER_1</span></td><td>Single COA KTOPL='UNES'. T030H 1014 rows: 779 CURTP=10 + 235 CURTP=30. Standard pair LSBEW=0006045011/LHBEW=0007045011 in 579 rows.</td></tr>
+        <tr><td>162</td><td><span class="tier tier-1">TIER_1</span></td><td>200 T030H rows have all of LSBEW/LHBEW/LKORR empty — defective config.</td></tr>
+        <tr><td>163</td><td><span class="tier tier-1">TIER_1</span></td><td>UNES 2025 unrealized FX P&amp;L = +€114.8M net gain. All-UNESCO ≈ +€130.6M.</td></tr>
+        <tr><td>164</td><td><span class="tier tier-1">TIER_1</span></td><td>Zero TBTCO entries for SAPF100. 12 named SAPGUI users; UNES J_LA = 98.9%. Continuity risk.</td></tr>
+        <tr><td>165</td><td><span class="tier tier-1">TIER_1</span></td><td>590 manual JV reposts in 2025; Dec 129 docs (3.06×). Four named patterns: FOREX NET OFF, YE ADJUSTMENT, FX UBO INTERCO, AL/SPS/PFF/TWAS ACTUARIAL MERCER25.</td></tr>
+        <tr><td>166</td><td><span class="tier tier-2">TIER_2</span></td><td>Top destinations of post-F.05 reposts: 0005049011 ($46.4M) + 0005049012 ($30.0M). Hypothesis: IFRS-reporting Unrealized FX Reserve accounts.</td></tr>
+      </table>
+
+      <h3>Known Unknowns (FX-relevant)</h3>
+      <table>
+        <tr><th>KU</th><th>Severity</th><th>Question</th></tr>
+        <tr><td>070-01</td><td>MEDIUM</td><td>Pull T044A valuation methods — which method does each F.05 variant use?</td></tr>
+        <tr><td>070-02</td><td>MEDIUM</td><td>Pull VARI/VARID for F.05 variants per BUKRS to inspect each institute's variant content</td></tr>
+        <tr><td>070-03</td><td>HIGH</td><td>Measure EBS posting lag vs F.05 cycle date — does EBS finish posting before F.05 always at month-end?</td></tr>
+        <tr><td>070-04</td><td>MEDIUM</td><td>Identify SKA1+SKAT for 0005049011/0005049012 — confirm IFRS-reporting role</td></tr>
+        <tr><td>070-05</td><td>MEDIUM</td><td>Why does IIEP 0007045011 carry €84,800 of DR postings (counter-natural sign) in F.05 docs?</td></tr>
+        <tr><td>070-06</td><td>LOW</td><td>Investigate ICTP July + November 2025 zero-cycles — was M_VENUTI on leave; backup configured?</td></tr>
+        <tr><td>070-07</td><td>HIGH</td><td>Are the 200 defective T030H rows actually firing in F.05? Probe BSEG.</td></tr>
+      </table>
+
+      <h3>Falsifiable Predictions</h3>
+      <table>
+        <tr><th>FALS</th><th>Prediction</th><th>Test criteria</th></tr>
+        <tr><td>070-01</td><td>The ~425 unexplained unreversed-2025 F.05 valuations resolve to &lt;100 once May-Dec 2026 BKPF is loaded</td><td>Re-run val/rev integrity check after next BKPF extraction</td></tr>
+        <tr><td>070-02</td><td>0005049011 + 0005049012 are UNESCO's IFRS-reporting Unrealized FX Reserve accounts</td><td>Read SKA1+SKAT.TXT50; expected text contains "FX Reserve" / "Foreign Currency Translation"</td></tr>
+        <tr><td>070-03</td><td>YE 2025 manual JV adjustments will exceed YE 2024 by ≥30% if portfolio FX volatility increased</td><td>Compute Dec 2024 vs Dec 2025 manual-JV count; correlate with TCURR sigma</td></tr>
+        <tr><td>070-04</td><td>≥80% of the 200 defective T030H rows will receive F.05 postings via universal-default inheritance</td><td>Probe BSEG for any of those 200 HKONTs in 2024-2025 F.05 docs</td></tr>
+      </table>
+    </section>
+
+    <div class="footer">
+      <strong>Companion:</strong> <code>companions/fx_revaluation_f05_v1.html</code><br>
+      <strong>Scope:</strong> FX revaluation only — F.05 / SAPF100 / OBA1 / T030H / T044A / OB59<br>
+      <strong>Out of scope:</strong> EBS interest auto-posting · F.52 accrued interest · INC-000008088 — see <a href="inc_000008088_interest_auto_posting_v1.html" style="color:var(--accent);text-decoration:none">inc_000008088_interest_auto_posting_v1.html</a><br>
+      <strong>Source of truth:</strong> P01 production extracts (Gold DB · 165 tables · 24M+ rows) · BKPF coverage 2024-01-01 → 2026-05-01<br>
+      Built 2026-05-04 (Session #070) · Brain anchors: claims 160-166 · KU-2026-070-01..07 · FALS-070-01..04
+    </div>
+  </main>
+</div>
+</body>
+</html>

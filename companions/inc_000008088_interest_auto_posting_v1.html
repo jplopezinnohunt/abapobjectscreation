@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>INC-000008088 — Interest Auto-Posting Change (EBS / Bank Statement Integration)</title>
+<style>
+:root{
+  --bg:#fafbfc; --panel:#ffffff; --ink:#1f2933; --muted:#5b6b7a;
+  --accent:#0b6e99; --accent-soft:#e3f1f8; --warn:#b06b00; --warn-soft:#fff5e0;
+  --bad:#a32d2d; --bad-soft:#fde8e8; --good:#2c7a4a; --good-soft:#e0f3e6;
+  --border:#dde3ea; --code-bg:#f3f5f7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:14px}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+nav.side{background:var(--panel);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav.side h1{font-size:14px;color:var(--accent);margin:0 0 4px 0;letter-spacing:.5px;text-transform:uppercase}
+nav.side .ver{font-size:11px;color:var(--muted);margin-bottom:18px}
+nav.side a{display:block;color:var(--ink);text-decoration:none;padding:6px 10px;font-size:13px;border-radius:4px;margin:2px 0}
+nav.side a:hover{background:var(--accent-soft);color:var(--accent)}
+nav.side a.sub{padding-left:24px;font-size:12px;color:var(--muted)}
+main{padding:30px 40px 80px;max-width:1200px}
+h1.page{font-size:22px;color:var(--accent);margin:0 0 6px 0}
+.subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
+section{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:22px 26px;margin-bottom:22px}
+section h2{font-size:18px;color:var(--accent);margin:0 0 12px 0;border-bottom:2px solid var(--accent-soft);padding-bottom:6px}
+section h3{font-size:15px;color:var(--ink);margin:18px 0 8px 0}
+section h4{font-size:13px;color:var(--muted);margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:.5px}
+section p{margin:8px 0}
+.muted{color:var(--muted);font-size:12.5px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);color:var(--accent);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",Consolas,monospace}
+code,kbd{background:var(--code-bg);padding:2px 5px;border-radius:3px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px}
+pre{background:var(--code-bg);padding:12px 16px;border-radius:4px;border:1px solid var(--border);overflow-x:auto;font-size:12.5px;line-height:1.5}
+.callout{padding:12px 16px;border-radius:5px;margin:12px 0;border-left:4px solid}
+.callout.ok{background:var(--good-soft);border-color:var(--good)}
+.callout.warn{background:var(--warn-soft);border-color:var(--warn)}
+.callout.bad{background:var(--bad-soft);border-color:var(--bad)}
+.callout.info{background:var(--accent-soft);border-color:var(--accent)}
+.callout strong{display:block;margin-bottom:4px;color:inherit}
+.tier{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.tier-1{background:var(--good-soft);color:var(--good)}
+.tier-2{background:var(--warn-soft);color:var(--warn)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:14px 0}
+.kpi .card{background:var(--accent-soft);padding:14px;border-radius:5px;border-left:3px solid var(--accent)}
+.kpi .v{font-size:22px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+
+/* Pipeline */
+.pipeline{display:flex;flex-direction:column;gap:18px;margin:18px 0;padding:22px;background:linear-gradient(180deg,#f7fafc 0%,#fff 100%);border:1px solid var(--border);border-radius:8px;overflow-x:auto}
+.pipeline-row{display:flex;align-items:stretch;gap:0;min-width:1100px}
+.pipe-step{flex:1;min-width:160px;background:#fff;border:1.5px solid var(--accent);border-radius:6px;padding:11px 12px;box-shadow:0 1px 3px rgba(11,110,153,.08);position:relative}
+.pipe-step .step-num{position:absolute;top:-9px;left:10px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.4px}
+.pipe-step .table-name{font-size:13.5px;font-weight:700;color:var(--accent);margin:6px 0 4px 0;text-align:center;font-family:"SF Mono",Consolas,monospace}
+.pipe-step .what{font-size:11.5px;color:var(--ink);text-align:center;margin-bottom:8px;font-weight:500}
+.pipe-step .fields{font-size:10.8px;color:var(--muted);font-family:"SF Mono",Consolas,monospace;line-height:1.45;background:var(--code-bg);padding:5px 7px;border-radius:3px;border:1px solid var(--border)}
+.pipe-step .fields strong{color:var(--accent);font-weight:600}
+.pipe-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:80px;position:relative}
+.pipe-arrow .tcode{font-size:10.5px;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:2px 8px;border-radius:3px;border:1px solid #f0d9a8;font-family:"SF Mono",Consolas,monospace;white-space:nowrap;margin-bottom:4px}
+.pipe-arrow::after{content:"";display:block;width:60px;height:0;border-top:2px solid var(--accent);position:relative}
+.pipe-arrow::before{content:"";position:absolute;right:8px;top:50%;margin-top:-1px;width:0;height:0;border-left:8px solid var(--accent);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.pipe-step.endpoint{border-color:var(--good);border-width:2px;background:var(--good-soft)}
+.pipe-step.endpoint .step-num{background:var(--good)}
+.pipe-step.endpoint .table-name{color:var(--good)}
+.pipe-step.target{border-color:var(--bad);border-width:2px;background:var(--bad-soft)}
+.pipe-step.target .step-num{background:var(--bad)}
+.pipe-step.target .table-name{color:var(--bad)}
+
+/* EBS Lifecycle (vertical flow) */
+.lifecycle{display:flex;flex-direction:column;gap:0;margin:20px 0;padding:24px;background:#fff;border:1px solid var(--border);border-radius:8px;align-items:stretch}
+.lifecycle-step{display:flex;align-items:center;gap:18px;background:#fff;border:1.5px solid var(--accent);border-radius:6px;padding:14px 18px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.lifecycle-step .num{flex:0 0 36px;height:36px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.lifecycle-step .body{flex:1}
+.lifecycle-step .body h4{margin:0;font-size:13.5px;color:var(--accent);text-transform:none;letter-spacing:0}
+.lifecycle-step .body p{margin:3px 0 0 0;font-size:12.5px;color:var(--ink)}
+.lifecycle-step .body .meta{font-family:"SF Mono",Consolas,monospace;font-size:11.5px;color:var(--muted);margin-top:4px}
+.lifecycle-step.target{border-color:var(--bad);background:#fff5f5}
+.lifecycle-step.target .num{background:var(--bad)}
+.lifecycle-step.target .body h4{color:var(--bad)}
+.lifecycle-arrow{flex:0 0 30px;display:flex;justify-content:center;color:var(--accent);font-size:24px;line-height:1;margin:6px 0;font-family:"SF Mono",Consolas,monospace}
+
+/* Screenshots */
+figure.shot{margin:18px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+figure.shot img{display:block;width:100%;height:auto;border-bottom:1px solid var(--border)}
+figure.shot figcaption{padding:10px 14px;font-size:12.5px;color:var(--muted);background:var(--code-bg);line-height:1.5}
+figure.shot figcaption strong{color:var(--accent);display:block;margin-bottom:3px;font-size:13px}
+
+/* Change boxes */
+.change-box{background:#fff;border:2px solid var(--bad);border-radius:6px;padding:18px 22px;margin:16px 0;position:relative}
+.change-box::before{content:"⚠ CHANGE";position:absolute;top:-11px;left:14px;background:var(--bad);color:#fff;padding:2px 10px;font-size:11px;font-weight:700;border-radius:3px;letter-spacing:.5px}
+.change-box h4{margin:4px 0 10px 0;font-size:14px;color:var(--bad);text-transform:none;letter-spacing:0}
+.change-box .from-to{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin:10px 0}
+.change-box .from-to .from{background:var(--bad-soft);padding:10px 14px;border-radius:5px;font-family:"SF Mono",Consolas,monospace;font-size:13px;text-align:center;border:1px solid #e6b8b8}
+.change-box .from-to .arrow{font-size:20px;color:var(--bad);text-align:center}
+.change-box .from-to .to{background:var(--good-soft);padding:10px 14px;border-radius:5px;font-family:"SF Mono",Consolas,monospace;font-size:13px;text-align:center;border:1px solid #b8d8c8;font-weight:600}
+
+ul.bullets{margin:8px 0;padding-left:22px}
+ul.bullets li{margin:5px 0}
+.footer{font-size:12px;color:var(--muted);text-align:center;padding:30px;border-top:1px solid var(--border);margin-top:30px}
+mark{background:#fff3a8;padding:1px 3px;border-radius:2px}
+.legend{font-size:11.5px;color:var(--muted);margin-top:10px;display:flex;gap:18px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:2px}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;background:#0b6e99;color:#fff;padding:8px 20px;display:flex;gap:14px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;border-bottom:1px solid #084e6e">
+  <span style="font-weight:700;letter-spacing:.3px">🏦 Bank End-to-End</span>
+  <span style="opacity:.6">·</span>
+  <a href="bank_statement_ebs_companion.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">📚 Master Hub (Bank Statement)</a>
+  <span style="opacity:.4">·</span>
+  <a href="inc_000008088_interest_auto_posting_v1.html" style="color:#fff;text-decoration:none;padding:3px 10px;border-radius:3px;background:rgba(255,255,255,0.18);font-weight:600">📄 Interest Change (INC-000008088) · YOU ARE HERE</a>
+  <span style="opacity:.4">·</span>
+  <a href="fx_revaluation_f05_v1.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">📄 FX Revaluation (F.05)</a>
+</div>
+<div class="layout">
+  <nav class="side">
+    <h1>INC-000008088</h1>
+    <div class="ver">Interest Auto-Posting<br>EBS · Bank Statement<br>v2 · 2026-05-05 (final)</div>
+
+    <a href="#lesson"><strong>🎯 Lesson Learned (TIER_1)</strong></a>
+    <a href="#summary"><strong>Executive Summary</strong></a>
+    <a href="#two-categories"><strong>The 2 Categories of Banks</strong></a>
+    <a href="#final-design"><strong>Final Design (implemented)</strong></a>
+    <a href="#change-recipe" class="sub">↳ The 4 customizing changes</a>
+    <a href="#banks-changed" class="sub">↳ Banks split (image 1)</a>
+    <a href="#banks-not-changed" class="sub">↳ Banks NOT split (image 2)</a>
+    <a href="#derivation-pipeline"><strong>🔗 Full Derivation Pipeline</strong></a>
+    <a href="#fundcenter-fix" class="sub">↳ FundCenter (ZXFMDTU02_RPY)</a>
+    <a href="#cost-center-okb9" class="sub">↳ Cost Center (OKB9 / TKA3D)</a>
+    <a href="#evidence"><strong>Evidence</strong></a>
+    <a href="#test-plan"><strong>Test Plan</strong></a>
+
+    <p style="margin-top:24px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px">
+      <strong>Scope:</strong> EBS interest auto-posting (OT83 / Application 0001).<br>
+      <strong>Out of scope:</strong> F.05 / FX revaluation → see <a href="fx_revaluation_f05_v1.html" style="color:var(--accent);text-decoration:none">fx_revaluation_f05_v1.html</a>.<br>
+      <strong>Brain:</strong> claim 173 (TIER_1) supersedes 167-170.
+    </p>
+  </nav>
+
+  <main>
+    <h1 class="page">INC-000008088 &mdash; Interest Auto-Posting Change (final design)</h1>
+    <div class="subtitle">
+      EBS / Bank Statement Integration &middot; Treasury request to differentiate interest credits from generic GL <strong>7044011</strong> into bank-type-specific GLs.<br>
+      <strong>Scope of split</strong>: only Soci&eacute;t&eacute; G&eacute;n&eacute;rale banks (the only HQ banks where the MT940 statement carries a SPECIFIC <code>NINT</code> external code).
+    </div>
+
+    <!-- VERIFIED STATUS BANNER -->
+    <div style="margin:0 0 22px 0;padding:14px 20px;border-radius:8px;border:2px solid #2c7a4a;background:rgba(67,160,71,0.08)">
+      <div style="font-size:0.78em;color:#5b6b7a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">D01 Status &middot; Verified 2026-05-06</div>
+      <div style="font-size:1.15em;font-weight:700;color:#2c7a4a;margin-bottom:6px">&#9989; D01 customizing matches the canonical Excel &mdash; ready for V01 / P01 transport</div>
+      <table style="width:100%;font-size:13px;margin-top:6px">
+        <tr><th style="text-align:left;width:30%">Layer</th><th style="text-align:left">D01 fresh state (RFC re-extract)</th></tr>
+        <tr><td><code>T033G</code> acc symbol &rarr; mask</td><td><code>INTEREST_REC &rarr; +++7044013</code> &middot; <code>INTEREST_REC_B &rarr; +++7044014</code> &middot; <code>INTEREST_PAID &rarr; +++6044011</code> (untouched). All obsolete <code>_A/_C/_D</code> entries deleted.</td></tr>
+        <tr><td><code>T028V</code> VGTYP catalog</td><td><code>SOG_FR</code> (parent, kept) &middot; <code>SOG_FRB</code> (new) &middot; <code>TR_TRNF</code> (parent, kept). No orphan clones.</td></tr>
+        <tr><td><code>T028D</code> posting key catalog</td><td><code>111B</code> (new) &middot; <code>111I</code> (existing) &middot; <code>111O</code> (existing). Obsolete <code>111A/111C/111D</code> deleted.</td></tr>
+        <tr><td><code>T028G</code> external &rarr; internal</td><td><code>SOG_FRB</code> has 18 rows cloned from <code>SOG_FR</code>; <strong>only</strong> <code>NINT+</code> redirected to <code>111B</code>. NTRF/NCHK/etc keep parent's posting rules.</td></tr>
+        <tr><td><code>T028B</code> bank &rarr; VGTYP</td><td>SOG_FR=7 banks &middot; SOG_FRB=2 banks (HKONT 0001075011 USD, 0001075912 EUR-Deposit) &middot; SOG_EUR4=1 (alpha bank).</td></tr>
+      </table>
+    </div>
+
+    <!-- LESSON LEARNED TIER_1 banner -->
+    <section id="lesson" style="border:2px solid #b06b00;background:rgba(176,107,0,0.05)">
+      <h2 style="color:#b06b00">&#127919; Lesson Learned (TIER_1) &middot; Why this looked simpler than it was</h2>
+      <p style="font-size:14.5px;line-height:1.65">
+        The original ask from Treasury was to split interest into 4 group GLs (A/B/C/D) across all 26 HQ bank accounts. The original architectural plan (Sessions #062-#070) assumed all 26 banks could be split via OT83 customizing &mdash; 4 new VGTYPs, 4 new posting rules, 4 new acc symbols, mass T028B reassignment.
+        <br><br>
+        <strong>The architectural blocker (discovered Session #71)</strong>: SAP's EBS posting engine routes credits to GLs based on the <strong>external transaction code</strong> emitted by the bank in the MT940 <code>:86:</code> tag. To split interest from non-interest credits, the bank must emit a SPECIFIC code (e.g. <code>NINT</code> = Normal Interest). At UNESCO, only <strong>Soci&eacute;t&eacute; G&eacute;n&eacute;rale</strong> emits <code>NINT</code> reliably. All other Treasury HQ banks (BNP-Paribas, CIC, CRCAM, Citibank, Standard Chartered, Northern Trust BFM/HED, Banque Populaire) emit only <strong>generic</strong> codes (<code>NTRF</code>, <code>NCHK</code>) for ALL credit lines including interest. There is no signal in the statement to drive routing logic for those banks.
+      </p>
+      <div class="callout warn" style="margin-top:14px">
+        <strong>The rule</strong>
+        You can only re-route bank credits to specific GLs <strong>when the bank emits a category-specific external transaction code</strong>. Generic codes (NTRF) cannot be split at the SAP customizing layer &mdash; there is no discriminator. Banks without specific NINT keys must stay on the generic config.
+        <br><br>
+        <strong>Validated with Marlies Spronk (Treasury Middle Office) on 2026-05-05.</strong> The generic configuration was decided in the past for those banks; Treasury accepts that those interest credits continue posting to <code>7044011</code> as a known limitation.
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">
+        Brain anchor: claim 173 (TIER_1, supersedes 167-170). Feedback memory: <code>feedback_external_code_discrimination.md</code> &middot; always validate T028V external-code catalog before proposing any group-split EBS design.
+      </p>
+    </section>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <section id="summary">
+      <h2>Executive Summary</h2>
+      <div class="kpi">
+        <div class="card"><div class="v">9</div><div class="l">SOG bank accounts split (Group A + B)</div></div>
+        <div class="card"><div class="v">~16</div><div class="l">Other HQ banks NOT split (generic codes)</div></div>
+        <div class="card"><div class="v">1</div><div class="l">New VGTYP (SOG_FRB)</div></div>
+        <div class="card"><div class="v">1</div><div class="l">New posting key (111B)</div></div>
+        <div class="card"><div class="v">1</div><div class="l">New acc symbol (INTEREST_REC_B)</div></div>
+        <div class="card"><div class="v">1</div><div class="l">Mask redirect (INTEREST_REC default)</div></div>
+      </div>
+
+      <div class="callout info">
+        <strong>One-liner</strong>
+        For SOG banks (9 accounts with NINT codes): Group A (7 accounts, current) routes through the existing <code>SOG_FR</code> VGTYP + posting key <code>111I</code> + acc symbol <code>INTEREST_REC</code> with the mask <strong>changed from <code>+++7044011</code> to <code>+++7044013</code></strong>. Group B (2 accounts, savings/USD) routes through a NEW <code>SOG_FRB</code> VGTYP + NEW posting key <code>111B</code> + NEW acc symbol <code>INTEREST_REC_B</code> with mask <code>+++7044014</code>. All other HQ banks keep their current generic config (interest still lands on 7044011).
+      </div>
+    </section>
+
+    <!-- THE 2 CATEGORIES -->
+    <section id="two-categories">
+      <h2>The 2 Categories of Banks (and why only one can be split)</h2>
+      <p>Every UNESCO HQ bank account falls into one of two categories based on what the bank emits in the MT940 <code>:86:</code> external transaction code:</p>
+
+      <table style="width:100%;font-size:13.5px;margin:12px 0">
+        <thead>
+          <tr style="background:rgba(11,110,153,0.10)">
+            <th style="text-align:left">External Key column value</th>
+            <th style="text-align:left">Significado</th>
+            <th style="text-align:left">¿Se puede derivar interés?</th>
+            <th style="text-align:left">Implementación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:rgba(67,160,71,0.08)">
+            <td><code><strong>NINT</strong></code> (Normal Interest)</td>
+            <td>El banco emite código SWIFT-est&aacute;ndar espec&iacute;fico para interés en el campo <code>:86:</code> del MT940</td>
+            <td>✅ <strong>SÍ &mdash; especifico, se puede derivar</strong></td>
+            <td>Routing customizing OT83 (T028G NINT+ → posting key dedicado → INTEREST_REC_X mask → GL espec&iacute;fico)</td>
+          </tr>
+          <tr style="background:rgba(176,107,0,0.08)">
+            <td><code><strong>Generic</strong></code> (NTRF, NCHK, NCLR, etc.)</td>
+            <td>El banco emite el mismo código gen&eacute;rico para TODOS los cr&eacute;ditos &mdash; interés mezclado con transferencias, refunds, dividendos, etc.</td>
+            <td>❌ <strong>NO &mdash; gen&eacute;rico, hoy no se puede derivar al SAP layer</strong></td>
+            <td>Sin discriminator. Treasury acept&oacute; quedarse con la config legacy 7044011 hasta que el banco cambie su mensajer&iacute;a o se haga un parsing customizado del <code>:86:</code> via YTBAM001.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0">
+        <div style="border:2px solid var(--good);border-radius:6px;padding:14px 18px;background:var(--good-soft)">
+          <h3 style="color:var(--good);margin:0 0 8px 0">&#10003; NINT-capable banks (splittable)</h3>
+          <p style="font-size:13.5px;margin:0 0 8px 0">Bank emits <code>NINT</code> (Normal Interest) as a separate external code, distinct from <code>NTRF</code> (Normal Transfer). SAP can read the code in T028G and route to a different posting rule.</p>
+          <ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.6">
+            <li><strong>Soci&eacute;t&eacute; G&eacute;n&eacute;rale</strong> &mdash; 9 accounts at UNESCO HQ (SOG01, SOG03)</li>
+          </ul>
+          <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0 0">Implementation: split into Group A (current accounts) &rarr; 7044013 and Group B (savings + USD) &rarr; 7044014</p>
+        </div>
+        <div style="border:2px solid var(--warn);border-radius:6px;padding:14px 18px;background:var(--warn-soft)">
+          <h3 style="color:var(--warn);margin:0 0 8px 0">&#9888; Generic-only banks (NOT splittable)</h3>
+          <p style="font-size:13.5px;margin:0 0 8px 0">Bank emits only <code>NTRF</code> (or equivalent generic) for ALL credits &mdash; interest, dividends, refunds, transfers all share the same code. SAP has no discriminator at the EBS layer.</p>
+          <ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.6">
+            <li>BNP-Paribas, CIC, CRCAM, Banque Populaire, Citibank, Standard Chartered, Northern Trust BFM/HED, etc.</li>
+          </ul>
+          <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0 0">Implementation: <strong>no change</strong>. Interest credits continue routing through generic NTRF &rarr; posting rule 102I &rarr; BANK_SUB &rarr; bank's clearing GL or 7044011 default. Treasury accepted this limitation 2026-05-05.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL DESIGN -->
+    <section id="final-design">
+      <h2>Final Design (implemented in D01, pending P01 transport)</h2>
+
+      <h3 id="change-recipe">The customizing changes (the entire INC-8088 implementation)</h3>
+      <table>
+        <tr>
+          <th>#</th><th>OT83 Folder &middot; Table</th><th>Action</th><th>Detail</th>
+        </tr>
+        <tr style="background:var(--good-soft)">
+          <td>1</td>
+          <td>Folder 2 &middot; <strong>T033G</strong> "Assign accounts to symbol"</td>
+          <td>UPDATE existing</td>
+          <td>Acc symbol <code>INTEREST_REC</code> &middot; KOMO1=+ &middot; KOMO2=+ &middot; mask <code>+++7044011</code> &rarr; <strong><code>+++7044013</code></strong> (Group A absorbs the default)</td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>2</td>
+          <td>Folder 1 &middot; <strong>T033F</strong> "Create acc symbols"</td>
+          <td>CREATE new</td>
+          <td>NEW acc symbol <strong><code>INTEREST_REC_B</code></strong> "Interest received - Saving Accounts (Group B)"</td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>3</td>
+          <td>Folder 2 &middot; <strong>T033G</strong></td>
+          <td>CREATE new</td>
+          <td><code>INTEREST_REC_B</code> &middot; KOMO1=+ &middot; KOMO2=+ &middot; mask <code>+++7044014</code> (Group B)</td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>4</td>
+          <td>Folder 3+4 &middot; <strong>T028D + T033F</strong></td>
+          <td>CREATE new posting rule</td>
+          <td>NEW posting key <strong><code>111B</code></strong> "Interest received Group B" &mdash; App 0001 &middot; DR posting key 40 / CR posting key 50 &middot; CR symbol <code>INTEREST_REC_B</code></td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>5</td>
+          <td>Folder 5 &middot; <strong>T028V</strong></td>
+          <td>CREATE new VGTYP</td>
+          <td>NEW transaction type <strong><code>SOG_FRB</code></strong> (clone of SOG_FR for Group B)</td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>6</td>
+          <td>Folder 6 &middot; <strong>T028G</strong> "External &rarr; internal"</td>
+          <td>CREATE rows</td>
+          <td>For VGTYP <code>SOG_FRB</code>: <code>NINT+ &rarr; 111B</code>, plus clone all existing SOG_FR external-code mappings (NTRF, FCHG, etc) so non-interest credits keep flowing to their original posting rules.</td>
+        </tr>
+        <tr style="background:var(--accent-soft)">
+          <td>7</td>
+          <td>Folder 7 &middot; <strong>T028B</strong> "Bank acct &rarr; VGTYP"</td>
+          <td>UPDATE 2 banks</td>
+          <td>Reassign 2 SOG Group B accounts (HKONT 0001075011 USD, HKONT 0001075912 EUR-Deposit) from <code>SOG_FR</code> &rarr; <code>SOG_FRB</code></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12.5px;color:var(--muted);margin-top:8px">
+        Group A (7 SOG accounts) need NO T028B change &mdash; they stay on <code>SOG_FR</code>; the <code>INTEREST_REC</code> mask redirect (change #1) automatically routes them to 7044013.
+      </p>
+
+      <h3 id="banks-changed" style="margin-top:18px">The 9 SOG bank accounts split (verified D01 2026-05-06)</h3>
+      <p style="font-size:12.5px;color:var(--muted)">BNKKO = Cash Management label visible on SAP screen &middot; HKTID = technical Acct ID stored in T012K. Both refer to the same account.</p>
+
+      <figure style="margin:14px 0;border:2px solid var(--good);border-radius:6px;overflow:hidden;background:#fff">
+        <img src="img/inc_8088_email/01_banks_split_per_pablo_email.png" alt="Pablo's email image 1 — 9 SOG accounts that are being split" style="display:block;width:100%;height:auto;background:#fff">
+        <figcaption style="padding:8px 12px;font-size:12px;color:var(--muted);background:rgba(67,160,71,0.06);border-top:1px solid var(--border)">
+          <strong style="color:#2c7a4a">Source · Pablo Lopez to Thavry Eng email 2026-05-05 15:16 (image 1)</strong> &middot;
+          The 9 SOG accounts that have NINT external code emitted by Soci&eacute;t&eacute; G&eacute;n&eacute;rale &mdash; the only HQ banks where the split is technically possible.
+          Yellow=Group A &middot; Blue=Group B.
+        </figcaption>
+      </figure>
+      <table style="font-size:13px">
+        <tr style="background:var(--accent-soft)">
+          <th>Grp</th><th>HKONT</th><th>BNKKO</th><th>HBKID</th><th>HKTID</th><th>Crcy</th><th>VGTYP</th><th>Posting key</th><th>Acc symbol</th><th>&rarr; GL</th>
+        </tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075012</td><td>SOG01-EUR1</td><td>SOG01</td><td>EUR01</td><td>EUR</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075032</td><td>SOG01-EUR3</td><td>SOG01</td><td>EUR03</td><td>EUR</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075043</td><td>SOG03-JPY1</td><td>SOG03</td><td>JPY01</td><td>JPY</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075023</td><td>SOG03-AUD1</td><td>SOG03</td><td>AUD01</td><td>AUD</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075093</td><td>SOG03-GBP1</td><td>SOG03</td><td>GBP01</td><td>GBP</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075063</td><td>SOG03-DKK1</td><td>SOG03</td><td>DKK01</td><td>DKK</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#fff6cc"><td><strong>A</strong></td><td>0001075083</td><td>SOG03-CHF1</td><td>SOG03</td><td>CHF01</td><td>CHF</td><td>SOG_FR</td><td>111I</td><td>INTEREST_REC</td><td><strong>7044013</strong></td></tr>
+        <tr style="background:#d6ebf5"><td><strong>B</strong></td><td>0001075011</td><td>SOG01-USD1</td><td>SOG01</td><td>USDD1</td><td>USD</td><td><strong>SOG_FRB</strong></td><td><strong>111B</strong></td><td><strong>INTEREST_REC_B</strong></td><td><strong>7044014</strong></td></tr>
+        <tr style="background:#d6ebf5"><td><strong>B</strong></td><td>0001075912</td><td>SOG03-EUD1</td><td>SOG03</td><td>EURD1</td><td>EUR</td><td><strong>SOG_FRB</strong></td><td><strong>111B</strong></td><td><strong>INTEREST_REC_B</strong></td><td><strong>7044014</strong></td></tr>
+      </table>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:8px">
+        Plus <code>SOG01-EUR4</code> (HKONT 0001075042 EUR) on its own VGTYP <code>SOG_EUR4</code> &mdash; alpha bank, out of the A/B split.
+      </p>
+
+      <h3 id="banks-not-changed" style="margin-top:18px">Banks NOT split (generic external codes only)</h3>
+
+      <figure style="margin:14px 0;border:2px solid var(--warn);border-radius:6px;overflow:hidden;background:#fff">
+        <img src="img/inc_8088_email/02_banks_not_split_per_pablo_email.png" alt="Pablo's email image 2 — banks NOT split (Generic external key)" style="display:block;width:100%;height:auto;background:#fff">
+        <figcaption style="padding:8px 12px;font-size:12px;color:var(--muted);background:rgba(176,107,0,0.06);border-top:1px solid var(--border)">
+          <strong style="color:#b06b00">Source · Pablo Lopez to Thavry Eng email 2026-05-05 15:16 (image 2)</strong> &middot;
+          The other ~16 HQ accounts where the bank emits only <code>Generic</code> external code (NTRF) for ALL credits including interest &mdash; no discriminator at the SAP layer. Yellow=Group A &middot; Blue=Group B &middot; Pink=Group C ASHI &middot; Green=Group D Nessim. Treasury (M. Spronk 2026-05-05) accepted these stay on legacy 7044011 routing as known limitation.
+        </figcaption>
+      </figure>
+
+      <p>All these accounts use generic external codes (<code>NTRF</code>, <code>NCHK</code>, etc.) for ALL credits, so SAP cannot tell interest from non-interest. Examples:</p>
+      <ul class="bullets">
+        <li>BANQUE POPULAIRE RIVES DE PARIS &middot; BPP01-EUR01 &middot; HKONT 0001036012</li>
+        <li>BNP-PARIBAS SA &middot; BNP01-EUR02 &middot; HKONT 0001038032</li>
+        <li>CREDIT INDUSTRIEL ET COMMERCIAL CIC &middot; CIC01-USD01 &middot; HKONT 0001008011</li>
+        <li>CRCAM DE PARIS ET D ILE DE FRANCE &middot; CRA01-EUR01 &middot; HKONT 0001035012</li>
+        <li>STANDARD CHARTERED BANK &middot; multiple accounts</li>
+        <li>NORTHERN TRUST COMPANY &middot; BFM (ASHI EUR/USD) and HED (PFF Nessim) accounts &mdash; original Treasury Group C and D targets</li>
+      </ul>
+      <p>For these accounts the existing config (<code>TR_TRNF</code> / <code>NTRF+ &rarr; 102I &rarr; BANK_SUB</code>) is unchanged. Interest credits continue posting to <code>7044011</code> via the generic flow. <strong>This is the accepted limitation.</strong></p>
+    </section>
+
+    <!-- DERIVATION PIPELINE -->
+    <section id="derivation-pipeline">
+      <h2>🔗 Full Derivation Pipeline · post-INC-8088 verified state</h2>
+      <p>Cuando un cr&eacute;dito posteado por EBS llega a un GL nuevo (7044013/14), SAP corre <strong>7 capas de derivaci&oacute;n</strong> en orden. INC-8088 toc&oacute; tres de ellas (OT83 + ZXFMDTU02_RPY + OKB9) para que el posting termine con TODOS los campos correctos: <code>HKONT, KOSTL, PRCTR, GSBER, FUND_CENTER, FUND</code>.</p>
+
+      <div style="font-family:'SF Mono',Consolas,monospace;font-size:12.5px;background:var(--code-bg);padding:12px 16px;border-radius:6px;border:1px solid var(--border);line-height:1.55;margin:12px 0">
+[1] <strong>OKB9 (TKA3D)</strong>           &mdash;&gt;  KOSTL (Cost Center) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>(parche INC-8088 ↓)</em><br>
+[2] CSKS (Cost Center master)   &mdash;&gt;  PRCTR (Profit Center) + KOSTL master defaults<br>
+[3] GGB1 callup 3 (UNESCO)      &mdash;&gt;  GSBER (Step 002 U910 + Step 010 U904), XREF1/2, ZLSCH, ZUONR<br>
+[4] EXIT_RFEBBU10_001 (YTBAM001) &mdash;&gt;  CHECT, GSBER (override EBS), ZUONR<br>
+[5] FMDERIVE rules (declarative) &mdash;&gt;  fallback FUND/FISTL/FAREA<br>
+[6] <strong>EXIT_SAPLFMDT_002 (ZXFMDTU02_RPY)</strong> &mdash;&gt;  FUND, FUND_CENTER, BUS_AREA, WBS_ELEMENT &nbsp; <em>(parche INC-8088 ↓)</em><br>
+[7] Validations (GB901/GB903)   &mdash;&gt;  field-value validations (0 hits para los GLs INC-8088)
+      </div>
+
+      <p style="font-size:13px">Knowledge ref: <a href="../knowledge/domains/FI/derivation_pipeline.md" style="color:var(--accent)">knowledge/domains/FI/derivation_pipeline.md</a> &middot; Brain anchors: claims 175 (ZXFMDTU02_RPY), 176 (OKB9), 177 (canonical pipeline reference).</p>
+
+      <!-- FUNDCENTER FIX -->
+      <h3 id="fundcenter-fix" style="margin-top:18px">[6] FundCenter / Fund · ZXFMDTU02_RPY · ABAP user-exit patch</h3>
+      <p>ZXFMDTU02_RPY es el include del exit <code>EXIT_SAPLFMDT_002</code> (FMDERIVE user-exit). Hardcodea bloques <code>IF I_COBL-HKONT='xxx'</code> que setean <code>C_FMDERIVE-FUND_CENTER / FUND / BUS_AREA / WBS_ELEMENT</code>. Si el HKONT no est&aacute; en ning&uacute;n bloque, el posting falla con <strong>"No funds center entered/derived in item 00000 (UNES/&lt;HKONT&gt;/)"</strong>.</p>
+
+      <table style="font-size:13px">
+        <tr style="background:var(--accent-soft)"><th>HKONT range</th><th>FUND_CENTER</th><th>FUND</th><th>BUS_AREA</th><th>L&iacute;neas</th></tr>
+        <tr><td>FX P&amp;L · 6045011 / 7045011 / 6045014</td><td>UNESCO</td><td>GEF</td><td>(no override)</td><td>85-115</td></tr>
+        <tr><td>ASHI · 7043011-14</td><td>BFM</td><td>645ASH9000</td><td>OPF</td><td>119-132</td></tr>
+        <tr><td>Nessim · 7043021</td><td>HED</td><td>401NHF1091 (+ WBS)</td><td>PFF</td><td>134-145</td></tr>
+        <tr style="background:rgba(67,160,71,0.10)"><td><strong>Treasury interest · 7044011 + 7044013 + 7044014</strong></td><td>UNESCO (per GSBER)</td><td>GEF / MBF</td><td>(input)</td><td><strong>152-170</strong> &middot; <em>parche INC-8088 2026-05-06: linea 155 + 7044013</em></td></tr>
+        <tr><td>7044012</td><td>UNESCO (per GSBER)</td><td>OPF / GEF</td><td>(input)</td><td>173+</td></tr>
+      </table>
+
+      <p style="font-size:13px;margin-top:8px">Sin este parche, los SOG accounts ruteados a 7044013 fallaban en producci&oacute;n con el error de FundCenter.</p>
+
+      <!-- COST CENTER OKB9 -->
+      <h3 id="cost-center-okb9" style="margin-top:24px">[1] Cost Center · OKB9 (TKA3D) · customizing puro</h3>
+      <p>El Cost Center NO se deriva en el FM exit. Se deriva via <strong>OKB9</strong> (table TKA3D) ANTES de la cadena FM. La key es <code>(KOKRS, KSTAR, BUKRS)</code> con un flag <code>BArIn</code> (Business Area Indicator) que activa un grid de overrides per-GSBER.</p>
+
+      <h4 style="margin-top:14px;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink)">A · Estado original del 7044011 (referencia hist&oacute;rica)</h4>
+      <figure class="shot">
+        <img src="img/okb9/01_okb9_7044011_baring_grid.png" alt="OKB9 7044011 con BArIn=ON y grid GEF/MBF/OPF">
+        <figcaption><strong>OKB9 &middot; HKONT 7044011 (catch-all hist&oacute;rico)</strong> &middot; BArIn ✓ activado &middot; Cost Ctr default = <code>123001</code> &middot; Grid per-GSBER: GEF→<code>113001</code>, MBF→<code>143001</code>, OPF→<code>133001</code>. Esto es la referencia: per-GSBER routing al cost center correcto del fondo.</figcaption>
+      </figure>
+
+      <h4 style="margin-top:14px;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink)">B · Estado inicial de los nuevos GLs (BArIn=OFF, simple default) &mdash; gap detectado</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <figure class="shot" style="margin:0">
+          <img src="img/okb9/02_okb9_7044013_before_baring_off.png" alt="OKB9 7044013 inicial · BArIn off">
+          <figcaption><strong>7044013 (Group A) BEFORE</strong> &middot; BArIn ☐ &middot; Cost Ctr=<code>113001</code> simple default &middot; grid vac&iacute;o &mdash; OPF/MBF postings caer&iacute;an a 113001 incorrectamente.</figcaption>
+        </figure>
+        <figure class="shot" style="margin:0">
+          <img src="img/okb9/03_okb9_7044014_before_baring_off.png" alt="OKB9 7044014 inicial · BArIn off">
+          <figcaption><strong>7044014 (Group B) BEFORE</strong> &middot; misma situaci&oacute;n: BArIn ☐ + grid vac&iacute;o.</figcaption>
+        </figure>
+      </div>
+
+      <h4 style="margin-top:14px;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink)">C · Estado final post-fix (BArIn=ON + grid completo)</h4>
+      <figure class="shot">
+        <img src="img/okb9/04_okb9_overview_all_baring_on.png" alt="OKB9 overview · 4 GLs con BArIn ON">
+        <figcaption><strong>OKB9 overview · 7044011/12/13/14</strong> &middot; los 4 GLs ahora muestran <strong>BArIn ✓</strong> consistentemente. Pablo replic&oacute; el patr&oacute;n del 7044011 a los nuevos GLs el 2026-05-07 morning.</figcaption>
+      </figure>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <figure class="shot" style="margin:0">
+          <img src="img/okb9/05_okb9_7044013_after_baring_grid.png" alt="OKB9 7044013 after · BArIn ON + grid">
+          <figcaption><strong>7044013 (Group A) AFTER</strong> &middot; BArIn ✓ + grid completo (GEF→<code>113001</code>, MBF→<code>143001</code>, OPF→<code>133001</code>). Now matches the 7044011 pattern.</figcaption>
+        </figure>
+        <figure class="shot" style="margin:0">
+          <img src="img/okb9/06_okb9_7044014_after_baring_grid.png" alt="OKB9 7044014 after · BArIn ON + grid">
+          <figcaption><strong>7044014 (Group B) AFTER</strong> &middot; misma config &middot; sub-folders "Detail per business area/valuation" + "Detail per profit center" visibles en el dialog structure.</figcaption>
+        </figure>
+      </div>
+
+      <div class="callout ok" style="margin-top:14px">
+        <strong>Cierre del derivation pipeline para INC-8088</strong>
+        Con OKB9 alineado para los 4 GLs (7044011/12/13/14) + ZXFMDTU02_RPY parcheado con 7044013 + OT83 customizing completo, los postings nuevos en 7044013/14 derivan limpiamente: KOSTL via OKB9 grid &middot; PRCTR via CSKS &middot; GSBER via GGB1/U910 &middot; FUND_CENTER + FUND via ZXFMDTU02_RPY. <strong>Cero errores de derivaci&oacute;n esperados en P01 post-transport</strong>.
+      </div>
+    </section>
+
+    <!-- EVIDENCE -->
+    <section id="evidence">
+      <h2>Evidence</h2>
+      <table>
+        <tr><th>Source</th><th>What it proves</th></tr>
+        <tr style="background:var(--good-soft)"><td><strong>D01 RFC re-extract 2026-05-06</strong> &middot; tables T033G (212 rows), T028V (24), T028D (332), T028G (1043), T028B (169), T033F (1264)</td><td><strong>D01 customizing matches the canonical Excel exactly</strong>. All 9 SOG accounts on correct VGTYP/posting-key/acc-symbol. Initial swap (1075032 &harr; 1075912) detected and corrected mid-session.</td></tr>
+        <tr><td>Email Pablo Lopez &rarr; Thavry Eng, 2026-05-05 15:16 (file: <code>RE_ Request for the change of the interest automatic postings... .eml</code>)</td><td>Final design + the 2-category split rule. "According with the model the external banks statements have external key for the operations that allows us to understand if a line is interest". 2 attached images list banks-changed vs banks-not-changed.</td></tr>
+        <tr><td>P01 Gold DB &middot; <code>T033G</code> WHERE KTOPL='UNES' AND KTOSY LIKE 'INTEREST%'</td><td>Confirms only ONE INTEREST_REC entry exists for App 0001 &rarr; safe to redirect. INTEREST_PAID at <code>+++6044011</code> untouched.</td></tr>
+        <tr><td>Original SAP customizing screenshot (OT83 Folder 7, "Assign External Transaction Types to Posting Rules")</td><td>Shows external codes (FCHG, NCHK, NCLR, NTRF, S202, UNALLOC) all use Interpretation Algorithm 001 / 019 &mdash; none specific to interest unless NINT exists. Generic code = no discriminator.</td></tr>
+        <tr><td>Treasury sign-off (Marlies Spronk, BFM-TRS-MO)</td><td>"I validated this situation with Marlies, and the generic configuration was decided in the past." Generic-only banks accepted as known limitation.</td></tr>
+        <tr><td>Brain claim 173 (TIER_1, Session #71, supersedes 167-170)</td><td>Architectural rule canonicalized for future agents.</td></tr>
+      </table>
+    </section>
+
+    <!-- TEST PLAN -->
+    <section id="test-plan">
+      <h2>Test Plan (V01 / TST after transport)</h2>
+      <ol>
+        <li>Apply customizing transport to V01 (Pablo: "I will transport the changes to V01 and you can do the test tomorrow morning")</li>
+        <li>Trigger an EBS import for one Group A SOG bank carrying a NINT credit (e.g. SOG01-EUR01, HKONT 0001075012, NINT+). Run FF.5 / FEBAN. <strong>Expected</strong>: BKPF doc credits <code>0007044013</code></li>
+        <li>Trigger an EBS import for one Group B SOG bank (e.g. SOG01-USDD1, HKONT 0001075011, NINT+). <strong>Expected</strong>: BKPF doc credits <code>0007044014</code></li>
+        <li>Trigger an EBS import for one generic-only bank (e.g. CIC01, HKONT 0001008011, NTRF+). <strong>Expected</strong>: BKPF doc credits whatever the generic flow currently produces (likely 7044011 via the bank-clearing chain). No change vs today.</li>
+        <li>If all 3 scenarios behave as expected &rarr; release transport to P01.</li>
+      </ol>
+    </section>
+
+    <div class="footer">
+      <strong>Companion:</strong> <code>companions/inc_000008088_interest_auto_posting_v1.html</code><br>
+      <strong>Scope:</strong> EBS / Bank Statement Integration — interest auto-posting routing change<br>
+      <strong>Out of scope:</strong> F.05 / FX revaluation (separate companion: <a href="fx_revaluation_f05_v1.html" style="color:var(--accent);text-decoration:none">fx_revaluation_f05_v1.html</a>)<br>
+      <strong>Source of truth:</strong> P01 production extracts (Gold DB · 165 tables · 24M+ rows) + 4 user-provided SAP screenshots<br>
+      Built 2026-05-04 · Brain anchors: claims 160-166 · KU-2026-070-08 (T033F CR-side completion)
+    </div>
+  </main>
+</div>
+</body>
+</html>

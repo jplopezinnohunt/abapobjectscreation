@@ -67,6 +67,44 @@
     .sidebar .nav-item::before { content: attr(data-short); color: inherit; font-weight: 700; font-size: 11px; }
     .kpis { display: none; }
   }
+
+  /* Print PDF button (visible on screen, hidden when printing) */
+  .print-button { padding: 8px 14px; background: #1abc9c; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; white-space: nowrap; }
+  .print-button:hover { background: #15a085; }
+  .print-button:active { background: #128b73; }
+
+  /* Print stylesheet — fires when user invokes browser print (Ctrl+P or "Save as PDF") */
+  @media print {
+    /* 1. Show ALL tab content divs (default has them as display:none) */
+    .content { display: block !important; page-break-before: always; }
+    .content:first-of-type { page-break-before: avoid; }
+    .content.visible { page-break-before: avoid; }
+
+    /* 2. Hide screen chrome that doesn't belong in PDF */
+    header { position: static !important; box-shadow: none !important; padding: 12px 24px !important; border-bottom: 1px solid #cbd5e1 !important; }
+    .sidebar { display: none !important; }
+    .layout { display: block !important; min-height: auto !important; }
+    .main { padding: 12px 24px !important; max-width: 100% !important; overflow: visible !important; }
+    .hamburger, .print-button { display: none !important; }
+    .kpis { display: flex !important; gap: 6px !important; }
+    .kpi { padding: 4px 6px !important; font-size: 10px !important; }
+    .kpi .val { font-size: 11px !important; }
+
+    /* 3. Page-flow hints — keep h3/h4 with their content + tables intact */
+    h3, h4, h5, h6 { page-break-after: avoid; }
+    table, pre, ol, ul, .flow-stage, .dme-shot, img { page-break-inside: avoid; }
+
+    /* 4. Print-friendly typography + colors (preserve emphasis but reduce ink) */
+    body { font-size: 9pt; color: #000; background: #fff; line-height: 1.4; }
+    a { color: #000; text-decoration: none; }
+    .section { padding: 10px !important; margin-bottom: 12px !important; box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+    pre { font-size: 8pt !important; }
+
+    /* 5. Avoid clipping of wide tables, code blocks, images */
+    pre, table { overflow: visible !important; max-width: 100% !important; }
+    img, .dme-shot { max-width: 100% !important; height: auto !important; }
+    .erm-ent { position: static !important; display: inline-block !important; margin: 4px !important; }
+  }
 </style>
 </head>
 <body>
@@ -83,6 +121,7 @@
     <div class="kpi" title="M_SPRONK 31 DMEE transports 2017-2024 — claim 72 TIER_1 + plan §Finding C"><div class="val">31</div><div class="lbl">Marlies '17–24</div></div>
     <div class="kpi"><div class="val">Nov 2026</div><div class="lbl">Deadline</div></div>
   </div>
+  <button class="print-button" onclick="window.print()" title="Print full document — expands all 32 tabs in sequence. In the browser print dialog, choose 'Save as PDF' as destination.">🖨 Print PDF (full document)</button>
 </header>
 <div class="layout">
   <aside class="sidebar" id="sidebar">
@@ -107,6 +146,7 @@
 <div class="nav-item nav-subitem" onclick="show('dmee-tree-citi', this)" data-full="↳ Tree 2 · CITI" data-short="T2C" style="padding-left:54px"><span class="nav-label">↳ Tree 2 · CITI</span></div>
 <div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi', this)" data-full="↳ Tree 3 · CGI" data-short="T3G" style="padding-left:54px"><span class="nav-label">↳ Tree 3 · CGI</span></div>
 <div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi1', this)" data-full="↳ Tree 4 · CGI_1" data-short="T4G" style="padding-left:54px"><span class="nav-label">↳ Tree 4 · CGI_1</span></div>
+<div class="nav-item nav-subitem" onclick="show('vendor-address-routing', this)" data-full="↳ 🆕 Vendor Address Routing (KTOKK / PA0006)" data-short="V·A" style="padding-left:54px"><span class="nav-label">↳ 🆕 Vendor Address Routing (KTOKK / PA0006)</span></div>
 <div class="nav-item nav-subitem" onclick="show('matrix', this)" data-full="↳ V001 Change Matrix" data-short="Mtx" style="padding-left:54px"><span class="nav-label">↳ V001 Change Matrix</span></div>
 <div class="nav-item" onclick="show('simulator', this)" data-full="🧪 Testing Simulation" data-short="🧪 T"><span class="nav-label">🧪 Testing Simulation</span></div>
 <div class="nav-item" onclick="show('phase0', this)" data-full="Phase 0 · Discovery ✅" data-short="Pha"><span class="nav-label">Phase 0 · Discovery ✅</span></div>
@@ -4936,6 +4976,172 @@ File written via SAPFPAYM driver.</pre>
       </ul>
     </div>
     </div>
+<div id="tab-vendor-address-routing" class="content">
+    <div class="section">
+      <h3>Vendor Address Routing — <code>Y_FI_DMEE_ADR</code> · KTOKK-agnostic, PA0006-first <span style="font-size:11px;color:#16a34a">[deployed v6 · 2026-05-08 · D01]</span></h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Sibling of <a href="#" onclick="show('dmee-tree-sepa', document.querySelector('[onclick*=dmee-tree-sepa]'));return false">Tree 1 · SEPA</a> (FM is wired into V001 SEPA Cdtr/PstlAdr + Dbtr/PstlAdr exit nodes only — CGI uses BAdI <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> with a different convention). Knowledge anchor: <a href="../knowledge/domains/Payment/vendor_address_routing_by_ktokk.md">vendor_address_routing_by_ktokk.md</a>.</p>
+
+      <div class="section" style="background:#fef3c7;border-left:5px solid #f59e0b;border-radius:4px;padding:12px;margin-bottom:14px">
+        <h4 style="color:#92400e;margin:0 0 6px 0">Why this section exists — root cause</h4>
+        <p style="font-size:12px;color:#1f2937;margin:0">UNESCO maintains <b>multiple LIFNR records per real-world entity</b> with different KTOKKs, and the meaning of <code>ADRC.STREET</code> depends on the account group. For staff (KTOKK=SCSA) <code>ADRC.STREET</code> is a <b>department code</b> like <code>BFM/FAS/PAY</code> or <code>ADM/DIT/MIS/FBS</code> — <em>not a real address</em>. Any system that reads <code>ADRC</code> blindly emits the dept code as the street. SEPA banks reject this. The fix lives in the custom DMEE exit FM <code>Y_FI_DMEE_ADR</code> (NOT in standard, NOT in Nicolas's BAdI — see rule <code>feedback_only_modify_our_own_code</code>).</p>
+      </div>
+
+      <h4>The pattern — one person, four LIFNR records</h4>
+      <p style="font-size:12px">Marlies SPRONK is one real person with one real home address but appears as 4 different LIFNRs in LFA1, each linked to a different ADRC entry depending on the business context (staff payroll, HQ link, personal, inter-company). The same is true for Simona BERTOLDINI and any UNESCO employee paid via SEPA.</p>
+
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse;margin-top:8px">
+        <thead style="background:#1e3a8a;color:#fff">
+          <tr><th style="padding:6px;text-align:left">LIFNR</th><th style="padding:6px;text-align:left">KTOKK</th><th style="padding:6px;text-align:left">ADRC.STREET</th><th style="padding:6px;text-align:left">Real meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fff"><td style="padding:6px"><code>0000407692</code></td><td style="padding:6px"><b>INDV</b></td><td style="padding:6px"><code>Laurierstraat</code>, 1016 PL Amsterdam</td><td style="padding:6px">Personal record (real home address)</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:6px"><code>0010082471</code></td><td style="padding:6px"><b>UNES</b></td><td style="padding:6px"><code>PLACE FONTENOY</code>, 75352 Paris</td><td style="padding:6px">UNESCO HQ link (org placeholder)</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><code>0010199971</code></td><td style="padding:6px"><b>SCSA</b></td><td style="padding:6px"><b><code>ADM/DIT/MIS/FBS</code></b>, 75007 Paris</td><td style="padding:6px;color:#991b1b">Staff payroll (dept code, NOT a street)</td></tr>
+          <tr style="background:#fff"><td style="padding:6px"><code>VS90199528</code></td><td style="padding:6px"><b>ICVS</b></td><td style="padding:6px"><code>1, rue Miollis</code>, Paris</td><td style="padding:6px">Inter-company / sub-building</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:12px;margin-top:10px">The <b>real home address</b> for any UNESCO employee lives in <code>PA0006 SUBTY='1'</code> (HR Address Infotype, permanent residence). Cast <code>LIFNR</code> NUMC(8) to derive <code>PERNR</code> — works for any KTOKK as long as PA0006 has a valid record.</p>
+
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse;margin-top:8px">
+        <thead style="background:#0f766e;color:#fff">
+          <tr><th style="padding:6px;text-align:left">Person</th><th style="padding:6px;text-align:left">PERNR (LIFNR cast)</th><th style="padding:6px;text-align:left">PA0006-SUBTY=1 STRAS</th><th style="padding:6px;text-align:left">PSTLZ</th><th style="padding:6px;text-align:left">ORT01</th><th style="padding:6px;text-align:left">LAND1</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#dcfce7"><td style="padding:6px">Marlies SPRONK</td><td style="padding:6px"><code>10199971</code></td><td style="padding:6px"><code>7, rue des Richardes</code></td><td style="padding:6px">92260</td><td style="padding:6px">FONTENAY-aux-Roses</td><td style="padding:6px">FR</td></tr>
+          <tr style="background:#dcfce7"><td style="padding:6px">Simona BERTOLDINI</td><td style="padding:6px"><code>10008305</code></td><td style="padding:6px"><code>16 avenue des Murs du Parc</code></td><td style="padding:6px">94300</td><td style="padding:6px">Vincennes</td><td style="padding:6px">FR</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px">Decision matrix — where the FM reads the address</h4>
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse">
+        <thead style="background:#1e3a8a;color:#fff">
+          <tr><th style="padding:6px;text-align:left">KTOKK</th><th style="padding:6px;text-align:left">Source for SEPA / output</th><th style="padding:6px;text-align:left">Why</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>SCSA</b> (Staff)</td><td style="padding:6px"><b>PA0006 SUBTY='1'</b> via <code>PERNR = LIFNR</code> (NUMC8)</td><td style="padding:6px">ADRC.STREET = dept code (<code>BFM/FAS/PAY</code>, <code>HRM/SES/BNF</code>, …) — not a real address</td></tr>
+          <tr style="background:#dcfce7"><td style="padding:6px"><b>INDV</b> (Individual)</td><td style="padding:6px"><b>PA0006</b> if PERNR exists, else ADRC of LIFNR</td><td style="padding:6px">May or may not have a PERNR; PA0006-first detection covers both cases</td></tr>
+          <tr style="background:#dcfce7"><td style="padding:6px"><b>UNES</b> (UNESCO HQ link)</td><td style="padding:6px"><b>PA0006</b> if PERNR exists, else ADRC of LIFNR</td><td style="padding:6px">BERTOLDINI confirmed PA0006 hit on UNES record; if no PA0006, ADRC has HQ address (FONTENOY)</td></tr>
+          <tr style="background:#dcfce7"><td style="padding:6px"><b>ICVS</b> (Inter-company)</td><td style="padding:6px"><b>PA0006</b> if PERNR exists, else ADRC of LIFNR</td><td style="padding:6px">Some ICVS LIFNRs map to a PERNR (sub-building staff), others to a real org address</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">Other (external supplier)</td><td style="padding:6px"><b>ADRC</b> of LIFNR (no PA0006 will match)</td><td style="padding:6px">ADRC.STREET = real supplier street — PA0006 lookup safely returns SY-SUBRC≠0</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:11.5px;margin-top:10px;color:#475569"><b>Implementation choice</b>: rather than dispatch on KTOKK explicitly (v5 design — failed for BERTOLDINI on UNES), v6 attempts <code>PA0006 SUBTY='1'</code> <em>first</em>, regardless of KTOKK. If found → employee path (PA0006 fields). If not found → vendor path (ADRC fields). This is <b>KTOKK-agnostic</b>: it correctly handles any LIFNR that maps to a PERNR (NUMC8 cast), no matter which account group F110 happened to pay against.</p>
+
+      <h4 style="margin-top:18px">Branch detection — Cdtr vs Dbtr</h4>
+      <p style="font-size:12px">The FM serves both <code>Cdtr/PstlAdr</code> (beneficiary) and <code>Dbtr/PstlAdr</code> (paying co) leaves. It walks 2 hops up via <code>DMEE_TREE_NODE.PARENT_ID</code> to identify the grandparent's <code>TECH_NAME</code> (<code>Cdtr</code> or <code>Dbtr</code>). Cdtr branch runs the PA0006-first detection. Dbtr branch reads <code>T001-ADRNR</code> by <code>FPAYH-ZBUKR</code> → <code>ADRC</code> (paying co always has a real address — KTOKK pattern does not apply).</p>
+
+      <h4 style="margin-top:18px">Live test — D01 V01T3 run · 2026-05-08 · BERTOLDINI (KTOKK=UNES)</h4>
+      <p style="font-size:12px">F110 SEPA run after v6 deployment emitted <b>both</b> <code>&lt;PstlAdr&gt;</code> blocks (legacy V000 path kept as control + new V001 path):</p>
+      <pre style="background:#0f172a;color:#e2e8f0;font-size:11px;padding:10px;border-radius:4px;overflow-x:auto">&lt;Cdtr&gt;
+  &lt;Nm&gt;SIMONA BERTOLDINI&lt;/Nm&gt;
+  &lt;PstlAdr&gt;          &lt;!-- LEGACY V000 (control) — reads ADRC --&gt;
+    &lt;StrtNm&gt;BFM/FAS/PAY&lt;/StrtNm&gt;     ← dept code (wrong)
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+  &lt;/PstlAdr&gt;
+  &lt;PstlAdr&gt;          &lt;!-- V001 NEW (treatment) — Y_FI_DMEE_ADR v6 --&gt;
+    &lt;StrtNm&gt;16 avenue des Murs du Parc&lt;/StrtNm&gt;   ← PA0006.STRAS ✓
+    &lt;PstCd&gt;94300&lt;/PstCd&gt;                          ← PA0006.PSTLZ ✓
+    &lt;TwnNm&gt;Vincennes&lt;/TwnNm&gt;                      ← PA0006.ORT01 ✓
+    &lt;CtrySubDvsn&gt;94&lt;/CtrySubDvsn&gt;                 ← PA0006.STATE ✓
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;                               ← PA0006.LAND1 ✓
+  &lt;/PstlAdr&gt;
+&lt;/Cdtr&gt;</pre>
+      <p style="font-size:11.5px;color:#475569"><b>Verdict</b>: v6 PA0006-first detection produces the correct beneficiary home address even though the SCSA dispatch logic in v5 would have missed this case (BERTOLDINI's payment LIFNR is UNES, not SCSA).</p>
+
+      <h4 style="margin-top:18px">Affected systems beyond V001 SEPA — audit candidates</h4>
+      <p style="font-size:12px">The KTOKK/ADRC convention is system-wide, not SEPA-specific. Any UNESCO output that reads <code>ADRC of LIFNR</code> without going through PA0006 will print the dept code for staff vendors. Open audit candidates:</p>
+      <ul style="font-size:12px">
+        <li>☑ SEPA Credit Transfer XML (V001 SEPA_CT_UNES) — fixed by v6</li>
+        <li>☑ CGI XML CT formats (Cdtr/PstlAdr nodes) — Nicolas's BAdI uses different routing; CGI is OK for Dbtr/Cdtr but CdtrAgt is unrelated</li>
+        <li>☑ CITI XML formats — Cdtr already structured, but check if it reads ADRC blindly</li>
+        <li>⚠ Avisos de pago (<code>RFFOAVIS_FPAYM</code>) — likely shows dept code as street</li>
+        <li>⚠ F110 confirmation prints / SAPF110V — likely same defect</li>
+        <li>⚠ BCM batch printout — likely same defect</li>
+        <li>⚠ Bank statement reconciliation reports — depend on which path they read</li>
+        <li>⚠ Treasury cash forecasting — probably uses ADRC; may be OK for non-SCSA only</li>
+      </ul>
+      <p style="font-size:11.5px;color:#475569"><b>Recommended pattern</b>: build a centralized helper FM <code>Y_GET_VENDOR_ADDRESS(LIFNR)</code> that returns the real address based on PA0006-first detection, and replace ad-hoc <code>ADRC</code> reads across UNESCO custom code. Tracked as KU.</p>
+
+      <h4 style="margin-top:18px">Closure simulation — full population, P01 last 2 years <span style="font-size:11px;color:#16a34a">[2026-05-10]</span></h4>
+      <p style="font-size:12px">After the BERTOLDINI live test, the v6 logic was replayed in SQL across <b>every payment</b> made via every SEPA format in P01 over the last 2 years. The universe was built by joining <code>DFPAYG</code> (now in Gold DB · 9,848 rows) ↔ <code>REGUH</code> ↔ <code>LFA1</code> ↔ <code>PA0006 SUBTY=1 active</code> ↔ <code>ADRC date-valid</code>. The simulator applies v6 rules in pure SQLite (PA0006 hit ⇒ home address, miss ⇒ ADRC fallback) and compares against V0 (ADRC blind read).</p>
+
+      <p style="font-size:12px"><b>Scope check — only <code>/SEPA_CT_UNES</code> wires <code>Y_FI_DMEE_ADR</code></b>. P01 <code>DMEE_TREE_NODE.MP_EXIT_FUNC</code> for the 4 SEPA trees:</p>
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse">
+        <thead style="background:#1e3a8a;color:#fff">
+          <tr><th style="padding:6px;text-align:left">SEPA tree</th><th style="padding:6px;text-align:left">Address exit FM</th><th style="padding:6px;text-align:left">In-scope for v6?</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#dcfce7"><td style="padding:6px"><code>/SEPA_CT_UNES</code></td><td style="padding:6px"><b><code>Y_FI_DMEE_ADR</code></b> (after V001 cutover)</td><td style="padding:6px"><b>YES</b></td></tr>
+          <tr style="background:#fff"><td style="padding:6px"><code>/SEPA_CT_ICTP_ISO</code></td><td style="padding:6px">none — direct FPAYHX bindings (REF buffers)</td><td style="padding:6px">no</td></tr>
+          <tr style="background:#fff"><td style="padding:6px"><code>/SEPA_CT_ICTP_ISO_EXTRASEPA</code></td><td style="padding:6px"><code>FI_CGI_DMEE_EXIT_W_BADI</code> → dispatches to <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> (Nicolas's class hierarchy)</td><td style="padding:6px">no</td></tr>
+          <tr style="background:#fff"><td style="padding:6px"><code>/SEPA_CT_ICTP_ISO_EXTRASEPA_I</code></td><td style="padding:6px"><code>FI_CGI_DMEE_EXIT_W_BADI</code> (same)</td><td style="padding:6px">no</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px">In-scope drift — `/SEPA_CT_UNES` across all 3 cocodes (UNES + IIEP + UIL)</h4>
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse">
+        <thead style="background:#0f766e;color:#fff">
+          <tr><th style="padding:6px;text-align:left">COCODE</th><th style="padding:6px;text-align:left">KTOKK</th><th style="padding:6px;text-align:right">vendors paid</th><th style="padding:6px;text-align:right">PA0006 hits</th><th style="padding:6px;text-align:right">drift (v6≠V0)</th><th style="padding:6px;text-align:right">drift %</th><th style="padding:6px;text-align:left">classification</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fff"><td style="padding:6px" rowspan="13"><b>UNES</b><br>(14,636 total)</td><td style="padding:6px">INDV</td><td style="padding:6px;text-align:right">6,318</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">non-staff (orgs/personal vendors)</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:6px">INSO</td><td style="padding:6px;text-align:right">3,455</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">institutional supplier</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:6px">(no LFA1)</td><td style="padding:6px;text-align:right">3,190</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">vendor deleted, REGUH alive</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>UNES</b></td><td style="padding:6px;text-align:right">1,497</td><td style="padding:6px;text-align:right">1,493</td><td style="padding:6px;text-align:right"><b>1,437</b></td><td style="padding:6px;text-align:right">96.0%</td><td style="padding:6px"><b>STAFF (HQ-link)</b></td></tr>
+          <tr style="background:#fff"><td style="padding:6px">PART</td><td style="padding:6px;text-align:right">991</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">partners</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">HQSU</td><td style="padding:6px;text-align:right">811</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">HQ supplier (non-staff)</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">FELL</td><td style="padding:6px;text-align:right">664</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">fellowships</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>SCSA</b></td><td style="padding:6px;text-align:right">508</td><td style="padding:6px;text-align:right">506</td><td style="padding:6px;text-align:right"><b>375</b></td><td style="padding:6px;text-align:right">73.8%</td><td style="padding:6px"><b>STAFF (payroll)</b></td></tr>
+          <tr style="background:#fff"><td style="padding:6px">GVNT</td><td style="padding:6px;text-align:right">208</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">governments</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">UNAG</td><td style="padding:6px;text-align:right">114</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">UN agencies</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">INGO</td><td style="padding:6px;text-align:right">65</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">international NGOs</td></tr>
+          <tr style="background:#fff"><td style="padding:6px">UBO</td><td style="padding:6px;text-align:right">4</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">UNESCO Brazil Office</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>INT</b></td><td style="padding:6px;text-align:right">1</td><td style="padding:6px;text-align:right">1</td><td style="padding:6px;text-align:right"><b>1</b></td><td style="padding:6px;text-align:right">100%</td><td style="padding:6px"><b>STAFF (intern)</b></td></tr>
+          <tr style="background:#fff"><td style="padding:6px" rowspan="3"><b>IIEP</b><br>(428 total)</td><td style="padding:6px">INDV / INSO / HQSU / PART / FELL / UNAG / INGO / GVNT</td><td style="padding:6px;text-align:right">368</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">non-staff</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>UNES</b></td><td style="padding:6px;text-align:right">51</td><td style="padding:6px;text-align:right">51</td><td style="padding:6px;text-align:right"><b>51</b></td><td style="padding:6px;text-align:right">100%</td><td style="padding:6px"><b>STAFF</b></td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>SCSA</b></td><td style="padding:6px;text-align:right">9</td><td style="padding:6px;text-align:right">9</td><td style="padding:6px;text-align:right"><b>9</b></td><td style="padding:6px;text-align:right">100%</td><td style="padding:6px"><b>STAFF</b></td></tr>
+          <tr style="background:#fff"><td style="padding:6px" rowspan="3"><b>UIL</b><br>(241 total)</td><td style="padding:6px">INDV / INSO / PART / INGO / HQSU</td><td style="padding:6px;text-align:right">205</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0</td><td style="padding:6px;text-align:right">0%</td><td style="padding:6px">non-staff</td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>SCSA</b></td><td style="padding:6px;text-align:right">29</td><td style="padding:6px;text-align:right">29</td><td style="padding:6px;text-align:right"><b>25</b></td><td style="padding:6px;text-align:right">86.2%</td><td style="padding:6px"><b>STAFF</b></td></tr>
+          <tr style="background:#fee2e2"><td style="padding:6px"><b>UNES</b></td><td style="padding:6px;text-align:right">7</td><td style="padding:6px;text-align:right">7</td><td style="padding:6px;text-align:right"><b>7</b></td><td style="padding:6px;text-align:right">100%</td><td style="padding:6px"><b>STAFF</b></td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:12px;margin-top:10px"><b>Total in-scope universe</b>: 15,305 distinct vendors paid via <code>/SEPA_CT_UNES</code>. <b>1,905 staff (12.4%)</b> get a corrected home address; <b>13,400 non-staff (87.6%)</b> emit identical output to V0 (ADRC). <b>Theory violators</b>: 0 — every drift case has a PA0006 hit, every PA0006 hit affects only staff KTOKKs (UNES / SCSA / INT). The "only employees vary" hypothesis is empirically confirmed.</p>
+
+      <h4 style="margin-top:18px">Sample drift rows — staff with dept code in V0, real home address in v6</h4>
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead style="background:#1e3a8a;color:#fff">
+          <tr><th style="padding:5px;text-align:left">LIFNR</th><th style="padding:5px;text-align:left">KTOKK</th><th style="padding:5px;text-align:left">Name</th><th style="padding:5px;text-align:left">V0 StrtNm (ADRC)</th><th style="padding:5px;text-align:left">v6 StrtNm (PA0006)</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fff"><td style="padding:5px"><code>0010000146</code></td><td style="padding:5px">UNES</td><td style="padding:5px">Ahmed ABDELLI</td><td style="padding:5px;color:#991b1b">ERI/SEC/FSO</td><td style="padding:5px;color:#15803d">20 Rue Rabelais, Saint Ouen</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:5px"><code>0010000247</code></td><td style="padding:5px">UNES</td><td style="padding:5px">Corinne BITOUN</td><td style="padding:5px;color:#991b1b">IEP/IST/LKM</td><td style="padding:5px;color:#15803d">38 rue Rieussec, VIROFLAY</td></tr>
+          <tr style="background:#fff"><td style="padding:5px"><code>0010000861</code></td><td style="padding:5px">UNES</td><td style="padding:5px">Irma EKUE</td><td style="padding:5px;color:#991b1b">BFM/USLS</td><td style="padding:5px;color:#15803d">3 rue Leroyer, Vincennes</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:5px"><code>0010000942</code></td><td style="padding:5px">UNES</td><td style="padding:5px">Aurore BRILLANT</td><td style="padding:5px;color:#991b1b">7 place de fontenoy</td><td style="padding:5px;color:#15803d">7 rue Jobbé Duval, Paris</td></tr>
+          <tr style="background:#fff"><td style="padding:5px"><code>0010032406</code></td><td style="padding:5px">SCSA</td><td style="padding:5px">Irene FERNANDEZ RAMOS</td><td style="padding:5px;color:#991b1b">CLT/WHC</td><td style="padding:5px;color:#15803d">10 Rue René Villermé</td></tr>
+          <tr style="background:#f9fafb"><td style="padding:5px"><code>0010103539</code></td><td style="padding:5px">SCSA</td><td style="padding:5px">Alessandra BORCHI</td><td style="padding:5px;color:#991b1b">PAX/SRC</td><td style="padding:5px;color:#15803d">56 rue de Vouillé</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><b>Note on the 178 PA0006-hit-but-no-drift cases</b>: employees whose ADRC.STREET happens to equal PA0006-STRAS (well-maintained vendor records). v6 emits the same address either way — no functional difference, just redundancy in master data.</p>
+
+      <h4 style="margin-top:18px">Out-of-scope — ICTP SEPA trees (deferred)</h4>
+      <p style="font-size:12px"><code>/SEPA_CT_ICTP_ISO</code> + 2 EXTRASEPA variants pay <b>2 + 81 = 83 staff vendors</b> (UNES KTOKK paid by ICTP cocode — staff making business trips to Trieste). These trees do <b>not</b> wire <code>Y_FI_DMEE_ADR</code>; their address routing goes through Nicolas's <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> (CGI BAdI dispatcher) or directly from FPAYHX REF buffers. Per rule <code>feedback_only_modify_our_own_code</code>, fixing this requires either (a) Nicolas extending his BAdI with PA0006-first detection, or (b) wiring <code>Y_FI_DMEE_ADR</code> into the ICTP trees. Tracked as KU follow-up — not a V001 deliverable.</p>
+
+      <h4 style="margin-top:18px">Brain anchors</h4>
+      <ul style="font-size:11.5px">
+        <li>Knowledge: <a href="../knowledge/domains/Payment/vendor_address_routing_by_ktokk.md">knowledge/domains/Payment/vendor_address_routing_by_ktokk.md</a></li>
+        <li>Code (deployed): <a href="../extracted_code/FI/DMEE_full_inventory/Y_FI_DMEE_ADR_v6.abap">extracted_code/FI/DMEE_full_inventory/Y_FI_DMEE_ADR_v6.abap</a></li>
+        <li>Code (superseded): <a href="../extracted_code/FI/DMEE_full_inventory/Y_FI_DMEE_ADR_v5.abap">Y_FI_DMEE_ADR_v5.abap</a> — KTOKK-explicit dispatch (failed BERTOLDINI/UNES)</li>
+        <li>Deploy script: <a href="../Zagentexecution/mcp-backend-server-python/deploy_yfi_v6.py">Zagentexecution/mcp-backend-server-python/deploy_yfi_v6.py</a></li>
+        <li>Reference (BAdI, read-only — N_MENARD): <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></li>
+        <li>Rules: <code>feedback_only_modify_our_own_code</code> · <code>feedback_extracted_code_is_brain_data</code> · <code>feedback_insert_report_destroys_fuparref</code> · <code>feedback_dmee_exit_must_match_template_exactly</code></li>
+      </ul>
+    </div>
+    </div>
 <div id="tab-matrix" class="content">
     <div class="section">
       <h3>V001 Change Matrix — node-by-node design specification</h3>
@@ -4960,20 +5166,48 @@ File written via SAPFPAYM driver.</pre>
         <li>CGI_1 SYNC: FIRSTNODE_ID identical to CGI parent (N_0978274660 pre-existing) — CdtrAgt fix propagates automatically without separate node edits. Verify post-Save in DMEE Tx.</li>
       </ul>
 
+      <h4 style="color:#1abc9c;margin-top:18px">Navigation reference — full path from <code>Document</code> root for each Parent NODE_ID</h4>
+      <p style="font-size:11px;color:#475569">Use this lookup when the matrix below references a Parent NODE_ID — gives the exact navigation in DMEE Tx tree pane to locate where to "Create subnode". Path levels mirror XML nesting depth.</p>
+      <table style="font-size:11px">
+        <tr><th>Parent NODE_ID</th><th>Tree</th><th>Full path from <code>Document</code> root</th><th>Used by matrix rows</th><th>Per-payment cardinality</th></tr>
+        <tr><td><code>N_9926185740</code></td><td>SEPA</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdr</code></td><td>5-8 (Dbtr V001)</td><td><b>1 per file</b> (header — UNESCO HQ)</td></tr>
+        <tr><td><code>N_4754354180</code></td><td>SEPA</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → CdtTrfTxInf → Cdtr → PstlAdr</code></td><td>1-4 (Cdtr V001)</td><td><b>N per file</b> (per payment line — vendor)</td></tr>
+        <tr><td><code>N_1531351640</code></td><td>CITI</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdr</code> (Dbtr-primary, default mode)</td><td>10-11 (CITI Dbtr V001)</td><td>1 per file (header)</td></tr>
+        <tr><td><code>N_4078824850</code></td><td>CITI</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdrMor</code> (alt-mode for specific countries)</td><td>12-16 (CITI Dbtr alt V001)</td><td>1 per file (header — when alt-mode triggered)</td></tr>
+        <tr><td><code>N_4600960730</code></td><td>CITI</td><td><code>... → CdtTrfTxInf → UltmtCdtr → PstlAdr</code></td><td>17-18 (CITI UltmtCdtr Worldlink)</td><td>N per file (per line)</td></tr>
+        <tr><td><code>N_5135503450</code></td><td>CITI</td><td><code>... → CdtTrfTxInf → CdtrAgt → FinInstnId → PstlAdr</code></td><td>19-20 (CITI CdtrAgt fix)</td><td>N per file (per line — beneficiary bank)</td></tr>
+        <tr><td><code>N_0693479130</code></td><td>CGI</td><td><code>... → CdtTrfTxInf → CdtrAgt → FinInstnId → PstlAdr</code> (FIRSTNODE shared with CGI_1)</td><td>21-24 (CGI CdtrAgt fix)</td><td>N per file (per line)</td></tr>
+        <tr><td>(SAP-std tx)</td><td>—</td><td><code>tx OBPM3</code> — "Customer Enhancement / FM per format" (SAP-std since ECC 6.0). IMG path: SPRO → FI → AR/AP → Business Transactions → Outgoing Payments → Automatic Outgoing Payments → Payment Media → Make Settings for PMW Formats → Customer Enhancement</td><td>9 (Event 05 FM registration)</td><td>1 entry per format (Sub-option A wiring of FI_PAYMEDIUM_DMEE_CGI_05 to /SEPA_CT_UNES)</td></tr>
+        <tr><td>(class)</td><td>—</td><td><code>tx SE24 → YCL_IDFI_CGI_DMEE_FALLBACK_CM001 → method GET_CREDIT</code></td><td>26 (Pattern A guard)</td><td>1 method (3-line ABAP edit)</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Cardinality matters for source-buffer choice:</strong> Header-level (1 per file) parents read from <code>FPAYHX</code> (where CM005 writes Dbtr address); line-level (N per file) parents read from <code>FPAYP</code> (where CM005 writes Cdtr address per-line). This is why SEPA Dbtr leaves source from <code>FPAYHX-REF01</code> and SEPA Cdtr leaves source from <code>FPAYP-REF01</code> — same field name, different structure, different scope.</p>
+
       <h4 style="color:#1abc9c;margin-top:18px">Per-tree node-by-node deltas (29 rows total — 2 PRECONDITIONS + 27 V001 deltas)</h4>
-      <p style="font-size:11px;color:#475569">Updated post-RFC verification (claims 109 + 111). The 2 PRECONDITION rows (0a + 0b) must complete BEFORE rows 1-27 apply.</p>
+      <p style="font-size:11px;color:#475569">Updated post-RFC verification (claims 109 + 111 + D01 V001 RFC verify 2026-05-07). The 2 PRECONDITION rows (0a + 0b) must complete BEFORE rows 1-27 apply. Cross-reference Parent NODE_ID with the navigation table above to locate the spot in DMEE Tx.</p>
+
+      <div style="background:#dcfce7;border-left:4px solid #16a34a;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+        <strong style="color:#166534">📊 Status SEPA V001 (rows 1-8) — D01 build COMPLETE 2026-05-07</strong><br>
+        All 8 V001 leaves (4 Cdtr + 4 Dbtr) configured in D01 V001 maintenance and verified via RFC extraction:
+        <ul style="margin-top:6px;margin-bottom:6px">
+          <li>4 Cdtr leaves under <code>N_4754354180</code> — FPAYP/REF01 byte slicing + FPAYP/BORT1 (TwnNm), CV_RULE <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code>, conditions FPAYP/&lt;&gt;/SPACE</li>
+          <li>4 Dbtr leaves under <code>N_9926185740</code> — FPAYHX/REF01 byte slicing + FPAYHX/REF06 (TwnNm), CV_RULE <code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code>, conditions FPAYHX/&lt;&gt;/SPACE</li>
+          <li>BROTHER_ID chain Dbtr: StrtNm → BldgNb → PstCd → TwnNm → Ctry → AdrLine ✅ XSD-compliant</li>
+          <li>BROTHER_ID chain Cdtr: StrtNm → BldgNb → PstCd → TwnNm → Ctry → AdrLine(ZPFST) → AdrLine(ZPLOR) ✅ XSD-compliant</li>
+        </ul>
+        Pendiente: Save (Ctrl+S) → tx SM30 V_T042FB row 9 (CM005 register) → Generate Version snapshot → Activate V001 → F8 Test active version with 3 SEPA Excel cases. CITI/CGI/CGI_1 trees (rows 10-25) NOT yet started.
+      </div>
       <table style="font-size:11px">
         <tr><th>#</th><th>Tree</th><th>Op</th><th>Parent PstlAdr</th><th>Branch</th><th>Node</th><th>TAB</th><th>FLD</th><th>OFF/LEN</th><th>CV</th><th>Exit</th><th>Cond</th><th>Rationale</th></tr>
         <tr style="background:#fef3c7"><td>0a</td><td>(all 4)</td><td><b>RETROFIT</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>D01-RETROFIT-01 transport</b>: CGI_1 V000 12-delta surgical fix (purge SCB N_6366307580 + restore 8 ONLY_P01 AdrLine + revert N_0711160730 Nm Z-field if Marlies confirms) + 5 P01-only ABAP retrofit (DE/IT classes + 3 ENHO + FR.CM002) + PURGE dormant D01 V001 on all 4 trees. Anchor: claims 109 + 111 + dmee_retrofit_procedure.md</td></tr>
         <tr style="background:#fef3c7"><td>0b</td><td>(all 4)</td><td><b>CREATE V001</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>DMEE Tx → Create Version</b> on each of 4 in-scope trees from aligned V000 → fresh V001 byte-clone of V000 (Active Version remains V000 · V001 dormant). Verification: NODE_ID set V001 = NODE_ID set V000 per tree. Anchor: claim 102 + dmee_versioning_procedure.md Step A</td></tr>
-        <tr><td>1</td><td>SEPA</td><td>ADD</td><td>N_4754354180</td><td>Cdtr</td><td>StrtNm</td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td>CL RP</td><td>BAdI</td><td>empty-suppress</td><td>Cdtr Hybrid → Structured. Mirror CITI Dbtr-1 source.</td></tr>
-        <tr><td>2</td><td>SEPA</td><td>ADD</td><td>N_4754354180</td><td>Cdtr</td><td>BldgNb</td><td>FPAYHX</td><td>REF01</td><td>60/20</td><td>CL RP</td><td>BAdI</td><td>empty-suppress</td><td>Building byte range per claim 101.</td></tr>
-        <tr><td>3</td><td>SEPA</td><td>ADD</td><td>N_4754354180</td><td>Cdtr</td><td>PstCd</td><td>FPAYHX</td><td>REF01</td><td>80/10</td><td>CL</td><td>BAdI</td><td>empty-suppress</td><td>Postal byte range.</td></tr>
-        <tr><td>4</td><td>SEPA</td><td>ADD</td><td>N_4754354180</td><td>Cdtr</td><td>TwnNm</td><td>FPAYHX</td><td>REF06</td><td>0/40</td><td>CL</td><td>BAdI</td><td>empty-suppress</td><td>City byte range.</td></tr>
-        <tr><td>5</td><td>SEPA</td><td>ADD</td><td>N_9926185740</td><td>Dbtr</td><td>StrtNm</td><td>FPAYP</td><td>REF01</td><td>0/60</td><td>CL RP</td><td>—</td><td>empty-suppress</td><td>Mirror CGI UltmtDbtr (existing TAB=FPAYP FLD=REF01).</td></tr>
-        <tr><td>6</td><td>SEPA</td><td>ADD</td><td>N_9926185740</td><td>Dbtr</td><td>BldgNb</td><td>FPAYP</td><td>REF01</td><td>60/10</td><td>CL RP</td><td>—</td><td>empty-suppress</td><td>Same.</td></tr>
-        <tr><td>7</td><td>SEPA</td><td>ADD</td><td>N_9926185740</td><td>Dbtr</td><td>PstCd</td><td>FPAYP</td><td>REF01</td><td>70/10</td><td>CL RP</td><td>—</td><td>empty-suppress</td><td>Verify byte offset on D01 Sub-option A test.</td></tr>
-        <tr><td>8</td><td>SEPA</td><td>ADD</td><td>N_9926185740</td><td>Dbtr</td><td>TwnNm</td><td>FPAYP</td><td>REF02</td><td>0/40</td><td>CL</td><td>—</td><td>empty-suppress</td><td>Verify byte offset on D01 Sub-option A test.</td></tr>
+        <tr style="background:#dcfce7"><td>1</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>StrtNm <code>(N_3513093480)</code></td><td>FPAYP</td><td>REF01</td><td>0/60</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>Cdtr per-line. Mirror CGI N_8824498030 (TIER_1). <b>D01 verified 2026-05-07</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>2</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>BldgNb <code>(N_4704385380)</code></td><td>FPAYP</td><td>REF01</td><td>100/10</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>HOUSE_NUM slot (CM005 line 97 +100(10)). Mirror CGI N_8824498030. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>3</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>PstCd <code>(N_9840226220)</code></td><td>FPAYP</td><td>REF01</td><td>80/10</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>POST_CODE1 slot (CM005 line 95). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>4</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>TwnNm <code>(N_7064046520)</code></td><td>FPAYP</td><td>BORT1</td><td>0/35</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/BORT1/2/&lt;&gt;/SPACE/1</td><td>FPAYP-BORT1 = vendor city SAP-std. XSD maxLen 35. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>5</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>StrtNm <code>(N_1215903670)</code></td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>Dbtr per-header. CM005 line 93 writes Dbtr to FPAYHX-REF01. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>6</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>BldgNb <code>(N_1396453300)</code></td><td>FPAYHX</td><td>REF01</td><td>100/10</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>HOUSE_NUM slot for UNESCO HQ "7" (CM005 line 97). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>7</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>PstCd <code>(N_2703639030)</code></td><td>FPAYHX</td><td>REF01</td><td>80/10</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>UNESCO HQ "75007" (CM005 line 95). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>8</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>TwnNm <code>(N_7609981350)</code></td><td>FPAYHX</td><td>REF06</td><td>0/35</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF06/2/&lt;&gt;/SPACE/1</td><td>FPAYHX-REF06 = UNESCO HQ city "PARIS" (CM005 line 98). XSD maxLen 35. <b>D01 verified</b>.</td></tr>
         <tr><td>9</td><td>—</td><td>REGISTER</td><td>TFPM042FB</td><td>—</td><td>+1 row</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>FORMI=/SEPA_CT_UNES EVENT=05 FNAME=FI_PAYMEDIUM_DMEE_CGI_05 (Sub-opt A)</td></tr>
         <tr><td>10</td><td>CITI</td><td>ADD</td><td>N_1531351640</td><td>Dbtr-primary</td><td>StrtNm</td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td>CL RP</td><td>—</td><td>(none — XSLT)</td><td>Existing PstCd+TwnNm+Ctry+AdrLine. Add StrtNm.</td></tr>
         <tr><td>11</td><td>CITI</td><td>ADD</td><td>N_1531351640</td><td>Dbtr-primary</td><td>BldgNb</td><td>FPAYHX</td><td>REF01</td><td>60/20</td><td>CL RP</td><td>—</td><td>(none)</td><td>Add BldgNb.</td></tr>
@@ -4995,7 +5229,52 @@ File written via SAPFPAYM driver.</pre>
         <tr><td>27</td><td>(DATA)</td><td>FIX</td><td>5 LIFNRs</td><td>—</td><td>vendor master</td><td>LFA1+ADRC</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0000020171/20731/20815/20843/59828 — fix CITY1+COUNTRY or LOEVM='X'.</td></tr>
       </table>
 
-      <h4 style="color:#0066cc;margin-top:18px">Transport packaging (per Phase 2 Week 1)</h4>
+      <h4 style="color:#0066cc;margin-top:24px">Design decisions — embedded in matrix rows 1-8 (TIER_1 evidence)</h4>
+      <p style="color:#475569;font-size:12px">After D01 V001 RFC verification (2026-05-06) the matrix design choices crystallized against ground truth. Three architectural decisions and their evidence anchors:</p>
+
+      <h5 style="color:#1abc9c;margin-top:14px">Decision A — CV_RULE = <code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> (Dbtr) / <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> (Cdtr) — 10-character positional flag</h5>
+      <p style="font-size:12px">CV_RULE is a <strong>fixed 10-character positional string</strong>, not space-separated tokens. Each position controls one transformation that DMEE applies to the value before writing to XML. Spaces are significant: <code>CL RP    X</code> ≠ <code>CLRPX</code> ≠ <code>CL&nbsp;RP&nbsp;X</code>.</p>
+      <table style="font-size:11px;margin-top:6px">
+        <tr><th>Pos</th><th>Char</th><th>Name</th><th>What it does</th></tr>
+        <tr><td>1</td><td><code>C</code></td><td>Compress</td><td>Removes leading/trailing spaces from value. <code>"&nbsp;&nbsp;Place de Fontenoy&nbsp;&nbsp;"</code> → <code>"Place de Fontenoy"</code></td></tr>
+        <tr><td>2</td><td><code>L</code></td><td>Left-justify</td><td>Aligns value at field start; pads right with spaces if value is shorter than slot</td></tr>
+        <tr><td>3</td><td><code>U</code> / blank</td><td>Upper-case</td><td>Converts to CAPS. <strong>Cdtr</strong> uses <code>U</code> (vendor data is mixed case → force consistency); <strong>Dbtr</strong> leaves blank (UNESCO HQ data already uppercase)</td></tr>
+        <tr><td>4</td><td><code>R</code></td><td>Reset on initial</td><td>Marks field as "considered empty" if value is initial after C+L (works with empty-suppress condition logic)</td></tr>
+        <tr><td>5</td><td><code>P</code></td><td>Print/Pad</td><td>For chars: print field even if empty post-Reset (override of R suppression). Combined with R = "let DMEE_TREE_COND condition decide", not automatic suppress</td></tr>
+        <tr><td>6-9</td><td>(blank)</td><td>reserved</td><td>SAP reserves these positions; UNESCO leaves blank</td></tr>
+        <tr><td>10</td><td><code>X</code></td><td>UNESCO custom flag</td><td>Non-SAP-standard. Customer Z-namespace marker. Likely XSLT-aware (CITI tree has XSLT post-processor) or XML-output mode flag. <strong>100% consistency across all UNESCO leaves cross-tree</strong> → mandatory for new V001 leaves</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Decoding the SEPA V001 patterns:</strong></p>
+      <ul style="font-size:11px;color:#475569;margin-top:4px">
+        <li><code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + (no U) + R + P + (4 spaces) + X — used for <strong>Dbtr V001 leaves</strong> + existing AdrLine ORT1Z</li>
+        <li><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + U + R + P + (4 spaces) + X — used for <strong>Cdtr V001 leaves</strong> + existing AdrLine ZPFST/ZPLOR</li>
+        <li><code>CL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + (no U/R/P) + (4 spaces) + X — used for <strong>CITI Dbtr-1 leaves</strong> (XSLT handles empty-suppress globally)</li>
+      </ul>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Anchor:</strong> verified via dmee_tree_node_p01.csv extraction 2026-05-06. SEPA Dbtr AdrLine N_4946758140 has <code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> in production today — V001 Dbtr leaves mirror this. SEPA Cdtr AdrLine N_6054982000/N_6343458710 have <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> — V001 Cdtr leaves mirror this.</p>
+
+      <h5 style="color:#1abc9c;margin-top:18px">Decision B — BldgNb maps to HOUSE_NUM slot (offset 100, len 10), NOT BUILDING slot (offset 60)</h5>
+      <p style="font-size:12px">Earlier matrix versions had BldgNb at offset 60 length 20 (the BUILDING slot in CM005 layout). RFC verification of CGI N_8824498030 production pattern revealed UNESCO uses <strong>offset 100 length 10</strong> (the HOUSE_NUM1 slot, CM005 line 97).</p>
+      <table style="font-size:11px">
+        <tr><th>Slot</th><th>CM005 line</th><th>ADRC source</th><th>UNESCO HQ data</th><th>Vendor data (typical)</th></tr>
+        <tr style="background:#fee2e2"><td>REF01[60..80] BUILDING</td><td>line 94 <code>+60(20) = ls_adrc-building</code></td><td>ADRC.BUILDING</td><td>(empty)</td><td>often empty (only ~31% have building name per Phase 0 Finding A)</td></tr>
+        <tr style="background:#dcfce7"><td>REF01[100..110] HOUSE_NUM</td><td>line 97 <code>+100(10) = ls_adrc-house_num1</code></td><td>ADRC.HOUSE_NUM1</td><td>"7" (Place de Fontenoy)</td><td>typically populated (street number)</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px">If we read BUILDING slot for <code>&lt;BldgNb&gt;</code>, UNESCO HQ payments produce empty BldgNb (suppressed → bank loses house number "7"). Reading HOUSE_NUM slot produces <code>&lt;BldgNb&gt;7&lt;/BldgNb&gt;</code> ✓. <strong>Anchor:</strong> CGI N_8824498030 production pattern (RFC-verified 2026-05-06) uses offset 100; CM005 ABAP line 97 confirms slot semantics.</p>
+
+      <h5 style="color:#1abc9c;margin-top:18px">Decision C — Ctry + AdrLine UNCHANGED in V001 (hybrid output accepted)</h5>
+      <p style="font-size:12px">Existing <code>&lt;Ctry&gt;</code> and <code>&lt;AdrLine&gt;</code> nodes are NOT modified by V001. After cutover, output XML contains <strong>both</strong> the new structured leaves (StrtNm/BldgNb/PstCd/TwnNm) <strong>and</strong> the original AdrLine + Ctry. ISO 20022 pain.001.001.03 schema permits both coexisting; banks may accept hybrid for now and tighten in CBPR+ Nov 2026.</p>
+      <table style="font-size:11px">
+        <tr><th>Side</th><th>Leaf</th><th>NODE_ID</th><th>Source</th><th>V001 action</th><th>XML rendered</th></tr>
+        <tr><td>Dbtr</td><td>Ctry</td><td>N_2225746230</td><td>FPAYHX-LAND1</td><td>UNCHANGED</td><td>always: <code>&lt;Ctry&gt;FR&lt;/Ctry&gt;</code></td></tr>
+        <tr><td>Dbtr</td><td>AdrLine</td><td>N_4946758140</td><td>FPAYHX-ORT1Z</td><td>UNCHANGED (already has empty-suppress condition)</td><td>renders: <code>&lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;</code> ⚠ redundant w/ TwnNm</td></tr>
+        <tr><td>Cdtr</td><td>Ctry</td><td>N_2790093090</td><td>FPAYHX-ZLISO</td><td>UNCHANGED</td><td>always: <code>&lt;Ctry&gt;{country}&lt;/Ctry&gt;</code></td></tr>
+        <tr><td>Cdtr</td><td>AdrLine #1</td><td>N_6054982000</td><td>FPAYHX-ZPFST</td><td>UNCHANGED</td><td>renders: <code>&lt;AdrLine&gt;{street}&lt;/AdrLine&gt;</code> ⚠ redundant w/ StrtNm</td></tr>
+        <tr><td>Cdtr</td><td>AdrLine #2</td><td>N_6343458710</td><td>FPAYHX-ZPLOR</td><td>UNCHANGED</td><td>renders: <code>&lt;AdrLine&gt;{postal+city}&lt;/AdrLine&gt;</code> ⚠ redundant w/ PstCd+TwnNm</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Rationale for status quo</strong>: V001 is the first migration step. Keeping AdrLine preserves backward compatibility (fallback if V001 structured fields fail to populate). Risk of redundancy is acceptable for V001; phase-out plan is V002 (3-6 months post-V001) once Phase 4 UAT confirms SocGen/Citibank/CGI banks accept Fully-Structured cleanly.</p>
+      <p style="font-size:11px;color:#475569"><strong>Alternative deferred to V002</strong>: add cross-leaf empty-suppress condition on AdrLine ("suppress if StrtNm/TwnNm non-empty"). Complexity: 5 conditions across 3 leaves, requires regression test. Out of scope for V001.</p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Transport packaging (per Phase 2 Week 1)</h4>
       <p style="color:#64748b;font-size:12px">Per <code>knowledge/domains/Payment/dmee_versioning_procedure.md</code> + claim 102 surgical envelope. 8 transports total.</p>
       <table style="font-size:12px">
         <tr><th>Transport ID</th><th>Carries</th><th>Owner</th><th>Verify after</th></tr>

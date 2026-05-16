@@ -218,10 +218,25 @@
           "BUT000",
           "CVI_VEND_LINK"
         ]
+      },
+      {
+        "tag": "ADDRESS_ROUTING",
+        "finding": "KTOKK encodes vendor account group AND determines whether ADRC.STREET is a real address (INDV/UNES/ICVS/external) or an internal dept code (SCSA = \"BFM/FAS/PAY\", \"ADM/DIT/MIS/FBS\", etc.). Multiple LIFNRs per real-world entity is normal at UNESCO (one person → SCSA + UNES + INDV + ICVS).",
+        "impact": "Any output reading ADRC.STREET via LIFNR without checking KTOKK emits dept code as street for staff. SEPA banks reject. PA0006-first detection (PERNR=LIFNR cast NUMC8, SUBTY=1) is the KTOKK-agnostic safe path.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "KTOKK",
+        "related": [
+          "ADRC",
+          "PA0006",
+          "Y_FI_DMEE_ADR",
+          "KTOKK"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
       }
     ],
     "first_seen": "2026-04-09T08:51:14.441758",
-    "last_updated": "2026-04-09T08:51:14.492178"
+    "last_updated": "2026-05-09T13:54:08.167293"
   },
   "LFB1": {
     "annotations": [
@@ -2467,5 +2482,477 @@
     ],
     "first_seen": "2026-05-01T17:12:30.419791",
     "last_updated": "2026-05-01T17:12:30.419791"
+  },
+  "ADRC": {
+    "annotations": [
+      {
+        "tag": "SEMANTICS_DEPENDS_ON_LINK",
+        "finding": "ADRC.STREET is NOT always a real street at UNESCO. When the linked LIFNR has KTOKK=SCSA (staff payroll), STREET stores a department/division code used for internal routing (e.g. \"BFM/FAS/PAY\", \"HRM/SES/BNF\"). For INDV/UNES/ICVS/external the STREET is the real address.",
+        "impact": "Reverse-lookup tools and any output that prints ADRC.STREET as a postal address must first check the originating LIFNR.KTOKK or prefer PA0006 SUBTY=1 when the LIFNR maps to a PERNR.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "STREET",
+        "related": [
+          "LFA1.KTOKK",
+          "PA0006",
+          "Y_FI_DMEE_ADR"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
+      }
+    ],
+    "first_seen": "2026-05-09T13:54:08.167293",
+    "last_updated": "2026-05-09T13:54:08.167293"
+  },
+  "PA0006": {
+    "annotations": [
+      {
+        "tag": "CANONICAL_HOME_ADDRESS",
+        "finding": "PA0006 SUBTY='1' (Permanent Residence) is the canonical home address for any UNESCO employee. PERNR is derived from LIFNR by NUMC(8) cast (e.g. LIFNR 0010199971 → PERNR 10199971). The lookup is KTOKK-agnostic — works for staff vendors regardless of whether the payment LIFNR is SCSA, UNES, INDV or ICVS.",
+        "impact": "Any payment / printout / reporting object emitting an employee address must read PA0006 SUBTY=1 first; ADRC of LIFNR is a fallback only when no PERNR matches. Date validity: ENDDA >= sy-datlo AND BEGDA <= sy-datlo.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "STRAS/PSTLZ/ORT01/LAND1/STATE",
+        "related": [
+          "LFA1",
+          "Y_FI_DMEE_ADR"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
+      }
+    ],
+    "first_seen": "2026-05-09T13:54:08.167293",
+    "last_updated": "2026-05-09T13:54:08.167293"
+  },
+  "Y_FI_DMEE_ADR": {
+    "annotations": [
+      {
+        "tag": "CUSTOM_FM",
+        "finding": "UNESCO custom DMEE exit FM in function group SAPLYFPAYM, include LYFPAYMU19. Implements DMEE_EXIT_TEMPLATE_EXTEND_ABA (REFERENCE I_EXTENSION). Wired into V001 SEPA_CT_UNES Cdtr/PstlAdr + Dbtr/PstlAdr leaves only. Walks 2 hops up DMEE_TREE_NODE.PARENT_ID (no version filter — i_extension does not carry version) to detect Cdtr vs Dbtr context.",
+        "impact": "Source of truth for SEPA structured address output. v6 (deployed 2026-05-08, D01) implements PA0006-first detection (KTOKK-agnostic). v5 (KTOKK=SCSA explicit dispatch) is superseded — failed for BERTOLDINI on KTOKK=UNES.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "*",
+        "related": [
+          "LYFPAYMU19",
+          "SAPLYFPAYM",
+          "PA0006",
+          "ADRC",
+          "T001",
+          "DMEE_TREE_NODE",
+          "FUPARAREF"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
+      },
+      {
+        "tag": "INTERFACE_METADATA",
+        "finding": "FUPARAREF.REFERENCE must be 'X' for I_EXTENSION (REFERENCE, not VALUE) — required by template DMEE_EXIT_TEMPLATE_EXTEND_ABA. INSERT REPORT destroys FUPARAREF; GENERATE REPORT does not always reparse interface comments. The deploy script must follow with explicit UPDATE FUPARAREF SET REFERENCE='X' WHERE FUNCNAME='Y_FI_DMEE_ADR' AND PARAMETER='I_EXTENSION'.",
+        "impact": "Without this UPDATE, runtime fails with DMEE_ABA358 even if the FM is active. Tracked in rules: feedback_insert_report_destroys_fuparref, feedback_dmee_exit_must_match_template_exactly.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "I_EXTENSION",
+        "related": [
+          "FUPARAREF",
+          "TRDIR",
+          "DMEE_EXIT_TEMPLATE_EXTEND_ABA"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
+      },
+      {
+        "tag": "CLOSURE_VALIDATED",
+        "finding": "v6 (PA0006-first detection) closure validated by SQL replay across 15,305 distinct vendors paid via /SEPA_CT_UNES in P01 last 2 years. Result: 2,096 PA0006 hits, 1,905 drift cases (all in staff KTOKKs UNES/SCSA/INT), 0 theory violators. The 'only employees vary' hypothesis is empirically confirmed. Scope is bounded to /SEPA_CT_UNES — ICTP-family SEPA trees do NOT wire this FM.",
+        "impact": "Production cutover (D01→P01 deploy of v6 + V001 tree config) will correct 1,905 staff home addresses without affecting the 13,400 non-staff vendor outputs. ICTP staff trips (83 vendors) need a separate fix path — Nicolas's BAdI extension or wiring Y_FI_DMEE_ADR into ICTP trees.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "*",
+        "related": [
+          "DFPAYG",
+          "DFPAYV",
+          "REGUH",
+          "LFA1",
+          "PA0006",
+          "ADRC",
+          "/SEPA_CT_UNES",
+          "/SEPA_CT_ICTP_ISO",
+          "YCL_IDFI_CGI_DMEE_FALLBACK",
+          "FI_CGI_DMEE_EXIT_W_BADI"
+        ],
+        "timestamp": "2026-05-10T18:21:09.379076",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-09T13:54:08.167293",
+    "last_updated": "2026-05-10T18:21:09.379076"
+  },
+  "LYFPAYMU19": {
+    "annotations": [
+      {
+        "tag": "FM_INCLUDE",
+        "finding": "Include in function group SAPLYFPAYM that hosts Y_FI_DMEE_ADR source. Z (custom) — under our governance. Modifying via INSERT REPORT FROM lt_src DIRECTORY ENTRY trdir requires UCCHECK='X' (Unicode), SUBC='1' (function-pool include) and a follow-up GENERATE REPORT 'SAPLYFPAYM' + UPDATE FUPARAREF.",
+        "impact": "Single source-of-truth for the DMEE Cdtr/Dbtr address routing. extracted_code/FI/DMEE_full_inventory/Y_FI_DMEE_ADR_v{5,6}.abap mirrors this include contents.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "*",
+        "related": [
+          "Y_FI_DMEE_ADR",
+          "SAPLYFPAYM",
+          "TRDIR"
+        ],
+        "timestamp": "2026-05-09T13:54:08.167293",
+        "session": "#073"
+      }
+    ],
+    "first_seen": "2026-05-09T13:54:08.167293",
+    "last_updated": "2026-05-09T13:54:08.167293"
+  },
+  "DFPAYG": {
+    "annotations": [
+      {
+        "tag": "GOLD_DB_TABLE",
+        "finding": "F110 payment medium grouping table (1 row per (run, group, FORMI, ZBUKR, HBKID)). Joined with REGUH gives the {format ↔ run ↔ vendors paid} matrix needed for impact analysis. In Gold DB since session #074 — 9,848 rows last 2 years.",
+        "impact": "Source of truth for 'which payment format was actually used in which F110 run'. Replaces ad-hoc P01 RFC queries for impact analysis and test scenario generation.",
+        "field": "FORMI / ZBUKR / HBKID / GRPNO",
+        "related": [
+          "REGUH",
+          "DFPAYV",
+          "DMEE_TREE_NODE",
+          "TFPM042FB"
+        ],
+        "timestamp": "2026-05-10T18:21:09.379076",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-10T18:21:09.379076",
+    "last_updated": "2026-05-10T18:21:09.379076"
+  },
+  "DFPAYV": {
+    "annotations": [
+      {
+        "tag": "GOLD_DB_TABLE",
+        "finding": "Format×cocode×HBKID×variant configuration table (84 rows total in P01). Maps every (FORMI, ZBUKR, BANKS, HBKID, HKTID, CRDEB, RZAWE) tuple to a DMEE selection variant (VARI). Together with DFPAYG enables reverse-engineering of FBZP customizing: which VARI gets used per pay-co/format combination.",
+        "impact": "For any test-scenario question 'which format runs against this cocode/HBKID/currency?', query DFPAYV in Gold DB instead of opening FBZP. Lists 7 distinct FORMI values across UNESCO landscape: /CGI_XML_CT_UNESCO (most-used, 13 cocodes/HBKID combos), /CITI/XML/UNESCO/DC_V3_01, /SEPA_CT_UNES, /SEPA_CT_ICTP_ISO[_EXTRASEPA[_I]], DTAZV, SEPA_CT, Z_SEPA_CT_DB_XML, ZSETIF_FOR_ICTP, /CITI_XML_MASTER, /CITI/XML/UNESCO/DIRECT_CREDIT.",
+        "field": "FORMI / VARI",
+        "related": [
+          "DFPAYG",
+          "OBPM4",
+          "TFPM042FB",
+          "T042Z"
+        ],
+        "timestamp": "2026-05-10T18:21:09.379076",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-10T18:21:09.379076",
+    "last_updated": "2026-05-10T18:21:09.379076"
+  },
+  "DMEE_TREE_NODE": {
+    "annotations": [
+      {
+        "tag": "TREE_TOPOLOGY_TABLE",
+        "finding": "Holds the per-format tree topology — NODE_ID, TECH_NAME, PARENT_ID, MP_EXIT_FUNC, MP_SC_TAB/FLD/OFFSET/LENGTH. The MP_EXIT_FUNC column names the FM that overrides the leaf value at runtime; when blank, MP_SC_TAB/FLD provide direct binding to FPAYH/FPAYHX/FPAYP buffers. Address-leaves can also have neither (empty) when populated by Citi PMW runtime or by another evaluation path.",
+        "impact": "Source of truth for every per-format address-resolution analysis. RFC_READ_TABLE quirk: DATA_BUFFER_EXCEEDED if too many cols requested at once; OPTION_NOT_VALID for IN clauses or inline AND-joined conditions — must use 'TREE_ID =' + ' AND TECH_NAME =' in separate OPTIONS rows.",
+        "field": "MP_EXIT_FUNC / MP_SC_TAB / MP_SC_FLD",
+        "related": [
+          "DMEE_TREE_HEAD",
+          "DMEE_TREE_COND",
+          "Y_FI_DMEE_ADR",
+          "FI_CGI_DMEE_EXIT_W_BADI"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "FI_PAYMEDIUM_DMEE_CGI_05": {
+    "annotations": [
+      {
+        "tag": "SAP_STANDARD_EVENT05",
+        "finding": "SAP standard Event 05 FM (generic CGI). Populates FPAYHX-REF01[0..60]=street, REF01[60..80]=building, REF01[80..90]=post_code1, REF01[90..100]=region, REF01[100..110]=house_num1; REF02 = Cdtr equivalents; REF06[0..40]=city. The address source is ADRC of the LIFNR — ALWAYS blind read, no KTOKK awareness.",
+        "impact": "Root of the structured-address bug surface system-wide. Every UNESCO DMEE tree that binds to FPAYHX-REF01/Z* without an override inherits the dept-code-for-staff defect. Fix paths: (a) replace the binding with Y_FI_DMEE_ADR exit FM, (b) extend a Z BAdI implementation that runs before SAP std and overrides REF buffers for staff LIFNRs.",
+        "field": "FPAYHX-REF01/REF02",
+        "related": [
+          "FPAYHX-REF01",
+          "ADRC",
+          "Y_FI_DMEE_ADR",
+          "TFPM042FB"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      },
+      {
+        "tag": "REF01_REF02_OWNERSHIP_CORRECTION",
+        "finding": "CORRECTION to prior #074 annotation 'ADRC of the LIFNR': the actual code in CL_IDFI_CGI_CALL05_GENERIC->GENERIC_CALL (CM005.abap:89-127) reads cl_idfi_cgi_dmee_utils=>get_company_address(iv_bukrs=is_fpayh-zbukr, iv_nation=...) which loads ADRC of T001(zbukr).ADRNR — i.e. PAYING-COMPANY address, NOT vendor. REF01 is therefore Dbtr-context (the run's ZBUKR cocode address). Vendor address lives in REF02 (CM005.abap:138-209):   - if FPAYH-ZADNR populated AND GPA1T != '14': ADDR_SELECT_ADRC_SINGLE(zadnr) → ADRC of vendor;   - if FPAYH-ZADNR initial OR GPA1T = '14' (CPD/one-time): READ_BSEC by xbelnr/xbukrs from     fpayp-doc2r → BSEC-PSTL2/PSTLZ/STRAS, then split_street_house_no → REF02+10/+20. REF01 byte layout (CM005:89-127): [0..60]=ADRC.STREET, [60..80]=BUILDING (20 bytes), [80..90]=POST_CODE1, [90..100]=REGION, [100..110]=HOUSE_NUM1, [110..116]=batch_booking. REF06[0..40]=CITY1 (falls back to is_fpayhx-ort1z if empty). FPAYP rows: same paying-co address written via LOOP at CM005:108-115, with refresh of ls_adrc to ls_fpayp-bukrs's company-address if multi-cocode run (CM005:102-107).",
+        "impact": "Two prior brain artifacts must be re-read with this lens: (a) Brain annotation on FPAYHX-REF01 #074 'from ADRC of the LIFNR' — wrong, see correction below. (b) v001_change_matrix.csv row 1 SEPA Cdtr/StrtNm → FPAYP/REF01: under the corrected understanding this binding would render paying-co street in <Cdtr><StrtNm>. The 2026-05-07 BERTOLDINI empirical test rendered vendor street there ('BFM/FAS/PAY'), so the actual deployed V001 binding likely differs from the matrix as written OR the test used a different binding path. Flagged as DQ open question (see data_quality_issues.json).",
+        "field": "FPAYHX-REF01/REF02 ownership",
+        "related": [
+          "CL_IDFI_CGI_CALL05_GENERIC",
+          "CL_IDFI_CGI_CALL05_FACTORY",
+          "FPAYHX-REF01",
+          "FPAYHX-REF02",
+          "T001",
+          "ADRC",
+          "BSEC",
+          "FI_PAYM_MEDIUM_OPEN",
+          "FI_PAYM_MEDIUM_WRITE",
+          "TFPM042FB"
+        ],
+        "evidence": [
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:89-127",
+            "cite": "ls_adrc = get_company_address(zbukr,...) → cs_fpayhx_fref-ref01+0(60) = ls_adrc-street …"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:138-209",
+            "cite": "CPD branch reads BSEC by doc2r; non-CPD branch ADDR_SELECT_ADRC_SINGLE(zadnr)"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_FACTORY_CM001.abap:11-67",
+            "cite": "Factory dispatches by LAND1 from TFPM042F, fallback UBISO/UBNKS"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/funcs/FI_PAYMEDIUM_DMEE_CGI_05.abap:30-54",
+            "cite": "FM is the Event 05 entry point; instantiates factory and calls fill_fpay_fref"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/FPAYM_GET.abap:54-85",
+            "cite": "SAPFPAYM driver calls FI_PAYM_MEDIUM_OPEN/WRITE which fires Event 05 per format"
+          }
+        ],
+        "timestamp": "2026-05-11T17:48:31",
+        "session": "#075"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T17:48:31"
+  },
+  "FI_CGI_DMEE_EXIT_W_BADI": {
+    "annotations": [
+      {
+        "tag": "SAP_BADI_DISPATCHER",
+        "finding": "SAP standard BAdI exit FM that dispatches per tag-path to UNESCO country-class hierarchy (YCL_IDFI_CGI_DMEE_FR/DE/IT/GB/FALLBACK). Wired into 794 of 1,975 nodes across the 4 main UNESCO formats (40.2% per claim 69). For address leaves, dispatcher calls YCL_IDFI_CGI_DMEE_FALLBACK::GET_CREDIT which only handles <Cdtr><Nm> overflow concatenation — does NOT override address from PA0006.",
+        "impact": "Critical insight: just because a leaf has MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI does NOT mean address is overridden. The BAdI dispatcher passes through to country-class GET_VALUE which today returns SY-SUBRC=0 with c_value unchanged for address tags. Net effect: same as direct FPAYHX-REF01 binding (= ADRC blind).",
+        "field": "*",
+        "related": [
+          "YCL_IDFI_CGI_DMEE_FALLBACK",
+          "YCL_IDFI_CGI_DMEE_FR",
+          "YCL_IDFI_CGI_DMEE_UTIL"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "YCL_IDFI_CGI_DMEE_FALLBACK": {
+    "annotations": [
+      {
+        "tag": "BADI_FALLBACK_IMPL",
+        "finding": "Nicolas's BAdI implementation class for non-country-specific tag overrides. GET_CREDIT method (CM001) only handles <Cdtr><Nm> overflow >35 chars by concatenating excess into <StrtNm>. CM002 GET_DEBIT method exists but minimal. Class hierarchy: FALLBACK is the default; FR/DE/IT/GB country classes override per-country before falling through.",
+        "impact": "Read-only per rule feedback_only_modify_our_own_code. Extension of this class for PA0006-first detection would require Nicolas's authorization. UNESCO-controlled alternative: build Z BAdI impl with higher priority, or wire Y_FI_DMEE_ADR into the trees directly.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "GET_CREDIT",
+        "related": [
+          "FI_CGI_DMEE_EXIT_W_BADI",
+          "Y_FI_DMEE_ADR",
+          "feedback_only_modify_our_own_code"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "YCL_IDFI_CGI_DMEE_UTIL": {
+    "annotations": [
+      {
+        "tag": "PPC_FRAMEWORK",
+        "finding": "Implements the PPC framework — GET_TAG_VALUE_FROM_CUSTO method resolves DMEE tag value at runtime by reading YTFI_PPC_TAG (tag → PPC_CODE mapping per country) + YTFI_PPC_STRUC (sub-segment composition) + T015L (lookup values). Built by N_MENARD 2024-09-06. Dispatched from FR country class (YCL_IDFI_CGI_DMEE_FR::CM002).",
+        "impact": "Framework is DORMANT for UNESCO main flows: YTFI_PPC_TAG has 11 rows covering only AE/BH/CN/ID/IN/JO/MA/MY/PH; ZERO rows for FR/DE/IT/GB/US/BR (the countries of UNESCO's main paying banks). Configured tags are narrative (<InstrInf>, <Ustrd>) — NOT address tags. PPC cannot resolve the staff-address bug without (a) adding FR rows AND (b) extending PPC_CODE domain to support PA0006 lookup.",
+        "field": "GET_TAG_VALUE_FROM_CUSTO",
+        "related": [
+          "YTFI_PPC_TAG",
+          "YTFI_PPC_STRUC",
+          "T015L",
+          "YCL_IDFI_CGI_DMEE_FR"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "YTFI_PPC_TAG": {
+    "annotations": [
+      {
+        "tag": "PPC_CONFIG_TABLE",
+        "finding": "11 rows in P01. Maps (LAND1, TAG_LAST_LEAF, DEB_CRE) → TAG_FULL_PATH. Currently configured for 9 countries (AE, BH, CN, ID, IN, JO, MA, MY, PH). Tags handled: INSTRINF, -INSTRINF, USTRD, RMTINF — all narrative payment instruction tags. NO address tags configured.",
+        "impact": "Adding FR rows would unlock the PPC framework for UNESCO's predominant flow but only for narrative tags as currently supported. Address handling would require extending YTFI_PPC_STRUC PPC_CODE values (currently SEPARATOR, FIXED_VAL, PPC_VAR, PPC_DESCR, PAY_FIELD) to support a new ADRC_PAY or PA0006_PAY value.",
+        "field": "TAG_FULL_PATH",
+        "related": [
+          "YTFI_PPC_STRUC",
+          "YCL_IDFI_CGI_DMEE_UTIL"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "YCL_IDFI_CGI_DMEE_FR": {
+    "annotations": [
+      {
+        "tag": "BADI_COUNTRY_FR",
+        "finding": "FR country class for BAdI dispatcher. CM002 GET_VALUE implementation calls YCL_IDFI_CGI_DMEE_UTIL::GET_TAG_VALUE_FROM_CUSTO for every tag — i.e. PPC framework is the FR-specific override path. Today returns SY-SUBRC<>0 for all tags because YTFI_PPC_TAG has zero FR rows — falls through to FALLBACK class (which only handles Nm overflow).",
+        "impact": "Strategic anchor: this class is the natural extension point if UNESCO wanted to fix CGI staff addresses via PPC. Adding FR rows in YTFI_PPC_TAG/STRUC for Cdtr/PstlAdr/StrtNm + PA0006 lookup PPC_CODE would activate the fix without touching Nicolas's code or the tree.",
+        "incident": "V001-SEPA-Cdtr-StructAddr",
+        "field": "GET_VALUE",
+        "related": [
+          "YCL_IDFI_CGI_DMEE_UTIL",
+          "YTFI_PPC_TAG"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "/CITIPMW/V3_GET_CDTR_BLDG": {
+    "annotations": [
+      {
+        "tag": "CITI_PROPRIETARY",
+        "finding": "Citi proprietary FM (namespace /CITIPMW/) wired into /CITI/XML/UNESCO/DC_V3_01 tree for <BldgNb> Cdtr leaves. Source code not in UNESCO Z-namespace — delivered by Citi as add-on. Cannot be modified per rule feedback_only_modify_our_own_code.",
+        "impact": "If staff-address fix is to land in CITI tree, this FM (and /CITIPMW/V3_CGI_CRED_REGION for CtrySubDvsn) cannot be modified — only replaced or bypassed via tree config or Z BAdI.",
+        "field": "*",
+        "related": [
+          "/CITIPMW/V3_CGI_CRED_REGION",
+          "/CITI/XML/UNESCO/DC_V3_01"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T16:33:19.820634"
+  },
+  "FPAYHX-REF01": {
+    "annotations": [
+      {
+        "tag": "BYTE_STRUCTURED_BUFFER",
+        "finding": "Extended payment buffer field — 60+ bytes structured per SAP std layout: [0..60]=street, [60..80]=building, [80..90]=post_code1, [90..100]=region, [100..110]=house_num1. Populated by SAP std FI_PAYMEDIUM_DMEE_CGI_05 (Event 05) from ADRC of the LIFNR at every payment medium creation. DMEE trees can bind to it via MP_SC_TAB=FPAYHX + MP_SC_FLD=REF01 + MP_OFFSET + MP_LENGTH for sub-range reads.",
+        "impact": "The actual bug surface: this buffer carries ADRC blind read for every payment. Any tree using REF01 inherits the dept-code-for-staff defect. Fixing means either (a) overriding the FM that populates it (TFPM042FB Event 05 — currently FI_PAYMEDIUM_DMEE_CGI_05) or (b) overriding at the leaf level via Y_FI_DMEE_ADR.",
+        "field": "REF01",
+        "related": [
+          "FI_PAYMEDIUM_DMEE_CGI_05",
+          "ADRC",
+          "DMEE_TREE_NODE"
+        ],
+        "timestamp": "2026-05-11T16:33:19.820634",
+        "session": "#074"
+      },
+      {
+        "tag": "DBTR_NOT_VENDOR_CORRECTION",
+        "finding": "CORRECTION to prior #074 annotation 'from ADRC of the LIFNR': REF01 is populated from ADRC of the paying-company (T001(zbukr).ADRNR), via cl_idfi_cgi_dmee_utils=>get_company_address(zbukr, nation) in CL_IDFI_CGI_CALL05_GENERIC->GENERIC_CALL (CM005.abap:89-127). REF01 is therefore Dbtr-context. The vendor address (Cdtr-context) lives in REF02 (CM005:138-209).",
+        "impact": "Trees binding to FPAYHX-REF01 for <Dbtr> tags render paying-co address (correct). Trees binding to FPAYHX-REF01 for <Cdtr> tags would render paying-co address as the creditor's — inverse of what's intended. The historic SCSA-staff-dept-code bug therefore lives in REF02 (vendor ADRC blind read), not REF01.",
+        "field": "REF01",
+        "related": [
+          "FPAYHX-REF02",
+          "CL_IDFI_CGI_CALL05_GENERIC",
+          "T001",
+          "ADRC"
+        ],
+        "evidence": [
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:89-127",
+            "cite": "ls_adrc = get_company_address(zbukr,...) → cs_fpayhx_fref-ref01+0(60) = ls_adrc-street …"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:138-209",
+            "cite": "CPD branch reads BSEC by doc2r; non-CPD branch ADDR_SELECT_ADRC_SINGLE(zadnr)"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_FACTORY_CM001.abap:11-67",
+            "cite": "Factory dispatches by LAND1 from TFPM042F, fallback UBISO/UBNKS"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/funcs/FI_PAYMEDIUM_DMEE_CGI_05.abap:30-54",
+            "cite": "FM is the Event 05 entry point; instantiates factory and calls fill_fpay_fref"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/FPAYM_GET.abap:54-85",
+            "cite": "SAPFPAYM driver calls FI_PAYM_MEDIUM_OPEN/WRITE which fires Event 05 per format"
+          }
+        ],
+        "timestamp": "2026-05-11T17:48:31",
+        "session": "#075"
+      }
+    ],
+    "first_seen": "2026-05-11T16:33:19.820634",
+    "last_updated": "2026-05-11T17:48:31"
+  },
+  "CL_IDFI_CGI_CALL05_GENERIC": {
+    "annotations": [
+      {
+        "tag": "CALL_CHAIN_EVENT05_CGI",
+        "finding": "End-to-end call chain that fills FPAYHX_FREF for /CGI_XML_CT_UNESCO (the user's mental model 'FI_FILL_FPAYHX' resolves to fill_fpay_fref on this class hierarchy):\n  1. SAPFPAYM LDB FPMF driver — GET fpayh / GET fpayp / GET fpayh LATE.\n     [extracted_code/FI/SAPFPAYM/FPAYM_GET.abap:54-85]\n  2. FI_PAYM_MEDIUM_OPEN (first item) + FI_PAYM_MEDIUM_WRITE (each item) —      internally fire Event 05 per format via TFPM042FB lookup.\n  3. Event 05 FM for /CGI_XML_CT_UNESCO (and all CGI variants):      FI_PAYMEDIUM_DMEE_CGI_05. [extracted_code/FI/SAPFPAYM/funcs/FI_PAYMEDIUM_DMEE_CGI_05.abap:16-54]\n  4. FM instantiates cl_idfi_cgi_call05_factory=>get_instance(...). Factory      dispatches by LAND1 from TFPM042F-LAND1 (UNESCO format → FR), with fallback      FPAYHX-UBISO then FPAYHX-UBNKS. Tries CL_IDFI_CGI_CALL05_<ISO>; if cx_sy_create_object_error,      falls back to CL_IDFI_CGI_CALL05_GENERIC. Special-case: LI dispatches to CH.\n     [extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_FACTORY_CM001.abap:1-69]\n  5. FM calls ro_instance->fill_fpay_fref(...). This orchestrator method (not extracted      by name) internally invokes — in this order: GENERIC_CALL → COUNTRY_SPECIFIC_CALL →      CHECK_CHANGES. GENERIC_CALL writes REF01..REF12; COUNTRY_SPECIFIC_CALL adds country      overrides (FR=REF14 SIRET only; DE/IT/GB also REF14-only); CHECK_CHANGES does byte-by-byte      compare and raises change_found if a country method overwrote a non-empty generic char      (W011 IDFIPAYM_MSG logged to FBPM).\n     [CL_IDFI_CGI_CALL05_GENERIC_CM005.abap (GENERIC_CALL), CL_IDFI_CGI_CALL05_FR_CM001.abap      (COUNTRY_SPECIFIC_CALL), CL_IDFI_CGI_CALL05_GENERIC_CM001.abap (CHECK_CHANGES),      CL_IDFI_CGI_CALL05_GENERIC_CM003.abap (compare_structures),      CL_IDFI_CGI_CALL05_GENERIC_CM002.abap (compare_by_chars)]\nKey consequence: country classes CANNOT override REF01/REF02/REF06 (the address fields) because CHECK_CHANGES blocks any non-empty-position overwrite. Address-mapping customization is impossible at the country-class layer; it must happen either (a) inside GENERIC_CALL via SAP std support package, (b) by replacing the registered TFPM042FB Event 05 FM, or (c) at the DMEE tree leaf via an EXIT_FUNC.",
+        "impact": "Closes the user's mental-model question 'how does FI_FILL_FPAYHX feed REF01'. Anchors vocabulary: there is no SAP-std FM named FI_FILL_FPAYHX; the conceptual filler is method fill_fpay_fref on the if_idfi_cgi_call05 instance returned by cl_idfi_cgi_call05_factory.",
+        "field": "fill_fpay_fref method orchestration",
+        "related": [
+          "FI_PAYMEDIUM_DMEE_CGI_05",
+          "CL_IDFI_CGI_CALL05_FACTORY",
+          "CL_IDFI_CGI_CALL05_FR",
+          "CL_IDFI_CGI_CALL05_DE",
+          "CL_IDFI_CGI_CALL05_IT",
+          "CL_IDFI_CGI_CALL05_GB",
+          "FPAYHX_FREF",
+          "TFPM042F",
+          "TFPM042FB",
+          "SAPFPAYM"
+        ],
+        "evidence": [
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:89-127",
+            "cite": "ls_adrc = get_company_address(zbukr,...) → cs_fpayhx_fref-ref01+0(60) = ls_adrc-street …"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_GENERIC_CM005.abap:138-209",
+            "cite": "CPD branch reads BSEC by doc2r; non-CPD branch ADDR_SELECT_ADRC_SINGLE(zadnr)"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/DMEE_full_inventory/CL_IDFI_CGI_CALL05_FACTORY_CM001.abap:11-67",
+            "cite": "Factory dispatches by LAND1 from TFPM042F, fallback UBISO/UBNKS"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/funcs/FI_PAYMEDIUM_DMEE_CGI_05.abap:30-54",
+            "cite": "FM is the Event 05 entry point; instantiates factory and calls fill_fpay_fref"
+          },
+          {
+            "type": "source_code",
+            "ref": "extracted_code/FI/SAPFPAYM/FPAYM_GET.abap:54-85",
+            "cite": "SAPFPAYM driver calls FI_PAYM_MEDIUM_OPEN/WRITE which fires Event 05 per format"
+          }
+        ],
+        "timestamp": "2026-05-11T17:48:31",
+        "session": "#075"
+      }
+    ],
+    "first_seen": "2026-05-11T17:48:31",
+    "last_updated": "2026-05-11T17:48:31"
   }
 }

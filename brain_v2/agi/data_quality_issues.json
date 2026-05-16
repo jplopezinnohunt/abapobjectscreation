@@ -412,7 +412,7 @@
     "extended_outliers_csv_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix_outliers.csv",
     "coverage_extension": "Coverage extended from 11,357 HARD-linked pairs (old detector) to 15,455 pairs (matrix) on 2026-05-01. State distribution: ALIGNED 4,363 / FM-EXHAUSTED 2,390 / PS-EXHAUSTED 991 / BOTH-EXHAUSTED 3,842. NEW BAD pairs found in DERIVED + DERIVED-MULTI tiers: 1,245 (invisible to old detector).",
     "outlier_governance_pending": "10 multi-fund (>10 funds) WBSs flagged for HQ Budget Office governance review on AVC policy for common-cost objects. WBSs: PR00027627 (1211 funds), PR00000106 (592), PR00000107 (591), PR00000111 (448), PR00000109 (369), PR00000108 (275), PR00000110 (249), PR00008981 (68), PR00002724 (36), PR00008982 (30). Tracked under KU-2026-OUTLIER-WBS-AVC.",
-    "enriched_session": 69,
+    "enriched_session": 70,
     "proposed_controls": {
       "parked_session": 68,
       "parked_reason": "User explicitly deferred control-mechanism execution to live under MODEL-GAP-2026-001 governance, not as separate work item.",
@@ -651,6 +651,48 @@
     ],
     "central_narrative_2026_05_02": "AVC absence/misconfiguration is the UPSTREAM root cause. Everything downstream (FB01 batches, closure protocols, workplan reprogramming, MULESOFT mappings, PO redirects) are symptoms or transport layers. SAP knew about the open commitments but had no guardian to enforce the constraint. The structural fix priority is therefore: FIX-G1 (granular AVC per-FIPEX) + FIX-G2 (exclude REVENUE from TC pool) + FIX-G3 (enable AVC for non-Earmarked TYPEs that need it) + FIX-H (remove REVENUE preservation in YCL_YPS8_BCS_BL). FIX-F Meta-AVC is the long-term strategic enhancement that ALSO adds cross-engine FM<->PS consistency check at every posting. FIX-A MULESOFT is deprecated. FIX-D/E/B are mitigations of symptoms.",
     "narrative_credit": "User SME 2026-05-02",
-    "related_central_claim": 157
+    "related_central_claim": 157,
+    "session_70_correction_2026_05_03": {
+      "date": "2026-05-03",
+      "attribution": "User SME screenshot of FMAVCT live view",
+      "correction": "Prior claim 'FM-AVC TC bucket on 196EAR4042/WHC in 2026 = -$1.56M deficit' is FALSE. Real values per SAP live AVC view: TC Available=$2,251,685.21 (positive); 80 Available=$200,854.89 (positive). Both AVC control objects show positive availability. The PS-FM consistency narrative needs adjustment: the gap is not 'FM exhausted vs PS healthy'. The 3 Gabon PO block has a different cause we have not yet identified.",
+      "methodology_error": "fmifiit_full WRTTP=66 - WRTTP=54 raw aggregation != AVC Consumable - Consumed semantics. AVC uses pre-allocated control object budgets and registration rules.",
+      "working_hypothesis": "Timing-window failure: FB01 R1 reversal exhausted AVC briefly; KBFC carry-forward restored it. Block may have been resolved by carry-forward rather than the structural fix we proposed.",
+      "superseded_claims": [
+        136,
+        142,
+        156,
+        157,
+        159
+      ],
+      "replaced_by_claim": 174,
+      "related_kus": [
+        "KU-2026-AVC-MATH-METHODOLOGY",
+        "KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE",
+        "KU-2026-FMAVCT-FULL-EXTRACT"
+      ]
+    }
+  },
+  {
+    "id": "DQ-2026-05-11-001",
+    "title": "v001_change_matrix.csv row 1 (SEPA Cdtr/StrtNm → FPAYP/REF01) contradicts code reading",
+    "severity": "HIGH",
+    "domain": "Payment",
+    "discovered_session": "#075",
+    "discovered_at": "2026-05-11T17:48:31",
+    "summary": "Matrix row 1 binds /SEPA_CT_UNES Cdtr/StrtNm to FPAYP/REF01 with rationale 'CM005 line 109 writes Cdtr to FPAYP-REF01'. Direct code reading of CL_IDFI_CGI_CALL05_GENERIC->GENERIC_CALL line 108-115 shows the LOOP writes <fs_fpayp>-ref01+0(60) = ls_adrc-street where ls_adrc was loaded via get_company_address(zbukr) — i.e. PAYING-CO address, not vendor. Under this code path, the matrix-row-1 binding would render UNESCO HQ street as <Cdtr><StrtNm>. Empirical 2026-05-07 BERTOLDINI test rendered VENDOR street ('BFM/FAS/PAY') under V001, which is inconsistent with the matrix-row-1 design.",
+    "candidate_explanations": [
+      "(A) The actual V001 binding deployed to D01 SEPA tree differs from matrix-row-1 — the deployed binding uses FPAYH-ZSTRA (vendor street Z-field) directly, and the matrix row 1 is forward-design only.",
+      "(B) FPAYP-REF01 layout for SEPA differs from FPAYHX-REF01 for CGI — but matrix row 1 says they're identical (CM005 line 109 cite).",
+      "(C) There's another code path that overwrites FPAYP-REF01 with vendor data after GENERIC_CALL (e.g. a BAdI or another Event)."
+    ],
+    "verification_plan": [
+      "(1) RFC-extract DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' for node N_3513093480 (per matrix row 1) — read MP_SC_TAB and MP_SC_FLD.",
+      "(2) If (1) returns MP_SC_TAB=FPAYP, MP_SC_FLD=REF01, then trace the V001 BERTOLDINI F110 run on 2026-05-07 — check whether SAPFPAYM_MERGE bypassed CGI_05 entirely (using ZSAPFPAYM_REPLAY path) which would explain a different REF01 population.",
+      "(3) Examine ZSAPFPAYM_REPLAY's FPAYHX/FPAYP construction — does it call FI_PAYMEDIUM_DMEE_CGI_05 or pre-populate REF01 from REGUH/FPAYH-ZSTRA?"
+    ],
+    "blocks": "Phase 5 V001 SEPA cutover — must not release until matrix row 1 vs code reality is reconciled",
+    "status": "OPEN",
+    "owner": "next session"
   }
 ]

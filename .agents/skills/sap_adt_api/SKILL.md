@@ -9,7 +9,12 @@ domains:
 
 # SAP ADT REST API Integration
 
-## Why ADT API?
+> [!WARNING]
+> **STATUS 2026-05-13 — D01 HTTP/ADT IS RETURNING 401 FOR jp_lopez.** Empirical test: `GET /sap/bc/adt/discovery` and every other ADT endpoint return HTTP 401 with body `Anmeldung fehlgeschlagen` (German "logon failed"). The same user+password authenticates successfully via RFC (port 3300). This is a SAP-side auth config issue (likely SU01 user type, USR02 buffer mismatch, or SICF service config), not a credentials problem. **Until BASIS fixes it, prefer RFC paths.**
+>
+> Cross-reference: same root cause blocks `@sap-ux/deploy-tooling` in the unescrp project. See unescrp's `references/deployment/sap-d01-connection-patterns.md` for the full diagnostic + fix-path.
+
+## Why ADT API? (when it works)
 
 The SAP ADT REST API is the **official, clean interface** for source code operations. It is used by:
 - The **VSCode ABAP extension** (abap-remote-fs)
@@ -17,7 +22,35 @@ The SAP ADT REST API is the **official, clean interface** for source code operat
 - The **mcp-abap-abap-adt-api** MCP server ([github.com/mario-andreschak/mcp-abap-abap-adt-api](https://github.com/mario-andreschak/mcp-abap-abap-adt-api))
 
 > [!IMPORTANT]
-> **Always prefer ADT API over RFC hacks** for source code writes. RFC functions like `RPY_PROGRAM_UPDATE`, `SIW_RFC_WRITE_REPORT` are often non-remote or dialog-dependent. ADT API handles locking, transport recording, and activation cleanly.
+> **When ADT is available, prefer it over RFC hacks** for source code writes. ADT handles locking, transport recording, and activation cleanly. **But verify ADT auth first with a quick GET probe** — if 401, fall back to RFC.
+
+## Current working alternative — RFC paths
+
+Until ADT auth is restored, use these working patterns:
+
+| Operation | RFC alternative | Status |
+|---|---|---|
+| Read program source | `RPY_PROGRAM_READ` | ✓ works |
+| Insert/update report | `INSERT REPORT lt_src FROM DIRECTORY ENTRY trdir` (run via `RFC_ABAP_INSTALL_AND_RUN`) | ✓ works (used for Y_FI_DMEE_ADR v6, ZSAPFPAYM_REPLAY) |
+| Generate / activate report | `GENERATE REPORT 'name'` (run via `RFC_ABAP_INSTALL_AND_RUN`) | ✓ works |
+| Update FUPARAREF | `UPDATE fupararef SET reference = 'X' WHERE ...` (run via `RFC_ABAP_INSTALL_AND_RUN`) | ✓ works (required after INSERT REPORT for FM interface metadata) |
+| Class CCIMP / Method source | `SEO_CLASS_CREATE_*` + RFC INSERT REPORT to CCIMP include | ✓ works (6 strategies in `sap_class_deployment` skill) |
+| BSP application upload | abapGit pull from GitHub OR Playwright SE38/SE80 | ✓ works (see `sap-github-pull-deployment.md` in unescrp skill) |
+| Read O2PAGCON (BSP page source) | ADT only — currently blocked | ✗ blocked |
+
+## Auth diagnostic — run this first
+
+```python
+import sys; sys.path.insert(0, 'Zagentexecution/mcp-backend-server-python')
+from sap_adt_client import from_env
+c = from_env('D01')
+status, body, headers = c._request("GET", "/sap/bc/adt/discovery")
+print(f"ADT HTTP status: {status}")
+# 200 → ADT works, proceed
+# 401 → ADT blocked, fall back to RFC paths
+```
+
+> **Watch out:** `c.fetch_csrf()` will print `"CSRF token obtained: ..."` even on 401 if SAP echoes a token in the error headers. The token will be **empty string** when auth actually failed. Check `status == 200` explicitly, not just whether a token came back.
 
 ---
 

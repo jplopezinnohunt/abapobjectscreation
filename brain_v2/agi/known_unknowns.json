@@ -58,7 +58,7 @@
       "related_dq": "MODEL-GAP-2026-001",
       "question": "How should AVC apply to the 10 multi-fund 'common cost' WBSs (each with >10 distinct funds posting in 2024-2026)? WBSs identified: PR00027627 (1,211 funds, Management Cost PFF technical account), PR00000106 (592, Major Programme 1 Education), PR00000107 (591, Major Programme 2 Natural Sciences), PR00000111 (448, RP Cross-Cutting Themes), PR00000109 (369, Major Programme 4 Culture), PR00000108 (275, Major Programme 3 Soc & Hum Sciences), PR00000110 (249, Major Programme 5 Com & Information), PR00008981 (68, UBO FITOCA), PR00002724 (36, IESALC), PR00008982 (30, UBO FITOCA PSC EAR). These cannot be evaluated with a single (Fund, WBS) pool view because the AVC concept does not map cleanly to common-cost / overhead objects.",
       "why": "The Pool Health Matrix (run 2026-05-01) flagged these 10 WBSs as outliers: 3,455 pair-rows excluded from single-pool eval. Without a Budget Office decision, these objects sit in a governance limbo: FM-AVC sees a fund-level bucket, PS-AVC sees a single WBS pool, and neither view aligns with operational reality (the WBS hosts costs from hundreds of funds). Proportional allocation (as used for DERIVED-MULTI 2-10 fund cases) is mathematically possible but administratively unreasonable for 1,211 funds.",
-      "how_to_resolve": "Submit list to HQ Budget Office with options: (a) PROPORTIONAL — extend matrix's DERIVED-MULTI logic with no upper limit, accepting the administrative cost; (b) PER-BUCKET — switch AVC at the (Fund, FundCenter, CommItem) granularity for these WBSs and ignore PS-pool; (c) AVC-OFF — exempt these WBSs from PS-AVC entirely, rely solely on FM-AVC at their fund level; (d) RE-DESIGN — split the WBSs into per-programme child WBSs (governance-heavy).",
+      "how_to_resolve": "Submit list to HQ Budget Office with options: (a) PROPORTIONAL â€” extend matrix's DERIVED-MULTI logic with no upper limit, accepting the administrative cost; (b) PER-BUCKET â€” switch AVC at the (Fund, FundCenter, CommItem) granularity for these WBSs and ignore PS-pool; (c) AVC-OFF â€” exempt these WBSs from PS-AVC entirely, rely solely on FM-AVC at their fund level; (d) RE-DESIGN â€” split the WBSs into per-programme child WBSs (governance-heavy).",
       "status": "OPEN",
       "opened": "2026-05-01",
       "related_companion": "companions/fm_ps_pool_health_matrix_v1.html",
@@ -102,7 +102,7 @@
       "status": "PARTIALLY_ANSWERED",
       "partial_answer_session": 69,
       "partial_answer_date": "2026-05-02",
-      "partial_answer": "Explore agent search 2026-05-02 found smoking-gun ABAP code in extracted_code: YCL_YPS8_BCS_BL===CM005_RPY.abap lines 58 and 73 explicitly preserve FIPEX=REVENUE rows while deleting zero-amount operational FIPEX rows: DELETE LT_WFMBDT WHERE HAMOUNT IS INITIAL AND FIPEX <> 'REVENUE'. This is a UNESCO custom PS budget class (BCS = Budget Control System) — confirms REVENUE placeholder is hardcoded in UNESCO custom code. However, the MULESOFT flow itself (MUNESCO_FundCreate or equivalent) is NOT in our extracted code repos — it lives in MuleSoft GitLab/Artifactory. Mapping table Allocation__c.Commitment_Item__c -> FMBL.CMMTITEM is DOCUMENTED as synced in unescrp/.claude/skills/salesforce-integration/session-learnings.md but empirical fmifiit_full shows NO per-FIPEX distribution at fund creation — gap between documented mapping and runtime behavior.",
+      "partial_answer": "Explore agent search 2026-05-02 found smoking-gun ABAP code in extracted_code: YCL_YPS8_BCS_BL===CM005_RPY.abap lines 58 and 73 explicitly preserve FIPEX=REVENUE rows while deleting zero-amount operational FIPEX rows: DELETE LT_WFMBDT WHERE HAMOUNT IS INITIAL AND FIPEX <> 'REVENUE'. This is a UNESCO custom PS budget class (BCS = Budget Control System) â€” confirms REVENUE placeholder is hardcoded in UNESCO custom code. However, the MULESOFT flow itself (MUNESCO_FundCreate or equivalent) is NOT in our extracted code repos â€” it lives in MuleSoft GitLab/Artifactory. Mapping table Allocation__c.Commitment_Item__c -> FMBL.CMMTITEM is DOCUMENTED as synced in unescrp/.claude/skills/salesforce-integration/session-learnings.md but empirical fmifiit_full shows NO per-FIPEX distribution at fund creation â€” gap between documented mapping and runtime behavior.",
       "next_action": "Contact MuleSoft Ops Team to obtain the MUNESCO_FundCreate flow XML from their repository. In parallel, contact FM Master Data Functional Lead (possibly R. RIOS based on session #66 context) to identify any Z* BAPI wrapper that intercepts BAPI_FUND_CREATE on the SAP side.",
       "related_evidence": [
         "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73",
@@ -172,6 +172,201 @@
       "question": "Which non-Earmarked TYPEs (001/005/006/etc) need AVC enablement (FIX-G3)? Currently 51,852 funds (93.5%) have no AVC rule. Some may be intentionally uncontrolled (e.g., internal clearing accounts). HQ Budget Office must classify which TYPEs should have AVC.",
       "how_to_resolve": "Submit to HQ Budget Office: list of TYPEs by fund count + post volume. Decision matrix on which require AVC profile + control object configuration.",
       "status": "OPEN"
+    },
+    {
+      "id": "KU-2026-070-01",
+      "domain": "Treasury",
+      "question": "Pull T044A (valuation methods) into Gold DB - which method does each F.05 variant use?",
+      "severity": "MEDIUM",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-02",
+      "domain": "Treasury",
+      "question": "Pull VARI/VARID for F.05 variants per BUKRS to inspect each institute's variant content",
+      "severity": "MEDIUM",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-03",
+      "domain": "Treasury",
+      "question": "Measure EBS posting lag vs F.05 cycle date - does EBS finish posting before F.05 always at month-end?",
+      "severity": "HIGH",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-04",
+      "domain": "Treasury",
+      "question": "Identify SKA1.SAKNR + SKAT.TXT50 long text for 0005049011 and 0005049012 - confirm IFRS-reporting unrealized-FX-reserve role",
+      "severity": "MEDIUM",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-05",
+      "domain": "Treasury",
+      "question": "Why does IIEP 0007045011 (gain) carry 84,800 EUR of DR postings (counter-natural sign) in F.05 docs in 2025?",
+      "severity": "MEDIUM",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-06",
+      "domain": "Treasury",
+      "question": "Investigate ICTP July + November 2025 zero-cycles - was M_VENUTI on leave; is backup configured?",
+      "severity": "LOW",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-070-07",
+      "domain": "Treasury",
+      "question": "Are the 200 defective T030H rows (LSBEW/LHBEW/LKORR all empty) actually firing in F.05? Probe BSEG.",
+      "severity": "HIGH",
+      "logged_at": "2026-05-03",
+      "logged_session": 70,
+      "status": "open"
+    },
+    {
+      "id": "KU-2026-071-09",
+      "session": 71,
+      "opened": "2026-05-05",
+      "domain": "Treasury",
+      "severity": "MEDIUM",
+      "question": "What is the canonical semantic meaning of each Treasury group A/B/C/D in the INC-000008088 Excel? Pablo (user) explicitly noted that the agent's prior characterizations (Group A=Current, B=Savings, C=ASHI, D=Nessim) are AGENT ASSUMPTIONS derived from interpreting bank account descriptions in T012T (e.g., 'TRANSFER', 'SAVINGS', 'ASHI', 'PFF NESSIM HABIF') â€” NOT confirmed Treasury semantics.",
+      "why_matters": "Affects: (1) future bank classification when Treasury adds new banks, (2) interpretation of NTRF+/NINT+/FINT+/FTRF+ external codes per group (operations vs savings), (3) whether auto-routing redirects ALL 4 interest external codes or only NINT/FINT, (4) accounting policy alignment with IPSAS/IAS classifications.",
+      "current_workaround": "Treasury Excel canonical mapping (banks â†’ groups â†’ target revenue GLs) is the source of truth for execution. We implement what Treasury specified without claiming to understand the underlying semantics. The 6-VGTYP plan + redirect of 4 external codes (NINT/NTRF/FINT/FTRF +) per VGTYP is what Treasury asked.",
+      "how_to_resolve": "Ask Treasury (Marlies / Thavry / Baizid) directly: (a) confirm Group A meaning, (b) Group B, (c) Group C exclusively ASHI, (d) Group D exclusively Nessim Habif, (e) for each group, are ALL incoming credits treated as interest or only specific external codes?",
+      "status": "open",
+      "blocking": false,
+      "related_objects": [
+        "INC-000008088"
+      ]
+    },
+    {
+      "id": "KU-2026-AVC-MATH-METHODOLOGY",
+      "session": 70,
+      "opened": "2026-05-03",
+      "severity": "CRITICAL",
+      "domain": "PSM",
+      "related_dq": "MODEL-GAP-2026-001",
+      "related_claim": 174,
+      "question": "What is the EXACT formula SAP AVC uses to compute Consumable/Consumed/Available per (Fund, FundCenter, CommItem)? My fmifiit_full WRTTP=66 - WRTTP=54 aggregation gave wrong sign and magnitude. The actual AVC math involves pre-allocated control object budgets and specific consumption-registration rules.",
+      "how_to_resolve": "Pull live FMAVCT row for 196EAR4042/WHC/TC/2026 with full schema (all ALLOCTYPE_9 + HSL01-HSL16). Cross-reference with FMAVCO01 transaction.",
+      "status": "OPEN"
+    },
+    {
+      "id": "KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE",
+      "session": 70,
+      "opened": "2026-05-03",
+      "severity": "HIGH",
+      "domain": "PSM",
+      "related_dq": "MODEL-GAP-2026-001",
+      "related_claim": 174,
+      "question": "If FM-AVC TC bucket has $2.25M available and 80 has $200K available AND PS pool shows +$48K free, why DID the 3 Gabon POs block in March-April 2026? Hypotheses: period-specific check, pre-KBFC timing, different error message, sub-bucket granularity.",
+      "how_to_resolve": "Get the actual error message text. Check timestamps. Run a test SES today.",
+      "status": "OPEN"
+    },
+    {
+      "id": "KU-2026-FMAVCT-FULL-EXTRACT",
+      "session": 70,
+      "opened": "2026-05-03",
+      "severity": "HIGH",
+      "domain": "Data",
+      "related_dq": "MODEL-GAP-2026-001",
+      "question": "fmavct_2026 extract is incomplete: only ALLOCTYPE_9=KBFC rows + only HSL01 column. Missing: KBN0 + supplements + period buckets HSL02-HSL16. Cannot reproduce real AVC Consumable/Consumed.",
+      "how_to_resolve": "Re-extract FMAVCT with full ALLOCTYPE_9 range and HSL01-HSL16. Use extract_co_tables.py pattern.",
+      "status": "OPEN"
+    },
+    {
+      "id": "KU-2026-071-12",
+      "title": "ZXFMDTU02_RPY Treasury block (lines 152-170) only handles GSBER='GEF'/'MBF' â€” PFF/OPF gaps",
+      "description": "After patching line 155 to add 7044013 to the IF list, the inner CASE on GSBER still only branches for 'GEF' and 'MBF'. Historical fmifiit_full shows 7044011 had 1669 PFF postings + 234 OPF postings (treasury-pooled funds with non-GEF GSBER). When interest reroutes from 7044011 to 7044013/14 in production, any line whose GGB1 substitution sets GSBER='PFF' or 'OPF' will hit WHEN OTHERS and fail with 'No funds center entered/derived'. SOG-only test scope (current INC-8088 V01) likely never triggers this because SOG is GEF-only. Risk emerges when bigger NT/ASHI/Nessim split is implemented (Phase 2) OR when generic-bank manual reposts route via the new GLs.",
+      "domain": "FI",
+      "session_introduced": 71,
+      "status": "open",
+      "blocking_for": [
+        "INC-000008088 Phase 2",
+        "ZXFMDTU02_RPY refactor"
+      ],
+      "next_step": "Extend lines 152-170 with WHEN 'PFF' / WHEN 'OPF' branches OR refactor to Z-table-driven lookup (BUKRS+HKONT+GSBER -> FundCenter+Fund) per claim 30 anti-pattern.",
+      "evidence": [
+        "fmifiit_full P01: HKONT=7044011 has GSBER distribution UNESCO/GEF=3697, UNESCO/PFF=1669, UNESCO/OPF=234",
+        "ZXFMDTU02_RPY.abap lines 152-170: only GSBER WHEN 'GEF' / WHEN 'MBF' branches"
+      ]
+    },
+    {
+      "id": "KU-2026-071-13",
+      "title": "TKA3D (OKB9 Default Account Assignment) NOT extracted to Gold DB",
+      "description": "TKA3D is THE source of truth for Cost Center (KOSTL) derivation per (KOKRS, KSTAR, BUKRS). Gold DB has CSKB (cost element master) + CSKS (cost center master) but not the OKB9 backing table TKA3D, which contains the BArIn flag + per-GSBER cost center grid. Today we have to query OKB9 manually in SAP V01/P01 to verify cost center derivation. For agentic intelligence to reason about FI posting outcomes end-to-end, TKA3D must be in Gold DB. Add to next P01 + D01 extraction batch with fields: KOKRS, KSTAR, BUKRS, GSBER, KOSTL, AUFNR, PRCTR, KSTAR_ALT, MEINS, LSTAR, ACCAS_DETAIL, ACT_FAREA. Filter: KOKRS='UNES'.",
+      "domain": "FI",
+      "session_introduced": 71,
+      "status": "open",
+      "blocking_for": [
+        "INC-000008088 Phase 2 audit",
+        "automated FM derivation analysis"
+      ],
+      "next_step": "Run RFC extraction of TKA3D when VPN restored; load as p01_tka3d + d01_tka3d in Gold DB; rerun audit comparing per-GL cost center config vs new vs old.",
+      "evidence": [
+        "Gold DB inventory of 199 tables searched 2026-05-07: no table with both KSTAR + KOSTL columns",
+        "Earlier extract attempts: extract_tka3d.py timed out 2026-05-07 due to VPN connection failure (172.16.4.66:4800 / 172.16.4.100:4800 not reached)"
+      ]
+    },
+    {
+      "id": "KU-2026-071-14",
+      "title": "OKB9 typo silently fails when target cost center doesn't exist in CSKS",
+      "description": "When OKB9 (TKA3D) BArIn grid contains a Cost Center value that does NOT exist in CSKS for the same KOKRS, SAP does NOT raise an error at OKB9 maintenance time. At posting time, the BArIn lookup retrieves the invalid cost center, fails to find it in CSKS, and silently skips → KOSTL is left empty in BSEG. The posting succeeds but with KOSTL=blank, which then causes downstream issues (no profit center derivation via CSKS, missing CO actual data). Specific instance INC-8088 V01 2026-05-07: 7044013 OKB9 entry had GEF row Cost Ctr=3001 (typo, should be 113001). Cost center 0000003001 does not exist in CSKS UNES; 0000113001 does (text: 'Exch rate / int- GEF'). Test posting on SOG-DKK1 NINT credit landed on 7044013 with Fund=GEF, FundCenter=UNESCO, KOSTL=blank. The agent reviewed the OKB9 screenshot showing 'GEF | 3001' alongside 'MBF | 143001 / OPF | 133001' (4-digit vs 6-digit pattern anomaly) and FAILED to flag it as a typo — Class-of-defect: agent must validate per-row OKB9 BArIn entries against CSKS before assuming derivation works.",
+      "domain": "FI",
+      "session_introduced": 71,
+      "status": "closed_invalid",
+      "blocking_for": [
+        "INC-000008088 production transport"
+      ],
+      "next_step": "1) Fix OKB9 7044013 GEF row 3001 -> 113001. 2) Re-post test statement. 3) Add agent rule: ANY OKB9 screenshot must be validated digit-by-digit against CSKS for the same KOKRS — flag any 4-digit cost center where 6-digit is the norm.",
+      "evidence": [
+        "FB03 screenshot 2026-05-07: Doc 3500000008 Line 002 G/L 7044013 USNAM blank, Cost Center field highlighted yellow/empty, Fund=GEF, FundCenter=UNESCO",
+        "OKB9 screenshot for 7044013: BusA GEF row Cost Ctr=3001 (4 digits, anomalous vs MBF=143001 OPF=133001)",
+        "CSKS UNES query: 0000003001 NOT FOUND, 0000113001 EXISTS ('Exch rate / int- GEF')"
+      ],
+      "closure_note": "FALSIFIED 2026-05-07 evening: agent misread the original OKB9 screenshot. Fresh screenshot from user confirms GEF=113001 (correct). The visual ambiguity was the input cursor over the leading 11 digits. The general rule (validate digit-by-digit) still stands. Real cause of FB03 KOSTL=blank on doc 3500000008 is most likely timing (doc posted before OKB9 BArIn grid was saved/transported to V01). Reverse + repost test pending."
+    },
+    {
+      "id": "KU-2026-071-15",
+      "title": "Unknown FUND/FUND_CENTER derivation mechanism active for UNES (not ZXFMDTU02_RPY, not FMDERIVE strategy)",
+      "description": "V01 test 2026-05-07: posting on 7044013 produces FB03 showing Fund=GEF + FundCenter=UNESCO. Debugger shows ZXFMDTU02_RPY exit hits WHEN OTHERS (GSBER blank when exit fires) - exit does NOT set those values. FMDERIVE Company Code Assignment screen confirms NO strategy assigned to BUKRS=UNES (only ICTP and UBO). Therefore there is at least one OTHER mechanism deriving FUND + FUND_CENTER for UNES bank-related postings. Candidates not yet investigated: (a) BAdI implementations TX SE19 (FMFG_BADI_DERIVE_RULE, FMDR_RULE, FAGL_DERIVE_FMFA), (b) FI substitution at callup point 1 line-item TX OBBH, (c) Standard SAP automatic derivation via cost element FM defaults TX KA03, (d) CMOD enhancement project with includes not yet pulled to extracted_code. Investigation method: set debugger watchpoint on C_FMDERIVE-FUND_CENTER + re-post, locate exact frame that assigns the value.",
+      "domain": "FI",
+      "session_introduced": 71,
+      "status": "closed_partial",
+      "blocking_for": [
+        "complete documentation of derivation pipeline",
+        "claim 175 + 177 promotion back to TIER_1"
+      ],
+      "next_step": "Pablo runs debugger watchpoint on C_FMDERIVE-FUND_CENTER during repost; reports which Include/Function/Form is the actual setter. Then update brain with the real mechanism.",
+      "evidence": [
+        "User screenshot 2026-05-07: TX FMDERIVE Company Code Assignments shows only ICTP + UBO have strategies; UNES is NOT in the list",
+        "Debugger screenshot 2026-05-07: ZXFMDTU02_RPY at line 153 with HKONT=7044013 + GSBER=blank - hits WHEN OTHERS",
+        "Same posting FB03 doc 3500000008 line 002: Fund=GEF, FundCenter=UNESCO, KOSTL=blank",
+        "extracted_code search: no other custom file assigns C_COBL-FUND/C_FMDERIVE-FUND_CENTER besides ZXFMDTU02_RPY"
+      ],
+      "closure_note": "PARTIALLY closed 2026-05-07: the operational symptom (KOSTL=blank on doc 3500000008) was caused by missing CSKB activation, not by an unknown derivation mechanism. After cost element activation, FUND/FUND_CENTER derive correctly. The deeper question 'which mechanism sets FUND/FUND_CENTER for UNES given no FMDERIVE strategy + ZXFMDTU02_RPY hitting WHEN OTHERS' remains open as a curiosity but is no longer blocking. Probable answer: SAP standard derivation reading commitment-item / FM-defaults from cost element master once it exists. Not investigated further as not blocking INC-8088."
+    },
+    {
+      "id": "KU-2026-071-16",
+      "table": "FPAYHX (runtime buffer)",
+      "where": "SAPFPAYM populator + AUSTO/AUST1/AUST2/AUST3 contents at F110 runtime for paying-co=UNES",
+      "error": "Cannot determine without runtime debug or SAPFPAYM source extraction whether FPAYHX-AUSTO/AUST1/AUST2/AUST3 contain parseable structured paying-co address (e.g. AUSTO=name, AUST2=street, AUST3=postcode+city) such that PAY_FIELD with PAY_STRUC=FPAYHX could resolve Dbtr StrtNm/PstCd/TwnNm via Z-table config alone (no DDIC extension, no UTIL ABAP delta).",
+      "logged_at": "2026-05-08",
+      "context": "If AUSTx fields contain parseable structured paying-co address (one field per address line in a known canonical form), V001 SEPA Dbtr can be implemented as 4 PAY_FIELD rows in YTFI_PPC_STRUC + 4 mapping rows in YTFI_PPC_TAG (zero ABAP, zero DDIC). Otherwise need ADRC_PAY PPC_CODE extension (~10 LOC + 1 DDIC domain row). Decision-blocker for V001 SEPA Dbtr final design path. Verification options: (a) SE38 SAPFPAYM debug for D01 F110 line — break before DMEE, inspect AUSTx values for UNES paying-co batch; (b) ADT extract SAPFPAYM source + sub-includes, grep for `fpayhx-aust`/`aust1 =`/`aust2 =`/`aust3 =` assignments to see what populates them; (c) Read XML output legacy hybrid mode where AdrLine[Dbtr] uses FPAYHX/AUST3 (V9 reference) — content of AdrLine reveals AUST3 content.",
+      "status": "open"
     }
   ]
 }

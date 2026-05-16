@@ -12,19 +12,22 @@ DB = Path('Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db')
 
 CRITICAL_COLS = [
     'LAUFD', 'LAUFI', 'ZBUKR', 'LIFNR',
-    'BELNR', 'GJAHR', 'BUZEI', 'BLART', 'BLDAT', 'BUDAT',
+    'BUKRS', 'BELNR', 'GJAHR', 'BUZEI',
+    'BLART', 'BLDAT', 'BUDAT',
     'WRBTR', 'WAERS', 'HKONT', 'KOART', 'BSCHL', 'SHKZG',
     'XBLNR', 'VBLNR', 'UMSKZ', 'ZUONR', 'SGTXT',
     'ZTERM', 'ZBD1T', 'ZBD2T', 'ZBD3T',
-    'MWSKZ', 'MANSP', 'REBZG'
+    'MWSKZ', 'MANSP', 'REBZG',
+    'EMPFG',  # ← alt-payee at item level (the field that was missing)
 ]
 
 
 def main():
-    print('=== Extract REGUP (payment line items) ===')
+    print('=== Extract REGUP (payment line items) with EMPFG, LAUFD >= 20240101 ===')
     t0 = time.time()
     conn = get_connection('P01')
-    rows = rfc_read_paginated(conn, 'REGUP', CRITICAL_COLS, where='',
+    rows = rfc_read_paginated(conn, 'REGUP', CRITICAL_COLS,
+                              where="LAUFD >= '20240101'",
                               batch_size=5000, throttle=1.0)
     print(f'Extracted {len(rows):,} rows in {time.time()-t0:.0f}s')
     conn.close()
@@ -42,13 +45,16 @@ def main():
     sqlcon.commit()
     for s in [
         'CREATE INDEX idx_regup_lifnr ON REGUP(LIFNR)',
-        'CREATE INDEX idx_regup_belnr ON REGUP(BELNR, GJAHR)',
-        'CREATE INDEX idx_regup_zbukr_lifnr ON REGUP(ZBUKR, LIFNR)',
+        'CREATE INDEX idx_regup_doc ON REGUP(BUKRS, BELNR, GJAHR, BUZEI)',
+        'CREATE INDEX idx_regup_run ON REGUP(LAUFD, LAUFI, ZBUKR)',
+        'CREATE INDEX idx_regup_empfg ON REGUP(EMPFG)',
     ]:
         cur.execute(s)
     sqlcon.commit()
     cur.execute('SELECT COUNT(*) FROM REGUP')
     print(f'REGUP final count: {cur.fetchone()[0]:,}')
+    cur.execute("SELECT COUNT(*) FROM REGUP WHERE EMPFG != '' AND EMPFG IS NOT NULL")
+    print(f'REGUP rows with EMPFG populated: {cur.fetchone()[0]:,}')
     sqlcon.close()
     print(f'DONE in {time.time()-t0:.0f}s')
 

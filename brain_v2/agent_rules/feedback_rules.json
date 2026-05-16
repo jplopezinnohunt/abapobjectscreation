@@ -2550,5 +2550,508 @@
     "rule": "When analyzing UNESCO SAP architecture defects, the agent role is EVALUATIVE not PRESCRIPTIVE. Do not propose code modifications, BAdI implementations, or architectural changes as if the agent were going to execute them. Document findings as OPTIONS for UNESCO config teams to evaluate.",
     "why": "User directive Session #69 (2026-05-02): \"No debes tocar ningún código, solo evaluar\". The agent does not own or modify production SAP code. Code changes belong to UNESCO config teams (FM/PS Configuration Team, MuleSoft Ops, Architecture Board). The agent provides empirical evidence, risk classification, and structured options — UNESCO decides and executes.",
     "how_to_apply": "Reframe all \"FIX-X\" entries from \"we propose to modify\" to \"option UNESCO can evaluate\". Use language like \"if UNESCO decides to modify X, the empirical effect would be Y\" rather than \"we propose modifying X\". Companions and briefs should be evaluative reports, not implementation plans. Keep the analytical depth; remove any executive verbs that imply agent will execute changes."
+  },
+  {
+    "id": "feedback_v001_dmee_design_requires_empirical_xml_output_test",
+    "created_session": 70,
+    "created_date": "2026-05-07",
+    "severity": "CRITICAL",
+    "rule": "When designing DMEE V001 changes for production deployment, the ONLY definitive validation is an empirical XML output test from F110 + SAPFPAYM in a real environment (D01 dev minimum). RFC table extracts (REGUH/ADRC), brain claims about buffer populating mechanisms, and pattern-mirror reasoning across DMEE trees are NECESSARY but NOT SUFFICIENT. The runtime context binding (which field maps to which XML scope) cannot be predicted from static analysis alone.",
+    "why": "Session 2026-05-07: V001 SEPA Dbtr design used FPAYH-ZSTRA for <StrtNm> source mirroring ICTP pattern. RFC extracts (REGUH-ZSTRA + ADRC UNESCO HQ) gave false confidence — REGUH had vendor data, ADRC had paying co data, and we assumed Z-include populated FPAYH-ZSTRA contextually based on Dbtr/Cdtr scope. WRONG. F110 runtime populates FPAYH-ZSTRA with vendor address regardless of XML scope. Empirical XML output (file UNES_SOGE_03SEP.in collector 10002B 2026-05-07) showed <StrtNm>BFM/FAS/PAY</StrtNm> (vendor street) instead of expected <StrtNm>Place de Fontenoy</StrtNm> (UNESCO HQ). Same test also revealed CM005 GENERIC does NOT fire automatically without OBPM3 registration — BldgNb + PstCd rendered empty. Without empirical XML test these 2 design flaws would have transported to V01/P01 and broken SEPA payments at bank schema validation level.",
+    "how_to_apply": "Before any V001 transport release: 1) F110 + SAPFPAYM_MERGE end-to-end test in D01 (or dev system) — post a small payment, generate medium via SAPFPAYM_MERGE collector path, retrieve XML output from network share or FDTA. 2) Verify each PstlAdr leaf in XML matches expected for both Dbtr (paying co) AND Cdtr (vendor). 3) If D01 has BCM cross-payment-run setup blocking direct medium creation: SAPFPAYM_MERGE bypasses the gate, output goes to file system path per OBPM4 variant (UNESCO: \\\\hq-sapitf\\SWIFT$\\D01\\INPUT\\). 4) Skip-empirical paths (REGUH analysis only, brain claims only, pattern-mirror reasoning) are valid for hypothesis but NEVER for design closure. 5) The empirical test cost is ~30 min D01 work; the cost of skipping is potential broken production payments at bank rejection level.",
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI",
+        "BCM",
+        "DMEE"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "evidence_artifacts": [
+      "knowledge/domains/Payment/v001_dbtr_fix_2026-05-07.md (full incident write-up)",
+      "C:\\Users\\jp_lopez\\Downloads\\UNES_SOGE_03SEP.in (XML output proving design flaw)",
+      "knowledge/domains/Payment/v001_change_matrix.csv rows 5 + 9 (corrected)",
+      "knowledge/domains/Payment/phase0/dmee_full/dmee_tree_node_d01_sepa_v001.csv (D01 pre-fix state)"
+    ]
+  },
+  {
+    "id": "feedback_use_sap_std_tx_before_inventing_path",
+    "created_session": 70,
+    "severity": "HIGH",
+    "rule": "Before describing how to do a SAP customizing action (e.g. wire a customer FM to a DMEE event, register a payment format, create a country variant), search the existing knowledge corpus for the canonical SAP-std transaction or IMG path FIRST. Do not invent SM30 / SE16 / direct table maintenance suggestions. If the user pushes back with 'this doesn't exist as a table', do NOT defend the suggestion — accept the correction and find the standard tx.",
+    "why": "Session #70 (2026-05-07): I told user `tx SM30 → V_T042FB → INSERT row` to register CM005 for SEPA Event 05. User correctly pushed back: 'esto no existe como tabla. No deberiamos reinventar la rueda esto es mas que comun'. The right answer was tx OBPM3 (Customer Enhancement / Function modules per format) — documented in our own repo at knowledge/domains/Payment/dme_creation_payment.md §2.3 line 72-73 since previous sessions. SAP has had OBPM3 since ECC 6.0; treating Payment Medium Workbench customizing as something requiring SM30 reinvention is a beginner-level error and propagates through to companion artifacts and execution runbooks.",
+    "how_to_apply": "1. For ANY SAP customizing action (DMEE FM register, format/variant create, BAdI wiring, payment method setup), ALWAYS first grep `knowledge/domains/Payment/` and similar domain folders for the canonical TX name. dme_creation_payment.md has the full OBPM1/OBPM2/OBPM3/OBPM4 quartet with screenshots and IMG paths.\n2. If knowledge corpus doesn't have it, the SAP-std customizing TX usually starts with O*: OB*, OF*, OT*, OK* — check SE93 or SAP help.\n3. If TX is unknown, propose the IMG path (SPRO →) NOT the table maintenance (SM30/SE16). IMG path is human-friendly; SM30 implies you're bypassing standard customizing controls (transport recording, validation, etc).\n4. NEVER suggest direct table maintenance via SM30/SE16N for tables that have a customizing wrapper TX. Direct table maintenance bypasses transport, validation, and audit trail.\n5. Companion docs and runbooks must use the SAP-std TX, not invented paths. If you wrote one wrong, fix it immediately AND fix the matrix CSV / brain claims that reference it. Don't leave inconsistent documentation.",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_validate_against_extracted_rfc_not_matrix",
+    "created_session": 70,
+    "severity": "CRITICAL",
+    "rule": "When dictating DMEE / SAP config values to a user mid-execution, ALWAYS validate against the EXTRACTED RFC tables (dmee_tree_node_p01.csv, dmee_tree_cond_p01.csv, etc.) BEFORE consulting derived artifacts (matrix CSVs, companion HTML tables). The matrix is a derived design artifact and may contain stale/wrong values; the RFC extraction reflects actual system state.",
+    "why": "Session #70 (2026-05-07): I dictated SEPA V001 leaf values to Pablo from v001_change_matrix.csv four times in succession; each time the matrix had different errors that I propagated: (1) FPAYP for SEPA Dbtr (should be FPAYHX — Dbtr is per-header, CM005 line 93 writes to FPAYHX); (2) FPAYHX for SEPA Cdtr (should be FPAYP — Cdtr is per-line, CM005 line 109 writes to FPAYP); (3) BldgNb offset 60 length 20 (should be offset 100 length 10 — CGI N_8824498030 production proves HOUSE_NUM slot is the right semantic for vendor BldgNb, not BUILDING which is empty); (4) TwnNm Dbtr REF02 (should be REF06 — REF02 is Cdtr legacy header buffer per CM005 line 130). User had to push back FOUR times — \"how can it be that all fields have the same reference field?\" — before I read the actual extracted CSV and corrected. Once I read dmee_tree_node_p01.csv (which I had on disk all along), all 4 errors became obvious from a single grep. The matrix had been written ~3 sessions before the final RFC extraction landed and was never reconciled.",
+    "how_to_apply": "Before ANY dictation of DMEE leaf values:\n1. Identify the closest 'twin' parent NODE_ID in P01 production (e.g., for SEPA Cdtr V001, use CGI N_8824498030 — same Cdtr architecture, same per-line scope, mature production pattern).\n2. Read dmee_tree_node_p01.csv directly: `awk -F',' 'NR==1 || ($18 == \"<parent_node>\")' dmee_tree_node_p01.csv`. Show the user the EXACT extracted rows (not a paraphrase).\n3. If the matrix CSV says different, treat the extracted RFC as TIER_1 ground truth. Flag the matrix discrepancy as a separate finding to update later.\n4. NEVER pass values from matrix CSV to user without cross-checking against extracted CSV first. Even one cell wrong forces user to re-do the work in DMEE Tx — high-cost reversal.\n5. After every batch of changes the user makes in DMEE, re-extract D01 V001 via `extract_dmee_d01_sepa_v001.py` and validate the BROTHER_ID chain + LENGTH + MP_SC_TAB/FLD/OFFSET against the master table. RFC verification is 5 seconds and catches errors that screenshots miss (cut+paste data loss, length=0 with empty source, wrong order, etc.).",
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_read_sap_std_xml_before_designing_z_objects",
+    "created_session": 71,
+    "created_date": "2026-05-08",
+    "severity": "HIGH",
+    "rule": "Before proposing ANY Z-FM, BAdI extension, or custom ABAP for a DMEE leaf binding (StrtNm, BldgNb, PstCd, TwnNm, AdrLine, Ctry, etc.), parse the SAP-standard format-tree XML that ships with the relevant SAP Note for that format and enumerate every available source field — both SAP-standard (FPAYHX-AUSTO/AUST1/AUST2/AUST3, FPAYHX-LDISO, FPAYHX-ORT1Z) and customer Z-extensions on FPAYHX (e.g. UNESCO ZPFST/ZPLOR/ZLISO). Then run DDIF_FIELDINFO_GET on FPAYHX in the target system to confirm field existence + length + domain. Only after that catalog is in hand should code paths be considered.",
+    "why": "Session #71 (2026-05-08): For SEPA_CT V001 Dbtr structured-address I proposed three code paths (Custom Z FM Z_DMEE_DBTR_HQ_STREET reading T001->ADRC; BAdI extension to YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_DEBIT; speculative empirical AUSTO test) before reading the SAP-std SEPA_CT format tree from Note 0001798463 (file SEPA_CT_260916.XML on disk in the user's Downloads folder). When Pablo pushed back ('this information is not custom, some standard function for SEPA should cover it'), parsing that XML revealed that SAP ships FPAYHX-AUSTO + FPAYHX-AUST3 as paying-co AdrLine sources AND that UNESCO already has FPAYHX-ZPFST/ZPLOR/ZLISO as purpose-built Z-extensions on the header buffer. DDIF_FIELDINFO_GET on FPAYHX in D01 confirmed all 7 fields exist with appropriate lengths (ZPFST=35 'P.O. Box or Street for Postal Code/City'; ZPLOR=46 'Postal Code/City of the Payee'; ZLISO=2 ISO country). The 'invent code' path was a 30-LOC + transport waste; the SAP-std answer was a config-only rebind. Cost of the wrong proposal: one extra back-and-forth and Pablo's correction. Cost prevented going forward: future agents proposing custom Z-objects for problems SAP solved 15 years ago.",
+    "how_to_apply": "(1) Whenever the user mentions a DMEE format that has an SAP Note (SEPA_CT 0001798463; SEPA_DD 0001798463 same note; CGI varies by release; CITI proprietary so this rule N/A), check the user's Downloads / artifact folders for the format XML before any design proposal. (2) Parse the format XML for the leaf in question — list every Element with that <Name> and dump MappingProcedure / TableName / FieldName / ExitFunction / Constant / Condition. Multiple Element occurrences usually mean multiple bindings under different parents (Dbtr/Cdtr/UltmtDbtr) or different conditional branches. (3) Distinguish header-buffer (FPAYHX, paying-co context) vs line-buffer (FPAYH/FPAYP, vendor context) sources. Structured leaves under Dbtr need FPAYHX; under Cdtr need FPAYH (per-line) or FPAYP (item). (4) Run DDIF_FIELDINFO_GET on the buffer table in D01 to confirm the field exists + its length + domain — gives ground truth. Use Zagentexecution/mcp-backend-server-python/extract_fpayhx_field_catalog.py as template. (5) Only after step 4 fails (no SAP-std field, no customer Z-ext, exit module needed) should code paths be considered. (6) Document the SAP-std bindings in the change matrix CSV with a 'sap_std_source' column citing the XML Element index for traceability.",
+    "violations_observed": [
+      {
+        "session": 71,
+        "what": "Proposed Path A (Z FM ~30 LOC reading T001-ADRNR -> ADRC) and Path B (BAdI extension to YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_DEBIT) for SEPA Dbtr StrtNm before reading SEPA_CT_260916.XML",
+        "user_correction": "this information is not custom, some standard function for SEPA should cover it. Why do not focus over reading schemas configuration, and why this was not option?",
+        "evidence": "C:/Users/jp_lopez/Downloads/SEPA_CT/SEPA_CT_260916.XML lines: <Name>StrtNm</Name>...FPAYH-ZBSTR; <Name>AdrLine</Name>...FPAYHX-AUSTO; <Name>AdrLine</Name>...FPAYHX-AUST3; <Name>AdrLine</Name>...FPAYHX-ZPFST; <Name>AdrLine</Name>...FPAYHX-ZPLOR; <Name>Ctry</Name>...FPAYHX-LDISO + FPAYHX-ZLISO"
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    },
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "Reading SAP-std XML before proposing Z-code is the precision/evidence/facts manifestation: facts come from the format file shipped by SAP, not from speculation about field names."
+  },
+  {
+    "id": "feedback_dmee_validate_node_context_dbtr_vs_cdtr_before_binding",
+    "created_session": 71,
+    "created_date": "2026-05-08",
+    "severity": "CRITICAL",
+    "rule": "Before binding a DMEE leaf to any FPAYHX or FPAYH field (especially UNESCO Z-extensions like ZPFST, ZPLOR, ZLISO, ZSTRA, ZBSTR, ZBORT), walk the tree from the leaf's NODE_ID up to the nearest Dbtr/Cdtr/UltmtDbtr/UltmtCdtr/InitgPty ancestor in the EXTRACTED tree (dmee_tree_node_p01.csv via PARENT_ID chain) to identify the leaf's CONTEXT. The Z-prefix on UNESCO append-structure fields does NOT signal paying-co context - those Z-extensions can be populated with either Cdtr (per-line vendor) or Dbtr (paying-co) data depending on the runtime populator. Production V000 active version is the only authoritative source.",
+    "why": "Session #71 (2026-05-08): For SEPA Dbtr V001 design I made TWO wrong revisions before getting it right. Revision #1 proposed binding StrtNm to FPAYHX/REF01 + CM005/OBPM3 register (cross-format coupling, REF01 is CGI/CITI architecture). Revision #2 proposed FPAYHX-ZPFST/ZPLOR/ZLISO claiming they were paying-co Z-extensions (DDIF text 'P.O. Box or Street for Postal Code/City of Payee's Display' was misread as 'paying-co' - actually 'Payee' = recipient = vendor). The correct verdict came from grep'ing dmee_tree_node_p01.csv: PARENT N_4754354180 of ZPFST/ZPLOR/ZLISO bindings has TECH_NAME = PstlAdr under Cdtr (vendor), confirming these are per-line vendor-context Z-extensions. Production V000 paying-co Dbtr uses ORT1Z + LAND1 + AUST1 + NAMEZ; for StrtNm/PstCd structured no FPAYHX field exists, so UNESCO's canonical pattern is BAdI extension via FI_CGI_DMEE_EXIT_W_BADI -> YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_CREDIT (used for both Cdtr and Dbtr). The cost of getting context wrong: each revision burns one user back-and-forth and risks transporting a config that renders vendor data under Dbtr (the original 2026-05-07 bug).",
+    "how_to_apply": "(1) When asked which FPAYHX/FPAYH field to bind a Dbtr/Cdtr/Ultmt* leaf to, FIRST identify production V000 active version's existing bindings under that exact ancestor: grep dmee_tree_node_p01.csv for the ancestor's NODE_ID, list all FPAYHX/FPAYH children, note their TECH_NAME and FIELDNAME. (2) Trace the leaf's PARENT_ID chain upward until hitting Dbtr/Cdtr/UltmtDbtr/UltmtCdtr/InitgPty - that's the context. (3) Verify the field's runtime semantic by reading SAP-std code that POPULATES it (CL_IDFI_CGI_CALL05_GENERIC_CM005, SAPFPAYM, BTE handlers) - field text alone is unreliable (DDIF descriptions are often misleading; 'Payee' might mean Cdtr OR Dbtr depending on author intent). (4) If no FPAYHX/FPAYH field carries the right context, default to UNESCO's canonical BAdI pattern: bind leaf with EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI and add a WHEN i_node_path case to YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_CREDIT method (handles both credit and debit branches per FLT_VAL_DEBIT_OR_CREDIT). (5) Document context+evidence in matrix CSV EVIDENCE_ANCHOR column with the dmee_tree_node_p01.csv line number and the nearest ancestor's TECH_NAME.",
+    "violations_observed": [
+      {
+        "session": 71,
+        "what": "Proposed FPAYHX-ZPFST/ZPLOR/ZLISO as paying-co bindings for V001 SEPA Dbtr (Revision #2)",
+        "user_correction": "(implicit by walking production tree afterward)",
+        "evidence": "knowledge/domains/Payment/phase0/dmee_full/dmee_tree_node_p01.csv lines 33,60,63 show ZPFST/ZPLOR/ZLISO under PARENT N_4754354180 = Cdtr/PstlAdr (line 43 PstlAdr child of N_4788773110 Cdtr), confirming Cdtr/vendor context"
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    },
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "Production V000 active tree is highest-tier evidence; Z-prefix naming and DDIF field text are speculation tier."
+  },
+  {
+    "id": "feedback_check_sap_format_lifecycle_before_extending_dmee",
+    "created_session": 71,
+    "created_date": "2026-05-08",
+    "severity": "CRITICAL",
+    "rule": "Before designing or transporting any V001 (or V00x) extension to a DMEE payment medium format tree, verify the format's SAP lifecycle status: open tx OBPM1 / SE16 TFPM (table for PMW formats) / search SAP Notes for 'obsolete <format_name>'. SAP marks formats as obsolete when they are superseded (e.g. SEPA_CT replaced by CGI_XML_CT per message BFIBL02591). Building V001 against an obsolete format burns transports + ABAP review cycles on a dead-end format that SAP Support will not fix.",
+    "why": "Session #71 (2026-05-08): Pablo discovered SAP message BFIBL02591 declaring SEPA_CT obsolete (replacement: CGI_XML_CT) AFTER 4 sessions of V001 SEPA design work, including 3 wrong revisions, 81-scenario test corpus planning, OBPM3 register decisions, BAdI extension drafts, and DDIF inspections. None of this would have been wasted if the format lifecycle had been the FIRST check: extending SEPA_CT V001 means enhancing a format SAP no longer maintains, with no SAP-Support escalation path post-CBPR+ deadline. The correct strategic move is migrate the SocGen rail to CGI_XML_CT (UNESCO already has /CGI_XML_CT_UNESCO operating; V9 is the SAP-std reference). Cost of wrong order: ~4-5 sessions of effort on the dead tree before the lifecycle gate triggered.",
+    "how_to_apply": "(1) On day 1 of any DMEE format work, run: SE16 TFPM where FORMI = '<format_name>' or check tx OBPM1; look for STATUS or OBSOLETE flag and tooltips. (2) Search SAP Notes / SAP Help Portal for 'BFIBL02591' or 'obsolete <format>' text. (3) If user has F_SHOW_OBSOLETE_TFPM=X parameter set, the format will still appear in dropdowns - that's an indicator it might be obsolete. (4) If format is obsolete: STOP. The replacement format (per SAP message diagnosis line) is the new build target. Update plan documents and matrix CSV before any further design work. (5) Document the decision in plan: 'Format X is OBSOLETE per SAP Note <id>, replaced by Y. Migrating SocGen / CITI / etc. payment method assignments from X to Y in FBZP.' (6) Build the V001 against the replacement, not the obsolete original.",
+    "violations_observed": [
+      {
+        "session": 71,
+        "what": "Designed V001 structured-address for /SEPA_CT_UNES across 4 sessions without checking SAP lifecycle. Pablo discovered SAP message BFIBL02591 deprecation late in the cycle.",
+        "user_correction": "Pasted SAP message BFIBL02591 text 'Payment medium format SEPA_CT is obsolete and was replaced by format CGI_XML_CT'",
+        "evidence": "SAP message BFIBL02591 + UNESCO /CGI_XML_CT_UNESCO production tree already operating + V9 reference tree (CGI_XML_CT_V9) extracted to dmee_v9_tree_d01.csv showing canonical structured-address bindings"
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    },
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "SAP-format-lifecycle is a verifiable, citable fact (SAP Note + tx OBPM1) and must precede design speculation."
+  },
+  {
+    "id": "feedback_reuse_ppc_util_framework_before_writing_badi_when_clauses",
+    "created_session": 71,
+    "created_date": "2026-05-08",
+    "severity": "CRITICAL",
+    "rule": "Before writing WHEN clauses in YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_CREDIT (or any country variant) to handle a new DMEE tag, FIRST check whether the UNESCO PPC framework (YCL_IDFI_CGI_DMEE_UTIL.GET_TAG_VALUE_FROM_CUSTO + YTFI_PPC_TAG + YTFI_PPC_STRUC) already covers the requirement via Z-table config. The PPC framework was built by N_MENARD 2024-09-06 specifically as the config-driven dispatcher for tag-value resolution: domains YD_FI_PPC_CODE (5 values: SEPARATOR/FIXED_VAL/PPC_VAR/PPC_DESCR/PAY_FIELD) + YD_FI_PAY_STRUC (FPAYH/FPAYHX/FPAYP). New DMEE tags activated for any country should be added as Z-table rows (YTFI_PPC_TAG entry mapping LAND1+DEB_CRE+TAG_FULL to TAG_ID; YTFI_PPC_STRUC entries with PPC_CODE rules) — not as ABAP WHEN clauses. Only when the existing PPC_CODE values cannot resolve the value (e.g. need ADRC read for paying-co address, no FPAYH-Z field populated) should ABAP delta be considered, and the delta should EXTEND the PPC framework (new PPC_CODE in domain YD_FI_PPC_CODE + UTIL.CM003 case) — never bypass it with bespoke WHEN clauses in FALLBACK_CM001.",
+    "why": "Session #71 (2026-05-08): For V001 SEPA Dbtr structured-address I proposed extending YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_CREDIT with 3-4 WHEN clauses reading ADRC via T001-ADRNR (~30 LOC). Pablo pointed out 'we have YCL_IDFI_CGI_DMEE_UTIL', revealing that UNESCO already has the canonical config-driven framework I should have used. Brain claims 76/97/98 (sessions #62) had documented this PPC framework completely (11+133 rows, schema, domains, entry point CM002, retrofit gap) but I didn't traverse those claims when designing. Result: my proposed bespoke BAdI WHEN-clause approach would have created an architectural inconsistency — UNESCO uses PPC config-driven everywhere except this new code path. The correct pattern is: new DMEE tag activation = Z-table rows (8 rows for 4 leaves x 2 tables), and ABAP delta only when the PPC_CODE vocabulary needs extension (~10 LOC + 1 DDIC domain row, vs ~30 LOC of WHEN clauses). The cost of getting this wrong without Pablo catching it: bespoke ABAP code that future maintainers can't extend via config.",
+    "how_to_apply": "(1) When asked to handle a new DMEE tag value, first check brain_v2/claims/claims.json for 'PPC' or 'YTFI_PPC_TAG' to see existing framework documentation. (2) Read YCL_IDFI_CGI_DMEE_UTIL_CM003 to see the dispatcher logic. (3) Check YTFI_PPC_TAG and YTFI_PPC_STRUC current rows via Gold DB query (`SELECT * FROM YTFI_PPC_TAG WHERE LAND1='<co_iso>'`) to see what's configured. (4) Determine if existing PPC_CODE vocabulary (SEPARATOR/FIXED_VAL/PPC_VAR/PPC_DESCR/PAY_FIELD with PAY_STRUC=FPAYH/FPAYHX/FPAYP) can resolve the value with config alone. (5) If yes → propose Z-table rows (no ABAP). (6) If no → propose new PPC_CODE in domain YD_FI_PPC_CODE + 1 case in UTIL.CM003 (~10 LOC). (7) NEVER write WHEN clauses in FALLBACK_CM001 GET_CREDIT for tag value resolution — that method's role is name-overflow handling and edge cases, not config dispatch. (8) Document the proposed Z-table rows in matrix CSV with explicit PPC_CODE/PAY_STRUC/PAY_FIELD/PPC_VALUE columns for SM30 / transport.",
+    "violations_observed": [
+      {
+        "session": 71,
+        "what": "Proposed `proposed_cgi_xml_ct_v001_dbtr_extension.abap` (~30 LOC of WHEN clauses in YCL_IDFI_CGI_DMEE_FALLBACK_CM001 GET_CREDIT) for V001 Dbtr structured-address",
+        "user_correction": "WE HAVE THIS  YCL_IDFI_CGI_DMEE_UTIL ... AS EXTENSION IN THE SYSTEM",
+        "evidence": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_FR_CM001.abap shows FR class calls UTIL.GET_TAG_VALUE_FROM_CUSTO passing i_node_path; brain claims 76/97/98 documented PPC framework"
+      }
+    ],
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "Integration"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    },
+    "derives_from_core_principle": "CP-002",
+    "cp_link_reason": "PPC framework is existing UNESCO architecture; reusing preserves consistency (CP-002 preserve > re-create); writing bespoke WHEN clauses creates parallel patterns that fragment knowledge."
+  },
+  {
+    "id": "feedback_only_modify_our_own_code",
+    "rule": "CRITICAL MAXIMUM RULE: Only modify code that WE wrote or were EXPLICITLY authorized to modify in the current conversation. NEVER modify (a) SAP-standard code, (b) code authored by other developers/team members (e.g. N_MENARD, A_AHOUNOU, A_ELMOUCH, etc.), (c) any object whose author is not us — even if it has a Z/Y prefix and lives in customer namespace. Reading and analyzing other people's code is OK; modifying it is FORBIDDEN.",
+    "why": "User directive Session #073 (2026-05-09), stated three times across the session: 'No cambias ningun programa estandard solo lo nuestro Z por favor' / 'eso es una regla' / 'Codigo es una regla de maxima!!!! Nosotros no modificamos codigo de otro'. The trigger: I read YCL_IDFI_CGI_DMEE_FALLBACK_CM001 (authored by N_MENARD, Nicolas — a team member, not me) intending to modify it because the user had said 'Plan B (Fix BAdI GET_CREDIT)'. The user immediately stopped me. Cross-team code ownership is a hard boundary because: (1) audit/traceability — TADIR.AUTHOR is the accountable party; modifying their code without coordination breaks attribution; (2) coordination — the original author may have undocumented context, in-flight changes, or pending transports we would clobber; (3) reversibility — even Z-prefixed objects can have business logic owned by another sub-team; touching them creates conflicts on next merge.",
+    "how_to_apply": "Before EVERY write operation (INSERT REPORT, RPY_PROGRAM_INSERT, UPDATE TRDIR, UPDATE FUPARAREF, UPDATE on any DB table, ABAP statement that modifies a repository object):\n1. Identify the object name to be modified.\n2. Check authorship: SELECT author FROM tadir WHERE obj_name=<X>.\n   - author = current user (JP_LOPEZ) → OK to modify\n   - author = SAP/SAP* → FORBIDDEN (SAP standard)\n   - author = any other (N_MENARD, A_*, etc.) → FORBIDDEN unless user explicitly authorizes THIS modification IN THIS CONVERSATION\n3. If unsure, ASK before touching.\n4. Reading (RPY_PROGRAM_READ, RFC_READ_TABLE) is always OK — for analysis, comparison, learning patterns. Modifying is the boundary.\n5. To extend other-author code: use BAdI / Enhancement Spot / Append Structure / Customer Exit / class inheritance with redefinition in OUR OWN class — never edit the original.\n\nExceptions explicitly authorized in Session #073:\n- Y_FI_DMEE_ADR (UNESCO custom FM, modified by us with user approval)\n- ZSAPFPAYM_REPLAY + ZFPAYM_* (created by us in this session)\n- LYFPAYMU19 (only because Y_FI_DMEE_ADR lives there and user authorized that FM)\n\nForbidden objects we touched read-only:\n- YCL_IDFI_CGI_DMEE_FALLBACK / FR / DE / IT / UTIL (Nicolas N_MENARD)\n- YENH_FI_DMEE_CGI_FALLBACK (Nicolas)\n- SAPFPAYM and its includes (SAP standard)\n- All DMEE_* templates (SAP standard)",
+    "severity": "CRITICAL",
+    "created_session": 73,
+    "source_file": "session_073_v001_sepa_dbtr_fix",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "user_directive_session_073_repeated_three_times",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_insert_report_destroys_fuparref",
+    "rule": "INSERT REPORT on a function-group include (e.g. LYFPAYMU19) DESTROYS the FUPARAREF interface metadata for the function modules in that include. After every INSERT REPORT on such an include, ALWAYS execute `GENERATE REPORT '<FUNCTION_GROUP>'` (e.g. SAPLYFPAYM) in the same one-shot to repopulate FUPARAREF.",
+    "why": "Session #073 (2026-05-09): deployed Y_FI_DMEE_ADR v2 via INSERT REPORT on LYFPAYMU19. The FM source updated correctly (REPOSRC R3STATE='A'), but FUPARAREF returned TABLE_WITHOUT_DATA — interface metadata was wiped. Symptoms: RPY_FUNCTIONMODULE_READ_NEW returns 0 lines; DMEE editor reports DMEE_ABA358 'incorrect interface'; FM may execute partially (cached compiled code) or fail silently per call. The fix was an explicit `GENERATE REPORT 'SAPLYFPAYM'` which restored 11 FUPARAREF rows from the `*\"` interface comments in the source.",
+    "how_to_apply": "Whenever updating a function-module body via INSERT REPORT on its include:\n1. INSERT REPORT 'L<FG>U<NN>' FROM lt_src DIRECTORY ENTRY ls_trdir.\n2. COMMIT WORK.\n3. GENERATE REPORT 'SAPL<FG>' MESSAGE lv_msg.\n4. Verify: SELECT COUNT(*) FROM fupararef WHERE funcname='Y_xxx' — should be > 0.\n5. If still empty, the GENERATE failed silently — investigate before assuming the FM is OK.\nThe RFC_ABAP_INSTALL_AND_RUN one-shot must include both INSERT and GENERATE in one program so they execute under the same transaction.",
+    "severity": "CRITICAL",
+    "created_session": 73,
+    "source_file": "session_073_v001_sepa_dbtr_fix",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "incident_diagnosis_session_073",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": "feedback_generate_report_does_not_reparse_interface_comments",
+    "rule": "`GENERATE REPORT '<FG>'` regenerates the function-group code BUT does NOT re-parse the `*\"` interface comments to update existing FUPARAREF rows. To change a parameter's pass-by-reference flag (VALUE→REFERENCE or vice versa), you must `UPDATE fupararef SET reference='X' WHERE funcname=... AND parameter=...` directly via ABAP one-shot, then GENERATE again.",
+    "why": "Session #073 (2026-05-09): edited Y_FI_DMEE_ADR `*\"` comments to change `VALUE(I_EXTENSION)` → `REFERENCE(I_EXTENSION)` (matching DMEE_EXIT_TEMPLATE_EXTEND_ABA). Deployed via INSERT REPORT + GENERATE REPORT. FUPARAREF still showed `reference=' '` (blank=VALUE) for I_EXTENSION. DMEE_ABA358 errors persisted. Fix: explicit UPDATE fupararef SET reference='X' WHERE funcname='Y_FI_DMEE_ADR' AND parameter='I_EXTENSION'. Then re-GENERATE. The errors disappeared.",
+    "how_to_apply": "When changing FM interface in `*\"` comments (pass-by-value vs reference, optional flag, type, structure):\n1. Edit the source `*\"` comments and INSERT REPORT.\n2. GENERATE REPORT '<FG>' (regenerates code but NOT FUPARAREF flags).\n3. SELECT * FROM fupararef WHERE funcname='Y_xxx' — verify each parameter's `reference`, `optional`, `structure` matches the new comments.\n4. For any mismatch, UPDATE fupararef SET <flag>='<new>' WHERE funcname=... AND parameter=...\n5. COMMIT WORK + GENERATE REPORT '<FG>' again.\n6. Re-verify FUPARAREF and run the FM via SE37 or actual caller to confirm.\nKey FUPARAREF columns: PARAMETER, PARAMTYPE (I/E/C/T), STRUCTURE, OPTIONAL, REFERENCE, PPOSITION, R3STATE.",
+    "severity": "HIGH",
+    "created_session": 73,
+    "source_file": "session_073_v001_sepa_dbtr_fix",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "incident_diagnosis_session_073",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "BASIS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": "feedback_dmee_exit_must_match_template_exactly",
+    "rule": "DMEE exit function modules (those configured as MP_EXIT_FUNC in DMEE_TREE_NODE) MUST have an interface that EXACTLY matches one of the two SAP templates: DMEE_EXIT_TEMPLATE_ABA (legacy) or DMEE_EXIT_TEMPLATE_EXTEND_ABA (modern, with REFERENCE(I_EXTENSION)). Any deviation triggers DMEE_ABA358 'function module XXX has incorrect interface' and the tree validation refuses to compile.",
+    "why": "Session #073 (2026-05-09): Y_FI_DMEE_ADR had `VALUE(I_EXTENSION)` while DMEE_EXIT_TEMPLATE_EXTEND_ABA has `REFERENCE(I_EXTENSION)`. The mismatch produced 8 DMEE_ABA358 errors (one per Dbtr/PstlAdr/* leaf assigned to Y_FI_DMEE_ADR). Runtime sometimes tolerates the mismatch (executes with a cached compile), but tree-editor validation, transport activation, and Test mode all reject. Strict-match is enforced field-by-field in FUPARAREF: parameter name, paramtype (I/E/C/T), structure, reference flag, optional flag, position.",
+    "how_to_apply": "Before assigning a custom FM as a DMEE node exit:\n1. SELECT * FROM fupararef WHERE funcname='DMEE_EXIT_TEMPLATE_EXTEND_ABA' (the reference).\n2. SELECT * FROM fupararef WHERE funcname='<your custom FM>'.\n3. Diff the two: every field — PARAMETER, PARAMTYPE, STRUCTURE, OPTIONAL, REFERENCE, PPOSITION — must match.\n4. If mismatch, fix via INSERT REPORT (source comments) + UPDATE fupararef (reference flag) + GENERATE REPORT.\n5. Test by running tx DMEE → tree → Validate / Test active version. Should be zero DMEE_ABA358.\nReference template (extended): `IMPORTING VALUE(I_TREE_TYPE) TYPE DMEE_TREETYPE_ABA, VALUE(I_TREE_ID) TYPE DMEE_TREEID_ABA, VALUE(I_ITEM), VALUE(I_PARAM), VALUE(I_UPARAM), REFERENCE(I_EXTENSION) TYPE DMEE_EXIT_INTERFACE_ABA. EXPORTING REFERENCE(O_VALUE), REFERENCE(C_VALUE), REFERENCE(N_VALUE), REFERENCE(P_VALUE). TABLES I_TAB.`",
+    "severity": "HIGH",
+    "created_session": 73,
+    "source_file": "session_073_v001_sepa_dbtr_fix",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "incident_diagnosis_session_073",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Payment"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_extracted_code_is_brain_data",
+    "rule": "Every piece of code we extract from SAP (ABAP source via RPY_PROGRAM_READ, function modules, classes, includes, enhancements, BAdI implementations, BTEs) is BRAIN DATA — not transient artifacts. It must be persisted under extracted_code/<DOMAIN>/<SUBDOMAIN>/, registered in brain_v2 (annotations, claims, knowledge_docs), and linked in brain_state.json so future agents can: (1) understand how SAP works at UNESCO, (2) detect patterns across modules, (3) discover connections between elements and domains, (4) avoid re-extracting the same code, (5) audit historical SAP behavior.",
+    "why": "User directive Session #073 (2026-05-09): 'Y las bajadas de codigo son datos que deben estar en el brain para conocer como funciona SAP luego los agentes determinan patrones y conexiones entre elementos y domains'. The raison d'etre of the brain v2 backbone (rule feedback_brain_code_tables_are_backbone) is that programs+tables+config are the SAP system, and edges between them are the intelligence. Extracted code is the only way to make those edges concrete (code → reads_table → joins_with). If extracted code only lives as one-off files outside the brain, every analysis starts from scratch. Concrete pain Session #073: while studying Nicolas's YCL_IDFI_CGI_DMEE_FALLBACK / FR / DE / IT / UTIL classes, I discovered a sophisticated PPC-customizing pattern (YTFI_PPC_TAG + YTFI_PPC_STRUC + T015L driven by util class constructor) that should be a brain-level annotation visible to every future incident touching DMEE — otherwise the next agent re-discovers it from scratch.",
+    "how_to_apply": "On every code extraction:\n1. Save source under extracted_code/<DOMAIN>/<SUBDOMAIN>/<NAME>.abap (e.g. extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_FALLBACK====CM001.abap).\n2. For each new object: add an annotation to brain_v2/annotations/annotations.json with finding (1-2 sentences of what the code does), tag, flavor, related_objects, evidence_tier=TIER_1 source code, line numbers if specific.\n3. For patterns spanning multiple objects: write a knowledge doc under knowledge/domains/<DOMAIN>/ and link it from the relevant brain_state.objects[X].knowledge_docs.\n4. For author/team-ownership: capture in annotation 'author' field (e.g. 'N_MENARD') so future agents respect feedback_only_modify_our_own_code.\n5. Run brain_v2/rebuild_all.py at session close to refresh brain_state.json.\n6. Cross-reference: when extracting object X, check brain_state.objects[X] first — if already annotated, only add new findings, do not duplicate.\n7. NEVER let extracted_code/ rot — it is a first-class persistence layer of the project.",
+    "severity": "CRITICAL",
+    "created_session": 73,
+    "source_file": "session_073_v001_sepa_dbtr_fix",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "user_directive_session_073",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_pa0006_first_for_employee_addresses",
+    "rule": "Rule: when emitting a vendor address from any UNESCO output (DMEE, avisos, F110 confirms, BCM print, treasury report), check PA0006 SUBTY='1' BEFORE reading ADRC.STREET. Cast LIFNR → PERNR via NUMC(8). If PA0006 hits → employee path (real home address). If not → vendor path (ADRC). The dispatch is KTOKK-agnostic — explicit KTOKK='SCSA' branching (the v5 design) misses cases where staff are paid against KTOKK=UNES / INDV / ICVS LIFNRs.",
+    "why": "Session #073 (2026-05-08): Y_FI_DMEE_ADR v5 used explicit KTOKK='SCSA' detection. F110 SEPA run for Simona BERTOLDINI emitted 'BFM/FAS/PAY' as <StrtNm> because her payment LIFNR is KTOKK=UNES (not SCSA), so v5 fell through to ADRC and printed the dept code. v6 PA0006-first detection is robust regardless of which KTOKK F110 paid against. Validated live on D01 V01T3 run — BERTOLDINI's real home address (16 avenue des Murs du Parc, 94300 Vincennes) emitted correctly. UNESCO LIFNR↔PERNR convention: PERNR = LIFNR cast NUMC(8) (e.g. 0010008305 → 10008305). ADRC.STREET stores dept codes for SCSA staff records — assuming ADRC = real address is wrong system-wide, not just SEPA-specific.",
+    "how_to_apply": "(1) For any new code that emits a vendor address: SELECT SINGLE FROM PA0006 WHERE PERNR = LIFNR (NUMC8 cast) AND SUBTY='1' AND date-valid first. (2) If SY-SUBRC=0 → use PA0006-STRAS/PSTLZ/ORT01/LAND1/STATE. (3) Else fall back to ADRC of the LIFNR. (4) For audit of EXISTING code: grep for SELECT * FROM ADRC patterns where the addrnumber comes from LIFNR-related sources (LFA1-ADRNR, FPAYH-ZADNR, etc.) — every such site is a candidate for the same bug. (5) Document the convention in the affected output's spec / companion. (6) Reference: Y_FI_DMEE_ADR v6 in extracted_code/FI/DMEE_full_inventory/Y_FI_DMEE_ADR_v6.abap; knowledge/domains/Payment/vendor_address_routing_by_ktokk.md.",
+    "severity": "HIGH",
+    "created_session": "#073",
+    "source_file": "knowledge/domains/Payment/vendor_address_routing_by_ktokk.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_073_validation",
+    "domain_axes": {
+      "functional": [
+        "payment_output",
+        "address_routing"
+      ],
+      "module": [
+        "FI",
+        "HR",
+        "DMEE"
+      ],
+      "process": [
+        "P2P",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_verify_dmee_tree_wiring_before_assuming_fix_scope",
+    "rule": "Before claiming a custom FM (e.g. Y_FI_DMEE_ADR) fixes a payment-format bug, query DMEE_TREE_NODE.MP_EXIT_FUNC for every relevant tree to confirm the FM is actually wired. A fix only applies where the tree calls it.",
+    "why": "Session #074: I initially extended the v6 simulator across all SEPA formats — but Y_FI_DMEE_ADR is wired ONLY in /SEPA_CT_UNES. The drift forecast for /SEPA_CT_ICTP_* was theoretical (would-happen-if), not in-scope. User caught this: 'no cambien nunca estos formatos cómo puede ser que funcione'. The same logic applies to /CGI_XML_CT_UNESCO and /CITI/XML/UNESCO/DC_V3_01 — they wire FI_CGI_DMEE_EXIT_W_BADI and /CITIPMW/* FMs, not Y_FI_DMEE_ADR. The fix surface is bounded by tree wiring, not by FM availability.",
+    "how_to_apply": "(1) For any payment-format bug claim, query DMEE_TREE_NODE for the affected leaves with MP_EXIT_FUNC populated. (2) Separate 'in-scope' (FM is wired) from 'theoretical' (FM would fix if wired). (3) When reporting drift across formats, label each row as IN-SCOPE or OUT-OF-SCOPE based on tree wiring evidence, not on assumed coverage. (4) Reference: extracted DMEE_TREE_NODE topology for the 5 active formats in claim 185.",
+    "severity": "HIGH",
+    "created_session": "#074",
+    "source_file": "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_074_user_correction",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "DMEE"
+      ],
+      "module": [
+        "FI",
+        "DMEE"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_dfpayg_dfpayv_are_payment_audit_trail",
+    "rule": "DFPAYG (execution evidence) and DFPAYV (config matrix) are the canonical source for any 'which payment format/run/vendor' question. Always cross-reference both before answering scope or coverage questions about UNESCO payments.",
+    "why": "Session #074 added both tables to Gold DB. DFPAYG = 9,848 rows = ground truth for what actually fired in the last 2 years; DFPAYV = 84 rows = static config showing what CAN fire (with 6 lapsed configs that never run). Combined with REGUH, they let SQL answer: 'which staff vendor was paid via which format×cocode×bank×account×PM combination?' — replacing ad-hoc P01 RFC queries.",
+    "how_to_apply": "(1) Format scope questions: SELECT DISTINCT FORMI FROM DFPAYG WHERE LAUFD >= '<window>' (= active set); SELECT FORMI FROM DFPAYV (= configured set); difference = lapsed configs. (2) Vendor questions: JOIN DFPAYG to REGUH on (LAUFD, LAUFI, ZBUKR) to get the vendor list paid via each format. (3) Bank/account/PM granularity: REGUH_FAST has HBKID, HKTID, RZAWE — better than DFPAYG for the routing breakdown. (4) Indexes: idx_reguh_run on (LAUFD,LAUFI,ZBUKR), idx_dfpayg_formi, idx_dfpayg_zbukr.",
+    "severity": "HIGH",
+    "created_session": "#074",
+    "source_file": "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "session_074_tool_addition",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "DataExtraction"
+      ],
+      "module": [
+        "FI",
+        "DMEE"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_label_distinct_vendors_vs_payment_lines",
+    "rule": "When reporting payment metrics, ALWAYS label whether the count is 'distinct LIFNRs' or 'REGUH payment lines'. Same employee paid 30 times = 1 distinct LIFNR = 30 lines. The two scales differ by 5-30x in typical UNESCO data.",
+    "why": "Session #074 user clarification: 'O sea son la cantidades de pagos staff que se hacen para ese formato' — user assumed 'staff drift = number of payments' but my number was 'distinct staff vendors'. The actual XMLs emitted = REGUH lines, not vendors. For /SEPA_CT_UNES UNES 2025-26: 1,659 staff vendors but 12,107 lines (7.3x factor).",
+    "how_to_apply": "(1) Default to BOTH counts when reporting: e.g. '1,659 staff vendors → 12,107 lines'. (2) For business impact (XMLs emitted with wrong data, bank rejection volume), use LINES. (3) For root-cause analysis (which employees are affected), use VENDORS. (4) Include the multiplier explicitly: 'pays/vendor ratio = 7.3x'.",
+    "severity": "MEDIUM",
+    "created_session": "#074",
+    "source_file": "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_074_user_question",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Reporting"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    }
+  },
+  {
+    "id": "feedback_use_explicit_business_column_labels",
+    "rule": "When presenting tables to operational users, use the FULL business name for each column (Company Code, House Bank, Bank Account, Payment Method) — NOT the SAP technical abbreviation (ZBUKR, HBKID, HKTID, RZAWE) or my shorthand (COCO, BANK, ACCT, PM).",
+    "why": "Session #074 user feedback: 'O faltan las columnas, Company code, house bank bank Account, and mediunm payment please' — when I used abbreviated headers, the user explicitly asked for the full names. Treasury and finance operators read SAP tables every day but the technical names slow them down vs business labels.",
+    "how_to_apply": "(1) First column header row uses business names: 'Company Code (ZBUKR)' is acceptable, 'ZBUKR' alone is not. (2) Apply consistently across companions and brain output. (3) Exception: when the audience is purely technical (ABAP devs / brain agents), abbreviations are fine.",
+    "severity": "LOW",
+    "created_session": "#074",
+    "source_file": "—",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "session_074_user_correction",
+    "domain_axes": {
+      "functional": [
+        "UX",
+        "Reporting"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_rfc_read_table_quirks",
+    "rule": "RFC_READ_TABLE has narrow accepted OPTIONS syntax: (a) NO 'IN (...)' clauses — use multiple single-field calls instead; (b) leading space required when concatenating conditions (' AND TECH_NAME = ...'); (c) DATA_BUFFER_EXCEEDED on wide tables — limit FIELDS to <20 columns or expect 512-byte WA truncation. Document tables that are DMEE_TREE_NODE, REGUH, etc. often hit these limits.",
+    "why": "Session #074 wasted ~15 minutes debugging OPTION_NOT_VALID errors when querying DMEE_TREE_NODE with IN clauses. Once switched to per-TECH_NAME calls in a loop, queries worked. This is a recurring pattern across sessions but never captured as a rule.",
+    "how_to_apply": "(1) When OPTION_NOT_VALID appears, simplify OPTIONS: one condition per row, leading space on continuation rows, no IN clauses. (2) For multi-value filtering, loop the query per value instead. (3) When DATA_BUFFER_EXCEEDED hits, narrow FIELDS list or split into multiple narrow queries. (4) Verified working pattern: OPTIONS=[{'TEXT':\"TREE_ID = '/X'\"}, {'TEXT':\" AND TECH_NAME = 'StrtNm'\"}]. Bad: OPTIONS=[{'TEXT':\"TREE_ID='/X' AND TECH_NAME IN ('StrtNm','BldgNb')\"}].",
+    "severity": "MEDIUM",
+    "created_session": "#074",
+    "source_file": "Zagentexecution/mcp-backend-server-python/rfc_helpers.py",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "session_074_debugging_loss",
+    "domain_axes": {
+      "functional": [
+        "DataExtraction",
+        "Tooling"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_isolate_protocol_before_blaming_credentials",
+    "rule": "When SAP auth fails, ALWAYS test the same credentials via both RFC (port 3300) AND HTTP (port 80) before declaring 'password is wrong'. SAP commonly accepts the same user/password on one protocol while rejecting it on another — caused by SU01 user type, USR02 password-buffer desync, or SICF policy. Run the 60-second diagnostic in unescrp/.claude/skills/sap-fiori-react-builder/sap-fiori-react-builder/references/deployment/sap-d01-connection-patterns.md before opening a credentials INC.",
+    "why": "Session #075: unescrp project burned 2+ hours assuming the 40-char password was stale, including retrying passwords found in earlier .env snapshots and probing /sap/bc/adt/discovery 6 times. The same password authenticates cleanly via RFC. Root cause is SAP-side ICF/SU01 — none of the client-side fixes would have helped. Isolating protocol vs credentials would have saved the time and triggered the correct BASIS ticket immediately.",
+    "how_to_apply": "(1) First failure to authenticate → run RFC probe (pyrfc T000 read). (2) If RFC works → it's not the password; switch to HTTP probe (urllib Basic + ADT discovery). (3) If RFC fails → check .env / VPN / SNC config. (4) If RFC works AND HTTP fails → SAP-side, open BASIS ticket with the diagnostic evidence. Don't keep trying passwords. (5) Document the result in the project's connection-patterns reference file.",
+    "severity": "HIGH",
+    "created_session": "#075",
+    "source_file": "unescrp/.claude/skills/sap-fiori-react-builder/sap-fiori-react-builder/references/deployment/sap-d01-connection-patterns.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_075_diagnostic_loss",
+    "domain_axes": {
+      "functional": [
+        "Infrastructure",
+        "Tooling"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_sap_adt_client_silent_401",
+    "rule": "Do NOT trust `sap_adt_client.fetch_csrf()` or any `_request()` call as proof of HTTP auth success. The current `_request` implementation catches `urllib.error.HTTPError` and returns `(status, body, headers)` without raising — and SAP echoes a CSRF token even on 401 when `X-CSRF-Token: Fetch` is sent. Always assert `status == 200` after the call. Patch `_request()` to raise on 4xx, or replace the client with one that propagates errors.",
+    "why": "Session #075: I told the user 'ADT HTTP works' based on `fetch_csrf()` returning normally, then realized the client silently swallowed the 401 and returned an empty token. The mistake cost trust and required a public correction. The bug has likely caused false positives in other sessions where ADT 'success' messages preceded mysterious downstream failures.",
+    "how_to_apply": "(1) When calling sap_adt_client methods, check the returned status code explicitly, not just whether a value came back. (2) Add a fix to `_request`: `if status >= 400: raise HTTPError(...)`. (3) Same patch needed for fetch_csrf, search_object, get_source, etc. (4) Until patched, run a separate `urllib.request.urlopen` probe to confirm 200 before trusting the client.",
+    "severity": "MEDIUM",
+    "created_session": "#075",
+    "source_file": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_075_silent_bug",
+    "domain_axes": {
+      "functional": [
+        "Tooling"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]
