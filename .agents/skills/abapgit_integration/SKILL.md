@@ -29,6 +29,10 @@ domains:
 
 Earlier this skill was Playwright-UI-only (33 lines, only covered ZABAPGIT-transaction stage/commit). Session #76 added full abapGit mastery (~700 lines) but cross-project users were already loading `sap_adt_api` by name — needing them to discover and load a second skill split the knowledge unnecessarily. Decision: ONE skill, all capabilities, name stays `sap_adt_api`.
 
+## Canonical operational status
+
+> **Read first:** `knowledge/operational_state/abapgit_d01_status.md` — single source of truth for what's active, what's NOT, who uses it, and the verification commands. Other entries in this file are derived from there and may lag.
+
 ## Status quick reference (full status in sap_adt_api §16 + §19)
 
 - **abapGit on D01**: ✅ **STANDALONE INSTALLED 2026-05-25** — `ZABAPGIT_STANDALONE` (PROG, `$TMP`, REPOSRC `r3state=A`, 151,660 lines, source verified by `READ REPORT`). Installed via workstation-bridge: workstation fetched `raw.githubusercontent.com/abapGit/build/main/zabapgit_standalone.prog.abap` (4.86 MB) and pushed via RFC `RPY_PROGRAM_INSERT` (`SOURCE_EXTENDED` ABAPTXT255). **NO BASIS ticket. NO STRUST. NO SICF changes.**
