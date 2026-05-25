@@ -7988,5 +7988,522 @@
       ],
       "process": []
     }
+  },
+  {
+    "id": 192,
+    "claim": "ADT REST DDIC creation endpoints (/sap/bc/adt/ddic/tables, .../indexes) are ABSENT on NW 7.40 (UNESCO ECC 6.0 EhP8). Empirical probe against D01 2026-05-24: POST /sap/bc/adt/ddic/tables returns HTTP 404; adt_discovery() lists 217 collections, DDIC subset includes dataelements/structures/views/typegroups/ddl/sources but NO tables and NO tables/*/indexes. These endpoints shipped in NW 7.50. Implication: on UNESCO current systems, all DDIC TABL/INDX creation MUST use the DDIF wrapper.",
+    "claim_type": "kernel_capability_gap",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_http_probe",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:adt_discovery",
+        "cite": "Session #076 live probe 2026-05-24 against D01 HTTPS:443 - adt_discovery() returned 217 collections, grep for tables showed only datapreview/ddic. POST /sap/bc/adt/ddic/tables returned HTTP 404 with empty body.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "define_table",
+      "create_index",
+      "adt_discovery"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 193,
+    "claim": "D01 ADT HTTP authentication restored 2026-05-24 after ~6 weeks of HTTP 401 (broken 2026-04-10 to 2026-05-24). Working endpoint switched from http://HQ-SAP-D01.HQ.INT.UNESCO.ORG:80 to https://HQ-SAP-D01.HQ.INT.UNESCO.ORG:443 - BASIS likely tightened SICF policy to require HTTPS. Confirmed by live CSRF fetch returning valid token and 217-collection discovery response.",
+    "claim_type": "infrastructure_state_change",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_http_probe",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:fetch_csrf",
+        "cite": "Session #076 live probe 2026-05-24 - fetch_csrf() returned a real CSRF token via HTTPS:443. Compare to session #75 evidence (2026-05-13) where every HTTP:80 endpoint returned 401.",
+        "added_session": 76
+      },
+      {
+        "type": "prior_session_evidence",
+        "ref": "knowledge/session_retros/session_075_retro.md",
+        "cite": "Session #75 retro documents the original 401 break; session #76 probe confirms resolution and protocol change.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "fetch_csrf",
+      "_request",
+      "sap_adt_api_skill"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": 76,
+    "resolution_notes": "401 was the failure mode that motivated the original silent-401 bug discovery. Both auth and bug fixed same session.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 194,
+    "claim": "TADIR-orphan bug pattern documented: bare DDIF_TABL_PUT calls return SY-SUBRC=0 and build DD02L/DD03L/DD09L rows, but TADIR has no row OR has blank DEVCLASS. Result: object active in DDIC but unable to transport. Empirical evidence on D01: 3 zombie tables in AS4LOCAL=N state inherited from prior runs without TR_TADIR_INTERFACE - ZCRP_ATTACH, ZCRP_AUTH_AUDIT, ZCRP_GL_MAP. Mitigation enforced in sap_adt_client.define_*_via_ddif: emit TR_TADIR_INTERFACE BEFORE DDIF_*_PUT; post-creation verify_tadir() flags orphans for SE03 manual fix.",
+    "claim_type": "bug_pattern_and_mitigation",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_rfc_read",
+        "ref": "DD02L WHERE TABNAME LIKE ZCRP_%",
+        "cite": "Session #076 RFC_READ_TABLE against D01 returned 19 ZCRP_* tables, 3 with AS4LOCAL=N (zombies): ZCRP_ATTACH, ZCRP_AUTH_AUDIT, ZCRP_GL_MAP. All originated from prior bare DDIF_TABL_PUT without TR_TADIR_INTERFACE.",
+        "added_session": 76
+      },
+      {
+        "type": "user_testimony",
+        "ref": "session_076_conversation",
+        "cite": "User: pattern viejo (RFC + DDIF_TABL_PUT, te dara tablas FUNCIONALES pero sin TADIR como paso con DEs) - direct experience of the orphan bug in parallel unescrp project DE creation runs.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ZCRP_ATTACH",
+      "ZCRP_AUTH_AUDIT",
+      "ZCRP_GL_MAP",
+      "define_table_via_ddif",
+      "verify_tadir",
+      "TR_TADIR_INTERFACE"
+    ],
+    "domain": "CUSTOM",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 195,
+    "claim": "Silent-401 bug in sap_adt_client._request fixed Session #076. Previously the except urllib.error.HTTPError branch unconditionally stored X-CSRF-Token from error responses (SAP echoes a token even on 401), poisoning self._csrf_token and making fetch_csrf() appear to succeed with empty token. Fix: in error branch do NOT cache CSRF from error responses; in fetch_csrf clear prior token + check status==200 + raise RuntimeError if not.",
+    "claim_type": "code_bug_fix",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code_diff",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:_request,fetch_csrf",
+        "cite": "Session #076 edit removed new_csrf capture in error branch + added explicit status==200 check in fetch_csrf. Verified via py_compile + introspection that method signatures are unchanged.",
+        "added_session": 76
+      },
+      {
+        "type": "prior_session_evidence",
+        "ref": "knowledge/session_retros/session_075_retro.md",
+        "cite": "Session #75 retro explicitly listed this bug as open follow-up. Closed in session #76.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "_request",
+      "fetch_csrf"
+    ],
+    "domain": "CUSTOM",
+    "created_session": 76,
+    "resolved_session": 76,
+    "resolution_notes": "Closes follow-up from session #75. Verified live: fetch_csrf returned real CSRF token instead of empty string.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 196,
+    "claim": "DDIF wrapper (sap_adt_client.define_table_via_ddif + define_data_element_via_ddif + define_domain_via_ddif) is the canonical EhP8 path for DDIC creation. Atomic create+activate with TR_TADIR_INTERFACE injection (fixes orphan bug), single-equality preflight (avoids 72-char IN-list parser bug), structured SY-SUBRC mapping (eliminates RC=2 ambiguity), forward-compatible API shape (callers flip _via_ddif to ADT REST suffix when UNESCO migrates to S/4HANA). Replaces ad-hoc generate ABAP program that calls DDIF_*_PUT patterns.",
+    "claim_type": "architecture_decision",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:define_table_via_ddif,define_data_element_via_ddif,define_domain_via_ddif",
+        "cite": "Session #076 added 3 atomic creation methods + 4 helpers (preflight_data_element, preflight_domain, preflight_table_chain, verify_tadir) + 5 internals (_get_rfc_connection, _run_abap_program, _execute_ddif, _abap_quote, _parse_rc_marker). Verified compile + introspection.",
+        "added_session": 76
+      },
+      {
+        "type": "skill_documentation",
+        "ref": ".agents/skills/sap_adt_api/SKILL.md#15",
+        "cite": "Session #076 added SKILL section 15 (DDIF Wrapper canonical for EhP8) - 8 subsections covering rationale, TADIR-orphan mitigation, RC=2 disambiguation, methods exposed, copy-paste workflow, recovery-by-phase, zombie cleanup, S/4HANA migration path.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "define_table_via_ddif",
+      "define_data_element_via_ddif",
+      "define_domain_via_ddif",
+      "preflight_data_element",
+      "verify_tadir",
+      "sap_adt_api_skill"
+    ],
+    "domain": "CUSTOM",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 197,
+    "claim": "abapGit is NOT installed on UNESCO D01 (NW 7.40 / ECC 6.0 EhP8). Empirical 5-way probe 2026-05-24: TADIR ZABAPGIT*=0 objects, TADIR ZCL_ABAPGIT*=0 objects, TRDIR ZABAPGIT_STANDALONE=0 programs, TDEVC ZABAPGIT package=0 packages, TFDIR ZABAPGIT_API_RFC_PULL=0 FMs. Install requires BASIS ticket (~2-5 days wall-clock). Until installed, DDIF wrapper (sap_adt_client.define_*_via_ddif, verified end-to-end same day with ZADTPYTST DE + ZADTPYTBL table) is the canonical DDIC creation path. abapGit would add: multi-object atomic deploys, Git version history of ABAP source, PR-based code review, cross-system sync, offline-ZIP disaster recovery. None are blockers for current single-object DDIC work.",
+    "claim_type": "kernel_capability_gap",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_rfc_read",
+        "ref": "D01 RFC_READ_TABLE probes against TADIR, TRDIR, TDEVC, TFDIR",
+        "cite": "Session #076 live probes 2026-05-24: 5 distinct queries (TADIR ZABAPGIT%, TADIR ZCL_ABAPGIT%, TRDIR ZABAPGIT_STANDALONE/ZABAPGIT, TDEVC ZABAPGIT, TFDIR ZABAPGIT_API_RFC_PULL/ZABAPGIT_SERVE_REQUEST) all returned 0 rows. abapGit is not present in any form.",
+        "added_session": 76
+      },
+      {
+        "type": "cross_project_evidence",
+        "ref": "c:/Users/jp_lopez/projects/unescrp/brain/sessions/s79-bsp-deploy-disaster-closing.md",
+        "cite": "unescrp S-79 retro (2026-05-13) explicitly considered abapGit pull-from-GitHub for BSP deploy and concluded it was \"not the right path here\" — confirming abapGit was not in production use at unescrp either at that date.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": [
+      {
+        "type": "empirical_install_verified",
+        "ref": "Zagentexecution/abapgit_install/check_abapgit_installed.py + verify_abapgit_state.py outputs 2026-05-25",
+        "cite": "Re-probe 2026-05-25 after install action: TADIR ZABAPGIT_STANDALONE=1 (PROG, $TMP, AUTHOR=JP_LOPEZ), TRDIR ZABAPGIT_STANDALONE=1 (SUBC=1 executable), REPOSRC r3state=A, READ REPORT returns 151,660 lines, first line REPORT zabapgit_standalone LINE-SIZE 100. The 'NOT installed' state was true at probe time 2026-05-24 but reversed by install action 2026-05-25.",
+        "added_session": 76
+      },
+      {
+        "type": "architecture_correction",
+        "ref": "BROADCAST-004 + sap_adt_api §19 rewritten",
+        "cite": "The claim asserted 'install requires BASIS ticket'. Install was completed WITHOUT BASIS via workstation-bridge architecture (workstation fetches GitHub source, RFC pushes via RPY_PROGRAM_INSERT). The BASIS-required premise was wrong — see new claim #201 for the actual install method.",
+        "added_session": 76
+      }
+    ],
+    "related_objects": [
+      "abapgit_integration_skill",
+      "sap_adt_api_skill",
+      "sap_adt_client.py",
+      "define_table_via_ddif"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": 76,
+    "resolution_notes": "SUPERSEDED 2026-05-25 by claim #201 (abapGit standalone INSTALLED on D01). The 'NOT installed' state was empirically correct on 2026-05-24 but reversed the next day. The 'install requires BASIS ticket' part of the claim was also wrong — install was completed via workstation-bridge architecture with no BASIS ticket. Original claim preserved per CP-002 (never delete superseded evidence); see evidence_against entries for the falsifying observations and #201 for the new state.",
+    "status": "superseded",
+    "superseded_by_claim_id": 201,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 198,
+    "claim": "UNESCO policy CRITICAL: never modify standard SAP objects via any tool (DDIF/ADT/abapGit/RFC/Playwright). Only Z*/Y*/customer-namespace objects are modifiable. SAP licensing forbids unauthorized standard object modification (SSCR keys required); upgrade safety requires standard objects stay unmodified to avoid SPDD/SPAU manual adjustment cost on every Support Package; UNESCO ECC 6.0 EhP8 BASIS team enforces this on principle. Permitted extension paths: append structures (CI_* includes), BAdIs, enhancement implementations (ENHO), user exits, all in Z/Y namespace.",
+    "claim_type": "governance_policy",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "user_directive",
+        "ref": "session_076_conversation",
+        "cite": "User stated 2026-05-24: \"we never can modify standard objects structures\" with emphasis (\"put a brain rule a mast!!\"). Raised as a HARD RULE binding on all future agent actions.",
+        "added_session": 76
+      },
+      {
+        "type": "sap_policy",
+        "ref": "SAP customer agreement + SSCR (Software Change Registration)",
+        "cite": "SAP customer agreement requires SSCR object key for any modification of delivered objects. SAP Notes 1129777, 28490 document the upgrade-time cost of modified objects (SPDD/SPAU).",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "feedback_never_modify_standard_objects",
+      "sap_adt_client.py",
+      "abapgit_integration_skill",
+      "sap_adt_api_skill"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 199,
+    "claim": "EDTFLAG poisoning bug in sap_adt_client.py DDIF wrapper IDENTIFIED + FIXED + VERIFIED Session #76. Root cause: wrapper called TR_TADIR_INTERFACE with iv_set_edtflag=X at 3 sites (define_domain_via_ddif:1829, define_data_element_via_ddif:1915, define_table_via_ddif:2031), which sets TADIR.EDTFLAG=X marking the object as non-standard-editor-only. SE11/SE12/SE80 then refuse to open with SAP message TK035 (You cannot edit object X with the standard editor). Fix: change X to space at all 3 sites. Repair pattern for poisoned objects: UPDATE tadir SET edtflag=space WHERE pgmid=R3TR AND obj_name IN (...) + COMMIT WORK via _run_abap_program. Verified live 2026-05-24 on ZADTPYTBL+ZADTPYTB2+ZADTPYTST in $TMP — all 3 now SE11-editable. User confirmed Funciono.",
+    "claim_type": "code_bug_fix",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code_diff",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:1829,1915,2031",
+        "cite": "Session #076 Edit replaced X with space at 3 sites in TR_TADIR_INTERFACE calls. py_compile validated. Brain rebuild absorbed change.",
+        "added_session": 76
+      },
+      {
+        "type": "empirical_rfc_repair",
+        "ref": "RFC_READ_TABLE TADIR pre/post + UPDATE TADIR via _run_abap_program",
+        "cite": "Session #076 live: diagnostic found 3 casualties ($TMP+EDTFLAG=X+AUTHOR=JP_LOPEZ). UPDATE TADIR cleared all 3 EDTFLAG to space. Post-verify confirmed EDTFLAG empty. User opened ZADTPYTBL in SE11 successfully (no more TK035).",
+        "added_session": 76
+      },
+      {
+        "type": "architectural_reference",
+        "ref": "github.com/abapGit/abapGit/blob/main/src/objects/core/zif_abapgit_tadir.intf.abap:47",
+        "cite": "abapGit defaults iv_set_edtflag=abap_false and uses RS_CORR_INSERT (which never touches EDTFLAG) for regular DDIC objects. TR_TADIR_INTERFACE with EDTFLAG=X is reserved for IDoc segments only (zcl_abapgit_object_tabl.deserialize_idoc_segment).",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "define_table_via_ddif",
+      "define_data_element_via_ddif",
+      "define_domain_via_ddif",
+      "TR_TADIR_INTERFACE",
+      "EDTFLAG",
+      "TK035",
+      "ZADTPYTBL",
+      "ZADTPYTB2",
+      "ZADTPYTST"
+    ],
+    "domain": "CUSTOM",
+    "created_session": 76,
+    "resolved_session": 76,
+    "resolution_notes": "Fix shipped + verified same session. Update propagated to abapgit_integration SKILL §9.1 and sap_adt_api SKILL §15.5b.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 200,
+    "claim": "abapGit is the architectural standard for ABAP/DDIC deployment in UNESCO going forward. Decision taken Session #76 after research validation (10+ year track record, 50K+ installs, SAP-promoted, TADIR/CTS architecturally correct by default, native version control, atomic multi-object, forward-compatible to S/4HANA, cross-system sync, PR-reviewable). DDIF wrapper (proven working on EhP8) is now classified as BRIDGE pending abapGit install. ADT REST remains for source code. RFC/Playwright for objects no other tool covers (SM30/SM59/RZ10/BOR/PFCG users). Install requires BASIS ticket on D01 — escalated to STRATEGIC PRIORITY, not optional.",
+    "claim_type": "architectural_decision",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "user_directive",
+        "ref": "session_076_conversation",
+        "cite": "User stated 2026-05-24: \"abapgit deberia ser el estandard me parece. por favor pensalo a fondo\" + \"los objetos que se pueden entregar por abapgit no deberian usar otro modelo. Ya que vimos que es el mas efectivo y estandard\". Asked for deep architectural reasoning. Agent confirmed and made it the standard.",
+        "added_session": 76
+      },
+      {
+        "type": "architectural_research",
+        "ref": ".agents/skills/sap_adt_api/SKILL.md §0 + §16-25",
+        "cite": "Session #76 research synthesis from 4 parallel research agents covering abapGit source code, DDIF FM family, serialization format, TADIR/CTS internals. abapGit handles TADIR/CTS correctly by default (RS_CORR_INSERT not TR_TADIR_INTERFACE); the EDTFLAG bug we hit in DDIF wrapper does not exist in abapGit.",
+        "added_session": 76
+      },
+      {
+        "type": "industry_evidence",
+        "ref": "github.com/abapGit/abapGit",
+        "cite": "10+ years on GitHub, 200+ contributors, 50K+ documented installs, SAP TechEd presentations promoting it as the Modern ABAP DevOps standard.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_api_skill",
+      "abapgit_integration_skill",
+      "sap_adt_client.py",
+      "feedback_abapgit_is_the_standard_when_installed"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": "Operational state UPDATED 2026-05-25: abapGit STANDALONE INSTALLED on D01 (claim #201 supersedes #197). Component 1 of 3 done. Migration path now actionable: human-driven workflows via SAPGUI SE38 → ZABAPGIT_STANDALONE for ANY of the 170+ supported object types. Bridge tools (DDIF, ADT REST) still operate alongside; deprecation per type as abapGit usage replaces them. Component 2 (dev edition, ~1000 ZCL_ABAPGIT_* objects via offline ZIP through standalone) and Component 3 (abapgit-api-rfc add-on) remain next steps for agent-driven RFC class-level API access — both use the same workstation-bridge architecture and need NO BASIS ticket.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 201,
+    "claim": "abapGit standalone IS INSTALLED on UNESCO D01 as of 2026-05-25. ZABAPGIT_STANDALONE registered as PROG R3TR in package $TMP, AUTHOR=JP_LOPEZ, CREATED_ON=20260525, TRDIR SUBC=1 (executable), REPOSRC r3state=A (active), READ REPORT returns 151,660 lines, first line matches official build (REPORT zabapgit_standalone LINE-SIZE 100). Install was performed via WORKSTATION-BRIDGE ARCHITECTURE with NO BASIS ticket, NO STRUST, NO SICF changes — eliminating the SAP→GitHub HTTPS dependency that was previously believed to require BASIS. Source pinned at Zagentexecution/abapgit_install/zabapgit_standalone_2026-05-25.abap (4.86 MB, 151,660 lines, fetched from raw.githubusercontent.com/abapGit/build/main/zabapgit_standalone.prog.abap by the workstation). RFC upload path used: RPY_PROGRAM_INSERT (FMODE=R) with SOURCE_EXTENDED parameter (TABLE OF ABAPTXT255), SUPPRESS_DIALOG=X, DEVELOPMENT_CLASS=$TMP — auto-activates for $TMP objects. Upload wall-clock: 32.3s. Pre-clean of any prior PROG: RFC_ABAP_INSTALL_AND_RUN with inline DELETE REPORT. abapGit is now usable today via SAPGUI SE38 → ZABAPGIT_STANDALONE for human-driven workflows on all 170+ supported object types (TABL, DTEL, DOMA, CLAS, INTF, FUGR, PROG, ENHO, MSAG, WAPA/BSP, IWSV/IWSG, XSLT, NROB, WDYN, SUSO, AGR, etc.). For agent-driven RFC class-level API (Python calling cl_abapgit_objects=>serialize directly), dev edition install is the next step — same workstation-bridge, no BASIS.",
+    "claim_type": "kernel_capability_present",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_rfc_read",
+        "ref": "Zagentexecution/abapgit_install/check_abapgit_installed.py log 2026-05-25",
+        "cite": "10-way TADIR/TRDIR/TDEVC/TFDIR probe: TADIR PROG ZABAPGIT_STANDALONE=1 row ($TMP), TRDIR ZABAPGIT_STANDALONE=1 row (SUBC=1). Verdict line: 'abapGit artifacts FOUND on D01. Brain claim #197 needs update.'",
+        "added_session": 76
+      },
+      {
+        "type": "empirical_abap_probe",
+        "ref": "Zagentexecution/abapgit_install/verify_abapgit_state.py output 2026-05-25",
+        "cite": "Inline ABAP via RFC_ABAP_INSTALL_AND_RUN: SELECT SINGLE r3state FROM reposrc WHERE progname='ZABAPGIT_STANDALONE' AND r3state='A' → row found, r3state=A. READ REPORT 'ZABAPGIT_STANDALONE' INTO lt_src → 151,660 lines. First line: 'REPORT zabapgit_standalone LINE-SIZE 100.' — matches expected official source.",
+        "added_session": 76
+      },
+      {
+        "type": "install_artifact_archived",
+        "ref": "Zagentexecution/abapgit_install/install_via_rpy_v2.py + rpy_v2_run_2026-05-25.log",
+        "cite": "Working installer script committed in commit 8ee428f. Log shows DELETE REPORT cleanup OK, RPY_PROGRAM_INSERT OK in 32.3s, TADIR/TRDIR/REPOSRC all confirmed post-install.",
+        "added_session": 76
+      },
+      {
+        "type": "source_provenance",
+        "ref": "Zagentexecution/abapgit_install/zabapgit_standalone_2026-05-25.abap",
+        "cite": "Pinned copy of the exact source deployed. SHA can be re-derived from raw.githubusercontent.com/abapGit/build/main/zabapgit_standalone.prog.abap via cache headers (Content-Length 4,863,539). 151,660 newline-terminated lines. Header line REPORT zabapgit_standalone LINE-SIZE 100 — abapGit official build branch.",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ZABAPGIT_STANDALONE",
+      "RPY_PROGRAM_INSERT",
+      "abapgit_integration_skill",
+      "sap_adt_api_skill",
+      "feedback_abapgit_is_the_standard_when_installed",
+      "feedback_never_modify_standard_objects"
+    ],
+    "domain": "BASIS",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "supersedes_claim_id": 197,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
+  },
+  {
+    "id": 202,
+    "claim": "ADT REST source PUT (/sap/bc/adt/programs/programs/{name}/source/main) is BROKEN on NW 7.40 EhP8 for PROGs in $TMP — returns HTTP 423 'Resource INCLUDE not locked (invalid lock handle)' regardless of lock URL (program shell vs source/main) or lockHandle position (X-adtcore-locktoken header vs lockHandle query param). The lock returned by ?_action=LOCK&accessMode=MODIFY has IS_LOCAL=X (correct for $TMP) but the PUT's lock-check rejects it. Empirically reproduced 3 times 2026-05-25 with fresh CSRF + fresh lock per attempt. Diagnosis: kernel-version limitation on EhP8 ADT, not a wrapper bug — POST to create the PROG and POST to lock both succeed; only the PUT to source/main with the otherwise-valid handle fails. WORKING ALTERNATIVE: use RFC RPY_PROGRAM_INSERT with SOURCE_EXTENDED (TABLE OF ABAPTXT255) + SUPPRESS_DIALOG='X' + DEVELOPMENT_CLASS='$TMP' — RFC-enabled (TFDIR FMODE=R), accepts wide source, auto-activates. For PROGs in transportable Z packages the ADT path may behave differently — not yet tested. Secondary finding: sap_adt_client.py create_object has a generic XML namespace bug for PROG/P — builds xmlns:program=http://www.sap.com/adt/programs (short, derived from path domain segment) but SAP expects http://www.sap.com/adt/programs/programs (full path). Fix: type-specific namespace_uri override in _CREATABLE_TYPES.",
+    "claim_type": "kernel_limitation",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical_http_response",
+        "ref": "Zagentexecution/abapgit_install/install_v2_run_2026-05-25.log",
+        "cite": "HTTP 423 + body <type id=ExceptionResourceInvalidLockHandle/><message>Resource INCLUDE ZABAPGIT_STANDALONE is not locked (invalid lock handle: 1A08CF3C91866665684BC44C5D9A46F46C816F4C)</message>. Reproduced with lock at shell URL AND lock at source/main URL — both gave a lock handle, both rejected at PUT.",
+        "added_session": 76
+      },
+      {
+        "type": "empirical_workaround_verified",
+        "ref": "Zagentexecution/abapgit_install/rpy_v2_run_2026-05-25.log",
+        "cite": "RPY_PROGRAM_INSERT (signature: PROGRAM_NAME, TITLE_STRING, SUPPRESS_DIALOG, DEVELOPMENT_CLASS, SOURCE_EXTENDED as TABLE OF ABAPTXT255) — call returned OK in 32.3s, 151,660 lines uploaded and auto-activated.",
+        "added_session": 76
+      },
+      {
+        "type": "namespace_bug_source",
+        "ref": "Zagentexecution/mcp-backend-server-python/sap_adt_client.py:813",
+        "cite": "domain_root = meta['path'].split('/')[0] — for PROG/P path='programs/programs', so domain_root='programs', producing xmlns:program=http://www.sap.com/adt/programs (short). Reference: marcellourbani/abap-adt-api/src/api/objectcreator.ts CreatableTypes[PROG/P].nameSpace='xmlns:program=\"http://www.sap.com/adt/programs/programs\"' (full path).",
+        "added_session": 76
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sap_adt_client.py",
+      "create_object",
+      "set_source",
+      "RPY_PROGRAM_INSERT",
+      "ABAPTXT255"
+    ],
+    "domain": "CUSTOM",
+    "created_session": 76,
+    "resolved_session": null,
+    "resolution_notes": "WORKAROUND in production via RPY_PROGRAM_INSERT for PROG source upload to $TMP. ADT REST path documented as broken — wrapper should add a kernel guard or fallback. Pending: (a) fix create_object PROG/P namespace bug; (b) test ADT REST source PUT for PROGs in TRANSPORTABLE Z packages (may behave differently); (c) document in sap_adt_api SKILL §15 alongside the existing DDIC EhP8 limitation note.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BASIS",
+        "CTS"
+      ],
+      "process": []
+    }
   }
 ]
