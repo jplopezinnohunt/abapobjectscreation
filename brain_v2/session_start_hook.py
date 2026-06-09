@@ -11,12 +11,26 @@ Two jobs, every session start:
 
 Fast (<1s): it only SPAWNS the background job and prints JSON. The heavy rebuild runs detached.
 """
-import json, sys, subprocess, datetime
+import json, sys, subprocess, datetime, time
 from pathlib import Path
 
 HERE = Path(__file__).parent
 MARKER = HERE / ".last_curation"
 LOG = HERE / "curation.log"
+TS_MARKER = HERE / ".session_start_ts"          # consumed by stop_durability_hook.py
+NUDGE_MARKER = HERE / ".last_durability_nudge"   # reset each session so leftovers re-nudge once
+
+
+def stamp_session():
+    """Record session-start epoch (so the Stop durability hook scopes to THIS session's
+    files) and reset the durability dedup marker so any leftover uncommitted source from a
+    prior session gets one fresh nudge."""
+    try:
+        TS_MARKER.write_text(str(time.time()), encoding="utf-8")
+        if NUDGE_MARKER.exists():
+            NUDGE_MARKER.unlink()
+    except Exception:
+        pass
 
 
 def maybe_curate():
@@ -44,6 +58,7 @@ def main():
         sys.stdin.read()
     except Exception:
         pass
+    stamp_session()
     note = maybe_curate()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
