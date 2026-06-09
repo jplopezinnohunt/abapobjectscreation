@@ -27,7 +27,7 @@
 ## 3. Incoming suggestions (from peers, to evaluate)
 | Suggestion | From | Status |
 |---|---|---|
-| Add 4 YTFM biennium tables to the SAP golden (FM domain) — `YTFM_FUND_C5/C5/OUTPUT/OUTPUT_T` | `unesco-sap-brain` | chip `task_64603104` · ref XLSX + spec in `Zagentexecution/sap_data_extraction/pending_from_sap_brain/REQUEST.md` |
+| Add 4 YTFM biennium tables to the SAP golden (FM domain) — `YTFM_FUND_C5/C5/OUTPUT/OUTPUT_T` | `unesco-sap-brain` | ✅ **DONE (Session #080)** — all 4 landed in golden; verified 2026-06-09 (`ytfm_fund_c5`, `ytfm_c5`, `ytfm_output`, `ytfm_output_t` present in `p01_gold_master_data.db`). chip `task_64603104` dismissed · spec was in `Zagentexecution/sap_data_extraction/pending_from_sap_brain/REQUEST.md` |
 
 ## 4. Produces-back / promotion
 This project IS the promotion target: peers (e.g. `FINCLOSSING`) push stabilized SAP skills, TIER_1 claims, and universal incidents back here via `ecosystem-coordinator/priority-actions.md`.
