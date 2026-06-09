@@ -3,7 +3,7 @@
 *Canonical map of what this project OWNS/PRODUCES and (minimally) CONSUMES. This is the SAP **source of truth** for the ecosystem — most edges point INTO this project.*
 *Standard: `ecosystem-coordinator/.knowledge/way-of-working/ecosystem-link-manifest.md` · Registry: `ecosystem/data-capability-registry.md` · Rule: ADR-007 / BROADCAST-005.*
 
-**Last reviewed:** 2026-06-05 · **Active ecosystem: 3 projects** — `abapobjectscreation`, `unesco-sap-brain`, `FINCLOSSING`.
+**Last reviewed:** 2026-06-09 · **Active ecosystem: 4 projects** — `abapobjectscreation`, `unesco-sap-brain`, `FINCLOSSING`, `unescore20-PPM-brain`.
 
 ---
 
@@ -11,13 +11,13 @@
 
 | Asset | Path (read-only for consumers) | Consumers |
 |---|---|---|
-| **SAP golden DB** | `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db` (6.4 GB, 205 tables, P01 PROD) | `unesco-sap-brain`, `FINCLOSSING` |
-| **SAP Intelligence brain** | `brain_v2/brain_state.json` (objects/claims/incidents/rules/domains; `brain_v2_index.db` 86 MB) | `FINCLOSSING` (and `unesco-sap-brain` for claim cross-validation) |
-| **Domain knowledge** (FI / PSM / Treasury / HCM) | `knowledge/domains/{FI,PSM,Treasury,HCM}/` | `FINCLOSSING` |
+| **SAP golden DB** | `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db` (6.4 GB, 205 tables, P01 PROD) | `unesco-sap-brain`, `FINCLOSSING`, `unescore20-PPM-brain` (monitoring scope) |
+| **SAP Intelligence brain** | `brain_v2/brain_state.json` (objects/claims/incidents/rules/domains; `brain_v2_index.db` 86 MB) | `FINCLOSSING` (and `unesco-sap-brain` for cross-validation), `unescore20-PPM-brain` (monitor — brain metrics) |
+| **Domain knowledge** (FI / PSM / Treasury / HCM) | `knowledge/domains/{FI,PSM,Treasury,HCM}/` | `FINCLOSSING`, `unescore20-PPM-brain` (monitor scope) |
 | **28 skills, 7 layers** (RFC extraction, ADT REST, ABAP class/SEGW deploy, transport intelligence, domain agents) | `.agents/skills/` | `FINCLOSSING` (10 skills), any SAP-touching project |
 | **Extracted code** | `extracted_code/` | `FINCLOSSING` |
 
-**Read-only contract for consumers:** peers never write here. Cross-project reads must resolve through the consumer's own `refs_external.json` (see `FINCLOSSING/brain_v2/refs_external.json`, `unesco-sap-brain/refs_external.json`).
+**Read-only contract for consumers:** peers never write here. Cross-project reads must resolve through the consumer's own `refs_external.json` (see `FINCLOSSING/brain_v2/refs_external.json`, `unesco-sap-brain/refs_external.json`, `unescore20-PPM-brain/refs_external.json`).
 
 ## 2. What abapobjectscreation CONSUMES
 
