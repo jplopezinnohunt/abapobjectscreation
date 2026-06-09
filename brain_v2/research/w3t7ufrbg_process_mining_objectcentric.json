@@ -1,0 +1,338 @@
+{
+  "research_id": "w3t7ufrbg",
+  "slug": "process_mining_objectcentric",
+  "question": "SAP process mining for CUSTOM/Z code and custom processes, conformance against STANDARD reference processes, and the latest 2024-2026 object-centric algorithms and tools. Three specific dimensions: (1) CUSTOM-CODE-AWARE SAP process mining — how do academia (van der Aalst/RWTH PADS) and tools (Celonis, SAP Signavio) handle CUSTOM/Z objects and custom processes? Specifically: change documents (CDHDR/CDPOS) on CUSTOM Z-tables/objects (do custom tables get change documents, and how to mine them via SCDO change-document objects and DBTABLOG/SCU3 table logging), custom Z-tables as event sources, the Graph-of-Relations starting from a custom master table, custom user-exits/BAdI/enhancement logic and BDC/batch-input (APQ*/SM35) as event sources, and the SAP RFC/.NET integration layer. (2) CONFORMANCE of a DISCOVERED (as-implemented) SAP process against a STANDARD / normative / reference process model — i.e. 'as-implemented vs as-delivered', detecting where a customer's process DEVIATES from or EXTENDS the standard SAP process: object-centric conformance checking methods, token replay/alignments for OCEL, OPID alignments, whether SAP ships normative/reference process models (SAP Signavio Process Insights reference models, SAP best-practice process content), and how deviation = customization is surfaced. (3) The LATEST 2024-2026 object-centric process mining ALGORITHMS and TOOLS — ocpa library, Object-Centric Petri Net (OCPN) discovery, OCEL 2.0 ecosystem and standard, object-centric conformance and performance, predictive process monitoring with Graph Neural Networks over object-centric data, object-centric simulation/digital-twin, OCPM² methodology, filtering/sampling OCELs, and the commercial OCPM (Celonis Process Intelligence Graph, SAP Signavio object-centric). GOAL: build a commercial product that OVERLAYS a customer's CUSTOM processes on the STANDARD SAP processes, down to the implementing code (Z exits, BDC, custom config) — the 'custom over standard' x-ray — and a PUBLIC-SECTOR Fund Management / budget-execution (PSM-FM/BCS) process intelligence vertical. Rank what is most relevant and actionable for that product. Be exhaustive about specific algorithms, tools, libraries, papers, and SAP tables/objects — do not stop at a high-level summary.",
+  "summary": "The 2024-2026 object-centric process mining (OCPM) stack provides a usable but incomplete foundation for a \"custom-over-standard\" SAP x-ray product. The verified-and-survived core is the OCEL 2.0 standard (van der Aalst / RWTH PADS): it adds Object-to-Object relations, qualifiers, and time-varying object attributes to OCEL 1.0, ships a formal metamodel plus SQLite/XML/JSON exchange formats, and enables on-demand multi-perspective mining from a single unchanging event store while structurally avoiding the convergence/divergence distortions that force a single case notion. For conformance — the dimension where \"deviation = customization\" is detected — the surviving primary result is OPID (\"object-centric Petri nets with identifiers,\" arXiv:2312.08537), which combines object-centric Petri nets with Petri nets with identifiers to do conformance alignments that track object identity and inter-object dependencies (tool oCoCoMoT). Critically, the claims most specific to the product thesis — SAP change-document mining (CDHDR/CDPOS recipes), the Graph-of-Relations table-extraction method seeded from a master table, OCPM² methodology, GNN-based predictive monitoring (HOEG), SAP Signavio reference models, and ocpa OCPN discovery/scalability — were all RAISED but did NOT survive adversarial verification (0-0 votes), so they remain plausible-but-unconfirmed leads rather than established facts for this report.",
+  "findings": [
+    {
+      "claim": "OCEL 2.0 is the foundational standard for object-centric process mining: it extends OCEL 1.0 with Object-to-Object (O2O) relations alongside Event-to-Object (E2O) relations, qualifiers on both relation types, and time-varying (dynamic) object attributes, letting a single event reference multiple objects of different types and removing the single-case-concept constraint.",
+      "confidence": "high",
+      "vote": "2-0 (merged from two unanimous-supported claims)",
+      "sources": [
+        "https://vdaalst.com/publications/p1435.pdf",
+        "https://arxiv.org/abs/2403.01975",
+        "https://www.ocel-standard.org/"
+      ],
+      "evidence": "Primary source (van der Aalst, originator of OCEL) verified verbatim: 'With OCEL 2.0, we have added Object-to-Object (O2O) relations next to Event-to-Object (E2O) relations, and the ability to modify object attributes and qualify O2O and E2O relationships. Similar to OCEL 1.0, an event can reference multiple objects of different types, freeing it from the constraints of a single-case concept.' Corroborated by ocel-standard.org and the OCEL 2.0 spec (arXiv 2403.01975: attribute values can change over time). For a custom-over-standard SAP product, O2O + qualifiers + multi-typed events is the data model that lets one event (e.g. an FM document posting) link standard objects AND custom Z-objects simultaneously without forcing a case notion."
+    },
+    {
+      "claim": "OCEL 2.0 ships a comprehensive specification (metamodel + formalization) plus three concrete exchange formats — SQLite (relational), XML, and JSON — along with example datasets, libraries, and software tools.",
+      "confidence": "high",
+      "vote": "2-0",
+      "sources": [
+        "https://vdaalst.com/publications/p1435.pdf",
+        "https://www.ocel-standard.org/",
+        "https://arxiv.org/abs/2403.01975"
+      ],
+      "evidence": "Source quote: 'This latest standard, OCEL 2.0, introduces a comprehensive specification, including metamodel and formalization, along with three exchange formats (SQLite, XML, and JSON). It also offers numerous example datasets, libraries, and software tools.' Confirmed verbatim by ocel-standard.org and the spec PDF. The SQLite relational format is directly actionable: SAP table extracts (CDHDR/CDPOS, FM tables, Z-tables) can be materialized into an OCEL 2.0 SQLite store as the product's canonical event substrate. Caveat (verifier-flagged): the framing of OCEL 2.0 as the format 'for' the broader OCED standardization effort is a minor overreach — OCED-MM (arXiv 2410.14495) is a separate, simpler base model that OCEL 2.0 extends; this does not affect the load-bearing facts (metamodel + formalization + three formats)."
+    },
+    {
+      "claim": "OCEL 2.0 enables on-demand, multi-perspective process mining from a single unchanging data source — eliminating repeated data extraction when the analytical question/perspective changes — and structurally avoids the convergence (event duplication across cases) and divergence (inability to separate causally-unrelated events) distortions inherent to single-case-object approaches.",
+      "confidence": "high",
+      "vote": "3-0",
+      "sources": [
+        "https://vdaalst.com/publications/p1435.pdf",
+        "https://arxiv.org/abs/2209.09725",
+        "https://blog.rwth-aachen.de/pads/2020/10/09/",
+        "https://link.springer.com/chapter/10.1007/978-3-030-85082-1_16"
+      ],
+      "evidence": "Primary quote: 'Leveraging the OCEL 2.0 standard and associated OCPM tools, one can effortlessly examine operational activities from various angles using a single, unchanging data source. This eliminates the need for data extraction when shifting perspectives, providing an unparalleled degree of flexibility through on-demand process mining views.' Convergence/divergence avoidance independently documented in OC-PM (arXiv 2209.09725), RWTH PADS blog, and Springer LNCS. This is the strongest single justification for the product architecture: extract SAP once into an object-centric store, then pivot between standard-process and custom-process perspectives without re-extraction. Verifier caveat: 'effortlessly/unparalleled' is promotional tone and 'eliminating repeated extraction' is idealized — genuinely new object types still require new extraction; the OCEL must be built once."
+    },
+    {
+      "claim": "A formal object-centric conformance-checking method exists — 'object-centric Petri nets with identifiers' (OPID) — combining object-centric Petri nets (one-to-many relations) with Petri nets with identifiers (object identity comparison), enabling conformance alignments that track object identity and inter-object dependencies. Implemented as the oCoCoMoT tool with alignments encoded as SMT.",
+      "confidence": "high",
+      "vote": "3-0",
+      "sources": [
+        "https://arxiv.org/abs/2312.08537",
+        "https://link.springer.com/chapter/10.1007/978-3-031-61433-0",
+        "https://github.com/cocomot"
+      ],
+      "evidence": "Primary source arXiv:2312.08537 ('Object-Centric Conformance Alignments with Synchronization') defines the formalism verbatim: 'The work combines two existing approaches — object-centric Petri nets (capturing one-to-many relations) and Petri nets with identifiers (comparing objects by identity). The result is called object-centric Petri nets with identifiers.' Abstract notes prior approaches were 'limited in their abilities to keep track of object identity and object dependencies.' Authors Montali/Winkler/Gianola are established OCPM researchers; corroborated by Springer and the oCoCoMoT GitHub repo, plus follow-up work (DOPIDs, arXiv:2505.15409). This is the directly relevant academic method for the conformance dimension ('as-implemented vs as-delivered'): aligning a discovered SAP process net against a normative net while preserving object identity is exactly what is needed to attribute a deviation to a specific (possibly custom) object."
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "Prior object-centric conformance approaches cannot adequately track object identity and object dependencies, so certain conformance violations in object-centric event logs go undetected — a gap this paper's identity-aware nets are designed to close.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/abs/2312.08537"
+    },
+    {
+      "claim": "The paper proposes a formalism-agnostic object-centric conformance checking approach via an abstraction layer called the 'object-centric state space', enabling comparable conformance results across multiple OC modelling formalisms (object-centric Petri nets, object-centric process trees, OC Petri nets with identifiers). This directly addresses the 'as-implemented vs as-delivered' conformance dimension where deviation = customization, but does so formalism-independent rather than by token replay/alignment on a single net.",
+      "vote": "0-0",
+      "source": "https://link.springer.com/chapter/10.1007/978-3-032-15538-2_11"
+    },
+    {
+      "claim": "The method detects new object-centric deviation types that prior techniques miss or hide, specifically 'missing objects' and 'mismatched object identities' in event execution, which existing OC conformance techniques either are insensitive to or fail to pinpoint to the deviating object. This is the deviation taxonomy a 'custom-over-standard' product needs to surface object-level customization.",
+      "vote": "0-0",
+      "source": "https://link.springer.com/chapter/10.1007/978-3-032-15538-2_11"
+    },
+    {
+      "claim": "HOEG (Heterogeneous Object Event Graph) encodes events and objects together into a single heterogeneous graph with diverse node types, without aggregating object features into event-level vectors, giving a more nuanced representation than prior object-centric encodings.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/abs/2404.05316"
+    },
+    {
+      "claim": "HOEG applies a heterogeneous Graph Neural Network architecture over object-centric event data to perform predictive process monitoring tasks (e.g., remaining-time prediction), directly demonstrating GNN-based predictive monitoring over object-centric logs.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/abs/2404.05316"
+    },
+    {
+      "claim": "OCPM² is a 12-stage object-centric process mining methodology grouped into five phases (Planning, Domain Modeling, Log Extraction, Analysis Iteration, Process Improvement & Support), extending PM²'s six stages for OCED extraction.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/pdf/2503.10735"
+    },
+    {
+      "claim": "OCPM² defines an Extraction Matrix mapping object types to activities, and recommends documenting the relationship from a system perspective via CRUD (Create, Read, Update, Delete) operations or, from a process perspective, via object quantity ranges per event.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/pdf/2503.10735"
+    },
+    {
+      "claim": "Berti et al. extract object-centric event data from SAP ERP into OCEL by first constructing a Graph of Relations (GoR) over business-process tables, using a Python tool that identifies relevant tables and relationships; this informs OCPM²'s domain-modeling/extraction-matrix approach.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/pdf/2503.10735"
+    },
+    {
+      "claim": "In OCPM², conformance checking, process discovery, and process enhancement live in the Mining & Analysis stage operating directly on the object-centric event log, producing compliance and performance findings; OCED can also be flattened to a traditional log to reuse classic techniques.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/pdf/2503.10735"
+    },
+    {
+      "claim": "Object-Centric Process Mining can be enriched with four OLAP-inspired multi-dimensional operations (drill-down, roll-up, unfold, fold) that let analysts adjust the granularity of object-centric event logs, and applying drill-down/unfold measurably improves discovered process model fitness and precision.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/html/2412.00393v2"
+    },
+    {
+      "claim": "The ocpa library can discover object-centric Petri nets (OCPN) from OCEL and compute their fitness and precision, but cannot do so for large logs or complex processes — i.e., object-centric conformance checking has a hard scalability ceiling on real industrial data.",
+      "vote": "0-0",
+      "source": "https://arxiv.org/html/2412.00393v2"
+    },
+    {
+      "claim": "The extraction approach classifies SAP tables into five classes, where 'change tables' (with CDHDR and CDPOS named as the primary change tables) are mined for events by transforming change records into activities via three methods: the change transaction code, the updated field name (e.g. 'Price Changed'), or a comparison of old vs new field values (e.g. 'Postpone Delivery').",
+      "vote": "0-0",
+      "source": "https://www.vdaalst.com/publications/p1255.pdf"
+    },
+    {
+      "claim": "The method builds a 'Graph of Relations' (GoR) — an undirected connected graph whose nodes are SAP tables and edges are shared join fields, centered on a master table most relevant to the target process, with node distance from the center encoding relevance — and relevant tables can be identified manually by domain experts, automatically by exploiting the SAP data dictionary table DD03VV to extract inter-table relationships, or by a hybrid of both.",
+      "vote": "0-0",
+      "source": "https://www.vdaalst.com/publications/p1255.pdf"
+    },
+    {
+      "claim": "The approach stores extracted SAP events as Object-Centric Event Logs (OCEL) precisely to avoid having to pick a single case notion, which resolves the convergence and divergence problems that afflict commercial SAP extractors (Celonis, ProcessGold) when a case notion such as order/item/delivery/invoice/payment must be fixed.",
+      "vote": "0-0",
+      "source": "https://www.vdaalst.com/publications/p1255.pdf"
+    },
+    {
+      "claim": "The RWTH PADS approach mines SAP business events primarily from the change-document tables CDHDR and CDPOS, defining each event by explicit filter criteria over CDPOS fields — e.g. an event is generated only when CDPOS.OBJECTCLAS='EINKBELEG' and CDPOS.CHNGIND='I', or for a field change when CDPOS.FNAME='FRGZU', CDPOS.VALUE_OLD='X', CDPOS.VALUE_NEW='XX' — with the timestamp built from CDHDR.UDATE + CDHDR.UTIME. This is a directly reusable recipe for turning SAP change documents into OCEL events.",
+      "vote": "0-0",
+      "source": "https://www.pads.rwth-aachen.de/global/show_document.asp?id=aaaaaaaabnkcifn&download=1"
+    },
+    {
+      "claim": "The method introduces an 'Extraction Blueprint' that maps joined SAP tables to object-centric 'activity concepts' (which table entries become which events, with related objects, timestamp, activity name, and filter criteria), and was implemented on a real SAP system pulling from tables JCDS, TJ02T, AFKO, RESB, CDPOS, CDHDR, EBAN, EKBE, MSEG (plus EKKO/EKPO/AUFK), using the open-source sap-extractor project into pandas dataframes.",
+      "vote": "0-0",
+      "source": "https://www.pads.rwth-aachen.de/global/show_document.asp?id=aaaaaaaabnkcifn&download=1"
+    },
+    {
+      "claim": "Object-centric conformance against a normative/base process model surfaces customization and policy deviations: comparing the as-implemented event log to the base model via object-centric fitness yielded 0.9275 (vs a perfect 1.0), and discovering an OCPN exposed a silent transition allowing the mandatory second purchase-requisition release to be skipped — diagnosed as a conformance problem because the second release should be mandatory per company rule.",
+      "vote": "0-0",
+      "source": "https://www.pads.rwth-aachen.de/global/show_document.asp?id=aaaaaaaabnkcifn&download=1"
+    },
+    {
+      "claim": "The method discovers the relevant SAP source tables via a Graph of Relations (GoR) — an undirected connected graph whose nodes are SAP tables holding the candidate process information — which is the mechanism that can be seeded from a custom master table to traverse to related (including Z) tables.",
+      "vote": "0-0",
+      "source": "https://link.springer.com/chapter/10.1007/978-3-030-98581-3_19"
+    },
+    {
+      "claim": "The approach produces Object-Centric Event Logs (OCEL) where a single event can be linked to multiple typed objects, avoiding a forced single case notion — directly relevant to object-centric SAP process mining.",
+      "vote": "0-0",
+      "source": "https://link.springer.com/chapter/10.1007/978-3-030-98581-3_19"
+    },
+    {
+      "claim": "SAP Signavio Process Insights ships ready-to-use reference process flows with preconfigured performance metrics and benchmarks, providing a normative baseline for monitoring SAP processes out of the box.",
+      "vote": "0-0",
+      "source": "https://www.signavio.com/products/process-insights/"
+    },
+    {
+      "claim": "The product contains a built-in library of over 1,000 typical issues/inefficiencies that it detects and prioritizes automatically across SAP process domains (financial, manufacturing, quality, maintenance, service, claims, capex).",
+      "vote": "0-0",
+      "source": "https://www.signavio.com/products/process-insights/"
+    }
+  ],
+  "caveats": "SCOPE WARNING — the verified set is much narrower than the research question. Only 4 claims survived 3-vote adversarial verification, and all 4 concern the GENERIC object-centric foundation (OCEL 2.0 data model + OPID conformance). The claims that were the actual heart of the product thesis were RAISED but FAILED verification (0-0 votes, i.e., not adjudicated/unsupported) and must NOT be treated as established: (a) CUSTOM-CODE-AWARE SAP mining via change documents — the CDHDR/CDPOS recipes (filter by CDPOS.OBJECTCLAS/CHNGIND/FNAME/VALUE_OLD/VALUE_NEW, timestamp from CDHDR.UDATE+UTIME) and the five-table-class extraction scheme are plausible and source-attributed (vdaalst p1255.pdf, RWTH PADS sap-extractor) but UNCONFIRMED here; (b) the Graph-of-Relations (GoR) method seeded from a master/custom table using DD03VV; (c) OCPM² methodology and its Extraction Matrix/CRUD mapping; (d) HOEG / GNN-based predictive monitoring; (e) ocpa OCPN discovery + fitness/precision and its scalability ceiling; (f) SAP Signavio Process Insights reference models + 1,000-issue library as a normative baseline. None of these survived, so their specific details (table names, metrics like 0.9275 object-centric fitness, the silent-transition release-skip example) are LEADS, not facts. Time-sensitivity: OCEL 2.0 and OPID are 2023-2025 and current as of 2026, but the OCPM tooling landscape (ocpa, ocel-standard.org libraries, commercial Celonis PIG / SAP Signavio object-centric features) moves fast and should be re-verified before product commitments. Source quality on the surviving claims is high (van der Aalst primary + peer-reviewed venues); the refuted/unscored claims drew on the same author's papers and RWTH PADS PDFs but were not corroborated in this pass. The question's most product-specific dimensions — custom Z-table change-document mining, BDC/APQ* as event sources, RFC/.NET integration-layer mining, and the PSM-FM/BCS public-sector vertical — have NO surviving verified support in this synthesis and require dedicated follow-up research.",
+  "openQuestions": [
+    "Do custom (Z-namespace) tables and SCDO change-document objects reliably generate CDHDR/CDPOS records, and what is the exact extraction recipe (which CDPOS fields, OBJECTCLAS registration via SCDO, DBTABLOG/SCU3 table logging as fallback) — none of the change-document mining claims survived verification and this is the load-bearing mechanism for the custom-over-standard x-ray?",
+    "Does SAP actually ship machine-consumable NORMATIVE/reference process models (SAP Signavio Process Insights reference flows, SAP Best Practices content) that can serve as the 'as-delivered' baseline net for OPID-style conformance alignment, or is the normative model something the product must construct itself?",
+    "What is the real scalability ceiling of object-centric discovery/conformance (ocpa OCPN discovery, OPID/oCoCoMoT SMT alignments) on industrial-scale SAP logs (millions of FM/FI documents), and is OPID conformance tractable at that volume or only on filtered/sampled OCELs?",
+    "How should BDC/batch-input (APQ*/SM35), user-exits/BAdI/ENHO enhancement logic, and the RFC/.NET integration layer be surfaced as object-centric event sources and linked back to the IMPLEMENTING code — this code-attribution layer (the 'down to the Z exit' requirement) has no verified method in the current evidence and is the product's hardest differentiator?"
+  ],
+  "sources": [
+    {
+      "url": "https://vdaalst.com/publications/p1435.pdf",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/abs/2312.08537",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://link.springer.com/chapter/10.1007/978-3-032-15538-2_11",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/abs/2404.05316",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/pdf/2503.10735",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/html/2412.00393v2",
+      "quality": "primary",
+      "angle": "academic/object-centric state-of-art",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.vdaalst.com/publications/p1255.pdf",
+      "quality": "primary",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.pads.rwth-aachen.de/global/show_document.asp?id=aaaaaaaabnkcifn&download=1",
+      "quality": "primary",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/application-development-and-automation-blog-posts/change-log-for-z-table-maintenance-via-scdo/ba-p/13342741",
+      "quality": "blog",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.dab-europe.com/en/articles/sap-change-tables-part-2-what-tables-and-field-changes-are-actually-getting-logged-and-where/",
+      "quality": "blog",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 4
+    },
+    {
+      "url": "https://link.springer.com/chapter/10.1007/978-3-030-98581-3_19",
+      "quality": "primary",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 4
+    },
+    {
+      "url": "https://sapcodes.com/2015/11/23/creating-sap-change-document-object-scdousing-cdhdr-cdpos-table-for-different-applications/",
+      "quality": "blog",
+      "angle": "SAP change-document & table-logging mining",
+      "claimCount": 4
+    },
+    {
+      "url": "https://docs.celonis.com/en/data-extractions-and-transformations-for-object-centric-process-mining.html",
+      "quality": "primary",
+      "angle": "commercial tools / conformance vs reference",
+      "claimCount": 0
+    },
+    {
+      "url": "https://help.sap.com/doc/5eddda2709c745d58530abc4209d38b5/SHIP/en-US/SAPSignavioProcessIntelligenceAccelerators_EN.pdf",
+      "quality": "unreliable",
+      "angle": "commercial tools / conformance vs reference",
+      "claimCount": 0
+    },
+    {
+      "url": "https://help.sap.com/docs/signavio-process-intelligence/user-guide/process-conformance-widget",
+      "quality": "primary",
+      "angle": "commercial tools / conformance vs reference",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.signavio.com/products/process-insights/",
+      "quality": "primary",
+      "angle": "commercial tools / conformance vs reference",
+      "claimCount": 4
+    },
+    {
+      "url": "https://docs.celonis.com/en/object-centric-process-mining-database-tables.html",
+      "quality": "unreliable",
+      "angle": "commercial tools / conformance vs reference",
+      "claimCount": 0
+    },
+    {
+      "url": "https://arxiv.org/pdf/2110.03467",
+      "quality": "primary",
+      "angle": "custom code / exits / BDC as event sources",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.softwareimpacts.com/article/S2665-9638(22)00122-1/fulltext",
+      "quality": "primary",
+      "angle": "custom code / exits / BDC as event sources",
+      "claimCount": 5
+    },
+    {
+      "url": "http://zonbas.com/change-log-for-z-table-maintenance-via-scdo/",
+      "quality": "blog",
+      "angle": "custom code / exits / BDC as event sources",
+      "claimCount": 4
+    },
+    {
+      "url": "https://www.celonis.com/blog/how-process-mining-execution-management-can-transform-government-public-sector-financial-processes/",
+      "quality": "blog",
+      "angle": "public-sector PSM-FM process intelligence",
+      "claimCount": 4
+    },
+    {
+      "url": "https://www.carahsoft.com/news/celonis-process-mining-execution-management-system-available-government-contracts",
+      "quality": "secondary",
+      "angle": "public-sector PSM-FM process intelligence",
+      "claimCount": 3
+    },
+    {
+      "url": "https://www.ocel-standard.org/2.0/ocel20_specification.pdf",
+      "quality": "primary",
+      "angle": "public-sector PSM-FM process intelligence",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/pdf/2508.00116",
+      "quality": "primary",
+      "angle": "predictive / GNN object-centric monitoring",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/html/2404.05316v2",
+      "quality": "primary",
+      "angle": "predictive / GNN object-centric monitoring",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/pdf/2507.15411",
+      "quality": "primary",
+      "angle": "predictive / GNN object-centric monitoring",
+      "claimCount": 5
+    }
+  ],
+  "stats": {
+    "angles": 6,
+    "sourcesFetched": 26,
+    "claimsExtracted": 102,
+    "claimsVerified": 25,
+    "confirmed": 4,
+    "killed": 21,
+    "afterSynthesis": 4,
+    "urlDupes": 5,
+    "budgetDropped": 5,
+    "agentCalls": 109
+  },
+  "status": "CLOSED_VERIFIED"
+}

@@ -1,0 +1,332 @@
+{
+  "research_id": "wh5gw9exu",
+  "slug": "s4hana_readiness_bpcvi",
+  "question": "SAP S/4HANA MIGRATION READINESS — the complete assessment discipline, with BUSINESS PARTNER / Customer-Vendor Integration (CVI) migration as the central pillar. Be exhaustive and concrete (tables, transactions, reports, tools, SAP Notes). Cover: (1) BUSINESS PARTNER (BP) / CVI MIGRATION — the MANDATORY Customer-Vendor Integration for S/4HANA: the BP approach replacing XD01/XK01, the CVI cockpit and synchronization (transactions MDS_LOAD_COCKPIT, CVI_FS_CHECK_CUSTOMIZING, FLBPD1/FLBPD2), the pre-checks (report PRECHECK_UPGRADATION_REPORT, CVI_MIGRATION_PRECHK, CVI_PRECHECK), customizing prerequisites (number ranges synchronization, BP grouping, BP roles FLCU00/FLCU01/FLVN00/FLVN01, account group→BP role mapping), the master-data tables involved (LFA1/LFB1/LFBK/KNA1/KNB1/KNBK → BUT000/BUT020/BUT0ID/BUT100/CVI_CUST_LINK/CVI_VEND_LINK), common migration errors and how data-quality issues (missing tax numbers, address, bank data, duplicate BPs) block the conversion, and the end-to-end CVI migration steps. How does a customer assess BP-migration readiness from their existing customer/vendor master data BEFORE converting? (2) SAP READINESS CHECK 2.0 — what it analyzes (simplification items, custom code, recommended Fiori apps, add-on compatibility, active business functions, sizing, integration/interfaces, BW), how it is run (note 2913617 / 3059197), and the output dashboard. (3) SIMPLIFICATION ITEMS in depth — the Simplification Item Catalog, the Simplification Item Check (transaction SYCM / report /SDF/RC_START_CHECK), mandatory vs informational items, how each maps to a SAP Note and required action. (4) FINANCE migration specifics — the Universal Journal ACDOCA, mandatory new Asset Accounting, mandatory Material Ledger, new G/L, credit management (FIN-FSCM-CR), House Bank Account Management (BAM), and the financial data migration cockpit / migration steps. (5) DATA & SYSTEM migration approach — brownfield (in-place conversion via SUM with DMO / Database Migration Option) vs greenfield (new implementation via the SAP S/4HANA Migration Cockpit LTMC/LTMOM / Migration Object Modeler) vs selective/bluefield; Maintenance Planner as the mandatory first step; the conversion sequence. (6) The TOOL landscape for readiness (SAP Readiness Check, ATC with S4HANA_READINESS variant, Simplification Item Check, Custom Code Migration app, Maintenance Planner) and how they fit together. GOAL: build an S/4HANA migration readiness CAPABILITY that, given a customer's extracted master data and custom code, scores their readiness — with BP/CVI migration readiness scored directly from their LFA1/KNA1/BUT000 data. Rank by relevance and actionability. Prefer primary SAP documentation and SAP Notes; state each fact as checkable (name the table/transaction/report/Note).",
+  "summary": "A customer assesses S/4HANA migration readiness by combining (a) BP/CVI master-data consistency analysis, (b) the Simplification Item Check, (c) SAP Readiness Check 2.0, and (d) custom-code/Maintenance-Planner technical checks, then converging on the fixed Prepare→Realize conversion sequence driven by SUM. The central pillar is BP/CVI: in S/4HANA the Business Partner is the mandatory leading object that fully replaces the ECC customer/vendor transactions, so every customer and vendor must be synchronized to a BP (links stored in CVI_CUST_LINK / CVI_VEND_LINK), and readiness can be scored BEFORE conversion by running report CVI_MIGRATION_PRECHK via transaction CVI_PRECHK (or the CVI Master Data Consistency Check inside the CVI Cockpit) scoped by customer/vendor, number range, account group and business check — surfacing missing tax number categories, address/bank/postal data and other defects that otherwise force laborious iterations of the MDS_LOAD_COCKPIT synchronization. Technically, the Maintenance Planner is the mandatory first step (generates the stack.xml SUM requires), the SI-Check (/SDF/RC_START_CHECK) is a hard gate that must be clean before SUM enters downtime, and SAP Readiness Check (Note 2913617 for conversion, 3059197 for upgrade) identifies the relevant simplification items from the source system's transactions/customizing/table contents. On the Finance side, new Asset Accounting records asset transactions directly in the Universal Journal ACDOCA rather than a technically separate FI-AA subledger. A readiness-scoring capability can therefore be built by running CVI_PRECHK-equivalent checks against extracted LFA1/KNA1/BUT000 data and mapping each defect class to its blocking SAP Note/check.",
+  "findings": [
+    {
+      "claim": "BP/CVI is mandatory for S/4HANA conversion: the Business Partner is the leading object and single entry point, completely replacing the ECC customer/vendor transactions; all customers, vendors and contacts must be synchronized to a BP. Authoritative sources are the CVI Cookbook (KBA 2713963) and SAP Note 2265093 (S4TWL - Business Partner Approach, which contains the BP conversion guide as attachment).",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/faq-cvi-customer-vendor-integration-for-system-conversion-to-sap-s-4hana/ba-p/13740757",
+        "SAP Note 2265093",
+        "SAP KBA 2713963",
+        "https://blogs.sap.com/2019/07/22/business-partner-cvi-master-data-consistency-checks-supporting-the-sap-s4hana-move/"
+      ],
+      "evidence": "Primary SAP-authored FAQ + SAP Note 2265093 (exact title 'S4TWL - Business Partner Approach') + CVI Cookbook (KBA 2713963). SAP wording: 'you can no longer create a customer or a vendor without first creating a Business Partner'; BP is 'the leading object and single entry point'. Merges claims [0] and [17].",
+      "vote": "3-0 (both source claims unanimous)"
+    },
+    {
+      "claim": "Standard CVI synchronization (Customer/Vendor → BP) creates BP roles FLVN00 and FLVN01 for suppliers/vendors and FLCU00 and FLCU01 for customers (FLxx00 = general/FI company data, FLxx01 = purchasing-org / sales-area data). The *01 roles are created only when purchasing-org / sales-area data exists in the source record.",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/faq-cvi-customer-vendor-integration-for-system-conversion-to-sap-s-4hana/ba-p/13740757",
+        "SAP S/4HANA CVI Cookbook (S4H.0781)"
+      ],
+      "evidence": "Verbatim from primary SAP FAQ: 'For Suppliers: FLVN00, FLVN01 For Customers: FLCU00, FLCU01'. Corroborated by CVI Cookbook and multiple guides giving identical role semantics. Claim [1].",
+      "vote": "3-0"
+    },
+    {
+      "claim": "Customer/vendor-to-BP links are stored in tables CVI_CUST_LINK (PARTNER_GUID↔KUNNR) and CVI_VEND_LINK (PARTNER_GUID↔LIFNR); the common key to BUT000 is PARTNER_GUID. Assigning the same number to BP and customer/vendor is recommended but optional (KBA 2430380).",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/faq-cvi-customer-vendor-integration-for-system-conversion-to-sap-s-4hana/ba-p/13740757",
+        "SAP KBA 2430380"
+      ],
+      "evidence": "Primary FAQ names CVI_CUST_LINK / CVI_VEND_LINK; KBA 2430380 ('Same number for BP and customer/vendor in CVI') exists and resolves on userapps.support.sap.com. Claim [2].",
+      "vote": "3-0"
+    },
+    {
+      "claim": "Mass CVI synchronization is executed via transaction MDS_LOAD_COCKPIT. BP data-quality checks (postal code, geo code, mandatory field, tax number, bank data, tax jurisdiction, e-mail) in the Customer/Vendor→BP direction can be suppressed per SAP Note 2780288 (default BAdI CVI_CUSTOM_MAPPER); postal-code and address-regional checks are suppressed by default in normal (non-migration) synchronization.",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/faq-cvi-customer-vendor-integration-for-system-conversion-to-sap-s-4hana/ba-p/13740757",
+        "SAP Note 2780288",
+        "SAP KBA 2906882",
+        "SAP Note 2336018"
+      ],
+      "evidence": "Primary FAQ + SAP KBA 2906882 reproduces the identical suppressible check list and names BAdI CVI_CUSTOM_MAPPER. Note 2780288 title: 'S/4 HANA Migration: The BP checks can be suppressed in the direction Customer/Vendor->BP'. Claim [3].",
+      "vote": "3-0"
+    },
+    {
+      "claim": "Pre-conversion BP-readiness is assessed by the standard master-data consistency check report CVI_MIGRATION_PRECHK, run via transaction CVI_PRECHK or from the CVI Cockpit Preparation tab. It is meant to run early (Preparation phase) before CVI synchronization, listing all customer/vendor inconsistencies vs. the BP data model. Delivered as of ECC EhP8 SP12 and made available down to ECC 6.0 via SAP Note 2743494.",
+      "confidence": "high",
+      "sources": [
+        "https://blogs.sap.com/2019/07/22/business-partner-cvi-master-data-consistency-checks-supporting-the-sap-s4hana-move/",
+        "SAP KBA 3478108",
+        "SAP Note 2743494",
+        "SAP KBA 2826445"
+      ],
+      "evidence": "SAP blog + independent Medium article both bind report CVI_MIGRATION_PRECHK ↔ transaction CVI_PRECHK and Preparation-phase timing. SP12 + Note 2743494 (down to ECC 6.0) corroborated by SAP KBAs. Merges claims [14] and [15]. Note the report-vs-viewer pairing claim was REFUTED (1-2) — CVI_PRECHK runs the check, it is not merely a result viewer.",
+      "vote": "3-0 on both merged claims"
+    },
+    {
+      "claim": "A CVI_MIGRATION_PRECHK result of 'All applied Checks (0/0)' means NO check was actually performed (e.g. selection yielded zero records), NOT that the data passed — a 0/0 outcome must never be scored as clean readiness. A genuine clean result requires checks to have run against selected data and returned zero errors.",
+      "confidence": "high",
+      "sources": [
+        "https://userapps.support.sap.com/sap/support/knowledge/en/3478108"
+      ],
+      "evidence": "SAP KBA 3478108 ('How to check the result returned by CVI_MIGRATION_PRECHK') is the exact primary source. Critical for any automated scoring capability — must distinguish 0/0 (no denominator) from 0-errors-of-N. Claim [4].",
+      "vote": "3-0"
+    },
+    {
+      "claim": "The CVI_PRECHK error 'Tax Type XXX is not maintained for country YY' is caused by missing Tax Number Categories; the BP-conversion mapping requires a Tax Number Category defined for each customer/vendor country in the master data. Fixed in maintenance view V_TFKTAXNUMTYPE via SM30 (tables TFKTAXNUMTYPE / _C / _T; BP tax numbers stored in DFKKBPTAXNUM). Detect ahead of conversion via the CVI Master Data Consistency Check report in the CVI Cockpit or transaction CVI_PRECHK directly.",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/sap-s-4hana-business-partner-conversion-cvi-prechk-tax-type-xxx-is-not/ba-p/13851776",
+        "SAP Note 775919",
+        "SAP KBA 2842769"
+      ],
+      "evidence": "SAP-authored blog: 'definition of Tax Number Categories for each customer/vendor country of your master data is required.' Detection path corroborated. Merges claims [5] and [6]. This is a concrete, scoreable defect class (missing tax number category per country).",
+      "vote": "3-0 on both merged claims"
+    },
+    {
+      "claim": "The CVI pre-check can be scoped by Customer/Vendor object (one at a time), Customer Number Range and Account Group, and by selecting specific or all business checks (Tax Code, Postal Code, Email, Transportation Zones, Tax Jurisdiction, Number Range, Industry, Bank Data, Address). This scoping is exactly what enables scoring BP-migration readiness from existing master data before conversion.",
+      "confidence": "high",
+      "sources": [
+        "https://blogs.sap.com/2019/07/22/business-partner-cvi-master-data-consistency-checks-supporting-the-sap-s4hana-move/",
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap (CVI Cockpit MDC Check, ba-p/13493008)"
+      ],
+      "evidence": "SAP blog + SAP-authored community pages confirm scoping options and the default business-check set. The check-set list directly defines the dimensions a readiness score should cover (tax, postal, email, transport zone, tax jurisdiction, number range, industry, bank, address). Claim [16].",
+      "vote": "3-0"
+    },
+    {
+      "claim": "Maintenance Planner is the MANDATORY first technical step of the conversion: it checks add-ons, active business functions and industry solutions for S/4HANA compatibility and generates the stack.xml file that the Software Update Manager (SUM) requires as input. It replaced the Maintenance Optimizer, which S/4HANA does not support.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+        "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/introducing-an-overview-of-an-sap-s-4hana-conversion_af68bb97-472f-4b8d-aea6-26e8e3c9bd5b"
+      ],
+      "evidence": "Verbatim from SAP S/4HANA 2023 Conversion Guide (primary help.sap.com PDF) and SAP Learning. Hard technical dependency (SUM needs the stack.xml) makes the sequence genuinely fixed. Merges claims [7] and [11].",
+      "vote": "3-0 on both merged claims"
+    },
+    {
+      "claim": "The Simplification Item Check (SI-Check) is run via standalone report /SDF/RC_START_CHECK in SA38 (select target S/4HANA version → 'Check Consistency for All' against the Simplification Item List). It is MANDATORY, runs without SAP Solution Manager, is re-triggered automatically by SUM (phases RUN_S4H_SIF_CHECK_INIT / _EXEC), and is a HARD GATE: all errors must be resolved/exempted before SUM can enter downtime (SUM stops on RC=12 at start, RC=8 or higher before downtime). Delivered by SAP Notes 2399707 (check report) and 2502552 (check classes via TCI); framework installed by following Note 2502552 in SNOTE.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+        "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/introducing-an-overview-of-an-sap-s-4hana-conversion_af68bb97-472f-4b8d-aea6-26e8e3c9bd5b",
+        "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/s-4hana-conversion-t4-simplification-item-check-step-by-step/ba-p/13443148",
+        "SAP Note 2399707",
+        "SAP Note 2502552"
+      ],
+      "evidence": "Primary SAP Conversion Guide + SAP Learning + SAP-authored blog + SAP KBA 3447800. Merges claims [8], [12], [18], [19]. Note: the related S4TC 'identifies version-specific items / verifies kernel/DB prereqs' framing was REFUTED (1-2) as overreaching — the SI-Check identifies simplification items and gates downtime, but do not over-attribute kernel/DB prerequisite verification to it.",
+      "vote": "3-0 across all four merged claims"
+    },
+    {
+      "claim": "SAP Readiness Check for S/4HANA identifies the simplification items relevant to a SPECIFIC ECC source system, derived from transactions used, customizing and table contents (run against production for accurate relevance). SAP Note 2913617 ('SAP Readiness Check for SAP S/4HANA') governs the conversion/migration scenario; SAP Note 3059197 ('SAP Readiness Check for SAP S/4HANA upgrades') governs the S/4HANA→S/4HANA upgrade scenario.",
+      "confidence": "high",
+      "sources": [
+        "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/introducing-an-overview-of-an-sap-s-4hana-conversion_af68bb97-472f-4b8d-aea6-26e8e3c9bd5b",
+        "https://community.sap.com/t5/technology-blog-posts-by-members/understanding-sap-readiness-check-and-simplification-check-for-sap-s-4hana/ba-p/13770134",
+        "SAP Note 2913617",
+        "SAP Note 3059197"
+      ],
+      "evidence": "SAP Learning (relevance from transactions/customizing/table contents) + community blog (note numbers/titles). Merges claims [13] and [20]. CAVEAT: the detailed 'six areas Readiness Check analyzes' enumeration was REFUTED (0-3) — do not assert a fixed six-area list; the analysis scope (simplification items, custom code, recommended Fiori apps, add-on compatibility, active business functions, sizing, integration, BW) is real but the specific enumeration claimed was not verifiable.",
+      "vote": "3-0 on both merged claims"
+    },
+    {
+      "claim": "The conversion follows a fixed Prepare→Realize sequence. Prepare: Planning & System Requirements → Maintenance Planner → SI-Check → Custom Code Migration, with SAP Readiness Check 2.0 and the Simplification Item Catalog spanning it. Realize: SUM performs DB migration (to HANA, via DMO if not yet on HANA) + software update (ECC→S/4HANA) + the major part of data conversion in one tool, followed by cross-application and application-specific follow-on activities. SUM is the central conversion tool.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+        "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/introducing-an-overview-of-an-sap-s-4hana-conversion_af68bb97-472f-4b8d-aea6-26e8e3c9bd5b"
+      ],
+      "evidence": "Verbatim from SAP Conversion Guide 2023 + SAP Learning. Merges claims [9] and [10]. This is the orchestrating sequence into which all readiness tools fit.",
+      "vote": "3-0 on both merged claims"
+    },
+    {
+      "claim": "FINANCE specifics: in S/4HANA new Asset Accounting asset transactions are no longer stored in a technically separate FI-AA subledger (legacy tables ANEP/ANEA/ANEK/ANLC/ANLP no longer updated) but recorded directly in the Universal Journal ACDOCA, the same structure as G/L postings; FI and AA are unified in ACDOCA and the old GL↔AA reconciliation programs (RAABST01/02, FAA_GL_RECON) were removed. Legacy tables remain as compatibility views (FAAV_*).",
+      "confidence": "high",
+      "sources": [
+        "https://leverx.com/newsroom/sap-s4hana-asset-accounting-migration",
+        "SAP Note 2270387 (S4TWL Data Structure Changes in Asset Accounting)"
+      ],
+      "evidence": "LeverX blog corroborated by SAP S4TWL Note 2270387 and SAP Help: ANEP/ANEA/ANLP/ANLC values saved in ACDOCA, ANEK header to BKPF+ACDOCA. Claim [21]. NOTE: the broader Finance migration topics in the research question (mandatory Material Ledger, new G/L, FIN-FSCM-CR credit management, House Bank Account Management/BAM, the Financial Data Migration Cockpit FINS_MIG_*) were NOT independently verified in this batch — only new Asset Accounting / ACDOCA survived verification.",
+      "vote": "3-0"
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "CVI_MIGRATION_PRECHK is a CVI migration consistency-check report whose results are viewed via transaction CVI_PRECHK; the two are paired as the check runner and its result viewer for Business Partner / Customer-Vendor Integration readiness.",
+      "vote": "1-2",
+      "source": "https://userapps.support.sap.com/sap/support/knowledge/en/3478108"
+    },
+    {
+      "claim": "SAP Readiness Check analyzes six areas: add-on/extension compatibility, custom ABAP code impact (including deprecated functions), sizing and performance, business process transformation, recommended Fiori apps, and an aggregated SAP Note Analyzer input file.",
+      "vote": "0-3",
+      "source": "https://community.sap.com/t5/technology-blog-posts-by-members/understanding-sap-readiness-check-and-simplification-check-for-sap-s-4hana/ba-p/13770134"
+    },
+    {
+      "claim": "The Simplification Item Check (referenced as the S4TC 'Conversion & Upgrade new Simplification Item Checks') identifies version-specific simplification items, flags mandatory changes that must be addressed, and verifies technical prerequisites (kernel updates, database requirements) before conversion.",
+      "vote": "1-2",
+      "source": "https://community.sap.com/t5/technology-blog-posts-by-members/understanding-sap-readiness-check-and-simplification-check-for-sap-s-4hana/ba-p/13770134"
+    }
+  ],
+  "caveats": "Source mix: the BP/CVI and conversion-sequence/SI-Check/Maintenance-Planner findings rest on PRIMARY SAP sources (SAP Notes, KBAs, help.sap.com Conversion Guide CONV_OP2023.pdf, SAP Learning) and are high confidence. Several SAP Community pages and the primary FAQ (ba-p/13740757) and blog (ba-p/13851776) returned HTTP 403 to direct fetch; their content was corroborated via WebSearch extracts and independent SAP KBAs, so this is an access limitation, not an evidence gap. Two-system note dates: the cited Conversion Guide is the 2023 on-premise edition (doc versions current to early 2026); the mechanisms (Maintenance Planner, SUM/DMO, SI-Check report names, BP/CVI mandate) are unchanged through S/4HANA 2025, but exact return-code thresholds and note SP levels should be re-confirmed against the target release's guide. THREE claims were REFUTED and must NOT be stated as fact: (a) that CVI_PRECHK is merely a 'result viewer' for CVI_MIGRATION_PRECHK (it actually RUNS the check); (b) a fixed 'six areas' enumeration of what SAP Readiness Check analyzes; (c) attributing kernel/DB prerequisite verification and 'flags mandatory changes' specifically to the S4TC SI-Check. The Asset Accounting/ACDOCA finding is verified, but the remaining Finance pillars named in the question (mandatory Material Ledger, new G/L, credit management FIN-FSCM-CR, House Bank Account Management/BAM, and the Financial Data Migration Cockpit FINS_MIG_*) were NOT covered by surviving claims and remain unverified here. The greenfield (LTMC/LTMOM Migration Cockpit / Migration Object Modeler), greenfield-vs-brownfield-vs-bluefield decision framing, Custom Code Migration app / ATC S4HANA_READINESS variant details, and the master-data table-by-table mapping (LFA1/LFB1/LFBK/KNA1/KNB1/KNBK → BUT000/BUT020/BUT0ID/BUT100) were referenced in the question but did not appear as independently verified claims in this batch beyond the link tables CVI_CUST_LINK/CVI_VEND_LINK and BUT000 key (PARTNER_GUID).",
+  "openQuestions": [
+    "What is the exact, current source→target table mapping for the BP master-data conversion (LFA1/LFB1/LFBK/KNA1/KNB1/KNBK → BUT000/BUT020/BUT0ID/BUT100), and which fields are mandatory in the BP model so an automated scorer can flag gaps from extracted ECC data?",
+    "For the Finance pillars not verified here (mandatory Material Ledger, new G/L, credit management FIN-FSCM-CR, House Bank Account Management/BAM), what are the governing S4TWL Notes and the exact Financial Data Migration Cockpit steps/transactions (FINS_MIG_*) and their pre-checks?",
+    "What are the precise mechanics of the greenfield path — SAP S/4HANA Migration Cockpit (LTMC vs the newer Migrate Your Data app / LTMOM Migration Object Modeler) — and how does selective/bluefield (e.g. SNP/DMLT) readiness scoring differ from brownfield?",
+    "How exactly do the Custom Code Migration app and ATC with the S4HANA_READINESS variant produce their findings, and how should those custom-code results be weighted alongside BP/CVI and SI-Check results in a single composite readiness score?"
+  ],
+  "sources": [
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/faq-cvi-customer-vendor-integration-for-system-conversion-to-sap-s-4hana/ba-p/13740757",
+      "quality": "primary",
+      "angle": "BP/CVI migration core (primary pillar)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/customer-amp-vendor-integration-cvi/ba-p/14240954",
+      "quality": "unreliable",
+      "angle": "BP/CVI migration core (primary pillar)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://blogs.sap.com/2016/08/15/s4hana-system-conversion-pre-check-setting-up-customer-vendor-integration/",
+      "quality": "unreliable",
+      "angle": "BP/CVI migration core (primary pillar)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://blogs.sap.com/2020/03/31/cvi-customizing-check-report/",
+      "quality": "unreliable",
+      "angle": "BP/CVI migration core (primary pillar)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://userapps.support.sap.com/sap/support/knowledge/en/3478108",
+      "quality": "primary",
+      "angle": "BP/CVI migration core (primary pillar)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://blogs.sap.com/2019/07/22/business-partner-cvi-master-data-consistency-checks-supporting-the-sap-s4hana-move/",
+      "quality": "secondary",
+      "angle": "BP readiness assessment from master data + errors",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/resolving-inconsistencies-in-cvi-tables/ba-p/13574488",
+      "quality": "unreliable",
+      "angle": "BP readiness assessment from master data + errors",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/sap-s-4hana-business-partner-conversion-cvi-prechk-tax-type-xxx-is-not/ba-p/13851776",
+      "quality": "primary",
+      "angle": "BP readiness assessment from master data + errors",
+      "claimCount": 4
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/s-4hana-conversion-t4-simplification-item-check-step-by-step/ba-p/13443148",
+      "quality": "blog",
+      "angle": "Readiness Check 2.0 + Simplification Items + tools",
+      "claimCount": 5
+    },
+    {
+      "url": "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/performing-the-simplification-item-checks",
+      "quality": "unreliable",
+      "angle": "Readiness Check 2.0 + Simplification Items + tools",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-members/sap-readiness-check-2-0-setup-execution/ba-p/13432371",
+      "quality": "unreliable",
+      "angle": "Readiness Check 2.0 + Simplification Items + tools",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/understanding-sap-readiness-check-and-simplification-check-for-sap-s-4hana/ba-p/13770134",
+      "quality": "blog",
+      "angle": "Readiness Check 2.0 + Simplification Items + tools",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/conversion-of-sap-s-4hana-finance-to-sap-s-4hana/ba-p/13492293",
+      "quality": "unreliable",
+      "angle": "Finance migration specifics",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blogs-by-members/sap-finance-data-migration-in-s-4hana/ba-p/13433120",
+      "quality": "unreliable",
+      "angle": "Finance migration specifics",
+      "claimCount": 0
+    },
+    {
+      "url": "https://leverx.com/newsroom/sap-s4hana-asset-accounting-migration",
+      "quality": "blog",
+      "angle": "Finance migration specifics",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/bank-account-management-in-sap-s-4-hana-a-master-data-perspective/ba-p/13470198",
+      "quality": "unreliable",
+      "angle": "Finance migration specifics",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-members/all-you-need-to-know-about-universal-journal-acdoca-sap-s-4-hana-2020/ba-p/13545279",
+      "quality": "unreliable",
+      "angle": "Finance migration specifics",
+      "claimCount": 0
+    },
+    {
+      "url": "https://sapficocorner.blogspot.com/2019/01/fixed-asset-migration-in-times-of-s4.html",
+      "quality": "blog",
+      "angle": "Finance migration specifics",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+      "quality": "primary",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/s-4hana-conversion-t3-maintenance-planner-step-by-step/ba-p/13443116",
+      "quality": "unreliable",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://learning.sap.com/courses/sap-s-4hana-conversion-and-sap-system-upgrade/introducing-an-overview-of-an-sap-s-4hana-conversion_af68bb97-472f-4b8d-aea6-26e8e3c9bd5b",
+      "quality": "primary",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.pikon.com/en/blog/brownfield-sap-s4hana-migration-conversion-step-guide/",
+      "quality": "blog",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/sap-s-4hana-conversion-check-list-steps-by-steps-with-details/ba-p/14261865",
+      "quality": "unreliable",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/financial-management-blog-posts-by-members/choosing-the-right-path-for-your-s-4hana-transformation-greenfield/ba-p/13877169",
+      "quality": "unreliable",
+      "angle": "Conversion approach & sequence (brownfield/greenfield/selective)",
+      "claimCount": 0
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 24,
+    "claimsExtracted": 53,
+    "claimsVerified": 25,
+    "confirmed": 22,
+    "killed": 3,
+    "afterSynthesis": 13,
+    "urlDupes": 2,
+    "budgetDropped": 4,
+    "agentCalls": 106
+  },
+  "status": "CLOSED_VERIFIED"
+}

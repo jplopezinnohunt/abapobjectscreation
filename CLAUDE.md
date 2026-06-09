@@ -1,5 +1,27 @@
 # CLAUDE.md - Instructions for AI Agents
 
+## ⛔ STOP — THE OPERATING MODEL ALREADY EXISTS (read before proposing anything)
+
+This project HAS a built, persisted **Capability Model** (Session #079). **DO NOT re-invent it, do not
+propose a "new framework", do not redesign `brain_state.json`'s schema.** It is already there:
+
+- **`brain_v2/capability_model/capability_model.json`** — the operating model: every domain × **10 capability
+  dimensions** (S_STANDARD_REF · A_PROCESS · B_CODE · C_CONFIG · D_DATA · E_AUTH · F_INTERFACE_FILE ·
+  G_CONFORMANCE · H_IMPROVE · R_S4_READINESS). A domain = **AS-DESIGNED (standard SAP) + AS-RUN (ours)**;
+  G = the delta = the product. It is **Layer 15** of `brain_state.json` (`brain_state.capability_model`).
+- Companions of the model: `s4_readiness_model.json` (fractal S/4 sub-scorecard) · `execution_backlog.json`
+  (9 EXT + AN + RES tasks, what to extract + what to look for) · `applied_models.json` (which model applied
+  to which domain) · `maturity.json` (model maturity, **measured**) · dashboard `companions/model_maturity_dashboard.html`.
+- **Verified research base:** `brain_v2/research/` — 7 CLOSED deep-researches, `sources_index.json` (157 urls
+  already read — dedupe against it), `findings_registry.json` (verified + refuted; never re-assert refuted).
+- The plan is **generated from the matrix**: `python brain_v2/graph_queries.py capability_gaps`.
+- Full spec: `knowledge/capability_model.md` · `capability_model_execution_plan.md`. Way-of-working rule:
+  `feedback_capability_model_is_the_operating_model` (#149).
+
+If you have NOT loaded `brain_state.capability_model`, you do not know the project state — load it, do not
+rebuild from scratch. (This block exists because a parallel session re-invented the model after skipping the
+brain read — s079.)
+
 ## 🏛️ CORE PRINCIPLES (constitutional — session #054)
 
 Before any work, the agent operates under three **Core Principles** that govern HOW it decides, stores, and compresses. Every feedback rule derives from one of these. Full definitions in `brain_v2/core_principles/core_principles.json`. Loaded as Layer 0 of `brain_state.json`.
@@ -35,28 +57,34 @@ Zagentexecution/           # Task execution artifacts
 
 **CRITICAL RULE:** Core modules (`lib/sap-webgui-core/`) must NEVER contain transaction-specific logic. They provide generic primitives that work across ALL SAP transactions.
 
-## 🧠 MANDATORY FIRST ACTION — Load Brain State
+## 🧠 MANDATORY FIRST ACTION — Load Brain (TIERED, s079)
 
-**EVERY session, before ANY other action, read this ONE file:**
+**EVERY session, before ANY other action, read the LEAN INDEX first (~800 tokens, not the 400K full brain):**
 
 ```
-brain_v2/brain_state.json
+brain_v2/BRAIN_INDEX.md   ← read THIS first (lean L1 bootstrap)
 ```
 
-This single file contains (Session #050 — 12 layers):
-- **Layer 1**: 136 analyzed objects with inline edges, annotations, claims, incidents
-- **Layer 2**: Cross-cutting indexes (by_incident — now enriched with status/doc/root_cause/fix, by_domain, uncertain_claims, superseded_claims)
-- **Layer 3**: 58 feedback rules (agent behavioral DNA)
-- **Layer 4**: 26 claims with evidence tier
-- **Layer 6**: 23 known_unknowns
-- **Layer 7**: 6 falsification predictions pending test
-- **Layer 8**: 15 superseded claims (anti-regression)
-- **Layer 9**: User questions (parked + answered)
-- **Layer 10**: Data quality issues (8 open)
-- **Layer 11**: First-class **incidents** (full root cause + fix path + analysis_doc inline) — added Session #050
-- **Layer 12**: **blind_spots** — names the brain talks about but does not classify as first-class objects (currently 20, all flavor MISSING) — added Session #050
-- `_coverage` — pct_classified metric (75.6%)
-- **~52K tokens (5.3% of context)**
+Then **DRILL on demand** via `python brain_v2/graph_queries.py <cmd>` (capability_gaps, capability <dom>,
+domain <name>, incident <id>, what_reads <table>, stats). Read the **full `brain_v2/brain_state.json`
+ONLY when you need depth** the index doesn't give. This is tiered loading — Anthropic's own endorsed
+"hybrid: small index up front + just-in-time drill-down" pattern (verified, research wwrqcozf1), which
+avoids context rot. The full brain is PRESERVED (CP-002); it's just not loaded wholesale every session.
+
+The full `brain_state.json` contains (Session #079 — **16 layers**, L0–L15):
+- **Layer 0**: core_principles (CP-001/002/003)
+- **Layer 1**: 742 analyzed objects with inline edges, annotations, claims, incidents
+- **Layer 2**: Cross-cutting indexes (by_incident — enriched with status/doc/root_cause/fix, by_domain, uncertain_claims, superseded_claims)
+- **Layer 3**: **151 feedback rules** (agent behavioral DNA)
+- **Layer 4**: claims with evidence tier (+ machine-verification status, Layer-3 trust)
+- **Layer 6**: known_unknowns · **Layer 7**: falsification predictions · **Layer 8**: superseded claims (anti-regression)
+- **Layer 9**: User questions · **Layer 10**: Data quality issues
+- **Layer 11**: First-class **incidents** (root cause + fix path + analysis_doc inline)
+- **Layer 12**: **blind_spots** (0 — 100% coverage)
+- **Layer 13**: **interactions** · **Layer 14**: **domains_layer** (3-axis: functional/module/process + process_map)
+- **Layer 15**: **capability_model** — THE operating model (domain × 10 capabilities; see STOP block at top). Includes s4_readiness_submodel + execution_backlog + maturity. **← added Session #079**
+- `_coverage` — pct_classified metric (**100% as of Session #079** — 0 blind spots; curation now SYNTHESIZES a queryable object for any referenced name with no graph node)
+- **~357K tokens (~35% of context as of Session #079)** — grew when coverage hit 100%. The full curated graph is correct to PRESERVE (CP-002); the open decision is **tiered loading** (lean L1 index at bootstrap, drill via `graph_queries.py`). See `memory/feedback_knowledge_becomes_useful_via_structured_records.md`. Do NOT shrink the brain to save tokens — solve with structure, not lossy compression.
 
 One Read call = full project intelligence. This REPLACES the old 50+ file session-start ceremony. NEVER skip this. If context compresses, re-read it.
 
@@ -376,6 +404,9 @@ Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 - `feedback_brain_first_then_grep` — CRITICAL. Traverse brain_state.incidents → by_incident → objects[X].knowledge_docs → blind_spots BEFORE any glob/grep.
 - `feedback_blind_spots_are_first_class` — HIGH. At session start, log `_coverage.pct_classified` and triage `blind_spots`. Don't let brain coverage decay.
 - `feedback_force_include_referenced_names` — HIGH. Any object referenced from annotations/claims/incidents is force-included in objects[]. Never let names we talk about fall out of the brain.
+
+### Making knowledge queryable (Session #079)
+Prose `.md` does NOT promote SAP objects into `brain_state.objects`. To make a name (SAPF100, OB09, an account) reachable, add **structured records** (incident + claims with the name in `related_objects`). The curation now **synthesizes** a queryable object for any referenced name with no graph node (`synthesize_object_from_records` in `build_brain_state.py`) — so blind spots → 0, coverage → 100%. Structural code edges (reads/calls/exits) still require the object's source to be a PARSED node. Full rule: `memory/feedback_knowledge_becomes_useful_via_structured_records.md`.
 
 ### Incident processing
 When the user passes a support incident: invoke the `incident-analyst` subagent (or follow the `sap_incident_analyst` skill manually). The 7-step protocol is: PARSE → BRAIN LOOKUP → GOLD DB PULL → CODE TRACE → ROOT CAUSE → CLASS GENERALIZATION → BRAIN ANNOTATION. Output: `knowledge/incidents/INC-<id>_<slug>.md` + first-class record in `brain_v2/incidents/incidents.json`.

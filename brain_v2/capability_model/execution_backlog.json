@@ -1,0 +1,236 @@
+{
+  "_design": "Execution backlog for the capability model (Layer 15). Model is BUILT now; execution is DEFERRED (user s079: 'creemos el modelo, luego los ejecutamos'). Each task is FULLY SPECIFIED — what to extract/run, from which system, and WHAT TO LOOK FOR — so later execution is turnkey, not rediscovery. Two types: EXTRACTION (needs SAP pull/run) and ANALYSIS (doable from data we hold). Provenance: code/structure system-invariant -> D01; production data -> P01 (currently inactive).",
+  "_version": "1.0",
+  "_created_session": "079",
+  "_status_legend": "DEFERRED = defined, not started. Pick up when executing.",
+  "_execution_sequence_s079": {
+    "rule": "The research (wwrqcozf1) runs ALONE (serial). NOTHING else fires until it CLOSES. Then execute the steps below in order, autonomously, no per-step asking (user s079).",
+    "GATE": "wwrqcozf1 CLOSED. A,B,C DONE. B2 scheduling = SessionStart daily curation (native hook, no schtasks). D SKIPPED by user (s079) - stays deferred. E maturity current. F commit = pending user OK (focused, not blanket - git status has ~100 unrelated changes).",
+    "after_gate": [
+      "A. CLOSE-OUT research: verify Synthesize -> archive (8th) -> update sources_index + findings_registry -> extract verified playbook.",
+      "B. MEMORY/CONTINUITY impl (the 'stay+borrow', from the playbook): B1 tiered loading (lean L1 index at bootstrap + drill via graph_queries — the 400K-token fix); B2 scheduled curation (dreaming emulation as a scheduled task/skill). (auto-load already hardened s079.)",
+      "C. DOMAIN-ENRICHMENT pass (propagate verified findings into companions + domain .md, cross-reference rule): C1 Procurement/P2P as-is doc (OCEL2+conformance); C2 Treasury (file I/O + BAM readiness); C3 Payment (conformance + SoD); C4 each companion gets a capability-maturity section; C5 NEW Security domain from the verified AUTH/SoD method.",
+      "D. REMAINING Group-1 no-P01 builds: D1 AN-BPCVI-SCORE (BP/CVI readiness from our master data); D2 DSGN-S4-WEIGHTING (composite R_S4 roll-up weighting).",
+      "E. MATURITY + CONTROL update: re-score maturity, regenerate dashboard, update applied_models.json — AFTER C/D land.",
+      "F. COMMIT (durability): git commit the model+research in BOTH repos — abapobjectscreation (CLAUDE.md, settings.json, capability_model/, research/) + ecosystem-coordinator (session-start.md, priority-actions.md)."
+    ]
+  },
+  "extraction_tasks": [
+    {
+      "id": "EXT-AUTH",
+      "fills": "E_AUTH (rank-1 — closes the column, lifts every domain)",
+      "system": "SPLIT — role STRUCTURE (what a role CAN do) = D01 system-invariant: AGR_DEFINE, AGR_1251, AGR_TCODES, USOBT_C/USOBX_C, TSTCA, TOBJ. User ASSIGNMENTS (who HAS the role) = P01 production data: AGR_USERS, USR02, UST12. We hold ZERO auth tables today.",
+      "extract": [
+        "[D01] AGR_DEFINE, AGR_1251 (role->auth-object values), AGR_TCODES, USOBT_C/USOBX_C (SU24), TSTCA, TOBJ",
+        "[P01] AGR_USERS (user<->role), USR02 (users), UST12 (effective auth)"
+      ],
+      "what_to_look_for": "ROLE-level SoD (D01, no P01 needed): which roles grant conflicting auth combinations (e.g. maintain bank master + run payment). USER-level SoD (P01): who actually HAS conflicting access (generalize the BCM dual-control finding). Map auth object -> tcode -> program to link security to process/code.",
+      "note": "User flag (s079): AUTH user-data is P01 — may be inaccessible until P01 active. BUT: (a) the SoD METHOD is being researched now (RES-AUTH-SOD wwyujjqyk — system-invariant, needs no access); (b) ROLE-DESIGN SoD is runnable from D01 alone (role structure is system-invariant); only the WHO-HAS-WHAT is P01-gated. So partial progress (role-level SoD) is possible on D01 without P01.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-BPCVI",
+      "fills": "R_S4_READINESS / BP_CVI factor (complete vendor side)",
+      "system": "P01 (master data)",
+      "extract": [
+        "BUT020 (BP addresses)",
+        "BUT0ID (BP identifiers/tax)",
+        "BUT100 (BP roles)",
+        "CVI_VEND_LINK (PARTNER_GUID<->LIFNR)",
+        "KNBK (customer bank)"
+      ],
+      "what_to_look_for": "complete the 9 CVI business checks on the VENDOR side; BP role coverage (FLVN00/01, FLCU00/01); tax-number-category completeness per country; the exact source->target field mapping (open question).",
+      "note": "We ALREADY hold LFA1/LFB1/LFBK/KNA1/KNB1/BUT000/CVI_CUST_LINK/BP001/ADRC -> BP/CVI customer-side readiness is scoreable WITHOUT this (Bucket A). This task only COMPLETES the picture.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-CDPOS",
+      "fills": "A_PROCESS (field-level change events) — enriches every change-based process",
+      "system": "P01",
+      "extract": [
+        "CDPOS (have CDHDR)"
+      ],
+      "what_to_look_for": "field-level activities (payment block ZLSPR set/removed, price change, release FRGZU); activity from CHNGIND/FNAME/VALUE_OLD->VALUE_NEW; timestamp CDHDR.UDATE+UTIME; filter by OBJECTCLAS.",
+      "caveat": "CLUSTER table (CDCLS) — RFC_READ_TABLE may fail; use ABAP FOR ALL ENTRIES via CHANGEDOCUMENT_READ_POSITIONS or RFC_ABAP_INSTALL_AND_RUN. Probe declustering on EhP8 first.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-VARIANT",
+      "fills": "F_INTERFACE_FILE (job intent — completes the A8 structural half)",
+      "system": "P01",
+      "extract": [
+        "VARI",
+        "VARIS (pool tables)"
+      ],
+      "what_to_look_for": "variant CONTENTS (selection params: BUKRS, account range, BUDAT, test/update) so a job step becomes a parameterized business action; key via RFC + FM RS_VARIANT_CONTENTS / RS_VARIANT_VALUES.",
+      "note": "We already hold TBTCP.VARIANT (the program+variant linkage). This pulls the CONTENTS. Skill sap_variant_analysis proven on SAPF100.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-FILES",
+      "fills": "F_INTERFACE_FILE (file system as OCEL object)",
+      "system": "config D01-ok; AL11 per-system",
+      "extract": [
+        "PATH",
+        "FILEPATH",
+        "FILENAMECI",
+        "FILENAME",
+        "OPSYSTEM (tcode FILE)",
+        "AL11 directory listing"
+      ],
+      "what_to_look_for": "logical->physical file path mapping = WHERE each interface reads/writes; the file = the JOIN between external systems (COUPA/MT940/DMEE) and the SAP process. Pair with the OPEN DATASET scan (Bucket A) on extracted_code.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-SERVICES",
+      "fills": "E/F + B_CODE (service & interface usage)",
+      "system": "P01 (usage = data)",
+      "extract": [
+        "/IWFND/ OData usage stats",
+        "RFC call inventory (beyond RFCDES)",
+        "EDIDS (IDoc status history)"
+      ],
+      "what_to_look_for": "who calls which service and how often; IDoc status-change patterns (we have EDIDC current state, not EDIDS history).",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-USAGE",
+      "fills": "B_CODE (used-vs-dead) + feeds R_S4 custom-code factor",
+      "system": "P01",
+      "extract": [
+        "SCMON/SUSG (ABAP Call Monitor)",
+        "UPL (SolMan BW)",
+        "ST03N/SWNC workload"
+      ],
+      "what_to_look_for": "which programs/classes/tcodes actually execute and by whom; the 40-60% dead-code split; transaction last-used dates.",
+      "caveat": "REQUIRES SCMON to be ACTIVE/collecting (retains ~7 days locally; ~13 months recommended). PROBE first whether it is running before assuming historical data exists.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-EVENTSOURCES",
+      "fills": "A_PROCESS (breadth — status/flow/workflow/output/log/BDC/dump)",
+      "system": "P01",
+      "extract": [
+        "JCDS (status changes)",
+        "VBFA (SD doc flow)",
+        "SWW* (workflow)",
+        "NAST (output)",
+        "BALHDR/BALDAT (app log)",
+        "APQI/APQD (BDC)",
+        "SNAP (dumps)"
+      ],
+      "what_to_look_for": "per the event_sources_catalog: status lifecycle, document flow, approval steps, output/print, application-log events, batch-input forensics, runtime errors.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-S4CHECKS",
+      "fills": "R_S4_READINESS (SI / custom-code / technical / readiness-check factors)",
+      "system": "D01 (mostly system-invariant analysis)",
+      "extract": [
+        "RUN ATC with S4HANA_READINESS_<ver> variant",
+        "RUN SI-Check /SDF/RC_START_CHECK (SA38)",
+        "RUN Maintenance Planner",
+        "RUN/IMPORT SAP Readiness Check 2.0 (Note 2913617)",
+        "IMPORT Simplification Database (KBA 3693326, tcode SYCM)"
+      ],
+      "what_to_look_for": "simplification items relevant to OUR system; custom-code adaptation findings; add-on/business-function compatibility; the per-factor S/4 readiness scores. NOT Gold-DB tables — these are SYSTEM RUNS.",
+      "status": "DEFERRED"
+    }
+  ],
+  "analysis_tasks_no_extraction": [
+    {
+      "id": "AN-OCEL2",
+      "fills": "A_PROCESS substrate",
+      "do": "reformat existing events into an OCEL 2.0 SQLite store",
+      "status": "DONE (s079)",
+      "result": "ocel_build_p2p.py -> p2p.ocel2.sqlite (verified canonical format, round-trip re-read OK). P2P object-centric: 404,675 events / 100,359 objects / 1,214,023 relations; 3 object types PurchaseOrder(72,891)+Vendor(26,912)+PurchasingGroup(556); object-centric DFG discovered. The #1 verified model (OCEL 2.0) now applied — one event references multiple object types, no flat single-case. Scales by widening SINCE=20240101."
+    },
+    {
+      "id": "AN-PM4PY",
+      "fills": "A_PROCESS",
+      "do": "finish the drafted pm4py upgrade (inductive/heuristic + token-replay conformance) in sap_process_discovery.py",
+      "status": "DONE (s079)",
+      "result": "inductive miner + token-replay conformance now applied & persisted. clearing_lifecycle (161,172 cases / 609,345 events): discovered Petri net 116 places / 178 transitions on a 4000-case SAMPLE (inductive untractable on full 600K events — the documented scalability ceiling); fitness=0.98 (model explains 98% of real behavior), precision=0.634 (model over-general, tighten via reference baseline). Fixed: sampling for the heavy step + save the inductive block to JSON (was a bug). Caveat: numbers are on a sample, not the full log."
+    },
+    {
+      "id": "AN-P2P",
+      "fills": "A_PROCESS (Procurement)",
+      "do": "build P2P as-is event log + variants from EKKO/EKPO/EBAN/EKBE/RBKP/RSEG/BKPF (we hold them)",
+      "status": "DONE (s079)",
+      "result": "config p2p_po_lifecycle added to sap_process_discovery.py. 77,629 POs / 437,002 events / 5 activities / 5,014 variants. Happy path PO->GR->IR = 20,987 (standard 3-way). Deviations: PO-only 12,622 (open POs), IR-before-GR 4,487+ (control deviation), multi-cycle GR/IR, no-PO-start ~2,300 (likely incomplete cases). Inductive 11 places/14 transitions (4000-sample); conformance fitness 0.891 / precision 0.693. Caveats: same-day order arbitrary (no intra-day time -> EXT-CDPOS would disambiguate); VGABE=9 (119K) left unclassified by design. Procurement A_PROCESS ●→ stays ● (deepened with inductive+conformance)."
+    },
+    {
+      "id": "AN-STDREF",
+      "fills": "S_STANDARD_REF (rank-0)",
+      "do": "document AS-DESIGNED standard baselines per domain from SAP Best Practices / verified PaPM P2P content (research, not extraction)",
+      "status": "DONE for P2P (s079)",
+      "result": "P2P standard encoded: PO->GR->IR, 3-way match, GR strictly before IR. Source: PaPM P2P content (verified wgrqpmt9f/wh5gw9exu). Other domains pending."
+    },
+    {
+      "id": "AN-G-P2P",
+      "fills": "G_CONFORMANCE (Procurement) — first x-ray",
+      "do": "align P2P as-is (AN-P2P) vs standard baseline (AN-STDREF)",
+      "status": "DONE (s079)",
+      "result": "p2p_conformance.py — full population 73,080 POs, date-based (not same-day-arbitrary). STANDARD-conforming 48.5%. Real deviations: PO-only 17.3% (open/abandoned), GR-no-IR 0.6%, IR-before-GR-by-date ONLY 0.1% (70), invoiced-without-GR 0%. 33.5% GR+IR same-day = order INDETERMINATE -> the business case for EXT-CDPOS (intra-day time). SELF-CORRECTION: the variant-view 'IR-before-GR 4,487' was mostly the same-day arbitrary-ordering ARTIFACT, not a real control deviation. Procurement G_CONFORMANCE ○->◐."
+    },
+    {
+      "id": "AN-BPCVI-SCORE",
+      "fills": "R_S4_READINESS / BP_CVI (BusinessPartner — first real S/4 readiness score)",
+      "do": "replicate the 9 CVI business checks over LFA1/KNA1/BUT000/CVI_CUST_LINK in the Gold DB; encode 0/0 != clean (KBA 3478108); flag missing Tax Number Category per country, bank data, address",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "AN-ABAPLINT",
+      "fills": "B_CODE",
+      "do": "run abaplint dead-code/unused detection over extracted_code/ (1215 .abap files)",
+      "status": "INSTALLED, run DEFERRED — preconditions confirmed (s079)",
+      "note": "@abaplint/cli installed (node v18). PRECONDITION CONFIRMED: extracted_code is NOT abapGit-serialized (1215 raw .abap, 0 .clas.abap/.prog.abap, 0 .xml) -> needs a format shim or abapGit re-extract before abaplint can parse. LIMITATION: static 'unused' within the extracted subset != truly dead (a method called from un-extracted code false-flags) -> definitive dead-code needs runtime EXT-USAGE (SCMON/UPL). Best done PAIRED with EXT-USAGE, not standalone. Outcome = code-quality (183 rules) + static dead-code candidates."
+    },
+    {
+      "id": "AN-DEPGRAPH",
+      "fills": "B_CODE",
+      "do": "surface the 52K-node brain as program->table->class where-used view",
+      "status": "DONE (s079)",
+      "result": "Confirmed ALREADY PRESENT in brain graph: 2,451 code-dependency edges (READS_TABLE 485, WRITES_TABLE 195, CALLS_FM 585, READS_FIELD 385, EXECUTES/RUNS_PROGRAM). graph_queries.py what_reads/what_depends_on work (what_reads REGUH -> 3 DMEE classes). Top-read: T001/PA0001/ADRC/T012K(house banks)/PAYR. Top FM-callers: RFFORI99(42)/RFFORI06/FPAYM_SEL. DQ flag: WRITES_TABLE includes internal T_* tables (not only DB)."
+    },
+    {
+      "id": "AN-OPENDATASET",
+      "fills": "F (file design)",
+      "do": "scan extracted_code for OPEN DATASET file-I/O points",
+      "status": "DONE (s079)",
+      "result": "6 of 1215 custom files do direct file I/O: 11 FOR OUTPUT, 3 FOR INPUT, 19 TRANSFER, 3 READ DATASET. Programs: RFFORI99/RPRAPA00/RPRAPADE_ALV/RPRAPAFO_ALV (std payment/travel) + custom YTBAI001, ZFPAYM_END. File boundary = payment(output)/bank(input) = COUPA/MT940/DMEE. Logical paths need EXT-FILES (D01) to resolve WHERE."
+    }
+  ],
+  "research_tasks_followups": [
+    {
+      "id": "RES-AUTH-SOD",
+      "for": "E_AUTH method",
+      "do": "dedicated research on roles/SoD detection methods (AGR_*/SU24/SUIM/GRC + conflict rulesets) to raise E_AUTH method_tier GAP->VERIFIED before extraction",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "RES-FINANCE-S4",
+      "for": "R_S4 Finance factor",
+      "do": "follow-up research on Finance pillars beyond Asset Accounting (Material Ledger, new G/L, FIN-FSCM-CR, BAM, FINS_MIG_* + governing S4TWL Notes)",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "RES-COMPETITORS",
+      "for": "landscape gap",
+      "do": "the unmapped process-mining competitors (Mehrwerk MPM on HANA/SAC, MS Power Automate, IBM, ARIS, QPR, Apromore, Skan) — no verified claims yet",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "RES-S4-GREENFIELD",
+      "for": "R_S4 data-migration factor",
+      "do": "greenfield Migration Cockpit + selective/bluefield",
+      "status": "DROPPED (s079) — NOT APPLICABLE: user confirmed UNESCO uses BROWNFIELD (in-place SUM/DMO), not greenfield/selective. Brownfield path already verified (wh5gw9exu: Maintenance Planner->SI-Check->SUM/DMO). No research needed."
+    },
+    {
+      "id": "DSGN-S4-WEIGHTING",
+      "for": "R_S4 composite roll-up",
+      "do": "DESIGN task (ours, not research): define how to WEIGHT the readiness factors (BP/CVI + SI-Check + custom-code + finance + technical) into one R_S4_READINESS score. Judgment-based scoring, not an external fact.",
+      "status": "DEFERRED"
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "research_id": "wwyujjqyk",
+  "slug": "auth_roles_sod",
+  "question": "SAP AUTHORIZATION, ROLE/USER mining and SEGREGATION-OF-DUTIES (SoD) conflict detection — the concrete method and table model, so it can be applied to extracted SAP data. Be exhaustive and concrete: name exact tables, transactions, reports, and the join logic. Cover: (1) The AUTHORIZATION DATA MODEL: how roles, users, authorization objects and field values link. Tables AGR_DEFINE (roles), AGR_USERS (user-to-role assignment with validity dates), AGR_TCODES (role-to-transaction), AGR_1251 (role authorization object field values), AGR_AGRS (composite-to-single role), USR02 (users/logon), UST12/UST10C/UST04 (authorization/profile data), USOBT_C and USOBX_C (the SU24 transaction-to-authorization-object proposals / check indicators), TSTCA (transaction authorization values), TOBJ/TOBJT (authorization objects). How to reconstruct 'who can execute which transaction with which authorization values' purely from these tables. (2) SoD CONFLICT DETECTION method: what a SoD ruleset is (conflicting function pairs, e.g. create vendor + post payment; maintain bank master + run payment proposal), how risks are defined at transaction/authorization-object level, how a user's effective authorizations are expanded and matched against the ruleset, and false-positive handling (mitigating controls). The standard reference rulesets. (3) SAP GRC Access Control (Access Risk Analysis ARA): how it models risks/functions/rulesets, the standard SoD ruleset, user/role-level risk analysis, and the underlying tables (GRACFUNC, GRACRULE, GRACACTRULE, GRACSODRISK or equivalents). (4) Role/transaction USAGE for cleanup: SUIM reports, ST03N/STAD transaction usage joined to authorizations (used vs assigned-but-unused authorizations). (5) Linking authorization objects to the PROGRAMS/transactions that check them (AUTHORITY-CHECK statements, SU22/SU24, USOBX). GOAL: a repeatable method to mine roles/users/SoD from extracted AGR_*/USOBT/USR* tables and score who-can-do-what + SoD conflicts — to lift our E_AUTH capability from 'no method' to an applicable, table-grounded procedure. Prefer PRIMARY SAP documentation, SAP Notes/KBAs, and authoritative GRC sources; state each fact as checkable (name the exact table/field/transaction). Rank by relevance and actionability for building an automated SoD/authorization analyzer over extracted master tables.",
+  "summary": "SAP authorization, role/user mining and SoD conflict detection can be reconstructed entirely from extracted master tables, and the verified evidence yields a repeatable, table-grounded method. The native authorization model lives in the AGR_* role tables (AGR_DEFINE roles, AGR_USERS user-to-role with validity dates, AGR_TCODES role-to-transaction, AGR_1251 role-level auth-object/field-value rows, AGR_AGRS composite-to-single, AGR_1016 generated profiles), the USR*/UST12 user-master tables, and the SU24 proposal/check tables USOBT_C (default field values) + USOBX_C (check indicator via OKFLAG N/X/Y), with TSTCA holding start-time transaction-authorization values and TOBJ/USOBT linking transactions to objects. To answer \"who can execute which transaction with which values,\" join AGR_USERS→AGR_1251 (effective role authorizations) and reconcile against AGR_TCODES/TSTCA; the runtime check is only real where the program contains an AUTHORITY-CHECK, so USOBX_C alone is insufficient and code/trace (ST01/STAUTHTRACE) inspection closes the gap. For SoD, a ruleset is the compiled set of action+permission combinations: Functions (transactions + required auth objects/values) are OR-combined into Risks (two+ conflicting functions), with three risk types — SoD, Critical Action, Critical Permission. In SAP GRC Access Control the model is table-grounded: GRACFUNC/GRACFUNCACT/GRACFUNCPRM (function→action→permission), GRACSODRISK (RISKTYPE 1=SoD/2=Critical Action/3=Critical Permission) → GRACSODRISKFUNC → GRACRULESET, compiled into GRACACTRULE/GRACORGRULE action/org rules, with violations landing in GRACUSERPRMVL — enabling direct extraction of who-violates-which-risk.",
+  "findings": [
+    {
+      "claim": "The native SAP role/authorization data model is fully captured in AGR_* tables, enabling reconstruction of role-to-user and role-to-authorization-value links: AGR_DEFINE (role definitions, PARENT_AGR for derived roles), AGR_USERS (user-to-role assignment with FROM_DAT/TO_DAT validity), AGR_TCODES (role-to-transaction), AGR_1251 (role-level auth objects/authorizations/field values LOW/HIGH plus status MODIFIED), AGR_AGRS (composite-to-single role hierarchy), AGR_1016 (generated profile names). AGR_USERS joined to AGR_1251 is the canonical path to expand a role's effective authorization values.",
+      "confidence": "high",
+      "sources": [
+        "http://time4sapsecurity.blogspot.com/2014/12/usr-and-agr-tables-in-sap.html",
+        "https://www.aglea.com/en/blog/tables-roles-profiles-and-authorizations-in-sap",
+        "https://sapdatasheet.org/abap/tabl/agr_1251.html",
+        "https://sapdatasheet.org/abap/tabl/agr_1016.html",
+        "SAP KBA 3430610",
+        "SAP KBA 3372901"
+      ],
+      "evidence": "Three independent claims (9, 16, 17) converge on the AGR_* model, corroborated by SAP Datasheet DDIC mirrors and SAP KBAs. AGR_USERS PK is MANDT/AGR_NAME/UNAME/FROM_DAT/TO_DAT (validity dates). AGR_1251 fields are AGR_NAME/OBJECT/AUTH/FIELD/LOW/HIGH/MODIFIED (status S=Standard,G=Maintained,C=Changed,U=Manual). AGR_DEFINE.PARENT_AGR links derived→parent (KBA 3430610). AGR_AGRS keys AGR_NAME(composite)+CHILD_AGR(single). AGR_1016.PROFILE holds generated profile names (KBA 3372901). Caveat: AGR_1251 is PFCG design-time data; runtime-effective auth lives in generated profiles/UST12 and can drift (KBA 2049108).",
+      "vote": "3-0 (merged from claims 9, 16, 17)"
+    },
+    {
+      "claim": "Core user master, logon, and runtime authorization-value data live in USR*/UST12 tables: USR01 (user master/defaults), USR02 (logon data — password, lock, validity), USR04 (user master authorizations/profile assignment), USR12 (user master authorization VALUES), UST12 (user master: authorizations — the SUIM-reporting copy of USR12).",
+      "confidence": "high",
+      "sources": [
+        "http://time4sapsecurity.blogspot.com/2014/12/usr-and-agr-tables-in-sap.html",
+        "https://sapdatasheet.org/abap/tabl/ust12.html",
+        "https://tcodesearch.com/sap-tables/USR12"
+      ],
+      "evidence": "Claim 10, corroborated by multiple DDIC-mirroring repositories matching SE11 short texts. USR02='Logon data', USR01=user defaults/parameters, USR04='User master authorizations', UST12/USR12='User master: Authorizations'/'authorization values'. Nuance: UST12 is the SUIM-reporting text copy of USR12, can drift, resynced via FM SUSR_SYNCH_USER_TABLES. Stable decades-old Basis tables.",
+      "vote": "3-0"
+    },
+    {
+      "claim": "The SU24 transaction-to-authorization-object proposal/check model is stored in customer-specific tables USOBT_C and USOBX_C: USOBX_C holds the CHECK INDICATOR per transaction/object via field OKFLAG (N=Do not check, X=Always check, Y=Check + USOBT entry/proposal maintained); USOBT_C holds the proposed default authorization FIELD VALUES (FIELD/VON/BIS) for objects flagged as maintained. SU22 reads the SAP-delivered USOBT/USOBX; SU24 reads the customer _C copies — so an automated analyzer should mine USOBT_C/USOBX_C for the customer-effective role-generation proposals.",
+      "confidence": "high",
+      "sources": [
+        "https://www.sapsecuritypages.com/su24-check-indicators/",
+        "https://sapsecurityanalyst.com/WP/su24-custom-tables-usobt_c-and-usobx_c/",
+        "https://sapdatasheet.org/abap/tabl/usobx_c-okflag.html",
+        "https://www.aglea.com/en/blog/tables-roles-profiles-and-authorizations-in-sap"
+      ],
+      "evidence": "Claims 11, 12, 14, 15, 18 converge. USOBX_C-OKFLAG SAP-delivered domain text verbatim: 'N=Do not check; X=Always check; Y=Check + USOBT entry'. _C suffix = Customer copies, initially filled from USOBX/USOBT, populated by SU25, maintained via SU24. USOBT_C stores 'Authorization values for the authorization objects which are defined to be maintained (Proposal value Yes)'. Directional mapping (mine _C tables for PFCG-effective proposals) confirmed across 4+ sources. S/4HANA caveat: SU22 can write USOBT_C in application/add-on contexts, but core directional model holds.",
+      "vote": "3-0 (merged from claims 11, 12, 14, 15, 18)"
+    },
+    {
+      "claim": "TSTCA is the table representing authorization objects checked at transaction START — values SAP evaluates automatically (kernel-level, before S_TCODE) when a transaction begins, distinct from in-program AUTHORITY-CHECK proposals in SU24. Fields OBJCT (auth object), FIELD, VALUE keyed by TCODE. It supplies the per-transaction object values needed to reconstruct who-can-execute-which-tcode-with-which-values.",
+      "confidence": "high",
+      "sources": [
+        "https://userapps.support.sap.com/sap/support/knowledge/en/2664269",
+        "https://sapdatasheet.org/abap/tabl/tstca",
+        "https://tcodesearch.com (TSTCA)",
+        "SAP Community 2428713"
+      ],
+      "evidence": "Claim 0 (primary SAP KBA) plus claim 18 corroboration. SAP KBA 2664269 title verbatim: 'TSTCA (Object Checked at Transaction start) in SU24'. SE93 docs confirm an additional authorization object assigned to a transaction is stored in TSTCA and checked in addition to S_TCODE before the transaction starts. Distinct from USOBT_C/SU24 in-program AUTHORITY-CHECK proposals.",
+      "vote": "3-0 (claim 0, corroborated by 18)"
+    },
+    {
+      "claim": "A SU24/USOBX_C proposal does NOT enforce security — an authorization object is only actually checked at runtime if the program code contains a corresponding AUTHORITY-CHECK statement. USOBX_C can SUPPRESS a check (N/Do-not-check overrides code) but cannot CREATE enforcement where no AUTHORITY-CHECK exists. Therefore linking authorization objects to the programs/transactions that truly check them requires code inspection (AUTHORITY-CHECK, SU22/SU24) and/or runtime tracing — not USOBX_C alone.",
+      "confidence": "high",
+      "sources": [
+        "https://www.sapsecuritypages.com/su24-check-indicators/",
+        "https://help.sap.com/doc/abapdocu_752 (abapauthority-check.htm)",
+        "https://sapsecurityanalyst.com"
+      ],
+      "evidence": "Claim 13. Load-bearing fact traces to primary SAP ABAP keyword documentation: enforcement happens at the AUTHORITY-CHECK statement; USOBX_C/SU24 govern only the check indicator and proposed defaults. Expert consensus: 'If the code does not contain the authority check then it doesn't matter what SU24 contains.' Architectural fact, stable, not outdated.",
+      "vote": "3-0"
+    },
+    {
+      "claim": "Authorization checks and their field values are recorded at runtime via a system trace (ST01) or a dedicated authorization trace (STAUTHTRACE), which captures the authorization object, the checked authorization values, and the result, and supports per-user filtering (activate/evaluate/deactivate). This trace data is the input for maintaining SU22/SU24 default values (USOBT_C/USOBX_C proposals) AND for maintaining role menu/authorization data in PFCG — linking runtime AUTHORITY-CHECK calls back to role/SU24 maintenance.",
+      "confidence": "high",
+      "sources": [
+        "https://learning.sap.com/courses/exploring-the-authorization-concept-for-sap-s-4hana-and-sap-business-suite/using-traces-to-maintain-role-menus-and-authorizations",
+        "SAP Help Portal — Trace for Authorization Checks (help.sap.com/doc/saphelp_nw74)"
+      ],
+      "evidence": "Claims 1 and 2, both from primary SAP Learning + SAP Help Portal. Verbatim SAP phrasing: a trace 'supports you when maintaining authorization default values (transactions SU22 and SU24) and when maintaining the menu and authorization data for roles (transaction PFCG).' STAUTHTRACE is the modern, still-recommended system-wide authorization trace; each check records 'the authorization object, the checked authorization values, and the result.' This is how dynamically-built (non-USOBX) checks are discovered for usage-based role cleanup.",
+      "vote": "3-0 (merged from claims 1, 2)"
+    },
+    {
+      "claim": "A SoD ruleset models risks at TWO levels — action (transaction) and permission (authorization object/field value). A Function is the building block: a task executed in SAP (e.g. purchase-order maintenance = ME21N+ME22N; vendor master maintenance) that groups transactions plus the authorization objects/values required to execute each. An SoD Risk = two or more conflicting Functions combined with an OR operator; risk fires when at least one qualifying action with its permission is found in each function. There are three risk types: Critical Action (single function of critical transactions), Critical Permission (single function of critical auth objects/permissions), and SoD Risk (conflicting functions).",
+      "confidence": "high",
+      "sources": [
+        "https://blog.sap-press.com/rulesets-in-sap-access-control",
+        "https://www.aglea.com/en/blog/sod-grc-ruleset-matrix",
+        "https://learning.sap.com (Building a Rule Set)"
+      ],
+      "evidence": "Claims 6, 7, 8, 22 converge, anchored by SAP-PRESS (SAP's official publisher) verbatim text: 'A function...can be defined as a task that is executed in SAP, for example, purchase order maintenance'; 'the function will also contain a definition of all the authorization objects and authorization values that are required to execute each transaction' (e.g. SU01 requires S_USER_GRP ACTVT 01/02/05/06); 'You have options to run the risk analysis at both the action level and/or the permission level.' Three risk types confirmed and map to GRACSODRISK.RISKTYPE codes. Intra-function actions are OR'd; a risk requires a qualifying action from EACH function (cross-function AND-like) — a precision nuance the loose 'OR' phrasing compresses.",
+      "vote": "3-0 (merged from claims 6, 7, 8, 22)"
+    },
+    {
+      "claim": "In SAP GRC Access Control (Access Risk Analysis), the ruleset is a three-tier function→action→permission model stored in DDIC: GRACFUNC (Function master) + GRACFUNCT (descriptions), GRACFUNCACT (Function-Action/transaction Relationship), and GRACFUNCPRM (Function-Action-Permission Relationship — the auth-object/field-value tier carried as RESOURCEID + FROMVAL/TOVAL value range, with an ACTIVE=X flag). This is exactly the structure used to expand a user's effective authorizations against the ruleset.",
+      "confidence": "high",
+      "sources": [
+        "https://www.se80.co.uk/sapmodules/g/grc-/grc-ac-tables-all.htm",
+        "https://www.aglea.com/en/blog/sap-grc-access-control-tables",
+        "https://sapstack.com/tables/tabledetails.php?table=GRACFUNCPRM",
+        "https://www.testingbrain.com/sap/grc-tutorial/gracfuncact-table-in-sap.html"
+      ],
+      "evidence": "Claims 3 and 20 converge, corroborated by sapdatasheet.org (primary DDIC mirror) and 4+ table repositories, all under package GRAC_SOD / component GRCFND_A. GRACFUNCPRM verified field list: MANDT/FUNCTID/ACTION/CONNECTOR/SEQUENCE/RESOURCEID/RESOURCEEXTN/FROMVAL/TOVAL/SEARCHTYPE/ACTIVE/INACTIVE — so the auth object is referenced via RESOURCEID (not inline AUTHOBJECT/FIELD columns) and field values are FROMVAL/TOVAL. ACTIVE is CHAR(1) data element GRAC_ACTIVE.",
+      "vote": "3-0 (merged from claims 3, 20)"
+    },
+    {
+      "claim": "In GRC Access Control, an SoD Risk header is stored in GRACSODRISK (field RISKTYPE: 1=SoD, 2=Critical Action, 3=Critical Permission; plus RISKLEVEL/ACTIVE), linked to its conflicting functions via GRACSODRISKFUNC (Risk-Function, keys RISKID/FUNCTID), assigned to a ruleset via GRACSODRISKRS, to systems via GRACSODRISKCONN, with descriptions in GRACSODRISKT and owners in GRACSODRISKOWN. The ruleset container is GRACRULESET + GRACRULESETT (descriptions). This normalized many-to-many model is why the junction tables exist (GRACSODRISK itself has no RULESETID/FUNCTID column).",
+      "confidence": "high",
+      "sources": [
+        "https://www.se80.co.uk/sapmodules/g/grc-/grc-ac-tables-all.htm",
+        "https://www.aglea.com/en/blog/sap-grc-access-control-tables",
+        "https://sapstack.com (GRACSODRISK)",
+        "https://www.testingbrain.com/sap/grc-tutorial/gracruleset-table-in-sap.html"
+      ],
+      "evidence": "Claims 4 and 19 converge, corroborated across testingbrain, erpexplorer, sapstack, aglea, se80, plus SAP Community. RISKTYPE data element GRAC_SODRISK_TYPE. GRACSODRISKFUNC='SOD Risk Function Relationship' keys MANDT/RISKID/FUNCTID. GRACRULESET/GRACRULESETT='Rule Set'/'Rule Set Description', 8-char Rule Set ID. All package GRAC_SOD. Stable GRC AC 10.x/12.0 model.",
+      "vote": "3-0 (merged from claims 4, 19)"
+    },
+    {
+      "claim": "The GRC ruleset is COMPILED (not hand-maintained) into executable rules: generated action/transaction-level rules in GRACACTRULE (SOD Action Rule Detail; keys RISKID/ACTRULEID/FUNCTID/CONNECTOR/ACTION) and organization-level rules in GRACORGRULE. The compilation is run by program/job GRAC_GENERATE_RULES whenever a ruleset changes. Risk-analysis results (violations) land in GRACUSERPRMVL (User Permission Violation Table; keys include USERID/RISKID/ACTRULEID/CONNECTOR), enabling direct extraction of who violates which risk.",
+      "confidence": "high",
+      "sources": [
+        "https://www.se80.co.uk/sapmodules/g/grc-/grc-ac-tables-all.htm",
+        "https://www.aglea.com/en/blog/sap-grc-access-control-tables",
+        "https://sapstack.com/tables/tabledetails.php?table=GRACACTRULE",
+        "SAP KBA 2872252",
+        "SAP KBA 2270608",
+        "https://sapbrainsonline.com/grc-tutorial/grac_generate_rules-tcode-in-sap.html"
+      ],
+      "evidence": "Claims 5 and 21 converge, with GRACUSERPRMVL corroborated by two primary SAP KBAs (2872252, 2270608). GRACACTRULE='SOD Action Rule Detail'; rows keyed to risk/function with an ACTION (transaction). Rules 'are combinations of actions and aren't maintained manually (done automatically by GRAC_GENERATE_RULES).' GRACUSERPRMVL='User Permission Violation Table' with USERID/RISKID — the who-violates-which-risk output. Parallel GRACUSERACTVL holds action-level results. The compile chain is RULESET→RISK(GRACSODRISK)→FUNCTION(GRACFUNC)→ACTION rows(GRACACTRULE).",
+      "vote": "3-0 (merged from claims 5, 21)"
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "SAP GRC Access Control stores its SoD ruleset across five core tables: GRACFUNC (business functions), GRACFUNCACT (function-to-action links), GRACFUNCPRM (action-to-permission maps), GRACSODRULE (conflicting function/action/permission combinations), and GRACSODRISK (identified user violations).",
+      "vote": "0-3",
+      "source": "https://medium.com/@vijayramraju22/sap-grc-ruleset-tables-8b059e95565f"
+    },
+    {
+      "claim": "GRACSODRISK is the violation output table populated during a risk-analysis run, listing users who currently hold conflicting access, distinguishing the rule-definition tables from the analysis-result table.",
+      "vote": "0-3",
+      "source": "https://medium.com/@vijayramraju22/sap-grc-ruleset-tables-8b059e95565f"
+    }
+  ],
+  "caveats": "Source quality is mixed. The native AGR_*/USR*/USOBT_C/USOBX_C/TSTCA model is anchored by PRIMARY SAP sources (KBA 2664269 for TSTCA, the AUTHORITY-CHECK ABAP keyword doc, SAP Learning/Help Portal for traces, SAP KBAs 3430610/3372901/2049108) plus DDIC-mirror repositories (sapdatasheet.org) — high confidence and decades-stable through S/4HANA. The GRC Access Control table facts rely largely on secondary table-catalog sites (se80.co.uk, sapstack, testingbrain, aglea) and the SAP-PRESS blog; these are convergent and field-level-verified, but only GRACUSERPRMVL has direct SAP-KBA backing (2872252, 2270608). Two Medium-sourced claims were REFUTED (0-3): the assertion that GRACSODRISK is the violation OUTPUT table (it is the risk-DEFINITION header — violations are in GRACUSERPRMVL/GRACUSERACTVL), and a five-table ruleset listing naming GRACSODRULE as conflict combinations — treat any GRACSODRULE references with caution as the verified compile target is GRACACTRULE. Precision nuances to encode in an analyzer: (1) GRACFUNCPRM references the auth object via RESOURCEID into a resource table with FROMVAL/TOVAL values, NOT inline object/field columns; (2) AGR_1251 is PFCG design-time data that can drift from generated runtime profiles (UST12) per KBA 2049108 — for true effective auth, also read UST12/USR12; (3) USOBX_C alone cannot prove a check is enforced — only the program's AUTHORITY-CHECK (or a runtime trace) confirms enforcement, and USOBX_C 'N' can suppress an existing code check; (4) USOBAUTHINACTIVE governs only a narrow class (Web Dynpro/TADIR start checks), not general transaction-level check enablement. Time-sensitivity: model is GRC AC 10.x/12.0 and classic ABAP authorization — stable; SU22 write-semantics shifted slightly in S/4HANA but the directional mine-the-_C-tables guidance holds.",
+  "openQuestions": [
+    "For ABAP usage-based cleanup (used vs assigned-but-unused authorizations), what are the exact extractable tables behind ST03N/STAD/SUIM and how do they join to AGR_1251/AGR_USERS? The verified claims confirm STAUTHTRACE captures runtime checks but did not pin down a persisted statistics table (e.g. SWNCMONI/aggregated workload, or transaction-usage records) for offline usage scoring — this gap must be closed to build the 'unused authorization' detector.",
+    "What is the precise resolution path from GRACFUNCPRM.RESOURCEID to the actual authorization object + field name (the GRC 'resource' table), so an analyzer can expand GRC functions to concrete S_* object/field/value tuples for matching against extracted AGR_1251 rows?",
+    "Which standard reference SoD rulesets (e.g. the SAP-delivered GRC default ruleset, or audit-firm matrices) are concretely available, and is the SAP-delivered ruleset itself extractable from GRACRULESET/GRACSODRISK/GRACFUNC in a target system to seed our own matrix? The claims confirm the model but not the contents of any standard ruleset.",
+    "How are mitigating controls / false-positive suppression modeled in the GRC tables (mitigation assignment, validity, control owner), so an automated analyzer can net out mitigated risks rather than reporting raw conflicts? This false-positive-handling layer was referenced conceptually but no mitigation tables were verified."
+  ],
+  "sources": [
+    {
+      "url": "http://time4sapsecurity.blogspot.com/2014/12/usr-and-agr-tables-in-sap.html",
+      "quality": "blog",
+      "angle": "Authorization data model + join logic (primary)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://userapps.support.sap.com/sap/support/knowledge/en/2664269",
+      "quality": "primary",
+      "angle": "Authorization data model + join logic (primary)",
+      "claimCount": 3
+    },
+    {
+      "url": "https://www.sapsecuritypages.com/su24-check-indicators/",
+      "quality": "blog",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 4
+    },
+    {
+      "url": "https://sapsecurityanalyst.com/WP/su24-custom-tables-usobt_c-and-usobx_c/",
+      "quality": "blog",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.aglea.com/en/blog/tables-roles-profiles-and-authorizations-in-sap",
+      "quality": "blog",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.aglea.com/en/blog/sap-grc-access-control-tables",
+      "quality": "blog",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 5
+    },
+    {
+      "url": "https://medium.com/@vijayramraju22/sap-grc-ruleset-tables-8b059e95565f",
+      "quality": "blog",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 4
+    },
+    {
+      "url": "https://community.sap.com/t5/application-development-and-automation-discussions/diffrence-between-agr-1251-agr-tcodes-suim-for-t-codes-authorized-by-a-role/m-p/6245695",
+      "quality": "forum",
+      "angle": "SU24 proposals + AUTHORITY-CHECK / TSTCA linkage",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.aglea.com/en/blog/sod-grc-ruleset-matrix",
+      "quality": "blog",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.aglea.com/en/blog/how-to-perform-a-risk-analysis-with-grc-access-control",
+      "quality": "blog",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/financial-management-blog-posts-by-members/new-access-risks-new-sod-matrix-how-s-4hana-changes-the-approach-to/ba-p/14298296",
+      "quality": "unreliable",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.voquzlabs.com/knowledge-base-remq/how-to-analyze-sod-violations-in-sap-erp-and-s-4hana-an-overview",
+      "quality": "blog",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 4
+    },
+    {
+      "url": "https://markgrafconsulting.com/understanding-segregation-of-duties-sod-risk-in-sap-security/",
+      "quality": "blog",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 4
+    },
+    {
+      "url": "https://www.inprosec.com/en/sap-grc-ara-how-to-improve-access-risk-analysis-results/",
+      "quality": "unreliable",
+      "angle": "SoD ruleset theory + effective-auth matching",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.se80.co.uk/sapmodules/g/grc-/grc-ac-tables-all.htm",
+      "quality": "secondary",
+      "angle": "GRC Access Control ARA internals + tables",
+      "claimCount": 4
+    },
+    {
+      "url": "https://help.sap.com/docs/SAP_ACCESS_CONTROL/5cae1bc9a72348389e91183714220e30/4e8cb94820ff0867e10000000a421bc1.html",
+      "quality": "primary",
+      "angle": "GRC Access Control ARA internals + tables",
+      "claimCount": 0
+    },
+    {
+      "url": "https://blog.sap-press.com/rulesets-in-sap-access-control",
+      "quality": "secondary",
+      "angle": "GRC Access Control ARA internals + tables",
+      "claimCount": 5
+    },
+    {
+      "url": "https://learning.sap.com/courses/exploring-the-authorization-concept-for-sap-s-4hana-and-sap-business-suite/using-traces-to-maintain-role-menus-and-authorizations",
+      "quality": "primary",
+      "angle": "Usage-based role cleanup (SUIM/ST03N/STAD)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.sap-perf.ca/run-sap-st03n/",
+      "quality": "blog",
+      "angle": "Usage-based role cleanup (SUIM/ST03N/STAD)",
+      "claimCount": 1
+    },
+    {
+      "url": "https://www.letstalksap.com/2022/05/st03n-chapter-for-all-basis-admins.html",
+      "quality": "unreliable",
+      "angle": "Usage-based role cleanup (SUIM/ST03N/STAD)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/application-development-and-automation-discussions/need-to-perform-roles-profile-cleanup-and-documentation/m-p/2786183",
+      "quality": "unreliable",
+      "angle": "Usage-based role cleanup (SUIM/ST03N/STAD)",
+      "claimCount": 0
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 21,
+    "claimsExtracted": 68,
+    "claimsVerified": 25,
+    "confirmed": 23,
+    "killed": 2,
+    "afterSynthesis": 10,
+    "urlDupes": 7,
+    "budgetDropped": 2,
+    "agentCalls": 103
+  },
+  "status": "CLOSED_VERIFIED"
+}

@@ -1,0 +1,290 @@
+{
+  "research_id": "wgrqpmt9f",
+  "slug": "competitive_landscape",
+  "question": "The COMPETITIVE LANDSCAPE of Process Mining for SAP specifically — every vendor, their OWN tools and methods, plus practitioner blogs and open-source tooling. SAP Signavio (Process Insights / Process Intelligence / Process Transformation Suite) is SAP's native solution, but map ALL the important competitors and how each one specifically connects to and mines SAP (ECC and S/4HANA): (1) CELONIS for SAP — SAP connectors/extractors, the Process Intelligence Graph and Process Sphere object-centric model, SAP-specific accelerators/Apps Store content (P2P, O2C, AP, AR), how Celonis pulls SAP event logs (RFC/extractors/CDC), Celonis EMS action engine, and Celonis vs SAP relationship. (2) Other MAJOR commercial competitors and their SAP-specific approach, tools and methods: UiPath Process Mining (ex-ProcessGold), Microsoft Power Automate Process Mining (ex-Minit), IBM Process Mining (ex-myInvenio), Software AG ARIS Process Mining, Apromore, mindzie, Lana Labs/Appian Process Mining, QPR ProcessAnalyzer, Skan.ai (task mining), Mehrwerk MPM (runs ON SAP HANA/SAC), Fluxicon Disco, ABBYY Timeline. For each: their SAP connector strategy, what makes their method different, public-sector/finance content. (3) SAP-specific PRACTITIONER tooling and blogs and open-source: SAP Community blogs on process mining, Medium/personal blogs, GitHub repos and open-source SAP-to-event-log extractors, pm4py-based SAP extraction recipes, SAP table-to-event-log mapping guides practitioners publish, SAP Signavio Process Insights ABAP-based on-stack analysis (runs inside the SAP system) vs cloud extractors, and any SAP-delivered standard process content / reference models used as the normative baseline. (4) The DATA-EXTRACTION / connector method each uses to turn SAP tables (BKPF/BSEG/CDHDR/EKKO/VBAK etc.) into an event log — the transformation layer — and the trade-offs (extractor vs CDC vs on-stack ABAP vs RFC). GOAL: a complete competitive map of SAP process mining so we can adopt the methods/tools we are NOT using. Rank by relevance and actionability. Be exhaustive and concrete about specific products, connectors, tables, repos, blog sources, and methods — name names. IMPORTANT for verification: prefer claims grounded in primary vendor documentation and official SAP/community sources; state each vendor's SAP-connector approach as a specific, checkable fact.",
+  "summary": "SAP process mining splits cleanly along the data-extraction axis, and the verified claims map that axis end-to-end. Three distinct connector paradigms dominate: (a) deployed in-SAP RFC/ABAP modules that do change-log delta extraction (Celonis installs a custom RFC ABAP transport doing CDC-style continuous extraction via /CELONIS/EX_CL_NEW; UiPath/ProcessGold installs a custom Z_XTRACT_IS_TABLE function module and calls standard RFC_READ_TABLE/RFCPING/RFC_GET_FUNCTION_INTERFACE); (b) generic RFC table reads with no heavy on-stack footprint (SAP Signavio Process Intelligence's own native method is the vanilla RFC_READ_TABLE module on Basis 7.40+, the same primitive practitioners use, with SQL-script transformation pipelines inside Signavio); and (c) on-stack push/in-engine models that never ship an external extractor (SAP Signavio Process Insights pushes from inside the system over outbound HTTPS to BTP via the ST-PI/ST-A/PI plug-ins with the Cloud Connector explicitly excluded; SAP PaPM runs P2P process-mining sample content entirely in-HANA via Model Table functions). The table-to-event-log transformation layer is concretely documented and checkable: SAP's PaPM P2P content names BKPF/BSEG/CDHDR/CDPOS/EKKO/EKPO/EBAN/LFA1/T001/USR02, and the RWTH Aachen OCEL academic approach names EKKO/RBKP/EKBE for P2P and VBAK/BKPF for O2C with detail tables EKPO/EKPA/EKET/BSEG/RSEG/RESB. The architectural frontier is object-centric: Celonis's Process Intelligence Graph / Process Sphere uses an object-centric data model (objects+events+relationships) deriving multiple event logs from one dataset via Perspectives — the same OCEL/OCPM paradigm pioneered in the van der Aalst (PADS) academic work and implemented in open-source PM4Py (Fraunhofer FIT spinoff). Methods UNESCO is likely NOT using and should adopt: object-centric extraction (avoid the convergence/divergence trap of fixed case notions), Celonis's documented BSEG cluster-table replacement best-practice, and the SAP-delivered PaPM on-stack P2P reference content as a normative baseline.",
+  "findings": [
+    {
+      "claim": "Celonis connects to SAP ECC/S4HANA via a deployed, installable RFC ABAP module (a transport imported into SAP, requiring dev rights, with documented install/update/operations steps) acting as the bridge to the SAP DB — not direct DB access or pure external table reads. It also ships a separate SAP extraction client supporting legacy SAP 4.6C and PI/PO.",
+      "confidence": "high",
+      "sources": [
+        "https://docs.celonis.com/en/connecting-to-sap-and-s-4hana.html",
+        "https://docs.celonis.com/en/installing-the-rfc-module.html",
+        "https://docs.celonis.com/en/rfc-module-overview.html",
+        "https://docs.celonis.com/en/step-3-create-sap-connection-in-the-celonis-platform.html",
+        "https://docs.celonis.com/en/step-1--installing-sap-extractor.html"
+      ],
+      "evidence": "Dedicated Celonis docs pages: 'Installing the RFC module', 'Updating RFC module and extractor', 'RFC module overview/operations'. RFC module = 'custom ABAP component installed on your SAP ECC or S/4HANA system' that 'acts as the secure bridge between the Celonis Data Integration service and your SAP database', imported as a transport (creates table /CELONIS/BUFFTAB), requires SAP_BASIS min SP (Notes 1487337/1601030/1743483) and dev rights. Separate page 'SAP extraction client for PI/PO and SAP 4.6C'. Verified unanimously across claims 1,5,10,11.",
+      "vote": "3-0 (claims 1,5,10,11); claim 0 was 2-1"
+    },
+    {
+      "claim": "Celonis's primary SAP extraction mode is 'Continuous Extraction' — change-log-based (CDC-style) delta sync from ECC and S/4HANA (on-prem + private cloud) — distinct from one-time and local (in-system ABAP GUI report) extraction modes. Delta is implemented via RFC functions /CELONIS/EX_CL_NEW (filters to changed rows) and /CELONIS/EX_CL_SET_EXTRACTED (flags extracted records); a newer real-time Replication Cockpit also exists.",
+      "confidence": "high",
+      "sources": [
+        "https://docs.celonis.com/en/connecting-to-sap-and-s-4hana.html",
+        "https://docs.celonis.com/en/one-time-extraction-from-sap-ecc-or-sap-s-4hana.html",
+        "https://docs.celonis.com/en/local-extractor-for-sap-ecc-and-sap-s-4hana.html",
+        "https://docs.celonis.com/en/real-time-extractions-through-replication-cockpit.html",
+        "https://docs.celonis.com/en/pipeline-end-to-end-overview.html"
+      ],
+      "evidence": "Three distinct documented modes confirmed: Continuous (featured/recommended, monitors whitelisted tables for changes), One-time (separate page), Local (ABAP report run in-system). Delta mechanism uses named RFC modules logging changed record IDs in a dedicated table. Caveat: default continuous is delta/change-log based, not streaming real-time CDC. Verified claims 0,4,12.",
+      "vote": "3-0 (claims 4,12); claim 0 2-1"
+    },
+    {
+      "claim": "Celonis's Process Intelligence Graph (Process Sphere) is built on an object-centric data model (OCDM): foundational concepts are Objects, Events, and Relationships. A single object-centric dataset yields MULTIPLE process event logs via 'Perspectives' (each event log anchored to a single chosen object), rather than one fixed case notion — a genuine departure from classic single-case-table process mining.",
+      "confidence": "high",
+      "sources": [
+        "https://docs.celonis.com/en/process-intelligence-graph.html",
+        "https://docs.celonis.com/en/ocdm.html",
+        "https://docs.celonis.com/en/perspectives",
+        "https://docs.celonis.com/en/eventlogs-oc.html"
+      ],
+      "evidence": "PI Graph page lists exactly Objects/Events/Relationships as OCDM foundations. Perspectives = 'a particular view on the object-centric data model... so you don't need to ingest and transform the source data again to model each process'. Event logs 'reorganize the data from a perspective around a single object'. CREATE_EVENTLOG operator. OCDM launched Celonis World Tour 2023, actively documented. Verified claims 2,3.",
+      "vote": "3-0 (claims 2,3)"
+    },
+    {
+      "claim": "Celonis documents handling of SAP cluster tables (specifically BSEG) as a dedicated best-practice topic titled 'Replacing SAP cluster tables (BSEG)' for object-centric process mining — addressing BSEG's compressed cluster storage (non-key columns in VARDATA inside RFBLG cluster).",
+      "confidence": "high",
+      "sources": [
+        "https://docs.celonis.com/en/data-extractions-and-transformations-for-object-centric-process-mining.html"
+      ],
+      "evidence": "Nav path: Objects and Events > Getting started > Data extractions and transformations > Best practice > 'Replacing SAP cluster tables (BSEG)'. BSEG genuinely a cluster table (non-key cols compressed in RFBLG VARDATA; SAP KBA 2769310 uses BSEG as canonical example). Best practice = avoid/replace direct BSEG extraction. Verified claim 22.",
+      "vote": "3-0 (claim 22)"
+    },
+    {
+      "claim": "UiPath Process Mining (ex-ProcessGold) native SAP extraction uses RFC: it requires S_RFC authorization for RFC destinations and calls standard function modules RFCPING, RFC_GET_FUNCTION_INTERFACE, RFC_READ_TABLE (plus FUNCTION_EXISTS) — but ALSO requires installing a CUSTOM ABAP function module Z_XTRACT_IS_TABLE (created via SE37, activated via SE80, needing an SAP user with a development key) on the SAP system itself. So it is an on-stack custom-extractor approach, not pure standard-RFC.",
+      "confidence": "high",
+      "sources": [
+        "https://docs.uipath.com/process-mining/standalone/2021.10/user-guide/set-up-native-sap-extraction",
+        "https://docs.uipath.com/process-mining/standalone/2021.10/user-guide/installing-the-zxtractistable-function-module-on-your-sap-system"
+      ],
+      "evidence": "S_RFC activity 16 lists RFCPING/RFC_GET_FUNCTION_INTERFACE/RFC_READ_TABLE/FUNCTION_EXISTS/Z_XTRACT_IS_TABLE. Install page: 'you must add the Z_XTRACT_IS_TABLE Function module to your SAP system... credentials of an SAP user with a development key'. Z-namespace = custom. UiPath also offers Theobald Xtract Universal (installs Z_THEO_READ_TABLE) as alternative path. Verified claims 8,9.",
+      "vote": "3-0 (claims 8,9)"
+    },
+    {
+      "claim": "SAP Signavio Process Intelligence's native ABAP/SAP-ERP extraction method is the STANDARD RFC function module RFC_READ_TABLE (via the on-prem extractor using SAP JCo), supported on SAP Basis 7.40+ — i.e. the same generic primitive practitioners use, not a proprietary CDC stream. (Known 512-char/row limit fixed via SAP Note 2246160.) A newer SAP Datasphere Replication Flow path via CDS Views also exists as an alternative.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/docs/signavio-process-intelligence/feature-scope-description/sap-signavio-process-intelligence",
+        "https://community.sap.com/t5/.../ba-p/13531000",
+        "https://documentation.signavio.com/etl-connector-sap-rfc.htm"
+      ],
+      "evidence": "SAP Help: 'Connect to ABAP systems using the standard SAP ERP through RFC function module, RFC_READ_TABLE... SAP Basis component version 7.40 and above.' SAP Community: 'On-Premises Extractor uses an RFC connection... based on Java Connector (JCo), and the well known RFC_READ_TABLE function module serves to generically read the table data' (512-char limit, Note 2246160). Verified claim 15.",
+      "vote": "2-1 (claim 15)"
+    },
+    {
+      "claim": "SAP Signavio Process Intelligence offers two integration models: 'Standardized data integration' (process performance data for SAP-defined business content from supported source systems pushed to the SAP BTP tenant at predefined intervals — the Process Insights / SAP-delivered-content path) vs 'Custom data integration' (cloud data pipelines extracting raw data and transforming it into an event log at custom intervals). In the custom path the table-to-event-log transformation is SQL-script-driven INSIDE Signavio (case-based and object-based pipelines; transformation scripts / 'event collectors' written in the SQL editor) — not delivered as raw extracts.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/docs/signavio-process-intelligence/feature-scope-description/sap-signavio-process-intelligence",
+        "https://documentation.signavio.com/etl-intro",
+        "https://documentation.signavio.com/etl-manage-transformation"
+      ],
+      "evidence": "Feature Scope Desc PDF verbatim: 'Standardized data integration involves sending process performance data for SAP-defined business content... at predefined intervals. Custom data integration lets you use data pipelines to extract data... and transforms data at custom intervals.' Signavio docs: 'the SQL editor is used to create transformation scripts', 'scripts for events are called event collectors', 'SQL knowledge is required'. Object-based and case-based pipelines confirmed. Caveat: 'on-stack/cloud ETL' labels are claimant glosses, not source text. Verified claims 16,17.",
+      "vote": "3-0 (claims 16,17)"
+    },
+    {
+      "claim": "SAP Signavio Process Insights connects on-premise S/4HANA (and ECC/Business Suite) to the cloud tenant via the ST-PI plug-in (requiring ST-A/PI plug-ins) installed IN the SAP system — an on-stack ABAP plug-in, NOT an external cloud extractor. Data is PUSHED/triggered from within the SAP system over an encrypted outbound HTTPS connection to SAP BTP (leveraging the SAP Cloud ALM framework mechanism); setup via /n/SDF/PINS_SETUP or SDCCN. The SAP Cloud Connector is explicitly NOT needed and CANNOT be used.",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/technology-blog-posts-by-sap/understanding-and-integrating-sap-signavio-process-insights-with-on-premise/ba-p/14289914",
+        "https://help.sap.com/docs/signavio-process-insights/administration-guide/installing-st-pi-and-st-api-plug-ins-direct-connection"
+      ],
+      "evidence": "SAP Help confirms both ST-PI and ST-A/PI installed on-prem; ST-PI contains SDCC/function modules deployed in source system. Quote: 'Using the plug-in and the HTTPS connection allows you to trigger the data transfer yourself from your SAP on-premise system. This means that the Cloud Connector is not needed and can't be used.' Push-from-stack model. Verified claims 13,14.",
+      "vote": "3-0 (claims 13,14)"
+    },
+    {
+      "claim": "SAP delivers STANDARD on-stack process-mining reference content: 'Sample Content for Process Mining on SAP S/4HANA – Purchase to Pay' runs on top of SAP Profitability and Performance Management (PaPM), a natively-integrated S/4HANA HANA add-on — NOT a separate cloud extractor. The extraction/connector method is replication of ERP tables into PaPM 'Model Table' functions (with an option to fetch from a remote SAP system), processed in-engine to derive activities, generate variant IDs, rank variants, and add START/END activities. Reads ACDOCA/COSP/COSS directly via HANA views (zero data movement). This is the SAP-delivered normative baseline / reference model.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/ccecc8d2aa55488ea8d0130d42f3f224/3.20/en-US/Sample%20Content%20Process%20Mining%20on%20SAP%20S4HANA%20Purchase%20to%20Pay.pdf",
+        "https://help.sap.com (PaPM Administration/Application Guide)"
+      ],
+      "evidence": "PDF (v3.0 SP20, 2022-12-20): 'This function replicates the data from the ERP system... data source for downstream functions'; 'integration of data sources uses... functions of type Model Table'; 'option to fetch data from a remote SAP system'; Processing includes 'Derivation of activities', 'generation of a START and END activity ID for all cases and ranking of variants according to their frequency'. PaPM = 'natively integrated add-on to S/4HANA... in-memory SAP HANA', reads ACDOCA/COSP/COSS via HANA views, zero data movement. Verified claims 19,21.",
+      "vote": "3-0 (claims 19,21)"
+    },
+    {
+      "claim": "The SAP P2P process-mining transformation layer (PaPM sample content) is built from a specific, named set of standard SAP ERP source tables: BKPF + BSEG (accounting docs), CDHDR + CDPOS (change documents), EKKO + EKPO (purchasing docs), EBAN (purchase requisitions), LFA1 (vendor master), T001 (company codes), USR02 (logon data). This is the checkable, SAP-official tables-to-event-log input mapping for P2P.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/ccecc8d2aa55488ea8d0130d42f3f224/3.20/en-US/Sample%20Content%20Process%20Mining%20on%20SAP%20S4HANA%20Purchase%20to%20Pay.pdf"
+      ],
+      "evidence": "PDF p.11 §3.1 'This section defines manually loaded data used in the subsequent functions:' then lists BKPF, BSEG, CDHDR, CDPOS, EKKO, EKPO, EBAN, LFA1, T001, USR02 — each with its own field section (§3.1.2–3.1.11). 'Standard SAP ERP tables and fields are being used.' Verified claim 20.",
+      "vote": "3-0 (claim 20)"
+    },
+    {
+      "claim": "The academic object-centric approach (Berti, Park, Rafiei, van der Aalst — PADS, RWTH Aachen + Fraunhofer FIT, arXiv:2110.03467) extracts SAP event data into Object-Centric Event Logs (OCEL) as intermediate storage to AVOID pre-committing to a single case notion — explicitly contrasting commercial extractors (Celonis, ProcessGold) that require a fixed case notion and suffer convergence/divergence problems. It names concrete per-process target tables: EKKO/RBKP/EKBE for P2P and VBAK/BKPF for O2C, classifying EKPO/EKPA/EKET/EKBE/BSEG/RSEG/RESB as detail tables — a checkable academic SAP-table-to-event-log mapping.",
+      "confidence": "high",
+      "sources": [
+        "https://arxiv.org/abs/2110.03467"
+      ],
+      "evidence": "Verbatim: 'We propose to use Object-Centric Event Logs (OCEL) as intermediate storage... OCEL does not require the specification of a case notion.' 'support to extracting event data from the SAP ERP system has only been limited to commercial vendors, e.g., Celonis and ProcessGold... the logs extracted by such extractors suffer from convergence/divergence problems... due to the necessity to specify a case notion.' 'target tables... already known, e.g., EKKO, RBKP, EKBE for P2P and VBAK, BKPF for O2C... detail tables: EKPO, EKPA, EKET, EKBE, BSEG, RSEG, RESB.' Verified claims 6,7. NOTE: a related sub-claim that this method is primarily change-document (CDHDR/CDPOS) based was REFUTED 0-3.",
+      "vote": "3-0 (claims 6,7)"
+    },
+    {
+      "claim": "PM4Py is the leading open-source Python process-mining library, managed/developed by PIS (Process Intelligence Solutions), a spinoff of the Fraunhofer Institute FIT where it was originally created. It is the open-source vehicle for the same OCEL/object-centric paradigm.",
+      "confidence": "high",
+      "sources": [
+        "https://github.com/process-intelligence-solutions/pm4py",
+        "https://pypi.org/project/pm4py/",
+        "https://processintelligence.solutions/"
+      ],
+      "evidence": "GitHub verbatim: 'PM4Py is managed and developed by PIS — Process Intelligence Solutions, a spin-off from the Fraunhofer Institute for Applied Information Technology FIT where PM4Py was initially developed.' Corroborated by PyPI, PIS site, Fraunhofer FIT/CPI. Verified claim 18. NOTE: a sub-claim that PM4Py ships NO native SAP connector (requiring practitioner-built BKPF/BSEG/CDHDR-to-XES recipes) was REFUTED 0-3 — so do not assert PM4Py lacks SAP integration.",
+      "vote": "3-0 (claim 18)"
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "The method derives events primarily from SAP change tables CDHDR and CDPOS (the change-document mechanism), classifying SAP tables into roles: transaction tables (TCODE executions), change tables (CDHDR/CDPOS), record/master tables (e.g. EKKO), and detail tables — i.e. its extraction layer is change-document-based, not redo-log or RFC-streaming based.",
+      "vote": "0-3",
+      "source": "https://arxiv.org/abs/2110.03467"
+    },
+    {
+      "claim": "PM4Py ships no native SAP connector or SAP table-to-event-log extractor; SAP integration must be built by practitioners on top of the library (e.g., custom BKPF/BSEG/CDHDR-to-XES recipes).",
+      "vote": "0-3",
+      "source": "https://github.com/process-intelligence-solutions/pm4py"
+    }
+  ],
+  "caveats": "VERIFICATION SCOPE: This synthesis is heavily weighted toward Celonis, SAP Signavio (PI + Process Insights), UiPath Process Mining, the SAP-delivered PaPM reference content, the van der Aalst/RWTH OCEL academic work, and PM4Py — because those are the claims that survived 3-vote adversarial verification. The original research question also asked about Microsoft Power Automate Process Mining (ex-Minit), IBM Process Mining (ex-myInvenio), Software AG ARIS Process Mining, Apromore, mindzie, Lana Labs/Appian, QPR ProcessAnalyzer, Skan.ai, Mehrwerk MPM (runs ON SAP HANA/SAC), Fluxicon Disco, and ABBYY Timeline — NONE of these vendors produced a surviving verified claim, so this report cannot make grounded statements about their specific SAP-connector strategies. Their absence is a coverage gap, NOT evidence they lack SAP connectivity.\\n\\nTWO CLAIMS WERE REFUTED (0-3) and must NOT be repeated as fact: (1) the arXiv OCEL method is NOT primarily change-document (CDHDR/CDPOS) based — its event derivation is broader than the change-table mechanism; (2) PM4Py does NOT lack SAP integration — the claim that it ships no SAP connector and forces practitioners to hand-roll BKPF/BSEG-to-XES recipes was refuted, so do not assert PM4Py has zero SAP path.\\n\\nSPLIT VOTES (medium-confidence wording): Celonis 'Continuous Extractor as the primary real-time method' (claim 0) and Signavio PI RFC_READ_TABLE (claim 15) were 2-1, with the dissent centered on (a) the continuous extractor being delta/change-log based rather than true streaming real-time CDC, and (b) Signavio PI now also having a SAP Datasphere/CDS-View replication path. Treat 'real-time' for Celonis as 'change-log delta sync,' not streaming CDC.\\n\\nTIME-SENSITIVITY: Celonis announced on-premise extractors (OPE) deprecate by end of Dec 2026 in favor of the On-Premise Client (OPC); the legacy SAP 4.6C/PI-PO extractor and current RFC module versions (3.9+) are live as of research date but the connector landscape is actively shifting. SAP Signavio Process Insights / PaPM content versions are current but version-pinned (PaPM 3.x, P2P sample content PP08).\\n\\nLABEL GLOSSES: Some interpretive labels (e.g. 'on-stack' vs 'cloud ETL' for Signavio's two integration models) are the claimant's framing, not verbatim source text — accurate but not directly quotable.",
+  "openQuestions": [
+    "What are the specific SAP-connector strategies of the major competitors that produced NO verified claims here — Microsoft Power Automate Process Mining (ex-Minit), IBM Process Mining (ex-myInvenio), Software AG ARIS Process Mining, QPR ProcessAnalyzer, Apromore, Lana Labs/Appian, ABBYY Timeline, Skan.ai (task mining), and especially Mehrwerk MPM which reportedly runs ON SAP HANA/SAC? These need a dedicated verification pass.",
+    "Does Celonis's deprecation of on-premise extractors (OPE → On-Premise Client by Dec 2026) change the RFC-module + custom-transport install model, and does the new Replication Cockpit move Celonis toward true streaming CDC vs the current change-log delta approach?",
+    "For SAP Signavio Process Intelligence, when is the RFC_READ_TABLE on-prem extractor path preferred vs the newer SAP Datasphere Replication Flow / CDS-View path, and what are the trade-offs (latency, table coverage, cluster-table handling) between them?",
+    "Beyond Celonis's documented 'Replacing SAP cluster tables (BSEG)' best practice, how do the other extractor-based tools (UiPath/Theobald, Signavio JCo RFC_READ_TABLE) handle SAP cluster/pool tables (BSEG via RFBLG, KONV/PRCD_ELEMENTS), and is there a published practitioner recipe (pm4py-based or GitHub) for converting BKPF/BSEG/CDHDR into an OCEL/XES event log?"
+  ],
+  "sources": [
+    {
+      "url": "https://docs.celonis.com/en/connecting-to-sap-and-s-4hana.html",
+      "quality": "primary",
+      "angle": "primary / market-leader deep-dive",
+      "claimCount": 5
+    },
+    {
+      "url": "https://docs.celonis.com/en/process-intelligence-graph.html",
+      "quality": "primary",
+      "angle": "primary / market-leader deep-dive",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/abs/2110.03467",
+      "quality": "primary",
+      "angle": "primary / market-leader deep-dive",
+      "claimCount": 5
+    },
+    {
+      "url": "https://docs.uipath.com/process-mining/standalone/2021.10/user-guide/set-up-native-sap-extraction",
+      "quality": "primary",
+      "angle": "competitive field / vendor connector strategies",
+      "claimCount": 4
+    },
+    {
+      "url": "https://docs.celonis.com/en/step-3-create-sap-connection-in-the-celonis-platform.html",
+      "quality": "primary",
+      "angle": "competitive field / vendor connector strategies",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/understanding-and-integrating-sap-signavio-process-insights-with-on-premise/ba-p/14289914",
+      "quality": "primary",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blogs-by-sap/from-data-to-insights-unveiling-the-path-of-sap-signavio-process-insights/ba-p/13548144",
+      "quality": "blog",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/source-data-extraction-for-sap-signavio-process-intelligence-using-sap/ba-p/14030384",
+      "quality": "unreliable",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 0
+    },
+    {
+      "url": "https://westernacher.com/sap-signavio-process-insights-vs-intelligence/",
+      "quality": "blog",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 3
+    },
+    {
+      "url": "https://help.sap.com/docs/signavio-process-intelligence/feature-scope-description/sap-signavio-process-intelligence",
+      "quality": "primary",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/sap-signavio-process-intelligence-on-premise-sap-s-4hana-data/ba-p/13531000",
+      "quality": "blog",
+      "angle": "SAP-native / on-stack vs cloud",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/process-intelligence-solutions/pm4py",
+      "quality": "primary",
+      "angle": "practitioner / open-source tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/doc/ccecc8d2aa55488ea8d0130d42f3f224/3.20/en-US/Sample%20Content%20Process%20Mining%20on%20SAP%20S4HANA%20Purchase%20to%20Pay.pdf",
+      "quality": "primary",
+      "angle": "practitioner / open-source tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/docs/signavio-process-intelligence/user-guide/on-premises-extractor-technical-overview",
+      "quality": "unreliable",
+      "angle": "practitioner / open-source tooling",
+      "claimCount": 0
+    },
+    {
+      "url": "https://docs.celonis.com/en/data-extractions-and-transformations-for-object-centric-process-mining.html",
+      "quality": "primary",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/pdf/2110.03467",
+      "quality": "primary",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/marcoheinisch/oc-process-discovery",
+      "quality": "primary",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 5
+    },
+    {
+      "url": "https://datalark.com/blog/sap-data-extraction-tools",
+      "quality": "blog",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 2
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/azure/data-factory/sap-change-data-capture-introduction-architecture",
+      "quality": "primary",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-members/logic-of-cdc-change-data-capture-in-abap-cds-view/ba-p/13703103",
+      "quality": "unreliable",
+      "angle": "technical transformation layer / trade-offs",
+      "claimCount": 0
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 20,
+    "claimsExtracted": 79,
+    "claimsVerified": 25,
+    "confirmed": 23,
+    "killed": 2,
+    "afterSynthesis": 12,
+    "urlDupes": 7,
+    "budgetDropped": 3,
+    "agentCalls": 102
+  },
+  "status": "CLOSED_VERIFIED"
+}

@@ -1,0 +1,316 @@
+{
+  "_design": "Layer 15 — Capability Model. The 4th axis of the domain taxonomy (after functional/module/process). Reflects the process+code+conformance work structurally: a domain is 'understood' only when 10 capability dimensions are covered for it (S precondition + A-H understanding + R composite readiness). ALIGN (re-express every domain on one skeleton) then EXPAND (every weak cell is the ranked roadmap). THIS FILE IS THE SINGLE SOURCE OF TRUTH for the matrix — do not hand-copy the matrix into prose docs (it drifts). Born Session #079.",
+  "_strata": {
+    "note": "A domain is a PAIR, not one model. The product lives in the delta. Capability G = compare AS_RUN against AS_DESIGNED. Conformance has TWO preconditions per domain: the standard baseline AND our process. Capturing AS_DESIGNED per domain is itself a precondition capability (S_STANDARD_REF below), mostly NONE today.",
+    "AS_DESIGNED": "how SAP designed the domain — normative reference flow/objects/config as delivered (SAP Best Practices / PaPM reference content)",
+    "AS_RUN": "how UNESCO actually does it — real process from data + Z-code/config/exits/.NET apps/workflows on top",
+    "DELTA": "G_CONFORMANCE — where AS_RUN extends/deviates from AS_DESIGNED, down to the implementing object (the custom-over-standard x-ray)",
+    "example_public_sector_budget_planning": {
+      "AS_DESIGNED": "SAP BCS: FMBB budget entry -> release -> AVC -> posting",
+      "AS_RUN": "UNESCO planning lives in Core Manager / Core Planner (SuccessFactors), integrated to SAP via MuleSoft (RFC+IDoc, PROJECT02); + .NET budget transfers + Z-config. NOT SISTER (corrected s079).",
+      "delta_status": "unbuilt — AS_RUN detail to be refined once the model/extraction lands"
+    }
+  },
+  "_version": "1.3",
+  "_created_session": "079",
+  "_portability": {
+    "note": "This capability model is NOT project-specific — it is the OPERATING MODEL / way of working. It applies to other projects (e.g. unesco-sap-brain) verbatim: same 10 dimensions + AS-DESIGNED/AS-RUN strata. Cross-project feedback: a standard SAP AS-DESIGNED baseline captured once is reusable across ALL projects (standard is system-invariant); each project contributes its AS-RUN deltas back to a shared library. Governed by the ecosystem-coordinator.",
+    "shared_across_projects": "S_STANDARD_REF baselines + verified methods (Phase-B backlog) + the 10-dimension skeleton",
+    "project_specific": "AS-RUN coverage + the G delta (each customer's reality)"
+  },
+  "_tier_legend": {
+    "HAVE": "verified/strong coverage on our data",
+    "PARTIAL": "some coverage, incomplete",
+    "NONE": "not covered"
+  },
+  "_method_tier_legend": {
+    "VERIFIED": "Phase-B 3-vote verified method exists",
+    "GAP": "method not yet in our hands",
+    "OWN": "our own design, to be validated"
+  },
+  "dimensions": {
+    "S_STANDARD_REF": {
+      "question": "do we have the STANDARD SAP as-designed baseline for this domain (precondition for G)?",
+      "method": "SAP Best Practices / PaPM reference content / standard reference model capture",
+      "method_tier": "GAP",
+      "is_precondition_for": "G_CONFORMANCE"
+    },
+    "A_PROCESS": {
+      "question": "how does it actually run (discovered from data) — AS-RUN?",
+      "method": "event log -> DFG/variants/performance; OCEL 2.0; pm4py",
+      "method_tier": "VERIFIED"
+    },
+    "B_CODE": {
+      "question": "which programs/classes/exits/BDC implement it?",
+      "method": "ATC/SCI, dependency graph, abaplint, SCMON/UPL usage",
+      "method_tier": "VERIFIED"
+    },
+    "C_CONFIG": {
+      "question": "which customizing parameterizes it?",
+      "method": "standard-vs-custom config tables",
+      "method_tier": "OWN"
+    },
+    "D_DATA": {
+      "question": "which tables + real keys hold it?",
+      "method": "DDIC keys; Gold DB; SAP-official P2P table set",
+      "method_tier": "VERIFIED"
+    },
+    "E_AUTH": {
+      "question": "who can/does execute it (roles, users, SoD)?",
+      "method": "VERIFIED (RES-AUTH-SOD wwyujjqyk): role model AGR_DEFINE/AGR_USERS(validity)/AGR_TCODES/AGR_1251(obj+field LOW/HIGH)/AGR_AGRS/AGR_1016; users USR01/02/04/12, UST12; SU24 proposals USOBT_C(values)+USOBX_C(OKFLAG N/X/Y); TSTCA(start-tcode auth). SoD = Function(tcodes+auth objects) -> Risk(2+ conflicting functions), 3 risk types (SoD/Critical Action/Critical Permission), action+permission levels. Expand AGR_USERS->AGR_1251 for effective role auth. CAVEAT: SU24/USOBX_C is a PROPOSAL, not enforcement — real check only where code has AUTHORITY-CHECK (pair with code scan / ST01-STAUTHTRACE). GRC: 3-tier function->action->permission, risk header GRACSODRISK(RISKTYPE), ruleset COMPILED. REFUTED: exact '5 GRC tables' enumeration + GRACSODRISK-as-violations.",
+      "method_tier": "VERIFIED",
+      "split_d01_p01": "role STRUCTURE (AGR_DEFINE/AGR_1251/USOBT_C/TSTCA) = D01 -> ROLE-level SoD without P01; user ASSIGNMENTS (AGR_USERS/USR02/UST12) = P01 -> USER-level SoD gated"
+    },
+    "F_INTERFACE_FILE": {
+      "question": "how does it cross the boundary (RFC/IDoc/file)?",
+      "method": "RFCDES, IDoc, file system AL11/OPEN DATASET, job variant->intent",
+      "method_tier": "OWN"
+    },
+    "G_CONFORMANCE": {
+      "question": "does it deviate from / extend STANDARD SAP?",
+      "method": "OPID conformance; PaPM reference baseline",
+      "method_tier": "VERIFIED"
+    },
+    "H_IMPROVE": {
+      "question": "where is the opportunity; what-if before building?",
+      "method": "simulation (designed); improvement framing",
+      "method_tier": "OWN"
+    },
+    "R_S4_READINESS": {
+      "question": "how ready is this domain's custom code/config/process for the S/4HANA migration?",
+      "method": "ATC S4HANA_READINESS_<ver> variant + Simplification Database (SYCM) + Custom Code Migration app (usage-based scoping) + CCLM decommissioning + SCMON/UPL/ST03N usage (used-to-migrate vs dead-to-delete); 40-60% custom code typically dead",
+      "method_tier": "VERIFIED",
+      "advance_path": "EXTRACTION",
+      "is_composite": true,
+      "composite_note": "NOT a leaf cell. R_S4_READINESS ROLLS UP from its own sub-scorecard (factor x domain) — fractal: the operating model one level down. Factor list VERIFIED by research wh5gw9exu (CLOSED). Sub-model source of truth: brain_v2/capability_model/s4_readiness_model.json.",
+      "note": "Method now VERIFIED across factors (research wh5gw9exu, 22/25). Coverage NONE = not yet APPLIED. Commercial hook: the S/4 migration x-ray. KEY: BP_CVI_READINESS is scoreable NOW from our Gold DB (LFA1/KNA1/BUT000/CVI_CUST_LINK) — no new extraction.",
+      "factors_verified": {
+        "BP_CVI_READINESS": "VERIFIED + SCOREABLE NOW from our data (CVI_MIGRATION_PRECHK/CVI_PRECHK logic: 9 business checks). The central pillar.",
+        "SIMPLIFICATION_ITEM_READINESS": "VERIFIED — SI-Check /SDF/RC_START_CHECK (hard gate). Needs system run.",
+        "CUSTOM_CODE_READINESS": "VERIFIED (research #3) — ATC S4HANA_READINESS + CCM. Needs system run.",
+        "TECHNICAL_READINESS": "VERIFIED — Maintenance Planner (stack.xml). System-level.",
+        "READINESS_CHECK_2_0": "VERIFIED orchestration (Notes 2913617/3059197). Area enumeration unverified.",
+        "FINANCE_READINESS": "PARTIAL — Asset Acc/ACDOCA VERIFIED; ML/newGL/FSCM/BAM = gap (follow-up)."
+      }
+    }
+  },
+  "domains": {
+    "Payment_BCM": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "HAVE",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "HAVE",
+      "D_DATA": "HAVE",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "PARTIAL",
+      "note": "strongest row; 1.4M events; FBZP/house-bank config; x-ray lands here first",
+      "R_S4_READINESS": "NONE"
+    },
+    "Procurement_P2P": {
+      "S_STANDARD_REF": "PARTIAL",
+      "A_PROCESS": "HAVE",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "HAVE",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "PARTIAL",
+      "H_IMPROVE": "NONE",
+      "note": "FIRST x-ray DONE (s079): standard PO->GR->IR encoded (S◐); conformance 48.5% conform, 17.3% open POs, 33.5% same-day indeterminate (G◐). p2p_conformance.py + p2p_po_lifecycle config.",
+      "R_S4_READINESS": "NONE"
+    },
+    "PSM_FM": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "PARTIAL",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "HAVE",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "HAVE",
+      "note": "largest domain; know the opportunity (model gap) but not the as-is process vs standard; public-sector differentiator",
+      "R_S4_READINESS": "NONE"
+    },
+    "Closing_Activities": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "PARTIAL",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "HAVE",
+      "note": "FX reval first activity; high H, low A/G",
+      "R_S4_READINESS": "NONE"
+    },
+    "FI": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "PARTIAL",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "HAVE",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "Treasury_EBS": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "PARTIAL",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "HAVE",
+      "D_DATA": "HAVE",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "PARTIAL",
+      "note": "MT940/EBS = file-based boundary -> F differentiator",
+      "R_S4_READINESS": "NONE"
+    },
+    "HCM": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "HAVE",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "note": "strong extracted_code (CL_HCMFAB_*); weak process",
+      "R_S4_READINESS": "NONE"
+    },
+    "Travel": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "Integration": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "NONE",
+      "C_CONFIG": "NONE",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "HAVE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "note": "239 RFC dest, IDocs; the F backbone; file system still NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "HR_Workflows": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "NONE",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "PY_Finance": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "PARTIAL",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "PARTIAL",
+      "note": "418 TRs reverse-engineered; wage-type config",
+      "R_S4_READINESS": "NONE"
+    },
+    "BusinessPartner": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "NONE",
+      "C_CONFIG": "PARTIAL",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "PS": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "NONE",
+      "C_CONFIG": "NONE",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "RE_FX": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "NONE",
+      "C_CONFIG": "NONE",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "NONE",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    },
+    "Output": {
+      "S_STANDARD_REF": "NONE",
+      "A_PROCESS": "NONE",
+      "B_CODE": "NONE",
+      "C_CONFIG": "NONE",
+      "D_DATA": "PARTIAL",
+      "E_AUTH": "NONE",
+      "F_INTERFACE_FILE": "PARTIAL",
+      "G_CONFORMANCE": "NONE",
+      "H_IMPROVE": "NONE",
+      "R_S4_READINESS": "NONE"
+    }
+  },
+  "systemic_gaps": [
+    {
+      "column": "S_STANDARD_REF",
+      "finding": "NONE for every domain — we never captured the SAP as-designed baseline. This is the PRECONDITION for G: without the standard reference there is nothing to conform AS-RUN against. This is why G is empty everywhere. Capture standard baselines (PaPM/Best-Practices) per domain FIRST.",
+      "rank": 0
+    },
+    {
+      "column": "E_AUTH",
+      "finding": "NONE for every domain — Auth/SoD is a missing MODEL capability, not a per-domain gap. Closing it once lifts all domains.",
+      "rank": 1
+    },
+    {
+      "column": "G_CONFORMANCE",
+      "finding": "NONE for every domain — the custom-over-standard x-ray (the differentiator) is unbuilt; AS-RUN vs AS-DESIGNED delta. Start on strongest rows (Payment, P2P) where PaPM/standard baselines exist.",
+      "rank": 2
+    },
+    {
+      "column": "R_S4_READINESS",
+      "finding": "NONE for every domain — S/4HANA migration readiness not yet APPLIED, though the method is fully VERIFIED (ATC S4HANA_READINESS + Simplification DB + Custom Code Migration app + usage scoping, research #3). Commercial hook (migration x-ray). Largely D01-runnable; usage scoping needs P01.",
+      "rank": 3
+    }
+  ],
+  "expansion_order": [
+    "1. Close E (Auth/SoD) once — highest leverage, lifts every domain (AGR_*/SU24/SUIM).",
+    "2. Close G (Conformance) on Payment + P2P first (baselines exist) — the differentiator.",
+    "3. Fill A (Process) for high-H/low-A domains: PSM/FM, Closing — turn known opportunity into discovered as-is.",
+    "4. Build F (file/variant) across Integration + batch-heavy domains — the OWN additions.",
+    "5. Apply R_S4_READINESS — run ATC S4HANA_READINESS + Simplification items + usage scoping per domain (method verified; mostly D01-runnable). The migration x-ray / commercial hook."
+  ]
+}

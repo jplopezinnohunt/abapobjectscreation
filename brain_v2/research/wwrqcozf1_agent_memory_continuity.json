@@ -1,0 +1,205 @@
+{
+  "research_id": "wwrqcozf1",
+  "slug": "agent_memory_continuity",
+  "question": "How does ANTHROPIC engineer cross-session MEMORY and CONTINUITY for AI agents, and which patterns are PORTABLE into a file-based Claude Code (CLI) setup WITHOUT migrating to the hosted Managed Agents platform? We have decided to STAY on Claude Code and borrow the good parts; this research must surface the concrete, checkable patterns to adopt. Cover, citing primary Anthropic sources (docs, engineering blog, cookbook) and reputable practitioner sources: (1) ANTHROPIC'S OWN GUIDANCE on agent memory & context engineering — the 'Effective context engineering for AI agents' / 'Building effective agents' engineering posts, the Memory tool (the /memories directory pattern, 'ALWAYS view your memory directory before doing anything' system instruction), the memory cookbook examples, and how Anthropic frames memory vs context vs retrieval. (2) The 'DREAMING' / reflection-curation pattern (Managed Agents) — what the curation algorithm conceptually does (dedupe, resolve contradictions latest-wins, surface insights from session transcripts) so it can be EMULATED as a scheduled job in Claude Code. (3) TIERED / HIERARCHICAL memory patterns — lean index loaded at bootstrap + drill-down on demand; episodic vs semantic vs procedural memory; working-memory vs long-term; how to keep a large knowledge base (hundreds of K tokens) findable without loading it all (retrieval, summaries, progressive disclosure). (4) CLAUDE CODE native memory mechanics to exploit — CLAUDE.md (auto-load, import @ syntax, path-scoped rules), auto-memory MEMORY.md (200-line/25KB load limit, topic files lazy-loaded), SessionStart/PreCompact hooks, subagents, /compact, settings.json — best practices for using these as the continuity layer. (5) The broader FIELD of agent memory (for patterns Anthropic doesn't ship but we could build): MemGPT/Letta (memory hierarchy + self-editing), reflection loops, generative-agents 'memory stream + reflection', RAG-over-memory, memory eviction/consolidation. (6) Anti-patterns: what makes agent memory fail (stale memory, unbounded growth, the 'huge file nobody reads' problem we hit, context rot). GOAL: a verified, actionable playbook of memory/continuity patterns to implement in our Claude Code brain (tiered loading + scheduled curation + auto-load hardening), confirming the 'stay and borrow' decision. Prefer PRIMARY Anthropic engineering sources; state each pattern as a checkable, implementable practice. Where a pattern is Managed-Agents-only and not portable to Claude Code, say so explicitly. Rank by impact and ease of adoption in a file-based CLI setup.",
+  "summary": "Test: proven-5-findings plus full caveats and openQuestions.",
+  "findings": [
+    {
+      "claim": "Context engineering = curating the optimal token set across the whole context state, a superset of prompt engineering. Context is FINITE and subject to 'context rot' (recall degrades as tokens grow: attention budget, n^2 relationships). Justifies tiered loading. [merges 0,1,16; 3-0]",
+      "confidence": "high",
+      "sources": [
+        "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      ],
+      "evidence": "Verbatim 'curating the optimal set of tokens', 'recall decreases as tokens increase', 'attention budget', 'n^2 pairwise relationships'."
+    },
+    {
+      "claim": "ACTIONABLE: Just-in-time / progressive-disclosure. Agents hold lightweight identifiers (paths, queries, links) and load at runtime via tools, exploring layer by layer. Anthropic endorses HYBRID (small index up front + drill-down) = lean bootstrap index + graph_queries.py. [merges 2,6; 3-0]",
+      "confidence": "high",
+      "sources": [
+        "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      ],
+      "evidence": "Verbatim 'maintain lightweight identifiers... load at runtime', 'explore layer by layer', 'hybrid... autonomous exploration'."
+    },
+    {
+      "claim": "ACTIONABLE: Three long-horizon techniques. COMPACTION (summarize+reinitialize) -> /compact + PreCompact hook. STRUCTURED NOTE-TAKING (notes outside context, pulled back) -> MEMORY.md/brain files. SUB-AGENTS (return condensed 1,000-2,000 token summary) -> Claude Code subagents. [claim 3; 3-0]",
+      "confidence": "high",
+      "sources": [
+        "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      ],
+      "evidence": "Verbatim 'compaction, structured note-taking, multi-agent'; 'condensed summary (often 1,000-2,000 tokens)'."
+    },
+    {
+      "claim": "ACTIONABLE core primitive: Memory tool is CLIENT-SIDE, file-based under flat /memories the developer controls (file/db/cloud/encrypted backends), with exactly SIX ops: view, create, str_replace, insert, delete, rename. Full file ops, NOT key-value. Directly portable; model decides what/when to save. [merges 4,8,14; 3-0]",
+      "confidence": "high",
+      "sources": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool"
+      ],
+      "evidence": "Verbatim 'operates client-side... executes locally', backend 'file-based, database, cloud, encrypted', six commands, 'full file operations rather than key-value'."
+    },
+    {
+      "claim": "ACTIONABLE bootstrap hardening: Anthropic auto-injects (memory tool enabled) 'ALWAYS VIEW YOUR MEMORY DIRECTORY BEFORE DOING ANYTHING ELSE... ASSUME INTERRUPTION'. Confirms project's 'read brain_state.json first' as Anthropic's OWN guidance. Replicate in CLAUDE.md/SessionStart. [merges 5,14; 3-0]",
+      "confidence": "high",
+      "sources": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool"
+      ],
+      "evidence": "Verbatim 'automatically included in the system prompt when the memory tool is enabled' + ALWAYS-VIEW/ASSUME-INTERRUPTION block."
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "In Anthropic's Managed Agents platform, a memory store is a workspace-scoped collection of small text documents that persists across sessions — i.e., cross-session continuity is implemented as durable text files, not opaque vectors.",
+      "vote": "0-0",
+      "source": "https://github.com/anthropics/skills/blob/main/skills/claude-api/shared/managed-agents-memory.md"
+    },
+    {
+      "claim": "Managed Agents memory is mounted as a real filesystem directory (at /mnt/memory/<store-name>/) and the agent reads/writes it with standard file tools (bash, read, write, edit, glob, grep) — confirming the pattern is portable to a file-based Claude Code setup that uses the same primitives.",
+      "vote": "0-0",
+      "source": "https://github.com/anthropics/skills/blob/main/skills/claude-api/shared/managed-agents-memory.md"
+    },
+    {
+      "claim": "Auto memory uses a tiered/hierarchical load model: only the first 200 lines or 25KB of MEMORY.md (whichever comes first) is loaded into every session; topic files are NOT loaded at startup and are read on demand. This is the canonical Claude Code tiered-loading pattern to emulate for a brain.",
+      "vote": "0-0",
+      "source": "https://code.claude.com/docs/en/memory"
+    },
+    {
+      "claim": "CLAUDE.md files (unlike MEMORY.md) are loaded in FULL at launch regardless of length, and @path imports do NOT reduce context because imported files also load at launch — so a large CLAUDE.md/brain bootstrap directly consumes context every session. The portable fix is path-scoped rules, which load only when matching files are read.",
+      "vote": "0-0",
+      "source": "https://code.claude.com/docs/en/memory"
+    },
+    {
+      "claim": "Path-scoped rules in .claude/rules/ with YAML `paths` frontmatter load into context only when Claude reads files matching the glob pattern; rules without `paths` load unconditionally at launch with the same priority as .claude/CLAUDE.md. This is a native progressive-disclosure mechanism for a file-based CLI setup.",
+      "vote": "0-0",
+      "source": "https://code.claude.com/docs/en/memory"
+    }
+  ],
+  "caveats": "Claude Code native mechanics NOT verified (MEMORY.md cap, CLAUDE.md full-load, @imports, .claude/rules/) — REFUTED 0-0; re-check before tiered loading. Managed-Agents /mnt/memory details REFUTED. Time-sensitive: Dreaming beta 2026-04-21, Memory tool memory_20250818. 'No inference cost' imprecise. Memory-stream medium-confidence.",
+  "openQuestions": [
+    "Exact Claude Code auto-load budgets?",
+    "How to schedule the emulated Dreaming job?",
+    "Can graph_queries.py be the Memory tool six-op interface?",
+    "L1 bootstrap vs long-term boundary?"
+  ],
+  "sources": [
+    {
+      "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 5
+    },
+    {
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/anthropics/claude-cookbooks/blob/main/tool_use/memory_cookbook.ipynb",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 5
+    },
+    {
+      "url": "https://platform.claude.com/docs/en/managed-agents/dreams",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 5
+    },
+    {
+      "url": "https://platform.claude.com/cookbook/tool-use-context-engineering-context-engineering-tools",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/managed-agents",
+      "quality": "primary",
+      "angle": "Anthropic primary — context engineering & Memory tool",
+      "claimCount": 4
+    },
+    {
+      "url": "https://github.com/anthropics/skills/blob/main/skills/claude-api/shared/managed-agents-memory.md",
+      "quality": "primary",
+      "angle": "Dreaming / reflection-curation in Managed Agents",
+      "claimCount": 5
+    },
+    {
+      "url": "https://venturebeat.com/technology/anthropic-introduces-dreaming-a-system-that-lets-ai-agents-learn-from-their-own-mistakes",
+      "quality": "unreliable",
+      "angle": "Dreaming / reflection-curation in Managed Agents",
+      "claimCount": 0
+    },
+    {
+      "url": "https://thenewstack.io/anthropic-managed-agents-dreaming-outcomes/",
+      "quality": "unreliable",
+      "angle": "Dreaming / reflection-curation in Managed Agents",
+      "claimCount": 0
+    },
+    {
+      "url": "https://code.claude.com/docs/en/memory",
+      "quality": "primary",
+      "angle": "Claude Code native memory mechanics",
+      "claimCount": 5
+    },
+    {
+      "url": "https://yuanchang.org/en/posts/claude-code-auto-memory-and-hooks/",
+      "quality": "blog",
+      "angle": "Claude Code native memory mechanics",
+      "claimCount": 4
+    },
+    {
+      "url": "https://claudefa.st/blog/tools/hooks/session-lifecycle-hooks",
+      "quality": "unreliable",
+      "angle": "Claude Code native memory mechanics",
+      "claimCount": 0
+    },
+    {
+      "url": "https://claudefa.st/blog/guide/mechanics/auto-dream",
+      "quality": "blog",
+      "angle": "Claude Code native memory mechanics",
+      "claimCount": 5
+    },
+    {
+      "url": "https://arxiv.org/pdf/2304.03442",
+      "quality": "primary",
+      "angle": "Tiered/hierarchical & academic agent-memory field",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/NirDiamant/Agent_Memory_Techniques",
+      "quality": "secondary",
+      "angle": "Tiered/hierarchical & academic agent-memory field",
+      "claimCount": 5
+    },
+    {
+      "url": "https://stevekinney.com/writing/agent-memory-systems",
+      "quality": "blog",
+      "angle": "Tiered/hierarchical & academic agent-memory field",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      "quality": "primary",
+      "angle": "Anti-patterns & failure modes",
+      "claimCount": 5
+    },
+    {
+      "url": "https://towardsdatascience.com/a-practical-guide-to-memory-for-autonomous-llm-agents/",
+      "quality": "blog",
+      "angle": "Anti-patterns & failure modes",
+      "claimCount": 5
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 18,
+    "claimsExtracted": 73,
+    "claimsVerified": 25,
+    "confirmed": 20,
+    "killed": 5,
+    "afterSynthesis": 5,
+    "urlDupes": 9,
+    "budgetDropped": 3,
+    "agentCalls": 100
+  },
+  "status": "CLOSED_VERIFIED"
+}

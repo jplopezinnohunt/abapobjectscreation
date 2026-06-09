@@ -1,0 +1,286 @@
+{
+  "research_id": "wc36ii0um",
+  "slug": "competitors_connectors",
+  "question": "SAP process-mining COMPETITOR connector strategies for the vendors NOT yet covered (Celonis, UiPath, SAP Signavio, SAP PaPM are already documented — do NOT repeat those). For EACH vendor below, find their SPECIFIC SAP (ECC and S/4HANA) connection/extraction method, what makes their approach different, and any public-sector/finance content — stated as checkable facts (named connector, mechanism, RFC/CDS/extractor): (1) MEHRWERK MPM (MPM ProcessMining) — reportedly runs natively ON SAP HANA / SAP Analytics Cloud (SAC); confirm the in-database / SAC-embedded architecture and how it ingests SAP data without an external extractor. (2) MICROSOFT Power Automate Process Mining (formerly Minit) — the SAP connector via Microsoft Dataverse / data integration, and the Minit SAP extractor heritage. (3) IBM Process Mining (formerly myInvenio) — SAP connector / data ingestion approach. (4) Software AG ARIS Process Mining — the SAP connector and ARIS data extraction. (5) Apromore — open-source-rooted, its SAP data ingestion / ETL approach. (6) QPR ProcessAnalyzer — SAP data extraction method. (7) mindzie, Lana Labs / Appian Process Mining, ABBYY Timeline, Fluxicon Disco, Skan.ai (task mining) — for each, the SAP ingestion approach if documented. (8) Cross-cutting: which of these run IN the SAP stack vs extract OUT, and which rely on third-party SAP extractors (Theobald Xtract, etc.). GOAL: complete the competitive map so we know every vendor's SAP-connector method and can adopt what we are NOT using. Prefer primary vendor documentation and official sources; name the specific connector/mechanism/table. Where a vendor's SAP method is not publicly documented, say so explicitly rather than guessing. Rank by relevance and actionability.",
+  "summary": "The competitive map for the previously-undocumented process-mining vendors is now complete, and the dominant pattern is clear: nearly every competitor EXTRACTS DATA OUT of SAP rather than running in-database — directly contradicting the research hypothesis that MEHRWERK MPM runs natively on SAP HANA / embedded in SAP Analytics Cloud (SAC). MEHRWERK MPM (now mpmX) is built on the Qlik Sense platform and uses Qlik's connector framework plus a proprietary MPM RuleEngine to pull event logs out of SAP into Qlik's in-memory Associative Engine — there is no HANA-native or SAC-embedded architecture in any primary source. The two strongest, most-actionable connector designs are ARIS Process Mining (a standalone on-prem Process Extractor using SAP JCo over RFC, requiring a vendor-delivered transport ProcessMiningTransport_v2.zip that installs the /SOFWAG/MINING_V2 ABAP class, extracting to local parquet then uploading to cloud over HTTPS) and IBM Process Mining (formerly myInvenio — an ABAP stage that auto-generates an ABAP program, uploads it to SAP optionally via CTS, and invokes it server-side to pull data over RFC, plus ready-made P2P/O2C/R2R accelerators). QPR ProcessAnalyzer uses the simplest mechanism (generic table reads via BBP_RFC_READ_TABLE / RFC_READ_TABLE with no SAP-side install), Apromore offers a no-code ETL Integration Center with preconfigured O2C/P2P/R2R pipelines for ECC and S/4HANA, and Fluxicon Disco has NO native SAP connector at all (file import only). Microsoft Power Automate Process Mining (Minit heritage), mindzie, Lana Labs/Appian, ABBYY Timeline, Skan.ai, and the Theobald third-party extractor path were NOT confirmed by primary sources in this verification pass and remain open items.",
+  "findings": [
+    {
+      "claim": "MEHRWERK MPM (now mpmX) is built on the Qlik Sense platform, NOT natively on SAP HANA and NOT embedded in SAP Analytics Cloud — refuting the in-database/SAC-embedded hypothesis. It ingests SAP data via Qlik Sense connectors plus a proprietary MPM RuleEngine that extracts event logs OUT of SAP into Qlik's Associative Engine.",
+      "confidence": "high",
+      "vote": "3-0 (Qlik-based) / 3-0 (RuleEngine extract-out) / 2-1 (mpmX page silent on SAP)",
+      "sources": [
+        "https://ceur-ws.org/Vol-2374/paper6.pdf",
+        "https://mpmx.com/",
+        "https://mpmx.com/en/s-4hana-migrations/"
+      ],
+      "evidence": "Vendor paper (Mehrwerk AG, 2019): 'Qlik Sense platform based MEHRWERK ProcessMining is the first tool to offer self-service process mining.' Section 2.2: 'The second option is to extract data directly from sources, as databases, XML, xlsx or csv with the MPM RuleEngine and create the event log' and 'Qlik Sense offers...connectors to a large number of enterprise information systems...MPM allows fast, tolerant and scheduled event log extraction from source systems.' The mpmX homepage names only Snowflake/Databricks/Qlik — no SAP/RFC/CDS/extractor/HANA/SAC. Third-party sources confirm a 'certified SAP connector' layered on Qlik's connector framework. The 'runs ON SAP HANA / SAC-embedded' premise is unsupported speculation; the actual architecture is extract-OUT into Qlik."
+    },
+    {
+      "claim": "ARIS Process Mining (Software AG) connects to SAP ECC and S/4HANA (basis 700+) via a standalone on-premise 'Process Extractor' service using SAP JCo (>=3.1) over RFC. It requires importing a vendor-delivered transport (ProcessMiningTransport_v2.zip) that installs the /SOFWAG/MINING_V2 ABAP development class and function modules into SAP. The extractor polls ARIS Process Mining Cloud for tasks, extracts in chunks to local parquet files, and uploads over HTTPS — a clear extract-OUT (not in-SAP-stack) architecture.",
+      "confidence": "high",
+      "vote": "3-0 / 3-0 / 3-0",
+      "sources": [
+        "https://docs.aris.com/10.0.27.0/yms-process-extractor-for-apm-guide/en/Process-Extractor-for-ARIS-Process-Mining.pdf"
+      ],
+      "evidence": "Vendor install manual (V10.0 SR27+, Feb 2025): 'Process Extractor communicates with SAP systems using the Remote Function Call (RFC)...uses RFC to call the function (contained in the delivered SAP transport request) to extract the data.' Sec 5.5.2 table: 'SAP version: from 700 of the SAP basis component | Transport request: ProcessMiningTransport_v2.zip'; '/SOFWAG/MINING_V2 development class with the /SOFWAG/MINING_V2 function group...created in the SAP system' (objects: DEVC/FUGR /SOFWAG/MINING_V2, tables /SOFWAG/INDX_V2, function /SOFWAG/RFC_READ_TABLE_V2). Sec 5.1: extractor 'queries the process mining cloud at cyclical intervals...extraction is done in chunks...temporarily stored as parquet files...then transferred to ARIS Process Mining Cloud.' SAP JCo confirmed by SAP KBA 1797233 'ARIS for SAP JCo Connector.'"
+    },
+    {
+      "claim": "IBM Process Mining (formerly myInvenio) extracts SAP data via an ABAP stage that auto-generates an ABAP extraction program, uploads it to the SAP server (optionally via the Change and Transport System / CTS), then invokes that program server-side at runtime to pull data back over RFC. This distinguishes it from connectors that only read tables via a generic RFC reader. IBM also ships a ready-to-use 'Accelerator for SAP Procure-to-Pay' performing ETL covering both Accounts Payable and Procurement.",
+      "confidence": "high",
+      "vote": "3-0 (ABAP auto-gen mechanism) / 3-0 (P2P accelerator)",
+      "sources": [
+        "https://www.ibm.com/docs/en/process-mining/1.13.1?topic=accelerator-using-sap-procure-pay"
+      ],
+      "evidence": "IBM docs: 'The ABAP stage automatically generates an ABAP program based on extraction parameters and uploads it to the SAP server, then during run-time invokes the ABAP program on the SAP server and extracts the data by means of RFC transfer...ABAP programs can be uploaded using the SAP Change and Transport System (CTS).' Accelerator: 'a ready-to-use data extraction and process analysis framework that allows users to analyze both the Accounts Payable and Procurement angles of the P2P process.' Heritage = IBM InfoSphere/DataStage SAP Pack (Talend connectors). CAVEAT: CTS is OPTIONAL ('can be uploaded using CTS'), not mandatory — default is direct RFC upload."
+    },
+    {
+      "claim": "QPR ProcessAnalyzer extracts SAP data via the SAP NetWeaver RFC Library 7.50, calling RFC function module BBP_RFC_READ_TABLE (with RFC_READ_TABLE as fallback) — a generic table-read mechanism requiring NO third-party component installed into SAP. It exposes two named methods: the ExtractSap function (expression language, where SAP table field names become output column names via a mandatory QueryTable parameter) and the --#ImportSapQuery command (SQL scripting).",
+      "confidence": "high",
+      "vote": "3-0 / 3-0 / 3-0",
+      "sources": [
+        "https://wiki.onqpr.com/pa/index.php/Importing_Data_from_SAP",
+        "https://wiki.onqpr.com/pa/index.php/ExtractSap_Function"
+      ],
+      "evidence": "QPR wiki: 'QPR ProcessAnalyzer is calling the RFC...BBP_RFC_READ_TABLE that is available in all modern SAP systems to read individual tables'; 'If the BBP_RFC_READ_TABLE is not available...the older RFC_READ_TABLE can be used as well'; uses 'SAP NetWeaver RFC Library 7.50' with 'no installations of 3rd party components into the SAP.' Two methods: '1. ExtractSap function - Uses expression language 2. --#ImportSapQuery command - Uses SQL scripting.' ExtractSap: 'QueryTable: Name of the SAP table to be extracted (mandatory)' and 'the query result will have the SAP Table field names as data table column names.' This is the simplest, lowest-footprint mechanism of the set (no SAP-side install)."
+    },
+    {
+      "claim": "Apromore (open-source-rooted) ingests SAP data via a no-code ETL 'Integration Center', shipping preconfigured extraction pipelines for order-to-cash (O2C), procure-to-pay (P2P), and record-to-report (R2R) with predefined table-to-log mappings, supporting both SAP ECC and S/4HANA.",
+      "confidence": "high",
+      "vote": "3-0 / 3-0 / 2-0",
+      "sources": [
+        "https://apromore.com/sap",
+        "https://apromore.com/integration-center"
+      ],
+      "evidence": "Vendor: 'our intuitive no-code extract-transform-load (ETL) solutions allows Business Analysts to integrate SAP and non-SAP data sets with a few simple clicks'; 'Our preconfigured data extraction pipelines for key processes such as order-to-cash, procure-to-pay and record-to-report running on SAP ECC and S4/HANA are ready to be used'; 'link your SAP ECC or S/4HANA to Apromore.' Integration Center page: 'business analysts can use Apromore's no-code interface to define and schedule...custom ETL pipelines...point-and-click,' with a SAP connector that extracts from ECC and S/4HANA with 'predefined table-to-log mappings for order-to-cash, procure-to-pay, accounts receivable and accounts payable.' Press coverage confirms ECC 6.0 + S/4HANA, one-off or periodic extraction."
+    },
+    {
+      "claim": "Fluxicon Disco has NO built-in SAP connector. Its import page lists only generic file formats (CSV, MS Excel XLS/XLSX, MXML/MXML.GZ, XES/XES.GZ, FXL, DSC). SAP data must be exported to a flat file first (manually or via a third-party extractor like Transware Airlift) before Disco can ingest it.",
+      "confidence": "high",
+      "vote": "3-0",
+      "sources": [
+        "https://fluxicon.com/disco/"
+      ],
+      "evidence": "Vendor page supported import formats: 'CSV files, MS Excel (XLS and XLSX) files, MXML and MXML.GZ files (ProM 5), XES and XES.GZ files (ProM 6), FXL Disco log files, DSC Disco project files' — no SAP-specific mechanism. Independent corroboration: 'there are no built-in tools for automated data extraction from SAP...Any such integrations must be developed separately and managed outside of the Disco environment.' The Fluxicon Process Mining Book's 'Prepare Your Own Data Extraction' checklist confirms the manual/external extraction model. This places Disco at the opposite end of the spectrum from the SAP-aware connectors."
+    },
+    {
+      "claim": "Cross-cutting architecture map: NONE of the confirmed vendors run computation IN the SAP stack — all EXTRACT OUT. They split into (a) SAP-side-install RFC connectors that import a vendor transport / generate server-side ABAP (ARIS via /SOFWAG/MINING_V2 transport; IBM via auto-generated ABAP program), (b) zero-install generic table-read RFC connectors (QPR via BBP_RFC_READ_TABLE/RFC_READ_TABLE), (c) platform-mediated ETL/connector frameworks (MEHRWERK via Qlik connectors + RuleEngine; Apromore via no-code Integration Center ETL), and (d) no-native-connector file-import-only tools (Fluxicon Disco). The hypothesized in-database HANA / SAC-embedded model was found for NO vendor.",
+      "confidence": "high",
+      "vote": "synthesis of 3-0 claims above",
+      "sources": [
+        "https://ceur-ws.org/Vol-2374/paper6.pdf",
+        "https://docs.aris.com/10.0.27.0/yms-process-extractor-for-apm-guide/en/Process-Extractor-for-ARIS-Process-Mining.pdf",
+        "https://www.ibm.com/docs/en/process-mining/1.13.1?topic=accelerator-using-sap-procure-pay",
+        "https://wiki.onqpr.com/pa/index.php/Importing_Data_from_SAP",
+        "https://apromore.com/sap",
+        "https://fluxicon.com/disco/"
+      ],
+      "evidence": "Composite: ARIS extractor diagram shows 'Customer Network' box with parquet temp files uploading across a firewall to cloud (extract-out); IBM uploads/invokes ABAP then RFC-transfers data out; QPR reads tables out via RFC with 'no installations of 3rd party components into the SAP'; MEHRWERK pulls into Qlik's Associative Engine; Apromore runs ETL pipelines pulling table-to-log mappings out; Disco only imports files. ACTIONABLE GAP for adoption: the two mechanisms UNESCO is likely NOT using are (1) IBM-style auto-generated server-side ABAP extraction (more efficient than table reads for joins/filters) and (2) ARIS-style packaged transport + JCo polling-extractor with local parquet staging. The project's own Gold DB approach (RFC_READ_TABLE) most resembles QPR's zero-install path."
+    }
+  ],
+  "refuted": [
+    {
+      "claim": "IBM's SAP data extraction is built on SAP's Remote Function Call (RFC) protocol — the proprietary SAP protocol used to exchange data with SAP systems — rather than CDS views or OData.",
+      "vote": "1-2",
+      "source": "https://www.ibm.com/docs/en/process-mining/1.13.1?topic=accelerator-using-sap-procure-pay"
+    },
+    {
+      "claim": "QPR ProcessAnalyzer's ExtractSap function connects to SAP via the RFC (Remote Function Call) interface, calling SAP function modules RFC_READ_TABLE (default) or BBP_RFC_TABLE to extract table data directly.",
+      "vote": "0-3",
+      "source": "https://wiki.onqpr.com/pa/index.php/ExtractSap_Function"
+    },
+    {
+      "claim": "Disco's only data-ingestion path is a manual mapping import ('Smart log import') that maps generic CSV/Excel columns to Case ID, Activity, Timestamp, Resource, and other attributes — i.e., SAP data must be exported to a flat file first by an external extractor before Disco can use it.",
+      "vote": "1-2",
+      "source": "https://fluxicon.com/disco/"
+    },
+    {
+      "claim": "QPR ProcessAnalyzer's SAP connector is compatible with all SAP R/3 (ECC), SAP S/4HANA, and SAP HANA versions, giving it broad coverage across legacy and modern SAP landscapes.",
+      "vote": "0-0",
+      "source": "https://www.qpr.com/connectors"
+    },
+    {
+      "claim": "The public QPR connectors page does NOT document the specific technical extraction mechanism (ScriptLauncher, SQL-based ETL, RFC, BAPI, or named table reads), so the ScriptLauncher + SQL-ETL architecture asserted for QPR is not confirmed by this primary source and remains publicly undocumented on this page.",
+      "vote": "1-2",
+      "source": "https://www.qpr.com/connectors"
+    },
+    {
+      "claim": "mindzie studio's documented dataset-loading method is manual file upload supporting CSV, XES, and Binary formats — not an automated SAP connector. The load-dataset workflow consists of uploading a file, then mapping columns to Case ID, Activity, and Activity Time via drag-and-drop.",
+      "vote": "0-1",
+      "source": "https://mindzie.com/docs/load-dataset/"
+    },
+    {
+      "claim": "mindzie does advertise out-of-the-box system connectors that include SAP (alongside Microsoft Dynamics, Oracle, NetSuite, JD Edwards, Salesforce, HubSpot), but the marketing material names SAP only as a logo/system in the connector list without describing the SAP-specific extraction mechanism.",
+      "vote": "0-0",
+      "source": "https://mindzie.com/docs/load-dataset/"
+    },
+    {
+      "claim": "Theobald Xtract Universal extracts SAP table data via a custom function module /THEO/READ_TABLE, which is installed into SAP to improve performance and bypass restrictions of SAP's standard RFC_READ_TABLE function module.",
+      "vote": "0-0",
+      "source": "https://helpcenter.theobald-software.com/xtract-universal/documentation/setup-in-sap/custom-function-module-for-table-extraction/"
+    },
+    {
+      "claim": "UiPath Process Mining ingests SAP data using Theobald Xtract Universal (XU), a third-party SAP-certified extraction tool that connects to SAP source systems via Remote Function Calls (RFC) — i.e., UiPath does NOT use its own native SAP connector for this path but relies on Theobald.",
+      "vote": "0-0",
+      "source": "https://docs.uipath.com/process-mining/automation-suite/2023.4/user-guide/loading-data-using-theobald-xtract-universal"
+    },
+    {
+      "claim": "The Theobald Xtract Universal extraction mechanism installs a read-only custom ABAP function module named Z_THEO_READ_TABLE into the SAP system, which is the named connector/table-read mechanism used to pull SAP table data.",
+      "vote": "0-0",
+      "source": "https://docs.uipath.com/process-mining/automation-suite/2023.4/user-guide/loading-data-using-theobald-xtract-universal"
+    }
+  ],
+  "caveats": "Time-sensitivity / source quality: (1) The MEHRWERK foundational source (CEUR-WS Vol-2374 paper6.pdf) is vendor-authored (Mehrwerk AG employees) and dated 2019, though the Qlik-based architecture is corroborated by 2026 third-party sources and the current mpmX product pages — the 'no HANA/SAC' finding is framed as absence in primary sources, not a universal denial. (2) The mpmX-homepage-silent-on-SAP claim was 2-1 (one dissent), reflecting that mpmX DOES carry S/4HANA migration marketing and third-party listings call it 'integrated with SAP' — but no primary source documents the specific connector/RFC/CDS/table, so the negative is narrowly accurate. (3) ARIS and IBM findings rest on single (but primary, current vendor install/product docs) sources; IBM WebFetch was bot-blocked (403) but verbatim text was confirmed via WebSearch across IBM doc versions 1.13.1-1.14.1. (4) IBM 'CTS upload' is OPTIONAL not mandatory — the default is direct RFC upload. (5) The Apromore ECC+S/4HANA claim was 2-0 (only two votes) and is marketing copy that names processes but not the underlying RFC/table mechanism. (6) Several vendors in the original brief were NOT confirmed by any surviving primary-source claim and should be treated as unresearched, not as 'no connector.'",
+  "openQuestions": [
+    "Microsoft Power Automate Process Mining (formerly Minit): the SAP connector via Microsoft Dataverse / data integration and the specific Minit SAP extractor heritage were NOT confirmed by any surviving primary-source claim — what is the named mechanism (Dataverse connector vs. Minit's original SAP table extractor)?",
+    "Theobald Xtract Universal third-party path: claims about /THEO/READ_TABLE (or Z_THEO_READ_TABLE) custom function module and which vendors (UiPath, others) rely on it received 0 votes / were not adjudicated — does it install a custom ABAP FM that bypasses RFC_READ_TABLE limits, and which competitors depend on it?",
+    "mindzie, Lana Labs / Appian Process Mining, ABBYY Timeline, and Skan.ai (task mining): no primary-source SAP-ingestion claim survived for any of these — is the SAP method publicly documented (named connector/RFC/CDS) or genuinely undocumented?",
+    "For Apromore, IBM Accelerator, and MEHRWERK: which SPECIFIC SAP tables/CDS views are mapped per process (e.g., EKKO/EKPO/RBKP for P2P, VBAK/VBAP for O2C) — the connector mechanism is documented but the exact table-level extraction scope is not yet captured."
+  ],
+  "sources": [
+    {
+      "url": "https://www.processmining-software.com/tools/mehrwerk-processmining-mpm/",
+      "quality": "secondary",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://help.qlik.com/en-US/connectors/Subsystems/SAP_Connectors_Help/Content/Connectors_SAP/Clients/SAP-Extractor-connection.htm",
+      "quality": "primary",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://mpmx.com/",
+      "quality": "primary",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 3
+    },
+    {
+      "url": "https://web.mpmx.com/en/process-mining",
+      "quality": "primary",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 2
+    },
+    {
+      "url": "https://ceur-ws.org/Vol-2374/paper6.pdf",
+      "quality": "primary",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.gartner.com/reviews/market/process-mining-platforms/vendor/mehrwerk/product/mpmx-platform",
+      "quality": "unreliable",
+      "angle": "In-database / SAC-embedded (MEHRWERK MPM)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://wiki.onqpr.com/pa/index.php/Importing_Data_from_SAP",
+      "quality": "primary",
+      "angle": "Enterprise vendors IBM, ARIS, QPR",
+      "claimCount": 5
+    },
+    {
+      "url": "https://docs.aris.com/10.0.27.0/yms-process-extractor-for-apm-guide/en/Process-Extractor-for-ARIS-Process-Mining.pdf",
+      "quality": "primary",
+      "angle": "Enterprise vendors IBM, ARIS, QPR",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.ibm.com/docs/en/process-mining/1.13.1?topic=accelerator-using-sap-procure-pay",
+      "quality": "primary",
+      "angle": "Enterprise vendors IBM, ARIS, QPR",
+      "claimCount": 5
+    },
+    {
+      "url": "https://wiki.onqpr.com/pa/index.php/ExtractSap_Function",
+      "quality": "primary",
+      "angle": "Enterprise vendors IBM, ARIS, QPR",
+      "claimCount": 5
+    },
+    {
+      "url": "https://fluxicon.com/disco/",
+      "quality": "primary",
+      "angle": "Open-source / lighter-weight tools",
+      "claimCount": 3
+    },
+    {
+      "url": "https://apromore.com/sap",
+      "quality": "primary",
+      "angle": "Open-source / lighter-weight tools",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.qpr.com/connectors",
+      "quality": "primary",
+      "angle": "Open-source / lighter-weight tools",
+      "claimCount": 3
+    },
+    {
+      "url": "https://mindzie.com/docs/load-dataset/",
+      "quality": "primary",
+      "angle": "Open-source / lighter-weight tools",
+      "claimCount": 5
+    },
+    {
+      "url": "https://helpcenter.theobald-software.com/xtract-universal/documentation/setup-in-sap/custom-function-module-for-table-extraction/",
+      "quality": "primary",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 4
+    },
+    {
+      "url": "https://docs.uipath.com/process-mining/automation-suite/2023.4/user-guide/loading-data-using-theobald-xtract-universal",
+      "quality": "primary",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 4
+    },
+    {
+      "url": "https://www.skan.ai/process-intelligence",
+      "quality": "primary",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 3
+    },
+    {
+      "url": "https://www.abbyy.com/en-us/isolutions/sap/",
+      "quality": "secondary",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 4
+    },
+    {
+      "url": "https://zinnov.com/digital-technologies/appian-lana-labs-acquisition-a-giant-leap-into-process-mining-blog/",
+      "quality": "blog",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 1
+    },
+    {
+      "url": "https://www.processexcellencenetwork.com/process-mining/articles/16-process-mining-vendors-gartner-magic-quadrant",
+      "quality": "secondary",
+      "angle": "Task mining + third-party SAP extractors",
+      "claimCount": 2
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/power-automate/process-mining-sap-erp",
+      "quality": "primary",
+      "angle": "Comparative public-sector / finance + IN-vs-OUT map",
+      "claimCount": 5
+    },
+    {
+      "url": "https://docs.uipath.com/process-mining/automation-cloud/latest/user-guide/setting-up-theobald-xtract-universal",
+      "quality": "primary",
+      "angle": "Comparative public-sector / finance + IN-vs-OUT map",
+      "claimCount": 4
+    }
+  ],
+  "stats": {
+    "angles": 6,
+    "sourcesFetched": 22,
+    "claimsExtracted": 81,
+    "claimsVerified": 25,
+    "confirmed": 15,
+    "killed": 10,
+    "afterSynthesis": 7,
+    "urlDupes": 3,
+    "budgetDropped": 5,
+    "agentCalls": 105
+  },
+  "status": "CLOSED_VERIFIED"
+}

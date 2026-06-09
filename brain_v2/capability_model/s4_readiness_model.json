@@ -1,0 +1,83 @@
+{
+  "_design": "S/4HANA Migration Readiness — the COMPOSITE sub-scorecard that R_S4_READINESS rolls up from (fractal: the operating model one level down). Factors below are VERIFIED by research wh5gw9exu (s079, 22/25 claims 3-vote confirmed). Each factor: method (how SAP checks it) + scoreable_now (can we score it from already-extracted data, no system run) + tier. The roll-up of these factors = the R_S4_READINESS cell per domain in capability_model.json.",
+  "_version": "1.0",
+  "_created_session": "079",
+  "_research": "wh5gw9exu (CLOSED, reached Synthesize)",
+  "_scoring_rule_critical": "CVI_MIGRATION_PRECHK 'All applied Checks (0/0)' means NO check ran (zero records selected), NOT a clean pass. Any automated scorer MUST distinguish 0/0 (no denominator) from 0-errors-of-N. Source: SAP KBA 3478108 (VERIFIED 3-0).",
+  "conversion_approach": {
+    "chosen": "BROWNFIELD (in-place system conversion via SUM with DMO) — user confirmed s079. NOT greenfield (new implementation / Migration Cockpit LTMC) and NOT selective/bluefield.",
+    "implication": "Readiness = the conversion-path checks (Maintenance Planner -> SI-Check -> Custom Code Migration -> finance/BP-CVI migration), NOT data-load modeling. Greenfield Migration Cockpit (LTMC/LTMOM) and bluefield/selective tooling are OUT OF SCOPE. The whole S/4 readiness sub-model is correctly brownfield-oriented (all factors already are)."
+  },
+  "conversion_sequence_verified": {
+    "PREPARE": "Planning & System Requirements -> Maintenance Planner (generates stack.xml for SUM) -> SI-Check (/SDF/RC_START_CHECK, hard gate) -> Custom Code Migration; SAP Readiness Check 2.0 + Simplification Item Catalog span this phase",
+    "REALIZE": "SUM performs DB migration (to HANA via DMO if needed) + software update (ECC->S/4HANA) + bulk data conversion in one tool; then follow-on activities",
+    "source": "SAP Conversion Guide 2023 CONV_OP2023.pdf + SAP Learning (VERIFIED 3-0)"
+  },
+  "factors": {
+    "BP_CVI_READINESS": {
+      "weight_note": "the central pillar; the only factor SCOREABLE NOW from our extracted master data",
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": true,
+      "why": "BP is the mandatory leading object replacing ECC customer/vendor (SAP Note 2265093 S4TWL Business Partner Approach; CVI Cookbook KBA 2713963). Every customer/vendor must sync to a BP; links in CVI_CUST_LINK (PARTNER_GUID<->KUNNR) / CVI_VEND_LINK (PARTNER_GUID<->LIFNR), key to BUT000 = PARTNER_GUID.",
+      "method": "report CVI_MIGRATION_PRECHK via transaction CVI_PRECHK (Preparation phase, BEFORE sync); down to ECC6.0 via Note 2743494 / EhP8 SP12. Mass sync = MDS_LOAD_COCKPIT. Roles created: vendor FLVN00/FLVN01, customer FLCU00/FLCU01 (*01 only if purch-org/sales-area data exists).",
+      "business_checks_to_replicate": ["Tax Code", "Postal Code", "Email", "Transportation Zones", "Tax Jurisdiction", "Number Range", "Industry", "Bank Data", "Address"],
+      "concrete_defect_class_example": "Missing Tax Number Categories -> 'Tax Type XXX is not maintained for country YY' (fix V_TFKTAXNUMTYPE via SM30; BP tax in DFKKBPTAXNUM). A directly scoreable defect per customer/vendor country.",
+      "our_data": "HAVE: LFA1, LFB1, LFBK, KNA1, KNB1, BUT000, CVI_CUST_LINK, BP001, ADRC. MISSING (minor extraction): BUT020, BUT0ID, BUT100, CVI_VEND_LINK, KNBK.",
+      "sources": ["SAP Note 2265093", "SAP KBA 2713963", "SAP KBA 3478108", "SAP Note 2743494", "SAP Note 2780288", "community.sap.com FAQ ba-p/13740757 (primary)"]
+    },
+    "SIMPLIFICATION_ITEM_READINESS": {
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": false,
+      "why": "SI-Check is a MANDATORY hard gate: all errors resolved/exempted before SUM can enter downtime (SUM stops RC=12 at start, RC>=8 before downtime).",
+      "method": "report /SDF/RC_START_CHECK in SA38 (target version -> Check Consistency for All vs Simplification Item List). Framework via Notes 2399707 + 2502552 (SNOTE/TCI). Needs a SYSTEM run.",
+      "sources": ["SAP Note 2399707", "SAP Note 2502552", "SAP Conversion Guide 2023"]
+    },
+    "CUSTOM_CODE_READINESS": {
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": false,
+      "why": "custom code must be adapted to simplifications; used-vs-dead scoping decides migrate vs delete.",
+      "method": "ATC S4HANA_READINESS_<ver> variant + Custom Code Migration app + Simplification Database (SYCM) + SCMON/UPL usage. VERIFIED by research #3 (w3os0wwlx). Needs a SYSTEM run (ATC) + usage data.",
+      "sources": ["research #3 w3os0wwlx", "SAP CustomCodeMigration_EndtoEnd.pdf"]
+    },
+    "TECHNICAL_READINESS": {
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": false,
+      "why": "Maintenance Planner is the MANDATORY first step; checks add-ons / active business functions / industry solutions for S/4 compatibility and generates the stack.xml SUM requires.",
+      "method": "Maintenance Planner (replaced Maintenance Optimizer). System/landscape-level.",
+      "sources": ["SAP Conversion Guide 2023 CONV_OP2023.pdf"]
+    },
+    "READINESS_CHECK_2_0": {
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": false,
+      "why": "identifies the simplification items RELEVANT to the specific source system, derived from transactions used + customizing + table contents (run vs production for accurate relevance).",
+      "method": "SAP Note 2913617 (conversion) / 3059197 (upgrade). NOTE: the specific 'six analysis areas' enumeration was REFUTED (0-3) — do NOT assert a fixed area list; scope (simplification items, custom code, Fiori apps, add-on compat, business functions, sizing, integration, BW) is real but the exact enumeration is unverified.",
+      "sources": ["SAP Note 2913617", "SAP Note 3059197"]
+    },
+    "FINANCE_READINESS": {
+      "tier": "VERIFIED",
+      "scoreable_now_from_gold_db": "partial — config/usage detection from tables we may hold (T012K etc.)",
+      "why": "6 mandatory finance pillars, all S4TWL-governed, migrated post-SUM via Finance migration cockpit (master Note 2332030).",
+      "pillars_verified": {
+        "asset_accounting": "new Asset Accounting -> ACDOCA; legacy ANEP/ANEA/ANEK/ANLC/ANLP not updated, FAAV_* compat views (Note 2270387). VERIFIED earlier (wh5gw9exu).",
+        "material_ledger": "MANDATORY all S/4HANA (S4TWL 2267834; tech note 2354768). MLHD/MLIT/MLPP/MLCR... -> MLDOC/MLDOCCCS + line items in ACDOCA; auto-activated, migration step M10; NO table compat views (custom code on ML* must rework); actual costing stays OPTIONAL. Readiness: detect ML activation per valuation area (T001W/T001K, MGVUPD) + scan code for legacy ML* tables.",
+        "new_gl_universal_journal": "S4TWL 2270339 (note 2431747 incompatible changes). New G/L auto-active at conversion; Document Splitting + Parallel Ledger need SEPARATE activation. BSEG no longer complete -> custom code reads BSEG+ACDOCA via CL_FINS_ACDOC_TRANSFORM_UTIL. Readiness: classic-vs-new G/L + splitting/ledger intent.",
+        "credit_management_fscm": "classic FI-AR-CR removed; FSCM-CR (FIN-FSCM-CR) MANDATORY if FI-AR-CR was used (S4TWL 2270544). Detect usage KNKK/KNKA/FD32/VKM1-4 + S066/S067 exposure; migration post-SUM, each credit control area->same-ID credit segment, risk category->risk class.",
+        "bam_house_banks": "house bank accounts migrate T012K -> FCLM_BAM_AMD (link FCLM_BAM_ACLINK2) before go-live, via FCLM_BAM_MIGRATION (manual) or activity CM1 (auto, account type 01). S4TWL 2870766. Readiness: populated T012K. (Treasury domain — we hold T012/T012K context.)",
+        "migration_cockpit": "FINS_MIG_PRECHECK -> Migrate General Customizing -> FINS_CUST_CONS_CHK -> data migration (FINS_MIG_STATUS/FINS_MIG_MONITOR_RC0), gated by SUM SI-Check (RC12 stop at start, RC>=8 before downtime). Master Note 2332030."
+      },
+      "sources": ["SAP Note 2270387", "S4TWL 2267834", "Note 2354768", "S4TWL 2270339", "Note 2431747", "S4TWL 2270544", "S4TWL 2870766", "Note 2332030", "help.sap.com SIMPL_OP2023.pdf"]
+    }
+  },
+  "refuted_do_not_repeat": [
+    "CVI_PRECHK is 'merely a result viewer' for CVI_MIGRATION_PRECHK — FALSE, CVI_PRECHK RUNS the check (1-2).",
+    "SAP Readiness Check analyzes a fixed 'six areas' enumeration — REFUTED (0-3).",
+    "The S4TC SI-Check verifies kernel/DB prerequisites + flags mandatory changes — REFUTED (1-2)."
+  ],
+  "open_questions": [
+    "Exact source->target BP table mapping (LFA1/LFB1/LFBK/KNA1/KNB1/KNBK -> BUT000/BUT020/BUT0ID/BUT100) + mandatory BP fields for an automated scorer.",
+    "Finance pillars beyond Asset Accounting (Material Ledger, new G/L, FIN-FSCM-CR, BAM, FINS_MIG_*) and their S4TWL Notes.",
+    "Greenfield mechanics (Migration Cockpit LTMC / Migrate Your Data / LTMOM) and selective/bluefield scoring.",
+    "How to WEIGHT custom-code + SI-Check + BP/CVI into a single composite readiness score."
+  ],
+  "immediate_action_bucket_A": "BP_CVI_READINESS is scoreable NOW with NO new extraction: replicate the 9 business checks (esp. Tax Number Category per country, bank data, address, number range) against our LFA1/KNA1/BUT000/CVI_CUST_LINK in the Gold DB. Produces the FIRST real S/4 readiness score (BusinessPartner domain), distinguishing 0/0 from 0-of-N."
+}

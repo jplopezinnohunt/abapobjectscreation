@@ -1,0 +1,229 @@
+{
+  "research_id": "w5v0r0akw",
+  "slug": "s4hana_finance_pillars",
+  "question": "SAP S/4HANA FINANCE migration readiness — the pillars BEYOND new Asset Accounting (which is already verified): be exhaustive and concrete, name S4TWL SAP Notes, tables, transactions, and migration cockpit steps. Cover: (1) MATERIAL LEDGER mandatory activation in S/4HANA — why it is obligatory, what changes (actual costing optional but ML ledger mandatory), the tables (MLHD/MLIT/MLPP/MLCR legacy vs ACDOCA/MATDOC integration), and the readiness/migration steps. (2) NEW GENERAL LEDGER / Universal Journal — the move to ACDOCA as the single source, document splitting, ledger/currency configuration, the relation between classic GL (GLT0/BSEG) and ACDOCA, and what 'new GL migration' vs 'already on new GL' means for readiness. (3) CREDIT MANAGEMENT FIN-FSCM-CR — the mandatory move from classic SD credit management (tables KNKK/KNKA, transaction FD32) to SAP Credit Management (FSCM-CR, BP-based, tables UKMBP_CMS_SGM / UKM_* ), the migration, and the S4TWL note. (4) HOUSE BANK ACCOUNT MANAGEMENT (BAM) — the move from classic house bank config (tables T012/T012K, transaction FI12) to Bank Account Management (BAM/BAM-lite, the Manage Bank Accounts Fiori app, table FCLM_BAM_* / house bank account ID), the migration step, and the S4TWL note. (5) The FINANCIAL DATA MIGRATION / Migration Cockpit for finance during conversion — the FINS_MIG_* programs/transactions, the phases (install/enrich/migrate/check the Universal Journal), customizing migration, and the mandatory sequence within SUM. (6) For EACH pillar: how to ASSESS readiness from a customer's current configuration/data BEFORE conversion. GOAL: complete the FINANCE_READINESS factor of our S/4 readiness sub-model (which currently only has new Asset Accounting/ACDOCA verified). Prefer PRIMARY SAP documentation, S4TWL simplification-item notes, and help.sap.com. State each fact as checkable (name the exact table/transaction/SAP Note). IMPORTANT: do not repeat already-established facts about new Asset Accounting / ACDOCA (verified separately) — focus on Material Ledger, new G/L, FSCM credit management, BAM, and the finance migration cockpit. Rank by relevance and actionability.",
+  "summary": "Beyond new Asset Accounting/ACDOCA (verified separately), the FINANCE_READINESS factor must cover five additional mandatory finance pillars, all governed by S4TWL simplification-item notes and all migrated post-SUM via the Finance migration cockpit (master note 2332030). (1) MATERIAL LEDGER is obligatory in all S/4HANA systems (S4TWL 2267834; technical-change note 2354768): legacy periodic tables MLHD/MLIT/MLPP/MLPPF/MLCR/MLCRF/MLCD are replaced by MLDOC/MLDOCCCS with line items in ACDOCA, ML is auto-activated on conversion (migration step M10), and only actual costing remains optional. (2) The UNIVERSAL JOURNAL move (S4TWL 2270339, incompatible-changes note 2431747): New G/L is automatically active at conversion but Document Splitting and Parallel Ledger require a separate subsequent activation; classic-G/L customers may convert directly or first migrate to New G/L. (3) CREDIT MANAGEMENT: classic FI-AR-CR is removed and FSCM-CR (FIN-FSCM-CR) is mandatory if FI-AR-CR was used (S4TWL 2270544); KNKK/KNKA/FD32/VKM1-4 detect usage, and IMG migration steps (Customizing then Master Data/Exposure/DCD) run post-SUM with each credit control area becoming a same-ID credit segment and each risk category a same-ID risk class. (4) BANK ACCOUNT MANAGEMENT (S4TWL 2870766): house bank accounts must migrate from T012K to FCLM_BAM_AMD (linked via FCLM_BAM_ACLINK2) before go-live via FCLM_BAM_MIGRATION (manual) or activity CM1 (auto, account type 01). (5) The FINANCE MIGRATION COCKPIT sequence (FINS_MIG_PRECHECK -> Migrate General Customizing -> FINS_CUST_CONS_CHK -> data migration monitored in FINS_MIG_STATUS/FINS_MIG_MONITOR_RC0), gated by the SUM SI-Check (RC12 stops at start, RC>=8 blocks before downtime). Readiness for each pillar is assessable pre-conversion by detecting current config/data usage (e.g., FI-AR-CR via UKM_IS_ACTIVE=space and S066/S067 exposure; classic vs New G/L; populated T012K; ML activation per valuation area).",
+  "findings": [
+    {
+      "claim": "MATERIAL LEDGER is mandatory in all S/4HANA systems (S4TWL note 2267834, component MM-IM-GF-VAL), independent of whether the source used Simple Finance or already ran ML. It is auto-activated during conversion (transactional inventory fields LBKUM/SALK3/VKSAL come from ACDOCA rather than legacy inventory tables), and ML data is migrated post-SUM in migration step M10. The technical data-model change (note 2354768) replaces legacy periodic tables MLHD/MLIT/MLPP/MLPPF/MLCR/MLCRF/MLKEPH/CKMLPP/CKMLCR/MLCD/CKMLMV003/CKMLMV004/CKMLPPWIP/CKMLKEPH with new tables MLDOC and MLDOCCCS (plus extract tables MLDOC_EXTRACT/MLDOCCCS_EXTRACT) and replaces CKMLMV011 with MLRUNLIST; SAP provides NO table-level compatibility views, so custom code referencing legacy ML tables must be reworked. Actual costing remains OPTIONAL — the migration does not activate it (toggled separately via CKMSTART/CKMLCP). READINESS ASSESSMENT: detect ML activation per valuation area (T001W/T001K, MGVUPD='X' for actual costing) and scan custom code for references to the obsolete ML* tables.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+        "https://mps4hana.com/2019/12/11/s4twl-dm-ml-actualcosting/",
+        "https://mps4hana.com/2019/11/27/finance-s4twl/",
+        "https://sapinsider.org/sap-s-4hana-1610-material-ledger-actual-costing-understand-the-fundamental-changes-and-the-impact-on-conversion/"
+      ],
+      "evidence": "S4TWL 2267834 'Material Ledger Obligatory for Material Valuation' verified verbatim in the primary help.sap.com SIMPL_OP2023.pdf; note 2354768 'Technical Changes in Material Ledger With Actual Costing' confirmed via the official note PDF (titled 2354768-E-20240207) and corroborated by SAP KBAs 2416935/2530890/2784741 and SAPinsider. Auto-activation on conversion and the LBKUM/SALK3/VKSAL-from-ACDOCA mechanism verified verbatim in SAPinsider. No-compatibility-views and custom-code-rework verified verbatim in note 2354768. Actual-costing-optional corroborated by SAP Learning, SAP-PRESS, PIKON, Consilio.",
+      "vote": "merged from claims [0],[13],[14],[15],[16],[19],[20] — all unanimous 3-0 except [13] and [15] at 2-1"
+    },
+    {
+      "claim": "The General Ledger move to the Universal Journal is governed by S4TWL note 2270339 (component FI-GL); incompatible changes to summary/index tables and to BSEG are documented in note 2431747 ('General Ledger: Incompatible Changes in S/4HANA compared to classic ERP releases'). At conversion New G/L is AUTOMATICALLY active (classic GL data is transferred into the new ACDOCA-based structures), but Document Splitting and Parallel Ledger functionality require a SEPARATE subsequent activation — they are NOT auto-enabled by the conversion. A classic-G/L customer has two valid paths: convert directly from classic G/L to S/4HANA, or first migrate classic G/L to New G/L and then convert. Customers still on Classic G/L must note that Foreign Currency Valuation, Line Item Display and Balance Carry Forward handling have changed in New G/L before migrating. READINESS ASSESSMENT: determine whether the customer is on Classic vs New G/L, and whether they intend to use Document Splitting / a ledger (parallel-ledger) approach — these drive a separate project beyond the technical conversion.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+        "https://www.erpfixers.com/blog/qa-migration-options-for-new-g/l-on-s/4-hana"
+      ],
+      "evidence": "S4TWL 2270339 (FI-GL) and note 2431747 (title, BSEG no-longer-complete, BKPF-BSTAT='U' for ACDOCA-only CO postings, custom code must read BSEG+ACDOCA via CL_FINS_ACDOC_TRANSFORM_UTIL) verified against primary SIMPL_OP2023.pdf and corroborated by mps4hana, smartshift, SAP Community. The FCV/Line-Item-Display/Balance-Carry-Forward caveat quoted verbatim from the primary doc. New-GL-auto-active-but-splitting/parallel-ledger-separate and the two-path classic-GL option corroborated by Eursap, Infogility, SAPinsider, SAP Community.",
+      "vote": "merged from claims [4],[21],[22] — all unanimous 3-0; [4] primary-sourced, [21]/[22] blog-sourced but multiply corroborated"
+    },
+    {
+      "claim": "Classic Credit Management (FI-AR-CR) is NOT available in S/4HANA; the mandatory functional equivalent is SAP Credit Management (FIN-FSCM-CR), BP-based with risk class on the business partner and release via Case Management. Migration is mandatory IF FI-AR-CR was used on the start release, and runs AFTER the technical SUM conversion (S4TWL note 2270544; conversion documented in the SAP Credit Management Configuration Guide). The IMG path is Migration to SAP S/4HANA Finance: Customizing under 'Preparations and Migration of Customizing > Preparatory Activities and Migration of Customizing for Credit Management' (first mandatory step 'Migrate Credit Management Customizing'); data under 'Data Migration > Credit Management Migration' (mandatory: Migrate Credit Management Master Data, Migrate Credit Management Exposure, Initialize Documented Credit Decisions, Reconcile Documented Credit Decisions). In the migration each credit control area becomes a credit segment with the SAME ID and each risk category becomes a risk class with the SAME ID. READINESS ASSESSMENT: detect FI-AR-CR usage — credit master maintained via FD31/FD32 in tables KNKK & KNKA, blocked-document transactions VKM1-VKM4 (VKM3 replaced by UKM_MY_DCDS), exposure in info structures S066/S067, and FM UKM_IS_ACTIVE returning space (FSCM not yet active). Master data moves to UKM_BP/BP; only credit check type D is supported.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+        "https://help.sap.com/doc/792426924faa44698c76733bd0b88072/2023.000/en-US/loiobb4c195466432b18e10000000a174cb4_PDF_EN.pdf",
+        "https://www.qnovate.com/sap-s4hana-credit-management-migration-fi-ar-cr-to-fin-fscm-cr"
+      ],
+      "evidence": "FI-AR-CR-not-available / FSCM-CR-equivalent verified verbatim in primary SIMPL_OP2023.pdf; mandatory-post-SUM migration verified verbatim in the primary SAP Credit Management Configuration Guide (page 9) and S4TWL note 2270544. IMG paths and mandatory step lists verified against the official 'Task List for Conversion of Credit Management' and qnovate. KNKK/KNKA replacement confirmed by SAP KBA 2706489; same-ID credit segment / risk class migration corroborated by SAP-authored community blog (2020/04/17). UKM_IS_ACTIVE FM existence confirmed; its 'returns space' detection semantics are a reasonable non-primary heuristic.",
+      "vote": "merged from claims [1],[5],[6],[7],[23],[24] — all unanimous 3-0; mix of primary config-guide and corroborated blog sources"
+    },
+    {
+      "claim": "Bank Account Management (BAM) is the only compatible cash-management model in S/4HANA (S4TWL note 2870766 'Cash Management - BAM'); the classic Cash and Liquidity Management is not officially available. House bank accounts must be migrated BEFORE go-live, from classic table T012K into BAM master-data table FCLM_BAM_AMD, with FCLM_BAM_ACLINK2 linking bank accounts to house bank accounts (SAP-delivered migration structure FCLM_BAM_S_MIGRATION_T012K). Migration is done either MANUALLY via transaction FCLM_BAM_MIGRATION (per-account setting of account types) or AUTOMATICALLY via the central 'Start and Monitor Data Migration' activity CM1 (which sets all accounts to account type 01 / 'Activate Directly'; see SAP Note 2873947). Accounts are then maintained as new bank-account master data via the Manage Bank Accounts Fiori app on the Fiori Launchpad. The old house-bank maintenance transactions were unavailable prior to S/4HANA 1809; FI12 (House Bank/House Bank Account) was reintroduced from 1809. READINESS ASSESSMENT: detect populated T012/T012K house bank account configuration; any rows there require BAM migration before go-live.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+        "https://blogs.sap.com/2022/05/02/how-to-manually-migrate-house-banks-during-a-system-conversion-using-fclm_bam_migration-to-manually-migration-house-banks/"
+      ],
+      "evidence": "S4TWL 2870766, classic-Cash-Mgmt-not-available, must-migrate-before-go-live, 'Migration of House Bank Accounts' activity name, FI12-not-available-pre-1809, and Fiori-Launchpad maintenance all verified verbatim in primary SIMPL_OP2023.pdf. T012K->FCLM_BAM_AMD with FCLM_BAM_ACLINK2 link confirmed via SAP table dictionary (FCLM_BAM_AMD='Bank Account Master Data', FCLM_BAM_ACLINK2='Linkages Between Bank Account and House Bank Accounts') plus migration structure FCLM_BAM_S_MIGRATION_T012K. FCLM_BAM_MIGRATION manual vs CM1 auto / account type 01 corroborated by help.sap.com 'Switch Migration Program for House Bank Accounts' and SAP Note 2873947.",
+      "vote": "merged from claims [2],[17],[18] — all unanimous 3-0; primary S4TWL plus table-dictionary-verified blog facts"
+    },
+    {
+      "claim": "The Finance migration cockpit (master conversion note 2332030, covering migration of GL, Asset Accounting, Controlling AND Material Ledger data to the new ACDOCA structure) executes AFTER the technical SUM conversion in a mandatory sequence: (1) FINS_MIG_PRECHECK ('Check Customizing Settings Prior to Migration') to clean inconsistencies; (2) 'Migrate General Customizing' (ledgers, currencies, CO integration) — must precede any manual IMG changes below it; (3) FINS_CUST_CONS_CHK ('Execute Consistency Check of General Ledger Settings') before migrating transactional data; (4) transactional data migration, monitored/resumed in transaction FINS_MIG_STATUS ('Start and Monitor Migration') and FINS_MIG_MONITOR_RC0, where step M10 migrates Material Ledger master data. Non-productive company codes can be excluded via the 'Template' flag in view V_001_TEMPLATE (SM30; objects T001-XTEMPLT/FINS_001_TEMPLT). Migration errors surfaced in FINS_MIG_STATUS must be resolved before go-live. This whole flow is gated by the SUM Simplification Item-Check (SI-Check), which runs at the start (RUN_S4H_SIF_CHECK_INIT — stops SUM on return code 12) and again just before downtime (RUN_S4H_SIF_CHECK_EXEC — stops on return code 8 or higher); Finance/GL/AA consistency items are enforced here. READINESS ASSESSMENT: run the Simplification Item-Check (SI-Check) pre-conversion and resolve all RC>=8 finance items before scheduling downtime.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+        "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+        "https://userapps.support.sap.com/sap/support/knowledge/en/2741967"
+      ],
+      "evidence": "FINS_MIG_PRECHECK -> Migrate General Customizing -> FINS_CUST_CONS_CHK -> FINS_MIG_STATUS sequence, the V_001_TEMPLATE Template-flag exclusion, and the M10/Resume-Migration mechanics all verified verbatim from primary SIMPL_OP2023.pdf (full text extracted and grepped) and corroborated by SAP KBAs 3047401/2741967/2714344. Note 2332030 as the finance conversion note (GL+AA+CO+ML to new structure) verified verbatim in the primary CONV_OP2023.pdf (three in-document confirmations). FINS_MIG_STATUS/FINS_MIG_MONITOR_RC0 and resolve-before-go-live verified in primary KBA 2741967. SI-Check RC12-at-start / RC>=8-before-downtime verified verbatim in primary CONV_OP2023.pdf and corroborated by SAP KBA 3141617.",
+      "vote": "merged from claims [3],[8],[9],[10],[11],[12] — [3] split 2-1, the rest unanimous 3-0; predominantly primary-sourced"
+    }
+  ],
+  "refuted": [],
+  "caveats": "All five S4TWL note numbers (2267834, 2270339, 2270544, 2354768, 2870766), the finance conversion master note (2332030), the BSEG incompatible-changes note (2431747), and the supporting KBAs (2741967, 2714344, 2873947, 2706489, 3047401, 3141617) are anchored in primary help.sap.com PDFs (SIMPL_OP2023, CONV_OP2023, the SAP Credit Management Configuration Guide) and SAP support notes; these note numbers are stable across S/4HANA 1809-2025. Some operational details (IMG step labels, the four-step credit data migration, manual-vs-CM1 house bank migration, same-ID credit segment/risk class mapping) are sourced from secondary blogs (qnovate, blogs.sap.com, mps4hana, SAPinsider, erpfixers), but every load-bearing table/transaction/note in those was independently corroborated by primary SAP artifacts or the SAP data dictionary. Three minor imprecisions to carry forward as non-blocking: (a) the UKM_IS_ACTIVE 'returns space' detection heuristic for FI-AR-CR is plausible but not primary-quoted; (b) ML step M10 technically creates ML master-data tables (CKMLHD/CKMLPR/CKMLPP/CKMLCR) and migrates aggregate inventory into ACDOCA, while MLDOC/MLDOCCCS supersede the transactional periodic tables — the two should not be conflated; (c) not 100% of inventory fields come from ACDOCA (SALKV still reads from the ML table). Version sensitivity: facts are anchored to S/4HANA 2023 (FPS3) docs; IMG node labels can shift slightly across releases (e.g., 'Migration to SAP S/4HANA Finance' vs 'Conversion of Accounting to SAP S/4HANA') but refer to the same FINS_MIG cockpit area. Asset Accounting/ACDOCA facts were deliberately excluded per scope (verified separately).",
+  "openQuestions": [
+    "What are the EXACT, programmatic readiness-detection queries per pillar against a customer's live config/data (e.g., precise UKM_IS_ACTIVE call + expected return-value semantics, the SELECT against S066/S067 for non-zero credit exposure, the T012K row-count threshold that mandates BAM migration, and the T001W/T001K/MGVUPD flag check for ML actual-costing) so the FINANCE_READINESS factor can be auto-scored from the Gold DB / RFC rather than by manual config review?",
+    "What is the full ordered list and mandatory/optional status of every FINS_MIG_STATUS migration step (M10 and siblings — e.g., M11, the GL/AA/CO/reconciliation steps and FINS_RECON_RC0 analysis), so we can model the complete cockpit step-graph rather than only M10?",
+    "For currency and ledger configuration specifically (multi-currency / parallel-currency setup in the Universal Journal), what are the exact 'Migrate General Customizing' sub-activities and any S4TWL constraints that gate a customer who runs non-standard currency types — beyond the high-level ledgers/currencies/CO-integration scope confirmed here?",
+    "Does the customer's current document-splitting characteristic / parallel-ledger intent change the migration path enough to require the two-step (classic G/L -> New G/L -> S/4HANA) route, and what objective config signals decide one-step vs two-step?"
+  ],
+  "sources": [
+    {
+      "url": "https://apps.support.sap.com/sap/support/knowledge/preview/en/2396864",
+      "quality": "unreliable",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.scribd.com/document/704238236/2354768-E-20240207",
+      "quality": "unreliable",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 0
+    },
+    {
+      "url": "https://mps4hana.com/2019/12/11/s4twl-dm-ml-actualcosting/",
+      "quality": "blog",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blogs-by-sap/material-ledger-is-mandatory-in-sap-s-4hana-what-do-you-need-to-know/ba-p/13398678",
+      "quality": "unreliable",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 0
+    },
+    {
+      "url": "https://sapinsider.org/sap-s-4hana-1610-material-ledger-actual-costing-understand-the-fundamental-changes-and-the-impact-on-conversion/",
+      "quality": "secondary",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/a-comprehensive-guide-to-sap-s-4hana-material-ledger-amp-integrated/ba-p/14224569",
+      "quality": "unreliable",
+      "angle": "Material Ledger mandatory activation",
+      "claimCount": 0
+    },
+    {
+      "url": "https://mps4hana.com/2019/11/27/finance-s4twl/",
+      "quality": "secondary",
+      "angle": "Universal Journal / new G/L (ACDOCA)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/doc/c34b5ef72430484cb4d8895d5edd12af/2023/en-US/SIMPL_OP2023.pdf",
+      "quality": "primary",
+      "angle": "Universal Journal / new G/L (ACDOCA)",
+      "claimCount": 5
+    },
+    {
+      "url": "http://www.infogility.org/insight-blog/sap-s4-hana-1709-simplified-new-gl-migration-process/",
+      "quality": "unreliable",
+      "angle": "Universal Journal / new G/L (ACDOCA)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.erpfixers.com/blog/qa-migration-options-for-new-g/l-on-s/4-hana",
+      "quality": "blog",
+      "angle": "Universal Journal / new G/L (ACDOCA)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/supply-chain-management-blog-posts-by-sap/conversion-of-credit-management-to-sap-s-4hana/ba-p/13439084",
+      "quality": "unreliable",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.scribd.com/document/789396766/2270544-S4TWL-Credit-Management",
+      "quality": "unreliable",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.qnovate.com/sap-s4hana-credit-management-migration-fi-ar-cr-to-fin-fscm-cr",
+      "quality": "blog",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 5
+    },
+    {
+      "url": "https://learning.scmgurus.com/wp-content/uploads/2025/02/S4HANA-Conversion-Credit-Management.pdf",
+      "quality": "blog",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/doc/792426924faa44698c76733bd0b88072/2023.000/en-US/loiobb4c195466432b18e10000000a174cb4_PDF_EN.pdf",
+      "quality": "primary",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 5
+    },
+    {
+      "url": "https://blogs.sap.com/2019/09/18/ltmcmass-business-partner-role-extension-sap-credit-management-ukm000-parameters/",
+      "quality": "unreliable",
+      "angle": "FSCM Credit Management migration",
+      "claimCount": 0
+    },
+    {
+      "url": "https://blogs.sap.com/2022/05/02/how-to-manually-migrate-house-banks-during-a-system-conversion-using-fclm_bam_migration-to-manually-migration-house-banks/",
+      "quality": "secondary",
+      "angle": "Bank Account Management (BAM)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/bank-account-management-in-sap-s-4hana/ba-p/13448994",
+      "quality": "blog",
+      "angle": "Bank Account Management (BAM)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/migration-of-house-banks-from-ecc-to-sap-s-4hana/ba-p/13430190",
+      "quality": "unreliable",
+      "angle": "Bank Account Management (BAM)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://userapps.support.sap.com/sap/support/knowledge/en/2741967",
+      "quality": "primary",
+      "angle": "Finance Migration Cockpit (FINS_MIG_*)",
+      "claimCount": 3
+    },
+    {
+      "url": "https://help.sap.com/doc/ef909756646a4e0ee10000000a4450e5/3.5/en-US/ef/909756646a4e0ee10000000a4450e5/content.htm",
+      "quality": "unreliable",
+      "angle": "Finance Migration Cockpit (FINS_MIG_*)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/conversion-to-sap-s-4hana-insights-into-finance-data-migration/ba-p/13377208",
+      "quality": "unreliable",
+      "angle": "Finance Migration Cockpit (FINS_MIG_*)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/migration-monitor-fins-mig-status-how-to-analyze-errors-and-information-and/ba-p/13580734",
+      "quality": "unreliable",
+      "angle": "Finance Migration Cockpit (FINS_MIG_*)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://help.sap.com/doc/2b87656c4eee4284a5eb8976c0fe88fc/2023/en-US/CONV_OP2023.pdf",
+      "quality": "primary",
+      "angle": "Finance Migration Cockpit (FINS_MIG_*)",
+      "claimCount": 5
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 24,
+    "claimsExtracted": 57,
+    "claimsVerified": 25,
+    "confirmed": 25,
+    "killed": 0,
+    "afterSynthesis": 5,
+    "urlDupes": 1,
+    "budgetDropped": 5,
+    "agentCalls": 106
+  },
+  "status": "CLOSED_VERIFIED"
+}

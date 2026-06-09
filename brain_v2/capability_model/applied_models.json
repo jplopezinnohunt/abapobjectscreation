@@ -1,0 +1,129 @@
+{
+  "_design": "CONTROL — which capability MODELS/LAYERS have actually been APPLIED to each domain, vs available-but-not-applied. A verified METHOD is NOT the same as an APPLIED result. APPLIED = a real artifact/score exists for THAT domain. This is the traceability of 'what we actually ran on each domain' (s079). Drives the domain-enrichment plan: every AVAILABLE-but-NOT-APPLIED entry with a verified method is an enrichment task; every APPLIED entry must be reflected in the domain's companion/.md (cross-reference rule).",
+  "_version": "1.0",
+  "_created_session": "079",
+  "models": {
+    "OCEL2_OBJECT_CENTRIC": {
+      "tier": "VERIFIED+APPLIED",
+      "what": "OCEL 2.0 store + object-centric discovery (one event, many object types)",
+      "artifact": "process_discovery/p2p.ocel2.sqlite"
+    },
+    "INDUCTIVE_CONFORMANCE": {
+      "tier": "VERIFIED+APPLIED",
+      "what": "inductive miner + token-replay conformance (as-is fitness/precision)",
+      "artifact": "process_discovery/*.json"
+    },
+    "DEPENDENCY_GRAPH": {
+      "tier": "APPLIED(cross-domain)",
+      "what": "code where-used (READS_TABLE/WRITES_TABLE/CALLS_FM)",
+      "artifact": "brain graph + graph_queries what_reads/what_depends_on"
+    },
+    "FILE_IO_BOUNDARY": {
+      "tier": "APPLIED(partial)",
+      "what": "OPEN DATASET file-I/O scan",
+      "artifact": "6 programs identified"
+    },
+    "BP_CVI_READINESS": {
+      "tier": "VERIFIED(method), NOT-APPLIED",
+      "what": "CVI 9-check migration readiness from master data",
+      "needs": "AN-BPCVI-SCORE (no extraction)"
+    },
+    "FINANCE_S4_READINESS": {
+      "tier": "VERIFIED(method), NOT-APPLIED",
+      "what": "ML/new-GL/ACDOCA/FSCM-CR/BAM pillars",
+      "needs": "config/data detection"
+    },
+    "AUTH_SOD_METHOD": {
+      "tier": "VERIFIED(method), NOT-APPLIED",
+      "what": "AGR_*/USOBT_C/TSTCA SoD analysis",
+      "needs": "EXT-AUTH (D01 role-level possible without P01)"
+    },
+    "S4_READINESS_SUBMODEL": {
+      "tier": "VERIFIED(method), NOT-APPLIED",
+      "what": "composite S/4 readiness (brownfield)",
+      "needs": "EXT-S4CHECKS + DSGN-S4-WEIGHTING"
+    }
+  },
+  "applied_by_domain": {
+    "Procurement_P2P": {
+      "applied": [
+        "OCEL2_OBJECT_CENTRIC",
+        "INDUCTIVE_CONFORMANCE",
+        "DEPENDENCY_GRAPH"
+      ],
+      "evidence": "p2p.ocel2.sqlite (404,675 events, 3 object types); p2p_po_lifecycle.json (77,629 POs, fitness 0.891, IR-before-GR deviation 4,487+, PO-only 12,622); what_reads on EKKO/EKBE",
+      "cells_moved": "S_STANDARD_REF->PARTIAL, G_CONFORMANCE->PARTIAL (as-is vs standard 3-way); A_PROCESS stays HAVE (deepened to object-centric)",
+      "enrich_artifact": "knowledge/domains/Procurement/p2p_process_discovery_asis.md",
+      "available_not_applied": [
+        "AUTH_SOD_METHOD",
+        "S4_READINESS_SUBMODEL"
+      ]
+    },
+    "BusinessPartner": {
+      "applied": [],
+      "documented_method": [
+        "BP_CVI_READINESS (method doc created, NOT yet scored from our data)"
+      ],
+      "enrich_artifact": "knowledge/domains/BusinessPartner/s4hana_bp_cvi_readiness.md (DONE)",
+      "available_not_applied": [
+        "BP_CVI_READINESS -> AN-BPCVI-SCORE (no extraction, highest-signal next)"
+      ]
+    },
+    "Treasury_EBS": {
+      "applied": [
+        "FILE_IO_BOUNDARY"
+      ],
+      "evidence": "custom file-I/O programs YTBAI001, ZFPAYM_END; house-bank deps T012K/T012 (top-read tables)",
+      "enrich_artifact": "knowledge/domains/Treasury/ (add file-boundary + BAM-readiness note)",
+      "available_not_applied": [
+        "FINANCE_S4_READINESS (BAM: T012K->FCLM_BAM_AMD)",
+        "AUTH_SOD_METHOD",
+        "INDUCTIVE_CONFORMANCE (payment process)"
+      ]
+    },
+    "Payment_BCM": {
+      "applied": [
+        "INDUCTIVE_CONFORMANCE"
+      ],
+      "evidence": "clearing_lifecycle inductive+conformance (fitness 0.98); file-I/O RFFORI99/ZFPAYM_END",
+      "enrich_artifact": "companions/payment_bcm_companion.html (add maturity + conformance)",
+      "available_not_applied": [
+        "OCEL2_OBJECT_CENTRIC",
+        "AUTH_SOD_METHOD (SoD = the BCM dual-control, now a verified method)"
+      ]
+    },
+    "FI": {
+      "applied": [],
+      "available_not_applied": [
+        "FINANCE_S4_READINESS (ML/new-GL/ACDOCA)",
+        "INDUCTIVE_CONFORMANCE",
+        "AUTH_SOD_METHOD"
+      ]
+    },
+    "Closing_Activities": {
+      "applied": [],
+      "available_not_applied": [
+        "FINANCE_S4_READINESS",
+        "INDUCTIVE_CONFORMANCE"
+      ]
+    },
+    "_other_domains": {
+      "applied": [],
+      "note": "PSM/HCM/Travel/Integration/etc — methods AVAILABLE, none APPLIED yet; enrichment pending data/runs"
+    }
+  },
+  "enrichment_plan_ranked": [
+    "1. Procurement/P2P — CREATE p2p_process_discovery_asis.md from the applied OCEL2+conformance results (real findings, no extraction). HIGHEST signal.",
+    "2. Treasury/Payment — note file-I/O boundary (YTBAI001/ZFPAYM_END) + BAM S/4 readiness (T012K->FCLM_BAM) in the treasury companion/.md.",
+    "3. BusinessPartner — run AN-BPCVI-SCORE (no extraction) then enrich with the real readiness score.",
+    "4. Every domain companion — add a 'capability maturity' section pulling its row from the matrix (the dashboard score).",
+    "5. NEW Security domain — seed from the verified AUTH/SoD method (AGR_*/USOBT_C/TSTCA)."
+  ],
+  "_enrichment_done_s079": {
+    "C1_Procurement": "knowledge/domains/Procurement/p2p_process_discovery_asis.md DONE",
+    "C2_Treasury": "knowledge/domains/Treasury/file_boundary_and_bam_s4_readiness.md DONE",
+    "C3_Payment": "knowledge/domains/Payment/clearing_conformance_asrun.md DONE",
+    "C5_Security": "knowledge/domains/Security/README.md DONE (NEW domain, seeds E_AUTH method)",
+    "C4_companions": "DEFERRED — proportionate: central model_maturity_dashboard.html covers per-domain maturity; NOT mass-editing 17 HTML companions (disproportionate/risky). Per-domain enrichment lives in the .md docs above."
+  }
+}

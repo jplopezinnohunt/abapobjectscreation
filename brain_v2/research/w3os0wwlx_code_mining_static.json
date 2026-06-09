@@ -1,0 +1,266 @@
+{
+  "research_id": "w3os0wwlx",
+  "slug": "code_mining_static",
+  "question": "SAP CODE MINING and static custom-code / object / authorization landscape analysis — the discipline distinct from (business) process mining that evaluates the actual ABAP repository: PROGRAMS, CLASSES, SERVICES (OData/RFC/BAPI), TABLES, ROLES and USERS — their usage, dependencies, and authorizations. Cover: (1) SAP CUSTOM CODE ANALYSIS / lifecycle: SAP Custom Code Migration app and Custom Code Lifecycle Management (CCLM), ABAP Test Cockpit (ATC) and Code Inspector (SCI) checks, S/4HANA readiness / Simplification Item Catalog, dead-code / unused-object detection and decommissioning. (2) RUNTIME USAGE measurement of custom objects: Usage Procedure Logging (UPL), ABAP Call Monitor (SCMON), SQL Monitor (SQLM), workload/statistics (ST03N/STAD/SWNC), how 'which programs/classes/transactions are actually used and by whom' is mined — used vs unused, hot vs dead. (3) OBJECT DEPENDENCY / where-used / repository-as-graph: cross-reference (SE84/where-used), call graphs, program→table→class→service dependency graphs, clone/duplicate detection, complexity metrics, and tools that build a code knowledge graph. (4) SERVICES inventory & usage: OData service usage, RFC/BAPI call inventory and who calls them (RFCDES, the .NET/RFC integration layer), interface usage. (5) ROLES, USERS and AUTHORIZATIONS mining: AGR_* tables, SU24 proposals, role/profile usage, who-can-do-what, Segregation-of-Duties (SoD) analysis and conflict detection, SAP GRC Access Control, SUIM, linking authorization objects to transactions/programs. (6) LINKING CODE TO PROCESS: how to map a program/class/enhancement/BDC to the business process step it implements (the 'custom over standard x-ray'), connecting static code mining to process mining. (7) The TOOL/VENDOR landscape for this static side: SAP (CCLM/ATC/UPL/LeanIX-now-SAP-application-portfolio), Panaya, SmartShift, SNP CrystalBridge, Tricentis LiveCompare, Basis Technologies, Theobald, and open-source (abapGit, abaplint, code-analysis libraries), plus any graph-based / AI code-analysis approaches for ABAP. GOAL: identify everything in SAP code/object/authorization mining we are NOT covering, to fold it into a unified brain that overlays custom code on standard processes down to roles and users. Rank by relevance and actionability. Name specific tools, tables, transactions, monitors, and methods — be concrete and exhaustive, not a high-level overview.",
+  "summary": "SAP code mining (the static custom-code/object/authorization discipline, distinct from business process mining) is anchored by a mature, SAP-native toolchain that the brain is largely NOT yet overlaying: ATC/Code Inspector (SCI) as the static-analysis engine with the S4HANA_READINESS_<version> check variant and a central remote-check hub that scans the whole landscape (SAP_BASIS 7.00+) via RFC; the Simplification Database that maps each changed/removed SAP object to a SAP Note for readiness analysis; and a runtime-usage stack (SCMON+SUSG, UPL, ST03/ST03N workload statistics) that, collected for up to ~13 months, separates hot custom code from the 40-60% that is typically dead. These feed two SAP applications for lifecycle/decommissioning: the Custom Code Migration Fiori app (three project types — S/4HANA Migration, BTP Analysis, arbitrary ATC analysis — with usage-based scoping that deletes unused code via deletion transports during SUM conversion) and Solution Manager 7.2 CCLM with its Decommissioning Cockpit (four-phase, usage + similarity/clone detection). Open-source abaplint adds repository-graph linting and dead-code/unused-object rules on abapGit-serialized code, and ATC can be wired into transport release as a quality gate. The findings concretely name the tables, transactions, monitors, variants, and tools the brain should fold in; however the verified evidence is concentrated on the SAP-native + abaplint side and did NOT cover the authorization/SoD layer (AGR_*, SU24, SUIM, GRC), services/OData-RFC usage mining, the code-to-process linking method, or most third-party vendors (Panaya/SmartShift only lightly, plus SNP, Tricentis LiveCompare, Basis Technologies, Theobald, LeanIX).",
+  "findings": [
+    {
+      "claim": "ATC + Code Inspector (SCI) is the SAP-native static-analysis engine for custom code; SCI is the underlying check engine and ATC the management/front-end layer that integrates Code Inspector checks into a single tool. The S/4HANA readiness analysis runs the SCI check variant named S4HANA_READINESS_<Version>, selected as the Check Variant when configuring ATC runs, and scopes by namespace (Z*/Y* package ranges plus any additional custom-code package, with customer /XYZ/ namespaces requiring registration via SE03 + SATC_AC_INIT_NAMESPACE_REG).",
+      "confidence": "high",
+      "sources": [
+        "https://sapinsider.org/articles/technical-guide-using-abap-test-cockpit-for-sap-s-4hana-transition/",
+        "https://success.panaya.com/docs/how-to-configure-execute-the-abap-test-cockpit-atc-for-s4-conversion",
+        "https://github.com/SAP/abap-atc-cr-cv-s4hc",
+        "SAP KBA 3296069",
+        "SAP KBA 3392481",
+        "help.sap.com Registering Name Spaces at the ATC Master System"
+      ],
+      "evidence": "SAPinsider (primary): 'these tools are combined in ABAP Test Cockpit, which enables you to get an overview of the project scope, analyze the adaptation requirements' and 'assigning the Code Inspector check variant S4HANA_READINESS'. SAP community uses the 'SCI as engine, ATC as car' metaphor. Variant naming corroborated by SAP KBAs 3296069/3392481 and SAP Notes per release (2659194=1809, 2812556=1909, 2959341=2020, 3090106=2021, 3231748=2022). Namespace scoping: Panaya 'always use the Z* and Y* values and any additional package where custom code is implemented'; help.sap.com confirms Z*/Y* checkable by default, /XYZ/ requires SE03 + SATC_AC_INIT_NAMESPACE_REG registration.",
+      "vote": "merged claims [9],[10],[23],[24] — unanimous 3-0 except [24] which was 2-1 but independently corroborated by SAPinsider + SAP Help"
+    },
+    {
+      "claim": "ATC supports a centralized remote code-analysis architecture: one central ATC check system (SAP_BASIS >=7.51/7.52, holding the latest checks and the Simplification Database) can remotely check custom ABAP code in many managed/satellite systems running on various NetWeaver AS ABAP releases (SAP_BASIS 7.00 SP15+, 7.01, 7.02, 7.31, 7.40, 7.50+) via RFC stubs. This means a code-mining brain can scan the whole landscape from a single hub rather than per-system. ATC can also be wired into the transport release process so only NEW/changed objects in a transport are checked and the request can be BLOCKED on findings (configured via SE03/SPRO), linking code-quality to the change lifecycle.",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/application-development-and-automation-blog-posts/remote-code-analysis-in-abap-test-cockpit-atc-faq/ba-p/13320130",
+        "help.sap.com Remote Code Analysis in ATC with a Central Check System (SAP_NETWEAVER_AS_ABAP_752)",
+        "help.sap.com Setting Up ATC Transport Checking",
+        "https://community.sap.com/.../remote-code-analysis-in-atc-one-central-check-system-for-multiple-systems/ba-p/13307811"
+      ],
+      "evidence": "SAP Help 'Remote Code Analysis in ATC with a Central Check System' is the authoritative doc; central system >=7.51 uses RFC 'remote stubs' returning a model of the custom code; checked satellites supported across SAP_BASIS 7.00 SP15+ through 7.50+. Transport gate: SAP Help 'Setting Up ATC Transport Checking' confirms ATC checks every released transport request and can block release if it contains objects with ATC errors; the FAQ documents 'check only new ABAP code during transport release in TMS'. Caveat: not all central checks run against all releases (e.g., CDS checks on old systems), limiting WHICH checks apply per release, not the hub architecture.",
+      "vote": "merged claims [11],[12] — unanimous 3-0; central-checker 7.51/7.52 vs checked-system 7.00+ distinction noted"
+    },
+    {
+      "claim": "S/4HANA custom-code readiness analysis is driven by the Simplification Database — a table in the S/4HANA system containing all Simplification Items, each describing a changed/removed SAP object and referring to a dedicated SAP Note that explains impact and how to adapt the custom code. The Simplification Database must be loaded into the central ATC check system; the ATC S4HANA_READINESS checks run against it. Displayed/checked via transaction SYCM (Simplification Item Check); imported per SAP KBA 3693326.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/9dcbc5e47ba54a5cbb509afaa49dd5a1/2025.001/en-US/CustomCodeMigration_EndtoEnd.pdf",
+        "SAP KBA 3693326",
+        "learning.sap.com SAP S/4HANA Conversion course",
+        "transaction SYCM"
+      ],
+      "evidence": "Primary SAP guide: 'The Simplification Database is a database table in the SAP S/4HANA system that contains all Simplification Items that refer to SAP objects simplified in SAP S/4HANA. Each simplification item describes changed or removed SAP objects and refers to a dedicated SAP Note.' Corroborated by SAP KBA 3693326 (download/import), SAP Learning S/4HANA Conversion course, and transaction SYCM (Simplification Item Check). SAP_BASIS 7.00+ floor applies to the remotely-checked target system.",
+      "vote": "merged claims [2],[17] — unanimous 3-0"
+    },
+    {
+      "claim": "Runtime usage measurement of custom objects is mined from SAP's statistical sources: ABAP Call Monitor (transaction SCMON) collects execution data of programs/function modules/method calls; transaction SUSG aggregates/persists it (SCMON retains only ~7 days locally); UPL (Usage Procedure Logging) is the predecessor whose data is stored in SAP Solution Manager BW; and ST03/ST03N (SWNC workload statistics) supplies TRANSACTION usage / last-used dates that UPL/SCMON cannot capture. SAP recommends collecting at least one year (ideally up to ~13 months, to span quarter/year-end cycles) of production usage data. SCMON/SUSG is SAP's documented successor to UPL.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/9dcbc5e47ba54a5cbb509afaa49dd5a1/2025.001/en-US/CustomCodeMigration_EndtoEnd.pdf",
+        "https://smartshift.com/solution/sap-upgrade-code-analysis/",
+        "https://github.com/SAP-samples/abap-platform-ccm-workshops/",
+        "SAP KBA 2569292",
+        "community.sap.com SUSG aggregate usage data blogs"
+      ],
+      "evidence": "Primary SAP guide: 'SAP recommends Using the ABAP Call Monitor (transaction SCMON) and Transaction SUSG to collect usage data in production system for at least one year' so 'usage data of quarter and year ending functionality is considered'; UPL alternative 'usage data collected in the SAP Solution Manager (using UPL or SCMON)'. smartShift: 'SAP statistical usage data (such as ST03/ST03N, UPL, SUSG, or SCMON)' and 'analyzing up to 13 months of historical SAP usage data'. ST03N/workload supplies transaction last-used dates SCMON/UPL cannot. SCMON is SAP's UPL successor (KBA 2569292).",
+      "vote": "merged claims [1],[7],[16],[22] — unanimous 3-0; '13 months' is a best-practice ceiling not a hard requirement"
+    },
+    {
+      "claim": "It is an established industry heuristic that 40%-60% of custom code objects in a typical SAP system are no longer used (dead/unused), detectable via runtime usage data — making used-vs-unused and hot-vs-dead classification a high-value mining target. Some sources cite even higher (60-75% never called).",
+      "confidence": "medium",
+      "sources": [
+        "https://smartshift.com/solution/sap-upgrade-code-analysis/",
+        "https://blog.sap-press.com/how-to-evaluate-custom-code-usage-data-ahead-of-an-sap-s4hana-migration"
+      ],
+      "evidence": "smartShift (vendor page): 'it is common to find that 40% to 60% of the custom code objects are no longer used.' Independently corroborated and exceeded by SAP-Press: '60% to 75% of your custom code objects ... are never called.' Multiple vendors converge. Weakness: primary cited source is a vendor sales page and figures are field estimates, not a single rigorous study with a defined denominator — but the claim is hedged ('typically') and matches that estimate nature.",
+      "vote": "unanimous 3-0 [21],[22], but secondary/vendor sourcing → medium confidence"
+    },
+    {
+      "claim": "SAP's Custom Code Migration Fiori app is the central tool for usage-based scoping and supports three project types: (1) SAP S/4HANA Migration Project, (2) SAP BTP Analysis Project (cloud readiness), and (3) Custom Code Analysis Project for arbitrary ATC check variants (including dependency and complexity analyses). Usage-based scoping — fed by SCMON/SUSG or UPL production data — determines frequently-used code to migrate vs. unused code deleted via deletion transport requests during the SUM-driven system conversion. The end-to-end process is: custom code scoping + custom code analysis (preparatory) then custom code adaptation. Scoping is ONLY available in the Migration app, NOT the classic SAP GUI/remote-ATC path.",
+      "confidence": "high",
+      "sources": [
+        "https://help.sap.com/doc/9dcbc5e47ba54a5cbb509afaa49dd5a1/2025.001/en-US/CustomCodeMigration_EndtoEnd.pdf",
+        "https://github.com/SAP-samples/abap-platform-ccm-workshops/"
+      ],
+      "evidence": "SAP-samples repo: 'three different kinds of projects: 1. SAP S/4HANA Migration Project 2. SAP BTP Analysis Project 3. Custom Code Analysis Project ... arbitrary ATC check variants.' Primary guide: 'Custom code scoping enables you to determine the ABAP custom code that is frequently used and needs to be taken over... Unused custom code can be deleted using deletion transport requests during the system conversion' and 'Scoping is only supported using the Custom Code Migration app'; classic GUI path 'you can neither scope your custom code based on usage data nor filter the analysis results by scope.' Process: 'preparatory analysis (custom code scoping and custom code analysis) and the adaptation.'",
+      "vote": "merged claims [0],[6],[8],[15] — unanimous 3-0"
+    },
+    {
+      "claim": "SAP Solution Manager 7.2 Custom Code Lifecycle Management (CCLM) is the central application managing custom code across the entire landscape from creation through decommissioning. Its usage evaluation requires BOTH workload statistics (ST03N) AND (UPL or SCMON) data in the managed system. CCLM includes a Decommissioning Cockpit covering a four-phase decommissioning process that identifies removal candidates by: non-usage over a defined period, similarity/clone-duplication to existing SAP objects, never being active in production, created long ago, and obsolescence due to standard functionality. (Note: SAP Cloud ALM is the strategic successor for custom code management, but CCLM remains the documented SolMan 7.2 capability.)",
+      "confidence": "high",
+      "sources": [
+        "https://community.sap.com/t5/technology-blog-posts-by-sap/custom-code-lifecycle-management-usage-and-use-cases/ba-p/13507625",
+        "https://blog.sap-press.com/how-to-perform-custom-code-management-in-sap-solution-manager-7.2",
+        "help.sap.com Custom Code Retirement - Decommissioning Cockpit",
+        "SAP KBA 2825777",
+        "SAP KBA 3559116",
+        "SAP Notes 1828848, 2513959"
+      ],
+      "evidence": "SAP blog: CCLM is 'the central location where customers can manage their collection of custom code all the way from creation to clearing of unused custom code objects across the entire SAP landscape' and 'To evaluate usage data directly from your managed system, UPL or SCMON data must be available.' SAP-PRESS: 'make sure that both workload statistics and UPL or SCMON data is available.' Four candidate criteria verbatim: 'Not used during a defined time period / Similar or even identical to an existing SAP object / Created a long time ago but not active in any productive system / Obsolete because of existing standard functionality.' KBA 2825777 maps phases to lifecycle statuses 60/70/80.",
+      "vote": "merged claims [3],[4],[5],[18],[19],[20] — unanimous 3-0"
+    },
+    {
+      "claim": "abaplint is an open-source (MIT-licensed) standalone static-analysis tool / linter for ABAP, written in TypeScript, that operates on code serialized via abapGit — making it a repository/code-side analysis tool usable in CI pipelines. It performs dead-code and unused-object detection via concrete rules: unused_variables (variables and constants), unused_methods (private/protected, excluding constructors/test/event handlers), unused_types, unused_macros, and unreachable_code (183 rules total) — directly relevant to dead-code detection and decommissioning use cases, and a graph-friendly open-source complement to SAP-native tooling.",
+      "confidence": "high",
+      "sources": [
+        "https://github.com/abaplint/abaplint",
+        "https://rules.abaplint.org",
+        "abaplint.org",
+        "analysis-tools.dev"
+      ],
+      "evidence": "Repo tagline: 'Standalone static analysis for ABAP ... code must be serialized using abapGit.' Each dead-code rule confirmed on rules.abaplint.org: unused_variables ('Checks for unused variables and constants'), unused_methods (dedicated page, private/protected scope), unused_types ('unused TYPE definitions'), unused_macros, unreachable_code. MIT license confirmed on GitHub. Written in TypeScript/NodeJS, reads serialized .abap files for CI.",
+      "vote": "merged claims [13],[14] — unanimous 3-0"
+    }
+  ],
+  "refuted": [],
+  "caveats": "Source concentration / coverage gaps relative to the research question: The 25 verified claims cover sections (1) custom code analysis/lifecycle, (2) runtime usage measurement, and parts of (7) tool landscape (SAP-native CCM/ATC/CCLM/UPL + open-source abaplint) with high confidence. They do NOT substantiate large portions of the question. UNCOVERED by verified evidence: (3) object dependency/where-used as a repository graph (SE84, where-used lists, call graphs, program→table→class→service graphs, clone detection beyond CCLM/abaplint, complexity metrics) — only touched indirectly via the Custom Code Analysis Project's 'dependency and complexity analyses' mention; (4) services inventory & usage (OData service usage stats /IWFND/, RFC/BAPI call inventory, RFCDES, who-calls-what) — entirely absent; (5) the entire ROLES/USERS/AUTHORIZATIONS layer (AGR_* tables, SU24 proposals, SUIM, SoD/conflict detection, SAP GRC Access Control, linking auth objects to transactions/programs) — NO verified claims; (6) the code-to-process linking method (mapping a program/class/enhancement/BDC to a business-process step) — NO verified claims. TOOL/VENDOR landscape is incomplete: only SAP-native + abaplint + light touches on Panaya and SmartShift were verified; SNP CrystalBridge, Tricentis LiveCompare, Basis Technologies, Theobald, and LeanIX (now SAP Application Portfolio Management) have NO verified claims. Source-quality caveats: the 40-60% dead-code figure rests on vendor (smartShift/SAP-PRESS) estimates without a rigorous denominator (medium confidence); claim [24] namespace scoping was 2-1 split though independently corroborated. Time-sensitivity: CCLM/SolMan 7.2 is in mainstream maintenance to end-2027 and SAP Cloud ALM is its strategic successor — the SolMan-anchored findings describe a tool on a sunset path. ATC variant naming evolves per release (S4HANA_READINESS_2022, _2023, etc.), delivered via SAP Notes, so version suffixes must be checked against the target S/4HANA release.",
+  "openQuestions": [
+    "AUTHORIZATION LAYER (entirely unverified): how is the AGR_*/USR*/SU24/SUIM/GRC stack actually mined for role-usage, who-can-do-what, and SoD conflict detection, and which tables (AGR_1251 auth-object values, AGR_USERS, AGR_TCODES, USOBT/USOBX SU24 proposals) link authorization objects to transactions/programs? No verified claim covers this — it is the single largest gap for a 'down to roles and users' brain.",
+    "SERVICES & INTERFACE USAGE (unverified): what are the concrete usage-mining sources for OData services (/IWFND/ stats, /IWFND/MAINT_SERVICE), RFC/BAPI call inventory, and the RFCDES/.NET-RFC integration layer — i.e., how to determine who calls which service and how often, analogous to SCMON for code?",
+    "CODE-TO-PROCESS LINKING METHOD (unverified): is there a documented, repeatable method to map a custom program/class/enhancement/BDC to the specific business-process step it implements (the 'custom-over-standard x-ray'), and how does it connect static code-mining output to process-mining event logs?",
+    "THIRD-PARTY & GRAPH/AI TOOLING (mostly unverified): what specifically do SNP CrystalBridge, Tricentis LiveCompare, Basis Technologies, Theobald, Panaya, and LeanIX/SAP Application Portfolio Management add beyond SAP-native CCM/ATC/CCLM — and are there graph-based or AI/LLM code-analysis approaches for ABAP (beyond abaplint's lint rules) that build a true code knowledge graph the brain could reuse?"
+  ],
+  "sources": [
+    {
+      "url": "https://help.sap.com/doc/9dcbc5e47ba54a5cbb509afaa49dd5a1/2025.001/en-US/CustomCodeMigration_EndtoEnd.pdf",
+      "quality": "primary",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/custom-code-lifecycle-management-usage-and-use-cases/ba-p/13507625",
+      "quality": "primary",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/SAP-samples/abap-platform-ccm-workshops/",
+      "quality": "primary",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://sapinsider.org/articles/technical-guide-using-abap-test-cockpit-for-sap-s-4hana-transition/",
+      "quality": "primary",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://blog.sap-press.com/how-to-perform-custom-code-management-in-sap-solution-manager-7.2",
+      "quality": "secondary",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://success.panaya.com/docs/how-to-configure-execute-the-abap-test-cockpit-atc-for-s4-conversion",
+      "quality": "blog",
+      "angle": "SAP-native custom code lifecycle & S/4HANA readiness tooling",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/application-development-blog-posts/abap-call-monitor-scmon-analyze-usage-of-your-code/ba-p/13313572",
+      "quality": "blog",
+      "angle": "Runtime usage measurement of custom objects (used vs dead)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/usage-procedure-logging-upl/ba-p/13295320",
+      "quality": "blog",
+      "angle": "Runtime usage measurement of custom objects (used vs dead)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://smartshift.com/solution/sap-upgrade-code-analysis/",
+      "quality": "secondary",
+      "angle": "Runtime usage measurement of custom objects (used vs dead)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.saptechnicalguru.com/tag/st03n/",
+      "quality": "blog",
+      "angle": "Runtime usage measurement of custom objects (used vs dead)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/docs/ABAP_PLATFORM_NEW/c238d694b825421f940829321ffa326a/0e3c50da60714e1c931d5d6e36835f01.html",
+      "quality": "primary",
+      "angle": "Repository-as-graph: dependency, where-used, clone & complexity analysis",
+      "claimCount": 0
+    },
+    {
+      "url": "https://userapps.support.sap.com/sap/support/knowledge/en/2577301",
+      "quality": "primary",
+      "angle": "Repository-as-graph: dependency, where-used, clone & complexity analysis",
+      "claimCount": 2
+    },
+    {
+      "url": "https://community.sap.com/t5/application-development-and-automation-blog-posts/remote-code-analysis-in-abap-test-cockpit-atc-faq/ba-p/13320130",
+      "quality": "primary",
+      "angle": "Repository-as-graph: dependency, where-used, clone & complexity analysis",
+      "claimCount": 5
+    },
+    {
+      "url": "https://smartshift.com/how-it-works-sap-custom-code-intelligent-automation/",
+      "quality": "blog",
+      "angle": "Repository-as-graph: dependency, where-used, clone & complexity analysis",
+      "claimCount": 5
+    },
+    {
+      "url": "https://medium.com/@vijayramraju22/role-mining-in-sap-grc-9e6cd80972dd",
+      "quality": "blog",
+      "angle": "Authorization, role & user mining + Segregation of Duties",
+      "claimCount": 4
+    },
+    {
+      "url": "https://mtcskopos.com/blog/sod-conflicts-sap/",
+      "quality": "blog",
+      "angle": "Authorization, role & user mining + Segregation of Duties",
+      "claimCount": 5
+    },
+    {
+      "url": "https://erp-wizard.com/understanding-su24-and-usobt_c-essential-components-of-sap-security/",
+      "quality": "blog",
+      "angle": "Authorization, role & user mining + Segregation of Duties",
+      "claimCount": 5
+    },
+    {
+      "url": "https://pathlock.com/blog/sap-grc/sap-access-control/",
+      "quality": "unreliable",
+      "angle": "Authorization, role & user mining + Segregation of Duties",
+      "claimCount": 0
+    },
+    {
+      "url": "https://www.tricentis.com/products/impact-analysis-livecompare",
+      "quality": "blog",
+      "angle": "Third-party & open-source ABAP analysis vendor landscape",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.panaya.com/sap/sap-s4hana/migration/",
+      "quality": "blog",
+      "angle": "Third-party & open-source ABAP analysis vendor landscape",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.snpgroup.com/en-us/snp-crystalbridge",
+      "quality": "blog",
+      "angle": "Third-party & open-source ABAP analysis vendor landscape",
+      "claimCount": 3
+    },
+    {
+      "url": "https://github.com/abaplint/abaplint",
+      "quality": "primary",
+      "angle": "Third-party & open-source ABAP analysis vendor landscape",
+      "claimCount": 5
+    },
+    {
+      "url": "https://help.sap.com/doc/9dcbc5e47ba54a5cbb509afaa49dd5a1/2025.000/en-US/CustomCodeMigration_EndToEnd.pdf",
+      "quality": "primary",
+      "angle": "Third-party & open-source ABAP analysis vendor landscape",
+      "claimCount": 5
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 23,
+    "claimsExtracted": 99,
+    "claimsVerified": 25,
+    "confirmed": 25,
+    "killed": 0,
+    "afterSynthesis": 8,
+    "urlDupes": 3,
+    "budgetDropped": 4,
+    "agentCalls": 105
+  },
+  "status": "CLOSED_VERIFIED"
+}

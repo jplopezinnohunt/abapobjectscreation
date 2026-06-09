@@ -3053,5 +3053,367 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_cross_project_brain_link",
+    "rule": "When another project (Tier 2 application or sibling Tier 1) consumes this brain, SAP-system facts (tables, transactions, standard customizing, customer customizing in any SAP module) MUST live ONLY in abapobjectscreation/brain_v2. The consuming project cites by reference (path + node id) and never duplicates. Project-specific facts (Z objects the consumer is building, design decisions, application-internal taxonomy) live in the consumer's brain.",
+    "why": "Session #00 of FINCLOSSING (2026-05-23) — first Tier 2 application project that needs to consume SAP truth without forking it. Without this rule, two brains will diverge on facts like 'BKPF columns' or 'CLOCO table layout' and the failure mode (silent drift) is invisible until an agent makes a wrong decision against a stale copy. Plausibility-without-evidence (CP-003 violation) is the concrete failure pattern.",
+    "how_to_apply": "(1) Before writing a fact to a consumer's brain, ask: 'is this about SAP itself, or about what the consumer is BUILDING?' (2) If about SAP → grep abapobjectscreation/brain_v2 first; if missing, ADD it to abapobjectscreation, not the consumer. (3) If about the consumer's Z objects / design / app-internal taxonomy → consumer's brain is correct. (4) Each consumer maintains a `refs_external.json` listing every layer/file it reads from this brain — that is the canonical drift-detection surface. (5) Reverse pointer: this brain maintains `brain_v2/consumers.md` listing every project that depends on it, so refactors here check downstream impact.",
+    "severity": "HIGH",
+    "created_session": "FINCLOSSING-00",
+    "source_file": "FINCLOSSING/ecosystem_link.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "ecosystem_growth_FINCLOSSING_genesis_2026_05_23",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_no_menus_when_decision_is_clear",
+    "rule": "When prior analysis has converged on an obvious recommended path AND the user signals agreement (OK/si/dale/proceed), do NOT present a 3-option AskUserQuestion menu. Execute the recommendation directly. The agent OWNS the technical decision.",
+    "why": "During session #076 ADT expansion, after a long analysis that converged on Build now + BASIS ticket in parallel, I still presented a 3-option menu. User rejected the tool use and said OK proceed im not sure what you need from basis. Menus are friction when path is obvious. Reinforces existing rule feedback_own_the_decision_stop_asking.",
+    "how_to_apply": "1. If my prior message ended with clear recommendation + user agrees (OK/si/dale/proceed), do not present options. Execute.\n2. Reserve AskUserQuestion for genuinely-equivalent-tradeoff cases or when user has not yet given any signal.\n3. When the user signals lack of context (not sure what X means), do NOT ask them to choose - give them what they need or just decide for them and explain.\n4. If I find myself drafting an AskUserQuestion after a long analysis, delete it and proceed.",
+    "severity": "HIGH",
+    "created_session": 76,
+    "source_file": "feedback_no_menus_when_decision_is_clear.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_verify_capabilities_before_recommending",
+    "rule": "Before recommending any SAP capability (ADT endpoint, BAPI, RFC FM, transaction availability), VERIFY it exists on the target kernel via empirical probe. SAP NetWeaver capabilities differ across releases - what works in S/4HANA / NW 7.5x may be 404 on UNESCO ECC 6.0 EhP8 (NW 7.40). Never assume kernel-uniform.",
+    "why": "Session #076 violation: I confidently recommended ADT REST define_table / create_index as the canonical DDIC path, including copy-paste prompts for the parallel unescrp conversation. Then user tested empirically and confirmed /sap/bc/adt/ddic/tables returns HTTP 404 on D01 (NW 7.40) - endpoint shipped in NW 7.50. ~400 lines of code became S/4HANA scaffolding, cross-project recommendation had to be retracted before being applied.",
+    "how_to_apply": "1. Before recommending an ADT method, call adt_discovery() and grep the response for the relevant collection. If endpoint absent, the method will 404 - recommend RFC alternative instead.\n2. Before recommending a BAPI / RFC FM, run RFC_READ_TABLE FROM TFDIR WHERE FUNCNAME EQ name to confirm availability.\n3. Before recommending a transaction, verify via TSTCT or quick GUI probe.\n4. UNESCO landscape baseline: ECC 6.0 EhP8 = NW 7.40. Treat any capability described as NW 7.5+ or S/4HANA-only as unavailable until proven otherwise.\n5. When recommending a path that crosses kernel versions, be explicit about version requirement IN THE RECOMMENDATION.\n6. When a recommendation is later proven wrong by empirical evidence, revise the related memory rules IMMEDIATELY and acknowledge the error directly - no softening.",
+    "severity": "HIGH",
+    "created_session": 76,
+    "source_file": "feedback_verify_capabilities_before_recommending.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_new_objects_only_in_d01_never_p01",
+    "rule": "For ANY new ABAP/DDIC object work (create table, DE, domain, class, program, FM, index, etc.), the agent works EXCLUSIVELY in D01. NEVER touches P01 - not for write, not for read, not for preflight, not for does this exist. The only legitimate P01 read in a creation context is post-transport verification.",
+    "why": "Session #076 violation: I called from_env(P01) and ran RFC_READ_TABLE FROM DD02L WHERE TABNAME='ZCRP_CERTHEAD' to triple-confirm the table doesn't exist there. The check was logically unnecessary - by the transport model, if it doesn't exist in D01 it cannot exist in P01 - and crossed a boundary the user explicitly maintains. User response in CAPS: PARA NUEVOS OBJETOS LO HACEMOS EN D01!!! NUNCA P01. This rule is STRICTER than the broader no-prod-writes rule.",
+    "how_to_apply": "1. When the user mentions creating/modifying/deploying a new ABAP/DDIC object: pin the system as D01 only. Do not call from_env(P01).\n2. For preflight of objects related to a new creation, query D01 only.\n3. The only legitimate P01 read in a new-object context is post-transport verification - prefer STMS over RFC.\n4. If user explicitly requests a P01 probe for some OTHER reason (incident, data extraction, customizing read), that is allowed under standard no-prod-writes rule.\n5. If unsure whether request is new-object work or diagnosis work, ASK before touching P01.",
+    "severity": "CRITICAL",
+    "created_session": 76,
+    "source_file": "feedback_new_objects_only_in_d01_never_p01.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_adt_first_kernel_qualified",
+    "rule": "ADT-first is qualified by kernel + object class. SOURCE CODE objects (PROG/CLAS/INTF/FUGR/FUNC/INCLUDE/ENHO/XSLT/BSP) - ADT-first on ALL kernels including EhP8. DDIC objects (TABL/DTEL/DOMA/INDX) - ADT-first ONLY on NW 7.50+ / S/4HANA. On EhP8 (UNESCO D01/P01) DDIC creation MUST use the DDIF wrapper (sap_adt_client.define_table_via_ddif / define_data_element_via_ddif / define_domain_via_ddif) with TR_TADIR_INTERFACE injection and verify_tadir post-check.",
+    "why": "Session #076: I originally saved a rule ADT-first for ALL DDIC, generating ABAP programs that call DDIF_*_PUT is forbidden as architecture. Empirical probe revealed ADT REST /sap/bc/adt/ddic/tables returns HTTP 404 on NW 7.40 - endpoint shipped in NW 7.50. So on EhP8 the DDIF_*_PUT via RFC_ABAP_INSTALL_AND_RUN pattern is NOT debt - it is the only path. Pain points (opaque RC=2, IN-list parser bug, TADIR-orphan) are real and mitigated by the wrapper, not avoided. The original rule overgeneralized and had to be corrected.",
+    "how_to_apply": "1. Before any DDIC create/modify, call adt_discovery() once and grep for the endpoint. If absent, fall back to the DDIF wrapper (NEVER to ad-hoc programs without preflight + TADIR fix).\n2. For SOURCE CODE work, default to ADT REST.\n3. When reviewing legacy projects for RFC_ABAP_INSTALL_AND_RUN + DDIF_*_PUT patterns on EhP8, do NOT mark them as debt - verify they implement preflight + TR_TADIR_INTERFACE + structured-error mitigation. If they do, the pattern is correct; if not, refactor to the wrapper, do not switch to ADT (which would fail).\n4. Track the S/4HANA migration: when UNESCO upgrades, flip DDIC operations to the ADT methods (already scaffolded) - field-list and return-dict shape are identical.\n5. DDIC creation order (both paths): Domain - Data Element - Table - Index. Validate prerequisites before each create.",
+    "severity": "HIGH",
+    "created_session": 76,
+    "source_file": "feedback_adt_first_no_abap_program_generators.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_never_modify_standard_objects",
+    "rule": "CRITICAL HARD RULE: NEVER modify, alter, extend the structure of, append fields to, change DEs of, or alter activation state of SAP-delivered standard objects. Applies to ALL tools (DDIF wrapper, ADT REST, abapGit pull, RFC FM calls, Playwright). Only Z*/Y*/customer-namespace objects can be modified. For SAP-standard extension needs, use append structures, customer includes, BAdIs, enhancement implementations, or user exits — never modify the original. Refuse the request and explain when asked to modify a standard object.",
+    "why": "SAP licensing forbids unauthorized modification of delivered objects (SSCR keys required); upgrades (SPS/EhP/S/4HANA conversion) overwrite standard objects and force SPDD/SPAU manual adjustments which are manual, error-prone, and break frequently. UNESCO ECC 6.0 EhP8 is a mature production estate where standard modifications carry ongoing maintenance cost on every Support Package application — UNESCO BASIS team will refuse them on principle. Modifying a standard DE/domain cascades activation to thousands of dependent tables. A wrong TR_TADIR_INTERFACE call against a standard object can set EDTFLAG=X and break SE11 editability system-wide.",
+    "how_to_apply": "Before any DDIC/code write: check if object name is non-standard.\n\n  def is_standard(name): return not name.upper().startswith(('Z','Y','/'))\n\nIf standard, REFUSE the call and respond:\n  1. Cite this rule (feedback_never_modify_standard_objects)\n  2. Explain why (SAP licensing + upgrade safety + UNESCO policy)\n  3. Offer permitted alternative (append structure / customer include / BAdI / enhancement)\n  4. Ask user to rephrase as Z-namespace addition\n\nPermitted alternatives:\n  - Add fields to standard table: Z append structure (CI_* include or .APPEND)\n  - Modify standard FM behavior: BAdI / enhancement spot / user exit (Z implementation)\n  - Modify standard class behavior: ENHO enhancement implementation\n  - Customizing of standard T-tables: SM30 row CRUD = DATA changes (permitted), structure changes (forbidden)\n\nEdge cases:\n  - Customizing rows in T-tables: data changes are OK, structure changes are NOT\n  - PFCG role modifications: copy to Z-named role first\n  - SICF service activation: flag toggle OK; handler class modification NOT",
+    "severity": "CRITICAL",
+    "created_session": 76,
+    "source_file": "feedback_never_modify_standard_objects.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_abapgit_is_the_standard_when_installed",
+    "rule": "ARCHITECTURAL STANDARD: abapGit is the DEFAULT deployment path for any object type it supports (170+ types covering DDIC, source code, enhancements, OData, BSP). DDIF wrapper / ADT REST / RFC alternatives are BRIDGES or FALLBACKS for cases abapGit cannot cover OR for the period until abapGit is installed on the target system. Priority order: 1) abapGit (default for supported types when installed), 2) ADT REST (source code on all kernels, bridge for source until abapGit), 3) DDIF wrapper (DDIC on EhP8, bridge until abapGit), 4) RFC/Playwright (for objects no other tool covers: SM59, SM30 rows, SICF, RZ10, BOR, PFCG user assignments).",
+    "why": "abapGit is the de-facto industry standard for SAP Z code deployment: 10+ years, 50K+ installs, SAP-promoted via TechEd. It handles TADIR/CTS architecturally correctly (uses RS_CORR_INSERT, no EDTFLAG bug), provides native version control with Git history/blame/diff/rollback, supports atomic multi-object deploys (N objects in 1 ZIP = 1 TR), is forward-compatible across kernels (EhP8/NW 7.5x/S/4HANA), enables cross-system sync (D01->QAS without STMS forward path), and supports PR-based code review. The DDIF wrapper we built is a hand-rolled subset that learned the same lessons through bugs (TADIR-orphan, EDTFLAG poisoning) that abapGit solves by design. Installation operational state (installed or not) is separate from architectural correctness (abapGit IS the standard regardless).",
+    "how_to_apply": "When proposing a deployment: lead with \"if abapGit is installed, use it; otherwise the bridge is X\". Don't propose the bridge as the default.\n\nWhen abapGit is not installed (current D01 state): include the BASIS ticket escalation in the response, marked STRATEGIC PRIORITY (not optional). Bridge solution is temporary.\n\nWhen designing new automation: API shape compatible with both backends (e.g. define_table(...) works whether backend is abapGit-pull or DDIF wrapper). Forward-compatible.\n\nWhen migrating to S/4HANA: abapGit path stays. DDIF wrapper deprecates. ADT REST takes over what DDIF did, but abapGit lifecycle features remain its own value.\n\nWhen auditing legacy projects (unescrp, ecosystem): check if they use abapGit. If yes, validate they're using it correctly. If no, propose migration when timing allows.\n\nBefore recommending abapGit as the immediate path: verify install via 5-way TADIR/TRDIR/TDEVC/TFDIR probe (per feedback_verify_capabilities_before_recommending). If not installed, recommend bridge with STRATEGIC install ticket attached.",
+    "severity": "CRITICAL",
+    "created_session": 76,
+    "source_file": "feedback_abapgit_is_the_standard_when_installed.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "explicit_session_076",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*",
+        "BASIS",
+        "CTS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_classify_exact_api_before_compliance_call",
+    "rule": "When assessing whether a SAP data-access restriction (note, patch, audit, security advisory) affects us, FIRST read our code to classify the EXACT function-module / API family our pipeline calls, then compare it against the SPECIFIC API the restriction names. Never reason from the category ('it is an RFC that reads data'). ODP Data Replication APIs (RODPS_REPL_*, ODQ_*, /SAPDS/) are a different framework from the generic RFC_READ_TABLE reader. UNESCO's Gold DB uses RFC_READ_TABLE only and is OUT OF SCOPE of SAP Note 3255746; the 2026-06-09 ODP-blocking patch does not affect it.",
+    "why": "SAP Note 3255746 ('Unpermitted usage of ODP Data Replication APIs') triggered an 'are we affected?' question. The failure mode is reasoning from the category: assuming any data-extraction RFC is in scope. ODP is a replication framework (delta queues, subscriptions, change-data-capture); RFC_READ_TABLE is a generic single-table SELECT-equivalent with no delta queue and no subscription. Conflating them produces either a false 'we are non-compliant' panic or -- worse -- a false 'we are safe' on a note that DID hit us. Precision on the exact API IS the whole answer (CP-003: precision + evidence + facts).",
+    "how_to_apply": "1) Grep the repo for the SPECIFIC restricted FMs/namespaces named in the note (e.g. RODPS_REPL, ODQ_, /SAPDS/) -- report the call count with file:line.\n2) Identify the FM our pipeline actually calls (read rfc_helpers.py / extract_*.py) and cite it.\n3) Produce a restricted-vs-used comparison so the verdict is auditable.\n4) Recommend running SAP's own self-assessment tool (when the note ships one, e.g. Note 3439624) to convert code evidence into SAP-sourced confirmation.\n5) If the pipeline depends on a single non-released FM (RFC_READ_TABLE), flag it as a forward-looking risk and name the SAP-endorsed durable path (ODP-OData / Business Data Cloud).",
+    "severity": "HIGH",
+    "created_session": 78,
+    "source_file": "session078_odp_compliance_brain.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "explicit_session_078",
+    "domain_axes": {
+      "functional": [
+        "Infrastructure"
+      ],
+      "module": [
+        "BASIS",
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_research_quality_gate_before_conclusions",
+    "rule": "No research/analysis produces conclusions or plans until it is CLOSED. A research is CLOSED only when ALL 8 guarantees pass: (1) completeness, (2) graded sources, (3) adversarial verification finished, (4) citable evidence per claim, (5) explicit confidence tier, (6) gaps stated as open questions, (7) reproducibility, (8) no-spin attestation. An incomplete/stopped/failed run is OPEN -> discard or re-run; NEVER salvage its fragments into findings. Conclusions and plans are built ONLY on CLOSED claims, each carrying its tier + citation; anything on a LOW/open item is labeled ASSUMPTION/RISK.",
+    "why": "s079: I presented unverified scraps from a deep research that died in Fetch (no Verify/Synthesize) as Phase-1 findings. User: 'mentiroso o irresponsable... si fuera algo medico que te parece usar un research de este nivel'. Quality discipline must be a STANDING gate, not a doc I write reactively. This is table-stakes, not a discovery.",
+    "how_to_apply": "Before using ANY research output: confirm it reached Synthesize (web research = Verify(3-vote)+Synthesize ran; own analysis = each claim has path:line/query-result + tier). If not closed: say so directly, re-run, invent nothing. Label every presented item VERIFIED / INFERRED / NOT-ESTABLISHED. Do not launch web-dependent research while internet is flagged down. Phase A (close research) strictly precedes Phase B (conclusions/plans). Full spec: knowledge/research_closing_methodology.md.",
+    "severity": "CRITICAL",
+    "created_session": "079",
+    "source_file": "research_closing_methodology.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_capability_model_is_the_operating_model",
+    "rule": "Every domain is modeled as a PAIR — AS-DESIGNED (standard SAP) + AS-RUN (our process) — and scored across 9 capability dimensions (S_STANDARD_REF, A_PROCESS, B_CODE, C_CONFIG, D_DATA, E_AUTH, F_INTERFACE_FILE, G_CONFORMANCE=the delta, H_IMPROVE). This domain×capability matrix (Layer 15, brain_v2/capability_model/) IS the operating model. Work is SELECTED by querying `graph_queries.py capability_gaps` — the roadmap is generated, not written. Empty COLUMNS are systemic model gaps, not per-domain. The model is PORTABLE across projects (unesco-sap-brain etc.): standard AS-DESIGNED baselines are system-invariant and shared cross-project; AS-RUN deltas are project-specific and fed back to a shared library.",
+    "why": "s079: the process+code+conformance work is crucial to the MODEL, not a one-off plan. User: 'cómo lo reflejamos más allá del plan... los dominios deben ALINEARSE y luego AMPLIARSE'. A plan is consumed and archived; a model axis is queried and grows. Reflecting it structurally (4th axis) makes acquired knowledge align to one skeleton and makes every gap a deterministic, ranked work item.",
+    "how_to_apply": "At session start, read brain_state.capability_model. Before proposing work, run `graph_queries.py capability_gaps` and pick from the ranked expansion_order. When a domain is touched (incident/claim/companion), update its capability cell. A capability is fully met only when BOTH strata exist AND the G delta is computed. Never present an AS-RUN finding as conformance without the AS-DESIGNED baseline (S_STANDARD_REF precondition). Keep the matrix honest: ●HAVE/◐PARTIAL/○NONE per cell with evidence. Full spec: knowledge/capability_model.md.",
+    "severity": "CRITICAL",
+    "created_session": "079",
+    "source_file": "capability_model.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_archive_and_dedupe_deep_research",
+    "rule": "Every CLOSED deep-research is archived under brain_v2/research/ (full result + sources + findings). Before launching ANY new deep-research, DEDUPE against brain_v2/research/sources_index.json (91 urls already read) and findings_registry.json (37 verified + 26 refuted). Do NOT re-fetch a source already analyzed or re-litigate a verified/refuted claim — READ the archive. Scope new runs to ENRICH the named openQuestions, not to repeat. Append, never overwrite. A FAILED/degraded run is logged in _run_log.json and superseded by a solo rerun — never re-run the same degraded query.",
+    "why": "s079: deep-research outputs lived in EPHEMERAL temp files — they would be lost, forcing re-reads/re-runs of already-analyzed sources (waste + CP-002 violation). User: 'guarda los deep researchs para enriquecerlos en el futuro y no tener que releer algo que ya analizaste'.",
+    "how_to_apply": "At research time: (1) grep sources_index.json for the candidate domains/urls; (2) if covered, cite the archived finding instead of re-fetching; (3) read the target research's openQuestions and scope the new run ONLY to those gaps; (4) after a run closes, archive it via the same persist pattern (full result + update sources_index + findings_registry). Run SERIALLY (concurrency degrades Verify).",
+    "severity": "HIGH",
+    "created_session": "079",
+    "source_file": "brain_v2/research/README.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_ask_strategy_before_scoping",
+    "rule": "Distinguish TECHNICAL decisions (the agent OWNS — do not ask) from STRATEGIC/BUSINESS-REALITY decisions that only the user/org can answer and that DETERMINE SCOPE/RELEVANCE (ASK before investing). Migration strategy (brownfield vs greenfield), which systems/company-codes/domains are in scope, business priorities, chosen vendors/paths — these are org facts NOT derivable from code/data/sensible defaults. Assuming one risks wasting a whole research/build. A focused question is cheaper than discarded work.",
+    "why": "s079: I assumed greenfield was in scope (it was in an openQuestion) and was about to run a full RES-S4-GREENFIELD research — but UNESCO uses BROWNFIELD. The research would have been wasted. User: 'como feedback sería buena la pregunta de qué estrategia usaríamos'. This complements (does NOT contradict) own_the_decision/no_menus: own the technical HOW; ask the strategic WHICH-PATH that the org decides.",
+    "how_to_apply": "Before scoping a research/build whose RELEVANCE depends on a strategic choice (migration approach, in-scope systems, chosen path/vendor, business priority), check: is this a fact I can derive from code/data/defaults, or an org decision? If org decision and it changes what work is relevant -> ask ONE focused question (AskUserQuestion) first. Still own the technical HOW (no menus for implementation). The test: 'would assuming this waste consequential work if wrong?' -> if yes, ask.",
+    "severity": "HIGH",
+    "created_session": "079",
+    "source_file": "feedback_ask_strategy_before_scoping.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_model_exists_do_not_reinvent",
+    "rule": "This project HAS a persisted operating model: brain_state.capability_model (Layer 15) + brain_v2/capability_model/* + brain_v2/research/* (7 closed researches). Before proposing ANY new framework/model/layer, or redesigning brain_state.json's schema, you MUST confirm you loaded brain_state.capability_model. If you did not load it, you do not know the project state — LOAD it, do not rebuild from scratch. Re-inventing what exists is a CP-001 (traceability) + CP-002 (preserve) violation and wastes the whole prior investment.",
+    "why": "s079: a PARALLEL conversation re-derived the model from scratch and was about to redesign brain_state.json schema — because it skipped the brain read and the model existed ONLY in brain_state.json (not in the auto-loaded CLAUDE.md/MEMORY.md). User: 'si no persiste, que valor tiene todo este trabajo, las futuras interacciones lo ignoran'. The model's existence is now announced in the auto-loaded channels (CLAUDE.md STOP block, MEMORY.md, SessionStart hook).",
+    "how_to_apply": "At session start the SessionStart hook + CLAUDE.md STOP block announce the model. If a task smells like 'design a model/framework/layers' for this project: STOP, load brain_state.capability_model, and EXTEND it — never replace. Schema changes to brain_state.json go through build_brain_state.py + rebuild_all.py, never hand-edits, and never from a session that hasn't loaded the current model. One session writes brain_state at a time.",
+    "severity": "CRITICAL",
+    "created_session": "079",
+    "source_file": "CLAUDE.md (STOP block)",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_register_on_create_not_at_close",
+    "rule": "When you BUILD a new model, layer, or persistent state, IMMEDIATELY register its EXISTENCE in the AUTO-LOADED channels (CLAUDE.md top + the lean bootstrap index + the SessionStart hook + MEMORY.md top) — at creation time, NOT at session close. A fresh conversation only knows what is auto-loaded; state saved to a read-on-demand file is invisible. Knowledge that a new session cannot FIND is worthless (CP-001/CP-002).",
+    "why": "s079: the capability_model lived only in brain_state.json (read-on-demand). A parallel conversation re-invented it and almost redesigned the schema because the auto-loaded CLAUDE.md/MEMORY never announced it. User: 'fue muy preocupante que no sepas'. The model was built but unfindable.",
+    "how_to_apply": "After creating any model/layer/major-state: (1) add a pointer at the TOP of CLAUDE.md; (2) regenerate the lean index (build_brain_index.py); (3) ensure the SessionStart hook mentions it. Treat 'persisted to its own file' as NOT DONE until the auto-loaded channels announce it. Continuity = the next session cannot miss it, not merely 'the file exists'.",
+    "severity": "CRITICAL",
+    "created_session": "079",
+    "source_file": "Zagentexecution/retros/session_079_retro.md",
+    "derives_from_core_principle": "CP-002",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_verify_before_asserting_consistency",
+    "rule": "NEVER claim 'consistent', 'complete', 'aligned', 'done', or 'they tell the same story' without FIRST running the command that proves it and showing the output. Assertion is not verification.",
+    "why": "s079: asserted 'the 4 artifacts tell the same story' (false — the dimension count had drifted 8 vs 10) and shipped '8 dimensions' while the model had 10. Both caught by the user: 'no sos consistente'. Violated CP-003 (claims need evidence).",
+    "how_to_apply": "Before any consistency/completeness/done claim: run a check (grep the count across files, diff the IDs, run the validator) and SHOW it. If you cannot run a check, say 'unverified' rather than asserting. Pair with rule #148.",
+    "severity": "HIGH",
+    "created_session": "079",
+    "source_file": "Zagentexecution/retros/session_079_retro.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_check_platform_before_building_infra",
+    "rule": "Before hand-building INFRASTRUCTURE (memory, continuity, agent orchestration, scheduling, retrieval), CHECK what Anthropic / Claude Code / the platform ALREADY ships (Memory tool, Managed Agents + dreaming, hooks, subagents, /compact). Borrow before build. Verify via the claude-code-guide / official docs, not from memory.",
+    "why": "s079: hand-built a memory store + a 'dreaming' curation that Anthropic ships as Managed Agents — only realized when the USER raised it ('por algo lo sacaron y nosotros estamos inventando'). We checked our OWN files for prior work but not the platform.",
+    "how_to_apply": "When a task is infrastructure-shaped, first ask 'does the platform already provide this?' and verify against official docs. Adopt/borrow the native piece where it fits (we borrowed the 'dreaming' concept as a SessionStart daily curation). Document the build-vs-borrow decision (e.g. decision_managed_agents_vs_claude_code.md).",
+    "severity": "HIGH",
+    "created_session": "079",
+    "source_file": "Zagentexecution/retros/session_079_retro.md",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "user_feedback_session_079",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]

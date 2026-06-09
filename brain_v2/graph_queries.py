@@ -301,6 +301,42 @@ def stats(brain):
     }
 
 
+def capability(brain, dom_name=None):
+    """Layer 15 — capability coverage for a domain, or the whole matrix.
+    A domain is AS-DESIGNED (standard SAP) + AS-RUN (ours); G = the delta."""
+    cm = brain.get("capability_model", {})
+    if not cm:
+        return {"error": "capability_model layer absent — run rebuild_all.py"}
+    doms = cm.get("domains", {})
+    if dom_name:
+        toks = set(dom_name.lower().replace("/", "_").replace("-", "_").split("_")) - {""}
+        hit = {k: v for k, v in doms.items()
+               if set(k.lower().replace("/", "_").replace("-", "_").split("_")) & toks}
+        return {"dimensions": cm.get("dimensions", {}), "strata": cm.get("_strata", {}),
+                "match": hit or f"no domain matching '{dom_name}'"}
+    return {"dimensions": list(cm.get("dimensions", {}).keys()),
+            "matrix": doms, "rollup": cm.get("_rollup", {})}
+
+
+def capability_gaps(brain):
+    """Layer 15 — every NONE cell ranked; surfaces systemic empty COLUMNS
+    (S_STANDARD_REF / E_AUTH / G_CONFORMANCE) that are model gaps, not per-domain."""
+    cm = brain.get("capability_model", {})
+    if not cm:
+        return {"error": "capability_model layer absent — run rebuild_all.py"}
+    doms = cm.get("domains", {})
+    dims = [d for d in cm.get("dimensions", {}).keys()]
+    col_none = {dim: [dn for dn, cov in doms.items() if cov.get(dim) == "NONE"] for dim in dims}
+    systemic = {dim: doms_list for dim, doms_list in col_none.items()
+                if len(doms_list) == len(doms) and doms}
+    return {
+        "systemic_empty_columns": list(systemic.keys()),
+        "systemic_detail": cm.get("systemic_gaps", []),
+        "expansion_order": cm.get("expansion_order", []),
+        "none_count_by_dimension": {k: len(v) for k, v in col_none.items()},
+    }
+
+
 COMMANDS = {
     "what_reads": lambda b, args: what_reads(b, args[0]),
     "what_depends_on": lambda b, args: what_depends_on(b, args[0]),
@@ -315,6 +351,9 @@ COMMANDS = {
     "domain_gap": lambda b, args: domain_gap(b),
     "process": lambda b, args: process_view(b, args[0]),
     "activate": lambda b, args: activate(b, " ".join(args) if args else ""),
+    # Layer 15 (session #079) — capability model (4th axis)
+    "capability": lambda b, args: capability(b, args[0] if args else None),
+    "capability_gaps": lambda b, args: capability_gaps(b),
 }
 
 if __name__ == "__main__":

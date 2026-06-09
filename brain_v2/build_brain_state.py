@@ -49,6 +49,11 @@ INTERACTIONS = BRAIN_V2 / "interactions" / "interactions.json"
 # (functional / module / process). Every domain knows its objects, claims,
 # rules, KUs, incidents, skills, companions. Added Session #059.
 DOMAINS_REGISTRY = BRAIN_V2 / "domains" / "domains.json"
+# LAYER 15: Capability Model — 4th axis (domain x capability). A domain is a
+# PAIR: AS-DESIGNED (standard SAP) + AS-RUN (ours); the delta (G) is the value.
+# Aligns acquired knowledge to one skeleton; every weak cell is the roadmap.
+# Added Session #079.
+CAPABILITY_MODEL = BRAIN_V2 / "capability_model" / "capability_model.json"
 
 # Legacy single-string domain -> 3-axis domain_axes. Derived at build time;
 # does NOT mutate the source graph. Keeps objects queryable by functional
@@ -258,6 +263,8 @@ def build_object_entry(node, out_edges, in_edges, annotations, claims, domain_re
                 "tier": c["confidence"],
                 "type": c["claim_type"],
                 "claim": c["claim"][:150],
+                # Layer 3 trust: surface machine-verification state on the object
+                "verified": c.get("verification_status", "NO_CHECK"),
             }
             for c in obj_claims
         ]
@@ -273,8 +280,94 @@ def build_object_entry(node, out_edges, in_edges, annotations, claims, domain_re
     return obj
 
 
+def infer_type_from_name(name):
+    """Best-effort entity type for a referenced name that has no graph node."""
+    import re
+    if re.fullmatch(r"\d{6,12}", name):
+        return "GL_ACCOUNT"
+    # ABAP program names (SAPF100, RFFOEDI1, ...) BEFORE the generic TCODE regex,
+    # which would otherwise swallow SAPF100 as [A-Z]{2,4}\d{1,3}.
+    if name.startswith(("SAPF", "RFF", "RFB", "SAPL", "SAPM", "RM", "RV")) and "_" not in name:
+        return "PROGRAM"
+    if re.fullmatch(r"[ZY][A-Z0-9_]{2,}", name):
+        return "PROGRAM_OR_CUSTOM"
+    if "." in name and re.fullmatch(r"[A-Z]{1,4}\.\d+", name):
+        return "TCODE"
+    if re.fullmatch(r"[A-Z]{2,4}\d{1,3}", name):
+        return "TCODE"
+    if "_" in name and name.isupper():
+        return "VARIANT_OR_SET"
+    return "CONCEPT"
+
+
+def synthesize_object_from_records(name, claims, incidents_records, annotations,
+                                   domain_registry=None):
+    """Create a minimal, queryable object for a referenced name that has NO
+    graph node. The node loop can only de-filter EXISTING nodes (force-include);
+    it cannot mint an object for a concept we discuss but never modeled as a
+    node — TCODEs (OB09/F.05), the executable program SAPF100 (only its variant
+    pool SAPF100_VARI was extracted), GL-account instances, variant names.
+    Without this they stay PERMANENT blind spots and the structured knowledge
+    that references them is unreachable by name. Source = structured_record so
+    an agent can tell a synthesized object from a graph-derived one."""
+    obj_claims = [c for c in claims if name in c.get("related_objects", [])]
+    obj_incidents = [r for r in incidents_records
+                     if name in r.get("related_objects", [])]
+    domain = ""
+    if obj_claims:
+        domain = obj_claims[0].get("domain", "")
+    elif obj_incidents:
+        domain = obj_incidents[0].get("domain", "")
+    obj = {
+        "type": infer_type_from_name(name),
+        "domain": domain,
+        "domain_axes": derive_domain_axes(domain, name, domain_registry),
+        "synthesized": True,
+        "source": "structured_record",
+    }
+    if obj_claims:
+        obj["claims"] = [
+            {"id": c["id"], "tier": c["confidence"],
+             "type": c["claim_type"], "claim": c["claim"][:150],
+             "verified": c.get("verification_status", "NO_CHECK")}
+            for c in obj_claims
+        ]
+    if obj_incidents:
+        obj["incidents"] = sorted(r["id"] for r in obj_incidents)
+        # surface the most actionable incident fields inline
+        primary = obj_incidents[0]
+        rc = primary.get("root_cause_summary")
+        if isinstance(rc, str) and rc:
+            obj["incident_root_cause"] = rc[:300]
+        fp = primary.get("fix_path")
+        if isinstance(fp, str) and fp:
+            obj["incident_fix_path"] = fp[:300]
+        elif isinstance(fp, list) and fp:
+            obj["incident_fix_path"] = "; ".join(str(x) for x in fp)[:300]
+        ad = primary.get("analysis_doc")
+        if isinstance(ad, str) and ad:
+            obj["analysis_doc"] = ad
+    if name in annotations:
+        obj["annotations"] = annotations[name]["annotations"]
+    return obj
+
+
 def main():
     print("Loading sources...")
+    # Dynamically determine the current session number from retros
+    session_num = 59
+    retros_dir = BRAIN_V2.parent / "knowledge" / "session_retros"
+    if retros_dir.exists():
+        import re
+        nums = []
+        for p in retros_dir.glob("session_*_retro.md"):
+            m = re.search(r"session_(\d+)_retro", p.name)
+            if m:
+                nums.append(int(m.group(1)))
+        if nums:
+            session_num = max(nums)
+            print(f"  Dynamically resolved session number: {session_num}")
+
     rules = json.load(open(RULES, encoding="utf-8"))
     claims = json.load(open(CLAIMS, encoding="utf-8"))
     annotations = json.load(open(ANNOTATIONS, encoding="utf-8"))
@@ -320,6 +413,21 @@ def main():
             continue
         name = n.get("name", "")
         objects[name] = build_object_entry(n, out_edges, in_edges, annotations, claims, domain_registry=domains_registry_preload)
+
+    # SYNTHESIZE objects for referenced names that have NO graph node.
+    # Force-include (above) only rescues names that already exist as nodes.
+    # A concept we discuss but never modeled as a node (TCODE, executable
+    # SAPF100, GL-account instance, variant) would otherwise be a permanent
+    # blind spot. Synthesize a minimal queryable object from its structured
+    # records so the knowledge is reachable by name.
+    synth_count = 0
+    for nm in referenced_names:
+        if nm in objects or nm in graph_node_names:
+            continue
+        objects[nm] = synthesize_object_from_records(
+            nm, claims, incidents_pre, annotations, domains_registry_preload)
+        synth_count += 1
+    print(f"  {synth_count} objects SYNTHESIZED from structured records (no graph node)")
 
     # Detect blind spots: names we keep TALKING about but don't classify.
     blind_spots = detect_blind_spots(referenced_names, graph_node_names, objects)
@@ -402,6 +510,38 @@ def main():
     if DOMAINS_REGISTRY.exists():
         domains_registry = json.load(open(DOMAINS_REGISTRY, encoding="utf-8"))
 
+    # LAYER 15 — Capability Model (4th axis). Load the domain x capability matrix
+    # and inject each domain's coverage into its Layer-14 entry (best-effort name
+    # map); keep the full model as a top-level layer so it's queryable even when a
+    # name doesn't map. A domain = AS-DESIGNED (standard) + AS-RUN (ours); G = delta.
+    capability_model = {}
+    if CAPABILITY_MODEL.exists():
+        capability_model = json.load(open(CAPABILITY_MODEL, encoding="utf-8"))
+        # attach sibling sub-models so one Read of brain_state sees them
+        _capdir = CAPABILITY_MODEL.parent
+        for _sib, _key in [("s4_readiness_model.json", "s4_readiness_submodel"),
+                           ("execution_backlog.json", "execution_backlog"),
+                           ("maturity.json", "maturity")]:
+            _p = _capdir / _sib
+            if _p.exists():
+                capability_model[_key] = json.load(open(_p, encoding="utf-8"))
+        cap_doms = capability_model.get("domains", {})
+        # normalize keys for matching: "Payment_BCM" -> {"payment","bcm"}, etc.
+        def _norm(s):
+            return set(str(s).lower().replace("/", "_").replace("-", "_").split("_")) - {""}
+        reg_doms = domains_registry.get("domains", {}) if isinstance(domains_registry, dict) else {}
+        for cap_name, cov in cap_doms.items():
+            cap_tokens = _norm(cap_name)
+            for reg_name, reg_entry in reg_doms.items():
+                if isinstance(reg_entry, dict) and _norm(reg_name) & cap_tokens:
+                    reg_entry["capability_coverage"] = cov
+        # roll up: which domains still have NO standard baseline / NO conformance
+        capability_model["_rollup"] = {
+            "domains_scored": len(cap_doms),
+            "G_conformance_built": sum(1 for d in cap_doms.values() if d.get("G_CONFORMANCE") == "HAVE"),
+            "auth_built": sum(1 for d in cap_doms.values() if d.get("E_AUTH") == "HAVE"),
+        }
+
     # Coverage metrics — what's the brain's percent-coverage of the objects
     # it has TALKED about? This is what tells the agent at session-start
     # "you don't know what you don't know".
@@ -417,6 +557,27 @@ def main():
         coverage["pct_classified"] = round(
             100 * coverage["names_classified"] / len(referenced_names), 1
         )
+
+    # LAYER 3 TRUST — how much of what the brain "knows" is machine-verified.
+    # Populated by brain_v2/verify_claims.py (re-derives each claim's check from
+    # the Gold DB). NO_CHECK = prose-only, a human must trust it. This is the
+    # honest trust gauge the agent reads at bootstrap.
+    vstat = {}
+    for c in claims:
+        vstat[c.get("verification_status", "NO_CHECK")] = \
+            vstat.get(c.get("verification_status", "NO_CHECK"), 0) + 1
+    _trust = {
+        "total_claims": len(claims),
+        "confirmed": vstat.get("CONFIRMED", 0),
+        "drift_needs_review": vstat.get("DRIFT", 0),
+        "error": vstat.get("ERROR", 0),
+        "no_check_prose_only": vstat.get("NO_CHECK", 0),
+        "pct_machine_verifiable": round(
+            100 * (len(claims) - vstat.get("NO_CHECK", 0)) / len(claims), 1
+        ) if claims else 0,
+        "drift_claim_ids": [c["id"] for c in claims if c.get("needs_review")],
+        "note": "Run `python brain_v2/verify_claims.py` to refresh. Every new claim should carry a `verification` block.",
+    }
 
     brain_state = {
         "_design": (
@@ -446,7 +607,7 @@ def main():
             "superseded": len(superseded_full),
             "interactions": len(interactions_list),
             "domain_layer_entries": len(domains_registry.get("domains", {})) if isinstance(domains_registry, dict) else 0,
-            "session": 59,
+            "session": session_num,
         },
         # LAYER 0: Core principles — constitutional tier above all rules/claims.
         # Governs HOW the agent decides, stores, compresses. Zero-tolerance
@@ -504,7 +665,14 @@ def main():
         # See brain_v2/domains/domains.json for the full registry incl.
         # session_activation_hints + process_map + module_map.
         "domains_layer": domains_registry,
+        # LAYER 15: Capability Model — 4th axis (domain x capability). A domain is
+        # AS-DESIGNED (standard SAP) + AS-RUN (ours); G = the delta = the product.
+        # Empty COLUMNS (S_STANDARD_REF, E_AUTH, G_CONFORMANCE) = systemic model
+        # gaps, not per-domain gaps. ALIGN acquired knowledge, EXPAND the empty
+        # cells. Source: brain_v2/capability_model/capability_model.json. S#079.
+        "capability_model": capability_model,
         "_coverage": coverage,
+        "_trust": _trust,
     }
 
     out = json.dumps(brain_state, indent=2, ensure_ascii=False)
