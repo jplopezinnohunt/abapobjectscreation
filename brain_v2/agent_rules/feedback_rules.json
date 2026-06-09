@@ -3415,5 +3415,16 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_conclude_against_known_model_when_blocked",
+    "rule": "When a read/extract/action hits a wall, FIRST run the tool we already use empirically on the actual object, THEN conclude against the KNOWN model + hard constraints (P01 = read-only via RFC/SSO ONLY; no ADT against production; no new objects/transports in P01; Excel is never a source). Park the gap as a capability-model task and keep the SSO-readable substitute. Do NOT invent exotic channels (ADT-over-HTTP, SPNEGO/Basic-password, deploy-FM-to-prod, ADT-against-prod) — that re-litigates settled constraints and fatigues the user.",
+    "why": "s080 (YTFM ODESC): a STRG column was not readable by RFC_READ_TABLE. Instead of empirically testing the core tool first and parking the gap, the agent spent ~7 turns proposing ADT-over-HTTP, deploying a custom read FM to P01, asking for a P01 password, and SPNEGO/Kerberos — each one violating an ALREADY-DOCUMENTED constraint (P01 read-only, SSO/RFC-only, no ADT against prod, no new objects in P01). The user redirected 4x (\"me estas fatigando\", \"no usabamos ADT contra produccion\", \"esto es un regresion\") and finally pointed at how data is actually read. Same family as feedback_check_platform_before_building_infra: invented instead of grounding in what exists.",
+    "how_to_apply": "On any blocked read/action: (1) run the core tool (RFC_READ_TABLE over SNC SSO) on the real object and report the exact result — never assume; (2) if it cannot, state the field-type/tooling limit plainly and STOP; (3) BEFORE proposing any alternative, check the hard P01 constraints — if it touches prod, needs a password, or deploys an object, it is already ruled out, do not propose it; (4) record the gap as an execution_backlog task and keep the SSO-readable substitute (e.g. OTEXT for a STRG ODESC); (5) if the user redirects twice on the same point, re-read the relevant code/constraint instead of proposing a third variant.",
+    "severity": "HIGH",
+    "created_session": "080",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "The established model + hard constraints ARE the project knowledge; inventing new channels sacrifices that knowledge (and the user time) for the velocity of an untested idea — a CP-001 (knowledge over velocity) violation.",
+    "source_file": "memory/feedback_conclude_against_known_model_when_blocked.md"
   }
 ]

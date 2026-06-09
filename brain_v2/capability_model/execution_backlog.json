@@ -135,6 +135,19 @@
       ],
       "what_to_look_for": "simplification items relevant to OUR system; custom-code adaptation findings; add-on/business-function compatibility; the per-factor S/4 readiness scores. NOT Gold-DB tables — these are SYSTEM RUNS.",
       "status": "DEFERRED"
+    },
+    {
+      "id": "EXT-STRG-ODESC",
+      "fills": "D_DATA (text completeness — FM/Budget C/5 output descriptions; generalizes to ANY DDIC STRG/LRAW/LCHR column landscape-wide)",
+      "system": "P01 (production data; READ-ONLY — modification NOT permitted, user s080)",
+      "extract": [
+        "YTFM_OUTPUT_T.ODESC (full C/5 Output long description; DDIC type STRG)"
+      ],
+      "what_to_look_for": "the full Expected-Result/Output descriptions. We already hold ONAME + OTEXT(40c), but OTEXT is truncated for 171 of 259 outputs; ODESC carries the complete text. Generalizes: every STRG/string column anywhere in the landscape has this same extraction gap.",
+      "caveat": "Our CORE prod read tool is RFC_READ_TABLE over SNC SSO (how the whole Gold DB was built). It reads every field type EXCEPT STRING: the flat WA buffer can't serialize STRG. EMPIRICALLY CONFIRMED s080 — all four RFC table readers (standard RFC_READ_TABLE, BBP_RFC_READ_TABLE, /SAPDS/RFC_READ_TABLE2, custom Z_RFC_READ_TABLE) return FM_OUTPUT/ONAME/OTEXT and SILENTLY OMIT ODESC (meta doesn't even list it; ODESC-alone -> TABLE_WITHOUT_DATA). This is a field-type limit of RFC, NOT an SSO/auth issue and NOT a tooling regression — ODESC is simply the first STRG column we've needed; no prior extracted column was STRING. We do NOT use ADT against production to read data. Excel is NOT a source.",
+      "unblock_requires": "A read channel that serializes STRING from P01. The only ones that exist (ADT Data Preview / OpenSQL; remote ABAP) are NOT used against production by policy and/or are authorization-gated for this user. Until such a channel is sanctioned for prod, the full ODESC stays unavailable. RFC-readable substitute already stored: OTEXT (CHAR40) — complete for 88/259 outputs, truncated for 171.",
+      "note": "The 4 companion tables ARE landed (golden DB ytfm_fund_c5/ytfm_c5/ytfm_output/ytfm_output_t, P01-sourced via RFC/SSO, no Excel) and registered in the brain graph. ONLY the ODESC long-text is deferred. Full evidence: memory/reference_p01_strg_columns_unreadable.md.",
+      "status": "DEFERRED (RFC cannot serialize STRG; OTEXT kept as the SSO-readable substitute)"
     }
   ],
   "analysis_tasks_no_extraction": [

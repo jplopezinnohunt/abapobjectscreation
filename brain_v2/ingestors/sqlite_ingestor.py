@@ -38,6 +38,11 @@ JOIN_MAP = [
     ("T042A",   "ZLSCH",    "T042Z", "ZLSCH",    "Pay method -> DMEE tree (method)"),
     ("TBTCO",   "JOBNAME",  "TBTCP", "JOBNAME",  "Job header -> Job steps"),
     ("TBTCO",   "JOBCOUNT", "TBTCP", "JOBCOUNT", "Job header -> Job steps (count)"),
+    # YTFM C/5 biennium classifier (FM/Budget domain) — landed 2026-06-09, joins verified live on P01
+    ("YTFM_FUND_C5", "FM_OUTPUT", "YTFM_OUTPUT",   "FM_OUTPUT", "C/5 fund classifier -> Output (Expected Result) master"),
+    ("YTFM_OUTPUT",  "FM_OUTPUT", "YTFM_OUTPUT_T", "FM_OUTPUT", "Output -> Output text (SPRSL='E')"),
+    ("YTFM_FUND_C5", "C5_ID",     "YTFM_C5",       "C5_ID",     "C/5 fund classifier -> biennium master (41/42/43)"),
+    ("YTFM_FUND_C5", "FINCODE",   "FUNDS",         "FINCODE",   "C/5 fund classifier -> Fund master"),
 ]
 
 
