@@ -1,5 +1,14 @@
 # CLAUDE.md - Instructions for AI Agents
 
+## 🌐 Ecosystem — this is 1 of 4 interconnected projects (auto-awareness of the other 3)
+Each owns its system's data; the others consume it **read-only** (rule **ADR-007 / BROADCAST-005**):
+- **abapobjectscreation** (THIS) — **SAP source of truth** (SAP golden DB + brain + 28 skills). Consumed by `unesco-sap-brain` + `FINCLOSSING`.
+- **unesco-sap-brain** — strategic SAP-redesign analysis + tools (consumes my SAP golden).
+- **FINCLOSSING** — financial closing ABAP (consumes my brain + golden + skills).
+- **unescore20-PPM-brain** — Salesforce / Core Planner (PPM) source (consumed by the SAP brain).
+
+My cross-project edges: `ecosystem_link.md` + `refs_external.json`. Directory: `ecosystem-coordinator/ecosystem/data-capability-registry.md`. Rule: ADR-007 / BROADCAST-005.
+
 ## ⛔ STOP — THE OPERATING MODEL ALREADY EXISTS (read before proposing anything)
 
 This project HAS a built, persisted **Capability Model** (Session #079). **DO NOT re-invent it, do not
