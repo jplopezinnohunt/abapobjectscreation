@@ -132,7 +132,19 @@
       "process": [
         "T2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM febep_2024_2026",
+      "expect": {
+        "op": "==",
+        "value": 223710
+      },
+      "note": "FEBEP item count (reality, P01)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 223710
   },
   {
     "id": 4,
@@ -1117,7 +1129,20 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM fmifiit_full WHERE BUKRS='UNES' AND FISTL='UNESCO' AND HKONT IN ('0006045011','0007045011','0006045014')",
+      "expect": {
+        "op": "==",
+        "value": 187514
+      },
+      "note": "rows matching the ZXFMDTU02_RPY:99 hardcode signature"
+    },
+    "verification_status": "DRIFT",
+    "last_verified": "s079",
+    "verified_value": 197010,
+    "needs_review": true
   },
   {
     "id": 29,
@@ -2160,7 +2185,19 @@
       "process": [
         "T2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM setleaf WHERE SETNAME LIKE 'YBANK_ACCOUNTS_FO_OTH%'",
+      "expect": {
+        "op": "==",
+        "value": 60
+      },
+      "note": "GL leaves in YBANK_ACCOUNTS_FO_OTH"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 60
   },
   {
     "id": 51,
@@ -2282,7 +2319,19 @@
         "B2R",
         "P2P"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(DISTINCT HKONT) FROM t012k",
+      "expect": {
+        "op": "==",
+        "value": 383
+      },
+      "note": "distinct T012K HKONTs"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 383
   },
   {
     "id": 53,
@@ -3973,7 +4022,19 @@
       "process": [
         "P2P"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM lfa1 WHERE LAND1=''",
+      "expect": {
+        "op": "==",
+        "value": 19
+      },
+      "note": "vendors with missing LAND1 (one-time vendors)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 19
   },
   {
     "id": 90,
@@ -4016,7 +4077,19 @@
         "P2P",
         "T2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM bnk_batch_header",
+      "expect": {
+        "op": "==",
+        "value": 27443
+      },
+      "note": "BCM batch headers in P01"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 27443
   },
   {
     "id": 91,
@@ -4051,7 +4124,19 @@
       "process": [
         "P2P"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM REGUH WHERE XVORL='X'",
+      "expect": {
+        "op": "==",
+        "value": 358106
+      },
+      "note": "REGUH test proposals XVORL=X (canonical REGUH after consolidation, was reguh_8col_backup)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 358106
   },
   {
     "id": 92,
@@ -4851,7 +4936,20 @@
       "process": [
         "T2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM REGUH WHERE LAUFD>='20250102' AND LAUFD<='20260429'",
+      "expect": {
+        "op": "==",
+        "value": 567059
+      },
+      "note": "repointed from deleted reguh_fast to canonical REGUH (s079 consolidation); canonical count differs"
+    },
+    "verification_status": "DRIFT",
+    "last_verified": "s079",
+    "verified_value": 567584,
+    "needs_review": true
   },
   {
     "id": 108,
@@ -6576,7 +6674,19 @@
     ],
     "resolved_session": null,
     "resolution_notes": null,
-    "status": "active"
+    "status": "active",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM t030h",
+      "expect": {
+        "op": "==",
+        "value": 1014
+      },
+      "note": "T030H total rows (P01 FX account determination)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 1014
   },
   {
     "id": 162,
@@ -6613,7 +6723,19 @@
     ],
     "resolved_session": null,
     "resolution_notes": null,
-    "status": "active"
+    "status": "active",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM t030h WHERE LSBEW='' AND LHBEW='' AND LKORR=''",
+      "expect": {
+        "op": "==",
+        "value": 200
+      },
+      "note": "T030H rows with no posting accounts (silent F.05 skip)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 200
   },
   {
     "id": 163,
@@ -8511,5 +8633,373 @@
       ],
       "process": []
     }
+  },
+  {
+    "id": 203,
+    "claim": "UNESCO Gold DB extraction uses ONLY RFC_READ_TABLE (generic single-table reader, function group SDTX) over pyrfc + SNC/SSO against P01. It uses NO ODP Data Replication API (RODPS_REPL_*, ODQ_* Operational Delta Queue, /SAPDS/ operators, CDS/extractor/DataSource subscriptions). Therefore it is OUT OF SCOPE of SAP Note 3255746 ('Unpermitted usage of ODP Data Replication APIs', updated 2026-04-13) and is unaffected by the 2026-06-09 Patch-Day patch that blocks unauthorized ODP-RFC calls. A Gold DB refresh runs unchanged after the patch.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/rfc_helpers.py:147",
+        "cite": "rfc_read_paginated() -> _rfc_read_single_page() issues conn.call('RFC_READ_TABLE', QUERY_TABLE=table, DELIMITER='|', ROWCOUNT=batch_size, ROWSKIPS=offset, OPTIONS=rfc_options, FIELDS=rfc_fields). This is the sole shared extraction primitive imported by every extract_*.py.",
+        "added_session": 78
+      },
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/sap_data_extraction/scripts/extract_bkpf_bseg_parallel.py:94",
+        "cite": "Extraction thread calls RFC_READ_TABLE with ROWCOUNT/ROWSKIPS pagination and a WHERE clause pushed via OPTIONS. Standard generic table read, no ODP context.",
+        "added_session": 78
+      },
+      {
+        "type": "empirical",
+        "ref": null,
+        "cite": "Repo-wide grep for ODP replication APIs (RODPS_REPL, ODQ_, /SAPDS/, RODPS, ODP_) across all .py files = 0 calls. Only token match is a name-classifier regex in sap_brain.py:863 (r'ODQ_|RSN3|RSCOLL' labels BW/Analytics objects in the knowledge graph) -- a classifier, not an ODP call.",
+        "added_session": 78
+      },
+      {
+        "type": "user_communication",
+        "ref": "SAP/partner email forwarded by user 2026-06-02 + model background knowledge",
+        "cite": "NOTE TEXT NOT DIRECTLY READ (me.sap.com is S-user gated; agent made no web call). Note scope characterized from (a) the SAP/partner email the user forwarded, which states ODP-RFC extractions are not permitted, alternatives = SAP Business Data Cloud / ODP-OData, self-assessment = Note 3439624, patch = 2026-06-09; and (b) model background knowledge that 'ODP Data Replication APIs' means RODPS_REPL_*/ODQ_*//SAPDS/ and that RFC_READ_TABLE is a separate framework. UNVERIFIED against the literal note. Authoritative check = run the Note 3439624 self-assessment on P01+D01.",
+        "added_session": 78
+      },
+      {
+        "type": "external_documentation",
+        "ref": "Theobald Software blog on SAP Note 3255746 + Databricks/Microsoft/Qlik/CData (web check 2026-06-02)",
+        "cite": "Independent corroboration of note scope. Theobald: 'Only the use of the ODP Data Replication API via RFC in SAP-to-non-SAP scenarios is restricted. RFC remains fully usable, for example for table/CDS view extractions, DeltaQ, BAPIs, or function modules.' Restricted FMs = RODPS_REPL_* family (ODP_CLOSE/PREFETCH/FETCH_XML). Generic table-read RFC (RFC_READ_TABLE) is explicitly UNAFFECTED and positioned as a compliant alternative. Scope description consistent across Databricks, Microsoft, Qlik, CData.",
+        "added_session": 78
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RFC_READ_TABLE",
+      "rfc_helpers.py",
+      "extract_bkpf_bseg_parallel.py",
+      "p01_gold_master_data.db",
+      "SAP_Note_3255746",
+      "SAP_Note_3439624"
+    ],
+    "domain": "Infrastructure",
+    "created_session": 78,
+    "resolved_session": null,
+    "resolution_notes": "Conclusion corroborated by 6+ independent public sources (web check 2026-06-02); upgraded TIER_2 -> TIER_1. Three legs: (1) code verified (RFC_READ_TABLE only), (2) note scope = ODP-RFC only per multiple sources, (3) Theobald explicitly states table-read RFC is unrestricted. Literal SAP note still not read; the per-system FORMAL sign-off is the Note 3439624 self-assessment on P01+D01.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Infrastructure"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 204,
+    "claim": "UNESCO's entire Gold DB extraction floor (24M+ rows, ~68 extracted tables) depends on a SINGLE function module -- RFC_READ_TABLE. As of 2026 this is SAP-tolerated and is the vendor-recommended compliant alternative to ODP-RFC (Theobald), so it is NOT restricted by Note 3255746. Residual risk is strategic/directional, not imminent: SAP is broadly moving to gatekeep third-party data access (Forrester 2026) and steer customers to SAP Business Data Cloud / ODP-OData. IF SAP ever extends restrictions to generic table-read RFC, the entire Gold DB refresh is the single point of failure. Mitigation: ODP-OData / Business Data Cloud (CDS/OData building blocks exist via sap_segw). Monitor; not urgent.",
+    "claim_type": "operational_risk",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Zagentexecution/mcp-backend-server-python/rfc_helpers.py",
+        "cite": "Single point of dependency: every extract_*.py routes through the shared rfc_read_paginated() -> RFC_READ_TABLE. There is no second extraction mechanism feeding the Gold DB.",
+        "added_session": 78
+      },
+      {
+        "type": "sap_policy",
+        "ref": "SAP Note 3255746 (direction-of-travel)",
+        "cite": "Note 3255746 formalizes SAP policy of blocking third-party direct data access (ODP first). RFC_READ_TABLE is the more exposed flank under the same governance philosophy and is documented by SAP as not released for productive use. Forward-looking inference, not a current restriction.",
+        "added_session": 78
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RFC_READ_TABLE",
+      "p01_gold_master_data.db",
+      "sap_segw"
+    ],
+    "domain": "Infrastructure",
+    "created_session": 78,
+    "resolved_session": null,
+    "resolution_notes": "Reframed Session #78 after web corroboration: earlier wording (RFC_READ_TABLE not released / the exposed flank) was an overstatement. Current consensus = table-read RFC is the recommended compliant path. Risk downgraded to strategic-direction watch item.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Infrastructure"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 205,
+    "claim": "UNESCO revalues bank accounts (F.05/SAPF100) via two valid patterns: self-revaluation (HKONT=LKORR, 277 active accts) or a main+sub-account design (BK main posts its FX balance-sheet adjustment to a paired active S-BK sub, 163 active accts). Ecobank does this correctly: 1094316 -> LKORR 1194316 (active sub).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "table_query",
+        "ref": "T030H x SKB1 (P01)",
+        "cite": "944 distinct HKONTs in T030H KTOPL=UNES; 555 self-ref (277 active), 167 sub-account (163 active), 6 point to a closed sub, 200 empty."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SAPF100",
+      "T030H",
+      "OB09",
+      "F.05",
+      "SKB1",
+      "GLT0",
+      "BSEG",
+      "BKPF",
+      "0001010574",
+      "0001010571",
+      "0001110574",
+      "0001110571",
+      "0001109574",
+      "0001109571",
+      "0001143254",
+      "0001194316",
+      "1094316",
+      "1194316",
+      "UNES_UNBA",
+      "UNES_DEPOSIT"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ],
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(DISTINCT HKONT) FROM t030h WHERE KTOPL='UNES'",
+      "expect": {
+        "op": "==",
+        "value": 944
+      },
+      "note": "distinct revaluation HKONTs in T030H"
+    },
+    "verification_status": "DRIFT",
+    "last_verified": "s079",
+    "verified_value": 891,
+    "needs_review": true
+  },
+  {
+    "id": 206,
+    "claim": "ROOT CAUSE of 'Account 1109574 blocked for posting' in F.05: an UNFINISHED bank sub-account migration in OB09. Banco de Chile mains 0001010574 (CLP) and 0001010571 (USD) still point their balance-sheet adjustment (LKORR) to the CLOSED sub 1109574/1109571 instead of the active sub 1110574/1110571. F.05 cannot post to the blocked sub and aborts.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config_screen",
+        "ref": "OB09 / FS00 (P01)",
+        "cite": "OB09 for 1010574: Val.loss/gain 6045011/7045011 (active); Bal.sheet adj 1109574 (XSPEB=X, 'CLOSED S-BK BANCO DE CHILE'). Active sub 1110574 exists (main+100000) but OB09 not repointed."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SAPF100",
+      "T030H",
+      "OB09",
+      "F.05",
+      "SKB1",
+      "GLT0",
+      "BSEG",
+      "BKPF",
+      "0001010574",
+      "0001010571",
+      "0001110574",
+      "0001110571",
+      "0001109574",
+      "0001109571",
+      "0001143254",
+      "0001194316",
+      "1094316",
+      "1194316",
+      "UNES_UNBA",
+      "UNES_DEPOSIT"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ],
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM t030h WHERE KTOPL='UNES' AND HKONT IN ('0001010574','0001010571') AND LKORR IN ('0001109574','0001109571')",
+      "expect": {
+        "op": "==",
+        "value": 2
+      },
+      "note": "both Banco de Chile mains still point LKORR to the CLOSED sub"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 2
+  },
+  {
+    "id": 207,
+    "claim": "FIX for the F.05 'blocked for posting' error = repoint OB09 (KDF) for the 2 in-scope accounts to the active sub: 0001010574 -> 1110574, 0001010571 -> 1110571 (matching Ecobank). Do NOT unblock the closed subs (retired on purpose). Only 2 accounts are inside the failing variant ranges (1000000-1099999); other mis-pointed accounts are out of scope.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "table_query",
+        "ref": "T030H ranges + GLT0 balances (P01)",
+        "cite": "Of 6 mis-pointed accounts only 1010574/1010571 fall in variant range 1000000-1099999; both carry FX balances (GLT0 FY2026: 164,918 / 20,096 USD)."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SAPF100",
+      "T030H",
+      "OB09",
+      "F.05",
+      "SKB1",
+      "GLT0",
+      "BSEG",
+      "BKPF",
+      "0001010574",
+      "0001010571",
+      "0001110574",
+      "0001110571",
+      "0001109574",
+      "0001109571",
+      "0001143254",
+      "0001194316",
+      "1094316",
+      "1194316",
+      "UNES_UNBA",
+      "UNES_DEPOSIT"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ],
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM t030h WHERE KTOPL='UNES' AND HKONT='0001094316' AND LKORR='0001194316'",
+      "expect": {
+        "op": "==",
+        "value": 1
+      },
+      "note": "Ecobank is the correct pattern: main -> active sub"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 1
+  },
+  {
+    "id": 208,
+    "claim": "F.05/SAPF100 runs interactively at UNESCO with ZERO background jobs; it builds a batch-input session (SM35) processed by SAPF180 to make FBB1 postings. The improvement opportunity is to schedule SM36 jobs (template: SAPF124 clearing already runs daily as JOBBATCH) to remove missed months, timing lag, single-point-of-failure and the absence of a sign-off gate.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "table_query",
+        "ref": "BKPF/APQI (P01)",
+        "cite": "0 SAPF100 jobs in TBTCO; FBB1 docs have human USNAM not JOBBATCH; SAPF180/UNES sessions in APQI."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BKPF",
+      "F.05",
+      "SAPF100",
+      "SAPF124",
+      "SAPF180",
+      "TBTCO",
+      "TBTCP"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ],
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM tbtcp WHERE PROGNAME='SAPF100'",
+      "expect": {
+        "op": "==",
+        "value": 0
+      },
+      "note": "F.05/SAPF100 has zero scheduled jobs"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 0
+  },
+  {
+    "id": 209,
+    "claim": "F.05/SAPF100 valuation behaviour is governed by a valuation method (config table T044A): it sets reversing vs non-reversing posting and the determination of exchange-rate diffs. Mode A (reversing, open items) vs Mode B (balance-sheet preparation, permanent, no reversal). For bank-balance revaluation the correct mode is non-reversing; confirming which method UNES_UNBA uses is the open known-unknown for the balance-non-reversal question.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "sap_config",
+        "ref": "T044A (Valuation Methods)",
+        "cite": "T044A holds KOAR/valuation-method flags incl. reversal indicator; SAPF100 reads the method named in the F.05 variant. Mode determines whether FBB1 docs reverse next period."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "T044A",
+      "SAPF100",
+      "F.05",
+      "OB09",
+      "UNES_UNBA"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ]
+  },
+  {
+    "id": 210,
+    "claim": "The currency of a revaluation/bank GL account is read from the account master TEXT (SKAT) + the document currency, NOT from SKB1.WAERS. SKB1.WAERS is the account-currency control, often blank/local; the operative currency (e.g. Citibank Dakar 1143254 = XOF) is identifiable from the SKAT account name and the FX document currency. Gold DB P01_SKA1/SKAT extracts carry these texts.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "table_query",
+        "ref": "SKAT / P01_SKA1 vs SKB1 (P01)",
+        "cite": "1143254 SKB1.WAERS blank but SKAT name = Citibank Dakar (XOF); FS10N shows XOF balance. Confirms currency source = SKAT name + doc currency."
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SKAT",
+      "P01_SKA1",
+      "SKB1",
+      "SKA1"
+    ],
+    "domain": "Closing Activities",
+    "created_session": 79,
+    "status": "active",
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ]
   }
 ]
