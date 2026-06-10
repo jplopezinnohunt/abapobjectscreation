@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Closing Activities — UNESCO SAP Month-End Close Intelligence</title>
+<style>
+:root{
+  --bg:#fafbfc; --panel:#ffffff; --ink:#1f2933; --muted:#5b6b7a;
+  --accent:#0b6e99; --accent-soft:#e3f1f8; --warn:#b06b00; --warn-soft:#fff5e0;
+  --bad:#a32d2d; --bad-soft:#fde8e8; --good:#2c7a4a; --good-soft:#e0f3e6;
+  --border:#dde3ea; --code-bg:#f3f5f7;
+  --purple:#5c3d99; --purple-soft:#ede8f8;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:14px}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+nav.side{background:var(--panel);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav.side h1{font-size:14px;color:var(--accent);margin:0 0 4px 0;letter-spacing:.5px;text-transform:uppercase}
+nav.side .ver{font-size:11px;color:var(--muted);margin-bottom:18px}
+nav.side a{display:block;color:var(--ink);text-decoration:none;padding:6px 10px;font-size:13px;border-radius:4px;margin:2px 0}
+nav.side a:hover{background:var(--accent-soft);color:var(--accent)}
+nav.side a.sub{padding-left:24px;font-size:12px;color:var(--muted)}
+nav.side .sep{border-top:1px solid var(--border);margin:12px 0}
+main{padding:30px 40px 80px;max-width:1200px}
+h1.page{font-size:22px;color:var(--accent);margin:0 0 6px 0}
+.subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
+section{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:22px 26px;margin-bottom:22px}
+section h2{font-size:18px;color:var(--accent);margin:0 0 12px 0;border-bottom:2px solid var(--accent-soft);padding-bottom:6px}
+section h3{font-size:15px;color:var(--ink);margin:18px 0 8px 0}
+section h4{font-size:13px;color:var(--muted);margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:.5px}
+section p{margin:8px 0}
+.muted{color:var(--muted);font-size:12.5px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);color:var(--accent);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",Consolas,monospace}
+td.center{text-align:center}
+code,kbd{background:var(--code-bg);padding:2px 5px;border-radius:3px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px}
+pre{background:var(--code-bg);padding:12px 16px;border-radius:4px;border:1px solid var(--border);overflow-x:auto;font-size:12.5px;line-height:1.5}
+.callout{padding:12px 16px;border-radius:5px;margin:12px 0;border-left:4px solid}
+.callout.ok{background:var(--good-soft);border-color:var(--good)}
+.callout.warn{background:var(--warn-soft);border-color:var(--warn)}
+.callout.bad{background:var(--bad-soft);border-color:var(--bad)}
+.callout.info{background:var(--accent-soft);border-color:var(--accent)}
+.callout strong{display:block;margin-bottom:4px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:14px 0}
+.kpi .card{background:var(--accent-soft);padding:14px;border-radius:5px;border-left:3px solid var(--accent)}
+.kpi .card.warn{background:var(--warn-soft);border-left-color:var(--warn)}
+.kpi .card.bad{background:var(--bad-soft);border-left-color:var(--bad)}
+.kpi .card.good{background:var(--good-soft);border-left-color:var(--good)}
+.kpi .card.purple{background:var(--purple-soft);border-left-color:var(--purple)}
+.kpi .v{font-size:24px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.kpi .card.warn .v{color:var(--warn)}
+.kpi .card.bad .v{color:var(--bad)}
+.kpi .card.good .v{color:var(--good)}
+.kpi .card.purple .v{color:var(--purple)}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:.3px}
+.badge.ok{background:var(--good-soft);color:var(--good)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.badge.info{background:var(--accent-soft);color:var(--accent)}
+.badge.purple{background:var(--purple-soft);color:var(--purple)}
+.calendar-grid{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:16px 0;font-size:13px}
+.cal-header{background:var(--accent);color:#fff;padding:10px 14px;font-weight:600;font-size:12px;letter-spacing:.4px;text-transform:uppercase}
+.cal-day{background:var(--code-bg);padding:10px 14px;font-weight:700;font-size:13px;color:var(--accent);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cal-cell{padding:9px 12px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:top}
+.cal-cell.current{background:var(--bad-soft)}
+.cal-cell.target{background:var(--good-soft)}
+.cal-cell.gate{background:var(--warn-soft)}
+.cal-cell p{margin:3px 0;font-size:12.5px}
+.cal-cell strong{font-size:13px}
+.lag-bar{display:flex;align-items:center;gap:8px;margin:3px 0}
+.lag-bar .fill{height:10px;border-radius:2px;min-width:4px}
+.lag-bar .fill.ok{background:var(--good)}
+.lag-bar .fill.warn{background:var(--warn)}
+.lag-bar .fill.bad{background:var(--bad)}
+.lag-bar .label{font-size:11.5px;color:var(--muted)}
+.flag-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.flag-card{border-radius:6px;padding:16px 18px;border:1px solid}
+.flag-card.red{background:var(--bad-soft);border-color:#d9b0b0}
+.flag-card.yellow{background:var(--warn-soft);border-color:#e0c88a}
+.flag-card h4{margin:0 0 8px 0;font-size:14px}
+.flag-card h4.red{color:var(--bad)}
+.flag-card h4.yellow{color:var(--warn)}
+.flag-card ul{margin:6px 0;padding-left:18px}
+.flag-card ul li{font-size:12.5px;margin:4px 0}
+.roadmap-item{display:grid;grid-template-columns:32px 1fr 130px 80px;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid var(--border)}
+.roadmap-item:last-child{border-bottom:none}
+.roadmap-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.roadmap-body strong{font-size:13.5px}
+.roadmap-body p{font-size:12.5px;color:var(--muted);margin:4px 0 0 0}
+.impact-pill{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:600}
+.impact-pill.high{background:#fde8e8;color:var(--bad)}
+.impact-pill.med{background:var(--warn-soft);color:var(--warn)}
+.impact-pill.low{background:var(--good-soft);color:var(--good)}
+.footer{font-size:12px;color:var(--muted);text-align:center;padding:30px;border-top:1px solid var(--border);margin-top:30px}
+mark{background:#fff3a8;padding:1px 3px;border-radius:2px}
+tr.best td{background:#f0faf4}
+tr.late td{background:#fdf2f2}
+tr.anomaly td{background:#fffbf0}
+.activity-index{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+.activity-card{border:1px solid var(--border);border-radius:6px;padding:14px;background:#fff}
+.activity-card.active{border-color:var(--accent);border-width:2px}
+.activity-card .status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.activity-card .status-dot.green{background:var(--good)}
+.activity-card .status-dot.yellow{background:#f0a500}
+.activity-card .status-dot.grey{background:#bbb}
+.activity-card h4{margin:0 0 6px 0;font-size:13.5px;color:var(--accent)}
+.activity-card p{margin:3px 0;font-size:12px;color:var(--muted)}
+
+/* ── Process Flow ── */
+.flow-wrap{overflow-x:auto;padding:8px 0 16px}
+.flow-lane{display:flex;align-items:center;gap:0;min-width:900px;margin-bottom:10px}
+.flow-lane-label{width:90px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;padding-right:10px;text-align:right}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;min-width:110px;max-width:120px;flex-shrink:0;position:relative}
+.flow-step.trigger{border-color:var(--accent);background:var(--accent-soft)}
+.flow-step.program{border-color:var(--purple);background:var(--purple-soft)}
+.flow-step.result{border-color:var(--good);background:var(--good-soft)}
+.flow-step.gate{border-color:var(--warn);background:var(--warn-soft)}
+.flow-step.missed{border-color:var(--bad);background:var(--bad-soft)}
+.flow-step .fi{font-size:20px;line-height:1}
+.flow-step .ft{font-size:11px;font-weight:700;text-align:center;color:var(--ink);line-height:1.3}
+.flow-step .fs{font-size:10px;color:var(--muted);text-align:center;font-family:"SF Mono",Consolas,monospace}
+.flow-arrow{font-size:18px;color:var(--border);padding:0 4px;flex-shrink:0;align-self:center}
+.flow-arrow.red{color:var(--bad)}
+.flow-sep{width:100%;border:none;border-top:2px dashed var(--border);margin:10px 0 4px}
+.flow-lag-badge{position:absolute;top:-10px;right:-8px;background:var(--warn);color:#fff;font-size:9.5px;font-weight:700;border-radius:8px;padding:1px 5px;font-family:"SF Mono",Consolas,monospace}
+.flow-lag-badge.bad{background:var(--bad)}
+.flow-lag-badge.ok{background:var(--good)}
+
+/* ── Event Timeline ── */
+.etl-wrap{overflow-x:auto;padding:4px 0 12px}
+.etl-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;min-width:500px}
+.etl-hdr{background:var(--accent);color:#fff;padding:8px 6px;font-size:11px;font-weight:700;text-align:center;letter-spacing:.3px}
+.etl-hdr.y26{background:var(--good)}
+.etl-inst{background:var(--code-bg);padding:8px 10px;font-weight:700;font-size:12px;color:var(--ink);border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center}
+.etl-cell{padding:6px 4px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:3px}
+.etl-cell:last-child{border-right:none}
+.etl-inst:last-of-type,.etl-cell:nth-last-child(-n+6){border-bottom:none}
+.etl-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:"SF Mono",Consolas,monospace;color:#fff}
+.etl-dot.d0{background:var(--good)}
+.etl-dot.d1{background:#4ade80}
+.etl-dot.d2{background:#86efac}
+.etl-dot.d3{background:#bbf7d0;color:var(--ink)}
+.etl-dot.d4{background:var(--warn)}
+.etl-dot.d5{background:var(--warn)}
+.etl-dot.d6{background:#dc8c00}
+.etl-dot.dbad{background:var(--bad)}
+.etl-dot.miss{background:var(--bad);font-size:9px}
+.etl-sub{font-size:9.5px;color:var(--muted);font-family:"SF Mono",Consolas,monospace}
+.etl-note{font-size:9px;color:var(--accent);font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV BAR -->
+<div style="position:sticky;top:0;z-index:9999;background:#2c5282;color:#fff;padding:8px 20px;display:flex;gap:14px;align-items:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;border-bottom:1px solid #1a3a5e;flex-wrap:wrap">
+  <span style="font-weight:700;letter-spacing:.3px">📅 Closing Activities</span>
+  <span style="opacity:.6">·</span>
+  <a href="fx_revaluation_f05_v1.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">🔬 FX Revaluation Deep Dive (F.05 v1)</a>
+  <span style="opacity:.4">·</span>
+  <a href="bank_statement_ebs_companion.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">📚 Bank Statement (EBS)</a>
+  <span style="opacity:.4">·</span>
+  <a href="treasury_operations_companion_v1.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">🏦 Treasury Operations</a>
+  <span style="opacity:.4">·</span>
+  <a href="unicode_sap_landing.html" style="color:#fff;opacity:.8;text-decoration:none;padding:3px 10px;border-radius:3px">🏠 Landing Page</a>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="side">
+    <h1>Closing Activities</h1>
+    <div class="ver">UNESCO SAP · Month-End Close Intel<br>Domain v1 · 2026-06-05</div>
+
+    <a href="#flow"><strong>⏱️ Process Flow &amp; Timeline</strong></a>
+    <a href="#domain-overview"><strong>🏛️ Domain Overview</strong></a>
+    <a href="#activity-index" class="sub">↳ Activity Index</a>
+
+    <div class="sep"></div>
+    <a href="#fx-reval"><strong>📊 FX Revaluation (F.05)</strong></a>
+    <a href="#who-runs" class="sub">↳ Who runs it</a>
+    <a href="#valuation-timing" class="sub">↳ Valuation timing</a>
+    <a href="#reversal-timing" class="sub">↳ Reversal timing</a>
+    <a href="#close-calendar" class="sub">↳ Close calendar</a>
+
+    <div class="sep"></div>
+    <a href="#flags"><strong>🚩 Flags &amp; Critical Issues</strong></a>
+    <a href="#ictp-gap" class="sub">↳ ICTP missing months</a>
+    <a href="#ubo-late" class="sub">↳ UBO chronic late</a>
+    <a href="#unes-reversal" class="sub">↳ UNES reversal lag</a>
+    <a href="#mgie-anomaly" class="sub">↳ MGIE anomaly</a>
+    <a href="#no-gate" class="sub">↳ No formal close gate</a>
+
+    <div class="sep"></div>
+    <a href="#forensic"><strong>🔬 Forensic: Variants vs Blocks</strong></a>
+    <a href="#t030h"><strong>⚙️ T030H Config Defects</strong></a>
+    <a href="#update2026"><strong>📈 2026 Update (Jan–Apr)</strong></a>
+    <a href="#roadmap"><strong>🗺️ Automation Roadmap</strong></a>
+    <a href="#knowns"><strong>❓ Known Unknowns</strong></a>
+
+    <div class="sep"></div>
+    <p style="font-size:11px;color:var(--muted);padding:0 4px">
+      <strong>Data source:</strong> P01 BKPF/BSIS 2025 (11,793 F.05 docs)<br>
+      <strong>Technical deep dive:</strong> <a href="fx_revaluation_f05_v1.html" style="color:var(--accent)">fx_revaluation_f05_v1.html</a><br>
+      <strong>Knowledge doc:</strong> knowledge/domains/Closing_Activities/
+    </p>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <h1 class="page">Closing Activities — UNESCO SAP Month-End Close Intelligence</h1>
+    <div class="subtitle">
+      New domain created Session #078 (2026-06-05) · First activity tracked: FX Revaluation<br>
+      Evidence base: 11,793 F.05 documents (P01 production 2025) + Jan–Apr 2026 data · 9 company codes · 12 accountants · Updated 2026-06-05
+    </div>
+
+    <!-- ═══ KPI ROW ═══ -->
+    <div class="kpi">
+      <div class="card bad">
+        <div class="v">0</div>
+        <div class="l">SAPF100 background jobs</div>
+      </div>
+      <div class="card bad">
+        <div class="v">2</div>
+        <div class="l">ICTP months missed 2025</div>
+      </div>
+      <div class="card bad">
+        <div class="v">2</div>
+        <div class="l">OB09 entries to repoint (unfinished Banco de Chile sub-account migration) = root cause of the "blocked for posting" error</div>
+      </div>
+      <div class="card warn">
+        <div class="v">24d</div>
+        <div class="l">UBO avg revaluation lag</div>
+      </div>
+      <div class="card warn">
+        <div class="v">11.8d</div>
+        <div class="l">UNES avg reversal lag</div>
+      </div>
+      <div class="card good">
+        <div class="v">108/108</div>
+        <div class="l">Institute×month cycles confirmed</div>
+      </div>
+      <div class="card good">
+        <div class="v">SAPF124</div>
+        <div class="l">Clearing already automated (daily)</div>
+      </div>
+      <div class="card purple">
+        <div class="v">9</div>
+        <div class="l">Company codes in scope</div>
+      </div>
+      <div class="card good">
+        <div class="v">↓ 78%</div>
+        <div class="l">2026 avg lag reduction vs 2025 (Jan–Apr)</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PROCESS FLOW + EVENT TIMELINE -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="flow">
+      <h2>⏱️ F.05 Close Event Flow — How Posting &amp; Reversal Work</h2>
+      <p class="muted">F.05 / SAPF100 does not post directly to FI. It creates a <strong>batch input session</strong> (SM35), then SAPF180 processes that session to create the actual FI documents. Understanding this two-step mechanism explains why reversals behave differently for OI vs Balance variants.</p>
+
+      <!-- ── MECHANISM DIAGRAM ──────────────────────────────────────────────── -->
+      <h3>Shared Posting Mechanism — Both Processes (via Batch Input)</h3>
+      <div style="overflow-x:auto;padding:8px 0 16px">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;min-width:800px;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px">
+
+          <!-- Header row -->
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2)">Step 1</div>
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2)">Step 2</div>
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2)">Step 3</div>
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2)">Step 4</div>
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2)">Step 5</div>
+          <div style="background:var(--accent);color:#fff;padding:10px;font-weight:700;text-align:center">Step 6</div>
+
+          <!-- Icon row -->
+          <div style="padding:14px;text-align:center;border-right:1px solid var(--border);background:var(--accent-soft);font-size:22px">👤</div>
+          <div style="padding:14px;text-align:center;border-right:1px solid var(--border);background:var(--accent-soft);font-size:22px">⚙️</div>
+          <div style="padding:14px;text-align:center;border-right:1px solid var(--border);background:var(--accent-soft);font-size:22px">📋</div>
+          <div style="padding:14px;text-align:center;border-right:1px solid var(--border);background:var(--good-soft);font-size:22px">🤖</div>
+          <div style="padding:14px;text-align:center;border-right:1px solid var(--border);background:var(--good-soft);font-size:22px">📄</div>
+          <div style="padding:14px;text-align:center;background:var(--accent-soft);font-size:22px">🔀</div>
+
+          <!-- Label row -->
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);font-weight:700;text-align:center">Accountant runs F.05</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);font-weight:700;text-align:center">SAPF100 calculates</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);font-weight:700;text-align:center">Batch session created</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);font-weight:700;text-align:center;color:var(--good)">SAPF180 processes</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);font-weight:700;text-align:center;color:var(--good)">FBB1 documents posted</div>
+          <div style="padding:10px 8px;border-top:1px solid var(--border);font-weight:700;text-align:center;color:var(--accent)">Diverge by mode</div>
+
+          <!-- Detail row -->
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);color:var(--muted)">SE38 / F.05 menu. Selects an _OI or _UNBA variant. Sets key date = month-end. Checks "Create Postings".</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);color:var(--muted)">Reads T030H/OBA1. Finds each HKONT in account range. Calculates FX delta vs current exchange rate.</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);color:var(--muted)">SM35 session created (e.g. <code>SAPF180/UNES</code>). NOT yet in FI. Accountant can review before processing.</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);color:var(--muted)">SAPF180 reads the session entries. Posts each entry as an FI document.</div>
+          <div style="padding:10px 8px;border-right:1px solid var(--border);border-top:1px solid var(--border);color:var(--muted)"><code>TCODE=FBB1</code> in BKPF. <code>BUDAT=month-end</code>. Dr/Cr unrealized FX gain/loss (accounts 6045011 / 7045011).</div>
+          <div style="padding:10px 8px;border-top:1px solid var(--border);color:var(--muted)">Now the two processes <strong>diverge</strong>: <strong>Open Items</strong> (<code>_OI</code>) reverse on day-1 (Mode A); <strong>Balances</strong> (<code>_UNBA</code>/<code>_BA</code>) are <strong>not</strong> reversed — permanent (Mode B). See the two tracks below.</div>
+        </div>
+      </div>
+
+      <!-- ── REVERSAL IS NOT OI-ONLY ─────────────────────────────── -->
+      <h3>Reversal Applies to BOTH Open Items and Balances — Two Valuation Modes</h3>
+      <div class="callout info">
+        <strong>Common misconception: "reversal only applies to Open Items"</strong>
+        Not true. SAP F.05 reverses <em>both</em> open-item and G/L-balance valuations. The difference at UNESCO is a matter of which <strong>valuation mode</strong> each run uses — and both modes are legitimate accounting practice. The mode determines whether a reversal is created.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0">
+
+        <div style="border:2px solid var(--accent);border-radius:8px;padding:16px;background:var(--accent-soft)">
+          <h4 style="color:var(--accent);margin:0 0 10px">Mode A — Reversing Valuation (interim/monthly)</h4>
+          <div style="font-size:12.5px;line-height:1.7">
+            <p><strong>How it works:</strong> Post unrealized FX gain/loss at month-end → reverse it on day 1 of the next month. The valuation is a temporary snapshot.</p>
+            <p><strong>Why reverse:</strong> The figure is provisional. When the underlying item (open item, or bank balance) actually moves, the real realized gain/loss is what counts. Reversing avoids double-counting.</p>
+            <p><strong>Applies to:</strong> Both Open Items <em>and</em> G/L Balances. Controlled by the "Reversal posting date" + reverse flag in the variant.</p>
+            <p><strong>UNESCO Open Items:</strong> all run in this mode — valuation + reversal confirmed in BKPF for all 8 OI institutes.</p>
+          </div>
+        </div>
+
+        <div style="border:2px solid var(--purple);border-radius:8px;padding:16px;background:var(--purple-soft)">
+          <h4 style="color:var(--purple);margin:0 0 10px">Mode B — Balance Sheet Preparation Valuation (permanent)</h4>
+          <div style="font-size:12.5px;line-height:1.7">
+            <p><strong>How it works:</strong> Post the valuation <em>permanently</em> — it is written to the account's valuation-difference field and is <strong>not reversed</strong>. The next run calculates the delta from this stored value.</p>
+            <p><strong>Why no reverse:</strong> Used to establish the official balance-sheet position (typically year-end). The valuation becomes the carried position, so reversing it would be wrong.</p>
+            <p><strong>Applies to:</strong> G/L Balances, via the <code>Bal.sheet preparation valuatn</code> checkbox on the Postings tab.</p>
+            <p><strong>UNESCO Balances:</strong> run in this mode — valuation posts monthly, no reversal. This is the <strong>expected, standard treatment for bank/cash balances</strong>: the account carries its revalued position and the next run posts only the delta. Not a defect.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout ok">
+        <strong>This is normal — bank-balance valuation is not meant to reverse</strong>
+        The absence of day-1 reversals on the <code>_UNBA</code> (balance) runs is the <em>correct</em> behaviour, not a missing step. Bank and cash balances are revalued to the period-end rate and the valuation is carried forward (Mode B above); the following month posts only the change. This is why all 8 institutes with balance variants show valuation-without-reversal — they are consistent with each other and with standard practice.
+        <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">Note on UIL: UIL has a single balance reversal (Jan 2025). That one-off is the deviation from the norm — likely a manual interim adjustment — not evidence that the others are wrong. To document the configured mode definitively, open a <code>_UNBA</code> variant in F.05 and read the <code>Bal.sheet preparation valuatn</code> setting (not extractable via RFC — VARI/VARIS are pool tables returning only the variant name).</p>
+      </div>
+
+      <!-- ── Two Separate Process Executions ─────────────────────────── -->
+      <h3>Step-by-Step Process Execution — Two Separate Processes</h3>
+      <p class="muted">After the shared posting mechanism above, the two revaluations <strong>diverge</strong>. They run as separate F.05 executions, with separate variants, and behave differently end-to-end: <span style="color:var(--accent);font-weight:700">Process A (Open Items)</span> reverses on day&nbsp;1; <span style="color:var(--purple);font-weight:700">Process B (Balances)</span> is permanent and does <em>not</em> reverse. Both end at the shared OB52 period lock and both share the same "missed run" risk (bottom).</p>
+
+      <!-- ═══════════ PROCESS A — OPEN ITEM REVALUATION ═══════════ -->
+      <div style="border:2px solid var(--accent);border-radius:10px;padding:12px 16px 6px;margin:14px 0;background:linear-gradient(180deg,var(--accent-soft),#fff 55%)">
+        <h4 style="margin:0 0 2px;color:var(--accent)">Process A — Open Item Revaluation&nbsp;·&nbsp;<code>_OI</code> variants&nbsp;·&nbsp;Mode A (reversing)</h4>
+        <p class="muted" style="margin:0 0 10px">F.05 tab <strong>Open Items</strong> · AR/AP + G/L open items · batch session <code>{BUKRS}_REVAL_OI</code>. The valuation is <strong>provisional</strong> — reversed on day&nbsp;1 because the real gain/loss only crystallises when the open item actually clears. <strong>Reversal is mandatory</strong> (skipping it double-counts).</p>
+
+        <div class="flow-wrap">
+          <!-- A1: Valuation -->
+          <div class="flow-lane">
+            <div class="flow-lane-label">A1 · Valuate<br>Month-end</div>
+
+            <div class="flow-step gate">
+              <div class="fi">📅</div><div class="ft">Month End</div><div class="fs">Day 28–31</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step trigger">
+              <div class="fi">👤</div><div class="ft">Runs F.05 · Open Items tab</div><div class="fs">_OI variant</div>
+              <div class="flow-lag-badge bad">0–62d lag</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step program">
+              <div class="fi">⚙️</div><div class="ft">SAPF100 reads T030H</div><div class="fs">AR/AP + G/L OI</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step program">
+              <div class="fi">🧮</div><div class="ft">FX delta on open items</div><div class="fs">per item × WAERS</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step result">
+              <div class="fi">📄</div><div class="ft">Posts FBB1 valuation</div><div class="fs">BUDAT = month-end</div>
+            </div>
+          </div>
+
+          <!-- A2: Reversal -->
+          <div class="flow-lane" style="margin-top:10px">
+            <div class="flow-lane-label">A2 · Reverse<br>Day 1</div>
+
+            <div class="flow-step gate">
+              <div class="fi">📆</div><div class="ft">New Month Day 1</div><div class="fs">BUDAT = 01</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step trigger">
+              <div class="fi">👤</div><div class="ft">Runs F.05 · OI reversal</div><div class="fs">reversal variant</div>
+              <div class="flow-lag-badge bad">0–40d lag</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step result">
+              <div class="fi">↩️</div><div class="ft">Posts FBB1 reversal</div><div class="fs">valuation backed out</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step result">
+              <div class="fi">🤖</div><div class="ft">SAPF124 clears item</div><div class="fs">automated · daily</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step gate" style="border-color:var(--good);background:var(--good-soft)">
+              <div class="fi">✅</div><div class="ft">Realized FX only</div><div class="fs">the true number</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout info" style="margin:2px 0 10px">
+          <strong>Net effect — nothing permanent is booked.</strong> The month-end valuation is fully reversed on day&nbsp;1; only the <em>realized</em> FX (booked when the item clears, via SAPF124 daily clearing) stays in the books. The interim valuation exists only so month-end statements reflect current rates.
+        </div>
+      </div>
+
+      <!-- ═══════════ PROCESS B — BALANCE REVALUATION ═══════════ -->
+      <div style="border:2px solid var(--purple);border-radius:10px;padding:12px 16px 6px;margin:14px 0;background:linear-gradient(180deg,var(--purple-soft),#fff 55%)">
+        <h4 style="margin:0 0 2px;color:var(--purple)">Process B — Balance Revaluation&nbsp;·&nbsp;<code>_UNBA</code> / <code>_BA</code> variants&nbsp;·&nbsp;Mode B (permanent)</h4>
+        <p class="muted" style="margin:0 0 10px">F.05 tab <strong>G/L Balances</strong> · bank / cash balance-sheet accounts · batch session <code>{BUKRS}_REVAL_BA</code>. The valuation is <strong>permanent</strong> — written to the account's valuation-difference field. There is <strong>no day-1 reversal</strong>; the next run posts only the delta. <span style="color:var(--good);font-weight:700">No reversal is the correct behaviour</span> (Mode B), not a missing step.</p>
+
+        <div class="flow-wrap">
+          <!-- B1: Valuation -->
+          <div class="flow-lane">
+            <div class="flow-lane-label">B1 · Valuate<br>Month-end</div>
+
+            <div class="flow-step gate">
+              <div class="fi">📅</div><div class="ft">Month End</div><div class="fs">Day 28–31</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step trigger">
+              <div class="fi">👤</div><div class="ft">Runs F.05 · G/L Balances tab</div><div class="fs">_UNBA / _BA variant</div>
+              <div class="flow-lag-badge bad">0–62d lag</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step program">
+              <div class="fi">⚙️</div><div class="ft">SAPF100 reads T030H</div><div class="fs">bank/cash HKONT</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step program">
+              <div class="fi">🧮</div><div class="ft">FX delta vs stored value</div><div class="fs">only the change</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step result">
+              <div class="fi">📄</div><div class="ft">Posts FBB1 valuation</div><div class="fs">→ valuation-diff field</div>
+            </div>
+          </div>
+
+          <!-- B2: Carry-forward (NO reversal) -->
+          <div class="flow-lane" style="margin-top:10px">
+            <div class="flow-lane-label" style="color:var(--purple)">B2 · Carry<br>Permanent</div>
+
+            <div class="flow-step gate" style="border-color:var(--good);background:var(--good-soft)">
+              <div class="fi">🚫↩️</div><div class="ft">No day-1 reversal</div><div class="fs">intentional · Mode B</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step result">
+              <div class="fi">🏦</div><div class="ft">Position stays on BS</div><div class="fs">carried at period rate</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step program">
+              <div class="fi">📆</div><div class="ft">Next month: delta only</div><div class="fs">vs stored value</div>
+            </div>
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-step gate" style="border-color:var(--good);background:var(--good-soft)">
+              <div class="fi">✅</div><div class="ft">Balance-sheet position</div><div class="fs">standard for bank/cash</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout ok" style="margin:2px 0 10px">
+          <strong>Net effect — the revalued position stays on the balance sheet.</strong> Reversing it would erase the carried position, so it is <em>not</em> reversed (Mode B — balance-sheet preparation). The next run computes only the change from the stored valuation-difference. This is why all 8 balance-capable institutes show valuation-without-reversal — consistent and correct. <span style="color:var(--muted)">(To document the configured mode definitively, read the <code>Bal.sheet preparation valuatn</code> checkbox on a <code>_UNBA</code> variant — not extractable via RFC.)</span>
+        </div>
+      </div>
+
+      <!-- ═══════════ SHARED RISK — WHEN A RUN IS MISSED ═══════════ -->
+      <h3 style="margin-top:18px">Shared Risk — When Either Process Is Missed</h3>
+      <p class="muted">Both processes are launched interactively, so both share the same failure mode: if the accountant is absent and there is no backup or SM36 job, the run simply never happens — and the period can still lock undetected.</p>
+      <div class="flow-wrap">
+        <div class="flow-lane">
+          <div class="flow-lane-label" style="color:var(--bad)">When<br>MISSED</div>
+
+          <div class="flow-step gate">
+            <div class="fi">📅</div><div class="ft">Month End</div><div class="fs">Day 28–31</div>
+          </div>
+          <div class="flow-arrow red">→</div>
+
+          <div class="flow-step missed">
+            <div class="fi">🚫</div><div class="ft">Accountant absent</div><div class="fs">no backup</div>
+          </div>
+          <div class="flow-arrow red">→</div>
+
+          <div class="flow-step missed">
+            <div class="fi">⛔</div><div class="ft">F.05 never runs</div><div class="fs">no FBB1 posted</div>
+          </div>
+          <div class="flow-arrow red">→</div>
+
+          <div class="flow-step missed">
+            <div class="fi">🔒</div><div class="ft">OB52 locks period</div><div class="fs">undetected gap</div>
+          </div>
+          <div class="flow-arrow red">→</div>
+
+          <div class="flow-step missed">
+            <div class="fi">📊</div><div class="ft">FX exposure</div><div class="fs">not in P&amp;L for month</div>
+          </div>
+          <div class="flow-arrow red">→</div>
+
+          <div class="flow-step missed">
+            <div class="fi">😶</div><div class="ft">A: reversal also<br>skipped</div><div class="fs">nothing to reverse</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info" style="margin-top:8px">
+        <strong>Key insight</strong>
+        The lag badge on each "Accountant opens F.05" step represents the delay between when they <em>should</em> run it (month-end) and when they actually do (CPUDT in BKPF). 2025 range: 0–62 days. 2026 range: 0–22 days. Zero automation = zero guarantee.
+      </div>
+
+      <!-- ── 2026 Event Timeline ──────────────────────────────────────── -->
+      <h3 style="margin-top:24px">2026 Closing Events — When Each Institute Ran (Jan–May)</h3>
+      <p class="muted">Each circle = average lag in days after month-end. Color: green ≤3d · amber 4–7d · red >7d · dark red = MISSED. Source: P01 BKPF TCODE=FBB1.</p>
+
+      <div class="etl-wrap">
+        <div class="etl-grid">
+
+          <!-- Header -->
+          <div class="etl-hdr">Institute</div>
+          <div class="etl-hdr y26">Jan 2026</div>
+          <div class="etl-hdr y26">Feb 2026</div>
+          <div class="etl-hdr y26">Mar 2026</div>
+          <div class="etl-hdr y26">Apr 2026</div>
+          <div class="etl-hdr y26">May 2026</div>
+
+          <!-- ICBA -->
+          <div class="etl-inst">ICBA</div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">E_GEBE</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">E_GEBE</div></div>
+          <div class="etl-cell"><div class="etl-dot d0">0d</div><div class="etl-sub">E_GEBE</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">E_GEBE</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">E_GEBE</div></div>
+
+          <!-- UIL -->
+          <div class="etl-inst">UIL</div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">DB_ABDI</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">DB_ABDI</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">DB_ABDI</div></div>
+          <div class="etl-cell"><div class="etl-dot d0">0d</div><div class="etl-sub">DB_ABDI</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">DB_ABDI</div></div>
+
+          <!-- UBO -->
+          <div class="etl-inst">UBO</div>
+          <div class="etl-cell"><div class="etl-dot d5">5d</div><div class="etl-sub">P_TUCK</div></div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">P_TUCK</div></div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">P_TUCK</div></div>
+          <div class="etl-cell"><div class="etl-dot d6">6d</div><div class="etl-sub">P_TUCK</div></div>
+          <div class="etl-cell"><div class="etl-dot d5">5d</div><div class="etl-sub">P_TUCK</div></div>
+
+          <!-- IBE -->
+          <div class="etl-inst">IBE</div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">V_KOHE</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">V_KOHE</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">V_KOHE</div></div>
+          <div class="etl-cell"><div class="etl-dot d0">0d</div><div class="etl-sub">V_KOHE</div></div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">V_KOHE</div></div>
+
+          <!-- IIEP -->
+          <div class="etl-inst">IIEP</div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">F_CADI</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">F_CADI</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">F_CADI</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">F_CADI</div></div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">F_CADI</div></div>
+
+          <!-- UIS -->
+          <div class="etl-inst">UIS</div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">N_MOUS</div></div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">N_MOUS</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">N_MOUS</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">N_MOUS</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">N_MOUS</div></div>
+
+          <!-- MGIE -->
+          <div class="etl-inst">MGIE</div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">P_AROR</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">P_AROR</div></div>
+          <div class="etl-cell"><div class="etl-dot d2">2d</div><div class="etl-sub">P_AROR</div></div>
+          <div class="etl-cell"><div class="etl-dot d1">1d</div><div class="etl-sub">P_AROR</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">P_AROR</div></div>
+
+          <!-- ICTP -->
+          <div class="etl-inst" style="color:var(--bad)">ICTP ⚠</div>
+          <div class="etl-cell"><div class="etl-dot d4">4d</div><div class="etl-sub">T_CARP</div></div>
+          <div class="etl-cell"><div class="etl-dot d3">3d</div><div class="etl-sub">T_CARP</div></div>
+          <div class="etl-cell"><div class="etl-dot d0">0d</div><div class="etl-sub">T_CARP</div></div>
+          <div class="etl-cell"><div class="etl-dot d0">0d</div><div class="etl-sub">T_CARP</div></div>
+          <div class="etl-cell"><div class="etl-dot miss">MISS</div><div class="etl-note">absent</div></div>
+
+          <!-- UNES -->
+          <div class="etl-inst" style="color:var(--warn)">UNES</div>
+          <div class="etl-cell"><div class="etl-dot dbad">22d</div><div class="etl-sub">J_LA</div></div>
+          <div class="etl-cell"><div class="etl-dot d5">5d</div><div class="etl-sub">J_LA</div></div>
+          <div class="etl-cell"><div class="etl-dot d5">5d</div><div class="etl-sub">J_LA</div></div>
+          <div class="etl-cell"><div class="etl-dot d6">6d</div><div class="etl-sub">J_LA</div></div>
+          <div class="etl-cell"><div class="etl-dot d5">5d</div><div class="etl-note">P_TUCK<br>covering</div></div>
+
+        </div>
+      </div><!-- /etl-wrap -->
+
+      <!-- Legend -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <span style="font-size:11.5px;color:var(--muted);font-weight:700">LAG SCALE:</span>
+        <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#4ade80;vertical-align:middle"></span> <span style="font-size:11.5px">0–1d (excellent)</span></span>
+        <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#bbf7d0;vertical-align:middle"></span> <span style="font-size:11.5px">2–3d (good)</span></span>
+        <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--warn);vertical-align:middle"></span> <span style="font-size:11.5px">4–6d (acceptable)</span></span>
+        <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#dc8c00;vertical-align:middle"></span> <span style="font-size:11.5px">7d+ (late)</span></span>
+        <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--bad);vertical-align:middle"></span> <span style="font-size:11.5px">MISSED</span></span>
+      </div>
+
+    </section>
+
+    <!-- DOMAIN OVERVIEW -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="domain-overview">
+      <h2>🏛️ Closing Activities — Domain Overview</h2>
+      <p>
+        <strong>Closing Activities</strong> tracks all period-end and year-end accounting activities — what runs, who runs it, when, whether it ran correctly, and whether anyone can prove it ran. Each activity is a recurring step that must complete before a fiscal period can be locked. Today most run <strong>interactively, with no scheduling and no execution visibility</strong>; a period can close with or without FX revaluation and no one is alerted.
+      </p>
+
+      <div class="callout ok">
+        <strong>The opportunity — not the error</strong>
+        The headline is not a bug. It is that these recurring close tasks can be <strong>automated and instrumented for visibility</strong> — turning "we think it ran" into "the job log proves it ran, on time, completely." FX revaluation is the first worked example: scheduling SM36 jobs (the infrastructure already exists — <code>SAPF124</code> runs this way daily) would remove missed months, timing lag, single-point-of-failure and the absence of a sign-off gate, all at once.
+      </div>
+      <div class="callout info" style="margin-top:8px">
+        <strong>How we know this — process mining</strong>
+        We reconstructed the entire reality of this process — who runs it, when, the gaps, the configuration and the root cause — purely by <strong>mining logs, data, tables and code</strong> (BKPF/BSIS, GLT0, T030H, VARI/VARIS, OB09/FS00), without interviews or guesswork. <em>Read the system, not the documentation.</em> This is the reusable lens for every domain: understand how it works → identify what to improve → automate and give execution visibility → resolve each incident with full context. (Aligns with the project North Star — SAP Agentic AGI.)
+      </div>
+      <div class="callout warn" style="margin-top:8px">
+        <strong>The error along the way — minor, immediate</strong>
+        One small configuration item surfaced: an unfinished Banco de Chile sub-account migration in OB09 (2 accounts post their FX adjustment to a closed sub). Fix = 2 OB09 entries. Plus four operational findings (ICTP coverage gap, single-user fragility, MGIE reversal inconsistency, UBO variant mislabeling); several earlier "alarms" (balance non-reversal, 102 "empty" accounts) were reviewed and cleared as benign. <span style="color:var(--muted)">Detail in the Forensic and T030H sections.</span>
+      </div>
+
+      <h3 id="activity-index">Activity Index — 2026</h3>
+      <div class="activity-index">
+        <div class="activity-card active">
+          <h4>📊 FX Revaluation (F.05)</h4>
+          <p><span class="status-dot yellow"></span>ACTIVE — interactive F.05/SAPF100, no SM36 jobs</p>
+          <p>Program: SAPF100 · TCODE: F.05</p>
+          <p>Frequency: Monthly (last day + day-1 reversal)</p>
+          <p><strong>This companion</strong></p>
+        </div>
+        <div class="activity-card">
+          <h4>🔄 Automatic Clearing (SAPF124)</h4>
+          <p><span class="status-dot green"></span>AUTOMATED — daily JOBBATCH</p>
+          <p>Program: SAPF124 · 4 variants</p>
+          <p>Frequency: Daily</p>
+          <p style="color:var(--good)">Reference automation model for SAPF100</p>
+        </div>
+        <div class="activity-card">
+          <h4>🔒 Period Lock (OB52 / MMPV)</h4>
+          <p><span class="status-dot yellow"></span>MANUAL — no formal gate</p>
+          <p>TCODE: OB52 / MMPV</p>
+          <p>Currently locks without FX sign-off</p>
+          <p style="color:var(--warn)">No gate enforcement — TBD</p>
+        </div>
+        <div class="activity-card">
+          <h4>📋 GR/IR Clearing</h4>
+          <p><span class="status-dot grey"></span>TBD — not yet tracked</p>
+        </div>
+        <div class="activity-card">
+          <h4>🏛️ Asset Depreciation (AFAB)</h4>
+          <p><span class="status-dot grey"></span>TBD — not yet tracked</p>
+        </div>
+        <div class="activity-card">
+          <h4>📦 Carry-Forward (CJCF)</h4>
+          <p><span class="status-dot grey"></span>TBD — not yet tracked</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- FX REVALUATION — MAIN SECTION -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="fx-reval">
+      <h2>📊 FX Revaluation (F.05 / SAPF100) — 2025 Production Analysis</h2>
+      <p>
+        All FX revaluation at UNESCO is executed <strong>interactively with no background job</strong>. Accountants launch <code>F.05</code> / <code>SAPF100</code> manually from their session — the program calculates amounts and posts documents with <code>TCODE=FBB1</code> in BKPF. <code>FBB1</code> is the program's internal posting transaction, <strong>not</strong> manual line-by-line data entry. The program is fully configured (T044A, T030H, OBA1) but has zero scheduled SM36 background jobs.
+      </p>
+      <p>
+        The standard cycle confirmed from 11,793 production documents:
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0">
+        <div style="border:2px solid var(--accent);border-radius:8px;padding:16px;background:var(--accent-soft)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:8px">Step 1 — Last Day of Month</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">Post FX Valuation</div>
+          <p style="font-size:12.5px;margin:4px 0">BUDAT = last day of period</p>
+          <p style="font-size:12.5px;margin:4px 0">Posts unrealized FX gain/loss to:<br>
+            <code>0006045011</code> (unrealized FX loss DR)<br>
+            <code>0007045011</code> (unrealized FX gain CR)
+          </p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--bad)">Current: Interactive F.05 run (program posts via FBB1) · Lag: 0–62 days</p>
+        </div>
+        <div style="border:2px solid var(--good);border-radius:8px;padding:16px;background:var(--good-soft)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--good);margin-bottom:8px">Step 2 — Day 1 of Following Month</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">Reverse Prior Month</div>
+          <p style="font-size:12.5px;margin:4px 0">BUDAT = 1st day of new period</p>
+          <p style="font-size:12.5px;margin:4px 0">Reverses the Step 1 valuation entry — clears unrealized gain/loss so real cleared items take over</p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--bad)">Current: Interactive F.05 run (program posts via FBB1) · Reversal lag: 0–40 days</p>
+        </div>
+      </div>
+
+      <!-- WHO RUNS IT -->
+      <h3 id="who-runs">Who Runs It — Users and Backup Coverage</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th>
+            <th>Primary User</th>
+            <th>Backup</th>
+            <th>TCODE</th>
+            <th>2025 Coverage</th>
+            <th>Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>UNES</strong> (HQ)</td>
+            <td><code>J_LA</code></td>
+            <td><code>I_WETTIE</code>, <code>EZ_MOYO</code> (yr-end)</td>
+            <td><code>FBB1</code> / <code>FB50</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge warn">Reversal lag</span></td>
+          </tr>
+          <tr>
+            <td><strong>UIL</strong></td>
+            <td><code>DB_ABDI</code></td>
+            <td>None</td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge warn">No backup</span></td>
+          </tr>
+          <tr>
+            <td><strong>IBE</strong></td>
+            <td><code>V_KOHEMUN</code></td>
+            <td>None</td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge warn">No backup</span></td>
+          </tr>
+          <tr>
+            <td><strong>ICBA</strong></td>
+            <td><code>A_MULUGETA</code></td>
+            <td><code>E_GEBREMARIA</code></td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge ok">Covered</span></td>
+          </tr>
+          <tr class="late">
+            <td><strong>ICTP</strong></td>
+            <td><code>M_VENUTI</code></td>
+            <td style="color:var(--bad);font-weight:600">NONE</td>
+            <td><code>FBB1</code></td>
+            <td class="center" style="color:var(--bad);font-weight:700">10/12 ⚠</td>
+            <td><span class="badge bad">Critical — SPoF</span></td>
+          </tr>
+          <tr>
+            <td><strong>IIEP</strong></td>
+            <td><code>F_CADIO</code></td>
+            <td><code>S_COURONNAUD</code></td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge ok">Covered</span></td>
+          </tr>
+          <tr class="anomaly">
+            <td><strong>MGIE</strong></td>
+            <td><code>P_ARORA</code></td>
+            <td><code>K_BHATIA</code></td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12*</td>
+            <td><span class="badge warn">Anomalous pattern</span></td>
+          </tr>
+          <tr class="late">
+            <td><strong>UBO</strong></td>
+            <td><code>P_TUCKER</code></td>
+            <td>None</td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge bad">Chronic late (24d avg)</span></td>
+          </tr>
+          <tr>
+            <td><strong>UIS</strong></td>
+            <td><code>N_MOUSSA</code></td>
+            <td><code>L_SANNEH</code> (yr-end)</td>
+            <td><code>FBB1</code></td>
+            <td class="center">12/12</td>
+            <td><span class="badge ok">Acceptable</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">* MGIE posts 12 months but pattern does not match standard month-end — see MGIE Anomaly flag below</p>
+
+      <!-- VALUATION TIMING -->
+      <h3 id="valuation-timing">Valuation Timing — Days After Month-End (2025 Production)</h3>
+      <p class="muted">Lag = CPUDT (computer entry date) minus last day of BUDAT month. Positive = entered N days after month-end. Zero = entered on last day of month.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th>
+            <th>User</th>
+            <th class="center">Avg Lag</th>
+            <th class="center">Min</th>
+            <th class="center">Max</th>
+            <th>Typical Pattern</th>
+            <th>Visual</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="best">
+            <td>ICBA</td>
+            <td><code>E_GEBREMARIA</code></td>
+            <td class="num">1.6d</td>
+            <td class="num">0</td>
+            <td class="num">5</td>
+            <td>Day 0–2</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:16px"></div><div class="fill ok" style="width:8px;opacity:.4"></div></div></td>
+            <td><span class="badge ok">Best performer</span></td>
+          </tr>
+          <tr class="best">
+            <td>ICBA</td>
+            <td><code>A_MULUGETA</code></td>
+            <td class="num">3.7d</td>
+            <td class="num">0</td>
+            <td class="num">5</td>
+            <td>Day 1–4</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:37px"></div></div></td>
+            <td><span class="badge ok">Good</span></td>
+          </tr>
+          <tr class="best">
+            <td>UIS</td>
+            <td><code>N_MOUSSA</code></td>
+            <td class="num">3.7d</td>
+            <td class="num">0</td>
+            <td class="num">8</td>
+            <td>Day 1–5</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:37px"></div></div></td>
+            <td><span class="badge ok">Good</span></td>
+          </tr>
+          <tr class="best">
+            <td>IIEP</td>
+            <td><code>S_COURONNAUD</code></td>
+            <td class="num">3.9d</td>
+            <td class="num">1</td>
+            <td class="num">8</td>
+            <td>Day 1–5</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:39px"></div></div></td>
+            <td><span class="badge ok">Good</span></td>
+          </tr>
+          <tr>
+            <td>IIEP</td>
+            <td><code>F_CADIO</code></td>
+            <td class="num">5.1d</td>
+            <td class="num">0</td>
+            <td class="num">12</td>
+            <td>Day 1–6</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:51px"></div></div></td>
+            <td><span class="badge ok">Acceptable</span></td>
+          </tr>
+          <tr class="anomaly">
+            <td>MGIE</td>
+            <td><code>P_ARORA</code></td>
+            <td class="num">5.1d*</td>
+            <td class="num">-15</td>
+            <td class="num">20</td>
+            <td>Mid-month (neg values)</td>
+            <td><div class="lag-bar"><div class="fill warn" style="width:51px"></div></div></td>
+            <td><span class="badge warn">Anomalous</span></td>
+          </tr>
+          <tr>
+            <td>UNES</td>
+            <td><code>J_LA</code></td>
+            <td class="num">6.7d</td>
+            <td class="num">0</td>
+            <td class="num">62</td>
+            <td>Day 5–22 (large variance)</td>
+            <td><div class="lag-bar"><div class="fill warn" style="width:67px"></div></div></td>
+            <td><span class="badge warn">Variable</span></td>
+          </tr>
+          <tr>
+            <td>UIL</td>
+            <td><code>DB_ABDI</code></td>
+            <td class="num">8.0d</td>
+            <td class="num">1</td>
+            <td class="num">20</td>
+            <td>Day 1–3 (consistent)</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:80px"></div></div></td>
+            <td><span class="badge ok">Consistent</span></td>
+          </tr>
+          <tr>
+            <td>ICTP</td>
+            <td><code>M_VENUTI</code></td>
+            <td class="num">7.6d</td>
+            <td class="num">2</td>
+            <td class="num">55</td>
+            <td>Day 2–8, spikes</td>
+            <td><div class="lag-bar"><div class="fill warn" style="width:76px"></div></div></td>
+            <td><span class="badge warn">Spikes + gaps</span></td>
+          </tr>
+          <tr>
+            <td>IBE</td>
+            <td><code>V_KOHEMUN</code></td>
+            <td class="num">9.0d</td>
+            <td class="num">2</td>
+            <td class="num">18</td>
+            <td>Day 2–7</td>
+            <td><div class="lag-bar"><div class="fill ok" style="width:90px"></div></div></td>
+            <td><span class="badge ok">Acceptable</span></td>
+          </tr>
+          <tr class="late">
+            <td>UBO</td>
+            <td><code>P_TUCKER</code></td>
+            <td class="num" style="color:var(--bad);font-weight:700">24.3d</td>
+            <td class="num">4</td>
+            <td class="num">62</td>
+            <td>Day 4–30+</td>
+            <td><div class="lag-bar"><div class="fill bad" style="width:120px"></div><div class="fill bad" style="width:20px;opacity:.3"></div></div></td>
+            <td><span class="badge bad">Chronic late</span></td>
+          </tr>
+          <tr class="anomaly">
+            <td>UIS</td>
+            <td><code>L_SANNEH</code></td>
+            <td class="num">50.7d</td>
+            <td class="num">10</td>
+            <td class="num">90</td>
+            <td>Year-end / actuarial only</td>
+            <td><div class="lag-bar"><div class="fill bad" style="width:120px"></div></div></td>
+            <td><span class="badge info">Actuarial/YE only</span></td>
+          </tr>
+          <tr class="anomaly">
+            <td>UNES</td>
+            <td><code>EZ_MOYO</code></td>
+            <td class="num">56.0d</td>
+            <td class="num">30</td>
+            <td class="num">90</td>
+            <td>Year-end actuarial</td>
+            <td><div class="lag-bar"><div class="fill bad" style="width:120px"></div></div></td>
+            <td><span class="badge info">YE only</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">* MGIE avg excludes mid-month outliers that skew the distribution. Negative values = posted before month-end (not standard).</p>
+
+      <!-- REVERSAL TIMING -->
+      <h3 id="reversal-timing">Reversal Timing — Days After Day-1 BUDAT</h3>
+      <p class="muted">Measures how late the reversal is posted after the new period opens. Reversal BUDAT = 1st of month. Lag = CPUDT minus 1st of month.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th>
+            <th>User</th>
+            <th class="center">Avg Reversal Lag</th>
+            <th class="center">Max</th>
+            <th>Risk</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="best">
+            <td>ICBA</td>
+            <td><code>E_GEBREMARIA</code></td>
+            <td class="num">0.5d</td>
+            <td class="num">2d</td>
+            <td>Minimal</td>
+            <td><span class="badge ok">Near real-time</span></td>
+          </tr>
+          <tr class="best">
+            <td>IIEP</td>
+            <td><code>F_CADIO</code></td>
+            <td class="num">3.4d</td>
+            <td class="num">8d</td>
+            <td>Low</td>
+            <td><span class="badge ok">Good</span></td>
+          </tr>
+          <tr>
+            <td>UBO</td>
+            <td><code>P_TUCKER</code></td>
+            <td class="num">4.2d</td>
+            <td class="num">15d</td>
+            <td>Low</td>
+            <td><span class="badge ok">OK</span></td>
+          </tr>
+          <tr>
+            <td>IBE</td>
+            <td><code>V_KOHEMUN</code></td>
+            <td class="num">4.6d</td>
+            <td class="num">12d</td>
+            <td>Low</td>
+            <td><span class="badge ok">Acceptable</span></td>
+          </tr>
+          <tr>
+            <td>ICTP</td>
+            <td><code>M_VENUTI</code></td>
+            <td class="num">4.7d</td>
+            <td class="num">33d</td>
+            <td>Medium — spikes</td>
+            <td><span class="badge warn">Spikes</span></td>
+          </tr>
+          <tr class="late">
+            <td>UNES</td>
+            <td><code>J_LA</code></td>
+            <td class="num" style="color:var(--bad);font-weight:700">11.8d</td>
+            <td class="num" style="color:var(--bad)">40d</td>
+            <td style="color:var(--bad)">High — 2-week overlap</td>
+            <td><span class="badge bad">Systematically late</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout bad">
+        <strong>UNES reversal risk</strong>
+        J_LA's reversals average 11.8 days into the new month — meaning for UNESCO HQ (largest co-code, 1,014 T030H rows), the prior month's unrealized FX gain/loss sits un-reversed in the books for nearly 2 weeks of the new period. This overstates FX exposure in interim reporting.
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- CLOSE CALENDAR -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="close-calendar">
+      <h2>📅 Proposed Month-End Close Calendar — FX Revaluation</h2>
+      <p>A target close schedule derived from the observed 2025 pattern. The left column is what actually happens today (interactive, variable timing); the right is the target after SM36 automation. The cycle is: valuate open items + balances on the last business day, reverse the open-item valuation on day 1, then lock the period — with an FX sign-off gate that does not exist today.</p>
+
+      <div class="calendar-grid">
+        <div class="cal-header">Timing</div>
+        <div class="cal-header">Activity</div>
+        <div class="cal-header">Current State</div>
+        <div class="cal-header">Target State (Automated)</div>
+
+        <!-- Row 1: Reversal -->
+        <div class="cal-day">Day 1<br><span style="font-size:11px;color:var(--muted)">New month opens</span></div>
+        <div class="cal-cell">
+          <strong>Reverse prior month FX</strong>
+          <p>SAPF100 reversal variant</p>
+          <p>BUDAT = 1st of month</p>
+        </div>
+        <div class="cal-cell current">
+          <p><span class="badge bad">Interactive F.05 (no SM36 job)</span></p>
+          <p>Lag: 0–40 days</p>
+          <p>UNES averages 11.8d late</p>
+          <p>No enforcement</p>
+        </div>
+        <div class="cal-cell target">
+          <p><span class="badge ok">SM36 Job: SAPF100_REV_{BUKRS}</span></p>
+          <p>Schedule: 06:00 AM day 1</p>
+          <p>JOBBATCH user (same as SAPF124)</p>
+          <p>9 jobs total (one per BUKRS)</p>
+        </div>
+
+        <!-- Row 2: Valuation -->
+        <div class="cal-day">Day 25–28<br><span style="font-size:11px;color:var(--muted)">Last biz days</span></div>
+        <div class="cal-cell">
+          <strong>Revalue open FX positions</strong>
+          <p>SAPF100 valuation variant</p>
+          <p>BUDAT = last day of month</p>
+        </div>
+        <div class="cal-cell current">
+          <p><span class="badge bad">Interactive F.05 (no SM36 job)</span></p>
+          <p>Lag: 4–62 days after month-end</p>
+          <p>UBO averages 24.3 days late</p>
+          <p>ICTP missed July + November</p>
+        </div>
+        <div class="cal-cell target">
+          <p><span class="badge ok">SM36 Job: SAPF100_REVAL_{BUKRS}</span></p>
+          <p>Schedule: last business day 23:00</p>
+          <p>9 jobs total (one per BUKRS)</p>
+          <p>Variant per BUKRS from existing setup</p>
+        </div>
+
+        <!-- Row 3: Sign-off gate -->
+        <div class="cal-day">Day 28–31<br><span style="font-size:11px;color:var(--muted)">Pre-close</span></div>
+        <div class="cal-cell">
+          <strong>FX Close Sign-Off Gate</strong>
+          <p>Controller confirms revaluation complete before period lock</p>
+        </div>
+        <div class="cal-cell current">
+          <p><span class="badge bad">Does not exist</span></p>
+          <p>Period can close without FX</p>
+          <p>ICTP July+Nov gaps prove this</p>
+        </div>
+        <div class="cal-cell gate">
+          <p><span class="badge warn">Controller sign-off required</span></p>
+          <p>Verify: BKPF docs exist for period</p>
+          <p>Before OB52 period lock allowed</p>
+        </div>
+
+        <!-- Row 4: Period lock -->
+        <div class="cal-day">Day last<br><span style="font-size:11px;color:var(--muted)">Period close</span></div>
+        <div class="cal-cell">
+          <strong>Period Lock</strong>
+          <p>OB52 / MMPV — close FI period</p>
+        </div>
+        <div class="cal-cell current">
+          <p><span class="badge warn">Manual — no prerequisites</span></p>
+          <p>Currently independent of FX revaluation status</p>
+        </div>
+        <div class="cal-cell target">
+          <p><span class="badge ok">After FX gate confirmed</span></p>
+          <p>Sequential dependency: FX sign-off → period lock</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>Infrastructure already exists</strong>
+        SAPF124 (automatic clearing) runs daily via JOBBATCH with 4 variants. The JOBBATCH user, job infrastructure, and scheduling pattern are already proven. Creating SAPF100 jobs is a configuration task in SM36 — not a development project.
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- FLAGS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="flags">
+      <h2>🚩 Flags &amp; Critical Issues (from 2025 Production)</h2>
+      <p class="muted">These are the findings that survived verification. Each is anchored in production data (BKPF/BSIS/T030H/SKB1/GLT0). The single genuine <em>configuration</em> error is the blocked FX-difference accounts in OBA1 (4 of them; see Forensic + T030H sections); the rest are operational/process flags. Note: balance valuations not reversing and the 102 "empty" T030H rows were reviewed and are <strong>not</strong> flagged — they are normal (see Forensic section).</p>
+
+      <div class="flag-grid">
+        <!-- ICTP -->
+        <div class="flag-card red" id="ictp-gap">
+          <h4 class="red">🔴 ICTP — 2 Missed Months (July + November 2025)</h4>
+          <ul>
+            <li>M_VENUTI posted day-1 reversals for both months (10 reversal docs each)</li>
+            <li>Zero corresponding month-end valuation documents found</li>
+            <li>Consequence: 2 months of FX exposure unrecognized — reversed against nothing</li>
+            <li>Root cause: M_VENUTI absent, no backup user for ICTP</li>
+            <li style="font-weight:600;color:var(--bad)">Will recur in 2026 without backup assignment</li>
+          </ul>
+          <p style="font-size:12px;margin-top:8px;color:var(--muted)">Fix: Assign backup user + create SM36 job so absence doesn't matter</p>
+        </div>
+
+        <!-- UBO Late -->
+        <div class="flag-card red" id="ubo-late">
+          <h4 class="red">🔴 UBO — Chronic Late Posting (avg 24.3 days)</h4>
+          <ul>
+            <li>P_TUCKER routinely posts revaluation 3–4 weeks after month-end</li>
+            <li>Worst case observed: 62 days late (over 2 months)</li>
+            <li>No backup user identified for UBO</li>
+            <li>UBO financial statements reflect FX exposure with significant delay</li>
+            <li>Despite lateness, all 12 months were eventually posted (process awareness exists)</li>
+          </ul>
+          <p style="font-size:12px;margin-top:8px;color:var(--muted)">Fix: SM36 job eliminates lag entirely</p>
+        </div>
+
+        <!-- UNES Reversal -->
+        <div class="flag-card red" id="unes-reversal">
+          <h4 class="red">🔴 UNES — Reversal Systematically Late (avg 11.8 days)</h4>
+          <ul>
+            <li>J_LA's reversals average 11.8 days into the new month</li>
+            <li>Maximum observed: 40 days after the reversal BUDAT</li>
+            <li>For UNES (largest co-code, 1,014 T030H rows), this is highest-impact</li>
+            <li>Prior month's unrealized FX sits in books ~2 weeks into new period</li>
+            <li>Creates overlap between prior-month valuation and current-month exposure</li>
+          </ul>
+          <p style="font-size:12px;margin-top:8px;color:var(--muted)">Fix: SM36 reversal job on day 1 at 06:00 eliminates this entirely</p>
+        </div>
+
+        <!-- MGIE Anomaly -->
+        <div class="flag-card yellow" id="mgie-anomaly">
+          <h4 class="yellow">🟡 MGIE — Mid-Month Posting Pattern (not standard month-end)</h4>
+          <ul>
+            <li>P_ARORA shows negative CPUDT lag values — FX entries posted mid-month, before month-end</li>
+            <li>This does not match the standard last-day valuation / day-1 reversal pattern</li>
+            <li>K_BHATIA (avg 14d lag) handles some months</li>
+            <li>MGIE is smallest co-code by FX volume (3 blocked accounts in SKB1)</li>
+            <li>Risk is lower but process is unclear and needs documentation</li>
+          </ul>
+          <p style="font-size:12px;margin-top:8px;color:var(--muted)">Action: Interview P_ARORA — understand if this is intentional or a process gap</p>
+        </div>
+
+        <!-- No Gate -->
+        <div class="flag-card yellow" id="no-gate" style="grid-column:1/-1">
+          <h4 class="yellow">🟡 No Formal Close Gate — Period Locks Without FX Sign-Off</h4>
+          <ul>
+            <li>SAP period lock (OB52 / MMPV) runs independently of FX revaluation status</li>
+            <li>A period can close with revaluation completely missing — no alert, no block, no notification</li>
+            <li>This is exactly how ICTP's July and November 2025 gaps occurred silently</li>
+            <li>The ICTP case was only discovered retroactively via BKPF data mining — it was not caught at close time</li>
+            <li>Finance management had no visibility that 2 months of ICTP FX exposure were unrecognized until this analysis</li>
+          </ul>
+          <p style="font-size:12px;margin-top:8px;color:var(--muted)">Fix: Add FX sign-off prerequisite to the period close checklist. For automation: the SM36 job log itself becomes the sign-off evidence.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- FORENSIC ANALYSIS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="forensic">
+      <h2>🔬 Forensic Analysis — All 21 Variants vs Account Blocks</h2>
+      <p class="muted">Complete cross-reference of all UNESCO operational variants × T030H account determination × SKB1 block flags × BSIS 2025 actual postings. Evidence: 1,014 T030H rows · 2,312 SKB1 rows · 11,793 FBB1 docs · P01 production.</p>
+
+      <!-- MASTER SCORECARD -->
+      <h3>Master Scorecard — All 21 Variants</h3>
+      <div class="callout ok">
+        <strong>Result: 18 of 21 variants CLEAN · 1 structural gap (ICTP no UNBA) · UNES is the sole error source</strong>
+        The blocked-LKORR defect is exclusively a UNES problem. All other 8 company codes have zero active HKONTs with blocked adjustment accounts.
+      </div>
+      <table style="font-size:11.5px">
+        <thead>
+          <tr>
+            <th>Co.</th><th>Variant</th><th>Type</th><th>Bank HKONTs Processed</th>
+            <th>HKONT Range (from BSIS)</th><th>Blocked LKORR</th>
+            <th>Empty T030H <span style="font-weight:400;font-size:10px;color:var(--muted)">(* = USD/dormant, not a gap)</span></th><th>Bal. Reversal</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- IBE -->
+          <tr class="best"><td>IBE</td><td><code>IBE_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0006045011 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td>IBE</td><td><code>IBE_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">1</td><td><code>0001043733</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">By design</span></td><td><span class="badge ok">Clean</span></td></tr>
+          <!-- ICBA -->
+          <tr><td>ICBA</td><td><code>ICBA_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0001900754 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td>ICBA</td><td><code>ICBA_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">2</td><td><code>0001044714 → 0001044715</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">By design</span></td><td><span class="badge ok">Clean · 8/12 months run</span></td></tr>
+          <!-- ICTP -->
+          <tr style="background:#fff8e0"><td>ICTP</td><td><code>ICTP_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0002011821 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean · 10/12 months</span></td></tr>
+          <tr style="background:#fde8e8"><td>ICTP</td><td style="color:var(--bad);font-style:italic">MISSING</td><td><span class="badge bad">No Variant</span></td><td class="num">0</td><td style="color:var(--bad)">Bank accounts not revalued</td><td class="num">—</td><td class="num">—</td><td>—</td><td><span class="badge bad">Coverage gap</span></td></tr>
+          <!-- IIEP -->
+          <tr class="best"><td>IIEP</td><td><code>IIEP_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0001900715 → 0007046011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td>IIEP</td><td><code>IIEP_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">3</td><td><code>0001043715 → 0001075712</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">By design</span></td><td><span class="badge ok">Clean · S_COURONNAUD dedicated</span></td></tr>
+          <!-- MGIE -->
+          <tr><td>MGIE</td><td><code>MGIE_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0001900884 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge warn">OI reversals inconsistent</span></td></tr>
+          <tr><td>MGIE</td><td><code>MGIE_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">1</td><td><code>0001063884</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">By design</span></td><td><span class="badge ok">Clean</span></td></tr>
+          <!-- UBO -->
+          <tr><td>UBO</td><td><code>UBO GRP CUR</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0002021861 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge warn">Mislabeled description</span></td></tr>
+          <tr><td>UBO</td><td><code>UBO_OI_AR/AP</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0002021861 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge warn">Desc says "UNES"</span></td></tr>
+          <tr><td>UBO</td><td><code>UBO_OI_G/L</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0002021861 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge warn">Desc says "UNES"</span></td></tr>
+          <tr><td>UBO</td><td><code>UBO_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">0</td><td>No bank FX exposure</td><td class="num">0</td><td class="num">0</td><td>N/A</td><td><span class="badge warn">Desc says "UNES"</span></td></tr>
+          <!-- UIL -->
+          <tr class="best"><td>UIL</td><td><code>UIL_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0002011844 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td>UIL</td><td><code>UIL_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">2</td><td><code>0001075791 → 0001175791</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">Once (deviation)</span></td><td><span class="badge ok">Clean</span></td></tr>
+          <!-- UIS -->
+          <tr class="best"><td>UIS</td><td><code>UIS_OI</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0006045011 → 0007045011</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td>UIS</td><td><code>UIS_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num">1</td><td><code>0001043723</code></td><td class="num">0</td><td class="num">0</td><td><span class="badge info">By design</span></td><td><span class="badge ok">Clean</span></td></tr>
+          <!-- UNES -->
+          <tr><td>UNES</td><td><code>UNES_DEPOSIT</code></td><td><span class="badge purple">Balance</span></td><td class="num">0 BANK</td><td><code>4041xxx</code> OTHR accounts (EUR)</td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean · covers OTHR not BANK · 1 active acct (4041017)</span></td></tr>
+          <tr><td>UNES</td><td><code>UNES_OI_AR/AP</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0001081464 → 0009999993</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean (AR/AP OI only)</span></td></tr>
+          <tr><td>UNES</td><td><code>UNES_OI_G/L</code></td><td><span class="badge info">OI</span></td><td class="num">—</td><td><code>0001081464 → 0009999993</code></td><td class="num">0</td><td class="num">0</td><td>—</td><td><span class="badge ok">Clean (G/L OI only)</span></td></tr>
+          <tr class="late"><td>UNES</td><td><code>UNES_UNBA</code></td><td><span class="badge purple">Balance</span></td><td class="num" style="color:var(--bad);font-weight:700">82 BANK</td><td><code>0001001604 → 0001098174</code> · 25 bank families · 913 docs/yr</td><td class="num" style="color:var(--bad);font-weight:700">6</td><td class="num" title="all USD local-currency or dormant — not a gap">102 *</td><td><span class="badge info">By design</span></td><td><span class="badge bad">ERROR GENERATOR · 2 mains → closed sub · stale 2007</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout ok" style="margin-top:10px">
+        <strong>Reviewed: the 102 "empty T030H" accounts are NOT a gap — corrected finding</strong>
+        An earlier draft flagged 102 UNES accounts with empty T030H (no adjustment account) as "the largest quantification gap." Drilling in with currency + balance + variant-range checks shows this was a false positive. <strong>UNES local currency is USD</strong> (confirmed in T001), so:
+        <table style="margin:10px 0;font-size:12px">
+          <thead><tr><th>Of the 102 empty-T030H accounts…</th><th>Count</th><th>Why no gap</th></tr></thead>
+          <tbody>
+            <tr class="best"><td>USD accounts (= local currency)</td><td class="num">95</td><td>Revaluing USD against a USD functional currency = zero FX. Empty T030H is <strong>correct</strong> — these never need an adjustment account.</td></tr>
+            <tr><td>Already valued via OI variant</td><td class="num">6</td><td>USD OTHR accounts (2021xxx series) handled through open-item valuation — not skipped at all.</td></tr>
+            <tr><td>Foreign currency (5 EUR · 1 MZN · 1 BRL)</td><td class="num">7</td><td>All dormant — zero balance in BSIS and BSAS, none are house banks. No FX exposure to value.</td></tr>
+          </tbody>
+        </table>
+        <strong>Net genuine gap from the 102: zero.</strong> Also: none of the 102 fall inside the UNES_UNBA balance-variant range (0001001604→0001098174), so the balance run never touches them regardless. The only real UNES configuration error remains the <strong>unfinished Banco de Chile sub-account migration in OB09</strong> (2 in-scope accounts post to a closed sub).
+      </div>
+
+      <div class="callout warn">
+        <strong>VARI/VARID extraction pending — P01 connection required</strong>
+        Script ready at <code>Zagentexecution/mcp-backend-server-python/extract_sapf100_variants.py</code>. Run when P01 is available to load variant selection ranges into Gold DB. The analysis below is based on T030H + SKB1 + BSIS (already in Gold DB).
+      </div>
+
+      <!-- ── T030H Defect Pyramid ────────────────────────────────── -->
+      <h3>T030H Account Determination — Defect Pyramid (KTOPL=UNES)</h3>
+      <p class="muted">T030H maps each FX-exposed account (HKONT) to its valuation adjustment targets (LKORR = balance sheet, LSBEW/LHBEW = P&L). F.05 reads this table at runtime.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:16px 0">
+        <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--accent);font-family:'SF Mono',Consolas,monospace">1,014</div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:4px">Total T030H rows</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">KTOPL=UNES, all currency types</div>
+        </div>
+        <div style="background:var(--good-soft);border:1px solid #a0d4b0;border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--good);font-family:'SF Mono',Consolas,monospace">200</div>
+          <div style="font-size:11px;font-weight:700;color:var(--good);text-transform:uppercase;margin-top:4px">Empty — reviewed, OK</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">LSBEW+LHBEW+LKORR blank. Active subset (102) all USD/dormant → nothing to value. Not a gap.</div>
+        </div>
+        <div style="background:var(--good-soft);border:1px solid #a0d4b0;border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--good);font-family:'SF Mono',Consolas,monospace">278</div>
+          <div style="font-size:11px;font-weight:700;color:var(--good);text-transform:uppercase;margin-top:4px">Blocked LKORR — safe</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Of 284 HKONTs w/ blocked LKORR, 278 are themselves blocked → F.05 skips before the lookup. No error.</div>
+        </div>
+        <div style="background:#4a0a0a;border:2px solid var(--bad);border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#ff6b6b;font-family:'SF Mono',Consolas,monospace">6 → 2</div>
+          <div style="font-size:11px;font-weight:700;color:#ff6b6b;text-transform:uppercase;margin-top:4px">Mis-pointed to a closed sub</div>
+          <div style="font-size:11px;color:#cc9999;margin-top:2px">The remaining 6 active accounts point to a closed sub-account (unfinished OB09 migration). Only 2 are in the variant range → those actually error. Fix = repoint OB09 to the active sub.</div>
+        </div>
+      </div>
+
+      <!-- ── 6 Live Error Generators ─────────────────────────────── -->
+      <h3>Root Cause — a Bank Sub-account Migration That Wasn't Finished in OB09</h3>
+
+      <h4>The configuration design — how UNESCO revalues bank accounts</h4>
+      <p class="muted">Across the 944 accounts in T030H there are <strong>two valid patterns</strong>, plus one broken state. This is the landscape (the error lives only in the last row):</p>
+      <table style="font-size:12px">
+        <thead><tr><th>Pattern</th><th>How it revalues</th><th>Accounts</th><th>Active</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr class="best"><td><strong>Self-revaluation</strong> (<code>HKONT = LKORR</code>)</td><td>The account is its own balance-sheet adjustment</td><td class="num">555</td><td class="num">277</td><td><span class="badge ok">Dominant pattern</span></td></tr>
+          <tr class="best"><td><strong>Sub-account</strong> (BK → S-BK active)</td><td>Adjustment posts to a separate <em>active</em> sub-account</td><td class="num">167</td><td class="num">163</td><td><span class="badge ok">Works (e.g. Ecobank)</span></td></tr>
+          <tr class="late"><td><strong>Sub-account BROKEN</strong> (BK → S-BK closed)</td><td>Same method, but the sub was blocked</td><td class="num">6</td><td class="num">6</td><td><span class="badge bad">THE ERROR</span></td></tr>
+          <tr><td>Empty LKORR</td><td>No adjustment (mostly USD = local cur.)</td><td class="num">200</td><td class="num">134</td><td><span class="badge ok">OK</span></td></tr>
+        </tbody>
+      </table>
+
+      <h4>The 3-account design (sub-account pattern, per bank/currency)</h4>
+      <table style="font-size:12px">
+        <thead><tr><th>Role</th><th>What it is</th><th>Banco Chile CLP</th><th>Ecobank ZWG</th></tr></thead>
+        <tbody>
+          <tr><td><strong>BK</strong> (main)</td><td>Operating account, holds cash. <strong>This is what F.05 revalues.</strong></td><td><code>1010574</code></td><td><code>1094316</code></td></tr>
+          <tr class="best"><td><strong>S-BK</strong> (active sub)</td><td>Adjustment account — receives the FX delta. The <code>LKORR</code> in OB09.</td><td><code>1110574</code></td><td><code>1194316</code></td></tr>
+          <tr><td><strong>CLOSED S-BK</strong> (old sub)</td><td>Previous sub, retired and blocked.</td><td><code>1109574</code></td><td><code>1194314</code></td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:11.5px">Numbering convention: <strong>active sub = main + 100000</strong> (Ecobank 1094316+100000=1194316 ✓; Banco Chile 1010574+100000=1110574 ✓).</p>
+
+      <h4>Why Ecobank works and Banco de Chile fails — same design, different maintenance</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0">
+        <div style="background:var(--good-soft);border:1px solid #a0d4b0;border-radius:6px;padding:12px">
+          <strong style="color:var(--good)">Ecobank ✓ — correct</strong>
+          <p style="font-size:12px;margin:6px 0;font-family:'SF Mono',Consolas,monospace"><code>1094316</code> (BK) → LKORR <code>1194316</code> (S-BK <strong>active</strong>)</p>
+          <p style="font-size:12px;margin:6px 0">Points to the active sub → valuation posts cleanly.</p>
+        </div>
+        <div style="background:var(--bad-soft);border:1px solid #d9b0b0;border-radius:6px;padding:12px">
+          <strong style="color:var(--bad)">Banco de Chile ❌ — broken</strong>
+          <p style="font-size:12px;margin:6px 0;font-family:'SF Mono',Consolas,monospace"><code>1010574</code> (BK) → LKORR <code>1109574</code> (<strong>CLOSED</strong>)<br>should be <code>1110574</code> (active sub)</p>
+          <p style="font-size:12px;margin:6px 0">The sub was migrated (old <code>1109574</code> closed → new <code>1110574</code>), but <strong>OB09 was never updated</strong> — still points to the closed sub → <em>"Account 1109574 blocked for posting."</em></p>
+        </div>
+      </div>
+
+      <h4>The error needs balance too — and only 2 accounts are in variant scope</h4>
+      <div class="callout warn" style="font-size:12px">
+        The error fires only when (1) the config points to a blocked sub AND (2) the main account carries an FX balance to revalue. Of the 6 mis-pointed accounts, only <strong>2 sit inside the failing variant's account ranges</strong> (<code>1000000–1099999</code> …): <code>1010574</code> (CLP) and <code>1010571</code> (USD). The other 4 (<code>1110571/574</code>, <code>1143254</code>, <code>1194316</code>) are outside the range → not revalued by this variant → cannot raise this error. Only the <code>1109574</code> CLP path is directly confirmed (session screenshot).
+      </div>
+
+      <div class="callout info">
+        <strong>Supporting detail — the accounts are live (not dead)</strong>
+        This confirms the fix is to repoint OB09, not to retire the accounts. Balances below are reference only (not the root cause). Example verified live: account <code>0001143254</code> = "S-BK CITIBANK-DAKAR", currency <strong>XOF</strong>, FY2026 balance <strong>79,719 USD</strong>, ~28 M turnover, activity through June 2026 — a live, heavily-used account.
+      </div>
+      <table style="font-size:11.5px">
+        <thead>
+          <tr><th>Source HKONT</th><th>Co.</th><th>Account Name (SKAT)</th><th>Cur</th><th>Balance USD <span style="font-weight:400;font-size:10px;color:var(--muted)">(GLT0)</span></th><th>→ LKORR (blocked)</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          <tr class="late">
+            <td><code>0001143254</code></td><td>UNES</td><td>S-BK CITIBANK - DAKAR <span style="color:var(--accent)">XOF</span></td>
+            <td><strong>XOF</strong></td>
+            <td class="num"><strong>79,719</strong> <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001102304</code> <span style="color:var(--bad);font-size:10px">(VND!)</span></td>
+            <td><span class="badge bad">Has balance · wrong LKORR (VND)</span></td>
+          </tr>
+          <tr class="late">
+            <td><code>0001010574</code></td><td>UNES</td><td>BK BANCO DE CHILE - SANTIAGO CLP</td>
+            <td><strong>CLP</strong></td><td class="num">164,918 <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001109574</code></td>
+            <td><span class="badge bad">Has balance · known incident</span></td>
+          </tr>
+          <tr class="late">
+            <td><code>0001010571</code></td><td>UNES</td><td>BK BANCO DE CHILE - SANTIAGO USD</td>
+            <td><strong>USD</strong></td><td class="num">20,096 <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001109571</code></td>
+            <td><span class="badge bad">Has balance (USD leg)</span></td>
+          </tr>
+          <tr class="late">
+            <td><code>0001110574</code></td><td>UNES</td><td>S-BK BANCO DE CHILE - SANTIAGO CLP</td>
+            <td><strong>CLP</strong></td><td class="num">−41,145 <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001109574</code></td>
+            <td><span class="badge bad">Sub-bank · has balance</span></td>
+          </tr>
+          <tr class="late" style="background:#fffbe0">
+            <td><code>0001194316</code></td><td>UNES</td><td>S-BK ECOBANK - HARARE ZWG</td>
+            <td><strong>ZWG</strong> ⚠</td><td class="num">0 <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001194314</code></td>
+            <td><span class="badge warn">ZWG (new 2024) · balance 0 → no error now</span></td>
+          </tr>
+          <tr class="late">
+            <td><code>0001110571</code></td><td>UNES</td><td>S-BK BANCO DE CHILE - SANTIAGO USD</td>
+            <td><strong>USD</strong></td><td class="num">0 <span style="font-size:10px;color:var(--muted)">FY26</span></td>
+            <td><code>0001109571</code></td>
+            <td><span class="badge warn">Sub-bank · balance 0 → no error</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:11.5px">All 6 are company code <strong>UNES</strong>, across <strong>3 banks</strong>: Banco de Chile Santiago (USD &amp; CLP, main "BK" + sub "S-BK"), Citibank Dakar (XOF), Ecobank Harare (ZWG). All <code>XSPEB=''</code> (active), <code>XLOEB=''</code>. Balances are <strong>live GLT0 FY2026 (P01)</strong>, reconciled to FS10N (1143254 = 79,718.87 ✓). 4 carry an FX balance (rows 1–4 → would revalue); 2 are at 0 (Ecobank ZWG, USD sub → no error today). The blocked accounts are the <em>LKORR targets</em>.</p>
+      <div class="callout info" style="font-size:11.5px">
+        <strong>📐 Reference (reusable) — how to read GL balance totals (GLT0/FAGLFLEXT)</strong>
+        <em>Balances are not the root cause of the error</em> (that is the OB09 migration) — they only gate which mis-pointed account triggers it in a given month. Kept here as reusable method: read from totals table <strong>GLT0</strong> with filter <code>RLDNR=00, RRCTY=0, RVERS=001</code>; balance (local cur) = <strong>simple sum of HSLVT + HSL01..16</strong> across all rows of the account — the debit/credit sign is already stored in the values (do NOT flip by DRCRK). Verified against FS10N: 1143254 = 79,718.87. <strong>Pitfalls seen this session (all corrected):</strong> (a) summing BSIS open items gave "445,688" — BSIS is not a balance; (b) flipping the sign by DRCRK inflated to 56M; (c) currency comes from the SKAT name / document currency, not <code>SKB1.WAERS</code>.
+      </div>
+      <div class="callout warn" style="margin-top:8px">
+        <strong>ZWG note — Zimbabwe Gold account (0001194316)</strong>
+        Same migration pattern: its adjustment account <code>0001194314</code> is the closed ZWL (old currency) sub. It is one of the 6 mis-pointed accounts, but currently at balance 0 and outside the variant range → no error today. Worth fixing in the same OB09 pass so it can be revalued once it carries a ZWG balance.
+      </div>
+
+      <!-- ── Variant Forensic ────────────────────────────────────── -->
+      <h3>Variant Inventory — SAPF100 (F.05) — P01 Production</h3>
+      <p class="muted">27 variants: 21 UNESCO operational + 6 SAP-delivered. Source: SE38 Variant Directory + VARI/VARIS RFC extraction, P01, 2026-06-05. Full descriptions and dates confirmed from SE38 screenshots.</p>
+
+      <!-- OI vs BALANCES explanation -->
+      <h4>Critical Distinction — Open Items vs Balances (two separate runs per company code)</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+        <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:16px">
+          <h4 style="margin:0 0 8px;color:var(--accent)">Open Items variants (_OI)</h4>
+          <p style="font-size:12.5px;margin:4px 0"><strong>F.05 tab: Open Items</strong></p>
+          <p style="font-size:12.5px;margin:4px 0">Valuates: AR open items · AP open items · G/L account open items</p>
+          <p style="font-size:12.5px;margin:4px 0">GL range (confirmed IBE): <code>1100000 → 1199999</code></p>
+          <p style="font-size:12.5px;margin:4px 0">Reconciliation account: <code>2011011</code> excluded (IBE)</p>
+          <p style="font-size:12.5px;margin:4px 0">Batch session: <code>{BUKRS}_REVAL_OI</code></p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--good)">✓ Reversal: embedded in variant (Reversal posting date = day 1)</p>
+        </div>
+        <div style="background:var(--purple-soft);border:1px solid var(--purple);border-radius:8px;padding:16px">
+          <h4 style="margin:0 0 8px;color:var(--purple)">Balances variants (_UNBA / _BA)</h4>
+          <p style="font-size:12.5px;margin:4px 0"><strong>F.05 tab: G/L Balances</strong></p>
+          <p style="font-size:12.5px;margin:4px 0">Valuates: G/L account total balances (NOT open-item managed)</p>
+          <p style="font-size:12.5px;margin:4px 0">GL range: same 1100000 → 1199999 (balance approach, not OI)</p>
+          <p style="font-size:12.5px;margin:4px 0">Covers: <strong>bank accounts</strong> (non-OI managed, balance-sheet items)</p>
+          <p style="font-size:12.5px;margin:4px 0">Batch session: <code>{BUKRS}_REVAL_BA</code></p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--bad)">⚠ This is where blocked LKORR errors occur</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>SAPF100 execution flow — via Batch Input (SM35)</strong>
+        SAPF100 does NOT post directly. It creates a <strong>batch input session</strong> (SM35), then SAPF180 processes it to make actual FI postings. Session names: <code>IBE_REVAL_OI</code>, <code>IBE_REVAL_BA</code>, etc. Sessions found in APQI for: IBE · UIL · UIS · MGIE · IIEP. <strong>Not found for UNES · ICBA · ICTP · UBO</strong> — likely processed and deleted, or using SAPF180 sessions. SAPF180 sessions confirmed: IBE · IIEP · UBO · UIS · UNES.
+      </div>
+
+      <div class="callout info">
+        <strong>Naming convention confirmed from SE38</strong>
+        <code>_OI</code> = "AP/AR/GL OI revaluation" (Open Items tab) &nbsp;·&nbsp;
+        <code>_UNBA</code> / <code>_BA</code> = "Balances Revaluation" (G/L Balances tab) &nbsp;·&nbsp;
+        <code>_DEPOSIT</code> = "Deposit {account range}" (bank/deposit specific) &nbsp;·&nbsp;
+        <code>GRP CUR</code> = Group currency &nbsp;·&nbsp;
+        <code>SAP&amp;*</code> = SAP-delivered 1997–1999, not modified since
+      </div>
+
+      <h4>Variant Inventory — Confirmed from SE38 + BKPF + BSIS Production Data</h4>
+      <p class="muted">Descriptions, creators and dates from SE38 Variant Directory screenshots. Bank coverage confirmed from 2025 FBB1 BSIS postings × P01_SKA1 KTOKS=BANK. Zero speculation.</p>
+      <table style="font-size:12px">
+        <thead>
+          <tr><th>Co.</th><th>Variant</th><th>Description (SE38)</th><th>Created</th><th>Last Changed</th><th>Batch Session</th><th>Bank Accounts</th><th>Evidence</th><th>Risk</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>IBE</strong></td><td><code>IBE_OI</code></td><td>IBE AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 20.02.2025</td><td><code>IBE_REVAL_OI</code></td><td><span class="badge ok">NO</span></td><td>0 BANK in BSIS</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>IBE</strong></td><td><code>IBE_UNBA</code></td><td>IBE Balances Revaluation</td><td><code>K_HEYLER</code> 2006</td><td><code>M_SPRONK</code> 2008</td><td><code>IBE_REVAL_BA</code></td><td><span class="badge ok">YES — 1</span></td><td><code>0001043733</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>ICBA</strong></td><td><code>ICBA_OI</code></td><td>ICBA AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2017</td><td><code>J_LA</code> 07.11.2022</td><td>—</td><td><span class="badge ok">NO</span></td><td>0 BANK in BSIS</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>ICBA</strong></td><td><code>ICBA_UNBA</code></td><td>ICBA Balances Revaluation</td><td><code>M_SPRONK</code> 2017</td><td><code>J_LA</code> 31.01.2018</td><td>—</td><td><span class="badge ok">YES — 2</span></td><td><code>0001044714</code> · <code>0001044715</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr style="background:#fff8e0"><td><strong>ICTP</strong></td><td><code>ICTP_OI</code></td><td>ICTP AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2012</td><td><code>M_VENUTI</code> 05.12.2022</td><td>—</td><td><span class="badge ok">NO</span></td><td>OI only, 0 BANK</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr style="background:#fde8e8"><td><strong>ICTP</strong></td><td style="color:var(--bad);font-style:italic">MISSING</td><td style="color:var(--bad)">No Balances variant exists</td><td>—</td><td>—</td><td>—</td><td><span class="badge bad">0 BANK revalued</span></td><td>Confirmed by BSIS — no bank FX coverage</td><td><span class="badge bad">Coverage gap</span></td></tr>
+          <tr><td><strong>IIEP</strong></td><td><code>IIEP_OI</code></td><td>IIEP AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 07.11.2022</td><td><code>IIEP_REVA_OI</code></td><td><span class="badge ok">NO</span></td><td>0 BANK in OI run</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>IIEP</strong></td><td><code>IIEP_UNBA</code></td><td>IIEP Balances Revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>M_SPRONK</code> 2008</td><td><code>IIEP_REVA_BA</code></td><td><span class="badge ok">YES — 3</span></td><td><code>0001043715</code> · <code>0001043894</code> · <code>0001075712</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>MGIE</strong></td><td><code>MGIE_OI</code></td><td>MGIE AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2017</td><td><code>J_LA</code> 07.11.2022</td><td><code>MGI_REVAL_OI</code></td><td><span class="badge ok">NO</span></td><td>0 BANK</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>MGIE</strong></td><td><code>MGIE_UNBA</code></td><td>MGIE Balances Revaluation</td><td><code>M_SPRONK</code> 2017</td><td>— never changed</td><td><code>MGI_REVAL_BA</code></td><td><span class="badge ok">YES — 1</span></td><td><code>0001063884</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>UBO</strong></td><td><code>UBO GRP CUR</code></td><td>UBO group currency</td><td><code>Y_KASSIM</code> 2009</td><td>— never changed</td><td>—</td><td><span class="badge ok">NO</span></td><td>0 BANK for all UBO</td><td><span class="badge info">No bank FX</span></td></tr>
+          <tr style="background:#fff0f0"><td><strong>UBO</strong></td><td><code>UBO_OI_AR/AP</code></td><td style="color:var(--bad)">⚠ "UNES AR/AP OI revaluation"</td><td><code>Y_KASSIM</code> 2016</td><td>— never changed</td><td>—</td><td><span class="badge ok">NO</span></td><td>0 BANK for UBO</td><td><span class="badge warn">Mislabeled</span></td></tr>
+          <tr style="background:#fff0f0"><td><strong>UBO</strong></td><td><code>UBO_OI_G/L</code></td><td style="color:var(--bad)">⚠ "UNES SUB BANK OI REVALUATION"</td><td><code>Y_KASSIM</code> 2016</td><td>— never changed</td><td>—</td><td><span class="badge ok">NO</span></td><td>0 BANK for UBO</td><td><span class="badge warn">Mislabeled</span></td></tr>
+          <tr style="background:#fff0f0"><td><strong>UBO</strong></td><td><code>UBO_UNBA</code></td><td style="color:var(--bad)">⚠ "UNES BANK Balances Revaluation"</td><td><code>Y_KASSIM</code> 2016</td><td>— never changed</td><td>—</td><td><span class="badge ok">NO</span></td><td>UBO has no bank FX exposure</td><td><span class="badge warn">Mislabeled</span></td></tr>
+          <tr><td><strong>UIL</strong></td><td><code>UIL_OI</code></td><td>UIL AP/AR/GL OI revaluation</td><td><code>KP_HUMME</code> 2013</td><td><code>J_LA</code> 07.11.2022</td><td><code>UIL_REVAL_OI</code></td><td><span class="badge ok">NO</span></td><td>0 BANK</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>UIL</strong></td><td><code>UIL_UNBA</code></td><td>UIL Bank Balances Revaluation</td><td><code>KP_HUMME</code> 2013</td><td><code>KP_HUMME</code> 03.09.2013</td><td><code>UIL_REVAL_01</code></td><td><span class="badge ok">YES — 2</span></td><td><code>0001075791</code> · <code>0001175791</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>UIS</strong></td><td><code>UIS_OI</code></td><td>UIS AP/AR/GL OI revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 25.02.2026</td><td><code>UIS_REVAL_OI</code></td><td><span class="badge ok">NO</span></td><td>0 BANK</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="best"><td><strong>UIS</strong></td><td><code>UIS_UNBA</code></td><td>UIS Balances Revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>M_SPRONK</code> 2008</td><td><code>UIS_REVAL_BA</code></td><td><span class="badge ok">YES — 1</span></td><td><code>0001043723</code></td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>UNES</strong></td><td><code>UNES_DEPOSIT</code></td><td>UNES_Deposit 4041011 &gt; 4041013</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 11.03.2026</td><td>—</td><td><span class="badge ok">NO</span></td><td>covers OTHR 4041xxx (1 active), not the 82 banks</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>UNES</strong></td><td><code>UNES_OI_AR/AP</code></td><td>UNES AR/AP OI revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 21.01.2024</td><td>—</td><td><span class="badge ok">NO</span></td><td>AR/AP only</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr><td><strong>UNES</strong></td><td><code>UNES_OI_G/L</code></td><td>UNES SUB BANK OI REVALUATION</td><td><code>M_SPRONK</code> 2007</td><td><code>J_LA</code> 07.10.2013</td><td>—</td><td><span class="badge ok">NO</span></td><td>G/L OI only</td><td><span class="badge ok">Clean</span></td></tr>
+          <tr class="late"><td><strong>UNES</strong></td><td><code>UNES_UNBA</code></td><td>UNES BANK Balances Revaluation</td><td><code>M_SPRONK</code> 2007</td><td><code>M_SPRONK</code> 27.04.2007</td><td>—</td><td><span class="badge bad">YES — 82 BANK</span></td><td>revalues the 2 mis-pointed Banco de Chile mains → closed sub</td><td><span class="badge bad">ERROR GENERATOR · stale 2007</span></td></tr>
+          <tr style="background:var(--code-bg)"><td colspan="9" style="color:var(--muted);font-size:11px;font-style:italic">SAP-delivered (1997–1999, last changed by SAP, not used in UNESCO monthly close): SAP&amp;AUDIT_OP_D (Cust OI) · SAP&amp;AUDIT_OP_K (Vendor OI) · SAP&amp;AUDIT_OP_S (G/L OI) · SAP&amp;AUDIT_SL_S (G/L Balance) · SAP&amp;FW_D (FC Customers) · SAP&amp;FW_K (FC Vendors)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout bad" style="margin-top:12px">
+        <strong>UBO variants mislabeled — 3 variants describe UNES, not UBO</strong>
+        <code>UBO_OI_AR/AP</code>, <code>UBO_OI_G/L</code>, and <code>UBO_UNBA</code> all have descriptions saying "UNES ...". Created by Y_KASSIM on 15.02.2016, never modified since. Were copied from UNES variants without updating descriptions. Actual parameters may be correctly set for UBO (confirmed: 0 BANK accounts processed for UBO). But this quality defect means no one can identify the variant by description alone.
+      </div>
+      <div class="callout warn" style="margin-top:8px">
+        <strong>UNES_UNBA last updated 27.04.2007 — nearly 19 years stale</strong>
+        This variant has never been modified since creation. Any bank/deposit accounts added to UNES after 2007 may fall outside its account selection range. ZWG account 0001194316 (added ~2024) almost certainly not covered.
+      </div>
+      <div class="callout warn" style="margin-top:8px">
+        <strong>Consequence: the 2 in-scope mains can't post their FX adjustment</strong>
+        When <code>UNES_UNBA</code> revalues <code>1010574</code>/<code>1010571</code>, F.05 tries to post the balance-sheet adjustment to the closed sub (<code>1109574</code>/<code>1109571</code>) and aborts — so their FX valuation is missing from the P&amp;L each month until OB09 is repointed to the active sub.
+      </div>
+
+      <h4>Execution Reality — Batch Input Log Reconstructed (BKPF + BSIS 2025–2026)</h4>
+      <p class="muted">APQI is a pool table — only session names readable via RFC. Full execution truth reconstructed from BKPF (TCODE=FBB1) + BSIS (KTOKS=BANK). REVERSAL = BUDAT day 1-2. VALUATION = BUDAT day 28-31.</p>
+
+      <div class="callout ok">
+        <strong>Expected: BALANCE valuations post monthly and do not reverse — this is standard practice</strong>
+        Across all of 2025 BKPF, balance-account FX valuations post every month with no day-1 reversal. This is the <em>correct</em> treatment for bank/cash balances (balance-sheet preparation valuation — see "Two Valuation Modes" above): the account carries its revalued position, the next run posts only the delta. All 8 institutes with balance variants behave consistently. UIL's single balance reversal (Jan 2025) is the one-off deviation, not the norm. <strong>The genuine timing issues are on the OI side</strong> (open-item reversals are meant to happen day-1 and are sometimes late or skipped — see below).
+      </div>
+
+      <table style="font-size:12px">
+        <thead>
+          <tr>
+            <th>Institute</th><th>Variants <span style="font-weight:400;font-size:10px;color:var(--muted)">(OI · Balance)</span></th><th>OI Valuation</th><th>OI Reversal</th><th>Balance Valuation</th><th>Balance Reversal <span style="font-weight:400;font-size:10px;color:var(--muted)">(none expected)</span></th><th>Key User</th><th>Anomalies</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="best">
+            <td><strong>IBE</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>IBE_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>IBE_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span> (1 doc)</td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>V_KOHEMUN</code></td>
+            <td>Nov 2025: <code>ME_PULLIG</code> assisted. Dec 2025 balance posted Feb 2026 (62d lag).</td>
+          </tr>
+          <tr>
+            <td><strong>ICBA</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>ICBA_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>ICBA_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge warn">Mostly ✓</span> (some gaps)</td>
+            <td><span class="badge warn">8 of 12 months</span></td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>A_MULUGETA</code> / <code>E_GEBREMARIA</code></td>
+            <td>Balance runs missing: Mar, Aug, Sep, Dec 2025. Two users alternate monthly.</td>
+          </tr>
+          <tr class="late">
+            <td><strong>ICTP</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>ICTP_OI</code><br><span style="color:var(--bad)">Bal: none</span></td>
+            <td><span class="badge ok">10 of 12 ✓</span></td>
+            <td><span class="badge ok">10 of 12 ✓</span></td>
+            <td><span class="badge bad">NEVER — no variant</span></td>
+            <td><span class="badge info">N/A</span></td>
+            <td><code>M_VENUTI</code></td>
+            <td>Jul+Nov 2025 both OI and Balance missed. No ICTP_UNBA variant exists.</td>
+          </tr>
+          <tr class="best">
+            <td><strong>IIEP</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>IIEP_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>IIEP_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span> (3 docs)</td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>F_CADIO</code> + <code>S_COURONNAUD</code></td>
+            <td>Best-covered institute. Two users split OI/Balance. S_COURONNAUD handles Balance exclusively.</td>
+          </tr>
+          <tr class="anomaly">
+            <td><strong>MGIE</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>MGIE_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>MGIE_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge bad">INCONSISTENT</span></td>
+            <td><span class="badge ok">Every month ✓</span> (1 doc)</td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>P_ARORA</code></td>
+            <td>OI reversals missing many months (May–Dec 2025). Balance always runs. Process gap.</td>
+          </tr>
+          <tr>
+            <td><strong>UBO</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>UBO_OI_AR/AP</code>, <code>UBO_OI_G/L</code>, <code>UBO GRP CUR</code><br><span style="color:var(--purple)">Bal:</span> <code>UBO_UNBA</code> <span style="color:var(--muted)">(0 bank runs)</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge info">NO BALANCE RUNS</span></td>
+            <td><span class="badge info">N/A</span></td>
+            <td><code>P_TUCKER</code></td>
+            <td>UBO has no bank FX exposure. Pure OI company code. Aug–Sep 2025: <code>M_MEHARI</code> assisted.</td>
+          </tr>
+          <tr class="best">
+            <td><strong>UIL</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>UIL_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>UIL_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span> (1 doc)</td>
+            <td><span class="badge info">Once (deviation)</span></td>
+            <td><code>DB_ABDI</code></td>
+            <td>UIL posted one balance reversal (Jan 2025, for Dec 2024) then reverted to the standard non-reversing approach. The one-off is the exception, not a missing step elsewhere.</td>
+          </tr>
+          <tr class="best">
+            <td><strong>UIS</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>UIS_OI</code><br><span style="color:var(--purple)">Bal:</span> <code>UIS_UNBA</code></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span></td>
+            <td><span class="badge ok">Every month ✓</span> (1 doc)</td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>N_MOUSSA</code></td>
+            <td>Dec 2025: <code>J_LA</code> posted OI valuation. Very clean process otherwise.</td>
+          </tr>
+          <tr class="late">
+            <td><strong>UNES</strong></td>
+            <td style="font-size:10px;line-height:1.6"><span style="color:var(--accent)">OI:</span> <code>UNES_OI_AR/AP</code>, <code>UNES_OI_G/L</code>, <code>UNES_DEPOSIT</code><br><span style="color:var(--purple)">Bal:</span> <code>UNES_UNBA</code> <span style="color:var(--bad)">⚠ error gen.</span></td>
+            <td><span class="badge ok">Every month ✓</span> (400+ docs)</td>
+            <td><span class="badge ok">Every month ✓</span> (300-700 docs)</td>
+            <td><span class="badge ok">Every month ✓</span> (75-78 docs)</td>
+            <td><span class="badge info">By design</span></td>
+            <td><code>J_LA</code></td>
+            <td>Largest volume by far. May 2026: <code>P_TUCKER</code> covered reversals. 6 blocked HKONTs → 0 balance docs posted for them.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Batch Input Sessions — Active Session Names Confirmed</h4>
+      <table style="font-size:12px">
+        <thead>
+          <tr><th>Institute</th><th>OI Session Name</th><th>Balance Session Name</th><th>SAPF180 Session</th><th>Status in APQI</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>IBE</td><td><code>IBE_REVAL_OI</code></td><td><code>IBE_REVAL_BA</code></td><td><code>SAPF180/IBE</code></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td>ICBA</td><td>—</td><td>—</td><td>—</td><td><span class="badge warn">Sessions not in APQI</span></td></tr>
+          <tr><td>ICTP</td><td>—</td><td>—</td><td>—</td><td><span class="badge warn">Sessions not in APQI</span></td></tr>
+          <tr><td>IIEP</td><td><code>IIEP_REVA_OI</code></td><td><code>IIEP_REVA_BA</code></td><td><code>SAPF180/IIEP</code></td><td><span class="badge ok">Active (note: REVA not REVAL)</span></td></tr>
+          <tr><td>MGIE</td><td><code>MGI_REVAL_OI</code></td><td><code>MGI_REVAL_BA</code></td><td>—</td><td><span class="badge ok">Active (note: MGI not MGIE)</span></td></tr>
+          <tr><td>UBO</td><td>—</td><td>—</td><td><code>SAPF180/UBO</code></td><td><span class="badge info">OI only</span></td></tr>
+          <tr><td>UIL</td><td><code>UIL_REVAL_OI</code></td><td><code>UIL_REVAL_01</code></td><td>—</td><td><span class="badge ok">Active (Balance session: REVAL_01 not REVAL_BA)</span></td></tr>
+          <tr><td>UIS</td><td><code>UIS_REVAL_OI</code></td><td><code>UIS_REVAL_BA</code></td><td><code>SAPF180/UIS</code></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td>UNES</td><td>—</td><td>—</td><td><code>SAPF180/UNES</code></td><td><span class="badge ok">Active via SAPF180</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout bad">
+        <strong>Confirmed: UNES_UNBA is the error generator — UNES_DEPOSIT is clean (covers OTHR, not bank)</strong>
+        Final analysis from T012K + SKB1 + BSIS + the variant screen ranges:
+        <ul style="margin:8px 0;font-size:12.5px">
+          <li><code>UNES_DEPOSIT</code>: covers 4041xxx <em>OTHR</em> accounts (EUR, 1 active = 0004041017). Does NOT cover the 82 BANK accounts → not the error source.</li>
+          <li><code>UNES_UNBA</code>: revalues the bank balance-sheet accounts. Its variant screen ranges are <code>1000000–1099999</code>, <code>1400000–1499999</code>, <code>1900000–1999999</code>. <strong>This is where the mis-pointed Banco de Chile mains are revalued.</strong></li>
+          <li>Of the 6 accounts pointing to a closed sub, only <strong>2 fall inside those ranges</strong> (<code>1010574</code>, <code>1010571</code> — in 1000000–1099999) → those actually error. The other 4 (<code>1110571/574</code>, <code>1143254</code>, <code>1194316</code>) are above 1099999 → outside scope → no error.</li>
+          <li>UNES runs via <code>SAPF180/UNES</code> — no named batch session like <code>UNES_REVAL_BA</code> in APQI, which is why UNES sessions were invisible in the initial search.</li>
+        </ul>
+      </div>
+
+      <h4>UNES Bank Account Groups — 82 Accounts across 25 Bank Families</h4>
+      <p class="muted">Mapped from T012K (house bank → GL account). The 2 in-scope error accounts are the Banco de Chile (BAE01) main USD/CLP accounts.</p>
+      <table style="font-size:11.5px">
+        <thead>
+          <tr><th>Bank Family</th><th>House Bank IDs</th><th>Accounts</th><th>Currencies</th><th>Blocked HKONTs</th></tr>
+        </thead>
+        <tbody>
+          <tr class="late"><td><strong>Citibank</strong></td><td><code>CIT01–CIT26</code></td><td class="num">19</td><td class="num">18</td><td><span class="badge bad">0001143254 (CIT23? — pending verification)</span></td></tr>
+          <tr><td><strong>Standard Chartered Bank</strong></td><td><code>SCB01–SCB19</code></td><td class="num">15</td><td class="num">14</td><td>none confirmed</td></tr>
+          <tr><td><strong>Société Générale</strong></td><td><code>SOG01–SOG06</code></td><td class="num">12</td><td class="num">8</td><td>none</td></tr>
+          <tr><td><strong>Ecobank</strong></td><td><code>ECO01–ECO10</code></td><td class="num">9</td><td class="num">6</td><td><span class="badge bad">0001194316 ZWG (ECO08 — pending verification)</span></td></tr>
+          <tr class="late"><td><strong>Banco de Chile (BAE01)</strong></td><td><code>BAE01</code></td><td class="num">1 active</td><td class="num">CLP</td><td><span class="badge bad">0001010571 USD · 0001010574 CLP (confirmed BAE01)</span><br><span style="font-size:10.5px;color:var(--muted)">Also 0001110571 USD · 0001110574 CLP (likely same bank, different account ID)</span></td></tr>
+          <tr><td><strong>BNP Paribas</strong></td><td><code>BNP01–02</code></td><td class="num">2</td><td class="num">1</td><td>none</td></tr>
+          <tr><td><strong>Credit Agricole</strong></td><td><code>CRA01</code></td><td class="num">2</td><td class="num">1</td><td>none</td></tr>
+          <tr><td><strong>Credit Industriel Commercial</strong></td><td><code>CIC01</code></td><td class="num">2</td><td class="num">1</td><td>none</td></tr>
+          <tr><td><strong>Commercial Bank Ethiopia</strong></td><td><code>CBE01</code></td><td class="num">2</td><td class="num">1</td><td>none</td></tr>
+          <tr><td><strong>Bank Tejarat (Iran)</strong></td><td><code>BTE01</code></td><td class="num">2</td><td class="num">2</td><td>none</td></tr>
+          <tr><td><strong>Banco Metropolitano (Cuba)</strong></td><td><code>BMN01</code></td><td class="num">2</td><td class="num">2</td><td>none</td></tr>
+          <tr style="background:var(--code-bg)"><td colspan="5" style="font-size:11px;color:var(--muted);font-style:italic">Other single-account banks (14): ANZ Bank · ABN AMRO · Bank of China · Bank Nile (Sudan) · Banco de Venezuela · FTB Cambodia · HDFC/Grindlays · AIB Afghanistan · Standard Bank Namibia · NTB · BST Mozambique · Bank of Palestine · TSC Paris · Standard Chartered (Paris SOG05)</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Fix — Repoint OB09 to the Active Sub-account (do NOT unblock)</h4>
+      <div class="callout info">
+        <strong>The closed subs were retired on purpose — don't unblock them. Finish the migration in OB09.</strong>
+        Repoint the 2 in-scope main accounts to their active sub, matching the Ecobank pattern:
+        <table style="font-size:12px;margin:8px 0">
+          <thead><tr><th>Account</th><th>LKORR now (wrong)</th><th>LKORR correct</th></tr></thead>
+          <tbody>
+            <tr><td><code>1010574</code> CLP</td><td><code>1109574</code> (CLOSED)</td><td><strong><code>1110574</code></strong> (S-BK active)</td></tr>
+            <tr><td><code>1010571</code> USD</td><td><code>1109571</code> (CLOSED)</td><td><strong><code>1110571</code></strong> (S-BK active)</td></tr>
+          </tbody>
+        </table>
+        Two OB09 entries → valuation posts to the active sub → error resolved. No unblocking, no variant change, no master-data change.
+        <p style="margin:8px 0 0;font-size:12px;color:var(--muted)"><strong>Confirm with Treasury/accounting first:</strong> that <code>1110574/1110571</code> (the active sub) is the intended adjustment account (the migration target). The other 4 mis-pointed accounts are out of variant scope today — fix them in the same pass for hygiene. The "102 empty T030H" tier was reviewed and is benign.</p>
+      </div>
+
+      <!-- ── THE BIGGER OPPORTUNITY ──────────────────────────────── -->
+      <h3 style="margin-top:24px">⚡ Beyond the Error — the Real Opportunity is Automation (SM36 Jobs)</h3>
+      <div class="callout ok">
+        <strong>The OB09 fix removes one error. Scheduling F.05 as background jobs removes an entire class of problems — and the infrastructure already exists.</strong>
+        Today <strong>zero SAPF100 background jobs</strong> exist: all FX revaluation is launched interactively by individual accountants. Meanwhile <code>SAPF124</code> (automatic clearing) already runs <strong>daily as a JOBBATCH job</strong> — the exact template to copy.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0">
+        <div style="border:2px solid var(--warn);border-radius:8px;padding:16px;background:var(--warn-soft)">
+          <h4 style="color:var(--warn);margin:0 0 8px">Level 1 — Tactical (fix the error)</h4>
+          <p style="font-size:12.5px;margin:4px 0">Repoint 2 OB09 entries to the active sub-account. Stops the "blocked for posting" error.</p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--muted)">Effort: 2 config entries · Impact: 1 error resolved</p>
+        </div>
+        <div style="border:2px solid var(--good);border-radius:8px;padding:16px;background:var(--good-soft)">
+          <h4 style="color:var(--good);margin:0 0 8px">Level 2 — Strategic (automate F.05)</h4>
+          <p style="font-size:12.5px;margin:4px 0">Schedule SM36 jobs for SAPF100 per company code: valuation last business day 23:00 + reversal day-1 06:00, under JOBBATCH (same as SAPF124).</p>
+          <p style="font-size:12.5px;margin:4px 0;color:var(--muted)">Effort: 9 BUKRS × 2 variants · Impact: eliminates a whole class of failures ↓</p>
+        </div>
+      </div>
+
+      <h4>What automation eliminates — all at once</h4>
+      <table style="font-size:12px">
+        <thead><tr><th>Problem today (manual / interactive)</th><th>Evidence</th><th>After SM36 jobs</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Missed months</strong> — period closes with no FX revaluation, undetected</td><td>ICTP missed Jul + Nov 2025 and May 2026 (single user, no backup)</td><td><span class="badge ok">Job runs regardless of who is present</span></td></tr>
+          <tr><td><strong>Timing lag</strong> — revaluation posted days/weeks after month-end</td><td>2025 avg lag up to ~18–24d; 2026 improved ~78% but still manual &amp; fragile</td><td><span class="badge ok">CPUDT = BUDAT, zero lag</span></td></tr>
+          <tr><td><strong>Single-point-of-failure</strong> — one accountant, no backup</td><td>ICTP (M_VENUTI→T_CARPENE), UBO (P_TUCKER); ad-hoc cross-coverage in May 2026</td><td><span class="badge ok">No human dependency for the run</span></td></tr>
+          <tr><td><strong>No sign-off gate</strong> — OB52 locks the period without checking FX is done</td><td>ICTP gaps only found by data mining months later</td><td><span class="badge ok">Job log = the sign-off evidence</span></td></tr>
+          <tr><td><strong>No audit trail of "did it run?"</strong></td><td>Reconstructed manually from BKPF this session</td><td><span class="badge ok">SM37 job history, automatic</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <strong>Why this is low-risk and high-value:</strong> the automation pattern is already proven in this same system — <code>SAPF124</code> clears automatically every day under JOBBATCH without incident. Replicating it for <code>SAPF100</code> (9 company codes × valuation + reversal variants) turns FX revaluation from a fragile, person-dependent monthly scramble into a guaranteed, self-documenting close step. The 78% timing improvement seen in 2026 was driven only by accountability/awareness — jobs would make it <strong>structural and permanent</strong>. See the full sequencing in the Automation Roadmap below.
+      </div>
+
+      <h4>Coverage Gap — ICTP</h4>
+      <div class="callout warn">
+        <strong>ICTP has no UNBA variant — balance-sheet FX accounts not revalued</strong>
+        All other company codes have both <code>_OI</code> and <code>_UNBA</code> variants. ICTP only has <code>ICTP_OI</code>. Any ICTP accounts that carry FX balances but are not open-item managed are systematically excluded from monthly revaluation — independent of the timing gap issue.
+      </div>
+
+      <!-- ── BSIS Cross-Reference ──────────────────────────────── -->
+      <h3>Actual Accounts Valued in 2025 (BSIS × BKPF TCODE=FBB1)</h3>
+      <p class="muted">40 distinct GL accounts appeared in 2025 FBB1 line items. Top accounts below. Accounts 0007045011 and 0006045011 are the <em>target</em> adjustment accounts (appear across all institutes). The rest are source FX-exposed accounts.</p>
+      <table>
+        <thead>
+          <tr><th>HKONT</th><th>Role</th><th class="num">2025 Docs</th><th>Company Codes</th><th>In T030H</th><th>Blocked</th></tr>
+        </thead>
+        <tbody>
+          <tr class="best"><td><code>0007045011</code></td><td>Unrealized FX Gain (target)</td><td class="num">7,663</td><td>All 9 institutes</td><td><span class="badge warn">0 — it IS the target</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr class="best"><td><code>0006045011</code></td><td>Unrealized FX Loss (target)</td><td class="num">7,613</td><td>All 9 institutes</td><td><span class="badge warn">0 — it IS the target</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0002031800</code></td><td>FX source account</td><td class="num">173</td><td>UBO, UIL, MGIE, UNES</td><td><span class="badge ok">1</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0002021843</code></td><td>FX source account</td><td class="num">136</td><td>UNES</td><td><span class="badge ok">1</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0002021844</code></td><td>FX source account</td><td class="num">112</td><td>UNES</td><td><span class="badge ok">1</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0002021811</code></td><td>FX source account</td><td class="num">90</td><td>ICBA, UIL, ICTP, UNES</td><td><span class="badge ok">2</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0002021842</code></td><td>FX source account</td><td class="num">77</td><td>ICTP, UIL, ICBA, UNES</td><td><span class="badge ok">2</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0005091000</code></td><td>FX source account</td><td class="num">54</td><td>UBO, UNES</td><td><span class="badge ok">1</span></td><td><span class="badge ok">Active</span></td></tr>
+          <tr><td><code>0001778810</code></td><td>FX source account (BANK)</td><td class="num">32</td><td>UNES</td><td><span class="badge ok">1</span></td><td><span class="badge ok">Active</span></td></tr>
+        </tbody>
+      </table>
+      <div class="callout info">
+        <strong>Note: 200 T030H accounts are silently skipped</strong>
+        These accounts have no adjustment target configured. If any of them hold FX balances, those balances are NOT being revalued each month-end — no error, no notification, no audit trail. The VARI extraction will clarify if these fall within or outside the variant selection range.
+      </div>
+
+    </section>
+
+    <!-- T030H CONFIG DEFECTS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="t030h">
+      <h2>⚙️ T030H Configuration Defects — Root Cause of "Blocked for Posting" Errors</h2>
+
+      <p>T030H is the OBA1 account determination table for FX revaluation. UNESCO has 1,014 rows (891 distinct HKONTs) in chart of accounts UNES. The genuine defect is small: <strong>4 FX-difference (adjustment) accounts configured here are blocked for posting</strong>, referenced by 6 active bank accounts (the error fires only when one carries an FX balance). The other tiers look alarming but are benign once filtered:</p>
+
+      <div class="kpi" style="grid-template-columns:repeat(3,1fr)">
+        <div class="card good">
+          <div class="v">200</div>
+          <div class="l">Rows with empty LSBEW/LHBEW/LKORR — reviewed: all USD (local cur.) or dormant, not a gap</div>
+        </div>
+        <div class="card good">
+          <div class="v">278</div>
+          <div class="l">HKONTs with blocked LKORR but the HKONT itself is also blocked — F.05 skips them, no error</div>
+        </div>
+        <div class="card bad">
+          <div class="v">6</div>
+          <div class="l">Active bank accounts that reference a blocked adjustment account (→ 4 distinct blocked accounts) — error only when they carry an FX balance</div>
+        </div>
+      </div>
+
+      <h3>The Specific Error — Account 0001109574</h3>
+      <p>This is the account seen in the session-triggering screenshot error <em>"Account 1109574 UNES is blocked for posting"</em>:</p>
+
+      <table>
+        <thead>
+          <tr><th>Account</th><th>Description</th><th>XSPEB (Blocked?)</th><th>Role in T030H</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>0001010574</code></td>
+            <td>Active CLP bank account</td>
+            <td style="color:var(--good)">No (ACTIVE)</td>
+            <td>HKONT being revalued</td>
+            <td>F.05 tries to revalue this account</td>
+          </tr>
+          <tr>
+            <td><code>0001110574</code></td>
+            <td>Active CLP bank account (open-item)</td>
+            <td style="color:var(--good)">No (ACTIVE)</td>
+            <td>HKONT being revalued</td>
+            <td>F.05 tries to revalue this account</td>
+          </tr>
+          <tr class="late">
+            <td><code>0001109574</code></td>
+            <td>"CLOSED S-BK BANCO DE CHILE-UNESCO SANTIAGO CLP"</td>
+            <td style="color:var(--bad);font-weight:700">XSPEB = X (BLOCKED)</td>
+            <td>LKORR (B/S adj target) for the two accounts above</td>
+            <td style="color:var(--bad);font-weight:600">ERROR: F.05 tries to post here and fails</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>How It Happens</h3>
+      <p style="font-size:13px">F.05 reads T030H for each account being revalued and looks up its balance-sheet adjustment account (LKORR). For the Banco de Chile mains, that adjustment account is the <strong>closed sub-account</strong> (<code>1109574</code> / <code>1109571</code>) instead of the active sub (<code>1110574</code> / <code>1110571</code>) — so F.05 cannot post and aborts with <em>"Account 1109574 is blocked for posting."</em> This is the unfinished sub-account migration explained in the Forensic section above: the old sub was retired, but OB09 was never repointed to the new active sub.</p>
+
+      <div class="callout info">
+        <strong>Fix = repoint OB09 to the active sub (see Forensic → "Fix" for the full detail).</strong>
+        Do NOT unblock the closed subs (retired on purpose). Repoint <code>1010574 → 1110574</code> and <code>1010571 → 1110571</code> (the 2 in-scope accounts), matching the Ecobank pattern. Confirm with Treasury that <code>1110574/1110571</code> is the migration target.
+      </div>
+
+      <h3>Is it excluded in the variant? No — the error proves it</h3>
+      <div class="callout info">
+        We could not read the variant's exclusion entries directly (VARIS is a pool table; RFC returns only the variant name — needs the F.05 screen or D01 + S_DEVELOP). <strong>But the logic is conclusive:</strong> an excluded account never reaches account determination, so it <em>cannot</em> produce "blocked for posting." The error occurring at runtime proves the account is <strong>in scope, not excluded</strong>. To list any exclusions for <em>other</em> accounts, open F.05 → UNES_UNBA → selection options and look for <code>sign='E'</code> entries.
+      </div>
+
+      <h3>Why the Other Blocked-Adjustment Cases Don't Error</h3>
+      <p style="font-size:13px">284 distinct HKONTs have a blocked adjustment account (289 T030H rows). Of those, <strong>278 are themselves blocked</strong> (XSPEB='X') — F.05 skips blocked source accounts entirely, never reaching the determination, so no error. Only <strong>6 active</strong> accounts reference a blocked adjustment account, and of those the error fires only when the account carries an FX balance to revalue (currently the CLP/USD/XOF accounts with a balance). The other 278 are excluded from scope silently and correctly (closed accounts that should not be revalued anyway).</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 2026 UPDATE -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="update2026">
+      <h2>📈 2026 Update — Jan through May (Live Production Data)</h2>
+      <p class="muted">How the process is trending in the current fiscal year. The headline is a broad timing improvement with no automation added — plus one repeat of the ICTP single-user gap. Figures below are from the May 2026 Gold DB refresh.</p>
+      <div class="callout ok">
+        <strong>Jan–May 2026 complete — extracted 2026-06-05 from P01</strong>
+        BKPF: 272,136 rows for 2026 (Jan 42K · Feb 54K · Mar 58K · Apr 58K · May 51K). 8 of 9 institutes with good lag (2–5d avg). Critical finding: ICTP missed May 2026 — T_CARPENE absent, no FBB1 docs posted. UNES covered by P_TUCKER (UBO) for May reversals.
+      </div>
+      <div class="callout bad" style="margin-top:8px">
+        <strong>⚠ ICTP — May 2026 MISSED (3rd gap: Jul+Nov 2025 + May 2026)</strong>
+        T_CARPENE posted clean Jan–Apr 2026 (avg 0.3d) then missed May entirely. No FBB1 document with BUKRS=ICTP in BKPF for May 2026. Pattern confirms: without SM36 job or guaranteed backup, ICTP misses whenever the primary is absent.
+      </div>
+      <div class="callout warn" style="margin-top:8px">
+        <strong>UNES — P_TUCKER (UBO) covering J_LA in May 2026</strong>
+        363 FBB1 docs posted by P_TUCKER for BUKRS=UNES in May (BUDAT=20260501 reversals, 6d lag). J_LA absent. P_TUCKER simultaneously handled UBO. Positive: someone stepped in. Risk: ad-hoc cross-coverage with no formal backup assignment documented.
+      </div>
+
+      <h3>Valuation Lag 2025 vs 2026 (Avg Days After Month-End)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th><th>Primary User</th>
+            <th>2025 Avg</th><th>2025 Max</th>
+            <th>2026 Avg (Jan–Apr)</th><th>May 2026</th><th>Δ vs 2025</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="best"><td><strong>ICBA</strong></td><td><code>E_GEBREMARIA</code></td><td class="num">2.6d</td><td class="num">57d</td><td class="num">1.1d</td><td class="num">3.0d</td><td class="num" style="color:var(--good)">↓ 58%</td><td><span class="badge ok">On target</span></td></tr>
+          <tr class="best"><td><strong>UIL</strong></td><td><code>DB_ABDI</code></td><td class="num">8.0d</td><td class="num">20d</td><td class="num">0.4d</td><td class="num">2.0d</td><td class="num" style="color:var(--good)">↓ 95%</td><td><span class="badge ok">Excellent</span></td></tr>
+          <tr><td><strong>UBO</strong></td><td><code>P_TUCKER</code></td><td class="num" style="color:var(--bad)">24.3d</td><td class="num" style="color:var(--bad)">62d</td><td class="num">1.2d</td><td class="num">4.8d</td><td class="num" style="color:var(--good)">↓ 95%</td><td><span class="badge ok">Strong recovery</span></td></tr>
+          <tr><td><strong>IBE</strong></td><td><code>V_KOHEMUN</code></td><td class="num">9.0d</td><td class="num">18d</td><td class="num">0.7d</td><td class="num">3.7d</td><td class="num" style="color:var(--good)">↓ 92%</td><td><span class="badge ok">On target</span></td></tr>
+          <tr class="best"><td><strong>IIEP</strong></td><td><code>F_CADIO</code></td><td class="num">5.1d</td><td class="num">12d</td><td class="num">2.0d</td><td class="num">3.7d</td><td class="num" style="color:var(--good)">↓ 61%</td><td><span class="badge ok">On target</span></td></tr>
+          <tr class="best"><td><strong>UIS</strong></td><td><code>N_MOUSSA</code></td><td class="num">3.7d</td><td class="num">8d</td><td class="num">1.3d</td><td class="num">2.7d</td><td class="num" style="color:var(--good)">↓ 65%</td><td><span class="badge ok">On target</span></td></tr>
+          <tr><td><strong>MGIE</strong></td><td><code>P_ARORA</code></td><td class="num">5.1d</td><td class="num">20d</td><td class="num">2.2d</td><td class="num">3.0d</td><td class="num" style="color:var(--good)">↓ 57%</td><td><span class="badge ok">On target</span></td></tr>
+          <tr class="late"><td><strong>ICTP</strong></td><td><code>T_CARPENE</code></td><td class="num" style="color:var(--bad)">7.6d (10/12)</td><td class="num" style="color:var(--bad)">55d</td><td class="num">0.3d</td><td class="num" style="color:var(--bad)">MISS ⚠</td><td class="num" style="color:var(--bad)">—</td><td><span class="badge bad">May 2026 missed</span></td></tr>
+          <tr class="anomaly"><td><strong>UNES</strong></td><td><code>J_LA</code> / <code>P_TUCKER</code></td><td class="num">6.7d</td><td class="num">62d</td><td class="num">5.2d</td><td class="num">4.9d <span style="font-size:11px;color:var(--muted)">(P_TUCKER)</span></td><td class="num" style="color:var(--warn)">↓ 22%</td><td><span class="badge warn">Cross-covered</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Key 2026 Findings</h3>
+      <div class="flag-grid">
+        <div class="flag-card" style="background:var(--good-soft);border-color:#a0d4b0">
+          <h4 style="color:var(--good)">UBO Recovery — Most Dramatic Turnaround</h4>
+          <ul>
+            <li>2025: avg 24.3d, peak 62d (May 2025 spike). Worst performer.</li>
+            <li>2026: avg 1.2d across Jan–Apr. Complete reversal.</li>
+            <li>Not process-driven: no new automation detected. Likely accountability effect from the 2025 outliers being visible.</li>
+          </ul>
+        </div>
+        <div class="flag-card red">
+          <h4 class="red">ICTP — May 2026 MISSED (3rd gap confirmed)</h4>
+          <ul>
+            <li>M_VENUTI missed Jul+Nov 2025. T_CARPENE replaced — clean Jan–Apr 2026 (0.3d avg).</li>
+            <li><strong>May 2026: zero FBB1 docs for ICTP.</strong> T_CARPENE absent, no backup stepped in.</li>
+            <li>Pattern proven: without SM36 job, ICTP misses whenever primary is absent.</li>
+          </ul>
+        </div>
+        <div class="flag-card yellow">
+          <h4 class="yellow">UNES — P_TUCKER Cross-Covering in May 2026</h4>
+          <ul>
+            <li>2025 avg reversal lag: 11.8d (worst, max 40d). 2026 Jan spike: 22d.</li>
+            <li>May 2026: J_LA absent. P_TUCKER (UBO) posted 363 FBB1 docs for UNES — 6d lag on reversals.</li>
+            <li>Positive: someone stepped in. Risk: ad-hoc, undocumented, no formal backup assignment.</li>
+          </ul>
+        </div>
+        <div class="flag-card" style="background:var(--accent-soft);border-color:#9bcde0">
+          <h4 style="color:var(--accent)">Jan–May 2026 — Net Assessment</h4>
+          <ul>
+            <li>8 of 9 institutes maintaining 2–5d lag in May. Strong improvement vs 2025 continues.</li>
+            <li>ICTP is the structural weak point: 3 gaps in 17 months (Jul+Nov 2025, May 2026) — all when primary absent.</li>
+            <li>One SM36 job for ICTP would eliminate all 3 historical gaps permanently.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>May 2026 Extraction Pending</strong>
+        Gold DB currently has only 95 BKPF rows for May 2026 — incomplete. A full extraction from P01 (expected ~50K rows) is required to include May in the analysis. This is the next data engineering task for this domain.
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- AUTOMATION ROADMAP -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="roadmap">
+      <h2>🗺️ Automation Roadmap</h2>
+      <p>Prioritized by impact and effort. The two highest-value actions are independent: (1) schedule SM36 jobs for SAPF100 to remove all timing lag, missed months, and backup gaps at once; (2) repoint OB09 to the active sub-accounts (finish the Banco de Chile sub-account migration) to stop the only genuine F.05 runtime error. Items below are ordered accordingly.</p>
+
+      <div style="margin:16px 0">
+        <div class="roadmap-item">
+          <div class="roadmap-num">1</div>
+          <div class="roadmap-body">
+            <strong>Create SM36 background jobs for SAPF100 — 9 BUKRS × 2 variants</strong>
+            <p>Create SAPF100_REVAL_{BUKRS} (last business day 23:00) and SAPF100_REV_{BUKRS} (day 1 06:00) for each company code. Use JOBBATCH user — same pattern as existing SAPF124 daily jobs. Eliminates all manual lag, all missed months, all backup gaps.</p>
+          </div>
+          <div><span class="impact-pill high">High Impact</span></div>
+          <div><span class="badge info">Medium effort</span></div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-num">2</div>
+          <div class="roadmap-body">
+            <strong>OB09 — repoint to the active sub-account (finish the migration)</strong>
+            <p>Banco de Chile's sub was migrated but OB09 not updated. Repoint <code>1010574</code> → <code>1110574</code> and <code>1010571</code> → <code>1110571</code> (the active subs, like Ecobank). Stops "Account 1109574 blocked for posting" at the next F.05 run. Do NOT unblock the old subs (closed on purpose). Low effort — 2 config entries.</p>
+          </div>
+          <div><span class="impact-pill high">High Impact</span></div>
+          <div><span class="badge ok">Low effort</span></div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-num">3</div>
+          <div class="roadmap-body">
+            <strong>Assign backup users for ICTP and UBO</strong>
+            <p>ICTP has M_VENUTI with no backup — missed July and November 2025. UBO has P_TUCKER with no backup. Treasury controller to assign and train secondary users. Without SM36 jobs this remains a dependency; with SM36 jobs it becomes a redundancy.</p>
+          </div>
+          <div><span class="impact-pill high">High Impact</span></div>
+          <div><span class="badge ok">Low effort</span></div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-num">4</div>
+          <div class="roadmap-body">
+            <strong>Add FX sign-off gate to month-end close checklist</strong>
+            <p>Finance controller sign-off required before OB52 period lock. For the SM36 automation path, the successful job log becomes the sign-off evidence. This is a process governance change, not a technical change.</p>
+          </div>
+          <div><span class="impact-pill med">Med Impact</span></div>
+          <div><span class="badge ok">Low effort</span></div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-num">5</div>
+          <div class="roadmap-body">
+            <strong>Extract VARI/VARID to Gold DB — audit F.05 variant coverage</strong>
+            <p>Currently unknown: which GL account ranges are covered by each institute's F.05 variants. Extracting VARI/VARID tables would allow verification that all FX-exposed accounts are in scope. This is a Gold DB enrichment task for the agent.</p>
+          </div>
+          <div><span class="impact-pill med">Med Impact</span></div>
+          <div><span class="badge ok">Low effort</span></div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-num">6</div>
+          <div class="roadmap-body">
+            <strong>Investigate MGIE P_ARORA mid-month posting pattern</strong>
+            <p>P_ARORA posts FX entries mid-month (negative lag) rather than at month-end. Needs clarification: is this an intentional MGIE practice (e.g., interim period revaluation) or a process deviation? Interview P_ARORA and document the intended frequency.</p>
+          </div>
+          <div><span class="impact-pill low">Low Impact</span></div>
+          <div><span class="badge ok">Low effort</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- KNOWN UNKNOWNS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="knowns">
+      <h2>❓ Known Unknowns &amp; Falsifiable Predictions</h2>
+      <p class="muted">What this analysis has <em>not</em> yet confirmed, and testable predictions that would validate the conclusions. Kept explicit so the next agent (or a Treasury reviewer) knows exactly what to check in the live system.</p>
+
+      <h3>Known Unknowns</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>What is unknown</th><th>Impact if unknown</th><th>How to resolve</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fffbf0">
+            <td><code>KU-CA-002</code></td>
+            <td><strong>Whether the <code>_UNBA</code> balance variants run as Mode B (balance-sheet preparation valuation — permanent, intentional) or Mode A with reverse off</strong></td>
+            <td>Both look identical in BKPF. Mode B is correct and needs only documenting; Mode A-with-reverse-off would be a latent issue. Current best evidence (consistency across 8 institutes) favours Mode B = correct.</td>
+            <td>Open one <code>_UNBA</code> variant in F.05 → read the <code>Bal.sheet preparation valuatn</code> checkbox on the Postings tab</td>
+          </tr>
+          <tr>
+            <td><code>KU-2026-070-01</code></td>
+            <td>Exact valuation method (T044A) and posting doc type per variant. Variant <em>names</em> now extracted (21 operational); selection screens not yet read.</td>
+            <td>Cannot confirm posting document type (SA vs JV) per institute</td>
+            <td>Read F.05 variant content on D01 via <code>RFC_ABAP_INSTALL_AND_RUN</code> (blocked on P01 by S_DEVELOP)</td>
+          </tr>
+          <tr>
+            <td><code>KU-2026-070-02</code></td>
+            <td>Exact GL-account selection ranges per variant. Ranges <em>inferred</em> from 2025 BSIS postings (e.g. UNES_UNBA 0001001604→0001098174); not read from the variant screen directly.</td>
+            <td>Cannot 100% confirm which variant covers each of the 6 error accounts (inference is strong but unverified)</td>
+            <td>Read VARIS selection screen for UNES_DEPOSIT and UNES_UNBA on D01</td>
+          </tr>
+          <tr>
+            <td><code>KU-2026-070-03</code></td>
+            <td>Accounts 0001111194 (Banco do Brasil BRL) and 0001144715 (Commercial BK Ethiopia ETB) — blocked but no "CLOSED" label</td>
+            <td>Unclear if these are decommissioned or just operationally blocked — affects remediation scope</td>
+            <td>Treasury team confirmation · check T012K for HBKID/HKTID</td>
+          </tr>
+          <tr>
+            <td><code>KU-CA-001</code></td>
+            <td>MGIE P_ARORA mid-month posting rationale</td>
+            <td>Cannot classify as process deviation vs intentional interim practice</td>
+            <td>Interview P_ARORA</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Falsifiable Predictions</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Prediction</th><th>Test</th><th>Expected outcome</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>FALS-CA-001</code></td>
+            <td>Creating SM36 SAPF100 job for one BUKRS (e.g. ICTP) will produce revaluation documents with lag &lt; 1 hour</td>
+            <td>Create ICTP job, monitor first month-end run</td>
+            <td>BKPF CPUDT = same day as BUDAT, no manual posting needed</td>
+          </tr>
+          <tr>
+            <td><code>FALS-CA-002</code></td>
+            <td>Without backup user or SM36 job, ICTP will miss at least 1 month in 2026</td>
+            <td>Monitor BKPF monthly for ICTP valuation docs</td>
+            <td>Gap appears when M_VENUTI is on leave/absent</td>
+          </tr>
+          <tr>
+            <td><code>FALS-CA-003</code></td>
+            <td>Repointing OB09 for the 2 in-scope accounts to the active sub (1110574/1110571) will eliminate "blocked for posting" F.05 errors</td>
+            <td>Run F.05 in simulation mode (EVR method) after fix</td>
+            <td>Zero error messages for previously-failing accounts</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout ok" style="margin-top:18px">
+        <strong>Bottom line — confirmed conclusions (evidence TIER_1, direct P01 production data)</strong>
+        <ol style="margin:8px 0;font-size:13px;line-height:1.7">
+          <li><strong>Execution model:</strong> F.05/SAPF100 is run <em>interactively</em> (zero background jobs). It builds a batch input session; SAPF180 posts it. The 11,793 FBB1 documents are <em>program-generated</em>, not manual line entry.</li>
+          <li><strong>Two valuation streams, both correct:</strong> Open Items valuate at month-end and reverse day-1 (confirmed all 8 OI institutes). Balances valuate at month-end and do <em>not</em> reverse — this is standard balance-sheet preparation valuation, not a defect.</li>
+          <li><strong>The one genuine config error — an unfinished bank sub-account migration:</strong> UNESCO revalues bank accounts either against themselves (277 accounts) or against an active sub-account (163, e.g. Ecobank <code>1094316→1194316</code>). Banco de Chile's sub was migrated (old <code>1109574</code> closed → new <code>1110574</code>) but OB09 was never repointed — so the active main account still posts its FX adjustment to the closed sub → "blocked for posting". Only 2 accounts are in the failing variant's range (<code>1010574</code> CLP, <code>1010571</code> USD). Fix = repoint OB09 to the active sub (<code>1110574/1110571</code>), matching Ecobank — no unblocking. Everything else in T030H (200 empty, 278 self-blocked, 102 active-empty) was reviewed and is benign.</li>
+          <li><strong>ICTP is the structural weak point:</strong> no balance variant exists, and it misses months whenever the sole user is absent (Jul+Nov 2025, May 2026 — 3 gaps in 17 months).</li>
+          <li><strong>2026 trend:</strong> valuation timing improved ~78% vs 2025 across all institutes, with no automation added — accountability/visibility effect. SM36 jobs would make it structural.</li>
+        </ol>
+      </div>
+    </section>
+
+    <div style="text-align:center;margin:24px 0 8px">
+      <a href="FX_Revaluation_Conclusions.docx" download style="display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;font-size:14px">⬇ Download conclusions (Word .docx) — for Treasury / management</a>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:8px">Shareable, comment-and-track-changes deliverable. Regenerated from the knowledge brain: <code>node scripts/build_fx_revaluation_docx.js</code></p>
+    </div>
+    <div class="footer">
+      Closing Activities Domain · v1 · 2026-06-07 · Session #078 · Data: P01 BKPF/BSIS/GLT0 (11,793 F.05 docs)<br>
+      Source of truth (living): <code>knowledge/domains/Closing_Activities/fx_revaluation_process.md</code> ·
+      Word deliverable: <a href="FX_Revaluation_Conclusions.docx" download style="color:var(--accent)">FX_Revaluation_Conclusions.docx</a><br>
+      Brain: claims 50–54, 160–164, 172 · KU-CA-001/002 · FALS-CA-001/002/003
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
