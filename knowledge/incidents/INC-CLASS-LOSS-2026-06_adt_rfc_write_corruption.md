@@ -20,8 +20,18 @@ does NOT work for a fully deleted class. Version history (VRSD) survives a SEOCL
 
 ---
 
-**Status:** ✅ RESOLVED 2026-06-12 (3 classes recovered; 11 confirmed pre-existing, out of scope).
-Earlier "14 damaged" / "6 damaged" framings below were superseded by the TS2-baseline finding.
+**Status:** ✅ RESOLVED 2026-06-12. **Real damage = 4 FI classes, recovered, ALL from V01** (transport of
+copies V01→D01): YCL_FI_ACCOUNT_SUBST_BL/_READ + YCL_FI_BANK_RECONCILIATION_BL (full code, verified line-for-line
+vs V01) + YCL_FI_ACC_DOCUMENT_ARGA. NOTE on ARGA: V01's transported version is a thin **stub** — that is the
+CORRECT released state. ARGA's "real" CHANGE logic (EKKN/payment) was **WIP that was never transported**, so it
+lives only in **TS2**; it is NOT lost and was NOT our damage. ARGA is a superseded implementing class anyway —
+the live enhancement `YFI_ENH_ACC_DOCUMENT_ARGA` uses class `YFI_ENH_DOWNPAYMENT` (healthy, ~86 lines). The TS2
+WIP is being carried forward into a new **Advance Payment** enhancement (follow-up task task_85534bf6). A later broad orphan-scan
+flagged ~41 "broken" classes and caused a false panic; evidence resolved it: **TADIR-without-SEOCLASS is
+debris from intentional deletions, NOT lost code** (incl. the user's own `ZCL_Z_AUTH_SRV_*` deleted on
+purpose, old SEGW-regen DPC/MPC, `_TEST`/`TO_DEL`). Only the healthy-in-TS2/V01-but-broken-in-D01 subset
+(the 3 FI) was real loss. See `memory/reference_tadir_orphan_is_not_lost_code.md`. Earlier "14"/"6" framings
+superseded.
 **System:** D01 (172.16.4.66, client 350) — dev. NO P01 impact found.
 **Reported:** 2026-06-12 — "Claude processes deleted class definitions, at least 14 lost."
 **Severity:** HIGH (custom Y*/Z* classes, some are active BAdI/exits → may break postings)
