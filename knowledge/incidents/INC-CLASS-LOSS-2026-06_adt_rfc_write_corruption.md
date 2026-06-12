@@ -1,6 +1,27 @@
 # INC — ABAP Class Loss / Corruption on D01 via ADT-over-RFC write client (June 2026)
 
-**Status:** OPEN — forensic complete, recovery pending user scope confirmation
+## ✅ RESOLUTION (2026-06-12) — read this first
+**Real scope = 3 classes (not 14).** The TS2 baseline (a pre-Jun-7 copy of D01) was used as discriminator:
+- **3 = OUR damage** (healthy in TS2/V01, broken in D01): `YCL_FI_ACCOUNT_SUBST_BL` (32 methods),
+  `YCL_FI_ACCOUNT_SUBST_READ` (1), `YCL_FI_BANK_RECONCILIATION_BL` (54).
+- **11 = "borrado real"** (pre-existing legitimate deletions, NOT ours — TADIR-orphans that predate Jun-7;
+  the Jun-7 writes hit already-dead objects → the `ResourceNotFound` errors). Left untouched.
+
+**Recovered** via **Transport of Copies `V01K910259`** (V01 → D01, same domain DOMAIN_P01, **Overwrite
+Originals**, target client 350). NOT via ADT write. All 3 active (SEOCLASSDF state=1), method counts match
+the baseline (32/1/54), **version history preserved** in D01 (VRSD survived the deletion; BANK has v0-8).
+Full execution record: `Zagentexecution/tasks/2026_06_12_class_loss_recovery/EXECUTION_LOG.md`.
+
+Key method facts (reusable): recover a deleted class by **transport of copies from a same-domain healthy
+system with "Overwrite Originals"** (the target is the class's home system → without that flag the import
+silently skips it). Verify the source system shares the target's transport domain first (`TMSCSYS`); a
+cross-domain system (TS2 = DOMAIN_TS2) gives "target unknown" and can't deliver. SE24/SE80 version-retrieve
+does NOT work for a fully deleted class. Version history (VRSD) survives a SEOCLASS deletion.
+
+---
+
+**Status:** ✅ RESOLVED 2026-06-12 (3 classes recovered; 11 confirmed pre-existing, out of scope).
+Earlier "14 damaged" / "6 damaged" framings below were superseded by the TS2-baseline finding.
 **System:** D01 (172.16.4.66, client 350) — dev. NO P01 impact found.
 **Reported:** 2026-06-12 — "Claude processes deleted class definitions, at least 14 lost."
 **Severity:** HIGH (custom Y*/Z* classes, some are active BAdI/exits → may break postings)
