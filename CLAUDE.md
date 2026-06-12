@@ -9,6 +9,21 @@ Each owns its system's data; the others consume it **read-only** (rule **ADR-007
 
 My cross-project edges: `ecosystem_link.md` + `refs_external.json`. Directory: `ecosystem-coordinator/ecosystem/data-capability-registry.md`. Rule: ADR-007 / BROADCAST-005.
 
+## ⛔ ABAP CHANGE DISCIPLINE — mandatory before ANY ABAP write/deploy (BROADCAST-007)
+
+Born from **INC-CLASS-LOSS (2026-06-12)** — a session corrupted real `N_MENARD` classes on D01 by writing
+in-place via direct ADT with **no transport, no review, on objects we don't own**. The universal rule now lives
+at `ecosystem-coordinator/.knowledge/way-of-working/sap-abap-change-discipline.md` (origin: CRP `unescrp` S-119).
+**Spine (ranked):** (0) probe landscape read-only first → **(1) a RELEASED transport is the unit of change — D01
+is DEV, not "the deploy"** → (2) no QAS ⇒ escalate as THE structural risk → (3) ATC via REST as the pre-release
+gate (replace home-made checks) → (4) 4-eyes = JP approves the release (mandatory for AI code) → (5) abapGit/git
+mirror + abaplint (channel is secondary to the released transport). **Hard rules:** own `Z*/Y*` objects only,
+**never peer-team objects**; recover via Transport-of-Copies (`TMSCSYS` same-domain + "Overwrite Originals"),
+**never ADT write**; don't reinvent the pipeline (`erpl-adt`/`abap-adt-api`). The two ADT write clients are
+kill-switched (`ALLOW_D01_WRITES=1`) — the real fix is this process, then retire the blunt block. Related:
+[[feedback_never_modify_standard_objects]] · [[feedback_new_objects_only_in_d01_never_p01]] ·
+[[feedback_abapgit_is_the_standard_when_installed]].
+
 ## ⛔ STOP — THE OPERATING MODEL ALREADY EXISTS (read before proposing anything)
 
 This project HAS a built, persisted **Capability Model** (Session #079). **DO NOT re-invent it, do not

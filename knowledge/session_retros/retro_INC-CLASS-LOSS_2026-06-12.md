@@ -59,8 +59,17 @@ propósito", el conteo 4-no-3, que ARGA tenía lógica, la explicación WIP-en-T
 "nosotros hacemos código" / "carguen el análisis previo". Eso es exactamente lo que el agente debió razonar solo.
 
 ## Acciones de seguimiento (derivadas)
-- Tarea: auditar creación de código vs best-practices CRP (`task_43451c89`).
+- ✅ **CERRADA — Tarea: auditar creación de código vs best-practices CRP (`task_43451c89`).** Resultado
+  (2026-06-12): gap analysis local + **el fix REAL = la regla general**. La disciplina ABAP de CRP (S-119) existía
+  pero estaba **local a CRP, nunca distribuida**; se promovió a estándar universal del ecosystem:
+  `ecosystem-coordinator/.knowledge/way-of-working/sap-abap-change-discipline.md` + **BROADCAST-007**
+  (`abapobjectscreation` + `FINCLOSSING` + `offboardning_clone` deben adoptar; CRP = origen, exenta) + puntero en
+  este `CLAUDE.md` (sección "⛔ ABAP CHANGE DISCIPLINE"). Spine: (0) probe landscape → (1) transporte liberado =
+  unidad de cambio → (2) escalar si no hay QAS → (3) ATC REST gate → (4) 4-eyes humano en la liberación → (5)
+  abapGit/abaplint. **Pendiente real de implementación:** volver el write transport-mandatory (paso #1 mecánico) y
+  correr el probe read-only del landscape (#0) — eso convierte "no hay QAS" de supuesto en hecho.
 - Tarea futura: enhancement Advance Payment recuperando WIP de TS2 (`task_85534bf6`).
-- Pendiente: quitar el kill-switch (reemplazar por disciplina, no bloqueo) cuando se retome desarrollo.
+- Pendiente: quitar el kill-switch (reemplazar por disciplina, no bloqueo) cuando se retome desarrollo — ahora
+  enmarcado por la regla universal (reemplazar el bloqueo burdo por el proceso del paso #1, después retirarlo).
 - Memorias: `reference_tadir_orphan_is_not_lost_code.md`, `reference_object_recovery_v01_to_d01.md`,
   `incident_class_loss_adt_rfc_write.md`.
