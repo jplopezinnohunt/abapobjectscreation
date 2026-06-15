@@ -6017,8 +6017,15 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
         <tr><td><code>&lt;TwnNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box/City × payroll/vendor (exit or ZORT1)</td></tr>
         <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_CGI_CRED_REGION (vendor) or ZREGI (payroll)</td></tr>
         <tr><td><code>&lt;Ctry&gt;</code></td><td>✅</td><td>✅</td><td>FPAYHX-ZLISO (beneficiary country)</td></tr>
-        <tr><td><code>&lt;AdrLine&gt;</code> ×3</td><td>✅ (ZNME2/3/4)</td><td>❌</td><td><strong>the only difference</strong></td></tr>
+        <tr><td><code>&lt;AdrLine&gt;</code> ×3</td><td>⚠️ name overflow (ZNME2/3/4)</td><td>❌</td><td><strong>the only #1-vs-#2 difference</strong> — see note</td></tr>
       </table>
+      <p><strong>What the Cdtr <code>&lt;AdrLine&gt;</code> really is:</strong> <code>ZNME1/2/3/4</code> =
+      data element <code>FPM_NAME</code>, <strong>"Name of the Payee"</strong> (not address). <code>&lt;Nm&gt;</code>
+      takes ZNME1; the <strong>name overflow</strong> (name &gt; 40 chars, suffixes like "LTDA") spills into
+      ZNME2/3/4 → <code>&lt;AdrLine&gt;</code> (cond <code>&lt;&gt;''</code>) — a name-overflow workaround
+      (semantically name-in-address). Real population (BR/UBO 2024-26, 82,392 pmts): ZNME2≠'' = <strong>3,913
+      (4.7%)</strong>, ZNME3 0.2%, ZNME4 0%. So in <strong>95.3% the AdrLine does not emit → #1 ≡ #2</strong> (pure
+      structured); only 4.7% carry a name line in an address tag.</p>
       <p>Internal logic (same in both): handles <strong>PO Box vs street</strong> (<code>ZPFAC</code>) and
       <strong>payroll vs vendor</strong> (node <code>HR='P'</code> → direct fields ZORT1/ZREGI/ZPFOR; else CITIPMW
       exits). Every structured tag has multiple internal branches but always emits one → <strong>no empty tags, no

@@ -118,14 +118,20 @@ Estructura interna **idéntica** entre #1 y #2, salvo que #1 agrega 3 `<AdrLine>
 | `<TwnNm>` | ✅ | ✅ | PO Box/City × payroll/vendor (exit `V3_*_CRED_CITY` ó `ZORT1`) |
 | `<CtrySubDvsn>` | ✅ | ✅ | exit `V3_CGI_CRED_REGION` (vendor) ó `ZREGI` (payroll) |
 | `<Ctry>` | ✅ | ✅ | `FPAYHX-ZLISO` |
-| `<AdrLine>` ×3 | ✅ (`ZNME2/3/4`) | ❌ | **única diferencia** |
+| `<AdrLine>` ×3 | ⚠️ overflow de NOMBRE (`ZNME2/3/4`) | ❌ | **única diferencia #1 vs #2** |
+
+**Qué es el `<AdrLine>` del Cdtr #1**: `ZNME1/2/3/4` = data element `FPM_NAME`, **"Name of the Payee"** (NO
+dirección). El `<Nm>` toma `ZNME1`; el **overflow del nombre** (nombre > 40 chars, sufijos tipo `LTDA`) se
+desborda a `ZNME2/3/4` → `<AdrLine>` (cond `<>''`). Es un workaround de overflow de nombre, **semánticamente
+name-in-address**. Población real (BR/UBO 2024-26, 82,392 pagos): `ZNME2`≠'' = **3,913 (4.7%)**, `ZNME3` 0.2%,
+`ZNME4` 0%. → en **95.3% el AdrLine no sale → #1 ≡ #2** (estructura pura); en 4.7% lleva nombre en tag de dirección.
 
 Lógica interna (igual en ambos): maneja **PO Box vs calle** (`ZPFAC`) y **payroll vs vendor** (nodo `HR='P'` →
 campos directos `ZORT1/ZREGI/ZPFOR`; si no → exits CITIPMW). Cada tag estructurado tiene varias ramas pero
 **siempre emite una** → ningún tag queda vacío → **sin hueco de compliance** (a diferencia del Dbtr `=SE`).
 
-Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado + 3 AdrLine). Ambos **completos**. RU/JP =
-hueco muerto (UBISO nunca RU/JP).
+Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado; +AdrLine solo si nombre largo, 4.7%). Ambos
+**completos**. RU/JP = hueco muerto (UBISO nunca RU/JP).
 
 **Volumen por nodo (P01, 2024-2026)** — mismo split por `UBISO` que el Dbtr:
 
