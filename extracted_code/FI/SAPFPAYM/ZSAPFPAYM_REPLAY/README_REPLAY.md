@@ -103,6 +103,92 @@ DIR C:\tmp\dmee_10003B_sepa.xml
 -- Tamaño ~1-3 KB para un solo pago SEPA EUR.
 ```
 
+## V01 — CITI tree country-branch tests (added 2026-06-15)
+
+**Target extended to V01** (system `V01`, client **350 "Validation"**, host `hq-sap-v01`,
+sysnr 00). V01 holds all 4 UNESCO PAYM trees at **V000 only** (no V001). Replay here is safe
+(validation system + `ROLLBACK WORK`). The replay needs `PM_GRPNO` — get it from `DFPAYG`.
+
+**Branch driver — VERIFIED 2026-06-15:** the CITI tree `/CITI/XML/UNESCO/DC_V3_01` selects its
+structured-address branch on `FPAYHX-UBISO` = **`REGUH-UBNKS`** (ultimate-beneficiary BANK
+country), **NOT** the address country `ZLAND`. Conditions in the tree:
+- `UBISO = US | CA | PR` → emit structured **`PstlAdr`** (StrtNm/BldgNb/PstCd/TwnNm/CtrySubDvsn/Ctry)
+- `UBISO = SE` → emit **`PstCd`**
+- `UBISO <> US AND <> CA AND <> PR` → **fallback** (unstructured `AdrLine`)
+
+**2024 reality (V01):** Citi payments used only 3 bank countries — **US 8,759 · BR 8,472 · CA 1,303**.
+`UBISO='SE'`→`PstCd` branch is **dead** (0 SE-bank Citi payments 2023-2026).
+
+### 3 verified test runs (all FORMI `/CITI/XML/UNESCO/DC_V3_01`, GRPNO 100)
+
+> **CORRECTION 2026-06-15:** an earlier pick (20240531/00001B/102, 20240124/00002B/103,
+> 20240326/00008B/100) was **WRONG** — derived from `DFPAYG` (which in V01 carries stale/orphan
+> groups not backed by a real medium). In V01 the run-management table **`REGUV` is empty** (refreshed
+> validation system) so F110 shows "No parameters entered", and the **authoritative real-medium inventory
+> is `REGUT`** (= what FDTA shows). Always pick re-run scenarios from `REGUT` (non-proposal `XVORL=''`) and
+> confirm consistency across REGUT + DFPAYG + REGUH before asserting a run is re-playable.
+
+| # | Branch | PM_LAUFD | PM_LAUFI | PM_GRPNO | Pay/HBank | n (REGUH) | UBNKS | Verified in |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **PstlAdr (US)** | 20240424 | 00012B | 100 | UNES/CIT04 USD | 37 | 100% US | FDTA + REGUT + DFPAYG + REGUH |
+| 1b | **PstlAdr (CA)** | 20240124 | 00020B | 100 | UNES/CIT21 CAD | 38 | 100% CA | REGUT + DFPAYG + REGUH |
+| 2 | **Fallback (BR)** | 20240131 | 00010B | 100 | UBO/CIT01 BRL | 37 | 100% BR | REGUT + DFPAYG + REGUH |
+| 3 | **PstCd (SE)** | — no historical data — synthesize SE-bank test vendor, or treat as dead config | | | | | | |
+
+NB: standard `SAPFPAYM`/F110 read `REGUV` (empty here) → won't load these runs. The **replay** bypasses the
+`REGUV` gate (reads `DFPAYG`+`REGUH`/`REGUP`) → this is precisely why the replay is needed in V01, not standard SAPFPAYM.
+
+**PR + SE branches are DEAD config (verified 2026-06-15):** `REGUH.UBNKS = 'PR'` and `= 'SE'` = **0 across all
+history (2006-2025)**. PR uses US banking (PR banks coded `UBNKS=US`); Swedish-ADDRESS beneficiaries exist
+(`ZLAND=SE` = 8,263; 146 via Citi) but are paid through FR/US banks → `UBNKS` is never SE. So the conditions
+`UBISO='PR'` and `UBISO='SE'` **never fire in production**. They can only be tested with a synthetic vendor
+(`LFBK-BANKS='SE'`/`'PR'`). Net: only **2 of the 3** address branches are reachable from real data (PstlAdr via
+US/CA, fallback via everything else); PstCd(SE) and the PR arm are theoretical.
+
+### Scenario ↔ DMEE_TREE_COND filter mapping (all on `FPAYHX-UBISO` = `REGUH-UBNKS`)
+
+**CANONICAL mapping (user-confirmed 2026-06-15):**
+
+| Escenario | Filtro DMEE (condición sobre `UBISO` = `UBNKS`) | Resultado |
+|---|---|---|
+| **1 / 1b (US / CA)** | `PstlAdr` → `= US OR CA OR PR` | `<PstlAdr>` estructurado, **solo** |
+| **2 (BR)** | sin-nombre `AdrLine` → `<> US AND <> CA AND <> PR` | `<AdrLine>` fallback |
+| **3 (SE)** | `AdrLine` (`<> US AND <> CA AND <> PR`) **AND** `PstCd` (`= SE`) | `<PstCd>` + `<AdrLine>` (híbrido) |
+
+Logic notes: US/CA/PR are **excluded** from the fallback → `PstlAdr` only, never `AdrLine`. **SE is a
+hybrid** — it satisfies BOTH the fallback (`SE <> US/CA/PR` = TRUE, emits `AdrLine`) AND `PstCd` (`=SE`),
+so an SE payment emits `AdrLine` + `PstCd` together. `PstCd` is an add-on over fallback for Sweden, not a
+clean third branch.
+
+### Explicación simple — el *compound* que genera la dirección Dbtr
+
+Cada nodo de dirección del árbol CITI tiene una **condición compuesta** (*compound*): varias comparaciones
+simples sobre `FPAYHX-UBISO` (el país del **banco del beneficiario**) unidas con **AND** u **OR**. Esa
+condición decide **si el nodo se escribe** en el XML → así se elige **cómo sale la dirección del Dbtr** (UNESCO,
+el pagador): estructurada, texto libre, o con código postal.
+
+| Compound | Operador | Se cumple cuando… | Dirección Dbtr resultante |
+|---|---|---|---|
+| `UBISO = 'US' OR = 'CA' OR = 'PR'` | **OR** (basta UNO) | el banco del benef. está en US/CA/PR | **`<PstlAdr>` estructurado** (StrtNm · PstCd · TwnNm · CtrySubDvsn/estado · Ctry) |
+| `UBISO <> 'US' AND <> 'CA' AND <> 'PR'` | **AND** (TODAS) | el banco no está en ninguno de los tres | **`<AdrLine>` texto libre** (fallback) |
+| `UBISO = 'SE'` | simple | el banco está en Suecia | **`<PstCd>`** (+ también `AdrLine`) |
+
+**En una frase**: el **OR** agrupa los países que van **estructurados**; el **AND** (que es la negación del OR)
+agrupa "**todos los demás**" que van en **texto libre**; entre los dos parten el universo de países en dos
+mitades que no se solapan. `SE` es un caso extra montado encima del fallback (cumple el AND **y** `=SE`).
+
+Por qué el disparador es el país del **banco** (no el de la dirección): la forma de la dirección la exige el
+**sistema de clearing** del destino — US/Canadá obligan dirección estructurada con estado+ZIP; el resto acepta
+texto libre. Por eso un beneficiario en Etiopía pagado por banco US toma la rama **estructurada** (US), aunque
+su dirección no tenga estado.
+
+Replay params per scenario (same as SEPA example, only LAUFD/LAUFI/GRPNO/FORM change):
+`PM_XVORL=' '` · `PAR_FORM=/CITI/XML/UNESCO/DC_V3_01` · `PAR_XPY3='X'` · `PAR_XFIL='X'` ·
+`PAR_FILE=C:\tmp\dmee_<LAUFI>_citi.xml` · `PAR_XLST='X'` · `PAR_XERR='X'`.
+
+Probe scripts: `Zagentexecution/mcp-backend-server-python/probe_v01_citi_groups.py`,
+`probe_v01_ubnks.py`, `probe_confirm.py`.
+
 ## Referencias
 
 - Origen extracción: `Zagentexecution/mcp-backend-server-python/extract_sapfpaym_full_p01.py`
