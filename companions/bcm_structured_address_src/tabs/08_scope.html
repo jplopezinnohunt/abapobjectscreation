@@ -1,0 +1,61 @@
+<div id="tab-scope" class="content">
+    <div class="section">
+      <h3>Scope — what we change in V001</h3>
+
+      <h4>Why this section matters</h4>
+      <p>The V001 project covers a deliberate, narrow change to UNESCO's payment-file generation: convert vendor / debtor postal addresses from a single unstructured <code>&lt;AdrLine&gt;</code> line to fully-structured ISO 20022 elements (<code>&lt;StrtNm&gt;</code>, <code>&lt;BldgNb&gt;</code>, <code>&lt;PstCd&gt;</code>, <code>&lt;TwnNm&gt;</code>, <code>&lt;Ctry&gt;</code>) before the CBPR+ Nov 2026 mandate kicks in. <strong>That is the entire goal.</strong> Everything in this tab is either a step toward that goal (IN SCOPE), a deliberate non-change to keep risk low (STAYS THE SAME), or an explicitly-deferred concern (OUT OF SCOPE).</p>
+      <p>The reason this scope is so tight is that UNESCO's payment infrastructure has been stable for years (claim 102: zero V001/V002 patterns across 44 historical transports). The bank deadline is real, but the cost of breaking working SocGen / Citi / SEPA flows would dwarf the benefit of getting V001 done quickly. <strong>Rule of thumb the team is following</strong>: if a change is not on the critical path to "structured address tags in the file", it does not go into V001 — even if it would otherwise be worth doing.</p>
+
+      <h4>How to read the three sub-tables below</h4>
+      <ul>
+        <li><strong>IN SCOPE</strong> — the actual deliverables. Each row is something a transport will carry, code review will approve, and Phase 3-4 will test. Effort estimates are realistic.</li>
+        <li><strong>STAYS THE SAME</strong> — assets we explicitly chose <em>not</em> to touch. This is just as important as IN SCOPE because it's the surface we're protecting from regression.</li>
+        <li><strong>OUT OF SCOPE</strong> — questions and changes the team agreed to defer. Each one has a documented rationale; some have brain claims that closed them.</li>
+      </ul>
+
+      <h4 style="color:#1abc9c">✅ IN SCOPE — V001 changes (per tree)</h4>
+      <p>Each row is one deliverable. The "Type" column tells you whether this is customizing (config tables / DMEE tree edits, no ABAP), code (ABAP development, code review needed), or data (master-data fixes, no transport). The vast majority is CONFIG — a deliberate design choice to minimize ABAP review burden.</p>
+      <table>
+        <tr><th>Tree</th><th>Change</th><th>Type</th><th>Effort</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>+5 Dbtr structured nodes (StrtNm/BldgNb/PstCd/TwnNm/Ctry) reading FPAYHX-REF01/REF06 with MP_OFFSET. +5 empty-suppress conditions in DMEE_TREE_COND (no XSLT for SEPA).</td><td>CONFIG</td><td>~4 hours</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code> — Dbtr</td><td>+5 Dbtr structured nodes. NO conditions needed (XSLT auto-removes empty).</td><td>CONFIG</td><td>~3 hours</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code> — UltmtCdtr (Worldlink)</td><td>+1 StrtNm node sourcing <code>FPAYH-ZSTRA</code> (same field as Cdtr/Dbtr). UltmtCdtr/Nm + Ctry + TwnNm + PstCd + CtrySubDvsn + AdrLine1/2 already wired. <b>Q3 RESOLVED</b> via DMEE_TREE_NODE analysis (N_8838338720, 21 descendants, 7 active source fields confirmed — brain claim 99). Unified into V001, NOT deferred to V002.</td><td>CONFIG</td><td>~1 hour</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td><b>Fix CdtrAgt</b> — convert PstlAdr from AdrLine to structured (StrtNm/PstCd/TwnNm/Ctry from T012K/BNKA via SAP Event 05 + CL_IDFI_CGI_CALL05_* country factory). Dbtr + Cdtr already structured ✓ — no change there.</td><td>CONFIG</td><td>~3 hours</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>SYNC from parent (FIRSTNODE shared) — same CdtrAgt fix propagates automatically.</td><td>CONFIG</td><td>0 (parent handles)</td></tr>
+        <tr><td><code>TFPM042FB</code> (OBPM4)</td><td>+1 row: SEPA tree → Event 05 = FI_PAYMEDIUM_DMEE_CGI_05 (Sub-option A — try first in D01; fall back to Sub-option B direct-read if incompatible)</td><td>CONFIG</td><td>~30 min</td></tr>
+        <tr><td><code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></td><td>+3 lines (Pattern A guard) — prevents V001 StrtNm corruption from name-overflow. Reviewer: N_MENARD. Transport: <code>D01K-BADI-FIX-01</code>.</td><td>CODE</td><td>~1 hour code + 2 hour regression test</td></tr>
+        <tr><td>5 LFA1+ADRC vendors</td><td>Manual fix CITY1/COUNTRY OR LOEVM='X'</td><td>DATA</td><td>~30 min Master Data team</td></tr>
+      </table>
+      <p><b>Total ABAP</b>: 1 method, 3 lines. <b>Total CONFIG</b>: ~24 nodes (5 SEPA Dbtr + 5 CITI Dbtr + 1 CITI UltmtCdtr StrtNm + ~7 CGI CdtrAgt + 5 SEPA empty-suppress conditions) + 1 OBPM4 row + 5 vendor fixes.</p>
+
+      <p style="background:#dcfce7;padding:12px;border-left:3px solid #16a34a;border-radius:4px"><strong>Why these numbers matter</strong> → <em>1 method, 3 lines of ABAP</em>. That is the entire code-change footprint. Everything else is config — which means M_SPRONK can deliver most of V001 without writing a single line of ABAP, and N_MENARD's review burden is bounded to a single 3-line guard. This was a deliberate design: the project's risk profile is minimised by pushing the work into config tables (DMEE_TREE_NODE / DMEE_TREE_COND / TFPM042FB) where SAP-std machinery does the heavy lifting.</p>
+
+      <h4 style="color:#f39c12">⚖ STAYS THE SAME (V000 untouched)</h4>
+      <p>This is the surface we explicitly do <strong>not</strong> touch. It looks like a long list, but each row is doing real work: the production payment flow keeps running on V000 the entire time V001 is being built and tested. SAP-standard FMs and country classes stay exactly as SAP shipped them. UNESCO's existing BAdI implementations (FR/DE/IT/UTIL) keep their behavior. <strong>The "STAYS THE SAME" list is the regression boundary</strong>: any UAT failure that traces back to one of these assets means V001 has overreached its scope.</p>
+      <table>
+        <tr><th>Asset</th><th>Why preserved</th></tr>
+        <tr><td>All V000 DMEE trees</td><td>Production payment flow continues unchanged during transition. V000 only deactivates at Phase 5 cutover.</td></tr>
+        <tr><td>SAP-std FMs (FI_PAYMEDIUM_DMEE_CGI_05, /CITIPMW/V3_PAYMEDIUM_DMEE_05, GENERIC class, country classes FR/DE/IT/GB)</td><td>SAP-delivered, never modified. Reused by V001.</td></tr>
+        <tr><td>FPAYHX_FREF + FPAYP_FREF buffer structures</td><td>SAP-std DDIC. V001 reads from them.</td></tr>
+        <tr><td>Workflow 90000003 + BCM batch logic</td><td>Out of scope — change is XML-content only.</td></tr>
+        <tr><td>UNESCO BAdI classes _FR/_DE/_IT/_UTIL</td><td>Untouched. Only FALLBACK_CM001 gets the 3-line fix.</td></tr>
+        <tr><td>Z exits Z_DMEE_EXIT_TAX_NUMBER + ZDMEE_EXIT_SEPA_21</td><td>Not address-related, untouched.</td></tr>
+        <tr><td>YTFI_PPC_TAG / STRUC tables</td><td>0 rows for our target countries — no change needed.</td></tr>
+        <tr><td>Francesco's PMF variants (5 transports 2025)</td><td>Bank-variant config, parallel to our work, courtesy heads-up only.</td></tr>
+        <tr><td>XSLT CGI_XML_CT_XSLT</td><td>SAP-std, devclass=ID-DMEE. CITI tree uses it as-is.</td></tr>
+      </table>
+
+      <h4 style="color:#e74c3c">❌ OUT OF SCOPE</h4>
+      <p>Each item below was raised and consciously rejected for V001 — not forgotten. Some of these (Q3 UltmtCdtr, A1 per-bank strictness) were originally framed as "must answer before V001 design can close" and got resolved <em>system-internally</em> instead of via external SME ask. That follows the brain rule <code>feedback_prefer_system_internal_to_external_sme</code> : if a question is answerable from extracted data, answer it from data rather than waiting on bank or vendor SME response. Saved the project 2-4 weeks of bank-response wait time on each.</p>
+      <ul>
+        <li><b>pain.001.001.09 schema migration</b> — separate project (current trees stay on .03; simulator confirmed V001 forward-compatible with .09 — claim 105)</li>
+        <li><b>BCM workflow 90000003 modification</b> — dual-control logic untouched</li>
+        <li><b>Bank file naming + transmission</b> — Alliance Lite2 + SWIFT delivery untouched</li>
+        <li><b>ICTP Trieste trees</b> (/SEPA_CT_ICTP_*) — separate from UNESCO HQ scope</li>
+        <li><b>Vendor master cleanup beyond the 5 mandatory-missing</b> — V001 emit-empty + suppress-cond strategy handles 68.8% missing HOUSE_NUM1 cleanly without DQ pressure on V001 design</li>
+        <li><b>BCM_BATCH_* BAdIs</b> — not extracted, not in change path</li>
+        <li><b>Per-bank acceptance gating</b> — not a scope item under V001 Fully-Structured commitment. Fully-Structured (5 tags) strictly satisfies any CBPR+ bank strictness ≥ Hybrid (TwnNm+Ctry minimum) by ISO 20022 schema definition. Simulator 794/794 PASS on .03+.09. <b>Brain claim 105</b>. TRM emails reduced to 1-page logistics.</li>
+      </ul>
+      <p style="background:#ccfbf1;padding:10px;border-left:4px solid #1abc9c;margin-top:12px"><b>Removed from out-of-scope (Sessions #62-63)</b>: <em>UltmtCdtr Worldlink (Q3)</em> RESOLVED via DMEE_TREE_NODE system analysis (claim 99). <em>Per-bank strictness (A1)</em> CLOSED via V001 Fully-Structured commitment + simulator (claim 105). Both follow the pattern <code>feedback_prefer_system_internal_to_external_sme</code> HIGH  — answer from system data, not from external SME ask.</p>
+    </div>
+    </div>

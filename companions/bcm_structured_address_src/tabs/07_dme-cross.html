@@ -1,0 +1,44 @@
+<div id="tab-dme-cross" class="content">
+  <div class="section">
+    <h3>Cross-link — putting SAP-standard back into UNESCO context</h3>
+
+    <h4>Why this section exists</h4>
+    <p>The first five tabs explained DMEE/PMW from SAP's perspective — generic, applicable to any company on any version of SAP. This last tab does the opposite: it walks the same concepts back to <strong>our</strong> work. Every SAP-standard mechanism we just learned is anchored to a specific UNESCO claim, file, or design decision in this V001 project. Reading this tab confirms the bridge — that nothing in V001 is novel SAP development; it is all SAP-standard hooks used in a SAP-standard way.</p>
+
+    <h4>The mapping at a glance</h4>
+    <p>If you only read one table in this whole companion's DME submenu, read this one. Each row is a SAP-standard concept on the left, the UNESCO claim or document that uses it on the right. Click through to the file to see the evidence.</p>
+    <table>
+      <tr><th>SAP-standard concept</th><th>UNESCO claim / artifact</th><th>Where to read</th></tr>
+      <tr><td>DMEE_TREE_HEAD VERSION semantics (V000=Active, V001=Maintenance per SAP-correct lifecycle — activation OVERWRITES V000 with V001 content; rollback via Generate Version snapshot to V002)</td><td>claim 102 (TIER_1) — first-ever <em>transport-released</em> V001 (claim 109: D01 already has dormant V001 clone from past Create-Version event); see <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the SAP-correct lifecycle</td><td><a href="../knowledge/domains/Payment/dmee_versioning_procedure.md">dmee_versioning_procedure.md</a></td></tr>
+      <tr><td>DMEE_TREE_NODE Structure-Field mapping with offsets</td><td>h18 finding — <code>&lt;Purp&gt;&lt;Cd&gt;</code> = FPAYP-XREF3, post-processed by FI_CGI_DMEE_EXIT_W_BADI</td><td><a href="../knowledge/domains/Payment/h18_dmee_tree_findings.md">h18_dmee_tree_findings.md</a></td></tr>
+      <tr><td>Exit module / BAdI dispatch</td><td>NMENARD Pattern A — bank-mandated <code>&lt;Cdtr&gt;&lt;Nm&gt;</code> overflow → <code>&lt;StrtNm&gt;</code>; <code>YCL_IDFI_CGI_DMEE_FR/DE/IT/FALLBACK</code></td><td><a href="../knowledge/domains/Payment/phase0/NMENARD_DMEE_specs_decoded.md">NMENARD_DMEE_specs_decoded.md</a></td></tr>
+      <tr><td>Own mapping (atoms) + DMEE_TREE_COND</td><td>NMENARD PPC infrastructure — 9 countries × 11 routes × 133 positional rows</td><td>same file, Doc 2+3</td></tr>
+      <tr><td>OBPM4 selection variants</td><td>F. Spezzano TFPM042F* parallel work</td><td>Sub-option A (plan §)</td></tr>
+      <tr><td>Event modules / Event 05</td><td>TFPM042FB Event 05 reg ; SAP-std FI_PAYMEDIUM_DMEE_CGI_05 + cl_idfi_cgi_call05_factory country dispatch</td><td><a href="../knowledge/domains/Payment/phase0/e2e_flow_components_connected.md">e2e_flow_components_connected.md</a></td></tr>
+      <tr><td>XSLT post-processor (SF_NAME / XSLTDESC)</td><td>CITI tree only uses CGI_XML_CT_XSLT — auto-removes empty leaves; SEPA/CGI need explicit DMEE_TREE_COND empty-suppress rules</td><td>same e2e doc</td></tr>
+      <tr><td>FPAYH-ZSTRA exit-populated</td><td>claim 99 (TIER_1) — UltmtCdtr Q3 RESOLVED system-driven, ZSTRA already populated by SAP-std exit chain</td><td>audit log</td></tr>
+      <tr><td>SAP help <em>VIA PMW</em> tree (user's source URL)</td><td>This companion's DME submenu §1–§5; SAP help body is JS-rendered SPA, layered SAPinsider/AUMTECH/Techlorean as text + ERProof for screenshots</td><td><a href="../knowledge/domains/Payment/dme_creation_payment.md">dme_creation_payment.md</a></td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Brain — what got registered, and why these 4 questions matter</h3>
+    <p>While building this companion section we identified <strong>4 questions we cannot answer with certainty today</strong>. Rather than guess or skip them, we registered them as formal <em>known-unknowns</em> in the brain so any future agent — whether ours or a successor — can pick them up and close them. Brain went from 36 → 40 KUs; these 4 surface in <code>brain_v2/brain_state.json</code> Layer 6 on next session start.</p>
+    <p>Why each question matters in plain terms:</p>
+    <ul>
+      <li><strong>KU-DMEE-A · Auth profile for version create/activate</strong> — UNESCO has never released a DMEE version-bump transport (claim 102: 0/44 historical transports). D01 has dormant V001 entries from a past Create-Version event (claim 109), but <em>Activate Version</em> has never been exercised on UNESCO trees. The first time M_SPRONK opens <em>Tree → Versions → Activate Version</em> we don't actually know if her auth profile allows it. If it doesn't, Phase 2 stalls until BASIS adds the missing object. <strong>Fix early in the dry-run protocol or we lose a week.</strong></li>
+      <li><strong>KU-DMEE-B · Header field copy semantics</strong> — Create Version copies node rows but the SAP standard does not document whether all 26 header columns are copied verbatim. If a field like <code>XMLEMPTYELEMENTPROCESSINGTYPE</code> resets to default on V001 creation, V001 output behavior could silently diverge from V000 — possibly causing bank rejections post-cutover. <strong>Cheap to verify; expensive to discover late.</strong></li>
+      <li><strong>KU-DMEE-C · Customizing vs Workbench transport</strong> — Affects how M_SPRONK pre-allocates the 8 transports listed in the versioning procedure. Wrong type = re-create the transport, possibly under deadline pressure. One TADIR query closes it.</li>
+      <li><strong>KU-DMEE-D · The actual SAP KBA body</strong> — Our synthesis covers ~95% of DMEE/PMW from public secondary sources. The 5% gap is the SAP-side authoritative wording. The user already offered to pull this from authenticated SAP for Me; once received we integrate the delta into <code>knowledge/domains/Payment/dme_creation_payment.md</code> §8.</li>
+    </ul>
+    <table>
+      <tr><th>KU ID</th><th>Question</th><th>Priority</th><th>Resolution path</th></tr>
+      <tr><td><code>KU-2026-DMEE-A</code></td><td>Auth profile for Tx DMEE menu Tree → Versions → Create / Activate / Deactivate Version</td><td>MEDIUM</td><td>F_DMEE_NDP auth-object lookup + SU24 readout + D01 dry-run + SU53 trace</td></tr>
+      <tr><td><code>KU-2026-DMEE-B</code></td><td>Do all 26 DMEE_TREE_HEAD columns copy verbatim from V000 → V001, or do any default-reset (HANDLE_BYTES, XMLEMPTYELEMENTPROCESSINGTYPE, …)?</td><td>MEDIUM</td><td>D01 sandbox dry-run with all-fields-populated test tree + diff DMEE_TREE_HEAD V000 vs V001</td></tr>
+      <tr><td><code>KU-2026-DMEE-C</code></td><td>Are DMEE V001 changes Customizing (W) or Workbench (K) transports?</td><td>LOW</td><td>TADIR.KORRDEP for object-type DMEE + observe transport prompt during dry-run</td></tr>
+      <tr><td><code>KU-2026-DMEE-D</code></td><td>What does the body of SAP KBA <code>3361880828</code> actually say beyond what secondary sources cover?</td><td>LOW</td><td>User pulls authenticated KBA body from SAP for Me</td></tr>
+    </table>
+    <p style="font-size:11px;color:#64748b;margin-top:14px">Each KU carries full <code>context</code>, <code>how_to_resolve</code>, and <code>related_objects</code> in JSON, so any future agent reading <code>brain_state.json</code> can pick up the work without re-deriving the path.</p>
+  </div>
+</div>
+

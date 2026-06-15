@@ -1,0 +1,210 @@
+<div id="tab-evolution" class="content">
+    <div class="section">
+      <h3>Evolution — 10 years of CTS history on the target trees</h3>
+
+      <h4>Why look at 10 years of transports before changing anything</h4>
+      <p>Before you change a 10-year-old DMEE tree, you should know who built it, who has touched it since, and what the historical change pattern looks like. UNESCO's payment XML config has been continuously evolving since 2017 — by <strong>8 different authors across 52 transports</strong>. Each transport tells you something about how the team works: are changes typically small and surgical, or sweeping refactors? Are there bursts of activity tied to specific business events (a new bank, a regulatory change)? Who owns which area of the code?</p>
+      <p>That history matters for V001 in two concrete ways: <em>(1)</em> it gives us the <strong>"surgical pattern"</strong> baseline — claim 102 confirms 81.8% of historical transports touch ≤3 objects, and our V001 (split into 8 transports averaging ~3 objects) sits squarely inside that envelope, meaning we are not asking the team to do anything operationally novel; <em>(2)</em> it identifies <strong>code ownership</strong> — N_MENARD owns all 8 ABAP-class transports, M_SPRONK owns all 31 DMEE config transports, F. Spezzano owns 5 PMW-variant transports. Knowing this, we route reviewers correctly: Pattern A goes to N_MENARD; DMEE node edits go to M_SPRONK; OBPM4 row goes to F. Spezzano.</p>
+
+      <h4>How to read the table below</h4>
+      <p>The first table is the <strong>author footprint</strong> — who has done what across the 8-author / 52-transport history. The second table is the <strong>year-by-year transport timeline</strong>, showing when each tree was changed and by whom. Read it as the project's institutional memory: every cell is a transport someone designed, tested, and released; the patterns reveal where the team is comfortable and where they are not.</p>
+      <p style="color:#64748b;font-size:13px"><b>Brain-anchored.</b> Every entry below is sourced from <code>knowledge/domains/Payment/phase0/cts_dmee_authors.md</code> + <code>francesco_audit.md</code> + the per-transport E071 classification at <code>Zagentexecution/incidents/xml_payment_structured_address/transport_classification_44.json</code>. Claims 72 (53 transports / 8 authors), 96 (Pattern A SocGen-mandated), 101 (44-transport classification). Each transport shows the date, author, object count, change-type (derived from PGMID + OBJECT_TYPE) and the actual elements touched.</p>
+
+      <h4 style="color:#0066cc">Author footprint — 52 DMEE-touching transports across 10 calendar years (2017-2026), 8 distinct authors</h4>
+      <table>
+        <tr><th>Author</th><th>Transports</th><th>Span (active years)</th><th>Role</th><th>Trees touched</th></tr>
+        <tr><td><b>M_SPRONK</b> (Marlies Spronk)</td><td><b>31</b></td><td>2017-2024 (7y span / 8 calendar years inclusive)</td><td>DMEE tree configuration — Treasury</td><td>CITI DC_V3_01 ×27 · SEPA_CT_UNES ×7 · CGI_XML_CT_UNESCO ×4 (overlap ok)</td></tr>
+        <tr><td><b>N_MENARD</b> (Nicolas Ménard)</td><td><b>8</b> <span style="font-size:10px;color:#e67e22">(corrected from "9" in cts_dmee_authors.md L14 — see KU-063-02)</span></td><td>2024 only (Jan-Nov, 11-month burst)</td><td>ABAP BAdI code owner</td><td>YCL_IDFI_CGI_DMEE_* class hierarchy (7 of 8) · 1 ICTP tree (out of scope)</td></tr>
+        <tr><td><b>FP_SPEZZANO</b> (Francesco Spezzano)</td><td><b>5</b></td><td>2025 Q1 only (4-week burst)</td><td>Bank-variant config (PMF)</td><td>CGI_XML_CT_UNESCO ×1 · CGI_XML_CT_UNESCO_1 ×4</td></tr>
+        <tr><td><b>E_FRATNIK</b></td><td>4</td><td>—</td><td>ICTP Trieste (out of scope)</td><td>SEPA_CT_ICTP_ISO* trees only</td></tr>
+        <tr><td><b>I_KONAKOV</b></td><td>1</td><td>one-off</td><td>Config</td><td>—</td></tr>
+        <tr><td><b>V.VAURETTE</b></td><td>1</td><td>one-off</td><td>Unknown</td><td>—</td></tr>
+        <tr><td><b>USER_SPDD</b></td><td>1</td><td>one-off</td><td>SPDD/SPAU upgrade</td><td>—</td></tr>
+        <tr><td><b>SM36623</b></td><td>1</td><td>2019 legacy</td><td>One-off</td><td>CITIPMW/CITI_XML_V* (legacy pre-cutover)</td></tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:6px"><em>Source: cts_dmee_authors.md L13-21 (TIER_1 — parsed from 10 cts_batch_*.json files 2017-2026, meta.source_system=D01).</em></p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Two patterns the historical evidence shows (both reinforce the V001 design)</h4>
+      <p style="color:#64748b;font-size:12px"><em>Anchor: brain claim 102 (TIER_1) — surgical pattern + zero-versioning analysis of the 44-transport cohort. Reproducible from <code>transport_classification_44.json</code>.</em></p>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px">
+        <div style="flex:1 1 380px;background:#dcfce7;border-left:4px solid #1abc9c;border-radius:4px;padding:12px 14px">
+          <h5 style="color:#1abc9c;margin:0 0 8px 0;font-size:13px">Pattern 1 · UNESCO DMEE changes are SURGICAL</h5>
+          <p style="color:#475569;font-size:12px;margin:0 0 8px 0">Across 44 DMEE-touching transports by the 3 active authors (M_SPRONK + N_MENARD + FP_SPEZZANO), the obj_count distribution is heavily skewed toward minimal touches:</p>
+          <table style="width:100%;font-size:11px;color:#475569">
+            <tr><th style="text-align:left;color:#0066cc">Bucket (obj/transport)</th><th style="text-align:right;color:#0066cc">Count</th><th style="text-align:right;color:#0066cc">%</th></tr>
+            <tr><td><b>exactly 1 object</b></td><td style="text-align:right">26</td><td style="text-align:right;color:#1abc9c"><b>59.1 %</b></td></tr>
+            <tr><td>2-3 objects</td><td style="text-align:right">10</td><td style="text-align:right">22.7 %</td></tr>
+            <tr><td>4-10 objects</td><td style="text-align:right">3</td><td style="text-align:right">6.8 %</td></tr>
+            <tr><td>11-25 objects</td><td style="text-align:right">2</td><td style="text-align:right">4.5 %</td></tr>
+            <tr><td>26+ objects (package merges)</td><td style="text-align:right">3</td><td style="text-align:right">6.8 %</td></tr>
+            <tr style="border-top:1px solid #1abc9c"><td><b>≤ 3 objects (surgical)</b></td><td style="text-align:right;color:#1abc9c"><b>36</b></td><td style="text-align:right;color:#1abc9c"><b>81.8 %</b></td></tr>
+          </table>
+          <p style="color:#7ee5cf;font-size:11px;margin:10px 0 0 0"><b>Median = 1 object · Mean = 5.3 · M_SPRONK is most surgical (90.3% ≤3, median 1). FP_SPEZZANO 100% ≤3.</b></p>
+          <p style="color:#475569;font-size:11px;margin:8px 0 0 0"><b>Why this matters for V001:</b> the planned V001 scope (3 ABAP lines + ~24 DMEE nodes across 4 trees + 1 OBPM4 row + 5 vendor fixes) lands inside this surgical envelope. The 4 V001 tree transports + 1 BAdI transport will look operationally indistinguishable from typical Marlies+N_MENARD work. No new operational risk surface from "size".</p>
+        </div>
+
+        <div style="flex:1 1 380px;background:#fef3c7;border-left:4px solid #e67e22;border-radius:4px;padding:12px 14px">
+          <h5 style="color:#e67e22;margin:0 0 8px 0;font-size:13px">Pattern 2 · DMEE NATIVE VERSIONING — historical evidence (claims 102 + 109 + 111 — RFC verification 2026-04-30)</h5>
+          <p style="color:#475569;font-size:12px;margin:0 0 8px 0">The version mental model (V000/V001 cohabitation, EX_STATUS flip, dormant V001 in D01) is documented canonically in <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false" style="color:#e67e22"><b>DMEE Configuration · the version thing</b></a>. This section captures the historical evidence specific to UNESCO's 10-year transport history — the released-transport scan and the in-system D01-vs-P01 version comparison.</p>
+          <p style="color:#475569;font-size:12px;margin:0 0 8px 0;background:#fef3c7;padding:6px;border-radius:3px"><b>Two truths, two scopes</b>:</p>
+          <ol style="color:#475569;font-size:12px;margin:0 0 8px 18px">
+            <li><b>Released-transport scope (claim 102 holds)</b>: zero V001/V002 patterns across all 44 released DMEE-touching transports 2017-2024. No V001 has ever shipped via transport.</li>
+            <li><b>In-system D01 scope (claim 109 - RFC-verified 2026-04-30 post-VPN restoration)</b>: D01 ALREADY has <code>DMEE_TREE_NODE.VERSION=001</code> rows for all 4 in-scope trees. Someone ran DMEE Tx -> Create Version on each, leaving V001 as a byte-identical clone of V000 - dormant, never edited, never released. Verified counts: SEPA(V000=95, V001=95), CITI(610/610), CGI(631/631), CGI_1(632/632). P01 has only V000.</li>
+          </ol>
+          <p style="color:#475569;font-size:12px;margin:0 0 8px 0">Verified: pattern scan across every E071 obj_name in all 44 transports for <code>V001 / V002 / VERSION_001 / V01 / VERS001</code> returned <b>zero hits</b>. The "V3" in <code>/CITI/XML/UNESCO/DC_V3_01</code> is a tree-name component (Citi PMW V3 format), <b>not</b> a DMEE_TREE_HEAD.VERSION bump. Plan §Finding J L504 said <code>VERSION=000</code> in all 4 UNESCO trees today - that holds for P01 only. D01 has BOTH 000 + 001.</p>
+          <table style="width:100%;font-size:11px;color:#475569">
+            <tr><th style="text-align:left;color:#e67e22">Tree</th><th style="text-align:left;color:#e67e22">P01 active VERSION</th><th style="text-align:left;color:#e67e22">D01 versions present</th><th style="text-align:left;color:#e67e22">Released V001 transports</th></tr>
+            <tr><td><code>/SEPA_CT_UNES</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone, dormant)</td><td><b style="color:#e67e22">0</b></td></tr>
+            <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone, dormant)</td><td><b style="color:#e67e22">0</b></td></tr>
+            <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone, dormant)</td><td><b style="color:#e67e22">0</b></td></tr>
+            <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>000 (only)</td><td><b>000 + 001</b> (V001=clone of dirty V000; V000=632 vs P01=639 = 12 deltas)</td><td><b style="color:#e67e22">0</b></td></tr>
+          </table>
+          <p style="color:#f6c891;font-size:11px;margin:10px 0 0 0"><b>V001 will be the FIRST EVER DMEE version-bumped transport at UNESCO</b> (released-transport scope per claim 102). In-system D01 already has dormant V001 entries for all 4 trees per claim 109 — recommendation: PURGE the dormant V001 (it has been sitting since an undated DMEE Tx Create Version event, byte-identical clone of D01 V000) and recreate fresh as part of D01-RETROFIT-01 to recover a clean transport-trail. The first-ever experience for the team is therefore: (a) the released-transport V001 round-trip D01→V01→P01, (b) tx DMEE → Tree → Activate (V001 content overwrites V000 per SAP-correct lifecycle), (c) tested rollback via Generate Version snapshot + Version Management Retrieve. Brain claim 111. See <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the corrected lifecycle.</p>
+          <p style="color:#475569;font-size:11px;margin:8px 0 0 0"><b>Why this matters for V001:</b> the 2-file + DMEE-versioning strategy adopted (per user directive 2026-04-24, plan §Design recommendations L500) is a <em>new operational practice</em> for the UNESCO team — neither M_SPRONK nor N_MENARD has done a version bump before. Phase 2 Week 1 deliverable explicitly: "V001 INACTIVE in all 3 systems" — first time exercising DMEE Tx Create Version + Activate Version steps in operations. Worth a dry run on a non-live tree first.</p>
+        </div>
+      </div>
+
+      <div style="background:#f1f5f9;border-left:4px solid #1d4ed8;padding:10px 14px;margin-top:18px;border-radius:4px;font-size:12px">
+        <b style="color:#0066cc">Granularity note · what E071 reveals vs what it doesn't</b>
+        <p style="color:#475569;margin:6px 0 0 0">Each transport's "what was changed" detail below is derived from its E071 entries (PGMID + OBJECT_TYPE + OBJECT_NAME). This is exact at:</p>
+        <ul style="color:#475569;margin:4px 0 6px 18px;font-size:12px">
+          <li><b>ABAP class transports</b> — method-level (LIMU METH gives class+method name) and include-level (CINC/CPUB/CPRI/CPRO).</li>
+          <li><b>Customizing transports</b> — table-row level (CDAT/TDAT/TABU give the exact view + changed table).</li>
+          <li><b>Enhancement/ENHO</b> — spot name (which BAdI hook is registered for which class).</li>
+        </ul>
+        <p style="color:#475569;margin:0">But E071 stops at <b>tree-level</b> for DMEE objects: <code>R3TR DMEE PAYM/&lt;tree&gt;</code> tells you which tree was edited, but NOT which nodes inside the tree were added/modified/deleted. To get node-level forensics you need a DMEE_TREE_NODE.AS_TIME diff between adjacent transport release timestamps. Tracked as <b>KU-2026-063-03 LOW</b> — not blocking V001 (surgical-pattern stats above are sufficient confirmation), open only if a Phase 4 regression needs deeper history.</p>
+      </div>
+
+      <h4 style="color:#1abc9c;margin-top:24px">M_SPRONK · 31 transports · 2017-2024 (7-year active span, 8 calendar years inclusive)</h4>
+      <p style="color:#64748b;font-size:12px">Marlies is the DMEE config SME — her 31 transports confirm capability (Plan §Finding C). <b>26 of 31 are single-object DMEE tree edits</b> (median obj_count = 1, 90.3% surgical) — pattern: open tree in DMEE Tx, tweak a few nodes, transport. 27 of 31 touch <code>/CITI/XML/UNESCO/DC_V3_01</code> (her primary tree), 7 also touch <code>/SEPA_CT_UNES</code> (often paired with CITI in multi-tree transports — 2020-02-07 D01K9B05CI, 2020-04-09 D01K9B0601, 2021-08-31 D01K9B080K, 2021-11-23 D01K9B08DT all bundle 3 trees), 4 touch <code>/CGI_XML_CT_UNESCO</code>. The 2 oldest BAdI touches (<code>D01K9B0393</code> 2018-09-04, <code>D01K9B04Y6</code> 2019-05-24) are on <code>CL_IM_DMEE_XML_BADI_01</code> — the <b>predecessor BAdI</b> before N_MENARD's 2024 class hierarchy. The most detail-rich transport (<code>D01K9B0BL1</code> 2024-03-26, 14 obj) bundles a CGI tree edit with 9× LIMU DOCU <code>NAZFI004/011/012/015/019/021</code> (payment notification text scripts) + 2× R3TR TABU <code>GB01C/GB02C</code> (validation rule customizing) + 1× LIMU MSAD <code>ZFI</code> (message class) + 1× R3TR TDAT <code>GGB0</code> (general customizing) — i.e. a bundled payment-notification + validation-rule release that happened to also touch a CGI tree node.</p>
+      <table>
+        <tr><th>Date</th><th>TRKORR</th><th>Obj</th><th>Change type</th><th>Elements touched</th></tr>
+        <tr><td>2024-05-31</td><td><code>D01K9B0BQG</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2024-03-26</td><td><code>D01K9B0BL1</code></td><td>14</td><td>DMEE-TREE + CUSTOMIZING</td><td>PAYM/CGI_XML_CT_UNESCO + 7 NAZFI* payment notification text scripts (NAZFI004/011/012/015/019/021/022)</td></tr>
+        <tr><td>2023-07-18</td><td><code>D01K9B0AT1</code></td><td>2</td><td>DMEE-TREE</td><td>PAYM/CGI_XML_CT_UNESCO + VC_T015V (instruction key view)</td></tr>
+        <tr><td>2023-06-19</td><td><code>D01K9B0AO3</code></td><td>2</td><td>DMEE-TREE</td><td>PAYM/CGI_XML_CT_UNESCO + VC_TFPM042F (Event 05 customizing)</td></tr>
+        <tr><td>2023-01-31</td><td><code>D01K9B0A9D</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-12-20</td><td><code>D01K9B0A1O</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-10-04</td><td><code>D01K9B09P4</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-08-03</td><td><code>D01K9B09KD</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-06-24</td><td><code>D01K9B09GL</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-06-21</td><td><code>D01K9B09F3</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-06-13</td><td><code>D01K9B09E1</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2022-05-11</td><td><code>D01K9B097T</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2021-12-02</td><td><code>D01K9B08GM</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2021-11-23</td><td><code>D01K9B08DT</code></td><td>4</td><td>DMEE-TREE (3 trees in one transport)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/CITI/XML/UNESCO/DIRECT_CREDIT + PAYM/SEPA_CT_UNES</td></tr>
+        <tr><td>2021-09-07</td><td><code>D01K9B0810</code></td><td>2</td><td>DMEE-TREE (2 trees)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/SEPA_CT_UNES</td></tr>
+        <tr><td>2021-09-03</td><td><code>D01K9B080Q</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2021-08-31</td><td><code>D01K9B080K</code></td><td>3</td><td>DMEE-TREE (3 trees)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/CITI/XML/UNESCO/DIRECT_CREDIT + PAYM/SEPA_CT_UNES</td></tr>
+        <tr><td>2021-07-06</td><td><code>D01K9B07VI</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DIRECT_CREDIT</td></tr>
+        <tr><td>2021-06-21</td><td><code>D01K9B07T6</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2021-04-14</td><td><code>D01K9B07HB</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2021-04-02</td><td><code>D01K9B0601</code></td><td>3</td><td>DMEE-TREE (3 trees)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/CITI/XML/UNESCO/DIRECT_CREDIT + PAYM/SEPA_CT_UNES</td></tr>
+        <tr><td>2021-04-02</td><td><code>D01K9B0603</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2020-04-30</td><td><code>D01K9B0605</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2020-02-07</td><td><code>D01K9B04YK</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2020-02-07</td><td><code>D01K9B05CI</code></td><td>3</td><td>DMEE-TREE (3 trees)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/CITI/XML/UNESCO/DIRECT_CREDIT + PAYM/SEPA_CT_UNES</td></tr>
+        <tr><td>2019-05-24</td><td><code>D01K9B04Y6</code></td><td>3</td><td>DMEE-TREE + ABAP-BAdI (predecessor)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + <b>CL_IM_DMEE_XML_BADI_01</b> (pre-N_MENARD BAdI)</td></tr>
+        <tr><td>2019-05-13</td><td><code>D01K9B04LK</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DIRECT_CREDIT</td></tr>
+        <tr><td>2019-01-31</td><td><code>D01K9B04F8</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DIRECT_CREDIT</td></tr>
+        <tr><td>2018-09-19</td><td><code>D01K9B03ZF</code></td><td>1</td><td>DMEE-TREE</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01</td></tr>
+        <tr><td>2018-09-04</td><td><code>D01K9B0393</code></td><td>3</td><td>DMEE-TREE + ABAP-BAdI (predecessor)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + <b>CL_IM_DMEE_XML_BADI_01</b></td></tr>
+        <tr><td>2017-12-06</td><td><code>D01K9B033V</code></td><td>6</td><td>DMEE-TREE (3 trees + Event 05 cfg)</td><td>PAYM/CITI/XML/UNESCO/DC_V3_01 + PAYM/CITI/XML/UNESCO/DIRECT_CREDIT + PAYM/CITIPMW/CITI_XML_V* + VC_TFPM042F</td></tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:6px"><em>Source: transport_classification_44.json + cts_dmee_authors.md L26-60. Span confirmed: oldest 2017-12-06, newest 2024-05-31 = 7 years of active changes (8 calendar years touched). The "10y" the legacy header used was the whole-landscape figure, not Marlies-specific.</em></p>
+
+      <h4 style="color:#e67e22;margin-top:24px">N_MENARD · 8 transports · 2024 only (Jan-Nov, 11-month burst) — full E071 detail</h4>
+      <p style="color:#64748b;font-size:12px">Nicolas owns the UNESCO BAdI class hierarchy. All 8 transports landed in a single calendar year. Required reviewer for any ABAP touch on <code>YCL_IDFI_CGI_DMEE_*</code>. Detail per transport is from E071 PGMID + OBJECT_TYPE + OBJECT_NAME (cited inline). Source: <code>transport_detail_e071.json</code> + <code>transport_classification_44.json</code>.</p>
+      <table style="font-size:12px">
+        <tr><th>Date</th><th>TRKORR</th><th>Obj</th><th>What was created/changed</th><th>How (E071 breakdown · narrative)</th></tr>
+        <tr>
+          <td>2024-01-10</td><td><code>D01K9B0BDM</code></td><td>14</td>
+          <td><b>BIRTH of country-class hierarchy</b> · created 3 country classes + ENHO spots</td>
+          <td>3× R3TR CLAS: <code>YCL_IDFI_CGI_DMEE_DE</code> + <code>_FR</code> + <code>_IT</code> · 3× R3TR ENHO + 3× R3TR ENBC: <code>Y_IDFI_CGI_DMEE_COUNTRIES_DE/FR/IT</code> (registers each class with the BAdI dispatcher) · 1× R3TR ENHC <code>YENH_FI_DMEE</code> · 1× LIMU METH on existing <code>CL_IDFI_CGI_DMEE_FALLBACK::GET_CREDIT</code> (delegation tweak) · 1 SOTT class text. <b>Pattern: foundation transport — net-new ABAP, no rework.</b></td>
+        </tr>
+        <tr>
+          <td>2024-03-18</td><td><code>D01K9B0BL9</code></td><td>4</td>
+          <td>Focused FALLBACK refinement</td>
+          <td>1× R3TR CLAS <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> · 1× LIMU METH <code>FALLBACK::GET_CREDIT</code> · 1× R3TR ENHC <code>YENH_FI_DMEE</code> + 1× R3TR ENHO <code>YENH_FI_DMEE_CGI_FALLBACK</code>. <b>Pattern: surgical FALLBACK class+method tweak (4 objects, single-class focus).</b></td>
+        </tr>
+        <tr style="background:#fff7ed">
+          <td>2024-03-26</td><td><code>D01K9B0BN9</code></td><td><b>52</b></td>
+          <td><b>BIRTH of PPC system + AE/BH classes</b> · the BIG transport (largest of all 44)</td>
+          <td>6× R3TR CLAS: added <code>YCL_IDFI_CGI_DMEE_<b>AE</b></code> + <code>_<b>BH</b></code> on top of DE/FR/IT (now 5 country classes). 2× R3TR TABL <code>YTFI_PPC_STRUC</code> + <code>YTFI_PPC_TAG</code> (NEW PPC tables). 4× R3TR DOMA <code>YD_FI_PAY_STRUC / PAY_TYPE / PPC_CODE / TAG_ID</code> + 6× R3TR DTEL <code>YE_FI_*</code> (PPC type system). 2× R3TR FUGR for PPC table maintenance. 7× R3TR ENHO <code>Y_IDFI_CGI_DMEE_COUNTRIES_AE/BH/DE/FR/IT/...</code> (registers AE+BH spots). 5× R3TR TABU customizing (<code>TDDAT, TNODEIMG, TNODEIMGR, TNODEIMGT, ...</code>). 2× R3TR TRAN <code>Y_D01_47000163, Y_D01_47000164</code> (PPC table maintenance transactions). 1× LIMU METH <code>YCL_IDFI_CGI_DMEE_FR::GET_CREDIT</code>. 6 SOTT class texts. <b>Pattern: PPC system + AE/BH country shells deployed in one go.</b> ⚠ AE/BH classes are NOT in P01 today (KU-063-01 below).</td>
+        </tr>
+        <tr style="opacity:0.6">
+          <td>2024-06-21</td><td><code>D01K9B0B5K</code></td><td>1</td>
+          <td>ICTP tree (out of scope)</td>
+          <td>1× R3TR DMEE <code>PAYM/SEPA_CT_ICTP_ISO</code> (ICTP Trieste tree, not UNESCO HQ).</td>
+        </tr>
+        <tr>
+          <td>2024-06-25</td><td><code>D01K9B0BXH</code></td><td>45</td>
+          <td>Package merge — FALLBACK+FR+UTIL repackage <em>without</em> AE/BH</td>
+          <td>3× R3TR CLAS: <code>FALLBACK</code> + <code>FR</code> + <code>UTIL</code> only. Same PPC infrastructure as BN9 (TABL/DOMA/DTEL/FUGR/TABU/TRAN). 3× R3TR ENHO including <code>YENH_FI_DMEE_CGI_FALLBACK</code> + <code>Y_IDFI_CGI_DMEE_COUNTRY_FR</code>. 2× LIMU METH on <code>FALLBACK::GET_CREDIT</code> + <code>FR::GET_CREDIT</code>. <b>Notable: AE/BH classes DROPPED from this package vs BN9 — likely the moment they were de-scoped from production.</b></td>
+        </tr>
+        <tr>
+          <td>2024-07-03</td><td><code>D01K9B0BYP</code></td><td>1</td>
+          <td><b>PPC dispatcher entry method created</b></td>
+          <td>1× LIMU METH: <code>YCL_IDFI_CGI_DMEE_UTIL::<b>GET_TAG_VALUE_FROM_CUSTO</b></code> — the helper method that reads YTFI_PPC_STRUC/TAG and builds PPC tag values per (LAND1, TAG_ID, PAY_TYPE) tuple. <b>Pattern: minimal-perfect surgical (1 method, 1 transport). This is the method PPC dispatch hangs on.</b></td>
+        </tr>
+        <tr>
+          <td>2024-07-08</td><td><code>D01K9B0BZ3</code></td><td>45</td>
+          <td>Re-merge of BXH (likely retry/correction)</td>
+          <td>Same content as D01K9B0BXH (3 CLAS + same PPC infra + 3 ENHO + 2 METH). <b>Pattern: 5-day re-deploy after BYP. Likely indicates a correction or test-system re-import.</b></td>
+        </tr>
+        <tr style="background:#fff7ed">
+          <td>2024-11-22</td><td><code>D01K9B0CEW</code></td><td>1</td>
+          <td><b>Pattern A area touch · last N_MENARD activity</b></td>
+          <td>1× LIMU METH: <code>YCL_IDFI_CGI_DMEE_FALLBACK::<b>GET_CREDIT</b></code>. <b>Pattern: surgical single-method update.</b> This is the same method whose stateful name-overflow logic V001 needs to guard (claim 96 SocGen-mandated per N_MENARD doc <code>TS DMEE CGI modifications 20240229.docx</code>). The Pattern A 3-line guard in our V001 transport <code>D01K-BADI-FIX-01</code> will land in this exact method. Reviewer for V001 = same N_MENARD.</td>
+        </tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:6px"><em>Source: transport_detail_e071.json (E071 breakdown per transport — full PGMID/OBJECT_TYPE/OBJECT_NAME triples). Pattern recognition is straight from the E071 contents — net-new objects (R3TR CLAS first appearance) vs reworks (LIMU METH on existing classes). Brain claim 102 confirms 81.8% of transports are ≤3 objects; N_MENARD at 37.5% surgical is the lowest because his cohort includes 4 package-merge transports (BN9/BXH/BZ3/the 14-obj BDM).</em></p>
+
+      <div style="background:#fff7ed;border-left:4px solid #e67e22;padding:10px 14px;margin-top:8px;border-radius:4px">
+        <b style="color:#e67e22">⚠ KU-2026-063-01 · MEDIUM priority</b>
+        <p style="margin:6px 0 0 0;font-size:12px">D01K9B0BN9 (2024-03-26) E071 lists <code>YCL_IDFI_CGI_DMEE_AE</code> and <code>YCL_IDFI_CGI_DMEE_BH</code> as transported objects. Phase 0 Finding D ran TADIR probe in P01 and found those classes <b>NOT FOUND</b>. Possible explanations: (a) transport not imported to P01, (b) classes deleted or renamed in a later transport, (c) class shells were never activated. Resolution: RFC E070 status check + RFC TADIR + grep E071 for any subsequent DELE entry. Tracked in brain known_unknowns.</p>
+      </div>
+
+      <h4 style="color:#0066cc;margin-top:24px">FP_SPEZZANO · 5 transports · 2025 Q1 only (4-week burst Feb 20 → Mar 20) — full E071 detail</h4>
+      <p style="color:#64748b;font-size:12px">Francesco's 5 transports cluster in a single 4-week window in 2025 Q1, touch <b>only</b> the CGI tree variants (never SEPA, never CITI). 2 of 5 also include <code>R3TR CDAT VC_TFPM042F</code> — note the type is <b>CDAT</b> (Customizing Data, not just a view config), which means actual TFPM042F* table-row data was modified. <b>Pattern: bank-variant PMF work — Francesco was likely registering a new bank variant in TFPM042F + tweaking how the CGI tree handles that bank.</b></p>
+      <table style="font-size:12px">
+        <tr><th>Date</th><th>TRKORR</th><th>Obj</th><th>What was changed</th><th>How (E071 breakdown)</th></tr>
+        <tr><td>2025-02-20</td><td><code>D01K9B0CTP</code></td><td>2</td><td>CGI_1 tree edit + PMF variant data</td><td>1× R3TR DMEE <code>PAYM/CGI_XML_CT_UNESCO_1</code> + 1× R3TR CDAT <code>VC_TFPM042F</code> (PMF bank-variant customizing data)</td></tr>
+        <tr><td>2025-02-21</td><td><code>D01K9B0CUS</code></td><td>1</td><td>CGI_1 tree-only edit</td><td>1× R3TR DMEE <code>PAYM/CGI_XML_CT_UNESCO_1</code> (single-object surgical)</td></tr>
+        <tr><td>2025-02-21</td><td><code>D01K9B0CUT</code></td><td>1</td><td>CGI_1 tree-only edit (same-day duplicate)</td><td>1× R3TR DMEE <code>PAYM/CGI_XML_CT_UNESCO_1</code>. Same date as CUS — likely an iterative tweak.</td></tr>
+        <tr><td>2025-03-07</td><td><code>D01K9B0CWS</code></td><td>1</td><td>CGI_1 tree-only edit</td><td>1× R3TR DMEE <code>PAYM/CGI_XML_CT_UNESCO_1</code> (single-object surgical)</td></tr>
+        <tr><td>2025-03-20</td><td><code>D01K9B0CZ0</code></td><td>2</td><td>CGI <b>parent</b> tree edit + PMF variant data</td><td>1× R3TR DMEE <code>PAYM/CGI_XML_CT_UNESCO</code> (note: parent tree this time, not _1) + 1× R3TR CDAT <code>VC_TFPM042F</code></td></tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:6px"><em>Source: transport_detail_e071.json + francesco_audit.md (TIER_1 — FP_SPEZZANO 70 total transports across 2017-2026, 5 DMEE-touching all 2025 Q1, all Released, all Workbench, descriptions empty). <b>The 4-week pattern (Feb 20 → Mar 20) starting on the SYNC twin then ending on the parent</b> is the typical PMF bank-variant rollout shape: develop the variant on the twin first, validate, then promote to the parent. Pre-Phase-2 alignment call recommended (Plan §line 1080) — written agreement that V001's CdtrAgt fix doesn't overwrite his variant work.</em></p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Cross-tree heatmap — author × tree × year (2017-2025 active, exact counts from transport_classification_44.json)</h4>
+      <table style="font-size:12px">
+        <tr><th>Tree</th><th>2017</th><th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>M:1</td><td>M:2</td><td>M:1</td><td>M:5</td><td>M:7</td><td>M:7</td><td>M:1</td><td>M:1</td><td>—</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DIRECT_CREDIT</code> (legacy)</td><td>M:1</td><td>—</td><td>M:2</td><td>M:2</td><td>M:3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>/CITIPMW/CITI_XML_V*</code> (legacy pre-cutover)</td><td>M:1</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>—</td><td>—</td><td>—</td><td>M:2</td><td>M:3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>M:2</td><td>M:1</td><td>F:1</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>F:4</td></tr>
+        <tr><td><code>YCL_IDFI_CGI_DMEE_*</code> (BAdI hierarchy)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>N:7</b></td><td>—</td></tr>
+        <tr><td><code>CL_IM_DMEE_XML_BADI_01</code> (predecessor BAdI)</td><td>—</td><td>M:1</td><td>M:1</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><code>/SEPA_CT_ICTP_*</code> (ICTP — out of scope)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>N:1</td><td>—</td></tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:6px"><em>M=M_SPRONK · N=N_MENARD · F=FP_SPEZZANO. Counts are per-author transport-touches per tree per year (a single transport touching 3 trees is counted once per tree column). Computed from transport_classification_44.json (44 of 53 transports — the 9 transports by E_FRATNIK / I_KONAKOV / V.VAURETTE / USER_SPDD / SM36623 are not classified here because they are out of scope or one-offs).</em></p>
+
+      <div style="background:#fff7ed;border-left:4px solid #e67e22;padding:10px 14px;margin-top:8px;border-radius:4px">
+        <b style="color:#e67e22">⚠ DQ-2026-063-02 (data quality fix applied) · CLOSED</b>
+        <p style="margin:6px 0 0 0;font-size:12px">cts_dmee_authors.md L14 originally reported N_MENARD = 9 transports. Re-grep of cts_batch_2017..2026.json for owner=N_MENARD AND any DMEE-related object (PAYM/FORMI types or YCL_IDFI_CGI_DMEE* names) returned <b>exactly 8 transports</b>. The "+1 ICTP transport" footnote at L74 was already counted in D01K9B0B5K (June 2024, SEPA_CT_ICTP_ISO). Source corrected to 8. Total DMEE-touching transports adjusted from 53 → <b>52</b>.</p>
+      </div>
+
+      <h4 style="color:#0066cc;margin-top:24px">What this means for V001</h4>
+      <ul style="font-size:13px">
+        <li><b>Marlies has 7 years of operational experience on Citi tree</b> (27 of her 31 transports) — V001 CITI Dbtr structuring + UltmtCdtr unification will land in territory she knows well. Plan §Phase 2 §Per-tree design adopts this premise.</li>
+        <li><b>SEPA tree has had only 5 touches ever</b> (M_SPRONK 2020-2021) — V001 SEPA work is the deepest config change of this migration. Sub-option A test in D01 first (per Plan line 567) is justified by the lack of recent operational practice on this tree.</li>
+        <li><b>CGI tree has had only 6 touches by Marlies + 5 by Francesco</b> (11 total) — V001 CdtrAgt fix lands on a relatively quiet tree. Pre-Phase-2 alignment call with Francesco still recommended (per `feedback_propagate_q_resolution_to_all_sections` rule).</li>
+        <li><b>N_MENARD's 2024 burst built the country-class hierarchy from scratch</b> — Pattern A 3-line guard (V001 ABAP change) lands inside YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT, the single method N_MENARD touched in his last transport (D01K9B0CEW 2024-11-22). N_MENARD as required reviewer is correctly identified by the plan.</li>
+        <li><b>The CL_IM_DMEE_XML_BADI_01 predecessor BAdI</b> (M_SPRONK 2018+2019) likely existed before N_MENARD's hierarchy. Whether it still fires in P01 is not directly tested — KU candidate if the Pattern A regression test surfaces unexpected behaviour.</li>
+      </ul>
+    </div>
+    </div>

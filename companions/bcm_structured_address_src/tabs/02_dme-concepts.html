@@ -1,0 +1,71 @@
+<div id="tab-dme-concepts" class="content">
+  <div class="section">
+    <h3>DME · Concepts & Runtime Flow</h3>
+
+    <h4>Start here — what problem does DMEE actually solve?</h4>
+    <p>Every time UNESCO pays a vendor electronically, a file has to leave SAP and reach the bank. The bank dictates the exact shape of that file — what fields, what order, what separators, what character set, whether it's flat-text or XML. <strong>Société Générale wants pain.001.001.03 XML. Citi wants their CITIPMW V3 XML envelope. A Botswana bank wants a comma-separated flat file.</strong> The same payment data has to be re-shaped differently for each receiving bank.</p>
+    <p>Before DMEE, every new bank format meant ABAP development: a developer wrote a function module that hand-coded the file structure. Adding a new country or upgrading a format was a change request, a transport, code review, regression testing. Slow and expensive.</p>
+    <p>DMEE flipped this on its head. Instead of code, the file format is described as a <em>tree</em> — a drag-and-drop visual model where each node says "this part of the file gets this field from the payment data". A functional consultant can build or modify a tree without writing ABAP. The engine reads the tree at runtime and produces the file.</p>
+
+    <h4>Two engines, one team — DMEE vs PMW</h4>
+    <p>People often blur DMEE and PMW together, but they do different jobs.</p>
+    <ul>
+      <li><strong>DMEE (Data Medium Exchange Engine, Tx <code>DMEE</code>; called <code>DMEEX</code> in S/4HANA)</strong> is the <em>format describer</em>. It owns the tree — the shape of the bank file. It does not know <em>when</em> to fire or <em>which</em> payments go through it; it just knows "given a payment, produce a file in this shape".</li>
+      <li><strong>PMW (Payment Medium Workbench)</strong> is the <em>orchestrator around DMEE</em>. It tells F110: "for this country + payment method + company code combination, use that DMEE tree, with this selection variant, and write the output to that file path." PMW also handles non-DMEE formats (legacy code-based — DTAUS0, ACH classic — used before DMEE existed).</li>
+    </ul>
+    <p>Think of it like Word + Mail Merge. <strong>DMEE is the document template. PMW is the Mail Merge config</strong> that says "when sending letters to French vendors in October, use this template, with this address book, save to that folder." You can change the template without touching Mail Merge, and you can re-route Mail Merge to a different template without touching the template.</p>
+    <p>The bridge between the two is a single flag in OBPM1 called <em>"Mapping using DME engine"</em>. When that flag is on for a PMW format, PMW knows to look up a DMEE tree with the same name. When it's off, PMW falls back to an old ABAP function module. <strong>UNESCO's four production trees are all DME-engine flag = ON.</strong></p>
+
+    <h4>Where the tree actually lives — four tables you should know</h4>
+    <p>A DMEE tree is data, not code. It lives in four customizing tables:</p>
+    <ul>
+      <li><code>DMEE_TREE_HEAD</code> — one row per (tree, version). Defines tree-wide settings: name, source structure, charset, root-node ID, optional XSLT post-processor.</li>
+      <li><code>DMEE_TREE_NODE</code> — one row per node. The bulk of the tree. Each row says "I am element X, my parent is Y, I read field Z from structure W, here's my length and conversion rule."</li>
+      <li><code>DMEE_TREE_COND</code> — one row per condition. Rules like "suppress this node if the source field is blank" or "use this branch if country = FR".</li>
+      <li><code>DMEE_TREE_SORT</code> — sort/key fields per level (e.g. group payments by company code at level 1).</li>
+    </ul>
+    <p>For UNESCO, P01 holds: <strong>1,975 nodes across 4 trees, 614 conditions, 39 sort entries</strong>. That whole landscape is what V001 surgically modifies.</p>
+
+    <h4>End-to-end runtime — what happens when you press F8 in F110</h4>
+<pre>F110 (SAPF110S → SAPFPAYM)
+  ├ reads FBZP customizing (cocode + payment method)
+  ├ selects open items, builds REGUH/REGUP, posts payment docs
+  └ calls Payment Medium driver SAPFPAYM with OBPM4 selection variant
+       ↓
+SAPFPAYM
+  ├ reads OBPM1 → format name + "Mapping using DME engine" flag
+  ├ reads OBPM2 → note-to-payee rules
+  ├ reads OBPM3 → customer FM enhancements
+  ├ if DMEE flag = X → load tree where TREE_ID === OBPM1 format name (invariant)
+  └ builds FPAYH / FPAYHX / FPAYP / FPAYP_REM / FPAYPX / DMEE_PAYD per (paying-cocode, vendor, item)
+       ↓
+DMEE controller (CL_DMEE_CONVERSION etc.)
+  ├ traverses DMEE_TREE_NODE rows for active VERSION
+  ├ resolves source: MP_SC_TAB + MP_SC_FLD + MP_OFFSET
+  ├ applies CV_RULE conversion (CL=lowercase, AL.2=amount-align, RP=replace)
+  ├ fires DMEE_TREE_COND (suppress / branch)
+  ├ calls MP_EXIT_FUNC (BAdI / FM) when registered
+  ├ assembles flat record OR XML element tree
+  └ if XSLT registered (SF_NAME / XSLTDESC) → post-process (typical: prune empty leaves)
+       ↓
+FILE OUTPUT — TemSe / file system / FDTA download
+  UNESCO: \\hq-sapitf\SWIFT$\P01\input\&lt;cc&gt;_&lt;pm&gt;_&lt;fmt&gt;&lt;date&gt;&lt;seq&gt;.in
+  Botswana sandbox: C:\INT\Outbound\EFT\MVAEFT_161123_154701
+       ↓
+BCM batch → workflow 90000003 → Alliance Lite → SWIFT</pre>
+    <p>Read this in plain English: <em>F110 picks the open invoices, decides who to pay, posts the accounting documents, and then hands off to a separate driver report (SAPFPAYM) whose only job is to produce the bank file. SAPFPAYM looks up the configuration in OBPM1-4, fills in-memory structures with the payment details, and asks the DMEE engine to walk the format tree. The engine reads node by node — like reading a recipe — and either writes a literal value, reads a field from the structures, or calls a custom function for special cases. The result is a flat or XML file written to the file system, ready to be sent to the bank.</em></p>
+
+    <h4>Why we're walking through all of this — anchoring V001 to the real machinery</h4>
+    <p>V001 is not a redesign. It is a <strong>surgical change</strong> to specific points on the chain above. Knowing which point each change touches is what lets us bound the risk:</p>
+    <ul>
+      <li>The <strong>Pattern A BAdI fix</strong> (3 lines in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>) lives at the <em>"calls MP_EXIT_FUNC"</em> step. Affects only nodes whose <code>MP_EXIT_FUNC</code> = <code>FI_CGI_DMEE_EXIT_W_BADI</code> + the FALLBACK country dispatch path. <strong>Blast radius: bounded.</strong></li>
+      <li>The <strong>SEPA Sub-option A</strong> (one TFPM042FB row) lives at the <em>"OBPM3 / event-module wiring"</em> step. Adds the SEPA tree to the existing Event 05 wrapper that already serves CGI. <strong>Blast radius: SEPA tree only.</strong></li>
+      <li>The <strong>structured Dbtr nodes</strong> (5 per tree in V001) live at the <em>"resolves source via MP_SC_TAB+MP_SC_FLD+MP_OFFSET"</em> step. They read the same FPAYHX-REF01/REF06 buffer that already serves Cdtr. <strong>Blast radius: V001 nodes only — V000 untouched.</strong></li>
+      <li>The <strong>empty-suppress conditions</strong> (5 per tree for SEPA) live at the <em>"fires DMEE_TREE_COND"</em> step. CITI skips them because <code>CGI_XML_CT_XSLT</code> auto-prunes empty leaves; SEPA has no XSLT, so it has to suppress at the tree level. <strong>Blast radius: SEPA tree only.</strong></li>
+    </ul>
+    <p>None of this is new SAP machinery. We are not inventing capabilities — we are using the SAP-standard hooks the way SAP designed them to be used. That is precisely why the risk profile is LOW.</p>
+
+    <p style="font-size:11px;color:#64748b;margin-top:14px">Full source: <a href="../knowledge/domains/Payment/dme_creation_payment.md">knowledge/domains/Payment/dme_creation_payment.md</a> §1 · adds canonical SAP-side scaffolding to existing UNESCO claims 96/99/102.</p>
+  </div>
+</div>
+

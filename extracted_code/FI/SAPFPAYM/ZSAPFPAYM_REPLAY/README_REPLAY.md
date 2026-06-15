@@ -202,10 +202,20 @@ Replay params per scenario (same as SEPA example, only LAUFD/LAUFI/GRPNO/FORM ch
 Probe scripts: `Zagentexecution/mcp-backend-server-python/probe_v01_citi_groups.py`,
 `probe_v01_ubnks.py`, `probe_confirm.py`.
 
+> **Dónde vive este bloque en el companion**: la explicación de arriba (tabla de la condición compuesta sobre
+> `UBISO` + nota De Morgan + ramas muertas-por-datos PR/SE) está también renderizada en
+> `companions/BCM_StructuredAddressChange.html`, dentro de la sección **XML Before/After** de la pestaña
+> **Phase 0** (fragmento `companions/bcm_structured_address_src/tabs/25_phase0.html`). El companion ya **NO**
+> se regenera con el builder viejo de 16 pestañas (regresaba a ~278 KB). Se ensambla, byte-a-byte, desde los
+> fragmentos verbatim en `companions/bcm_structured_address_src/` vía
+> `build_bcm_structured_address_companion.py` (v2). Para editar ese bloque, edita el fragmento `25_phase0.html`
+> y reconstruye. Detalle: `companions/bcm_structured_address_src/README.md`.
+
 ## Referencias
 
 - Origen extracción: `Zagentexecution/mcp-backend-server-python/extract_sapfpaym_full_p01.py`
 - Builder de los 3 modificados: `Zagentexecution/mcp-backend-server-python/build_zsapfpaym_replay.py`
+- Companion (pipeline reconciliado): `Zagentexecution/mcp-backend-server-python/build_bcm_structured_address_companion.py` (v2, ensambla desde `companions/bcm_structured_address_src/`)
 - Estructuras DDIC consumidas: `extracted_code/FI/SAPFPAYM/structures/{FPAYH,FPAYHX,FPAYP,REGUH,REGUP}.json`
 - BAdI exit canónico: `extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_FALLBACK====CM001.abap`
 - Brain rule: `feedback_search_dfpayg_for_sapfpaym_runs` (sesión #072)

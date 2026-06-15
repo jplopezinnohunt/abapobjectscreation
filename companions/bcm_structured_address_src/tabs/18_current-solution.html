@@ -1,0 +1,537 @@
+<div id="tab-current-solution" class="content">
+  <div class="section">
+    <h3>Current Solution — what is actually wired and firing in P01 today</h3>
+
+    <h4>Why this section exists</h4>
+    <p>The <em>E2E Flow</em> tab shows the runtime machinery (what <em>can</em> happen). The <em>Components Map</em> shows the moving parts (what <em>is built</em>). This tab answers a third, very practical question: <strong>of all the DMEE format trees declared in the system, which ones are actually called by F110 today, and which are just sitting there unused?</strong></p>
+    <p>Knowing the difference matters for V001 scoping (don't risk tests on inactive trees), regression budgeting (less surface = less risk), and decommissioning (inactive trees are tech-debt candidates). Anyone reading the OBPM1 catalog will see ~12 custom UNESCO/ICTP format names and assume they are all in use. <strong>They are not.</strong></p>
+
+    <h4>The proof — T042Z, the routing table</h4>
+    <p><code>T042Z</code> is the SAP-standard routing table that maps <code>(country LAND1, payment method ZLSCH)</code> → <code>format ID FORMI</code> (where FORMI = the OBPM1 format name = the DMEE TREE_ID, per the invariant we covered earlier). <strong>If a format has no T042Z entry, F110 will never invoke it</strong>, regardless of whether OBPM1 declares it or DMEE_TREE_HEAD stores nodes for it. T042Z is the single deterministic source of truth for "is this format wired to anything?"</p>
+    <p>Source query (Gold DB <code>p01_gold_master_data.db</code>):</p>
+    <pre style="background:#f1f5f9;color:#1e293b;padding:10px;border-radius:4px;border:1px solid #cbd5e1">SELECT FORMI, LAND1, ZLSCH, XBKKT, TEXT1
+FROM T042Z
+WHERE FORMI LIKE '/%UNES%' OR FORMI LIKE '/%CITI%' OR FORMI LIKE '/CGI%'
+   OR FORMI LIKE '/SEPA%' OR FORMI LIKE '/CHECK%' OR FORMI LIKE '/CMI%'
+ORDER BY FORMI, LAND1, ZLSCH;</pre>
+    <p>Result: <strong>19 routing rows across 8 distinct custom formats</strong>. Compare with OBPM1 catalog which shows 12+ custom formats declared. <strong>4 custom formats are declared in OBPM1 but have ZERO T042Z routing</strong> — they are inactive.</p>
+  </div>
+
+  <div class="section">
+    <h3>The 3-tier reality of UNESCO custom DMEE formats</h3>
+    <p style="background:#dcfce7;padding:12px;border-left:3px solid #16a34a;border-radius:4px"><strong>Read this before the tables</strong> → A format being declared in OBPM1 + having a tree in DMEE_TREE_HEAD is <em>not</em> proof of activity. Activity = an entry in T042Z. The 3 tiers below sort UNESCO custom formats by their T042Z presence: actively wired and in V001 scope · actively wired but out of V001 scope · declared but unused (decommissioning candidates).</p>
+
+    <h4 style="color:#16a34a">▸ Tier 1 — UNESCO V001 active (the 4 trees the project actually changes)</h4>
+    <p style="font-size:12px;color:#475569"><strong>Consistency check</strong>: D01 vs P01 node counts. Source: <code>knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv</code> + h18 findings (2026-04-06). When D01 has substantially more nodes than P01, it means D01 carries <em>untransported draft versions</em> never released to production. <strong>Only P01 is the trustworthy source for live config analysis</strong> (per existing brain rule).</p>
+    <table>
+      <tr><th>Format ID (= TREE_ID)</th><th>Active routes P01 (LAND1/ZLSCH)</th><th>P01 V000</th><th>D01 V000</th><th>D01 V001 (dormant)</th><th>D01 V000 vs P01 V000 diff (48 fields)</th><th>Description</th><th>V001 change</th></tr>
+      <tr style="background:#f0fdf4">
+        <td><code>/SEPA_CT_UNES</code></td>
+        <td>DE/S · FR/S</td>
+        <td>95</td>
+        <td>95</td>
+        <td>95 (byte-clone)</td>
+        <td style="background:#dcfce7"><strong>0 deltas — BYTE-EQUAL</strong> (claim 112 RFC, 48 fields × 95 nodes)</td>
+        <td>SEPA Credit Transfer UNESCO</td>
+        <td>+5 Dbtr structured nodes + 5 empty-suppress conds + TFPM042FB row</td>
+      </tr>
+      <tr style="background:#f0fdf4">
+        <td><code>/CGI_XML_CT_UNESCO</code></td>
+        <td>DE/N · FR/A · FR/J · FR/N</td>
+        <td>631</td>
+        <td>631</td>
+        <td>631 (byte-clone)</td>
+        <td style="background:#dcfce7"><strong>0 deltas — BYTE-EQUAL</strong> (claim 112 RFC, 48 fields × 631 nodes)</td>
+        <td>XML outgoing credit transfers pain.001.001.03 (parent CGI tree)</td>
+        <td>Fix CdtrAgt PstlAdr from AdrLine to structured (~7 nodes)</td>
+      </tr>
+      <tr style="background:#f0fdf4">
+        <td><code>/CITI/XML/UNESCO/DC_V3_01</code></td>
+        <td>BR/Q · BR/R · CA/C · CA/N · FR/C · FR/L · FR/X</td>
+        <td>610</td>
+        <td>610</td>
+        <td>610 (byte-clone)</td>
+        <td style="background:#dcfce7"><strong>0 deltas — BYTE-EQUAL</strong> (claim 112 RFC verification 2026-04-30, 48 fields × 610 nodes)</td>
+        <td>Citibank PMW XML Direct Credit V3 pain.001.001.03</td>
+        <td>+5 Dbtr structured nodes + 1 UltmtCdtr StrtNm (Q3 RESOLVED, claim 99)</td>
+      </tr>
+      <tr style="background:#fef3c7">
+        <td><code>/CGI_XML_CT_UNESCO_1</code></td>
+        <td><strong>⚠ ZERO T042Z routes (P01)</strong></td>
+        <td>639</td>
+        <td>632</td>
+        <td>632 (byte-clone of D01 V000)</td>
+        <td style="background:#fef3c7"><strong>12 deltas</strong>: 1 ONLY_D01 (N_6366307580 SCB) + 8 ONLY_P01 (AdrLine variants) + 3 CHANGED (1 substantive Nm Z-field experiment N_0711160730 + 2 BROTHER_ID consequential) — claim 109/111</td>
+        <td>Peer of /CGI_XML_CT_UNESCO — shares <code>FIRSTNODE_ID = N_5649723900</code></td>
+        <td>Surgical retrofit ~30min + SYNC from parent (CdtrAgt fix propagates automatically)</td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:#475569;margin-top:8px"><strong>Reading the diff column (REVISED (RFC verification 2026-04-30, claims 109 + 111 + 112))</strong>: The original h18 baseline (2026-04-06) framing of "2× drift" is REPLACED by precise RFC verification. D01's apparent "2× node count" is exactly <code>VERSION=000</code> + <code>VERSION=001</code> cohabitation — V001 is a byte-identical clone of V000 created via DMEE Tx → Create Version dormantly (claim 109). Full 48-field byte-level RFC diff confirms <strong>SEPA / CITI / CGI all 3 are BYTE-EQUAL D01=P01</strong> (zero deltas each); only <strong>CGI_1 has 12 deltas</strong>. Retrofit scope is therefore ~1-2h surgical (12 CGI_1 nodes + dormant V001 PURGE on all 4 trees + 5 P01-only ABAP retrofit), NOT the originally-feared multi-tree retrofit.</p>
+
+    <p style="background:#fef3c7;padding:12px;border-left:3px solid #d97706;border-radius:4px;margin-top:10px"><strong>⚠ Open finding — `/CGI_XML_CT_UNESCO_1` reconciliation needed</strong> → Brain claim 102 + the V001 versioning procedure list this as one of 4 V001-scope trees. But T042Z has <strong>zero rows</strong> referencing it. It does exist in <code>DMEE_TREE_HEAD</code> with 639 nodes (P01) and shares the FIRSTNODE_ID with its parent /CGI_XML_CT_UNESCO. Three plausible explanations: <em>(a)</em> it is a draft/legacy peer that never got production-routed (most likely — making it tech debt, not V001 scope); <em>(b)</em> a different routing mechanism we have not extracted (unlikely — T042Z is the canonical source); <em>(c)</em> implicit invocation via shared FIRSTNODE_ID (possible but undocumented). <strong>Action item</strong>: confirm with M_SPRONK whether this format was historically routed and if so where; then either remove from V001 scope or document the implicit-routing mechanism. Either way, the brain claim 102 needs a <em>"caveat: 1 of 4 trees has no T042Z routing"</em> note.</p>
+
+    <h4 style="color:#0d9488;margin-top:18px">▸ Tier 2 — Active but out of V001 scope</h4>
+    <table>
+      <tr><th>Format ID</th><th>Active routes P01</th><th>Nodes (h18 P01 extract 2026-04-06)</th><th>Description</th><th>Why out of V001 scope</th></tr>
+      <tr>
+        <td><code>/CMI101</code></td>
+        <td>CH/N · FR/H · FR/I</td>
+        <td>not in h18 PAYM-tree extract — Swiss-domestic CMI uses different SAP machinery (not pain.001)</td>
+        <td>Swiss CMI / Euro France / SEPA-zone (TEXT1 says "no use" for FR/H + FR/I — likely dormant routes)</td>
+        <td>Swiss-domestic format, separate from CBPR+ scope</td>
+      </tr>
+      <tr>
+        <td><code>/SEPA_CT_ICTP_ISO</code></td>
+        <td>IT/S</td>
+        <td>not in h18 — ICTP-owned tree (separate from UNESCO HQ extraction scope)</td>
+        <td>SEPA bank transfer — ICTP Trieste</td>
+        <td>ICTP Trieste owns its trees separately</td>
+      </tr>
+      <tr>
+        <td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA</code></td>
+        <td>IT/J</td>
+        <td>not in h18 — ICTP-owned</td>
+        <td>SETIF Foreign bank (SWIFT) — ICTP Trieste</td>
+        <td>ICTP-owned</td>
+      </tr>
+      <tr>
+        <td><code>/SEPA_CT_ICTP_ISO_EXTRASEPA_I</code></td>
+        <td>IT/I</td>
+        <td>not in h18 — ICTP-owned</td>
+        <td>SETIF Foreign bank (NO SWIFT) — ICTP Trieste</td>
+        <td>ICTP-owned</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#dc2626;margin-top:18px">▸ Tier 3 — Declared in OBPM1 but ZERO T042Z routes (inactive / tech-debt)</h4>
+    <table>
+      <tr><th>Format ID</th><th>Visible in OBPM1 (P01)</th><th>T042Z routes P01</th><th>Nodes P01 (h18 baseline 2026-04-06)</th><th>Likely status</th></tr>
+      <tr>
+        <td><code>/CGI_XML_CT_UNESCO_BK</code></td>
+        <td>✓ visible — "XML outgoing credit transfers pain.001.001.03"</td>
+        <td><strong>0</strong></td>
+        <td>not in h18 P01 nodes extract — likely tree exists in DMEE_TREE_HEAD but no nodes built (skeleton)</td>
+        <td>Backup or experimental — never routed</td>
+      </tr>
+      <tr>
+        <td><code>/CITI/XML/UNESCO/DIRECT_CREDIT</code></td>
+        <td>✓ visible — "Citibank PMW XML Template (all countries) V2"</td>
+        <td><strong>0</strong></td>
+        <td><strong>377</strong> (h18_dmee_tree_nodes.csv 2026-04-06)</td>
+        <td>Older Citi V2 template — superseded by DC_V3_01 (610 nodes); kept as documented predecessor</td>
+      </tr>
+      <tr>
+        <td><code>/CHECK_SG</code></td>
+        <td>✓ visible — "Check Société Générale"</td>
+        <td><strong>0</strong></td>
+        <td>not in h18 — skeleton or non-PAYM tree-type</td>
+        <td>Check format for SocGen — likely accessed via legacy code-based path or obsolete</td>
+      </tr>
+      <tr>
+        <td><code>/SEPA_CT_ICTP_ISO_EXCEE</code></td>
+        <td>✓ visible — "SEPA Credit Transfer (Bank Transfer)"</td>
+        <td><strong>0</strong></td>
+        <td>not in h18 — ICTP-owned tree</td>
+        <td>ICTP-flavored variant — declared but never wired</td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:#475569;margin-top:8px"><strong>Why "not in h18" for some Tier 2/3 trees</strong>: h18 baseline (2026-04-06) extracted DMEE_TREE_NODE for the trees registered as TREE_TYPE='PAYM' with non-empty node sets. Trees marked "not in h18" either (a) have empty DMEE_TREE_HEAD entries (skeleton), (b) use a different TREE_TYPE, or (c) are declared in OBPM1 but never had nodes built. Tier 1 D01 evidence is now COMPLETE per claim 109/111/112 RFC verification . Tier 2/3 D01 extraction remains de-prioritized — out of V001 scope, no operational signal for retrofit.</p>
+  </div>
+
+  <div class="section">
+    <h3>How does SAP decide which format to call? — the combination of factors</h3>
+    <p>The user-friendly answer to "which DMEE tree fires for a given payment?" is: <strong>not one factor, but a deterministic combination</strong>. We worked this out in the FBZP Chain tab + components_map + e2e_flow earlier; this is the recap focused on format selection specifically.</p>
+
+    <h4>The 5 inputs SAP combines per payment</h4>
+    <table>
+      <tr><th>Factor</th><th>Source</th><th>Role in format selection</th></tr>
+      <tr style="background:#f0fdf4">
+        <td>① <strong>Vendor's bank country</strong></td>
+        <td><code>LFBK.BANKS</code> (vendor master, vendor's bank record) → also reachable as <code>FPAYH-ZBNKS</code> at runtime</td>
+        <td><strong>Becomes the LAND1 input to T042Z lookup.</strong> A French vendor with a French bank → LAND1=FR. The vendor's bank country (not the cocode's country) is what drives the routing.</td>
+      </tr>
+      <tr style="background:#f0fdf4">
+        <td>② <strong>Payment method</strong></td>
+        <td><code>BSEG.ZLSCH</code> on the invoice OR vendor's <code>LFB1.ZWELS</code> default · single-letter code (S/N/J/L/X/A/C…)</td>
+        <td><strong>Becomes the ZLSCH input to T042Z lookup.</strong> S = SEPA, C = check, N = international wire, etc. Country + method together identify the format unambiguously.</td>
+      </tr>
+      <tr>
+        <td>③ <strong>Paying company code</strong></td>
+        <td><code>T042.ZBUKR</code> for cocode → ABSBU mapping · invoice's BUKRS may differ from ZBUKR (cross-cocode IHC)</td>
+        <td>Does <em>not</em> change FORMI (the format), but determines which OBPM4 selection variant fires (file path, file naming, output flags). Same format can be written to different paths per cocode.</td>
+      </tr>
+      <tr>
+        <td>④ <strong>House bank chosen</strong></td>
+        <td><code>T012/T012K</code> via FBZP optimization (cocode rules) OR vendor override <code>LFB1.HBKID</code></td>
+        <td>Does <em>not</em> change FORMI either. Determines the &lt;DbtrAcct&gt; / &lt;DbtrAgt&gt; content inside the file, but the file format itself is the same.</td>
+      </tr>
+      <tr>
+        <td>⑤ <strong>Currency</strong></td>
+        <td>Invoice currency from BKPF/BSEG · vendor allowed currencies via T042S</td>
+        <td>May filter out (LAND1, ZLSCH) combinations that aren't allowed for a currency — e.g., FR/L is "Payment in US in USD only", FR/X is "non-standard currency". Currency steers which T042Z row matches when multiple are eligible.</td>
+      </tr>
+    </table>
+
+    <h4>The deterministic formula</h4>
+    <pre style="background:#f1f5f9;color:#1e293b;padding:14px;border-radius:6px;border:1px solid #cbd5e1">FORMAT (DMEE TREE_ID) = T042Z[ vendor.LFBK.BANKS , (invoice.ZLSCH OR vendor.LFB1.ZWELS) ]
+                       └────────── ① ──────────┘  └─────────── ② ──────────────────┘
+                                  WHERE T042Z.XBKKT = 'X' (DMEE-flagged)
+
+OBPM4 selection variant = TFPM042F[ paying_cocode , FORMAT ]
+                                  └──── ③ ────┘
+                                  → file path, output flags
+
+DbtrAgt content       = T012K[ paying_cocode , chosen_HBKID ] joined to BNKA
+                                              └──── ④ ────┘ (FBZP optimization or LFB1 override)
+
+Currency filter       ⑤ further filters T042Z eligibility when ZLSCH has multi-currency variants</pre>
+
+    <h4>Worked example — vendor 200135 invoice in FR for SEPA payment</h4>
+    <p>Take a real-world payment: French vendor with a French bank, EUR invoice, payment method S (SEPA), paying cocode UNES, default house bank FB00.</p>
+    <ol>
+      <li><strong>① LAND1 = FR</strong> (from vendor bank country)</li>
+      <li><strong>② ZLSCH = S</strong> (SEPA — vendor's default or invoice override)</li>
+      <li><strong>T042Z[FR, S] = /SEPA_CT_UNES</strong> ← the format / DMEE TREE_ID</li>
+      <li><strong>③ Paying cocode UNES</strong> → look up TFPM042F[UNES, /SEPA_CT_UNES] → file path <code>\\hq-sapitf\SWIFT$\P01\input\UNES_S_001…</code></li>
+      <li><strong>④ Chosen house bank FB00</strong> → T012K[UNES, FB00] → bank account details written into &lt;DbtrAcct&gt;</li>
+      <li><strong>⑤ Currency EUR</strong> matches T042Z row eligibility (no further filter)</li>
+      <li><strong>SAPFPAYM</strong> writes the file using <code>/SEPA_CT_UNES</code> tree, with FB00 details inside, to the UNES-specific path.</li>
+    </ol>
+    <p style="background:#dbeafe;padding:12px;border-left:3px solid #1d4ed8;border-radius:4px;margin-top:12px"><strong>The user's instinct was right</strong>: the format selection is a <em>combination</em> of vendor data (bank country, allowed methods), invoice data (method, currency), and cocode/house-bank config — but only the first two factors actually enter the T042Z key. The other three shape <em>what goes into the file</em> and <em>where the file lands</em>, not <em>which format</em> SAP picks.</p>
+
+
+  <div class="section" style="background:#fef2f2;border:2px solid #dc2626;border-radius:6px;padding:14px;margin-top:18px">
+    <h3 style="color:#dc2626;margin:0 0 8px 0">⛔ CRITICAL RISK — D01 carries draft cohabitation, P01 must be source of truth</h3>
+    <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0"><b>Brain claim 108 TIER_1</b> · CRITICAL feedback rule <code>feedback_p01_source_of_truth_retrofit_first_then_adjust</code> · user directive 2026-04-30.</p>
+    <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0;background:#fef3c7;padding:8px;border-radius:4px"><b>UPDATED (post-VPN RFC verification 2026-04-30, claim 109)</b> — the original framing of "draft cohabitation" is REPLACED by precise diagnosis:</p>
+    <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0">The 2× node count in D01 is <b>exact V000+V001 cohabitation</b>: D01 has <code>DMEE_TREE_NODE.VERSION=000</code> rows AND <code>VERSION=001</code> rows for all 4 in-scope trees. P01 has only V000. Someone ran DMEE Tx → Create Version on each tree, producing a byte-identical V001 clone of V000, then never edited or released it. Verified RFC counts: SEPA D01(V000=95, V001=95) P01(95); CITI D01(610, 610) P01(610); CGI D01(631, 631) P01(631); CGI_1 D01(632, 632) P01(639). <b>D01 V001 is byte-identical to D01 V000 — zero NODE_ID differences, zero field diffs in 7 sampled columns</b>.</p>
+    <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0;background:#dcfce7;padding:8px;border-radius:4px"><b>RETROFIT SCOPE DRAMATICALLY REDUCED</b>: D01 V000 vs P01 V000 row-level diff (full RFC 2026-04-30): SEPA / CITI / CGI all <b>BYTE-EQUAL</b> (zero deltas each). Only CGI_1 has 12 deltas: 1 ONLY_D01 (N_6366307580 SCB), 8 ONLY_P01 (8 AdrLine variants), 3 CHANGED (1 substantive Nm Z-field experiment + 2 BROTHER_ID consequential). The ~30-minute surgical fix on CGI_1 + dormant-V001 cleanup replaces the original "huge multi-tree retrofit" framing.</p>
+    <h4 style="color:#dc2626;margin:6px 0">Why this is a HUGE risk for V001 deployment</h4>
+    <table style="font-size:12px">
+      <tr><th>Failure mode</th><th>What happens if we apply V001 to D01 today (without retrofit)</th></tr>
+      <tr><td>Wrong-layer landing</td><td>V001 change-matrix rows target P01 NODE_IDs (e.g. N_4754354180 SEPA Cdtr PstlAdr). In D01 there are TWO PstlAdr nodes per branch (one in each layer). Marlies's edit may attach to the draft sibling, not the P01-mirror.</td></tr>
+      <tr><td>Transport pollution</td><td>SE09 transport packing may pull the draft nodes alongside our V001 deltas. The transport ships TO P01 and silently introduces the unfinished WIP someone built years ago.</td></tr>
+      <tr><td>Developer confusion</td><td>M_SPRONK opens DMEE Tx in D01 and sees nodes she does not recognize. Pattern A guard, FALLBACK BAdI fix may misbehave on the draft layer.</td></tr>
+      <tr><td>UAT divergence</td><td>Phase 4 UAT runs in V01 (which inherits D01 via transport). If D01 carries drafts, V01 ≠ P01. Bank acceptance test on V01 does not prove P01 will accept.</td></tr>
+      <tr><td>Simulator gap</td><td>Simulator (claim 105, 794/794 PASS) reads P01 data. It cannot detect a D01-side draft-layer corruption. XSD validation cannot either.</td></tr>
+    </table>
+    <p style="font-size:12px;color:#1f2937;margin-top:10px"><b>Why simulator + XSD do NOT cover this risk</b>: simulator validates the P01-derived V001 design works against XSD. It cannot tell you whether the D01 environment where you deploy V001 is byte-equal to P01. That second question is purely a transport-management question that lives outside the schema layer.</p>
+  </div>
+
+  <div class="section" style="background:#f0fdf4;border:2px solid #16a34a;border-radius:6px;padding:14px;margin-top:14px">
+    <h3 style="color:#16a34a;margin:0 0 8px 0">✅ The protocol — P01 source of truth → D01 retrofit → only then adjust</h3>
+    <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0"><b>Invariant sequence</b> (any deviation = CRITICAL risk per the new feedback rule):</p>
+    <ol style="font-size:13px;color:#1f2937">
+      <li><b>P01 snapshot</b> — extract current P01 state of all 4 in-scope trees (DMEE_TREE_HEAD + DMEE_TREE_NODE + DMEE_TREE_COND + TFPM042FB rows + 5 ABAP P01-only objects per Finding I) and record byte hashes per object. Source-of-truth manifest produced.</li>
+      <li><b>D01 retrofit (transport <code>D01K-RETROFIT-01</code>)</b> — bring D01 to byte-equality with the P01 manifest. Two options:
+        <ul>
+          <li><b>Option A · PURGE then re-import P01 (recommended)</b>: in DMEE Tx → delete the entire UNESCO custom tree set in D01, re-import the P01 versions via transport from P01 → D01 (or via TR_RELEASE+TR_IMPORT roundtrip). Smallest blast radius, no per-node decisions, end-state guaranteed clean.</li>
+          <li><b>Option B · Surgical diff</b>: per-tree, list every D01-only node, classify as <em>(a) keep — was a real WIP and we want to preserve it</em> vs <em>(b) purge — abandoned WIP</em>. Build a transport that deletes all "purge" nodes and promotes all "keep" nodes to P01. High effort, high value only if there is a known intentional draft we must keep.</li>
+        </ul>
+      </li>
+      <li><b>Verification</b> — re-extract D01 state, recompute byte hashes, must match P01 manifest. Node counts must match exactly: SEPA 95, CGI 631, CGI_1 639, CITI 610. If not equal → retrofit incomplete, fix before proceeding.</li>
+      <li><b>5 P01-only ABAP objects retrofit</b> (Finding I) — pull <code>YCL_IDFI_CGI_DMEE_DE</code>, <code>_IT</code> classes + 3 ENHO spots + the <code>YCL_IDFI_CGI_DMEE_FR::CM002</code> method via P01→D01 transport (or RPY_CLASS_INSERT). Re-verify hashes.</li>
+      <li><b>NOW</b> apply the V001 change matrix (29 rows: 2 preconditions + 27 deltas, see V001 Change Matrix tab) to the now-aligned D01 baseline.</li>
+      <li><b>Per-row verification</b> — for every V001 row, after the DMEE Tx Save, the new transport's E071 must contain ONLY the planned delta — no accidental draft-layer pull.</li>
+      <li><b>Test → V01 → P01</b> per the standard transport flow.</li>
+    </ol>
+    <p style="font-size:12px;color:#1f2937;margin-top:8px"><b>Recommendation</b>: Option A (purge + re-import). Rationale: surgical-pattern (claim 102 — 81.8% of historical UNESCO transports touch ≤3 objects) makes per-node Option B effort disproportionate; V001 Fully-Structured commitment (claim 105) means the draft layer adds no design value we cannot reproduce from P01 + the change matrix; the simulator (claim 105) already validated V001 design against P01 data, so a clean P01-derived D01 baseline is exactly what the simulator results presume.</p>
+  </div>
+
+  <div class="section" style="background:#dcfce7;border:2px solid #1abc9c;border-radius:6px;padding:14px;margin-top:14px">
+    <h3 style="color:#1abc9c;margin:0 0 8px 0">✅ RESOLVED (2026-04-30, post-VPN restoration)</h3>
+    <ul style="font-size:13px;color:#1f2937">
+      <li><b>CITI tree D01 extracted</b> — RFC verification 2026-04-30: D01 V000=610 nodes + V001=610 nodes (dormant byte-clone). D01 V000 vs P01 V000 = <strong>BYTE-EQUAL across all 48 fields × 610 nodes</strong> (claim 112). Prediction confirmed: same V000+V001 cohabitation pattern as SEPA/CGI/CGI_1.</li>
+      <li><b>D01 hash manifest produced</b> — full 48-field RFC diff for SEPA + CITI + CGI + CGI_1 saved at <code>Zagentexecution/incidents/xml_payment_structured_address/full_47field_diff_session63.json</code>. SHA-256 byte-level verification done for SEPA: <code>033f11ce1798ed90cdae447c0f4feaeddc03445c37885487e8adc4a447345b39</code>.</li>
+      <li><b>Decision A (PURGE dormant V001 + re-create fresh)</b> recommended for retrofit transport <code>D01K-RETROFIT-01</code> — clean transport-trail, no per-node decisions, end-state guaranteed clean. Awaiting Marlies + Pablo final confirm before Phase 2 Step 0.</li>
+      <li><b>5 P01-only ABAP objects (Finding I)</b> — already documented and queued for D01-RETROFIT-01. Scope unchanged but now bundled with the tree retrofit in one transport.</li>
+    </ul>
+  </div>
+
+  <div class="section" style="background:#dbeafe;border-left:4px solid #1d4ed8;border-radius:4px;padding:12px;margin-top:14px">
+    <h4 style="color:#1d4ed8;margin:0 0 6px 0">📌 Phase 2 readiness — Step 0 elevated to TOP gating blocker</h4>
+    <p style="font-size:12px;color:#1f2937;margin:0">Per claim 108 + new CRITICAL rule, the Phase 2 readiness checklist now ranks D01-RETROFIT-01 above VPN restoration: VPN unblocks the retrofit, but the retrofit itself is the gating prerequisite for any V001 row landing in D01. The original Phase 2 §Step 0 scope (5 P01-only ABAP objects per Finding I) is preserved, expanded to include the full byte-alignment of all 4 in-scope DMEE trees. Reference: <code>knowledge/domains/Payment/phase2_readiness_checklist.md</code> · <code>knowledge/domains/Payment/dmee_versioning_procedure.md</code> Step 0 prerequisite section to be added.</p>
+  </div>
+
+  </div>
+
+  <div class="section">
+    <h3>Where each factor is configured — the Tx / IMG / table cheat-sheet</h3>
+    <p style="background:#fef3c7;padding:10px;border-left:3px solid #d97706;border-radius:4px"><strong>Why this section exists.</strong> The deterministic formula above is precise but the inputs live in <em>five different places</em> in SAP. Knowing the formula without knowing where to inspect each input is half the picture. <strong>This is complex to absorb in one read</strong>; come back to this section when debugging "why is payment X going to format Y?" — each factor has its own Tx + IMG + table reference so you can pinpoint the disagreeing layer in 60 seconds.</p>
+
+    <h4 style="color:#16a34a;margin-top:12px">① Vendor's bank country (LAND1 input to T042Z)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>Tx codes</td><td><code>FK02</code> / <code>XK02</code> (vendor master change) · <code>BP</code> (Business Partner — S/4 unified) · <code>FK03</code> / <code>XK03</code> (display only)</td></tr>
+      <tr><td>Tab to open</td><td>"Payment transactions" → "Bank Details" sub-tab</td></tr>
+      <tr><td>Field</td><td><code>Bank Country</code> = column <code>BANKS</code> in table <code>LFBK</code> (vendor's bank record). At F110 runtime resolves to <code>FPAYH-ZBNKS</code>.</td></tr>
+      <tr><td>Tables</td><td><code>LFBK</code> (vendor bank — keys: vendor, bank country, bank key, account)</td></tr>
+      <tr><td>SPRO IMG</td><td><em>Not customizing</em> — this is master data per vendor, not config.</td></tr>
+      <tr><td>Common gotcha</td><td>Vendor with multiple bank records: the F110 picks the one whose currency matches the invoice + vendor's "partner bank type" hint. Wrong bank country here = wrong format. Check via <code>FK03 → Banking → Bank Details</code>.</td></tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:12px">② Payment method (ZLSCH input to T042Z)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>Tx codes</td><td><code>FK02</code> (vendor default) · <code>FB60</code> / <code>F-43</code> (invoice — can override) · <code>FBL1N</code> (line items — view current)</td></tr>
+      <tr><td>Vendor default</td><td><code>LFB1.ZWELS</code> — string of allowed payment methods per (cocode, vendor). E.g. "SNJ" = vendor accepts S, N, or J.</td></tr>
+      <tr><td>Invoice override</td><td><code>BSEG.ZLSCH</code> — single chosen method on the invoice line. Takes precedence over vendor default.</td></tr>
+      <tr><td>Country definition</td><td>Tx <code>OBVCU</code> (FBZP "Pmt method in country") — defines what each single-letter code means in each country (S = SEPA, C = check, etc.). <strong>This is also where the "Use Payment Medium Workbench" radio button + the PMW format name live</strong> — and the format name === DMEE TREE_ID.</td></tr>
+      <tr><td>Cocode definition</td><td>Tx <code>OBVU</code> (FBZP "Pmt method in cocode") — declares which methods this cocode supports + amount limits + the <code>FPAYM_INT_DMEE</code> form-routing field (see FBZP Chain tab).</td></tr>
+      <tr><td>SPRO IMG</td><td>FI → AR/AP → Business Transactions → Outgoing Payments → Automatic Outgoing Payments → Payment Method/Bank Selection for Payment Program → <strong>Set Up Payment Methods per Country</strong> + <strong>Set Up Payment Methods per Cocode</strong></td></tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:12px">⓪ The T042Z routing itself (the lookup table)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>Tx codes</td><td><code>OBVCU</code> (FBZP "Pmt method in country") — <strong>the GUI on top of T042Z</strong>. Filling in the FORMI field on this screen creates a T042Z row.</td></tr>
+      <tr><td>Direct table view</td><td><code>SE16N</code> → table <code>T042Z</code> · 263 rows in P01 · key columns: <code>LAND1, ZLSCH</code> · result column: <code>FORMI</code></td></tr>
+      <tr><td>Companion source</td><td>Gold DB <code>p01_gold_master_data.db</code>, table <code>T042Z</code> — query in this tab earlier shows all UNESCO-relevant rows.</td></tr>
+      <tr><td>Common gotcha</td><td>The <code>XBKKT='X'</code> flag must be set for DMEE-routing rows. Without it, FORMI is set but SAP routes via the legacy code-based PMW path even if a DMEE tree exists with the same name.</td></tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:12px">③ Paying company code (drives OBPM4 variant + file path)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>Tx codes</td><td><code>OBVCU</code> + <code>OBVU</code> (FBZP "Paying cocodes") · <code>FBZP</code> top-level menu</td></tr>
+      <tr><td>Cocode-to-paying-cocode</td><td>Table <code>T042</code> — column <code>BUKRS</code> = invoice cocode, <code>ZBUKR</code> = paying cocode. Cross-cocode IHC scenarios use this.</td></tr>
+      <tr><td>OBPM4 variant per (cocode, format)</td><td>Tx <code>OBPM4</code> · table <code>TFPM042F</code> family · 311 rows in P01 · binds (paying-cocode, format) → SAPFPAYM selection variant → file-name pattern + output flags</td></tr>
+      <tr><td>SPRO IMG</td><td>FI → AR/AP → Business Transactions → Outgoing Payments → Automatic Outgoing Payments → Payment Method/Bank Selection for Payment Program → <strong>Set Up Paying Company Codes</strong> · then Payment Media → <strong>Make Settings for Payment Medium Formats from Payment Medium Workbench</strong> → Create/Assign Selection Variants</td></tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:12px">④ House bank chosen (drives DbtrAcct / DbtrAgt content inside the file)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>House-bank master</td><td>Tx <code>FI12</code> (House Bank maintenance) · table <code>T012</code> = house banks per cocode · table <code>T012K</code> = house bank accounts (211 / 402 rows in P01)</td></tr>
+      <tr><td>Bank-determination rules</td><td>Tx <code>FBZP</code> → "Bank Determination" → 5 sub-screens: Ranking Order · Bank Accounts · Available Amounts · Value Date · Expenses/Charges</td></tr>
+      <tr><td>Vendor override</td><td><code>LFB1.HBKID</code> — when set, forces a specific house bank for that (cocode, vendor) combination, bypassing the FBZP optimization rules</td></tr>
+      <tr><td>SPRO IMG</td><td>FI → Bank Accounting → Bank Accounts → <strong>Define House Banks</strong> · plus FBZP → Bank Determination</td></tr>
+      <tr><td>Common gotcha</td><td>FBZP "Bank selection control" on the (cocode, payment method) screen (No optimization / Optimize by bank group / Optimize by postal code) changes which house bank wins when multiple are eligible. UNESCO setting is mostly "No optimization" — meaning vendor's <code>LFB1.HBKID</code> override or first-eligible wins.</td></tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:12px">⑤ Currency (filters which T042Z row is eligible when multiple match)</h4>
+    <table>
+      <tr><th>Where</th><th>Detail</th></tr>
+      <tr><td>Invoice currency</td><td><code>BKPF.WAERS</code> + <code>BSEG.WAERS</code> on each line item · entered at invoice posting (FB60 etc.)</td></tr>
+      <tr><td>Allowed currencies per (cocode, method)</td><td>Tx <code>OBVU</code> "Foreign payments" tab → flags <em>Foreign currency allowed</em> + <em>Foreign business partner allowed</em></td></tr>
+      <tr><td>Format-level currency restriction</td><td>Some T042Z rows narrow by description (TEXT1) — e.g. FR/L "Payment in US in USD only", FR/X "non-standard currency". The narrowing is captured in TEXT1 metadata + enforced via FBZP foreign-payment flags.</td></tr>
+      <tr><td>SPRO IMG</td><td>Same as ②, the cocode-method config screens</td></tr>
+    </table>
+
+    <h4 style="color:#7fb3d3;margin-top:14px">Reading order suggestion when debugging</h4>
+    <p>"Why did this payment go to format X (or fail to find a format)?" — open these screens in this order:</p>
+    <ol>
+      <li><strong>Tx FK03 vendor master</strong> (factor ① + ②) — confirm bank country and allowed payment methods.</li>
+      <li><strong>Tx FB03 invoice document</strong> — confirm ZLSCH on the line item + currency.</li>
+      <li><strong>Tx OBVCU country payment methods</strong> (factor ⓪) — find the row matching (LAND1, ZLSCH); confirm FORMI populated and XBKKT='X'.</li>
+      <li><strong>Tx DMEE</strong> → open the FORMI tree; confirm VERSION=000 EX_STATUS='A'.</li>
+      <li><strong>Tx OBPM4</strong> (factor ③) — confirm a selection variant exists for (paying-cocode, FORMI). No variant → no file even though steps 1-4 succeed.</li>
+      <li><strong>Tx FI12 + FBZP Bank Determination</strong> (factor ④) — confirm house bank resolution is producing a valid bank.</li>
+      <li><strong>Tx FBZP cocode-method screen</strong> (factor ⑤) — if the run rejected on currency, the foreign-payment flags here are the gate.</li>
+    </ol>
+    <p style="background:#dbeafe;padding:10px;border-left:3px solid #1d4ed8;border-radius:4px;margin-top:8px">7 screens, 5 factors, 1 deterministic outcome. A massive improvement over "let's tail F110 logs and hope". This is the canonical playbook to bookmark.</p>
+  </div>
+
+  <div class="section">
+    <h3>The deterministic chain — how to predict which tree fires for any payment</h3>
+    <p>For any given payment, the chain that decides which DMEE tree is invoked is fully deterministic. Walking it is the only reliable way to answer "which tree will this payment hit?":</p>
+    <pre style="background:#f1f5f9;color:#1e293b;padding:14px;border-radius:6px;border:1px solid #cbd5e1">F110 inputs: (paying-cocode, payment method, vendor, country)
+       │
+       ▼  ① T042Z lookup
+T042Z routing  ── (LAND1 + ZLSCH) → FORMI                          [263 rows in P01]
+       │       (XBKKT='X' marks DMEE-enabled rows)
+       ▼  ② OBPM1 catalog (T042Y / T042YB)
+OBPM1 ── confirms format exists + DME-engine flag = ON             [evidence: erp_obpm1_*.png]
+       + event modules wired (FI_PAYMEDIUM_DMEE_*)
+       + format name === DMEE TREE_ID (the invariant)
+       │
+       ▼  ③ DMEE_TREE_HEAD
+DMEE_TREE_HEAD ── tree exists with VERSION=000, EX_STATUS='A'      [4 UNESCO + 4 ICTP rows]
+       │
+       ▼  ④ OBPM4 (TFPM042F)
+OBPM4 selection variant ── exists for (paying-cocode, format)      [311 rows in P01]
+       │       + carries file path + Output-to-file-system flag
+       ▼
+File written via SAPFPAYM driver.</pre>
+    <p>Read this in plain English: <em>SAP first asks T042Z "given this country and payment method, which format do I use?". If T042Z returns nothing, F110 cannot pay. If it returns a format, SAP confirms in OBPM1 that the format exists and is DMEE-flagged, looks up the actual tree in DMEE_TREE_HEAD, finds an OBPM4 variant with file-output settings, and finally writes the file.</em> Break any one of these steps and the chain fails.</p>
+  </div>
+
+  <div class="section">
+    <h3>Per-tree current state — how each DMEE tree is structured today (V000)</h3>
+
+    <p>Before talking about what V001 changes, this section captures <strong>how the 4 in-scope DMEE trees are wired and behaving in P01 today</strong>. The V001 deltas (in the <em>Change Strategy → DMEE Configuration</em> tab) only make sense once you can see V000 baseline. Each tree's subsection below covers: the actual tree structure as tx DMEE Display shows it, the tree-level tab settings (Format attributes / Levels / Sort-key / File Data / Post Processing), and the hierarchy stratification (how many nodes total vs how many actually carry data).</p>
+
+    <h4>Background — the 6 tabs on the DMEE Display Format Tree screen</h4>
+    <p>tx DMEE → Display Format Tree always shows 6 tabs: <strong>Administrative data · Format attributes · Levels · Sort/key fields · File Data · Post Processing</strong>. They govern how a tree behaves at runtime — the bind to ABAP source structures, the nesting depth, sort/grouping, character validation, and what happens to empty XML elements. These settings are <strong>tree-level</strong>, not node-level. They are part of the V000 contract and survive into V001 unchanged unless explicitly touched.</p>
+
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>One tab setting matters disproportionately for V001</strong>: <strong>Post Processing → Empty Element Processing</strong>. If set to "Do Not Remove" (as in /SEPA_CT_UNES, claim 120), empty XML tags ARE emitted to the file. V001 INSERTs that bind to source fields which can be empty for some payments must therefore carry per-node DMEE_TREE_COND empty-suppress conditions. CITI uses XSLT post-processing instead (CGI_XML_CT_XSLT auto-removes empty leaves) so DMEE_TREE_COND is not needed. CGI / CGI_1 settings TBD Phase 2 verification.</p>
+
+    <h4 style="color:#0369a1;margin-top:16px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 1 of 4 · <code>/SEPA_CT_UNES</code> current state</h4>
+
+    <p style="font-size:12px"><strong>95 nodes V000</strong> · pain.001.001.03 · SocGen SEPA-zone EUR (SOG01 method S) · 1,703-payment batches per cycle (claim 113). Empty Element Processing = "Do Not Remove" → empty tags emitted as-is.</p>
+
+    <h5 style="color:#0d9488">SEPA tree structure (ASCII view of tx DMEE Display)</h5>
+    <pre style="font-size:11px;line-height:1.4">DMEE tree: properties
+└── Document
+    ├── xmlns (ISO, Para)
+    ├── xmlns:xsi (ISO, Para)
+    ├── xsi:schemaLocation
+    └── CstmrCdtTrfInitn                  ← root of the credit-transfer message
+        ├── GrpHdr                        ← message-level header (1 per file)
+        │   ├── MsgId
+        │   ├── CreDtTm (YYYY-MM-DDTtime)
+        │   ├── NbOfTxs
+        │   ├── CtrlSum
+        │   └── InitgPty
+        │       └── Nm (AUST1, NAMEZ)     ← UNESCO identity, message-level
+        └── PmtInf                        ← payment-instruction batch (1 per run)
+            ├── PmtInfId
+            ├── PmtMtd
+            ├── NbOfTxs  (TX2)
+            ├── CtrlSum  (IA2)
+            ├── PmtTpInf → SvcLvl/Cd
+            ├── ReqdExctnDt
+            ├── <strong>Dbtr</strong>     ← BATCH-LEVEL DEBTOR (UNESCO at PmtInf level)
+            │   ├── Nm
+            │   └── <strong>PstlAdr</strong> (Ctry, AdrLine)   ← path: Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr
+            ├── DbtrAcct → Id/IBAN, Ccy
+            ├── DbtrAgt → FinInstnId/BIC
+            ├── ChrgBr
+            └── CdtTrfTxInf  (TX)         ← PER-TRANSACTION block (1 per payment)
+                ├── PmtId → InstrId (DOC1T-DOC1R(1..rest)), EndToEndId (PAYD2/NOTPROVIDED)
+                ├── Amt → InstdAmt (IA), Ccy
+                ├── UltmtDbtr → Nm        ← Name only — no PstlAdr (intentional)
+                ├── CdtrAgt → FinInstnId/BIC   ← Bank — BIC only (IBAN routing)
+                ├── <strong>Cdtr</strong>      ← BENEFICIARY at CdtTrfTxInf level
+                │   ├── Nm (KOINH, ZNME1)      ← Name = concatenation of 2 leaf atoms
+                │   └── <strong>PstlAdr</strong> (Ctry, AdrLine, AdrLine) ← path: Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr
+                ├── CdtrAcct → Id/IBAN
+                ├── UltmtCdtr → Nm        ← Name only — no PstlAdr (intentional)
+                └── RmtInf
+</pre>
+
+    <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+      <strong>Three structural details to anchor</strong>:
+      <br>(1) <strong><code>&lt;PstlAdr&gt;</code> appears twice in this tree</strong> — once at PmtInf level (UNESCO HQ for the whole batch) and once at CdtTrfTxInf level (per-transaction beneficiary). Different parents, independently configured.
+      <br>(2) <strong><code>&lt;UltmtDbtr&gt;</code> and <code>&lt;UltmtCdtr&gt;</code> only carry <code>&lt;Nm&gt;</code></strong> — no PstlAdr branch. ISO 20022 permits identifying a party by name alone for ultimate-debtor / ultimate-creditor.
+      <br>(3) <strong><code>&lt;Cdtr&gt;&lt;Nm&gt;</code> has two leaf atoms</strong> — KOINH (account-holder name from bank-master) and ZNME1 (UNESCO custom Z-name field). The Name produced is a concatenation, not a single bind.
+    </p>
+
+    <div style="display:flex;gap:8px;margin:14px 0;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_top.png" alt="SEPA tree top">
+        <div class="dme-shot-cap"><b>tree_top.png</b> — Document → CstmrCdtTrfInitn → GrpHdr (with InitgPty/Nm AUST1+NAMEZ) → start of PmtInf.</div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_mid.png" alt="SEPA tree mid">
+        <div class="dme-shot-cap"><b>tree_mid.png</b> — PmtInf body: Dbtr/PstlAdr (Ctry+AdrLine), DbtrAcct, DbtrAgt/BIC, CdtTrfTxInf entry.</div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_tree_bottom.png" alt="SEPA tree bottom">
+        <div class="dme-shot-cap"><b>tree_bottom.png</b> — CdtTrfTxInf: UltmtDbtr/Nm, CdtrAgt/BIC, Cdtr/Nm (KOINH+ZNME1) + Cdtr/PstlAdr, CdtrAcct/IBAN, UltmtCdtr/Nm, RmtInf.</div>
+      </div>
+    </div>
+
+    <h5 style="color:#0d9488">SEPA — visual anchor: Dbtr/PstlAdr selected (V001 INSERT entry point #1)</h5>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_dbtr_pstladr_highlighted.png" alt="DMEE tree with Dbtr/PstlAdr highlighted">
+    <div class="dme-shot-cap"><b>unesco_dmee_dbtr_pstladr_highlighted.png — Dbtr/PstlAdr selected.</b> The operator clicked through <code>PmtInf → Dbtr → PstlAdr</code>; the orange highlight + arrow marker shows the current selection. Children (Ctry, AdrLine) at indentation depth 5 in the UI = nesting depth 5 in the XML output.</div>
+
+    <h5 style="color:#0d9488">SEPA — the 6 tabs detail (V000 settings)</h5>
+    <p style="font-size:12px;color:#475569">Tab 1 (Administrative data): Tree type=PAYM, Format tree=/SEPA_CT_UNES, Version=0, Author M_SPRONK, Created 27.11.2013, Last Changed 23.11.2021. Operationally frozen 4+ years.</p>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 2 · Format attributes — binding to the ABAP runtime structure</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_format_attributes.png" alt="DMEE Format attributes tab">
+    <div class="dme-shot-cap"><b>format_attributes.png</b> — <code>Fmt-spec.strct = FPM_SEPA</code>. The DMEE engine glues to ABAP via FPM_SEPA at the top + FPAYH/FPAYHX/FPAYP at per-node level. "Without accompanying sheet" — electronic-only, no paper.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 3 · Levels — nesting depth + repetition</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_levels.png" alt="DMEE Levels tab">
+    <div class="dme-shot-cap"><b>levels.png</b> — Level 0 = 9,999,999 · Level 1 = <strong>1</strong> (one CstmrCdtTrfInitn per file) · Level 2 = 9,999,999 (PmtInf unlimited) · Level 3 = 9,999,999 (CdtTrfTxInf unlimited per PmtInf). This is what supports 1,703-payment batches.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 4 · Sort/key fields — payment grouping</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_sort_key.png" alt="DMEE Sort/key tab">
+    <div class="dme-shot-cap"><b>sort_key.png</b> — 4 keys all from FPAYH: ZBUKR (Level 1) · AUSFD + HKTID (Level 2) · DOC1R (Level 3). F110 sorts open invoices by company code → date → house bank → document reference, then writes them into XML in that order.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 5 · File Data — character validation</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_file_data.png" alt="DMEE File Data tab">
+    <div class="dme-shot-cap"><b>file_data.png</b> — Disallowed chars: <code>^&quot;$%&amp;{}=`~!?º'+*\.:;,_()[]#&lt;&gt;</code>. Engine sanitises field values before emission to match SocGen's pain.001 character whitelist.</div>
+
+    <h6 style="color:#0369a1;margin-top:10px">Tab 6 · Post Processing (the load-bearing one)</h6>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_post_processing.png" alt="DMEE Post Processing tab">
+    <div class="dme-shot-cap"><b>post_processing.png</b> — <strong>Empty Element Processing = "Do Not Remove"</strong> · XSLT Program empty. Empty tags ARE emitted. This is why V001 INSERTs need per-node DMEE_TREE_COND empty-suppress conditions (claim 120).</div>
+
+    <h5 style="color:#0d9488">SEPA — the hierarchy collapse (95 nodes stratified)</h5>
+    <p style="font-size:12px">tx DMEE shows /SEPA_CT_UNES with 95 rows. <strong>It looks like a lot — it isn't, because the tree is a hierarchy, not a flat list.</strong> Stratified by depth level:</p>
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>Level</th><th>What lives here</th><th>Approx node count</th></tr>
+      <tr><td><b>0</b></td><td><code>DMEE tree: properties</code> root</td><td>1</td></tr>
+      <tr><td><b>1</b></td><td><code>Document</code> + namespace declarations</td><td>~5</td></tr>
+      <tr><td><b>2</b></td><td><code>CstmrCdtTrfInitn</code></td><td>1</td></tr>
+      <tr><td><b>3</b></td><td><code>GrpHdr</code> + <code>PmtInf</code></td><td>2</td></tr>
+      <tr><td><b>4</b></td><td>GrpHdr children (5) + PmtInf children including Dbtr (~11)</td><td>~16</td></tr>
+      <tr style="background:#fef3c7"><td><b>5</b></td><td>Inside Dbtr: Nm + <strong>PstlAdr</strong>. Inside CdtTrfTxInf: PmtId, Amt, UltmtDbtr, CdtrAgt, Cdtr, CdtrAcct, UltmtCdtr, RmtInf (~10)</td><td>~12</td></tr>
+      <tr style="background:#fef3c7"><td><b>6</b></td><td>Inside Dbtr/PstlAdr: Ctry, AdrLine. Inside Cdtr: Nm + <strong>PstlAdr</strong></td><td>~25</td></tr>
+      <tr style="background:#dcfce7"><td><b>7</b></td><td>Leaves under PstlAdr containers + leaves under Nm/EndToEndId/PmtId</td><td>~33</td></tr>
+      <tr><td colspan="3" style="background:#f0f4f8"><b>Total V000</b> ≈ 95 nodes · <b>V001 INSERT targets</b> = 2 (the two PstlAdr containers)</td></tr>
+    </table>
+    <p style="background:#e8f5e9;border-left:5px solid #1abc9c;padding:10px 14px;margin:10px 0;border-radius:3px;font-size:12px"><strong>The mental simplification</strong>: 95 nodes, only 2 matter for V001 (the two PstlAdr). Everything above level 5 is frozen wrapper structure; everything else is leaf data, mostly cloned untouched in V001. <strong>Same principle generalises across all 4 trees</strong>: each has its own large total, but a small number of PstlAdr containers carry the entire V001 delta.</p>
+
+    <h5 style="color:#0d9488">SEPA — same TECH_NAME at different levels (path disambiguation)</h5>
+    <p style="font-size:12px">Looking at the tree screen carefully, you see <strong>repeated tag names at different depths</strong>. The DMEE engine emits exactly what the path says, so identifying a node by TECH_NAME alone is ambiguous. The level in the UI = the position in the XML.</p>
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>TECH_NAME</th><th>Where it appears (UI path)</th><th>What XML element</th></tr>
+      <tr><td><code>Nm</code></td><td>GrpHdr → InitgPty → Nm</td><td>UNESCO message-level identity</td></tr>
+      <tr><td><code>Nm</code></td><td>PmtInf → Dbtr → Nm</td><td>UNESCO batch-level debtor name</td></tr>
+      <tr><td><code>Nm</code></td><td>CdtTrfTxInf → Cdtr → Nm</td><td>Beneficiary name (per transaction)</td></tr>
+      <tr><td><code>Nm</code></td><td>CdtTrfTxInf → UltmtCdtr → Nm</td><td>Alternative payee name</td></tr>
+      <tr><td><code>NbOfTxs</code></td><td>GrpHdr → NbOfTxs</td><td>file-level total payment count</td></tr>
+      <tr><td><code>NbOfTxs</code></td><td>PmtInf → NbOfTxs (TX2 ref)</td><td>batch-level count</td></tr>
+      <tr style="background:#fef3c7"><td><code>PstlAdr</code></td><td>PmtInf → Dbtr → PstlAdr</td><td><strong>V001 INSERT TARGET #1</strong></td></tr>
+      <tr style="background:#fef3c7"><td><code>PstlAdr</code></td><td>CdtTrfTxInf → Cdtr → PstlAdr</td><td><strong>V001 INSERT TARGET #2</strong></td></tr>
+    </table>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 2 of 4 · <code>/CITI/XML/UNESCO/DC_V3_01</code> current state</h4>
+    <p style="font-size:12px"><strong>610 nodes V000</strong> · CITI proprietary XML · Citibank USD/CAD/Worldlink BRL/MGA/TND. Most-touched tree historically — 25 transports 2017-2024 (claim 72) → highest regression risk. Has CGI_XML_CT_XSLT post-processor → empty leaves auto-removed (no DMEE_TREE_COND needed). Heavy BAdI dispatch via FI_CGI_DMEE_EXIT_W_BADI for 31 nodes (~5%).</p>
+    <p style="font-size:12px;color:#475569"><strong>Existing structured parties in V000</strong>: Cdtr (full structured) · UltmtCdtr (Worldlink BRL — 7 source-bound nodes; StrtNm exists with empty source binding — Q3 RESOLVED via claim 99) · CdtrAgt (StrtNm + TwnNm + CtrySubDvsn + Ctry, missing PstCd + BldgNb). <strong>Existing unstructured parties</strong>: Dbtr-primary (TwnNm + PstCd + Ctry + 3 AdrLine, missing StrtNm + BldgNb), Dbtr-altMor / PstlAdrMor (3 AdrLine only).</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending</strong>: 6-tabs screenshots for CITI tree (especially Post Processing → confirm XSLT name + Empty-element setting), 4 tree-pane screenshots (one per V001 INSERT entry point). Hierarchy stratification analogous to SEPA: 610 nodes → ~6 PstlAdr-bearing parties (Dbtr-primary, Dbtr-altMor, Cdtr, UltmtCdtr, UltmtDbtr if used, CdtrAgt) → 4 V001 INSERT entry points. Full RFC analysis available in <code>knowledge/domains/Payment/phase0/dmee_full/</code>.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 3 of 4 · <code>/CGI_XML_CT_UNESCO</code> current state</h4>
+    <p style="font-size:12px"><strong>631 nodes V000</strong> · CGI XML cross-bank · SocGen for non-SEPA (USD/EUR/GBP) + CGI member banks. Heavy BAdI dispatch — 239 nodes route through FI_CGI_DMEE_EXIT_W_BADI → YCL_IDFI_CGI_DMEE_FR/_DE/_IT/_UTIL/_FALLBACK classes. Empty Element Processing TBD Phase 2 (likely Do-Not-Remove like SEPA, no XSLT — verify).</p>
+    <p style="font-size:12px;color:#475569"><strong>Existing structured parties in V000</strong>: Dbtr (fully structured via BAdI), Cdtr (fully structured via BAdI), UltmtCdtr (fully structured), UltmtDbtr (fully structured). <strong>Existing unstructured party</strong>: CdtrAgt/FinInstnId/PstlAdr (Ctry + AdrLine + AdrLine + AdrLine1 + AdrLine2 — missing all 4 structured atoms StrtNm/BldgNb/PstCd/TwnNm). <strong>PPC dispatch tags</strong> (<code>InstrForCdtrAgt/InstrInf</code> for AE/CN, <code>RmtInf/Ustrd</code> for BH/ID/IN/JO/MA/MY/PH) wired in V000 — claim 116 — and MUST remain unchanged in V001.</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending</strong>: 6-tabs screenshots for CGI tree (especially Post Processing — TBD setting drives whether V001 INSERTs need DMEE_TREE_COND), 1 tree-pane screenshot of CdtrAgt/.../PstlAdr highlighted. Hierarchy: 631 nodes → 1 PstlAdr-bearing party needs V001 work (CdtrAgt only) → 1 V001 INSERT entry point.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 4 of 4 · <code>/CGI_XML_CT_UNESCO_1</code> current state</h4>
+    <p style="font-size:12px"><strong>632 nodes D01 V000 / 639 nodes P01 V000</strong> · CGI variant. <strong>Drift identified by RFC verification 2026-04-30 (claim 111)</strong>: 8 P01-only nodes + 1 D01-only + 3 changed nodes between systems. D01-RETROFIT-01 must reconcile this 12-delta drift before any V001 work. FIRSTNODE_ID identical to <code>/CGI_XML_CT_UNESCO</code> → CdtrAgt fix from CGI parent propagates automatically via SYNC.</p>
+    <p style="font-size:12px;color:#475569"><strong>Same structured-vs-unstructured pattern as CGI parent</strong>: Dbtr/Cdtr/UltmtCdtr/UltmtDbtr already structured; CdtrAgt unstructured. Tree-level tab settings expected identical to CGI parent (FIRSTNODE_ID twin) but RFC byte-equality verification pending Phase 2.</p>
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:8px 12px;margin:8px 0;border-radius:3px;font-size:11px"><strong>Phase 2 capture pending (post-retrofit)</strong>: tree-pane screenshot only meaningful AFTER D01-RETROFIT-01 lands. 6-tabs screenshots optional — expected identical to CGI parent.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">Where to find the V001 changes for each tree</h4>
+    <p style="font-size:12px">The V001 changes (per-tree INSERT/MODIFY/SYNC operations + Step A/B/C walkthroughs + UI↔XML parallel bridges) live in the <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">Change Strategy → DMEE Configuration</a> tab. Each tree's V001 section there assumes the V000 baseline documented above.</p>
+  </div>
+
+  <div class="section">
+    <h3>What this means for V001</h3>
+    <p style="background:#dbeafe;padding:12px;border-left:3px solid #1d4ed8;border-radius:4px"><strong>V001 active surface is even smaller than we thought.</strong> If <code>/CGI_XML_CT_UNESCO_1</code> is confirmed inactive (Tier 3 candidate), V001 acts on <strong>3 actively-routed trees</strong> covering <strong>13 (LAND1/ZLSCH) routes</strong>: SEPA (DE/S, FR/S), CGI parent (DE/N, FR/A, FR/J, FR/N), and Citi DC_V3_01 (BR/R, CA/C, CA/N, FR/C, FR/L, FR/X — and BR/Q legacy without XBKKT='X'). That is the full blast radius of V001 in production payment volume terms. Pre-cutover regression tests should cover all 13 routes; post-cutover monitoring should flag any of these routes failing.</p>
+    <p>Companion assertions to update accordingly:</p>
+    <ul>
+      <li><strong>"4 target trees"</strong> KPI in the header → review whether this should be "3 production-routed trees + 1 unrouted peer".</li>
+      <li><strong>brain claim 102</strong> — add caveat about /CGI_XML_CT_UNESCO_1 routing status.</li>
+      <li><strong>V001 test matrix</strong> — drop /CGI_XML_CT_UNESCO_1 from regression scope unless implicit-invocation is confirmed.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h3>Source data</h3>
+    <ul style="font-size:12px">
+      <li><strong>T042Z routing</strong> — Gold DB <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code>, 263 rows. Query above.</li>
+      <li><strong>OBPM1 catalog</strong> — visual evidence in 4 P01 screenshots (the user provided them in this session). Save to <code>knowledge/domains/Payment/sap_standard_reference/dme_screenshots/obpm1_p01_*.png</code> for embed.</li>
+      <li><strong>DMEE_TREE_HEAD</strong> — extracted in <code>knowledge/domains/Payment/phase0/dmee_full/dmee_tree_head_p01_full.csv</code>, 4 UNESCO trees confirmed at VERSION=000 EX_STATUS='A'.</li>
+      <li><strong>TFPM042FB (OBPM4)</strong> — Gold DB, 311 rows. F. Spezzano parallel work covers selection-variant maintenance.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- D01 ↔ P01 Checks — RFC verification               -->
+<!-- Brain anchor: claims 109 + 111                                 -->
+<!-- ============================================================ -->
+<div id="d01-p01-checks" class="content"></div>

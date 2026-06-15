@@ -1,0 +1,110 @@
+<div id="tab-overview" class="content visible">
+    <div class="section" style="background:#dcfce7;border-left:5px solid #1abc9c;border-radius:4px;padding:14px;margin-bottom:18px">
+      <h3 style="color:#1abc9c;margin:0 0 8px 0">✅ Companion fully aligned with post-VPN RFC verification (2026-04-30)</h3>
+      <p style="font-size:13px;color:#1f2937">This companion is the canonical V001 design + change-management record. Post-VPN RFC verification (2026-04-30, Pablo + Brain v2) refreshed every tab against the RFC ground-truth (claims 109/111/112/113/114) plus closed the LZBKZ-validation gap as a tracked KU. Brain rebuilt: <b>278 objects · 115 claims · 104 rules · 7 incidents · 41 KUs</b>. This callout supersedes any earlier "draft cohabitation" / "FIRST EVER DMEE bump" / "Hybrid V001" framing across the companion.</p>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>Area</th><th>What changed (post-VPN RFC verification 2026-04-30)</th><th>Brain anchor</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#f0fdf4"><td><b>Retrofit scope</b></td><td>Reduced from "huge multi-tree" to ~1-2h surgical: SEPA/CITI/CGI byte-equal D01=P01 V000 across 48 fields (claim 112). Only CGI_1 has 12 deltas. All 4 trees carry dormant V001 byte-clones (PURGE before fresh CREATE).</td><td>claims 109 + 111 + 112</td></tr>
+          <tr style="background:#f0fdf4"><td><b>V001 Change Matrix</b></td><td>27 V001 deltas + 2 PRECONDITION rows (0a RETROFIT, 0b CREATE-V001) = <b>29 rows total</b>. Heading + 5 cross-references aligned across companion.</td><td>v001_change_matrix.csv (29 rows)</td></tr>
+          <tr style="background:#f0fdf4"><td><b>CBPR+ classification</b></td><td>Truth-derivation order codified: <b>System Data + Bank Requirements (CBPR+ ISO 20022) &gt; comments</b>. Per-tree per-party CBPR+ verdict table now derives from RFC-extracted leaf inventory (4 hard-stop parties · 3 hybrid+ at future-proof risk).</td><td>claim 113 + claim 114</td></tr>
+          <tr style="background:#f0fdf4"><td><b>D01↔P01 Checks tab</b></td><td>SHA-256 byte-level verification for SEPA: <code>033f11ce1798ed90cdae447c0f4feaeddc03445c37885487e8adc4a447345b39</code>. Full 48-field RFC diff at <code>full_47field_diff_session63.json</code>. CITI D01 extracted (was "not extracted" — now 610+610 byte-clone).</td><td>claim 112</td></tr>
+          <tr style="background:#fef3c7"><td><b>PPC LZBKZ gap (NEW)</b></td><td>Post-VPN RFC audit confirmed NO upstream validation enforces LZBKZ for 9 PPC countries. Full 5-layer audit (F4/GGB0/GGB1/YRGGBS00/vendor master) all empty. Risk: AP clerk can post FB60/MIRO without LZBKZ → F110 → empty PPC tag → bank rejects. 4 fix options ranked, Option A (GGB0 hard-stop) recommended — see PPC tab + payment_bcm_companion.html.</td><td><b>KU-2026-PPC-LZBKZ-VALIDATION</b></td></tr>
+          <tr style="background:#f0fdf4"><td><b>Tier 2/3 data restored</b></td><td>"not extracted" count 22 → 6 (the 6 remaining are correct out-of-scope context). Tier 1 CITI D01 column filled. /DIRECT_CREDIT P01 = 377 nodes (h18). YCL_DE/IT classes confirmed extracted (P01_canonical, 9 includes each).</td><td>h18_dmee_tree_nodes.csv</td></tr>
+          <tr style="background:#f0fdf4"><td><b>PPC data flow (new section)</b></td><td>5-stage chain (invoice → master config → F110 buffer → BAdI dispatch → XML emission) now code-traced to <code>UTIL.CM003 line 48</code>. Source field is <b>FPAYP-LZBKZ</b> (BSIK at posting via bseg_union view), NOT SGTXT (corrected in payment_bcm_companion).</td><td>claim 97 + extracted_code line 48</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:#475569;margin-top:8px"><b>What's next (Phase 2 entry)</b>: D01-RETROFIT-01 transport (12 CGI_1 nodes + dormant V001 PURGE on all 4 trees + 5 P01-only ABAP retrofit) → Pattern A 3-line BAdI fix → V001 build per-tree (8 transports). Decision awaited from Marlies + N_MENARD on (a) PURGE vs REPURPOSE dormant V001 (recommend PURGE), (b) CGI_1 Nm Z-field experiment fate (revert vs keep), (c) LZBKZ validation Option A vs C.</p>
+    </div>
+    <div class="section">
+      <h3>Why this change</h3>
+      <p><strong>Bank-driven + CBPR+ Nov 2026 mandate</strong>. Banks will reject XML payment files with only unstructured <code>&lt;AdrLine&gt;</code> addresses starting November 2026 (ISO 20022 CBPR+).</p>
+      <p>UNESCO runs <strong>3 custom DMEE trees</strong> in P01 that emit Hybrid or Unstructured addresses today. The migration must ensure at least <code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> (mandatory) and preferably full 5-tag structured PstlAdr.</p>
+
+      <h3>The 3 XML payment file formats — what each one is for</h3>
+      <p>UNESCO uses <strong>three distinct DMEE-generated XML payment formats</strong> in P01, each tied to a specific bank relationship and payment use-case. They are not interchangeable: T042Z routes each (company code, payment method) tuple to exactly one tree, and each tree produces a file format the receiving bank is expecting. Volumes below are from process mining of REGUH 2025+2026Q1 production payments.</p>
+
+      <table>
+        <tr>
+          <th>Format / DMEE tree</th>
+          <th>Bank relationship</th>
+          <th>Currencies</th>
+          <th>Used by (company codes / users)</th>
+          <th>Volume (2025+2026Q1)</th>
+          <th>What V001 changes</th>
+        </tr>
+        <tr>
+          <td><b>SEPA payment file</b><br/><code>/SEPA_CT_UNES</code><br/>pain.001.001.03 SEPA Credit Transfer</td>
+          <td><b>Société Générale</b> EUR account → SEPA-zone beneficiaries</td>
+          <td>EUR only (single-currency SEPA scheme)</td>
+          <td><b>UNES HQ (SOG01)</b>, <b>IIEP (SOG02)</b>, <b>UIL (SOG05 — German EUR account)</b></td>
+          <td>~176K payments (167K UNES + 4.7K UIL + 3.8K IIEP)</td>
+          <td>+5 Dbtr structured nodes (StrtNm/BldgNb/PstCd/TwnNm/Ctry) + 5 empty-suppress conds + Sub-option A (FI_PAYMEDIUM_DMEE_CGI_05 Event 05 reg)</td>
+        </tr>
+        <tr>
+          <td><b>CITI payment file</b><br/><code>/CITI/XML/UNESCO/DC_V3_01</code><br/>Citi proprietary CGI variant (pain.001.001.03 + CITIPMW extensions)</td>
+          <td><b>Citibank</b> USD account + Worldlink for exotic-currency cover payments</td>
+          <td>USD from the main Citi account; Worldlink for <b>TND and MGA</b>; UBO and UIS local payments through their own Citi relationships</td>
+          <td><b>UNES HQ Citi US (CIT04)</b>, <b>UBO Citi BR (CIT01)</b>, <b>UIS</b>, <b>UNES Canada (CIT21)</b>. UBO and UIS use the CITI tree for their local-currency payments.</td>
+          <td>~85K payments (45.8K UBO + 36.6K UNES Citi US + 2.6K UNES Canada)</td>
+          <td>+5 Dbtr structured nodes (XSLT auto-removes empty) + 1 UltmtCdtr StrtNm = FPAYH-ZSTRA (Worldlink UltmtCdtr Q3 RESOLVED — claim 99). UltmtCdtr's 7 active source fields are already wired (Nm, Ctry, TwnNm, PstCd, CtrySubDvsn, AdrLine1/2).</td>
+        </tr>
+        <tr>
+          <td><b>CGI_XML payment file</b><br/><code>/CGI_XML_CT_UNESCO</code> + twin <code>/CGI_XML_CT_UNESCO_1</code><br/>CGI Common Global Implementation (pain.001.001.03 multi-bank standard)</td>
+          <td><b>All other banks</b> — SocGen non-SEPA branches (SOG03 UNES non-EUR), Shinhan KR, Metro GB, GT NG, SCB14, CIC01, etc. CGI is the multi-bank "fallback" format any CGI-compliant bank can accept.</td>
+          <td><b>All currencies</b> not covered by SEPA-EUR or Citi-USD/Worldlink (i.e. GBP, KRW, NGN, INR, etc.)</td>
+          <td>UNES + multiple field offices using local-currency banks. Whatever doesn't route to SEPA or CITI lands here.</td>
+          <td>~76K payments (70K UNES SOG01 non-SEPA + 5K SOG03 + scattered tail)</td>
+          <td><b>Fix CdtrAgt</b> only — convert CdtrAgt PstlAdr from AdrLine to structured (StrtNm/PstCd/TwnNm/Ctry from T012K/BNKA via existing SAP Event 05 + CL_IDFI_CGI_CALL05_* country factory). Dbtr ✓ and Cdtr ✓ already structured in V000 — no changes there. ZERO ABAP for the CdtrAgt fix.</td>
+        </tr>
+      </table>
+
+      <p style="background:#dcfce7;border-left:4px solid #1abc9c;padding:10px 14px;margin-top:12px;font-size:13px"><b>Why three formats and not one?</b> Each receiving bank specifies its own pain.001 dialect (SEPA scheme is strict EUR-only; Citi adds proprietary tags for Worldlink cover-payment routing; CGI is the multi-bank common denominator). T042Z (263 rows in P01) is the routing brain — given (company code + payment method + LAND1), it picks the tree. SAP supports multiple PMW tree definitions per system precisely because real-world bank diversity demands it. UNESCO's three trees reflect three distinct bank rails — SocGen-EUR, Citi-USD/Worldlink, and the CGI multi-bank rail — not a duplication.</p>
+
+      <p style="background:#f1f5f9;border-left:4px solid #3498db;padding:10px 14px;font-size:13px"><b>All three need adjustment for CBPR+ Nov 2026.</b> The <em>nature</em> of the V001 change is asymmetric per format:</p>
+      <ul style="font-size:13px">
+        <li><b>SEPA</b> — biggest add: full Dbtr restructure (Hybrid → Structured) + Event 05 wiring. ~4 hours config.</li>
+        <li><b>CITI</b> — medium add: Dbtr restructure (Unstructured → Structured) + UltmtCdtr StrtNm fill. XSLT post-proc handles empties automatically. ~4 hours config total.</li>
+        <li><b>CGI</b> — smallest add: only CdtrAgt PstlAdr needs structuring. Dbtr + Cdtr already done in V000 (CGI is the existing pattern we lift to SEPA + CITI). ~3 hours config.</li>
+        <li><b>Plus 3 ABAP lines</b> in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code> (Pattern A guard) — one transport, applies to all three trees.</li>
+      </ul>
+
+      <h3>Compliance states (3 states, not 2) — for context only</h3>
+      <table>
+        <tr><th>State</th><th>Validity after Nov 2026</th><th>UNESCO position</th></tr>
+        <tr><td>Unstructured (AdrLine only)</td><td>REJECTED</td><td>Current V000 state, migrate away</td></tr>
+        <tr><td>Hybrid (TwnNm+Ctry + AdrLine mixed)</td><td>OK — minimum viable</td><td><strong>Rejected as default</strong> — mixes legacy+new in one file; rollback + bank validation harder. Kept as fallback if V001 fails bank acceptance on specific vendors.</td></tr>
+        <tr><td>Fully structured (5 tags)</td><td>OK + future-proof</td><td><strong>OUR TARGET (V001)</strong> — clean file, future-proof, DMEE-native versioning enables parallel V000/V001 operation + atomic cutover</td></tr>
+      </table>
+      <h3>Coexistence strategy — 2-file + DMEE native versioning (user-directed)</h3>
+      <p>Instead of mixing structured+AdrLine in one file (Hybrid), V000 (current) and V001 (new) cohabit as two DMEE versions of the same tree, controlled by the <code>DMEE_TREE_NODE.VERSION</code> column and a single <code>EX_STATUS</code> flip at cutover. <strong>The full mental model — what V000/V001 mean, how the flip works, why D01 already has dormant V001 rows, visual proof — lives in <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a></strong> (single canonical source).</p>
+      <p>The strategy-level commitment here: V000 stays ACTIVE during Phase 2-4 (production untouched); test F110 runs reach V001 via a Z-payment method; at Phase 5 cutover the EX_STATUS flips atomically; rollback is the same flip in reverse; V000 decommissions 30 days after stable cutover. Stateful BAdI logic must be structure-aware (see <a href="#" onclick="show('dmee-tree-cgi', document.querySelector('[onclick*=dmee-tree-cgi]'));return false">↳ Tree 3 · CGI</a> for Pattern A fix on <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</code> name-overflow guard).</p>
+      <h3>Key people</h3>
+      <ul>
+        <li><strong>Marlies Spronk (M_SPRONK)</strong> — Treasury, business owner AND historical DMEE config author (31 transports 2017-2024)</li>
+        <li><strong>Pablo Lopez (JP_LOPEZ)</strong> — SAP config + coordination</li>
+        <li><strong>Nicolas Ménard (N_MENARD)</strong> — BAdI code owner (9 transports 2024), required reviewer for ABAP changes</li>
+        <li><strong>Francesco Spezzano (FP_SPEZZANO)</strong> — 5 PMF variant transports 2025 Q1 (ASSIST/IRRELEVANT), not address-related</li>
+        <li><strong>DBS</strong> — business implementation + testing</li>
+      </ul>
+      <h3>Timeline</h3>
+      <table>
+        <tr><th>Phase</th><th>Window</th><th>Status</th></tr>
+        <tr><td>0 — 100% Code Inventory</td><td>2026-04-24 → 04-27</td><td><strong style="color:#1abc9c">CLOSED</strong> 2026-04-27</td></tr>
+        <tr><td>1 — Config matrix + bank specs</td><td>2026-04-27 → 04-30</td><td><strong style="color:#1abc9c">CLOSED</strong> (claims 99/105/109/111/112/113 — RFC verification 2026-04-30)</td></tr>
+        <tr><td>2 — Config D01 (D01-RETROFIT → V001 → Pattern A)</td><td>May 2026</td><td>Ready to start</td></tr>
+        <tr><td>3 — Unit Test D01/V01</td><td>June 2026</td><td>Pending</td></tr>
+        <tr><td>4 — UAT V01</td><td>July 2026</td><td>Pending</td></tr>
+        <tr><td>5 — Deploy P01</td><td>Aug-Nov 2026</td><td>Pending — CBPR+ hard deadline</td></tr>
+      </table>
+    </div>
+    </div>
+
+<!-- ============================================================ -->
+<!-- DME / PMW REFERENCE — submenu under Overview                 -->
+<!-- Source: knowledge/domains/Payment/dme_creation_payment.md    -->
+<!-- Screenshots: knowledge/domains/Payment/sap_standard_reference -->
+<!-- ============================================================ -->
+

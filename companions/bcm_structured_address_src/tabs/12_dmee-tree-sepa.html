@@ -1,0 +1,282 @@
+<div id="tab-dmee-tree-sepa" class="content">
+    <div class="section">
+      <h3>Tree 1 · /SEPA_CT_UNES — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the version mental model · <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for the three operations + per-target mapping + PMW retrofit + V000 baseline cross-references. This sub-tab covers Tree 1 V001 work only.</p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>For the conceptual foundations</strong> — the hierarchy collapse (95 nodes → 2 INSERT targets), the level connection (UI indentation = XML nesting depth), and the path-disambiguation rule (same TECH_NAME at different levels means different things) — see <a href="#" onclick="show('current-solution', document.querySelector('[onclick*=current-solution]'));return false">Current Solution → Per-tree current state</a>. Below: the SEPA-specific V000 vs V001 parallel rendering as the worked example for Tree 1. CITI/CGI/CGI_1 each have their own bridge in their respective per-tree sections.</p>
+
+      <h4>SEPA Tree 1 of 4 — bridge in parallel — UI tree (left) ↔ XML output (right), aligned by level</h4>
+
+      <p>Read this top-to-bottom. Every line on the left has its mirror on the right. The indentation depth on the left = the nesting depth on the right. Same configuration shown two ways.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">V000 today — what the operator sees in tx DMEE vs what F110 writes to the bank file</p>
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — tree pane indentation (UI)</th><th style="width:50%">F110 output — XML nesting (bank file)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">CstmrCdtTrfInitn
+  GrpHdr                                  ← level 2
+    MsgId
+    CreDtTm
+    NbOfTxs                               ← file-total count
+    CtrlSum                               ← file-total sum
+    InitgPty
+      Nm                                  ← UNESCO @ message level
+        AUST1
+        NAMEZ
+  PmtInf                                  ← level 2 (batch)
+    PmtInfId
+    PmtMtd
+    NbOfTxs (TX2)                         ← batch count
+    CtrlSum (IA2)                         ← batch sum
+    PmtTpInf/SvcLvl/Cd
+    ReqdExctnDt (YYYY-MM-DD)
+    Dbtr                                  ← level 3 (batch debtor)
+      Nm
+      <strong>PstlAdr ←── INSERT TARGET #1</strong>
+        Ctry         (FPAYHX-LAND1)       ← level 5
+        AdrLine      (FPAYHX-ORT1Z)       ← level 5
+    DbtrAcct/Id/IBAN
+    DbtrAgt/FinInstnId/BIC
+    ChrgBr
+    CdtTrfTxInf (TX)                      ← level 3 (per tx)
+      PmtId/InstrId/EndToEndId
+      Amt/InstdAmt
+      UltmtDbtr/Nm                        ← Nm only, no PstlAdr
+      CdtrAgt/FinInstnId/BIC              ← BIC only, no PstlAdr
+      Cdtr                                ← level 4 (beneficiary)
+        Nm                                ← KOINH + ZNME1
+        <strong>PstlAdr ←── INSERT TARGET #2</strong>
+          Ctry      (FPAYHX-ZLISO)        ← level 6
+          AdrLine   (FPAYHX-ZPFST)        ← level 6
+          AdrLine   (FPAYHX-ZPLOR)        ← level 6
+      CdtrAcct/Id/IBAN
+      UltmtCdtr/Nm                        ← Nm only, no PstlAdr
+      RmtInf</pre></td>
+        <td><pre style="margin:0;font-size:10px">&lt;CstmrCdtTrfInitn&gt;
+  &lt;GrpHdr&gt;
+    &lt;MsgId&gt;...&lt;/MsgId&gt;
+    &lt;CreDtTm&gt;...&lt;/CreDtTm&gt;
+    &lt;NbOfTxs&gt;1703&lt;/NbOfTxs&gt;
+    &lt;CtrlSum&gt;10952619.81&lt;/CtrlSum&gt;
+    &lt;InitgPty&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+    &lt;/InitgPty&gt;
+  &lt;/GrpHdr&gt;
+  &lt;PmtInf&gt;
+    &lt;PmtInfId&gt;...&lt;/PmtInfId&gt;
+    &lt;PmtMtd&gt;TRF&lt;/PmtMtd&gt;
+    &lt;NbOfTxs&gt;1703&lt;/NbOfTxs&gt;
+    &lt;CtrlSum&gt;10952619.81&lt;/CtrlSum&gt;
+    &lt;PmtTpInf&gt;&lt;SvcLvl&gt;&lt;Cd&gt;SEPA&lt;/Cd&gt;...
+    &lt;ReqdExctnDt&gt;2025-05-22&lt;/ReqdExctnDt&gt;
+    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      <strong>&lt;PstlAdr&gt;</strong>
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+        &lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    &lt;DbtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;...
+    &lt;DbtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;SOGEFRPP&lt;/BIC&gt;
+    &lt;ChrgBr&gt;SLEV&lt;/ChrgBr&gt;
+    &lt;CdtTrfTxInf&gt;
+      &lt;PmtId&gt;...&lt;/PmtId&gt;
+      &lt;Amt&gt;&lt;InstdAmt&gt;...&lt;/InstdAmt&gt;...
+      &lt;UltmtDbtr&gt;&lt;Nm&gt;...&lt;/Nm&gt;&lt;/UltmtDbtr&gt;
+      &lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;BNPAFRPP&lt;/BIC&gt;
+      &lt;Cdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        <strong>&lt;PstlAdr&gt;</strong>
+          &lt;Ctry&gt;FR&lt;/Ctry&gt;
+          &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+          &lt;AdrLine&gt;...postal+city...&lt;/AdrLine&gt;
+        &lt;/PstlAdr&gt;
+      &lt;/Cdtr&gt;
+      &lt;CdtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;...
+      &lt;UltmtCdtr&gt;&lt;Nm&gt;...&lt;/Nm&gt;&lt;/UltmtCdtr&gt;
+      &lt;RmtInf&gt;...&lt;/RmtInf&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="margin-top:8px;font-size:12px"><strong>Notice the two PstlAdr instances</strong>: one at PmtInf level (batch debtor), one nested deeper at CdtTrfTxInf level (per-transaction beneficiary). They produce two separate <code>&lt;PstlAdr&gt;</code> blocks in the XML, at different depths, each with its own children. <strong>V001 has to INSERT 4 nodes into each one</strong> — that's why matrix row 1–4 (Cdtr/PstlAdr) and rows 5–8 (Dbtr/PstlAdr) are separate sets even though the TECH_NAMEs (StrtNm/BldgNb/PstCd/TwnNm) are identical.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">V001 — same parallel, same two PstlAdr containers, +4 INSERTs each</p>
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE Maintenance version (after Step B INSERTs)</th><th style="width:50%">F110 output after Phase 5 cutover</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">    Dbtr
+      Nm
+      <strong>PstlAdr ←── INSERT TARGET #1</strong>
+        Ctry        (FPAYHX-LAND1)        ← V000 kept
+        AdrLine     (FPAYHX-ORT1Z)        ← V000 suppressed
+        StrtNm      (FPAYHX-REF01[0..60]) ← INSERT row 5
+        BldgNb      (FPAYHX-REF01[60..80])← INSERT row 6
+        PstCd       (FPAYHX-REF01[80..90])← INSERT row 7
+        TwnNm       (FPAYHX-REF06[0..40]) ← INSERT row 8
+    ...
+      Cdtr
+        Nm
+        <strong>PstlAdr ←── INSERT TARGET #2</strong>
+          Ctry      (FPAYHX-ZLISO)        ← V000 kept
+          AdrLine   (FPAYHX-ZPFST)        ← V000 suppressed
+          AdrLine   (FPAYHX-ZPLOR)        ← V000 suppressed
+          StrtNm    (FPAYHX-REF01[0..60]) ← INSERT row 1
+          BldgNb    (FPAYHX-REF01[60..80])← INSERT row 2
+          PstCd     (FPAYHX-REF01[80..90])← INSERT row 3
+          TwnNm     (FPAYHX-REF06[0..40]) ← INSERT row 4</pre></td>
+        <td><pre style="margin:0;font-size:10px">    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      <strong>&lt;PstlAdr&gt;</strong>
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+        &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt;
+        &lt;BldgNb&gt;7&lt;/BldgNb&gt;
+        &lt;PstCd&gt;75007&lt;/PstCd&gt;
+        &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    ...
+      &lt;Cdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        <strong>&lt;PstlAdr&gt;</strong>
+          &lt;Ctry&gt;FR&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+                                          ← AdrLine suppressed
+          &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+          &lt;BldgNb&gt;...&lt;/BldgNb&gt;
+          &lt;PstCd&gt;...&lt;/PstCd&gt;
+          &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+        &lt;/PstlAdr&gt;
+      &lt;/Cdtr&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="margin-top:8px;font-size:13px"><strong>The connection now reads</strong>: each new line indented under PstlAdr in the UI (left) corresponds to one new tag inside <code>&lt;PstlAdr&gt;</code> in the XML (right). The 4 INSERTs at each PstlAdr produce 4 new XML tags at the matching nesting depth. The empty-suppress conditions (matrix rows 1–8) hide the legacy AdrLine entries from the output, so the bank receives clean Fully Structured PstlAdr blocks.</p>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>The whole connection in one line</strong>: <strong>UI tree indentation = XML tag nesting</strong>. Configuring at level N in tx DMEE = emitting at depth N in the XML. INSERT Element under PstlAdr = new sibling of Ctry/AdrLine in the UI = new sibling of <code>&lt;Ctry&gt;</code>/<code>&lt;AdrLine&gt;</code> inside <code>&lt;PstlAdr&gt;</code> in the XML. Same operation, two views. No translation step.</p>
+
+      <p style="font-weight:600;color:#0369a1;font-size:14px;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">SEPA Per-target simplified mapping — V001 INSERT targets at the row/XML level (2 targets)</p>
+
+      <p>One block per target. Each block shows the path the operator navigates (top), then V000 today (DMEE rows on the left ↔ XML the bank receives on the right), then V001 (same rows + INSERTs ↔ updated XML output). Read each block independently — the bank only ever sees the XML on the right.</p>
+
+      <!-- TARGET #1 — SEPA Dbtr/PstlAdr -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #1 — SEPA <code>Dbtr/PstlAdr</code> (UNESCO HQ, batch level)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code></div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 2 rows under Dbtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1
+TECH_NAME=AdrLine   MP_SC_FLD=ORT1Z</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 2 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ORT1Z            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 5)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 6)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 7)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 8)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt;   ← new tag
+    &lt;BldgNb&gt;7&lt;/BldgNb&gt;                   ← new tag
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;                 ← new tag
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;                 ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #2 — SEPA Cdtr/PstlAdr -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #2 — SEPA <code>Cdtr/PstlAdr</code> (beneficiary, per-transaction)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr</code></div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 3 rows under Cdtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZLISO
+TECH_NAME=AdrLine   MP_SC_FLD=ZPFST
+TECH_NAME=AdrLine   MP_SC_FLD=ZPLOR</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Cdtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;...postal+city...&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Cdtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 3 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZLISO            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ZPFST            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=ZPLOR            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 1)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 2)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 3)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 4)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Cdtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                 ← new tag
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                 ← new tag
+    &lt;PstCd&gt;...&lt;/PstCd&gt;                   ← new tag
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;                   ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Cdtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><em>Read this in plain English: each block above is independent — same parent, same V000 rows kept, just more children added inside <code>&lt;PstlAdr&gt;</code>. SEPA totals 8 INSERTs (rows 1–8) plus 1 OBPM4 row (matrix row 9 — TFPM042FB Event-05 registration so REF01..REF10 buffers fill for SEPA).</em></p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 1 of 4 · <code>/SEPA_CT_UNES</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 95 nodes V000 → 103 nodes V001. Bank: Société Générale (SEPA-zone EUR payments). Format: pain.001.001.03. Empty Element Processing = "Do Not Remove" (claim 120) → <strong>per-node DMEE_TREE_COND empty-suppress mandatory</strong>. No XSLT post-processor.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:8px">SEPA Step A · PURGE existing dormant V001, then CREATE fresh V001</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → DME Engine: Initial Screen → Tree type = <code>PAYM</code> + Format tree = <code>/SEPA_CT_UNES</code> → click <strong>Display</strong></li>
+        <li>Popup "Which version would you like to display?" → <strong>Active version</strong> (inspect V000) → re-open with <strong>Maintenance version</strong> (confirm dormant V001 exists per claim 109)</li>
+        <li>Back to initial screen → <strong>Change</strong> → choose <strong>Maintenance version</strong></li>
+        <li>Menu: <strong>Tree → Versions → Delete Version</strong> → select <code>VERSION=001</code> → confirm. Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code></li>
+        <li>Menu: <strong>Tree → Versions → Create Version</strong> → Source 000, Target 001 → confirm. Save → transport <code>D01K-V001-SEPA-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step B · INSERT 8 structured nodes + 8 conditions + 1 OBPM4 row</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → switch tree view to <code>VERSION=001</code> (Maintenance)</li>
+        <li>Navigate to <strong>INSERT TARGET #1</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code></li>
+        <li>Right-click PstlAdr → <strong>Insert Element</strong> → set TECH_NAME=<code>StrtNm</code>, MP_SC_TAB=<code>FPAYHX</code>, MP_SC_FLD=<code>REF01</code>, MP_OFFSET=<code>0</code>, LENGTH=<code>60</code> (matrix row 5)</li>
+        <li>Repeat for BldgNb (REF01[60..80] · row 6) · PstCd (REF01[80..90] · row 7) · TwnNm (REF06[0..40] · row 8)</li>
+        <li>For each new node: add DMEE_TREE_COND row with empty-suppress (emit only if source NE space)</li>
+        <li>Navigate to <strong>INSERT TARGET #2</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; Cdtr &gt; PstlAdr</code></li>
+        <li>Repeat the same 4 INSERTs (matrix rows 1–4) + 4 conditions</li>
+        <li>Save → transport <code>D01K-V001-SEPA-01</code> (single transport collects all 8 INSERTs + 8 conditions)</li>
+        <li>Outside tx DMEE: SM30 → V_T042Z or direct entry into TFPM042FB → INSERT row FORMI=<code>/SEPA_CT_UNES</code>, EVENT=<code>05</code>, FNAME=<code>FI_PAYMEDIUM_DMEE_CGI_05</code> (matrix row 9). Save → transport <code>D01K-V001-OBPM4-01</code></li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>SEPA Step B verification</strong>: <code>SELECT NODE_ID, MP_SC_FLD FROM DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' AND PARENT_ID IN ('&lt;Dbtr/PstlAdr&gt;','&lt;Cdtr/PstlAdr&gt;')</code> returns original 5 V000 children + 8 new children. V000 query returns unchanged 5.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">SEPA Step C · ACTIVATE V001 (Phase 5 cutover) — SAP-correct procedure</p>
+      <ol style="font-size:12px">
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx <code>DMEE</code> → <code>/SEPA_CT_UNES</code> → Display → Maintenance → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → SAP archives current V000 to V002 (or next free number). <strong>Document the assigned version number</strong> — it is required for rollback.</li>
+        <li>tx <code>DMEE</code> → open <code>/SEPA_CT_UNES</code> → Format tree → Change → Tree → <strong>Activate</strong> → SAP runs consistency checks; if clean, V001 content is saved as V000 (overwrites previous V000 — but V002 snapshot from step 1 preserves it for rollback)</li>
+        <li>Save → cutover transport <code>D01K-V001-CUTOVER-01</code> (collects activation for all 4 trees together OR staggered per tree per claim 102 surgical philosophy). Transport class: <strong>Workbench (R3TR DMEE, K)</strong> — not Customizing.</li>
+        <li>From this moment, every F110 SEPA run (SOG01 EUR, payment method S) produces V001 Fully Structured XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>SEPA rollback (5-15 min, NOT atomic flip)</strong>: tx DMEE → /SEPA_CT_UNES → Utilities → Versions → Version Management → select V002 (the pre-cutover snapshot from step 1 above) → <strong>Retrieve</strong> → V002 content copies into V001 → Tree → Activate → V001 (with snapshot content) overwrites V000 → F110 reads original V000 again. F110 idempotent on REGUH (zero data loss).</p>
+      <p style="font-size:11px;color:#475569"><strong>SEPA code change required: NONE</strong>. All matrix rows 1–9 are customizing (DMEE_TREE_NODE, DMEE_TREE_COND, TFPM042FB).</p>
+    </div>
+    </div>

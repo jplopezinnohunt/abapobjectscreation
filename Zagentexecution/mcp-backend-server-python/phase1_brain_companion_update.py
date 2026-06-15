@@ -2,8 +2,12 @@
   - brain_v2/claims/claims.json (+8 claims)
   - brain_v2/agent_rules/feedback_rules.json (+1 rule on PPC dispatcher pattern)
   - knowledge/domains/Payment/phase0/components_map.json (+2 components: PPC tables, refine FR/DE/IT)
-  - companions/BCM_StructuredAddressChange.html (rebuild with components map tab)
-  - rebuild_all.py
+
+NOTE (corrected): this script does NOT write companions/BCM_StructuredAddressChange.html.
+It only updates the JSON sidecars above. The companion is now assembled from verbatim
+fragments under companions/bcm_structured_address_src/ by
+build_bcm_structured_address_companion.py (v2). The earlier "rebuild with components map
+tab" / "rebuild_all.py" lines were aspirational and never implemented here.
 """
 from __future__ import annotations
 import json, sys

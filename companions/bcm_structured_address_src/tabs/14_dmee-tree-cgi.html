@@ -1,0 +1,186 @@
+<div id="tab-dmee-tree-cgi" class="content">
+    <div class="section">
+      <h3>Tree 3 · /CGI_XML_CT_UNESCO — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the version mental model · <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for the three operations + per-target mapping + PMW retrofit + V000 baseline cross-references. This sub-tab covers Tree 3 V001 work only.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 3 of 4 · <code>/CGI_XML_CT_UNESCO</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 631 nodes V000 → 635 nodes V001. Bank: SocGen for non-SEPA (USD/EUR/GBP) + CGI member banks. Format: CGI XML cross-bank. Heavy BAdI dispatch — 239 nodes route through <code>FI_CGI_DMEE_EXIT_W_BADI</code> → <code>YCL_IDFI_CGI_DMEE_*</code> classes. <strong>This is the only tree requiring an ABAP code change (Pattern A guard).</strong> Empty Element Processing TBD (likely Do-Not-Remove like SEPA, no XSLT — verify Phase 2). PPC dispatch tags (<code>InstrInf</code>, <code>Ustrd</code>) MUST be preserved untouched.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI bridge in parallel — tx DMEE indentation (left) ↔ XML emitted (right), aligned by level</p>
+      <p style="font-size:12px;color:#475569">CGI tree has 631 nodes — only the CdtrAgt/PstlAdr branch changes in V001. Dbtr, Cdtr, UltmtCdtr, UltmtDbtr are already fully structured via BAdI dispatch and are not touched. PPC dispatch tags (<code>InstrInf</code>, <code>Ustrd</code>) sit elsewhere in the tree and MUST remain unchanged.</p>
+
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — V000 today (UI)</th><th style="width:50%">F110 output — V000 today (XML)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    Dbtr/PstlAdr                            ← already structured
+    DbtrAcct/Id/IBAN
+    DbtrAgt/FinInstnId
+    CdtTrfTxInf
+      Cdtr/PstlAdr                          ← already structured
+      <strong>CdtrAgt</strong>                              ← INSERT TARGET (only V001 work)
+        FinInstnId
+          BIC
+          Nm
+          <strong>PstlAdr</strong>
+            Ctry      (FPAYHX-ZBISO)
+            AdrLine   (FPAYH-ZBSTR)
+            AdrLine   (FPAYH-ZBORT)
+            AdrLine1  (BAdI FI_CGI_DMEE_EXIT_W_BADI)
+            AdrLine2  (BAdI FI_CGI_DMEE_EXIT_W_BADI)
+      UltmtCdtr/PstlAdr                     ← already structured
+      RmtInf/Ustrd  ← PPC tags, DO NOT TOUCH</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;PmtInf&gt;
+    &lt;Dbtr&gt;...&lt;/Dbtr&gt;
+    &lt;DbtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;...&lt;/IBAN&gt;
+    &lt;DbtrAgt&gt;&lt;FinInstnId&gt;&lt;BIC&gt;...
+    &lt;CdtTrfTxInf&gt;
+      &lt;Cdtr&gt;...&lt;/Cdtr&gt;
+      &lt;CdtrAgt&gt;
+        &lt;FinInstnId&gt;
+          &lt;BIC&gt;GTBINGLA&lt;/BIC&gt;
+          &lt;Nm&gt;GUARANTY TRUST BANK PLC&lt;/Nm&gt;
+          &lt;PstlAdr&gt;
+            &lt;Ctry&gt;NG&lt;/Ctry&gt;
+            &lt;AdrLine&gt;635 AKIN ADESOLA STREET&lt;/AdrLine&gt;
+            &lt;AdrLine&gt;LAGOS&lt;/AdrLine&gt;
+          &lt;/PstlAdr&gt;
+        &lt;/FinInstnId&gt;
+      &lt;/CdtrAgt&gt;
+      &lt;UltmtCdtr&gt;...&lt;/UltmtCdtr&gt;
+      &lt;RmtInf&gt;&lt;Ustrd&gt;PPC...&lt;/Ustrd&gt;...   ← PPC dispatch
+    &lt;/CdtTrfTxInf&gt;</pre></td>
+        </tr>
+        <tr><th>tx DMEE — V001 (UI, after Step B)</th><th>F110 output — V001 (XML, after Phase 5 cutover)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">    Cdtr/PstlAdr                          ← unchanged
+    CdtrAgt/FinInstnId/<strong>PstlAdr</strong>
+      Ctry        (FPAYHX-ZBISO)            ← V000, kept
+      AdrLine     (FPAYH-ZBSTR)             ← V000, suppressed (cond)
+      AdrLine     (FPAYH-ZBORT)             ← V000, suppressed (cond)
+      AdrLine1    (BAdI)                    ← V000, suppressed (cond)
+      AdrLine2    (BAdI)                    ← V000, suppressed (cond)
+      <strong>StrtNm      (FPAYH-ZBSTR)</strong>             ← INSERT row 21
+      <strong>BldgNb      (FPAYH-ZBSTR[60..])</strong>       ← INSERT row 22
+      <strong>PstCd       (FPAYH-ZBPST)</strong>             ← INSERT row 23
+      <strong>TwnNm       (FPAYH-ZBORT)</strong>             ← INSERT row 24
+    UltmtCdtr/PstlAdr                       ← unchanged
+    RmtInf/Ustrd  ← PPC tags, UNCHANGED
+
+(BAdI: YCL_IDFI_CGI_DMEE_FALLBACK_CM001
+       Pattern A 3-line guard added — row 26)</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;CdtrAgt&gt;
+    &lt;FinInstnId&gt;
+      &lt;BIC&gt;GTBINGLA&lt;/BIC&gt;
+      &lt;Nm&gt;GUARANTY TRUST BANK PLC&lt;/Nm&gt;
+      &lt;PstlAdr&gt;
+        &lt;Ctry&gt;NG&lt;/Ctry&gt;
+                                          ← 4 AdrLines suppressed
+        &lt;StrtNm&gt;635 AKIN ADESOLA&lt;/StrtNm&gt; ← new
+        &lt;BldgNb&gt;635&lt;/BldgNb&gt;             ← new
+        &lt;PstCd&gt;...&lt;/PstCd&gt;               ← new
+        &lt;TwnNm&gt;LAGOS&lt;/TwnNm&gt;             ← new
+      &lt;/PstlAdr&gt;
+    &lt;/FinInstnId&gt;
+  &lt;/CdtrAgt&gt;
+  ...
+  &lt;RmtInf&gt;&lt;Ustrd&gt;PPC...&lt;/Ustrd&gt;...    ← UNCHANGED</pre></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>CGI bridge read-back</strong>: 1 INSERT entry point (CdtrAgt/.../PstlAdr) + 4 new tags + Pattern A BAdI guard (matrix row 26 — the only ABAP touch in V001). Empty-suppress condition required on each new node IF Empty Element Processing setting is "Do Not Remove" (TBD Phase 2 verification — see CGI tree-level tab settings stub above).</p>
+
+      <p style="font-weight:600;color:#0369a1;font-size:14px;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">CGI Per-target simplified mapping — V001 INSERT target at the row/XML level (1 target — CdtrAgt)</p>
+
+      <p>One block. The block shows the path the operator navigates (top), then V000 today (DMEE rows on the left ↔ XML the bank receives on the right), then V001 (same rows + INSERTs ↔ updated XML output). The bank only ever sees the XML on the right.</p>
+
+      <!-- TARGET #7 — CGI CdtrAgt -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #7 — CGI <code>CdtrAgt/PstlAdr</code> (paying bank, full 4-leaf INSERT)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code> in <code>/CGI_XML_CT_UNESCO</code>. Currently only Ctry + AdrLine + AdrLine1/2 — missing all 4 structured atoms. /CGI_XML_CT_UNESCO_1 SYNCs from this parent (matrix row 25).</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 5 rows under CdtrAgt/.../PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZBISO
+TECH_NAME=AdrLine   MP_SC_FLD=ZBSTR
+TECH_NAME=AdrLine   MP_SC_FLD=ZBORT
+TECH_NAME=AdrLine1  (BAdI)
+TECH_NAME=AdrLine2  (BAdI)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;NG&lt;/Ctry&gt;
+      &lt;AdrLine&gt;635 AKIN ADESOLA STREET&lt;/AdrLine&gt;
+      &lt;AdrLine&gt;LAGOS&lt;/AdrLine&gt;
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 5 rows + 4 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=ZBISO            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=ZBSTR            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=ZBORT            ← V000, suppressed
+TECH_NAME=AdrLine1  (BAdI)                    ← V000, suppressed
+TECH_NAME=AdrLine2  (BAdI)                    ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=ZBSTR            ← INSERT (matrix row 21)
+TECH_NAME=BldgNb    MP_SC_FLD=ZBSTR[60..]     ← INSERT (matrix row 22)
+TECH_NAME=PstCd     MP_SC_FLD=ZBPST            ← INSERT (matrix row 23)
+TECH_NAME=TwnNm     MP_SC_FLD=ZBORT            ← INSERT (matrix row 24)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;NG&lt;/Ctry&gt;
+      &lt;StrtNm&gt;635 AKIN ADESOLA&lt;/StrtNm&gt;    ← new tag
+      &lt;BldgNb&gt;635&lt;/BldgNb&gt;                ← new tag
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+      &lt;TwnNm&gt;LAGOS&lt;/TwnNm&gt;                ← new tag
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><em>Read this in plain English: 1 entry point (CdtrAgt) · 4 INSERT rows (matrix rows 21-24) · 4 new XML tags. PLUS Pattern A 3-line BAdI guard (matrix row 26) — the only ABAP touch in the entire V001 — protecting the SocGen overflow logic. PLUS 4 DMEE_TREE_COND empty-suppress conditions (TBD per Phase 2 Post Processing tab capture). The /CGI_XML_CT_UNESCO_1 twin tree inherits these 4 atoms via SYNC (FIRSTNODE_ID propagation from this parent — matrix row 25).</em></p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">CGI Step A · PURGE + CREATE</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → Tree type = <code>PAYM</code> + Format tree = <code>/CGI_XML_CT_UNESCO</code> → Display → confirm V000 + dormant V001</li>
+        <li>Change → Maintenance → <strong>Delete Version</strong> 001 → Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code></li>
+        <li><strong>Create Version</strong> 000 → 001 → Save → transport <code>D01K-V001-CGI-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step B · 4 INSERTs CdtrAgt + 4 DMEE_TREE_COND + Pattern A BAdI guard (the ONLY ABAP change in V001)</p>
+      <ol style="font-size:12px">
+        <li>Switch tree view to V001. Navigate to <strong>CdtrAgt/.../PstlAdr</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code></li>
+        <li>INSERT StrtNm (FPAYH ZBSTR[0..70] · matrix row 21) + BldgNb (FPAYH ZBSTR[60..75] · row 22) + PstCd (FPAYH ZBPST · row 23) + TwnNm (FPAYH ZBORT · row 24)</li>
+        <li>For each of the 4 new nodes: add DMEE_TREE_COND empty-suppress condition (likely needed, verify Empty Element Processing setting first)</li>
+        <li>Save → transport <code>D01K-V001-CGI-01</code></li>
+        <li><strong>SEPARATE WORKBENCH TRANSPORT — Pattern A guard</strong>: SE24 → open class <code>YCL_IDFI_CGI_DMEE_FALLBACK</code> → method <code>CM001::GET_CREDIT</code> → add 3-line guard around the SocGen Cdtr name-overflow logic (matrix row 26):
+          <pre style="font-size:10px;margin:4px 0">WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.            " ← V001 GUARD: only prepend if StrtNm empty
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   " V000 legacy preserved
+  ENDIF.</pre>
+        Activate → transport prompt (Workbench K) → assign to <code>D01K-BADI-FIX-01</code>. Reviewer: N_MENARD.</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CGI Step B verification</strong>: VERSION=001 node count = 631+4=635. CdtrAgt/PstlAdr now has 5+4=9 children. <strong>PPC regression check (CRITICAL)</strong>: confirm <code>InstrForCdtrAgt/InstrInf</code> and <code>RmtInf/Ustrd</code> dispatch behavior unchanged for AE/BH/CN/ID/IN/JO/MA/MY/PH country payments. Use the deterministic PPC validation script (Gold DB query against YTFI_PPC_STRUC + T015L) to compare V000 vs V001 expected outputs.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CGI Step C · ACTIVATE V001 (SAP-correct procedure)</p>
+      <ol style="font-size:12px">
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx DMEE → /CGI_XML_CT_UNESCO → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → V000 archived to V002 (next free). Document the version number.</li>
+        <li>tx <code>DMEE</code> → /CGI_XML_CT_UNESCO → Format tree → Change → <strong>Tree → Activate</strong> → V001 content overwrites V000</li>
+        <li>Save → cutover transport (Workbench R3TR DMEE class K) — recommend stagger after SEPA + CITI validate</li>
+        <li>From cutover, every F110 CGI run (SOG01 USD/EUR/GBP, SOG03 GBP, payment methods N/J) produces V001 XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>CGI rollback (5-15 min)</strong>: Utilities → Versions → Version Management → select V002 snapshot → Retrieve → Activate → original V000 restored. Pattern A guard is backward-compatible (V000 path unaffected by guard since c_value will not be initial under V000 — guard only fires for V001 structured emission).</p>
+      <p style="font-size:11px;color:#475569"><strong>CGI code change required: YES — Pattern A 3-line guard</strong> in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Workbench transport <code>D01K-BADI-FIX-01</code>. Reviewer N_MENARD. Backward-compatible with V000.</p>
+    </div>
+    </div>

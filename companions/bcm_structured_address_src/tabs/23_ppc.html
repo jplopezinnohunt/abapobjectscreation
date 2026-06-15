@@ -1,0 +1,206 @@
+<div id="tab-ppc" class="content">
+    <div class="section" style="background:#fef3c7;border-color:#e67e22">
+      <h3 style="color:#e67e22">🆕 PPC System (Payment Purpose Code) — discovered 2026-04-29</h3>
+
+      <h4>What is PPC and why does it exist?</h4>
+      <p><strong>Payment Purpose Code</strong> (PPC) is a regulatory tag that 9 countries — UAE, Bahrain, China, Indonesia, India, Jordan, Morocco, Malaysia, Philippines — require their receiving banks to receive on every inbound USD payment. The code identifies the <em>purpose</em> of the payment (consultancy fee / supplier invoice / travel reimbursement / regulatory cost / etc.) so the receiving central bank can categorize cross-border flows for capital-controls reporting. <strong>Without PPC, banks in those 9 countries reject the payment</strong> — the money bounces back, the vendor doesn't get paid, the finance team has to retry with a corrected file.</p>
+
+      <h4>Why this tab exists at all (this is critical context for V001)</h4>
+      <p>Until 2026-04-29 the team thought there was <em>one</em> custom development stream on /CGI_XML_CT_UNESCO: Pattern A (the SocGen name-overflow logic). Then N_MENARD shared an email with 3 functional + technical specs revealing a <strong>second, equally important custom stream</strong>: the entire PPC infrastructure. Built March 2024, production-active in P01 (but not in D01 — that's a known retrofit gap). It uses two custom Z-tables (YTFI_PPC_TAG, YTFI_PPC_STRUC) plus a UTIL class plus a country-dispatcher BAdI. Touching /CGI_XML_CT_UNESCO V001 without understanding PPC would have been a serious risk.</p>
+      <p>The discovery of PPC also forced the team to add an explicit <strong>PPC preservation requirement</strong> to the Change Strategy tab: the V001 CdtrAgt fix must NOT alter the BAdI dispatch behavior on <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (used by AE/CN) or <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (used by the other 7 countries). Both XML nodes sit inside the same <code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;</code> wrapper as the CdtrAgt fix, so an over-broad refactor could accidentally break PPC routing.</p>
+
+      <h4>How to read this tab</h4>
+      <p>The tables below first show the <strong>9 countries</strong> with their tag locations (where in the XML the PPC value goes) and example values, then the <strong>infrastructure</strong> (tables, classes, dispatcher logic). Use this as both reference (when reviewing /CGI_XML_CT_UNESCO V001 design) and validation context (when the simulator validates PPC dispatch behavior is preserved).</p>
+
+      <p style="color:#64748b;font-size:12px;margin-top:14px">Source: N_MENARD email <code>DMEE.eml</code> 2026-04-29 with 3 docx attachments saved to <code>Zagentexecution/incidents/xml_payment_structured_address/nmenard_email_2026-04-29/</code>. <strong>This is a SECOND custom development stream</strong> on /CGI_XML_CT_UNESCO beyond Pattern A. Without PPC tags, banks for 9 countries reject USD payments via SocGen.</p>
+
+      <h4 style="color:#e67e22">9 PPC countries</h4>
+      <table>
+        <tr><th>LAND1</th><th>Country</th><th>Tag location</th><th>Format example</th></tr>
+        <tr><td>AE</td><td>UAE</td><td><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code></td><td><code>/REC/FIS</code></td></tr>
+        <tr><td>BH</td><td>Bahrein</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/STR/Travel</code></td></tr>
+        <tr><td>CN</td><td>China</td><td><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code></td><td><code>/REC/CSTRDR</code></td></tr>
+        <tr><td>ID</td><td>Indonesia</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/2490/Consulting</code></td></tr>
+        <tr><td>IN</td><td>India</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>P0301;Purchases;INV;6523486</code></td></tr>
+        <tr><td>JO</td><td>Jordan</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/801/Consulting</code></td></tr>
+        <tr><td>MA</td><td>Morocco</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/510/Consulting</code></td></tr>
+        <tr><td>MY</td><td>Malaysia</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/16510/Consulting</code></td></tr>
+        <tr><td>PH</td><td>Philippines</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td><code>/PURP/SUPP/Consulting</code></td></tr>
+      </table>
+
+      <h4 style="color:#e67e22">DDIC inventory (11 objects, all by N_MENARD 2024-09-06 in P01)</h4>
+      <table>
+        <tr><th>Object</th><th>Type</th><th>Content</th><th>D01 vs P01</th></tr>
+        <tr><td><code>YTFI_PPC_TAG</code></td><td>TABL (5 fields)</td><td>11 rows mapping (LAND1, TAG_ID, DEB_CRE) → XML tag location</td><td>✅ Identical</td></tr>
+        <tr><td><code>YTFI_PPC_STRUC</code></td><td>TABL (9 fields)</td><td>133 rows building blocks (LAND1, TAG_ID, PAY_TYPE, CODE_ORD)</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PPC_CODE</code></td><td>DOMA</td><td>5 values: PPC_VAR / PPC_DESCR / SEPARATOR / FIXED_VAL / PAY_FIELD</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PAY_TYPE</code></td><td>DOMA</td><td>4 values: '' / P (payroll) / R (replenishment) / O (third-party)</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_PAY_STRUC</code></td><td>DOMA</td><td>3 values: FPAYH / FPAYHX / FPAYP</td><td>✅ Identical</td></tr>
+        <tr><td><code>YD_FI_TAG_ID</code></td><td>DOMA</td><td>Free text (e.g., USTRD, INSTRINF, -INSTRINF)</td><td>✅ Identical</td></tr>
+        <tr><td>5 data elements (YE_FI_*)</td><td>DTEL × 5</td><td>Wrappers for above domains</td><td>✅ Identical</td></tr>
+      </table>
+      <p><strong>DDIC drift</strong>: D01 timestamps 2024-03-18 vs P01 2024-09-06 (~6 months). Structure + data byte-identical = non-functional drift.</p>
+
+      <h4 style="color:#e67e22">Data flow — where the PPC value originates (invoice → payment → tag)</h4>
+      <p style="font-size:13px;color:#1f2937">Brain anchor: <b>claim 97</b> (PPC system) · code-traced evidence: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_UTIL========CM003.abap</code> line 48 (<code>READ TABLE mt_t015l WITH KEY lzbkz = is_fpayp-lzbkz</code>). The PPC code is NOT entered at payment time — it is set when the <b>invoice is posted</b> and then read downstream during F110.</p>
+
+      <p style="font-size:12px;color:#475569;background:#fef3c7;padding:8px;border-radius:4px"><b>Reading-note (UNESCO data model)</b>: BSEG is a cluster table — not directly RFC-readable. UNESCO's Gold DB exposes line items via the <b><code>bseg_union</code> view</b> (BSIS ∪ BSAS ∪ BSIK ∪ BSAK ∪ BSID ∪ BSAD, 32 cols, 4.7M rows). For vendor line items, LZBKZ lives on <b>BSIK</b> (open) / <b>BSAK</b> (cleared) — accessed via <code>bseg_union</code>. F110 itself uses SAP-std internal logic to read open items via BSIK, not via the cluster.</p>
+
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>Stage</th><th>SAP transaction</th><th>Where stored</th><th>Who maintains</th><th>What gets validated against what</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fef9c3">
+            <td><b>1. Invoice posting</b><br/>(the moment the PPC is "imagined onto" the document)</td>
+            <td><code>FB60</code> / <code>MIRO</code> / <code>F-43</code> / <code>FBV1</code></td>
+            <td>SAP writes the line to the cluster (BSEG) AND populates the secondary indices: <b><code>BSIK-LZBKZ</code></b> (vendor open items) — 3-char SCB Statistical Bank Indicator. Visible to us via <b><code>bseg_union</code></b>.</td>
+            <td>AP clerk / Finance team — entered on the "Payment" tab of the vendor line</td>
+            <td>F4-help on LZBKZ already validates against <b>T015L</b> at posting time. Invalid LZBKZ codes are rejected by the standard SAP field check.</td>
+          </tr>
+          <tr style="background:#dbeafe">
+            <td><b>2. Master config</b><br/>(the table the invoice-time entry is checked against)</td>
+            <td><code>OBC8</code> / <code>SM30 V_T015L</code></td>
+            <td><b><code>T015L</code></b> (SAP-std SCB Indicators, ~73 rows in P01)</td>
+            <td>FI configurator (one-time + occasional) — populates <code>T015L-ZWCK1</code> with the PPC code <em>+</em> description (space-separated, e.g. <code>"P0301 PURCHASES"</code>)</td>
+            <td>SAP-std table. UNESCO does NOT customize T015L beyond standard SCB regulatory codes — the PPC-formatted ZWCK1 is the convention agreed with SocGen.</td>
+          </tr>
+          <tr style="background:#fef9c3">
+            <td><b>3. Payment buffering</b><br/>(F110 build phase, before DMEE)</td>
+            <td><code>F110</code> proposal/run</td>
+            <td><b><code>FPAYP-LZBKZ</code></b> (SAP-std: F110 reads vendor open items via <b>BSIK</b> → builds <code>FPAYP</code> per item, inheriting <code>LZBKZ</code>)</td>
+            <td>SAP-std F110 logic — no UNESCO code involved here</td>
+            <td>FPAYP is the per-item payment buffer. The LZBKZ travels with the line item all the way into the DMEE BAdI context.</td>
+          </tr>
+          <tr style="background:#dcfce7">
+            <td><b>4. DMEE BAdI dispatch</b><br/>(the read + lookup at payment moment)</td>
+            <td>(internal, fires during DMEE tree traversal of <code>/CGI_XML_CT_UNESCO</code>)</td>
+            <td>BAdI reads <code>is_fpayp-lzbkz</code> → looks up <code>mt_t015l</code> (in-memory cache) → splits <code>ZWCK1</code> at space (first token = <em>PPC_VAR</em>, rest = <em>PPC_DESCR</em>)</td>
+            <td>N_MENARD code (<code>YCL_IDFI_CGI_DMEE_UTIL.CM003</code>)</td>
+            <td><b>Lookup keys</b>: <code>(land1, deb_cre, pay_type, tag_full)</code> against <b><code>YTFI_PPC_STRUC</code></b> (133 positional rows) selects WHICH building blocks concat into the tag, in WHICH order. <code>YTFI_PPC_TAG</code> (11 rows) decides WHERE in the XML the result goes.</td>
+          </tr>
+          <tr style="background:#dcfce7">
+            <td><b>5. XML emission</b></td>
+            <td>(DMEE writes node)</td>
+            <td>Final concatenated value emitted into <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (AE/CN) OR <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (BH/ID/IN/JO/MA/MY/PH)</td>
+            <td>SAP-std DMEE engine</td>
+            <td>Receiving central bank validates per its own regulatory rules (e.g. India RBI P-codes, China SAFE codes). Reject = payment bounce.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><b>The two validations that matter</b>:</p>
+      <ul style="font-size:12px;color:#475569">
+        <li><b>SAP-side, at invoice posting</b>: F4-help on BSEG-LZBKZ validates against T015L existence — guarantees no payment carries a non-existent SCB code.</li>
+        <li><b>UNESCO-side, at DMEE traversal</b>: YTFI_PPC_STRUC LOOP filters by <code>(land1+deb_cre+pay_type+tag_full)</code>; if no row matches for the country, the BAdI returns <code>ev_subrc=4</code> and the XML tag emits empty/default (PPC fails silently — bank rejection downstream).</li>
+      </ul>
+
+      <p style="font-size:12px;color:#1f2937;margin-top:8px;background:#fef3c7;padding:8px;border-radius:4px"><b>Operational implication for V001</b>: V001 changes (CdtrAgt structured nodes) do NOT touch FPAYP-LZBKZ, T015L, or YTFI_PPC_STRUC — but they MUST preserve the existence of the <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> and <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> XML tags so the BAdI write path still reaches them. If V001 accidentally suppresses either tag for a PPC country, payment to AE/BH/CN/ID/IN/JO/MA/MY/PH gets rejected at the receiving bank.</p>
+
+      <h4 style="color:#e67e22">Code chain (PPC dispatch)</h4>
+      <pre style="font-size:11px">
+F110 → /CGI_XML_CT_UNESCO traversal
+  ↓ DMEE node BAdI FI_CGI_DMEE_EXIT_W_BADI fires
+  ↓ for FR co code (UNES) → YCL_IDFI_CGI_DMEE_FR  ⚠️ method CM002 P01-ONLY (retrofit needed)
+       ↓ NEW ycl_idfi_cgi_dmee_util( )
+       ↓ lo_cgi_util->get_tag_value_from_custo(land1, tag_full, deb_cre, fpayh, fpayhx, fpayp)
+         ↓ YCL_IDFI_CGI_DMEE_UTIL_CM003 (identical D01↔P01)
+            ↓ pay_type from i_fpayh-dorigin(2): HR→P, TR→R, OTHERS→O
+            ↓ READ TABLE mt_t015l (SCB indicators master, 73 rows)
+            ↓ LOOP YTFI_PPC_STRUC WHERE land1+pay_type+tag_full match
+            ↓ Build via positional concat:
+                SEPARATOR/FIXED_VAL → append literal
+                PPC_VAR → T015L.ZWCK1 first space-token
+                PPC_DESCR → T015L.ZWCK1 rest after first space
+                PAY_FIELD → dynamic field assign IS_FPAYH/IS_FPAYHX/IS_FPAYP
+            ↓ RETURN populated o_value
+       ↓ DMEE writes o_value into the XML tag
+      </pre>
+
+      <h4 style="color:#dc2626;margin-top:14px">⛔ GAP — LZBKZ has no upstream validation today (finding 2026-04-30)</h4>
+      <p style="font-size:13px;color:#1f2937">Brain anchor: <b>KU-PPC-LZBKZ-VALIDATION</b>  · evidence: GB922 zero substitutions targeting <code>SUBSFIELD='LZBKZ'</code> · YRGGBS00 1,592-line full-source grep zero matches for "LZBKZ" / "SCB" / "stat\\w*\\s*bank" / "reporting indicator" · GB901/GB922 audit of UNESCO custom validation+substitution chain.</p>
+
+      <p style="font-size:13px;color:#1f2937;background:#fee2e2;padding:8px;border-radius:4px"><b>The risk in one sentence</b>: today an AP clerk can post FB01 / FB60 / MIRO / F-43 against a vendor whose bank is in AE/BH/CN/ID/IN/JO/MA/MY/PH <em>without entering LZBKZ</em>. At F110 time the BAdI looks up T015L with empty <code>FPAYP-LZBKZ</code> → no match → empty <code>&lt;InstrInf&gt;</code> / <code>&lt;Ustrd&gt;</code> PPC tag → bank rejects the payment.</p>
+
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>Layer</th><th>What exists today</th><th>LZBKZ enforcement?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>SAP-std F4 check</b> at field entry</td><td>T015L lookup (73 codes for 9 PPC countries: AE×9 · BH×6 · CN×3 · ID×9 · IN×11 · JO×10 · MA×10 · MY×10 · PH×5)</td><td style="background:#fef3c7">⚠ Verifies entered code EXISTS in T015L · does NOT require entry</td></tr>
+          <tr><td><b>UNESCO validation</b> (GGB0 BOOLCLASS=009 VALID='UNES')</td><td>12 steps in GB931 (claim 34) · steps focus on XREF1/XREF2/XREF3 (claims 47/48)</td><td style="background:#fee2e2">❌ No step references LZBKZ</td></tr>
+          <tr><td><b>UNESCO substitution</b> (GGB1 GB922)</td><td>218 rows across multiple SUBSTID</td><td style="background:#fee2e2">❌ Zero rows with <code>SUBSFIELD='LZBKZ'</code> (Gold DB verified)</td></tr>
+          <tr><td><b>Custom code</b> YRGGBS00 (1,592 lines, 69 FORMs U100-U913 + UXR1/UXR2/UZLS/UAEP/UIT1/...)</td><td>69 FORMs implementing exit-form validation+substitution</td><td style="background:#fee2e2">❌ Zero matches for "LZBKZ" or "SCB" / "stat\\w*\\s*bank" / "reporting indicator" in full-source grep</td></tr>
+          <tr><td><b>Vendor master discipline</b></td><td>LFB1 has no PPC-country flag · LFBK has BANKS but no auto-derive rule</td><td style="background:#fee2e2">❌ No vendor-level LZBKZ default</td></tr>
+        </tbody>
+      </table>
+
+      <h5 style="color:#dc2626;margin-top:14px">Fix candidates (4 options, ranked)</h5>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>#</th><th>Where</th><th>What</th><th>Effort</th><th>Trade-off</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#dcfce7"><td><b>A · RECOMMENDED</b></td><td><b>GGB0 validation</b>, BOOLCLASS=009 VALID='UNES' new step</td><td><code>IF LFBK-BANKS (vendor's bank country) IN PPC list AND BSEG-LZBKZ IS INITIAL → BLOCK with error "PPC country requires SCB indicator"</code></td><td>~1 day config + N_MENARD review</td><td><b>Hard stop at posting</b>. Best UX (clerk sees error immediately). Caveat: claim 39 — F110 BAPI bypasses callpoint 3 substitutions; need to verify validation callpoint 2 also fires for BAPI postings, otherwise need Option C as backstop.</td></tr>
+          <tr><td>B</td><td>GGB1 substitution new step in UNESCO SUBSTID</td><td>If LZBKZ initial + PPC country → write a vendor-master default (requires LFB1-Z* field)</td><td>~2 days config + Z-field on LFB1</td><td>Soft enforcement. Breaks if vendor master not maintained per-vendor.</td></tr>
+          <tr><td>C</td><td>F110 / BCM pre-submit ABAP check</td><td>Check before file generation; reject batch if any item missing PPC-required LZBKZ for PPC-country vendors</td><td>~3 days ABAP</td><td>Late catch (after invoice already posted); blocks payment runs not invoices. Useful as backstop if A insufficient.</td></tr>
+          <tr><td>D</td><td>Master Data process discipline</td><td>BP creation/maintenance for PPC-country vendors mandates LZBKZ-default population</td><td>Process change only</td><td>No code; depends on people consistency.</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><b>Status</b>: PENDING — raised, registered as <b>KU-PPC-LZBKZ-VALIDATION</b> in brain (<code>brain_v2/agi/known_unknowns.json</code>). Phase 2 candidate (operational hardening — V001 deals with format only; this gap is what makes V001 actually work end-to-end in production for PPC countries). Decision needed: Marlies + N_MENARD + Pablo.</p>
+
+      <h4 style="color:#e67e22">Why D01 testing of PPC is BROKEN today</h4>
+      <p>D01 has the YTFI_PPC tables + UTIL/CM003 dispatcher + T015L master. But D01's
+      <code>YCL_IDFI_CGI_DMEE_FR</code> has method <strong>CM001</strong> instead of P01's <strong>CM002</strong>.
+      The CM002 method is the entry point that calls UTIL→get_tag_value_from_custo. Without it:</p>
+      <ul>
+        <li>F110 in D01 to vendor in AE/BH/CN/ID/IN/JO/MA/MY/PH via /CGI tree</li>
+        <li>BAdI fires for <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> or <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> node</li>
+        <li>FR class CM001 (legacy) handles it → does NOT dispatch PPC</li>
+        <li>Output XML has the tag empty or with default value → bank would reject in production</li>
+      </ul>
+      <p>→ <strong>Q1bis (FR method swap) RESOLVED</strong>: CM002 is the PPC integration that was added
+      to P01 in March 2024 and never came back to D01. <strong>Retrofit to D01 is mandatory.</strong></p>
+
+      <h4 style="color:#e67e22">Connection to Worldlink dual-route (claim 95)</h4>
+      <p>PM Model 10 found exotic currencies route via two paths:</p>
+      <ul>
+        <li><strong>Path A: Citi (CIT01/CIT04) → /CITI tree</strong> — BRL/MGA/TND (no PPC)</li>
+        <li><strong>Path B: SocGen (SOG01) → /CGI tree</strong> — INR/THB/KES/NGN/CNY (PPC FIRES for IN/CN/MY/PH/JO/MA)</li>
+      </ul>
+      <p>The CGI tree carries treasury exotic-currency payments via SocGen which trigger PPC.
+      Volume per PPC country (REGUH 2025+): IN 2,098 · MY 800+ · PH 800+ · CN 796 · JO/MA hundreds.</p>
+
+      <h4 style="color:#e67e22">V001 design impact (CRITICAL)</h4>
+      <p>The CGI tree V001 changes (CdtrAgt structured nodes) MUST PRESERVE PPC tag locations:</p>
+      <ul>
+        <li><code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (used by AE/CN PPC)</li>
+        <li><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (used by BH/ID/IN/JO/MA/MY/PH PPC)</li>
+      </ul>
+      <p>If V001 modifies these node definitions or conditions in a way that suppresses PPC dispatch,
+      payments to vendors with banks in 9 countries will fail in production.</p>
+
+      <h4 style="color:#e67e22">Test matrix extension — 27 PPC scenarios</h4>
+      <p>Phase 3 test matrix adds <strong>9 countries × 3 payment types (O/P/R)</strong> = 27 scenarios.
+      Each must verify the PPC tag content matches V000 baseline byte-for-byte after V001 changes.</p>
+      <table>
+        <tr><th>Test ID</th><th>LAND1</th><th>Pay type</th><th>Expected output</th></tr>
+        <tr><td>PPC-T01</td><td>AE</td><td>O (third-party)</td><td><code>/REC/&lt;PPC&gt;</code> in <code>&lt;InstrInf&gt;</code></td></tr>
+        <tr><td>PPC-T02</td><td>BH</td><td>O</td><td><code>/STR/&lt;description&gt;</code> in <code>&lt;Ustrd&gt;</code></td></tr>
+        <tr><td>PPC-T03</td><td>CN</td><td>O</td><td><code>/REC/&lt;PPC&gt;</code> in <code>&lt;InstrInf&gt;</code></td></tr>
+        <tr><td>PPC-T04..T09</td><td>ID/IN/JO/MA/MY/PH</td><td>O</td><td>Various PURP/PPC formats in <code>&lt;Ustrd&gt;</code></td></tr>
+        <tr><td>PPC-T10..T18</td><td>9 × P (payroll)</td><td>P</td><td>Fixed payroll PPC per country (e.g., AE → /REC/SAL)</td></tr>
+        <tr><td>PPC-T19..T27</td><td>9 × R (replenishment)</td><td>R</td><td>Fixed replenishment PPC per country (e.g., AE → /REC/IGT)</td></tr>
+      </table>
+
+      <h4 style="color:#e67e22">References</h4>
+      <ul>
+        <li>Brain claims: 96 (Pattern A bank-mandated), 97 (PPC system), 98 (DDIC inventory)</li>
+        <li>Source spec: <code>Zagentexecution/incidents/xml_payment_structured_address/nmenard_email_2026-04-29/</code> (3 docx)</li>
+        <li>Decoded analysis: <code>knowledge/domains/Payment/phase0/NMENARD_DMEE_specs_decoded.md</code></li>
+        <li>Source code: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_UTIL========CM003.abap</code> (79 lines, identical D01↔P01)</li>
+        <li>Source code: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_FR==========CM002.abap</code> (17 lines, P01-only, retrofit target)</li>
+      </ul>
+    </div>
+    </div>

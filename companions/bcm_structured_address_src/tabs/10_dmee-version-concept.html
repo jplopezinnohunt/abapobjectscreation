@@ -1,0 +1,330 @@
+<div id="tab-dmee-version-concept" class="content">
+    <div class="section">
+      <h3>DMEE Configuration — the version thing, in plain English</h3>
+
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↪ Forward to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for the three operations on V001, per-target simplified mapping, runtime buffers, PMW retrofit, step-by-step in tx DMEE, and the all-trees before/after table. This sub-tab covers <strong>only the version mental model</strong> — V000 vs V001, "Active version" vs "Maintenance version", what already exists in D01, and visual proof of claim 109.</p>
+
+      <div style="background:#e8f5e9;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px">
+        <p style="margin:0;font-size:13px;color:#1f2937"><strong>The one-line takeaway</strong>: every change in V001 is a row added to or modified in <code>DMEE_TREE_NODE</code> — done in tx <strong>DMEE</strong>, captured as a <strong>workbench transport</strong> (<code>R3TR DMEE</code>, class K — confirmed via SAP help). No ABAP for the row-level work. The same XML segments (<code>&lt;Dbtr&gt;</code>, <code>&lt;CdtrAgt&gt;</code>, <code>&lt;Cdtr&gt;</code>, <code>&lt;UltmtCdtr&gt;</code>) stay where they are; we just put more children inside their <code>&lt;PstlAdr&gt;</code>.</p>
+      </div>
+
+      <div style="background:#fef3c7;border:3px solid #b45309;padding:18px 22px;margin:14px 0;border-radius:6px;font-size:13px">
+        <p style="margin:0 0 10px 0;color:#b45309;font-weight:700;font-size:15px">⚠ SAP-OFFICIAL CORRECTION — the version mechanism is OVERWRITE, not a flag flip</p>
+
+        <p style="margin:0 0 10px 0;color:#1f2937">Earlier sections of this companion described V001 activation as "an atomic flag flip on <code>EX_STATUS</code> that swaps Active ↔ Maintenance roles, with V000 preserved as dormant for instant rollback". <strong style="color:#b45309">That model is INCORRECT vs SAP-official ECC 6.0 DMEE behavior.</strong> Verified against SAP Help Portal (Version Management, Activating Format Trees), SAP Datasheet (function module DMEE_GET_BACK_ACTIVE_TREE_ABA), and SAP Community blogs. The corrected model:</p>
+
+        <table style="margin-top:8px;font-size:12px;width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#1e3a4a;color:#ffffff">
+              <th style="padding:8px;text-align:left;color:#fff;width:25%">Aspect</th>
+              <th style="padding:8px;text-align:left;color:#fff;width:38%">Wrong model (earlier in this tab)</th>
+              <th style="padding:8px;text-align:left;color:#fff;width:37%">SAP-correct model (per official docs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>Version label semantics</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5">"V000 and V001 are 2 cohabiting slots; labels are permanent; only EX_STATUS flag swaps which is active"</td>
+              <td style="padding:10px;border:1px solid #86efac;background:#dcfce7"><strong>V000 is ALWAYS the active version. V001 is ALWAYS the maintenance version.</strong> V002–V998 are archived historical snapshots. V999 is SAP-delivered. The labels are semantic roles, not slot numbers.</td>
+            </tr>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>What activation does</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5">"Atomic flag flip on EX_STATUS — V000 → blank, V001 → 'A'. V000 row data unchanged."</td>
+              <td style="padding:10px;border:1px solid #86efac;background:#dcfce7"><strong>V001's content is saved as V000, REPLACING the previous V000.</strong> The old V000 is OVERWRITTEN. No flag flip — content replacement. (SAP Help: "When you activate the maintenance version (001), the system stores it as the active version (000), replacing the previous active version.")</td>
+            </tr>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>V000 preservation</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5">"Automatic — V000 rows remain in DMEE_TREE_NODE after activation, dormant"</td>
+              <td style="padding:10px;border:1px solid #86efac;background:#dcfce7"><strong>NOT automatic.</strong> V000 is overwritten at activation. To preserve the old V000, you must run <strong>Generate Version</strong> on V000 BEFORE activating V001 → snapshot archived to V002 (or next free number).</td>
+            </tr>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>Rollback mechanism</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5">"Atomic flag flip in seconds — same dialog, select V000 → flip back"</td>
+              <td style="padding:10px;border:1px solid #86efac;background:#dcfce7"><strong>Multi-step Version Management procedure</strong>: tx DMEE → Utilities → Versions → Version Management → select V002 snapshot → <strong>Retrieve</strong> (copies V002 content into V001) → Tree → Activate (V001 with snapshot content overwrites V000). Time: 5–15 min per tree depending on size. Requires P01 DMEE-change authorization.</td>
+            </tr>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>Transport class</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5">"Customizing (W) for all DMEE_TREE_* changes"</td>
+              <td style="padding:10px;border:1px solid #86efac;background:#dcfce7"><strong>Workbench (K)</strong> — logical object <code>R3TR DMEE</code>, client-independent (despite being functionally customizing). Only TFPM042FB (matrix row 9) is true Customizing (W).</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p style="margin:12px 0 0 0;color:#1f2937"><strong>Sources</strong> (verified):</p>
+        <ul style="margin:6px 0 0 22px;color:#1f2937;font-size:12px">
+          <li><a href="https://help.sap.com/doc/8248d953189a424de10000000a174cb4/700_SFIN3E%20006/en-US/0a8ad0531d8b4208e10000000a174cb4.html" target="_blank">SAP Help Portal — Version Management (DMEE)</a></li>
+          <li><a href="http://saphelp.ucc.ovgu.de/NW750/EN/4e/3137932a87161ee10000000a42189b/content.htm" target="_blank">SAP Help — Activating Format Trees</a></li>
+          <li><a href="https://help.sap.com/doc/saphelp_nw74/7.4.16/en-US/a9/7e2ae837e511d5b3bf0050dae02d7c/content.htm" target="_blank">SAP Help — Displaying and Using Versions</a> (menu paths SE09 + Utilities Version Management)</li>
+          <li><a href="https://www.sapdatasheet.org/abap/func/dmee_get_back_active_tree_aba.html" target="_blank">DMEE_GET_BACK_ACTIVE_TREE_ABA function module</a> (function group <code>DMEE1_ABA</code>)</li>
+          <li><a href="https://techlorean.com/2020/05/06/sap-dme-tree-configuration-dmee/" target="_blank">Techlorean — DME Tree Configuration</a> (Workbench transport, R3TR DMEE confirmation)</li>
+          <li><a href="https://community.sap.com/t5/financial-management-q-a/how-to-update-dmee-format-cgi-xml-ct-to-the-pain-001-001-09-version/qaq-p/13897978" target="_blank">SAP Community — pain.001.001.09 update procedure</a></li>
+        </ul>
+
+        <p style="margin:12px 0 0 0;color:#1f2937;font-size:13px"><strong>Implication for the V001 deployment strategy</strong>: a new <strong>mandatory pre-cutover step</strong> is required — <strong>Generate Version on the current P01 V000 BEFORE activating V001</strong>. Without this snapshot, V000 is unrecoverable after the cutover. The corrected implementation strategy is described in the next subsection (with visual evidence captures from UNESCO's actual SAP confirming the model). <strong>All earlier lifecycle/playbook content based on the "atomic flag flip" assumption has been removed from this tab</strong>; the corrected procedure replaces it. If you encounter remaining wording about "EX_STATUS flip" or "rollback in seconds" elsewhere in the companion (e.g., Strategy tab "Rollback protocol"), re-read through this corrected lens.</p>
+      </div>
+
+      <h4 style="color:#0369a1;margin-top:18px">Visual evidence from UNESCO's actual SAP — tx DMEE screenshots verify the SAP-correct model</h4>
+
+      <p style="font-size:13px">The corrected model above is not theoretical — it matches what tx DMEE in UNESCO's actual SAP shows step by step. Five screenshots taken from <code>/CGI_XML_CT_UNESCO</code> in UNESCO's ECC 6.0 system confirm: (a) the operator UI exposes only "Active / Maintenance" as roles, (b) the menu path is exactly <code>Utilities → Versions → Version Management</code>, (c) UNESCO's V001 is currently a byte-equal dormant clone of V000 created by <code>FP_SPEZZANO</code> on 2025-03-20 (claim 109 — visually confirmed via Compare).</p>
+
+      <h5 style="color:#0369a1;margin-top:14px">Screenshot 1 — tx DMEE Initial Screen (the entry point)</h5>
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_initial_screen.png" alt="DME Engine Initial Screen for /CGI_XML_CT_UNESCO" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_initial_screen.png</strong> — DME Engine Initial Screen with <code>Tree type=PAYM</code> + <code>Format tree=/CGI_XML_CT_UNESCO</code>. The 3 buttons (Display / Change / Create) are the entry points. Click Display to inspect a version; Change to edit V001; Create to define a brand-new tree (Type 2 change in our taxonomy).</div>
+
+      <h5 style="color:#0369a1;margin-top:14px">Screenshot 2 — the Display popup proves "only 2 roles" — Active / Maintenance</h5>
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_version_popup_2_options.png" alt="Display format tree popup — Active version / Maintenance version" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_version_popup_2_options.png</strong> — After Display click, SAP prompts <em>"Which version would you like to display?"</em> with exactly <strong>2 buttons: Active version · Maintenance version · Cancel</strong>. <strong>This is the operator-facing reality</strong>: SAP does not present a numbered version list at the entry point. The V000/V001/V002+ labels exist at the table level (DMEE_TREE_HEAD.VERSION column) but the operator interacts via the 2 named roles. This is what the user observed and pushed back on — and it is correct.</div>
+
+      <h5 style="color:#0369a1;margin-top:14px">Screenshot 3 — the Utilities → Versions menu path is real</h5>
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_utilities_versions_menu.png" alt="DMEE menu Utilities → Versions → Version Management / Generate Version" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_utilities_versions_menu.png</strong> — Menu path: <code>Utilities → Versions → {Version Management | Generate Version}</code>. <strong>Note: Generate Version is grayed out in this screenshot</strong> — that is because the operator is in Display mode. To call Generate Version (the snapshot operation that enables rollback), the operator must enter Change mode first. <strong>This is the menu the V001 cutover playbook must use</strong>: Generate Version BEFORE the cutover (in Change mode) to snapshot V000 to V002 — without that snapshot, rollback after activation is impossible.</div>
+
+      <h5 style="color:#0369a1;margin-top:14px">Screenshot 4 — Version Management overview confirms the "2 dev DB versions + 0 historical" state</h5>
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_version_management_overview.png" alt="Versions of Format Tree /CGI_XML_CT_UNESCO showing V000 active and V001 Maintenance" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_version_management_overview.png</strong> — <strong>This is direct evidence of UNESCO's actual state</strong> for <code>/CGI_XML_CT_UNESCO</code>:
+        <ul style="margin:6px 0 0 22px">
+          <li>"Version(s) in the development database":<br>· <code>000 (active)</code> · 20.03.2025 16:03:41 · author <strong>FP_SPEZZANO</strong><br>· <code>001 (Maintenance version)</code> · 20.03.2025 16:03:41 · author <strong>FP_SPEZZANO</strong><br>(both rows have selection checkboxes; bottom row checked, indicating it's the one currently being inspected)</li>
+          <li>"Version(s) in the version database": <strong>empty</strong> — no V002, V003, etc. <strong>No historical snapshots exist today.</strong> This means: if V001 were activated right now without first running Generate Version on V000, the previous V000 content would be unrecoverable.</li>
+        </ul>
+        Both V000 and V001 share the same author + timestamp — consistent with claim 109 (V001 is a byte-clone of V000 from a Create Version operation that was never actually edited). FP_SPEZZANO authored this on 2025-03-20 (one of his 5 DMEE-touching 2025 Q1 transports per the Francesco audit in Phase 0).</div>
+
+      <h5 style="color:#0369a1;margin-top:14px">Screenshot 5 — Compare V001 with V000 → "No differences" → claim 109 visually proven</h5>
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_version_compare_no_differences.png" alt="Compare Version 001 with Version 000 — No differences between selected versions" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_version_compare_no_differences.png</strong> — From the Version Management overview, selecting V000 + V001 and clicking Compare yields the screen <em>"Format Tree /CGI_XML_CT_UNESCO: Compare Version 001 with Version 000"</em>. Output: <strong>"No differences between selected versions"</strong>. This is the visual confirmation of <strong>brain claim 109 (TIER_1)</strong>: V001 in this tree is a byte-equal clone of V000 — created by FP_SPEZZANO 2025-03-20, never edited since. The toolbar buttons (Header Attributes · Node Attributes · Deleted Nodes · Inserted Nodes · Delayed Nodes) are the categories of differences SAP would report — all empty for this comparison. <strong>For the V001 deployment, this dormant clone must be PURGED in Phase 2 Step 0 (D01-RETROFIT-01) before fresh V001 design is built</strong>, so the deployed V001 has a clean transport-trail tied to Phase 2 transports rather than to FP_SPEZZANO's 2025-03-20 Create Version event.</div>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>What these screenshots establish for the corrected strategy</strong>: (a) the operator UI confirms 2-role model (Active / Maintenance), not numeric navigation; (b) Generate Version exists at <code>Utilities → Versions → Generate Version</code> but requires Change mode; (c) UNESCO's CGI tree currently has 0 historical snapshots in the version database — meaning <strong>the very first thing Phase 5 cutover prep must do is run Generate Version on each tree's V000 to create the V002 snapshot, so rollback is possible</strong>; (d) claim 109 is visually proven, validating the PURGE of the dormant V001 in Phase 2 Step 0.</p>
+
+      <h4 style="color:#b45309;margin-top:18px">Corrected implementation strategy — the V000 snapshot pattern</h4>
+
+      <p style="font-size:13px">Given the SAP-correct model above, the V001 deployment must include a snapshot step BEFORE every activation in every system, not just the P01 cutover. The snapshot is what makes rollback possible. Without it, activation is one-way.</p>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th style="width:8%">Phase</th><th style="width:25%">Operation</th><th style="width:33%">SAP transaction / menu</th><th style="width:34%">Why this step exists</th></tr>
+
+        <tr style="background:#fef3c7">
+          <td><b>2 · 0a</b></td>
+          <td><strong>NEW: snapshot D01's current V000</strong> on each of the 4 trees before any V001 work</td>
+          <td>D01: tx <code>DMEE</code> → open tree → <code>Utilities → Versions → Generate Version</code></td>
+          <td>Captures D01 V000 to V002 (or next free). Enables D01-side rollback during Phase 3 unit test.</td>
+        </tr>
+        <tr>
+          <td><b>2 · 0b–0c</b></td>
+          <td>D01-RETROFIT-01 + D01-RETROFIT-02-PMW (unchanged)</td>
+          <td>STMS imports of pre-built transports</td>
+          <td>Bring D01 to byte-equality with P01 (DMEE trees + 5 BAdI classes + PMW infrastructure tables)</td>
+        </tr>
+        <tr>
+          <td><b>2 · 1–8</b></td>
+          <td>Build V001 content (matrix rows 1–25 INSERT/MODIFY/SYNC)</td>
+          <td>D01: tx DMEE → switch to Maintenance (V001) → edit nodes → save → activate → captures <code>R3TR DMEE</code> Workbench transport (K)</td>
+          <td>The V001 row-level work. Transport class is K (Workbench), not W (Customizing). Saves into D01 V001.</td>
+        </tr>
+        <tr>
+          <td><b>2 · 9</b></td>
+          <td>SEPA Event 05 registration (matrix row 9)</td>
+          <td>D01: tx <code>OBPM4</code> → INSERT row in TFPM042FB</td>
+          <td>One <strong>Customizing (W)</strong> transport — the only customizing-class change in V001 row-level work.</td>
+        </tr>
+        <tr>
+          <td><b>2 · 10</b></td>
+          <td>Pattern A 3-line BAdI guard (matrix row 26)</td>
+          <td>D01: tx <code>SE24</code> → YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</td>
+          <td>Workbench (K). N_MENARD-level reviewer required.</td>
+        </tr>
+
+        <tr style="background:#fef3c7">
+          <td><b>3 · pre</b></td>
+          <td><strong>NEW: confirm D01 V002 snapshot still exists</strong> from Phase 2 step 0a</td>
+          <td>D01: tx DMEE → Utilities → Versions → Version Management → verify V002 row present</td>
+          <td>Pre-flight check before the D01 activation. If snapshot missing, recreate via Generate Version.</td>
+        </tr>
+        <tr>
+          <td><b>3 · 1</b></td>
+          <td>Activate V001 in D01 (V001 content overwrites D01's V000)</td>
+          <td>D01: tx DMEE → Tree → Activate. For large trees: SE38 → <code>DMEE_ACTIVATE_TREE</code> background.</td>
+          <td>D01-only activation. <strong>Do NOT promote activation transport to V01 or P01.</strong></td>
+        </tr>
+        <tr>
+          <td><b>3 · 2–4</b></td>
+          <td>F110 sample runs · XSD validation · simulator regression · BCM end-to-end</td>
+          <td>D01: F110 + FDTA + offline XSD validator + simulator</td>
+          <td>Validate V001 output against pain.001.001.03 + .09 schemas. Compare to simulator predictions (claim 105).</td>
+        </tr>
+
+        <tr style="background:#fef3c7">
+          <td><b>4 · pre</b></td>
+          <td><strong>NEW: snapshot V01's current V000</strong></td>
+          <td>V01: tx DMEE → Utilities → Versions → Generate Version on each tree</td>
+          <td>V01-side rollback enabler before UAT activation.</td>
+        </tr>
+        <tr>
+          <td><b>4 · 1</b></td>
+          <td>Promote V001 content transport D01→V01 (R3TR DMEE workbench)</td>
+          <td>STMS</td>
+          <td>Delivers V001 content as maintenance version in V01 (not activated).</td>
+        </tr>
+        <tr>
+          <td><b>4 · 2</b></td>
+          <td>Activate V001 in V01</td>
+          <td>V01: tx DMEE → Tree → Activate</td>
+          <td>V001 content overwrites V01's V000. UAT can now run.</td>
+        </tr>
+        <tr>
+          <td><b>4 · 3</b></td>
+          <td>UAT scenarios + bank pilot via test gateway</td>
+          <td>V01 F110 + bank's UAT environment</td>
+          <td>Full bank-acceptance validation before P01 cutover.</td>
+        </tr>
+
+        <tr style="background:#fee2e2">
+          <td><b>5 · pre</b></td>
+          <td><strong>CRITICAL NEW STEP: snapshot P01's current V000</strong> on each of the 4 trees</td>
+          <td>P01: tx DMEE → Utilities → Versions → Generate Version (requires P01 DMEE-change auth)</td>
+          <td><strong>This is the rollback enabler for production. Without this snapshot, V000 is unrecoverable after V001 activation. Document the V### number assigned per tree.</strong></td>
+        </tr>
+        <tr>
+          <td><b>5 · 1</b></td>
+          <td>Promote V001 content transport D01→V01→P01</td>
+          <td>STMS chain</td>
+          <td>Delivers V001 content as maintenance in P01 (not activated yet — P01 still on V000).</td>
+        </tr>
+        <tr>
+          <td><b>5 · 2</b></td>
+          <td>Activate V001 in P01 (the cutover)</td>
+          <td>P01: tx DMEE → Tree → Activate. For large trees: <code>DMEE_ACTIVATE_TREE</code> background.</td>
+          <td>V001 content OVERWRITES P01's V000. F110 from this moment reads V001 → bank file emerges with structured address. The pre-step snapshot (V002) preserves the old V000 for rollback.</td>
+        </tr>
+        <tr>
+          <td><b>5 · 3</b></td>
+          <td>Post-cutover monitoring (14 days)</td>
+          <td>P01 BCM Monitor + Treasury inbox + bank acks</td>
+          <td>Verify bank acceptance + workflow 90000003 green + no schema errors.</td>
+        </tr>
+
+        <tr style="background:#fee2e2">
+          <td><b>5 · ROLLBACK</b></td>
+          <td><strong>Rollback procedure (if needed)</strong></td>
+          <td>P01: tx DMEE → Utilities → Versions → Version Management → select V002 → <strong>Retrieve</strong> → V002 copied into V001 → Tree → Activate</td>
+          <td>V001 (with snapshot content) overwrites V000. F110 reads the old content again. <strong>Time: 5–15 min per tree. NOT atomic flag flip.</strong> Requires P01 DMEE-change authorization.</td>
+        </tr>
+
+        <tr>
+          <td><b>5+30d</b></td>
+          <td>Optional: Delete V002 snapshots</td>
+          <td>P01: tx DMEE → Utilities → Versions → Version Management → select V002 → Delete</td>
+          <td>After V001 stable: free version slots. <strong>Irreversible</strong> — only after sustained bank acceptance.</td>
+        </tr>
+      </table>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>Risk profile under the corrected model</strong>: previous strategy presumed "rollback in seconds via atomic flip" → low operational risk. SAP-correct reality: <strong>rollback is multi-step, requires snapshot pre-positioning, requires P01 DMEE-change authorization, and takes 5–15 min per tree</strong>. Mitigation: (a) make Generate Version mandatory in pre-cutover preparation per tree; (b) dry-run the Retrieve+Activate procedure in V01 cutover to confirm the rollback works as expected; (c) document V### snapshot numbers per tree in a runbook accessible during the cutover window; (d) ensure P01 DMEE-change authorization is provisioned for the on-call operator at cutover time. The strategy stays SAFE because of the snapshots — but it is NOT instant.</p>
+
+      <div style="background:#fef3c7;border:3px solid #b45309;padding:16px 20px;margin:14px 0;border-radius:6px;font-size:14px">
+        <p style="margin:0 0 10px 0;color:#b45309;font-weight:700;font-size:15px">❓ Why versions exist at all — the 3 things versions give you (and the one thing they don't)</p>
+
+        <p style="margin:0 0 8px 0;color:#1f2937;font-size:13px">It is reasonable to ask: <em>"if I have to deploy a new XML format anyway, why does SAP wrap that in a 'version' concept? Couldn't we just edit V000 directly, or create a separate tree?"</em>. The answer is that <strong>versions solve three deployment problems that would otherwise force a destructive edit or a much heavier change project</strong>.</p>
+
+        <table style="margin-top:8px;font-size:12px;width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#1e3a4a;color:#ffffff">
+              <th style="padding:8px;text-align:left;color:#fff;width:25%">What versions give you</th>
+              <th style="padding:8px;text-align:left;color:#fff;width:38%">Why this matters</th>
+              <th style="padding:8px;text-align:left;color:#fff;width:37%">What you'd have to do without versions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#dcfce7">
+              <td style="padding:10px;border:1px solid #86efac"><strong>1. Staged pre-deployment</strong></td>
+              <td style="padding:10px;border:1px solid #86efac">Deploy V001 to P01 INACTIVE (EX_STATUS=' '). The config is physically in P01 but F110 ignores it. <strong>Separates "deploy" from "cutover" in time</strong> — weeks of stability between transport import and activation.</td>
+              <td style="padding:10px;border:1px solid #86efac">Edit V000 directly in P01 (destructive — no rollback path) or build a separate parallel tree (much heavier, requires new T042Y + T042Z routing).</td>
+            </tr>
+            <tr style="background:#dcfce7">
+              <td style="padding:10px;border:1px solid #86efac"><strong>2. Clean cutover boundary</strong></td>
+              <td style="padding:10px;border:1px solid #86efac">Tree → Activate is a single atomic SAP transaction (overwrites V000 with V001 content per SAP-official model). Before activation: F110 uses V000. After: F110 uses the new V000 (= V001 content). <strong>Zero in-between period</strong> where some payments are V000-output and others V001-output.</td>
+              <td style="padding:10px;border:1px solid #86efac">A multi-step deployment with a window of inconsistency, where in-flight F110 batches might hit half-old / half-new config.</td>
+            </tr>
+            <tr style="background:#dcfce7">
+              <td style="padding:10px;border:1px solid #86efac"><strong>3. Reversible deployment via Version Management</strong></td>
+              <td style="padding:10px;border:1px solid #86efac">Before activation, run <code>Generate Version</code> to archive the current V000 to V002. After activation (V001 content overwrites V000), if rollback needed: Version Management → Retrieve V002 → Activate → original V000 restored. <strong>Rollback in 5–15 min per tree.</strong> NOT a flag flip; the snapshot is what enables reversibility, not automatic preservation.</td>
+              <td style="padding:10px;border:1px solid #86efac">Restore config from backup (hours), or re-edit V000 by hand to revert — and that's only possible if you didn't already touch V000 destructively in step 1.</td>
+            </tr>
+            <tr style="background:#fee2e2">
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>What versions DO NOT give you</strong></td>
+              <td style="padding:10px;border:1px solid #fca5a5"><strong>Parallel running</strong> of V000 and V001 simultaneously serving different payments in P01. Only one version has EX_STATUS='A' at a time → all F110 against that tree use that version.</td>
+              <td style="padding:10px;border:1px solid #fca5a5">For genuine parallel running (e.g. piloting V001 with one bank while V000 stays for others), the SAP-correct path is creating a <strong>new tree with a new TREE_ID</strong> (a Type 2 change in our taxonomy). That is a separate project — not what V001 is.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p style="margin:10px 0 0 0;color:#1f2937;font-size:13px"><strong>Most cutovers don't need parallel running.</strong> They need: (a) safe pre-deployment that doesn't disrupt production, (b) a single moment where the new format goes live without an in-between window, (c) a fast safety net if something fails. Versions give all three. Parallel running is a different problem and uses a different tool (separate tree).</p>
+
+        <p style="margin:8px 0 0 0;color:#475569;font-size:12px;font-style:italic"><strong>Disambiguation</strong>: "Create Version" copies V000 rows into a new VERSION='001' inside the SAME tree (same TREE_ID, just a new value in the VERSION column — both versions cohabit in DMEE_TREE_NODE). This is internal to versioning. It is NOT the same as creating a new TREE_ID, which is a separate project (Type 2 change). When operators say "we'll just version it" they mean the first; when they say "we need a new tree" they mean the second.</p>
+      </div>
+
+      <h4>Why we need to talk about versions before we talk about changes</h4>
+      <p>If you have only seen DMEE once or twice, the natural mental model is "open the tree, edit the nodes, save". And that's basically right — except for one detail that changes everything: <strong>DMEE trees have a built-in versioning column</strong>. Every row in <code>DMEE_TREE_HEAD</code> and <code>DMEE_TREE_NODE</code> carries a <code>VERSION</code> field. UNESCO has been running on <code>VERSION='000'</code> for a decade. The Nov 2026 CBPR+ migration creates <code>VERSION='001'</code>.</p>
+
+      <p>This is the SAP-native way to ship a bank-format upgrade. It's the same mechanism a company would use to roll from pain.001.001.03 to .09, or to migrate from a regional format to a global one. The reason it matters here: <em>V001 cohabits with V000 inside the same tree, both fully active in the same DMEE_TREE_NODE table, and only one is "active" (EX_STATUS='A') at any moment</em>. The tree does not get cloned, replaced, or rebuilt. It gets a parallel sibling layer.</p>
+
+      <h4>Two names for the same thing — SAP UI vs table layer</h4>
+      <p>Before going further: SAP's tx DMEE screen uses different words from what I wrote in the matrix. Both describe the same concept, but the operator sees the UI words first and the matrix uses the table-level words. Bridge:</p>
+      <table style="margin-top:8px">
+        <tr><th>SAP UI label (what you see in tx DMEE)</th><th>Table-level label (DMEE_TREE_HEAD column)</th><th>What it actually is</th></tr>
+        <tr><td><strong>Active version</strong></td><td><code>VERSION='000'</code> with <code>EX_STATUS='A'</code></td><td>The version F110 actually reads to produce today's bank file. UNESCO's V000 since 2017.</td></tr>
+        <tr><td><strong>Maintenance version</strong></td><td><code>VERSION='001'</code> with <code>EX_STATUS=' '</code> (blank)</td><td>The draft / dormant copy. You edit it, test it, but it doesn't reach F110 until you activate it. Currently exists in D01 only (claim 109).</td></tr>
+      </table>
+      <p style="font-size:12px;color:#475569"><em>Read this in plain English: when SAP asks "Which version would you like to display? Active version / Maintenance version" — Active = V000, Maintenance = V001. The text below uses V000/V001 because it tracks back to the matrix CSV and the RFC verifications, but every time you read "V000" think "what tx DMEE calls Active version" and every time you read "V001" think "Maintenance version".</em></p>
+
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_step_a_01.png" alt="DME Engine Initial Screen with /SEPA_CT_UNES + Display format tree popup">
+      <div class="dme-shot-cap"><b>unesco_dmee_step_a_01.png — DME Engine Initial Screen.</b> Tree type=PAYM, Format tree=/SEPA_CT_UNES. Display button click triggers the popup "Which version would you like to display? — Active version / Maintenance version / Cancel". <strong>This popup is the operator's first interaction with the version concept</strong> and applies identically to all 4 in-scope trees. Active version = V000 in production; Maintenance version = the dormant V001 byte-clone (claim 109).</div>
+
+      <h4>Analogy that makes it click</h4>
+      <p>Think of a DMEE tree like a Microsoft Word document with <strong>a published copy + a draft</strong>:</p>
+      <ul>
+        <li><strong>V000 (Active version) is the published copy</strong>. F110 has been reading it since 2017 and producing real bank files from it.</li>
+        <li><strong>V001 (Maintenance version) is a draft saved alongside</strong>. It exists in the same DMEE_TREE_NODE table (just with VERSION='001'), can be edited and tested in tx DMEE Maintenance mode, but does not reach F110 until you activate it.</li>
+        <li><strong>Activation = save the draft as the new published copy</strong>. Per SAP-official behavior, when you Activate V001 the system stores its content as V000, <em>replacing</em> the previous V000. The old published copy is overwritten.</li>
+        <li><strong>Rollback requires a pre-saved snapshot</strong>. Before activating, you must run <code>Utilities → Versions → Generate Version</code> on the current V000 — SAP archives it as V002 (or next free number). To roll back: retrieve V002 from Version Management → it becomes the new V001 → activate → the snapshot content overwrites V000. <strong>NOT a flag flip; a multi-step Version Management procedure</strong>. See the corrected implementation strategy table above.</li>
+      </ul>
+
+      <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>If you only remember one thing</strong>: V000 and V001 are not different trees — they are roles within the same tree (TREE_ID identical, VERSION column differs). Activation is overwrite of V000 by V001's content, not a flag flip. Rollback exists only if you snapshotted V000 to a historical version (V002+) BEFORE activating. <strong>The whole exercise is still "configuration, not migration"</strong> — just configuration with a mandatory snapshot step before each activation.</p>
+
+      <h4>What's already in D01 today (you'd be surprised)</h4>
+      <p>Until the post-VPN RFC verification (2026-04-30) we thought UNESCO had never touched V001 in any tree. Post-VPN RFC verification (claim 109) proved otherwise: <strong>D01 already has <code>VERSION='001'</code> rows on all 4 in-scope trees</strong>. Someone, at some undated past moment, ran tx DMEE → Tree → Versions → Create Version, and SAP duplicated every V000 row into V001. Those V001 rows are <em>byte-identical</em> to V000 (claim 109 — 0 differences across NODE_ID set + 7 sampled content fields). They've sat dormant ever since, never released to V01 or P01 (claim 102 — zero V001 patterns in 44 historical transports).</p>
+
+      <p>Read that in plain English: <em>the "Create Version" step has effectively already been done in D01 — but as a clean clone of V000, with no actual structured-address changes inside. The dormant V001 in D01 is a placeholder. Before we add V001's real content, we PURGE the dormant clone and re-CREATE fresh, so the deployed V001 has a clean transport-trail tied to the Phase 2 transports — not to whatever happened years ago that was never released</em>.</p>
+
+      <table style="margin-top:10px">
+        <tr><th>System</th><th>V000</th><th>V001</th><th>Note</th></tr>
+        <tr><td>P01 (production)</td><td>✓ Active (EX_STATUS='A')</td><td>— absent —</td><td>Live state. V001 has never reached P01.</td></tr>
+        <tr><td>D01 (dev)</td><td>✓ Active (mirror of P01)</td><td>✓ Dormant clone (byte-identical to V000)</td><td>Per claim 109. To PURGE+RECREATE in Phase 2.</td></tr>
+        <tr><td>D01 after Phase 2 Step 0</td><td>✓ Active (still mirror of P01)</td><td>✓ Dormant <strong>fresh</strong> clone (transport-trailed)</td><td>Same byte-identical content, but linked to Phase 2 transport ID.</td></tr>
+        <tr><td>D01 after Phase 2 Step B</td><td>✓ Active</td><td>✓ Dormant + structured-address nodes added</td><td>The 27-row change matrix is applied here.</td></tr>
+        <tr><td>D01 after Phase 5 cutover</td><td>(overwritten — old content saved to V002 if Generate Version was run pre-cutover)</td><td>(its content now in V000 slot, ✓ Active EX_STATUS='A')</td><td>The activation OVERWROTE V000 with V001 content. F110 now reads the new V000 (= V001 design). Pre-cutover snapshot to V002 is what enables rollback.</td></tr>
+      </table>
+
+      <h4>Visual proof of claim 109 — V000 and V001 admin data are byte-identical</h4>
+      <p>The two screenshots below are tx <code>DMEE</code> → Display Format Tree <code>/SEPA_CT_UNES</code> → Administrative data tab, taken on 2026-04-30. Left side shows V000 (the Active version). Right side shows V001 (the Maintenance version). <strong>Every metadata field matches exactly</strong> — Tree type, Short Description, Documentation pointer, Author, Created on, Created at, Last Changed By, Changed on, Changed at — except for one column: Version (0 vs 1). This is what SAP's "Create Version" operation does at the DMEE_TREE_HEAD level: full row copy, increment Version, leave everything else untouched.</p>
+
+      <p style="background:#dcfce7;border-left:4px solid #1abc9c;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+        <strong>Two facts the screenshots add to the brain</strong>:
+        <br>(1) The SEPA tree was created by M_SPRONK on <strong>27.11.2013 18:32:02</strong> — i.e. 12 years ago. Last meaningful change was <strong>23.11.2021 10:36:24</strong>. Operationally frozen for 4+ years.
+        <br>(2) Both V000 and V001 share the <em>same</em> Changed timestamp (23.11.2021 10:36:24), which means Create Version was executed on or before that date. Consistent with claim 102 (zero V001 transports 2017–2024) — the dormant V001 has been sitting in D01 untouched for 4+ years, never released.
+      </p>
+
+      <div style="display:flex;gap:12px;margin:14px 0;flex-wrap:wrap">
+        <div style="flex:1;min-width:380px">
+          <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_v000_admin.png" alt="DMEE Display Format Tree /SEPA_CT_UNES — V000 Active version Administrative data">
+          <div class="dme-shot-cap"><b>unesco_dmee_v000_admin.png — V000 (Active version) admin data.</b> Tree type=PAYM · Format tree=/SEPA_CT_UNES · Version=<b>0</b> · Author=M_SPRONK · Created 27.11.2013 18:32:02 · Last Changed 23.11.2021 10:36:24. The version F110 reads in production every day.</div>
+        </div>
+        <div style="flex:1;min-width:380px">
+          <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_v001_admin.png" alt="DMEE Display Format Tree /SEPA_CT_UNES — V001 Maintenance version Administrative data">
+          <div class="dme-shot-cap"><b>unesco_dmee_v001_admin.png — V001 (Maintenance version) admin data.</b> Same tree, same Author, same Created/Changed timestamps. Only Version=<b>1</b> differs. <strong>Visual proof of claim 109 — byte-identical clone.</strong> This is the dormant V001 we PURGE in Phase 2 Step A before creating a fresh clone tied to the Phase 2 transport ID.</div>
+        </div>
+      </div>
+
+      <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>For the V000 baseline of each tree</strong> — including the actual tree structure, the 6-tabs settings (Format attributes / Levels / Sort-key / File Data / Post Processing), the SEPA tree-pane screenshots, and the hierarchy stratification — see the <a href="#" onclick="show('current-solution', document.querySelector('[onclick*=current-solution]'));return false">Current Solution → Per-tree current state</a> section. This DMEE Configuration tab focuses purely on the V001 changes per tree.</p>
+
+      <p style="background:#dcfce7;border-left:4px solid #1abc9c;padding:10px 14px;margin:14px 0;border-radius:3px;font-size:12px"><strong>Next →</strong> Now that the version mental model is anchored, continue to <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for the three operations on V001 (INSERT / MODIFY / SYNC), the bridge in one sentence (one DMEE_TREE_NODE row = one XML tag), the per-target simplified mappings, the runtime buffer chain, the PMW retrofit scope (D01-RETROFIT-02-PMW), and the step-by-step tx DMEE walkthrough referencing the per-tree sub-tabs.</p>
+    </div>
+    </div>
+

@@ -1,0 +1,242 @@
+<div id="tab-components" class="content">
+    <div class="section">
+      <h3>Components Map — config + code + data (31 components)</h3>
+
+      <h4>Why a "components map" instead of a flow chart</h4>
+      <p>The E2E Flow tab shows <em>when</em> each component fires (the runtime sequence). This tab shows <em>what</em> each component is in catalog form: type (config / code / data / DDIC), ownership (UNESCO custom or SAP standard), V001 impact, and key properties. <strong>Think of it as the parts list</strong>: if E2E Flow is the wiring diagram, this is the bill of materials. Each row is one entity that lives in a specific table or has a specific transport-traceable identity.</p>
+
+      <h4>How to read the table below</h4>
+      <p>The 31 rows split into 5 categories, each with its own color in the header chips:</p>
+      <ul>
+        <li><span style="background:#cfe2f3;padding:2px 8px;color:#1e293b">CONFIG</span> — DMEE tree nodes, conditions, OBPM customizing, FBZP rules. Customizing transports.</li>
+        <li><span style="background:#fce5cd;padding:2px 8px;color:#1e293b">CODE (UNESCO)</span> — Y-prefix BAdI implementations and Z-prefix exits, owned by N_MENARD / UNESCO team. Workbench transports.</li>
+        <li><span style="background:#ead1dc;padding:2px 8px;color:#1e293b">CODE (SAP std)</span> — SAP-delivered classes, FMs, BAdIs. Never modified, only consumed.</li>
+        <li><span style="background:#d9ead3;padding:2px 8px;color:#1e293b">DDIC</span> — DDIC structures (FPAY*, T012K, etc.) referenced by the tree at runtime.</li>
+        <li><span style="background:#fff2cc;padding:2px 8px;color:#1e293b">DATA</span> — master-data tables (LFA1, ADRC, T015L) consulted at runtime but not part of customizing.</li>
+      </ul>
+      <p>The "V001 change" column at the right says one of three things for each row: a specific delta (e.g., "+5 Dbtr structured nodes"), <strong>NO CHANGE</strong> (V000 untouched, regression-protected), or <em>NO DIRECT CHANGE</em> (component is read by V001 but its definition does not change). Use this column to scan the regression boundary fast.</p>
+
+      <p style="color:#64748b;font-size:12px"><em>Last update: 2026-04-25 — CITIPMW V3 extracted, byte layout confirmed identical to GENERIC · Source of truth: <code>knowledge/domains/Payment/phase0/components_map.json</code></em></p>
+      <p>Color legend: <span style="background:#cfe2f3;padding:2px 8px;color:#1e293b">CONFIG</span> &nbsp;
+         <span style="background:#fce5cd;padding:2px 8px;color:#1e293b">CODE (UNESCO)</span> &nbsp;
+         <span style="background:#ead1dc;padding:2px 8px;color:#1e293b">CODE (SAP std)</span> &nbsp;
+         <span style="background:#d9ead3;padding:2px 8px;color:#1e293b">DDIC</span> &nbsp;
+         <span style="background:#fff2cc;padding:2px 8px;color:#1e293b">DATA</span></p>
+
+      <h4 style="color:#0066cc;margin-top:18px">ERM-type architecture view — 31 components in 6 lanes with cross-lane data flow</h4>
+      <p style="color:#64748b;font-size:12px">Each entity is one row in the table below. Border color = component type (matches legend above). <span style="background:#1abc9c;color:#000;padding:2px 6px;border-radius:3px">Teal fill</span> = touched by V001. <span style="background:#e67e22;color:#fff;padding:2px 6px;border-radius:3px">Orange fill</span> = ABAP code change (Pattern A). <span style="background:#34495e;color:#475569;padding:2px 6px;border-radius:3px">Grey dashed</span> = out-of-scope. Arrows: <b style="color:#1d4ed8">solid blue</b> = data flow at runtime · <b style="color:#475569">dashed grey</b> = config registration · <b style="color:#1abc9c">dashed teal</b> = V001-introduced edge · <b style="color:#e67e22">orange</b> = code stateful coupling. Hover any entity to see the full spec (browser tooltip).</p>
+
+      <style>
+        .erm-wrap { background:#0a1622; border:1px solid #cbd5e1; border-radius:8px; padding:18px 14px; overflow-x:auto; }
+        .erm-canvas { position:relative; width:1200px; height:740px; font-family:'Segoe UI',sans-serif; margin:0 auto; }
+        .erm-ent { position:absolute; width:170px; height:46px; background:#e0f2fe; border:1px solid #2a4a64; border-radius:4px; padding:5px 8px; box-sizing:border-box; cursor:default; transition:transform 0.1s; z-index:2; }
+        .erm-ent:hover { transform:translateY(-1px); border-color:#0066cc; z-index:3; }
+        .erm-ent .ent-id { font-size:10px; font-family:'Consolas',monospace; color:#64748b; line-height:1; margin-bottom:2px; }
+        .erm-ent .ent-name { font-size:11px; color:#0c4a6e; line-height:1.2; font-weight:700; }
+        .erm-ent.cfg { border-left:4px solid #5c8db1; }
+        .erm-ent.code-u { border-left:4px solid #d99b6b; }
+        .erm-ent.code-sap { border-left:4px solid #b48fb6; }
+        .erm-ent.ddic { border-left:4px solid #88b97f; }
+        .erm-ent.data { border-left:4px solid #c8b86b; }
+        .erm-ent.v001 { background:#dcfce7; border-color:#1abc9c; }
+        .erm-ent.v001 .ent-name { color:#7ee5cf; }
+        .erm-ent.patA { background:#fff7ed; border-color:#e67e22; }
+        .erm-ent.patA .ent-name { color:#f6c891; }
+        .erm-ent.scope-out { opacity:0.6; border-style:dashed; }
+        .erm-lane-hdr { position:absolute; height:24px; line-height:24px; text-align:center; font-size:11px; font-weight:600; letter-spacing:0.5px; color:#0066cc; background:#cbd5e1; border-radius:3px; }
+        .erm-arrow-leg { display:inline-block; width:18px; height:2px; vertical-align:middle; margin-right:4px; }
+      </style>
+
+      <div class="erm-wrap">
+       <div class="erm-canvas">
+
+        <!-- Lane headers -->
+        <div class="erm-lane-hdr" style="top:14px;left:15px;width:170px">① INPUTS · ROUTING + MASTER DATA</div>
+        <div class="erm-lane-hdr" style="top:14px;left:215px;width:170px">② EVENT 05 ENGINE</div>
+        <div class="erm-lane-hdr" style="top:14px;left:415px;width:170px">③ DDIC BUFFERS</div>
+        <div class="erm-lane-hdr" style="top:14px;left:615px;width:170px">④ DMEE TREES</div>
+        <div class="erm-lane-hdr" style="top:14px;left:815px;width:170px">⑤ BAdI HIERARCHY + PPC</div>
+        <div class="erm-lane-hdr" style="top:14px;left:1015px;width:170px">⑥ POST-PROC + OUT-OF-SCOPE</div>
+
+        <!-- SVG relationship layer (positioned underneath entities via z-index) -->
+        <svg width="1200" height="740" style="position:absolute;top:0;left:0;z-index:1;pointer-events:none">
+          <defs>
+            <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/></marker>
+            <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1abc9c"/></marker>
+            <marker id="arr-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+            <marker id="arr-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e67e22"/></marker>
+          </defs>
+
+          <!-- 1. T042Z (185, 78) -> tree column entry (around 615, 200, fan to 4 trees) -->
+          <path d="M 185 78 C 320 78, 320 200, 615 200" stroke="#475569" stroke-width="1.5" stroke-dasharray="5,4" fill="none" marker-end="url(#arr-grey)"/>
+          <text x="380" y="155" fill="#475569" font-size="10" font-style="italic">routes by (BUKRS, ZLSCH, LAND1)</text>
+
+          <!-- 2. TFPM042FB (185, 133) -> sap_fm_event05_cgi (215, 133) — registers Event 05 FM per tree -->
+          <path d="M 185 133 L 215 133" stroke="#475569" stroke-width="1.5" stroke-dasharray="5,4" fill="none" marker-end="url(#arr-grey)"/>
+          <text x="195" y="124" fill="#1abc9c" font-size="9" font-style="italic">+1 SEPA row V001</text>
+
+          <!-- 3. LFA1+ADRC (185, 188) -> sap_class_generic (215, 298) — read at Event 05 -->
+          <path d="M 185 188 C 250 188, 250 298, 215 298" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 4. T012/T012K (185, 243) -> tree_cgi (615, 188) — CdtrAgt source for CGI V001 fix -->
+          <path d="M 185 243 C 400 243, 400 200, 615 188" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#arr-teal)"/>
+          <text x="370" y="220" fill="#1abc9c" font-size="9" font-style="italic">CdtrAgt source (V001)</text>
+
+          <!-- 5. BNKA (185, 298) -> tree_cgi (615, 188) — bank master structured src -->
+          <path d="M 185 298 C 410 298, 410 215, 615 200" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#arr-teal)"/>
+
+          <!-- 6. sap_fm_event05_cgi (385, 133) -> sap_factory (385, 243) intra-column dispatch (vertical) -->
+          <path d="M 300 156 L 300 220" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 7. sap_factory (300, 266) -> sap_class_generic (300, 275) — country dispatch (already vertical) -->
+          <path d="M 300 266 L 300 275" stroke="#1d4ed8" stroke-width="1.5" fill="none"/>
+
+          <!-- 8. sap_class_generic (300, 298) -> ddic_fpayhx_fref (415, 78) — populates buffer -->
+          <path d="M 385 298 C 460 298, 460 78, 415 78" stroke="#1d4ed8" stroke-width="2" fill="none" marker-end="url(#arr-blue)"/>
+          <text x="395" y="200" fill="#1d4ed8" font-size="9" font-style="italic">populates REF01..REF06</text>
+
+          <!-- 9. sap_class_generic -> ddic_fpayp_fref (415, 188) -->
+          <path d="M 385 320 C 460 320, 460 188, 415 188" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 10. sap_class_country_extras (385, 353) -> ddic_fpayhx_fref via REF14 (curved) -->
+          <path d="M 385 353 C 470 353, 470 95, 415 95" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 11. sap_fm_event05_citi (385, 133) -> ddic_fpayhx_fref (415, 78) — CITI populates same byte layout via ADDR_GET -->
+          <path d="M 385 133 C 410 133, 410 78, 415 78" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 12. ddic_fpayhx_fref (585, 78) -> all 4 trees (read by V001 nodes) -->
+          <path d="M 585 78 C 605 78, 605 78, 615 78" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-teal)"/>
+          <path d="M 585 78 C 605 78, 605 188, 615 188" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="5,3" fill="none"/>
+          <path d="M 585 78 C 605 78, 605 243, 615 243" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="5,3" fill="none"/>
+          <path d="M 585 78 C 605 78, 605 298, 615 298" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-teal)"/>
+          <text x="475" y="68" fill="#1abc9c" font-size="9" font-style="italic">read by V001 PstlAdr nodes</text>
+
+          <!-- 13. ddic_fpayp_fref (585, 188) -> CGI tree (line-level Cdtr) -->
+          <path d="M 585 188 L 615 188" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 14. ddic_fpayhx (585, 243) -> CITI tree (Z-fields incl ZSTRA for UltmtCdtr) -->
+          <path d="M 585 243 C 605 243, 605 298, 615 298" stroke="#1abc9c" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-teal)"/>
+          <text x="588" y="285" fill="#1abc9c" font-size="9" font-style="italic">FPAYH-ZSTRA → UltmtCdtr</text>
+
+          <!-- 15. All 4 trees -> abap_fallback (BAdI fires per node) — aggregated to one bus line -->
+          <path d="M 785 78 C 800 78, 800 78, 815 78" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+          <path d="M 785 188 C 800 188, 800 78, 815 78" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+          <path d="M 785 243 C 800 243, 800 78, 815 78" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+          <path d="M 785 298 C 800 298, 800 78, 815 78" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+          <text x="700" y="68" fill="#1d4ed8" font-size="9" font-style="italic">FI_CGI_DMEE_EXIT_W_BADI fires</text>
+
+          <!-- 16. abap_fallback Pattern A (orange flag, no arrow needed but show stateful coupling onto trees) -->
+          <path d="M 815 91 C 805 110, 805 350, 785 320" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="2,3" fill="none"/>
+          <text x="700" y="370" fill="#e67e22" font-size="9" font-style="italic">⚠ stateful name-overflow → V001 guards</text>
+
+          <!-- 17. tree_citi (785, 298) -> sap_xslt (1015, 363) post-proc -->
+          <path d="M 785 320 C 900 320, 900 363, 1015 363" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+          <text x="845" y="335" fill="#1d4ed8" font-size="9" font-style="italic">XML post-proc (CITI only)</text>
+
+          <!-- 18. abap_fr (985, 133) -> abap_util (985, 188) intra-column PPC dispatch -->
+          <path d="M 900 156 L 900 188" stroke="#1d4ed8" stroke-width="1.5" fill="none" marker-end="url(#arr-blue)"/>
+
+          <!-- 19. abap_util -> data_ytfi_ppc_tag/struc (long vertical) -->
+          <path d="M 900 211 L 900 518" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="2,3" fill="none" marker-end="url(#arr-blue)"/>
+          <text x="905" y="370" fill="#1d4ed8" font-size="9" font-style="italic" transform="rotate(-90 905 370)">PPC dispatch (claim 96, 99)</text>
+
+          <!-- 20. abap_fallback -> abap_enho_de/fr/it (registration via enhancement spots) -->
+          <path d="M 900 91 C 940 91, 940 353, 900 353" stroke="#475569" stroke-width="1" stroke-dasharray="2,3" fill="none" marker-end="url(#arr-grey)"/>
+          <text x="945" y="225" fill="#475569" font-size="9" font-style="italic">ENHO registers</text>
+        </svg>
+
+        <!-- ENTITIES — Lane 1: INPUTS -->
+        <div class="erm-ent data" style="top:55px;left:15px" title="T042Z (payment method per country → tree). 263 rows in P01. Routes (BUKRS, ZLSCH, LAND1) → FORMI tree id. NOT touched by V001."><div class="ent-id">data_t042z</div><div class="ent-name">T042Z routing</div></div>
+        <div class="erm-ent cfg v001" style="top:110px;left:15px" title="TFPM042FB · OBPM4 Event 05 registrations. CGI = FI_PAYMEDIUM_DMEE_CGI_05. CITI = /CITIPMW/V3_PAYMEDIUM_DMEE_05. SEPA = NONE today. V001: +1 row SEPA → FI_PAYMEDIUM_DMEE_CGI_05 (Sub-opt A)."><div class="ent-id">obpm4_event05</div><div class="ent-name">TFPM042FB · Event 05 reg</div></div>
+        <div class="erm-ent data v001" style="top:165px;left:15px" title="LFA1 + ADRC vendor master. 111,241 active. 5 missing CITY1/COUNTRY (V001 manual fix). Read by SAP-std GENERIC class at Event 05."><div class="ent-id">data_lfa1_adrc</div><div class="ent-name">LFA1+ADRC vendor master</div></div>
+        <div class="erm-ent data" style="top:220px;left:15px" title="T012 + T012K house bank master. UNESCO own banks, structured addresses. CdtrAgt source for CGI V001 fix."><div class="ent-id">data_t012_t012k</div><div class="ent-name">T012/T012K house bank</div></div>
+        <div class="erm-ent data" style="top:275px;left:15px" title="BNKA · standard bank database with structured address per bank. Used by V001 CGI CdtrAgt nodes."><div class="ent-id">data_bnka</div><div class="ent-name">BNKA bank master</div></div>
+
+        <!-- ENTITIES — Lane 2: EVENT 05 ENGINE -->
+        <div class="erm-ent code-sap" style="top:110px;left:215px" title="FI_PAYMEDIUM_DMEE_CGI_05 (SAP-std FM, 41 lines). Calls cl_idfi_cgi_call05_factory→get_instance, then instance→fill_fpay_fref. Will be registered for SEPA Event 05 in V001 (Sub-opt A)."><div class="ent-id">sap_fm_event05_cgi</div><div class="ent-name">FI_PAYMEDIUM_DMEE_CGI_05</div></div>
+        <div class="erm-ent code-sap" style="top:55px;left:215px" title="/CITIPMW/V3_PAYMEDIUM_DMEE_05 (CITI PMW Industry Solution, ~80 lines). Reads T001-ADRNR → ADRC via ADDR_GET, populates FPAYHX_FREF using SAME byte layout as SAP-std GENERIC."><div class="ent-id">sap_fm_event05_citi</div><div class="ent-name">/CITIPMW/V3_PAYMEDIUM_DMEE_05</div></div>
+        <div class="erm-ent code-sap" style="top:220px;left:215px" title="CL_IDFI_CGI_CALL05_FACTORY (SAP-std). Country dispatcher — 20 country variants confirmed in TADIR (AT/BE/CH/CZ/DE/DK/ES/FI/FR/GB/HR/IT/LU/PT/RO/SK/TH + GENERIC fallback)."><div class="ent-id">sap_factory</div><div class="ent-name">CL_IDFI_CGI_CALL05_FACTORY</div></div>
+        <div class="erm-ent code-sap" style="top:275px;left:215px" title="CL_IDFI_CGI_CALL05_GENERIC (SAP-std, 570 lines, CM005). Universal address populator: REF01[0..60]=street, [60..80]=building, [80..90]=postal, [90..100]=region, [100..110]=house; REF06[0..40]=city. Called for every country."><div class="ent-id">sap_class_generic</div><div class="ent-name">CL_IDFI_CGI_CALL05_GENERIC</div></div>
+        <div class="erm-ent code-sap" style="top:330px;left:215px" title="CL_IDFI_CGI_CALL05_FR/DE/IT/GB (SAP-std country adders). ONLY write REF14 country-specific values: FR=SIRET 16ch, DE=SUN+SeqTp, IT=CUP+CIG+MGO, GB=bnkid+SeqTp. Do NOT touch REF01/02/06 address fields."><div class="ent-id">sap_class_country_extras</div><div class="ent-name">CL_IDFI_CGI_CALL05_FR/DE/IT/GB</div></div>
+
+        <!-- ENTITIES — Lane 3: BUFFERS -->
+        <div class="erm-ent ddic" style="top:55px;left:415px" title="FPAYHX_FREF · 16 fields (CURNO + REF01..REF15, each CHAR 264). Header-level address buffer. Populated by Event 05 country class. V001 reads from this buffer for Dbtr structured nodes."><div class="ent-id">ddic_fpayhx_fref</div><div class="ent-name">FPAYHX_FREF (16 fields)</div></div>
+        <div class="erm-ent ddic" style="top:165px;left:415px" title="FPAYP_FREF · 5 fields (REF01..REF05, CHAR 264). Line-level Cdtr buffer (one per invoice line). Source for line-level structured nodes."><div class="ent-id">ddic_fpayp_fref</div><div class="ent-name">FPAYP_FREF (5 fields)</div></div>
+        <div class="erm-ent ddic" style="top:220px;left:415px" title="FPAYHX with CI_FPAYHX append. 432 fields total · 25 Z-fields (ZPFST, ZPLOR, ZLISO, ZNM1S, ZBANK, ZREF01..ZREF10, etc.). FPAYH-ZSTRA is the field V001 uses for UltmtCdtr StrtNm (Q3 RESOLVED — claim 99)."><div class="ent-id">ddic_fpayhx</div><div class="ent-name">FPAYHX + CI_FPAYHX (432 flds)</div></div>
+
+        <!-- ENTITIES — Lane 4: DMEE TREES -->
+        <div class="erm-ent cfg v001" style="top:55px;left:615px" title="/SEPA_CT_UNES (95 nodes, 18 conds). SocGen EUR — UNES + IIEP + UIL. V001: +5 Dbtr structured nodes (StrtNm/BldgNb/PstCd/TwnNm/Ctry) + 5 empty-suppress conds + Sub-opt A registration in TFPM042FB."><div class="ent-id">tree_sepa</div><div class="ent-name">/SEPA_CT_UNES</div></div>
+        <div class="erm-ent cfg v001" style="top:165px;left:615px" title="/CGI_XML_CT_UNESCO (631 nodes, 123 conds). All other banks (SocGen non-SEPA, Shinhan KR, Metro GB, GT NG). V000: Dbtr ✓ Cdtr ✓ CdtrAgt unstructured. V001: fix CdtrAgt PstlAdr (~7 nodes from T012K/BNKA via Event 05 wiring)."><div class="ent-id">tree_cgi</div><div class="ent-name">/CGI_XML_CT_UNESCO</div></div>
+        <div class="erm-ent cfg v001" style="top:220px;left:615px" title="/CGI_XML_CT_UNESCO_1 (639 nodes, FIRSTNODE_ID identical to CGI parent). V001: SYNC from parent — CdtrAgt fix propagates automatically."><div class="ent-id">tree_cgi_1</div><div class="ent-name">/CGI_XML_CT_UNESCO_1</div></div>
+        <div class="erm-ent cfg v001" style="top:275px;left:615px" title="/CITI/XML/UNESCO/DC_V3_01 (610 nodes, 350 conds). Citi USD + Worldlink TND/MGA + UBO/UIS local. V001: +5 Dbtr structured + 1 UltmtCdtr StrtNm = FPAYH-ZSTRA (Q3 RESOLVED — claim 99)."><div class="ent-id">tree_citi</div><div class="ent-name">/CITI/XML/UNESCO/DC_V3_01</div></div>
+
+        <!-- ENTITIES — Lane 5: BAdI HIERARCHY + PPC -->
+        <div class="erm-ent code-u patA" style="top:55px;left:815px" title="YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT. Stateful name-overflow logic at lines 13-31 (SocGen-mandated per N_MENARD doc 2024-02-29 — claim 96). V001: Pattern A 3-line guard. Reviewer N_MENARD. Transport D01K-BADI-FIX-01."><div class="ent-id">abap_fallback</div><div class="ent-name">YCL_..._FALLBACK ⚠ Pattern A</div></div>
+        <div class="erm-ent code-u" style="top:110px;left:815px" title="YCL_IDFI_CGI_DMEE_FR (6 includes). PPC dispatcher entry — calls UTIL.get_tag_value_from_custo. PPC has 0 rows for FR → effective no-op for FR. Address mapping comes from SAP-std GENERIC class."><div class="ent-id">abap_fr</div><div class="ent-name">YCL_IDFI_CGI_DMEE_FR</div></div>
+        <div class="erm-ent code-u" style="top:165px;left:815px" title="YCL_IDFI_CGI_DMEE_UTIL (6 includes + CM001-4). Helper class — central tag resolution + PPC reader. GET_TAG_VALUE_FROM_CUSTO reads YTFI_PPC_TAG/STRUC."><div class="ent-id">abap_util</div><div class="ent-name">YCL_IDFI_CGI_DMEE_UTIL</div></div>
+        <div class="erm-ent code-u" style="top:220px;left:815px" title="YCL_IDFI_CGI_DMEE_DE (7 includes). Shell — overrides ONLY <CdtrAgt><FinInstnId><ClrSysMmbId><MmbId> from i_fpayh-zbnkl. Delegates everything else to FALLBACK."><div class="ent-id">abap_de</div><div class="ent-name">YCL_IDFI_CGI_DMEE_DE</div></div>
+        <div class="erm-ent code-u" style="top:275px;left:815px" title="YCL_IDFI_CGI_DMEE_IT (7 includes). Shell — same pattern as DE."><div class="ent-id">abap_it</div><div class="ent-name">YCL_IDFI_CGI_DMEE_IT</div></div>
+        <div class="erm-ent code-u" style="top:330px;left:815px" title="Y_IDFI_CGI_DMEE_COUNTRIES_DE — Enhancement Implementation registering DE class with BAdI dispatcher."><div class="ent-id">abap_enho_de</div><div class="ent-name">ENHO ..._COUNTRIES_DE</div></div>
+        <div class="erm-ent code-u" style="top:385px;left:815px" title="Y_IDFI_CGI_DMEE_COUNTRIES_FR — ENHO registering FR class with BAdI dispatcher."><div class="ent-id">abap_enho_fr</div><div class="ent-name">ENHO ..._COUNTRIES_FR</div></div>
+        <div class="erm-ent code-u" style="top:440px;left:815px" title="Y_IDFI_CGI_DMEE_COUNTRIES_IT — ENHO registering IT class."><div class="ent-id">abap_enho_it</div><div class="ent-name">ENHO ..._COUNTRIES_IT</div></div>
+        <div class="erm-ent data" style="top:495px;left:815px" title="YTFI_PPC_TAG · 11 rows in P01. Maps (LAND1, TAG_ID, DEB_CRE) → XML tag location for 9 PPC countries (AE/BH/CN/ID/IN/JO/MA/MY/PH). NONE of our scope countries (FR/DE/IT/US/CA/BR/GB/KR/NG) have rows."><div class="ent-id">data_ytfi_ppc_tag</div><div class="ent-name">YTFI_PPC_TAG (11 rows)</div></div>
+        <div class="erm-ent data" style="top:550px;left:815px" title="YTFI_PPC_STRUC · 133 rows in P01. PPC tag building blocks (LAND1, TAG_ID, PAY_TYPE, CODE_ORD, PPC_CODE/PPC_VALUE/PAY_STRUC/PAY_FIELD)."><div class="ent-id">data_ytfi_ppc_struc</div><div class="ent-name">YTFI_PPC_STRUC (133 rows)</div></div>
+
+        <!-- ENTITIES — Lane 6: POST-PROC + OUT-OF-SCOPE -->
+        <div class="erm-ent code-sap" style="top:340px;left:1015px" title="CGI_XML_CT_XSLT (12 lines, devclass=ID-DMEE). Removes empty leaf nodes from CITI tree output before file write. SAP-std — Phase 4 UAT must verify it doesn't mangle V001 structured nodes."><div class="ent-id">sap_xslt</div><div class="ent-name">CGI_XML_CT_XSLT</div></div>
+        <div class="erm-ent cfg scope-out" style="top:495px;left:1015px" title="TFPM042F* PMF variants — Francesco's 5 transports 2025 Q1 (CGI tree only, never SEPA/CITI). 4-week burst Feb 20→Mar 20 2025. Out of our scope — courtesy heads-up before V001 transport."><div class="ent-id">tfpm042f_variants</div><div class="ent-name">TFPM042F variants (Francesco)</div></div>
+        <div class="erm-ent cfg scope-out" style="top:550px;left:1015px" title="Workflow 90000003 · BCM dual-control approval. PD object groups OTYPE='RY' (claim 42/43). Routing 100% F110+payroll via OBPM5/TFIBLMPAYBLOCK (claim 65). Out of scope — V001 changes XML content only."><div class="ent-id">wf_90000003</div><div class="ent-name">Workflow 90000003 (BCM)</div></div>
+        <div class="erm-ent code-u scope-out" style="top:605px;left:1015px" title="BCM_BATCH_ENHANCE/GROUP/APPROVAL/STATUS/SUBMISSION BAdIs. Operate post-DMEE on batch level. Not extracted, not in change path. Phase 4 follow-up if BCM-level surprises emerge."><div class="ent-id">bcm_batch_badis</div><div class="ent-name">BCM_BATCH_* BAdIs</div></div>
+
+       </div>
+      </div>
+
+      <p style="margin-top:14px;color:#64748b;font-size:12px"><b>Cardinality cheat-sheet</b> (per claim 101 / e2e_flow_components_connected.md): T042Z routes 1:N to trees · TFPM042FB N:1 to Event 05 FMs (one FM serves CGI + CGI_1, another for CITI, V001 adds one for SEPA) · Event 05 FMs 1:1 to FACTORY (CGI path) · FACTORY 1:N to country classes · GENERIC writes 1:1 into FPAYHX_FREF (universal byte layout — claim 101 confirms CITIPMW V3 byte-identical) · Buffers M:N to trees (each tree reads many buffer fields) · BAdI 1:N to country implementations · Pattern A is a stateful coupling on FALLBACK only. The companion table below has full per-edge evidence.</p>
+
+      <p style="margin-top:18px;background:#dcfce7;border-left:4px solid #1abc9c;padding:10px 14px;font-size:13px"><b>Read this view → table below.</b> Each entity is one component_id; the next section's table has the full per-component spec (Today V000 / V001 change / Evidence / Reviewer / ABAP?). The ERM view answers <em>"what connects to what"</em>, the table answers <em>"what changes and why"</em>.</p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Full per-component table — 31 rows</h4>
+      <table>
+        <tr><th>ID</th><th>Component</th><th>Type</th><th>Layer</th><th>Owner</th><th>Today (V000)</th><th>V001 change</th><th>Evidence</th><th>Reviewer</th><th>ABAP?</th></tr>
+        <tr style='background:#cfe2f3;color:#1e293b'><td><code>tree_sepa</code></td><td><b>/SEPA_CT_UNES</b></td><td>CONFIG</td><td>DMEE tree</td><td>Pablo + Marlies</td><td>95 nodes · NO Event 05 registered · Dbtr Hybrid (Ctry+AdrLine PARIS) · Cdtr Hybrid · postal code missing per Marlies row 1</td><td><b>Create V001 copy. Register Event 05 = FI_PAYMEDIUM_DMEE_CGI_05 (revised sub-opt A). Add structured Cdtr+Dbtr PstlAdr nodes (StrtNm/PstCd/TwnNm/Ctry minimum). Suppress AdrLine when structured populated. Test in D01 first.</b></td><td>Phase 0 GAP-006 + Marlies Excel rows 1-3 + D01 probe (FI_PAYMEDIUM_DMEE_CGI_05 EXISTS)</td><td>Pablo (config) + Marlies (verification)</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>tree_cgi</code></td><td><b>/CGI_XML_CT_UNESCO</b></td><td>CONFIG</td><td>DMEE tree</td><td>Pablo + Marlies</td><td>631 nodes · Event 05 = FI_PAYMEDIUM_DMEE_CGI_05 (already) · Dbtr STRUCTURED OK · Cdtr STRUCTURED OK · CdtrAgt UNSTRUCTURED (3 cases NG/KR/GB)</td><td><b>Create V001 copy. Fix CdtrAgt unstructured nodes — replace AdrLine with structured StrtNm/PstCd/TwnNm/Ctry sourced from BNKA standard bank DB.</b></td><td>Marlies Excel rows 8-10 CdtrAgt verdict 'Not accepted'. Probe: FPAYHX-UBSTR/UBORT/UBISO unstructured today.</td><td>Pablo + Marlies</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>tree_cgi_1</code></td><td><b>/CGI_XML_CT_UNESCO_1</b></td><td>CONFIG</td><td>DMEE tree</td><td>Pablo</td><td>639 nodes · Same FIRSTNODE_ID as CGI_XML_CT_UNESCO (N_5649723900) — variant of parent. Last FP_SPEZZANO 2025-02-14</td><td><b>SYNC pattern from V001 of /CGI_XML_CT_UNESCO. Same CdtrAgt fix.</b></td><td>Phase 0 Finding D — FIRSTNODE_ID identical confirms variant pattern</td><td>Pablo</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>tree_citi</code></td><td><b>/CITI/XML/UNESCO/DC_V3_01</b></td><td>CONFIG</td><td>DMEE tree</td><td>Pablo + Marlies + Citi TRM (for Q3)</td><td>610 nodes · Event 05=/CITIPMW/V3_PAYMEDIUM_DMEE_05 (extracted 2026-04-25 — same byte layout as SAP-std GENERIC: REF01[0..60]=street, [60..80]=building, [80..90]=postal, [90..100]=region, [100..110]=house, REF06[0..40]=city) · Dbtr UNSTRUCTURED · Cdtr mostly OK · UltmtCdtr Hybrid (WHO/ICC Q3 still open) · XSLT CGI_XML_CT_XSLT post-proc</td><td><b>Create V001 copy. Add Dbtr structured PstlAdr nodes sourcing FPAYHX-REF01 + REF06 with the same MP_OFFSET layout as CGI tree (now confirmed identical at code level). UltmtCdtr Worldlink (Q3) still TBD — defer to V002 or keep AdrLine fallback.</b></td><td>Marlies Excel rows 4,5,7 + Phase 0 Finding F</td><td>Pablo + Marlies</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>obpm4_event05</code></td><td><b>TFPM042FB (OBPM4 Event 05 registrations)</b></td><td>CONFIG</td><td>Customizing table</td><td>Pablo</td><td>CGI=FI_PAYMEDIUM_DMEE_CGI_05 (SAP std) · CITI=/CITIPMW/V3_PAYMEDIUM_DMEE_05 · SEPA_CT_UNES=NONE</td><td><b>ADD entry: FORMI=/SEPA_CT_UNES, EVENT=05, FNAME=FI_PAYMEDIUM_DMEE_CGI_05 (revised sub-opt A, test in D01 first). CGI/CITI registrations untouched.</b></td><td>Phase 1 batch D01 probe (FI_PAYMEDIUM_DMEE_CGI_05 exists, dispatches to CL_IDFI_CGI_CALL05_FR for French SEPA addresses)</td><td>Pablo</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_fallback</code></td><td><b>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</b></td><td>CODE</td><td>BAdI implementation</td><td>N_MENARD (code owner)</td><td>Stateful name-overflow-into-StrtNm logic at lines 13-31. Works in V000 (StrtNm empty). Would corrupt V001 structured StrtNm.</td><td><b>Pattern A fix: 3-line guard 'AND c_value IS INITIAL' to prevent overflow corrupting V001 structured StrtNm. Backward-compatible.</b></td><td>Source extracted line-by-line · Phase 0 Finding L · Pattern A in Excel sheet 16</td><td>N_MENARD (alignment call required)</td><td><b style='color:#c0392b'>YES</b></td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_fr</code></td><td><b>YCL_IDFI_CGI_DMEE_FR (6 includes)</b></td><td>CODE</td><td>BAdI impl (country=FR)</td><td>N_MENARD</td><td>PPC dispatcher (1-line method) — calls UTIL.get_tag_value_from_custo which reads YTFI_PPC_TAG/STRUC. PPC has 0 rows for FR → effectively no-op. Address mapping comes from SAP-std GENERIC class via Event 05.</td><td><b>NO CHANGE — works for both V000 and V001 (no stateful address bug)</b></td><td>Source extracted, no name-overflow logic present</td><td>—</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_util</code></td><td><b>YCL_IDFI_CGI_DMEE_UTIL (6 includes + CM001-4)</b></td><td>CODE</td><td>BAdI impl (utilities)</td><td>N_MENARD</td><td>Helper class — central tag resolution + customization lookup. GET_TAG_VALUE_FROM_CUSTO method.</td><td><b>NO CHANGE</b></td><td>Source extracted, no address logic touched</td><td>—</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_de</code></td><td><b>YCL_IDFI_CGI_DMEE_DE (7 includes)</b></td><td>CODE</td><td>BAdI impl (country=DE)</td><td>N_MENARD</td><td>Shell — overrides ONLY &lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;ClrSysMmbId&gt;&lt;MmbId&gt; from i_fpayh-zbnkl. Delegates everything else to FALLBACK. PPC has 0 rows for DE.</td><td><b>NO CHANGE — but D01 retrofit needed (P01-only object, see Finding I)</b></td><td>Phase 1 batch extraction · CM001 confirmed shell pattern</td><td>N_MENARD (D01 retrofit approval)</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_it</code></td><td><b>YCL_IDFI_CGI_DMEE_IT (7 includes)</b></td><td>CODE</td><td>BAdI impl (country=IT)</td><td>N_MENARD</td><td>Shell — same pattern as DE. PPC has 0 rows for IT.</td><td><b>NO CHANGE — but D01 retrofit needed (P01-only)</b></td><td>Phase 1 batch extraction</td><td>N_MENARD</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_enho_de</code></td><td><b>Y_IDFI_CGI_DMEE_COUNTRIES_DE (ENHO)</b></td><td>CODE</td><td>Enhancement Implementation</td><td>N_MENARD</td><td>Enhancement spot impl — registers DE class with BAdI dispatcher</td><td><b>NO CHANGE — D01 retrofit only</b></td><td>Phase 0 Finding I (P01-ONLY)</td><td>N_MENARD</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_enho_fr</code></td><td><b>Y_IDFI_CGI_DMEE_COUNTRIES_FR (ENHO)</b></td><td>CODE</td><td>Enhancement Implementation</td><td>N_MENARD</td><td>Enhancement spot impl — registers FR class with BAdI dispatcher</td><td><b>NO CHANGE — D01 retrofit only (P01-ONLY despite class being in D01)</b></td><td>Phase 0 Finding I (P01-ONLY ENHO)</td><td>N_MENARD</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>abap_enho_it</code></td><td><b>Y_IDFI_CGI_DMEE_COUNTRIES_IT (ENHO)</b></td><td>CODE</td><td>Enhancement Implementation</td><td>N_MENARD</td><td>Enhancement spot impl — registers IT class</td><td><b>NO CHANGE — D01 retrofit only</b></td><td>Phase 0 Finding I</td><td>N_MENARD</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_fm_event05_cgi</code></td><td><b>FI_PAYMEDIUM_DMEE_CGI_05</b></td><td>CODE (SAP std)</td><td>Function module — Event 05 wrapper</td><td>SAP (do not modify)</td><td>Thin wrapper. Calls cl_idfi_cgi_call05_factory=&gt;get_instance, then instance-&gt;fill_fpay_fref. Populates FPAYHX_FREF + FPAYP_FREF buffers from country-specific class.</td><td><b>NO CHANGE — REUSE as-is. Will be registered for /SEPA_CT_UNES Event 05 (revised sub-opt A).</b></td><td>Source extracted · 41 lines</td><td>—</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_factory</code></td><td><b>CL_IDFI_CGI_CALL05_FACTORY</b></td><td>CODE (SAP std)</td><td>Factory class</td><td>SAP</td><td>Dispatches by country to: AT, BE, CH, CZ, DE, DK, ES, FI, FR, GB, HR, IT, LU, PT, RO, SK, TH, GENERIC</td><td><b>NO CHANGE</b></td><td>TADIR probe in P01 — 20 country variants confirmed</td><td>—</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_fm_event05_citi</code></td><td><b>/CITIPMW/V3_PAYMEDIUM_DMEE_05</b></td><td>CODE (SAP std)</td><td>FM (Citibank PMW Industry Solution)</td><td>SAP / Citi PMW</td><td>Event 05 for /CITI/XML/UNESCO/DC_V3_01. Reads T001-ADRNR → ADRC via ADDR_GET, populates FPAYHX_FREF using SAME byte layout as SAP-std GENERIC class. 5103 chars / ~80 lines extracted 2026-04-25.</td><td><b>NO CHANGE — keep using. Confirmed compatible with structured V001 design.</b></td><td>Source extracted via RPY_FUNCTIONMODULE_READ_NEW NEW_SOURCE field. extracted_code/FI/DMEE_full_inventory/CITIPMW_V3_PAYMEDIUM_DMEE_05.abap</td><td>—</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_xslt</code></td><td><b>CGI_XML_CT_XSLT (XSLT post-processor)</b></td><td>CODE (SAP std)</td><td>XSLT transformation</td><td>SAP (devclass=ID-DMEE)</td><td>Post-processes CITI tree XML output before file write.</td><td><b>NO CHANGE — but Phase 4 UAT must verify it doesn't mangle V001 structured nodes.</b></td><td>TADIR probe · source extraction blocked via RFC (SAP-std)</td><td>Phase 4 UAT validation</td><td>no</td></tr>
+<tr style='background:#d9ead3;color:#1e293b'><td><code>ddic_fpayhx_fref</code></td><td><b>FPAYHX_FREF</b></td><td>DDIC</td><td>Structure (buffer)</td><td>SAP std</td><td>16 fields: CURNO + REF01..REF15 (each CHAR 264). Populated by Event 05 country class. Source for DMEE Dbtr-level structured nodes.</td><td><b>NO CHANGE — we read from this buffer in V001 nodes</b></td><td>DDIF_FIELDINFO_GET in P01</td><td>—</td><td>no</td></tr>
+<tr style='background:#d9ead3;color:#1e293b'><td><code>ddic_fpayp_fref</code></td><td><b>FPAYP_FREF</b></td><td>DDIC</td><td>Structure (buffer)</td><td>SAP std</td><td>5 fields: REF01..REF05 (CHAR 264). Line-level buffer. Source for Cdtr per-line structured nodes.</td><td><b>NO CHANGE</b></td><td>DDIF_FIELDINFO_GET</td><td>—</td><td>no</td></tr>
+<tr style='background:#d9ead3;color:#1e293b'><td><code>ddic_fpayhx</code></td><td><b>FPAYHX (with CI_FPAYHX append)</b></td><td>DDIC</td><td>Structure (header extension)</td><td>SAP std + UNESCO append</td><td>432 fields total · 25 Z-fields incl. ZPFST, ZPLOR, ZLISO, ZNM1S, ZBANK, ZREF01..ZREF10</td><td><b>NO CHANGE — we use existing fields</b></td><td>GAP-004 closure</td><td>—</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_lfa1_adrc</code></td><td><b>LFA1 + ADRC (vendor master)</b></td><td>DATA</td><td>Master data</td><td>Master Data team</td><td>111,241 active vendors. 5 missing CITY1 or COUNTRY (mandatory CBPR+).</td><td><b>Manual fix or KILL the 5 LIFNRs (0000020171, 0000020731, 0000020815, 0000020843, 0000059828)</b></td><td>Phase 1 batch SQL on Gold DB · sheet 09 + vendor_dq_5_specific.csv</td><td>Master Data team (Marlies coordinates)</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_t012_t012k</code></td><td><b>T012 + T012K (house bank)</b></td><td>DATA</td><td>Customizing</td><td>Pablo (config) + Marlies</td><td>House bank addresses (UNESCO own banks). Source for Dbtr Ctry. Some banks have full address, others minimal.</td><td><b>Review for completeness. No structural change expected.</b></td><td>Probe context</td><td>Pablo + Marlies</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_bnka</code></td><td><b>BNKA (bank master, standard bank DB)</b></td><td>DATA</td><td>Customizing</td><td>SAP std + UNESCO bank master maintenance</td><td>Standard bank database with structured address per bank.</td><td><b>NO CHANGE — used by V001 CGI CdtrAgt nodes as structured source.</b></td><td>Marlies Excel CGI rows 8-10 'standard bank database'</td><td>—</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_t042z</code></td><td><b>T042Z (payment method per country → tree)</b></td><td>DATA</td><td>Customizing</td><td>Pablo (config)</td><td>263 rows. UNES/IIEP/UIL → /SEPA_CT_UNES (FR+S, DE+S). UNES/UIS/UBO → /CITI/XML/UNESCO/DC_V3_01. UNES/IIEP → /CGI_XML_CT_UNESCO. XSTRA='X' for most, XSTRA='' only for FR+A Treasury Transfer.</td><td><b>Possibly add Z-payment methods routing to V001 trees during Phase 3 testing window. For Phase 5 cutover: standard payment methods point to V001 atomically.</b></td><td>GAP-008 closure</td><td>Pablo</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>tfpm042f_variants</code></td><td><b>TFPM042F* (PMF variants — Francesco's work)</b></td><td>CONFIG</td><td>OBPM customizing</td><td>Francesco (FP_SPEZZANO)</td><td>5 transports 2025 Q1 — bank variant configs (e.g., /CGI_XML_CT_UNESCO_BK)</td><td><b>NO CHANGE in our scope. Courtesy heads-up to Francesco that we are creating V001 of the parent trees.</b></td><td>Phase 0 Finding D · Francesco audit · sheet 10</td><td>Francesco (courtesy email)</td><td>no</td></tr>
+<tr style='background:#cfe2f3;color:#1e293b'><td><code>wf_90000003</code></td><td><b>Workflow 90000003 (BCM dual approval)</b></td><td>CONFIG</td><td>Workflow</td><td>Treasury workflow team</td><td>Dual control approval for BCM batches. PD object groups OTYPE='RY'.</td><td><b>NO CHANGE — out of scope. UltmtCdtr structured may render slightly different in BNK_APP UI but test in Phase 4.</b></td><td>Brain Claim #65 · feedback_bcm_signatory_ry_otype</td><td>—</td><td>no</td></tr>
+<tr style='background:#fce5cd;color:#1e293b'><td><code>bcm_batch_badis</code></td><td><b>BCM_BATCH_* BAdIs (BCM_BATCH_ENHANCE/GROUP/APPROVAL/STATUS/SUBMISSION)</b></td><td>CODE</td><td>BCM BAdI hooks</td><td>?? (not yet identified)</td><td>Not extracted. Operate post-DMEE on batch level. May or may not have UNESCO impls.</td><td><b>NO CHANGE in V001 scope. Address change is XML-content, not batch-level.</b></td><td>Phase 0 follow-up — extract if BCM-level surprises emerge in Phase 4</td><td>—</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_ytfi_ppc_tag</code></td><td><b>YTFI_PPC_TAG (Payment Properties Customizing tag table)</b></td><td>DATA</td><td>Z customizing table</td><td>UNESCO BAdI infrastructure</td><td>11 rows in P01. Distinct LAND1: AE(2), BH(1), CN(2), ID(1), IN(1), JO(1), MA(1), MY(1), PH(1). Schema: LAND1+TAG_ID+DEB_CRE+TAG_FULL.</td><td><b>NO CHANGE — none of our target countries (FR/DE/IT/US/CA/BR/GB/KR/NG) have rows. PPC dispatcher is no-op for our scope.</b></td><td>RFC_READ_TABLE P01 2026-04-25 + UTIL_CM001 SELECT statement</td><td>—</td><td>no</td></tr>
+<tr style='background:#fff2cc;color:#1e293b'><td><code>data_ytfi_ppc_struc</code></td><td><b>YTFI_PPC_STRUC (PPC structure values table)</b></td><td>DATA</td><td>Z customizing table</td><td>UNESCO BAdI infrastructure</td><td>133 rows in P01. Joined with YTFI_PPC_TAG via LAND1+TAG_ID. Provides PPC_CODE / PPC_VALUE / PAY_STRUC / PAY_FIELD per country+tag.</td><td><b>NO CHANGE — same scope reasoning as YTFI_PPC_TAG.</b></td><td>RFC_READ_TABLE P01</td><td>—</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_class_generic</code></td><td><b>CL_IDFI_CGI_CALL05_GENERIC (SAP std)</b></td><td>CODE (SAP std)</td><td>Country dispatcher class</td><td>SAP</td><td>GENERIC_CALL method (CM005, 36KB / 570 lines) populates FPAYHX-REF01 + REF06 + REF02 from ADRC fields at every Event 05 call. Layout: REF01[0..60]=street, [60..80]=building, [80..90]=post_code, [90..100]=region, [100..110]=house_num; REF06[0..40]=city; REF02 same for Cdtr. Universal for all countries (called even when country class exists).</td><td><b>NO CHANGE — we read its output buffers in V001 DMEE nodes</b></td><td>Source extracted</td><td>—</td><td>no</td></tr>
+<tr style='background:#ead1dc;color:#1e293b'><td><code>sap_class_country_extras</code></td><td><b>CL_IDFI_CGI_CALL05_FR/DE/IT/GB (SAP std country adders)</b></td><td>CODE (SAP std)</td><td>Country-specific REF14 writers</td><td>SAP</td><td>Country classes only WRITE REF14 country-specific values (FR=SIRET, DE=SUN+SeqTp, IT=CUP+CIG+MGO, GB=bnkid+SeqTp). Do NOT touch REF01/02/06 address fields.</td><td><b>NO CHANGE</b></td><td>Source extracted Wave 1 of phase1_deep_extraction</td><td>—</td><td>no</td></tr>
+      </table>
+      <p style="margin-top:16px"><b>Summary</b>: of 31 components, <b>1 needs ABAP</b> (Pattern A guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</code>, 3 lines), <b>5 need CONFIG</b> (DMEE V001 trees + TFPM042FB Event 05 row), the rest are <b>NO CHANGE</b> — SAP-std reused or out of scope.</p>
+      <p>Surgical change validated by independent expert agent re-evaluation 2026-04-25: <b>~80% customizing, ~20% code (1 method, 3 lines)</b>.</p>
+    </div>
+    </div>
+
+<!-- ============================================================ -->
+<!-- CURRENT SOLUTION — what is actually wired and firing in P01   -->
+<!-- Source: Gold DB T042Z (263 rows) + OBPM1 catalog screenshots  -->
+<!-- ============================================================ -->
+<div id="current-solution" class="content"></div>

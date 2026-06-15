@@ -1,0 +1,342 @@
+<div id="tab-simulator" class="content">
+    <div class="section" style="background:#dcfce7;border-color:#1abc9c">
+      <h3 style="color:#1abc9c">🧪 Testing Simulation — V001 testing methodology in 4 complementary layers</h3>
+
+      <p style="font-size:13px">V001 is validated by 4 layers of testing — each layer catches a different class of error, runs at a different speed, and has a different fidelity. The Python simulator (claim 105) is layer 1; SAP-native tx DMEE Test Data (manual + history-replay) are layers 2 and 3; D01 F110 integration is layer 4. <strong>None of layers 1–3 require V001 activation anywhere</strong> — they are entirely build-time validation that retires most V001 design risk before any Phase 5-style activation.</p>
+
+      <table style="margin-top:10px;font-size:12px;border-collapse:collapse;width:100%">
+        <thead>
+          <tr style="background:#0d3a2f;color:#fff">
+            <th style="padding:8px;text-align:left;color:#fff;width:5%">Layer</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:25%">What it is</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:25%">Use case</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:12%">Speed</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:18%">Fidelity</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:15%">V001 activation needed?</th>
+          </tr>
+        </thead>
+        <tbody style="background:#fff;color:#1f2937">
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>1</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Python simulator</strong> (claim 105) — pure-Python re-implementation of the DMEE engine</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Fast design iteration during build; matrix-spec validation; XSD compliance check across schemas</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~seconds per scenario</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Schema-correctness only (Python implementation may differ from SAP engine on edge cases)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>2</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — hand-crafted (V000 only)</strong> — manual data entry into FPAYHX/FPAYH/FPAYP grids; F8 tests Active version</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Spot-check V000 engine output for one specific case; prove L1 simulator V000 ≡ L2 engine V000</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~1 min per case</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate for V000 (cannot test V001 without activation per Test active version constraint)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No (V000 path)</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>3</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>tx DMEE Test Data — F110 history replay (V000 only)</strong> — REGUH/REGUP reconstruction → paste into Test Data; F8 tests Active version</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Reproduce real production patterns under V000; top-15 scenarios = 94.5% volume coverage; engine-level V000 baseline for diff vs simulator V000</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~2-5 min per case</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">SAP-engine accurate for V000 (V001 testing belongs to Layer 4)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#15803d"><b>No (V000 path)</b></td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #cbd5e1"><b>4</b></td>
+            <td style="padding:8px;border:1px solid #cbd5e1"><strong>Activate V001 in D01 + run F110 (or F8)</strong> — D01-only V001 engine validation: snapshot V000 → activate V001 → test (F8 or F110) → rollback</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">V001 engine validation; final integration test if F110 used; required because L2-3 cannot test V001 directly</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">~30 min per F110 batch (F8-only test = ~5 min, no BCM/SWIFT)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1">Full-stack accurate (F110+all) or DMEE-engine-only (F8 after activation)</td>
+            <td style="padding:8px;border:1px solid #cbd5e1;color:#dc2626"><b>Yes — D01 only, with snapshot+rollback ritual</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:13px;margin-top:10px"><strong>Recommended order through Phase 3 / Phase 4</strong>: layer 1 first (catch design errors at code-review speed) → layer 2 second (sanity-check the simulator's predictions in real SAP for a few cases) → layer 3 third (top-15 scenarios = 94.5% volume coverage in ~30 min total) → layer 4 fourth (final integration). The earlier the layer, the cheaper the discovery — issues caught at layer 1 cost seconds; the same issues caught at layer 4 cost 30 minutes plus a transport rework.</p>
+
+      <p style="font-size:13px;margin-top:8px"><strong>Strategic implication</strong>: layers 1–3 are 100% build-time validation. They retire V001 design risk WITHOUT touching the SAP version-management lifecycle (no <code>Generate Version</code> snapshot, no Activate Version, no Workbench transport activation). Layer 4 is where D01-side activation enters — and the SAP-correct deployment lifecycle (snapshots, atomic activation = overwrite, Version-Management retrieve for rollback) only starts mattering at layer 4 and Phase 5. <strong>By the time Phase 5 cutover arrives, V001 design risk is already retired by layers 1–3</strong> — the cutover is mechanical, not exploratory.</p>
+
+      <h4 style="color:#1abc9c;margin-top:24px">Layer 1 — The Python simulator (claim 105)</h4>
+
+      <p style="font-size:13px">A pure-Python re-implementation of the DMEE engine that reads real P01 payment data from the Gold DB, renders V000 + V001 XML, and validates against ISO 20022 XSDs. <strong>Validated 794 production cases × 3 schemas = 2,382 PASS / 0 FAIL</strong>. Used for fast design iteration during V001 build — issues caught here cost seconds to fix.</p>
+
+      <h4>Why simulate before touching SAP at all?</h4>
+      <p>Most SAP projects test by deploying ABAP to a sandbox client, running F110 with synthetic data, and inspecting the output XML. That works, but it has three drawbacks: <em>(1)</em> it requires a transport, <em>(2)</em> it requires sandbox SAP authorisation, <em>(3)</em> running 794 test scenarios serially through F110 takes hours per run. The Python simulator solves all three: <strong>it is pure Python, runs entirely on local Gold DB data, and renders V000 + V001 pain.001 XML in seconds per scenario</strong>. We can iterate on the V001 design at the speed of code review, not the speed of SAP transports.</p>
+
+      <h4>What the simulator actually does</h4>
+      <p>The simulator implements every layer of the SAP-side pipeline in Python: it reads real P01 payment data from the Gold DB (REGUH_FAST + REGUP + LFA1 + ADRC), follows the same field mappings the DMEE tree would follow, builds V000 (current) and V001 (proposed) XML side-by-side, then validates both against the official ISO 20022 XSDs. <strong>The simulator is correctness-equivalent to F110 + DMEE for the address-tag scope</strong> — and that equivalence is itself a tested invariant (claim 105: 794/794 PASS on both pain.001.001.03 and pain.001.001.09 schemas). <strong>Layer 1 limit</strong>: the simulator is Python — any SAP-engine quirk Python doesn't reproduce will not be caught here. That gap is exactly what layers 2 and 3 close.</p>
+
+      <h4>What this layer enables for V001</h4>
+      <p>Three high-leverage outcomes: <em>(1)</em> design questions that would otherwise need bank confirmation (e.g., "does the bank accept the V001 tag layout?") become testable locally — the simulator validates against pain.001.001.09 (the CBPR+ Nov 2026 schema) so we know V001 is forward-compatible without sending a single test file; <em>(2)</em> per-tree per-vendor edge-cases (UltmtCdtr Worldlink, name-overflow, missing house-numbers) get exhaustive coverage in seconds; <em>(3)</em> the simulator becomes the <strong>regression baseline for layer 4 testing</strong> — when D01 F110 produces a real V001 XML, we diff it against the simulator's expected output to catch any unexpected SAP-side behavior.</p>
+
+      <p style="color:#64748b;font-size:12px;margin-top:14px">Tool: <code>Zagentexecution/mcp-backend-server-python/xml_simulator.py</code> — autonomous Python (no ABAP deploy needed). Reads real P01 data from Gold DB, renders V000 + V001 pain.001 XML per tree, validates against XSDs.</p>
+
+      <h4 style="color:#1abc9c">Pipeline</h4>
+      <pre style="font-size:11px">
+Real P01 data (REGUH_FAST + REGUP + LFA1 + ADRC from Gold DB)
+  ↓ [Python templates per tree: SEPA, CITI, CGI]
+V000 pain.001 XML
+  ↓ [V001 transformer: insert structured PstlAdr per Marlies + N_MENARD spec]
+V001 pain.001 XML
+  ↓ [XSD validator]
+Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026)
+      </pre>
+
+      <h4 style="color:#1abc9c">Results — 100% PASS</h4>
+      <table>
+        <tr><th>Tree</th><th>Total samples</th><th>V000 → XSD .03</th><th>V001 → XSD .03</th><th>V001 → XSD .09</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>166</td><td>✅ 166/166</td><td>✅ 166/166</td><td>✅ 166/166</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>320</td><td>✅ 320/320</td><td>✅ 320/320</td><td>✅ 320/320</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>308</td><td>✅ 308/308</td><td>✅ 308/308</td><td>✅ 308/308</td></tr>
+        <tr style="background:#0d3a2f"><td><b>TOTAL</b></td><td><b>794</b></td><td colspan="3"><b>2,382 / 2,382 PASS — 0 failures</b></td></tr>
+      </table>
+
+      <h4 style="color:#1abc9c">V001 transformer per tree</h4>
+      <table>
+        <tr><th>Tree</th><th>V001 transformation</th></tr>
+        <tr><td>SEPA</td><td>Replace Hybrid AdrLine with full structured (StrtNm/PstCd/TwnNm/Ctry) — both Cdtr + Dbtr</td></tr>
+        <tr><td>CITI</td><td>Fix Dbtr: add Ctry + restructure to structured</td></tr>
+        <tr><td>CGI</td><td>Fix CdtrAgt: PstlAdr from AdrLine to structured</td></tr>
+        <tr><td>CITI UltmtCdtr (Q3 res)</td><td>Add <code>&lt;StrtNm&gt;=FPAYH-ZSTRA</code>, deprecate AdrLine</td></tr>
+      </table>
+
+      <h4 style="color:#1abc9c">XSD bridge for .09 validation</h4>
+      <ul>
+        <li>Namespace: <code>pain.001.001.03</code> → <code>pain.001.001.09</code></li>
+        <li>ReqdExctnDt: simple date → complex with <code>&lt;Dt&gt;</code> sub-element</li>
+        <li><code>&lt;BIC&gt;</code> → <code>&lt;BICFI&gt;</code> (renamed in .09)</li>
+      </ul>
+
+      <h4 style="color:#1abc9c">Sample XMLs exported</h4>
+      <p><code>Zagentexecution/incidents/xml_payment_structured_address/simulator_output/</code> — 30 files (5 V000 + V001 pairs per tree). Inspectable by banking team / regression baseline.</p>
+
+      <h4 style="color:#1abc9c">Tool reusability</h4>
+      <p>Any future DMEE change can be simulated by editing the V001 transformer rules in Python. <strong>Permanent regression test infrastructure for UNESCO DMEE.</strong></p>
+
+      <h4 style="color:#1abc9c;margin-top:24px">F110 history replay via DMEE Test Data — SAP-native testing complementary to the Python simulator</h4>
+
+      <div style="background:#fef3c7;border:3px solid #b45309;padding:14px 18px;margin:14px 0;border-radius:6px;font-size:13px">
+        <p style="margin:0 0 8px 0;color:#b45309;font-weight:700;font-size:14px">⚠ KEY CONSTRAINT — DMEE Test mode tests ONLY the Active version</p>
+        <p style="margin:0 0 8px 0;color:#1f2937">tx DMEE menu exposes <strong>"Format tree → Test active version" (F8)</strong>. There is <strong>no "Test maintenance version" menu option</strong>. This means engine-level testing splits into two non-symmetric paths:</p>
+        <ul style="margin:0 0 8px 22px;color:#1f2937">
+          <li><strong>V000 testing (Phase A)</strong> — runs anywhere (D01/V01/P01) via F8 against the production active state. No activation needed. No risk. <em>Proves L1 (Python simulator) ↔ L2 (SAP engine) equivalence on V000.</em></li>
+          <li><strong>V001 testing (Phase B) — D01 ONLY</strong> — V001 cannot be tested in isolation via F8. To run F8 against V001 content, V001 must FIRST be activated (which per SAP-correct lifecycle overwrites V000 with V001 content). Therefore V001 testing requires the full snapshot+activate+test+rollback ritual: (a) Generate Version on D01 V000 → archives to V002 (rollback enabler); (b) Activate V001 → V001 content becomes the new D01 V000; (c) F8 Test active version → output is V001 engine output; (d) Retrieve V002 from Version Management → Activate → original V000 restored.</li>
+        </ul>
+        <p style="margin:0;color:#1f2937"><strong>Implication for the 4-layer methodology</strong>: Layer 2-3 as a "test V001 without activation" path does NOT exist for engine-level validation. What L2-3 actually delivers is engine-level validation of V000 (without activation, in any system). V001 engine testing requires Layer 4 (D01 with V001 activated). The Python simulator's V001 predictions are trusted transitively once L1 V000 ≡ L2 engine V000 is empirically confirmed for the same scenarios.</p>
+      </div>
+
+      <p style="font-size:13px">The Python simulator above is one way to validate V001 without F110. SAP itself ships <strong>a second, complementary mechanism</strong> that runs the real DMEE engine against manually-entered test data — <strong>tx DMEE → Format tree → Test active version (F8) — the "DMEE Test Data" screen</strong>. The screen is the entry point of stages ⑤–⑦ in the <a href="#" onclick="show('e2e-flow', document.querySelector('[onclick*=e2e-flow]'));return false">E2E Flow</a> chain: it accepts the same buffer structures (FPAYHX / FPAYH / FPAYP) that F110 + Event 05 populate at runtime — but populated manually by the operator. Per the constraint above, this F8 path tests whichever version is active at the moment of execution.</p>
+
+      <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/unesco_dmee_test_data_input_buffers.png" alt="DMEE Test Data screen — FPAYHX / FPAYH / FPAYP input structures" style="max-width:100%;border:1px solid #cbd5e1;border-radius:4px;margin-top:8px">
+      <div class="dme-shot-cap" style="font-size:12px;color:#475569;margin-top:6px"><strong>unesco_dmee_test_data_input_buffers.png</strong> — DMEE Test Data screen showing the 3 input grids: <strong>FPAYHX (formatting of payment data)</strong>, <strong>FPAYH (data for payment)</strong>, <strong>FPAYP (data for paid items)</strong>. Each grid accepts manual row entry; the column names visible (ISO Code / Account No / Name / Street / Bank city / IBAN / SWIFT/BIC / Amount / Crcy / etc.) ARE the SAP-standard DDIC fields of these structures. <strong>What is NOT visible by default is UNESCO's append-structure extensions</strong> — the 25 custom Z-fields in <code>CI_FPAYHX</code> (<code>ZSTRA</code>, <code>ZBSTR</code>, <code>ZBORT</code>, <code>ZBPST</code>, <code>ZLAND</code>, <code>ZORT1</code>, <code>ZPSTL</code>, <code>ZREGI</code>, <code>ZLISO</code>, <code>ZPFST</code>, <code>ZPLOR</code>, etc., per claim 67) that V001 references for UltmtCdtr Worldlink and CdtrAgt cases. Those custom fields exist at the table level but require scrolling/expansion (or the operator using "More fields" in the test screen layout) to populate. <strong>This visual boundary is itself useful: it tells you which V001 bindings reference SAP-standard fields (low-risk, universally available) vs custom append fields (UNESCO-specific, need explicit handling in test scenarios).</strong></div>
+
+      <h5 style="color:#0369a1;margin-top:14px">The strategy — replay F110 history into the test screen</h5>
+
+      <p style="font-size:13px">Combine two artifacts UNESCO already has: <strong>(a) F110 history persisted in REGUH / REGUP / REGUT</strong> (every payment ever produced is reconstructable from these tables); <strong>(b) the same tx DMEE Test Data input shape on the screen above</strong>. Pick any historical F110 batch — for example, the SEPA Payroll run from 2025-Q4 with 103,126 line items (scenario #2 of the 81-scenario coverage above). Reverse-engineer the FPAYH / FPAYHX / FPAYP rows for one of those payments from REGUH/REGUP, paste them into the DMEE Test Data screen, switch to V001 view, click Test, and SAP runs the real DMEE engine against your manually-pasted buffers and renders the V001 XML. <strong>You see exactly what F110 would have produced for that historical payment under V001, without F110 ever executing.</strong></p>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th>Source table</th><th>What to extract</th><th>Maps to test-screen grid</th></tr>
+        <tr><td><code>REGUH</code> (payment header — 1 row per F110-generated payment)</td><td>ZBUKR, LIFNR, ZALDT, ZBETR, WAERS, ZBNKS, ZBNKL, ZBNKN, IBAN, SWIFT, KIDNO, NAME1, ORT01, STRAS, PSTLZ, REGUL, ZBNKL, etc.</td><td><code>FPAYH</code> grid (data for payment)</td></tr>
+        <tr><td><code>REGUP</code> (payment items — 1+ rows per REGUH record)</td><td>BELNR, BUZEI, WRBTR, SGTXT, KIDNO, ZUONR, etc. (per line)</td><td><code>FPAYP</code> grid (data for paid items)</td></tr>
+        <tr><td><code>ADRC</code> + <code>T001</code> (Dbtr/UNESCO HQ company-code address)</td><td>STREET, HOUSE_NUM1, POST_CODE1, CITY1, COUNTRY, REGION — byte-packed into REF01..REF15 (claim 101 layout)</td><td><code>FPAYHX</code> grid (formatting of payment data)</td></tr>
+        <tr><td><code>REGUT</code> (run-time formatting buffer, partially persisted) + Z-fields populated by Event 05 country class</td><td>ZSTRA, ZBSTR, ZORT1, ZPSTL etc. — UNESCO custom append fields for UltmtCdtr / CdtrAgt structured atoms</td><td><code>FPAYHX</code> grid (custom-extension columns — typically hidden by default; activate via screen layout)</td></tr>
+      </table>
+
+      <h5 style="color:#0369a1;margin-top:14px">Why this matters for the change strategy</h5>
+
+      <ol style="font-size:13px">
+        <li><strong>Validates V001 against real production patterns without F110</strong> — pick the top-15 scenarios (94.5% of volume per the table below), reconstruct one representative payment per scenario from REGUH/REGUP, paste into Test Data, simulate. If the V001 XML output is structurally correct and schema-valid, V001 is validated against 94.5% of production volume — without ever running F110 in any system.</li>
+
+        <li><strong>Reproduces specific bank-rejection scenarios deterministically</strong> — when Marlies's analysis or a bank reports a specific defect ("payment X to vendor Y to bank Z was rejected because..."), find that exact REGUH record, reconstruct its FPAYH/FPAYHX/FPAYP, paste into Test Data, run V001 → see if V001 still produces a problem-XML or fixes it. Same input + V000 vs V001 = direct A/B comparison.</li>
+
+        <li><strong>Field-visibility audit comes for free</strong> — when reconstructing FPAYHX, every field your V001 design references via MP_SC_FLD must be populated. If the field is in the visible part of the test screen, it is SAP-standard and universally available. If it is hidden in the append-structure section (Z-fields), <strong>that binding depends on UNESCO's CI_FPAYHX customization</strong> and won't work in any other UNESCO-like environment without the same extension. This audit is a derivative output of the testing exercise: the V001 design's portability gets characterized as a side effect.</li>
+
+        <li><strong>Complementary, not duplicative, to the Python simulator</strong> — the Python simulator catches design errors (matrix-spec issues, wrong byte offset, wrong source-bind structure, missing DMEE_TREE_COND). The DMEE Test Data approach catches engine-implementation differences (anything Python implements differently from the SAP-standard DMEE engine — e.g., XSLT post-processing nuances on CITI tree, or per-node EXIT_FUNC behavior). <strong>Use both</strong>: simulator first for fast iteration, DMEE Test Data for a SAP-native confirmation pass on the top scenarios.</li>
+
+        <li><strong>V000 testing in any system without activation; V001 testing in D01 only with activation ritual</strong> — per the F8 KEY CONSTRAINT above, the Test Data screen runs the Active version. V000 (current production) can be tested in D01/V01/P01 with zero side effects (no activation, no F110 file, no BCM batch). V001 testing requires Layer 4: Generate Version snapshot → Activate V001 in D01 → F8 Test → Retrieve snapshot → Activate to rollback. The "no activation needed" property applies only to V000 testing.</li>
+      </ol>
+
+      <h5 style="color:#0369a1;margin-top:14px">Combined testing methodology — the 4 layers in order</h5>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th>#</th><th>Layer</th><th>Purpose</th><th>Speed</th><th>Fidelity</th></tr>
+        <tr><td>1</td><td><strong>Python simulator</strong> (claim 105)</td><td>Catch design errors fast — matrix spec, byte offsets, source-bind</td><td>seconds per scenario</td><td>schema-correctness only</td></tr>
+        <tr><td>2</td><td><strong>tx DMEE Test Data</strong> with hand-crafted FPAYHX/FPAYH/FPAYP</td><td>Spot-check one specific edge case interactively in SAP</td><td>~1 minute per case</td><td>SAP-engine accurate (single payment)</td></tr>
+        <tr><td>3</td><td><strong>tx DMEE Test Data</strong> with F110-history-replay</td><td>Reproduce real production patterns with V001; A/B vs V000 for any historical payment</td><td>~2-5 minutes per case (data prep + paste + run)</td><td>SAP-engine accurate (real-data scenario)</td></tr>
+        <tr><td>4</td><td><strong>Activate V001 in D01 only</strong> + run real F110</td><td>Full integration: F110 + SAPFPAYM + Event 05 + DMEE + BCM end-to-end</td><td>~30 min per F110 batch</td><td>full-stack accurate</td></tr>
+      </table>
+
+      <p style="font-size:13px;margin-top:8px"><strong>Recommended Phase 3 sequence</strong>: layer 1 (simulator) for design iteration during build → layer 2 (Test Data hand-crafted) for sanity checks per matrix-row → layer 3 (Test Data F110-history replay) for the top-15 scenarios = 94.5% volume coverage → layer 4 (D01 F110) for the final integration cycle. Each layer catches a different class of error, and earlier layers find issues at lower cost.</p>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>Strategic implication</strong>: layers 1–3 do not require Phase 5-style activation, do not require Generate Version snapshots, and do not depend on the Workbench transport chain. They are <strong>build-time validation tools</strong>. The SAP-correct V001 deployment lifecycle (with mandatory <code>Generate Version</code> snapshots before activation per the version-concept tab) only kicks in at layer 4 and Phase 5. <strong>This means most V001 design risk is retire-able BEFORE any Generate Version snapshot has to be considered</strong> — which buys safety margin: by the time we activate V001 in P01, the design has already been validated by 794 simulator runs + DMEE Test Data spot checks + D01 F110 integration test. The activation step itself is then mechanical, not exploratory.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px">Validation matrix alignment — corrected per Test active version constraint</h5>
+
+      <p style="font-size:13px"><strong>The Python simulator (L1) validates each of the 4 trees against 3 cases</strong>: V000 → pain.001.001.03 (current production behaviour) · V001 → pain.001.001.03 (V001 backward-compatible against today's schema) · V001 → pain.001.001.09 (V001 forward-compatible against the CBPR+ Nov 2026 schema). Total: 4 trees × 3 cases × 794 sample payments = 2,382 layer-1 validations, all PASS (claim 105).</p>
+
+      <p style="font-size:13px"><strong>L2-3 (DMEE Test Data) only validates the V000 case</strong> per the F8 constraint — see KEY CONSTRAINT callout above. The V001 cases are validated by L4 (D01 activation with snapshot+rollback ritual). The matrix below reflects the actual coverage delivered per layer:</p>
+
+      <table style="margin-top:8px;font-size:12px;width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#1e3a4a;color:#fff">
+            <th style="padding:8px;text-align:left;color:#fff;width:18%">Template (DMEE tree)</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:24%">Case 1 — V000 → pain.001.001.03</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:24%">Case 2 — V001 → pain.001.001.03</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:24%">Case 3 — V001 → pain.001.001.09</th>
+            <th style="padding:8px;text-align:left;color:#fff;width:10%">Coverage</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:12px">
+          <tr><td style="padding:8px;border:1px solid #cbd5e1"><code>/SEPA_CT_UNES</code></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 166/166 · <strong>L2-3 to run (V000)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 166/166 · <strong>L4 D01 to run (V001 activation)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 166/166 · L4 D01 if .09 cutover planned</td><td style="padding:8px;border:1px solid #cbd5e1">17 scenarios · 292,727 payments · 45.4%</td></tr>
+          <tr><td style="padding:8px;border:1px solid #cbd5e1"><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 308/308 · <strong>L2-3 to run (V000)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 308/308 · <strong>L4 D01 to run (V001 activation)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 308/308 · L4 D01 if .09 cutover planned</td><td style="padding:8px;border:1px solid #cbd5e1">32 scenarios · 177,051 · 27.5%</td></tr>
+          <tr><td style="padding:8px;border:1px solid #cbd5e1"><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 320/320 · <strong>L2-3 to run (V000)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 320/320 · <strong>L4 D01 to run (V001 activation)</strong></td><td style="padding:8px;border:1px solid #cbd5e1">L1 ✅ 320/320 · L4 D01 if .09 cutover planned</td><td style="padding:8px;border:1px solid #cbd5e1">32 scenarios · 175,107 · 27.2%</td></tr>
+          <tr style="background:#fef3c7"><td style="padding:8px;border:1px solid #cbd5e1"><b>TOTAL</b></td><td style="padding:8px;border:1px solid #cbd5e1;text-align:center"><b>L1: 794 PASS<br>L2-3: 794 V000 validations to schedule</b></td><td style="padding:8px;border:1px solid #cbd5e1;text-align:center" colspan="2"><b>L1: 1,588 PASS (V001 × 2 schemas)<br>L4 D01: top-15 scenarios × 4 trees × V001 activation cycle = 60 cases</b></td><td style="padding:8px;border:1px solid #cbd5e1"><b>81 scenarios · 644,885 payments · 100%</b></td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>Adjusted Phase 3 effort estimate</strong>: Top-15 scenarios = 94.5% volume coverage. L2-3 V000 baseline runs = 15 cases × 4 trees × ~5 min = ~5 hours. L4 V001 activation cycles in D01 = top-15 × 4 trees × ~30 min per activate-test-rollback cycle = ~30 hours of focused testing (splittable across operators). Plus L1 simulator already done. <strong>The L2-3 V000 run is the cheap, fast first pass; the L4 V001 cycles are the heavier-but-mandatory engine validation.</strong></p>
+
+      <h5 style="color:#0369a1;margin-top:14px">Why the alignment matters — three correctness properties stacked</h5>
+
+      <p style="font-size:13px">Running the same 3-cases-per-template at every layer validates three independent correctness properties on the same input space:</p>
+
+      <table style="margin-top:8px;font-size:12px">
+        <tr><th style="width:18%">Layer</th><th style="width:42%">What this layer is validating</th><th style="width:40%">What the alignment buys</th></tr>
+        <tr><td><b>L1 — Python simulator</b></td><td>"V001 design produces schema-valid pain.001 against XSD .03 and .09" — i.e. <strong>schema-correctness of the design</strong></td><td>Catches matrix-spec errors at code-review speed (seconds per scenario). Output: 2,382 PASS confirms the design is schema-valid in principle.</td></tr>
+        <tr><td><b>L2-3 — DMEE Test Data</b></td><td>"SAP's actual DMEE engine, given the same input buffers, produces schema-valid output that matches the Python simulator's prediction" — i.e. <strong>simulator-vs-SAP equivalence per scenario</strong></td><td>If L2-3 output ≡ L1 prediction for every case → claim 105's "correctness-equivalent" assertion is empirically proven, scenario by scenario. If any case differs → that is a SAP-engine quirk Python missed; we know about it before Phase 5 instead of in production.</td></tr>
+        <tr><td><b>L4 — D01 F110</b></td><td>"The full upstream chain (F110 + SAPFPAYM + Event 05 + DMEE + BCM) produces the same XML the test layers predicted" — i.e. <strong>integration-correctness of the chain</strong></td><td>Catches issues that span F110/SAPFPAYM/BCM, not just DMEE. Top-K scenarios is sufficient — we don't need 794×3=2,382 F110 batches; we need ~15 representative ones because L1-L3 already validated the DMEE layer exhaustively.</td></tr>
+      </table>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px"><strong>The alignment principle in one sentence</strong>: <strong>same 4 templates × same 3 cases × same 794 sample inputs at L1, L2-3, and a sampled subset at L4</strong>. Coverage doesn't fragment across layers — it's the same matrix evaluated by progressively higher-fidelity validators. Anomalies at any layer reveal a specific class of error (design / simulator-equivalence / integration) without ambiguity. This is what makes the methodology operationally tight rather than just "we test multiple ways".</p>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>Practical Phase 3 sequencing</strong>: layer 1 already done (claim 105). For layer 2-3 V000 baseline runs: prioritize the top-15 scenarios (94.5% volume coverage) × 4 templates × 1 case (V000) = 60 DMEE Test Data runs (~5 min each = ~5 hours of focused work, splittable across operators), no activation needed. For layer 4 V001 runs: top-15 × 4 templates × V001 activation cycle = 60 cases × ~30 min each = ~30 hours, in D01 only with snapshot+rollback ritual. Total Phase 3 effort = days of focused testing, not weeks of D01 cycles.</p>
+
+      <div style="background:#dcfce7;border-left:5px solid #1abc9c;padding:14px 18px;margin:14px 0;border-radius:4px;font-size:13px">
+        <p style="margin:0 0 6px 0;color:#15803d;font-weight:700">📊 Sister Excel — ready-to-execute test cases for SEPA tree</p>
+        <p style="margin:0 0 6px 0;color:#1f2937">The first SEPA tree test cases are pre-built and operator-ready: <code>Zagentexecution/incidents/xml_payment_structured_address/sepa_ct_unes_test_cases.xlsx</code>.</p>
+        <p style="margin:0 0 4px 0;color:#1f2937">Workbook structure:</p>
+        <ul style="margin:0 0 6px 22px;color:#1f2937">
+          <li><strong>README tab</strong> — recommended inter-case execution order (Case 1 → Case 2 → Case 3) + KEY CONSTRAINT (F8 tests Active only) + Phase A vs Phase B distinction</li>
+          <li><strong>Case_1_Standard_Vendor</strong> — Scenario #1 (FR vendor, EUR, Doc cat=01) — 18.4% volume</li>
+          <li><strong>Case_2_Payroll</strong> — Scenario #2 (FR employee, EUR, Doc cat=03) — 16% volume</li>
+          <li><strong>Case_3_Cross_Border_ES</strong> — SEPA-zone non-FR Cdtr (Spanish vendor, Doc cat=01) — exercises non-FR Cdtr country binding</li>
+        </ul>
+        <p style="margin:0 0 4px 0;color:#1f2937">Each case tab carries the full <strong>17-step procedure</strong> organised in 3 phases:</p>
+        <ul style="margin:0 0 6px 22px;color:#1f2937">
+          <li><strong>Phase A · steps 1-9</strong> — Test V000 (any system, no activation) — F8 against the Active version, save case_N_V000.xml</li>
+          <li><strong>Phase B · steps 10-15</strong> — Test V001 (D01 only) — Generate Version snapshot to V002 → Activate V001 (overwrites V000) → F8 → save case_N_V001.xml → Version Management Retrieve V002 → Activate (rollback)</li>
+          <li><strong>Phase C · steps 16-17</strong> — Diff case_N_V000.xml vs case_N_V001.xml + verify simulator equivalence</li>
+        </ul>
+        <p style="margin:0;color:#1f2937">Generator script (parametric) at <code>Zagentexecution/incidents/xml_payment_structured_address/generate_sepa_test_cases.py</code> — same pattern reusable for /CITI/XML/UNESCO/DC_V3_01, /CGI_XML_CT_UNESCO, /CGI_XML_CT_UNESCO_1 by adding case definitions to the CASES list.</p>
+      </div>
+
+      <h4 style="color:#1abc9c;margin-top:24px">Where the volume goes — 81-scenario coverage (claim 106 TIER_1)</h4>
+      <p style="color:#8aa4b8;font-size:13px">The 794 simulator samples were stratified across <b>81 distinct scenarios</b> exhaustively enumerated from P01 production REGUH 2025+2026Q1 (210,080 REGUP rows analysed). A scenario is a unique tuple of <code>(tree × paying_co × vendor_bank_country × currency × payment_method × pay_type)</code>. Source: <code>knowledge/domains/Payment/phase0/scenario_discovery.json</code>.</p>
+      <table style="font-size:12px">
+        <tr><th>Tree</th><th>Distinct scenarios</th><th>Total payments (REGUP rows)</th><th>% of in-scope volume</th></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>17</td><td>292,727</td><td>45.4%</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>32</td><td>177,051</td><td>27.5%</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>32</td><td>175,107</td><td>27.2%</td></tr>
+        <tr style="background:#0d3a2f"><td><b>TOTAL</b></td><td><b>81</b></td><td><b>644,885</b></td><td><b>100%</b></td></tr>
+      </table>
+      <h5 style="color:#1abc9c;margin-top:16px">Top 15 scenarios (94.5% of in-scope volume)</h5>
+      <table style="font-size:11px">
+        <tr><th>#</th><th>Tree</th><th>Co</th><th>Bank ctry</th><th>Curr</th><th>PM</th><th>Pay type</th><th>Payments</th><th>Cumul %</th></tr>
+        <tr><td>1</td><td>SEPA</td><td>UNES</td><td>FR</td><td>EUR</td><td>S</td><td>O (Other)</td><td>118,678</td><td>18.4%</td></tr>
+        <tr><td>2</td><td>SEPA</td><td>UNES</td><td>FR</td><td>EUR</td><td>S</td><td><b>P (Payroll)</b></td><td>103,126</td><td>34.4%</td></tr>
+        <tr><td>3</td><td>CGI</td><td>UNES</td><td>FR</td><td>USD</td><td>N</td><td>O</td><td>94,356</td><td>49.0%</td></tr>
+        <tr style="background:#0e2e2c"><td>4</td><td>CITI</td><td>UBO</td><td>BR</td><td>BRL</td><td>R</td><td><b>R (Replenishment / Worldlink)</b></td><td>66,872</td><td>59.4%</td></tr>
+        <tr><td>5</td><td>SEPA</td><td>UNES</td><td>FR</td><td>(empty)</td><td>S</td><td>O</td><td>53,516</td><td>67.7%</td></tr>
+        <tr><td>6</td><td>CITI</td><td>UNES</td><td>US</td><td>(empty)</td><td>L</td><td>O</td><td>50,078</td><td>75.4%</td></tr>
+        <tr><td>7</td><td>CGI</td><td>UNES</td><td>FR</td><td>(empty)</td><td>N</td><td>O</td><td>43,194</td><td>82.1%</td></tr>
+        <tr><td>8</td><td>CITI</td><td>UNES</td><td>US</td><td>USD</td><td>L</td><td>O</td><td>26,951</td><td>86.3%</td></tr>
+        <tr><td>9</td><td>CITI</td><td>UNES</td><td>US</td><td>USD</td><td>L</td><td>P</td><td>13,603</td><td>88.4%</td></tr>
+        <tr><td>10</td><td>CGI</td><td>UNES</td><td>FR</td><td>(empty)</td><td>J</td><td>O</td><td>8,468</td><td>89.7%</td></tr>
+        <tr><td>11</td><td>SEPA</td><td>UIL</td><td>FR</td><td>EUR</td><td>S</td><td>O</td><td>7,508</td><td>90.9%</td></tr>
+        <tr><td>12</td><td>CGI</td><td>UNES</td><td>FR</td><td>USD</td><td>N</td><td>P</td><td>6,316</td><td>91.8%</td></tr>
+        <tr><td>13</td><td>CGI</td><td>UNES</td><td>FR</td><td>EUR</td><td>J</td><td>O</td><td>6,207</td><td>92.8%</td></tr>
+        <tr><td>14</td><td>SEPA</td><td>IIEP</td><td>FR</td><td>EUR</td><td>S</td><td>O</td><td>5,830</td><td>93.7%</td></tr>
+        <tr><td>15</td><td>CITI</td><td>UNES</td><td>US</td><td>EUR</td><td>L</td><td>P</td><td>5,084</td><td>94.5%</td></tr>
+      </table>
+      <p style="color:#8aa4b8;font-size:12px;margin-top:8px"><b>Tail: 32 of 81 scenarios cover only 0.2% combined</b> (1,214 payments) — long-tail edge cases, exception-handling not core test coverage.</p>
+      <h5 style="color:#1abc9c;margin-top:16px">Pay-type axis — orthogonal dimension connecting to PPC system</h5>
+      <p style="color:#8aa4b8;font-size:12px">The <code>pay_type</code> column (derived from <code>FPAYH-DORIGIN[0:2]</code>) takes 3 values used by the PPC dispatcher (<code>YCL_IDFI_CGI_DMEE_UTIL::GET_TAG_VALUE_FROM_CUSTO</code>, claim 99):</p>
+      <ul style="font-size:12px;color:#cbd5dc">
+        <li><b>O (Other)</b> — vendor invoice payments. Most common (~70% of in-scope).</li>
+        <li><b>P (Payroll)</b> — DORIGIN starts with HR. SEPA pm=S split between O+P (#1+#2 of top 15) is purely a PPC-routing concern, not a tree-design concern — V001 nodes don't differentiate.</li>
+        <li><b>R (Replenishment)</b> — DORIGIN starts with TR. Includes Worldlink BRL (#4 of top 15). PPC tags fire here for the 9 PPC countries.</li>
+      </ul>
+      <h5 style="color:#1abc9c;margin-top:16px">Operational consequence for V001 risk model</h5>
+      <p style="font-size:12px;color:#cbd5dc">Every V001 risk question is bounded by "which of the 81 scenarios?" instead of "what if some unknown payment breaks?":</p>
+      <ul style="font-size:12px;color:#cbd5dc">
+        <li><b>Phase 3 unit test</b> stratifies by the 81 — top 8 cover &gt;88%, top 15 cover 95%</li>
+        <li><b>Phase 4 UAT</b> needs only ~5-8 scenarios for bank end-to-end validation; simulator already proved the other 73 are schema-equivalent</li>
+        <li><b>Cutover monitoring (Phase 5)</b> — daily schema-fail rate per scenario class; investigation scope bounded</li>
+        <li><b>Regression baseline</b> — re-run scenario_discovery + simulator after V001 deploys for byte-level V000-vs-V001 diff per scenario class</li>
+      </ul>
+      <h5 style="color:#1abc9c;margin-top:16px">Volume reconciliation — Overview tab vs scenario_discovery</h5>
+      <p style="font-size:12px;color:#8aa4b8">Overview tab quotes ~176K SEPA / ~85K CITI / ~76K CGI (<code>process_mining_real_tree_per_payment.json</code> — CONFIG-derived T042Z lookup, counts <b>F110 payments</b> at REGUH header level). Simulator scenario_discovery quotes 292K / 177K / 175K (counts <b>invoice lines</b> at REGUP level). One payment can have N lines. Both correct under their respective definitions.</p>
+      <h4 style="color:#1abc9c;margin-top:24px">Year × Company Code × Tree breakdown (Gold DB query 2026-04-30, claim 107 TIER_1)</h4>
+      <p style="color:#8aa4b8;font-size:13px">Direct REGUH_FAST × T001 × T042Z join — 567,059 F110 payment-header rows in P01 covering 2025 + 2026 partial. Brain anchor: claim 107.</p>
+
+      <table style="font-size:12px">
+        <tr><th>Year</th><th>Company code</th><th>SEPA</th><th>CITI</th><th>CGI</th><th>Row total</th></tr>
+        <tr><td>2025</td><td>UNES (HQ)</td><td><b>129,722</b></td><td>30,093</td><td>57,914</td><td><b>217,729</b></td></tr>
+        <tr><td>2025</td><td>UBO (Brazil)</td><td>—</td><td>33,558</td><td>—</td><td>33,558</td></tr>
+        <tr><td>2025</td><td>UIL (Hamburg)</td><td>3,783</td><td>—</td><td>354</td><td>4,137</td></tr>
+        <tr><td>2025</td><td>IIEP</td><td>2,976</td><td>—</td><td>1,155</td><td>4,131</td></tr>
+        <tr><td>2025</td><td>UIS</td><td>—</td><td>1,119</td><td>—</td><td>1,119</td></tr>
+        <tr style="background:#1a2738"><td><b>2025 TOTAL</b></td><td></td><td><b>136,481</b></td><td><b>64,770</b></td><td><b>59,423</b></td><td><b>260,674</b></td></tr>
+        <tr><td>2026 (Q1 partial)</td><td>UNES</td><td>37,685</td><td>8,880</td><td>16,408</td><td>62,973</td></tr>
+        <tr><td>2026</td><td>UBO</td><td>—</td><td>10,786</td><td>—</td><td>10,786</td></tr>
+        <tr><td>2026</td><td>UIL</td><td>945</td><td>—</td><td>32</td><td>977</td></tr>
+        <tr><td>2026</td><td>IIEP</td><td>793</td><td>—</td><td>298</td><td>1,091</td></tr>
+        <tr><td>2026</td><td>UIS</td><td>—</td><td>336</td><td>—</td><td>336</td></tr>
+        <tr style="background:#1a2738"><td><b>2026 TOTAL (Q1 partial)</b></td><td></td><td><b>39,423</b></td><td><b>20,002</b></td><td><b>16,738</b></td><td><b>76,163</b></td></tr>
+        <tr style="background:#0d3a2f"><td><b>2-year totals (in-scope)</b></td><td></td><td><b>175,904</b></td><td><b>84,772</b></td><td><b>76,161</b></td><td><b>336,837</b></td></tr>
+      </table>
+
+      <h5 style="color:#1abc9c;margin-top:14px">Per-company-code rollup (2-year)</h5>
+      <table style="font-size:12px">
+        <tr><th>Co code</th><th>Description</th><th>SEPA</th><th>CITI</th><th>CGI total</th><th>2-year total</th><th>% of in-scope</th></tr>
+        <tr><td>UNES</td><td>Headquarters Paris</td><td>167,407</td><td>38,973</td><td>74,322</td><td><b>280,702</b></td><td><b>83.3%</b></td></tr>
+        <tr><td>UBO</td><td>Brazil branch</td><td>—</td><td>44,344</td><td>—</td><td>44,344</td><td>13.2%</td></tr>
+        <tr><td>UIL</td><td>UNESCO Institute Hamburg</td><td>4,728</td><td>—</td><td>386</td><td>5,114</td><td>1.5%</td></tr>
+        <tr><td>IIEP</td><td>Education planning institute</td><td>3,769</td><td>—</td><td>1,453</td><td>5,222</td><td>1.5%</td></tr>
+        <tr><td>UIS</td><td>Institute for Statistics</td><td>—</td><td>1,455</td><td>—</td><td>1,455</td><td>0.4%</td></tr>
+      </table>
+      <p style="color:#8aa4b8;font-size:12px;margin-top:6px"><em>UNES alone = 83% of in-scope traffic. The 4 satellite entities together = 17%. 2026 numbers are Q1-only (LAUFD &lt; 2026-04-30); annualised pace is roughly 3× the partial. ICTP traffic excluded — out of scope (separate ICTP DMEE trees).</em></p>
+
+      <h4 style="color:#1abc9c;margin-top:24px">3 F110 examples per tree — copy-and-paste for V001 testing</h4>
+      <p style="color:#8aa4b8;font-size:13px">For each in-scope tree: 3 actual F110 runs from P01 production, chosen for variety (vendor-bank country / payment method / currency). Each row gives the exact F110 input keys (LAUFD + LAUFI + ZBUKR) needed to reproduce the run in D01 after Step-0 retrofit. Sample LIFNR + simulator output XML cross-referenced. Source: <code>Zagentexecution/incidents/xml_payment_structured_address/f110_copy_examples.json</code>.</p>
+
+      <h5 style="color:#1abc9c;margin-top:12px">SEPA — /SEPA_CT_UNES (3 F110 examples)</h5>
+      <table style="font-size:11px">
+        <tr><th>#</th><th>LAUFD (run date)</th><th>LAUFI (run id)</th><th>ZBUKR</th><th>PM</th><th>HBKID</th><th>Curr</th><th>Vendor LAND1</th><th>Pmts in run</th><th>Vendors</th><th>Sum amount</th><th>Sample LIFNR</th><th>Simulator V001 XML</th></tr>
+        <tr><td>1</td><td><code>20250522</code></td><td><code>00002B</code></td><td>UNES</td><td>S</td><td>SOG01</td><td>EUR</td><td>FR</td><td>1,703</td><td>1,703</td><td>10,952,620</td><td>0010000152</td><td><code>simulator_output/SEPA/sample_1_0000200002_V001.xml</code></td></tr>
+        <tr><td>2</td><td><code>20250716</code></td><td><code>BT07</code></td><td>UNES</td><td>S</td><td>SOG01</td><td>USD</td><td>FR</td><td>16</td><td>4</td><td>1,805,347</td><td>0000347452</td><td><code>simulator_output/SEPA/sample_2_0000200006_V001.xml</code></td></tr>
+        <tr><td>3</td><td><code>20260121</code></td><td><code>BT01</code></td><td>UNES</td><td>S</td><td>SOG01</td><td>(empty)</td><td>FR</td><td>6</td><td>1</td><td>690</td><td>—</td><td><code>simulator_output/SEPA/sample_3_0010061388_V001.xml</code></td></tr>
+      </table>
+
+      <h5 style="color:#1abc9c;margin-top:12px">CITI — /CITI/XML/UNESCO/DC_V3_01 (3 F110 examples)</h5>
+      <table style="font-size:11px">
+        <tr><th>#</th><th>LAUFD</th><th>LAUFI</th><th>ZBUKR</th><th>PM</th><th>HBKID</th><th>Curr</th><th>Vendor LAND1</th><th>Pmts</th><th>Vendors</th><th>Sum amount</th><th>Sample LIFNR</th><th>Simulator V001 XML</th></tr>
+        <tr><td>1</td><td><code>20251024</code></td><td><code>00016B</code></td><td>UNES</td><td>L</td><td>CIT04</td><td>USD</td><td>US</td><td>292</td><td>292</td><td>1,572,205</td><td>0010001230</td><td><code>simulator_output/CITI/sample_1_0000350938_V001.xml</code></td></tr>
+        <tr style="background:#0e2e2c"><td>2</td><td><code>20250624</code></td><td><code>BUBO</code></td><td><b>UBO</b></td><td>R</td><td>CIT01</td><td>BRL</td><td>BR</td><td>290</td><td>145</td><td>7,998,455</td><td>0000416092</td><td><code>simulator_output/CITI/sample_2_0000422266_V001.xml</code> · <b>Worldlink + UltmtCdtr</b></td></tr>
+        <tr><td>3</td><td><code>20250221</code></td><td><code>09304P</code></td><td>UNES</td><td>L</td><td>CIT04</td><td>EUR</td><td>US</td><td>87</td><td>87</td><td>536,416</td><td>0010001293</td><td><code>simulator_output/CITI/sample_3_0000422377_V001.xml</code></td></tr>
+      </table>
+
+      <h5 style="color:#1abc9c;margin-top:12px">CGI — /CGI_XML_CT_UNESCO (3 F110 examples)</h5>
+      <table style="font-size:11px">
+        <tr><th>#</th><th>LAUFD</th><th>LAUFI</th><th>ZBUKR</th><th>PM</th><th>HBKID</th><th>Curr</th><th>Vendor LAND1</th><th>Pmts</th><th>Vendors</th><th>Sum amount</th><th>Sample LIFNR</th><th>Simulator V001 XML</th></tr>
+        <tr><td>1</td><td><code>20251210</code></td><td><code>BT12</code></td><td>UNES</td><td>N</td><td>SOG01</td><td>USD</td><td>FR</td><td>1,075</td><td>526</td><td>9,742,661</td><td>0000042177</td><td><code>simulator_output/CGI/sample_1_0010141693_V001.xml</code></td></tr>
+        <tr><td>2</td><td><code>20251217</code></td><td><code>BTM12</code></td><td>UNES</td><td>J</td><td>SOG01</td><td>EUR</td><td>FR</td><td>69</td><td>34</td><td>884,055</td><td>0000305562</td><td><code>simulator_output/CGI/sample_2_0010153070_V001.xml</code></td></tr>
+        <tr><td>3</td><td><code>20250709</code></td><td><code>BT07</code></td><td>UNES</td><td>N</td><td>SOG03</td><td>GBP</td><td>FR</td><td>38</td><td>19</td><td>103,925</td><td>0000044783</td><td><code>simulator_output/CGI/sample_3_0010173695_V001.xml</code></td></tr>
+      </table>
+
+      <p style="color:#8aa4b8;font-size:12px;margin-top:10px"><b>How to use in Phase 3 unit testing</b>: in D01 (after Step-0 retrofit), run F110 with the same (LAUFD, LAUFI, ZBUKR) — SAP reproduces the exact payment selection. Switch payment method to a Z-method routing to V001 (per plan §Phase 2 sequencing L569). Compare F110 XML output byte-by-byte against the simulator V001 XML referenced above. Match → V001 is byte-equivalent. Diverge → the diff localises the gap (Event 05 byte-layout subtlety or CV_RULE conversion difference).</p>
+
+      <p style="color:#8aa4b8;font-size:12px"><em>JSON form of the 9 examples (with ZALDT + full F110 metadata): <code>Zagentexecution/incidents/xml_payment_structured_address/f110_copy_examples.json</code>. Brain anchor: claim 107.</em></p>
+
+
+    </div>
+    </div>

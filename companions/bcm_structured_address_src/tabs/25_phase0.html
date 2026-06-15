@@ -1,0 +1,551 @@
+<div id="tab-phase0" class="content">
+    <div class="section" style="background:#dcfce7;border-color:#1abc9c">
+      <h3 style="color:#1abc9c">Phase 0 — Discovery &amp; 100% Code Inventory <span style="font-size:12px;color:#0369a1">(COMPLETED · 2026-04-24)</span></h3>
+
+      <h4>Why "100% inventory" before any design</h4>
+      <p>Phase 0 set a hard rule: <strong>no design decision without evidence</strong>. UNESCO's payment XML pipeline has been touched by 8 authors over 10 years; new contributors typically see only the visible parts (the DMEE tree + the BAdI they touch) and miss the customizing tables, exit functions, and event modules behind the scenes. Phase 0's job was to enumerate <em>everything</em> — every Z-class, Y-include, customizing entry, Event 05 wrapper, byte-buffer field — so V001 design starts from a verified inventory rather than assumptions. The "100%" is not rhetorical: every single MP_EXIT_FUNC reference in the 1,975 P01 nodes was traced to its function module, and every function module was extracted and inspected.</p>
+
+      <h4>What Phase 0 actually delivered</h4>
+      <p>The Phase 0 outputs become the foundation every later phase rests on: <em>(a)</em> the reference architecture (3 compliance states: Unstructured / Hybrid / Structured), <em>(b)</em> the 31-component map (Components Map tab), <em>(c)</em> the Phase 0 closure report which signed off that no piece of code/config was unaccounted for, <em>(d)</em> the gap-closure memos for each open question. Anything labeled "Phase 0" below is the <strong>archive</strong> of that discovery — Phase 0 is closed; you are reading the receipts.</p>
+
+      <p><strong>Inputs</strong>: Marlies email 2026-04-14 + Excel "XML Address un structured.xlsx" (10 production cases) + handoff doc UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0 + h18 P01 DMEE baseline (2026-04-06) + Brain v2.</p>
+    </div>
+
+    <div class="section" style="background:#fef3c7;border-color:#f59e0b">
+      <h4 style="color:#b45309;margin-top:0">⚠ Read this before reading the rest of Phase 0 — design supersedes</h4>
+      <p style="font-size:13px">Phase 0 sections below mention a planned custom function module <code>Z_DMEE_UNESCO_DEBTOR_ADDR</code> writing into <code>FPAYHX-ZREF01..ZREF05</code>. <strong>That FM is not built.</strong> Discovery later in Phase 0 (and confirmed by static-scan claim 68 — zero UNESCO writers to FPAYHX-Z* / FPAYH-REF) found that the SAP-standard user exit <code>FI_PAYMEDIUM_DMEE_CGI_05</code> already fills <code>FPAYHX-REF01..REF10</code> from ADRC, and DMEE tree nodes can bind directly to those byte slices (claim 101 byte layout). The current V001 design (<strong>Sub-option A</strong>) reuses this SAP-standard chain — V001 only adds <em>(a)</em> 1 row in TFPM042FB registering Event 05 for SEPA (matrix row 9), and <em>(b)</em> the DMEE_TREE_NODE INSERT rows binding to REF01..REF06 byte slices. <strong>No new ABAP FM is created.</strong> The current design lives in <a href="#" onclick="show('phase2', document.querySelector('[onclick*=phase2]'));return false">Phase 2</a> §3 "Address-fill chain" and <a href="#" onclick="show('strategy', document.querySelector('[onclick*=strategy]'));return false">Change Strategy</a>. Phase 0 is preserved as the discovery archive — you are reading the receipts of how we got here.</p>
+    </div>
+    <h4 style="color:#0369a1">Section 1 — Reference Architecture (handoff doc interpreted)</h4>
+    
+    <div class="section">
+      <h3>Reference architecture — from UNESCO_BCM_StructuredAddress_AgentHandoff.docx v1.0</h3>
+      <h4>3 compliance states</h4>
+      <table>
+        <tr><th>State</th><th>Example</th><th>Valid post Nov 2026</th></tr>
+        <tr><td>Unstructured</td><td><code>&lt;AdrLine&gt;...&lt;/AdrLine&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;</code></td><td>REJECTED</td></tr>
+        <tr><td>Hybrid</td><td><code>&lt;TwnNm&gt;Paris&lt;/TwnNm&gt;&lt;Ctry&gt;FR&lt;/Ctry&gt;&lt;AdrLine&gt;...&lt;/AdrLine&gt;</code></td><td>OK (TwnNm+Ctry only mandatory)</td></tr>
+        <tr><td>Fully Structured</td><td><code>&lt;StrtNm&gt;&lt;BldgNb&gt;&lt;PstCd&gt;&lt;TwnNm&gt;&lt;Ctry&gt;</code></td><td>OK + future-proof</td></tr>
+      </table>
+      <h4>3 asymmetric technical patterns by XML party</h4>
+      <table>
+        <tr><th>Party</th><th>Data source</th><th>Change mechanism</th></tr>
+        <tr><td>Cdtr (vendor)</td><td>SAP-standard populates FPAYHX from LFA1+ADRC</td><td>DMEE tree config only, no ABAP</td></tr>
+        <tr><td>Dbtr (UNESCO)</td><td>NOT in FPAYHX/FPAYH</td><td>NEW user exit Z_DMEE_UNESCO_DEBTOR_ADDR + OBPM4 Event 05 + FPAYHX-ZREF01..05 (CORRECTED from handoff doc's FPAYH-REF)</td></tr>
+        <tr><td>UltmtCdtr (Worldlink)</td><td>UNKNOWN (handoff Q3)</td><td>BLOCKED until data source resolved</td></tr>
+      </table>
+      <h4>17-step checklist (Phase 2 execution, from handoff §9)</h4>
+      <p>Adopted verbatim. See <strong>Tab 11 — Transport Plan</strong> for TRKORR tracking.</p>
+      <h4>Reference SAP Notes</h4>
+      <ol>
+        <li><strong>1665873</strong> — CGI_XML_CT full introduction guide (59 pages, canonical)</li>
+        <li>2795667 — ISO 20022 adoption / SEPA harmonization</li>
+        <li>2668719 — PMW format lifecycle</li>
+        <li>2819590 — Structured remittance in CGI XML (check applicability)</li>
+        <li>2845063 — CGI IDs config</li>
+      </ol>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 2 — The 3 target trees</h4>
+    
+    <div class="section">
+      <h3>The 3 target DMEE trees (+ 1 twin)</h3>
+      <table>
+        <tr><th>Tree (P01)</th><th>Nodes</th><th>Address+party nodes</th><th>Marlies Excel state</th><th>Change scope</th></tr>
+        <tr>
+          <td><code>/SEPA_CT_UNES</code></td><td>95</td><td>15</td>
+          <td>Dbtr Hybrid (Ctry+AdrLine PARIS only), Cdtr Hybrid (Ctry+2xAdrLine) — postal code missing</td>
+          <td><strong>P1 — structure Dbtr+Cdtr full</strong>, keep AdrLine as Hybrid fallback</td>
+        </tr>
+        <tr>
+          <td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>610</td><td>83</td>
+          <td>Dbtr Unstructured (AdrLine only, some cases no Ctry!), Cdtr mostly OK, CdtrAgt OK, UltmtCdtr WHO/ICC Hybrid</td>
+          <td><strong>P1 — fix Dbtr Ctry + structure</strong>; UltmtCdtr <strong style="color:#1abc9c">unified into V001</strong> (Q3 RESOLVED #62 — StrtNm=FPAYH-ZSTRA, claim 99)</td>
+        </tr>
+        <tr>
+          <td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td>631+639</td><td>124+132</td>
+          <td>Dbtr Structured OK (TEMPLATE), Cdtr Structured OK, <strong>CdtrAgt Unstructured</strong></td>
+          <td><strong>P2 — fix CdtrAgt only</strong>, Dbtr/Cdtr kept</td>
+        </tr>
+      </table>
+      <p><em>Source: Marlies Spronk Excel "XML Address un structured.xlsx" 10 real production cases + h18 P01 baseline (2026-04-06) + Phase 0 Finding F (2026-04-24).</em></p>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 3 — XML Before / After</h4>
+    
+    <div class="section">
+      <h3>XML Before/After — from handoff doc §2.1 + Marlies Excel Tab 2</h3>
+      <h4>BEFORE — Unstructured (current SEPA/CITI, rejected Nov 2026)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;AdrLine&gt;123 Main Street, Paris 75001&lt;/AdrLine&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</pre>
+      <h4>HYBRID — minimum viable (TwnNm+Ctry mandatory)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;TwnNm&gt;Paris&lt;/TwnNm&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+  &lt;AdrLine&gt;123 Main Street&lt;/AdrLine&gt;
+&lt;/PstlAdr&gt;</pre>
+      <h4>AFTER — Fully structured (preferred, already in CGI for UNESCO Dbtr)</h4>
+      <pre>&lt;PstlAdr&gt;
+  &lt;StrtNm&gt;Place de Fontenoy&lt;/StrtNm&gt;
+  &lt;BldgNb&gt;7&lt;/BldgNb&gt;
+  &lt;PstCd&gt;75007&lt;/PstCd&gt;
+  &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+  &lt;Ctry&gt;FR&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</pre>
+
+      <h3>How the tree picks the address format — the compound condition on <code>UBISO</code></h3>
+      <p>Each address node in the CITI tree carries a <strong>compound condition</strong> (several comparisons
+      of <code>FPAYHX-UBISO</code> joined by AND/OR). <code>UBISO</code> = the beneficiary's <strong>BANK
+      country</strong> (= <code>REGUH-UBNKS</code>), <em>not</em> the address country. The condition decides
+      whether the node is written &rarr; it selects how the <strong>Dbtr address</strong> is rendered.
+      <span style="color:#7fb3d3">(Verified V01 2026-06-15.)</span></p>
+      <table>
+        <tr><th>Compound condition</th><th>Operator</th><th>Fires when…</th><th>Output</th></tr>
+        <tr><td><code>UBISO = 'US' OR = 'CA' OR = 'PR'</code></td><td>OR (any one)</td><td>bank in US / CA / PR</td><td><strong>structured <code>&lt;PstlAdr&gt;</code></strong> (StrtNm·PstCd·TwnNm·CtrySubDvsn·Ctry)</td></tr>
+        <tr><td><code>UBISO &lt;&gt; 'US' AND &lt;&gt; 'CA' AND &lt;&gt; 'PR'</code></td><td>AND (all)</td><td>bank in any other country</td><td><strong>unstructured <code>&lt;AdrLine&gt;</code></strong> (fallback)</td></tr>
+        <tr><td><code>UBISO = 'SE'</code></td><td>simple</td><td>bank in Sweden</td><td><code>&lt;PstCd&gt;</code> (+ AdrLine — hybrid)</td></tr>
+      </table>
+      <p><strong>At first glance this AND looks illogical — "how can a bank be three countries at once?"</strong>
+      It can't, and it doesn't have to. The AND does <em>not</em> ask <code>UBISO</code> to hold three values; a
+      bank sits in exactly <strong>one</strong> country, so <code>UBISO</code> has a single value, and the AND
+      simply runs <strong>three separate checks against that one value</strong>. For a beneficiary banking in
+      Brazil, <code>UBISO = 'BR'</code>, and the engine asks: is BR different from US? yes — from CA? yes — from
+      PR? yes. All three are true at once (a single value can perfectly well differ from three different countries),
+      so the condition holds and the unstructured <code>&lt;AdrLine&gt;</code> is written.</p>
+      <p>The connector has to be <strong>AND</strong> because the rule is <em>"none of the three"</em>: to be
+      <em>none</em>, the value must differ from the first <strong>and</strong> the second <strong>and</strong> the
+      third. A single failing check — e.g. the bank actually <em>is</em> US — collapses the whole condition to
+      false, which is exactly what we want, because US/CA/PR must take the structured branch instead, not the
+      fallback. The "impossible" reading is only true if the operator were <code>=</code>: <code>UBISO = 'US' AND =
+      'CA' AND = 'PR'</code> would indeed require one value to equal three different countries and could never fire
+      — but the tree uses <code>&lt;&gt;</code> (not-equal), not <code>=</code>. Swapping that one operator turns
+      the condition from "impossible" into the <strong>most frequently matched branch of all</strong>: every payment
+      to a bank outside US/CA/PR lands here — e.g. all ~8,500 Brazilian payments in 2024. (Formally it is De
+      Morgan's law: <code>NOT(US OR CA OR PR) ≡ (NOT US) AND (NOT CA) AND (NOT PR)</code>.)</p>
+      <p><strong>Reachability — dead-by-DATA, not dead-by-logic (REGUH 2006-2025):</strong> only <strong>2 of the
+      3</strong> branches ever fire with real data. 2024 CITI traffic used only 3 bank countries — <strong>US 8,759
+      · BR 8,472 · CA 1,303</strong>. <code>UBNKS</code> is <strong>NEVER</strong> <code>PR</code> or <code>SE</code>
+      in the whole history, so the <code>PstCd(SE)</code> node and the <code>PR</code> operand never execute today.
+      They are <strong>defensive</strong>, not removable: the <code>=PR</code>/<code>&lt;&gt;PR</code> pair correctly
+      routes a hypothetical PR-bank payment to <code>PstlAdr</code> (not fallback); deleting them would silently
+      send a future PR/SE payment down the wrong branch. Testing them requires a synthetic vendor
+      (<code>LFBK-BANKS='SE'/'PR'</code>).</p>
+    </div>
+
+    <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
+    
+    <div class="section">
+      <h3>SAP architecture — Payment file generation E2E</h3>
+      <pre>F110 (Automatic Payment Run)
+  │
+  ▼
+FBZP Configuration (Payment method → House bank → PMW format)
+  │
+  ▼
+OBPM1 (Payment Medium Format → DMEE tree mapping)
+  │
+  ▼
+DMEE Engine (tree traversal, reads FPAYHX / FPAYH / FPAYP)
+  │         ├── MP_SC_TAB/MP_SC_FLD = direct table-field read
+  │         ├── MP_CONST = constant value
+  │         └── MP_EXIT_FUNC = call BAdI / FM (794 nodes in our 4 trees)
+  │
+  ▼
+BAdI FI_CGI_DMEE_EXIT_W_BADI → dispatch by country to:
+  │         ├── YCL_IDFI_CGI_DMEE_FR    (France)
+  │         ├── YCL_IDFI_CGI_DMEE_DE    (Germany, P01-only)
+  │         ├── YCL_IDFI_CGI_DMEE_IT    (Italy, P01-only)
+  │         └── YCL_IDFI_CGI_DMEE_FALLBACK (default)
+  ▼
+XML output file written to \\hq-sapitf\SWIFT$\P01\input\
+  │
+  ▼
+BCM (Bank Communication Management — Claim #65: 100% routed via OBPM5/TFIBLMPAYBLOCK)
+  │
+  ▼
+Workflow 90000003 (dual-control approval, signatories from PD OTYPE='RY')
+  │
+  ▼
+SWIFT / Alliance Lite2 → Bank gateway
+  │
+  ▼
+Bank schema validation (pain.001.001.09 XSD + bank-specific rules)</pre>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 5 — Code Inventory (100%) — every code point that touches XML</h4>
+    
+    <div class="section">
+      <h3>Code Inventory (100%) — xml_touch_points_complete.md rendered</h3>
+      <h2>Complete XML Touch-Point Inventory</h2>
+<p>**Single source of truth for every code point that affects outgoing XML payment file content.**</p>
+<p>**2026-04-24** · **Target trees**: `/SEPA_CT_UNES`, `/CITI/XML/UNESCO/DC_V3_01`, `/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</p>
+<p>---</p>
+<h3>Grouped by payment lifecycle stage</h3>
+<pre>
+[Vendor master read] → [F110 selection] → [FPAYHX population]
+  → [OBPM4 events] → [DMEE tree traversal] → [node EXIT_FUNC calls]
+  → [XML assembly] → [post-DMEE file handling] → [BCM batch] → [SWIFT delivery]
+</pre>
+<p>Each table below = one stage. Every asset that can mutate the XML appears in exactly one stage. "Change required" column is the output for the Phase 0 exit gate.</p>
+<p>---</p>
+<h4>Stage 1 — Vendor master / address source (data layer)</h4>
+<p>Data flows INTO F110, which copies into FPAYHX/FPAYH/FPAYP structures.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Path/location</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>LFA1</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor master, STRAS/ORT01/PSTLZ/LAND1/ADRNR</td><td>NO — data source</td></tr>
+<tr><td>ADRC</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Central address mgmt, STREET/HOUSE_NUM1/CITY1/POST_CODE1/COUNTRY</td><td>NO — data source; **DQ remediation for 5 vendors** missing CITY1/COUNTRY</td></tr>
+<tr><td>LFBK</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Vendor bank account</td><td>NO</td></tr>
+<tr><td>T001</td><td>SAP_TABLE</td><td>Gold DB + P01</td><td>Company code (UNESCO) master, ADRNR → ADRC for Dbtr address</td><td>NO — data source</td></tr>
+</table>
+<h4>Stage 2 — F110 payment run (standard SAP, not touched)</h4>
+<p>SAP standard F110 picks open items, groups by vendor/bank/currency, populates FPAYHX/FPAYH/FPAYP structures using vendor master + company code address + payment method config.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>F110 transaction</td><td>SAP_TCODE</td><td>Entry point</td><td>NO — used as-is for test</td></tr>
+<tr><td>SAPFPAYM</td><td>SAP_PROG</td><td>Payment medium generator</td><td>NO</td></tr>
+<tr><td>T042Z_FULL</td><td>TABL</td><td>country+method → DMEE tree (FORMI) mapping</td><td>NO — already configured</td></tr>
+<tr><td>T042A</td><td>TABL</td><td>payment method per co code</td><td>NO</td></tr>
+<tr><td>T042I</td><td>TABL</td><td>house bank per co code per method</td><td>NO</td></tr>
+</table>
+<h4>Stage 3 — FPAYHX / FPAYH / FPAYP population</h4>
+<p>SAP standard PMW auto-populates the structures at F110 runtime. No UNESCO custom code writes to Z-fields (verified: 0 writes in 986 ABAP files).</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>FPAYHX</td><td>STRU</td><td>432 fields, 25 Z-fields (ZPFST/ZPLOR/ZLISO/... + ZREF01..10)</td><td>NO — SAP-populated</td></tr>
+<tr><td>FPAYH</td><td>STRU</td><td>Payment header</td><td>NO — SAP-populated</td></tr>
+<tr><td>FPAYP</td><td>STRU</td><td>Payment line</td><td>NO — SAP-populated</td></tr>
+<tr><td>CI_FPAYHX</td><td>APPEND</td><td>Customer append structure defining Z-fields</td><td>NO for this change; **confirm membership** in Phase 1</td></tr>
+</table>
+<h4>Stage 4 — OBPM4 Event 05 (user exit hook)</h4>
+<p>Currently no UNESCO Event 05 handler exists for address. Phase 2 creates one.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>OBPM4 customizing (TFPM042FB)</td><td>TABL</td><td>Event registrations per format</td><td>**YES — register our new FM** (Step 10)</td></tr>
+<tr><td>`Z_DMEE_UNESCO_DEBTOR_ADDR`</td><td>FUGR/FM</td><td>**NEW** — reads T001→ADRC for Dbtr, writes FPAYHX-ZREF01..ZREF05</td><td>**YES — CREATE** (Step 9)</td></tr>
+<tr><td>Other Y/Z Event 05 handlers</td><td>FUGR</td><td>None found for address in P01</td><td>NO — only ZWFPAYROLL_STATUS for payroll</td></tr>
+</table>
+<h4>Stage 5 — DMEE tree traversal (per target tree)</h4>
+<p>4 target trees, 1,975 nodes total, 354 address+party-related. SAP standard DMEE engine walks each tree per payment, reading values from source fields and calling exits.</p>
+<table>
+<tr><th>Tree</th><th>Total nodes</th><th>Address+party</th><th>Change required?</th><th>Priority</th></tr>
+<tr><td>`/SEPA_CT_UNES`</td><td>95</td><td>15</td><td>**YES — add structured nodes to Dbtr+Cdtr**</td><td>P1 (Tier A)</td></tr>
+<tr><td>`/CITI/XML/UNESCO/DC_V3_01`</td><td>610</td><td>83</td><td>**YES — add Ctry to Dbtr, restructure Dbtr, +1 UltmtCdtr StrtNm=FPAYH-ZSTRA**</td><td>P1 (Q3 RESOLVED #62, claim 99)</td></tr>
+<tr><td>`/CGI_XML_CT_UNESCO`</td><td>631</td><td>124</td><td>**YES — fix CdtrAgt Unstructured** (Dbtr already ok)</td><td>P2</td></tr>
+<tr><td>`/CGI_XML_CT_UNESCO_1`</td><td>639</td><td>132</td><td>**YES — same as CGI_XML_CT_UNESCO**</td><td>P2</td></tr>
+</table>
+<h4>Stage 6 — Node EXIT_FUNC calls (794 nodes mediated by BAdI)</h4>
+<p>When a node has `MP_EXIT_FUNC='FI_CGI_DMEE_EXIT_W_BADI'`, the value goes through one of our 5 country-class implementations. 146 address-related nodes have exits.</p>
+<table>
+<tr><th>Exit function</th><th>Node count</th><th>Extracted?</th><th>Change required?</th></tr>
+<tr><td>`FI_CGI_DMEE_EXIT_W_BADI` (dispatches to country)</td><td>794</td><td>BAdI def SAP, 3 impls extracted (FR/FALLBACK/UTIL), 2 not yet (DE/IT)</td><td>**MAYBE — each new structured node must decide: set EXIT_FUNC='' (skip BAdI) or let BAdI process**</td></tr>
+<tr><td>`/CITIPMW/V3_*` (12 prebuilt CITI exits)</td><td>18</td><td>SAP standard</td><td>NO — preserve</td></tr>
+<tr><td>`DMEE_EXIT_SEPA_*` (3 SEPA exits)</td><td>5</td><td>SAP standard</td><td>NO</td></tr>
+<tr><td>`Z_DMEE_EXIT_TAX_NUMBER`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
+<tr><td>`ZDMEE_EXIT_SEPA_21`</td><td>1</td><td>Not extracted</td><td>NO — not address</td></tr>
+</table>
+<h4>Stage 7 — BAdI implementations (our 5 UNESCO classes)</h4>
+<table>
+<tr><th>Class</th><th>Extracted</th><th>Author</th><th>Change required?</th></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_FR</td><td>✅</td><td>N_MENARD</td><td>**MAYBE — review name-overflow-into-StrtNm quirk** (FALLBACK_CM001:13-31 semantics)</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_FALLBACK</td><td>✅</td><td>N_MENARD (2024-11-22)</td><td>**MAYBE — same quirk review**</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_UTIL</td><td>✅</td><td>N_MENARD</td><td>NO — utility only</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_DE</td><td>✅ (RFC extraction 2026-04-30 — 9 includes: CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)</td><td>N_MENARD</td><td>P01-only retrofit P01→D01 (claim 109 — D01 missing this class entirely)</td></tr>
+<tr><td>YCL_IDFI_CGI_DMEE_IT</td><td>✅ (RFC extraction 2026-04-30 — 9 includes: CCDEF/CCIMP/CCMAC/CI/CM001/CO/CP/CT/CU)</td><td>N_MENARD</td><td>P01-only retrofit P01→D01 (claim 109)</td></tr>
+</table>
+<p>**N_MENARD = required code reviewer for Phase 2 Step 9** (`Z_DMEE_UNESCO_DEBTOR_ADDR`) and any changes to the BAdI classes.</p>
+<h4>Stage 8 — Post-DMEE file handling</h4>
+<p>XML file is written to directory per handoff doc §4.3 (Alliance Lite2 pickup).</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>File transmission code</td><td>PROG (not extracted)</td><td>Writes XML to `\\hq-sapitf\SWIFT$\P01\input\`</td><td>NO — address change is within XML content, not filename</td></tr>
+<tr><td>Alliance Lite2 client</td><td>External</td><td>SWIFT file pickup</td><td>NO</td></tr>
+<tr><td>File naming convention</td><td>DOC</td><td>`aaaa_bbbb_ccxxxxxxxxyyyy.in`</td><td>NO</td></tr>
+</table>
+<h4>Stage 9 — BCM (Bank Communication Management)</h4>
+<p>BCM receives the generated file, queues for dual-control approval, sends to bank.</p>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>OBPM5 routing (TFIBLMPAYBLOCK)</td><td>TABL</td><td>100% F110+payroll routed through BCM (Claim #65)</td><td>NO — preserve routing</td></tr>
+<tr><td>BNK_BATCH_HEADER / BNK_BATCH_ITEM</td><td>SAP_TABLE</td><td>Batch records</td><td>NO — data</td></tr>
+<tr><td>Workflow 90000003</td><td>WF</td><td>Payment approval workflow</td><td>NO — out of scope</td></tr>
+<tr><td>BCM_BATCH_* BAdIs</td><td>BADI (not extracted)</td><td>Batch enhancement hooks</td><td>NO — address change does not affect batch-level logic</td></tr>
+<tr><td>BNK_APP signatory approval UI</td><td>SAP_TCODE</td><td>Where signatories see the batch</td><td>**MAYBE — verify UI renders structured tags correctly** (Phase 3 test)</td></tr>
+</table>
+<h4>Stage 10 — Supporting / governance / monitoring</h4>
+<table>
+<tr><th>Asset</th><th>Type</th><th>Role</th><th>Change required?</th></tr>
+<tr><td>H13 dual-control monitor</td><td>PY_SCRIPT</td><td>`Zagentexecution/bcm_dual_control_monitor.py`</td><td>**NO change to script; EXTEND monitoring post-go-live** for address-related reject tracking</td></tr>
+<tr><td>`feedback_bcm_ghost_pernr_check`</td><td>RULE</td><td>Pre-test DQ check for UIS payments</td><td>NO</td></tr>
+<tr><td>`feedback_only_p01_for_config_analysis` #204</td><td>RULE</td><td>Decision anchor</td><td>NO</td></tr>
+</table>
+<p>---</p>
+<h3>Change locus summary</h3>
+<p>**Where the change physically happens**:</p>
+<table>
+<tr><th>Where</th><th>What</th><th>Who</th><th>Depends on</th></tr>
+<tr><td>**DMEE tree nodes (SEPA + CITI + CGI)** via tx DMEE</td><td>Add structured `&lt;StrtNm&gt;/&lt;BldgNb&gt;/&lt;PstCd&gt;/&lt;TwnNm&gt;/&lt;Ctry&gt;` nodes under Cdtr/Dbtr/UltmtCdtr PstlAdr; deactivate AdrLine or keep for Hybrid</td><td>Pablo</td><td>GAP-006 closed ✅</td></tr>
+<tr><td>**OBPM4 / TFPM042FB** via tx OBPM4 or SM30</td><td>INSERT 1 row registering Event 05 for `/SEPA_CT_UNES` → SAP-std FM `FI_PAYMEDIUM_DMEE_CGI_05` (matrix row 9). CITI / CGI / CGI_1 already registered in P01; D01 verification is part of D01-RETROFIT-02-PMW.</td><td>Pablo</td><td>Step 9 complete</td></tr>
+<tr><td>~~**Custom FM Z_DMEE_UNESCO_DEBTOR_ADDR**~~</td><td>~~New FM~~ <strong>NOT BUILT — Sub-option A reuses SAP-std `FI_PAYMEDIUM_DMEE_CGI_05`</strong>. Static scan (claim 68) confirmed UNESCO has zero buffer-writers; the SAP-std user exit fills FPAYHX-REF01..REF10 from ADRC. V001 binds tree-node rows directly to those byte slices.</td><td>—</td><td>Closed by design</td></tr>
+<tr><td>**Optional — BAdI classes** `YCL_IDFI_CGI_DMEE_FALLBACK/_FR`</td><td>Review + possibly constrain name-overflow quirk</td><td>N_MENARD</td><td>Phase 2 decision</td></tr>
+<tr><td>**Vendor master** (LFA1+ADRC)</td><td>Fix 5 vendors missing CITY1 or COUNTRY</td><td>Master Data team</td><td>Phase 1</td></tr>
+</table>
+<p>**Where the change DOES NOT physically happen**:</p>
+<p>- F110 itself (standard SAP used as-is)</p>
+<p>- Payment medium programs SAPFPAYM / RFFO* (standard)</p>
+<p>- BCM workflow 90000003 (out of scope)</p>
+<p>- File transmission / SWIFT (not affected)</p>
+<p>- LFA1/ADRC populator code (SAP standard)</p>
+<p>- FPAYHX/FPAYH/FPAYP data model (append structures unchanged)</p>
+<p>---</p>
+<h3>Outstanding (Phase 0 follow-ups that don't block Phase 1)</h3>
+<p>1. **Extract `YCL_IDFI_CGI_DMEE_DE` and `_IT`** source via pyrfc RPY_CLASS_READ. Needed for Phase 3 German/Italian regression tests.</p>
+<p>2. **Extract source of `Z_DMEE_EXIT_TAX_NUMBER` and `ZDMEE_EXIT_SEPA_21`** to confirm they're unrelated to address.</p>
+<p>3. **Confirm `CI_FPAYHX` include structure** membership via DD03L probe (partial today — 25 Z-fields known, confirm they're all in CI_FPAYHX).</p>
+<p>4. ~~**Resolve Q3 (Worldlink UltmtCdtr data source)**~~ → **RESOLVED (system-driven)**: DMEE_TREE_NODE analysis closed Q3 — no Citi TRM input needed. UltmtCdtr unified into V001 (StrtNm=FPAYH-ZSTRA). See brain claim 99 + Phase 2 Step 7 below.</p>
+<h3>Zero UNKNOWN in "Change required" column — Phase 0 exit gate met</h3>
+<p>Every asset above has a verdict: YES / NO / MAYBE (with decision point) / extraction-follow-up.</p>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 6 — Francesco audit</h4>
+    
+    <div class="section">
+      <h3>Francesco Audit — FP_SPEZZANO</h3>
+      <h2>Francesco Audit — FP_SPEZZANO DMEE transport history</h2>
+<p>**Phase 0 deliverable** · 2026-04-24 · Evidence tier: TIER_1 (parsed from `Zagentexecution/mcp-backend-server-python/cts_batch_*.json`)</p>
+<h3>Context</h3>
+<p>User statement: *"Francesco no sabía del proceso"* (structured address change). Audit goal: verify what FP_SPEZZANO touched historically in DMEE and classify each transport as BLOCK / ASSIST / IRRELEVANT for this project.</p>
+<h3>Verified facts</h3>
+<p>**FP_SPEZZANO = Francesco Spezzano**. Confirmed from CTS `summary.top_20_owners` field in `cts_batch_2024.json` + parsing all 10 year files.</p>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Total transports by FP_SPEZZANO, 2017-2026</td><td>**70**</td></tr>
+<tr><td>DMEE-touching transports</td><td>**5** (all 2025 Q1)</td></tr>
+<tr><td>Non-DMEE transports</td><td>65</td></tr>
+<tr><td>Target trees touched</td><td>`/CGI_XML_CT_UNESCO`, `/CGI_XML_CT_UNESCO_1`</td></tr>
+<tr><td>SEPA / CITI tree touches</td><td>**0**</td></tr>
+<tr><td>All DMEE transports status</td><td>Released (`R`)</td></tr>
+<tr><td>All DMEE transports type</td><td>Workbench</td></tr>
+</table>
+<h3>The 5 DMEE transports — detail</h3>
+<p>All have **empty description** field. Classification pending node-level inspection (requires pyrfc or manual DMEE tree version diff).</p>
+<table>
+<tr><th>Date</th><th>TRKORR</th><th>Target Tree</th><th>Obj count</th><th>Preliminary classification</th></tr>
+<tr><td>2025-03-20</td><td>D01K9B0CZ0</td><td>`/CGI_XML_CT_UNESCO`</td><td>3</td><td>PENDING — need node diff</td></tr>
+<tr><td>2025-03-07</td><td>D01K9B0CWS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
+<tr><td>2025-02-21</td><td>D01K9B0CUS</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>1</td><td>PENDING</td></tr>
+<tr><td>2025-02-21</td><td>D01K9B0CUT</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>2</td><td>PENDING</td></tr>
+<tr><td>2025-02-20</td><td>D01K9B0CTP</td><td>`/CGI_XML_CT_UNESCO_1`</td><td>3</td><td>PENDING</td></tr>
+</table>
+<h3>Interpretation [INFERRED — needs validation]</h3>
+<p>- Francesco's 5 transports are on the **CGI trees only**, never touched SEPA or CITI</p>
+<p>- Marlies reported CGI Dbtr is **already structured** (per her Excel analysis). If Francesco's transports are Dbtr-related, they may have contributed to that structured state.</p>
+<p>- Small obj_count (1-3 per transport) = narrow changes, not full-tree rework</p>
+<p>- Clustered in 4 weeks (Feb 20 → Mar 20) = likely a focused mini-project</p>
+<p>- **User directive**: "Francesco no sabía del proceso" — we must not assume his work covers structured address broadly. It's likely tactical/reactive.</p>
+<h3>BLOCK/ASSIST/IRRELEVANT classification — procedure (to execute in Phase 0 continued)</h3>
+<p>For each of the 5 transports, need to:</p>
+<p>1. Fetch the transport's E071 object keys (pyrfc `RFC_READ_TABLE E071 WHERE TRKORR=X`)</p>
+<p>2. Fetch the DMEE tree node IDs in the transport (if any are PAYM tree entries)</p>
+<p>3. Compare node IDs against the `PstlAdr` subtree node IDs in `/CGI_XML_CT_UNESCO` and `/CGI_XML_CT_UNESCO_1`</p>
+<p>4. Classify:</p>
+<p>   - **BLOCK**: touches any PstlAdr node in Dbtr/Cdtr/CdtrAgt/UltmtCdtr hierarchy</p>
+<p>   - **ASSIST**: touches structure supporting address work (FPAYHX mapping, char filter nodes on address, condition suppressing AdrLine)</p>
+<p>   - **IRRELEVANT**: touches unrelated parts of the tree (Purp, payment amount tags, reference tags)</p>
+<h3>What to do about Francesco</h3>
+<p>Per user directive (2026-04-24): audit as context, don't assume pattern.</p>
+<p>- **Before any CGI tree edit in Phase 2**: alignment call with Francesco to disclose the 5 transports' scope — written agreement that our structured-address changes don't overwrite his WIP</p>
+<p>- If BLOCK: coordinate merge path; schedule a joint review</p>
+<p>- If ASSIST: treat as prerequisite; evaluate if his changes help or hinder</p>
+<p>- If IRRELEVANT: no coordination needed; log in the audit</p>
+<h3>Data source</h3>
+<p>- `Zagentexecution/mcp-backend-server-python/cts_batch_2017.json` through `cts_batch_2026.json`</p>
+<p>- Field names: `trkorr`, `owner`, `date`, `status`, `type`, `description`, `objects[{pgmid,obj_type,obj_name}]`</p>
+<p>- Parser: see Phase 0 implementation commit</p>
+<h3>Corrections to prior agent output</h3>
+<p>- Earlier Explore agent reported 5 transports (correct count, correct author ID)</p>
+<p>- Earlier Explore agent reported D01K9B0CZ0 2025-03-20 as most recent (correct)</p>
+<p>- Earlier Explore agent missed the 4 other dates and the 2025-02-21 duplicate-date pair</p>
+<p>- Prior user statement "Francesco no sabía" and Explore agent "Francesco authored" both need evidence-based reconciliation. This audit shows Francesco DID touch CGI DMEE trees but we don't know WHAT yet. Not inconsistent with "didn't know about the CBPR+ structured-address initiative specifically" — his changes may have been something else entirely.</p>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 7 — Vendor master DQ</h4>
+    
+    <div class="section">
+      <h3>Vendor Master Data Quality</h3>
+      <h2>Vendor Master Data Quality — ADRC Compliance Audit</h2>
+<p>**Phase 0 deliverable** · 2026-04-24 · Evidence tier: TIER_1 (SQL against Gold DB `p01_gold_master_data.db`)</p>
+<h3>Query — handoff doc §7.2 (adapted to Gold DB)</h3>
+<pre>
+SELECT COUNT(*)
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+</pre>
+<h3>Results — as of P01 snapshot Apr 2026</h3>
+<table>
+<tr><th>Metric</th><th>Count</th><th>% of active</th></tr>
+<tr><td>Total active LFA1 vendors (LOEVM blank)</td><td>111,241</td><td>100%</td></tr>
+<tr><td>Active vendors with valid ADRC join</td><td>111,238</td><td>99.997%</td></tr>
+<tr><td>**Missing CITY1 OR COUNTRY**</td><td>**5**</td><td>**0.005%**</td></tr>
+<tr><td>Missing CITY1</td><td>1</td><td>0.001%</td></tr>
+<tr><td>Missing COUNTRY</td><td>4</td><td>0.004%</td></tr>
+<tr><td>Missing STREET</td><td>5,570</td><td>5.01%</td></tr>
+<tr><td>Missing POST_CODE1</td><td>1,153</td><td>1.04%</td></tr>
+<tr><td>Missing HOUSE_NUM1</td><td>76,574</td><td>68.84%</td></tr>
+</table>
+<h3>CBPR+ compliance impact</h3>
+<p>Per handoff doc §2.1 and §7.2, **only `TwnNm` (=CITY1) and `Ctry` (=COUNTRY) are MANDATORY** under ISO 20022 structured or hybrid address. All other fields (StrtNm/BldgNb/PstCd) are recommended but their absence only downgrades to Hybrid mode, which is still CBPR+-valid through 2026 (and beyond, with stricter bank spec).</p>
+<table>
+<tr><th>Compliance level</th><th>Vendor count ready</th><th>Vendor count blocked</th></tr>
+<tr><td>**Survival (Hybrid minimum: TwnNm+Ctry)**</td><td>111,236 (99.995%)</td><td>**5**</td></tr>
+<tr><td>Preferred (full structured: all 5 fields)</td><td>~32,000</td><td>~79,000 (missing BldgNb/StrtNm/PstCd)</td></tr>
+</table>
+<h3>[VERIFIED] conclusion</h3>
+<p>**Compliance survival is secured.** Only 5 vendors need manual cleanup of CITY1/COUNTRY before go-live. This is a **hard-fail-if-missing** fix, not a systemic cleanup.</p>
+<p>The BldgNb (HOUSE_NUM1) 68.8% miss is cosmetic — under Hybrid mode, missing BldgNb does not reject the file. Some banks may push for fully-structured stricter compliance post-2026; in that case, vendor master cleanup becomes a separate project (out of scope here).</p>
+<h3>Implications for the plan</h3>
+<p>1. **Phase 1**: request the 5 specific vendor IDs from Master Data team; fix by manual LFA1/ADRC update before V01 UAT</p>
+<p>2. **Phase 2**: no data-cleanup blocker for config start</p>
+<p>3. **Phase 3-4**: Hybrid-mode tests will pass for 99.995% of vendors; the 5 are the known edge cases</p>
+<p>4. **Post-go-live**: monitor ADRC data quality; new vendors must have CITY1+COUNTRY populated or F110 rejects the item</p>
+<h3>Risk level: **LOW**</h3>
+<p>Previously in the plan this was flagged as a potential major risk gating Phase 3. This audit downgrades it to LOW.</p>
+<h3>Query for the 5 vendors (execute in Phase 1 for cleanup)</h3>
+<pre>
+SELECT l.LIFNR, l.NAME1, a.CITY1, a.COUNTRY, a.STREET, a.POST_CODE1, a.HOUSE_NUM1
+FROM LFA1 l
+JOIN ADRC a ON l.ADRNR = a.ADDRNUMBER
+WHERE (a.CITY1 IS NULL OR a.CITY1 = '' OR a.COUNTRY IS NULL OR a.COUNTRY = '')
+  AND (l.LOEVM IS NULL OR l.LOEVM = '')
+ORDER BY l.LIFNR;
+</pre>
+<p>(Pending execution — will populate this doc with vendor list.)</p>
+<h3>Data source</h3>
+<p>- Database: `Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db`</p>
+<p>- Tables: LFA1 (111,241 active) + ADRC (joined via LFA1.ADRNR = ADRC.ADDRNUMBER)</p>
+<p>- ADRC has additional temporal filter available (DATE_FROM/DATE_TO) — handoff SQL omits it but Gold DB snapshot was single point-in-time so the simple join is representative</p>
+    </div>
+    
+    <h4 style="color:#0369a1">Section 8 — Q1-Q8 status (from handoff doc)</h4>
+    
+    <div class="section">
+      <h3>Q1-Q8 status — from handoff doc §11 (audit refresh)</h3>
+      <table>
+        <tr><th>Q#</th><th>Question</th><th>Priority</th><th>Status (2026-04-30)</th></tr>
+        <tr><td>Q1</td><td>Exact DMEE tree name for CITI format in PRD vs DEV</td><td>HIGH</td><td><strong>CLOSED</strong> — h18 P01 baseline + Phase 0 Finding G confirm /CITI/XML/UNESCO/DC_V3_01 in P01</td></tr>
+        <tr><td>Q1bis</td><td>FR/CM002 retrofit P01→D01 (PPC dispatcher entry)</td><td>HIGH</td><td><strong>CLOSED</strong> — CM002 = PPC dispatcher entry added to P01 March 2024 (transport D01K9B0BYP), never retrofitted to D01. Mandatory in D01-RETROFIT-01.</td></tr>
+        <tr><td>Q2</td><td>CITI pain.001 variant tags (proprietary?)</td><td>HIGH</td><td>OPEN — Phase 1 via Citi TRM</td></tr>
+        <tr><td><b style="color:#1abc9c">Q3</b></td><td>Worldlink UltmtCdtr beneficiary address source</td><td>HIGH</td><td><strong style="color:#1abc9c">RESOLVED (system-driven)</strong> — DMEE_TREE_NODE analysis: CITI tree N_8838338720 + 21 descendants show 7 active source fields wired (Nm=FPAYP-NAME1, Ctry=FPAYH-ZLAND, TwnNm=FPAYH-ZORT1, PstCd=FPAYH-ZPSTL, CtrySubDvsn=FPAYH-ZREGI, AdrLine1=FPAYH-ZSTRA, AdrLine2=FPAYH-ZORT2). 99.7% of BRL Worldlink payments fire UltmtCdtr/Nm. V001 fills <code>&lt;StrtNm&gt;</code>=FPAYH-ZSTRA. UNIFIED into V001, NOT V002. <b>Brain claim 99 TIER_1</b>. No Citi TRM input needed.</td></tr>
+        <tr><td>Q4</td><td>IIEP/UIL separate PMW assignments in FBZP?</td><td>MEDIUM</td><td>OPEN — Phase 1 FBZP check</td></tr>
+        <tr><td>Q5</td><td>UBO/UIS separate OBPM4 Event 05 registrations?</td><td>MEDIUM</td><td>OPEN — Phase 1 check</td></tr>
+        <tr><td>Q6</td><td>Vendor master DQ count</td><td>HIGH</td><td><strong>CLOSED</strong> — Phase 0 Finding A: 5/111,241 missing mandatory = LOW risk</td></tr>
+        <tr><td>Q7</td><td>Formal bank deadline communications</td><td>MEDIUM</td><td>OPEN — Phase 1 TRM outreach</td></tr>
+        <tr><td>Q8</td><td>SEPA consolidation into CGI_XML_CT?</td><td>LOW</td><td>PARKED — post-go-live decision</td></tr>
+      </table>
+    </div>
+    
+    <div class="section" style="background:#dcfce7;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">✅ Phase 0 — CONCLUSION</h3>
+      <h4 style="color:#f1c40f">What we delivered</h4>
+      <ul>
+        <li><strong>Complete data-mutation chain decoded</strong>: F110 → PMW → OBPM4 Event 05 → SAP country factory → FPAYHX_FREF/FPAYP_FREF buffers → DMEE tree traversal → TECH switch nodes (-DBTRPSTLADR/-PSTLADRMOR1/2/3/etc.) → BAdI UNESCO impls → CV_RULE transformations → XSLT post-proc (CITI) → file → BCM → SWIFT</li>
+        <li><strong>5 of 8 gaps CLOSED, 2 PARKED, 0 blocking</strong>: GAP-003 (AE/BH don't exist in P01) · GAP-004 (FPAYHX Z-fields real names) · GAP-005 (zero UNESCO writes to Z-fields) · GAP-006 (1,975 nodes + 614 conditions + 26-field headers extracted) · GAP-008 (T042 mapping confirmed) · GAP-001/007 parked</li>
+        <li><strong>12 Findings A-L documented</strong> in plan with evidence tier (TIER_1)</li>
+        <li><strong>D01 vs P01 anomaly identified</strong>: 5 P01-ONLY objects (YCL_IDFI_CGI_DMEE_DE/IT + 3 ENHO) — D01 retrofit required before Phase 2</li>
+        <li><strong>Vendor DQ risk downgraded HIGH→LOW</strong>: only 5/111,241 vendors miss mandatory CITY1/COUNTRY</li>
+        <li><strong>Francesco classified</strong>: 5 transports 2025 Q1 are PMF variant config (VC_TFPM042F), not tree structure — ASSIST/IRRELEVANT</li>
+        <li>Brain v2 enriched: +7 claims (id 66-72, TIER_1), +3 feedback rules</li>
+        <li>Companion v1 built (16 original flat tabs → now restructured by phase)</li>
+        <li>4 local commits (f1d1598, e3bf312, a01857a, 5dff1e8)</li>
+      </ul>
+      <h4 style="color:#f1c40f">What we learned that changed the design</h4>
+      <ul>
+        <li><strong>Handoff doc §5 had wrong field names</strong>: FPAYHX-ZSTRA/ZHSNM/ZPSTL/ZORT1/ZLAND do NOT exist. Real fields: ZPFST/ZPLOR/ZLISO/ZLNDX/ZREGX/ZREF01..ZREF10. FPAYH has ZERO REF fields; buffers live in FPAYHX-ZREF01..ZREF10.</li>
+        <li><strong>Event 05 FMs already exist and are SAP-standard</strong>: FI_PAYMEDIUM_DMEE_CGI_05 + /CITIPMW/V3_PAYMEDIUM_DMEE_05 registered for CGI and CITI. SEPA has NO Event 05. UNESCO doesn't need to write Z_DMEE_UNESCO_DEBTOR_ADDR from scratch (handoff doc pattern was correct but unnecessary for CGI/CITI).</li>
+        <li><strong>PSTLADRMOR1/2/3 are TECH scaffolding nodes, not magic parameters</strong>: they group address sub-elements and emit conditional on FREF data availability — SAP-native multi-mode.</li>
+        <li><strong>DMEE VERSION column supports 2-file strategy natively</strong>: VERSION=000 current, create VERSION=001 structured in parallel, atomic activation/rollback.</li>
+        <li><strong>Hybrid (single file mixed) REJECTED</strong> per user directive — too risky, hard to rollback, parser confusion. 2-file + versioning chosen instead.</li>
+        <li><strong>BAdI version-awareness needed</strong>: YCL_IDFI_CGI_DMEE_FALLBACK_CM001 has stateful name-overflow-into-StrtNm quirk that would corrupt V001 structured StrtNm. Pattern A fix (structure-aware guard, 1-2 lines) required.</li>
+      </ul>
+      <h4 style="color:#f1c40f">Blockers for Phase 2 (to resolve in Phase 1)</h4>
+      <ul>
+        <li><strong>D01 retrofit from P01</strong>: 5 P01-only objects must be synced to D01 via pyrfc extraction + transport</li>
+        <li><strong>Extract YCL_IDFI_CGI_DMEE_DE + _IT source</strong> (currently blocked by RFC auth, use ADT/SE24 export)</li>
+        <li><strong>Extract XSLT CGI_XML_CT_XSLT</strong> content (SAP-std, devclass ID-DMEE)</li>
+        <li><strong>Q3 Worldlink UltmtCdtr data source</strong> (CITI WHO/ICC case) — needs Citi TRM + DBS input</li>
+        <li><strong>N_MENARD alignment</strong>: BAdI Pattern A fix review + D01 retrofit approval</li>
+        <li><strong>Francesco courtesy alignment</strong>: disclose his 2025 Q1 transports are context-only, no conflict</li>
+      </ul>
+      <h4 style="color:#f1c40f">Phase 1 starts from</h4>
+      <ol>
+        <li>Bank spec TRM outreach (SocGen / Citi / CGI-routed) — 7-day window</li>
+        <li>Resolve the 5 DQ vendors manually</li>
+        <li>Resolve Q3 data source</li>
+        <li>Schedule N_MENARD + Francesco alignment calls</li>
+        <li>Build <code>change_matrix.csv</code> with per-node action (ADD/MOD/DEL/KEEP) for V001</li>
+      </ol>
+    </div>
+
+    <div class="section" style="background:#1a2230;border-color:#0369a1;margin-top:30px">
+      <h3 style="color:#0369a1">📊 Update 2026-04-29 — Drift detection + Process mining + LIVE config map</h3>
+      <p>Three follow-up workstreams completed after Phase 0 v1:</p>
+
+      <h4 style="color:#0369a1">1. D01 vs P01 drift detection — D01-RETROFIT-01 transport scope</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/CONCLUSIONS_TABLES.md" style="color:#0369a1">CONCLUSIONS_TABLES.md</a> · <a href="../knowledge/domains/Payment/phase0/retrofit_diff_matrix.md" style="color:#0369a1">retrofit_diff_matrix.md</a></p>
+      <p>51 UNESCO custom DMEE includes byte-by-byte compared between D01 and P01:</p>
+      <ul>
+        <li><strong>30 IDENTICAL</strong> (skip — no retrofit needed)</li>
+        <li><strong>19 P01_ONLY</strong> — must retrofit P01→D01 (YCL_IDFI_CGI_DMEE_DE 9 includes + IT 9 includes + FR/CM002)</li>
+        <li><strong>2 D01_ONLY</strong> — Q1bis (FR/CM001 method swap with P01/CM002), Z_DMEE_EXIT_TAX_NUMBER====FT (2019 leftover)</li>
+        <li>Plus 3 ENHO (Y_IDFI_CGI_DMEE_COUNTRIES_DE/FR/IT) → <strong>22 objects total in D01-RETROFIT-01 transport</strong></li>
+        <li>Pattern A target file (FALLBACK CM001) verified byte-identical → fix safe to apply</li>
+        <li>Customizing extras in D01 (TFPM042FB +5 SocGen check rows, T042Z +3 China rows) are unrelated WIP — not in our scope</li>
+      </ul>
+
+      <h4 style="color:#0369a1">2. Process mining (anchored on P01 Gold DB)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/process_mining_dispatcher_usage.md" style="color:#0369a1">PM #1 Country dispatcher</a> · <a href="../knowledge/domains/Payment/phase0/process_mining_tier1_models.md" style="color:#0369a1">PM Tier 1 (BCM + house bank)</a> · <a href="../knowledge/domains/Payment/phase0/process_mining_model9_drilldown.md" style="color:#0369a1">PM Model 9 drilldown</a></p>
+      <ul>
+        <li><strong>942,011 REGUH payments analyzed</strong> covering 2024-01 → 2026-03 (range 2 years 3 months)</li>
+        <li><strong>18 country dispatchers ACTIVE</strong> (FR=148K, US=38K, IT=22K, DE=20K, GB=9K, BE=7K, ES=7K, CA=5K, CH=2.5K, CN=2.3K, AU=1.7K, MX=1.6K, PL=931, DK=871, PT=857, AT=545, SE=416, LT=377)</li>
+        <li><strong>10 country dispatchers DEAD</strong>: BG/CZ/EE/HK/HR/IE/LU/RO/SK/TW (zero traffic — extracted but never exercised)</li>
+        <li><strong>Top in-scope HBKIDs</strong>: SOG01 (UNES SocGen) 490K, CIT01 (UBO Citi BR) 76K, CIT04 (UNES Citi US) 61K, SOG05 (UIL DE) 9K, SOG02 (IIEP) 7K, SOG03 (UNES) 9K, CIT21 (UNES Canada) 5K. UNI01 (ICTP) 24K is OUT OF SCOPE.</li>
+        <li><strong>Worldlink confirmed</strong>: CIT04 emits to MG (4K) + TN (1.6K) + AR + CD + ZW (Worldlink exotic currencies)</li>
+        <li><strong>YoY growth ~7%</strong>, no seasonal anomalies — V001 cutover safe in any window</li>
+        <li><strong>F110 proposal pattern</strong>: 38% of all REGUH runs are XVORL=X (test proposal). Phase 3 testing leverages this — zero posting risk.</li>
+        <li><strong>BCM batches</strong>: 27,443 headers + 600,042 items. SOG01 alone = 41% of BCM batches (11,334).</li>
+      </ul>
+
+      <h4 style="color:#0369a1">3. LIVE configuration map — vendor → file → bank (all connected)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/LIVE_CONFIG_MAP.md" style="color:#0369a1">LIVE_CONFIG_MAP.md</a> — full chain documented</p>
+      <ul>
+        <li><strong>T042I = canonical house bank derivation</strong> (77 rules: ZBUKR + ZLSCH + WAERS → HBKID + HKTID). Multi-currency aware. Confirmed against REGUH traffic.</li>
+        <li><strong>Country dispatcher (FR/DE/IT classes) fires ONLY on CGI tree</strong> — not SEPA, not CITI. Two dispatcher mechanisms distinguished:
+          <ul>
+            <li>Event 05 factory (cl_idfi_cgi_call05_factory) — 18 SAP-std country classes, populates FPAYHX_FREF</li>
+            <li>Per-node BAdI (FI_CGI_DMEE_EXIT_W_BADI) — only 4 UNESCO Y classes (FALLBACK + FR + DE + IT), mutates output XML per node</li>
+          </ul>
+        </li>
+        <li><strong>What stays untouched in production</strong>: V000 of all 4 trees, 17 CITIPMW V3 FMs, FI_PAYMEDIUM_DMEE_CGI_05, SAP-std country classes, BCM workflow, file output path</li>
+      </ul>
+
+      <h4 style="color:#0369a1">4. Active vs Dead classification (P01-anchored)</h4>
+      <p><a href="../knowledge/domains/Payment/phase0/active_vs_dead_inventory.md" style="color:#0369a1">active_vs_dead_inventory.md</a></p>
+      <ul>
+        <li>4 DMEE trees + 1 bonus _BK active in P01</li>
+        <li>2 Event 05 FMs registered (TFPM042FB)</li>
+        <li>33 node-level FMs (MP_EXIT_FUNC) including 26 CITIPMW V3 + 4 SEPA + 2 Z customs + 1 BAdI dispatcher</li>
+        <li>5 UNESCO Y* classes active</li>
+        <li>17/17 CITIPMW V3 FMs extracted to <code>extracted_code/FI/DMEE_full_inventory/</code></li>
+        <li>Brain claims +6 (88-93)</li>
+      </ul>
+
+      <h4 style="color:#0369a1">5. Pending extractions (in progress)</h4>
+      <ul>
+        <li>REGUH_FULL (27 cols, 942K rows) — for RZAWE-based real tree mapping</li>
+        <li>REGUP (28 cols, ~3-5M rows) — for line-item analysis</li>
+        <li>Apenas terminen: Model 10 (Worldlink currencies) + PM v2 (real tree per payment via T001 × T042Z JOIN)</li>
+      </ul>
+    </div>
+    </div>

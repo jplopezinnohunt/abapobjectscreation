@@ -1,0 +1,70 @@
+<div id="tab-dme-tree" class="content">
+  <div class="section">
+    <h3>Format Tree Anatomy — the Lego catalog</h3>
+
+    <h4>The mental model — Lego pieces and ways to fill them</h4>
+    <p>If a DMEE format tree is a Lego model of a bank file, then this section is the catalog of pieces. There are <strong>7 piece types</strong> (the shape) and <strong>7 ways to fill each piece with a value</strong> (the content). Once you grasp these 14 concepts, every DMEE tree in the world becomes readable — you can open one cold and trace exactly where each output character comes from.</p>
+    <p>Beyond the pieces themselves, the engine also has two control mechanisms: <strong>conditions</strong> (rules to suppress or branch) and <strong>sorts</strong> (how to group/order the input data per output level). Plus the tree-wide <strong>header</strong> settings (charset, root node, optional XSLT) that govern the whole assembly.</p>
+    <p>Reading order suggestion: <em>node types → mapping procedures → conditions/sorts → header → source structures</em>. You'll see how V001 fits at each layer.</p>
+
+    <h4>Node types (column DMEE_TREE_NODE.NODE_TYPE) — the 7 shapes</h4>
+    <p>The first three (Segment group / Segment / Composite) are mostly relevant for <strong>flat files</strong>. The middle two (Element / XML attribute) are <strong>XML</strong> shapes. Atom and Technical node work in both worlds. UNESCO trees are all XML, so we mostly deal with Element / XML attribute / Atom / Technical node.</p>
+    <table>
+      <tr><th>Node type</th><th>Used for</th><th>XML or flat?</th></tr>
+      <tr><td><strong>Segment group</strong></td><td>Group of segments (e.g. one repeat per line item)</td><td>Flat</td></tr>
+      <tr><td><strong>Segment</strong></td><td>One record / line in target file</td><td>Flat</td></tr>
+      <tr><td><strong>Composite</strong></td><td>Group of elements inside a segment</td><td>Flat</td></tr>
+      <tr><td><strong>Element</strong></td><td>A leaf field (flat) OR an XML tag (XML)</td><td>Both</td></tr>
+      <tr><td><strong>XML attribute</strong></td><td>Sub-node of an element supplying tag attributes</td><td>XML only</td></tr>
+      <tr><td><strong>Atom</strong></td><td>Multiple values feeding one element OR conditional value selection</td><td>Both</td></tr>
+      <tr><td><strong>Technical node</strong></td><td>Stores a value referenced elsewhere; never written to file</td><td>Both</td></tr>
+    </table>
+
+    <h4>Mapping procedures (per node, columns MP_*) — the 7 ways to fill a piece</h4>
+    <p>Each node carries a <em>mapping procedure</em> that tells the engine where the value comes from. Four of these are passive ("read this field, this constant, this aggregate"), three are active ("call code, build from atoms, contain other things"). UNESCO uses all seven across the four trees:</p>
+    <table>
+      <tr><th>Procedure</th><th>What the node does</th><th>UNESCO example</th></tr>
+      <tr><td>No mapping</td><td>Pure container (grouping)</td><td><code>&lt;Document&gt;</code> wrapping the body</td></tr>
+      <tr><td>Constant</td><td>Literal text in <code>MP_CONST</code></td><td><code>xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"</code></td></tr>
+      <tr><td>Structure field</td><td>Read <code>MP_SC_TAB.MP_SC_FLD</code> + <code>MP_OFFSET</code></td><td>Most Dbtr/Cdtr nodes — <code>FPAYH-ZBUKR</code>, <code>FPAYHX-REF01[0..60]</code>, <code>FPAYP-XREF3</code> (h18 PurposeCode)</td></tr>
+      <tr><td>Reference to tree node</td><td>Re-emit value of node identified by MP_SC_NODE / MP_SC_REF_NAME</td><td>UltmtCdtr structured-name reuse</td></tr>
+      <tr><td>Aggregation</td><td>Sum/count/min/max over level</td><td>Trailer <code>&lt;NbOfTxs&gt;</code>, <code>&lt;CtrlSum&gt;</code></td></tr>
+      <tr><td>Exit module</td><td>Call FM/method named in <code>MP_EXIT_FUNC</code></td><td>UNESCO: BAdI <code>FI_CGI_DMEE_EXIT_W_BADI</code> on 794/1,975 nodes (40%) → <code>YCL_IDFI_CGI_DMEE_FR/DE/IT/FALLBACK/UTIL</code>. CITI: <code>/CITIPMW/V3_CGI_CRED_*</code> family</td></tr>
+      <tr><td>Own mapping (atoms)</td><td>Compose value from multiple atoms with conditions</td><td>NMENARD's PPC tag value built from <code>YTFI_PPC_STRUC</code> positional building blocks (SEPARATOR / FIXED_VAL / PPC_VAR / PPC_DESCR / PAY_FIELD)</td></tr>
+    </table>
+
+    <h4>Conditions &amp; sorts — the engine's two control levers</h4>
+    <p>The mapping procedures decide <em>what</em> a node outputs. Conditions and sorts decide <em>whether</em> a node fires and <em>how</em> the data is ordered.</p>
+    <ul>
+      <li><code>DMEE_TREE_COND</code> — per-node <strong>suppress / branch</strong> logic. Each row says "if argument 1 OPERATOR argument 2 then [suppress / continue]". A node can have multiple conditions linked with AND/OR. <strong>UNESCO V001 SEPA design relies heavily on this</strong>: 5 new conditions per tree to suppress empty structured elements ("if <code>FPAYHX-REF01[60..80] = ''</code> then suppress <code>&lt;BldgNb&gt;</code>"). The CITI tree avoids needing these because XSLT auto-prunes empty leaves; SEPA has no XSLT, so suppression has to happen at the tree level.</li>
+      <li><code>DMEE_TREE_SORT</code> — per-level sort/key fields. Tells the engine how to group repeating data into output levels. UNESCO uses <code>ZBUKR</code> (level 1 — one batch per company code), <code>AUSFD+HKTID</code> (level 2 — group by due date and account), <code>DOC1R</code> (level 3 — order by payment doc reference). This is what makes the file emit one PmtInf block per cocode, with line items grouped sensibly underneath.</li>
+    </ul>
+
+    <h4>The header (DMEE_TREE_HEAD) — tree-wide settings + UNESCO's V000 values</h4>
+    <p>The header is one row per (tree, version). It sets things that apply to the whole tree, regardless of which node fires: the source DDIC structure, root node ID, charset, XSLT post-processor, etc. Most fields are inherited from V000 to V001 by the SAP-std "Create Version" function, but <strong>that exact semantic is one of the open known-unknowns we registered (KU-2026-DMEE-B)</strong> — we want to verify field-by-field before cutover.</p>
+    <table>
+      <tr><th>Field</th><th>Role</th><th>UNESCO P01 V000</th></tr>
+      <tr><td>TREE_TYPE</td><td><code>PAYM</code> for payments</td><td><code>PAYM</code> (all 4 trees)</td></tr>
+      <tr><td>TREE_ID</td><td>Format-tree name = PMW format name</td><td><code>/SEPA_CT_UNES</code> · <code>/CITI/XML/UNESCO/DC_V3_01</code> · <code>/CGI_XML_CT_UNESCO</code> · <code>/CGI_XML_CT_UNESCO_1</code></td></tr>
+      <tr><td>VERSION</td><td>Coexisting versions per tree</td><td><strong>P01: 000 only</strong> · <strong>D01: 000 + 001</strong> (V001 already created as dormant byte-clone — claims 109+111). V001 has never been transport-released to V01/P01 (claim 102).</td></tr>
+      <tr><td>EX_STATUS</td><td><code>'A'</code> = active</td><td>A on all (V000 active)</td></tr>
+      <tr><td>PARAM_STRUC</td><td>DDIC structure for source-field picker</td><td><code>FPM_SEPA</code> (SEPA), <code>FPM_CGI</code> (CGI + CGI_1)</td></tr>
+      <tr><td>FIRSTNODE_ID</td><td>Root node</td><td>N_4880705930 · N_3831274320 · <strong>N_5649723900</strong> shared by CGI + CGI_1 → critical: any change to N_5649723900 affects both</td></tr>
+      <tr><td>SF_NAME / XSLTDESC</td><td>XSLT post-processor</td><td>Empty for SEPA + CGI; CITI uses <code>CGI_XML_CT_XSLT</code> (12-line identity-copy with empty-leaf-prune)</td></tr>
+    </table>
+
+    <h4>Source structures available to TREE_TYPE='PAYM' — what the tree can read</h4>
+    <p>When you build a tree of <code>TREE_TYPE='PAYM'</code> (the type used for payment formats), DMEE knows about a fixed set of in-memory structures populated by SAPFPAYM at runtime. These are the only fields the tree can map nodes to. Custom append fields (UNESCO's Z and Y prefixes) live inside these structures.</p>
+    <p>Memorize these six — every UNESCO node ultimately reads from one of them:</p>
+    <table>
+      <tr><th>Structure</th><th>Purpose</th><th>UNESCO custom append fields</th></tr>
+      <tr><td>FPAYH</td><td>Per-paying header (one per payment file batch)</td><td>ZBUKR, HBKID, HWAER, ZBNKS (vendor bank country), ZSTRA (vendor street, exit-populated for UltmtCdtr)</td></tr>
+      <tr><td>FPAYHX</td><td>Extended per-batch — buffers populated by Event 05</td><td>FPAYHX_FREF: REF01..REF15 + CURNO. UNESCO byte layout — REF01[0..60]=street, [60..80]=building, [80..90]=postcode, [90..100]=region, [100..110]=house_num1; REF06[0..40]=city</td></tr>
+      <tr><td>FPAYP</td><td>Per-line-item</td><td>XREF3 carries the ISO 20022 PurposeCode (h18 finding)</td></tr>
+      <tr><td>FPAYP_REM</td><td>Per-line remittance / note-to-payee</td><td><code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> source for NMENARD PPC countries</td></tr>
+      <tr><td>FPAYPX</td><td>Extended per-line — FPAYP_FREF.REF01..REF05 (same Dbtr address per line)</td><td></td></tr>
+      <tr><td>DMEE_PAYD</td><td>Standard note-to-payee structure</td><td>OBPM2 binds this</td></tr>
+    </table>
+  </div>
+</div>
+

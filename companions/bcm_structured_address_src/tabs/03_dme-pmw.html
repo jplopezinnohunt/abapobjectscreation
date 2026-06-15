@@ -1,0 +1,128 @@
+<div id="tab-dme-pmw" class="content">
+  <div class="section">
+    <h3>PMW Transactions — the 4 doors into the workbench</h3>
+
+    <h4>Why is PMW split across 4 separate transactions?</h4>
+    <p>SAP could have put everything in one giant config screen, but they didn't — and that turned out to be a good thing. Each of OBPM1, OBPM2, OBPM3, OBPM4 owns a clean, separable concern. Once you know which transaction owns what, debugging becomes pinpointable: "the file format itself is wrong" → OBPM1 + the DMEE tree; "the note-to-payee text is missing" → OBPM2; "I need a custom field that isn't in FPAY*" → OBPM3; "the file went to the wrong folder" → OBPM4.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ OBPM1 — the format catalog</h4>
+    <p>Think of OBPM1 as the <em>library catalog</em> for all bank-file formats SAP knows about. Each row is a "format" — a name like <code>CGI_XML_CT</code> or <code>CHECK_BW</code> — with three key attributes: <strong>which country it serves, whether it is DMEE-based or legacy code-based, and what event modules to call</strong>. The most important field is the <em>"Mapping using DME engine"</em> flag. When checked, SAP knows: "for this format, look up a DMEE tree with the same name and use it." When unchecked, SAP uses an old function module instead.</p>
+    <p><strong>The invariant nobody tells you explicitly</strong>: when DME flag = ON, the OBPM1 format name must equal the DMEE TREE_ID character-for-character. <code>/SEPA_CT_UNES</code> in OBPM1 must match <code>/SEPA_CT_UNES</code> in <code>DMEE_TREE_HEAD</code>. If they drift apart (typo, rename) the format silently stops producing files. This is exactly why we proposed adding the brain feedback rule <code>feedback_dmee_pmw_treeid_invariant</code> as part of this work.</p>
+    <p><em>UNESCO touch-point</em>: OBPM1 has rows for <code>/SEPA_CT_UNES</code>, <code>/CITI/XML/UNESCO/DC_V3_01</code>, <code>/CGI_XML_CT_UNESCO</code>, <code>/CGI_XML_CT_UNESCO_1</code> — all DME-engine flag = ON. <strong>V001 does NOT touch OBPM1</strong> — only the underlying tree.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ OBPM2 — note to payee rules</h4>
+    <p>The <em>note to payee</em> is the human-readable line on a payment that tells the receiving party what the money is for ("Invoice #4711, October consulting"). Different payment formats need different note compositions: SEPA wants up to 140 chars in <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code>, MT101 wants something else, a flat file might want a column-fixed extract. OBPM2 is where you say "for this format, build the note-to-payee by concatenating these fields with this separator, with this max length."</p>
+    <p>The OBPM2 output ends up in the in-memory structure <code>FPAYP_REM</code> — and <strong>that is the field DMEE reads when a node is mapped to <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code></strong>. So if you ever wonder "why is my Ustrd content wrong?", the answer is almost always at OBPM2, not in the DMEE tree.</p>
+    <p><em>UNESCO touch-point</em>: OBPM2 drives the Ustrd content for our PPC countries (ID / IN / JO / MA / MY / PH). NMENARD's PPC dispatcher writes positional building blocks (SEPARATOR, FIXED_VAL, PPC_VAR, PPC_DESCR, PAY_FIELD) that ultimately surface here. <strong>V001 must preserve all OBPM2 wiring; we do not change it.</strong></p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ OBPM3 — customer enhancements (the BAdI alternative)</h4>
+    <p>OBPM3 lets you register a <em>customer function module</em> for a given format. The FM gets called at specific events during file creation — typically Event 05 (one shot per payment, where you can populate buffers like <code>FPAYHX_FREF</code>). Why does this exist when DMEE already has <code>MP_EXIT_FUNC</code> on individual nodes? Because they cover different scopes:</p>
+    <ul>
+      <li><strong>OBPM3 customer FMs</strong> = "do something <em>once per payment / per file</em>" (populate buffers, validate, side-effect logging).</li>
+      <li><strong>DMEE node MP_EXIT_FUNC</strong> = "do something <em>for this single field/value</em>" (per-node transformation, conditional override, lookup).</li>
+    </ul>
+    <p>They are <strong>independent extension points</strong>. When tracing a custom value, future agents must check both. UNESCO uses both: SAP-std OBPM3 FMs (e.g. <code>FI_PAYMEDIUM_DMEE_CGI_05</code> for Event 05) and per-node exits (e.g. <code>/CITIPMW/V3_CGI_CRED_STREET</code> on CITI tree nodes).</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ The 7 DMEE lifecycle events — what each one is actually for</h4>
+    <p>OBPM1's <em>"Event Modules for Payment Medium Formats"</em> sub-folder is where the 7 SAP-standard <strong>lifecycle events</strong> are wired to function modules per format. Think of file creation as a play: the curtain rises (Event 20), each scene plays out (Event 30 per record), the stage gets reset between acts (Event 25), and the curtain falls (Event 40). Two more events fire <em>before</em> the curtain even rises: validation (Event 10) and per-payment data prep (Events 00 + 05). For each event, you can register one custom function module that will be called when the event fires.</p>
+    <p>Each event has a single, well-defined purpose. You do not register all 7 — you register only the ones you have custom logic for. The screenshot below shows the SAP-std catalog (left popup) and the 6 events that <code>/CGI_XML_CT_UNESCO</code> has registered (right pane). UNESCO skips Event 10 entirely because there is no custom format-parameter validation needed for our flows.</p>
+
+    <table>
+      <tr><th>Event</th><th>Plain-English purpose</th><th>When it fires</th><th>UNESCO `/CGI_XML_CT_UNESCO`</th></tr>
+      <tr>
+        <td><strong>00</strong> · Fill sort field</td>
+        <td>Populate the sort/key fields used to group payments at each level of the output tree (e.g. group by paying-bank then by due date)</td>
+        <td>Once per payment, before the tree starts traversing</td>
+        <td><code>FI_PAYMEDIUM_DMEE_00</code> ✅</td>
+      </tr>
+      <tr style="background:#0f2a1f">
+        <td><strong>05</strong> · Fill additional reference fields ⭐</td>
+        <td><strong>Populate the FPAYHX_FREF buffer (REF01..REF15) and FPAYP_FREF buffer that DMEE nodes will read from.</strong> This is where structured-address bytes are written into the in-memory buffer before the tree walks them. <em>UNESCO V001 directly depends on this event.</em></td>
+        <td>Once per payment, after Event 00</td>
+        <td><code>FI_PAYMEDIUM_DMEE_CGI_05</code> ✅ ← <strong>V001 hook</strong> (Sub-option A reuses this for SEPA via TFPM042FB row)</td>
+      </tr>
+      <tr>
+        <td><strong>10</strong> · Check format parameters</td>
+        <td>Validate run-level parameters before any file is written. If the FM raises an error, the entire run aborts before file creation</td>
+        <td>Once, at run start (validation phase)</td>
+        <td><em>Not registered</em> — UNESCO has no custom validation here</td>
+      </tr>
+      <tr>
+        <td><strong>20</strong> · Start / file header</td>
+        <td>Emit pre-tree header content when a file opens. For XML formats this is mostly a no-op (the XML declaration comes from the tree); used for flat-file envelopes</td>
+        <td>Once per output file (file open)</td>
+        <td><code>FI_PAYMEDIUM_DMEE_20</code> ✅</td>
+      </tr>
+      <tr>
+        <td><strong>25</strong> · File close / open</td>
+        <td>Cleanup/finalize at file boundary when one F110 run produces multiple files (e.g. one file per paying-cocode)</td>
+        <td>At each file split during the run</td>
+        <td><code>FI_PAYMEDIUM_DMEE_25</code> ✅</td>
+      </tr>
+      <tr>
+        <td><strong>30</strong> · Order / transaction record</td>
+        <td>Per-record custom processing during emission — fires once for every individual payment</td>
+        <td>Per FPAYH row (one payment in the batch)</td>
+        <td><code>FI_PAYMEDIUM_DMEE_30</code> ✅</td>
+      </tr>
+      <tr>
+        <td><strong>40</strong> · End / file trailer</td>
+        <td>Emit trailer information at file close — totals, control sums, EOF markers. For XML this typically just emits closing wrappers; for flat files this is the line-9 trailer record we saw earlier</td>
+        <td>Once per output file (file close)</td>
+        <td><code>FI_PAYMEDIUM_DMEE_40</code> ✅</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ The order events fire at runtime</h4>
+    <p>Reading them in numerical order does not match the firing order. Here is the actual timeline of a single F110 → SAPFPAYM → file run:</p>
+    <pre>① Event 10 — validate format params              (once, very early; aborts run if it fails)
+② per-payment loop:
+     Event 00 — fill sort fields                    (per payment)
+     Event 05 — fill FPAYHX_FREF / FPAYP_FREF       (per payment)  ← UNESCO V001 hook
+③ per-file loop (files split by cocode/method):
+     Event 20 — write file header
+     ④ per-record loop inside that file:
+          Event 30 — per-transaction processing
+          DMEE tree traversal — emit XML/flat record
+     Event 25 — fires if another file opens (split boundary)
+     Event 40 — write file trailer (close the file)</pre>
+    <p>Read this in plain English: <em>SAP first validates that the run can proceed (Event 10). For each payment in the batch it fills sort fields (Event 00) and address/reference buffers (Event 05). Then for each output file it opens with a header (Event 20), walks every transaction emitting records (Event 30 + DMEE tree), handles file boundaries (Event 25), and closes with a trailer (Event 40).</em> The DMEE tree itself is invoked once per record inside Event 30 — the tree is the engine, the events are the orchestration around it.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ Where to find this in OBPM1</h4>
+    <p>To inspect or edit which events a format has registered, open Tx <code>OBPM1</code> → click into the format name → the left dialog tree shows <em>"Event Modules for Payment Medium Formats"</em>. The right pane lists Event / Function module / Implementation. To add a new event, click <em>New Entries</em> and pick from the popup of 7 (the popup we see in the screenshot).</p>
+    <p style="background:#f1f5f9;padding:12px;border-left:3px solid #1abc9c;border-radius:4px;margin-top:14px"><strong>UNESCO V001 implication</strong> → V001 does not register any new event for the SEPA tree — it adds <strong>one row in TFPM042FB</strong> (OBPM4 territory) registering Event 05 = <code>FI_PAYMEDIUM_DMEE_CGI_05</code> for the SEPA tree, reusing the SAP-std FM that already serves CGI. That single row is what tells SAPFPAYM "when running SEPA, also call the country-dispatch chain that fills the structured-address buffer." Zero ABAP development is needed for this — the FM exists, the dispatch logic exists, we are just pointing the SEPA tree at the same wiring.</p>
+
+    <h4 style="color:#0369a1;margin-top:18px">▸ OBPM4 — selection variants for the driver report</h4>
+    <p>This one trips people up because the name "Selection Variants" sounds optional. <strong>It is not</strong>. Every PMW format must have at least one OBPM4 entry per paying-cocode, otherwise F110 will run successfully, post the documents, and then quietly fail to write any bank file. The variant is what tells the SAPFPAYM driver: "for this run, use format X, write the file to path Y, with file name pattern Z, and please include a payment summary printout."</p>
+    <p>The variant ID is just a label (e.g., <code>TESTING</code> in the screenshots below). What matters is the variant's content: format name, file-name pattern (e.g. <code>&lt;cc&gt;_&lt;pm&gt;_&lt;fmt&gt;&lt;date&gt;&lt;seq&gt;.in</code>), and the "Output to file system" flag. <strong>Change the file path here, F110 writes to a new path next run.</strong></p>
+    <p><em>UNESCO touch-point</em>: F. Spezzano owns the parallel work on TFPM042F* (the table behind OBPM4). For V001, SEPA Sub-option A requires <strong>one new row in TFPM042FB</strong> registering Event 05 for the SEPA tree. That single addition is what lets the same SAP-std Event 05 wrapper that already serves CGI also feed FPAYHX_FREF for SEPA — meaning we do <em>not</em> need to write any custom Event 05 code for SEPA.</p>
+
+    <h4>Quick-reference table</h4>
+    <table>
+      <tr><th>Tx</th><th>Owns</th><th>UNESCO V001 impact</th></tr>
+      <tr><td><code>OBPM1</code></td><td>Format catalog · DME-engine flag · event modules. <strong>Format name === DMEE TREE_ID</strong></td><td>None — V001 keeps existing format rows</td></tr>
+      <tr><td><code>OBPM2</code></td><td>Note-to-payee composition rules · feeds FPAYP_REM</td><td>None — V001 preserves all PPC wiring</td></tr>
+      <tr><td><code>OBPM3</code></td><td>Customer FM enhancements · per-event hooks</td><td>None directly (Event 05 already wired for CGI)</td></tr>
+      <tr><td><code>OBPM4</code></td><td>Selection variants · file path · output flags</td><td><strong>+1 row in TFPM042FB</strong> registering Event 05 for SEPA tree (Sub-option A)</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>What each screen actually looks like</h3>
+    <p>The four screenshots below are from a Botswana sandbox (cocode MVAF, format CHECK_BW), not UNESCO P01 — but the SAP UI is identical. We use them because they're publicly available and let us tag concepts visually. UNESCO's own screens look the same; only the format names and cocodes differ.</p>
+    <p>Walk through them in order: <strong>SPRO IMG path</strong> (where you start), <strong>OBPM4 catalog</strong> (where you pick the format and add a variant), <strong>variant creation popup</strong> (the moment SAP commits the new variant), <strong>SAPFPAYM variant editor</strong> (where the file path and output flags actually get set).</p>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_139.png" alt="SPRO IMG path PMW config">
+    <div class="dme-shot-cap"><b>erp_139.png — SPRO IMG tree.</b> Branch: <em>Outgoing Payments → Automatic Outgoing Payments → Payment Media → Make Settings for Payment Medium Formats from Payment Medium Workbench</em>. Sub-activities: Adjust Note to Payee (OBPM2), Assign Payment Medium Format and Note (OBPM2), <em>Create/Assign Selection Variants (OBPM4)</em> highlighted, Adjust Payment Medium Format, Create Payment Medium Formats (OBPM1), Define Identification for Cross-Payment Run, Sort Variants, Check Management. Tag: this is the canonical SAP IMG path for all UNESCO PMW maintenance.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_140.png" alt="OBPM4 selection variants screen">
+    <div class="dme-shot-cap"><b>erp_140.png — OBPM4 entry screen.</b> Left tree: catalogue of all PMW formats in the system (005, ACB_ZA, ACH, AU_BECS, BECS, BTL91, <code>CGI_XML_CT</code>, <code>CGI_XML_CT_PE</code>, CHECK, <code>CHECK_BW</code> highlighted, …). Right pane: format CHECK_BW (DME format tree for Botswana), variant table with <code>pCo=MVAF</code>, <code>Sel.variant=TESTING</code>. Tag: canonical PMW format → SAPFPAYM variant per paying-cocode binding screen — directly analogous to UNESCO's TFPM042F.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_141.png" alt="OBPM4 variant creation popup">
+    <div class="dme-shot-cap"><b>erp_141.png — OBPM4 popup.</b> "Variant TESTING does not exist for format CHECK_BW. Do you want to create it?" Tag: SAP-std variant-creation UX. Future agents must know that a missing OBPM4 variant means F110 reads FBZP fine but fails at the file-write step.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_142.png" alt="SAPFPAYM Edit Variants form">
+    <div class="dme-shot-cap"><b>erp_142.png — Edit Variants: Report SAPFPAYM, Variant TESTING.</b> Format: Payment Medium Format = <code>CHECK_BW</code>. Print Control: Data Medium Exchange ✓, Payment Summary ✓, Error Log ✓. Output Control: Payment Document Validation, Output to file system, File name, Payment Summary Layout, Screen Output. Tag: <strong>this is the only place</strong> the file-name pattern and Output-to-file-system flag are set. UNESCO's <code>\\hq-sapitf\SWIFT$\P01\input\…</code> path is set here.</div>
+  </div>
+</div>
+

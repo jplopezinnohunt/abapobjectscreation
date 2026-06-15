@@ -1,0 +1,69 @@
+<div id="tab-phase3" class="content">
+    <div class="section" style="background:#f8fafc;border-color:#0369a1">
+      <h3 style="color:#0369a1">Phase 3 — Unit Test D01/V01 <span style="font-size:12px;color:#e67e22">(PENDING · June 2026)</span></h3>
+
+      <h4>Why Phase 3 is "Unit Test" and Phase 4 is "UAT"</h4>
+      <p>Phase 3 is where developers and testers verify V001 produces correct XML — not where business users sign off (that is Phase 4). The distinction matters because the <strong>cost of a bug found in Phase 3 is hours; the cost of the same bug found in Phase 4 is days plus stakeholder confidence</strong>. Phase 3 catches everything mechanical: schema validation against pain.001.001.03 XSD, BAdI regression on Pattern A, byte-level diff of V000 vs V001 output. Phase 3 fails fast and loud so Phase 4 can focus on judgment calls (does the bank accept this in their test gateway? does Marlies confirm the field mapping matches the source XLS?).</p>
+
+      <h4>Where Phase 3 runs</h4>
+      <p>Two environments: <strong>D01</strong> for the DMEE Test Data path (Phase A V000 testing without activation, plus Phase B V001 testing with the snapshot+activate+test+rollback ritual per <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> — F8 only tests the Active version, so V001 must be activated locally in D01 to be tested by the SAP engine). Plus <strong>V01</strong> for end-to-end F110 runs with V001 activated in V01 (after the Generate Version snapshot of V01's V000) for full-stack BCM/SWIFT integration. Production (P01) stays on V000 throughout Phase 3-4. Bug found = roll back via Version Management Retrieve in the affected D01/V01, fix V001 in D01, re-test. Each test scenario from the matrix in this tab maps to one verifiable XML output.</p>
+
+      <p style="background:#dcfce7;border-left:5px solid #1abc9c;padding:12px 16px;margin:14px 0;border-radius:4px;font-size:13px"><strong>📊 Operator-ready test cases (SEPA tree)</strong>: pre-built Excel workbook with 3 scenarios + 17-step Phase A/B/C procedure per case at <code>Zagentexecution/incidents/xml_payment_structured_address/sepa_ct_unes_test_cases.xlsx</code>. Use as the Phase 3 starter for /SEPA_CT_UNES — copy-paste rows into tx DMEE → Test Data → F8 → save XML outputs. Full description in <a href="#" onclick="show('simulator', document.querySelector('[onclick*=simulator]'));return false">🧪 Testing Simulation</a> tab "Sister Excel" subsection.</p>
+
+      <p><strong>Owner</strong>: Pablo + DBS + Marlies</p>
+    </div>
+    <h4 style="color:#0369a1">Test matrix (UT scenarios from handoff §8.1)</h4>
+    
+    <div class="section">
+      <h3>Test Matrix — from handoff doc §8.1 (UT) + §8.2 (UAT) + data-driven anchors</h3>
+      <h4>Unit Test scenarios (June 2026 — Phase 3)</h4>
+      <table>
+        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Pass criteria</th></tr>
+        <tr><td>UT-01</td><td>SEPA vendor with full address</td><td>SEPA</td><td>All 5 structured tags present and populated, AdrLine suppressed (V001 Fully-Structured per claim 105)</td></tr>
+        <tr><td>UT-02</td><td>SEPA vendor with city+country only (partial DQ)</td><td>SEPA</td><td>TwnNm + Ctry populated, missing structured leaves auto-suppressed by DMEE_TREE_COND empty-suppress; CBPR+ minimum (TwnNm+Ctry) still met</td></tr>
+        <tr><td>UT-03</td><td>SEPA vendor missing city (ORT1 blank)</td><td>SEPA</td><td>Empty TwnNm leaf auto-suppressed by DMEE_TREE_COND (no empty tag emitted); other populated leaves emit; bank may reject if missing TwnNm — acceptable for partial-DQ test</td></tr>
+        <tr><td>UT-04</td><td>CITI USD vendor with full address</td><td>CITI</td><td>Cdtr PstlAdr fully structured</td></tr>
+        <tr><td>UT-05</td><td>CITI Worldlink TND UltmtCdtr structured</td><td>CITI</td><td>UltmtCdtr/Nm + StrtNm (=FPAYH-ZSTRA) + Ctry + TwnNm + PstCd populated; AdrLine1/2 deprecated post-cutover. Q3 RESOLVED #62 (claim 99) — no longer blocked.</td></tr>
+        <tr><td>UT-06</td><td>CGI non-EUR, non-USD currency payment</td><td>CGI</td><td>Structured Dbtr kept; CdtrAgt fix verified</td></tr>
+        <tr><td>UT-07</td><td>Debtor (UNESCO) address via user exit — all formats</td><td>All</td><td>FPAYHX-ZREF01..05 populated; structured Dbtr in XML</td></tr>
+        <tr><td>UT-08</td><td>Mixed payment run (some vendors missing postal)</td><td>All</td><td>XSD valid at file level; empty-suppress conditions remove empty leaves per vendor; populated leaves emit (V001 Fully-Structured + self-cleaning, claim 105)</td></tr>
+      </table>
+      <h4>UAT scenarios (July 2026 — Phase 4)</h4>
+      <table>
+        <tr><th>#</th><th>Scenario</th><th>Format</th><th>Validator</th></tr>
+        <tr><td>UAT-01</td><td>EUR salary/vendor via SocGen monthly</td><td>SEPA</td><td>Finance/Treasury</td></tr>
+        <tr><td>UAT-02</td><td>USD payment to international vendor</td><td>CITI</td><td>Finance/Treasury</td></tr>
+        <tr><td>UAT-03</td><td>Worldlink TND (Tunisia staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
+        <tr><td>UAT-04</td><td>Worldlink MGA (Madagascar staff)</td><td>CITI Worldlink</td><td>HRM/Treasury</td></tr>
+        <tr><td>UAT-05</td><td>Local UBO Brazil payment</td><td>CITI</td><td>UBO Finance</td></tr>
+        <tr><td>UAT-06</td><td>Local UIS payment</td><td>CITI</td><td>UIS Finance</td></tr>
+        <tr><td>UAT-07</td><td>EUR via CGI non-SocGen bank</td><td>CGI</td><td>Finance</td></tr>
+        <tr><td>UAT-08</td><td>Multi-currency batch</td><td>All</td><td>Treasury</td></tr>
+        <tr><td>UAT-09</td><td>IIEP payment SEPA</td><td>SEPA</td><td>IIEP Finance</td></tr>
+        <tr><td>UAT-10</td><td>UIL payment SEPA</td><td>SEPA</td><td>UIL Finance</td></tr>
+        <tr><td>UAT-11</td><td>Non-Latin characters (Arabic etc.)</td><td>CGI/CITI</td><td>Finance + IT</td></tr>
+        <tr><td>UAT-12</td><td>Bank pilot confirmation of structured format</td><td>All</td><td>Treasury + Bank TRM</td></tr>
+      </table>
+    </div>
+    
+    <h4 style="color:#0369a1">Regression scenarios (V000 must still work)</h4>
+    <div class="section">
+      <p>During parallel operation (V000 + V001 both exist), regression tests ensure V000 unchanged behavior:</p>
+      <ul>
+        <li>F110 with production payment method → V000 → file matches baseline byte-for-byte</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V000 tree → overflow still prepends (legacy behavior preserved)</li>
+        <li>BAdI Pattern A fix: vendor name &gt; 35 chars + V001 tree → overflow NOT prepended (StrtNm has real value)</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#dcfce7;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 3 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 3 close. Template:</em></p>
+      <ul>
+        <li>UT cases executed: [passed / total] — fail list with root cause</li>
+        <li>XSD validation: [100% pass / issues list]</li>
+        <li>Regression V000 vs baseline: [0 diff / diff count]</li>
+        <li>Pattern A fix behavior verified in both V000 and V001 contexts</li>
+        <li>Phase 4 starts with: [ready for UAT + pilot]</li>
+      </ul>
+    </div>
+    </div>

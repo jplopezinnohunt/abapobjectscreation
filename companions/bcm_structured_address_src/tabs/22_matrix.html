@@ -1,0 +1,164 @@
+<div id="tab-matrix" class="content">
+    <div class="section">
+      <h3>V001 Change Matrix — node-by-node design specification</h3>
+
+      <h4>Why this matrix exists</h4>
+      <p>Saying "we will add structured address tags to 4 DMEE trees" is a high-level statement. Saying "we will create node N_NEW_001 as child of N_5649723900 with NODE_TYPE=ELEM, MP_SC_TAB=FPAYHX, MP_SC_FLD=REF01, MP_OFFSET=0, LENGTH=60" is what M_SPRONK can actually configure in DMEE Tx. <strong>This matrix is the bridge between the two</strong> — every node, every condition, every TFPM042FB row, every ABAP line of V001 is enumerated as one row, with all the fields needed to execute the change without inventing values. No row is speculative; every PARENT_NODE_ID and every source-field reference is verified against the real P01 tree state (1,975 nodes already extracted).</p>
+
+      <h4>How to use this matrix</h4>
+      <p>Read it as the <strong>build instructions</strong> for Phase 2. Each row maps to a single config click in DMEE Tx (or a single line of ABAP for Pattern A). When M_SPRONK opens DMEE → /SEPA_CT_UNES → V001 → Edit, she can use the <code>Action</code>, <code>Parent Node</code>, <code>Tech Name</code>, <code>Source</code>, <code>MP_OFFSET</code>, <code>Length</code> columns directly to fill in the SAP screens. There is no judgment-call space here on purpose: the design is locked, the values are known, the work is mechanical.</p>
+      <p>The matrix totals <strong>27 rows split across 8 transports</strong> — and that 27/8 split is itself meaningful. Claim 102 established that 81.8% of UNESCO's historical DMEE transports touched ≤3 objects (the "surgical pattern"). V001's 8 transports averaging ~3 objects each puts the work squarely inside that historical envelope. <em>This is not a project asking the team to do something operationally novel; it is a project executing the team's normal change cadence at the normal scale</em>.</p>
+
+      <p style="color:#64748b;font-size:13px"><b>Phase 1 deliverable item #1</b> · created 2026-04-30  · CSV source: <code>knowledge/domains/Payment/v001_change_matrix.csv</code> · brain anchors: claim 99 (Q3 RESOLVED), claim 101 (byte-layout finding), claim 102 (surgical pattern), claim 103 (per-entity routing closed), claim 96 (Pattern A SocGen-mandated), plan §Per-tree design L546-567.</p>
+      <p style="color:#64748b;font-size:12px">Each row is one DMEE_TREE_NODE / DMEE_TREE_COND / TFPM042FB / ABAP / DATA delta needed for V001. Sourced from extracted <code>dmee_tree_node_p01_all48.csv</code> — every PARENT_NODE_ID and existing-source pattern is from the actual P01 tree state (1,975 nodes), not invented. <b>29 rows total = 2 PRECONDITION (0a + 0b) + 27 V001 deltas</b>. The 27 deltas match the surgical envelope claim 102: median 1 obj/transport, 81.8% ≤3, our V001 split into 8 transports stays within historical pattern.</p>
+
+      <p style="color:#475569;font-size:12px;margin-top:8px"><b>Important precision corrections vs earlier plan wording</b>:</p>
+      <ul style="color:#475569;font-size:12px">
+        <li>Plan §L546 said "+5 Dbtr structured nodes per tree" — actual extracted tree state shows the existing PstlAdr nodes already have <code>Ctry</code> in many cases. So per-tree the deltas are <b>4 NEW nodes</b> (StrtNm/BldgNb/PstCd/TwnNm) plus existing <code>Ctry</code> stays.</li>
+        <li>SEPA needs Cdtr work too (4 nodes), not just Dbtr — plan §L220 explicitly says "Structured Dbtr + Cdtr" so total SEPA = 8 new nodes + 4 conds + 1 OBPM4 row.</li>
+        <li>CITI has TWO Dbtr PstlAdr parents (N_1531351640 primary, N_4078824850 alt-mode/PstlAdrMor). The alt-mode needs full +5; primary only needs +2 (StrtNm + BldgNb).</li>
+        <li>CITI UltmtCdtr has an EXISTING-but-empty StrtNm node (N_4600960730 child) — V001 sets MP_SC_TAB=FPAYH MP_SC_FLD=ZSTRA on it (MODIFY operation, not ADD). Per claim 99.</li>
+        <li>CGI CdtrAgt fix is +4 nodes (StrtNm/BldgNb/PstCd/TwnNm), parent N_0693479130, sourced from FPAYH-ZBSTR/ZBPST/ZBORT — mirrors existing CITI CdtrAgt source pattern (FPAYH-ZBSTR + FPAYH-ZBORT verified in extracted nodes).</li>
+        <li>CGI_1 SYNC: FIRSTNODE_ID identical to CGI parent (N_0978274660 pre-existing) — CdtrAgt fix propagates automatically without separate node edits. Verify post-Save in DMEE Tx.</li>
+      </ul>
+
+      <h4 style="color:#1abc9c;margin-top:18px">Navigation reference — full path from <code>Document</code> root for each Parent NODE_ID</h4>
+      <p style="font-size:11px;color:#475569">Use this lookup when the matrix below references a Parent NODE_ID — gives the exact navigation in DMEE Tx tree pane to locate where to "Create subnode". Path levels mirror XML nesting depth.</p>
+      <table style="font-size:11px">
+        <tr><th>Parent NODE_ID</th><th>Tree</th><th>Full path from <code>Document</code> root</th><th>Used by matrix rows</th><th>Per-payment cardinality</th></tr>
+        <tr><td><code>N_9926185740</code></td><td>SEPA</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdr</code></td><td>5-8 (Dbtr V001)</td><td><b>1 per file</b> (header — UNESCO HQ)</td></tr>
+        <tr><td><code>N_4754354180</code></td><td>SEPA</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → CdtTrfTxInf → Cdtr → PstlAdr</code></td><td>1-4 (Cdtr V001)</td><td><b>N per file</b> (per payment line — vendor)</td></tr>
+        <tr><td><code>N_1531351640</code></td><td>CITI</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdr</code> (Dbtr-primary, default mode)</td><td>10-11 (CITI Dbtr V001)</td><td>1 per file (header)</td></tr>
+        <tr><td><code>N_4078824850</code></td><td>CITI</td><td><code>Document → CstmrCdtTrfInitn → PmtInf → Dbtr → PstlAdrMor</code> (alt-mode for specific countries)</td><td>12-16 (CITI Dbtr alt V001)</td><td>1 per file (header — when alt-mode triggered)</td></tr>
+        <tr><td><code>N_4600960730</code></td><td>CITI</td><td><code>... → CdtTrfTxInf → UltmtCdtr → PstlAdr</code></td><td>17-18 (CITI UltmtCdtr Worldlink)</td><td>N per file (per line)</td></tr>
+        <tr><td><code>N_5135503450</code></td><td>CITI</td><td><code>... → CdtTrfTxInf → CdtrAgt → FinInstnId → PstlAdr</code></td><td>19-20 (CITI CdtrAgt fix)</td><td>N per file (per line — beneficiary bank)</td></tr>
+        <tr><td><code>N_0693479130</code></td><td>CGI</td><td><code>... → CdtTrfTxInf → CdtrAgt → FinInstnId → PstlAdr</code> (FIRSTNODE shared with CGI_1)</td><td>21-24 (CGI CdtrAgt fix)</td><td>N per file (per line)</td></tr>
+        <tr><td>(SAP-std tx)</td><td>—</td><td><code>tx OBPM3</code> — "Customer Enhancement / FM per format" (SAP-std since ECC 6.0). IMG path: SPRO → FI → AR/AP → Business Transactions → Outgoing Payments → Automatic Outgoing Payments → Payment Media → Make Settings for PMW Formats → Customer Enhancement</td><td>9 (Event 05 FM registration)</td><td>1 entry per format (Sub-option A wiring of FI_PAYMEDIUM_DMEE_CGI_05 to /SEPA_CT_UNES)</td></tr>
+        <tr><td>(class)</td><td>—</td><td><code>tx SE24 → YCL_IDFI_CGI_DMEE_FALLBACK_CM001 → method GET_CREDIT</code></td><td>26 (Pattern A guard)</td><td>1 method (3-line ABAP edit)</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Cardinality matters for source-buffer choice:</strong> Header-level (1 per file) parents read from <code>FPAYHX</code> (where CM005 writes Dbtr address); line-level (N per file) parents read from <code>FPAYP</code> (where CM005 writes Cdtr address per-line). This is why SEPA Dbtr leaves source from <code>FPAYHX-REF01</code> and SEPA Cdtr leaves source from <code>FPAYP-REF01</code> — same field name, different structure, different scope.</p>
+
+      <h4 style="color:#1abc9c;margin-top:18px">Per-tree node-by-node deltas (29 rows total — 2 PRECONDITIONS + 27 V001 deltas)</h4>
+      <p style="font-size:11px;color:#475569">Updated post-RFC verification (claims 109 + 111 + D01 V001 RFC verify 2026-05-07). The 2 PRECONDITION rows (0a + 0b) must complete BEFORE rows 1-27 apply. Cross-reference Parent NODE_ID with the navigation table above to locate the spot in DMEE Tx.</p>
+
+      <div style="background:#dcfce7;border-left:4px solid #16a34a;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px">
+        <strong style="color:#166534">📊 Status SEPA V001 (rows 1-8) — D01 build COMPLETE 2026-05-07</strong><br>
+        All 8 V001 leaves (4 Cdtr + 4 Dbtr) configured in D01 V001 maintenance and verified via RFC extraction:
+        <ul style="margin-top:6px;margin-bottom:6px">
+          <li>4 Cdtr leaves under <code>N_4754354180</code> — FPAYP/REF01 byte slicing + FPAYP/BORT1 (TwnNm), CV_RULE <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code>, conditions FPAYP/&lt;&gt;/SPACE</li>
+          <li>4 Dbtr leaves under <code>N_9926185740</code> — FPAYHX/REF01 byte slicing + FPAYHX/REF06 (TwnNm), CV_RULE <code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code>, conditions FPAYHX/&lt;&gt;/SPACE</li>
+          <li>BROTHER_ID chain Dbtr: StrtNm → BldgNb → PstCd → TwnNm → Ctry → AdrLine ✅ XSD-compliant</li>
+          <li>BROTHER_ID chain Cdtr: StrtNm → BldgNb → PstCd → TwnNm → Ctry → AdrLine(ZPFST) → AdrLine(ZPLOR) ✅ XSD-compliant</li>
+        </ul>
+        Pendiente: Save (Ctrl+S) → tx SM30 V_T042FB row 9 (CM005 register) → Generate Version snapshot → Activate V001 → F8 Test active version with 3 SEPA Excel cases. CITI/CGI/CGI_1 trees (rows 10-25) NOT yet started.
+      </div>
+      <table style="font-size:11px">
+        <tr><th>#</th><th>Tree</th><th>Op</th><th>Parent PstlAdr</th><th>Branch</th><th>Node</th><th>TAB</th><th>FLD</th><th>OFF/LEN</th><th>CV</th><th>Exit</th><th>Cond</th><th>Rationale</th></tr>
+        <tr style="background:#fef3c7"><td>0a</td><td>(all 4)</td><td><b>RETROFIT</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>D01-RETROFIT-01 transport</b>: CGI_1 V000 12-delta surgical fix (purge SCB N_6366307580 + restore 8 ONLY_P01 AdrLine + revert N_0711160730 Nm Z-field if Marlies confirms) + 5 P01-only ABAP retrofit (DE/IT classes + 3 ENHO + FR.CM002) + PURGE dormant D01 V001 on all 4 trees. Anchor: claims 109 + 111 + dmee_retrofit_procedure.md</td></tr>
+        <tr style="background:#fef3c7"><td>0b</td><td>(all 4)</td><td><b>CREATE V001</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>DMEE Tx → Create Version</b> on each of 4 in-scope trees from aligned V000 → fresh V001 byte-clone of V000 (Active Version remains V000 · V001 dormant). Verification: NODE_ID set V001 = NODE_ID set V000 per tree. Anchor: claim 102 + dmee_versioning_procedure.md Step A</td></tr>
+        <tr style="background:#dcfce7"><td>1</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>StrtNm <code>(N_3513093480)</code></td><td>FPAYP</td><td>REF01</td><td>0/60</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>Cdtr per-line. Mirror CGI N_8824498030 (TIER_1). <b>D01 verified 2026-05-07</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>2</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>BldgNb <code>(N_4704385380)</code></td><td>FPAYP</td><td>REF01</td><td>100/10</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>HOUSE_NUM slot (CM005 line 97 +100(10)). Mirror CGI N_8824498030. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>3</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>PstCd <code>(N_9840226220)</code></td><td>FPAYP</td><td>REF01</td><td>80/10</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/REF01/2/&lt;&gt;/SPACE/1</td><td>POST_CODE1 slot (CM005 line 95). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>4</td><td>SEPA</td><td>ADD ✅</td><td>N_4754354180</td><td>Cdtr</td><td>TwnNm <code>(N_7064046520)</code></td><td>FPAYP</td><td>BORT1</td><td>0/35</td><td><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYP/BORT1/2/&lt;&gt;/SPACE/1</td><td>FPAYP-BORT1 = vendor city SAP-std. XSD maxLen 35. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>5</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>StrtNm <code>(N_1215903670)</code></td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>Dbtr per-header. CM005 line 93 writes Dbtr to FPAYHX-REF01. <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>6</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>BldgNb <code>(N_1396453300)</code></td><td>FPAYHX</td><td>REF01</td><td>100/10</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>HOUSE_NUM slot for UNESCO HQ "7" (CM005 line 97). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>7</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>PstCd <code>(N_2703639030)</code></td><td>FPAYHX</td><td>REF01</td><td>80/10</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF01/2/&lt;&gt;/SPACE/1</td><td>UNESCO HQ "75007" (CM005 line 95). <b>D01 verified</b>.</td></tr>
+        <tr style="background:#dcfce7"><td>8</td><td>SEPA</td><td>ADD ✅</td><td>N_9926185740</td><td>Dbtr</td><td>TwnNm <code>(N_7609981350)</code></td><td>FPAYHX</td><td>REF06</td><td>0/35</td><td><code>CL&nbsp;RP&nbsp;&nbsp;&nbsp;&nbsp;X</code></td><td>—</td><td>FPAYHX/REF06/2/&lt;&gt;/SPACE/1</td><td>FPAYHX-REF06 = UNESCO HQ city "PARIS" (CM005 line 98). XSD maxLen 35. <b>D01 verified</b>.</td></tr>
+        <tr><td>9</td><td>—</td><td>REGISTER</td><td>TFPM042FB</td><td>—</td><td>+1 row</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>FORMI=/SEPA_CT_UNES EVENT=05 FNAME=FI_PAYMEDIUM_DMEE_CGI_05 (Sub-opt A)</td></tr>
+        <tr><td>10</td><td>CITI</td><td>ADD</td><td>N_1531351640</td><td>Dbtr-primary</td><td>StrtNm</td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td>CL RP</td><td>—</td><td>(none — XSLT)</td><td>Existing PstCd+TwnNm+Ctry+AdrLine. Add StrtNm.</td></tr>
+        <tr><td>11</td><td>CITI</td><td>ADD</td><td>N_1531351640</td><td>Dbtr-primary</td><td>BldgNb</td><td>FPAYHX</td><td>REF01</td><td>60/20</td><td>CL RP</td><td>—</td><td>(none)</td><td>Add BldgNb.</td></tr>
+        <tr><td>12</td><td>CITI</td><td>ADD</td><td>N_4078824850</td><td>Dbtr-altMor</td><td>StrtNm</td><td>FPAYHX</td><td>REF01</td><td>0/60</td><td>CL RP</td><td>—</td><td>(none)</td><td>Alt-mode PstlAdr (3 AdrLine only). Add full 5.</td></tr>
+        <tr><td>13</td><td>CITI</td><td>ADD</td><td>N_4078824850</td><td>Dbtr-altMor</td><td>BldgNb</td><td>FPAYHX</td><td>REF01</td><td>60/20</td><td>CL RP</td><td>—</td><td>(none)</td><td>Same.</td></tr>
+        <tr><td>14</td><td>CITI</td><td>ADD</td><td>N_4078824850</td><td>Dbtr-altMor</td><td>PstCd</td><td>FPAYHX</td><td>REF01</td><td>80/10</td><td>CL</td><td>—</td><td>(none)</td><td>Same.</td></tr>
+        <tr><td>15</td><td>CITI</td><td>ADD</td><td>N_4078824850</td><td>Dbtr-altMor</td><td>TwnNm</td><td>FPAYHX</td><td>REF06</td><td>0/40</td><td>CL</td><td>—</td><td>(none)</td><td>City.</td></tr>
+        <tr><td>16</td><td>CITI</td><td>ADD</td><td>N_4078824850</td><td>Dbtr-altMor</td><td>Ctry</td><td>FPAYHX</td><td>LAND1</td><td>0/2</td><td>—</td><td>—</td><td>(none)</td><td>Used in Dbtr-1 already.</td></tr>
+        <tr style="background:#dcfce7"><td>17</td><td>CITI</td><td><b>MODIFY</b></td><td>N_4600960730</td><td>UltmtCdtr</td><td>StrtNm (set source)</td><td>FPAYH</td><td><b>ZSTRA</b></td><td>0/70</td><td>CLURP</td><td>—</td><td>(none)</td><td><b>Q3 RESOLVED</b> — existing empty node, set source. claim 99.</td></tr>
+        <tr><td>18</td><td>CITI</td><td>ADD</td><td>N_4600960730</td><td>UltmtCdtr</td><td>BldgNb</td><td>FPAYH</td><td>ZSTRA</td><td>60/15</td><td>CLURP</td><td>—</td><td>(none)</td><td>Optional — only 31% vendors have HOUSE_NUM1 (Phase 0 Finding A).</td></tr>
+        <tr><td>19</td><td>CITI</td><td>ADD</td><td>N_5135503450</td><td>CdtrAgt</td><td>PstCd</td><td>FPAYH</td><td>ZBPST</td><td>0/16</td><td>CL RP</td><td>—</td><td>(none)</td><td>CdtrAgt missing PstCd. Mirror existing TAB=FPAYH FLD=ZB* pattern.</td></tr>
+        <tr><td>20</td><td>CITI</td><td>ADD</td><td>N_5135503450</td><td>CdtrAgt</td><td>BldgNb</td><td>FPAYH</td><td>ZBSTR</td><td>60/15</td><td>CL RP</td><td>—</td><td>(none)</td><td>Optional — defer if Phase 4 UAT shows banks accept.</td></tr>
+        <tr><td>21</td><td>CGI</td><td>ADD</td><td>N_0693479130</td><td>CdtrAgt</td><td>StrtNm</td><td>FPAYH</td><td>ZBSTR</td><td>0/70</td><td>CL RP</td><td>—</td><td>existing TECH switch</td><td>Plan §L550. Mirror CITI source pattern.</td></tr>
+        <tr><td>22</td><td>CGI</td><td>ADD</td><td>N_0693479130</td><td>CdtrAgt</td><td>BldgNb</td><td>FPAYH</td><td>ZBSTR</td><td>60/15</td><td>CL RP</td><td>—</td><td>existing TECH switch</td><td>Optional Hybrid acceptable.</td></tr>
+        <tr><td>23</td><td>CGI</td><td>ADD</td><td>N_0693479130</td><td>CdtrAgt</td><td>PstCd</td><td>FPAYH</td><td>ZBPST</td><td>0/16</td><td>CL</td><td>—</td><td>existing TECH switch</td><td>From T012K bank postal.</td></tr>
+        <tr><td>24</td><td>CGI</td><td>ADD</td><td>N_0693479130</td><td>CdtrAgt</td><td>TwnNm</td><td>FPAYH</td><td>ZBORT</td><td>0/35</td><td>CL</td><td>—</td><td>existing TECH switch</td><td>From BNKA bank city.</td></tr>
+        <tr style="background:#f1f5f9"><td>25</td><td>CGI_1</td><td>SYNC</td><td>(parent)</td><td>—</td><td>(auto)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>FIRSTNODE_ID identical → CdtrAgt fix propagates automatically. Verify post-Save.</td></tr>
+        <tr style="background:#fff7ed"><td>26</td><td>(BAdI)</td><td><b>MODIFY</b></td><td>YCL_IDFI_CGI_DMEE_FALLBACK_CM001</td><td>—</td><td>GET_CREDIT (+3 lines)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>Pattern A guard</b>. Reviewer N_MENARD. Transport D01K-BADI-FIX-01.</td></tr>
+        <tr><td>27</td><td>(DATA)</td><td>FIX</td><td>5 LIFNRs</td><td>—</td><td>vendor master</td><td>LFA1+ADRC</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0000020171/20731/20815/20843/59828 — fix CITY1+COUNTRY or LOEVM='X'.</td></tr>
+      </table>
+
+      <h4 style="color:#0066cc;margin-top:24px">Design decisions — embedded in matrix rows 1-8 (TIER_1 evidence)</h4>
+      <p style="color:#475569;font-size:12px">After D01 V001 RFC verification (2026-05-06) the matrix design choices crystallized against ground truth. Three architectural decisions and their evidence anchors:</p>
+
+      <h5 style="color:#1abc9c;margin-top:14px">Decision A — CV_RULE = <code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> (Dbtr) / <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> (Cdtr) — 10-character positional flag</h5>
+      <p style="font-size:12px">CV_RULE is a <strong>fixed 10-character positional string</strong>, not space-separated tokens. Each position controls one transformation that DMEE applies to the value before writing to XML. Spaces are significant: <code>CL RP    X</code> ≠ <code>CLRPX</code> ≠ <code>CL&nbsp;RP&nbsp;X</code>.</p>
+      <table style="font-size:11px;margin-top:6px">
+        <tr><th>Pos</th><th>Char</th><th>Name</th><th>What it does</th></tr>
+        <tr><td>1</td><td><code>C</code></td><td>Compress</td><td>Removes leading/trailing spaces from value. <code>"&nbsp;&nbsp;Place de Fontenoy&nbsp;&nbsp;"</code> → <code>"Place de Fontenoy"</code></td></tr>
+        <tr><td>2</td><td><code>L</code></td><td>Left-justify</td><td>Aligns value at field start; pads right with spaces if value is shorter than slot</td></tr>
+        <tr><td>3</td><td><code>U</code> / blank</td><td>Upper-case</td><td>Converts to CAPS. <strong>Cdtr</strong> uses <code>U</code> (vendor data is mixed case → force consistency); <strong>Dbtr</strong> leaves blank (UNESCO HQ data already uppercase)</td></tr>
+        <tr><td>4</td><td><code>R</code></td><td>Reset on initial</td><td>Marks field as "considered empty" if value is initial after C+L (works with empty-suppress condition logic)</td></tr>
+        <tr><td>5</td><td><code>P</code></td><td>Print/Pad</td><td>For chars: print field even if empty post-Reset (override of R suppression). Combined with R = "let DMEE_TREE_COND condition decide", not automatic suppress</td></tr>
+        <tr><td>6-9</td><td>(blank)</td><td>reserved</td><td>SAP reserves these positions; UNESCO leaves blank</td></tr>
+        <tr><td>10</td><td><code>X</code></td><td>UNESCO custom flag</td><td>Non-SAP-standard. Customer Z-namespace marker. Likely XSLT-aware (CITI tree has XSLT post-processor) or XML-output mode flag. <strong>100% consistency across all UNESCO leaves cross-tree</strong> → mandatory for new V001 leaves</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Decoding the SEPA V001 patterns:</strong></p>
+      <ul style="font-size:11px;color:#475569;margin-top:4px">
+        <li><code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + (no U) + R + P + (4 spaces) + X — used for <strong>Dbtr V001 leaves</strong> + existing AdrLine ORT1Z</li>
+        <li><code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + U + R + P + (4 spaces) + X — used for <strong>Cdtr V001 leaves</strong> + existing AdrLine ZPFST/ZPLOR</li>
+        <li><code>CL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X</code> → C + L + (no U/R/P) + (4 spaces) + X — used for <strong>CITI Dbtr-1 leaves</strong> (XSLT handles empty-suppress globally)</li>
+      </ul>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Anchor:</strong> verified via dmee_tree_node_p01.csv extraction 2026-05-06. SEPA Dbtr AdrLine N_4946758140 has <code>CL RP&nbsp;&nbsp;&nbsp;&nbsp;X</code> in production today — V001 Dbtr leaves mirror this. SEPA Cdtr AdrLine N_6054982000/N_6343458710 have <code>CLURP&nbsp;&nbsp;&nbsp;&nbsp;X</code> — V001 Cdtr leaves mirror this.</p>
+
+      <h5 style="color:#1abc9c;margin-top:18px">Decision B — BldgNb maps to HOUSE_NUM slot (offset 100, len 10), NOT BUILDING slot (offset 60)</h5>
+      <p style="font-size:12px">Earlier matrix versions had BldgNb at offset 60 length 20 (the BUILDING slot in CM005 layout). RFC verification of CGI N_8824498030 production pattern revealed UNESCO uses <strong>offset 100 length 10</strong> (the HOUSE_NUM1 slot, CM005 line 97).</p>
+      <table style="font-size:11px">
+        <tr><th>Slot</th><th>CM005 line</th><th>ADRC source</th><th>UNESCO HQ data</th><th>Vendor data (typical)</th></tr>
+        <tr style="background:#fee2e2"><td>REF01[60..80] BUILDING</td><td>line 94 <code>+60(20) = ls_adrc-building</code></td><td>ADRC.BUILDING</td><td>(empty)</td><td>often empty (only ~31% have building name per Phase 0 Finding A)</td></tr>
+        <tr style="background:#dcfce7"><td>REF01[100..110] HOUSE_NUM</td><td>line 97 <code>+100(10) = ls_adrc-house_num1</code></td><td>ADRC.HOUSE_NUM1</td><td>"7" (Place de Fontenoy)</td><td>typically populated (street number)</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px">If we read BUILDING slot for <code>&lt;BldgNb&gt;</code>, UNESCO HQ payments produce empty BldgNb (suppressed → bank loses house number "7"). Reading HOUSE_NUM slot produces <code>&lt;BldgNb&gt;7&lt;/BldgNb&gt;</code> ✓. <strong>Anchor:</strong> CGI N_8824498030 production pattern (RFC-verified 2026-05-06) uses offset 100; CM005 ABAP line 97 confirms slot semantics.</p>
+
+      <h5 style="color:#1abc9c;margin-top:18px">Decision C — Ctry + AdrLine UNCHANGED in V001 (hybrid output accepted)</h5>
+      <p style="font-size:12px">Existing <code>&lt;Ctry&gt;</code> and <code>&lt;AdrLine&gt;</code> nodes are NOT modified by V001. After cutover, output XML contains <strong>both</strong> the new structured leaves (StrtNm/BldgNb/PstCd/TwnNm) <strong>and</strong> the original AdrLine + Ctry. ISO 20022 pain.001.001.03 schema permits both coexisting; banks may accept hybrid for now and tighten in CBPR+ Nov 2026.</p>
+      <table style="font-size:11px">
+        <tr><th>Side</th><th>Leaf</th><th>NODE_ID</th><th>Source</th><th>V001 action</th><th>XML rendered</th></tr>
+        <tr><td>Dbtr</td><td>Ctry</td><td>N_2225746230</td><td>FPAYHX-LAND1</td><td>UNCHANGED</td><td>always: <code>&lt;Ctry&gt;FR&lt;/Ctry&gt;</code></td></tr>
+        <tr><td>Dbtr</td><td>AdrLine</td><td>N_4946758140</td><td>FPAYHX-ORT1Z</td><td>UNCHANGED (already has empty-suppress condition)</td><td>renders: <code>&lt;AdrLine&gt;PARIS&lt;/AdrLine&gt;</code> ⚠ redundant w/ TwnNm</td></tr>
+        <tr><td>Cdtr</td><td>Ctry</td><td>N_2790093090</td><td>FPAYHX-ZLISO</td><td>UNCHANGED</td><td>always: <code>&lt;Ctry&gt;{country}&lt;/Ctry&gt;</code></td></tr>
+        <tr><td>Cdtr</td><td>AdrLine #1</td><td>N_6054982000</td><td>FPAYHX-ZPFST</td><td>UNCHANGED</td><td>renders: <code>&lt;AdrLine&gt;{street}&lt;/AdrLine&gt;</code> ⚠ redundant w/ StrtNm</td></tr>
+        <tr><td>Cdtr</td><td>AdrLine #2</td><td>N_6343458710</td><td>FPAYHX-ZPLOR</td><td>UNCHANGED</td><td>renders: <code>&lt;AdrLine&gt;{postal+city}&lt;/AdrLine&gt;</code> ⚠ redundant w/ PstCd+TwnNm</td></tr>
+      </table>
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>Rationale for status quo</strong>: V001 is the first migration step. Keeping AdrLine preserves backward compatibility (fallback if V001 structured fields fail to populate). Risk of redundancy is acceptable for V001; phase-out plan is V002 (3-6 months post-V001) once Phase 4 UAT confirms SocGen/Citibank/CGI banks accept Fully-Structured cleanly.</p>
+      <p style="font-size:11px;color:#475569"><strong>Alternative deferred to V002</strong>: add cross-leaf empty-suppress condition on AdrLine ("suppress if StrtNm/TwnNm non-empty"). Complexity: 5 conditions across 3 leaves, requires regression test. Out of scope for V001.</p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Transport packaging (per Phase 2 Week 1)</h4>
+      <p style="color:#64748b;font-size:12px">Per <code>knowledge/domains/Payment/dmee_versioning_procedure.md</code> + claim 102 surgical envelope. 8 transports total.</p>
+      <table style="font-size:12px">
+        <tr><th>Transport ID</th><th>Carries</th><th>Owner</th><th>Verify after</th></tr>
+        <tr><td><code>D01K-BADI-FIX-01</code></td><td>Row 26 — Pattern A guard</td><td>N_MENARD review</td><td>RPY_CLASS_READ shows new 3 lines</td></tr>
+        <tr><td><code>D01K-V001-SEPA-01</code></td><td>Rows 1-8 (8 nodes) + Step A Create Version</td><td>M_SPRONK</td><td>DMEE_TREE_NODE shows VERSION=001 + 8 new rows under N_4754354180/N_9926185740</td></tr>
+        <tr><td><code>D01K-V001-CITI-01</code></td><td>Rows 10-20 (11 ops) + Step A Create Version</td><td>M_SPRONK</td><td>VERSION=001 nodes; row 17 MODIFY shows MP_SC_FLD=ZSTRA</td></tr>
+        <tr><td><code>D01K-V001-CGI-01</code></td><td>Rows 21-24 (4 nodes) + Step A Create Version</td><td>M_SPRONK</td><td>4 new rows under N_0693479130</td></tr>
+        <tr><td><code>D01K-V001-CGI1-01</code></td><td>Step A only (SYNC propagates row 25)</td><td>M_SPRONK</td><td>VERSION=001 inherits CdtrAgt edits via FIRSTNODE share</td></tr>
+        <tr><td><code>D01K-V001-OBPM4-01</code></td><td>Row 9 — TFPM042FB +1 row (Sub-option A)</td><td>M_SPRONK</td><td>RFC_READ_TABLE TFPM042FB returns 51 rows; SEPA row present</td></tr>
+        <tr><td>(no transport)</td><td>Row 27 — vendor master fix</td><td>Master Data team</td><td>Gold DB re-extract: 0 missing CITY1/COUNTRY (was 5)</td></tr>
+        <tr><td><code>D01K-V001-CUTOVER-01</code></td><td>Phase 5 — Step C ACTIVATE V001 on all 4 trees</td><td>Pablo</td><td>DMEE_TREE_HEAD shows VERSION=001 EX_STATUS='A' for all 4 trees</td></tr>
+      </table>
+
+      <p style="color:#64748b;font-size:12px;margin-top:14px"><em>To download as CSV: see <code>knowledge/domains/Payment/v001_change_matrix.csv</code> (29 rows: 2 PRECONDITION 0a/0b + 27 V001 deltas, full RATIONALE + EVIDENCE_ANCHOR columns). Sign-off block at end of CSV file once Marlies + N_MENARD + Pablo review.</em></p>
+
+      <h4 style="color:#0066cc;margin-top:24px">Phase 2 readiness checklist (single-page)</h4>
+      <p style="color:#64748b;font-size:12px">Companion artifact: <code>knowledge/domains/Payment/phase2_readiness_checklist.md</code> · 8 sections (A-H): plan decisions, Phase 1 deliverables, Phase 2 prerequisites, KUs, artifacts, brain state, blockers, decision log + sign-off block.</p>
+      <table style="font-size:12px">
+        <tr><th>Section</th><th>Items</th><th>Status</th></tr>
+        <tr><td><b>A</b> · Plan §Open architectural decisions</td><td>5</td><td>2 CLOSED (A4, A5) · 2 OPEN (A1 TRM-dependent, A2 Phase-3-dependent) · 1 PARTIAL (A3 Francesco audit)</td></tr>
+        <tr><td><b>B</b> · Phase 1 deliverables</td><td>7</td><td>1 DRAFT READY (B1 change matrix) · 1 DONE (B4 Q3) · 5 NOT STARTED (TRM, retrofit, vendor fix, alignment calls)</td></tr>
+        <tr><td><b>C</b> · Phase 2 prerequisites</td><td>5</td><td>1 DRAFT READY (C2 transports) · 4 NOT STARTED · 1 BLOCKED (C5 VPN)</td></tr>
+        <tr><td><b>D</b> · Open V001-relevant KUs</td><td>5</td><td>1 CLOSED (KU-011) · 4 LOW or partially answered · all non-blocking</td></tr>
+        <tr><td><b>E</b> · Artifacts produced (post-VPN, 2026-04-30)</td><td>7</td><td>All landed</td></tr>
+        <tr><td><b>F</b> · Brain state</td><td>—</td><td>103 claims · 100 rules · FRESH 2026-04-30</td></tr>
+        <tr><td><b>G</b> · Active blockers</td><td>5</td><td>VPN · TRM responses · Master Data · N_MENARD call · Francesco call</td></tr>
+        <tr><td><b>H</b> · Decision log</td><td>7 entries</td><td>Audit trail</td></tr>
+      </table>
+      <p style="color:#64748b;font-size:12px;margin-top:8px"><em>Read the full markdown for the per-row breakdown + signature block.</em></p>
+    </div>
+    </div>

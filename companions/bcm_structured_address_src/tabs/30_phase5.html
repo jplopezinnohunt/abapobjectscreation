@@ -1,0 +1,64 @@
+<div id="tab-phase5" class="content">
+    <div class="section" style="background:#f8fafc;border-color:#0369a1">
+      <h3 style="color:#0369a1">Phase 5 — Deploy P01 staged <span style="font-size:12px;color:#e67e22">(PENDING · Aug-Nov 2026 · CBPR+ hard deadline Nov 1)</span></h3>
+
+      <h4>Why Phase 5 is staged, not big-bang</h4>
+      <p>By Phase 5, V001 has passed unit tests (Phase 3) and UAT + bank acceptance (Phase 4). One option would be to flip all 4 trees from V000 to V001 simultaneously and be done. <strong>Phase 5 deliberately rejects that approach.</strong> Cutting over one tree at a time, with a 14-day monitoring window between trees, gives us three safety nets: <em>(a)</em> if a tree's V001 has an unexpected bank-side issue, only that one tree is affected and we can roll back without disturbing the other 3; <em>(b)</em> 14 days is enough to catch slow-burn bugs (delayed bank rejections, monthly reporting glitches, edge-case vendor combinations); <em>(c)</em> the team gets to tune their monitoring and rollback muscle on the lowest-risk tree first before proceeding to higher-risk ones.</p>
+
+      <h4>Why the order is CGI → SEPA → CITI</h4>
+      <p>Order matters in staged cutover. We go from <em>narrowest blast radius</em> to <em>widest</em>. <strong>CGI first</strong> because the V001 change there is just the CdtrAgt fix — small surface area, no PPC interaction risk during the address-tag verification window. <strong>SEPA second</strong> because it has full V001 node additions but only DE/FR routing (modest volume). <strong>CITI last</strong> because it carries the highest payment volume across BR/CA/FR plus the Worldlink UltmtCdtr edge case — most exposed if anything fails. By the time we get to CITI, we have already seen V001 succeed in production on two trees, monitoring playbook is proven, rollback has been rehearsed.</p>
+
+      <h4>The Nov 1 2026 deadline pressure</h4>
+      <p>CBPR+ goes live Nov 1, 2026. After that date, banks will reject pain.001 files with only unstructured <code>&lt;AdrLine&gt;</code> addresses. <strong>Phase 5 must complete before Nov 1</strong>. Aug-Sep-Oct gives us roughly 12 weeks for 3 staged cutovers with 14-day buffers and slack — comfortably within the schedule, with room for one rollback-and-retry cycle if needed. Slipping into Oct 25 or later would leave no slack for an unexpected rollback, so the working target for last-tree-cutover is mid-October.</p>
+
+      <p><strong>Owner</strong>: DBS (transport) + Pablo (monitoring) + Marlies (business confirmation)</p>
+    </div>
+    <div class="section">
+      <h4>Cutover order (staggered 2-week windows)</h4>
+      <ol>
+        <li><strong>CGI trees first</strong> — narrowest change scope (CdtrAgt only), lowest volume per week</li>
+        <li><strong>SEPA_CT_UNES</strong> — medium volume, Sub-option dependent on Phase 2 choice</li>
+        <li><strong>CITI/XML/UNESCO/DC_V3_01 last</strong> — highest volume, Worldlink edge cases</li>
+      </ol>
+      <h4>Rollback plan (per tree)</h4>
+      <pre>Trigger: &gt;2 bank rejects in 24h attributable to address format
+        OR XSD validation failure rate &gt;1%
+        OR Marlies/Treasury-head override
+
+Action:  DMEE activate V000 / deactivate V001 atomically in D01
+         Transport to P01 via emergency path
+         V001 preserved inactive for investigation
+         SLA: cutover &lt;60 minutes from decision
+
+Post-rollback:
+  Diagnosis of V001 failure
+  Fix in next V001 iteration (or V002)
+  Re-cutover in 2-week cycle</pre>
+      <h4>Post-go-live monitoring (14 days per tree)</h4>
+      <ul>
+        <li>Daily BCM batch reject count per tree (existing Zagentexecution/bcm_dual_control_monitor.py extended)</li>
+        <li>Schema validation fail rate (should be 0%)</li>
+        <li>Vendor-specific errors (expected &lt;0.01% per active-vendor pop)</li>
+        <li>Bank confirmations of file acceptance (daily check)</li>
+      </ul>
+      <h4>V000 decommission (Phase 5+30 days)</h4>
+      <ul>
+        <li>After 30 days of stable V001 in prod across all 4 trees</li>
+        <li>Delete V000 from DMEE tree headers</li>
+        <li>Clean transport to remove V000 nodes from all 3 systems</li>
+        <li>Final plan retrospective + brain session close</li>
+      </ul>
+    </div>
+    <div class="section" style="background:#dcfce7;border-color:#f1c40f;margin-top:30px">
+      <h3 style="color:#f1c40f">🔶 Phase 5 — CONCLUSION (to fill when done)</h3>
+      <p><em>To be populated at Phase 5 close. Template:</em></p>
+      <ul>
+        <li>Cutover dates per tree: [CGI YYYY-MM-DD | SEPA YYYY-MM-DD | CITI YYYY-MM-DD]</li>
+        <li>Rollbacks executed: [count / 0 ideal]</li>
+        <li>Bank rejects attributable to address: [0 / N]</li>
+        <li>CBPR+ Nov 2026 deadline: [MET / MISSED / partial]</li>
+        <li>V000 decommissioned: [date]</li>
+        <li>Brain session-close retro: [link]</li>
+      </ul>
+    </div>
+    </div>

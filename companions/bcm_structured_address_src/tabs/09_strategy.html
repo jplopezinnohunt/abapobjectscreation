@@ -1,0 +1,234 @@
+<div id="tab-strategy" class="content">
+    <div class="section">
+      <h3 style="color:#dc2626;margin-top:18px">Understanding the problem — Structured vs Hybrid vs Unstructured (CBPR+ ISO 20022)</h3>
+      <p style="font-size:13px;color:#1f2937">Brain anchor: <b>claim 113</b> · CBPR+ Nov 2026 mandate · ISO 20022 PstlAdr definitions. The three states below are the <b>regulatory definitions banks enforce</b>, not arbitrary labels. <b>What banks actually look at</b>: which structured leaves <code>&lt;StrtNm&gt; &lt;BldgNb&gt; &lt;PstCd&gt; &lt;TwnNm&gt; &lt;Ctry&gt;</code> exist as XML elements in the file. The <code>&lt;PstlAdr&gt;</code> container is mandatory; the children determine compliance.</p>
+
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>CBPR+ state</th><th>Definition (which leaves exist + populated)</th><th>Bank acceptance post-Nov 2026</th><th>Risk</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fee2e2">
+            <td><b>UNSTRUCTURED</b></td>
+            <td>Only <code>&lt;AdrLine&gt;</code> leaves emitted · NO <code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> structured leaves OR they are unpopulated</td>
+            <td style="color:#991b1b"><b>REJECTED</b></td>
+            <td><b>HARD STOP</b> — bank rejects the file at SWIFT entry. No payment goes through.</td>
+          </tr>
+          <tr style="background:#fef3c7">
+            <td><b>HYBRID</b></td>
+            <td>Both <code>&lt;TwnNm&gt;</code> AND <code>&lt;Ctry&gt;</code> structured leaves emitted with values (CBPR+ minimum mandatory) · remaining content (street, postal, building) inside <code>&lt;AdrLine&gt;</code></td>
+            <td style="color:#92400e">ACCEPTED (minimum viable)</td>
+            <td>Some banks may flag for review · stricter banks (post-2027) may move to Reject. Not future-proof.</td>
+          </tr>
+          <tr style="background:#dcfce7">
+            <td><b>FULLY STRUCTURED</b></td>
+            <td>All 5 ISO 20022 structured leaves emitted: <code>&lt;StrtNm&gt;</code> + <code>&lt;BldgNb&gt;</code> + <code>&lt;PstCd&gt;</code> + <code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> · <code>&lt;AdrLine&gt;</code> empty or suppressed</td>
+            <td style="color:#14532d"><b>ACCEPTED + future-proof</b></td>
+            <td>Strict superset of Hybrid · forward-compatible with pain.001.001.09 schema · maximum bank acceptance margin.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#dc2626;margin-top:14px">Important nuance — the state is determined by tree configuration, not by data quality</h4>
+      <p style="font-size:13px;color:#1f2937">A <code>&lt;PstlAdr&gt;</code> branch is Unstructured/Hybrid/Structured based on <b>which structured-leaves EXIST as nodes in the DMEE tree</b> (DMEE_TREE_NODE rows under the PstlAdr parent), not whether the data fields are populated for any given vendor. If the tree has no <code>&lt;StrtNm&gt;</code> leaf, the XML output never has one regardless of vendor data quality. This is system-data-driven, not observation-driven.</p>
+      <p style="font-size:12px;color:#475569"><b>Implication for Marlies's analysis</b>: her 10 production XML samples are sample-validation, not the classification authority. A tree may produce different-looking output for vendor A vs vendor B (because of vendor data variations), but the <b>tree configuration</b> is single-state. The CBPR+ classification of a tree is "what structured leaves can it possibly emit". This is what claim 113 enumerates per (tree, party).</p>
+
+      <h4 style="color:#dc2626;margin-top:14px">Why V001 chose Fully Structured (not minimum-viable Hybrid)</h4>
+      <ul style="font-size:13px;color:#1f2937">
+        <li>Hybrid satisfies CBPR+ Nov 2026 minimum but is <b>not bank-strictness-future-proof</b>. Some receiving banks (especially in PPC countries — claim 99) may enforce stricter than CBPR+ minimum for AML reasons.</li>
+        <li>Fully Structured is a <b>strict superset</b> of Hybrid — accepted everywhere Hybrid is, plus accepted at strict gateways.</li>
+        <li>Per claim 105 commitment: V001 ships Fully Structured + empty-suppress conditions (so vendors with missing data still produce clean XML — empty leaves auto-removed via DMEE_TREE_COND for SEPA/CGI, XSLT for CITI).</li>
+        <li>Simulator (claim 105): 794/794 PASS on both pain.001.001.03 (current) and pain.001.001.09 (future) schemas — Fully Structured is forward-compatible.</li>
+      </ul>
+
+      <h4 style="color:#dc2626;margin-top:14px">Per-tree current state — system-data classification (not comment-based)</h4>
+      <p style="font-size:12px;color:#475569">Derived from RFC-extracted leaf inventory in P01 V000 (claim 113, RFC verification 2026-04-30). For each tree × party, the structured leaves PRESENT in the tree determine the classification. <b>If a structured leaf is missing in the tree, the XML output cannot have that element regardless of vendor data.</b></p>
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead style="background:#1e3a4a;color:#fff">
+          <tr><th>Tree</th><th>Party</th><th>Structured leaves PRESENT</th><th>Structured leaves MISSING</th><th>CBPR+ classification</th><th>Rejection risk post-Nov 2026</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fee2e2"><td><code>/SEPA_CT_UNES</code></td><td>Cdtr</td><td>Ctry</td><td><b>StrtNm · BldgNb · PstCd · TwnNm</b></td><td style="color:#991b1b"><b>UNSTRUCTURED</b> (only Ctry; missing TwnNm leaf in tree)</td><td>HARD STOP — REJECT</td></tr>
+          <tr style="background:#fee2e2"><td><code>/SEPA_CT_UNES</code></td><td>Dbtr</td><td>Ctry</td><td><b>StrtNm · BldgNb · PstCd · TwnNm</b></td><td style="color:#991b1b"><b>UNSTRUCTURED</b></td><td>HARD STOP — REJECT</td></tr>
+          <tr style="background:#fef3c7"><td><code>/CITI/.../DC_V3_01</code></td><td>Dbtr-primary</td><td>PstCd · TwnNm · Ctry</td><td>StrtNm · BldgNb</td><td style="color:#92400e"><b>HYBRID+</b></td><td>OK minimum · not future-proof</td></tr>
+          <tr style="background:#fee2e2"><td><code>/CITI/.../DC_V3_01</code></td><td>Dbtr-altMor (TECH)</td><td>(none)</td><td><b>StrtNm · BldgNb · PstCd · TwnNm · Ctry</b></td><td style="color:#991b1b"><b>UNSTRUCTURED</b> (3× AdrLine only)</td><td>HARD STOP when alt-mode fires</td></tr>
+          <tr style="background:#dcfce7"><td><code>/CITI/.../DC_V3_01</code></td><td>Cdtr</td><td>StrtNm · BldgNb · PstCd · TwnNm · Ctry · CtrySubDvsn</td><td>(none)</td><td style="color:#14532d"><b>FULLY STRUCTURED</b></td><td>OK · BAdI/CITIPMW fills runtime</td></tr>
+          <tr style="background:#fef3c7"><td><code>/CITI/.../DC_V3_01</code></td><td>UltmtCdtr (Worldlink)</td><td>StrtNm (empty source) · PstCd · TwnNm · Ctry · CtrySubDvsn</td><td>BldgNb</td><td style="color:#92400e"><b>HYBRID+ with empty StrtNm</b></td><td>StrtNm element emits empty → bank may flag</td></tr>
+          <tr style="background:#fef3c7"><td><code>/CITI/.../DC_V3_01</code></td><td>CdtrAgt</td><td>StrtNm · TwnNm · CtrySubDvsn</td><td>PstCd · BldgNb · Ctry (empty source)</td><td style="color:#92400e"><b>HYBRID</b></td><td>OK minimum · not future-proof</td></tr>
+          <tr style="background:#dcfce7"><td><code>/CGI_XML_CT_UNESCO</code></td><td>Dbtr</td><td>StrtNm · BldgNb · PstCd · TwnNm · Ctry · CtrySubDvsn</td><td>(none)</td><td style="color:#14532d"><b>FULLY STRUCTURED</b></td><td>OK</td></tr>
+          <tr style="background:#dcfce7"><td><code>/CGI_XML_CT_UNESCO</code></td><td>Cdtr</td><td>StrtNm · BldgNb · PstCd · TwnNm · Ctry · CtrySubDvsn</td><td>(none)</td><td style="color:#14532d"><b>FULLY STRUCTURED</b></td><td>OK</td></tr>
+          <tr style="background:#fee2e2"><td><code>/CGI_XML_CT_UNESCO</code></td><td>CdtrAgt</td><td>Ctry</td><td><b>StrtNm · BldgNb · PstCd · TwnNm</b></td><td style="color:#991b1b"><b>UNSTRUCTURED</b> (Ctry + 2×AdrLine)</td><td>HARD STOP for receiving-bank address</td></tr>
+          <tr style="background:#dcfce7"><td><code>/CGI_XML_CT_UNESCO</code></td><td>UltmtCdtr · UltmtDbtr</td><td>StrtNm · BldgNb · PstCd · TwnNm · Ctry · CtrySubDvsn</td><td>(none)</td><td style="color:#14532d"><b>FULLY STRUCTURED</b></td><td>OK</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:#475569;margin-top:6px"><b>Total parties at HARD-STOP rejection risk under V000 today</b>: 4 (SEPA Cdtr · SEPA Dbtr · CITI Dbtr-altMor · CGI CdtrAgt). <b>Hybrid+ parties at future-proof risk</b>: 3 (CITI Dbtr-primary · CITI UltmtCdtr · CITI CdtrAgt). <b>V001 lifts all 4 hard-stop parties to Fully Structured + completes the 3 Hybrid+ to Fully Structured.</b> Brain claim 113.</p>
+
+      <hr style="margin:20px 0;border:none;border-top:1px solid #cbd5e1"/>
+
+      <h3>Change Strategy — HOW we deploy V001</h3>
+
+      <h4>Why we even need a strategy</h4>
+      <p>If V001 were simply "edit the DMEE tree in production and turn it on", we wouldn't need this section. The reason we do is that <strong>UNESCO can never afford a payment day where bank files are rejected</strong>. Every payment cycle has hard deadlines (payroll, vendor invoices, intercompany sweeps); a single failed cycle costs money, reputation, and finance-team weekends. So the strategy has to answer three questions at once: (1) <em>How do we put V001 in production safely?</em> (2) <em>How do we test it side-by-side with V000 before cutover?</em> (3) <em>How do we instantly roll back if a bank rejects V001?</em></p>
+      <p>The strategy below uses a SAP-native feature (DMEE tree versioning) that solves all three at once. It is not a custom workaround — it is the canonical way SAP intended bank-format upgrades to be deployed.</p>
+
+      <h4>Why 2-file + DMEE versioning (not Hybrid single-file)</h4>
+      <p>The team considered two main approaches before locking in. They look similar on paper but diverge sharply on rollback risk and bank validation. The decision was made user-directive on 2026-04-24:</p>
+      <table>
+        <tr><th>Approach</th><th>Adopted?</th><th>Why</th></tr>
+        <tr><td><b>Hybrid single file</b> (mixed structured + AdrLine in same XML)</td><td>❌ Rejected</td><td>Mixes legacy + new in one file → parser confusion, rollback hard, bank validation harder</td></tr>
+        <tr><td><b>2-file + DMEE native versioning</b> (V000 + V001 parallel)</td><td>✅ Adopted</td><td>Per user directive 2026-04-24. Atomic activation/rollback. SAP-native. Bank can validate V001 via test gateway without prod risk</td></tr>
+      </table>
+      <p>Read this in plain English: <em>the Hybrid single-file approach would have produced one file with both old and new tags mixed together — which sounds like belt-and-suspenders but actually makes the bank's parser job harder and our rollback nearly impossible (we'd have to re-emit the file). The 2-file + DMEE-versioning approach keeps V000 alive in parallel with V001 as two completely separate trees, lets us flip between them with one config change, and lets the bank validate V001 in a test gateway without ever touching the production V000 stream.</em></p>
+
+      <h4>How V000 + V001 coexist — phase-by-phase timeline</h4>
+      <p>The mechanism (V000 vs V001 cohabitation, EX_STATUS flip, dormant V001 in D01) is documented canonically in <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a>. This section adds something specific to this strategy tab: <strong>the project-phase timeline</strong> — exactly which version is firing in each system at each project phase, so reviewers can trace operational risk over time:</p>
+      <pre>Phase 2 (May 2026):
+  Tree V000 = ACTIVE (current production state, unchanged)
+  Tree V001 = INACTIVE (newly deployed dormant)
+
+Phase 3-4 testing:
+  Z-payment method routes test F110 → V001 only
+  Production payments → V000 (untouched)
+  Both files generated for parallel comparison
+
+Phase 5 cutover (atomic):
+  Deactivate V000, Activate V001 → instant
+  All F110 now produces V001 structured
+
+Rollback (instant if needed):
+  Activate V000, Deactivate V001 → seconds, no data loss
+
+Phase 5 + 30 days stable:
+  V000 decommissioned</pre>
+
+      <p>Read the timeline like this: <em>during May 2026 we build V001 alongside the existing V000, with V001 deployed but turned off. During Phase 3-4 we route only test payments through V001 (using a Z-payment method that doesn't appear on real invoices) so we can compare V000 vs V001 byte-for-byte. At cutover (Phase 5) we flip the EX_STATUS flag — atomic, instant — and from that moment all F110 runs use V001. If a bank rejects, we flip back. Thirty days after stable cutover, V000 is decommissioned.</em> The whole sequence is reversible until the V000 cleanup.</p>
+
+      <h4>Per-tree strategy nuances</h4>
+      <p>The four DMEE trees in V001 scope are <strong>not symmetric</strong>. Each one has its own quirks driven by either the bank's expectations (Citi uses an XSLT post-processor; SEPA does not), the tree's history (CGI shares a root node with its CGI_1 peer), or pre-existing custom logic (CITI tree has UltmtCdtr Worldlink node that was already half-wired). The table below makes the differences explicit so reviewers don't apply uniform thinking where the implementation has to differ:</p>
+      <table>
+        <tr><th>Tree</th><th>What V001 changes</th><th>Empty-element handling</th><th>Why different</th></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code> (Dbtr)</td><td>+5 Dbtr structured nodes</td><td>Emit all 5 nodes unconditionally. XSLT (CGI_XML_CT_XSLT) auto-removes empty.</td><td>XSLTDESC populated for this tree only — verified Phase 1.</td></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code> (UltmtCdtr Worldlink)</td><td>+1 StrtNm = FPAYH-ZSTRA. Existing 7 nodes already populated (Nm, Ctry, TwnNm, PstCd, CtrySubDvsn, AdrLine1, AdrLine2). <b>Q3 RESOLVED</b>.</td><td>Same XSLT auto-removal applies.</td><td>System-driven Q3 resolution — UltmtCdtr was the last open question, now closed via DMEE_TREE_NODE inspection (N_8838338720, brain claim 99).</td></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td>+5 Dbtr structured nodes + Sub-option A test (FI_PAYMEDIUM_DMEE_CGI_05 registration)</td><td>Add explicit DMEE_TREE_COND per node: emit only if source field NE space</td><td>No XSLT for SEPA — empty nodes would be emitted as-is, breaking schema</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code> + <code>_1</code></td><td><b>Fix CdtrAgt</b> — PstlAdr from AdrLine to structured (StrtNm/PstCd/TwnNm/Ctry). Dbtr + Cdtr already structured ✓ — no Dbtr/Cdtr changes.</td><td>CdtrAgt nodes use existing T012K/BNKA-driven Event 05 wiring. <strong>PRESERVE PPC tags untouched</strong>: <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> and <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> dispatch logic must not change.</td><td>Plan §Per-tree design line 550. PPC system requires those tags to dispatch correctly for AE/BH/CN/ID/IN/JO/MA/MY/PH. ZERO ABAP for the CdtrAgt fix — all wiring is config-only.</td></tr>
+      </table>
+
+      <h4 style="color:#e67e22">⚠️ PPC preservation requirement — added 2026-04-29</h4>
+      <p><strong>Plain-English context</strong>: PPC stands for <em>Payment Purpose Code</em> — a regulatory tag that 9 specific countries (UAE, Bahrain, China, Indonesia, India, Jordan, Morocco, Malaysia, Philippines) require in the payment XML or the receiving bank rejects the payment. UNESCO has a working PPC dispatch system in production today (NMENARD specs Doc 2+3, March 2024) that writes country-specific values into <code>&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> for AE/CN and into <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code> for the other 7 countries.</p>
+      <p>The V001 CGI tree change touches <code>&lt;CdtrAgt&gt;&lt;PstlAdr&gt;</code> (a different XML node — the creditor's bank address). But because both PPC and CdtrAgt sit inside the same <code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;</code> wrapper, an over-broad refactor could accidentally break PPC routing. <strong>This callout is the explicit no-touch warning</strong>: V001 must NOT alter the BAdI dispatch behavior on:</p>
+      <ul>
+        <li><code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;InstrForCdtrAgt&gt;&lt;InstrInf&gt;</code> (used by AE, CN PPC)</li>
+        <li><code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;</code> (used by BH/ID/IN/JO/MA/MY/PH PPC)</li>
+      </ul>
+      <p>Without PPC, banks for the 9 countries above reject USD payments via SocGen. <strong>This is one of the strongest "do not touch" lines in the V001 design</strong>: a regression here means real payments to vendors in those countries fail until the next correction transport.</p>
+
+      <h4 style="color:#e67e22">PPC verification approach — READ P01, no need to SIMULATE D01</h4>
+      <p>User insight 2026-04-29: <em>"podemos leer todo lo que ya pasó"</em>. The PPC system is DETERMINISTIC — we don't need F110 simulation in D01 to verify behavior:</p>
+      <ol>
+        <li><strong>The algorithm is known</strong>: extracted source <code>YCL_IDFI_CGI_DMEE_UTIL_CM003</code> (79 lines, byte-identical D01↔P01)</li>
+        <li><strong>The data is known</strong>: YTFI_PPC_STRUC (133 rules) + T015L (73 SCB indicators) extracted to Gold DB</li>
+        <li><strong>For any (LAND1, LZBKZ, PAY_TYPE) tuple</strong>: predict the expected PPC tag content by replaying the algorithm in Python</li>
+        <li><strong>Validate against P01 production</strong>: sample REGUH for PPC-country payments → read actual XML output via REGUC.VARDATA or DTA file history</li>
+      </ol>
+      <p>D01 F110 simulation is only useful for verifying V001 STRUCTURAL changes (new PstlAdr nodes), NOT for re-confirming V000 PPC behavior. The PPC dispatch chain is already provably correct in P01 — we just need to ensure V001 tree changes don't alter the dispatch.</p>
+
+      <h4 style="color:#e67e22">PPC validation — concrete script approach</h4>
+      <pre style="font-size:11px">
+# Pseudo-code for PPC validation script (Python on Gold DB):
+for each REGUH row WHERE LIFNR has bank_country IN PPC_9_countries:
+    # 1. Predict expected PPC tag content
+    pay_type = derive_from_dorigin(fpayh.DORIGIN[0:2])  # HR→P, TR→R, otros→O
+    deb_cre = 'C'  # always credit
+    expected_value = ''
+    FOR row IN YTFI_PPC_STRUC WHERE land1=bank_ctry AND pay_type=pay_type
+                              AND tag_full=tag_xml_path
+                              ORDER BY code_ord:
+        if row.PPC_CODE = SEPARATOR/FIXED_VAL: append row.PPC_VALUE
+        if row.PPC_CODE = PPC_VAR: append T015L[invoice.LZBKZ].ZWCK1.first_token
+        if row.PPC_CODE = PPC_DESCR: append T015L[invoice.LZBKZ].ZWCK1.rest
+        if row.PPC_CODE = PAY_FIELD: append fpay_struc[row.PAY_FIELD]
+    # 2. Read actual XML output
+    actual_xml = read_xml_file(reguh.LAUFD, reguh.LAUFI, reguh.ZBUKR)
+    # 3. Compare
+    assert actual_xml.tag(tag_xml_path).content == expected_value
+      </pre>
+      <p>This validation can be done <strong>NOW</strong> on P01 data (no Phase 2 prerequisite). It confirms V000 PPC works correctly. Then in Phase 3, V001 simulation in D01 needs only to verify that the same dispatch chain still fires — not to re-validate the algorithm.</p>
+
+      <h4>Pattern A — the only ABAP change (BANK-MANDATED, confirmed 2026-04-29)</h4>
+      <p><strong>The "Pattern A" name comes from</strong> NMENARD's internal naming for an existing piece of UNESCO custom logic. Société Générale specifically demanded that when a vendor name exceeds 35 characters (the limit for <code>&lt;Cdtr&gt;&lt;Nm&gt;</code>), the overflow goes into <code>&lt;StrtNm&gt;</code> (yes — into the <em>street name</em> tag, alongside the actual street). This is a SocGen quirk and not an ISO 20022 standard — but it is real, in production, and the bank has explicitly insisted.</p>
+      <p>The problem with V001: that overflow logic <em>writes into</em> <code>&lt;StrtNm&gt;</code>, but V001 also writes the structured street into <code>&lt;StrtNm&gt;</code>. Without the guard, V000's overflow would clobber V001's structured street. <strong>The 3-line guard fixes this</strong>: it tells the existing legacy code "only prepend the name overflow if StrtNm is empty (V000 case) — leave it alone if StrtNm is already populated (V001 case)". V000 production behavior is fully preserved; V001 gets correct structured StrtNm.</p>
+      <p style="color:#475569">3-line guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. Prevents V001 structured StrtNm from being corrupted by V000's legacy name-overflow logic. Backward-compatible: V000 behavior preserved.</p>
+      <p><strong>Origin confirmed (Q1 RESOLVED)</strong>: per N_MENARD doc <code>TS DMEE CGI modifications 20240229.docx</code>, this overflow logic is a <strong>Société Générale-mandated requirement</strong> — the bank explicitly insisted on prepending Name1 chars 36-40 + Name2 to <code>&lt;StrtNm&gt;</code> when name >35 chars. <strong>A1 (remove) is NOT acceptable</strong> — would break SocGen production. <strong>A2 (guard) is the only valid path</strong>. Quote: <em>"I don't think this is a very 'clean' solution but we asked confirmation by giving examples and they insist."</em></p>
+      <pre>" Add this guard:
+WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.            "← V001 GUARD: only prepend if StrtNm empty
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   " V000 legacy preserved
+  ENDIF.
+  IF c_value+70 IS NOT INITIAL.
+    CLEAR c_value+70.
+  ENDIF.</pre>
+      <p><b>Reviewer</b>: N_MENARD (code owner). Pending alignment call (see Phase 1 tab).</p>
+
+      <h4>Test pyramid (4 levels of risk)</h4>
+      <p>Testing strategy is layered like a pyramid: the bottom is cheap, fully-reversible synthetic testing in D01 read-only; each level above adds realism but also adds risk and external dependency. We move up the pyramid only after the lower level passes. The goal is to <strong>maximise the number of bugs caught at L0/L1</strong> (where rolling back is free) and <strong>minimise reliance on L2/L3</strong> (where transports or external banks are involved):</p>
+      <table>
+        <tr><th>Level</th><th>Where</th><th>Risk</th><th>Examples</th></tr>
+        <tr><td><b>L0 — DMEE Tx Test simulation</b></td><td>D01 read-only</td><td>ZERO</td><td>Synthetic FPAYHX payload, validate XML output. Python XSD harness.</td></tr>
+        <tr><td><b>L1 — D01 simulation no transport</b></td><td>D01</td><td>Reversible (no transport)</td><td>F110 proposal mode with Z-payment method routed to V001</td></tr>
+        <tr><td><b>L2 — D01 transport, V01 test client</b></td><td>D01 → V01</td><td>Transport-revertable</td><td>Real F110 in V01 with Z-method, compare V000 vs V001 byte-by-byte</td></tr>
+        <tr><td><b>L3 — Bank pilot via test gateway</b></td><td>External</td><td>External dependency</td><td>Send V001 sample to bank's test gateway (separate from prod), get written acceptance</td></tr>
+      </table>
+
+      <h4>Cutover order (Phase 5)</h4>
+      <p>The three trees do <strong>not</strong> cut over together. Sequencing matters: each tree's V001 activation has its own blast radius, and we deliberately go from <em>narrowest impact</em> to <em>widest impact</em>. If something goes wrong at step 1, only one tree is affected and we can roll back without disturbing the others. The 14-day buffer between cutovers lets us catch slow-burn bugs (delayed bank rejections, monthly reporting glitches) before extending the change to the next tree:</p>
+      <ol>
+        <li><b>CGI tree first</b> — only 3-line BAdI fix activates effects. Lowest blast radius. Validate.</li>
+        <li><b>SEPA second</b> — first tree with full V001 node additions. UNESCO + IIEP + UIL.</li>
+        <li><b>CITI last</b> — highest volume + Worldlink edge cases. Most exposed if anything fails.</li>
+      </ol>
+      <p>Each cutover: 14-day monitoring before next tree's cutover. <strong>Total Phase 5 window: ~6 weeks</strong> from first cutover (CGI) to V000 decommissioning after CITI stable.</p>
+
+      <h4>Rollback protocol</h4>
+      <p><strong>The single biggest reason we chose 2-file + DMEE versioning</strong> over Hybrid is right here: rollback is mechanical and reversible — Version Management retrieves the pre-cutover snapshot and re-activates it. <strong>NOT a flag flip — see <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the SAP-correct lifecycle (activation overwrites V000, rollback requires the V002 snapshot).</strong> The protocol below tells the on-call team exactly what to look for, what to do, and who decides:</p>
+      <pre>Detection criteria:
+  - >2 bank rejects in 24h attributed to address structure
+  - XSD validation failure rate >1%
+  - Marlies/Treasury head override
+
+Action sequence (~5–15 min per tree, NOT atomic — requires Version Management retrieve):
+  1. tx DMEE → /TREE_NAME → Display → Active version → confirm current state
+  2. Utilities → Versions → Version Management → select V002 snapshot
+     (the Generate Version archive taken in Phase 5 pre-cutover prep)
+  3. Click Retrieve → V002 content copies into V001 (Maintenance slot)
+  4. Tree → Activate → V001 (with snapshot content) overwrites current V000
+  5. tx FDTA: re-run 1-vendor F110 sample, verify V000-baseline file emitted
+  6. Notify banks via BCM ops DL: "Reverted to V000 unstructured; new ETA TBD"
+  7. INC ticket open; preserve V001 inactive for forensics
+
+Decision authority: Marlies (BCM ops) + Pablo (technical) jointly.
+Pre-requisite: V002 snapshot must have been Generated in pre-cutover prep
+              (see version-concept tab Phase 5·pre row). Without it, rollback
+              requires a separate transport-level recovery procedure.
+Data loss: zero (F110 idempotent on REGUH).</pre>
+
+      <h4>Decisions baked into this strategy</h4>
+      <p>Each bullet below is a question that was raised during V001 design and was closed by an explicit decision (with the closing rationale and brain-claim anchor). They're listed here as a reference for anyone joining the project mid-stream — read them as "these are no longer open questions; here's why":</p>
+      <ul>
+        <li><strong>Pattern A2 (guard, not remove)</strong> → Q1 RESOLVED. SocGen-mandated overflow logic must be preserved in V000. V001 guards prevents corruption.</li>
+        <li><strong>FR/CM002 retrofit P01→D01</strong> → Q1bis RESOLVED. Not a method swap — CM002 is the PPC dispatcher entry that was added to P01 in March 2024 but never came back to D01. Mandatory in D01-RETROFIT-01.</li>
+        <li><strong>CGI CdtrAgt fix</strong> → V001 converts CGI <code>&lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;PstlAdr&gt;</code> from AdrLine to structured. Dbtr + Cdtr already structured ✓ in V000 — no changes there. PPC tags preserved.</li>
+        <li><strong>PPC tags preserved in V001</strong> → CGI tree V001 must NOT alter dispatch on InstrForCdtrAgt/InstrInf or RmtInf/Ustrd nodes</li>
+        <li><strong>Verification = read P01, not D01 simulation</strong> → algorithm + data deterministic, sample P01 to validate expected output</li>
+        <li><strong>UltmtCdtr Worldlink (Q3) → RESOLVED (system-driven)</strong>. DMEE_TREE_NODE analysis confirmed 7 active source fields under N_8838338720 (Nm=FPAYP-NAME1, Ctry=FPAYH-ZLAND, TwnNm=FPAYH-ZORT1, PstCd=FPAYH-ZPSTL, CtrySubDvsn=FPAYH-ZREGI, AdrLine1=FPAYH-ZSTRA, AdrLine2=FPAYH-ZORT2). 99.7% of BRL Worldlink payments fire UltmtCdtr/Nm. V001 fills <code>StrtNm = FPAYH-ZSTRA</code> (same as Cdtr/Dbtr). UNIFIED into V001 — NOT deferred to V002. No human/TRM input needed. Brain claim 99.</li>
+        <li>Per-bank strictness → confirmed Phase 1 (TRM responses)</li>
+        <li>Vendor master cleanup → 5 mandatory-missing only (LOW risk per DQ)</li>
+        <li>pain.001.001.09 schema upgrade → SEPARATE project, not in V001</li>
+        <li>2-tree CGI variants (CGI + _1) → SYNC pattern, no independent design</li>
+      </ul>
+    </div>
+    </div>

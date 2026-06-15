@@ -1,0 +1,345 @@
+<div id="tab-e2e-flow" class="content">
+    <div class="section">
+      <h3>End-to-End Flow Map — all components connected</h3>
+
+      <h4>Why a single end-to-end view exists</h4>
+      <p>UNESCO's payment pipeline involves <strong>32 distinct components</strong> across config tables, ABAP code, customer enhancements, vendor master data, and SAP-standard infrastructure. Until Phase 0 closed, no one had a single view that connected all of them — the knowledge lived in separate domain docs, separate transports, separate authors' heads. This tab is the result of "<em>tenemos que conectar todos los elementos en un flow logico</em>" (user directive 2026-04-25): one diagram, every component, with the V001-touched ones visually highlighted so reviewers can see the change footprint at a glance.</p>
+
+      <h4>How to read the diagram</h4>
+      <p>The flow runs top-to-bottom from F110 launching to the bank file landing on Alliance Lite2. At each stage, components are arranged horizontally if they fan out (e.g., the four DMEE trees fire in parallel for different countries). Color-coding tells you at a glance what V001 does to each component:</p>
+      <ul>
+        <li><span style="background:#1abc9c;color:#000;padding:2px 6px;border-radius:3px">Teal fill</span> — <strong>touched by V001</strong>. These are the ~24 nodes + 1 OBPM4 row + 5 vendor records changing.</li>
+        <li><span style="background:#e67e22;color:#fff;padding:2px 6px;border-radius:3px">Orange fill</span> — <strong>Pattern A 3-line ABAP change</strong>. The only code touched. Backward-compatible guard.</li>
+        <li><span style="background:#34495e;color:#fff;padding:2px 6px;border-radius:3px">Grey</span> — <strong>out of scope</strong>. BCM workflow, Alliance Lite2, ICTP trees, etc. Touching anything grey means scope creep.</li>
+        <li><em>Default styling</em> — components V001 reads from but does not modify (FPAYHX_FREF buffer, SAP-std country classes, FBZP customizing).</li>
+      </ul>
+      <p>Read this in plain English: <em>if you scan the diagram and see only a few teal/orange fills, that is the V001 footprint by design. Everything else stays as-is. The wide flow chart's purpose is to show how small the change actually is relative to the moving parts of the system.</em></p>
+
+      <p style="color:#64748b;font-size:12px"><em>Source: <code>knowledge/domains/Payment/phase0/e2e_flow_components_connected.md</code></em></p>
+    </div>
+    <h2>UNESCO BCM Structured Address — End-to-End Flow Map</h2>
+    <p style="color:#64748b;font-size:13px"><b>Status (2026-04-29): ALL components connected — V001 design closed (Q1, Q1bis, Q3 resolved)</b></p>
+    <p style="color:#64748b;font-size:12px">Per user directive 2026-04-25 "tenemos que conectar todos los elementos en un flow logico". This view shows the F110→Bank pipeline with V001-touched components highlighted in <span style="background:#1abc9c;color:#000;padding:2px 6px;border-radius:3px">teal</span>, Pattern A code change in <span style="background:#e67e22;color:#fff;padding:2px 6px;border-radius:3px">orange</span>, and out-of-scope components in <span style="background:#475569;color:#f1f5f9;padding:2px 6px;border-radius:3px">grey</span>.</p>
+
+    <div class="section" style="background:#fef3c7;border-left:5px solid #b45309;padding:14px 18px;margin:14px 0;border-radius:4px">
+      <h4 style="color:#b45309;margin:0 0 8px 0">🔗 The runtime → testing bridge — same buffers, two source paths</h4>
+      <p style="font-size:13px;color:#1f2937;margin:0 0 10px 0">A central insight of this E2E flow: the buffer-population stage ④ (FPAYHX/FPAYH/FPAYP) is also <strong>the entry point of SAP's built-in DMEE Test mode</strong> (tx DMEE → Tree → Test → "DMEE Test Data" screen). The same 3 structures that F110 + Event 05 fill at runtime can also be filled <em>manually</em> by the operator from F110 history — enabling SAP-engine-accurate testing without F110 ever running. <strong>This is why most V001 design risk can be retired before any V001 activation</strong> (see Testing Simulation tab → "F110 history replay via DMEE Test Data" for the full 4-layer methodology).</p>
+
+      <table style="margin:8px 0;font-size:11px;width:100%;border-collapse:collapse;background:#fff">
+        <thead>
+          <tr style="background:#1e3a4a;color:#fff">
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:25%">Test Data grid</th>
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:35%">Runtime path (stages ①–③ above fill this)</th>
+            <th style="padding:6px 8px;text-align:left;color:#fff;width:40%">History-replay path (operator fills from)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYH</strong> grid<br><span style="font-size:10px;color:#64748b">header per payment</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUH at payment-medium build time</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUH</strong> — extract one persistent payment-header row per F110-generated payment</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYP</strong> grid<br><span style="font-size:10px;color:#64748b">line items</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUP per cleared invoice line</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUP</strong> — 1+ rows per REGUH header (one per paid line)</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYHX</strong> grid<br><span style="font-size:10px;color:#64748b">standard columns (REF01..REF15 byte-packed)</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">Stages ②–③: Event 05 country class reads ADRC for the company-code Dbtr, byte-packs into REF01..REF06 per claim 101 layout</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>ADRC + T001</strong> — for the originating company-code (UNES / UBO / IIEP / etc.), look up T001-ADRNR → ADRC, byte-pack STREET / HOUSE_NUM1 / POST_CODE1 / CITY1 / REGION into REF01[0..60]/[60..80]/[80..90]/[100..110]/[90..100] + REF06[0..40]</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>FPAYHX</strong> grid<br><span style="font-size:10px;color:#64748b">UNESCO-custom append columns (Z-fields, hidden by default)</span></td><td style="padding:6px 8px;border:1px solid #cbd5e1">Event 05 country class also writes Z-fields (ZSTRA, ZBSTR, ZBORT, ZBPST, ZORT1, ZPSTL, ZREGI, ZLISO, ZPFST, ZPLOR…) into the <strong>CI_FPAYHX</strong> append structure (claim 67 — 25 Z-fields total)</td><td style="padding:6px 8px;border:1px solid #cbd5e1"><strong>REGUT</strong> (run-time formatting buffer, partially persisted) + reconstruction from Event 05 logic; or operator manually populates from vendor master / payment context</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:13px;color:#1f2937;margin:8px 0 0 0"><strong>Two implications</strong>: <em>(1)</em> Testing — pick the top-15 production scenarios (94.5% volume coverage), reconstruct one representative payment per scenario from REGUH/REGUP, paste into Test Data, run V001 → SAP-engine-accurate validation in ~2-5 min per scenario, no F110 needed. <em>(2)</em> Portability audit — every V001 binding (<code>MP_SC_FLD</code>) maps to a column on this screen. If it is in the <strong>visible default layout</strong> = SAP-standard, portable to any UNESCO-like SAP. If it is in the <strong>append-structure layout</strong> (Z-fields hidden by default) = depends on UNESCO's CI_FPAYHX extension being present.</p>
+    </div>
+
+    <style>
+      .flow-pipeline { display:flex; flex-direction:column; gap:0; align-items:stretch; margin:20px 0; font-family:'Segoe UI',sans-serif; }
+      .flow-stage { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:14px 18px; color:#475569; position:relative; }
+      .flow-stage h4 { margin:0 0 8px 0; color:#0066cc; font-size:14px; letter-spacing:0.5px; }
+      .flow-stage .desc { font-size:12px; color:#64748b; margin-bottom:8px; }
+      .flow-stage .meta { font-size:11px; color:#6c7a89; font-style:italic; }
+      .flow-arrow { align-self:center; color:#3498db; font-size:22px; line-height:1; padding:6px 0; }
+      .flow-branch { display:flex; gap:10px; flex-wrap:wrap; }
+      .flow-branch > .flow-stage { flex:1 1 0; min-width:170px; }
+      .v001-touched { border-color:#1abc9c; background:linear-gradient(135deg,#f1f5f9 0%,#dcfce7 100%); }
+      .v001-touched h4 { color:#1abc9c; }
+      .v001-touched::after { content:"V001"; position:absolute; top:8px; right:10px; background:#1abc9c; color:#000; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; }
+      .pattern-a { border-color:#e67e22; background:linear-gradient(135deg,#f1f5f9 0%,#fff7ed 100%); }
+      .pattern-a h4 { color:#e67e22; }
+      .pattern-a::after { content:"ABAP +3 lines"; position:absolute; top:8px; right:10px; background:#e67e22; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; }
+      .out-scope { border-color:#34495e; opacity:0.78; }
+      .out-scope h4 { color:#7f8c9b; }
+      .out-scope::after { content:"OUT OF SCOPE"; position:absolute; top:8px; right:10px; background:#34495e; color:#475569; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; }
+      .flow-stage code { background:#0f172a; color:#fde68a; padding:2px 6px; border-radius:3px; font-size:11px; font-family:Consolas,Monaco,monospace; font-weight:600; border:1px solid #fbbf24; }
+      .flow-stage ul { margin:6px 0 0 18px; padding:0; font-size:12px; line-height:1.55; }
+      .flow-stage ul li { color:#475569; }
+      .legend-row { display:flex; gap:6px; flex-wrap:wrap; font-size:11px; margin-top:6px; }
+      .legend-row span { background:#e0f2fe; padding:2px 7px; border-radius:3px; color:#475569; }
+    </style>
+
+    <h3 style="color:#0066cc;margin-top:24px">Master Flow Diagram (per tree)</h3>
+
+    <div class="flow-pipeline">
+
+      <div class="flow-stage">
+        <h4>① F110 PAYMENT RUN</h4>
+        <div class="desc">Inputs: open invoices, vendor master (LFA1+ADRC), payment methods, company code, run id.</div>
+        <div class="meta">Tx F110 · ~3,000 payments/week across 9 company codes (P01 process mining, 2025+2026Q1)</div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>② T042Z LOOKUP — country + payment method → tree</h4>
+        <div class="desc">Resolves the FORMI (DMEE tree id) for each payment based on (LAND1, ZLSCH). XBKKT='X' marks DMEE-enabled rows.</div>
+        <div class="meta">263 rows in P01 (Phase 0 verified) · DATA · NOT touched by V001</div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-branch">
+        <div class="flow-stage v001-touched">
+          <h4>SEPA tree</h4>
+          <div class="desc"><code>/SEPA_CT_UNES</code><br/>SocGen EUR · UNES, IIEP, UIL</div>
+          <div class="meta">V000: 95 nodes · 18 cond · <b style="color:#dc2626">UNSTRUCTURED</b> Dbtr + Cdtr (only Ctry leaf in tree, no StrtNm/BldgNb/PstCd/TwnNm — claim 113 CBPR+ HARD-STOP)</div>
+          <div class="meta" style="color:#1abc9c"><b>V001: +5 Dbtr structured nodes + 5 empty-suppress conds + Sub-option A (Event 05 reg)</b></div>
+        </div>
+
+        <div class="flow-stage v001-touched">
+          <h4>CGI tree</h4>
+          <div class="desc"><code>/CGI_XML_CT_UNESCO</code><br/>SocGen non-SEPA, Shinhan KR, Metro GB, GT NG</div>
+          <div class="meta">V000: 631 nodes · 123 cond · Dbtr ✓ Cdtr ✓ <b style="color:#e67e22">CdtrAgt unstructured</b></div>
+          <div class="meta" style="color:#1abc9c"><b>V001: fix CdtrAgt (PstlAdr → structured StrtNm/PstCd/TwnNm/Ctry from T012K/BNKA)</b></div>
+        </div>
+
+        <div class="flow-stage v001-touched">
+          <h4>CGI variant 1</h4>
+          <div class="desc"><code>/CGI_XML_CT_UNESCO_1</code><br/>SYNC from parent (FIRSTNODE shared)</div>
+          <div class="meta">V000: 639 nodes · 123 cond · same as CGI</div>
+          <div class="meta" style="color:#1abc9c"><b>V001: SYNC from parent — CdtrAgt fix propagates automatically</b></div>
+        </div>
+
+        <div class="flow-stage v001-touched">
+          <h4>CITI tree</h4>
+          <div class="desc"><code>/CITI/XML/UNESCO/DC_V3_01</code><br/>Citi USD + Worldlink TND/MGA/BRL</div>
+          <div class="meta">V000: 610 nodes · 350 cond · Dbtr unstructured (no Ctry!) · Cdtr mostly Structured · UltmtCdtr Hybrid</div>
+          <div class="meta" style="color:#1abc9c"><b>V001: +5 Dbtr structured nodes + 1 UltmtCdtr StrtNm=FPAYH-ZSTRA (Q3 RESOLVED #62)</b></div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>③ EVENT 05 — OBPM4 (TFPM042FB) lookup</h4>
+        <div class="desc">SAP looks up the registered FM for each tree's Event 05. The FM populates FPAYHX_FREF / FPAYP_FREF buffers from ADRC + BSEC + Z-tables.</div>
+        <div class="legend-row">
+          <span>SEPA → <b style="color:#1abc9c">+1 row needed (V001)</b></span>
+          <span>CGI → <code>FI_PAYMEDIUM_DMEE_CGI_05</code> (already registered)</span>
+          <span>CGI_1 → <code>FI_PAYMEDIUM_DMEE_CGI_05</code> (same FM)</span>
+          <span>CITI → <code>/CITIPMW/V3_PAYMEDIUM_DMEE_05</code> (CITI PMW IS)</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-branch">
+        <div class="flow-stage">
+          <h4>CGI/SEPA path: country factory</h4>
+          <div class="desc"><code>cl_idfi_cgi_call05_factory::get_instance</code> resolves country (format → ubiso → ubnks) → CL_IDFI_CGI_CALL05_FR/DE/IT/GB or fallback CL_IDFI_CGI_CALL05_GENERIC.</div>
+          <div class="meta">SAP-std · NOT touched by V001</div>
+        </div>
+        <div class="flow-stage">
+          <h4>CITI path: direct ADDR_GET</h4>
+          <div class="desc">Direct <code>ADDR_GET</code> via T001-ADRNR + ZADNR; one-time vendors via BSEC table.</div>
+          <div class="meta">SAP-std (CITIPMW) · NOT touched by V001</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>④ BUFFER POPULATION — FPAYHX_FREF + FPAYP_FREF</h4>
+        <div class="desc">Universal byte layout (same in GENERIC and CITIPMW V3) — V001 reads from these buffers, does not write to them.</div>
+        <ul>
+          <li><code>REF01[0..60]</code> = ADRC.STREET · <code>[60..80]</code> BUILDING · <code>[80..90]</code> POST_CODE1 · <code>[90..100]</code> REGION · <code>[100..110]</code> HOUSE_NUM1</li>
+          <li><code>REF06[0..40]</code> = ADRC.CITY1</li>
+          <li><code>REF02</code> = Cdtr post_code2 + house_num1 (one-time vendor BSEC path)</li>
+          <li><code>FPAYP_FREF</code> (5 fields REF01..REF05) — same Dbtr address per line</li>
+          <li>Country REF14 extras: FR=SIRET 16 chars · DE=SUN+SeqTp · IT=CUP+CIG+MGO · GB=bnkid+SeqTp · GENERIC writes nothing</li>
+        </ul>
+        <div class="meta">DDIC structures · NOT touched by V001 (read-only consumers added in V001)</div>
+
+        <div style="background:#fef3c7;border-left:5px solid #1abc9c;padding:12px 16px;margin:14px 0;border-radius:4px;font-size:12px">
+          <p style="margin:0 0 6px 0;color:#15803d;font-weight:700">💡 Stage ④ is also the entry point of SAP's built-in DMEE Test mode — and the bridge between runtime and history-replay testing</p>
+          <p style="margin:0 0 8px 0;color:#1f2937">tx DMEE → Tree → Test (or via Display + Test button) opens the <strong>"DMEE Test Data"</strong> screen which accepts manual input rows for exactly these 3 structures: <code>FPAYHX</code>, <code>FPAYH</code>, <code>FPAYP</code>. <strong>The input columns of the test screen ARE the runtime buffer fields</strong> — populated automatically by stages ①–③ at F110 runtime, OR populated manually by the operator for testing. Once these 3 grids are filled, stages ⑤–⑦ run against the V001 tree without F110 ever executing.</p>
+
+          <p style="margin:8px 0 6px 0;color:#1f2937;font-weight:700">The bridge between F110 runtime and history-replay testing — same buffers, two source paths:</p>
+          <table style="margin:6px 0 8px 0;font-size:11px;width:100%;border-collapse:collapse;background:#fff">
+            <thead>
+              <tr style="background:#1e3a4a;color:#fff">
+                <th style="padding:6px;text-align:left;color:#fff;width:25%">Test Data grid</th>
+                <th style="padding:6px;text-align:left;color:#fff;width:35%">Runtime path (F110 fills this)</th>
+                <th style="padding:6px;text-align:left;color:#fff;width:40%">History-replay path (operator fills this from)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYH</code> grid (header per payment)</td><td style="padding:6px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUH at payment-medium build time</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUH</code> — extract one persistent payment-header row per F110-generated payment</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYP</code> grid (line items)</td><td style="padding:6px;border:1px solid #cbd5e1">SAP-std F110 logic populates from REGUP per cleared invoice line</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUP</code> — 1+ rows per REGUH header (one per paid line)</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYHX</code> grid · standard columns (REF01..REF15 byte-packed)</td><td style="padding:6px;border:1px solid #cbd5e1">Stages ②–③ above: Event 05 country class reads ADRC for the company-code Dbtr, byte-packs into REF01..REF06 per claim 101 layout</td><td style="padding:6px;border:1px solid #cbd5e1"><code>ADRC</code> + <code>T001</code> — for the originating company-code (UNES / UBO / IIEP / etc.), look up T001-ADRNR → ADRC, byte-pack STREET/HOUSE_NUM1/POST_CODE1/CITY1/REGION into REF01[0..60]/[60..80]/[80..90]/[100..110]/[90..100] + REF06[0..40]</td></tr>
+              <tr><td style="padding:6px;border:1px solid #cbd5e1"><code>FPAYHX</code> grid · UNESCO-custom append columns (Z-fields, hidden by default)</td><td style="padding:6px;border:1px solid #cbd5e1">Event 05 country class also writes Z-fields (ZSTRA, ZBSTR, ZBORT, ZBPST, ZORT1, ZPSTL, ZREGI, ZLISO, ZPFST, ZPLOR…) into the <code>CI_FPAYHX</code> append structure (claim 67 — 25 Z-fields total)</td><td style="padding:6px;border:1px solid #cbd5e1"><code>REGUT</code> (run-time formatting buffer, partially persisted) + reconstruction from Event 05 logic; or operator manually populates from vendor master / payment context</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:0 0 4px 0;color:#1f2937"><strong>Insight</strong>: every V001 binding (<code>MP_SC_FLD</code>) the matrix references must come from one of the two source paths above. If it references a column visible in the default Test Data grid layout → SAP-standard, portable, populates universally. If it references a column hidden in the append-structure layout → UNESCO-specific, depends on <code>CI_FPAYHX</code> extension being present in any target system.</p>
+          <p style="margin:0;color:#1f2937">Full strategy + 4-layer testing methodology in <a href="#" onclick="show('simulator', document.querySelector('[onclick*=simulator]'));return false">🧪 Testing Simulation</a> tab → "F110 history replay via DMEE Test Data".</p>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>⑤ DMEE TREE TRAVERSAL</h4>
+        <div class="desc">SAP traverses the active version's nodes. V001 nodes deployed dormant in Phase 2; activation atomic in Phase 5.</div>
+        <ul>
+          <li><b>V000 baseline</b>: SEPA Hybrid · CITI Dbtr unstructured · CGI Dbtr structured ✓ CdtrAgt unstructured · CGI_1 SYNC</li>
+          <li><b>V001 deltas</b>: SEPA +5 Dbtr · CITI +5 Dbtr +1 UltmtCdtr StrtNm · CGI fix CdtrAgt · CGI_1 SYNC</li>
+        </ul>
+        <div class="meta">Per-node processing: MP_SC_TAB+MP_SC_FLD+MP_OFFSET (read source) · CV_RULE (CL/AL.2/RP) · MP_EXIT_FUNC (call BAdI/FM) · DMEE_TREE_COND (TECH switch nodes PSTLADRMOR1/2/3)</div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage pattern-a">
+        <h4>⑥ BAdI FI_CGI_DMEE_EXIT_W_BADI</h4>
+        <div class="desc">Fires on 794 of 1,975 nodes (40%). Country-dispatched to UNESCO impls.</div>
+        <ul>
+          <li><code>YCL_IDFI_CGI_DMEE_FR</code> · get_value() → PPC dispatcher (0 rows for FR — empty result)</li>
+          <li><code>YCL_IDFI_CGI_DMEE_DE</code> · get_credit() → SHELL: only ClrSysMmbId override</li>
+          <li><code>YCL_IDFI_CGI_DMEE_IT</code> · get_credit() → SHELL: same as DE</li>
+          <li><code>YCL_IDFI_CGI_DMEE_FALLBACK</code> · get_credit() → <b style="color:#e67e22">⚠ NAME-OVERFLOW BUG corrupts V001 StrtNm. Pattern A 3-line guard, reviewer N_MENARD.</b></li>
+          <li><code>YCL_IDFI_CGI_DMEE_UTIL</code> · utility class (PPC reader, helpers)</li>
+        </ul>
+        <div class="meta" style="margin-top:8px"><b>CITI tree extra layer</b> (per-node EXIT_FUNC FMs, CITI-only): /CITIPMW/V3_CGI_CRED_STREET · _PO_CITY · _REGION · _GET_CDTR_BLDG · _EXIT_CGI_CRED_NAME · _CITY · _NM2 · _GET_BANKCODE · _CGI_REGULATORY_INF</div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>⑦ XML ASSEMBLED IN MEMORY — pain.001.001.03</h4>
+        <ul>
+          <li><code>&lt;Dbtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/Dbtr&gt;</code> — UNESCO debtor</li>
+          <li><code>&lt;Cdtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/Cdtr&gt;</code> — vendor</li>
+          <li><code>&lt;CdtrAgt&gt;&lt;FinInstnId&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/FinInstnId&gt;&lt;/CdtrAgt&gt;</code> — vendor's bank (CGI tree fix here in V001)</li>
+          <li><code>&lt;UltmtCdtr&gt;&lt;PstlAdr&gt;...&lt;/PstlAdr&gt;&lt;/UltmtCdtr&gt;</code> — Worldlink only (CITI tree, V001 unified Q3)</li>
+        </ul>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-branch">
+        <div class="flow-stage">
+          <h4>⑧a CITI tree → XSLT post-proc</h4>
+          <div class="desc"><code>CGI_XML_CT_XSLT</code> (12 lines) removes empty leaf nodes, identity copy otherwise.</div>
+          <div class="meta">Effect: empty structured nodes auto-disappear → CITI V001 emits all 5 Dbtr nodes unconditionally · SAP-std XSLT, NOT touched by V001</div>
+        </div>
+        <div class="flow-stage">
+          <h4>⑧b SEPA + CGI trees → no XSLT</h4>
+          <div class="desc">Empty structured nodes emitted as-is unless DMEE_TREE_COND explicitly suppresses them.</div>
+          <div class="meta" style="color:#1abc9c">→ V001 SEPA design adds COND rules per node ('source field NE space'). CGI's CdtrAgt nodes use existing TECH switch.</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage">
+        <h4>⑨ FILE WRITE</h4>
+        <div class="desc">Output path: <code>\\hq-sapitf\SWIFT$\P01\input\aaaa_bbbb_ccxxxxxxxxyyyy.in</code></div>
+        <ul>
+          <li><b>aaaa</b> = company code (UNES / IIEP / UIL / ...)</li>
+          <li><b>bbbb</b> = payment method (S / N / J / L / X / ...)</li>
+          <li><b>cc</b> = format (001=pain.001.001.02 · 002=mt101 · 003=pain.001.001.03)</li>
+          <li><b>xxxxxxxx</b> = date · <b>yyyy</b> = sequence</li>
+        </ul>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage out-scope">
+        <h4>⑩ BCM BATCH (Bank Communication Management)</h4>
+        <ul>
+          <li>Routing: 100% F110+payroll via OBPM5/TFIBLMPAYBLOCK (Claim #65)</li>
+          <li>Workflow 90000003: dual control approval</li>
+          <li>Signatories: PD objects OTYPE='RY' (Claim #42/43)</li>
+          <li>Status: IBC05 (Sent to Bank)</li>
+        </ul>
+        <div class="meta">Out of scope — V001 changes XML content only, BCM workflow untouched</div>
+      </div>
+
+      <div class="flow-arrow">▼</div>
+
+      <div class="flow-stage out-scope">
+        <h4>⑪ ALLIANCE LITE2 → SWIFT → Bank</h4>
+        <div class="desc">SocGen / Citi / CGI-routed banks (Shinhan, Metro, GT NG, etc.)</div>
+        <div class="meta">External SWIFT delivery — NOT touched by V001</div>
+      </div>
+
+    </div>
+<h3>Where each component sits in the flow</h3>
+<table>
+<tr><th>#</th><th>Component</th><th>Type</th><th>Layer</th><th>Touched by V001?</th></tr>
+<tr><td>1</td><td>T042Z mapping</td><td>DATA</td><td>Pre-tree config</td><td>NO</td></tr>
+<tr><td>2</td><td>TFPM042FB Event 05 reg</td><td>CONFIG</td><td>Pre-tree config</td><td>YES (add SEPA row)</td></tr>
+<tr><td>3</td><td>FI_PAYMEDIUM_DMEE_CGI_05</td><td>CODE (SAP std)</td><td>Event 05 wrapper</td><td>NO (reused)</td></tr>
+<tr><td>4</td><td>/CITIPMW/V3_PAYMEDIUM_DMEE_05</td><td>CODE (SAP std)</td><td>Event 05 (CITI)</td><td>NO (reused)</td></tr>
+<tr><td>5</td><td>CL_IDFI_CGI_CALL05_FACTORY</td><td>CODE (SAP std)</td><td>Country dispatcher</td><td>NO</td></tr>
+<tr><td>6</td><td>CL_IDFI_CGI_CALL05_GENERIC</td><td>CODE (SAP std)</td><td>Address mapper</td><td>NO</td></tr>
+<tr><td>7</td><td>CL_IDFI_CGI_CALL05_FR/DE/IT/GB</td><td>CODE (SAP std)</td><td>Country REF14 adders</td><td>NO</td></tr>
+<tr><td>8</td><td>FPAYHX_FREF + FPAYP_FREF</td><td>DDIC</td><td>Buffers</td><td>NO (read by V001)</td></tr>
+<tr><td>9</td><td>DMEE trees (4)</td><td>CONFIG</td><td>Tree traversal</td><td>YES (add V001 nodes)</td></tr>
+<tr><td>10</td><td>DMEE_TREE_NODE</td><td>DATA</td><td>Tree structure</td><td>YES (V001 rows)</td></tr>
+<tr><td>11</td><td>DMEE_TREE_COND</td><td>DATA</td><td>Emission gates</td><td>MAYBE (SEPA/CGI need empty-suppress conds)</td></tr>
+<tr><td>12</td><td>YCL_IDFI_CGI_DMEE_FALLBACK</td><td>CODE (UNESCO)</td><td>BAdI in-tree</td><td>YES (Pattern A 3 lines)</td></tr>
+<tr><td>13</td><td>YCL_IDFI_CGI_DMEE_FR/DE/IT</td><td>CODE (UNESCO)</td><td>BAdI in-tree</td><td>NO</td></tr>
+<tr><td>14</td><td>YCL_IDFI_CGI_DMEE_UTIL</td><td>CODE (UNESCO)</td><td>BAdI helper</td><td>NO</td></tr>
+<tr><td>15</td><td>YTFI_PPC_TAG / STRUC</td><td>DATA (Z)</td><td>PPC tables</td><td>NO (no rows for our countries)</td></tr>
+<tr><td>16</td><td>/CITIPMW/V3_CGI_CRED_*</td><td>CODE (SAP std)</td><td>CITI per-node exits</td><td>NO</td></tr>
+<tr><td>17</td><td>CGI_XML_CT_XSLT</td><td>CODE (SAP std)</td><td>XSLT post-proc</td><td>NO (only CITI uses it)</td></tr>
+<tr><td>18</td><td>LFA1+ADRC vendor master</td><td>DATA</td><td>Address source</td><td>YES (5 vendor cleanup)</td></tr>
+<tr><td>19</td><td>Z_DMEE_EXIT_TAX_NUMBER</td><td>CODE (UNESCO)</td><td>1-node tax exit</td><td>NO</td></tr>
+<tr><td>20</td><td>ZDMEE_EXIT_SEPA_21</td><td>CODE (UNESCO)</td><td>1-node batch_id exit</td><td>NO</td></tr>
+<tr><td>21</td><td>T012/T012K house bank</td><td>DATA</td><td>CdtrAgt source</td><td>NO</td></tr>
+<tr><td>22</td><td>BNKA bank master</td><td>DATA</td><td>CdtrAgt structured</td><td>NO</td></tr>
+<tr><td>23</td><td>Workflow 90000003</td><td>CONFIG</td><td>BCM approval</td><td>NO (out of scope)</td></tr>
+<tr><td>24</td><td>OBPM5/TFIBLMPAYBLOCK</td><td>CONFIG</td><td>BCM routing</td><td>NO (out of scope)</td></tr>
+<tr><td>25</td><td>TFPM042F variants (Francesco)</td><td>CONFIG</td><td>PMF variants</td><td>NO (parallel work)</td></tr>
+<tr><td>26</td><td>BCM_BATCH_* BAdIs</td><td>CODE</td><td>BCM hooks</td><td>NO</td></tr>
+<tr><td>27</td><td>File transmission (Alliance)</td><td>EXTERNAL</td><td>SWIFT delivery</td><td>NO</td></tr>
+</table>
+<h3>Total surgical change scope</h3>
+<p><b>ABAP</b>: 1 method (<code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>), 3 lines (Pattern A guard) · transport <code>D01K-BADI-FIX-01</code> · reviewer N_MENARD.</p>
+<p><b>CONFIG (CUSTOMIZING)</b>:</p>
+<p>- TFPM042FB: +1 row for SEPA Event 05 registration (Sub-option A)</p>
+<p>- DMEE V001 trees (~24 nodes total):</p>
+<p>  - SEPA: +5 Dbtr structured nodes + 5 COND rules to suppress empty</p>
+<p>  - CITI: +5 Dbtr structured nodes (XSLT auto-removes empty) + 1 UltmtCdtr StrtNm node (Q3 RESOLVED #62)</p>
+<p>  - CGI: <b>fix CdtrAgt</b> (PstlAdr from AdrLine to structured StrtNm/PstCd/TwnNm/Ctry, ~7 nodes)</p>
+<p>  - CGI_1: SYNC from parent (FIRSTNODE shared, 0 manual nodes)</p>
+<p><b>DATA</b>: 5 vendor master cleanup (LFA1/ADRC).</p>
+<p><b>Risk: LOW</b>. All changes either additive (V001 new, V000 untouched), backward-compatible (Pattern A guarded), or data-only (vendor cleanup).</p>
+<h3>Critical decisions baked into this flow</h3>
+<table>
+<tr><th>Decision</th><th>Status</th></tr>
+<tr><td>2-file + DMEE versioning (not Hybrid single-file)</td><td>✅ Adopted (user-directed 2026-04-24)</td></tr>
+<tr><td>SEPA Sub-option A revised (FI_PAYMEDIUM_DMEE_CGI_05, not FVD_SEPA_OL)</td><td>✅ Confirmed (D01 probe)</td></tr>
+<tr><td>Pattern A BAdI fix for FALLBACK</td><td>✅ Locked (3 lines, N_MENARD review, transport D01K-BADI-FIX-01)</td></tr>
+<tr><td>CITI Cdtr untouched (EXIT_FUNCs already structured)</td><td>✅ Locked</td></tr>
+<tr><td>CGI CdtrAgt fix (Dbtr/Cdtr already structured ✓)</td><td>✅ Locked (Plan §Per-tree design line 550)</td></tr>
+<tr><td>UltmtCdtr Worldlink (Q3) — unified into V001 (NOT V002)</td><td>✅ RESOLVED (system-driven via DMEE_TREE_NODE; brain claim 99)</td></tr>
+<tr><td>XSLT empty-element auto-removal (CITI only)</td><td>✅ Verified</td></tr>
+<tr><td>SEPA needs explicit empty-suppress conditions; CGI CdtrAgt uses TECH switch</td><td>⚠ Action item Phase 2</td></tr>
+</table>
+<h3>What is NOT in this flow (intentionally)</h3>
+<p>- Out of scope: pain.001.001.09 schema upgrade (separate project)</p>
+<p>- Out of scope: BCM workflow modifications</p>
+<p>- Out of scope: file naming convention changes</p>
+<p>- Out of scope: Alliance Lite2 integration</p>
+<p>- Out of scope: ICTP Trieste's separate trees (/SEPA_CT_ICTP_*)</p>
+<h3>Cross-references</h3>
+<p>- Components map JSON: `knowledge/domains/Payment/phase0/components_map.json` (32 components)</p>
+<p>- Brain claims: `brain_v2/claims/claims.json` ids 65-84 (BCM + structured-address related)</p>
+<p>- Source code extracted: `extracted_code/FI/DMEE/` (UNESCO BAdIs) + `extracted_code/FI/DMEE_full_inventory/` (SAP std + CITIPMW + DE/IT shells + XSLT)</p>
+<p>- Plan: `knowledge/session_plans/plan file` + `~/.claude/plans/revisa-nuevamente-todo-hay-parsed-scone.md`</p>
+<p>- Companion: `companions/BCM_StructuredAddressChange.html`</p>
+<p>- Excel tracker: `Zagentexecution/incidents/xml_payment_structured_address/BCM_StructuredAddress_Analysis.xlsx`</p>
+    </div>

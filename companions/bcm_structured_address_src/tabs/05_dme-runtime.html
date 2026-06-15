@@ -1,0 +1,56 @@
+<div id="tab-dme-runtime" class="content">
+  <div class="section">
+    <h3>F110 → SAPFPAYM → DMEE → File — what actually happens at runtime</h3>
+
+    <h4>The 5-act play</h4>
+    <p>A successful payment run is a tightly choreographed sequence. Each act has its own screen, its own logs, and its own failure modes. If you are debugging a missing file, knowing which act broke down narrows the search dramatically:</p>
+    <ol>
+      <li><strong>Act 1 · Parameters</strong> — you tell F110 <em>which</em> invoices, <em>for which</em> cocodes/methods, on <em>what</em> date.</li>
+      <li><strong>Act 2 · Proposal</strong> — F110 simulates: which vendors get paid, which get blocked, with what amounts. <em>No postings yet.</em></li>
+      <li><strong>Act 3 · Edit Proposal (optional)</strong> — you can manually block/unblock specific items.</li>
+      <li><strong>Act 4 · Payment Run</strong> — F110 actually posts the FI documents. REGUH and REGUP are populated.</li>
+      <li><strong>Act 5 · Create Payment Medium</strong> — SAPFPAYM is called, DMEE traverses the tree, file is written. <strong>This is where DMEE actually runs.</strong></li>
+    </ol>
+    <p><strong>Critical to remember</strong>: Acts 1-4 succeed independently of DMEE. You can have a green payment run with no file produced. The <em>"Create payment medium"</em> checkbox on the Schedule popup is what wires Act 5 to fire automatically. If unchecked, you'll see green status everywhere and still have no bank file — a classic source of confusion.</p>
+  </div>
+
+  <div class="section">
+    <h3>Acts 1-4 — F110 itself</h3>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_145.png" alt="F110 Parameters tab">
+    <div class="dme-shot-cap"><b>erp_145.png — F110 Automatic Payment Transactions: Parameters.</b> Run Date <code>27.04.2017</code>, Identification <code>MVA3</code>. Posting Date / "Docs entered up to". Payments control: <code>Company codes=MVAF, Pmt meths=C, Next p/date=02.05.2017</code>. Tag: a payment run is identified by <code>(RUN_DATE, LAUFI)</code> — at UNESCO the LAUFI suffix <code>+++++R / +++++P / +++++O</code> is what NMENARD's PPC dispatcher uses to pick PAY_TYPE (Replenishment / Payroll / Other) per <code>YTFI_PPC_STRUC</code>.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_146.png" alt="F110 Schedule Proposal popup">
+    <div class="dme-shot-cap"><b>erp_146.png — F110 Schedule Proposal popup.</b> Start date / Start time / Target computer / <strong>Create payment medium ✓</strong>. Tag: the <em>Create payment medium</em> checkbox is what triggers SAPFPAYM (and therefore DMEE) immediately after the payment run. If unchecked, payments are posted but no bank file emerges — must be (re-)triggered manually via F110 → Environment → Payment Medium, or directly with Tx <code>SAPFPAYM</code>.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_147.png" alt="F110 Status tab — green run">
+    <div class="dme-shot-cap"><b>erp_147.png — F110 Status tab after a successful run.</b> All four lights green: Parameters entered / Payment proposal created / Payment proposal edited / Payment run carried out. "Posting orders: 1 generated, 1 completed". Tag: green here ≠ DME file produced; green = postings done. The DME file lives in TemSe/filesystem; verify in FDTA.</div>
+
+    <p style="background:#f1f5f9;padding:12px;border-left:3px solid #1abc9c;border-radius:4px;margin-top:14px"><strong>The four-green-lights trap</strong> → Many UNESCO support tickets come in saying "F110 ran fine but the bank says no file arrived." The screenshot above looks identical whether Act 5 succeeded or never fired. To confirm Act 5 actually produced a file, you must go to FDTA (next section) — never trust the F110 Status alone.</p>
+  </div>
+
+  <div class="section">
+    <h3>Act 5 — FDTA: where the bank file actually lives</h3>
+    <p>FDTA stands for <strong>F</strong>i <strong>D</strong>ata medium <strong>T</strong>ransfer <strong>A</strong>dministration — clunky name, simple purpose: it shows you the inventory of bank files SAP has produced. You filter by run date, identification, format, etc. and see one row per generated file. From there you can: download to local disk, mark as "transferred to bank", view content, or re-export.</p>
+    <p>For UNESCO, FDTA is mostly used for ad-hoc downloads and post-mortem investigations. The day-to-day flow uses BCM Monitor instead, because BCM batches, signs, and ships files through workflow 90000003. But FDTA is always available as a fallback and is the canonical source of truth for "did SAPFPAYM actually write a file?"</p>
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_150.png" alt="FDTA selection screen">
+    <div class="dme-shot-cap"><b>erp_150.png — FDTA Data Medium Administration selection.</b> Reference number / Paying company code / Bank country, Selections (Run Date, Identification, Format), checkboxes for Pymt.runs, Proposal runs, Data medium (not yet transferred / transmit to external / w/out acct stmt / with acct stmt). Tag: post-F110 file inventory. UNESCO ops can also use BCM Monitor for the BCM-batched flow, but FDTA still works for ad-hoc downloads.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_151.png" alt="FDTA Data Medium Overview list">
+    <div class="dme-shot-cap"><b>erp_151.png — FDTA Data Medium Overview.</b> Columns: Run On / Ident / Propos / Amount / Currency / Entered by / Receiver / Format / Date created / Seq. nu / Paying. Sample formats: <code>SEPA_CT</code>, <code>CGI_XML_CT_PE</code>, <code>DTAUS0</code>. Tag: Format column = PMW format ID = DMEE TREE_ID. UNESCO rows show <code>/SEPA_CT_UNES</code>, <code>/CGI_XML_CT_UNESCO</code>, <code>/CITI/XML/UNESCO/DC_V3_01</code>.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_153.png" alt="FDTA file download dialog">
+    <div class="dme-shot-cap"><b>erp_153.png — FDTA Download to local disk dialog.</b> <code>Addnl info=0001-ACB</code>, <code>File name=C:\INT\Outbound\EFT\MVAEFT_161123_154701</code>, <code>Comment=Download already carried out</code>. Tag: file-naming pattern is governed by the OBPM4 selection variant (see erp_142.png). UNESCO uses <code>&lt;cc&gt;_&lt;pm&gt;_&lt;fmt&gt;&lt;date&gt;&lt;seq&gt;.in</code> resolving to <code>\\hq-sapitf\SWIFT$\P01\input\…</code>.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_154.png" alt="DME flat file content">
+    <div class="dme-shot-cap"><b>erp_154.png — actual DME flat file (Botswana ACB)</b> opened in TextEdit:
+<pre style="margin:6px 0">1,LOCAL,CR,23112016,154745
+2,3070618,029,002,BWP,23112016,TJ01,DIRECTPAYT,2875.50,MVA FUND
+3,57360028909,02828,23112016,BWP,2875.50,NOTWANE PHARMACY,MVA FUND
+9,4,2875.50</pre>
+Tag: a flat-file DME — line types <code>1</code> header, <code>2</code> paying instruction, <code>3</code> beneficiary, <code>9</code> trailer/footer. Each line = one DMEE segment; integers + CSV separator come from <code>DMEE_TREE_HEAD.SEGM_DELIM</code> etc. <strong>Contrast with UNESCO</strong>: UNESCO emits XML DMEs (pain.001.001.03 envelopes) — the line-types disappear and become nested <code>&lt;PmtInf&gt;/&lt;CdtTrfTxInf&gt;</code> blocks; the underlying mechanism (segments → records, atoms → values) is identical.</div>
+
+    <h4>What V001 changes about Act 5</h4>
+    <p><strong>Almost nothing visible at this layer.</strong> V001 changes <em>what</em> ends up inside the file (structured Dbtr address tags appear instead of unstructured <code>&lt;AdrLine&gt;</code>), but FDTA still sees one file per payment, named the same way, in the same path. The only operational change post-cutover is that the file content has more nested XML elements. M_SPRONK and ops won't see different screens; the bank just stops rejecting our files.</p>
+  </div>
+</div>
+

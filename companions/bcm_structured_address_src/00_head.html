@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UNESCO BCM Structured Address Change — v1.0</title>
+<style>
+/* light-theme migration applied 2026-04-30 per feedback_companion_no_dark_mode (CP-001) */
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; margin: 0; background: #ffffff; color: #1e293b; font-size: 13px; line-height: 1.5; }
+  header { background: #f1f5f9; padding: 16px 32px; border-bottom: 2px solid #cbd5e1; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 20px; }
+  .header-title { flex: 1; }
+  h1 { margin: 0; font-size: 18px; color: #0369a1; }
+  .sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .hamburger { cursor: pointer; padding: 8px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #1abc9c; font-size: 18px; line-height: 1; user-select: none; }
+  .hamburger:hover { background: #cbd5e1; }
+  .kpis { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kpi { background: #ffffff; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; }
+  .kpi .val { font-size: 14px; font-weight: 600; color: #0369a1; }
+  .kpi .lbl { font-size: 10px; color: #94a3b8; }
+
+  .layout { display: flex; min-height: calc(100vh - 70px); }
+
+  /* Left sidebar — vertical, collapsible */
+  .sidebar { width: 260px; background: #f1f5f9; border-right: 2px solid #cbd5e1; padding: 16px 0; transition: width 0.25s ease; overflow-y: auto; flex-shrink: 0; position: sticky; top: 70px; height: calc(100vh - 70px); }
+  .sidebar.collapsed { width: 56px; }
+  .nav-item { padding: 12px 20px; cursor: pointer; color: #475569; font-size: 13px; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.15s, color 0.15s, border-left 0.15s; display: flex; align-items: center; }
+  .nav-item:hover { color: #0369a1; background: #ffffff; }
+  .nav-item.active { color: #1abc9c; background: #ffffff; border-left: 3px solid #1abc9c; font-weight: 600; }
+  .sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; width: 0; }
+  .sidebar.collapsed .nav-item { padding: 12px 0; justify-content: center; }
+  .sidebar.collapsed .nav-item::before { content: attr(data-short); color: inherit; font-weight: 700; font-size: 11px; }
+  .nav-label { transition: opacity 0.2s; }
+
+  /* Indented submenu under a parent nav-item */
+  .nav-subitem { padding: 7px 20px 7px 38px; font-size: 12px; color: #64748b; }
+  .nav-subitem::before { content: "▸"; color: #94a3b8; margin-right: 8px; font-size: 10px; }
+  .nav-subitem.active::before { color: #1abc9c; }
+  .sidebar.collapsed .nav-subitem { padding: 8px 0; justify-content: center; }
+  .sidebar.collapsed .nav-subitem::before { content: attr(data-short); color: inherit; font-weight: 700; font-size: 10px; margin: 0; }
+
+  /* DME reference content polish */
+  .dme-shot { display: block; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin: 10px 0; }
+  .dme-shot-cap { font-size: 11px; color: #475569; font-style: italic; margin-bottom: 18px; padding-left: 6px; border-left: 2px solid #1abc9c; padding-top: 2px; padding-bottom: 2px; }
+  .dme-shot-cap b { color: #0369a1; font-style: normal; }
+
+  /* Main content area */
+  .main { flex: 1; padding: 24px 32px; max-width: 100%; min-width: 0; overflow-x: auto; }
+  .content { display: none; }
+  .content.visible { display: block; }
+
+  .section { background: #ffffff; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #cbd5e1; }
+  .section h3 { margin-top: 0; color: #1abc9c; font-size: 16px; }
+  .section h4 { color: #0369a1; font-size: 13px; margin-top: 18px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12px; }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #cbd5e1; color: #0369a1; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; color: #1abc9c; font-size: 11px; }
+  pre { background: #f1f5f9; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; overflow-x: auto; font-size: 11px; color: #1e293b; }
+  a { color: #0369a1; }
+  ul li { margin-bottom: 4px; }
+
+  @media (max-width: 900px) {
+    .sidebar { width: 56px; }
+    .sidebar .nav-label { opacity: 0; width: 0; }
+    .sidebar .nav-item { padding: 12px 0; justify-content: center; }
+    .sidebar .nav-item::before { content: attr(data-short); color: inherit; font-weight: 700; font-size: 11px; }
+    .kpis { display: none; }
+  }
+
+  /* Print PDF button (visible on screen, hidden when printing) */
+  .print-button { padding: 8px 14px; background: #1abc9c; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; white-space: nowrap; }
+  .print-button:hover { background: #15a085; }
+  .print-button:active { background: #128b73; }
+
+  /* Print stylesheet — fires when user invokes browser print (Ctrl+P or "Save as PDF") */
+  @media print {
+    /* 1. Show ALL tab content divs (default has them as display:none) */
+    .content { display: block !important; page-break-before: always; }
+    .content:first-of-type { page-break-before: avoid; }
+    .content.visible { page-break-before: avoid; }
+
+    /* 2. Hide screen chrome that doesn't belong in PDF */
+    header { position: static !important; box-shadow: none !important; padding: 12px 24px !important; border-bottom: 1px solid #cbd5e1 !important; }
+    .sidebar { display: none !important; }
+    .layout { display: block !important; min-height: auto !important; }
+    .main { padding: 12px 24px !important; max-width: 100% !important; overflow: visible !important; }
+    .hamburger, .print-button { display: none !important; }
+    .kpis { display: flex !important; gap: 6px !important; }
+    .kpi { padding: 4px 6px !important; font-size: 10px !important; }
+    .kpi .val { font-size: 11px !important; }
+
+    /* 3. Page-flow hints — keep h3/h4 with their content + tables intact */
+    h3, h4, h5, h6 { page-break-after: avoid; }
+    table, pre, ol, ul, .flow-stage, .dme-shot, img { page-break-inside: avoid; }
+
+    /* 4. Print-friendly typography + colors (preserve emphasis but reduce ink) */
+    body { font-size: 9pt; color: #000; background: #fff; line-height: 1.4; }
+    a { color: #000; text-decoration: none; }
+    .section { padding: 10px !important; margin-bottom: 12px !important; box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+    pre { font-size: 8pt !important; }
+
+    /* 5. Avoid clipping of wide tables, code blocks, images */
+    pre, table { overflow: visible !important; max-width: 100% !important; }
+    img, .dme-shot { max-width: 100% !important; height: auto !important; }
+    .erm-ent { position: static !important; display: inline-block !important; margin: 4px !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hamburger" onclick="toggleSidebar()" title="Collapse/expand menu">&#9776;</div>
+  <div class="header-title">
+    <h1>UNESCO BCM Structured Address Change &nbsp;<span style="font-size:12px;color:#0369a1">v1.0</span></h1>
+    <div class="sub">CBPR+ Nov 2026 · 4 DMEE trees (3 active + 1 SYNC twin) · 2-file + DMEE versioning · Built 2026-04-29 18:46</div>
+  </div>
+  <div class="kpis">
+    <div class="kpi" title="SEPA + CITI + CGI active + CGI_1 SYNC twin"><div class="val">3+1</div><div class="lbl">Trees (+SYNC)</div></div>
+    <div class="kpi"><div class="val">1,975</div><div class="lbl">Nodes P01</div></div>
+    <div class="kpi"><div class="val">5/111k</div><div class="lbl">Vendor miss</div></div>
+    <div class="kpi" title="M_SPRONK 31 DMEE transports 2017-2024 — claim 72 TIER_1 + plan §Finding C"><div class="val">31</div><div class="lbl">Marlies '17–24</div></div>
+    <div class="kpi"><div class="val">Nov 2026</div><div class="lbl">Deadline</div></div>
+  </div>
+  <button class="print-button" onclick="window.print()" title="Print full document — expands all 32 tabs in sequence. In the browser print dialog, choose 'Save as PDF' as destination.">🖨 Print PDF (full document)</button>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="nav-item active" onclick="show('overview', this)" data-full="Overview" data-short="Ove"><span class="nav-label">Overview</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-concepts', this)" data-full="DME · Concepts & Flow" data-short="D·1"><span class="nav-label">DME · Concepts & Flow</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-pmw', this)" data-full="PMW Transactions" data-short="D·2"><span class="nav-label">PMW Transactions</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-fbzp', this)" data-full="FBZP Chain" data-short="D·3"><span class="nav-label">FBZP Chain</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-runtime', this)" data-full="F110 Runtime + FDTA" data-short="D·4"><span class="nav-label">F110 Runtime + FDTA</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-tree', this)" data-full="Format Tree Anatomy" data-short="D·5"><span class="nav-label">Format Tree Anatomy</span></div>
+<div class="nav-item nav-subitem" onclick="show('dme-cross', this)" data-full="Cross-link to UNESCO" data-short="D·6"><span class="nav-label">Cross-link to UNESCO</span></div>
+<div class="nav-item" onclick="show('scope', this)" data-full="Scope" data-short="Sco"><span class="nav-label">Scope</span></div>
+<div class="nav-item" onclick="show('current-solution', this)" data-full="📊 Current Solution" data-short="Cur"><span class="nav-label">📊 Current Solution</span></div>
+<div class="nav-item" onclick="show('e2e-flow', this)" data-full="E2E Flow" data-short="E2E"><span class="nav-label">E2E Flow</span></div>
+<div class="nav-item nav-subitem" onclick="show('ppc', this)" data-full="↳ 🆕 PPC System" data-short="🆕 P"><span class="nav-label">↳ 🆕 PPC System</span></div>
+<div class="nav-item nav-subitem" onclick="show('components', this)" data-full="↳ Components Map" data-short="Com"><span class="nav-label">↳ Components Map</span></div>
+<div class="nav-item" onclick="show('d01-p01-checks', this)" data-full="🔍 D01 ↔ P01 Checks" data-short="D↔P"><span class="nav-label">🔍 D01 ↔ P01 Checks</span></div>
+<div class="nav-item" onclick="show('evolution', this)" data-full="Evolution (10y CTS)" data-short="Evo"><span class="nav-label">Evolution (10y CTS)</span></div>
+<div class="nav-item" onclick="show('strategy', this)" data-full="Change Strategy" data-short="Cha"><span class="nav-label">Change Strategy</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-version-concept', this)" data-full="DMEE Configuration · the version thing" data-short="C·0"><span class="nav-label">DMEE Configuration · the version thing</span></div>
+<div class="nav-item nav-subitem" onclick="show('strategy-dmee-config', this)" data-full="DMEE Configuration · foundations" data-short="C·1"><span class="nav-label">DMEE Configuration · foundations</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-sepa', this)" data-full="↳ Tree 1 · SEPA" data-short="T1S" style="padding-left:54px"><span class="nav-label">↳ Tree 1 · SEPA</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-citi', this)" data-full="↳ Tree 2 · CITI" data-short="T2C" style="padding-left:54px"><span class="nav-label">↳ Tree 2 · CITI</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi', this)" data-full="↳ Tree 3 · CGI" data-short="T3G" style="padding-left:54px"><span class="nav-label">↳ Tree 3 · CGI</span></div>
+<div class="nav-item nav-subitem" onclick="show('dmee-tree-cgi1', this)" data-full="↳ Tree 4 · CGI_1" data-short="T4G" style="padding-left:54px"><span class="nav-label">↳ Tree 4 · CGI_1</span></div>
+<div class="nav-item nav-subitem" onclick="show('vendor-address-routing', this)" data-full="↳ 🆕 Vendor Address Routing (KTOKK / PA0006)" data-short="V·A" style="padding-left:54px"><span class="nav-label">↳ 🆕 Vendor Address Routing (KTOKK / PA0006)</span></div>
+<div class="nav-item nav-subitem" onclick="show('matrix', this)" data-full="↳ V001 Change Matrix" data-short="Mtx" style="padding-left:54px"><span class="nav-label">↳ V001 Change Matrix</span></div>
+<div class="nav-item" onclick="show('simulator', this)" data-full="🧪 Testing Simulation" data-short="🧪 T"><span class="nav-label">🧪 Testing Simulation</span></div>
+<div class="nav-item" onclick="show('phase0', this)" data-full="Phase 0 · Discovery ✅" data-short="Pha"><span class="nav-label">Phase 0 · Discovery ✅</span></div>
+<div class="nav-item" onclick="show('phase1', this)" data-full="Phase 1 · Matrix + Specs" data-short="Pha"><span class="nav-label">Phase 1 · Matrix + Specs</span></div>
+<div class="nav-item" onclick="show('phase2', this)" data-full="Phase 2 · Config D01" data-short="Pha"><span class="nav-label">Phase 2 · Config D01</span></div>
+<div class="nav-item" onclick="show('phase3', this)" data-full="Phase 3 · Unit Test" data-short="Pha"><span class="nav-label">Phase 3 · Unit Test</span></div>
+<div class="nav-item" onclick="show('phase4', this)" data-full="Phase 4 · UAT + Pilot" data-short="Pha"><span class="nav-label">Phase 4 · UAT + Pilot</span></div>
+<div class="nav-item" onclick="show('phase5', this)" data-full="Phase 5 · Deploy" data-short="Pha"><span class="nav-label">Phase 5 · Deploy</span></div>
+<div class="nav-item" onclick="show('timeline', this)" data-full="Timeline" data-short="Tim"><span class="nav-label">Timeline</span></div>
+<div class="nav-item" onclick="show('plan', this)" data-full="The Plan (live)" data-short="The"><span class="nav-label">The Plan (live)</span></div>
+<div class="nav-item" onclick="show('references', this)" data-full="References" data-short="Ref"><span class="nav-label">References</span></div>
+  </aside>
+  <main class="main">
+    

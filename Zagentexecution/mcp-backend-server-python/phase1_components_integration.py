@@ -3,8 +3,13 @@
 Build the full custom-components interaction map (CONFIG + CODE) and integrate
 it into:
   - Excel BCM_StructuredAddress_Analysis.xlsx (new sheet 19)
-  - Companion BCM_StructuredAddressChange.html (new tab "Components Map")
   - Brain v2 (new claims, annotations, objects)
+
+This script writes knowledge/domains/Payment/phase0/components_map.json (the data).
+It does NOT write companions/BCM_StructuredAddressChange.html. The companion's
+"Components Map" tab is now a frozen fragment (tabs/17_components.html), assembled
+by build_bcm_structured_address_companion.py (v2). To re-render that one tab from
+this JSON, regenerate the fragment, then rebuild — see bcm_structured_address_src/README.md.
 
 The map answers: for every custom-or-touched component in the chain,
 what is its type (CONFIG/CODE/DATA), what does it do, what we modify

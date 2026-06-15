@@ -1,0 +1,410 @@
+<div id="tab-dmee-tree-citi" class="content">
+    <div class="section">
+      <h3>Tree 2 · /CITI/XML/UNESCO/DC_V3_01 — V001 changes</h3>
+      <p style="margin-bottom:12px;font-size:12px;color:#475569">↶ Back to <a href="#" onclick="show('dmee-version-concept', document.querySelector('[onclick*=dmee-version-concept]'));return false">DMEE Configuration · the version thing</a> for the version mental model · <a href="#" onclick="show('strategy-dmee-config', document.querySelector('[onclick*=strategy-dmee-config]'));return false">DMEE Configuration · foundations</a> for the three operations + per-target mapping + PMW retrofit + V000 baseline cross-references. This sub-tab covers Tree 2 V001 work only.</p>
+
+      <h5 style="color:#0369a1;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">Tree 2 of 4 · <code>/CITI/XML/UNESCO/DC_V3_01</code></h5>
+
+      <p style="font-size:12px"><strong>Tree summary</strong>: 610 nodes V000 → 619 nodes V001. Bank: Citibank (USD/CAD/Worldlink BRL/MGA/TND). Format: CITI proprietary XML. Has CGI_XML_CT_XSLT post-processor → empty leaves auto-removed (no DMEE_TREE_COND needed). Most-touched tree historically: 25 transports 2017–2024 (claim 72) → highest regression-risk tree, despite zero ABAP changes.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI bridge in parallel — tx DMEE indentation (left) ↔ XML emitted (right), aligned by level</p>
+      <p style="font-size:12px;color:#475569">Focus on the 4 V001 INSERT entry points. CITI tree has 610 nodes total — only the PstlAdr-bearing parties are shown below; the surrounding wrapper structure (PmtInf, CdtTrfTxInf, CtrlSum etc.) is identical to V000.</p>
+
+      <table style="margin-top:6px;font-size:11px">
+        <tr><th style="width:50%">tx DMEE — V000 today (UI)</th><th style="width:50%">F110 output — V000 today (XML)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    <strong>Dbtr</strong>                                   ← INSERT TARGET #1 (primary)
+      Nm
+      <strong>PstlAdr</strong>
+        Ctry        (FPAYHX-LAND1)
+        TwnNm       (FPAYHX-ORT1Z)
+        PstCd       (FPAYHX-REF01)
+        AdrLine     (FPAYHX-AUSTO)
+        AdrLine     (FPAYHX-AUST2)
+        AdrLine     (FPAYHX-AUST3)
+    ...
+    CdtTrfTxInf
+      Cdtr/...                              ← already structured
+      <strong>UltmtCdtr</strong>                            ← INSERT TARGET #3 (Worldlink)
+        Nm          (FPAYP-NAME1)
+        <strong>PstlAdr</strong>
+          Ctry      (FPAYH-ZLAND)
+          TwnNm     (FPAYH-ZORT1)
+          PstCd     (FPAYH-ZPSTL)
+          CtrySubDvsn (FPAYH-ZREGI)
+          AdrLine1  (FPAYH-ZSTRA)
+          AdrLine2  (FPAYH-ZORT2)
+          StrtNm    (empty — gap)           ← exists, never fires
+      <strong>CdtrAgt</strong>                              ← INSERT TARGET #4
+        FinInstnId
+          BIC
+          <strong>PstlAdr</strong>
+            StrtNm  (FPAYH-ZBSTR)
+            TwnNm   (FPAYH-ZBORT)
+            CtrySubDvsn (FPAYH-ZBREGX)
+            Ctry
+            AdrLine
+    ...
+    <strong>Dbtr (alt-mode/PstlAdrMor)</strong>             ← INSERT TARGET #2
+      <strong>PstlAdr</strong>
+        AdrLine     (FPAYHX-AUSTO)
+        AdrLine     (FPAYHX-AUST3)
+        AdrLine     (FPAYHX-AUST2)</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;PmtInf&gt;
+    &lt;Dbtr&gt;
+      &lt;Nm&gt;UNESCO&lt;/Nm&gt;
+      &lt;PstlAdr&gt;
+        &lt;Ctry&gt;FR&lt;/Ctry&gt;
+        &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+        &lt;PstCd&gt;75007&lt;/PstCd&gt;
+        &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;
+    ...
+    &lt;CdtTrfTxInf&gt;
+      &lt;Cdtr&gt;...&lt;/Cdtr&gt;
+      &lt;UltmtCdtr&gt;
+        &lt;Nm&gt;...&lt;/Nm&gt;
+        &lt;PstlAdr&gt;
+          &lt;Ctry&gt;BR&lt;/Ctry&gt;
+          &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+          &lt;PstCd&gt;...&lt;/PstCd&gt;
+          &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+          &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+          &lt;AdrLine&gt;...neighborhood...&lt;/AdrLine&gt;
+                                          ← StrtNm absent
+        &lt;/PstlAdr&gt;
+      &lt;/UltmtCdtr&gt;
+      &lt;CdtrAgt&gt;
+        &lt;FinInstnId&gt;
+          &lt;BIC&gt;...&lt;/BIC&gt;
+          &lt;PstlAdr&gt;
+            &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+            &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+            &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+            &lt;Ctry&gt;...&lt;/Ctry&gt;
+            &lt;AdrLine&gt;...&lt;/AdrLine&gt;
+          &lt;/PstlAdr&gt;
+        &lt;/FinInstnId&gt;
+      &lt;/CdtrAgt&gt;
+    ...
+    &lt;Dbtr&gt; (alt PstlAdrMor)
+      &lt;PstlAdr&gt;
+        &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+        &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+      &lt;/PstlAdr&gt;
+    &lt;/Dbtr&gt;</pre></td>
+        </tr>
+        <tr><th>tx DMEE — V001 (UI, after Step B)</th><th>F110 output — V001 (XML, after Phase 5 cutover)</th></tr>
+        <tr><td><pre style="margin:0;font-size:10px">  PmtInf
+    Dbtr/PstlAdr (primary)
+      Ctry/TwnNm/PstCd                      ← V000, kept
+      AdrLine × 3                           ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYHX-REF01[0..60])</strong>      ← INSERT row 10
+      <strong>BldgNb    (FPAYHX-REF01[60..80])</strong>     ← INSERT row 11
+    ...
+    UltmtCdtr/PstlAdr
+      Ctry/TwnNm/PstCd/CtrySubDvsn          ← V000, kept
+      AdrLine1/AdrLine2                     ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYH-ZSTRA, was empty)</strong>   ← MODIFY row 17
+      <strong>BldgNb    (FPAYH-ZSTRA[60..])</strong>        ← INSERT row 18
+    CdtrAgt/.../PstlAdr
+      StrtNm/TwnNm/CtrySubDvsn/Ctry         ← V000, kept
+      AdrLine                               ← V000, suppressed by XSLT
+      <strong>PstCd     (FPAYH-ZBPST)</strong>              ← INSERT row 19
+      <strong>BldgNb    (FPAYH-ZBSTR[60..])</strong>        ← INSERT row 20
+    ...
+    Dbtr (alt-mode)/PstlAdr
+      AdrLine × 3                           ← V000, suppressed by XSLT
+      <strong>StrtNm    (FPAYHX-REF01[0..60])</strong>      ← INSERT row 12
+      <strong>BldgNb    (FPAYHX-REF01[60..80])</strong>     ← INSERT row 13
+      <strong>PstCd     (FPAYHX-REF01[80..90])</strong>     ← INSERT row 14
+      <strong>TwnNm     (FPAYHX-REF06[0..40])</strong>      ← INSERT row 15
+      <strong>Ctry      (FPAYHX-LAND1)</strong>             ← INSERT row 16</pre></td>
+        <td><pre style="margin:0;font-size:10px">  &lt;Dbtr&gt; (primary)
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;FR&lt;/Ctry&gt;
+      &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+      &lt;PstCd&gt;75007&lt;/PstCd&gt;
+                                          ← AdrLine × 3 suppressed
+      &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt; ← new
+      &lt;BldgNb&gt;7&lt;/BldgNb&gt;                 ← new
+    &lt;/PstlAdr&gt;
+  ...
+  &lt;UltmtCdtr&gt;
+    &lt;PstlAdr&gt;
+      &lt;Ctry&gt;BR&lt;/Ctry&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;PstCd&gt;...&lt;/PstCd&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+                                          ← AdrLines suppressed
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;               ← now populated
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+    &lt;/PstlAdr&gt;
+  &lt;/UltmtCdtr&gt;
+  &lt;CdtrAgt&gt;&lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+                                          ← AdrLine suppressed
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                 ← new
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;&lt;/CdtrAgt&gt;
+  ...
+  &lt;Dbtr&gt; (alt PstlAdrMor)
+    &lt;PstlAdr&gt;
+                                          ← AdrLines suppressed
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;               ← new
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;               ← new
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                 ← new
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;                 ← new
+      &lt;Ctry&gt;FR&lt;/Ctry&gt;                    ← new
+    &lt;/PstlAdr&gt;
+  &lt;/Dbtr&gt;</pre></td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><strong>CITI bridge read-back</strong>: 4 INSERT entry points + 1 MODIFY (UltmtCdtr/StrtNm gets ZSTRA source). Total: 9 tree-row operations = 9 new/changed XML tags. AdrLines stay in the tree but the CGI_XML_CT_XSLT post-processor strips them at output time — no DMEE_TREE_COND empty-suppress needed (unlike SEPA).</p>
+
+      <p style="font-weight:600;color:#0369a1;font-size:14px;margin-top:18px;border-top:2px solid #cbd5e1;padding-top:14px">CITI Per-target simplified mapping — V001 INSERT + MODIFY targets at the row/XML level (4 targets)</p>
+
+      <p>One block per target. Each block shows the path the operator navigates (top), then V000 today (DMEE rows on the left ↔ XML the bank receives on the right), then V001 (same rows + INSERTs ↔ updated XML output). Read each block independently — the bank only ever sees the XML on the right.</p>
+
+      <!-- TARGET #3 — CITI Dbtr-primary -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #3 — CITI <code>Dbtr/PstlAdr</code> (primary path, batch level)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code> (primary). Tree <code>/CITI/XML/UNESCO/DC_V3_01</code>. Already has TwnNm + PstCd + Ctry + 3 AdrLine; only missing StrtNm + BldgNb. CITI XSLT auto-removes empty leaves (no DMEE_TREE_COND needed).</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 6 rows under Dbtr/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1
+TECH_NAME=TwnNm     MP_SC_FLD=ORT1Z
+TECH_NAME=PstCd     MP_SC_FLD=REF01
+TECH_NAME=AdrLine   MP_SC_FLD=AUSTO
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;
+    &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 6 rows + 2 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← V000, kept
+TECH_NAME=TwnNm     MP_SC_FLD=ORT1Z            ← V000, kept
+TECH_NAME=PstCd     MP_SC_FLD=REF01            ← V000, kept
+TECH_NAME=AdrLine   MP_SC_FLD=AUSTO            ← V000, suppressed by XSLT
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2            ← V000, suppressed by XSLT
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3            ← V000, suppressed by XSLT
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 10)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 11)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
+    &lt;PstCd&gt;75007&lt;/PstCd&gt;
+    &lt;StrtNm&gt;PLACE DE FONTENOY&lt;/StrtNm&gt; ← new tag
+    &lt;BldgNb&gt;7&lt;/BldgNb&gt;                 ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #4 — CITI Dbtr alt-mode -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #4 — CITI <code>Dbtr/PstlAdr</code> (alt-mode / PstlAdrMor)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: alternate Dbtr branch in <code>/CITI/XML/UNESCO/DC_V3_01</code>. Currently 3 AdrLine rows only — needs full 5-leaf structured subtree. CITI XSLT handles empty suppression.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 3 rows under Dbtr-alt/PstlAdr</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=AdrLine   MP_SC_FLD=AUSTO
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt; (alt)
+  &lt;PstlAdr&gt;
+    &lt;AdrLine&gt;7 PLACE DE FONTENOY&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;FRANCE&lt;/AdrLine&gt;
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same 3 rows + 5 INSERT rows under the same parent</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=AdrLine   MP_SC_FLD=AUSTO            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=AUST3            ← V000, suppressed
+TECH_NAME=AdrLine   MP_SC_FLD=AUST2            ← V000, suppressed
+TECH_NAME=StrtNm    MP_SC_FLD=REF01[0..60]     ← INSERT (matrix row 12)
+TECH_NAME=BldgNb    MP_SC_FLD=REF01[60..80]    ← INSERT (matrix row 13)
+TECH_NAME=PstCd     MP_SC_FLD=REF01[80..90]    ← INSERT (matrix row 14)
+TECH_NAME=TwnNm     MP_SC_FLD=REF06[0..40]     ← INSERT (matrix row 15)
+TECH_NAME=Ctry      MP_SC_FLD=LAND1            ← INSERT (matrix row 16)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;Dbtr&gt; (alt)
+  &lt;PstlAdr&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                ← new tag
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+    &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;                  ← new tag
+    &lt;Ctry&gt;FR&lt;/Ctry&gt;                     ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/Dbtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #5 — CITI UltmtCdtr (MODIFY, not INSERT) -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #5 — CITI <code>UltmtCdtr/StrtNm</code> (MODIFY existing empty node + 1 INSERT)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; UltmtCdtr &gt; PstlAdr</code> in <code>/CITI/XML/UNESCO/DC_V3_01</code>. The UltmtCdtr/StrtNm node already EXISTS (Worldlink BRL flow) but its source binding is empty — V001 sets MP_SC_FLD=ZSTRA. Plus +1 INSERT for BldgNb.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — UltmtCdtr/PstlAdr (StrtNm exists with empty binding)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Nm        MP_SC_FLD=NAME1            ← FPAYP
+TECH_NAME=Ctry      MP_SC_FLD=ZLAND            ← FPAYH
+TECH_NAME=TwnNm     MP_SC_FLD=ZORT1            ← FPAYH
+TECH_NAME=PstCd     MP_SC_FLD=ZPSTL            ← FPAYH
+TECH_NAME=CtrySubDvsn MP_SC_FLD=ZREGI         ← FPAYH
+TECH_NAME=AdrLine1  MP_SC_FLD=ZSTRA            ← FPAYH
+TECH_NAME=AdrLine2  MP_SC_FLD=ZORT2            ← FPAYH
+TECH_NAME=StrtNm    MP_SC_FLD=(empty!)         ← gap — exists but never fires</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;UltmtCdtr&gt;
+  &lt;Nm&gt;...&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;BR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+    &lt;PstCd&gt;...&lt;/PstCd&gt;
+    &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+    &lt;AdrLine&gt;...street...&lt;/AdrLine&gt;
+    &lt;AdrLine&gt;...neighborhood...&lt;/AdrLine&gt;
+                                          ← StrtNm absent (empty source)
+  &lt;/PstlAdr&gt;
+&lt;/UltmtCdtr&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — 1 MODIFY (StrtNm gets source) + 1 INSERT (BldgNb)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=Nm           ...                   ← V000, kept
+TECH_NAME=Ctry         ...                   ← V000, kept
+TECH_NAME=TwnNm        ...                   ← V000, kept
+TECH_NAME=PstCd        ...                   ← V000, kept
+TECH_NAME=CtrySubDvsn  ...                   ← V000, kept
+TECH_NAME=AdrLine1     MP_SC_FLD=ZSTRA       ← V000, suppressed
+TECH_NAME=AdrLine2     MP_SC_FLD=ZORT2       ← V000, suppressed
+TECH_NAME=StrtNm       MP_SC_FLD=ZSTRA       ← MODIFY (matrix row 17)
+TECH_NAME=BldgNb       MP_SC_FLD=ZSTRA[60..] ← INSERT (matrix row 18)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;UltmtCdtr&gt;
+  &lt;Nm&gt;...&lt;/Nm&gt;
+  &lt;PstlAdr&gt;
+    &lt;Ctry&gt;BR&lt;/Ctry&gt;
+    &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+    &lt;PstCd&gt;...&lt;/PstCd&gt;
+    &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+    &lt;StrtNm&gt;...&lt;/StrtNm&gt;                ← now populated
+    &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+  &lt;/PstlAdr&gt;
+&lt;/UltmtCdtr&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TARGET #6 — CITI CdtrAgt -->
+      <div style="border:1px solid #cbd5e1;border-radius:6px;padding:14px;margin:14px 0;background:#fafbfc">
+        <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:6px">Target #6 — CITI <code>CdtrAgt/PstlAdr</code> (paying bank address)</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:10px">Path in tx DMEE: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code> in <code>/CITI/XML/UNESCO/DC_V3_01</code>. Has StrtNm + TwnNm + Ctry + CtrySubDvsn (4 leaves) but missing PstCd + BldgNb.</div>
+        <table style="margin-top:6px;font-size:11px;width:100%">
+          <tr><th style="width:50%">DMEE_TREE_NODE config rows</th><th style="width:50%">XML emitted in the F110 output file</th></tr>
+          <tr style="background:#eff6ff"><td colspan="2"><b>V000 today — 4 rows + AdrLine</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=StrtNm       MP_SC_FLD=ZBSTR
+TECH_NAME=TwnNm        MP_SC_FLD=ZBORT
+TECH_NAME=CtrySubDvsn  MP_SC_FLD=ZBREGX
+TECH_NAME=Ctry         MP_SC_FLD=(bank country)
+TECH_NAME=AdrLine      MP_SC_FLD=(legacy)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+      &lt;AdrLine&gt;...&lt;/AdrLine&gt;
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+          <tr style="background:#dcfce7"><td colspan="2"><b>V001 — same rows + 2 INSERTs (PstCd + BldgNb)</b></td></tr>
+          <tr>
+            <td><pre style="margin:0;font-size:10px">TECH_NAME=StrtNm       MP_SC_FLD=ZBSTR        ← V000, kept
+TECH_NAME=TwnNm        MP_SC_FLD=ZBORT        ← V000, kept
+TECH_NAME=CtrySubDvsn  MP_SC_FLD=ZBREGX       ← V000, kept
+TECH_NAME=Ctry         ...                   ← V000, kept
+TECH_NAME=AdrLine      ...                   ← V000, suppressed
+TECH_NAME=PstCd        MP_SC_FLD=ZBPST        ← INSERT (matrix row 19)
+TECH_NAME=BldgNb       MP_SC_FLD=ZBSTR[60..]  ← INSERT (matrix row 20)</pre></td>
+            <td><pre style="margin:0;font-size:10px">&lt;CdtrAgt&gt;
+  &lt;FinInstnId&gt;
+    &lt;PstlAdr&gt;
+      &lt;StrtNm&gt;...&lt;/StrtNm&gt;
+      &lt;TwnNm&gt;...&lt;/TwnNm&gt;
+      &lt;CtrySubDvsn&gt;...&lt;/CtrySubDvsn&gt;
+      &lt;Ctry&gt;...&lt;/Ctry&gt;
+      &lt;PstCd&gt;...&lt;/PstCd&gt;                  ← new tag
+      &lt;BldgNb&gt;...&lt;/BldgNb&gt;                ← new tag
+    &lt;/PstlAdr&gt;
+  &lt;/FinInstnId&gt;
+&lt;/CdtrAgt&gt;</pre></td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size:12px;color:#475569;margin-top:8px"><em>Read this in plain English: 4 entry points · 2+5+1+2 = 10 row operations (8 INSERTs + 1 MODIFY + 1 INSERT on UltmtCdtr) → 9 tree-row deltas counted as matrix rows 10-20 (matrix row 17 is the MODIFY, paired with row 18 INSERT BldgNb). XSLT post-processor strips empty AdrLines automatically — no DMEE_TREE_COND needed.</em></p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:14px">CITI Step A · PURGE + CREATE</p>
+      <ol style="font-size:12px">
+        <li>tx <code>DMEE</code> → Tree type = <code>PAYM</code> + Format tree = <code>/CITI/XML/UNESCO/DC_V3_01</code> → Display → confirm V000 (Active) + dormant V001 (Maintenance)</li>
+        <li>Change → Maintenance version → <strong>Tree → Versions → Delete Version</strong> 001 → Save → transport <code>D01K-RETROFIT-01-V001-PURGE</code> (same retrofit transport as SEPA)</li>
+        <li><strong>Tree → Versions → Create Version</strong> 000 → 001 → Save → transport <code>D01K-V001-CITI-01</code></li>
+      </ol>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step B · 2 INSERTs primary Dbtr + 5 INSERTs alt-Dbtr + 1 MODIFY UltmtCdtr/StrtNm + 1 INSERT UltmtCdtr/BldgNb + 2 INSERTs CdtrAgt</p>
+      <ol style="font-size:12px">
+        <li>Switch tree view to V001. Navigate to <strong>Dbtr-primary/PstlAdr</strong>: <code>Document &gt; CstmrCdtTrfInitn &gt; PmtInf &gt; Dbtr &gt; PstlAdr</code> (primary path)</li>
+        <li>INSERT StrtNm (FPAYHX REF01[0..60] · matrix row 10) + BldgNb (FPAYHX REF01[60..80] · row 11). <strong>NO DMEE_TREE_COND needed</strong> — XSLT auto-removes empty.</li>
+        <li>Navigate to <strong>Dbtr-altMor/PstlAdr</strong> (alternate path PstlAdrMor in same tree)</li>
+        <li>INSERT 5 nodes (matrix rows 12–16): StrtNm, BldgNb, PstCd, TwnNm, Ctry — full structured subtree, since alt-mode currently has only 3 AdrLines</li>
+        <li>Navigate to <strong>UltmtCdtr/PstlAdr</strong>: <code>... &gt; CdtTrfTxInf &gt; UltmtCdtr &gt; PstlAdr</code></li>
+        <li><strong>MODIFY existing StrtNm node</strong>: double-click the empty StrtNm row → set MP_SC_TAB=<code>FPAYH</code>, MP_SC_FLD=<code>ZSTRA</code>, LENGTH=<code>70</code> (matrix row 17, claim 99 — Worldlink BRL UltmtCdtr resolved system-driven)</li>
+        <li>INSERT BldgNb under UltmtCdtr/PstlAdr (FPAYH ZSTRA[60..75] · matrix row 18)</li>
+        <li>Navigate to <strong>CdtrAgt/.../PstlAdr</strong>: <code>... &gt; CdtTrfTxInf &gt; CdtrAgt &gt; FinInstnId &gt; PstlAdr</code></li>
+        <li>INSERT PstCd (FPAYH ZBPST · matrix row 19) + BldgNb (FPAYH ZBSTR[60..] · row 20)</li>
+        <li>Save → transport <code>D01K-V001-CITI-01</code></li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569;margin-top:6px"><strong>CITI Step B verification</strong>: count of VERSION=001 nodes = 610 + 9 = 619. UltmtCdtr StrtNm node confirms MP_SC_FLD='ZSTRA' (was empty in V000). Run F110 simulator on a Worldlink BRL run to confirm UltmtCdtr/StrtNm now populates.</p>
+
+      <p style="font-weight:600;color:#0369a1;margin-top:10px">CITI Step C · ACTIVATE V001 (SAP-correct procedure)</p>
+      <ol style="font-size:12px">
+        <li><strong>PRE-CUTOVER (mandatory rollback enabler)</strong>: tx DMEE → /CITI/XML/UNESCO/DC_V3_01 → Format tree → Change → <strong>Utilities → Versions → Generate Version</strong> → SAP archives current V000 to V002 (next free). Document the version number for rollback.</li>
+        <li>tx <code>DMEE</code> → open <code>/CITI/XML/UNESCO/DC_V3_01</code> → Format tree → Change → <strong>Tree → Activate</strong> → V001 content overwrites V000</li>
+        <li>Save → cutover transport (Workbench R3TR DMEE class K) — recommended: stagger after SEPA cutover validates by ≥14 days</li>
+        <li>From cutover, every F110 CITI run (CIT01/CIT04/CIT21, payment methods L/R) produces V001 XML</li>
+      </ol>
+
+      <p style="font-size:11px;color:#475569"><strong>CITI rollback (5-15 min)</strong>: tx DMEE → /CITI/XML/UNESCO/DC_V3_01 → Utilities → Versions → Version Management → select V002 snapshot → Retrieve → Activate → original V000 restored.</p>
+      <p style="font-size:11px;color:#475569"><strong>CITI code change required: NONE</strong>. The <code>/CITIPMW/V3_GET_CDTR_BLDG</code> exit and CGI_XML_CT_XSLT post-processor are SAP-standard and unchanged. Pattern A guard does NOT apply to CITI (CITI does not use YCL_IDFI_CGI_DMEE_FALLBACK).</p>
+    </div>
+    </div>

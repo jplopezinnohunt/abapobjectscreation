@@ -1,0 +1,69 @@
+<div id="tab-dme-fbzp" class="content">
+  <div class="section">
+    <h3>FBZP chain — three locks in series</h3>
+
+    <h4>The mental model — why three layers and not one?</h4>
+    <p>Imagine SAP needs to answer one apparently simple question: <em>"Should F110 pay vendor 12345 in company code UNES using payment method S?"</em> Three separate parties might disagree:</p>
+    <ul>
+      <li><strong>The country regulators</strong> — France allows SEPA, but maybe not domestic checks; Saudi Arabia mandates IBAN, etc.</li>
+      <li><strong>The company itself</strong> — UNES might say "I support SEPA, but only for amounts up to €1M and only via this house bank."</li>
+      <li><strong>The vendor</strong> — Vendor 12345 might only accept wire transfer; cheques will bounce back.</li>
+    </ul>
+    <p>SAP models all three as <strong>three independent locks</strong>. F110 walks down the chain at runtime: <em>"Is method S allowed in country FR? Yes. Is method S allowed in cocode UNES? Yes. Does vendor 12345 list S as an allowed method? Yes. → Pay."</em> If any one of the three says no, the payment is skipped. <strong>All three must agree.</strong></p>
+    <p>Most "why isn't this vendor being paid?" tickets resolve to one of the three locks being misconfigured. Knowing which lock to check first saves hours.</p>
+
+    <h4>The three locks at a glance</h4>
+    <ol>
+      <li><strong>Country-level payment method</strong> (Tx FBZP / OBVCU) — single-letter codes that say "in this country, payment method X means <em>this</em> kind of payment, uses <em>this</em> output (PMW vs classic), allows <em>these</em> currencies and document types." UNESCO's S/N/J/L/X codes live here.</li>
+      <li><strong>Cocode-level payment method</strong> (Tx FBZP / OBVU) — each cocode declares "yes, I support method X — and here are my amount limits, my grouping rules, my foreign-payment rules, and crucially my <em>FBZP form</em> binding (the field that says 'use DMEE, not legacy code')."</li>
+      <li><strong>Vendor-level binding</strong> (Tx FK02 / XK02) — the vendor master row carries the list of payment methods the vendor accepts plus optional house-bank override.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h3>Lock #1 — Country-level catalog</h3>
+    <p>This is where SAP keeps the "rule book per country" for payment methods. A single-letter code (or symbol — SAP uses things like <code>&amp;</code>, <code>=</code>, <code>@</code> as well as letters) is bound to a payment-method type (check / wire / SEPA / IHC), an output channel (PMW with a specific format, or legacy code-based), allowed currencies, and the document type to use when posting.</p>
+    <p>You read it as: <em>"In country DE, code 5 means SEPA Credit Transfer using PMW format X."</em> The code is short because it lives in single-character columns (<code>REGUH-RZAWE</code>, <code>LFB1-ZWELS</code>, etc.) that are hard to expand without massive regression.</p>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_135.png" alt="FBZP country payment methods catalog">
+    <div class="dme-shot-cap"><b>erp_135.png — Country payment methods popup.</b> Selection dialog opening with <code>Paying co. code = MVAF</code>, <code>Pymt Method = C</code> being entered. Behind it, the catalog shows the country's full set of methods: <code>&amp;</code> SEPA Credit transfer · <code>5</code> SEPA Credit Transfer · <code>7</code> SEPA Credit Transfer (PE) · <code>=</code> MT101 · <code>@</code> ISO 20022 International · <code>C</code> International Check · <code>I/J</code> Banküberweisung intern/extern IHC · <code>L</code> Auslandsüberweisung · <code>M</code> Auslandsüberweisung PMW. Tag: this is the country-level <em>catalog</em>. The cocode level (next screen) picks from this list.</div>
+  </div>
+
+  <div class="section">
+    <h3>Lock #2 — Cocode-level binding</h3>
+    <p>Here each company code declares <em>which</em> payment methods (from the country catalog) it supports, and configures the operational details: amount limits, item-grouping rules, foreign-payment permissions, bank-selection optimization, and — most importantly for our DMEE work — <strong>the FBZP "form" fields</strong>.</p>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_136.png" alt="FBZP company code payment methods">
+    <div class="dme-shot-cap"><b>erp_136.png — Maintenance of Company Code Data for a Payment Method (the list view).</b> Rows: (Cocode, City, Pmt method, Name) — e.g. <code>MVAF Gaborone C check</code>, <code>NAS2 New York 0 Biller Direct</code>, <code>NDF0 Harare C Cash Payment</code>, <code>NICK Frankfurt &amp; SEPA Credit transfer</code>. <em>New Entries</em> button highlighted at top-left. Read this as: "MVAF supports method C (check), NAS2 supports method 0, NICK supports SEPA …". UNESCO has rows here for every (UNES / IIEP / UIL) × every payment method (S / N / J / L / X) combination.</div>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_137.png" alt="FBZP detail screen — Form Data button">
+    <div class="dme-shot-cap"><b>erp_137.png — FBZP detail for (MVAF, C check).</b> Click into a row from the list and you get this screen. <strong>Amount limits</strong> (Min 300, Max 3 000 000 BWP) — F110 won't process invoices outside that range. <strong>Grouping of items</strong> (Single payment for marked item / Payment per due day / Extended Individual Payment) — controls whether one payment file lumps multiple invoices together or keeps them separate. <strong>Foreign payments</strong> (Foreign business partner / Foreign currency / Vendor bank abroad) — required for cross-border. <strong>Bank selection control</strong> (No optimization / Optimize by bank group / Optimize by postal code) — controls how F110 picks among the cocode's house banks. The <em>Form Data</em> button (highlighted) opens the section in the next screenshot — that is the section that says "use DMEE."</div>
+
+    <p style="background:#f1f5f9;padding:12px;border-left:3px solid #1abc9c;border-radius:4px;margin-top:14px"><strong>Pause here for a key insight</strong> → Everything you have seen so far on this screen happens <em>before</em> DMEE is even called. F110 uses these settings to decide <em>which</em> invoices to pick, <em>which</em> house bank to use, <em>whether</em> to group, and so on. Only after F110 has resolved all of that, and posted the documents, does it hand off to SAPFPAYM, which then asks DMEE to produce the file. So if your DMEE output is missing payments, the bug is upstream of DMEE — usually here in FBZP.</p>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_138.png" alt="FBZP detail with Form Data expanded">
+    <div class="dme-shot-cap"><b>erp_138.png — same screen, Form Data section expanded.</b> Two fields under <em>Forms</em>: <code>Form for the Payment Medium</code> (here blank) and <code>Next form = SAPscript FPAYM_INT_DMEE</code>. <strong>This is the DMEE switch.</strong> When <code>FPAYM_INT_DMEE</code> appears in either field, F110 routes this (cocode, payment method) combination through SAPFPAYM → DMEE. When the field is blank or set to a non-DMEE form name, F110 falls back to the legacy code-based PMW driver and never even loads a DMEE tree. If a future agent asks "why isn't DMEE firing for this payment?" — <strong>this is the first field to check</strong>.</div>
+  </div>
+
+  <div class="section">
+    <h3>Lock #3 — Vendor-level binding</h3>
+    <p>Even if the country and cocode both allow a payment method, the vendor still has the final say. Vendor 200135 might only accept wire transfers (method T) and reject checks. The vendor master row carries an explicit list of <em>allowed</em> payment methods plus an optional override of which house bank to pay through.</p>
+
+    <img class="dme-shot" src="../knowledge/domains/Payment/sap_standard_reference/dme_screenshots/erp_144.png" alt="Vendor master payment methods">
+    <div class="dme-shot-cap"><b>erp_144.png — FK02 Change Vendor: Payment transactions Accounting</b> for vendor 200135, cocode MVAF. <em>Automatic payment transactions</em> section: <code>Payment methods = C</code> (highlighted with arrow), <code>House Bank = FB00</code>. Tag: third lock. UNESCO vendor masters in P01 carry the S/N/J/L/X allowed lists; per-vendor <code>LFB1.HBKID</code> overrides force a specific house bank when the vendor demands it (e.g. UNESCO's intercompany vendors that must pay via FB00 only).</div>
+
+    <h4>Putting it together — what F110 actually does</h4>
+    <p>When F110 runs and hits vendor 200135 with an open invoice in cocode MVAF and proposed method C, it walks all three locks in order:</p>
+    <pre>① country-level — "Is C allowed for cocode MVAF's country?"  → look up FBZP country table.
+② cocode-level — "Does MVAF support method C? With what limits?
+                   And does the form field say DMEE or legacy?"  → look up FBZP cocode table.
+③ vendor-level  — "Does vendor 200135 list C as allowed?"        → look up LFB1 / LFA1.
+
+If any → no, skip the invoice.
+If all → yes, post payment doc, hand off to SAPFPAYM with format from cocode.form_data.
+                                                                          ↓
+                                                               DMEE tree fires.</pre>
+    <p>This is exactly the flow that produces the file we are modifying in V001. Knowing the path makes failure points easy to predict.</p>
+  </div>
+</div>
+

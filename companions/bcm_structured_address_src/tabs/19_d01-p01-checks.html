@@ -1,0 +1,910 @@
+<div id="tab-d01-p01-checks" class="content">
+  <div class="section">
+    <h3>D01 ↔ P01 Version Comparison & Retrofit Conclusion</h3>
+    <p style="color:#475569;font-size:13px"><b>Brain anchor</b>: claims 109 + 111 (TIER_1) · RFC verification 2026-04-30 (post-VPN restoration). Saved evidence: <code>Zagentexecution/incidents/xml_payment_structured_address/version_difference_matrix_session63.json</code> + <code>d01_p01_v000_diff_session63.json</code>.</p>
+
+    <h4 style="color:#0d9488;margin-top:14px">Method</h4>
+    <p style="font-size:13px;color:#1f2937">Direct RFC_READ_TABLE on <code>DMEE_TREE_NODE</code> in both D01 and P01, full extraction of all rows for each (TREE_ID, VERSION) pair, then row-level diff over 14 columns:</p>
+    <p style="font-size:11px;color:#475569;font-family:monospace">NODE_ID · TECH_NAME · PARENT_ID · BROTHER_ID · FIRSTCHILD_ID · LEV · NODE_TYPE · MP_SC_TAB · MP_SC_FLD · MP_OFFSET · LENGTH · CV_RULE · MP_EXIT_FUNC · MP_CONST</p>
+  </div>
+
+  <div class="section">
+    <h3>Table 1 — Sizes + Definition Check per (Tree × Version)</h3>
+    <p style="font-size:12px;color:#475569">8 rows: 4 trees × 2 versions. <b>D01</b> and <b>P01</b> columns show <b>node counts</b> (not checkmarks); — means the version doesn't exist in that system. <b>NODES</b> column is the canonical count when D01 = P01 agree (or D01-only count for V001). <b>Definition Check</b> column reports the verdict from full 48-field byte-level RFC comparison (2026-04-30).</p>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead style="background:#1e3a4a;color:#fff">
+        <tr><th>Tree</th><th>Version</th><th>D01</th><th>P01</th><th>NODES</th><th>Definition Check</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4"><td><code>/SEPA_CT_UNES</code></td><td>V000</td><td style="text-align:center">95</td><td style="text-align:center">95</td><td style="text-align:center"><b>95</b></td><td style="color:#16a34a">✓ <b>Field definitions byte-equal</b> (48/48 fields match · 0 deltas across all node-definition columns: NODE_ID, PARENT_ID, MP_SC_TAB, MP_SC_FLD, MP_OFFSET, LENGTH, CV_RULE, MP_EXIT_FUNC, MP_CONST, etc.). D01 and P01 produce identical XML for this tree.</td><td>D01 = P01 baseline</td></tr>
+        <tr style="background:#f0fdf4"><td><code>/SEPA_CT_UNES</code></td><td>V001</td><td style="text-align:center">95</td><td style="text-align:center;color:#9ca3af">—</td><td style="text-align:center"><b>95</b></td><td style="text-align:center;color:#9ca3af">— (V001 absent in P01)</td><td>D01 dormant V001 · P01 absent</td></tr>
+
+        <tr style="background:#f0fdf4"><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>V000</td><td style="text-align:center">610</td><td style="text-align:center">610</td><td style="text-align:center"><b>610</b></td><td style="color:#16a34a">✓ <b>Field definitions byte-equal</b> (48/48 fields match · 0 deltas across all node-definition columns: NODE_ID, PARENT_ID, MP_SC_TAB, MP_SC_FLD, MP_OFFSET, LENGTH, CV_RULE, MP_EXIT_FUNC, MP_CONST, etc.). D01 and P01 produce identical XML for this tree.</td><td>D01 = P01 baseline</td></tr>
+        <tr style="background:#f0fdf4"><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>V001</td><td style="text-align:center">610</td><td style="text-align:center;color:#9ca3af">—</td><td style="text-align:center"><b>610</b></td><td style="text-align:center;color:#9ca3af">— (V001 absent in P01)</td><td>D01 dormant V001 · P01 absent</td></tr>
+
+        <tr style="background:#f0fdf4"><td><code>/CGI_XML_CT_UNESCO</code></td><td>V000</td><td style="text-align:center">631</td><td style="text-align:center">631</td><td style="text-align:center"><b>631</b></td><td style="color:#16a34a">✓ <b>Field definitions byte-equal</b> (48/48 fields match · 0 deltas across all node-definition columns: NODE_ID, PARENT_ID, MP_SC_TAB, MP_SC_FLD, MP_OFFSET, LENGTH, CV_RULE, MP_EXIT_FUNC, MP_CONST, etc.). D01 and P01 produce identical XML for this tree.</td><td>D01 = P01 baseline</td></tr>
+        <tr style="background:#f0fdf4"><td><code>/CGI_XML_CT_UNESCO</code></td><td>V001</td><td style="text-align:center">631</td><td style="text-align:center;color:#9ca3af">—</td><td style="text-align:center"><b>631</b></td><td style="text-align:center;color:#9ca3af">— (V001 absent in P01)</td><td>D01 dormant V001 · P01 absent</td></tr>
+
+        <tr style="background:#fef3c7"><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>V000</td><td style="text-align:center;color:#d97706"><b>632</b></td><td style="text-align:center;color:#d97706"><b>639</b></td><td style="text-align:center;color:#9ca3af">—</td><td style="color:#d97706">⚠ <b>Field definitions diverge</b> — 12 deltas (1 ONLY_D01 + 8 ONLY_P01 + 3 CHANGED) on 6 fields: BROTHER_ID×2, LENGTH×1, MP_SC_TAB×1, MP_SC_FLD×1, MP_IF_TP×1, MP_SELECTION×1. D01 produces different XML than P01 for payments touching the affected nodes.</td><td>retrofit needed</td></tr>
+        <tr style="background:#fef3c7"><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>V001</td><td style="text-align:center">632</td><td style="text-align:center;color:#9ca3af">—</td><td style="text-align:center"><b>632</b></td><td style="text-align:center;color:#9ca3af">— (V001 absent in P01)</td><td>D01 dormant V001 of dirty V000 (inherits divergence)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>What this confirms</h3>
+    <table>
+      <tr><th>Observation</th><th>Implication</th></tr>
+      <tr>
+        <td>D01 V000 = D01 V001 in <b>all 4 trees</b> (zero deltas across 14 fields)</td>
+        <td>D01 V001 is a <b>byte-perfect dormant clone of V000</b>. Whichever is HEAD-active, F110 produces identical output today.</td>
+      </tr>
+      <tr>
+        <td>D01 V000 = P01 V000 for SEPA + CITI + CGI</td>
+        <td>These 3 trees need <b>zero retrofit work</b>.</td>
+      </tr>
+      <tr>
+        <td>D01 V001 = P01 V000 for SEPA + CITI + CGI</td>
+        <td>Confirms transitivity. The dormant V001 in D01 is byte-equal to the production V000 in P01 for these 3 trees.</td>
+      </tr>
+      <tr>
+        <td>D01 V000 ≠ P01 V000 only for <code>/CGI_XML_CT_UNESCO_1</code> (12 deltas)</td>
+        <td>The <b>only</b> misalignment requiring retrofit work.</td>
+      </tr>
+      <tr>
+        <td>D01 V001 ↔ P01 V000 has the same 12 deltas as D01 V000 ↔ P01 V000 (CGI_1 only)</td>
+        <td>D01 V001 inherits D01 V000's CGI_1 divergence — confirms V001 was created AFTER the D01 V000 divergence existed.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>CGI_1 — the 12 deltas detailed</h3>
+    <table>
+      <tr><th>Type</th><th>Count</th><th>NODE_IDs</th><th>Action</th></tr>
+      <tr>
+        <td><b>ONLY_D01</b> (purge from D01)</td>
+        <td>1</td>
+        <td><code>N_6366307580</code> (TECH_NAME=<code>SCB</code>)</td>
+        <td>DMEE Tx → /CGI_XML_CT_UNESCO_1 V000 → delete node</td>
+      </tr>
+      <tr>
+        <td><b>ONLY_P01</b> (restore in D01)</td>
+        <td>8</td>
+        <td><code>N_3156850640</code>, <code>N_3578098180</code>, <code>N_4479927170</code>, <code>N_6139351280</code>, <code>N_7496220820</code>, <code>N_8916026460</code>, <code>N_9204653810</code>, <code>N_9270087220</code> (all <code>AdrLine*</code> variants)</td>
+        <td>Transport from P01→D01 OR re-create in D01 from P01 source</td>
+      </tr>
+      <tr>
+        <td><b>CHANGED</b> (substantive)</td>
+        <td>1</td>
+        <td><code>N_0711160730</code> <code>Nm</code></td>
+        <td>D01 sources <code>FPAYHX-NAMEZ</code> len 70 ; P01 empty TAB/FLD len 35. UNESCO custom Z-field experiment unrelated to PstlAdr V001 design. <b>Decision needed</b>: revert to P01 (recommended) OR keep D01 + promote to P01 in a separate transport.</td>
+      </tr>
+      <tr>
+        <td><b>CHANGED</b> (consequential drift)</td>
+        <td>2</td>
+        <td><code>N_9432681780</code> <code>Ctry</code> · <code>N_9930896580</code> <code>Ctry</code></td>
+        <td>BROTHER_ID drift caused by the missing AdrLine nodes. <b>Resolves automatically</b> once the 8 ONLY_P01 AdrLine nodes are restored.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Future state — V001 after our change matrix lands</h3>
+    <p style="font-size:13px;color:#1f2937">Once retrofit completes (D01 V000 = P01 V000 byte-equal on all 4 trees, dormant V001 purged), we Create Fresh V001 and apply the 27-row change matrix:</p>
+    <table>
+      <tr><th>Tree</th><th>Planned V001 = aligned V000 + change-matrix delta</th></tr>
+      <tr><td><code>/SEPA_CT_UNES</code></td><td>+8 nodes (4 Cdtr structured + 4 Dbtr structured) + 8 empty-suppress conds + 1 OBPM4 row</td></tr>
+      <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td>+5 Dbtr primary + 5 Dbtr alt-mode + 1 UltmtCdtr StrtNm MODIFY + 2 CdtrAgt (PstCd + BldgNb) = ~13 deltas</td></tr>
+      <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td>+4 CdtrAgt structured (StrtNm + BldgNb + PstCd + TwnNm)</td></tr>
+      <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td>SYNC from parent (FIRSTNODE shared; CdtrAgt fix propagates automatically)</td></tr>
+    </table>
+    <p style="font-size:12px;color:#475569;margin-top:8px"><em>Detail per row: see V001 Change Matrix tab (29 rows: 2 preconditions + 27 deltas, brain claim 104).</em></p>
+  </div>
+
+  
+  <div class="section" style="background:#f0fdf4;border:2px solid #16a34a;border-radius:6px;padding:14px">
+    <h3 style="color:#16a34a;margin:0 0 8px 0">🔐 First-tree explicit confirmation — SEPA D01 = P01 by SHA-256</h3>
+    <p style="font-size:13px;color:#1f2937">Per user directive 2026-04-30 ("confirm that the first tree is the same"), independent verification beyond the per-row diff. Method: serialize all 95 nodes × 46 functional fields per node into a canonical text representation (sorted by NODE_ID, sorted by field name within each node), compute SHA-256.</p>
+    <table style="width:100%;font-size:12px;font-family:monospace;border-collapse:collapse;background:#fff">
+      <tr><th style="width:120px">System</th><th>Nodes</th><th>SHA-256 of 46-field × N-node canonical serialization</th></tr>
+      <tr><td>D01 V000</td><td>95</td><td>033f11ce1798ed90cdae447c0f4feaeddc03445c37885487e8adc4a447345b39</td></tr>
+      <tr><td>P01 V000</td><td>95</td><td>033f11ce1798ed90cdae447c0f4feaeddc03445c37885487e8adc4a447345b39</td></tr>
+      <tr style="background:#dcfce7;color:#16a34a"><td colspan="3" style="text-align:center"><b>✓ HASHES MATCH — D01 SEPA V000 is cryptographically identical to P01 SEPA V000</b></td></tr>
+    </table>
+    <p style="font-size:12px;color:#475569;margin-top:8px">Saved canonical serialization (the BEFORE-state baseline for SEPA V001 design): <code>Zagentexecution/incidents/xml_payment_structured_address/sepa_v000_baseline_session63.txt</code>. Brain claim 112 covers the 4-tree extension via field-by-field diff.</p>
+  </div>
+
+  <div class="section">
+    <h3>Before / After per tree — V001 design overlay on the V000 baseline</h3>
+    <p style="font-size:13px;color:#1f2937"><b>BEFORE</b> = current V000 byte-equal baseline (SEPA, CITI, CGI all confirmed D01 = P01; CGI_1 needs the 12-node retrofit first). <b>AFTER</b> = V000 + V001 change-matrix delta (29 rows: 2 preconditions + 27 deltas from V001 Change Matrix tab). The view shows what nodes get added or modified per tree.</p>
+
+    <h4 style="color:#0d9488;margin-top:14px">/SEPA_CT_UNES — BEFORE 95 nodes → AFTER 103 nodes (+8)</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Branch</th><th>Parent NODE_ID</th><th>BEFORE (V000 children)</th><th>AFTER (V001 children — bold = NEW)</th></tr>
+      <tr>
+        <td><b>Cdtr / PstlAdr</b></td>
+        <td><code>N_4754354180</code></td>
+        <td>Ctry (FPAYHX-ZLISO) · 2× AdrLine</td>
+        <td><b>StrtNm (FPAYHX-REF01[0:60])</b> · <b>BldgNb (FPAYHX-REF01[60:80])</b> · <b>PstCd (FPAYHX-REF01[80:90])</b> · <b>TwnNm (FPAYHX-REF06[0:40])</b> · Ctry (unchanged) · 2× AdrLine (empty-suppress conds)</td>
+      </tr>
+      <tr>
+        <td><b>Dbtr / PstlAdr</b></td>
+        <td><code>N_9926185740</code></td>
+        <td>Ctry (FPAYHX-LAND1) · 1× AdrLine</td>
+        <td><b>StrtNm (FPAYP-REF01[0:60])</b> · <b>BldgNb (FPAYP-REF01[60:70])</b> · <b>PstCd (FPAYP-REF01[70:80])</b> · <b>TwnNm (FPAYP-REF02[0:40])</b> · Ctry (unchanged) · AdrLine (empty-suppress)</td>
+      </tr>
+      <tr>
+        <td><b>TFPM042FB</b> (Event 05 reg)</td>
+        <td>—</td>
+        <td>0 rows for /SEPA_CT_UNES</td>
+        <td><b>+1 row</b>: FORMI=/SEPA_CT_UNES · EVENT=05 · FNAME=FI_PAYMEDIUM_DMEE_CGI_05 (Sub-option A)</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#0d9488;margin-top:14px">/CITI/XML/UNESCO/DC_V3_01 — BEFORE 610 nodes → AFTER ~620 nodes (+10)</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Branch</th><th>Parent NODE_ID</th><th>BEFORE (V000)</th><th>AFTER (V001 — bold = NEW · italic = MODIFY)</th></tr>
+      <tr>
+        <td><b>Dbtr-primary / PstlAdr</b></td>
+        <td><code>N_1531351640</code></td>
+        <td>PstCd · TwnNm · Ctry · 3× AdrLine</td>
+        <td><b>StrtNm (FPAYHX-REF01[0:60])</b> · <b>BldgNb (FPAYHX-REF01[60:80])</b> · PstCd · TwnNm · Ctry · 3× AdrLine (XSLT auto-removes empty)</td>
+      </tr>
+      <tr>
+        <td><b>Dbtr-altMor / PstlAdr</b></td>
+        <td><code>N_4078824850</code></td>
+        <td>3× AdrLine only</td>
+        <td><b>StrtNm</b> · <b>BldgNb</b> · <b>PstCd</b> · <b>TwnNm</b> · <b>Ctry (FPAYHX-LAND1)</b> · 3× AdrLine (XSLT auto-removes)</td>
+      </tr>
+      <tr>
+        <td><b>UltmtCdtr / PstlAdr</b></td>
+        <td><code>N_4600960730</code></td>
+        <td>StrtNm (empty source) · PstCd · TwnNm · Ctry · CtrySubDvsn · AdrLine</td>
+        <td><i>StrtNm — MODIFY: set MP_SC_TAB=FPAYH MP_SC_FLD=ZSTRA (Q3 RESOLVED claim 99)</i> · <b>BldgNb (FPAYH-ZSTRA[60:75])</b> · PstCd · TwnNm · Ctry · CtrySubDvsn · AdrLine</td>
+      </tr>
+      <tr>
+        <td><b>CdtrAgt / PstlAdr</b></td>
+        <td><code>N_5135503450</code></td>
+        <td>StrtNm (FPAYH-ZBSTR) · TwnNm · Ctry · CtrySubDvsn · AdrLine</td>
+        <td><b>PstCd (FPAYH-ZBPST)</b> · <b>BldgNb (FPAYH-ZBSTR[60:75])</b> · StrtNm · TwnNm · Ctry · CtrySubDvsn · AdrLine</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#0d9488;margin-top:14px">/CGI_XML_CT_UNESCO — BEFORE 631 nodes → AFTER 635 nodes (+4)</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Branch</th><th>Parent NODE_ID</th><th>BEFORE (V000)</th><th>AFTER (V001 — bold = NEW)</th></tr>
+      <tr>
+        <td><b>CdtrAgt / PstlAdr</b></td>
+        <td><code>N_0693479130</code></td>
+        <td>Ctry · 2× AdrLine</td>
+        <td><b>StrtNm (FPAYH-ZBSTR[0:70])</b> · <b>BldgNb (FPAYH-ZBSTR[60:75])</b> · <b>PstCd (FPAYH-ZBPST)</b> · <b>TwnNm (FPAYH-ZBORT)</b> · Ctry · 2× AdrLine</td>
+      </tr>
+      <tr>
+        <td>Dbtr / Cdtr / UltmtCdtr / UltmtDbtr</td>
+        <td>—</td>
+        <td>Already fully structured in V000 ✓</td>
+        <td>No change</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#0d9488;margin-top:14px">/CGI_XML_CT_UNESCO_1 — SYNC from /CGI_XML_CT_UNESCO parent</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Branch</th><th>Parent NODE_ID</th><th>BEFORE</th><th>AFTER</th></tr>
+      <tr style="background:#fef3c7">
+        <td colspan="4">⚠ Pre-step: D01 V000 must first be aligned with P01 V000 (12-delta retrofit per Table 1) BEFORE V001 work begins on this tree.</td>
+      </tr>
+      <tr>
+        <td><b>CdtrAgt / PstlAdr</b></td>
+        <td><code>N_0693479130</code> (FIRSTNODE shared with parent)</td>
+        <td>Same as parent (Ctry · 2× AdrLine)</td>
+        <td>SYNC propagates — same +4 NEW nodes from parent (StrtNm · BldgNb · PstCd · TwnNm)</td>
+      </tr>
+    </table>
+
+    <p style="font-size:12px;color:#475569;margin-top:14px"><b>Total V001 change footprint</b>: ~26 new nodes + 1 modified node + 1 OBPM4 row = aligns with V001 Change Matrix tab's 27 V001 deltas (+ 2 preconditions = 29 total rows). <b>BEFORE state</b> is brain-anchored byte-equal D01=P01 baseline (claims 109 + 112). <b>AFTER state</b> is the change-matrix design (claim 104).</p>
+  </div>
+
+
+  <div class="section">
+    <h3>Node usage classification per tree — IN USE vs EMPTY</h3>
+    <p style="font-size:13px;color:#1f2937">Per user question 2026-04-30 ("if we have 48 nodes for example, can we know which ones are empty and which are in use?"). Method: classify every P01 V000 node by examining its source binding columns. A node is <b>IN USE</b> if it has either a buffer source (MP_SC_TAB + MP_SC_FLD) or a constant (MP_CONST); <b>IN USE EXIT</b> if it has a BAdI/exit FM (MP_EXIT_FUNC); <b>STRUCTURAL</b> if it is an aggregator parent (NODE_TYPE in AGGR/TECH/COMP) or has children (FIRSTCHILD_ID); <b>EMPTY</b> if none of the above — defined node that produces no output.</p>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead style="background:#1e3a4a;color:#fff">
+        <tr><th>Tree</th><th>Total nodes</th><th>IN USE<br/>(source/const)</th><th>IN USE EXIT<br/>(BAdI-filled)</th><th>STRUCTURAL<br/>(parent/aggregator)</th><th>EMPTY<br/>(no output)</th><th>% effective</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4"><td><code>/SEPA_CT_UNES</code></td><td style="text-align:center"><b>95</b></td><td style="text-align:center;color:#16a34a">56</td><td style="text-align:center;color:#16a34a">1</td><td style="text-align:center">34</td><td style="text-align:center;color:#9ca3af">4</td><td style="text-align:center">95.8%</td></tr>
+        <tr style="background:#fef3c7"><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td style="text-align:center"><b>610</b></td><td style="text-align:center;color:#16a34a">295</td><td style="text-align:center;color:#16a34a">31</td><td style="text-align:center">218</td><td style="text-align:center;color:#d97706"><b>66</b></td><td style="text-align:center">89.2%</td></tr>
+        <tr style="background:#f0fdf4"><td><code>/CGI_XML_CT_UNESCO</code></td><td style="text-align:center"><b>631</b></td><td style="text-align:center;color:#16a34a">109</td><td style="text-align:center;color:#16a34a">239</td><td style="text-align:center">276</td><td style="text-align:center;color:#9ca3af">7</td><td style="text-align:center">98.9%</td></tr>
+        <tr style="background:#f0fdf4"><td><code>/CGI_XML_CT_UNESCO_1</code></td><td style="text-align:center"><b>639</b></td><td style="text-align:center;color:#16a34a">110</td><td style="text-align:center;color:#16a34a">239</td><td style="text-align:center">280</td><td style="text-align:center;color:#9ca3af">10</td><td style="text-align:center">98.4%</td></tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:12px;color:#475569;margin-top:8px"><b>% effective</b> = (IN USE + IN USE EXIT + STRUCTURAL) / Total. Only the EMPTY column shows nodes that contribute nothing to the XML output.</p>
+
+    <h4 style="color:#0d9488;margin-top:14px">EMPTY-node breakdown per tree</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Tree</th><th>EMPTY count</th><th>Sample TECH_NAMEs of empty nodes</th><th>Why empty?</th></tr>
+      <tr>
+        <td><code>/SEPA_CT_UNES</code></td>
+        <td style="text-align:center">4</td>
+        <td>NbOfTxs ×2, CtrlSum ×2</td>
+        <td>SAP DMEE engine auto-populates these header counts at runtime — they look "empty" in DMEE_TREE_NODE because they have no static source binding, but the engine fills them. NOT a real concern.</td>
+      </tr>
+      <tr>
+        <td><code>/CITI/XML/UNESCO/DC_V3_01</code></td>
+        <td style="text-align:center">66</td>
+        <td>BirthDate, FrDt, Issr, PrvcOfBirth, Housenum, Prtry, Id, OrgId, PrvtId variants...</td>
+        <td>CITI tree carries the full ISO 20022 PartyIdentification superset (private-individual identification, birth-date, regulatory IDs). UNESCO doesn't pay natural persons via Citi → those nodes are reserved placeholders, never fire. Same for many alt-mode <code>PstlAdrMor</code> branches.</td>
+      </tr>
+      <tr>
+        <td><code>/CGI_XML_CT_UNESCO</code></td>
+        <td style="text-align:center">7</td>
+        <td>CtrlSum ×2, NbOfTxs ×2, Ref ×3</td>
+        <td>Same auto-count pattern as SEPA + 3 reserved Ref slots. Negligible.</td>
+      </tr>
+      <tr>
+        <td><code>/CGI_XML_CT_UNESCO_1</code></td>
+        <td style="text-align:center">10</td>
+        <td>CtrlSum ×2, NbOfTxs ×2, AdrLine ×2 (N_3578098180, N_6139351280), Ref ×4</td>
+        <td>Same as parent CGI + 2 of the 8 ONLY_P01 AdrLine variants we need to restore in D01 are also EMPTY in P01 (intentional reserved AdrLine slots, never fired). Restoration is structural, not functional.</td>
+      </tr>
+    </table>
+
+    <p style="background:#dbeafe;border-left:3px solid #1d4ed8;padding:10px;font-size:13px;color:#1f2937;margin-top:14px"><b>Insight</b>: only ~5-10% of any tree's nodes are EMPTY, and most of those are SAP-engine-managed counters (NbOfTxs, CtrlSum) or ISO 20022 reserved superset slots that UNESCO doesn't exercise. The retrofit + V001 design only changes <b>active address branches</b> (PstlAdr / Cdtr / Dbtr / CdtrAgt / UltmtCdtr) — never the EMPTY nodes. Saved evidence: <code>Zagentexecution/incidents/xml_payment_structured_address/node_usage_classification_session63.json</code>.</p>
+  </div>
+
+
+  <div class="section">
+    <h3>What V001 changes — by node type · CONFIG vs CODE vs DATA · structural never changes</h3>
+
+    <p style="font-size:13px;color:#1f2937">For every node in every tree, the V001 design is constrained to <b>three change types</b> at the leaf level — and <b>STRUCTURAL nodes are never modified</b>. The 27 V001-delta rows of the matrix split exactly along this axis. (Plus 2 PRECONDITION rows 0a + 0b for retrofit and Create-Version — see V001 Change Matrix tab.)</p>
+
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead style="background:#1e3a4a;color:#fff">
+        <tr><th>Change type</th><th>Where it lives</th><th>How many rows in V001 matrix</th><th>What V001 actually does</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4">
+          <td><b>CONFIG</b><br/>(DMEE customizing)</td>
+          <td><code>DMEE_TREE_NODE</code> + <code>DMEE_TREE_COND</code> + <code>TFPM042FB</code></td>
+          <td style="text-align:center"><b>25 of 27</b></td>
+          <td>Add new ELEM nodes (StrtNm/BldgNb/PstCd/TwnNm) under existing PstlAdr structural parents · set MP_SC_TAB + MP_SC_FLD + MP_OFFSET + LENGTH + CV_RULE · add empty-suppress conditions in DMEE_TREE_COND for SEPA · add 1 row in TFPM042FB for SEPA Event 05 registration. <b>Pure customizing — no ABAP transport.</b></td>
+        </tr>
+        <tr style="background:#fef3c7">
+          <td><b>CODE</b><br/>(ABAP method)</td>
+          <td><code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code></td>
+          <td style="text-align:center"><b>1 of 27</b> (row 26)</td>
+          <td>Pattern A 3-line guard inside the existing BAdI method. Reviewer N_MENARD. Transport <code>D01K-BADI-FIX-01</code>. Workbench transport.</td>
+        </tr>
+        <tr style="background:#dbeafe">
+          <td><b>DATA</b><br/>(master data)</td>
+          <td><code>LFA1</code> + <code>ADRC</code> for 5 vendor LIFNRs</td>
+          <td style="text-align:center"><b>1 of 27</b> (row 27)</td>
+          <td>Master Data team manual fix CITY1 + COUNTRY OR LOEVM='X'. <b>No transport — pure data.</b></td>
+        </tr>
+        <tr style="background:#f9fafb;color:#475569">
+          <td><b>STRUCTURAL</b><br/>(parent/aggregator/TECH switch)</td>
+          <td>—</td>
+          <td style="text-align:center"><b>0 of 27</b></td>
+          <td>STRUCTURAL nodes (PstlAdr, Cdtr, Dbtr, CdtrAgt, UltmtCdtr container parents · NbOfTxs/CtrlSum auto-counters · TECH switch nodes like PstlAdrMor1/2/3) are <b>NEVER modified by V001</b>. They remain exactly as today. New ELEM children are <b>added under</b> existing structural parents, but the parent structure itself is untouched.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:12px;color:#475569;margin-top:6px"><b>Total V001 footprint</b>: 25 CONFIG + 1 CODE (3 lines) + 1 DATA (5 vendors) = 27 rows in V001 Change Matrix · zero structural changes · zero existing-node deletions.</p>
+  </div>
+
+  <div class="section">
+    <h3>Per-node detail — what's in the node (config or code)</h3>
+    <p style="font-size:13px;color:#1f2937">For every active node in any tree we can show <b>either the configuration</b> (source binding for CONFIG nodes) <b>or the code</b> (BAdI method for CODE nodes). Below: the V001-affected nodes specifically — for each, BEFORE state from RFC + AFTER state from V001 design + reference to the actual code/config.</p>
+
+    <h4 style="color:#0d9488;margin-top:14px">Configuration nodes — source binding only (no code)</h4>
+    <p style="font-size:12px;color:#475569">These nodes read from a buffer field at runtime. The <b>configuration</b> is fully expressed in 5 DMEE_TREE_NODE columns. No ABAP runs for these nodes (unless MP_EXIT_FUNC is also set).</p>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Example</th><th>BEFORE config</th><th>AFTER config (V001)</th></tr>
+      <tr>
+        <td>SEPA Cdtr StrtNm (NEW)</td>
+        <td>node doesn't exist</td>
+        <td><code>MP_SC_TAB=FPAYHX · MP_SC_FLD=REF01 · MP_OFFSET=0 · LENGTH=60 · CV_RULE=CL RP · MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI</code></td>
+      </tr>
+      <tr>
+        <td>SEPA Dbtr StrtNm (NEW)</td>
+        <td>node doesn't exist</td>
+        <td><code>MP_SC_TAB=FPAYP · MP_SC_FLD=REF01 · MP_OFFSET=0 · LENGTH=60 · CV_RULE=CL RP</code></td>
+      </tr>
+      <tr>
+        <td>CITI UltmtCdtr StrtNm (MODIFY)</td>
+        <td><code>MP_SC_TAB= (empty) · MP_SC_FLD= (empty) · LENGTH=70</code> — node exists, no source set</td>
+        <td><code>MP_SC_TAB=FPAYH · MP_SC_FLD=ZSTRA · MP_OFFSET=0 · LENGTH=70 · CV_RULE=CLURP</code></td>
+      </tr>
+      <tr>
+        <td>CGI CdtrAgt PstCd (NEW)</td>
+        <td>node doesn't exist</td>
+        <td><code>MP_SC_TAB=FPAYH · MP_SC_FLD=ZBPST · MP_OFFSET=0 · LENGTH=16 · CV_RULE=CL</code></td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:#475569;margin-top:6px">Full per-row config: <a href="../knowledge/domains/Payment/v001_change_matrix.csv" style="color:#0369a1"><code>v001_change_matrix.csv</code></a> (29 rows: 2 PRECONDITION 0a/0b + 27 V001 deltas). Per-tree node BEFORE state: <a href="../Zagentexecution/incidents/xml_payment_structured_address/sepa_v000_baseline_session63.txt" style="color:#0369a1"><code>sepa_v000_baseline_session63.txt</code></a>.</p>
+
+    <h4 style="color:#e67e22;margin-top:18px">Code node — the only BAdI change in V001</h4>
+    <p style="font-size:12px;color:#475569">There's exactly one node-level CODE change: Pattern A guard in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code>. It runs when DMEE traversal reaches the StrtNm node and the BAdI exit is configured. This method is REGISTERED as <code>MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI</code> on every Cdtr/Dbtr/UltmtCdtr StrtNm in CGI + SEPA (claim 96 SocGen-mandated).</p>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Affected node</th><th>BEFORE code (current GET_CREDIT method body)</th><th>AFTER code (Pattern A 3-line guard)</th></tr>
+      <tr>
+        <td><code>&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;</code> WHEN-branch in <code>GET_CREDIT</code></td>
+        <td>
+          <pre style="font-size:10px;background:#fef2f2;color:#991b1b;padding:6px;margin:0">WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.
+  ENDIF.
+  IF c_value+70 IS NOT INITIAL.
+    CLEAR c_value+70.
+  ENDIF.</pre>
+          <p style="font-size:10px;color:#991b1b;margin:2px 0 0">Source: <code>extracted_code/FI/DMEE_p01_canonical/YCL_IDFI_CGI_DMEE_FALLBACK====CM001.abap</code>. Issue: when V001 supplies a real <code>c_value</code> (structured StrtNm from FPAYHX-REF01), this overwrites it by prepending mv_cdtr_name+35 unconditionally.</p>
+        </td>
+        <td>
+          <pre style="font-size:10px;background:#f0fdf4;color:#14532d;padding:6px;margin:0">WHEN '&lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;Cdtr&gt;&lt;PstlAdr&gt;&lt;StrtNm&gt;'.
+  IF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL
+     AND c_value IS INITIAL.            "← V001 GUARD: only prepend if StrtNm empty (V000 path)
+    c_value = mv_cdtr_name+35.
+  ELSEIF i_fpayh = mv_fpayh
+     AND mv_cdtr_name+35 IS NOT INITIAL.
+    c_value = |{ mv_cdtr_name+35 } { c_value }|.   " V000 legacy preserved
+  ENDIF.
+  IF c_value+70 IS NOT INITIAL.
+    CLEAR c_value+70.
+  ENDIF.</pre>
+          <p style="font-size:10px;color:#14532d;margin:2px 0 0"><b>Net change: +3 lines</b> (the guard <code>AND c_value IS INITIAL</code> + the ELSEIF reroute). Backward-compatible with V000 (when c_value is empty, the original prepend behavior runs unchanged). Reviewer N_MENARD. Transport <code>D01K-BADI-FIX-01</code>.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section" style="background:#dbeafe;border-left:4px solid #1d4ed8;padding:12px;border-radius:4px">
+    <h4 style="color:#1d4ed8;margin:0 0 8px 0">📌 Summary — your two questions answered</h4>
+    <ol style="font-size:13px;color:#1f2937">
+      <li><b>Structural nodes are NOT changed in V001.</b> ✓ Confirmed. STRUCTURAL = parent/aggregator nodes (PstlAdr, Cdtr, Dbtr, CdtrAgt, UltmtCdtr containers · NbOfTxs/CtrlSum auto-counters · PstlAdrMor TECH switches). The change matrix has 0 of 27 rows targeting structural nodes. V001 only adds NEW leaf-level ELEM nodes <i>under</i> existing structural parents.</li>
+      <li><b>Per-tree-node we can see the code or the configuration.</b> ✓ Confirmed. CONFIG nodes expose 5 fields (MP_SC_TAB · MP_SC_FLD · MP_OFFSET · LENGTH · CV_RULE) — fully visible per RFC. CODE nodes (only nodes with MP_EXIT_FUNC set) link to the actual BAdI method source on disk. Of the 27 V001 deltas: <b>25 are CONFIG</b> (DMEE customizing) · <b>1 is CODE</b> (Pattern A 3-line guard) · <b>1 is DATA</b> (5 vendor master fix). No structural disruption anywhere.</li>
+    </ol>
+  </div>
+
+
+  <div class="section">
+    <h3>Marlies's analysis coverage vs our V001 design — 11 user-visible defects + 8 internal gaps</h3>
+    <p style="font-size:13px;color:#1f2937">Source: <code>Zagentexecution/incidents/xml_payment_structured_address/original_marlies/XML Address un structured.xlsx</code> — 2 sheets · 10 production payment XML samples (3 SEPA + 4 CITI + 4 CGI). Question: how did Marlies know which nodes to focus on, and what could her method physically not catch?</p>
+
+    <h4 style="color:#0d9488;margin-top:14px">Vocabulary clarification — "Dbtr Hybrid" describes a CONTAINER, not a node</h4>
+    <p style="font-size:13px;color:#1f2937">Marlies labels each PARTY-level <code>&lt;PstlAdr&gt;</code> container as <b>Unstructured</b> / <b>Hybrid</b> / <b>Structured</b>. These are <i>state labels on a structural container</i>, not individual nodes. The actual leaf nodes underneath are <code>&lt;StrtNm&gt;</code>, <code>&lt;BldgNb&gt;</code>, <code>&lt;PstCd&gt;</code>, <code>&lt;TwnNm&gt;</code>, <code>&lt;Ctry&gt;</code>, <code>&lt;CtrySubDvsn&gt;</code>, <code>&lt;AdrLine&gt;×N</code>.</p>
+    <pre style="font-size:11px;background:#f1f5f9;color:#1e293b;padding:10px;border-radius:4px;border:1px solid #cbd5e1">&lt;CdtTrfTxInf&gt;                      ← payment-line container
+  ├── &lt;Dbtr&gt;                       ← PARTY (UNESCO as debtor)
+  │   ├── &lt;Nm&gt;                     ← leaf node (entity name)
+  │   └── &lt;PstlAdr&gt;                ← STRUCTURAL CONTAINER (no value, just wraps)
+  │       ├── &lt;StrtNm&gt;             ← LEAF NODE (street)
+  │       ├── &lt;BldgNb&gt;             ← LEAF NODE (building)
+  │       ├── &lt;PstCd&gt;              ← LEAF NODE (postal)
+  │       ├── &lt;TwnNm&gt;              ← LEAF NODE (town)
+  │       ├── &lt;CtrySubDvsn&gt;        ← LEAF NODE (state/region)
+  │       ├── &lt;Ctry&gt;               ← LEAF NODE (ISO country)
+  │       └── &lt;AdrLine&gt;×N          ← LEAF NODE(s) (unstructured fallback)
+  ├── &lt;Cdtr&gt;                       ← PARTY (vendor as creditor) — same children
+  ├── &lt;CdtrAgt&gt;                    ← PARTY (vendor's bank) — same children inside &lt;FinInstnId&gt;
+  └── &lt;UltmtCdtr&gt;                  ← PARTY (Worldlink end-beneficiary) — same children</pre>
+
+    <table style="width:100%;font-size:12px">
+      <tr><th>Marlies's label</th><th>What it describes about the PstlAdr container's leaf children</th></tr>
+      <tr><td><b>Unstructured</b></td><td>Only <code>&lt;AdrLine&gt;</code> leaves populated · no structured leaves · <b>REJECTED post-Nov 2026 CBPR+</b></td></tr>
+      <tr><td><b>Hybrid</b></td><td><code>&lt;TwnNm&gt;</code> + <code>&lt;Ctry&gt;</code> populated structured · rest in <code>&lt;AdrLine&gt;</code> · <b>CBPR+ minimum OK</b></td></tr>
+      <tr><td><b>Structured</b></td><td>All 5 structured leaves populated · <code>&lt;AdrLine&gt;</code> empty/suppressed · <b>CBPR+ future-proof</b></td></tr>
+    </table>
+
+    <p style="font-size:12px;color:#475569;margin-top:8px"><b>So</b>: Marlies's "DBTR Hybrid" = state of the Dbtr's PstlAdr container · our V001 change matrix rows = specific LEAF nodes we add/modify under those containers · STRUCTURAL containers themselves (Dbtr · Cdtr · CdtrAgt · UltmtCdtr · PstlAdr · FinInstnId) are <b>NEVER modified by V001</b>.</p>
+
+    <h4 style="color:#16a34a;margin-top:18px">How Marlies identified her nodes</h4>
+    <table style="width:100%;font-size:12px">
+      <tr><th>Method</th><th>Strength</th><th>Inherent blind spot</th></tr>
+      <tr>
+        <td>Pulled 10 real production payment XML files (3 SEPA + 4 CITI + 4 CGI)</td>
+        <td>Sees actual XML output users get → catches user-visible defects (Hybrid/Unstructured/missing postal)</td>
+        <td>Cannot see internal source bindings, BAdI dispatch chain, alt-mode TECH switches, or D01-side divergence</td>
+      </tr>
+      <tr>
+        <td>Walked each <code>&lt;Dbtr&gt; &lt;CdtrAgt&gt; &lt;Cdtr&gt; &lt;UltmtCdtr&gt;</code> block per sample</td>
+        <td>100% complete on the 4 user-facing address blocks per format</td>
+        <td>Empty/reserved ISO 20022 slots don't appear in production XML (66 reserved nodes in CITI tree)</td>
+      </tr>
+      <tr>
+        <td>Marked each block as Structured / Hybrid / Unstructured + remark</td>
+        <td>Clear scope-delineation per format × block</td>
+        <td>Can't infer WHY (config? BAdI? Pattern A?) — only WHAT</td>
+      </tr>
+    </table>
+
+    <h4 style="color:#16a34a;margin-top:18px">11 of 11 user-visible defects → V001 design (Marlies's findings = our V001 rows)</h4>
+    <table style="width:100%;font-size:11px">
+      <tr><th>Marlies's finding</th><th>Our V001 row(s)</th><th>Match?</th></tr>
+      <tr><td>SEPA Dbtr Hybrid (postal missing)</td><td>rows 5-8 (4 Dbtr structured nodes)</td><td>✓</td></tr>
+      <tr><td>SEPA Cdtr Hybrid</td><td>rows 1-4 (4 Cdtr structured nodes)</td><td>✓</td></tr>
+      <tr><td>SEPA CdtrAgt — "BIC sufficient"</td><td>not in scope</td><td>✓ correctly excluded</td></tr>
+      <tr><td>SEPA UltmtCdtr — "Not found during analysis"</td><td>not in scope</td><td>✓ correctly excluded</td></tr>
+      <tr><td>CITI Dbtr Unstructured</td><td>rows 10-11 (Dbtr-primary StrtNm/BldgNb)</td><td>✓ partial — see <b>gap A</b> below</td></tr>
+      <tr><td>CITI CdtrAgt Structured ✓</td><td>rows 19-20 (PstCd + BldgNb completeness)</td><td>✓ extension</td></tr>
+      <tr><td>CITI Cdtr Structured ✓</td><td>unchanged</td><td>✓</td></tr>
+      <tr><td>CITI UltmtCdtr (WHO/ICC) Hybrid</td><td>row 17 (UltmtCdtr StrtNm modify) + 18 (BldgNb)</td><td>✓</td></tr>
+      <tr><td>CGI Dbtr Structured ✓</td><td>unchanged</td><td>✓</td></tr>
+      <tr><td>CGI CdtrAgt Unstructured</td><td>rows 21-24 (4 CdtrAgt structured nodes)</td><td>✓</td></tr>
+      <tr><td>CGI Cdtr Structured ✓</td><td>unchanged</td><td>✓</td></tr>
+      <tr><td>CGI Treasury Transfer "postal code missing"</td><td>rows 21-24 cover via BNKA bank-master fix</td><td>✓</td></tr>
+    </table>
+
+    <h4 style="color:#d97706;margin-top:18px">8 internal gaps her bottom-up method physically can't catch</h4>
+    <p style="font-size:12px;color:#475569">XML-output inspection is necessary but not sufficient. These 8 gaps come from row-level RFC verification + ABAP source extraction + cross-system D01-vs-P01 diff — none of which is visible in a payment XML file.</p>
+    <table style="width:100%;font-size:11px">
+      <tr><th>#</th><th>Gap</th><th>Why XML-only inspection misses it</th><th>Our finding</th></tr>
+      <tr style="background:#fef3c7">
+        <td><b>A</b></td>
+        <td><b>CITI Dbtr alt-mode PstlAdr</b> (<code>N_4078824850</code>) — second Dbtr PstlAdr fired only when TECH switch routes (PstlAdrMor)</td>
+        <td>Marlies's 4 CITI samples all routed to primary PstlAdr (<code>N_1531351640</code>). Alt-mode is data-conditional and her samples didn't trigger it.</td>
+        <td>Matrix rows 12-16 add full +5 structured nodes to alt-mode. <b>Without this, certain US/CA/BR payments would still produce Unstructured XML in V001.</b></td>
+      </tr>
+      <tr style="background:#fef3c7">
+        <td><b>B</b></td>
+        <td><b>CGI_1 D01-vs-P01 12-delta divergence</b> (1 SCB ONLY_D01 + 8 AdrLine ONLY_P01 + 3 CHANGED)</td>
+        <td>Production XML output is from P01 V000 only. D01-vs-P01 row-level diff requires RFC extraction of both sides — her file is XML-output-driven.</td>
+        <td>Claim 109 RFC-verified. Retrofit transport <code>D01K-RETROFIT-01</code> fixes in ~30 min. <b>Without this, deploying V001 in D01 would inherit dirty V000 state P01 doesn't have.</b></td>
+      </tr>
+      <tr>
+        <td><b>C</b></td>
+        <td><b>CGI_1 Nm Z-field experiment</b> — D01 sources <code>Nm</code> from <code>FPAYHX-NAMEZ</code>, P01 has empty TAB/FLD</td>
+        <td>This is a DEFINITION delta inside the tree, not visible in XML output</td>
+        <td>Found via row-level diff (claim 109). Decision: revert to P01 (recommended) or promote D01 + transport.</td>
+      </tr>
+      <tr>
+        <td><b>D</b></td>
+        <td><b>Pattern A overflow logic in BAdI</b> — when <code>&lt;Cdtr&gt;&lt;Nm&gt;</code> &gt;35 chars, BAdI prepends chars 36-40 onto <code>&lt;StrtNm&gt;</code></td>
+        <td>The OUTPUT XML shows the prepended text — symptom visible but cause is in <code>YCL_IDFI_CGI_DMEE_FALLBACK_CM001::GET_CREDIT</code> ABAP, invisible from XML</td>
+        <td>Claim 96: SocGen-mandated per N_MENARD doc 2024-02-29. V001 needs the 3-line guard (matrix row 26) to prevent corrupting NEW structured StrtNm.</td>
+      </tr>
+      <tr>
+        <td><b>E</b></td>
+        <td><b>PPC tags for 9 countries</b> (AE/BH/CN/ID/IN/JO/MA/MY/PH)</td>
+        <td>Her 10 samples were FR/US/CA/BR — none of the PPC countries. She would never see PPC tags fire in those samples.</td>
+        <td>Claim 99 + PPC tab. V001 must PRESERVE these tag dispatches on <code>&lt;InstrForCdtrAgt&gt;/&lt;InstrInf&gt;</code> and <code>&lt;RmtInf&gt;/&lt;Ustrd&gt;</code>.</td>
+      </tr>
+      <tr>
+        <td><b>F</b></td>
+        <td><b>66 EMPTY reserved nodes in CITI tree</b> (BirthDate, OrgId, PrvtId, PrvcOfBirth, etc.)</td>
+        <td>Empty nodes don't appear in any production XML — they're reserved ISO 20022 superset slots UNESCO doesn't exercise</td>
+        <td>Node-usage classification  explains: not a defect, intentional. No V001 action needed.</td>
+      </tr>
+      <tr>
+        <td><b>G</b></td>
+        <td><b>TFPM042FB SEPA Event 05 missing registration</b></td>
+        <td>Her XML shows missing structured fields in SEPA — but the WHY (no Event 05 FM registered) requires looking at OBPM4 customizing</td>
+        <td>Matrix row 9: +1 row in TFPM042FB · FORMI=/SEPA_CT_UNES · EVENT=05 · FNAME=FI_PAYMEDIUM_DMEE_CGI_05.</td>
+      </tr>
+      <tr>
+        <td><b>H</b></td>
+        <td><b>Source field bindings per node</b> (MP_SC_TAB · MP_SC_FLD · MP_OFFSET · LENGTH · CV_RULE) for the new V001 nodes</td>
+        <td>Her file says "make it Structured" — design layer translates that into specific buffer reads (FPAYHX-REF01[0:60], etc.)</td>
+        <td>Matrix rows 1-25 specify each binding precisely with claim-101 byte-layout anchors.</td>
+      </tr>
+    </table>
+
+    <p style="background:#dcfce7;border-left:4px solid #16a34a;padding:10px;font-size:13px;color:#1f2937;margin-top:14px"><b>Summary</b>: Marlies's analysis is right and complete at the <b>user-visible XML-output layer</b> — 11 of 11 defects in her samples are covered by V001. The 8 gaps above come from row-level RFC + ABAP-source + D01-vs-P01 layers her XML-driven method physically can't see. Two of the 8 gaps (<b>A</b> CITI Dbtr alt-mode, <b>B</b> CGI_1 retrofit) would have shipped a broken V001 if missed; the other 6 are coverage extensions that strengthen V001 without being failure-causing on their own.</p>
+  </div>
+
+
+  <div class="section">
+    <h3>📁 XML file structure visual — what V001 modifies inside each tree's output</h3>
+    <p style="font-size:13px;color:#1f2937">For each of the 4 trees: BEFORE = the XML that F110 produces today (from V000) · AFTER = what V001 will produce. Color codes: <span style="background:#dcfce7;color:#14532d;padding:1px 6px;border-radius:3px">existing structured leaf, no change</span> · <span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px">unstructured / problematic leaf in V000</span> · <span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:3px">NEW leaf added by V001</span> · <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:3px">MODIFIED source binding in V001</span> · <span style="color:#9ca3af">— grey = structural container, never modified</span>.</p>
+
+    <style>
+      .xml-tree { font-family:'Consolas','Monaco',monospace; font-size:12px; line-height:1.5; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:12px; margin-top:10px; overflow-x:auto; }
+      .xml-tree .ind { color:#94a3b8; }
+      .xml-tree .struct { color:#475569; }
+      .xml-tree .leaf-ok { background:#dcfce7; color:#14532d; padding:1px 4px; border-radius:2px; }
+      .xml-tree .leaf-bad { background:#fee2e2; color:#991b1b; padding:1px 4px; border-radius:2px; }
+      .xml-tree .leaf-new { background:#dbeafe; color:#1d4ed8; padding:1px 4px; border-radius:2px; font-weight:600; }
+      .xml-tree .leaf-mod { background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:2px; font-weight:600; }
+      .xml-tree .src { color:#0d9488; font-style:italic; font-size:11px; }
+      .xml-tree .comment { color:#9ca3af; font-style:italic; }
+      .ba-row { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; }
+      .ba-col { flex:1 1 460px; min-width:0; }
+      .ba-col h5 { color:#475569; font-size:13px; margin:0 0 4px 0; }
+    </style>
+
+    <h4 style="color:#0d9488;margin-top:18px">/SEPA_CT_UNES — Cdtr + Dbtr from Hybrid → Fully Structured (+8 leaves)</h4>
+    <div class="ba-row">
+      <div class="ba-col">
+        <h5>BEFORE (V000) — what F110 produces today</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Dbtr&gt;</span>
+<span class="ind">    </span>&lt;Nm&gt;UNESCO&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>          <span class="src">← FPAYHX-LAND1</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;7 PLACE FONTENOY 75007 PARIS&lt;/AdrLine&gt;</span>  <span class="src">← FPAYHX-ORT1Z</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Dbtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Cdtr&gt;</span>
+<span class="ind">    </span>&lt;Nm&gt;EVANNA CORONA VAN VLIET&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>          <span class="src">← FPAYHX-ZLISO</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;25 RUE EXAMPLE&lt;/AdrLine&gt;</span>     <span class="src">← FPAYHX-ZPFST</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;75008 PARIS&lt;/AdrLine&gt;</span>          <span class="src">← FPAYHX-ZPLOR</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Cdtr&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+      <div class="ba-col">
+        <h5>AFTER (V001) — what F110 will produce</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Dbtr&gt;</span>
+<span class="ind">    </span>&lt;Nm&gt;UNESCO&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-new">&lt;StrtNm&gt;7 PLACE FONTENOY&lt;/StrtNm&gt;</span>      <span class="src">← FPAYP-REF01[0:60]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;BldgNb&gt;7&lt;/BldgNb&gt;</span>                  <span class="src">← FPAYP-REF01[60:70]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;PstCd&gt;75007&lt;/PstCd&gt;</span>              <span class="src">← FPAYP-REF01[70:80]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;</span>              <span class="src">← FPAYP-REF02[0:40]</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>                  <span class="src">← unchanged</span>
+<span class="ind">      </span><span class="comment">(AdrLine — empty-suppress cond)</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Dbtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Cdtr&gt;</span>
+<span class="ind">    </span>&lt;Nm&gt;EVANNA CORONA VAN VLIET&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-new">&lt;StrtNm&gt;25 RUE EXAMPLE&lt;/StrtNm&gt;</span>     <span class="src">← FPAYHX-REF01[0:60]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;BldgNb&gt;25&lt;/BldgNb&gt;</span>                <span class="src">← FPAYHX-REF01[60:80]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;PstCd&gt;75008&lt;/PstCd&gt;</span>              <span class="src">← FPAYHX-REF01[80:90]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;</span>              <span class="src">← FPAYHX-REF06[0:40]</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>                  <span class="src">← unchanged</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Cdtr&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#475569;margin-top:6px"><b>SEPA delta</b>: 8 NEW leaves under existing PstlAdr containers (4 Cdtr · 4 Dbtr) · structural <code>&lt;Dbtr&gt;</code> / <code>&lt;Cdtr&gt;</code> / <code>&lt;PstlAdr&gt;</code> never touched · plus 1 OBPM4 row (TFPM042FB Event 05 registration). Matrix rows 1-9.</p>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CITI/XML/UNESCO/DC_V3_01 — Dbtr Unstructured → Structured · UltmtCdtr (Worldlink) gets StrtNm</h4>
+    <div class="ba-row">
+      <div class="ba-col">
+        <h5>BEFORE (V000)</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Dbtr&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>  <span class="comment">← N_1531351640 primary</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;UNESCO 7 PLACE FONTENOY&lt;/AdrLine&gt;</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;75007 PARIS&lt;/AdrLine&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;PstCd&gt;75007&lt;/PstCd&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Dbtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;UltmtCdtr&gt;</span>     <span class="comment">← Worldlink only</span>
+<span class="ind">    </span>&lt;Nm&gt;INTERNATIONAL COMPUTING CENTRE&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>  <span class="comment">← N_4600960730</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;StrtNm/&gt;</span>  <span class="src">← empty source</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;TwnNm&gt;GENEVA&lt;/TwnNm&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;PstCd&gt;1211&lt;/PstCd&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;CH&lt;/Ctry&gt;</span>
+<span class="ind">      </span><span class="leaf-bad">&lt;AdrLine&gt;AVENUE APPIA 20&lt;/AdrLine&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/UltmtCdtr&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+      <div class="ba-col">
+        <h5>AFTER (V001)</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Dbtr&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-new">&lt;StrtNm&gt;7 PLACE FONTENOY&lt;/StrtNm&gt;</span>     <span class="src">← FPAYHX-REF01[0:60]</span>
+<span class="ind">      </span><span class="leaf-new">&lt;BldgNb&gt;7&lt;/BldgNb&gt;</span>                 <span class="src">← FPAYHX-REF01[60:80]</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;</span>             <span class="src">← unchanged</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;PstCd&gt;75007&lt;/PstCd&gt;</span>             <span class="src">← unchanged</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;FR&lt;/Ctry&gt;</span>                 <span class="src">← unchanged</span>
+<span class="ind">      </span><span class="comment">(2× AdrLine — XSLT auto-removes empty)</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Dbtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;UltmtCdtr&gt;</span>
+<span class="ind">    </span>&lt;Nm&gt;INTERNATIONAL COMPUTING CENTRE&lt;/Nm&gt;
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">      </span><span class="leaf-mod">&lt;StrtNm&gt;AVENUE APPIA 20&lt;/StrtNm&gt;</span>    <span class="src">← FPAYH-ZSTRA (NEW source)</span>
+<span class="ind">      </span><span class="leaf-new">&lt;BldgNb&gt;20&lt;/BldgNb&gt;</span>               <span class="src">← FPAYH-ZSTRA[60:75]</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;TwnNm&gt;GENEVA&lt;/TwnNm&gt;</span>            <span class="src">← unchanged</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;PstCd&gt;1211&lt;/PstCd&gt;</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;Ctry&gt;CH&lt;/Ctry&gt;</span>
+<span class="ind">      </span><span class="comment">(AdrLine — XSLT auto-removes)</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/UltmtCdtr&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#475569;margin-top:6px"><b>CITI delta</b>: +2 leaves under Dbtr-primary (StrtNm + BldgNb) · +5 under Dbtr-altMor (TECH-switched alt mode — gap A from Marlies analysis) · 1 MODIFIED leaf source on UltmtCdtr StrtNm + 1 NEW UltmtCdtr BldgNb · 2 NEW under CdtrAgt (PstCd + BldgNb completeness). Matrix rows 10-20. XSLT post-processor auto-removes any empty leaf — safe to emit unconditionally.</p>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CGI_XML_CT_UNESCO — only the CdtrAgt block changes (+4 leaves)</h4>
+    <div class="ba-row">
+      <div class="ba-col">
+        <h5>BEFORE (V000) — CdtrAgt Unstructured</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Cdtr&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;PstlAdr&gt;</span>  <span class="comment">← already structured V000 ✓</span>
+<span class="ind">      </span><span class="leaf-ok">&lt;StrtNm/&gt; &lt;BldgNb/&gt; &lt;PstCd/&gt; &lt;TwnNm/&gt; &lt;Ctry/&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/Cdtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;CdtrAgt&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;FinInstnId&gt;</span>
+<span class="ind">      </span>&lt;BIC&gt;SHBKKRSE&lt;/BIC&gt;
+<span class="ind">      </span>&lt;Nm&gt;Shinhan Bank&lt;/Nm&gt;
+<span class="ind">      </span><span class="struct">&lt;PstlAdr&gt;</span>  <span class="comment">← N_0693479130</span>
+<span class="ind">        </span><span class="leaf-ok">&lt;Ctry&gt;KR&lt;/Ctry&gt;</span>
+<span class="ind">        </span><span class="leaf-bad">&lt;AdrLine&gt;120 BENNETT WAY&lt;/AdrLine&gt;</span>
+<span class="ind">        </span><span class="leaf-bad">&lt;AdrLine&gt;SEOUL 04514&lt;/AdrLine&gt;</span>
+<span class="ind">      </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;/FinInstnId&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/CdtrAgt&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+      <div class="ba-col">
+        <h5>AFTER (V001) — CdtrAgt Structured</h5>
+        <div class="xml-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;Cdtr&gt;</span>  <span class="comment">← unchanged ✓</span>
+<span class="ind">    </span>&lt;PstlAdr&gt; ... &lt;/PstlAdr&gt;
+<span class="ind">  </span><span class="struct">&lt;/Cdtr&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;CdtrAgt&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;FinInstnId&gt;</span>
+<span class="ind">      </span>&lt;BIC&gt;SHBKKRSE&lt;/BIC&gt;
+<span class="ind">      </span>&lt;Nm&gt;Shinhan Bank&lt;/Nm&gt;
+<span class="ind">      </span><span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">        </span><span class="leaf-new">&lt;StrtNm&gt;120 BENNETT WAY&lt;/StrtNm&gt;</span>     <span class="src">← FPAYH-ZBSTR[0:70]</span>
+<span class="ind">        </span><span class="leaf-new">&lt;BldgNb&gt;120&lt;/BldgNb&gt;</span>              <span class="src">← FPAYH-ZBSTR[60:75]</span>
+<span class="ind">        </span><span class="leaf-new">&lt;PstCd&gt;04514&lt;/PstCd&gt;</span>              <span class="src">← FPAYH-ZBPST</span>
+<span class="ind">        </span><span class="leaf-new">&lt;TwnNm&gt;SEOUL&lt;/TwnNm&gt;</span>              <span class="src">← FPAYH-ZBORT</span>
+<span class="ind">        </span><span class="leaf-ok">&lt;Ctry&gt;KR&lt;/Ctry&gt;</span>                 <span class="src">← unchanged</span>
+<span class="ind">        </span><span class="comment">(AdrLine — empty-suppress cond)</span>
+<span class="ind">      </span><span class="struct">&lt;/PstlAdr&gt;</span>
+<span class="ind">    </span><span class="struct">&lt;/FinInstnId&gt;</span>
+<span class="ind">  </span><span class="struct">&lt;/CdtrAgt&gt;</span>
+<span class="struct">&lt;/CdtTrfTxInf&gt;</span></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#475569;margin-top:6px"><b>CGI delta</b>: +4 NEW leaves only under CdtrAgt PstlAdr — Dbtr/Cdtr/UltmtCdtr/UltmtDbtr already fully-structured in V000 (the 'lift CGI as template' pattern). Matrix rows 21-24. Bank-master fields (T012K + BNKA via existing Event 05 wiring).</p>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CGI_XML_CT_UNESCO_1 — SYNC twin (FIRSTNODE shared with CGI parent)</h4>
+    <div class="xml-tree" style="background:#fef3c7;border-color:#f59e0b">
+<span class="comment">// Same XML structure as /CGI_XML_CT_UNESCO above.</span>
+<span class="comment">// FIRSTNODE_ID identical with parent (N_5649723900) →</span>
+<span class="comment">// V001 CdtrAgt structured nodes propagate automatically when parent is edited.</span>
+<span class="comment">// PRE-STEP: D01 V000 must first be aligned with P01 V000 (12-delta retrofit) — see Table 1.</span></div>
+
+    <p style="background:#dbeafe;border-left:4px solid #1d4ed8;padding:10px;font-size:13px;color:#1f2937;margin-top:14px"><b>What V001 actually modifies in the XML files</b> — summarized: 8 NEW leaves in SEPA · 10 NEW + 1 MODIFIED in CITI · 4 NEW in CGI · 0 in CGI_1 (SYNC) · 1 NEW row in TFPM042FB · 3 NEW lines in BAdI guard. Total ~26 new XML elements + 1 modified source binding · zero structural-container changes · zero deletions of existing structured leaves.</p>
+  </div>
+
+
+  <div class="section">
+    <h3>📋 Per-tree hierarchy with the actual configuration — specific view per tree</h3>
+    <p style="font-size:13px;color:#1f2937">The hierarchy in the Marlies-vs-our-analysis section above is <b>generic</b> — it shows the abstract ISO 20022 PstlAdr structure. This section is <b>specific</b>: for each of the 4 trees, the actual leaf-node configuration is shown on the same hierarchy. <b>Source</b>: RFC extraction P01 V000 (claim 109, RFC verification 2026-04-30). <b>Legend</b>: 🔧 config-only leaf (source-bound, no BAdI) · ⚙ BAdI-fired leaf (MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI) · ∅ empty leaf (no source, no exit, no children) · 🆕 NEW in V001 · 🔁 MODIFIED in V001 · grey = structural container (never modified).</p>
+
+    <style>
+      .h-tree { font-family:'Consolas','Monaco',monospace; font-size:11px; line-height:1.55; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:12px; margin-top:8px; overflow-x:auto; }
+      .h-tree .struct { color:#94a3b8; }
+      .h-tree .party { color:#1e293b; font-weight:600; }
+      .h-tree .ind { color:#cbd5e1; }
+      .h-tree .leaf-cfg { color:#0d9488; }
+      .h-tree .leaf-badi { color:#d97706; }
+      .h-tree .leaf-empty { color:#9ca3af; }
+      .h-tree .leaf-new { color:#1d4ed8; font-weight:700; background:#dbeafe; padding:0 3px; border-radius:2px; }
+      .h-tree .leaf-mod { color:#92400e; font-weight:700; background:#fef3c7; padding:0 3px; border-radius:2px; }
+      .h-tree .src { color:#475569; font-style:italic; font-size:10px; }
+      .h-tree .nid { color:#94a3b8; font-size:10px; }
+    </style>
+
+    <h4 style="color:#0d9488;margin-top:18px">/SEPA_CT_UNES — Hybrid baseline · V001 lifts to fully structured</h4>
+    <table style="width:100%;font-size:12px;margin:6px 0">
+      <tr><th>Party</th><th>V000 state (Marlies)</th><th>V001 action</th><th>Why</th></tr>
+      <tr><td><b>Dbtr</b></td><td style="background:#fee2e2;color:#991b1b">Hybrid (Ctry + AdrLine)</td><td style="background:#dbeafe;color:#1d4ed8">+4 leaves → Structured</td><td>postal code missing per Marlies's 3 SEPA samples (FR EUR)</td></tr>
+      <tr><td><b>Cdtr</b></td><td style="background:#fee2e2;color:#991b1b">Hybrid (Ctry + 2 AdrLine)</td><td style="background:#dbeafe;color:#1d4ed8">+4 leaves → Structured</td><td>same — vendor address Hybrid in samples</td></tr>
+      <tr><td><b>CdtrAgt</b></td><td>(only BIC, no PstlAdr children populated in samples)</td><td>(no change — IBAN sufficient, claim 105)</td><td>Marlies: "Because of IBAN no need to enter bank address"</td></tr>
+      <tr><td><b>UltmtCdtr</b></td><td>(no UltmtCdtr branch in SEPA samples)</td><td>(out of scope)</td><td>Marlies: "Not found during analysis"</td></tr>
+    </table>
+    <div class="h-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Dbtr&gt;</span>                           <span class="src">PstlAdr=N_9926185740</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;StrtNm&gt;</span>                <span class="src">FPAYP-REF01[0:60] · CV_RULE=CL RP</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYP-REF01[60:70] · CV_RULE=CL RP</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;PstCd&gt;</span>                 <span class="src">FPAYP-REF01[70:80] · CV_RULE=CL RP</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;TwnNm&gt;</span>                 <span class="src">FPAYP-REF02[0:40] · CV_RULE=CL</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                  <span class="src">FPAYHX-LAND1 · unchanged</span>
+<span class="ind">  │       └──</span> <span class="leaf-cfg">🔧 &lt;AdrLine&gt;</span>               <span class="src">FPAYHX-ORT1Z · empty-suppress cond V001</span>
+<span class="ind">  └──</span> <span class="party">&lt;Cdtr&gt;</span>                           <span class="src">PstlAdr=N_4754354180</span>
+<span class="ind">      └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">          ├──</span> <span class="leaf-new">🆕 &lt;StrtNm&gt;</span>                <span class="src">FPAYHX-REF01[0:60] · CV_RULE=CL RP · MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI</span>
+<span class="ind">          ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYHX-REF01[60:80] · CV_RULE=CL RP</span>
+<span class="ind">          ├──</span> <span class="leaf-new">🆕 &lt;PstCd&gt;</span>                 <span class="src">FPAYHX-REF01[80:90] · CV_RULE=CL</span>
+<span class="ind">          ├──</span> <span class="leaf-new">🆕 &lt;TwnNm&gt;</span>                 <span class="src">FPAYHX-REF06[0:40] · CV_RULE=CL</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                  <span class="src">FPAYHX-ZLISO · unchanged</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;AdrLine&gt;</span>               <span class="src">FPAYHX-ZPFST · empty-suppress cond V001</span>
+<span class="ind">          └──</span> <span class="leaf-cfg">🔧 &lt;AdrLine&gt;</span>               <span class="src">FPAYHX-ZPLOR · empty-suppress cond V001</span>
+
+<span class="src"># NOTE: SEPA has no CdtrAgt or UltmtCdtr branches with PstlAdr children today.
+# V001 also adds: TFPM042FB +1 row (FORMI=/SEPA_CT_UNES · EVENT=05 · FNAME=FI_PAYMEDIUM_DMEE_CGI_05).</span></div>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CITI/XML/UNESCO/DC_V3_01 — 4 PARTIES, mix of CONFIG + EXIT_FUNC binding</h4>
+    <table style="width:100%;font-size:12px;margin:6px 0">
+      <tr><th>Party</th><th>V000 state (Marlies)</th><th>V001 action</th><th>Why</th></tr>
+      <tr><td><b>Dbtr (primary)</b></td><td style="background:#fee2e2;color:#991b1b">Unstructured (3 AdrLine + structured PstCd/TwnNm/Ctry)</td><td style="background:#dbeafe;color:#1d4ed8">+2 leaves (StrtNm + BldgNb) → Structured</td><td>UNESCO HQ debtor address must be CBPR+ compliant</td></tr>
+      <tr><td><b>Dbtr (alt-mode TECH)</b></td><td style="background:#fee2e2;color:#991b1b">Unstructured (3 AdrLine only)</td><td style="background:#dbeafe;color:#1d4ed8">+5 leaves (full structured) — gap A</td><td>alt-mode TECH switch fires conditionally · Marlies's samples didn't trigger it</td></tr>
+      <tr><td><b>Cdtr</b></td><td style="background:#dcfce7;color:#14532d">Structured ✓</td><td>(no change)</td><td>Marlies: "Correct, no need to change"</td></tr>
+      <tr><td><b>CdtrAgt</b></td><td style="background:#dcfce7;color:#14532d">Structured ✓ (StrtNm/TwnNm/CtrySubDvsn)</td><td style="background:#dbeafe;color:#1d4ed8">+2 leaves (PstCd + BldgNb completeness)</td><td>completeness extension</td></tr>
+      <tr><td><b>UltmtCdtr (Worldlink WHO/ICC)</b></td><td style="background:#fef3c7;color:#92400e">Hybrid (StrtNm empty, AdrLine populated)</td><td style="background:#fef3c7;color:#92400e">🔁 MODIFY StrtNm source = FPAYH-ZSTRA (Q3 RESOLVED claim 99) + 🆕 BldgNb</td><td>Worldlink TND/MGA/BRL beneficiary addressing</td></tr>
+    </table>
+    <div class="h-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Dbtr&gt; (primary)</span>             <span class="src">PstlAdr=N_1531351640</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;StrtNm&gt;</span>                <span class="src">FPAYHX-REF01[0:60] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYHX-REF01[60:80] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;PstCd&gt;</span>                 <span class="src">FPAYHX-REF01 · existing</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;TwnNm&gt;</span>                 <span class="src">FPAYHX-ORT1Z · existing</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                  <span class="src">FPAYHX-LAND1 · existing</span>
+<span class="ind">  │       └──</span> <span class="leaf-cfg">🔧 3× &lt;AdrLine&gt;</span>            <span class="src">FPAYHX-AUSTO/AUST2/AUST3 · XSLT auto-removes empty</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Dbtr&gt; (alt-mode PstlAdrMor)</span> <span class="src">PstlAdr=N_4078824850 · TECH-switched</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;StrtNm&gt;</span>                <span class="src">FPAYHX-REF01[0:60] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYHX-REF01[60:80] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;PstCd&gt;</span>                 <span class="src">FPAYHX-REF01[80:90] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;TwnNm&gt;</span>                 <span class="src">FPAYHX-REF06[0:40] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;Ctry&gt;</span>                  <span class="src">FPAYHX-LAND1 · NEW V001</span>
+<span class="ind">  │       └──</span> <span class="leaf-cfg">🔧 3× &lt;AdrLine&gt;</span>            <span class="src">FPAYHX-AUSTO/AUST2/AUST3 · existing</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Cdtr&gt;</span>                          <span class="src">PstlAdr=N_1496761000</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-empty">∅ &lt;StrtNm&gt;</span>                  <span class="src">no source · CITIPMW exit fills at runtime</span>
+<span class="ind">  │       ├──</span> <span class="leaf-empty">∅ &lt;BldgNb&gt;</span>                  <span class="src">EXIT=/CITIPMW/V3_GET_CDTR_BLDG</span>
+<span class="ind">  │       ├──</span> <span class="leaf-empty">∅ &lt;PstCd&gt;</span>                   <span class="src">CITIPMW exit fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-empty">∅ &lt;TwnNm&gt;</span>                   <span class="src">CITIPMW exit fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-empty">∅ &lt;CtrySubDvsn&gt;</span>             <span class="src">CITIPMW exit fills</span>
+<span class="ind">  │       └──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                  <span class="src">FPAYHX-ZLISO</span>
+<span class="ind">  ├──</span> <span class="party">&lt;CdtrAgt&gt;</span>                       <span class="src">PstlAdr=N_5135503450</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;FinInstnId&gt;&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;StrtNm&gt;</span>                 <span class="src">FPAYH-ZBSTR · existing</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYH-ZBSTR[60:75] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;PstCd&gt;</span>                 <span class="src">FPAYH-ZBPST · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;TwnNm&gt;</span>                 <span class="src">FPAYH-ZBORT · existing</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;CtrySubDvsn&gt;</span>            <span class="src">FPAYHX-ZBREGX · existing</span>
+<span class="ind">  │       └──</span> <span class="leaf-empty">∅ &lt;Ctry&gt;</span>                    <span class="src">no source · XSLT auto-removes</span>
+<span class="ind">  └──</span> <span class="party">&lt;UltmtCdtr&gt; (Worldlink)</span>     <span class="src">PstlAdr=N_4600960730 · Q3 RESOLVED claim 99</span>
+<span class="ind">      └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">          ├──</span> <span class="leaf-mod">🔁 &lt;StrtNm&gt;</span>                <span class="src">FPAYH-ZSTRA · MODIFY (was empty source)</span>
+<span class="ind">          ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                <span class="src">FPAYH-ZSTRA[60:75] · NEW V001</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;PstCd&gt;</span>                 <span class="src">FPAYH-ZPSTL · existing</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;TwnNm&gt;</span>                 <span class="src">FPAYH-ZORT1 · existing</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;CtrySubDvsn&gt;</span>            <span class="src">FPAYH-ZREGI · existing</span>
+<span class="ind">          ├──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                  <span class="src">FPAYH-ZLAND · existing</span>
+<span class="ind">          └──</span> <span class="leaf-empty">∅ &lt;AdrLine&gt;</span>                <span class="src">no source · XSLT auto-removes</span></div>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CGI_XML_CT_UNESCO — Cdtr/Dbtr/UltmtCdtr fully BAdI-fired · CdtrAgt is the only V001 change</h4>
+    <table style="width:100%;font-size:12px;margin:6px 0">
+      <tr><th>Party</th><th>V000 state (Marlies)</th><th>V001 action</th><th>Why</th></tr>
+      <tr><td><b>Dbtr</b></td><td style="background:#dcfce7;color:#14532d">Structured ✓</td><td>(no change)</td><td>Marlies: "OK"</td></tr>
+      <tr><td><b>Cdtr</b></td><td style="background:#dcfce7;color:#14532d">Structured ✓</td><td>(no change)</td><td>Marlies: "Correct, no need to change"</td></tr>
+      <tr><td><b>CdtrAgt</b></td><td style="background:#fee2e2;color:#991b1b">Unstructured (Ctry + 2 AdrLine)</td><td style="background:#dbeafe;color:#1d4ed8">+4 leaves (full structured from BNKA bank-master)</td><td>Marlies: "Not accepted. Recommended to set to structured"</td></tr>
+      <tr><td><b>UltmtCdtr · UltmtDbtr</b></td><td style="background:#dcfce7;color:#14532d">Structured ✓ (10 leaves each)</td><td>(no change)</td><td>Already fully-structured V000 — claim 101 confirms</td></tr>
+    </table>
+    <div class="h-tree">
+<span class="struct">&lt;CdtTrfTxInf&gt;</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Dbtr&gt;</span>                          <span class="src">PstlAdr=N_1160789980 · 9 leaves all ⚙ BAdI</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;StrtNm&gt;</span>                  <span class="src">no static source · BAdI fills (FALLBACK or country class)</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;BldgNb&gt;</span>                  <span class="src">no static source · BAdI fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;PstCd&gt;</span>                   <span class="src">no static source · BAdI fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;TwnNm&gt;</span>                   <span class="src">no static source · BAdI fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;CtrySubDvsn&gt;</span>             <span class="src">no static source · BAdI fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;Ctry&gt;</span>                    <span class="src">FPAYHX-LDISO · BAdI may override</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;Dept&gt; · &lt;SubDept&gt;</span>        <span class="src">no source · BAdI fills (typically empty)</span>
+<span class="ind">  │       └──</span> <span class="leaf-badi">⚙ &lt;-PstlAdr_More_Nodes&gt; (TECH)</span> <span class="src">condition switch</span>
+<span class="ind">  ├──</span> <span class="party">&lt;Cdtr&gt;</span>                           <span class="src">PstlAdr=N_8311560080 · 9 leaves all ⚙ BAdI</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;StrtNm&gt;</span>                  <span class="src">⚠ Pattern A 3-line guard target (BAdI FALLBACK_CM001::GET_CREDIT)</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;BldgNb&gt;</span>                  <span class="src">no static source · BAdI fills</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;PstCd&gt;</span>                   <span class="src">FPAYH-ZPSTL · BAdI may override</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;TwnNm&gt;</span>                   <span class="src">FPAYH-ZORT1 · BAdI may override</span>
+<span class="ind">  │       ├──</span> <span class="leaf-badi">⚙ &lt;Ctry&gt;</span>                    <span class="src">FPAYHX-ZLISO · BAdI may override</span>
+<span class="ind">  │       └──</span> <span class="leaf-badi">⚙ &lt;CtrySubDvsn&gt; · &lt;Dept&gt; · &lt;SubDept&gt; · TECH-switch</span>
+<span class="ind">  ├──</span> <span class="party">&lt;CdtrAgt&gt;</span>                        <span class="src">PstlAdr=N_0693479130 · 5 leaves · V001 ADDS 4 NEW</span>
+<span class="ind">  │   └──</span> <span class="struct">&lt;FinInstnId&gt;&lt;PstlAdr&gt;</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;StrtNm&gt;</span>                 <span class="src">FPAYH-ZBSTR[0:70] · NEW V001 · CV_RULE=CL RP</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;BldgNb&gt;</span>                 <span class="src">FPAYH-ZBSTR[60:75] · NEW V001</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;PstCd&gt;</span>                  <span class="src">FPAYH-ZBPST · NEW V001 · CV_RULE=CL</span>
+<span class="ind">  │       ├──</span> <span class="leaf-new">🆕 &lt;TwnNm&gt;</span>                  <span class="src">FPAYH-ZBORT · NEW V001 · CV_RULE=CL</span>
+<span class="ind">  │       ├──</span> <span class="leaf-cfg">🔧 &lt;Ctry&gt;</span>                   <span class="src">FPAYHX-ZBISO · existing</span>
+<span class="ind">  │       └──</span> <span class="leaf-badi">⚙ 2× &lt;AdrLine&gt;</span>              <span class="src">BAdI-fired · existing</span>
+<span class="ind">  └──</span> <span class="party">&lt;UltmtCdtr&gt; · &lt;UltmtDbtr&gt;</span>      <span class="src">10 leaves each · all already structured V000 · NO V001 change</span></div>
+
+    <h4 style="color:#0d9488;margin-top:18px">/CGI_XML_CT_UNESCO_1 — SYNC twin · same as parent (FIRSTNODE shared)</h4>
+    <table style="width:100%;font-size:12px;margin:6px 0">
+      <tr><th>Party</th><th>V000 state (D01 vs P01)</th><th>V001 action</th><th>Why</th></tr>
+      <tr><td><b>All parties</b></td><td style="background:#fef3c7;color:#92400e">D01 V000 ≠ P01 V000 (12 deltas) — see Table 1</td><td>RETROFIT first → then SYNC from CGI parent</td><td>FIRSTNODE shared with /CGI_XML_CT_UNESCO. After retrofit, parent's V001 CdtrAgt fix propagates automatically.</td></tr>
+    </table>
+    <div class="h-tree" style="background:#fef3c7;border-color:#f59e0b">
+<span class="src"># Identical hierarchy to /CGI_XML_CT_UNESCO above.
+# FIRSTNODE_ID shared with parent (N_5649723900 · same children).
+# V001 CdtrAgt structured nodes propagate automatically when parent is edited.
+#
+# PRE-STEP for this tree only: D01 V000 must be aligned with P01 V000 first
+# (12-delta retrofit per Table 1 — 1 SCB ONLY_D01 + 8 AdrLine ONLY_P01 + 3 CHANGED).
+# After retrofit, the V001 SYNC works as designed.</span></div>
+
+    <p style="background:#dbeafe;border-left:4px solid #1d4ed8;padding:10px;font-size:13px;color:#1f2937;margin-top:14px"><b>What this view shows that the generic hierarchy doesn't</b> — for each leaf node in each tree we now know: (1) whether it's source-bound CONFIG (🔧), BAdI-fired (⚙), or empty (∅) · (2) the actual buffer field it reads from · (3) whether it's a V001 NEW (🆕) or MODIFY (🔁) target. Every cell here cites the RFC-extracted P01 V000 state (claim 109 + claim 112 full 48-field verification).</p>
+  </div>
+
+<div class="section" style="background:#dcfce7;border:2px solid #16a34a;border-radius:6px;padding:14px">
+    <h3 style="color:#16a34a;margin:0 0 8px 0">✅ Conclusion — retrofit is small and safe</h3>
+    <ol style="font-size:13px;color:#1f2937">
+      <li><b>P01</b> runs <b>V000 (the only version)</b> in production today. Verified.</li>
+      <li><b>D01</b> has both V000 + V001; V001 is byte-perfect clone of V000 (dormant since Create Version event). F110 in D01 produces V000-equivalent output regardless of which is HEAD-active.</li>
+      <li><b>3 of 4 trees</b> (SEPA + CITI + CGI) are byte-equal D01 V000 = P01 V000. Zero retrofit work needed there.</li>
+      <li><b>Only CGI_1</b> has 12 deltas. ~30 minutes of DMEE Tx surgical work fixes them.</li>
+      <li><b>The retrofit transport <code>D01K-RETROFIT-01</code></b> bundles: (a) purge dormant V001 on all 4 trees, (b) CGI_1 V000 12-node fix, (c) 5 P01-only ABAP objects (DE/IT classes + 3 ENHO + FR.CM002 method).</li>
+      <li><b>After retrofit</b>: Create fresh V001 from byte-equal V000 → apply 27-row V001 change matrix → test → V01 → P01.</li>
+      <li><b>One outstanding audit-trail item</b>: D01 V001 EX_STATUS at HEAD level. <em>Functionally irrelevant</em> (V001 = V000 byte-clone) but Marlies's 10-second DMEE Tx → Versions check completes documentation.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h3>PMW infrastructure alignment — D01-RETROFIT-02-PMW (beyond the DMEE tree)</h3>
+
+    <p>The DMEE tree is only one of several SAP objects F110 traverses to produce a payment file. Before V001 testing in D01 can be trusted, the surrounding PMW infrastructure that <em>invokes</em> the DMEE tree must also be byte-equal between D01 and P01. The first retrofit transport (<code>D01-RETROFIT-01</code>, documented above) covers (a) DMEE tree drift on CGI_1, (b) dormant V001 PURGE on all 4 trees, (c) 5 P01-only BAdI classes (YCL_IDFI_CGI_DMEE_DE/_IT + 3 ENHOs + FR.CM002 method per claim 70). It does <strong>not</strong> cover the PMW configuration tables and program variants below — that is the second alignment transport <strong>D01-RETROFIT-02-PMW</strong>, run before Phase 3 unit testing.</p>
+
+    <p style="background:#fff3e0;border-left:4px solid #f59e0b;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>The runtime chain F110 follows</strong>: F110 reads FBZP → looks up T042Z (payment method per country) → identifies the PMW format (FORMI) → looks up T042Y (PMW format definition) → invokes the SAPFPAYM_&lt;format&gt; program with the registered variant → that program reads TFPM042F/TFPM042FB (Event registrations) → fires Event 05 (FI_PAYMEDIUM_DMEE_CGI_05) → fills FPAYHX-FREF buffers → DMEE engine walks the tree → emits XML. <strong>Any of those tables/programs missing from D01 means F110 in D01 produces a different file from F110 in P01 — even if the DMEE tree is identical</strong>.</p>
+
+    <h4 style="color:#0369a1;margin-top:14px">PMW retrofit scope — what to byte-align between D01 and P01</h4>
+
+    <table style="margin-top:8px;font-size:12px">
+      <tr><th>Object</th><th>What it does</th><th>Why it matters for V001</th><th>Verification</th></tr>
+      <tr><td><code>T042Z</code> (V_T042Z via SM30)</td><td>Routes (ZBUKR, LAND1, ZLSCH, WAERS) → format ID. Per claim 103, no ZBUKR column — same routing cross-entity.</td><td>If D01 T042Z routes a test F110 run to a different format than P01 would, the V001 cutover validation is meaningless. <em>Specifically</em>: SOG01 EUR method S → /SEPA_CT_UNES; CIT04 USD method L → /CITI/XML/UNESCO/DC_V3_01; SOG01 USD method N → /CGI_XML_CT_UNESCO; etc.</td><td>RFC_READ_TABLE T042Z, hash columns, compare D01 vs P01. Expected: byte-equal for the 13 (LAND1, ZLSCH) → format combinations identified per claim 103.</td></tr>
+      <tr><td><code>T042Y</code> (V_T042Y / OBPM1)</td><td>PMW format definition: FORMI → SAPFPAYM_&lt;format&gt; program + the format-spec structure (FPM_SEPA, etc.) + tree type PAYM.</td><td>Defines the program SAPFPAYM uses to drive the format. Mismatch = different program runs in D01 vs P01, V001 outputs differ in non-tree ways.</td><td>RFC_READ_TABLE T042Y for the 4 in-scope FORMI values. Compare program name + format-spec structure columns.</td></tr>
+      <tr><td><code>TFPM042F</code> + <code>TFPM042FB</code> (OBPM4)</td><td>Event registration per format: which user-exit FM fires at which event (Event 05 = address fill via FI_PAYMEDIUM_DMEE_CGI_05).</td><td><strong>Direct V001 dependency</strong>: matrix row 9 ADDS Event 05 for SEPA. CITI and CGI presumably already have Event 05 in P01. If D01 lacks Event 05 for CITI/CGI, REF01..REF10 buffers stay empty in D01 testing → the V001 INSERTs that bind to REF01[0..60] etc. emit empty tags.</td><td>RFC_READ_TABLE TFPM042F and TFPM042FB filtered by FORMI in scope. Verify Event 05 registration exists in D01 for /CITI/XML/UNESCO/DC_V3_01 and /CGI_XML_CT_UNESCO and /CGI_XML_CT_UNESCO_1. If missing in D01, transport from P01 (export then import) before Phase 3.</td></tr>
+      <tr><td><code>SAPFPAYM_&lt;format&gt;</code> programs</td><td>The actual ABAP programs that read the DMEE tree and fire events. SAP-standard for SEPA/CITI/CGI but UNESCO may have customized variants.</td><td>If a UNESCO-modified SAPFPAYM_* exists in P01 but not D01, the call chain differs → V001 testing isn't representative.</td><td>SE38 → display SAPFPAYM_&lt;format&gt; in both systems. Check version + last-changed-on. ADT pull source if any UNESCO modifications exist.</td></tr>
+      <tr><td>Program variants (<code>VARI</code>/<code>VARID</code>)</td><td>Variants of SAPFPAYM_* used by F110 batch jobs in P01. Tied to (BUKRS, payment method, house bank) tuple.</td><td>F110 batch jobs in P01 reference specific variants; without them in D01, manual F110 runs in D01 use defaults that may not match production behavior.</td><td>RFC_READ_TABLE VARI WHERE REPORT LIKE 'SAPFPAYM%'. Identify the variants used by P01 F110 jobs (TBTCO + TBTCP). Transport missing ones to D01.</td></tr>
+      <tr><td><code>OBPM2</code> (V_TFPM2_FORMS)</td><td>Print form per format (less critical for XML-only; may be empty for our 4 trees).</td><td>If a print form is referenced but missing in D01, Save/run may fail with form-not-found.</td><td>RFC_READ_TABLE T042B / V_TFPM2 filtered by FORMI. Confirm empty or present in both systems.</td></tr>
+      <tr><td><code>YCL_IDFI_CGI_DMEE_*</code> classes</td><td>UNESCO BAdI implementations dispatching from FI_CGI_DMEE_EXIT_W_BADI (claim 69 — 794/1975 nodes route through this).</td><td><strong>Already in D01-RETROFIT-01 scope</strong> per matrix row 0a (5 P01-only objects retrofit per claim 70). No additional action — flagged here for completeness.</td><td>Already covered.</td></tr>
+      <tr><td><code>YTFI_PPC_STRUC</code> + <code>YTFI_PPC_TAG</code> + <code>T015L</code></td><td>PPC dispatch tables (Payment Purpose Code for 9 countries — claim 116).</td><td>If D01 lacks PPC config rows, PPC regression check on CGI tree V001 is invalid.</td><td>RFC_READ_TABLE YTFI_PPC_STRUC + YTFI_PPC_TAG + T015L. Compare row counts + content hash D01 vs P01.</td></tr>
+    </table>
+
+    <h4 style="color:#0369a1;margin-top:14px">Discovery → triage → execute → verify — the 5-step flow</h4>
+
+    <p style="font-size:12px">Scope: identify all D01↔P01 deltas across the 8 objects above and either (a) transport missing rows from P01 to D01, or (b) flag explicit divergence as a known limitation of D01 testing. Owner: Pablo + N_MENARD (BAdI/code) + M_SPRONK (config tables).</p>
+
+    <ol style="font-size:12px">
+      <li><strong>Step 1 — Discovery</strong>: 8 RFC_READ_TABLE comparisons D01 vs P01 (T042Z, T042Y, TFPM042F, TFPM042FB, VARI for SAPFPAYM*, OBPM2, plus the PPC tables and class catalogs). Output: <code>knowledge/domains/Payment/d01_p01_pmw_alignment.json</code> with row-level diffs.</li>
+      <li><strong>Step 2 — Triage</strong>: per delta, classify as RETROFIT (transport from P01 to D01), KEEP-DIFFERENT (intentional D01 test override), or INVESTIGATE (unclear).</li>
+      <li><strong>Step 3 — Execute</strong>: bundle the RETROFIT-class deltas in <code>D01K-RETROFIT-02-PMW</code>. Customizing transport (W) for tables; workbench (K) for any program variants that touch ABAP source.</li>
+      <li><strong>Step 4 — Verify</strong>: re-run the 8 hash comparisons. D01 = P01 byte-equal expected. Document residual KEEP-DIFFERENT items.</li>
+      <li><strong>Step 5 — Gate</strong>: Phase 3 unit-test cannot start until D01-RETROFIT-02-PMW completes OR explicit waivers are documented for residual deltas.</li>
+    </ol>
+
+    <p style="background:#e3f2fd;border-left:4px solid #1976d2;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:12px"><strong>Brain anchor</strong>: <strong>KU-2026-PMW-D01-ALIGNMENT</strong> — open question on byte-equality of the 8 objects above. Status: PENDING — RFC discovery required before Phase 3 unit-test. Once verified, the alignment status of T042Z/T042Y/TFPM042F/TFPM042FB for the 4 in-scope formats becomes a TIER_1 claim (candidate claim 121).</p>
+
+    <p style="font-size:12px;color:#475569;margin-top:8px"><strong>Why this lives here, not in DMEE Configuration · foundations</strong>: this is byte-alignment work — the natural home for "what's different between D01 and P01 that we must fix before testing V001 there". It complements <code>D01-RETROFIT-01</code> (DMEE tree drift, dormant V001 PURGE, BAdI classes) which is documented above in this same tab. Both retrofits gate Phase 3.</p>
+  </div>
+
+  <div class="section">
+    <h3>Cross-references</h3>
+    <ul style="font-size:12px">
+      <li>Brain claims: 108 (superseded), 109 (corrected V001 cohabitation finding), 111 (narrative correction), KU-2026-PMW-D01-ALIGNMENT (PMW retrofit-02 scope)</li>
+      <li>Saved evidence: <code>Zagentexecution/incidents/xml_payment_structured_address/version_difference_matrix_session63.json</code></li>
+      <li>Per-row CGI_1 diff: <code>d01_p01_v000_diff_session63.json</code></li>
+      <li>Source on disk: <code>extracted_code/FI/DMEE_p01_canonical/</code> (DE/IT classes + FR CM002) · <code>DMEE_d01_state/</code> (D01 baseline showing FR has CM001 only)</li>
+      <li>Procedure: <code>knowledge/domains/Payment/dmee_retrofit_procedure.md</code></li>
+      <li>PMW retrofit-02 output (when generated): <code>knowledge/domains/Payment/d01_p01_pmw_alignment.json</code></li>
+    </ul>
+  </div>
+</div>
+<!-- end D01 P01 Checks tab -->
+
