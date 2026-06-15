@@ -1,0 +1,36 @@
+# objects_manifest.yaml — THE canonical source-to-object map (ported from CRP M-1).
+#
+# This is the OWN-OBJECTS-ONLY gate. deploy_object.py REFUSES to touch any object
+# that is not listed here. That membership check is what would have stopped
+# INC-CLASS-LOSS (the agent wrote to N_MENARD's YCL_FI_* classes — they were never ours).
+#
+# Rules:
+#  - List ONLY objects WE own (Z*/Y*/customer-namespace AND authored/owned by us).
+#  - tier: custom  -> deployable via deploy_object.py.
+#    tier: generated -> NEVER deployed by hand (SEGW/framework owns it).
+#  - canonical: path to the git-mirrored source (verify_mirror.py keeps it 0-diff vs D01).
+#
+meta:
+  package: ZCRP
+  system: D01
+  # The OPEN workbench transport to pin writes to (corrNr). Releasing it (SE09) is
+  # what creates the durable version — that is POINT B (deferred). For now writes are
+  # kill-switched (ALLOW_D01_WRITES) and this is the pin target once unblocked.
+  workbench_tr: null          # e.g. D01K9B0FJX — set to the current open WB TR before deploying
+  workbench_tr_note: >
+    ADT transport RELEASE + ATC gate (the native rails) are POINT B, not yet wired.
+    Today: pin to this TR, write (when unblocked), then release manually via SE09.
+
+# Seed entries — our known ZCRP objects. canonical paths are placeholders until
+# verify_mirror.py --adopt pulls the live source into the git mirror.
+objects:
+  - name: ZCL_CRP_PROCESS_REQ
+    type: CLASS
+    tier: custom
+    canonical: sap/classes/zcl_crp_process_req.clas.abap
+    d01_state: present
+  - name: ZCL_CRP_CERT_READER
+    type: CLASS
+    tier: custom
+    canonical: sap/classes/zcl_crp_cert_reader.clas.abap
+    d01_state: present

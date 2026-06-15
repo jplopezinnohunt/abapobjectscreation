@@ -20,7 +20,13 @@ gate (replace home-made checks) → (4) 4-eyes = JP approves the release (mandat
 mirror + abaplint (channel is secondary to the released transport). **Hard rules:** own `Z*/Y*` objects only,
 **never peer-team objects**; recover via Transport-of-Copies (`TMSCSYS` same-domain + "Overwrite Originals"),
 **never ADT write**; don't reinvent the pipeline (`erpl-adt`/`abap-adt-api`). The two ADT write clients are
-kill-switched (`ALLOW_D01_WRITES=1`) — the real fix is this process, then retire the blunt block. Related:
+kill-switched (`ALLOW_D01_WRITES=1`) — the real fix is this process, then retire the blunt block.
+**THE gated write path now exists (ported from CRP): `Zagentexecution/abap_deploy/deploy_object.py`** —
+own-objects-only (manifest) + TADIR/SEOCLASS pre-flight + PRE-readback + hard diff-gate (HALT on deletions) +
+W-5 operator guard + concurrent-writer guard + POST-readback byte-verify; `verify_mirror.py` keeps the git
+mirror 0-diff; the `process-guardian` agent HALTs a close that deployed without that evidence. **Use it — NEVER
+the legacy ad-hoc `deploy_*`/`reconstruct_*`/`force_*`/`direct_insert_*` scripts.** Transport RELEASE + ATC-REST
+= POINT B (deferred). Related:
 [[feedback_never_modify_standard_objects]] · [[feedback_new_objects_only_in_d01_never_p01]] ·
 [[feedback_abapgit_is_the_standard_when_installed]].
 
