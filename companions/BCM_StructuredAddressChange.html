@@ -6004,6 +6004,27 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       is never empty in production the structured block would be suppressed. To close CGI: (1) what the exit
       computes for <code>-PstlAdrMore</code> and whether it is empty for real payments; (2) CGI bank country ·
       account · year (the non-Citi / SocGen flow, likely more countries than US/CA/BR).</p>
+
+      <h3>CITI <code>Cdtr</code> (beneficiary) — 2 <code>PstlAdr</code>, XML tags</h3>
+      <p>Unlike the Dbtr (4 nodes, 3-letter bug, <code>=SE</code>), the Cdtr is <strong>clean</strong>: 2
+      mutually-exclusive PstlAdr, correct 2-letter codes, no suppression. Internal structure is identical between
+      the two — the <em>only</em> tag-level difference is that #1 adds three <code>&lt;AdrLine&gt;</code>.</p>
+      <table>
+        <tr><th>XML tag</th><th>#1 (rest / BR) <code>&lt;&gt;RU/JP/US/CA/PR</code></th><th>#2 (US/CA/PR) <code>=US/CA/PR</code></th><th>Source / internal logic</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box (<code>ZPFAC</code>≠'') → "PO BOX"+num; else Housenum+Street (exit V3_CGI_CRED_STREET)</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_GET_CDTR_BLDG</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>✅</td><td>✅</td><td>POBoxPc (ZPST2) or CityPc (exit V3_POSTALCODE)</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box/City × payroll/vendor (exit or ZORT1)</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_CGI_CRED_REGION (vendor) or ZREGI (payroll)</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>✅</td><td>✅</td><td>FPAYHX-ZLISO (beneficiary country)</td></tr>
+        <tr><td><code>&lt;AdrLine&gt;</code> ×3</td><td>✅ (ZNME2/3/4)</td><td>❌</td><td><strong>the only difference</strong></td></tr>
+      </table>
+      <p>Internal logic (same in both): handles <strong>PO Box vs street</strong> (<code>ZPFAC</code>) and
+      <strong>payroll vs vendor</strong> (node <code>HR='P'</code> → direct fields ZORT1/ZREGI/ZPFOR; else CITIPMW
+      exits). Every structured tag has multiple internal branches but always emits one → <strong>no empty tags, no
+      compliance gap</strong> (unlike the Dbtr <code>=SE</code>). US/CA → #2 (pure structured); BR → #1 (structured +
+      AdrLine); both <strong>complete</strong>. RU/JP = dead gap (UBISO is never RU/JP). The format's compliance
+      issue is <strong>Dbtr-only</strong>.</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>

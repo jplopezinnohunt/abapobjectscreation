@@ -81,6 +81,52 @@ Escaneo cruzado del subárbol Dbtr de los 4 formatos:
 1. Qué calcula el exit para el nodo técnico `-PstlAdrMore` (N_2326418530) y si está vacío para los pagos reales → ¿emite estructurado?
 2. País de banco · cuenta · año del formato CGI (P01) — es el formato grande no-Citi (EUR/SocGen, probablemente más países que US/CA/BR).
 
+## 5. Cdtr (beneficiario) — 2 `PstlAdr` (formato `/CITI/XML/UNESCO/DC_V3_01`, D01 V000)
+
+A diferencia del Dbtr (4 nodos con defectos), el **Cdtr está SANO**. 2 `PstlAdr` bajo `Cdtr N_3576433990`
+(el otro nodo `Cdtr N_3255409070` tiene 0):
+
+| # | NODE_ID | Condición (`FPAYHX-UBISO`) | Tipo | Dispara para |
+|---|---|---|---|---|
+| 1 | N_2368849090 | `<> RU AND <> JP AND <> US AND <> CA AND <> PR` | **híbrido** (estruct + 3× `AdrLine` de `FPAYH-ZNME2/3/4`, cond `<> ''`) | el resto (= **BR** para CITI) |
+| 2 | N_1496761000 | `= US OR CA OR PR` | **estructurado puro** (sin AdrLine) | US/CA/PR |
+
+Fuentes de tags: `BldgNb` ← exit `/CITIPMW/V3_GET_CDTR_BLDG`; `Ctry` ← `FPAYHX-ZLISO` (país del **beneficiario**,
+no UBISO); `StrtNm`/`PstCd`/`TwnNm`/`CtrySubDvsn` = contenedores (poblados por exits CITIPMW).
+
+**Veredicto Cdtr (vs Dbtr):**
+- ✅ Códigos **2-letras** correctos (RU/JP/US/CA/PR) — NO tiene el bug 3-letras del Dbtr.
+- ✅ **No hay duplicado** (#1 y #2 mutuamente excluyentes) ni supresión `=SE`.
+- ⚠️ **Split legítimo**: para BR (#1) el Cdtr sale **híbrido** (estruct + AdrLine de nombres); para US/CA (#2)
+  **estructurado puro**. Acá el condicional SÍ tiene sentido (la dirección del beneficiario varía por destino).
+- ⚠️ **Hueco RU/JP (muerto)**: ni #1 (excluye RU/JP) ni #2 (solo US/CA/PR) cubren `UBISO=RU` o `JP` → si
+  ocurriera, Cdtr sin `PstlAdr`. Pero UBISO para CITI es solo US/CA/BR → nunca pasa (defensivo, como PR/SE).
+
+**Contraste CITI Dbtr vs Cdtr:** Dbtr = 4 PstlAdr, bug 3-letras, `=SE` (D-2 compliance abierto). Cdtr = 2
+PstlAdr limpios, 2-letras, sin supresión → **sano** (solo el hueco RU/JP teórico). El problema de compliance
+del formato es **solo del Dbtr**, no del Cdtr.
+
+### XML tags del Cdtr (recursivo) — #1 vs #2
+
+Estructura interna **idéntica** entre #1 y #2, salvo que #1 agrega 3 `<AdrLine>` al final:
+
+| Tag XML | #1 (BR/resto) | #2 (US/CA/PR) | Fuente / lógica interna |
+|---|---|---|---|
+| `<StrtNm>` | ✅ | ✅ | PO Box (`ZPFAC`≠'') → `"PO BOX"`+`ZPFAC`; si no → `Housenum`+`Street` (exit `V3_CGI_CRED_STREET`) |
+| `<BldgNb>` | ✅ | ✅ | exit `V3_GET_CDTR_BLDG` |
+| `<PstCd>` | ✅ | ✅ | `POBoxPc` (`ZPST2`) ó `CityPc` (exit `V3_POSTALCODE`) |
+| `<TwnNm>` | ✅ | ✅ | PO Box/City × payroll/vendor (exit `V3_*_CRED_CITY` ó `ZORT1`) |
+| `<CtrySubDvsn>` | ✅ | ✅ | exit `V3_CGI_CRED_REGION` (vendor) ó `ZREGI` (payroll) |
+| `<Ctry>` | ✅ | ✅ | `FPAYHX-ZLISO` |
+| `<AdrLine>` ×3 | ✅ (`ZNME2/3/4`) | ❌ | **única diferencia** |
+
+Lógica interna (igual en ambos): maneja **PO Box vs calle** (`ZPFAC`) y **payroll vs vendor** (nodo `HR='P'` →
+campos directos `ZORT1/ZREGI/ZPFOR`; si no → exits CITIPMW). Cada tag estructurado tiene varias ramas pero
+**siempre emite una** → ningún tag queda vacío → **sin hueco de compliance** (a diferencia del Dbtr `=SE`).
+
+Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado + 3 AdrLine). Ambos **completos**. RU/JP =
+hueco muerto (UBISO nunca RU/JP).
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).
