@@ -5949,8 +5949,46 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
   &lt;TwnNm&gt;PARIS&lt;/TwnNm&gt;
   &lt;Ctry&gt;FR&lt;/Ctry&gt;
 &lt;/PstlAdr&gt;</pre>
+
+      <h3>How the tree picks the address format — the compound condition on <code>UBISO</code></h3>
+      <p>Each address node in the CITI tree carries a <strong>compound condition</strong> (several comparisons
+      of <code>FPAYHX-UBISO</code> joined by AND/OR). <code>UBISO</code> = the beneficiary's <strong>BANK
+      country</strong> (= <code>REGUH-UBNKS</code>), <em>not</em> the address country. The condition decides
+      whether the node is written &rarr; it selects how the <strong>Dbtr address</strong> is rendered.
+      <span style="color:#7fb3d3">(Verified V01 2026-06-15.)</span></p>
+      <table>
+        <tr><th>Compound condition</th><th>Operator</th><th>Fires when…</th><th>Output</th></tr>
+        <tr><td><code>UBISO = 'US' OR = 'CA' OR = 'PR'</code></td><td>OR (any one)</td><td>bank in US / CA / PR</td><td><strong>structured <code>&lt;PstlAdr&gt;</code></strong> (StrtNm·PstCd·TwnNm·CtrySubDvsn·Ctry)</td></tr>
+        <tr><td><code>UBISO &lt;&gt; 'US' AND &lt;&gt; 'CA' AND &lt;&gt; 'PR'</code></td><td>AND (all)</td><td>bank in any other country</td><td><strong>unstructured <code>&lt;AdrLine&gt;</code></strong> (fallback)</td></tr>
+        <tr><td><code>UBISO = 'SE'</code></td><td>simple</td><td>bank in Sweden</td><td><code>&lt;PstCd&gt;</code> (+ AdrLine — hybrid)</td></tr>
+      </table>
+      <p><strong>At first glance this AND looks illogical — "how can a bank be three countries at once?"</strong>
+      It can't, and it doesn't have to. The AND does <em>not</em> ask <code>UBISO</code> to hold three values; a
+      bank sits in exactly <strong>one</strong> country, so <code>UBISO</code> has a single value, and the AND
+      simply runs <strong>three separate checks against that one value</strong>. For a beneficiary banking in
+      Brazil, <code>UBISO = 'BR'</code>, and the engine asks: is BR different from US? yes — from CA? yes — from
+      PR? yes. All three are true at once (a single value can perfectly well differ from three different countries),
+      so the condition holds and the unstructured <code>&lt;AdrLine&gt;</code> is written.</p>
+      <p>The connector has to be <strong>AND</strong> because the rule is <em>"none of the three"</em>: to be
+      <em>none</em>, the value must differ from the first <strong>and</strong> the second <strong>and</strong> the
+      third. A single failing check — e.g. the bank actually <em>is</em> US — collapses the whole condition to
+      false, which is exactly what we want, because US/CA/PR must take the structured branch instead, not the
+      fallback. The "impossible" reading is only true if the operator were <code>=</code>: <code>UBISO = 'US' AND =
+      'CA' AND = 'PR'</code> would indeed require one value to equal three different countries and could never fire
+      — but the tree uses <code>&lt;&gt;</code> (not-equal), not <code>=</code>. Swapping that one operator turns
+      the condition from "impossible" into the <strong>most frequently matched branch of all</strong>: every payment
+      to a bank outside US/CA/PR lands here — e.g. all ~8,500 Brazilian payments in 2024. (Formally it is De
+      Morgan's law: <code>NOT(US OR CA OR PR) ≡ (NOT US) AND (NOT CA) AND (NOT PR)</code>.)</p>
+      <p><strong>Reachability — dead-by-DATA, not dead-by-logic (REGUH 2006-2025):</strong> only <strong>2 of the
+      3</strong> branches ever fire with real data. 2024 CITI traffic used only 3 bank countries — <strong>US 8,759
+      · BR 8,472 · CA 1,303</strong>. <code>UBNKS</code> is <strong>NEVER</strong> <code>PR</code> or <code>SE</code>
+      in the whole history, so the <code>PstCd(SE)</code> node and the <code>PR</code> operand never execute today.
+      They are <strong>defensive</strong>, not removable: the <code>=PR</code>/<code>&lt;&gt;PR</code> pair correctly
+      routes a hypothetical PR-bank payment to <code>PstlAdr</code> (not fallback); deleting them would silently
+      send a future PR/SE payment down the wrong branch. Testing them requires a synthetic vendor
+      (<code>LFBK-BANKS='SE'/'PR'</code>).</p>
     </div>
-    
+
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
     
     <div class="section">

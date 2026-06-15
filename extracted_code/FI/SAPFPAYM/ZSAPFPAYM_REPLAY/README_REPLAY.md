@@ -177,6 +177,19 @@ el pagador): estructurada, texto libre, o con código postal.
 agrupa "**todos los demás**" que van en **texto libre**; entre los dos parten el universo de países en dos
 mitades que no se solapan. `SE` es un caso extra montado encima del fallback (cumple el AND **y** `=SE`).
 
+> ⚠️ **El AND del fallback parece ilógico — "¿cómo va a ser un banco 3 países a la vez?".** No lo es: el AND
+> **no** le pide a `UBISO` tener 3 valores. Un banco está en **un solo** país, así que `UBISO` tiene **un**
+> valor, y el AND simplemente corre **tres chequeos contra ese único valor**. Para un beneficiario con banco en
+> Brasil, `UBISO='BR'`: ¿BR distinto de US? sí; ¿de CA? sí; ¿de PR? sí → las tres ciertas a la vez (un solo
+> valor sí puede diferir de tres países distintos) → se cumple → sale `<AdrLine>`. Tiene que ser **AND** porque
+> la regla es "**ninguno de los tres**": para ser ninguno hay que diferir del primero **y** del segundo **y** del
+> tercero; si una sola falla (el banco **sí** es US), toda la condición cae — que es lo que queremos, porque
+> US/CA/PR van por la rama estructurada, no por el fallback. La lectura "imposible" sólo aplica si el operador
+> fuera `=` (`=US AND =CA AND =PR`: un valor no puede ser 3 países) — pero el árbol usa `<>`, no `=`. Cambiar ese
+> operador convierte la condición de "imposible" en **la rama que MÁS se dispara** (todo pago a banco fuera de
+> US/CA/PR — p.ej. los ~8,500 pagos brasileños de 2024). Formalmente es De Morgan:
+> `NOT(US OR CA OR PR) ≡ (NOT US) AND (NOT CA) AND (NOT PR)`.
+
 Por qué el disparador es el país del **banco** (no el de la dirección): la forma de la dirección la exige el
 **sistema de clearing** del destino — US/Canadá obligan dirección estructurada con estado+ZIP; el resto acepta
 texto libre. Por eso un beneficiario en Etiopía pagado por banco US toma la rama **estructurada** (US), aunque
