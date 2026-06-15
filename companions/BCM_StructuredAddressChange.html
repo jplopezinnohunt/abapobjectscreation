@@ -5987,6 +5987,23 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       routes a hypothetical PR-bank payment to <code>PstlAdr</code> (not fallback); deleting them would silently
       send a future PR/SE payment down the wrong branch. Testing them requires a synthetic vendor
       (<code>LFBK-BANKS='SE'/'PR'</code>).</p>
+
+      <h3>Dbtr <code>PstlAdr</code> status across the 4 UNESCO trees (D01 V000, 2026-06-15)</h3>
+      <p>Cross-tree scan of the Dbtr address sub-tree. CITI was the worst case (4 PstlAdr nodes + 3-letter
+      country-code bug + <code>=SE</code>); SEPA is clean; CGI (+twin) is the remaining one to analyse.</p>
+      <table>
+        <tr><th>Tree</th><th>Dbtr PstlAdr</th><th>Mechanism</th><th>Status</th></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td><strong>4</strong> (2 old + 2 structured)</td><td>cond on <code>UBISO</code> US/CA/PR vs rest; <code>PstCd</code>/<code>TwnNm</code> gated on <code>=SE</code></td><td>D-1 fixed (kill-switch); <strong>D-2 OPEN</strong> — BR/UBO without PstCd/TwnNm</td></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td><strong>1</strong> structured</td><td>no condition (always emits)</td><td>✅ clean</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td><strong>1</strong> structured</td><td>tags gated on <code>NODE -PstlAdrMore (N_2326418530) = 'SPACE'</code></td><td>⚠️ <strong>PENDING</strong></td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td><strong>1</strong> (CGI twin, same NODE_ID)</td><td>same</td><td>⚠️ same</td></tr>
+      </table>
+      <p><strong>Pending = <code>/CGI_XML_CT_UNESCO</code></strong> (+ twin <code>_1</code>): the Dbtr emits the
+      structured address only when the technical node <code>-PstlAdrMore</code> is empty
+      ("structured-unless-overflow"). Same class of risk as the CITI <code>=SE</code>: if <code>-PstlAdrMore</code>
+      is never empty in production the structured block would be suppressed. To close CGI: (1) what the exit
+      computes for <code>-PstlAdrMore</code> and whether it is empty for real payments; (2) CGI bank country ·
+      account · year (the non-Citi / SocGen flow, likely more countries than US/CA/BR).</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>

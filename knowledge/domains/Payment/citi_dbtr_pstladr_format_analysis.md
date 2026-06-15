@@ -64,6 +64,23 @@ En el nodo **#4** (resto), los tags hijo `PstCd` y `TwnNm` tienen condición `FP
 
 **Fix propuesto:** en #4, quitar el `= SE` de `PstCd` y `TwnNm` (dejarlos incondicionales como en #3) → así BR/UBO emite dirección completa. Confirmar antes que el exit los llene (que no queden tags vacíos).
 
+## 4. Estado Dbtr `PstlAdr` — los 4 árboles UNESCO (D01 V000, 2026-06-15)
+
+Escaneo cruzado del subárbol Dbtr de los 4 formatos:
+
+| Árbol | Nodos | Dbtr PstlAdr | Mecanismo | Estado |
+|---|---|---|---|---|
+| `/CITI/XML/UNESCO/DC_V3_01` | 639 | **4** (2 viejos no-estruct + 2 estruct) | cond `UBISO` US/CA/PR vs resto; `PstCd`/`TwnNm` con `=SE` | D-1 resuelto (kill-switch); **D-2 abierto** (BR/UBO sin PstCd/TwnNm) |
+| `/SEPA_CT_UNES` | 111 | **1** estructurado | **sin condición** (siempre emite) | ✅ **limpio** |
+| `/CGI_XML_CT_UNESCO` | 631 | **1** estructurado | tags gated por `NODE -PstlAdrMore (N_2326418530) = 'SPACE'` | ⚠️ **PENDIENTE** |
+| `/CGI_XML_CT_UNESCO_1` | 632 | **1** (twin de CGI, mismo NODE_ID) | idem | ⚠️ idem |
+
+**Conclusión:** CITI era el peor caso (4 nodos, código 3-letras, =SE). **SEPA está limpio.** El **formato pendiente = `/CGI_XML_CT_UNESCO`** (+ twin `_1`): su Dbtr emite estructurado **solo si `-PstlAdrMore` está vacío** (patrón "structured-si-no-hay-overflow"). Riesgo análogo al `=SE`: si `-PstlAdrMore` nunca está vacío en prod, el estructurado se suprimiría.
+
+**Pendiente para cerrar CGI** (mismo tratamiento que CITI):
+1. Qué calcula el exit para el nodo técnico `-PstlAdrMore` (N_2326418530) y si está vacío para los pagos reales → ¿emite estructurado?
+2. País de banco · cuenta · año del formato CGI (P01) — es el formato grande no-Citi (EUR/SocGen, probablemente más países que US/CA/BR).
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).
