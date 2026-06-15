@@ -67,13 +67,13 @@ propósito", el conteo 4-no-3, que ARGA tenía lógica, la explicación WIP-en-T
   este `CLAUDE.md` (sección "⛔ ABAP CHANGE DISCIPLINE"). Spine: (0) probe landscape → (1) transporte liberado =
   unidad de cambio → (2) escalar si no hay QAS → (3) ATC REST gate → (4) 4-eyes humano en la liberación → (5)
   abapGit/abaplint.
-- ✅ **#0 PROBE LANDSCAPE — HECHO (2026-06-15, read-only RFC en D01).** Resultado VERIFICADO: 7 sistemas / 1 dominio
-  DOMAIN_P01 / basis 7.50 / **NO hay QAS entre D01 (DEV) y P01 (PROD)** (TMSCROUTE vacío → import manual por cola
-  STMS; solo VDE/VRT virtuales de validación) / **transportes liberados a escala: 29.408 R vs 511 D** → liberar ES
-  la norma; INC-CLASS-LOSS fue el agente salteándola por ADT in-place, no una carencia del landscape. Doc:
-  `knowledge/operational_state/transport_landscape.md` (probe: `probe_landscape_readonly.py`).
-  🔴 **ESCALACIÓN A JP (paso #2):** no hay QAS donde probar antes de "real" — decisión: aceptar D01+ATC+4-eyes como
-  gate, o provisionar/identificar un QAS (V01/TS1/TS3 candidatos, rol sin confirmar).
+- ✅ **#0 PROBE LANDSCAPE — HECHO (2026-06-15, read-only RFC en D01) + rol confirmado por JP.** VERIFICADO: 7
+  sistemas / 1 dominio DOMAIN_P01 / basis 7.50 / **landscape de 3 sistemas: D01 (DEV) → V01 (QAS) → P01 (PROD)**
+  (V01=QAS confirmado por JP; mi "no hay QAS" inicial era el rol sin asignar — corregido) / **transportes liberados a
+  escala: 29.408 R vs 511 D** → liberar ES la norma; INC-CLASS-LOSS fue el agente salteándola por ADT in-place, no
+  una carencia del landscape. Doc: `knowledge/operational_state/transport_landscape.md`.
+  ✅ **Paso #2 RESUELTO:** existe QAS (V01). El flujo disciplinado es real: D01 dev → liberar TR → import a V01 →
+  probar → P01.
 - **Pendiente real de implementación (#1):** volver el write transport-mandatory (mecánico) — y recién ahí retirar
   el kill-switch burdo. (El #0 ya cerró: "no hay QAS" pasó de supuesto a hecho.)
 - Tarea futura: enhancement Advance Payment recuperando WIP de TS2 (`task_85534bf6`).
