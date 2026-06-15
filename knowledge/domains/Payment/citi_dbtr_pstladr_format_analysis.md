@@ -127,6 +127,16 @@ campos directos `ZORT1/ZREGI/ZPFOR`; si no → exits CITIPMW). Cada tag estructu
 Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado + 3 AdrLine). Ambos **completos**. RU/JP =
 hueco muerto (UBISO nunca RU/JP).
 
+**Volumen por nodo (P01, 2024-2026)** — mismo split por `UBISO` que el Dbtr:
+
+| Nodo Cdtr | Dispara | Tipo | Pagos | Medios |
+|---|---|---|---|---|
+| #2 N_1496761000 | US+CA | estructurado puro | **73,529** (US 65,838 + CA 7,691) | 1,311 |
+| #1 N_2368849090 | BR | estructurado + 3 AdrLine | **82,392** | 1,199 |
+| | | Total | 155,921 | 2,510 |
+
+≈ 47% estructura pura (US/CA), 53% híbrido (BR/Worldlink). Ambos completos.
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).
