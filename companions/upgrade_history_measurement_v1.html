@@ -190,6 +190,26 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
     <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73"><strong>Why the SPAU transport release time (e.g. 06:10) can pre-date the prod import end:</strong> <code>E070.AS4DATE/AS4TIME</code> is the <em>release</em> time in the source system (TS4 / D01), a different event from the P01 import. The SPAU work was authored by <strong>N_MENARD</strong> (<code>SMODILOG.MOD_USER</code>) and the transports released by <strong>V.VAURETTE (UNESCO)</strong> + N_MENARD in TS4/D01; the figures in column ② are the real <em>P01 import</em> times from TPALOG, not the release times.</div>
   </div>
 
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3>End-to-end &mdash; the real maintenance window (lock &rarr; release)</h3>
+    <p style="margin-bottom:12px">The disruptive import was 5.7 h, but <strong>users were locked out far longer.</strong> The exact lock/unlock action is not in the RFC-readable logs (0 <code>UFLAG</code> change docs; security audit log empty though <code>rsau/enable=1</code>), so the window is <strong>inferred from the gap in business activity</strong> &mdash; when users are locked, no change documents are created.</p>
+    <div class="kpi-row" style="margin-bottom:14px">
+      <div class="kpi"><div class="val" style="color:var(--red)">~61 h</div><div class="label">users locked out (&asymp;2.5 days)</div></div>
+      <div class="kpi"><div class="val">5.7 h</div><div class="label">of that, the disruptive import</div></div>
+      <div class="kpi"><div class="val" style="font-size:1.2em">Sat 19:39</div><div class="label">last activity before (06-06)</div></div>
+      <div class="kpi"><div class="val" style="font-size:1.2em">Tue 08:35</div><div class="label">first activity after (06-09)</div></div>
+    </div>
+    <table>
+      <tr><th>Milestone</th><th>When (2026, CEST)</th></tr>
+      <tr><td>&#128274; Users locked &mdash; business activity ceases</td><td><strong>Sat 06 Jun ~19:39</strong></td></tr>
+      <tr><td>SP + SPAU import</td><td>Sun 07 Jun 00:58 &rarr; 06:39</td></tr>
+      <tr><td><strong>SGEN</strong> (RSPARAGENER mass generation)</td><td>Sun 07 Jun 21:54 &rarr; 23:21</td></tr>
+      <tr><td>Validation / testing &mdash; system still closed</td><td>Sun&ndash;Mon (Mon 08 Jun: zero user activity)</td></tr>
+      <tr><td>&#128275; Users released &mdash; business activity resumes</td><td><strong>Tue 09 Jun ~08:35</strong></td></tr>
+    </table>
+    <div class="note">The import window (5.7 h) badly understates the real end-to-end. <strong>SGEN + validation kept the system closed across the whole weekend</strong> &mdash; Monday 08 Jun had <em>zero</em> business-user change documents (still locked). This is why SGEN is part of the end-to-end time, not a footnote. <span class="muted">Inferred from a 60.9 h gap in 13,328 real-user change docs (06-05&hellip;06-09); the explicit EWZ5/login-restriction lock isn't in the readable logs.</span></div>
+  </div>
+
   <div class="card">
     <h3>After the import &mdash; post-import activity is real (TPALOG + TBTCO job log)</h3>
     <p style="margin-bottom:12px">The import window is not the end. Once the SP stack is in, the system does post-processing and then returns to service. Evidence from the <strong>2026</strong> run (P01 job log: <strong>30,187 jobs</strong> ran that week):</p>
