@@ -165,14 +165,14 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <h3>The upgrade process &mdash; preparation + main import (TPALOG)</h3>
       <table>
         <tr><th>Upgrade</th><th>Phase</th><th>Day &amp; window</th><th>Duration</th><th>Nature</th></tr>
-        <tr><td><strong>2026-06</strong></td><td>Prep + import (single session)</td><td>Sun 07 Jun&nbsp; 00:59 &rarr; 06:39</td><td><span class="badge badge-green">5.7 h</span></td><td>off-hours, one run</td></tr>
+        <tr><td><strong>2026-06</strong></td><td>Main import (no SPAM prep needed)</td><td>Sun 07 Jun&nbsp; 00:59 &rarr; 06:39</td><td><span class="badge badge-green">5.7 h</span></td><td>SPAM already current</td></tr>
         <tr><td rowspan="2"><strong>2024-07</strong></td><td>&#9312; Preparation &mdash; SPAM update</td><td>Thu 04 Jul&nbsp; 09:56 &rarr; 09:58</td><td>~2 min</td><td><span class="badge badge-green">non-disruptive</span></td></tr>
         <tr><td>&#9313; Main import</td><td>Fri 05 Jul&nbsp; 15:37 &rarr; 22:35</td><td>7.0 h</td><td><span class="badge badge-yellow">disruptive</span></td></tr>
         <tr><td rowspan="2"><strong>2023-06</strong></td><td>&#9312; Preparation &mdash; SPAM + tools</td><td>Fri 09 Jun&nbsp; 17:22 &rarr; 17:43</td><td>~21 min</td><td><span class="badge badge-green">non-disruptive</span></td></tr>
         <tr><td>&#9313; Main import</td><td>Sat 10 Jun&nbsp; 01:15 &rarr; 09:19</td><td>8.1 h</td><td><span class="badge badge-yellow">disruptive</span></td></tr>
       </table>
       <div class="note"><strong>Full process span (first prep action &rarr; import complete):</strong> 2026 = 5.7 h in one Sunday session &middot; 2024 = Thu 09:56 &rarr; Fri 22:35 (touches 2 days) &middot; 2023 = Fri 17:22 &rarr; Sat 09:19 (touches 2 days). The calendar gap between preparation and the main import is <strong>normal operation, not downtime</strong> &mdash; only the main import (the 7&ndash;8 h block) is disruptive. <span class="muted">SP-queue (SAPK*) activity from TPALOG; full SUM-level downtime is OS-log only.</span></div>
-      <div class="note" style="background:var(--purple-soft);border-color:#e3d7fa;border-left-color:var(--purple);color:#4a2f7a"><strong>What "preparation" means:</strong> the day-before activity (not downtime) was the mandatory <strong>SPAM/SAINT tool update</strong> &mdash; <code>SAPKD75087</code> (2024) / <code>SAPKD75084</code> (2023), component <code>SAP_OCS</code> &mdash; which SAP requires before importing a stack, plus loading and <em>test-importing</em> the queue (disassemble, add-to-buffer, DD pre-import). These run with users still on the system, so the next day's disruptive main import is as short as possible. It is also why the raw 2024/2023 span looks like it crosses midnight (36 h / 16 h): that figure includes this prep, not continuous downtime.</div>
+      <div class="note" style="background:var(--purple-soft);border-color:#e3d7fa;border-left-color:var(--purple);color:#4a2f7a"><strong>What "preparation" means:</strong> the day-before activity (not downtime) was the mandatory <strong>SPAM/SAINT tool update</strong> &mdash; <code>SAPKD75087</code> (2024) / <code>SAPKD75084</code> (2023), component <code>SAP_OCS</code> &mdash; which SAP requires before importing a stack, plus loading and <em>test-importing</em> the queue (disassemble, add-to-buffer, DD pre-import). These run with users still on the system, so the next day's disruptive main import is as short as possible. It is also why the raw 2024/2023 span looks like it crosses midnight (36 h / 16 h): that figure includes this prep, not continuous downtime. <strong>2026 had no SPAM update at all</strong> (SPAM was already current, zero <code>SAPKD*</code> packages) &mdash; which is exactly why it needed no separate prep day and ran in one session.</div>
       <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73">Import time is near-constant at ~6&ndash;8 h. The biggest stack (2026, 275 patches) was the <strong>fastest</strong> (5.7 h). The spread across the three is ~2.4 h &mdash; not a meaningful differentiator. The cost lives in SPAU, not the import window.</div>
     </div>
 
@@ -186,6 +186,18 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       </table>
       <div class="note">2024 forced <strong>2.2&times; more</strong> custom-code adjustment per support package than 2026 or 2023 &mdash; despite applying half as many patches as 2026. SPAU depends on whether SAP touched the objects UNESCO had modified, not on patch count.</div>
     </div>
+  </div>
+
+  <div class="card">
+    <h3>2026 in full &mdash; the three phases (incl. post-import)</h3>
+    <p style="margin-bottom:12px">Asked of the data: was there a SPAM/tools step, and were there post-import activities? Both answered below &mdash; the disruptive import is only the middle phase.</p>
+    <table>
+      <tr><th>Phase</th><th>What ran</th><th>When (Sun 07 Jun)</th><th>Nature</th></tr>
+      <tr><td><span class="badge badge-green">&#9312; SPAM / tools</span></td><td><strong>No SPAM update</strong> (already current). Tools = ST-PI (4 SPs) + ST-A/PI (1), folded into the session</td><td>from 00:59 (~7 min head)</td><td>part of import</td></tr>
+      <tr style="background:rgba(210,153,34,0.07)"><td><span class="badge badge-yellow">&#9313; Main import</span></td><td>214 support packages + 5 tool SPs &mdash; DD import, activation, main import</td><td>00:59 &rarr; 06:39</td><td><strong>disruptive (5.7 h)</strong></td></tr>
+      <tr><td><span class="badge badge-purple">&#9314; Post-import</span></td><td><strong>SPAU re-adjustment</strong> &mdash; 343 custom objects in 3 transports; then generation + versioning</td><td>06:10 &rarr; ~21:23</td><td>post-processing</td></tr>
+    </table>
+    <div class="note">So the disruptive SP import was a tight <strong>5.7 h early-Sunday block</strong>, but the <strong>full working footprint stretched to ~21:23</strong> the same day because of the post-import SPAU rework. In 2026 that SPAU was done by <strong>V.VAURETTE (UNESCO, 2 transports) + N_MENARD (1)</strong> &mdash; a shift from 2024, where N_MENARD did 100%. The transport activity on 08&ndash;14 Jun is the background tp dispatcher heartbeat (<code>TRKORR='ALL'</code>), not upgrade work &mdash; the upgrade was a one-day event.</div>
   </div>
 
   <div class="card">
