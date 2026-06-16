@@ -161,32 +161,32 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   </div>
 
   <div class="card">
-    <h3>The upgrade process &mdash; three phases (prep &middot; import &middot; <span style="color:var(--purple)">post-import</span>)</h3>
-    <p style="margin-bottom:12px">Every upgrade is three phases. <strong>Only the middle one (main import) is disruptive.</strong> The real cost is phase ③ &mdash; the post-import SPAU re-adjustment of UNESCO's custom code.</p>
+    <h3>The upgrade process &mdash; what actually happens (TPALOG + SMODILOG)</h3>
+    <p style="margin-bottom:12px">In <strong>production</strong> there are two phases: a non-disruptive <strong>SPAM preparation</strong> (day before, if needed) and one <strong>import session</strong>. The <strong>SPAU re-adjustment</strong> &mdash; the real cost &mdash; is <em>developer effort done in DEV/test weeks earlier</em> and imported into production <em>together with</em> the stack. It is <strong>not</strong> a separate production step after the import.</p>
     <div class="note" style="background:var(--green-soft);border-color:#cce9d6;border-left-color:var(--green);color:#13502f"><strong>&#128337; Time zone:</strong> all timestamps are <strong>SAP system time = CET / CEST (Europe&#8239;/&#8239;Paris)</strong> &mdash; verified (<code>TTZCU.TZONESYS='CET'</code>, <code>RFCDAYST='X'</code>). The June times shown are <strong>CEST (UTC+2)</strong>, which <em>is</em> French local time. <strong>No conversion needed</strong> &mdash; UNESCO runs the system on Paris time.</div>
     <table>
-      <tr><th>Upgrade</th><th>&#9312; Preparation (SPAM)<br><span class="muted" style="font-weight:400">non-disruptive</span></th><th>&#9313; Main import<br><span class="muted" style="font-weight:400">disruptive</span></th><th>&#9314; Post-import (SPAU re-adjust)<br><span class="muted" style="font-weight:400">the real cost</span></th></tr>
+      <tr><th>Upgrade</th><th>&#9312; Preparation (SPAM)<br><span class="muted" style="font-weight:400">day before, non-disruptive</span></th><th>&#9313; Production import session<br><span class="muted" style="font-weight:400">SP stack + SPAU transports together &mdash; disruptive</span></th><th>SPAU re-adjustment<br><span class="muted" style="font-weight:400">done in DEV, ahead &mdash; the real cost</span></th></tr>
       <tr>
         <td><strong>2026-06</strong><br><span class="muted">Sunday</span></td>
-        <td><span class="badge badge-green">none</span> SPAM already current; tools (ST-PI&times;4, ST-A/PI&times;1) folded into import</td>
-        <td>Sun 00:59 &rarr; 06:39<br><span class="badge badge-yellow">5.7 h</span></td>
-        <td>Sun 06:10 &rarr; 21:23 &middot; <strong>343</strong> objects <span class="muted">(same day)</span></td>
+        <td><span class="badge badge-green">none</span> SPAM already current</td>
+        <td>Sun 00:59 &rarr; 06:39 <span class="badge badge-yellow">5.7 h</span><br><span class="muted">incl. 332-obj SPAU bundle (TS4); +11-obj correction imported 21:19&rarr;21:24</span></td>
+        <td><strong>343</strong> objects<br><span class="muted">built in TS4, Apr 2026</span></td>
       </tr>
       <tr>
         <td><strong>2024-07</strong><br><span class="muted">Friday</span></td>
-        <td>Thu 04 Jul &middot; ~2 min<br><span class="muted">SPAM update SAPKD75087</span></td>
-        <td>Fri 15:37 &rarr; 22:35<br><span class="badge badge-yellow">7.0 h</span></td>
-        <td>Fri ~22:23 &middot; <strong>503</strong> objects <span class="badge badge-red">most</span> <span class="muted">(same day)</span></td>
+        <td>Thu 04 Jul &middot; ~2 min</td>
+        <td>Fri 15:37 &rarr; 22:36 <span class="badge badge-yellow">~7 h</span><br><span class="muted">SP packages + 502-obj SPAU (D01/TS4) imported together</span></td>
+        <td><strong>503</strong> objects <span class="badge badge-red">most</span><br><span class="muted">built in TS4/D01, May 2024</span></td>
       </tr>
       <tr>
         <td><strong>2023-06</strong><br><span class="muted">Saturday</span></td>
-        <td>Fri 09 Jun &middot; ~21 min<br><span class="muted">SPAM + tools</span></td>
-        <td>Sat 01:15 &rarr; 09:19<br><span class="badge badge-yellow">8.1 h</span></td>
-        <td>Sat 10 &rarr; <strong>Wed 14 Jun</strong> &middot; <strong>233</strong> objects <span class="muted">(spread 4 days)</span></td>
+        <td>Fri 09 Jun &middot; ~21 min</td>
+        <td>Sat 01:15 &rarr; 09:19 <span class="badge badge-yellow">8.1 h</span><br><span class="muted">then SPAU imported 09:24&rarr;09:43 same morning; +110-obj follow-up Wed 14 Jun</span></td>
+        <td><strong>233</strong> objects<br><span class="muted">built in DEV, May 2023</span></td>
       </tr>
     </table>
-    <div class="note"><strong>&#9312; Preparation</strong> = the mandatory SPAM/SAINT tool update (<code>SAPKD*</code> / <code>SAP_OCS</code>) + queue load &amp; test-import, the day before, with users still on the system. 2026 needed none (SPAM already current) &rarr; no prep day. <strong>&#9313; Main import</strong> = the only disruptive phase, near-constant <strong>~6&ndash;8 h</strong> regardless of stack size (2026 was biggest yet fastest). <strong>&#9314; Post-import</strong> = SPAU re-adjustment of the custom objects SAP overwrote &mdash; the real cost: 2024 forced <strong>503</strong> (3.6/SP) vs 343 for the bigger 2026 stack. Done same-day for 2024/2026; spread Sat&rarr;Wed for 2023.</div>
-    <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73">SPAU adjustment transports were released by <strong>V.VAURETTE (UNESCO)</strong> and <strong>N_MENARD</strong> &mdash; V.VAURETTE did all of 2024 and most of 2026, N_MENARD most of 2023. The modifications themselves are authored by N_MENARD (<code>SMODILOG.MOD_USER</code>). <span class="muted">Days after the import in TPALOG are the tp dispatcher heartbeat (<code>TRKORR='ALL'</code>), not upgrade work.</span></div>
+    <div class="note"><strong>&#9312; Preparation</strong> = the mandatory SPAM/SAINT tool update (<code>SAPKD*</code> / <code>SAP_OCS</code>) + queue load, the day before, users still on. 2026 needed none. <strong>&#9313; Import session</strong> = the only disruptive phase, near-constant <strong>~6&ndash;8 h</strong>; it brings in <em>both</em> the SP packages <em>and</em> the SPAU/correction transports &mdash; verified by their P01 import times in TPALOG (e.g. 2026 bundle 00:58&rarr;06:39, 2024 18:03&rarr;22:36, 2023 09:24&rarr;09:43). <strong>SPAU re-adjustment</strong> = the developer rework of objects SAP overwrote, the real cost (2024 forced <strong>503</strong> vs 343 for the bigger 2026 stack), performed in DEV/test weeks before and shipped in.</div>
+    <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73"><strong>Why the SPAU transport release time (e.g. 06:10) can pre-date the prod import end:</strong> <code>E070.AS4DATE/AS4TIME</code> is the <em>release</em> time in the source system (TS4 / D01), a different event from the P01 import. The SPAU work was authored by <strong>N_MENARD</strong> (<code>SMODILOG.MOD_USER</code>) and the transports released by <strong>V.VAURETTE (UNESCO)</strong> + N_MENARD in TS4/D01; the figures in column ② are the real <em>P01 import</em> times from TPALOG, not the release times.</div>
   </div>
 
   <div class="card">
