@@ -41,6 +41,10 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: t
 tbody tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafbfd; }
 table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+td, th, p, li { overflow-wrap: break-word; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+html { overflow-x: hidden; }
 .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
 .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; text-align: center; box-shadow: var(--shadow); }
 .kpi .val { font-size: 1.7em; font-weight: 750; color: var(--heading); letter-spacing: -0.02em; }
@@ -112,7 +116,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 
   <div class="card">
     <h3>The 3 last upgrades &mdash; at a glance</h3>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>#</th><th>Date</th><th>Type</th><th>Total patches</th><th>Support pkgs (CSP)</th><th>Add-on (ACP/AOI)</th><th>MOD patches *</th><th>Components</th><th>SAP_BASIS</th><th>Stack size</th></tr>
       <tr>
         <td><strong>1</strong></td><td><strong>2026-06-07</strong></td><td>SP stack</td>
@@ -129,7 +133,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <td>145</td><td>142</td><td>2</td><td>0</td><td>37</td><td>SP22&rarr;26 <span class="muted">(+4)</span></td>
         <td><span class="badge badge-yellow">MED</span></td>
       </tr>
-    </table>
+    </table></div>
     <p class="muted" style="margin:8px 0;font-size:0.85em">* <strong>MOD patches</strong> = PAT03 patches of type <code>MOD</code> (SAP-delivered correction patches in the queue) &mdash; <em>not</em> the customer SPAU rework. The real SPAU effort (the custom objects UNESCO re-adjusted) is <strong>343 / 503 / 233</strong> objects from SMODILOG; see the <em>Activities &amp; Timing</em> tab. "Stack size" ranks by patch volume, which (as the alert below explains) is <em>not</em> the operational cost.</p>
     <div class="note">Two <em>targeted</em> campaigns sit between #1 and #2 &mdash; 2025-11-11 (40 patches, add-on <code>PA_SE_IN</code> only) and 2025-04-16 (30 patches, ST-PI / UI tools only). They are not full stacks, so they are excluded from "the 3 upgrades". They are visible in the Full Timeline.</div>
   </div>
@@ -152,12 +156,12 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>The point: volume &ne; impact</h3>
     <p style="margin-bottom:14px">An upgrade's operational cost is not the number of patches. It is two things: <strong>(1) how long the import runs</strong> (the time window the system is busy / down), and <strong>(2) how much custom code must be re-adjusted afterwards</strong> &mdash; the SPAU/SPDD rework. Both are measured below from <code>TPALOG</code> (per-step import timestamps) and <code>SMODILOG</code> (the modification log).</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Upgrade</th><th>Patches</th><th>Import</th><th>SPAU adjustments</th><th>per SP</th><th></th></tr>
       <tr style="background:rgba(180,35,24,0.05)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td><strong>503</strong></td><td><strong>3.59</strong></td><td><span class="badge badge-red">&larr; the painful one</span></td></tr>
       <tr><td><strong>2026-06</strong></td><td>275</td><td>5.7 h</td><td>343</td><td>1.60</td><td><span class="muted">biggest, but light</span></td></tr>
       <tr><td><strong>2023-06</strong></td><td>145</td><td>8.5 h</td><td>233</td><td>1.64</td><td><span class="muted">lightest</span></td></tr>
-    </table>
+    </table></div>
     <p class="muted" style="margin-top:10px;font-size:0.88em">Same import time (~6&ndash;8 h) across all three; 2024 forced 2.2&times; more custom-code adjustment per support package than the bigger 2026 stack.</p>
   </div>
 
@@ -165,10 +169,10 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
     <h3>The upgrade process &mdash; all milestones, communicated &amp; actual (USH02 &middot; TPALOG &middot; TBTCO &middot; user comms)</h3>
     <p style="margin-bottom:12px">Every milestone of each upgrade in one view, in order: <strong>communicated</strong> downtime &middot; user <strong>lock</strong> &rarr; SPAM <strong>prep</strong> &rarr; <strong>import</strong> &rarr; <strong>SGEN</strong> &rarr; user <strong>release</strong>. The <strong>Communicated</strong> column is the user announcement (cutover plan, provided); everything else is measured from the system. <span class="muted">SGEN for 2024/2023 = job log purged; 2023 had no mass user-lock in USH02 (login restriction) so its lock/release are not measurable &mdash; left blank rather than guessed. SPAU re-adjustment counts (343 / 503 / 233 objects) are in the cards below.</span></p>
     <div class="note" style="background:var(--green-soft);border-color:#cce9d6;border-left-color:var(--green);color:#13502f"><strong>&#128337; Time zone:</strong> all timestamps are <strong>SAP system time = CET / CEST (Europe&#8239;/&#8239;Paris)</strong> &mdash; verified (<code>TTZCU.TZONESYS='CET'</code>, <code>RFCDAYST='X'</code>). The June times shown are <strong>CEST (UTC+2)</strong>, which <em>is</em> French local time. <strong>No conversion needed</strong> &mdash; UNESCO runs the system on Paris time.</div>
-    <table>
+    <div class="table-wrap"><table>
       <tr>
         <th>Upgrade</th>
-        <th>&#128226; System unavailability<br><span class="muted" style="font-weight:400">communication &middot; user comms</span></th>
+        <th>&#128226; Communication<br><span class="muted" style="font-weight:400">announced window &middot; to users</span></th>
         <th>&#128274; Users locked<br><span class="muted" style="font-weight:400">actual &middot; USH02</span></th>
         <th>&#9312; SPAM prep<br><span class="muted" style="font-weight:400">day before</span></th>
         <th>&#9313; Import in P01<br><span class="muted" style="font-weight:400">start&rarr;end &middot; disruptive</span></th>
@@ -210,7 +214,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <td><span class="muted">&mdash;</span></td>
         <td><span class="muted">&mdash;</span></td>
       </tr>
-    </table>
+    </table></div>
     <div class="note" style="background:var(--purple-soft);border-color:#e3d7fa;border-left-color:var(--purple);color:#4a2f7a"><strong>What "start &rarr; end" means in P01:</strong> <strong>start</strong> = the first import step of the SP queue; <strong>end</strong> = the last upgrade transport imported (incl. the SPAU correction transports). Between them SPAM runs its phases in order &mdash; DD (dictionary) import &rarr; activation &rarr; main import (R3trans of repository + table entries) &rarr; XPRA / after-import methods &rarr; generation &mdash; then imports the SPAU/correction transports. The brief internal pauses (e.g. 2024 15:38&ndash;17:58, 2023 06:48&ndash;09:02) are normal between phases. Only this window is disruptive; the SPAU <em>work</em> already happened in DEV.</div>
     <div class="note"><strong>&#9312; Preparation</strong> = the mandatory SPAM/SAINT tool update (<code>SAPKD*</code> / <code>SAP_OCS</code>) + queue load, the day before, users still on. 2026 needed none. <strong>&#9313; Import session</strong> = the only disruptive phase, near-constant <strong>~6&ndash;8 h</strong>; it brings in <em>both</em> the SP packages <em>and</em> the SPAU/correction transports &mdash; verified by their P01 import times in TPALOG (e.g. 2026 bundle 00:58&rarr;06:39, 2024 18:03&rarr;22:36, 2023 09:24&rarr;09:43). <strong>SPAU re-adjustment</strong> = the developer rework of objects SAP overwrote, the real cost (2024 forced <strong>503</strong> vs 343 for the bigger 2026 stack), performed in DEV/test weeks before and shipped in.</div>
     <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73"><strong>Why the SPAU transport release time (e.g. 06:10) can pre-date the prod import end:</strong> <code>E070.AS4DATE/AS4TIME</code> is the <em>release</em> time in the source system (TS4 / D01), a different event from the P01 import. The SPAU work was authored by <strong>N_MENARD</strong> (<code>SMODILOG.MOD_USER</code>) and the transports released by <strong>V.VAURETTE (UNESCO)</strong> + N_MENARD in TS4/D01; the figures in column ② are the real <em>P01 import</em> times from TPALOG, not the release times.</div>
@@ -220,55 +224,55 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
     <h3>End-to-end &mdash; maintenance window (lock &rarr; release) <span style="color:var(--green);font-size:0.78em;font-weight:600;letter-spacing:0.03em">MEASURED from USH02</span></h3>
     <div class="note" style="background:var(--green-soft);border-color:#cce9d6;border-left-color:var(--green);color:#13502f">
       The mass user lock/release <strong>is logged</strong> &mdash; in <code>USH02</code> (logon-data change history, field <code>UFLAG</code>: 0 = open, 64 = locked by admin). 2026 and 2024 each show a clean mass lock and release by basis admin <strong>P.IKOUNA</strong>. <em>(This corrects an earlier note that said the lock wasn't in the readable logs &mdash; it is, in USH02; it just isn't in CDHDR change docs or the audit log.)</em> 2023 had <strong>no</strong> mass user-lock in USH02 for the June upgrade (only 4&ndash;14 users) &mdash; it used a lighter method (login restriction). The org <em>does</em> mass-lock for year-end and for the 2024/2026 upgrades (all in USH02), but June 2023 did not, so its lock/release are <strong>not measurable</strong> and are left blank.</div>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Upgrade</th><th>&#128274; Users locked</th><th>&#128275; Users released</th><th>End-to-end</th><th>Import</th><th>Source</th></tr>
       <tr style="background:rgba(180,35,24,0.06)"><td><strong>2026-06</strong></td><td>Sat 06 Jun 19:50 &middot; 2,635 users</td><td>Tue 09 Jun 09:45 &middot; 2,651 users</td><td><span class="badge badge-red">61.9 h</span></td><td>5.7 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
       <tr style="background:rgba(240,136,62,0.06)"><td><strong>2024-07</strong></td><td>Fri 05 Jul 16:01 &middot; 1,558 users</td><td>Sun 07 Jul 14:20 &middot; 1,557 users</td><td><span class="badge badge-yellow">46.3 h</span></td><td>7.0 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
       <tr><td><strong>2023-06</strong></td><td colspan="2"><em>no mass user-lock in USH02 (login restriction) &mdash; lock/release not measurable</em></td><td><span class="muted">&mdash;</span></td><td>8.5 h</td><td><span class="muted">&mdash;</span></td></tr>
-    </table>
+    </table></div>
     <div class="note">The pattern: the <strong>import got faster</strong> (8.5 &rarr; 7.0 &rarr; 5.7 h) while the measured <strong>end-to-end grew</strong> (2024 <strong>46.3 h</strong> &rarr; 2026 <strong>61.9 h</strong>). The growth is validation + SGEN + closed-window time, <em>not</em> the import. Locks/releases for 2024 &amp; 2026 by <strong>P.IKOUNA</strong>; 2023 had no mass USH02 lock so its end-to-end is not measurable.</div>
     <p style="margin:16px 0 8px;font-weight:600;color:var(--heading)">Communicated downtime vs actual lock &mdash; cutover discipline:</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Upgrade</th><th>Communicated "unavailable from" <span class="muted">(user comms)</span></th><th>Actual lock <span class="muted">(USH02)</span></th><th>Gap (comms &rarr; real)</th></tr>
       <tr><td><strong>2026-06</strong></td><td>Fri 18:00 (6 PM)</td><td>Sat 19:50</td><td><span class="badge badge-red">+1 day 1 h 50 m</span> locked the next day</td></tr>
       <tr><td><strong>2024-07</strong></td><td>Fri 16:00 (4 PM)</td><td>Fri 16:01</td><td><span class="badge badge-green">+1 min</span> on time</td></tr>
       <tr><td><strong>2023-06</strong></td><td>Fri 18:00 (6 PM)</td><td><em>no mass lock (login restriction)</em></td><td><span class="muted">&mdash;</span></td></tr>
-    </table>
+    </table></div>
     <div class="note">The "communicated" times come from the <strong>user communication / cutover plan</strong> (provided), not the system; the actual lock is measured from <code>USH02</code>. <strong>2024 executed exactly as announced</strong> (16:00 &rarr; 16:01). <strong>2026 announced Fri 6 PM but did not lock until Sat 19:50</strong> &mdash; ~1 day later, so the system stayed available about a day longer than announced (good for users). <strong>2023 announced Fri 6 PM</strong> but had no mass user-lock in USH02 (login restriction), so the actual lock and release are <strong>not measurable</strong> from the system.</div>
     <p style="margin:16px 0 8px;font-weight:600;color:var(--heading)">2026 timeline &mdash; each row tagged by source:</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Milestone</th><th>When (2026, CEST)</th><th>Source</th></tr>
       <tr style="background:rgba(180,35,24,0.05)"><td>&#128274; <strong>Users locked</strong> &mdash; 2,635 users, P.IKOUNA</td><td><strong>Sat 06 Jun 19:50</strong></td><td><span class="badge badge-green">measured</span> USH02</td></tr>
       <tr><td>SP + SPAU import</td><td>Sun 07 Jun 00:58 &rarr; 06:39</td><td><span class="badge badge-green">measured</span> TPALOG</td></tr>
       <tr><td><strong>SGEN</strong> (RSPARAGENER mass generation)</td><td>Sun 07 Jun 21:54 &rarr; 23:21</td><td><span class="badge badge-green">measured</span> TBTCO</td></tr>
       <tr><td>Mon 08 Jun &mdash; zero business-user activity (validation)</td><td>all Monday</td><td><span class="badge badge-green">measured</span> CDHDR</td></tr>
       <tr style="background:rgba(63,185,80,0.05)"><td>&#128275; <strong>Users released</strong> &mdash; 2,651 users, P.IKOUNA</td><td><strong>Tue 09 Jun 09:45</strong></td><td><span class="badge badge-green">measured</span> USH02</td></tr>
-    </table>
+    </table></div>
     <div class="note">So the end-to-end for 2026 was <strong>~61.9 h (lock Sat 19:50 &rarr; release Tue 09:45)</strong> &mdash; users were locked out from Saturday evening through Tuesday morning. The disruptive import was only 5.7 h of that; SGEN + a full Monday of validation account for the rest. The release Patrick asked for = the <code>UFLAG</code> 64&rarr;0 mass change by P.IKOUNA.</div>
   </div>
 
   <div class="card">
     <h3>After the import &mdash; post-import activity is real (TPALOG + TBTCO job log)</h3>
     <p style="margin-bottom:12px">The import window is not the end. Once the SP stack is in, the system does post-processing and then returns to service. Evidence from the <strong>2026</strong> run (P01 job log: <strong>30,187 jobs</strong> ran that week):</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Post-import activity</th><th>When</th><th>What it is</th></tr>
       <tr><td><strong>Mass ABAP generation</strong> <code>RSPARAGENER8M</code></td><td>Sun 07 Jun 21:54 &rarr; 23:21</td><td>SGEN-style parallel recompile of program/screen loads after the upgrade (~1.5 h)</td></tr>
       <tr><td>Load generation during import <code>RDDGEN0L</code></td><td>Sun 03:43 &amp; 06:10</td><td>Generation phase of the import itself</td></tr>
       <tr><td><strong>Upgrade-correction transports</strong> (3)</td><td>Sun 21:19 &rarr; 21:24</td><td><code>TS2K900037/039</code> "Upgrade correction 04/2026"</td></tr>
       <tr><td><strong>Post-upgrade dump fix</strong></td><td>Wed 10 Jun</td><td>SAP notes <strong>3696852 + 3715883</strong> for dump <code>TABLEVIEW_DUP_COLUMN_INDEX</code> &mdash; two notes for the same dump that surfaced after the upgrade</td></tr>
       <tr><td>Business-as-usual resumes</td><td>Tue 09 Jun onward</td><td>Payments, COUPA, EBS, IDocs, HR/MM changes &mdash; normal operation restored</td></tr>
-    </table>
+    </table></div>
     <div class="note">So the disruptive import is the early-Sunday window, but post-import the system runs <strong>mass generation</strong> the same evening, takes a few <strong>correction transports / SAP-note fixes</strong> over the following days, and resumes normal business. <span class="muted">The <code>TRKORR='ALL'</code> rows in TPALOG are the transport dispatcher (<code>RDDIMPDP</code>) heartbeat &mdash; background, but the corrections, generation and BAU above are genuine post-import work.</span></div>
   </div>
 
   <div class="card">
     <h3>Side by side &mdash; the metrics that matter</h3>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Upgrade</th><th>Patches (volume)</th><th>Import time</th><th>SPAU adjustments</th><th>SPAU per SP</th><th>Real operational weight</th></tr>
       <tr style="background:rgba(248,81,73,0.06)"><td><strong>2026-06</strong></td><td>275 <span class="badge badge-blue">biggest</span></td><td>5.7 h <span class="badge badge-green">fastest</span></td><td>343</td><td>1.60</td><td><span class="badge badge-yellow">MEDIUM</span> (big but efficient)</td></tr>
       <tr style="background:rgba(240,136,62,0.08)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td>503 <span class="badge badge-red">most</span></td><td>3.59 <span class="badge badge-red">most</span></td><td><span class="badge badge-red">HEAVIEST</span> (SPAU-driven)</td></tr>
       <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td>145</td><td>8.5 h</td><td>233</td><td>1.64</td><td><span class="badge badge-green">LIGHTEST</span></td></tr>
-    </table>
+    </table></div>
     <p style="margin-top:12px">&bull; <strong>If you rank by patches:</strong> 2026 &gt; 2024 &asymp; 2023.<br>
        &bull; <strong>If you rank by what actually hurts (SPAU rework):</strong> 2024 &gt; 2026 &gt; 2023.<br>
        &bull; <strong>Import time barely moves</strong> (5.7&ndash;8.5 h). The differentiator is SPAU, and the 2024 stack &mdash; not the bigger 2026 one &mdash; was the costly one.</p>
@@ -284,15 +288,23 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 <!-- ============ 2024 SPAU OBJECT DETAIL ============ -->
 <div class="panel" id="spau2024">
   <div class="card">
-    <h3>The recurring activity &mdash; SPAU re-adjustment, every upgrade</h3>
-    <p style="margin-bottom:10px">Every SP stack ships new SAP versions of objects UNESCO modified <em>in place</em>. Each one must be <strong>re-applied (SPAU)</strong> so the modification survives the new version &mdash; a manual <strong>recurring activity</strong>, done in DEV ahead of each upgrade and shipped in with the stack. This is the real recurring cost of running modified standard code: the <em>volume</em> changes from one upgrade to the next, the activity itself does not.</p>
-    <div class="kpi-row" style="margin-bottom:6px">
-      <div class="kpi"><div class="val">502</div><div class="label">objects re-adjusted<br><strong>2024</strong> (peak)</div></div>
-      <div class="kpi"><div class="val">343</div><div class="label">objects re-adjusted<br>2026</div></div>
-      <div class="kpi"><div class="val">233</div><div class="label">objects re-adjusted<br>2023</div></div>
-      <div class="kpi"><div class="val" style="font-size:1.05em">every cycle</div><div class="label">the same activity recurs &mdash; it is not optional</div></div>
-    </div>
-    <div class="note">How much each upgrade depends on how many of UNESCO's modified objects that stack's SPs happen to touch. <strong>2024 was the peak and the most concentrated &mdash; overwhelmingly HR/Payroll</strong> (deep-dive below). <span class="muted">A reliable per-upgrade breakdown by functional area needs a clean package&rarr;domain mapping; only 2024 is established to that level, so it is the one detailed here rather than an unreliable cross-upgrade split.</span></div>
+    <h3>The recurring activity &mdash; re-adjusting UNESCO's modifications, every upgrade</h3>
+    <p style="margin-bottom:8px">Every SP stack ships new SAP versions of objects UNESCO modified <em>in place</em>; each must be <strong>re-applied (SPAU)</strong> so the change survives &mdash; a manual <strong>recurring activity</strong>, done in DEV ahead of every upgrade. The raw SPAU-flagged workload was <strong>502 (2024) &middot; 343 (2026) &middot; 233 (2023)</strong> adjustment records.</p>
+    <p style="margin-bottom:12px">But that raw set <strong>mixes three things</strong>, and separating them is what makes a per-upgrade comparison reliable: UNESCO's own <strong>functional modifications</strong> (the real recurring work), <strong>SAP-delivered objects</strong> (S/4 readiness-check classes <code>CLS4SIC_*</code> + SAP note corrections), and generated artifacts (MIME, Fiori). Counting only the <strong>genuine UNESCO modifications</strong> (distinct objects):</p>
+    <div class="table-wrap"><table>
+      <tr><th>UNESCO modification area</th><th>2024-07</th><th>2026-06</th><th>2023-06</th></tr>
+      <tr><td><strong>HR / Payroll</strong></td><td><span class="badge badge-red">117</span></td><td><span class="badge badge-red">28</span></td><td><span class="badge badge-red">22</span></td></tr>
+      <tr><td>FI / Banking / Payment</td><td>26</td><td>15</td><td>12</td></tr>
+      <tr><td>Other functional</td><td>3</td><td>12</td><td>15</td></tr>
+      <tr style="background:#f7f9fc"><td><strong>= genuine UNESCO modifications</strong></td><td><strong>146</strong></td><td><strong>55</strong></td><td><strong>49</strong></td></tr>
+      <tr><td class="muted" style="font-weight:600">SAP-delivered + technical <span style="font-weight:400">(not UNESCO recurring work)</span></td><td class="muted"><strong>41</strong></td><td class="muted"><strong>38</strong></td><td class="muted"><strong>34</strong></td></tr>
+      <tr><td class="muted" style="padding-left:28px">&#8627; <strong>S/4 readiness checks</strong> <code>CLS4SIC_*</code> &mdash; SAP SIC tool</td><td class="muted">17</td><td class="muted">4</td><td class="muted">0</td></tr>
+      <tr><td class="muted" style="padding-left:28px">&#8627; SAP note corrections</td><td class="muted">1</td><td class="muted">10</td><td class="muted">0</td></tr>
+      <tr><td class="muted" style="padding-left:28px">&#8627; generated / technical (SMIM, AVAS, MIME&hellip;)</td><td class="muted">10</td><td class="muted">20</td><td class="muted">15</td></tr>
+      <tr><td class="muted" style="padding-left:28px">&#8627; Basis / tools</td><td class="muted">13</td><td class="muted">4</td><td class="muted">19</td></tr>
+    </table></div>
+    <div class="note"><strong>HR/Payroll is the largest UNESCO-modification cluster in every upgrade</strong> (117 / 28 / 22) &mdash; the persistent recurring item, <em>not</em> a 2024-only finding. 2024 was the peak because its SPs hit those HR mods hardest. <span class="muted">The earlier "Material Ledger" reading was an artefact of a crude package split: those were SAP <code>CLS4SIC_*</code> readiness-check classes and a note correction (3130905) in the ML <em>code</em> area &mdash; not Material Ledger usage (UNESCO does not run ML).</span></div>
+    <div class="alert" style="background:var(--purple-soft);border-color:#d9c8f7;border-left-color:var(--purple);color:#43286e"><strong>&#128270; Relevant to the S/4HANA project.</strong> The <code>CLS4SIC_CO_PC_ACT_*</code> family are <strong>S/4HANA Simplification Item Check</strong> classes &mdash; SAP&rsquo;s own <em>S/4 readiness-check</em> tooling (SIC), <strong>delivered by SAP, not modified by UNESCO</strong>. They appear in the SPAU set only because the SP stack ships them; they are <em>not</em> recurring UNESCO work. Their growing presence (0 &rarr; 17 &rarr; counted) is actually a signal of <strong>S/4 readiness instrumentation already landing in P01</strong> &mdash; an input for the S/4HANA migration assessment, not an upgrade cost.</div>
   </div>
 
   <div class="card">
@@ -303,24 +315,25 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="kpi-row">
     <div class="kpi"><div class="val">502</div><div class="label">SPAU adjustment records</div></div>
     <div class="kpi"><div class="val">187</div><div class="label">distinct objects re-adjusted</div></div>
-    <div class="kpi"><div class="val" style="color:var(--purple)">74%</div><div class="label">are HR / Payroll objects</div></div>
+    <div class="kpi"><div class="val" style="color:var(--purple)">63%</div><div class="label">of UNESCO mods are HR / Payroll</div></div>
     <div class="kpi"><div class="val" style="font-size:1.3em">N_MENARD</div><div class="label">re-adjusted 100% (the SI partner)</div></div>
   </div>
 
   <div class="grid-2">
     <div class="card">
       <h3>By domain &mdash; where it concentrates</h3>
-      <table>
+      <div class="table-wrap"><table>
         <tr><th>Domain</th><th>Objects</th><th>Share</th></tr>
-        <tr style="background:rgba(105,65,198,0.05)"><td><strong>HR / Payroll</strong></td><td><strong>139</strong></td><td><span class="badge badge-red">74%</span></td></tr>
-        <tr><td>FI / Banking / Payment</td><td>31</td><td><span class="badge badge-yellow">17%</span></td></tr>
-        <tr><td>Basis / SAP tools</td><td>12</td><td><span class="badge badge-green">6%</span></td></tr>
-      </table>
-      <div class="note">In 2024 the recurring work was overwhelmingly in <strong>HR/Payroll</strong> &mdash; UNESCO's most heavily modified area. Biggest package: <code>PBUN</code> (107 objects, UN payroll). Recurring classes: <code>CL_HRPADUN_*</code> (UN personnel / CMT), <code>CL_HRPAYFR_*</code> (French payroll), <code>CL_HRPA_INFTY_0009</code> (bank-details infotype).</div>
+        <tr style="background:rgba(105,65,198,0.05)"><td><strong>HR / Payroll</strong> <span class="muted">(UNESCO mod)</span></td><td><strong>117</strong></td><td><span class="badge badge-red">63%</span></td></tr>
+        <tr><td>FI / Banking / Payment <span class="muted">(UNESCO mod)</span></td><td>26</td><td><span class="badge badge-yellow">14%</span></td></tr>
+        <tr><td>Other functional <span class="muted">(UNESCO mod)</span></td><td>3</td><td><span class="badge badge-green">2%</span></td></tr>
+        <tr><td class="muted">SAP-delivered + technical <span style="font-weight:400">(SIC 17 &middot; basis 13 &middot; generated 10 &middot; note 1)</span></td><td class="muted">41</td><td class="muted">22%</td></tr>
+      </table></div>
+      <div class="note">Of the 187 SPAU-flagged objects, <strong>146 are genuine UNESCO modifications</strong> and 41 are SAP-delivered/technical (S/4 readiness checks, note corrections, generated artefacts &mdash; not recurring UNESCO work). Within the UNESCO mods the recurring work is overwhelmingly <strong>HR/Payroll</strong> (117 of 146 = 80%) &mdash; UNESCO's most heavily modified area. Biggest package: <code>PBUN</code> (107 objects, UN payroll). Recurring classes: <code>CL_HRPADUN_*</code> (UN personnel / CMT), <code>CL_HRPAYFR_*</code> (French payroll), <code>CL_HRPA_INFTY_0009</code> (bank-details infotype).</div>
     </div>
     <div class="card">
       <h3>By object type &mdash; classes vs DDIC vs code</h3>
-      <table>
+      <div class="table-wrap"><table>
         <tr><th>Type</th><th>Count</th><th>What</th></tr>
         <tr><td><code>PROG</code></td><td>74</td><td>Programs / reports</td></tr>
         <tr><td><code>CLAS</code></td><td>39</td><td>Classes</td></tr>
@@ -328,13 +341,13 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <tr><td><code>FUGR</code></td><td>12</td><td>Function groups</td></tr>
         <tr><td><code>AVAS</code></td><td>8</td><td>Generated objects</td></tr>
         <tr><td>others (15 types)</td><td>30</td><td>DTEL, TTYP, VIEW, ENHS, TRAN, MSAG, DOMA, INTF, CUS*&hellip;</td></tr>
-      </table>
+      </table></div>
     </div>
   </div>
 
   <div class="card">
     <h3>Top packages (the concrete hotspots)</h3>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Package</th><th>Objects</th><th>Area</th></tr>
       <tr><td><code>PBUN</code></td><td><strong>107</strong></td><td>HR &mdash; UN payroll <span class="badge badge-red">dominant</span></td></tr>
       <tr><td><code>BF_BANK</code></td><td>19</td><td>FI &mdash; bank / payment</td></tr>
@@ -342,7 +355,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><td><code>STTREL</code></td><td>10</td><td>Tools / release</td></tr>
       <tr><td><code>ID-FI-REU-PAYM</code></td><td>7</td><td>FI &mdash; payment DMEE</td></tr>
       <tr><td><code>P06_DSN / PC06 / PCUN / PUN_CMT</code></td><td>~10</td><td>HR &mdash; French &amp; UN payroll</td></tr>
-    </table>
+    </table></div>
     <p class="muted" style="margin-top:8px;font-size:0.88em">Full object list persisted in the Gold DB table <code>spau_2024_objects</code> (type &middot; name &middot; package).</p>
   </div>
 
@@ -408,14 +421,14 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 
   <div class="card">
     <h3>How "stack size" is built (all measured, no opinion)</h3>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Dimension</th><th>What it measures</th><th>Source field</th></tr>
       <tr><td>Support packages (CSP)</td><td>Volume of standard SAP maintenance applied</td><td><code>PAT03.PATCH_TYPE='CSP'</code></td></tr>
       <tr><td>Add-on patches (ACP/AOI)</td><td>How many add-on components had to move in lockstep</td><td><code>PATCH_TYPE in (ACP,AOI)</code></td></tr>
       <tr><td>MOD patches</td><td>SAP-delivered correction patches in the queue (<em>not</em> the customer SPAU rework &mdash; that's the SMODILOG count)</td><td><code>PATCH_TYPE='MOD'</code></td></tr>
       <tr><td>Components touched</td><td>Breadth of the stack across the product</td><td><code>distinct PAT03.COMPONENT</code></td></tr>
       <tr><td>SAP_BASIS SP jump</td><td>Depth of the technical core change (the bellwether)</td><td><code>PAT03.TO_REL</code> range</td></tr>
-    </table>
+    </table></div>
   </div>
 </div>
 
@@ -424,7 +437,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>Full upgrade history since EhP8 (SAP_BASIS-anchored)</h3>
     <p class="muted" style="margin-bottom:12px">Each row = a date on which SAP_BASIS support packages were implemented = one maintenance event. The 2017 row is the EhP8 <em>release upgrade</em> (the only one in <code>UVERS</code>); the rest are SP stacks.</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Date</th><th>Event</th><th>SAP_BASIS SP</th><th>Total patches</th><th>Components</th><th>Cadence</th></tr>
       <tr style="background:rgba(188,140,255,0.08)"><td><strong>2017-03-24 &rarr; 03-31</strong></td><td><span class="badge badge-purple">EhP8 RELEASE UPGRADE</span></td><td>install &rarr; SP06</td><td>363</td><td>44</td><td>UVERS: 6.7 calendar days</td></tr>
       <tr><td>2019-03-30</td><td>SP stack</td><td>SP07&rarr;13</td><td>216</td><td>32</td><td>~2 yr</td></tr>
@@ -436,7 +449,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><td>2025-04-16</td><td class="muted">targeted (ST-PI / UI tools)</td><td>&ndash;</td><td>30</td><td>5</td><td>&ndash;</td></tr>
       <tr><td>2025-11-11</td><td class="muted">targeted (add-on PA_SE_IN)</td><td>&ndash;</td><td>40</td><td>1</td><td>&ndash;</td></tr>
       <tr style="background:rgba(248,81,73,0.08)"><td><strong>2026-06-07</strong></td><td><span class="badge badge-red">UPGRADE #1 (latest)</span></td><td>SP28&rarr;34</td><td>275</td><td>59</td><td>~23 mo (2025 stack skipped)</td></tr>
-    </table>
+    </table></div>
   </div>
   <div class="card">
     <h3>Reading the cadence</h3>
@@ -451,7 +464,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>Current stack after the June 2026 upgrade (CVERS &mdash; 177 components total)</h3>
     <p class="muted" style="margin-bottom:12px">This is the endpoint &mdash; where P01 sits today. Underlying base release is <strong>SAP ERP 6.0 EhP8</strong> (NetWeaver 7.50 basis).</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Component</th><th>Release</th><th>SP level</th><th>Meaning</th></tr>
       <tr><td>SAP_BASIS</td><td>750</td><td>SP0034</td><td>NetWeaver technical core</td></tr>
       <tr><td>SAP_ABA</td><td>750</td><td>SP0034</td><td>Application Basis</td></tr>
@@ -467,7 +480,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><td>EA-HR</td><td>608</td><td>SP0156</td><td>HCM extension</td></tr>
       <tr><td>SAP_HRCAR / SAP_HRGXX</td><td>608</td><td>SP0156</td><td>HR country / international</td></tr>
       <tr><td>WEBCUIF</td><td>748</td><td>SP0025</td><td>Web Client UI Framework</td></tr>
-    </table>
+    </table></div>
     <div class="note">The split releases (BASIS at 750, SAP_APPL/SAP_FIN at 618, SAP_HR at 608) are normal for EhP8 ERP &mdash; the NetWeaver layer and the application enhancement packages version independently.</div>
   </div>
 </div>
@@ -477,7 +490,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>Sources &mdash; how this was measured</h3>
     <p style="margin-bottom:10px">All figures read live from <strong>P01 (production, client 350)</strong> via <code>RFC_READ_TABLE</code> over SNC/SSO &mdash; read-only, the only compliant channel. Pulled 2026-06-16.</p>
-    <table>
+    <div class="table-wrap"><table>
       <tr><th>Table</th><th>What it gave</th><th>Rows</th><th>Gold DB</th></tr>
       <tr><td><code>UVERS</code></td><td>Release/EhP upgrade history (start/end date, OLD&rarr;NEW release)</td><td>160</td><td><code>uvers</code></td></tr>
       <tr><td><code>PAT03</code></td><td>Every support package + implementation date + type</td><td>3,737</td><td><code>pat03</code></td></tr>
@@ -488,7 +501,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><td><code>TBTCO</code></td><td>background job log &mdash; SGEN / generation + post-import jobs</td><td>30,187*</td><td><code>tbtco_upgrade2026_jobs</code></td></tr>
       <tr><td><code>CDHDR</code></td><td>change-document headers &mdash; business-activity gap (validation window, 2023 lock bracket)</td><td>&mdash;</td><td>&mdash;</td></tr>
       <tr><td><code>E070 / E07T</code></td><td>transport headers + texts &mdash; SPAU / correction transport release dates &amp; descriptions</td><td>&mdash;</td><td>&mdash;</td></tr>
-    </table>
+    </table></div>
     <p class="muted" style="margin-top:6px">*TPALOG limited to the 4 upgrade windows (2017/2023/2024/2026); TBTCO to the 2026 upgrade week. Read-only; some lookups not persisted to Gold DB.</p>
     <h4>PATCH_TYPE legend (PAT03)</h4>
     <p class="muted">CSP = Component Support Package &middot; ACP = Add-on Component Patch &middot; AOI = Add-on Installation &middot; MOD = Modification adjustment (SPDD/SPAU) &middot; PAT = patch.</p>
