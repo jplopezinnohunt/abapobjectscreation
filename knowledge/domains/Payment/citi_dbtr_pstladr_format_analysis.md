@@ -159,15 +159,15 @@ Los 2 nodos (#1 N_2368849090 BR/resto, #2 N_1496761000 US/CA/PR) tienen **estruc
 - `ZPFAC` ("PO Box") → **apartado postal vs calle**.
 - `HOUSENUMBER` ← `FPAYHX-REF02` (buffer user-defined). `XSCHK` ("Is a Check Created?") → rama de cheque.
 
-| Tag XML | Atoms / fuente | Lógica |
-|---|---|---|
-| `<StrtNm>` | `Housenum`←REF02 · `Street`←exit V3_CGI_CRED_STREET · `"PO BOX"`(const) · `POBOXNUM`←ZPFAC | PO Box (`ZPFAC<>''`) vs calle |
-| `<BldgNb>` | exit `V3_GET_CDTR_BLDG` | — |
-| `<PstCd>` | `POBoxPc`←ZPST2 ("PO Box Postal Code") · `CityPc`←exit V3_POSTALCODE | PO Box vs normal |
-| `<TwnNm>` | `POBoxCity`←exit · `POBoxCity_HR`←ZPFOR ("PO Box city") · `City`←exit · `City_HR`←ZORT1 ("City") | PO Box/City × payroll/vendor (`XSCHK`,`HR`) |
-| `<CtrySubDvsn>` | `CtrySubDvsn`←exit V3_CGI_CRED_REGION · `CtrySubDvsn_HR`←ZREGI ("Regional code of the payee") | vendor vs payroll |
-| `<Ctry>` | `FPAYHX-ZLISO` ("Country ISO code", 2 chars) | país del beneficiario |
-| `<AdrLine>` ×3 (**solo #1**) | `FPAYH-ZNME2/3/4` ("Name of the Payee") | **overflow de NOMBRE** (no dirección) |
+| Tag XML | #1 (BR/resto) | #2 (US/CA) | Fuente / lógica interna |
+|---|---|---|---|
+| `<StrtNm>` | ✅ | ✅ | PO Box → `"PO BOX"`+`ZPFAC`; calle → `Housenum`(REF02) + `Street`(exit V3_CGI_CRED_STREET) |
+| `<BldgNb>` | ✅ | ✅ | exit `V3_GET_CDTR_BLDG` |
+| `<PstCd>` | ✅ | ✅ | PO Box → `ZPST2` ("PO Box Postal Code"); normal → exit `V3_POSTALCODE` |
+| `<TwnNm>` | ✅ | ✅ | payroll → `ZPFOR`/`ZORT1`; vendor → exits; PO Box/City según `XSCHK`/`HR` |
+| `<CtrySubDvsn>` | ✅ | ✅ | vendor → exit `V3_CGI_CRED_REGION`; payroll → `ZREGI` ("Regional code of payee") |
+| `<Ctry>` | ✅ | ✅ | `FPAYHX-ZLISO` ("Country ISO code", 2 chars) |
+| `<AdrLine>` ×3 | ✅ ← `ZNME2/3/4` | ❌ | **"Name of the Payee"** (overflow de NOMBRE) — **única diferencia** |
 
 **Patrones transversales:** (1) **PO Box vs calle** (`ZPFAC`); (2) **payroll vs vendor** (`HR` desde `LAUFI`):
 payroll usa campos directos (`ZPFOR/ZORT1/ZREGI/ZNME1`), vendor usa exits CITIPMW; (3) **cheque** (`XSCHK`) en
