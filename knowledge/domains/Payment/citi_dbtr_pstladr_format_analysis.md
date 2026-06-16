@@ -133,6 +133,12 @@ campos directos `ZORT1/ZREGI/ZPFOR`; si no → exits CITIPMW). Cada tag estructu
 Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado; +AdrLine solo si nombre largo, 4.7%). Ambos
 **completos**. RU/JP = hueco muerto (UBISO nunca RU/JP).
 
+> 🔑 **IMPORTANTE (usuario, 2026-06-15) — solución al overflow de nombre:** para este caso (nombre del
+> beneficiario > 40 chars que se desborda de `ZNME1` a `ZNME2/3/4` → `<AdrLine>`) **se creó una FUNCIÓN en
+> OTRO MODELO que COMBINA los nombres** (`ZNME1..4`) en uno solo. _Detalle a completar:_ nombre de la función ·
+> en qué modelo/sistema · qué produce (¿un único `<Nm>` concatenado? ¿elimina el name-in-address del AdrLine?).
+> Esto resuelve el name-in-address semántico del Cdtr #1.
+
 **Volumen por nodo (P01, 2024-2026)** — mismo split por `UBISO` que el Dbtr:
 
 | Nodo Cdtr | Dispara | Tipo | Pagos | Medios |
@@ -142,6 +148,30 @@ Impacto real: US/CA → #2 (estructurado puro); BR → #1 (estructurado; +AdrLin
 | | | Total | 155,921 | 2,510 |
 
 ≈ 47% estructura pura (US/CA), 53% híbrido (BR/Worldlink). Ambos completos.
+
+## 6. Cdtr `<PstlAdr>` — detalle de cada XML tag (ambos nodos, D01 V000)
+
+Los 2 nodos (#1 N_2368849090 BR/resto, #2 N_1496761000 US/CA/PR) tienen **estructura interna idéntica**;
+#1 sólo agrega los 3 `<AdrLine>`. Cada tag estructurado es un contenedor con ramas internas.
+
+**Nodos técnicos que gobiernan la lógica:**
+- `HR` (HR_Payment) ← `FPAYH-LAUFI` ("Additional Identification"=run id): `HR='P'` → **payroll** vs vendor.
+- `ZPFAC` ("PO Box") → **apartado postal vs calle**.
+- `HOUSENUMBER` ← `FPAYHX-REF02` (buffer user-defined). `XSCHK` ("Is a Check Created?") → rama de cheque.
+
+| Tag XML | Atoms / fuente | Lógica |
+|---|---|---|
+| `<StrtNm>` | `Housenum`←REF02 · `Street`←exit V3_CGI_CRED_STREET · `"PO BOX"`(const) · `POBOXNUM`←ZPFAC | PO Box (`ZPFAC<>''`) vs calle |
+| `<BldgNb>` | exit `V3_GET_CDTR_BLDG` | — |
+| `<PstCd>` | `POBoxPc`←ZPST2 ("PO Box Postal Code") · `CityPc`←exit V3_POSTALCODE | PO Box vs normal |
+| `<TwnNm>` | `POBoxCity`←exit · `POBoxCity_HR`←ZPFOR ("PO Box city") · `City`←exit · `City_HR`←ZORT1 ("City") | PO Box/City × payroll/vendor (`XSCHK`,`HR`) |
+| `<CtrySubDvsn>` | `CtrySubDvsn`←exit V3_CGI_CRED_REGION · `CtrySubDvsn_HR`←ZREGI ("Regional code of the payee") | vendor vs payroll |
+| `<Ctry>` | `FPAYHX-ZLISO` ("Country ISO code", 2 chars) | país del beneficiario |
+| `<AdrLine>` ×3 (**solo #1**) | `FPAYH-ZNME2/3/4` ("Name of the Payee") | **overflow de NOMBRE** (no dirección) |
+
+**Patrones transversales:** (1) **PO Box vs calle** (`ZPFAC`); (2) **payroll vs vendor** (`HR` desde `LAUFI`):
+payroll usa campos directos (`ZPFOR/ZORT1/ZREGI/ZNME1`), vendor usa exits CITIPMW; (3) **cheque** (`XSCHK`) en
+TwnNm. La **única diferencia #1 vs #2** = los 3 `<AdrLine>` (nombre).
 
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,

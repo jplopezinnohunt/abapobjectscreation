@@ -6036,6 +6036,24 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       <strong>#2</strong> (US+CA, pure structured) = <strong>73,529</strong> payments (1,311 media);
       <strong>#1</strong> (BR, structured + AdrLine) = <strong>82,392</strong> payments (1,199 media). ≈ 47% pure
       structured, 53% hybrid — both complete.</p>
+
+      <h3>CITI <code>Cdtr</code> <code>&lt;PstlAdr&gt;</code> — per-XML-tag detail (both nodes)</h3>
+      <p>Both nodes have <strong>identical internal structure</strong>; #1 only adds the 3 <code>&lt;AdrLine&gt;</code>.
+      Drivers: <code>HR</code> (←<code>FPAYH-LAUFI</code>, <code>='P'</code> → <strong>payroll</strong> vs vendor),
+      <code>ZPFAC</code> ("PO Box") → <strong>PO Box vs street</strong>, <code>XSCHK</code> ("Is a Check Created?").</p>
+      <table>
+        <tr><th>XML tag</th><th>Atoms / source</th><th>Logic</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>Housenum←REF02 · Street←exit V3_CGI_CRED_STREET · "PO BOX"(const) · POBOXNUM←ZPFAC</td><td>PO Box vs street</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>exit V3_GET_CDTR_BLDG</td><td>—</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>POBoxPc←ZPST2 ("PO Box Postal Code") · CityPc←exit V3_POSTALCODE</td><td>PO Box vs normal</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code></td><td>POBoxCity←exit · POBoxCity_HR←ZPFOR · City←exit · City_HR←ZORT1 ("City")</td><td>PO Box/City × payroll/vendor</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>CtrySubDvsn←exit V3_CGI_CRED_REGION · CtrySubDvsn_HR←ZREGI ("Regional code of payee")</td><td>vendor vs payroll</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>FPAYHX-ZLISO ("Country ISO code", 2 chars)</td><td>beneficiary country</td></tr>
+        <tr><td><code>&lt;AdrLine&gt;</code> ×3 (<strong>#1 only</strong>)</td><td>FPAYH-ZNME2/3/4 ("Name of the Payee")</td><td><strong>NAME overflow</strong> (not address)</td></tr>
+      </table>
+      <p>Cross-cutting patterns: <strong>PO Box vs street</strong> (ZPFAC), <strong>payroll vs vendor</strong>
+      (HR from LAUFI — payroll uses direct fields ZPFOR/ZORT1/ZREGI/ZNME1, vendor uses CITIPMW exits),
+      <strong>check</strong> (XSCHK) on TwnNm. The <strong>only #1-vs-#2 difference</strong> is the 3 AdrLine (name).</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
