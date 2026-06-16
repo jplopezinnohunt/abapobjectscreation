@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P01 Upgrade History &mdash; Measured (last 3 upgrades) &mdash; UNESCO SAP</title>
+<style>
+:root {
+  --bg: #f4f6f9; --card: #ffffff; --border: #e6e9ef; --line: #eef1f5;
+  --text: #1f2a37; --muted: #667085; --heading: #101828;
+  --accent: #2563eb; --accent-soft: #e8f0fe;
+  --green: #15803d; --green-soft: #e7f6ec;
+  --yellow: #b45309; --yellow-soft: #fdf2e3;
+  --red: #b42318; --red-soft: #fdeceb;
+  --purple: #6941c6; --purple-soft: #f1ebfd;
+  --orange: #c4320a; --cyan: #0e7490;
+  --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.07);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+p { margin-bottom: 2px; }
+.header { background: linear-gradient(135deg, #ffffff 0%, #eef3fc 100%); padding: 30px 40px 26px; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 1.7em; color: var(--heading); font-weight: 700; letter-spacing: -0.015em; margin-bottom: 6px; }
+.header .sub { color: var(--muted); font-size: 0.95em; }
+.header .domain-badge { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 0.72em; font-weight: 600; letter-spacing: 0.03em; background: var(--accent-soft); color: var(--accent); margin-top: 12px; border: 1px solid #d4e2fd; }
+.tabs { display: flex; gap: 4px; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 28px; overflow-x: auto; flex-wrap: nowrap; position: sticky; top: 0; z-index: 5; box-shadow: var(--shadow); }
+.tab { padding: 14px 18px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.88em; font-weight: 500; transition: all 0.15s; }
+.tab:hover { color: var(--text); border-bottom-color: #cdd5e1; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.content { padding: 28px 40px 60px; max-width: 1340px; margin: 0 auto; }
+.panel { display: none; animation: fade 0.2s ease; }
+.panel.active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.card h3 { color: var(--heading); margin-bottom: 14px; font-size: 1.08em; font-weight: 650; letter-spacing: -0.01em; }
+.card h4 { color: var(--purple); margin: 18px 0 8px; font-size: 0.95em; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+th { background: #f7f9fc; color: #475467; text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; font-weight: 600; font-size: 0.92em; }
+th:first-child { border-top-left-radius: 8px; } th:last-child { border-top-right-radius: 8px; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafbfd; }
+table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; text-align: center; box-shadow: var(--shadow); }
+.kpi .val { font-size: 1.7em; font-weight: 750; color: var(--heading); letter-spacing: -0.02em; }
+.kpi .label { font-size: 0.8em; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+.flow-diagram { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 20px; margin: 16px 0; font-family: 'SF Mono', 'Cascadia Code', 'Courier New', monospace; font-size: 0.82em; line-height: 1.7; white-space: pre; overflow-x: auto; color: #e2e8f0; }
+.highlight { color: var(--accent); font-weight: 650; }
+.highlight-green { color: var(--green); font-weight: 650; }
+.highlight-yellow { color: var(--yellow); font-weight: 650; }
+.highlight-red { color: var(--red); font-weight: 650; }
+.highlight-purple { color: var(--purple); font-weight: 650; }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 0.74em; font-weight: 600; letter-spacing: 0.02em; }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-yellow { background: var(--yellow-soft); color: var(--yellow); }
+.badge-red { background: var(--red-soft); color: var(--red); }
+.badge-blue { background: var(--accent-soft); color: var(--accent); }
+.badge-purple { background: var(--purple-soft); color: var(--purple); }
+.note { background: var(--yellow-soft); border: 1px solid #f6e2c4; border-left: 3px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 14px 0; font-size: 0.88em; color: #6b4012; }
+.note::before { content: "Note  "; font-weight: 700; color: var(--yellow); }
+.alert { background: var(--red-soft); border: 1px solid #f6cfcb; border-left: 3px solid var(--red); border-radius: 8px; padding: 13px 15px; margin: 14px 0; font-size: 0.9em; color: #6e1a12; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 1000px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+.upg-card { border-top: 4px solid var(--border); }
+.upg-card.latest { border-top-color: var(--red); }
+.upg-card.mid { border-top-color: var(--orange); }
+.upg-card.old { border-top-color: var(--yellow); }
+.metric { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 0.88em; }
+.metric:last-child { border-bottom: none; }
+.metric .m-val { font-weight: 650; color: var(--heading); text-align: right; }
+.bar { height: 10px; border-radius: 5px; background: var(--accent); }
+.muted { color: var(--muted); }
+code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.86em; color: #b4399a; font-family: 'SF Mono', 'Cascadia Code', monospace; }
+.flow-diagram code { background: none; color: inherit; padding: 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>P01 Upgrade History &mdash; Measured</h1>
+  <div class="sub">Forensic measurement of the last 3 SAP maintenance upgrades on P01 (production) &middot; complexity, timing, stack delta</div>
+  <span class="domain-badge">SYSTEM LIFECYCLE &middot; VERIFIED FROM P01 RFC 2026-06-16</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(event,'overview')">Overview</div>
+  <div class="tab" onclick="showTab(event,'spau')">SPAU &amp; Real Timing</div>
+  <div class="tab" onclick="showTab(event,'spau2024')">2024 Fragility Detail</div>
+  <div class="tab" onclick="showTab(event,'last3')">The 3 Last Upgrades</div>
+  <div class="tab" onclick="showTab(event,'timeline')">Full Timeline</div>
+  <div class="tab" onclick="showTab(event,'stack')">Current Stack</div>
+  <div class="tab" onclick="showTab(event,'method')">Method &amp; Provenance</div>
+</div>
+
+<div class="content">
+
+<!-- ============ OVERVIEW ============ -->
+<div class="panel active" id="overview">
+  <div class="card">
+    <h3>What this measures</h3>
+    <p style="margin-bottom:10px">An executed SAP upgrade leaves a forensic trail. This companion measures it from three P01 tables, read-only over SNC/SSO: <code>UVERS</code> (release/EhP upgrade history), <code>PAT03</code> (every support package + its implementation date), and <code>CVERS</code> (the current stack = the endpoint).</p>
+    <p>P01 has had <strong>one release upgrade</strong> (EhP8, 2017) and a roughly <strong>annual cadence of Support-Package stacks</strong> since. "The last 3 upgrades" = the 3 most recent <em>full SP stacks</em>.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:var(--red)">2026-06-07</div><div class="label">Last upgrade executed<br>(was blocked in April &rarr; ran Jun 7)</div></div>
+    <div class="kpi"><div class="val">275</div><div class="label">patches in the last upgrade<br>(214 support pkgs)</div></div>
+    <div class="kpi"><div class="val">SP28&rarr;34</div><div class="label">SAP_BASIS jump (+6 levels)<br>biggest since EhP8</div></div>
+    <div class="kpi"><div class="val">~23 mo</div><div class="label">gap since prior stack<br>(2025 annual cycle skipped)</div></div>
+  </div>
+
+  <div class="card">
+    <h3>The 3 last upgrades &mdash; at a glance</h3>
+    <table>
+      <tr><th>#</th><th>Date</th><th>Type</th><th>Total patches</th><th>Support pkgs (CSP)</th><th>Add-on (ACP/AOI)</th><th>Mod-adjust (SPDD/SPAU)</th><th>Components</th><th>SAP_BASIS</th><th>Complexity</th></tr>
+      <tr>
+        <td><strong>1</strong></td><td><strong>2026-06-07</strong></td><td>SP stack</td>
+        <td><strong>275</strong></td><td>214</td><td>56</td><td>4</td><td>59</td><td>SP28&rarr;34 <span class="muted">(+6)</span></td>
+        <td><span class="badge badge-red">HIGHEST</span></td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td><td>2024-07-05/06</td><td>SP stack</td>
+        <td>148</td><td>140</td><td>4</td><td>3</td><td>37</td><td>SP26&rarr;28 <span class="muted">(+2)</span></td>
+        <td><span class="badge badge-yellow">LOW&ndash;MED</span></td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td><td>2023-06-09/14</td><td>SP stack</td>
+        <td>145</td><td>142</td><td>2</td><td>0</td><td>37</td><td>SP22&rarr;26 <span class="muted">(+4)</span></td>
+        <td><span class="badge badge-yellow">MED</span></td>
+      </tr>
+    </table>
+    <div class="note">Two <em>targeted</em> campaigns sit between #1 and #2 &mdash; 2025-11-11 (40 patches, add-on <code>PA_SE_IN</code> only) and 2025-04-16 (30 patches, ST-PI / UI tools only). They are not full stacks, so they are excluded from "the 3 upgrades". They are visible in the Full Timeline.</div>
+  </div>
+
+  <div class="alert">
+    <strong>Patch count is the wrong lens.</strong> June 2026 is the biggest stack <em>by patch count</em>, but by the two metrics that actually matter operationally &mdash; how long the import took and how much custom code had to be re-adjusted (SPAU) &mdash; <strong>July 2024 was the heaviest upgrade, not 2026</strong>. See the <span class="highlight">SPAU &amp; Real Timing</span> tab. Summary: import time is ~6&ndash;8 h for all three (2026 was actually the <em>fastest</em> at 5.7 h); SPAU adjustments were 503 (2024) &gt; 343 (2026) &gt; 233 (2023).
+  </div>
+
+  <div class="card">
+    <h3>Verdict</h3>
+    <p style="margin-bottom:8px">&bull; <span class="highlight">By patch volume</span>, June 2026 is the biggest maintenance event since EhP8 (275 patches, 59 components, SAP_BASIS +6 levels) &mdash; it absorbed the <span class="highlight-yellow">skipped 2025 cycle</span> (~23-month gap).</p>
+    <p style="margin-bottom:8px">&bull; <span class="highlight-red">But by operational impact, July 2024 was the painful one</span>: 503 SPAU adjustments (3.6 per support package) vs 343 for 2026 (1.6 per SP). Volume of SAP patches does <em>not</em> predict how much UNESCO custom code breaks &mdash; that depends on whether SAP changed the specific objects UNESCO had modified.</p>
+    <p style="margin-bottom:8px">&bull; <span class="highlight-green">The SP import itself is a near-constant ~6&ndash;8 h</span> regardless of stack size; the difference between upgrades is ~2 h. The real time-and-effort cost lives in SPAU rework, not the import window.</p>
+    <p>&bull; The June 2026 run is the same "Upgrade 2026" that was <span class="highlight">blocked in April</span> by 7 open P01 customizing requests (see <code>upgrade_2026_v01_open_customizing_requests.html</code>); resolved, imported <strong>2026-06-07</strong>.</p>
+  </div>
+</div>
+
+<!-- ============ SPAU & TIMING ============ -->
+<div class="panel" id="spau">
+  <div class="card">
+    <h3>The point: volume &ne; impact</h3>
+    <p style="margin-bottom:14px">An upgrade's operational cost is not the number of patches. It is two things: <strong>(1) how long the import runs</strong> (the time window the system is busy / down), and <strong>(2) how much custom code must be re-adjusted afterwards</strong> &mdash; the SPAU/SPDD rework. Both are measured below from <code>TPALOG</code> (per-step import timestamps) and <code>SMODILOG</code> (the modification log).</p>
+    <table>
+      <tr><th>Upgrade</th><th>Patches</th><th>Import</th><th>SPAU adjustments</th><th>per SP</th><th></th></tr>
+      <tr style="background:rgba(180,35,24,0.05)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td><strong>503</strong></td><td><strong>3.59</strong></td><td><span class="badge badge-red">&larr; the painful one</span></td></tr>
+      <tr><td><strong>2026-06</strong></td><td>275</td><td>5.7 h</td><td>343</td><td>1.60</td><td><span class="muted">biggest, but light</span></td></tr>
+      <tr><td><strong>2023-06</strong></td><td>145</td><td>8.1 h</td><td>233</td><td>1.64</td><td><span class="muted">lightest</span></td></tr>
+    </table>
+    <p class="muted" style="margin-top:10px;font-size:0.88em">Same import time (~6&ndash;8 h) across all three; 2024 forced 2.2&times; more custom-code adjustment per support package than the bigger 2026 stack.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>The upgrade process &mdash; preparation + main import (TPALOG)</h3>
+      <table>
+        <tr><th>Upgrade</th><th>Phase</th><th>Day &amp; window</th><th>Duration</th><th>Nature</th></tr>
+        <tr><td><strong>2026-06</strong></td><td>Prep + import (single session)</td><td>Sun 07 Jun&nbsp; 00:59 &rarr; 06:39</td><td><span class="badge badge-green">5.7 h</span></td><td>off-hours, one run</td></tr>
+        <tr><td rowspan="2"><strong>2024-07</strong></td><td>&#9312; Preparation &mdash; SPAM update</td><td>Thu 04 Jul&nbsp; 09:56 &rarr; 09:58</td><td>~2 min</td><td><span class="badge badge-green">non-disruptive</span></td></tr>
+        <tr><td>&#9313; Main import</td><td>Fri 05 Jul&nbsp; 15:37 &rarr; 22:35</td><td>7.0 h</td><td><span class="badge badge-yellow">disruptive</span></td></tr>
+        <tr><td rowspan="2"><strong>2023-06</strong></td><td>&#9312; Preparation &mdash; SPAM + tools</td><td>Fri 09 Jun&nbsp; 17:22 &rarr; 17:43</td><td>~21 min</td><td><span class="badge badge-green">non-disruptive</span></td></tr>
+        <tr><td>&#9313; Main import</td><td>Sat 10 Jun&nbsp; 01:15 &rarr; 09:19</td><td>8.1 h</td><td><span class="badge badge-yellow">disruptive</span></td></tr>
+      </table>
+      <div class="note"><strong>Full process span (first prep action &rarr; import complete):</strong> 2026 = 5.7 h in one Sunday session &middot; 2024 = Thu 09:56 &rarr; Fri 22:35 (touches 2 days) &middot; 2023 = Fri 17:22 &rarr; Sat 09:19 (touches 2 days). The calendar gap between preparation and the main import is <strong>normal operation, not downtime</strong> &mdash; only the main import (the 7&ndash;8 h block) is disruptive. <span class="muted">SP-queue (SAPK*) activity from TPALOG; full SUM-level downtime is OS-log only.</span></div>
+      <div class="note" style="background:var(--purple-soft);border-color:#e3d7fa;border-left-color:var(--purple);color:#4a2f7a"><strong>What "preparation" means:</strong> the day-before activity (not downtime) was the mandatory <strong>SPAM/SAINT tool update</strong> &mdash; <code>SAPKD75087</code> (2024) / <code>SAPKD75084</code> (2023), component <code>SAP_OCS</code> &mdash; which SAP requires before importing a stack, plus loading and <em>test-importing</em> the queue (disassemble, add-to-buffer, DD pre-import). These run with users still on the system, so the next day's disruptive main import is as short as possible. It is also why the raw 2024/2023 span looks like it crosses midnight (36 h / 16 h): that figure includes this prep, not continuous downtime.</div>
+      <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73">Import time is near-constant at ~6&ndash;8 h. The biggest stack (2026, 275 patches) was the <strong>fastest</strong> (5.7 h). The spread across the three is ~2.4 h &mdash; not a meaningful differentiator. The cost lives in SPAU, not the import window.</div>
+    </div>
+
+    <div class="card">
+      <h3>SPAU impact (SMODILOG &mdash; custom code re-adjusted)</h3>
+      <table>
+        <tr><th>Upgrade</th><th>SPAU adjustments</th><th>per support pkg</th><th>Burden</th></tr>
+        <tr><td>2024-07</td><td><strong>503</strong></td><td><strong>3.59</strong></td><td><span class="badge badge-red">HEAVIEST</span></td></tr>
+        <tr><td><strong>2026-06</strong></td><td>343</td><td>1.60</td><td><span class="badge badge-yellow">light</span></td></tr>
+        <tr><td>2023-06</td><td>233</td><td>1.64</td><td><span class="badge badge-green">lightest</span></td></tr>
+      </table>
+      <div class="note">2024 forced <strong>2.2&times; more</strong> custom-code adjustment per support package than 2026 or 2023 &mdash; despite applying half as many patches as 2026. SPAU depends on whether SAP touched the objects UNESCO had modified, not on patch count.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Side by side &mdash; the metrics that matter</h3>
+    <table>
+      <tr><th>Upgrade</th><th>Patches (volume)</th><th>Import time</th><th>SPAU adjustments</th><th>SPAU per SP</th><th>Real operational weight</th></tr>
+      <tr style="background:rgba(248,81,73,0.06)"><td><strong>2026-06</strong></td><td>275 <span class="badge badge-blue">biggest</span></td><td>5.7 h <span class="badge badge-green">fastest</span></td><td>343</td><td>1.60</td><td><span class="badge badge-yellow">MEDIUM</span> (big but efficient)</td></tr>
+      <tr style="background:rgba(240,136,62,0.08)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td>503 <span class="badge badge-red">most</span></td><td>3.59 <span class="badge badge-red">most</span></td><td><span class="badge badge-red">HEAVIEST</span> (SPAU-driven)</td></tr>
+      <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td>145</td><td>8.1 h</td><td>233</td><td>1.64</td><td><span class="badge badge-green">LIGHTEST</span></td></tr>
+    </table>
+    <p style="margin-top:12px">&bull; <strong>If you rank by patches:</strong> 2026 &gt; 2024 &asymp; 2023.<br>
+       &bull; <strong>If you rank by what actually hurts (SPAU rework):</strong> 2024 &gt; 2026 &gt; 2023.<br>
+       &bull; <strong>Import time barely moves</strong> (5.7&ndash;8.1 h). The differentiator is SPAU, and the 2024 stack &mdash; not the bigger 2026 one &mdash; was the costly one.</p>
+  </div>
+
+  <div class="card">
+    <h3>How SPAU was attributed (method)</h3>
+    <p style="margin-bottom:8px">P01 <code>SMODILOG</code> holds <strong>9,852</strong> logged modifications, of which <strong>5,809</strong> are SPAU-relevant (flag set). Each SPAU-flagged modification carries the <code>TRKORR</code> of the transport that adjusted it; that transport is dated via <code>E070.AS4DATE</code> and bucketed to the upgrade month. So "503 adjustments in 2024-07" = 503 SPAU-flagged modifications whose adjustment transport was released in that upgrade window.</p>
+    <div class="note">Full SPAU history (all upgrades): EhP8 2017-04 = 1,219 &middot; 2022-04 = 515 &middot; 2024-07 = 503 &middot; 2026-06 = 343 &middot; 2023-06 = 233 &middot; 2021-04 = 169. The custom-code burden has trended <em>down</em> since the 2017/2022 peaks.</div>
+  </div>
+</div>
+
+<!-- ============ 2024 SPAU OBJECT DETAIL ============ -->
+<div class="panel" id="spau2024">
+  <div class="card">
+    <h3>Where the upgrade fragility lives &mdash; the 502 objects re-adjusted in July 2024</h3>
+    <p>The heaviest upgrade (2024-07) forced <strong>502 SPAU adjustment records across 187 distinct objects</strong>, all re-applied by <code>N_MENARD</code> (the implementation partner) during the import. These are SAP-standard objects UNESCO modified <em>in place</em> &mdash; so every time SAP ships a new version of them, the modification collides and must be re-adjusted by hand. <strong>This list is the recurring upgrade cost.</strong></p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">502</div><div class="label">SPAU adjustment records</div></div>
+    <div class="kpi"><div class="val">187</div><div class="label">distinct objects re-adjusted</div></div>
+    <div class="kpi"><div class="val" style="color:var(--purple)">74%</div><div class="label">are HR / Payroll objects</div></div>
+    <div class="kpi"><div class="val" style="font-size:1.3em">N_MENARD</div><div class="label">re-adjusted 100% (the SI partner)</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>By domain &mdash; where it concentrates</h3>
+      <table>
+        <tr><th>Domain</th><th>Objects</th><th>Share</th></tr>
+        <tr style="background:rgba(105,65,198,0.05)"><td><strong>HR / Payroll</strong></td><td><strong>139</strong></td><td><span class="badge badge-red">74%</span></td></tr>
+        <tr><td>FI / Banking / Payment</td><td>31</td><td><span class="badge badge-yellow">17%</span></td></tr>
+        <tr><td>Basis / SAP tools</td><td>12</td><td><span class="badge badge-green">6%</span></td></tr>
+      </table>
+      <div class="note">Fragility is overwhelmingly in <strong>HR/Payroll</strong> &mdash; UNESCO's most heavily modified area. Biggest package: <code>PBUN</code> (107 objects, UN payroll). Recurring classes: <code>CL_HRPADUN_*</code> (UN personnel / CMT), <code>CL_HRPAYFR_*</code> (French payroll), <code>CL_HRPA_INFTY_0009</code> (bank-details infotype).</div>
+    </div>
+    <div class="card">
+      <h3>By object type &mdash; classes vs DDIC vs code</h3>
+      <table>
+        <tr><th>Type</th><th>Count</th><th>What</th></tr>
+        <tr><td><code>PROG</code></td><td>74</td><td>Programs / reports</td></tr>
+        <tr><td><code>CLAS</code></td><td>39</td><td>Classes</td></tr>
+        <tr><td><code>TABL</code></td><td>24</td><td>DDIC tables / structures</td></tr>
+        <tr><td><code>FUGR</code></td><td>12</td><td>Function groups</td></tr>
+        <tr><td><code>AVAS</code></td><td>8</td><td>Generated objects</td></tr>
+        <tr><td>others (15 types)</td><td>30</td><td>DTEL, TTYP, VIEW, ENHS, TRAN, MSAG, DOMA, INTF, CUS*&hellip;</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Top packages (the concrete hotspots)</h3>
+    <table>
+      <tr><th>Package</th><th>Objects</th><th>Area</th></tr>
+      <tr><td><code>PBUN</code></td><td><strong>107</strong></td><td>HR &mdash; UN payroll <span class="badge badge-red">dominant</span></td></tr>
+      <tr><td><code>BF_BANK</code></td><td>19</td><td>FI &mdash; bank / payment</td></tr>
+      <tr><td><code>PP00</code></td><td>11</td><td>HR &mdash; Org Management</td></tr>
+      <tr><td><code>STTREL</code></td><td>10</td><td>Tools / release</td></tr>
+      <tr><td><code>ID-FI-REU-PAYM</code></td><td>7</td><td>FI &mdash; payment DMEE</td></tr>
+      <tr><td><code>P06_DSN / PC06 / PCUN / PUN_CMT</code></td><td>~10</td><td>HR &mdash; French &amp; UN payroll</td></tr>
+    </table>
+    <p class="muted" style="margin-top:8px;font-size:0.88em">Full object list persisted in the Gold DB table <code>spau_2024_objects</code> (type &middot; name &middot; package).</p>
+  </div>
+
+  <div class="card">
+    <h3>So what &mdash; how to stop paying this every upgrade</h3>
+    <p style="margin-bottom:8px">&bull; The 502 adjustments are not random &mdash; they are <strong>the same modified objects re-breaking each cycle</strong>. The 2024, 2023 and 2022 upgrades all re-adjusted the same HR/Payroll core.</p>
+    <p style="margin-bottom:8px">&bull; <span class="highlight-purple">The lever is clean-core refactoring</span>: move the most-recurring in-place modifications (the <code>PBUN</code> payroll classes, the infotype objects) to enhancement techniques &mdash; BAdIs, enhancement spots, append structures &mdash; so SAP's new versions no longer collide with them.</p>
+    <p>&bull; Converting just the <strong>top ~20 recurring HR/Payroll objects</strong> would remove a large share of the per-upgrade SPAU burden &mdash; turning a 500-adjustment manual task into a fraction of it, and de-risking every future upgrade <em>and</em> the eventual S/4HANA move.</p>
+  </div>
+</div>
+
+<!-- ============ LAST 3 ============ -->
+<div class="panel" id="last3">
+  <div class="grid-3">
+    <div class="card upg-card latest">
+      <h3 style="color:var(--red)">#1 &mdash; June 2026</h3>
+      <div class="muted" style="margin-bottom:10px">Implemented 2026-06-07 &middot; latest</div>
+      <div class="metric"><span>Total patches</span><span class="m-val">275</span></div>
+      <div class="metric"><span>Support packages (CSP)</span><span class="m-val">214</span></div>
+      <div class="metric"><span>Add-on patches (ACP)</span><span class="m-val">54</span></div>
+      <div class="metric"><span>Add-on installs (AOI)</span><span class="m-val">2</span></div>
+      <div class="metric"><span>Mod adjust (SPDD/SPAU)</span><span class="m-val" style="color:var(--orange)">4</span></div>
+      <div class="metric"><span>Components touched</span><span class="m-val">59</span></div>
+      <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP28&rarr;34 (+6)</span></div>
+      <div class="metric"><span>SAP_APPL</span><span class="m-val">&rarr;618 SP25</span></div>
+      <div class="metric"><span>SAP_UI</span><span class="m-val">&rarr;754 SP18</span></div>
+      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-red">HIGHEST</span></span></div>
+      <div class="note" style="margin-top:12px">Absorbed the skipped 2025 cycle. 54 add-on components re-patched + 4 modification adjustments = the heaviest custom-code re-validation burden of the three.</div>
+    </div>
+
+    <div class="card upg-card mid">
+      <h3 style="color:var(--orange)">#2 &mdash; July 2024</h3>
+      <div class="muted" style="margin-bottom:10px">Implemented 2024-07-05 &rarr; 07-06 (2d)</div>
+      <div class="metric"><span>Total patches</span><span class="m-val">148</span></div>
+      <div class="metric"><span>Support packages (CSP)</span><span class="m-val">140</span></div>
+      <div class="metric"><span>Add-on patches (ACP)</span><span class="m-val">0</span></div>
+      <div class="metric"><span>Add-on installs (AOI)</span><span class="m-val">4</span></div>
+      <div class="metric"><span>Mod adjust (SPDD/SPAU)</span><span class="m-val" style="color:var(--orange)">3</span></div>
+      <div class="metric"><span>Components touched</span><span class="m-val">37</span></div>
+      <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP26&rarr;28 (+2)</span></div>
+      <div class="metric"><span>SAP_APPL</span><span class="m-val">618 SP21</span></div>
+      <div class="metric"><span>SAP_UI</span><span class="m-val">740 SP13</span></div>
+      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-yellow">LOW&ndash;MED</span></span></div>
+      <div class="note" style="margin-top:12px">Smallest SAP_BASIS jump of the three (+2). Routine annual stack.</div>
+    </div>
+
+    <div class="card upg-card old">
+      <h3 style="color:var(--yellow)">#3 &mdash; June 2023</h3>
+      <div class="muted" style="margin-bottom:10px">Implemented 2023-06-09 &rarr; 06-14 (6d)</div>
+      <div class="metric"><span>Total patches</span><span class="m-val">145</span></div>
+      <div class="metric"><span>Support packages (CSP)</span><span class="m-val">142</span></div>
+      <div class="metric"><span>Add-on patches (ACP)</span><span class="m-val">0</span></div>
+      <div class="metric"><span>Add-on installs (AOI)</span><span class="m-val">1</span></div>
+      <div class="metric"><span>Mod adjust (SPDD/SPAU)</span><span class="m-val">0</span></div>
+      <div class="metric"><span>Components touched</span><span class="m-val">37</span></div>
+      <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP22&rarr;26 (+4)</span></div>
+      <div class="metric"><span>SAP_APPL</span><span class="m-val">618 SP18</span></div>
+      <div class="metric"><span>SAP_UI</span><span class="m-val">740 SP9</span></div>
+      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-yellow">MED</span></span></div>
+      <div class="note" style="margin-top:12px">+4 SAP_BASIS levels over a 6-day window. No recorded modification adjustments.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>How "complexity" is built (all measured, no opinion)</h3>
+    <table>
+      <tr><th>Dimension</th><th>What it measures</th><th>Source field</th></tr>
+      <tr><td>Support packages (CSP)</td><td>Volume of standard SAP maintenance applied</td><td><code>PAT03.PATCH_TYPE='CSP'</code></td></tr>
+      <tr><td>Add-on patches (ACP/AOI)</td><td>How many add-on components had to move in lockstep</td><td><code>PATCH_TYPE in (ACP,AOI)</code></td></tr>
+      <tr><td>Modification adjustments</td><td>Custom-code rework forced by the SPs (SPDD/SPAU effort)</td><td><code>PATCH_TYPE='MOD'</code></td></tr>
+      <tr><td>Components touched</td><td>Breadth of the stack across the product</td><td><code>distinct PAT03.COMPONENT</code></td></tr>
+      <tr><td>SAP_BASIS SP jump</td><td>Depth of the technical core change (the bellwether)</td><td><code>PAT03.TO_REL</code> range</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ TIMELINE ============ -->
+<div class="panel" id="timeline">
+  <div class="card">
+    <h3>Full upgrade history since EhP8 (SAP_BASIS-anchored)</h3>
+    <p class="muted" style="margin-bottom:12px">Each row = a date on which SAP_BASIS support packages were implemented = one maintenance event. The 2017 row is the EhP8 <em>release upgrade</em> (the only one in <code>UVERS</code>); the rest are SP stacks.</p>
+    <table>
+      <tr><th>Date</th><th>Event</th><th>SAP_BASIS SP</th><th>Total patches</th><th>Components</th><th>Cadence</th></tr>
+      <tr style="background:rgba(188,140,255,0.08)"><td><strong>2017-03-24 &rarr; 03-31</strong></td><td><span class="badge badge-purple">EhP8 RELEASE UPGRADE</span></td><td>install &rarr; SP06</td><td>363</td><td>44</td><td>UVERS: 6.7 calendar days</td></tr>
+      <tr><td>2019-03-30</td><td>SP stack</td><td>SP07&rarr;13</td><td>216</td><td>32</td><td>~2 yr</td></tr>
+      <tr><td>2020-04-04</td><td>SP stack</td><td>SP14&rarr;16</td><td>78</td><td>30</td><td>1 yr</td></tr>
+      <tr><td>2021-04-10</td><td>SP stack</td><td>SP17&rarr;19</td><td>258</td><td>47</td><td>1 yr</td></tr>
+      <tr><td>2022-04-09</td><td>SP stack</td><td>SP20&rarr;22</td><td>89</td><td>37</td><td>1 yr</td></tr>
+      <tr style="background:rgba(210,153,34,0.06)"><td><strong>2023-06-10</strong></td><td><span class="badge badge-yellow">UPGRADE #3</span></td><td>SP22&rarr;26</td><td>142</td><td>37</td><td>~14 mo</td></tr>
+      <tr style="background:rgba(240,136,62,0.06)"><td><strong>2024-07-06</strong></td><td><span class="badge" style="background:rgba(240,136,62,0.2);color:var(--orange)">UPGRADE #2</span></td><td>SP26&rarr;28</td><td>147</td><td>37</td><td>~13 mo</td></tr>
+      <tr><td>2025-04-16</td><td class="muted">targeted (ST-PI / UI tools)</td><td>&ndash;</td><td>30</td><td>5</td><td>&ndash;</td></tr>
+      <tr><td>2025-11-11</td><td class="muted">targeted (add-on PA_SE_IN)</td><td>&ndash;</td><td>40</td><td>1</td><td>&ndash;</td></tr>
+      <tr style="background:rgba(248,81,73,0.08)"><td><strong>2026-06-07</strong></td><td><span class="badge badge-red">UPGRADE #1 (latest)</span></td><td>SP28&rarr;34</td><td>275</td><td>59</td><td>~23 mo (2025 stack skipped)</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Reading the cadence</h3>
+    <p style="margin-bottom:8px">&bull; UNESCO ran an <strong>annual</strong> SP stack from 2019 to 2024, drifting from April to a June/July slot.</p>
+    <p style="margin-bottom:8px">&bull; <span class="highlight-yellow">2025 broke the pattern</span>: only two narrow targeted updates (tools + one add-on), no full stack.</p>
+    <p>&bull; <span class="highlight-red">June 2026 paid the debt</span>: the largest stack on record (ex-EhP8) at 275 patches / 59 components, lifting SAP_BASIS 6 levels in one go.</p>
+  </div>
+</div>
+
+<!-- ============ STACK ============ -->
+<div class="panel" id="stack">
+  <div class="card">
+    <h3>Current stack after the June 2026 upgrade (CVERS &mdash; 177 components total)</h3>
+    <p class="muted" style="margin-bottom:12px">This is the endpoint &mdash; where P01 sits today. Underlying base release is <strong>SAP ERP 6.0 EhP8</strong> (NetWeaver 7.50 basis).</p>
+    <table>
+      <tr><th>Component</th><th>Release</th><th>SP level</th><th>Meaning</th></tr>
+      <tr><td>SAP_BASIS</td><td>750</td><td>SP0034</td><td>NetWeaver technical core</td></tr>
+      <tr><td>SAP_ABA</td><td>750</td><td>SP0034</td><td>Application Basis</td></tr>
+      <tr><td>SAP_GWFND</td><td>750</td><td>SP0034</td><td>Gateway Foundation (OData/Fiori)</td></tr>
+      <tr><td>SAP_BW</td><td>750</td><td>SP0034</td><td>BW embedded</td></tr>
+      <tr><td>SAP_UI</td><td>754</td><td>SP0018</td><td>UI add-on (SAPUI5 / Fiori FE)</td></tr>
+      <tr><td>SAP_APPL</td><td>618</td><td>SP0025</td><td>Logistics / core ERP (EhP8)</td></tr>
+      <tr><td>SAP_FIN</td><td>618</td><td>SP0025</td><td>Financials (EhP8)</td></tr>
+      <tr><td>FINBASIS</td><td>748</td><td>SP0025</td><td>Financial Basis</td></tr>
+      <tr><td>EA-FINSERV</td><td>618</td><td>SP0025</td><td>Financial Services extension</td></tr>
+      <tr><td>EA-PS</td><td>618</td><td>SP0025</td><td>Public Sector extension (PSM)</td></tr>
+      <tr><td>SAP_HR</td><td>608</td><td>SP0156</td><td>HCM core</td></tr>
+      <tr><td>EA-HR</td><td>608</td><td>SP0156</td><td>HCM extension</td></tr>
+      <tr><td>SAP_HRCAR / SAP_HRGXX</td><td>608</td><td>SP0156</td><td>HR country / international</td></tr>
+      <tr><td>WEBCUIF</td><td>748</td><td>SP0025</td><td>Web Client UI Framework</td></tr>
+    </table>
+    <div class="note">The split releases (BASIS at 750, SAP_APPL/SAP_FIN at 618, SAP_HR at 608) are normal for EhP8 ERP &mdash; the NetWeaver layer and the application enhancement packages version independently.</div>
+  </div>
+</div>
+
+<!-- ============ METHOD ============ -->
+<div class="panel" id="method">
+  <div class="card">
+    <h3>Sources &mdash; how this was measured</h3>
+    <p style="margin-bottom:10px">All figures read live from <strong>P01 (production, client 350)</strong> via <code>RFC_READ_TABLE</code> over SNC/SSO &mdash; read-only, the only compliant channel. Pulled 2026-06-16.</p>
+    <table>
+      <tr><th>Table</th><th>What it gave</th><th>Rows</th><th>Gold DB</th></tr>
+      <tr><td><code>UVERS</code></td><td>Release/EhP upgrade history (start/end date, OLD&rarr;NEW release)</td><td>160</td><td><code>uvers</code></td></tr>
+      <tr><td><code>PAT03</code></td><td>Every support package + implementation date + type</td><td>3,737</td><td><code>pat03</code></td></tr>
+      <tr><td><code>CVERS</code></td><td>Current SP level per software component</td><td>177</td><td><code>cvers</code></td></tr>
+      <tr><td><code>SMODILOG</code></td><td>Modification log &mdash; SPAU/SPDD custom-code adjustments (impact)</td><td>9,852</td><td><code>smodilog</code></td></tr>
+      <tr><td><code>TPALOG</code></td><td>tp action log &mdash; per-step import timestamps (real timing)</td><td>31,952*</td><td><code>tpalog_upgrades</code></td></tr>
+    </table>
+    <p class="muted" style="margin-top:6px">*TPALOG limited to the 4 upgrade windows (2017/2023/2024/2026), not the full log.</p>
+    <h4>PATCH_TYPE legend (PAT03)</h4>
+    <p class="muted">CSP = Component Support Package &middot; ACP = Add-on Component Patch &middot; AOI = Add-on Installation &middot; MOD = Modification adjustment (SPDD/SPAU) &middot; PAT = patch.</p>
+  </div>
+
+  <div class="card">
+    <h3>Honest limits of this measurement</h3>
+    <div class="alert" style="background:rgba(210,153,34,0.1);border-color:rgba(210,153,34,0.3)">
+      <strong>Import time is measured; full SUM downtime is not.</strong> The 5.7&ndash;8.1 h figures are the SP-queue import (SAPK* steps) from <code>TPALOG.TRTIME</code> on the main import day &mdash; the real busy window for applying the packages. The <em>total</em> technical downtime of a SUM-driven run (shadow system, EU_IMPORT, post-processing) is wider and lives in the <strong>Software Update Manager logs</strong> (<code>UPGANA.XML</code> / phase log) at OS level &mdash; not RFC-readable. <code>PAT03.IMPLE_TIME</code> alone understates duration: for 2023/2024 it is just the SPAM commit stamp (all patches within ~2.5 min), which is why timing was taken from TPALOG, not PAT03.
+    </div>
+    <div class="note">SPAU attribution buckets SMODILOG SPAU-flagged modifications by their adjustment transport's <code>E070.AS4DATE</code>. This dates <em>when</em> each custom object was re-adjusted; it does not capture manual effort-hours per object (not recorded in SAP). The object-level list (which classes/DDIC objects) is in the <code>smodilog</code> Gold DB table if you want it per upgrade.</div>
+  </div>
+
+  <div class="card">
+    <h3>Reproduce</h3>
+    <div class="flow-diagram">cd Zagentexecution/mcp-backend-server-python
+python probe_upgrade_history.py        <span class="muted"># discover table structure (DD03L)</span>
+python extract_upgrade_measurement.py  <span class="muted"># pull UVERS / PAT03 / CVERS -> Gold DB</span>
+python analyze_upgrades.py             <span class="muted"># cluster into campaigns + scorecard</span>
+python extract_spau_timing.py          <span class="muted"># SMODILOG (SPAU) + TPALOG (timing) -> Gold DB</span></div>
+    <p class="muted">Gold DB: <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code> (tables <code>uvers</code>, <code>pat03</code>, <code>cvers</code>).</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+function showTab(e, id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
