@@ -85,8 +85,8 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 
 <div class="tabs">
   <div class="tab active" onclick="showTab(event,'overview')">Overview</div>
-  <div class="tab" onclick="showTab(event,'spau')">SPAU &amp; Real Timing</div>
-  <div class="tab" onclick="showTab(event,'spau2024')">2024 Fragility Detail</div>
+  <div class="tab" onclick="showTab(event,'spau')">Activities &amp; Timing</div>
+  <div class="tab" onclick="showTab(event,'spau2024')">Recurring SPAU work</div>
   <div class="tab" onclick="showTab(event,'last3')">The 3 Last Upgrades</div>
   <div class="tab" onclick="showTab(event,'timeline')">Full Timeline</div>
   <div class="tab" onclick="showTab(event,'stack')">Current Stack</div>
@@ -130,12 +130,12 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <td><span class="badge badge-yellow">MED</span></td>
       </tr>
     </table>
-    <p class="muted" style="margin:8px 0;font-size:0.85em">* <strong>MOD patches</strong> = PAT03 patches of type <code>MOD</code> (SAP-delivered correction patches in the queue) &mdash; <em>not</em> the customer SPAU rework. The real SPAU effort (the custom objects UNESCO re-adjusted) is <strong>343 / 503 / 233</strong> objects from SMODILOG; see the <em>SPAU &amp; Real Timing</em> tab. "Stack size" ranks by patch volume, which (as the alert below explains) is <em>not</em> the operational cost.</p>
+    <p class="muted" style="margin:8px 0;font-size:0.85em">* <strong>MOD patches</strong> = PAT03 patches of type <code>MOD</code> (SAP-delivered correction patches in the queue) &mdash; <em>not</em> the customer SPAU rework. The real SPAU effort (the custom objects UNESCO re-adjusted) is <strong>343 / 503 / 233</strong> objects from SMODILOG; see the <em>Activities &amp; Timing</em> tab. "Stack size" ranks by patch volume, which (as the alert below explains) is <em>not</em> the operational cost.</p>
     <div class="note">Two <em>targeted</em> campaigns sit between #1 and #2 &mdash; 2025-11-11 (40 patches, add-on <code>PA_SE_IN</code> only) and 2025-04-16 (30 patches, ST-PI / UI tools only). They are not full stacks, so they are excluded from "the 3 upgrades". They are visible in the Full Timeline.</div>
   </div>
 
   <div class="alert">
-    <strong>Patch count is the wrong lens.</strong> June 2026 is the biggest stack <em>by patch count</em>, but by the two metrics that actually matter operationally &mdash; how long the import took and how much custom code had to be re-adjusted (SPAU) &mdash; <strong>July 2024 was the heaviest upgrade, not 2026</strong>. See the <span class="highlight">SPAU &amp; Real Timing</span> tab. Summary: import time is ~6&ndash;8 h for all three (2026 was actually the <em>fastest</em> at 5.7 h); SPAU adjustments were 503 (2024) &gt; 343 (2026) &gt; 233 (2023).
+    <strong>Patch count is the wrong lens.</strong> June 2026 is the biggest stack <em>by patch count</em>, but by the two metrics that actually matter operationally &mdash; how long the import took and how much custom code had to be re-adjusted (SPAU) &mdash; <strong>July 2024 was the heaviest upgrade, not 2026</strong>. See the <span class="highlight">Activities &amp; Timing</span> tab. Summary: import time is ~6&ndash;8 h for all three (2026 was actually the <em>fastest</em> at 5.7 h); SPAU adjustments were 503 (2024) &gt; 343 (2026) &gt; 233 (2023).
   </div>
 
   <div class="card">
@@ -284,7 +284,19 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 <!-- ============ 2024 SPAU OBJECT DETAIL ============ -->
 <div class="panel" id="spau2024">
   <div class="card">
-    <h3>Where the upgrade fragility lives &mdash; the 502 objects re-adjusted in July 2024</h3>
+    <h3>The recurring activity &mdash; SPAU re-adjustment, every upgrade</h3>
+    <p style="margin-bottom:10px">Every SP stack ships new SAP versions of objects UNESCO modified <em>in place</em>. Each one must be <strong>re-applied (SPAU)</strong> so the modification survives the new version &mdash; a manual <strong>recurring activity</strong>, done in DEV ahead of each upgrade and shipped in with the stack. This is the real recurring cost of running modified standard code: the <em>volume</em> changes from one upgrade to the next, the activity itself does not.</p>
+    <div class="kpi-row" style="margin-bottom:6px">
+      <div class="kpi"><div class="val">502</div><div class="label">objects re-adjusted<br><strong>2024</strong> (peak)</div></div>
+      <div class="kpi"><div class="val">343</div><div class="label">objects re-adjusted<br>2026</div></div>
+      <div class="kpi"><div class="val">233</div><div class="label">objects re-adjusted<br>2023</div></div>
+      <div class="kpi"><div class="val" style="font-size:1.05em">every cycle</div><div class="label">the same activity recurs &mdash; it is not optional</div></div>
+    </div>
+    <div class="note">How much each upgrade depends on how many of UNESCO's modified objects that stack's SPs happen to touch. <strong>2024 was the peak and the most concentrated &mdash; overwhelmingly HR/Payroll</strong> (deep-dive below). <span class="muted">A reliable per-upgrade breakdown by functional area needs a clean package&rarr;domain mapping; only 2024 is established to that level, so it is the one detailed here rather than an unreliable cross-upgrade split.</span></div>
+  </div>
+
+  <div class="card">
+    <h3>2024 in depth &mdash; the HR/Payroll cycle (502 objects re-adjusted)</h3>
     <p>The heaviest upgrade (2024-07) forced <strong>502 SPAU adjustment records across 187 distinct objects</strong>, authored by <code>N_MENARD</code> (the implementation partner) and re-adjusted in DEV/test ahead of the upgrade, then shipped into P01 with the stack. These are SAP-standard objects UNESCO modified <em>in place</em> &mdash; so every time SAP ships a new version of them, the modification collides and must be re-adjusted by hand. <strong>This list is the recurring upgrade cost.</strong></p>
   </div>
 
@@ -304,7 +316,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <tr><td>FI / Banking / Payment</td><td>31</td><td><span class="badge badge-yellow">17%</span></td></tr>
         <tr><td>Basis / SAP tools</td><td>12</td><td><span class="badge badge-green">6%</span></td></tr>
       </table>
-      <div class="note">Fragility is overwhelmingly in <strong>HR/Payroll</strong> &mdash; UNESCO's most heavily modified area. Biggest package: <code>PBUN</code> (107 objects, UN payroll). Recurring classes: <code>CL_HRPADUN_*</code> (UN personnel / CMT), <code>CL_HRPAYFR_*</code> (French payroll), <code>CL_HRPA_INFTY_0009</code> (bank-details infotype).</div>
+      <div class="note">In 2024 the recurring work was overwhelmingly in <strong>HR/Payroll</strong> &mdash; UNESCO's most heavily modified area. Biggest package: <code>PBUN</code> (107 objects, UN payroll). Recurring classes: <code>CL_HRPADUN_*</code> (UN personnel / CMT), <code>CL_HRPAYFR_*</code> (French payroll), <code>CL_HRPA_INFTY_0009</code> (bank-details infotype).</div>
     </div>
     <div class="card">
       <h3>By object type &mdash; classes vs DDIC vs code</h3>
@@ -336,9 +348,9 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 
   <div class="card">
     <h3>So what &mdash; how to stop paying this every upgrade</h3>
-    <p style="margin-bottom:8px">&bull; The 502 adjustments are not random &mdash; they are <strong>the same modified objects re-breaking each cycle</strong>. The 2024, 2023 and 2022 upgrades all re-adjusted the same HR/Payroll core.</p>
-    <p style="margin-bottom:8px">&bull; <span class="highlight-purple">The lever is clean-core refactoring</span>: move the most-recurring in-place modifications (the <code>PBUN</code> payroll classes, the infotype objects) to enhancement techniques &mdash; BAdIs, enhancement spots, append structures &mdash; so SAP's new versions no longer collide with them.</p>
-    <p>&bull; Converting just the <strong>top ~20 recurring HR/Payroll objects</strong> would remove a large share of the per-upgrade SPAU burden &mdash; turning a 500-adjustment manual task into a fraction of it, and de-risking every future upgrade <em>and</em> the eventual S/4HANA move.</p>
+    <p style="margin-bottom:8px">&bull; The re-adjustments are not random &mdash; objects re-break wherever UNESCO modified SAP standard <strong>in place</strong>. The <em>volume</em> varies by stack (502 / 343 / 233), and <strong>HR/Payroll is the largest, most concentrated cluster</strong> &mdash; it is what turned 2024 into the heaviest upgrade and the area to prioritise.</p>
+    <p style="margin-bottom:8px">&bull; <span class="highlight-purple">The lever is clean-core refactoring</span>: move the most-recurring in-place modifications to enhancement techniques &mdash; BAdIs, enhancement spots, append structures &mdash; so SAP's new versions no longer collide. Start with the recurring HR/Payroll core (<code>PBUN</code> payroll classes, infotype objects).</p>
+    <p>&bull; Converting the <strong>top ~20 recurring objects</strong> (HR/Payroll first) would remove a large share of the per-upgrade SPAU burden &mdash; turning a 500-adjustment manual task into a fraction of it, and de-risking every future upgrade <em>and</em> the eventual S/4HANA move.</p>
   </div>
 </div>
 
@@ -358,7 +370,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <div class="metric"><span>SAP_APPL</span><span class="m-val">&rarr;618 SP25</span></div>
       <div class="metric"><span>SAP_UI</span><span class="m-val">&rarr;754 SP18</span></div>
       <div class="metric"><span>Stack size</span><span class="m-val"><span class="badge badge-blue">BIGGEST</span></span></div>
-      <div class="note" style="margin-top:12px">Biggest stack by patch count &mdash; absorbed the skipped 2025 cycle (54 add-on components re-patched). But the custom-code <strong>SPAU burden was lighter than 2024</strong> (343 vs 503 objects re-adjusted): biggest, but not the costliest. See <em>SPAU &amp; Real Timing</em>.</div>
+      <div class="note" style="margin-top:12px">Biggest stack by patch count &mdash; absorbed the skipped 2025 cycle (54 add-on components re-patched). But the custom-code <strong>SPAU burden was lighter than 2024</strong> (343 vs 503 objects re-adjusted): biggest, but not the costliest. See <em>Activities &amp; Timing</em>.</div>
     </div>
 
     <div class="card upg-card mid">
