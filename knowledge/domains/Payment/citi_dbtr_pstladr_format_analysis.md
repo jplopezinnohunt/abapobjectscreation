@@ -173,6 +173,26 @@ Los 2 nodos (#1 N_2368849090 BR/resto, #2 N_1496761000 US/CA/PR) tienen **estruc
 payroll usa campos directos (`ZPFOR/ZORT1/ZREGI/ZNME1`), vendor usa exits CITIPMW; (3) **cheque** (`XSCHK`) en
 TwnNm. La **única diferencia #1 vs #2** = los 3 `<AdrLine>` (nombre).
 
+### Los 3 drivers — dónde y cómo afectan (máximo detalle)
+
+| Driver | Qué es | Controla (tags/átomos) |
+|---|---|---|
+| **`ZPFAC`** ("PO Box", FPAYH) | apartado postal vs calle | **SOLO `<StrtNm>`**: `Housenum`(REF02)+`Street`(exit) si `ZPFAC=''`; `"PO BOX"`+`POBOXNUM`(=ZPFAC) si `ZPFAC<>''` |
+| **`HR`** (=`FPAYH-LAUFI` offset0 len1; `'P'`=payroll) | payroll vs vendor | `<Nm>` (ZNME1 exit ↔ ZNME1_HR directo) · `<TwnNm>` (City exit ↔ ZORT1) · `<CtrySubDvsn>` (exit REGION ↔ ZREGI). Payroll = campos directos del empleado; vendor = exits CITIPMW |
+| **`XSCHK`** ("Is a Check Created?", FPAYHX) | cheque vs transferencia | **SOLO `<TwnNm>`**: `POBoxCity`(exit PO_CITY) si `XSCHK='X'`; `City`(exit CRED_CITY) si no (`POCITY` vacío) |
+
+**NO dependen de driver:** `<BldgNb>` (exit, siempre) · `<PstCd>` (POBoxPc=ZPST2 por **param `=2`**, CityPc=exit — NO ZPFAC) · `<Ctry>` (ZLISO, siempre) · `<AdrLine>` (ZNME2/3/4, cond `<>''`).
+
+🔑 **Hallazgo:** el "PO Box" **NO** tiene un switch único — está fragmentado en **3**: `<StrtNm>` por `ZPFAC`,
+`<TwnNm>` (ciudad) por `XSCHK`, `<PstCd>` (postal) por **param `=2`**. Y `HR` (payroll) corre en paralelo. Una
+dirección con apartado activa sus 3 partes por 3 condiciones distintas → frágil/inconsistente.
+
+**Realidad BR/UBO (P01):** los 3 drivers están todos en "default" → `HR` nunca `'P'` (LAUFI=`BUBO`/`00..B`,
+nunca payroll), `ZPFAC` 0% (0/82,684 con PO Box), `XSCHK` no-cheque (método `R` Worldlink). → para BR la
+dirección **siempre** sale por los exits vendor/calle/city. Las ramas payroll/PO-Box/cheque son defensivas
+(otros flujos: nóminas, apartados, cheques — no ocurren en Citi/UBO). [US/CA podrían disparar alguna — no
+verificado.]
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).

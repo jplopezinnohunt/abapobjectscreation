@@ -6054,6 +6054,20 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       <p>Cross-cutting patterns: <strong>PO Box vs street</strong> (ZPFAC), <strong>payroll vs vendor</strong>
       (HR from LAUFI — payroll uses direct fields ZPFOR/ZORT1/ZREGI/ZNME1, vendor uses CITIPMW exits),
       <strong>check</strong> (XSCHK) on TwnNm. The <strong>only #1-vs-#2 difference</strong> is the 3 AdrLine (name).</p>
+
+      <h3>The 3 drivers — where &amp; how they affect (max detail)</h3>
+      <table>
+        <tr><th>Driver</th><th>What</th><th>Controls (tags/atoms)</th></tr>
+        <tr><td><code>ZPFAC</code> ("PO Box", FPAYH)</td><td>PO Box vs street</td><td><strong>ONLY <code>&lt;StrtNm&gt;</code></strong>: Housenum(REF02)+Street(exit) if ZPFAC=''; "PO BOX"+POBOXNUM if ZPFAC&lt;&gt;''</td></tr>
+        <tr><td><code>HR</code> (=FPAYH-LAUFI[0]; 'P'=payroll)</td><td>payroll vs vendor</td><td><code>&lt;Nm&gt;</code> (ZNME1 exit ↔ ZNME1_HR direct) · <code>&lt;TwnNm&gt;</code> (City exit ↔ ZORT1) · <code>&lt;CtrySubDvsn&gt;</code> (exit REGION ↔ ZREGI)</td></tr>
+        <tr><td><code>XSCHK</code> ("Is a Check Created?", FPAYHX)</td><td>check vs transfer</td><td><strong>ONLY <code>&lt;TwnNm&gt;</code></strong>: POBoxCity(exit PO_CITY) if XSCHK='X'; else City(exit CRED_CITY)</td></tr>
+      </table>
+      <p><strong>No driver:</strong> <code>&lt;BldgNb&gt;</code> (exit, always) · <code>&lt;PstCd&gt;</code> (POBoxPc=ZPST2 by
+      <strong>param =2</strong>, CityPc=exit — NOT ZPFAC) · <code>&lt;Ctry&gt;</code> (ZLISO) · <code>&lt;AdrLine&gt;</code> (ZNME2/3/4).
+      <strong>Finding:</strong> "PO Box" has <strong>no single switch</strong> — fragmented across 3 (StrtNm by ZPFAC,
+      TwnNm-city by XSCHK, PstCd by param =2); HR runs in parallel. <strong>BR/UBO reality (P01):</strong> all 3
+      drivers sit at default → HR never 'P' (LAUFI=BUBO…), ZPFAC 0% (0/82,684), XSCHK non-check (method R Worldlink)
+      → BR address always emits via vendor/street/city exits; payroll/PO-Box/check branches are defensive (other flows).</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
