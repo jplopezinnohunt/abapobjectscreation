@@ -190,28 +190,27 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
     <div class="note" style="background:#eef3fc;border-color:#cfdcf6;border-left-color:var(--accent);color:#1d3a73"><strong>Why the SPAU transport release time (e.g. 06:10) can pre-date the prod import end:</strong> <code>E070.AS4DATE/AS4TIME</code> is the <em>release</em> time in the source system (TS4 / D01), a different event from the P01 import. The SPAU work was authored by <strong>N_MENARD</strong> (<code>SMODILOG.MOD_USER</code>) and the transports released by <strong>V.VAURETTE (UNESCO)</strong> + N_MENARD in TS4/D01; the figures in column ② are the real <em>P01 import</em> times from TPALOG, not the release times.</div>
   </div>
 
-  <div class="card" style="border-left:4px solid var(--orange)">
-    <h3>End-to-end &mdash; maintenance window <span style="color:var(--orange);font-size:0.78em;font-weight:600;letter-spacing:0.03em">(ESTIMATE &mdash; inferred from the activity gap)</span></h3>
-    <div class="alert" style="background:var(--yellow-soft);border-color:#f6e2c4;border-left-color:var(--yellow);color:#6b4012">
-      <strong>Measured vs inferred &mdash; read this first.</strong> <strong>Measured (fact):</strong> the last and first real-user change document before/after the upgrade, and the gap between them. <strong>Inferred (estimate):</strong> that users were locked for that whole gap. The explicit lock/unlock command (EWZ5 / login restriction) is <strong>not in the RFC-readable logs</strong> (0 <code>UFLAG</code> change docs; security audit log returns nothing although <code>rsau/enable=1</code>). So the hours below are a <strong>well-bracketed estimate of the maintenance window, not the exact lock timestamps.</strong></div>
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3>End-to-end &mdash; maintenance window (lock &rarr; release) <span style="color:var(--green);font-size:0.78em;font-weight:600;letter-spacing:0.03em">MEASURED from USH02</span></h3>
+    <div class="note" style="background:var(--green-soft);border-color:#cce9d6;border-left-color:var(--green);color:#13502f">
+      The mass user lock/release <strong>is logged</strong> &mdash; in <code>USH02</code> (logon-data change history, field <code>UFLAG</code>: 0 = open, 64 = locked by admin). 2026 and 2024 each show a clean mass lock and release by basis admin <strong>P.IKOUNA</strong>. <em>(This corrects an earlier note that said the lock wasn't in the readable logs &mdash; it is, in USH02; it just isn't in CDHDR change docs or the audit log.)</em> 2023 had <strong>no</strong> mass user-lock in USH02 (only 4&ndash;14 users) &mdash; it used a lighter method (login restriction), so its window stays inferred from the activity gap.</div>
     <table>
-      <tr><th>Upgrade</th><th>Last activity <em>before</em></th><th>First activity <em>after</em></th><th>Activity gap <span class="muted">(&asymp; window)</span></th><th>Import <span class="muted">(measured)</span></th></tr>
-      <tr style="background:rgba(180,35,24,0.06)"><td><strong>2026-06</strong></td><td>Sat 06 Jun 19:39</td><td>Tue 09 Jun 08:35</td><td><span class="badge badge-red">60.9 h</span></td><td>5.7 h</td></tr>
-      <tr style="background:rgba(240,136,62,0.06)"><td><strong>2024-07</strong></td><td>Fri 05 Jul 16:05</td><td>Sun 07 Jul 12:45</td><td><span class="badge badge-yellow">44.7 h</span></td><td>7.0 h</td></tr>
-      <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td>Fri 09 Jun 22:43</td><td>Sat 10 Jun 10:29</td><td><span class="badge badge-green">11.8 h</span></td><td>8.1 h</td></tr>
+      <tr><th>Upgrade</th><th>&#128274; Users locked</th><th>&#128275; Users released</th><th>End-to-end</th><th>Import</th><th>Source</th></tr>
+      <tr style="background:rgba(180,35,24,0.06)"><td><strong>2026-06</strong></td><td>Sat 06 Jun 19:50 &middot; 2,635 users</td><td>Tue 09 Jun 09:45 &middot; 2,651 users</td><td><span class="badge badge-red">61.9 h</span></td><td>5.7 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
+      <tr style="background:rgba(240,136,62,0.06)"><td><strong>2024-07</strong></td><td>Fri 05 Jul 16:01 &middot; 1,558 users</td><td>Sun 07 Jul 14:20 &middot; 1,557 users</td><td><span class="badge badge-yellow">46.3 h</span></td><td>7.0 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
+      <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td colspan="2"><em>no mass user-lock in USH02 &mdash; window inferred from activity gap (Fri 22:43 &rarr; Sat 10:29)</em></td><td><span class="badge badge-green">~11.8 h</span></td><td>8.1 h</td><td><span class="badge badge-yellow">inferred</span></td></tr>
     </table>
-    <div class="note">The pattern holds regardless of the exact lock times: the <strong>import got faster</strong> (8.1 &rarr; 7.0 &rarr; 5.7 h) while the <strong>activity gap grew sharply</strong> (11.8 &rarr; 44.7 &rarr; 60.9 h). The growth is validation + SGEN + closed-window time, <em>not</em> the import. <span class="muted">All three = the largest gap in real-user CDHDR change docs around each upgrade.</span></div>
+    <div class="note">The pattern: the <strong>import got faster</strong> (8.1 &rarr; 7.0 &rarr; 5.7 h) while the <strong>end-to-end grew sharply</strong> (~11.8 &rarr; 46.3 &rarr; 61.9 h). The growth is validation + SGEN + closed-window time, <em>not</em> the import. All locks/releases by <strong>P.IKOUNA</strong>; the mass lock precedes the import and the release follows SGEN + validation.</div>
     <p style="margin:16px 0 8px;font-weight:600;color:var(--heading)">2026 timeline &mdash; each row tagged by source:</p>
     <table>
       <tr><th>Milestone</th><th>When (2026, CEST)</th><th>Source</th></tr>
-      <tr><td>Last business activity <em>before</em> the window</td><td>Sat 06 Jun 19:39</td><td><span class="badge badge-green">measured</span> CDHDR</td></tr>
+      <tr style="background:rgba(180,35,24,0.05)"><td>&#128274; <strong>Users locked</strong> &mdash; 2,635 users, P.IKOUNA</td><td><strong>Sat 06 Jun 19:50</strong></td><td><span class="badge badge-green">measured</span> USH02</td></tr>
       <tr><td>SP + SPAU import</td><td>Sun 07 Jun 00:58 &rarr; 06:39</td><td><span class="badge badge-green">measured</span> TPALOG</td></tr>
       <tr><td><strong>SGEN</strong> (RSPARAGENER mass generation)</td><td>Sun 07 Jun 21:54 &rarr; 23:21</td><td><span class="badge badge-green">measured</span> TBTCO</td></tr>
-      <tr><td>Mon 08 Jun &mdash; zero business-user activity</td><td>all Monday</td><td><span class="badge badge-green">measured</span> CDHDR</td></tr>
-      <tr><td>First business activity <em>after</em> the window</td><td>Tue 09 Jun 08:35</td><td><span class="badge badge-green">measured</span> CDHDR</td></tr>
-      <tr style="background:rgba(210,153,34,0.06)"><td><em>User lock / release command (EWZ5)</em></td><td><em>somewhere inside the gap &mdash; unknown</em></td><td><span class="badge badge-yellow">inferred</span></td></tr>
+      <tr><td>Mon 08 Jun &mdash; zero business-user activity (validation)</td><td>all Monday</td><td><span class="badge badge-green">measured</span> CDHDR</td></tr>
+      <tr style="background:rgba(63,185,80,0.05)"><td>&#128275; <strong>Users released</strong> &mdash; 2,651 users, P.IKOUNA</td><td><strong>Tue 09 Jun 09:45</strong></td><td><span class="badge badge-green">measured</span> USH02</td></tr>
     </table>
-    <div class="note">What we can state firmly: business activity stopped Sat 19:39 and did not resume until Tue 08:35, with <strong>zero activity all Monday</strong> &mdash; strong evidence the system was held closed for the weekend (import + SGEN + validation), far beyond the 5.7 h import. What we cannot state: the exact minute users were locked or released. To get that, pull the basis cutover runbook, or SM20 if security-audit filtering were active.</div>
+    <div class="note">So the end-to-end for 2026 was <strong>~61.9 h (lock Sat 19:50 &rarr; release Tue 09:45)</strong> &mdash; users were locked out from Saturday evening through Tuesday morning. The disruptive import was only 5.7 h of that; SGEN + a full Monday of validation account for the rest. The release Patrick asked for = the <code>UFLAG</code> 64&rarr;0 mass change by P.IKOUNA.</div>
   </div>
 
   <div class="card">
