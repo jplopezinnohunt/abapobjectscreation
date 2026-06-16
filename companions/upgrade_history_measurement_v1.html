@@ -191,6 +191,20 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   </div>
 
   <div class="card">
+    <h3>After the import &mdash; post-import activity is real (TPALOG + TBTCO job log)</h3>
+    <p style="margin-bottom:12px">The import window is not the end. Once the SP stack is in, the system does post-processing and then returns to service. Evidence from the <strong>2026</strong> run (P01 job log: <strong>30,187 jobs</strong> ran that week):</p>
+    <table>
+      <tr><th>Post-import activity</th><th>When</th><th>What it is</th></tr>
+      <tr><td><strong>Mass ABAP generation</strong> <code>RSPARAGENER8M</code></td><td>Sun 07 Jun 21:54 &rarr; 23:21</td><td>SGEN-style parallel recompile of program/screen loads after the upgrade (~1.5 h)</td></tr>
+      <tr><td>Load generation during import <code>RDDGEN0L</code></td><td>Sun 03:43 &amp; 06:10</td><td>Generation phase of the import itself</td></tr>
+      <tr><td><strong>Upgrade-correction transports</strong> (3)</td><td>Sun 21:19 &rarr; 21:24</td><td><code>TS2K900037/039</code> "Upgrade correction 04/2026"</td></tr>
+      <tr><td><strong>Post-upgrade dump fix</strong></td><td>Wed 10 Jun</td><td>SAP notes <strong>3696852 + 3715883</strong> for dump <code>TABLEVIEW_DUP_COLUMN_INDEX</code> &mdash; two notes for the same dump that surfaced after the upgrade</td></tr>
+      <tr><td>Business-as-usual resumes</td><td>Tue 09 Jun onward</td><td>Payments, COUPA, EBS, IDocs, HR/MM changes &mdash; normal operation restored</td></tr>
+    </table>
+    <div class="note">So the disruptive import is the early-Sunday window, but post-import the system runs <strong>mass generation</strong> the same evening, takes a few <strong>correction transports / SAP-note fixes</strong> over the following days, and resumes normal business. <span class="muted">The <code>TRKORR='ALL'</code> rows in TPALOG are the transport dispatcher (<code>RDDIMPDP</code>) heartbeat &mdash; background, but the corrections, generation and BAU above are genuine post-import work.</span></div>
+  </div>
+
+  <div class="card">
     <h3>Side by side &mdash; the metrics that matter</h3>
     <table>
       <tr><th>Upgrade</th><th>Patches (volume)</th><th>Import time</th><th>SPAU adjustments</th><th>SPAU per SP</th><th>Real operational weight</th></tr>
