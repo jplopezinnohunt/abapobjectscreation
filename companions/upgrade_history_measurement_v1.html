@@ -79,7 +79,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 <body>
 <div class="header">
   <h1>P01 Upgrade History &mdash; Measured</h1>
-  <div class="sub">Forensic measurement of the last 3 SAP maintenance upgrades on P01 (production) &middot; complexity, timing, stack delta</div>
+  <div class="sub">Forensic measurement of the last 3 SAP maintenance upgrades on P01 (production) &middot; timing &middot; SPAU impact &middot; end-to-end maintenance window</div>
   <span class="domain-badge">SYSTEM LIFECYCLE &middot; VERIFIED FROM P01 RFC 2026-06-16</span>
 </div>
 
@@ -99,7 +99,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 <div class="panel active" id="overview">
   <div class="card">
     <h3>What this measures</h3>
-    <p style="margin-bottom:10px">An executed SAP upgrade leaves a forensic trail. This companion measures it from three P01 tables, read-only over SNC/SSO: <code>UVERS</code> (release/EhP upgrade history), <code>PAT03</code> (every support package + its implementation date), and <code>CVERS</code> (the current stack = the endpoint).</p>
+    <p style="margin-bottom:10px">An executed SAP upgrade leaves a forensic trail. This companion measures it <strong>read-only over SNC/SSO</strong> from the system's own logs: <code>UVERS</code>/<code>PAT03</code>/<code>CVERS</code> (upgrade history + stack), <code>SMODILOG</code> (SPAU custom-code impact), <code>TPALOG</code> (import timing), <code>USH02</code> (mass user lock/release) and <code>TBTCO</code> (SGEN / jobs). Full source list in <em>Method &amp; Provenance</em>.</p>
     <p>P01 has had <strong>one release upgrade</strong> (EhP8, 2017) and a roughly <strong>annual cadence of Support-Package stacks</strong> since. "The last 3 upgrades" = the 3 most recent <em>full SP stacks</em>.</p>
   </div>
 
@@ -113,16 +113,16 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>The 3 last upgrades &mdash; at a glance</h3>
     <table>
-      <tr><th>#</th><th>Date</th><th>Type</th><th>Total patches</th><th>Support pkgs (CSP)</th><th>Add-on (ACP/AOI)</th><th>Mod-adjust (SPDD/SPAU)</th><th>Components</th><th>SAP_BASIS</th><th>Complexity</th></tr>
+      <tr><th>#</th><th>Date</th><th>Type</th><th>Total patches</th><th>Support pkgs (CSP)</th><th>Add-on (ACP/AOI)</th><th>MOD patches *</th><th>Components</th><th>SAP_BASIS</th><th>Stack size</th></tr>
       <tr>
         <td><strong>1</strong></td><td><strong>2026-06-07</strong></td><td>SP stack</td>
         <td><strong>275</strong></td><td>214</td><td>56</td><td>4</td><td>59</td><td>SP28&rarr;34 <span class="muted">(+6)</span></td>
-        <td><span class="badge badge-red">HIGHEST</span></td>
+        <td><span class="badge badge-blue">BIGGEST</span></td>
       </tr>
       <tr>
         <td><strong>2</strong></td><td>2024-07-05/06</td><td>SP stack</td>
         <td>148</td><td>140</td><td>4</td><td>3</td><td>37</td><td>SP26&rarr;28 <span class="muted">(+2)</span></td>
-        <td><span class="badge badge-yellow">LOW&ndash;MED</span></td>
+        <td><span class="badge badge-green">SMALL</span></td>
       </tr>
       <tr>
         <td><strong>3</strong></td><td>2023-06-09/14</td><td>SP stack</td>
@@ -130,6 +130,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
         <td><span class="badge badge-yellow">MED</span></td>
       </tr>
     </table>
+    <p class="muted" style="margin:8px 0;font-size:0.85em">* <strong>MOD patches</strong> = PAT03 patches of type <code>MOD</code> (SAP-delivered correction patches in the queue) &mdash; <em>not</em> the customer SPAU rework. The real SPAU effort (the custom objects UNESCO re-adjusted) is <strong>343 / 503 / 233</strong> objects from SMODILOG; see the <em>SPAU &amp; Real Timing</em> tab. "Stack size" ranks by patch volume, which (as the alert below explains) is <em>not</em> the operational cost.</p>
     <div class="note">Two <em>targeted</em> campaigns sit between #1 and #2 &mdash; 2025-11-11 (40 patches, add-on <code>PA_SE_IN</code> only) and 2025-04-16 (30 patches, ST-PI / UI tools only). They are not full stacks, so they are excluded from "the 3 upgrades". They are visible in the Full Timeline.</div>
   </div>
 
@@ -155,7 +156,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><th>Upgrade</th><th>Patches</th><th>Import</th><th>SPAU adjustments</th><th>per SP</th><th></th></tr>
       <tr style="background:rgba(180,35,24,0.05)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td><strong>503</strong></td><td><strong>3.59</strong></td><td><span class="badge badge-red">&larr; the painful one</span></td></tr>
       <tr><td><strong>2026-06</strong></td><td>275</td><td>5.7 h</td><td>343</td><td>1.60</td><td><span class="muted">biggest, but light</span></td></tr>
-      <tr><td><strong>2023-06</strong></td><td>145</td><td>8.1 h</td><td>233</td><td>1.64</td><td><span class="muted">lightest</span></td></tr>
+      <tr><td><strong>2023-06</strong></td><td>145</td><td>8.5 h</td><td>233</td><td>1.64</td><td><span class="muted">lightest</span></td></tr>
     </table>
     <p class="muted" style="margin-top:10px;font-size:0.88em">Same import time (~6&ndash;8 h) across all three; 2024 forced 2.2&times; more custom-code adjustment per support package than the bigger 2026 stack.</p>
   </div>
@@ -223,7 +224,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><th>Upgrade</th><th>&#128274; Users locked</th><th>&#128275; Users released</th><th>End-to-end</th><th>Import</th><th>Source</th></tr>
       <tr style="background:rgba(180,35,24,0.06)"><td><strong>2026-06</strong></td><td>Sat 06 Jun 19:50 &middot; 2,635 users</td><td>Tue 09 Jun 09:45 &middot; 2,651 users</td><td><span class="badge badge-red">61.9 h</span></td><td>5.7 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
       <tr style="background:rgba(240,136,62,0.06)"><td><strong>2024-07</strong></td><td>Fri 05 Jul 16:01 &middot; 1,558 users</td><td>Sun 07 Jul 14:20 &middot; 1,557 users</td><td><span class="badge badge-yellow">46.3 h</span></td><td>7.0 h</td><td><span class="badge badge-green">measured</span> USH02</td></tr>
-      <tr><td><strong>2023-06</strong></td><td colspan="2"><em>no mass user-lock in USH02 (login restriction) &mdash; lock/release not measurable</em></td><td><span class="muted">&mdash;</span></td><td>8.1 h</td><td><span class="muted">&mdash;</span></td></tr>
+      <tr><td><strong>2023-06</strong></td><td colspan="2"><em>no mass user-lock in USH02 (login restriction) &mdash; lock/release not measurable</em></td><td><span class="muted">&mdash;</span></td><td>8.5 h</td><td><span class="muted">&mdash;</span></td></tr>
     </table>
     <div class="note">The pattern: the <strong>import got faster</strong> (8.5 &rarr; 7.0 &rarr; 5.7 h) while the measured <strong>end-to-end grew</strong> (2024 <strong>46.3 h</strong> &rarr; 2026 <strong>61.9 h</strong>). The growth is validation + SGEN + closed-window time, <em>not</em> the import. Locks/releases for 2024 &amp; 2026 by <strong>P.IKOUNA</strong>; 2023 had no mass USH02 lock so its end-to-end is not measurable.</div>
     <p style="margin:16px 0 8px;font-weight:600;color:var(--heading)">Communicated downtime vs actual lock &mdash; cutover discipline:</p>
@@ -266,11 +267,11 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><th>Upgrade</th><th>Patches (volume)</th><th>Import time</th><th>SPAU adjustments</th><th>SPAU per SP</th><th>Real operational weight</th></tr>
       <tr style="background:rgba(248,81,73,0.06)"><td><strong>2026-06</strong></td><td>275 <span class="badge badge-blue">biggest</span></td><td>5.7 h <span class="badge badge-green">fastest</span></td><td>343</td><td>1.60</td><td><span class="badge badge-yellow">MEDIUM</span> (big but efficient)</td></tr>
       <tr style="background:rgba(240,136,62,0.08)"><td><strong>2024-07</strong></td><td>148</td><td>7.0 h</td><td>503 <span class="badge badge-red">most</span></td><td>3.59 <span class="badge badge-red">most</span></td><td><span class="badge badge-red">HEAVIEST</span> (SPAU-driven)</td></tr>
-      <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td>145</td><td>8.1 h</td><td>233</td><td>1.64</td><td><span class="badge badge-green">LIGHTEST</span></td></tr>
+      <tr style="background:rgba(63,185,80,0.06)"><td><strong>2023-06</strong></td><td>145</td><td>8.5 h</td><td>233</td><td>1.64</td><td><span class="badge badge-green">LIGHTEST</span></td></tr>
     </table>
     <p style="margin-top:12px">&bull; <strong>If you rank by patches:</strong> 2026 &gt; 2024 &asymp; 2023.<br>
        &bull; <strong>If you rank by what actually hurts (SPAU rework):</strong> 2024 &gt; 2026 &gt; 2023.<br>
-       &bull; <strong>Import time barely moves</strong> (5.7&ndash;8.1 h). The differentiator is SPAU, and the 2024 stack &mdash; not the bigger 2026 one &mdash; was the costly one.</p>
+       &bull; <strong>Import time barely moves</strong> (5.7&ndash;8.5 h). The differentiator is SPAU, and the 2024 stack &mdash; not the bigger 2026 one &mdash; was the costly one.</p>
   </div>
 
   <div class="card">
@@ -284,7 +285,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 <div class="panel" id="spau2024">
   <div class="card">
     <h3>Where the upgrade fragility lives &mdash; the 502 objects re-adjusted in July 2024</h3>
-    <p>The heaviest upgrade (2024-07) forced <strong>502 SPAU adjustment records across 187 distinct objects</strong>, all re-applied by <code>N_MENARD</code> (the implementation partner) during the import. These are SAP-standard objects UNESCO modified <em>in place</em> &mdash; so every time SAP ships a new version of them, the modification collides and must be re-adjusted by hand. <strong>This list is the recurring upgrade cost.</strong></p>
+    <p>The heaviest upgrade (2024-07) forced <strong>502 SPAU adjustment records across 187 distinct objects</strong>, authored by <code>N_MENARD</code> (the implementation partner) and re-adjusted in DEV/test ahead of the upgrade, then shipped into P01 with the stack. These are SAP-standard objects UNESCO modified <em>in place</em> &mdash; so every time SAP ships a new version of them, the modification collides and must be re-adjusted by hand. <strong>This list is the recurring upgrade cost.</strong></p>
   </div>
 
   <div class="kpi-row">
@@ -356,8 +357,8 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP28&rarr;34 (+6)</span></div>
       <div class="metric"><span>SAP_APPL</span><span class="m-val">&rarr;618 SP25</span></div>
       <div class="metric"><span>SAP_UI</span><span class="m-val">&rarr;754 SP18</span></div>
-      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-red">HIGHEST</span></span></div>
-      <div class="note" style="margin-top:12px">Absorbed the skipped 2025 cycle. 54 add-on components re-patched + 4 modification adjustments = the heaviest custom-code re-validation burden of the three.</div>
+      <div class="metric"><span>Stack size</span><span class="m-val"><span class="badge badge-blue">BIGGEST</span></span></div>
+      <div class="note" style="margin-top:12px">Biggest stack by patch count &mdash; absorbed the skipped 2025 cycle (54 add-on components re-patched). But the custom-code <strong>SPAU burden was lighter than 2024</strong> (343 vs 503 objects re-adjusted): biggest, but not the costliest. See <em>SPAU &amp; Real Timing</em>.</div>
     </div>
 
     <div class="card upg-card mid">
@@ -372,7 +373,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP26&rarr;28 (+2)</span></div>
       <div class="metric"><span>SAP_APPL</span><span class="m-val">618 SP21</span></div>
       <div class="metric"><span>SAP_UI</span><span class="m-val">740 SP13</span></div>
-      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-yellow">LOW&ndash;MED</span></span></div>
+      <div class="metric"><span>Stack size</span><span class="m-val"><span class="badge badge-green">SMALL</span></span></div>
       <div class="note" style="margin-top:12px">Smallest SAP_BASIS jump of the three (+2). Routine annual stack.</div>
     </div>
 
@@ -388,18 +389,18 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <div class="metric"><span>SAP_BASIS</span><span class="m-val">SP22&rarr;26 (+4)</span></div>
       <div class="metric"><span>SAP_APPL</span><span class="m-val">618 SP18</span></div>
       <div class="metric"><span>SAP_UI</span><span class="m-val">740 SP9</span></div>
-      <div class="metric"><span>Complexity</span><span class="m-val"><span class="badge badge-yellow">MED</span></span></div>
+      <div class="metric"><span>Stack size</span><span class="m-val"><span class="badge badge-yellow">MED</span></span></div>
       <div class="note" style="margin-top:12px">+4 SAP_BASIS levels over a 6-day window. No recorded modification adjustments.</div>
     </div>
   </div>
 
   <div class="card">
-    <h3>How "complexity" is built (all measured, no opinion)</h3>
+    <h3>How "stack size" is built (all measured, no opinion)</h3>
     <table>
       <tr><th>Dimension</th><th>What it measures</th><th>Source field</th></tr>
       <tr><td>Support packages (CSP)</td><td>Volume of standard SAP maintenance applied</td><td><code>PAT03.PATCH_TYPE='CSP'</code></td></tr>
       <tr><td>Add-on patches (ACP/AOI)</td><td>How many add-on components had to move in lockstep</td><td><code>PATCH_TYPE in (ACP,AOI)</code></td></tr>
-      <tr><td>Modification adjustments</td><td>Custom-code rework forced by the SPs (SPDD/SPAU effort)</td><td><code>PATCH_TYPE='MOD'</code></td></tr>
+      <tr><td>MOD patches</td><td>SAP-delivered correction patches in the queue (<em>not</em> the customer SPAU rework &mdash; that's the SMODILOG count)</td><td><code>PATCH_TYPE='MOD'</code></td></tr>
       <tr><td>Components touched</td><td>Breadth of the stack across the product</td><td><code>distinct PAT03.COMPONENT</code></td></tr>
       <tr><td>SAP_BASIS SP jump</td><td>Depth of the technical core change (the bellwether)</td><td><code>PAT03.TO_REL</code> range</td></tr>
     </table>
@@ -471,8 +472,12 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
       <tr><td><code>CVERS</code></td><td>Current SP level per software component</td><td>177</td><td><code>cvers</code></td></tr>
       <tr><td><code>SMODILOG</code></td><td>Modification log &mdash; SPAU/SPDD custom-code adjustments (impact)</td><td>9,852</td><td><code>smodilog</code></td></tr>
       <tr><td><code>TPALOG</code></td><td>tp action log &mdash; per-step import timestamps (real timing)</td><td>31,952*</td><td><code>tpalog_upgrades</code></td></tr>
+      <tr><td><code>USH02</code></td><td>logon-data change history (<code>UFLAG</code>) &mdash; mass user lock / release</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td><code>TBTCO</code></td><td>background job log &mdash; SGEN / generation + post-import jobs</td><td>30,187*</td><td><code>tbtco_upgrade2026_jobs</code></td></tr>
+      <tr><td><code>CDHDR</code></td><td>change-document headers &mdash; business-activity gap (validation window, 2023 lock bracket)</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td><code>E070 / E07T</code></td><td>transport headers + texts &mdash; SPAU / correction transport release dates &amp; descriptions</td><td>&mdash;</td><td>&mdash;</td></tr>
     </table>
-    <p class="muted" style="margin-top:6px">*TPALOG limited to the 4 upgrade windows (2017/2023/2024/2026), not the full log.</p>
+    <p class="muted" style="margin-top:6px">*TPALOG limited to the 4 upgrade windows (2017/2023/2024/2026); TBTCO to the 2026 upgrade week. Read-only; some lookups not persisted to Gold DB.</p>
     <h4>PATCH_TYPE legend (PAT03)</h4>
     <p class="muted">CSP = Component Support Package &middot; ACP = Add-on Component Patch &middot; AOI = Add-on Installation &middot; MOD = Modification adjustment (SPDD/SPAU) &middot; PAT = patch.</p>
   </div>
@@ -480,7 +485,7 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
   <div class="card">
     <h3>Honest limits of this measurement</h3>
     <div class="alert" style="background:rgba(210,153,34,0.1);border-color:rgba(210,153,34,0.3)">
-      <strong>Import time is measured; full SUM downtime is not.</strong> The 5.7&ndash;8.1 h figures are the SP-queue import (SAPK* steps) from <code>TPALOG.TRTIME</code> on the main import day &mdash; the real busy window for applying the packages. The <em>total</em> technical downtime of a SUM-driven run (shadow system, EU_IMPORT, post-processing) is wider and lives in the <strong>Software Update Manager logs</strong> (<code>UPGANA.XML</code> / phase log) at OS level &mdash; not RFC-readable. <code>PAT03.IMPLE_TIME</code> alone understates duration: for 2023/2024 it is just the SPAM commit stamp (all patches within ~2.5 min), which is why timing was taken from TPALOG, not PAT03.
+      <strong>Import time is measured; full SUM downtime is not.</strong> The 5.7&ndash;8.5 h figures are the import session (SP packages + SPAU/correction transports) from <code>TPALOG.TRTIME</code> on the main import day &mdash; the real busy window for applying the packages. The <em>total</em> technical downtime of a SUM-driven run (shadow system, EU_IMPORT, post-processing) is wider and lives in the <strong>Software Update Manager logs</strong> (<code>UPGANA.XML</code> / phase log) at OS level &mdash; not RFC-readable. <code>PAT03.IMPLE_TIME</code> alone understates duration: for 2023/2024 it is just the SPAM commit stamp (all patches within ~2.5 min), which is why timing was taken from TPALOG, not PAT03.
     </div>
     <div class="note">SPAU attribution buckets SMODILOG SPAU-flagged modifications by their adjustment transport's <code>E070.AS4DATE</code>. This dates <em>when</em> each custom object was re-adjusted; it does not capture manual effort-hours per object (not recorded in SAP). The object-level list (which classes/DDIC objects) is in the <code>smodilog</code> Gold DB table if you want it per upgrade.</div>
   </div>
@@ -491,8 +496,12 @@ code { background: #eff2f7; padding: 2px 6px; border-radius: 5px; font-size: 0.8
 python probe_upgrade_history.py        <span class="muted"># discover table structure (DD03L)</span>
 python extract_upgrade_measurement.py  <span class="muted"># pull UVERS / PAT03 / CVERS -> Gold DB</span>
 python analyze_upgrades.py             <span class="muted"># cluster into campaigns + scorecard</span>
-python extract_spau_timing.py          <span class="muted"># SMODILOG (SPAU) + TPALOG (timing) -> Gold DB</span></div>
-    <p class="muted">Gold DB: <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code> (tables <code>uvers</code>, <code>pat03</code>, <code>cvers</code>).</p>
+python extract_spau_timing.py          <span class="muted"># SMODILOG (SPAU) + TPALOG (timing) -> Gold DB</span>
+python extract_spau_2024_detail.py     <span class="muted"># 2024 SPAU objects by type / package</span>
+python analyze_user_lock_ush02.py      <span class="muted"># mass user lock / release from USH02</span>
+python analyze_lock_window_all.py      <span class="muted"># end-to-end window (activity-gap fallback)</span>
+python analyze_postimport_2026.py      <span class="muted"># SGEN + corrections + job log -> Gold DB</span></div>
+    <p class="muted">Gold DB <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code> &mdash; tables <code>uvers</code>, <code>pat03</code>, <code>cvers</code>, <code>smodilog</code>, <code>tpalog_upgrades</code>, <code>tbtco_upgrade2026_jobs</code>, <code>spau_2024_objects</code>. <span style="color:var(--orange)">Local-only (gitignored); scripts regenerate it from P01.</span></p>
   </div>
 </div>
 
