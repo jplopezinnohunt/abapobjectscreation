@@ -3426,5 +3426,16 @@
     "derives_from_core_principle": "CP-001",
     "cp_link_reason": "The established model + hard constraints ARE the project knowledge; inventing new channels sacrifices that knowledge (and the user time) for the velocity of an untested idea — a CP-001 (knowledge over velocity) violation.",
     "source_file": "memory/feedback_conclude_against_known_model_when_blocked.md"
+  },
+  {
+    "id": "feedback_real_output_beats_config_for_rendering",
+    "rule": "To decide whether a piece of SAP config that GENERATES output (DMEE tree node, smartform, routing) actually RENDERS/FIRES at runtime, the real generated OUTPUT is the arbiter — not the static config tables. DMEE_TREE_COND does NOT capture node-level deactivation, so reading only the condition gives false positives. If the artifact is replayable (e.g. ZSAPFPAYM_REPLAY for DMEE), generate it and read the real output BEFORE asserting a defect or alarming.",
+    "why": "2026-06-17 (DMEE structured-address forensics): I read DMEE_TREE_COND, saw node N_1531351640 condition still matched BR, and alarmed it duplicated the Dbtr PstlAdr (D-1). The real replayed BR XML showed ONE PstlAdr — node #1 was deactivated by a flag NOT in the condition table; the prior \"D-1 resolved\" was correct. Same session I also over-stated D-2 as a CBPR+ reject risk without checking the BR flow is DOMESTIC (no impact). The real output / the business context were the evidence, not the tree read.",
+    "how_to_apply": "(1) Before claiming a DMEE/form node fires or suppresses, check for a deactivation/render flag OUTSIDE the condition table; if unsure, replay and read the real output. (2) Distinguish a DEAD-CONSTANT gate (e.g. UBISO=SE, a value that never occurs -> always suppresses = real bug) from a DYNAMIC exit-computed gate (e.g. -PstlAdr_More_Nodes overflow flag -> benign, emits for normal data). (3) Before asserting CBPR+/compliance reject risk, confirm the flow is cross-border SWIFT, not domestic local-clearing. (4) Update immediately and without defensiveness when real output contradicts a config-read claim.",
+    "severity": "HIGH",
+    "created_session": "2026-06-17-dmee-structured-address",
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "Asserting runtime behavior from a config/condition read without the generated output is approximation without measuring; the real output IS the verifiable evidence.",
+    "source_file": "knowledge/session_retros/retro_dmee_structured_address_2026-06-17.md"
   }
 ]
