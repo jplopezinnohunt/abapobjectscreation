@@ -152,6 +152,17 @@ Para testear la **creación en D01** (no V01). Verificado vía RFC: `DFPAYG` (LA
 
 > **Solo 1 run CITI de 2023 en D01** (`20231215/USDI`) — y es US-cleared (no D-2). No hay run BR de 2023; para D-2 usar BR-1 (2021).
 
+#### CGI — verificar gate `-PstlAdr_More_Nodes` (≠ bug `=SE`)
+
+Para cerrar el flujo **CGI** (el grande EUR/europeo, donde la dirección estructurada SÍ importa para CBPR+/SEPA). El gate
+CGI es **dinámico** (overflow del exit), no constante muerta → se espera que el Dbtr emita **completo**. Confirmar:
+
+| # | Run | PM_LAUFD | PM_LAUFI | PM_GRPNO | FORMI | Pay/HBank | n | Esperado |
+|---|---|---|---|---|---|---|---|---|
+| CGI-1 | reciente c/volumen | **20250326** | **T0001** | **100** | `/CGI_XML_CT_UNESCO` | UNES/SOG01 FR/USD | 2 | Dbtr completo (Place de Fontenoy·75007·PARIS·FR) → gate benigno |
+
+`PAR_FILE=C:\tmp\dmee_CGI_sog.xml · PAR_XLST='X' · PAR_XERR='X'`. Si el Dbtr sale **completo** → CGI OK, **nada que ajustar**.
+
 > El BR run **20210924/UBO/100** es el escenario clave: `ZBUKR=UBO` → `Dbtr = T001[UBO]→ADRC` = dirección de Brasil,
 > `UBISO=BR` → dispara nodos #2 (`N_1905437260`, estruct con `=SE`→sin PstCd/TwnNm) **y** #1 (`N_1531351640`, legacy →
 > 2º PstlAdr). El XML generado debe mostrar el `<Dbtr><PstlAdr>` **sin `<PstCd>` ni `<TwnNm>`**, y posiblemente **dos**

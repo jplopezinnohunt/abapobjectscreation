@@ -93,14 +93,18 @@ Escaneo cruzado del subárbol Dbtr de los 4 formatos:
 |---|---|---|---|---|
 | `/CITI/XML/UNESCO/DC_V3_01` | 639 | **4** (2 viejos no-estruct + 2 estruct) | cond `UBISO` US/CA/PR vs resto; `PstCd`/`TwnNm` con `=SE` | D-1 resuelto (kill-switch); **D-2 abierto** (BR/UBO sin PstCd/TwnNm) |
 | `/SEPA_CT_UNES` | 111 | **1** estructurado | **sin condición** (siempre emite) | ✅ **limpio** |
-| `/CGI_XML_CT_UNESCO` | 631 | **1** estructurado | tags gated por `NODE -PstlAdrMore (N_2326418530) = 'SPACE'` | ⚠️ **PENDIENTE** |
-| `/CGI_XML_CT_UNESCO_1` | 632 | **1** (twin de CGI, mismo NODE_ID) | idem | ⚠️ idem |
+| `/CGI_XML_CT_UNESCO` | 631 | **1** estructurado | tags gated por `<-PstlAdr_More_Nodes> = 'SPACE'` (flag **dinámico** del exit) | ✅ **benigno** (≠ bug `=SE`) — confirmar con replay |
+| `/CGI_XML_CT_UNESCO_1` | 632 | **1** (twin de CGI, mismo NODE_ID) | idem | ✅ idem |
 
-**Conclusión:** CITI era el peor caso (4 nodos, código 3-letras, =SE). **SEPA está limpio.** El **formato pendiente = `/CGI_XML_CT_UNESCO`** (+ twin `_1`): su Dbtr emite estructurado **solo si `-PstlAdrMore` está vacío** (patrón "structured-si-no-hay-overflow"). Riesgo análogo al `=SE`: si `-PstlAdrMore` nunca está vacío en prod, el estructurado se suprimiría.
+**Conclusión (revisada 2026-06-17):** CITI tenía el bug del `=SE`. **SEPA limpio.** **CGI NO tiene el mismo bug:** su
+gate `<-PstlAdr_More_Nodes> = 'SPACE'` compara contra un **valor DINÁMICO calculado por el exit** (`FI_CGI_DMEE_EXIT_W_BADI`),
+NO contra una constante muerta como `=SE`. Es el patrón **estándar SAP de overflow**: si la dirección **cabe** estructurada →
+flag=SPACE → emite estructurado (caso normal); solo si **desborda** → no-estructurado. Para direcciones normales **emite
+estructurado**. La diferencia con `=SE`: `=SE` siempre suprime (Suecia nunca ocurre); el flag CGI suprime solo en overflow real.
 
-**Pendiente para cerrar CGI** (mismo tratamiento que CITI):
-1. Qué calcula el exit para el nodo técnico `-PstlAdrMore` (N_2326418530) y si está vacío para los pagos reales → ¿emite estructurado?
-2. País de banco · cuenta · año del formato CGI (P01) — es el formato grande no-Citi (EUR/SocGen, probablemente más países que US/CA/BR).
+**Verificación empírica (lección "output real > condición"):** replay CGI D01 **20250326/T0001/100** (FORMI
+`/CGI_XML_CT_UNESCO`, 2 pagos UNES/SOG01 FR/USD) → mirar `<Dbtr><PstlAdr>`: se espera completo (Place de Fontenoy·75007·
+PARIS·FR). Si completo → gate benigno confirmado, **nada que ajustar en CGI**.
 
 ## 5. Cdtr (beneficiario) — 2 `PstlAdr` (formato `/CITI/XML/UNESCO/DC_V3_01`, D01 V000)
 
