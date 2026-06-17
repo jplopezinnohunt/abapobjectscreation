@@ -6111,6 +6111,28 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       (FI_CGI BAdI for CGI/CITI native; Y_FI_DMEE custom for SEPA). Inconsistencies are projection choices, not technical
       limits — bringing a format to parity is config (+ custom for SEPA), since the underlying model is shared. Full
       detail: <code>knowledge/domains/Payment/dmee_formats_model_comparison.md</code>.</p>
+
+      <h3>CITI vs CGI — source of each address tag (deep, all parties)</h3>
+      <table>
+        <tr><th>Party</th><th>Tag</th><th>CITI (source)</th><th>CGI (source)</th></tr>
+        <tr><td rowspan="4"><strong>Dbtr</strong></td><td>StrtNm·BldgNb·CtrySubDvsn</td><td>BADI</td><td>BADI</td></tr>
+        <tr><td>PstCd</td><td>FPAYHX-REF01</td><td>BADI</td></tr>
+        <tr><td>TwnNm / Ctry</td><td>FPAYHX-ORT1Z / LAND1</td><td>BADI</td></tr>
+        <tr><td>AdrLine</td><td>FPAYHX-AUST2</td><td>—</td></tr>
+        <tr><td rowspan="4"><strong>UltmtDbtr</strong></td><td>StrtNm·BldgNb·PstCd·CtrySubDvsn</td><td>❌</td><td><strong>FPAYP-REF01</strong></td></tr>
+        <tr><td>TwnNm</td><td>❌</td><td>FPAYP-BORT1</td></tr>
+        <tr><td>Ctry</td><td>❌</td><td>FPAYP-BLAND</td></tr>
+        <tr><td>AdrLine</td><td>❌</td><td>FPAYP-BSTRAS</td></tr>
+        <tr><td rowspan="3"><strong>Cdtr</strong></td><td>StrtNm/BldgNb/PstCd/TwnNm/CtrySubDvsn</td><td><strong>CITIPMW V3_* → ADRC</strong></td><td>BADI</td></tr>
+        <tr><td>Ctry</td><td>FPAYHX-ZLISO</td><td>BADI</td></tr>
+        <tr><td>AdrLine</td><td>FPAYH-ZNME2/3/4</td><td>—</td></tr>
+        <tr><td rowspan="2"><strong>UltmtCdtr</strong></td><td>StrtNm…Ctry</td><td>BADI</td><td>BADI</td></tr>
+        <tr><td>AdrLine</td><td>FPAYH-ZSTRA/ZORT2</td><td>BADI</td></tr>
+      </table>
+      <p><code>BADI</code>=<code>FI_CGI_DMEE_EXIT_W_BADI</code> (reads ADRC/buffer, country-dispatched); <code>CITIPMW</code>
+      (V3_*)=CITI-specific exits reading ADRC directly. <strong>Action:</strong> CITI <strong>UltmtDbtr</strong> →
+      <strong>copy the CGI nodes</strong> (read direct FPAYP-REF01/BORT1/BLAND/BSTRAS, already populated in CITI) =
+      config-only. SEPA UltmtDbtr/UltmtCdtr → custom Y_FI_DMEE (no buffer). CITI Cdtr → leave (CITIPMW richer).</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>

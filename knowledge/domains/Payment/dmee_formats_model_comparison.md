@@ -68,6 +68,38 @@ usa `Y_FI_DMEE` y no el buffer.)
    Y el **Event 05** es el habilitador del buffer — sin él (SEPA) hace falta el custom.
 4. Inconsistencias entre formatos (UltmtDbtr ausente en CITI/SEPA) = **decisiones de proyección**, no límites técnicos.
 
+## 7. CITI vs CGI — source of each address tag (deep, all parties, D01 V000)
+
+| Party | Tag | CITI (source) | CGI (source) |
+|---|---|---|---|
+| **Dbtr** | StrtNm · BldgNb · CtrySubDvsn | BADI | BADI |
+| | PstCd | `FPAYHX-REF01` | BADI |
+| | TwnNm | `FPAYHX-ORT1Z` | BADI |
+| | Ctry | `FPAYHX-LAND1` | BADI |
+| | AdrLine | `FPAYHX-AUST2` | — |
+| **UltmtDbtr** | StrtNm·BldgNb·PstCd·CtrySubDvsn | ❌ | `FPAYP-REF01` |
+| | TwnNm | ❌ | `FPAYP-BORT1` |
+| | Ctry | ❌ | `FPAYP-BLAND` |
+| | AdrLine | ❌ | `FPAYP-BSTRAS` |
+| **Cdtr** | StrtNm | `V3_CGI_CRED_STREET` → ADRC | BADI |
+| | BldgNb | `V3_GET_CDTR_BLDG` → ADRC | BADI |
+| | PstCd | `V3_POSTALCODE` / `ZPST2` | BADI |
+| | TwnNm | `V3_CGI_CRED_PO_CITY` / `_CRED_CITY` | BADI |
+| | CtrySubDvsn | `V3_CGI_CRED_REGION` | BADI |
+| | Ctry | `FPAYHX-ZLISO` | BADI |
+| | AdrLine | `FPAYH-ZNME2/3/4` | — |
+| **UltmtCdtr** | StrtNm…Ctry | BADI | BADI |
+| | AdrLine | `FPAYH-ZSTRA` / `ZORT2` | BADI |
+
+`BADI` = `FI_CGI_DMEE_EXIT_W_BADI` (internally reads ADRC/buffer, country-dispatched). `CITIPMW` (`V3_*`) =
+CITI-specific exits reading `ADRC` directly.
+
+**Action items (structured address for all parties):**
+- **CITI UltmtDbtr** → **COPY the CGI UltmtDbtr nodes** (they read direct `FPAYP-REF01`/`BORT1`/`BLAND`/`BSTRAS`,
+  already populated in CITI by Event 05 + standard fields). Viable, config-only.
+- **SEPA UltmtDbtr + UltmtCdtr** → not directly copyable (no Event 05/buffer); use custom `Y_FI_DMEE` like SEPA Dbtr/Cdtr.
+- **CITI Cdtr** → leave as-is (CITIPMW exits read ADRC; richer than CGI's generic BADI).
+
 ## Probes
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·
 `probe_ultmdbtr_compare.py` (UltmtDbtr CITI vs CGI) — en `Zagentexecution/mcp-backend-server-python/`.
