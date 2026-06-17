@@ -6124,7 +6124,7 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
         <tr style="background:#f1f5f9"><td><b>Dbtr</b> #3 <code>N_4078824850</code></td><td><code>=USA OR CAN OR PRO</code> (3-letter)</td><td>never (V000/V001)</td><td>AdrLine×3</td><td>dead. 🧹 delete (V002→2-letter would dup US/CA)</td></tr>
         <tr style="background:#dcfce7"><td><b>Dbtr</b> #4 <code>N_5197213060</code></td><td><code>=US OR CA OR PR</code></td><td>US/CA/PR</td><td>StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry</td><td>✅ complete</td></tr>
         <tr><td><b>Cdtr</b> #1/#2</td><td><code>=US/CA/PR</code> · <code>&lt;&gt;RU/JP/US/CA/PR</code></td><td>US/CA · BR</td><td>structured (CITIPMW→ADRC); #2 +AdrLine×3 (ZNME overflow)</td><td>✅ both complete</td></tr>
-        <tr style="background:#fef9c3"><td><b>UltmtDbtr</b></td><td>—</td><td>—</td><td><b>0 PstlAdr nodes</b> (Nm only)</td><td>🟡 ADD: copy CGI node</td></tr>
+        <tr style="background:#dcfce7"><td><b>UltmtDbtr</b></td><td>—</td><td>all</td><td><code>PmtInf/UltmtDbtr</code> = <b>Nm only</b> (CITI <code>Nm</code>, CGI <code>Nm</code>+<code>Id</code>) — no PstlAdr</td><td>✅ <b>Nm-only BY DESIGN</b> (ISO 20022) — NOT a gap, NO add</td></tr>
         <tr><td><b>UltmtCdtr</b> #1/#2</td><td>(none) · <code>UBISO&lt;&gt;''</code></td><td>all</td><td>BAdI (=SPACE) · direct FPAYH-Z* (ZPSTL/ZORT1/ZREGI/ZLAND)</td><td>✅ structured</td></tr>
         <tr style="background:#eef2ff"><td><b>CGI</b> (all 4 parties)</td><td>1 node each, gated <code>=SPACE</code>/<code>&lt;&gt;X</code></td><td>all</td><td>BAdI; UltmtDbtr = direct FPAYP (REF01/BORT1/BLAND/BSTRAS)</td><td>✅ uniform, clean</td></tr>
       </table>
@@ -6147,11 +6147,8 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
         <tr><td>Ctry</td><td><code>FPAYHX-LAND1</code> (directo)</td><td>BAdI std → LAND1</td><td>✅ ninguna</td></tr>
         <tr><td>AdrLine</td><td><code>FPAYHX-AUST2</code> (directo)</td><td>—</td><td>✅ opcional</td></tr>
         <tr style="background:#f1f5f9"><td><i>nodos #1/#2</i></td><td>viejos 3-letras, apagados (kill-switch)</td><td>—</td><td>🧹 borrar #1/#2 en V001 (limpieza D-1)</td></tr>
-        <tr><td rowspan="5"><strong>UltmtDbtr</strong><br><span style="font-size:10px;color:#64748b">opcional<br>on-behalf-of<br>≤0.77% pagos</span></td><td>StrtNm·BldgNb·PstCd·CtrySubDvsn</td><td>❌ sin nodo</td><td><code>FPAYP-REF01</code> (mismos offsets, MP_IF_TP=1)</td><td>🟡 <b>ADD</b>: copiar subárbol de CGI (config-only). <b>Prioridad BAJA</b></td></tr>
-        <tr><td>TwnNm</td><td>❌</td><td><code>FPAYP-BORT1</code></td><td>🟡 ADD (de CGI)</td></tr>
-        <tr><td>Ctry</td><td>❌</td><td><code>FPAYP-BLAND</code></td><td>🟡 ADD</td></tr>
-        <tr><td>AdrLine</td><td>❌</td><td><code>FPAYP-BSTRAS</code></td><td>🟡 ADD (opcional)</td></tr>
-        <tr><td><i>Nm</i></td><td><code>FPAYP-BNAME</code> si ≠NAMEZ (único presente)</td><td><code>FPAYP-BNAME</code></td><td>✅ ya presente</td></tr>
+        <tr style="background:#dcfce7"><td rowspan="2"><strong>UltmtDbtr</strong><br><span style="font-size:10px;color:#64748b">parte última<br>on-behalf-of</span></td><td><code>PmtInf/UltmtDbtr</code> = <b>Nm only</b></td><td><code>Nm</code> ← FPAYP-BNAME (no PstlAdr)</td><td><code>Nm</code>+<code>Id</code> (no PstlAdr)</td><td>✅ <b>Nm-only POR DISEÑO</b> (ISO 20022) — NO es gap, NO add</td></tr>
+        <tr><td>nivel transacción (CdtTrfTxInf)</td><td>CITI: ninguno</td><td>CGI: <code>N_8824498030</code> estruct (FPAYP-REF01/BORT1/BLAND/BSTRAS)</td><td>✅ NO copiar a CITI (decisión de diseño)</td></tr>
         <tr><td rowspan="8"><strong>Cdtr</strong><br><span style="font-size:10px;color:#64748b">beneficiario<br>maestro vendor<br>ADRC v.nation</span></td><td>StrtNm</td><td><code>V3_CGI_CRED_STREET</code> → <b>ADRC-STREET</b> (one-time→BSEC-STRAS; fb→ZSTRA; PO box→"PO BOX"+ZPFAC)</td><td>BAdI std → ADRC + <b>FALLBACK</b> (name-overflow)</td><td>✅ ninguna (CITI más rico)</td></tr>
         <tr><td>BldgNb</td><td><code>V3_GET_CDTR_BLDG</code> → <b>ADRC-BUILDING</b></td><td>BAdI std</td><td>✅ ninguna</td></tr>
         <tr><td>PstCd</td><td><code>V3_POSTALCODE</code> (ZPST2 PO box / ZPSTL)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
@@ -6164,12 +6161,12 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
         <tr><td>AdrLine</td><td><code>FPAYH-ZSTRA/ZORT2</code> (directo)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
         <tr style="background:#f1f5f9"><td><i>transversal</i></td><td>InstrForCdtrAgt / RmtInf (PPC)</td><td>clases país FR/DE/IT → <code>get_tag_value_from_custo</code></td><td>idem</td><td>✅ no es dirección (purpose code)</td></tr>
       </table>
-      <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:3px;font-size:12px"><strong>Resumen — solo 3 acciones reales (el resto ✅ ninguna):</strong><br>
-      1. 🔴 <b>FIX D-2 (ALTA)</b> — Dbtr CITI <code>PstCd</code>+<code>TwnNm</code>: quitar <code>=SE</code> del nodo #4 <code>N_1905437260</code>. Afecta <b>83,224 pagos (8.5% · 53% del flujo CITI)</b>, campo <b>obligatorio</b> CBPR+. Único cambio de impacto.<br>
-      2. 🟡 <b>ADD UltmtDbtr CITI (BAJA)</b> — copiar subárbol de CGI (campos directos <code>FPAYP-*</code>, ya poblados). Config-only, pero solo <b>≤0.77%</b> de pagos (partido opcional) → bajo retorno.<br>
+      <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:3px;font-size:12px"><strong>Resumen de acciones (CORREGIDO 2026-06-17 — UltmtDbtr SIN add; versión activa = V000):</strong><br>
+      1. 🔴 <b>FIX D-2 (ALTA)</b> — Dbtr CITI <code>PstCd</code>+<code>TwnNm</code>: quitar <code>=SE</code> del nodo estructurado #2 <code>N_1905437260</code>. Afecta <b>83,224 pagos (8.5% · 53% del flujo CITI)</b>, campo <b>obligatorio</b> CBPR+. <b>Único cambio de impacto.</b><br>
+      2. 🧹 <b>FIX D-1 (duplicado BR)</b> — desactivar nodo legacy #1 <code>N_1531351640</code> (dispara junto a #2 → 2º <code>PstlAdr</code> para BR) + borrar #3 muerto <code>N_4078824850</code>. <em>Reconciliar: la nota previa lo daba por resuelto vía kill-switch — no está en V000.</em><br>
       3. 🟢 <b>Cdtr name-overflow (MEJORA)</b> — opcional: consolidar <code>ZNME2/3/4</code>→<code>AdrLine</code> con la función combina-nombres. 4.7% BR. No es defecto.<br>
-      4. 🧹 <b>Limpieza D-1</b> — borrar nodos Dbtr #1/#2 (muertos) en V001. Higiene.<br>
-      <em>SEPA aparte: UltmtDbtr+UltmtCdtr sin dirección, NO copiable de CGI (sin Event 05/buffer) → custom <code>Y_FI_DMEE</code>. Impacto MÍNIMO.</em></p>
+      4. ❌ <b>UltmtDbtr — SIN acción.</b> <code>PmtInf/UltmtDbtr</code> es <b>Nm-only por diseño</b> en CITI y CGI (ISO 20022). El UltmtDbtr estructurado de CGI está a nivel transacción y NO se replica en CITI. <b>No es un gap.</b><br>
+      <em>SEPA: sus partes última son Nm-only igual (mismo diseño). Lo relevante de SEPA es Dbtr/Cdtr vía custom <code>Y_FI_DMEE</code>.</em></p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>

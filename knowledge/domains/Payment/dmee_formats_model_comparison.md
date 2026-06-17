@@ -88,14 +88,18 @@ dispara. CITI = 12 nodos PstlAdr (Dbtr **4** · UltmtDbtr **0** · Cdtr 2 · Ult
 (000/001/002) lo muestra**; #1 sigue vivo para BR. `DMEE_TREE_HEAD` no es RFC-legible → versión activa sin confirmar
 (V000 = baseline medido, consistente con output P01 previo). **Reconciliar antes de cerrar D-1.**
 
-**CITI Cdtr — 2 nodos:** #1 `N_1496761000` (`=US OR CA OR PR`, estruct puro) · #2 `N_2368849090`
-(`<>RU AND <>JP AND <>US AND <>CA AND <>PR`, estruct + `AdrLine×3`←ZNME2/3/4 name-overflow). Ambos completos ✅.
-**CITI UltmtDbtr — 0 nodos** (solo `Nm`) = el gap. **CITI UltmtCdtr — 2 nodos:** #1 `N_3468319710` (BAdI, gated `=SPACE`)
-+ #2 `N_4600960730` (`UBISO<>''`, campos directos `FPAYH-Z*`: PstCd←ZPSTL, TwnNm←ZORT1, CtrySubDvsn←ZREGI, Ctry←ZLAND).
+**CITI Cdtr — 2 nodos** (`PmtInf/CdtTrfTxInf/Cdtr/PstlAdr`): #1 `N_1496761000` (`=US OR CA OR PR`, estruct puro) · #2
+`N_2368849090` (`<>RU AND <>JP AND <>US AND <>CA AND <>PR`, estruct + `AdrLine×3`←ZNME2/3/4 name-overflow). Ambos ✅.
+**CITI UltmtDbtr — Nm-only POR DISEÑO** (`PmtInf/UltmtDbtr` solo `Nm`, sin `PstlAdr` a ningún nivel; **NO es gap** —
+CGI tiene uno estructurado a nivel transacción `N_8824498030` que **no se replica en CITI**). **CITI UltmtCdtr — 2 nodos**
+(`PmtInf/CdtTrfTxInf/UltmtCdtr/PstlAdr`): #1 `N_3468319710` (BAdI, gated `=SPACE`) + #2 `N_4600960730` (`UBISO<>''`,
+directos `FPAYH-Z*`: PstCd←ZPSTL, TwnNm←ZORT1, CtrySubDvsn←ZREGI, Ctry←ZLAND).
+**Otras partes con PstlAdr (bancos, aparte):** DbtrAgt · CdtrAgt · IntrmyAgt1 (CITI+CGI) · IntrmyAgt2 (CITI) — todas
+`FinInstnId/PstlAdr` = dirección del **banco** (T012K/BNKA), no de las partes cliente analizadas aquí.
 
 **CGI — 1 nodo estructurado por partido (uniforme), gated por flag overflow:** Dbtr `N_1160789980`(`-PstlAdrMore=SPACE`)
 · UltmtDbtr `N_8824498030`(`=SPACE`, directos FPAYP) · Cdtr `N_8311560080`(`<>X`) · UltmtCdtr `N_4634017880`(`=SPACE`).
-→ CGI es limpio (1 nodo/partido); CITI es el desordenado (4 Dbtr con solape, 0 UltmtDbtr, 2+2).
+→ CGI es limpio (1 nodo/partido); CITI es el desordenado (4 Dbtr con solape, UltmtDbtr Nm-only por diseño, Cdtr 2, UltmtCdtr 2).
 
 ### 7.1 Fuente de cada tag (dentro del nodo que dispara)
 
@@ -112,12 +116,9 @@ street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100
 | | CtrySubDvsn | BAdI std → `FPAYHX-REF01+90(10)` (region) | BAdI std → idem | ✅ ninguna |
 | | Ctry | `FPAYHX-LAND1` (directo) | BAdI std → LAND1 | ✅ ninguna |
 | | AdrLine | `FPAYHX-AUST2` (directo) | — (CGI no lo tiene) | ✅ opcional |
-| | *(nodos)* | #1/#2 viejos (3-letras) apagados por kill-switch | — | 🧹 **limpieza D-1**: borrar nodos #1/#2 en V001 |
-| **UltmtDbtr** *(opcional, on-behalf-of; ≤0.77% de pagos)* | StrtNm·BldgNb·PstCd·CtrySubDvsn | ❌ **sin nodo** | campo directo `FPAYP-REF01` (mismos offsets buffer, `MP_IF_TP=1`) | 🟡 **ADD**: copiar subárbol UltmtDbtr de CGI → CITI (FPAYP ya poblado; config-only). **Prioridad BAJA** |
-| | TwnNm | ❌ | `FPAYP-BORT1` (directo) | 🟡 ADD (copiar de CGI) |
-| | Ctry | ❌ | `FPAYP-BLAND` (directo) | 🟡 ADD |
-| | AdrLine | ❌ | `FPAYP-BSTRAS` (directo) | 🟡 ADD (opcional) |
-| | *(Nm)* | `FPAYP-BNAME` si `≠NAMEZ` (único tag presente) | `FPAYP-BNAME` | ✅ ya presente |
+| | *(nodo #1 legacy N_1531351640)* | dispara para BR junto a #2 ⇒ 2º `PstlAdr` (Ctry+AdrLine) = **duplicado D-1** | — | 🧹 **D-1**: desactivar #1 (BR→solo #2); borrar #1 + #3 muerto |
+| **UltmtDbtr** *(parte última, on-behalf-of)* | **`PmtInf/UltmtDbtr` = solo `Nm`** | `Nm` ← `FPAYP-BNAME` (sin PstlAdr) | `Nm`+`Id` (sin PstlAdr en PmtInf) | ✅ **Nm-only POR DISEÑO** (ISO 20022 permite parte última solo por nombre) — **NO es gap, NO add** |
+| | *(nivel transacción)* | CITI: sin `CdtTrfTxInf/UltmtDbtr/PstlAdr` | CGI: `N_8824498030` estruct (directos `FPAYP-REF01/BORT1/BLAND/BSTRAS`, gated `=SPACE`) | ✅ **NO copiar a CITI** (parte opcional, decisión de diseño confirmada por usuario) |
 | **Cdtr** *(beneficiario, maestro vendor `ADRC` v.`nation`)* | StrtNm | exit `V3_CGI_CRED_STREET` → **`ADRC-STREET`** (one-time→`BSEC-STRAS`; fallback HR/F111/PR→`ZSTRA`; PO box→"PO BOX"+`ZPFAC`) | BAdI std → ADRC + **FALLBACK** (name-overflow: antepone nombre chars 35+) | ✅ ninguna (CITI más rico) |
 | | BldgNb | `V3_GET_CDTR_BLDG` → **`ADRC-BUILDING`** | BAdI std | ✅ ninguna |
 | | PstCd | `V3_POSTALCODE` (`ZPST2` PO box / `ZPSTL`) | BAdI std | ✅ ninguna |
@@ -130,18 +131,22 @@ street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100
 | | AdrLine | `FPAYH-ZSTRA`/`ZORT2` (directo) | BAdI std | ✅ ninguna |
 | *(transversal)* | InstrForCdtrAgt / RmtInf (PPC) | clases país `FR/DE/IT`→`get_tag_value_from_custo` (`mt_ppc_cus` por país·D/C·pay_type·tag) | idem | ✅ no es dirección (purpose code) |
 
-**Resumen de acciones (solo 3 reales; el resto = ✅ ninguna):**
-1. 🔴 **FIX D-2 (ALTA)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #4 `N_1905437260`. Afecta **83,224 pagos
-   (8.5%·53% del flujo CITI)**, campo **obligatorio** CBPR+. Único cambio de impacto. Confirmar antes que el exit los
-   llene (no dejar tags vacíos).
-2. 🟡 **ADD UltmtDbtr CITI (BAJA)** — copiar el subárbol UltmtDbtr de CGI (campos directos `FPAYP-*`, ya poblados).
-   Config-only, pero solo **≤0.77%** de pagos (partido opcional) → bajo retorno.
-3. 🟢 **Cdtr name-overflow (MEJORA)** — opcional: consolidar `ZNME2/3/4`→`AdrLine` con la función combina-nombres
-   (otro modelo). 4.7% BR. No es defecto de compliance.
-4. 🧹 **Limpieza D-1** — borrar nodos Dbtr #1/#2 (muertos) en V001. Higiene, no funcional.
+**Resumen de acciones (CORREGIDO 2026-06-17 — `UltmtDbtr` NO lleva add):**
+1. 🔴 **FIX D-2 (ALTA)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #2 estructurado `N_1905437260`. Afecta
+   **83,224 pagos (8.5%·53% del flujo CITI)**, campo **obligatorio** CBPR+. **Único cambio de impacto.** Confirmar
+   antes que el exit los llene (no dejar tags vacíos).
+2. 🧹 **D-1 duplicado (Dbtr BR)** — desactivar nodo #1 legacy `N_1531351640` (dispara junto a #2 → 2º `PstlAdr` para
+   BR); borrar #1 + #3 muerto `N_4078824850`. *(Reconciliar: la nota previa lo daba por resuelto vía kill-switch — no
+   está en V000.)*
+3. 🟢 **Cdtr name-overflow (MEJORA)** — opcional: consolidar `ZNME2/3/4`→`AdrLine` con la función combina-nombres. 4.7% BR.
+4. ❌ **UltmtDbtr — SIN acción.** `PmtInf/UltmtDbtr` es **Nm-only por diseño** en CITI **y** CGI (ISO 20022 permite
+   parte última solo por nombre). El UltmtDbtr estructurado de CGI está a nivel transacción y **no se replica en CITI**
+   (decisión de diseño, usuario 2026-06-17). **No es un gap.**
 
-*(SEPA aparte: UltmtDbtr+UltmtCdtr sin dirección, NO copiable de CGI — sin Event 05/buffer; usar custom `Y_FI_DMEE`
-como SEPA Dbtr/Cdtr. Impacto MÍNIMO — ver §9.)*
+**Versión activa: V000** (confirmado usuario 2026-06-17). V001/V002 son copias de trabajo.
+
+*(SEPA aparte: sus UltmtDbtr/UltmtCdtr son Nm-only igual — mismo diseño. Lo relevante de SEPA es Dbtr/Cdtr vía custom
+`Y_FI_DMEE`. Impacto de las "ausencias" de parte última = mínimo, ver §9.)*
 
 ## 8. BAdI internals — qué hace `FI_CGI_DMEE_EXIT_W_BADI` por partido (CGI/CITI)
 
@@ -198,17 +203,15 @@ OBLIGATORIO (Dbtr/Cdtr, dirección mandatoria CBPR+) u OPCIONAL (UltmtDbtr/Ultmt
 | # | Diferencia | Tipo | Partido | Volumen (MEDIDO) | Mandato | Impacto |
 |---|---|---|---|---|---|---|
 | **D-2** | CITI Dbtr: `=SE` suprime `PstCd`/`TwnNm` p/ clearing≠US/CA/PR | **DEFECTO en partido obligatorio** | Dbtr | **83,224 pagos (8.5% del total · 52.9% del flujo CITI)**; BR=79,674, creciendo | **MANDATORIO** (CBPR+ structured addr) → riesgo rechazo/retorno | **🔴 ALTO** |
-| G-1 | CITI UltmtDbtr sin dirección (solo `Nm`) | Falta partido OPCIONAL | UltmtDbtr | ≤ **7,575 pagos (0.77%)** [proxy EMPFG payee-alterno] | Opcional; dirección NO mandatoria | 🟡 BAJO |
-| G-2 | SEPA UltmtDbtr + UltmtCdtr sin dirección | Falta partido OPCIONAL | Ultmt×2 | subconjunto del 0.77% | Opcional + SEPA=IBAN-only, intra-EU, mínima sensibilidad a dirección | ⚪ MÍNIMO |
+| **D-1** | CITI Dbtr BR: nodos #1+#2 disparan ambos → 2º `PstlAdr` | DEFECTO estructural (duplicado) | Dbtr | mismo flujo BR (≈79,674) | XML mal formado / addr partida | 🟠 MEDIO |
+| ~~G-1~~ | ~~UltmtDbtr sin dirección~~ → **NO es diferencia** | **Nm-only POR DISEÑO** (ISO 20022) | UltmtDbtr | — | parte última identificable solo por nombre | ⚪ **N/A (no es gap)** |
 
-**Veredicto:** la diferencia que importa es **D-2** (Dbtr CITI BR/UBO) — un **defecto** que borra campos **obligatorios**
-en un partido **siempre presente** y en el **8.5% de TODOS los pagos** (mitad del flujo CITI, creciendo). Las otras dos
-son **ausencias** de partidos **opcionales** que se pueblan en **≤0.77%** (proxy `EMPFG`), cuya dirección **ni siquiera
-es mandatoria** y que aún así llevan `Nm`. Diferencia de impacto ≈ **11× en volumen + un tier regulatorio**.
+**Veredicto:** la única diferencia con impacto de compliance es **D-2** (Dbtr CITI BR/UBO) — un **defecto** que borra
+campos **obligatorios** en un partido **siempre presente**, en el **8.5% de TODOS los pagos** (mitad del flujo CITI,
+creciendo). El **D-1** (duplicado de `PstlAdr` para BR) es secundario pero del mismo flujo. **`UltmtDbtr` NO es una
+diferencia a cerrar**: es **Nm-only por diseño** en CITI y CGI (corrección 2026-06-17) — antes mal-clasificado como gap.
 
-→ **Prioridad para "structured address to all": (1) fijar D-2 ≫ (2) copiar UltmtDbtr CITI←CGI ≫ (3) SEPA ultimate.**
-*Caveat (MEDIDO vs INFERIDO):* 0.77% = `EMPFG<>''` (payee alterno) como **proxy** del escenario ultimate-party; el
-conteo exacto de UltmtDbtr/UltmtCdtr poblados requiere FPAYP, pero el orden de magnitud (decenas de miles vs ~7.5K) es firme.
+→ **Prioridad real: (1) fijar D-2 (único de impacto) → (2) limpiar D-1 (duplicado, mismo flujo BR). UltmtDbtr = sin acción.**
 
 ## Probes
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·
