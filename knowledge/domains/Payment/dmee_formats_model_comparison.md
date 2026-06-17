@@ -134,8 +134,11 @@ street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100
 **Resumen de acciones (CORREGIDO 2026-06-17 — D-2 probado en XML real; D-1 retractado):**
 1. 🔴 **FIX D-2 (ALTA — ÚNICA ACCIÓN REAL)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #2 estructurado
    `N_1905437260` (dejarlos incondicionales como el #4). Afecta **83,224 pagos (8.5%·53% del flujo CITI)**, campo
-   **obligatorio** CBPR+. **PROBADO end-to-end** en el XML BR real (§10.1: Dbtr BR sale sin `PstCd`/`TwnNm`). Confirmar
-   antes que el exit/buffer los llene (que `ADRC`/REF tenga el código postal y la ciudad de UBO Brasil — si no, saldría vacío).
+   **obligatorio** CBPR+. **PROBADO end-to-end** en el XML BR real (§10.1: Dbtr BR sale sin `PstCd`/`TwnNm`).
+   **ZERO-RIESGO (usuario 2026-06-17): NO existe flujo `SE` (Suecia)** → el `=SE` es código muerto que nunca emite;
+   quitarlo no regresa ningún caso real. Y como el Dbtr BR **ya emite** `StrtNm`/`BldgNb`/`CtrySubDvsn` de la misma
+   fuente (`ADRC` de UBO Brasil), el código postal y la ciudad están casi seguro poblados → al quitar el `=SE` saldrían
+   (Brasília + CEP), no tags vacíos. **Cambio limpio, sin pre-condición pendiente.**
 2. ❌ **D-1 (duplicado) — RETRACTADO, no hay acción.** El XML BR real trae **1 solo `PstlAdr`**; el nodo legacy #1
    `N_1531351640` **está desactivado** (no renderiza). La nota previa "D-1 resuelto" era correcta. (`#3 N_4078824850`
    muerto = higiene opcional, sin impacto.)
