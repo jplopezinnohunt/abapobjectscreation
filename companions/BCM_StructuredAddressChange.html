@@ -6092,6 +6092,25 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       international version</strong> — not from payment fields. If the vendor's ADRC is incomplete the structured
       address is incomplete. Z* are fallback only for payroll/F111/payment-request; <code>&lt;PstCd&gt;</code> is
       the exception (reads FPAYH ZPSTL/ZPST2 direct, no ADRC).</p>
+
+      <h3>🔑 The big picture — 2 underlying models, 4-party × 3-format matrix</h3>
+      <p>DMEE trees are <strong>XML projections of a shared runtime model</strong> (FPAYH/FPAYHX REF buffers/FPAYP/ADRC,
+      filled by Event 05 + exits). There are <strong>2 models</strong>: <code>FPM_CGI</code> (shared by CITI + CGI) and
+      <code>FPM_SEPA</code> (SEPA, different). <strong>Event 05</strong> is the key: CGI=<code>FI_PAYMEDIUM_DMEE_CGI_05</code>,
+      CITI=<code>/CITIPMW/V3_PAYMEDIUM_DMEE_05</code> (both fill <code>FPAYHX_FREF</code>); <strong>SEPA calls NONE</strong>
+      → that is why UNESCO built 17 custom <code>Y_FI_DMEE</code> exits (read ADRC directly).</p>
+      <table>
+        <tr><th>Party</th><th>SEPA (FPM_SEPA)</th><th>CITI (CGI model)</th><th>CGI (FPM_CGI)</th></tr>
+        <tr><td><strong>Dbtr</strong></td><td>✅ <code>Y_FI_DMEE</code> custom</td><td>✅ FI_CGI BAdI (REF buffer)</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>UltmtDbtr</strong></td><td>❌ no address</td><td>❌ no address (Nm only)</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>Cdtr</strong></td><td>✅ <code>Y_FI_DMEE</code> custom</td><td>✅ <code>CITIPMW</code> → ADRC</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>UltmtCdtr</strong></td><td>❌ no address</td><td>✅ FI_CGI BAdI</td><td>✅ FI_CGI BAdI</td></tr>
+      </table>
+      <p><strong>Structured-address coverage:</strong> CGI = <strong>4/4</strong> (gold standard, all via FI_CGI BAdI);
+      CITI = 3/4 (UltmtDbtr missing); SEPA = 2/4 (UltmtDbtr + UltmtCdtr missing). The function called = the model
+      (FI_CGI BAdI for CGI/CITI native; Y_FI_DMEE custom for SEPA). Inconsistencies are projection choices, not technical
+      limits — bringing a format to parity is config (+ custom for SEPA), since the underlying model is shared. Full
+      detail: <code>knowledge/domains/Payment/dmee_formats_model_comparison.md</code>.</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
