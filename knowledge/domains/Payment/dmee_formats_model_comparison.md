@@ -213,6 +213,28 @@ diferencia a cerrar**: es **Nm-only por diseño** en CITI y CGI (corrección 202
 
 → **Prioridad real: (1) fijar D-2 (único de impacto) → (2) limpiar D-1 (duplicado, mismo flujo BR). UltmtDbtr = sin acción.**
 
+## 10. Validación EMPÍRICA — 2 XML reales generados (CITI, replay, 2026-06-17)
+
+Usuario aportó 2 salidas reales del formato CITI (`pain.001.001.03`, vía ZSAPFPAYM_REPLAY; `CreDtTm` hoy, `ReqdExctnDt`
+2022/2023). Ambas **US-cleared** (`DbtrAgt/BIC=CITIUS33`, ABA 021000089) → `UBISO=US`. Confirman el modelo corregido:
+
+| Observación en el XML real | Confirma |
+|---|---|
+| **Dbtr UNESCO COMPLETO** (`StrtNm·BldgNb·PstCd=75007·TwnNm=PARIS·Ctry=FR`) en ambos | US-clearing → nodo **#4 `N_5197213060`** (`=US/CA/PR`) emite completo; **D-2 NO se dispara para US** |
+| Dbtr `Ctry=FR` (Paris) pese a clearing US | Dbtr = dirección propia `ZBUKR→T001→ADRC`, **no** país de clearing |
+| **`UltmtCdtr` Serbia estructurado FULL** (`Strt·BldgNb=24·PstCd=11000·TwnNm=BELGRADE·Ctry=RS`) (file ALPAY txn2) | CITI UltmtCdtr estructurado (2 nodos) funciona |
+| **`UltmtDbtr` AUSENTE en ambos** (incl. el "ALPAY") | **UltmtDbtr Nm-only/no-emitido POR DISEÑO** (valida corrección 2026-06-17) |
+| Cdtr (STEG/BG/Serbie) con dirección pero **sin `BldgNb`** | CITIPMW→`ADRC`; `BldgNb` vacío = `ADRC-BUILDING` vacío en esos vendors |
+| `InstrForCdtrAgt=ROUT ID 10` (file2) | capa PPC (FR/DE/IT `get_tag_value_from_custo`) = routing, **no** dirección |
+
+**"Alternative payer" — precisión:** el file `ALPAY` muestra un **alternative PAYEE** (txn2: `Cdtr`=Delegation Serbie
+Paris recibe en SocGen; `UltmtCdtr`=Commission Serbia Belgrade = beneficiario último). **No hay `UltmtDbtr`** (alt payer)
+en ninguno → el Dbtr es UNESCO siempre. El escenario alt-payee se renderiza vía `UltmtCdtr`, no via `UltmtDbtr`.
+
+**Límite:** ambos US-cleared ⇒ **D-2 NO observable aquí** (Dbtr completo). Para ver el defecto real falta un XML
+**BR-cleared** (UBO Worldlink `CIT01`): ahí el Dbtr = dirección UBO Brasil por nodo #2 `N_1905437260` → saldría **sin
+`PstCd`/`TwnNm`**. (Archivos crudos no versionados: contienen IBANs reales; solo se persiste la estructura.)
+
 ## Probes
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·
 `probe_ultmdbtr_compare.py` (UltmtDbtr CITI vs CGI) — en `Zagentexecution/mcp-backend-server-python/`.
