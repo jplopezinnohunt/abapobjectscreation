@@ -193,6 +193,32 @@ dirección **siempre** sale por los exits vendor/calle/city. Las ramas payroll/P
 (otros flujos: nóminas, apartados, cheques — no ocurren en Citi/UBO). [US/CA podrían disparar alguna — no
 verificado.]
 
+## 7. Código fuente de los exits CITIPMW — la dirección sale de `ADRC` (maestro de vendor)
+
+**Hallazgo (exits explorados a fondo, código en `extracted_code/FI/DMEE_full_inventory/CITIPMW_V3_*`):** los
+tags estructurados del Cdtr NO sacan el valor de campos `Z*` — lo sacan del **maestro de dirección del vendor
+`ADRC`**. Todos los `V3_*CRED_*` siguen la **misma jerarquía de 3 niveles**:
+1. **One-time/CPD vendor** (`FPAYH-GPA1T='14'`) → `BSEC` (dirección tipeada al postear; clave de `DOC1R` → `READ_BSEC`).
+2. **Vendor normal** → `ADRC` por `FPAYH-ZADNR` (nº dirección), **versión internacional** (`nation = FPAYHX-NATION`).
+3. **Fallback** (solo HR `FPAYP-DOC2T='03'` / F111 `DOC2T='05'` / payment-request `FPAYH-DORIGIN='FI-AP-PR'`, si quedó vacío) → `FPAYH-Z*`.
+
+| XML tag | Exit | One-time → BSEC | Vendor → ADRC (nation) | Fallback → FPAYH |
+|---|---|---|---|---|
+| `<StrtNm>` | `V3_CGI_CRED_STREET` | `BSEC-STRAS` | **`ADRC-STREET`** | `ZSTRA` |
+| `<BldgNb>` | `V3_GET_CDTR_BLDG` | (skip) | **`ADRC-BUILDING`** | — |
+| `<PstCd>` | `V3_POSTALCODE` | — | (lee FPAYH directo) | `ZPST2` (PO box) / `ZPSTL` |
+| `<TwnNm>` City | `V3_EXIT_CGI_CRED_CITY` | `BSEC-ORT01` | **`ADRC-CITY1`** | `ZORT1` |
+| `<TwnNm>` PObox | `V3_CGI_CRED_PO_CITY` | `BSEC-ORT01` | **`ADRC-PO_BOX_CTY`** | `ZPFOR` |
+| `<CtrySubDvsn>` | `V3_CGI_CRED_REGION` | `BSEC-REGIO` | **`ADRC-REGION`** | `ZREGI` |
+| `<Nm>` | `V3_EXIT_CGI_CRED_NAME` | `BSEC-NAME1` | **`ADRC-NAME1`** (+ `CTGYPURP='TRAD'` → busca doc reemplazo en `REGUP`) | `ZNME1` |
+| `<Ctry>` | (sin exit) | — | — | `FPAYHX-ZLISO` directo |
+
+**Implicaciones:**
+1. La dirección del beneficiario viene del **maestro de vendor (LFA1→ADRC)**, **versión internacional** (`nation`) — NO de campos de pago. Esto importa: si el ADRC del vendor está incompleto, la dirección estructurada sale incompleta.
+2. Los `Z*` (ZSTRA/ZORT1/ZREGI/ZNME1) son **fallback solo** para nómina/F111/payment-request, no para AP normal.
+3. `<PstCd>` es la excepción: lee `FPAYH` (`ZPSTL`/`ZPST2`) directo, sin ADRC.
+4. El branch tree-level `HR='P'` (payroll → `_HR` atoms directos) coincide con el fallback interno del exit (DOC2T='03') — payroll usa campos directos por ambas vías.
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).

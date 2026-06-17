@@ -6068,6 +6068,30 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       TwnNm-city by XSCHK, PstCd by param =2); HR runs in parallel. <strong>BR/UBO reality (P01):</strong> all 3
       drivers sit at default → HR never 'P' (LAUFI=BUBO…), ZPFAC 0% (0/82,684), XSCHK non-check (method R Worldlink)
       → BR address always emits via vendor/street/city exits; payroll/PO-Box/check branches are defensive (other flows).</p>
+
+      <h3>CITIPMW exit source code — address comes from <code>ADRC</code> (vendor master)</h3>
+      <p><strong>Key finding (exits read from <code>extracted_code/.../CITIPMW_V3_*</code>):</strong> the Cdtr
+      structured tags do NOT take their value from <code>Z*</code> fields — they read the <strong>vendor address
+      master <code>ADRC</code></strong>. Every <code>V3_*CRED_*</code> exit follows the same <strong>3-tier</strong>
+      hierarchy: (1) one-time/CPD vendor (<code>GPA1T='14'</code>) → <code>BSEC</code> (address typed at posting);
+      (2) normal vendor → <code>ADRC</code> via <code>FPAYH-ZADNR</code>, <strong>international version</strong>
+      (<code>nation=FPAYHX-NATION</code>); (3) fallback (only HR <code>DOC2T='03'</code> / F111 <code>'05'</code> /
+      payment-request <code>DORIGIN='FI-AP-PR'</code>, if empty) → <code>FPAYH-Z*</code>.</p>
+      <table>
+        <tr><th>XML tag</th><th>Exit</th><th>Vendor → ADRC</th><th>Fallback → FPAYH</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>V3_CGI_CRED_STREET</td><td><strong>ADRC-STREET</strong></td><td>ZSTRA</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>V3_GET_CDTR_BLDG</td><td><strong>ADRC-BUILDING</strong></td><td>—</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>V3_POSTALCODE</td><td>(reads FPAYH direct)</td><td>ZPST2(PO box) / ZPSTL</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code> City</td><td>V3_EXIT_CGI_CRED_CITY</td><td><strong>ADRC-CITY1</strong></td><td>ZORT1</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code> PObox</td><td>V3_CGI_CRED_PO_CITY</td><td><strong>ADRC-PO_BOX_CTY</strong></td><td>ZPFOR</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>V3_CGI_CRED_REGION</td><td><strong>ADRC-REGION</strong></td><td>ZREGI</td></tr>
+        <tr><td><code>&lt;Nm&gt;</code></td><td>V3_EXIT_CGI_CRED_NAME</td><td><strong>ADRC-NAME1</strong> (+TRAD→REGUP)</td><td>ZNME1</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>(no exit)</td><td>—</td><td>FPAYHX-ZLISO direct</td></tr>
+      </table>
+      <p><strong>Implication:</strong> the beneficiary address comes from the <strong>vendor master (LFA1→ADRC),
+      international version</strong> — not from payment fields. If the vendor's ADRC is incomplete the structured
+      address is incomplete. Z* are fallback only for payroll/F111/payment-request; <code>&lt;PstCd&gt;</code> is
+      the exception (reads FPAYH ZPSTL/ZPST2 direct, no ADRC).</p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>
