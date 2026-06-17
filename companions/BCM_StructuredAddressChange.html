@@ -6112,7 +6112,28 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       limits — bringing a format to parity is config (+ custom for SEPA), since the underlying model is shared. Full
       detail: <code>knowledge/domains/Payment/dmee_formats_model_comparison.md</code>.</p>
 
-      <h3>CITI vs CGI — source of each address tag + ACTION (deep, all parties)</h3>
+      <h3>Node structure — CITI is NOT 1 node per party (MEASURED D01 V000)</h3>
+      <p style="background:#fef2f2;border-left:4px solid #dc2626;padding:10px 14px;border-radius:3px;font-size:12px">
+      Each party has <b>N conditional <code>PstlAdr</code> nodes</b> (by <code>UBISO</code>) — the address that ships
+      depends on WHICH node fires. CITI Dbtr = <b>4 nodes</b>; the per-tag sources below apply <em>inside the firing node</em>.
+      <code>probe_pstladr_nodes_full.py</code>.</p>
+      <table>
+        <tr><th>Party / Node</th><th>Cond (UBISO)</th><th>Fires for</th><th>Emits</th><th>Status / Action</th></tr>
+        <tr><td><b>Dbtr</b> #1 <code>N_1531351640</code></td><td><code>&lt;&gt;US AND &lt;&gt;CA AND &lt;&gt;PR AND &lt;&gt;''</code></td><td>BR/rest</td><td>Ctry + AdrLine×3 (PstCd/TwnNm <code>=SE</code> dead)</td><td>legacy → fires with #2 = <b>duplicate (D-1)</b>. 🧹 disable</td></tr>
+        <tr style="background:#fee2e2"><td><b>Dbtr</b> #2 <code>N_1905437260</code></td><td><code>&lt;&gt;US AND &lt;&gt;CA AND &lt;&gt;PR</code></td><td>BR/rest</td><td>StrtNm·BldgNb·CtrySubDvsn·Ctry; PstCd/TwnNm <code>=SE</code>→suppressed</td><td>structured, <b>D-2</b>. 🔴 remove <code>=SE</code></td></tr>
+        <tr style="background:#f1f5f9"><td><b>Dbtr</b> #3 <code>N_4078824850</code></td><td><code>=USA OR CAN OR PRO</code> (3-letter)</td><td>never (V000/V001)</td><td>AdrLine×3</td><td>dead. 🧹 delete (V002→2-letter would dup US/CA)</td></tr>
+        <tr style="background:#dcfce7"><td><b>Dbtr</b> #4 <code>N_5197213060</code></td><td><code>=US OR CA OR PR</code></td><td>US/CA/PR</td><td>StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry</td><td>✅ complete</td></tr>
+        <tr><td><b>Cdtr</b> #1/#2</td><td><code>=US/CA/PR</code> · <code>&lt;&gt;RU/JP/US/CA/PR</code></td><td>US/CA · BR</td><td>structured (CITIPMW→ADRC); #2 +AdrLine×3 (ZNME overflow)</td><td>✅ both complete</td></tr>
+        <tr style="background:#fef9c3"><td><b>UltmtDbtr</b></td><td>—</td><td>—</td><td><b>0 PstlAdr nodes</b> (Nm only)</td><td>🟡 ADD: copy CGI node</td></tr>
+        <tr><td><b>UltmtCdtr</b> #1/#2</td><td>(none) · <code>UBISO&lt;&gt;''</code></td><td>all</td><td>BAdI (=SPACE) · direct FPAYH-Z* (ZPSTL/ZORT1/ZREGI/ZLAND)</td><td>✅ structured</td></tr>
+        <tr style="background:#eef2ff"><td><b>CGI</b> (all 4 parties)</td><td>1 node each, gated <code>=SPACE</code>/<code>&lt;&gt;X</code></td><td>all</td><td>BAdI; UltmtDbtr = direct FPAYP (REF01/BORT1/BLAND/BSTRAS)</td><td>✅ uniform, clean</td></tr>
+      </table>
+      <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:8px 12px;border-radius:3px;font-size:11px">
+      ⚠️ <b>Open discrepancy</b>: prior note said D-1 "resolved via kill-switch <code>UBISO&lt;&gt;UBISO</code>" — <b>no
+      version (000/001/002) shows it</b>; #1 still live for BR. 3 tree versions exist; <code>DMEE_TREE_HEAD</code> not
+      RFC-readable → active version unconfirmed (V000 = measured baseline, consistent with prior P01 output). Reconcile before closing D-1.</p>
+
+      <h3>Per-tag source (inside the firing node) — CITI vs CGI + ACTION</h3>
       <p style="font-size:12px;color:#475569"><code>BADI</code> resuelto a lo que el exit estándar <code>FI_CGI_DMEE_EXIT_W_BADI</code>
       realmente lee. <strong>Byte-offsets buffer <code>FPAYHX-REF01</code> = Event 05 (MEDIDO):</strong> street@0(60) ·
       building@60(20) · postcode@80(10) · region@90(10) · house@100(10) · city@<code>REF06</code>+0(40).</p>

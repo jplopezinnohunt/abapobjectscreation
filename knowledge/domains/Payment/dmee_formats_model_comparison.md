@@ -70,6 +70,35 @@ usa `Y_FI_DMEE` y no el buffer.)
 
 ## 7. CITI vs CGI — source of each address tag + ACTION (deep, all parties, D01 V000)
 
+### 7.0 Estructura de NODOS — CITI NO es 1 nodo por partido (MEDIDO D01 V000, `probe_pstladr_nodes_full.py`)
+
+Cada partido tiene **N nodos `PstlAdr` condicionados por `UBISO`** — la dirección que sale depende de QUÉ nodo
+dispara. CITI = 12 nodos PstlAdr (Dbtr **4** · UltmtDbtr **0** · Cdtr 2 · UltmtCdtr 2); CGI = 7 (1 por partido, uniforme).
+
+**CITI Dbtr — 4 nodos (clave):**
+| Nodo | Cond `UBISO` | Dispara | Emite | Estado / Acción |
+|---|---|---|---|---|
+| #1 `N_1531351640` | `<>US AND <>CA AND <>PR AND <>''` | **BR / resto** | `Ctry` + `AdrLine×3` (AUST2/3/O); PstCd/TwnNm con `=SE`→muertos | **legacy no-estruct** → dispara junto a #2 = **duplicado (D-1)**. 🧹 desactivar |
+| #2 `N_1905437260` | `<>US AND <>CA AND <>PR` | **BR / resto** | `StrtNm·BldgNb·CtrySubDvsn·Ctry` (BAdI); PstCd/TwnNm con `=SE`→**suprimidos** | estructurado, **D-2**. 🔴 quitar `=SE` |
+| #3 `N_4078824850` | `=USA OR CAN OR PRO` (3-letras) | **nunca** (V000/V001) | `AdrLine×3` | **muerto**. 🧹 borrar (V002 lo cambia a 2-letras → crearía duplicado US/CA) |
+| #4 `N_5197213060` | `=US OR CA OR PR` | **US/CA/PR** | `StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry` (BAdI) | ✅ **completo** |
+
+→ **US/CA/PR** → solo #4 → completo ✅. **BR** → #1 **+** #2 → **2 `PstlAdr`** (duplicado) y **ambos sin PstCd/TwnNm**.
+⚠️ **Discrepancia abierta**: la doc previa decía D-1 "resuelto vía kill-switch `UBISO<>UBISO`" — **ninguna versión
+(000/001/002) lo muestra**; #1 sigue vivo para BR. `DMEE_TREE_HEAD` no es RFC-legible → versión activa sin confirmar
+(V000 = baseline medido, consistente con output P01 previo). **Reconciliar antes de cerrar D-1.**
+
+**CITI Cdtr — 2 nodos:** #1 `N_1496761000` (`=US OR CA OR PR`, estruct puro) · #2 `N_2368849090`
+(`<>RU AND <>JP AND <>US AND <>CA AND <>PR`, estruct + `AdrLine×3`←ZNME2/3/4 name-overflow). Ambos completos ✅.
+**CITI UltmtDbtr — 0 nodos** (solo `Nm`) = el gap. **CITI UltmtCdtr — 2 nodos:** #1 `N_3468319710` (BAdI, gated `=SPACE`)
++ #2 `N_4600960730` (`UBISO<>''`, campos directos `FPAYH-Z*`: PstCd←ZPSTL, TwnNm←ZORT1, CtrySubDvsn←ZREGI, Ctry←ZLAND).
+
+**CGI — 1 nodo estructurado por partido (uniforme), gated por flag overflow:** Dbtr `N_1160789980`(`-PstlAdrMore=SPACE`)
+· UltmtDbtr `N_8824498030`(`=SPACE`, directos FPAYP) · Cdtr `N_8311560080`(`<>X`) · UltmtCdtr `N_4634017880`(`=SPACE`).
+→ CGI es limpio (1 nodo/partido); CITI es el desordenado (4 Dbtr con solape, 0 UltmtDbtr, 2+2).
+
+### 7.1 Fuente de cada tag (dentro del nodo que dispara)
+
 Sources fully resolved: `BADI`→ qué lee de verdad el exit estándar `FI_CGI_DMEE_EXIT_W_BADI`; `CITIPMW V3_*`→
 campo ADRC; campo directo→ struct field. **Byte-offsets del buffer `FPAYHX-REF01` = Event 05 (MEDIDO):**
 street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100(10) · city@`REF06`+0(40).
