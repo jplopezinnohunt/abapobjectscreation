@@ -148,6 +148,9 @@ Para testear la **creación en D01** (no V01). Verificado vía RFC: `DFPAYG` (LA
 | **BR-1** | **Fallback (BR/UBO)** | **20210924** | **UBO** | **100** | UBO/CIT01 BRL | 4 | 100% BR | **D-2** (Dbtr sin `PstCd`/`TwnNm`) + **D-1** (2º `PstlAdr`) |
 | BR-2 | Fallback (BR) | 20210416 | 00001B | 100 | UBO/CIT01 BRL | 1 | 100% BR | idem (1 pago) |
 | US-1 | PstlAdr (US) | 20240221 | 00001B | 100 | UNES/CIT04 USD | 2 | US | Dbtr completo (control, nodo #4) |
+| **ALPAY-2023** | PstlAdr (US) + **alt-payee** | **20231215** | **USDI** | **100** | UNES/CIT04 USD | 8 (4 CIT04 US + SOG01/blank) | US (CITI lines) | **Fuente del XML `ALPAY` provisto.** Vendor 200027 (BG $25k) + 200319 (Delegation Serbie $20k, **`EMPFG=>0000200960>Z`** alt-payee, ultimate=Commission RS). Dbtr completo (US) → NO muestra D-2; las líneas FR clearean por `SOG01` (otra HB, no entran al CITI). El `EMPFG` produce el `<UltmtCdtr>` Serbia |
+
+> **Solo 1 run CITI de 2023 en D01** (`20231215/USDI`) — y es US-cleared (no D-2). No hay run BR de 2023; para D-2 usar BR-1 (2021).
 
 > El BR run **20210924/UBO/100** es el escenario clave: `ZBUKR=UBO` → `Dbtr = T001[UBO]→ADRC` = dirección de Brasil,
 > `UBISO=BR` → dispara nodos #2 (`N_1905437260`, estruct con `=SE`→sin PstCd/TwnNm) **y** #1 (`N_1531351640`, legacy →
