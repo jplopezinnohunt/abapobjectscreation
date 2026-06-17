@@ -65,11 +65,15 @@ el Dbtr (el del #2 estructurado). Una pasada intermedia (2026-06-17) lo marcó e
 duplicaba. El output real probó que NO (1 solo PstlAdr). Conservado solo como registro del error. -->
 Regla útil (apagar un nodo): `= <valor inexistente>` o `campo <> mismo_campo`; NUNCA `<> <valor inexistente>` (siempre prendido).
 
-### D-2 (ABIERTO — COMPLIANCE, PROBADO en XML real) — `PstCd`/`TwnNm` suprimidos para no-US/CA/PR
+### D-2 (PROBADO pero SIN IMPACTO — config se deja, decisión usuario 2026-06-17)
 En el nodo estructurado de "resto" **`N_1905437260`** (el que dispara para BR), los tags hijo `PstCd` y `TwnNm` tienen
 condición `FPAYHX-UBISO = 'SE'` → solo emiten para Suecia. Como **SE nunca ocurre** (0 pagos), `PstCd`/`TwnNm` se
 **eliminan siempre** para no-US/CA/PR. **CONFIRMADO end-to-end** en el XML BR real (replay D01 20210924/UBO): el Dbtr
 *UNESCO Brazilian Office* salió con `StrtNm·BldgNb·CtrySubDvsn·Ctry` pero **sin `PstCd` ni `TwnNm`**.
+**DECISIÓN:** **sin impacto operativo** — el flujo BR/Worldlink es **doméstico** (BRL, beneficiarios locales vía bancos
+BR), **no** cross-border SWIFT → CBPR+ no aplica; los 83K pagos clearean OK. **Se deja la config como está.** El framing
+previo "compliance / riesgo de rechazo" estaba sobredimensionado para este flujo doméstico. Fix futuro (si se decide):
+quitar `=SE` (zero-riesgo, no hay SE; `ADRC` de UBO ya trae calle/región → postal+ciudad saldrían).
 
 **Impacto (P01):** afecta **exclusivamente el flujo BR/UBO Worldlink** = **1,789 medios / ~40% del volumen CITI histórico** (~48% en 2024-2026). Esos pagos emiten Dbtr sin código postal ni ciudad. `<TwnNm>` es **obligatorio** ISO 20022 / CBPR+ → riesgo de rechazo bancario.
 

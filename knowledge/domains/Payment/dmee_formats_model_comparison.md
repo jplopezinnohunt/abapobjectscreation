@@ -131,14 +131,11 @@ street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100
 | | AdrLine | `FPAYH-ZSTRA`/`ZORT2` (directo) | BAdI std | ✅ ninguna |
 | *(transversal)* | InstrForCdtrAgt / RmtInf (PPC) | clases país `FR/DE/IT`→`get_tag_value_from_custo` (`mt_ppc_cus` por país·D/C·pay_type·tag) | idem | ✅ no es dirección (purpose code) |
 
-**Resumen de acciones (CORREGIDO 2026-06-17 — D-2 probado en XML real; D-1 retractado):**
-1. 🔴 **FIX D-2 (ALTA — ÚNICA ACCIÓN REAL)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #2 estructurado
-   `N_1905437260` (dejarlos incondicionales como el #4). Afecta **83,224 pagos (8.5%·53% del flujo CITI)**, campo
-   **obligatorio** CBPR+. **PROBADO end-to-end** en el XML BR real (§10.1: Dbtr BR sale sin `PstCd`/`TwnNm`).
-   **ZERO-RIESGO (usuario 2026-06-17): NO existe flujo `SE` (Suecia)** → el `=SE` es código muerto que nunca emite;
-   quitarlo no regresa ningún caso real. Y como el Dbtr BR **ya emite** `StrtNm`/`BldgNb`/`CtrySubDvsn` de la misma
-   fuente (`ADRC` de UBO Brasil), el código postal y la ciudad están casi seguro poblados → al quitar el `=SE` saldrían
-   (Brasília + CEP), no tags vacíos. **Cambio limpio, sin pre-condición pendiente.**
+**Resumen de acciones (FINAL 2026-06-17 — NINGUNA; todo documentado, 0 cambios):**
+1. ⚪ **D-2 — SE DEJA LA CONFIG COMO ESTÁ (decisión usuario).** Probado en XML real (Dbtr BR sin `PstCd`/`TwnNm`, nodo
+   `N_1905437260` con `=SE` muerto) pero **sin impacto operativo**: flujo doméstico BR (no cross-border SWIFT → CBPR+ no
+   aplica). Si algún día se decide cerrarlo: quitar `=SE` de `PstCd`/`TwnNm` (zero-riesgo, no hay flujo SE; el `ADRC` de
+   UBO ya trae calle/región → postal+ciudad saldrían). **Por ahora: no se toca.**
 2. ❌ **D-1 (duplicado) — RETRACTADO, no hay acción.** El XML BR real trae **1 solo `PstlAdr`**; el nodo legacy #1
    `N_1531351640` **está desactivado** (no renderiza). La nota previa "D-1 resuelto" era correcta. (`#3 N_4078824850`
    muerto = higiene opcional, sin impacto.)
@@ -205,14 +202,16 @@ OBLIGATORIO (Dbtr/Cdtr, dirección mandatoria CBPR+) u OPCIONAL (UltmtDbtr/Ultmt
 
 | # | Diferencia | Tipo | Partido | Volumen (MEDIDO) | Mandato | Impacto |
 |---|---|---|---|---|---|---|
-| **D-2** | CITI Dbtr: `=SE` suprime `PstCd`/`TwnNm` p/ clearing≠US/CA/PR | **DEFECTO en partido obligatorio** | Dbtr | **83,224 pagos (8.5% del total · 52.9% del flujo CITI)**; BR=79,674, creciendo | **MANDATORIO** (CBPR+ structured addr) → riesgo rechazo/retorno | **🔴 ALTO — PROBADO en XML BR real (§10.1)** |
+| **D-2** | CITI Dbtr: `=SE` suprime `PstCd`/`TwnNm` p/ clearing≠US/CA/PR | hueco de completitud (no defecto operativo) | Dbtr | 83,224 pagos BR | **NO operativo** — flujo **doméstico BR** (BRL, bancos locales), **NO** cross-border SWIFT → CBPR+ no aplica; los pagos clearean OK | ⚪ **SIN IMPACTO — config se deja como está (usuario 2026-06-17)** |
 | ~~D-1~~ | ~~Dbtr BR: 2º `PstlAdr`~~ → **RETRACTADO** | nodo #1 desactivado | Dbtr | — | XML BR real trae **1 solo `PstlAdr`** | ⚪ **N/A (no ocurre)** |
 | ~~G-1~~ | ~~UltmtDbtr sin dirección~~ → **NO es diferencia** | **Nm-only POR DISEÑO** (ISO 20022) | UltmtDbtr | — | parte última identificable solo por nombre | ⚪ **N/A (no es gap)** |
 
-**Veredicto:** la **única** diferencia con impacto — y ya **probada en output real** (§10.1) — es **D-2** (Dbtr CITI
-BR/UBO): borra campos **obligatorios** (`PstCd`/`TwnNm`) en un partido **siempre presente**, en el **8.5% de TODOS los
-pagos** (mitad del flujo CITI, creciendo). **D-1 (duplicado) NO ocurre** (XML BR real = 1 `PstlAdr`; nodo #1 desactivado).
-**`UltmtDbtr` = Nm-only por diseño** (no es gap). → **Acción ÚNICA: fijar D-2.**
+**Veredicto (FINAL, decisión usuario 2026-06-17):** el D-2 está **probado** en output real (Dbtr BR sin `PstCd`/`TwnNm`)
+pero **SIN impacto operativo** — el flujo BR/Worldlink es **doméstico** (BRL, beneficiarios locales vía bancos BR), no
+correspondencia cross-border SWIFT, así que el mandato CBPR+ de dirección estructurada **no aplica** y los 83K pagos
+clearean OK. _(Mi framing previo "ALTO / riesgo de rechazo CBPR+" estaba sobredimensionado para este flujo doméstico.)_
+**Decisión: se deja la configuración como está, sin cambio.** Queda documentado como hueco de completitud conocido.
+**D-1 (duplicado) NO ocurre. `UltmtDbtr` = Nm-only por diseño.** → **Acción: NINGUNA (todo documentado, 0 cambios).**
 
 ## 10. Validación EMPÍRICA — 2 XML reales generados (CITI, replay, 2026-06-17)
 
