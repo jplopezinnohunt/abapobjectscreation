@@ -62,6 +62,19 @@ address to all". Validated end-to-end against 3 real generated `pain.001` XMLs (
 - [x] ¿Falta una feedback rule? → SÍ, añadida: `feedback_real_output_beats_config_for_rendering` (#157).
 - [x] ¿CLAUDE.md load-bearing? → No tocado.
 
+## Qué hacer MEJOR la próxima — acuerdo de trabajo
+
+Para DMEE / cualquier config que GENERA output:
+> **config-read → HIPÓTESIS (no hecho) → replay output real → impacto evaluado CON el negocio → recién ahí persistir como hecho.**
+
+1. **Output real primero, no al final.** Si la verificación es barata (replay de minutos), conseguir 1 sample por
+   escenario ANTES de escribir/commitear la conclusión. (Regla #157 — aplicarla desde el minuto cero.)
+2. **Separar "existe" de "importa".** Hecho estructural ("falta el tag") ≠ juicio de impacto ("riesgo compliance").
+   Antes de poner severidad: 1 pregunta al dueño del negocio (cross-border vs doméstico; ¿el valor X ocurre?).
+3. **Taggear MEDIDO vs INFERIDO vs ASUMIDO + confianza** en cada claim (regla ya existente — usarla). No afirmar inferencias como hechos.
+4. **No persistir conclusiones sin verificar.** Marcar HIPÓTESIS hasta confirmar; evita el churn write→rewrite y que el brain tenga un hecho falso aunque sea brevemente.
+5. **Batch probes/ediciones.** Menos pasos, más grandes (un probe que saca toda la estructura de una).
+
 ## Open / parked
 
 - **CGI replay `20250326/T0001/100`** — confirmar Dbtr completo (esperado benigno). Parqueado por el usuario ("eso será después").
