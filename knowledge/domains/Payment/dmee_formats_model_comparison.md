@@ -78,15 +78,15 @@ dispara. CITI = 12 nodos PstlAdr (Dbtr **4** · UltmtDbtr **0** · Cdtr 2 · Ult
 **CITI Dbtr — 4 nodos (clave):**
 | Nodo | Cond `UBISO` | Dispara | Emite | Estado / Acción |
 |---|---|---|---|---|
-| #1 `N_1531351640` | `<>US AND <>CA AND <>PR AND <>''` | **BR / resto** | `Ctry` + `AdrLine×3` (AUST2/3/O); PstCd/TwnNm con `=SE`→muertos | **legacy no-estruct** → dispara junto a #2 = **duplicado (D-1)**. 🧹 desactivar |
+| #1 `N_1531351640` | cond `<>US/CA/PR AND <>''` PERO **nodo DESACTIVADO** | nunca (off) | (no renderiza) | legacy — **ya apagado** (probado: XML BR real = 1 PstlAdr). Sin acción |
 | #2 `N_1905437260` | `<>US AND <>CA AND <>PR` | **BR / resto** | `StrtNm·BldgNb·CtrySubDvsn·Ctry` (BAdI); PstCd/TwnNm con `=SE`→**suprimidos** | estructurado, **D-2**. 🔴 quitar `=SE` |
-| #3 `N_4078824850` | `=USA OR CAN OR PRO` (3-letras) | **nunca** (V000/V001) | `AdrLine×3` | **muerto**. 🧹 borrar (V002 lo cambia a 2-letras → crearía duplicado US/CA) |
+| #3 `N_4078824850` | `=USA OR CAN OR PRO` (3-letras) | **nunca** | `AdrLine×3` | **muerto**. higiene opcional |
 | #4 `N_5197213060` | `=US OR CA OR PR` | **US/CA/PR** | `StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry` (BAdI) | ✅ **completo** |
 
-→ **US/CA/PR** → solo #4 → completo ✅. **BR** → #1 **+** #2 → **2 `PstlAdr`** (duplicado) y **ambos sin PstCd/TwnNm**.
-⚠️ **Discrepancia abierta**: la doc previa decía D-1 "resuelto vía kill-switch `UBISO<>UBISO`" — **ninguna versión
-(000/001/002) lo muestra**; #1 sigue vivo para BR. `DMEE_TREE_HEAD` no es RFC-legible → versión activa sin confirmar
-(V000 = baseline medido, consistente con output P01 previo). **Reconciliar antes de cerrar D-1.**
+→ **US/CA/PR** → #4 → completo ✅. **BR** → solo **#2** (#1 desactivado) → **1 `PstlAdr` sin PstCd/TwnNm** = **D-2**
+(PROBADO en XML BR real, §10.1). **NO hay duplicado** (D-1 retractado: el #1 no renderiza). El "D-1 resuelto" previo
+era correcto; el flag de desactivación del nodo no vive en `DMEE_TREE_COND`, por eso leer solo la condición engañó.
+Versión activa = **V000** (confirmado usuario).
 
 **CITI Cdtr — 2 nodos** (`PmtInf/CdtTrfTxInf/Cdtr/PstlAdr`): #1 `N_1496761000` (`=US OR CA OR PR`, estruct puro) · #2
 `N_2368849090` (`<>RU AND <>JP AND <>US AND <>CA AND <>PR`, estruct + `AdrLine×3`←ZNME2/3/4 name-overflow). Ambos ✅.
@@ -131,17 +131,17 @@ street@0(60) · building@60(20) · postcode@80(10) · region@90(10) · house@100
 | | AdrLine | `FPAYH-ZSTRA`/`ZORT2` (directo) | BAdI std | ✅ ninguna |
 | *(transversal)* | InstrForCdtrAgt / RmtInf (PPC) | clases país `FR/DE/IT`→`get_tag_value_from_custo` (`mt_ppc_cus` por país·D/C·pay_type·tag) | idem | ✅ no es dirección (purpose code) |
 
-**Resumen de acciones (CORREGIDO 2026-06-17 — `UltmtDbtr` NO lleva add):**
-1. 🔴 **FIX D-2 (ALTA)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #2 estructurado `N_1905437260`. Afecta
-   **83,224 pagos (8.5%·53% del flujo CITI)**, campo **obligatorio** CBPR+. **Único cambio de impacto.** Confirmar
-   antes que el exit los llene (no dejar tags vacíos).
-2. 🧹 **D-1 duplicado (Dbtr BR)** — desactivar nodo #1 legacy `N_1531351640` (dispara junto a #2 → 2º `PstlAdr` para
-   BR); borrar #1 + #3 muerto `N_4078824850`. *(Reconciliar: la nota previa lo daba por resuelto vía kill-switch — no
-   está en V000.)*
+**Resumen de acciones (CORREGIDO 2026-06-17 — D-2 probado en XML real; D-1 retractado):**
+1. 🔴 **FIX D-2 (ALTA — ÚNICA ACCIÓN REAL)** — Dbtr CITI `PstCd`+`TwnNm`: quitar `=SE` del nodo #2 estructurado
+   `N_1905437260` (dejarlos incondicionales como el #4). Afecta **83,224 pagos (8.5%·53% del flujo CITI)**, campo
+   **obligatorio** CBPR+. **PROBADO end-to-end** en el XML BR real (§10.1: Dbtr BR sale sin `PstCd`/`TwnNm`). Confirmar
+   antes que el exit/buffer los llene (que `ADRC`/REF tenga el código postal y la ciudad de UBO Brasil — si no, saldría vacío).
+2. ❌ **D-1 (duplicado) — RETRACTADO, no hay acción.** El XML BR real trae **1 solo `PstlAdr`**; el nodo legacy #1
+   `N_1531351640` **está desactivado** (no renderiza). La nota previa "D-1 resuelto" era correcta. (`#3 N_4078824850`
+   muerto = higiene opcional, sin impacto.)
 3. 🟢 **Cdtr name-overflow (MEJORA)** — opcional: consolidar `ZNME2/3/4`→`AdrLine` con la función combina-nombres. 4.7% BR.
-4. ❌ **UltmtDbtr — SIN acción.** `PmtInf/UltmtDbtr` es **Nm-only por diseño** en CITI **y** CGI (ISO 20022 permite
-   parte última solo por nombre). El UltmtDbtr estructurado de CGI está a nivel transacción y **no se replica en CITI**
-   (decisión de diseño, usuario 2026-06-17). **No es un gap.**
+4. ❌ **UltmtDbtr — SIN acción.** `PmtInf/UltmtDbtr` es **Nm-only por diseño** en CITI **y** CGI (confirmado: 0 UltmtDbtr
+   en los 3 XML reales, incl. el ALPAY). No es un gap.
 
 **Versión activa: V000** (confirmado usuario 2026-06-17). V001/V002 son copias de trabajo.
 
@@ -202,16 +202,14 @@ OBLIGATORIO (Dbtr/Cdtr, dirección mandatoria CBPR+) u OPCIONAL (UltmtDbtr/Ultmt
 
 | # | Diferencia | Tipo | Partido | Volumen (MEDIDO) | Mandato | Impacto |
 |---|---|---|---|---|---|---|
-| **D-2** | CITI Dbtr: `=SE` suprime `PstCd`/`TwnNm` p/ clearing≠US/CA/PR | **DEFECTO en partido obligatorio** | Dbtr | **83,224 pagos (8.5% del total · 52.9% del flujo CITI)**; BR=79,674, creciendo | **MANDATORIO** (CBPR+ structured addr) → riesgo rechazo/retorno | **🔴 ALTO** |
-| **D-1** | CITI Dbtr BR: nodos #1+#2 disparan ambos → 2º `PstlAdr` | DEFECTO estructural (duplicado) | Dbtr | mismo flujo BR (≈79,674) | XML mal formado / addr partida | 🟠 MEDIO |
+| **D-2** | CITI Dbtr: `=SE` suprime `PstCd`/`TwnNm` p/ clearing≠US/CA/PR | **DEFECTO en partido obligatorio** | Dbtr | **83,224 pagos (8.5% del total · 52.9% del flujo CITI)**; BR=79,674, creciendo | **MANDATORIO** (CBPR+ structured addr) → riesgo rechazo/retorno | **🔴 ALTO — PROBADO en XML BR real (§10.1)** |
+| ~~D-1~~ | ~~Dbtr BR: 2º `PstlAdr`~~ → **RETRACTADO** | nodo #1 desactivado | Dbtr | — | XML BR real trae **1 solo `PstlAdr`** | ⚪ **N/A (no ocurre)** |
 | ~~G-1~~ | ~~UltmtDbtr sin dirección~~ → **NO es diferencia** | **Nm-only POR DISEÑO** (ISO 20022) | UltmtDbtr | — | parte última identificable solo por nombre | ⚪ **N/A (no es gap)** |
 
-**Veredicto:** la única diferencia con impacto de compliance es **D-2** (Dbtr CITI BR/UBO) — un **defecto** que borra
-campos **obligatorios** en un partido **siempre presente**, en el **8.5% de TODOS los pagos** (mitad del flujo CITI,
-creciendo). El **D-1** (duplicado de `PstlAdr` para BR) es secundario pero del mismo flujo. **`UltmtDbtr` NO es una
-diferencia a cerrar**: es **Nm-only por diseño** en CITI y CGI (corrección 2026-06-17) — antes mal-clasificado como gap.
-
-→ **Prioridad real: (1) fijar D-2 (único de impacto) → (2) limpiar D-1 (duplicado, mismo flujo BR). UltmtDbtr = sin acción.**
+**Veredicto:** la **única** diferencia con impacto — y ya **probada en output real** (§10.1) — es **D-2** (Dbtr CITI
+BR/UBO): borra campos **obligatorios** (`PstCd`/`TwnNm`) en un partido **siempre presente**, en el **8.5% de TODOS los
+pagos** (mitad del flujo CITI, creciendo). **D-1 (duplicado) NO ocurre** (XML BR real = 1 `PstlAdr`; nodo #1 desactivado).
+**`UltmtDbtr` = Nm-only por diseño** (no es gap). → **Acción ÚNICA: fijar D-2.**
 
 ## 10. Validación EMPÍRICA — 2 XML reales generados (CITI, replay, 2026-06-17)
 
@@ -231,9 +229,32 @@ Usuario aportó 2 salidas reales del formato CITI (`pain.001.001.03`, vía ZSAPF
 Paris recibe en SocGen; `UltmtCdtr`=Commission Serbia Belgrade = beneficiario último). **No hay `UltmtDbtr`** (alt payer)
 en ninguno → el Dbtr es UNESCO siempre. El escenario alt-payee se renderiza vía `UltmtCdtr`, no via `UltmtDbtr`.
 
-**Límite:** ambos US-cleared ⇒ **D-2 NO observable aquí** (Dbtr completo). Para ver el defecto real falta un XML
-**BR-cleared** (UBO Worldlink `CIT01`): ahí el Dbtr = dirección UBO Brasil por nodo #2 `N_1905437260` → saldría **sin
-`PstCd`/`TwnNm`**. (Archivos crudos no versionados: contienen IBANs reales; solo se persiste la estructura.)
+### 10.1 XML BR real — D-2 CONFIRMADO end-to-end + D-1 RETRACTADO (2026-06-17)
+
+Usuario replayó la corrida BR **D01 20210924/UBO/100** (`ReqdExctnDt=2021-09-24`, `DbtrAgt/BIC=CITIBRBR`, `UBISO=BR`,
+BRL). El `<Dbtr><PstlAdr>` real (UNESCO Brazilian Office):
+
+| Tag Dbtr | US file (CITIUS33) | **BR file (CITIBRBR)** |
+|---|---|---|
+| StrtNm | ✓ Place de Fontenoy | ✓ SAS Quadra 05 Bloco H |
+| BldgNb | ✓ 7 | ✓ Lote 6 |
+| **PstCd** | ✓ 75007 | **❌ AUSENTE** |
+| **TwnNm** | ✓ PARIS | **❌ AUSENTE** |
+| CtrySubDvsn | — | ✓ DF |
+| Ctry | ✓ FR | ✓ BR |
+
+✅ **D-2 PROBADO tree→output:** el Dbtr BR emite `StrtNm·BldgNb·CtrySubDvsn·Ctry` **sin `PstCd` ni `TwnNm`** (nodo #2
+`N_1905437260`, gate `=SE`). `TwnNm` es obligatorio CBPR+ → riesgo de rechazo. **Este es el único defecto real.**
+
+❌ **D-1 (duplicado) RETRACTADO:** el Dbtr real trae **UN solo `<PstlAdr>`** (el del #2), NO dos. El nodo legacy #1
+`N_1531351640` **no renderiza** (de dos nodos que solapan condición para BR, solo salió el #2 ⇒ **#1 está desactivado**).
+La nota previa "D-1 resuelto" era **correcta**; mi re-análisis por-condición (s-actual) estaba **mal** — el flag de
+desactivación no vive en `DMEE_TREE_COND`. **No hay duplicado en producción.**
+
+✅ **Cdtr COMPLETO** (Iron Mountain do Brasil): `StrtNm·PstCd=70632-200·TwnNm=BRASILIA DF·CtrySubDvsn=DF·Ctry=BR` →
+confirma que **solo el Dbtr** tiene el hueco; el Cdtr (CITIPMW→ADRC) está sano. → **Acción única: FIX D-2.**
+
+(Archivos crudos no versionados: IBANs/tax-IDs reales; solo se persiste la estructura.)
 
 ## Probes
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·

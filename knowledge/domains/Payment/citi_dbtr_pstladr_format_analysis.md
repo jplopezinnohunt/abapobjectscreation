@@ -38,36 +38,38 @@ BR/Worldlink (incompleto, #4) creció y se estabilizó en ~48% del volumen CITI.
 
 El `Dbtr` (N_6528960200) tiene 4 `PstlAdr`. Todos sourcean del exit `FI_CGI_DMEE_EXIT_W_BADI`, que arma la dirección del **ente pagador** desde `T001(BUKRS=i_fpayh-zbukr) -> ADRC` (NO es fija: UNES→Paris, UBO→Brasil, UIS→Montreal).
 
-> ⚠️ **CORRECCIÓN MEDIDA 2026-06-17** (`probe_pstladr_nodes_full.py`, D01 V000): la versión previa de esta tabla
-> tenía la condición de #1 mal (decía 3-letras) y el mecanismo de D-1 mal. **Valores reales abajo.** Hay además
-> **3 versiones del árbol (000/001/002)**; `DMEE_TREE_HEAD` no es RFC-legible → versión activa sin confirmar.
+> ⚠️ **CORRECCIÓN 2026-06-17 (2 pasadas):** (a) probe `probe_pstladr_nodes_full.py` halló la condición de #1 en
+> 2-letras (la versión vieja decía 3-letras); (b) el **XML BR real** (replay D01 20210924/UBO) probó que **#1 NO
+> renderiza** (Dbtr trae 1 solo `PstlAdr`) → **#1 está DESACTIVADO** (el flag no vive en `DMEE_TREE_COND`, por eso
+> leer solo la condición engañó en la pasada (a)). Versión activa = **V000** (confirmado usuario). Tabla real abajo.
 
-| # (orden árbol) | NODE_ID | Tipo | Condición REAL (V000) | Dispara | Estado |
+| # (orden árbol) | NODE_ID | Tipo | Condición (V000) | Dispara | Estado |
 |---|---|---|---|---|---|
-| #1 | N_1531351640 | no-estruct legacy (Ctry + 3 AdrLine) | `UBISO <> 'US' AND <> 'CA' AND <> 'PR' AND <> ''` (**2-letras**) | **BR/resto** | **VIVO** — dispara junto a #2 ⇒ **duplicado (D-1)**. PstCd/TwnNm con `=SE` (muertos). NO está apagado en ninguna versión |
-| #2 | N_1905437260 | **estructurado** | `UBISO <> 'US' AND <> 'CA' AND <> 'PR'` (2-letras) | **BR/resto** | **ACTIVO** — PstCd/TwnNm con `=SE`→suprimidos = **D-2** |
-| #3 | N_4078824850 | no-estruct (3 AdrLine) | `= 'USA' OR 'CAN' OR 'PRO'` (3-letras → nunca) | nunca (V000/V001); V002→2-letras | muerto en V000/V001; borrar |
-| #4 | N_5197213060 | **estructurado** | `= 'US' OR 'CA' OR 'PR'` (2-letras) | **US/CA/PR** | **ACTIVO** — completo ✅ |
+| #1 | N_1531351640 | no-estruct legacy | `<> US AND <> CA AND <> PR AND <> ''` (2-letras) **pero NODO DESACTIVADO** | nunca (off) | **apagado** — no renderiza (probado XML BR real). Sin acción |
+| #2 | N_1905437260 | **estructurado** | `<> US AND <> CA AND <> PR` (2-letras) | **BR/resto** | **ACTIVO** — PstCd/TwnNm con `=SE`→suprimidos = **D-2** |
+| #3 | N_4078824850 | no-estruct (3 AdrLine) | `= USA OR CAN OR PRO` (3-letras → nunca) | nunca | muerto; higiene opcional |
+| #4 | N_5197213060 | **estructurado** | `= US OR CA OR PR` (2-letras) | **US/CA/PR** | **ACTIVO** — completo ✅ |
 
-**Resultado real por destino:** US/CA/PR → solo #4 → completo ✅. **BR → #1 + #2 disparan ambos** → **2 `<PstlAdr>`**
-(duplicado D-1) y **ambos sin PstCd/TwnNm** (D-2). El "D-1 resuelto vía kill-switch `UBISO<>UBISO`" de la versión
-previa **no se observa en V000/V001/V002** — reconciliar antes de cerrar D-1.
+**Resultado real por destino (PROBADO en XML):** US/CA/PR → #4 → completo ✅. **BR → solo #2** (#1 apagado) →
+**1 `<PstlAdr>` sin PstCd/TwnNm** = **D-2**. **NO hay duplicado** (D-1 era un falso positivo de mi re-análisis por
+condición; el "D-1 resuelto" original era correcto).
 
 ## 3. Defectos encontrados
 
-### D-1 (ABIERTO — corregido 2026-06-17) — duplicado de PstlAdr para BR
-`UBISO` es ISO-**2** (`US`). El duplicado **NO** viene del 3-letras (eso es #3, que está muerto): viene de que
-**#1 (`N_1531351640`) y #2 (`N_1905437260`) tienen condiciones que solapan en "resto"** — ambos `<> US AND <> CA AND
-<> PR` — así que **para BR los dos disparan** → 2 `<PstlAdr>` en el Dbtr (uno legacy Ctry+AdrLine de #1, uno
-estructurado de #2). **Estado real (medido V000/V001/V002):** #1 sigue **VIVO** (no hay kill-switch `UBISO<>UBISO` en
-ninguna versión — la versión previa de esta nota lo daba por aplicado, **incorrecto**). **Fix correcto:** desactivar #1
-(`UBISO <> UBISO` o `= 'ZZ'`) para que BR emita solo el estructurado #2; luego borrar #1 y #3.
-Regla: para apagar un nodo, `= <valor inexistente>` o `campo <> mismo_campo`; NUNCA `<> <valor inexistente>` (eso lo deja siempre prendido).
-> **Pendiente de confirmar:** cuál de las 3 versiones (000/001/002) está activa en P01 (`DMEE_TREE_HEAD` no RFC-legible);
-> el output P01 previo (BR sin PstCd/TwnNm) es consistente con V000. Confirmar vía SAP GUI (DMEE) o generación real.
+### D-1 (RESUELTO — confirmado por output real 2026-06-17) — NO hay duplicado
+El nodo legacy #1 (`N_1531351640`) está **desactivado** y no renderiza: el XML BR real trae **un solo `<PstlAdr>`** en
+el Dbtr (el del #2 estructurado). Una pasada intermedia (2026-06-17) lo marcó erróneamente "abierto/vivo" por leer solo
+`DMEE_TREE_COND` (la condición sigue siendo `<>US/CA/PR` pero el nodo está apagado a nivel nodo, no por condición).
+**Lección:** para saber si un nodo DMEE renderiza, el output real > la condición. _(texto previo conservado abajo como histórico)_
+<!-- Histórico (re-análisis intermedio del 2026-06-17, REFUTADO por el XML BR real): se afirmó que #1 seguía VIVO y
+duplicaba. El output real probó que NO (1 solo PstlAdr). Conservado solo como registro del error. -->
+Regla útil (apagar un nodo): `= <valor inexistente>` o `campo <> mismo_campo`; NUNCA `<> <valor inexistente>` (siempre prendido).
 
-### D-2 (ABIERTO — COMPLIANCE) — `PstCd`/`TwnNm` suprimidos para no-US/CA/PR
-En el nodo **#4** (resto), los tags hijo `PstCd` y `TwnNm` tienen condición `FPAYHX-UBISO = 'SE'` → solo emiten para Suecia. Como **SE nunca ocurre** (0 pagos), `PstCd` y `TwnNm` se **eliminan siempre** para todos los pagos no-US/CA/PR.
+### D-2 (ABIERTO — COMPLIANCE, PROBADO en XML real) — `PstCd`/`TwnNm` suprimidos para no-US/CA/PR
+En el nodo estructurado de "resto" **`N_1905437260`** (el que dispara para BR), los tags hijo `PstCd` y `TwnNm` tienen
+condición `FPAYHX-UBISO = 'SE'` → solo emiten para Suecia. Como **SE nunca ocurre** (0 pagos), `PstCd`/`TwnNm` se
+**eliminan siempre** para no-US/CA/PR. **CONFIRMADO end-to-end** en el XML BR real (replay D01 20210924/UBO): el Dbtr
+*UNESCO Brazilian Office* salió con `StrtNm·BldgNb·CtrySubDvsn·Ctry` pero **sin `PstCd` ni `TwnNm`**.
 
 **Impacto (P01):** afecta **exclusivamente el flujo BR/UBO Worldlink** = **1,789 medios / ~40% del volumen CITI histórico** (~48% en 2024-2026). Esos pagos emiten Dbtr sin código postal ni ciudad. `<TwnNm>` es **obligatorio** ISO 20022 / CBPR+ → riesgo de rechazo bancario.
 

@@ -6119,7 +6119,7 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       <code>probe_pstladr_nodes_full.py</code>.</p>
       <table>
         <tr><th>Party / Node</th><th>Cond (UBISO)</th><th>Fires for</th><th>Emits</th><th>Status / Action</th></tr>
-        <tr><td><b>Dbtr</b> #1 <code>N_1531351640</code></td><td><code>&lt;&gt;US AND &lt;&gt;CA AND &lt;&gt;PR AND &lt;&gt;''</code></td><td>BR/rest</td><td>Ctry + AdrLine×3 (PstCd/TwnNm <code>=SE</code> dead)</td><td>legacy → fires with #2 = <b>duplicate (D-1)</b>. 🧹 disable</td></tr>
+        <tr><td><b>Dbtr</b> #1 <code>N_1531351640</code></td><td>cond <code>&lt;&gt;US/CA/PR</code> but <b>NODE DISABLED</b></td><td>never (off)</td><td>(does not render)</td><td>✅ legacy, already off — <b>real BR XML = 1 PstlAdr, NO duplicate</b> (D-1 retracted)</td></tr>
         <tr style="background:#fee2e2"><td><b>Dbtr</b> #2 <code>N_1905437260</code></td><td><code>&lt;&gt;US AND &lt;&gt;CA AND &lt;&gt;PR</code></td><td>BR/rest</td><td>StrtNm·BldgNb·CtrySubDvsn·Ctry; PstCd/TwnNm <code>=SE</code>→suppressed</td><td>structured, <b>D-2</b>. 🔴 remove <code>=SE</code></td></tr>
         <tr style="background:#f1f5f9"><td><b>Dbtr</b> #3 <code>N_4078824850</code></td><td><code>=USA OR CAN OR PRO</code> (3-letter)</td><td>never (V000/V001)</td><td>AdrLine×3</td><td>dead. 🧹 delete (V002→2-letter would dup US/CA)</td></tr>
         <tr style="background:#dcfce7"><td><b>Dbtr</b> #4 <code>N_5197213060</code></td><td><code>=US OR CA OR PR</code></td><td>US/CA/PR</td><td>StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry</td><td>✅ complete</td></tr>
@@ -6128,10 +6128,11 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
         <tr><td><b>UltmtCdtr</b> #1/#2</td><td>(none) · <code>UBISO&lt;&gt;''</code></td><td>all</td><td>BAdI (=SPACE) · direct FPAYH-Z* (ZPSTL/ZORT1/ZREGI/ZLAND)</td><td>✅ structured</td></tr>
         <tr style="background:#eef2ff"><td><b>CGI</b> (all 4 parties)</td><td>1 node each, gated <code>=SPACE</code>/<code>&lt;&gt;X</code></td><td>all</td><td>BAdI; UltmtDbtr = direct FPAYP (REF01/BORT1/BLAND/BSTRAS)</td><td>✅ uniform, clean</td></tr>
       </table>
-      <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:8px 12px;border-radius:3px;font-size:11px">
-      ⚠️ <b>Open discrepancy</b>: prior note said D-1 "resolved via kill-switch <code>UBISO&lt;&gt;UBISO</code>" — <b>no
-      version (000/001/002) shows it</b>; #1 still live for BR. 3 tree versions exist; <code>DMEE_TREE_HEAD</code> not
-      RFC-readable → active version unconfirmed (V000 = measured baseline, consistent with prior P01 output). Reconcile before closing D-1.</p>
+      <p style="background:#dcfce7;border-left:4px solid #16a34a;padding:8px 12px;border-radius:3px;font-size:11px">
+      ✅ <b>D-1 resolved (confirmed by real XML)</b>: the BR replay (D01 20210924/UBO) produced a Dbtr with <b>ONE
+      <code>PstlAdr</code></b> — node #1 does NOT render (it is disabled; the flag is not in <code>DMEE_TREE_COND</code>,
+      which is why reading only the condition gave a false "duplicate" mid-analysis). Active version = <b>V000</b>. The only
+      real defect is <b>D-2</b> (also proven by the same XML: BR Dbtr without <code>PstCd</code>/<code>TwnNm</code>).</p>
 
       <h3>Per-tag source (inside the firing node) — CITI vs CGI + ACTION</h3>
       <p style="font-size:12px;color:#475569"><code>BADI</code> resuelto a lo que el exit estándar <code>FI_CGI_DMEE_EXIT_W_BADI</code>
@@ -6163,7 +6164,7 @@ Validate against pain.001.001.03 (current SAP) + pain.001.001.09 (CBPR+ Nov 2026
       </table>
       <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:3px;font-size:12px"><strong>Resumen de acciones (CORREGIDO 2026-06-17 — UltmtDbtr SIN add; versión activa = V000):</strong><br>
       1. 🔴 <b>FIX D-2 (ALTA)</b> — Dbtr CITI <code>PstCd</code>+<code>TwnNm</code>: quitar <code>=SE</code> del nodo estructurado #2 <code>N_1905437260</code>. Afecta <b>83,224 pagos (8.5% · 53% del flujo CITI)</b>, campo <b>obligatorio</b> CBPR+. <b>Único cambio de impacto.</b><br>
-      2. 🧹 <b>FIX D-1 (duplicado BR)</b> — desactivar nodo legacy #1 <code>N_1531351640</code> (dispara junto a #2 → 2º <code>PstlAdr</code> para BR) + borrar #3 muerto <code>N_4078824850</code>. <em>Reconciliar: la nota previa lo daba por resuelto vía kill-switch — no está en V000.</em><br>
+      2. ✅ <b>D-1 (duplicado) — RETRACTADO, sin acción.</b> El XML BR real trae <b>1 solo <code>PstlAdr</code></b>; el nodo legacy #1 <code>N_1531351640</code> está desactivado (no renderiza). La nota previa "D-1 resuelto" era correcta. (#3 muerto = higiene opcional.)<br>
       3. 🟢 <b>Cdtr name-overflow (MEJORA)</b> — opcional: consolidar <code>ZNME2/3/4</code>→<code>AdrLine</code> con la función combina-nombres. 4.7% BR. No es defecto.<br>
       4. ❌ <b>UltmtDbtr — SIN acción.</b> <code>PmtInf/UltmtDbtr</code> es <b>Nm-only por diseño</b> en CITI y CGI (ISO 20022). El UltmtDbtr estructurado de CGI está a nivel transacción y NO se replica en CITI. <b>No es un gap.</b><br>
       <em>SEPA: sus partes última son Nm-only igual (mismo diseño). Lo relevante de SEPA es Dbtr/Cdtr vía custom <code>Y_FI_DMEE</code>.</em></p>
