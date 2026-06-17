@@ -138,6 +138,23 @@ country), **NOT** the address country `ZLAND`. Conditions in the tree:
 NB: standard `SAPFPAYM`/F110 read `REGUV` (empty here) → won't load these runs. The **replay** bypasses the
 `REGUV` gate (reads `DFPAYG`+`REGUH`/`REGUP`) → this is precisely why the replay is needed in V01, not standard SAPFPAYM.
 
+### D01 — CITI runs verified LIVE for replay (added 2026-06-17)
+
+Para testear la **creación en D01** (no V01). Verificado vía RFC: `DFPAYG` (LAUFD/LAUFI/GRPNO/FORMI/ZBUKR/HBKID) +
+`REGUH` (UBNKS). D01 tiene 48 grupos `DC_V3_01`; los relevantes por clearing (`HBKID`: CIT04=US, CIT21=CA, **CIT01=BR Worldlink**):
+
+| # | Branch | PM_LAUFD | PM_LAUFI | PM_GRPNO | Pay/HBank | n (REGUH) | UBNKS | Demuestra |
+|---|---|---|---|---|---|---|---|---|
+| **BR-1** | **Fallback (BR/UBO)** | **20210924** | **UBO** | **100** | UBO/CIT01 BRL | 4 | 100% BR | **D-2** (Dbtr sin `PstCd`/`TwnNm`) + **D-1** (2º `PstlAdr`) |
+| BR-2 | Fallback (BR) | 20210416 | 00001B | 100 | UBO/CIT01 BRL | 1 | 100% BR | idem (1 pago) |
+| US-1 | PstlAdr (US) | 20240221 | 00001B | 100 | UNES/CIT04 USD | 2 | US | Dbtr completo (control, nodo #4) |
+
+> El BR run **20210924/UBO/100** es el escenario clave: `ZBUKR=UBO` → `Dbtr = T001[UBO]→ADRC` = dirección de Brasil,
+> `UBISO=BR` → dispara nodos #2 (`N_1905437260`, estruct con `=SE`→sin PstCd/TwnNm) **y** #1 (`N_1531351640`, legacy →
+> 2º PstlAdr). El XML generado debe mostrar el `<Dbtr><PstlAdr>` **sin `<PstCd>` ni `<TwnNm>`**, y posiblemente **dos**
+> bloques `<PstlAdr>`. Esto cierra la cadena tree→output real del D-2/D-1 (los XML US-cleared previos no lo muestran).
+> Variante: `PM_LAUFD=20210924 · PM_LAUFI=UBO · PM_GRPNO=100 · FORMI=/CITI/XML/UNESCO/DC_V3_01 · PAR_FILE=C:\tmp\dmee_UBO_br_citi.xml · PAR_XLST='X' · PAR_XERR='X'`.
+
 **PR + SE branches are DEAD config (verified 2026-06-15):** `REGUH.UBNKS = 'PR'` and `= 'SE'` = **0 across all
 history (2006-2025)**. PR uses US banking (PR banks coded `UBNKS=US`); Swedish-ADDRESS beneficiaries exist
 (`ZLAND=SE` = 8,263; 146 via Citi) but are paid through FR/US banks → `UBNKS` is never SE. So the conditions
