@@ -9,7 +9,7 @@ tier: project
 maturity: production
 origin_session: 20
 last_updated_session: 55
-triggers: [payments, F110, BCM, FBZP, house banks, payment methods, bank communication, advance payments, payment runs, vendor clearing, dual control, 90000003, 90000004, 90000005, CRUSR, CHUSR]
+triggers: [payments, F110, BCM, FBZP, house banks, payment methods, bank communication, advance payments, payment runs, vendor clearing, dual control, 90000003, 90000004, 90000005, CRUSR, CHUSR, bank signatory, signatory panel, signature panel, change in bank signatory, add signatory, OOCU_RESP, carton, carton des signatures, IT1218, BNK_APP, RY node, signatory change]
 ---
 
 # SAP Payment & BCM Domain Agent
@@ -45,6 +45,9 @@ The **coordinator** should route to this agent when the user asks about:
 - Bank statements and reconciliation → **REDIRECT to `sap_bank_statement_recon`** (dedicated agent since Session #030)
 - Payment process mining results
 - Company code payment capability assessment
+- **Bank signatory panel changes** ("Change in Bank Signatory panel of &lt;ENTITY&gt;", add/remove a signatory in BCM) → see the **Signatory-change hub** below
+
+> **Signatory-change hub (entry point — read in order):** (1) [`knowledge/domains/Treasury/bcm_signatory_change_solution_design.md`](../../../knowledge/domains/Treasury/bcm_signatory_change_solution_design.md) — 3-level model + **node selection in IT1218** + reconciliation; (2) [`bcm_signatory_rules.md`](../../../knowledge/domains/Treasury/bcm_signatory_rules.md) — RY nodes + change process; (3) companion `companions/bcm_signatory_companion.html`; (4) precedents `INC-000006313` (UIS) / `INC-000011781` (UBO). Mandatory output format = Reconciliation Protocol **Step 7** below. Node selection lives in **infotype 1218** (`HRP1218`/`HRT1218`, expressions on `BNK_STR_BATCH_REL_APPR`) — NOT the empty PFAC `HRP1222`.
 
 ## NEVER Do This
 
@@ -518,7 +521,22 @@ This script detects:
 Save each carton file under `Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt` with one PERNR per line (`#` for comments). One file per bank account carton, not per entity.
 
 **Step 7 — Produce the spec for DBS (no execution)**
-Deliver a 5-column change spec: `Rule | RY OBJID | Group STEXT | Action (ADD/DELIMIT) | PERNR`. **All five columns mandatory — never describe the target by entity name or STEXT alone** (see lookalike-group trap below). Use **BEGDA = TRS letter effective date** ("as of immediate effect" → the letter date, NOT today), ENDDA = 99991231 or letter-specified term. Hand to DBS. Wait for execution confirmation.
+
+##### MANDATORY OUTPUT STRUCTURE (locked 2026-06-17, INC-000011781 — user directive)
+
+Every BCM signatory-change incident MUST be presented as **ONE single table** covering **every person currently in every affected node PLUS every addition** — never just the deltas. This makes the full as-is panel, the requested change, and pre-existing drift visible in one place and auditable. Columns, in this exact order:
+
+`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Action`
+
+- One row per (node × person), for **all four** (or all relevant) tier/phase nodes of the entity — list `keep` rows too, not only changes.
+- **Action legend (mandatory):** ✅ keep (on carton, correct) · ➕ ADD (current ask) · ➖ DELIMIT (current ask) · ⚠️ TRS = old issue, needs separate TRS sign-off (over-auth removal or on-carton-but-absent add).
+- The Rule + Node OBJID + Node name are all mandatory on every row (lookalike-group trap — see below).
+- Follow the table with a **net-operations summary** split into two blocks:
+  1. **Current ask** (authorized by the TRS letter/REF) — the discrete ADD/DELIMIT ops: `Op | PERNR | Rule | Node`. BEGDA = TRS letter effective date, ENDDA = 99991231.
+  2. **Old issues — hold for TRS sign-off** — drift not covered by this letter (over-authorized removals, on-carton-but-absent adds), listed but NOT executed without per-item TRS authorization.
+- Membership data must come from a **live P01 read** (RFC_READ_TABLE on HRP1001, all periods) — not a stale Gold DB snapshot, not screenshots. Resolve multi-period rows (a person can have an expired + an active period in the same node).
+
+This structure supersedes the old "5-column deltas-only spec". Hand to DBS; wait for execution confirmation.
 
 #### Lookalike-group trap (INC-000006313 Part 2, Session #052)
 In OOCU_RESP rule 90000005, several groups sit adjacent in the tree and end with the word `Validation`:

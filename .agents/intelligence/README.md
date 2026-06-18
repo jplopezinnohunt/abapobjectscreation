@@ -9,6 +9,7 @@
 | File | Purpose | Read When |
 |------|---------|-----------|
 | **[PROJECT_MEMORY.md](./PROJECT_MEMORY.md)** | Session memory — architecture rules, extractions, BDC findings | **FIRST — every session** |
+| **[PROJECT_EVALUATION.md](./PROJECT_EVALUATION.md)** | Project specification, WoW loop, Constitutional Principles, Claude forensics | **SECOND — every session** |
 | [sap_companion_intelligence.md](./sap_companion_intelligence.md) | Full reference — ADT map, monitor commands, auth, Allos strategy | Deep technical work |
 | [vscode_sap_plugin_intelligence.md](./vscode_sap_plugin_intelligence.md) | VS Code plugin analysis, ADT endpoint discovery | Plugin/extension work |
 
