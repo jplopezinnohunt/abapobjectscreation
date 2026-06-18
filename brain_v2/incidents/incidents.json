@@ -1404,5 +1404,112 @@
       ]
     },
     "root_cause_engine": "FM"
+  },
+  {
+    "id": "INC-FXREVAL-OB09",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "F.05 FX revaluation: 'Account 1109574 blocked for posting' (Banco de Chile)",
+    "reporter": "Treasury (via session screenshot)",
+    "received_date": "2026-06-07",
+    "analyzed_session": 78,
+    "domain": "Closing Activities",
+    "secondary_domains": [
+      "Treasury",
+      "FI"
+    ],
+    "transactions": [
+      "F.05",
+      "OB09",
+      "FS00",
+      "FS10N"
+    ],
+    "primary_object_id": "0001109574",
+    "primary_subject": "FX revaluation balance-sheet adjustment account blocked",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "scenario": "F.05/SAPF100 (variant UNES_UNBA) revalues active CLP/USD Banco de Chile bank accounts. It posts the FX balance-sheet adjustment to the account configured in OB09/T030H (LKORR). That account is the CLOSED sub 1109574/1109571, blocked for posting.",
+    "error_messages": [
+      "Account 1109574 UNES is blocked for posting"
+    ],
+    "root_cause_summary": "Unfinished bank sub-account migration. The Banco de Chile sub was retired (old 1109574 closed -> new 1110574 created) but OB09 was never repointed; the active main still points its LKORR adjustment to the closed sub. Two conditions needed for the runtime error: (1) OB09 points to a blocked sub AND (2) the main carries an FX balance to revalue.",
+    "code_validation_chain": "F.05 -> SAPF100 -> T030H (KDF account determination) -> LKORR=1109574 -> SKB1.XSPEB='X' -> post aborts.",
+    "scope": "2 accounts in the failing variant range (1010574 CLP, 1010571 USD); 4 more share the defect but are out of variant scope.",
+    "fix_path": "OB09/KDF: repoint 0001010574 -> 1110574 and 0001010571 -> 1110571 (active subs, like Ecobank 1094316->1194316). Do NOT unblock the closed subs. Confirm migration target with Treasury.",
+    "related_objects": [
+      "0001010571",
+      "0001010574",
+      "0001109571",
+      "0001109574",
+      "0001110571",
+      "0001110574",
+      "0001143254",
+      "0001194316",
+      "1094316",
+      "1194316",
+      "BKPF",
+      "BSEG",
+      "F.05",
+      "GLT0",
+      "OB09",
+      "P01_SKA1",
+      "SAPF100",
+      "SKA1",
+      "SKAT",
+      "SKB1",
+      "T030H",
+      "T044A",
+      "TBTCO",
+      "TBTCP",
+      "UNES_DEPOSIT",
+      "UNES_UNBA"
+    ],
+    "related_claims": [
+      {
+        "id": 205,
+        "claim": "Two valid revaluation patterns: self-ref vs main+sub-account (Ecobank correct)."
+      },
+      {
+        "id": 206,
+        "claim": "Root cause = unfinished OB09 sub-account migration (main -> closed sub)."
+      },
+      {
+        "id": 207,
+        "claim": "Fix = repoint OB09 to the active sub for the 2 in-scope accounts."
+      },
+      {
+        "id": 208,
+        "claim": "F.05 runs interactively with 0 jobs; SM36 automation is the bigger opportunity."
+      },
+      {
+        "id": 209,
+        "claim": "Valuation method (T044A) governs reversing vs non-reversing F.05 postings."
+      },
+      {
+        "id": 210,
+        "claim": "Account currency from SKAT text + doc currency, not SKB1.WAERS."
+      }
+    ],
+    "related_dq": [],
+    "related_known_unknowns": [
+      "KU-CA-001 (confirm migration target 1110574/1110571)",
+      "KU-CA-002 (confirm _UNBA valuation mode)"
+    ],
+    "analysis_doc": "knowledge/domains/Closing_Activities/fx_revaluation_process.md",
+    "evidence_extracted_this_incident": "T030H config, SKB1 block flags, T012K house-bank map, GLT0 balances, OB09/FS00 screens, variant ranges, BKPF/BSIS execution.",
+    "lessons": "Closing-account migrations must repoint OB09 (house-bank closure Step 4). Balance source = GLT0/FAGLFLEXT, not BSIS sums. Currency from SKAT name, not SKB1.WAERS.",
+    "open_followups": [
+      "Repoint OB09 (2 entries)",
+      "Fix Citibank/Ecobank mis-mappings in same pass",
+      "Schedule SM36 jobs for SAPF100"
+    ],
+    "chain_anchor_type": "config_table",
+    "chain_anchor_note": "Anchored on T030H/OB09 account determination.",
+    "chain_anchor_coverage_pct": 95,
+    "chain_audited_session": 78,
+    "domain_axes": [
+      "FI",
+      "Treasury"
+    ]
   }
 ]

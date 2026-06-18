@@ -1,0 +1,62 @@
+{
+  "purpose": "What the agent needs from the user/environment to make the knowledge model materially better. Ranked by leverage. Tracked so nothing is lost. Started s079.",
+  "needs": [
+    {
+      "id": "MIN-1",
+      "rank": 1,
+      "title": "SAP data model per domain (table role + real PK + header/item parent + business meaning)",
+      "why": "Agent decided merge/no-merge from key heuristics, not the real model -> wrong twice this session (FEBKO/FEBEP header-item, REGUH PK, DORIGIN dedup). The data model is reusable across dedup, joins, process mining, verification.",
+      "deliverable": "Zagentexecution/sap_data_extraction/domain_data_model.json",
+      "approach": "ECC, NOT S/4. Full model from 3 RFC extractions of SAP own definitions (zero guessing): (1) DD03L.KEYFLAG=real PKs, (2) DD08L+DD03L.CHECKTABLE=foreign keys, (3) LDBN+LDBS=Logical Database tree = standard header->item/parent-child hierarchy (FEBKO->FEBEP, BKPF->BSEG, PERNR->infotypes). CDS=S/4 (N/A); BW content=reporting extractors (not the relational hierarchy). Extractor: scripts/extract_ddic_model.py -> domain_data_model.json.",
+      "status": "READY_PENDING_EXTRACTION",
+      "blocked_on": "P01/D01 not active (extractor built, first run pending)",
+      "insight": "The STANDARD model on ECC = the Logical Database (LDB), native/pre-CDS, whose node tree adopts the tables foreign-key hierarchy. SLDB/SE36. Stored in LDBN/LDBS, RFC-extractable. This is what closes the header/item model that hand-guessing got wrong."
+    },
+    {
+      "id": "MIN-2",
+      "rank": 2,
+      "title": "Process DISCOVERY (process mining) from logs/transactions/jobs — THE MAIN OBJECTIVE",
+      "why": "CORRECTED: process maps are NOT a user input — they are the OUTPUT we DISCOVER. Process engineering = discover how the process actually runs from event data (logs, bkpf transactions, jobs, change docs), read the system not the docs. process_ingestor PROCESS_DEFINITIONS being hardcoded is the anti-pattern — they should be DISCOVERED.",
+      "deliverable": "expand brain_v2/ingestors/process_ingestor.py PROCESS_DEFINITIONS",
+      "status": "UNBLOCKED_LOCAL",
+      "blocked_on": null,
+      "approach": "Build the event log {case_id, activity, timestamp, resource} from data ALREADY in the Gold DB: case = AWTYP+AWKEY doc-flow chain / business object; activity = TCODE / change / status; timestamp = CPUDT+CPUTM (bkpf) / UDATE+UTIME (cdhdr); resource = USNAM. Sources: bkpf (1.8M, AWKEY 100% populated, 15 AWTYP, 50 tcodes), cdhdr (7.8M change events), tbtcp_history (jobs). Discover variants/sequences/bottlenecks -> feed brain PROCESS spine (STEP_USES_TCODE->program->tables->users). P01 NOT required.",
+      "insight": "This is the project main objective (SAP Agentic AGI / process mining). The data is local and ready — discovery can start now, not pending user maps or P01."
+    },
+    {
+      "id": "MIN-3",
+      "rank": 3,
+      "title": "Definitions for ambiguous metrics",
+      "why": "e.g. BCM 'same-user batch': CRUSR=CHUSR gives 4,760 but claims say 3,359 / 1,557. Exact business definition unblocks a verifiable check.",
+      "status": "PENDING_USER_INPUT",
+      "blocked_on": "user metric definitions",
+      "examples": [
+        "BCM same-user batch (claims 6, 14)"
+      ]
+    },
+    {
+      "id": "MIN-4",
+      "rank": 4,
+      "title": "Reactivate P01",
+      "why": "Unblocks: first run of the log accumulator (TBTCO/TBTCP history), full FEBEP/FEBKO re-extraction, t030h re-extract to resolve drift 205.",
+      "status": "PENDING_P01",
+      "blocked_on": "P01 not active"
+    },
+    {
+      "id": "MIN-5",
+      "rank": 5,
+      "title": "Two decisions: the 3 drifts + provenance source-of-truth per table",
+      "why": "Drifts 28 (187514->197010), 107 (567059->567584), 205 (944->891): update the claim numbers or treat as moved-evidence? And confirm CODE=D01 / DATA=P01 source per table where ambiguous.",
+      "status": "PENDING_USER_DECISION",
+      "blocked_on": "user decision"
+    },
+    {
+      "id": "MIN-6",
+      "rank": 6,
+      "title": "Standard SAP program source availability (SAPF100 etc.)",
+      "why": "Determines whether structural edges (reads/calls/exits) for standard programs are parseable, or must be curated by hand as claims.",
+      "status": "PENDING_USER_INPUT",
+      "blocked_on": "user confirmation"
+    }
+  ]
+}

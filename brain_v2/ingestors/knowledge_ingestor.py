@@ -67,75 +67,80 @@ def ingest_knowledge(brain, project_root: str):
 
 
 def _ingest_companions(brain, project_root: Path, stats: dict):
-    """Ingest HTML companion dashboards as KNOWLEDGE_DOC nodes."""
-    # Known companion locations (exclude venv/, playwright_data/)
-    companion_dirs = [
-        project_root / 'Zagentexecution' / 'mcp-backend-server-python',
-        project_root / 'Zagentexecution' / 'dashboards',
-        project_root / 'Zagentexecution' / 'my_monitors',
-        project_root / 'Zagentexecution' / 'sap_data_extraction' / 'reports',
-        project_root / '.agents' / 'intelligence',
-    ]
+    """Ingest HTML companion dashboards as KNOWLEDGE_DOC nodes using companions.json registry."""
+    import json
+    registry_path = project_root / 'companions' / 'companions.json'
+    if not registry_path.exists():
+        print(f"WARNING: Companion registry not found at {registry_path}")
+        return
 
-    # Domain mapping for companions
-    COMPANION_DOMAINS = {
-        'payment': 'FI', 'bcm': 'FI', 'bank_statement': 'FI', 'fi_': 'FI',
-        'epiuse': 'FI', 'carry_forward': 'FI',
-        'p2p': 'MM', 'process': 'MM',
-        'cts': 'CTS', 'transport': 'CTS', 'taxonomy': 'CTS',
-        'connectivity': 'BASIS', 'system_inventory': 'BASIS', 'rfc': 'BASIS',
-        'unesco_sap_landing': 'GENERAL', 'knowledge_graph': 'GENERAL',
-        'monitor': 'BASIS',
-    }
+    try:
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+    except Exception as e:
+        print(f"ERROR reading companions.json: {e}")
+        return
 
-    seen = set()
-    for cdir in companion_dirs:
-        if not cdir.exists():
+    for entry in registry:
+        rel_path = entry.get('file')
+        if not rel_path:
             continue
-        for html_file in sorted(cdir.glob('*.html')):
-            if html_file.name.startswith('_'):
-                continue  # Skip fragments
-            if html_file.name in seen:
-                continue
-            seen.add(html_file.name)
 
-            rel_path = str(html_file.relative_to(project_root)).replace('\\', '/')
-            name = html_file.stem
-            node_id = f"COMPANION:{name}"
+        html_file = project_root / rel_path
+        if not html_file.exists():
+            # If it's not at the exact path, check if it's placed directly under companions/
+            alt_file = project_root / 'companions' / Path(rel_path).name
+            if alt_file.exists():
+                html_file = alt_file
+                rel_path = f"companions/{alt_file.name}"
 
-            # Determine domain
-            domain = "GENERAL"
-            name_lower = name.lower()
-            for key, dom in COMPANION_DOMAINS.items():
-                if key in name_lower:
-                    domain = dom
-                    break
+        name = html_file.stem
+        node_id = f"COMPANION:{name}"
 
-            try:
-                size = html_file.stat().st_size
-            except Exception:
-                size = 0
+        title = entry.get('title', name)
+        domain = entry.get('domain', 'GENERAL').upper()
+        description = entry.get('description', '')
+        version = entry.get('version', 'v1.0')
+        last_updated = entry.get('last_updated', '')
+        status = entry.get('status', 'active')
+        keywords = entry.get('keywords', [])
+        metrics = entry.get('metrics', [])
 
-            brain.add_node(node_id, "KNOWLEDGE_DOC", name,
-                           domain=domain, layer="process",
-                           source="companion",
-                           metadata={
-                               'path': rel_path,
-                               'size_bytes': size,
-                               'type': 'html_companion',
-                           },
-                           tags=[domain.lower(), 'companion', 'dashboard'])
-            stats['knowledge_nodes'] += 1
+        try:
+            size = html_file.stat().st_size if html_file.exists() else 0
+        except Exception:
+            size = 0
 
-            # Try to extract text content for reference linking
+        metadata = {
+            'path': rel_path,
+            'size_bytes': size,
+            'type': 'html_companion',
+            'description': description,
+            'version': version,
+            'last_updated': last_updated,
+            'status': status,
+            'keywords': keywords,
+            'metrics': metrics,
+            'exists': html_file.exists()
+        }
+
+        brain.add_node(node_id, "KNOWLEDGE_DOC", title,
+                       domain=domain, layer="process",
+                       source="companion",
+                       metadata=metadata,
+                       tags=[domain.lower(), 'companion', 'dashboard'])
+        stats['knowledge_nodes'] += 1
+
+        # Scan text for reference linking if the file exists
+        if html_file.exists():
             try:
                 content = html_file.read_text(encoding='utf-8', errors='replace')
                 # Only scan a reasonable portion for references
                 scan_content = content[:50000] if len(content) > 50000 else content
                 _create_reference_edges(brain, node_id, scan_content, stats,
                                         edge_type="DOCUMENTED_IN")
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error scanning {html_file}: {e}")
 
 
 def _ingest_knowledge_doc(brain, md_file: Path, project_root: Path, stats: dict,

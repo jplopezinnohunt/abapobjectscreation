@@ -125,4 +125,22 @@ def ingest_processes(brain):
                                discovered_in="040")
                 stats['edges'] += 1
 
+            # Step -> transaction (THE SPINE JOIN). The tcode was stored only as
+            # node metadata before #079, so the process mining layer floated
+            # disconnected from transactions/programs/users. This edge attaches the
+            # process spine to the static+behavioural web: STEP -USES_TCODE-> TRANSACTION
+            # -EXECUTES_PROGRAM-> PROGRAM -READS_TABLE-> TABLE, and TRANSACTION
+            # <-OPERATES_TCODE- USER. One process step now reaches its program,
+            # its tables, and the real people who run it — with mined event volumes.
+            for tcode in step.get("tcodes", []):
+                tx_id = f"TRANSACTION:{tcode}"
+                if not brain.has_node(tx_id):
+                    brain.add_node(tx_id, "TRANSACTION", tcode,
+                                   domain=domain, layer="code",
+                                   source="process_mining")
+                brain.add_edge(step_id, tx_id, "STEP_USES_TCODE",
+                               evidence="mined", confidence=0.9,
+                               discovered_in="079")
+                stats['edges'] += 1
+
     return stats

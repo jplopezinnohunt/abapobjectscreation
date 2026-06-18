@@ -41,6 +41,7 @@ def cmd_build():
     from brain_v2.ingestors.domain_knowledge_ingestor import ingest_domain_knowledge
     from brain_v2.ingestors.annotation_ingestor import ingest_annotations
     from brain_v2.ingestors.bcm_domain_ingestor import ingest_bcm_domain
+    from brain_v2.ingestors.connective_ingestor import ingest_connective
 
     brain = BrainGraph()
     tracker = IncrementalTracker(brain)
@@ -91,6 +92,13 @@ def cmd_build():
     # quality check scripts and the relationships between them.
     r = tracker.update_from_source("BCM Domain", lambda b: ingest_bcm_domain(b, str(PROJECT_ROOT)))
     print(f"  BCM Domain:       +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
+
+    # Phase 8: Connective tissue (Session #079) — the behavioural + ownership web
+    # the parser can't see: USER layer + OPERATES_TCODE + USED_IN_CC + RUNS_PROGRAM,
+    # derived from Gold DB bkpf/tadir/tbtcp. Emits an extraction backlog for the
+    # tables still missing (TSTC, MODSAP, USR02, AGR_*). Run last so target nodes exist.
+    r = tracker.update_from_source("Connective", ingest_connective, db)
+    print(f"  Connective:       +{r['new_nodes']:6d} nodes  +{r['new_edges']:6d} edges")
 
     print("=" * 60)
     print(f"  TOTAL:  {brain.node_count():,} nodes  {brain.edge_count():,} edges")

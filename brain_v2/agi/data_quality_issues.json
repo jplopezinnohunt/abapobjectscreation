@@ -694,5 +694,115 @@
     "blocks": "Phase 5 V001 SEPA cutover — must not release until matrix row 1 vs code reality is reconciled",
     "status": "OPEN",
     "owner": "next session"
+  },
+  {
+    "id": "DQ-S079-FEBEP",
+    "source": "gold_db_dedup",
+    "issue": "FEBEP exists as two extract twins: FEBEP (104 cols, 50K-row sample) vs FEBEP_2024_2026 (27 cols, 223K rows). Neither is a superset — one has the columns, the other the rows.",
+    "severity": "MEDIUM",
+    "impact": "Redundant twin; cannot consolidate losslessly from existing data.",
+    "workaround": "Use FEBEP_2024_2026 (223K rows) for row-complete work; FEBEP for the wide 104-col schema.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "RE-EXTRACT FEBEP with ALL 104 cols for the full 2024-2026 row set, then drop both twins. BLOCKED: P01 not active.",
+    "affected_count": 2
+  },
+  {
+    "id": "DQ-S079-FEBKO",
+    "source": "gold_db_dedup",
+    "issue": "FEBKO extract twins: FEBKO (8 cols, 50K) vs FEBKO_2024_2026 (62 cols, 31K). FEBKO is the bank-statement HEADER (1 per KUKEY) to FEBEP items.",
+    "severity": "MEDIUM",
+    "impact": "Redundant twin; columns-vs-rows split.",
+    "workaround": "Use FEBKO_2024_2026 (62 cols) for analysis.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "RE-EXTRACT FEBKO with full 62 cols for full row set. BLOCKED: P01 not active.",
+    "affected_count": 2
+  },
+  {
+    "id": "DQ-S079-CDPOS",
+    "source": "process_mining",
+    "issue": "CDPOS (field-level change documents) is NOT loaded in the Gold DB. extract_cdhdr.py supports it (table cdpos, --cdpos-only) and extracted_data/CDPOS exists but is EMPTY; no cdpos table. cdhdr (7.8M headers) is present.",
+    "severity": "HIGH",
+    "impact": "Process mining activities are coarse (Change PO) instead of field-level (PROCSTAT->Released, quantity changed). CDPOS is the richest activity source.",
+    "workaround": "Use cdhdr TCODE-level activities for now.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extractor BUILT: scripts/extract_cdpos_by_object.py — by object + OBJECTID windows (2000) + resumable checkpoints + field-filtered (activity FNAMEs) + stream to SQLite (PK dedup). Plan: ~784 windows across 7 priority objects (EINKBELEG 37, BANF 5, BELEG 174, ENTRYSHEET 60, KRED 54, FMRESERV 438, MM_SERVICE 16). Run order: prio1 first. CDPOS is PERMANENT (one-time bulk + delta), NOT a 15-day log. BLOCKED: P01 not active.",
+    "affected_count": 1,
+    "resolution_ready": true
+  },
+  {
+    "id": "DQ-S079-JCDS",
+    "source": "process_mining",
+    "issue": "JCDS (object status change history) not loaded. JEST (current status) IS present. JCDS = the status TRANSITIONS (created->released->completed->closed) for orders/PS/PM/QM, decoded via TJ02T. NOT captured by CDHDR/CDPOS.",
+    "severity": "HIGH",
+    "impact": "No status-lifecycle process mining.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract JCDS (OBJNR,STAT,UDATE,UTIME,USERID,CHGNR) + TJ02T (status texts). Pairs with existing JEST. Priority 2 after CDPOS. Verified by deep research (van der Aalst/RWTH, SAP KBA 3527846).",
+    "affected_count": 1
+  },
+  {
+    "id": "DQ-S079-VBFA",
+    "source": "process_mining",
+    "issue": "VBFA (SD/O2C document flow) not loaded. Canonical flow table: links VBELN(current)->VBELV(prev) with VBTYP_N/VBTYP_V doc types.",
+    "severity": "HIGH",
+    "impact": "No O2C document-flow/lifecycle mining.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract VBFA via RFC_READ_TABLE (transparent). Activity = VBTYP_N. Priority 3. Supplement timestamps from VBAK/LIKP/VBRK.",
+    "affected_count": 1
+  },
+  {
+    "id": "DQ-S079-WORKFLOW",
+    "source": "process_mining",
+    "issue": "Workflow history tables (SWWWIHEAD + SWWLOGHIST) not loaded. Approval-flow mining: case_id=COALESCE(TOP_WI_ID,WI_ID); SWWLOGHIST adds step/agent history.",
+    "severity": "MEDIUM_HIGH",
+    "impact": "No approval/SoD/control process mining (BCM dual-control, payment approvals, YWFI).",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract SWWWIHEAD + SWWLOGHIST via RFC_READ_TABLE. Priority 4. SWWWIHEAD alone insufficient (deep-research refuted) — need SWWLOGHIST for agents/steps.",
+    "affected_count": 1
+  },
+  {
+    "id": "DQ-S079-EDIDS",
+    "source": "interface_mining",
+    "issue": "EDIDS (IDoc status history) not loaded — only EDIDC current status. 70 IDocs already in error status 51. Without EDIDS we cannot see interface failures, retries, manual reprocessing (BD87).",
+    "severity": "HIGH",
+    "impact": "Blind to interface failure/reprocessing improvement opportunities.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract EDIDS (DOCNUM,STATUS,LOGDAT,LOGTIM,UNAME,STATXT). case=DOCNUM, activity=status text, ts=LOGDAT+LOGTIM. Reveals failure/retry/reprocess patterns."
+  },
+  {
+    "id": "DQ-S079-VRSD",
+    "source": "code_mining",
+    "issue": "VRSD/VRSX (version management = code-change log) not loaded. No visibility into code churn — which objects change most, by whom, correlated with incidents.",
+    "severity": "HIGH",
+    "impact": "Cannot find unstable/over-modified objects at scale; improvements found only by manual deep-dive.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract VRSD (OBJTYPE,OBJNAME,VERSNO,KORRNUM,AUTHOR,DATUM,ZEIT). Mine code-change frequency per object; join incidents/transports. Code is system-invariant -> D01 OK."
+  },
+  {
+    "id": "DQ-S079-MODSAP",
+    "source": "code_mining",
+    "issue": "MODSAP/SMOD/CMOD/ENHO (user exits, BAdIs, enhancements) not loaded. The custom logic inside processes (YRGGBS00/ZXFMDTU02 type) is found one-off, not systematically.",
+    "severity": "HIGH",
+    "impact": "Cannot connect exits/enhancements to discovered processes at scale (the process<->code moat).",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract MODSAP (active exits->program), SMOD/CMOD (enhancement projects), ENHO/ENHOBJ (enhancement implementations). Connect to mined process steps. System-invariant -> D01 OK."
+  },
+  {
+    "id": "DQ-S079-ARFC",
+    "source": "interface_mining",
+    "issue": "ARFCSSTATE/TRFCQOUT/TRFCQIN (tRFC/qRFC error & stuck-queue logs, SM58/SMQ1/SMQ2) not loaded. The async-interface failure log.",
+    "severity": "MEDIUM",
+    "impact": "Blind to stuck/failed async RFC interface calls.",
+    "discovered_session": 79,
+    "status": "PENDING_P01",
+    "resolution_path": "Extract ARFCSSTATE + queue tables. Short retention possible -> consider accumulator."
   }
 ]

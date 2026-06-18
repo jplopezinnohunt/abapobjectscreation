@@ -16,7 +16,7 @@ NODE_TYPES = {
     "VALIDATION_RULE", "SUBSTITUTION_RULE", "NUMBER_RANGE", "JOB_DEFINITION",
     # Category 4: Organizational / Master Data
     "COMPANY_CODE", "FUND", "FUND_AREA", "FUND_CENTER",
-    "GL_ACCOUNT", "COST_ELEMENT",
+    "GL_ACCOUNT", "COST_ELEMENT", "USER",
     # Category 5: Integration / Infrastructure
     "SAP_SYSTEM", "EXTERNAL_SYSTEM", "RFC_DESTINATION", "ICF_SERVICE", "IDOC_TYPE",
     # Category 6: Process / Transport / Knowledge
@@ -53,6 +53,15 @@ EDGE_TYPES = {
     "BELONGS_TO", "HAS_FUND_CENTER", "POSTS_TO_GL",
     # Infrastructure
     "RUNS_PROGRAM",
+    # Category 9: Behavioral / Ownership (connective layer — derived from Gold DB
+    # USNAM/TCODE/devclass/job evidence; the "who does what with which object" web)
+    "OPERATES_TCODE",   # USER -> TRANSACTION (posted N docs via this tcode)
+    "USED_IN_CC",       # TRANSACTION -> COMPANY_CODE (tcode active in this co.code)
+    "BELONGS_TO_PACKAGE",  # object -> PACKAGE (TADIR ownership)
+    "SCHEDULED_BY",     # JOB -> USER (who scheduled the job)
+    "EXECUTES_PROGRAM", # TRANSACTION -> PROGRAM (from TSTC.PGMNA / TSTCP RS38M-PROGRAMM)
+    "MAINTAINS_VIEW",   # TRANSACTION -> TABLE/VIEW (from TSTCP VIEWNAME, e.g. OB09 -> T030H)
+    "ENHANCES",         # ENHANCEMENT/exit -> PROGRAM (needs MODSAP — backlog)
 }
 
 # ── Impact Direction per Edge Type ──
