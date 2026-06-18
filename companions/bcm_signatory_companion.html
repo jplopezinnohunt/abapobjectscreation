@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCM Bank Signatory — Companion</title>
+<style>
+:root{--bg:#ffffff;--fg:#1b1b19;--mut:#6b6b64;--bd:#e3e3dc;--bg2:#f5f5ef;--red:#dc2626;
+  --gray:#8a8a82;--blue:#2f7dc4;--purple:#6b62d6;--teal:#1d9e75;--coral:#c2410c;--amber:#b8860b;}
+@media(prefers-color-scheme:dark){:root{--bg:#191916;--fg:#ededea;--mut:#a2a29a;--bd:#3a3a34;--bg2:#24241d;--red:#f87171;
+  --gray:#a9a9a0;--blue:#5aa6e8;--purple:#9b93ee;--teal:#4fc9a3;--coral:#e8825a;--amber:#e0b341;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:22px;margin:0 0 2px}
+h2{font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);border-bottom:1px solid var(--bd);padding-bottom:5px;margin:34px 0 12px}
+.lead{color:var(--mut);font-size:13px;margin:0 0 6px}
+.stage{border:1px solid var(--bd);border-left:4px solid var(--ac,#888);border-radius:8px;padding:9px 13px;max-width:660px;margin:0 auto;background:var(--bg)}
+.stage .h{font-weight:600;font-size:13.5px}
+.stage .s{font-size:11.5px;color:var(--mut);margin-top:3px}
+.stage .tagr{float:right;font-size:10px;color:var(--mut);font-weight:600;border:1px solid var(--bd);border-radius:4px;padding:0 5px}
+.arrow{text-align:center;color:var(--mut);font-size:11px;margin:4px 0}
+.arrow b{color:var(--fg)}
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+th,td{border:1px solid var(--bd);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--bg2);font-weight:600}
+code,.mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.92em}
+.note{border:1px dashed var(--bd);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--mut);margin-top:10px}
+.gate{border:1px solid var(--bd);border-left:4px solid var(--teal);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:12.5px}
+.gate b{color:var(--teal)}
+.warn{border:1px solid var(--amber);border-left:6px solid var(--amber);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:13px;background:var(--bg2)}
+.warn .t{color:var(--amber);font-weight:800;font-size:13px;margin-bottom:4px}
+.hero{color:var(--red);font-weight:700;font-size:13.5px;text-align:center;margin:14px 0}
+.pill{display:inline-block;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:600;border:1px solid var(--bd)}
+.k{color:var(--teal)} .a{color:var(--purple)} .d{color:var(--coral)} .w{color:var(--amber)}
+.tag{font-size:10.5px;color:var(--mut)}
+.cols{display:flex;gap:14px;flex-wrap:wrap}
+.cols>div{flex:1;min-width:240px}
+ul{margin:6px 0;padding-left:20px}
+.src{font-size:11px;color:var(--mut);margin-top:30px;border-top:1px solid var(--bd);padding-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>BCM Bank Signatory — Companion</h1>
+<p class="lead">How payment signing/approval works in SAP Bank Communication Management (UNESCO) and how to resolve a signatory-panel change. <b>All data is read live from P01 via RFC</b> — not from screenshots. P01 is <b>read-only</b> for the agent; DBS executes changes in <span class="mono">OOCU_RESP</span>. · v2 · 2026-06-18 · origin: INC-000011781.</p>
+
+<div class="warn"><div class="t">⚠ Banks are aligned OUTSIDE the system — SAP cannot enforce it</div>
+Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>separate letter + carton to each bank</b>. But SAP's signatory node is <b>entity-level</b> — ONE panel for ALL of an entity's banks — so it can hold only one list and has <b>no mechanism to detect or prevent two banks of the same entity (same country) from drifting apart</b>. If bank A's carton ≠ bank B's carton, the single node is wrong for at least one bank and nothing in SAP flags it. Keeping the panels aligned is a <b>manual / TRS governance control, not a system control</b>. The "alignment gate" in §5 is the compensating check this routine adds.</div>
+
+<h2>1 · Data model — three levels</h2>
+<div class="cols">
+<div class="stage" style="--ac:var(--blue)"><div class="h">LEVEL 1 · Entity</div><div class="s">Company code (<span class="mono">ZBUKR</span>, e.g. UBO). <b>This is the key that scopes the signatory nodes.</b></div></div>
+<div class="stage" style="--ac:var(--gray)"><div class="h">LEVEL 2 · Banks</div><div class="s">House banks of the company code (<span class="mono">T012/T012K</span>). Each <b>account</b> has its own <i>carton des signatures</i>. The ones that reach BCM = those that produce batches.</div></div>
+<div class="stage" style="--ac:var(--teal)"><div class="h">LEVEL 3 · Signatory nodes</div><div class="s">PD objects <span class="mono">OTYPE='RY'</span>, key = <b>entity × amount band</b>. <b>Bank-agnostic.</b> Members in <span class="mono">HRP1001</span>.</div></div>
+</div>
+<div class="note"><b>The two "rules":</b> the <b>batch-grouping</b> rule (<span class="mono">RULE_ID</span>, e.g. <span class="mono">UBO_AP_ST/MAX</span>) <u>is</u> bank-aware (<span class="mono">ZBUKR+HBKID</span>); the <b>signing/approval</b> rules (<span class="mono">90000005</span> validate, <span class="mono">90000004</span> commit) are <u>not</u> — entity + amount only.</div>
+
+<h2>2 · Full flow (bank → people)</h2>
+<svg viewBox="0 0 680 292" width="100%" style="max-width:680px;display:block;margin:8px auto" role="img" aria-label="Banks feed one entity batch; rules select a node by amount via IT1218; the node's people sign. Bank never selects the node.">
+ <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--mut)" stroke-width="1.3"/></marker></defs>
+ <g font-family="system-ui,sans-serif">
+ <!-- headers -->
+ <text x="86" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">BANKS (multiple)</text>
+ <text x="255" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">BATCH</text>
+ <text x="430" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">RULES</text>
+ <text x="600" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">NODES (tiers)</text>
+ <text x="600" y="29" text-anchor="middle" font-size="8.5" fill="var(--teal)">selected by IT1218: ZBUKR + amount</text>
+ <!-- connectors -->
+ <g stroke="var(--mut)" stroke-width="1" stroke-dasharray="3 2" fill="none" opacity="0.65">
+  <line x1="150" y1="48" x2="180" y2="111"/><line x1="150" y1="80" x2="180" y2="111"/><line x1="150" y1="112" x2="180" y2="111"/><line x1="150" y1="144" x2="180" y2="111"/><line x1="150" y1="176" x2="180" y2="111"/>
+ </g>
+ <line x1="180" y1="111" x2="189" y2="111" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <line x1="321" y1="98" x2="363" y2="92" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <line x1="321" y1="126" x2="363" y2="198" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <text x="343" y="156" text-anchor="middle" font-size="8.5" fill="var(--mut)">WF 90000003</text>
+ <line x1="497" y1="84" x2="533" y2="72" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <line x1="497" y1="104" x2="533" y2="112" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <line x1="497" y1="190" x2="533" y2="174" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <line x1="497" y1="210" x2="533" y2="214" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#ah)"/>
+ <!-- bank boxes -->
+ <g fill="var(--bg)" stroke="var(--gray)" stroke-width="1.3">
+  <rect x="22" y="34" width="128" height="28" rx="6"/><rect x="22" y="66" width="128" height="28" rx="6"/><rect x="22" y="98" width="128" height="28" rx="6"/><rect x="22" y="130" width="128" height="28" rx="6"/><rect x="22" y="162" width="128" height="28" rx="6"/>
+ </g>
+ <g font-size="9.5" fill="var(--fg)" text-anchor="middle" font-weight="600">
+  <text x="86" y="52">Citibank · CIT01</text><text x="86" y="84">Banco do Brasil · BRA01</text><text x="86" y="116">Caixa · CEF01</text><text x="86" y="148">Chase · CHA01</text><text x="86" y="180">Itaú · ITA01</text>
+ </g>
+ <!-- batch -->
+ <rect x="189" y="80" width="132" height="64" rx="8" fill="var(--bg)" stroke="var(--blue)" stroke-width="1.5"/>
+ <text x="255" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="var(--fg)">BCM batch</text>
+ <text x="255" y="116" text-anchor="middle" font-size="8.3" font-family="monospace" fill="var(--mut)">BNK_STR_BATCH_REL_APPR</text>
+ <text x="255" y="131" text-anchor="middle" font-size="9" fill="var(--mut)">ZBUKR + bank + amount</text>
+ <!-- rules -->
+ <rect x="363" y="66" width="134" height="56" rx="8" fill="var(--bg)" stroke="var(--purple)" stroke-width="1.5"/>
+ <text x="430" y="90" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--fg)">Rule 90000005</text>
+ <text x="430" y="106" text-anchor="middle" font-size="9" fill="var(--mut)">BNK_INI · Validate</text>
+ <rect x="363" y="172" width="134" height="56" rx="8" fill="var(--bg)" stroke="var(--purple)" stroke-width="1.5"/>
+ <text x="430" y="196" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--fg)">Rule 90000004</text>
+ <text x="430" y="212" text-anchor="middle" font-size="9" fill="var(--mut)">BNK_COM · Commit</text>
+ <!-- nodes -->
+ <rect x="533" y="54" width="134" height="34" rx="6" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.5"/>
+ <text x="600" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50034892</text><text x="600" y="82" text-anchor="middle" font-size="8.5" fill="var(--teal)">Validate ≤10K</text>
+ <rect x="533" y="94" width="134" height="34" rx="6" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.5"/>
+ <text x="600" y="110" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50034893</text><text x="600" y="122" text-anchor="middle" font-size="8.5" fill="var(--amber)">Validate ≤5M</text>
+ <rect x="533" y="156" width="134" height="34" rx="6" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.5"/>
+ <text x="600" y="172" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50034894</text><text x="600" y="184" text-anchor="middle" font-size="8.5" fill="var(--teal)">Commit ≤10K</text>
+ <rect x="533" y="196" width="134" height="34" rx="6" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.5"/>
+ <text x="600" y="212" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50036737</text><text x="600" y="224" text-anchor="middle" font-size="8.5" fill="var(--amber)">Commit &gt;10K</text>
+ <!-- captions -->
+ <text x="180" y="258" text-anchor="middle" font-size="9.5" fill="var(--mut)">all banks → one entity batch (N:1)</text>
+ <text x="470" y="258" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--red)">AMOUNT picks the tier — the bank never does</text>
+ <!-- legend -->
+ <rect x="250" y="276" width="11" height="11" rx="3" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.4"/><text x="266" y="285" font-size="9" fill="var(--mut)">≤10K tier</text>
+ <rect x="340" y="276" width="11" height="11" rx="3" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.4"/><text x="356" y="285" font-size="9" fill="var(--mut)">higher-amount tier</text>
+ </g>
+</svg>
+<p class="lead" style="text-align:center;margin-top:4px">The matching node's people (<span class="mono">HRP1001</span>) are the validators/committers. Node-selection detail (IT1218) → §3.</p>
+
+<h2>3 · Node selection — where the logic lives (IT1218)</h2>
+<p class="lead"><b>How the rule picks ONE node:</b> when a batch arrives, the rule scans every node's criteria and returns the node where <b>all</b> conditions match the batch. Those criteria are <b>not</b> the standard PFAC ones (<span class="mono">HRP1222</span> is <b>empty</b>) — they live in <b>infotype 1218</b> on each <span class="mono">RY</span> node (<span class="mono">HRP1218</span> header → <span class="mono">TABNR</span> → <span class="mono">HRT1218</span> expressions) and are matched against the standard BCM structure <span class="mono">BNK_STR_BATCH_REL_APPR</span>. (It IS standard BCM — the Approval Procedure generates them; it only looked non-standard because it bypasses the PFAC/1222 path.)</p>
+<p class="lead">Read each row as: <span class="mono">if batch.ZBUKR == UBO AND batch.amount ∈ [low,high] (and RULE_ID matches, on INI) → use this node</span>.</p>
+<table>
+<tr><th>Rule</th><th>Node (OBJID)</th><th>ZBUKR</th><th>MAXPAYAMT_RULECURR</th><th>RULE_ID</th></tr>
+<tr><td>90000005 INI</td><td>50034892 · ≤10K</td><td>UBO</td><td>0 – 10 000</td><td>UBO_AP_MAX</td></tr>
+<tr><td>90000005 INI</td><td>50034893 · ≤5M</td><td>UBO</td><td>10 000 – 5 000 000</td><td>UBO_AP_ST</td></tr>
+<tr><td>90000004 COM</td><td>50034894 · ≤10K</td><td>UBO</td><td>0 – 10 000</td><td>—</td></tr>
+<tr><td>90000004 COM</td><td>50036737 · &gt;10K</td><td>UBO</td><td>10 000 – 50 000 000</td><td>—</td></tr>
+</table>
+<div class="warn"><div class="t">⚠ Notice what is MISSING: there is no bank (HBKID) column</div>
+The selection key is <b>entity (ZBUKR) + amount only</b> — the node <b>literally cannot tell one bank from another</b>. This is the technical root of the warning at the top: because selection ignores the bank, <b>one node serves ALL of the entity's banks</b>, so SAP has no way to give Citibank a different signatory list than Banco do Brasil — and no way to detect if their cartons disagree. Bank-to-bank alignment is therefore a control <b>outside the system</b> (TRS / manual), not something SAP enforces.</div>
+<div class="note"><b>On <span class="mono">RULE_ID</span> (avoid confusion):</b> it is the <i>batch-grouping</i> rule, not an amount label — don't read "MAX"/"ST" as a size. The actual tier driver is <span class="mono">MAXPAYAMT_RULECURR</span>; the RULE_ID pairing is just how UBO's approval procedure happens to be configured.</div>
+<div class="note"><b>How to view it in SAP — step by step</b>
+
+<p style="margin:8px 0 3px"><b>Easiest · <span class="mono">OOCU_RESP</span></b> (no object-type fiddling — recommended): open the rule <span class="mono">BNK_INI_01_01_04</span> (validate) or <span class="mono">BNK_COM_01_01_03</span> (commit) → find the node (e.g. <i>UBO Validation up to 10.000 USD</i>) → <b>double-click the node</b> to see its criteria (company code + amount band), or click <b>"Simulate rule resolution"</b> and enter <span class="mono">UBO</span> + an amount to see which node + people resolve.</p>
+
+<p style="margin:8px 0 3px"><b>Advanced · <span class="mono">PP01</span> (raw IT1218 criteria) — get these 3 header fields right. ⚠ <span class="mono">RY</span> goes in <u>Object type</u>, the number in <u>Object ID</u> — do NOT swap them (that gives "… RY not found"):</b></p>
+<table style="margin-top:2px">
+<tr><th>Field</th><th>Value</th><th>⚠ common mistake</th></tr>
+<tr><td>Plan version</td><td><b>Current plan (01)</b></td><td>NOT "Alternative plan/tech." (empty for these objects)</td></tr>
+<tr><td>Object type</td><td><b><span class="mono">RY</span></b> (Responsibility) — type the 2 letters</td><td>NOT "Work Item"</td></tr>
+<tr><td>Object ID</td><td><span class="mono">50034892</span> (the node)</td><td>—</td></tr>
+</table>
+<p style="margin:6px 0 0">Then: pick infotype <span class="mono">1218</span> → <b>Display (glasses)</b>. Rows show <span class="mono">ELEMENT</span> = ZBUKR / MAXPAYAMT_RULECURR / RULE_ID with <span class="mono">EXPR_LOW</span>–<span class="mono">EXPR_HIGH</span> (the amount band), <span class="mono">REFSTRUCT=BNK_STR_BATCH_REL_APPR</span>.</p>
+
+<p style="margin:10px 0 3px"><b>Option B · <span class="mono">OOCU_RESP</span> (more intuitive — <i>see</i> the selection work):</b></p>
+1. Open the rule <span class="mono">BNK_INI_01_01_04</span> (validate) or <span class="mono">BNK_COM_01_01_03</span> (commit) and find the node.<br>
+2. Click <b>"Simulate rule resolution"</b> → enter company code <span class="mono">UBO</span> + an amount (e.g. 5 000) → it returns the matching node + the people. Change the amount to 50 000 and it lands in the high-tier node — that's the criterion in action.
+
+<p style="margin:10px 0 0"><b>Underlying tables:</b> <span class="mono">HRP1218</span> (header → TABNR) + <span class="mono">HRT1218</span> (ELEMENT / EXPR_LOW / EXPR_HIGH / REFSTRUCT).</p></div>
+
+<h2>4 · Complete node inventory (live P01)</h2>
+<p class="lead">Not a uniform "2 per company": 1..N nodes per (entity × rule), tiered by amount only where the entity needs it. <span class="tag">Active = members with a future ENDDA today.</span></p>
+<table>
+<tr><th>Rule</th><th>OBJID</th><th>Ent</th><th>Active</th><th>Node (STEXT)</th></tr>
+<tr><td>90000004 COM</td><td>50010052</td><td>UNES</td><td>0</td><td>signatures for all transfers <span class="tag">(→ Coupa)</span></td></tr>
+<tr><td>90000004 COM</td><td>50010054</td><td>UIS</td><td>8</td><td>signatures for all transfers</td></tr>
+<tr><td>90000004 COM</td><td>50010088</td><td>IIEP</td><td>6</td><td>signatures for all transfers</td></tr>
+<tr><td>90000004 COM</td><td>50034894</td><td>UBO</td><td>8</td><td>signatures up to 10.000</td></tr>
+<tr><td>90000004 COM</td><td>50036326</td><td>UIS</td><td>0</td><td>signatures up to 10.000 <span class="tag">(retired)</span></td></tr>
+<tr><td>90000004 COM</td><td>50036737</td><td>UBO</td><td>7</td><td>signatures for transfers over 10.000</td></tr>
+<tr><td>90000004 COM</td><td>50037531</td><td>UIL</td><td>4</td><td>signatures for all transfers</td></tr>
+<tr><td>90000005 INI</td><td>50010051</td><td>UIS</td><td>0</td><td>AP Validation up to 10.000 USD <span class="tag">(retired)</span></td></tr>
+<tr><td>90000005 INI</td><td>50010053</td><td>UIS</td><td>0</td><td>AP Validation up to 5.000.000 USD <span class="tag">(retired)</span></td></tr>
+<tr><td>90000005 INI</td><td>50010075</td><td>UNES</td><td>5</td><td>FAS/PAP/AP Validation to 500.000</td></tr>
+<tr><td>90000005 INI</td><td>50010076</td><td>UNES</td><td>2</td><td>FAS/PAP/AP Validation to 5.000.000</td></tr>
+<tr><td>90000005 INI</td><td>50010077</td><td>UNES</td><td>1</td><td>FAS/PAP/AP Validation to 50.000.000</td></tr>
+<tr><td>90000005 INI</td><td>50010078</td><td>UNES</td><td>6</td><td>TRS Validation up to 50.000.000</td></tr>
+<tr><td>90000005 INI</td><td>50010079</td><td>UNES</td><td>0</td><td>UNESCO bank to bank transfers</td></tr>
+<tr><td>90000005 INI</td><td>50010087</td><td>IIEP</td><td>6</td><td>IIEP Validation</td></tr>
+<tr><td>90000005 INI</td><td>50032363</td><td>UNES</td><td>3</td><td>FAS/PAP/PAY Validation</td></tr>
+<tr><td>90000005 INI</td><td>50034892</td><td>UBO</td><td>8</td><td>Validation up to 10.000 USD</td></tr>
+<tr><td>90000005 INI</td><td>50034893</td><td>UBO</td><td>7</td><td>Validation up up to 5.000.000 USD</td></tr>
+<tr><td>90000005 INI</td><td>50036716</td><td>UNES</td><td>0</td><td>AP Validation up to 10.000.000 USD</td></tr>
+<tr><td>90000005 INI</td><td>50036801</td><td>UIS</td><td>8</td><td>UIS Validation</td></tr>
+<tr><td>90000005 INI</td><td>50037530</td><td>UIL</td><td>5</td><td>UIL Validation</td></tr>
+<tr><td>90000005 INI</td><td>50038878</td><td>UNES</td><td>1</td><td>FAS/PAP/AP Validation to 7.500.000</td></tr>
+<tr><td>90000005 INI</td><td>50038588/89</td><td>—</td><td>0</td><td>BNK_INI_01_01_04 (Generated Rule) <span class="tag">empty stubs</span></td></tr>
+</table>
+<table style="margin-top:10px">
+<tr><th>Entity</th><th>COMMIT</th><th>INI</th><th>Pattern</th></tr>
+<tr><td>UBO</td><td>2</td><td>2</td><td><b>clean 2×2</b>, by amount (≤10K / &gt;10K)</td></tr>
+<tr><td>UIS</td><td>2</td><td>3</td><td>mixed (old tiers now 0)</td></tr>
+<tr><td>IIEP</td><td>1</td><td>1</td><td>single node</td></tr>
+<tr><td>UIL</td><td>1</td><td>1</td><td>single node</td></tr>
+<tr><td>UNES</td><td>1</td><td>9</td><td>many INI tiers; COMMIT → Coupa</td></tr>
+</table>
+
+<h2>5 · Reconciliation &amp; gates</h2>
+<p class="lead"><b>Target</b> = the single agreed panel, split by tier (≤10K-only vs unlimited). <b>Current</b> = live <span class="mono">HRP1001</span> membership (all periods) of the entity's RY nodes. Classify every (node × person):</p>
+<table>
+<tr><th>Condition</th><th>Verdict</th></tr>
+<tr><td>On carton &amp; active in SAP</td><td class="k">keep</td></tr>
+<tr><td>On carton &amp; absent/expired in SAP</td><td class="a">ADD &nbsp;<span class="tag">(current ask if in the letter; otherwise TRS gap)</span></td></tr>
+<tr><td>"Delete" in the letter &amp; active in SAP</td><td class="d">DELIMIT &nbsp;<span class="tag">(current ask)</span></td></tr>
+<tr><td>Active in SAP &amp; on no carton</td><td class="w">over-authorization → DELIMIT &nbsp;<span class="tag">(TRS, old issue)</span></td></tr>
+</table>
+<div class="gate"><b>Completeness gate.</b> Require a current carton for <b>every BCM bank of the entity</b> — the banks that actually produce batches (<span class="mono">BNK_BATCH_HEADER</span>; a subset of <span class="mono">T042A</span>). If any is missing → do <b>NOT</b> flag "SAP-extra" as drift; emit <span class="mono">INCOMPLETE: missing cartons for &lt;HBKID…&gt;</span>.</div>
+<div class="gate" style="border-left-color:var(--coral)"><b style="color:var(--coral)">Alignment gate.</b> All those cartons <b>must be identical</b>. If they diverge → <b>HALT and escalate to TRS</b> — the single entity-level node cannot represent two different panels.</div>
+<div class="warn"><div class="t">⚠ Why the alignment gate exists: the bank panels are not controlled by SAP</div>
+TRS issues a separate letter/carton to each bank, and each bank registers it on its own. SAP holds <b>one</b> panel per entity (all its banks share it), so it physically cannot give Citibank a different signatory list than Banco do Brasil. <b>Nothing in the system detects or prevents two banks of the same entity/country from diverging</b> — that consistency is enforced outside SAP (TRS process / manual). This gate is the only place the routine catches a divergence.</div>
+<div class="note">Tier mapping (validated by Amaral): <b>"up to 10,000 only"</b> → ≤10K nodes only; <b>"unlimited"</b> → all tier nodes of both rules.</div>
+
+<h2>6 · MANDATORY output structure</h2>
+<p class="lead">ONE table, a <b>1:1 mirror</b> of <span class="mono">OOCU_RESP</span> — every <span class="mono">HRP1001</span> row the screen shows (active <b>and</b> expired/red) <b>plus</b> the additions. Columns: <span class="mono">Rule | Node (OBJID) | Node name | PERNR | Person | Live status | Action</span>. Legend: <span class="pill k">✅ keep</span> <span class="pill a">➕ ADD (current ask)</span> <span class="pill d">➖ DELIMIT (current ask)</span> <span class="pill w">⚠️ TRS (old issue)</span> <span class="pill">— no action</span>. Then a net-operations summary split into <b>Current ask</b> (authorized by the letter) vs <b>Old issues</b> (need TRS sign-off).</p>
+
+<h2>7 · The routine (phases) — read-only; DBS executes</h2>
+<table>
+<tr><th>Phase</th><th>What</th><th>How (read-only)</th></tr>
+<tr><td>0 Ingest</td><td>extract PDFs + body from the .eml; detect entity + bank list</td><td>parse .eml</td></tr>
+<tr><td>1 Validate request</td><td>read each carton/letter → {ref, account, effective date, deletes[], adds[], panel[tier]}; cross-check carton PERNR = passport = email id; assert cartons identical</td><td>agent + read PDF</td></tr>
+<tr><td>2 Live state</td><td>read RY nodes + <span class="mono">HRP1001</span> all periods (never a snapshot/screenshot)</td><td><span class="mono">RFC_READ_TABLE</span></td></tr>
+<tr><td>3 Employee validity</td><td><span class="mono">PA0000</span> STAT2=3 · <span class="mono">USR02</span> UFLAG/GLTGB · <span class="mono">PA0002/PA0105</span> for additions</td><td><span class="mono">RFC_READ_TABLE</span></td></tr>
+<tr><td>4 Reconcile</td><td>§5 logic + completeness/alignment gates</td><td>deterministic</td></tr>
+<tr><td>5 Output</td><td>mandatory table §6 + ops spec + TRS reply + <span class="mono">INC-xxxx.md</span></td><td>template</td></tr>
+<tr><td>— Execute</td><td><b>DBS</b> in <span class="mono">OOCU_RESP</span> (P01). The agent never writes P01.</td><td>DBS</td></tr>
+<tr><td>6 Verify</td><td>re-read <span class="mono">HRP1001</span>; refresh <span class="mono">extract_bcm_signatories.py</span>; <span class="mono">bcm_signatory_reconciliation_check.py</span></td><td><span class="mono">RFC_READ_TABLE</span></td></tr>
+</table>
+
+<h2>8 · Example — INC-000011781 (UBO / Renata Ritter)</h2>
+<ul>
+<li>BCM banks: <b>CIT01</b> (the only one producing batches) + BRA01 carton; both cartons received and <b>identical</b> (8 signatories) → rule representable.</li>
+<li>Renata <span class="mono">10021811</span>: confirmed on carton; live → <span class="mono">PA0000</span> STAT2=3 active, <span class="mono">USR02 R_RITTER</span> unlocked (⚠️ validity ends 2026-09-30), email/user match. Still lacks the <span class="mono">BNK_APP</span> role (Security).</li>
+</ul>
+<p class="lead" style="margin-top:8px"><b>Mandatory table — node 50034894 (= the OOCU_RESP screen + the addition), format demo:</b></p>
+<table>
+<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Action</th></tr>
+<tr><td>10002437</td><td>Amaral, Evaney F.</td><td>Active</td><td>Yes (≤10K)</td><td class="k">✅ keep</td></tr>
+<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
+<tr><td>10021100</td><td>Cuba Sanchez, Julio C.</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
+<tr><td>10062474</td><td>Jovchelovitch Noleto, Marlova</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
+<tr><td>10067273</td><td>Otero Gomes, Maria</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
+<tr><td>10081583</td><td>Soares Eon, Fabio</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
+<tr><td>10005016</td><td>Ba, Ismaila</td><td>Active</td><td>No</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td>No</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10097358</td><td>Yli-Hietanen, Anssi</td><td>Expired 26.01.2024</td><td>Yes</td><td class="w">⚠️ re-ADD (TRS)</td></tr>
+<tr><td>10105030</td><td>Gazi, Munim Shahriar Baizid</td><td>Expired 26.01.2024</td><td>No</td><td>— no action</td></tr>
+<tr><td>10108464</td><td>Martin, Von Michael</td><td>Expired 21.03.2023 <span class="tag">(here)</span></td><td>No (delete)</td><td>— (active in 50034893)</td></tr>
+<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td>Not present (new)</td><td>Yes</td><td class="a">➕ ADD</td></tr>
+</table>
+<p class="lead" style="margin-top:10px"><b>Net operations</b></p>
+<table>
+<tr><th>Block</th><th>Op</th><th>PERNR</th><th>Rule</th><th>Node</th></tr>
+<tr><td rowspan="5"><b>Current ask</b><br><span class="tag">REF 3617/3618</span></td><td class="a">ADD</td><td>10021811 Ritter</td><td>90000005</td><td>50034892</td></tr>
+<tr><td class="a">ADD</td><td>10021811 Ritter</td><td>90000005</td><td>50034893</td></tr>
+<tr><td class="a">ADD</td><td>10021811 Ritter</td><td>90000004</td><td>50034894</td></tr>
+<tr><td class="a">ADD</td><td>10021811 Ritter</td><td>90000004</td><td>50036737</td></tr>
+<tr><td class="d">DELIMIT</td><td>10108464 Martin</td><td>90000005</td><td>50034893 <span class="tag">(its only active row)</span></td></tr>
+<tr><td rowspan="3"><b>Old issues</b><br><span class="tag">TRS sign-off</span></td><td class="w">DELIMIT</td><td>10005016 Ba</td><td colspan="2">not on carton (over-auth)</td></tr>
+<tr><td class="w">DELIMIT</td><td>10016038 Carvalho</td><td colspan="2">not on carton (over-auth)</td></tr>
+<tr><td class="w">ADD/confirm</td><td>10097358 Yli-Hietanen</td><td colspan="2">on carton, absent in SAP</td></tr>
+</table>
+<div class="note">+ <b>Security ticket</b>: grant <span class="mono">BNK_APP</span> role (<span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> + signature user <span class="mono">F_STAT_USR</span>) to <span class="mono">R_RITTER</span> — without it she cannot sign even if she is in the node.</div>
+
+<h2>9 · Payment lifecycle (operational flow) + BCM status</h2>
+<p class="lead">How a payment is actually signed and sent (distinct from the <i>selection logic</i> in §3). This is where the nodes/signatories are used in production.</p>
+<div class="stage" style="--ac:var(--blue)"><div class="h">F110 — payment run</div><div class="s">creates payment proposals/groups</div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--blue)"><div class="h">FBPM1 — group into BCM batches</div><div class="s"><span class="mono">BNK_BATCH_HEADER</span>, by <span class="mono">RULE_ID = company code + bank + amount</span></div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--purple)"><div class="h">Workflow 90000003 — batch approval</div><div class="s">• rule <b>90000005</b> (INI) resolves <b>validators</b> → <span class="mono">BNK_APP</span> "Validate" (system signature)<br>• rule <b>90000004</b> (COM) resolves <b>committers</b> → <span class="mono">BNK_APP</span> "Commit"</div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--teal)"><div class="h">DMEE file → SWIFT / Coupa → bank</div><div class="s">payment medium generated and transmitted</div></div>
+<table style="margin-top:10px">
+<tr><th>Status (BNK_BATCH_HEADER.STATUS)</th><th>Meaning</th></tr>
+<tr><td>IBC01 → IBC11 → IBC05 → IBC15</td><td>New → Approved → Sent to bank → Completed</td></tr>
+<tr><td>IBC17 / IBC06 / IBC20</td><td>Failed / Rejected / Reversed</td></tr>
+</table>
+<div class="note"><b>Four-eyes (<span class="mono">F_STAT_USR</span>):</b> the validator cannot be the user who created the F110. <b>Never</b> the same user with <span class="mono">Y_XXXX_FI_AP_PAYMENTS</span> + <span class="mono">YS:FI:M:BCM_MON_APP</span> (= BCM bypass; 2023 incident).</div>
+
+<h2>10 · The 4 payment processes (UBO = Process 3 on Citibank)</h2>
+<table>
+<tr><th>Process</th><th>Description</th><th>BCM</th><th>Entities</th></tr>
+<tr><td>1</td><td>Payment OUTSIDE SAP (AO posts; transfer/check in local banking)</td><td>No</td><td>IBE, MGIE, ICBA, field offices</td></tr>
+<tr><td>2</td><td>F110 + MANUAL file download to the bank portal</td><td>No</td><td>ICTP · <b>UBO / Banco do Brasil</b> · UIL (migrating)</td></tr>
+<tr><td>3</td><td>F110 + BCM + <b>2 validations</b> → Coupa → bank</td><td>Yes</td><td>UIS, IIEP, UIL · <b>UBO / Citibank</b></td></tr>
+<tr><td>4</td><td>F110 + BCM + <b>1 validation</b> → Coupa does the 2nd → bank</td><td>Yes</td><td>UNES (HQ)</td></tr>
+</table>
+<div class="note">This explains two things in the data: (1) <b>UNES has 0 active committers</b> in 90000004 — Coupa does the commit (Process 4); (2) of UBO's banks, <b>only Citibank (CIT01) produces BCM batches</b> (Process 3) → that is why only CIT01 appears in <span class="mono">BNK_BATCH_HEADER</span>. Banco do Brasil (BRA01) is Process 2 (manual download): its carton is <i>legal</i> authority but its payments <b>do not pass through BCM</b>. Gate refinement (§5): the banks that actually feed the signing rule = those that <b>produce batches</b> (<span class="mono">BNK_BATCH_HEADER</span>), not all of <span class="mono">T042A</span>.</div>
+
+<h2>11 · End-to-end across systems (don't lose this)</h2>
+<p class="lead">A signatory change touches <b>4 independent systems/steps</b>; all four must complete for the person to be able to sign. This companion covers the SAP BCM step.</p>
+<div class="stage" style="--ac:var(--gray)"><span class="tagr">TRS</span><div class="h">TRS builds the change</div><div class="s">letter REF FIN.8/MOD + HEPATUS carton ("sign two-by-two") — <b>one per bank</b></div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--blue)"><span class="tagr">external · legal</span><div class="h">Bank registers the carton</div><div class="s">Citibank / Banco do Brasil (each independently — see ⚠ alignment)</div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--purple)"><span class="tagr">Brasília / Amaral</span><div class="h">Role Management (RM, SOAP, CRP app)</div><div class="s">person registered as <span class="mono">BANK_SIGNATORY</span></div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--teal)"><span class="tagr">Pablo → DBS</span><div class="h">SAP BCM — <span class="mono">OOCU_RESP</span></div><div class="s">DBS adds the PERNR to the RY node &nbsp;<b>← THIS companion</b></div></div>
+<div class="arrow">▼</div>
+<div class="stage" style="--ac:var(--coral)"><span class="tagr">SAP Security</span><div class="h">BNK_APP authorization</div><div class="s">role <span class="mono">BCM_MON_APP</span> + signature user <span class="mono">F_STAT_USR</span> on the SAP user</div></div>
+<div class="note">RM (Role Management, CRP/<span class="mono">unescrp</span> side) and SAP BCM are <b>different systems</b>: the carton = legal authority per account; RM = role registration; SAP BCM = operational approval routing per entity. Renata's "not authorized for <span class="mono">BNK_APP</span>" screen is step 4 (Security), separate from the node addition (step 3).</div>
+
+<h2>12 · Workflow → Routine (from manual to automated)</h2>
+<table>
+<tr><th>Stage</th><th>How</th></tr>
+<tr><td>Today (manual)</td><td>the agent reads, validates, reconciles and produces the spec + mandatory table; <b>DBS executes</b>.</td></tr>
+<tr><td>Routine (semi-auto)</td><td><span class="mono">bcm_ingest_letter.py</span> (extract PDFs from the .eml) → agent reads the carton → <span class="mono">bcm_reconcile.py</span> (read live P01 + reconcile + emit mandatory table + spec).</td></tr>
+<tr><td>Config-driven</td><td>a map <span class="mono">entity → {tier → [RY OBJIDs]}</span> (derived from §3/§4) → data-driven, resilient to new nodes.</td></tr>
+<tr><td>Autonomy</td><td><b>(A) assisted</b> — emits spec + draft for review (recommended). <b>(B) auto-draft</b> — runs end-to-end on a dropped .eml and notifies with the finished spec.</td></tr>
+</table>
+<div class="note"><b>Trigger:</b> email "Change in Bank Signatory panel of &lt;ENTITY&gt;". <b>Hard limit:</b> the agent NEVER writes P01 — it only reads (RFC) and produces a spec; DBS executes in <span class="mono">OOCU_RESP</span>.</div>
+
+<h2>13 · Anti-patterns &amp; safeguards</h2>
+<table>
+<tr><th>Risk</th><th>Safeguard</th></tr>
+<tr><td><b>Lookalike nodes:</b> several end in "Validation" and sit adjacent (IIEP 50010087, UIS 50036801, UBO 50034892…). Near-miss INC-000006313 P2: Svein added to IIEP by mistake.</td><td>ALWAYS identify by <b>RY OBJID</b>, never by name. The mandatory table carries OBJID on every row.</td></tr>
+<tr><td><b>Ghost PERNR:</b> a row points to a PERNR with PA0002 but no PA0105/0001 (no SAP user) → the workflow can't route to it → signatory silently disabled.</td><td>Validate the user in <span class="mono">PA0105</span>/<span class="mono">USR02</span> (phase 3). The HEPATUS carton is the authoritative PERNR source.</td></tr>
+<tr><td><b>Screenshots mislead:</b> OOCU_RESP with "Other period" shows/hides expired rows (red X); a person can have an expired + an active row (Martin in 50034893).</td><td>Read <span class="mono">HRP1001</span> <b>all periods, live</b>; never conclude from an image.</td></tr>
+<tr><td><b>Banks not aligned</b> (see ⚠ top): two banks of the same entity with different cartons.</td><td>The <b>alignment gate</b> (§5) — SAP can't catch it, so the routine must. Escalate to TRS.</td></tr>
+<tr><td><b>Stale Gold-DB snapshot.</b></td><td>Refresh <span class="mono">extract_bcm_signatories.py</span> before trusting counts.</td></tr>
+<tr><td><b>Writing to P01.</b></td><td>Forbidden for the agent. Read-only; DBS executes.</td></tr>
+</table>
+
+<h2>14 · SAP reference — where to see what</h2>
+<table>
+<tr><th>I need…</th><th>Transaction / Table</th></tr>
+<tr><td>Maintain nodes and members (DBS executes)</td><td><span class="mono">OOCU_RESP</span></td></tr>
+<tr><td>Node selection criteria</td><td><span class="mono">PP01</span> (RY, infotype 1218) · <span class="mono">HRP1218</span>/<span class="mono">HRT1218</span></td></tr>
+<tr><td>Node members (all periods)</td><td><span class="mono">HRP1001</span> (OTYPE=RY, RELAT=007, SCLAS=P)</td></tr>
+<tr><td>Node catalogue</td><td><span class="mono">HRP1000</span> (OTYPE=RY, SHORT BNK_01_01_03/04)</td></tr>
+<tr><td>Batches (bank, rule, amount)</td><td><span class="mono">BNK_BATCH_HEADER</span> / <span class="mono">BNK_BATCH_ITEM</span></td></tr>
+<tr><td>House banks / BCM banks</td><td><span class="mono">T012</span>/<span class="mono">T012K</span> · F110 routing: <span class="mono">T042A</span></td></tr>
+<tr><td>Employee / user validity</td><td><span class="mono">PA0000</span> (STAT2) · <span class="mono">PA0002</span> · <span class="mono">PA0105</span> · <span class="mono">USR02</span></td></tr>
+<tr><td>Approve / monitor payments</td><td><span class="mono">BNK_APP</span> · <span class="mono">BNK_MONI</span> · auth objects <span class="mono">F_STAT_MON</span>/<span class="mono">F_STAT_USR</span></td></tr>
+</table>
+
+<p class="src"><b>Source:</b> live P01 reads via <span class="mono">RFC_READ_TABLE</span> (<span class="mono">rfc_helpers.get_connection("P01")</span>). Gold-DB tables <span class="mono">bcm_signatory_responsibility/assignment</span> are a derived snapshot (refresh before trusting counts). Sibling document: <span class="mono">knowledge/domains/Treasury/bcm_signatory_change_solution_design.md</span> and skill <span class="mono">sap_payment_bcm_agent</span>. · 2026-06-18.</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basis Monitoring — Visual Companion</title>
+<style>
+:root {
+  --bg: #080c14; --surf: #0d1320; --card: #111827; --card-hover: #162032;
+  --b: #1a2540; --b2: #1e2d4a; --txt: #dde5f5; --mu: #4c6490; --mu2: #7892c0;
+  --acc: #4f8ef7; --grn: #22c55e; --pur: #a78bfa; --org: #fb923c; --cyan: #22d3ee;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Layout */
+header { padding: 20px 40px; background: var(--surf); border-bottom: 1px solid var(--b); display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-size: 1.5em; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; }
+header h1 span.domain { font-size: 0.6em; text-transform: uppercase; background: rgba(79,142,247,0.15); color: var(--acc); padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
+header p.desc { color: var(--mu2); font-size: 0.9em; margin-top: 4px; }
+.back-btn { text-decoration: none; color: var(--mu2); font-size: 0.9em; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--b); border-radius: 8px; background: var(--card); transition: all 0.2s; }
+.back-btn:hover { color: #fff; border-color: var(--acc); background: rgba(79,142,247,0.05); }
+
+.main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+/* Canvas styling */
+.canvas-container { flex: 1; overflow: auto; background: radial-gradient(circle at center, #0b111e 0%, #080c14 100%); position: relative; padding: 40px; display: flex; justify-content: center; align-items: center; }
+svg.diagram { min-width: 890px; min-height: 590px; display: block; }
+
+/* SVG Elements Styling */
+.node-group { cursor: pointer; }
+.node-rect { transition: all 0.25s ease; }
+.node-group:hover .node-rect { stroke-width: 3px; filter: drop-shadow(0 0 12px var(--glow-color)); }
+.link-path { stroke-dasharray: 4; stroke-dashoffset: 0; animation: dash 20s linear infinite; opacity: 0.6; transition: all 0.25s; }
+.link-path:hover { opacity: 1; stroke-width: 3px; stroke-dasharray: 0; }
+
+/* Inspector Side Panel */
+.inspector { width: 360px; background: var(--surf); border-left: 1px solid var(--b); padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; z-index: 10; }
+.inspector h3 { font-size: 1.2em; font-weight: 700; color: #fff; padding-bottom: 12px; border-bottom: 1px solid var(--b); }
+.inspector-details { color: var(--mu2); font-size: 0.9em; line-height: 1.6; flex: 1; }
+.inspector-details strong { color: var(--txt); }
+.inspector-placeholder { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--mu); text-align: center; font-style: italic; font-size: 0.95em; border: 1px dashed var(--b); border-radius: 12px; }
+
+/* Metrics Bar */
+.metrics-bar { display: flex; gap: 16px; padding: 12px 40px; background: var(--surf); border-top: 1px solid var(--b); }
+.metric-card { background: var(--card); border: 1px solid var(--b); border-radius: 8px; padding: 8px 16px; display: flex; flex-direction: column; justify-content: center; }
+.metric-card .mv { font-size: 1.2em; font-weight: 800; color: var(--acc); font-family: 'Consolas', monospace; }
+.metric-card .ml { font-size: 0.65em; color: var(--mu); text-transform: uppercase; letter-spacing: 0.05em; }
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Basis Monitoring <span class="domain">SUPPORT</span></h1>
+    <p class="desc">Technical operational intelligence dashboard mapping active users, background jobs, batch inputs, and runtime dumps in P01.</p>
+  </div>
+  <a href="unesco_sap_landing.html" class="back-btn">&larr; Back to Landing Page</a>
+</header>
+
+<div class="main-container">
+  <div class="canvas-container">
+    <svg class="diagram" viewBox="0 0 890 590" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#4c6490" />
+        </marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#4f8ef7" />
+        </marker>
+      </defs>
+
+      <!-- Connection Lines -->
+      
+    <path d="M 260 280 H 310.0 V 80 H 360" fill="none" stroke="#4f8ef7" stroke-width="2" class="link-path link-from-SYSTEM:P01 link-to-SM04:Users" marker-end="url(#arrow)" />
+    <path d="M 260 280 H 310.0 V 180 H 360" fill="none" stroke="#4f8ef7" stroke-width="2" class="link-path link-from-SYSTEM:P01 link-to-SM37:Jobs" marker-end="url(#arrow)" />
+    <path d="M 260 280 H 310.0 V 280 H 360" fill="none" stroke="#4f8ef7" stroke-width="2" class="link-path link-from-SYSTEM:P01 link-to-SM35:BDC" marker-end="url(#arrow)" />
+    <path d="M 260 280 H 310.0 V 380 H 360" fill="none" stroke="#4f8ef7" stroke-width="2" class="link-path link-from-SYSTEM:P01 link-to-ST22:Dumps" marker-end="url(#arrow)" />
+    <path d="M 260 280 H 310.0 V 480 H 360" fill="none" stroke="#4f8ef7" stroke-width="2" class="link-path link-from-SYSTEM:P01 link-to-REPOSRC:Code" marker-end="url(#arrow)" />
+    <path d="M 540 80 H 590.0 V 280 H 640" fill="none" stroke="#34d399" stroke-width="2" class="link-path link-from-SM04:Users link-to-MONITOR:Dashboard" marker-end="url(#arrow)" />
+    <path d="M 540 180 H 590.0 V 280 H 640" fill="none" stroke="#a78bfa" stroke-width="2" class="link-path link-from-SM37:Jobs link-to-MONITOR:Dashboard" marker-end="url(#arrow)" />
+    <path d="M 540 280 H 590.0 V 280 H 640" fill="none" stroke="#fb923c" stroke-width="2" class="link-path link-from-SM35:BDC link-to-MONITOR:Dashboard" marker-end="url(#arrow)" />
+    <path d="M 540 380 H 590.0 V 280 H 640" fill="none" stroke="#ef4444" stroke-width="2" class="link-path link-from-ST22:Dumps link-to-MONITOR:Dashboard" marker-end="url(#arrow)" />
+    <path d="M 540 480 H 590.0 V 280 H 640" fill="none" stroke="#22d3ee" stroke-width="2" class="link-path link-from-REPOSRC:Code link-to-MONITOR:Dashboard" marker-end="url(#arrow)" />
+
+      <!-- Nodes -->
+      
+    <g class="node-group" id="node-SYSTEM:P01" onclick="inspectNode('SYSTEM:P01')" data-details="System ID: P01\nClient: 350 Client\nHost: 172.16.4.100:00\nAuth Channel: SNC/SSO (Kerberos)\nState: Online">
+      <rect x="80" y="240" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(79, 142, 247, 0.08)" stroke="#4f8ef7" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #4f8ef722); --glow-color: rgba(79, 142, 247, 0.4)" />
+      <g transform="translate(80, 240)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">P01 SAP</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Production</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-SM04:Users" onclick="inspectNode('SM04:Users')" data-details="RFC: TH_USER_LIST\nFallback: USR02 Table\nActive Sessions: 124 Dialogs\nDialogless sessions: Tracked">
+      <rect x="360" y="40" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(34, 197, 94, 0.08)" stroke="#22c55e" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #22c55e22); --glow-color: rgba(34, 197, 94, 0.4)" />
+      <g transform="translate(360, 40)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Active Users</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">(SM04)</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-SM37:Jobs" onclick="inspectNode('SM37:Jobs')" data-details="Table: TBTCO\nActive Jobs: 18\nPeriodic Jobs: 142\nFailures (24h): 2">
+      <rect x="360" y="140" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(167, 139, 250, 0.08)" stroke="#a78bfa" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #a78bfa22); --glow-color: rgba(167, 139, 250, 0.4)" />
+      <g transform="translate(360, 140)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Background</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Jobs (SM37)</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-SM35:BDC" onclick="inspectNode('SM35:BDC')" data-details="Table: APQI\nClearing Rate: 98.4%\nAllos replacement targets: 89 sessions\nStatus: Monitored">
+      <rect x="360" y="240" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(251, 146, 60, 0.08)" stroke="#fb923c" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #fb923c22); --glow-color: rgba(251, 146, 60, 0.4)" />
+      <g transform="translate(360, 240)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Batch Inputs</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">(SM35)</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-ST22:Dumps" onclick="inspectNode('ST22:Dumps')" data-details="Table: SNAP\nADT REST: /runtime/dumps\nToday's Dumps: 3\nCritical Exceptions: 0">
+      <rect x="360" y="340" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(239, 68, 68, 0.08)" stroke="#ef4444" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #ef444422); --glow-color: rgba(239, 68, 68, 0.4)" />
+      <g transform="translate(360, 340)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Runtime Dumps</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">(ST22)</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-REPOSRC:Code" onclick="inspectNode('REPOSRC:Code')" data-details="Table: REPOSRC\nObsolete Programs (>12m): 1,245\nRepository changes (24h): 14">
+      <rect x="360" y="440" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(34, 211, 238, 0.08)" stroke="#22d3ee" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #22d3ee22); --glow-color: rgba(34, 211, 238, 0.4)" />
+      <g transform="translate(360, 440)">
+        <text x="90" y="37" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">Repository</text><text x="90" y="55" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">(REPOSRC)</text>
+      </g>
+    </g>
+    <g class="node-group" id="node-MONITOR:Dashboard" onclick="inspectNode('MONITOR:Dashboard')" data-details="Script: sap_system_monitor.py\nDual-channel: RFC + ADT REST\nVPN Guard: ConnectionGuard active\nIntegration: Brain ANOMALY nodes">
+      <rect x="640" y="240" width="180" height="80" rx="10" ry="10" 
+            fill="rgba(52, 211, 153, 0.08)" stroke="#34d399" stroke-width="2" class="node-rect"
+            style="filter: drop-shadow(0 0 4px #34d39922); --glow-color: rgba(52, 211, 153, 0.4)" />
+      <g transform="translate(640, 240)">
+        <text x="90" y="45" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="Segoe UI, sans-serif">System Monitor</text>
+      </g>
+    </g>
+    </svg>
+  </div>
+
+  <div class="inspector">
+    <h3>Object Inspector</h3>
+    <div id="inspector-content">
+      <div class="inspector-placeholder">Click any node in the flow diagram to inspect its metadata, related tables, and system dependencies.</div>
+    </div>
+  </div>
+</div>
+
+<div class="metrics-bar">
+  
+      <div class="metric-card">
+        <div class="mv">124</div>
+        <div class="ml">Active Users</div>
+      </div>
+      <div class="metric-card">
+        <div class="mv">2</div>
+        <div class="ml">Failures (24h)</div>
+      </div>
+      <div class="metric-card">
+        <div class="mv">3</div>
+        <div class="ml">Dumps Today</div>
+      </div>
+      <div class="metric-card">
+        <div class="mv">1,245</div>
+        <div class="ml">Obsolete Progs</div>
+      </div>
+</div>
+
+<script>
+function inspectNode(nodeId) {
+  const g = document.getElementById('node-' + nodeId);
+  const details = g.getAttribute('data-details');
+  const rect = g.querySelector('.node-rect');
+  const strokeColor = rect.getAttribute('stroke');
+  const label = g.querySelector('text').textContent;
+
+  // Highlight connections connected to this node
+  document.querySelectorAll('.link-path').forEach(link => {
+    link.style.opacity = 0.1;
+    link.style.strokeWidth = 2;
+  });
+  
+  // Highlight outgoing
+  document.querySelectorAll('.link-from-' + nodeId).forEach(link => {
+    link.style.opacity = 1;
+    link.style.stroke = '#4f8ef7';
+    link.style.strokeWidth = 3;
+    link.setAttribute('marker-end', 'url(#arrow-active)');
+  });
+
+  // Highlight incoming
+  document.querySelectorAll('.link-to-' + nodeId).forEach(link => {
+    link.style.opacity = 1;
+    link.style.stroke = '#a78bfa';
+    link.style.strokeWidth = 3;
+    link.setAttribute('marker-end', 'url(#arrow-active)');
+  });
+
+  // Format details as HTML
+  let detailsHtml = `
+    <div style="margin-bottom:16px;">
+      <span style="font-size:0.75em; text-transform:uppercase; background:rgba(255,255,255,0.05); color:${strokeColor}; padding:3px 8px; border-radius:4px; font-weight:600; border: 1px solid ${strokeColor}33;">${nodeId.split(':')[0] || 'OBJECT'}</span>
+      <h4 style="font-size:1.4em; font-weight:800; color:#fff; margin-top:8px;">${label}</h4>
+    </div>
+  `;
+  
+  if (details) {
+    // Split key-value pairs or paragraphs
+    const paragraphs = details.split('\n');
+    paragraphs.forEach(p => {
+      if (p.includes(':')) {
+        const [k, v] = p.split(':', 1);
+        const rest = p.substring(k.length + 1);
+        detailsHtml += `<p style="margin-bottom:8px;"><strong>${k}:</strong> ${rest}</p>`;
+      } else {
+        detailsHtml += `<p style="margin-bottom:12px;">${p}</p>`;
+      }
+    });
+  } else {
+    detailsHtml += `<p style="font-style:italic; color:var(--mu);">No additional details specified for this object node.</p>`;
+  }
+
+  document.getElementById('inspector-content').innerHTML = detailsHtml;
+}
+
+// Reset highlights on background click
+document.querySelector('.canvas-container').addEventListener('click', function(e) {
+  if (e.target.tagName === 'svg' || e.target.classList.contains('canvas-container')) {
+    document.querySelectorAll('.link-path').forEach(link => {
+      link.style.opacity = 0.6;
+      link.style.stroke = '#4c6490';
+      link.style.strokeWidth = 2;
+      link.setAttribute('marker-end', 'url(#arrow)');
+    });
+    document.getElementById('inspector-content').innerHTML = `
+      <div class="inspector-placeholder">Click any node in the flow diagram to inspect its metadata, related tables, and system dependencies.</div>
+    `;
+  }
+}, true);
+</script>
+</body>
+</html>
