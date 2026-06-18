@@ -10,6 +10,7 @@
 **System**: P01
 **Related domain**: Treasury / BCM Signatory Management
 **Related rule**: [knowledge/domains/Treasury/bcm_signatory_rules.md](../domains/Treasury/bcm_signatory_rules.md)
+**See also**: [bcm_signatory_change_solution_design.md](../domains/Treasury/bcm_signatory_change_solution_design.md) (3-level model + node selection IT1218 + routine) · companion `companions/bcm_signatory_companion.html` · successor incident [INC-000011781](INC-000011781_ubo_bcm_add_ritter.md) (UBO / Renata Ritter)
 
 ---
 

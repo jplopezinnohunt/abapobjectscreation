@@ -1,0 +1,151 @@
+# BCM Signatory-Change — Solution & Routine Design (schema + flow + procedure)
+
+**Status**: design, v1.1 — 2026-06-17 (added node-selection flow)
+**Origin incident**: INC-000011781 (UBO / add Renata Ritter)
+**Source of every fact below**: **live P01 reads via `RFC_READ_TABLE`** (`rfc_helpers.get_connection("P01")`). NOT screenshots — screenshots are not authoritative (period filters hide rows; OCR is unreliable). P01 is **read-only** for the agent; changes are executed by DBS in `OOCU_RESP`.
+**Related**: [`bcm_signatory_rules.md`](bcm_signatory_rules.md) · skill `sap_payment_bcm_agent` (Reconciliation Protocol, Step 7 mandatory output)
+
+---
+
+## 1. Purpose
+Standard, repeatable solution for "Change in Bank Signatory panel of <ENTITY>" incidents: validate the TRS letter/carton, read the **real** current SAP state from P01, reconcile, and produce a DBS change-spec + TRS reply — separating the **current ask** from **old issues**.
+
+---
+
+## 2. Data model — THREE levels (the schema)
+
+```
+LEVEL 1  ENTITY  (company code, e.g. UBO)  ── the scoping key for signatory nodes
+            │
+   ┌────────┴───────────────────────────────────────────────┐
+   │                                                          │
+LEVEL 2  BANKS (per entity)                       LEVEL 3  SIGNATORY NODES (per entity)
+   from T012/T012K                                    PD objects OTYPE='RY'
+   each house bank account                            key = (ENTITY × RULE × AMOUNT-TIER)
+   has ITS OWN carton (legal authority)               bank-AGNOSTIC people-buckets
+   BCM-routed banks = those in T042A                  members = HRP1001 RELAT='007' SCLAS='P'
+```
+
+- **Level 1 — Entity** = SAP company code (`ZBUKR`). This is what scopes the signatory nodes.
+- **Level 2 — Banks** = `T012`/`T012K` house banks of the company code. Each **bank account** has its own *carton des signatures* (account-level legal authority). The banks that actually reach BCM are the ones in **`T042A`** (F110 payment path). Banks **not** in `T042A` (collection/manual) never produce a BCM batch.
+- **Level 3 — Nodes** = `RY` responsibility objects, keyed by **entity + amount band** (selection logic in §3a). Their selection criteria live in **infotype 1218** (`HRP1218`/`HRT1218`) as expressions on the standard BCM structure `BNK_STR_BATCH_REL_APPR` — **NOT** in the generic PFAC `HRP1222` (which is empty here). Members live in `HRP1001` (`RELAT='007' SCLAS='P' SOBID=PERNR`, with `BEGDA/ENDDA`).
+
+### Two "rules" — only one is bank-aware
+| Concept | Keyed on | Bank-aware? | Table |
+|---|---|---|---|
+| Batch-grouping rule (`RULE_ID`, e.g. `UBO_AP_ST/MAX`) | company code + house bank + amount | **YES** | `BNK_BATCH_HEADER` (`ZBUKR`,`HBKID`,`RULE_ID`) |
+| Signatory rule `90000005` (BNK_INI / Validate) | entity + amount tier | **NO** | RY nodes via workflow 90000003 |
+| Approval rule `90000004` (BNK_COM / Commit) | entity + amount tier | **NO** | RY nodes via workflow 90000003 |
+
+---
+
+## 3. The flow — bank → rule → node (how SAP picks the signatories)
+
+```
+Bank (CIT01 / BRA01 / …)  ── only decides which BATCH is built
+        ▼
+BCM batch  RULE_ID=UBO_AP_ST/MAX  carries  ZBUKR=UBO + HBKID + amount
+        ▼
+workflow 90000003  →  approval procedure picks the AMOUNT tier
+        ▼
+scoped by ENTITY (ZBUKR=UBO), NOT by bank:
+   90000005 INI  ≤10K (50034892)   ≤5M (50034893)
+   90000004 COM  ≤10K (50034894)   >10K (50036737)
+        =  people-buckets (members = HRP1001). Selection criteria in IT1218 — see §3a.
+```
+
+### 3a. Node selection — WHERE the logic lives (verified live in P01, infotype 1218)
+
+It is **not** the generic PFAC criteria mechanism (`HRP1222` is empty). The selection criteria sit on each `RY` node in **infotype 1218**: `HRP1218` (header → `TABNR`) → `HRT1218` (expression rows), as **expressions evaluated against the standard BCM container structure `BNK_STR_BATCH_REL_APPR`**. At approval time the generated rule (`BNK_INI_01_01_04` / `BNK_COM_01_01_03`) evaluates each responsibility's 1218 expression against the batch's release-approval structure and returns the people of the node that matches.
+
+Exact criteria read live from `HRT1218`:
+
+| Node | Rule | `ZBUKR` | `MAXPAYAMT_RULECURR` | `RULE_ID` |
+|---|---|---|---|---|
+| 50034892 | 90000005 INI | UBO | 0 – 10 000 | UBO_AP_MAX |
+| 50034893 | 90000005 INI | UBO | 10 000 – 5 000 000 | UBO_AP_ST |
+| 50034894 | 90000004 COM | UBO | 0 – 10 000 | — |
+| 50036737 | 90000004 COM | UBO | 10 000 – 50 000 000 | — |
+
+**Runtime selection key = `ZBUKR` (entity) + `MAXPAYAMT_RULECURR` (amount band)** (+ `RULE_ID` on the INI nodes). There is **no `HBKID`/bank field anywhere in the criteria** → confirms bank-agnostic node selection. It IS standard BCM (the *Approval Procedure* customizing generates the rule and writes these IT1218 expressions); it only *looked* non-standard because it bypasses the usual PFAC/`HRP1222` path. The amount thresholds (10 000 / 5 000 000 / 50 000 000) are the BCM approval-procedure amount levels.
+
+**Consequence (the invariant):** because the node is chosen by **company code + amount** and never by bank, **all of an entity's BCM banks share the same node set (N banks : 1 node set)**. Therefore **every BCM-routed bank's carton for that entity MUST list the same people** — otherwise the single node would over-authorize the stricter bank. SAP on ECC cannot model per-bank signatories. → If two cartons of the same entity diverge, HALT and escalate to TRS (rule not representable).
+
+---
+
+## 4. Complete node inventory (live P01, 2026-06-17)
+
+Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule), tiered by amount only where needed.
+
+| Entity | COMMIT nodes (90000004) | INI nodes (90000005) | Pattern |
+|---|---|---|---|
+| **UBO** | 50034894 ≤10K · 50036737 >10K | 50034892 ≤10K · 50034893 ≤5M | **clean 2×2, amount-tiered** |
+| UIS | 50010054 all · 50036326 ≤10K(0) | 50010051(0) · 50010053(0) · 50036801 | mixed; old tiers retired |
+| IIEP | 50010088 all | 50010087 | single node |
+| UIL | 50037531 all | 50037530 | single node |
+| UNES | 50010052 (0 — Coupa) | 50010075/76/77/78/79 · 50032363 · 50036716(0) · 50038878 | many INI tiers; COMMIT→Coupa |
+| (stubs) | — | 50038588 / 50038589 (empty "Generated Rule") | ignore |
+
+`(0)` = zero active members today (delimited/retired). Full per-node active counts: see `full_inventory.py` output / `bcm_signatory_responsibility` + live `HRP1001`.
+
+---
+
+## 5. Reconciliation logic + completeness gate
+
+```
+BCM banks of entity  := banks of the company code present in T042A     (NOT all T012K)
+require: a current carton for EACH BCM bank        ── completeness gate
+assert : all those cartons are IDENTICAL           ── alignment gate (else HALT → TRS)
+target := that single agreed panel, split by tier  (≤10K-only vs unlimited)
+current:= live HRP1001 membership of the entity's RY nodes (all periods)
+reconcile per (node × person):
+   on carton & active in SAP            → keep
+   on carton & absent/expired in SAP    → ADD  (current ask if in letter; else TRS gap)
+   in letter "delete" & active in SAP   → DELIMIT (current ask)
+   active in SAP & not on any carton     → over-auth → DELIMIT (TRS, old issue)
+GATE: if any BCM bank lacks a current carton → DO NOT flag "SAP-extra" as drift;
+      emit "INCOMPLETE: missing cartons for <HBKID…>".
+```
+Tier mapping (validated by Amaral): **"≤10K only"** → ≤10K nodes only; **"unlimited"** → all tier nodes of both rules.
+
+---
+
+## 6. MANDATORY output structure (locked 2026-06-17)
+
+ONE table, mirroring `OOCU_RESP` **1:1** — every `HRP1001` row the screen shows (active **and** expired/red-X) **plus** the additions. Columns:
+
+`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Live status (HRP1001) | Action`
+
+- **Live status** = `Active` / `Expired <ENDDA>` / `New`. Include expired rows (action `—`, no action) so the table matches the SAP screen and never looks like a mismatch.
+- Membership = live `HRP1001` read, **all periods** (resolve multi-period people — e.g. an expired + an active row in the same node).
+- Legend: ✅ keep · ➕ ADD (current ask) · ➖ DELIMIT (current ask) · ⚠️ TRS (old issue, needs sign-off) · — no action.
+- Follow with **net-operations summary**, split: **Current ask** (authorized by REF) vs **Old issues — hold for TRS**.
+- Rule + OBJID + Node name on every row (lookalike-group safeguard).
+
+---
+
+## 7. The routine (phases) — read-only; DBS executes
+
+| Phase | What | How (read-only) |
+|---|---|---|
+| 0 Ingest | extract PDFs + body from the .eml; detect entity + bank list | `parse_eml`/`extract_attach` |
+| 1 Validate request | read each carton/letter → {ref, account, effective_date, deletes[], adds[], panel[tier]}; cross-check carton PERNR = passport = email-id; assert all cartons identical | agent + PDF read |
+| 2 Live state | read RY nodes of the entity + `HRP1001` all periods; never a stale snapshot/screenshot | `RFC_READ_TABLE` |
+| 3 Employee validity | `PA0000` STAT2=3, `USR02` UFLAG/GLTGB, `PA0002`/`PA0105` for adds (esp. new) | `RFC_READ_TABLE` |
+| 4 Reconcile | §5 logic + completeness/alignment gates | deterministic |
+| 5 Output | §6 mandatory table + net-ops spec + TRS reply + `INC-xxxx.md` | templated |
+| — Execute | **DBS** in `OOCU_RESP` (P01). Agent never writes P01. | DBS |
+| 6 Verify | re-read `HRP1001`; refresh `extract_bcm_signatories.py`; `bcm_signatory_reconciliation_check.py` | `RFC_READ_TABLE` |
+
+---
+
+## 8. Worked example — INC-000011781 (UBO / Renata Ritter)
+- BCM banks (T042A): **CIT01 + BRA01**; both cartons received and **identical** (8 signatories) → rule representable.
+- Renata `10021811` confirmed on carton; live: `PA0000` STAT2=3 active, `USR02 R_RITTER` unlocked (⚠️ validity ends 2026-09-30), `PA0105` user/email match. Still lacks `BNK_APP` role (Security).
+- **Current ask:** ADD `10021811` to all 4 UBO nodes; DELIMIT `10108464` Martin in **50034893** (his only active period — verified via all-periods read; screenshot hid it).
+- **Old issues (TRS):** Ba `10005016` + De Sousa Carvalho `10016038` (active, not on carton → over-auth); Yli-Hietanen `10097358` (on carton, expired 2024 in SAP → gap); Gazi `10105030` (expired, no action).
+
+---
+
+## 9. Data sources used (all live P01)
+`HRP1000`, `HRP1001` (all periods), **`HRP1218`/`HRT1218` (node-selection criteria = expressions on `BNK_STR_BATCH_REL_APPR`: `ZBUKR` + `MAXPAYAMT_RULECURR` + `RULE_ID`)**, `HRP1222`/`HRP1230` (empty — confirms selection is NOT via the PFAC path), `BNK_BATCH_HEADER`, `T012`/`T012K`, `T042A`, `PA0000`, `PA0002`, `PA0105`, `USR02`, `DD02L`/`DD03L`. Gold-DB tables `bcm_signatory_responsibility`/`bcm_signatory_assignment` are a **derived snapshot** (refresh before relying on counts).

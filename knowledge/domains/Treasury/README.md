@@ -61,6 +61,19 @@ TREASURY (BFM-TRS)
 | [house_bank_configuration.md](house_bank_configuration.md) | Full 13-step house bank config procedure + ECO09 patterns | This folder |
 | [bank_statement_ebs_architecture.md](bank_statement_ebs_architecture.md) | EBS architecture: MT940 → posting → clearing | This folder |
 | [payment_full_landscape.md](payment_full_landscape.md) | Payment landscape: F110, BCM, FBZP, DMEE | This folder |
+| [bcm_signatory_rules.md](bcm_signatory_rules.md) | **BCM signatory rules 90000004/5** — RY nodes, members, change process via OOCU_RESP | This folder |
+| [bcm_signatory_change_solution_design.md](bcm_signatory_change_solution_design.md) | **Signatory-change solution & routine** — 3-level model, node selection (IT1218), reconciliation, mandatory output | This folder |
+
+## BCM Signatory Panel Management (hub)
+
+> Entry point for any **"Change in Bank Signatory panel of &lt;ENTITY&gt;"** request (TRS → DBS). This knowledge was hard to find before — this block links it all.
+
+- **Rules / data model:** [bcm_signatory_rules.md](bcm_signatory_rules.md) — RY nodes 90000004 (commit) / 90000005 (validate), members in `HRP1001`, change process via `OOCU_RESP`.
+- **Solution & routine (read first):** [bcm_signatory_change_solution_design.md](bcm_signatory_change_solution_design.md) — 3-level model (entity→banks→nodes), **node selection in IT1218** (`HRP1218`/`HRT1218` expressions on `BNK_STR_BATCH_REL_APPR`: ZBUKR + amount band, never bank), reconciliation + gates, mandatory output table.
+- **Companion (visual):** `companions/bcm_signatory_companion.html`.
+- **Skill (routing):** `.agents/skills/sap_payment_bcm_agent/` — Reconciliation Protocol + mandatory output (Step 7).
+- **Incidents:** [INC-000006313](../../incidents/INC-000006313_uis_bcm_add_voffal.md) (UIS, precedent) · [INC-000011781](../../incidents/INC-000011781_ubo_bcm_add_ritter.md) (UBO / Renata Ritter).
+- **Key facts:** node = entity × amount-tier people-bucket, **bank-agnostic**; selection by ZBUKR + amount (IT1218), never by bank; P01 is **read-only** for the agent — DBS executes in `OOCU_RESP`.
 
 ## Skills
 
@@ -81,6 +94,7 @@ TREASURY (BFM-TRS)
 | `bank_statement_ebs_companion.html` | 84KB | EBS / Bank Reconciliation | `Zagentexecution/mcp-backend-server-python/` |
 | `epiuse_companion.html` | 32KB | Bank Data Migration | `Zagentexecution/mcp-backend-server-python/` |
 | `payment_process_mining.html` | 680KB | Payment E2E Process Mining | `Zagentexecution/mcp-backend-server-python/` |
+| `bcm_signatory_companion.html` | 27KB | **BCM signatory panel change** (flow + IT1218 selection + routine + anti-patterns) | `companions/` |
 
 ## Automation Scripts
 
