@@ -4,11 +4,54 @@ from typing import Any
 from pyrfc import Connection, RFCError
 from mcp.server.fastmcp import FastMCP
 
+# ADT RFC client (replaces sap_adt_client.py HTTP stack)
+# Proven on ECC EhP8 D01: SADT_REST_RFC_ENDPOINT exists and works.
+# Zero HTTP plumbing — same pyrfc auth as all other tools.
+from sap_adt_rfc_client import SapAdtRfcClient, AdtRfcError
+
 # Load SAP credentials from .env
 load_dotenv()
 
 # Initialize FastMCP server
 mcp = FastMCP("SAP_Backend_MCP")
+
+# ── ADT RFC client cache (one persistent connection per system) ───────────────
+_adt_clients: dict = {}
+
+
+def get_adt_client(system_id: str = "D01") -> SapAdtRfcClient:
+    """
+    Return cached SapAdtRfcClient for the given system.
+    Creates+warms up a new client on first call per system_id.
+    If the connection is stale, reconnects automatically.
+    """
+    global _adt_clients
+
+    if system_id in _adt_clients:
+        return _adt_clients[system_id]
+
+    dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+    load_dotenv(dotenv_path)
+
+    prefix = f"SAP_{system_id}_"
+
+    def _get(key, default=None):
+        return (os.getenv(prefix + key)
+                or os.getenv("SAP_" + key)
+                or default)
+
+    conn = Connection(
+        ashost=_get("ASHOST"),
+        sysnr=_get("SYSNR"),
+        client=_get("CLIENT"),
+        user=_get("USER"),
+        passwd=_get("PASSWD") or _get("PASSWORD"),
+        lang="EN",
+    )
+    client = SapAdtRfcClient(conn)
+    client._warmup()  # Required on ECC EhP8: initializes ADT HTTP session context
+    _adt_clients[system_id] = client
+    return client
 
 def get_sap_connection(system_id="D01") -> Connection:
     """Establish and return a connection to the SAP backend.
@@ -148,8 +191,15 @@ def get_abap_source(object_name: str, object_type: str = "PROG", system_id: str 
             return "\n".join([line.get("LINE", "") for line in lines])
             
         elif object_type == "CLAS":
-            return f"Retrieval for {object_type} (Classes) requires method-specific selection via SEO* tables or similar BAPIs."
-            
+            # Use ADT RFC client — works natively for classes via SADT_REST_RFC_ENDPOINT
+            try:
+                adt = get_adt_client(system_id)
+                source = adt.read_source("CLASS", object_name)
+                lines = source.splitlines()
+                return f"Class {object_name} ({system_id}): {len(lines)} lines\n\n{source}"
+            except AdtRfcError as e:
+                return f"ADT Error {e.status} {e.reason}: {e.body[:300]}"
+
         return f"Retrieval for {object_type} not yet implemented."
     except Exception as e:
         return f"Error reading source: {str(e)}"
@@ -282,6 +332,208 @@ def brain_stats() -> str:
     for t, c in list(s["edge_types"].items())[:10]:
         lines.append(f"  {t}: {c:,}")
     return "\n".join(lines)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ADT RFC TOOLS — Source read/write/activate via SADT_REST_RFC_ENDPOINT
+#  Replaces the old sap_adt_client.py HTTP/CSRF/cookie approach.
+#  No CSRF tokens. No cookie jars. No SSL config. Pure RFC.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _adt_guard(system_id: str) -> str:
+    """Return error string if system is not D01, else empty string."""
+    if system_id.upper() != "D01":
+        return (f"ADT tools operate on D01 (development) only. "
+                f"For P01 use read_sap_table / search_abap_objects for data and logs.")
+    return ""
+
+
+def _adt_call(fn, system_id: str, *args, **kwargs):
+    """
+    Call an ADT client method with automatic reconnect on stale connection.
+    Returns the method result.
+    """
+    try:
+        adt = get_adt_client(system_id)
+        return getattr(adt, fn)(*args, **kwargs)
+    except AdtRfcError:
+        raise
+    except Exception:
+        # Stale connection — clear and retry once
+        _adt_clients.pop(system_id, None)
+        adt = get_adt_client(system_id)
+        return getattr(adt, fn)(*args, **kwargs)
+
+
+@mcp.tool()
+def adt_read_source(object_name: str, object_type: str = "CLASS") -> str:
+    """Read ABAP source code from D01 development system.
+
+    Supports ALL object types: CLASS, PROG, INTF, INCLUDE, FUGR, TABL, DTEL, DOMA, ENHO.
+
+    Strategy (automatic):
+      1. ADT via SADT_REST_RFC_ENDPOINT (indexed objects in proper packages)
+      2. RFC fallback via CLIF_GET_SOURCE / SIW_RFC_READ_REPORT (for $TMP local package)
+
+    So $TMP objects are supported — the client tries ADT first, falls back to RFC on 404.
+
+    Args:
+        object_name: Object name (e.g. 'ZCL_FI_ACCOUNT_SUBST', 'YCL_FI_ACC_DOCUMENT_ARGA').
+        object_type: CLASS, PROG, INTF, INCLUDE, FUGR, TABL, DTEL, DOMA, ENHO.
+
+    For P01 data/logs use read_sap_table instead.
+    """
+    try:
+        source = _adt_call("read_source", "D01", object_type, object_name)
+        lines = source.splitlines()
+        return (f"Source {object_type}/{object_name} (D01): {len(lines)} lines\n\n"
+                + source)
+    except AdtRfcError as e:
+        return f"ADT {e.status} {e.reason}: {e.body[:500]}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+@mcp.tool()
+def adt_object_info(object_name: str, object_type: str = "CLASS") -> str:
+    """Look up an ABAP object in TADIR (D01).
+
+    Returns package, author, creation date — and whether it's in $TMP.
+    Use this to diagnose why adt_read_source returns 404.
+
+    Args:
+        object_name: Object name to check (e.g. 'YCL_FI_ACC_DOCUMENT_ARGA').
+        object_type: TADIR object type: CLASS, PROG, INTF, FUGR, TABL, DTEL, DOMA, ENHO.
+    """
+    try:
+        info = _adt_call("check_tadir", "D01", object_type, object_name)
+        if not info.get("found"):
+            return (f"{object_type}/{object_name} — NOT FOUND in TADIR (D01).\n"
+                    f"Object may not exist, or check the type.")
+        pkg = info['package']
+        is_tmp = info['is_tmp']
+        lines = [
+            f"TADIR info for {object_type}/{object_name} (D01):",
+            f"  Package:  {pkg}{'  ← $TMP (local, no transport)' if is_tmp else ''}",
+            f"  Author:   {info['author']}",
+            f"  Created:  {info['created']}",
+            f"  System:   {info['system']}",
+            "",
+        ]
+        if is_tmp:
+            lines.append("  ADT read: uses RFC fallback (CLIF_GET_SOURCE) — $TMP not indexed by ADT")
+            lines.append("  ADT deploy: NOT possible from $TMP — move to transport package first")
+        else:
+            lines.append(f"  ADT read: direct via SADT_REST_RFC_ENDPOINT (package {pkg})")
+        return "\n".join(lines)
+    except AdtRfcError as e:
+        return f"ADT {e.status} {e.reason}: {e.body[:500]}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+@mcp.tool()
+def adt_search(query: str, object_type: str = "", max_results: int = 20) -> str:
+    """Search SAP ADT repository for ABAP objects (D01).
+
+    More powerful than TADIR search: supports wildcards, searches descriptions,
+    returns package info. Uses ADT quickSearch endpoint.
+
+    Args:
+        query: Search term (e.g. 'ZCL_FI*', 'YCL_IDFI*', 'SAPF100').
+        object_type: Filter by ADT type ID (e.g. 'CLAS/OC', 'PROG/P', 'TABL/DT').
+                     Leave empty to search all types.
+        max_results: Max results to return (default 20).
+
+    For P01 object search use search_abap_objects (queries TADIR via RFC).
+    """
+    try:
+        results = _adt_call("search", "D01", query,
+                            obj_type=object_type, max_results=max_results)
+        if not results:
+            return f"No ADT objects found matching '{query}' in D01"
+        lines = [f"ADT search '{query}' (D01): {len(results)} results"]
+        lines.append(f"{'Type':<14} {'Name':<40} {'Package':<16} Description")
+        lines.append("-" * 90)
+        for r in results:
+            lines.append(
+                f"{r['type']:<14} {r['name']:<40} {r['package']:<16} {r['description']}"
+            )
+        return "\n".join(lines)
+    except AdtRfcError as e:
+        return f"ADT {e.status} {e.reason}: {e.body[:500]}"
+    except Exception as e:
+        return f"Error (connection reset): {str(e)}"
+
+
+@mcp.tool()
+def adt_syntax_check(object_name: str, object_type: str = "CLASS") -> str:
+    """Run ADT syntax check on an ABAP object in D01 (read-only — no source modification).
+
+    Returns findings list. Empty list = syntax clean.
+
+    Args:
+        object_name: Object name.
+        object_type: CLASS, PROG, INTF, INCLUDE, FUGR, TABL.
+    """
+    try:
+        findings = _adt_call("syntax_check", "D01", object_type, object_name)
+        if not findings:
+            return f"CLEAN — {object_type}/{object_name} (D01): 0 syntax findings"
+        errors   = [f for f in findings if f.get("severity") in ("E", "A")]
+        warnings = [f for f in findings if f.get("severity") == "W"]
+        lines = [
+            f"Syntax check {object_type}/{object_name} (D01): "
+            f"{len(findings)} findings ({len(errors)} errors, {len(warnings)} warnings)"
+        ]
+        for finding in findings:
+            lines.append(
+                f"  [{finding.get('severity','?')}] "
+                f"Line {finding.get('line','')}: {finding.get('message','')}"
+            )
+        return "\n".join(lines)
+    except AdtRfcError as e:
+        return f"ADT {e.status} {e.reason}: {e.body[:500]}"
+    except Exception as e:
+        return f"Error (connection reset): {str(e)}"
+
+
+@mcp.tool()
+def adt_deploy(object_name: str, source: str, object_type: str = "CLASS") -> str:
+    """Full ABAP deploy cycle on D01: lock → write → syntax check → activate → unlock.
+
+    Uses SADT_REST_RFC_ENDPOINT. No HTTP credentials. No CSRF tokens.
+    Unlock always runs (even on error) — no stranded locks.
+
+    Args:
+        object_name: Name of the object to update.
+        source: New ABAP source code string.
+        object_type: CLASS, PROG, INTF, INCLUDE.
+
+    Notes:
+    - D01 only (development system). Never P01.
+    - Requires S_DEVELOP authorization for the object's package.
+      ACTVT=42 (Activate) needed to complete activation step.
+    - $TMP objects: readable via RFC fallback but NOT deployable via ADT.
+      To deploy a $TMP object: assign it to a transport package first.
+    """
+    try:
+        result = _adt_call("deploy", "D01", object_type, object_name, source)
+        lines = [f"Deploy {object_type}/{object_name} (D01):"]
+        lines.append(f"  Locked:     {'OK' if result['locked']    else 'FAIL'}")
+        lines.append(f"  Written:    {'OK' if result['written']   else 'FAIL'}")
+        lines.append(f"  Syntax OK:  {'OK' if result['syntax_ok'] else 'FAIL (errors found)'}")
+        lines.append(f"  Activated:  {'OK' if result['activated'] else 'FAIL'}")
+        if result['findings']:
+            lines.append(f"  Findings ({len(result['findings'])}):")
+            for f in result['findings'][:20]:
+                lines.append(f"    [{f['severity']}] Line {f['line']}: {f['message']}")
+        lines.append(f"\n  Status: {'SUCCESS' if result['activated'] else 'PARTIAL'}")
+        return "\n".join(lines)
+    except AdtRfcError as e:
+        return f"ADT {e.status} {e.reason}: {e.body[:500]}"
+    except Exception as e:
+        return f"Deploy error: {str(e)}"
 
 
 if __name__ == "__main__":

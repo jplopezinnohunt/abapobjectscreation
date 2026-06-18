@@ -1,4 +1,12 @@
 """
+[DEPRECATED s079] DO NOT RUN — this re-creates the redundant REGUH_FAST table.
+REGUH_FAST was consolidated INTO the canonical REGUH (Session #079 dedup): REGUH now
+holds all rows (2016-2026, 27 cols) PLUS the merged XVORL and DORIGIN columns, so the
+"fast subset" + REGUH_DORIGIN are fully contained. Query `REGUH` directly
+(add `WHERE LAUFD >= '20250101'` if you need the old fast-subset scope). Running this
+would re-introduce the duplication that caused wrong-table reads. See
+memory/feedback_gold_db_redundant_tables_consolidation.md.
+
 Fast alternative REGUH extraction — minimal columns, recent year filter, low throttle.
 
 If full extraction stalls, this gives us 70% of analytical value in 4 minutes:

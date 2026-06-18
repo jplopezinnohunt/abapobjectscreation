@@ -187,13 +187,13 @@ def compute_ps_pool(db, objnr: str) -> dict:
     res: dict = {"objnr": objnr}
     # Cumulative budget 2026 (current = WRTTP=41)
     rows = db.execute(
-        "SELECT WTJHR FROM bpja_2026 WHERE OBJNR=? AND WRTTP='41'", (objnr,)
+        "SELECT WTJHR FROM bpja WHERE OBJNR=? AND WRTTP='41' AND GJAHR='2026'", (objnr,)
     ).fetchall()
     res["ps_budget_2026_current_usd"] = round(sum(signed_amount(r["WTJHR"]) for r in rows), 2)
 
     # Cumulative budget 2025 (previous year — relevant for biennium)
     rows = db.execute(
-        "SELECT WTJHR FROM bpja_2025 WHERE OBJNR=? AND WRTTP='41'", (objnr,)
+        "SELECT WTJHR FROM bpja WHERE OBJNR=? AND WRTTP='41' AND GJAHR='2025'", (objnr,)
     ).fetchall()
     res["ps_budget_2025_current_usd"] = round(sum(signed_amount(r["WTJHR"]) for r in rows), 2)
 
@@ -237,17 +237,17 @@ def compute_ps_pool_project(db, project_pspid: str) -> dict:
 
     # PS budget cumulative
     rows = db.execute(
-        f"SELECT WTJHR FROM bpja_2026 WHERE OBJNR IN {in_clause} AND WRTTP='41'"
+        f"SELECT WTJHR FROM bpja WHERE OBJNR IN {in_clause} AND WRTTP='41' AND GJAHR='2026'"
     ).fetchall()
     res["ps_budget_2026_current_usd"] = round(sum(signed_amount(r["WTJHR"]) for r in rows), 2)
 
     rows = db.execute(
-        f"SELECT WTJHR FROM bpja_2025 WHERE OBJNR IN {in_clause} AND WRTTP='41'"
+        f"SELECT WTJHR FROM bpja WHERE OBJNR IN {in_clause} AND WRTTP='41' AND GJAHR='2025'"
     ).fetchall()
     res["ps_budget_2025_current_usd"] = round(sum(signed_amount(r["WTJHR"]) for r in rows), 2)
 
     rows = db.execute(
-        f"SELECT WTJHR FROM bpja_2024 WHERE OBJNR IN {in_clause} AND WRTTP='41'"
+        f"SELECT WTJHR FROM bpja WHERE OBJNR IN {in_clause} AND WRTTP='41' AND GJAHR='2024'"
     ).fetchall()
     res["ps_budget_2024_current_usd"] = round(sum(signed_amount(r["WTJHR"]) for r in rows), 2)
 

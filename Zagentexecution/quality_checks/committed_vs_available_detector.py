@@ -78,7 +78,7 @@ def main():
           ) as fund_derived,
           CASE WHEN EXISTS (SELECT 1 FROM funds f WHERE f.FINCODE = SUBSTR(p.POSID, 1, 10) AND f.FIKRS='UNES') THEN 'HARD' ELSE 'DERIVED' END as link_type
         FROM (SELECT DISTINCT OBJNR FROM cooi WHERE GJAHR='2026' AND OBJNR IN (SELECT OBJNR FROM _active_wbs)) c
-        LEFT JOIN prps_full p ON c.OBJNR = p.OBJNR
+        LEFT JOIN prps p ON c.OBJNR = p.OBJNR
     """)
     cur.execute(f"""
         CREATE TEMP TABLE _ps_commit AS
@@ -164,7 +164,7 @@ def main():
           COALESCE(fm.fm_revenue_2026, 0) + COALESCE(fm.fm_consumed_2026, 0) as fm_pool_remaining,
           CASE WHEN i.OBJNR IS NOT NULL THEN 'YES' ELSE 'NO' END as isbd_flag
         FROM _ps_commit c
-        LEFT JOIN prps_full p ON c.OBJNR = p.OBJNR
+        LEFT JOIN prps p ON c.OBJNR = p.OBJNR
         LEFT JOIN funds f ON c.GEBER = f.FINCODE AND f.FIKRS='UNES'
         LEFT JOIN _ps_budget b ON c.OBJNR = b.OBJNR
         LEFT JOIN _ps_actual a ON c.OBJNR = a.OBJNR

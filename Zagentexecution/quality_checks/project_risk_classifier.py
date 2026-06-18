@@ -59,7 +59,7 @@ def main():
           MIN(SUBSTR(p.POSID,1,10)=c.GEBER) as posid_match_min,
           MAX(SUBSTR(p.POSID,1,10)=c.GEBER) as posid_match_max
         FROM coep c
-        JOIN prps_full p ON c.OBJNR = p.OBJNR
+        JOIN prps p ON c.OBJNR = p.OBJNR
         INNER JOIN _active_wbs aw ON c.OBJNR = aw.OBJNR
         WHERE c.GEBER != '' AND c.OBJNR LIKE 'PR%'
           AND c.GJAHR IN ('2024','2025','2026')
