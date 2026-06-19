@@ -1,6 +1,6 @@
 # BCM Signatory-Change — Solution & Routine Design (schema + flow + procedure)
 
-**Status**: design, v1.1 — 2026-06-17 (added node-selection flow)
+**Status**: design, v1.2 — 2026-06-19 (added release-config chain `TBCA_REL_*`, grouping-rule conditions, reject BAdI; corrected: grouping is also bank-agnostic)
 **Origin incident**: INC-000011781 (UBO / add Renata Ritter)
 **Source of every fact below**: **live P01 reads via `RFC_READ_TABLE`** (`rfc_helpers.get_connection("P01")`). NOT screenshots — screenshots are not authoritative (period filters hide rows; OCR is unreliable). P01 is **read-only** for the agent; changes are executed by DBS in `OOCU_RESP`.
 **Related**: [`bcm_signatory_rules.md`](bcm_signatory_rules.md) · skill `sap_payment_bcm_agent` (Reconciliation Protocol, Step 7 mandatory output)
@@ -30,12 +30,14 @@ LEVEL 2  BANKS (per entity)                       LEVEL 3  SIGNATORY NODES (per 
 - **Level 2 — Banks** = `T012`/`T012K` house banks of the company code. Each **bank account** has its own *carton des signatures* (account-level legal authority). The banks that actually reach BCM are the ones in **`T042A`** (F110 payment path). Banks **not** in `T042A` (collection/manual) never produce a BCM batch.
 - **Level 3 — Nodes** = `RY` responsibility objects, keyed by **entity + amount band** (selection logic in §3a). Their selection criteria live in **infotype 1218** (`HRP1218`/`HRT1218`) as expressions on the standard BCM structure `BNK_STR_BATCH_REL_APPR` — **NOT** in the generic PFAC `HRP1222` (which is empty here). Members live in `HRP1001` (`RELAT='007' SCLAS='P' SOBID=PERNR`, with `BEGDA/ENDDA`).
 
-### Two "rules" — only one is bank-aware
-| Concept | Keyed on | Bank-aware? | Table |
+### Two "rules" — and NEITHER is bank-aware (corrected 2026-06-19)
+| Concept | Keyed on | Bank-aware? | Where (verified live) |
 |---|---|---|---|
-| Batch-grouping rule (`RULE_ID`, e.g. `UBO_AP_ST/MAX`) | company code + house bank + amount | **YES** | `BNK_BATCH_HEADER` (`ZBUKR`,`HBKID`,`RULE_ID`) |
-| Signatory rule `90000005` (BNK_INI / Validate) | entity + amount tier | **NO** | RY nodes via workflow 90000003 |
-| Approval rule `90000004` (BNK_COM / Commit) | entity + amount tier | **NO** | RY nodes via workflow 90000003 |
+| Batch-grouping rule (`RULE_ID`, e.g. `UBO_AP_MAX/ST`) | grouping origin + company code + amount + payment method | **NO** | `TBNK_RULE` / `TBNK_RULE_SELOP` — see §3b |
+| Signatory rule `90000005` (BNK_INI / Validate) | entity + amount tier | **NO** | RY nodes, IT1218 (§3a) |
+| Approval rule `90000004` (BNK_COM / Commit) | entity + amount tier | **NO** | RY nodes, IT1218 (§3a) |
+
+> **Correction (was wrong in v1.1):** the grouping rule does **not** key on house bank. `UBO_AP_MAX`'s real conditions (`TBNK_RULE_SELOP`, read live 2026-06-19) are grouping origin + company code + amount + payment method — **no `HBKID`**. The bank is only **carried** on the batch (`BNK_BATCH_HEADER.HBKID`), never **tested** at any layer. Bank-agnostic therefore holds for **both** grouping and signatory selection.
 
 ---
 
@@ -70,6 +72,38 @@ Exact criteria read live from `HRT1218`:
 **Runtime selection key = `ZBUKR` (entity) + `MAXPAYAMT_RULECURR` (amount band)** (+ `RULE_ID` on the INI nodes). There is **no `HBKID`/bank field anywhere in the criteria** → confirms bank-agnostic node selection. It IS standard BCM (the *Approval Procedure* customizing generates the rule and writes these IT1218 expressions); it only *looked* non-standard because it bypasses the usual PFAC/`HRP1222` path. The amount thresholds (10 000 / 5 000 000 / 50 000 000) are the BCM approval-procedure amount levels.
 
 **Consequence (the invariant):** because the node is chosen by **company code + amount** and never by bank, **all of an entity's BCM banks share the same node set (N banks : 1 node set)**. Therefore **every BCM-routed bank's carton for that entity MUST list the same people** — otherwise the single node would over-authorize the stricter bank. SAP on ECC cannot model per-bank signatories. → If two cartons of the same entity diverge, HALT and escalate to TRS (rule not representable).
+
+---
+
+### 3b. WHERE the node is configured — release chain + custom code (verified live P01/D01, 2026-06-19)
+
+The signatory node is not configured on one screen; it is the end of a chain across the BCM **release framework** (`TBCA_REL_*`), plus the grouping process upstream and a custom reject BAdI.
+
+**(i) Upstream grouping process — `TBNK_RULE` / `TBNK_RULE_SELOP`** (general BCM, a *separate* process from signing). `UBO_AP_MAX` (the ≤10K bucket) real conditions, read live:
+
+| Seq | Field | Attribute | RelOp | Low … High |
+|---|---|---|---|---|
+| 1 | `DORIGIN` | Grouping Origin | BT | FI-AP … FI-AR-PR |
+| 1 | `ZBUKR` | Paying Company Code | EQ | UBO |
+| 1 | `AMT_RULECU` | Payment amount (rule ccy) | GT | `10000.00-` |
+| 1 | `RZAWE` | Payment Method | EQ | R |
+
+`AMT_RULECU GT 10000.00-` = amount > −10,000 (AP outgoing amounts are negative) → matches abs value **< 10,000** = the ≤10K bucket. **No `HBKID`** → grouping is bank-agnostic. **Dev→prod drift:** P01 has **13** grouping rules; D01 has **14** (extra `UNES_AX_EX` Exotic Currency, not transported). The IMG screenshots were D01 ("Change View"). Authoritative prod list = the 13 in Golden DB `bcm_grouping_rule`.
+
+**(ii) Release configuration chain** (the answer to "where is the node configured"):
+
+| # | What | Table / tx | Value in P01 |
+|---|---|---|---|
+| 1 | Release object | `TBCA_REL_OBJ_CAT` | `BNK_INI` (validate) · `BNK_COM` (sign); structure `BNK_STR_BATCH_REL_APPR` |
+| 2 | Release procedure on object | `TBCA_REL_PROC`(T) | **01 = "Dual Ctrl"** (00 No release · 02 3x · 03 4x) |
+| 3 | **Step → RULE_ID (the wiring)** | `TBCA_REL_RULE` | BNK_INI/01/01 → **90000005** · BNK_COM/01/01 → **90000004** |
+| 4 | RULE_ID → who signs + criteria | `OOCU_RESP` (Change) → RY node, IT1218 | rules resolve the RY nodes (50034892…) by entity+amount = **the node; what DBS edits** |
+| 5 | Workflow per step | `TBCA_RTW_LINKAGE` | BNK_INI → WF `31000004` · BNK_COM → WF `50100021`; master WF `50100024` |
+| 6 | **On REJECT — custom code** | BAdI `BNK_BADI_ORIG_PAYMT_CHG` → `Z_CL_BNK_BADI_PAYMT_CHG` | auto-reverses the F110 payment (FBRA reset + FB08 reverse, reason 01); logs SLG1/FBPM |
+
+**"Configuring a node" = maintain the responsibility (`RY`) in `OOCU_RESP` Change mode** (people + IT1218 criteria entity+amount). It is *wired* to a release step by `TBCA_REL_RULE` (step → rule 90000004/05); the number of signatures (Dual/3x/4x) is the **release procedure** on the object (`TBCA_REL_PROC`). Why it was hard to find: `OOCU_RESP→Simulate` / `PP01→Display` only read, and the chain spans `TBCA_REL_*`, not one transaction.
+
+**(iii) Custom code** — the only method implemented in `Z_CL_BNK_BADI_PAYMT_CHG` is `IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT` (SAP note 1333640): on batch/payment **reject**, reverse the F110 payment (`J_1B_FBRA_POSTING_AUFRUFEN`, reversal reason `01`) and log to SLG1/FBPM. Full source: [`code/Z_CL_BNK_BADI_PAYMT_CHG.abap`](code/Z_CL_BNK_BADI_PAYMT_CHG.abap) (read from D01 via ADT). It does **not** affect agent/node selection — it is the reject handler only.
 
 ---
 
@@ -148,4 +182,8 @@ ONE table, mirroring `OOCU_RESP` **1:1** — every `HRP1001` row the screen show
 ---
 
 ## 9. Data sources used (all live P01)
-`HRP1000`, `HRP1001` (all periods), **`HRP1218`/`HRT1218` (node-selection criteria = expressions on `BNK_STR_BATCH_REL_APPR`: `ZBUKR` + `MAXPAYAMT_RULECURR` + `RULE_ID`)**, `HRP1222`/`HRP1230` (empty — confirms selection is NOT via the PFAC path), `BNK_BATCH_HEADER`, `T012`/`T012K`, `T042A`, `PA0000`, `PA0002`, `PA0105`, `USR02`, `DD02L`/`DD03L`. Gold-DB tables `bcm_signatory_responsibility`/`bcm_signatory_assignment` are a **derived snapshot** (refresh before relying on counts).
+`HRP1000`, `HRP1001` (all periods), **`HRP1218`/`HRT1218` (node-selection criteria = expressions on `BNK_STR_BATCH_REL_APPR`: `ZBUKR` + `MAXPAYAMT_RULECURR` + `RULE_ID`)**, `HRP1222`/`HRP1230` (empty — confirms selection is NOT via the PFAC path), `BNK_BATCH_HEADER`, `T012`/`T012K`, `T042A`, `PA0000`, `PA0002`, `PA0105`, `USR02`, `DD02L`/`DD03L`.
+
+**Added 2026-06-19 (release chain + grouping):** grouping rules `TBNK_RULE` / `TBNK_RULE_T` / `TBNK_RULE_SELOP`; release framework `TBCA_REL_RULE` / `TBCA_REL_PROC`(T) / `TBCA_REL_OBJ_CAT` / `TBCA_RTW_LINKAGE`; reject BAdI `Z_CL_BNK_BADI_PAYMT_CHG` (read from **D01** via ADT — code is system-invariant Z*).
+
+**Golden DB tables (derived snapshots — local-only, NOT in git):** `bcm_signatory_responsibility`/`bcm_signatory_assignment` (signing); `bcm_grouping_rule`/`bcm_grouping_rule_selop` (grouping); `bcm_release_rule`/`bcm_release_procedure`(`_t`)/`bcm_release_object`/`bcm_release_wf_linkage` (release chain). Refresh before relying on counts.
