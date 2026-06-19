@@ -46,6 +46,11 @@ ul{margin:6px 0;padding-left:20px}
 <h1>BCM Bank Signatory — Companion</h1>
 <p class="lead">How payment signing/approval works in SAP Bank Communication Management (UNESCO) and how to resolve a signatory-panel change. <b>All data is read live from P01 via RFC</b> — not from screenshots. P01 is <b>read-only</b> for the agent; DBS executes changes in <span class="mono">OOCU_RESP</span>. · v2 · 2026-06-18 · origin: INC-000011781.</p>
 
+<div class="gate"><b>Two separate processes, in order:</b><br>
+<b>① GROUPING</b> (general BCM — §9a): a <i>grouping</i> process first assembles F110 payments into batches, by rule. It decides <b>what is in a batch</b>. No signatures here.<br>
+<b>② APPROVE + SIGN workflow</b> (§2 — this companion's focus): each batch is then released through a <b>mandatory two-step control</b> — <b>Step&nbsp;1: Approve / Validate</b>, then <b>Step&nbsp;2: Sign / Commit</b> — by <b>two different people, in that order</b>; both required, never simultaneous.<br>
+The two are independent. The <b>only</b> link is the <span class="mono">RULE_ID</span> that grouping stamps on the batch, which the validate step happens to read. Grouping = <i>what is in the batch</i>; the workflow = <i>who releases it</i>.</div>
+
 <div class="warn"><div class="t">⚠ Banks are aligned OUTSIDE the system — SAP cannot enforce it</div>
 Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>separate letter + carton to each bank</b>. But SAP's signatory node is <b>entity-level</b> — ONE panel for ALL of an entity's banks — so it can hold only one list and has <b>no mechanism to detect or prevent two banks of the same entity (same country) from drifting apart</b>. If bank A's carton ≠ bank B's carton, the single node is wrong for at least one bank and nothing in SAP flags it. Keeping the panels aligned is a <b>manual / TRS governance control, not a system control</b>. The "alignment gate" in §5 is the compensating check this routine adds.</div>
 
@@ -55,9 +60,13 @@ Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>sep
 <div class="stage" style="--ac:var(--gray)"><div class="h">LEVEL 2 · Banks</div><div class="s">House banks of the company code (<span class="mono">T012/T012K</span>). Each <b>account</b> has its own <i>carton des signatures</i>. The ones that reach BCM = those that produce batches.</div></div>
 <div class="stage" style="--ac:var(--teal)"><div class="h">LEVEL 3 · Signatory nodes</div><div class="s">PD objects <span class="mono">OTYPE='RY'</span>, key = <b>entity × amount band</b>. <b>Bank-agnostic.</b> Members in <span class="mono">HRP1001</span>.</div></div>
 </div>
-<div class="note"><b>The two "rules":</b> the <b>batch-grouping</b> rule (<span class="mono">RULE_ID</span>, e.g. <span class="mono">UBO_AP_ST/MAX</span>) <u>is</u> bank-aware (<span class="mono">ZBUKR+HBKID</span>); the <b>signing/approval</b> rules (<span class="mono">90000005</span> validate, <span class="mono">90000004</span> commit) are <u>not</u> — entity + amount only.</div>
+<div class="note"><b>Two different things are both called "rules" — don't confuse them:</b><br>
+• The <b>batch-grouping</b> rule (<span class="mono">RULE_ID</span>, e.g. <span class="mono">UBO_AP_ST/MAX</span>) decides how payments are bundled into a batch — it keys on <b>grouping origin + paying company code + amount + payment method</b> (real conditions in §9a). <b>Not</b> house bank.<br>
+• The <b>release rules</b> <span class="mono">90000005</span> (validate) and <span class="mono">90000004</span> (commit) are the <b>two sequential approval STEPS</b> (Step&nbsp;1 → Step&nbsp;2, see §2) — entity + amount tier only.<br>
+→ <b>The bank is a criterion in <u>neither</u> layer</b> — it is only carried on the batch (<span class="mono">BNK_BATCH_HEADER.HBKID</span>), never tested.</div>
 
 <h2>2 · Full flow (bank → people)</h2>
+<p class="lead">Every payment batch must pass <b>two mandatory release steps</b> before it reaches the bank — <b>Step&nbsp;1 Approve/Validate</b>, then <b>Step&nbsp;2 Sign/Commit</b> (detail in the callout below). The diagram shows how each step selects the people who act:</p>
 <svg viewBox="0 0 680 292" width="100%" style="max-width:680px;display:block;margin:8px auto" role="img" aria-label="Banks feed one entity batch; rules select a node by amount via IT1218; the node's people sign. Bank never selects the node.">
  <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--mut)" stroke-width="1.3"/></marker></defs>
  <g font-family="system-ui,sans-serif">
@@ -66,7 +75,7 @@ Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>sep
  <text x="255" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">BATCH</text>
  <text x="430" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">RULES</text>
  <text x="600" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mut)">NODES (tiers)</text>
- <text x="600" y="29" text-anchor="middle" font-size="8.5" fill="var(--teal)">selected by IT1218: ZBUKR + amount</text>
+ <text x="600" y="29" text-anchor="middle" font-size="8.5" fill="var(--teal)">by IT1218: ZBUKR (entity) + amount band</text>
  <!-- connectors -->
  <g stroke="var(--mut)" stroke-width="1" stroke-dasharray="3 2" fill="none" opacity="0.65">
   <line x1="150" y1="48" x2="180" y2="111"/><line x1="150" y1="80" x2="180" y2="111"/><line x1="150" y1="112" x2="180" y2="111"/><line x1="150" y1="144" x2="180" y2="111"/><line x1="150" y1="176" x2="180" y2="111"/>
@@ -93,11 +102,14 @@ Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>sep
  <text x="255" y="131" text-anchor="middle" font-size="9" fill="var(--mut)">ZBUKR + bank + amount</text>
  <!-- rules -->
  <rect x="363" y="66" width="134" height="56" rx="8" fill="var(--bg)" stroke="var(--purple)" stroke-width="1.5"/>
- <text x="430" y="90" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--fg)">Rule 90000005</text>
- <text x="430" y="106" text-anchor="middle" font-size="9" fill="var(--mut)">BNK_INI · Validate</text>
+ <text x="430" y="88" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">STEP 1 · 90000005</text>
+ <text x="430" y="104" text-anchor="middle" font-size="8.4" fill="var(--mut)">BNK_INI — Approve / Validate</text>
  <rect x="363" y="172" width="134" height="56" rx="8" fill="var(--bg)" stroke="var(--purple)" stroke-width="1.5"/>
- <text x="430" y="196" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--fg)">Rule 90000004</text>
- <text x="430" y="212" text-anchor="middle" font-size="9" fill="var(--mut)">BNK_COM · Commit</text>
+ <text x="430" y="194" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">STEP 2 · 90000004</text>
+ <text x="430" y="210" text-anchor="middle" font-size="8.4" fill="var(--mut)">BNK_COM — Sign / Commit</text>
+ <!-- sequence cue: step 1 THEN step 2 (never simultaneous) -->
+ <line x1="512" y1="124" x2="512" y2="170" stroke="var(--red)" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#ah)"/>
+ <text x="520" y="150" text-anchor="start" font-size="8" font-weight="700" fill="var(--red)">then</text>
  <!-- nodes -->
  <rect x="533" y="54" width="134" height="34" rx="6" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.5"/>
  <text x="600" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50034892</text><text x="600" y="82" text-anchor="middle" font-size="8.5" fill="var(--teal)">Validate ≤10K</text>
@@ -109,13 +121,29 @@ Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>sep
  <text x="600" y="212" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">50036737</text><text x="600" y="224" text-anchor="middle" font-size="8.5" fill="var(--amber)">Commit &gt;10K</text>
  <!-- captions -->
  <text x="180" y="258" text-anchor="middle" font-size="9.5" fill="var(--mut)">all banks → one entity batch (N:1)</text>
- <text x="470" y="258" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--red)">AMOUNT picks the tier — the bank never does</text>
+ <text x="470" y="252" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--red)">ENTITY (ZBUKR=UBO) picks the node set · AMOUNT the tier</text>
+ <text x="470" y="265" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--red)">the BANK is never a selection criterion</text>
  <!-- legend -->
  <rect x="250" y="276" width="11" height="11" rx="3" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.4"/><text x="266" y="285" font-size="9" fill="var(--mut)">≤10K tier</text>
  <rect x="340" y="276" width="11" height="11" rx="3" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.4"/><text x="356" y="285" font-size="9" fill="var(--mut)">higher-amount tier</text>
  </g>
 </svg>
-<p class="lead" style="text-align:center;margin-top:4px">The matching node's people (<span class="mono">HRP1001</span>) are the validators/committers. Node-selection detail (IT1218) → §3.</p>
+<p class="lead">Node selection takes <b>three</b> inputs, and the bank is <b>not</b> one of them:</p>
+<ol class="lead" style="margin:4px 0 0;padding-left:22px">
+<li><b>Entity (<span class="mono">ZBUKR</span>=UBO)</b> — hard-wired into <i>every</i> node's criteria → it picks <b>which set of nodes</b> applies (the "UBO" you see in each node name is this criterion, not a label).</li>
+<li><b>Rule / phase</b> — <span class="mono">90000005</span> BNK_INI (validate) vs <span class="mono">90000004</span> BNK_COM (commit) → picks <b>which step's</b> nodes are evaluated.</li>
+<li><b>Amount</b> — picks the <b>tier</b> within that entity+phase (≤10K vs higher).</li>
+</ol>
+<p class="lead" style="margin-top:4px">So a payment lands on a node only when <b>entity AND phase AND amount</b> all match; the matching node's people (<span class="mono">HRP1001</span>) act. The <b>bank</b> only stamps the batch — it is never tested. Criteria detail (IT1218) → §3.</p>
+
+<div class="warn"><div class="t">Two STEPS — approve THEN sign (never at the same time)</div>
+<p style="margin:2px 0 6px">The "two rules" are <b>not parallel rule types</b> — they are the <b>two sequential release steps</b> of one approval procedure, run by workflow <span class="mono">90000003</span>. The same batch moves through them <b>in order</b>:</p>
+<table style="margin:2px 0">
+<tr><th>Order</th><th>Rule</th><th>Action</th><th>Who</th><th>Nodes</th></tr>
+<tr><td><b>Step 1</b></td><td><span class="mono">90000005</span> · BNK_INI</td><td><b>Approve / Validate</b> — check and release the batch for signing</td><td>approving officer</td><td>"… <b>Validation</b> …" (50034892 / 50034893)</td></tr>
+<tr><td><b>Step 2</b></td><td><span class="mono">90000004</span> · BNK_COM</td><td><b>Sign / Commit</b> — sign and send the batch to the bank</td><td>bank signatory</td><td>"… <b>signatures</b> …" (50034894 / 50036737)</td></tr>
+</table>
+<p style="margin:6px 0 0">A batch must <b>clear Step 1 before it reaches Step 2</b>, and the two actions are performed by <b>different people</b> (segregation of duties / 4-eyes) — they <b>never happen simultaneously</b>. The entity + amount-tier selection runs <b>independently at each step</b>, which is why an <i>unlimited</i> signatory (e.g. Renata) is added to <b>both</b> the Validation and the Signature nodes — but acts at two different moments: first to validate, then to sign.</p></div>
 
 <h2>3 · Node selection — where the logic lives (IT1218)</h2>
 <p class="lead"><b>How the rule picks ONE node:</b> when a batch arrives, the rule scans every node's criteria and returns the node where <b>all</b> conditions match the batch. Those criteria are <b>not</b> the standard PFAC ones (<span class="mono">HRP1222</span> is <b>empty</b>) — they live in <b>infotype 1218</b> on each <span class="mono">RY</span> node (<span class="mono">HRP1218</span> header → <span class="mono">TABNR</span> → <span class="mono">HRT1218</span> expressions) and are matched against the standard BCM structure <span class="mono">BNK_STR_BATCH_REL_APPR</span>. (It IS standard BCM — the Approval Procedure generates them; it only looked non-standard because it bypasses the PFAC/1222 path.)</p>
@@ -148,6 +176,22 @@ The selection key is <b>entity (ZBUKR) + amount only</b> — the node <b>literal
 2. Click <b>"Simulate rule resolution"</b> → enter company code <span class="mono">UBO</span> + an amount (e.g. 5 000) → it returns the matching node + the people. Change the amount to 50 000 and it lands in the high-tier node — that's the criterion in action.
 
 <p style="margin:10px 0 0"><b>Underlying tables:</b> <span class="mono">HRP1218</span> (header → TABNR) + <span class="mono">HRT1218</span> (ELEMENT / EXPR_LOW / EXPR_HIGH / REFSTRUCT).</p></div>
+
+<div class="warn"><div class="t">Where the NODE is configured — the full release chain (verified live, P01)</div>
+<p style="margin:2px 0 6px"><b>"Simulate" / "Display" only READ.</b> The real wiring is a chain across the BCM <b>release framework</b> (<span class="mono">TBCA_REL_*</span> tables) plus the responsibility maintenance — that is why it was hard to find on one screen:</p>
+<table style="margin:2px 0">
+<tr><th>#</th><th>What</th><th>Where (table / tx)</th><th>Value in P01</th></tr>
+<tr><td>1</td><td>Release object</td><td><span class="mono">TBCA_REL_OBJ_CAT</span></td><td><span class="mono">BNK_INI</span> (validate) · <span class="mono">BNK_COM</span> (sign) — both on structure <span class="mono">BNK_STR_BATCH_REL_APPR</span></td></tr>
+<tr><td>2</td><td>Release procedure on the object</td><td>"Assign Release Procedure to Release Object" → <span class="mono">TBCA_REL_PROC</span>(T)</td><td>Procedure <b>01 = "Dual Ctrl"</b> (00 No release · 02 3x · 03 4x)</td></tr>
+<tr><td>3</td><td><b>Step → RULE_ID (the wiring)</b></td><td><span class="mono">TBCA_REL_RULE</span></td><td>BNK_INI / 01 / 01 → <b>90000005</b> &nbsp;·&nbsp; BNK_COM / 01 / 01 → <b>90000004</b></td></tr>
+<tr><td>4</td><td><b>RULE_ID → who signs + criteria</b></td><td><span class="mono">OOCU_RESP</span> (Change) → RY node, IT1218</td><td>Rules 90000005/04 resolve the RY nodes (50034892…) by entity + amount. <b>This IS the node — what DBS edits</b></td></tr>
+<tr><td>5</td><td>Workflow per step</td><td>"Assign Workflow…" → <span class="mono">TBCA_RTW_LINKAGE</span></td><td>BNK_INI → WF <span class="mono">31000004</span> · BNK_COM → WF <span class="mono">50100021</span>; master WF <span class="mono">50100024</span></td></tr>
+<tr><td>6</td><td><b>On REJECT — custom code</b></td><td>BAdI <span class="mono">BNK_BADI_ORIG_PAYMT_CHG</span> → impl <span class="mono">Z_CL_BNK_BADI_PAYMT_CHG</span></td><td>Auto-reverses the F110 payment (FBRA reset + FB08 reverse, reason 01) and logs SLG1/FBPM</td></tr>
+</table>
+<p style="margin:6px 0 0"><b>So "configuring a node" = maintaining the responsibility (<span class="mono">RY</span>) in <span class="mono">OOCU_RESP</span> Change mode</b> (people + IT1218 criteria = entity + amount). The node is <b>wired to a release step</b> by <span class="mono">TBCA_REL_RULE</span> (step → rule 90000004/05); the number of signatures (Dual / 3x / 4x) is the <b>release procedure</b> on the object (<span class="mono">TBCA_REL_PROC</span>). It was hard to find because the chain spans the <span class="mono">TBCA_REL_*</span> framework, not one transaction.</p>
+<p style="margin:6px 0 0"><b>Custom code confirmed (your point):</b> the reject path is the Z BAdI above — full source read at <span class="mono">knowledge/domains/Treasury/code/Z_CL_BNK_BADI_PAYMT_CHG.abap</span> (method <span class="mono">IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT</span>, SAP note 1333640). The bank-agnostic behaviour is a config choice: criteria come from <span class="mono">BNK_STR_BATCH_REL_APPR</span> (which <i>exposes</i> House Bank) but UNESCO keys on company code + amount only.</p>
+<p style="margin:6px 0 0;font-size:12px;opacity:.8"><i>Evidence: all live <b>P01</b> via RFC (<span class="mono">TBCA_REL_RULE / TBCA_REL_PROC / TBCA_REL_OBJ_CAT / TBCA_RTW_LINKAGE</span>) + ADT read of the Z class from D01, 2026-06-19. Persisted to Golden DB: <span class="mono">bcm_release_rule, bcm_release_procedure(_t), bcm_release_object, bcm_release_wf_linkage</span>.</i></p>
+</div>
 
 <h2>4 · Complete node inventory (live P01)</h2>
 <p class="lead">Not a uniform "2 per company": 1..N nodes per (entity × rule), tiered by amount only where the entity needs it. <span class="tag">Active = members with a future ENDDA today.</span></p>
@@ -267,6 +311,44 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 <tr><td>IBC17 / IBC06 / IBC20</td><td>Failed / Rejected / Reversed</td></tr>
 </table>
 <div class="note"><b>Four-eyes (<span class="mono">F_STAT_USR</span>):</b> the validator cannot be the user who created the F110. <b>Never</b> the same user with <span class="mono">Y_XXXX_FI_AP_PAYMENTS</span> + <span class="mono">YS:FI:M:BCM_MON_APP</span> (= BCM bypass; 2023 incident).</div>
+
+<h2>9a · Payment GROUPING process — rules &amp; conditions (general BCM, Process ①)</h2>
+<div class="gate" style="border-left-color:var(--blue)"><b>Process ① — separate, upstream.</b> This is the <b>grouping</b> process (general BCM): how F110 payments are assembled into batches. It is <b>not</b> who-signs — it links to the signature workflow (§2) only via the <span class="mono">RULE_ID</span> stamped on the batch, which the validate step (§3) reads. <b>SAP source:</b> <span class="mono">TBNK_RULE</span> / <span class="mono">TBNK_RULE_T</span> / <span class="mono">TBNK_RULE_SELOP</span> (SPRO → FSCM → Bank Communication Management → Payment Grouping). <b>Now in Golden DB:</b> <span class="mono">bcm_grouping_rule</span> (13) + <span class="mono">bcm_grouping_rule_selop</span> (125 conditions).</div>
+
+<p class="lead">The grouping rules (live <b>P01</b>) — rule, priority, additional grouping field, description:</p>
+<table>
+<tr><th>Rule ID</th><th>Prio</th><th>Scope</th><th>Add'l grouping field</th><th>Description</th></tr>
+<tr><td class='mono'>IIEP_AP_ST</td><td>1</td><td>IIEP</td><td class='mono'>VALUT</td><td>Bank transfers to 3rd party vendors and customers</td></tr>
+<tr><td class='mono'>PAYROLL</td><td>3</td><td>Payroll (all)</td><td class='mono'>—</td><td>Bank transfers for payroll</td></tr>
+<tr><td class='mono'>UBO_AP_MAX</td><td>1</td><td>UBO</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers max amount USD10.000</td></tr>
+<tr><td class='mono'>UBO_AP_ST</td><td>2</td><td>UBO</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers</td></tr>
+<tr><td class='mono'>UIL_AP_ST</td><td>1</td><td>UIL</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers</td></tr>
+<tr><td class='mono'>UIS_AP_MAX</td><td>1</td><td>UIS</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers max amount USD10.000</td></tr>
+<tr><td class='mono'>UIS_AP_ST</td><td>2</td><td>UIS</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers max 5.000.000</td></tr>
+<tr><td class='mono'>UNES_AP_10</td><td>4</td><td>UNES</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers max USD 500.000</td></tr>
+<tr><td class='mono'>UNES_AP_11</td><td>3</td><td>UNES</td><td class='mono'>—</td><td>Bank transfers to 3rd party vendors and customers min USD 500.000</td></tr>
+<tr><td class='mono'>UNES_AP_EX</td><td>2</td><td>UNES</td><td class='mono'>VALUT</td><td>Bank transfers to 3rd party vendors and customers in exception list</td></tr>
+<tr><td class='mono'>UNES_AP_IK</td><td>0</td><td>UNES</td><td class='mono'>VALUT</td><td>Bank transfers to 3rd party vendors and customers InstrucKey B1 (US only)</td></tr>
+<tr><td class='mono'>UNES_AR_BP</td><td>1</td><td>UNES</td><td class='mono'>VALUT</td><td>Bank Transfers to Business Partners (Inv &amp; FX)</td></tr>
+<tr><td class='mono'>UNES_TR_TR</td><td>1</td><td>UNES</td><td class='mono'>—</td><td>Bank Transfers between UNESCO bank accounts</td></tr>
+</table>
+<div class="warn"><div class="t">Dev→prod drift — the screenshots were D01, not P01</div>
+<b>P01 (prod) has 13 rules; D01 (dev) has 14.</b> The extra one, <span class="mono">UNES_AX_EX</span> (Exotic Currency in exception list), exists in <b>D01 only</b> — it has <b>not been transported to P01</b>. The IMG captures said "Change View" (edit mode) → they came from D01. This is exactly why the rule is "read P01, not screenshots": the authoritative prod config is the 13 rows above (Golden DB), verified live by RFC 2026-06-19.</div>
+<div class="note"><b><span class="mono">GROUP_FIELD1</span> = additional grouping key.</b> <span class="mono">VALUT</span> = value date — a rule carrying it splits its batch by value date. In P01 only <span class="mono">IIEP_AP_ST</span>, <span class="mono">UNES_AP_EX</span>, <span class="mono">UNES_AP_IK</span>, <span class="mono">UNES_AR_BP</span> use it; <b>UBO uses none</b>. <b>Priority</b> = evaluation order (lower = checked first / more specific). No house bank field anywhere here.</div>
+
+<p class="lead" style="margin-top:16px;font-weight:700;color:var(--fg)"><span class="mono">UBO_AP_MAX</span> — conditions (live P01, <span class="mono">TBNK_RULE_SELOP</span>)</p>
+<p class="lead">A payment groups into <span class="mono">UBO_AP_MAX</span> only when <b>ALL</b> match (all SEQUENCE_ID 1, ANDed). Technical field = the attribute from <span class="mono">BNK_STR_BATCH_REL_APPR</span>:</p>
+<table>
+<tr><th>Seq</th><th>Field</th><th>Attribute</th><th>RelOp</th><th>Low … High</th></tr>
+<tr><td>1</td><td class='mono'>DORIGIN</td><td>Grouping Origin</td><td class='mono'>BT</td><td class='mono'>FI-AP … FI-AR-PR</td></tr>
+<tr><td>1</td><td class='mono'>ZBUKR</td><td>Paying Company Code</td><td class='mono'>EQ</td><td class='mono'>UBO</td></tr>
+<tr><td>1</td><td class='mono'>AMT_RULECU</td><td>Payment amount (rule ccy)</td><td class='mono'>GT</td><td class='mono'>10000.00-</td></tr>
+<tr><td>1</td><td class='mono'>RZAWE</td><td>Payment Method</td><td class='mono'>EQ</td><td class='mono'>R</td></tr>
+</table>
+<div class="note"><b>The negative amount (key detail):</b> outgoing AP payments are stored <b>negative</b>, so <span class="mono">AMT_RULECU GT 10000.00-</span> means <b>amount &gt; −10,000</b> → it matches payments whose absolute value is <b>below 10,000</b> = the <b>≤10K bucket</b>. That is why a rule named "max USD 10.000" uses <span class="mono">GT</span> on a negative limit. Confirms node <span class="mono">50034892</span> (≤10K) ← <span class="mono">UBO_AP_MAX</span>; <span class="mono">UBO_AP_ST</span> (prio 2) catches the rest → <span class="mono">50034893</span>. All 13 rules' conditions (125 rows) are in <span class="mono">bcm_grouping_rule_selop</span>.</div>
+<div class="warn"><div class="t">Model fact — the grouping rule is NOT bank-aware either</div>
+<span class="mono">UBO_AP_MAX</span> keys on <b>Grouping Origin + Paying Company Code (UBO) + Amount + Payment Method</b> — <b>no House Bank condition at all</b>. So the bank is selected by <b>neither</b> layer (grouping nor signatory). The house bank is only an <b>attribute carried</b> on the batch (<span class="mono">BNK_BATCH_HEADER.HBKID</span>), never tested. Strengthens §2: the bank never drives selection, at any layer.</div>
+<div class="note" style="font-size:11.5px;opacity:.85"><i>Source: live <b>P01</b> via <span class="mono">RFC_READ_TABLE</span> on <span class="mono">TBNK_RULE</span> / <span class="mono">TBNK_RULE_T</span> / <span class="mono">TBNK_RULE_SELOP</span> (2026-06-19). Persisted to Golden DB tables <span class="mono">bcm_grouping_rule</span> + <span class="mono">bcm_grouping_rule_selop</span>. The earlier IMG screenshots were D01 (showed 14 rules incl. UNES_AX_EX).</i></div>
 
 <h2>10 · The 4 payment processes (UBO = Process 3 on Citibank)</h2>
 <table>
