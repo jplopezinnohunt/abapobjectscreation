@@ -189,6 +189,8 @@ Being in a node ≠ can sign (Renata's error). For **every active signatory** (g
 
 Per entity missing: UBO 2/9 · IIEP 1/6 · UNES 3/11; UIS & UIL clean. **Fix:** grant entity-matched `YS:FI:M:BCM_MON_APP______:<entity>` (Security/PFCG) **or** delimit from the node. Persisted to Golden DB `bcm_signatory_role_gap` (39 rows). Caveat: assignment list from 2026-04-13 snapshot — refresh `extract_bcm_signatories.py` before acting.
 
+**Which role exactly (verified content, live P01).** One **derived-role family**: master `YS:FI:M:BCM_MON_APP______:` + one derived per entity differing **only in the org level `$BUKRS`** — `:UBO`→UBO · `:IIEP`→IIEP · `:UIS`→UIS · `:UIL`→UIL · `:UKDS`→UKDS · `:ALL`→`*` (**UNES uses `:ALL`, there is no `:UNES`**). Separate `…BCM_MON_APP_PAY__:ALL` for payment/payroll. Content (AGR_1251): `S_TCODE`(BNK_APP, BNK_MONI/A/P, FBPM1, FDTA, Y_PAY_FILE, FBL1) · **`C_SIGN`**(SIGNAPPL=BANCO, SIGNOBJ=BC_LOG = digital signature) · **`F_STAT_MON`**(BNK_ACT/BNK_RULE/BNK_ITMDET = validate/commit/reject) · `F_STAT_USR` · **`F_REGU_BUK`** (BUKRS=`$BUKRS` = the entity restriction, set by the derived role) · F_REGU_KOA, F_KNA1/F_LFA1, P_ABAP(SAPFPAYM/RFMPAY00), S_APPL_LOG(FBPM), S_BTCH. **To grant:** assign the derived role for the person's entity (`:UBO` etc.) or `:ALL` for UNES. Persisted to Golden DB `bcm_approve_role`.
+
 ---
 
 ### 3f. Where each thing happens + open issues

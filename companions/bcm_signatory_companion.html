@@ -255,6 +255,19 @@ The <b>OBJID is mandatory</b>: node names look alike across entities (UBO/UIS/II
 <div class="warn"><div class="t">What it means + fix</div>
 These 6 sit in a BCM signatory node but their SAP user has <b>no role granting <span class="mono">BNK_APP</span></b> → they physically cannot validate/sign; the workflow item can't route to them. <b>Per entity:</b> UBO 2/9 · IIEP 1/6 · UNES 3/11 missing; UIS &amp; UIL clean. <b>Fix (per user):</b> either grant the entity-matched approve role <span class="mono">YS:FI:M:BCM_MON_APP______:&lt;entity&gt;</span> (Security/PFCG), <b>or</b> delimit them from the node (they can't act anyway — esp. VM_MARTIN, already on the remove list, and I_BA, over-authorized). The names with only HR self-service roles look like they never should have been signatories. Result persisted to Golden DB <span class="mono">bcm_signatory_role_gap</span> (39 rows). <i>Caveat: signatory list from the 2026-04-13 snapshot (active rows); refresh <span class="mono">extract_bcm_signatories.py</span> before acting.</i></div>
 
+<div class="note"><div class="t" style="color:var(--fg);font-weight:700">Which role exactly — the BNK_APP approve role (verified content, live P01)</div>
+It is <b>one derived-role family</b>: master <span class="mono">YS:FI:M:BCM_MON_APP______:</span> + one derived role per entity that differs <b>only in the company-code org level</b> (<span class="mono">$BUKRS</span>): <span class="mono">:UBO</span>→UBO · <span class="mono">:IIEP</span>→IIEP · <span class="mono">:UIS</span>→UIS · <span class="mono">:UIL</span>→UIL · <span class="mono">:UKDS</span>→UKDS · <span class="mono">:ALL</span>→<span class="mono">*</span> (UNES uses <b>:ALL</b> — there is no <span class="mono">:UNES</span>). A separate <span class="mono">…BCM_MON_APP_PAY__:ALL</span> covers payment/payroll approval.
+<table style="margin-top:4px">
+<tr><th>Auth object</th><th>What it grants</th></tr>
+<tr><td class="mono">S_TCODE</td><td><b>BNK_APP</b> + BNK_MONI/A/P, FBPM1, FDTA, Y_PAY_FILE, FBL1</td></tr>
+<tr><td class="mono">C_SIGN</td><td><b>digital signature</b> — SIGNAPPL=<span class="mono">BANCO</span>, SIGNOBJ=<span class="mono">BC_LOG</span> (the "can sign")</td></tr>
+<tr><td class="mono">F_STAT_MON</td><td>BCM action: <span class="mono">BNK_ACT</span> / <span class="mono">BNK_RULE</span> / <span class="mono">BNK_ITMDET</span> (validate / commit / reject)</td></tr>
+<tr><td class="mono">F_STAT_USR</td><td>BCM signature user</td></tr>
+<tr><td class="mono">F_REGU_BUK</td><td>payment run by <b><span class="mono">BUKRS = $BUKRS</span></b> ← <b>this is the entity restriction</b> (filled by the derived role)</td></tr>
+<tr><td class="mono">+ supporting</td><td>F_REGU_KOA · F_KNA1/F_LFA1 (display) · P_ABAP (SAPFPAYM/RFMPAY00) · S_APPL_LOG (FBPM) · S_BTCH</td></tr>
+</table>
+<b>So to grant the capability:</b> assign the <b>derived role for the person's entity</b> (e.g. <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span>), or <span class="mono">:ALL</span> for UNES. Persisted to Golden DB <span class="mono">bcm_approve_role</span>.</div>
+
 <h2>4 · Complete node inventory — nodes × people × role (live P01)</h2>
 <p class="lead">Every node, its <b>active people</b>, and each person's <span class="mono">BNK_APP</span> role check — sorted by Rule then Entity, Node beside OBJID. <span class="tag">Active members only; ❌ = in the panel but no BNK_APP-granting role (§3e).</span></p>
 <table>
