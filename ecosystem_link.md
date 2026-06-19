@@ -29,5 +29,10 @@
 |---|---|---|
 | Add 4 YTFM biennium tables to the SAP golden (FM domain) — `YTFM_FUND_C5/C5/OUTPUT/OUTPUT_T` | `unesco-sap-brain` | ✅ **DONE (Session #080)** — all 4 landed in golden; verified 2026-06-09 (`ytfm_fund_c5`, `ytfm_c5`, `ytfm_output`, `ytfm_output_t` present in `p01_gold_master_data.db`). chip `task_64603104` dismissed · spec was in `Zagentexecution/sap_data_extraction/pending_from_sap_brain/REQUEST.md` |
 
+## 3b. Data-ready handoffs (produced FOR a consumer to continue analysis)
+| Handoff | To | Status |
+|---|---|---|
+| **SAP config-frontier** — 61 FI/FM/GM customizing tables (GMDERIVE/`GMDT`, doc-splitting `T8G*`/`FAGL_SPLIT`, new-GL `T881/T882`, FMDERIVE `TABADR*`/`FMDERIVE*`, AVC `FMUP*`/`BUAVCTOLASS`/`FMAVCLDGR*`) → golden DB (+`_config_frontier_manifest`) | `unesco-sap-brain` | ✅ **READY (2026-06-19)** — closes the "still needs extraction" rows in their `knowledge/35_recreated_conclusions.md` (HYP-003/008/012/018, CLM-012/024/036, OI-FI-01, F3). Response note: `Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_config_frontier.md` · evidence: `knowledge/config_frontier_extraction_2026-06-19.md` · task chip dropped into their queue. They consume read-only via their `refs_external.json` and recompute the verdicts. |
+
 ## 4. Produces-back / promotion
 This project IS the promotion target: peers (e.g. `FINCLOSSING`) push stabilized SAP skills, TIER_1 claims, and universal incidents back here via `ecosystem-coordinator/priority-actions.md`.
