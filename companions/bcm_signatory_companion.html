@@ -510,6 +510,30 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 </g></svg>
 <div class="note"><b>One line:</b> Gate 1 (custom) blocks the <i>document</i> until released; F110 pays freed docs and groups by <span class="mono">RULE_ID</span>; Gate 2 (standard <span class="mono">RH_GET_ACTORS</span>) has two different people validate then sign the <i>batch</i>. Custom code lives only at the document gate. Step detail: §3 (selection) · §3d (how to change) · §9a (grouping).</div>
 
+<h2>9c · Where each thing happens (tx · program · table) + open issues</h2>
+<p class="lead">The §9b diagram is the overview; here is <b>where to see/maintain each step</b> and the <b>known issues</b> — including the substitutions and the direct-DB-write problem.</p>
+<table>
+<tr><th>Step / area</th><th>Where to see &amp; maintain</th><th>Tables</th><th>Note</th></tr>
+<tr><td><b>Doc posting + FI substitutions</b></td><td><span class="mono">OB28</span>/<span class="mono">GGB1</span> define · <span class="mono">OBBH</span> assign · exit prog <span class="mono">YRGGBS00</span> (forms U100–U917)</td><td><span class="mono">T001Q</span> · <span class="mono">GB92</span></td><td>Active subst: UNES=UNESCH(hdr)+UNESCO(item) · UBO=UNESCH+UBO · UIS=UIS · IIEP=IIEP · UIL=UIL. ✅ <b>verified they do NOT set the payment block</b> (no ZLSPR in YRGGBS00) — parallel customization, not the block path</td></tr>
+<tr><td><b>Set payment block "W"</b></td><td>WF <span class="mono">SWDD</span> WS90000003 · BOR <span class="mono">SWO1</span>/<span class="mono">SE24</span> YBSEG · prog <span class="mono">SE38 YBSEG_REL</span></td><td><span class="mono">BSEG.ZLSPR</span> · <span class="mono">BSIK.ZLSPR</span></td><td>⚠️ <b>ISSUE — see below</b></td></tr>
+<tr><td>Block reason "W"</td><td><span class="mono">OBD?</span>/<span class="mono">OB27</span> (payment block reasons)</td><td><span class="mono">T008</span>/<span class="mono">T008T</span></td><td>W = "Workflow block"</td></tr>
+<tr><td>Release-for-Payment WF</td><td><span class="mono">SWDD</span> WS90000003 · <span class="mono">PFTC</span> tasks · <span class="mono">SWI1</span> work items</td><td><span class="mono">SWDSSTEPS</span> · <span class="mono">HRS1201</span></td><td>reset block = TS00407868</td></tr>
+<tr><td>F110 + house banks</td><td><span class="mono">F110</span> · <span class="mono">FBZP</span></td><td><span class="mono">T042A</span></td><td>UBO → CIT01/BRA01</td></tr>
+<tr><td>Grouping rules (RULE_ID)</td><td>IMG BCM → Payment Grouping ("Rule maintenance")</td><td><span class="mono">TBNK_RULE</span>/<span class="mono">_SELOP</span></td><td>by ZBUKR+amount+method, no bank (§9a)</td></tr>
+<tr><td>BCM batch</td><td><span class="mono">BNK_MONI</span> (monitor)</td><td><span class="mono">BNK_BATCH_HEADER</span></td><td>carries ZBUKR+HBKID+RULE_ID</td></tr>
+<tr><td>Release procedure / determination</td><td>IMG BCM → Approval</td><td><span class="mono">TBCA_RELPROC_CUS</span>/<span class="mono">_EXP</span> · <span class="mono">TBCA_REL_RULE</span></td><td>proc 01 "Dual Ctrl"; step→rule 90000004/05</td></tr>
+<tr><td><b>Node criteria + people (selection)</b></td><td><span class="mono">OOCU_RESP</span> (Change) · <span class="mono">PP01</span> (RY, IT1218) · resolves via <span class="mono">RH_GET_ACTORS</span></td><td><span class="mono">HRP1218</span>/<span class="mono">HRT1218</span> (ZBUKR+amt) · <span class="mono">HRP1001</span> (people)</td><td>this is where the node is chosen (§3)</td></tr>
+<tr><td>Authorization to sign</td><td><span class="mono">PFCG</span> · <span class="mono">SU01</span> · tcode <span class="mono">BNK_APP</span></td><td><span class="mono">AGR_USERS</span>/<span class="mono">AGR_TCODES</span></td><td>role YS:FI:M:BCM_MON_APP______:&lt;ent&gt; — 6 missing (§3e)</td></tr>
+<tr><td>Reject → reverse payment (custom)</td><td>BAdI <span class="mono">SE18/SE19 BNK_BADI_ORIG_PAYMT_CHG</span> → <span class="mono">Z_CL_BNK_BADI_PAYMT_CHG</span></td><td>—</td><td>ON_REJECT → <span class="mono">J_1B_FBRA_POSTING_AUFRUFEN</span> (FBRA+FB08)</td></tr>
+<tr><td>Output file</td><td><span class="mono">DMEE</span> · <span class="mono">FDTA</span></td><td>—</td><td>SWIFT/Coupa → bank</td></tr>
+</table>
+
+<div class="warn"><div class="t">⚠️ OPEN ISSUES / RISKS</div>
+<b>1 · Direct DB write instead of a BAPI (the main one).</b> <span class="mono">YBSEG.ZCREATEPAYMENTBLOCKWF</span> sets the payment block with raw <span class="mono">UPDATE bseg / UPDATE bsik SET zlspr='W'</span> — <b>not</b> <span class="mono">FI_DOCUMENT_CHANGE</span> / <span class="mono">BAPI_ACC_*</span> nor the standard Release-for-Payment block. Consequences: <b>no change documents</b> (no audit trail of the block), <b>no validation/substitution/authority check</b>, <b>no enqueue</b> (lock), and <b>BSEG and BSIK updated separately</b> → if one fails the document is inconsistent. Plus <span class="mono">COMMIT WORK</span> inside a BOR method (workflow LUW). <b>Recommend:</b> replace with the standard payment-release block or a supported change API.<br>
+<b>2 · 6 signatories without the BNK_APP role</b> — in the panel but cannot sign (§3e). <br>
+<b>3 · Bank-agnostic selection</b> — SAP can't tell one bank from another; carton alignment is a manual control (§5).<br>
+<b>4 · Grouping-rule drift dev→prod</b> — D01 has UNES_AX_EX, P01 doesn't (§9a).</div>
+
 <h2>10 · The 4 payment processes (UBO = Process 3 on Citibank)</h2>
 <table>
 <tr><th>Process</th><th>Description</th><th>BCM</th><th>Entities</th></tr>
