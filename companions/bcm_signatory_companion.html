@@ -148,6 +148,15 @@ Each bank registers its signatory panel <b>independently</b>: TRS sends a <b>sep
 <h2>3 · Node selection — where the logic lives (IT1218)</h2>
 <p class="lead"><b>How the rule picks ONE node:</b> when a batch arrives, the rule scans every node's criteria and returns the node where <b>all</b> conditions match the batch. Those criteria are <b>not</b> the standard PFAC ones (<span class="mono">HRP1222</span> is <b>empty</b>) — they live in <b>infotype 1218</b> on each <span class="mono">RY</span> node (<span class="mono">HRP1218</span> header → <span class="mono">TABNR</span> → <span class="mono">HRT1218</span> expressions) and are matched against the standard BCM structure <span class="mono">BNK_STR_BATCH_REL_APPR</span>. (It IS standard BCM — the Approval Procedure generates them; it only looked non-standard because it bypasses the PFAC/1222 path.)</p>
 <p class="lead">Read each row as: <span class="mono">if batch.ZBUKR == UBO AND batch.amount ∈ [low,high] (and RULE_ID matches, on INI) → use this node</span>.</p>
+<div class="gate"><b>THIS is where the node is selected — worked example (raw IT1218, live P01).</b> The condition lives literally on each node. A UBO payment of <b>USD 7,500</b> (batch <span class="mono">ZBUKR=UBO</span>, amount 7 500, <span class="mono">RULE_ID=UBO_AP_MAX</span>):
+<table style="margin:4px 0">
+<tr><th>Node</th><th>Raw IT1218 condition (HRT1218)</th><th>Match for 7 500?</th></tr>
+<tr><td>50034892 (INI ≤10K)</td><td><span class="mono">ZBUKR=UBO · MAXPAYAMT 0–10000 · RULE_ID=UBO_AP_MAX</span></td><td>✅ <b>selected (validate)</b></td></tr>
+<tr><td>50034893 (INI ≤5M)</td><td><span class="mono">ZBUKR=UBO · MAXPAYAMT 10000–5000000 · RULE_ID=UBO_AP_ST</span></td><td>✗ amount/RULE_ID out</td></tr>
+<tr><td>50034894 (COM ≤10K)</td><td><span class="mono">ZBUKR=UBO · MAXPAYAMT 0–10000</span></td><td>✅ <b>selected (sign)</b></td></tr>
+<tr><td>50036737 (COM &gt;10K)</td><td><span class="mono">ZBUKR=UBO · MAXPAYAMT 10000–50000000</span></td><td>✗ amount out</td></tr>
+</table>
+<span class="mono">RH_GET_ACTORS</span> evaluates these against the batch container and returns the <b>people of the matching node</b> (node 50034892 → 11 persons via <span class="mono">HRP1001</span> relation <span class="mono">A007→P</span>). <b>So "the node" is whatever RY row has <span class="mono">ZBUKR='UBO'</span> + the amount band the payment falls in.</b> Raw criteria read from <span class="mono">HRT1218</span>; all 24 nodes persisted to Golden DB <span class="mono">bcm_node_selection_criteria</span> (67 rows).</div>
 <table>
 <tr><th>Rule</th><th>Node (OBJID)</th><th>ZBUKR</th><th>MAXPAYAMT_RULECURR</th><th>RULE_ID</th></tr>
 <tr><td>90000005 INI</td><td>50034892 · ≤10K</td><td>UBO</td><td>0 – 10 000</td><td>UBO_AP_MAX</td></tr>
