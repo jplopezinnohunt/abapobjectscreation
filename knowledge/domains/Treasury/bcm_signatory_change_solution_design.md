@@ -250,6 +250,32 @@ The selection logic is defined per responsibility: the **OOCU_RESP overview** sh
 
 > ⚠️ **Dev/prod caveat (safety):** the D01 (dev) signatory config differs from P01 — e.g. UBO is **1 node** "all transfers" in D01 vs **2 amount tiers** (≤10K + >10K) in P01, and **OBJID `50034894` means ≤10K in P01 but all-amounts in D01**; UIS/UIL use different OBJIDs. So **don't validate prod behaviour in D01, and don't blindly transport these RY nodes D01→P01** (OBJID collision). Full comparison in Golden DB `bcm_node_d01_vs_p01`.
 
+### 4d. Side-by-side — who RELEASES (Step 1) vs who SIGNS (Step 2), by company × amount (live P01, 2026-06-19)
+
+The release control is **two sequential steps by two different people**: **Step 1 · Validate/Release** (rule `90000005` BNK_INI) *then* **Step 2 · Sign/Commit** (rule `90000004` BNK_COM). The two steps draw from **separate RY nodes whose amount bands do not always line up**. Pairing them by entity × overlapping band (`✗` = in panel, no BNK_APP role, §3e):
+
+| Co. | Amount band | Step 1 RELEASE (90000005 INI) | Step 2 SIGN (90000004 COM) | Note |
+|---|---|---|---|---|
+| UBO | ≤10K | `50034892` · 8 (Amaral, Ba✗, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, Soares) | `50034894` · 8 (= same 8) | ⚠ same list validates & signs |
+| UBO | 10K–50M | `50034893` · 7 ≤5M (Cuba, De Sousa, Godinho, Jovchelovitch, Martin✗, Otero, Soares) | `50036737` · 7 (Ba✗, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, Soares) | ⚠ gap: validator tops 5M, signer 50M → no Step-1 validator 5M–50M; lists differ |
+| UIS | 0–50M | `50036801` · 8 ≤5M (Imhof, Labe, Oesttveit, Ould A. Voffal, Pessoa, Reuge, Sanneh, Yli-Hietanen) | `50010054` · 8 (= same 8) | ⚠ same list; ⚠ gap 5M–50M. Old ≤10K nodes (INI 50010051, COM 50036326) = 0 active |
+| IIEP | 0–50M | `50010087` · 6 (Gonzalez, Lopez-Rey, Moyo E., Poisson, Pont Ferrer✗, Sarmento) | `50010088` · 6 (= same 6) | same list validates & signs |
+| UIL | 0–50M | `50037530` · 5 (Abdi, **Basoglu**, Kempf, Valdes Cotera, Zholdoshalieva) | `50037531` · 4 (Abdi, Kempf, Valdes Cotera, Zholdoshalieva) | **Basoglu validates but does NOT sign** — only real list difference |
+| UNES | ≤300K PAYROLL | `50032363` · 3 (Derakhshan, Khisty, Moyo Ez.) | **COUPA** (no SAP signer) | Step-2 sign done in Coupa (Process 4); node 50010052 expired 2023 |
+| UNES | ≤500K AP | `50010075` · 5 (Khisty, Lopez-Chemouny, Marquand, Moyo Ez., Negusse) | **COUPA** | — |
+| UNES | 500K–5M | `50010076` · 2 (Khisty, Negusse) | **COUPA** | — |
+| UNES | 500K–7.5M | `50038878` · 1 (Moyo Ez.) | **COUPA** | — |
+| UNES | 5M–50M | `50010077` · 1 (Khisty) | **COUPA** | — |
+| UNES | 0–50M TRS | `50010078` · 6 (Bidault-Coe✗, Ekue✗, El Holoui✗, Gazi, Sopraseuth, Yli-Hietanen) | **COUPA** | 3 of 6 role-less (§3e) |
+
+**What the cross reveals:**
+1. **Same people validate AND sign** in UBO ≤10K, UIS, IIEP — the 4-eyes split is **not** enforced by separate panels; it relies on two *distinct users* acting at run time (`F_STAT_USR` / creator-≠-releaser, §9). Only UBO >10K and UIL have genuinely different lists per step.
+2. **Coverage gaps 5M–50M** (UBO, UIS): a signer exists up to 50M but the validator tops at 5M → a payment in that band cannot be released at Step 1. Confirm whether such amounts occur for these entities.
+3. **UNES does not sign in SAP** — Step 2 is Coupa (Process 4); SAP only validates. For UNES "who signs" is not a SAP node.
+4. **Role-less people recur** across both steps: Ba (UBO), Martin (UBO, being delimited), Pont Ferrer (IIEP), Bidault-Coe/Ekue/El Holoui (UNES TRS) — §3e/§4b.
+
+Reproducible: `Zagentexecution/quality_checks/bcm_release_vs_approve.py` (`--entity`) pairs Step 1↔Step 2 by entity × overlapping amount band from live-P01 Golden-DB data. Persisted to Golden DB `bcm_release_vs_approve` (11 rows).
+
 ---
 
 ## 5. Reconciliation logic + completeness gate
