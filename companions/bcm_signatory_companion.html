@@ -391,44 +391,109 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 <span class="mono">UBO_AP_MAX</span> keys on <b>Grouping Origin + Paying Company Code (UBO) + Amount + Payment Method</b> — <b>no House Bank condition at all</b>. So the bank is selected by <b>neither</b> layer (grouping nor signatory). The house bank is only an <b>attribute carried</b> on the batch (<span class="mono">BNK_BATCH_HEADER.HBKID</span>), never tested. Strengthens §2: the bank never drives selection, at any layer.</div>
 <div class="note" style="font-size:11.5px;opacity:.85"><i>Source: live <b>P01</b> via <span class="mono">RFC_READ_TABLE</span> on <span class="mono">TBNK_RULE</span> / <span class="mono">TBNK_RULE_T</span> / <span class="mono">TBNK_RULE_SELOP</span> (2026-06-19). Persisted to Golden DB tables <span class="mono">bcm_grouping_rule</span> + <span class="mono">bcm_grouping_rule_selop</span>. The earlier IMG screenshots were D01 (showed 14 rules incl. UNES_AX_EX).</i></div>
 
-<h2>9b · End-to-end flow — the TWO approval gates, with the config behind every step</h2>
-<p class="lead">Invoice → bank file. Tag = <span style="color:var(--coral);font-weight:700">CUSTOM (UNESCO)</span> vs <span style="color:var(--teal);font-weight:700">STANDARD SAP</span>. Every card names the <b>config table / object</b> that drives it — nothing is hand-waved.</p>
-
-<div style="background:var(--bg2);border-left:6px solid var(--coral);border-radius:6px;padding:6px 11px;margin:16px 0 7px;font-weight:800;color:var(--coral);font-size:12.5px">GATE 1 · FI RELEASE FOR PAYMENT — document level, runs BEFORE F110 · workflow <span class="mono">WS90000003</span></div>
-<div class="stage" style="--ac:var(--gray)"><div class="h">Invoice / document posted</div><div class="s"><span class="mono">BKPF</span> / <span class="mono">BSEG</span> — needs payment approval → triggers <span class="mono">WS90000003</span></div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--coral)"><span class="tagr">CUSTOM</span><div class="h">Block the document for payment</div><div class="s">TS90000012 → <span class="mono">YBSEG.ZCREATEPAYMENTBLOCKWF</span> · <b><span class="mono">UPDATE bseg/bsik SET zlspr='W'</span></b> (W = "Workflow block", <span class="mono">T008T</span>) · prog <span class="mono">YBSEG_REL</span> ⚠ direct UPDATE</div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--coral)"><span class="tagr">CUSTOM</span><div class="h">Instantiate the wrapper object</div><div class="s">TS90000011 → BOR <span class="mono">YBSEG</span> (subtype of <span class="mono">BSEG</span>, <span class="mono">TOJTB</span>)</div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--teal)"><span class="tagr">STANDARD</span><div class="h">Determine sub-workflow + release</div><div class="s">TS00407859 "Determine subworkflow release" → <span class="mono">WS00400011</span> "Release for payment single-stage" — an approver releases</div></div>
-<div class="arrow">▼ approved &nbsp;|&nbsp; ✗ rejected ↘</div>
-<div class="stage" style="--ac:var(--amber);margin-left:34px"><span class="tagr">CUSTOM · reject</span><div class="h">✗ Rejected → add reason note</div><div class="s">TS90000010 / <span class="mono">YBSEG.rejectionreason</span> → <span class="mono">SGOS_NOTE_CREATE_DIALOG</span> on <span class="mono">BKPF</span> (GOS note) + <span class="mono">COMMIT WORK</span>; document stays blocked</div></div>
-<div class="arrow">▼ (approved)</div>
-<div class="stage" style="--ac:var(--teal)"><span class="tagr">STANDARD</span><div class="h">Reset payment block → free for payment</div><div class="s">TS00407868 "Reset payment block" → <span class="mono">ZLSPR</span> cleared → document is now payable</div></div>
-
-<div style="background:var(--bg2);border-left:6px solid var(--blue);border-radius:6px;padding:6px 11px;margin:16px 0 7px;font-weight:800;color:var(--blue);font-size:12.5px">F110 PAYMENT RUN → GROUPING (Process ①, general BCM)</div>
-<div class="stage" style="--ac:var(--blue)"><span class="tagr">STANDARD</span><div class="h">F110 selects free-for-payment docs, picks house bank</div><div class="s">banks from <span class="mono">T042A</span> (UBO → CIT01, BRA01) · house-bank determination via FBZP</div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--blue)"><span class="tagr">CONFIG</span><div class="h">Group payments into a batch → assign RULE_ID</div><div class="s"><span class="mono">TBNK_RULE</span> / <span class="mono">TBNK_RULE_SELOP</span>: match by <b>DORIGIN + ZBUKR + AMT_RULECU + RZAWE</b> (no bank). ≤10K → <span class="mono">UBO_AP_MAX</span> · &gt;10K → <span class="mono">UBO_AP_ST</span>. Extra split: <span class="mono">GROUP_FIELD1</span>=VALUT on some entities</div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--blue)"><div class="h">BCM batch created</div><div class="s"><span class="mono">BNK_BATCH_HEADER</span> carries <span class="mono">ZBUKR</span> + <span class="mono">HBKID</span> + <span class="mono">RULE_ID</span> + amount — on structure <span class="mono">BNK_STR_BATCH_REL_APPR</span></div></div>
-
-<div style="background:var(--bg2);border-left:6px solid var(--teal);border-radius:6px;padding:6px 11px;margin:16px 0 7px;font-weight:800;color:var(--teal);font-size:12.5px">GATE 2 · BCM BATCH SIGNATORY RELEASE — file level, runs AFTER F110 · workflow <span class="mono">WS50100024 → WS50100021</span> (std <span class="mono">BUSISB001</span>)</div>
-<div class="stage" style="--ac:var(--purple)"><span class="tagr">CONFIG</span><div class="h">Which release procedure fires</div><div class="s"><span class="mono">TBCA_RELPROC_CUS</span> (BNK_COM type 3/proc 01 · BNK_INI type 1/proc 01) + <span class="mono">TBCA_RELPROC_EXP</span> (RULE_ID ∈ {UBO_AP_MAX/ST, UIS_*, IIEP_*, UIL_*} → proc <b>01 "Dual Ctrl"</b>)</div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--purple)"><span class="tagr">STEP 1</span><div class="h">Validate (INI)</div><div class="s"><span class="mono">TBCA_REL_RULE</span> BNK_INI/01/01 → rule <b>90000005</b></div></div>
-<div class="arrow">▼ resolve agents (standard) ▼</div>
-<div class="stage" style="--ac:var(--teal)"><span class="tagr">STANDARD</span><div class="h">Select the signatory node + people</div><div class="s"><span class="mono">BNK_API_GET_REL_ACTORS</span> → <span class="mono">BCA_OBJ_REL_GET_ACTORS</span> → <span class="mono">RH_GET_ACTORS</span> (rule = OTYPE AC, container from <span class="mono">BNK_STR_BATCH_REL_APPR</span>) → evaluates each RY's <span class="mono">IT1218</span> (ZBUKR+amount). Rule 90000005 → RY <span class="mono">50034892</span> ≤10K / <span class="mono">50034893</span> ≤5M → people = <span class="mono">HRP1001</span></div></div>
-<div class="arrow">▼</div>
-<div class="stage" style="--ac:var(--purple)"><span class="tagr">STEP 2</span><div class="h">Sign / Commit (COM) — different person (4-eyes)</div><div class="s"><span class="mono">TBCA_REL_RULE</span> BNK_COM/01/01 → rule <b>90000004</b> → RY <span class="mono">50034894</span> ≤10K / <span class="mono">50036737</span> &gt;10K → people via same <span class="mono">RH_GET_ACTORS</span>. Acting needs auth role <span class="mono">BNK_APP</span></div></div>
-<div class="arrow">▼ committed &nbsp;|&nbsp; ✗ rejected ↘</div>
-<div class="stage" style="--ac:var(--amber);margin-left:34px"><span class="tagr">CUSTOM · reject</span><div class="h">✗ Batch rejected → reverse the payment</div><div class="s">BAdI <span class="mono">BNK_BADI_ORIG_PAYMT_CHG</span> → <span class="mono">Z_CL_BNK_BADI_PAYMT_CHG~ON_REJECT</span>: <span class="mono">J_1B_FBRA_POSTING_AUFRUFEN</span> (FBRA reset + FB08 reverse, reason 01) + log SLG1/FBPM</div></div>
-
-<div style="background:var(--bg2);border-left:6px solid var(--gray);border-radius:6px;padding:6px 11px;margin:16px 0 7px;font-weight:800;color:var(--mut);font-size:12.5px">OUTPUT</div>
-<div class="stage" style="--ac:var(--gray)"><div class="h">Generate file → bank</div><div class="s">DMEE → SWIFT / Coupa → bank (Citibank / Banco do Brasil)</div></div>
-
-<div class="note"><b>The one-line summary:</b> Gate 1 (custom) blocks the <i>document</i> until released; F110 pays the freed docs and groups them by <span class="mono">RULE_ID</span>; Gate 2 (standard selection) gets two different people to validate then sign the <i>batch</i>. <b>Custom code is only at the document gate (block/reject)</b> — the signatory selection is 100% standard <span class="mono">RH_GET_ACTORS</span>.</div>
+<h2>9b · End-to-end flow — the TWO approval gates (config behind every step)</h2>
+<p class="lead">Invoice → bank file. Left bar colour: <span style="color:var(--coral);font-weight:700">custom (UNESCO)</span> · <span style="color:var(--teal);font-weight:700">standard</span> · <span style="color:var(--blue);font-weight:700">data/grouping</span> · <span style="color:var(--purple);font-weight:700">procedure/step</span> · <span style="color:var(--amber);font-weight:700">reject branch</span>. Each box shows its config table/object.</p>
+<svg viewBox="0 0 700 1038" width="100%" style="max-width:700px;display:block;margin:8px auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="End-to-end payment flow across the two approval gates">
+<defs><marker id="fa" markerWidth="9" markerHeight="9" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--mut)"/></marker></defs>
+<g font-family="system-ui,-apple-system,sans-serif">
+<rect x="6" y="12" width="688" height="362" rx="8" fill="var(--bg2)" opacity="0.55"/>
+<rect x="6" y="12" width="4.5" height="362" fill="var(--coral)"/>
+<text x="16" y="30" font-size="11" font-weight="800" fill="var(--coral)">GATE 1 · FI RELEASE FOR PAYMENT — before F110 · WS90000003</text>
+<rect x="6" y="390" width="688" height="222" rx="8" fill="var(--bg2)" opacity="0.55"/>
+<rect x="6" y="390" width="4.5" height="222" fill="var(--blue)"/>
+<text x="16" y="408" font-size="11" font-weight="800" fill="var(--blue)">F110 PAYMENT RUN + GROUPING (Process ①)</text>
+<rect x="6" y="628" width="688" height="292" rx="8" fill="var(--bg2)" opacity="0.55"/>
+<rect x="6" y="628" width="4.5" height="292" fill="var(--teal)"/>
+<text x="16" y="646" font-size="11" font-weight="800" fill="var(--teal)">GATE 2 · BCM BATCH SIGNATORY — after F110 · WS50100024→WS50100021</text>
+<rect x="6" y="936" width="688" height="82" rx="8" fill="var(--bg2)" opacity="0.55"/>
+<rect x="6" y="936" width="4.5" height="82" fill="var(--gray)"/>
+<text x="16" y="954" font-size="11" font-weight="800" fill="var(--gray)">OUTPUT</text>
+<line x1="239.0" y1="86" x2="239.0" y2="110" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="156" x2="239.0" y2="180" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="226" x2="239.0" y2="250" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="296" x2="239.0" y2="320" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="366" x2="239.0" y2="418" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="464" x2="239.0" y2="488" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="534" x2="239.0" y2="558" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="604" x2="239.0" y2="656" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="702" x2="239.0" y2="726" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="772" x2="239.0" y2="796" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="842" x2="239.0" y2="866" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<line x1="239.0" y1="912" x2="239.0" y2="964" stroke="var(--mut)" stroke-width="1.4" marker-end="url(#fa)"/>
+<rect x="40" y="40" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="40" width="4.5" height="46" rx="2" fill="var(--gray)"/>
+<text x="54" y="59" font-size="11" font-weight="700" fill="var(--fg)">Invoice / document posted</text>
+<text x="54" y="75" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">BKPF · BSEG  →  triggers WS90000003</text>
+<rect x="40" y="110" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="110" width="4.5" height="46" rx="2" fill="var(--coral)"/>
+<text x="54" y="129" font-size="11" font-weight="700" fill="var(--fg)">Block the document for payment</text>
+<text x="54" y="145" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TS90000012 · UPDATE bseg/bsik SET zlspr=&#x27;W&#x27;  (T008T)</text>
+<text x="430" y="123" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--coral)">CUSTOM</text>
+<rect x="40" y="180" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="180" width="4.5" height="46" rx="2" fill="var(--coral)"/>
+<text x="54" y="199" font-size="11" font-weight="700" fill="var(--fg)">Instantiate wrapper object YBSEG</text>
+<text x="54" y="215" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TS90000011 · BOR subtype of BSEG</text>
+<text x="430" y="193" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--coral)">CUSTOM</text>
+<rect x="40" y="250" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="250" width="4.5" height="46" rx="2" fill="var(--teal)"/>
+<text x="54" y="269" font-size="11" font-weight="700" fill="var(--fg)">Determine sub-workflow + release</text>
+<text x="54" y="285" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TS00407859 → WS00400011 (approver releases)</text>
+<text x="430" y="263" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--teal)">STD</text>
+<line x1="438" y1="273.0" x2="470" y2="272" stroke="var(--amber)" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#fa)"/>
+<rect x="470" y="253" width="222" height="38" rx="6" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.3"/>
+<rect x="470" y="253" width="4.5" height="38" rx="2" fill="var(--amber)"/>
+<text x="482" y="269" font-size="9.5" font-weight="700" fill="var(--amber)">✗ reject: reason note</text>
+<text x="482" y="283" font-size="7.5" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">YBSEG.rejectionreason · GOS note</text>
+<rect x="40" y="320" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="320" width="4.5" height="46" rx="2" fill="var(--teal)"/>
+<text x="54" y="339" font-size="11" font-weight="700" fill="var(--fg)">Reset payment block → payable</text>
+<text x="54" y="355" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TS00407868 · ZLSPR cleared</text>
+<text x="430" y="333" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--teal)">STD</text>
+<rect x="40" y="418" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="418" width="4.5" height="46" rx="2" fill="var(--blue)"/>
+<text x="54" y="437" font-size="11" font-weight="700" fill="var(--fg)">F110 selects free-for-payment docs</text>
+<text x="54" y="453" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">banks from T042A (CIT01 / BRA01) · FBZP</text>
+<text x="430" y="431" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--blue)">STD</text>
+<rect x="40" y="488" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="488" width="4.5" height="46" rx="2" fill="var(--blue)"/>
+<text x="54" y="507" font-size="11" font-weight="700" fill="var(--fg)">Group payments → assign RULE_ID</text>
+<text x="54" y="523" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TBNK_RULE/SELOP · ZBUKR+amount+method · NO bank</text>
+<text x="430" y="501" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--blue)">CONFIG</text>
+<rect x="40" y="558" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="558" width="4.5" height="46" rx="2" fill="var(--blue)"/>
+<text x="54" y="577" font-size="11" font-weight="700" fill="var(--fg)">BCM batch created</text>
+<text x="54" y="593" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">BNK_BATCH_HEADER · struct BNK_STR_BATCH_REL_APPR</text>
+<rect x="40" y="656" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="656" width="4.5" height="46" rx="2" fill="var(--purple)"/>
+<text x="54" y="675" font-size="11" font-weight="700" fill="var(--fg)">Which release procedure fires</text>
+<text x="54" y="691" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TBCA_RELPROC_CUS/EXP · RULE_ID ∈ {...} → proc 01 &#x27;Dual Ctrl&#x27;</text>
+<text x="430" y="669" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--purple)">CONFIG</text>
+<rect x="40" y="726" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="726" width="4.5" height="46" rx="2" fill="var(--purple)"/>
+<text x="54" y="745" font-size="11" font-weight="700" fill="var(--fg)">STEP 1 · Validate (INI)</text>
+<text x="54" y="761" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">TBCA_REL_RULE  BNK_INI/01/01 → rule 90000005</text>
+<text x="430" y="739" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--purple)">STEP</text>
+<rect x="40" y="796" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="796" width="4.5" height="46" rx="2" fill="var(--teal)"/>
+<text x="54" y="815" font-size="11" font-weight="700" fill="var(--fg)">Pick the node + its people</text>
+<text x="54" y="831" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">RH_GET_ACTORS · IT1218 ZBUKR=UBO+amount → 50034892/3 → HRP1001</text>
+<text x="430" y="809" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--teal)">STD</text>
+<rect x="40" y="866" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="866" width="4.5" height="46" rx="2" fill="var(--purple)"/>
+<text x="54" y="885" font-size="11" font-weight="700" fill="var(--fg)">STEP 2 · Sign / Commit (COM)</text>
+<text x="54" y="901" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">rule 90000004 → 50034894 / 50036737 · needs BNK_APP</text>
+<text x="430" y="879" text-anchor="end" font-size="7.5" font-weight="700" fill="var(--purple)">STEP</text>
+<line x1="438" y1="889.0" x2="470" y2="888" stroke="var(--amber)" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#fa)"/>
+<rect x="470" y="869" width="222" height="38" rx="6" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.3"/>
+<rect x="470" y="869" width="4.5" height="38" rx="2" fill="var(--amber)"/>
+<text x="482" y="885" font-size="9.5" font-weight="700" fill="var(--amber)">✗ reject: reverse F110</text>
+<text x="482" y="899" font-size="7.5" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">ON_REJECT BAdI · FBRA+FB08</text>
+<rect x="40" y="964" width="398" height="46" rx="7" fill="var(--bg)" stroke="var(--bd)" stroke-width="1.2"/>
+<rect x="40" y="964" width="4.5" height="46" rx="2" fill="var(--gray)"/>
+<text x="54" y="983" font-size="11" font-weight="700" fill="var(--fg)">Generate file → bank</text>
+<text x="54" y="999" font-size="8" font-family="ui-monospace,Consolas,monospace" fill="var(--mut)">DMEE → SWIFT / Coupa → Citibank / Banco do Brasil</text>
+</g></svg>
+<div class="note"><b>One line:</b> Gate 1 (custom) blocks the <i>document</i> until released; F110 pays freed docs and groups by <span class="mono">RULE_ID</span>; Gate 2 (standard <span class="mono">RH_GET_ACTORS</span>) has two different people validate then sign the <i>batch</i>. Custom code lives only at the document gate. Step detail: §3 (selection) · §3d (how to change) · §9a (grouping).</div>
 
 <h2>10 · The 4 payment processes (UBO = Process 3 on Citibank)</h2>
 <table>
