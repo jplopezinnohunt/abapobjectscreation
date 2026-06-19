@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INC-000011781 — UBO / Renata Ritter (BCM signatory change)</title>
+<style>
+:root{--bg:#ffffff;--fg:#1b1b19;--mut:#6b6b64;--bd:#e3e3dc;--bg2:#f5f5ef;--red:#dc2626;
+  --gray:#8a8a82;--blue:#2f7dc4;--purple:#6b62d6;--teal:#1d9e75;--coral:#c2410c;--amber:#b8860b;}
+@media(prefers-color-scheme:dark){:root{--bg:#191916;--fg:#ededea;--mut:#a2a29a;--bd:#3a3a34;--bg2:#24241d;--red:#f87171;
+  --gray:#a9a9a0;--blue:#5aa6e8;--purple:#9b93ee;--teal:#4fc9a3;--coral:#e8825a;--amber:#e0b341;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:22px;margin:0 0 2px}
+h2{font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);border-bottom:1px solid var(--bd);padding-bottom:5px;margin:30px 0 12px}
+.lead{color:var(--mut);font-size:13px;margin:0 0 6px}
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+th,td{border:1px solid var(--bd);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--bg2);font-weight:600}
+code,.mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.92em}
+.note{border:1px dashed var(--bd);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--mut);margin-top:10px}
+.warn{border:1px solid var(--amber);border-left:6px solid var(--amber);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:13px;background:var(--bg2)}
+.warn .t{color:var(--amber);font-weight:800;font-size:13px;margin-bottom:4px}
+.k{color:var(--teal)} .a{color:var(--purple)} .d{color:var(--coral)} .w{color:var(--amber)}
+.tag{font-size:10.5px;color:var(--mut)}
+ul{margin:6px 0;padding-left:20px}
+.back{display:inline-block;margin-bottom:8px;font-size:12px}
+.src{font-size:11px;color:var(--mut);margin-top:30px;border-top:1px solid var(--bd);padding-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back">← <a href="bcm_signatory_companion.html">BCM Bank Signatory — Companion</a></p>
+<h1>INC-000011781 — UBO / Renata Ritter</h1>
+<p class="lead">BCM bank-signatory change, entity <b>UBO</b> (UNESCO Brasília), Citibank. Request from TRS (Ingrid Wettie): "add Renata RITTER for UBO in BCM". Worked end-to-end against live P01. This is the worked example for the method in the <a href="bcm_signatory_companion.html">signature companion</a>.</p>
+
+<h2>1 · Context</h2>
+<ul>
+<li><b>BCM banks:</b> <span class="mono">CIT01</span> (the only one producing batches) + BRA01 carton; both cartons received and <b>identical</b> (8 signatories) → rule representable.</li>
+<li><b>Renata</b> <span class="mono">10021811</span> / <span class="mono">R_RITTER</span>: confirmed on the carton; live → <span class="mono">PA0000</span> STAT2=3 active, <span class="mono">USR02</span> unlocked (⚠️ validity ends 2026-09-30), email/user match. <b>Lacks the BNK_APP role</b> (her "not authorized" screenshot).</li>
+<li><b>The letter is a swap, not just an add</b> (REF 3617/3618): DELETE Von Michael <b>MARTIN</b> + ADD <b>Renata</b>.</li>
+</ul>
+
+<h2>2 · Rules &amp; nodes being adjusted (explicit)</h2>
+<p class="lead">UBO uses both release rules, two amount tiers each. Adding an <b>unlimited</b> signatory (Renata) touches <b>all four</b> nodes:</p>
+<table>
+<tr><th>Rule</th><th>Step</th><th>Node (OBJID)</th><th>Tier</th><th>Change</th></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034892</td><td>≤ 10.000</td><td class="a">➕ ADD Renata</td></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="a">➕ ADD Renata</td> </tr>
+<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50034894</td><td>≤ 10.000</td><td class="a">➕ ADD Renata</td></tr>
+<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50036737</td><td>&gt; 10.000</td><td class="a">➕ ADD Renata</td></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="d">➖ DELIMIT Martin (his only active node)</td></tr>
+</table>
+<div class="note">The earlier "format demo" showed only node <span class="mono">50034894</span> (rule 90000004 COM ≤10K). The <b>real change spans both rules</b> — 90000005 (Validate) <i>and</i> 90000004 (Sign) — because Renata is unlimited, so she joins every tier of both steps.</div>
+
+<h2>3 · Net operations for DBS (OOCU_RESP, P01)</h2>
+<p class="lead"><b>Current ask</b> (authorized by REF 3617/3618; BEGDA = letter date, ENDDA = 99991231):</p>
+<table>
+<tr><th>Op</th><th>PERNR</th><th>Person</th><th>Rule</th><th>Node</th></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034892</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034893</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50034894</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50036737</td></tr>
+<tr><td class="d">DELIMIT</td><td>10108464</td><td>Martin, Von Michael</td><td>90000005</td><td class="mono">50034893</td></tr>
+<tr><td class="w">+ Security</td><td>R_RITTER</td><td>Ritter, Renata</td><td colspan="2">grant role <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (PFCG) — required to actually sign</td></tr>
+</table>
+<p class="lead" style="margin-top:8px"><b>Old issues — hold for TRS sign-off</b> (not in this letter):</p>
+<ul>
+<li><span class="mono">10005016</span> <b>Ba, Ismaila</b> — active in UBO nodes, <b>not on carton</b> (over-auth) AND no BNK_APP role → recommend delimit.</li>
+<li><span class="mono">10016038</span> <b>De Sousa Carvalho, Lorena</b> — active, not on carton (over-auth) → TRS review.</li>
+<li><span class="mono">10097358</span> <b>Yli-Hietanen, Anssi</b> — on carton but delimited from UBO since 2024 → re-add or confirm exclusion.</li>
+</ul>
+
+<h2>4 · Mandatory table (format) — node 50034894</h2>
+<p class="lead"><b>Rule <span class="mono">90000004</span> (BNK_COM, Sign) · Node <span class="mono">50034894</span> (UBO signatures ≤10.000)</b> — every person the OOCU_RESP screen shows + the addition. <span class="tag">✅ keep · ➕ ADD · ➖ DELIMIT · ⚠️ TRS (old issue) · — no action</span></p>
+<table>
+<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Access — BNK_APP role</th><th>Action</th></tr>
+<tr><td>10002437</td><td>Amaral, Evaney F.</td><td>Active</td><td>Yes (≤10K)</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10021100</td><td>Cuba Sanchez, Julio C.</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10062474</td><td>Jovchelovitch Noleto, Marlova</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10067273</td><td>Otero Gomes, Maria</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10081583</td><td>Soares Eon, Fabio</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10005016</td><td>Ba, Ismaila</td><td>Active</td><td>No</td><td class="d">❌ no role</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td>No</td><td class="k">✅ role (UBO)</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10097358</td><td>Yli-Hietanen, Anssi</td><td>Expired 26.01.2024</td><td>Yes</td><td class="k">✅ role (ALL)</td><td class="w">⚠️ re-ADD (TRS)</td></tr>
+<tr><td>10105030</td><td>Gazi, Munim Shahriar Baizid</td><td>Expired 26.01.2024</td><td>No</td><td class="k">✅ role (ALL)</td><td>— no action</td></tr>
+<tr><td>10108464</td><td>Martin, Von Michael</td><td>Expired 21.03.2023 <span class="tag">(here)</span></td><td>No (delete)</td><td class="d">❌ no role</td><td>— (active in 50034893)</td></tr>
+<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td>Not present (new)</td><td>Yes</td><td class="d"><b>❌ no role → + Security ticket</b></td><td class="a">➕ ADD</td></tr>
+</table>
+<div class="note">Same format for the other three nodes (50034892, 50034893, 50036737) — see the full per-node × role matrix in the companion §4 and Golden DB <span class="mono">bcm_node_agent_role_check</span>.</div>
+
+<h2>5 · Access — the role to grant</h2>
+<div class="warn"><div class="t">Two actions, not one — node + role</div>
+Renata's ADD to the nodes (OOCU_RESP/DBS) must be paired with a <b>Security/PFCG ticket</b> to grant <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (the entity-derived BCM approve role: <span class="mono">S_TCODE</span> BNK_APP + <span class="mono">C_SIGN</span> digital signature + <span class="mono">F_STAT_MON</span> + <span class="mono">F_REGU_BUK</span> BUKRS=UBO). Being in the node alone does not let her sign — that was her original "not authorized to use transaction BNK_APP" error.</div>
+
+<div class="src">Source: live P01 via RFC (HRP1001/HRP1218/HRT1218, PA0000/PA0105/USR02, AGR_*), the two TRS cartons (REF 3617/3618), and the BNK_APP screenshot. Golden DB: <span class="mono">bcm_node_agent_role_check</span>, <span class="mono">bcm_signatory_role_gap</span>, <span class="mono">bcm_approve_role</span>. Canonical record: <span class="mono">knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md</span>. Method: <a href="bcm_signatory_companion.html">BCM Bank Signatory companion</a>.</div>
+
+</div>
+</body>
+</html>
