@@ -58,7 +58,10 @@ scoped by ENTITY (ZBUKR=UBO), NOT by bank:
 
 ### 3a. Node selection — WHERE the logic lives (verified live in P01, infotype 1218)
 
-It is **not** the generic PFAC criteria mechanism (`HRP1222` is empty). The selection criteria sit on each `RY` node in **infotype 1218**: `HRP1218` (header → `TABNR`) → `HRT1218` (expression rows), as **expressions evaluated against the standard BCM container structure `BNK_STR_BATCH_REL_APPR`**. At approval time the generated rule (`BNK_INI_01_01_04` / `BNK_COM_01_01_03`) evaluates each responsibility's 1218 expression against the batch's release-approval structure and returns the people of the node that matches.
+It is **not** the generic PFAC criteria mechanism (`HRP1222` is empty). The selection criteria sit on each `RY` node in **infotype 1218**: `HRP1218` (header → `TABNR`) → `HRT1218` (expression rows), as **expressions evaluated against the standard BCM container structure `BNK_STR_BATCH_REL_APPR`**.
+
+**Runtime selection — PROVEN by reading the code (2026-06-19), all STANDARD SAP, no custom code:**
+`BNK_API_GET_REL_ACTORS` → `BCA_API_REL_GET_ACTORS` → `BCA_OBJ_REL_GET_ACTORS` (FG `BCA_OBJ_REL_WF_CUST`). The last one: (1) `BCA_DB_REL_RULE_SEL_SINGLE` reads `TBCA_REL_RULE` → the rule (90000004/05); (2) builds a workflow rule object `OTYPE='AC' OBJID=<rule>`; (3) reads `TBCA_REL_OBJ_CAT` → structure `BNK_STR_BATCH_REL_APPR`, fills it from the batch and maps it to a workflow **container**; (4) calls the standard agent FM **`RH_GET_ACTORS`** with the rule + container → returns the agents. `RH_GET_ACTORS` resolves the rule as a **Responsibilities** rule and evaluates each RY node's IT1218 criteria → the matching node's `HRP1001` people. **The reject BAdI plays no part in selection.** Evidence: `BADI_IMPL` for `BNK%` = 3 impls, only **1 custom** (the reject `Z_CL_BNK_BADI_PAYMT_CHG`), **none for agent selection**. FM sources saved under `code/` (`bnk_get_rel_actors.abap`, `bca_get_actors.abap`, `bca_obj_get_actors.abap`).
 
 Exact criteria read live from `HRT1218`:
 
