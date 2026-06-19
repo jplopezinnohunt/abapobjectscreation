@@ -534,7 +534,7 @@ Baseline 2026-06-19: 39 active signatories, 6 with no BNK_APP role (UBO: I_BA, V
 
 ##### MANDATORY OUTPUT STRUCTURE (locked 2026-06-17, INC-000011781 — user directive)
 
-Every BCM signatory-change incident MUST be presented as **ONE single table** covering **every person currently in every affected node PLUS every addition** — never just the deltas. This makes the full as-is panel, the requested change, and pre-existing drift visible in one place and auditable. Columns, in this exact order:
+Every BCM signatory-change incident MUST be presented as **ONE single table** covering **every ACTIVE member of every affected node PLUS every addition** — never just the deltas. Expired/red OOCU_RESP rows are **not** in the table (active panel only); an expired row that carries an action — a re-add, or a person still active on another node — goes in the net-operations **Old issues** block instead. This makes the live panel, the requested change, and pre-existing drift visible in one place and auditable. Columns, in this exact order:
 
 `Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Live status | Carton | Access (BNK_APP role) | Action`
 
@@ -545,7 +545,7 @@ Every BCM signatory-change incident MUST be presented as **ONE single table** co
 - Follow the table with a **net-operations summary** split into two blocks:
   1. **Current ask** (authorized by the TRS letter/REF) — the discrete ADD/DELIMIT ops: `Op | PERNR | Rule | Node`. BEGDA = TRS letter effective date, ENDDA = 99991231.
   2. **Old issues — hold for TRS sign-off** — drift not covered by this letter (over-authorized removals, on-carton-but-absent adds), listed but NOT executed without per-item TRS authorization.
-- Membership data must come from a **live P01 read** (RFC_READ_TABLE on HRP1001, all periods) — not a stale Gold DB snapshot, not screenshots. Resolve multi-period rows (a person can have an expired + an active period in the same node).
+- Membership data must come from a **live P01 read** (RFC_READ_TABLE on HRP1001, **all periods**) — not a stale Gold DB snapshot, not screenshots. Read all periods to (a) determine who is *currently active* and (b) catch a person who looks expired on one node but is **still active on another** (the Martin case). But the **table shows ACTIVE members only**; expired rows that need an action go in *Old issues*, not the main table.
 
 This structure supersedes the old "5-column deltas-only spec". Hand to DBS; wait for execution confirmation.
 
