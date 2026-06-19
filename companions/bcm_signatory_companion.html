@@ -212,6 +212,28 @@ Gate (1) runs <b>4 custom tasks</b> (D_CROUZET, 2010) on the custom BOR object <
 <p style="margin:6px 0 0;font-size:12px;opacity:.8"><i>Correction vs the earlier version: the procedure is assigned/determined by <span class="mono">TBCA_RELPROC_CUS</span> + <span class="mono">TBCA_RELPROC_EXP</span> (not <span class="mono">TBCA_REL_PROC</span>, which is only the name catalogue), and the rule→node link is the <span class="mono">rule_number</span> on each RY. Evidence: live P01 <span class="mono">RFC_READ_TABLE</span> on <span class="mono">TBCA_RELPROC_CUS / TBCA_RELPROC_EXP / TBCA_REL_RULE / TBCA_REL_FM / TBCA_RTW_LINKAGE / TBCA_REL_OBJ_CAT</span> + ADT read of the Z class from D01, 2026-06-19. Persisted to Golden DB: <span class="mono">bcm_release_rule, bcm_release_proc_assign, bcm_release_proc_determination, bcm_release_activity_fm, bcm_release_procedure(_t), bcm_release_object, bcm_release_wf_linkage</span>.</i></p>
 </div>
 
+<h2>3d · How to CHANGE it — plain-language guide (for a functional user)</h2>
+<p class="lead"><b>Mental model:</b> a <b>node</b> is just <b>the list of people allowed to act for one entity + one amount range</b> — SAP's version of the bank's signature card. There are two lists per payment (<b>validate</b>, then <b>sign</b>), and for some entities one list per amount tier. Every node is stamped with <span class="mono">ZBUKR=&lt;its entity&gt;</span> (proven above) — so changing people never touches the condition.</p>
+
+<div class="gate"><b>The everyday change — add / remove a signatory</b> (≈95% of requests, e.g. INC-000011781):
+<ol style="margin:4px 0 0;padding-left:20px">
+<li>Transaction <span class="mono">OOCU_RESP</span> in <b>Change</b> mode (NOT "Simulate" — that only reads).</li>
+<li>Open the rule — <span class="mono">BNK_INI</span> (validate) or <span class="mono">BNK_COM</span> (sign) — then the node (e.g. <i>UBO Validation up to 10.000 USD</i>).</li>
+<li><b>Agent assignment</b> → <b>add</b> the person (personnel number) or <b>delimit</b> (end-date) the one leaving, with <b>valid-from / valid-to</b> dates.</li>
+<li>Done — that person can now (or no longer) validate/sign for that entity + amount tier. <b>You never edit the condition</b> (ZBUKR / amount), only the people.</li>
+</ol>
+<b>Who:</b> DBS executes in P01 (we never write P01 — we hand them the spec).</div>
+
+<div class="note"><b>The spec we hand DBS (unambiguous + safe)</b> — one row per change:<br>
+<span class="mono">Rule | Node (OBJID) | Node name | PERNR | Person | Action (ADD/DELIMIT) | valid-from/to</span><br>
+The <b>OBJID is mandatory</b>: node names look alike across entities (UBO/UIS/IIEP all have a "Validation" node) — using the <b>number</b> prevents editing the wrong panel. This is the §6 mandatory output.</div>
+
+<div class="warn"><div class="t">Two things people forget</div>
+1. <b>Being in the node is not enough to sign</b> — the person also needs the SAP Security role <span class="mono">BNK_APP</span> (that was Renata's "not authorized" error). Separate ticket to Security.<br>
+2. <b>Reconcile against the bank's <i>carton des signatures</i></b> — SAP is entity-level/bank-agnostic, so keeping the SAP panel = the bank's legal list is a <b>manual control</b> (the reconciliation in §5), not something SAP enforces.</div>
+
+<div class="note"><b>Rare changes (config / BASIS — not day-to-day):</b> change a node's <b>amount band</b> ("up to X") or add a <b>new tier / entity</b> → done in the <b>Approval Procedure</b> customizing, which regenerates the node's <span class="mono">IT1218</span> condition. Not a signatory-list change.</div>
+
 <h2>4 · Complete node inventory (live P01)</h2>
 <p class="lead">Not a uniform "2 per company": 1..N nodes per (entity × rule), tiered by amount only where the entity needs it. <span class="tag">Active = members with a future ENDDA today.</span></p>
 <table>

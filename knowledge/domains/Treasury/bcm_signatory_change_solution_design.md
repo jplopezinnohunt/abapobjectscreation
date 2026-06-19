@@ -158,6 +158,18 @@ OUTPUT: DMEE → SWIFT/Coupa → bank
 
 ---
 
+### 3d. How to CHANGE it (plain-language)
+
+A **node** = the list of people allowed to act for **one entity + one amount range** (SAP's signature card). Every node carries `ZBUKR=<its entity>` (confirmed for UBO/UIS/IIEP/UIL/UNES) + an amount band [+ RULE_ID on INI]; changing people never touches that condition.
+
+- **Everyday change — add/remove a signatory** (≈95% of cases): `OOCU_RESP` in **Change** mode → open rule `BNK_INI` (validate) / `BNK_COM` (sign) → the node → **Agent assignment** → ADD person (PERNR) or DELIMIT the leaver, with valid-from/to. **DBS executes** (we never write P01). Spec = §6 mandatory table (`Rule | Node OBJID | Node name | PERNR | Person | Action | dates`); **OBJID mandatory** (lookalike-node safeguard).
+- **Two reminders:** (1) being in the node ≠ can sign — also needs SAP Security role `BNK_APP`; (2) reconcile vs the bank carton (manual control, §5) — SAP is bank-agnostic.
+- **Rare (config/BASIS):** change a node's amount band or add a tier/entity → Approval Procedure customizing (regenerates the IT1218 condition), not a signatory-list edit.
+
+**Per-entity ZBUKR confirmation** (raw IT1218, all in Golden DB `bcm_node_selection_criteria`): UBO=2×2 by amount · UIS=amount+RULE_ID · IIEP/UIL=single node · UNES=many INI nodes by RULE_ID+amount, COM→Coupa(0).
+
+---
+
 ## 4. Complete node inventory (live P01, 2026-06-17)
 
 Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule), tiered by amount only where needed.
