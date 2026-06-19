@@ -10,6 +10,8 @@
 ## 1. Purpose
 Standard, repeatable solution for "Change in Bank Signatory panel of <ENTITY>" incidents: validate the TRS letter/carton, read the **real** current SAP state from P01, reconcile, and produce a DBS change-spec + TRS reply — separating the **current ask** from **old issues**.
 
+> 🔍 **AUDIT OBSERVATION — payment block set by a HIDDEN direct DB write (why nobody sees how it changes).** Process-mapping BCM surfaced an **undocumented direct-modification path**: the document payment block (`ZLSPR='W'`, "Workflow block") is set by custom BOR method `YBSEG.ZCREATEPAYMENTBLOCKWF` (subtype of BSEG, prog `YBSEG_REL`, author A_AHOUNOU) via a **raw SQL `UPDATE bseg / UPDATE bsik SET zlspr='W'`** — invoked from the **FI Release-for-Payment workflow `WS90000003`** (document-level gate, before F110; separate from the BCM batch signatory release) which runs 4 UNESCO custom tasks (D_CROUZET, 2010): TS90000012 set block W (the UPDATE), TS90000011 instantiate YBSEG, TS90000010 ZGETGOSNOTE, TS90000008 BSEG.CHANGE. **Why invisible:** a raw UPDATE leaves **no change document, no application-log entry, no authority check** — so "who set/removed this block and when?" has an **empty audit trail**. **Risks:** BSEG/BSIK updated separately (consistency), COMMIT WORK in a BOR method, bypasses the standard FI change API / payment-release block. **Scope:** acts on the *document*, not on who-signs (signatory selection is standard, §3a). **Recommendation:** use the standard payment-release block / a supported change API so the block carries change docs + auth. Source `code/YBSEG_REL.abap`; Golden DB `bcm_workflow_custom_task`; detail §3b(iv).
+
 ---
 
 ## 2. Data model — THREE levels (the schema)
