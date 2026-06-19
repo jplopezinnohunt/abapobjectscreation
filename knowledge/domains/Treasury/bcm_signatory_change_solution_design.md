@@ -128,6 +128,34 @@ The methods live on the **custom BOR subtype `YBSEG`** (PARENT `BSEG`, program `
 
 ---
 
+### 3c. End-to-end flow — TWO gates, with the config behind each step (verified 2026-06-19)
+
+```
+GATE 1 · FI RELEASE FOR PAYMENT (document-level, BEFORE F110) · WF WS90000003
+  invoice posted (BKPF/BSEG)
+   └─ CUSTOM block:  TS90000012 YBSEG.ZCREATEPAYMENTBLOCKWF → UPDATE bseg/bsik SET zlspr='W'  (W=Workflow block, T008T)  [prog YBSEG_REL]
+   └─ CUSTOM:        TS90000011 instantiate BOR YBSEG (subtype of BSEG)
+   └─ STANDARD:      TS00407859 determine subwf → WS00400011 "Release for payment single-stage" (approver releases)
+        ├─ ✗ reject → CUSTOM YBSEG.rejectionreason → SGOS_NOTE_CREATE_DIALOG on BKPF (GOS note) + COMMIT; stays blocked
+        └─ ✓ approve → STANDARD TS00407868 "Reset payment block" → ZLSPR cleared → payable
+F110 PAYMENT RUN → GROUPING (Process ①)
+   F110 selects free docs; banks from T042A (UBO: CIT01, BRA01); FBZP house-bank determination
+   └─ GROUP: TBNK_RULE / TBNK_RULE_SELOP → RULE_ID by DORIGIN+ZBUKR+AMT_RULECU+RZAWE (no bank). ≤10K=UBO_AP_MAX, >10K=UBO_AP_ST; +GROUP_FIELD1=VALUT
+   └─ batch: BNK_BATCH_HEADER (ZBUKR+HBKID+RULE_ID+amount) on BNK_STR_BATCH_REL_APPR
+GATE 2 · BCM BATCH SIGNATORY RELEASE (file-level, AFTER F110) · WF WS50100024→WS50100021 (std BUSISB001)
+   └─ procedure determ.: TBCA_RELPROC_CUS (BNK_COM type3/proc01, BNK_INI type1/proc01) + TBCA_RELPROC_EXP (RULE_ID∈{…} → proc 01 "Dual Ctrl")
+   └─ STEP 1 validate: TBCA_REL_RULE BNK_INI/01/01 → rule 90000005
+        └─ STANDARD select: BNK_API_GET_REL_ACTORS → BCA_OBJ_REL_GET_ACTORS → RH_GET_ACTORS(rule AC, container=BNK_STR_BATCH_REL_APPR)
+             → eval RY IT1218 (ZBUKR+amount): rule 90000005 → RY 50034892 ≤10K / 50034893 ≤5M → people HRP1001
+   └─ STEP 2 sign (different person, 4-eyes): TBCA_REL_RULE BNK_COM/01/01 → rule 90000004 → RY 50034894 ≤10K / 50036737 >10K; auth role BNK_APP
+        ├─ ✗ reject → CUSTOM BAdI Z_CL_BNK_BADI_PAYMT_CHG~ON_REJECT → J_1B_FBRA_POSTING_AUFRUFEN (FBRA+FB08 reason 01) + SLG1/FBPM
+        └─ ✓ commit
+OUTPUT: DMEE → SWIFT/Coupa → bank
+```
+**One line:** Gate 1 (custom) blocks the *document* until released; F110 pays freed docs and groups by RULE_ID; Gate 2 (standard selection) gets two different people to validate then sign the *batch*. Custom code is only at the document gate (block/reject); signatory selection is 100% standard `RH_GET_ACTORS`.
+
+---
+
 ## 4. Complete node inventory (live P01, 2026-06-17)
 
 Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule), tiered by amount only where needed.
