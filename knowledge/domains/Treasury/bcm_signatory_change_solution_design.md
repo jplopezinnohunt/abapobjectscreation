@@ -170,6 +170,25 @@ A **node** = the list of people allowed to act for **one entity + one amount ran
 
 ---
 
+### 3e. Validation — do assigned signatories have the BNK_APP role? (live P01, 2026-06-19)
+
+Being in a node ≠ can sign (Renata's error). For **every active signatory** (golden `bcm_signatory_assignment`, active rows), checked live whether their SAP user holds a role granting `BNK_APP`. Granting roles = `AGR_TCODES`(menu) ∪ `AGR_1251`(`S_TCODE='BNK_APP'`) + BCM derived; active holders from `AGR_USERS`.
+
+**Result: 39 active signatories · 33 OK · 6 CANNOT open BNK_APP:**
+
+| User | Name | Entity | BNK_APP role | Note |
+|---|---|---|---|---|
+| VM_MARTIN | Martin, Von Michael | UBO | ❌ none (5 HR self-service roles) | also delimited per INC-000011781 |
+| I_BA | Ba, Ismaila | UBO | ❌ none (56 HR/FO roles) | also over-authorized (not on carton) |
+| B_PONT | Pont Ferrer, Beatriz | IIEP | ❌ none (24 IIEP admin/HR) | in panel, cannot act |
+| I_ADJANOHOUN | Ekue, Irma | UNES | ❌ none (5 HR self-service) | in panel, cannot act |
+| I_BIDAULT | Bidault-Coe, Isabelle | UNES | ❌ none (49 AR accountant) | in panel, cannot act |
+| S_EL-HOLOUI | El Holoui, Said | UNES | ❌ none (5 HR self-service) | in panel, cannot act |
+
+Per entity missing: UBO 2/9 · IIEP 1/6 · UNES 3/11; UIS & UIL clean. **Fix:** grant entity-matched `YS:FI:M:BCM_MON_APP______:<entity>` (Security/PFCG) **or** delimit from the node. Persisted to Golden DB `bcm_signatory_role_gap` (39 rows). Caveat: assignment list from 2026-04-13 snapshot — refresh `extract_bcm_signatories.py` before acting.
+
+---
+
 ## 4. Complete node inventory (live P01, 2026-06-17)
 
 Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule), tiered by amount only where needed.

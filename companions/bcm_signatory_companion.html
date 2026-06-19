@@ -234,6 +234,21 @@ The <b>OBJID is mandatory</b>: node names look alike across entities (UBO/UIS/II
 
 <div class="note"><b>Rare changes (config / BASIS — not day-to-day):</b> change a node's <b>amount band</b> ("up to X") or add a <b>new tier / entity</b> → done in the <b>Approval Procedure</b> customizing, which regenerates the node's <span class="mono">IT1218</span> condition. Not a signatory-list change.</div>
 
+<h2>3e · Validation — do all assigned signatories actually have the BNK_APP role?</h2>
+<p class="lead"><b>Being in a node ≠ being able to sign</b> (Renata's error). Checked <b>every active signatory</b> against live P01: does their SAP user hold a role granting transaction <span class="mono">BNK_APP</span>? Method: granting roles from <span class="mono">AGR_TCODES</span> (menu) ∪ <span class="mono">AGR_1251</span> (<span class="mono">S_TCODE='BNK_APP'</span>) + BCM derived; active holders from <span class="mono">AGR_USERS</span>. 2026-06-19.</p>
+<div class="hero">39 active signatories · 33 OK · <span style="color:var(--red)">6 CANNOT open BNK_APP</span></div>
+<table>
+<tr><th>User</th><th>Name</th><th>Entity</th><th>Active roles</th><th>BNK_APP role?</th><th>Note</th></tr>
+<tr><td class="mono">VM_MARTIN</td><td>Martin, Von Michael</td><td>UBO</td><td>5 (HR self-service)</td><td>❌ none</td><td>also being <b>delimited</b> per INC-000011781 — consistent</td></tr>
+<tr><td class="mono">I_BA</td><td>Ba, Ismaila</td><td>UBO</td><td>56 (HR/FO Baghdad)</td><td>❌ none</td><td>also flagged <b>over-authorized</b> (not on carton) — can't sign anyway</td></tr>
+<tr><td class="mono">B_PONT</td><td>Pont Ferrer, Beatriz</td><td>IIEP</td><td>24 (IIEP admin/HR)</td><td>❌ none</td><td>in panel, cannot act</td></tr>
+<tr><td class="mono">I_ADJANOHOUN</td><td>Ekue, Irma</td><td>UNES</td><td>5 (HR self-service)</td><td>❌ none</td><td>in panel, cannot act</td></tr>
+<tr><td class="mono">I_BIDAULT</td><td>Bidault-Coe, Isabelle</td><td>UNES</td><td>49 (AR accountant)</td><td>❌ none</td><td>in panel, cannot act</td></tr>
+<tr><td class="mono">S_EL-HOLOUI</td><td>El Holoui, Said</td><td>UNES</td><td>5 (HR self-service)</td><td>❌ none</td><td>in panel, cannot act</td></tr>
+</table>
+<div class="warn"><div class="t">What it means + fix</div>
+These 6 sit in a BCM signatory node but their SAP user has <b>no role granting <span class="mono">BNK_APP</span></b> → they physically cannot validate/sign; the workflow item can't route to them. <b>Per entity:</b> UBO 2/9 · IIEP 1/6 · UNES 3/11 missing; UIS &amp; UIL clean. <b>Fix (per user):</b> either grant the entity-matched approve role <span class="mono">YS:FI:M:BCM_MON_APP______:&lt;entity&gt;</span> (Security/PFCG), <b>or</b> delimit them from the node (they can't act anyway — esp. VM_MARTIN, already on the remove list, and I_BA, over-authorized). The names with only HR self-service roles look like they never should have been signatories. Result persisted to Golden DB <span class="mono">bcm_signatory_role_gap</span> (39 rows). <i>Caveat: signatory list from the 2026-04-13 snapshot (active rows); refresh <span class="mono">extract_bcm_signatories.py</span> before acting.</i></div>
+
 <h2>4 · Complete node inventory (live P01)</h2>
 <p class="lead">Not a uniform "2 per company": 1..N nodes per (entity × rule), tiered by amount only where the entity needs it. <span class="tag">Active = members with a future ENDDA today.</span></p>
 <table>
