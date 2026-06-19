@@ -1,6 +1,6 @@
 # INC-000011781 — Add Renata Ritter to UBO BCM signatory panel (+ Martin removal, drift findings)
 
-**Status**: EXECUTED (partial) 2026-06-19 — Renata added to all 4 nodes + Martin/Ba delimited (live-verified); **OPEN**: Renata's `BNK_APP` role (Security) + 2 carton discrepancies (Yli-Hietanen missing, De Sousa over-auth)
+**Status**: EXECUTED (partial) 2026-06-19 — Renata added to all 4 nodes + Martin/Ba/De Sousa delimited (live-verified); **OPEN**: Renata's `BNK_APP` role (Security) + add Yli-Hietanen ("solo queda Anssi")
 **Type**: Operational change (add/remove signatory) + pre-existing drift findings
 **Date opened**: 2026-06-17
 **Requester**: Ingrid Wettie (BFM-TRS, Middle Office)
@@ -15,11 +15,12 @@
 
 ## 0. Execution status — validated live P01 (2026-06-19)
 Official UBO carton received (**8 signatories**: 7 at both tiers + Amaral ≤10K only). OOCU_RESP changes were made; read back live from the 4 UBO nodes (`HRP1001` A007→P):
-- ✅ **Done & correct:** Renata `10021811` added to all 4 nodes (BEGDA 2026-06-19 / ENDDA 9999-12-31); Martin `10108464` delimited (ends today); Ba `10005016` delimited (ends today); the 5 unlimited keepers (Cuba, Godinho, Jovchelovitch, Otero, Soares) + Amaral (≤10K) match the carton.
-- ❌ **Open (3):**
-  1. **Renata has no `BNK_APP` role** — verified still missing (`bcm_signatory_role_gap`) → she **cannot sign**; Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending**. *The incident is not closeable until this is granted.*
-  2. **Yli-Hietanen `10097358` MISSING** — on the carton (both tiers) but not active in any UBO node (expired 2024; holds role via UIS/UNES) → **ADD ×4 nodes**.
-  3. **De Sousa Carvalho `10016038` over-authorized — and can sign TODAY.** Full access: in all 4 UBO nodes since 2024-01-25 (unlimited, both steps) + holds **both** `YS:FI:M:BCM_MON_APP______:UBO` (sign/approve) **and** `YS:FI:M:BCM_REV_REJ_PAY__:UBO` (reverse/reject) since Jan-2024; SAP user active (last logon 2026-06-19), employee active in UBO/Brasília (BR04). Not on the carton of 8 → **control gap** (can validate/sign/reverse UBO payments at any amount while not bank-authorized). TRS to confirm: add to carton, **or DELIMIT all 4 nodes + remove both roles**.
+- ✅ **Done & correct:** Renata `10021811` added to all 4 nodes (BEGDA 2026-06-19 / ENDDA 9999-12-31); Martin `10108464` + Ba `10005016` delimited (end today); **De Sousa Carvalho `10016038` delimited 2026-06-19** (ENDDA all 4 nodes) — over-auth control gap **closed** (she was active with full sign + `BCM_REV_REJ_PAY` reverse/reject since Jan-2024, not on the carton); the 5 unlimited keepers (Cuba, Godinho, Jovchelovitch, Otero, Soares) + Amaral (≤10K) match the carton.
+- ❌ **Open (2):**
+  1. **Renata has no `BNK_APP` role** — verified still missing 2026-06-19 (`bcm_signatory_role_gap`) → she **cannot sign**; Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending**. *The incident is not closeable until this is granted.*
+  2. **Yli-Hietanen `10097358` MISSING — the only node-side item left ("solo queda Anssi").** On the carton (both tiers) but not active in any UBO node (expired 2024; holds role via UIS/UNES) → **ADD ×4 nodes**.
+
+  *De Sousa cleanup:* her 2 BCM roles remain in PFCG — harmless without a node; Security may remove for hygiene.
 
 Refreshed live: `extract_bcm_signatories.py` + `bcm_role_gap_check.py` + `bcm_release_vs_approve.py` (Golden DB). Companion + solution-design §3e/§4b/§4d + incident page updated.
 

@@ -257,8 +257,8 @@ The release control is **two sequential steps by two different people**: **Step 
 
 | Co. | Amount band | Step 1 RELEASE (90000005 INI) | Step 2 SIGN (90000004 COM) | Note |
 |---|---|---|---|---|
-| UBO | ≤10K | `50034892` · 9 (Amaral, Ba✗ out-today, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | `50034894` · 9 (= same 9) | ⚠ same list. Renata added 2026-06-19 (role pending); Ba leaving. Carton wants Yli-Hietanen here (missing); De Sousa over-auth |
-| UBO | 10K–50M | `50034893` · 8 ≤5M (Cuba, De Sousa, Godinho, Jovchelovitch, Martin✗ out-today, Otero, **Ritter✗ new**, Soares) | `50036737` · 8 (Ba✗ out-today, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | ⚠ gap 5M–50M (validator tops 5M). Renata added both steps; Ba & Martin leaving |
+| UBO | ≤10K | `50034892` · 9 (Amaral, Ba✗ out, Cuba, De Sousa out, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | `50034894` · 9 (= same 9) | ⚠ same list. Renata added (role pending); De Sousa & Ba delimited 2026-06-19. **Only Yli-Hietanen missing** vs carton; Renata's role pending |
+| UBO | 10K–50M | `50034893` · 8 ≤5M (Cuba, De Sousa out, Godinho, Jovchelovitch, Martin✗ out, Otero, **Ritter✗ new**, Soares) | `50036737` · 8 (Ba✗ out, Cuba, De Sousa out, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | ⚠ gap 5M–50M (validator tops 5M). Renata added; Ba, Martin & De Sousa delimited 2026-06-19 |
 | UIS | 0–50M | `50036801` · 8 ≤5M (Imhof, Labe, Oesttveit, Ould A. Voffal, Pessoa, Reuge, Sanneh, Yli-Hietanen) | `50010054` · 8 (= same 8) | ⚠ same list; ⚠ gap 5M–50M. Old ≤10K nodes (INI 50010051, COM 50036326) = 0 active |
 | IIEP | 0–50M | `50010087` · 6 (Gonzalez, Lopez-Rey, Moyo E., Poisson, Pont Ferrer✗, Sarmento) | `50010088` · 6 (= same 6) | same list validates & signs |
 | UIL | 0–50M | `50037530` · 5 (Abdi, **Basoglu**, Kempf, Valdes Cotera, Zholdoshalieva) | `50037531` · 4 (Abdi, Kempf, Valdes Cotera, Zholdoshalieva) | **Basoglu validates but does NOT sign** — only real list difference |
@@ -334,11 +334,11 @@ The **Access** column (the §3e check, live) flags whether the person's SAP user
 ## 8. Worked example — INC-000011781 (UBO / Renata Ritter)
 - BCM banks (T042A): **CIT01 + BRA01**; both cartons received and **identical** (8 signatories) → rule representable.
 - Renata `10021811` confirmed on carton; live: `PA0000` STAT2=3 active, `USR02 R_RITTER` unlocked (⚠️ validity ends 2026-09-30), `PA0105` user/email match. Still lacks `BNK_APP` role (Security).
-- **Executed 2026-06-19 (read-back live):** Renata `10021811` ADDED to all 4 UBO nodes ✅; Martin `10108464` DELIMITED in **50034893** ✅ (his only active period — verified via all-periods read); Ba `10005016` DELIMITED ✅. Official carton confirmed = **8** (7 both tiers + Amaral ≤10K only).
+- **Executed 2026-06-19 (read-back live):** Renata `10021811` ADDED to all 4 UBO nodes ✅; Martin `10108464` DELIMITED in **50034893** ✅; Ba `10005016` DELIMITED ✅; **De Sousa Carvalho `10016038` DELIMITED in all 4 nodes ✅** (over-auth control gap closed — she was active with full sign + `BCM_REV_REJ_PAY` reverse/reject since Jan-2024, not on carton). Official carton confirmed = **8** (7 both tiers + Amaral ≤10K only).
 - **Still OPEN (verified live, action needed):**
   1. **Renata still has NO `BNK_APP` role** → cannot sign. Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending** — *the incident is not closed until this is granted*.
-  2. **Yli-Hietanen `10097358` MISSING** — on the carton (both tiers) but not active in any UBO node (expired 2024; holds the role via UIS/UNES) → **ADD ×4 nodes** (new carton confirms).
-  3. **De Sousa Carvalho `10016038` over-authorized** — active in all 4 nodes but not on carton → **DELIMIT** or TRS confirms. Gazi `10105030` expired, no action.
+  2. **Yli-Hietanen `10097358` MISSING — the only node-side item left ("solo queda Anssi").** On the carton (both tiers) but not active in any UBO node (expired 2024; holds the role via UIS/UNES) → **ADD ×4 nodes**.
+  - *De Sousa cleanup:* her 2 BCM roles remain in PFCG — harmless without a node; Security may remove for hygiene. Gazi `10105030` expired, no action.
 
 ---
 
