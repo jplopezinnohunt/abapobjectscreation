@@ -48,7 +48,7 @@ Bank (CIT01 / BRA01 / …)  ── only decides which BATCH is built
         ▼
 BCM batch  RULE_ID=UBO_AP_ST/MAX  carries  ZBUKR=UBO + HBKID + amount
         ▼
-workflow 90000003  →  approval procedure picks the AMOUNT tier
+BCM release WF WS50100024 → WS50100021 (std BUSISB001)  →  approval procedure picks the AMOUNT tier
         ▼
 scoped by ENTITY (ZBUKR=UBO), NOT by bank:
    90000005 INI  ≤10K (50034892)   ≤5M (50034893)
@@ -115,7 +115,7 @@ The signatory node is not configured on one screen; it is the end of a chain acr
 
 **(iii) Custom code** — the only method implemented in `Z_CL_BNK_BADI_PAYMT_CHG` is `IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT` (SAP note 1333640): on batch/payment **reject**, reverse the F110 payment (`J_1B_FBRA_POSTING_AUFRUFEN`, reversal reason `01`) and log to SLG1/FBPM. Full source: [`code/Z_CL_BNK_BADI_PAYMT_CHG.abap`](code/Z_CL_BNK_BADI_PAYMT_CHG.abap) (read from D01 via ADT). It does **not** affect agent/node selection — it is the reject handler only.
 
-**(iv) Custom logic INSIDE the workflow (`WS90000003`)** — the master BCM batch workflow (standard template, but with custom steps) runs **4 custom tasks created by UNESCO (D_CROUZET, 2010)**, persisted in Golden DB `bcm_workflow_custom_task`:
+**(iv) Custom logic lives in a SEPARATE gate — FI "Release for Payment" (`WS90000003`), NOT the BCM batch release.** Two distinct approval gates exist: **(1) FI Release for Payment** = `WS90000003` (tasks "Determine subworkflow release for payt", "Release for payment single-stage" = std `WS00400011`, "Reset payment block") — a **document/invoice-level** gate run **before** F110, and **where UNESCO's custom code is**; **(2) BCM batch signatory release** = `WS50100024`→`WS50100021` (std `BUSISB001`, tasks RELEASE/GETRELEASESUBWORKFLOW) — run **after** F110 on the payment file, agent selection **standard** (`RH_GET_ACTORS`, §3a). The migrated-session note that called `90000003` "the BCM workflow" conflated the two. Gate (1) runs **4 custom tasks (D_CROUZET, 2010)**, persisted in Golden DB `bcm_workflow_custom_task`:
 
 | Task | BOR method | Name | What it does |
 |---|---|---|---|
