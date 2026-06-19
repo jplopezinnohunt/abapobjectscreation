@@ -302,7 +302,7 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 <div class="note">Tier mapping (validated by Amaral): <b>"up to 10,000 only"</b> → ≤10K nodes only; <b>"unlimited"</b> → all tier nodes of both rules.</div>
 
 <h2>6 · MANDATORY output structure</h2>
-<p class="lead">ONE table, a <b>1:1 mirror</b> of <span class="mono">OOCU_RESP</span> — every <span class="mono">HRP1001</span> row the screen shows (active <b>and</b> expired/red) <b>plus</b> the additions. Columns: <span class="mono">Rule | Node (OBJID) | Node name | PERNR | Person | Live status | Action</span>. Legend: <span class="pill k">✅ keep</span> <span class="pill a">➕ ADD (current ask)</span> <span class="pill d">➖ DELIMIT (current ask)</span> <span class="pill w">⚠️ TRS (old issue)</span> <span class="pill">— no action</span>. Then a net-operations summary split into <b>Current ask</b> (authorized by the letter) vs <b>Old issues</b> (need TRS sign-off).</p>
+<p class="lead">ONE table, a <b>1:1 mirror</b> of <span class="mono">OOCU_RESP</span> — every <span class="mono">HRP1001</span> row the screen shows (active <b>and</b> expired/red) <b>plus</b> the additions. Columns: <span class="mono">Rule | Node (OBJID) | Node name | PERNR | Person | Live status | Carton | Access (BNK_APP role) | Action</span>. The <b>Access</b> column (the §3e check) flags whether the person's SAP user holds a <span class="mono">BNK_APP</span>-granting role — every ADD with ❌ needs a paired Security/PFCG ticket, not just the node change. Legend: <span class="pill k">✅ keep</span> <span class="pill a">➕ ADD (current ask)</span> <span class="pill d">➖ DELIMIT (current ask)</span> <span class="pill w">⚠️ TRS (old issue)</span> <span class="pill">— no action</span>. Then a net-operations summary split into <b>Current ask</b> (authorized by the letter) vs <b>Old issues</b> (need TRS sign-off).</p>
 
 <h2>7 · The routine (phases) — read-only; DBS executes</h2>
 <table>
@@ -324,20 +324,21 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 </ul>
 <p class="lead" style="margin-top:8px"><b>Mandatory table — node 50034894 (= the OOCU_RESP screen + the addition), format demo:</b></p>
 <table>
-<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Action</th></tr>
-<tr><td>10002437</td><td>Amaral, Evaney F.</td><td>Active</td><td>Yes (≤10K)</td><td class="k">✅ keep</td></tr>
-<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
-<tr><td>10021100</td><td>Cuba Sanchez, Julio C.</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
-<tr><td>10062474</td><td>Jovchelovitch Noleto, Marlova</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
-<tr><td>10067273</td><td>Otero Gomes, Maria</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
-<tr><td>10081583</td><td>Soares Eon, Fabio</td><td>Active</td><td>Yes</td><td class="k">✅ keep</td></tr>
-<tr><td>10005016</td><td>Ba, Ismaila</td><td>Active</td><td>No</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
-<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td>No</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
-<tr><td>10097358</td><td>Yli-Hietanen, Anssi</td><td>Expired 26.01.2024</td><td>Yes</td><td class="w">⚠️ re-ADD (TRS)</td></tr>
-<tr><td>10105030</td><td>Gazi, Munim Shahriar Baizid</td><td>Expired 26.01.2024</td><td>No</td><td>— no action</td></tr>
-<tr><td>10108464</td><td>Martin, Von Michael</td><td>Expired 21.03.2023 <span class="tag">(here)</span></td><td>No (delete)</td><td>— (active in 50034893)</td></tr>
-<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td>Not present (new)</td><td>Yes</td><td class="a">➕ ADD</td></tr>
+<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Access — BNK_APP role</th><th>Action</th></tr>
+<tr><td>10002437</td><td>Amaral, Evaney F.</td><td>Active</td><td>Yes (≤10K)</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10021100</td><td>Cuba Sanchez, Julio C.</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10062474</td><td>Jovchelovitch Noleto, Marlova</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10067273</td><td>Otero Gomes, Maria</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10081583</td><td>Soares Eon, Fabio</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10005016</td><td>Ba, Ismaila</td><td>Active</td><td>No</td><td class="d">❌ no role</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td>No</td><td class="k">✅ role (UBO)</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
+<tr><td>10097358</td><td>Yli-Hietanen, Anssi</td><td>Expired 26.01.2024</td><td>Yes</td><td class="k">✅ role (ALL)</td><td class="w">⚠️ re-ADD (TRS)</td></tr>
+<tr><td>10105030</td><td>Gazi, Munim Shahriar Baizid</td><td>Expired 26.01.2024</td><td>No</td><td class="k">✅ role (ALL)</td><td>— no action</td></tr>
+<tr><td>10108464</td><td>Martin, Von Michael</td><td>Expired 21.03.2023 <span class="tag">(here)</span></td><td>No (delete)</td><td class="d">❌ no role</td><td>— (active in 50034893)</td></tr>
+<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td>Not present (new)</td><td>Yes</td><td class="d"><b>❌ no role → + Security ticket</b></td><td class="a">➕ ADD</td></tr>
 </table>
+<div class="note"><b>The Access column = the §3e check live:</b> does the SAP user hold a role granting <span class="mono">BNK_APP</span>? ❌ means the person also needs a <b>Security/PFCG ticket</b> for <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> — being in the node alone won't let them sign. <b>Renata's ADD must be paired with that role grant</b> (it was her original "not authorized" error). <b>Ba &amp; Martin have no role either</b> → they can't sign anyway, reinforcing their removal. So every signatory change carries <b>two actions</b>: the node (OOCU_RESP/DBS) <i>and</i> the role (PFCG/Security).</div>
 <p class="lead" style="margin-top:10px"><b>Net operations</b></p>
 <table>
 <tr><th>Block</th><th>Op</th><th>PERNR</th><th>Rule</th><th>Node</th></tr>

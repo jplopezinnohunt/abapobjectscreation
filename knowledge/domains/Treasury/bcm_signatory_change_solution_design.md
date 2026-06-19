@@ -244,7 +244,9 @@ Tier mapping (validated by Amaral): **"≤10K only"** → ≤10K nodes only; **"
 
 ONE table, mirroring `OOCU_RESP` **1:1** — every `HRP1001` row the screen shows (active **and** expired/red-X) **plus** the additions. Columns:
 
-`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Live status (HRP1001) | Action`
+`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Live status (HRP1001) | Carton | Access (BNK_APP role) | Action`
+
+The **Access** column (the §3e check, live) flags whether the person's SAP user holds a `BNK_APP`-granting role. Every signatory change is therefore **two actions**: the node (OOCU_RESP/DBS) **and** the authorization role (PFCG/Security). E.g. INC-000011781: Renata's ADD has ❌ no role → must be paired with a Security ticket for `YS:FI:M:BCM_MON_APP______:UBO` (her original "not authorized" error); Ba & Martin also have ❌ no role → can't sign anyway, reinforcing removal.
 
 - **Live status** = `Active` / `Expired <ENDDA>` / `New`. Include expired rows (action `—`, no action) so the table matches the SAP screen and never looks like a mismatch.
 - Membership = live `HRP1001` read, **all periods** (resolve multi-period people — e.g. an expired + an active row in the same node).
