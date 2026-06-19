@@ -115,6 +115,17 @@ The signatory node is not configured on one screen; it is the end of a chain acr
 
 **(iii) Custom code** — the only method implemented in `Z_CL_BNK_BADI_PAYMT_CHG` is `IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT` (SAP note 1333640): on batch/payment **reject**, reverse the F110 payment (`J_1B_FBRA_POSTING_AUFRUFEN`, reversal reason `01`) and log to SLG1/FBPM. Full source: [`code/Z_CL_BNK_BADI_PAYMT_CHG.abap`](code/Z_CL_BNK_BADI_PAYMT_CHG.abap) (read from D01 via ADT). It does **not** affect agent/node selection — it is the reject handler only.
 
+**(iv) Custom logic INSIDE the workflow (`WS90000003`)** — the master BCM batch workflow (standard template, but with custom steps) runs **4 custom tasks created by UNESCO (D_CROUZET, 2010)**, persisted in Golden DB `bcm_workflow_custom_task`:
+
+| Task | BOR method | Name | What it does |
+|---|---|---|---|
+| TS90000008 | `BSEG.CHANGE` | Change Document Line | change a doc line item |
+| TS90000010 | `SYSTEM.GENERICINSTANTIATE` | ZGETGOSNOTE | get a GOS note/attachment |
+| TS90000011 | `SYSTEM.GENERICINSTANTIATE` | Create instance ZBSEG | instantiate custom BOR `YBSEG` |
+| TS90000012 | **`BSEG.ZCREATEPAYMENTBLOCKWF`** | Set Block Payment to W | **set payment block `ZLSPR='W'`** |
+
+The methods live on the **custom BOR subtype `YBSEG`** (PARENT `BSEG`, program `YBSEG_REL`, by A_AHOUNOU). `ZCREATEPAYMENTBLOCKWF` does a **direct SQL `UPDATE bseg`/`UPDATE bsik SET zlspr = 'W'`** for the document line (companycode/documentno/fiscalyear/lineitem). Full source: [`code/YBSEG_REL.abap`](code/YBSEG_REL.abap). **So the workflow DOES contain custom logic (payment blocking by direct table update), but it acts on the document — not on who-signs.** Node/agent selection remains standard `RH_GET_ACTORS` (§3a). ⚠️ Note for later: direct `UPDATE` of FI documents bypasses standard APIs — flag for review.
+
 ---
 
 ## 4. Complete node inventory (live P01, 2026-06-17)
