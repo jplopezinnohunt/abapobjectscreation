@@ -520,15 +520,26 @@ This script detects:
 
 Save each carton file under `Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>.txt` with one PERNR per line (`#` for comments). One file per bank account carton, not per entity.
 
+**Step 6b — Access-control check (MANDATORY, INC-000011781) — does every assigned signatory hold the BNK_APP role?**
+```bash
+python Zagentexecution/quality_checks/bcm_role_gap_check.py            # all entities & nodes
+python Zagentexecution/quality_checks/bcm_role_gap_check.py --entity UBO
+```
+Being in a node (HRP1001) is **NOT** enough to sign — the user also needs a role granting transaction `BNK_APP` (e.g. `YS:FI:M:BCM_MON_APP______:<entity>`). This check reads live P01 (`AGR_1251` S_TCODE='BNK_APP' ∪ `AGR_TCODES` ∪ BCM derived roles; active holders from `AGR_USERS`), flags every assigned signatory whose user holds no such role, and rebuilds Gold DB `bcm_node_agent_role_check` (node × agent) + `bcm_signatory_role_gap` (per user). **Run it for every signatory request** and feed the result into the **Access** column of the Step-7 table:
+- a ❌ on an **ADD** ⇒ the node change MUST be paired with a Security/PFCG ticket for the entity role (this was Renata's original "not authorized to use transaction BNK_APP" error);
+- a ❌ on someone being **removed** reinforces the removal (they can't sign anyway).
+Baseline 2026-06-19: 39 active signatories, 6 with no BNK_APP role (UBO: I_BA, VM_MARTIN · IIEP: B_PONT · UNES node 50010078: 3 of 6).
+
 **Step 7 — Produce the spec for DBS (no execution)**
 
 ##### MANDATORY OUTPUT STRUCTURE (locked 2026-06-17, INC-000011781 — user directive)
 
 Every BCM signatory-change incident MUST be presented as **ONE single table** covering **every person currently in every affected node PLUS every addition** — never just the deltas. This makes the full as-is panel, the requested change, and pre-existing drift visible in one place and auditable. Columns, in this exact order:
 
-`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Action`
+`Rule | Node (OBJID) | Node name (STEXT) | PERNR | Person | Live status | Carton | Access (BNK_APP role) | Action`
 
 - One row per (node × person), for **all four** (or all relevant) tier/phase nodes of the entity — list `keep` rows too, not only changes.
+- **Access (BNK_APP role)** column (from Step 6b, live): ✅ has a BNK_APP-granting role / ❌ no role. A ❌ means the change MUST be paired with a Security/PFCG ticket — being in the node alone does not let the person sign. Every signatory change is therefore **two actions**: the node (OOCU_RESP/DBS) **and** the role (PFCG/Security).
 - **Action legend (mandatory):** ✅ keep (on carton, correct) · ➕ ADD (current ask) · ➖ DELIMIT (current ask) · ⚠️ TRS = old issue, needs separate TRS sign-off (over-auth removal or on-carton-but-absent add).
 - The Rule + Node OBJID + Node name are all mandatory on every row (lookalike-group trap — see below).
 - Follow the table with a **net-operations summary** split into two blocks:

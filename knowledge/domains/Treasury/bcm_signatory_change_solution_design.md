@@ -283,6 +283,7 @@ The **Access** column (the §3e check, live) flags whether the person's SAP user
 | 2 Live state | read RY nodes of the entity + `HRP1001` all periods; never a stale snapshot/screenshot | `RFC_READ_TABLE` |
 | 3 Employee validity | `PA0000` STAT2=3, `USR02` UFLAG/GLTGB, `PA0002`/`PA0105` for adds (esp. new) | `RFC_READ_TABLE` |
 | 4 Reconcile | §5 logic + completeness/alignment gates | deterministic |
+| 4b Access control | every assigned agent vs the `BNK_APP` role (§3e/§4b) → Access column | `bcm_role_gap_check.py` (live P01) |
 | 5 Output | §6 mandatory table + net-ops spec + TRS reply + `INC-xxxx.md` | templated |
 | — Execute | **DBS** in `OOCU_RESP` (P01). Agent never writes P01. | DBS |
 | 6 Verify | re-read `HRP1001`; refresh `extract_bcm_signatories.py`; `bcm_signatory_reconciliation_check.py` | `RFC_READ_TABLE` |
