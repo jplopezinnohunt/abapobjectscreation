@@ -19,7 +19,7 @@ Official UBO carton received (**8 signatories**: 7 at both tiers + Amaral ≤10K
 - ❌ **Open (3):**
   1. **Renata has no `BNK_APP` role** — verified still missing (`bcm_signatory_role_gap`) → she **cannot sign**; Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending**. *The incident is not closeable until this is granted.*
   2. **Yli-Hietanen `10097358` MISSING** — on the carton (both tiers) but not active in any UBO node (expired 2024; holds role via UIS/UNES) → **ADD ×4 nodes**.
-  3. **De Sousa Carvalho `10016038` over-authorized** — active in all 4 nodes but not on the carton → **DELIMIT** or TRS confirms.
+  3. **De Sousa Carvalho `10016038` over-authorized — and can sign TODAY.** Full access: in all 4 UBO nodes since 2024-01-25 (unlimited, both steps) + holds **both** `YS:FI:M:BCM_MON_APP______:UBO` (sign/approve) **and** `YS:FI:M:BCM_REV_REJ_PAY__:UBO` (reverse/reject) since Jan-2024; SAP user active (last logon 2026-06-19), employee active in UBO/Brasília (BR04). Not on the carton of 8 → **control gap** (can validate/sign/reverse UBO payments at any amount while not bank-authorized). TRS to confirm: add to carton, **or DELIMIT all 4 nodes + remove both roles**.
 
 Refreshed live: `extract_bcm_signatories.py` + `bcm_role_gap_check.py` + `bcm_release_vs_approve.py` (Golden DB). Companion + solution-design §3e/§4b/§4d + incident page updated.
 
