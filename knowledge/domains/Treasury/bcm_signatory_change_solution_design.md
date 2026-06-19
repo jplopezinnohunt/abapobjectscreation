@@ -178,18 +178,19 @@ A **node** = the list of people allowed to act for **one entity + one amount ran
 
 Being in a node ≠ can sign (Renata's error). For **every active signatory** (golden `bcm_signatory_assignment`, active rows), checked live whether their SAP user holds a role granting `BNK_APP`. Granting roles = `AGR_TCODES`(menu) ∪ `AGR_1251`(`S_TCODE='BNK_APP'`) + BCM derived; active holders from `AGR_USERS`.
 
-**Result: 39 active signatories · 33 OK · 6 CANNOT open BNK_APP:**
+**Result: 40 active signatories · 33 OK · 7 CANNOT open BNK_APP:**
 
 | User | Name | Entity | BNK_APP role | Note |
 |---|---|---|---|---|
-| VM_MARTIN | Martin, Von Michael | UBO | ❌ none (5 HR self-service roles) | also delimited per INC-000011781 |
-| I_BA | Ba, Ismaila | UBO | ❌ none (56 HR/FO roles) | also over-authorized (not on carton) |
+| VM_MARTIN | Martin, Von Michael | UBO | ❌ none (5 HR self-service roles) | delimited 2026-06-19 per INC-000011781 |
+| I_BA | Ba, Ismaila | UBO | ❌ none (56 HR/FO roles) | over-authorized (not on carton) — delimited 2026-06-19 |
+| R_RITTER | Ritter, Renata | UBO | ❌ none (added 2026-06-19) | **NEW signatory (INC-000011781)** — in all 4 nodes, Security role ticket still PENDING → cannot sign yet |
 | B_PONT | Pont Ferrer, Beatriz | IIEP | ❌ none (24 IIEP admin/HR) | in panel, cannot act |
 | I_ADJANOHOUN | Ekue, Irma | UNES | ❌ none (5 HR self-service) | in panel, cannot act |
 | I_BIDAULT | Bidault-Coe, Isabelle | UNES | ❌ none (49 AR accountant) | in panel, cannot act |
 | S_EL-HOLOUI | El Holoui, Said | UNES | ❌ none (5 HR self-service) | in panel, cannot act |
 
-Per entity missing: UBO 2/9 · IIEP 1/6 · UNES 3/11; UIS & UIL clean. **Fix:** grant entity-matched `YS:FI:M:BCM_MON_APP______:<entity>` (Security/PFCG) **or** delimit from the node. Persisted to Golden DB `bcm_signatory_role_gap` (39 rows). Caveat: assignment list from 2026-04-13 snapshot — refresh `extract_bcm_signatories.py` before acting.
+Per entity missing: UBO 3 (Ba + Martin delimited 2026-06-19; Renata added, role pending) · IIEP 1 · UNES 3; UIS & UIL clean. **Fix:** grant entity-matched `YS:FI:M:BCM_MON_APP______:<entity>` (Security/PFCG) — **the open action for Renata** — **or** delimit. Persisted to Golden DB `bcm_signatory_role_gap` (40 rows). Refreshed live via `extract_bcm_signatories.py` on 2026-06-19.
 
 **Which role exactly (verified content, live P01).** One **derived-role family**: master `YS:FI:M:BCM_MON_APP______:` + one derived per entity differing **only in the org level `$BUKRS`** — `:UBO`→UBO · `:IIEP`→IIEP · `:UIS`→UIS · `:UIL`→UIL · `:UKDS`→UKDS · `:ALL`→`*` (**UNES uses `:ALL`, there is no `:UNES`**). Separate `…BCM_MON_APP_PAY__:ALL` for payment/payroll. Content (AGR_1251): `S_TCODE`(BNK_APP, BNK_MONI/A/P, FBPM1, FDTA, Y_PAY_FILE, FBL1) · **`C_SIGN`**(SIGNAPPL=BANCO, SIGNOBJ=BC_LOG = digital signature) · **`F_STAT_MON`**(BNK_ACT/BNK_RULE/BNK_ITMDET = validate/commit/reject) · `F_STAT_USR` · **`F_REGU_BUK`** (BUKRS=`$BUKRS` = the entity restriction, set by the derived role) · F_REGU_KOA, F_KNA1/F_LFA1, P_ABAP(SAPFPAYM/RFMPAY00), S_APPL_LOG(FBPM), S_BTCH. **To grant:** assign the derived role for the person's entity (`:UBO` etc.) or `:ALL` for UNES. Persisted to Golden DB `bcm_approve_role`.
 
@@ -203,7 +204,7 @@ Per entity missing: UBO 2/9 · IIEP 1/6 · UNES 3/11; UIS & UIL clean. **Fix:** 
 
 **OPEN ISSUES / RISKS:**
 1. **Direct DB write, not a BAPI (main):** `YBSEG.ZCREATEPAYMENTBLOCKWF` does raw `UPDATE bseg/bsik SET zlspr='W'` — no change docs, no validation/authority check, no enqueue, BSEG/BSIK updated separately (desync risk), `COMMIT WORK` in a BOR method. Should use the standard Release-for-Payment block / a supported change API.
-2. **6 signatories without the BNK_APP role** (§3e) — in the panel, cannot sign.
+2. **7 signatories without the BNK_APP role** (§3e) — in the panel, cannot sign; incl. **Renata** (node done 2026-06-19, role ticket still pending — the open action for INC-000011781).
 3. **Bank-agnostic selection** — carton alignment is a manual control (§5).
 4. **Grouping-rule drift dev→prod** — UNES_AX_EX in D01 not P01 (§3b/§9a).
 
@@ -228,14 +229,14 @@ Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule),
 
 ### 4b. Access control across ALL nodes (live P01, 2026-06-19)
 
-§3e applied to **every node × every active agent** — 85 active assignments, **76 OK, 9 cannot sign** (the same 6 people, recurring across nodes). Persisted to Golden DB `bcm_node_agent_role_check` (85 rows). Gaps per node:
+§3e applied to **every node × every active agent** — 89 active assignments (live 2026-06-19), **76 OK, 13 cannot sign** (the same 7 people, recurring across nodes). Persisted to Golden DB `bcm_node_agent_role_check` (89 rows). Gaps per node:
 
 | Rule | Node | Ent | Active | Missing role |
 |---|---|---|---|---|
-| 90000005 | 50034892 | UBO | 8 | I_BA |
-| 90000005 | 50034893 | UBO | 7 | VM_MARTIN (being delimited) |
-| 90000004 | 50034894 | UBO | 8 | I_BA |
-| 90000004 | 50036737 | UBO | 7 | I_BA |
+| 90000005 | 50034892 | UBO | 9 | I_BA (delim.), **R_RITTER (new, role pending)** |
+| 90000005 | 50034893 | UBO | 8 | VM_MARTIN (delim.), **R_RITTER (new)** |
+| 90000004 | 50034894 | UBO | 9 | I_BA (delim.), **R_RITTER (new)** |
+| 90000004 | 50036737 | UBO | 8 | I_BA (delim.), **R_RITTER (new)** |
 | 90000005 | 50010087 | IIEP | 6 | B_PONT |
 | 90000004 | 50010088 | IIEP | 6 | B_PONT |
 | 90000005 | 50010078 | UNES | 6 | **I_ADJANOHOUN, S_EL-HOLOUI, I_BIDAULT (3 of 6)** |
@@ -256,8 +257,8 @@ The release control is **two sequential steps by two different people**: **Step 
 
 | Co. | Amount band | Step 1 RELEASE (90000005 INI) | Step 2 SIGN (90000004 COM) | Note |
 |---|---|---|---|---|
-| UBO | ≤10K | `50034892` · 8 (Amaral, Ba✗, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, Soares) | `50034894` · 8 (= same 8) | ⚠ same list validates & signs |
-| UBO | 10K–50M | `50034893` · 7 ≤5M (Cuba, De Sousa, Godinho, Jovchelovitch, Martin✗, Otero, Soares) | `50036737` · 7 (Ba✗, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, Soares) | ⚠ gap: validator tops 5M, signer 50M → no Step-1 validator 5M–50M; lists differ |
+| UBO | ≤10K | `50034892` · 9 (Amaral, Ba✗ out-today, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | `50034894` · 9 (= same 9) | ⚠ same list. Renata added 2026-06-19 (role pending); Ba leaving. Carton wants Yli-Hietanen here (missing); De Sousa over-auth |
+| UBO | 10K–50M | `50034893` · 8 ≤5M (Cuba, De Sousa, Godinho, Jovchelovitch, Martin✗ out-today, Otero, **Ritter✗ new**, Soares) | `50036737` · 8 (Ba✗ out-today, Cuba, De Sousa, Godinho, Jovchelovitch, Otero, **Ritter✗ new**, Soares) | ⚠ gap 5M–50M (validator tops 5M). Renata added both steps; Ba & Martin leaving |
 | UIS | 0–50M | `50036801` · 8 ≤5M (Imhof, Labe, Oesttveit, Ould A. Voffal, Pessoa, Reuge, Sanneh, Yli-Hietanen) | `50010054` · 8 (= same 8) | ⚠ same list; ⚠ gap 5M–50M. Old ≤10K nodes (INI 50010051, COM 50036326) = 0 active |
 | IIEP | 0–50M | `50010087` · 6 (Gonzalez, Lopez-Rey, Moyo E., Poisson, Pont Ferrer✗, Sarmento) | `50010088` · 6 (= same 6) | same list validates & signs |
 | UIL | 0–50M | `50037530` · 5 (Abdi, **Basoglu**, Kempf, Valdes Cotera, Zholdoshalieva) | `50037531` · 4 (Abdi, Kempf, Valdes Cotera, Zholdoshalieva) | **Basoglu validates but does NOT sign** — only real list difference |
@@ -333,8 +334,11 @@ The **Access** column (the §3e check, live) flags whether the person's SAP user
 ## 8. Worked example — INC-000011781 (UBO / Renata Ritter)
 - BCM banks (T042A): **CIT01 + BRA01**; both cartons received and **identical** (8 signatories) → rule representable.
 - Renata `10021811` confirmed on carton; live: `PA0000` STAT2=3 active, `USR02 R_RITTER` unlocked (⚠️ validity ends 2026-09-30), `PA0105` user/email match. Still lacks `BNK_APP` role (Security).
-- **Current ask:** ADD `10021811` to all 4 UBO nodes; DELIMIT `10108464` Martin in **50034893** (his only active period — verified via all-periods read; screenshot hid it).
-- **Old issues (TRS):** Ba `10005016` + De Sousa Carvalho `10016038` (active, not on carton → over-auth); Yli-Hietanen `10097358` (on carton, expired 2024 in SAP → gap); Gazi `10105030` (expired, no action).
+- **Executed 2026-06-19 (read-back live):** Renata `10021811` ADDED to all 4 UBO nodes ✅; Martin `10108464` DELIMITED in **50034893** ✅ (his only active period — verified via all-periods read); Ba `10005016` DELIMITED ✅. Official carton confirmed = **8** (7 both tiers + Amaral ≤10K only).
+- **Still OPEN (verified live, action needed):**
+  1. **Renata still has NO `BNK_APP` role** → cannot sign. Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending** — *the incident is not closed until this is granted*.
+  2. **Yli-Hietanen `10097358` MISSING** — on the carton (both tiers) but not active in any UBO node (expired 2024; holds the role via UIS/UNES) → **ADD ×4 nodes** (new carton confirms).
+  3. **De Sousa Carvalho `10016038` over-authorized** — active in all 4 nodes but not on carton → **DELIMIT** or TRS confirms. Gazi `10105030` expired, no action.
 
 ---
 

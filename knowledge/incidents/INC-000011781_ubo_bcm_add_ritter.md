@@ -1,6 +1,6 @@
 # INC-000011781 — Add Renata Ritter to UBO BCM signatory panel (+ Martin removal, drift findings)
 
-**Status**: SPEC_READY — pending DBS execution in P01 (+ TRS sign-off on old issues)
+**Status**: EXECUTED (partial) 2026-06-19 — Renata added to all 4 nodes + Martin/Ba delimited (live-verified); **OPEN**: Renata's `BNK_APP` role (Security) + 2 carton discrepancies (Yli-Hietanen missing, De Sousa over-auth)
 **Type**: Operational change (add/remove signatory) + pre-existing drift findings
 **Date opened**: 2026-06-17
 **Requester**: Ingrid Wettie (BFM-TRS, Middle Office)
@@ -10,6 +10,18 @@
 **Related domain**: Treasury / BCM Signatory Management — [domain README](../domains/Treasury/README.md)
 **Related rule/model**: [bcm_signatory_rules.md](../domains/Treasury/bcm_signatory_rules.md) · [bcm_signatory_change_solution_design.md](../domains/Treasury/bcm_signatory_change_solution_design.md) · companion `companions/bcm_signatory_companion.html`
 **Precedent**: [INC-000006313](INC-000006313_uis_bcm_add_voffal.md) (UIS — same Ingrid→Pablo "add X in BCM" pattern)
+
+---
+
+## 0. Execution status — validated live P01 (2026-06-19)
+Official UBO carton received (**8 signatories**: 7 at both tiers + Amaral ≤10K only). OOCU_RESP changes were made; read back live from the 4 UBO nodes (`HRP1001` A007→P):
+- ✅ **Done & correct:** Renata `10021811` added to all 4 nodes (BEGDA 2026-06-19 / ENDDA 9999-12-31); Martin `10108464` delimited (ends today); Ba `10005016` delimited (ends today); the 5 unlimited keepers (Cuba, Godinho, Jovchelovitch, Otero, Soares) + Amaral (≤10K) match the carton.
+- ❌ **Open (3):**
+  1. **Renata has no `BNK_APP` role** — verified still missing (`bcm_signatory_role_gap`) → she **cannot sign**; Security ticket `YS:FI:M:BCM_MON_APP______:UBO` **pending**. *The incident is not closeable until this is granted.*
+  2. **Yli-Hietanen `10097358` MISSING** — on the carton (both tiers) but not active in any UBO node (expired 2024; holds role via UIS/UNES) → **ADD ×4 nodes**.
+  3. **De Sousa Carvalho `10016038` over-authorized** — active in all 4 nodes but not on the carton → **DELIMIT** or TRS confirms.
+
+Refreshed live: `extract_bcm_signatories.py` + `bcm_role_gap_check.py` + `bcm_release_vs_approve.py` (Golden DB). Companion + solution-design §3e/§4b/§4d + incident page updated.
 
 ---
 

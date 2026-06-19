@@ -34,66 +34,80 @@ ul{margin:6px 0;padding-left:20px}
 
 <p class="back">← <a href="bcm_signatory_companion.html">BCM Bank Signatory — Companion</a></p>
 <h1>INC-000011781 — UBO / Renata Ritter</h1>
-<p class="lead">BCM bank-signatory change, entity <b>UBO</b> (UNESCO Brasília), Citibank. Request from TRS (Ingrid Wettie): "add Renata RITTER for UBO in BCM". Worked end-to-end against live P01. This is the worked example for the method in the <a href="bcm_signatory_companion.html">signature companion</a>.</p>
+<p class="lead">BCM bank-signatory change, entity <b>UBO</b> (UNESCO Brasília), Citibank. Request from TRS (Ingrid Wettie): "add Renata RITTER for UBO in BCM". Worked end-to-end against live P01; <b>executed in OOCU_RESP and re-validated against the official carton on 2026-06-19</b>. Worked example for the method in the <a href="bcm_signatory_companion.html">signature companion</a>.</p>
+
+<div class="warn" style="border-color:var(--teal);border-left-color:var(--teal)">
+<div class="t" style="color:var(--teal)">✅ EXECUTED in P01 + re-validated against the official carton (2026-06-19, live RFC read-back)</div>
+TRS supplied the <b>official UBO carton — 8 authorized signatories</b>: <b>7 at both amount tiers</b> (Yli-Hietanen, Cuba, Godinho Barros Coelho, Jovchelovitch Noleto, Otero Gomes, <b>Ritter</b>, Soares Eon) + <b>Amaral — ≤ USD 10.000 only</b>. The OOCU_RESP changes were made; read back live from the 4 UBO nodes:<br><br>
+<b>Correct ✅</b> — Renata <span class="mono">10021811</span> ADDED to all 4 nodes (both tiers, both steps); Amaral kept ≤10K only; Martin <span class="mono">10108464</span> delimited (ends today); Cuba, Godinho, Jovchelovitch, Otero, Soares present in all 4 — all match the carton. Ba <span class="mono">10005016</span> delimited (ends today) — correct, not on the carton.<br>
+<b>Still OPEN ❌ (3) — verified live, action needed:</b>
+<ol style="margin:4px 0 0;padding-left:20px">
+<li><b>Renata has NO <span class="mono">BNK_APP</span> role yet</b> — <span class="mono">R_RITTER</span> is in all 4 nodes but holds <b>no granting role</b> (live <span class="mono">bcm_signatory_role_gap</span>) → she <b>still cannot sign</b> (the original incident error). The Security/PFCG ticket for <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> is <b>NOT done</b>. <b>The node change alone does not finish this incident.</b></li>
+<li><b>Yli-Hietanen <span class="mono">10097358</span> is MISSING</b> — the carton authorizes him (Sede Paris, both tiers) but he is <b>not active in any UBO node</b> (expired 2024-01-26; he holds the role via UIS/UNES). → <b>ADD to all 4 UBO nodes</b> (the new carton confirms — this resolves the earlier "re-add or confirm exclusion").</li>
+<li><b>De Sousa Carvalho Lorena <span class="mono">10016038</span> is OVER-AUTHORIZED</b> — active in all 4 nodes but <b>NOT on the carton</b>. → <b>DELIMIT</b> (or, if she belongs, add her to the carton). TRS to confirm.</li>
+</ol></div>
 
 <h2>1 · Context</h2>
 <ul>
 <li><b>BCM banks:</b> <span class="mono">CIT01</span> (the only one producing batches) + BRA01 carton; both cartons received and <b>identical</b> (8 signatories) → rule representable.</li>
-<li><b>Renata</b> <span class="mono">10021811</span> / <span class="mono">R_RITTER</span>: confirmed on the carton; live → <span class="mono">PA0000</span> STAT2=3 active, <span class="mono">USR02</span> unlocked (⚠️ validity ends 2026-09-30), email/user match. <b>Lacks the BNK_APP role</b> (her "not authorized" screenshot).</li>
-<li><b>The letter is a swap, not just an add</b> (REF 3617/3618): DELETE Von Michael <b>MARTIN</b> + ADD <b>Renata</b>.</li>
+<li><b>Renata</b> <span class="mono">10021811</span> / <span class="mono">R_RITTER</span> (DA SILVA FREIRE RITTER): confirmed on the carton; live → <span class="mono">PA0000</span> STAT2=3 active, <span class="mono">USR02</span> unlocked (⚠️ validity ends 2026-09-30), email/user match. <b>Still lacks the BNK_APP role</b> (her "not authorized" screenshot — confirmed still missing 2026-06-19).</li>
+<li><b>The letter is a swap, not just an add</b> (REF 3617/3618): DELETE Von Michael <b>MARTIN</b> + ADD <b>Renata</b> — both done.</li>
+<li><b>Official carton = 8</b>: 7 unlimited + Amaral (≤10K). This is the authoritative target the live panel is validated against.</li>
 </ul>
 
-<h2>2 · Rules &amp; nodes being adjusted (explicit)</h2>
-<p class="lead">UBO uses both release rules, two amount tiers each. Adding an <b>unlimited</b> signatory (Renata) touches <b>all four</b> nodes:</p>
+<h2>2 · Rules &amp; nodes adjusted (explicit)</h2>
+<p class="lead">UBO uses both release rules, two amount tiers each. An <b>unlimited</b> signatory (Renata, Yli-Hietanen) touches <b>all four</b> nodes; an <b>≤10K-only</b> signatory (Amaral) only the two ≤10K nodes:</p>
 <table>
-<tr><th>Rule</th><th>Step</th><th>Node (OBJID)</th><th>Tier</th><th>Change</th></tr>
-<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034892</td><td>≤ 10.000</td><td class="a">➕ ADD Renata</td></tr>
-<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="a">➕ ADD Renata</td> </tr>
-<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50034894</td><td>≤ 10.000</td><td class="a">➕ ADD Renata</td></tr>
-<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50036737</td><td>&gt; 10.000</td><td class="a">➕ ADD Renata</td></tr>
-<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="d">➖ DELIMIT Martin (his only active node)</td></tr>
+<tr><th>Rule</th><th>Step</th><th>Node (OBJID)</th><th>Tier</th><th>Change &amp; status</th></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034892</td><td>≤ 10.000</td><td class="k">✅ Renata ADDED (live)</td></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="k">✅ Renata ADDED (live)</td></tr>
+<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50034894</td><td>≤ 10.000</td><td class="k">✅ Renata ADDED (live)</td></tr>
+<tr><td><span class="mono">90000004</span> BNK_COM</td><td>Sign</td><td class="mono">50036737</td><td>&gt; 10.000</td><td class="k">✅ Renata ADDED (live)</td></tr>
+<tr><td><span class="mono">90000005</span> BNK_INI</td><td>Validate</td><td class="mono">50034893</td><td>≤ 5.000.000</td><td class="d">✅ Martin DELIMITED (ends today) — his only active node</td></tr>
 </table>
-<div class="note">The earlier "format demo" showed only node <span class="mono">50034894</span> (rule 90000004 COM ≤10K). The <b>real change spans both rules</b> — 90000005 (Validate) <i>and</i> 90000004 (Sign) — because Renata is unlimited, so she joins every tier of both steps.</div>
+<div class="note">The earlier "format demo" showed only node <span class="mono">50034894</span> (rule 90000004 COM ≤10K). The <b>real change spans both rules</b> — 90000005 (Validate) <i>and</i> 90000004 (Sign) — because Renata is unlimited, so she joins every tier of both steps. <b>Confirmed live 2026-06-19: Renata BEGDA 2026-06-19 / ENDDA 9999-12-31 in all 4 nodes.</b></div>
 
-<h2>3 · Net operations for DBS (OOCU_RESP, P01)</h2>
-<p class="lead"><b>Current ask</b> (authorized by REF 3617/3618; BEGDA = letter date, ENDDA = 99991231):</p>
+<h2>3 · Net operations for DBS (OOCU_RESP, P01) — status</h2>
+<p class="lead"><b>Letter ask</b> (authorized by REF 3617/3618; BEGDA = letter date, ENDDA = 99991231) — <b>all executed</b>:</p>
 <table>
-<tr><th>Op</th><th>PERNR</th><th>Person</th><th>Rule</th><th>Node</th></tr>
-<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034892</td></tr>
-<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034893</td></tr>
-<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50034894</td></tr>
-<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50036737</td></tr>
-<tr><td class="d">DELIMIT</td><td>10108464</td><td>Martin, Von Michael</td><td>90000005</td><td class="mono">50034893</td></tr>
-<tr><td class="w">+ Security</td><td>R_RITTER</td><td>Ritter, Renata</td><td colspan="2">grant role <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (PFCG) — required to actually sign</td></tr>
+<tr><th>Op</th><th>PERNR</th><th>Person</th><th>Rule</th><th>Node</th><th>Status (live)</th></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034892</td><td class="k">✅ done</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000005</td><td class="mono">50034893</td><td class="k">✅ done</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50034894</td><td class="k">✅ done</td></tr>
+<tr><td class="a">ADD</td><td>10021811</td><td>Ritter, Renata</td><td>90000004</td><td class="mono">50036737</td><td class="k">✅ done</td></tr>
+<tr><td class="d">DELIMIT</td><td>10108464</td><td>Martin, Von Michael</td><td>90000005</td><td class="mono">50034893</td><td class="k">✅ done (ends today)</td></tr>
+<tr><td class="w">+ Security</td><td>R_RITTER</td><td>Ritter, Renata</td><td colspan="2">grant role <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (PFCG)</td><td class="d"><b>❌ NOT done — still no role</b></td></tr>
 </table>
-<p class="lead" style="margin-top:8px"><b>Old issues — hold for TRS sign-off</b> (not in this letter):</p>
+<p class="lead" style="margin-top:8px"><b>Open against the official carton — TRS / Security sign-off:</b></p>
 <ul>
-<li><span class="mono">10005016</span> <b>Ba, Ismaila</b> — active in UBO nodes, <b>not on carton</b> (over-auth) AND no BNK_APP role → recommend delimit.</li>
-<li><span class="mono">10016038</span> <b>De Sousa Carvalho, Lorena</b> — active, not on carton (over-auth) → TRS review.</li>
-<li><span class="mono">10097358</span> <b>Yli-Hietanen, Anssi</b> — on carton but delimited from UBO since 2024 → re-add or confirm exclusion.</li>
+<li><span class="mono">10021811</span> <b>Ritter, Renata</b> — in all 4 nodes but <b>no BNK_APP role</b> → cannot sign. <b>Security ticket pending</b> (the core remaining action).</li>
+<li><span class="mono">10097358</span> <b>Yli-Hietanen, Anssi</b> — <b>on the carton (both tiers)</b> but not active in any UBO node (expired 2024) → <b>ADD ×4 nodes</b> (he already holds the role via UIS/UNES).</li>
+<li><span class="mono">10016038</span> <b>De Sousa Carvalho, Lorena</b> — active in all 4 nodes, <b>not on carton</b> (over-auth) → <b>DELIMIT</b> or TRS confirms.</li>
+<li><span class="mono">10005016</span> <b>Ba, Ismaila</b> — delimited today; not on carton; had no role anyway → ✅ consistent.</li>
 </ul>
 
-<h2>4 · Mandatory table (format) — node 50034894</h2>
-<p class="lead"><b>Rule <span class="mono">90000004</span> (BNK_COM, Sign) · Node <span class="mono">50034894</span> (UBO signatures ≤10.000)</b> — <b>active members</b> + the addition. <span class="tag">✅ keep · ➕ ADD · ➖ DELIMIT · ⚠️ TRS (old issue)</span></p>
+<h2>4 · Node 50034894 — live membership after the change (vs carton)</h2>
+<p class="lead"><b>Rule <span class="mono">90000004</span> (BNK_COM, Sign) · Node <span class="mono">50034894</span> (UBO signatures ≤10.000)</b> — <b>active members read live 2026-06-19</b> + carton + role. <span class="tag">✅ keep · ➕ added · ➖ delimited · ⚠️ action vs carton</span></p>
 <table>
-<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Access — BNK_APP role</th><th>Action</th></tr>
+<tr><th>PERNR</th><th>Person</th><th>Live status (HRP1001)</th><th>Carton</th><th>Access — BNK_APP role</th><th>Status / action</th></tr>
 <tr><td>10002437</td><td>Amaral, Evaney F.</td><td>Active</td><td>Yes (≤10K)</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
-<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
 <tr><td>10021100</td><td>Cuba Sanchez, Julio C.</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
+<tr><td>10006301</td><td>Godinho Barros Coelho, Beatriz</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
 <tr><td>10062474</td><td>Jovchelovitch Noleto, Marlova</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
 <tr><td>10067273</td><td>Otero Gomes, Maria</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
 <tr><td>10081583</td><td>Soares Eon, Fabio</td><td>Active</td><td>Yes</td><td class="k">✅ role (UBO)</td><td class="k">✅ keep</td></tr>
-<tr><td>10005016</td><td>Ba, Ismaila</td><td>Active</td><td>No</td><td class="d">❌ no role</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
-<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td>No</td><td class="k">✅ role (UBO)</td><td class="w">⚠️ DELIMIT (TRS)</td></tr>
-<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td>New (add)</td><td>Yes</td><td class="d"><b>❌ no role → + Security ticket</b></td><td class="a">➕ ADD</td></tr>
+<tr><td><b>10021811</b></td><td><b>Ritter, Renata</b></td><td class="k">Active (added today)</td><td>Yes</td><td class="d"><b>❌ no role</b></td><td class="w"><b>⚠️ Security ticket PENDING — cannot sign yet</b></td></tr>
+<tr><td>10097358</td><td>Yli-Hietanen, Anssi</td><td class="d">NOT active (exp. 2024)</td><td>Yes</td><td class="k">✅ role</td><td class="w"><b>❌ MISSING — ADD (on carton)</b></td></tr>
+<tr><td>10016038</td><td>De Sousa Carvalho, Lorena</td><td>Active</td><td class="d">No</td><td class="k">✅ role</td><td class="w">⚠️ over-auth → DELIMIT (TRS)</td></tr>
+<tr><td>10005016</td><td>Ba, Ismaila</td><td class="d">Active (ends today)</td><td>No</td><td class="d">❌ no role</td><td class="d">➖ delimited today ✅</td></tr>
 </table>
-<div class="note"><b>Active members only</b> (8 + the addition). Expired/red rows in OOCU_RESP are <b>not</b> in the table — their actions are in §3: Yli-Hietanen (re-ADD, TRS), Martin (his removal is on node <span class="mono">50034893</span> where he is still active), Gazi (no action). Same format for the other 3 nodes — full per-node × role matrix in companion §4 / Golden DB <span class="mono">bcm_node_agent_role_check</span>.</div>
+<div class="note"><b>Read live 2026-06-19</b> from <span class="mono">HRP1001</span> (RY 50034894, A007→P). 8 of the carton's 8 ≤10K-eligible names should sit here (7 unlimited + Amaral); the live panel has Renata ✅ but still <b>misses Yli-Hietanen</b> and <b>carries De Sousa (over-auth)</b>. Same picture across the other 3 nodes — full per-node × role matrix in companion §4 / §4d, Golden DB <span class="mono">bcm_node_agent_role_check</span>, <span class="mono">bcm_release_vs_approve</span>.</div>
 
-<h2>5 · Access — the role to grant</h2>
-<div class="warn"><div class="t">Two actions, not one — node + role</div>
-Renata's ADD to the nodes (OOCU_RESP/DBS) must be paired with a <b>Security/PFCG ticket</b> to grant <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (the entity-derived BCM approve role: <span class="mono">S_TCODE</span> BNK_APP + <span class="mono">C_SIGN</span> digital signature + <span class="mono">F_STAT_MON</span> + <span class="mono">F_REGU_BUK</span> BUKRS=UBO). Being in the node alone does not let her sign — that was her original "not authorized to use transaction BNK_APP" error.</div>
+<h2>5 · Access — the role to grant (STILL OPEN)</h2>
+<div class="warn"><div class="t">❌ Two actions, not one — the node is done, the role is NOT</div>
+Renata's ADD to the nodes (OOCU_RESP/DBS) is <b>done</b>, but it must be paired with a <b>Security/PFCG ticket</b> to grant <span class="mono">YS:FI:M:BCM_MON_APP______:UBO</span> (the entity-derived BCM approve role: <span class="mono">S_TCODE</span> BNK_APP + <span class="mono">C_SIGN</span> digital signature + <span class="mono">F_STAT_MON</span> + <span class="mono">F_REGU_BUK</span> BUKRS=UBO). <b>Verified live 2026-06-19: she still holds no granting role</b> → being in the node does not let her sign. This is the same "not authorized to use transaction BNK_APP" error that opened the incident — <b>the incident is not closed until this role is granted.</b></div>
 
-<div class="src">Source: live P01 via RFC (HRP1001/HRP1218/HRT1218, PA0000/PA0105/USR02, AGR_*), the two TRS cartons (REF 3617/3618), and the BNK_APP screenshot. Golden DB: <span class="mono">bcm_node_agent_role_check</span>, <span class="mono">bcm_signatory_role_gap</span>, <span class="mono">bcm_approve_role</span>. Canonical record: <span class="mono">knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md</span>. Method: <a href="bcm_signatory_companion.html">BCM Bank Signatory companion</a>.</div>
+<div class="src">Source: live P01 via RFC (HRP1001/HRP1218/HRT1218, PA0000/PA0105/USR02, AGR_*), re-read 2026-06-19; the official TRS carton (8 signatories); the BNK_APP screenshot. Golden DB: <span class="mono">bcm_node_agent_role_check</span>, <span class="mono">bcm_signatory_role_gap</span>, <span class="mono">bcm_release_vs_approve</span>, <span class="mono">bcm_approve_role</span>. Canonical record: <span class="mono">knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md</span>. Method: <a href="bcm_signatory_companion.html">BCM Bank Signatory companion</a>.</div>
 
 </div>
 </body>
