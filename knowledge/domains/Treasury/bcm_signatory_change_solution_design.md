@@ -220,6 +220,24 @@ Structure is **not** uniformly "2 per company": 1..N nodes per (entity × rule),
 
 ---
 
+### 4b. Access control across ALL nodes (live P01, 2026-06-19)
+
+§3e applied to **every node × every active agent** — 85 active assignments, **76 OK, 9 cannot sign** (the same 6 people, recurring across nodes). Persisted to Golden DB `bcm_node_agent_role_check` (85 rows). Gaps per node:
+
+| Rule | Node | Ent | Active | Missing role |
+|---|---|---|---|---|
+| 90000005 | 50034892 | UBO | 8 | I_BA |
+| 90000005 | 50034893 | UBO | 7 | VM_MARTIN (being delimited) |
+| 90000004 | 50034894 | UBO | 8 | I_BA |
+| 90000004 | 50036737 | UBO | 7 | I_BA |
+| 90000005 | 50010087 | IIEP | 6 | B_PONT |
+| 90000004 | 50010088 | IIEP | 6 | B_PONT |
+| 90000005 | 50010078 | UNES | 6 | **I_ADJANOHOUN, S_EL-HOLOUI, I_BIDAULT (3 of 6)** |
+
+UIS & UIL clean; other UNES nodes clean. Fix per person: grant `YS:FI:M:BCM_MON_APP______:<ent>` or delimit.
+
+---
+
 ## 5. Reconciliation logic + completeness gate
 
 ```

@@ -286,6 +286,31 @@ These 6 sit in a BCM signatory node but their SAP user has <b>no role granting <
 <tr><td>UNES</td><td>1</td><td>9</td><td>many INI tiers; COMMIT → Coupa</td></tr>
 </table>
 
+<h2>4b · Access control across ALL nodes — every assigned agent vs the BNK_APP role (live P01)</h2>
+<p class="lead">The §3e check applied to <b>every node and every active agent</b> (85 active assignments). A ❌ = the agent is in the panel but their SAP user holds no <span class="mono">BNK_APP</span>-granting role → cannot sign. Full matrix persisted in Golden DB <span class="mono">bcm_node_agent_role_check</span> (85 rows).</p>
+<div class="hero">85 active (node × agent) · 76 ✅ · <span style="color:var(--red)">9 cannot sign (6 people)</span></div>
+<table>
+<tr><th>Rule</th><th>Node</th><th>Ent</th><th>Node name</th><th>Active</th><th>✅ role</th><th>❌ missing</th><th>Who is missing</th></tr>
+<tr><td>90000005 INI</td><td>50034892</td><td>UBO</td><td>Validation ≤10K</td><td>8</td><td>7</td><td class="d">1</td><td>I_BA</td></tr>
+<tr><td>90000005 INI</td><td>50034893</td><td>UBO</td><td>Validation ≤5M</td><td>7</td><td>6</td><td class="d">1</td><td>VM_MARTIN (being delimited)</td></tr>
+<tr><td>90000004 COM</td><td>50034894</td><td>UBO</td><td>signatures ≤10K</td><td>8</td><td>7</td><td class="d">1</td><td>I_BA</td></tr>
+<tr><td>90000004 COM</td><td>50036737</td><td>UBO</td><td>signatures &gt;10K</td><td>7</td><td>6</td><td class="d">1</td><td>I_BA</td></tr>
+<tr><td>90000005 INI</td><td>50010087</td><td>IIEP</td><td>Validation</td><td>6</td><td>5</td><td class="d">1</td><td>B_PONT</td></tr>
+<tr><td>90000004 COM</td><td>50010088</td><td>IIEP</td><td>signatures all</td><td>6</td><td>5</td><td class="d">1</td><td>B_PONT</td></tr>
+<tr><td>90000005 INI</td><td>50010078</td><td>UNES</td><td>TRS Validation ≤50M</td><td>6</td><td>3</td><td class="d"><b>3</b></td><td><b>I_ADJANOHOUN, S_EL-HOLOUI, I_BIDAULT</b></td></tr>
+<tr><td>90000005 INI</td><td>50010075</td><td>UNES</td><td>Validation ≤500K</td><td>5</td><td>5</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50010076</td><td>UNES</td><td>Validation ≤5M</td><td>2</td><td>2</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50010077</td><td>UNES</td><td>Validation ≤50M</td><td>1</td><td>1</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50032363</td><td>UNES</td><td>FAS/PAP/PAY Validation</td><td>3</td><td>3</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50038878</td><td>UNES</td><td>Validation ≤7.5M</td><td>1</td><td>1</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000004 COM</td><td>50010054</td><td>UIS</td><td>signatures all</td><td>8</td><td>8</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50036801</td><td>UIS</td><td>Validation</td><td>8</td><td>8</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000004 COM</td><td>50037531</td><td>UIL</td><td>signatures all</td><td>4</td><td>4</td><td class="k">0</td><td>—</td></tr>
+<tr><td>90000005 INI</td><td>50037530</td><td>UIL</td><td>Validation</td><td>5</td><td>5</td><td class="k">0</td><td>—</td></tr>
+</table>
+<div class="warn"><div class="t">Reading it</div>
+<b>UIS &amp; UIL are clean.</b> Gaps cluster in: <b>UBO</b> (I_BA in all 3 of his nodes; Martin in his one active node — both already on the remove list), <b>IIEP</b> (B_PONT in both nodes), and especially <b>UNES node 50010078</b> "TRS Validation ≤50M" where <b>3 of 6</b> members cannot sign. Per person it is the same 6 from §3e (they recur across nodes). <b>Fix per person:</b> grant the entity-matched <span class="mono">YS:FI:M:BCM_MON_APP______:&lt;ent&gt;</span> or delimit. Nodes with 0 active members (UNES 50010052→Coupa, UIS 50036326, the generated stubs) are n/a.</div>
+
 <h2>5 · Reconciliation &amp; gates</h2>
 <p class="lead"><b>Target</b> = the single agreed panel, split by tier (≤10K-only vs unlimited). <b>Current</b> = live <span class="mono">HRP1001</span> membership (all periods) of the entity's RY nodes. Classify every (node × person):</p>
 <table>
