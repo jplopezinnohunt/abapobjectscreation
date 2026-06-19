@@ -90,18 +90,25 @@ The signatory node is not configured on one screen; it is the end of a chain acr
 
 `AMT_RULECU GT 10000.00-` = amount > −10,000 (AP outgoing amounts are negative) → matches abs value **< 10,000** = the ≤10K bucket. **No `HBKID`** → grouping is bank-agnostic. **Dev→prod drift:** P01 has **13** grouping rules; D01 has **14** (extra `UNES_AX_EX` Exotic Currency, not transported). The IMG screenshots were D01 ("Change View"). Authoritative prod list = the 13 in Golden DB `bcm_grouping_rule`.
 
-**(ii) Release configuration chain** (the answer to "where is the node configured"):
+**(ii) Release configuration chain** (full, every row read live — table → value):
 
-| # | What | Table / tx | Value in P01 |
+| # | Step | Where (verified table) | Actual value in P01 |
 |---|---|---|---|
-| 1 | Release object | `TBCA_REL_OBJ_CAT` | `BNK_INI` (validate) · `BNK_COM` (sign); structure `BNK_STR_BATCH_REL_APPR` |
-| 2 | Release procedure on object | `TBCA_REL_PROC`(T) | **01 = "Dual Ctrl"** (00 No release · 02 3x · 03 4x) |
-| 3 | **Step → RULE_ID (the wiring)** | `TBCA_REL_RULE` | BNK_INI/01/01 → **90000005** · BNK_COM/01/01 → **90000004** |
-| 4 | RULE_ID → who signs + criteria | `OOCU_RESP` (Change) → RY node, IT1218 | rules resolve the RY nodes (50034892…) by entity+amount = **the node; what DBS edits** |
-| 5 | Workflow per step | `TBCA_RTW_LINKAGE` | BNK_INI → WF `31000004` · BNK_COM → WF `50100021`; master WF `50100024` |
-| 6 | **On REJECT — custom code** | BAdI `BNK_BADI_ORIG_PAYMT_CHG` → `Z_CL_BNK_BADI_PAYMT_CHG` | auto-reverses the F110 payment (FBRA reset + FB08 reverse, reason 01); logs SLG1/FBPM |
+| 1 | Batch carries the inputs | struct `BNK_STR_BATCH_REL_APPR` | `RULE_ID` + `ZBUKR` + amount + payment method |
+| 2 | Release object → type + procedure | `TBCA_RELPROC_CUS` | `BNK_COM` → REL_TYPE **3**, proc **01** · `BNK_INI` → REL_TYPE **1**, proc **01** |
+| 3 | **Which procedure fires (determination)** | **`TBCA_RELPROC_EXP`** | proc 01 fires when batch `RULE_ID` ∈ { IIEP_AP_ST, UBO_AP_MAX, UBO_AP_ST, UIS_AP_ST, UIS_AP_MAX, UIL_AP_ST… } — OR-expression on `BNK_STR_BATCH_REL_APPR` (maint. M_SPRONK 2022-23) |
+| 4 | Procedure name | `TBCA_REL_PROC`(T) | 01 = **"Dual Ctrl"** (00 No release · 02 3x · 03 4x) |
+| 5 | **Step → rule (the wiring)** | `TBCA_REL_RULE` | BNK_INI/01/01 → **90000005** · BNK_COM/01/01 → **90000004** |
+| 6 | **Rule → its RY nodes** | `RY.rule_number` (HRP1000 / `bcm_signatory_responsibility`) | **90000004** → 50034894, 50036737 (+ all entities' commit nodes) · **90000005** → 50034892, 50034893 (+ …). All entities hang under just these 2 rules |
+| 7 | Pick ONE node among the rule's siblings | `IT1218` (`HRP1218`/`HRT1218`) | `ZBUKR` + amount band [+ `RULE_ID` on INI] → the matching node |
+| 8 | People of that node | `HRP1001` (RELAT 007, SCLAS P) | the PERNRs — **what DBS edits in `OOCU_RESP`** |
+| 9 | Activity → function module | `TBCA_REL_FM` | all **standard** `BNK_API_BATCH_*` (reject = activity `06` → `BNK_API_BATCH_REJECT`) — no custom FM |
+| 10 | Workflow per step | `TBCA_RTW_LINKAGE` | BNK_INI → WF `31000004` · BNK_COM → WF `50100021`; master WF `50100024` |
+| 11 | **On REJECT — only custom code** | BAdI `BNK_BADI_ORIG_PAYMT_CHG` → `Z_CL_BNK_BADI_PAYMT_CHG` | `ON_REJECT`: auto-reverse the F110 payment (FBRA reset + FB08, reason 01); log SLG1/FBPM |
 
-**"Configuring a node" = maintain the responsibility (`RY`) in `OOCU_RESP` Change mode** (people + IT1218 criteria entity+amount). It is *wired* to a release step by `TBCA_REL_RULE` (step → rule 90000004/05); the number of signatures (Dual/3x/4x) is the **release procedure** on the object (`TBCA_REL_PROC`). Why it was hard to find: `OOCU_RESP→Simulate` / `PP01→Display` only read, and the chain spans `TBCA_REL_*`, not one transaction.
+**Plain reading:** the grouping `RULE_ID` does double duty — it groups the batch **and** (via `TBCA_RELPROC_EXP`, step 3) selects the **Dual-Control** procedure. The step maps to a **rule** (90000004 commit / 90000005 validate); each rule owns a set of **RY nodes** (step 6, via `rule_number`); the node's **IT1218** criteria (entity+amount) pick the one that matches; its **HRP1001** people sign. **"Configuring a node" = `OOCU_RESP` Change** (people + IT1218). Determination FMs are standard; the **only** custom code is the reject BAdI.
+
+> **Correction vs the first §3b draft:** the procedure is assigned/determined by `TBCA_RELPROC_CUS` + `TBCA_RELPROC_EXP` (NOT `TBCA_REL_PROC`, which is only the name catalogue), and the rule→node link is the `rule_number` carried on each RY. All read live via `RFC_READ_TABLE` 2026-06-19, persisted to Golden DB (`bcm_release_proc_assign`, `bcm_release_proc_determination`, `bcm_release_activity_fm`, `bcm_release_rule`, `bcm_release_*`).
 
 **(iii) Custom code** — the only method implemented in `Z_CL_BNK_BADI_PAYMT_CHG` is `IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT` (SAP note 1333640): on batch/payment **reject**, reverse the F110 payment (`J_1B_FBRA_POSTING_AUFRUFEN`, reversal reason `01`) and log to SLG1/FBPM. Full source: [`code/Z_CL_BNK_BADI_PAYMT_CHG.abap`](code/Z_CL_BNK_BADI_PAYMT_CHG.abap) (read from D01 via ADT). It does **not** affect agent/node selection — it is the reject handler only.
 
