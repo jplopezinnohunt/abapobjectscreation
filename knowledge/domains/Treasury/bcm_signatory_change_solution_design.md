@@ -244,7 +244,7 @@ UIS & UIL clean; other UNES nodes clean. Fix per person: grant `YS:FI:M:BCM_MON_
 
 The selection logic is defined per responsibility: the **OOCU_RESP overview** shows each node's criteria in the `M.PymtAmt(rcur)` of–to + `Paying co. code` columns; double-click a row → *Responsibility Change → Responsibility Specs* to edit (= infotype 1218). This document is **P01 (production, authoritative)**.
 
-> ⚠️ **Dev/prod caveat (safety, kept brief):** the D01 (dev) signatory config differs from P01 — e.g. UBO is **1 node** "all transfers" in D01 vs **2 amount tiers** (≤10K + >10K) in P01, and **OBJID `50034894` means ≤10K in P01 but all-amounts in D01**; UIS/UIL use different OBJIDs. So **don't validate prod behaviour in D01, and don't blindly transport these RY nodes D01→P01** (OBJID collision). Full comparison in Golden DB `bcm_node_d01_vs_p01` if ever needed.
+> ⚠️ **Dev/prod caveat (safety):** the D01 (dev) signatory config differs from P01 — e.g. UBO is **1 node** "all transfers" in D01 vs **2 amount tiers** (≤10K + >10K) in P01, and **OBJID `50034894` means ≤10K in P01 but all-amounts in D01**; UIS/UIL use different OBJIDs. So **don't validate prod behaviour in D01, and don't blindly transport these RY nodes D01→P01** (OBJID collision). Full comparison in Golden DB `bcm_node_d01_vs_p01`.
 
 ---
 
