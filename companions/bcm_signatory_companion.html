@@ -171,16 +171,15 @@ The selection key is <b>entity (ZBUKR) + amount only</b> — the node <b>literal
 
 <p style="margin:8px 0 3px"><b>Easiest · <span class="mono">OOCU_RESP</span></b> (no object-type fiddling — recommended): open the rule <span class="mono">BNK_INI_01_01_04</span> (validate) or <span class="mono">BNK_COM_01_01_03</span> (commit) → find the node (e.g. <i>UBO Validation up to 10.000 USD</i>) → <b>double-click the node</b> to see its criteria (company code + amount band), or click <b>"Simulate rule resolution"</b> and enter <span class="mono">UBO</span> + an amount to see which node + people resolve.</p>
 
-<p style="margin:8px 0 3px"><b>Advanced · <span class="mono">PP01</span> (raw IT1218 criteria) — get these 3 header fields right. ⚠ <span class="mono">RY</span> goes in <u>Object type</u>, the number in <u>Object ID</u> — do NOT swap them (that gives "… RY not found"):</b></p>
+<p style="margin:8px 0 3px"><b>About <span class="mono">PP01</span> — and why you "see nothing":</b></p>
 <table style="margin-top:2px">
-<tr><th>Field</th><th>Value</th><th>⚠ common mistake</th></tr>
-<tr><td>Plan version</td><td><b>Current plan (01)</b></td><td>NOT "Alternative plan/tech." (empty for these objects)</td></tr>
-<tr><td>Object type</td><td><b><span class="mono">RY</span></b> (Responsibility) — <b>TYPE the 2 letters by hand</b></td><td><b>RY is NOT in the dropdown</b> — don't look for it there</td></tr>
-<tr><td>Object ID</td><td><span class="mono">50034892</span> (the node)</td><td>—</td></tr>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Plan version</td><td><b>Current plan (01)</b></td></tr>
+<tr><td>Object type</td><td><b>Responsibility</b> = the code <span class="mono">RY</span> — it IS in the dropdown (under "R"), or type <span class="mono">RY</span></td></tr>
+<tr><td>Object ID</td><td>the node, e.g. <span class="mono">50034892</span> (its abbr. shows as <span class="mono">BNK_01_01_03</span> sign / <span class="mono">BNK_01_01_04</span> validate)</td></tr>
 </table>
-<div class="warn"><div class="t">⚠ Why RY is missing from the PP01 dropdown</div>
-Object type <span class="mono">RY</span> <b>exists</b> (verified in <span class="mono">T778O</span>) but has <b>no description text</b>. PP01's F4 list is sorted/shown <b>by description</b>, so an entry with no text never appears — you'll see "Workflow Task", "Work Center", etc. but never "RY". <b>Fix:</b> just <b>type <span class="mono">RY</span></b> straight into the Object type field (ignore the dropdown), or use <span class="mono">OOCU_RESP</span> (above) which doesn't ask for an object type at all — recommended.</div>
-<p style="margin:6px 0 0">Then: pick infotype <span class="mono">1218</span> → <b>Display (glasses)</b>. Rows show <span class="mono">ELEMENT</span> = ZBUKR / MAXPAYAMT_RULECURR / RULE_ID with <span class="mono">EXPR_LOW</span>–<span class="mono">EXPR_HIGH</span> (the amount band), <span class="mono">REFSTRUCT=BNK_STR_BATCH_REL_APPR</span>.</p>
+<div class="warn"><div class="t">⚠ PP01 does NOT show the selection criteria — use OOCU_RESP</div>
+For the <span class="mono">RY</span> object, PP01 lists only the PD infotypes <b>Object · Relationships · Description · Standard Profiles · PD Profiles</b> — the <b>ZBUKR + amount criteria are NOT among them</b> (that is why "no se ve nada"). The criteria live in <b>infotype 1218</b> (<span class="mono">HRP1218</span> → <span class="mono">TABNR</span> → <span class="mono">HRT1218</span>), which PP01 doesn't surface in that list. <b>To SEE the criteria, use <span class="mono">OOCU_RESP</span></b> (above) — double-click the node, or "Simulate rule resolution"; or read <span class="mono">HRT1218</span> via RFC. Verified values are in Golden DB <span class="mono">bcm_node_selection_criteria</span> (67 rows). <i>(Earlier note that "RY isn't in the dropdown / has no text" was wrong — it shows as "Responsibility".)</i></div>
 
 <p style="margin:10px 0 3px"><b>Option B · <span class="mono">OOCU_RESP</span> (more intuitive — <i>see</i> the selection work):</b></p>
 1. Open the rule <span class="mono">BNK_INI_01_01_04</span> (validate) or <span class="mono">BNK_COM_01_01_03</span> (commit) and find the node.<br>
@@ -551,7 +550,7 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 <tr><td>Grouping rules (RULE_ID)</td><td>IMG BCM → Payment Grouping ("Rule maintenance")</td><td><span class="mono">TBNK_RULE</span>/<span class="mono">_SELOP</span></td><td>by ZBUKR+amount+method, no bank (§9a)</td></tr>
 <tr><td>BCM batch</td><td><span class="mono">BNK_MONI</span> (monitor)</td><td><span class="mono">BNK_BATCH_HEADER</span></td><td>carries ZBUKR+HBKID+RULE_ID</td></tr>
 <tr><td>Release procedure / determination</td><td>IMG BCM → Approval</td><td><span class="mono">TBCA_RELPROC_CUS</span>/<span class="mono">_EXP</span> · <span class="mono">TBCA_REL_RULE</span></td><td>proc 01 "Dual Ctrl"; step→rule 90000004/05</td></tr>
-<tr><td><b>Node criteria + people (selection)</b></td><td><span class="mono">OOCU_RESP</span> (Change) · <span class="mono">PP01</span> (<b>type</b> RY — not in dropdown, IT1218) · resolves via <span class="mono">RH_GET_ACTORS</span></td><td><span class="mono">HRP1218</span>/<span class="mono">HRT1218</span> (ZBUKR+amt) · <span class="mono">HRP1001</span> (people)</td><td>this is where the node is chosen (§3)</td></tr>
+<tr><td><b>Node criteria + people (selection)</b></td><td><span class="mono">OOCU_RESP</span> (Change) — criteria + people. PP01 (object type "Responsibility"=RY) shows only PD infotypes, <b>not</b> the criteria; IT1218 is in <span class="mono">HRP1218/HRT1218</span>. Resolves via <span class="mono">RH_GET_ACTORS</span></td><td><span class="mono">HRP1218</span>/<span class="mono">HRT1218</span> (ZBUKR+amt) · <span class="mono">HRP1001</span> (people)</td><td>this is where the node is chosen (§3)</td></tr>
 <tr><td>Authorization to sign</td><td><span class="mono">PFCG</span> · <span class="mono">SU01</span> · tcode <span class="mono">BNK_APP</span></td><td><span class="mono">AGR_USERS</span>/<span class="mono">AGR_TCODES</span></td><td>role YS:FI:M:BCM_MON_APP______:&lt;ent&gt; — 6 missing (§3e)</td></tr>
 <tr><td>Reject → reverse payment (custom)</td><td>BAdI <span class="mono">SE18/SE19 BNK_BADI_ORIG_PAYMT_CHG</span> → <span class="mono">Z_CL_BNK_BADI_PAYMT_CHG</span></td><td>—</td><td>ON_REJECT → <span class="mono">J_1B_FBRA_POSTING_AUFRUFEN</span> (FBRA+FB08)</td></tr>
 <tr><td>Output file</td><td><span class="mono">DMEE</span> · <span class="mono">FDTA</span></td><td>—</td><td>SWIFT/Coupa → bank</td></tr>
@@ -611,7 +610,7 @@ TRS issues a separate letter/carton to each bank, and each bank registers it on 
 <table>
 <tr><th>I need…</th><th>Transaction / Table</th></tr>
 <tr><td>Maintain nodes and members (DBS executes)</td><td><span class="mono">OOCU_RESP</span></td></tr>
-<tr><td>Node selection criteria</td><td><span class="mono">PP01</span> (type <span class="mono">RY</span> by hand — not in F4 list, infotype 1218) · <span class="mono">HRP1218</span>/<span class="mono">HRT1218</span></td></tr>
+<tr><td>Node selection criteria</td><td><span class="mono">OOCU_RESP</span> (the criteria; PP01 "Responsibility"=RY doesn't show them) · stored in <span class="mono">HRP1218</span>/<span class="mono">HRT1218</span></td></tr>
 <tr><td>Node members (all periods)</td><td><span class="mono">HRP1001</span> (OTYPE=RY, RELAT=007, SCLAS=P)</td></tr>
 <tr><td>Node catalogue</td><td><span class="mono">HRP1000</span> (OTYPE=RY, SHORT BNK_01_01_03/04)</td></tr>
 <tr><td>Batches (bank, rule, amount)</td><td><span class="mono">BNK_BATCH_HEADER</span> / <span class="mono">BNK_BATCH_ITEM</span></td></tr>
