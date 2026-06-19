@@ -317,6 +317,41 @@ These 6 sit in a BCM signatory node but their SAP user has <b>no role granting <
 <div class="warn"><div class="t">Reading it</div>
 <b>UIS &amp; UIL are clean.</b> Gaps cluster in: <b>UBO</b> (I_BA in all 3 of his nodes; Martin in his one active node — both already on the remove list), <b>IIEP</b> (B_PONT in both nodes), and especially <b>UNES node 50010078</b> "TRS Validation ≤50M" where <b>3 of 6</b> members cannot sign. Per person it is the same 6 from §3e (they recur across nodes). <b>Fix per person:</b> grant the entity-matched <span class="mono">YS:FI:M:BCM_MON_APP______:&lt;ent&gt;</span> or delimit. Nodes with 0 active members (UNES 50010052→Coupa, UIS 50036326, the generated stubs) are n/a.</div>
 
+<h2>4c · D01 ≠ P01 — the signatory config DIVERGES (OOCU_RESP overview, rule BNK_COM 90000004)</h2>
+<p class="lead">The criteria are visible/defined in the <b>OOCU_RESP overview</b> (the <span class="mono">M.PymtAmt(rcur)</span> of–to + <span class="mono">Paying co. code</span> columns); double-click a row → <i>Responsibility Change → Responsibility Specs</i> to edit. <b>But the dev and prod configs differ</b> — reproductions of the two screens (verified live + user screenshots, 2026-06-19):</p>
+
+<p class="lead" style="margin-top:8px;font-weight:700;color:var(--teal)">P01 (PRODUCTION) — the authoritative panel</p>
+<table>
+<tr><th>St.</th><th>Responsibility</th><th>Name</th><th>M.PymtAmt of</th><th>… to</th><th>Paying co.</th></tr>
+<tr><td>🟩</td><td class="mono">RY 50010052</td><td>UNES signatures for all transfers <span class="tag">(exp. 20.01.2023)</span></td><td>0.00</td><td>50.000.000</td><td>UNES</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50010054</td><td>UIS signatures for all transfers</td><td>0.00</td><td>50.000.000</td><td>UIS</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50010088</td><td>IIEP signatures for all transfers</td><td>0.00</td><td>50.000.000</td><td>IIEP</td></tr>
+<tr><td>🟩</td><td class="mono"><b>RY 50034894</b></td><td><b>UBO signatures up to 10.000</b></td><td>0.00</td><td><b>10.000</b></td><td>UBO</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50036326</td><td>UIS signatures up to 10.000</td><td>0.00</td><td>10.000</td><td>UIS</td></tr>
+<tr><td>🟩</td><td class="mono"><b>RY 50036737</b></td><td><b>UBO signatures for transfers over 10.000</b></td><td>10.000</td><td>50.000.000</td><td>UBO</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50037531</td><td>UIL signatures for all transfers</td><td>0.00</td><td>50.000.000</td><td>UIL</td></tr>
+</table>
+
+<p class="lead" style="margin-top:10px;font-weight:700;color:var(--coral)">D01 (DEV) — different! (do NOT validate prod against this)</p>
+<table>
+<tr><th>St.</th><th>Responsibility</th><th>Name</th><th>M.PymtAmt of</th><th>… to</th><th>Paying co.</th></tr>
+<tr><td>🟩</td><td class="mono">RY 50010052</td><td>UNES signatures for all transfers</td><td>0.00</td><td>50.000.000</td><td>UNES</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50010054</td><td><span style="color:var(--coral)">UIS signatures for transfers over 10.000</span></td><td><span style="color:var(--coral)">10.000</span></td><td>50.000.000</td><td>UIS</td></tr>
+<tr><td>🟩</td><td class="mono">RY 50010088</td><td>IIEP signatures for all transfers</td><td>0.00</td><td>50.000.000</td><td>IIEP</td></tr>
+<tr><td>🟩</td><td class="mono"><b>RY 50034894</b></td><td><span style="color:var(--coral)"><b>UBO signatures for ALL transfers</b></span></td><td>0.00</td><td><span style="color:var(--coral)"><b>9.999.999.999</b></span></td><td>UBO</td></tr>
+<tr><td>🟩</td><td class="mono"><span style="color:var(--coral)">RY 50035433</span></td><td><span style="color:var(--coral)">UIS signatures for transfers upto 10.000</span> <span class="tag">(D01-only)</span></td><td>0.00</td><td>10.000</td><td>UIS</td></tr>
+<tr><td>🟩</td><td class="mono"><span style="color:var(--coral)">RY 50036342</span></td><td><span style="color:var(--coral)">UIL signatures for all transfers</span> <span class="tag">(D01-only OBJID)</span></td><td>0.00</td><td>50.000.000</td><td>UIL</td></tr>
+</table>
+
+<div class="warn"><div class="t">⚠️ Why this matters — dev/prod signatory config is NOT in sync</div>
+<b>UBO is the sharp one:</b> P01 has <b>two amount tiers</b> (<span class="mono">50034894</span> ≤10K + <span class="mono">50036737</span> &gt;10K); D01 has <b>one single node</b> (<span class="mono">50034894</span> "all transfers" 0–9.999.999.999). <b>The same OBJID <span class="mono">50034894</span> means different things in each system</b> (≤10K in prod, all-amounts in dev). UIS/UIL also use different OBJIDs (P01 <span class="mono">50036326/50037531</span> vs D01 <span class="mono">50035433/50036342</span>). Consequences:
+<ul>
+<li><b>Don't validate or simulate prod behaviour in D01</b> — a UBO test there hits one node; in prod it splits by amount → different signatories.</li>
+<li><b>Don't blindly transport these RY nodes</b> D01→P01 — OBJID 50034894 would overwrite the prod ≤10K node with the dev "all-transfers" definition.</li>
+<li>Everything else in this companion is <b>P01 (prod)</b> = the authoritative panel.</li>
+</ul>
+Full comparison persisted in Golden DB <span class="mono">bcm_node_d01_vs_p01</span>. <i>(Reproductions of the two OOCU_RESP screens — I can't embed pasted PNGs, so these tables render the same data verified by RFC.)</i></div>
+
 <h2>5 · Reconciliation &amp; gates</h2>
 <p class="lead"><b>Target</b> = the single agreed panel, split by tier (≤10K-only vs unlimited). <b>Current</b> = live <span class="mono">HRP1001</span> membership (all periods) of the entity's RY nodes. Classify every (node × person):</p>
 <table>

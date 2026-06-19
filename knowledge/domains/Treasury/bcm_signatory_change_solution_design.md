@@ -240,6 +240,24 @@ UIS & UIL clean; other UNES nodes clean. Fix per person: grant `YS:FI:M:BCM_MON_
 
 ---
 
+### 4c. D01 ≠ P01 — signatory config diverges (rule 90000004 BNK_COM, verified 2026-06-19)
+
+The criteria are visible/defined in the **OOCU_RESP overview** (`M.PymtAmt(rcur)` of–to + `Paying co. code` columns); double-click a row → *Responsibility Change → Responsibility Specs* to edit. **Dev and prod differ:**
+
+| OBJID | P01 (prod) | D01 (dev) | verdict |
+|---|---|---|---|
+| 50010052 UNES | all 0–50M | all 0–50M | same |
+| 50010088 IIEP | all 0–50M | all 0–50M | same |
+| **50034894 UBO** | **≤10K (0–10000)** | **all 0–9.999.999.999** | **DIFFERS (same OBJID, diff meaning!)** |
+| 50036737 UBO >10K | 10000–50M | absent | P01-only |
+| 50010054 UIS | all 0–50M | >10K 10000–50M | DIFFERS |
+| 50036326 / 50035433 UIS ≤10K | 50036326 | 50035433 | different OBJID |
+| 50037531 / 50036342 UIL | 50037531 | 50036342 | different OBJID |
+
+**UBO:** P01 = 2 amount tiers; D01 = 1 single "all transfers" node. **Same OBJID 50034894 means ≤10K in prod, all-amounts in dev.** Implications: (1) don't validate/simulate prod behaviour in D01; (2) don't blindly transport these RY nodes D01→P01 (OBJID collision); (3) everything else here is P01 = authoritative. Persisted to Golden DB `bcm_node_d01_vs_p01`.
+
+---
+
 ## 5. Reconciliation logic + completeness gate
 
 ```
