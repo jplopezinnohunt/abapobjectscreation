@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNESCO SAP — Substitutions & Custom Code Registry</title>
+<style>
+  :root{
+    --bg:#0e1726; --panel:#152033; --panel2:#1c2940; --line:#27374f;
+    --ink:#e8eef7; --mut:#9fb0c8; --dim:#6f819c;
+    --accent:#3aa0ff; --accent2:#6fd3a8; --warn:#ffb454; --bad:#ff6b6b; --ok:#5ed699;
+    --chip:#21314c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  code,.mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}
+  .kick{color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+  h1{margin:6px 0 4px;font-size:26px}
+  .sub{color:var(--mut);font-size:13px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .meta .chip{background:var(--chip);border:1px solid var(--line);color:var(--mut);border-radius:20px;padding:3px 11px;font-size:12px}
+  nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 20px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+  nav.tabs button{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:13px}
+  nav.tabs button:hover{color:var(--ink);border-color:var(--accent)}
+  nav.tabs button.active{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:700}
+  section.tab{display:none}
+  section.tab.active{display:block;animation:f .2s ease}
+  @keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  h2{font-size:19px;margin:6px 0 4px;border-left:3px solid var(--accent);padding-left:10px}
+  h3{font-size:15px;margin:20px 0 6px;color:var(--ink)}
+  .lead{color:var(--mut);margin:2px 0 14px;max-width:90ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--mut);font-weight:600;position:sticky}
+  tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+  .tag{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700}
+  .t-sub{background:rgba(58,160,255,.16);color:#8fc6ff}
+  .t-val{background:rgba(111,211,168,.16);color:#8de3bd}
+  .t-exit{background:rgba(255,180,84,.16);color:#ffcd8a}
+  .t-bad{background:rgba(255,107,107,.16);color:#ff9a9a}
+  .pill{font-size:11px;border:1px solid var(--line);border-radius:20px;padding:1px 9px;color:var(--mut)}
+  .callout{border-left:3px solid var(--warn);background:rgba(255,180,84,.06);padding:11px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .callout.bad{border-color:var(--bad);background:rgba(255,107,107,.06)}
+  .callout.ok{border-color:var(--ok);background:rgba(94,214,153,.06)}
+  .callout b{color:var(--ink)}
+  pre{background:#0a1322;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font-size:12px;color:#cfe0f5}
+  .kv{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .kv div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:130px}
+  .kv .n{font-size:20px;font-weight:800}
+  .kv .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  .muted{color:var(--dim)}
+  .src{font-size:11px;color:var(--dim);margin-top:6px}
+  .flow{display:flex;flex-direction:column;gap:6px}
+  .step{display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .step .no{font-weight:800;color:var(--accent);text-align:center}
+  .step.hot{border-color:var(--accent)}
+  .step.hot .no{color:var(--ok)}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding-top:14px;color:var(--dim);font-size:12px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kick">UNESCO SAP Intelligence · Source of Truth</div>
+  <h1>Substitutions &amp; Custom Code Registry</h1>
+  <div class="sub">The master inventory of every FI substitution, validation, derivation and custom exit that bends a UNESCO posting — standard GGB0/GGB1 + the <code>YRGGBS00</code> exit pool + BASU + EBS layers + the BCM/Payment workflow custom code.</div>
+  <div class="meta">
+    <span class="chip">v1 · 2026-06-20</span>
+    <span class="chip">System: P01 (production)</span>
+    <span class="chip">Evidence: live RFC + extracted ABAP + Golden DB</span>
+    <span class="chip">Brain: claims 167/168/169/21/34 · INC-5240/6073/8088</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="overview" class="active">Overview</button>
+  <button data-t="chain">16-Step Chain</button>
+  <button data-t="exits">YRGGBS00 Exits</button>
+  <button data-t="basu">BASU · Business Area</button>
+  <button data-t="xref">XREF Office Tagging</button>
+  <button data-t="bcm">BCM / Payment Custom Code</button>
+  <button data-t="backdoor">YXUSER Backdoor</button>
+  <button data-t="tables">Tables &amp; Incidents</button>
+</nav>
+
+<!-- OVERVIEW -->
+<section class="tab active" id="overview">
+  <h2>What this is &amp; why it matters</h2>
+  <p class="lead">At UNESCO, a posting's account-assignment fields (Business Area, Cost Center, Fund, Fund Center, payment method, office tag) are rarely what the user typed — they are <b>rewritten</b> by a chain of standard configuration and custom ABAP exits before the document is saved. This registry is the single map of every mechanism that does that rewriting, so the next agent or analyst does not re-derive it from scratch. <b>If one of these is wrong, postings land in the wrong segment, payments mis-route, or the audit trail goes blank.</b></p>
+
+  <div class="grid g3">
+    <div class="card"><div class="l muted">PRIMARY EXIT POOL</div><h3 style="margin-top:4px">YRGGBS00</h3><p class="muted" style="font-size:13px">The global FI form pool (tx GGB0/GGB1). Hosts ~13 UNESCO exits across two families: BA/Fund/CC derivation and XREF office-tagging. Registered in <code>T080D</code>.</p></div>
+    <div class="card"><div class="l muted">BUSINESS-AREA ENGINE</div><h3 style="margin-top:4px">BASU · YFI_BASU_MOD</h3><p class="muted" style="font-size:13px">No-transport BA substitution. <code>YTFI_BA_SUBST</code> (modern, ranges) + <code>YBASUBST</code> (legacy, flat) read by class <code>YCL_FI_ACCOUNT_SUBST_READ</code> from Form U910.</p></div>
+    <div class="card"><div class="l muted">PAYMENT GATES</div><h3 style="margin-top:4px">BCM / WS90000003</h3><p class="muted" style="font-size:13px">FI Release-for-Payment custom tasks (<code>YBSEG_REL</code>, direct <code>UPDATE bseg</code>) + the BCM reject BAdI. Signatory selection itself is 100% standard.</p></div>
+  </div>
+
+  <h3>The three mechanisms (don't confuse them)</h3>
+  <table>
+    <tr><th>Field rewritten</th><th>Mechanism</th><th>Where maintained</th><th>Custom?</th></tr>
+    <tr><td>Business Area <span class="mono">BSEG.GSBER</span></td><td>GGB1 <code>SUBSTID=UNESCO</code> Step 002 (Form U910) → reads YTFI_BA_SUBST + YBASUBST</td><td><code>YFI_BASU_MOD</code> / SE16N</td><td><span class="tag t-sub">CUSTOM exit</span></td></tr>
+    <tr><td>Cost Center <span class="mono">BSEG.KOSTL</span></td><td>OKB9 default account assignment per cost element</td><td>tx <code>OKB9</code></td><td><span class="tag t-val">standard</span></td></tr>
+    <tr><td>Fund / Fund Center <span class="mono">FMIFIIT.FONDS/FISTL</span></td><td>FMDERIVE strategy (HKONT-driven + Fund-driven steps) + exit <code>ZXFMDTU02</code></td><td>tx <code>FMDERIVE</code></td><td><span class="tag t-sub">CUSTOM exit</span></td></tr>
+    <tr><td>Office tag <span class="mono">BSEG.XREF1/2</span> → <span class="mono">ZLSCH</span></td><td>YRGGBS00 trio UXR1 / UXR2 / UZLS (reads <code>USR05.Y_USERFO</code>)</td><td>SU3 user param + <code>YFO_CODES</code></td><td><span class="tag t-sub">CUSTOM exit</span></td></tr>
+  </table>
+  <div class="callout ok"><b>Plot twist (claim 168):</b> on real posted documents 2024–2026, <b>3 of 4 derivations already work correctly</b> for all bank groups — only Cost Center on two revenue GLs needed a 2-entry OKB9 fix. The substitution machinery looks fearsome but mostly lands right; the risk is in the <i>gaps</i> (XREF validation, audit trail) not the happy path.</div>
+
+  <h3>Three substitution LAYERS on every EBS posting (not one)</h3>
+  <div class="flow">
+    <div class="step hot"><div class="no">1</div><div><b>EXIT_RFEBBU10_001 / YTBAM001</b> — fires during FEBEP→BSEG conversion, <i>before</i> the OT83 chain. Modifies CHECT, GSBER, ZUONR (via <code>YCL_FI_ACCOUNT_SUBST_READ</code>). Does <b>not</b> touch HKONT. CMOD <code>YTFBE001</code> (active since 2001, 559 lines).</div></div>
+    <div class="step"><div class="no">2</div><div><b>OT83 account-symbol chain</b> (T028B → T028G → T033F → T033G) — resolves the GL.</div></div>
+    <div class="step hot"><div class="no">3</div><div><b>GGB1 <code>SUBSTID=UNESCO</code> callup-3</b> — fires per BSEG line: the 16-step chain (incl. U910 GSBER again). → see the <b>16-Step Chain</b> tab.</div></div>
+  </div>
+  <p class="src">Sources: <code>knowledge/domains/Treasury/substitution_bank_model.md</code> · <code>knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md</code> · <code>knowledge/sap_custom_enhancement_registry.md</code></p>
+</section>
+
+<!-- 16-STEP CHAIN -->
+<section class="tab" id="chain">
+  <h2>The 16-step UNESCO substitution chain</h2>
+  <p class="lead">Callup point 3 (complete document), <code>GB922</code> with <code>SUBSTID='UNESCO'</code> (17 rows incl. the UNESCH MONAT-only step). This is the canonical spine every FI document passes through. <b>Highlighted</b> steps carry the load: 002 (BA), 004 (default), 010 (late BA override).</p>
+  <div class="flow">
+    <div class="step"><div class="no">001</div><div><span class="tag t-exit">UGLS</span> sets <span class="mono">BSEG.HKONT</span> — GL account redirect</div></div>
+    <div class="step hot"><div class="no">002</div><div><span class="tag t-exit">U910</span> sets <span class="mono">BSEG.GSBER</span> — <b>BA derivation, reads YTFI_BA_SUBST + YBASUBST</b> via <code>YCL_FI_ACCOUNT_SUBST_READ</code></div></div>
+    <div class="step"><div class="no">003</div><div><span class="tag t-exit">U901/U902</span> set <span class="mono">BVTYP, PYCUR</span> — bank type, payment currency</div></div>
+    <div class="step hot"><div class="no">004</div><div><span class="tag t-sub">literal</span> <span class="mono">GSBER='GEF'</span> — default fallback</div></div>
+    <div class="step"><div class="no">005</div><div><span class="tag t-exit">UXR1</span> sets <span class="mono">XREF1</span> — office tag (bank-related HKONTs gated)</div></div>
+    <div class="step"><div class="no">006</div><div><span class="tag t-exit">UXR2</span> sets <span class="mono">XREF2</span> — office tag (only when blank)</div></div>
+    <div class="step"><div class="no">007</div><div><span class="tag t-exit">UZLS</span> sets <span class="mono">ZLSCH</span> — payment method from XREF2</div></div>
+    <div class="step"><div class="no">008</div><div><span class="tag t-exit">UAEP</span> — assets-expense custom logic (no field)</div></div>
+    <div class="step"><div class="no">009</div><div><span class="tag t-sub">literal</span> <span class="mono">HKONT='2021023'</span> — specific GL redirect</div></div>
+    <div class="step hot"><div class="no">010</div><div><span class="tag t-exit">U904</span> sets <span class="mono">BSEG.GSBER</span> — <b>late-stage BA override</b> (beats Step 002 on cash-side debits)</div></div>
+    <div class="step"><div class="no">011</div><div><span class="tag t-sub">literal</span> <span class="mono">FDLEV='B2'</span> — cash forecast level</div></div>
+    <div class="step"><div class="no">012</div><div><span class="tag t-sub">literal</span> <span class="mono">ZLSPR='A'</span> — payment block</div></div>
+    <div class="step"><div class="no">013</div><div><span class="tag t-exit">U908</span> sets <span class="mono">FDLEV</span> — FDLEV override</div></div>
+    <div class="step"><div class="no">014</div><div><span class="tag t-sub">literal</span> <span class="mono">ZUONR='Reval. Sub-Bank'</span> — FX revaluation marker</div></div>
+    <div class="step"><div class="no">015</div><div><span class="tag t-sub">literal</span> <span class="mono">ZLSPR='N'</span> — release payment block</div></div>
+    <div class="step"><div class="no">016</div><div><span class="tag t-exit">UATF</span> — final exit (no field)</div></div>
+  </div>
+  <div class="callout"><b>Why 010 matters (claim 169):</b> bank cash GLs always end up <span class="mono">GSBER=GEF</span> in BSEG regardless of what YBASUBST says, because Step 010 (U904) overrides Step 002 (U910) for cash-side debits. Group classification matters on the <i>revenue</i> side, not the cash side. This explains the YBASUBST "config drift" on NTB01 accounts (PFF/OPF in config, GEF in reality).</div>
+  <p class="src">Source: <code>substitution_bank_model.md</code> §"The 16-step UNESCO substitution chain" · <code>GB922 SUBSTID='UNESCO'</code> (live P01)</p>
+</section>
+
+<!-- EXITS -->
+<section class="tab" id="exits">
+  <h2>YRGGBS00 exit catalogue</h2>
+  <p class="lead">Raw logic extracted from <code>YRGGBS00_SOURCE.txt</code> (1,591 lines). Two families share the form pool: <b>BA/Fund/CC derivation</b> (substitutions) and <b>validations</b>. Registration tables: <code>GB901</code> (prereq) / <code>GB922</code> (action) / <code>GB93</code>·<code>GB931</code> (validations).</p>
+  <table>
+    <tr><th>Exit</th><th>Kind</th><th>Sets / checks</th><th>Logic (real)</th></tr>
+    <tr><td class="mono">U910</td><td><span class="tag t-sub">SUB</span></td><td>BSEG.GSBER</td><td>BA derivation — calls <code>YCL_FI_ACCOUNT_SUBST_READ</code> over YTFI_BA_SUBST then YBASUBST</td></tr>
+    <tr><td class="mono">U904</td><td><span class="tag t-sub">SUB</span></td><td>BSEG.GSBER</td><td>Payment-supplement linkage: UZAWE <code>PF→PFF · OP→OPF · GE→GEF</code>. Late override of U910.</td></tr>
+    <tr><td class="mono">UAEP</td><td><span class="tag t-sub">SUB</span></td><td>FISTL/GEBER/KOSTL</td><td>Asset-expense 1:1:1 force-map. UNES <code>GEF→UNESCO/GEF/111023</code>, <code>OPF→…/131023</code>, <code>PFF→…/121023</code>; IBE→IBE/PFF. Guarded by <code>YXUSER</code> XTYPE='AF'.</td></tr>
+    <tr><td class="mono">UATF / NSAI</td><td><span class="tag t-sub">SUB</span></td><td>BSEG.PROJK</td><td>Technical-fund substitution → <b>FORCE-CLEARS the WBS element</b> to avoid PS-PSM overlap. Guarded by <code>YXUSER</code> XTYPE='AA'.</td></tr>
+    <tr><td class="mono">UGLS</td><td><span class="tag t-sub">SUB</span></td><td>BSEG.HKONT</td><td>GL account redirect (Step 001).</td></tr>
+    <tr><td class="mono">U901 / U902</td><td><span class="tag t-sub">SUB</span></td><td>BVTYP / PYCUR</td><td>Bank type & payment-currency manipulation.</td></tr>
+    <tr><td class="mono">U915</td><td><span class="tag t-val">VAL</span></td><td>multi-bank vendor</td><td>If vendor has &gt;1 <code>LFBK</code> account and no <code>BVTYP</code> on the line → fail. Skips BSCHL 26/39. Registered <code>1UNES###011 / 2UNES###011</code>. Invoice TCODEs only.</td></tr>
+    <tr><td class="mono">U916</td><td><span class="tag t-val">VAL</span></td><td>fund GL restriction</td><td>Whitelists HKONT when <code>FISTL='UNESCO'</code> or <code>GEBER='185GEF0006'</code>. Severity <b>I</b> (info only, non-blocking).</td></tr>
+    <tr><td class="mono">U917</td><td><span class="tag t-val">VAL</span></td><td>SCB indicator</td><td>Validates <code>LZBKZ</code> vs vendor bank country; checks custom <code>YTFI_PPC_STRUC</code>. Fires on invoice-entry TCODEs + KOART='K'. <b>Does NOT fire on F-53/FBZ2 manual payments.</b></td></tr>
+    <tr><td class="mono">UXR1 / UXR2 / UZLS</td><td><span class="tag t-sub">SUB</span></td><td>XREF1/2 → ZLSCH</td><td>Office-tagging trio → see the <b>XREF Office Tagging</b> tab.</td></tr>
+    <tr><td class="mono">U908</td><td><span class="tag t-sub">SUB</span></td><td>FDLEV</td><td>Cash-forecast level override (Step 013).</td></tr>
+  </table>
+  <div class="callout"><b>Coverage gap (the validation family):</b> of the 12 <code>VALID='UNES'</code> steps, the two that fire on invoice vendor lines (U915, U917) check <b>bank-account mechanics only</b> — never XREF content. <code>F-53</code>/<code>FBZ2</code> manual outgoing payments appear in <b>zero</b> UNES validation prerequisites → pass through completely uncovered.</div>
+  <p class="src">Source: <code>finance_validations_and_substitutions_autopsy.md</code> §2 · <code>YRGGBS00_SOURCE.txt</code></p>
+</section>
+
+<!-- BASU -->
+<section class="tab" id="basu">
+  <h2>BASU — Business-Area substitution engine</h2>
+  <p class="lead">UNESCO maintains complex BA derivation <b>without raising a transport</b>: tx <code>YFI_BASU_MOD</code> (program <code>YFI_ACCOUNT_SUBSTITUTION</code>) edits range tables read at runtime by <code>YCL_FI_ACCOUNT_SUBST_READ</code>, called from <code>YRGGBS00</code> Form U910. This is the "hidden" substitution layer that lets non-ABAPers manage rules the transport-locked GGB1 config can't.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3 style="margin-top:0">YTFI_BA_SUBST — modern, range-based</h3>
+      <div class="muted" style="font-size:13px">Schema: <code>BUKRS + BLART + GSBER + NUMB + SIGN + OPTI + LOW + HIGH</code>. <b>UNES: 4 rules.</b></div>
+      <table style="margin-top:8px">
+        <tr><th>BLART</th><th>GSBER</th><th>OPTI</th><th>LOW</th><th>HIGH</th></tr>
+        <tr><td>(any)</td><td>GEF</td><td>BT</td><td>0001000000</td><td>0001999999</td></tr>
+        <tr><td>Z1</td><td>GEF</td><td>BT</td><td>0001000000</td><td>0001199999</td></tr>
+        <tr><td>PP</td><td>OPF</td><td>EQ</td><td>0005098020</td><td>—</td></tr>
+        <tr><td>(any)</td><td>PFF</td><td>BT</td><td>0005098011</td><td>0005098023</td></tr>
+      </table>
+      <div class="muted" style="font-size:12px">The first range catches every bank cash GL → default GEF.</div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">YBASUBST — legacy, flat, per-account</h3>
+      <div class="muted" style="font-size:13px">Schema: <code>BUKRS + BLART + HKONT + GSBER</code>. <b>Higher precedence</b> than YTFI_BA_SUBST for HKONTs in both. <b>UNES: 641 rules.</b></div>
+      <div class="kv" style="margin-top:10px">
+        <div><div class="n">~565</div><div class="l">GEF (operating banks)</div></div>
+        <div><div class="n">~50</div><div class="l">PFF (project/restricted)</div></div>
+        <div><div class="n">~25</div><div class="l">OPF (ASHI/ops programme)</div></div>
+      </div>
+    </div>
+  </div>
+  <h3>Runtime read (method READ — real source)</h3>
+  <pre>SELECT DISTINCT bukrs, blart, gsber FROM ytfi_ba_subst
+  WHERE bukrs = @iv_bukrs AND blart = @iv_blart AND sign &lt;&gt; @space ...
+LOOP ...
+  IF iv_hkont IN lt_hkont_range.
+    rv_gsber = ls_subst-gsber. EXIT.
+  ENDIF.
+ENDLOOP.
+* Fallback: (1) BUKRS+BLART+range  →  (2) BUKRS+SPACE+range (global)</pre>
+  <div class="callout"><b>Config drift (claim 169):</b> NTB01-USD02 carries a <code>PFF</code> entry in YBASUBST but every real posting lands <code>GEF</code> — because Step 010 (U904) overrides U910 on the cash side. <b>Reading the config table alone gives a false BA</b>; verify against posted BSEG.</div>
+  <h3>The EBS third actor — YTBAM001</h3>
+  <p class="muted" style="font-size:13px">On bank-statement postings the same <code>YCL_FI_ACCOUNT_SUBST_READ</code> is also called <i>earlier</i>, from custom code <code>YTBAM001</code> (CMOD <code>YTFBE001</code> → enhancement <code>FEB00001</code> → <code>EXIT_RFEBBU10_001</code> → include <code>ZXF01U01</code>, active since 2001). It sets <code>E_FEBEP-GSBER</code> during FEBEP→BSEG conversion. Gated by <code>EFART='E' AND BUKRS IN {UBO, IIEP, UNES}</code>.</p>
+  <p class="src">Sources: <code>basu_mod_technical_autopsy.md</code> · <code>substitution_bank_model.md</code> · class <code>YCL_FI_ACCOUNT_SUBST_READ</code></p>
+</section>
+
+<!-- XREF -->
+<section class="tab" id="xref">
+  <h2>XREF office-tagging trio — UXR1 / UXR2 / UZLS</h2>
+  <p class="lead">An independent mechanism from BA/Fund derivation: it stamps the posting user's <b>office code</b> onto the document and uses it to route the payment. Reads <code>USR05.PARID='Y_USERFO'</code> (SU3 user parameter), validates against custom table <code>YFO_CODES</code>. <b>The defect class behind INC-000005240.</b></p>
+  <div class="flow">
+    <div class="step"><div class="no">005</div><div><b>UXR1</b> → writes <span class="mono">BSEG.XREF1</span> from <code>USR05.Y_USERFO</code>. <span class="tag t-bad">guard commented out</span> — overwrites even user-typed values. Non-blocking warning <code>w018</code> if not in YFO_CODES.</div></div>
+    <div class="step"><div class="no">006</div><div><b>UXR2</b> → writes <span class="mono">BSEG.XREF2</span> only when blank. <b>Asymmetric.</b></div></div>
+    <div class="step"><div class="no">007</div><div><b>UZLS</b> → reads XREF2, derives <span class="mono">BSEG.ZLSCH</span> (payment method) per company code.</div></div>
+  </div>
+  <h3>The critical asymmetry in UXR2 (real source)</h3>
+  <pre>IF bseg_xref2 = space.              " user did not type anything
+    SELECT SINGLE * FROM usr05 WHERE bname=sy-uname AND parid='Y_USERFO'.
+    IF sy-subrc IS INITIAL.
+        bseg_xref2 = usr05-parva.   " &larr; auto-write, NO validation
+    ENDIF.
+ELSE.                               " user typed a value
+    SELECT SINGLE * FROM yfo_codes WHERE focod = bseg_xref2.
+    IF sy-subrc &lt;&gt; 0.
+        MESSAGE e018(zfi) WITH bseg_xref2.  " &larr; HARD error, stops posting
+    ENDIF.
+ENDIF.</pre>
+  <div class="callout bad"><b>Why INC-000005240 happened:</b> the SPACE branch trusts <code>USR05</code> blindly (no YFO_CODES check). A wrong <code>Y_USERFO='HQ'</code> in user master is written to XREF2 with no validation. <code>F-53</code> hides XREF2 on screen → UXR2 always takes the SPACE branch → AL_JONATHAN's Jakarta postings were silently tagged <code>HQ</code> instead of <code>JAK</code>, and UZLS then mis-routed the payment method.</div>
+  <h3>UZLS routing (real source)</h3>
+  <pre>CASE bseg-bukrs.
+  WHEN 'UNES'.  IF bseg-xref2 &lt;&gt; 'HQ'        &rarr; zlsch='O'.
+  WHEN 'UBO'.   IF bseg-xref2 &lt;&gt; 'BRZ'       &rarr; zlsch='O'.
+  WHEN 'UIS'.   IF bseg-xref2 &lt;&gt; 'UIS'       &rarr; zlsch='O'.
+  WHEN 'IBE'.   IF bseg-xref2 &lt;&gt; 'IBE'       &rarr; zlsch='O'.
+  WHEN 'IIEP'.  IF bseg-xref2 &lt;&gt; 'IIEP_PAR'  &rarr; zlsch='O'.
+ENDCASE.
+* XREF2(4)='UNDP'  &rarr;  zlsch='U'  (UNDP transfers)</pre>
+  <h3>The operational cost of the gap (Q1 2026, measured)</h3>
+  <div class="kv">
+    <div><div class="n">21,754</div><div class="l">manual edit events</div></div>
+    <div><div class="n">242</div><div class="l">distinct users</div></div>
+    <div><div class="n">24,597</div><div class="l">UNES documents touched</div></div>
+    <div><div class="n">0</div><div class="l">validation steps check XREF</div></div>
+  </div>
+  <p class="muted" style="font-size:13px">No validation catches a wrong XREF, so the business has been correcting it by hand via FBL3N/FBL1N/FB02 for years (top editor C_VINCENZI: 2,075 FBL1N edits). <b>This is years of absorbed human labour standing in for a missing validation.</b></p>
+  <p class="src">Sources: <code>finance_validations_and_substitutions_autopsy.md</code> §2.7 · <code>xref_office_tagging_model.md</code> · <code>INC-000005240</code></p>
+</section>
+
+<!-- BCM -->
+<section class="tab" id="bcm">
+  <h2>BCM / Payment workflow custom code</h2>
+  <p class="lead">Surfaced by the BCM-signature analysis and promoted to the registry (Section 13) on 2026-06-20. <b>Scope note:</b> the signatory/agent <i>selection</i> is 100% standard SAP (<code>RH_GET_ACTORS</code>). The custom code lives in a separate gate — <b>FI "Release for Payment"</b> (<code>WS90000003</code>, document-level, before F110) — and in the BCM <b>reject</b> path. It blocks/reverses documents; it does not decide who signs.</p>
+  <h3>WS90000003 — 4 custom tasks (D_CROUZET, 2010)</h3>
+  <table>
+    <tr><th>Task</th><th>BOR method</th><th>Name</th><th>Effect</th></tr>
+    <tr><td class="mono">TS90000012</td><td class="mono">BSEG.ZCREATEPAYMENTBLOCKWF</td><td>Set Block Payment to W</td><td><b>Raw <code>UPDATE bseg / UPDATE bsik SET zlspr='W'</code></b></td></tr>
+    <tr><td class="mono">TS90000011</td><td class="mono">SYSTEM.GENERICINSTANTIATE</td><td>Create instance ZBSEG</td><td>Instantiate custom BOR <code>YBSEG</code></td></tr>
+    <tr><td class="mono">TS90000010</td><td class="mono">SYSTEM.GENERICINSTANTIATE</td><td>ZGETGOSNOTE</td><td>Get GOS note/attachment</td></tr>
+    <tr><td class="mono">TS90000008</td><td class="mono">BSEG.CHANGE</td><td>Change Document Line</td><td>Change a doc line item</td></tr>
+  </table>
+  <div class="callout bad"><b>RISK — direct DB write, not a BAPI.</b> <code>ZCREATEPAYMENTBLOCKWF</code> (BOR subtype <code>YBSEG</code>, program <code>YBSEG_REL</code>, author A_AHOUNOU) sets <code>ZLSPR='W'</code> via raw SQL <code>UPDATE</code>: <b>no change documents, no authority check, no enqueue</b>, BSEG/BSIK updated separately (desync risk), <code>COMMIT WORK</code> inside a BOR method. "Who set/removed this block and when?" has an <b>empty audit trail</b>. Same class of finding as the YBASUBST hidden substitution — custom config bypassing the standard guardrail.</div>
+  <h3>BCM reject BAdI — the only custom code in the signing path</h3>
+  <table>
+    <tr><th>BAdI</th><th>Impl class</th><th>Method</th><th>Effect</th></tr>
+    <tr><td class="mono">BNK_BADI_ORIG_PAYMT_CHG</td><td class="mono">Z_CL_BNK_BADI_PAYMT_CHG</td><td class="mono">~ON_REJECT</td><td>Auto-reverse the F110 payment (<code>J_1B_FBRA_POSTING_AUFRUFEN</code>, FBRA+FB08 reason 01) + log SLG1/FBPM (SAP note 1333640)</td></tr>
+  </table>
+  <p class="muted" style="font-size:13px">Plus <code>ZFI_PAYREL_EMAIL</code> (FUGR, package YWFI) — payment-release email notification (<code>LZFI_PAYREL_EMAILU01/U02</code>; logic depth TBC).</p>
+  <p class="src">Sources: <code>sap_custom_enhancement_registry.md</code> §13 · <code>bcm_signatory_change_solution_design.md</code> §3b · Golden DB <code>bcm_workflow_custom_task</code> / <code>bcm_badi_impl</code> · code <code>YBSEG_REL.abap</code>, <code>Z_CL_BNK_BADI_PAYMT_CHG.abap</code></p>
+</section>
+
+<!-- BACKDOOR -->
+<section class="tab" id="backdoor">
+  <h2>The YXUSER backdoor — the "open door"</h2>
+  <p class="lead">Several of the most restrictive force-mapping routines in <code>YRGGBS00</code> (the Asset ones) start with a check against custom table <code>YXUSER</code>. If the posting user is registered there with the matching <code>XTYPE</code>, the <b>entire routine is skipped</b> — the fund/cost-center force-map and the WBS clear do not apply.</p>
+  <pre>SELECT SINGLE * FROM yxuser
+  WHERE xtype = 'AF'   " or 'AA'
+    AND uname = sy-uname.
+CHECK sy-subrc &lt;&gt; 0.   " if user FOUND (subrc=0) &rarr; SKIP the whole routine</pre>
+  <table>
+    <tr><th>XTYPE</th><th>Bypasses</th><th>Effect of an entry</th></tr>
+    <tr><td class="mono">AF</td><td>UAEP (assets expenses)</td><td>Post asset expenses <b>without</b> the mandatory Fund/CC force-map</td></tr>
+    <tr><td class="mono">AA</td><td>UATF / NSAI (assets technical)</td><td>Post technical asset docs <b>without clearing the WBS element</b></td></tr>
+  </table>
+  <div class="callout bad"><b>Audit risk:</b> any user a functional admin adds to <code>YXUSER</code> can bypass the hardcoded fiscal-year and fund-center guardrails. Likely used for batch/interface IDs and migration tools, but it is an un-gated exception list that <b>must be monitored</b> to know who can post non-standard account assignments.</div>
+  <p class="src">Source: <code>finance_validations_and_substitutions_autopsy.md</code> §5</p>
+</section>
+
+<!-- TABLES & INCIDENTS -->
+<section class="tab" id="tables">
+  <h2>Persistence tables &amp; evidence</h2>
+  <h3>Tables that drive substitution/validation</h3>
+  <table>
+    <tr><th>Table</th><th>Rows (UNES)</th><th>Role</th><th>In Gold DB</th></tr>
+    <tr><td class="mono">YBASUBST</td><td>641</td><td>Legacy per-account BA mapping</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">YTFI_BA_SUBST</td><td>4</td><td>Modern range-based BA mapping (YFI_BASU_MOD)</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">GB901</td><td>162 BOOLIDs</td><td>Substitution prerequisites</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">GB922</td><td>17 (UNESCO+UNESCH)</td><td>Substitution actions (the 16-step chain)</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">GB02C</td><td>10</td><td>Substitution headers / callpoint registry</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">GB93 / GB931</td><td>17 / 12</td><td>Validation headers &amp; steps (VALID='UNES')</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">T001D</td><td>8</td><td>Validation/substitution → company-code assignment</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">T080D</td><td>2</td><td>Form-pool registration (YRGGBS00)</td><td><span class="tag t-val">YES</span></td></tr>
+    <tr><td class="mono">YFO_CODES</td><td>~40</td><td>Office-code whitelist (XREF validation)</td><td><span class="tag t-bad">unconfirmed</span></td></tr>
+    <tr><td class="mono">YTFI_PPC_STRUC</td><td>?</td><td>Bank PPC structure (read by U917)</td><td><span class="tag t-bad">NO</span></td></tr>
+    <tr><td class="mono">YXUSER</td><td>?</td><td>Bypass list (XTYPE AF/AA)</td><td><span class="tag t-bad">monitor</span></td></tr>
+    <tr><td class="mono">T8JFB / T8JFC</td><td>—</td><td>FMDERIVE strategy</td><td><span class="tag t-bad">not via RFC</span></td></tr>
+    <tr><td class="mono">TKA3D/E/F</td><td>—</td><td>OKB9 cost-element assignment</td><td><span class="tag t-bad">not via RFC</span></td></tr>
+  </table>
+
+  <h3>Incidents that map to this registry</h3>
+  <table>
+    <tr><th>Incident</th><th>Mechanism</th><th>One-line</th></tr>
+    <tr><td class="mono">INC-000005240</td><td>XREF (UXR1/UXR2/UZLS)</td><td>Jakarta user tagged HQ instead of JAK — wrong <code>USR05.Y_USERFO</code>, UXR2 SPACE branch skips validation, payment mis-routed</td></tr>
+    <tr><td class="mono">INC-000006073</td><td>GGB1 BA gap</td><td>IIEP travel posting on vendor GL 2021011 lacks a GGB1 rule (only 2021042/2021061 covered); YTFI_BA_SUBST has 0 IIEP entries</td></tr>
+    <tr><td class="mono">INC-000008088</td><td>Bank-posting derivation</td><td>Interest auto-posting cost center — 3 of 4 fields already correct; collapses to a 2-entry OKB9 fix (claim 168)</td></tr>
+  </table>
+
+  <h3>Supporting brain claims</h3>
+  <table>
+    <tr><th>Claim</th><th>Tier</th><th>Statement</th></tr>
+    <tr><td>167</td><td>TIER_1</td><td>UNESCO substitution architecture — 16-step chain, U910 reads YTFI_BA_SUBST/YBASUBST</td></tr>
+    <tr><td>168</td><td>TIER_1</td><td>3 of 4 derivation fields already correct for ASHI/Nessim — only CC needs OKB9</td></tr>
+    <tr><td>169</td><td>TIER_1</td><td>YBASUBST config drift on NTB01-USD02 — Step 010 (U904) overrides</td></tr>
+    <tr><td>34</td><td>—</td><td>YRGGBS00 UXR1/UXR2 XREF office-tagging trio architecture</td></tr>
+    <tr><td>21</td><td>—</td><td>GGB1 rule 3IIEP###002 covers only GL 2021042 &amp; 2021061 (INC-000006073)</td></tr>
+  </table>
+  <div class="legend">
+    <span><span class="tag t-sub">SUB</span> substitution (rewrites a field)</span>
+    <span><span class="tag t-val">VAL</span> validation (blocks/warns)</span>
+    <span><span class="tag t-exit">EXIT</span> ABAP form exit</span>
+    <span><span class="tag t-bad">RISK</span> gap / audit concern</span>
+  </div>
+</section>
+
+<footer>
+  <b>Substitutions &amp; Custom Code Registry v1</b> — living companion (brain&nbsp;.md → companion&nbsp;.html → Word snapshot).
+  Source of truth: <code>knowledge/sap_custom_enhancement_registry.md</code> + the PSM/EXTENSIONS &amp; Treasury &amp; FI domain docs cited per tab.
+  Substance lives in the brain + this companion; keep them aligned (0 contradictions). Generated 2026-06-20 · system P01.
+</footer>
+
+</div>
+<script>
+  const tabs=document.getElementById('tabs');
+  tabs.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(b.dataset.t).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+</script>
+</body>
+</html>

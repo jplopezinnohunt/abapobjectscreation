@@ -2,6 +2,8 @@
 
 This document serves as the master registry of custom ABAP enhancements (User-Exits, CMOD Projects, and BAdIs) discovered during the analysis of the UNESCO SAP system (P01).
 
+> 🖥️ **Living companion (the visual layer):** [`companions/fi_substitutions_custom_code_companion_v1.html`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/companions/fi_substitutions_custom_code_companion_v1.html) — renders this registry as 8 tabs (16-step chain · YRGGBS00 exits · BASU · XREF tagging · BCM/Payment custom code · YXUSER backdoor · tables & incidents). Keep registry ↔ companion aligned (0 contradictions); the `.md` is the source of truth, the `.html` is the snapshot.
+
 ## 1. Fund Management (FM) & Posting Derivation
 
 ### 1.1 `FMDERIVE` Strategy (Global)
@@ -218,6 +220,52 @@ Their logic lives in BAdI implementation classes to be extracted:
 | `YHR_ENH_HRCOREPLUS` | Classes for HR Core+ integration |
 | `ZCOMP_ENH_SF` | SuccessFactors interface classes in `ZHR_DEV` |
 | `YENH_INFOTYPE` | Infotype screen exit classes |
+
+---
+
+## 13. Payment / BCM Workflow Custom Code (Treasury — Extracted live P01, 2026-06-19)
+
+> **Why this section exists:** the BCM-signature analysis surfaced custom ABAP in workflow steps that
+> previously lived ONLY in the Treasury design doc + Golden DB, never in this master registry. Promoted here
+> 2026-06-20 to close that gap (cross-reference rule). Authoritative detail + flow:
+> [`bcm_signatory_change_solution_design.md` §3b](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/Treasury/bcm_signatory_change_solution_design.md).
+
+**Scope note — what is NOT custom:** the **signatory/agent selection is 100% standard SAP**
+(`BNK_API_GET_REL_ACTORS` → `RH_GET_ACTORS`, criteria in IT1218). The custom code below lives in a *separate*
+gate — **FI "Release for Payment"** workflow `WS90000003` (document-level, BEFORE F110) — and in the BCM batch
+**reject** path. It blocks/reverses *documents*; it does NOT decide *who signs*.
+
+### 13.1 FI Release-for-Payment custom tasks — `WS90000003` (4 tasks, D_CROUZET, 2010)
+Source: Golden DB `bcm_workflow_custom_task`. BOR methods live on custom subtype **`YBSEG`** (PARENT `BSEG`,
+program [`YBSEG_REL`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/Treasury/code/YBSEG_REL.abap), author A_AHOUNOU).
+
+| Task | BOR method | Name | Effect |
+| :--- | :--- | :--- | :--- |
+| **TS90000012** | **`BSEG.ZCREATEPAYMENTBLOCKWF`** | Set Block Payment to W | **Raw `UPDATE bseg / UPDATE bsik SET zlspr='W'`** (Workflow payment block) |
+| TS90000011 | `SYSTEM.GENERICINSTANTIATE` | Create instance ZBSEG | Instantiate custom BOR `YBSEG` |
+| TS90000010 | `SYSTEM.GENERICINSTANTIATE` | ZGETGOSNOTE | Get a GOS note/attachment |
+| TS90000008 | `BSEG.CHANGE` | Change Document Line | Change a doc line item |
+
+> ⚠️ **RISK — direct DB write, not a BAPI.** `ZCREATEPAYMENTBLOCKWF` sets `ZLSPR='W'` via raw SQL `UPDATE`:
+> **no change documents, no authority check, no enqueue**, BSEG/BSIK updated separately (desync risk),
+> `COMMIT WORK` inside a BOR method. "Who set/removed this block and when?" has an **empty audit trail**.
+> Should use the standard Release-for-Payment block / a supported change API. (Same class of finding as the
+> `YBASUBST` "hidden substitution" — custom config bypassing the standard guardrail.)
+
+### 13.2 BCM batch reject BAdI — the only custom code in the signing path
+Source: Golden DB `bcm_badi_impl` (1 of 3 impls is custom).
+
+| BAdI | Impl class | Method | Effect |
+| :--- | :--- | :--- | :--- |
+| `BNK_BADI_ORIG_PAYMT_CHG` | [`Z_CL_BNK_BADI_PAYMT_CHG`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/Treasury/code/Z_CL_BNK_BADI_PAYMT_CHG.abap) | `IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT` | On batch/payment reject → auto-reverse the F110 payment (`J_1B_FBRA_POSTING_AUFRUFEN`, FBRA+FB08 reason `01`) + log SLG1/FBPM (SAP note 1333640) |
+
+### 13.3 Payment-release email notification (FUGR, package YWFI)
+`ZFI_PAYREL_EMAIL` — includes [`LZFI_PAYREL_EMAILU01`](file:///c:/Users/jp_lopez/projects/abapobjectscreation/extracted_code/FI/YWFI/FUGR/ZFI_PAYREL_EMAIL/LZFI_PAYREL_EMAILU01.abap) / `U02`. Email notification for the payment-release gate. *(Logic depth: TBC — extracted, not yet autopsied.)*
+
+### 13.4 Persistence / where this is queryable
+*   Golden DB (structured): `bcm_workflow_custom_task` · `bcm_badi_impl` · `bcm_release_activity_fm` (standard FMs).
+*   Source code: `knowledge/domains/Treasury/code/` (YBSEG_REL, Z_CL_BNK_BADI_PAYMT_CHG) + `extracted_code/FI/YWFI/`.
+*   Companion: `companions/bcm_signatory_companion.html`.
 
 ---
 *For app-level connections see individual analysis docs in `knowledge/domains/HCM/Fiori Apps/`*

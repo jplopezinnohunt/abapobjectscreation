@@ -80,6 +80,14 @@ See `.agents/workflows/session_retro.md` for the existing 7-phase checklist:
 
 ## Phase 4b — Capture SAP Learnings (added Session #050)
 
+> 🤖 **MECHANIZED (s082) — this phase is now executed by the `brain-steward` subagent, auto-triggered.**
+> The `Stop` hook `brain_v2/stop_steward_hook.py` fires once per session and nudges the agent to run the
+> **`brain-steward`** (Agent tool, `subagent_type: "brain-steward"`) before close. The steward performs
+> exactly the harvest→classify→dedupe→promote→rebuild loop below and emits a ledger. This checklist is now
+> the steward's SPEC, not a manual ritual — but if the steward did not run (hook disabled), execute it by
+> hand. Rule #158 (`feedback_promote_conversational_knowledge_to_central_store`); curate.py = the structural
+> half, the steward = the semantic half.
+
 **Mandatory step before commit. Run this after Phase 4 (Skill & Workflow Updates).**
 
 Every session that touches SAP — investigation, extraction, configuration analysis,

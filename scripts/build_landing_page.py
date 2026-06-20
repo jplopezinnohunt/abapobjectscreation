@@ -297,6 +297,10 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
       <div class="hero-stat cyan"><div class="v">{skills_count}</div><div class="l">Skills Built</div></div>
       <div class="hero-stat teal"><div class="v">{session_count}</div><div class="l">Sessions</div></div>
     </div>
+    <div style="margin-top:22px; display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="companion_graph_v1.html" style="display:inline-flex; align-items:center; gap:10px; background:linear-gradient(135deg,#4f8ef7,#a78bfa); color:#06101f; font-weight:800; font-size:0.92em; text-decoration:none; padding:11px 20px; border-radius:10px; box-shadow:0 4px 18px rgba(79,142,247,0.25);">&#x1F578; Companion Knowledge Map &mdash; how they relate &rarr;</a>
+      <span style="display:inline-flex; align-items:center; color:#7892c0; font-size:0.8em;">{existing_companions_count} companions &middot; related as a graph (deterministic IDF, traceable edges)</span>
+    </div>
   </div>
 </div>
 
