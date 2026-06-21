@@ -163,6 +163,10 @@ def build_landing_page():
     for entry in companions:
         dom = entry.get("domain", "general").lower()
         domain_groups.setdefault(dom, []).append(entry)
+    num_domains = len([d for d, v in domain_groups.items() if v])
+    # filename -> title, for rendering companion-graph `related` links on each card (the structure
+    # now carries the graph: jump from a companion to its related ones, not just browse by domain)
+    title_by_file = {Path(e.get("file", "")).name: e.get("title", "") for e in companions}
 
     # Get critical alerts (marked as alert in status, or drift/stale, or manually defined)
     alerts = []
@@ -254,6 +258,10 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
 .metric .mv {{ font-size: 1em; font-weight: 700; font-family: 'Consolas', monospace; }}
 .metric .ml {{ font-size: 0.65em; color: var(--mu); text-transform: uppercase; letter-spacing: 0.05em; }}
 
+.card-related {{ display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 12px; }}
+.rel-label {{ font-size: 0.62em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mu); margin-right: 2px; }}
+.rel-chip {{ font-size: 0.7em; color: #a0c4ff; background: rgba(79,142,247,0.10); border: 1px solid var(--b); border-radius: 10px; padding: 1px 8px; cursor: pointer; transition: all 0.15s; }}
+.rel-chip:hover {{ border-color: var(--acc); color: #fff; background: rgba(79,142,247,0.2); }}
 .card-footer {{ display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--b); }}
 .card-size {{ font-size: 0.75em; color: var(--mu); }}
 .card-arrow {{ color: var(--acc); font-size: 1.2em; transition: transform 0.2s; }}
@@ -288,7 +296,7 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
 <div class="hero">
   <div class="hero-inner">
     <h1>UNESCO SAP Intelligence Platform</h1>
-    <p class="sub">Knowledge Hub — {existing_companions_count} Active Companions across 6 Domains (Drift and Staleness Protected)</p>
+    <p class="sub">Knowledge Hub — {existing_companions_count} Active Companions across {num_domains} Domains (Drift and Staleness Protected)</p>
     <div class="hero-stats">
       <div class="hero-stat blue"><div class="v">{existing_companions_count}</div><div class="l">Companions</div></div>
       <div class="hero-stat green"><div class="v">24M+</div><div class="l">Rows Extracted</div></div>
@@ -465,10 +473,20 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
         "transport": ("Transport Intelligence", "📦", "linear-gradient(135deg,#4f8ef7,#a78bfa)"),
         "infra": ("Infrastructure & Systems", "🖥️", "linear-gradient(135deg,#22d3ee,#4f8ef7)"),
         "support": ("Support & Maintenance", "🔧", "linear-gradient(135deg,#f59e0b,#ef4444)"),
+        "closing": ("Closing Activities", "📅", "linear-gradient(135deg,#a78bfa,#f472b6)"),
         "general": ("General Knowledge", "🧠", "linear-gradient(135deg,#a78bfa,#22d3ee)"),
     }
 
-    for dom_code, (dom_name, dom_icon, dom_gradient) in domains_map.items():
+    # Accommodate EVERY companion: mapped domains in this order, then ANY other domain present in
+    # companions.json (never silently drop a companion whose domain isn't pre-listed — the bug that
+    # hid the Closing companion). Catch-all gets a neutral style.
+    ordered_domains = list(domains_map.items())
+    for code in sorted(domain_groups):
+        if code not in domains_map and domain_groups.get(code):
+            ordered_domains.append((code, (code.replace("_", " ").title(), "🗂️",
+                                           "linear-gradient(135deg,#64748b,#94a3b8)")))
+
+    for dom_code, (dom_name, dom_icon, dom_gradient) in ordered_domains:
         entries = domain_groups.get(dom_code, [])
         if not entries:
             continue
@@ -522,6 +540,20 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
             for m in metrics:
                 metric_html += f'<div class="metric"><div class="mv">{m["value"]}</div><div class="ml">{m["label"]}</div></div>'
 
+            # companion-graph relationships → clickable chips (navigate without nesting <a> in <a>)
+            related_html = ""
+            rel_files = entry.get("related", [])[:4]
+            if rel_files:
+                chips = ""
+                for rf in rel_files:
+                    fn = Path(rf).name
+                    rt = title_by_file.get(fn) or fn.replace(".html", "").replace("_", " ")
+                    label = rt if len(rt) <= 24 else rt[:23] + "…"
+                    chips += (f'<span class="rel-chip" title="{rt}" '
+                              f'onclick="event.preventDefault();event.stopPropagation();'
+                              f"window.location='{fn}'\">{label}</span>")
+                related_html = f'<div class="card-related"><span class="rel-label">Related</span>{chips}</div>'
+
             html += f"""
       <a class="card {dom_code}" href="{card_href}" data-keywords="{" ".join(keywords)}" {card_style}>
         <div class="card-title">
@@ -532,6 +564,7 @@ body {{ font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg
         <div class="card-metrics">
           {metric_html}
         </div>
+        {related_html}
         <div class="card-footer">
           <span class="card-size">{size_str} &middot; {entry.get("version", "v1.0")}</span>
           <span class="card-arrow">&rarr;</span>

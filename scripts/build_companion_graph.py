@@ -59,6 +59,68 @@ ORPHAN_DOMAIN = {
 }
 
 
+REPO_NOISE_DIR = ("node_modules", ".git", ".venv", "venv", "site-packages", "__pycache__",
+                  ".playwright-mcp", "dist", "build", "playwright_data", "extracted_sap", ".external")
+REPO_NOISE_NAME = re.compile(r"^(_|tmp).*|.*_part\d.*|^index\.html$|^offscreen\.html$|.*readme\.html$", re.I)
+
+
+def repo_html_inventory():
+    """Scan the WHOLE repo for companion-like HTML and classify vs the canonical companions/ set.
+    Answers 'are there more companions?' deterministically: most extra HTML are STALE build copies,
+    not new domains. Persisted so the next session doesn't re-ask."""
+    import hashlib
+    canon = {p.name: hashlib.sha1(p.read_bytes()).hexdigest() for p in COMP.glob("*.html")}
+
+    def noisy(p):
+        s = str(p).replace("\\", "/")
+        if any(d in s.split("/") for d in REPO_NOISE_DIR):
+            return True
+        if "bcm_structured_address_src" in s or "brain_v2/output" in s:
+            return True
+        return bool(REPO_NOISE_NAME.match(p.name))
+
+    dup, diverged, unique = [], [], []
+    for p in ROOT.rglob("*.html"):
+        if noisy(p):
+            continue
+        rel = str(p.relative_to(ROOT)).replace("\\", "/")
+        if rel.startswith("companions/"):
+            continue
+        h = hashlib.sha1(p.read_bytes()).hexdigest()
+        if p.name in canon:
+            (dup if h == canon[p.name] else diverged).append(rel)
+        else:
+            unique.append(rel)
+
+    # Format-aware: companions exist as .html + downstream snapshots (.pdf/.png/.docx). Capture the
+    # non-HTML deliverables INSIDE companions/ and best-effort attach each to its parent companion by stem.
+    stems = {p.stem.lower(): p.name for p in COMP.glob("*.html")}
+    other_fmt = []
+    for p in sorted(COMP.iterdir()):
+        if not p.is_file() or p.suffix.lower() in (".html", ".json", ".py"):
+            continue
+        low = p.stem.lower()
+        parent = next((nm for st, nm in stems.items()
+                       if low.startswith(st) or st.startswith(low.split("_")[0])
+                       or low.split("_")[0] in st), None)
+        other_fmt.append({"file": "companions/" + p.name, "kb": p.stat().st_size // 1024,
+                          "format": p.suffix.lstrip(".").lower(), "attached_to": parent})
+
+    return {
+        "canonical_dir": "companions/", "canonical_html": len(canon),
+        "duplicate_copies": sorted(dup),     # identical stale copies in build dirs → redundant
+        "diverged_stale": sorted(diverged),  # same name, OLDER generation in a build dir → not new
+        "unique_candidates": sorted(unique), # HTML whose name is NOT in companions/ → review
+        "companions_dir_other_formats": other_fmt,  # pdf/png/docx snapshots living in companions/
+        "note": "Canonical companions live in companions/ (HTML = primary). duplicate_copies/diverged_stale "
+                "are old build generations of the SAME companions. companions_dir_other_formats = downstream "
+                "snapshots (PDF/PNG/Word) of a companion — attached to its parent by stem. unique_candidates = "
+                "review: real new companion vs raw data-viewer. Repo-wide non-companion docs (111 PDFs under "
+                "Zagentexecution/sap-skills = external SAC handbook; 19 xlsx = analysis workbooks; "
+                "Transport_Intelligence/*.docx = a domain w/o an HTML companion) are NOT companions.",
+    }
+
+
 def norm_inc(s):
     d = re.sub(r"\D", "", s)
     return "INC-" + d.zfill(9)
@@ -366,6 +428,7 @@ def main():
             "on_disk": len(on_disk), "registered": len(registered),
             "orphans_unregistered": orphans, "registered_missing_file": missing,
         },
+        "html_inventory_repo_wide": repo_html_inventory(),
         "stats": {"nodes": len(nodes), "edges": len(edges), "clusters": len(clusters),
                   "cluster_method": method},
         "nodes": nodes,
@@ -381,6 +444,15 @@ def main():
     print(f"on_disk={len(on_disk)}  registered={len(registered)}")
     print(f"ORPHANS (on disk, NOT in companions.json): {orphans or 'none'}")
     print(f"MISSING (registered, no file): {missing or 'none'}")
+    hi = graph["html_inventory_repo_wide"]
+    print(f"\nREPO-WIDE: canonical_html={hi['canonical_html']} (companions/) · "
+          f"duplicate_copies={len(hi['duplicate_copies'])} · diverged_stale={len(hi['diverged_stale'])} · "
+          f"unique_candidates={len(hi['unique_candidates'])} · "
+          f"other_format_artifacts={len(hi['companions_dir_other_formats'])}")
+    for u in hi["unique_candidates"]:
+        print(f"   UNIQUE -> {u}")
+    for o in hi["companions_dir_other_formats"]:
+        print(f"   {o['format'].upper():4} {o['kb']:5}KB  {o['file']}  -> attached_to: {o['attached_to']}")
     print("\nTOP 15 EDGES (most related):")
     for e in edges[:15]:
         sh = ", ".join(e["shared"][:6])
@@ -392,13 +464,20 @@ def main():
 
     if a.write_related:
         changed = 0
+        # group downstream-format snapshots by parent companion
+        att = {}
+        for o in graph["html_inventory_repo_wide"]["companions_dir_other_formats"]:
+            if o["attached_to"]:
+                att.setdefault(o["attached_to"], []).append(o["file"])
         for e in reg:
             f = Path(e["file"]).name
             if f in related:
                 e["related"] = ["companions/" + r for r in related[f]]
                 changed += 1
+            if f in att:
+                e["attachments"] = sorted(att[f])     # PDF/PNG/Word snapshots of this companion
         REG.write_text(json.dumps(reg, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"\nInjected `related` into {changed} companions.json entries.")
+        print(f"\nInjected `related` into {changed} entries; `attachments` into {len(att)} entries.")
     print(f"\nwrote {OUT}")
 
 

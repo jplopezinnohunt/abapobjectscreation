@@ -78,6 +78,9 @@ def main():
     regenerate_dynamic_companions()
     
     run(["python", "scripts/validate_companions.py"], "Step 6/7: Validate HTML companions")
+    # Companion relationship graph BEFORE the landing — it injects `related`/`attachments` into
+    # companions.json, which the landing renders as the per-card Related chips. Order matters.
+    run(["python", "scripts/build_companion_graph.py", "--write-related"], "Step 7a/7: Rebuild companion knowledge graph")
     run(["python", "scripts/build_landing_page.py"], "Step 7/7: Rebuild landing page dashboard")
 
     print("\n" + "=" * 60)
