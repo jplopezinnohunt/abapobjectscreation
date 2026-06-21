@@ -9029,5 +9029,196 @@
       "BC",
       "S4_Readiness"
     ]
+  },
+  {
+    "id": 212,
+    "claim": "RSAU/SM20 Security Audit Log on P01 has retention >= 61 days (NOT ~15 days). Verified empirically 2026-06-21: data back to 2026-04-21 at full volume, 8,497,934 rows over 61 days (~150K rows/day). The ~15-day figure in MEMORY.md was a conservative pre-extraction estimate, now corrected by live data.",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "rsau_audit_history Gold DB table: MIN(SAL_DATE)=20260421, MAX(SAL_DATE)=20260621, COUNT=8497934. Extracted 2026-06-21 via RSAU_API_GET_LOG_DATA chunked <=6h.",
+    "evidence_path": "Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "RSAU_API_GET_LOG_DATA",
+      "rsau_audit_history",
+      "SM20",
+      "accumulate_logs.py"
+    ],
+    "discovered_session": "s083",
+    "cross_link": "knowledge/gold_db_table_catalog.md (RSAU row), knowledge/process_mining_table_analysis.md section 7b, MEMORY.md corrected (was ~236K rows/day ~15d -> now 150K rows/day >=61d)",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BC-SAL"
+      ],
+      "process": [
+        "Security"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "rsau_audit_history Gold DB table: MIN(SAL_DATE)=20260421, MAX(SAL_DATE)=20260621, COUNT=8497934. Extracted 2026-06-21 via RSAU_API_GET_LOG_DATA chunked <=6h.",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s083"
+  },
+  {
+    "id": 213,
+    "claim": "Behavioral SoD analysis on rsau_audit_history (Apr-Jun 2026, 8.5M rows): 32 users hold both invoice-posting and payment/clearing tcodes in the same period. Conflict concentrated in cross-domain power users T_ENG (FI clearing + Treasury bank + entry) and I_MARQUAND, corroborating the BCM dual-control / H13 finding from a different data source (audit log vs. BCM payment log).",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "process_mining/tier2_sod.py on rsau_audit_history. T_ENG and I_MARQUAND flagged: invoice-post tcodes (MIRO/FB60) + payment/clearing tcodes (F110/F-28/FB05) in same 2-month window. Total 32 users with conflict.",
+    "evidence_path": "process_mining/tier2_sod.py",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "T_ENG",
+      "I_MARQUAND",
+      "rsau_audit_history",
+      "tier2_sod.py"
+    ],
+    "discovered_session": "s083",
+    "cross_link": "knowledge/process_mining_maturity.md section Progress-2026-06-21, claims.json claim #6 (BCM dual-control I_MARQUAND), knowledge/analysis_methodology_per_group.md (Audit/SoD row)",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Payment_BCM",
+        "Treasury_EBS"
+      ],
+      "module": [
+        "FI",
+        "BC-SAL"
+      ],
+      "process": [
+        "Security",
+        "P2D",
+        "T2R"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "process_mining/tier2_sod.py on rsau_audit_history. T_ENG and I_MARQUAND flagged: invoice-post tcodes (MIRO/FB60) + payment/clearing tcodes (F110/F-28/FB05) in same 2-month window. Total 32 users with conflict.",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s083"
+  },
+  {
+    "id": 214,
+    "claim": "P2P conformance Gold DB (ekko/ekbe, P01, 2026-06-21): 38% clean 3-way-match (PO+GR+IR all present), 17% PO-with-no-receipt (open PO), ~44% multi-receipt or variant. 70 POs invoiced BEFORE goods receipt = $713,341 audit-grade 3-way-match violation (IR-before-GR rule). GR->IR median 1 day; 4% >30 days.",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "process_mining/p2p_conformance.py on Gold DB ekko/ekbe (P01). Commit 9b4fb1a. Outputs: 38% conform, 17% open, 44% multi; 70 IR-before-GR violations; $713,341 total PO value affected.",
+    "evidence_path": "process_mining/p2p_conformance.py",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "EKKO",
+      "EKBE",
+      "p2p_conformance.py",
+      "Procurement_P2P"
+    ],
+    "discovered_session": "s083",
+    "cross_link": "knowledge/process_mining_maturity.md section Progress-2026-06-21, capability_model.json Procurement_P2P note updated (was s079 stale 48.5%/17.3%/33.5%)",
+    "supersedes_note": "Procurement_P2P note in capability_model had stale 48.5%/17.3%/33.5% from s079 (first-pass same-day indeterminate logic). s083 uses proper 3-way-match rule: IR-before-GR = violation.",
+    "domain_axes": {
+      "functional": [
+        "Procurement_P2P"
+      ],
+      "module": [
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "process_mining/p2p_conformance.py on Gold DB ekko/ekbe (P01). Commit 9b4fb1a. Outputs: 38% conform, 17% open, 44% multi; 70 IR-before-GR violations; $713,341 total PO value affected.",
+    "evidence_against": "",
+    "domain": "Procurement_P2P",
+    "created_session": "s083"
+  },
+  {
+    "id": 215,
+    "claim": "SNC/Kerberos interactive ticket expires ~10 hours and does NOT survive an unattended/overnight run. The 14-day scheduled log accumulator (accumulate_logs.py) REQUIRES a BASIS-provisioned keytab or headless SNC credential. Two overnight runs failed for this reason (2026-06-20 and 2026-06-21).",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "Two failed overnight accumulator runs: connection error at ~10h mark traceable to Kerberos TGT expiry. SNC/Kerberos TGT lifetime = ~10h (standard Kerberos default, no auto-renewal without keytab).",
+    "evidence_path": "Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py",
+    "evidence_tier": "TIER_2",
+    "related_objects": [
+      "accumulate_logs.py",
+      "SNC",
+      "Kerberos"
+    ],
+    "discovered_session": "s083",
+    "cross_link": "knowledge/gold_db_table_catalog.md (RSAU row scheduler note)",
+    "blocking_action": "BASIS must provision a keytab (headless SNC credential) for the accumulator service account before 14-day scheduled unattended runs are possible.",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "BC-SNC"
+      ],
+      "process": [
+        "Infrastructure"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Two failed overnight accumulator runs: connection error at ~10h mark traceable to Kerberos TGT expiry. SNC/Kerberos TGT lifetime = ~10h (standard Kerberos default, no auto-renewal without keytab).",
+    "evidence_against": "",
+    "domain": "Infrastructure",
+    "created_session": "s083"
+  },
+  {
+    "id": 216,
+    "claim": "Per-domain AS-RUN activity from RSAU audit log (2026-04 to 2026-06, Dialog+TcodeStart events): Procurement_P2P 5,556 events / 139 users; PSM_FM 4,697 / 238 users (widest reach, mostly read); FI 4,385 / 185 users (clearing-heavy, T_ENG #1); Treasury_EBS 1,970 / 24 users (specialist); FI-AP 1,899 / 110 users; Payment_BCM 646 / 13 users only (concentrated authority, C_LOPEZ). COMPREHENSION GAP: master-data and budget maintenance runs through CUSTOM COCKPITS (YFM1, ZICTP_COCKPIT, YKBLP_N) -- the unlabeled long tail (29 tcodes cover 95% of audit volume; tail = custom = the LLM/brain moat).",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "rsau_audit_history analyzed 2026-06-21 via process_mining/semantic_activity_map.py. 8.5M total rows; filtered to Dialog Logon + Transaction Start = ~876K human events. Per-domain split by tcode-to-domain mapping (LLM-generated map commit 62b5a9e).",
+    "evidence_path": "process_mining/semantic_activity_map.py",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "rsau_audit_history",
+      "YFM1",
+      "ZICTP_COCKPIT",
+      "YKBLP_N",
+      "T_ENG",
+      "C_LOPEZ",
+      "semantic_activity_map.py"
+    ],
+    "discovered_session": "s083",
+    "cross_link": "knowledge/process_mining_table_analysis.md section 7b, capability_model.json A_PROCESS and E_AUTH dimensions updated this steward pass",
+    "domain_axes": {
+      "functional": [
+        "Procurement_P2P",
+        "PSM_FM",
+        "FI",
+        "Treasury_EBS",
+        "Payment_BCM"
+      ],
+      "module": [
+        "BC-SAL",
+        "MM",
+        "FM",
+        "FI",
+        "TR"
+      ],
+      "process": [
+        "P2P",
+        "B2R",
+        "T2R",
+        "P2D"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "rsau_audit_history analyzed 2026-06-21 via process_mining/semantic_activity_map.py. 8.5M total rows; filtered to Dialog Logon + Transaction Start = ~876K human events. Per-domain split by tcode-to-domain mapping (LLM-generated map commit 62b5a9e).",
+    "evidence_against": "",
+    "domain": "Cross_Domain",
+    "created_session": "s083"
   }
 ]
