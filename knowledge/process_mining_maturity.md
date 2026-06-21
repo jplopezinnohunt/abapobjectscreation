@@ -64,6 +64,17 @@ So **>90% requires Tiers 0-3 essentially complete**. Highest-leverage first 3 mo
 filtering, (2) OCEL 2.0 + pm4py-full, (3) conformance (as-implemented vs standard). These three alone lift the
 two biggest-value 0% sections and stop artifact-reporting.
 
+## Progress 2026-06-21 — first Tier 0/1/2 build (12.5% → ~20%)
+Built and running (`process_mining/`): **Tier 0** semantic activity labeling (EKKO/EKBE VGABE→GR/IR) +
+incomplete-case quality filter + OCEL 2.0/pm4py-full substrate; **Tier 1** inductive discovery + Declare-style
+**conformance** on P2P (38% clean 3-way, 62% deviates; **70 IR-before-GR violations $713K**; GR→IR median 1d,
+4% >30d); **Tier 2** behavioral **SoD** on rsau_audit_history (**32 invoice+payment conflicts**, incl. I_MARQUAND
+corroborating BCM). Capabilities moved from NONE: Inductive (A) HAVE, Declare-conformance (B) PARTIAL, SoD (G)
+PARTIAL, incomplete-case-filter (I) HAVE, pm4py (M) HAVE, OCEL2 (M) PARTIAL = **+4.5 pts → 12.0/60 = ~20%**.
+Key learning: **semantic activity labeling is THE foundation** — same pipeline gave garbage on the coarse OCEL
+(fitness 1.0 trivial) and real insight once activities were labeled. Next: formal alignments, LLM-semantic
+labeling, permission-level SoD (AGR_*), roll the methodology to Payment/FI.
+
 ## Honest note
 This is the project's stated North Star direction (the "real product is analysis, not more extraction"). It is a
 program, not a task. Measure again after each Tier; register the delta in `capability_model` H_IMPROVE.
