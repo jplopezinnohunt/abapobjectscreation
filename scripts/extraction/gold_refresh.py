@@ -200,23 +200,84 @@ def refresh_value_compare(g, con, ts, dom, ttype, spec):
           f"-{len(gone)} gone  ({','.join(vfields)})  {sample[:50]}")
 
 
-def refresh_hwm_append(g, con, ts, dom, ttype, spec):
-    """transaction — append only docs beyond the stored high-water mark."""
-    gold, sap, hwm = spec["gold"], spec["sap"], spec.get("hwm")
+PERIODS = ["000"] + [f"{i:03d}" for i in range(1, 17)]
+YEARS = ["2024", "2025", "2026"]
+
+
+def _combos(partition):
+    """partition = list of field names. Values: FIKRS/FM_AREA->institutes,
+    GJAHR/DOCYEAR->YEARS, PERIO->PERIODS. Cartesian product (empty combos skipped at read)."""
+    src = {"FIKRS": FIKRS, "FM_AREA": FIKRS, "BUKRS": FIKRS,
+           "GJAHR": YEARS, "DOCYEAR": YEARS, "PERIO": PERIODS}
+    lists = [[(f, v) for v in src[f]] for f in partition]
+    out = [[]]
+    for lst in lists:
+        out = [c + [item] for c in out for item in lst]
+    return out  # list of [(field,val),...]
+
+
+def refresh_txn_partitioned(g, con, ts, dom, ttype, spec):
+    """transaction line items — partitioned full-state DELTA, scoped to recent biennia.
+    Same correctness model as totals (key = all non-amount cols → no collapse), but
+    REPLACE-BY-PARTITION so each (FIKRS×GJAHR[×PERIO]) combo is re-pulled and swapped
+    independently — keeps every RFC call bounded and leaves out-of-scope years intact."""
+    gold, sap = spec["gold"], spec["sap"]
+    vfields = spec.get("value_fields", [])
+    partition = spec.get("partition", [])
     cur = con.cursor()
-    cur_max = None
-    try:
-        cur_max = cur.execute(f'SELECT MAX("{hwm}") FROM "{gold}"').fetchone()[0]
-    except sqlite3.OperationalError:
-        pass
-    print(f"    {gold:24s} HWM-append on {hwm}: current max={cur_max!r} — "
-          f"incremental pull wired (heavy; run dedicated). note: {spec.get('note','')}")
-    log_row(cur, ts, dom, ttype, spec, "hwm-append", 0, 0, 0, 0, f"hwm={hwm} max={cur_max} (not pulled this run)")
-    con.commit()
+    cols = [r[1] for r in cur.execute(f'PRAGMA table_info("{gold}")').fetchall()]
+    if not cols:
+        print(f"    {gold:24s} SKIP: golden table absent"); return
+    vfields = [v for v in vfields if v in cols]
+    pfields = [f for f in partition if f in cols]
+    key = [c for c in cols if c not in vfields and c.upper() != "MANDT"]
+    ki = [cols.index(k) for k in key]
+    vi = [cols.index(v) for v in vfields]
+    sel = ",".join(f'"{c}"' for c in cols)
+    ph = ",".join("?" * len(cols))
+
+    tot_new = tot_chg = tot_gone = tot = 0
+    combos = _combos(pfields) if pfields else [[]]
+    print(f"    {gold:24s} {len(combos)} partitions ({'×'.join(pfields)}), scope GJAHR {YEARS} ...")
+    for combo in combos:
+        where = " AND ".join(f"{f} = '{v}'" for f, v in combo)
+        rows = read_p01(g, sap, cols, None) if not where else \
+            g_read(g, sap, cols, where)
+        if not rows:
+            continue
+        p01_idx = {tuple(r.get(cols[i], "") for i in ki): tuple(r.get(c, "") for c in cols) for r in rows}
+        # golden rows in this partition
+        gwhere = " AND ".join(f'"{f}"=?' for f, v in combo)
+        gvals = [v for f, v in combo]
+        gold_idx = {}
+        q = f'SELECT {sel} FROM "{gold}"' + (f" WHERE {gwhere}" if gwhere else "")
+        for row in cur.execute(q, gvals):
+            row = tuple("" if v is None else str(v) for v in row)
+            gold_idx[tuple(row[i] for i in ki)] = row
+        new = sum(1 for k in p01_idx if k not in gold_idx)
+        chg = sum(1 for k in p01_idx if k in gold_idx
+                  and tuple(p01_idx[k][i] for i in vi) != tuple(gold_idx[k][i] for i in vi))
+        gone = sum(1 for k in gold_idx if k not in p01_idx)
+        # replace this partition
+        if gwhere:
+            cur.execute(f'DELETE FROM "{gold}" WHERE {gwhere}', gvals)
+        cur.executemany(f'INSERT INTO "{gold}" ({sel}) VALUES ({ph})', list(p01_idx.values()))
+        con.commit()
+        tot_new += new; tot_chg += chg; tot_gone += gone; tot += len(p01_idx)
+        if len(p01_idx) > 1000:
+            print(f"      {'/'.join(v for _, v in combo):20s} {len(p01_idx):>7}  +{new} ~{chg} -{gone}")
+    log_row(cur, ts, dom, ttype, spec, "txn-partitioned", tot_new, tot_chg, tot_gone, tot,
+            f"scope={YEARS} part={pfields}"); con.commit()
+    print(f"    {gold:24s} DONE  scoped total={tot:>8}  +{tot_new} new  ~{tot_chg} chg  -{tot_gone} gone")
+
+
+def g_read(g, sap, cols, where):
+    """single ROWCOUNT=0 read with a WHERE (no partition iteration)."""
+    return read_p01(g, sap, cols, None, where=where)
 
 
 STRATS = {"pk-upsert": refresh_pk_upsert, "value-compare": refresh_value_compare,
-          "hwm-append": refresh_hwm_append}
+          "txn-partitioned": refresh_txn_partitioned}
 
 
 def main():
@@ -229,7 +290,11 @@ def main():
         return
 
     dom = args[0]
-    only_type = args[1] if len(args) > 1 else None
+    only_type = args[1] if len(args) > 1 and not args[1].startswith("tables=") else None
+    tbl_filter = None
+    for a in args[1:]:
+        if a.startswith("tables="):
+            tbl_filter = set(a.split("=", 1)[1].split(","))
     if dom not in reg["domains"]:
         print(f"Domain '{dom}' not in registry. Use --list."); return
 
@@ -244,6 +309,8 @@ def main():
         if only_type and ttype != only_type:
             continue
         curated = [s for s in specs if s.get("source") == "curated"]
+        if tbl_filter:
+            curated = [s for s in curated if s["gold"] in tbl_filter]
         if not curated:
             continue
         print(f"  [{ttype}]")

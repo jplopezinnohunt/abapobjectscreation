@@ -43,7 +43,7 @@
 ## PSM_FM  (62 tables)
 - _master_data_: BP001 (557), **commitment_items** (205), **functional_areas** (9), **fund_centers** (787), **funds** (67,408)
 - _text_: **FMFINT** (67,410), **commitment_items_text** (205), fmavcldgract (9), fmavcldgratt (9), fmavcldgrgat (9), fmup00t (68), **functional_areas_text** (9), **fund_centers_text** (787), tabadrst (253), tabadrt (188), ytfm_output (259), ytfm_output_t (259)
-- _totals_: **bpge** (274,978), **bpja** (82,481), fmavct_2024 (15,890), fmavct_2025 (13,288), fmavct_2026 (9,531), fmavct_summary (19,111), fmbdt_summary (19,008), movements_summary (18,975), volume_anchors (66)
+- _totals_: **bpge** (390,707), **bpja** (135,794), fmavct_2024 (15,890), fmavct_2025 (13,288), fmavct_2026 (9,531), fmavct_summary (19,111), fmbdt_summary (19,008), movements_summary (18,975), volume_anchors (66)
 - _transaction_: **fmbh** (286,984), **fmbl** (319,335), **fmifiit_full** (2,197,675), **fmioi** (1,813,943)
 - _config_: buavctolass (34), fm01tol (150), fmafmap013500109 (4,675), fmafmtp013500110 (5), fmavcatgr_001 (32), fmavcatgr_002 (55), fmavcbudfiltb (18), fmavcbudfilth (9), fmderive002 (2,714), fmderive003 (6), fmderive007 (3,482), fmderive_sets (4), fmderive_trigger (224), fmderiveenvid (2), fmderivefunc (597), fmderivefuncid (16), fmfmoad011300012 (75), fmfmoap013500001 (4), fmfmoap013500012 (8), fmfmoap013500022 (2), fmfmoap013500062 (34), fmup00 (17), fmup01 (301), fmup02 (5), tabadr (57), tabadrh (32), tabadrs (170), tabadrsf (3,627), ytfm_c5 (3), ytfm_fund_c5 (17,598), ytfm_fund_cpl (6,368), ytfm_wrttp_gr (66)
 

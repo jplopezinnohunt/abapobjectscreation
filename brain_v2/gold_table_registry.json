@@ -649,7 +649,7 @@
           "partition": null,
           "delta": "value-compare",
           "note": "BCS overall budget total. key=all dims (engine-derived)",
-          "rows": 274978,
+          "rows": 390707,
           "source": "curated"
         },
         {
@@ -667,7 +667,7 @@
           "partition": "GJAHR",
           "delta": "value-compare",
           "note": "BCS annual budget total; partition by GJAHR. key=all dims",
-          "rows": 82481,
+          "rows": 135794,
           "source": "curated"
         },
         {
@@ -873,13 +873,14 @@
           "gold": "fmbh",
           "sap": "FMBH",
           "key": [
-            "FM_AREA",
-            "DOCYEAR",
-            "DOCNR"
+            "__all_dims__"
           ],
-          "hwm": "DOCNR",
-          "delta": "hwm-append",
-          "note": "BCS budget doc header",
+          "value_fields": [],
+          "partition": [
+            "FM_AREA"
+          ],
+          "delta": "txn-partitioned",
+          "note": "BCS budget doc header (immutable; key=all cols, all years)",
           "rows": 286984,
           "source": "curated"
         },
@@ -887,14 +888,15 @@
           "gold": "fmbl",
           "sap": "FMBL",
           "key": [
-            "FM_AREA",
-            "DOCYEAR",
-            "DOCNR",
-            "ITEMNO"
+            "__all_dims__"
           ],
-          "hwm": "DOCNR",
-          "delta": "hwm-append",
-          "note": "BCS budget doc line",
+          "value_fields": [],
+          "partition": [
+            "FM_AREA",
+            "DOCYEAR"
+          ],
+          "delta": "txn-partitioned",
+          "note": "BCS budget doc line (scope DOCYEAR 2024-2026)",
           "rows": 319335,
           "source": "curated"
         },
@@ -902,14 +904,19 @@
           "gold": "fmifiit_full",
           "sap": "FMIFIIT",
           "key": [
-            "FIKRS",
-            "KNGJAHR",
-            "KNBELNR",
-            "KNBUZEI"
+            "__all_dims__"
           ],
-          "hwm": "KNBELNR",
-          "delta": "hwm-append",
-          "note": "FM actual (FI-FM) line items",
+          "value_fields": [
+            "FKBTR",
+            "TRBTR"
+          ],
+          "partition": [
+            "FIKRS",
+            "GJAHR",
+            "PERIO"
+          ],
+          "delta": "txn-partitioned",
+          "note": "FM actual (FI-FM) line items (scope GJAHR 2024-2026, sub by PERIO)",
           "rows": 2197675,
           "source": "curated"
         },
@@ -917,13 +924,19 @@
           "gold": "fmioi",
           "sap": "FMIOI",
           "key": [
-            "FIKRS",
-            "FMBELNR",
-            "FMBUZEI"
+            "__all_dims__"
           ],
-          "hwm": "FMBELNR",
-          "delta": "hwm-append",
-          "note": "FM commitment line items",
+          "value_fields": [
+            "FKBTR",
+            "TRBTR"
+          ],
+          "partition": [
+            "BUKRS",
+            "GJAHR",
+            "PERIO"
+          ],
+          "delta": "txn-partitioned",
+          "note": "FM commitment line items (scope GJAHR 2024-2026, sub by PERIO)",
           "rows": 1813943,
           "source": "curated"
         }
