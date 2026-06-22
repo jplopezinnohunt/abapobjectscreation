@@ -52,9 +52,13 @@ def _parse(res):
     return out
 
 
-def read_p01(g, sap, fields, partition=None, where=""):
-    """ROWCOUNT=0; partitioned by FIKRS when the table is large (wrapper rejects ROWSKIPS)."""
-    parts = FIKRS if partition else [None]
+def read_p01(g, sap, fields, partition=None, where="", part_values=None):
+    """ROWCOUNT=0; partitioned (wrapper rejects ROWSKIPS) to stay under the ~60k ceiling.
+    partition='FIKRS' -> the 9 institutes; any other field -> caller supplies part_values."""
+    if partition:
+        parts = part_values if part_values is not None else (FIKRS if partition == "FIKRS" else [None])
+    else:
+        parts = [None]
     out = []
     for pv in parts:
         clauses = []
@@ -143,38 +147,57 @@ def refresh_pk_upsert(g, con, ts, dom, ttype, spec):
 
 
 def refresh_value_compare(g, con, ts, dom, ttype, spec):
-    """totals — compare amount VALUES per key (count is meaningless for totals)."""
+    """totals — compare amount VALUES per key (a row count is meaningless for totals).
+    SCHEMA-PRESERVING: reads the existing golden columns and re-pulls those same SAP
+    columns, partitioned, so we never narrow the table. Computes the value delta BEFORE
+    replacing storage (so the change is reported, not blind)."""
     gold, sap, key = spec["gold"], spec["sap"], spec["key"]
     vfields = spec.get("value_fields", [])
-    if not vfields:
-        print(f"    {gold:24s} SKIP value-compare: no value_fields declared (note: {spec.get('note','')})")
-        log_row(con.cursor(), ts, dom, ttype, spec, "value-compare", 0, 0, 0, 0, "no value_fields")
-        con.commit()
-        return
-    fields = key + vfields
-    p01 = read_p01(g, sap, fields, spec.get("partition"))
-    p01_idx = {tuple(r[k] for k in key): tuple(r.get(v, "") for v in vfields) for r in p01}
     cur = con.cursor()
+    cols = [r[1] for r in cur.execute(f'PRAGMA table_info("{gold}")').fetchall()]
+    if not cols:
+        print(f"    {gold:24s} SKIP value-compare: golden table absent"); return
+    if not vfields:
+        print(f"    {gold:24s} SKIP value-compare: no value_fields ({spec.get('note','')})")
+        log_row(cur, ts, dom, ttype, spec, "value-compare", 0, 0, 0, 0, "no value_fields"); con.commit(); return
+    vfields = [v for v in vfields if v in cols]
+    # CRITICAL: a totals business key = ALL dimension cols (everything except amounts +
+    # MANDT). An incomplete key collapses distinct rows -> data loss. So derive it fully.
+    key = [c for c in cols if c not in vfields and c.upper() != "MANDT"]
+    part = spec.get("partition")
+    pvals = None
+    if part and part != "FIKRS":
+        pvals = [r[0] for r in cur.execute(f'SELECT DISTINCT "{part}" FROM "{gold}"').fetchall()]
+    p01 = read_p01(g, sap, cols, part, part_values=pvals)        # full existing columns
+    ki = [cols.index(k) for k in key]
+    vi = [cols.index(v) for v in vfields]
+    p01_idx = {tuple(r.get(cols[i], "") for i in ki): tuple(r.get(c, "") for c in cols) for r in p01}
+
     gold_idx = {}
-    try:
-        for row in cur.execute(f'SELECT {",".join(fields)} FROM "{gold}"'):
-            row = tuple("" if v is None else str(v) for v in row)
-            gold_idx[tuple(row[:len(key)])] = tuple(row[len(key):])
-    except sqlite3.OperationalError:
-        pass
-    changed = [k for k in p01_idx if k in gold_idx and p01_idx[k] != gold_idx[k]]
+    sel = ",".join(f'"{c}"' for c in cols)
+    for row in cur.execute(f'SELECT {sel} FROM "{gold}"'):
+        row = tuple("" if v is None else str(v) for v in row)
+        gold_idx[tuple(row[i] for i in ki)] = row
     new = [k for k in p01_idx if k not in gold_idx]
-    # overwrite values (totals are authoritative from P01)
-    cols_sql = ", ".join(f"{c} TEXT" for c in fields)
-    cur.execute(f'CREATE TABLE IF NOT EXISTS "{gold}" ({cols_sql}, PRIMARY KEY ({",".join(key)}))')
-    ph = ",".join("?" * len(fields))
-    cur.executemany(f'INSERT OR REPLACE INTO "{gold}" VALUES ({ph})',
-                    [tuple(k) + p01_idx[k] for k in p01_idx])
+    changed = [k for k in p01_idx if k in gold_idx
+               and tuple(p01_idx[k][i] for i in vi) != tuple(gold_idx[k][i] for i in vi)]
+    gone = [k for k in gold_idx if k not in p01_idx]
+
+    # replace storage with the complete pulled state (delta already computed above)
+    cur.execute(f'DELETE FROM "{gold}"')
+    cur.executemany(f'INSERT INTO "{gold}" ({sel}) VALUES ({",".join("?" * len(cols))})',
+                    list(p01_idx.values()))
     con.commit()
-    log_row(cur, ts, dom, ttype, spec, "value-compare", len(new), len(changed), 0, len(p01_idx),
-            f"value_fields={vfields}")
-    con.commit()
-    print(f"    {gold:24s} total={len(p01_idx):>6}  +{len(new)} new buckets  ~{len(changed)} value-changed  ({vfields})")
+
+    sample = ""
+    if changed:
+        k0 = changed[0]
+        old_v = tuple(gold_idx[k0][i] for i in vi); new_v = tuple(p01_idx[k0][i] for i in vi)
+        sample = f"e.g. {'|'.join(k0)}: {old_v}->{new_v}"
+    log_row(cur, ts, dom, ttype, spec, "value-compare", len(new), len(changed), len(gone),
+            len(p01_idx), f"vf={vfields} {sample}"); con.commit()
+    print(f"    {gold:24s} total={len(p01_idx):>6}  +{len(new)} new  ~{len(changed)} value-changed  "
+          f"-{len(gone)} gone  ({','.join(vfields)})  {sample[:50]}")
 
 
 def refresh_hwm_append(g, con, ts, dom, ttype, spec):

@@ -70,12 +70,14 @@ CURATED = {
              "delta": "pk-upsert"},
         ],
         "totals": [
-            {"gold": "bpge", "sap": "BPGE", "key": ["OBJNR", "POSIT", "TRGKZ", "WRTTP", "GEBER", "VERSN"],
-             "value_fields": ["WTGES", "WLGES"], "delta": "value-compare", "note": "BCS overall budget total"},
-            {"gold": "bpja", "sap": "BPJA", "key": ["OBJNR", "POSIT", "TRGKZ", "WRTTP", "GJAHR", "GEBER", "VERSN"],
-             "value_fields": ["WTJHR", "WLJHR"], "delta": "value-compare", "note": "BCS annual budget total"},
-            {"gold": "fmavct_summary", "sap": "FMAVCT", "key": ["FIKRS", "GJAHR", "OBJNR"],
-             "value_fields": [], "delta": "value-compare", "note": "AVC ledger totals (year-split tables exist)"},
+            {"gold": "bpge", "sap": "BPGE", "key": ["__all_dims__"],
+             "value_fields": ["WTGES", "WTGEV", "WLGES", "WLGEV"], "partition": None,
+             "delta": "value-compare", "note": "BCS overall budget total. key=all dims (engine-derived)"},
+            {"gold": "bpja", "sap": "BPJA", "key": ["__all_dims__"],
+             "value_fields": ["WTJHR", "WTJHV", "WLJHR", "WLJHV"], "partition": "GJAHR",
+             "delta": "value-compare", "note": "BCS annual budget total; partition by GJAHR. key=all dims"},
+            # fmavct_summary is an ANALYSIS table (RFIKRS/RYEAR/RFUND/COUNT), NOT a raw FMAVCT
+            # mirror -> not value-comparable; left to auto-classify (totals, source=auto).
         ],
         "transaction": [
             {"gold": "fmbh", "sap": "FMBH", "key": ["FM_AREA", "DOCYEAR", "DOCNR"],
@@ -108,28 +110,52 @@ CURATED = {
 
 # ----------------------------------------------------------------- AUTO heuristics
 DOMAIN_RULES = [
-    ("provenance", r"^(d01_|v01_)"),
-    ("PS",         r"^(proj|prps|prhi)"),
-    ("PSM_FM",     r"^(fm|bp[0-9g j]|ytfm|funds|fund_|commitment_|functional_)"),
-    ("Payment",    r"^(reguh|regup|payr|bcm_|dfpay|febep|febko|febre|feban|t012|t042|t028|t033|tiban)"),
-    ("FI",         r"^(bsis|bsas|bseg|bkpf|bsid|bsik|bsad|bsak|glt0|faglflext|fagl|ska1|skat|skb1|csk|knc|lfc)"),
-    ("Master_BP",  r"^(lfa1|lfb1|lfbk|kna1|knb1|bp001|but0|adrc)"),
-    ("Security",   r"^(agr_|ust|usr|tobj|usobx|usobt)"),
-    ("Transport",  r"^(e07|tms|tcevers|cts)"),
-    ("Logs",       r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|smodilog|pat03|tpalog|cvers|uvers|snap)"),
-    ("HCM",        r"^(pa0|pernr|hrp|t5|allos)"),
-    ("Config",     r"^t[0-9]"),
+    ("provenance",  r"^(d01_|v01_)"),
+    ("PS",          r"^(proj|prps|prhi|rpsco|rpsco)"),
+    ("PSM_FM",      r"^(fm|bp[0-9gj]|ytfm|funds|fund_|commitment_|functional_|buavc|tabadr|movements_summary)"),
+    ("Procurement", r"^(ekko|ekpo|ekbe|ekkn|eban|esll|essr|rseg|rbkp|me[0-9])"),
+    ("Controlling", r"^(coep|cooi|cosp|covp|cobk|tka0|csl)"),
+    ("Travel",      r"^(ptrv|trip|tcos|ttrv)"),
+    ("Integration", r"^(edidc|edid|rfcdes|icfservice|tfdir|tbdls|srt_)"),
+    ("Payment",     r"^(reguh|regup|payr|bcm_|bnk_batch|dfpay|febep|febko|febre|feban|t012|t042|t028|t033|tiban|sim_|sepa|payment_|zfi_payrel|tfpm042)"),
+    ("Master_BP",   r"^(adr[0-9]|adrc|bnka|but0|but100|knvv|kna1|knb1|lfa1|lfb1|lfbk|cvi_|bp001)"),
+    ("FI",          r"^(bsis|bsas|bseg|bkpf|bsid|bsik|bsad|bsak|glt0|faglflext|fagl|p01_sk|p01_csk|ska1|skat|skb1|csk|knc|lfc|tcurr|tcurf|gb0|gb9|set(header|leaf|node)|ybasubst|ytfi|sapf100|tj[0-9]|tj02t|tj30t)"),
+    ("Security",    r"^(agr_|ust|usr|tobj|usobx|usobt|jest)"),
+    ("Transport",   r"^(e07|tms|tcevers|tadir_enrich|spau|cts)"),
+    ("Logs",        r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|sm21|st22|smodilog|pat03|tpalog|cvers|uvers|snap)"),
+    ("HCM",         r"^(pa0|pernr|hrp|t5|allos)"),
+    ("Config",      r"^t[0-9]"),
 ]
 TYPE_RULES = [
     ("provenance",  r"^(d01_|v01_)"),
-    ("text",        r"(_t$|_text$|text$|^skat$|^csku$|t$)"),
-    ("log",         r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|smodilog|pat03|tpalog|cvers|uvers|snap)"),
-    ("hierarchy",   r"(hierarchy|^prhi|setnode|setleaf|^setheader)"),
-    ("totals",      r"(_summary$|^bpge|^bpja|^glt0|faglflext|^fmavct|^fmbdt|^knc|^lfc|total)"),
-    ("transaction", r"^(bkpf|bseg|bsis|bsas|bsid|bsik|fmbh|fmbl|fmioi|fmifiit|fmreserv|reguh|regup|payr|febep|cobk|coep|edidc|edid)"),
-    ("config",      r"^(t[0-9]|fmderive|fmavcatgr|fmavcbudfil|fmavcldgr|fmup|fm01tol|fmfmoa|fmafm|rfcdes|icfservice)"),
-    ("master_data", r"^(funds|fund_centers|commitment_items|functional_areas|proj|prps|ska1|skb1|csks|cska|cskb|lfa1|lfb1|kna1|knb1|bp001|fmfincode|fmfctr|fmci|fmfpo|fmmeasure|tfkb)"),
+    ("log",         r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|sm21|st22|smodilog|pat03|tpalog|cvers|uvers|snap)"),
+    ("hierarchy",   r"(hierarchy|^prhi|^setnode|^setleaf|^setheader$|^setheadert$)"),
+    ("text",        r"(_t$|_text$|text$|^skat$|^csku$|^p01_skat$|^p01_csku$|^tj02t$|^tj30t$|^tabadrt$|^tabadrst$|t$)"),
+    ("totals",      r"(_summary$|^bpge|^bpja|^glt0|faglflext|^fmavct|^fmbdt|^cosp|^rpsco|^knc|^lfc|total|anchor)"),
+    ("transaction", r"^(bkpf|bseg|bsis|bsas|bsid|bsik|bsad|bsak|fmbh|fmbl|fmioi|fmifiit|fmreserv|reguh|regup|payr|febep|febko|febre|dfpayg|dfpayv|cobk|coep|cooi|covp|edidc|edid|ekko|ekpo|ekbe|eban|esll|essr|rseg|rbkp|ptrv|jest|bnk_batch|movements|cts_transport)"),
+    ("config",      r"^(t[0-9]|tcurr|tcurf|tiban|gb0|gb9|tka0|agr_|fagl_split|fmderive|fmavcatgr|fmavcbudfil|fmavcldgr|fmup|fm01tol|fmfmoa|fmafm|rfcdes|icfservice|tfdir|tabadr|ekkn|sapf100|ybasubst|ytfi|ytfm|bcm_|zfi|buavc|sim_|scenario_|payment_objects|tfpm042)"),
+    ("master_data", r"^(funds|fund_centers|commitment_items|functional_areas|proj|prps|ska1|skb1|csks|cska|cskb|lfa1|lfb1|lfbk|kna1|knb1|knvv|but000|but100|but0bk|bp001|adr[0-9]|adrc|bnka|cvi_|p01_sk|p01_csk|ekko_master|fmfincode|fmfctr|fmci|fmfpo|fmmeasure|tfkb|tadir_enrich|tfdir_custom|cts_object)"),
 ]
+
+# Explicit overrides for tables that pattern-matching gets wrong or that carry intent
+# (analysis/custom tables). (domain, table_type). Highest precedence after curated.
+OVERRIDES = {
+    "movements_summary": ("PSM_FM", "totals"),
+    "volume_anchors": ("PSM_FM", "totals"),
+    "buavctolass": ("PSM_FM", "config"),
+    "rpsco": ("PS", "totals"),
+    "jest": ("Cross_Domain", "transaction"),
+    "tadir_enrichment": ("Transport", "master_data"),
+    "tfdir_custom": ("Integration", "master_data"),
+    "sapf100_vari": ("FI", "config"), "sapf100_varid": ("FI", "config"),
+    "scenario_samples": ("Payment", "config"),
+    "sim_all_formats": ("Payment", "transaction"), "sim_sepa_all": ("Payment", "transaction"),
+    "sim_v6_results": ("Payment", "transaction"),
+    "payment_objects": ("Payment", "master_data"),
+    "currency_usd_rates": ("FI", "config"),
+    "spau_2024_objects": ("Transport", "log"),
+    "tka01": ("Controlling", "config"), "tka02": ("Controlling", "config"),
+}
 
 
 def classify(name, rules, default="unknown"):
@@ -170,6 +196,10 @@ def main():
             dom, ttype, spec = curated_index[t]
             e = dict(spec); e["rows"] = rows; e["source"] = "curated"
             add(dom, ttype, e)
+        elif t.lower() in OVERRIDES:
+            dom, ttype = OVERRIDES[t.lower()]
+            add(dom, ttype, {"gold": t, "rows": rows, "source": "override"})
+            auto_count += 1
         else:
             dom = classify(t, DOMAIN_RULES, "Uncatalogued")
             ttype = classify(t, TYPE_RULES, "unknown")
