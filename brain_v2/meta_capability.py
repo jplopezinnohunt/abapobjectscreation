@@ -36,6 +36,9 @@ def _read(p):
 def measure():
     health = _load(os.path.join(HERE, "claims_health.json"), {}) or {}
     reg = _load(os.path.join(HERE, "method_registry.json"), {}) or {}
+    extr = _load(os.path.join(HERE, "gold_extractor_maturity.json"), {}) or {}
+    extr_mat = extr.get("overall_pct", 0) / 100.0
+    extr_pct = extr.get("overall_pct", "?")
     claims = _load(os.path.join(HERE, "claims", "claims.json"), [])  # defensive: steward may be writing
     claims = claims if isinstance(claims, list) else (claims or {}).get("claims", [])
     superseded = sum(1 for c in claims if str(c.get("status", "")).startswith("supersed")) if claims else 29
@@ -55,6 +58,7 @@ def measure():
             ("registry_resolver",        1.0 if reg else 0.0, "M", "method registry resolves object->method"),
             ("table_class_coverage",     round(min(type_cov, 1.0), 2), "M", "DD02L class rules (TRANSP/POOL/CLUSTER/VIEW/INTTAB)"),
             ("special_element_coverage", round(ovr_cov, 2), "M", "log/cluster overrides documented (RSAU/dumps/CDPOS/...)"),
+            ("domain_table_maturity",    round(extr_mat, 2), "M", f"{extr_pct}% — per domain×table ladder L0..L4 (gold_extractor_maturity.py)"),
             ("kernel_verified",          0.60, "E", "% methods empirically proven on the target kernel — instrument"),
         ],
         "ANALYZE": [
