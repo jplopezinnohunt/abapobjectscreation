@@ -40,6 +40,20 @@ TECH = ["RFCPING", "RFC_PING", "SYSTEM_INFO", "/SDF/", "SALC", "AMDP", "ENQ_CTX"
 OUR_USERS = {"JP_LOPEZ", "P_LUVHIMBI"}
 
 
+# ORIGIN axis (host/dest/user) — WHO/WHICH SYSTEM makes the call. As important as the FM:
+# the same BAPI from MULESOFT (external satellite) vs an internal report are different things.
+SATELLITES = {"MULESOFT": "MuleSoft (external bus)", "BRIDGE-RFC": "BRIDGE-RFC (external portal)",
+              "SMTMSBP": "SolMan (external monitor)"}
+INTERNAL_BATCH = {"JOBBATCH", "WF-BATCH", "SAPSYS", "HIPER", "WF-BATCH", "TMSADM", "DDIC"}
+
+
+def classify_origin(user):
+    if user in OUR_USERS: return "us (JP_LOPEZ extraction)"
+    if user in SATELLITES: return SATELLITES[user]
+    if user in INTERNAL_BATCH: return "internal batch/system"
+    return "named user (dialog/portal-as-user)"
+
+
 def classify(fm, user):
     f = (fm or "").upper()
     if user in OUR_USERS and any(p in f for p in OURS): return ("_ours", "_ours")
@@ -55,9 +69,13 @@ def main():
     rows = c.execute("SELECT PARAM3, SLGUSER, COUNT(*) FROM rsau_audit_history "
                      "WHERE TXSUBCLSID='RFC Function Call' AND PARAM3<>'' GROUP BY PARAM3, SLGUSER").fetchall()
     bucket = defaultdict(int); proc_vol = defaultdict(int); unknown = defaultdict(int); unk_user = defaultdict(set)
+    origin_vol = defaultdict(int); origin_unknown = defaultdict(int)
     for fm, user, n in rows:
         b, proc = classify(fm, user)
         bucket[b] += n
+        if b in ("KNOWN", "UNKNOWN"):
+            o = classify_origin(user); origin_vol[o] += n
+            if b == "UNKNOWN": origin_unknown[o] += n
         if b == "KNOWN": proc_vol[proc] += n
         elif b == "UNKNOWN": unknown[fm] += n; unk_user[fm].add(user)
     business = bucket["KNOWN"] + bucket["UNKNOWN"]
@@ -73,6 +91,15 @@ def main():
     print("\n  UNKNOWN worklist (top — explain these next, biggest first):")
     for fm, n in sorted(unknown.items(), key=lambda x: -x[1])[:15]:
         print(f"    {n:>8,}  {fm:38} ({len(unk_user[fm])} callers)")
+
+    print("\n  BUSINESS calls by ORIGIN (host/dest/user) — the satellite topology:")
+    sat = 0
+    for o, n in sorted(origin_vol.items(), key=lambda x: -x[1]):
+        unk = origin_unknown.get(o, 0)
+        if "external" in o: sat += n
+        print(f"    {n:>9,}  {o:36} ({unk:,} process still UNKNOWN)")
+    print(f"  *** {100*sat/business:.1f}% of business RFC is driven by EXTERNAL satellites "
+          f"(MuleSoft + BRIDGE-RFC) — the system is operated from outside ***")
 
     # IDoc layer (edidc) — same known/unknown idea on message types
     tabs = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
