@@ -9916,7 +9916,14 @@
         "added_session": "s086"
       }
     ],
-    "evidence_against": null,
+    "evidence_against": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/h74_syslog_10054_connectivity_analysis.md",
+        "cite": "CENTDATA decode + temporal correlation (process_mining/parse_syslog.py) REFUTES the satellite attribution: 269/272 '10054' are end-user SAP GUI frontend resets (WP=DP dispatcher, 86% business hours, weekday, Sat=1/Sun=8); only 3/272 are SAP<->SQL Server (one Sun 02:53 maintenance window). ZERO gateway/RFC-server resets (no gwrd/synctrigger/MULESOFT in syslog). See claim #236.",
+        "added_session": "s087"
+      }
+    ],
     "related_objects": [
       "st22_dumps_history",
       "sm21_syslog_history",
@@ -9927,13 +9934,21 @@
     ],
     "domain": "Integration",
     "created_session": "s086",
-    "status": "active",
-    "resolution_notes": null,
+    "status": "superseded_in_part",
+    "resolution_notes": "The application-healthy verdict + accumulator/FM facts HOLD. The 'failures are in the satellite connections' attribution is WRONG and is superseded by #236 (H74 deepening 2026-06-22): the 272 are dominated by benign frontend GUI session churn, not satellite integration drops.",
     "resolved_session": null,
     "domain_axes": {
-      "functional": ["Integration", "Cross_Domain"],
-      "module": ["BC-MID", "BC-SYS"],
-      "process": ["*"]
+      "functional": [
+        "Integration",
+        "Cross_Domain"
+      ],
+      "module": [
+        "BC-MID",
+        "BC-SYS"
+      ],
+      "process": [
+        "*"
+      ]
     }
   },
   {
@@ -9967,9 +9982,21 @@
     "resolution_notes": null,
     "resolved_session": null,
     "domain_axes": {
-      "functional": ["Integration", "Procurement_P2P", "FI"],
-      "module": ["BC-MID", "MM", "FI"],
-      "process": ["P2P", "B2R", "Security"]
+      "functional": [
+        "Integration",
+        "Procurement_P2P",
+        "FI"
+      ],
+      "module": [
+        "BC-MID",
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "B2R",
+        "Security"
+      ]
     }
   },
   {
@@ -9996,9 +10023,17 @@
     "resolution_notes": null,
     "resolved_session": null,
     "domain_axes": {
-      "functional": ["Integration", "Cross_Domain"],
-      "module": ["BC-MID", "BC"],
-      "process": ["*"]
+      "functional": [
+        "Integration",
+        "Cross_Domain"
+      ],
+      "module": [
+        "BC-MID",
+        "BC"
+      ],
+      "process": [
+        "*"
+      ]
     }
   },
   {
@@ -10026,9 +10061,60 @@
     "resolution_notes": "Corrects 'dest GUIDs = SOAMANAGER logical ports' label in claim #221. The GUIDs are RFC connection-pool IDs, not SOAMANAGER ports. Claim #221 remains active for its other content (17 flows, bidirectional, RFCDES).",
     "resolved_session": null,
     "domain_axes": {
-      "functional": ["Integration"],
-      "module": ["BC-MID"],
-      "process": ["*"]
+      "functional": [
+        "Integration"
+      ],
+      "module": [
+        "BC-MID"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 236,
+    "claim": "UNESCO P01 H74 deepening (2026-06-22): the 272 SM21 '10054' resets are NOT satellite integration failures. Decoding CENTDATA (process_mining/parse_syslog.py) + temporal correlation: 269/272 = frontend_DIAG_reset = end-user SAP GUI native sockets reset by the user PC (logged by WP=DP dispatcher = frontend, NOT the RFC gateway; companion Q0/4 dpTermin names only end-user workstations HRM-L-*/DAK-LAP-*/mac-*.ictp.it; 86% in business hours 06-19h with a two-hump human diurnal curve; weekend collapse Sat=1/Sun=8 vs weekday 44-82). Only 3/272 = db_connection_reset = SAP<->SQL Server, ALL at Sun 2026-06-21 02:53 = one maintenance window (matches the lone DBIF_REPO_SQL_ERROR dump). ZERO gateway/RFC-server TCP resets in the syslog (no gwrd/reg_info/synctrigger/MULESOFT) => the MuleSoft/ORION RFC links are NOT TCP-dropping. The genuine integration tail is small: 3 SQL-Server resets + 3 DBSQL errors in batch RFFMAVC_OVERALL_VIEW + 3 ORION app errors + 13 RFC/CPIC errors. 28 HTTP 'plugin auto logout' are expected idle timeouts. Remediation: reclassify frontend churn as non-failures, make SQL-Server alerting maintenance-window-aware, investigate the RFFMAVC_OVERALL_VIEW batch SQL error, keep accumulate_problems.py weekly to build a >7d baseline. Keepalive tuning to the satellites is NOT indicated (they aren't resetting).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "process_mining/parse_syslog.py + knowledge/h74_syslog_10054_connectivity_analysis.md",
+        "cite": "sm21_syslog_history (2,402 rows, 2026-06-15..06-22) classified: 10054 -> 269 frontend_DIAG_reset + 3 db_connection_reset. frontend 86% business-hours, weekend share 3% (Sat=1,Sun=8). db_connection_reset 100% Sunday 02:53. Token search: zero gwrd/synctrigger/MULESOFT/reg_info. 2026-06-22.",
+        "added_session": "s087"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "sm21_syslog_history",
+      "st22_dumps_history",
+      "parse_syslog.py",
+      "accumulate_problems.py",
+      "RFFMAVC_OVERALL_VIEW",
+      "MDS_CTRL_STRATEGY",
+      "DBIF_REPO_SQL_ERROR",
+      "DBSQL_SQL_ERROR",
+      "HQ-ORION"
+    ],
+    "domain": "Integration",
+    "created_session": "s087",
+    "status": "active",
+    "resolution_notes": "Supersedes the satellite-attribution part of claim #232.",
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Cross_Domain"
+      ],
+      "module": [
+        "BC-MID",
+        "BC-SYS",
+        "BC-CST"
+      ],
+      "process": [
+        "*"
+      ]
     }
   }
 ]
