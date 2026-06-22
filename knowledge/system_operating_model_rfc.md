@@ -47,6 +47,22 @@ normalization (raw totals are skewed by partial months + our extraction bursts).
    a Microsoft SSIS BI/data-warehouse extractor reading SAP tables raw. Minor but a real (BI) channel.
 Dialog is the minority across all of these. TODO: a unified channel mix % (RFC vs IDoc vs Jobs vs direct-table vs dialog).
 
+## External→internal: WHAT the system does (read vs write per satellite, 2026-06-21)
+Each external call does something internal — read or write. The direction split tells what each satellite IS:
+- **MuleSoft** (1.62M): READ-dominant (`Y_BAPI_YPS8`/`Y_BAPI_WBS_FINANCIAL_DATA_1` = reads project financials OUT
+  to PPM/Salesforce) + targeted WRITES of fund master (`FM_FUND_CREATE_RFC`/`FM_FUND_CHANGE_RFC`) + project IDoc out.
+- **BRIDGE-RFC** (875K): **92% READ** — a display/read portal (vendor/PR/PO/service/travel/bank/user details OUT
+  to the procurement+travel self-service UI). Barely writes.
+- **named-user portal** (501K): **balanced 37% read / 32% write — THE write channel.** Real transactions + master
+  changes enter under the user's ID: `BAPI_PR_CHANGE` (37K), `Y_RFC_FMRP_RFFMEP1FX_FI_POST` (31K, FI posting),
+  `ZBAPI_VENDOR_CHANGE` (24K, vendor master).
+**Characterization: SAP is the authoritative SYSTEM-OF-RECORD.** ~80% of external traffic READS it (satellites pull
+data out: project financials→PPM, procurement/travel→portals); the WRITES (transactions + master changes) flow back
+in concentrated through the portal-as-user channel (+ MuleSoft funds). Dialog is the minority everywhere. The system
+FEEDS satellites (read) and RECEIVES targeted transactions (write) — operated almost entirely by integration.
+(Caveat: verb-based READ/WRITE undercounts non-standard read names like YPS8/WBS_FINANCIAL_DATA — MuleSoft is more
+read-heavy than its 9% literal READ suggests.)
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
