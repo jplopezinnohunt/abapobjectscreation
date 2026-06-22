@@ -3569,5 +3569,21 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_p01_sais_rowskips_rejection",
+    "rule": "P01 (and D01) RFC_READ_TABLE is wrapped by class SAIS which REJECTS ROWSKIPS with OPTION_NOT_VALID. This causes silent silent data truncation — not an error you see immediately. Use ROWCOUNT=0 with a tight WHERE partition (by FIKRS, date range, or other high-cardinality key) so each call stays under the ~60k-row WA ceiling. NEVER use ROWSKIPS-based pagination against P01/D01.",
+    "why": "Session s088 (2026-06-22): refresh_funds_from_live.py used ROWSKIPS pagination against P01 and silently returned only 30,000 of 56,639 UNES funds — a 47% data loss with no error raised. The failure mode is silent: SAIS returns OPTION_NOT_VALID internally but the caller gets a partial result, not an exception. This also applies to D01 (reference_d01_rowskips_and_adt_ddic_limits.md, s081). The method_registry.json already records this constraint ('P01-secured: NO ROWSKIPS') but no behavioral rule captured the SILENT TRUNCATION risk and the correct partitioning pattern.",
+    "how_to_apply": "1. NEVER pass ROWSKIPS > 0 to RFC_READ_TABLE on P01 or D01. The call will appear to succeed with partial rows.\n2. Instead: use ROWCOUNT=0 in a single call per partition. Partition by FIKRS for FM tables, by date range for event tables, by PSPID prefix for WBS.\n3. Verify row counts against expected universe (e.g. compare with a COUNT(*) call or prior run): a result capped suspiciously at 30k or 60k means ROWSKIPS was used or the WA ceiling was hit.\n4. For tables over 60k rows even in one partition: split by a secondary key (e.g. year, bukrs) until each call returns < 60k.\n5. Run `python process_mining/method_registry.py <TABLE>` to confirm the constraint before coding any extraction.\n6. DEPRECATED: refresh_funds_from_live.py. Use scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py instead (claim #244).",
+    "severity": "HIGH",
+    "created_session": 88,
+    "source_file": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_retro_2026-06-22_rowskips_silent_truncation",
+    "domain_axes": {
+      "functional": ["*"],
+      "module": ["*"],
+      "process": ["*"]
+    }
   }
 ]

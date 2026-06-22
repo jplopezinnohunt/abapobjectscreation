@@ -10420,5 +10420,130 @@
         "*"
       ]
     }
+  },
+  {
+    "id": 244,
+    "claim": "P01 secured RFC_READ_TABLE wrapper (class SAIS) REJECTS ROWSKIPS with OPTION_NOT_VALID. Cannot paginate. Correct read = ROWCOUNT=0 partitioned by FIKRS (or equivalent key range) so each call stays under the ~60k-row WA ceiling. Evidence: UNES FMFINCODE = 56,639 rows returned in ONE ROWCOUNT=0 FIKRS=UNES call; PRPS/PRHI ~59.7k also single-call. Old refresh_funds_from_live.py used ROWSKIPS pagination and silently truncated UNES funds to 30,000 rows — this script is now deprecated. Fixed in scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py (session S-088).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
+        "cite": "Canonical refresher built s088: ROWCOUNT=0 partitioned by FIKRS, no ROWSKIPS. Verified against P01 2026-06-22: 67,408 funds total (UNES 56,639), all returned in single FIKRS-scoped call. Old paginated script was silently returning only 30,000 rows.",
+        "added_session": 88
+      },
+      {
+        "type": "source_code",
+        "ref": "brain_v2/method_registry.json",
+        "cite": "method_registry.json TRANSP type_rules entry: 'P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields'. Pre-existing note confirmed this session.",
+        "added_session": 88
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RFC_READ_TABLE",
+      "SAIS",
+      "FMFINCODE",
+      "PRPS",
+      "PRHI",
+      "refresh_funds_from_live.py",
+      "p01_fm_ps_bcs_masterdata_refresh.py",
+      "method_registry.json"
+    ],
+    "domain": "D_DATA",
+    "created_session": 88,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone section). Rule: feedback_p01_sais_rowskips_rejection.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 245,
+    "claim": "UNESCO does NOT use the FM Funded-Program dimension (FMMEASURE). P01 verification 2026-06-22: FMMEASURE = 0 rows across ALL 9 FM areas. FMFPO (Funded Program master) = 19 rows (UNES only, essentially empty). UNESCO models 'projects' via PS (PROJ/PRPS), not the FM Funded-Program sub-ledger. Do not attempt to extract FMMEASURE as a BCS dimension — it is inactive.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
+        "cite": "P01 live read 2026-06-22: SELECT COUNT(*) FROM FMMEASURE returned 0 for every FM area (UNES/ICTP/BIOP/IBER/MOST/OROI/IIEP/IHE/WECO). FMFPO = 19 rows (UNES only). All 9 institutes confirmed in this session's extraction run.",
+        "added_session": 88
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMMEASURE",
+      "FMFPO",
+      "PROJ",
+      "PRPS",
+      "PSM_FM"
+    ],
+    "domain": "PSM",
+    "created_session": 88,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone — 'Verified NOT used by UNESCO' note).",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM",
+        "PS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 246,
+    "claim": "FM Commitment Item master (FMCI) uses GJAHR='0000' — year-independent. There are approximately 26 commitment items per FM area (205 total across 9 institutes on P01). Text is in FMCIT. This is the BCS commitment-item dimension; it is NOT per-fiscal-year (unlike budget documents which are year-keyed). Implication: extract FMCI with WHERE GJAHR = '0000'; do not add year conditions or expect year-based splits.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
+        "cite": "P01 live read 2026-06-22: FMCI extracted with no GJAHR filter — all rows have GJAHR='0000'. Total 205 rows (UNES ~26). Gold DB table commitment_items verified.",
+        "added_session": 88
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMCI",
+      "FMCIT",
+      "PSM_FM"
+    ],
+    "domain": "PSM",
+    "created_session": 88,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: knowledge/gold_db_table_catalog.md (FMCI row: 'GJAHR=0000 year-indep'). One DQ curiosity: UNES FIPEX '10\\'' (apostrophe) faithful to P01.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]

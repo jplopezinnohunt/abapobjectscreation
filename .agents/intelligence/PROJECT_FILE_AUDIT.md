@@ -27,9 +27,9 @@
 | File | Size | Status | What It Does |
 |------|------|--------|-------------|
 | `p01_massive_extractor.py` | 7 KB | ⚠️ **Not tracked** | Mass extraction from P01 — predecessor of current extraction scripts |
-| `p01_master_data_sync.py` (v1-v6) | 5-8 KB each | ⚠️ **6 versions!** | Master data sync scripts — evolution trail shows ≥6 iterations |
+| `p01_master_data_sync.py` (v1-v6) | 5-8 KB each | ⛔ **DEPRECATED s088** | Master data sync scripts — superseded by `scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py`; wrote to stale PSM path |
 | `p01_anchor_counts.py` | 4 KB | ⚠️ **Not tracked** | Row count anchors for data verification |
-| `p01_proj_prps_sync.py` | 4 KB | ⚠️ **Not tracked** | PS Project/WBS data extraction |
+| `p01_proj_prps_sync.py` | 4 KB | ⛔ **DEPRECATED s088** | PS Project/WBS data extraction — superseded by `scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py`; wrote to stale PSM path |
 | `p01_ps_transaction_sync.py` | 6 KB | ⚠️ **Not tracked** | PS Transaction data sync |
 | `p01_ps_transaction_anchor.py` | 4 KB | ⚠️ **Not tracked** | PS anchor counts |
 | `p01_raw_puller.py` | 5 KB | ⚠️ **Not tracked** | Raw table data puller |
