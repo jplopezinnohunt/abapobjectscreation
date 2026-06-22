@@ -9395,7 +9395,7 @@
   },
   {
     "id": 221,
-    "claim": "MuleSoft = synctrigger sync-worker FLEET of 174 connection endpoints (dest GUIDs = SOAMANAGER logical ports, hosts synctrigger-sap-app-XX) resolving to 17 distinct logical flows. RFCDES: MULESOFT_PROD (HTTP/G) + MULESOFT_P01_IDOC (TCP/T). BIDIRECTIONAL: reads SAP project financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K, Y_BAPI_CUSTOMER_GET_ID 148K) + writes project/WBS/fund master IN (BAPI_PROJECT_MAINTAIN, Y_BAPI_WBS_TEXT_MAINTAIN, Y_BAPI_WBS_CUS_FIELD_UPDATE, Y_BAPI_FUND_C5_ASSIGNMENT, Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC). This is the PPM/Core Planner (Salesforce) <-> SAP project+fund master sync. Ecosystem link confirmed: unescore20-PPM-brain holds YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json = the other side of the sync.",
+    "claim": "MuleSoft = synctrigger sync-worker FLEET of 174 connection endpoints (dest GUIDs = RFC connection-pool IDs from the synctrigger fleet, NOT SOAMANAGER logical ports -- see claim #235; hosts synctrigger-sap-app-XX) resolving to 17 distinct logical flows. RFCDES: MULESOFT_PROD (HTTP/G) + MULESOFT_P01_IDOC (TCP/T). BIDIRECTIONAL: reads SAP project financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K, Y_BAPI_CUSTOMER_GET_ID 148K) + writes project/WBS/fund master IN (BAPI_PROJECT_MAINTAIN, Y_BAPI_WBS_TEXT_MAINTAIN, Y_BAPI_WBS_CUS_FIELD_UPDATE, Y_BAPI_FUND_C5_ASSIGNMENT, Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC). This is the PPM/Core Planner (Salesforce) <-> SAP project+fund master sync. Ecosystem link confirmed: unescore20-PPM-brain holds YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json = the other side of the sync.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -9901,6 +9901,134 @@
         "B2R",
         "Security"
       ]
+    }
+  },
+  {
+    "id": 232,
+    "claim": "UNESCO P01 PROBLEMS analysis (2026-06-21): application-healthy (1 ABAP dump in 7+ days, infra not code: DBIF_REPO_SQL_ERROR TCP 10054 on MDS_CTRL_STRATEGY SAP<->SQL Server). #1 FAILURE MODE IS NETWORK CONNECTIVITY: ~12% of sm21_syslog_history (2,402 rows, ~7d) = 10054 resets (272) + recv errors (268) + HTTP timeouts (30). In an 80%-external-orchestrated system, failures are in the SATELLITE CONNECTIONS (MuleSoft/ORION/SQL Server), not ABAP code — the failure side mirrors the operating model. Captured via /USE/BL_GET_SHORTDUMPS (ST-PI addon, P01-safe, no RFC_ABAP_INSTALL_AND_RUN) in accumulate_problems.py. New Gold DB tables: st22_dumps_history + sm21_syslog_history.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:PROBLEMS analysis section",
+        "cite": "st22_dumps_history (1 row) + sm21_syslog_history (2,402 rows ~7d) in Gold DB. /USE/BL_GET_SHORTDUMPS FM verified P01-safe. Syslog breakdown: E0A=1181 (72% noise), 10054=272, recv=268, HTTP-timeout=30. 2026-06-21.",
+        "added_session": "s086"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "st22_dumps_history",
+      "sm21_syslog_history",
+      "accumulate_problems.py",
+      "/USE/BL_GET_SHORTDUMPS",
+      "DBIF_REPO_SQL_ERROR",
+      "MDS_CTRL_STRATEGY"
+    ],
+    "domain": "Integration",
+    "created_session": "s086",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": ["Integration", "Cross_Domain"],
+      "module": ["BC-MID", "BC-SYS"],
+      "process": ["*"]
+    }
+  },
+  {
+    "id": 233,
+    "claim": "Write-channel SoD gap (TIER_1 control finding): E_SILVA + L_NEVES execute both BAPI_GOODSMVT_CREATE (GR) AND BAPI_INCOMINGINVOICE_CREATE1 (invoice) via the named-user portal = can self-approve the 3-way-match. MP_ANCUTA + S_STANTIC execute both BAPI_PR_CHANGE (PR change) AND ZBAPI_VENDOR_CHANGE (vendor master change) = can direct spend to a vendor they control. UBO-RFC posts FI (Y_RFC_FMRP_RFFMEP1FX_FI_POST 30K). This extends the dialog SoD (claim #213) to the integration write channel — the channel where real control must focus. Behavioral evidence only (rsau_audit_history); permission-level confirmation requires AGR_*/USR* pull (H76, not yet in Gold DB).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:items-5-9 (item #6)",
+        "cite": "rsau_audit_history SLGUSER/PARAM3 analysis: E_SILVA BAPI_GOODSMVT_CREATE + BAPI_INCOMINGINVOICE_CREATE1; MP_ANCUTA BAPI_PR_CHANGE + ZBAPI_VENDOR_CHANGE. Cross-reference with claim #223 (portal write channel). 2026-06-21.",
+        "added_session": "s086"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "E_SILVA",
+      "L_NEVES",
+      "MP_ANCUTA",
+      "S_STANTIC",
+      "BAPI_GOODSMVT_CREATE",
+      "BAPI_INCOMINGINVOICE_CREATE1",
+      "BAPI_PR_CHANGE",
+      "ZBAPI_VENDOR_CHANGE",
+      "Y_RFC_FMRP_RFFMEP1FX_FI_POST"
+    ],
+    "domain": "Integration",
+    "created_session": "s086",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": ["Integration", "Procurement_P2P", "FI"],
+      "module": ["BC-MID", "MM", "FI"],
+      "process": ["P2P", "B2R", "Security"]
+    }
+  },
+  {
+    "id": 234,
+    "claim": "Channel-mix (data-confirmed 2026-06-21): RFC business traffic is ~5-6x dialog tcode-starts every month — integration channel structurally dominates dialog. By-month: Mar 2026 RFC=738K vs dialog=156K; Apr=956K vs 202K; May=912K vs 172K. IDoc/Jobs/direct-table are additional non-dialog channels (Jobs ~50-58K/month TBTCO; RFC-SSIS 123 direct reads). Dialog is a minority across ALL channels.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:By-month section + items-5-9 (#8)",
+        "cite": "rsau_audit_history RFC Function Call stream vs Transaction Start stream by SLGDAT month. TBTCO job counts from Gold DB. 2026-06-21.",
+        "added_session": "s086"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "rsau_audit_history",
+      "TBTCO"
+    ],
+    "domain": "Integration",
+    "created_session": "s086",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": ["Integration", "Cross_Domain"],
+      "module": ["BC-MID", "BC"],
+      "process": ["*"]
+    }
+  },
+  {
+    "id": 235,
+    "claim": "MuleSoft 174 dest-GUIDs are external RFC connection IDs from the synctrigger fleet connection pool — NOT SAP-named SOAMANAGER logical ports (not in RFCDES; SRT_* tables are SOAP endpoints, these are RFC). Resolution = NEGATIVE: the host (synctrigger-sap-app-XX) + the 17 distinct flows by dominant FM already name the integration completely. SRT_* tables are irrelevant for resolving these IDs. Supersedes the 'SOAMANAGER logical ports' label in claim #221.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "analysis",
+        "ref": "knowledge/system_operating_model_rfc.md:MuleSoft GUID resolution section",
+        "cite": "SOAMANAGER SRT_*/logical-port tables are NOT in Gold DB and are SOAP-specific. The 174 GUIDs parsed from PARAMX host/dest fields are RFC connection pool IDs from the synctrigger worker fleet. 17 flows identified by dominant FM name. No KU needed for SRT_* lookup — the host+flow naming is sufficient. 2026-06-21.",
+        "added_session": "s086"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "MULESOFT_PROD",
+      "MULESOFT_P01_IDOC",
+      "rsau_audit_history"
+    ],
+    "domain": "Integration",
+    "created_session": "s086",
+    "status": "active",
+    "resolution_notes": "Corrects 'dest GUIDs = SOAMANAGER logical ports' label in claim #221. The GUIDs are RFC connection-pool IDs, not SOAMANAGER ports. Claim #221 remains active for its other content (17 flows, bidirectional, RFCDES).",
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": ["Integration"],
+      "module": ["BC-MID"],
+      "process": ["*"]
     }
   }
 ]
