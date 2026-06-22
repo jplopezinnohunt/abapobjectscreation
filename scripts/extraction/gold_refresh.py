@@ -26,6 +26,7 @@ import json
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
+from collections import Counter
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -222,53 +223,45 @@ def refresh_txn_partitioned(g, con, ts, dom, ttype, spec):
     REPLACE-BY-PARTITION so each (FIKRS×GJAHR[×PERIO]) combo is re-pulled and swapped
     independently — keeps every RFC call bounded and leaves out-of-scope years intact."""
     gold, sap = spec["gold"], spec["sap"]
-    vfields = spec.get("value_fields", [])
     partition = spec.get("partition", [])
     cur = con.cursor()
     cols = [r[1] for r in cur.execute(f'PRAGMA table_info("{gold}")').fetchall()]
     if not cols:
         print(f"    {gold:24s} SKIP: golden table absent"); return
-    vfields = [v for v in vfields if v in cols]
     pfields = [f for f in partition if f in cols]
-    key = [c for c in cols if c not in vfields and c.upper() != "MANDT"]
-    ki = [cols.index(k) for k in key]
-    vi = [cols.index(v) for v in vfields]
     sel = ",".join(f'"{c}"' for c in cols)
     ph = ",".join("?" * len(cols))
 
-    tot_new = tot_chg = tot_gone = tot = 0
+    # CRITICAL: line-item tables stored without their full unique key (e.g. fmioi has no
+    # line counter) CANNOT be keyed safely — a key-dedup COLLAPSES distinct rows -> loss.
+    # So store ALL pulled rows (no dedup); delta = multiset diff on the FULL row tuple.
+    tot_new = tot_gone = tot = 0
     combos = _combos(pfields) if pfields else [[]]
     print(f"    {gold:24s} {len(combos)} partitions ({'×'.join(pfields)}), scope GJAHR {YEARS} ...")
     for combo in combos:
         where = " AND ".join(f"{f} = '{v}'" for f, v in combo)
-        rows = read_p01(g, sap, cols, None) if not where else \
-            g_read(g, sap, cols, where)
+        rows = read_p01(g, sap, cols, None) if not where else g_read(g, sap, cols, where)
         if not rows:
             continue
-        p01_idx = {tuple(r.get(cols[i], "") for i in ki): tuple(r.get(c, "") for c in cols) for r in rows}
-        # golden rows in this partition
+        p01_rows = [tuple(r.get(c, "") for c in cols) for r in rows]
         gwhere = " AND ".join(f'"{f}"=?' for f, v in combo)
         gvals = [v for f, v in combo]
-        gold_idx = {}
         q = f'SELECT {sel} FROM "{gold}"' + (f" WHERE {gwhere}" if gwhere else "")
-        for row in cur.execute(q, gvals):
-            row = tuple("" if v is None else str(v) for v in row)
-            gold_idx[tuple(row[i] for i in ki)] = row
-        new = sum(1 for k in p01_idx if k not in gold_idx)
-        chg = sum(1 for k in p01_idx if k in gold_idx
-                  and tuple(p01_idx[k][i] for i in vi) != tuple(gold_idx[k][i] for i in vi))
-        gone = sum(1 for k in gold_idx if k not in p01_idx)
-        # replace this partition
+        gold_rows = [tuple("" if v is None else str(v) for v in row) for row in cur.execute(q, gvals)]
+        p01_mset, gold_mset = Counter(p01_rows), Counter(gold_rows)
+        new = sum((p01_mset - gold_mset).values())
+        gone = sum((gold_mset - p01_mset).values())
+        # replace this partition with the COMPLETE pulled set (no dedup)
         if gwhere:
             cur.execute(f'DELETE FROM "{gold}" WHERE {gwhere}', gvals)
-        cur.executemany(f'INSERT INTO "{gold}" ({sel}) VALUES ({ph})', list(p01_idx.values()))
+        cur.executemany(f'INSERT INTO "{gold}" ({sel}) VALUES ({ph})', p01_rows)
         con.commit()
-        tot_new += new; tot_chg += chg; tot_gone += gone; tot += len(p01_idx)
-        if len(p01_idx) > 1000:
-            print(f"      {'/'.join(v for _, v in combo):20s} {len(p01_idx):>7}  +{new} ~{chg} -{gone}")
-    log_row(cur, ts, dom, ttype, spec, "txn-partitioned", tot_new, tot_chg, tot_gone, tot,
-            f"scope={YEARS} part={pfields}"); con.commit()
-    print(f"    {gold:24s} DONE  scoped total={tot:>8}  +{tot_new} new  ~{tot_chg} chg  -{tot_gone} gone")
+        tot_new += new; tot_gone += gone; tot += len(p01_rows)
+        if len(p01_rows) > 1000:
+            print(f"      {'/'.join(v for _, v in combo):20s} {len(p01_rows):>7}  +{new} -{gone}")
+    log_row(cur, ts, dom, ttype, spec, "txn-partitioned", tot_new, 0, tot_gone, tot,
+            f"scope={YEARS} part={pfields} (full-row, no dedup)"); con.commit()
+    print(f"    {gold:24s} DONE  scoped rows={tot:>8}  +{tot_new} new  -{tot_gone} gone (full-row multiset)")
 
 
 def g_read(g, sap, cols, where):
