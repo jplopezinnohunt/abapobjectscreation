@@ -1,0 +1,226 @@
+"""
+build_gold_table_registry.py
+-----------------------------
+Categorize EVERY golden-DB table by (domain x table_type) so any agent can know
+*immediately* which tables belong to a domain and how to refresh them.
+
+Two layers:
+  CURATED  — hand-authored specs for domains we actively refresh (PSM_FM, PS).
+             Each spec carries the refresh contract: key, delta strategy, partition,
+             value_fields (for totals). This DRIVES scripts/extraction/gold_refresh.py.
+  AUTO     — heuristic name-based classification of the remaining tables so the
+             domain map is COMPLETE (lower fidelity, source='auto').
+
+table_type taxonomy (the user's axis): master_data | text | totals | transaction
+             | config | hierarchy | log | provenance | unknown
+
+Emits:
+  brain_v2/gold_table_registry.json          (machine-readable, drives the refresher)
+  knowledge/gold_table_domain_map.md          (human view, grouped domain -> type)
+Run:  python brain_v2/build_gold_table_registry.py
+"""
+import json
+import re
+import sqlite3
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+OUT_JSON = REPO / "brain_v2" / "gold_table_registry.json"
+OUT_MD = REPO / "knowledge" / "gold_table_domain_map.md"
+
+# ----------------------------------------------------------------- CURATED
+# domain -> table_type -> [ spec ]
+# spec keys:
+#   gold   : golden-DB table name
+#   sap    : real SAP table
+#   key    : primary-key columns (delta PK)
+#   delta  : 'pk-upsert' (master) | 'value-compare' (totals) | 'hwm-append' (txn)
+#   partition: FIKRS/etc to read per-partition (P01 wrapper rejects ROWSKIPS)
+#   created/changed: SAP audit cols for the delta report (master only)
+#   value_fields: amount cols to diff (totals only)
+#   hwm    : high-water-mark col for incremental txn pulls
+CURATED = {
+    "PSM_FM": {
+        "master_data": [
+            {"gold": "funds", "sap": "FMFINCODE", "key": ["FIKRS", "FINCODE"],
+             "fields": ["FIKRS", "FINCODE", "TYPE", "ERFDAT", "ERFNAME"],
+             "partition": "FIKRS", "created": "ERFDAT", "changed": None, "delta": "pk-upsert"},
+            {"gold": "fund_centers", "sap": "FMFCTR", "key": ["FIKRS", "FICTR"],
+             "fields": ["FIKRS", "FICTR", "ERFDAT", "ERFNAME"],
+             "partition": "FIKRS", "created": "ERFDAT", "delta": "pk-upsert"},
+            {"gold": "commitment_items", "sap": "FMCI", "key": ["FIKRS", "GJAHR", "FIPEX"],
+             "fields": ["FIKRS", "GJAHR", "FIPEX", "KATEG", "FIVOR", "FICTR"],
+             "partition": "FIKRS", "delta": "pk-upsert"},
+            {"gold": "functional_areas", "sap": "TFKB", "key": ["FKBER"],
+             "fields": ["FKBER", "AUTHGRP", "DATAB", "DATBIS"], "partition": None, "delta": "pk-upsert"},
+        ],
+        "text": [
+            {"gold": "FMFINT", "sap": "FMFINT", "key": ["FIKRS", "FINCODE", "SPRAS"],
+             "fields": ["FIKRS", "FINCODE", "SPRAS", "BEZEICH", "BESCHR"],
+             "partition": "FIKRS", "where": "SPRAS = 'E'", "delta": "pk-upsert"},
+            {"gold": "fund_centers_text", "sap": "FMFCTRT", "key": ["FIKRS", "FICTR", "SPRAS"],
+             "fields": ["FIKRS", "FICTR", "SPRAS", "BEZEICH", "BESCHR"],
+             "partition": "FIKRS", "where": "SPRAS = 'E'", "delta": "pk-upsert"},
+            {"gold": "commitment_items_text", "sap": "FMCIT", "key": ["FIKRS", "FIPEX", "SPRAS"],
+             "fields": ["FIKRS", "FIPEX", "SPRAS", "BEZEI", "TEXT1"],
+             "partition": "FIKRS", "where": "SPRAS = 'E'", "delta": "pk-upsert"},
+            {"gold": "functional_areas_text", "sap": "TFKBT", "key": ["FKBER", "SPRAS"],
+             "fields": ["FKBER", "SPRAS", "FKBTX"], "partition": None, "where": "SPRAS = 'E'",
+             "delta": "pk-upsert"},
+        ],
+        "totals": [
+            {"gold": "bpge", "sap": "BPGE", "key": ["OBJNR", "POSIT", "TRGKZ", "WRTTP", "GEBER", "VERSN"],
+             "value_fields": ["WTGES", "WLGES"], "delta": "value-compare", "note": "BCS overall budget total"},
+            {"gold": "bpja", "sap": "BPJA", "key": ["OBJNR", "POSIT", "TRGKZ", "WRTTP", "GJAHR", "GEBER", "VERSN"],
+             "value_fields": ["WTJHR", "WLJHR"], "delta": "value-compare", "note": "BCS annual budget total"},
+            {"gold": "fmavct_summary", "sap": "FMAVCT", "key": ["FIKRS", "GJAHR", "OBJNR"],
+             "value_fields": [], "delta": "value-compare", "note": "AVC ledger totals (year-split tables exist)"},
+        ],
+        "transaction": [
+            {"gold": "fmbh", "sap": "FMBH", "key": ["FM_AREA", "DOCYEAR", "DOCNR"],
+             "hwm": "DOCNR", "delta": "hwm-append", "note": "BCS budget doc header"},
+            {"gold": "fmbl", "sap": "FMBL", "key": ["FM_AREA", "DOCYEAR", "DOCNR", "ITEMNO"],
+             "hwm": "DOCNR", "delta": "hwm-append", "note": "BCS budget doc line"},
+            {"gold": "fmioi", "sap": "FMIOI", "key": ["FIKRS", "FMBELNR", "FMBUZEI"],
+             "hwm": "FMBELNR", "delta": "hwm-append", "note": "FM commitment line items"},
+            {"gold": "fmifiit_full", "sap": "FMIFIIT", "key": ["FIKRS", "KNGJAHR", "KNBELNR", "KNBUZEI"],
+             "hwm": "KNBELNR", "delta": "hwm-append", "note": "FM actual (FI-FM) line items"},
+        ],
+    },
+    "PS": {
+        "master_data": [
+            {"gold": "proj", "sap": "PROJ", "key": ["PSPID"],
+             "fields": ["VBUKR", "PSPID", "POST1", "VERNR", "ERDAT", "PSPNR"],
+             "partition": None, "created": "ERDAT", "delta": "pk-upsert"},
+            {"gold": "prps", "sap": "PRPS", "key": ["POSID"],
+             "fields": ["PBUKR", "POSID", "POST1", "VERNR", "ERDAT", "PSPHI", "PSPNR", "OBJNR", "ERNAM"],
+             "partition": None, "created": "ERDAT", "delta": "pk-upsert"},
+        ],
+        "hierarchy": [
+            {"gold": "proj_hierarchy", "sap": "PRHI", "key": ["POSNR"],
+             "fields": ["POSNR", "PSPHI", "UP", "DOWN", "LEFT", "RIGHT"],
+             "gold_cols": ["POSNR", "PSPHI", "UP", "DOWN", "LEFTND", "RIGHTND"],
+             "partition": None, "delta": "pk-upsert"},
+        ],
+    },
+}
+
+# ----------------------------------------------------------------- AUTO heuristics
+DOMAIN_RULES = [
+    ("provenance", r"^(d01_|v01_)"),
+    ("PS",         r"^(proj|prps|prhi)"),
+    ("PSM_FM",     r"^(fm|bp[0-9g j]|ytfm|funds|fund_|commitment_|functional_)"),
+    ("Payment",    r"^(reguh|regup|payr|bcm_|dfpay|febep|febko|febre|feban|t012|t042|t028|t033|tiban)"),
+    ("FI",         r"^(bsis|bsas|bseg|bkpf|bsid|bsik|bsad|bsak|glt0|faglflext|fagl|ska1|skat|skb1|csk|knc|lfc)"),
+    ("Master_BP",  r"^(lfa1|lfb1|lfbk|kna1|knb1|bp001|but0|adrc)"),
+    ("Security",   r"^(agr_|ust|usr|tobj|usobx|usobt)"),
+    ("Transport",  r"^(e07|tms|tcevers|cts)"),
+    ("Logs",       r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|smodilog|pat03|tpalog|cvers|uvers|snap)"),
+    ("HCM",        r"^(pa0|pernr|hrp|t5|allos)"),
+    ("Config",     r"^t[0-9]"),
+]
+TYPE_RULES = [
+    ("provenance",  r"^(d01_|v01_)"),
+    ("text",        r"(_t$|_text$|text$|^skat$|^csku$|t$)"),
+    ("log",         r"^(tbtco|tbtcp|cdhdr|cdpos|rsau|syslog|smodilog|pat03|tpalog|cvers|uvers|snap)"),
+    ("hierarchy",   r"(hierarchy|^prhi|setnode|setleaf|^setheader)"),
+    ("totals",      r"(_summary$|^bpge|^bpja|^glt0|faglflext|^fmavct|^fmbdt|^knc|^lfc|total)"),
+    ("transaction", r"^(bkpf|bseg|bsis|bsas|bsid|bsik|fmbh|fmbl|fmioi|fmifiit|fmreserv|reguh|regup|payr|febep|cobk|coep|edidc|edid)"),
+    ("config",      r"^(t[0-9]|fmderive|fmavcatgr|fmavcbudfil|fmavcldgr|fmup|fm01tol|fmfmoa|fmafm|rfcdes|icfservice)"),
+    ("master_data", r"^(funds|fund_centers|commitment_items|functional_areas|proj|prps|ska1|skb1|csks|cska|cskb|lfa1|lfb1|kna1|knb1|bp001|fmfincode|fmfctr|fmci|fmfpo|fmmeasure|tfkb)"),
+]
+
+
+def classify(name, rules, default="unknown"):
+    low = name.lower()
+    for label, pat in rules:
+        if re.search(pat, low):
+            return label
+    return default
+
+
+def main():
+    con = sqlite3.connect(GOLD)
+    cur = con.cursor()
+    all_tables = [r[0] for r in cur.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
+
+    # index curated by gold name
+    curated_index = {}
+    for dom, types in CURATED.items():
+        for ttype, specs in types.items():
+            for s in specs:
+                curated_index[s["gold"]] = (dom, ttype, s)
+
+    registry = {"domains": {}, "_meta": {"total_tables": len(all_tables)}}
+
+    def add(dom, ttype, entry):
+        registry["domains"].setdefault(dom, {}).setdefault(ttype, []).append(entry)
+
+    auto_count = 0
+    for t in all_tables:
+        if t.startswith("_") or t == "sqlite_sequence":
+            continue
+        try:
+            rows = cur.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0]
+        except sqlite3.Error:
+            rows = None
+        if t in curated_index:
+            dom, ttype, spec = curated_index[t]
+            e = dict(spec); e["rows"] = rows; e["source"] = "curated"
+            add(dom, ttype, e)
+        else:
+            dom = classify(t, DOMAIN_RULES, "Uncatalogued")
+            ttype = classify(t, TYPE_RULES, "unknown")
+            add(dom, ttype, {"gold": t, "rows": rows, "source": "auto"})
+            auto_count += 1
+
+    registry["_meta"]["curated"] = len(curated_index)
+    registry["_meta"]["auto"] = auto_count
+
+    OUT_JSON.write_text(json.dumps(registry, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # ---- markdown view
+    lines = ["# Golden DB — domain × table-type map",
+             "",
+             f"> Generated by `brain_v2/build_gold_table_registry.py`. {len(all_tables)} tables: "
+             f"{len(curated_index)} curated (drive the refresher), {auto_count} auto-classified.",
+             "> table_type axis (user directive): **master_data · text · totals · transaction · "
+             "config · hierarchy · log · provenance**.",
+             "> Refresher: `scripts/extraction/gold_refresh.py <domain> [type]` (registry-driven, delta-aware).",
+             ""]
+    TYPE_ORDER = ["master_data", "text", "totals", "transaction", "hierarchy",
+                  "config", "log", "provenance", "unknown"]
+    for dom in sorted(registry["domains"]):
+        types = registry["domains"][dom]
+        n = sum(len(v) for v in types.values())
+        lines.append(f"## {dom}  ({n} tables)")
+        for ttype in TYPE_ORDER:
+            if ttype not in types:
+                continue
+            entries = sorted(types[ttype], key=lambda e: e["gold"])
+            tags = []
+            for e in entries:
+                tag = e["gold"]
+                if e.get("source") == "curated":
+                    tag = f"**{tag}**"
+                if e.get("rows") is not None:
+                    tag += f" ({e['rows']:,})"
+                tags.append(tag)
+            lines.append(f"- _{ttype}_: " + ", ".join(tags))
+        lines.append("")
+    OUT_MD.write_text("\n".join(lines), encoding="utf-8")
+
+    con.close()
+    print(f"Registry: {OUT_JSON}  ({len(curated_index)} curated + {auto_count} auto = {len(all_tables)} tables)")
+    print(f"Domain map: {OUT_MD}")
+    print("\nDomains:")
+    for dom in sorted(registry["domains"]):
+        types = registry["domains"][dom]
+        tt = {k: len(v) for k, v in types.items()}
+        print(f"  {dom:14s} {sum(tt.values()):>4} tables  {tt}")
+
+
+if __name__ == "__main__":
+    main()
