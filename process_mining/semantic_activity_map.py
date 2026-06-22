@@ -42,6 +42,19 @@ SEMANTIC = {
     # PSM / FM (UNESCO-heavy)
     "FMX3": ("Display FM document", "PSM", "view"), "FMRP_RFFMEP1FX": ("FM line-item report", "PSM", "view"),
     "FMRP_RFFMEP1OX": ("FM commitment report", "PSM", "view"), "FMBB": ("Budgeting", "PSM", "budget"),
+    # CUSTOM cockpits (resolved via brain d01_tstc -> program 2026-06-21; the comprehension gap closed).
+    # These are where UNESCO's real budget/HR-finance work runs — NOT standard tcodes. The LLM/brain
+    # moat: no commercial PM tool knows what YFM1_BCS_V3 / Y_KBLP_PBC_OPEN_N / HUNUEDGR_CONSOLE do.
+    "YFM1": ("Budget detail (BCS yearly)", "PSM", "view"),          # YFM1_BCS_V3
+    "ZICTP_COCKPIT": ("ICTP operations cockpit", "PSM", "operate"),  # ZICTP_COCKPIT
+    "YKBLP_N": ("HR open commitments (PBC)", "PSM-HR", "view"),      # Y_KBLP_PBC_OPEN_N
+    "YSC1": ("Support-cost allocation", "FI-CO", "posting"),         # YEBUET01
+    "HRPADUNEDGR": ("Education Grant console", "HCM", "benefit"),    # HUNUEDGR_CONSOLE
+    "PPOME": ("Change org/staffing", "HCM", "master-edit"), "F13E": ("Automatic clearing (currency)", "FI", "clearing"),
+    "FBZ2": ("Post outgoing payment", "Payment", "payment"), "ME2L": ("POs by vendor (report)", "P2P", "view"),
+    # control-sensitive: arbitrary program execution
+    "SA38": ("Run any program", "_admin", "execute-arbitrary"), "SA39": ("Run program (param tcode)", "_admin", "execute-arbitrary"),
+    "SE38": ("ABAP editor / run program", "_admin", "execute-arbitrary"),
 }
 
 
