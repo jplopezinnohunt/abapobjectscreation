@@ -74,6 +74,21 @@ The host field NAMES the system: `synctrigger` (MuleSoft sync fleet) + `HQ-ORION
 ladder: origin-user → dest-GUID (the flow/connection) → host (the physical worker/server). TODO: resolve the 174
 MuleSoft dest GUIDs to named SOAMANAGER logical ports; cross host inventory with RFCDES + the .NET/integration map.
 
+## MuleSoft = 17 flows (bidirectional PPM↔SAP project+fund sync) + ecosystem link confirmed (2026-06-21)
+**The 174 MuleSoft dest-GUIDs collapse to 17 distinct FLOWS** (by dominant call) — 174 was connection instances,
+17 is the real flow count:
+- READ (out): `Y_BAPI_WBS_FINANCIAL_DATA_1` (975K, 26 ep), `Y_BAPI_YPS8` (463K, 23 ep), `Y_BAPI_CUSTOMER_GET_ID` (148K, 34 ep).
+- WRITE (in): `Y_FMKU_0050_CREATE_WITH_COMMIT` (fund create), `Y_BAPI_FUND_C5_ASSIGNMENT` (fund assign — C5 biennium),
+  `FM_FUND_CHANGE_RFC`, `BAPI_PROJECT_MAINTAIN` (project), `Y_BAPI_WBS_TEXT_MAINTAIN` + `Y_BAPI_WBS_CUS_FIELD_UPDATE` (WBS).
+So MuleSoft is **bidirectional**: reads SAP project financials OUT + writes project/WBS/fund master IN (PPM is the
+master for projects/funds; SAP receives them + serves financials back). This is the **PPM↔SAP project+fund master sync**.
+**GUID resolution:** SOAMANAGER `SRT_*`/logical-port tables are NOT in the Gold DB → naming the 174 GUIDs needs a
+live SRT_* probe on P01 (deferred). ORION (BRIDGE-RFC) is inbound → not in RFCDES; outbound dests = `MULESOFT_PROD`
+(HTTP/G) + `MULESOFT_P01_IDOC` (TCP/T).
+**Ecosystem link CONFIRMED:** `unescore20-PPM-brain` already holds SAP artifacts (`artifacts/sap_source/
+YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the other side of the synctrigger sync
+(Core Planner/Salesforce ↔ SAP project/fund/cost). The ADR-007 ecosystem edge is real and bidirectional here.
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
