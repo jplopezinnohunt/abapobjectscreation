@@ -9342,5 +9342,565 @@
     "evidence_against": "",
     "domain": "Security",
     "created_session": "s084"
+  },
+  {
+    "id": 220,
+    "claim": "UNESCO SAP P01 is NOT operated primarily by dialog -- it is ORCHESTRATED FROM OUTSIDE. 80.6% of business RFC traffic is driven by external satellite systems (measured from rsau_audit_history 15.6M rows, 4 months Feb-Jun 2026). SAP is a READ-DOMINANT SYSTEM-OF-RECORD: ~80% of external traffic reads it (project financials, procurement/travel details) while writes flow back through the portal-as-user channel and MuleSoft. Structural, not artifact -- stable by month: Feb 86%, Mar 80%, Apr 80%, May 82%, Jun 77%.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md",
+        "cite": "2-axis system-explanation engine applied to rsau_audit_history 15.6M rows Feb-Jun 2026 (P01). 91.1% of business RFC explained. 80.6% external-satellite origin. By-month breakdown confirms structural.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "rsau_audit_history",
+      "process_mining/rfc_process_classifier.py",
+      "MULESOFT_PROD",
+      "MULESOFT_P01_IDOC",
+      "HQ-ORION-EAI03"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "FI",
+        "PSM_FM",
+        "Procurement_P2P",
+        "HCM",
+        "Travel"
+      ],
+      "module": [
+        "BC-MID",
+        "FI",
+        "MM",
+        "FM",
+        "HCM"
+      ],
+      "process": [
+        "P2P",
+        "B2R",
+        "H2R",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 221,
+    "claim": "MuleSoft = synctrigger sync-worker FLEET of 174 connection endpoints (dest GUIDs = SOAMANAGER logical ports, hosts synctrigger-sap-app-XX) resolving to 17 distinct logical flows. RFCDES: MULESOFT_PROD (HTTP/G) + MULESOFT_P01_IDOC (TCP/T). BIDIRECTIONAL: reads SAP project financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K, Y_BAPI_CUSTOMER_GET_ID 148K) + writes project/WBS/fund master IN (BAPI_PROJECT_MAINTAIN, Y_BAPI_WBS_TEXT_MAINTAIN, Y_BAPI_WBS_CUS_FIELD_UPDATE, Y_BAPI_FUND_C5_ASSIGNMENT, Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC). This is the PPM/Core Planner (Salesforce) <-> SAP project+fund master sync. Ecosystem link confirmed: unescore20-PPM-brain holds YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json = the other side of the sync.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:MuleSoft = 17 flows section",
+        "cite": "174 dest GUIDs in rsau_audit_history PARAMX host/dest parse. 17 distinct flows by dominant FM. RFCDES MULESOFT_PROD+MULESOFT_P01_IDOC in Gold DB. unescore20-PPM-brain YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json confirmed.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "MULESOFT_PROD",
+      "MULESOFT_P01_IDOC",
+      "Y_BAPI_WBS_FINANCIAL_DATA_1",
+      "Y_BAPI_YPS8",
+      "Y_BAPI_CUSTOMER_GET_ID",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "Y_BAPI_FUND_C5_ASSIGNMENT",
+      "FM_FUND_CHANGE_RFC",
+      "BAPI_PROJECT_MAINTAIN",
+      "Y_BAPI_WBS_TEXT_MAINTAIN",
+      "Y_BAPI_WBS_CUS_FIELD_UPDATE"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "PSM_FM",
+        "PS"
+      ],
+      "module": [
+        "BC-MID",
+        "FM",
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "P2P"
+      ]
+    }
+  },
+  {
+    "id": 222,
+    "claim": "BRIDGE-RFC = ORION EAI (server HQ-ORION-EAI03, 2 RFCDES endpoints). UNESCO procurement + travel + master-data-read self-service portal middleware. 875K RFC calls, 92% READ. Top FMs: ZBAPI_VENDOR_GETDETAIL (72K), Z_RFC_GET_USER (508K portal SSO / 970 users), BAPI_PR_GETDETAIL, BAPI_PO_GETDETAIL1, BAPI_ENTRYSHEET_GETDETAIL, ZBAPI_READ_BNKA, YHRTRV_IF_GET_TRIP+YHRTRV_IF_MODIFY_TRIP (46K Travel). Custom ZBAPI_VENDOR_*/YHRTRV_IF_* = the BRIDGE-RFC interface contract and the LLM moat.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:Finer breakdown section",
+        "cite": "PARAMX host=HQ-ORION-EAI03 in rsau_audit_history. 875K calls. FM breakdown from PARAM3. Z_RFC_GET_USER 508K / 970 users.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "HQ-ORION-EAI03",
+      "ZBAPI_VENDOR_GETDETAIL",
+      "ZBAPI_VENDOR_SEARCH",
+      "BAPI_PR_GETDETAIL",
+      "BAPI_PO_GETDETAIL1",
+      "BAPI_ENTRYSHEET_GETDETAIL",
+      "ZBAPI_READ_BNKA",
+      "Z_RFC_GET_USER",
+      "YHRTRV_IF_GET_TRIP",
+      "YHRTRV_IF_MODIFY_TRIP"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Procurement_P2P",
+        "Travel",
+        "BusinessPartner"
+      ],
+      "module": [
+        "BC-MID",
+        "MM",
+        "TV"
+      ],
+      "process": [
+        "P2P",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 223,
+    "claim": "Named-user portal channel (~501K RFC calls): THE WRITE CHANNEL (37% read / 32% write). Users: E_SILVA, L_NEVES, MP_ANCUTA, C_SOUZA, S_STANTIC. Write FMs: BAPI_PR_CHANGE (37K), Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K FI posting from field offices), ZBAPI_VENDOR_CHANGE (24K vendor master changes), BAPI_GOODSMVT_CREATE (GR), BAPI_INCOMINGINVOICE_CREATE1 (invoice). Real business transactions enter SAP under individual user ID -- an external receiving/AP portal posting under named credentials.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:External->internal section",
+        "cite": "rsau_audit_history SLGUSER breakdown. E_SILVA/L_NEVES GR+invoice. MP_ANCUTA+S_STANTIC vendor change. Volume and FM counts from PARAM3.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "E_SILVA",
+      "L_NEVES",
+      "MP_ANCUTA",
+      "C_SOUZA",
+      "S_STANTIC",
+      "BAPI_PR_CHANGE",
+      "BAPI_GOODSMVT_CREATE",
+      "BAPI_INCOMINGINVOICE_CREATE1",
+      "ZBAPI_VENDOR_CHANGE",
+      "Y_RFC_FMRP_RFFMEP1FX_FI_POST"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Procurement_P2P",
+        "FI",
+        "BusinessPartner"
+      ],
+      "module": [
+        "BC-MID",
+        "MM",
+        "FI",
+        "LO-MD"
+      ],
+      "process": [
+        "P2P",
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 224,
+    "claim": "WF-BATCH satellite: HR lifecycle workflow automation (RE_RHAKTI00, HR infotype 1000/1001, blank-tcode entries in rsau). PBC engine (F_DERAKHSHAN/HIPER, ZPBC_PERIOD_CLS_EXEC): payroll-commitment generator producing FMRESERV (6.4M CDHDR rows = largest OBJECTCLAS). RFC-SSIS (123 calls): Microsoft SSIS BI extractor, direct RFC_READ_TABLE, the only external direct-table channel besides JP_LOPEZ.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md:satellites table + knowledge/process_mining_table_analysis.md:7e",
+        "cite": "RE_RHAKTI00+HR_IT1000/1001 in rsau blank-tcode rows. FMRESERV 6.4M from CDHDR OBJECTCLAS counts. RFC-SSIS 123 RFC_READ_TABLE in rsau.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RE_RHAKTI00",
+      "ZPBC_PERIOD_CLS_EXEC",
+      "F_DERAKHSHAN",
+      "FMRESERV"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "HCM",
+        "PSM_FM",
+        "PY_Finance"
+      ],
+      "module": [
+        "BC-MID",
+        "HCM",
+        "FM"
+      ],
+      "process": [
+        "H2R",
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 225,
+    "claim": "Per-process UNESCO SAP operating model (data-confirmed): Procurement PR/PO/Service = BRIDGE-RFC (BAPI_PR_GET/CHANGE, BAPI_PO_GET/CREATE, BAPI_ENTRYSHEET_GET); Travel = BRIDGE-RFC YHRTRV_IF_GET/MODIFY_TRIP (46K, custom); FM/Fund master = MuleSoft (Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC, Y_BAPI_FUND_C5_ASSIGNMENT); HR lifecycle = WF-BATCH RE_RHAKTI00; Payroll commitments = PBC engine (FMRESERV 6.4M); GR/Invoice/FI posting = named-user portal (E_SILVA/L_NEVES/Y_RFC_FMRP_*); Vendor master = DUAL: XK02 M_AYIMBA 72K + ZBAPI_VENDOR_CHANGE MP_ANCUTA 19K; GL master = dialog FS00 25 docs (stable, rare). Dialog is MINORITY for all P2P/Travel/FM/Project/HR-org.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/system_operating_model_rfc.md + knowledge/process_mining_table_analysis.md:7c,7d,7e",
+        "cite": "CDHDR (result-side) x rsau RFC stream (method-side). KRED CDHDR 143K: XK02/M_AYIMBA 72718. SACH CDHDR 25. All process flows confirmed in rsau PARAM3.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "M_AYIMBA",
+      "CDHDR",
+      "KRED",
+      "SACH",
+      "ZBAPI_VENDOR_CHANGE",
+      "YHRTRV_IF_GET_TRIP",
+      "YHRTRV_IF_MODIFY_TRIP",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FM_FUND_CHANGE_RFC",
+      "RE_RHAKTI00",
+      "ZPBC_PERIOD_CLS_EXEC"
+    ],
+    "domain": "Cross_Domain",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Procurement_P2P",
+        "Travel",
+        "PSM_FM",
+        "HCM",
+        "FI"
+      ],
+      "module": [
+        "BC-MID",
+        "MM",
+        "TV",
+        "FM",
+        "HCM",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "H2R",
+        "B2R",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 226,
+    "claim": "2-axis RFC/BAPI system-explanation method: PROCESS (FM name -> business process, 91.1% coverage) x ORIGIN (PARAMX host/dest/user -> satellite, 80.6% external). Neither axis alone is sufficient -- a MuleSoft call and an internal report call to the same FM look identical on PROCESS alone. Coverage climbed 67%->76%->91.1% in one session. Engine: process_mining/rfc_process_classifier.py. 8.9% unexplained = known_unknowns (deferred, not blocker).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "process_mining/rfc_process_classifier.py",
+        "cite": "rfc_process_classifier.py implements 2-axis classification. Coverage progression in knowledge/system_operating_model_rfc.md. Commit 2026-06-21.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "process_mining/rfc_process_classifier.py",
+      "rsau_audit_history"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration"
+      ],
+      "module": [
+        "BC-MID"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 227,
+    "claim": "CDHDR blind-spot detection method: activity-stream tcode value of ~0 does NOT mean process is inactive -- it means the channel may be RFC/BAPI, invisible to tcode analysis. Fix: read the RESULT side (CDHDR, channel-agnostic) x METHOD side (rsau RFC stream). Corrected: vendor master KRED = 143K CDHDR docs (not ~0); XK02/M_AYIMBA 72K + ZBAPI_VENDOR_CHANGE/MP_ANCUTA 19K. GL SACH = 25 docs (genuinely rare). CDHDR OBJECTCLAS map = definitive P01 change inventory: FMRESERV 6.4M, BELEG 442K, EINKBELEG 188K, KRED 143K, ENTRYSHEET 128K, BANF 106K.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/process_mining_table_analysis.md:7d + Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db:cdhdr_history",
+        "cite": "CDHDR GROUP BY OBJECTCLAS confirmed counts. TCODE=XK02 GROUP BY USERNAME: M_AYIMBA 72718. ZBAPI_VENDOR_CHANGE SLGUSER=MP_ANCUTA 19481 from rsau.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "CDHDR",
+      "M_AYIMBA",
+      "ZBAPI_VENDOR_CHANGE",
+      "MP_ANCUTA",
+      "cdhdr_history"
+    ],
+    "domain": "Cross_Domain",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "BusinessPartner",
+        "FI"
+      ],
+      "module": [
+        "BC-MID",
+        "LO-MD",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 228,
+    "claim": "Vendor master KRED CDHDR by-year: 2024=29,337 -> 2025=110,238 (3.7x spike) -> 2026=3,831 (4mo, 93% collapse). The 2025 spike likely = a mass vendor cleanup/migration campaign. Only visible via CDHDR by-year cut (rsau is 2026-only). Specific driver (user/program) not yet confirmed.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "knowledge/process_mining_table_analysis.md:7f + Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db:cdhdr_history",
+        "cite": "CDHDR WHERE OBJECTCLAS=KRED GROUP BY YEAR(UDATE): 2024=29337, 2025=110238, 2026(4mo)=3831.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "CDHDR",
+      "KRED",
+      "LFA1",
+      "ZBAPI_VENDOR_CHANGE",
+      "MP_ANCUTA"
+    ],
+    "domain": "BusinessPartner",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "BusinessPartner",
+        "Integration"
+      ],
+      "module": [
+        "LO-MD"
+      ],
+      "process": [
+        "P2P"
+      ]
+    }
+  },
+  {
+    "id": 229,
+    "claim": "Custom satellite interface names are the LLM/brain moat: YHRTRV_IF_GET_TRIP, YHRTRV_IF_MODIFY_TRIP, ZBAPI_VENDOR_GETDETAIL, ZBAPI_VENDOR_SEARCH, ZBAPI_VENDOR_CHANGE, ZBAPI_READ_BNKA, Y_FMKU_0050_CREATE_WITH_COMMIT, Y_BAPI_FUND_C5_ASSIGNMENT, Y_BAPI_WBS_FINANCIAL_DATA_1, Y_BAPI_YPS8, Y_BAPI_CUSTOMER_GET_ID, Y_RFC_FMRP_RFFMEP1FX_FI_POST. No commercial PM tool (Celonis/Signavio/UiPath) can label these. Our brain holds d01_tstc+Z-code graph = the only system that can correctly label UNESCO-custom activity names.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "knowledge/system_operating_model_rfc.md:Implication section + process_mining/rfc_process_classifier.py",
+        "cite": "FM names from PARAM3 parse of rsau. Confirmed custom (Y_/Z_) via d01_tstc + TFDIR_CUSTOM. No SAP standard documentation covers these.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YHRTRV_IF_GET_TRIP",
+      "YHRTRV_IF_MODIFY_TRIP",
+      "ZBAPI_VENDOR_GETDETAIL",
+      "ZBAPI_VENDOR_CHANGE",
+      "ZBAPI_READ_BNKA",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "Y_BAPI_FUND_C5_ASSIGNMENT",
+      "Y_BAPI_WBS_FINANCIAL_DATA_1",
+      "Y_BAPI_YPS8",
+      "Y_BAPI_CUSTOMER_GET_ID",
+      "Y_RFC_FMRP_RFFMEP1FX_FI_POST",
+      "d01_tstc",
+      "TFDIR_CUSTOM"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Travel",
+        "PSM_FM",
+        "Procurement_P2P",
+        "FI"
+      ],
+      "module": [
+        "BC-MID",
+        "TV",
+        "FM",
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "H2R",
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 230,
+    "claim": "ADR-007 ecosystem edge CONFIRMED bidirectional (s085): unescore20-PPM-brain holds SAP artifacts (YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json + integration-layer docs) = OTHER SIDE of the MuleSoft synctrigger sync. PPM is master for projects/funds; SAP receives project+fund master IN + serves WBS financials back OUT. The ADR-007 ecosystem edge is a LIVE operational integration, not just a design reference.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "knowledge/system_operating_model_rfc.md:Ecosystem link CONFIRMED section",
+        "cite": "unescore20-PPM-brain artifacts/sap_source/YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json confirmed. MuleSoft Y_BAPI_WBS_FINANCIAL_DATA_1 974K + BAPI_PROJECT_MAINTAIN writes in rsau confirm both directions.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "unescore20-PPM-brain",
+      "YCL_FM_STAFF_COST_DISTRIBUT_BL",
+      "MULESOFT_PROD",
+      "MULESOFT_P01_IDOC",
+      "Y_BAPI_WBS_FINANCIAL_DATA_1",
+      "BAPI_PROJECT_MAINTAIN",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT"
+    ],
+    "domain": "Integration",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "PSM_FM",
+        "PS"
+      ],
+      "module": [
+        "BC-MID",
+        "FM",
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "P2P"
+      ]
+    }
+  },
+  {
+    "id": 231,
+    "claim": "Process-mining analysis maturity climbed from 12.5% to ~20% (s085 builds): Tier 0 -- semantic activity labeling (EKKO/EKBE VGABE->GR/IR), incomplete-case quality filter, OCEL 2.0/pm4py-full substrate (adaptive_discovery.py). Tier 1: Inductive Miner + Declare-style P2P conformance (38% clean 3-way, 62% deviates, 70 IR-before-GR violations $713K, GR->IR median 1d, 4% >30d). Tier 2: Behavioral SoD rsau (32 invoice+payment conflicts). NONE->HAVE/PARTIAL: Inductive (A), Declare-conformance (B), SoD (G), incomplete-case-filter (I), pm4py (M), OCEL2 (M) = +4.5 pts -> ~20%. Key: semantic labeling is THE foundation.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "process_mining/ (rfc_process_classifier.py, adaptive_discovery.py, p2p_conformance.py, tier2_sod.py, semantic_activity_map.py) + knowledge/process_mining_maturity.md",
+        "cite": "knowledge/process_mining_maturity.md Progress 2026-06-21. Commits 9b4fb1a+62b5a9e. Baseline 12.5% from process_mining_capability_inventory.md.",
+        "added_session": "s085"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "process_mining/rfc_process_classifier.py",
+      "process_mining/adaptive_discovery.py",
+      "process_mining/p2p_conformance.py",
+      "process_mining/tier2_sod.py",
+      "process_mining/semantic_activity_map.py"
+    ],
+    "domain": "Cross_Domain",
+    "created_session": "s085",
+    "status": "active",
+    "resolution_notes": null,
+    "resolved_session": null,
+    "domain_axes": {
+      "functional": [
+        "Integration",
+        "Procurement_P2P",
+        "Security"
+      ],
+      "module": [
+        "BC-MID",
+        "MM",
+        "BC-SEC"
+      ],
+      "process": [
+        "P2P",
+        "B2R",
+        "Security"
+      ]
+    }
   }
 ]

@@ -3448,5 +3448,54 @@
     "derives_from_core_principle": "CP-001",
     "cp_link_reason": "Losing traceability is irreversible; leaving evidenced knowledge in volatile chat sacrifices knowledge for velocity, which CP-001 forbids.",
     "source_file": "memory/feedback_promote_conversational_knowledge_to_central_store.md"
+  },
+  {
+    "id": "feedback_2axis_rfc_classification",
+    "rule": "When analyzing SAP RFC/BAPI traffic volume or patterns, ALWAYS apply the 2-axis method: (1) PROCESS axis from the FM name mapping to a business process, AND (2) ORIGIN axis from PARAMX host/dest/user identifying the satellite system. Neither axis alone is sufficient. A MuleSoft call and an internal report call to the same FM look identical without the ORIGIN axis. Coverage target: >90% of RFC volume explained.",
+    "why": "Discovered s085: applying only 1 axis left 80.6% of external traffic unexplained or misattributed. The 2-axis engine explained 91.1% of business RFC volume. Without ORIGIN, MuleSoft's 1.62M calls would be labeled 'unknown internal'. CP-003 precision.",
+    "how_to_apply": "Use process_mining/rfc_process_classifier.py (the engine). First classify by PARAM3 FM name -> process. Then enrich with PARAMX host/dest/user -> satellite/origin. Report as (process, origin) pairs. The 8.9% unexplained = known_unknowns, not a failure.",
+    "cp_link": "CP-003",
+    "severity": "HIGH",
+    "created_session": "s085",
+    "related_claims": [
+      "#220",
+      "#226"
+    ],
+    "related_files": [
+      "process_mining/rfc_process_classifier.py",
+      "knowledge/system_operating_model_rfc.md"
+    ]
+  },
+  {
+    "id": "feedback_cdhdr_blindspot_detection",
+    "rule": "When a tcode-based activity count for a domain is near zero, DO NOT conclude the process is inactive. The channel may be RFC/BAPI (invisible to tcode analysis). Always cross-validate with the RESULT side (CDHDR change documents, which are channel-agnostic -- every write is captured regardless of channel) before concluding a process runs at low volume.",
+    "why": "Discovered s085: vendor master tcode count was ~0, suggesting MDM was idle. CDHDR showed KRED=143K change docs, dominantly dialog XK02 (M_AYIMBA 72K) + secondary ZBAPI_VENDOR_CHANGE (MP_ANCUTA 19K). The tcode-only view was a blind spot. CP-003: conclusion must be grounded in evidence from the correct source.",
+    "how_to_apply": "Step 1: check rsau_audit_history SLGTC for the domain tcode. Step 2 if low: query cdhdr_history WHERE OBJECTCLAS = <relevant class> GROUP BY USERNAME, TCODE, YEAR(UDATE). Step 3: the TCODE column in CDHDR shows the channel (blank=RFC, populated=dialog). Cross-classify with rsau FM stream for the full picture.",
+    "cp_link": "CP-003",
+    "severity": "HIGH",
+    "created_session": "s085",
+    "related_claims": [
+      "#227"
+    ],
+    "related_files": [
+      "knowledge/process_mining_table_analysis.md",
+      "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db"
+    ]
+  },
+  {
+    "id": "feedback_exclude_jp_lopez_before_reporting_rfc",
+    "rule": "ALWAYS filter out JP_LOPEZ (and P_LUVHIMBI) RFC calls BEFORE reporting any RFC volume metrics from rsau_audit_history. Our own extraction is approximately 80-124K calls in a 4-month window (RFC_READ_TABLE 76K + DDIF_FIELDINFO_GET 3K + RFC_GET_FUNCTION_INTERFACE 1.5K + RSAU_API_* calls). Reporting without exclusion inflates the external-satellite share and overstates total traffic.",
+    "why": "Discovered s085 when reconciling RFC volumes: JP_LOPEZ RFC_READ_TABLE alone = 76,137 calls in the analysis window. Including these in 'business RFC' or 'external traffic' metrics produces systematically wrong numbers. CP-003 precision: state your own footprint before quoting volumes.",
+    "how_to_apply": "Add WHERE SLGUSER NOT IN ('JP_LOPEZ','P_LUVHIMBI') to all rsau_audit_history queries used for reporting satellite volumes. Document the exclusion in any claim that cites RFC volumes. The 80.6% external figure already has this exclusion applied.",
+    "cp_link": "CP-003",
+    "severity": "CRITICAL",
+    "created_session": "s085",
+    "related_claims": [
+      "#220"
+    ],
+    "related_files": [
+      "knowledge/system_operating_model_rfc.md:7f",
+      "knowledge/process_mining_table_analysis.md:7f"
+    ]
   }
 ]

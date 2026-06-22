@@ -133,7 +133,55 @@
 | **Failing integrations** | 2 (TULIP 93%, UNESDIR 93%) |
 | **Security concerns** | 1 (AWS HTTP:80 without TLS) |
 
-Last updated: Session #035 (2026-04-04)
+Last updated: Session #035 (2026-04-04) + MAJOR UPDATE Session #085 (2026-06-21) — satellite architecture from rsau_audit_history
+
+---
+
+## MAJOR UPDATE s085: Real Operating Model from RSAU Audit Log
+
+> Source: `knowledge/system_operating_model_rfc.md` (full detail). Claims #220-#230.
+> Method: 2-axis engine (process x origin) on rsau_audit_history 15.6M rows, 4 months Feb-Jun 2026.
+
+**HEADLINE: UNESCO does NOT operate SAP via dialog. 80.6% of business RFC is driven by external satellites.**
+SAP is a READ-DOMINANT SYSTEM-OF-RECORD. The integration map above (session #035) described the channels; this update measures the actual VOLUME and DIRECTION.
+
+### Satellite volume map (4-month Feb-Jun 2026)
+| Satellite | Identity | Volume | Direction | Key FMs |
+|---|---|---|---|---|
+| **MuleSoft** | synctrigger-sap-app-XX fleet (174 endpoints = 17 flows) | **1.62M** | Bidirectional | READ: Y_BAPI_WBS_FINANCIAL_DATA_1 (974K), Y_BAPI_YPS8 (463K), Y_BAPI_CUSTOMER_GET_ID (148K). WRITE: BAPI_PROJECT_MAINTAIN, Y_BAPI_WBS_CUS_FIELD_UPDATE, Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC |
+| **BRIDGE-RFC/ORION** | HQ-ORION-EAI03 (2 endpoints) | **875K** | 92% READ | ZBAPI_VENDOR_GETDETAIL (72K), Z_RFC_GET_USER (508K SSO), BAPI_PR_GETDETAIL, BAPI_PO_GETDETAIL1, YHRTRV_IF_GET/MODIFY_TRIP (46K Travel) |
+| **Named-user portal** | E_SILVA, L_NEVES, MP_ANCUTA, C_SOUZA | **501K** | THE WRITE CHANNEL (37% read / 32% write) | BAPI_PR_CHANGE (37K), Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K FI post), ZBAPI_VENDOR_CHANGE (24K), BAPI_GOODSMVT_CREATE, BAPI_INCOMINGINVOICE_CREATE1 |
+| **WF-BATCH** | blank-tcode workflow engine | -- | WRITE | RE_RHAKTI00 (HR_IT1000/1001 lifecycle) |
+| **PBC engine** | F_DERAKHSHAN/HIPER, ZPBC | -- | WRITE | ZPBC_PERIOD_CLS_EXEC -> FMRESERV (6.4M CDHDR rows) |
+| **RFC-SSIS** | MS SSIS BI extractor | 123 | READ | RFC_READ_TABLE (direct table, external BI) |
+| JP_LOPEZ (us) | Our extraction -- EXCLUDE from business metrics | ~80-124K | READ | RFC_READ_TABLE, DDIF_*, RSAU_API_* |
+
+### Q4 ANSWERED: Does Core Manager write back to SAP?
+YES. MULESOFT_PROD (HTTP/G) receives BAPI calls (BAPI_PROJECT_MAINTAIN, Y_BAPI_WBS_*, Y_FMKU_0050_*) from the synctrigger fleet. The integration is BIDIRECTIONAL: SAP serves WBS financials OUT + receives project/WBS/fund master IN from PPM/Core Planner. ADR-007 ecosystem link confirmed live operational.
+
+### By-month stability (the 80% is structural, not a spike)
+| Month | External % | MuleSoft % | BRIDGE-RFC % | Named-user % |
+|---|---|---|---|---|
+| 2026-02 | 86% | ~50% | ~25% | ~11% |
+| 2026-03 | 80% | ~50% | ~25% | ~15% |
+| 2026-04 | 80% | ~50% | ~25% | ~15% |
+| 2026-05 | 82% | ~50% | ~25% | ~17% |
+| 2026-06 | 77% | ~50% | ~17% | ~10% |
+
+### Per-process channel (the real "way of working")
+| Process | Primary channel | Key FM/TCODE |
+|---|---|---|
+| Procurement PR/PO/Service | BRIDGE-RFC/ORION | BAPI_PR_GET/CHANGE, BAPI_PO_GET/CREATE, BAPI_ENTRYSHEET_GET |
+| Travel | BRIDGE-RFC/ORION (custom) | YHRTRV_IF_GET_TRIP, YHRTRV_IF_MODIFY_TRIP |
+| FM/Fund master | MuleSoft | Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC, Y_BAPI_FUND_C5_ASSIGNMENT |
+| HR lifecycle | WF-BATCH | RE_RHAKTI00 (HR_IT1000/1001) |
+| Payroll commitments | PBC engine | ZPBC_PERIOD_CLS_EXEC -> FMRESERV |
+| GR/Invoice/FI posting (field offices) | Named-user portal | BAPI_GOODSMVT_CREATE, BAPI_INCOMINGINVOICE_CREATE1, Y_RFC_FMRP_RFFMEP1FX_FI_POST |
+| Vendor master CHANGE | DUAL: dialog XK02 (M_AYIMBA 72K) + BAPI ZBAPI_VENDOR_CHANGE (MP_ANCUTA 19K) | -- |
+| GL master | Dialog FS00 only (25 CDHDR docs -- genuinely rare) | -- |
+
+### THE MOAT
+Custom satellite interface names (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`, `Y_BAPI_WBS_FINANCIAL_DATA_1`, `Y_RFC_FMRP_*`) -- no commercial PM tool (Celonis/Signavio/UiPath) can label these. Our brain (d01_tstc + Z-code graph) is the only system that can. See claim #229.
 
 ---
 
