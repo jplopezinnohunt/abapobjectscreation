@@ -103,6 +103,19 @@ DIALOG is a MINORITY for P2P, Travel, FM-master, HR-org, Projects. Custom satell
 Method: model each satellite as an OCEL resource/system; the BAPI = activity; connect to interface-intelligence
 (RFCDES destinations, .NET apps, Coupa). This is the real "way of working" — operation-by-satellite.
 
+## 7f. RFC-stream caveats: OUR footprint, more satellites, by-year (2026-06-21, user-directed)
+- **DATA QUALITY — exclude OUR OWN calls:** `RFC_READ_TABLE` by `JP_LOPEZ` = 76,137 (our extraction) + DDIF_FIELDINFO_GET
+  ~3K + RFC_GET_FUNCTION_INTERFACE ~1.5K = ~80K self-inflicted RFC calls in the 4-month window. ALWAYS filter
+  `SLGUSER='JP_LOPEZ'` (and watch P_LUVHIMBI, who also runs DDIF/interface probes) before reporting RFC volumes.
+- **More satellite RFCs (single-caller custom = dedicated external systems):** `Y_BAPI_WBS_FINANCIAL_DATA_1` **974,874**
+  (#1, WBS financials, 1 caller), `Z_RFC_GET_USER` 508K (970 users, portal SSO), `Y_BAPI_YPS8` 461K (1), `Y_BAPI_CUSTOMER_GET_ID`
+  148K (1), `Y_RFC_UBO_YEBUR003_BCS` 40K (1, BCS budget), `ARFC_DEST_SHIP/CONFIRM` 82K (tRFC/IDoc async). Each single-caller
+  custom Y/Z RFC = a dedicated satellite reading one domain.
+- **BY-YEAR (do this next):** the RSAU audit is **2026-only (4 months)** → RFC trend = by-MONTH; **CDHDR spans 2024-2026**
+  → master-change trend = by-YEAR. Demo: vendor (KRED) changes 2024=29,337 → **2025=110,238 (3.7x peak)** → 2026=3,831
+  (4mo, ~93% collapse). The 2025 spike (mass vendor cleanup/migration?) + 2026 collapse is exactly what the by-year cut surfaces.
+  TODO: run by-year on all master OBJECTCLAS + by-month on the satellite RFCs (excluding JP_LOPEZ).
+
 ## 7d. METHOD lesson — find a blind spot from RESULT × METHOD (CDHDR is the channel-agnostic detector) (2026-06-21)
 The audit-log activity stream (Transaction Starts) counts SESSIONS not CHANGES and misses the RFC/BAPI write
 channel → it made MDM look like ~0 (a blind spot). The fix: read the RESULT side — **CDHDR change documents
