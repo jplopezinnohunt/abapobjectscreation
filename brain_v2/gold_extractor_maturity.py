@@ -40,6 +40,8 @@ def delta_parameterized(spec):
         return bool(spec.get("value_fields"))
     if strat == "hwm-append":
         return bool(spec.get("hwm"))
+    if strat == "txn-partitioned":
+        return bool(spec.get("partition"))  # headers carry no amounts; partition = the delta unit
     return False
 
 
