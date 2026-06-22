@@ -22,7 +22,7 @@ KNOWN = [
     ("Travel",          ["YHRTRV", "TRIP", "TRAVEL", "PTRV", "FITV"]),
     ("HCM",             ["HR_", "RHAK", "PA00", "INFOTYPE", "PAYROLL", "PERNR", "HRFPM", "PBC", "ZHRCA", "POSTAL"]),
     ("PSM-Budget/FM",   ["FUND", "FMKU", "BCS", "FMRESERV", "FMFCTR", "YEBU", "FMSU", "FM5", "RFFMEP", "FMRP"]),
-    ("PS-Project",      ["WBS", "PROJECT", "PRPS", "PROJ"]),
+    ("PS-Project",      ["WBS", "PROJECT", "PRPS", "PROJ", "YPS"]),  # YPS8 = MuleSoft project-financials sync
     ("P2P-PR",          ["REQUISITION", "BAPI_PR_", "_PR_CREATE", "_PR_CHANGE"]),
     ("P2P-PO",          ["BAPI_PO_", "_PO_CREATE", "_PO_CHANGE", "_PO_GET"]),
     ("P2P-Service",     ["ENTRYSHEET"]),
