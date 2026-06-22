@@ -95,8 +95,11 @@ YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the ot
   can self-approve the 3-way match. **MP_ANCUTA + S_STANTIC do `BAPI_PR_CHANGE` AND `ZBAPI_VENDOR_CHANGE`** =
   can direct spend to a vendor they control. `UBO-RFC` posts FI (`Y_RFC_FMRP_RFFMEP1FX_FI_POST` 30K). Extends
   the dialog SoD (claim #213) to the integration write channel — this is where conformance/SoD must focus.
-- **#7 Permission-level SoD:** AGR_*/USR* tables are NOT in the Gold DB → declared-vs-actual needs a P01 AGR_*
-  pull (behavioral half is done above).
+- **#7 Permission-level SoD: ✅ DONE 2026-06-22 (PMO H71/H76).** AGR_USERS/AGR_1251/AGR_AGRS pulled from P01 →
+  Gold DB `agr_users` + `agr_1251_sod`. **Declared SoD CONFIRMS behavioral** with precision: Conflict 1 (Brasília
+  `Y_UBO_*` bundle) = GR+invoice+PO at change-level (vendor-bank role display-only); Conflict 2 (HQ `Y_ICTP_SIS`) =
+  vendor+PR+PO change. **Root weakness exposed: `S_RFC=*` + custom `ZBAPI_VENDOR_CHANGE` skips `F_LFA1`** (S_STANTIC
+  changed 6,972 vendors with no F_LFA1 grant). Full analysis + control design: `knowledge/domains/Security/h71_write_channel_sod_remediation.md`, claims #237–240. $ exposure: Conflict 1 R$ 264.7M; Conflict 2 ~EUR 11.8M.
 - **#8 CHANNEL-MIX by month:** RFC business is **~5-6x dialog tcode-starts** every month (Mar 738K vs 156K,
   Apr 956K vs 202K, May 912K vs 172K) → the integration channel dominates operation, stable. (IDoc/Jobs sparse
   in the snapshots, not representative.) Dialog is a minority.
@@ -113,15 +116,26 @@ Analysis of `st22_dumps_history` (1) + `sm21_syslog_history` (2,402, ~7d):
 - **Application-healthy:** only **1 ABAP dump in 7+ days**, and it is infrastructure not code — `DBIF_REPO_SQL_ERROR`
   (2026-06-21 02:53, SAP↔SQL Server `MDS_CTRL_STRATEGY`, "TCP connection forcibly closed by remote host", net 10054 =
   a DB maintenance/blip window). No recurring app crashes.
-- **The #1 failure mode is NETWORK CONNECTIVITY:** ~12% of syslog = `10054` (272, connection forcibly closed) + `recv`
-  errors (268) + HTTP timeouts (30) — the SAME class as the lone dump. In an 80%-external-orchestrated system the
-  failures are in the CONNECTIONS to the satellites (MuleSoft/ORION/SQL Server), not the ABAP code. The problems data
-  is the failure-side MIRROR of the operating model.
+- **⚠️ CORRECTED 2026-06-22 (H74 deepening — `knowledge/h74_syslog_10054_connectivity_analysis.md`, claim #236):**
+  the "272 `10054` = satellite connection drops" reading below was WRONG. Decoding CENTDATA + temporal correlation
+  (`process_mining/parse_syslog.py`): **269/272 `10054` are end-user SAP GUI frontend resets** (`frontend_DIAG_reset`
+  — WP=`DP` dispatcher = frontend, NOT the RFC gateway; companion `dpTermin` names only end-user workstations; 86%
+  business-hours, weekday, weekend-collapse Sat=1/Sun=8 = a human diurnal curve). **Only 3/272 are the SAP↔SQL Server
+  link**, all at **Sun 02:53 = one maintenance window** (= the lone dump). **ZERO gateway/RFC-server TCP resets** in
+  the syslog ⇒ the MuleSoft/ORION RFC links are **not** TCP-dropping. The genuine integration tail is small (3 SQL
+  resets + 3 `DBSQL` errors in batch `RFFMAVC_OVERALL_VIEW` + 3 ORION app errors + 13 RFC/CPIC); 28 HTTP "plugin auto
+  logout" are **expected** idle timeouts. Keepalive tuning to the satellites is NOT indicated.
+- **~~The #1 failure mode is NETWORK CONNECTIVITY~~ (SUPERSEDED by the above):** ~12% of syslog = `10054` (272) +
+  `recv` errors (268) + HTTP timeouts (30). *Original (incorrect) reading: failures are in the CONNECTIONS to the
+  satellites.* Corrected: the bulk is benign **frontend GUI session churn**, not satellite integration.
 - **72% of syslog is operational noise** (E0A 1,181 = one user heavy on FMX3; R47 547 = session rollout resource
-  cleanup), not errors. Signal = the ~12% network/HTTP class. Custom touch-points with minor issues: SAPMHTTP (HTTP
-  channel), HRPADUNEDGR (Education Grant console).
-- **Monitoring conclusion:** watch **TCP/connection stability to the satellites**, not ABAP dumps. SM21 syslog retains
-  only ~7 days → the problems accumulator (`process_mining/accumulate_problems.py`, weekly) is what preserves it.
+  cleanup), not errors. Note: the `10054`/`recv` "network" class is *also* mostly benign frontend churn — true error
+  signal is the small integration tail above. Custom touch-points with minor issues: SAPMHTTP (HTTP), HRPADUNEDGR.
+- **Monitoring conclusion (CORRECTED):** the satellites are NOT the problem — watch the **SAP↔SQL Server link**
+  (make alerting maintenance-window-aware: suppress Sun 02:00–06:00) and the **`RFFMAVC_OVERALL_VIEW` batch SQL
+  error**; reclassify frontend GUI resets as *churn, not failures*. SM21 retains only ~7 days → keep the accumulator
+  (`process_mining/accumulate_problems.py`, weekly) running to build a >7-day baseline that separates episodic from
+  chronic. Decode/classify with `process_mining/parse_syslog.py`.
 
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.

@@ -10116,5 +10116,177 @@
         "*"
       ]
     }
+  },
+  {
+    "id": 237,
+    "claim": "PMO H71 write-channel SoD CONFIRMED at both behavioral and declared (AGR role) levels. Conflict 1: E_SILVA, L_NEVES, C_SOUZA, B_LOPES (Brasilia AP, identical Y_UBO_* role bundle) each post BOTH goods receipt (BAPI_GOODSMVT_CREATE) and vendor invoice (BAPI_INCOMINGINVOICE_CREATE1) and can create the PO too — AGR_1251 ACTVT confirms GR/invoice/PO = create/change (01/02), while the MD_VNDR_BNK_DATA role is DISPLAY-only (03). Conflict 2: MP_ANCUTA (Y_ICTP_SIS) holds vendor create/change + PR + PO; S_STANTIC changes PR/PO/vendor behaviorally. Population is 4 (not 2) for conflict 1 — C_SOUZA + B_LOPES also call both.",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "Live P01 pull of AGR_USERS+AGR_1251+AGR_AGRS (Zagentexecution/tasks/2026_06_22_h71_sod_write_channel/pull_agr_sod.py -> agr_users, agr_1251_sod, agr_sod_map.json) cross-checked vs rsau_audit_history + cdhdr_history. ACTVT analysis separates change(01/02) from display(03).",
+    "evidence_path": "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "E_SILVA",
+      "L_NEVES",
+      "C_SOUZA",
+      "B_LOPES",
+      "MP_ANCUTA",
+      "S_STANTIC",
+      "BAPI_GOODSMVT_CREATE",
+      "BAPI_INCOMINGINVOICE_CREATE1",
+      "BAPI_PR_CHANGE",
+      "ZBAPI_VENDOR_CHANGE",
+      "AGR_USERS",
+      "AGR_1251",
+      "Y_UBO_MM_GOODS_ENTRY",
+      "Y_ICTP_SIS"
+    ],
+    "discovered_session": "s086",
+    "cross_link": "knowledge/domains/Security/h71_write_channel_sod_remediation.md; claims.json #213 (dialog SoD), #6 (BCM dual-control); knowledge/system_operating_model_rfc.md",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "MM",
+        "Procurement"
+      ],
+      "module": [
+        "MM",
+        "FI",
+        "BC-SAL"
+      ],
+      "process": [
+        "P2P",
+        "Security"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "Live P01 pull of AGR_USERS+AGR_1251+AGR_AGRS (Zagentexecution/tasks/2026_06_22_h71_sod_write_channel/pull_agr_sod.py -> agr_users, agr_1251_sod, agr_sod_map.json) cross-checked vs rsau_audit_history + cdhdr_history. ACTVT analysis separates change(01/02) from display(03).",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s086"
+  },
+  {
+    "id": 238,
+    "claim": "H71 Conflict 1 (3-way-match self-approval) $ exposure: the 4 Brasilia AP users posted 20,573 logistics invoices worth R$ 264,658,831 BRL (~US$ 49M @5.4) full history 2024-01..2026-04, across 9,411 distinct POs of which 100% have a goods receipt (EKBE VGABE=1) — i.e. every one is a genuine 3-way match whose dual-person safeguard collapses to a single identity. Windowed lower bound (BUDAT>=2026-02-23) >= R$ 24.97M (RBKP extract ends 2026-04-30 so May-Jun missing). Residual: same-PO same-user GR+IR needs MSEG.USNAM (MSEG/MKPF not extracted).",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "rbkp.USNAM in (E_SILVA,L_NEVES,C_SOUZA,B_LOPES) WAERS=BRL SUM(RMWWR); rseg->EBELN distinct POs; ekbe VGABE=1 GR existence. Attribution link verified: RBKP/BKPF USNAM = portal users.",
+    "evidence_path": "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "E_SILVA",
+      "L_NEVES",
+      "C_SOUZA",
+      "B_LOPES",
+      "rbkp",
+      "rseg",
+      "ekbe",
+      "BAPI_GOODSMVT_CREATE",
+      "BAPI_INCOMINGINVOICE_CREATE1"
+    ],
+    "discovered_session": "s086",
+    "cross_link": "knowledge/domains/Security/h71_write_channel_sod_remediation.md; claims.json #213 (dialog SoD), #6 (BCM dual-control); knowledge/system_operating_model_rfc.md",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "MM"
+      ],
+      "module": [
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "rbkp.USNAM in (E_SILVA,L_NEVES,C_SOUZA,B_LOPES) WAERS=BRL SUM(RMWWR); rseg->EBELN distinct POs; ekbe VGABE=1 GR existence. Attribution link verified: RBKP/BKPF USNAM = portal users.",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s086"
+  },
+  {
+    "id": 239,
+    "claim": "H71 Conflict 2 (vendor-control + spend direction) $ exposure: MP_ANCUTA + S_STANTIC changed master data for 5,084 distinct vendors (VS9 portal-managed account group) while also changing PRs (77,158 combined) and POs. ~EUR 11.8M of cleared AP (BSAK DMBTR, 15,318 lines, 2,137 vendors) — about half of all VS9-vendor spend (EUR 23.7M) — went to vendors they directly control. They own the forward pipeline too.",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "cdhdr_history OBJECTCLAS=KRED OBJECTID (VS9 vendor set) joined to bsak/bsik/rbkp/ekpo by LIFNR. DMBTR local cur (predominantly EUR for HQ vendors).",
+    "evidence_path": "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "MP_ANCUTA",
+      "S_STANTIC",
+      "ZBAPI_VENDOR_CHANGE",
+      "BAPI_PR_CHANGE",
+      "cdhdr_history",
+      "bsak",
+      "LFA1"
+    ],
+    "discovered_session": "s086",
+    "cross_link": "knowledge/domains/Security/h71_write_channel_sod_remediation.md; claims.json #213 (dialog SoD), #6 (BCM dual-control); knowledge/system_operating_model_rfc.md",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Procurement"
+      ],
+      "module": [
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "Security"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "cdhdr_history OBJECTCLAS=KRED OBJECTID (VS9 vendor set) joined to bsak/bsik/rbkp/ekpo by LIFNR. DMBTR local cur (predominantly EUR for HQ vendors).",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s086"
+  },
+  {
+    "id": 240,
+    "claim": "H71 ROOT structural weakness: SoD cannot be enforced at the SAP call layer because S_RFC=* on Y_ICTP_COMMON (both MP_ANCUTA+S_STANTIC) and Y_UBO_ADMINISTRATION (all 4 Brasilia users + UBO-RFC service account) lets every portal user call ANY RFC FM. Enforcement therefore depends on each BAPI internal AUTHORITY-CHECK, which is inconsistent: the custom ZBAPI_VENDOR_CHANGE (FUGR ZFI_VENDOR_MGMT) performs NO vendor-master check — proven by S_STANTIC changing 6,972 vendors with S_RFC=* but NO F_LFA1 grant. Consequence: a role-only split of F_LFA1 is cosmetic; control must move to the call/data layer (kill S_RFC=*, add AUTHORITY-CHECK to custom write BAPIs) + SAP-native approval (T055F sensitive-field dual control for vendor bank, MRBR invoice release, PR/PO release strategy where creator<>releaser).",
+    "status": "VERIFIED",
+    "confidence_tier": "TIER_1",
+    "evidence": "agr_1251_sod S_RFC RFC_NAME=* on named roles; S_STANTIC behavioral KRED changes (cdhdr) vs absent F_LFA1 in AGR_1251.",
+    "evidence_path": "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+    "evidence_tier": "TIER_1",
+    "related_objects": [
+      "S_RFC",
+      "Y_ICTP_COMMON",
+      "Y_UBO_ADMINISTRATION",
+      "ZBAPI_VENDOR_CHANGE",
+      "ZFI_VENDOR_MGMT",
+      "UBO-RFC",
+      "F_LFA1_GEN"
+    ],
+    "discovered_session": "s086",
+    "cross_link": "knowledge/domains/Security/h71_write_channel_sod_remediation.md; claims.json #213 (dialog SoD), #6 (BCM dual-control); knowledge/system_operating_model_rfc.md",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Procurement",
+        "Security"
+      ],
+      "module": [
+        "BC-SEC",
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "Security",
+        "P2P"
+      ]
+    },
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": "agr_1251_sod S_RFC RFC_NAME=* on named roles; S_STANTIC behavioral KRED changes (cdhdr) vs absent F_LFA1 in AGR_1251.",
+    "evidence_against": "",
+    "domain": "Security",
+    "created_session": "s086"
   }
 ]
