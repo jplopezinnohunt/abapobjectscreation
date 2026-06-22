@@ -63,6 +63,17 @@ FEEDS satellites (read) and RECEIVES targeted transactions (write) — operated 
 (Caveat: verb-based READ/WRITE undercounts non-standard read names like YPS8/WBS_FINANCIAL_DATA — MuleSoft is more
 read-heavy than its 9% literal READ suggests.)
 
+## Finer breakdown via host/dest/path — the satellites have NAMES (2026-06-21)
+Parsing PARAMX `caller: host= dest= user=` gives the real external systems, not just the RFC user:
+- **MuleSoft = a FLEET of 174 endpoints** (dest GUIDs = SOAMANAGER logical ports), hosts `synctrigger-sap-app-6d/76/79/6f…`
+  — a **"synctrigger" sync-worker fleet** all calling `Y_BAPI_WBS_FINANCIAL_DATA_1` + `Y_BAPI_YPS8` = triggered
+  **project-financials sync** (→ PPM/Salesforce; connect to `unescore20-PPM-brain`).
+- **BRIDGE-RFC = ORION EAI** — a single server `HQ-ORION-EAI03` (2 endpoints). The procurement/travel/master-read
+  portal middleware is **ORION** (Enterprise Application Integration). 
+The host field NAMES the system: `synctrigger` (MuleSoft sync fleet) + `HQ-ORION-EAI03` (ORION EAI). Granularity
+ladder: origin-user → dest-GUID (the flow/connection) → host (the physical worker/server). TODO: resolve the 174
+MuleSoft dest GUIDs to named SOAMANAGER logical ports; cross host inventory with RFCDES + the .NET/integration map.
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
