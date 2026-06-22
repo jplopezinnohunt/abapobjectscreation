@@ -1,0 +1,163 @@
+{
+ "_doc": "object -> (extract, analyze, constraint, retention). TYPE_RULE covers any table via DD02L class; OVERRIDE = special/non-table elements.",
+ "type_rules": {
+  "TRANSP": [
+   "RFC_READ_TABLE",
+   "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields"
+  ],
+  "POOL": [
+   "RFC_READ_TABLE (KEY only) -> FM",
+   "pool table: RFC returns the key field only; values via a content FM (e.g. RS_VARIANT_CONTENTS)"
+  ],
+  "CLUSTER": [
+   "ABAP FOR ALL ENTRIES",
+   "cluster behind e.g. CDCLS/RFBLG: RFC_READ_TABLE cannot read it; sometimes declustered on EhP8 \u2014 probe first"
+  ],
+  "VIEW": [
+   "RFC_READ_TABLE",
+   "DB/projection view \u2014 read like a transparent table"
+  ],
+  "INTTAB": [
+   "n/a",
+   "structure/append \u2014 not a data container"
+  ]
+ },
+ "overrides": {
+  "RSAU": [
+   "FM RSAU_API_GET_LOG_DATA(IS_INTERVAL)",
+   "chunk <=6h (2-day call hangs); conn poisons ~every 12 calls -> reconnect; transient 'partner not reached' -> resilient reconnect",
+   "audit / 2-axis classification + self-adapting",
+   "~4 months"
+  ],
+  "SM21": [
+   "FM /USE/BL_GET_SHORTDUMPS -> EIT_SYSLOG",
+   "SALC_MSC_READ_SYSLOG returns 0; Z_READ_SYSLOG broken; RFC_READ_TABLE n/a",
+   "failure-pattern (decode CENTDATA before concluding!)",
+   "~7 days"
+  ],
+  "ST22": [
+   "FM /USE/BL_GET_SHORTDUMPS -> EIT_SHORT_DUMP",
+   "SNAP TABLE_NOT_AVAILABLE; RFC_ABAP_INSTALL_AND_RUN no auth on P01",
+   "failure-pattern",
+   "~7-30 days"
+  ],
+  "SNAP": [
+   "FM /USE/BL_GET_SHORTDUMPS",
+   "the SNAP table is not RFC-readable; use the dump FM",
+   "failure-pattern",
+   "~7-30 days"
+  ],
+  "STAD": [
+   "FM SAPWL_STATREC_READ_FILE",
+   "workload stats, not a table; kernel-verify; date/time/host params",
+   "tcode-usage mining",
+   "short (days)"
+  ],
+  "SWNCMONI": [
+   "FM SAPWL_* (SWNC)",
+   "workload monitor aggregates",
+   "tcode-usage mining",
+   "config'd"
+  ],
+  "CDPOS": [
+   "ABAP FOR ALL ENTRIES (CDCLS)",
+   "cluster; pair with CDHDR by OBJECTCLAS+OBJECTID+CHANGENR; declustered sometimes on EhP8 -> probe",
+   "blind-spot RESULT\u00d7METHOD (field-level old->new)",
+   "persists"
+  ],
+  "RFC_STREAM": [
+   "RSAU 'RFC Function Call' events; parse PARAMX host/dest/user",
+   "the call stream lives in the audit log, not a table; ORIGIN axis = host/dest/user",
+   "2-axis classification + self-adapting discovery",
+   "~4 months"
+  ],
+  "SOAMANAGER_GUID": [
+   "NOT resolvable",
+   "the dest GUIDs are external connection IDs, not SAP-named ports (not in RFCDES; SRT_* are SOAP, calls are RFC)",
+   "n/a \u2014 host names the system",
+   "n/a"
+  ]
+ },
+ "resolved_examples": [
+  {
+   "object": "EKKO",
+   "kind": "TRANSP",
+   "extract": "RFC_READ_TABLE",
+   "constraint": "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields",
+   "analyze": "process mining (OCEL / inductive / conformance)",
+   "retention": "persists (master/txn)"
+  },
+  {
+   "object": "CDHDR",
+   "kind": "TRANSP",
+   "extract": "RFC_READ_TABLE",
+   "constraint": "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields",
+   "analyze": "blind-spot RESULT\u00d7METHOD (changes, channel via TCODE)",
+   "retention": "persists (master/txn)"
+  },
+  {
+   "object": "CDPOS",
+   "kind": "override",
+   "extract": "ABAP FOR ALL ENTRIES (CDCLS)",
+   "constraint": "cluster; pair with CDHDR by OBJECTCLAS+OBJECTID+CHANGENR; declustered sometimes on EhP8 -> probe",
+   "analyze": "blind-spot RESULT\u00d7METHOD (field-level old->new)",
+   "retention": "persists"
+  },
+  {
+   "object": "VARI",
+   "kind": "TRANSP",
+   "extract": "RFC_READ_TABLE",
+   "constraint": "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields",
+   "analyze": "SQL aggregation (default)",
+   "retention": "persists (master/txn)"
+  },
+  {
+   "object": "RSAU",
+   "kind": "override",
+   "extract": "FM RSAU_API_GET_LOG_DATA(IS_INTERVAL)",
+   "constraint": "chunk <=6h (2-day call hangs); conn poisons ~every 12 calls -> reconnect; transient 'partner not reached' -> resilient reconnect",
+   "analyze": "audit / 2-axis classification + self-adapting",
+   "retention": "~4 months"
+  },
+  {
+   "object": "SM21",
+   "kind": "override",
+   "extract": "FM /USE/BL_GET_SHORTDUMPS -> EIT_SYSLOG",
+   "constraint": "SALC_MSC_READ_SYSLOG returns 0; Z_READ_SYSLOG broken; RFC_READ_TABLE n/a",
+   "analyze": "failure-pattern (decode CENTDATA before concluding!)",
+   "retention": "~7 days"
+  },
+  {
+   "object": "ST22",
+   "kind": "override",
+   "extract": "FM /USE/BL_GET_SHORTDUMPS -> EIT_SHORT_DUMP",
+   "constraint": "SNAP TABLE_NOT_AVAILABLE; RFC_ABAP_INSTALL_AND_RUN no auth on P01",
+   "analyze": "failure-pattern",
+   "retention": "~7-30 days"
+  },
+  {
+   "object": "AGR_USERS",
+   "kind": "TRANSP",
+   "extract": "RFC_READ_TABLE",
+   "constraint": "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields",
+   "analyze": "SoD declared-vs-actual reconciliation",
+   "retention": "persists (master/txn)"
+  },
+  {
+   "object": "BSEG",
+   "kind": "TRANSP",
+   "extract": "RFC_READ_TABLE",
+   "constraint": "P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields",
+   "analyze": "SQL aggregation / golden query",
+   "retention": "persists (master/txn)"
+  },
+  {
+   "object": "SOAMANAGER_GUID",
+   "kind": "override",
+   "extract": "NOT resolvable",
+   "constraint": "the dest GUIDs are external connection IDs, not SAP-named ports (not in RFCDES; SRT_* are SOAP, calls are RFC)",
+   "analyze": "n/a \u2014 host names the system",
+   "retention": "n/a"
+  }
+ ]
+}
