@@ -86,6 +86,19 @@ Categorization (§3) ≠ analysis. Mining the human signal (Dialog Logon + Trans
   **handover-of-work** between users on the same object (join to CDHDR by OBJECTID); (d) off-hours actor
   drill-down (who/where the overnight floor is).
 
+## 7c. Master data & financials run via RFC/BAPI, NOT dialog (2026-06-21, user-confirmed + audit-located)
+Why dialog MDM ≈ 0 (FS00 by 1 user): GL accounts and **vendor master are maintained by EXTERNAL solutions via
+RFC/BAPI**, invisible to tcode analysis but captured in the RSAU "RFC Function Call" stream (PARAM3 = FM name,
+SLGUSER = RFC user). Located in `rsau_audit_history`:
+- **Vendor master CHANGE = `ZBAPI_VENDOR_CHANGE`** (MP_ANCUTA 19,481 + S_STANTIC 4,683) — not XK02. Read/search via
+  **BRIDGE-RFC** (`ZBAPI_VENDOR_GETDETAIL` 72K, `ZBAPI_VENDOR_SEARCH*`); bank via `ZBAPI_GET_BANK_COUNTRY_DATA`.
+- **FM/Fund master = MuleSoft** (`Y_FMKU_0050_CREATE_WITH_COMMIT`, `FM_FUND_CHANGE_RFC`).
+- Integration backbone (top RFC): `Y_BAPI_WBS_FINANCIAL_DATA_1` 974K (#1, WBS financials), `Z_RFC_GET_USER` 508K,
+  `Y_BAPI_YPS8` 461K, `Y_BAPI_CUSTOMER_GET_ID` 148K, `BAPI_INCOMINGINVOICE_CREATE1`/`BAPI_GOODSMVT_CREATE` (E_SILVA/L_NEVES).
+- **GL-account-master BAPI not yet surfaced** (low volume or differently named) — OPEN: grep RFC stream for GL/SKA1.
+- Implication: the master-data + WBS-financial "way of working" is a BAPI/integration process. Model it from the
+  RFC stream (resource = SLGUSER incl. BRIDGE-RFC/MULESOFT; activity = FM name). Custom Z-BAPI names = the brain/LLM moat.
+
 ## 7. Next steps (incremental)
 1. Finish the RSAU **quarter** (4-month) pull → find the real audit retention boundary.
 2. Apply the RSAU **type filter** as the retention policy (keep signal, drop machine noise).
