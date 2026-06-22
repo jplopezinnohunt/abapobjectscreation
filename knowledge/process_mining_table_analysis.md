@@ -86,6 +86,17 @@ Categorization (§3) ≠ analysis. Mining the human signal (Dialog Logon + Trans
   **handover-of-work** between users on the same object (join to CDHDR by OBJECTID); (d) off-hours actor
   drill-down (who/where the overnight floor is).
 
+## 7d. METHOD lesson — find a blind spot from RESULT × METHOD (CDHDR is the channel-agnostic detector) (2026-06-21)
+The audit-log activity stream (Transaction Starts) counts SESSIONS not CHANGES and misses the RFC/BAPI write
+channel → it made MDM look like ~0 (a blind spot). The fix: read the RESULT side — **CDHDR change documents
+(channel-agnostic: every change, with USERNAME + the TCODE that delates the channel)** — and cross it with the
+METHOD side (RFC/BAPI call stream). CORRECTED finding: vendor master is NOT ~0 — **KRED = 143,406 change docs**,
+DOMINANTLY dialog **XK02 by M_AYIMBA (72,718 = the #1 vendor maintainer)** + a SECONDARY external BAPI channel
+(`ZBAPI_VENDOR_CHANGE`/MP_ANCUTA 19K). GL master **SACH = only 25** (FS00, stable, dialog); GL is READ via BAPI
+(`ZBAPI_GLACCOUNT_GETLIST`) but rarely changed. CDHDR OBJECTCLAS map = the real "what changes in P01" inventory:
+FMRESERV 6.4M, BELEG 442K, EINKBELEG 188K, KRED 143K, ENTRYSHEET 128K, BANF 106K, HR_IT* . Start change-process
+mining from CDHDR (result), not the activity stream. The §7c RFC/BAPI view below is the METHOD half — both are needed.
+
 ## 7c. Master data & financials run via RFC/BAPI, NOT dialog (2026-06-21, user-confirmed + audit-located)
 Why dialog MDM ≈ 0 (FS00 by 1 user): GL accounts and **vendor master are maintained by EXTERNAL solutions via
 RFC/BAPI**, invisible to tcode analysis but captured in the RSAU "RFC Function Call" stream (PARAM3 = FM name,
