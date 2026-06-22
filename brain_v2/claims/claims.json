@@ -10288,5 +10288,137 @@
     "evidence_against": "",
     "domain": "Security",
     "created_session": "s086"
+  },
+  {
+    "id": 241,
+    "claim": "SAP extraction method registry built (2026-06-22): a DD02L-class-based RESOLVER maps ANY SAP object to (extract_method, analyze_method, constraint, retention). Type rules: TRANSP->RFC_READ_TABLE(ROWSKIPS-free,date-chunked); POOL->RFC key-only then content FM; CLUSTER->ABAP FOR ALL ENTRIES; VIEW->RFC_READ_TABLE. Element overrides: RSAU->FM RSAU_API_GET_LOG_DATA chunk<=6h; SM21/ST22/SNAP->FM /USE/BL_GET_SHORTDUMPS; STAD->FM SAPWL_STATREC_READ_FILE; SOAMANAGER GUIDs->unresolvable. Eliminates per-session rediscovery of extraction path.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "process_mining/method_registry.py",
+        "cite": "Method registry resolver with DD02L class rules + element overrides. Emits brain_v2/method_registry.json. Built and committed Session S-087.",
+        "added_session": 87
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/method_registry.json",
+        "cite": "Generated resolver artifact: 5 type_rules + 9 element overrides, all verified against P01 in sessions S-085/S-086/S-087.",
+        "added_session": 87
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "DD02L",
+      "RFC_READ_TABLE",
+      "RSAU_API_GET_LOG_DATA",
+      "/USE/BL_GET_SHORTDUMPS",
+      "RS_VARIANT_CONTENTS"
+    ],
+    "domain": "D_DATA",
+    "created_session": 87,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 242,
+    "claim": "Claims-health verification rate (2026-06-22): only 24.3% of 210 live claims have >=2 independent evidence types (51 STRONG / 159 WEAK / 0 UNSUPPORTED). 21 WEAK TIER_1 claims identified as verification worklist (ids: 31-41, 213-214, 216-219, 237-240). A WEAK TIER_1 claim has enough confidence tier but insufficient corroboration — it is a hypothesis that was stated as a fact. The claims-health gate (brain_v2/claims_health.py) is the mechanism that surfaces this class of defect before session close.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "brain_v2/claims_health.py",
+        "cite": "Claims-health gate: scans all live claims, classifies STRONG/WEAK/UNSUPPORTED by independent evidence-type count. Built and committed Session S-087.",
+        "added_session": 87
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/claims_health.json",
+        "cite": "Output: live=210, STRONG=51, WEAK=159, UNSUPPORTED=0, verification_rate=24.3%, weak_tier1_worklist=21 claims. Generated 2026-06-22.",
+        "added_session": 87
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "claims.json",
+      "claims_health.py",
+      "claims_health.json"
+    ],
+    "domain": "G_CONFORMANCE",
+    "created_session": 87,
+    "resolved_session": null,
+    "resolution_notes": "Verification worklist: claim ids 31-41, 213-214, 216-219, 237-240. Generalizes the lesson from claim #232 (surface count mistaken for a finding).",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": 243,
+    "claim": "Meta-capability maturity (our own way-of-working, 2026-06-22): 67.8% across 7 dimensions. EXTRACT=1.0 (method registry); ANALYZE=0.5 (process mining ~30% domain maturity); VERIFY=0.243 (weakest — 24.3% claims with >=2 sources); CONSOLIDATE=1.0 (brain-steward+curate, 100% coverage); ESCALATE=1.0 (rule #162+PMO H66-H82); SELF_CORRECT=0.5 (29 superseded claims, demonstrated not default); DURABILITY=0.5 (accumulators gitignored/local-only). This is the first application of the domain x capability discipline to OUR OWN operating model, not only to UNESCO SAP.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "brain_v2/meta_capability.py",
+        "cite": "Meta-capability model: 7 dimensions measured from real artifacts (claims_health.json, maturity.json, PMO, superseded claims count, git status). Built Session S-087.",
+        "added_session": 87
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/meta_capability.json",
+        "cite": "Output: meta_maturity_pct=67.8, weakest=VERIFY, self_correction_demonstrated=true. 5 of 7 dims measured from artifacts; ANALYZE+DURABILITY are estimates.",
+        "added_session": 87
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "meta_capability.py",
+      "meta_capability.json",
+      "claims_health.json",
+      "maturity.json"
+    ],
+    "domain": "H_IMPROVE",
+    "created_session": 87,
+    "resolved_session": null,
+    "resolution_notes": "ANALYZE and DURABILITY scores are estimates (not fully artifact-derived). Cross-link: knowledge/session_retros/final_analysis_way_of_working_tools_model_2026-06-22.md",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]
