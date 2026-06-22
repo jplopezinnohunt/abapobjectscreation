@@ -33,6 +33,22 @@ def stamp_session():
         pass
 
 
+def meta_headline():
+    """Read the cached meta-capability self-assessment (instant — no recompute) and return the
+    one-line headline. This makes our OWN way-of-working maturity 'considered at every session start'
+    (user directive 2026-06-22): every session opens knowing its weakest lever to improve."""
+    try:
+        m = json.loads((HERE / "meta_capability.json").read_text(encoding="utf-8"))
+        weak = m.get("weakest", "?")
+        ws = m.get("dimensions", {}).get(weak, {}).get("score", 0)
+        return (f" SELF-ASSESSMENT (meta-capability, measured): {m.get('meta_maturity_pct','?')}% maturity in "
+                f"OUR way of working; weakest capability = {weak} ({ws}). Run `python brain_v2/meta_capability.py` "
+                f"for the sub-lever scorecard and `python brain_v2/claims_health.py` for the claim-verification "
+                f"worklist. Pick ONE weak sub-lever and move it this session; that is how we evolve.")
+    except Exception:
+        return " (meta_capability.json missing — run python brain_v2/meta_capability.py to self-assess)"
+
+
 def maybe_curate():
     """First session of the day -> spawn curate.py detached. Returns a note for the context."""
     try:
@@ -60,6 +76,7 @@ def main():
         pass
     stamp_session()
     note = maybe_curate()
+    meta = meta_headline()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
         "index) — NOT the full 400K brain_state.json. Then DRILL on demand: python brain_v2/graph_queries.py "
@@ -77,10 +94,10 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (~6.4GB, gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta
     )
     print(json.dumps({
-        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note,
+        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta,
         "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx},
     }))
 
