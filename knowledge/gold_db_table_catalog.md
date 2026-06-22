@@ -51,8 +51,8 @@ The **method registry** (`process_mining/method_registry.py` + `brain_v2/method_
 > P01 LIVE → canonical golden DB). Supersedes `refresh_funds_from_live.py` (used ROWSKIPS — now broken)
 > + `p01_proj_prps_sync.py` (wrote to the STALE `knowledge/domains/PSM/` path). Reading rule: the P01
 > secured RFC_READ_TABLE wrapper (class SAIS) **REJECTS ROWSKIPS** (`OPTION_NOT_VALID`) → cannot page;
-> read **`ROWCOUNT=0` partitioned by FIKRS** so each call stays under the ~60k-row WA ceiling
-> (UNES FMFINCODE = 56,639 returns in one call; PRPS/PRHI ~59.7k also single-call).
+> read **`ROWCOUNT=0` partitioned by FIKRS** (there is NO ~60k platform ceiling — BPGE returned 390,707
+> rows in one ROWCOUNT=0 call; partition for memory/latency only, not a hard limit — claim #244 corrected S-089).
 
 | SAP source | Gold DB table | What it is | Key | Notes |
 |---|---|---|---|---|

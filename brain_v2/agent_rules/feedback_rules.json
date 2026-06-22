@@ -3572,18 +3572,47 @@
   },
   {
     "id": "feedback_p01_sais_rowskips_rejection",
-    "rule": "P01 (and D01) RFC_READ_TABLE is wrapped by class SAIS which REJECTS ROWSKIPS with OPTION_NOT_VALID. This causes silent silent data truncation — not an error you see immediately. Use ROWCOUNT=0 with a tight WHERE partition (by FIKRS, date range, or other high-cardinality key) so each call stays under the ~60k-row WA ceiling. NEVER use ROWSKIPS-based pagination against P01/D01.",
+    "rule": "P01 (and D01) RFC_READ_TABLE is wrapped by class SAIS which REJECTS ROWSKIPS with OPTION_NOT_VALID. This causes silent silent data truncation — not an error you see immediately. Use ROWCOUNT=0 with a tight WHERE partition (by FIKRS, date range, or other high-cardinality key) so each call stays manageable (there is NO ~60k platform ceiling: ROWCOUNT=0 returned 390,707 rows for BPGE in one call; partition is for memory/latency only). NEVER use ROWSKIPS-based pagination against P01/D01.",
     "why": "Session s088 (2026-06-22): refresh_funds_from_live.py used ROWSKIPS pagination against P01 and silently returned only 30,000 of 56,639 UNES funds — a 47% data loss with no error raised. The failure mode is silent: SAIS returns OPTION_NOT_VALID internally but the caller gets a partial result, not an exception. This also applies to D01 (reference_d01_rowskips_and_adt_ddic_limits.md, s081). The method_registry.json already records this constraint ('P01-secured: NO ROWSKIPS') but no behavioral rule captured the SILENT TRUNCATION risk and the correct partitioning pattern.",
-    "how_to_apply": "1. NEVER pass ROWSKIPS > 0 to RFC_READ_TABLE on P01 or D01. The call will appear to succeed with partial rows.\n2. Instead: use ROWCOUNT=0 in a single call per partition. Partition by FIKRS for FM tables, by date range for event tables, by PSPID prefix for WBS.\n3. Verify row counts against expected universe (e.g. compare with a COUNT(*) call or prior run): a result capped suspiciously at 30k or 60k means ROWSKIPS was used or the WA ceiling was hit.\n4. For tables over 60k rows even in one partition: split by a secondary key (e.g. year, bukrs) until each call returns < 60k.\n5. Run `python process_mining/method_registry.py <TABLE>` to confirm the constraint before coding any extraction.\n6. DEPRECATED: refresh_funds_from_live.py. Use scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py instead (claim #244).",
+    "how_to_apply": "1. NEVER pass ROWSKIPS > 0 to RFC_READ_TABLE on P01 or D01. The call will appear to succeed with partial rows.\n2. Instead: use ROWCOUNT=0 in a single call per partition. Partition by FIKRS for FM tables, by date range for event tables, by PSPID prefix for WBS.\n3. Verify row counts against expected universe (e.g. compare with a COUNT(*) call or prior run): a result capped suspiciously near 30k means ROWSKIPS was used (no platform row ceiling exists for ROWCOUNT=0 — corrected s089).\n4. For very large tables (hundreds of thousands of rows), partition by a secondary key (e.g. year, bukrs) for memory/latency — NOT because of a platform row ceiling.\n5. Run `python process_mining/method_registry.py <TABLE>` to confirm the constraint before coding any extraction.\n6. DEPRECATED: refresh_funds_from_live.py. Use scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py instead (claim #244).",
     "severity": "HIGH",
     "created_session": 88,
     "source_file": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
     "derives_from_core_principle": "CP-003",
     "cp_derivation_method": "session_retro_2026-06-22_rowskips_silent_truncation",
     "domain_axes": {
-      "functional": ["*"],
-      "module": ["*"],
-      "process": ["*"]
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "correction_note_s089": "S-089 correction: the ~60k ceiling was false. BPGE returned 390,707 rows, FMBH UNES 248,086 rows in single ROWCOUNT=0 calls (confirmed via _gold_sync_log 2026-06-22). The earlier truncation was caused by explicit ROWCOUNT=30000 in the deprecated script, not a platform limit. Rule text updated."
+  },
+  {
+    "id": "feedback_verify_golden_row_count_before_close",
+    "rule": "When a bulk/delta extraction run completes without error, ALWAYS verify that the golden table row count approximately matches the P01 raw count for the same partition. A run that exits 0 CAN silently drop rows (e.g. via a key-collapse dedup on a table whose stored columns lack the full unique key). Do NOT dedup a line-item table unless the stored golden columns cover its FULL SAP unique key. For transaction tables (FMIOI, FMIFIIT, BSEG, etc.): check the DDIC key vs the golden column list before writing any dedup logic; if they differ, store ALL rows (no dedup) and use multiset-diff for delta.",
+    "why": "S-089 (2026-06-22): gold_refresh.py txn-partitioned engine deduped by all-non-amount columns. FMIOI has 13 golden columns but its SAP unique key includes a line counter NOT in the golden extract. Result: 1,813,943 rows silently collapsed to 1,029,062 (~43% loss) with exit code 0. Only discovered via manual raw-count comparison: P01 UNES 2025 = 806,902 raw but golden had ~405k for ALL institutes (impossible). Fixed in commit 8190f3c. See claim #247.",
+    "how_to_apply": "1. After any extraction run: query P01 for COUNT(*) of the key partition and compare to golden row count. Allow <=0.1% variance for live churn (inserts/deletes between runs); >1% variance = re-investigate. 2. Before writing dedup logic for a table: run PRAGMA table_info(golden) to list golden cols, then check DD05L/DDIC key for the SAP table. If any key field is absent from the golden extract, do NOT dedup — store all rows. 3. For delta runs: use multiset diff (count occurrences of each full-row tuple) rather than set diff. 4. Verify FMIFIIT (ok: has FMBELNR+FMBUZEI+RLDNR+STUNR), BSEG (ok: BUKRS+BELNR+GJAHR+BUZEI), FMIOI (was broken: missing line counter in golden). 5. Add a post-pull assertion in the extractor: if n_total < 0.9 * expected_p01_count: HALT and report.",
+    "severity": "HIGH",
+    "created_session": 89,
+    "source_file": "scripts/extraction/gold_refresh.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_retro_2026-06-22_fmioi_key_collapse",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
     }
   }
 ]

@@ -1141,7 +1141,7 @@
     },
     "verification_status": "DRIFT",
     "last_verified": "s079",
-    "verified_value": 197010,
+    "verified_value": 207702,
     "needs_review": true
   },
   {
@@ -10423,7 +10423,7 @@
   },
   {
     "id": 244,
-    "claim": "P01 secured RFC_READ_TABLE wrapper (class SAIS) REJECTS ROWSKIPS with OPTION_NOT_VALID. Cannot paginate. Correct read = ROWCOUNT=0 partitioned by FIKRS (or equivalent key range) so each call stays under the ~60k-row WA ceiling. Evidence: UNES FMFINCODE = 56,639 rows returned in ONE ROWCOUNT=0 FIKRS=UNES call; PRPS/PRHI ~59.7k also single-call. Old refresh_funds_from_live.py used ROWSKIPS pagination and silently truncated UNES funds to 30,000 rows — this script is now deprecated. Fixed in scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py (session S-088).",
+    "claim": "P01 secured RFC_READ_TABLE wrapper (class SAIS) REJECTS ROWSKIPS with OPTION_NOT_VALID. Cannot paginate. Correct read = ROWCOUNT=0 per tight partition (FIKRS, date range, or other high-cardinality key). There is NO row ceiling on ROWCOUNT=0 single calls: BPGE returned 390,707 rows and FMBH UNES returned 248,086 rows in one call each (2026-06-22). The earlier mention of a ~60k ceiling was incorrect - the truncation was caused by an explicit ROWCOUNT=30000 + ROWSKIPS rejection, not a platform cap. Partition only for memory/latency on very large tables; the row ceiling does not exist.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -10438,6 +10438,12 @@
         "ref": "brain_v2/method_registry.json",
         "cite": "method_registry.json TRANSP type_rules entry: 'P01-secured: NO ROWSKIPS (read ROWSKIPS-free, date-chunked); split wide fields'. Pre-existing note confirmed this session.",
         "added_session": 88
+      },
+      {
+        "type": "empirical",
+        "ref": "_gold_sync_log",
+        "cite": "Single ROWCOUNT=0 call 2026-06-22: BPGE returned 390,707 rows (14:06:34Z); FMBH UNES 248,086 rows (14:17:08Z). Both exceed 60k, proving no platform row ceiling.",
+        "added_session": 89
       }
     ],
     "evidence_against": null,
@@ -10449,12 +10455,13 @@
       "PRHI",
       "refresh_funds_from_live.py",
       "p01_fm_ps_bcs_masterdata_refresh.py",
-      "method_registry.json"
+      "method_registry.json",
+      "BPGE"
     ],
     "domain": "D_DATA",
     "created_session": 88,
     "resolved_session": null,
-    "resolution_notes": "Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone section). Rule: feedback_p01_sais_rowskips_rejection.",
+    "resolution_notes": "CORRECTED s089: removed false ~60k ceiling claim; confirmed ROWCOUNT=0 can return 390k+ rows in one call. Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone section). Rule: feedback_p01_sais_rowskips_rejection.",
     "status": "active",
     "evidence_legacy_text_for": null,
     "domain_axes": {
@@ -10543,6 +10550,97 @@
       ],
       "process": [
         "B2R"
+      ]
+    }
+  },
+  {
+    "id": 247,
+    "claim": "DATA-LOSS BUG (2026-06-22, FIXED commit 8190f3c): scripts/extraction/gold_refresh.py txn-partitioned engine originally deduped rows by key=all-non-amount columns. For line-item tables stored WITHOUT their full SAP unique key (FMIOI has only 13 golden columns, no line counter), this collapsed distinct rows differing only in amounts. Result: FMIOI dropped 1,813,943 rows to 1,029,062 (~43% loss). P01 raw UNES 2025 = 806,902; golden held only ~405k for ALL institutes in 2025 (impossible). FIX: store ALL pulled rows (no dict-dedup); delta = multiset diff on full row tuple; replace-by-partition via DELETE + INSERT-all. Post-fix: FMIOI golden = 2,190,853 vs P01 raw 2,190,919 (99.997% match). FMIFIIT UNAFFECTED (its golden cols carry unique key FMBELNR+FMBUZEI+RLDNR+STUNR): golden 2,308,814 vs P01 raw 2,308,991 (0.008% churn).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "_gold_sync_log",
+        "cite": "FMIOI sync run 1 (14:18:48Z): n_total=1,029,062 (collapsed). Run 2 (15:26:48Z): n_total=2,190,853 (fixed). Delta +1,161,793 recovered.",
+        "added_session": 89
+      },
+      {
+        "type": "source_code",
+        "ref": "scripts/extraction/gold_refresh.py:8190f3c",
+        "cite": "Commit 8190f3c: transaction refresh stores ALL rows, never key-dedups. Commit message documents the full collapse numbers.",
+        "added_session": 89
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMIOI",
+      "FMIFIIT",
+      "gold_refresh.py",
+      "_gold_sync_log",
+      "txn-partitioned"
+    ],
+    "domain": "D_DATA",
+    "created_session": 89,
+    "resolved_session": 89,
+    "resolution_notes": "Fixed in commit 8190f3c. See feedback rule: feedback_verify_golden_row_count_before_close.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 248,
+    "claim": "Gold DB extractor maturity baseline (2026-06-22): 29.1% overall across 318 classified golden tables. Measured via brain_v2/gold_extractor_maturity.py ladder: L0 unclassified=0 / L1 classified=0.25 / L2 contracted=0.50 / L3 delta_capable=0.75 / L4 synced_verified=1.0. Domain scores: PSM_FM 0.42, PS 0.81, all other domains L1 (auto-classified only). This is the first measured D_DATA sub-lever: 'domain_table_maturity' in meta_capability.py EXTRACT dimension dropped EXTRACT 1.0 to 0.76, overall meta-capability 64.4% to 62.7%. Registry: brain_v2/gold_table_registry.json (318 tables, 17 curated / 291 auto, 15 domains). PMO H84 tracks curating remaining domains to L2+.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/gold_extractor_maturity.py",
+        "cite": "Maturity scorer run 2026-06-22: 318 tables across 15 domains, overall mean 0.291. PSM_FM tables all L4 after S-089 refresh confirmed by _gold_sync_log.",
+        "added_session": 89
+      },
+      {
+        "type": "source_code",
+        "ref": "brain_v2/gold_table_registry.json",
+        "cite": "318 tables: 17 curated (explicit key/delta/strategy), 291 auto (domain+type only). Builder: build_gold_table_registry.py. Human map: knowledge/gold_table_domain_map.md.",
+        "added_session": 89
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "gold_extractor_maturity.py",
+      "gold_table_registry.json",
+      "gold_table_domain_map.md",
+      "build_gold_table_registry.py",
+      "meta_capability.py",
+      "_gold_sync_log"
+    ],
+    "domain": "D_DATA",
+    "created_session": 89,
+    "resolved_session": null,
+    "resolution_notes": "PMO H84: curate remaining domain tables to L2+. Cross-link: knowledge/gold_db_table_catalog.md.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
       ]
     }
   }
