@@ -34,6 +34,19 @@ A call is explained as a **(process, origin-system)** pair; the worklist = the i
 Vendor master change (XK02/M_AYIMBA 72K — dual-channel with BAPI), GL master (FS00, stable/rare), bank (FI01),
 some FI postings. Dialog is a MINORITY for P2P, Travel, FM/Project master, HR-org.
 
+## By-month (the REAL %, normalized) + multi-channel (2026-06-21)
+**The 80% external is STRUCTURAL, not an artifact** — business RFC external share by month: 2026-02=86%,
+03=80%, 04=80%, 05=82%, 06=77% (MuleSoft ~50% / BRIDGE-RFC ~25% / named ~15% every month). Our own footprint
+(JP_LOPEZ) was an April burst (11,263) — separable; the external rate holds without it. By-month is the right
+normalization (raw totals are skewed by partial months + our extraction bursts).
+**Multi-channel operation model** (combine these, not just RFC):
+1. **RFC/BAPI satellites** — ~80% external, the dominant channel (this doc).
+2. **IDoc** — PROJECT + BW (RSINFO/RSRQST) + exchange rates (edidc).
+3. **Jobs / batch** — ~50–58K jobs/month (TBTCO) = heavy internal automation (the PBC engine, RE_RHAKTI00, etc.).
+4. **Direct-table-access** — ~99% US (RFC_READ_TABLE by JP_LOPEZ 76K); the only external is **`RFC-SSIS`** (123) =
+   a Microsoft SSIS BI/data-warehouse extractor reading SAP tables raw. Minor but a real (BI) channel.
+Dialog is the minority across all of these. TODO: a unified channel mix % (RFC vs IDoc vs Jobs vs direct-table vs dialog).
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
