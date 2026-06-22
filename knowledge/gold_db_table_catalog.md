@@ -46,5 +46,36 @@ type: project
 ## Extraction method — how to read any SAP object
 The **method registry** (`process_mining/method_registry.py` + `brain_v2/method_registry.json`, built S-087) is the resolver: given ANY SAP object name, it returns (extract_method, constraint, analyze_method, retention) by looking up DD02L.TABCLASS + element-specific overrides. Before extracting a new table, run: `python process_mining/method_registry.py <TABLE>`. This prevents per-session rediscovery of extraction paths (claim #241, rule `feedback_use_method_registry_before_extracting`).
 
+## FM/BCS + PS master-data backbone (refreshed 2026-06-22 from P01)
+> Refresher: **`scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py`** (ONE idempotent script,
+> P01 LIVE → canonical golden DB). Supersedes `refresh_funds_from_live.py` (used ROWSKIPS — now broken)
+> + `p01_proj_prps_sync.py` (wrote to the STALE `knowledge/domains/PSM/` path). Reading rule: the P01
+> secured RFC_READ_TABLE wrapper (class SAIS) **REJECTS ROWSKIPS** (`OPTION_NOT_VALID`) → cannot page;
+> read **`ROWCOUNT=0` partitioned by FIKRS** so each call stays under the ~60k-row WA ceiling
+> (UNES FMFINCODE = 56,639 returns in one call; PRPS/PRHI ~59.7k also single-call).
+
+| SAP source | Gold DB table | What it is | Key | Notes |
+|---|---|---|---|---|
+| **FMFINCODE** | `funds` | Fund master (BCS dim) | FIKRS+FINCODE | 67,408 (UNES 56,639). 100% have EN text. |
+| **FMFINT** | `FMFINT` | Fund text (EN) | FIKRS+FINCODE+SPRAS | 67,410 — ALL 9 institutes (was 820/3 only). |
+| **FMFCTR** | `fund_centers` | Funds Center master (BCS dim) | FIKRS+FICTR | 787 |
+| **FMFCTRT** | `fund_centers_text` ✅NEW | Funds Center text (EN) | FIKRS+FICTR+SPRAS | 787 |
+| **FMCI** | `commitment_items` ✅NEW | Commitment Item master (BCS dim, **GJAHR='0000'** year-indep) | FIKRS+GJAHR+FIPEX | 205 total (UNES~26). One DQ curiosity: UNES FIPEX `10'` (apostrophe, faithful to P01). |
+| **FMCIT** | `commitment_items_text` ✅NEW | Commitment Item text (EN) | FIKRS+FIPEX+SPRAS | 205 |
+| **TFKB** | `functional_areas` ✅NEW | Functional Area (BCS dim) | FKBER | 9 (0001..0980) |
+| **TFKBT** | `functional_areas_text` ✅NEW | Functional Area text (EN) | FKBER+SPRAS | 9 |
+| **PROJ** | `proj` | PS Project definition | PSPID | 13,976 (max ERDAT=2026-06-22, fresh). |
+| **PRPS** | `prps` | PS WBS element | POSID | 59,749 (fresh). OBJNR → status (jest). |
+| **PRHI** | `proj_hierarchy` ✅NEW | PS project hierarchy (UP/DOWN/LEFT/RIGHT; cols renamed LEFTND/RIGHTND, reserved words) | POSNR | 59,751 — 100% of PRPS.PSPNR links here. |
+| **YTFM_FUND_C5 / YTFM_C5 / YTFM_OUTPUT(_T)** | `ytfm_fund_c5` (17,598) etc. | UNESCO custom C/5 biennium BCS model (fund×biennium→Output) | see `p01_ytfm_biennium_sync.py` | bienio 43 (2026-2027) active. |
+
+**Verified NOT used by UNESCO (don't re-extract):** `FMMEASURE` (Funded Program) = **0 rows on P01** —
+UNESCO models "projects" via **PS (PROJ/PRPS)**, not the FM Funded-Program dimension. `FMFPO` ≈ empty (19).
+The BCS budget *documents/totals* (`fmbh`/`fmbl`/`bpge`/`bpja`) are transactional, already present, and are
+NOT master data — out of scope of this refresher.
+
 ## TODO (extend this catalog)
-Started with the log/change/job/upgrade/audit tables (the active topic). **Not yet catalogued: the remaining ~280 of 306 tables** (FI bsX, FM fmavc*/fmifiit*, BCM bcm_*, config T0*, etc.). Extend incrementally; each table gets: real SAP name, what it is, how we use it, key, provenance. Companion of capability-model dimension **D_DATA**.
+Started with the log/change/job/upgrade/audit tables + the FM/BCS+PS master-data backbone above.
+**Not yet catalogued: the remaining ~270 of 311 tables** (FI bsX, FM fmavc*/fmifiit*/fmioi, BCM bcm_*,
+config T0*, etc.). Extend incrementally; each table gets: real SAP name, what it is, how we use it, key,
+provenance. Companion of capability-model dimension **D_DATA**.
