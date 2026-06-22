@@ -89,6 +89,25 @@ live SRT_* probe on P01 (deferred). ORION (BRIDGE-RFC) is inbound → not in RFC
 YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the other side of the synctrigger sync
 (Core Planner/Salesforce ↔ SAP project/fund/cost). The ADR-007 ecosystem edge is real and bidirectional here.
 
+## Items 5-9 — write-channel SoD, channel-mix, PPM side, P2P-by-channel (2026-06-21)
+- **#6 WRITE-CHANNEL SoD (the real conformance focus):** named-user portal writes carry SoD conflicts —
+  **E_SILVA + L_NEVES do BOTH `BAPI_GOODSMVT_CREATE` (GR) AND `BAPI_INCOMINGINVOICE_CREATE1` (invoice)** =
+  can self-approve the 3-way match. **MP_ANCUTA + S_STANTIC do `BAPI_PR_CHANGE` AND `ZBAPI_VENDOR_CHANGE`** =
+  can direct spend to a vendor they control. `UBO-RFC` posts FI (`Y_RFC_FMRP_RFFMEP1FX_FI_POST` 30K). Extends
+  the dialog SoD (claim #213) to the integration write channel — this is where conformance/SoD must focus.
+- **#7 Permission-level SoD:** AGR_*/USR* tables are NOT in the Gold DB → declared-vs-actual needs a P01 AGR_*
+  pull (behavioral half is done above).
+- **#8 CHANNEL-MIX by month:** RFC business is **~5-6x dialog tcode-starts** every month (Mar 738K vs 156K,
+  Apr 956K vs 202K, May 912K vs 172K) → the integration channel dominates operation, stable. (IDoc/Jobs sparse
+  in the snapshots, not representative.) Dialog is a minority.
+- **#9 PPM side (the other bridge end):** `unescore20-PPM-brain` = Salesforce/Core Planner; holds a SAP
+  integration catalog **INT-01..06**, models MuleSoft, has SAP P01 as a graph node (31 edges) + SAP FM source
+  (`YCL_FM_STAFF_COST_DISTRIBUT`). Our **17 MuleSoft flows = their INT-01..06 from the SAP side** — align them.
+- **#5 Integration-first reframe:** the P2P conformance (EKKO/EKBE) is already CHANNEL-AGNOSTIC (EKBE records
+  GR/IR regardless of dialog vs BAPI) → the 38%-clean / 70-IR-before-GR findings HOLD. The missing piece was
+  channel attribution per step: Create PO→BRIDGE/dialog, **GR/Invoice→BAPI (E_SILVA/L_NEVES AP portal)**,
+  PR→BAPI_PR_CHANGE (MP_ANCUTA/ORION). TODO: full OCEL with origin=resource per event.
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
