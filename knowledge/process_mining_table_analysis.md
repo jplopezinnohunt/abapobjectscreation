@@ -86,6 +86,23 @@ Categorization (§3) ≠ analysis. Mining the human signal (Dialog Logon + Trans
   **handover-of-work** between users on the same object (join to CDHDR by OBJECTID); (d) off-hours actor
   drill-down (who/where the overnight floor is).
 
+## 7e. SATELLITE-APP operation map — SAP is operated heavily via RFC/BAPI, not dialog (2026-06-21, user-directed)
+Triangulating CDHDR (result, channel via TCODE) × RSAU RFC stream (method, the BAPI) reveals UNESCO operates
+SAP substantially through SATELLITE apps. Five drivers:
+1. **BRIDGE-RFC** (procurement+travel+master-read portal gateway) — PR (BAPI_PR_GETDETAIL/CHANGE), PO
+   (BAPI_PO_GETDETAIL1/CREATE1), Service (BAPI_ENTRYSHEET_GET*), Vendor/GL/Bank read (ZBAPI_VENDOR_*/GLACCOUNT_GETLIST),
+   **Travel via custom `YHRTRV_IF_GET/MODIFY_TRIP`** (46K) — the #1 satellite driver.
+2. **MULESOFT** (integration bus) — FM/Fund master (FMFUNDBPD via FM5U/FM5I, `Y_FMKU_0050_CREATE_WITH_COMMIT`,
+   `FM_FUND_CHANGE_RFC`) + **Project creation (PROJ, blank-tcode/MULESOFT)**.
+3. **WF-BATCH** (HR lifecycle workflow automation) — HR infotype changes HR_IT1000/1001 (org/relationships) via RE_RHAKTI00.
+4. **PBC engine** (F_DERAKHSHAN/HIPER, ZPBC_PERIOD_CLS_EXEC/SE38) — payroll-commitment generation, **FMRESERV 6.4M** (blank tcode).
+5. **Named-user BAPI** (E_SILVA/L_NEVES/MP_ANCUTA/C_SOUZA) — GR (BAPI_GOODSMVT_CREATE), invoice
+   (BAPI_INCOMINGINVOICE_CREATE1), PR/PO create — an external receiving/AP portal posting under the user's ID.
+DIALOG is a MINORITY for P2P, Travel, FM-master, HR-org, Projects. Custom satellite interfaces
+(`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`) = the brain/LLM moat (no commercial PM tool understands them).
+Method: model each satellite as an OCEL resource/system; the BAPI = activity; connect to interface-intelligence
+(RFCDES destinations, .NET apps, Coupa). This is the real "way of working" — operation-by-satellite.
+
 ## 7d. METHOD lesson — find a blind spot from RESULT × METHOD (CDHDR is the channel-agnostic detector) (2026-06-21)
 The audit-log activity stream (Transaction Starts) counts SESSIONS not CHANGES and misses the RFC/BAPI write
 channel → it made MDM look like ~0 (a blind spot). The fix: read the RESULT side — **CDHDR change documents
