@@ -43,5 +43,8 @@ type: project
 ## Provenance/system-variant tables (correctly prefixed)
 `d01_tstc`/`d01_tstct`/`d01_tstcp` (tcode→program map, system-invariant, pulled from D01), `d01_seo_*` (class anatomy from D01), `d01_t028*`/`d01_t033*` (config compare), `p01_*` vs `d01_*` master-data pairs (GL/cost-element sync). Rule: never assert a P01 fact from a `d01_` table.
 
+## Extraction method — how to read any SAP object
+The **method registry** (`process_mining/method_registry.py` + `brain_v2/method_registry.json`, built S-087) is the resolver: given ANY SAP object name, it returns (extract_method, constraint, analyze_method, retention) by looking up DD02L.TABCLASS + element-specific overrides. Before extracting a new table, run: `python process_mining/method_registry.py <TABLE>`. This prevents per-session rediscovery of extraction paths (claim #241, rule `feedback_use_method_registry_before_extracting`).
+
 ## TODO (extend this catalog)
 Started with the log/change/job/upgrade/audit tables (the active topic). **Not yet catalogued: the remaining ~280 of 306 tables** (FI bsX, FM fmavc*/fmifiit*, BCM bcm_*, config T0*, etc.). Extend incrementally; each table gets: real SAP name, what it is, how we use it, key, provenance. Companion of capability-model dimension **D_DATA**.

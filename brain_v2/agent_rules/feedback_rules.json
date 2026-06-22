@@ -3506,15 +3506,68 @@
     "cp_link": "CP-001",
     "severity": "CRITICAL",
     "created_session": "s086",
-    "related_claims": ["#223", "#232"],
+    "related_claims": [
+      "#223",
+      "#232"
+    ],
     "related_files": [
       "knowledge/system_operating_model_rfc.md:items-5-9",
       ".agents/intelligence/PMO_BRAIN.md:H71-H80"
     ],
     "domain_axes": {
-      "functional": ["*"],
-      "module": ["*"],
-      "process": ["*"]
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_use_method_registry_before_extracting",
+    "rule": "Before extracting any SAP object, RESOLVE the extraction and analysis method via the method registry (brain_v2/method_registry.json or process_mining/method_registry.py). Do NOT rediscover how to read a SAP object each session by trial-and-error (RFC_READ_TABLE -> fails -> hunt the FM -> probe interface -> build). The registry maps: DD02L.TABCLASS -> method (TRANSP=RFC_READ_TABLE ROWSKIPS-free; POOL=RFC key-only+FM; CLUSTER=FOR ALL ENTRIES; VIEW=RFC_READ_TABLE) plus element overrides (RSAU=RSAU_API_GET_LOG_DATA chunk<=6h; SM21/ST22/SNAP=/USE/BL_GET_SHORTDUMPS; SOAMANAGER=unresolvable). Cross-link: claim #241, D_DATA, retro knowledge/session_retros/retro_operating_model_method_2026-06-21.md.",
+    "why": "Born 2026-06-21/22: every session we rediscovered extraction methods by trial (RFC_READ_TABLE -> fails -> hunt FM -> probe -> build). This is the #1 inefficiency identified in the operating-model retro. The registry is the fix: a resolver built from DD02L table class + hard-won element-specific overrides. Without it, a session wastes turns re-learning what RSAU requires chunked FM calls, what POOL tables return only keys, etc. Reference: process_mining/method_registry.py + brain_v2/method_registry.json (committed S-087).",
+    "how_to_apply": "1. python process_mining/method_registry.py <OBJECT_NAME> -- returns (extract_method, constraint, analyze_method, retention)\n2. If the object is in the Gold DB already, check sqlite schema first -- may not need re-extraction\n3. For unknown tables, check DD02L.TABCLASS via RFC_READ_TABLE to get the type, then apply the type rule\n4. Never RFC_READ_TABLE a CLUSTER table (fails silently or errors) -- use FOR ALL ENTRIES\n5. Never 2-day RSAU call -- chunk <=6h or connection hangs\n6. The registry is EXTENSIBLE: when a new override is discovered, add it to OVERRIDE dict in method_registry.py and re-run to regenerate brain_v2/method_registry.json",
+    "severity": "HIGH",
+    "created_session": 87,
+    "source_file": "process_mining/method_registry.py",
+    "derives_from_core_principle": "CP-001",
+    "cp_derivation_method": "session_retro_2026-06-21",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_claims_health_gate_at_close",
+    "rule": "A claim with <2 independent evidence sources is WEAK. A single-source or surface-count finding is a HYPOTHESIS, not a finding. Before promoting any quantitative finding to a claim: (a) decode the detail (not just a count), (b) obtain a 2nd independent evidence source. Run the claims-health gate (brain_v2/claims_health.py) at session close to measure the STRONG/WEAK ratio. 21 WEAK TIER_1 claims are the current verification backlog (claim #242).",
+    "why": "Born from claim #232 error (2026-06-21/22): 272 SM21 10054 resets -> concluded satellite connectivity failure (WRONG). The H74 chip decoded CENTDATA and found 269/272 = frontend GUI resets by end-user PCs, not satellite failures. The error was a surface count stated as a TIER_1 claim without a 2nd independent source. The claims-health gate (24.3% verification rate as of S-087) would have flagged #232 before it was stated. This generalizes the lesson: any finding derived from a single count/source must be treated as a hypothesis until corroborated. Cross-link: claim #242, superseded claim #232, brain_v2/claims_health.py.",
+    "how_to_apply": "1. python brain_v2/claims_health.py -- outputs STRONG/WEAK/UNSUPPORTED counts + weak_tier1_worklist\n2. For any WEAK TIER_1 claim on the worklist: decode the detail (not just count rows) + get a 2nd independent source before citing it\n3. A finding with only legacy_text or only empirical-count as evidence = WEAK -- add source_code or production_data corroboration\n4. At session close: run claims_health.py and confirm STRONG count did not drop\n5. Never state a quantitative claim as TIER_1 from a single surface count -- say TIER_2 (hypothesis) until a 2nd source confirms",
+    "severity": "CRITICAL",
+    "created_session": 87,
+    "source_file": "brain_v2/claims_health.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_retro_claim232_error_2026-06-22",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
     }
   }
 ]
