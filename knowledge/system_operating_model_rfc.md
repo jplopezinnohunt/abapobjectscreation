@@ -108,6 +108,21 @@ YCL_FM_STAFF_COST_DISTRIBUT_BL_source.json` + integration-layer docs) — the ot
   channel attribution per step: Create PO→BRIDGE/dialog, **GR/Invoice→BAPI (E_SILVA/L_NEVES AP portal)**,
   PR→BAPI_PR_CHANGE (MP_ANCUTA/ORION). TODO: full OCEL with origin=resource per event.
 
+## PROBLEMS analysis — the failure side mirrors the operating model (2026-06-21)
+Analysis of `st22_dumps_history` (1) + `sm21_syslog_history` (2,402, ~7d):
+- **Application-healthy:** only **1 ABAP dump in 7+ days**, and it is infrastructure not code — `DBIF_REPO_SQL_ERROR`
+  (2026-06-21 02:53, SAP↔SQL Server `MDS_CTRL_STRATEGY`, "TCP connection forcibly closed by remote host", net 10054 =
+  a DB maintenance/blip window). No recurring app crashes.
+- **The #1 failure mode is NETWORK CONNECTIVITY:** ~12% of syslog = `10054` (272, connection forcibly closed) + `recv`
+  errors (268) + HTTP timeouts (30) — the SAME class as the lone dump. In an 80%-external-orchestrated system the
+  failures are in the CONNECTIONS to the satellites (MuleSoft/ORION/SQL Server), not the ABAP code. The problems data
+  is the failure-side MIRROR of the operating model.
+- **72% of syslog is operational noise** (E0A 1,181 = one user heavy on FMX3; R47 547 = session rollout resource
+  cleanup), not errors. Signal = the ~12% network/HTTP class. Custom touch-points with minor issues: SAPMHTTP (HTTP
+  channel), HRPADUNEDGR (Education Grant console).
+- **Monitoring conclusion:** watch **TCP/connection stability to the satellites**, not ABAP dumps. SM21 syslog retains
+  only ~7 days → the problems accumulator (`process_mining/accumulate_problems.py`, weekly) is what preserves it.
+
 ## Implication for the model & next steps
 - This is the **AS-RUN** the capability model wants (A_PROCESS) and the **F_INTERFACE** reality. Feed it there.
 - The **moat**: custom satellite interfaces (`YHRTRV_IF_*`, `ZBAPI_VENDOR_*`, `Y_FMKU_*`, `Y_BAPI_YPS8`) — no
