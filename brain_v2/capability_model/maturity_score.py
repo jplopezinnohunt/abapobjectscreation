@@ -22,7 +22,7 @@ CELL = {"NONE": 0.0, "PARTIAL": 0.5, "HAVE": 1.0}
 # plan mapping: which dimensions are advanceable WITHOUT new SAP extraction (Bucket A)
 # vs which require new extraction (Bucket B). From capability_model_execution_plan.md.
 NO_EXTRACTION_DIMS = {"S_STANDARD_REF", "A_PROCESS", "B_CODE", "G_CONFORMANCE"}  # A4/A3/A6-7/A5
-EXTRACTION_DIMS = {"E_AUTH", "F_INTERFACE_FILE", "R_S4_READINESS"}                # B1/B3-5 + ATC/usage
+EXTRACTION_DIMS = {"E_AUTH", "F_INTERFACE_FILE", "R_S4_READINESS", "U_USAGE"}     # B1/B3-5 + ATC/usage + exec census
 MIXED_DIMS = {"C_CONFIG", "D_DATA", "H_IMPROVE"}                                  # partly both
 
 

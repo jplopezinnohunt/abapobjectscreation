@@ -92,6 +92,13 @@
         "READINESS_CHECK_2_0": "VERIFIED orchestration (Notes 2913617/3059197). Area enumeration unverified.",
         "FINANCE_READINESS": "PARTIAL — Asset Acc/ACDOCA VERIFIED; ML/newGL/FSCM/BAM = gap (follow-up)."
       }
+    },
+    "U_USAGE": {
+      "question": "WHAT objects actually execute, WHO runs them, by which CHANNEL (dialog / batch / RFC-BAPI / batch-input BDC), WHEN, and at what VOLUME — the AS-RUN execution footprint?",
+      "method": "Fuse the execution-evidence channels into a per-domain object×actor×channel×time×volume census: RSAU/SM20 audit (Transaction Start->tcode, Report Start->program, RFC Function Call->function) + TBTCO/TBTCP (batch program+variant) + APQI/APQD (batch input / BDC). Cross-reference the static catalog (TSTC / TFDIR) to split EXECUTED vs CATALOG-ONLY. Builder: process_mining/fm_executed_census.py (generalize per domain via the FM-style name filter). Scored: NONE=no census; PARTIAL=one channel or counts-only; HAVE=all 4 channels with actor+volume(+time).",
+      "method_tier": "VERIFIED",
+      "advance_path": "EXTRACTION",
+      "note": "The AS-RUN usage layer. Distinct from B_CODE (STATIC: which code exists), A_PROCESS (the FLOW/variants) and E_AUTH (who CAN execute). U_USAGE = who ACTUALLY executes what, how, when, how much. Bridges static inventory -> live reality; the dead-vs-used signal also feeds R_S4_READINESS (used-to-migrate vs dead-to-delete). Added 2026-06-23 on user directive ('otra dimension del process discovery: que se usa, quien, como, cuando, volumen')."
     }
   },
   "domains": {
@@ -106,7 +113,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "PARTIAL",
       "note": "strongest row; 1.4M events; FBZP/house-bank config; x-ray lands here first. E_AUTH PARTIAL s083: behavioral SoD from rsau_audit_history (646 events / 13 users; C_LOPEZ concentrated authority — claim #216). Role-level SoD (AGR_*) still NONE.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "Procurement_P2P": {
       "S_STANDARD_REF": "PARTIAL",
@@ -119,7 +127,8 @@
       "G_CONFORMANCE": "PARTIAL",
       "H_IMPROVE": "NONE",
       "note": "x-ray UPDATED s083: 38% clean 3-way-match, 17% open PO (no GR), ~44% multi-receipt/variant. AUDIT FINDING: 70 IR-before-GR violations = $713,341 (claim #214). GR->IR median 1d; 4% >30d. Behavioral SoD: T_ENG #1 user (claim #216). p2p_conformance.py (commit 9b4fb1a). F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION (HQ-ORION-EAI03) = primary procurement portal channel; BAPI_PR_GET/CHANGE (37K writes) + BAPI_PO_GET/CREATE + BAPI_ENTRYSHEET_GET via Z_RFC_GET_USER (508K SSO). Named-user portal GR/Invoice (E_SILVA/L_NEVES) = write channel. Claims #222,#223,#225.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "PSM_FM": {
       "S_STANDARD_REF": "NONE",
@@ -132,7 +141,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "HAVE",
       "note": "largest domain; know the opportunity (model gap) but not the as-is process vs standard; public-sector differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (4,697 events / 238 users, widest domain reach, mostly read-only YFM1/ZICTP_COCKPIT -- claim #216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE HAVE s085: MuleSoft = FM/Fund master sync IN (Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC, Y_BAPI_FUND_C5_ASSIGNMENT) + WBS financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K). 17 distinct MuleSoft flows. PBC engine (ZPBC_PERIOD_CLS_EXEC) = payroll commitment channel. Claims #221,#224,#225. D_DATA s088 (2026-06-22): BCS+PS master-data backbone refreshed — Gold DB now has funds/FMFINT (67,408/67,410 — all 9 institutes), fund_centers+text (FMFCTR/FMFCTRT 787), commitment_items+text (FMCI/FMCIT 205, GJAHR='0000' year-indep — claim #246), functional_areas+text (TFKB/TFKBT 9), proj/prps (13,976/59,749), proj_hierarchy NEW (PRHI 59,751 — 100% PRPS link). FMMEASURE=0 on all 9 areas: UNESCO does NOT use Funded-Program dimension (claims #245). Canonical refresher: scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py. Extraction rule: P01 SAIS rejects ROWSKIPS — use ROWCOUNT=0 per FIKRS (claim #244, rule feedback_p01_sais_rowskips_rejection).",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "HAVE"
     },
     "Closing_Activities": {
       "S_STANDARD_REF": "NONE",
@@ -145,7 +155,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "HAVE",
       "note": "FX reval first activity; high H, low A/G",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "FI": {
       "S_STANDARD_REF": "NONE",
@@ -158,7 +169,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
       "note": "E_AUTH PARTIAL s083: behavioral SoD (4,385 events / 185 users; T_ENG #1 power user FI+Treasury+Payment conflict -- claims #213,#216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE PARTIAL s085: named-user portal Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K, FI posting from field offices via E_SILVA/L_NEVES) confirmed as external FI write channel. COUPA file-based FI posting (YFI_COUPA_POSTING_FILE) also active. Claims #223,#225.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "Treasury_EBS": {
       "S_STANDARD_REF": "NONE",
@@ -171,7 +183,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "PARTIAL",
       "note": "MT940/EBS = file-based boundary -> F differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (1,970 events / 24 users; specialist domain; T_ENG appears with bank-statement + clearing overlap = cross-domain SoD risk — claims #213 and #216). Role-level SoD (AGR_*) still NONE.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "HCM": {
       "S_STANDARD_REF": "NONE",
@@ -184,7 +197,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
       "note": "strong extracted_code (CL_HCMFAB_*); weak process. F_INTERFACE_FILE HAVE s085: WF-BATCH satellite = HR lifecycle automation (RE_RHAKTI00, HR infotype 1000/1001); SuccessFactors EC ECPAO_OM_OBJECT_EXTRACTION (43 parallel jobs, claim #8). Claims #224,#225.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "Travel": {
       "S_STANDARD_REF": "NONE",
@@ -197,7 +211,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
       "note": "F_INTERFACE_FILE HAVE s085: Travel runs exclusively via BRIDGE-RFC/ORION using custom FMs YHRTRV_IF_GET_TRIP + YHRTRV_IF_MODIFY_TRIP (46K calls). Dialog is NONE for Travel transactions. Claims #222,#225,#229.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "Integration": {
       "S_STANDARD_REF": "NONE",
@@ -210,7 +225,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "PARTIAL",
       "note": "MAJOR UPDATE s085: A_PROCESS HAVE (was NONE): 80.6% of business RFC = external satellites, 91.1% explained by 2-axis method. Named satellites: MuleSoft (1.62M, 17 flows, synctrigger fleet), BRIDGE-RFC/ORION (875K, 92% read), named-user portal (501K, write channel), WF-BATCH, PBC, RFC-SSIS. D_DATA HAVE: rsau_audit_history (8.5M/4mo), RFCDES, EDIDC, cdhdr_history all in Gold DB. H_IMPROVE PARTIAL: satellite-process OCEL model = next build. Claims #220-#230. Engine: process_mining/rfc_process_classifier.py. Doc: knowledge/system_operating_model_rfc.md. UPDATE s086: D_DATA += st22_dumps_history (1 dump) + sm21_syslog_history (2,402 rows ~7d volatile, /USE/BL_GET_SHORTDUMPS P01-safe). A_PROCESS += FAILURE SIDE: #1 failure mode = network connectivity (10054/recv/HTTP ~12% syslog, mirrors 80%-external operating model). SoD gap documented: E_SILVA/L_NEVES self-approve 3-way-match; MP_ANCUTA/S_STANTIC direct-spend risk. Claims #232-#235. MuleSoft 174 GUIDs = RFC connection-pool IDs NOT SOAMANAGER ports (resolved, claim #235). Channel-mix: RFC ~5-6x dialog/month (claim #234).",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "HR_Workflows": {
       "S_STANDARD_REF": "NONE",
@@ -222,7 +238,8 @@
       "F_INTERFACE_FILE": "PARTIAL",
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "PY_Finance": {
       "S_STANDARD_REF": "NONE",
@@ -235,7 +252,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "PARTIAL",
       "note": "418 TRs reverse-engineered; wage-type config. F_INTERFACE_FILE PARTIAL s085: PBC engine (F_DERAKHSHAN/HIPER, ZPBC_PERIOD_CLS_EXEC) = payroll-commitment generator creating FMRESERV (6.4M CDHDR rows, blank-tcode channel -- identified in rsau). Claims #224.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "BusinessPartner": {
       "S_STANDARD_REF": "NONE",
@@ -248,7 +266,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
       "note": "A_PROCESS PARTIAL s085: vendor master dual-channel confirmed (XK02 M_AYIMBA 72K + ZBAPI_VENDOR_CHANGE MP_ANCUTA 19K); 2025 KRED spike 110K (3.7x, likely mass cleanup). CDHDR change inventory is the real 'what changes' source. F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION = vendor read portal (ZBAPI_VENDOR_GETDETAIL 72K, ZBAPI_VENDOR_SEARCH*); named-user portal ZBAPI_VENDOR_CHANGE (write). Claims #222,#225,#227,#228.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "PS": {
       "S_STANDARD_REF": "NONE",
@@ -261,7 +280,8 @@
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
       "note": "A_PROCESS PARTIAL + F_INTERFACE_FILE HAVE s085: PS is operated heavily via MuleSoft. Project WBS creation = BAPI_PROJECT_MAINTAIN + Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE from synctrigger fleet. WBS financial reads OUT = Y_BAPI_WBS_FINANCIAL_DATA_1 (974K) + Y_BAPI_YPS8 (463K) to PPM/Core Planner. Project IDoc = PROJECT02 (4,420 IDocs Dec25-Mar26). Claims #221,#225,#230.",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "RE_FX": {
       "S_STANDARD_REF": "NONE",
@@ -273,7 +293,8 @@
       "F_INTERFACE_FILE": "NONE",
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     },
     "Output": {
       "S_STANDARD_REF": "NONE",
@@ -285,7 +306,8 @@
       "F_INTERFACE_FILE": "PARTIAL",
       "G_CONFORMANCE": "NONE",
       "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE"
+      "R_S4_READINESS": "NONE",
+      "U_USAGE": "NONE"
     }
   },
   "systemic_gaps": [
