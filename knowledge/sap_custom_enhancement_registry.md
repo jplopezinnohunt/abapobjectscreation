@@ -269,3 +269,20 @@ Source: Golden DB `bcm_badi_impl` (1 of 3 impls is custom).
 
 ---
 *For app-level connections see individual analysis docs in `knowledge/domains/HCM/Fiori Apps/`*
+
+---
+
+## 14. FM/BCS Availability Control Custom Code (PSM — Extracted live P01, 2026-06-23)
+
+### 14.1 `ZRFC_FRESERVATION_CREATE` — Funds Reservation via BDC (ANTI-PATTERN)
+
+*   **Object type**: Function Module (Z-namespace, RFC-enabled)
+*   **Purpose**: Creates FM funds reservations (earmarked funds, transaction FMX1) via RFC call from external systems.
+*   **Anti-pattern (G_CONFORMANCE)**: Implemented as `CALL TRANSACTION USING t_bdc` with OKCODEs `/00`, `EPF23`, `=SAVE` — a fragile batch-input of screen FMX1. The clean standard data-driven API `FMFR_CREATE_FROM_DATA` (with `I_FLG_CHECKONLY` for AVC check without commit) exists and was NOT used.
+*   **Evidence**: Source code extracted via RPY_FUNCTIONMODULE_READ_NEW on P01 (s091). Claim #258.
+*   **Improvement candidate**: Replace BDC with `FMFR_CREATE_FROM_DATA`. `I_FLG_CHECKONLY=X` enables AVC pre-check without posting — enables "will this reservation block?" queries without side effects.
+*   **Related**: `FI_PSO_EARMARKED_FUNDS2_CREATE` (another standard FM in chain), `FMX1` (BDC target), `BAPI_0050_CREATE` (budget entry BAPI — NOT reservation), `BAPI_0051_GET_TOTALS` (budget totals only — NOT AVC consumption).
+*   **Cross-links**: Claim #258 (structural defect), rule `feedback_mode_e_bdc_is_network_coupling_risk`, `knowledge/domains/PSM/avc_availability_model.md#reservation-bapi-landscape`.
+
+---
+*AVC model documentation: `knowledge/domains/PSM/avc_availability_model.md` (committed 92f1004). AVC claims #253-#259 in brain_v2/claims/claims.json.*
