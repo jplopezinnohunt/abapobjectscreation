@@ -10858,5 +10858,286 @@
         "P2P"
       ]
     }
+  },
+  {
+    "id": 253,
+    "claim": "AVC availability formula (TIER_1, verified from ABAP source): available_for_posting = consumable_budget(RRCTY=1,Plan) minus consumed_amount(RRCTY=0,Actual), each split posted+reserved by WFSTATE_9, computed per derived control object per fiscal year on the active AVC ledger. Source: FMAVC_READ_TOTALS_FOR_ADDRESS lines 565-590. Live V01 read confirmed: 447RAF2040/NAI/80/2018 -> available 795.43 USD.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "FMAVC_READ_TOTALS_FOR_ADDRESS:565-590 (RPY_FUNCTIONMODULE_READ_NEW, P01, s091)",
+        "cite": "ABAP source read via RPY_FUNCTIONMODULE_READ_NEW on P01. Formula lines 565-590: RRCTY=1(consumable) minus RRCTY=0(consumed), each summed posted+reserved via WFSTATE_9. Live V01 read: 447RAF2040/NAI/80/2018 -> available 795.43 USD. Source doc: knowledge/domains/PSM/avc_availability_model.md",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "FMAVCT",
+      "FMAVC_SELECT_ANNUAL_TOTALS_ACO"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 254,
+    "claim": "The standard AVC read chain is FMAVC_READ_TOTALS_FOR_ADDRESS -> FMAVC_DERI_CONTROL_OBJECT -> FMAVC_CALL_DERIVATION_ACO -> ABADR_DERIVE_CHARACTERISTICS (strategy AFMA) -> FMAVC_SELECT_ANNUAL_TOTALS_ACO. ALL FMAVC_* function modules are NOT RFC-enabled (TFDIR FMODE=empty for all 94 FMAVC_* FMs). External callers must use RFC_ABAP_INSTALL_AND_RUN on V01/D01 (S_DEVELOP required; not P01 production), or report FMAVCR.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "TFDIR + RPY_FUNCTIONMODULE_READ_NEW (P01, s091)",
+        "cite": "ABAP source chain read via RPY_FUNCTIONMODULE_READ_NEW on P01. TFDIR confirmed FMODE='' for FMAVC_READ_TOTALS_FOR_ADDRESS and all FMAVC_* variants (94 FMs). Chain: READ_TOTALS_FOR_ADDRESS -> DERI_CONTROL_OBJECT -> CALL_DERIVATION_ACO -> ABADR_DERIVE_CHARACTERISTICS(strategy AFMA) -> SELECT_ANNUAL_TOTALS_ACO -> SELECT_DB_TOTALS_ACO.",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "FMAVC_DERI_CONTROL_OBJECT",
+      "FMAVC_CALL_DERIVATION_ACO",
+      "FMAVC_SELECT_ANNUAL_TOTALS_ACO",
+      "ABADR_DERIVE_CHARACTERISTICS",
+      "FMAVCT",
+      "FMAVCR"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #253 (formula), claim #258 (ZRFC_FRESERVATION_CREATE BDC anti-pattern). Callable via RFC_ABAP_INSTALL_AND_RUN on V01/D01 only.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 255,
+    "claim": "AVC ledger 9H = PAYMENT-budget AVC (CORRECTION: earlier assumption 9H=commitment was wrong). Evidence: fmavcldgract/fmavcbudfil* filter VALTYPE=B1 BUDTYPE 3000/4000; UNESCO budgets in BUDCAT 9F=Payment Budget; SAP standard delivers 9H=payment / 9I=commitment. UNESCO runs payment-budget AVC ONLY (9I not active). Tolerance profile 9HZ00001 = 100% Error on all 9 institutes (LDGRSTAT=S from FY2001). Supersedes any claim asserting 9H=commitment budget ledger.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config_table",
+        "ref": "fmavcldgract / fmavcbudfil* / fmavcldgratt (P01 Gold DB, s091)",
+        "cite": "fmavcldgract: ledger 9H active (LDGRSTAT=S, from FY2001, IGNORE_REVENUES=X, FMAREA=UNES). fmavcbudfil*/fmavcbudfilth: VALTYPE=B1 (budget), BUDTYPE 3000/4000. SAP standard: 9H=payment ledger, 9I=commitment. UNESCO BUDCAT 9F = Payment Budget. 9I not active. Tolerance profile 9HZ00001: ICTP=ZIT1, UBO=Z002, UIL=Z001, rest=Z000, all 100% Error. Source: knowledge/domains/PSM/avc_availability_model.md",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "fmavcldgract",
+      "fmavcbudfil",
+      "fmavcbudfilth",
+      "fmavcldgratt",
+      "FMAVCT",
+      "9HZ00001"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claims #125, #149, #174. Supersedes any prior claim asserting 9H=commitment. Config tables fmavcbudfil* = AVC ledger budget filter configuration.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 256,
+    "claim": "The AVC control object is a DERIVED, ROLLED-UP address (not the posting leaf). Strategy AFMA / address rule 9HZ00001 has 8 steps (tabadrs/tabadrsf): step 1 collapses all regular-budget/OPF commitment items to TC; EXBO/donor funds control at line-item level; CDO->10-prime, CDCE->11, CDSP->13. Data proof (FMAVCT 2026): CI distribution TC=6,550 dominant / 80=1,015 / 20=500 / PC=407. Two regimes: OPF->AVC at TC; EXBO->AVC at detailed CI with exceptions to TC/PC/NPC.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config_table",
+        "ref": "tabadrs/tabadrsf AFMA/9HZ00001 (P01, s091)",
+        "cite": "Strategy AFMA + address rule 9HZ00001: 8 steps in tabadrs/tabadrsf. Step 1: MOVE CI=TC (General Rule OPF - AVC on TC). Step 3: MOVE EXBO - AVC @ Line Item Level. Steps 4-6: CDO->10', CDCE->11, CDSP->13. Step 7: DRULE Exception Rule EXBO - AVC @ TC or PC or NPC. Source: knowledge/domains/PSM/avc_availability_model.md",
+        "added_session": 91
+      },
+      {
+        "type": "rfc_pull",
+        "ref": "fmavct_2026 (P01 Gold DB)",
+        "cite": "CI distribution in FMAVCT UNES 2026: TC=6550, 80=1015, 20=500, PC=407, 50=296, 30=212, 40=188, 11=153, 10'=132, 13=65, NPC=11. TC dominance confirms OPF-fund rollup to TC.",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMAVC_DERI_CONTROL_OBJECT",
+      "FMAVC_CALL_DERIVATION_ACO",
+      "ABADR_DERIVE_CHARACTERISTICS",
+      "tabadrs",
+      "tabadrsf",
+      "FMAVCT",
+      "9HZ00001"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claims #125 (9HZ00001 granularity), #149 (FMAFMAP013500109). The rollup is intentional config. Key input to dual-AVC->Fund-AVC decision.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 257,
+    "claim": "Consumption enters AVC totals (FMAVCT) via activity groups FMAVCATGR which map WRTTP to AVC amount type: WRTTP 50 PO->amtype 20; WRTTP 51 PR->30; WRTTP 54 invoice->40; WRTTP 60/61 actuals->40/60; reservations (04/earmarked) handled by activity group. FMAVCATGR is the bridge between FM posting documents (FMIFIIT WRTTP) and AVC consumption buckets (FMAVCT RRCTY=0).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config_table",
+        "ref": "fmavcatgr (P01 Gold DB, s091)",
+        "cite": "FMAVCATGR maps WRTTP (commitment type in FM posting) to AVC amount type in FMAVCT RRCTY=0 rows. WRTTP 50=PO->20; 51=PR->30; 54=invoice->40; 60/61/04=actuals/reservations->40/60. Source: knowledge/domains/PSM/avc_availability_model.md",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "fmavcatgr",
+      "FMAVCT",
+      "FMIFIIT"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #253 (formula), claim #46 (pool-level AVC metric). FMAVCT RRCTY=0 = consumed; populated via activity groups from FMIFIIT WRTTP postings.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 258,
+    "claim": "CUSTOM-OVER-STANDARD ANTI-PATTERN (G_CONFORMANCE PSM_FM): UNESCO ZRFC_FRESERVATION_CREATE creates funds reservations via fragile BDC of FMX1 (CALL TRANSACTION with OKCODEs /00/EPF23/=SAVE) where the clean standard API FMFR_CREATE_FROM_DATA exists (I_FLG_CHECKONLY runs AVC check without COMMIT). BAPI_0050_CREATE = budget ENTRY document (not earmarked funds); BAPI_0051_GET_TOTALS = budget totals only (no AVC consumption). G_CONFORMANCE improvement: replace ZRFC_FRESERVATION_CREATE BDC with FMFR_CREATE_FROM_DATA.",
+    "claim_type": "structural_defect",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "ZRFC_FRESERVATION_CREATE source (extracted_code, P01, s091)",
+        "cite": "ZRFC_FRESERVATION_CREATE: CALL TRANSACTION using t_bdc with OKCODEs /00/EPF23/=SAVE = BDC of FMX1. Standard: FMFR_CREATE_FROM_DATA (I_FLG_CHECKONLY=X = AVC check without commit; data-driven). BAPI_0050_CREATE = PROCESS ENTR/SUPL (budget entry document, not earmarked funds). BAPI_0051_GET_TOTALS = budget totals only. Source: knowledge/domains/PSM/avc_availability_model.md",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ZRFC_FRESERVATION_CREATE",
+      "FMFR_CREATE_FROM_DATA",
+      "FI_PSO_EARMARKED_FUNDS2_CREATE",
+      "FMX1",
+      "BAPI_0050_CREATE",
+      "BAPI_0051_GET_TOTALS"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #254 (FMAVC chain not RFC-enabled). BDC anti-pattern per feedback_mode_e_bdc_is_network_coupling_risk. PMO improvement candidate. G_CONFORMANCE + H_IMPROVE PSM_FM.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 259,
+    "claim": "Hand-rolling AVC from FM document tables (FMIFIIT/WRTTP arithmetic at leaf level) is REFUTED and produces 23.7% spurious negatives. committed_vs_available_detector.py: fund 196EAR4042 -> -$12.9M (reality positive); MBF -> -$110M spurious. Root causes: (a) control object is derived/rolled-up via AFMA (OPF budget at TC, consumption rolls up -- leaf sum misses rollup); (b) budget distributed negative-at-parent. The ONLY correct external AVC computation: FMAVC_READ_TOTALS_FOR_ADDRESS via RFC_ABAP_INSTALL_AND_RUN on V01/D01, or report FMAVCR. Rule: feedback_avc_real_from_standard_not_handrolled.",
+    "claim_type": "refuted_approach",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "committed_vs_available_detector.py + fmavct_2026 + FMAVC_READ_TOTALS_FOR_ADDRESS V01 live read (s091)",
+        "cite": "Leaf WRTTP arithmetic: 196EAR4042 -> -$12.9M (refuted by V01 FMAVC live read: positive). MBF: -$110M spurious negatives = 23.7% of active WBS. Root cause: AFMA collapses posting CIs to TC (claim #256); leaf sum cannot reconstruct rollup. Standard FM read = only ground truth. Source: knowledge/domains/PSM/avc_availability_model.md#why-hand-rolling-fails",
+        "added_session": 91
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "committed_vs_available_detector.py",
+      "FMAVCT",
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "FMIFIIT",
+      "INC-000005638"
+    ],
+    "domain": "PSM",
+    "created_session": 91,
+    "resolved_session": null,
+    "resolution_notes": "Cross-links: claim #249 (YPS8/YFM1 use same leaf-level wrong pattern), PMO H86 (fix detector), claim #256 (AFMA rollup = root cause). Rule: feedback_avc_real_from_standard_not_handrolled.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]

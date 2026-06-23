@@ -3614,5 +3614,27 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_avc_real_from_standard_not_handrolled",
+    "rule": "Never re-derive AVC availability from FM document tables (FMIFIIT/BPJA/FMAVCT WRTTP arithmetic at posting-leaf level). The ONLY correct AVC figure comes from FMAVC_READ_TOTALS_FOR_ADDRESS (standard FM chain) or report FMAVCR. Leaf-level arithmetic produces 23.7% spurious negatives because the control object is DERIVED AND ROLLED-UP via strategy AFMA (OPF budget aggregated at TC, not at the posting commitment item). Hand-rolling silently misses the rollup and the negative-at-parent budget distribution.",
+    "why": "committed_vs_available_detector.py was refuted empirically (s091): fund 196EAR4042 -> leaf arithmetic gave -$12.9M while V01 live FMAVC_READ_TOTALS_FOR_ADDRESS returned positive available. MBF fund: -$110M spurious negatives = 23.7% of active WBS. Root cause verified in ABAP source + config: strategy AFMA step 1 collapses all OPF commitment items to TC; leaf sum cannot reconstruct that rollup. This is the same class of error as GL balances from BSIS vs GLT0 (rule feedback_gl_balance_from_fs10n_not_bsis). Claims #253, #256, #259.",
+    "how_to_apply": "1. For any AVC availability question: call FMAVC_READ_TOTALS_FOR_ADDRESS via RFC_ABAP_INSTALL_AND_RUN on V01 or D01 (not P01 -- S_DEVELOP needed). Or run report FMAVCR in V01/D01. 2. To check-only AVC without commit (e.g. reservation pre-flight): FMFR_CREATE_FROM_DATA with I_FLG_CHECKONLY=X. 3. Never compute available = SUM(budget) - SUM(consumed) per (fund, fundsctr, cmmtitem) from fmavct or fmifiit -- that is WRONG because the control object is a derived address, not the posting leaf. 4. The Gold DB fmavct_* slice only has ALLOCTYPE_9=KBFC rows (consumption); it cannot reconstruct available on its own without the budget base from FMAVC_READ_TOTALS_FOR_ADDRESS. 5. If ALL FMAVC_* FMs are not RFC-enabled (TFDIR FMODE=empty): confirm S_DEVELOP on the calling user on V01/D01, use RFC_ABAP_INSTALL_AND_RUN wrapper pattern.",
+    "severity": "HIGH",
+    "created_session": 91,
+    "source_file": "knowledge/domains/PSM/avc_availability_model.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "empirical_refutation_s091",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]
