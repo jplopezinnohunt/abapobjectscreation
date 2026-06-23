@@ -439,3 +439,24 @@ metadata-driven approach to reporting logic.
 > This analysis confirms that modification of these objects requires 
 > authorization within the `YB` package. As per project guidelines, 
 > active development is restricted to the `ZCRP` package.
+
+## U_USAGE — Execution Footprint (S-090, 2026-06-23)
+Source: `brain_v2/fm_usage_deepdive.json`, P01 window ~2026-02-21..06-21, rsau_audit_history.
+
+| Metric | Value |
+|--------|-------|
+| Executions (~4mo) | **10,134** |
+| Distinct users | **557** |
+| Top actors | G_PEROTIN (245), C_LA-MACCHIA (211) — broad base, not key-person risk |
+| Actor type | Human only (no integration/batch actor) |
+| Classification | Heavily-used (>3,000 threshold) |
+| Sibling sprawl | 15+ YFM1* variants: _NEW/_OLD/_USD/_ICTP/_V4/YFM11 etc. — fragmentation debt |
+
+### AVC Monitoring Blind Spot (claim #249, TIER_1)
+YFM1 reuses the same `IS_COMMITMENT_ITEM_IN_AVC` filter as the FM-AVC engine (per class `YCL_YFM1_BCS_BL`, confirmed in `knowledge/domains/PSM/REPORTS/yfm1_technical_analysis.md`). Budget/Project Officers using YFM1 **cannot pre-empt** INC-000005638-class FIPEX-deficit incidents.
+
+- Combined with YPS8 (11,314 / 571 users): ~21K monitoring runs/4mo across the org share the same structural blind spot.
+- **Fix**: `Zagentexecution/quality_checks/committed_vs_available_detector.py` (per-FIPEX committed-vs-available check, PMO H86) in addition to YFM1 runs.
+- The sibling variant sprawl (YFM1_NEW/YFM1_ICTP/etc.) is secondary fragmentation debt — identify and retire unused variants as part of S/4 readiness.
+
+Cross-links: claims #249 (AVC blind spot + U_USAGE blast-radius), #159 (code-level confirmation), INC-000005638, PMO H86.

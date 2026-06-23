@@ -10643,5 +10643,220 @@
         "*"
       ]
     }
+  },
+  {
+    "id": 249,
+    "claim": "AVC monitoring blind spot (PSM_FM, TIER_1): The two most-used custom budget monitors YPS8 (11,314 executions / 571 users, ~4mo P01) and YFM1 (10,134 / 557 users) reuse the SAME IS_COMMITMENT_ITEM_IN_AVC filter and REVENUE-placeholder preservation logic (YCL_YPS8_BCS_BL lines 58+73) as the FM-AVC engine itself. Combined ~21K runs/4mo constitute the org-wide de-facto budget truth, yet they are structurally blind to INC-000005638-class donor-fund FIPEX-deficit overruns. Remedy: a per-FIPEX committed-vs-available detector (Zagentexecution/quality_checks/committed_vs_available_detector.py) not more YPS8/YFM1 runs. Blast radius: ~1,008 distinct user-sessions cross-field-offices.",
+    "claim_type": "structural_defect",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73",
+        "cite": "Lines 58+73: IS_COMMITMENT_ITEM_IN_AVC filter + DELETE LT_WFMBDT WHERE HAMOUNT IS INITIAL AND FIPEX <> 'REVENUE' -- same exclusion logic as the FM-AVC engine.",
+        "added_session": 90
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/fm_usage_deepdive.json",
+        "cite": "YPS8 card: exec_count=11314, distinct_users=571, window P01 2026-02-21..06-21, rsau_audit_history. YFM1 card: exec_count=10134, distinct_users=557. Both cards explicitly state monitor is as blind as the engine it monitors.",
+        "added_session": 90
+      },
+      {
+        "type": "brain_cross_ref",
+        "ref": "brain_v2/claims/claims.json:#153,#159",
+        "cite": "Claim #153: IS_COMMITMENT_ITEM_IN_AVC code analysis in YCL_YPS8_BCS_BL. Claim #159: YPS8+YFM1 AVC blindness code-level confirmation. Claim #249 adds U_USAGE blast-radius dimension (21K org-wide runs) and PMO H86 wiring.",
+        "added_session": 90
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YPS8",
+      "YFM1",
+      "YCL_YPS8_BCS_BL",
+      "IS_COMMITMENT_ITEM_IN_AVC",
+      "committed_vs_available_detector.py",
+      "INC-000005638"
+    ],
+    "domain": "PSM",
+    "created_session": 90,
+    "resolved_session": null,
+    "resolution_notes": "PMO H86: wire committed_vs_available_detector.py into monitoring schedule. Cross-links: claims #153 #159 (code), INC-000005638 (incident class missed). Source: brain_v2/fm_usage_deepdive.json.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM",
+        "PS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 250,
+    "claim": "ICTP custom monolith and bus-factor risk (PSM_FM, TIER_1): ZICTP_COCKPIT (5,014 events / 8 named users, ~4mo P01) fronts a 70+ object ZICTP_* custom suite re-implementing standard SAP (ME28/ME2L/MIRO/FBL1N/cash/VAT) for a single Cat-1 institute (ICTP Trieste). 42% of volume is concentrated on 2 Trieste-local users (D_CRESEVICH 1,094 + B_RAZZINI 1,003). This is (a) the clearest key-person/bus-factor risk in PSM_FM and (b) the largest single S/4 re-platform/decommission scope in the domain. Strategic lever: consolidate ICTP onto standard tcodes (PMO H87).",
+    "claim_type": "structural_risk",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/fm_usage_deepdive.json",
+        "cite": "ZICTP_COCKPIT card: exec_count=5014, distinct_users=8, D_CRESEVICH(1094)+B_RAZZINI(1003)=42% concentration. d01_tstc shows 70+ ZICTP_* tcode namespace re-implementing ME28/ME2L/MIRO/FBL1N/cash/VAT.",
+        "added_session": 90
+      },
+      {
+        "type": "brain_cross_ref",
+        "ref": "brain_v2/claims/claims.json:#218",
+        "cite": "Claim #218 (s084): ZICTP_COCKPIT custom-cockpit comprehension gap closed. Claim #250 adds U_USAGE volume + key-person quantification + S/4 decommission framing.",
+        "added_session": 90
+      },
+      {
+        "type": "config",
+        "ref": "knowledge/config_frontier_extraction_2026-06-19.md",
+        "cite": "ICTP = FM area with AVC profile ZIT1 (80% warning), confirming it is a fully configured dedicated FM area.",
+        "added_session": 90
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "ZICTP_COCKPIT",
+      "D_CRESEVICH",
+      "B_RAZZINI",
+      "ZICTP_ME28",
+      "ZICTP_MIRO",
+      "ZICTP_FBL1N",
+      "R_S4_READINESS"
+    ],
+    "domain": "PSM",
+    "created_session": 90,
+    "resolved_session": null,
+    "resolution_notes": "PMO H87: ICTP consolidation onto standard tcodes as S/4 scope. Cross-links: claim #218 (ZICTP_COCKPIT code context), R_S4_READINESS PSM_FM. Source: brain_v2/fm_usage_deepdive.json.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM",
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 251,
+    "claim": "Custom fork duplication of standard FM reports -- S/4 maintenance liability (PSM_FM, TIER_1): SAP-standard RFFMEPGAX (9,650 / 441 humans, ~4mo P01) is forked twice: (1) ZRFFMEPGAX_NEW behind custom tcode ZICTP_REP_BCS (ICTP-specific) and (2) Y_RFFMEPGAX_FOR_UBO_1 (30,738, 100% UBO-RFC). Standard list reports RFFMRE01 (11,115 / 323 users) and FMRP_RFFMEP1FX (3,319 / 196 users) belong to the RFFMR*/RFFMEP* family superseded by FM Fiori/embedded analytics in S/4HANA. Custom forks must be justified-or-retired ahead of S/4 migration. Y_RFFMEPGAX_FOR_UBO_1 carries the H71 UBO write-channel SoD exposure (same UBO-RFC service account, Y_UBO_ADMINISTRATION role, S_RFC=*).",
+    "claim_type": "structural_risk",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/fm_usage_deepdive.json",
+        "cite": "RFFMEPGAX card: exec_count=9650, 441 humans; forked into ZRFFMEPGAX_NEW (d01_tstc: ZICTP_REP_BCS->ZRFFMEPGAX_NEW) and Y_RFFMEPGAX_FOR_UBO_1 (30738, UBO-RFC 100%). RFFMRE01: 11115 / 323 users. FMRP_RFFMEP1FX: 3319 / 196 users.",
+        "added_session": 90
+      },
+      {
+        "type": "brain_cross_ref",
+        "ref": "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+        "cite": "Y_RFFMEPGAX_FOR_UBO_1 uses same UBO-RFC service account as H71 write channel (Y_UBO_ADMINISTRATION, S_RFC=*). Claims #237-#240.",
+        "added_session": 90
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RFFMEPGAX",
+      "ZRFFMEPGAX_NEW",
+      "Y_RFFMEPGAX_FOR_UBO_1",
+      "RFFMRE01",
+      "FMRP_RFFMEP1FX",
+      "ZICTP_REP_BCS",
+      "UBO-RFC",
+      "R_S4_READINESS"
+    ],
+    "domain": "PSM",
+    "created_session": 90,
+    "resolved_session": null,
+    "resolution_notes": "Feeds R_S4_READINESS PSM_FM: custom forks duplicating standard reports = decommission candidates. Cross-links: claim #240 (H71 S_RFC=*). Source: brain_v2/fm_usage_deepdive.json.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 252,
+    "claim": "U_USAGE capability validated on PSM_FM (TIER_1, synthesis): standard tcodes carry the clicks, custom layer carries the truth. PSM_FM deep-dive (P01 2026-02-21..06-21, rsau_audit_history, 15 object cards, fm_usage_deepdive.json): standard tcodes (FMX3 16,939 / FMX2 13,580 / RFFMRE01 11,115 / RFFMEPGAX 9,650) = human read/maintain surface. All load-bearing decision paths are custom-wrapped: YPS8/YFM1/YPS_BA/YPS3 ~29K combined (AVC-blind); MuleSoft+UBO 8.3K silent service-account writes; ICTP 5K on parallel custom stack. Custom layer = simultaneous locus of AVC blind spot + H71 SoD exposure + key-person concentration + entire S/4 re-platform burden.",
+    "claim_type": "synthesis",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/fm_usage_deepdive.json",
+        "cite": "15-card synthesis section: standard tcodes carry the clicks; the custom layer carries the truth. Source: rsau_audit_history SM20/RSAU, window P01 2026-02-21..06-21.",
+        "added_session": 90
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/fm_executed_census.json",
+        "cite": "322/1331 tcodes live = 13.2% usage rate. RFC channel = MULESOFT/BRIDGE-RFC + named-user writes. Committed 258a4d3.",
+        "added_session": 90
+      },
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/capability_U_USAGE_execution_footprint.md",
+        "cite": "Methodology: object-to-process M:N principle. PSM_FM = first domain with U_USAGE=HAVE.",
+        "added_session": 90
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "fm_usage_deepdive.json",
+      "fm_executed_census.json",
+      "capability_U_USAGE_execution_footprint.md",
+      "YPS8",
+      "YFM1",
+      "ZICTP_COCKPIT",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "Y_BAPI_FUND_C5_ASSIGNMENT"
+    ],
+    "domain": "PSM",
+    "created_session": 90,
+    "resolved_session": null,
+    "resolution_notes": "Validates U_USAGE capability dimension (PMO H85). Feeds capability_model PSM_FM note. Cross-links: claims #249 (AVC blind), #250 (ICTP monolith), #251 (fork duplication), #237-#240 (H71 SoD). Method extends to 14 remaining domains per H85.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM",
+        "PS",
+        "MM",
+        "FI"
+      ],
+      "process": [
+        "B2R",
+        "P2P"
+      ]
+    }
   }
 ]
