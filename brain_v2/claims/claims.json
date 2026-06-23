@@ -11139,5 +11139,121 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 260,
+    "claim": "Executed-objects->domain map built 2026-06-23 (U_USAGE at scale): every executed object (tcode/report/RFC-BAPI/job) mapped to a domain using the AUTHORITATIVE package signal TADIR.DEVCLASS (module-coded: FMRP->PSM_FM, FBAS->FI, ME->Procurement, PC10->HCM), sourced from rsau_audit_history (Transaction Start/Report Start/RFC Function Call) + tbtcp. Coverage = 60% by execution volume / 39% by object (6,403 distinct objects; 11.4M executions across 4 channels). Tail = ad-hoc queries + generated programs + technical/Basis substrate; technical substrate is a legitimate NON-business tier, not lost knowledge. Durable Gold DB tables: tadir_prog (388,106 programs->DEVCLASS) + tdevc (28,308 packages->DLVUNIT/COMPONENT). This is the METHOD for U_USAGE at scale; map is at brain_v2/executed_objects_domain_map.json.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "brain_v2/executed_objects_domain_map.json + tadir_prog/tdevc Gold DB tables (2026-06-23, s092)",
+        "cite": "process_mining/executed_objects_domain_map.py built the map from rsau_audit_history (~4mo) + tbtcp. TADIR.DEVCLASS is the authoritative package signal. 16 domains mapped; total 11,435,301 execs. Coverage floor 60% vol / 39% objects; characterized tail (Uncatalogued=3,893 objs / Basis_Security=516). Source: knowledge/operating_model_discovery_methods.md",
+        "added_session": 92
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "brain_v2/executed_objects_domain_map.json",
+      "process_mining/executed_objects_domain_map.py",
+      "tadir_prog",
+      "tdevc",
+      "rsau_audit_history",
+      "tbtcp"
+    ],
+    "domain": "Infrastructure",
+    "created_session": 92,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #216 (per-domain AS-RUN activity), claim #252 (PSM_FM U_USAGE). PMO H88 (complete the map) + H84/H85 (U_USAGE per domain). capability_model U_USAGE dimension. knowledge/operating_model_discovery_methods.md",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "Infrastructure"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 261,
+    "claim": "DISCOVERY PATTERN -- hidden/parallel HR data extraction (governance/security risk). VERIFIED 2026-06-23: ad-hoc SAP Queries (AQ*/SAPQUERY program type) = ungoverned parallel data extraction channel. Observed on rsau_audit_history: 6,060 query executions, 1,798 distinct queries, 153 users; 60% are HR (3,658 execs, 39 users) = sensitive personnel data extracted outside governed reports. Top actor JOBBATCH = 1,890 executions = queries SCHEDULED AS JOBS -> automated extraction -> almost certainly file output = a shadow integration never catalogued in F_INTERFACE_FILE. Active and growing (2026-03 through 2026-06, ~1,500/mo). Detection method: rsau_audit_history PROGRAM LIKE AQ% plus actor-type classification. Cross-links: PMO H89, H73 (arbitrary-extraction auth), H71 (write-channel SoD).",
+    "claim_type": "structural_defect",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "rsau_audit_history Gold DB (4-month P01 sample, 2026-06-23, s092)",
+        "cite": "rsau_audit_history WHERE PROGRAM LIKE AQ%: 6,060 rows, 1,798 distinct PROGRAMs, 153 distinct USERs. Of those 3,658 execs (60%) map to HR domain objects. JOBBATCH actor = 1,890 execs = scheduled query jobs. Month-on-month: 2026-03 through 2026-06 approx 1,500/mo. Source: knowledge/operating_model_discovery_methods.md section hidden/parallel extractions",
+        "added_session": 92
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "rsau_audit_history",
+      "tadir_prog",
+      "knowledge/operating_model_discovery_methods.md"
+    ],
+    "domain": "HCM",
+    "created_session": 92,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #219 (SA38/SE38 run-arbitrary-program in real user sessions), claim #213 (behavioral SoD). PMO H89 (trace which HR infotypes / confirm file output). F_INTERFACE_FILE for HCM domain needs updating once file-output confirmed. Also relevant to Integration domain.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "HCM",
+        "Integration"
+      ],
+      "module": [
+        "HR"
+      ],
+      "process": [
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 262,
+    "claim": "DISCOVERY METHOD -- multi-method object->domain triangulation + time-factoring for U_USAGE. Four complementary mapping methods (no single one is complete): (a) by PACKAGE TADIR.DEVCLASS -- floor ~60% by exec volume, authoritative, do first; (b) by LOGS/execution context -- rsau_audit_history + tbtcp gives the AS-RUN set + volume + actor + channel; (c) by OBJECTS-READ -- resolve generated programs by embedded object (/1BCDWB/DB<table>->table->domain, AQ*->workspace/table); (d) by CALLER->DOMAIN -- map service-account/dialog-user to domain + actor-type (human/integration/batch). TIME axis (rsau SAL_DATE monthly) is first-class: separates active vs dead (feeds R_S4_READINESS dead-code), reveals seasonality (period-end / biennium), dates extractions. Together these explain 100% of executed objects (business + integration + technical-substrate tiers). Reusable pattern; documented in knowledge/operating_model_discovery_methods.md.",
+    "claim_type": "method",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "process_mining/executed_objects_domain_map.py + brain_v2/executed_objects_domain_map.json (s092)",
+        "cite": "Method (a) built and validated: 60% vol coverage. Methods (b)+(c)+(d) partially built. TIME axis used in trend analysis (1,500/mo query trend, H74 business-hours collapse). Full pattern documented in knowledge/operating_model_discovery_methods.md. TIER_2 because methods (c)+(d) not yet fully built.",
+        "added_session": 92
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "brain_v2/executed_objects_domain_map.json",
+      "process_mining/executed_objects_domain_map.py",
+      "knowledge/operating_model_discovery_methods.md",
+      "rsau_audit_history"
+    ],
+    "domain": "Infrastructure",
+    "created_session": 92,
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #260 (the map), claim #261 (hidden extraction pattern), claim #216 (per-domain AS-RUN). PMO H88 (raise coverage), H90 (add behavior + actor + time axes). Feeds U_USAGE capability dimension across all domains. knowledge/operating_model_discovery_methods.md is the canonical reference.",
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "domain_axes": {
+      "functional": [
+        "Infrastructure"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]
