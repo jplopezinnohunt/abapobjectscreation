@@ -48,6 +48,26 @@ the object-name filter (`FM_RE`) for the domain's object patterns (or drive it f
 > NOTE on the data window: `rsau_audit_history` = SM20/RSAU, a **~4-month** rolling window (P01
 > 2026-02-21…06-21, 15.6M rows). So U_USAGE volume is "last ~4 months", not all-time — state the window.
 
+## ⚠️ Object ↔ Process is MANY-TO-MANY (do not bake 1:1)
+A transaction/report/FM is a **shared primitive** — the SAME object participates in **multiple
+processes** (user directive 2026-06-23: "una transacción puede ser usada en múltiples procesos").
+Example: `FMX3` (fund reservation) is used in budget-execution **and** project/grant funding **and**
+closing/carryforward. Therefore:
+- The census stores `object → processes` as a **SET**, never a single label. A `sub_area`/primary tag is
+  a convenience, NOT an exclusive classification.
+- **Volume must be split by process** when attributing — an object's 16k executions span N processes;
+  the per-process share needs the context join below, not the raw object total.
+- **How we discover the M:N** (the "cómo lo usa" axis = object × process × variant × actor):
+  1. **U_USAGE × A_PROCESS** — the same object appears in multiple event-log variants/DFGs; each variant
+     is a different process context.
+  2. **DATA context** — what the execution touches (fund / WBS / grant / commitment item / doc type)
+     determines which process it served (e.g. FMX3 against a project-WBS = project funding; against a
+     budget object = budget execution).
+  3. **ACTOR/role context** — the caller's role + channel narrows the process (MULESOFT C/5 sync vs a
+     human reserving against a grant).
+- Corollary for the deep-dive: each object card carries `processes[]` (a set), and the high-volume shared
+  primitives (FMX1/2/3, FM5S, the YPS/YFM reports) get an explicit multi-process membership pass.
+
 ## Maturity scoring (per domain)
 - **NONE** — no census built.
 - **PARTIAL** — one channel only, or counts without actor/volume.
