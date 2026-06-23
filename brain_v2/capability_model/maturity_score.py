@@ -45,6 +45,19 @@ def run(write=True):
             "cells": {d: cov.get(d, "NONE") for d in dims},
         }
 
+    # LEVEL 3 — per SUBDOMAIN (subtopic) where a domain declares `subdomains`
+    by_subdomain = {}
+    for name, cov in doms.items():
+        subs = cov.get("subdomains")
+        if isinstance(subs, dict):
+            for sname, scells in subs.items():
+                svals = [CELL.get(scells.get(d, "NONE"), 0.0) for d in dims]
+                by_subdomain[f"{name}.{sname}"] = {
+                    "domain": name,
+                    "maturity_pct": pct(sum(svals) / len(dims)),
+                    "cells": {d: scells.get(d, "NONE") for d in dims},
+                }
+
     # LEVEL 1 — per capability/theme (column average across domains)
     by_capability = {}
     for d in dims:
@@ -87,6 +100,7 @@ def run(write=True):
         },
         "level1_by_capability": dict(sorted(by_capability.items(), key=lambda kv: kv[1]["maturity_pct"], reverse=True)),
         "level2_by_domain": dict(sorted(by_domain.items(), key=lambda kv: kv[1]["maturity_pct"], reverse=True)),
+        "level3_by_subdomain": dict(sorted(by_subdomain.items(), key=lambda kv: kv[1]["maturity_pct"], reverse=True)),
     }
     if write:
         json.dump(result, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
@@ -105,4 +119,8 @@ if __name__ == "__main__":
     print("\nLEVEL 2 — by DOMAIN:")
     for n, v in r["level2_by_domain"].items():
         print(f"  {v['maturity_pct']:5.1f}%  {n}")
+    if r.get("level3_by_subdomain"):
+        print("\nLEVEL 3 — by SUBDOMAIN (subtopic):")
+        for n, v in r["level3_by_subdomain"].items():
+            print(f"  {v['maturity_pct']:5.1f}%  {n}")
     print(f"\nsaved: {OUT}")
