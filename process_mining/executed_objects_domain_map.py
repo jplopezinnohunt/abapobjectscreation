@@ -175,8 +175,9 @@ def _match(rules, val):
     return None
 
 
-def main():
-    con = sqlite3.connect(GOLD)
+def make_classifier(con):
+    """Load maps + return (domain_of, ctx). REUSABLE so mine_domain.py uses the SAME classifier — one
+    source of truth, no wheel reinvention next session."""
     ensure_cache(con)
     c = con.cursor()
     prog_dc = dict(c.execute("SELECT OBJ_NAME, DEVCLASS FROM tadir_prog").fetchall())
@@ -204,6 +205,16 @@ def main():
                 or _match(TEXT_RULES, text)
                 or _match_table(resolve_generated(name))
                 or "Uncatalogued")
+
+    return domain_of, {"prog_dc": prog_dc, "dc_dlv": dc_dlv, "tc_prog": tc_prog,
+                       "tc_text": tc_text, "fm_dom": fm_dom, "job_dom": job_dom}
+
+
+def main():
+    con = sqlite3.connect(GOLD)
+    domain_of, ctx = make_classifier(con)
+    tc_prog, tc_text, fm_dom, job_dom = ctx["tc_prog"], ctx["tc_text"], ctx["fm_dom"], ctx["job_dom"]
+    c = con.cursor()
 
     def grouped(where, field):
         return c.execute(f"SELECT {field} o, COUNT(*) n, COUNT(DISTINCT SLGUSER) u FROM rsau_audit_history "

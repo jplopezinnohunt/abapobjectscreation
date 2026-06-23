@@ -109,16 +109,28 @@ python cdhdr_activity_mapping.py --mine             # Change doc mining
    153 users · 60% HR · JOBBATCH=1,890 scheduled.)
 5. **DEEP-DIVE per domain** — top objects by volume → purpose / owner / dead-vs-used / S4-disposition.
 
-### Scripts (the tooling)
+### THE command — run this, do NOT re-derive (executable, parameterized by domain)
 ```bash
 cd process_mining
-python executed_objects_domain_map.py     # steps 1-2: object→domain map, 4 channels, ALL domains (caches tadir_prog/tdevc)
-python fm_executed_census.py              # per-domain census template (swap the name / B_CODE-object filter per domain)
-python method_registry.py <TABLE>         # per-table provenance + refresh method
+python mine_domain.py                # ALL domains  → brain_v2/domain_footprints/<DOMAIN>.json + _index.json
+python mine_domain.py PSM_FM         # one domain
+python mine_domain.py HCM PSM_FM     # several
 ```
-**Honest scope:** the unmapped tail = ad-hoc queries + generated programs + technical substrate (SAPMSSY1/RS*).
-The technical substrate is a legitimate **NON-business tier**, NOT lost knowledge. Coverage today: **60% volume /
-39% object**. Raise it via the objects-read + caller methods (PMO H88).
+**Output per domain (DATA, not prose):** `totals` · `by_channel` · **`by_actor` (human / integration / batch)** ·
+`time_monthly` · `dead_objects` · `top_objects` (each with actor_mix, first/last month, dead flag) ·
+`hidden_extractions` · `integration_objects`. Uses the SHARED classifier
+`executed_objects_domain_map.make_classifier` — **one source of truth, so the next session RUNS this, it does not
+re-invent the rules.** Supporting tools: `executed_objects_domain_map.py` (the object→domain map + the
+`tadir_prog`/`tdevc` cache), `fm_executed_census.py` (legacy PSM template), `method_registry.py <TABLE>`.
+
+**Verified real output (2026-06-23, all 16 domains):** PS = 1.6M execs but only **6,264 human** vs 1.44M
+integration + 165K batch (**PS is machine-driven, near-zero dialog**) · BusinessPartner **88% integration**
+(BP master data = MULESOFT/RFC, not people) · PSM_FM **93% human** (real budget work) · HCM **28 hidden ad-hoc
+extractions** · FI 239 / PSM_FM 197 dead objects (S/4 dead-code candidates).
+
+**Honest scope:** the unmapped tail (Uncatalogued domain) = ad-hoc queries + generated programs + technical
+substrate (SAPMSSY1/RS*) — the substrate is a legitimate **NON-business tier**, NOT lost knowledge. Coverage
+today: **60% volume / 39% object**. Raise it via the objects-read + caller methods (PMO H88).
 
 ---
 
