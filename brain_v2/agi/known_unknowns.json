@@ -407,6 +407,34 @@
       "answer": "NEGATIVE/N-A. The 174 dest-GUIDs are RFC connection-pool IDs from the synctrigger fleet, NOT SOAMANAGER logical ports. SRT_* tables are SOAP-specific and unrelated. The host (synctrigger-sap-app-XX) + the 17 flows by dominant FM already fully name the integration. No further SRT_* probe needed.",
       "resolution_claim": 235,
       "evidence": "knowledge/system_operating_model_rfc.md:MuleSoft GUID resolution section (2026-06-21). Claim #235."
+    },
+    {
+      "id": "KU-2026-093-OUTPUT-CATALOG-OWNERSHIP",
+      "opened_at": "2026-06-25",
+      "session": 93,
+      "severity": "MEDIUM",
+      "domain": "PSM",
+      "question": "Is the upstream output catalog (43 C/5 Expenditure Plan — the list of outputs by sector) owned and mastered in the Core Planner (PPM, Salesforce-based, ecosystem project unescore20-PPM-brain)? Unconfirmed. The Jun-2026 upload-test mismatch (file 8.10.CPE/8.11.FLD/8.12.PFF vs SAP 8.10.BSP/8.11.CPE/8.12.FLD/8.13.PPF — number/acronym shift + PPF/PFF transposition) implies the Excel template diverged from SAP YTFM_OUTPUT. If the catalog originates in PPM/Salesforce, the sync gap must be fixed at that source (not row-by-row in SAP). If it is a manual Excel maintained by the budget office with no single system of record, that itself is an organizational design gap.",
+      "why": "Claim #264 (TIER_1) documents the SAP-internal defects and the template mismatch. The root cause of the mismatch — whether the Excel is a downstream artifact of PPM or a standalone budget-office artefact — determines where the fix lives (PPM integration vs. YTFM_OUTPUT governance process).",
+      "how_to_resolve": "Ask N. Menard or L. Chabeau: (a) does the 43 C/5 output list originate in Core Planner / Salesforce PPM, or is it manually maintained in Excel? (b) Is there any automated feed from PPM -> YTFM_OUTPUT, or is YTFM_OUTPUT updated manually each biennium? Cross-check with unescore20-PPM-brain project for any SAP-Salesforce output-sync flow.",
+      "status": "open",
+      "blocking_for": ["claim #264 root cause resolution", "YTFM_OUTPUT governance recommendation"],
+      "related_claims": [264],
+      "evidence": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md:Section 4"
+    },
+    {
+      "id": "KU-2026-093-HRP-PERCENT-STORAGE",
+      "opened_at": "2026-06-25",
+      "session": 93,
+      "severity": "LOW",
+      "domain": "PSM",
+      "question": "What is the exact storage mechanism for the per-output percentage distribution on a position? Claim #263 says HRP1000/HRP1001 with biennium dates. But is the percentage stored on an HRP1001 relationship subtype (standard PD relationship), or on a UNESCO custom PD infotype (HRP9xxx range)? No HRP9xxx infotype was seen in N_MENARD's Jan-2025 change docs (only HR_IT1000/1001/1005/1013/1050 = standard OM infotypes). If standard HRP1001, which relationship type (code) carries the % field?",
+      "why": "The storage subtype determines: (a) which RFC/BAPI to use for programmatic reads, (b) whether abapGit exports it, (c) what the impact analysis of a position deletion is. Without it, any automated extraction of position-output allocation is blind.",
+      "how_to_resolve": "Run SE16 on HRP1001 filtered to a known position (e.g., SHS 041 or one returned by YFM_POS_OUTPUT) with BEGDA in biennium range. Read the RELAT + ISTAT + other fields to identify relationship type. Alternatively trace YFMOUTPUT SE38 step in debugger to see which PA FM it calls to write the allocation.",
+      "status": "open",
+      "blocking_for": ["automated position-output % extraction", "HCM/PSM data model documentation"],
+      "related_claims": [263],
+      "evidence": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md:Section 1"
     }
   ]
 }
