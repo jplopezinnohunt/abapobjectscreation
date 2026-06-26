@@ -11258,7 +11258,7 @@
   },
   {
     "id": 263,
-    "claim": "UNESCO staff worktime-distribution-by-output ('personnel cost by output' for BCM) is uploaded into SAP via tcode YFMOUTPUT (program YFM_OUTPUT_MANAGEMENT, BL classes YCL_FM_OUTPUT_MANAGEMENT/YCL_FM_OUTPUT_BL), validated by YFM_OUTPUT_CHECK_POSITION, and stored as Organizational-Management data on positions (HRP1000 objects + HRP1001 relationships, with biennium start/end dates => retroactive). It is CONSUMED by: YFM_STAFF_COST_2->YFM_STAFF_COST_DISTRIBUT (staff cost distribution per sector & output), YFM_POS_OUTPUT->YFM_OUTPUT_REPORT_1 (list of outputs per position), YHR_POS2->YHR_POSITION_WITH_NODE_1 (positions in C/5 structure); and pushed to the Data Hub/BW via YFM_STAFF_COST_DISTRIBUT_DH (+ YTDH_STFCO) and YFM_OUTPUT_INDIRECT_COSTS_DH for financial reporting by output. Without the distribution, none of these reports/extracts produce biennium data.",
+    "claim": "UNESCO staff worktime-distribution-by-output ('personnel cost by output' for BCM) is uploaded into SAP via tcode YFMOUTPUT (program YFM_OUTPUT_MANAGEMENT, BL classes YCL_FM_OUTPUT_MANAGEMENT/YCL_FM_OUTPUT_BL), validated by YFM_OUTPUT_CHECK_POSITION, and stored as Organizational-Management data on positions (HRP1000 objects + HRP1001 relationships, with biennium start/end dates => retroactive). It is CONSUMED by: YFM_STAFF_COST_2->YFM_STAFF_COST_DISTRIBUT (staff cost distribution per sector & output), YFM_POS_OUTPUT->YFM_OUTPUT_REPORT_1 (list of outputs per position), YHR_POS2->YHR_POSITION_WITH_NODE_1 (positions in C/5 structure); and pushed to the Data Hub/BW via YFM_STAFF_COST_DISTRIBUT_DH (+ YTDH_STFCO) and YFM_OUTPUT_INDIRECT_COSTS_DH for financial reporting by output. Without the distribution, none of these reports/extracts produce biennium data. REFINED (Nicolas msg post-2026-06-24): the upload runs in TEST/SIMULATION mode producing a 'SAP upload log' that the operator reconciles MANUALLY against the Excel before deciding load-as-is vs fix — confirming the Jun-2026 run did NOT commit (explains zero CDHDR). The load is a manual iterative reconcile loop (test upload -> reject list emailed -> budget office fixes Excel -> repeat).",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -11290,6 +11290,12 @@
         "type": "email",
         "ref": "RE_ Template of update staff work time distribution.eml (2025-12-19..2026-06-24)",
         "cite": "Menard: 'The implication of not filling the worktime distribution of outputs on post will impact: Staff cost distribution (YFM_STAFF_COST_2), List of positions by output (YFM_POS_OUTPUT), Position and holders by C/5 node (YHR_POS2)'. Assignment done with biennium start/end date => retroactive.",
+        "added_session": 93
+      },
+      {
+        "type": "email",
+        "ref": "Nicolas Menard follow-up (after 2026-06-24)",
+        "cite": "'After checks between SAP upload log (in test mode) and the Excel file, I found a bug.' + 'Do I upload the existing file, or do you want to do correction?' => test-mode log, manual reconcile, operator-gated commit.",
         "added_session": 93
       }
     ],
@@ -11335,7 +11341,7 @@
   },
   {
     "id": 264,
-    "claim": "The SAP output referential YTFM_OUTPUT (Results-Based Budgeting output codes; 193 OUTPUT + 66 OFFICE4 = 259 rows) has data-quality defects AND diverges from the upstream Expenditure-Plan (43 C/5) template prepared by the budget office. VERIFIED in P01 gold: (1) a true DUPLICATE - FM_OUTPUT 3075 & 3083 both ONAME='8.13.PPF' (3075 retained/used in tables, 3083 to be deleted); (2) 31 entries with blank ONAME. Template-vs-SAP mismatch reported on the Jun-2026 upload test: file outputs 8.10.CPE / 8.11.FLD / 8.12.PFF do NOT exist in SAP, whereas SAP has 8.10.BSP, 8.11.CPE, 8.12.FLD and 8.13.PPF - i.e. a number<->acronym shift plus a PFF<->PPF transposition. Also: 64 posts without acronym (temporary assistance not in SAP), post SHS 143 closed (SC/SHS sector merge), post SHS 041 invalid, and 4 posts with output distribution != 100% (shared posts across sectors). Root cause: the planning-side output catalog and SAP YTFM_OUTPUT are maintained separately and not synchronized.",
+    "claim": "The SAP output referential YTFM_OUTPUT (Results-Based Budgeting output codes; 193 OUTPUT + 66 OFFICE4 = 259 rows) has data-quality defects AND diverges from the upstream Expenditure-Plan (43 C/5) template prepared by the budget office. VERIFIED in P01 gold: (1) a true DUPLICATE - FM_OUTPUT 3075 & 3083 both ONAME='8.13.PPF' (3075 retained/used in tables, 3083 to be deleted); (2) 31 entries with blank ONAME. Template-vs-SAP mismatch reported on the Jun-2026 upload test: file outputs 8.10.CPE / 8.11.FLD / 8.12.PFF do NOT exist in SAP, whereas SAP has 8.10.BSP, 8.11.CPE, 8.12.FLD and 8.13.PPF - i.e. a number<->acronym shift plus a PFF<->PPF transposition. Also: 64 posts without acronym (temporary assistance not in SAP), post SHS 143 closed (SC/SHS sector merge), post SHS 041 invalid, and 4 posts with output distribution != 100% (shared posts across sectors). Root cause: the planning-side output catalog and SAP YTFM_OUTPUT are maintained separately and not synchronized. REFINED: the file fails validation on TWO independent referential dimensions. DIM-A = OUTPUT referential (YTFM_OUTPUT) as above. DIM-B = POST/POSITION master (OM/HRP1000): 13 posts 'not available for the biennium' per the test-mode upload log: SHS 041, SC 122, PAX 311, PAX 009, OPS 944, BSP 129, '4KZCI 1000RP', SC 337, SC 169, SC 142, SC 399, SC 351, SHS 001. By sector: SC=6, SHS=2, PAX=2, OPS=1, BSP=1, 4KZCI=1 => 8/13 (62%) are SC/SHS, matching Lionel's stated cause: 'merge of the SC and SHS sectors... update manually in OM few other posts'. 'Not available for the biennium' = the OM position validity (HRP1000 BEGDA/ENDDA) does not cover the 43 C/5 biennium (closed/delimited/merged). ROOT (both dims): planning-side master (posts+outputs) not synchronized with SAP master after org restructuring; handled by manual reject + OM correction (same pattern as SHS 041 'deal with it manually').",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -11356,6 +11362,12 @@
         "ref": "RE_ Template of update staff work time distribution.eml",
         "cite": "Menard upload-test summary: 64 posts w/o acronym; SHS 143 closed; outputs 8.10.CPE/8.11.FLD/8.12.PFF don't exist; 4 posts !=100%; 2 outputs same name. Chabeau: %>100 due to shared posts between sectors; 'I do not know how the outputs were created in SAP'; 8.13 PPF id 3083 to delete keep 3075; remove SHS 041 (handled manually).",
         "added_session": 93
+      },
+      {
+        "type": "email",
+        "ref": "Nicolas Menard follow-up (after 2026-06-24)",
+        "cite": "13 posts not available for biennium (test-mode upload-log vs Excel reconcile): SHS 041/SC 122/PAX 311/PAX 009/OPS 944/BSP 129/4KZCI 1000RP/SC 337/SC 169/SC 142/SC 399/SC 351/SHS 001. 8/13 = SC/SHS = sector-merge fallout.",
+        "added_session": 93
       }
     ],
     "evidence_against": null,
@@ -11364,7 +11376,9 @@
       "YTFM_OUTPUT_T",
       "YTFM_OUTPUT_C5",
       "YFMOUTPUT",
-      "YFM_OUTPUT_MANAGEMENT"
+      "YFM_OUTPUT_MANAGEMENT",
+      "HRP1000",
+      "YFM_OUTPUT_CHECK_POSITION"
     ],
     "domain": "PSM",
     "created_session": 93,

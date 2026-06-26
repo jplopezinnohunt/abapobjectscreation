@@ -435,6 +435,21 @@
       "blocking_for": ["automated position-output % extraction", "HCM/PSM data model documentation"],
       "related_claims": [263],
       "evidence": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md:Section 1"
+    },
+    {
+      "id": "KU-2026-094-BOR-FM-IDENTITY",
+      "opened_at": "2026-06-26",
+      "session": "s094",
+      "severity": "MEDIUM",
+      "domain": "Integration",
+      "question": "Which specific SAP function module carries the BOR (Budget Original Reservation) write when MuleSoft/Core Planner triggers the B2R budget-load? Candidate: Y_FMKU_0050_CREATE_WITH_COMMIT. This is an UNVERIFIED INFERENCE derived from two TIER_1 claims: (a) claim #146/#154: MuleSoft is a transport layer that moves the BOR (budget-side only); (b) claim #221: the MuleSoft write-IN fleet calls Y_FMKU_0050_CREATE_WITH_COMMIT as one of several fund-master write FMs. The bridge — that Y_FMKU_0050_CREATE_WITH_COMMIT is specifically the BOR-write FM vs. a generic fund-master update — is NOT stated in any single claim and has NOT been verified against rsau_audit_history or the MuleSoft flow XML.",
+      "why": "The BOR object in brain_state carries claims #146 and #154 (TIER_1) naming MuleSoft as the BOR carrier, but has no calls_fms edge. Until the specific FM is verified, any fix-path analysis for BOR synchronization issues (e.g. FIX-A scope from MODEL-GAP-2026-001) is incomplete. The next session that touches B2R budget-loading should resolve this before deepening the fix design.",
+      "how_to_resolve": "Query rsau_audit_history filtered by FM_NAME = 'Y_FMKU_0050_CREATE_WITH_COMMIT' AND user/host = synctrigger-sap-app-XX (MuleSoft cluster). If calls from that fleet contain FMAREA/FUND/AMOUNT data consistent with biennium-start BOR load dates (Jan/Feb 24-C/5 cycle), the linkage is confirmed TIER_1. If the FM appears with no MuleSoft host or with non-BOR payload, re-examine FM_FUND_CHANGE_RFC or Y_BAPI_FUND_C5_ASSIGNMENT as alternative carriers.",
+      "status": "open",
+      "related_claims": [146, 154, 221],
+      "related_objects": ["BOR", "Y_FMKU_0050_CREATE_WITH_COMMIT", "MULESOFT_PROD"],
+      "blocking_for": ["BOR object calls_fms edge in brain_state", "MODEL-GAP-2026-001 FIX-A scope clarification"],
+      "evidence": "Inference assembled in session s094 Q&A from claims #146, #154, #221 — no new extraction; source claims carry TIER_1 evidence but the bridge itself is unverified."
     }
   ]
 }
