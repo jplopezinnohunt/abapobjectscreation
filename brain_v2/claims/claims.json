@@ -11398,5 +11398,570 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 265,
+    "claim": "Citibank test-tool (2026-06-18 upload, evaluated 2026-06-26) returned PASS for the CITI structured-address remediation: 3 files uploaded (xmlUNESCODVV3_BR.in, XMLUNESCODVV3_USALPAY_test.in, xmlUNESCODVV3_US.in) — 2 PASS, 1 FAIL. The FAIL (xmlUNESCODVV3_US.in, 'For US') was NOT a structured-address failure: Citi's contact explicitly stated the failure was a missing payment reference field — the structured-address change passed the bank's own validator.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "bank_validation",
+        "ref": "Citibank test-tool result 2026-06-26 (uploaded 2026-06-18): files xmlUNESCODVV3_BR.in / XMLUNESCODVV3_USALPAY_test.in / xmlUNESCODVV3_US.in",
+        "cite": "Processing Status = Completed for all 3. Result: 2 PASS, 1 FAIL. Citi contact confirmed US failure = missing payment reference, NOT structured address. TIER_1 = bank's own validator.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "BCM_StructuredAddressChange.html",
+      "citi_dbtr_pstladr_format_analysis.md",
+      "reference_zsapfpaym_replay_and_citi_ubiso.md"
+    ],
+    "domain": "Payment",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Structured-address remediation (D-1 kill-switch + D-2 analysis) externally validated. US failure is a SEPARATE gap (payment reference, claim #266 / KU-2026-CITI-CTGYPURP-PRTRY). US file still fails for a different reason.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "AP"
+      ],
+      "process": [
+        "P2D"
+      ]
+    }
+  },
+  {
+    "id": 266,
+    "claim": "The CITI format /CGI_XML_CT_UNESCO has a mandatory CtgyPurp/Prtry field (Category Purpose / Proprietary) that fails for US payments: Citi validation error XPath PmtInf[1].CdtTrfTxInf[1].PmtTpInf[1].CtgyPurp[1].Prtry[1], Type=Data Validation, Country=TN, PIUID=949, Payment Method=WIRE, Trans.Ref=UNES0002000018. Citi requirement: AlphaNumeric, exactly 11 chars (min=max=11), Mandatory. Sample value from Citi: '/REF/0825/C'. The node exists in D01 tree (N_3498213760 + N_3697641060 with Prtry children, exit FI_CGI_DMEE_EXIT_W_BADI, lines 223/237/469/573 of dmee_CGI_XML_CT_UNESCO_d01.csv); BR file passed → BR flow populates CtgyPurp/Prtry while US flow hits an empty or false-gated branch. Root cause (which condition/source field) is not yet confirmed.",
+    "claim_type": "hypothesis",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "bank_validation",
+        "ref": "Citibank test-tool result 2026-06-26: xmlUNESCODVV3_US.in FAIL row — Type=Data Validation, XPath=PmtInf[1].CdtTrfTxInf[1].PmtTpInf[1].CtgyPurp[1].Prtry[1], Country=TN, PIUID=949, Trans.Ref=UNES0002000018, min=11 max=11, mandatory, sample=/REF/0825/C",
+        "cite": "TIER_2: node exists (confirmed from dmee_CGI_XML_CT_UNESCO_d01.csv lines 223/237/469/573 node IDs N_3498213760/N_3697641060/N_0832103570/N_6963714000) but conditional-mapping gap root cause not yet confirmed.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "source_analysis",
+        "ref": "Zagentexecution/output/dmee_CGI_XML_CT_UNESCO_d01.csv:223,237,469,573",
+        "cite": "Lines 223 and 237: CtgyPurp ELEM nodes N_3498213760 and N_3697641060. Lines 469/573: -CtgyPurp TECH mapping nodes N_7132341240 / N_8881495060 gated by conditions via FI_CGI_DMEE_EXIT_W_BADI. BR passed = BR path fires the exit; US path does not.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "N_3498213760",
+      "N_3697641060",
+      "N_7132341240",
+      "N_8881495060",
+      "YTFI_PPC_TAG",
+      "YTFI_PPC_STRUC"
+    ],
+    "domain": "Payment",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Open defect. Tracked as KU-2026-CITI-CTGYPURP-PRTRY. Pre-existing gap per PPC spec v2.0 p.16: 'development is only for SocGen; if Citibank requires this, all requirements and developments should be reviewed' (Zagentexecution/analysis/payment_purpose_code_extracted.txt:1110-1111). NOT a regression from the structured-address change.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "AP"
+      ],
+      "process": [
+        "P2D"
+      ]
+    }
+  },
+  {
+    "id": 267,
+    "claim": "The PPC (Payment Purpose Code) custom development (SCB indicator T015L-LZBKZ → REGUP-LZBKZ → per-country XML tag) is explicitly SocGen-only per PPC functional spec v2.0 (M. Spronk), page 16: 'The development is only for the XML file of Societé Generale. If Citibank requires this, all the requirements and developments should be reviewed.' PPC targets RmtInf/Ustrd and InstrForCdtrAgt/InstrInf — NOT CtgyPurp/Prtry. Therefore the Citi CtgyPurp/Prtry requirement (claim #266) is the pre-existing un-closed Citi extension gap, NOT a regression from the structured-address change.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "functional_spec",
+        "ref": "Zagentexecution/analysis/payment_purpose_code_extracted.txt:1110-1111",
+        "cite": "PPC spec v2.0 (M. Spronk) page 16: 'The development is only for the XML file of Societé Generale. If Citibank requires this, all the requirements and developments should be reviewed.' TIER_1 = official functional specification.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YTFI_PPC_TAG",
+      "YTFI_PPC_STRUC",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "/CGI_XML_CT_UNESCO",
+      "T015L"
+    ],
+    "domain": "Payment",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "This claim scopes the PPC system to SocGen only and establishes that Citi CtgyPurp/Prtry is a net-new Citi extension (not a PPC retrofit). Cross-link: claim #266 (the open defect), KU-2026-CITI-CTGYPURP-PRTRY.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "AP"
+      ],
+      "process": [
+        "P2D"
+      ]
+    }
+  },
+  {
+    "id": 268,
+    "claim": "The UNESCO Cost Recovery Pool fund is 633CRP9003 ('Cost Recovery Policy'). It is the central pool for all project-funded staff cost recovery under the CRP (Cost Recovery Policy) mechanism. 92.5% of all 633CRP-series recovery flows to this single fund: in 2025, 9.65M USD out of 10.43M total (WRTTP=66 actuals). Fund 633CRP9000 is 'CRP Interests' — the interest account, NOT the recovery pool. 281 distinct 633CRP* funds exist (per-office sub-funds, verified via FMFINT live RFC). The self-financing loop: FI cost-recovery R1 doc credits 633CRP9003; monthly BOR supplement distributes authority to per-office 633CRP<cat><off> funds.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "fmifiit_full (Gold DB), FMFINT (P01 live RFC)",
+        "cite": "fmifiit_full GEBER=633CRP9003 WRTTP=66 FY2025: 9,650,xxx USD vs total 633CRP* = 10,430,xxx. FMFINT returns 281 funds matching 633CRP*. 633CRP9000 FONDS_TEXT='CRP Interests'. Session 2026-06-26 live P01 RFC read.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md",
+        "cite": "Section: Fund Structure. 633CRP9003 = central pool (92.5% share). 281 633CRP* total. 633CRP9000 = interests.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "633CRP9003",
+      "633CRP9000",
+      "FMFINT",
+      "fmifiit_full",
+      "Cost_Recovery",
+      "633CRP"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FI"
+      ],
+      "module": [
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 269,
+    "claim": "The Cost Recovery BOR E2E flow is a two-phase self-financing loop: Phase 1 = FI posting (R1 document type, BAPI_ACC_DOCUMENT_POST / FB01, BUS_ACT=RFBU): Debit source project fund (GL 6046013 or 6046014, FIPOS 11 or 13) / Credit cost-recovery pool 633CRP9003 (GL 7046013, FIPOS REVENUE) — nets to zero, no budget consumed at pool level. Phase 2 = monthly Budget Supplement (BOR, PROCESS=SUPL) via Y_FMKU_0050_CREATE_WITH_COMMIT: gives the office its spending authority on its per-office 633CRP<cat><off> fund. The R1 credit and the BOR supplement are linked implicitly by matching FISTL + amount + SGTXT format 'CR <project> <sector> <grade> <PERNR> <period>'. BOR fixed fields: BUDCAT=9F, VALTYPE=B1, BUDGETING_PERIOD=016.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md",
+        "cite": "Full E2E model: R1 posting schema, BOR supplement structure, SGTXT format, fixed BOR fields (BUDCAT 9F, VALTYPE B1, BUDGETING_PERIOD 016). R1-to-BOR link validation: 87/87 FISTL matches confirmed.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "gold_db",
+        "ref": "fmifiit_full / FMBL (P01 Gold DB + live RFC)",
+        "cite": "BLART=R1 docs with GEBER=633CRP9003, GL 7046013 credit side confirmed. FMBL supplement doc 1000019775 total=270,551 USD = sum of Jan-2025 monthly recovery lines.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "Cost_Recovery",
+      "633CRP9003",
+      "BAPI_ACC_DOCUMENT_POST",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FMBL",
+      "fmifiit_full"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #268 (fund structure), claim #270 (Y_FMKU_0050 interface), claim #221 (MuleSoft BOR channel). BOR for Cost Recovery = same Y_FMKU_0050_CREATE_WITH_COMMIT channel as PPM budget load.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FI"
+      ],
+      "module": [
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 270,
+    "claim": "Y_FMKU_0050_CREATE_WITH_COMMIT (function group Y_FM_BAPI, RFC-enabled) is a thin wrapper over standard BAPI_0050_CREATE (FM budget entry document, object type 0050) plus COMMIT WORK, DEQUEUE_ALL, and a fiscal-year guard YFMXCHKP. The guard (CHTYP='CM', ACTIV='X') compares the posting FISC_YEAR against the current active budget year — as of 2026, GJAHR=2025, so any BOR line with FISC_YEAR<=2025 is rejected. Full interface: IMPORTING HEADER_DATA(BAPI_0050_HEADER), TESTRUN(default 'X'); TABLES ITEM_DATA(BAPI_0050_ITEM), PERIOD_DATA(BAPI_0050_PERIOD), RETURN(BAPIRET2). Source code read via RPY_PROGRAM_READ from P01.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/TECH_SPEC_Y_FMKU_0050.md",
+        "cite": "Full ABAP source extracted via RPY_PROGRAM_READ from P01. YFMXCHKP call confirmed: CHTYP='CM', ACTIV='X'. TESTRUN default='X'. BAPI_0050_CREATE wrapper pattern confirmed. Fiscal-year guard logic documented.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "BAPI_0050_CREATE",
+      "YFMXCHKP",
+      "Y_FM_BAPI",
+      "Cost_Recovery"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #221 (MuleSoft uses this FM for PPM budget load, 4,953 calls). Cost Recovery BOR uses the same FM — same channel, same fiscal-year guard constraint.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 271,
+    "claim": "The Funds Center (recovering office) on the cost-recovery R1 document is entered MANUALLY — it is NOT derived by FMDERIVE. Verified by exhaustive search: FMDERIVE has zero rules for GLs 7046013, 6046014, 6046013, or any 633CRP fund/fund-center combination (searched all fmderive*/fmfmoa*/tabadr* tables in Gold DB). HRP1008 carries no FISTL. KOSTL is blank on cost-recovery lines. One fund (633CRP9003) maps to 88 distinct fund centers, confirming no deterministic derivation. Derivable post-hoc from PA0001-ORGEH via a not-yet-built mapping Z_CRP_OFFICE_MAP. 96% of 501 staff map stably to one office; 4% exhibit mobility (multiple offices in the period). Validation: 87/87 R1-credit FISTL values match corresponding BOR FUNDS_CTR in the supplement documents.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "fmderive*/fmfmoa*/tabadr* (Gold DB exhaustive search) + fmifiit_full",
+        "cite": "Zero FMDERIVE rules for cost-recovery GLs confirmed by Gold DB scan. 633CRP9003 → 88 distinct FISTL values (fmifiit_full GROUP BY). PA0001-ORGEH stable for 96% of 501 staff (staff_office_map.json, 501 rows).",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md + staff_office_map.json",
+        "cite": "Section: Funds Center Derivation. 87/87 FISTL cross-validation. staff_office_map.json: 501 staff→office mappings, 4% mobility cases identified.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "Cost_Recovery",
+      "Z_CRP_OFFICE_MAP",
+      "PA0001",
+      "fmifiit_full",
+      "633CRP9003",
+      "FMDERIVE"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Z_CRP_OFFICE_MAP is the automation gap — registered as KU-2026-094-Z-CRP-OFFICE-MAP. Cross-link: claim #272 (GL by PERSG), office_code_map.json (89 offices→code).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "HCM"
+      ],
+      "module": [
+        "FM",
+        "HCM"
+      ],
+      "process": [
+        "B2R",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 272,
+    "claim": "The debit GL account on cost-recovery R1 documents is determined by PA0001-PERSG (Employee Group), NOT by staff-vs-consultant distinction: PERSG=1 (Professional/International staff) → GL 6046013, FIPOS 11; PERSG=2 (GS / National Officer / General Service) → GL 6046014, FIPOS 13. Verified live on P01: all Professional PERNR recoveries post to 6046013; all GS/National Officer recoveries post to 6046014. The credit always goes to GL 7046013, fund 633CRP9003, FIPOS REVENUE regardless of PERSG.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "fmifiit_full + BKPF/BSEG (P01 Gold DB + live RFC), cross-referenced PA0001",
+        "cite": "PA0001-PERSG=1 PERNRs consistently show GL 6046013 on R1 debit line; PERSG=2 PERNRs show GL 6046014. Both confirmed in 2025 posting data. FIPOS 11 / 13 confirmed via FMCI (commitment items). Session 2026-06-26.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md",
+        "cite": "Section: GL Determination. PERSG=1→GL6046013/FIPOS11, PERSG=2→GL6046014/FIPOS13. Credit always GL7046013/633CRP9003/FIPOS REVENUE.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "PA0001",
+      "Cost_Recovery",
+      "fmifiit_full",
+      "633CRP9003"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #271 (manual FISTL entry), claim #269 (E2E flow).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FI",
+        "HCM"
+      ],
+      "module": [
+        "FM",
+        "FI",
+        "HCM"
+      ],
+      "process": [
+        "B2R",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 273,
+    "claim": "The time-split (which project receives cost-recovery charges, in what proportion, for which months) is NOT derivable from SAP master data. PA0027 (Cost Distribution), CATSDB (timesheets), and PA0014 (Recurring Payments) are all EMPTY for the relevant staff population. The R1 document (posted as a period lump sum) is the finest granularity available in SAP. The distribution across multiple projects within a period is a manual office estimate made outside SAP. This is the fundamental data-quality gap of the CRP mechanism: what gets recovered is known precisely; WHY it is allocated to a specific project is not encoded in SAP.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "PA0027, CATSDB, PA0014 (Gold DB / P01 RFC extraction)",
+        "cite": "PA0027 cost distribution: zero rows for CRP staff population. CATSDB timesheet: zero rows for same population. PA0014: zero relevant rows. Confirmed session 2026-06-26 via Gold DB query.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md",
+        "cite": "Section: Time-Split Derivability. Confirms absence of PA0027/CATSDB/PA0014 data; lump-sum R1 = finest granularity.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "PA0027",
+      "CATSDB",
+      "PA0014",
+      "Cost_Recovery",
+      "fmifiit_full"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Registered as KU-2026-094-TIME-SPLIT-NOT-DERIVABLE. Cross-link: claims #263/#264 (staff output distribution — the PPM side of the same gap).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "HCM"
+      ],
+      "module": [
+        "FM",
+        "HCM"
+      ],
+      "process": [
+        "B2R",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 274,
+    "claim": "The cost-recovery fund code structure is 633CRP<category2><office2> where category is a 2-character funding-line code and office is a 2-character duty-station code (or 90/91 for HQ sectors). Category is NOT pattern-derivable from the source project: one project class (537) maps to 8 distinct CRP categories. Office code = PA0001-based duty-station mapping (89 offices→code in office_code_map.json, fully built). Example: fund 633CRP3190 = 633CRP + category 31 + office 90 (OPC, headquarters sector). The CRP_FUND_MAP (source project → CRP category) is the remaining automation gap — it is the only piece not yet derivable.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "FMFINT (P01 live) + fmifiit_full + office_code_map.json",
+        "cite": "281 633CRP* funds analyzed. Pattern 633CRP<2><2> confirmed across all. 89-entry office_code_map.json built from P01 fund names (Zagentexecution/tasks/2026_06_26_cost_recovery_bor/office_code_map.json). Project class 537 → 8 categories: confirmed by fund enumeration.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md + office_code_map.json",
+        "cite": "Fund code anatomy section + 89-entry office map. CRP_FUND_MAP gap explicitly documented.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "633CRP9003",
+      "CRP_FUND_MAP",
+      "Cost_Recovery",
+      "FMFINT"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "CRP_FUND_MAP gap registered as KU-2026-094-CRP-FUND-MAP-CATEGORY. Cross-link: claim #271 (office derivation), office_code_map.json.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 275,
+    "claim": "Budget supplement amounts for Cost Recovery BOR live in FMBL fields TVAL01..TVAL16 (period-level amount columns). These fields were NOT included in the gold DB extract of FMBL. Reconciliation of Jan-2025 supplement document 1000019775 shows total = 270,551 USD = sum of 12 monthly recovery amounts for the corresponding FISTL. The BOR supplement document is created monthly, referencing the prior month's recovery total. The FMBL TVAL gap is a known data-quality issue preventing automated reconciliation of R1 credits vs BOR supplement amounts.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "FMBL (Gold DB extract — TVAL01..TVAL16 confirmed absent) + live P01 FMBL read for doc 1000019775",
+        "cite": "Gold DB FMBL: TVAL columns missing from extract schema. P01 live read doc 1000019775: sum of monthly amounts = 270,551 = FY2025 monthly recovery total for the FISTL. Session 2026-06-26.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "analysis_doc",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md",
+        "cite": "Section: BOR supplement reconciliation. FMBL TVAL gap documented.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FMBL",
+      "Cost_Recovery",
+      "633CRP9003",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "D_DATA gap: FMBL TVAL01..TVAL16 must be added to gold extract for automated BOR reconciliation. Cross-link: claim #269 (E2E flow), claim #270 (Y_FMKU_0050 interface).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 276,
+    "claim": "Worked case: staff member 10025831 (Ana M. Dominguez, GS grade, home office OPC) had 12 cost-recovery R1 postings in 2024-2025 across 9 different projects, totaling 38,148.75 USD. The credit FISTL is always OPC (Office of the Director-General area) regardless of which project is debited. Her BOR fund is 633CRP3190 (= 633CRP + category 31 + office 90). This case validates the full E2E model: PA0001-PERSG=2 → GL 6046014; PA0001-ORGEH → OPC → office code 90; project class 537 → category 31. The multi-project dimension (9 projects in 2 years) confirms the time-split is a manual allocation outside SAP.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/CASE_staff_10025831_e2e.md",
+        "cite": "Full case trace: PERNR 10025831, 12 R1 docs 2024-2025, 9 projects, total 38,148.75 USD. FISTL=OPC on all 12 credits. BOR fund 633CRP3190. PA0001 PERSG=2 confirmed. Session 2026-06-26 P01 live data.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "Cost_Recovery",
+      "633CRP3190",
+      "633CRP9003",
+      "PA0001",
+      "fmifiit_full"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Reference validation case for the Cost Recovery BOR model. Cross-link: claims #268-#274 (full model), CASE_staff_10025831_e2e.md.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "HCM"
+      ],
+      "module": [
+        "FM",
+        "HCM"
+      ],
+      "process": [
+        "B2R",
+        "H2R"
+      ]
+    }
+  },
+  {
+    "id": 277,
+    "claim": "Y_FMKU_0050_CREATE_WITH_COMMIT is called via MuleSoft for PPM→SAP budget synchronization (4,953 calls per P01 audit census, claim #221) AND directly for manual Cost Recovery BOR supplements. These are two distinct use cases sharing the same FM: (1) PPM budget load = automated biennium-start/mid-year load from Core Planner via MuleSoft synctrigger fleet; (2) Cost Recovery BOR = monthly supplement granting per-office spending authority on 633CRP<cat><off> funds. The YFMXCHKP fiscal-year guard (GJAHR<=2025 rejected as of 2026) constrains BOTH use cases — any retroactive BOR correction to a prior fiscal year is blocked at the FM level, not by a dialog warning.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/TECH_SPEC_Y_FMKU_0050.md + brain_v2 claim #221",
+        "cite": "Claim #221: MuleSoft 4,953 Y_FMKU_0050_CREATE_WITH_COMMIT calls. TECH_SPEC: YFMXCHKP guard confirmed active. Both use cases share same FM with same guard behavior.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "BAPI_0050_CREATE",
+      "YFMXCHKP",
+      "Cost_Recovery",
+      "633CRP9003"
+    ],
+    "domain": "PSM",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #221 (MuleSoft BOR channel), claim #270 (Y_FMKU_0050 interface spec), claim #269 (Cost Recovery BOR E2E flow). The YFMXCHKP guard is a shared constraint — changes affect both channels.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]
