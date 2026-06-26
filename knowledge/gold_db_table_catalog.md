@@ -79,3 +79,9 @@ Started with the log/change/job/upgrade/audit tables + the FM/BCS+PS master-data
 **Not yet catalogued: the remaining ~270 of 311 tables** (FI bsX, FM fmavc*/fmifiit*/fmioi, BCM bcm_*,
 config T0*, etc.). Extend incrementally; each table gets: real SAP name, what it is, how we use it, key,
 provenance. Companion of capability-model dimension **D_DATA**.
+
+### Priority extraction backlog (D_DATA gaps confirmed this session)
+
+| SAP table | What it is | Why needed | Key | TCode | Added |
+|---|---|---|---|---|---|
+| **T001U** | Cross-company clearing pairs (OBYA) — for each BUKRS1/BUKRS2 direction: the two clearing G/L accounts (SAKON payer side, UKON payee side) | STEM company code has 0 pairs; MGIE has 16 (8 institutes × 2 directions). Cannot query existing config from Gold DB → live RFC required. Claim #279. | BUKRS1+BUKRS2 | OBYA / IMG: "Define Intercompany Clearing Accounts" (Real-Time CO-FI Integration) | 2026-06-26 |
