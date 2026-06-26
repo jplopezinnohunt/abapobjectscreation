@@ -11440,7 +11440,7 @@
   {
     "id": 266,
     "claim": "The CITI format /CGI_XML_CT_UNESCO has a mandatory CtgyPurp/Prtry field (Category Purpose / Proprietary) that fails for US payments: Citi validation error XPath PmtInf[1].CdtTrfTxInf[1].PmtTpInf[1].CtgyPurp[1].Prtry[1], Type=Data Validation, Country=TN, PIUID=949, Payment Method=WIRE, Trans.Ref=UNES0002000018. Citi requirement: AlphaNumeric, exactly 11 chars (min=max=11), Mandatory. Sample value from Citi: '/REF/0825/C'. The node exists in D01 tree (N_3498213760 + N_3697641060 with Prtry children, exit FI_CGI_DMEE_EXIT_W_BADI, lines 223/237/469/573 of dmee_CGI_XML_CT_UNESCO_d01.csv); BR file passed → BR flow populates CtgyPurp/Prtry while US flow hits an empty or false-gated branch. Root cause (which condition/source field) is not yet confirmed.",
-    "claim_type": "hypothesis",
+    "claim_type": "superseded_hypothesis",
     "confidence": "TIER_2",
     "evidence_for": [
       {
@@ -11469,9 +11469,9 @@
     ],
     "domain": "Payment",
     "created_session": "s-2026-06-26",
-    "resolved_session": null,
-    "resolution_notes": "Open defect. Tracked as KU-2026-CITI-CTGYPURP-PRTRY. Pre-existing gap per PPC spec v2.0 p.16: 'development is only for SocGen; if Citibank requires this, all requirements and developments should be reviewed' (Zagentexecution/analysis/payment_purpose_code_extracted.txt:1110-1111). NOT a regression from the structured-address change.",
-    "status": "active",
+    "resolved_session": "s-2026-06-26",
+    "resolution_notes": "SUPERSEDED by claim #278 (2026-06-26, TIER_1). The hypothesis that root cause was unconfirmed is now resolved. The real source is NOT a conditional-mapping gap in the CGI tree — that analysis used the wrong tree (/CGI_XML_CT_UNESCO vs /CITI/XML/UNESCO/DC_V3_01). Actual root cause: /CITIPMW/PMWV3.CTGYPURP_PRTY is BLANK for all 9 US rows in both D01 and P01 (never configured). The node N_6555567710 correctly maps FPAYHX-CTGYPURP_PRTY (no own condition); /CITIPMW/V3_PAYMEDIUM_DMEE_06 (NOT _05) fills FPAYHX-CTGYPURP_PRTY via SELECT from /CITIPMW/PMWV3. Fix: pure config in D01 + transport. Anti-regression: do not re-assert the CGI-tree/fallback analysis as applying to the CITI tree. See domain doc §10.5 and claim #278.",
+    "status": "superseded",
     "domain_axes": {
       "functional": [
         "Payment"
@@ -11961,6 +11961,69 @@
       ],
       "process": [
         "B2R"
+      ]
+    }
+  },
+  {
+    "id": 278,
+    "claim": "CITI format /CITI/XML/UNESCO/DC_V3_01 CtgyPurp/Prtry (node N_6555567710, field FPAYHX-CTGYPURP_PRTY, len 35) is filled by exit /CITIPMW/V3_PAYMEDIUM_DMEE_06 (NOT Event-05/_05) via PERFORM read_zcitipmw → SELECT SINGLE * FROM /CITIPMW/PMWV3 (key BUKRS/HBKID/HKTID/BANKS/ZLSCH/UZAWE/DTAWS) + MOVE-CORRESPONDING into FPAYHX_CREF. For US (UNES/CIT04/US, 9 rows) CTGYPURP_PRTY is EMPTY in both D01 and P01 (never populated; LCLINSTRM_PRTY=CITI499/CITI2/CITI949 IS populated via same path). US files never emit <CtgyPurp> yet 153 media paid in 2026 (incl 2026-06-26, USD 6,898,042.58) with no rejection: Citi real channel does NOT require the field; only the test-tool flags it mandatory. No drift between D01 (v000/001/002) and P01 (v000). Fix = pure CONFIG: populate /CITIPMW/PMWV3.CTGYPURP_PRTY for US WIRE rows in D01 + transport to P01. No code/tree change needed.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "rfc_live_read",
+        "ref": "scratchpad/probe_p01_citi_tree_ctgypurp.py + scratchpad/probe_citi_ctgypurp_drift.py",
+        "cite": "P01 DMEE_TREE_NODE for /CITI/XML/UNESCO/DC_V3_01 v000: node N_6555567710 (Prtry) maps FPAYHX/CTGYPURP_PRTY, no own condition. Identical in D01 v000/001/002. No drift. TIER_1 = live RFC read from production and dev systems 2026-06-26.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "source_code_read",
+        "ref": "scratchpad/probe_p01_ctgypurp_source.py + scratchpad/probe_citipmw_maint.py",
+        "cite": "RPY_FUNCTIONMODULE_READ_NEW for /CITIPMW/V3_PAYMEDIUM_DMEE_06: line 22 PERFORM read_zcitipmw (include /CITIPMW/LPMWV3F01), SELECT SINGLE * FROM /CITIPMW/PMWV3, MOVE-CORRESPONDING to FPAYHX_CREF. /CITIPMW/V3_PAYMEDIUM_DMEE_05 fills only REF01-REF06 (addresses/bank codes), NOT CtgyPurp. CLEAR /CITIPMW/PMWV3 on line 236 = work-area hygiene before SELECT (not a value-clear). TIER_1 = source code read via RFC from D01.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "rfc_live_read",
+        "ref": "scratchpad/probe_citipmw_config_us.py",
+        "cite": "/CITIPMW/PMWV3 P01+D01: all 9 US rows (UNES/CIT04/USD04/US, all payment methods) have CTGYPURP_PRTY=BLANK; CTGYPURP=BLANK. LCLINSTRM_PRTY=CITI499(WIRE)/CITI2(ACH)/CITI949(WorldLink) IS populated — proving the same SELECT+MOVE path runs correctly for other fields. TIER_1 = live RFC read from both P01 and D01 config table 2026-06-26.",
+        "added_session": "s-2026-06-26"
+      },
+      {
+        "type": "operational_evidence",
+        "ref": "scratchpad/probe_p01_us_real_xml.py (REGUT P01)",
+        "cite": "153 US media in 2026 (Jan 23, Feb 25, Mar 29, Apr 30, May 24, Jun 22, last 20260626/00002B USD 6,898,042.58 UNES_CITI_03XMLUSDDOM0919.in), STATUS=no rejection. 1,884 media since 2019-07. If format rejected, nothing would be paid. TIER_1 = P01 production REGUT read 2026-06-26.",
+        "added_session": "s-2026-06-26"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "N_6555567710",
+      "FPAYHX-CTGYPURP_PRTY",
+      "/CITIPMW/PMWV3",
+      "/CITIPMW/V3_PAYMEDIUM_DMEE_06",
+      "/CITIPMW/LPMWV3F01",
+      "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+      "LCLINSTRM_PRTY"
+    ],
+    "domain": "Payment",
+    "created_session": "s-2026-06-26",
+    "resolved_session": null,
+    "resolution_notes": "Closes the hypothesis in claim #266 (superseded). Pending functional confirmation: exact 11-char value of /REF/0825/C from Citi, and whether CtgyPurp/Prtry is truly blocking in the real channel or only in the test-tool. Cross-links: claim #265 (bank test-tool result), claim #267 (PPC SocGen-only scope), KU-2026-CITI-CTGYPURP-PRTRY (answered_technically_pending_functional). Domain doc: knowledge/domains/Payment/citi_dbtr_pstladr_format_analysis.md §10.5.",
+    "status": "active",
+    "supersedes": [
+      266
+    ],
+    "domain_axes": {
+      "functional": [
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "AP"
+      ],
+      "process": [
+        "P2D"
       ]
     }
   }

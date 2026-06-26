@@ -482,24 +482,28 @@
       "why": "Citibank test-tool validation failure for xmlUNESCODVV3_US.in (2026-06-26, PIUID=949, Country=TN, Trans.Ref=UNES0002000018). US/CA is 53% of CITI payment volume (claim #265). User's correct challenge: if Citi rejected the format, nothing would be paid — but P01 shows continuous US payments incl. today, so the format is fine and the missing value is per-payment (likely incomplete invoice data at simulation time).",
       "how_to_resolve": "1. In P01, find the exit/FM registered for the CITI medium Event 05 (TFPM042FB / TFPM042F by LAND1/UBISO) and read its source for where it sets *-CTGYPURP_PRTY (grep CTGYPURP_PRTY over P01 source via RPY_FUNCTIONMODULE_READ_NEW / ADT). 2. Identify the document-level source field it derives from (probable pattern: an SCB/purpose indicator like REGUP-LZBKZ or a custom Z-field, same family as PPC). 3. Read that source field for the failing run (Trans.Ref UNES0002000018) vs a passing US run to confirm blank-vs-filled. 4. Functional fix: ensure that field is mandatory/derived for US WIRE so the node is never blank; confirm with Citi the exact 11-char construction of '/REF/0825/C'.",
       "status": "answered_technically_pending_functional",
-      "resolution": "ORIGIN FOUND 2026-06-26: CtgyPurp/Prtry is filled by Event-05 exit /CITIPMW/V3_PAYMEDIUM_DMEE_05 from CONFIG table /CITIPMW/PMWV3 (key BUKRS/HBKID/HKTID/BANKS/ZLSCH/DTAWS), NOT from the document. For US (UNES/CIT04/US, 9 rows) CTGYPURP_PRTY is EMPTY in BOTH P01 and D01 (never populated; BR/CA also empty). What IS populated for US is LCLINSTRM_PRTY (CITI499 wire / CITI2 ach / CITI949 worldlink). So US files never emit CtgyPurp and yet 153 media paid in 2026 incl today -> Citi's real channel does NOT require it; only the test-tool flags it mandatory. No drift D01 vs P01. Fix = pure CONFIG: populate /CITIPMW/PMWV3.CTGYPURP_PRTY for US WIRE rows in D01 + transport to P01 (no code/tree change). Pending: confirm with Citi the exact 11-char value of '/REF/0825/C' and whether it's truly blocking in the real channel.",
+      "resolution": "ORIGIN FOUND (FINAL, 2026-06-26, TIER_1): CtgyPurp/Prtry is filled by /CITIPMW/V3_PAYMEDIUM_DMEE_06 (NOT Event-05/_05) via PERFORM read_zcitipmw (include /CITIPMW/LPMWV3F01) which does SELECT SINGLE * FROM /CITIPMW/PMWV3 (key BUKRS/HBKID/HKTID/BANKS/ZLSCH/UZAWE/DTAWS) then MOVE-CORRESPONDING into FPAYHX_CREF. Event-05 exit /CITIPMW/V3_PAYMEDIUM_DMEE_05 fills ONLY addresses/bank codes (REF01-REF06) — does NOT touch CtgyPurp. CLEAR /CITIPMW/PMWV3 (line 236) is work-area hygiene before the SELECT, not a value-clear. For US (UNES/CIT04/US, 9 config rows) CTGYPURP_PRTY is EMPTY in BOTH P01 and D01 (never populated; BR/CA also empty). What IS populated for US is LCLINSTRM_PRTY (CITI499 wire / CITI2 ach / CITI949 worldlink) — proving the same SELECT+MOVE path runs for other fields. US files never emit CtgyPurp and yet 153 media paid in 2026 incl today (20260626 USD 6.9M) -> Citi real channel does NOT require it; only test-tool flags mandatory. No drift D01 (v000/001/002) vs P01 (v000). Fix = pure CONFIG: populate /CITIPMW/PMWV3.CTGYPURP_PRTY for US WIRE rows in D01 + transport to P01 (no code/tree change). Pending: confirm with Citi exact 11-char value of '/REF/0825/C' and whether truly blocking in real channel.",
+      "resolution_claim": 278,
       "blocking_for": [
         "Citibank US/CA payment validation sign-off (functional decision)"
       ],
       "related_claims": [
         265,
         266,
-        267
+        267,
+        278
       ],
       "related_objects": [
         "/CITI/XML/UNESCO/DC_V3_01",
         "FPAYHX-CTGYPURP_PRTY",
         "N_6555567710",
         "/CITIPMW/PMWV3",
+        "/CITIPMW/V3_PAYMEDIUM_DMEE_06",
+        "/CITIPMW/LPMWV3F01",
         "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
         "LCLINSTRM_PRTY"
       ],
-      "evidence": "P01+D01 /CITIPMW/PMWV3 US rows all CTGYPURP_PRTY blank, LCLINSTRM_PRTY=CITI499/CITI2/CITI949 (scratchpad/probe_citipmw_config_us.py); TFPM042FB CITI Event05=/CITIPMW/V3_PAYMEDIUM_DMEE_05 + DD03L roll /CITIPMW/V3CTGYPURP_PRTY (probe_p01_ctgypurp_source.py); tree node N_6555567710->FPAYHX/CTGYPURP_PRTY (probe_p01_citi_tree_ctgypurp.py); REGUT 153 US media 2026 incl 20260626 USD 6.9M no rejection (probe_p01_us_real_xml.py); Citibank test-tool 2026-06-26."
+      "evidence": "P01+D01 /CITIPMW/PMWV3 US rows all CTGYPURP_PRTY blank, LCLINSTRM_PRTY=CITI499/CITI2/CITI949 (scratchpad/probe_citipmw_config_us.py); TFPM042FB CITI Event05=/CITIPMW/V3_PAYMEDIUM_DMEE_05 + _06 source read via RPY_FUNCTIONMODULE_READ_NEW (probe_p01_ctgypurp_source.py + probe_citipmw_maint.py); tree node N_6555567710->FPAYHX/CTGYPURP_PRTY no-own-condition (probe_p01_citi_tree_ctgypurp.py); D01 v000/001/002 vs P01 v000 no drift (probe_citi_ctgypurp_drift.py); REGUT 153 US media 2026 incl 20260626 USD 6.9M no rejection (probe_p01_us_real_xml.py); Citibank test-tool 2026-06-26."
     },
     {
       "id": "KU-2026-094-Z-CRP-OFFICE-MAP",

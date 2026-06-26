@@ -28,7 +28,7 @@
       </ul>
     </div>
     <div class="section" style="background:#dcfce7;border-color:#f1c40f;margin-top:30px">
-      <h3 style="color:#f1c40f">🔶 Phase 4 — CONCLUSION (to fill when done)</h3>
+      <h3 style="color:#f1c40f">Phase 4 — CONCLUSION (to fill when done)</h3>
       <p><em>To be populated at Phase 4 close. Template:</em></p>
       <ul>
         <li>UAT scenarios passed: [count / total] — sign-off per entity</li>
@@ -36,5 +36,21 @@
         <li>Issues found and resolved: [list]</li>
         <li>Phase 5 starts with: [ready to cutover / blocked on bank X]</li>
       </ul>
+    </div>
+    <div class="section" style="background:#fef9c3;border-color:#e67e22;margin-top:30px">
+      <h3 style="color:#e67e22">Citi test-tool partial result (2026-06-26) — STRUCTURED-ADDRESS PASS, NEW OPEN DEFECT</h3>
+      <p><strong>Upload date:</strong> 2026-06-18. <strong>Evaluation date:</strong> 2026-06-26. Processing Status = Completed for all 3 files.</p>
+      <table>
+        <tr><th>File</th><th>Result</th></tr>
+        <tr><td><code>xmlUNESCODVV3_BR.in</code></td><td style="color:#16a34a"><strong>PASS</strong></td></tr>
+        <tr><td><code>XMLUNESCODVV3_USALPAY_test.in</code></td><td style="color:#16a34a"><strong>PASS</strong></td></tr>
+        <tr><td><code>xmlUNESCODVV3_US.in</code> ("For US")</td><td style="color:#dc2626"><strong>FAIL</strong></td></tr>
+      </table>
+      <p><strong>Critical finding:</strong> The US failure was <strong>NOT</strong> the structured address. Citi confirmed the failure was a missing <strong>CtgyPurp/Prtry</strong> field (Category Purpose / Proprietary). The structured-address remediation passed the bank's own validator. Evidence tier: TIER_1 (bank's official test tool). Brain claim #265.</p>
+      <p><strong>New open defect — CtgyPurp/Prtry (separate from structured-address work):</strong><br/>
+      XPath: <code>PmtInf[1].CdtTrfTxInf[1].PmtTpInf[1].CtgyPurp[1].Prtry[1]</code> — Mandatory, AlphaNumeric, exactly 11 chars. Citi sample: <code>/REF/0825/C</code>. Country=TN, PIUID=949, Trans.Ref=UNES0002000018.<br/>
+      The node EXISTS in D01 tree (N_3498213760 + N_3697641060 with Prtry children) but the US branch does not populate it. BR passed = BR fires the exit; US does not. Root cause unconfirmed.<br/>
+      <strong>Pre-existing gap (NOT regression):</strong> PPC spec v2.0 p.16 (M. Spronk): "The development is only for the XML file of Societé Generale. If Citibank requires this, all the requirements and developments should be reviewed." Brain claims #266 + #267. KU: <code>KU-2026-CITI-CTGYPURP-PRTRY</code>.</p>
+      <p style="color:#64748b;font-size:12px">Next step: probe DMEE_TREE_COND for nodes N_3498213760/N_3697641060 on D01 + replay US test case + scope Citi CtgyPurp/Prtry extension independent of PPC/SocGen. See <code>knowledge/domains/Payment/citi_dbtr_pstladr_format_analysis.md</code> sections 8-9.</p>
     </div>
     </div>
