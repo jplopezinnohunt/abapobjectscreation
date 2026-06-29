@@ -11,8 +11,27 @@ by changing the target argument (requires `SAP_V01_*` in the RFC `.env`).
 python fund_center_sync.py D01        # or V01
 # 2) Funds (scope = current biennium C5/43)
 python fund_sync.py D01               # or V01
-# 3) Z tables (YTFM_FUND_C5 / FUND_CPL / OUTPUT) — direct INSERT via RFC_ABAP_INSTALL_AND_RUN  [pending]
+# 3) Z tables (YTFM_OUTPUT now; FUND_C5/CPL after funds load) — direct INSERT
+python z_tables_sync.py D01 output      # then: fundc5 / cpl  (after funds done)
+# 4) Field-level reconcile of biennium funds present in BOTH but drifted (make D01 == P01)
+python fund_reconcile.py D01            # or V01  — uses FM_FUND_CHANGE_RFC
 ```
+
+## Field reconciliation (make biennium data identical, not just present)
+
+`fund_reconcile.py` compares all functional FMFINCODE fields for C5/43 funds in both systems and
+updates D01 to match P01 via **`FM_FUND_CHANGE_RFC`** (same interface + TESTRUN-default gotcha as create).
+Result P01→D01 s093: 113 drifted → **112 reconciled, 1 blocked**.
+
+Reconcile-specific gotchas:
+- **Source from RAW tables, not `FM_FUND_GET_DETAIL_RFC`.** GET_DETAIL needs `I_DATE` *within* the
+  fund's validity; a hardcoded date past `DATBIS` returns an EMPTY record → CHANGE fails on required
+  fields (DATAB/DATBIS/BEZEICH). Read FMFINCODE + FMFINT raw instead.
+- **pyrfc rejects `'00000000'` for DATS fields.** Raw read returns empty dates as `'00000000'`; convert
+  to `''` before the call (DATAB/DATBIS/DATE_EXP/DATE_CAN).
+- **Budget-scope is locked once budget exists.** `FM_FUND_CHANGE_RFC` errors *"Change of budget scope
+  from overall to annual is not allowed"* (1 fund, UNES 3210111232) — a genuine SAP business rule, not
+  a tool limit. Leave as a justified exception.
 
 ## Verified write channels (NOT flat INSERT for standard master)
 
