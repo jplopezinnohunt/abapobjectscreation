@@ -151,8 +151,17 @@ Required-field gotchas hit in order: ITEM_NUM must be string; DOCSTATE='1' (else
 **Result (5 CR test funds, docs 2000000250-254):** disponible now present in D01 — FMBL ENTR lines +
 FMAVCT rows both non-zero for all 5. Total assigned 3,638,028 USD (567KEN2000 990,099 / 537RAF4006 450,000 /
 218MAR2000 500,000 / 263KEN5000 1,120,400 / 235MAG5003 577,529). Script:
-`Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_entr.py <TGT> <test|commit> [FUND]`
-(idempotent — skips funds that already have ENTR in target).
+`Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_entr.py <TGT> <test|commit> [FUND] [YEAR]`
+(idempotent — skips funds that already have ENTR for the given year in target).
+
+### Budget is ANNUAL — each fiscal year needs its own disponible
+Verified in D01: a 2025 ENTR creates FMAVCT only for RYEAR=2025; it does NOT make the fund spendable in
+2026. In P01, FY2026 has **no fresh ENTR** — the 2026 disponible arrives via year-end **budget
+carryforward** (residual 2025→2026). To make a fund spendable in a target year in D01, post the ENTR with
+`FISC_YEAR=<year>` (the script's 4th arg forces the FY). **Done for 2026** (the active posting/test year):
+docs 2000000255-259, same per-fund amounts/addresses → all 5 now have FMAVCT RYEAR=2026 disponible.
+(For a faithful replica of P01's 2026 *residual* one would carry forward instead; the full-envelope ENTR
+is the dev-enablement choice.)
 
 This is DISTINCT from the ~98 regular funds with the ~212M D01 overall-budget gap (those use
 WRTTP43 BPGE/BPJA, separate concern addressed in claim #283).

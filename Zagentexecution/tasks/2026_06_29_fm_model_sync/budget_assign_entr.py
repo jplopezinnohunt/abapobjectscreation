@@ -13,7 +13,8 @@ sys.path.insert(0, r"c:\Users\jp_lopez\projects\abapobjectscreation\Zagentexecut
 from rfc_helpers import get_connection
 TARGET = sys.argv[1] if len(sys.argv) > 1 else "D01"
 MODE   = sys.argv[2] if len(sys.argv) > 2 else "test"
-ONLY   = sys.argv[3] if len(sys.argv) > 3 else None
+ONLY   = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].isdigit() else None
+FORCE_YEAR = next((a for a in sys.argv[3:] if a.isdigit() and len(a)==4), None)  # e.g. 2026: post ENTR in this FY
 FUNDS  = [ONLY] if ONLY else ['567KEN2000','537RAF4006','218MAR2000','263KEN5000','235MAG5003']
 TVAL=[f'TVAL{i:02d}' for i in range(1,17)]
 def num(s):
@@ -35,7 +36,7 @@ def post(t, fund, lines, testrun, today):
     items=[]; n=0
     for r in lines:
         n+=1
-        items.append({'ITEM_NUM':f'{n:03d}','FISC_YEAR':r['FISCYEAR'],'BUDCAT':r['BUDCAT'] or '9F','BUDTYPE':'3000',
+        items.append({'ITEM_NUM':f'{n:03d}','FISC_YEAR':(FORCE_YEAR or r['FISCYEAR']),'BUDCAT':r['BUDCAT'] or '9F','BUDTYPE':'3000',
                       'FUND':fund,'FUNDS_CTR':r['FUNDSCTR'],'CMMT_ITEM':r['CMMTITEM'],
                       'FUNC_AREA':r['FUNCAREA'],'VALTYPE':'B1','TRANS_CURR':r['TCURR'] or 'USD',
                       'TOTAL_AMOUNT':abs(r['_AMT']),'DISTKEY':'1'})
@@ -50,10 +51,11 @@ def main():
     today=datetime.date.today().strftime('%Y%m%d')
     for fund in FUNDS:
         # idempotency: skip if target already has ENTR/B1/3000 for this fund
+        yrcond = f" AND FISCYEAR = '{FORCE_YEAR}'" if FORCE_YEAR else ""
         chk=t.call('RFC_READ_TABLE',QUERY_TABLE='FMBL',FIELDS=[{'FIELDNAME':'DOCNR'}],
-                   OPTIONS=[{'TEXT':f"FUND = '{fund}' AND PROCESS = 'ENTR'"}],ROWCOUNT=1)
+                   OPTIONS=[{'TEXT':f"FUND = '{fund}' AND PROCESS = 'ENTR'{yrcond}"}],ROWCOUNT=1)
         if chk['DATA'] and MODE=='commit':
-            print(f"\n=== {fund}: already has ENTR in {TARGET} -> SKIP ==="); continue
+            print(f"\n=== {fund}: already has ENTR{(' FY'+FORCE_YEAR) if FORCE_YEAR else ''} in {TARGET} -> SKIP ==="); continue
         lines=p01_entr(p,fund)
         tot=sum(abs(r['_AMT']) for r in lines)
         print(f"\n=== {fund}  ENTR lines={len(lines)}  total={tot:,.2f} ({MODE}) ===")
