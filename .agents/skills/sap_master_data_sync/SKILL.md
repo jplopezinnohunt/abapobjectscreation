@@ -6,10 +6,11 @@ description: >
   cost centers, profit centers, functional areas, WBS elements. Proven pattern: extract both
   systems, compare in SQLite by key, INSERT missing records via RFC_ABAP_INSTALL_AND_RUN.
   Session 2026-04-03: 880 records synced (69 SKA1, 69 SKAT, 450 SKB1, 26 CSKA, 92 CSKU, 174 CSKB).
+  FM model extension evaluated 2026-06-29 (s093): gap of ~63K rows confirmed (claim #283).
 domains:
-  functional: [FI]
-  module: [FI, CTS]
-  process: [P2D]
+  functional: [FI, PSM, FM]
+  module: [FI, FM, CTS]
+  process: [P2D, B2R]
 ---
 
 # SAP Master Data Sync (P01 → D01)
@@ -225,3 +226,59 @@ for sys_id in ['P01', 'D01']:
 | Date | Tables | Records | Result |
 |------|--------|---------|--------|
 | 2026-04-03 | SKA1, SKAT, SKB1, CSKA, CSKU, CSKB | 880 | Gap = 0, all verified |
+| 2026-06-29 | FMFINCODE, FMFINT, FMFCTR, FMFCTRT, FMCI, YTFM_FUND_C5, YTFM_FUND_CPL | ~63K gap counted | Gap analysis only — write phase NOT executed yet (requires full-field re-extraction; claim #283) |
+
+## FM Model Extension (PSM/FM domain) — Evaluated s093 2026-06-29
+
+The proven GL/CE sync pattern extends to Fund Management master data, with **important differences
+in write method** per SAP object type.
+
+### Gap summary (claim #283, point-in-time 2026-06-29)
+
+| SAP table | Gold DB table | P01 count | D01 count | GAP | Notes |
+|-----------|--------------|-----------|-----------|-----|-------|
+| FMFINCODE | funds | 67,408 | 47,885 | **19,523** | UNES=14,809 dominant |
+| FMFINT | FMFINT | 67,410 | ~47,887 | **19,523** | mirrors FMFINCODE |
+| FMFCTR | fund_centers | 787 | 655 | **135** | UNES=110; D01 has +3 dev-only |
+| FMFCTRT | fund_centers_text | 787 | 655 | **135** | mirrors FMFCTR |
+| FMCI | commitment_items | 205 | 232 | 0 P01-only | D01 has +27 dev-only |
+| FMCIT | commitment_items_text | 205 | 232 | 0 P01-only | same |
+| TFKB | functional_areas | 9 | 9 | 0 | identical |
+| YTFM_FUND_C5 | ytfm_fund_c5 | 17,598 | 100 | **17,564** | UNES=14,214 dominant |
+| YTFM_FUND_CPL | ytfm_fund_cpl | 6,368 | 24 | **6,345** | UNES=6,234 |
+| YTFM_OUTPUT | ytfm_output | +6 gap | | 6 | low priority |
+| YTFM_C5 | ytfm_c5 | — | — | 0 | no sync needed |
+| YTFM_WRTTP_GR | ytfm_wrttp_gr | — | — | 0 | no sync needed |
+
+### Write method by object type
+
+| Object | Write method | Why |
+|--------|-------------|-----|
+| FMFINCODE (funds) | Direct INSERT via RFC_ABAP_INSTALL_AND_RUN | Flat table, no hierarchy; same pattern as SKA1 |
+| FMFINT (fund text) | Direct INSERT | Same; key FIKRS+FINCODE+SPRAS |
+| FMFCTR (fund centers) | BAPI_0050_CREATE or direct INSERT | Fund centers participate in hierarchies (FMFCTRHIER); prefer BAPI to preserve hierarchy links. Verify BAPI availability on ECC 6.0 EhP8 before coding. |
+| FMFCTRT (fund center text) | Direct INSERT | Text table, no hierarchy |
+| YTFM_FUND_C5 / YTFM_FUND_CPL | Direct INSERT | Z/Y own objects — INSERT is correct path |
+| YTFM_OUTPUT / YTFM_OUTPUT_T | Direct INSERT | Own objects |
+
+### CRITICAL: Gold DB funds table is KEY-ONLY (claim #284)
+
+The gold `funds` table has only 5 columns: FIKRS, FINCODE, TYPE, ERFDAT, ERFNAME.
+Real FMFINCODE has ~30 fields. **DO NOT use the Gold DB cache as the write source.**
+The write phase MUST re-extract FMFINCODE live from P01 with full field list before INSERT to D01.
+
+### Extraction constraint (claim #244 — applies to BOTH P01 and D01)
+
+Both P01 and D01 RFC_READ_TABLE are wrapped by class SAIS which **REJECTS ROWSKIPS** (rc=5,
+OPTION_NOT_VALID). Confirmed empirically on D01 FMFINCODE/FMFINT during s093.
+
+```python
+# CORRECT pattern for FM tables on P01 or D01
+for fikrs in ['IBE', 'ICBA', 'ICTP', 'IIEP', 'MGIE', 'UBO', 'UIL', 'UIS', 'UNES']:
+    rows = guard.call('RFC_READ_TABLE',
+        QUERY_TABLE='FMFINCODE',
+        OPTIONS=[{'TEXT': f"FIKRS = '{fikrs}'"}],
+        ROWCOUNT=0,       # ROWCOUNT=0 = all rows
+        ROWSKIPS=0,       # NEVER set > 0
+        FIELDS=[...])     # full field list from live extraction
+```

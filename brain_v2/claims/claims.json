@@ -10444,6 +10444,12 @@
         "ref": "_gold_sync_log",
         "cite": "Single ROWCOUNT=0 call 2026-06-22: BPGE returned 390,707 rows (14:06:34Z); FMBH UNES 248,086 rows (14:17:08Z). Both exceed 60k, proving no platform row ceiling.",
         "added_session": 89
+      },
+      {
+        "added_session": "s-2026-06-29",
+        "cite": "FM P01->D01 gap-analysis session 2026-06-29: FMFINCODE and FMFINT reads on D01 via rfc_read_paginated (which uses ROWSKIPS) returned rc=5 OPTION_NOT_VALID. Switched to ROWCOUNT=0 partitioned by FIKRS -- identical to P01 technique. This is the first DIRECT empirical confirmation of D01 ROWSKIPS rejection on FM tables (prior D01 reference was s081 for ADT/DDIC).",
+        "ref": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/read_job_cadence_p01.py (FM gap analysis script)",
+        "type": "empirical"
       }
     ],
     "evidence_against": null,
@@ -10461,7 +10467,7 @@
     "domain": "D_DATA",
     "created_session": 88,
     "resolved_session": null,
-    "resolution_notes": "CORRECTED s089: removed false ~60k ceiling claim; confirmed ROWCOUNT=0 can return 390k+ rows in one call. Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone section). Rule: feedback_p01_sais_rowskips_rejection.",
+    "resolution_notes": "CORRECTED s089: removed false ~60k ceiling claim; confirmed ROWCOUNT=0 can return 390k+ rows in one call. Cross-link: knowledge/gold_db_table_catalog.md (FM/BCS+PS backbone section). Rule: feedback_p01_sais_rowskips_rejection. | s093 (2026-06-29): D01 ROWSKIPS rejection confirmed directly on FMFINCODE/FMFINT — rc=5 OPTION_NOT_VALID. Applies equally to both P01 and D01.",
     "status": "active",
     "evidence_legacy_text_for": null,
     "domain_axes": {
@@ -12188,5 +12194,93 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 283,
+    "claim": "FM model P01→D01 gap (point-in-time 2026-06-29): FMFINCODE funds P01=67,408 / D01=47,885 / GAP=19,523 (UNES 14,809 dominant; IBE 234, ICBA 46, ICTP 1,581, IIEP 1,455, MGIE 242, UBO 103, UIL 674, UIS 379). FMFINT fund-text EN gap mirrors: 19,523. FMFCTR fund-centers P01=787 / D01=655 / GAP=135 (UNES 110; D01-only +3 dev entries). FMCI/FMCIT commitment-items: GAP=0 (D01 has +27 extra dev entries). TFKB/TFKBT functional-areas: GAP=0 (identical, 9 rows). YTFM_FUND_C5: P01=17,598 / D01=100 / GAP=17,564 (UNES 14,214 dominant). YTFM_FUND_CPL: P01=6,368 / D01=24 / GAP=6,345 (UNES 6,234). YTFM_OUTPUT: GAP=6; YTFM_C5: GAP=0; YTFM_WRTTP_GR: GAP=0. Total gap ≈63K rows, concentrated in funds+text and YTFM biennium model; D01 already has ~71% of FMFINCODE rows.",
+    "claim_type": "project_finding",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-06-29",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM"
+      ],
+      "module": [
+        "FM",
+        "PSM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "FMFINCODE",
+      "FMFINT",
+      "FMFCTR",
+      "FMFCTRT",
+      "FMCI",
+      "FMCIT",
+      "TFKB",
+      "TFKBT",
+      "YTFM_FUND_C5",
+      "YTFM_FUND_CPL",
+      "YTFM_OUTPUT",
+      "YTFM_C5",
+      "YTFM_WRTTP_GR"
+    ],
+    "evidence_for": [
+      {
+        "added_session": "s-2026-06-29",
+        "cite": "Live RFC extraction from both P01 and D01 (ROWCOUNT=0 per FIKRS, no ROWSKIPS), compared in SQLite. UNES dominant in all gaps. D01 dev-only entries visible in FMCI/FMFCTR (+27/+3 respectively).",
+        "ref": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/read_job_cadence_p01.py",
+        "type": "empirical"
+      }
+    ],
+    "evidence_against": null,
+    "resolution_notes": "Cross-link: claim #244 (ROWSKIPS constraint applies to D01 extraction). sap_master_data_sync skill FM extension needed. Gold DB funds/FMFINT tables confirm P01 side (67,408 FMFINCODE per gold_db_table_catalog.md). The sync to D01 requires full-field re-extraction of FMFINCODE/FMFCTR — gold cache has only 5 key cols (claim #284).",
+    "resolved_session": null,
+    "status": "active"
+  },
+  {
+    "id": 284,
+    "claim": "Gold DB funds and fund_centers tables hold KEY + PROVENANCE columns only — insufficient as write source for D01 sync. funds table has 5 columns (FIKRS, FINCODE, TYPE, ERFDAT, ERFNAME); real FMFINCODE has ~30 fields. fund_centers has 4 columns (FIKRS, FICTR, ERFDAT, ERFNAME); real FMFCTR has ~20 fields. Fine for gap-analysis (key-based COUNT/EXISTS), but the P01→D01 write phase requires a full-field live re-extraction of FMFINCODE/FMFCTR from P01. YTFM_* custom tables have fuller column coverage in gold. Standard tables FMCI/TFKB/FMCIT/TFKBT: GAP=0, no sync needed.",
+    "claim_type": "data_quality",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-06-29",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "FMFINCODE",
+      "FMFCTR",
+      "funds",
+      "fund_centers",
+      "YTFM_FUND_C5",
+      "YTFM_FUND_CPL"
+    ],
+    "evidence_for": [
+      {
+        "added_session": "s-2026-06-29",
+        "cite": "PRAGMA table_info(funds) on p01_gold_master_data.db: 5 columns (FIKRS, FINCODE, TYPE, ERFDAT, ERFNAME). FMFINCODE DD02L-structure has ~30 fields. Gap: 25+ functional fields absent from gold funds table.",
+        "ref": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db",
+        "type": "gold_db"
+      }
+    ],
+    "evidence_against": null,
+    "resolution_notes": "Cross-link: claim #283 (gap analysis). gold_db_table_catalog.md FM/BCS section notes FMFINCODE→funds with no column-coverage warning. This claim adds that warning. The write phase of FM sync must re-extract FMFINCODE/FMFCTR live from P01 before INSERT to D01.",
+    "resolved_session": null,
+    "status": "active"
   }
 ]

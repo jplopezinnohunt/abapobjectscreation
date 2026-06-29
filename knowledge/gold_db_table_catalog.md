@@ -49,10 +49,18 @@ The **method registry** (`process_mining/method_registry.py` + `brain_v2/method_
 ## FM/BCS + PS master-data backbone (refreshed 2026-06-22 from P01)
 > Refresher: **`scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py`** (ONE idempotent script,
 > P01 LIVE → canonical golden DB). Supersedes `refresh_funds_from_live.py` (used ROWSKIPS — now broken)
-> + `p01_proj_prps_sync.py` (wrote to the STALE `knowledge/domains/PSM/` path). Reading rule: the P01
-> secured RFC_READ_TABLE wrapper (class SAIS) **REJECTS ROWSKIPS** (`OPTION_NOT_VALID`) → cannot page;
-> read **`ROWCOUNT=0` partitioned by FIKRS** (there is NO ~60k platform ceiling — BPGE returned 390,707
-> rows in one ROWCOUNT=0 call; partition for memory/latency only, not a hard limit — claim #244 corrected S-089).
+> + `p01_proj_prps_sync.py` (wrote to the STALE `knowledge/domains/PSM/` path). Reading rule: the
+> **P01 AND D01** secured RFC_READ_TABLE wrapper (class SAIS) **REJECTS ROWSKIPS** (`OPTION_NOT_VALID`)
+> → cannot page; read **`ROWCOUNT=0` partitioned by FIKRS** (there is NO ~60k platform ceiling — BPGE
+> returned 390,707 rows in one ROWCOUNT=0 call; partition for memory/latency only, not a hard limit —
+> claim #244 corrected S-089). **D01 ROWSKIPS rejection confirmed empirically s093 (2026-06-29) on
+> FMFINCODE/FMFINT: rc=5 OPTION_NOT_VALID** — identical behavior to P01.
+>
+> **P01→D01 gap analysis (s093, 2026-06-29):** gap ≈ 63K rows. FMFINCODE: 19,523 missing in D01
+> (UNES-centric). YTFM_FUND_C5: 17,564. YTFM_FUND_CPL: 6,345. FMFCTR: 135. FMCI/TFKB: GAP=0.
+> D01 already has ~71% of production funds. **Write phase not yet executed** — requires full-field
+> live re-extraction (gold `funds` table has only 5 key cols, not usable as write source — claim #284).
+> Full gap breakdown: claim #283. Sync method: `sap_master_data_sync` skill FM extension section.
 
 | SAP source | Gold DB table | What it is | Key | Notes |
 |---|---|---|---|---|
