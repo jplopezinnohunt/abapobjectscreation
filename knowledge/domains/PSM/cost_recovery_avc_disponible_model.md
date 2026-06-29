@@ -134,11 +134,25 @@ Any CRP testing in D01 will fail at AVC. This is a test-environment gap, not a P
 - **`BAPI_0050_CREATE`** (budget entry document BAPI, object type 0050) OR
 - **`Y_FMKU_0050_CREATE_WITH_COMMIT`** (UNESCO RFC wrapper over BAPI_0050_CREATE)
 
-Replicate the **ENTR assignment** (process **ENTR**, BUDTYPE **3000**, VALTYPE **B1**, commitment item
-**TC** (+80), control fund center **NAI**, per fiscal year) with the P01 amount. That gives the project
-its disponible. Do this FIRST; the recovery (COSD/CORV) is a separate process and not needed to make
-the project spendable. **Do NOT use WRTTP43 overall budget** — CR funds use VALTYPE=B1, not the
-classic overall budget.
+Replicate the **ENTR assignment** (process **ENTR**, BUDTYPE **3000**, VALTYPE **B1**, control fund center
+**NAI**, commitment item per the fund's real P01 lines — usually **TC**+80, but some spread across detailed
+CIs/PC, e.g. 537RAF4006). That gives the project its disponible. Do this FIRST; the recovery (COSD/CORV) is
+a separate process, not needed to make the project spendable. **Do NOT use WRTTP43 overall budget.**
+
+### VERIFIED BAPI_0050_CREATE recipe (executed P01→D01 2026-06-29)
+HEADER: `FM_AREA='UNES', VERSION='000', DOCTYPE='2000', PROCESS='ENTR', DOCSTATE='1', DOCDATE=today`
+— **omit PSTNG_DATE** (budgetary ledger not active → FMKU020 error if passed).
+ITEM (per address): `ITEM_NUM (string '001'..), FISC_YEAR, BUDCAT='9F', BUDTYPE='3000', FUND, FUNDS_CTR='NAI',
+CMMT_ITEM, FUNC_AREA, VALTYPE='B1', TRANS_CURR='USD', TOTAL_AMOUNT (positive magnitude), DISTKEY='1'`.
+Then `BAPI_TRANSACTION_COMMIT(WAIT='X')` (BAPI does not auto-commit). TESTRUN='X' first.
+Required-field gotchas hit in order: ITEM_NUM must be string; DOCSTATE='1' (else FMKU048); DISTKEY='1'
+(else FMBAPI010); no PSTNG_DATE (else FMKU020).
+
+**Result (5 CR test funds, docs 2000000250-254):** disponible now present in D01 — FMBL ENTR lines +
+FMAVCT rows both non-zero for all 5. Total assigned 3,638,028 USD (567KEN2000 990,099 / 537RAF4006 450,000 /
+218MAR2000 500,000 / 263KEN5000 1,120,400 / 235MAG5003 577,529). Script:
+`Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_entr.py <TGT> <test|commit> [FUND]`
+(idempotent — skips funds that already have ENTR in target).
 
 This is DISTINCT from the ~98 regular funds with the ~212M D01 overall-budget gap (those use
 WRTTP43 BPGE/BPJA, separate concern addressed in claim #283).
