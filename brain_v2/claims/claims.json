@@ -12104,5 +12104,89 @@
         "P2D"
       ]
     }
+  },
+  {
+    "id": 281,
+    "claim": "FI document number-range bands in P01 (object RF_BELEG, reset per company code + fiscal year) for the high 9x tier, verified across 1,826,719 BKPF rows: Band 90 (9000000000-9199999999) = BLART R1 (cost recovery ITF/field), 2026 max ~9000007720 in UNES. Band 92 (9200000000-9299999999) = BLART JV (staff cost recovery), 2026 max ~9200020727 in UNES. Band 93 = IO, 94 = OF, 95 = IT, 98 = R8. FREE high bands: 91, 96, 97, 99. Recommended allocation for a NEW cost-recovery doc type: band 96 (9600000000-9699999999) — free, isolated from R1 and JV. IMPORTANT: NRIV/FBN1 number-range intervals are NOT transported (transport class NROB carries the object definition, not the intervals) — intervals must be created manually per client. Only T003 (doc-type definition) transports.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db (BKPF table, 1,826,719 rows)",
+        "cite": "MAX(BELNR) GROUP BY BLART, BUKRS, GJAHR=2026 for 9x bands; confirmed R1 in band 90, JV in band 92, bands 91/96/97/99 unused.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RF_BELEG",
+      "BKPF",
+      "T003",
+      "NRIV",
+      "FBN1",
+      "Cost_Recovery",
+      "R1",
+      "JV"
+    ],
+    "domain": "FI",
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #269 (R1/JV doc types used in cost-recovery E2E flow), claim #282 (GB901 account validation for R1). Basis for new doc-type design: use band 96 to stay isolated from R1 (band 90) and JV (band 92).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "PSM"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": 282,
+    "claim": "The FI account validation for company code UNES that controls cost-recovery R1 postings (GGB0/OB28, line-item callup point) is stored in GB901 boolean steps with ID prefix '1UNES###006' and '2UNES###006'. Prerequisite step 2UNES###006: BKPF-BLART = 'R1'. Account-check step 1UNES###006 restricts permitted BSEG-HKONT to: 6046012-6046020 (staff/consultant cost debit side), 7034011-7034013 (IIEP revenue), 7046012-7046014 (UNES field revenue). The validation fires ONLY when BLART = 'R1' literally. Implication for a new cost-recovery doc type: any new BLART (e.g. a JV-copy) bypasses this control entirely unless step 2UNES###006 is extended to include the new BLART in GGB0. The permitted account ranges align with the documented CR posting pattern (debit 6046013/6046014 -> credit 7034011/7046013).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "gold_db",
+        "ref": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db (GB901 + GB903 tables)",
+        "cite": "GB901 BOOLID='2UNES###006': BKPF-BLART = 'R1'. GB901 BOOLID='1UNES###006': HKONT IN (6046012..6046020, 7034011..7034013, 7046012..7046014). Confirmed single prerequisite step keyed on literal BLART value.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "GB901",
+      "GB903",
+      "GGB0",
+      "OB28",
+      "R1",
+      "BKPF",
+      "BSEG",
+      "Cost_Recovery"
+    ],
+    "domain": "FI",
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #269 (R1 doc type in cost-recovery E2E), claim #281 (number-range bands). When a new cost-recovery doc type is introduced, step 2UNES###006 MUST be updated in GGB0 to include the new BLART, otherwise the account range guard is bypassed. Related: knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md and validation_substitution_matrix.md.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "PSM"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]
