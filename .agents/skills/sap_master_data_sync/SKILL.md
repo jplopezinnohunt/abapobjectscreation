@@ -23,7 +23,12 @@ This skill extracts, compares, and copies the delta programmatically.
 
 ## Direction
 
-**Always P01 → D01.** Source = P01 (production, read-only). Target = D01 (development, write).
+**Always P01 → non-prod target.** Source = P01 (production, read-only). Target = **D01 (dev) or V01
+(validation)** — same scripts, target is an argument. Never write P01.
+
+**Reusable FM-model scripts** (target-parameterized, proven P01→D01 s093):
+`Zagentexecution/tasks/2026_06_29_fm_model_sync/` — `fund_center_sync.py <TGT>`, `fund_sync.py <TGT>`,
+`METHOD.md`. Run centers BEFORE funds (dependency). For V01 add `SAP_V01_*` to the RFC `.env`.
 
 ## Supported Tables
 
