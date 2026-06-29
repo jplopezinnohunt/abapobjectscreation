@@ -7435,7 +7435,11 @@
       "checkpoint-rule"
     ],
     "status": "active",
-    "verified_date": "2026-05-07"
+    "verified_date": "2026-05-07",
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ],
+    "resolution_notes": "Refined for CR cost elements (0006046013/0006046014/0007046013) by claim #293: OKB9 has NO entry for these CEs; CO object comes from WBS in P01."
   },
   {
     "id": 177,
@@ -12228,7 +12232,8 @@
       "YTFM_FUND_CPL",
       "YTFM_OUTPUT",
       "YTFM_C5",
-      "YTFM_WRTTP_GR"
+      "YTFM_WRTTP_GR",
+      "BAPI_PROJECT_MAINTAIN"
     ],
     "evidence_for": [
       {
@@ -12241,7 +12246,10 @@
     "evidence_against": null,
     "resolution_notes": "Cross-link: claim #244 (ROWSKIPS constraint applies to D01 extraction). sap_master_data_sync skill FM extension needed. Gold DB funds/FMFINT tables confirm P01 side (67,408 FMFINCODE per gold_db_table_catalog.md). The sync to D01 requires full-field re-extraction of FMFINCODE/FMFCTR — gold cache has only 5 key cols (claim #284).",
     "resolved_session": null,
-    "status": "active"
+    "status": "active",
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ]
   },
   {
     "id": 284,
@@ -12281,7 +12289,11 @@
     "evidence_against": null,
     "resolution_notes": "Cross-link: claim #283 (gap analysis). gold_db_table_catalog.md FM/BCS section notes FMFINCODE→funds with no column-coverage warning. This claim adds that warning. The write phase of FM sync must re-extract FMFINCODE/FMFCTR live from P01 before INSERT to D01.",
     "resolved_session": null,
-    "status": "active"
+    "status": "active",
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "knowledge/domains/PSM/fund_management_sync_playbook.md"
+    ]
   },
   {
     "id": 285,
@@ -12360,6 +12372,9 @@
       "235MAG5003",
       "633CRP9003",
       "633CRP9000"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   },
   {
@@ -12406,6 +12421,9 @@
       "BAPI_0050_CREATE",
       "Y_FMKU_0050_CREATE_WITH_COMMIT",
       "FMBB"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   },
   {
@@ -12449,6 +12467,9 @@
       "633CRP9000",
       "567KEN2000",
       "BAPI_0050_CREATE"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   },
   {
@@ -12489,6 +12510,9 @@
       "BPGE",
       "FMAVCT",
       "567KEN2000"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   },
   {
@@ -12535,6 +12559,9 @@
       "235MAG5003",
       "633CRP9003",
       "633CRP9000"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   },
   {
@@ -12617,6 +12644,311 @@
       "FMAVCT",
       "FM_RIB_AVAILABLE_REVENUE",
       "FMAVC_READ_TOTALS_FOR_ADDRESS"
+    ]
+  },
+  {
+    "id": 293,
+    "claim": "KI235 root cause for cost elements 0006046013/0006046014/0007046013 is a MISSING WBS CO-OBJECT in D01, NOT an OKB9 default cost center. Verified P01+D01 2026-06-29: TKA3A (170) + TKA3C (158) are IDENTICAL P01=D01; these 3 cost elements have NO OKB9 entry in either system. In P01 the CO object is supplied by the WBS (COEP: OBJNR PR00028292=000CRP9000, PR00022163=633CRP9003, PR00032001=504PAK1000.4.4; PR-prefix = WBS OBJNR, not POSID). A WBS element is itself a valid CO object. Once the WBS exists+is RELEASED in D01, KI235 clears without any OKB9 configuration.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FI",
+        "Cost_Recovery"
+      ],
+      "module": [
+        "PS",
+        "CO",
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Supersedes any suggestion that OKB9 default cost center is the fix for KI235 on these cost elements. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md, claim #176 (OKB9 general derivation), claim #286-290 (CR AVC chain).",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "P01 RFC_READ_TABLE TKA3A+TKA3C 2026-06-29",
+        "cite": "TKA3A count=170 P01=D01 identical; TKA3C count=158 P01=D01 identical; no row for KSTAR in (0006046013,0006046014,0007046013). COEP OBJNR values PR00028292/PR00022163/PR00032001 confirm WBS as CO object source.",
+        "added_session": "s-2026-06-29"
+      },
+      {
+        "type": "live_d01",
+        "ref": "D01 BAPI_PROJECT_MAINTAIN + re-read PRPS 2026-06-29",
+        "cite": "After creating+releasing WBS 000CRP9000 in D01 via BAPI_PROJECT_MAINTAIN, the KI235 error resolves for test postings using that WBS as CO object. Direct empirical verification.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "TKA3A",
+      "TKA3C",
+      "COEP",
+      "PRPS",
+      "PROJ",
+      "000CRP9000",
+      "633CRP9003",
+      "504PAK1000",
+      "BAPI_PROJECT_MAINTAIN",
+      "BAPI_PROJECTDEF_GETDETAIL",
+      "0006046013",
+      "0006046014",
+      "0007046013"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ]
+  },
+  {
+    "id": 294,
+    "claim": "3-layer prerequisite chain for a cost-recovery test posting to succeed in D01: (1) WBS CO object must exist + be RELEASED (REL, I0002) in D01 -- fixes KI235; (2) FM derivation must resolve WBS to fund/fundcenter/commitment item via FMDERIVE -- config already present in D01; (3) derived FM address must have B1 budget + ENTR disponible -- requires explicit budget loading (FMBB/BAPI_0050_CREATE). All three layers are independently necessary; creating the WBS alone only clears layer 1.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FM",
+        "FI",
+        "Cost_Recovery"
+      ],
+      "module": [
+        "PS",
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Synthesizes KI235 fix (#293), FM derivation (#283), and CR AVC disponible (#286-290) into the operative 3-layer test-posting precondition. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md + cost_recovery_avc_disponible_model.md.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "D01 test posting sequence s093 2026-06-29",
+        "cite": "Empirical sequence: WBS create+release clears KI235 (layer 1). FM derivation configured in D01 (layer 2 existing, claim #283). Budget gap confirmed by claim #290 (layer 3 still open for some funds).",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "PRPS",
+      "FMDERIVE",
+      "FMBL",
+      "BAPI_0050_CREATE",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FMAVCT",
+      "BAPI_PROJECT_MAINTAIN",
+      "000CRP9000",
+      "633CRP9003",
+      "504PAK1000",
+      "FMFCTR",
+      "FMFINCODE"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
+    ]
+  },
+  {
+    "id": 295,
+    "claim": "BAPI_PROJECT_MAINTAIN recipe for flat WBS replication P01->D01 (VERIFIED s093 2026-06-29): read source with BAPI_PROJECTDEF_GETDETAIL + RFC_READ_TABLE PRPS (POSID LIKE). Create: I_PROJECT_DEFINITION + I_WBS_ELEMENT_TABLE (WBS_ACCOUNT_ASSIGNMENT_ELEMENT=X, WBS_PLANNING_ELEMENT=X) + I_METHOD_PROJECT [{Create ProjectDefinition}, {Create WBS-Element}*, {Save, REFNUMBER=000000}] + BAPI_TRANSACTION_COMMIT(WAIT=X). Release: I_WBS_ELEMENT_TABLE=[key-only rows] + method [{Release WBS-Element}*, {Save}]. Status transitions CRTD(I0001)->REL(I0002). Script: Zagentexecution/tasks/2026_06_29_fm_model_sync/ps_project_sync.py.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "Cost_Recovery"
+      ],
+      "module": [
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Flat WBS only. Hierarchical WBS fails (see claim #297 + known_unknown KU-2026-WBS-HIERARCHY-BAPI). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/ps_project_sync.py",
+        "cite": "Script executed on D01 2026-06-29: 000CRP9000 created+released (flat, 1 WBS); 504PAK1000 def+root created+released. BAPI_PROJECT_MAINTAIN T_RETURN checked; BAPI_TRANSACTION_COMMIT(WAIT=X) confirmed. Re-read via BAPI_PROJECTDEF_GETDETAIL verified REL status.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BAPI_PROJECT_MAINTAIN",
+      "BAPI_PROJECTDEF_GETDETAIL",
+      "BAPI_TRANSACTION_COMMIT",
+      "PRPS",
+      "PROJ",
+      "TCJ04",
+      "TCJ05",
+      "I_WBS_HIERARCHIE_TABLE",
+      "000CRP9000",
+      "504PAK1000",
+      "633CRP9003"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "Zagentexecution/tasks/2026_06_29_fm_model_sync/ps_project_sync.py"
+    ]
+  },
+  {
+    "id": 296,
+    "claim": "BAPI_PROJECT_MAINTAIN gotchas (all hit empirically s093 2026-06-29): RESPONSIBLE_NO validated against TCJ04; APPLICANT_NO validated against TCJ05 (different tables -- P01 HR numbers usually absent in D01; used responsible=10133238, applicant=00000001). Profile-dependent: Z000012 needs only RESPONSIBLE_NO; Z000002 needs both. BAPI auto-commits the Save step -- no TESTRUN flag; rollback does NOT undo. Method table entries must be consistent with data table entries. REFNUMBER field is NUMC; Save row = 000000. Method Delete NOT supported for ProjectDefinition.",
+    "claim_type": "technical_gotcha",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS"
+      ],
+      "module": [
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Companion to claim #295 (BAPI recipe). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "BAPI_PROJECT_MAINTAIN RFC call series s093 2026-06-29",
+        "cite": "Multiple RFC calls returning T_RETURN errors: RESPONSIBLE_NO not found in TCJ04 (with P01 HR number); APPLICANT_NO not found in TCJ05 (with P01 HR number); resolved by substituting valid D01 values. Auto-commit behavior observed: failed rollback still materialized the project.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BAPI_PROJECT_MAINTAIN",
+      "TCJ04",
+      "TCJ05",
+      "PRPS",
+      "PROJ"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ]
+  },
+  {
+    "id": 297,
+    "claim": "Hierarchical WBS via BAPI_PROJECT_MAINTAIN is UNSOLVED (s093, ~12 RFC attempts). Flat WBS works; children fail with two symptom paths: (a) one-at-a-time -> 'Several WBS elements on level 1 not allowed' (BAPI treats each child as a new level-1 root); (b) all-in-one-call -> 'WBS element X already exists' (coding mask auto-creates intermediates -> collision). Hierarchy uses separate I_WBS_HIERARCHIE_TABLE (fields: WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT) -- discovered but not made to work. Recommended alternative: CJ20N via sap-webgui-core GUI framework.",
+    "claim_type": "known_unknown",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS"
+      ],
+      "module": [
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Open execution-backlog item. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "BAPI_PROJECT_MAINTAIN I_WBS_HIERARCHIE_TABLE attempts s093 2026-06-29",
+        "cite": "Approximately 12 RFC call variants tested on D01. Return messages: E/OP/PT035 'Several WBS elements on level 1 not allowed' and E/OP/PT038 'WBS element already exists'. I_WBS_HIERARCHIE_TABLE structure identified from BAPI documentation but correct population not achieved.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BAPI_PROJECT_MAINTAIN",
+      "I_WBS_HIERARCHIE_TABLE",
+      "PRPS",
+      "504PAK1000",
+      "504PAK1000.4",
+      "504PAK1000.4.4",
+      "CJ20N"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ]
+  },
+  {
+    "id": 298,
+    "claim": "PS replication result P01->D01 s093 (2026-06-29): KI235 culprit WBS status -- (1) 000CRP9000: created + RELEASED in D01 (flat, 1 WBS); (2) 633CRP9003: pre-existing in D01; (3) 504PAK1000: project def + root WBS created + RELEASED in D01; children 504PAK1000.4 and 504PAK1000.4.4 PENDING (hierarchical WBS issue, claim #297). 2 of 3 KI235 WBS paths fully unblocked; 504PAK1000.4.4 still requires CJ20N or resolved I_WBS_HIERARCHIE_TABLE approach.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "Cost_Recovery"
+      ],
+      "module": [
+        "PS",
+        "FM"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Point-in-time state for KI235 WBS availability after s093. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "BAPI_PROJECTDEF_GETDETAIL re-read after creation, D01 2026-06-29",
+        "cite": "Re-read of 000CRP9000 and 504PAK1000 via BAPI_PROJECTDEF_GETDETAIL confirmed PROJECT_DEFINITION exists and WBS status=REL (I0002). 633CRP9003 confirmed pre-existing via same BAPI call. 504PAK1000.4/.4.4 not found (creation blocked by hierarchy issue).",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "000CRP9000",
+      "633CRP9003",
+      "504PAK1000",
+      "504PAK1000.4",
+      "504PAK1000.4.4",
+      "BAPI_PROJECT_MAINTAIN",
+      "BAPI_PROJECTDEF_GETDETAIL",
+      "CJ20N"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
   }
 ]
