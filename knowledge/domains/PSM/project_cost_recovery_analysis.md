@@ -2,6 +2,10 @@
 name: Cost Recovery Analysis 2025
 description: Personal cost recovery posting analysis for UNESCO — 4,211 docs, 3 company codes (IIEP/UNES), 3 streams, complete posting schema documented.
 type: project
+cross_links:
+  - knowledge/domains/PSM/cost_recovery_avc_disponible_model.md  # CR AVC/Disponible control model (TIER_1, s-2026-06-29)
+  - knowledge/domains/PSM/avc_availability_model.md
+  - companions/cost_recovery_bor_model.html
 ---
 
 ## Cost Recovery 2025 — Summary
