@@ -66,7 +66,22 @@ Biennium-linked dimensions (FMFINCODE/FMFINT, YTFM_FUND_C5, YTFM_FUND_CPL) scope
 `YTFM_FUND_C5.C5_ID='43'` (2026-2027). Non-biennium dimensions (FMFCTR, YTFM_OUTPUT, TFKB) sync the
 full current-master difference — **only the differences (P01 minus target)**, no usage filters.
 
-## Result P01 → D01 (s093 2026-06-29)
+## Result P01 → D01 (s093 2026-06-29) — biennium C5/43 COMPLETE
 
-- Fund centers: 135 created (5 E2E + 130 mass, 4 waves), **gap = 0** verified.
-- Funds C5/43: 5,349 (+ 10 E2E) — see `fund_sync_D01.log`.
+| Component | Result |
+|-----------|--------|
+| Fund centers FMFCTR + text + hierarchy | gap **0** (135 created, 4 topo waves) |
+| Funds FMFINCODE + FMFINT (C5/43) | gap **0** (5,338 mass + 226 short-validity raw-sourced + 10 E2E) |
+| Fund field reconciliation (make identical) | 113 drift → **112 fixed**, 1 SAP-blocked |
+| YTFM_OUTPUT / OUTPUT_T | gap **0** (6+6) |
+| YTFM_FUND_C5 (C5_ID=43) | gap **0** (5,579) |
+| YTFM_FUND_CPL | gap **0** (241) |
+
+**The 1 exception:** UNES `3210111232` — `FM_FUND_CHANGE_RFC` blocks the budget-scope change
+(overall→annual) because budget exists. Genuine SAP business rule; left as a justified exception.
+
+**Critical lesson — `created` counter ≠ persisted.** First fund_sync pass reported created=5,338/failed=0
+but real gap was 226: GET_DETAIL at a fixed `I_DATE` returned EMPTY for funds whose validity ended
+before that date → CREATE got blank required fields and the FM rejected (ET_MESSAGES not checked).
+Fix: source from RAW FMFINCODE+FMFINT, sanitize '00000000' dates, and CHECK ET_MESSAGES (TYPE E/A/X).
+Verification is by re-read gap, never by the create counter.

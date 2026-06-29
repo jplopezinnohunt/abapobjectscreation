@@ -25,6 +25,24 @@ def target_funds(t, area):
     m=res['FIELDS'][0]; o=int(m['OFFSET']); l=int(m['LENGTH'])
     return set(row['WA'][o:o+l].strip() for row in res['DATA'])
 
+def raw_rows(c, area, flds):
+    res=c.call('RFC_READ_TABLE',QUERY_TABLE='FMFINCODE',FIELDS=[{'FIELDNAME':x} for x in ['FINCODE']+flds],
+               OPTIONS=[{'TEXT':f"FIKRS = '{area}'"}],ROWCOUNT=0)
+    m=res['FIELDS']; out={}
+    for r in res['DATA']:
+        wa=r['WA']; d={x['FIELDNAME']:wa[int(x['OFFSET']):int(x['OFFSET'])+int(x['LENGTH'])].strip() for x in m}
+        out[d['FINCODE']]=d
+    return out
+
+def fund_text(c, area):
+    res=c.call('RFC_READ_TABLE',QUERY_TABLE='FMFINT',FIELDS=[{'FIELDNAME':'FINCODE'},{'FIELDNAME':'BEZEICH'},{'FIELDNAME':'BESCHR'}],
+               OPTIONS=[{'TEXT':f"FIKRS = '{area}' AND SPRAS = 'E'"}],ROWCOUNT=0)
+    m=res['FIELDS']; out={}
+    for r in res['DATA']:
+        wa=r['WA']; d={x['FIELDNAME']:wa[int(x['OFFSET']):int(x['OFFSET'])+int(x['LENGTH'])].strip() for x in m}
+        out[d['FINCODE']]=d
+    return out
+
 def main():
     g=sqlite3.connect(GOLD); p=get_connection('P01'); t=get_connection(TARGET)
     print(f"=== FUND SYNC P01 -> {TARGET} (scope C5/43) ===")
@@ -38,15 +56,21 @@ def main():
         have=target_funds(t, area)
         todo=sorted(act-have)
         print(f"\n[{area}] active C5/43={len(act)}  {TARGET} has={len(act & have)}  to create={len(todo)}")
+        if not todo: continue
+        praw=raw_rows(p, area, DATA_FLDS); ptxt=fund_text(p, area)   # RAW source (no I_DATE validity dependency)
         for i,f in enumerate(todo,1):
             try:
-                r=p.call("FM_FUND_GET_DETAIL_RFC",I_FM_AREA=area,I_FUND=f,I_FLG_TEXT='X',I_DATE='20260601')
-                fd=r.get('ES_FUND_DATA',{}); ft=r.get('ES_FUND_TEXT',{})
-                isd={k:fd.get(k,'') for k in DATA_FLDS}
-                ist={k:ft.get(k,'') for k in TEXT_FLDS}; ist['SPRAS']=ist.get('SPRAS') or 'E'
-                t.call("FM_FUND_CREATE_RFC",I_FM_AREA=area,I_FUND=f,IS_FUND_DATA=isd,IS_FUND_TEXT=ist,
+                if f not in praw: total_fail+=1; print(f"   FAIL {f}: not in P01 FMFINCODE"); continue
+                isd={k:praw[f].get(k,'') for k in DATA_FLDS}
+                for dk in ('DATAB','DATBIS','DATE_EXP','DATE_CAN'):   # pyrfc rejects '00000000' for DATS
+                    if isd.get(dk)=='00000000': isd[dk]=''
+                tt=ptxt.get(f,{})
+                ist={'SPRAS':'E','BEZEICH':tt.get('BEZEICH',''),'BESCHR':tt.get('BESCHR','')}
+                r=t.call("FM_FUND_CREATE_RFC",I_FM_AREA=area,I_FUND=f,IS_FUND_DATA=isd,IS_FUND_TEXT=ist,
                        I_FLG_TESTRUN=' ',I_FLG_COMMIT='X')
-                total_created+=1
+                errs=[m['MESSAGE'] for m in r.get('ET_MESSAGES',[]) if m['TYPE'] in 'EAX']
+                if errs: total_fail+=1; print(f"   ERR {f}: {errs[:1]}")
+                else: total_created+=1
             except Exception as e:
                 total_fail+=1; print(f"   FAIL {f}: {str(e)[:70]}")
             if i % 200 == 0:
