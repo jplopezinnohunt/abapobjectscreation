@@ -52,27 +52,52 @@ clean path. Note PRPS has **PSPHI** (project internal no.), not PSPID; `PRxxxxxx
 - `REFNUMBER` is NUMC; the Save row = '000000'.
 - Method 'Delete' is NOT supported for ProjectDefinition (can't delete via this BAPI).
 
-## THE GOOD PROCESS (hierarchical WBS) — and what NOT to do
-Hierarchy is **not** derived from the POSID dots; it must be given explicitly in **`I_WBS_HIERARCHIE_TABLE`**
-(WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT — set `UP` = parent POSID for each node). The good process
-is **ONE clean call on a project that does NOT yet exist in the target**:
-`I_PROJECT_DEFINITION` + `I_WBS_ELEMENT_TABLE` (all WBS, parents-before-children) + `I_WBS_HIERARCHIE_TABLE`
-(UP=parent) + `I_METHOD_PROJECT` [Create ProjectDefinition, Create WBS-Element*, Save] → commit → Release all.
-Script: `ps_project_sync.py` (has a precondition guard that ABORTS if the project already has WBS).
+## THE GOOD PROCESS (BAPI_PROJECT_MAINTAIN) — corrected & verified
 
-**ANTI-PATTERN that corrupted 504PAK1000 (do NOT repeat):** iterating with `METHOD='Delete'` to "retry" a
-failed create. A delete on a WBS sets the **deletion flag (system status DLFL / I0076)**, which has **NO
-clean RFC reset** (STATUS_CHANGE_EXTERN = user-status only; STATUS_CHANGE_INTERN = NOT_FOUND/DA300; no
-public PS BAPI). The only reset is **CJ20N → "reset deletion indicator"**. So: never delete-to-retry; if a
-create fails, fix the input and re-run the single clean call against a non-existing project.
+### #1 fix — REFNUMBER is a per-data-table ROW INDEX (not a global sequence)
+The biggest blocker ("WBS element X already exists" on the LAST WBS, even on a clean slate) was a REFNUMBER
+mistake. In `I_METHOD_PROJECT`, **REFNUMBER points to the row index inside the method's OWN data table**:
+ProjectDefinition Create → `000001` (row 1 of `I_PROJECT_DEFINITION`); each WBS Create → its **1-based index
+in `I_WBS_ELEMENT_TABLE`**; Save → `000000`. Numbering globally (def=1, wbs=2,3,…) makes the last WBS point
+past its table → the misleading "already exists". Fixed in `ps_project_sync.py`.
 
-**504PAK1000 current state:** root WBS exists but deletion-flagged (DLFL) from delete-to-retry attempts.
-To finish it: reset its deletion flag in CJ20N (one status op), delete it there, then run `ps_project_sync.py
-D01 504PAK1000 10133238 00000001` (clean one-call create). The recipe itself is sound; the blocker is the
-self-inflicted DLFL, not a BAPI limitation.
+### Verified create recipe (def + single-level-1 WBS)
+ONE clean call on a project that does NOT yet exist: full `I_PROJECT_DEFINITION` + `I_WBS_ELEMENT_TABLE`
+(WBS_ACCOUNT_ASSIGNMENT_ELEMENT=X, WBS_PLANNING_ELEMENT=X) + `I_METHOD_PROJECT` [Create ProjectDefinition,
+Create WBS-Element* with REFNUMBER=row-index, Save=000000] → commit → Release. RESPONSIBLE_NO→TCJ04,
+APPLICANT_NO→TCJ05 (distinct tables; valid target persons). BAPI auto-commits (no TESTRUN) — verify by re-read.
+
+### Dates left OPEN intentionally
+P01 finish dates are in the past (504PAK1000=2024-01-31, 000CRP9000=2020-12-31) → copying them would block a
+2026 test posting. START/FINISH/FCST_* are NOT copied (left open). Everything else is replicated faithfully
+(verified field-by-field on 000CRP9000: only FINISH differed; all profile-driven fields — BUDGET/PLAN/NETWORK/
+INT/WBS_SCHED/CSH profiles, OBJECTCLASS, CALENDAR — identical because PROJECT_PROFILE defaults them).
+
+### KNOWN LIMITATION — WBS hierarchy NESTING (unsolved by RFC)
+Single level-1 create works. **Nesting children under a parent does NOT work via this BAPI by RFC.** With no
+coding mask (MASK_ID empty) the POSID dots don't auto-nest, AND `I_WBS_HIERARCHIE_TABLE` (UP/DOWN) is **not
+honored at create** → "Several WBS elements on level 1 not allowed" (a project allows only one level-1 WBS).
+Verified across one-call / incremental / UP-only / UP+DOWN, on a CLEAN slate with REFNUMBER fixed.
+**For a multi-level WBS structure: create def + root with the script, then INDENT children in CJ20N (Project
+Builder).** Only the indent is manual; def/root/profiles/responsible-applicant/release are correct via BAPI.
+
+### ANTI-PATTERN (do NOT repeat) — delete-to-retry
+Iterating with `METHOD='Delete'` to "retry" sets the **deletion flag (system status DLFL/I0076)**, which has
+**no clean RFC reset** (STATUS_CHANGE_EXTERN=user-status only; STATUS_CHANGE_INTERN=NOT_FOUND/DA300; no public
+PS BAPI) — only CJ20N "reset deletion indicator". This corrupted 504PAK1000 mid-session. If a create fails:
+fix the input and re-run the single clean call on a non-existing project; never delete-to-retry.
 
 ## Result P01→D01 (s093) — KI235 culprits
 - 000CRP9000 (1 flat WBS): created + REL ✓
 - 633CRP9003: pre-existing in D01 ✓
-- 504PAK1000: project def + root WBS created + REL ✓; children 504PAK1000.4 / .4.4 PENDING (hierarchy issue)
-→ 2 of 3 KI235 WBS fully available; the 504PAK1000.4.4 line still needs the hierarchical WBS (CJ20N).
+- 504PAK1000: project def + root WBS recreated CLEAN (full def, dates open, released) ✓; children
+  **504PAK1000.4 / .4.4 PENDING — do the indent in CJ20N** (BAPI nesting limitation above)
+→ 2 of 3 KI235 WBS fully available; 504PAK1000.4.4 needs the CJ20N indent.
+
+## What still remains (to a working test posting)
+1. **504PAK1000.4 / .4.4** — CJ20N indent (hierarchy nesting; BAPI-RFC limitation).
+2. **FM derivation** — confirm the WBS posting derives the right fund/fundcenter/commitment item (FMDERIVE).
+3. **AVC disponible on the derived address** — disponible was loaded for the 5 CR FUNDS (ENTR/B1, 2025+2026);
+   confirm/assign for the address the WBS actually derives.
+4. **E2E test posting** — post the CR document; confirm it clears KI235 + derivation + AVC.
+Deferred (not blocking): ~98 funds WRTTP43 budget (~212M); YTFM Z for old biennia; field reconcile outside C5/43.
