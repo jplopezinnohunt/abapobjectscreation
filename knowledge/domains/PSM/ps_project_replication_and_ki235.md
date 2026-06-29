@@ -52,14 +52,24 @@ clean path. Note PRPS has **PSPHI** (project internal no.), not PSPID; `PRxxxxxx
 - `REFNUMBER` is NUMC; the Save row = '000000'.
 - Method 'Delete' is NOT supported for ProjectDefinition (can't delete via this BAPI).
 
-## OPEN ISSUE — hierarchical WBS via BAPI_PROJECT_MAINTAIN (unsolved by RFC)
-Flat WBS create works; **hierarchical children fail.** Symptoms: one-at-a-time → "Several WBS elements on
-level 1 not allowed" (BAPI treats each child as a new root); all-in-one-call → "WBS element X already exists"
-(coding mask auto-creates intermediates → collision). The hierarchy is specified via the separate table
-**`I_WBS_HIERARCHIE_TABLE`** (fields WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT) — discovered but not
-made to work after ~12 RFC attempts (consistency / "level 1" errors persist). **Recommended path for
-hierarchical WBS: CJ20N (Project Builder) via the sap-webgui-core GUI framework**, or a dedicated deep-dive on
-the exact I_WBS_HIERARCHIE_TABLE construction.
+## THE GOOD PROCESS (hierarchical WBS) — and what NOT to do
+Hierarchy is **not** derived from the POSID dots; it must be given explicitly in **`I_WBS_HIERARCHIE_TABLE`**
+(WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT — set `UP` = parent POSID for each node). The good process
+is **ONE clean call on a project that does NOT yet exist in the target**:
+`I_PROJECT_DEFINITION` + `I_WBS_ELEMENT_TABLE` (all WBS, parents-before-children) + `I_WBS_HIERARCHIE_TABLE`
+(UP=parent) + `I_METHOD_PROJECT` [Create ProjectDefinition, Create WBS-Element*, Save] → commit → Release all.
+Script: `ps_project_sync.py` (has a precondition guard that ABORTS if the project already has WBS).
+
+**ANTI-PATTERN that corrupted 504PAK1000 (do NOT repeat):** iterating with `METHOD='Delete'` to "retry" a
+failed create. A delete on a WBS sets the **deletion flag (system status DLFL / I0076)**, which has **NO
+clean RFC reset** (STATUS_CHANGE_EXTERN = user-status only; STATUS_CHANGE_INTERN = NOT_FOUND/DA300; no
+public PS BAPI). The only reset is **CJ20N → "reset deletion indicator"**. So: never delete-to-retry; if a
+create fails, fix the input and re-run the single clean call against a non-existing project.
+
+**504PAK1000 current state:** root WBS exists but deletion-flagged (DLFL) from delete-to-retry attempts.
+To finish it: reset its deletion flag in CJ20N (one status op), delete it there, then run `ps_project_sync.py
+D01 504PAK1000 10133238 00000001` (clean one-call create). The recipe itself is sound; the blocker is the
+self-inflicted DLFL, not a BAPI limitation.
 
 ## Result P01→D01 (s093) — KI235 culprits
 - 000CRP9000 (1 flat WBS): created + REL ✓
