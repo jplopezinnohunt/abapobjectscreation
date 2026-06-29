@@ -12282,5 +12282,341 @@
     "resolution_notes": "Cross-link: claim #283 (gap analysis). gold_db_table_catalog.md FM/BCS section notes FMFINCODE→funds with no column-coverage warning. This claim adds that warning. The write phase of FM sync must re-extract FMFINCODE/FMFCTR live from P01 before INSERT to D01.",
     "resolved_session": null,
     "status": "active"
+  },
+  {
+    "id": 285,
+    "claim": "In P01, /CGI_XML_CT_UNESCO is the ONLY live CGI DMEE tree: 3,512 real media (REGUT XVORL='', 2023->2026-06-29, co-codes IIEP/UIL/UNES). The twin /CGI_XML_CT_UNESCO_1 has produced 0 production media ever (orphan, not in T042Z routing); its 9 media in D01 are FP_SPEZZANO test runs only. Therefore production CGI structured-address only ever exercises the parent tree; the SYNC-twin (shared FIRSTNODE_ID) relationship is moot in production.",
+    "claim_type": "data_quality",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-06-29",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1",
+      "REGUT",
+      "T042Z",
+      "DMEE_TREE_NODE"
+    ],
+    "evidence_for": [
+      "P01 REGUT DTFOR LIKE /CGI%: 3512 rows all /CGI_XML_CT_UNESCO, 0 for _1 (p01_cgi_tree_usage.py 2026-06-29)",
+      "payment_bcm_companion.html marks _1 INACTIVE / not in T042Z"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Corrected BCM_StructuredAddressChange.html v1.1: header KPI, Tree 4 DEAD banner, Current Solution row, comparison header, tree-summary row, blast-radius, pending section.",
+    "resolved_session": "",
+    "status": "active"
+  },
+  {
+    "id": 286,
+    "claim": "CR (Cost Recovery) project AVC / Disponible is controlled at a CONTROL ADDRESS (fund center NAI + control CIs), NOT at the posting leaf address. For 5 verified CR test funds (567KEN2000, 537RAF4006, 218MAR2000, 263KEN5000, 235MAG5003): FMAVCT rows exist at RFUNDSCTR=NAI, RCMMTITEM in {10', 11, 13, 20, 30, 40, 50, 80, TC}. This is the EXBO/Extrabudgetary AVC regime (derivation via AFMA strategy 9HZ00001). A script reading FMAVCT at the posting fund center will return ZERO and give a false-negative disponible reading.",
+    "claim_type": "system_behavior",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: knowledge/domains/PSM/cost_recovery_avc_disponible_model.md; avc_availability_model.md (EXBO regime); claims #253-#259 (general AVC model).",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "P01 RFC_READ_TABLE FMAVCT 2026-06-29",
+        "cite": "FMAVCT WHERE RFUND IN (567KEN2000, 537RAF4006, 218MAR2000, 263KEN5000, 235MAG5003): all rows have RFUNDSCTR=NAI, RCMMTITEM in the listed control set. Zero rows at posting-level fund centers.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMAVCT",
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "FMAVC_DERI_CONTROL_OBJECT",
+      "567KEN2000",
+      "537RAF4006",
+      "218MAR2000",
+      "263KEN5000",
+      "235MAG5003",
+      "633CRP9003",
+      "633CRP9000"
+    ]
+  },
+  {
+    "id": 287,
+    "claim": "CR (Cost Recovery) budget lives in FMBL as VALTYPE=B1 (Payment Budget), BUDTYPE=4000, processes ENTR/COSD/CORV/SEND/RECV -- NOT in BPGE/BPJA WRTTP43. BPGE/BPJA WRTTP43 = 0 for all 5 verified CR test funds. FMBL B1 lines are active for fiscal years 2024-2025-2026 in P01 (263KEN5000/235MAG5003 multi-biennium from 2024). The control address in FMBL is fund center NAI + control CIs. Any script reading only BPGE/BPJA WRTTP43 for CR funds will report ZERO budget -- a FALSE NEGATIVE.",
+    "claim_type": "system_behavior",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: cost_recovery_avc_disponible_model.md; claim #275 (FMBL TVAL period amounts); claims #283/#284 (FM model sync). SUPERSEDES any prior implicit assumption that CR budget = BPGE/BPJA WRTTP43.",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "P01 RFC_READ_TABLE FMBL + BPGE + BPJA 2026-06-29",
+        "cite": "BPGE/BPJA: WRTTP43 SUM=0 for all 5 CR test funds. FMBL: rows with VALTYPE=B1, BUDTYPE=4000, fund center NAI, FY 2024-2026 present for same funds.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMBL",
+      "BPGE",
+      "BPJA",
+      "FMAVCT",
+      "567KEN2000",
+      "537RAF4006",
+      "218MAR2000",
+      "263KEN5000",
+      "235MAG5003",
+      "BAPI_0050_CREATE",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FMBB"
+    ]
+  },
+  {
+    "id": 288,
+    "claim": "Cost recovery AVC mechanism is RIB (Revenues Increasing the Budget): incoming R1 revenue postings (GL 7046013/7034011) increase the available AVC budget, enabling cost recovery postings to clear. Standard SAP FMs: FM_RIB_AVAILABLE_REVENUE (available revenue), FMAVC_READ_TOTALS_FOR_ADDRESS (AVC consumable/consumed/available per ACO address; IMPORT struct FMKU_S_DIMPART = FUND/FUNDSCTR/CMMTITEM/FUNCAREA/GRANT_NBR/MEASURE/USERDIM/BUDGET_PD). Neither FM is RFC-enabled -- call via RFC_ABAP_INSTALL_AND_RUN on D01/V01 only. Never INSERT FMAVCT (feedback_avc_real_from_standard_not_handrolled).",
+    "claim_type": "system_behavior",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: cost_recovery_avc_disponible_model.md; avc_availability_model.md (FMAVC_READ_TOTALS_FOR_ADDRESS); claims #270/#277 (BAPI_0050_CREATE / Y_FMKU_0050_CREATE_WITH_COMMIT).",
+    "evidence_for": [
+      {
+        "type": "domain_model",
+        "ref": "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md 2026-06-29",
+        "cite": "RIB architecture: R1 revenue (GL 7046013/7034011) feeds FMAVCT consumable side via activity groups; FMAVC_READ_TOTALS_FOR_ADDRESS returns available at NAI control address. Source: P01 FMBL/FMAVCT read + ABAP source RPY on V01.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FM_RIB_AVAILABLE_REVENUE",
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "FMAVC_GET_CD_ACTIVATION",
+      "FMAVCT",
+      "FMBL",
+      "633CRP9003",
+      "633CRP9000",
+      "567KEN2000",
+      "BAPI_0050_CREATE"
+    ]
+  },
+  {
+    "id": 289,
+    "claim": "Cover funds 633CRP9000 (TYPE 303) and 633CRP9003 (TYPE 304) had BPJA WRTTP43 (annual entered budget) only through 2018 (633CRP9000: 2008-2018; 633CRP9003: 2016-2018). Since 2019 these cover funds have ZERO entered budget. Current CR disponible is entirely revenue/cover-driven (RIB), not from entered annual budget. This explains why a naive BPGE/BPJA read shows zero budget for the CR pool funds since 2019.",
+    "claim_type": "data_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #268 (633CRP9003 = CR pool fund); cost_recovery_avc_disponible_model.md. Fund TYPE 303/304 = credit/cover fund family.",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "P01 RFC_READ_TABLE BPJA WHERE GEBER IN (633CRP9000, 633CRP9003) 2026-06-29",
+        "cite": "BPJA rows for 633CRP9003: GJAHR 2016-2018 only (WRTTP43 non-zero). BPJA rows for 633CRP9000: GJAHR 2008-2018 only. No rows after 2018 for either fund.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "633CRP9003",
+      "633CRP9000",
+      "BPJA",
+      "BPGE",
+      "FMAVCT",
+      "567KEN2000"
+    ]
+  },
+  {
+    "id": 290,
+    "claim": "D01 CR disponible gap = 100%: the 5 CR test funds (567KEN2000, 537RAF4006, 218MAR2000, 263KEN5000, 235MAG5003) have B1 budget in FMBL (2024-2026) and FMAVCT control rows in P01, but ZERO FMBL lines and ZERO FMAVCT rows in D01. D01 cannot process cost-recovery postings for these test funds -- any CRP test will fail at AVC. Fix: load CR budget via FMBB / BAPI_0050_CREATE / Y_FMKU_0050_CREATE_WITH_COMMIT against control address (fund center NAI + CR CIs), VALTYPE=B1, process ENTR. This is DISTINCT from the ~212M regular-fund budget gap (claim #283, BPGE/BPJA WRTTP43).",
+    "claim_type": "gap",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: cost_recovery_avc_disponible_model.md; claim #283 (FM model sync regular funds); claim #291 (fund validity fix applied this session).",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "D01 RFC_READ_TABLE FMBL + FMAVCT 2026-06-29",
+        "cite": "FMBL WHERE GEBER IN (567KEN2000, 537RAF4006, 218MAR2000, 263KEN5000, 235MAG5003) in D01: 0 rows. FMAVCT same filter in D01: 0 rows. P01 shows non-zero for both.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMBL",
+      "FMAVCT",
+      "BAPI_0050_CREATE",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FMBB",
+      "567KEN2000",
+      "537RAF4006",
+      "218MAR2000",
+      "263KEN5000",
+      "235MAG5003",
+      "633CRP9003",
+      "633CRP9000"
+    ]
+  },
+  {
+    "id": 291,
+    "claim": "CR cover fund family D01 validity sync (2026-06-29): 633CRP9003 had DATBIS=2018 in D01 (EXPIRED) vs 2027 in P01. Fix executed via FM_FUND_CHANGE_RFC (validity extension) and FM_FUND_CREATE_RFC (new fund creation). Result: 14 CR funds CREATED + 4 validity-EXTENDED in D01. Exception: 633CRP9200 left with longer validity in D01 than P01 because SAP refuses to shorten a fund validity when budget exists in that period. Reusable: Zagentexecution/tasks/2026_06_29_fm_model_sync/fund_family_sync.py",
+    "claim_type": "fix_applied",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: claim #290 (D01 CR gap); claim #283 (FM model sync); fund_family_sync.py = reusable sync tool.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/fund_family_sync.py execution 2026-06-29",
+        "cite": "14 FM_FUND_CREATE_RFC + 4 FM_FUND_CHANGE_RFC calls SY-SUBRC=0. Post-run D01: 633CRP9003 DATBIS=2027, 14 new CR funds confirmed present in FMFINCODE.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "633CRP9003",
+      "633CRP9000",
+      "FM_FUND_CHANGE_RFC",
+      "FM_FUND_CREATE_RFC",
+      "FMFINCODE",
+      "567KEN2000"
+    ]
+  },
+  {
+    "id": 292,
+    "claim": "SAP RFC amounts use TRAILING minus format (e.g. '75695.67-' not '-75695.67'). float('75695.67-') raises ValueError. Correct parse: strip trailing '-', negate. Affects FMBL TVAL columns, BPGE/BPJA amounts, FMAVCT HSL amounts, and any numeric column returned by RFC_READ_TABLE. Applies across all FM/FI table reads.",
+    "claim_type": "technical_gotcha",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "FI"
+      ],
+      "module": [
+        "FM",
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Cross-link: cost_recovery_avc_disponible_model.md gotcha section. Applies broadly to all SAP RFC numeric parsing.",
+    "evidence_for": [
+      {
+        "type": "live_p01",
+        "ref": "P01 RFC_READ_TABLE FMBL / BPGE parsing 2026-06-29",
+        "cite": "FMBL TVAL column raw values: '75695.67-'. float() call fails. Trailing-minus is SAP RFC standard for negative amounts (ABAP packed decimals serialized as char with trailing sign).",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMBL",
+      "BPGE",
+      "BPJA",
+      "FMAVCT",
+      "FM_RIB_AVAILABLE_REVENUE",
+      "FMAVC_READ_TOTALS_FOR_ADDRESS"
+    ]
   }
 ]
