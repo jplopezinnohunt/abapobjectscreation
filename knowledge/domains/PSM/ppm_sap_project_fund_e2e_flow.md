@@ -20,20 +20,21 @@ TBTCO job discovery). SAP then serves financials back OUT to PPM. (Source: syste
 ```mermaid
 flowchart TD
     subgraph PPM["PPM — Salesforce / Core Planner (MASTER)"]
-      WP["Workplan / project defined + approved\n(outputs, sector, division, region, country, donor,\nfund type, funding, C/5 biennium)"]
+      WP["Workplan / project defined + approved\n(outputs, sector, division, region, country, donor,\nfund type, funding AMOUNTS, C/5 biennium)"]
     end
     WP -->|approve → sync trigger| MS["MuleSoft\n(synctrigger job fleet, 17 flows)\ndest: MULESOFT_PROD / MULESOFT_P01_IDOC"]
 
     subgraph SAP["SAP (D01/P01) — RECEIVES (inbound, in order)"]
       direction TB
-      S1["1 · Project def + WBS structure\nBAPI_PROJECT_MAINTAIN\n(PSPID, profile, CO area, resp/appl,\nWBS hierarchy from C/5 outputs, BELKZ/PLAKZ=X, Release)"]
-      S2["2 · WBS texts + custom fields\nY_BAPI_WBS_TEXT_MAINTAIN +\nY_BAPI_WBS_CUS_FIELD_UPDATE\n(USR00-04 = region/country/sector/division/CCAQ,\ndonor/source/exec/beneficiary)"]
-      S3["3 · Fund create\nY_FMKU_0050_CREATE_WITH_COMMIT\n(FM_FUND_CREATE_RFC)\nFINCODE = PSPID  ·  type from YPS_FM_TYPE  ·  validity"]
-      S4["4 · Fund → C/5 biennium assign\nY_BAPI_FUND_C5_ASSIGNMENT\n(YTFM_FUND_C5: fund × C5_ID × output)"]
-      S5["5 · Budget / disponible (cost recovery)\nENTR / VALTYPE=B1 / BUDTYPE=3000\nat control address (e.g. FC NAI + TC)\n→ project becomes spendable (AVC)"]
-      S1 --> S2 --> S3 --> S4 --> S5
+      A["A · CREATE FUND\nY_FMKU_0050_CREATE_WITH_COMMIT (→FM_FUND_CREATE_RFC)\nFINCODE = PSPID · type (YPS_FM_TYPE) · validity"]
+      B["B · FUND → C/5 biennium\nY_BAPI_FUND_C5_ASSIGNMENT\n(YTFM_FUND_C5: fund × C5_ID × output)"]
+      C["C · CREATE PROJECT + WBS\nBAPI_PROJECT_MAINTAIN\n(PSPID, profile, CO area, resp/appl,\nWBS hierarchy via I_WBS_HIERARCHIE_TABLE, BELKZ/PLAKZ=X, Release)"]
+      D["D · WBS texts + custom fields\nY_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE\n(USR00-04 region/country/sector/division, donor/source/exec)"]
+      E["E · ASSIGN BUDGET to FUND\nBCS budget entry (BAPI_0050_CREATE / Y_FMKU_0050)\naddress = fund center (OBJNR FS*) + commitment item + fund\n→ BPGE/BPJA"]
+      F["F · ASSIGN BUDGET to PROJECT / WBS\nBCS budget entry (BAPI_0050_CREATE)\naddress = WBS (OBJNR PR*) + commitment item + fund\n→ BPGE/BPJA  (cost-recovery: ENTR/VALTYPE B1/BUDTYPE 3000)"]
+      A --> B --> C --> D --> E --> F
     end
-    MS -->|inbound write| S1
+    MS -->|inbound write| A
 
     SAP -->|financials sync OUT| MSO["MuleSoft (read flows)"]
     MSO -->|Y_BAPI_WBS_FINANCIAL_DATA_1\nY_BAPI_YPS8| PPM
@@ -43,12 +44,17 @@ flowchart TD
 
 | # | Step | FM (inbound MuleSoft→SAP) | Key data |
 |---|------|---------------------------|----------|
-| 1 | Project + WBS structure | **`BAPI_PROJECT_MAINTAIN`** | PSPID, PROJECT_PROFILE, COMP_CODE/CONTROLLING_AREA/BUS_AREA, RESPONSIBLE_NO (TCJ04), APPLICANT_NO (TCJ05); WBS w/ `WBS_ACCOUNT_ASSIGNMENT_ELEMENT=X`+`WBS_PLANNING_ELEMENT=X`; hierarchy via `I_WBS_HIERARCHIE_TABLE`; then Release (REL). REFNUMBER = per-data-table row index. |
-| 2 | WBS texts + custom fields | `Y_BAPI_WBS_TEXT_MAINTAIN`, `Y_BAPI_WBS_CUS_FIELD_UPDATE` | USR00=REGION, USR01=COUNTRY, USR02=SECTOR, USR03=DIVISION, USR04≈CCAQ; YYE_DONOR, YYE_TYP_SOU (source), YYE_EXEC, YYE_BENEF1 (sister/beneficiary). |
-| 3 | Fund create | **`Y_FMKU_0050_CREATE_WITH_COMMIT`** (→ FM_FUND_CREATE_RFC) | **FINCODE = PSPID** (the 10-digit link); fund TYPE via YPS_FM_TYPE correlation; DATAB/DATBIS from workplan validity. |
-| 4 | Fund → C/5 biennium | **`Y_BAPI_FUND_C5_ASSIGNMENT`** | Writes YTFM_FUND_C5 (FIKRS, FINCODE, C5_ID e.g. 43=2026-27, FM_OUTPUT). |
-| 5 | Disponible (cost recovery) | budget entry (ENTR / VALTYPE B1 / BUDTYPE 3000) | At the control address (fund center e.g. NAI + commitment item TC); makes the project spendable under AVC (RIB). See cost_recovery_avc_disponible_model.md. |
-| ← | Financials back to PPM | `Y_BAPI_WBS_FINANCIAL_DATA_1`, `Y_BAPI_YPS8` | SAP returns project financials (budget/commitment/actual) to PPM for monitoring. |
+| A | **CREATE FUND** | **`Y_FMKU_0050_CREATE_WITH_COMMIT`** (→ FM_FUND_CREATE_RFC) | **FINCODE = PSPID**; fund TYPE via YPS_FM_TYPE; DATAB/DATBIS from workplan validity. |
+| B | Fund → C/5 biennium | **`Y_BAPI_FUND_C5_ASSIGNMENT`** | YTFM_FUND_C5 (FIKRS, FINCODE, C5_ID e.g. 43=2026-27, FM_OUTPUT). |
+| C | **CREATE PROJECT + WBS** | **`BAPI_PROJECT_MAINTAIN`** | PSPID, PROJECT_PROFILE, COMP_CODE/CONTROLLING_AREA/BUS_AREA, RESPONSIBLE_NO (TCJ04), APPLICANT_NO (TCJ05); WBS w/ ACCT_ASSIGN+PLANNING=X; hierarchy via `I_WBS_HIERARCHIE_TABLE`; Release. REFNUMBER = per-table row index. |
+| D | WBS texts + custom fields | `Y_BAPI_WBS_TEXT_MAINTAIN`, `Y_BAPI_WBS_CUS_FIELD_UPDATE` | USR00=REGION, USR01=COUNTRY, USR02=SECTOR, USR03=DIVISION, USR04≈CCAQ; YYE_DONOR/TYP_SOU/EXEC/BENEF1. |
+| E | **ASSIGN BUDGET → FUND** | BCS budget entry (`BAPI_0050_CREATE` / `Y_FMKU_0050`) | Address = **fund center (OBJNR `FS*`)** + commitment item + fund(GEBER) → **BPGE/BPJA**. The funding envelope at FM level. |
+| F | **ASSIGN BUDGET → PROJECT/WBS** | BCS budget entry (`BAPI_0050_CREATE`) | Address = **WBS (OBJNR `PR*`)** + commitment item + fund → **BPGE/BPJA**. Cost-recovery variant = `ENTR / VALTYPE B1 / BUDTYPE 3000` at control addr (FC NAI + CI TC); makes the project spendable under AVC/RIB. |
+| ← | Financials back to PPM | `Y_BAPI_WBS_FINANCIAL_DATA_1`, `Y_BAPI_YPS8` | SAP returns project financials (budget/commitment/actual) to PPM. |
+
+**Two budget levels are real (verified):** BPGE/BPJA carry budget at BOTH the fund center (`OBJNR FS*`) AND the
+WBS (`OBJNR PR*`). Step E budgets the FUND; step F budgets the PROJECT/WBS — both via the BCS budget entry
+document, differing only by the addressed object. AVC controls consumption against them.
 
 ## Invariants
 - **FINCODE = PSPID** (project ⇔ fund, 10-digit naming link). When a project is created a matching fund is provisioned.
