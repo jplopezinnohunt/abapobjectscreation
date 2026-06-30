@@ -9,6 +9,9 @@ cross_links:
   - knowledge/domains/PSM/ps_project_replication_and_ki235.md
   - knowledge/domains/PSM/cost_recovery_avc_disponible_model.md
   - knowledge/domains/PSM/fund_management_sync_playbook.md
+  - brain_v2/claims/claims.json#301
+  - brain_v2/claims/claims.json#302
+  - brain_v2/claims/claims.json#303
 ---
 
 # E2E Flow — PPM/Salesforce → SAP (project + fund), as the integration does it

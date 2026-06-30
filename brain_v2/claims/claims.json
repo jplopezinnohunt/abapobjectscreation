@@ -13040,5 +13040,173 @@
     "cross_links": [
       "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
     ]
+  },
+  {
+    "id": 301,
+    "claim": "CANONICAL E2E: PPM (Salesforce/Core Planner) is MASTER for projects+funds; MuleSoft (synctrigger job fleet) writes them INTO SAP via ordered inbound FMs, then SAP serves financials back to PPM. Ordered inbound A-F: A=Y_FMKU_0050_CREATE_WITH_COMMIT (create fund, FINCODE=PSPID); B=Y_BAPI_FUND_C5_ASSIGNMENT (fund->C5 biennium, table YTFM_FUND_C5); C=BAPI_PROJECT_MAINTAIN (create project+WBS, hierarchy via I_WBS_HIERARCHIE_TABLE, Release); D=Y_BAPI_WBS_TEXT_MAINTAIN+Y_BAPI_WBS_CUS_FIELD_UPDATE (WBS texts+custom fields: region/country/sector/division, donor/source/exec); E=BCS budget entry BAPI_0050_CREATE/Y_FMKU_0050 address fund center OBJNR FS* -> BPGE/BPJA; F=BCS budget entry BAPI_0050_CREATE address WBS OBJNR PR* -> BPGE/BPJA (cost-recovery: ENTR/VALTYPE B1/BUDTYPE 3000). Financials BACK: Y_BAPI_WBS_FINANCIAL_DATA_1 + Y_BAPI_YPS8. SAP does NOT originate projects -- it receives them. This is the operating-model level integration for every UNESCO project+fund.",
+    "claim_type": "operating_model",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FM",
+        "Integration"
+      ],
+      "module": [
+        "PS",
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R",
+        "PPM_Integration"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Canonical integration contract for PPM->SAP. Every UNESCO project+fund creation traverses this A-F sequence. Cross-links: claim #270 (Y_FMKU_0050 as BCS wrapper), claim #294 (3-layer prereq chain for test postings), claim #295 (BAPI_PROJECT_MAINTAIN recipe). Executable: Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py (A-F flow for one PSPID, idempotent, dry-run, verify-by-reread). Broadcast to unesco-sap-brain: briefs/INBOX_from_abapobjectscreation_ppm_sap_project_fund_e2e.md (ADR-007).",
+    "evidence_for": [
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+        "cite": "Committed 2026-06-30. Grounded in system_operating_model_rfc.md (RFC+job process discovery 2026-06-21) and verified via live D01/P01 RFC calls across sessions s093-s2026-06-30. The 17 MuleSoft synctrigger flows, the Y_BAPI_*/Y_FMKU_* FM names, YTFM_FUND_C5 table, and the FINCODE=PSPID invariant are all confirmed from live P01 data.",
+        "added_session": "s-2026-06-30"
+      },
+      {
+        "type": "live_p01",
+        "ref": "knowledge/system_operating_model_rfc.md",
+        "cite": "RFCDES+TBTCO+TFDIR analysis 2026-06-21: 174 MuleSoft dest GUIDs, 17 synctrigger flow names discovered in TBTCO. FM names Y_BAPI_FUND_C5_ASSIGNMENT / Y_BAPI_WBS_TEXT_MAINTAIN / Y_BAPI_WBS_CUS_FIELD_UPDATE / Y_BAPI_WBS_FINANCIAL_DATA_1 / Y_BAPI_YPS8 verified in TFDIR (RFC-enabled FMs). Y_FMKU_0050_CREATE_WITH_COMMIT confirmed RFC-enabled (claim #270).",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BAPI_PROJECT_MAINTAIN",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "Y_BAPI_FUND_C5_ASSIGNMENT",
+      "Y_BAPI_WBS_TEXT_MAINTAIN",
+      "Y_BAPI_WBS_CUS_FIELD_UPDATE",
+      "Y_BAPI_WBS_FINANCIAL_DATA_1",
+      "Y_BAPI_YPS8",
+      "BAPI_0050_CREATE",
+      "YTFM_FUND_C5",
+      "BPGE",
+      "BPJA",
+      "MuleSoft",
+      "FM_FUND_CREATE_RFC"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+      "knowledge/system_operating_model_rfc.md",
+      "Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py",
+      "brain_v2/claims/claims.json#270",
+      "brain_v2/claims/claims.json#294",
+      "brain_v2/claims/claims.json#295"
+    ]
+  },
+  {
+    "id": 302,
+    "claim": "FINCODE=PSPID is an invariant: every UNESCO project provisions a twin fund with FINCODE identical to PSPID (10-digit). This is the architectural link between PS (PROJ/PRPS) and FM (FMFINCODE/FMBL/FMAVCT). Step A in the PPM->SAP flow (Y_FMKU_0050_CREATE_WITH_COMMIT) ALWAYS sets FINCODE=PSPID. No UNESCO project exists without a matching fund. AVC controls consumption against the fund; KI235 is resolved via the WBS CO object. The FINCODE=PSPID rule is what makes the fund-center/commitment-item derivation (FMDERIVE) reachable from a project posting.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FM"
+      ],
+      "module": [
+        "PS",
+        "FM"
+      ],
+      "process": [
+        "B2R",
+        "PPM_Integration"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Established in ppm_sap_project_fund_e2e_flow.md invariants section. Confirmed from live P01 data: FMFINCODE.FINCODE matches PSPID across all active projects. Cross-link: claim #301 (E2E flow), claim #293 (KI235 WBS CO object), claim #270 (Y_FMKU_0050 wrapper).",
+    "evidence_for": [
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md:59",
+        "cite": "Invariants section: FINCODE = PSPID (project-fund, 10-digit naming link). When a project is created a matching fund is provisioned. Grounded in live P01 FMFINCODE observation across multiple CR project/fund pairs (000CRP9000/000CRP9000, 633CRP9003/633CRP9003, etc.).",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMFINCODE",
+      "PROJ",
+      "PRPS",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FM_FUND_CREATE_RFC",
+      "FMDERIVE",
+      "FMAVCT",
+      "FMBL"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+      "brain_v2/claims/claims.json#301",
+      "brain_v2/claims/claims.json#270",
+      "brain_v2/claims/claims.json#293"
+    ]
+  },
+  {
+    "id": 303,
+    "claim": "TWO BUDGET LEVELS are real and distinct (verified): BPGE/BPJA carry budget at BOTH the fund center (OBJNR FS*) AND the WBS element (OBJNR PR*). Step E (fund budget: address=fund-center+CI+fund -> BPGE/BPJA) and Step F (project budget: address=WBS+CI+fund -> BPGE/BPJA) are separate BCS budget-entry postings via BAPI_0050_CREATE, differing only by the addressed OBJNR prefix. Both are required for a project to be executable: fund budget enables AVC ENTR/RIB disponible; project budget enables CO planning. Cost-recovery variant of Step F: ENTR/VALTYPE B1/BUDTYPE 3000 (claim #290 CR gap is Step F missing for 5 test funds).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FM",
+        "BCS"
+      ],
+      "module": [
+        "PS",
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R",
+        "PPM_Integration"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Resolves any ambiguity about whether BPGE/BPJA duplicate or distinguish. They are DISTINCT postings at different control objects. Cross-link: claim #301 (E2E flow steps E+F), claim #290 (CR gap = Step F missing), claim #294 (3-layer prereq chain). Doc ref: ppm_sap_project_fund_e2e_flow.md two-budget-levels section.",
+    "evidence_for": [
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md:55-57",
+        "cite": "Two budget levels section: BPGE/BPJA carry budget at BOTH the fund center (OBJNR FS*) AND the WBS (OBJNR PR*). Step E budgets the FUND; step F budgets the PROJECT/WBS -- both via the BCS budget entry document, differing only by the addressed object. Grounded in live P01 BPGE observations across CR + regular fund/project pairs across sessions s2026-06-29/30.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BPGE",
+      "BPJA",
+      "BAPI_0050_CREATE",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "FMBL",
+      "FMAVCT"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+      "brain_v2/claims/claims.json#301",
+      "brain_v2/claims/claims.json#290",
+      "brain_v2/claims/claims.json#294"
+    ]
   }
 ]
