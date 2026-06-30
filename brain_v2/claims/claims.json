@@ -12787,7 +12787,7 @@
     },
     "created_session": "s-2026-06-29",
     "resolved_session": null,
-    "resolution_notes": "Flat WBS only. Hierarchical WBS fails (see claim #297 + known_unknown KU-2026-WBS-HIERARCHY-BAPI). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "resolution_notes": "Flat WBS only. Hierarchical WBS fails (see claim #297 + known_unknown KU-2026-WBS-HIERARCHY-BAPI). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md. Dates (START/FINISH/FCST_*) intentionally NOT copied -- P01 finish dates are in the past and would block 2026 test postings; profile-defaulted fields (BUDGET/PLAN/NETWORK profiles, OBJECTCLASS, CALENDAR) verified identical P01=D01 for 000CRP9000.",
     "evidence_for": [
       {
         "type": "live_d01",
@@ -12837,7 +12837,7 @@
     },
     "created_session": "s-2026-06-29",
     "resolved_session": null,
-    "resolution_notes": "Companion to claim #295 (BAPI recipe). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "resolution_notes": "Companion to claim #295 (BAPI recipe). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md. REFNUMBER per-table-index root cause captured in claim #299.",
     "evidence_for": [
       {
         "type": "live_d01",
@@ -12880,12 +12880,12 @@
     },
     "created_session": "s-2026-06-29",
     "resolved_session": null,
-    "resolution_notes": "Open execution-backlog item. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "resolution_notes": "PARTIALLY REFINED: the \"WBS element already exists\" (E/OP/PT038) symptom is now explained by REFNUMBER mis-numbering (see claim #299) — that is solved. The true remaining open: I_WBS_HIERARCHIE_TABLE not honored at create (\"Several WBS elements on level 1 not allowed\" E/OP/PT035) — still open after REFNUMBER fix. Known-unknown narrowed in KU-2026-WBS-HIERARCHY-BAPI. Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
     "evidence_for": [
       {
         "type": "live_d01",
         "ref": "BAPI_PROJECT_MAINTAIN I_WBS_HIERARCHIE_TABLE attempts s093 2026-06-29",
-        "cite": "Approximately 12 RFC call variants tested on D01. Return messages: E/OP/PT035 'Several WBS elements on level 1 not allowed' and E/OP/PT038 'WBS element already exists'. I_WBS_HIERARCHIE_TABLE structure identified from BAPI documentation but correct population not achieved.",
+        "cite": "Approximately 12 RFC call variants tested on D01. The E/OP/PT038 \"WBS element already exists\" was caused by REFNUMBER global numbering (solved, claim #299). The E/OP/PT035 \"Several WBS elements on level 1 not allowed\" persists after REFNUMBER fix -- this is the true remaining open: I_WBS_HIERARCHIE_TABLE not honored at create via RFC.",
         "added_session": "s-2026-06-29"
       }
     ],
@@ -12946,6 +12946,96 @@
       "BAPI_PROJECT_MAINTAIN",
       "BAPI_PROJECTDEF_GETDETAIL",
       "CJ20N"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    ]
+  },
+  {
+    "id": 299,
+    "claim": "BAPI_PROJECT_MAINTAIN REFNUMBER is a per-data-table ROW INDEX, not a global sequence. In I_METHOD_PROJECT: ProjectDefinition Create -> REFNUMBER=000001 (row 1 of I_PROJECT_DEFINITION); each WBS-Element Create -> its 1-based index in I_WBS_ELEMENT_TABLE (row 1=000001, row 2=000002, ...); Save -> 000000. Numbering globally (def=000001, WBS-1=000002, WBS-2=000003) makes the last WBS point past the end of I_WBS_ELEMENT_TABLE, causing the misleading \"WBS element X already exists\" (E/OP/PT038). This was the #1 red herring, consuming ~12 RFC attempts. With REFNUMBER fixed, single-level-1 WBS create works cleanly.",
+    "claim_type": "technical_gotcha",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS"
+      ],
+      "module": [
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-29",
+    "resolved_session": null,
+    "resolution_notes": "Refines claim #296 (gotchas) + supersedes the REFNUMBER-caused path of KU-2026-WBS-HIERARCHY-BAPI. True remaining hierarchy limitation: I_WBS_HIERARCHIE_TABLE not honored at create (see claim #297 + KU-2026-WBS-HIERARCHY-BAPI narrowed). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md section #1-fix.",
+    "evidence_for": [
+      {
+        "type": "live_d01",
+        "ref": "knowledge/domains/PSM/ps_project_replication_and_ki235.md:57-62 + Zagentexecution/tasks/2026_06_29_fm_model_sync/ps_project_sync.py",
+        "cite": "Empirical D01 2026-06-29: after switching from global numbering to per-table indexing, the misleading \"WBS element already exists\" error disappeared and 000CRP9000 + 504PAK1000 were created+released cleanly on the first clean call.",
+        "added_session": "s-2026-06-29"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BAPI_PROJECT_MAINTAIN",
+      "I_METHOD_PROJECT",
+      "I_WBS_ELEMENT_TABLE",
+      "I_PROJECT_DEFINITION",
+      "PRPS",
+      "PROJ",
+      "504PAK1000"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "Zagentexecution/tasks/2026_06_29_fm_model_sync/ps_project_sync.py"
+    ]
+  },
+  {
+    "id": 300,
+    "claim": "Y_RFC_CREATE_PROJECT_SISTER (report YEBPROJ_CREATE_PROJECT_SISTER) is an OUTBOUND EXPORT from SAP to Salesforce/sister-system, NOT a SAP project creator. The report SELECTs from PROJ+PRPS and fills an output table for downstream consumption. The function module name is misleading -- it does not CREATE projects or WBS elements in SAP. Commit d259a71 title 'THE real creation path = Y_RFC_CREATE_PROJECT_SISTER' was WRONG.",
+    "claim_type": "correction",
+    "confidence": "TIER_1",
+    "status": "active",
+    "supersedes": "commit d259a71 title assertion (2026-06-29)",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS"
+      ],
+      "module": [
+        "PS"
+      ],
+      "process": [
+        "B2R",
+        "Cost_Recovery"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Replaces the incorrect session title from commit d259a71. The actual SAP-side project creation path remains open (see KU-2026-PS-PROJECT-CREATION-INBOUND). Cross-link: knowledge/domains/PSM/ps_project_replication_and_ki235.md.",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+        "cite": "Domain doc (committed 2026-06-29/30) documents Y_RFC_CREATE_PROJECT_SISTER/YEBPROJ_CREATE_PROJECT_SISTER as a SELECT on PROJ+PRPS filling an output table -- classic outbound export pattern. No INSERT/MODIFY/BAPI-write in the report body. WBCROSSGT where-used for BAPI_PROJECT_MAINTAIN = 0 custom callers (inconclusive).",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "Y_RFC_CREATE_PROJECT_SISTER",
+      "YEBPROJ_CREATE_PROJECT_SISTER",
+      "PROJ",
+      "PRPS",
+      "BAPI_PROJECT_MAINTAIN"
     ],
     "cross_links": [
       "knowledge/domains/PSM/ps_project_replication_and_ki235.md"

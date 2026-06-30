@@ -546,25 +546,60 @@
       "id": "KU-2026-WBS-HIERARCHY-BAPI",
       "opened_at": "2026-06-29",
       "context": "PS project replication P01->D01 (session s-2026-06-29). ~12 RFC attempts on D01 via BAPI_PROJECT_MAINTAIN failed to create hierarchical WBS children under 504PAK1000.",
-      "question": "What is the exact correct population of I_WBS_HIERARCHIE_TABLE (fields: WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT) to create child WBS elements under an existing parent via BAPI_PROJECT_MAINTAIN, avoiding 'Several WBS elements on level 1 not allowed' (E/OP/PT035) and 'WBS element already exists' (E/OP/PT038)?",
+      "question": "NARROWED (2026-06-29, claim #299): The 'WBS element already exists' (E/OP/PT038) symptom was caused by REFNUMBER global mis-numbering -- that is SOLVED (see claim #299). The true remaining open: what is the exact correct population of I_WBS_HIERARCHIE_TABLE (fields: WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT) to create child WBS elements under an existing parent via BAPI_PROJECT_MAINTAIN, avoiding 'Several WBS elements on level 1 not allowed' (E/OP/PT035)? With no coding mask (MASK_ID empty), POSID dots do not auto-nest AND I_WBS_HIERARCHIE_TABLE UP/DOWN is not honored at create -- verified across one-call / incremental / UP-only / UP+DOWN on a clean slate with REFNUMBER fixed.",
       "domain": "PSM / PS",
       "status": "open",
-      "recommended_path": "CJ20N (Project Builder) via sap-webgui-core GUI framework, OR a targeted RFC deep-dive with SAP documentation on I_WBS_HIERARCHIE_TABLE population rules.",
+      "recommended_path": "CJ20N (Project Builder) via sap-webgui-core GUI framework for the indent step (def+root via BAPI, then indent children in CJ20N). RFC-only path requires MASK_ID/coding mask or undocumented I_WBS_HIERARCHIE_TABLE population rules.",
+      "narrowed_session": "s-2026-06-29",
+      "narrowing_note": "E/OP/PT038 'already exists' path REMOVED -- it was REFNUMBER mis-numbering (solved). E/OP/PT035 'level-1 not allowed' is the sole remaining open path.",
       "related_claims": [
         "#295",
         "#296",
         "#297",
-        "#298"
+        "#298",
+        "#299"
       ],
       "related_objects": [
         "BAPI_PROJECT_MAINTAIN",
         "I_WBS_HIERARCHIE_TABLE",
+        "I_METHOD_PROJECT",
         "504PAK1000",
         "504PAK1000.4",
         "504PAK1000.4.4",
         "CJ20N"
       ],
       "knowledge_doc": "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    },
+    {
+      "id": "KU-2026-PS-PROJECT-CREATION-INBOUND",
+      "opened_at": "2026-06-30",
+      "context": "s-2026-06-30 steward pass. Y_RFC_CREATE_PROJECT_SISTER proved to be an outbound export (claim #300), so the actual project+WBS creation path in SAP is unknown. WBCROSSGT where-used for BAPI_PROJECT_MAINTAIN = 0 custom callers -- inconclusive.",
+      "question": "How are PS projects + WBS elements CREATED in SAP at UNESCO? Leading hypothesis: interactively via CJ20N (Project Builder), then exported outbound via the SISTER RFCs. Alternative: inbound IDoc or PPM->SAP PI message triggers creation. Needs: trace a recent project's creating tcode/program via CDHDR (OBJECTCLAS=PROJ, CHANGEDOC) or check PROJ-ERNAM program name, or find an inbound IDoc type / PI interface from PPM/Core Planner.",
+      "domain": "PSM / PS",
+      "status": "resolved",
+      "recommended_path": "Query CDHDR WHERE OBJECTCLAS='PROJ' AND CHANGENR first-change for a known project -> TCODE field reveals creating transaction. Or check PROJ.ERNAM (user who created) for batch/background user vs dialog user. Check EDIDC for inbound IDocs with MESTYP relevant to PS.",
+      "related_claims": [
+        "#300",
+        "#295",
+        "#297"
+      ],
+      "related_objects": [
+        "Y_RFC_CREATE_PROJECT_SISTER",
+        "YEBPROJ_CREATE_PROJECT_SISTER",
+        "BAPI_PROJECT_MAINTAIN",
+        "PROJ",
+        "PRPS",
+        "CDHDR",
+        "CJ20N",
+        "MuleSoft",
+        "Y_FMKU_0050_CREATE_WITH_COMMIT",
+        "Y_BAPI_FUND_C5_ASSIGNMENT",
+        "Y_BAPI_WBS_TEXT_MAINTAIN",
+        "unescore20-PPM-brain"
+      ],
+      "knowledge_doc": "knowledge/system_operating_model_rfc.md",
+      "resolved_at": "2026-06-30",
+      "resolution": "ANSWERED from EXISTING process/RFC/job discovery (knowledge/system_operating_model_rfc.md, 2026-06-21). PPM (Salesforce/Core Planner) is the MASTER for projects+funds; MuleSoft (synctrigger job fleet, 17 flows) writes them INTO SAP: project+WBS via BAPI_PROJECT_MAINTAIN; WBS text/custom via Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE; fund via Y_FMKU_0050_CREATE_WITH_COMMIT; fund->C5 biennium via Y_BAPI_FUND_C5_ASSIGNMENT; fund change via FM_FUND_CHANGE_RFC. SAP serves financials back OUT via Y_BAPI_WBS_FINANCIAL_DATA_1 + Y_BAPI_YPS8. FINCODE=PSPID linkage (project provisions a matching fund). CJ20N-interactive hypothesis RETRACTED. So WBS hierarchy nesting IS achievable via BAPI_PROJECT_MAINTAIN (MuleSoft does it daily); the only residual is reproducing the exact I_WBS_HIERARCHIE_TABLE payload MuleSoft sends. Lesson: load system_operating_model_rfc.md first."
     }
   ]
 }
