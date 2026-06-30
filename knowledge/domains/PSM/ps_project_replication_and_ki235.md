@@ -52,23 +52,27 @@ clean path. Note PRPS has **PSPHI** (project internal no.), not PSPID; `PRxxxxxx
 - `REFNUMBER` is NUMC; the Save row = '000000'.
 - Method 'Delete' is NOT supported for ProjectDefinition (can't delete via this BAPI).
 
-## ⭐ THE REAL UNESCO CREATION PATH — `Y_RFC_CREATE_PROJECT_SISTER` (use THIS, not raw BAPI)
-UNESCO/PPM (Salesforce, the "SISTER" system) creates projects + WBS daily via a **custom RFC**, NOT raw
-BAPI_PROJECT_MAINTAIN:
-```
-Salesforce → Y_RFC_CREATE_PROJECT_SISTER (RFC) → SUBMIT report YEBPROJ_CREATE_PROJECT_SISTER → project + WBS hierarchy
-```
-- Input `IT_PROJ_PRPS` (table `YRFC_PROJ_PRPS_CREATE_SISTER`) is **BUSINESS-level**, ONE row per project:
-  PSPID, FUND_TYPE, RESPON, APPLIC, DIVISION, SECTOR, REGION, COUNTRY, CCAQ, VALID_FROM/TO, CREATION_DATE,
-  SISTER_CODE, APPROVED, YE_TYP_SOU, YE_EXEC, DONOR, TITLE, STATUS_TXT. + RFC_FROM_DATE/RFC_TO_DATE. Returns BAPIRETURN.
-- It does **NOT** take explicit WBS — the report **GENERATES the WBS hierarchy internally** from the business
-  attributes (UNESCO C/5 sector→output model). This is why the WBS nesting "just works" for Salesforce.
-- Companions: `Y_RFC_MODIFY_PROJECT_SISTER` (change), `Y_RFC_WBS` (WBS read by fund).
-- **Implication:** to replicate a UNESCO project faithfully, call `Y_RFC_CREATE_PROJECT_SISTER` with the
-  project's PPM business attributes — do NOT hand-build WBS via BAPI_PROJECT_MAINTAIN. The raw-BAPI section
-  below documents what was learned (REFNUMBER, nesting limit) but the SISTER RFC is the sanctioned tool.
-  Open: capture YRFC_PROJ_PRPS_CREATE_SISTER field mapping for 504PAK1000 + read report YEBPROJ_CREATE_PROJECT_SISTER
-  WBS-generation logic (blocked when D01 RFC connectivity dropped overnight 2026-06-29/30).
+## ⚠️ CORRECTION — `Y_RFC_CREATE_PROJECT_SISTER` is an EXPORT (SAP→Salesforce), NOT the SAP creator
+An earlier note (commit d259a71) called this "THE real creation path". **That was WRONG — corrected here.**
+Reading the report behind it (`YEBPROJ_CREATE_PROJECT_SISTER`, 208 lines) shows it `SELECT`s from PROJ +
+PRPS WHERE ERDAT BETWEEN dates and fills the output table `IT_PROJ_PRPS` (+ reads status via
+STATUS_TEXT_EDIT and long text via READ_TEXT). It **READS SAP projects and pushes them to the SISTER system
+(Salesforce)** — i.e. "create the project record IN the sister system FROM SAP". It is the OUTBOUND sync,
+it does NOT create projects/WBS in SAP. Companions `Y_RFC_MODIFY_PROJECT_SISTER`, `Y_RFC_WBS` are likewise
+SAP-side readers/exports.
+
+**Still OPEN — how a project+WBS is actually CREATED inside SAP (with hierarchy):**
+- `WBCROSSGT` where-used for `BAPI_PROJECT_MAINTAIN` returned 0 custom callers (index may be unpopulated, or
+  no custom code calls it). Not yet conclusive.
+- Leading hypothesis: projects are created in SAP **interactively in CJ20N (Project Builder)** by finance
+  users — where the WBS indent/hierarchy works natively — and then EXPORTED to Salesforce via the SISTER
+  RFCs above. (Consistent with: BAPI_PROJECT_MAINTAIN can't nest by RFC here; the SISTER FM is export-only.)
+- To confirm: trace a recently-created D01/P01 project's creating program/tcode (CDHDR / SE16 PROJ-ERNAM +
+  change docs), or check for an inbound interface (IDoc/PI) from PPM. NOT yet done.
+
+So for replicating 504PAK1000.4/.4.4 right now: **CJ20N indent on the existing def+root** remains the
+practical path (raw BAPI nesting limitation documented below). The "use the SISTER FM" implication was based
+on the wrong direction and is retracted.
 
 ## THE RAW-BAPI PROCESS (BAPI_PROJECT_MAINTAIN) — corrected & verified (fallback / learnings)
 
