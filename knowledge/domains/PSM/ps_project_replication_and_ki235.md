@@ -61,18 +61,23 @@ STATUS_TEXT_EDIT and long text via READ_TEXT). It **READS SAP projects and pushe
 it does NOT create projects/WBS in SAP. Companions `Y_RFC_MODIFY_PROJECT_SISTER`, `Y_RFC_WBS` are likewise
 SAP-side readers/exports.
 
-**Still OPEN — how a project+WBS is actually CREATED inside SAP (with hierarchy):**
-- `WBCROSSGT` where-used for `BAPI_PROJECT_MAINTAIN` returned 0 custom callers (index may be unpopulated, or
-  no custom code calls it). Not yet conclusive.
-- Leading hypothesis: projects are created in SAP **interactively in CJ20N (Project Builder)** by finance
-  users — where the WBS indent/hierarchy works natively — and then EXPORTED to Salesforce via the SISTER
-  RFCs above. (Consistent with: BAPI_PROJECT_MAINTAIN can't nest by RFC here; the SISTER FM is export-only.)
-- To confirm: trace a recently-created D01/P01 project's creating program/tcode (CDHDR / SE16 PROJ-ERNAM +
-  change docs), or check for an inbound interface (IDoc/PI) from PPM. NOT yet done.
+**The REAL creation path WAS ALREADY DOCUMENTED** — see `knowledge/system_operating_model_rfc.md`
+(MuleSoft↔PPM sync, 2026-06-21). I should have loaded it instead of reverse-engineering (CLAUDE.md rule #1).
 
-So for replicating 504PAK1000.4/.4.4 right now: **CJ20N indent on the existing def+root** remains the
-practical path (raw BAPI nesting limitation documented below). The "use the SISTER FM" implication was based
-on the wrong direction and is retracted.
+**E2E: PPM (Salesforce/Core Planner) is the MASTER for projects + funds; MuleSoft writes them INTO SAP.**
+Inbound MuleSoft→SAP create FMs:
+- **Project + WBS structure → `BAPI_PROJECT_MAINTAIN`** (yes — the same BAPI; production uses it, so the WBS
+  HIERARCHY *is* creatable via this BAPI — my RFC attempts just didn't construct I_WBS_HIERARCHIE_TABLE
+  correctly; it is NOT a BAPI limitation. Revisit the exact construction vs the MuleSoft payload.)
+- WBS text + custom fields → `Y_BAPI_WBS_TEXT_MAINTAIN` + `Y_BAPI_WBS_CUS_FIELD_UPDATE`.
+- **Fund → `Y_FMKU_0050_CREATE_WITH_COMMIT`**; **fund→C5 biennium → `Y_BAPI_FUND_C5_ASSIGNMENT`**;
+  fund change → `FM_FUND_CHANGE_RFC`.
+- Out (SAP→PPM financials): `Y_BAPI_WBS_FINANCIAL_DATA_1`, `Y_BAPI_YPS8`.
+- "When a Project is created, a corresponding Fund is provisioned" (FINCODE=PSPID linkage; psm_initial_analysis.md).
+
+So the **CJ20N hypothesis above is RETRACTED** — the production creator is MuleSoft via BAPI_PROJECT_MAINTAIN,
+not CJ20N. CJ20N indent is still a valid *manual* shortcut for one test WBS, but the faithful/automated path
+is the BAPI (get the I_WBS_HIERARCHIE_TABLE construction right, matching MuleSoft).
 
 ## THE RAW-BAPI PROCESS (BAPI_PROJECT_MAINTAIN) — corrected & verified (fallback / learnings)
 
