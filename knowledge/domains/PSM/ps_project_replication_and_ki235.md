@@ -52,7 +52,25 @@ clean path. Note PRPS has **PSPHI** (project internal no.), not PSPID; `PRxxxxxx
 - `REFNUMBER` is NUMC; the Save row = '000000'.
 - Method 'Delete' is NOT supported for ProjectDefinition (can't delete via this BAPI).
 
-## THE GOOD PROCESS (BAPI_PROJECT_MAINTAIN) — corrected & verified
+## ⭐ THE REAL UNESCO CREATION PATH — `Y_RFC_CREATE_PROJECT_SISTER` (use THIS, not raw BAPI)
+UNESCO/PPM (Salesforce, the "SISTER" system) creates projects + WBS daily via a **custom RFC**, NOT raw
+BAPI_PROJECT_MAINTAIN:
+```
+Salesforce → Y_RFC_CREATE_PROJECT_SISTER (RFC) → SUBMIT report YEBPROJ_CREATE_PROJECT_SISTER → project + WBS hierarchy
+```
+- Input `IT_PROJ_PRPS` (table `YRFC_PROJ_PRPS_CREATE_SISTER`) is **BUSINESS-level**, ONE row per project:
+  PSPID, FUND_TYPE, RESPON, APPLIC, DIVISION, SECTOR, REGION, COUNTRY, CCAQ, VALID_FROM/TO, CREATION_DATE,
+  SISTER_CODE, APPROVED, YE_TYP_SOU, YE_EXEC, DONOR, TITLE, STATUS_TXT. + RFC_FROM_DATE/RFC_TO_DATE. Returns BAPIRETURN.
+- It does **NOT** take explicit WBS — the report **GENERATES the WBS hierarchy internally** from the business
+  attributes (UNESCO C/5 sector→output model). This is why the WBS nesting "just works" for Salesforce.
+- Companions: `Y_RFC_MODIFY_PROJECT_SISTER` (change), `Y_RFC_WBS` (WBS read by fund).
+- **Implication:** to replicate a UNESCO project faithfully, call `Y_RFC_CREATE_PROJECT_SISTER` with the
+  project's PPM business attributes — do NOT hand-build WBS via BAPI_PROJECT_MAINTAIN. The raw-BAPI section
+  below documents what was learned (REFNUMBER, nesting limit) but the SISTER RFC is the sanctioned tool.
+  Open: capture YRFC_PROJ_PRPS_CREATE_SISTER field mapping for 504PAK1000 + read report YEBPROJ_CREATE_PROJECT_SISTER
+  WBS-generation logic (blocked when D01 RFC connectivity dropped overnight 2026-06-29/30).
+
+## THE RAW-BAPI PROCESS (BAPI_PROJECT_MAINTAIN) — corrected & verified (fallback / learnings)
 
 ### #1 fix — REFNUMBER is a per-data-table ROW INDEX (not a global sequence)
 The biggest blocker ("WBS element X already exists" on the LAST WBS, even on a clean slate) was a REFNUMBER
