@@ -600,6 +600,34 @@
       "knowledge_doc": "knowledge/system_operating_model_rfc.md",
       "resolved_at": "2026-06-30",
       "resolution": "ANSWERED from EXISTING process/RFC/job discovery (knowledge/system_operating_model_rfc.md, 2026-06-21). PPM (Salesforce/Core Planner) is the MASTER for projects+funds; MuleSoft (synctrigger job fleet, 17 flows) writes them INTO SAP: project+WBS via BAPI_PROJECT_MAINTAIN; WBS text/custom via Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE; fund via Y_FMKU_0050_CREATE_WITH_COMMIT; fund->C5 biennium via Y_BAPI_FUND_C5_ASSIGNMENT; fund change via FM_FUND_CHANGE_RFC. SAP serves financials back OUT via Y_BAPI_WBS_FINANCIAL_DATA_1 + Y_BAPI_YPS8. FINCODE=PSPID linkage (project provisions a matching fund). CJ20N-interactive hypothesis RETRACTED. So WBS hierarchy nesting IS achievable via BAPI_PROJECT_MAINTAIN (MuleSoft does it daily); the only residual is reproducing the exact I_WBS_HIERARCHIE_TABLE payload MuleSoft sends. Lesson: load system_operating_model_rfc.md first."
+    },
+    {
+      "id": "KU-2026-BP604-PS-AVC-PROFILE-DIFF",
+      "opened_at": "2026-07-01",
+      "context": "s-2026-07-01 steward pass. Claim #305: CR WBS 650RER0008 has 0 BPGE rows (PR*) on BOTH P01 and D01, yet P01 does NOT raise BP/604 when posting to it while D01 DOES. This implies PS-AVC is active with different coverage rules between the two systems for cost-recovery project types.",
+      "question": "Why does P01 not raise BP/604 (PS-AVC budget-exceeded) on a CR WBS with 0 PS budget in BPGE, while D01 does? Hypothesis: P01 PS-AVC profile for CR project types is configured to use FM-AVC fund-level budget as fallback (or PS-AVC is deactivated for those objects); D01 was refreshed/configured differently. Resolution path: compare OPSV/project BUDGET_PROFILE between P01 and D01 for project 650RER0008 (blocked on claim #134 -- OPSV not available via RFC; try SE16/CJ20N in GUI, or check T001/OPS5 config tables). Also check if the WBS BUDTYP/ACTTYPE in PRPS differs P01 vs D01.",
+      "domain": "PSM / PS / BCS",
+      "status": "open",
+      "recommended_path": "SE16 on OPSV (project budget profile) for project 650RER0008 in both P01 and D01 (GUI only per claim #134). Check PRPS.BUDTYP and PRPS.ACTTYPE for WBS 650RER0008. Check T001 and BDG_PROFILE customizing for CR project type.",
+      "related_claims": [
+        "#134",
+        "#133",
+        "#294",
+        "#305",
+        "#303",
+        "#268",
+        "#287"
+      ],
+      "related_objects": [
+        "BPGE",
+        "650RER0008",
+        "633CRP9003",
+        "CJ30",
+        "OPSV",
+        "PRPS",
+        "KBPP_EXTERN_UPDATE"
+      ],
+      "knowledge_doc": "knowledge/domains/PSM/budget_control_system_bcs_domain.md"
     }
   ]
 }

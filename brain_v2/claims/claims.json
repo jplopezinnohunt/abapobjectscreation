@@ -13208,5 +13208,109 @@
       "brain_v2/claims/claims.json#290",
       "brain_v2/claims/claims.json#294"
     ]
+  },
+  {
+    "id": 304,
+    "claim": "WBS PS-budget channel is GUI-only (CJ30/KBPP family) — no clean single-call RFC equivalent. KBPP_EXTERN_UPDATE raises DA300 NOT_FOUND without the full CJ30 buffer/profile context even with IMP_CHECK=X. Custom Y*BUDGET* FMs are readers/loggers only; BAPI_BUS2054_SET_STATUS = status only; BAPI_0050_CREATE = FM fund-center object (OBJNR FS*), NOT WBS (OBJNR PR*). PS-budget total for a WBS lives in BPGE WHERE OBJNR LIKE PR* AND WRTTP=01 AND VERSN=000. Budget-exceeded message = BP/604 (PS-AVC engine, not FM-AVC). To set WBS original budget: use CJ30 via GUI — same GUI-only class as WBS hierarchy nesting (claim #297).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_PS",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "BCS"
+      ],
+      "module": [
+        "PS",
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R",
+        "PPM_Integration"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Fills the RFC-channel gap for WBS original budget. Complements claim #303 (two budget levels) and #297 (hierarchical WBS BAPI unsolved). Cross-link: knowledge/domains/PSM/budget_control_system_bcs_domain.md gotchas section.",
+    "evidence_for": [
+      {
+        "type": "live_rfc",
+        "ref": "knowledge/domains/PSM/budget_control_system_bcs_domain.md:gotchas",
+        "cite": "Verified live RFC D01/P01 2026-06-30: KBPP_EXTERN_UPDATE raises DA300 NOT_FOUND without CJ30 buffer context; BAPI_0050_CREATE addresses OBJNR FS* (fund center), never PR* (WBS); BAPI_BUS2054_SET_STATUS = status-only; custom Y*BUDGET* FMs are readers. BPGE PR* WRTTP=01 VERSN=000 confirmed as the WBS budget storage row.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "KBPP_EXTERN_UPDATE",
+      "CJ30",
+      "BPGE",
+      "BAPI_BUS2054_SET_STATUS",
+      "BAPI_0050_CREATE",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
+      "brain_v2/claims/claims.json#297",
+      "brain_v2/claims/claims.json#303"
+    ]
+  },
+  {
+    "id": 305,
+    "claim": "Cost-recovery WBS carry 0 PS-budget in BPGE on BOTH P01 and D01 (verified: 650RER0008 = 0 BPGE rows WHERE OBJNR LIKE PR*). Spendability of CR WBS comes from the FUND-level budget (633CRP9003, OBJNR FS*, claim #268/#287), NOT from a WBS-level PS-budget entry. Therefore a BP/604 (PS-AVC budget-exceeded) on a CR WBS in D01 signals a PS-AVC profile CONFIG DIFFERENCE (D01 has PS-AVC active; P01 relies on FM-AVC fund-level coverage for CR objects), not genuinely missing budget. Test-unblock path: CJ30 give the WBS a nominal PS budget in D01. Structural fix: align the PS-AVC/budget-profile between D01 and P01 for CR project types.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_PS",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "PS",
+        "FM",
+        "BCS",
+        "CostRecovery"
+      ],
+      "module": [
+        "PS",
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R",
+        "CostRecovery"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Opens KU-2026-BP604-PS-AVC-PROFILE-DIFF (why P01 does not raise BP/604 on CR WBS with 0 PS budget). Cross-link: claim #268 (633CRP9003 cost recovery pool fund), #287 (CR budget in FMBL), #134 (OPSV not available on P01), #294 (3-layer prereq chain). Doc ref: budget_control_system_bcs_domain.md + cost_recovery_avc_disponible_model.md.",
+    "evidence_for": [
+      {
+        "type": "live_rfc",
+        "ref": "knowledge/domains/PSM/budget_control_system_bcs_domain.md:gotchas",
+        "cite": "Verified live RFC D01+P01 2026-06-30: BPGE WHERE OBJNR LIKE PR* for project 650RER0008 = 0 rows in both systems. In P01 the CR WBS posts without BP/604 because FM-AVC covers via fund 633CRP9003 budget. In D01 BP/604 fires because PS-AVC is active without a BPGE PR* row for this WBS.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BPGE",
+      "650RER0008",
+      "633CRP9003",
+      "KBPP_EXTERN_UPDATE",
+      "CJ30",
+      "BAPI_0050_CREATE"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
+      "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+      "brain_v2/claims/claims.json#268",
+      "brain_v2/claims/claims.json#287",
+      "brain_v2/claims/claims.json#134",
+      "brain_v2/claims/claims.json#294"
+    ]
   }
 ]
