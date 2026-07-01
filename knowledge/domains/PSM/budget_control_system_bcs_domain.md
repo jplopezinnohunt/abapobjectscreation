@@ -77,6 +77,7 @@ full current-master diff. Result s093: C5/43 fund model gap=0 (funds/centers/Z);
 | `fund_family_sync.py <TGT> <prefix>` | ALIGN a fund family by prefix (e.g. 633CRP9 credits) | ✅ proven |
 | `z_tables_sync.py <TGT> <which>` | ALIGN UNESCO Z (YTFM_FUND_C5/CPL/OUTPUT) via INSERT | ✅ proven |
 | `budget_assign_entr.py <TGT> commit [FUND] [YEAR]` | budget→project (ENTR/B1/3000) via BAPI_0050 | ✅ proven |
+| `budget_assign_funds_multiarea.py <dry\|run>` | ENTR/B1/3000 disponible for a fund list → target FY; auto-detects FIKRS per fund (multi-area safe); idempotent; 5/6 UNES funds posted FY2026 (docs 2000000260-264); UBO skipped (version-status not open, see §5) | ✅ proven (claim #306) |
 | `ps_project_sync.py <TGT> <PSPID> [resp] [appl]` | CREATE project def + (flat) WBS + release via BAPI_PROJECT_MAINTAIN | ✅ proven (nested→CJ20N) |
 | `replicate_project_fund.py <PSPID> <TGT> dry\|run` | ORCHESTRATOR — full A→F for one project+fund | ✅ A/C/F proven; B/D/E wire-up |
 | `scripts/extraction/gold_refresh.py PSM_FM [type]` | refresh the gold (P01 source of truth), delta-aware | ✅ proven |
@@ -130,9 +131,15 @@ Message on shortage = **BP/604** (budget exceeded, PS AVC). → For a WBS budget
 in D01 is likely a PS-AVC-profile config difference, not a genuinely missing budget; the byte-faithful
 fix is the AVC profile, the test-unblock is CJ30.
 
+**FM budget-version status is a CONFIG PREREQUISITE per FM-area × fiscal-year (claim #307):** `BAPI_0050_CREATE`
+fails with "No status assigned to version 0, year <Y>" when version 0 for that FIKRS+year is not open. Fix = run
+transaction **FMBV** for the area/year before posting. Verified: 465BRZ0002 (FIKRS=UBO) blocked FY2026 while
+UNES/2026 worked. KNOWN-UNKNOWN: programmatic path to open FMBV version-status (config table / RFC) unresolved.
+
 **Open:** WBS hierarchy NESTING via BAPI by RFC (works for MuleSoft → reproduce its `I_WBS_HIERARCHIE_TABLE`
 payload); WBS PS-budget via RFC (KBPP buffer sequence, else CJ30); wire-up+verify B/D/E in the orchestrator;
-the ~98 funds WRTTP43 fund-budget (~212M) replication; P01/D01 PS-AVC-profile diff on CR WBS (BP/604 root cause).
+the ~98 funds WRTTP43 fund-budget (~212M) replication; P01/D01 PS-AVC-profile diff on CR WBS (BP/604 root cause);
+programmatic FMBV (how to open FM budget-version status per area/year via RFC/config).
 
 ## 6. Cross-project
 Broadcast sent to `unesco-sap-brain` (ADR-007). Other side of the create flow = `unescore20-PPM-brain`

@@ -13324,5 +13324,102 @@
       "brain_v2/claims/claims.json#134",
       "brain_v2/claims/claims.json#294"
     ]
+  },
+  {
+    "id": 306,
+    "claim": "budget_assign_funds_multiarea.py (Zagentexecution/tasks/2026_06_29_fm_model_sync/) is a reusable fund-level ENTR/B1 disponible loader: posts PROCESS=ENTR/VALTYPE=B1/BUDTYPE=3000 via BAPI_0050_CREATE for a fund list into a target system (D01/V01) for a target FY. Auto-detects each fund FIKRS across all FM areas (funds span areas: e.g. BRZ fund 465BRZ0002 is FIKRS=UBO, not UNES), uses latest-year P01 ENTR amount+real address (fund center + commitment items), idempotent (skips funds that already have that FY ENTR in target). Verified s-2026-07-01: 5/6 funds budgeted for FY2026 (196EAR4042/650RER0008/538GLO5000/301EGY4072/469GLO2000 all UNES; docs 2000000260-264; FMAVCT rows populated = disponible created). 465BRZ0002 skipped (UBO version-status error, see claim #307).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_funds_multiarea.py",
+        "cite": "Full script verified s-2026-07-01: fikrs_of() detects FM area; FMBL ENTR/B1/3000 read; BAPI_0050_CREATE call; FMAVCT re-read verification. 5 UNES funds posted (docs 2000000260-264). 465BRZ0002/UBO blocked by version-status.",
+        "added_session": "S-098"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "BAPI_0050_CREATE",
+      "budget_assign_funds_multiarea.py",
+      "FMAVCT",
+      "FMBL",
+      "FMFINCODE",
+      "196EAR4042",
+      "650RER0008",
+      "538GLO5000",
+      "301EGY4072",
+      "469GLO2000",
+      "465BRZ0002"
+    ],
+    "domain": "PSM",
+    "created_session": "S-098",
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "cross_links": [
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md#4-reusable-toolset",
+      "brain_v2/claims/claims.json#270",
+      "brain_v2/claims/claims.json#277"
+    ]
+  },
+  {
+    "id": 307,
+    "claim": "BAPI_0050_CREATE fails with \"No status assigned to version 0, year <Y>, fund <F>\" when the FM budget version 0 for that FM area (FIKRS) + fiscal year is not open. Verified s-2026-07-01: fund 465BRZ0002 (FIKRS=UBO) failed for FY2026 because UBO version-0/2026 was never opened, while UNES/2026 worked (opened by prior postings). The budget version status is a CONFIG PREREQUISITE per FM-area x fiscal-year, managed via transaction FMBV. This is DISTINCT from the PS WBS budget (CJ30/CJ32) and the fiscal-year guard in Y_FMKU_0050_CREATE_WITH_COMMIT (YFMXCHKP). KNOWN-UNKNOWN: how to open FM budget-version status per area/year programmatically (FMBV config table / RFC path) — manual FMBV run required until resolved.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "live_rfc_observation",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_funds_multiarea.py",
+        "cite": "BAPI_0050_CREATE returned error msg \"No status assigned to version 0, year 2026, fund 465BRZ0002\" for FIKRS=UBO. Same call succeeded for 5 UNES funds on same run s-2026-07-01. Differentiator = FIKRS (UBO vs UNES), not the fund value.",
+        "added_session": "S-098"
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "BAPI_0050_CREATE",
+      "FMBV",
+      "BPJA",
+      "465BRZ0002",
+      "Y_FMKU_0050_CREATE_WITH_COMMIT",
+      "YFMXCHKP"
+    ],
+    "domain": "PSM",
+    "created_session": "S-098",
+    "resolved_session": null,
+    "resolution_notes": null,
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "cross_links": [
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md#5-session-deep-analysis",
+      "brain_v2/claims/claims.json#270",
+      "brain_v2/claims/claims.json#304"
+    ]
   }
 ]
