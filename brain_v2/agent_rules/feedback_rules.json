@@ -3636,5 +3636,28 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": "feedback_companion_drift_is_bidirectional",
+    "rule": "When reconciling a fragment-assembled companion against its live HTML output, treat drift as BIDIRECTIONAL: (a) HTML-only blocks (present in the live companion but missing from fragments — port INTO the relevant fragment file); (b) fragment-only blocks (present in fragments but not yet rebuilt into the companion — DO NOT delete them; they merge correctly on the next rebuild). Never force byte-equality by discarding fragment-only content — that is an irreversible loss (CP-001). Reconciliation method: run --check → use difflib SequenceMatcher on newline-normalized lines → inspect BOTH insert-hunks (live-only) AND delete-hunks (fragment-only) → port on RAW bytes preserving CRLF+UTF-8 → verify no loss by diffing new built companion vs old → refresh MANIFEST baseline after confirming identity.",
+    "why": "Session 2026-06-30 (commit 5bcb07a): the BCM Structured Address companion (companions/BCM_StructuredAddressChange.html) was ~21 KB short of the live companion. --check via build_bcm_structured_address_companion.py revealed three drift blocks: Block 1 = HTML-only CITI/CGI Dbtr+Cdtr analysis (+23,437 B across 181 lines) that existed in the live companion but never made it back into tabs/25_phase0.html; Block 2 = a missing leading emoji on a Phase 4 h3 in tabs/29_phase4.html; Block 3 = a fragment-only section (Citi test-tool 2026-06-26, brain claims #265/266/267) present in tabs/29_phase4.html but not in the companion because rebuild had never been re-run after that edit. The failure mode: a naive 'port everything from live to fragments' approach would have silently deleted Block 3 content. CP-001 requires treating every fragment-only hunk as intentional until confirmed redundant.",
+    "how_to_apply": "When --check reports a size/hash mismatch on a fragment-assembled companion:\n1. Run the builder with --check to get difflib hunk output (or equivalent).\n2. Classify each hunk: INSERT = live-only (missing from fragments); DELETE = fragment-only (missing from live).\n3. INSERT hunks: identify the correct fragment file (by tab/section name) and port the raw bytes into it, preserving CRLF+UTF-8.\n4. DELETE hunks: DO NOT remove them from fragments. Verify they are not already present elsewhere; if truly new, they will merge into the companion on rebuild.\n5. Rebuild the companion and confirm the new live file matches the expected content.\n6. Compare new vs old companion to verify no content loss in either direction.\n7. Refresh the MANIFEST.json baseline (byte_count + sha256 + sha256_lf) ONLY after confirming byte-identical integrity.\n8. Never update the MANIFEST baseline to the pre-reconciliation state — only update after the full reconciliation is clean.",
+    "severity": "HIGH",
+    "created_session": 96,
+    "source_file": "companions/bcm_structured_address_src/MANIFEST.json",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "CP-001 'Knowledge over velocity': the fragment-only content represents work already done (brain claims #265/266/267 analysis) that would be irreversibly deleted if the reconciler only read one direction of the diff. Velocity would suggest 'just make the fragments match the live companion'; CP-001 demands inspecting what the live companion is missing too. The bidirectional check is the minimum-loss path.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "*"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]
