@@ -101,8 +101,19 @@ key-only (not a write source).
 - The CJ20N-creator hypothesis was retracted — the real creator is MuleSoft via `BAPI_PROJECT_MAINTAIN` (already
   documented in system_operating_model_rfc.md; should have been loaded first — CLAUDE.md rule #1).
 
+**WBS PS-budget channel (s093, 2026-06-30):** step F "budget→project" for a WBS goes through **classic PS
+budgeting = CJ30** (KBPP family behind it: KBPP_START/EXTERN_UPDATE/POST). There is **no clean single-call RFC
+BAPI**: `KBPP_EXTERN_UPDATE` even with IMP_CHECK='X' throws **DA300 (NOT_FOUND)** without the full CJ30
+buffer/profile context; the custom `Y*BUDGET*` FMs are readers/loggers, `BAPI_BUS2054_*` = status only,
+`BAPI_0050` = FM (fund) not WBS. WBS budget total = BPGE `OBJNR PR*`, WRTTP=01, VERSN=000. Message on shortage
+= **BP/604** (budget exceeded, PS AVC). → For a WBS budget, use **CJ30 (GUI)** (same GUI-only class as the WBS
+hierarchy indent). NOTE: cost-recovery WBS (e.g. 650RER0008) carry **0 PS budget in P01 too** — their coverage
+is the FUND (cost recovery / credit 633CRP9003), so a BP/604 in D01 is likely a PS-AVC-profile config
+difference, not a genuinely missing budget; the byte-faithful fix is the AVC profile, the test-unblock is CJ30.
+
 **Open:** WBS hierarchy NESTING via BAPI by RFC (works for MuleSoft → reproduce its `I_WBS_HIERARCHIE_TABLE`
-payload); wire-up+verify B/D/E in the orchestrator; the ~98 funds WRTTP43 fund-budget (~212M) replication.
+payload); WBS PS-budget via RFC (KBPP buffer sequence, else CJ30); wire-up+verify B/D/E in the orchestrator;
+the ~98 funds WRTTP43 fund-budget (~212M) replication; P01/D01 PS-AVC-profile diff on CR WBS (BP/604 root cause).
 
 ## 6. Cross-project
 Broadcast sent to `unesco-sap-brain` (ADR-007). Other side of the create flow = `unescore20-PPM-brain`
