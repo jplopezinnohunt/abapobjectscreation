@@ -61,6 +61,61 @@ The **method registry** (`process_mining/method_registry.py` + `brain_v2/method_
 > D01 already has ~71% of production funds. **Write phase not yet executed** — requires full-field
 > live re-extraction (gold `funds` table has only 5 key cols, not usable as write source — claim #284).
 > Full gap breakdown: claim #283. Sync method: `sap_master_data_sync` skill FM extension section.
+>
+> **V01 ROWSKIPS rejection confirmed empirically 2026-07-02** (extraction for the sibling `unescrp`
+> actor-chain grounding probe): identical `rc=5 OPTION_NOT_VALID: "ROWSKIPS requires GET_SORTED"` (class
+> SAIS) on USR02/PA0001/PA0105. **This closes the class across all 3 systems we read (P01, D01, V01):
+> every secured `RFC_READ_TABLE` wrapper in this landscape rejects `ROWSKIPS` — always read
+> `ROWCOUNT=0` single-call, partition the key space (not offset-paginate) on `DATA_BUFFER_EXCEEDED`.**
+> Same pattern as `accumulate_logs.py::_read_window` and `p01_fm_ps_bcs_masterdata_refresh.py`. Claim #319.
+
+## V01 actor-chain grounding tables (2026-07-02, for sibling `unescrp` project)
+**Why:** `unescrp`'s `scripts/probes/check_actor_chain.py` scores whether a staff member is usable for an
+E2E test (eligible + a complete actor chain whose officers exist as real users on the target system). It
+was grounded on D01 only; needed V01 too. The interactive user has SSO-only access to V01 (no Basic
+password) and V01's live ADT endpoint challenges Basic (realm `V01/350`) → blocked from the unescrp side.
+**This project's own RFC/SNC service path (`ConnectionGuard("V01")` in
+`Zagentexecution/mcp-backend-server-python/rfc_helpers.py`, `SAP_V01_*` env creds) connects independently
+in ~1s and reads tables** — so the extraction was done here and handed off as a golden DB. Host
+`hq-sap-v01.hq.int.unesco.org`, client 350. Script: `Zagentexecution/sap_data_extraction/scripts/extract_v01_actor_grounding.py`.
+
+New per-system DB (mirrors `p01_gold_master_data.db` convention): **`v01_gold_master_data.db`**
+(~28MB after the Funds+WBS tables below were added, gitignored, LOCAL-ONLY like the P01/D01 golds).
+
+| SAP source | Gold DB table | What it is | Key | Rows | Notes |
+|---|---|---|---|---|---|
+| **USR02** | `v01_usr02` | User master authorization (lock/type) | BNAME | 5,552 | UFLAG: 64=admin-locked (5,332, majority — typical pre-prod copy), 0=unlocked (160), 192/96/128/224 = other lock reasons (60 total). Probe must read UFLAG bitmask for usability, not assume unlocked. |
+| **PA0001** | `v01_pa0001` | HR Org Assignment infotype | PERNR+BEGDA | 106,995 | Cols PERNR,PERSK,GSBER,BUKRS,ANSVH,BEGDA,ENDDA. GEF-eligible pool = `GSBER='GEF' AND BUKRS='UNES' AND ANSVH='01'` → **3,093 distinct PERNR** (validity BEGDA/ENDDA applied downstream by the probe, not pre-filtered here). |
+| **PA0105** | `v01_pa0105` | Communication infotype, SUBTY='0010' only | PERNR+SUBTY | 7,835 | Cols PERNR,SUBTY,USRID_LONG (staff work email). Filtered server-side to SUBTY='0010' only — not the full infotype. |
+
+Claim #320 (connectivity) + #319 (ROWSKIPS class). Cross-link: [[reference_p01_strg_columns_unreadable]],
+[[reference_d01_rowskips_and_adt_ddic_limits]] (now superseded in scope by the 3-system generalization above).
+
+## V01 Funds + WBS master data (2026-07-02, for sibling `unescrp` project)
+**Why:** companion to the actor-chain pull above — `unescrp`'s `specifications/test-data/crp-usable-test-data.xlsx`
+"usable test data" computation needs V01 Funds + WBS master data (date validity + account-assignment +
+budget), not just actors. Same rationale: requester has SSO-only V01 access, this project's own
+`ConnectionGuard("V01")` RFC/SNC path pulls it independently. Script:
+`Zagentexecution/sap_data_extraction/scripts/extract_v01_funds_wbs.py`. Same DB as the actor pull:
+`v01_gold_master_data.db`.
+
+| SAP source | Gold DB table | What it is | Key | Rows | Notes |
+|---|---|---|---|---|---|
+| **FMFINCODE** | `v01_fmfincode` | Fund master | FIKRS+FINCODE | 61,626 | Cols FIKRS,FINCODE,DATAB,DATBIS (date validity — NOT FIVOR, which does not exist on this table, claim #321),TYPE,FINUSE,PROFIL,DECKUNG,DATE_EXP,DATE_CAN. |
+| **PRPS** | `v01_prps` | WBS element master | PSPNR (OBJNR=PR+PSPNR) | 49,392 | Cols incl. POSID,OBJNR,PBUKR,PRART,STUFE,PLAKZ,BELKZ (account-assignment flag; NOT PSTRT, which does not exist on this table, claim #321),KOSTL,LOEVM,PRPS_STATUS. BELKZ='X' (account-assignable) 48,451 rows (98.1%), BELKZ='' (structural) 941 rows (1.9%). |
+| **JEST** (WBS only) | `v01_jest` | System status per object, filtered `OBJNR LIKE 'PR%'` | OBJNR+STAT | 284,483 | Cols OBJNR,STAT,INACT. STAT='I0002' AND INACT='' = REL (14,509 released WBS); STAT='I0001' = CRTD. |
+| **PROJ** | `v01_proj` | Project definitions | PSPNR (OBJNR=PR+PSPNR) | 13,037 | Cols PSPID,PSPNR,VBUKR (company code — note the field is VBUKR on PROJ, not PBUKR as on PRPS),OBJNR,INACT,LOEVM. |
+| **FMAVCT** (ledger 9H) | `v01_fmavct_2024`/`_2025`/`_2026` | AVC (Availability Control) totals | RFIKRS+RFUND+RFUNDSCTR+RCMMTITEM+RYEAR+RRCTY (row-index merged, no single PK column — see claim #322) | 14,086 / 2,577 / 44 | Field-split extraction (5 chunks, row-index merge — table exceeds 512-byte RFC_READ_TABLE line buffer, claim #322). RRCTY: 0=consumption, 1=budget. RVERS='000', RLDNR='9H'. Amounts HSLVT+HSL01..HSL16 (FM-area currency). Do NOT use for a hand-rolled availability formula — go through the standard AVC read (FMAVCR/FMAVC FM), per [[feedback_avc_real_from_standard_not_handrolled]]. |
+
+**Reference-fund coverage (D01 cost-recovery test set S-166, claim #323):** all 8 present in
+`v01_fmfincode` — 196EAR4042, 538GLO5000, 301EGY4072, 465BRZ0002, 469GLO2000, 650RER0008, 633CRP9003,
+633CRP9200. **Date-EXPIRED for a 2026 test** (DATBIS in 2024): 301EGY4072, 469GLO2000, 633CRP9003 (2nd
+validity row extends further, see claim #323), 633CRP9200. **Still date-valid through 2026:** 196EAR4042
+(DATBIS 2026-08-31), 538GLO5000 (2026-09-30), 465BRZ0002 (2026-03-31), 650RER0008 (2026-12-31). WBS
+633CRP9003 present in `v01_prps` with BELKZ='X' plus a full multi-level child hierarchy.
+
+Claims #321 (field-name quirk), #322 (FMAVCT extraction pattern), #323 (reference-fund coverage).
+Cross-link: [[feedback_p01_sais_rowskips_rejection]], [[feedback_avc_real_from_standard_not_handrolled]].
 
 | SAP source | Gold DB table | What it is | Key | Notes |
 |---|---|---|---|---|

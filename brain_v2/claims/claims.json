@@ -13904,5 +13904,213 @@
       "claim:316",
       "claim:317"
     ]
+  },
+  {
+    "id": 319,
+    "claim": "The secured RFC_READ_TABLE wrapper (class SAIS) that rejects ROWSKIPS is NOT P01/D01-specific -- it is landscape-wide. Confirmed on a 3rd system, V01, 2026-07-02: RFC_READ_TABLE on USR02/PA0001/PA0105 returns rc=5 OPTION_NOT_VALID \"ROWSKIPS requires GET_SORTED\" (class SAIS), identical to the P01 (2026-06-09) and D01 (2026-06-29) errors. CLASS GENERALIZATION: every SAP system in this landscape we have read via RFC_READ_TABLE runs this secured wrapper -- never assume ROWSKIPS pagination works on a new system; always read ROWCOUNT=0 single-call and partition the key space (not offset-paginate) on DATA_BUFFER_EXCEEDED.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "USR02",
+      "PA0001",
+      "PA0105",
+      "v01_gold_master_data.db",
+      "extract_v01_actor_grounding.py"
+    ],
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/scripts/extract_v01_actor_grounding.py -- read_all() catches RFCError DATA_BUFFER_EXCEEDED and partitions by PERNR leading digit instead of ROWSKIPS pagination; comment documents the rc=5 OPTION_NOT_VALID error observed live on V01 2026-07-02.",
+      "Generalizes prior single-system claims: P01 ROWSKIPS rejection (reference_p01_strg_columns_unreadable.md, 2026-06-09) and D01 ROWSKIPS rejection (reference_d01_rowskips_and_adt_ddic_limits.md, claim referenced s093 2026-06-29 on FMFINCODE/FMFINT)."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "knowledge/gold_db_table_catalog.md#fmbcs-ps-master-data-backbone",
+      "reference_p01_strg_columns_unreadable",
+      "reference_d01_rowskips_and_adt_ddic_limits"
+    ]
+  },
+  {
+    "id": 320,
+    "claim": "V01 is reachable via this project's own RFC/SNC service path independent of the interactive user's SSO. ConnectionGuard(\"V01\") (Zagentexecution/mcp-backend-server-python/rfc_helpers.py, using SAP_V01_* env creds over SNC/SSO) connects in ~1s and reads tables (host hq-sap-v01.hq.int.unesco.org, client 350). This is INDEPENDENT of the interactive user's ADT/Basic SSO path -- V01's live ADT endpoint challenges Basic auth with realm \"V01/350\" and is blocked for that user. Used 2026-07-02 to extract 3 master tables (USR02 5,552 rows / PA0001 106,995 rows / PA0105 SUBTY=0010 7,835 rows) into a new per-system golden DB v01_gold_master_data.db, grounding the sibling unescrp project's actor-chain probe (check_actor_chain.py) against V01 (previously only grounded on D01). GEF-eligible pool on V01 (GSBER=GEF AND BUKRS=UNES AND ANSVH=01) = 3,093 distinct PERNR (pre-validity-filter). USR02 UFLAG distribution: 5,332/5,552 (96%) admin-locked (64), 160 unlocked (0) -- typical of a pre-prod copy; any consumer must read the UFLAG bitmask, not assume unlocked.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "F_INTERFACE_FILE",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "V01",
+      "ConnectionGuard",
+      "rfc_helpers.py",
+      "extract_v01_actor_grounding.py",
+      "v01_gold_master_data.db",
+      "v01_usr02",
+      "v01_pa0001",
+      "v01_pa0105",
+      "check_actor_chain.py"
+    ],
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/scripts/extract_v01_actor_grounding.py -- live extraction run 2026-07-02, wrote _extraction_meta provenance stamp (system=V01, host=hq-sap-v01.hq.int.unesco.org, client=350, channel=RFC_READ_TABLE over SNC/SSO).",
+      "Zagentexecution/sap_data_extraction/sqlite/v01_gold_master_data.db -- v01_usr02 (5,552 rows), v01_pa0001 (106,995 rows), v01_pa0105 (7,835 rows), verified by direct sqlite3 query 2026-07-02."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "unescrp side (check_actor_chain.py) is the consumer of this DB; the write there is out of scope for this project (ADR-007 -- unescrp owns its own consumption).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:319",
+      "knowledge/gold_db_table_catalog.md#v01-actor-chain-grounding-tables-2026-07-02-for-sibling-unescrp-project"
+    ]
+  },
+  {
+    "id": 321,
+    "claim": "V01's secured RFC_READ_TABLE wrapper raises a MISLEADING ABAPApplicationError TABLE_WITHOUT_DATA (not FIELD_NOT_VALID) when a requested FIELDNAME does not exist on the target table -- indistinguishable from a genuinely empty result set unless the field list is pre-validated. Confirmed empirically 2026-07-02: FMFINCODE has NO field FIVOR (fund date-validity lives in DATAB/DATBIS, not FIVOR); PRPS has NO field PSTRT. Both raised TABLE_WITHOUT_DATA on first attempt; DDIF_FIELDINFO_GET confirmed the fields do not exist, and removing them from the FIELDS list returned the expected non-empty row counts (61,626 / 49,392 rows respectively).",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "FMFINCODE",
+      "PRPS",
+      "FIVOR",
+      "PSTRT",
+      "DDIF_FIELDINFO_GET",
+      "extract_v01_funds_wbs.py",
+      "v01_gold_master_data.db"
+    ],
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/scripts/extract_v01_funds_wbs.py -- module docstring documents both misses and the DDIF_FIELDINFO_GET validation step; FMFINCODE_FIELDS/PRPS_FIELDS field lists in the script are the corrected, validated lists.",
+      "Live extraction 2026-07-02: v01_fmfincode (61,626 rows) and v01_prps (49,392 rows) in v01_gold_master_data.db, verified by direct sqlite3 query."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Class-of-defect: on this landscape's secured RFC_READ_TABLE wrapper (class SAIS, see claim #319), an invalid FIELDNAME and a genuinely empty table both surface as TABLE_WITHOUT_DATA. Any extraction script MUST validate its field list against DDIF_FIELDINFO_GET before concluding a table has no data.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:319",
+      "knowledge/gold_db_table_catalog.md#v01-funds--wbs-master-data-2026-07-02-for-sibling-unescrp-project"
+    ]
+  },
+  {
+    "id": 322,
+    "claim": "FMAVCT (AVC totals ledger 9H) rows on V01 exceed RFC_READ_TABLE's 512-byte line buffer -- the same field-split + row-index-merge technique used elsewhere in this landscape (rfc_helpers.rfc_read_paginated) is required: split the field list into <=8-field chunks, issue one ROWSKIPS-free (ROWCOUNT=0) call per chunk per year, then merge rows by index position. A per-year row-count-equality guard across chunks is mandatory (a mismatch means the index-merge is unsafe and the year must be skipped, not merged blindly). WHERE-clause equality options need spaces around '=' (\"RYEAR = '2026'\"); \"RYEAR='2026'\" (no spaces) raises OPTION_NOT_VALID/DB_Error on this wrapper. RRCTY discriminates budget (1, ~7.2k rows in 2024) vs consumption (0, ~6.9k rows in 2024); RCVRGRP_9 is uniformly blank on V01; RVERS='000', RLDNR='9H'. V01 2026 FMAVCT is nearly empty (44 rows) -- expected, since 2026 budget/consumption is mid-year and low relative to prior years (14,086 rows 2024 / 2,577 rows 2025).",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "FMAVCT",
+      "v01_fmavct_2024",
+      "v01_fmavct_2025",
+      "v01_fmavct_2026",
+      "extract_v01_funds_wbs.py",
+      "v01_gold_master_data.db"
+    ],
+    "evidence_for": [
+      "Zagentexecution/sap_data_extraction/scripts/extract_v01_funds_wbs.py -- FMAVCT_CHUNKS (5 chunks of <=8 fields) + read_fmavct_year() (per-chunk ROWSKIPS-free read, row-count-equality guard, index merge).",
+      "Live extraction 2026-07-02: v01_fmavct_2024 (14,086 rows), v01_fmavct_2025 (2,577 rows), v01_fmavct_2026 (44 rows) in v01_gold_master_data.db, verified by direct sqlite3 query -- all 3 years passed the row-count guard (no skipped year)."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Consistent with feedback_avc_real_from_standard_not_handrolled: these FMAVCT totals are raw ledger 9H rows for master-data cataloging, NOT a hand-rolled availability formula -- any 'available budget' determination must still go through the standard AVC read (FMAVCR/FMAVC FM), not a computation on these columns.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "feedback_avc_real_from_standard_not_handrolled",
+      "claim:319",
+      "knowledge/gold_db_table_catalog.md#v01-funds--wbs-master-data-2026-07-02-for-sibling-unescrp-project"
+    ]
+  },
+  {
+    "id": 323,
+    "claim": "V01 (client 350) carries all 8 reference funds from the D01 cost-recovery test set (S-166): 196EAR4042, 538GLO5000, 301EGY4072, 465BRZ0002, 469GLO2000, 650RER0008, 633CRP9003, 633CRP9200 -- all PRESENT in v01_fmfincode. Of these, 4 are DATE-EXPIRED for a 2026 test (DATBIS in 2024): 301EGY4072 (DATBIS 2024-01-01), 469GLO2000 (DATBIS 2024-01-01), 633CRP9003 (DATBIS 2024-12-31, but note a 2nd validity row DATAB 2015-12-10/DATBIS 2025-12-31 also exists for the same FINCODE), 633CRP9200 (DATBIS 2024-12-31). 4 remain date-valid through 2026: 196EAR4042 (DATBIS 2026-08-31), 538GLO5000 (DATBIS 2026-09-30), 465BRZ0002 (DATBIS 2026-03-31), 650RER0008 (DATBIS 2026-12-31). WBS 633CRP9003 is present in v01_prps with BELKZ='X' (account-assignable) plus a full hierarchy of children (.1, .2, .3, ... down to 4 levels deep). Across all V01 WBS elements (v01_prps, 49,392 rows), BELKZ='X' (account-assignable) = 48,451 rows (98.1%), BELKZ='' (structural/non-postable) = 941 rows (1.9%).",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM",
+        "PS"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "FMFINCODE",
+      "PRPS",
+      "196EAR4042",
+      "538GLO5000",
+      "301EGY4072",
+      "465BRZ0002",
+      "469GLO2000",
+      "650RER0008",
+      "633CRP9003",
+      "633CRP9200",
+      "v01_fmfincode",
+      "v01_prps"
+    ],
+    "evidence_for": [
+      "Live sqlite3 query 2026-07-02 against v01_gold_master_data.db: SELECT FINCODE,DATAB,DATBIS FROM v01_fmfincode WHERE FINCODE IN (...) -- all 8 present, dates as stated.",
+      "SELECT POSID,BELKZ FROM v01_prps WHERE POSID LIKE '633CRP9003%' -- root + full child hierarchy present, root BELKZ='X'.",
+      "SELECT BELKZ, COUNT(*) FROM v01_prps GROUP BY BELKZ -- ('',941), ('X',48451)."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Feeds unescrp specifications/test-data/crp-usable-test-data.xlsx 'usable test data' computation for V01: a fund is only usable for a 2026 test if DATBIS >= test date -- 4 of the 8 S-166 reference funds fail this on V01 despite being present.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:321",
+      "knowledge/gold_db_table_catalog.md#v01-funds--wbs-master-data-2026-07-02-for-sibling-unescrp-project"
+    ]
   }
 ]
