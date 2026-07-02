@@ -13421,5 +13421,281 @@
       "brain_v2/claims/claims.json#270",
       "brain_v2/claims/claims.json#304"
     ]
+  },
+  {
+    "id": 308,
+    "claim": "CGI tree /CGI_XML_CT_UNESCO (D01 V001) has structured PstlAdr on ALL 4 client parties, confirming the CGI=4/4 structured-address verdict at the node level. Dbtr (PmtInf/Dbtr, PstlAdr N_1160789980, 8 tags) is populated via the FI_CGI BAdI/buffer with Ctry<-FPAYHX-LDISO. UltmtDbtr has TWO nodes: PmtInf/UltmtDbtr = Nm+Id only (no PstlAdr, matches Nm-only-by-design verdict for the ultimate party); CdtTrfTxInf/UltmtDbtr (PstlAdr N_8824498030) IS structured, via FPAYP DIRECT fields (not the BAdI buffer) -- StrtNm<-REF01[0-60], BldgNb<-REF01[100-110], PstCd<-REF01[80-90], CtrySubDvsn<-REF01[90-100], TwnNm<-BORT1, Ctry<-BLAND, AdrLine<-BSTRAS. This is the ONLY one of the 4 CGI client-party PstlAdr nodes that bypasses the shared buffer. Cdtr (CdtTrfTxInf/Cdtr, PstlAdr N_8311560080, 8 tags) is structured with PstCd<-ZPSTL, TwnNm<-ZORT1, Ctry<-ZLISO, rest via BAdI. UltmtCdtr (CdtTrfTxInf/UltmtCdtr, PstlAdr N_4634017880, 9 tags) is structured with PstCd<-ZPSTL, CtrySubDvsn<-FPAYP-REGIO, TwnNm<-FPAYP-ORT01, Ctry<-FPAYP-LAND1, rest via BAdI. Tax/Dbtr and Tax/Cdtr correctly have no PstlAdr (tax id only).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "d01_rfc_tree_extract",
+        "ref": "Zagentexecution/output/dmee_CGI_XML_CT_UNESCO_d01.csv",
+        "cite": "Full DMEE_TREE_NODE dump of /CGI_XML_CT_UNESCO V001, all 4 client-party PstlAdr subtrees enumerated with node IDs, MP_SC_TAB/MP_SC_FLD sources and offsets.",
+        "added_session": "s-2026-07-01"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "N_1160789980",
+      "N_8824498030",
+      "N_8311560080",
+      "N_4634017880",
+      "FPAYP",
+      "FPAYHX",
+      "FI_CGI"
+    ],
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "created_session": "s-2026-07-01",
+    "resolved_session": null,
+    "status": "active",
+    "cross_links": [
+      "knowledge/domains/Payment/dmee_formats_model_comparison.md",
+      "brain_v2/claims/claims.json#285"
+    ]
+  },
+  {
+    "id": 309,
+    "claim": "CGI CdtrAgt (N_0693479130) is UNSTRUCTURED: only AdrLine<-ZBSTR, AdrLine<-ZBORT, Ctry<-ZBISO. CITI CdtrAgt (N_5135503450) is STRUCTURED: StrtNm<-ZBSTR[0-70], TwnNm<-ZBORT[0-35], CtrySubDvsn<-FPAYHX-ZBREGX[0-35], plus Ctry. BOTH lack PstCd and BldgNb because there is no clean bank-master source for either. Therefore CITI's CdtrAgt structure is the correct template for structuring CGI's CdtrAgt (same Z-fields, ZBSTR/ZBORT/ZBISO, already present on CGI as unstructured AdrLine -- just need re-mapping to StrtNm/TwnNm/CtrySubDvsn + add CtrySubDvsn source). Cdtr, by contrast, is at parity: both CGI and CITI have Cdtr fully structured (CGI = 1 node via buffer + Z-field fallback with extra Dept/SubDept; CITI = 2 nodes conditional by UBISO, ADRC-direct via CITIPMW V3 exits) -- no CdtrAgt-style gap exists on Cdtr.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "d01_rfc_tree_extract",
+        "ref": "Zagentexecution/mcp-backend-server-python/dump_citi_cdtr_subtrees.py",
+        "cite": "CITI CdtrAgt N_5135503450 subtree dump: StrtNm/TwnNm/CtrySubDvsn/Ctry sources enumerated, no PstCd/BldgNb nodes present.",
+        "added_session": "s-2026-07-01"
+      },
+      {
+        "type": "d01_rfc_tree_extract",
+        "ref": "Zagentexecution/output/dmee_CGI_XML_CT_UNESCO_d01.csv",
+        "cite": "CGI CdtrAgt N_0693479130 subtree: only 2 AdrLine nodes (ZBSTR, ZBORT) + Ctry<-ZBISO; no StrtNm/TwnNm/CtrySubDvsn/PstCd/BldgNb nodes.",
+        "added_session": "s-2026-07-01"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "N_0693479130",
+      "N_5135503450",
+      "ZBSTR",
+      "ZBORT",
+      "ZBISO",
+      "ZBREGX"
+    ],
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "created_session": "s-2026-07-01",
+    "resolved_session": null,
+    "status": "active",
+    "cross_links": [
+      "knowledge/domains/Payment/v001_change_matrix.csv",
+      "brain_v2/claims/claims.json#308"
+    ]
+  },
+  {
+    "id": 310,
+    "claim": "REFINEMENT to v001_change_matrix.csv rows 21-24 (CGI CdtrAgt structured-address change): the correct change is LOWER SCOPE than originally planned. CONFIRMED DEFINITION: mirror CITI's CdtrAgt structure on CGI -- ADD StrtNm<-ZBSTR, TwnNm<-ZBORT, CtrySubDvsn<-FPAYHX-ZBREGX (Ctry<-ZBISO already exists), and REMOVE the 2 existing unstructured AdrLine nodes (ISO 20022 forbids mixing structured PstlAdr fields with AdrLine on the same party). Do NOT add PstCd or BldgNb -- there is no bank-master source for either field on CGI OR CITI (CITI's own CdtrAgt lacks them too), so the original matrix rows (row 23: PstCd<-ZBPST; row 22: BldgNb<-ZBSTR[60-75]) are WRONG and should not be implemented as written. This is LOW priority: the bank (CdtrAgt) is keyed by BIC for routing; the postal address of the bank itself is optional under CBPR+ (unlike Dbtr/Cdtr addresses, which are mandatory). Cdtr itself needs NO change -- it is already structured; the self-transfer test XML that showed BldgNb-in-StrtNm was an artifact of UNESCO-as-its-own-Cdtr using the Z-field fallback path; real external vendors populate BldgNb via the standard buffer.",
+    "claim_type": "correction",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "d01_rfc_tree_extract",
+        "ref": "Zagentexecution/output/dmee_CGI_XML_CT_UNESCO_d01.csv",
+        "cite": "CGI CdtrAgt subtree + Cdtr subtree confirm current node inventory this refinement is based on.",
+        "added_session": "s-2026-07-01"
+      },
+      {
+        "type": "d01_rfc_tree_extract",
+        "ref": "Zagentexecution/mcp-backend-server-python/dump_citi_cdtr_subtrees.py",
+        "cite": "CITI CdtrAgt lacks PstCd/BldgNb too -- confirms no bank-master source exists for either field, invalidating matrix rows 22/23 as originally written.",
+        "added_session": "s-2026-07-01"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "N_0693479130",
+      "N_8311560080",
+      "ZBSTR",
+      "ZBORT",
+      "ZBISO",
+      "ZBREGX",
+      "ZBPST"
+    ],
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "created_session": "s-2026-07-01",
+    "resolved_session": null,
+    "status": "active",
+    "resolution_notes": "SUPERSEDES the specific field-source claims in v001_change_matrix.csv rows 22 (BldgNb<-ZBSTR[60-75]) and 23 (PstCd<-ZBPST). Rows 21 (StrtNm<-ZBSTR) and 24 (TwnNm<-ZBORT) remain correct. Row 25 (CGI_1 SYNC propagation) is now moot per claim #285 (CGI_1 is a dead orphan tree, 0 P01 media) -- the SYNC relationship claimed in row 25 has no production consumer. The matrix CSV itself is NOT edited here (CP-002 preserve-first); this claim is the superseding correction of record.",
+    "cross_links": [
+      "knowledge/domains/Payment/v001_change_matrix.csv",
+      "brain_v2/claims/claims.json#285",
+      "brain_v2/claims/claims.json#308",
+      "brain_v2/claims/claims.json#309",
+      "brain_v2/claims/claims.json#105"
+    ]
+  },
+  {
+    "id": 311,
+    "claim": "SEPA tree /SEPA_CT_UNES structured-address evaluation (session s-2026-07-01, D01 V001 fresh extract): Dbtr = structured via custom Y_FI_DMEE_ADR exits; Cdtr = structured via FPAYH-Z* direct fields (missing CtrySubDvsn); UltmtDbtr = Nm-only; UltmtCdtr = Nm-only. This reconfirms the dmee_formats_model_comparison.md finding that SEPA's 2/4 PstlAdr coverage is COMPLETE-BY-DESIGN, not a gap: the SEPA/EPC pain.001 scheme carries ultimate parties (UltmtDbtr/UltmtCdtr) as Name+Id only, with no PstlAdr slot in the schema for on-behalf-of parties -- mirroring the already-confirmed CITI UltmtDbtr decision (2026-06-17, user-confirmed, claim lineage in dmee_formats_model_comparison.md SS9-10). CONCLUSION: no structured-address change is warranted on SEPA UltmtDbtr/UltmtCdtr. The real SEPA gap is the pain.001 SCHEMA VERSION (.03 vs .09), not the ultimate-party address fields. KNOWN_UNKNOWN: whether the EPC pain.001 Implementation Guide / SocGen's specific IG variant permits or forbids a PstlAdr on ultimate parties -- not yet confirmed against the actual EPC/SocGen specification document (only inferred from the absence of populated nodes in the current tree).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_2",
+    "evidence_for": [
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/domains/Payment/dmee_sepa_v001_compare_table.md",
+        "cite": "Per-node mapping table for Dbtr/DbtrAgt/DbtrAcct/Cdtr/CdtrAgt/CdtrAcct on /SEPA_CT_UNES V001.",
+        "added_session": "s-2026-07-01"
+      },
+      {
+        "type": "domain_doc",
+        "ref": "knowledge/domains/Payment/dmee_formats_model_comparison.md",
+        "cite": "Lines ~60,120,143,148: prior confirmation that UltmtDbtr/UltmtCdtr Nm-only is by-design (ISO 20022), not a gap, for CITI and CGI; this claim extends the same verdict to SEPA.",
+        "added_session": "s-2026-07-01"
+      }
+    ],
+    "evidence_against": [],
+    "known_unknown": "EPC pain.001 Implementation Guide / SocGen IG confirmation that UltmtDbtr/UltmtCdtr carry no PstlAdr by scheme design -- currently inferred from tree absence, not from reading the actual IG document.",
+    "related_objects": [
+      "/SEPA_CT_UNES",
+      "Y_FI_DMEE_ADR",
+      "FPAYH",
+      "pain.001.001.03"
+    ],
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "created_session": "s-2026-07-01",
+    "resolved_session": null,
+    "status": "active",
+    "cross_links": [
+      "knowledge/domains/Payment/dmee_sepa_v001_compare_table.md",
+      "knowledge/domains/Payment/dmee_formats_model_comparison.md",
+      "brain_v2/claims/claims.json#113"
+    ]
+  },
+  {
+    "id": 312,
+    "claim": "ZSAPFPAYM_REPLAY is a deployed, executable ABAP report in D01 (TRDIR, author JP_LOPEZ, created 2026-06-15) -- confirmed still present and runnable as of s-2026-07-01 for replaying CGI/CITI/SEPA DMEE runs without posting side-effects. 5 CGI test cases identified in D01 with real REGUT media, replay-ready: TC-1 20250326/T0001/100 (AE foreign Cdtr); TC-2/3 20250320/00002R,00001R/100 (alt-payee -> UltmtCdtr); TC-4/5 20250307/00001R,00006R/100 (CGI_XML_CT_UNESCO_1 twin tree, EUR/USD, alt-payee).",
+    "claim_type": "reference_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "d01_rfc_observation",
+        "ref": "extracted_code/FI/SAPFPAYM/ZSAPFPAYM_REPLAY/ZSAPFPAYM_REPLAY.abap",
+        "cite": "TRDIR entry confirms report exists in D01, author JP_LOPEZ, created 2026-06-15, type=1 (executable).",
+        "added_session": "s-2026-07-01"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "ZSAPFPAYM_REPLAY",
+      "/CGI_XML_CT_UNESCO",
+      "/CGI_XML_CT_UNESCO_1",
+      "REGUT"
+    ],
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "created_session": "s-2026-07-01",
+    "resolved_session": null,
+    "status": "active",
+    "cross_links": [
+      "reference_zsapfpaym_replay_and_citi_ubiso.md",
+      "brain_v2/claims/claims.json#285"
+    ]
+  },
+  {
+    "id": 313,
+    "claim": "Real CGI XML (production format /CGI_XML_CT_UNESCO, replay of D01 run 20250320/00002R via ZSAPFPAYM_REPLAY; INTC intra-company treasury self-transfer UNES Paris -> UNESCO own USD account at SOGEUS33 New York, 789 USD, RmtInf '/PFF SOG NY TSF') empirically confirms the 4-party PstlAdr structure AND reveals a rendering divergence: for the SAME physical address (UNESCO, Place de Fontenoy 7, 75007 PARIS FR), the Dbtr renders StrtNm='Place de Fontenoy' + BldgNb='7' SEPARATED (buffer/Event-05 path), while the Cdtr renders StrtNm='7 Place de Fontenoy' house-in-street with NO BldgNb and NO CtrySubDvsn (Z-field fallback FPAYH-ZSTRA path, because Cdtr=UNESCO self). CdtrAgt (SOGEUS33) is UNSTRUCTURED: Ctry=US + 2 AdrLine with city+state+zip concatenated 'NEW YORKNY 10167' (empirically confirms the claim #310 gap). No UltmtDbtr/UltmtCdtr emitted (self-transfer; EMPFG=UNES2 was UNESCO's own alternate account, not a third party). CGI overflow gate benign (Dbtr emitted full structured, not fallback). Confirms claims #308 and #310. Raw file NOT versioned (real IBAN/account numbers); structure/finding only.",
+    "claim_type": "verification",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-01",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "YCL_IDFI_CGI_DMEE_FALLBACK_CM001",
+      "FPAYH-ZSTRA",
+      "FPAYHX_FREF",
+      "SOGEUS33"
+    ],
+    "evidence_for": [
+      "Real production-format XML 0001R20232025CGI_XML_CT_UNESCO.in (user replay 2026-07-01): Dbtr StrtNm+BldgNb separated vs Cdtr house-in-street; CdtrAgt AdrLine NEW YORKNY 10167"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Open verification: a real EXTERNAL vendor payment (e.g. TC-1 20250326/T0001, AE vendor) should show Cdtr BldgNb SEPARATED via buffer, proving the Cdtr house-in-street is a self-transfer/Z-fallback artifact, not a tree defect.",
+    "resolved_session": "",
+    "status": "active"
   }
 ]

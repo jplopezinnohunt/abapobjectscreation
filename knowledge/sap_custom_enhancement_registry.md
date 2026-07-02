@@ -286,3 +286,85 @@ Source: Golden DB `bcm_badi_impl` (1 of 3 impls is custom).
 
 ---
 *AVC model documentation: `knowledge/domains/PSM/avc_availability_model.md` (committed 92f1004). AVC claims #253-#259 in brain_v2/claims/claims.json.*
+
+---
+
+## 15. DMEE Structured-Address Custom Code (Payment/Treasury — extensively analyzed s#062-s#-2026-07-01, never in this registry until now)
+
+> **Why this section exists:** the V001 structured-address redesign for CGI/CITI/SEPA payment media has been
+> analyzed across many sessions (claims #62-115, #179-186, #267, #285, #308-311) and has 2 companions
+> (`BCM_StructuredAddressChange.html`, `payment_bcm_companion.html`) — but the underlying CUSTOM CODE that
+> implements it was never itself registered here. Promoted 2026-07-01 (steward pass) to close that gap.
+
+### 15.1 `YCL_IDFI_CGI_DMEE_FALLBACK_CM001` — CGI Cdtr name-overflow BAdI (Pattern A)
+
+*   **Object type**: Class implementing BAdI `FI_CGI` (method `GET_CREDIT`), exit `FI_CGI_DMEE_EXIT_W_BADI`.
+*   **Purpose**: SocGen-mandated overflow guard — if the DMEE-tree-populated `Cdtr` name overflows the field,
+    prepend/patch the value (Pattern A). NOT a legacy hack — bank-mandated (claim #96, TIER_1, verified against
+    the SocGen document).
+*   **Scope of what it actually touches**: address assembly for Dbtr/Cdtr/UltmtCdtr on the CGI tree is mostly
+    SAP-standard (`FI_PAYMEDIUM_DMEE_CGI_05` Event 05 populates `FPAYHX-REF01/REF02` buffers from ADRC); this
+    class only patches the Cdtr name-overflow case. Confirmed still the only UNESCO-owned address-related BAdI
+    code to preserve (claim #186).
+*   **Evidence**: `knowledge/domains/Payment/dmee_formats_model_comparison.md` §8; claims #96, #186, #308.
+
+### 15.2 `Y_FI_DMEE_ADR` — SEPA custom DMEE exit family (`/SEPA_CT_UNES`)
+
+*   **Object type**: Custom exit function(s) bound as `MP_EXIT_FUNC` on `/SEPA_CT_UNES` DMEE tree nodes
+    (model `FPM_SEPA`). Unlike CGI/CITI, SEPA has NO Event-05 standard buffer population — this custom exit is
+    the only address-population mechanism (reads `T001`→`ADRC` directly for the paying company Dbtr fields).
+*   **Per-party status (verified s-2026-07-01, D01 V001 fresh extract)**: Dbtr = structured via this exit;
+    Cdtr = structured via `FPAYH`-Z* direct fields (no exit, missing `CtrySubDvsn`); UltmtDbtr/UltmtCdtr =
+    Nm-only (by design, ISO 20022/EPC scheme has no PstlAdr slot for on-behalf-of parties on ultimate parties —
+    see claim #311, `KNOWN_UNKNOWN`: not yet confirmed against the actual EPC/SocGen IG document).
+*   **Evidence**: `knowledge/domains/Payment/dmee_sepa_v001_compare_table.md`; `dmee_formats_model_comparison.md`;
+    claims #113, #311.
+
+### 15.3 CITIPMW V3 exits — CITI structured-address (`/CITI/XML/UNESCO/DC_V3_01`)
+
+*   **Object type**: SAP-partner-delivered exit family `CITIPMW/V3_*` (Event-05 FM
+    `/CITIPMW/V3_PAYMEDIUM_DMEE_05` pre-populates `FPAYHX_FREF` for Dbtr; separate exits read vendor-master
+    `ADRC` directly for Cdtr, gated by `UBISO`).
+*   **Coverage (verified)**: Dbtr 4/4 structured tags across 2 PstlAdr node variants (primary +
+    alt-mode/PstlAdrMor); Cdtr 2 conditional nodes by `UBISO`; UltmtCdtr 2 nodes (structured, works in
+    production, Serbia example); UltmtDbtr = 0 (Nm-only by design, user-confirmed 2026-06-17). CITI's
+    **CdtrAgt** (`N_5135503450`) is structured (StrtNm/TwnNm/CtrySubDvsn via `FPAYH`-ZB* fields) but lacks
+    PstCd/BldgNb — no bank-master source for either (claim #309).
+*   **Evidence**: `dump_citi_cdtr_subtrees.py` (Zagentexecution/mcp-backend-server-python/); claims #99, #101,
+    #113, #309.
+
+### 15.4 CGI tree (`/CGI_XML_CT_UNESCO`) — 4/4 party structured-address inventory
+
+*   **Object type**: DMEE tree, model `FPM_CGI` (shared with CITI). The ONLY live production CGI tree — its
+    twin `/CGI_XML_CT_UNESCO_1` is a DEAD orphan (0 P01 media ever, not in T042Z routing; claim #285).
+*   **Full 4-party PstlAdr inventory (D01 V001, verified s-2026-07-01)**: Dbtr, UltmtDbtr (transaction-level
+    node only — `PmtInf/UltmtDbtr` stays Nm+Id), Cdtr, UltmtCdtr are ALL structured (claim #308). **CdtrAgt is
+    the one gap**: unstructured (2 `AdrLine` nodes only). CITI's CdtrAgt is the correct mirror template
+    (claim #309); the refined, LOW-priority change definition (ADD StrtNm/TwnNm/CtrySubDvsn, REMOVE the 2
+    AdrLine nodes, do NOT add PstCd/BldgNb — no bank-master source) supersedes the original
+    `v001_change_matrix.csv` rows 22-23 (claim #310, TIER_1).
+*   **Evidence**: `Zagentexecution/output/dmee_CGI_XML_CT_UNESCO_d01.csv`; claims #285, #308, #309, #310.
+
+### 15.5 `ZSAPFPAYM_REPLAY` — DMEE replay/test tool (deployed D01)
+
+*   **Object type**: Executable ABAP report (TRDIR, author JP_LOPEZ, created 2026-06-15), a copy of SAPFPAYM
+    that replays a DFPAYG payment run to regenerate the DMEE output file with ROLLBACK (no status mutation).
+    Needs `PM_GRPNO` as input. Confirmed still deployed and runnable as of s-2026-07-01.
+*   **Purpose**: Test/validate DMEE tree changes (CGI/CITI/SEPA) against real historical payment media without
+    posting side-effects. 5 CGI test cases identified in D01, replay-ready (TC-1..TC-5, see claim #312).
+*   **Evidence**: `extracted_code/FI/SAPFPAYM/ZSAPFPAYM_REPLAY/ZSAPFPAYM_REPLAY.abap`;
+    `reference_zsapfpaym_replay_and_citi_ubiso.md`; claim #312.
+
+### 15.6 Persistence / where this is queryable
+
+*   Claims: brain_v2/claims/claims.json #62-115, #179-186, #267, #285, #308-312.
+*   Source docs: `knowledge/domains/Payment/dmee_formats_model_comparison.md`,
+    `dmee_sepa_v001_compare_table.md`, `v001_change_matrix.csv`, `v001_dbtr_fix_2026-05-07.md`,
+    `dmee_retrofit_procedure.md`, `dmee_versioning_procedure.md`.
+*   Companions: `companions/BCM_StructuredAddressChange.html` (+ source fragments in
+    `companions/bcm_structured_address_src/`), `companions/payment_bcm_companion.html`.
+*   **KNOWN STALE REFERENCE (flagged, not yet fixed):** `companions/bcm_structured_address_src/tabs/22_matrix.html`
+    rows 22-23 still show the original CGI CdtrAgt `PstCd<-ZBPST` / `BldgNb<-ZBSTR[60-75]` field-source plan,
+    which claim #310 supersedes (no bank-master source exists for either field). Do not port this correction
+    into the fragment until the in-progress fragment/HTML reconciliation (companion drift fix, rule #168)
+    completes — fixing it mid-reconciliation risks colliding with that pending merge.
