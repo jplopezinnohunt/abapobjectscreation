@@ -13562,15 +13562,18 @@
       ]
     },
     "created_session": "s-2026-07-01",
-    "resolved_session": null,
-    "status": "active",
-    "resolution_notes": "SUPERSEDES the specific field-source claims in v001_change_matrix.csv rows 22 (BldgNb<-ZBSTR[60-75]) and 23 (PstCd<-ZBPST). Rows 21 (StrtNm<-ZBSTR) and 24 (TwnNm<-ZBORT) remain correct. Row 25 (CGI_1 SYNC propagation) is now moot per claim #285 (CGI_1 is a dead orphan tree, 0 P01 media) -- the SYNC relationship claimed in row 25 has no production consumer. The matrix CSV itself is NOT edited here (CP-002 preserve-first); this claim is the superseding correction of record.",
+    "resolved_session": "s-2026-07-02",
+    "status": "superseded",
+    "resolution_notes": "SUPERSEDES the specific field-source claims in v001_change_matrix.csv rows 22 (BldgNb<-ZBSTR[60-75]) and 23 (PstCd<-ZBPST). Rows 21 (StrtNm<-ZBSTR) and 24 (TwnNm<-ZBORT) remain correct. Row 25 (CGI_1 SYNC propagation) is now moot per claim #285 (CGI_1 is a dead orphan tree, 0 P01 media) -- the SYNC relationship claimed in row 25 has no production consumer. The matrix CSV itself is NOT edited here (CP-002 preserve-first); this claim is the superseding correction of record. | SUPERSEDED 2026-07-02 (s-2026-07-02, claim #316): the CdtrAgt/DbtrAgt (bank agent) is OUT OF SCOPE of the structured-address mandate (applies to parties Dbtr/Cdtr/UltmtDbtr/UltmtCdtr, not to financial agents identified by BIC/ClrSysMmbId). Additionally the only available source (BNKA.ORT01) mashes city+state+zip in one field with PROVZ empty (claim #317), so structuring CdtrAgt would not even clean the data. CONCLUSION REVERSED: do NOT add StrtNm/TwnNm/CtrySubDvsn to CGI's CdtrAgt; AdrLine on CdtrAgt is acceptable as-is. Kept for anti-regression (CP-002) -- do not re-propose this change.",
     "cross_links": [
-      "knowledge/domains/Payment/v001_change_matrix.csv",
+      "brain_v2/claims/claims.json#105",
       "brain_v2/claims/claims.json#285",
       "brain_v2/claims/claims.json#308",
       "brain_v2/claims/claims.json#309",
-      "brain_v2/claims/claims.json#105"
+      "claim:316",
+      "claim:317",
+      "claim:318",
+      "knowledge/domains/Payment/v001_change_matrix.csv"
     ]
   },
   {
@@ -13694,8 +13697,212 @@
       "Real production-format XML 0001R20232025CGI_XML_CT_UNESCO.in (user replay 2026-07-01): Dbtr StrtNm+BldgNb separated vs Cdtr house-in-street; CdtrAgt AdrLine NEW YORKNY 10167"
     ],
     "evidence_against": [],
-    "resolution_notes": "Open verification: a real EXTERNAL vendor payment (e.g. TC-1 20250326/T0001, AE vendor) should show Cdtr BldgNb SEPARATED via buffer, proving the Cdtr house-in-street is a self-transfer/Z-fallback artifact, not a tree defect.",
+    "resolution_notes": "Open verification: a real EXTERNAL vendor payment (e.g. TC-1 20250326/T0001, AE vendor) should show Cdtr BldgNb SEPARATED via buffer, proving the Cdtr house-in-street is a self-transfer/Z-fallback artifact, not a tree defect. | NOTE 2026-07-02 (s-2026-07-02): the 'claim #310 gap' this claim references (CdtrAgt CGI unstructured) is SUPERSEDED by claim #316/#317 -- CdtrAgt is out of the structured-address mandate scope (agents, not parties) and BNKA source data would not support clean structuring anyway. This claim's empirical XML observations (Dbtr/Cdtr rendering divergence) remain valid and unaffected.",
     "resolved_session": "",
-    "status": "active"
+    "status": "active",
+    "cross_links": [
+      "claim:316",
+      "claim:317"
+    ]
+  },
+  {
+    "id": 314,
+    "claim": "DMEE version model for UNESCO's /CGI_XML_CT_UNESCO (and the pattern generally, consistent with the SAP-official corrected model in companions/bcm_structured_address_src/tabs/10_dmee-version-concept.html): V000 = the ACTIVE/PRODUCTIVE version (what production F110 actually emits today), V001 = the MAINTENANCE/WORKING version (edited by operators, does not reach F110 until activated), V002+ = ARCHIVED/BACKUP snapshots created via Generate Version. Changes are made in V001, then activated (V001 content OVERWRITES V000 -- not a flag flip). Live-verified via RFC (DMEE_TREE_NODE, D01, s-2026-07-02): V000=629 nodes, V001=629 nodes, V002=631 nodes (V002 pre-dates the 2-node AdrLine removal executed this session in V001, hence the +2 node count difference).",
+    "claim_type": "reference",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "DMEE_TREE_NODE",
+      "DMEE_TREE_HEAD"
+    ],
+    "evidence_for": [
+      "Live RFC read Zagentexecution/mcp-backend-server-python/verify_cgi_final_config.py (D01, 2026-07-02): DMEE_TREE_NODE row counts V000=629, V001=629, V002=631",
+      "Confirms/aligns with companions/bcm_structured_address_src/tabs/10_dmee-version-concept.html SAP-official-corrected version model (claim 109 lineage)"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:109",
+      "knowledge/domains/Payment/dmee_formats_model_comparison.md"
+    ]
+  },
+  {
+    "id": 315,
+    "claim": "Structured-address hygiene remediation EXECUTED by the user in D01 V001 of /CGI_XML_CT_UNESCO (2026-07-02): removed the 2 OPTIONAL redundant AdrLine nodes from the two ultimate parties -- UltmtDbtr AdrLine node N_3813831110 (was <-FPAYP-BSTRAS) and UltmtCdtr AdrLine node N_7522397310. Rationale: both ultimate parties already carry a full structured PstlAdr (StrtNm/BldgNb/PstCd/TwnNm/CtrySubDvsn/Ctry per claim #308); mixing structured PstlAdr fields with AdrLine on the SAME party is not ISO-20022/CBPR+ clean. Everything else in the tree is UNCHANGED: CdtrAgt keeps its AdrLine (bank -- see claim #316 on why this is correct), Dbtr/Cdtr structured exactly as documented in claims #308/#313. Live-verified (verify_cgi_final_config.py, D01, 2026-07-02): V000 (active, post-activation) and V001 (working copy) both now show these ultimate parties with NO AdrLine node (clean); V002 (backup snapshot, pre-change) still HAS them -- confirming the change landed and the backup preserves the prior state for rollback.",
+    "claim_type": "verification",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "N_3813831110",
+      "N_7522397310",
+      "DMEE_TREE_NODE"
+    ],
+    "evidence_for": [
+      "Zagentexecution/mcp-backend-server-python/verify_cgi_final_config.py (D01, 2026-07-02): V000+V001 show UltmtDbtr/UltmtCdtr with no AdrLine child; V002 backup still has both AdrLine nodes"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Output-side confirmation PENDING -- see claim #317 caveat (the post-change replay run was a self-transfer that does not exercise UltmtDbtr/UltmtCdtr at all).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:308",
+      "claim:313",
+      "claim:316",
+      "claim:317"
+    ]
+  },
+  {
+    "id": 316,
+    "claim": "Structured-address scope clarification (resolves the project's core question, TIER_1): AdrLine (free-text address line) satisfies payment DELIVERY (the payment clears) but is NOT 'structured address' in the ISO 20022 / SWIFT CBPR+ / EPC sense (machine-parseable, separately tagged StrtNm/BldgNb/PstCd/TwnNm/CtrySubDvsn/Ctry). CRITICAL scope finding: the structured-address mandate applies to the PARTIES of the payment (Dbtr/Cdtr/UltmtDbtr/UltmtCdtr) -- NOT to financial AGENTS (DbtrAgt/CdtrAgt). Agents are identified primarily by BIC + ClrSysMmbId (routing number/ABA); their postal address is informational only and is NOT subject to the structured-address mandate. Therefore CdtrAgt (bank) using AdrLine on CGI/CITI is ACCEPTABLE AS-IS and needs NO remediation. This directly SUPERSEDES claim #310 (which proposed adding StrtNm/TwnNm/CtrySubDvsn to CGI's CdtrAgt mirroring CITI) -- the correct conclusion is the CdtrAgt should NOT be changed at all: it is out of the mandate's scope, AND its only available source (BNKA) is not clean enough to structure anyway (see claim #317's bank-address root cause).",
+    "claim_type": "reference",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "CdtrAgt",
+      "DbtrAgt",
+      "Dbtr",
+      "Cdtr",
+      "UltmtDbtr",
+      "UltmtCdtr",
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01"
+    ],
+    "evidence_for": [
+      "ISO 20022 / SWIFT CBPR+ / EPC pain.001 scheme structure: PstlAdr on Party elements is the structured-address carrier; Agent elements (DbtrAgt/CdtrAgt) are identified by FinInstnId (BIC/ClrSysMmbId), PstlAdr on FinInstnId is optional/informational"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Known-unknown: confirm this scope reading against the bank's own Implementation Guideline (SocGen IG) before treating as fully closed with the bank counterparty -- see KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM (TIER_2 on that confirmation).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:310",
+      "claim:317",
+      "claim:318"
+    ]
+  },
+  {
+    "id": 317,
+    "claim": "Bank-address root cause + no format-specific parsing exists (TIER_1, code+data verified): CdtrAgt address is sourced from BNKA (bank master) via the STANDARD Payment Medium Workbench (PMW) into FPAYH-ZB* fields, WHOLESALE (no parsing/splitting) -- identical mechanism for CGI and CITI. Real BNKA data (Gold DB p01_gold_master_data.db) for SOGEUS33 (BANKL=SP0000001U9I): STRAS='245 PARK AVENUE' but ORT01='NEW YORK,NY 10167' -- city+state+ZIP MASHED into ONE field, PROVZ (region/state) EMPTY. Structuring CdtrAgt's PstlAdr would therefore NOT clean the town/region/postcode -- the source data itself is not component-separated. Verified via code search that NO format-specific address parsing exists anywhere in the DMEE exit chain: CITI Event-05 (/CITIPMW/V3_PAYMEDIUM_DMEE_05) ONLY fills the PARTY address buffer from ADRC (street/building/post_code1/region/city1 -- already component-separated in ADRC because ADRC is the customer/vendor address master with proper DDIC fields), and touches ZERO bank/CdtrAgt/ZB* fields (grep=0 hits). This is WHY client parties (sourced from ADRC) render clean structured addresses while banks (sourced from BNKA) do not -- it is a MASTER-DATA granularity difference, not a code/config gap. Note: BNKA is blocked via RFC_READ_TABLE (AD718 TABLE_WITHOUT_DATA) -- read via Gold DB instead.",
+    "claim_type": "verification",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "BNKA",
+      "ADRC",
+      "SOGEUS33",
+      "CdtrAgt",
+      "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+      "FPAYH-ZSTRA"
+    ],
+    "evidence_for": [
+      "Zagentexecution/mcp-backend-server-python/probe_bnka_sogeus33.py -- RFC_READ_TABLE on BNKA blocked (AD718 TABLE_WITHOUT_DATA)",
+      "Gold DB p01_gold_master_data.db BNKA row BANKL=SP0000001U9I: STRAS='245 PARK AVENUE', ORT01='NEW YORK,NY 10167', PROVZ empty",
+      "extracted_code/FI/DMEE_full_inventory/CITIPMW_V3_PAYMEDIUM_DMEE_05.abap -- grep for bank/ZB*/CdtrAgt field writes = 0 hits; only ADRC-sourced party fields are touched"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:309",
+      "claim:316"
+    ]
+  },
+  {
+    "id": 318,
+    "claim": "FINAL VERDICT on the DMEE structured-address project (TIER_1): all 3 in-scope UNESCO payment formats fulfill the ISO 20022/CBPR+/EPC structured-address requirement on PARTIES WITHOUT further code/config changes. CGI = cleanest, 4/4 parties structured, already in production (claim #308). CITI = D-2 (PstCd/TwnNm suppressed via '=SE' condition on one node) is left AS-IS -- confirmed BR-domestic-only impact, no CBPR+ exposure (prior session verdict, unchanged). SEPA = 2/4 structured on Dbtr/Cdtr; UltmtDbtr/UltmtCdtr are Name-only BY DESIGN (EPC pain.001 scheme has no PstlAdr slot for on-behalf-of parties -- claim #311, complete-by-design not a gap). The ONLY change actually executed this project = an OPTIONAL hygiene fix: remove 2 redundant AdrLine nodes on CGI's 2 ultimate parties in D01 V001 (claim #315). CdtrAgt/DbtrAgt (bank agents) use of AdrLine is ACCEPTABLE and requires NO change (claim #316 mandate-scope + claim #317 source-data root cause). Net: the project's deliverable is ANALYSIS/VERIFICATION of an already-compliant configuration, not a remediation build.",
+    "claim_type": "verification",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "/SEPA_CT_UNES"
+    ],
+    "evidence_for": [
+      "Synthesizes claims #308, #309, #311, #313, #315, #316, #317 (this session + prior s-2026-07-01/s-2026-06-16/17)"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Output-side confirmation for claim #315 still pending a real third-party UltmtCdtr replay (see claim #315 note).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:308",
+      "claim:309",
+      "claim:311",
+      "claim:313",
+      "claim:315",
+      "claim:316",
+      "claim:317"
+    ]
   }
 ]

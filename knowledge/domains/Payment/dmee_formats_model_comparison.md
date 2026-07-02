@@ -262,3 +262,45 @@ confirma que **solo el Dbtr** tiene el hueco; el Cdtr (CITIPMW→ADRC) está san
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·
 `probe_ultmdbtr_compare.py` (UltmtDbtr CITI vs CGI) — en `Zagentexecution/mcp-backend-server-python/`.
 BAdI internals: clases `YCL_IDFI_CGI_DMEE_{FALLBACK,FR,UTIL}_CM00x.abap` en `extracted_code/FI/DMEE/`.
+
+## 11. CIERRE DEL PROYECTO (2026-07-02) — modelo de versiones preciso + veredicto final + CdtrAgt fuera de alcance
+
+**Precisión sobre "Versión activa: V000" (§10, línea previa):** confirmado por RFC live (D01, `verify_cgi_final_config.py`)
+— **V000 = ACTIVA/PRODUCTIVA** (lo que emite producción hoy), **V001 = MANTENIMIENTO/TRABAJO** (donde se edita), **V002+ =
+BACKUP/snapshot** (via Generate Version). Activar = V001 SOBREESCRIBE V000 (no es un flag flip). Conteo real
+2026-07-02: V000=629 nodos, V001=629, V002=631 (los +2 de V002 son los 2 `AdrLine` que se acaban de quitar en V001,
+ver abajo). Claim #314. Modelo SAP-oficial ya documentado en detalle en el companion
+`companions/bcm_structured_address_src/tabs/10_dmee-version-concept.html`.
+
+**Remediación EJECUTADA (usuario, en V001, 2026-07-02):** se quitaron los 2 nodos `AdrLine` redundantes de las 2
+partes últimas de `/CGI_XML_CT_UNESCO` — `UltmtDbtr` nodo `N_3813831110` (era `<-FPAYP-BSTRAS`) y `UltmtCdtr` nodo
+`N_7522397310` — porque ambas partes YA tienen `PstlAdr` estructurado completo (§7/§8, claim #308) y mezclar
+estructurado+`AdrLine` en la misma parte no es limpio ISO 20022/CBPR+. Todo lo demás SIN CAMBIOS. Verificado V000+V001
+sin esos nodos, V002 (backup) los conserva. Claim #315. **Pendiente:** confirmación en OUTPUT real — la corrida de
+verificación fue un self-transfer INTC que no emite `UltmtDbtr`/`UltmtCdtr` (archivo idéntico salvo MsgId/timestamp);
+falta una corrida con un `UltmtCdtr` tercero real.
+
+**Aclaración de alcance del mandato (resuelve la pregunta de fondo del proyecto):** `AdrLine` cumple ENTREGA (el pago
+se cursa) pero NO es "dirección estructurada" (tags separados machine-readable). El mandato de dirección estructurada
+ISO 20022/SWIFT CBPR+/EPC aplica a las **PARTES** (`Dbtr`/`Cdtr`/`UltmtDbtr`/`UltmtCdtr`), **NO a los AGENTES
+financieros** (`DbtrAgt`/`CdtrAgt`) — los agentes se identifican por BIC + `ClrSysMmbId`, su dirección postal es
+informativa. Por eso **`CdtrAgt` con `AdrLine` es ACEPTABLE, no requiere cambio**. Esto **SUPERSEDE la claim #310**
+(que proponía mirror de CITI en CGI CdtrAgt: `StrtNm`/`TwnNm`/`CtrySubDvsn`) — decisión revertida: NO tocar CdtrAgt.
+Claim #316 (known_unknown abierto: confirmar contra la Implementation Guideline propia de SocGen —
+`KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM`).
+
+**Root cause de por qué el banco no está limpio (independiente del punto anterior):** `CdtrAgt` sale de `BNKA`
+(maestro de banco) vía PMW estándar hacia `FPAYH-ZB*`, EN BLOQUE (sin parsear) — igual en CGI y CITI. Dato real
+(Gold DB, `BNKA` `SOGEUS33`/`BANKL=SP0000001U9I`): `STRAS='245 PARK AVENUE'` pero `ORT01='NEW YORK,NY 10167'`
+(ciudad+estado+ZIP mezclados en un solo campo, `PROVZ` vacío) → aunque se estructurara, la fuente no lo permite
+limpio. Verificado además que **no existe parsing por-formato**: el Event-05 de CITI
+(`/CITIPMW/V3_PAYMEDIUM_DMEE_05`) solo llena el buffer de PARTES desde `ADRC` (ya separado por campo) y no toca
+NINGÚN campo de banco/`ZB*`/CdtrAgt (grep=0). Por eso las partes (fuente `ADRC`) salen limpias y los bancos (fuente
+`BNKA`) no — es una diferencia de granularidad del maestro de datos, no un gap de código/config. Claim #317.
+
+**VEREDICTO FINAL (claim #318):** los 3 formatos cumplen el requisito de dirección estructurada en las PARTES SIN
+cambios adicionales de código/config. CGI = más limpio, 4/4, en producción. CITI = D-2 se deja como está (impacto
+solo BR-doméstico). SEPA = 2/4 Nm-only en últimas partes POR DISEÑO del esquema EPC (no es gap). El ÚNICO cambio
+ejecutado en todo el proyecto = higiene opcional (quitar 2 `AdrLine` redundantes en CGI, arriba). `CdtrAgt`/`DbtrAgt`
+con `AdrLine` es aceptable, sin cambio. **El entregable del proyecto fue ANÁLISIS/VERIFICACIÓN de una configuración
+ya conforme, no una remediación de código.**
