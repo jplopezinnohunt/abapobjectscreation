@@ -91,6 +91,17 @@ New per-system DB (mirrors `p01_gold_master_data.db` convention): **`v01_gold_ma
 Claim #320 (connectivity) + #319 (ROWSKIPS class). Cross-link: [[reference_p01_strg_columns_unreadable]],
 [[reference_d01_rowskips_and_adt_ddic_limits]] (now superseded in scope by the 3-system generalization above).
 
+> **PA0105 SUBTY='0001' = the SAP-user link, a DIFFERENT subtype than the '0010' row above (2026-07-03,
+> claim #333).** Field **USRID** (CHAR12, e.g. `A_COWLING`) carries PERNR→SY-UNAME/BNAME; `USRID_LONG` is
+> empty on these rows (it belongs to '0010' = work email, above — do not conflate the two subtypes).
+> The staff-time-distribution upload (`YFMOUTPUT`/`YFM_OUTPUT_MANAGEMENT` SaveFormData, see
+> `Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md` §5) resolves each employee's
+> SAP user via this link; when absent in D01/V01 the slot never fills. Measured gap P01(5,292)→D01(857
+> missing)/V01(775 missing), synced 2026-07-03 via `BAPI_EMPLCOMM_CREATE` (never direct table insert) —
+> `Zagentexecution/tasks/2026_07_03_pa0105_user_sync/pa0105_user_sync.py` + `README.md`. Claims
+> #333-#337. Also reconfirms the SAIS wrapper's IN-clause/multi-condition WHERE limitation on PA-module
+> tables (claim #337, same class as #319/#328) — read whole + filter in Python.
+
 ## V01 Funds + WBS master data (2026-07-02, for sibling `unescrp` project)
 **Why:** companion to the actor-chain pull above — `unescrp`'s `specifications/test-data/crp-usable-test-data.xlsx`
 "usable test data" computation needs V01 Funds + WBS master data (date validity + account-assignment +

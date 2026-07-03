@@ -14534,5 +14534,198 @@
       "claim:331",
       "KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM"
     ]
+  },
+  {
+    "id": 333,
+    "claim": "PA0105 subtype 0001 is the PERNR->SAP-user (SY-UNAME/BNAME) communication infotype; the user-carrying field is USRID (CHAR12, e.g. 'A_COWLING'), NOT USRID_LONG (which is used by subtype 0010, the work-email infotype, empty for 0001 records). The staff-worktime-distribution upload (tcode YFMOUTPUT / program YFM_OUTPUT_MANAGEMENT, SaveFormData) looks up an employee's SAP user via PA0105-0001; when the link is absent in a target system (D01/V01) the lookup fails and the slot never fills. This is the HCM link the BCM staff-time-distribution task (claims #263/#264) depends on for per-position SAP-user resolution.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "HCM",
+    "domain_axes": {
+      "functional": [
+        "HCM",
+        "PSM",
+        "BCM"
+      ],
+      "module": [
+        "PA",
+        "FM"
+      ],
+      "process": [
+        "H2R"
+      ]
+    },
+    "related_objects": [
+      "PA0105",
+      "USR02",
+      "YFMOUTPUT",
+      "YFM_OUTPUT_MANAGEMENT",
+      "YFM_OUTPUT_CHECK_POSITION",
+      "HRP1000",
+      "HRP1001"
+    ],
+    "evidence_for": [
+      "Live RFC read of PA0105 on P01/D01/V01 2026-07-03: SUBTY='0001' rows carry USRID (CHAR12, e.g. A_COWLING) with USRID_LONG empty; SUBTY='0010' rows carry USRID_LONG (work email) with USRID empty -- confirms the two subtypes are disjoint fields for disjoint purposes.",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/README.md -- ground truth + mechanism.",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/pa0105_user_sync.py -- sync script using BAPI_EMPLCOMM_CREATE SUBTYPE=0001 COMMUNICATIONID=<P01 USRID>."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Cross-links claims #263/#264 (staff-time-distribution upload/consumption) and #320 (V01 PA0105 SUBTY=0010 extraction, a different subtype of the same infotype -- do not conflate).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:263",
+      "claim:264",
+      "claim:320",
+      "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/README.md"
+    ]
+  },
+  {
+    "id": 334,
+    "claim": "Measured PA0105-0001 (SAP-user link) gap P01->D01/V01, 2026-07-03: P01 has 5,292 employees with the link (source of truth). D01 was missing it for 857 employees, V01 for 775 -- in all these cases the referenced SAP user ALREADY EXISTED in the target system's USR02 (D01/V01), only the PA0105-0001 infotype link was missing. This means the gap is a metadata-linkage gap, not a user-provisioning gap.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "HCM",
+    "domain_axes": {
+      "functional": [
+        "HCM"
+      ],
+      "module": [
+        "PA"
+      ],
+      "process": [
+        "H2R"
+      ]
+    },
+    "related_objects": [
+      "PA0105",
+      "USR02"
+    ],
+    "evidence_for": [
+      "Live RFC comparison P01 vs D01/V01 PA0105-0001 + USR02, 2026-07-03 (pa0105_user_sync.py gap-detection pass): D01 gap=857/861 checked, V01 gap=775.",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/README.md section 'Ground truth'."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:333",
+      "claim:335"
+    ]
+  },
+  {
+    "id": 335,
+    "claim": "Executed the PA0105-0001 sync P01->D01/V01, commit=True, 2026-07-03: D01 +855 links created (2,314 -> 3,173), V01 +773 links created (4,267 -> 5,040). Golden-12 spot-check: 12/12 present in D01, 11/12 in V01 (PERNR 91036937 has no P01 source -- D_GRIGORIU's link exists only in D01). Reusable mechanism, standard BAPI path (never direct HR-infotype table insert): BAPI_EMPLOYEE_ENQUEUE -> BAPI_EMPLCOMM_CREATE(SUBTYPE='0001', COMMUNICATIONID=<P01 USRID>, VALIDITYBEGIN=<P01 BEGDA>, VALIDITYEND=99991231, NOCOMMIT='X') -> BAPI_TRANSACTION_COMMIT -> BAPI_EMPLOYEE_DEQUEUE; idempotent (skips PERNRs already linked), every write verified by re-read. Script: pa0105_user_sync.py <D01|V01> golden|all|test:N|dry|<PERNRs csv> [commit]. Joins the family of P01->D01/V01 master-data replicators alongside fund_sync.py (Funds) and the GL SKA1/SKB1 sync (sap_master_data_sync skill).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "F_INTERFACE_FILE",
+    "domain_axes": {
+      "functional": [
+        "HCM"
+      ],
+      "module": [
+        "PA"
+      ],
+      "process": [
+        "H2R"
+      ]
+    },
+    "related_objects": [
+      "PA0105",
+      "USR02",
+      "BAPI_EMPLOYEE_ENQUEUE",
+      "BAPI_EMPLCOMM_CREATE",
+      "BAPI_TRANSACTION_COMMIT",
+      "BAPI_EMPLOYEE_DEQUEUE",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/pa0105_user_sync.py"
+    ],
+    "evidence_for": [
+      "Live execution log, commit=True, 2026-07-03: D01 855 created (2314->3173), V01 773 created (4267->5040); golden-12 verified by re-read (12/12 D01, 11/12 V01).",
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/README.md.",
+      "commit 20d98bcc4d315ecbb1603dc7508844a3a5a8f063."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "sap_master_data_sync skill family now covers: Funds (fund_sync.py), GL SKA1/SKB1/Cost Elements, and HCM PA0105 SAP-user link (this claim). Consider adding pa0105_user_sync.py as a named extension section of that skill (mirrors the FM extension section pattern already used for Funds).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:334",
+      "claim:336"
+    ]
+  },
+  {
+    "id": 336,
+    "claim": "4 PA0105-0001 sync targets are non-copyable by design (real data conflict, not a tool bug): a BNAME/SAP-user can be linked (PA0105-0001) to only ONE PERNR at a time; if the target system already links that user to a DIFFERENT employee, SAP refuses the create and the correct resolution is a human decision on which PERNR is correct, not a copy. Observed 2026-07-03: D01 PERNR 10005045 (Y.BABIARD@GMAIL.COM already used by another person number), D01 PERNR 10100301 (infotype UNCAUGHT_EXCEPTION, data-specific), V01 PERNR 10152769 (SAP-user X_LI already linked to PERNR 10052083), V01 PERNR 10158641 (SAP-user Z_LIU already linked to PERNR 10052474).",
+    "claim_type": "known_unknown",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "HCM",
+    "domain_axes": {
+      "functional": [
+        "HCM"
+      ],
+      "module": [
+        "PA"
+      ],
+      "process": [
+        "H2R"
+      ]
+    },
+    "related_objects": [
+      "PA0105",
+      "USR02"
+    ],
+    "evidence_for": [
+      "Live BAPI_EMPLCOMM_CREATE rejections during the 2026-07-03 sync run for PERNRs 10005045, 10100301 (D01) and 10152769, 10158641 (V01); Zagentexecution/tasks/2026_07_03_pa0105_user_sync/README.md section '4 non-copyable edge cases'."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Open known-unknown: which PERNR is the correct owner of X_LI, Z_LIU and the BABIARD gmail user in D01/V01 -- needs a human/HR-master decision, not further automation. Not a defect in pa0105_user_sync.py.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:335"
+    ]
+  },
+  {
+    "id": 337,
+    "claim": "The SAIS secured RFC_READ_TABLE wrapper's restriction on multi-condition/IN(...) WHERE clauses (parser error 'A Boolean expression...') and its false TABLE_WITHOUT_DATA behavior (seen on FMFCTR, claim #328) generalize to PA-module tables too: reading PA0105/USR02 with an IN-list or multi-condition WHERE during the 2026-07-03 sync work hit the same class of wrapper limitation. Workaround used (same as claim #319/#328): read the whole table (ROWCOUNT=0, no WHERE) and filter in Python rather than pushing filter logic into the RFC WHERE clause.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "PA0105",
+      "USR02",
+      "FMFCTR"
+    ],
+    "evidence_for": [
+      "Zagentexecution/tasks/2026_07_03_pa0105_user_sync/pa0105_user_sync.py and README.md 'Notes/constraints': SAIS wrapper rejects multi-condition/IN(...) WHERE (parser 'A Boolean expression...' error) and returns false TABLE_WITHOUT_DATA on some tables; read-whole-then-filter used instead.",
+      "Generalizes claim #319 (ROWSKIPS rejection, 3-system) and claim #328 (FMFCTR false TABLE_WITHOUT_DATA) to the PA/HCM table class."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Same class of D_DATA read limitation as #319/#328 -- reinforces, does not supersede. No new root cause isolated this session; still a landscape-wide RFC channel constraint, not evidence about the data itself.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:319",
+      "claim:328",
+      "claim:333"
+    ]
   }
 ]
