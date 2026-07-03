@@ -13837,13 +13837,17 @@
       "ISO 20022 / SWIFT CBPR+ / EPC pain.001 scheme structure: PstlAdr on Party elements is the structured-address carrier; Agent elements (DbtrAgt/CdtrAgt) are identified by FinInstnId (BIC/ClrSysMmbId), PstlAdr on FinInstnId is optional/informational"
     ],
     "evidence_against": [],
-    "resolution_notes": "Known-unknown: confirm this scope reading against the bank's own Implementation Guideline (SocGen IG) before treating as fully closed with the bank counterparty -- see KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM (TIER_2 on that confirmation).",
+    "resolution_notes": "Known-unknown: confirm this scope reading against the bank's own Implementation Guideline (SocGen IG) before treating as fully closed with the bank counterparty -- see KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM (TIER_2 on that confirmation). | QUALIFIED 2026-07-02 (s-2026-07-02b, claim #331): general ISO-20022-scheme reasoning here (agents identified by BIC/ClrSysMmbId, PstlAdr on FinInstnId optional) remains correct, but the practical 'CdtrAgt needs NO remediation' conclusion was TOO STRONG -- it only holds if the agent's PstlAdr is omitted entirely. UNESCO's CGI tree DOES emit a PstlAdr for CdtrAgt (claim #308), and the bank's own test tool flagged it under a dated Nov-2026 rule (claims #329/#330). See claim #332 for the revised, dated remediation verdict on CGI's CdtrAgt. Kept for anti-regression (CP-002) -- the general-scheme building block still stands; do not re-derive it from scratch.",
     "resolved_session": "",
     "status": "active",
     "cross_links": [
       "claim:310",
       "claim:317",
-      "claim:318"
+      "claim:318",
+      "claim:329",
+      "claim:330",
+      "claim:331",
+      "claim:332"
     ]
   },
   {
@@ -13915,7 +13919,7 @@
       "Synthesizes claims #308, #309, #311, #313, #315, #316, #317 (this session + prior s-2026-07-01/s-2026-06-16/17)"
     ],
     "evidence_against": [],
-    "resolution_notes": "Output-side confirmation for claim #315 still pending a real third-party UltmtCdtr replay (see claim #315 note).",
+    "resolution_notes": "Output-side confirmation for claim #315 still pending a real third-party UltmtCdtr replay (see claim #315 note). | QUALIFIED 2026-07-02 (s-2026-07-02b, claims #329-#332): the CITI D-2 / SEPA-by-design conclusions and the CGI parties (#308) remain unchanged and correct. The CdtrAgt/DbtrAgt 'ACCEPTABLE, no change' sub-conclusion is CORRECTED: CGI's CdtrAgt (which already emits a PstlAdr) is flagged by the bank's own Nov-2026 structured-address rule and requires a dated, TIER_2-recommendation remediation (mirror CITI's structured CdtrAgt) -- see claim #332. This is a scope narrowing on ONE node (CdtrAgt), not a reversal of the overall verdict that the 4 PARTIES across all 3 formats are already compliant. Kept for anti-regression (CP-002); claim #332 is the record of what changed.",
     "resolved_session": "",
     "status": "active",
     "cross_links": [
@@ -13925,7 +13929,11 @@
       "claim:313",
       "claim:315",
       "claim:316",
-      "claim:317"
+      "claim:317",
+      "claim:329",
+      "claim:330",
+      "claim:331",
+      "claim:332"
     ]
   },
   {
@@ -14346,6 +14354,185 @@
     "cross_links": [
       "claim:327",
       "knowledge/gold_db_table_catalog.md"
+    ]
+  },
+  {
+    "id": 329,
+    "claim": "CONCRETE Nov-2026 CBPR+ structured-address rule (TIER_1, bank's own validation guide, quoted verbatim in the bank's test-tool result, 2026-07-02): \"This guide applies November 2026 rules: when <PstlAdr> is provided, <TwnNm> & <Ctry> tags are mandatory. Nevertheless, unstructured address <AdrLine> (+ <Ctry>) will be still accepted until Novembre 2026 on live environment. In case of hybrid address, take care the address elements entered in their structured dedicated tag are not repeated in <AdrLine>.\" Three concrete, dated sub-rules follow: (a) IF a party/element emits <PstlAdr> at all, THEN <TwnNm> and <Ctry> are mandatory inside it; (b) a PURE <AdrLine>+<Ctry> (no PstlAdr structured tags) remains accepted only UNTIL November 2026, then becomes non-compliant; (c) a HYBRID address (structured tags + AdrLine on the same element) must not repeat the structured elements' content inside AdrLine. This sharpens claim #316's general ISO-20022-scheme scope reasoning with a bank-specific, dated enforcement rule that changes the practical timeline.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02b",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "PstlAdr",
+      "AdrLine",
+      "TwnNm",
+      "Ctry"
+    ],
+    "evidence_for": [
+      "Bank validation-guide text quoted verbatim in the bank's test-tool result, user screenshot 2026-07-02: 'This guide applies November 2026 rules: when <PstlAdr> is provided, <TwnNm> & <Ctry> tags are mandatory. Nevertheless, unstructured address <AdrLine> (+ <Ctry>) will be still accepted until Novembre 2026 on live environment. In case of hybrid address, take care the address elements entered in their structured dedicated tag are not repeated in <AdrLine>.'"
+    ],
+    "evidence_against": [],
+    "resolution_notes": "This is the authoritative bank-specific rule that answers KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM in substance (a bank validation guide, not necessarily the SocGen IG document itself, but functionally equivalent -- the bank's own enforcement text). See claim #330 for the CdtrAgt-specific practical consequence, and claim #331 which qualifies claim #316.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:316",
+      "claim:318",
+      "KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM"
+    ]
+  },
+  {
+    "id": 330,
+    "claim": "The bank's test-tool FLAGGED the CGI CdtrAgt as an impacted line under the Nov-2026 rule (TIER_1, user screenshot 2026-07-02, file CGI_XML_CT_UNESCO.in, impacted lines 88 and 98): CdtrAgt/FinInstnId/PstlAdr carries Ctry + 2x AdrLine ('245 PARK AVENUE' / 'NEW YORKNY 10167') with NO structured TwnNm. Under claim #329 rule (a), this is currently ACCEPTED (pure AdrLine+Ctry, pre-Nov-2026 grace) but becomes NON-COMPLIANT once the Nov-2026 rule takes effect, because a PstlAdr element with AdrLine-only content lacking TwnNm will then require TwnNm+Ctry structured. The flagged address text ('NEW YORKNY 10167', city+state+ZIP mashed with no space) matches EXACTLY the previously-documented BNKA source-data root cause (claim #317: BNKA SOGEUS33/BANKL=SP0000001U9I, STRAS='245 PARK AVENUE', ORT01='NEW YORK,NY 10167', PROVZ empty) -- confirming the flagged line is CGI's CdtrAgt (Citibank-New-York-as-clearing-agent-for-SocGen/CGI), not a different address.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02b",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "CdtrAgt",
+      "BNKA",
+      "SOGEUS33",
+      "SP0000001U9I"
+    ],
+    "evidence_for": [
+      "User screenshot of bank test-tool result, 2026-07-02: CGI_XML_CT_UNESCO.in, impacted lines 88 + 98, CdtrAgt/FinInstnId/PstlAdr Ctry + AdrLine '245 PARK AVENUE' / 'NEW YORKNY 10167', no TwnNm.",
+      "claim #317: BNKA SOGEUS33 BANKL=SP0000001U9I has STRAS='245 PARK AVENUE', ORT01='NEW YORK,NY 10167' (mashed city+state+ZIP, PROVZ empty) -- exact text match confirms this is the CdtrAgt address, sourced wholesale from BNKA via standard PMW into FPAYH-ZB* fields."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "This is empirical confirmation that the agent's address, when a PstlAdr IS emitted (as CGI does for CdtrAgt), IS in scope of bank enforcement -- it directly qualifies claim #316's 'agents are out of the mandate's scope' conclusion for the specific case where UNESCO's own configuration already emits a PstlAdr for the agent. See claim #331 (qualification of #316) and claim #332 (revised remediation verdict).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:316",
+      "claim:317",
+      "claim:329",
+      "claim:332"
+    ]
+  },
+  {
+    "id": 331,
+    "claim": "QUALIFICATION of claim #316 (does NOT delete or fully reverse it -- narrows an overstated conclusion, TIER_1): claim #316's general ISO-20022-scheme reasoning is CORRECT (agents are identified by BIC/ClrSysMmbId; a PstlAdr on FinInstnId is optional -- an agent need not carry a postal address at all). What claim #316 OVERSTATED is the practical consequence: it concluded 'CdtrAgt using AdrLine on CGI/CITI is ACCEPTABLE AS-IS and needs NO remediation' -- TOO STRONG. Correct nuance: IF an agent's PstlAdr is OMITTED entirely, no structured-address rule applies (claim #316 fully holds). BUT IF a PstlAdr IS emitted for the agent (as UNESCO's CGI tree already does for CdtrAgt, claim #308), it becomes subject to the SAME Nov-2026 structured-address rule as any other PstlAdr occurrence (claim #329) -- and the bank's own test tool confirms this by flagging CGI's CdtrAgt (claim #330). The mandate-scope finding (parties vs agents) was never the load-bearing fact; whether a PstlAdr node exists at all is what triggers the rule, regardless of which XML party/agent role hosts it.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02b",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "CdtrAgt",
+      "DbtrAgt",
+      "PstlAdr"
+    ],
+    "evidence_for": [
+      "claim #329 bank rule text: the mandatory-TwnNm-if-PstlAdr-present rule makes no distinction between Party and Agent XML roles -- it is keyed on the presence of a <PstlAdr> element, not on which BIZ role hosts it.",
+      "claim #330: the bank's own test tool flagged CGI's CdtrAgt PstlAdr specifically, empirically falsifying the 'agents are categorically exempt' practical reading of claim #316."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Do NOT delete claim #316 (CP-002 preserve-first) -- its general-scheme reasoning remains a correct building block. This claim (#331) is the qualifying correction; claim #332 carries the concrete CdtrAgt remediation verdict that follows from it. Cross-reference: v001_change_matrix.csv rows 21/24 (CGI CdtrAgt StrtNm/TwnNm) return to being CORRECT/needed after having been marked wrong by claim #310's supersession note -- see claim #332.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:316",
+      "claim:318",
+      "claim:329",
+      "claim:330",
+      "claim:310"
+    ]
+  },
+  {
+    "id": 332,
+    "claim": "REVISED remediation verdict on CGI's CdtrAgt (SUPERSEDES the S-100 'no change / acceptable as-is' conclusion in claims #316/#318 for this specific node, TIER_1 on the rule + config facts, TIER_2 on the remediation recommendation pending a real third-party CITI CdtrAgt output sample): CGI's CdtrAgt AdrLine is compliant ONLY until November 2026 (claim #329 rule b). To be forward-compliant, CdtrAgt must be STRUCTURED, mirroring CITI's already-passing CdtrAgt config (claim #265 CITI PASS; CITI CdtrAgt/FinInstnId/PstlAdr children: StrtNm<-FPAYH-ZBSTR, TwnNm<-FPAYH-ZBORT, CtrySubDvsn<-FPAYHX-ZBREGX, Ctry direct-bind, all via structure-field binds with NO exit except the sibling Nm node): add StrtNm<-ZBSTR, TwnNm<-ZBORT, CtrySubDvsn<-ZBREGX (Ctry<-ZBISO already exists on CGI per claim #313 lineage) and suppress/empty AdrLine (no repetition per claim #329 rule c). This reinstates v001_change_matrix.csv rows 21 (StrtNm<-ZBSTR) and 24 (TwnNm<-ZBORT) as CORRECT-AND-NEEDED (they were marked superseded/wrong by the claim #310 supersession note under the now-qualified claim #316 -- that supersession is itself now qualified by claim #331). Rows 22/23 (BldgNb/PstCd) remain NOT SOURCEABLE (BNKA has no clean equivalent field on either bank, per claim #317) and are NOT part of this remediation -- only StrtNm/TwnNm/CtrySubDvsn/Ctry, matching exactly what CITI already emits and what the bank's rule requires (TwnNm+Ctry mandatory; BldgNb/PstCd are not flagged as mandatory in the quoted rule). The mashed BNKA-sourced TwnNm value ('NEW YORK,NY 10167' city+state+zip in one field, claim #317) rides into structured TwnNm as-is -- CITI's identical mechanism already passed the bank's validator (claim #265), so data-cleaning of BNKA.ORT01/PROVZ is a SEPARATE, OPTIONAL, non-blocking improvement, not a precondition for this fix. This is now a DATED action item (before November 2026), not an optional/skip item as claims #316/#318 concluded. The PARTIES (Dbtr/Cdtr/UltmtDbtr/UltmtCdtr) were already fully structured (claim #308) and are unaffected -- only CdtrAgt/DbtrAgt agent addresses are the residual pre-Nov-2026 gap.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-02b",
+    "domain": "Payment",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P"
+      ]
+    },
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "CdtrAgt",
+      "DbtrAgt",
+      "ZBSTR",
+      "ZBORT",
+      "ZBREGX",
+      "ZBISO"
+    ],
+    "evidence_for": [
+      "claim #330: bank test-tool flagged CGI CdtrAgt as impacted by the Nov-2026 rule.",
+      "claim #329: quoted bank rule requiring TwnNm+Ctry when PstlAdr is present.",
+      "CITI CdtrAgt live DMEE tree config (/CITI/XML/UNESCO/DC_V3_01, dumped via Zagentexecution/mcp-backend-server-python/dump_citi_cdtr_subtrees.py, user CITI-tree screenshot 2026-07-02): CdtrAgt/FinInstnId/PstlAdr children StrtNm<-FPAYH-ZBSTR, TwnNm<-FPAYH-ZBORT, CtrySubDvsn<-FPAYHX-ZBREGX, Ctry (direct bind), AdrLine -- only the sibling Nm node uses an exit (bank-name lookup); address tags are direct structure-field binds, no exit needed.",
+      "claim #265: CITI structured-address remediation (including this CdtrAgt config) PASSED the Citibank test-tool validator.",
+      "claim #317: BNKA is the sole source for both CGI and CITI CdtrAgt address (STRAS/ORT01/PROVZ), identical mechanism -- so mirroring CITI's field bindings on CGI is mechanically straightforward (same source table, same PMW-fed ZB* fields)."
+    ],
+    "evidence_against": [
+      "PENDING (flagged, not yet resolved): no empirical confirmation yet from a REAL CITI file sent to a real US bank showing a CITI CdtrAgt with the known-mashed BNKA TwnNm value ('NEW YORK,NY 10167') actually clearing/passing bank-side. Claim #265's PASS was on the bank's TEST TOOL, not a confirmed live production CdtrAgt validation slice. The user will provide a live CITI output file with a real CdtrAgt for this confirmation -- until then this claim's remediation recommendation rests on tree-config comparison + the test-tool PASS, not on a directly observed passing CdtrAgt output."
+    ],
+    "resolution_notes": "Downgrade the remediation RECOMMENDATION to TIER_2 pending the CITI live-file confirmation noted above (the rule facts themselves -- #329/#330 -- remain TIER_1). Tracked as KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM (see known_unknowns.json). Do NOT execute the CGI CdtrAgt structuring change until (a) the CITI live-file confirmation lands, or (b) the user explicitly accepts the TIER_2 risk and proceeds on tree-config-comparison evidence alone. Companion BCM_StructuredAddressChange.html needs a new row for this dated Nov-2026 CdtrAgt action item -- NOT applied here (companion is mid-reconciliation per task_4aca41a1); flagged for the next companion-touch session.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:265",
+      "claim:308",
+      "claim:310",
+      "claim:313",
+      "claim:316",
+      "claim:317",
+      "claim:318",
+      "claim:329",
+      "claim:330",
+      "claim:331",
+      "KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM"
     ]
   }
 ]

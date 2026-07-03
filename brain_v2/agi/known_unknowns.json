@@ -667,10 +667,31 @@
       "question": "Claim #316 (TIER_1) concludes the ISO 20022/CBPR+/EPC structured-address mandate applies to PARTIES (Dbtr/Cdtr/UltmtDbtr/UltmtCdtr) and NOT to financial AGENTS (DbtrAgt/CdtrAgt), based on general ISO 20022 scheme structure (agents identified by BIC/ClrSysMmbId, PstlAdr on FinInstnId is optional/informational). This has NOT been cross-checked against SocGen's own Implementation Guideline for /CGI_XML_CT_UNESCO (or the equivalent bank IG for CITI), which could in principle impose a stricter bank-specific requirement beyond the base ISO 20022 scheme.",
       "why": "If the SocGen IG (or Citibank's) mandates structured CdtrAgt address as a bank-specific rule, claim #316's 'no change needed' conclusion for CdtrAgt would need revisiting even though it is correct against the base ISO 20022/CBPR+ standard.",
       "how_to_resolve": "Obtain and read the SocGen (and Citibank) Implementation Guideline document for the CGI/CITI XML formats; grep for 'CdtrAgt' + 'PstlAdr' + 'mandatory'/'required' sections; confirm agent-address is optional/informational per the bank's own spec.",
-      "status": "open",
-      "related_claims": [310, 316, 317],
+      "status": "resolved",
+      "resolved_at": "2026-07-02",
+      "resolved_session": "s-2026-07-02b",
+      "resolution": "ANSWERED IN SUBSTANCE (TIER_1) -- not from the SocGen IG document itself, but from the bank's own validation-guide text quoted verbatim in the bank's test-tool result (functionally equivalent evidence, user screenshot 2026-07-02): 'This guide applies November 2026 rules: when <PstlAdr> is provided, <TwnNm> & <Ctry> tags are mandatory. Nevertheless, unstructured address <AdrLine> (+ <Ctry>) will be still accepted until Novembre 2026 on live environment.' This CONFIRMS claim #316's concern was warranted: the bank DOES impose a stricter, dated rule beyond the base ISO 20022 scheme's 'agents are exempt' reading -- but the trigger is PstlAdr-presence, not party-vs-agent role. Since CGI already emits a PstlAdr for CdtrAgt, that node is in scope and was flagged by the bank's test tool (claim #330). Claim #316 is QUALIFIED (not deleted, claim #331); the concrete CdtrAgt remediation verdict is claim #332. Residual gap: the raw SocGen IG PDF itself was still not read -- if ever obtained, cross-check it does not add further constraints (e.g. BldgNb/PstCd mandates) beyond what the test-tool quote already revealed.",
+      "related_claims": [310, 316, 317, 329, 330, 331, 332],
       "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt"],
-      "evidence": "brain_v2/claims/claims.json claim #316 resolution_notes"
+      "evidence": "brain_v2/claims/claims.json claim #316 resolution_notes; claim #329 (bank rule text); claim #330 (bank test-tool CdtrAgt flag, user screenshot 2026-07-02)"
+    },
+    {
+      "id": "KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM",
+      "opened_at": "2026-07-02",
+      "session": "s-2026-07-02b",
+      "severity": "MEDIUM",
+      "domain": "Payment",
+      "question": "Claim #332 recommends structuring CGI's CdtrAgt to mirror CITI's already-configured CdtrAgt (StrtNm/TwnNm/CtrySubDvsn/Ctry from BNKA-fed ZB* fields), resting on (a) tree-config comparison and (b) claim #265's bank TEST-TOOL PASS for CITI. Neither is a directly observed REAL production CITI file with a populated third-party CdtrAgt that actually cleared/passed on the bank side with the known-mashed BNKA TwnNm value ('NEW YORK,NY 10167' city+state+zip, claim #317). Does a real CITI output file to a real US bank confirm the structured CdtrAgt (with the mashed TwnNm) actually clears without rejection?",
+      "why": "Claim #332's remediation recommendation is TIER_2 (downgraded from the TIER_1 rule facts) specifically because of this gap. Executing the CGI CdtrAgt structuring change before this confirmation risks discovering the mashed TwnNm value itself causes a NEW rejection reason (distinct from the currently-flagged missing-TwnNm reason) once structured.",
+      "how_to_resolve": "User will provide a live/real CITI XML output file containing a populated third-party CdtrAgt. Read its StrtNm/TwnNm/CtrySubDvsn/Ctry values, confirm they match the BNKA-mashed pattern, and confirm (via bank confirmation, ack, or absence of rejection) that the file cleared. If confirmed, upgrade claim #332's remediation recommendation to TIER_1 and proceed to execute (mirror CITI's CdtrAgt config onto CGI's /CGI_XML_CT_UNESCO tree in D01 V001, before Nov 2026). If the mashed TwnNm causes its own rejection, the fix path changes to BNKA data-cleaning (splitting ORT01 into city/state/zip, populating PROVZ) as a precondition, not an optional improvement.",
+      "status": "open",
+      "blocking_for": [
+        "execution of claim #332's CGI CdtrAgt structuring remediation",
+        "Nov-2026 CBPR+ compliance deadline for CGI"
+      ],
+      "related_claims": [265, 317, 329, 330, 332],
+      "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt", "BNKA"],
+      "evidence": "claim #332 evidence_against note; claim #265 (test-tool PASS, not live-file); claim #317 (BNKA mashed source data)"
     }
   ]
 }
