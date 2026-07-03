@@ -14135,5 +14135,132 @@
       "claim:321",
       "knowledge/gold_db_table_catalog.md#v01-funds--wbs-master-data-2026-07-02-for-sibling-unescrp-project"
     ]
+  },
+  {
+    "id": 324,
+    "claim": "BCS budget-document REVERSAL is blocked in D01 by a per-year customizing gate, same class as the FMBV version-status gate (claim #307). BAPI_0050_REVERSE (RFC-enabled; interface DOCUMENTNUMBER/DOCUMENTYEAR/FMAREA/REVERSAL_DATA/TESTRUN, returns REV_DOCUMENT_NUMBER/YEAR) passes TESTRUN='X' but fails on the REAL run with \"Reversal reasons are not active in year 2026 for document type\" + \"No instance of object type BudgetEntryDocFM has been created\". TESTRUN does NOT catch this gate -- it only validates structurally, not against the reversal-reason customizing. This is a D01 config gap for FY2026 (reversal reasons / OF-config), NOT our code and NOT fixable via RFC -- needs Finance/Basis customizing activation, exactly like the FMBV budget-version-status-not-open block hit on 465BRZ0002 (claim #307). REVERSAL_DATA structure = BAPI_0050_REVERSAL_DATA (DOCSTATE, DOCDATE, HEADER_TEXT, TEXT_NAME, REF_ORG_UN, REF_DOC, OBJ_SYS, OBJ_TYPE, EXTERNAL_NUMBER, PSTNG_DATE, REASON_REV). Same PSTNG_DATE gotcha as BAPI_0050_CREATE (claim #270/#306): omit it, else \"no active budgetary ledger\".",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "BAPI_0050_REVERSE",
+      "BAPI_0050_REVERSAL_DATA",
+      "BAPI_0050_CREATE",
+      "FMBV",
+      "650RER0008",
+      "2000000261"
+    ],
+    "evidence_for": [
+      "Live D01 RFC call s-2026-07-03: BAPI_0050_REVERSE(DOCUMENTNUMBER=2000000261, DOCUMENTYEAR=2026, FMAREA=UNES, TESTRUN='X') returned success; TESTRUN=' ' (real run) returned error \"Reversal reasons are not active in year 2026 for document type\" + \"No instance of object type BudgetEntryDocFM has been created\".",
+      "REVERSAL_DATA structure fields enumerated from the RFC interface signature read via ADT/RFC metadata s-2026-07-03."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Workaround used instead of chasing the config gate: negative-offset ENTR posting (claim #325). Same class as claim #307 (FMBV version-status) -- rule feedback_conclude_against_known_model_when_blocked applies: don't chase D01 customizing gaps via RFC, park as known config gap and route around it.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:307",
+      "claim:325",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md#5-session-deep-analysis--findings-corrections-gotchas-s093",
+      "memory/feedback_conclude_against_known_model_when_blocked.md"
+    ]
+  },
+  {
+    "id": 325,
+    "claim": "A BCS budget net can be aligned to a target (P01) WITHOUT reversal, via a negative-offset ENTR/B1 posting through BAPI_0050_CREATE -- avoiding the reversal-reason customizing gate entirely (claim #324). Sign convention verified: posting a POSITIVE TOTAL_AMOUNT stores a NEGATIVE B1 value in FMBL/FMAVCT; posting the NEGATIVE of an existing doc's amount stores a POSITIVE value that cancels the earlier line net-to-zero for that (fund, fund center, commitment item, year). Recipe unchanged from the original ENTR post (claim #306): HEADER DOCTYPE=2000/PROCESS=ENTR/DOCSTATE=1/VERSION=000/no PSTNG_DATE; ITEM BUDCAT=9F/BUDTYPE=3000/VALTYPE=B1/DISTKEY=1/ITEM_NUM as string; TESTRUN=' '; BAPI_TRANSACTION_COMMIT. Concrete case: fund 650RER0008 in D01 had DOUBLE P01's ENTR/B1 net for FY2026 (new doc 2000000261 = 1,039,626.21 duplicated a pre-existing 2015-vintage budget already carried at that fund/year). Offset doc 2000000265 (amount = -1,039,626.21) neutralized the FY2026 net to 0, bringing D01's ENTR/B1 net for 650RER0008 to exactly match P01 (VNI+11 = -548,344.00, VNI+13 = -491,282.21; FY2026 net = 0 in both systems).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "BAPI_0050_CREATE",
+      "FMBL",
+      "FMAVCT",
+      "650RER0008",
+      "2000000261",
+      "2000000265",
+      "VNI"
+    ],
+    "evidence_for": [
+      "Live D01 posting s-2026-07-03: BAPI_0050_CREATE with TOTAL_AMOUNT=-1039626.21 for fund 650RER0008/FY2026 created doc 2000000265; re-read of FMBL/FMAVCT confirmed FY2026 net for the fund dropped to 0, matching P01's ENTR/B1 net at fund centers VNI+11 (-548,344.00) and VNI+13 (-491,282.21).",
+      "Prior doc 2000000261 (this session, +1,039,626.21) identified as duplicating a pre-existing 2015-vintage FY2026 budget already present in D01 for the same fund/address -- root cause of the double."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Generalizes to any future D01<->P01 BCS alignment where a duplicate/excess ENTR/B1 line exists at a (fund, fund center, commitment item, year): post the negative offset instead of attempting BAPI_0050_REVERSE (blocked by claim #324's customizing gate).",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:306",
+      "claim:324",
+      "claim:326",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md#5-session-deep-analysis--findings-corrections-gotchas-s093"
+    ]
+  },
+  {
+    "id": 326,
+    "claim": "Fund 650RER0008's real P01 budget/postings address is fund center VNI, commitment items 11 and 13 (TIER_1, source of truth for the D01 alignment target). FMIFIIT shows 30/30 real posting lines at FISTL=VNI; FIPEX distribution 13x CI-21 / REVENUE x7 / CI-80 x2. The CI-80 that appears in the P01 FMAVCT control triple (fund, fund center, commitment item) is STRUCTURAL -- it arises from consumption/commitment activity, NOT from an ENTR/B1 budget line. There is NO ENTR/B1 budget entry at VNI+80 in P01 for this fund. Implication for BCS alignment work: do not 'load a VNI+80 budget' to match P01's control-triple footprint -- CI-80 showing up there is not budget, and adding a budget line there would be a fabricated discrepancy, not a fix.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "650RER0008",
+      "VNI",
+      "FMIFIIT",
+      "FIPEX",
+      "FMAVCT"
+    ],
+    "evidence_for": [
+      "Live P01 RFC read s-2026-07-03: FMIFIIT WHERE FUND=650RER0008 -- 30/30 lines FISTL=VNI. FIPEX distribution by commitment item: CI-21 x13, REVENUE x7, CI-80 x2.",
+      "FMAVCT control-triple read for the same fund showed a (VNI, CI-80) row with 0 ENTR/B1 budget entries -- confirmed the CI-80 exposure is consumption-derived (structural), not a booked budget line."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Prevents a future session from mis-replicating a structural AVC artifact as a missing budget line during P01->D01 BCS alignment.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:325",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
+    ]
   }
 ]

@@ -136,10 +136,46 @@ fails with "No status assigned to version 0, year <Y>" when version 0 for that F
 transaction **FMBV** for the area/year before posting. Verified: 465BRZ0002 (FIKRS=UBO) blocked FY2026 while
 UNES/2026 worked. KNOWN-UNKNOWN: programmatic path to open FMBV version-status (config table / RFC) unresolved.
 
+**BCS budget-document REVERSAL is also a per-year customizing gate — SAME CLASS as FMBV version-status (claim
+#324, s-2026-07-03):** `BAPI_0050_REVERSE` (RFC-enabled; DOCUMENTNUMBER/DOCUMENTYEAR/FMAREA/REVERSAL_DATA/TESTRUN
+→ REV_DOCUMENT_NUMBER/YEAR) passes `TESTRUN='X'` but fails on the REAL run with **"Reversal reasons are not
+active in year 2026 for document type"** + "No instance of object type BudgetEntryDocFM has been created".
+**TESTRUN does NOT catch this** — it only validates structurally, not against the reversal-reason customizing.
+This is a D01 config gap for FY2026 (reversal reasons / OF-config), not our code, not fixable via RFC — needs
+Finance/Basis customizing activation, exactly like the FMBV gate above. `REVERSAL_DATA` structure =
+`BAPI_0050_REVERSAL_DATA` (DOCSTATE, DOCDATE, HEADER_TEXT, TEXT_NAME, REF_ORG_UN, REF_DOC, OBJ_SYS, OBJ_TYPE,
+EXTERNAL_NUMBER, PSTNG_DATE, REASON_REV) — same PSTNG_DATE gotcha as `BAPI_0050_CREATE`: omit it, else "no active
+budgetary ledger". Per `feedback_conclude_against_known_model_when_blocked`: don't chase this D01 customizing gap
+via RFC — park it as a known config gap and route around it (see workaround below).
+
+**Workaround — negative-offset ENTR posting instead of reversal (claim #325, s-2026-07-03):** `BAPI_0050_CREATE`
+accepts a NEGATIVE `TOTAL_AMOUNT`. Verified sign convention: input POSITIVE amount → stored NEGATIVE B1 value in
+FMBL/FMAVCT; input NEGATIVE amount → stored POSITIVE → cancels an earlier line. Posting the negative of a doc's
+amount drives that (fund, fund center, commitment item, year) net to 0 **without touching the reversal-reason
+config**. Recipe unchanged (HEADER DOCTYPE=2000/PROCESS=ENTR/DOCSTATE=1/VERSION=000/no PSTNG_DATE; ITEM BUDCAT=9F/
+BUDTYPE=3000/VALTYPE=B1/DISTKEY=1/ITEM_NUM string; TESTRUN=' '; BAPI_TRANSACTION_COMMIT). Concrete case: fund
+**650RER0008** in D01 had DOUBLE P01's FY2026 ENTR/B1 net (this session's doc 2000000261 = 1,039,626.21 duplicated
+a pre-existing 2015-vintage FY2026 budget already carried at that fund/address). Offset doc **2000000265**
+(−1,039,626.21) neutralized the FY2026 net → D01 now matches P01 exactly at fund center **VNI**: CI-11 =
+−548,344.00, CI-13 = −491,282.21, FY2026 net = 0 in both systems.
+
+**650RER0008 real addressing, P01 source of truth (claim #326):** real postings + AVC budget live at fund center
+**VNI**, commitment items **11 and 13**. FMIFIIT: 30/30 lines FISTL=VNI; FIPEX distribution CI-21×13 / REVENUE×7 /
+CI-80×2. The **CI-80** appearing in P01's FMAVCT control triple is **STRUCTURAL** (consumption/commitment-derived),
+**NOT a budget line** — there is no ENTR/B1 entry at VNI+80 in P01. Do not "load a VNI+80 budget" to match the
+control-triple footprint; that would fabricate a discrepancy, not fix one.
+
+**General alignment principle:** when aligning D01 to P01, compare the ENTR/B1 NET by (fund center, commitment
+item) across ALL years — read FMBL client-side (filter VALTYPE=B1 & BUDTYPE=3000 in Python; the D01 SAIS RFC
+wrapper rejects 4-condition WHERE clauses, so read with ≤2-3 conditions and filter after). A "latest-year only"
+loader (`budget_assign_funds_multiarea.py`, claim #306) can duplicate a pre-existing target-year budget if one
+already exists — always net-check before posting, not just presence-check.
+
 **Open:** WBS hierarchy NESTING via BAPI by RFC (works for MuleSoft → reproduce its `I_WBS_HIERARCHIE_TABLE`
 payload); WBS PS-budget via RFC (KBPP buffer sequence, else CJ30); wire-up+verify B/D/E in the orchestrator;
 the ~98 funds WRTTP43 fund-budget (~212M) replication; P01/D01 PS-AVC-profile diff on CR WBS (BP/604 root cause);
-programmatic FMBV (how to open FM budget-version status per area/year via RFC/config).
+programmatic FMBV (how to open FM budget-version status per area/year via RFC/config); programmatic path to open
+BCS reversal-reason customizing per FM-area × fiscal-year (mirrors the FMBV known-unknown).
 
 ## 6. Cross-project
 Broadcast sent to `unesco-sap-brain` (ADR-007). Other side of the create flow = `unescore20-PPM-brain`
