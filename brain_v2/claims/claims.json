@@ -13211,7 +13211,7 @@
   },
   {
     "id": 304,
-    "claim": "WBS PS-budget channel is GUI-only (CJ30/KBPP family) — no clean single-call RFC equivalent. KBPP_EXTERN_UPDATE raises DA300 NOT_FOUND without the full CJ30 buffer/profile context even with IMP_CHECK=X. Custom Y*BUDGET* FMs are readers/loggers only; BAPI_BUS2054_SET_STATUS = status only; BAPI_0050_CREATE = FM fund-center object (OBJNR FS*), NOT WBS (OBJNR PR*). WBS budgeting is a TWO-STEP process: (1) CJ30 sets the original/current budget → stored in BPJA as WRTTP=41 (current budget); (2) CJ32 releases it → stored in BPJA as WRTTP=42 (released budget). Budget is ANNUAL (table BPJA by GJAHR), NOT overall (BPGE WRTTP=01 was empty for WBS 650RER0008 / OBJNR PR00021132). Corrects the earlier '0 budget in P01' which only checked BPGE/overall — BPJA WRTTP=41 (GJAHR=2026) had the 10,000 USD entry. BPGE WRTTP=01 = overall-level; BPJA WRTTP=41 = annual current; BPJA WRTTP=42 = annual released; VERSN=000 throughout. Budget-exceeded message = BP/604 (PS-AVC engine, not FM-AVC). Open: whether AVC/BP-604 checks WRTTP=41 (current) or WRTTP=42 (released) is unresolved — see KU-2026-CJ32-RELEASE-NOT-LANDING.",
+    "claim": "WBS PS-budget channel is GUI-only (CJ30/KBPP family) — no clean single-call RFC equivalent. KBPP_EXTERN_UPDATE raises DA300 NOT_FOUND without the full CJ30 buffer/profile context even with IMP_CHECK=X. Custom Y*BUDGET* FMs are readers/loggers only; BAPI_BUS2054_SET_STATUS = status only; BAPI_0050_CREATE = FM fund-center object (OBJNR FS*), NOT WBS (OBJNR PR*). WBS budgeting is a TWO-STEP process: (1) CJ30 sets the original/current budget → stored in BPJA as WRTTP=41 (current budget); (2) CJ32 releases it → stored in BPJA as WRTTP=42 (released budget). Budget is ANNUAL (table BPJA by GJAHR), NOT overall (BPGE WRTTP=01 was empty for WBS 650RER0008 / OBJNR PR00021132). Corrects the earlier '0 budget in P01' which only checked BPGE/overall — BPJA WRTTP=41 (GJAHR=2026) had the 10,000 USD entry. BPGE WRTTP=01 = overall-level; BPJA WRTTP=41 = annual current; BPJA WRTTP=42 = annual released; VERSN=000 throughout. Budget-exceeded message = BP/604 (PS-AVC engine, not FM-AVC). RESOLVED s-2026-07-01 (was open — see KU-2026-CJ32-RELEASE-NOT-LANDING, now closed): PS-AVC/BP-604 checks the RELEASED budget WRTTP=42 (set by CJ32), NOT the original/current WRTTP=41 (set by CJ30). Proof: WBS 650RER0008 (OBJNR PR00021132) has WRTTP=41=10,000 USD for FY2026 but WRTTP=42=0, and BP/604 still fires on a posting attempt — the WRTTP=41 entry alone does not satisfy AVC. Therefore CJ32 release is MANDATORY, not just CJ30; the two-step CJ30→CJ32 sequence is a hard AVC precondition, not merely bookkeeping.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "status": "active",
@@ -13233,8 +13233,8 @@
       ]
     },
     "created_session": "s-2026-06-30",
-    "resolved_session": null,
-    "resolution_notes": "Fills the RFC-channel gap for WBS original budget. Complements claim #303 (two budget levels) and #297 (hierarchical WBS BAPI unsolved). Updated s-2026-07-01: WRTTP41=current(CJ30)/WRTTP42=released(CJ32) distinction added; BPJA-annual vs BPGE-overall corrected; CJ32-release-not-landing added as KU. Cross-link: knowledge/domains/PSM/budget_control_system_bcs_domain.md gotchas section.",
+    "resolved_session": "s-2026-07-01",
+    "resolution_notes": "Fills the RFC-channel gap for WBS original budget. Complements claim #303 (two budget levels) and #297 (hierarchical WBS BAPI unsolved). Updated s-2026-07-01: WRTTP41=current(CJ30)/WRTTP42=released(CJ32) distinction added; BPJA-annual vs BPGE-overall corrected. RESOLVES KU-2026-CJ32-RELEASE-NOT-LANDING (closed s-2026-07-01): BP/604 evaluates WRTTP=42 (released), confirming CJ32 is mandatory, not optional. Cross-link: knowledge/domains/PSM/budget_control_system_bcs_domain.md §5.",
     "evidence_for": [
       {
         "type": "live_rfc",
@@ -13247,6 +13247,12 @@
         "ref": "D01 RFC_READ_TABLE BPJA WHERE OBJNR=PR00021132 (WBS 650RER0008) 2026-06-30",
         "cite": "BPJA WRTTP=41 GJAHR=2026 VERSN=000 = 10,000 USD (entered via CJ30). WRTTP=42 GJAHR=2026 = 0 after two CJ32 release attempts (release not landing — see KU-2026-CJ32-RELEASE-NOT-LANDING). BPGE rows for same OBJNR = 0 (budget is ANNUAL, not overall). Corrects earlier 0-budget diagnosis which only checked BPGE/overall.",
         "added_session": "s-2026-07-01"
+      },
+      {
+        "type": "live_rfc",
+        "ref": "D01 posting attempt against WBS 650RER0008 / OBJNR PR00021132, s-2026-07-01",
+        "cite": "With BPJA WRTTP=41=10,000 USD (FY2026) present and WRTTP=42=0 (unreleased), a posting attempt still raised BP/604 (budget exceeded, PS-AVC). Empirically confirms PS-AVC evaluates WRTTP=42 (released), not WRTTP=41 (current) — resolves KU-2026-CJ32-RELEASE-NOT-LANDING's core question and confirms CJ32 release is mandatory.",
+        "added_session": "s-2026-07-01"
       }
     ],
     "evidence_against": [],
@@ -13257,6 +13263,7 @@
       "BPGE",
       "BPJA",
       "WRTTP",
+      "BP604",
       "BAPI_BUS2054_SET_STATUS",
       "BAPI_0050_CREATE",
       "Y_FMKU_0050_CREATE_WITH_COMMIT",
@@ -13267,12 +13274,13 @@
     "cross_links": [
       "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
       "brain_v2/claims/claims.json#297",
-      "brain_v2/claims/claims.json#303"
+      "brain_v2/claims/claims.json#303",
+      "brain_v2/claims/claims.json#305"
     ]
   },
   {
     "id": 305,
-    "claim": "Cost-recovery WBS carry 0 PS-budget in BPGE on BOTH P01 and D01 (verified: 650RER0008 = 0 BPGE rows WHERE OBJNR LIKE PR*). Spendability of CR WBS comes from the FUND-level budget (633CRP9003, OBJNR FS*, claim #268/#287), NOT from a WBS-level PS-budget entry. Therefore a BP/604 (PS-AVC budget-exceeded) on a CR WBS in D01 signals a PS-AVC profile CONFIG DIFFERENCE (D01 has PS-AVC active; P01 relies on FM-AVC fund-level coverage for CR objects), not genuinely missing budget. Test-unblock path: CJ30 give the WBS a nominal PS budget in D01. Structural fix: align the PS-AVC/budget-profile between D01 and P01 for CR project types.",
+    "claim": "Cost-recovery WBS carry 0 PS-budget in BPGE on BOTH P01 and D01 (verified: 650RER0008 = 0 BPGE rows WHERE OBJNR LIKE PR*). Spendability of CR WBS comes from the FUND-level budget (633CRP9003, OBJNR FS*, claim #268/#287), NOT from a WBS-level PS-budget entry. Therefore a BP/604 (PS-AVC budget-exceeded) on a CR WBS in D01 signals a PS-AVC profile CONFIG DIFFERENCE (D01 has PS-AVC active; P01 relies on FM-AVC fund-level coverage for CR objects), not genuinely missing budget. Test-unblock path: CJ30 give the WBS a nominal PS budget in D01. Structural fix: align the PS-AVC/budget-profile between D01 and P01 for CR project types. Refined s-2026-07-01: this is one of TWO DISTINCT budget layers per fund/project that must not be conflated — (a) FUND disponible = FM/BCS AVC ledger 9H (FMAVCT), loaded via ENTR/B1/BAPI_0050; (b) WBS PS budget = classic PS budgeting (BPJA WRTTP=41/42 at OBJNR PR*, CJ30/CJ32 GUI, no clean RFC). A cost-recovery test posting needs BOTH layers satisfied; they are separate AVC systems and one being funded does not satisfy the other.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "status": "active",
@@ -13297,28 +13305,43 @@
     },
     "created_session": "s-2026-06-30",
     "resolved_session": null,
-    "resolution_notes": "Opens KU-2026-BP604-PS-AVC-PROFILE-DIFF (why P01 does not raise BP/604 on CR WBS with 0 PS budget). Cross-link: claim #268 (633CRP9003 cost recovery pool fund), #287 (CR budget in FMBL), #134 (OPSV not available on P01), #294 (3-layer prereq chain). Doc ref: budget_control_system_bcs_domain.md + cost_recovery_avc_disponible_model.md.",
+    "resolution_notes": "Opens KU-2026-BP604-PS-AVC-PROFILE-DIFF (why P01 does not raise BP/604 on CR WBS with 0 PS budget). Cross-link: claim #268 (633CRP9003 cost recovery pool fund), #287 (CR budget in FMBL), #134 (OPSV not available on P01), #294 (3-layer prereq chain), #304 (WBS PS-budget two-step CJ30/CJ32, resolved s-2026-07-01: BP/604 checks WRTTP=42 released). Doc ref: budget_control_system_bcs_domain.md + cost_recovery_avc_disponible_model.md.",
     "evidence_for": [
       {
         "type": "live_rfc",
         "ref": "knowledge/domains/PSM/budget_control_system_bcs_domain.md:gotchas",
         "cite": "Verified live RFC D01+P01 2026-06-30: BPGE WHERE OBJNR LIKE PR* for project 650RER0008 = 0 rows in both systems. In P01 the CR WBS posts without BP/604 because FM-AVC covers via fund 633CRP9003 budget. In D01 BP/604 fires because PS-AVC is active without a BPGE PR* row for this WBS.",
         "added_session": "s-2026-06-30"
+      },
+      {
+        "type": "live_rfc",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/budget_assign_funds_multiarea.py run s-2026-07-01, FMAVCT docs 2000000260-2000000262",
+        "cite": "Verified s-2026-07-01: funds 196EAR4042, 650RER0008, and 538GLO5000 all have FUND disponible populated (FMAVCT ledger 9H, docs 2000000260/261/262) but all three lack RELEASED WBS PS budget (BPJA WRTTP=42=0 at their respective OBJNR PR*) — confirming a test posting on any of them is still blocked by BP/604 until CJ30+CJ32 are run (GUI action, no RFC path). Corroborates the two-layer distinction across 3 independent funds, not just 650RER0008.",
+        "added_session": "s-2026-07-01"
       }
     ],
     "evidence_against": [],
     "related_objects": [
       "BPGE",
+      "BPJA",
+      "WRTTP",
       "650RER0008",
+      "196EAR4042",
+      "538GLO5000",
       "633CRP9003",
       "KBPP_EXTERN_UPDATE",
       "CJ30",
+      "CJ32",
+      "BP604",
+      "PR00021132",
+      "FMAVCT",
       "BAPI_0050_CREATE"
     ],
     "cross_links": [
       "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
       "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
       "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
+      "brain_v2/claims/claims.json#304",
       "brain_v2/claims/claims.json#268",
       "brain_v2/claims/claims.json#287",
       "brain_v2/claims/claims.json#134",
