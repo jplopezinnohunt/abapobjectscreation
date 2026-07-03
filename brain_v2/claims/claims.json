@@ -14225,7 +14225,7 @@
   },
   {
     "id": 326,
-    "claim": "Fund 650RER0008's real P01 budget/postings address is fund center VNI, commitment items 11 and 13 (TIER_1, source of truth for the D01 alignment target). FMIFIIT shows 30/30 real posting lines at FISTL=VNI; FIPEX distribution 13x CI-21 / REVENUE x7 / CI-80 x2. The CI-80 that appears in the P01 FMAVCT control triple (fund, fund center, commitment item) is STRUCTURAL -- it arises from consumption/commitment activity, NOT from an ENTR/B1 budget line. There is NO ENTR/B1 budget entry at VNI+80 in P01 for this fund. Implication for BCS alignment work: do not 'load a VNI+80 budget' to match P01's control-triple footprint -- CI-80 showing up there is not budget, and adding a budget line there would be a fabricated discrepancy, not a fix.",
+    "claim": "SUPERSEDED by claim #327 -- INCOMPLETE, not wrong: Fund 650RER0008's real P01 budget/postings address is fund center VNI, commitment items 11 and 13 (TIER_1, source of truth for the D01 alignment target). FMIFIIT shows 30/30 real posting lines at FISTL=VNI; FIPEX distribution 13x CI-21 / REVENUE x7 / CI-80 x2. The CI-80 that appears in the P01 FMAVCT control triple (fund, fund center, commitment item) is STRUCTURAL -- it arises from consumption/commitment activity, NOT from an ENTR/B1 budget line. There is NO ENTR/B1 budget entry at VNI+80 in P01 for this fund. Implication for BCS alignment work: do not 'load a VNI+80 budget' to match P01's control-triple footprint -- CI-80 showing up there is not budget, and adding a budget line there would be a fabricated discrepancy, not a fix. [CORRECTION s-2026-07-03 same session, via coordinator: this describes where the fund's OWN postings/budget lines sit (VNI, leaf), but the AVC CONTROL object that actually BLOCKS a posting is a DIFFERENT, superior fund center (HEQ) -- see claim #327. VNI rolls up to HEQ. The CI-80/structural conclusion still holds.]",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "created_session": "s-2026-07-03",
@@ -14253,14 +14253,99 @@
       "Live P01 RFC read s-2026-07-03: FMIFIIT WHERE FUND=650RER0008 -- 30/30 lines FISTL=VNI. FIPEX distribution by commitment item: CI-21 x13, REVENUE x7, CI-80 x2.",
       "FMAVCT control-triple read for the same fund showed a (VNI, CI-80) row with 0 ENTR/B1 budget entries -- confirmed the CI-80 exposure is consumption-derived (structural), not a booked budget line."
     ],
+    "evidence_against": [
+      "Live D01 posting error FMAVC015 s-2026-07-03 (same session, after this claim was written) named the ACTUAL AVC control object as 9H/650RER0008/HEQ/11 -- fund center HEQ, not VNI. See claim #327."
+    ],
+    "resolution_notes": "Prevents a future session from mis-replicating a structural AVC artifact as a missing budget line during P01->D01 BCS alignment. Superseded/extended same-session by claim #327 which adds the HEQ control-node fact -- do not delete (CP-002), the VNI-leaf + CI-80-structural facts remain true.",
+    "resolved_session": "s-2026-07-03",
+    "status": "superseded",
+    "cross_links": [
+      "claim:325",
+      "claim:327",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
+    ]
+  },
+  {
+    "id": 327,
+    "claim": "Fund 650RER0008 has TWO distinct fund-center roles that must not be conflated: VNI is the LEAF where the fund's own postings/budget lines sit (FMIFIIT: 30/30 lines FISTL=VNI, CI-11/13; FIPEX CI-21x13/REVENUE x7/CI-80x2 -- see claim #326), but the AVC CONTROL object that actually BLOCKS a posting is a SUPERIOR/summarization fund center: 9H / 650RER0008 / HEQ / 11 (ledger 9H, fund 650RER0008, fund center HEQ, commitment item 11) -- revealed by a live D01 posting error FMAVC015 (\"Overall budget exceeded by 1,000.00 USD\") that named this exact control triple. VNI rolls up to HEQ in the fund-center hierarchy. Both fund centers (HEQ control-node and VNI leaf) were independently postable via BAPI_0050_CREATE TESTRUN (neither rejected) -- confirming budget CAN be injected directly at the control node, not only at the leaf. CI-80 remains structural/non-budget (claim #326) at both addresses.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "650RER0008",
+      "VNI",
+      "HEQ",
+      "FMAVC015",
+      "FMFCTR",
+      "2000000266"
+    ],
+    "evidence_for": [
+      "Live D01 posting attempt s-2026-07-03 raised FMAVC015 \"Overall budget exceeded by 1,000.00 USD\" naming control object 9H/650RER0008/HEQ/11 explicitly in the message.",
+      "BAPI_0050_CREATE posted doc 2000000266 (+100,000 USD) directly at HEQ/11/2026, cleared the FMAVC015 block -- confirms HEQ is a valid, postable AVC control address, distinct from the VNI leaf.",
+      "TESTRUN=' X' probes at both HEQ and VNI for this fund/year returned no rejection for either address."
+    ],
     "evidence_against": [],
-    "resolution_notes": "Prevents a future session from mis-replicating a structural AVC artifact as a missing budget line during P01->D01 BCS alignment.",
+    "resolution_notes": "OPERATIONAL LESSON (generalizes beyond this fund): when an AVC posting fails with FMAVC015/FMAVC0xx, read the control object DIRECTLY FROM THE ERROR MESSAGE and post budget at THAT address -- do not infer the control fund center from FMIFIIT/FMAVCT leaf-level rows, which show the fund's own postings but not necessarily the summarization node the AVC ledger actually enforces against. See claim #328 for the FMFCTR RFC-read limitation encountered while trying to verify HEQ/VNI hierarchy directly.",
     "resolved_session": "",
     "status": "active",
     "cross_links": [
-      "claim:325",
+      "claim:326",
+      "claim:328",
       "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
       "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
+    ]
+  },
+  {
+    "id": 328,
+    "claim": "FMFCTR (fund center master) is SAIS-RFC-wrapper-blocked in this environment -- RFC_READ_TABLE against FMFCTR returns a false TABLE_WITHOUT_DATA for HEQ/VNI despite both being live, postable fund centers. This is the SAME FALSE-NEGATIVE SIGNATURE already documented for the SAIS wrapper's field-validation quirk (claim in feedback_rules.json correction_note_s2026_07_02b + claim on FMFINCODE/PRPS, s-2026-07-02): the wrapper raises TABLE_WITHOUT_DATA (not a distinguishing error) both when a requested FIELDNAME doesn't exist on the table AND, per this session, when reading FMFCTR at all -- indistinguishable from a genuinely empty result without independent confirmation. NOTE: unlike the FMFINCODE/PRPS case (root-caused to a bad FIELDNAME, fixed by validating fields via DDIF_FIELDINFO_GET), the FMFCTR root cause was NOT isolated this session (could be a bad field in the FIELDS list, a table-level SAIS restriction, or something else) -- flagged as a KNOWN-UNKNOWN, not a fully diagnosed case. This is a D_DATA READ LIMITATION of the RFC channel, NOT evidence that fund centers HEQ or VNI 'don't exist' or that the FMFCTR hierarchy (HEQ as VNI's superior node) is unverifiable in principle -- confirm via GUI/ADT/alternate FM instead.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-03",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "related_objects": [
+      "FMFCTR",
+      "FMFINCODE",
+      "PRPS",
+      "HEQ",
+      "VNI"
+    ],
+    "evidence_for": [
+      "Live RFC_READ_TABLE call against FMFCTR s-2026-07-03 returned TABLE_WITHOUT_DATA despite HEQ/VNI being live, postable fund centers (confirmed via FMAVC015 + successful BAPI_0050_CREATE postings, claim #327).",
+      "Prior documented instance of the same wrapper's false-TABLE_WITHOUT_DATA signature: FMFINCODE (bad field FIVOR) and PRPS (bad field PSTRT), s-2026-07-02 -- root-caused to invalid FIELDNAME, fixed via DDIF_FIELDINFO_GET pre-validation. The FMFCTR case this session was NOT root-caused to the same degree (field list not yet isolated) -- treat as an open KNOWN-UNKNOWN, not a confirmed duplicate of the FMFINCODE/PRPS mechanism."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Known D_DATA read limitation, not a data-existence fact. Route FMFCTR hierarchy verification (e.g. confirming VNI's superior node = HEQ structurally, not just operationally) through GUI/ADT rather than RFC_READ_TABLE. KNOWN-UNKNOWN: whether the FMFCTR block is the same FIELDNAME-validation bug as FMFINCODE/PRPS or a distinct table-level restriction -- needs a DDIF_FIELDINFO_GET pass on the FMFCTR field list actually requested to confirm.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:327",
+      "knowledge/gold_db_table_catalog.md"
     ]
   }
 ]

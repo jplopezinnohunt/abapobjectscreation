@@ -159,11 +159,28 @@ a pre-existing 2015-vintage FY2026 budget already carried at that fund/address).
 (−1,039,626.21) neutralized the FY2026 net → D01 now matches P01 exactly at fund center **VNI**: CI-11 =
 −548,344.00, CI-13 = −491,282.21, FY2026 net = 0 in both systems.
 
-**650RER0008 real addressing, P01 source of truth (claim #326):** real postings + AVC budget live at fund center
-**VNI**, commitment items **11 and 13**. FMIFIIT: 30/30 lines FISTL=VNI; FIPEX distribution CI-21×13 / REVENUE×7 /
-CI-80×2. The **CI-80** appearing in P01's FMAVCT control triple is **STRUCTURAL** (consumption/commitment-derived),
-**NOT a budget line** — there is no ENTR/B1 entry at VNI+80 in P01. Do not "load a VNI+80 budget" to match the
-control-triple footprint; that would fabricate a discrepancy, not fix one.
+**650RER0008 real addressing — TWO fund-center roles, do not conflate (claims #326 superseded/extended by #327):**
+- **VNI = the LEAF** where the fund's own postings/budget lines sit (P01 source of truth, TIER_1). FMIFIIT: 30/30
+  real posting lines at FISTL=VNI, commitment items **11 and 13**; FIPEX distribution CI-21×13 / REVENUE×7 / CI-80×2.
+  CI-80 is **STRUCTURAL** (consumption/commitment-derived), **NOT a budget line** — no ENTR/B1 entry at VNI+80 in
+  P01. Don't "load a VNI+80 budget" to match the control-triple footprint; that fabricates a discrepancy.
+- **HEQ = the AVC CONTROL node** (claim #327, revealed live in D01, s-2026-07-03) — a SUPERIOR/summarization fund
+  center that VNI rolls up to. The AVC ledger enforces at **9H / 650RER0008 / HEQ / 11**, not at VNI. Discovered via
+  a live posting error **FMAVC015** ("Overall budget exceeded by 1,000.00 USD") that named this exact control
+  triple. Both HEQ and VNI were independently postable via `BAPI_0050_CREATE` (TESTRUN rejected neither) — budget
+  CAN be injected directly at the control node. Fix applied: doc **2000000266** (+100,000 USD at HEQ/11/2026)
+  cleared the FMAVC015 block.
+- **Operational lesson (generalizes beyond this fund):** when an AVC posting fails with `FMAVC015`/`FMAVC0xx`,
+  **read the control object DIRECTLY FROM THE ERROR MESSAGE** and post budget at THAT address — do not infer the
+  control fund center from FMIFIIT/FMAVCT leaf-level rows, which show the fund's own postings but not necessarily
+  the node the AVC ledger actually enforces against.
+- **FMFCTR (fund-center master) is SAIS-RFC-wrapper-blocked (claim #328)** — `RFC_READ_TABLE` against FMFCTR
+  returned a false `TABLE_WITHOUT_DATA` for HEQ/VNI despite both being live, postable fund centers. Same
+  false-negative SIGNATURE as the documented FMFINCODE/PRPS field-validation quirk (bad FIELDNAME → misleading
+  TABLE_WITHOUT_DATA, s-2026-07-02), but the FMFCTR case was **not root-caused this session** — KNOWN-UNKNOWN
+  whether it's the same bad-fieldname bug (fix: validate via `DDIF_FIELDINFO_GET`) or a distinct table-level
+  restriction. Either way it's a **D_DATA read limitation**, not evidence HEQ/VNI "don't exist" — route FMFCTR
+  hierarchy confirmation through GUI/ADT instead of RFC_READ_TABLE until isolated.
 
 **General alignment principle:** when aligning D01 to P01, compare the ENTR/B1 NET by (fund center, commitment
 item) across ALL years — read FMBL client-side (filter VALTYPE=B1 & BUDTYPE=3000 in Python; the D01 SAIS RFC
@@ -175,7 +192,8 @@ already exists — always net-check before posting, not just presence-check.
 payload); WBS PS-budget via RFC (KBPP buffer sequence, else CJ30); wire-up+verify B/D/E in the orchestrator;
 the ~98 funds WRTTP43 fund-budget (~212M) replication; P01/D01 PS-AVC-profile diff on CR WBS (BP/604 root cause);
 programmatic FMBV (how to open FM budget-version status per area/year via RFC/config); programmatic path to open
-BCS reversal-reason customizing per FM-area × fiscal-year (mirrors the FMBV known-unknown).
+BCS reversal-reason customizing per FM-area × fiscal-year (mirrors the FMBV known-unknown); confirm the FMFCTR
+fund-center hierarchy (VNI→HEQ) via GUI/ADT since RFC_READ_TABLE on FMFCTR is SAIS-blocked (claim #328).
 
 ## 6. Cross-project
 Broadcast sent to `unesco-sap-brain` (ADR-007). Other side of the create flow = `unescore20-PPM-brain`
