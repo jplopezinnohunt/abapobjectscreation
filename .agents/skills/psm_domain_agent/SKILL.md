@@ -203,6 +203,40 @@ Gap = BSAS clearing lines + non-WBS objects (no OBJNRZ).
 See `sap_data_extraction` SKILL.md → "Golden Query" section for the canonical JOIN:
 `bseg_union → BKPF → FMIFIIT (KNBELNR=BELNR, KNBUZEI=BUZEI) → PRPS (OBJNRZ=OBJNR)`
 
+## AVC Test-Data Setup (WRITE side — unblock a posting / load test budget)
+
+> This skill also stands up the budget that lets a cost object (cert / earmarked doc / posting) on a
+> workplan→WBS **GO** through BOTH availability-control engines on D01. Two engines check every line and
+> **both must pass**: **FM-AVC** (ledger `9H`, blocks `FMAVC0xx`) + **PS-AVC** (on the WBS, blocks `BP603`/`BP604`).
+> **Full runbook:** `knowledge/domains/PSM/d01_test_data_setup_avc_gates_runbook.md`.
+> **Proven toolset:** `Zagentexecution/tasks/2026_06_29_fm_model_sync/` (`fund_sync.py`, `fund_center_sync.py`,
+> `budget_assign_entr.py`, `ps_project_sync.py`).
+
+**The 4 ordered cases** (1–2 = verify/create preconditions; 3–4 = load budget):
+
+| # | Case | tcodes | Key fact |
+|---|------|--------|----------|
+| 1 | Fund master exists | FM5S / FM5I · FMSC · FMCIC | FINCODE=PSPID; leaf + **control** fund center both needed |
+| 2 | PS master exists | CJ20N / CJ03 | project+WBS+**budget profile** (no profile → CJ30/CJ32 won't run) |
+| 3 | Top-up Fund (Gate 1) | **FMBV** then **FMBB** / `BAPI_0050_CREATE` | post at the **CONTROL node**, not the leaf |
+| 4 | PS budget (Gate 2) | **CJ30 → CJ32 → CJBV** | CJBV reconstruct is the step CJ30/CJ32-only was missing |
+
+**⚠️ Post FM budget at the AVC CONTROL node, not the leaf (claim #327).** The AVC ledger enforces at the
+control fund center (a superior node the leaf rolls up to), NOT at the posting leaf. When a create fails with
+`FMAVC015`/`FMAVC0xx`, **read the control triple DIRECTLY FROM THE ERROR MESSAGE and post budget there** — never
+infer the control fund center from FMIFIIT/FMAVCT leaf rows.
+
+**Prereqs / gotchas:**
+- `BAPI_0050_CREATE` needs **FM budget version-0 status OPEN** for FIKRS+year → run **FMBV** first (claim #307).
+- `BAPI_0050_CREATE`: HEADER `DOCTYPE=2000/PROCESS=ENTR/DOCSTATE=1/VERSION=000`, **omit PSTNG_DATE**; ITEM
+  `BUDCAT=9F/BUDTYPE=3000/VALTYPE=B1/DISTKEY=1/ITEM_NUM=<string>`; `TESTRUN=' '`; then `BAPI_TRANSACTION_COMMIT`.
+  Positive input → stored NEGATIVE B1; to remove budget post the negative (NOT `BAPI_0050_REVERSE` — reversal
+  reasons inactive FY2026, claim #324). Wrapper: `Y_FMKU_0050_CREATE_WITH_COMMIT`.
+- WBS budget has **no clean RFC BAPI** (`KBPP_EXTERN_UPDATE`→DA300) → **CJ30/CJ32/CJBV via GUI**. CJ30→`BPJA WRTTP=41`,
+  CJ32 (annual level, GJAHR explicit)→`BPJA WRTTP=42`, then **CJBV** rebuilds the PS-AVC pool.
+- `FMFCTR` is SAIS-RFC-blocked (claim #328) → confirm fund-center hierarchy via **GUI/ADT**, not `RFC_READ_TABLE`.
+- Reference walkthrough: **650RER0008** (FIKRS=`UNES`, leaf `VNI`, control `HEQ`, CI `11`/`13`, WBS OBJNR `PR00021132`).
+
 ## Living Knowledge Updates
 
 After analyzing FM data, update this file when:
