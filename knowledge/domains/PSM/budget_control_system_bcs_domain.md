@@ -5,6 +5,7 @@ type: domain
 domain: PSM / Fund_Management / BCS / Project_System
 evidence_tier: TIER_1
 cross_links:
+  - knowledge/domains/PSM/d01_test_data_setup_avc_gates_runbook.md
   - knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md
   - knowledge/domains/PSM/fund_management_sync_playbook.md
   - knowledge/domains/PSM/cost_recovery_avc_disponible_model.md
@@ -123,7 +124,10 @@ earlier "0 budget" diagnosis only checked BPGE/overall and was incorrect). Summa
 **Open (KU-2026-CJ32-RELEASE-NOT-LANDING):** After CJ30 set 10,000 USD / 2026 (WRTTP=41 confirmed),
 two CJ32 release attempts left WRTTP=42 at 0. Hypothesis: CJ32 must be run at the ANNUAL level (select
 GJAHR=2026 explicitly), not at the overall level. Whether AVC/BP-604 checks WRTTP=41 (current) or WRTTP=42
-(released) is unresolved.
+(released) is unresolved. **Refined s-2026-07-05 (user-directed): the missing step is a `CJBV` AVC
+RECONSTRUCT after CJ30/CJ32** — without it the released budget is not rebuilt into the PS-AVC pool. Full
+procedure now in the 4-case runbook: `knowledge/domains/PSM/d01_test_data_setup_avc_gates_runbook.md`.
+CJBV-closes-the-KU is to be RUNTIME-VERIFIED on next execution.
 
 Message on shortage = **BP/604** (budget exceeded, PS AVC). → For a WBS budget, use **CJ30+CJ32 (GUI)**
 (same GUI-only class as the WBS hierarchy indent). NOTE: cost-recovery WBS (e.g. 650RER0008) carry
