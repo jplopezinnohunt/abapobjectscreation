@@ -14276,7 +14276,7 @@
   },
   {
     "id": 327,
-    "claim": "Fund 650RER0008 has TWO distinct fund-center roles that must not be conflated: VNI is the LEAF where the fund's own postings/budget lines sit (FMIFIIT: 30/30 lines FISTL=VNI, CI-11/13; FIPEX CI-21x13/REVENUE x7/CI-80x2 -- see claim #326), but the AVC CONTROL object that actually BLOCKS a posting is a SUPERIOR/summarization fund center: 9H / 650RER0008 / HEQ / 11 (ledger 9H, fund 650RER0008, fund center HEQ, commitment item 11) -- revealed by a live D01 posting error FMAVC015 (\"Overall budget exceeded by 1,000.00 USD\") that named this exact control triple. VNI rolls up to HEQ in the fund-center hierarchy. Both fund centers (HEQ control-node and VNI leaf) were independently postable via BAPI_0050_CREATE TESTRUN (neither rejected) -- confirming budget CAN be injected directly at the control node, not only at the leaf. CI-80 remains structural/non-budget (claim #326) at both addresses.",
+    "claim": "Fund 650RER0008 has TWO distinct fund-center roles that must not be conflated: VNI is the LEAF where the fund's own postings/budget lines sit (FMIFIIT: 30/30 lines FISTL=VNI, CI-11/13; FIPEX CI-21x13/REVENUE x7/CI-80x2 -- see claim #326), but the AVC CONTROL object that actually BLOCKS a posting is a SUPERIOR/summarization fund center: 9H / 650RER0008 / HEQ / 11 (ledger 9H, fund 650RER0008, fund center HEQ, commitment item 11) -- revealed by a live D01 posting error FMAVC015 (\"Overall budget exceeded by 1,000.00 USD\") that named this exact control triple. VNI rolls up to HEQ in the fund-center hierarchy. Both fund centers (HEQ control-node and VNI leaf) were independently postable via BAPI_0050_CREATE TESTRUN (neither rejected) -- confirming budget CAN be injected directly at the control node, not only at the leaf. CI-80 remains structural/non-budget (claim #326) at both addresses. [SCOPE CORRECTION 2026-07-06, claim #338: this fact is TRUE ONLY for fund 650RER0008 (control fund center HEQ, control CI 11). It does NOT generalize to \"the AVC control fund center for cost-recovery funds is HEQ\" or \"control CI = 11 universally\" -- each fund has its OWN control (fund, FISTL, CI) triple, read from that fund's own FMAVC object, never assumed from another fund's triple. Wrongly generalizing this fund's HEQ/11 (and separately the cost_recovery_avc_disponible_model.md TC/NAI pattern) to a batch of 14 unrelated recovery funds caused mis-addressed budget loads on 2026-07-06 -- see claim #338.]",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "created_session": "s-2026-07-03",
@@ -14306,15 +14306,18 @@
       "BAPI_0050_CREATE posted doc 2000000266 (+100,000 USD) directly at HEQ/11/2026, cleared the FMAVC015 block -- confirms HEQ is a valid, postable AVC control address, distinct from the VNI leaf.",
       "TESTRUN=' X' probes at both HEQ and VNI for this fund/year returned no rejection for either address."
     ],
-    "evidence_against": [],
-    "resolution_notes": "OPERATIONAL LESSON (generalizes beyond this fund): when an AVC posting fails with FMAVC015/FMAVC0xx, read the control object DIRECTLY FROM THE ERROR MESSAGE and post budget at THAT address -- do not infer the control fund center from FMIFIIT/FMAVCT leaf-level rows, which show the fund's own postings but not necessarily the summarization node the AVC ledger actually enforces against. See claim #328 for the FMFCTR RFC-read limitation encountered while trying to verify HEQ/VNI hierarchy directly.",
-    "resolved_session": "",
-    "status": "active",
+    "evidence_against": [
+      "Live D01/V01 FMAVC object reads 2026-07-06 (claim #338) for 14 OTHER cost-recovery funds show control commitment items 11 or 13 at fund centers NAI/YAO/TAS/JAK/HAR/DAK/BGK/LBV/CPE/SJO/FLI -- NONE at HEQ, and NONE requiring commitment item TC. HEQ/11 is 650RER0008-specific, not a general cost-recovery control address."
+    ],
+    "resolution_notes": "OPERATIONAL LESSON (still valid, scope-narrowed): when an AVC posting fails with FMAVC015/FMAVC0xx, read the control object DIRECTLY FROM THE ERROR MESSAGE / the FMAVC object for THAT fund, and post budget at THAT address -- do not infer the control fund center from FMIFIIT/FMAVCT leaf-level rows, AND do not carry this fund's HEQ/11 triple over to any other fund. See claim #328 for the FMFCTR RFC-read limitation. See claim #338 for the corrected per-fund model and the 14-fund concrete addresses.",
+    "resolved_session": "s-2026-07-06",
+    "status": "superseded",
     "cross_links": [
       "claim:326",
       "claim:328",
       "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
-      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
+      "claim:338"
     ]
   },
   {
@@ -14726,6 +14729,175 @@
       "claim:319",
       "claim:328",
       "claim:333"
+    ]
+  },
+  {
+    "id": 338,
+    "claim": "CORRECTION (supersedes claim #327's generalization and narrows cost_recovery_avc_disponible_model.md's TC/NAI pattern for THIS batch): the BCS AVC control key is (fund, fund center/FISTL, commitment item), and for each cost-recovery fund the control commitment item is whatever the fund's OWN FMAVC object (9H/FUND/FISTL/CI) names -- for the 14 funds in this batch that is CI 11 or 13, at fund centers NAI/YAO/TAS/JAK/HAR/DAK/BGK/LBV/CPE/SJO/FLI (each fund's OWN FISTL, not a shared summarization node). It is NOT commitment item TC, and it is NOT fund center HEQ -- both were wrongly carried over from prior session artifacts (claim #327's 650RER0008-specific HEQ/11 finding, and cost_recovery_avc_disponible_model.md's general TC/NAI pattern for the 5 unrelated CR test funds 567KEN2000/537RAF4006/218MAR2000/263KEN5000/235MAG5003) and led to two consecutive wrong loads this session (HEQ/11 then TC) before the FMAVC object screens were read per-fund. Do NOT re-assert 'recovery budget goes to CI TC' or 'control node = HEQ' as a general rule -- the control CI is per-fund and given by that fund's own FMAVC object; the fund center is that fund's own FISTL, not a shared/summarization node.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-06",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "FMAVCT",
+      "FMAVCR02",
+      "BAPI_0050_CREATE",
+      "549RAF2004",
+      "218BDI2000",
+      "501UZB5002",
+      "728RAS2003",
+      "547RAF1001",
+      "520RAF1015",
+      "503RAF1003",
+      "526RAS1036",
+      "272GAB2000",
+      "927CMR5001",
+      "218BDI5000",
+      "570GLO0028",
+      "514RLA2004",
+      "570GLO1032",
+      "HEQ",
+      "TC",
+      "650RER0008"
+    ],
+    "evidence_for": [
+      "User-provided FMAVCR02 control-object screenshots per fund 2026-07-06, showing control triple 9H/FUND/FISTL/CI = 11 or 13 for each of the 14 funds, at the fund's OWN fund center (NAI/YAO/TAS/JAK/HAR/DAK/BGK/LBV/CPE/SJO/FLI) -- never HEQ, never CI TC.",
+      "Live D01/V01 RFC re-reads of FMBL/FMAVCT 2026-07-06 confirming budget posted and persisted at exactly these 14 (fund,FISTL,CI) addresses (see claim #339)."
+    ],
+    "evidence_against": [
+      "This session's own two prior mis-loads (HEQ/11, then CI TC, both wrong for this batch) -- see claim #339 for the cleanup/net-out."
+    ],
+    "resolution_notes": "Supersedes: claim #327's generalization beyond 650RER0008 (327 itself patched to scope-correct in place, not deleted, CP-002). Narrows: cost_recovery_avc_disponible_model.md's TC/NAI pattern -- that pattern remains TRUE for the 5 CR test funds it was verified against (567KEN2000/537RAF4006/218MAR2000/263KEN5000/235MAG5003) but must NOT be assumed for other cost-recovery funds without reading that fund's own FMAVC object first. General rule going forward: READ the FMAVC control object per fund before loading budget -- never infer from another fund's or a prior session's control triple.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:327",
+      "claim:326",
+      "claim:339",
+      "claim:340",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
+      "knowledge/domains/PSM/d01_test_data_setup_avc_gates_runbook.md"
+    ]
+  },
+  {
+    "id": 339,
+    "claim": "14 cost-recovery funds loaded to their VERIFIED per-fund AVC control key (fund/FISTL/CI/amount, ledger 9H, FY2026, ENTR process, BUDCAT=9F/BUDTYPE=3000/VALTYPE=B1, FM area UNES), in BOTH D01 and V01, via BAPI_0050_CREATE + BAPI_TRANSACTION_COMMIT, and confirmed persisted via a fresh FMBL/FMAVCT read (single correct line each, no residual junk at the earlier wrong CI/FISTL addresses): 549RAF2004/NAI/11/200,000; 218BDI2000/YAO/11/100,000; 501UZB5002/TAS/11/100,000; 728RAS2003/JAK/11/100,000; 547RAF1001/HAR/11/100,000; 520RAF1015/DAK/11/100,000; 503RAF1003/HAR/11/100,000; 526RAS1036/BGK/11/100,000; 272GAB2000/LBV/11/100,000; 927CMR5001/YAO/13/100,000; 218BDI5000/YAO/13/100,000; 570GLO0028/CPE/13/100,000; 514RLA2004/SJO/13/100,000; 570GLO1032/FLI/13/100,000 (amounts USD). This corrects two prior wrong loads in the SAME session at CI TC and at fund center HEQ (both addressed by claim #338) -- those wrong postings were netted out via negative-offset BAPI_0050_CREATE (reversal blocked, reversal reasons not active for FY2026 in both D01 and V01, same gate as claim #324; workaround = negative-offset create per claim #325).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "created_session": "s-2026-07-06",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "BAPI_0050_CREATE",
+      "FMBL",
+      "FMAVCT",
+      "549RAF2004",
+      "218BDI2000",
+      "501UZB5002",
+      "728RAS2003",
+      "547RAF1001",
+      "520RAF1015",
+      "503RAF1003",
+      "526RAS1036",
+      "272GAB2000",
+      "927CMR5001",
+      "218BDI5000",
+      "570GLO0028",
+      "514RLA2004",
+      "570GLO1032",
+      "NAI",
+      "YAO",
+      "TAS",
+      "JAK",
+      "HAR",
+      "DAK",
+      "BGK",
+      "LBV",
+      "CPE",
+      "SJO",
+      "FLI"
+    ],
+    "evidence_for": [
+      "Live D01 posting + fresh FMBL/FMAVCT re-read 2026-07-06 confirming each of the 14 funds carries exactly one ENTR/B1/3000 line at its verified (FISTL, CI) address for FY2026, matching the user-provided FMAVCR02 control-object screens.",
+      "Live V01 posting + fresh FMBL/FMAVCT re-read 2026-07-06, same 14 addresses, same verification.",
+      "Negative-offset cleanup postings confirmed via re-read to net the two earlier wrong addresses (TC, HEQ) to zero for all 14 funds, leaving only the correct CI-11/13 line."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Concrete, reusable reference set for this fund batch -- if any of these 14 funds needs re-verification, re-read FMBL/FMAVCT at the (fund, FISTL, CI) triple listed here, do not re-derive from TC/HEQ.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:338",
+      "claim:324",
+      "claim:325",
+      "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
+      "knowledge/domains/PSM/budget_control_system_bcs_domain.md"
+    ]
+  },
+  {
+    "id": 340,
+    "claim": "KNOWN-UNKNOWN (do not chase without Basis access): in V01, the FMAVCT (AVC ledger) rows for fund 549RAF2004 showed control objects at (NAI,80) and (NAI,TC) from pre-existing TC budget, but NOT yet at (NAI,11) -- the corrected control address for this fund per claim #338/#339. Whether CI-11 budget registers as its own AVC control object in V01 (i.e. whether the AVC ledger recognizes/derives a control row at NAI+11 the same way it does at NAI+TC/80) may require an AVC ledger reconstruction, which is a Basis-level action, not something verifiable via RFC read alone. Parked, not verified -- do not assert either way until checked.",
+    "claim_type": "known_unknown",
+    "confidence": "TIER_2",
+    "created_session": "s-2026-07-06",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "related_objects": [
+      "549RAF2004",
+      "FMAVCT",
+      "NAI",
+      "FMAVC_GET_CD_ACTIVATION"
+    ],
+    "evidence_for": [
+      "Live V01 FMAVCT read 2026-07-06 for fund 549RAF2004 showing control-object rows at (NAI,80) and (NAI,TC) but no row yet at (NAI,11) after the CI-11 ENTR/B1 posting."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Route to Basis if this needs resolving -- an AVC ledger reconstruction (FMAVC_GET_CD_ACTIVATION / re-derivation run) is outside RFC-read verification scope. Not blocking claim #338/#339's per-fund control-key correction.",
+    "resolved_session": "",
+    "status": "active",
+    "cross_links": [
+      "claim:338",
+      "claim:339"
     ]
   }
 ]

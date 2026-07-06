@@ -20,6 +20,18 @@ cross_links:
 > regime. "Disponible" = the AVC-available amount that must be positive for a cost-recovery
 > posting to go through. "Para recuperar el costo el proyecto debe tener disponible."
 
+> ⚠️ **SCOPE CORRECTION (2026-07-06, claim #338 — do not generalize the TC/NAI pattern below).**
+> The TC + fund-center-NAI control pattern documented in this file was verified ONLY for the 5 CR
+> test funds named below (567KEN2000, 537RAF4006, 218MAR2000, 263KEN5000, 235MAG5003). It is **NOT**
+> a universal cost-recovery rule. A 2026-07-06 session wrongly carried this pattern (plus a separate
+> HEQ finding from claim #327, itself 650RER0008-specific) onto a batch of 14 OTHER cost-recovery
+> funds and mis-loaded budget at CI TC / fund center HEQ for all of them — both wrong. The correct,
+> general rule (claim #338): **the AVC control key is (fund, fund center/FISTL, commitment item), and
+> the control CI + FISTL are per-fund, read from that fund's OWN FMAVC object (`9H/FUND/FISTL/CI`) —
+> never assumed from another fund, another session, or this doc's TC/NAI example.** For the corrected
+> 14-fund batch the control CI was 11 or 13, at each fund's own FISTL (NAI/YAO/TAS/JAK/HAR/DAK/BGK/LBV/
+> CPE/SJO/FLI) — see claim #339 for the full per-fund list.
+
 ## TL;DR — the CR-specific AVC address
 
 Cost-recovery (CR) project disponible is controlled at a **control address**, NOT at the posting
@@ -165,6 +177,33 @@ is the dev-enablement choice.)
 
 This is DISTINCT from the ~98 regular funds with the ~212M D01 overall-budget gap (those use
 WRTTP43 BPGE/BPJA, separate concern addressed in claim #283).
+
+## ⚠️ TWO LAYERS: budget address vs control object (the root of the 2026-07-06 confusion)
+
+FMAVCR02 has THREE view radios (`Type of Account Assignments`): **Control Objects · Budget Addresses ·
+Posting Addresses**. Conflating the first two caused a full session of mis-loads. They are DIFFERENT layers:
+
+| Layer | Commitment item (this batch) | What it is |
+|-------|------------------------------|------------|
+| **Budget address** | **CI 11 / 13** (at the fund's own FISTL) | where you ENTER budget via FMBB / BAPI_0050. This is the `9H/FUND/FISTL/11` the user's table called "FMBB va aquí". |
+| **Control object** | **CI TC / PC / 80** | where AVC actually CHECKS. The budget address **rolls UP** to it. |
+
+**Proven (549RAF2004, V01, 2026-07-06):** FMBL has budget ONLY at CI-11/2026 (net 200,000) and ZERO lines at
+TC/2026; yet FMAVCR02 shows the **control object TC/2026 = 200,000 consumable — exact match**. ⇒ budget entered
+at CI 11 (budget address) summarizes up to control object **TC**. So the "Control Objects" view shows TC (not 11),
+the "Budget Addresses" view shows 11. Both the user ("load at 11") and the system ("control is TC") were right —
+different layers. This RESOLVES the known-unknown in claim #340 (CI-11 does feed the TC control object; no AVC
+reconstruction was needed for 549).
+
+**Operational rule:** load budget at the **budget address** (the fund's own FISTL + CI 11/13, per its FMAVC
+object); then verify in FMAVCR02 that the amount appears at the **control object** (TC/PC/80). If it does not roll
+up, load directly at the control-object CI. Never assume the control-object CI equals the budget-address CI.
+
+**IDEMPOTENCY (hard lesson):** before loading, READ the target's existing state at the key — most V01 funds in
+this batch were ALREADY funded (pre-existing budget); loading blindly created doubles that had to be netted out
+with negative-offset ENTR (reversal gated — reversal reasons not active FY2026, claims #324/#325). On 549 the net
+contribution ended at ZERO (load 200k doc 2000027602 cancelled by offset doc 2000027616); the visible 200k was
+pre-existing. Only 3 of 14 V01 funds were genuinely empty (272GAB2000/LBV, 570GLO0028/CPE, 570GLO1032/FLI).
 
 ## Gotcha: SAP trailing-minus format
 

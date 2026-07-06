@@ -3661,5 +3661,32 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_read_target_state_before_writing_at_a_key",
+    "rule": "Before loading budget (or any master/transactional value) into a target system, READ the target's existing state at that EXACT key first -- an idempotency check, not just a presence check. If a value already exists at that key, NET-CHECK before posting (do not just add a new line), because most SAP posting APIs (e.g. BAPI_0050_CREATE for BCS budget) are additive, not upsert -- posting again at an already-populated key creates a double, not a correction.",
+    "why": "Session 2026-07-06: 14 cost-recovery funds were loaded into V01 without first reading V01's existing state at the target (fund, fund center, commitment item) key. V01 already had budget at CI-11/13 for 11 of the 14 funds, so the new ENTR/B1 posts doubled the budget rather than establishing it. Compounded by an earlier mis-addressing in the same session (loading at commitment item TC, then at fund center HEQ, both wrong for this batch per claim #338) -- three separate write-without-verify-first mistakes on the same batch. Reversal was blocked (reversal reasons not active for FY2026 in both D01 and V01, claim #324), forcing a negative-offset BAPI_0050_CREATE workaround (claim #325) to net the doubles/mis-addresses back to zero -- extra cleanup work that a pre-write read would have avoided entirely.",
+    "how_to_apply": "1. Identify the EXACT key the write targets (for BCS: fund + fund center/FISTL + commitment item + fiscal year + ledger/version -- not just the fund).\n2. Read the target system's live state (FMBL/FMAVCT for budget; the equivalent master/transaction table for any other domain) at that exact key BEFORE posting anything.\n3. If a value already exists at that key: NET-CHECK (compare the source value against what's already there) -- do not blindly add. If the API is additive (most BAPI_0050_* budget posts are), compute the delta needed and post only the delta (or the negative-offset if you already over-posted).\n4. Never assume a target starts empty just because the source system has the value -- targets used for prior testing/dev work commonly already carry partial or full state.\n5. This generalizes the 'verify before alarming / verify by re-read' family (feedback_verify_before_alarming_and_update_on_correction) to the WRITE side: verify BEFORE you write, not just before you report.",
+    "severity": "HIGH",
+    "created_session": "s-2026-07-06",
+    "source_file": "brain_v2/claims/claims.json#338,339",
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "CP-003 'Precision, evidence, facts': writing to a target system without first reading its current state at the exact key is an unverified assumption (the target is empty / the target matches the source), not a checked fact. The fix is the same discipline CP-003 already demands for claims -- verify before asserting -- applied to the write path instead of the report path.",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "*"
+      ],
+      "module": [
+        "FM",
+        "BCS",
+        "*"
+      ],
+      "process": [
+        "B2R",
+        "*"
+      ]
+    }
   }
 ]
