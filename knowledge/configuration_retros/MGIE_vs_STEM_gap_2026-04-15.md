@@ -4,6 +4,13 @@
 **MGIE source:** 16 transports from 2013 creation cluster
 **STEM source:** 5 transports currently in progress
 
+> **2026-06-26 — runtime confirmation (claim #279):** The "Cross-Company Pairs (F01U): MGIE 16 / STEM 0" gap
+> manifested as a runtime error during STEM company-code creation. Screenshot of IMG node "Define
+> Intercompany Clearing Accounts" (Real-Time CO-FI Integration) confirmed STEM is absent from the clearing-pair
+> mesh (all 8 other institutes present). Root cause confirmed as missing T001U entries. Remediation: OBYA,
+> create STEM paired with each institute in both directions, reusing MGIE's clearing G/L accounts (16 entries).
+> T001U is NOT in the Gold DB — requires live RFC to query. See also: claim #280 (D_DATA gap).
+
 ## Executive summary
 
 - MGIE creation cluster (2013): **16 transports, 268 objects, 8696 keys** over 5 months (Jul->Dec 2013)

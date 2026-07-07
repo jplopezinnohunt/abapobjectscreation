@@ -244,6 +244,147 @@ tags estructurados del Cdtr NO sacan el valor de campos `Z*` — lo sacan del **
 3. `<PstCd>` es la excepción: lee `FPAYH` (`ZPSTL`/`ZPST2`) directo, sin ADRC.
 4. El branch tree-level `HR='P'` (payroll → `_HR` atoms directos) coincide con el fallback interno del exit (DOC2T='03') — payroll usa campos directos por ambas vías.
 
+## 8. Resultado del test-tool Citibank (2026-06-26) — validacion externa
+
+**Fecha de upload:** 2026-06-18. **Fecha de evaluacion:** 2026-06-26.
+
+3 archivos subidos al validador oficial de Citibank:
+
+| Archivo | Resultado |
+|---|---|
+| `xmlUNESCODVV3_BR.in` | **PASS** |
+| `XMLUNESCODVV3_USALPAY_test.in` | **PASS** |
+| `xmlUNESCODVV3_US.in` ("For US") | **FAIL** |
+
+**Conclusion critica:** El FAIL del archivo US **NO fue por la direccion estructurada**. El contacto de Citi confirmo explicitamente que el fallo fue por un **campo de referencia de pago faltante** (`CtgyPurp/Prtry`, ver seccion 9). **La remediacion de direccion estructurada (D-1 kill-switch + analisis D-2) paso el validador del banco.** Evidencia TIER_1 = validador oficial del banco.
+
+Claim: #265 (`brain_v2/claims/claims.json`).
+
+## 9. CtgyPurp/Prtry en flujo US — DATO FALTANTE puntual, NO defecto de formato (corregido en P01)
+
+**Fallo detectado:** Citibank test-tool 2026-06-26, archivo `xmlUNESCODVV3_US.in`.
+
+| Campo | Valor |
+|---|---|
+| XPath | `PmtInf[1].CdtTrfTxInf[1].PmtTpInf[1].CtgyPurp[1].Prtry[1]` |
+| Tipo | Data Validation |
+| Country | TN |
+| PIUID | 949 |
+| Payment Method | WIRE |
+| Trans.Ref | UNES0002000018 |
+| Requerimiento Citi | AlphaNumeric, exactamente 11 chars (min=11, max=11), **Mandatory** |
+| Valor ejemplo Citi | `/REF/0825/C` |
+| Error | Value not present |
+
+**Diagnostico CORREGIDO en P01 (2026-06-26, TIER_1) — el nodo SÍ se llena en produccion; el fallo es dato faltante, NO el formato.**
+
+> ⚠️ Un diagnostico previo (sobre el arbol `/CGI_XML_CT_UNESCO` de **D01**) concluyo erroneamente que el nodo quedaba vacio por diseño (`CLEAR C_VALUE` en `CL_IDFI_CGI_DMEE_FALLBACK`). Eso es del arbol CGI/SocGen, **NO** del arbol CITI. Corregido leyendo el arbol correcto en **P01**.
+
+En el **arbol CITI real de P01** (`DMEE_TREE_NODE` TREE_ID=`/CITI/XML/UNESCO/DC_V3_01`, version **000 = activa**, 610 nodos) el `CtgyPurp/Prtry` **SÍ esta mapeado a un campo runtime**:
+
+| NODE_ID | TECH_NAME | MP_SC_TAB | MP_SC_FLD | REF_NAME | LEN |
+|---|---|---|---|---|---|
+| `N_6555567710` | `Prtry` | **FPAYHX** | **CTGYPURP_PRTY** | CPP | 35 |
+
+La rama CITI usa una familia de campos `FPAYHX-*_PRTY` (todos len 35): `SVCLVL_PRTY` (SLP), `LCLINSTRM_PRTY` (LP), `PURP_PRTY`, **`CTGYPURP_PRTY` (CPP)**, `DLVRYMTD_PRTY`, `CDTR_ACCT_TP_PRTY`. El nodo `CtgyPurp/Prtry` **no tiene condicion propia** (DMEE_TREE_COND vacio para `N_6555567710`): se emite con el valor de `FPAYHX-CTGYPURP_PRTY`; si ese campo viene **vacio**, el elemento se suprime → Citi lo reporta como mandatorio ausente.
+
+**Por tanto:** produccion llena el nodo normalmente. Prueba: **153 archivos US (UNES/US) en 2026, el ultimo HOY 2026-06-26** (`LAUFD=20260626/00002B`, USD 6,898,042.58, archivo `UNES_CITI_03XMLUSDDOM0919.in`), `STATUS` sin rechazo; histórico 1.884 medios desde 2019-07. **Si el formato rechazara siempre, no se pagaria nada — y se paga.** El FAIL del test-tool es un **caso puntual con `FPAYHX-CTGYPURP_PRTY` vacio** para ese pago (factura/run sin el dato) — consistente con la hipotesis de facturas incompletas al momento de simular.
+
+**Pendiente (la verdadera pregunta abierta):** ¿quien llena `FPAYHX-CTGYPURP_PRTY` y desde que dato? Es un campo append custom poblado por un exit del medium (familia `CITIPMW V3` / Event 05), no extraido aun localmente (`grep CTGYPURP_PRTY` sobre `*.abap` = 0 hits). Hay que leer en P01 el exit registrado y su campo fuente (probable: indicador/campo del documento, como el patron PPC `REGUP-LZBKZ`). Eso confirma exactamente por que el caso de prueba salio vacio.
+
+**Contexto critico — gap preexistente, NO regresion:** la especificacion funcional PPC v2.0 (M. Spronk), pagina 16, dice explicitamente: _"The development is only for the XML file of Societé Generale. If Citibank requires this, all the requirements and developments should be reviewed"_ (`Zagentexecution/analysis/payment_purpose_code_extracted.txt:1110-1111`). El PPC apunta a `RmtInf/Ustrd` e `InstrForCdtrAgt/InstrInf`, NO a `CtgyPurp/Prtry`. Este requerimiento de Citi es exactamente el gap de extension Citi que el spec PPC ya identifico como pendiente de revision.
+
+Claims: #266 **SUPERSEDED** por el hallazgo P01 (el nodo NO esta vacio por diseño; mapea `FPAYHX-CTGYPURP_PRTY`) + #267 (scope SocGen-only, TIER_1, sigue valido).
+KU: `KU-2026-CITI-CTGYPURP-PRTRY` → reorientado: la pregunta ya no es "por que el branch US queda vacio" sino "**quien llena `FPAYHX-CTGYPURP_PRTY` y desde que dato del documento**".
+Probe P01 del arbol: `scratchpad/probe_p01_citi_tree_ctgypurp.py` (nodo `N_6555567710`, v000). Conteo+medios: `probe_p01_citi_ctgypurp.py` / `probe_p01_us_real_xml.py`.
+
 ## Probes (read-only)
 `probe_p01_citi_banks.py`, `probe_p01_citi_byyear.py`, `probe_citi_dbtr_sys.py`, `probe_child_conds.py`,
 `probe_ubiso_len.py`, `probe_ubiso_breakdown.py`, `probe_by_country.py` (en `Zagentexecution/mcp-backend-server-python/`).
+
+---
+
+## 10. CtgyPurp/Prtry — traza COMPLETA de investigación (preservada, CP-001/CP-002)
+
+> Se conserva la evolución del diagnóstico END-TO-END: la hipótesis inicial (código fallback), la corrección con el árbol REAL de P01, y la respuesta a las dos dudas del usuario (drift + hermanos). No borrar las versiones previas — son la traza.
+
+### 10.1 Análisis inicial — hipótesis (árbol `CGI_XML_CT_UNESCO` / fallback) — LUEGO SUPERSEDED
+
+Primer análisis, hecho sobre el árbol **equivocado** (`/CGI_XML_CT_UNESCO` de D01) y el código estándar `CL_IDFI_CGI_DMEE_FALLBACK`:
+
+- Se separaron 2 nodos hermanos dentro de `CtgyPurp`:
+  - `CtgyPurp/Cd` → código ISO estándar (SALA, SUPP, TREA, DIVI…). Fuente: pago de nómina → `FPAYH-PURP_CODE`; resto → customizing de category purpose / `DTWS2`.
+  - `CtgyPurp/Prtry` (el que falla) → código propietario (`/REF/0825/C`). En el fallback estándar el handler hacía:
+    ```abap
+    WHEN '<PmtInf><CdtTrfTxInf><PmtTpInf><CtgyPurp><Prtry>'.
+    *   This node defines the Category Purpose for the payment - Proprietary
+        CLEAR C_VALUE.        " ← sale vacío
+    ```
+- **Conclusión inicial (INCORRECTA para CITI):** "el Prtry se deja vacío por diseño; nada en el flujo US lo escribe; mismo patrón que el PPC de SocGen (desarrollo pendiente del lado Citi)". Se asoció al spec PPC v2.0 p.16 ("if Citibank requires this, all developments should be reviewed").
+- **Por qué se superó:** ese `CLEAR C_VALUE` pertenece al árbol/clase **CGI/SocGen (fallback)**, NO al árbol **CITI** que realmente usa US. El formato del fallo es `/CITI/XML/UNESCO/DC_V3_01`, otro árbol. (El razonamiento SocGen-PPC sigue siendo válido como contexto histórico, pero NO es la causa del fallo Citi.)
+
+### 10.2 Corrección — árbol CITI REAL de P01 (TIER_1, 2026-06-26)
+
+Leído `DMEE_TREE_NODE` TREE_ID=`/CITI/XML/UNESCO/DC_V3_01` en **P01** (versión **000 = activa**, 610 nodos). El nodo del XPath de Citi SÍ está mapeado:
+
+```
+CtgyPurp (N_3460219500)  →  hijos hermanos (choice ISO 20022, Cd XOR Prtry):
+   ├─ Cd     (N_6232264240)  map = FPAYHX / CTGYPURP        ref=CP   len=4
+   └─ Prtry  (N_6555567710)  map = FPAYHX / CTGYPURP_PRTY   ref=CPP  len=35   ← el que Citi exige
+```
+
+- El `Prtry` **no tiene condición propia** (`DMEE_TREE_COND` vacío para `N_6555567710`): se emite con el valor de `FPAYHX-CTGYPURP_PRTY`; si ese campo runtime viene vacío, el elemento se suprime → Citi lo marca "Value not present".
+- Producción llena el nodo normalmente: **153 medios US (UNES/US) en 2026, el último HOY 2026-06-26** (`20260626/00002B`, USD 6.898.042,58, `UNES_CITI_03XMLUSDDOM0919.in`), sin rechazo. Histórico **1.884 medios** desde 2019-07. **Si rechazara siempre, no se pagaría nada — y se paga.**
+- ➡️ El FAIL del test-tool es un **caso puntual con `FPAYHX-CTGYPURP_PRTY` vacío** para ese pago (factura/run sin el dato) — consistente con la hipótesis de factura incompleta al simular.
+
+### 10.3 Duda usuario A — ¿el formato/árbol está desalineado con producción? → NO (en este segmento)
+
+Comparado el nodo `CtgyPurp` entre **P01 y D01**:
+- **Mapeo IDÉNTICO** en P01 (v000) y en las **3 versiones de D01 (000/001/002)**: `Cd→FPAYHX/CTGYPURP`, `Prtry→FPAYHX/CTGYPURP_PRTY`. **Sin drift en este segmento.**
+- Diferencia estructural general: D01 tiene versiones 001/002 que P01 no tiene activas (P01 solo 000). Si el archivo de PRUEBA se hubiera generado con otra versión/sistema, podría diferir en OTROS nodos — pero el segmento `CtgyPurp` está alineado en todos.
+- Observación: en el árbol, el único `CtgyPurp` cuelga de `PmtInf/PmtTpInf` (nivel batch), mientras el XPath del error Citi lo cita en `CdtTrfTxInf/PmtTpInf` (nivel transacción). Diferencia de nivel a revisar, pero el mapeo del campo es el mismo.
+
+### 10.4 Duda usuario B — ¿Cd y Prtry son hermanos; en P01 se llena uno y el otro no hace falta? → SÍ
+
+- Son **hermanos en un choice ISO 20022**: va `<Cd>` **O** `<Prtry>`, nunca ambos.
+- Cada uno mapea a un campo FPAYHX distinto: `CTGYPURP` (ISO, 4) vs `CTGYPURP_PRTY` (propietario, 35).
+- Citi exige el **`Prtry`**. **Pregunta abierta real:** ¿cuál de los dos se está llenando en los pagos US REALES que sí pasan? Posible que producción emita el `<Cd>` (aceptado por Citi en el canal real) y el test-tool exija el `<Prtry>`. No se pudo leer el valor runtime (XML efímero, share sin acceso, `FPAYHX` no persiste).
+
+### 10.5 ORIGEN DEFINITIVO — tabla de configuración `/CITIPMW/PMWV3` (TIER_1, 2026-06-26)
+
+**Cadena de código verificada línea por línea (D01, RPY_FUNCTIONMODULE_READ_NEW → NEW_SOURCE):**
+- `TFPM042FB` registra para FORMI=`/CITI/XML/UNESCO/DC_V3_01` solo **EVENT 05 → `/CITIPMW/V3_PAYMEDIUM_DMEE_05`**. Pero `_05` llena **solo direcciones/bank codes** (REF01–REF06, REF03=SEPA, REF04=DTAID/T045T, REF05=clearing) — **NO toca `CtgyPurp`**. (Corrige una afirmación previa errónea de que `_05` llenaba CtgyPurp.)
+- El que llena los `*_PRTY` es **`/CITIPMW/V3_PAYMEDIUM_DMEE_06`** (export `FPAYHX_CREF`). En su línea 22 hace `PERFORM read_zcitipmw` (include `/CITIPMW/LPMWV3F01`), que ejecuta:
+  ```abap
+  CLEAR /CITIPMW/PMWV3.                                  " hygiene del work-area ANTES del SELECT
+  SELECT SINGLE * INTO X_ZCITIPMWV3 FROM /CITIPMW/PMWV3  " config por clave
+    WHERE BUKRS=ZBUKR AND HBKID=... AND HKTID=... AND BANKS(ubiso)=... AND ZLSCH(rzawe)=... AND UZAWE=... AND DTAWS=...
+  ```
+  Luego `_06` línea 47-50 hace `MOVE-CORRESPONDING v_zcitipmw_v3ref01 TO es_fpayhx_cref` → así se llena `FPAYHX-CTGYPURP_PRTY`.
+- **El valor NO sale del documento/factura — sale de la tabla de CUSTOMIZING `/CITIPMW/PMWV3`** (data element `/CITIPMW/V3CTGYPURP_PRTY`).
+- **Ningún CLEAR borra `CTGYPURP_PRTY`.** El `CLEAR /CITIPMW/PMWV3` (línea 236) limpia el work-area justo antes del SELECT (lo repuebla de inmediato). El único CLEAR real de valor (líneas 28-35 de `_06`) borra `LCLINSTRM_CD` cuando `LCLINSTRM_PRTY` existe (regla XOR), **no** CtgyPurp. Prueba de que la cadena corre: `LCLINSTRM_PRTY=CITI499` SÍ está configurado para US y sale por esta misma ruta.
+
+**Valores leídos (P01 y D01, 2026-06-26) para US (`UNES/CIT04/USD04/US`, 9 filas, todos los métodos):**
+
+| Campo | Valor US (idéntico en P01 y D01) |
+|---|---|
+| `CTGYPURP` (Cd) | **vacío** |
+| `CTGYPURP_PRTY` (Prtry) ← el que Citi pide | **vacío** |
+| `LCLINSTRM_PRTY` | **`CITI499`** (WIRE) / `CITI2` (ACH) / `CITI949` (WorldLink) — POBLADO |
+| `SVCLVL_PRTY`, `PURP_PRTY` | vacíos |
+
+BR y CA: `CTGYPURP_PRTY` también vacío en todas sus filas.
+
+**Conclusiones firmes (cierran el caso):**
+1. **NO hay drift** entre D01 y P01: la config US es idéntica; `CTGYPURP_PRTY` **vacío en ambos**. Nunca se ha poblado.
+2. **NO es "se llenó después"**: el campo no depende del documento ni de una fecha; depende de esta celda de config, que está vacía para US en los dos sistemas hoy.
+3. **Los archivos US reales NO emiten `<CtgyPurp>`** (ni Cd ni Prtry) — coincide con los XML regenerados. US sí emite el Local Instrument (`CITI499`/`CITI2`/`CITI949`).
+4. **Y aún así se pagan** (153 medios 2026, hoy USD 6.9M, sin rechazo) → **Citi en el canal productivo real NO exige `CtgyPurp/Prtry`; solo el test-tool lo marca mandatorio.** El validador del test es más estricto que el procesamiento real. (O Citi introdujo un requisito nuevo que la config aún no refleja.)
+
+### 10.6 Cómo se cierra — es CONFIGURACIÓN, no desarrollo
+
+1. **Confirmar con Citi** qué es `/REF/0825/C` (valor fijo vs. referencia derivada). Patrón `/REF/MMYY/x` sugiere referencia — pedir definición oficial.
+2. **Poblar la celda de config** `/CITIPMW/PMWV3.CTGYPURP_PRTY` para las filas US WIRE (igual que ya está `LCLINSTRM_PRTY=CITI499`), vía su transacción de mantenimiento en **D01**, y **transportar a P01**. NO requiere tocar código ni el árbol DMEE (el nodo `N_6555567710` ya mapea ese campo).
+3. (Opcional) Confirmar con Citi si realmente es bloqueante en el canal real o solo en el test-tool — define la urgencia.
+
+**Probes P01/D01 de esta traza:** `probe_p01_citi_ctgypurp.py` (medios), `probe_p01_us_real_xml.py` (conteo+lectura), `probe_p01_citi_tree_ctgypurp.py` (rama árbol), `probe_citi_ctgypurp_drift.py` (P01 vs D01 árbol + hermanos), `probe_p01_ctgypurp_source.py` (DD03L+TFPM042FB→exit), `probe_citipmw_config_us.py` (tabla config US P01 vs D01). Todos en `scratchpad/`.

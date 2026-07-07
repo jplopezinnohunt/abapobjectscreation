@@ -3569,5 +3569,146 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_p01_sais_rowskips_rejection",
+    "rule": "P01, D01, AND V01 RFC_READ_TABLE is wrapped by class SAIS which REJECTS ROWSKIPS with OPTION_NOT_VALID -- this is a LANDSCAPE-WIDE constraint, not a per-system quirk. This causes silent silent data truncation — not an error you see immediately. Use ROWCOUNT=0 with a tight WHERE partition (by FIKRS, date range, or other high-cardinality key) so each call stays manageable (there is NO ~60k platform ceiling: ROWCOUNT=0 returned 390,707 rows for BPGE in one call; partition is for memory/latency only). NEVER use ROWSKIPS-based pagination against P01/D01.",
+    "why": "Session s088 (2026-06-22): refresh_funds_from_live.py used ROWSKIPS pagination against P01 and silently returned only 30,000 of 56,639 UNES funds — a 47% data loss with no error raised. The failure mode is silent: SAIS returns OPTION_NOT_VALID internally but the caller gets a partial result, not an exception. This also applies to D01 (reference_d01_rowskips_and_adt_ddic_limits.md, s081). The method_registry.json already records this constraint ('P01-secured: NO ROWSKIPS') but no behavioral rule captured the SILENT TRUNCATION risk and the correct partitioning pattern. | s093 (2026-06-29): D01 ROWSKIPS rejection confirmed DIRECTLY on FM tables (FMFINCODE, FMFINT) via gap-analysis script. rc=5 OPTION_NOT_VALID — identical to P01. Prior D01 reference (s081) was for ADT/DDIC context; this is the first FM-table direct confirmation on D01. | s-2026-07-02: V01 ROWSKIPS rejection confirmed DIRECTLY on USR02/PA0001/PA0105 (extract_v01_actor_grounding.py, rc=5 OPTION_NOT_VALID) -- 3rd system confirmed, closing the class: assume EVERY system in this landscape rejects ROWSKIPS unless proven otherwise (claim #319).",
+    "how_to_apply": "1. NEVER pass ROWSKIPS > 0 to RFC_READ_TABLE on P01 or D01. The call will appear to succeed with partial rows.\n2. Instead: use ROWCOUNT=0 in a single call per partition. Partition by FIKRS for FM tables, by date range for event tables, by PSPID prefix for WBS.\n3. Verify row counts against expected universe (e.g. compare with a COUNT(*) call or prior run): a result capped suspiciously near 30k means ROWSKIPS was used (no platform row ceiling exists for ROWCOUNT=0 — corrected s089).\n4. For very large tables (hundreds of thousands of rows), partition by a secondary key (e.g. year, bukrs) for memory/latency — NOT because of a platform row ceiling.\n5. Run `python process_mining/method_registry.py <TABLE>` to confirm the constraint before coding any extraction.\n6. DEPRECATED: refresh_funds_from_live.py. Use scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py instead (claim #244).",
+    "severity": "HIGH",
+    "created_session": 88,
+    "source_file": "scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_retro_2026-06-22_rowskips_silent_truncation",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "correction_note_s089": "S-089 correction: the ~60k ceiling was false. BPGE returned 390,707 rows, FMBH UNES 248,086 rows in single ROWCOUNT=0 calls (confirmed via _gold_sync_log 2026-06-22). The earlier truncation was caused by explicit ROWCOUNT=30000 in the deprecated script, not a platform limit. Rule text updated.",
+    "correction_note_s2026_07_02": "Generalized to V01 (3rd confirmed system) 2026-07-02 during the unescrp actor-chain grounding extraction. Rule scope widened from P01+D01 to \"this landscape\" language; no behavior change, only evidence + wording.",
+    "correction_note_s2026_07_02b": "Related quirk on the SAME wrapper found during the follow-up V01 Funds+WBS extraction (extract_v01_funds_wbs.py, claim #321): this SAIS-wrapped RFC_READ_TABLE also raises TABLE_WITHOUT_DATA (not FIELD_NOT_VALID) when a requested FIELDNAME does not exist on the table -- indistinguishable from a genuinely empty result. Confirmed: FMFINCODE has no FIVOR field, PRPS has no PSTRT field. ALWAYS validate the field list against DDIF_FIELDINFO_GET before concluding a table is empty on this landscape."
+  },
+  {
+    "id": "feedback_verify_golden_row_count_before_close",
+    "rule": "When a bulk/delta extraction run completes without error, ALWAYS verify that the golden table row count approximately matches the P01 raw count for the same partition. A run that exits 0 CAN silently drop rows (e.g. via a key-collapse dedup on a table whose stored columns lack the full unique key). Do NOT dedup a line-item table unless the stored golden columns cover its FULL SAP unique key. For transaction tables (FMIOI, FMIFIIT, BSEG, etc.): check the DDIC key vs the golden column list before writing any dedup logic; if they differ, store ALL rows (no dedup) and use multiset-diff for delta.",
+    "why": "S-089 (2026-06-22): gold_refresh.py txn-partitioned engine deduped by all-non-amount columns. FMIOI has 13 golden columns but its SAP unique key includes a line counter NOT in the golden extract. Result: 1,813,943 rows silently collapsed to 1,029,062 (~43% loss) with exit code 0. Only discovered via manual raw-count comparison: P01 UNES 2025 = 806,902 raw but golden had ~405k for ALL institutes (impossible). Fixed in commit 8190f3c. See claim #247.",
+    "how_to_apply": "1. After any extraction run: query P01 for COUNT(*) of the key partition and compare to golden row count. Allow <=0.1% variance for live churn (inserts/deletes between runs); >1% variance = re-investigate. 2. Before writing dedup logic for a table: run PRAGMA table_info(golden) to list golden cols, then check DD05L/DDIC key for the SAP table. If any key field is absent from the golden extract, do NOT dedup — store all rows. 3. For delta runs: use multiset diff (count occurrences of each full-row tuple) rather than set diff. 4. Verify FMIFIIT (ok: has FMBELNR+FMBUZEI+RLDNR+STUNR), BSEG (ok: BUKRS+BELNR+GJAHR+BUZEI), FMIOI (was broken: missing line counter in golden). 5. Add a post-pull assertion in the extractor: if n_total < 0.9 * expected_p01_count: HALT and report.",
+    "severity": "HIGH",
+    "created_session": 89,
+    "source_file": "scripts/extraction/gold_refresh.py",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "session_retro_2026-06-22_fmioi_key_collapse",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_avc_real_from_standard_not_handrolled",
+    "rule": "Never re-derive AVC availability from FM document tables (FMIFIIT/BPJA/FMAVCT WRTTP arithmetic at posting-leaf level). The ONLY correct AVC figure comes from FMAVC_READ_TOTALS_FOR_ADDRESS (standard FM chain) or report FMAVCR. Leaf-level arithmetic produces 23.7% spurious negatives because the control object is DERIVED AND ROLLED-UP via strategy AFMA (OPF budget aggregated at TC, not at the posting commitment item). Hand-rolling silently misses the rollup and the negative-at-parent budget distribution.",
+    "why": "committed_vs_available_detector.py was refuted empirically (s091): fund 196EAR4042 -> leaf arithmetic gave -$12.9M while V01 live FMAVC_READ_TOTALS_FOR_ADDRESS returned positive available. MBF fund: -$110M spurious negatives = 23.7% of active WBS. Root cause verified in ABAP source + config: strategy AFMA step 1 collapses all OPF commitment items to TC; leaf sum cannot reconstruct that rollup. This is the same class of error as GL balances from BSIS vs GLT0 (rule feedback_gl_balance_from_fs10n_not_bsis). Claims #253, #256, #259.",
+    "how_to_apply": "1. For any AVC availability question: call FMAVC_READ_TOTALS_FOR_ADDRESS via RFC_ABAP_INSTALL_AND_RUN on V01 or D01 (not P01 -- S_DEVELOP needed). Or run report FMAVCR in V01/D01. 2. To check-only AVC without commit (e.g. reservation pre-flight): FMFR_CREATE_FROM_DATA with I_FLG_CHECKONLY=X. 3. Never compute available = SUM(budget) - SUM(consumed) per (fund, fundsctr, cmmtitem) from fmavct or fmifiit -- that is WRONG because the control object is a derived address, not the posting leaf. 4. The Gold DB fmavct_* slice only has ALLOCTYPE_9=KBFC rows (consumption); it cannot reconstruct available on its own without the budget base from FMAVC_READ_TOTALS_FOR_ADDRESS. 5. If ALL FMAVC_* FMs are not RFC-enabled (TFDIR FMODE=empty): confirm S_DEVELOP on the calling user on V01/D01, use RFC_ABAP_INSTALL_AND_RUN wrapper pattern.",
+    "severity": "HIGH",
+    "created_session": 91,
+    "source_file": "knowledge/domains/PSM/avc_availability_model.md",
+    "derives_from_core_principle": "CP-003",
+    "cp_derivation_method": "empirical_refutation_s091",
+    "domain_axes": {
+      "functional": [
+        "PSM"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_companion_drift_is_bidirectional",
+    "rule": "When reconciling a fragment-assembled companion against its live HTML output, treat drift as BIDIRECTIONAL: (a) HTML-only blocks (present in the live companion but missing from fragments — port INTO the relevant fragment file); (b) fragment-only blocks (present in fragments but not yet rebuilt into the companion — DO NOT delete them; they merge correctly on the next rebuild). Never force byte-equality by discarding fragment-only content — that is an irreversible loss (CP-001). Reconciliation method: run --check → use difflib SequenceMatcher on newline-normalized lines → inspect BOTH insert-hunks (live-only) AND delete-hunks (fragment-only) → port on RAW bytes preserving CRLF+UTF-8 → verify no loss by diffing new built companion vs old → refresh MANIFEST baseline after confirming identity.",
+    "why": "Session 2026-06-30 (commit 5bcb07a): the BCM Structured Address companion (companions/BCM_StructuredAddressChange.html) was ~21 KB short of the live companion. --check via build_bcm_structured_address_companion.py revealed three drift blocks: Block 1 = HTML-only CITI/CGI Dbtr+Cdtr analysis (+23,437 B across 181 lines) that existed in the live companion but never made it back into tabs/25_phase0.html; Block 2 = a missing leading emoji on a Phase 4 h3 in tabs/29_phase4.html; Block 3 = a fragment-only section (Citi test-tool 2026-06-26, brain claims #265/266/267) present in tabs/29_phase4.html but not in the companion because rebuild had never been re-run after that edit. The failure mode: a naive 'port everything from live to fragments' approach would have silently deleted Block 3 content. CP-001 requires treating every fragment-only hunk as intentional until confirmed redundant.",
+    "how_to_apply": "When --check reports a size/hash mismatch on a fragment-assembled companion:\n1. Run the builder with --check to get difflib hunk output (or equivalent).\n2. Classify each hunk: INSERT = live-only (missing from fragments); DELETE = fragment-only (missing from live).\n3. INSERT hunks: identify the correct fragment file (by tab/section name) and port the raw bytes into it, preserving CRLF+UTF-8.\n4. DELETE hunks: DO NOT remove them from fragments. Verify they are not already present elsewhere; if truly new, they will merge into the companion on rebuild.\n5. Rebuild the companion and confirm the new live file matches the expected content.\n6. Compare new vs old companion to verify no content loss in either direction.\n7. Refresh the MANIFEST.json baseline (byte_count + sha256 + sha256_lf) ONLY after confirming byte-identical integrity.\n8. Never update the MANIFEST baseline to the pre-reconciliation state — only update after the full reconciliation is clean.",
+    "severity": "HIGH",
+    "created_session": 96,
+    "source_file": "companions/bcm_structured_address_src/MANIFEST.json",
+    "derives_from_core_principle": "CP-001",
+    "cp_link_reason": "CP-001 'Knowledge over velocity': the fragment-only content represents work already done (brain claims #265/266/267 analysis) that would be irreversibly deleted if the reconciler only read one direction of the diff. Velocity would suggest 'just make the fragments match the live companion'; CP-001 demands inspecting what the live companion is missing too. The bidirectional check is the minimum-loss path.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "*"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_read_target_state_before_writing_at_a_key",
+    "rule": "Before loading budget (or any master/transactional value) into a target system, READ the target's existing state at that EXACT key first -- an idempotency check, not just a presence check. If a value already exists at that key, NET-CHECK before posting (do not just add a new line), because most SAP posting APIs (e.g. BAPI_0050_CREATE for BCS budget) are additive, not upsert -- posting again at an already-populated key creates a double, not a correction.",
+    "why": "Session 2026-07-06: 14 cost-recovery funds were loaded into V01 without first reading V01's existing state at the target (fund, fund center, commitment item) key. V01 already had budget at CI-11/13 for 11 of the 14 funds, so the new ENTR/B1 posts doubled the budget rather than establishing it. Compounded by an earlier mis-addressing in the same session (loading at commitment item TC, then at fund center HEQ, both wrong for this batch per claim #338) -- three separate write-without-verify-first mistakes on the same batch. Reversal was blocked (reversal reasons not active for FY2026 in both D01 and V01, claim #324), forcing a negative-offset BAPI_0050_CREATE workaround (claim #325) to net the doubles/mis-addresses back to zero -- extra cleanup work that a pre-write read would have avoided entirely.",
+    "how_to_apply": "1. Identify the EXACT key the write targets (for BCS: fund + fund center/FISTL + commitment item + fiscal year + ledger/version -- not just the fund).\n2. Read the target system's live state (FMBL/FMAVCT for budget; the equivalent master/transaction table for any other domain) at that exact key BEFORE posting anything.\n3. If a value already exists at that key: NET-CHECK (compare the source value against what's already there) -- do not blindly add. If the API is additive (most BAPI_0050_* budget posts are), compute the delta needed and post only the delta (or the negative-offset if you already over-posted).\n4. Never assume a target starts empty just because the source system has the value -- targets used for prior testing/dev work commonly already carry partial or full state.\n5. This generalizes the 'verify before alarming / verify by re-read' family (feedback_verify_before_alarming_and_update_on_correction) to the WRITE side: verify BEFORE you write, not just before you report.",
+    "severity": "HIGH",
+    "created_session": "s-2026-07-06",
+    "source_file": "brain_v2/claims/claims.json#338,339",
+    "derives_from_core_principle": "CP-003",
+    "cp_link_reason": "CP-003 'Precision, evidence, facts': writing to a target system without first reading its current state at the exact key is an unverified assumption (the target is empty / the target matches the source), not a checked fact. The fix is the same discipline CP-003 already demands for claims -- verify before asserting -- applied to the write path instead of the report path.",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "*"
+      ],
+      "module": [
+        "FM",
+        "BCS",
+        "*"
+      ],
+      "process": [
+        "B2R",
+        "*"
+      ]
+    }
+  },
+  {
+    "id": "feedback_worktree_branches_strand_knowledge",
+    "rule": "Audit parallel worktree branches at session start AND close. A commit that lives only on a `.claude/worktrees/<name>` branch is invisible to `git status`/`git log` on your own branch and is NO safer than uncommitted work -- gone if the disk dies. Durability = the work is on ORIGIN, not merely 'committed'.",
+    "why": "Session 2026-07-07: the worktree branch `unruffled-williamson-810b11` @5285e92 held the entire AVC recurring-pipeline layer -- 5 claims, gold_table_registry +266 rows, a capability-model bump, and the new 330-line scripts/extraction/psm_avc_refresh.py -- committed but never merged or pushed. Nothing on the active feature branch or origin referenced it; it was one disk failure from total loss. This is the concrete mechanism behind the measured weakest capability, DURABILITY (0.233): 'I committed' felt safe but the work was stranded locally.",
+    "how_to_apply": "1. At session start and close run: `git worktree list`; for each worktree HEAD `git merge-base --is-ancestor <tip> HEAD || echo STRANDED`; and `git log --oneline origin/<branch>..HEAD | wc -l` for unpushed on the current branch.\n2. Any tip NOT an ancestor of a pushed branch = stranded knowledge -> merge it, preserve-first (union; on a claim/record id collision, keep the earlier-referenced side's ids and RENUMBER the other, then fix its citations -- both branches took claim ids 304-308 here, AVC renumbered to 341-345).\n3. Never treat a local commit as durable. Push before you consider the work captured.\n4. Prune only fully-merged worktrees, and only when no parallel session is using one (no active-work.md lease).",
+    "severity": "HIGH",
+    "created_session": "s-2026-07-07",
+    "source_file": "memory/feedback_worktree_branches_strand_knowledge.md; merge commit 8ec0700",
+    "derives_from_core_principle": "CP-002",
+    "cp_link_reason": "CP-002 'Preserve first, context is cheap': stranded local commits are the failure mode where hard-won knowledge is silently at risk of irreversible loss. Preserving it means making it durable (on origin) and merging without clobbering, not just leaving it 'committed somewhere'.",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]

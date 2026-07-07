@@ -105,7 +105,45 @@ The custom reports are the "Proof of Consistency":
 
 ---
 
-## 10. Final Conclusions & Roadmap
+## 10. Output Distribution by Position (BCM — "Personnel Cost by Output") — Added Session #093
+
+This sub-capability connects HCM positions to financial output codes for Results-Based Budgeting reporting.
+Claims: #263 (data flow, TIER_1), #264 (YTFM_OUTPUT referential defects, TIER_1).
+
+### Upload flow
+| Step | Object | Purpose |
+|---|---|---|
+| Upload tcode | `YFMOUTPUT` | Entry point — program `YFM_OUTPUT_MANAGEMENT` (BL classes `YCL_FM_OUTPUT_MANAGEMENT`/`YCL_FM_OUTPUT_BL`) |
+| Validation | `YFM_OUTPUT_CHECK_POSITION` | Generates reject list (invalid outputs, missing acronyms, distribution ≠ 100%) |
+| Storage | `HRP1000` + `HRP1001` | OM objects and relationships on positions, with biennium start/end dates (retroactive) |
+
+### Consuming reports (transaction → program, verified d01_tstc P01 gold)
+| Transaction | Program | Purpose |
+|---|---|---|
+| `YFM_STAFF_COST_2` | `YFM_STAFF_COST_DISTRIBUT` | Staff cost distribution per sector & output |
+| `YFM_STAFF_COST` | `YFM_STAFF_COST_PER_OUTPUT` | Staff costs per output |
+| `YFM_POS_OUTPUT` | `YFM_OUTPUT_REPORT_1` | List of outputs per position |
+| `YHR_POS2` | `YHR_POSITION_WITH_NODE_1` | Positions in C/5 structure |
+| `YHR_POS1` | `YHR_ORG_UNIT_COUNT` | Org-unit headcount (established/vacant) |
+
+### Outbound (Data Hub / BW file extracts — P01 verified)
+- `YFM_STAFF_COST_DISTRIBUT_DH` (4 CC variants: UBO, UNES_MCA, UNES_RGF, UNES_RP) — table `YTDH_STFCO`
+- `YFM_OUTPUT_INDIRECT_COSTS_DH` (11 CC variants) — table `YTDH_INDCO`
+
+### Referential: YTFM_OUTPUT defects (verified P01 gold, session #093)
+- Duplicate: FM_OUTPUT 3075 & 3083 both ONAME=8.13.PPF — keep 3075, delete 3083.
+- 31 entries with blank ONAME.
+- Template-vs-SAP mismatch (number/acronym shift + PFF/PPF transposition). Root cause: planning catalog (budget office Excel / possibly Core Planner PPM) and SAP YTFM_OUTPUT maintained separately.
+- Open known_unknowns: KU-2026-093-OUTPUT-CATALOG-OWNERSHIP, KU-2026-093-HRP-PERCENT-STORAGE.
+
+### Evidence
+- Gold DB `ytfm_output` / `ytfm_output_t` / `d01_tstc`, cdhdr/rsau_audit_history (P01 gold).
+- Email thread `RE_ Template of update staff work time distribution .eml` (2025-12-19 → 2026-06-24).
+- `Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md`
+
+---
+
+## 11. Final Conclusions & Roadmap
 To achieve 100% technical fidelity in any reconstruction:
 1.  **Replicate the BASU Logic**: The UI must auto-populate the Fund/CC based on the G/L range lookup in `YTFI_BA_SUBST`.
 2.  **Audit `YXUSER`**: Regular checks on this table are required to detect valid "Exceptions to the Rule."

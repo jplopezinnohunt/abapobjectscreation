@@ -141,5 +141,26 @@ The `YPS8` report confirms that:
 2. **FM is the Source of Truth** for the actual financial balances.
 3. The **Linkage** is purely naming-convention based (`FINCODE` = `PSPID`), which must be maintained in any automated object creation or integration service.
 
+## U_USAGE — Execution Footprint (S-090, 2026-06-23)
+Source: `brain_v2/fm_usage_deepdive.json`, P01 window ~2026-02-21..06-21, rsau_audit_history.
+
+| Metric | Value |
+|--------|-------|
+| Executions (~4mo) | **11,314** |
+| Distinct users | **571** |
+| Top actor | G_DARD (895), AB_SALL (475) — named human power users |
+| Actor type | Human (no integration/batch actor) |
+| Classification | Heavily-used (>3,000 threshold) |
+
+### AVC Monitoring Blind Spot (claim #249, TIER_1)
+YPS8 reuses the same `IS_COMMITMENT_ITEM_IN_AVC` filter and `REVENUE`-placeholder preservation logic (class `YCL_YPS8_BCS_BL` lines 58+73) as the FM-AVC engine itself. This means YPS8 is **structurally blind** to the exact INC-000005638-class donor-fund FIPEX-deficit overruns it is used to monitor.
+
+- 11,314 runs/4mo across 571 users = the org's de-facto budget truth for non-RB projects, yet it **cannot pre-empt** INC-000005638-class incidents.
+- Combined with YFM1 (10,134 / 557 users): ~21K monitoring runs/4mo are all subject to the same blind spot.
+- **Fix**: schedule `Zagentexecution/quality_checks/committed_vs_available_detector.py` (per-FIPEX committed-vs-available check, PMO H86) alongside or instead of YPS8 for AVC-deficit early warning.
+- This is a READ-ONLY reporting object — no write-channel/SoD concern. The actionable angle is H86 wiring, not report retirement.
+
+Cross-links: claims #153 (IS_COMMITMENT_ITEM_IN_AVC code), #159 (YPS8+YFM1 AVC blindness), #249 (this finding + blast-radius), INC-000005638, PMO H86.
+
 ---
-*Created as part of the YPS8 Technical Analysis protocol.*
+*Created as part of the YPS8 Technical Analysis protocol. U_USAGE section added S-090.*

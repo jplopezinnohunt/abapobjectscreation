@@ -131,6 +131,187 @@
       routes a hypothetical PR-bank payment to <code>PstlAdr</code> (not fallback); deleting them would silently
       send a future PR/SE payment down the wrong branch. Testing them requires a synthetic vendor
       (<code>LFBK-BANKS='SE'/'PR'</code>).</p>
+
+      <h3>Dbtr <code>PstlAdr</code> status across the 4 UNESCO trees (D01 V000, 2026-06-15)</h3>
+      <p>Cross-tree scan of the Dbtr address sub-tree. CITI was the worst case (4 PstlAdr nodes + 3-letter
+      country-code bug + <code>=SE</code>); SEPA is clean; CGI (+twin) is the remaining one to analyse.</p>
+      <table>
+        <tr><th>Tree</th><th>Dbtr PstlAdr</th><th>Mechanism</th><th>Status</th></tr>
+        <tr><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td><td><strong>4</strong> (2 old + 2 structured)</td><td>cond on <code>UBISO</code> US/CA/PR vs rest; <code>PstCd</code>/<code>TwnNm</code> gated on <code>=SE</code></td><td>D-1 fixed (kill-switch); <strong>D-2 OPEN</strong> — BR/UBO without PstCd/TwnNm</td></tr>
+        <tr><td><code>/SEPA_CT_UNES</code></td><td><strong>1</strong> structured</td><td>no condition (always emits)</td><td>✅ clean</td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO</code></td><td><strong>1</strong> structured</td><td>tags gated on <code>NODE -PstlAdrMore (N_2326418530) = 'SPACE'</code></td><td>⚠️ <strong>PENDING</strong></td></tr>
+        <tr><td><code>/CGI_XML_CT_UNESCO_1</code></td><td><strong>1</strong> (CGI twin, same NODE_ID)</td><td>same</td><td>⚠️ same</td></tr>
+      </table>
+      <p><strong>Pending = <code>/CGI_XML_CT_UNESCO</code></strong> <span style="font-size:11px;color:#b91c1c">(twin <code>_1</code> is DEAD — 0 P01 media — so production only ever exercises the parent tree)</span>: the Dbtr emits the
+      structured address only when the technical node <code>-PstlAdrMore</code> is empty
+      ("structured-unless-overflow"). Same class of risk as the CITI <code>=SE</code>: if <code>-PstlAdrMore</code>
+      is never empty in production the structured block would be suppressed. To close CGI: (1) what the exit
+      computes for <code>-PstlAdrMore</code> and whether it is empty for real payments; (2) CGI bank country ·
+      account · year (the non-Citi / SocGen flow, likely more countries than US/CA/BR).</p>
+
+      <h3>CITI <code>Cdtr</code> (beneficiary) — 2 <code>PstlAdr</code>, XML tags</h3>
+      <p>Unlike the Dbtr (4 nodes, 3-letter bug, <code>=SE</code>), the Cdtr is <strong>clean</strong>: 2
+      mutually-exclusive PstlAdr, correct 2-letter codes, no suppression. Internal structure is identical between
+      the two — the <em>only</em> tag-level difference is that #1 adds three <code>&lt;AdrLine&gt;</code>.</p>
+      <table>
+        <tr><th>XML tag</th><th>#1 (rest / BR) <code>&lt;&gt;RU/JP/US/CA/PR</code></th><th>#2 (US/CA/PR) <code>=US/CA/PR</code></th><th>Source / internal logic</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box (<code>ZPFAC</code>≠'') → "PO BOX"+num; else Housenum+Street (exit V3_CGI_CRED_STREET)</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_GET_CDTR_BLDG</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>✅</td><td>✅</td><td>POBoxPc (ZPST2) or CityPc (exit V3_POSTALCODE)</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box/City × payroll/vendor (exit or ZORT1)</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_CGI_CRED_REGION (vendor) or ZREGI (payroll)</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>✅</td><td>✅</td><td>FPAYHX-ZLISO (beneficiary country)</td></tr>
+        <tr><td><code>&lt;AdrLine&gt;</code> ×3</td><td>⚠️ name overflow (ZNME2/3/4)</td><td>❌</td><td><strong>the only #1-vs-#2 difference</strong> — see note</td></tr>
+      </table>
+      <p><strong>What the Cdtr <code>&lt;AdrLine&gt;</code> really is:</strong> <code>ZNME1/2/3/4</code> =
+      data element <code>FPM_NAME</code>, <strong>"Name of the Payee"</strong> (not address). <code>&lt;Nm&gt;</code>
+      takes ZNME1; the <strong>name overflow</strong> (name &gt; 40 chars, suffixes like "LTDA") spills into
+      ZNME2/3/4 → <code>&lt;AdrLine&gt;</code> (cond <code>&lt;&gt;''</code>) — a name-overflow workaround
+      (semantically name-in-address). Real population (BR/UBO 2024-26, 82,392 pmts): ZNME2≠'' = <strong>3,913
+      (4.7%)</strong>, ZNME3 0.2%, ZNME4 0%. So in <strong>95.3% the AdrLine does not emit → #1 ≡ #2</strong> (pure
+      structured); only 4.7% carry a name line in an address tag.</p>
+      <p>Internal logic (same in both): handles <strong>PO Box vs street</strong> (<code>ZPFAC</code>) and
+      <strong>payroll vs vendor</strong> (node <code>HR='P'</code> → direct fields ZORT1/ZREGI/ZPFOR; else CITIPMW
+      exits). Every structured tag has multiple internal branches but always emits one → <strong>no empty tags, no
+      compliance gap</strong> (unlike the Dbtr <code>=SE</code>). US/CA → #2 (pure structured); BR → #1 (structured +
+      AdrLine); both <strong>complete</strong>. RU/JP = dead gap (UBISO is never RU/JP). The format's compliance
+      issue is <strong>Dbtr-only</strong>.</p>
+      <p><strong>Volume per node (P01, 2024-2026)</strong> — same <code>UBISO</code> split as the Dbtr:
+      <strong>#2</strong> (US+CA, pure structured) = <strong>73,529</strong> payments (1,311 media);
+      <strong>#1</strong> (BR, structured + AdrLine) = <strong>82,392</strong> payments (1,199 media). ≈ 47% pure
+      structured, 53% hybrid — both complete.</p>
+
+      <h3>CITI <code>Cdtr</code> <code>&lt;PstlAdr&gt;</code> — per-XML-tag detail (both nodes)</h3>
+      <p>Both nodes have <strong>identical internal structure</strong>; #1 only adds the 3 <code>&lt;AdrLine&gt;</code>.
+      Drivers: <code>HR</code> (←<code>FPAYH-LAUFI</code>, <code>='P'</code> → <strong>payroll</strong> vs vendor),
+      <code>ZPFAC</code> ("PO Box") → <strong>PO Box vs street</strong>, <code>XSCHK</code> ("Is a Check Created?").</p>
+      <table>
+        <tr><th>XML tag</th><th>#1 (BR/rest)</th><th>#2 (US/CA)</th><th>Source / internal logic</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>✅</td><td>✅</td><td>PO Box → "PO BOX"+ZPFAC; street → Housenum(REF02)+Street(exit V3_CGI_CRED_STREET)</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>✅</td><td>✅</td><td>exit V3_GET_CDTR_BLDG</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>✅</td><td>✅</td><td>PO Box → ZPST2; normal → exit V3_POSTALCODE</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code></td><td>✅</td><td>✅</td><td>payroll → ZPFOR/ZORT1; vendor → exits; PO Box/City via XSCHK/HR</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>✅</td><td>✅</td><td>vendor → exit V3_CGI_CRED_REGION; payroll → ZREGI</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>✅</td><td>✅</td><td>FPAYHX-ZLISO ("Country ISO code", 2 chars)</td></tr>
+        <tr><td><code>&lt;AdrLine&gt;</code> ×3</td><td>✅ ← ZNME2/3/4</td><td>❌</td><td><strong>"Name of the Payee"</strong> overflow — <strong>only difference</strong></td></tr>
+      </table>
+      <p>Cross-cutting patterns: <strong>PO Box vs street</strong> (ZPFAC), <strong>payroll vs vendor</strong>
+      (HR from LAUFI — payroll uses direct fields ZPFOR/ZORT1/ZREGI/ZNME1, vendor uses CITIPMW exits),
+      <strong>check</strong> (XSCHK) on TwnNm. The <strong>only #1-vs-#2 difference</strong> is the 3 AdrLine (name).</p>
+
+      <h3>The 3 drivers — where &amp; how they affect (max detail)</h3>
+      <table>
+        <tr><th>Driver</th><th>What</th><th>Controls (tags/atoms)</th></tr>
+        <tr><td><code>ZPFAC</code> ("PO Box", FPAYH)</td><td>PO Box vs street</td><td><strong>ONLY <code>&lt;StrtNm&gt;</code></strong>: Housenum(REF02)+Street(exit) if ZPFAC=''; "PO BOX"+POBOXNUM if ZPFAC&lt;&gt;''</td></tr>
+        <tr><td><code>HR</code> (=FPAYH-LAUFI[0]; 'P'=payroll)</td><td>payroll vs vendor</td><td><code>&lt;Nm&gt;</code> (ZNME1 exit ↔ ZNME1_HR direct) · <code>&lt;TwnNm&gt;</code> (City exit ↔ ZORT1) · <code>&lt;CtrySubDvsn&gt;</code> (exit REGION ↔ ZREGI)</td></tr>
+        <tr><td><code>XSCHK</code> ("Is a Check Created?", FPAYHX)</td><td>check vs transfer</td><td><strong>ONLY <code>&lt;TwnNm&gt;</code></strong>: POBoxCity(exit PO_CITY) if XSCHK='X'; else City(exit CRED_CITY)</td></tr>
+      </table>
+      <p><strong>No driver:</strong> <code>&lt;BldgNb&gt;</code> (exit, always) · <code>&lt;PstCd&gt;</code> (POBoxPc=ZPST2 by
+      <strong>param =2</strong>, CityPc=exit — NOT ZPFAC) · <code>&lt;Ctry&gt;</code> (ZLISO) · <code>&lt;AdrLine&gt;</code> (ZNME2/3/4).
+      <strong>Finding:</strong> "PO Box" has <strong>no single switch</strong> — fragmented across 3 (StrtNm by ZPFAC,
+      TwnNm-city by XSCHK, PstCd by param =2); HR runs in parallel. <strong>BR/UBO reality (P01):</strong> all 3
+      drivers sit at default → HR never 'P' (LAUFI=BUBO…), ZPFAC 0% (0/82,684), XSCHK non-check (method R Worldlink)
+      → BR address always emits via vendor/street/city exits; payroll/PO-Box/check branches are defensive (other flows).</p>
+
+      <h3>CITIPMW exit source code — address comes from <code>ADRC</code> (vendor master)</h3>
+      <p><strong>Key finding (exits read from <code>extracted_code/.../CITIPMW_V3_*</code>):</strong> the Cdtr
+      structured tags do NOT take their value from <code>Z*</code> fields — they read the <strong>vendor address
+      master <code>ADRC</code></strong>. Every <code>V3_*CRED_*</code> exit follows the same <strong>3-tier</strong>
+      hierarchy: (1) one-time/CPD vendor (<code>GPA1T='14'</code>) → <code>BSEC</code> (address typed at posting);
+      (2) normal vendor → <code>ADRC</code> via <code>FPAYH-ZADNR</code>, <strong>international version</strong>
+      (<code>nation=FPAYHX-NATION</code>); (3) fallback (only HR <code>DOC2T='03'</code> / F111 <code>'05'</code> /
+      payment-request <code>DORIGIN='FI-AP-PR'</code>, if empty) → <code>FPAYH-Z*</code>.</p>
+      <table>
+        <tr><th>XML tag</th><th>Exit</th><th>Vendor → ADRC</th><th>Fallback → FPAYH</th></tr>
+        <tr><td><code>&lt;StrtNm&gt;</code></td><td>V3_CGI_CRED_STREET</td><td><strong>ADRC-STREET</strong></td><td>ZSTRA</td></tr>
+        <tr><td><code>&lt;BldgNb&gt;</code></td><td>V3_GET_CDTR_BLDG</td><td><strong>ADRC-BUILDING</strong></td><td>—</td></tr>
+        <tr><td><code>&lt;PstCd&gt;</code></td><td>V3_POSTALCODE</td><td>(reads FPAYH direct)</td><td>ZPST2(PO box) / ZPSTL</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code> City</td><td>V3_EXIT_CGI_CRED_CITY</td><td><strong>ADRC-CITY1</strong></td><td>ZORT1</td></tr>
+        <tr><td><code>&lt;TwnNm&gt;</code> PObox</td><td>V3_CGI_CRED_PO_CITY</td><td><strong>ADRC-PO_BOX_CTY</strong></td><td>ZPFOR</td></tr>
+        <tr><td><code>&lt;CtrySubDvsn&gt;</code></td><td>V3_CGI_CRED_REGION</td><td><strong>ADRC-REGION</strong></td><td>ZREGI</td></tr>
+        <tr><td><code>&lt;Nm&gt;</code></td><td>V3_EXIT_CGI_CRED_NAME</td><td><strong>ADRC-NAME1</strong> (+TRAD→REGUP)</td><td>ZNME1</td></tr>
+        <tr><td><code>&lt;Ctry&gt;</code></td><td>(no exit)</td><td>—</td><td>FPAYHX-ZLISO direct</td></tr>
+      </table>
+      <p><strong>Implication:</strong> the beneficiary address comes from the <strong>vendor master (LFA1→ADRC),
+      international version</strong> — not from payment fields. If the vendor's ADRC is incomplete the structured
+      address is incomplete. Z* are fallback only for payroll/F111/payment-request; <code>&lt;PstCd&gt;</code> is
+      the exception (reads FPAYH ZPSTL/ZPST2 direct, no ADRC).</p>
+
+      <h3>🔑 The big picture — 2 underlying models, 4-party × 3-format matrix</h3>
+      <p>DMEE trees are <strong>XML projections of a shared runtime model</strong> (FPAYH/FPAYHX REF buffers/FPAYP/ADRC,
+      filled by Event 05 + exits). There are <strong>2 models</strong>: <code>FPM_CGI</code> (shared by CITI + CGI) and
+      <code>FPM_SEPA</code> (SEPA, different). <strong>Event 05</strong> is the key: CGI=<code>FI_PAYMEDIUM_DMEE_CGI_05</code>,
+      CITI=<code>/CITIPMW/V3_PAYMEDIUM_DMEE_05</code> (both fill <code>FPAYHX_FREF</code>); <strong>SEPA calls NONE</strong>
+      → that is why UNESCO built 17 custom <code>Y_FI_DMEE</code> exits (read ADRC directly).</p>
+      <table>
+        <tr><th>Party</th><th>SEPA (FPM_SEPA)</th><th>CITI (CGI model)</th><th>CGI (FPM_CGI)</th></tr>
+        <tr><td><strong>Dbtr</strong></td><td>✅ <code>Y_FI_DMEE</code> custom</td><td>✅ FI_CGI BAdI (REF buffer)</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>UltmtDbtr</strong></td><td>❌ no address</td><td>❌ no address (Nm only)</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>Cdtr</strong></td><td>✅ <code>Y_FI_DMEE</code> custom</td><td>✅ <code>CITIPMW</code> → ADRC</td><td>✅ FI_CGI BAdI</td></tr>
+        <tr><td><strong>UltmtCdtr</strong></td><td>❌ no address</td><td>✅ FI_CGI BAdI</td><td>✅ FI_CGI BAdI</td></tr>
+      </table>
+      <p><strong>Structured-address coverage:</strong> CGI = <strong>4/4</strong> (gold standard, all via FI_CGI BAdI);
+      CITI = 3/4 (UltmtDbtr missing); SEPA = 2/4 (UltmtDbtr + UltmtCdtr missing). The function called = the model
+      (FI_CGI BAdI for CGI/CITI native; Y_FI_DMEE custom for SEPA). Inconsistencies are projection choices, not technical
+      limits — bringing a format to parity is config (+ custom for SEPA), since the underlying model is shared. Full
+      detail: <code>knowledge/domains/Payment/dmee_formats_model_comparison.md</code>.</p>
+
+      <h3>Node structure — CITI is NOT 1 node per party (MEASURED D01 V000)</h3>
+      <p style="background:#fef2f2;border-left:4px solid #dc2626;padding:10px 14px;border-radius:3px;font-size:12px">
+      Each party has <b>N conditional <code>PstlAdr</code> nodes</b> (by <code>UBISO</code>) — the address that ships
+      depends on WHICH node fires. CITI Dbtr = <b>4 nodes</b>; the per-tag sources below apply <em>inside the firing node</em>.
+      <code>probe_pstladr_nodes_full.py</code>.</p>
+      <table>
+        <tr><th>Party / Node</th><th>Cond (UBISO)</th><th>Fires for</th><th>Emits</th><th>Status / Action</th></tr>
+        <tr><td><b>Dbtr</b> #1 <code>N_1531351640</code></td><td>cond <code>&lt;&gt;US/CA/PR</code> but <b>NODE DISABLED</b></td><td>never (off)</td><td>(does not render)</td><td>✅ legacy, already off — <b>real BR XML = 1 PstlAdr, NO duplicate</b> (D-1 retracted)</td></tr>
+        <tr style="background:#fee2e2"><td><b>Dbtr</b> #2 <code>N_1905437260</code></td><td><code>&lt;&gt;US AND &lt;&gt;CA AND &lt;&gt;PR</code></td><td>BR/rest</td><td>StrtNm·BldgNb·CtrySubDvsn·Ctry; PstCd/TwnNm <code>=SE</code>→suppressed</td><td>structured, <b>D-2</b>. 🔴 remove <code>=SE</code></td></tr>
+        <tr style="background:#f1f5f9"><td><b>Dbtr</b> #3 <code>N_4078824850</code></td><td><code>=USA OR CAN OR PRO</code> (3-letter)</td><td>never (V000/V001)</td><td>AdrLine×3</td><td>dead. 🧹 delete (V002→2-letter would dup US/CA)</td></tr>
+        <tr style="background:#dcfce7"><td><b>Dbtr</b> #4 <code>N_5197213060</code></td><td><code>=US OR CA OR PR</code></td><td>US/CA/PR</td><td>StrtNm·BldgNb·PstCd·TwnNm·CtrySubDvsn·Ctry</td><td>✅ complete</td></tr>
+        <tr><td><b>Cdtr</b> #1/#2</td><td><code>=US/CA/PR</code> · <code>&lt;&gt;RU/JP/US/CA/PR</code></td><td>US/CA · BR</td><td>structured (CITIPMW→ADRC); #2 +AdrLine×3 (ZNME overflow)</td><td>✅ both complete</td></tr>
+        <tr style="background:#dcfce7"><td><b>UltmtDbtr</b></td><td>—</td><td>all</td><td><code>PmtInf/UltmtDbtr</code> = <b>Nm only</b> (CITI <code>Nm</code>, CGI <code>Nm</code>+<code>Id</code>) — no PstlAdr</td><td>✅ <b>Nm-only BY DESIGN</b> (ISO 20022) — NOT a gap, NO add</td></tr>
+        <tr><td><b>UltmtCdtr</b> #1/#2</td><td>(none) · <code>UBISO&lt;&gt;''</code></td><td>all</td><td>BAdI (=SPACE) · direct FPAYH-Z* (ZPSTL/ZORT1/ZREGI/ZLAND)</td><td>✅ structured</td></tr>
+        <tr style="background:#eef2ff"><td><b>CGI</b> (all 4 parties)</td><td>1 node each, gated <code>=SPACE</code>/<code>&lt;&gt;X</code></td><td>all</td><td>BAdI; UltmtDbtr = direct FPAYP (REF01/BORT1/BLAND/BSTRAS)</td><td>✅ uniform, clean</td></tr>
+      </table>
+      <p style="background:#dcfce7;border-left:4px solid #16a34a;padding:8px 12px;border-radius:3px;font-size:11px">
+      ✅ <b>D-1 resolved (confirmed by real XML)</b>: the BR replay (D01 20210924/UBO) produced a Dbtr with <b>ONE
+      <code>PstlAdr</code></b> — node #1 does NOT render (it is disabled; the flag is not in <code>DMEE_TREE_COND</code>,
+      which is why reading only the condition gave a false "duplicate" mid-analysis). Active version = <b>V000</b>. The only
+      real defect is <b>D-2</b> (also proven by the same XML: BR Dbtr without <code>PstCd</code>/<code>TwnNm</code>).</p>
+
+      <h3>Per-tag source (inside the firing node) — CITI vs CGI + ACTION</h3>
+      <p style="font-size:12px;color:#475569"><code>BADI</code> resuelto a lo que el exit estándar <code>FI_CGI_DMEE_EXIT_W_BADI</code>
+      realmente lee. <strong>Byte-offsets buffer <code>FPAYHX-REF01</code> = Event 05 (MEDIDO):</strong> street@0(60) ·
+      building@60(20) · postcode@80(10) · region@90(10) · house@100(10) · city@<code>REF06</code>+0(40).</p>
+      <table>
+        <tr><th>Party</th><th>Tag</th><th>CITI — source (resuelto)</th><th>CGI — source (resuelto)</th><th>Acción</th></tr>
+        <tr><td rowspan="8"><strong>Dbtr</strong><br><span style="font-size:10px;color:#64748b">ente pagador<br>T001[ZBUKR]→ADRC<br>#3 US/CA · #4 resto=BR</span></td><td>StrtNm</td><td>BAdI std → buffer <code>REF01+0(60)</code></td><td>BAdI std → idem</td><td>✅ ninguna</td></tr>
+        <tr><td>BldgNb</td><td>BAdI std → <code>REF01+60(20)</code> + house +100</td><td>BAdI std → idem</td><td>✅ ninguna</td></tr>
+        <tr style="background:#fee2e2"><td><b>PstCd</b></td><td><code>REF01+80(10)</code> — <b>#4 gated <code>UBISO='SE'</code></b> ⇒ suprimido BR/UBO</td><td>BAdI std → postcode (sin gate)</td><td>🔴 <b>FIX D-2</b>: quitar <code>=SE</code> en nodo #4 <code>N_1905437260</code></td></tr>
+        <tr style="background:#fee2e2"><td><b>TwnNm</b></td><td><code>FPAYHX-ORT1Z</code> — <b>#4 gated <code>UBISO='SE'</code></b> ⇒ suprimido BR/UBO</td><td>BAdI std → city <code>REF06</code></td><td>🔴 <b>FIX D-2</b>: quitar <code>=SE</code> en nodo #4</td></tr>
+        <tr><td>CtrySubDvsn</td><td>BAdI std → <code>REF01+90(10)</code> (region)</td><td>BAdI std → idem</td><td>✅ ninguna</td></tr>
+        <tr><td>Ctry</td><td><code>FPAYHX-LAND1</code> (directo)</td><td>BAdI std → LAND1</td><td>✅ ninguna</td></tr>
+        <tr><td>AdrLine</td><td><code>FPAYHX-AUST2</code> (directo)</td><td>—</td><td>✅ opcional</td></tr>
+        <tr style="background:#f1f5f9"><td><i>nodos #1/#2</i></td><td>viejos 3-letras, apagados (kill-switch)</td><td>—</td><td>🧹 borrar #1/#2 en V001 (limpieza D-1)</td></tr>
+        <tr style="background:#dcfce7"><td rowspan="2"><strong>UltmtDbtr</strong><br><span style="font-size:10px;color:#64748b">parte última<br>on-behalf-of</span></td><td><code>PmtInf/UltmtDbtr</code> = <b>Nm only</b></td><td><code>Nm</code> ← FPAYP-BNAME (no PstlAdr)</td><td><code>Nm</code>+<code>Id</code> (no PstlAdr)</td><td>✅ <b>Nm-only POR DISEÑO</b> (ISO 20022) — NO es gap, NO add</td></tr>
+        <tr><td>nivel transacción (CdtTrfTxInf)</td><td>CITI: ninguno</td><td>CGI: <code>N_8824498030</code> estruct (FPAYP-REF01/BORT1/BLAND/BSTRAS)</td><td>✅ NO copiar a CITI (decisión de diseño)</td></tr>
+        <tr><td rowspan="8"><strong>Cdtr</strong><br><span style="font-size:10px;color:#64748b">beneficiario<br>maestro vendor<br>ADRC v.nation</span></td><td>StrtNm</td><td><code>V3_CGI_CRED_STREET</code> → <b>ADRC-STREET</b> (one-time→BSEC-STRAS; fb→ZSTRA; PO box→"PO BOX"+ZPFAC)</td><td>BAdI std → ADRC + <b>FALLBACK</b> (name-overflow)</td><td>✅ ninguna (CITI más rico)</td></tr>
+        <tr><td>BldgNb</td><td><code>V3_GET_CDTR_BLDG</code> → <b>ADRC-BUILDING</b></td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr><td>PstCd</td><td><code>V3_POSTALCODE</code> (ZPST2 PO box / ZPSTL)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr><td>TwnNm</td><td><code>V3_*_CRED_CITY/_PO_CITY</code> → <b>ADRC-CITY1/PO_BOX_CTY</b></td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr><td>CtrySubDvsn</td><td><code>V3_CGI_CRED_REGION</code> → <b>ADRC-REGION</b> (payroll→ZREGI)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr><td>Ctry</td><td><code>FPAYHX-ZLISO</code> (país beneficiario)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr><td>Nm</td><td><code>V3_EXIT_CGI_CRED_NAME</code> → <b>ADRC-NAME1</b></td><td><b>FALLBACK</b>: TR-CM-BT→SGTXT; trunca 35, overflow→StrtNm</td><td>✅ ninguna</td></tr>
+        <tr style="background:#dcfce7"><td>AdrLine ×3</td><td><code>FPAYH-ZNME2/3/4</code> (<b>overflow de NOMBRE</b>, no dirección; 4.7% BR)</td><td>— (overflow→StrtNm vía FALLBACK)</td><td>🟢 mejora opcional: consolidar con función combina-nombres</td></tr>
+        <tr><td rowspan="2"><strong>UltmtCdtr</strong><br><span style="font-size:10px;color:#64748b">opcional<br>cubierto ambos</span></td><td>StrtNm…Ctry</td><td>BAdI std (exit FI_CGI)</td><td>BAdI std (exit FI_CGI)</td><td>✅ ninguna (presente CITI y CGI)</td></tr>
+        <tr><td>AdrLine</td><td><code>FPAYH-ZSTRA/ZORT2</code> (directo)</td><td>BAdI std</td><td>✅ ninguna</td></tr>
+        <tr style="background:#f1f5f9"><td><i>transversal</i></td><td>InstrForCdtrAgt / RmtInf (PPC)</td><td>clases país FR/DE/IT → <code>get_tag_value_from_custo</code></td><td>idem</td><td>✅ no es dirección (purpose code)</td></tr>
+      </table>
+      <p style="background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:3px;font-size:12px"><strong>Resumen de acciones (CORREGIDO 2026-06-17 — UltmtDbtr SIN add; versión activa = V000):</strong><br>
+      1. ⚪ <b>D-2 — SE DEJA LA CONFIG COMO ESTÁ (decisión usuario 2026-06-17).</b> Probado en XML BR real (Dbtr sin <code>PstCd</code>/<code>TwnNm</code>, nodo <code>N_1905437260</code> con <code>=SE</code> muerto) pero <b>sin impacto operativo</b>: flujo doméstico BR (BRL, bancos locales), no cross-border SWIFT → CBPR+ no aplica, los 83K pagos clearean OK. Si algún día se cierra: quitar <code>=SE</code> (zero-riesgo, no hay flujo SE). <b>Por ahora: no se toca.</b><br>
+      2. ✅ <b>D-1 (duplicado) — RETRACTADO, sin acción.</b> El XML BR real trae <b>1 solo <code>PstlAdr</code></b>; el nodo legacy #1 <code>N_1531351640</code> está desactivado (no renderiza). La nota previa "D-1 resuelto" era correcta. (#3 muerto = higiene opcional.)<br>
+      3. 🟢 <b>Cdtr name-overflow (MEJORA)</b> — opcional: consolidar <code>ZNME2/3/4</code>→<code>AdrLine</code> con la función combina-nombres. 4.7% BR. No es defecto.<br>
+      4. ❌ <b>UltmtDbtr — SIN acción.</b> <code>PmtInf/UltmtDbtr</code> es <b>Nm-only por diseño</b> en CITI y CGI (ISO 20022). El UltmtDbtr estructurado de CGI está a nivel transacción y NO se replica en CITI. <b>No es un gap.</b><br>
+      <em>SEPA: sus partes última son Nm-only igual (mismo diseño). Lo relevante de SEPA es Dbtr/Cdtr vía custom <code>Y_FI_DMEE</code>.</em></p>
     </div>
 
     <h4 style="color:#0369a1">Section 4 — SAP Architecture (E2E flow)</h4>

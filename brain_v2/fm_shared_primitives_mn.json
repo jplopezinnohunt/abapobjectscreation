@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "purpose": "Object<->Process MANY-TO-MANY membership for PSM-FM shared primitives. A transaction is NOT 1:1 with a process; the SAME object serves multiple processes (user principle 2026-06-23). This resolves the high-volume shared primitives (FMX1/2/3, FM5S) into their processes[].",
+    "method": "U_USAGE x A_PROCESS x DATA-context: the FM lifecycle (A_PROCESS) gives the native phase; the DATA the executions touch (WRTTP value type, fund TYPE, FM<->PS WBS link) gives the multiple process contexts.",
+    "window": "P01 ~2026-02-21..06-21 (RSAU exec volume); FMIOI/detector for data context",
+    "dimension": "U_USAGE",
+    "volume_split_principle": "An object's raw execution total spans N processes -> per-process share needs the document-level join (which FMIOI doc / WBS / fund-type each execution touched), NOT the object total. The shares below are signal-based approximations, not the audit-log split."
+  },
+  "primitives": [
+    {
+      "object": "FMX1 / FMX2 / FMX3  (Fund Reservation: create / change / display)",
+      "kind": "tcode-family",
+      "program": "SAPLFMFR / SAPMKBLD",
+      "native_phase": "Reservation_Precommit",
+      "exec_volume_4mo": 35026,
+      "reservation_lines_WRTTP65": 776201,
+      "processes": [
+        { "process": "Reservation_Precommit", "role": "native phase",
+          "evidence": "earmarked-funds doc, WRTTP=65 (776,201 FMIOI lines); FMX1 create / FMX2 change / FMX3 display" },
+        { "process": "Budget_Execution", "role": "consumes budget availability (AVC-checked)",
+          "evidence": "Regular-Budget fund TYPE 001 = 41,949 reservation lines; AVC ledger checks every reservation" },
+        { "process": "Project_Funding (FM<->PS bridge)", "role": "earmarks funds for a PS WBS",
+          "evidence": "4,115 Fund+WBS pairs (871 distinct funds) in committed_vs_available_detector; WBS-linked fund TYPEs 104(862)/105(1965)/107(312)/108(439)" },
+        { "process": "Donor_XB_Management", "role": "reserves against donor / extrabudgetary funds",
+          "evidence": "donor/XB fund TYPEs 003(252,808)/105(166,309)/104(78,053)/107/108 dominate the 776k reservation lines (~RB 001 is only 41,949)" },
+        { "process": "Closing_Carryforward", "role": "reservation carry-forward into next year",
+          "evidence": "FM carryforward customs ZFMJ2->RFFMCCF1, ZFMMPCOVRN->RFFMMP_COVR_700; YFM_FR_RC->RFFMREPO reconstruction" }
+      ],
+      "control_note": "FMX1/2/3 is hook for THREE custom exits (ZFIX_EF_FUND_RESERVATION + ZFIX_EXCHANGERATE_FUNDBLOCK budget-rate on SAPMKBLD; ZXFMCU17 2%/$2000 AVC tolerance) -> any process touching it inherits those; one of 4 manual fund-mutation paths (with FB01, FMBB, MULESOFT) per INC-000005638."
+    },
+    {
+      "object": "FM5S  (Display Fund)",
+      "kind": "tcode",
+      "program": "SAPLFM52",
+      "native_phase": "Master_Data",
+      "exec_volume_4mo": 3469,
+      "processes": [
+        { "process": "ALL FM processes (read-side master-data lookup)", "role": "the fund lens every process touches",
+          "evidence": "fund master display across Budget_Execution / Project_Funding / Donor_XB / Closing; 309 distinct users; INC-000005638 FIX-D fund TYPE 104->106 flip diagnostic" }
+      ]
+    }
+  ],
+  "implication": "Volume attribution must be per-(object,process), not per-object. The 35,026 FMX1/2/3 executions are NOT 'one process' — they split across Budget_Execution + Project_Funding (4,115 WBS pairs) + Donor_XB (donor fund types) + Closing. This is why U_USAGE x A_PROCESS x DATA is the correct join, not a single sub_area tag."
+}

@@ -797,14 +797,18 @@
       "knowledge_docs": [
         "knowledge/domains/PSM/psm_initial_analysis.md",
         "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md",
-        "knowledge/domains/PSM/project_cost_recovery_analysis.md"
+        "knowledge/domains/PSM/project_cost_recovery_analysis.md",
+        "knowledge/domains/PSM/avc_availability_model.md",
+        "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
       ],
       "knowledge_subfolders": [
         "EXTENSIONS",
         "FIORI APPS",
         "REPORTS"
       ],
-      "companions": [],
+      "companions": [
+        "companions/cost_recovery_bor_model.html"
+      ],
       "skills": [
         "psm_domain_agent"
       ],
@@ -817,26 +821,149 @@
           "docs": [
             "knowledge/domains/PSM/EXTENSIONS/basu_mod_technical_autopsy.md"
           ]
+        },
+        "availability_control": {
+          "description": "BCS Availability Control (AVC): standard FM chain FMAVC_READ_TOTALS_FOR_ADDRESS, ledger 9H (payment-budget), strategy AFMA/9HZ00001, control-object derivation+rollup (OPF->TC, EXBO->line-item), activity groups FMAVCATGR. Verified from ABAP source + config + Gold DB (s091). Claims #253-#259. Source: knowledge/domains/PSM/avc_availability_model.md."
+        },
+        "cost_recovery_crp": {
+          "description": "UNESCO CRP mechanism: R1 FI docs debit source project (GL 6046013/6046014) and credit CRP pool 633CRP9003 (GL 7046013). Monthly BOR supplements (Y_FMKU_0050_CREATE_WITH_COMMIT, PROCESS=SUPL) give per-office authority on 633CRP<cat><off> funds. 281 total 633CRP* funds. GL by PERSG: 1->6046013/FIPOS11, 2->6046014/FIPOS13. Funds Center = MANUAL. TIER_1 verified 2026-06-26. Claims #268-#277.",
+          "pool_fund": "633CRP9003",
+          "interest_fund": "633CRP9000",
+          "total_crp_funds": 281,
+          "fund_code_structure": "633CRP<category2><office2>",
+          "gl_debit_professional": "6046013",
+          "gl_debit_gs_national": "6046014",
+          "gl_credit": "7046013",
+          "fipos_professional": "11",
+          "fipos_gs_national": "13",
+          "fipos_credit": "REVENUE",
+          "bor_fixed_fields": {
+            "BUDCAT": "9F",
+            "VALTYPE": "B1",
+            "BUDGETING_PERIOD": "016"
+          },
+          "tables": [
+            "FMBL",
+            "fmifiit_full",
+            "PA0001"
+          ],
+          "key_objects": [
+            "Y_FMKU_0050_CREATE_WITH_COMMIT",
+            "BAPI_ACC_DOCUMENT_POST",
+            "BAPI_0050_CREATE",
+            "YFMXCHKP"
+          ],
+          "open_gaps": [
+            "Z_CRP_OFFICE_MAP (to build)",
+            "CRP_FUND_MAP (category->project mapping)"
+          ],
+          "companion": "companions/cost_recovery_bor_model.html",
+          "analysis_docs": [
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md",
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md",
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/TECH_SPEC_Y_FMKU_0050.md",
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/CASE_staff_10025831_e2e.md"
+          ],
+          "claims": [
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277
+          ]
+        },
+        "ps_project_replication": {
+          "description": "PS project replication P01->D01 via BAPI_PROJECT_MAINTAIN. Key learnings: REFNUMBER is per-data-table row index (not global); flat WBS works; hierarchical nesting NOT honored via RFC (CJ20N required for indent). WBS element is the CO object for KI235. TIER_1 verified D01 2026-06-29.",
+          "key_objects": [
+            "BAPI_PROJECT_MAINTAIN",
+            "I_METHOD_PROJECT",
+            "PRPS",
+            "PROJ",
+            "CJ20N"
+          ],
+          "claims": [
+            293,
+            294,
+            295,
+            296,
+            297,
+            298,
+            299
+          ],
+          "known_unknowns": [
+            "KU-2026-WBS-HIERARCHY-BAPI"
+          ],
+          "knowledge_doc": "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
         }
       },
       "objects": [
         "FMIFIIT",
         "PRPS",
-        "YFI_BASU_MOD"
+        "YFI_BASU_MOD",
+        "633CRP9003",
+        "633CRP9000",
+        "Y_FMKU_0050_CREATE_WITH_COMMIT",
+        "BAPI_0050_CREATE",
+        "YFMXCHKP",
+        "BAPI_ACC_DOCUMENT_POST",
+        "Z_CRP_OFFICE_MAP",
+        "CRP_FUND_MAP",
+        "Cost_Recovery",
+        "BAPI_PROJECT_MAINTAIN",
+        "I_METHOD_PROJECT",
+        "I_WBS_ELEMENT_TABLE",
+        "I_WBS_HIERARCHIE_TABLE",
+        "PROJ",
+        "BAPI_PROJECTDEF_GETDETAIL",
+        "000CRP9000",
+        "504PAK1000"
       ],
-      "claims_ids": [],
+      "claims_ids": [
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299
+      ],
       "rules_ids": [],
       "incidents": [],
-      "known_unknowns": [],
+      "known_unknowns": [
+        "KU-2026-094-Z-CRP-OFFICE-MAP",
+        "KU-2026-094-CRP-FUND-MAP-CATEGORY",
+        "KU-2026-WBS-HIERARCHY-BAPI",
+        "KU-2026-OUTLIER-WBS-AVC",
+        "KU-2026-093-OUTPUT-CATALOG-OWNERSHIP",
+        "KU-2026-093-HRP-PERCENT-STORAGE"
+      ],
       "owner_role": "PSM Functional SME",
       "coverage_pct": 62,
-      "last_session_touched": 48,
+      "last_session_touched": "s-2026-06-29",
       "primary_modules": [
         "FM",
         "PS"
       ],
       "primary_processes": [
         "B2R"
+      ],
+      "child_domains": [
+        "Cost_Recovery_CRP"
       ]
     },
     "Payment": {
@@ -1421,6 +1548,117 @@
         "custom_apps_retained_tbd": true,
         "source": "User attestation Session #60 (2026-04-22)"
       }
+    },
+    "Cost_Recovery_CRP": {
+      "axis": "functional",
+      "description": "UNESCO Cost Recovery Policy (CRP) subdomain -- E2E mechanism: project-funded staff costs recovered into CRP pool 633CRP9003, redistributed as BOR supplements to per-office 633CRP<cat><off> funds. Pool=633CRP9003 (92.5% share, 9.65M/10.43M 2025). 281 total 633CRP* funds. GL by PERSG: 1->6046013, 2->6046014. Funds Center=manual (PA0001-ORGEH via Z_CRP_OFFICE_MAP). TIER_1 verified 2026-06-26. Claims #268-#277.",
+      "parent_domain": "PSM",
+      "knowledge_doc_path": "knowledge/domains/PSM/",
+      "knowledge_docs": [
+        "knowledge/domains/PSM/project_cost_recovery_analysis.md"
+      ],
+      "companions": [
+        "companions/cost_recovery_bor_model.html"
+      ],
+      "skills": [
+        "psm_domain_agent"
+      ],
+      "analysis_docs": [
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/MODEL_cost_recovery_bor.md",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/TECH_SPEC_Y_FMKU_0050.md",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/CASE_staff_10025831_e2e.md",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/derivation_spec.json",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/office_code_map.json",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/staff_office_map.json"
+      ],
+      "subtopics": {
+        "fi_posting_phase": {
+          "description": "Phase 1: R1 doc via BAPI_ACC_DOCUMENT_POST (BUS_ACT=RFBU)/FB01. Debit source project (GL 6046013 PERSG=1 or 6046014 PERSG=2). Credit 633CRP9003 GL 7046013 FIPOS REVENUE. SGTXT: CR <project> <sector> <grade> <PERNR> <period>.",
+          "tables": [
+            "BKPF",
+            "BSEG",
+            "fmifiit_full"
+          ],
+          "key_objects": [
+            "BAPI_ACC_DOCUMENT_POST"
+          ]
+        },
+        "bor_supplement_phase": {
+          "description": "Phase 2: monthly BOR (PROCESS=SUPL) via Y_FMKU_0050_CREATE_WITH_COMMIT. BUDCAT=9F, VALTYPE=B1, BUDGETING_PERIOD=016. FMBL TVAL01..TVAL16 hold amounts (gap: not in Gold DB extract).",
+          "tables": [
+            "FMBL"
+          ],
+          "key_objects": [
+            "Y_FMKU_0050_CREATE_WITH_COMMIT",
+            "BAPI_0050_CREATE",
+            "YFMXCHKP"
+          ]
+        },
+        "office_fund_derivation": {
+          "description": "501 staff->office (staff_office_map.json). 89 offices->code (office_code_map.json). 96% stable. Fund=633CRP<cat><off>. CRP_FUND_MAP (category) is open gap. FISTL not in FMDERIVE -- from PA0001-ORGEH via Z_CRP_OFFICE_MAP.",
+          "artifacts": [
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/staff_office_map.json",
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/office_code_map.json",
+            "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/derivation_spec.json"
+          ]
+        }
+      },
+      "objects": [
+        "633CRP9003",
+        "633CRP9000",
+        "633CRP3190",
+        "Y_FMKU_0050_CREATE_WITH_COMMIT",
+        "BAPI_ACC_DOCUMENT_POST",
+        "BAPI_0050_CREATE",
+        "YFMXCHKP",
+        "Z_CRP_OFFICE_MAP",
+        "CRP_FUND_MAP",
+        "Cost_Recovery",
+        "FMBL",
+        "fmifiit_full",
+        "PA0001"
+      ],
+      "claims_ids": [
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277
+      ],
+      "rules_ids": [],
+      "incidents": [],
+      "known_unknowns": [
+        "KU-2026-094-Z-CRP-OFFICE-MAP",
+        "KU-2026-094-CRP-FUND-MAP-CATEGORY"
+      ],
+      "falsification_pending": [],
+      "data_quality_open": [
+        "FMBL TVAL01..TVAL16 not in Gold DB extract -- prevents BOR reconciliation automation"
+      ],
+      "blind_spots": [],
+      "owner_role": "PSM Functional SME / Finance Controller",
+      "coverage_pct": 75,
+      "last_session_touched": "s-2026-06-26",
+      "primary_modules": [
+        "FM",
+        "FI",
+        "HCM"
+      ],
+      "primary_processes": [
+        "B2R"
+      ],
+      "established_session": "s-2026-06-26",
+      "cross_links": {
+        "claims_146_154_221": "MuleSoft BOR channel -- Y_FMKU_0050_CREATE_WITH_COMMIT also carries PPM budget load (4,953 calls). Cost Recovery BOR = second use case of same FM.",
+        "claims_263_264": "Staff output distribution (s093) -- PPM/output side of same personnel cost allocation gap.",
+        "ku_2026_094": "KU-2026-094-Z-CRP-OFFICE-MAP + KU-2026-094-CRP-FUND-MAP-CATEGORY"
+      }
     }
   },
   "process_map": {
@@ -1453,7 +1691,8 @@
         "FI",
         "PSM",
         "PS",
-        "Treasury"
+        "Treasury",
+        "Cost_Recovery_CRP"
       ]
     },
     "T2R": {
@@ -1612,6 +1851,10 @@
     ],
     "procurement|PO|ESSR|EKKO": [
       "Procurement"
+    ],
+    "cost.recovery|633CRP|Y_FMKU_0050|CRP_FUND|BOR.supplement": [
+      "PSM",
+      "Cost_Recovery_CRP"
     ]
   }
 }

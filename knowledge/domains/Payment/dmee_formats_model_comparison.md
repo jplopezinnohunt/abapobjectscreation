@@ -262,3 +262,98 @@ confirma que **solo el Dbtr** tiene el hueco; el Cdtr (CITIPMW→ADRC) está san
 `probe_models.py` (PARAM_STRUC + familias de exit) · `probe_models_matrix.py` (matriz) ·
 `probe_ultmdbtr_compare.py` (UltmtDbtr CITI vs CGI) — en `Zagentexecution/mcp-backend-server-python/`.
 BAdI internals: clases `YCL_IDFI_CGI_DMEE_{FALLBACK,FR,UTIL}_CM00x.abap` en `extracted_code/FI/DMEE/`.
+
+## 11. CIERRE DEL PROYECTO (2026-07-02) — modelo de versiones preciso + veredicto final + CdtrAgt fuera de alcance
+
+**Precisión sobre "Versión activa: V000" (§10, línea previa):** confirmado por RFC live (D01, `verify_cgi_final_config.py`)
+— **V000 = ACTIVA/PRODUCTIVA** (lo que emite producción hoy), **V001 = MANTENIMIENTO/TRABAJO** (donde se edita), **V002+ =
+BACKUP/snapshot** (via Generate Version). Activar = V001 SOBREESCRIBE V000 (no es un flag flip). Conteo real
+2026-07-02: V000=629 nodos, V001=629, V002=631 (los +2 de V002 son los 2 `AdrLine` que se acaban de quitar en V001,
+ver abajo). Claim #314. Modelo SAP-oficial ya documentado en detalle en el companion
+`companions/bcm_structured_address_src/tabs/10_dmee-version-concept.html`.
+
+**Remediación EJECUTADA (usuario, en V001, 2026-07-02):** se quitaron los 2 nodos `AdrLine` redundantes de las 2
+partes últimas de `/CGI_XML_CT_UNESCO` — `UltmtDbtr` nodo `N_3813831110` (era `<-FPAYP-BSTRAS`) y `UltmtCdtr` nodo
+`N_7522397310` — porque ambas partes YA tienen `PstlAdr` estructurado completo (§7/§8, claim #308) y mezclar
+estructurado+`AdrLine` en la misma parte no es limpio ISO 20022/CBPR+. Todo lo demás SIN CAMBIOS. Verificado V000+V001
+sin esos nodos, V002 (backup) los conserva. Claim #315. **Pendiente:** confirmación en OUTPUT real — la corrida de
+verificación fue un self-transfer INTC que no emite `UltmtDbtr`/`UltmtCdtr` (archivo idéntico salvo MsgId/timestamp);
+falta una corrida con un `UltmtCdtr` tercero real.
+
+**Aclaración de alcance del mandato (resuelve la pregunta de fondo del proyecto):** `AdrLine` cumple ENTREGA (el pago
+se cursa) pero NO es "dirección estructurada" (tags separados machine-readable). El mandato de dirección estructurada
+ISO 20022/SWIFT CBPR+/EPC aplica a las **PARTES** (`Dbtr`/`Cdtr`/`UltmtDbtr`/`UltmtCdtr`), **NO a los AGENTES
+financieros** (`DbtrAgt`/`CdtrAgt`) — los agentes se identifican por BIC + `ClrSysMmbId`, su dirección postal es
+informativa. Por eso **`CdtrAgt` con `AdrLine` es ACEPTABLE, no requiere cambio**. Esto **SUPERSEDE la claim #310**
+(que proponía mirror de CITI en CGI CdtrAgt: `StrtNm`/`TwnNm`/`CtrySubDvsn`) — decisión revertida: NO tocar CdtrAgt.
+Claim #316 (known_unknown abierto: confirmar contra la Implementation Guideline propia de SocGen —
+`KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM`).
+
+**Root cause de por qué el banco no está limpio (independiente del punto anterior):** `CdtrAgt` sale de `BNKA`
+(maestro de banco) vía PMW estándar hacia `FPAYH-ZB*`, EN BLOQUE (sin parsear) — igual en CGI y CITI. Dato real
+(Gold DB, `BNKA` `SOGEUS33`/`BANKL=SP0000001U9I`): `STRAS='245 PARK AVENUE'` pero `ORT01='NEW YORK,NY 10167'`
+(ciudad+estado+ZIP mezclados en un solo campo, `PROVZ` vacío) → aunque se estructurara, la fuente no lo permite
+limpio. Verificado además que **no existe parsing por-formato**: el Event-05 de CITI
+(`/CITIPMW/V3_PAYMEDIUM_DMEE_05`) solo llena el buffer de PARTES desde `ADRC` (ya separado por campo) y no toca
+NINGÚN campo de banco/`ZB*`/CdtrAgt (grep=0). Por eso las partes (fuente `ADRC`) salen limpias y los bancos (fuente
+`BNKA`) no — es una diferencia de granularidad del maestro de datos, no un gap de código/config. Claim #317.
+
+**VEREDICTO FINAL (claim #318):** los 3 formatos cumplen el requisito de dirección estructurada en las PARTES SIN
+cambios adicionales de código/config. CGI = más limpio, 4/4, en producción. CITI = D-2 se deja como está (impacto
+solo BR-doméstico). SEPA = 2/4 Nm-only en últimas partes POR DISEÑO del esquema EPC (no es gap). El ÚNICO cambio
+ejecutado en todo el proyecto = higiene opcional (quitar 2 `AdrLine` redundantes en CGI, arriba). `CdtrAgt`/`DbtrAgt`
+con `AdrLine` es aceptable, sin cambio. **El entregable del proyecto fue ANÁLISIS/VERIFICACIÓN de una configuración
+ya conforme, no una remediación de código.**
+
+## 12. CORRECCIÓN 2026-07-02 (steward S-101) — regla Nov-2026 concreta del banco + CdtrAgt de CGI SÍ requiere cambio
+
+**Esta sección QUALIFICA (no borra, CP-002) las claims #316/#318 de §11.** Nueva evidencia TIER_1: el resultado del
+test-tool del banco (screenshot usuario 2026-07-02) cita textualmente su guía de validación:
+
+> "This guide applies November 2026 rules: when `<PstlAdr>` is provided, `<TwnNm>` & `<Ctry>` tags are mandatory.
+> Nevertheless, unstructured address `<AdrLine>` (+ `<Ctry>`) will be still accepted until Novembre 2026 on live
+> environment. In case of hybrid address, take care the address elements entered in their structured dedicated tag
+> are not repeated in `<AdrLine>`." (claim #329)
+
+Tres reglas concretas y fechadas: (a) si se emite `<PstlAdr>`, `<TwnNm>`+`<Ctry>` son obligatorios dentro; (b) un
+`<AdrLine>`+`<Ctry>` puro se acepta SOLO hasta Nov-2026; (c) en dirección híbrida, no repetir en `AdrLine` lo que ya
+está en los tags estructurados.
+
+**El test del banco marcó el `CdtrAgt` de CGI como línea impactada** (`CGI_XML_CT_UNESCO.in`, líneas 88 y 98):
+`CdtrAgt/FinInstnId/PstlAdr` con `Ctry` + 2×`AdrLine` ('245 PARK AVENUE' / 'NEW YORKNY 10167'), sin `TwnNm`
+estructurado — el mismo dato mashed de `BNKA` ya documentado en claim #317 (`ORT01='NEW YORK,NY 10167'`, ciudad+
+estado+ZIP en un campo, `PROVZ` vacío). Confirma que el texto flageado ES el `CdtrAgt` de CGI. Claim #330.
+
+**Corrección al razonamiento de alcance de la claim #316:** el razonamiento general (agentes se identifican por
+BIC/`ClrSysMmbId`, `PstlAdr` en `FinInstnId` es opcional) sigue siendo correcto — un agente puede NO llevar dirección
+postal en absoluto. Lo que estaba sobre-generalizado es la conclusión práctica "`CdtrAgt` con `AdrLine` es aceptable,
+sin cambio": eso solo vale si el agente NO emite `PstlAdr`. CGI SÍ emite `PstlAdr` para su `CdtrAgt` (claim #308) →
+por tanto está sujeto a la MISMA regla Nov-2026 que cualquier otro nodo `PstlAdr`, sin importar si el rol XML es
+Party o Agent. Claim #331.
+
+**Veredicto revisado sobre `CdtrAgt` de CGI (SUPERSEDE la conclusión "sin cambio" de §11 para este nodo específico,
+claim #332):** el `AdrLine` actual del `CdtrAgt` de CGI es conforme SOLO hasta Nov-2026. Para ser forward-compliant,
+estructurar mirando la config YA VIGENTE y YA APROBADA de CITI (`/CITI/XML/UNESCO/DC_V3_01`, `CdtrAgt/FinInstnId/
+PstlAdr`, verificado en vivo vía `Zagentexecution/mcp-backend-server-python/dump_citi_cdtr_subtrees.py` +
+screenshot del árbol CITI 2026-07-02): `StrtNm<-FPAYH-ZBSTR`, `TwnNm<-FPAYH-ZBORT`, `CtrySubDvsn<-FPAYHX-ZBREGX`
+(`Ctry<-ZBISO` ya existe en CGI, claim #313), suprimir/vaciar `AdrLine` (no repetir, regla (c)). Esto reinstala como
+correctas las filas 21/24 de `v001_change_matrix.csv` (`StrtNm<-ZBSTR`/`TwnNm<-ZBORT`) que la nota de supersesión de
+claim #310 había marcado como incorrectas bajo la lectura ahora corregida de claim #316. Las filas 22/23
+(`BldgNb`/`PstCd`) SIGUEN sin fuente limpia en `BNKA` (claim #317) y quedan FUERA de esta remediación — la regla
+citada solo exige `TwnNm`+`Ctry`, no `BldgNb`/`PstCd`. El valor `TwnNm` mashed de `BNKA` ('NEW YORK,NY 10167') entra
+tal cual en el tag estructurado — el mismo mecanismo de CITI ya pasó el validador del banco (claim #265) — por lo
+que limpiar `BNKA.ORT01`/`PROVZ` es una mejora SEPARADA y OPCIONAL, no una precondición.
+
+**Es una acción con fecha límite (antes de Nov-2026), no opcional/skip como concluían #316/#318 para este nodo.**
+Las PARTES (`Dbtr`/`Cdtr`/`UltmtDbtr`/`UltmtCdtr`) ya estaban 100% estructuradas y no cambian.
+
+**PENDIENTE antes de ejecutar (KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM, degrada la recomendación de remediación a
+TIER_2 aunque las reglas #329/#330 sean TIER_1):** confirmación empírica con un archivo CITI REAL enviado a un banco
+US mostrando su `CdtrAgt` estructurado (con el mismo `TwnNm` mashed) efectivamente aceptado/cursado en producción —
+el PASS de claim #265 fue en el test-tool del banco, no una salida productiva observada directamente. El usuario
+proveerá ese archivo. Hasta entonces, no ejecutar el cambio de estructuración de `CdtrAgt` en CGI solo con la
+comparación de árbol + el PASS del test-tool.
+
+**Companion:** `companions/BCM_StructuredAddressChange.html` está en reconciliación (`task_4aca41a1`) — NO se tocó
+aquí. Pendiente para la próxima sesión que edite el companion: agregar fila para esta acción fechada (CdtrAgt CGI,
+antes de Nov-2026) en la tab de Scope/Change Strategy, y una nota de qualificación sobre claims #316/#318.

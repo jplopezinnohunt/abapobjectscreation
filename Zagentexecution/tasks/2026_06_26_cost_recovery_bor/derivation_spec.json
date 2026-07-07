@@ -1,0 +1,102 @@
+{
+  "$schema": "cost-recovery-to-bor derivation spec v1",
+  "purpose": "Technical, machine-consumable derivation of the UNESCO Cost Recovery R1 (FI) posting and its monthly BOR budget supplement, for an external app. Verified against P01 (live + Golden DB) 2026-06-26.",
+  "scope": "Company code UNES, FM area UNES, Cost Recovery Pool fund 633CRP9003.",
+
+  "inputs": {
+    "manual": {
+      "PERNR": {"type": "CHAR8", "desc": "staff personnel number being recovered", "example": "10025831"},
+      "SOURCE_FUND": {"type": "CHAR10", "desc": "the project/fund that consumed the staff (debit side)", "example": "537GLO3000"},
+      "AMOUNT": {"type": "DEC", "desc": "recovered amount (business decision, no timesheet source)", "example": 11319.00},
+      "PERIOD_TEXT": {"type": "free", "desc": "the months the staff supported the project", "example": "JAN-DEC24"},
+      "FISC_YEAR": {"type": "NUMC4", "desc": "budget fiscal year; MUST be >= current YFMXCHKP+1 (today >=2026)", "example": "2026"}
+    },
+    "lookups_required": {
+      "STAFF_OFFICE_MAP": {"key": "PERNR | PA0001-ORGEH", "value": "FISTL (home office)", "table_file": "staff_office_map.json", "coverage": "501 staff, 90% single-office; multi-office = mobility (use validity at posting date)", "fallback": "PA0001-ORGEH -> Z_CRP_OFFICE_MAP (to build)"},
+      "OFFICE_CODE_MAP": {"key": "FISTL", "value": "2-digit fund suffix", "table_file": "office_code_map.json", "coverage": "89 offices; field=duty-station code, HQ sectors=90/91"},
+      "CRP_FUND_MAP": {"key": "(FISTL, SOURCE funding-line category)", "value": "633CRP fund", "status": "GAP - category not derivable from project pattern (verified). = the source project funding source. Build from project master (grant/sponsor) or from recovery history (FISTL+SOURCE_FUND -> CRP_FUND)."},
+      "STAFF_PERSG": {"key": "PERNR", "value": "PA0001-PERSG (1=Professional, 2=GS/NO)", "rule": "drives debit GL + commitment item — verified, NOT staff-vs-consultant"}
+    }
+  },
+
+  "value_rules": {
+    "debit_gl_by_persg": {"1_professional": "6046013", "2_gs_no": "6046014"},
+    "debit_commitment_item_by_persg": {"1_professional": "11", "2_gs_no": "13"},
+    "credit_gl": {"default": "7046013", "note": "~99.5% of pool recoveries (HQ+field). Rare: 7022020 (ITF), 7034011.", "commitment_item": "REVENUE"},
+    "pool_fund": "633CRP9003",
+    "fund_pattern": "'633CRP' + CATEGORY(2) + OFFICE_CODE(2)",
+    "bor_fixed": {"PROCESS": "SUPL", "VERSION": "000", "DOCTYPE": "1000", "FM_AREA": "UNES", "CMMT_ITEM": "TC", "BUDCAT": "9F", "VALTYPE": "B1", "BUDGETING_PERIOD": "016", "TRANS_CURR": "USD"},
+    "year_guard": {"table": "YFMXCHKP", "rule": "FISC_YEAR <= GJAHR(CHTYP='CM',ACTIV='X') is rejected by Y_FMKU_0050", "current_value": "2025 -> only FY>=2026 postable"}
+  },
+
+  "output_R1": {
+    "doc": "FI document, BKPF-BLART='R1'. Manual today via FB01/FB50; programmatic via BAPI_ACC_DOCUMENT_POST (BUS_ACT=RFBU; ACCOUNTGL carries FUND/FUNDS_CTR/CMMT_ITEM; CURRENCYAMOUNT sign: + debit, - credit).",
+    "line_DEBIT": {
+      "BSEG-BSCHL": "40", "BSEG-SHKZG": "S",
+      "BSEG-HKONT": "debit_gl_by_persg(PERNR)",
+      "BSEG-GEBER": "SOURCE_FUND",
+      "BSEG-FISTL": "sector of SOURCE_FUND (from WBS/project)",
+      "BSEG-FIPOS": "debit_commitment_item_by_persg(PERNR)",
+      "BSEG-WRBTR": "AMOUNT",
+      "BSEG-SGTXT": "CR <SOURCE_FUND> <sector> <grade> <PERNR> <PERIOD_TEXT>"
+    },
+    "line_CREDIT": {
+      "BSEG-BSCHL": "50", "BSEG-SHKZG": "H",
+      "BSEG-HKONT": "credit_gl.default (7046013)",
+      "BSEG-GEBER": "pool_fund (633CRP9003)",
+      "BSEG-FISTL": "STAFF_OFFICE_MAP(PERNR)  <-- the key derivation",
+      "BSEG-FIPOS": "REVENUE",
+      "BSEG-WRBTR": "AMOUNT",
+      "BSEG-SGTXT": "same text key as DEBIT"
+    },
+    "invariant": "debit total = credit total (nets to 0)"
+  },
+
+  "output_BOR": {
+    "fm": "Y_FMKU_0050_CREATE_WITH_COMMIT (wrapper over BAPI_0050_CREATE + commit; FY guard YFMXCHKP)",
+    "HEADER (BAPI_0050_HEADER)": {"FM_AREA": "UNES", "VERSION": "000", "PROCESS": "SUPL", "DOCTYPE": "1000", "DOC_DATE": "<month-end>", "PSTNG_DATE": "<month-end>"},
+    "ITEM (BAPI_0050_ITEM, one per recovery)": {
+      "ITEM_NUM": "running",
+      "FISC_YEAR": "FISC_YEAR (>=2026)",
+      "FUND": "CRP_FUND_MAP(FISTL, source funding category)   = '633CRP'+cat+OFFICE_CODE_MAP(FISTL)",
+      "FUNDS_CTR": "STAFF_OFFICE_MAP(PERNR)   == R1 credit FISTL",
+      "CMMT_ITEM": "TC",
+      "BUDCAT": "9F", "VALTYPE": "B1",
+      "TOTAL_AMOUNT": "AMOUNT   == R1 credit WRBTR",
+      "TRANS_CURR": "USD", "TRANS_CURR_ISO": "USD"
+    },
+    "PERIOD (BAPI_0050_PERIOD)": {"ITEM_NUM": "= item", "BUDGETING_PERIOD": "016", "PERIOD_AMOUNT": "AMOUNT"},
+    "TESTRUN": "'X' simulate (default) | '' post",
+    "RETURN": "BAPIRET2 - any TYPE in (E,A) = rejected"
+  },
+
+  "R1_to_BOR_link": {
+    "same": ["FUNDS_CTR (office)", "amount (WRBTR==TOTAL_AMOUNT)", "text (SGTXT==FMBL-TEXT50)"],
+    "changes": ["GEBER 633CRP9003 -> 633CRP<office fund>", "FIPOS REVENUE -> CMMT_ITEM TC", "FI posting -> budget supplement"],
+    "note": "only the R1 CREDIT line maps to the BOR; the DEBIT line is FI-only. No document-key join; the bridge is FISTL+amount+TEXT50."
+  },
+
+  "automatable": {
+    "yes": ["FISTL (via STAFF_OFFICE_MAP)", "debit/credit GL + commitment item (via PERSG)", "all fixed values", "fund OFFICE_CODE part", "R1+BOR payload assembly", "BOR call (Y_FMKU_0050 testrun)"],
+    "gap": ["fund CATEGORY (= source funding line; build CRP_FUND_MAP)"],
+    "no": ["which project / how much / which months (no PA0027/CATSDB/PA0014 timesheet -> manual)"]
+  },
+
+  "worked_example": {
+    "case": "PERNR 10025831 (Ana Dominguez, PERSG=2 GS, home office OPC), recovered from project 537GLO3000, Jan 2025, USD 11319.00",
+    "FI_BAPI_ACC_DOCUMENT_POST": {
+      "DOCUMENTHEADER": {"BUS_ACT": "RFBU", "COMP_CODE": "UNES", "DOC_TYPE": "R1", "DOC_DATE": "20250131", "PSTNG_DATE": "20250131", "REF_DOC_NO": "CRP", "HEADER_TXT": "Cost recovery"},
+      "ACCOUNTGL_1_DEBIT": {"ITEMNO_ACC": "1", "GL_ACCOUNT": "6046014", "FUND": "537GLO3000", "FUNDS_CTR": "BIO", "CMMT_ITEM": "13", "ITEM_TEXT": "CR 537GLO3000 SHS G5 10025831 JAN-DEC24"},
+      "ACCOUNTGL_2_CREDIT": {"ITEMNO_ACC": "2", "GL_ACCOUNT": "7046013", "FUND": "633CRP9003", "FUNDS_CTR": "OPC", "CMMT_ITEM": "REVENUE", "ITEM_TEXT": "CR 537GLO3000 SHS G5 10025831 JAN-DEC24"},
+      "CURRENCYAMOUNT": [{"ITEMNO_ACC": "1", "CURRENCY": "USD", "AMT_DOCCUR": 11319.00}, {"ITEMNO_ACC": "2", "CURRENCY": "USD", "AMT_DOCCUR": -11319.00}]
+    },
+    "BOR_derivation": {"FUNDS_CTR": "OPC (= R1 credit FISTL)", "OFFICE_CODE": "90 (OFFICE_CODE_MAP[OPC])", "CATEGORY": "31 (OPC funding line)", "FUND": "633CRP3190 = '633CRP'+'31'+'90'", "TOTAL_AMOUNT": "11319.00 (= R1 credit)"},
+    "BOR_Y_FMKU_0050": {
+      "HEADER_DATA": {"FM_AREA": "UNES", "VERSION": "000", "PROCESS": "SUPL", "DOCTYPE": "1000", "DOC_DATE": "20260131"},
+      "ITEM_DATA_1": {"ITEM_NUM": "000001", "FISC_YEAR": "2026", "FUND": "633CRP3190", "FUNDS_CTR": "OPC", "CMMT_ITEM": "TC", "BUDCAT": "9F", "VALTYPE": "B1", "TOTAL_AMOUNT": 11319.00, "TRANS_CURR": "USD"},
+      "PERIOD_DATA_1": {"ITEM_NUM": "000001", "BUDGETING_PERIOD": "016", "PERIOD_AMOUNT": 11319.00},
+      "TESTRUN": "X",
+      "note": "FY2025 is blocked by YFMXCHKP today; a new posting uses FY>=2026."
+    }
+  }
+}

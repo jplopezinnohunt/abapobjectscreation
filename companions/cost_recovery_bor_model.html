@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cost Recovery → BOR — Derivation model (real field names)</title>
+<style>
+  :root{--bg:#fff;--fg:#1f2328;--mut:#6b7280;--line:#e5e7eb;--card:#f9fafb;
+        --blue:#0C447C;--blueb:#cfe0f3;--bluf:#eef5fc;--grn:#1B5E20;--grnb:#cfe8d2;--grnf:#eef7ef;
+        --amb:#8A5A00;--ambb:#f0e2c4;--ambf:#fbf6ea;--red:#8E2436;--redb:#f0cdd4;--redf:#fbeef0;}
+  @media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--mut:#9aa4af;--line:#26303b;--card:#161b22;
+        --blueb:#1d3a57;--bluf:#10202f;--grnb:#244a28;--grnf:#11211410;--ambb:#5a431a;--ambf:#241c0f;--redb:#5a2730;--redf:#241015;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 22px 60px}
+  h1{font-size:23px;margin:0 0 4px} .sub{color:var(--mut);margin:0 0 22px;font-size:14px}
+  h2{font-size:17px;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  h3{font-size:14px;margin:18px 0 6px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+  p{margin:8px 0} code{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+  td code{font-size:12px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;border:1px solid}
+  .t-grn{color:var(--grn);background:var(--grnf);border-color:var(--grnb)}
+  .t-red{color:var(--red);background:var(--redf);border-color:var(--redb)}
+  .t-blue{color:var(--blue);background:var(--bluf);border-color:var(--blueb)}
+  .t-amb{color:var(--amb);background:var(--ambf);border-color:var(--ambb)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;margin:6px 0 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .note{font-size:12.5px;color:var(--mut)} .sr{position:absolute;width:1px;height:1px;overflow:hidden}
+  .pill{font:12px ui-monospace,monospace;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr">Cost Recovery to BOR derivation model with real SAP field names</h2>
+<h1>Cost Recovery → BOR · Derivation model</h1>
+<p class="sub">UNESCO · PSM-FM · real field names for an implementable derivation · evidence from P01 (live + Golden DB), 2026-06-26</p>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--grn)"></span>Auto — derivable from HR / master data</span>
+  <span><span class="dot" style="background:var(--red)"></span>Manual — no data source</span>
+  <span><span class="dot" style="background:var(--blue)"></span>Fixed / constant</span>
+  <span><span class="dot" style="background:var(--amb)"></span>From the project / WBS</span>
+</div>
+
+<!-- ===== FLOW ===== -->
+<svg width="100%" viewBox="0 0 920 330" role="img" style="margin:14px 0">
+<title>Combined flow: input, derivation, R1 (2 lines), BOR (1 line)</title>
+<defs>
+<marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#888"/></marker>
+<marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2E7D32"/></marker>
+<marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#C2334D"/></marker>
+</defs>
+<g font-family="ui-sans-serif,system-ui,sans-serif" text-anchor="middle">
+<g font-size="11" font-weight="700" fill="#9a9a9a" text-anchor="start">
+<text x="10" y="22">INPUT</text><text x="200" y="22">DERIVE</text><text x="410" y="22">R1 · FI (2 lines)</text><text x="700" y="22">BOR (1 line)</text></g>
+<!-- inputs -->
+<rect x="10" y="34" width="170" height="52" rx="7" fill="#eef5fc" stroke="#cfe0f3"/><text x="95" y="56" font-size="12.5" font-weight="700" fill="#0C447C">PA0001-PERNR</text><text x="95" y="74" font-size="10" fill="#0C447C">staff · 10025831</text>
+<rect x="10" y="120" width="170" height="52" rx="7" fill="#fbf6ea" stroke="#f0e2c4"/><text x="95" y="142" font-size="12.5" font-weight="700" fill="#8A5A00">PS_PSP_PNR</text><text x="95" y="160" font-size="10" fill="#8A5A00">537GLO3000</text>
+<rect x="10" y="224" width="170" height="50" rx="7" fill="#fbeef0" stroke="#f0cdd4"/><text x="95" y="245" font-size="11.5" font-weight="700" fill="#8E2436">amount + period</text><text x="95" y="262" font-size="10" fill="#8E2436">11,319 · JAN-DEC24</text>
+<!-- derive -->
+<rect x="200" y="34" width="160" height="52" rx="7" fill="#eef7ef" stroke="#cfe8d2"/><text x="280" y="53" font-size="12" font-weight="700" fill="#1B5E20">FISTL (office)</text><text x="280" y="70" font-size="9.5" fill="#1B5E20">= OPC</text>
+<rect x="200" y="120" width="160" height="52" rx="7" fill="#fbf6ea" stroke="#f0e2c4"/><text x="280" y="139" font-size="12" font-weight="700" fill="#8A5A00">FISTL (sector)</text><text x="280" y="156" font-size="9.5" fill="#8A5A00">= BIO</text>
+<!-- R1 -->
+<rect x="388" y="30" width="262" height="210" rx="9" fill="none" stroke="#d3d8de"/>
+<rect x="402" y="40" width="234" height="64" rx="7" fill="#eef7ef" stroke="#cfe8d2"/><text x="519" y="60" font-size="11.5" font-weight="700" fill="#1B5E20">CREDIT (BSCHL 50)</text><text x="519" y="76" font-size="9" fill="#1B5E20">GEBER 633CRP9003 · FISTL OPC</text><text x="519" y="90" font-size="9" fill="#1B5E20">HKONT 7046013 · REVENUE · 11,319</text>
+<rect x="402" y="120" width="234" height="64" rx="7" fill="#fbf6ea" stroke="#f0e2c4"/><text x="519" y="140" font-size="11.5" font-weight="700" fill="#8A5A00">DEBIT (BSCHL 40)</text><text x="519" y="156" font-size="9" fill="#8A5A00">GEBER 537GLO3000 · FISTL BIO</text><text x="519" y="170" font-size="9" fill="#8A5A00">HKONT 6046014 · FIPOS 13 · 11,319</text>
+<text x="519" y="222" font-size="9.5" font-style="italic" fill="#888">SHKZG: H = Credit · S = Debit → nets to 0</text>
+<!-- BOR -->
+<rect x="700" y="40" width="210" height="64" rx="7" fill="#eef5fc" stroke="#cfe0f3"/><text x="805" y="60" font-size="11.5" font-weight="700" fill="#0C447C">BAPI_0050_ITEM (SUPL)</text><text x="805" y="76" font-size="9" fill="#0C447C">FUND 633CRP3190 · FUNDS_CTR OPC</text><text x="805" y="90" font-size="9" fill="#0C447C">CMMT_ITEM TC · 11,319.00</text>
+<!-- arrows -->
+<g fill="none">
+<path d="M180,60 L198,60" stroke="#888" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M360,60 L400,68" stroke="#2E7D32" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M180,146 L198,146" stroke="#888" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M360,146 L400,150" stroke="#888" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M180,249 C300,249 330,200 400,176" stroke="#C2334D" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+<path d="M636,72 L698,72" stroke="#2E7D32" stroke-width="2.1" marker-end="url(#ag)"/>
+</g>
+<text x="668" y="50" font-size="9" font-weight="700" fill="#2E7D32">TEXT50 + amount + FISTL</text>
+<text x="668" y="104" font-size="8.5" fill="#C2334D">GEBER 9003 → 633CRP3190</text>
+<text x="568" y="116" font-size="9" fill="#bbb">✕ Debit = FI only</text>
+</g>
+</svg>
+<p class="note">The credit line of the R1 (one of its 2 lines) generates the single BOR line. The link is <code>TEXT50</code> + amount + <code>FISTL</code> — <b>not</b> the fund, which changes from <code>633CRP9003</code> to the office fund.</p>
+
+<!-- ===== STEP 1: STAFF → OFFICE ===== -->
+<h2>1 · Staff → Office (Funds Center)</h2>
+<p>The home office (= the credit <code>FISTL</code> and the BOR <code>FUNDS_CTR</code>) is determined by the employee. The source fields exist in HR; the jump to <code>FISTL</code> needs a <b>mapping table</b> (no standard OM field — <code>HRP1008</code> only carries <code>BUKRS/GSBER/KOKRS</code>).</p>
+<table>
+<tr><th>Data</th><th>SAP table-field</th><th>Example (10025831)</th><th></th></tr>
+<tr><td>Employee</td><td><code>PA0001-PERNR</code></td><td>10025831 (Ana M. Dominguez)</td><td><span class="tag t-grn">HR</span></td></tr>
+<tr><td>Organizational unit</td><td><code>PA0001-ORGEH</code></td><td>00003012 → <code>HRP1000-STEXT</code> "SC/AO"</td><td><span class="tag t-grn">HR</span></td></tr>
+<tr><td>Cost center</td><td><code>PA0001-KOSTL</code></td><td>0000112201</td><td><span class="tag t-grn">HR</span></td></tr>
+<tr><td>Duty station</td><td><code>PA0001-WERKS / BTRTL</code></td><td>FR00 (Paris HQ)</td><td><span class="tag t-grn">HR</span></td></tr>
+<tr><td>Employee group (drives debit GL)</td><td><code>PA0001-PERSG</code></td><td>2 (GS) → GL 6046014 · FIPOS 13</td><td><span class="tag t-grn">HR</span></td></tr>
+<tr><td><b>→ Recovery Funds Center</b></td><td><b><code>Z_CRP_OFFICE_MAP</code></b> (to build): <code>ORGEH → FISTL</code></td><td>→ <code>OPC</code></td><td><span class="tag t-amb">map</span></td></tr>
+</table>
+<p class="note"><b>The gap:</b> the <code>ORGEH→FISTL</code> mapping is not standard config. Today it's manual input; it is buildable from recovery history (<code>staff_office_map.json</code>, 501 staff, 90% stable) cross-checked against <code>PA0001</code>.</p>
+
+<!-- ===== STEP 2: R1 ===== -->
+<h2>2 · The R1 posting (FI) — 2 lines</h2>
+<p>Header <code>BKPF</code>: <code>BLART='R1'</code>, <code>BUDAT</code>, <code>BKTXT</code>, <code>WAERS</code>. Each line = <code>BSEG</code> (and its FM projection <code>FMIFIIT</code>).</p>
+<table>
+<tr><th>Field</th><th>BSEG / FMIFIIT</th><th>DEBIT line (project)</th><th>CREDIT line (pool)</th></tr>
+<tr><td>Posting key</td><td><code>BSEG-BSCHL</code></td><td>40</td><td>50</td></tr>
+<tr><td>Debit/Credit ind.</td><td><code>BSEG-SHKZG</code></td><td>S (Debit)</td><td>H (Credit)</td></tr>
+<tr><td>G/L account</td><td><code>BSEG-HKONT</code></td><td>6046013 (PR) / 6046014 (GS/NO)</td><td><b>7046013</b> (~99.5%; rare 7022020/7034011)</td></tr>
+<tr><td>Fund</td><td><code>BSEG-GEBER</code> / <code>FMIFIIT-FONDS</code></td><td>project (537GLO3000)</td><td><b>633CRP9003</b> (fixed pool)</td></tr>
+<tr><td>Funds center</td><td><code>BSEG-FISTL</code> / <code>FMIFIIT-FISTL</code></td><td><b>BIO</b> (sector, from WBS)</td><td><b>OPC</b> (office, from staff)</td></tr>
+<tr><td>Commitment item</td><td><code>BSEG-FIPOS</code> / <code>FMIFIIT-FIPEX</code></td><td>13 (GS · PERSG 2)</td><td>REVENUE</td></tr>
+<tr><td>WBS</td><td><code>BSEG-PS_PSP_PNR</code> / <code>FMIFIIT-OBJNRZ</code></td><td>537GLO3000</td><td>—</td></tr>
+<tr><td>Amount</td><td><code>BSEG-WRBTR</code> / <code>FMIFIIT-TRBTR</code></td><td>11,319.00</td><td>11,319.00</td></tr>
+<tr><td>FM value type</td><td><code>FMIFIIT-WRTTP</code></td><td>66 (actual)</td><td>66 (actual)</td></tr>
+<tr><td>Text (key)</td><td><code>BSEG-SGTXT</code></td><td colspan="2"><code>CR &lt;project&gt; &lt;sector&gt; &lt;grade&gt; &lt;PERNR&gt; &lt;period&gt;</code></td></tr>
+</table>
+
+<!-- ===== STEP 3: BOR ===== -->
+<h2>3 · The BOR — 1 line · <code>Y_FMKU_0050_CREATE_WITH_COMMIT</code></h2>
+<p>Wrapper over <code>BAPI_0050_CREATE</code> (+ commit + the <code>YFMXCHKP</code> guard that blocks FY ≤ 2025). Structures: <code>BAPI_0050_HEADER</code> / <code>_ITEM</code> / <code>_PERIOD</code>.</p>
+<table>
+<tr><th>BOR field</th><th>Structure-field</th><th>Value</th><th>Source</th></tr>
+<tr><td>Process</td><td><code>BAPI_0050_HEADER-PROCESS</code></td><td><code>SUPL</code></td><td><span class="tag t-blue">fixed</span></td></tr>
+<tr><td>Version / Doc type</td><td><code>VERSION</code> / <code>DOCTYPE</code></td><td><code>000</code> / <code>1000</code></td><td><span class="tag t-blue">fixed</span></td></tr>
+<tr><td>FM area</td><td><code>FM_AREA</code></td><td><code>UNES</code></td><td><span class="tag t-blue">fixed</span></td></tr>
+<tr><td>Fund</td><td><code>BAPI_0050_ITEM-FUND</code></td><td><code>633CRP3190</code> (= 633CRP+31+90)</td><td><span class="tag t-grn">office</span> + <span class="tag t-amb">cat</span></td></tr>
+<tr><td>Funds center</td><td><code>BAPI_0050_ITEM-FUNDS_CTR</code></td><td>OPC</td><td><span class="tag t-grn">= R1 credit FISTL</span></td></tr>
+<tr><td>Commitment item</td><td><code>BAPI_0050_ITEM-CMMT_ITEM</code></td><td><code>TC</code></td><td><span class="tag t-blue">fixed</span></td></tr>
+<tr><td>Category / Value type</td><td><code>BUDCAT</code> / <code>VALTYPE</code></td><td><code>9F</code> / <code>B1</code></td><td><span class="tag t-blue">fixed</span></td></tr>
+<tr><td>Fiscal year</td><td><code>BAPI_0050_ITEM-FISC_YEAR</code></td><td>≥ 2026 (YFMXCHKP guard)</td><td><span class="tag t-red">manual</span></td></tr>
+<tr><td>Amount</td><td><code>BAPI_0050_ITEM-TOTAL_AMOUNT</code></td><td>11,319.00</td><td><span class="tag t-grn">= R1 credit WRBTR</span></td></tr>
+<tr><td>Period / amount</td><td><code>BAPI_0050_PERIOD-BUDGETING_PERIOD / PERIOD_AMOUNT</code></td><td><code>016</code> / amount</td><td><span class="tag t-red">manual</span></td></tr>
+<tr><td>Testrun</td><td><code>TESTRUN</code></td><td><code>'X'</code> simulate · <code>''</code> post</td><td><span class="tag t-blue">control</span></td></tr>
+</table>
+
+<!-- ===== WORKED EXAMPLE ===== -->
+<h3>Worked example — real values (PERNR 10025831, Jan 2025, USD 11,319)</h3>
+<div class="card">
+<p style="margin-top:0"><b>① FI posting</b> · <code>BAPI_ACC_DOCUMENT_POST</code></p>
+<pre style="margin:0 0 10px;font:11.5px ui-monospace,monospace;white-space:pre-wrap">DOCUMENTHEADER  BUS_ACT=RFBU · COMP_CODE=UNES · DOC_TYPE=R1 · DOC_DATE=2025-01-31 · REF_DOC_NO=CRP
+ACCOUNTGL[1] DEBIT   GL_ACCOUNT=6046014 · FUND=537GLO3000 · FUNDS_CTR=BIO · CMMT_ITEM=13
+ACCOUNTGL[2] CREDIT  GL_ACCOUNT=7046013 · FUND=633CRP9003 · FUNDS_CTR=OPC · CMMT_ITEM=REVENUE
+CURRENCYAMOUNT  [1] AMT_DOCCUR= +11319.00   [2] AMT_DOCCUR= -11319.00      (nets to 0)
+ITEM_TEXT (both)  "CR 537GLO3000 SHS G5 10025831 JAN-DEC24"</pre>
+<p><b>② BOR derivation</b> — every field is taken from the R1 <i>credit</i>; only FUND is built:</p>
+<pre style="margin:0 0 10px;font:11.5px ui-monospace,monospace;white-space:pre-wrap">FUNDS_CTR    = OPC                          ← R1 credit FISTL (Ana's home office)
+OFFICE_CODE  = 90                           ← OFFICE_CODE_MAP["OPC"]  (HQ)
+CATEGORY     = 31                           ← OPC funding-line category
+FUND         = "633CRP"+"31"+"90" = 633CRP3190
+TOTAL_AMOUNT = 11319.00                      ← = R1 credit amount</pre>
+<p><b>③ BOR</b> · <code>Y_FMKU_0050_CREATE_WITH_COMMIT</code></p>
+<pre style="margin:0;font:11.5px ui-monospace,monospace;white-space:pre-wrap">HEADER_DATA   FM_AREA=UNES · VERSION=000 · PROCESS=SUPL · DOCTYPE=1000 · DOC_DATE=2025-01-31
+ITEM_DATA[1]  ITEM_NUM=000001 · FISC_YEAR=2026* · FUND=633CRP3190 · FUNDS_CTR=OPC
+              CMMT_ITEM=TC · BUDCAT=9F · VALTYPE=B1 · TOTAL_AMOUNT=11319.00 · TRANS_CURR=USD
+PERIOD_DATA[1] ITEM_NUM=000001 · BUDGETING_PERIOD=016 · PERIOD_AMOUNT=11319.00
+TESTRUN='X'   (*FY2025 blocked by YFMXCHKP — a new one uses FY≥2026)</pre>
+</div>
+
+<!-- ===== LINK ===== -->
+<h2>4 · The R1 → BOR relation (the implicit link)</h2>
+<div class="card">
+<table>
+<tr><th>Field</th><th>R1 CREDIT line</th><th>BOR line</th><th>relation</th></tr>
+<tr><td>Fund</td><td><code>633CRP9003</code></td><td><code>633CRP3190</code></td><td><span class="tag t-red">changes</span></td></tr>
+<tr><td>Funds center</td><td>OPC</td><td>OPC</td><td><span class="tag t-grn">same</span></td></tr>
+<tr><td>Amount</td><td><code>WRBTR</code></td><td><code>TOTAL_AMOUNT</code></td><td><span class="tag t-grn">same</span></td></tr>
+<tr><td>Text</td><td><code>SGTXT</code></td><td><code>FMBL-TEXT50</code></td><td><span class="tag t-grn">same</span></td></tr>
+<tr><td>Commitment item</td><td>REVENUE</td><td>TC</td><td><span class="tag t-red">changes</span></td></tr>
+</table>
+<p class="note">The <b>DEBIT line does not go to the BOR</b> (FI only). The bridge is the credit, by <code>FISTL+amount+TEXT50</code>, not a document key.</p>
+</div>
+
+<!-- ===== VERDICT ===== -->
+<h2>5 · Real derivation? — verdict</h2>
+<table>
+<tr><th>Piece</th><th>Automatable?</th><th>How</th></tr>
+<tr><td>FISTL / FUND / CMMT_ITEM / pool</td><td><span class="tag t-grn">YES</span></td><td><code>PA0001-ORGEH</code> → <code>Z_CRP_OFFICE_MAP</code> → <code>FISTL</code>; rest fixed</td></tr>
+<tr><td>GL + commitment item</td><td><span class="tag t-grn">YES</span></td><td><code>PA0001-PERSK</code> (staff/consultant) → HKONT/FIPOS</td></tr>
+<tr><td>Fund category (633CRP<b>cat</b>)</td><td><span class="tag t-amb">partial</span></td><td>funding line of the source project</td></tr>
+<tr><td>Which project · how much · which months</td><td><span class="tag t-red">NO</span></td><td>no <code>PA0027</code>/<code>CATSDB</code>/<code>PA0014</code> → manual decision</td></tr>
+<tr><td>R1 + BOR (structure/payload)</td><td><span class="tag t-grn">YES</span></td><td>the fields above → <code>Y_FMKU_0050</code> (testrun)</td></tr>
+</table>
+<p><b>Conclusion:</b> the <i>account-assignment</i> derivation is real and implementable with the fields above — all that's missing is building the <code>Z_CRP_OFFICE_MAP</code> table (org unit→FISTL). The <i>time split</i> (which project / how much) is not derivable: UNESCO records no timesheet for this profile.</p>
+
+<!-- ===== TECHNICAL DERIVATION ===== -->
+<h2>6 · Technical derivation (for integration)</h2>
+<p>Deterministic rules an external app can implement directly. Machine-readable spec: <code>derivation_spec.json</code>.</p>
+<h3>Value rules (deterministic)</h3>
+<table>
+<tr><th>Rule</th><th>Input</th><th>Output</th></tr>
+<tr><td>Debit GL + commitment item</td><td>employee group <code>PA0001-PERSG</code></td><td>1 Professional → <code>HKONT 6046013</code> · <code>FIPOS 11</code> &nbsp;|&nbsp; 2 GS/NO → <code>6046014</code> · <code>13</code></td></tr>
+<tr><td>Credit GL</td><td>—</td><td><code>HKONT 7046013</code> · <code>FIPOS REVENUE</code> (fixed; ~99.5%)</td></tr>
+<tr><td>Pool fund (credit)</td><td>—</td><td><code>GEBER 633CRP9003</code> (fixed)</td></tr>
+<tr><td>BOR fund</td><td>office + funding category</td><td><code>'633CRP' + CATEGORY(2) + OFFICE_CODE(2)</code></td></tr>
+<tr><td>BOR fixed fields</td><td>—</td><td><code>PROCESS SUPL · VERSION 000 · DOCTYPE 1000 · CMMT_ITEM TC · BUDCAT 9F · VALTYPE B1 · BUDGETING_PERIOD 016 · TRANS_CURR USD</code></td></tr>
+<tr><td>FY guard</td><td><code>YFMXCHKP</code> (CHTYP CM)</td><td><code>FISC_YEAR</code> must be &gt; closed year (today ≥ 2026)</td></tr>
+</table>
+<h3>Lookup tables the app needs</h3>
+<table>
+<tr><th>Table</th><th>Key → Value</th><th>Status</th></tr>
+<tr><td><code>STAFF_OFFICE_MAP</code></td><td><code>PERNR</code> → <code>FISTL</code> (home office)</td><td><span class="tag t-grn">built</span> 501 staff · 90% single-office (<code>staff_office_map.json</code>)</td></tr>
+<tr><td><code>OFFICE_CODE_MAP</code></td><td><code>FISTL</code> → 2-digit code</td><td><span class="tag t-grn">built</span> 89 offices (<code>office_code_map.json</code>)</td></tr>
+<tr><td><code>CRP_FUND_MAP</code></td><td><code>(FISTL, funding category)</code> → 633CRP fund</td><td><span class="tag t-amb">GAP</span> category = project funding source; not pattern-derivable (verified) → build from project master / recovery history</td></tr>
+</table>
+<h3>Algorithm</h3>
+<div class="card"><pre style="margin:0;font:12px ui-monospace,monospace;white-space:pre-wrap">build(PERNR, SOURCE_FUND, AMOUNT, PERIOD, FY):     # 4 manual inputs
+  office  = STAFF_OFFICE_MAP[PERNR]                # FISTL  (HR)
+  persg   = PA0001-PERSG[PERNR]                    # 1=Professional | 2=GS/NO
+  dGL,dCI = (6046013,'11') if persg==1 else (6046014,'13')
+  fund    = '633CRP' + CRP_FUND_MAP[office,SOURCE_FUND].cat + OFFICE_CODE_MAP[office]
+  # R1 (FI):  Dr dGL  GEBER=SOURCE_FUND  FISTL=sector(SOURCE_FUND)  FIPOS=dCI  AMOUNT
+  #           Cr 7046013  GEBER=633CRP9003  FISTL=office  FIPOS=REVENUE  AMOUNT
+  # BOR: Y_FMKU_0050_CREATE_WITH_COMMIT(PROCESS=SUPL,
+  #        ITEM{FUND=fund, FUNDS_CTR=office, CMMT_ITEM=TC, BUDCAT=9F, VALTYPE=B1, FISC_YEAR=FY, TOTAL_AMOUNT=AMOUNT},
+  #        PERIOD{BUDGETING_PERIOD=016, PERIOD_AMOUNT=AMOUNT}, TESTRUN='X')</pre></div>
+
+<p class="note" style="margin-top:26px">Source: P01 (PA0001/HRP1000/HRP1008/BSEG/FMBL live + FMIFIIT/BKPF Golden DB). Specs: <code>TECH_SPEC_Y_FMKU_0050.md</code> · <code>MODEL_cost_recovery_bor.md</code> · <code>CASE_staff_10025831_e2e.md</code>. Standalone companion — does not require companion_graph.</p>
+</div>
+</body>
+</html>

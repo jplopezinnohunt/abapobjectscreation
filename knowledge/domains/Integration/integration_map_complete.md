@@ -63,9 +63,18 @@
 | 4.19 | SAP P01 | **File system** | Job -> Spool -> File | `ZSPOOL_TO_FILE` (5 jobs: HR staffing, FM monitoring) | Spool output dump to file share | 50 runs | [VERIFIED] Active |
 | 4.20 | ? | SAP P01 | Job -> File | `YFI_FILE_RATES_TMS` (job: TMS_UPDATE_RATES) | Treasury exchange rate file import? | 1 run | [INFERRED] Source unknown |
 
+**Note on 4.13/4.14 (added session #093):** `YFM_OUTPUT_INDIRECT_COSTS_DH` and `YFM_STAFF_COST_DISTRIBUT_DH` are DOWNSTREAM consumers of the output-distribution data loaded via tcode `YFMOUTPUT` → program `YFM_OUTPUT_MANAGEMENT`. Without a completed upload (YTFM_OUTPUT clean + position distribution done), these DH extracts produce biennium-blank output. See claim #263 (TIER_1) + PSM domain doc section 10.
+
+### 5. Human-Uploaded / Batch-Input (Inbound — Budget Office)
+
+| # | Source | Target | Channel | Artifact | What it does | Frequency | Status |
+|---|--------|--------|---------|----------|-------------|-----------|--------|
+| 5.1 | Budget Office (Excel) | SAP P01 (OM) | Dialog / SE38 run | `YFMOUTPUT` → `YFM_OUTPUT_MANAGEMENT` | Upload per-position output % distribution (HRP1000/HRP1001 with biennium dates) for Results-Based Budgeting. Validated by `YFM_OUTPUT_CHECK_POSITION` (reject list). | Per-biennium (Jan–Feb of biennium start) | [VERIFIED] Active — claim #263 TIER_1 |
+
 **Question: Where does COUPA deposit files?** AL11 directory or OS mount? Same for SWIFT/MT940 files.
 **Question: Data Hub = which system?** YFM/YHR programs with _DH suffix. Is it a BI tool? A UNESCO internal reporting platform?
 **Question: YFI_FILE_RATES_TMS** — is this the source of exchange rates for P01? If so, it closes the loop on where EXCHANGE_RATE IDocs originate.
+**Question (s093): Does the 43 C/5 output catalog originate in Core Planner (PPM/Salesforce)?** If so, the YTFM_OUTPUT synchronization gap (claim #264) should be fixed upstream. See KU-2026-093-OUTPUT-CATALOG-OWNERSHIP.
 
 ### 5. BDC (Batch Data Communication)
 

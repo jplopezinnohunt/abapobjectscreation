@@ -164,6 +164,7 @@ When a company code is copied from a source in a different country, these mismat
 | 6a | Verify OB28 (validation) assignment — optional per precedent (MGIE/ICBA/IBE have none) | OB28 / table `T001D` | MEDIUM |
 | 6b | Verify OBBH (substitution) assignment for new BUKRS — all 9 institutes have one at CallPnt 2 | OBBH | **HIGH** |
 | 6c | **Run RGUGBR00 to regenerate validation/substitution Boolean code** — mandatory after any OB28/OBBH change. For FAGL-New-GL also run RGUGBR30. Until this runs, assignments exist but rules do NOT fire at posting time. | SE38 → RGUGBR00 / RGUGBR30 | **CRITICAL** |
+| 6d | **Define cross-company clearing account pairs (OBYA / T001U)** — create STEM paired with every other institute in BOTH directions (n-1 × 2 entries = 16 for 9 institutes). Reuse same clearing G/L accounts as MGIE. Without this, any CO-FI real-time integration or cross-company FI posting involving STEM fails with F5 080-class "No clearing accounts defined for company codes STEM / XXX". T001U is NOT in the Gold DB — verify live. See claim #279. | OBYA or IMG: "Real-Time Integration CO-FI → Define Intercompany Clearing Accounts" | **HIGH** |
 | 7 | Verify exchange rate types and maintain rates | OB07 / OB08 | MEDIUM |
 | 8 | Verify correspondence forms and programs | OB77 / OB78 | LOW |
 
@@ -280,7 +281,7 @@ Template: `Zagentexecution/transport_companion_D01K9B0CBF.html`
 ## Summary Statistics
 
 - **7 CRITICAL** tasks (blocks basic operations)
-- **12 HIGH** tasks (blocks specific modules)
+- **13 HIGH** tasks (blocks specific modules)
 - **11 MEDIUM** tasks (degraded functionality)
 - **11 LOW** tasks (cosmetic / edge cases)
 - **12 number range objects** to verify

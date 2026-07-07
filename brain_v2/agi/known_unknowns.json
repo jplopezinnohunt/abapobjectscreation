@@ -58,7 +58,7 @@
       "related_dq": "MODEL-GAP-2026-001",
       "question": "How should AVC apply to the 10 multi-fund 'common cost' WBSs (each with >10 distinct funds posting in 2024-2026)? WBSs identified: PR00027627 (1,211 funds, Management Cost PFF technical account), PR00000106 (592, Major Programme 1 Education), PR00000107 (591, Major Programme 2 Natural Sciences), PR00000111 (448, RP Cross-Cutting Themes), PR00000109 (369, Major Programme 4 Culture), PR00000108 (275, Major Programme 3 Soc & Hum Sciences), PR00000110 (249, Major Programme 5 Com & Information), PR00008981 (68, UBO FITOCA), PR00002724 (36, IESALC), PR00008982 (30, UBO FITOCA PSC EAR). These cannot be evaluated with a single (Fund, WBS) pool view because the AVC concept does not map cleanly to common-cost / overhead objects.",
       "why": "The Pool Health Matrix (run 2026-05-01) flagged these 10 WBSs as outliers: 3,455 pair-rows excluded from single-pool eval. Without a Budget Office decision, these objects sit in a governance limbo: FM-AVC sees a fund-level bucket, PS-AVC sees a single WBS pool, and neither view aligns with operational reality (the WBS hosts costs from hundreds of funds). Proportional allocation (as used for DERIVED-MULTI 2-10 fund cases) is mathematically possible but administratively unreasonable for 1,211 funds.",
-      "how_to_resolve": "Submit list to HQ Budget Office with options: (a) PROPORTIONAL \u00e2\u20ac\u201d extend matrix's DERIVED-MULTI logic with no upper limit, accepting the administrative cost; (b) PER-BUCKET \u00e2\u20ac\u201d switch AVC at the (Fund, FundCenter, CommItem) granularity for these WBSs and ignore PS-pool; (c) AVC-OFF \u00e2\u20ac\u201d exempt these WBSs from PS-AVC entirely, rely solely on FM-AVC at their fund level; (d) RE-DESIGN \u00e2\u20ac\u201d split the WBSs into per-programme child WBSs (governance-heavy).",
+      "how_to_resolve": "Submit list to HQ Budget Office with options: (a) PROPORTIONAL â€” extend matrix's DERIVED-MULTI logic with no upper limit, accepting the administrative cost; (b) PER-BUCKET â€” switch AVC at the (Fund, FundCenter, CommItem) granularity for these WBSs and ignore PS-pool; (c) AVC-OFF â€” exempt these WBSs from PS-AVC entirely, rely solely on FM-AVC at their fund level; (d) RE-DESIGN â€” split the WBSs into per-programme child WBSs (governance-heavy).",
       "status": "OPEN",
       "opened": "2026-05-01",
       "related_companion": "companions/fm_ps_pool_health_matrix_v1.html",
@@ -102,7 +102,7 @@
       "status": "PARTIALLY_ANSWERED",
       "partial_answer_session": 69,
       "partial_answer_date": "2026-05-02",
-      "partial_answer": "Explore agent search 2026-05-02 found smoking-gun ABAP code in extracted_code: YCL_YPS8_BCS_BL===CM005_RPY.abap lines 58 and 73 explicitly preserve FIPEX=REVENUE rows while deleting zero-amount operational FIPEX rows: DELETE LT_WFMBDT WHERE HAMOUNT IS INITIAL AND FIPEX <> 'REVENUE'. This is a UNESCO custom PS budget class (BCS = Budget Control System) \u00e2\u20ac\u201d confirms REVENUE placeholder is hardcoded in UNESCO custom code. However, the MULESOFT flow itself (MUNESCO_FundCreate or equivalent) is NOT in our extracted code repos \u00e2\u20ac\u201d it lives in MuleSoft GitLab/Artifactory. Mapping table Allocation__c.Commitment_Item__c -> FMBL.CMMTITEM is DOCUMENTED as synced in unescrp/.claude/skills/salesforce-integration/session-learnings.md but empirical fmifiit_full shows NO per-FIPEX distribution at fund creation \u00e2\u20ac\u201d gap between documented mapping and runtime behavior.",
+      "partial_answer": "Explore agent search 2026-05-02 found smoking-gun ABAP code in extracted_code: YCL_YPS8_BCS_BL===CM005_RPY.abap lines 58 and 73 explicitly preserve FIPEX=REVENUE rows while deleting zero-amount operational FIPEX rows: DELETE LT_WFMBDT WHERE HAMOUNT IS INITIAL AND FIPEX <> 'REVENUE'. This is a UNESCO custom PS budget class (BCS = Budget Control System) â€” confirms REVENUE placeholder is hardcoded in UNESCO custom code. However, the MULESOFT flow itself (MUNESCO_FundCreate or equivalent) is NOT in our extracted code repos â€” it lives in MuleSoft GitLab/Artifactory. Mapping table Allocation__c.Commitment_Item__c -> FMBL.CMMTITEM is DOCUMENTED as synced in unescrp/.claude/skills/salesforce-integration/session-learnings.md but empirical fmifiit_full shows NO per-FIPEX distribution at fund creation â€” gap between documented mapping and runtime behavior.",
       "next_action": "Contact MuleSoft Ops Team to obtain the MUNESCO_FundCreate flow XML from their repository. In parallel, contact FM Master Data Functional Lead (possibly R. RIOS based on session #66 context) to identify any Z* BAPI wrapper that intercepts BAPI_FUND_CREATE on the SAP side.",
       "related_evidence": [
         "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73",
@@ -242,9 +242,9 @@
       "opened": "2026-05-05",
       "domain": "Treasury",
       "severity": "MEDIUM",
-      "question": "What is the canonical semantic meaning of each Treasury group A/B/C/D in the INC-000008088 Excel? Pablo (user) explicitly noted that the agent's prior characterizations (Group A=Current, B=Savings, C=ASHI, D=Nessim) are AGENT ASSUMPTIONS derived from interpreting bank account descriptions in T012T (e.g., 'TRANSFER', 'SAVINGS', 'ASHI', 'PFF NESSIM HABIF') \u00e2\u20ac\u201d NOT confirmed Treasury semantics.",
+      "question": "What is the canonical semantic meaning of each Treasury group A/B/C/D in the INC-000008088 Excel? Pablo (user) explicitly noted that the agent's prior characterizations (Group A=Current, B=Savings, C=ASHI, D=Nessim) are AGENT ASSUMPTIONS derived from interpreting bank account descriptions in T012T (e.g., 'TRANSFER', 'SAVINGS', 'ASHI', 'PFF NESSIM HABIF') â€” NOT confirmed Treasury semantics.",
       "why_matters": "Affects: (1) future bank classification when Treasury adds new banks, (2) interpretation of NTRF+/NINT+/FINT+/FTRF+ external codes per group (operations vs savings), (3) whether auto-routing redirects ALL 4 interest external codes or only NINT/FINT, (4) accounting policy alignment with IPSAS/IAS classifications.",
-      "current_workaround": "Treasury Excel canonical mapping (banks \u00e2\u2020\u2019 groups \u00e2\u2020\u2019 target revenue GLs) is the source of truth for execution. We implement what Treasury specified without claiming to understand the underlying semantics. The 6-VGTYP plan + redirect of 4 external codes (NINT/NTRF/FINT/FTRF +) per VGTYP is what Treasury asked.",
+      "current_workaround": "Treasury Excel canonical mapping (banks â†’ groups â†’ target revenue GLs) is the source of truth for execution. We implement what Treasury specified without claiming to understand the underlying semantics. The 6-VGTYP plan + redirect of 4 external codes (NINT/NTRF/FINT/FTRF +) per VGTYP is what Treasury asked.",
       "how_to_resolve": "Ask Treasury (Marlies / Thavry / Baizid) directly: (a) confirm Group A meaning, (b) Group B, (c) Group C exclusively ASHI, (d) Group D exclusively Nessim Habif, (e) for each group, are ALL incoming credits treated as interest or only specific external codes?",
       "status": "open",
       "blocking": false,
@@ -289,7 +289,7 @@
     },
     {
       "id": "KU-2026-071-12",
-      "title": "ZXFMDTU02_RPY Treasury block (lines 152-170) only handles GSBER='GEF'/'MBF' \u00e2\u20ac\u201d PFF/OPF gaps",
+      "title": "ZXFMDTU02_RPY Treasury block (lines 152-170) only handles GSBER='GEF'/'MBF' â€” PFF/OPF gaps",
       "description": "After patching line 155 to add 7044013 to the IF list, the inner CASE on GSBER still only branches for 'GEF' and 'MBF'. Historical fmifiit_full shows 7044011 had 1669 PFF postings + 234 OPF postings (treasury-pooled funds with non-GEF GSBER). When interest reroutes from 7044011 to 7044013/14 in production, any line whose GGB1 substitution sets GSBER='PFF' or 'OPF' will hit WHEN OTHERS and fail with 'No funds center entered/derived'. SOG-only test scope (current INC-8088 V01) likely never triggers this because SOG is GEF-only. Risk emerges when bigger NT/ASHI/Nessim split is implemented (Phase 2) OR when generic-bank manual reposts route via the new GLs.",
       "domain": "FI",
       "session_introduced": 71,
@@ -324,14 +324,14 @@
     {
       "id": "KU-2026-071-14",
       "title": "OKB9 typo silently fails when target cost center doesn't exist in CSKS",
-      "description": "When OKB9 (TKA3D) BArIn grid contains a Cost Center value that does NOT exist in CSKS for the same KOKRS, SAP does NOT raise an error at OKB9 maintenance time. At posting time, the BArIn lookup retrieves the invalid cost center, fails to find it in CSKS, and silently skips \u2192 KOSTL is left empty in BSEG. The posting succeeds but with KOSTL=blank, which then causes downstream issues (no profit center derivation via CSKS, missing CO actual data). Specific instance INC-8088 V01 2026-05-07: 7044013 OKB9 entry had GEF row Cost Ctr=3001 (typo, should be 113001). Cost center 0000003001 does not exist in CSKS UNES; 0000113001 does (text: 'Exch rate / int- GEF'). Test posting on SOG-DKK1 NINT credit landed on 7044013 with Fund=GEF, FundCenter=UNESCO, KOSTL=blank. The agent reviewed the OKB9 screenshot showing 'GEF | 3001' alongside 'MBF | 143001 / OPF | 133001' (4-digit vs 6-digit pattern anomaly) and FAILED to flag it as a typo \u2014 Class-of-defect: agent must validate per-row OKB9 BArIn entries against CSKS before assuming derivation works.",
+      "description": "When OKB9 (TKA3D) BArIn grid contains a Cost Center value that does NOT exist in CSKS for the same KOKRS, SAP does NOT raise an error at OKB9 maintenance time. At posting time, the BArIn lookup retrieves the invalid cost center, fails to find it in CSKS, and silently skips → KOSTL is left empty in BSEG. The posting succeeds but with KOSTL=blank, which then causes downstream issues (no profit center derivation via CSKS, missing CO actual data). Specific instance INC-8088 V01 2026-05-07: 7044013 OKB9 entry had GEF row Cost Ctr=3001 (typo, should be 113001). Cost center 0000003001 does not exist in CSKS UNES; 0000113001 does (text: 'Exch rate / int- GEF'). Test posting on SOG-DKK1 NINT credit landed on 7044013 with Fund=GEF, FundCenter=UNESCO, KOSTL=blank. The agent reviewed the OKB9 screenshot showing 'GEF | 3001' alongside 'MBF | 143001 / OPF | 133001' (4-digit vs 6-digit pattern anomaly) and FAILED to flag it as a typo — Class-of-defect: agent must validate per-row OKB9 BArIn entries against CSKS before assuming derivation works.",
       "domain": "FI",
       "session_introduced": 71,
       "status": "closed_invalid",
       "blocking_for": [
         "INC-000008088 production transport"
       ],
-      "next_step": "1) Fix OKB9 7044013 GEF row 3001 -> 113001. 2) Re-post test statement. 3) Add agent rule: ANY OKB9 screenshot must be validated digit-by-digit against CSKS for the same KOKRS \u2014 flag any 4-digit cost center where 6-digit is the norm.",
+      "next_step": "1) Fix OKB9 7044013 GEF row 3001 -> 113001. 2) Re-post test statement. 3) Add agent rule: ANY OKB9 screenshot must be validated digit-by-digit against CSKS for the same KOKRS — flag any 4-digit cost center where 6-digit is the norm.",
       "evidence": [
         "FB03 screenshot 2026-05-07: Doc 3500000008 Line 002 G/L 7044013 USNAM blank, Cost Center field highlighted yellow/empty, Fund=GEF, FundCenter=UNESCO",
         "OKB9 screenshot for 7044013: BusA GEF row Cost Ctr=3001 (4 digits, anomalous vs MBF=143001 OPF=133001)",
@@ -365,7 +365,7 @@
       "where": "SAPFPAYM populator + AUSTO/AUST1/AUST2/AUST3 contents at F110 runtime for paying-co=UNES",
       "error": "Cannot determine without runtime debug or SAPFPAYM source extraction whether FPAYHX-AUSTO/AUST1/AUST2/AUST3 contain parseable structured paying-co address (e.g. AUSTO=name, AUST2=street, AUST3=postcode+city) such that PAY_FIELD with PAY_STRUC=FPAYHX could resolve Dbtr StrtNm/PstCd/TwnNm via Z-table config alone (no DDIC extension, no UTIL ABAP delta).",
       "logged_at": "2026-05-08",
-      "context": "If AUSTx fields contain parseable structured paying-co address (one field per address line in a known canonical form), V001 SEPA Dbtr can be implemented as 4 PAY_FIELD rows in YTFI_PPC_STRUC + 4 mapping rows in YTFI_PPC_TAG (zero ABAP, zero DDIC). Otherwise need ADRC_PAY PPC_CODE extension (~10 LOC + 1 DDIC domain row). Decision-blocker for V001 SEPA Dbtr final design path. Verification options: (a) SE38 SAPFPAYM debug for D01 F110 line \u2014 break before DMEE, inspect AUSTx values for UNES paying-co batch; (b) ADT extract SAPFPAYM source + sub-includes, grep for `fpayhx-aust`/`aust1 =`/`aust2 =`/`aust3 =` assignments to see what populates them; (c) Read XML output legacy hybrid mode where AdrLine[Dbtr] uses FPAYHX/AUST3 (V9 reference) \u2014 content of AdrLine reveals AUST3 content.",
+      "context": "If AUSTx fields contain parseable structured paying-co address (one field per address line in a known canonical form), V001 SEPA Dbtr can be implemented as 4 PAY_FIELD rows in YTFI_PPC_STRUC + 4 mapping rows in YTFI_PPC_TAG (zero ABAP, zero DDIC). Otherwise need ADRC_PAY PPC_CODE extension (~10 LOC + 1 DDIC domain row). Decision-blocker for V001 SEPA Dbtr final design path. Verification options: (a) SE38 SAPFPAYM debug for D01 F110 line — break before DMEE, inspect AUSTx values for UNES paying-co batch; (b) ADT extract SAPFPAYM source + sub-includes, grep for `fpayhx-aust`/`aust1 =`/`aust2 =`/`aust3 =` assignments to see what populates them; (c) Read XML output legacy hybrid mode where AdrLine[Dbtr] uses FPAYHX/AUST3 (V9 reference) — content of AdrLine reveals AUST3 content.",
       "status": "open"
     },
     {
@@ -407,6 +407,291 @@
       "answer": "NEGATIVE/N-A. The 174 dest-GUIDs are RFC connection-pool IDs from the synctrigger fleet, NOT SOAMANAGER logical ports. SRT_* tables are SOAP-specific and unrelated. The host (synctrigger-sap-app-XX) + the 17 flows by dominant FM already fully name the integration. No further SRT_* probe needed.",
       "resolution_claim": 235,
       "evidence": "knowledge/system_operating_model_rfc.md:MuleSoft GUID resolution section (2026-06-21). Claim #235."
+    },
+    {
+      "id": "KU-2026-093-OUTPUT-CATALOG-OWNERSHIP",
+      "opened_at": "2026-06-25",
+      "session": 93,
+      "severity": "MEDIUM",
+      "domain": "PSM",
+      "question": "Is the upstream output catalog (43 C/5 Expenditure Plan — the list of outputs by sector) owned and mastered in the Core Planner (PPM, Salesforce-based, ecosystem project unescore20-PPM-brain)? Unconfirmed. The Jun-2026 upload-test mismatch (file 8.10.CPE/8.11.FLD/8.12.PFF vs SAP 8.10.BSP/8.11.CPE/8.12.FLD/8.13.PPF — number/acronym shift + PPF/PFF transposition) implies the Excel template diverged from SAP YTFM_OUTPUT. If the catalog originates in PPM/Salesforce, the sync gap must be fixed at that source (not row-by-row in SAP). If it is a manual Excel maintained by the budget office with no single system of record, that itself is an organizational design gap.",
+      "why": "Claim #264 (TIER_1) documents the SAP-internal defects and the template mismatch. The root cause of the mismatch — whether the Excel is a downstream artifact of PPM or a standalone budget-office artefact — determines where the fix lives (PPM integration vs. YTFM_OUTPUT governance process).",
+      "how_to_resolve": "Ask N. Menard or L. Chabeau: (a) does the 43 C/5 output list originate in Core Planner / Salesforce PPM, or is it manually maintained in Excel? (b) Is there any automated feed from PPM -> YTFM_OUTPUT, or is YTFM_OUTPUT updated manually each biennium? Cross-check with unescore20-PPM-brain project for any SAP-Salesforce output-sync flow.",
+      "status": "open",
+      "blocking_for": [
+        "claim #264 root cause resolution",
+        "YTFM_OUTPUT governance recommendation"
+      ],
+      "related_claims": [
+        264
+      ],
+      "evidence": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md:Section 4"
+    },
+    {
+      "id": "KU-2026-093-HRP-PERCENT-STORAGE",
+      "opened_at": "2026-06-25",
+      "session": 93,
+      "severity": "LOW",
+      "domain": "PSM",
+      "question": "What is the exact storage mechanism for the per-output percentage distribution on a position? Claim #263 says HRP1000/HRP1001 with biennium dates. But is the percentage stored on an HRP1001 relationship subtype (standard PD relationship), or on a UNESCO custom PD infotype (HRP9xxx range)? No HRP9xxx infotype was seen in N_MENARD's Jan-2025 change docs (only HR_IT1000/1001/1005/1013/1050 = standard OM infotypes). If standard HRP1001, which relationship type (code) carries the % field?",
+      "why": "The storage subtype determines: (a) which RFC/BAPI to use for programmatic reads, (b) whether abapGit exports it, (c) what the impact analysis of a position deletion is. Without it, any automated extraction of position-output allocation is blind.",
+      "how_to_resolve": "Run SE16 on HRP1001 filtered to a known position (e.g., SHS 041 or one returned by YFM_POS_OUTPUT) with BEGDA in biennium range. Read the RELAT + ISTAT + other fields to identify relationship type. Alternatively trace YFMOUTPUT SE38 step in debugger to see which PA FM it calls to write the allocation.",
+      "status": "open",
+      "blocking_for": [
+        "automated position-output % extraction",
+        "HCM/PSM data model documentation"
+      ],
+      "related_claims": [
+        263
+      ],
+      "evidence": "Zagentexecution/tasks/2026_06_25_staff_time_distribution_bcm/ANALYSIS.md:Section 1"
+    },
+    {
+      "id": "KU-2026-094-BOR-FM-IDENTITY",
+      "opened_at": "2026-06-26",
+      "session": "s094",
+      "severity": "MEDIUM",
+      "domain": "Integration",
+      "question": "Which specific SAP function module carries the BOR (Budget Original Reservation) write when MuleSoft/Core Planner triggers the B2R budget-load? Candidate: Y_FMKU_0050_CREATE_WITH_COMMIT. This is an UNVERIFIED INFERENCE derived from two TIER_1 claims: (a) claim #146/#154: MuleSoft is a transport layer that moves the BOR (budget-side only); (b) claim #221: the MuleSoft write-IN fleet calls Y_FMKU_0050_CREATE_WITH_COMMIT as one of several fund-master write FMs. The bridge — that Y_FMKU_0050_CREATE_WITH_COMMIT is specifically the BOR-write FM vs. a generic fund-master update — is NOT stated in any single claim and has NOT been verified against rsau_audit_history or the MuleSoft flow XML.",
+      "why": "The BOR object in brain_state carries claims #146 and #154 (TIER_1) naming MuleSoft as the BOR carrier, but has no calls_fms edge. Until the specific FM is verified, any fix-path analysis for BOR synchronization issues (e.g. FIX-A scope from MODEL-GAP-2026-001) is incomplete. The next session that touches B2R budget-loading should resolve this before deepening the fix design.",
+      "how_to_resolve": "Query rsau_audit_history filtered by FM_NAME = 'Y_FMKU_0050_CREATE_WITH_COMMIT' AND user/host = synctrigger-sap-app-XX (MuleSoft cluster). If calls from that fleet contain FMAREA/FUND/AMOUNT data consistent with biennium-start BOR load dates (Jan/Feb 24-C/5 cycle), the linkage is confirmed TIER_1. If the FM appears with no MuleSoft host or with non-BOR payload, re-examine FM_FUND_CHANGE_RFC or Y_BAPI_FUND_C5_ASSIGNMENT as alternative carriers.",
+      "status": "open",
+      "related_claims": [
+        146,
+        154,
+        221
+      ],
+      "related_objects": [
+        "BOR",
+        "Y_FMKU_0050_CREATE_WITH_COMMIT",
+        "MULESOFT_PROD"
+      ],
+      "blocking_for": [
+        "BOR object calls_fms edge in brain_state",
+        "MODEL-GAP-2026-001 FIX-A scope clarification"
+      ],
+      "evidence": "Inference assembled in session s094 Q&A from claims #146, #154, #221 — no new extraction; source claims carry TIER_1 evidence but the bridge itself is unverified."
+    },
+    {
+      "id": "KU-2026-CITI-CTGYPURP-PRTRY",
+      "opened_at": "2026-06-26",
+      "session": "s-2026-06-26",
+      "severity": "HIGH",
+      "domain": "Payment",
+      "question": "REORIENTED 2026-06-26 (P01 read): WHO fills FPAYHX-CTGYPURP_PRTY and from WHICH document field? In the REAL CITI tree (P01, DMEE_TREE_NODE TREE_ID='/CITI/XML/UNESCO/DC_V3_01', VERSION 000=active), node N_6555567710 (CtgyPurp/Prtry, REF=CPP, len 35) maps directly to FPAYHX-CTGYPURP_PRTY with NO own condition. So production DOES populate it (153 US media in 2026, last today 2026-06-26 USD 6.9M, no rejection) — the test FAIL is a one-off where FPAYHX-CTGYPURP_PRTY was blank for that payment. Need the exit (CITIPMW V3 / Event 05 family) that fills CTGYPURP_PRTY and its source field, to explain why the test case came out empty.",
+      "why": "Citibank test-tool validation failure for xmlUNESCODVV3_US.in (2026-06-26, PIUID=949, Country=TN, Trans.Ref=UNES0002000018). US/CA is 53% of CITI payment volume (claim #265). User's correct challenge: if Citi rejected the format, nothing would be paid — but P01 shows continuous US payments incl. today, so the format is fine and the missing value is per-payment (likely incomplete invoice data at simulation time).",
+      "how_to_resolve": "1. In P01, find the exit/FM registered for the CITI medium Event 05 (TFPM042FB / TFPM042F by LAND1/UBISO) and read its source for where it sets *-CTGYPURP_PRTY (grep CTGYPURP_PRTY over P01 source via RPY_FUNCTIONMODULE_READ_NEW / ADT). 2. Identify the document-level source field it derives from (probable pattern: an SCB/purpose indicator like REGUP-LZBKZ or a custom Z-field, same family as PPC). 3. Read that source field for the failing run (Trans.Ref UNES0002000018) vs a passing US run to confirm blank-vs-filled. 4. Functional fix: ensure that field is mandatory/derived for US WIRE so the node is never blank; confirm with Citi the exact 11-char construction of '/REF/0825/C'.",
+      "status": "answered_technically_pending_functional",
+      "resolution": "ORIGIN FOUND (FINAL, 2026-06-26, TIER_1): CtgyPurp/Prtry is filled by /CITIPMW/V3_PAYMEDIUM_DMEE_06 (NOT Event-05/_05) via PERFORM read_zcitipmw (include /CITIPMW/LPMWV3F01) which does SELECT SINGLE * FROM /CITIPMW/PMWV3 (key BUKRS/HBKID/HKTID/BANKS/ZLSCH/UZAWE/DTAWS) then MOVE-CORRESPONDING into FPAYHX_CREF. Event-05 exit /CITIPMW/V3_PAYMEDIUM_DMEE_05 fills ONLY addresses/bank codes (REF01-REF06) — does NOT touch CtgyPurp. CLEAR /CITIPMW/PMWV3 (line 236) is work-area hygiene before the SELECT, not a value-clear. For US (UNES/CIT04/US, 9 config rows) CTGYPURP_PRTY is EMPTY in BOTH P01 and D01 (never populated; BR/CA also empty). What IS populated for US is LCLINSTRM_PRTY (CITI499 wire / CITI2 ach / CITI949 worldlink) — proving the same SELECT+MOVE path runs for other fields. US files never emit CtgyPurp and yet 153 media paid in 2026 incl today (20260626 USD 6.9M) -> Citi real channel does NOT require it; only test-tool flags mandatory. No drift D01 (v000/001/002) vs P01 (v000). Fix = pure CONFIG: populate /CITIPMW/PMWV3.CTGYPURP_PRTY for US WIRE rows in D01 + transport to P01 (no code/tree change). Pending: confirm with Citi exact 11-char value of '/REF/0825/C' and whether truly blocking in real channel.",
+      "resolution_claim": 278,
+      "blocking_for": [
+        "Citibank US/CA payment validation sign-off (functional decision)"
+      ],
+      "related_claims": [
+        265,
+        266,
+        267,
+        278
+      ],
+      "related_objects": [
+        "/CITI/XML/UNESCO/DC_V3_01",
+        "FPAYHX-CTGYPURP_PRTY",
+        "N_6555567710",
+        "/CITIPMW/PMWV3",
+        "/CITIPMW/V3_PAYMEDIUM_DMEE_06",
+        "/CITIPMW/LPMWV3F01",
+        "/CITIPMW/V3_PAYMEDIUM_DMEE_05",
+        "LCLINSTRM_PRTY"
+      ],
+      "evidence": "P01+D01 /CITIPMW/PMWV3 US rows all CTGYPURP_PRTY blank, LCLINSTRM_PRTY=CITI499/CITI2/CITI949 (scratchpad/probe_citipmw_config_us.py); TFPM042FB CITI Event05=/CITIPMW/V3_PAYMEDIUM_DMEE_05 + _06 source read via RPY_FUNCTIONMODULE_READ_NEW (probe_p01_ctgypurp_source.py + probe_citipmw_maint.py); tree node N_6555567710->FPAYHX/CTGYPURP_PRTY no-own-condition (probe_p01_citi_tree_ctgypurp.py); D01 v000/001/002 vs P01 v000 no drift (probe_citi_ctgypurp_drift.py); REGUT 153 US media 2026 incl 20260626 USD 6.9M no rejection (probe_p01_us_real_xml.py); Citibank test-tool 2026-06-26."
+    },
+    {
+      "id": "KU-2026-094-Z-CRP-OFFICE-MAP",
+      "opened_at": "2026-06-26",
+      "context": "Cost Recovery BOR E2E model (session s-2026-06-26)",
+      "question": "Z_CRP_OFFICE_MAP does not yet exist. It should map PA0001-ORGEH (org unit) to the 2-character office code used in 633CRP<cat><off> fund names. 501 staff analyzed: 96% stable single-office, 4% mobility. 89 office->code pairs already extracted in office_code_map.json. Build path: PA0001-ORGEH -> HRP1000 STEXT -> office_code_map lookup -> FISTL. Needed to automate the manual Funds Center entry on cost-recovery R1 documents.",
+      "severity": "HIGH",
+      "blocks": "Automation of Funds Center derivation on Cost Recovery R1 documents; automated BOR supplement preparation",
+      "status": "open",
+      "session": "s-2026-06-26",
+      "domain": "PSM / Cost_Recovery_CRP",
+      "related_claims": [
+        271,
+        274
+      ],
+      "related_artifacts": [
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/staff_office_map.json",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/office_code_map.json",
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/derivation_spec.json"
+      ]
+    },
+    {
+      "id": "KU-2026-094-CRP-FUND-MAP-CATEGORY",
+      "opened_at": "2026-06-26",
+      "context": "Cost Recovery BOR E2E model (session s-2026-06-26)",
+      "question": "The 2-character CRP category in fund code 633CRP<cat><off> is NOT derivable from the source project alone. Verified: project class 537 maps to 8 distinct CRP categories in live data. The mapping (source project funding line -> CRP category) does not exist as a SAP config table (not in FMDERIVE, not in any Gold DB table). It is likely maintained as an offline spreadsheet or implicit knowledge in the Finance team. Build path unknown -- requires Finance SME input to provide the source project -> CRP category mapping table.",
+      "severity": "HIGH",
+      "blocks": "Full automation of BOR supplement creation; automated fund code derivation for cost-recovery R1 docs",
+      "status": "open",
+      "session": "s-2026-06-26",
+      "domain": "PSM / Cost_Recovery_CRP",
+      "related_claims": [
+        274
+      ],
+      "related_artifacts": [
+        "Zagentexecution/tasks/2026_06_26_cost_recovery_bor/ANALYSIS.md"
+      ]
+    },
+    {
+      "id": "KU-2026-WBS-HIERARCHY-BAPI",
+      "opened_at": "2026-06-29",
+      "context": "PS project replication P01->D01 (session s-2026-06-29). ~12 RFC attempts on D01 via BAPI_PROJECT_MAINTAIN failed to create hierarchical WBS children under 504PAK1000.",
+      "question": "NARROWED (2026-06-29, claim #299): The 'WBS element already exists' (E/OP/PT038) symptom was caused by REFNUMBER global mis-numbering -- that is SOLVED (see claim #299). The true remaining open: what is the exact correct population of I_WBS_HIERARCHIE_TABLE (fields: WBS_ELEMENT/PROJECT_DEFINITION/UP/DOWN/LEFT/RIGHT) to create child WBS elements under an existing parent via BAPI_PROJECT_MAINTAIN, avoiding 'Several WBS elements on level 1 not allowed' (E/OP/PT035)? With no coding mask (MASK_ID empty), POSID dots do not auto-nest AND I_WBS_HIERARCHIE_TABLE UP/DOWN is not honored at create -- verified across one-call / incremental / UP-only / UP+DOWN on a clean slate with REFNUMBER fixed.",
+      "domain": "PSM / PS",
+      "status": "open",
+      "recommended_path": "CJ20N (Project Builder) via sap-webgui-core GUI framework for the indent step (def+root via BAPI, then indent children in CJ20N). RFC-only path requires MASK_ID/coding mask or undocumented I_WBS_HIERARCHIE_TABLE population rules.",
+      "narrowed_session": "s-2026-06-29",
+      "narrowing_note": "E/OP/PT038 'already exists' path REMOVED -- it was REFNUMBER mis-numbering (solved). E/OP/PT035 'level-1 not allowed' is the sole remaining open path.",
+      "related_claims": [
+        "#295",
+        "#296",
+        "#297",
+        "#298",
+        "#299"
+      ],
+      "related_objects": [
+        "BAPI_PROJECT_MAINTAIN",
+        "I_WBS_HIERARCHIE_TABLE",
+        "I_METHOD_PROJECT",
+        "504PAK1000",
+        "504PAK1000.4",
+        "504PAK1000.4.4",
+        "CJ20N"
+      ],
+      "knowledge_doc": "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+    },
+    {
+      "id": "KU-2026-PS-PROJECT-CREATION-INBOUND",
+      "opened_at": "2026-06-30",
+      "context": "s-2026-06-30 steward pass. Y_RFC_CREATE_PROJECT_SISTER proved to be an outbound export (claim #300), so the actual project+WBS creation path in SAP is unknown. WBCROSSGT where-used for BAPI_PROJECT_MAINTAIN = 0 custom callers -- inconclusive.",
+      "question": "How are PS projects + WBS elements CREATED in SAP at UNESCO? Leading hypothesis: interactively via CJ20N (Project Builder), then exported outbound via the SISTER RFCs. Alternative: inbound IDoc or PPM->SAP PI message triggers creation. Needs: trace a recent project's creating tcode/program via CDHDR (OBJECTCLAS=PROJ, CHANGEDOC) or check PROJ-ERNAM program name, or find an inbound IDoc type / PI interface from PPM/Core Planner.",
+      "domain": "PSM / PS",
+      "status": "resolved",
+      "recommended_path": "Query CDHDR WHERE OBJECTCLAS='PROJ' AND CHANGENR first-change for a known project -> TCODE field reveals creating transaction. Or check PROJ.ERNAM (user who created) for batch/background user vs dialog user. Check EDIDC for inbound IDocs with MESTYP relevant to PS.",
+      "related_claims": [
+        "#300",
+        "#295",
+        "#297"
+      ],
+      "related_objects": [
+        "Y_RFC_CREATE_PROJECT_SISTER",
+        "YEBPROJ_CREATE_PROJECT_SISTER",
+        "BAPI_PROJECT_MAINTAIN",
+        "PROJ",
+        "PRPS",
+        "CDHDR",
+        "CJ20N",
+        "MuleSoft",
+        "Y_FMKU_0050_CREATE_WITH_COMMIT",
+        "Y_BAPI_FUND_C5_ASSIGNMENT",
+        "Y_BAPI_WBS_TEXT_MAINTAIN",
+        "unescore20-PPM-brain"
+      ],
+      "knowledge_doc": "knowledge/system_operating_model_rfc.md",
+      "resolved_at": "2026-06-30",
+      "resolution": "ANSWERED from EXISTING process/RFC/job discovery (knowledge/system_operating_model_rfc.md, 2026-06-21). PPM (Salesforce/Core Planner) is the MASTER for projects+funds; MuleSoft (synctrigger job fleet, 17 flows) writes them INTO SAP: project+WBS via BAPI_PROJECT_MAINTAIN; WBS text/custom via Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE; fund via Y_FMKU_0050_CREATE_WITH_COMMIT; fund->C5 biennium via Y_BAPI_FUND_C5_ASSIGNMENT; fund change via FM_FUND_CHANGE_RFC. SAP serves financials back OUT via Y_BAPI_WBS_FINANCIAL_DATA_1 + Y_BAPI_YPS8. FINCODE=PSPID linkage (project provisions a matching fund). CJ20N-interactive hypothesis RETRACTED. So WBS hierarchy nesting IS achievable via BAPI_PROJECT_MAINTAIN (MuleSoft does it daily); the only residual is reproducing the exact I_WBS_HIERARCHIE_TABLE payload MuleSoft sends. Lesson: load system_operating_model_rfc.md first."
+    },
+    {
+      "id": "KU-2026-BP604-PS-AVC-PROFILE-DIFF",
+      "opened_at": "2026-07-01",
+      "context": "s-2026-07-01 steward pass. Claim #305: CR WBS 650RER0008 has 0 BPGE rows (PR*) on BOTH P01 and D01, yet P01 does NOT raise BP/604 when posting to it while D01 DOES. This implies PS-AVC is active with different coverage rules between the two systems for cost-recovery project types.",
+      "question": "Why does P01 not raise BP/604 (PS-AVC budget-exceeded) on a CR WBS with 0 PS budget in BPGE, while D01 does? Hypothesis: P01 PS-AVC profile for CR project types is configured to use FM-AVC fund-level budget as fallback (or PS-AVC is deactivated for those objects); D01 was refreshed/configured differently. Resolution path: compare OPSV/project BUDGET_PROFILE between P01 and D01 for project 650RER0008 (blocked on claim #134 -- OPSV not available via RFC; try SE16/CJ20N in GUI, or check T001/OPS5 config tables). Also check if the WBS BUDTYP/ACTTYPE in PRPS differs P01 vs D01.",
+      "domain": "PSM / PS / BCS",
+      "status": "open",
+      "recommended_path": "SE16 on OPSV (project budget profile) for project 650RER0008 in both P01 and D01 (GUI only per claim #134). Check PRPS.BUDTYP and PRPS.ACTTYPE for WBS 650RER0008. Check T001 and BDG_PROFILE customizing for CR project type.",
+      "related_claims": [
+        "#134",
+        "#133",
+        "#294",
+        "#305",
+        "#303",
+        "#268",
+        "#287"
+      ],
+      "related_objects": [
+        "BPGE",
+        "650RER0008",
+        "633CRP9003",
+        "CJ30",
+        "OPSV",
+        "PRPS",
+        "KBPP_EXTERN_UPDATE"
+      ],
+      "knowledge_doc": "knowledge/domains/PSM/budget_control_system_bcs_domain.md"
+    },
+    {
+      "id": "KU-2026-CJ32-RELEASE-NOT-LANDING",
+      "opened_at": "2026-07-01",
+      "resolved_at": "2026-07-01",
+      "context": "s-2026-07-01 steward pass. Claim #304 update: After setting WBS 650RER0008 original budget 10,000 USD / GJAHR=2026 via CJ30 (confirmed in BPJA WRTTP=41), two manual CJ32 release attempts left WRTTP=42 at 0 for 2026. Hypothesis A: CJ32 was run at OVERALL level but the project is ANNUAL (budget profile requires release PER YEAR, not once at overall). Hypothesis B: version mismatch. Hypothesis C: budget profile requires explicit period split before release.",
+      "question": "Why did BPJA WRTTP=42 (released budget) remain 0 for WBS 650RER0008 GJAHR=2026 after two CJ32 release attempts? Is the CJ32 release required at ANNUAL level (per GJAHR) when the budget profile is set to ANNUAL? Does AVC/BP-604 check WRTTP=41 (current) or WRTTP=42 (released) — i.e., is the release step mandatory for availability control to pass?",
+      "domain": "PSM / PS / BCS",
+      "status": "resolved",
+      "resolution": "RESOLVED s-2026-07-01, live RFC D01: PS-AVC/BP-604 checks the RELEASED budget WRTTP=42 (CJ32), NOT the original WRTTP=41 (CJ30). Proof: WBS 650RER0008 / OBJNR PR00021132 kept WRTTP=41=10,000 USD (FY2026) with WRTTP=42=0, and a posting attempt still raised BP/604 — WRTTP=41 alone does not satisfy AVC. This answers the core question directly: the CJ32 release step IS mandatory for AVC to pass, regardless of the mechanical reason the two prior manual CJ32 attempts didn't land (annual-level selection, per Hypothesis A, remains the operational fix to actually populate WRTTP=42 in CJ32 GUI — but the AVC-check question that blocked the KU is closed). Promoted to claim #304 (resolved_session s-2026-07-01) and cross-referenced in claim #305 (fund-vs-WBS two-layer distinction).",
+      "recommended_path": "CLOSED. Residual operational note (not a KU): when running CJ32, explicitly select the ANNUAL level/year (GJAHR=2026), not the overall node, to get WRTTP=42 to actually populate.",
+      "related_claims": [
+        "#304",
+        "#133",
+        "#303",
+        "#305"
+      ],
+      "related_objects": [
+        "BPJA",
+        "BPGE",
+        "CJ30",
+        "CJ32",
+        "WRTTP",
+        "BP604",
+        "650RER0008",
+        "PR00021132",
+        "KBPP"
+      ],
+      "knowledge_doc": "knowledge/domains/PSM/budget_control_system_bcs_domain.md"
+    },
+    {
+      "id": "KU-2026-100-SOCGEN-IG-SCOPE-CONFIRM",
+      "opened_at": "2026-07-02",
+      "session": "s-2026-07-02",
+      "severity": "LOW",
+      "domain": "Payment",
+      "question": "Claim #316 (TIER_1) concludes the ISO 20022/CBPR+/EPC structured-address mandate applies to PARTIES (Dbtr/Cdtr/UltmtDbtr/UltmtCdtr) and NOT to financial AGENTS (DbtrAgt/CdtrAgt), based on general ISO 20022 scheme structure (agents identified by BIC/ClrSysMmbId, PstlAdr on FinInstnId is optional/informational). This has NOT been cross-checked against SocGen's own Implementation Guideline for /CGI_XML_CT_UNESCO (or the equivalent bank IG for CITI), which could in principle impose a stricter bank-specific requirement beyond the base ISO 20022 scheme.",
+      "why": "If the SocGen IG (or Citibank's) mandates structured CdtrAgt address as a bank-specific rule, claim #316's 'no change needed' conclusion for CdtrAgt would need revisiting even though it is correct against the base ISO 20022/CBPR+ standard.",
+      "how_to_resolve": "Obtain and read the SocGen (and Citibank) Implementation Guideline document for the CGI/CITI XML formats; grep for 'CdtrAgt' + 'PstlAdr' + 'mandatory'/'required' sections; confirm agent-address is optional/informational per the bank's own spec.",
+      "status": "resolved",
+      "resolved_at": "2026-07-02",
+      "resolved_session": "s-2026-07-02b",
+      "resolution": "ANSWERED IN SUBSTANCE (TIER_1) -- not from the SocGen IG document itself, but from the bank's own validation-guide text quoted verbatim in the bank's test-tool result (functionally equivalent evidence, user screenshot 2026-07-02): 'This guide applies November 2026 rules: when <PstlAdr> is provided, <TwnNm> & <Ctry> tags are mandatory. Nevertheless, unstructured address <AdrLine> (+ <Ctry>) will be still accepted until Novembre 2026 on live environment.' This CONFIRMS claim #316's concern was warranted: the bank DOES impose a stricter, dated rule beyond the base ISO 20022 scheme's 'agents are exempt' reading -- but the trigger is PstlAdr-presence, not party-vs-agent role. Since CGI already emits a PstlAdr for CdtrAgt, that node is in scope and was flagged by the bank's test tool (claim #330). Claim #316 is QUALIFIED (not deleted, claim #331); the concrete CdtrAgt remediation verdict is claim #332. Residual gap: the raw SocGen IG PDF itself was still not read -- if ever obtained, cross-check it does not add further constraints (e.g. BldgNb/PstCd mandates) beyond what the test-tool quote already revealed.",
+      "related_claims": [310, 316, 317, 329, 330, 331, 332],
+      "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt"],
+      "evidence": "brain_v2/claims/claims.json claim #316 resolution_notes; claim #329 (bank rule text); claim #330 (bank test-tool CdtrAgt flag, user screenshot 2026-07-02)"
+    },
+    {
+      "id": "KU-2026-101-CITI-CDTRAGT-LIVE-CONFIRM",
+      "opened_at": "2026-07-02",
+      "session": "s-2026-07-02b",
+      "severity": "MEDIUM",
+      "domain": "Payment",
+      "question": "Claim #332 recommends structuring CGI's CdtrAgt to mirror CITI's already-configured CdtrAgt (StrtNm/TwnNm/CtrySubDvsn/Ctry from BNKA-fed ZB* fields), resting on (a) tree-config comparison and (b) claim #265's bank TEST-TOOL PASS for CITI. Neither is a directly observed REAL production CITI file with a populated third-party CdtrAgt that actually cleared/passed on the bank side with the known-mashed BNKA TwnNm value ('NEW YORK,NY 10167' city+state+zip, claim #317). Does a real CITI output file to a real US bank confirm the structured CdtrAgt (with the mashed TwnNm) actually clears without rejection?",
+      "why": "Claim #332's remediation recommendation is TIER_2 (downgraded from the TIER_1 rule facts) specifically because of this gap. Executing the CGI CdtrAgt structuring change before this confirmation risks discovering the mashed TwnNm value itself causes a NEW rejection reason (distinct from the currently-flagged missing-TwnNm reason) once structured.",
+      "how_to_resolve": "User will provide a live/real CITI XML output file containing a populated third-party CdtrAgt. Read its StrtNm/TwnNm/CtrySubDvsn/Ctry values, confirm they match the BNKA-mashed pattern, and confirm (via bank confirmation, ack, or absence of rejection) that the file cleared. If confirmed, upgrade claim #332's remediation recommendation to TIER_1 and proceed to execute (mirror CITI's CdtrAgt config onto CGI's /CGI_XML_CT_UNESCO tree in D01 V001, before Nov 2026). If the mashed TwnNm causes its own rejection, the fix path changes to BNKA data-cleaning (splitting ORT01 into city/state/zip, populating PROVZ) as a precondition, not an optional improvement.",
+      "status": "open",
+      "blocking_for": [
+        "execution of claim #332's CGI CdtrAgt structuring remediation",
+        "Nov-2026 CBPR+ compliance deadline for CGI"
+      ],
+      "related_claims": [265, 317, 329, 330, 332],
+      "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt", "BNKA"],
+      "evidence": "claim #332 evidence_against note; claim #265 (test-tool PASS, not live-file); claim #317 (BNKA mashed source data)"
     }
   ]
 }

@@ -1,10 +1,14 @@
 ---
 name: SAP Process Mining (pm4py Engine)
 description: >
-  Process discovery and conformance checking on UNESCO SAP event data using pm4py.
-  8 CLI commands covering CTS transport mining, FM budget lifecycle, P2P procurement,
-  and CDHDR change audit. Generates DFG, variants, conformance, bottleneck, and
-  temporal analysis. JSON-first output for brain integration, HTML for visual exploration.
+  Process & usage mining on UNESCO SAP data, two complementary tiers.
+  TIER 1 (event-log, pm4py): process discovery / variants / conformance / bottleneck /
+  temporal for CTS, FM lifecycle, P2P, CDHDR — "how does ONE process flow?".
+  TIER 2 (object-usage, U_USAGE by domain): inventory EVERY executed object
+  (tcode/report/RFC-BAPI/job) and map each to domain + actor + behavior + time via 4
+  triangulated methods (TADIR.DEVCLASS / logs / objects-read / caller→domain), detect
+  hidden/ungoverned extractions (ad-hoc SAP Queries) — "how does UNESCO work overall?".
+  JSON-first for brain integration, HTML for visual exploration.
 domains:
   functional: [*]
   module: [*]
@@ -74,6 +78,59 @@ python p2p_process_mining.py                        # Full P2P event log mining
 # CDHDR Change Audit (via activity mapping)
 python cdhdr_activity_mapping.py --mine             # Change doc mining
 ```
+
+---
+
+## Operating-Model / Object-Usage Discovery — the U_USAGE method (BY DOMAIN)
+
+> A **second tier** of process mining, complementary to the event-log mining above. Event-log mining
+> answers *"how does ONE process flow?"* (P2P, CTS, FM lifecycle — case-centric). This answers
+> **"how does UNESCO work overall?"**: inventory EVERY executed object (tcode / report / RFC-BAPI / job)
+> and map each to **domain + actor + behavior + time** = the AS-RUN operating model (capability dimension
+> **U_USAGE**). Method-of-record (read these): `knowledge/operating_model_discovery_methods.md` +
+> `knowledge/capability_U_USAGE_execution_footprint.md`.
+
+### The 5-step replicable protocol (works for ANY domain)
+1. **INVENTORY** — pull the AS-RUN object set from `rsau_audit_history` (Transaction Start→`PARAM1`,
+   Report Start→`SLGREPNA`, RFC Function Call→`PARAM3`) + `tbtcp` (jobs→`PROGNAME`), carrying volume +
+   actor (`SLGUSER`) + time (`SAL_DATE`).
+2. **MAP to domain — TRIANGULATE 4 methods** (no single one is complete):
+   - **by PACKAGE `TADIR.DEVCLASS`** — authoritative, module-coded (FMRP→PSM_FM, FBAS→FI, ME→Procurement,
+     PC10→HCM). Cache `tadir_prog`(388K)+`tdevc`(28K) in the Gold DB. **Floor ≈60% by execution volume.**
+   - **by LOGS** (execution context / channel).
+   - **by OBJECTS-READ** — resolve generated programs via their embedded object (`/1BCDWB/DB<table>`→table→domain;
+     SAP-Query `AQ*/!Q*`→workspace/table).
+   - **by CALLER→DOMAIN** — map service-account/user→domain + actor-type (human / integration / batch).
+3. **ENRICH** per object — actor-type (human / integration MULESOFT·BRIDGE·UBO-RFC·SISTER / batch) + behavior
+   (read / DB-write / **file** OPEN-DATASET·AL11 / RFC-out → **integration = technical caller OR file OR write/call-out**)
+   + time profile (active vs dead, seasonality).
+4. **DETECT hidden extractions** — ad-hoc SAP Queries (`AQ*/!Q*`/SAPQUERY) + caller + time = ungoverned parallel
+   data extraction; **query→job→file = shadow integration**. (Verified 2026-06-23: 6,060 execs · 1,798 queries ·
+   153 users · 60% HR · JOBBATCH=1,890 scheduled.)
+5. **DEEP-DIVE per domain** — top objects by volume → purpose / owner / dead-vs-used / S4-disposition.
+
+### THE command — run this, do NOT re-derive (executable, parameterized by domain)
+```bash
+cd process_mining
+python mine_domain.py                # ALL domains  → brain_v2/domain_footprints/<DOMAIN>.json + _index.json
+python mine_domain.py PSM_FM         # one domain
+python mine_domain.py HCM PSM_FM     # several
+```
+**Output per domain (DATA, not prose):** `totals` · `by_channel` · **`by_actor` (human / integration / batch)** ·
+`time_monthly` · `dead_objects` · `top_objects` (each with actor_mix, first/last month, dead flag) ·
+`hidden_extractions` · `integration_objects`. Uses the SHARED classifier
+`executed_objects_domain_map.make_classifier` — **one source of truth, so the next session RUNS this, it does not
+re-invent the rules.** Supporting tools: `executed_objects_domain_map.py` (the object→domain map + the
+`tadir_prog`/`tdevc` cache), `fm_executed_census.py` (legacy PSM template), `method_registry.py <TABLE>`.
+
+**Verified real output (2026-06-23, all 16 domains):** PS = 1.6M execs but only **6,264 human** vs 1.44M
+integration + 165K batch (**PS is machine-driven, near-zero dialog**) · BusinessPartner **88% integration**
+(BP master data = MULESOFT/RFC, not people) · PSM_FM **93% human** (real budget work) · HCM **28 hidden ad-hoc
+extractions** · FI 239 / PSM_FM 197 dead objects (S/4 dead-code candidates).
+
+**Honest scope:** the unmapped tail (Uncatalogued domain) = ad-hoc queries + generated programs + technical
+substrate (SAPMSSY1/RS*) — the substrate is a legitimate **NON-business tier**, NOT lost knowledge. Coverage
+today: **60% volume / 39% object**. Raise it via the objects-read + caller methods (PMO H88).
 
 ---
 
