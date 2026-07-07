@@ -68,6 +68,20 @@ The AVC layer is now part of the **recurring PSM_FM gold pipeline** (claim #344)
 
 **RFC extraction pattern** for wide FMAVCT (claim #345): field-split into <=7-col groups, RFC-read each group, recombine by row position with an equal-rowcount guard. Necessary because RFC_READ_TABLE has a 512-byte WA buffer. P01 rejects ROWSKIPS (claim #244) — use ROWCOUNT=0 partitioned by RFIKRS x RYEAR.
 
+## The AVC CONTROL KEY — 4 dimensions, Fund Area is mandatory (user correction 2026-07-07)
+The AVC control object is addressed by a **4-part key**, NOT 3-part:
+
+> **Fund Area (`RFIKRS`) + Fund (`RFUND`) + Fund Center (`RFUNDSCTR`) + Commitment Item (`RCMMTITEM`)** — per fiscal year (`RYEAR`), ledger **9H**, version, and record type `RRCTY` (budget vs actual).
+
+**Fund Area is NOT optional.** Fund Center and Commitment Item codes (`TC`, `11`, `13`, `VNI`, `HEQ`, `NAI`, …)
+are **area-scoped and repeat across the 9 FM areas** (UNES, ICTP, IIEP, UBO, MGIE, UIS, UIL, ICBA, IBE — see
+`fmavct_2026` row counts). Any AVC read, group-by, or join that keys on `(Fund, FundCenter, CmmtItem)` **without
+`FIKRS` collides control objects across institutes** — this is the root of the "no considera las claves de control"
+problems. The standard read API `FMAVC_READ_TOTALS_FOR_ADDRESS` **requires `I_FM_AREA` (FIKRS)** as a mandatory
+import for exactly this reason. Gold DB `fmavct_2024/2025/2026` carry all four as explicit columns
+(`RFIKRS/RFUND/RFUNDSCTR/RCMMTITEM`); always include `RFIKRS` in any query key. Refines claims #338 (3-part
+framing) and #341 (technical storage key hides the address inside `ROBJNR`). Claim #346.
+
 ## The control-object DERIVATION / ROLLUP — the crux (PROVEN from config + data)
 The ACO is a **derived, rolled-up address**, NOT the posting leaf. Strategy **AFMA / 9HZ00001** has **8 steps**
 (`tabadrs`/`tabadrsf`):

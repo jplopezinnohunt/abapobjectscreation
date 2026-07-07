@@ -15145,5 +15145,61 @@
       "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md"
     ],
     "_merge_note": "renumbered from 308 (parallel-branch id collision, merge 2026-07-07)"
+  },
+  {
+    "id": 346,
+    "claim": "The AVC control key is 4-PART: Fund Area (RFIKRS) + Fund (RFUND) + Fund Center (RFUNDSCTR) + Commitment Item (RCMMTITEM), per fiscal year (RYEAR), ledger 9H, version, and record type RRCTY (budget vs actual). Fund Area is MANDATORY, not optional: Fund Center and Commitment Item codes (TC, 11, 13, VNI, HEQ, NAI, ...) are area-scoped and repeat across the 9 FM areas (UNES 11,390 rows, ICTP 741, IIEP 559, UBO 377, MGIE 171, UIS 108, UIL 89, ICBA 89, IBE 69 in fmavct_2026), so any AVC read/group-by/join keyed on (Fund, FundCenter, CmmtItem) WITHOUT RFIKRS collides control objects across institutes. The standard read API FMAVC_READ_TOTALS_FOR_ADDRESS requires I_FM_AREA (FIKRS) as a mandatory import for exactly this reason. Gold DB fmavct_2024/2025/2026 carry all four dims as explicit columns (RFIKRS/RFUND/RFUNDSCTR/RCMMTITEM); always include RFIKRS in the query key.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-07-07",
+    "related_objects": [
+      "FMAVCT",
+      "RFIKRS",
+      "RFUND",
+      "RFUNDSCTR",
+      "RCMMTITEM",
+      "FMAVC_READ_TOTALS_FOR_ADDRESS",
+      "9HZ00001"
+    ],
+    "evidence_for": [
+      {
+        "type": "data_artifact",
+        "ref": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db :: fmavct_2026",
+        "cite": "Carries RFIKRS/RFUND/RFUNDSCTR/RCMMTITEM as explicit columns; 9 distinct RFIKRS (UNES 11390, ICTP 741, IIEP 559, UBO 377, MGIE 171, UIS 108, UIL 89, ICBA 89, IBE 69) -> FISTL/CI codes repeat across areas"
+      },
+      {
+        "type": "knowledge_doc",
+        "ref": "knowledge/domains/PSM/avc_availability_model.md",
+        "cite": "'The AVC CONTROL KEY - 4 dimensions, Fund Area is mandatory' section"
+      },
+      {
+        "type": "code_artifact",
+        "ref": "FMAVC_READ_TOTALS_FOR_ADDRESS (RPY read P01)",
+        "cite": "Requires I_FM_AREA (FIKRS) as a mandatory import"
+      }
+    ],
+    "evidence_against": [],
+    "resolution_notes": "User correction 2026-07-07. Refines claims #338 (3-part framing (fund,fundcenter,cmmtitem)) and #341 (technical natural key hides address inside ROBJNR): Fund Area (FIKRS) is a mandatory part of the AVC control key because FISTL/CI codes repeat across the 9 FM areas.",
+    "cross_links": [
+      "knowledge/domains/PSM/avc_availability_model.md",
+      "brain_v2/claims/claims.json#338",
+      "brain_v2/claims/claims.json#341"
+    ]
   }
 ]
