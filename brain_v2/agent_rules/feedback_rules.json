@@ -3688,5 +3688,27 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_worktree_branches_strand_knowledge",
+    "rule": "Audit parallel worktree branches at session start AND close. A commit that lives only on a `.claude/worktrees/<name>` branch is invisible to `git status`/`git log` on your own branch and is NO safer than uncommitted work -- gone if the disk dies. Durability = the work is on ORIGIN, not merely 'committed'.",
+    "why": "Session 2026-07-07: the worktree branch `unruffled-williamson-810b11` @5285e92 held the entire AVC recurring-pipeline layer -- 5 claims, gold_table_registry +266 rows, a capability-model bump, and the new 330-line scripts/extraction/psm_avc_refresh.py -- committed but never merged or pushed. Nothing on the active feature branch or origin referenced it; it was one disk failure from total loss. This is the concrete mechanism behind the measured weakest capability, DURABILITY (0.233): 'I committed' felt safe but the work was stranded locally.",
+    "how_to_apply": "1. At session start and close run: `git worktree list`; for each worktree HEAD `git merge-base --is-ancestor <tip> HEAD || echo STRANDED`; and `git log --oneline origin/<branch>..HEAD | wc -l` for unpushed on the current branch.\n2. Any tip NOT an ancestor of a pushed branch = stranded knowledge -> merge it, preserve-first (union; on a claim/record id collision, keep the earlier-referenced side's ids and RENUMBER the other, then fix its citations -- both branches took claim ids 304-308 here, AVC renumbered to 341-345).\n3. Never treat a local commit as durable. Push before you consider the work captured.\n4. Prune only fully-merged worktrees, and only when no parallel session is using one (no active-work.md lease).",
+    "severity": "HIGH",
+    "created_session": "s-2026-07-07",
+    "source_file": "memory/feedback_worktree_branches_strand_knowledge.md; merge commit 8ec0700",
+    "derives_from_core_principle": "CP-002",
+    "cp_link_reason": "CP-002 'Preserve first, context is cheap': stranded local commits are the failure mode where hard-won knowledge is silently at risk of irreversible loss. Preserving it means making it durable (on origin) and merging without clobbering, not just leaving it 'committed somewhere'.",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]
