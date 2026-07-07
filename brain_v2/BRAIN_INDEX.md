@@ -9,7 +9,7 @@
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **32.1%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (916 objects · 167 rules · 261 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1025 objects · 167 rules · 307 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

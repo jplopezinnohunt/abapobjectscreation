@@ -14899,5 +14899,251 @@
       "claim:338",
       "claim:339"
     ]
+  },
+  {
+    "id": 341,
+    "claim": "FMAVCT real structure on P01 = 77 fields. Natural key = RCLNT, RLDNR, RRCTY, RVERS, RYEAR, ROBJNR, COBJNR, SOBJNR, RTCUR, DRCRK, RPMAX (11 fields). Amount columns come in 3 currency families each with carry-forward + 16 period buckets: TSL** (transaction currency), HSL** (FM-area/local currency), KSL** (group/CO currency). The AVC-active ledger is RLDNR=9H. Prior Gold-DB schema of 7 columns (RFIKRS,RFUND,RFUNDSCTR,RCMMTITEM,RYEAR,ALLOCTYPE_9,HSL01) collided ~36% of rows and could NOT resolve budget-object vs consumed-object rows -- defect remediated 2026-06-30 by re-extracting to 38 gold columns covering the full natural key.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "BCS"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "AVC",
+        "Budget_Execution"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Verified live on P01 via RFC_READ_TABLE/DD03L over SNC SSO (read-only). Supersedes the narrow 7-col schema description in avc_availability_model.md note. Gold DB fmavct_2024/2025/2026 now carry 38 cols. DONE record: Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md.",
+    "evidence_for": [
+      {
+        "type": "rfc_pull",
+        "ref": "P01 DD03L FMAVCT (live, 2026-06-30)",
+        "cite": "DD03L WHERE TABNAME=FMAVCT returns 77 fields. Natural key confirmed by DD05Q + empirical row-level inspection. 38-col gold schema: full key + HSLVT/HSL01-16 + RFUNCAREA/RGRANT_NBR/RMEASURE/RCVRGRP_9/BUDGET_PD_9/WFSTATE_9/ALLOCTYPE_9.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMAVCT",
+      "BUAVC_ALLOCTYPE",
+      "fmavct_2024",
+      "fmavct_2025",
+      "fmavct_2026"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/avc_availability_model.md",
+      "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md",
+      "brain_v2/claims/claims.json#126"
+    ],
+    "_merge_note": "renumbered from 304 (parallel-branch id collision, merge 2026-07-07)"
+  },
+  {
+    "id": 342,
+    "claim": "available = budget - consumed is computed from FMAVCT by pairing SEPARATE rows that share the consuming-object COBJNR but differ in ROBJNR (the responsible/budget object), grouped by cover group RCVRGRP_9. Verified example: ledger 9H / FY2026 / UNES / fund 3110111021 / PAX / CI=TC: ROBJNR ...3870146 (budget object) annual = 4,500.00 USD; ROBJNR ...3870148 (consumption object) annual = 547.65 USD; available = 3,952.35 USD. Annual amount per row = HSLVT + sum(HSL01..HSL16). RRCTY=1 (Plan=consumable budget row), RRCTY=0 (Actual=consumed row) is a secondary discriminator coexisting with the ROBJNR split.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "BCS",
+        "AVC"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "AVC",
+        "Budget_Execution"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Resolves the budget-vs-consumed ambiguity in the AVC totals model. Prior doc said RRCTY is THE discriminator; now: ROBJNR is the primary discriminator (budget vs consumption object), RRCTY coexists as secondary. Cross-links: claim #126 (KBFC only), claim #341 (77 fields), avc_availability_model.md.",
+    "evidence_for": [
+      {
+        "type": "rfc_pull",
+        "ref": "fmavct_2026 P01 live 2026-06-30, address 9H/UNES/3110111021/PAX/TC",
+        "cite": "Two rows on same COBJNR, different ROBJNR: budget ROBJNR=...3870146 sum(HSLVT+HSL01-16)=4500.00 USD; consumption ROBJNR=...3870148 sum=547.65 USD. available=3952.35 USD. DONE_avc_totals_refresh.md section 1 confirms.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMAVCT",
+      "ROBJNR",
+      "COBJNR",
+      "RCVRGRP_9",
+      "RRCTY"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/avc_availability_model.md",
+      "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md",
+      "brain_v2/claims/claims.json#126",
+      "brain_v2/claims/claims.json#341"
+    ],
+    "_merge_note": "renumbered from 305 (parallel-branch id collision, merge 2026-07-07)"
+  },
+  {
+    "id": 343,
+    "claim": "ALLOCTYPE_9 (data element BUAVC_ALLOCTYPE) domain fixed values confirmed: KBFC=Hard commitments/allocated budget; SEEC/SENC/REEC/RENC/RSEC/RSNC = sender/receiver cover-element legs; ACCG/RIBC/ARIB/RIBL = cover-group contribution legs. For UNESCO (all 9 FM areas: UNES ICTP UIS IIEP IBE UIL ICBA MGIE UBO) only KBFC carries rows in FY2024-2026 (48,543 total rows across all 9 areas). The cover-element and cover-group legs exist in the domain but carry zero UNESCO rows -- confirming UNESCO does not use cover-element or cover-group AVC splitting.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "BCS",
+        "AVC"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "AVC"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Extends claim #126 (UNES-only KBFC) to all 9 FM areas after the 2026-06-30 wide extraction. Documents the full domain value set for ALLOCTYPE_9. Source: BUAVC_ALLOCTYPE domain table DD07V + empirical fmavct 9-area DISTINCT.",
+    "evidence_for": [
+      {
+        "type": "rfc_pull",
+        "ref": "P01 DD07V BUAVC_ALLOCTYPE + fmavct_2024/2025/2026 all 9 FM areas (2026-06-30)",
+        "cite": "DISTINCT ALLOCTYPE_9 across 18,838+16,112+13,593=48,543 rows (9 FM areas FY2024-2026) = single value KBFC. Domain value table DD07V confirms full fixed-value set including cover-element and cover-group legs. DONE_avc_totals_refresh.md section 1.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMAVCT",
+      "BUAVC_ALLOCTYPE",
+      "ALLOCTYPE_9"
+    ],
+    "cross_links": [
+      "knowledge/domains/PSM/avc_availability_model.md",
+      "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md",
+      "brain_v2/claims/claims.json#126",
+      "brain_v2/claims/claims.json#341"
+    ],
+    "_merge_note": "renumbered from 306 (parallel-branch id collision, merge 2026-07-07)"
+  },
+  {
+    "id": 344,
+    "claim": "The AVC layer (config tables BUAVCTOLASS, FMAVCATGR_001, FMAVCATGR_002, FMAVCBUDFILTB, FMAVCBUDFILTBH, FMAVCLDGRACT, FMAVCLDGRATT, FMAVCLDGRGAT + totals FMAVCT) was previously UNTRACKED in the recurring Gold-DB pipeline -- a one-off 2026-06-19 config-frontier pull only, not in _gold_sync_log or any cadence. It is now registered as source=curated in brain_v2/gold_table_registry.json under PSM_FM with delta=external (gold_refresh.py skips; psm_avc_refresh.py owns them). Cadence: config=weekly, FMAVCT=same as fmifiit_full. Freshness queryable via _gold_sync_log + _config_frontier_manifest (extracted_at 2026-06-30). Config drift confirmed: BUAVCTOLASS grew 34->36 rows between 2026-06-19 and 2026-06-30 -- proving the staleness risk was real.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "BCS",
+        "AVC"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "AVC",
+        "Data_Pipeline"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Pipeline registration fact -- AVC layer now has a durable home in the gold pipeline. BUAVCTOLASS 34->36 drift proves staleness risk was real. Script canonical: scripts/extraction/psm_avc_refresh.py. Cross-link: gold_table_registry.json PSM_FM section.",
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "brain_v2/gold_table_registry.json PSM_FM curated section (2026-06-30)",
+        "cite": "All AVC tables registered with source=curated, delta=external, refresh_script=scripts/extraction/psm_avc_refresh.py. _gold_sync_log + _config_frontier_manifest rows written 2026-06-30. BUAVCTOLASS: 34 rows 2026-06-19 -> 36 rows 2026-06-30 (direct row count comparison).",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "BUAVCTOLASS",
+      "FMAVCATGR_001",
+      "FMAVCATGR_002",
+      "FMAVCBUDFILTB",
+      "FMAVCLDGRACT",
+      "FMAVCT",
+      "psm_avc_refresh.py",
+      "gold_table_registry"
+    ],
+    "cross_links": [
+      "brain_v2/gold_table_registry.json",
+      "scripts/extraction/psm_avc_refresh.py",
+      "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md",
+      "brain_v2/claims/claims.json#341"
+    ],
+    "_merge_note": "renumbered from 307 (parallel-branch id collision, merge 2026-07-07)"
+  },
+  {
+    "id": 345,
+    "claim": "RFC_READ_TABLE reads of wide tables on P01 (such as FMAVCT with 77 fields / 38-col schema) require field-split batching: split columns into groups of <=7, RFC-read each group, recombine by row position with an equal-rowcount guard (assert all groups return the same number of rows). This is necessary because RFC_READ_TABLE has a 512-byte WA (work area) buffer and returns BUFFER_OVERFLOW beyond that limit. P01 also rejects ROWSKIPS (SAIS restriction -- claim #244); workaround = ROWCOUNT=0 partitioned by RFIKRS x RYEAR. Pattern implemented in scripts/extraction/psm_avc_refresh.py; reuse for any future wide-table RFC extraction from P01.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "FM",
+        "Integration"
+      ],
+      "module": [
+        "FM",
+        "RFC"
+      ],
+      "process": [
+        "Data_Pipeline",
+        "AVC"
+      ]
+    },
+    "created_session": "s-2026-06-30",
+    "resolved_session": null,
+    "resolution_notes": "Reusable tooling pattern. The 512-byte WA buffer is a known RFC_READ_TABLE constraint; this documents the working workaround tested against P01 FMAVCT. Cross-link: claim #244 (P01 SAIS ROWSKIPS rejection). Script: scripts/extraction/psm_avc_refresh.py.",
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "scripts/extraction/psm_avc_refresh.py (2026-06-30)",
+        "cite": "Field-split implementation: FMAVCT 77 fields split into <=7-col groups; each RFC-read; recombined by position; guard: assert all groups same row count. ROWCOUNT=0 per RFIKRS x RYEAR avoids ROWSKIPS. Tested live P01: 18,838 rows FY2024 / 16,112 FY2025 / 13,593 FY2026 -- all cross-split counts match.",
+        "added_session": "s-2026-06-30"
+      }
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "FMAVCT",
+      "RFC_READ_TABLE",
+      "psm_avc_refresh.py",
+      "P01"
+    ],
+    "cross_links": [
+      "scripts/extraction/psm_avc_refresh.py",
+      "brain_v2/claims/claims.json#244",
+      "brain_v2/claims/claims.json#344",
+      "Zagentexecution/sap_data_extraction/pending_from_sap_brain/DONE_avc_totals_refresh.md"
+    ],
+    "_merge_note": "renumbered from 308 (parallel-branch id collision, merge 2026-07-07)"
   }
 ]

@@ -43,13 +43,30 @@ snippet via `RFC_ABAP_INSTALL_AND_RUN` (works on V01/D01 — has S_DEVELOP; **no
   rest=Z000); strategy = **AFMA**.
 
 ## The totals model (table `FMAVCT`)
-Key: RLDNR(ledger)+RFIKRS+RYEAR+RFUND+RFUNDSCTR+RCMMTITEM(+grant/measure/funcarea)+ALLOCTYPE_9; amounts HSLVT+HSL01..16.
-- **RRCTY** (record type) = the consumable/consumed discriminator: **0=Actual=CONSUMED, 1=Plan=CONSUMABLE** (std domain).
+Real structure on P01: **77 fields**. Natural key (11 fields): RCLNT, RLDNR, RRCTY, RVERS, RYEAR, ROBJNR, COBJNR, SOBJNR, RTCUR, DRCRK, RPMAX. Amounts come in 3 currency families each with carry-forward + 16 period buckets: TSL** (transaction), HSL** (FM-area/local), KSL** (group/CO). Annual figure per row = HSLVT + sum(HSL01..HSL16).
+
+**How to compute available = budget − consumed (VERIFIED 2026-06-30):**
+Budget address and its consumption are **separate rows** sharing the consuming-object `COBJNR` but differing in `ROBJNR` (the responsible/budget object), grouped by cover group `RCVRGRP_9`.
+Example: 9H/2026/UNES/3110111021/PAX/TC — ROBJNR ...3870146 (budget) = 4,500.00 USD; ROBJNR ...3870148 (consumption) = 547.65 USD → **available = 3,952.35 USD** (claims #341, #342).
+- **RRCTY** = secondary discriminator (0=Actual=consumed, 1=Plan=consumable) — coexists with the ROBJNR split.
 - **WFSTATE_9** = posted (P) / reserved (R) / earmarked.
+
+**ALLOCTYPE_9** (data element BUAVC_ALLOCTYPE) domain values: KBFC=Hard commitments/allocated budget; SEEC/SENC/REEC/RENC/RSEC/RSNC = sender/receiver cover-element legs; ACCG/RIBC/ARIB/RIBL = cover-group legs. For **all 9 UNESCO FM areas KBFC is the only value in use** (FY2024-2026, 48,543 rows — claim #343). UNESCO does not use cover-element or cover-group splitting.
+
 - Consumption enters via the **activity groups `FMAVCATGR`** (map consumption WRTTP→AVC amount type:
   50 PO→20, 51 PR→30, 54 invoice→40, 60/61/04 actuals→40/60, reservations etc.).
-- ⚠️ Our Gold-DB `fmavct_*` slice kept only ALLOCTYPE_9=KBFC+HSL01 (dropped RLDNR/ARCTY/WFSTATE) → it can prove
-  positivity but NOT the exact available; re-extract full FMAVCT (RRCTY/WFSTATE_9 + all amounts) if needed.
+- ~~Our Gold-DB `fmavct_*` slice kept only ALLOCTYPE_9=KBFC+HSL01~~ — **REMEDIATED 2026-06-30**: Gold DB `fmavct_2024/2025/2026` now carry 38 columns including the full natural key. The prior 7-col schema collided ~36% of rows and could not resolve budget vs consumed (claims #341).
+
+## Gold DB / Pipeline — AVC layer (added 2026-06-30)
+The AVC layer is now part of the **recurring PSM_FM gold pipeline** (claim #344):
+- **Script**: `scripts/extraction/psm_avc_refresh.py` (subcommands: `config` | `totals` | `all`)
+- **Registered**: `brain_v2/gold_table_registry.json` — `source=curated`, `delta=external` (skipped by `gold_refresh.py`; owned exclusively by `psm_avc_refresh.py`)
+- **Config tables** (BUAVCTOLASS, FMAVCATGR_001/002, FMAVCBUDFILTB/H, FMAVCLDGRACT/ATT/GAT): cadence = weekly
+- **Totals** (FMAVCT): cadence = same as `fmifiit_full` (daily-ish; balances drift daily)
+- **Freshness**: queryable via `_gold_sync_log` and `_config_frontier_manifest` (`extracted_at 2026-06-30`)
+- **Drift evidence**: BUAVCTOLASS grew 34→36 rows between 2026-06-19 and 2026-06-30 in 11 days — confirms staleness risk was real.
+
+**RFC extraction pattern** for wide FMAVCT (claim #345): field-split into <=7-col groups, RFC-read each group, recombine by row position with an equal-rowcount guard. Necessary because RFC_READ_TABLE has a 512-byte WA buffer. P01 rejects ROWSKIPS (claim #244) — use ROWCOUNT=0 partitioned by RFIKRS x RYEAR.
 
 ## The control-object DERIVATION / ROLLUP — the crux (PROVEN from config + data)
 The ACO is a **derived, rolled-up address**, NOT the posting leaf. Strategy **AFMA / 9HZ00001** has **8 steps**
@@ -94,5 +111,8 @@ PC 407 · 50 296 · 30 212 · 40 188 · 11 153 · 10' 132 · 13 65 · NPC 11. TC
 ## Evidence index
 ABAP source (RPY read on P01): FMAVC_READ_TOTALS_FOR_ADDRESS (836 ln), FMAVC_DERI_CONTROL_OBJECT (963 ln),
 FMAVC_CALL_DERIVATION_ACO (1024 ln), FMAVC_SELECT_ANNUAL_TOTALS_ACO (271 ln), FMFR_CREATE_FROM_DATA, ZRFC_FRESERVATION_CREATE.
-Config: fmavcldgract/att, fmavcbudfil*, fmavcatgr, tabadrs/tabadrsf (AFMA/9HZ00001, 8 steps). Data: fmavct_2026,
-fmioi, bpja. Live read: FMAVC_READ_TOTALS_FOR_ADDRESS on V01 (795.43 USD).
+Config: fmavcldgract/att, fmavcbudfil*, fmavcatgr, tabadrs/tabadrsf (AFMA/9HZ00001, 8 steps).
+Data (2026-06-30 refresh): fmavct_2024 (18,838 rows / 38 cols, 9 FM areas), fmavct_2025 (16,112), fmavct_2026 (13,593), fmioi, bpja.
+Pipeline: scripts/extraction/psm_avc_refresh.py; registry: brain_v2/gold_table_registry.json PSM_FM curated section.
+Live read: FMAVC_READ_TOTALS_FOR_ADDRESS on V01 (795.43 USD); ROBJNR-pair example: 9H/2026/UNES/3110111021/PAX/TC = 4500-547.65=3952.35 USD (P01, 2026-06-30).
+Claims: #341 (77 fields / 38-col schema), #342 (ROBJNR-pair available formula), #343 (ALLOCTYPE_9 values + KBFC-only for all 9 areas), #344 (AVC layer pipeline registration), #345 (field-split RFC pattern).
