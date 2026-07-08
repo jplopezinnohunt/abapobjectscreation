@@ -32,6 +32,13 @@ Account-assignment DIMENSIONS (hierarchical, the "case notions"): **Fund** (FMFC
 document** (DOCNR). The AVC **control object** = the (Fund, FundsCenter, CommitmentItem-rolled, FundedProgram)
 tuple — the unit budget availability is checked against (this is where the model gap lives).
 
+**Fund ≠ Funds Center — separate code spaces, never infer one from the other (claim #351/#352, 2026-07-08).**
+Fund (`218BDI2000`-style codes) and Funds Center (short 3-char office codes: YAO/ABJ/ADM/JAK) live in
+unrelated master-data code spaces — a fund's prefix or the WBS code tells you NOTHING about its Funds
+Center. To recover the correct Funds Center for a given Fund empirically: `SELECT DISTINCT FISTL,
+COUNT(*) FROM fmifiit_full WHERE FONDS LIKE '<fund>%' GROUP BY FISTL` — real posted line items are the
+source of truth. Example: fund `218BDI2000` → FISTL `YAO` (283/283 real P01 postings, 0 elsewhere).
+
 ## How to MINE it from our Gold DB (mostly local, now)
 - **FMRESERV (6.4M change events)** = the reservation/budget object lifecycle (created→changed→...→consumed).
   Case = the FM object; activity = the change/status; the biggest single FM event source — UNBLOCKED.

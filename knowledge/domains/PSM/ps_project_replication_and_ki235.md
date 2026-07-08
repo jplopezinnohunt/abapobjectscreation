@@ -140,3 +140,13 @@ fund: `Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py`
 C project+WBS · D WBS attrs · E budget-fund · F budget-project). Tracked as
 `KU-2026-WBS-FISTL-DERIVATION-218BDI` (`brain_v2/agi/known_unknowns.json`) — pick up next session before
 generalizing this doc's 3-layer chain beyond the KI235 fund set.
+
+**UPDATE 2026-07-08 (claims #351/#352) — target address CONFIRMED, root cause still open:** the real P01
+Funds Center for fund 218BDI2000 is **YAO** — verified via `fmifiit_full` (P01 Gold DB): `SELECT DISTINCT
+FISTL, COUNT(*) FROM fmifiit_full WHERE FONDS LIKE '218BDI2000%' GROUP BY FISTL` returns exactly ONE row,
+FISTL=YAO, 283/283 line items. YAO is a valid, long-standing center for UNES (fund_centers master, active
+since 2002-01-07) — NOT to be confused with the fund code itself (Fund `218BDI2000` and Funds Center `YAO`
+are separate master-data code spaces — see claim #351). This gives step (1)/(4) of the KU's
+`how_to_resolve` a confirmed target value: `replicate_project_fund.py` step E ("budget-fund") should load
+FISTL=YAO for this fund. It does NOT resolve why the target-system (D01/V01) posting still fails "No funds
+center entered/derived" — that remains a config-gap-vs-replication-incomplete open question.

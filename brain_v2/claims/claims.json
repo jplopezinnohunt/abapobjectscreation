@@ -15385,5 +15385,96 @@
       "brain_v2/claims/claims.json#348",
       "knowledge/domains/PSM/fund_management_sync_playbook.md"
     ]
+  },
+  {
+    "id": 351,
+    "claim": "Fund and Funds Center are SEPARATE SAP master-data objects / code spaces at UNESCO -- do not infer one from the other's naming pattern. Fund (FMFINCODE/FMFCT, e.g. '218BDI2000') and Funds Center (FMFCTR/FISTL, a short 3-char office code, e.g. YAO/ABJ/ADM/JAK) are unrelated code spaces: Gold DB 'funds' table has fund '218BDI2000', but 'fund_centers' (787 rows) has NO center starting with '218' -- all centers are 3-char office codes. REUSABLE TECHNIQUE to recover the correct Funds Center for any Fund empirically (do NOT infer from the fund code or WBS code): `SELECT DISTINCT FISTL, COUNT(*) FROM fmifiit_full WHERE FONDS LIKE '<fund>%' GROUP BY FISTL` -- real posted line items in fmifiit_full are the source of truth for the fund->center mapping. Concrete instance of rule feedback_query_data_before_hardcoding (key validation against actual data) applied specifically to FM master data.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "created_session": "s-2026-07-08",
+    "related_objects": [
+      "FMFINCODE",
+      "FMFCTR",
+      "fmifiit_full",
+      "funds",
+      "fund_centers",
+      "FISTL",
+      "FONDS"
+    ],
+    "evidence_for": [
+      "Gold DB P01 p01_gold_master_data.db: table 'funds' contains fund 218BDI2000; table 'fund_centers' (787 rows) has zero centers starting with '218' -- centers are 3-char codes (YAO/ABJ/ABS/ABU/...).",
+      "fmifiit_full grouped by FISTL for FONDS LIKE '<fund>%' returns the real posted center(s) with line counts -- verified for 218BDI2000 -> single center YAO, 283/283 lines (see claim #352)."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Applies the existing rule feedback_query_data_before_hardcoding / key-validation-against-actual-data (CLAUDE.md 'Key validation') specifically to Fund->FundsCenter recovery. Use this technique instead of inferring FISTL from the fund code prefix or WBS code -- they are unrelated code spaces.",
+    "resolved_session": "",
+    "cross_links": [
+      "knowledge/fund_management_public_sector_process.md",
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "brain_v2/agi/known_unknowns.json#KU-2026-WBS-FISTL-DERIVATION-218BDI",
+      "claim:352"
+    ]
+  },
+  {
+    "id": 352,
+    "claim": "Fund 218BDI2000 (Burundi -- 'Kahuzi Biega and Kibira Forest Sanctuaries', fund type 108, created 2023-12-21 by YM_LAI) has EXACTLY ONE real Funds Center in P01: YAO (Yaounde). Verified via fmifiit_full (P01 Gold DB) grouped by FISTL for FONDS LIKE '218BDI2000%': single result FISTL=YAO, 283/283 line items, 0 postings at any other center. YAO is a valid center for company code UNES (fund_centers master, active since 2002-01-07). This CORROBORATES claim #339 (which loaded 218BDI2000's AVC control budget to FISTL=YAO/CI=11 in D01+V01 via BAPI_0050_CREATE, verified against a user-provided FMAVCR02 screenshot) with an INDEPENDENT verification method: real historical P01 postings rather than a control-object screenshot. It also gives the confirmed TARGET replication address for KU-2026-WBS-FISTL-DERIVATION-218BDI (the open WBS 218BDI2000.1 'No funds center entered/derived' gap documented in ps_project_replication_and_ki235.md) -- the fund-center to load via replicate_project_fund.py step E ('budget-fund') for this fund is YAO, not an inferred/guessed value.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM",
+        "BCS"
+      ],
+      "process": [
+        "B2R"
+      ]
+    },
+    "created_session": "s-2026-07-08",
+    "related_objects": [
+      "218BDI2000",
+      "218BDI2000.1",
+      "YAO",
+      "FISTL",
+      "fmifiit_full",
+      "funds",
+      "fund_centers",
+      "FMDERIVE"
+    ],
+    "evidence_for": [
+      "fmifiit_full (P01 Gold DB) WHERE FONDS LIKE '218BDI2000%' GROUP BY FISTL -> single row FISTL=YAO, COUNT=283 (0 rows at any other FISTL).",
+      "funds table: fund 218BDI2000, fund type 108, created 2023-12-21, created_by YM_LAI, description references Burundi / Kahuzi Biega and Kibira Forest Sanctuaries.",
+      "fund_centers table: FIKRS/BUKRS=UNES, FICTR=YAO, active since 2002-01-07 -- confirms YAO is a legitimate, long-standing center, not a placeholder."
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Does NOT resolve KU-2026-WBS-FISTL-DERIVATION-218BDI's root cause (why the D01/V01 posting still fails 'No funds center entered/derived') -- that remains OPEN (config-gap vs replication-incomplete, per known_unknowns.json). This claim only confirms the CORRECT target address (YAO) to replicate/load, narrowing step (1) of that KU's how_to_resolve.",
+    "resolved_session": "",
+    "cross_links": [
+      "claim:338",
+      "claim:339",
+      "brain_v2/agi/known_unknowns.json#KU-2026-WBS-FISTL-DERIVATION-218BDI",
+      "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+      "knowledge/fund_management_public_sector_process.md"
+    ]
   }
 ]
