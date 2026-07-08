@@ -128,3 +128,15 @@ fix the input and re-run the single clean call on a non-existing project; never 
    confirm/assign for the address the WBS actually derives.
 4. **E2E test posting** — post the CR document; confirm it clears KI235 + derivation + AVC.
 Deferred (not blocking): ~98 funds WRTTP43 budget (~212M); YTFM Z for old biennia; field reconcile outside C5/43.
+
+## OPEN — layer-2 FM-derivation gap on a DIFFERENT WBS (218BDI2000.1, 2026-07-07)
+Item 2 above ("confirm the WBS posting derives...") is not yet a solved general case — a new project/fund
+outside the KI235 set hit it directly: coding-block error `No funds center entered/derived in item 00001
+(UNES/6046013/218BDI2000.1)` for WBS 218BDI2000.1 / fund 218BDI2000. Layer 1 (CO object) appears satisfied
+but layer 2 (FM derivation → FISTL) fails. Not yet root-caused: FMDERIVE rule gap vs incomplete target
+replication (fund-center address not yet loaded for this fund) vs genuine standard-config gap. The
+mechanism to replicate project+WBS+fund assignment already exists but was not run to completion for this
+fund: `Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py` (A fund · B C5 ·
+C project+WBS · D WBS attrs · E budget-fund · F budget-project). Tracked as
+`KU-2026-WBS-FISTL-DERIVATION-218BDI` (`brain_v2/agi/known_unknowns.json`) — pick up next session before
+generalizing this doc's 3-layer chain beyond the KI235 fund set.

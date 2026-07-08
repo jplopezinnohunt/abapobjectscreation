@@ -10,7 +10,7 @@ cross_links:
   - knowledge/gold_db_table_catalog.md                                # gold table contract
   - Zagentexecution/tasks/2026_06_29_fm_model_sync/METHOD.md          # task-level run notes
   - .agents/skills/sap_master_data_sync/SKILL.md                      # FM extension of the master-sync skill
-  - claims: [#283, #284, #286, #287, #288, #289, #290, #291, #292]
+  - claims: [#283, #284, #286, #287, #288, #289, #290, #291, #292, #347, #348, #349, #350]
 ---
 
 # Fund Management Sync Playbook — Master Data + Budget Envelope
@@ -23,7 +23,15 @@ cross_links:
 ## Direction & ground rules
 - P01 → target only. Read source via RFC over SNC/SSO.
 - **Both P01 and D01/V01 reject ROWSKIPS** (SAIS secured wrapper) → read large FM tables `ROWCOUNT=0`
-  partitioned by FIKRS; never paginate with ROWSKIPS.
+  partitioned by FIKRS; never paginate with ROWSKIPS. **The same SAIS wrapper also rejects `IN (...)`**
+  (rc=5 OPTION_NOT_VALID "suspicious WHERE condition", confirmed live on P01 FMFINCODE 2026-07-07,
+  claim #347) — use `LIKE` + client-side filter, or OR-chained equality, never a SQL `IN(...)` list.
+- **"Active fund" = `DATBIS >= today`** (not a filter on one specific DATBIS literal; `31.12.9999` =
+  permanent). Compute at query time — claim #350.
+- **Reconcile writes should be SURGICAL, not full-field, when the target may carry its own legitimate
+  test data.** Read the target's own current record first, override ONLY the drifted field(s) — see
+  the `reconcile_633crp_v01.py` pattern below (claim #349). The generic `fund_reconcile.py` full-field
+  copy remains valid where no target-local divergence exists (verified for D01).
 - **Standard API, not table writes** — use SAP's own create/change FMs and the budget BAPI; never INSERT
   standard tables by hand (does not violate never-modify-standard-objects).
 - **Verify by re-read, never by the return code.** Several FMs return empty messages / default-TESTRUN and
@@ -117,3 +125,21 @@ pk-upsert for master/text, value-compare for totals. Audited in `_gold_sync_log`
 Every script is `<TARGET>`-parameterized. For V01: add `SAP_V01_*` to the RFC `.env`, then run the same
 sequence: `fund_center_sync.py V01` → `fund_sync.py V01` → `z_tables_sync.py V01 all` →
 `fund_reconcile.py V01` → `fund_family_sync.py V01 633CRP9` → `budget_assign_entr.py V01 commit 2026`.
+
+## V01 633CRP* validity alignment — result (2026-07-07, claims #347-#350)
+Ran a SURGICAL validity-only variant instead of the generic full-field `fund_reconcile.py` for this
+target: `Zagentexecution/tasks/2026_06_29_fm_model_sync/reconcile_633crp_v01.py` (+ diff probe
+`Zagentexecution/mcp-backend-server-python/probe_633crp_p01_vs_v01.py`). Full-field would have
+overwritten V01's own `ZZOUTPUT`/`ZZIBF` test-fixture values with P01's — those are deliberate V01
+test data, not drift. Pattern: base = V01's own current FMFINCODE row, override ONLY DATAB/DATBIS from
+P01, verify by raw re-read (never trust `ET_MESSAGES`, per the `FM_FUND_CREATE_RFC`/`FM_FUND_CHANGE_RFC`
+TESTRUN-default gotcha above).
+- **Before**: P01 282 funds 633CRP* (280 UNES + 1 ICBA 633CRP9003 + 1 MGIE 633CRP9100) vs V01 203 —
+  9 identical, 194 differ (validity, mostly the 2026-2027 biennium DATBIS extension not replicated),
+  79 only-in-P01 (not created — user choice), 0 only-in-V01.
+- **After**: 194 updated, still-drift=0, fm-errors=0. The 79 P01-only funds remain uncreated (deliberate).
+- **Active-fund gap** (DATBIS>=today definition, claim #350): P01 254 active vs V01 185 active; 69 of the
+  79 P01-only funds are themselves still active (the other 10 are already expired) — user chose not to
+  create them this session.
+- Recommend this surgical pattern as the DEFAULT for any future V01 reconcile where target-local test
+  data may exist; keep full-field for D01 unless a similar case is found there.

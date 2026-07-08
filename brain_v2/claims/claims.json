@@ -15201,5 +15201,189 @@
       "brain_v2/claims/claims.json#338",
       "brain_v2/claims/claims.json#341"
     ]
+  },
+  {
+    "id": 347,
+    "claim": "The secured RFC_READ_TABLE wrapper (class SAIS) rejects the `IN (...)` operator too, not just ROWSKIPS -- a second, independent trigger for rc=5 OPTION_NOT_VALID \"suspicious WHERE condition\". Confirmed live on P01 2026-07-07: `FMFINCODE WHERE FINCODE IN (...)` (633CRP* fund list) rejected with the identical error signature as the ROWSKIPS rejection generalized in claim #319. This is the SECOND documented trigger of the same SAIS suspicious-WHERE guard (first: ROWSKIPS param; second: IN(...) operator) -- earlier, less-formal evidence of the same IN(...) trigger exists in PMO_BRAIN.md H76 (2026-06-22, P01 AGR/SoD pull) but was never promoted to a first-class claim until now. WORKAROUND (both triggers): read via `LIKE` + filter client-side in Python, or OR-chained equality conditions, or ROWCOUNT=0 partitioned by a scoping key -- never ROWSKIPS pagination and never a SQL IN(...) list in the OPTIONS WHERE clause.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "D_DATA",
+    "domain_axes": {
+      "functional": [
+        "*"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "created_session": "s-2026-07-07",
+    "related_objects": [
+      "FMFINCODE",
+      "SAIS",
+      "RFC_READ_TABLE",
+      "probe_633crp_p01_vs_v01.py"
+    ],
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "Zagentexecution/mcp-backend-server-python/probe_633crp_p01_vs_v01.py",
+        "cite": "FINCODE LIKE '633CRP%' used instead of FINCODE IN (...) after live rc=5 OPTION_NOT_VALID confirmed on the IN(...) form against P01 2026-07-07."
+      },
+      {
+        "type": "reference_doc",
+        "ref": ".agents/intelligence/PMO_BRAIN.md#H76",
+        "cite": "'Method note: P01 secured RFC_READ_TABLE (SAIS) rejects IN(...) (\"suspicious WHERE\") -> read per-value equality.' -- prior prose-only observation, 2026-06-22, never before a first-class claim."
+      }
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Extends (does not supersede) claim #319 -- #319 generalized the ROWSKIPS trigger across P01/D01/V01; this claim adds the IN(...) operator as a second, independent trigger of the same SAIS guard, and closes the CP-001 gap where the IN(...) finding lived only in PMO_BRAIN.md prose since 2026-06-22.",
+    "cross_links": [
+      "brain_v2/claims/claims.json#319",
+      ".agents/intelligence/PMO_BRAIN.md#H76",
+      "Zagentexecution/mcp-backend-server-python/probe_633crp_p01_vs_v01.py"
+    ]
+  },
+  {
+    "id": 348,
+    "claim": "Fund master (FMFINCODE) validity for 633CRP* between P01 and V01 as of 2026-07-07, before and after the V01 alignment write. P01 has 282 funds matching 633CRP*: 280 FIKRS=UNES + 1 FIKRS=ICBA (633CRP9003) + 1 FIKRS=MGIE (633CRP9100). Before fix: V01 had 203 of these funds -- 9 identical to P01, 194 differing (dominant pattern: DATBIS P01=20271231 vs V01=20251231, i.e. the 2026-2027 biennium validity extension not yet replicated to V01), 79 present only in P01 (not created in V01 at all, by user choice), 0 present only in V01. AFTER the surgical validity-only reconcile (claim #349): 194 funds updated in V01, still-drift=0, fm-errors=0 -- V01's 203 funds now match P01 on DATAB/DATBIS exactly; the 79 P01-only funds remain uncreated in V01 (user decision, not a defect).",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "created_session": "s-2026-07-07",
+    "related_objects": [
+      "FMFINCODE",
+      "633CRP9003",
+      "633CRP9100",
+      "v01_fmfincode",
+      "reconcile_633crp_v01.py",
+      "probe_633crp_p01_vs_v01.py"
+    ],
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "Zagentexecution/mcp-backend-server-python/probe_633crp_p01_vs_v01.py",
+        "cite": "Live P01 vs V01 diff 2026-07-07: 282 P01 / 203 V01 (pre-fix) -- 9 identical, 194 differ, 79 only-in-P01, 0 only-in-V01."
+      },
+      {
+        "type": "code_artifact",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/reconcile_633crp_v01.py",
+        "cite": "Post-run verification (raw read-back, not return-code): validity_fixed=194, still_drift=0, fm_errors=0."
+      }
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Fund master validity is P01-authoritative; V01 was drifted on the 2026-2027 biennium DATBIS extension. Fixed via claim #349's surgical write pattern. Cross-link claim #323 (V01 S-166 reference-fund validity, a related but distinct 8-fund subset) and claim #350 (active-fund definition applied to this same 633CRP* population).",
+    "cross_links": [
+      "brain_v2/claims/claims.json#323",
+      "brain_v2/claims/claims.json#349",
+      "brain_v2/claims/claims.json#350",
+      "knowledge/domains/PSM/fund_management_sync_playbook.md"
+    ]
+  },
+  {
+    "id": 349,
+    "claim": "SURGICAL validity-only reconcile pattern (preserve-first refinement of `fund_reconcile.py`'s full-field FM_FUND_CHANGE_RFC write, for any P01->target FM fund alignment where the target legitimately carries its own divergent test data): base the write payload on the TARGET's OWN current record (read V01 first), then override ONLY the specific mismatched field(s) being aligned (here: DATAB/DATBIS from P01) -- never blanket-copy every P01 field onto the target. Concrete case 2026-07-07: a naive full-field reconcile of 633CRP* funds P01->V01 would ALSO have overwritten ZZOUTPUT (V01 carried real output IDs e.g. 0000000063/65/66; P01 has 0000000000 -- an FM-derivation-not-yet-run state, not a P01 gap) and ZZIBF (V01='X' test-data flag vs P01=''). Both looked like deliberate V01 test fixtures, not drift to fix. Same method as FM_FUND_CHANGE_RFC (claim: I_FLG_TESTRUN defaults 'X', ET_MESSAGES empty even on real success -> raw read-back mandatory, per fund_management_sync_playbook.md), scoped narrower. Result: 194 V01 funds' validity fixed, 0 non-validity fields disturbed (verified by full-field re-read post-write).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "created_session": "s-2026-07-07",
+    "related_objects": [
+      "FM_FUND_CHANGE_RFC",
+      "FMFINCODE",
+      "ZZOUTPUT",
+      "ZZIBF",
+      "reconcile_633crp_v01.py",
+      "fund_reconcile.py"
+    ],
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "Zagentexecution/tasks/2026_06_29_fm_model_sync/reconcile_633crp_v01.py",
+        "cite": "Payload builder reads V01's own current FMFINCODE row as base, overrides only DATAB/DATBIS keys from the P01 source row; --dry flag available for pre-verification."
+      },
+      {
+        "type": "data_artifact",
+        "ref": "v01_gold_master_data.db :: v01_fmfincode (post-write re-read)",
+        "cite": "194 funds' DATAB/DATBIS match P01 post-write; ZZOUTPUT/ZZIBF unchanged from pre-write V01 values on all 194 rows."
+      }
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Improves on the generic `fund_reconcile.py <TGT>` full-field pattern documented in fund_management_sync_playbook.md Part A (which is correct for D01, where no divergent target test-data was found) by adding a preserve-first (CP-001/CP-002) guard: read-target-first, override-only-the-drifted-fields, for any target where full-field copy risks clobbering legitimate target-local state. Recommend this pattern as the DEFAULT for future V01 reconciles; full-field remains valid for D01 unless a similar target-local-data case is found there.",
+    "cross_links": [
+      "knowledge/domains/PSM/fund_management_sync_playbook.md",
+      "brain_v2/claims/claims.json#348",
+      "Zagentexecution/tasks/2026_06_29_fm_model_sync/fund_reconcile.py"
+    ]
+  },
+  {
+    "id": 350,
+    "claim": "DEFINITION (user correction, 2026-07-07): an SAP fund is \"ACTIVE\" when DATBIS >= today (i.e. its validity has not yet expired -- DATBIS=31.12.9999 means permanently active). It is NOT a filter on any one specific DATBIS value (e.g. filtering for exactly DATBIS=20271231 is WRONG -- that under-counts funds valid further out and over-counts nothing but is the wrong predicate). Applying this definition to the 633CRP* population (2026-07-07, post claim #348's V01 fix): P01 has 254 active 633CRP* funds; V01 has 185 active. 69 active-in-P01 633CRP* funds are absent from V01 entirely -- these are a SUBSET of the 79 P01-only funds from claim #348 (the other 10 of the 79 are P01-only but already expired, so don't count as an 'active gap'). User explicitly chose NOT to create the missing 69/79 funds in V01 this session.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "status": "active",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": [
+        "PSM",
+        "Fund_Management",
+        "Cost_Recovery_CRP"
+      ],
+      "module": [
+        "FM"
+      ],
+      "process": [
+        "*"
+      ]
+    },
+    "created_session": "s-2026-07-07",
+    "related_objects": [
+      "FMFINCODE",
+      "DATBIS",
+      "633CRP9003",
+      "v01_fmfincode"
+    ],
+    "evidence_for": [
+      {
+        "type": "code_artifact",
+        "ref": "Zagentexecution/mcp-backend-server-python/probe_633crp_p01_vs_v01.py",
+        "cite": "Active-fund count applying DATBIS>=today (2026-07-07) to both systems: P01=254, V01=185; 69 active-in-P01 funds have no matching V01 row."
+      }
+    ],
+    "evidence_against": [],
+    "resolution_notes": "Terminology correction for all future fund-validity selections in this project -- 'active' must be computed as DATBIS>=CURRENT_DATE at query time, never hardcoded against a specific DATBIS literal. Cross-link claim #348 (the underlying P01/V01 633CRP* diff this definition was applied to).",
+    "cross_links": [
+      "brain_v2/claims/claims.json#348",
+      "knowledge/domains/PSM/fund_management_sync_playbook.md"
+    ]
   }
 ]

@@ -692,6 +692,30 @@
       "related_claims": [265, 317, 329, 330, 332],
       "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt", "BNKA"],
       "evidence": "claim #332 evidence_against note; claim #265 (test-tool PASS, not live-file); claim #317 (BNKA mashed source data)"
+    },
+    {
+      "id": "KU-2026-WBS-FISTL-DERIVATION-218BDI",
+      "opened_at": "2026-07-07",
+      "session": "s-2026-07-07",
+      "severity": "MEDIUM",
+      "domain": "PSM",
+      "question": "WBS 218BDI2000.1 (project/fund 218BDI2000, FIKRS=UNES) does NOT derive a Funds Center (FISTL) on posting -- coding-block error 'No funds center entered/derived in item 00001 (UNES/6046013/218BDI2000.1)'. Is this a specific FMDERIVE rule gap for this WBS/fund (or its object class / project profile), or a missing prerequisite step in the P01->V01/D01 project+WBS+fund replication (e.g. fund-center assignment not yet loaded for this fund before the WBS posting test), or a genuine standard-config gap that also exists in P01 for this fund family?",
+      "why": "Layer 2 of the documented 3-layer chain (CO object -> FM derivation -> AVC disponible, ps_project_replication_and_ki235.md) is failing for this WBS even though layer 1 (CO object/WBS exists) appears satisfied -- this is a DIFFERENT project/fund than the KI235 set (000CRP9000/633CRP9003/504PAK1000) already resolved in that doc, so the FM-derivation layer cannot yet be assumed reliable for the general case.",
+      "how_to_resolve": "Next session: (1) confirm 218BDI2000 fund + its funds-center address exist and are correctly linked (FMFINCODE/FMFCTR) in the target system; (2) trace FMDERIVE rule set for this WBS's object class / project profile to see which rule is expected to fire and why it doesn't; (3) compare against a working WBS (e.g. 633CRP9003) to isolate what differs; (4) if it's a target-replication gap (not a genuine config gap), the fix is likely completing steps A-F of the already-built mechanism `replicate_project_fund.py` (A fund - B C5 - C project+WBS - D WBS attrs - E budget-fund - F budget-project) for 218BDI2000 before retrying the posting.",
+      "status": "open",
+      "blocking_for": [
+        "PS master-data replication for 218BDI2000.1 test posting",
+        "generalizing the 3-layer chain (ps_project_replication_and_ki235.md) beyond the KI235 fund set"
+      ],
+      "related_claims": [],
+      "related_objects": [
+        "218BDI2000",
+        "218BDI2000.1",
+        "FMDERIVE",
+        "6046013",
+        "replicate_project_fund.py"
+      ],
+      "evidence": "Live coding-block error UNES/6046013/218BDI2000.1 'No funds center entered/derived in item 00001', session 2026-07-07. Mechanism to replicate project+WBS+FM assignment already exists but was not yet run to completion for this fund: Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py."
     }
   ]
 }
