@@ -1,0 +1,64 @@
+{
+  "purpose": "Standard SAP Logical Databases (LDB) mapped to UNESCO's domains. LDBs encode SAP's native ECC hierarchical table model (header->item, based on foreign keys). This is the target list + interpretation guide for extract_ddic_model.py (LDBN/LDBS) and the source of the standard hierarchy for domain_data_model.json.",
+  "how_to_read": "An LDB = tree of table-nodes + GET<table> events delivering rows in tree order (GET BKPF -> GET BSEG). Node join = the tables' foreign key. 3 parts: structure (tree, in LDBS/LDBN) + selections (screen) + program SAPDB<name>. CAUTION: some LDBs model header+item at the SAME level with a join (BRF: BKPF & BSEG), not strict parent-child -> read the real LDBN tree, do not assume.",
+  "status": "RESEARCHED_PENDING_VALIDATION (P01/D01 down; root tables + programs from SAP docs/knowledge, validate against LDBN/LDBS on first extraction)",
+  "logical_databases": {
+    "BRF": {"name": "Accounting Document Database", "program": "SAPDBBRF",
+            "root_tables": ["BKPF", "BSEG", "BSEC", "BSED", "BSET"],
+            "our_domains": ["FI", "Treasury", "Payment", "Closing Activities"],
+            "note": "BKPF header + BSEG items (same level + join). Core FI document access."},
+    "BRM": {"name": "Accounting Documents", "program": "SAPDBBRM",
+            "root_tables": ["BKPF", "BSEG"], "our_domains": ["FI"],
+            "note": "Alternative accounting-document LDB; confirm vs BRF in our release."},
+    "SDF": {"name": "G/L Account Database", "program": "SAPDBSDF",
+            "root_tables": ["SKA1", "SKB1", "BSIS", "BSAS"],
+            "our_domains": ["FI", "Closing Activities", "Treasury"],
+            "note": "G/L master + G/L line items. Relevant to balances/closing."},
+    "KDF": {"name": "Vendor Database", "program": "SAPDBKDF",
+            "root_tables": ["LFA1", "LFB1", "BSIK", "BSAK"],
+            "our_domains": ["Payment", "FI", "BusinessPartner"],
+            "note": "Vendor master + vendor open/cleared items. Payment-relevant."},
+    "DDF": {"name": "Customer Database", "program": "SAPDBDDF",
+            "root_tables": ["KNA1", "KNB1", "BSID", "BSAD"],
+            "our_domains": ["FI", "BusinessPartner"],
+            "note": "Customer master + customer items."},
+    "ADA": {"name": "Asset Accounting", "program": "SAPDBADA",
+            "root_tables": ["ANLA", "ANLB", "ANEP", "ANLP", "ANEK"],
+            "our_domains": ["FI-AA"],
+            "note": "Asset master + asset transactions."},
+    "PNP": {"name": "HR Personnel Administration", "program": "SAPDBPNP",
+            "root_tables": ["PA0000", "PA0001"],
+            "our_domains": ["HCM"],
+            "note": "PERNR -> infotypes PAnnnn. PNPCE is the successor (concurrent employment)."},
+    "PNPCE": {"name": "HR Personnel Admin (concurrent employment)", "program": "SAPDBPNPCE",
+              "root_tables": ["PA0000", "PA0001"], "our_domains": ["HCM"],
+              "note": "Replaces PNP; preferred for PA/Payroll/Time InfoSets."}
+  },
+  "funds_management_model": {
+    "domain": "PSM / Funds Management (FM-BCS)",
+    "note": "FM has NO single classic LDB like BRF. It is accessed via FI-FM integration: the control number CTRNR is processable in programs AND logical databases, and FM line items bridge to FI via FMIFIIT.KNBELNR=BKPF.BELNR (+KNGJAHR, +KNBUZEI line-level). The model below is the authoritative FM structure (validate keys against DD03L on first extraction).",
+    "budget_documents": {
+      "header": {"table": "FMBH", "key": ["FIKRS", "DOCYEAR", "DOCNR"], "meaning": "Budget entry document header"},
+      "item":   {"table": "FMBL", "parent": "FMBH", "join": "FIKRS+DOCYEAR+DOCNR", "meaning": "Budget entry document lines (account assignments)"},
+      "totals": {"table": "FMBDT", "from": "FMBL", "meaning": "Budget totals (per period RPMAX)"}
+    },
+    "commitment_actuals": {
+      "commitments_lines": {"table": "FMIOI", "key_hint": ["FIKRS", "REFBN", "REFBT", "RFPOS"], "link": "CTRNR", "meaning": "Commitment/open-item line items"},
+      "actuals_lines":     {"table": "FMIFIIT", "key_hint": ["FIKRS", "FMBELNR", "FMBUZEI"], "link": "CTRNR; FI bridge KNBELNR->BKPF.BELNR", "meaning": "Actuals FI-FM line items (WRTTP filter mandatory)"},
+      "totals":            {"table": "FMIT", "from": "FMIFIIT+FMIOI", "meaning": "Commitment/Actual totals"},
+      "avc_totals":        {"table": "FMAVCT", "from": "FMIT", "meaning": "Availability Control totals (rebuilt from FMIT via FMAF)"}
+    },
+    "dimensions_hierarchical": {
+      "funds":           {"table": "FMFCT",  "meaning": "Fund master"},
+      "fund_centers":    {"table": "FMFCTR", "hierarchy": "FMHICODES / sets (SETLEAF/SETNODE)", "meaning": "Fund center master (hierarchical)"},
+      "commitment_items":{"table": "FMCI / FMFPO", "hierarchy": "FMHICODES / sets", "meaning": "Commitment item master (hierarchical)"},
+      "funded_programs": {"table": "FMFG", "meaning": "Funded program master"}
+    },
+    "gold_db_tables": ["fmifiit_full", "fmioi", "fmbh", "fmbl", "funds", "fund_centers", "fmavct_2024", "fmavct_2025", "fmavct_2026", "bpja"],
+    "brain_relevance": "Largest PSM area: FM-AVC model gap (MODEL-GAP-2026-001), 2,005 buckets at risk, fmavct_*, the AVC derivation. The FM model + hierarchies are central to that analysis."
+  },
+  "no_standard_ldb_check": {
+    "FEBKO_FEBEP": "Bank statement header/item (FEBKO->FEBEP by KUKEY) — verify whether a standard LDB exists; if not, the header/item relationship still comes from DD08L (foreign key). Treasury/EBS domain.",
+    "REGUH": "Payment program data — verify; may have no LDB, relationships from DD08L."
+  }
+}

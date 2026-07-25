@@ -1,0 +1,162 @@
+{
+  "_doc": "F0 INGEST GATE — the NEGATIVE CONTRACT of a SAP landscape, made executable. Each probe asks ONE question about what the RFC boundary will NOT let us read, records the REAL symptom, and derives the extraction strategy that works anyway. Run it FIRST on any new tenant/system, before writing a single extractor. Consumed by f0_probe.py; output = system_profile.json, which feeds that tenant's method_registry (type_rules + overrides). READ-ONLY: every probe is a read; no probe may write to SAP.",
+  "suite_id": "probe_suite_f0",
+  "suite_version": "1.0.0",
+  "created": "2026-07-25",
+  "contract_ref": "sapilot/analysis/arch/C1-extraccion-hub.md §3 Contrato C",
+  "consumes": "brain_v2/method_registry.json (type_rules + overrides) — READ ONLY, never rewritten by this suite",
+  "produces": "system_profile.json",
+
+  "severity_scale": {
+    "KILL": "No viable path for the scoped capability on this system. Onboarding must declare that scope out of scope, or obtain a new authorization/FM. Blocks.",
+    "DEGRADE": "Reachable, but ONLY via derived_strategy (partitioned / split / alternate FM). Ingest proceeds with the adapted method — slower, not blocked.",
+    "INFO": "Does not block data extraction. Affects a non-extraction capability (DDIC write, source read) or is a note for the tenant profile."
+  },
+  "status_scale": {
+    "CONFIRMED": "The expected_failure reproduced. The restriction EXISTS on this system -> apply derived_strategy.",
+    "NOT_PRESENT": "The call succeeded. The restriction does NOT exist here -> the naive/fast path is allowed. Do NOT copy the P01 strategy blindly.",
+    "INCONCLUSIVE": "Could not be evaluated (missing probe object, unexpected error, insufficient auth). NOT the same as CONFIRMED — never derive a strategy from INCONCLUSIVE."
+  },
+  "read_only_allowlist": ["RFC_READ_TABLE", "SADT_REST_RFC_ENDPOINT"],
+  "read_only_note": "SADT_REST_RFC_ENDPOINT is allowed with HTTP method GET ONLY (enforced in f0_probe.py). The historical evidence for adt_404_ehp8 came from a POST; the probe deliberately re-derives it from the READ-ONLY ADT discovery document instead, so the gate never attempts a write.",
+
+  "probes": [
+    {
+      "id": "rowskips_rejected",
+      "order": 1,
+      "question": "Does this system's RFC_READ_TABLE accept ROWSKIPS pagination, or is it behind a secured wrapper that rejects it?",
+      "how": "RFC_READ_TABLE QUERY_TABLE=<probe_table> FIELDS=[<key_field>] ROWCOUNT=1 ROWSKIPS=1 (no WHERE). Compare against the same call with ROWSKIPS=0.",
+      "params": { "probe_table": "DD02L", "field": "TABNAME", "rowcount": 1, "rowskips": 1 },
+      "expected_failure": "ABAPApplicationError rc=5 key=OPTION_NOT_VALID (class SAIS, type E, number 000) — 'ROWSKIPS requires GET_SORTED' / secured-wrapper rejection.",
+      "failure_signatures": ["OPTION_NOT_VALID", "ROWSKIPS", "GET_SORTED", "SAIS"],
+      "derived_strategy": "Read ROWSKIPS-FREE: ROWCOUNT=0 and PARTITION the read on a low-cardinality key column (org unit / company code / fiscal year / date window) so every partition stays under the wrapper's row ceiling (~60k observed). Never use rfc_read_paginated() on such a system.",
+      "fallback_strategy": "If NOT_PRESENT: ordinary ROWSKIPS pagination (rfc_read_paginated, batch_size=5000, throttle=3.0) is allowed.",
+      "severity": "DEGRADE",
+      "scope": "table_class:TRANSP,VIEW",
+      "feeds": { "type_rules": ["TRANSP", "VIEW"] },
+      "reference": "brain_v2/method_registry.json type_rules.TRANSP constraint; accumulate_logs.py L52-54; gold_refresh.py docstring; claim #244 / #319"
+    },
+    {
+      "id": "in_clause_rejected",
+      "order": 2,
+      "question": "Does the WHERE guard accept an IN (...) value list, or does the anti-injection check classify it as a suspicious WHERE?",
+      "how": "RFC_READ_TABLE QUERY_TABLE=<probe_table> FIELDS=[<field>] ROWCOUNT=1 OPTIONS=[{TEXT: \"<field> IN ('<v1>','<v2>')\"}]. Control call: the same filter as a single equality.",
+      "params": { "probe_table": "DD02L", "field": "TABNAME", "values": ["T000", "T001"] },
+      "expected_failure": "ABAPApplicationError rc=5 key=OPTION_NOT_VALID — 'RFC_READ_TABLE with suspicious WHERE condition' (SAIS 000). Also triggered by OR and by parentheses.",
+      "failure_signatures": ["OPTION_NOT_VALID", "suspicious WHERE", "SAIS"],
+      "derived_strategy": "PARTITION instead of IN: loop one equality per call over the value list, or read the table once with a coarse single-condition filter and finish the filtering in Python. Same rule applies to OR and to parenthesised expressions.",
+      "fallback_strategy": "If NOT_PRESENT: IN (...) lists are allowed — batch the values (still cap the OPTIONS text length).",
+      "severity": "DEGRADE",
+      "scope": "where_clause",
+      "feeds": { "type_rules": ["TRANSP", "VIEW"] },
+      "reference": "knowledge/domains/Treasury/bcm_signatory_rules.md L210; knowledge/session_retros/session_052_retro.md L117; session_077_retro.md L105; INC-000006313 L142"
+    },
+    {
+      "id": "max_where_conditions",
+      "order": 3,
+      "question": "How many AND conditions does the WHERE parser actually accept before it breaks? (Do NOT assume the P01 number — MEASURE it.)",
+      "how": "Ladder: issue RFC_READ_TABLE with 1, then 2, ... up to <max_ladder> ANDed single-column conditions on <probe_table>, ROWCOUNT=1. Record the highest N that does not raise. Zero rows returned is SUCCESS (the filter is just narrow) — only an exception counts as failure.",
+      "params": {
+        "probe_table": "DD02L",
+        "max_ladder": 6,
+        "conditions": [
+          "TABNAME LIKE 'T0%'",
+          "AS4LOCAL = 'A'",
+          "TABCLASS = 'TRANSP'",
+          "CLIDEP = 'X'",
+          "CONTFLAG = 'A'",
+          "MASTERLANG = 'E'"
+        ]
+      },
+      "expected_failure": "ABAPApplicationError rc=5 key=OPTION_NOT_VALID — 'DB_Error on <TABLE>: The parser produced the error: \"AN\" is not valid h' / 'A Boolean expressio'. The tokenizer runs out before the semantics do.",
+      "failure_signatures": ["OPTION_NOT_VALID", "The parser produced the error", "is not valid", "Boolean expressio", "DB_Error on"],
+      "derived_strategy": "Cap the generated WHERE at the MEASURED maximum (write it into the tenant profile as max_where_conditions=N) and push every surplus predicate into Python post-filtering. Never emit a WHERE longer than N.",
+      "fallback_strategy": "If no ladder step fails: record the tested ceiling as '>= max_ladder' and still cap conservatively — the ceiling is table- and length-dependent, not a hard constant.",
+      "severity": "DEGRADE",
+      "scope": "where_clause",
+      "prior_observations": {
+        "P01_UNESCO": "INC-000006313 reports failure beyond ~3 AND clauses; other sessions worked with 4. Because the two disagree, the ceiling MUST be measured per system rather than asserted — that is exactly why this probe is a ladder and not a yes/no."
+      },
+      "feeds": { "type_rules": ["TRANSP", "VIEW"] },
+      "reference": "knowledge/incidents/INC-000006313_uis_bcm_add_voffal.md L142; .agents/skills/sap_interface_intelligence/SKILL.md L385"
+    },
+    {
+      "id": "wide_field_split",
+      "order": 4,
+      "question": "At which field-count does the 512-byte RFC_READ_TABLE work-area buffer overflow, and what chunk size survives the split ladder?",
+      "how": "Read DD03L for <wide_table> to get its real field list (skip pseudo-fields starting with '.'), take enough leading fields to exceed <wa_limit_bytes>, and issue RFC_READ_TABLE with all of them, ROWCOUNT=1. Then walk the SAME ladder rfc_helpers uses (MAX_FIELDS_PER_CALL, halving, floor 2) and record the first chunk size that returns data.",
+      "params": { "wide_table": "T001", "fallback_wide_tables": ["EKKO", "BKPF"], "wa_limit_bytes": 512 },
+      "expected_failure": "DATA_BUFFER_EXCEEDED (or a silently empty DATA table, which is how the wrapper surfaces the same overflow).",
+      "failure_signatures": ["DATA_BUFFER_EXCEEDED", "TABLE_WITHOUT_DATA"],
+      "derived_strategy": "FIELD-SPLIT: read the field list in chunks of the measured size, one RFC call per chunk at the SAME offset/partition, and merge the chunks BY ROW POSITION with an equal-rowcount guard. The ladder is 8 -> 4 -> 2; below 2 the reader ABORTS (a 1-field split is never attempted). Row-position merge is only sound when every chunk uses an identical WHERE and ordering.",
+      "ladder_note": "The real ladder in rfc_helpers.py is 8 -> 4 -> 2 (MAX_FIELDS_PER_CALL=8, chunk_size //= 2 inside `while chunk_size >= 2`; the loop exits once chunk_size drops to 1 and the caller aborts at L222-224). It is NOT 8 -> 4 -> 2 -> 1. f0_probe.py derives the ladder from the imported MAX_FIELDS_PER_CALL constant so it can never drift from the implementation.",
+      "fallback_strategy": "If NOT_PRESENT: the whole field list can be requested in one call — no split, no row-position merge, no merge guard needed.",
+      "severity": "DEGRADE",
+      "scope": "table_class:TRANSP,VIEW",
+      "feeds": { "type_rules": ["TRANSP", "VIEW"] },
+      "reference": "rfc_helpers.py L21 MAX_FIELDS_PER_CALL / L207-224 split ladder; knowledge/domains/PSM/avc_availability_model.md L69; claim #322 / #345"
+    },
+    {
+      "id": "cluster_unreadable",
+      "order": 5,
+      "question": "Is the change-document item table (and cluster tables generally) readable by RFC_READ_TABLE on this kernel, or is it still behind its physical cluster? On EhP8 it is SOMETIMES declustered — probe, do not assume.",
+      "how": "1) RFC_READ_TABLE DD02L for <cluster_table> to read its declared TABCLASS. 2) RFC_READ_TABLE QUERY_TABLE=<cluster_table> FIELDS=[<field>] ROWCOUNT=1, no WHERE. Rows returned => physically readable (declustered) regardless of the declared class.",
+      "params": { "cluster_table": "CDPOS", "field": "OBJECTCLAS", "also_check": ["RFBLG", "BSEG"] },
+      "expected_failure": "ABAPApplicationError rc=5 key=TABLE_NOT_AVAILABLE (class DA, type E, number 131).",
+      "failure_signatures": ["TABLE_NOT_AVAILABLE", "number=131"],
+      "derived_strategy": "ABAP FOR ALL ENTRIES over the physical cluster (CDCLS for CDPOS, RFBLG for BSEG): read CDHDR first, then pull the items joined on OBJECTCLAS+OBJECTID+CHANGENR (3 fields, NOT CHANGENR alone), via CHANGEDOCUMENT_READ_POSITIONS or a read-only SELECT ... FOR ALL ENTRIES executed through RFC_ABAP_INSTALL_AND_RUN. Compliance note: pure RFC_READ_TABLE is Note-3255746-safe; an ABAP read program is a DIFFERENT (still read-only) path — get it confirmed before running in production.",
+      "fallback_strategy": "If NOT_PRESENT (declustered on this kernel): treat it as TRANSP and read it with RFC_READ_TABLE under the rowskips/where/field-split constraints measured above. This is the cheap path — always probe for it before building the ABAP path.",
+      "severity": "DEGRADE",
+      "escalates_to": "KILL if RFC_ABAP_INSTALL_AND_RUN is not authorized on this system AND the table is not declustered — then there is no path to field-level change history at all.",
+      "scope": "table_class:CLUSTER; override:CDPOS",
+      "feeds": { "type_rules": ["CLUSTER"], "overrides": ["CDPOS"] },
+      "reference": "knowledge/sap_event_sources_catalog.md L41-46; brain_v2/method_registry.json overrides.CDPOS; retro_operating_model_method_2026-06-21.md L20"
+    },
+    {
+      "id": "strg_pool_unreadable",
+      "order": 6,
+      "question": "For a POOL table, does RFC return anything beyond the key fields — i.e. is the raw content column (STRG / LRAW / RAW / RSTR) readable at all?",
+      "how": "1) DD02L TABCLASS for <pool_table> (expect POOL). 2) DD03L field list -> classify fields into KEY vs RAW-content (DATATYPE in STRG/LRAW/RAW/RSTR/LCHR). 3) RFC_READ_TABLE with the KEY fields only (control: expect success). 4) RFC_READ_TABLE with the RAW content field (expect failure or unusable bytes).",
+      "params": { "pool_table": "VARI", "also_check": ["VARIS"], "raw_datatypes": ["STRG", "LRAW", "RAW", "RSTR", "LCHR"] },
+      "expected_failure": "The key-only read SUCCEEDS while the content read fails (DATA_BUFFER_EXCEEDED / TABLE_NOT_AVAILABLE) or returns bytes that are not interpretable — the RFC layer exposes the pool key, never the pooled payload.",
+      "failure_signatures": ["DATA_BUFFER_EXCEEDED", "TABLE_NOT_AVAILABLE", "OPTION_NOT_VALID"],
+      "derived_strategy": "KEY-ONLY via RFC + a CONTENT FM for the payload (for variants: RS_VARIANT_CONTENTS / RS_VARIANT_VALUES). If the content FM is not RFC-enabled, it must be reached via RFC_ABAP_INSTALL_AND_RUN on a system where S_DEVELOP is granted (typically DEV/QA, not PROD) — so plan pool-table content extraction on a NON-production system and transport the finding, not the data.",
+      "fallback_strategy": "If NOT_PRESENT: the pool payload is directly readable — but still verify the bytes decode before trusting them.",
+      "severity": "DEGRADE",
+      "scope": "table_class:POOL",
+      "feeds": { "type_rules": ["POOL"] },
+      "reference": "brain_v2/method_registry.json type_rules.POOL; knowledge/sap_event_sources_catalog.md L62-63; knowledge/domains/Closing_Activities/fx_revaluation_process.md L96/L221/L239"
+    },
+    {
+      "id": "adt_404_ehp8",
+      "order": 7,
+      "question": "Does this NetWeaver release expose the ADT DDIC table endpoints, or is it a 7.40 (EhP8) kernel where /sap/bc/adt/ddic/tables is absent?",
+      "how": "1) RFC_READ_TABLE TFDIR for SADT_REST_RFC_ENDPOINT (does the ADT-over-RFC bridge even exist?). 2) If it exists, call it with METHOD='GET' URI='/sap/bc/adt/discovery' and inspect which DDIC collections the discovery document enumerates. READ-ONLY by construction — the probe never POSTs.",
+      "params": { "adt_fm": "SADT_REST_RFC_ENDPOINT", "discovery_uri": "/sap/bc/adt/discovery", "required_collections": ["ddic/tables", "ddic/tables/{table}/indexes"], "known_present_collections": ["dataelements", "structures", "views", "typegroups", "ddl/sources"] },
+      "expected_failure": "The discovery document does NOT list a 'ddic/tables' collection (and a POST to it would return HTTP 404). NW 7.50+ ships it; NW 7.40 / ECC 6.0 EhP8 does not.",
+      "failure_signatures": ["404", "Not Found", "collection absent"],
+      "derived_strategy": "Do NOT route DDIC table/index work through ADT on this system. Read source via CLIF_GET_SOURCE (classes) / READ_REPORT (programs); create or alter DDIC objects via the DDIF_*_PUT RFC wrapper (with TADIR-orphan mitigation). Preserve the ADT code path for the S/4HANA migration — do not delete it, just do not invoke it here. Caveat carried from INC-CLASS-LOSS-2026-06: CLIF_GET_SOURCE is a LOSSY read — never use it as the source of a read-modify-write round trip.",
+      "fallback_strategy": "If NOT_PRESENT (collections exist): NW 7.50+ — ADT DDIC endpoints are usable.",
+      "severity": "INFO",
+      "scope": "capability:ddic_write,source_read",
+      "feeds": { "overrides": ["ADT_DDIC"] },
+      "reference": "knowledge/session_retros/session_076_retro.md L66/L77; .agents/skills/sap_adt_api/SKILL.md L80-84/L490; .agents/skills/sap_abap_style/SKILL.md L85"
+    },
+    {
+      "id": "fmavc_not_rfc",
+      "order": 8,
+      "question": "Are the Availability-Control function modules (FMAVC*) RFC-enabled on this system, i.e. can the STANDARD AVC figure be read remotely at all?",
+      "how": "RFC_READ_TABLE QUERY_TABLE=TFDIR FIELDS=[FUNCNAME, FMODE] OPTIONS=[{TEXT: \"FUNCNAME LIKE '<fm_prefix>%'\"}]. FMODE='R' means remote-enabled; FMODE='' means local-only. Count both.",
+      "params": { "fm_prefix": "FMAVC", "rfc_enabled_fmode": "R", "spot_check": ["FMAVC_READ_TOTALS_FOR_ADDRESS", "FMAVC_GET_CD_ACTIVATION"] },
+      "expected_failure": "Zero FMAVC* function modules carry FMODE='R' (94 observed on P01, all local-only). The standard AVC read is therefore NOT reachable over plain RFC.",
+      "failure_signatures": ["FMODE=''", "0 rfc_enabled"],
+      "derived_strategy": "FLAG IT — there is no direct remote path. Options, in order of preference: (a) read the AVC TOTALS table FMAVCT directly (field-split, partitioned by control area x year) and reconcile, (b) run the standard AVC report (FMAVCR / RFFMAVC*) and consume its output, (c) call the FM via RFC_ABAP_INSTALL_AND_RUN on a NON-production system that grants S_DEVELOP. NEVER hand-roll an availability formula from consumption tables — that has already been refuted once (a hand-rolled detector was wrong by $14.5M AND by sign versus the standard ledger).",
+      "fallback_strategy": "If NOT_PRESENT (some FMAVC* are FMODE='R'): call the standard FM directly — that is strictly better than any table reconstruction.",
+      "severity": "KILL",
+      "scope": "capability:avc_standard_read",
+      "kill_meaning": "KILL is scoped: it blocks the 'read AVC from the standard over RFC' capability on this system, not the whole onboarding. If the tenant's contract promises standard-AVC figures and none of the three fallbacks is available, that deliverable cannot be met — decide at onboarding, not at delivery.",
+      "feeds": { "overrides": ["FMAVC"] },
+      "reference": "knowledge/domains/PSM/avc_availability_model.md L32; knowledge/domains/PSM/cost_recovery_avc_disponible_model.md L107-108; .agents/intelligence/PMO_BRAIN.md H86"
+    }
+  ]
+}
