@@ -1,3 +1,26 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: REQUEST
+request_id: v01_pa0105_subty0001
+from_project: unescrp                 # "(CRP app - test-case builder, S-178)"
+date: 2026-07-03
+status: OPEN                          # no DONE_v01_pa0105_subty0001.md on disk as of 2026-07-25
+system_role: V01
+why: "v01_pa0105 holds only SUBTY='0010' (email); there is no PERNR -> SAP logon user (BNAME) mapping, so no golden employee can be gated on having a SAP user or resolved as the step-01 workflow actor."
+resource_requested: "Re-extract PA0105 for V01 including SUBTY='0001' (system user name) alongside the existing 0010, and re-land v01_pa0105 in v01_gold_master_data.db"
+extract_spec:
+  - source_table: PA0105
+    keys: [PERNR, SUBTY, USRID]       # for subty 0001 the value lands in USRID, not USRID_LONG
+    filters: {SUBTY: "0001", ENDDA: ">= today", company: "UNES"}
+consumers:
+  - "unescrp/scripts/probes/check_actor_chain.py --golden-db <v01 db>"
+  - "unescrp/specifications/test-data/crp-usable-test-data.xlsx (Golden set V01)"
+  - "unescrp/specifications/test-data/crp-test-scenario-model.md section 4"
+  - "unescrp/.claude/agents/crp-test-case-builder.md"
+resolve_via: UNKNOWN                  # no resolve_via line; message states only that "the golden DB is the sole path" (V01 is SSO-only)
+# NOTE: this message carries an explicit DONE-verification query. C-4 v1.1 has no `verification` slot (C-2 does) - see report.
+---
+
 # Request: re-extract V01 `v01_pa0105` INCLUDING subtype 0001 (SY-UNAME → SAP logon user)
 
 > **From:** `unescrp` (CRP app — test-case builder, S-178) · **Date:** 2026-07-03

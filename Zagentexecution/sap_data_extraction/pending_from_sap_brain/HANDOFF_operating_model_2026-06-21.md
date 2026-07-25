@@ -1,3 +1,15 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: HANDOFF
+request_id: operating_model_2026-06-21
+from_project: abapobjectscreation
+to_project: unesco-sap-brain
+date: 2026-06-21
+system_role: P01                      # "P01 Security Audit Log (RSAU, 15.6M rows, 4 months)"
+why: "The AS-RUN measured from the P01 security audit log changes the baseline: UNESCO does not operate SAP by dialog, it orchestrates it from outside (80.6% of business RFC driven by external satellites). Any hypothesis assuming dialog-driven usage must be re-scored."
+how_to_consume: "Read-only via refs_external.json -> knowledge/system_operating_model_rfc.md (full) + knowledge/process_mining_table_analysis.md sections 7a-7f + the engines in process_mining/. Golden DB has rsau_audit_history (15.6M) to recompute."
+---
+
 # HANDOFF → unesco-sap-brain : the AS-RUN operating model (re-evaluate your redesign analysis)
 
 **From:** abapobjectscreation (SAP source of truth) · **To:** unesco-sap-brain · **Date:** 2026-06-21 · Rule ADR-007 / BROADCAST-005.

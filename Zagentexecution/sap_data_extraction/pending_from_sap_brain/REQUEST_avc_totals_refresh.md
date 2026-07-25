@@ -1,3 +1,24 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: REQUEST
+request_id: avc_totals_refresh
+from_project: unesco-sap-brain        # "(S40, AVC grouping analysis)"
+date: 2026-06-30
+status: RESOLVED                      # answered by DONE_avc_totals_refresh.md (same day); this file was NOT renamed
+why: "fmavct_2024/2025/2026 (the live availability balances) are tracked in neither _gold_sync_log nor _config_frontier_manifest - they drift daily with no refresh cadence. Needed to state AVC values 'as of today's P01'."
+resource_requested: "Re-extract FMAVCT with the consumption legs, and put the whole AVC layer (config + totals) on the recurring PSM_FM pipeline with a _gold_sync_log row"
+extract_spec:
+  - source_table: FMAVCT
+    keys: [RFIKRS, RFUND, RFUNDSCTR, RCMMTITEM, RYEAR, ALLOCTYPE_9, HSL01]   # "extend with any consumption/commitment legs available"
+    fm_area: [UNES, ICTP, UIS, IIEP, IBE, UIL, ICBA, MGIE, UBO]
+    years: [2024, 2025, 2026]
+    ledger: 9H
+consumers:
+  - "unesco-sap-brain/knowledge/45_avc_grouping_control_logic.md (+ claims CLM-201...)"
+  - "unesco-sap-brain/knowledge/21 (INC-005638 desync surface)"
+resolve_via: "unesco-sap-brain/refs_external.json -> query the golden tables directly (never copy raw)"
+---
+
 # Request: refresh the AVC control TOTALS (live availability balances) + put the AVC layer on the recurring pipeline
 
 > **From:** `unesco-sap-brain` (S40, AVC grouping analysis) · **Date:** 2026-06-30

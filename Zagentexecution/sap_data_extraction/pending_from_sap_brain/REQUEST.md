@@ -1,3 +1,27 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: REQUEST
+request_id: ytfm_biennium             # filename carries NO topic slug; id taken from the answering DONE_ytfm_biennium.md
+from_project: unesco-sap-brain
+date: 2026-06-05
+status: RESOLVED                      # answered by DONE_ytfm_biennium.md (2026-06-09); this file was NOT renamed
+why: "Single-source-of-truth rule - raw SAP table data must live ONLY in the golden DB, not duplicated in the brain. These 4 tables exist only in unesco-sap-brain and are missing from p01_gold_master_data.db."
+resource_requested: "Add the 4 YTFM C/5 (biennium) tables to the FM extraction pipeline and land them in p01_gold_master_data.db"
+extract_spec:
+  - source_table: YTFM_FUND_C5
+    keys: [FIKRS, FINCODE, C5_ID, C5_SEL, FM_OUTPUT]
+  - source_table: YTFM_C5
+  - source_table: YTFM_OUTPUT
+  - source_table: YTFM_OUTPUT_T
+consumers:
+  - "unesco-sap-brain/artifacts/build-biennium-conversion.js"
+  - "unesco-sap-brain/knowledge/24"
+  - "unesco-sap-brain/knowledge/25"
+  - "unesco-sap-brain/knowledge/27"
+  - "unesco-sap-brain /tools/biennium.html"
+resolve_via: UNKNOWN                  # this message states no resolve_via line (every later REQUEST does)
+---
+
 # Request: add 4 YTFM (biennium) tables to the golden DB — FM / Fund Management domain
 
 > **From:** `unesco-sap-brain` project · **Date:** 2026-06-05

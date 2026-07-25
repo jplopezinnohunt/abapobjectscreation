@@ -1,3 +1,18 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: DONE
+request_id: ytfm_biennium
+from_project: abapobjectscreation
+owner: abapobjectscreation            # not stated verbatim; message is emitted by the golden-DB owner (this repo)
+date: 2026-06-09
+consumers: [unesco-sap-brain]
+system_role: P01                      # "live P01 (client 350) via RFC_READ_TABLE"
+closes: ["REQUEST.md"]                # the bare 2026-06-05 REQUEST; that filename carries no topic slug
+tables_landed: [ytfm_fund_c5, ytfm_c5, ytfm_output, ytfm_output_t]
+row_counts: {ytfm_fund_c5: 16549, ytfm_c5: 3, ytfm_output: 259, ytfm_output_t: 259}   # "~" / drift by a few between live reads
+how_to_consume: "Regenerate ysfm_fund_c5 FROM the golden DB with the join in section 'Regeneration query'. Honor the raw zero-padded NUMC convention (FM_OUTPUT='0000000068') and SPRSL='E'. ODESC is intentionally absent (STRG, unreadable by RFC_READ_TABLE) - do not backfill it from the XLSX."
+---
+
 # DONE — 4 YTFM biennium (C/5) tables landed in the golden DB — SAP P01 source only
 
 > **Status:** ✅ COMPLETE · **Date:** 2026-06-09 · **For:** `unesco-sap-brain`

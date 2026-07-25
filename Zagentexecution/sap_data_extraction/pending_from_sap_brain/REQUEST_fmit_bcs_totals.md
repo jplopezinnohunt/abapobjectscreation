@@ -1,3 +1,24 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: REQUEST
+request_id: fmit_bcs_totals
+from_project: unesco-sap-brain        # "(S40 AVC refinement)"
+date: 2026-06-30
+status: OPEN                          # no DONE_fmit_bcs_totals.md on disk as of 2026-07-25
+why: "The authoritative UNESCO negative-funds check (YFM1 -> YFM1_BCS_V3 -> variant ZNEGATIVECHECK) reads FMIT, which the golden DB does not have - so the official RB budget-allocation figures cannot be reproduced."
+resource_requested: "Land FMIT (FM/BCS totals) in p01_gold_master_data.db and add it to the recurring pipeline alongside fmavct/fmifiit"
+extract_spec:
+  - source_table: FMIT
+    keys: [FIKRS, RFONDS, RFISTL, RFIPEX, RYEAR, RWRTTP, VERSN]   # + period buckets HSL01..HSL16 and HSLVT
+    fm_area: [UNES]                   # "(+ the 8 institutes if cheap)"
+    years: [2024, 2025, 2026, 2027]   # "covers biennia 42 + 43"
+    ledger: 9H
+    filters: {VERSN: "0"}             # "ledger 9H / version 0"
+consumers:
+  - "unesco-sap-brain/knowledge/45 section 8 (YFM1/ZNEGATIVECHECK reproduction)"
+resolve_via: "unesco-sap-brain/refs_external.json -> query the golden read-only (never copy raw)"
+---
+
 # Request: extract FMIT (BCS budget totals) — basis of the official negative-funds check (YFM1)
 
 > **From:** `unesco-sap-brain` (S40 AVC refinement) · **Date:** 2026-06-30

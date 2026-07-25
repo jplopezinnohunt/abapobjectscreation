@@ -1,3 +1,26 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: DONE
+request_id: config_frontier
+from_project: abapobjectscreation
+owner: abapobjectscreation
+date: 2026-06-19
+consumers: [unesco-sap-brain]
+system_role: P01                      # "MEASURED on P01 client 350"
+closes:
+  - "unesco-sap-brain/knowledge/35_recreated_conclusions.md lines 75-80"   # closes a knowledge doc, not a REQUEST_ file
+tables_landed: UNKNOWN                # 61 tables, NOT enumerated in-message; full inventory lives in manifest_ref
+row_counts: {_total_approx: 13794}    # "~13,794 rows"; golden table count 225 -> 286
+manifest_ref: _config_frontier_manifest
+verdicts:
+  - "HYP-008 / OI-FI-01 doc splitting: OFF - FAGL_ACTIVEC/FAGL_SPLIT_ACTC empty, GLT0 populated -> classic G/L; method Z000000012 does not exist"
+  - "F3 new-GL ledger: t881 defines leading 0L -> FAGLFLEXT but 0 postings; real parallel ledgers = classic FI-SL"
+  - "HYP-018 / CLM-012/024 GMDERIVE: strategy GMDT registered but GMGR/GMIA = 0 grants -> GM not productively used"
+  - "CLM-036 / HYP-003 FMDERIVE: config = generic TABADR*, not FMDT_*; strategy FMOA = 14 steps / 5 custom DRULE -> '5 of 26' half-confirmed (5 matches, 26 does not)"
+  - "HYP-012 AVC tolerance: BCS AVC active (ledger 9H, 9 FM areas, FY2001+); limits 100% Error default, ICTP 80% Warning; no 50% threshold"
+how_to_consume: "Resolve through unesco-sap-brain/refs_external.json -> query the golden tables read-only (never copy raw). Start from _config_frontier_manifest."
+---
+
 # DONE — SAP config-frontier extraction (response to unesco-sap-brain)
 
 **Owner:** abapobjectscreation (SAP source of truth) · **Date:** 2026-06-19 · **For:** unesco-sap-brain

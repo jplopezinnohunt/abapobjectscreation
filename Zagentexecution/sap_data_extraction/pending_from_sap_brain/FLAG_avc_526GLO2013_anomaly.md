@@ -1,3 +1,17 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: FLAG
+request_id: avc_526GLO2013_anomaly
+from_project: unesco-sap-brain        # "(S40 AVC validation)"
+date: 2026-06-30
+status: OPEN                          # asks abapobjectscreation to verify at source; no DONE/closure on disk
+system_role: P01
+why: "Fund 526GLO2013 nets to -$103.76M available in fmavct_2026, driven by two ROBJNR with no budget, actuals or commitments backing (real activity ~$0.45M). Likely a genuine negative-transfer posting or an extraction sign/scale artifact."
+consumers:
+  - "unesco-sap-brain/knowledge/45 (fund excluded: 163 net-negative funds = -$47.2M excl. 526GLO2013)"
+resolve_via: "unesco-sap-brain/refs_external.json -> golden DB read-only"
+---
+
 # Data-quality FLAG: FMAVCT anomaly on fund 526GLO2013 (2026) — please verify at source
 
 > **From:** `unesco-sap-brain` (S40 AVC validation) · **Date:** 2026-06-30

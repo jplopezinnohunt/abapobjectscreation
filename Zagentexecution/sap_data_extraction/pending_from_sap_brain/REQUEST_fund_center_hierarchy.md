@@ -1,3 +1,33 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: REQUEST
+request_id: fund_center_hierarchy
+from_project: unesco-sap-brain        # "(S39)"
+date: 2026-06-30
+status: OPEN                          # no DONE_fund_center_hierarchy.md on disk as of 2026-07-25
+why: "The golden DB has the leaf fund_centers (787) but not the standard hierarchy - the office -> sub-region -> region -> sector -> HQ rollup cannot be reconstructed. The extracted SET tables contain only set class 0000."
+resource_requested: "Add the FM fund-center standard-hierarchy SET rows (parent-child tree + leaves + group texts) to p01_gold_master_data.db and note the set class used in a manifest row"
+extract_spec:
+  - source_table: SETNODE
+    keys: [SETCLASS, SUBCLASS, SETNAME, SUBSETNAME]
+    set_class: "0306"
+    fm_area: [UNES, ICTP, UIS, IIEP, IBE, UIL, ICBA, MGIE, UBO]
+  - source_table: SETLEAF
+    keys: [SETCLASS, SETNAME, VALFROM, VALTO]
+    set_class: "0306"
+    fm_area: [UNES, ICTP, UIS, IIEP, IBE, UIL, ICBA, MGIE, UBO]
+  - source_table: SETHEADER
+    keys: [SETNAME, DESCRIPT]
+    set_class: "0306"
+  - source_table: SETHEADERT
+    keys: [SETNAME, DESCRIPT]
+    set_class: "0306"                 # "if UNESCO keeps it under a different set class, extract whichever resolves fund_centers.FICTR into a tree"
+consumers:
+  - "unesco-sap-brain/knowledge/44_fund_center_structure_organizational_axis.md sections 1 and 4 (closes claim CLM-196)"
+  - "unesco-sap-brain entity fund-center-structure + /tools/fund-center-structure.html"
+resolve_via: "unesco-sap-brain/refs_external.json -> query the golden tables directly (never copy raw)"
+---
+
 # Request: extract the Fund Center STANDARD HIERARCHY (FM responsibility-axis rollup)
 
 > **From:** `unesco-sap-brain` (S39) · **Date:** 2026-06-30

@@ -1,3 +1,20 @@
+---
+# Bus header — contract C-4 v1.1 (sole owner: C0). Derived from the prose below; nothing invented.
+msg_type: DONE
+request_id: avc_totals_refresh
+from_project: abapobjectscreation
+owner: abapobjectscreation
+date: 2026-06-30
+consumers: [unesco-sap-brain]
+system_role: P01                      # "live P01"
+closes: ["REQUEST_avc_totals_refresh.md"]
+tables_landed: [fmavct_2024, fmavct_2025, fmavct_2026]
+row_counts: {fmavct_2024: 18838, fmavct_2025: 16112, fmavct_2026: 13593}
+manifest_ref: _config_frontier_manifest        # message also stamps a _gold_sync_log row per table
+sync_log_ts: 2026-06-30                        # "extracted_at = 2026-06-30", freshness is queryable
+how_to_consume: "Golden DB is single-source-of-truth (ADR-007); query the tables directly via refs_external.json. No raw copy was sent. available = budget - consumed via ROBJNR/COBJNR pairing, annual = HSLVT + sum(HSL01..HSL16)."
+---
+
 # DONE — AVC totals refresh + AVC layer onto the recurring PSM_FM pipeline
 
 > **Resolved:** 2026-06-30 · **For:** `unesco-sap-brain` S40 (AVC grouping analysis)
