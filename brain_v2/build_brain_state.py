@@ -54,6 +54,11 @@ DOMAINS_REGISTRY = BRAIN_V2 / "domains" / "domains.json"
 # Aligns acquired knowledge to one skeleton; every weak cell is the roadmap.
 # Added Session #079.
 CAPABILITY_MODEL = BRAIN_V2 / "capability_model" / "capability_model.json"
+# CONTRACT C-1: the canonical vocabulary (domain aliases x the 11 dimensions).
+# Source of truth for WHICH domain keys are legal and which of them are the same
+# thing; capability_model.json stays the source of truth for the cell VALUES.
+# Gated at rebuild step 0 by brain_v2/validate_ontology.py.
+ONTOLOGY = BRAIN_V2 / "capability_model" / "ontology.json"
 
 # Legacy single-string domain -> 3-axis domain_axes. Derived at build time;
 # does NOT mutate the source graph. Keeps objects queryable by functional
@@ -526,17 +531,38 @@ def main():
             if _p.exists():
                 capability_model[_key] = json.load(open(_p, encoding="utf-8"))
         cap_doms = capability_model.get("domains", {})
-        # normalize keys for matching: "Payment_BCM" -> {"payment","bcm"}, etc.
-        def _norm(s):
-            return set(str(s).lower().replace("/", "_").replace("-", "_").split("_")) - {""}
         reg_doms = domains_registry.get("domains", {}) if isinstance(domains_registry, dict) else {}
-        for cap_name, cov in cap_doms.items():
-            cap_tokens = _norm(cap_name)
-            for reg_name, reg_entry in reg_doms.items():
-                if isinstance(reg_entry, dict) and _norm(reg_name) & cap_tokens:
-                    reg_entry["capability_coverage"] = cov
+        # CONTRACT C-1 — cross L14 (domain registry) x L15 (capability model) by
+        # EXACT LOOKUP against ontology.json. This replaces the fuzzy token
+        # intersection that lived here (`_norm()`: "Payment_BCM" -> {"payment","bcm"}
+        # intersected against every registry key), which matched silently and could
+        # not be audited. Each canonical domain now DECLARES the registry keys that
+        # are the same thing (Payment_BCM -> "Payment" + "BCM"), so the crossing is
+        # a declaration, not a coincidence of tokens. Same result, auditable
+        # mechanism: 15 registry entries receive coverage, exactly as before.
+        if not ONTOLOGY.exists():
+            raise SystemExit(
+                "MISSING %s — the canonical ontology (contract C-1) is required to cross "
+                "L14 x L15. Restore it from git; do NOT fall back to token matching." % ONTOLOGY
+            )
+        ontology = json.load(open(ONTOLOGY, encoding="utf-8"))
+        alias_to_canonical = {}
+        for _d in ontology.get("domains", []):
+            _ck = _d["canonical_key"]
+            alias_to_canonical[_ck] = _ck
+            for _a in _d.get("aliases", []):
+                alias_to_canonical[_a] = _ck
+        _crossed = 0
+        for reg_name, reg_entry in reg_doms.items():
+            canonical = alias_to_canonical.get(reg_name)
+            if canonical in cap_doms and isinstance(reg_entry, dict):
+                reg_entry["capability_coverage"] = cap_doms[canonical]
+                reg_entry["capability_canonical_key"] = canonical
+                _crossed += 1
         # roll up: which domains still have NO standard baseline / NO conformance
         capability_model["_rollup"] = {
+            "ontology_version": ontology.get("_version"),
+            "registry_entries_crossed": _crossed,
             "domains_scored": len(cap_doms),
             "G_conformance_built": sum(1 for d in cap_doms.values() if d.get("G_CONFORMANCE") == "HAVE"),
             "auth_built": sum(1 for d in cap_doms.values() if d.get("E_AUTH") == "HAVE"),

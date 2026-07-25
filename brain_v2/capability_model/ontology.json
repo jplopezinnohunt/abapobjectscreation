@@ -1,0 +1,501 @@
+{
+  "_design": "Contract C-1 - CANONICAL ONTOLOGY. The common vocabulary every component (C1 extraction / C2 process-mining / C3 intervention / C5 delivery) keys on: `domain x dimension`. Before this file the two source registries disagreed (capability_model.json = 15 domain keys, domains.json = 18 functional keys) and were reconciled by FUZZY TOKEN-MATCHING at build time (build_brain_state.py `_norm()` + set intersection). This file makes the mapping EXPLICIT and the crossing a LOOKUP. It ADDS a vocabulary layer - it does NOT rename anything in the source stores and does NOT add or remove dimensions.",
+  "_version": "1.0",
+  "_created": "2026-07-25",
+  "_authority": "READ-ONLY contract, hand-versioned. `dimensions` is a verbatim copy of capability_model.json:.dimensions - capability_model.json stays the single source of truth for the MATRIX (cell values); this file is the source of truth for the VOCABULARY (which keys are legal and what they mean).",
+  "_generated_from": {
+    "brain_v2/capability_model/capability_model.json": "v1.3 - `dimensions` copied verbatim; `domains` keys (15) = the canonical keys",
+    "brain_v2/domains/domains.json": "v1.0.0 - `domains` keys (18 functional) = the alias side; parent/module_axis/process_axis pulled from here"
+  },
+  "_tier_legend": {
+    "HAVE": "verified/strong coverage on our data",
+    "PARTIAL": "some coverage, incomplete",
+    "NONE": "not covered"
+  },
+  "_method_tier_legend": {
+    "VERIFIED": "Phase-B 3-vote verified method exists",
+    "GAP": "method not yet in our hands",
+    "OWN": "our own design, to be validated"
+  },
+  "_strata": {
+    "note": "A domain is a PAIR, not one model. The product lives in the delta. Capability G = compare AS_RUN against AS_DESIGNED. Conformance has TWO preconditions per domain: the standard baseline AND our process. Capturing AS_DESIGNED per domain is itself a precondition capability (S_STANDARD_REF below), mostly NONE today.",
+    "AS_DESIGNED": "how SAP designed the domain — normative reference flow/objects/config as delivered (SAP Best Practices / PaPM reference content)",
+    "AS_RUN": "how UNESCO actually does it — real process from data + Z-code/config/exits/.NET apps/workflows on top",
+    "DELTA": "G_CONFORMANCE — where AS_RUN extends/deviates from AS_DESIGNED, down to the implementing object (the custom-over-standard x-ray)"
+  },
+  "_resolution_rules": [
+    "EXACT match only - no token matching, no fuzzy fallback. A key resolves iff it is a canonical_key, a declared alias, a subdomain_aliases key, or a cross_cutting_keys key.",
+    "An alias resolves to exactly one canonical_key (the index is checked for collisions at load).",
+    "A canonical_key may carry several aliases (Payment_BCM -> Payment, BCM): every matching L14 registry entry receives that row's capability_coverage.",
+    "cross_cutting_keys are NOT domains. They resolve so the gate is green on today's data, but they are reported separately and the list is FROZEN: any new unregistered value fails."
+  ],
+  "dimensions": {
+    "S_STANDARD_REF": {
+      "question": "do we have the STANDARD SAP as-designed baseline for this domain (precondition for G)?",
+      "method": "SAP Best Practices / PaPM reference content / standard reference model capture",
+      "method_tier": "GAP",
+      "is_precondition_for": "G_CONFORMANCE"
+    },
+    "A_PROCESS": {
+      "question": "how does it actually run (discovered from data) — AS-RUN?",
+      "method": "event log -> DFG/variants/performance; OCEL 2.0; pm4py",
+      "method_tier": "VERIFIED"
+    },
+    "B_CODE": {
+      "question": "which programs/classes/exits/BDC implement it?",
+      "method": "ATC/SCI, dependency graph, abaplint, SCMON/UPL usage",
+      "method_tier": "VERIFIED"
+    },
+    "C_CONFIG": {
+      "question": "which customizing parameterizes it?",
+      "method": "standard-vs-custom config tables",
+      "method_tier": "OWN"
+    },
+    "D_DATA": {
+      "question": "which tables + real keys hold it?",
+      "method": "DDIC keys; Gold DB; SAP-official P2P table set",
+      "method_tier": "VERIFIED"
+    },
+    "E_AUTH": {
+      "question": "who can/does execute it (roles, users, SoD)?",
+      "method": "VERIFIED (RES-AUTH-SOD wwyujjqyk): role model AGR_DEFINE/AGR_USERS(validity)/AGR_TCODES/AGR_1251(obj+field LOW/HIGH)/AGR_AGRS/AGR_1016; users USR01/02/04/12, UST12; SU24 proposals USOBT_C(values)+USOBX_C(OKFLAG N/X/Y); TSTCA(start-tcode auth). SoD = Function(tcodes+auth objects) -> Risk(2+ conflicting functions), 3 risk types (SoD/Critical Action/Critical Permission), action+permission levels. Expand AGR_USERS->AGR_1251 for effective role auth. CAVEAT: SU24/USOBX_C is a PROPOSAL, not enforcement — real check only where code has AUTHORITY-CHECK (pair with code scan / ST01-STAUTHTRACE). GRC: 3-tier function->action->permission, risk header GRACSODRISK(RISKTYPE), ruleset COMPILED. REFUTED: exact '5 GRC tables' enumeration + GRACSODRISK-as-violations.",
+      "method_tier": "VERIFIED",
+      "split_d01_p01": "role STRUCTURE (AGR_DEFINE/AGR_1251/USOBT_C/TSTCA) = D01 -> ROLE-level SoD without P01; user ASSIGNMENTS (AGR_USERS/USR02/UST12) = P01 -> USER-level SoD gated"
+    },
+    "F_INTERFACE_FILE": {
+      "question": "how does it cross the boundary (RFC/IDoc/file)?",
+      "method": "RFCDES, IDoc, file system AL11/OPEN DATASET, job variant->intent",
+      "method_tier": "OWN"
+    },
+    "G_CONFORMANCE": {
+      "question": "does it deviate from / extend STANDARD SAP?",
+      "method": "OPID conformance; PaPM reference baseline",
+      "method_tier": "VERIFIED"
+    },
+    "H_IMPROVE": {
+      "question": "where is the opportunity; what-if before building?",
+      "method": "simulation (designed); improvement framing",
+      "method_tier": "OWN"
+    },
+    "R_S4_READINESS": {
+      "question": "how ready is this domain's custom code/config/process for the S/4HANA migration?",
+      "method": "ATC S4HANA_READINESS_<ver> variant + Simplification Database (SYCM) + Custom Code Migration app (usage-based scoping) + CCLM decommissioning + SCMON/UPL/ST03N usage (used-to-migrate vs dead-to-delete); 40-60% custom code typically dead",
+      "method_tier": "VERIFIED",
+      "advance_path": "EXTRACTION",
+      "is_composite": true,
+      "composite_note": "NOT a leaf cell. R_S4_READINESS ROLLS UP from its own sub-scorecard (factor x domain) — fractal: the operating model one level down. Factor list VERIFIED by research wh5gw9exu (CLOSED). Sub-model source of truth: brain_v2/capability_model/s4_readiness_model.json.",
+      "note": "Method now VERIFIED across factors (research wh5gw9exu, 22/25). Coverage NONE = not yet APPLIED. Commercial hook: the S/4 migration x-ray. KEY: BP_CVI_READINESS is scoreable NOW from our Gold DB (LFA1/KNA1/BUT000/CVI_CUST_LINK) — no new extraction.",
+      "factors_verified": {
+        "BP_CVI_READINESS": "VERIFIED + SCOREABLE NOW from our data (CVI_MIGRATION_PRECHK/CVI_PRECHK logic: 9 business checks). The central pillar.",
+        "SIMPLIFICATION_ITEM_READINESS": "VERIFIED — SI-Check /SDF/RC_START_CHECK (hard gate). Needs system run.",
+        "CUSTOM_CODE_READINESS": "VERIFIED (research #3) — ATC S4HANA_READINESS + CCM. Needs system run.",
+        "TECHNICAL_READINESS": "VERIFIED — Maintenance Planner (stack.xml). System-level.",
+        "READINESS_CHECK_2_0": "VERIFIED orchestration (Notes 2913617/3059197). Area enumeration unverified.",
+        "FINANCE_READINESS": "PARTIAL — Asset Acc/ACDOCA VERIFIED; ML/newGL/FSCM/BAM = gap (follow-up)."
+      }
+    },
+    "U_USAGE": {
+      "question": "WHAT objects actually execute, WHO runs them, by which CHANNEL (dialog / batch / RFC-BAPI / batch-input BDC), WHEN, and at what VOLUME — the AS-RUN execution footprint?",
+      "method": "Fuse the execution-evidence channels into a per-domain object×actor×channel×time×volume census: RSAU/SM20 audit (Transaction Start->tcode, Report Start->program, RFC Function Call->function) + TBTCO/TBTCP (batch program+variant) + APQI/APQD (batch input / BDC). Cross-reference the static catalog (TSTC / TFDIR) to split EXECUTED vs CATALOG-ONLY. Builder: process_mining/fm_executed_census.py (generalize per domain via the FM-style name filter). Scored: NONE=no census; PARTIAL=one channel or counts-only; HAVE=all 4 channels with actor+volume(+time).",
+      "method_tier": "VERIFIED",
+      "advance_path": "EXTRACTION",
+      "note": "The AS-RUN usage layer. Distinct from B_CODE (STATIC: which code exists), A_PROCESS (the FLOW/variants) and E_AUTH (who CAN execute). U_USAGE = who ACTUALLY executes what, how, when, how much. Bridges static inventory -> live reality; the dead-vs-used signal also feeds R_S4_READINESS (used-to-migrate vs dead-to-delete). Added 2026-06-23 on user directive ('otra dimension del process discovery: que se usa, quien, como, cuando, volumen')."
+    }
+  },
+  "domains": [
+    {
+      "canonical_key": "Payment_BCM",
+      "aliases": [
+        "Payment",
+        "BCM"
+      ],
+      "parent": "Treasury_EBS",
+      "subdomains": [
+        "dual_control_gap",
+        "signatory_rules",
+        "workflow_mod_path"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Payment",
+        "BCM"
+      ],
+      "module_axis": [
+        "FI"
+      ],
+      "process_axis": [
+        "T2R",
+        "P2P"
+      ],
+      "_note": "The ONLY domain with two aliases: domains.json splits it into `Treasury > Payment` and `Treasury > BCM`. Both registry entries receive this row's capability_coverage (behaviour preserved from the token-matching it replaces)."
+    },
+    {
+      "canonical_key": "Procurement_P2P",
+      "aliases": [
+        "Procurement"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Procurement"
+      ],
+      "module_axis": [
+        "MM"
+      ],
+      "process_axis": [
+        "P2P"
+      ]
+    },
+    {
+      "canonical_key": "PSM_FM",
+      "aliases": [
+        "PSM"
+      ],
+      "subdomains": [
+        "availability_control",
+        "fm_fi_bridge",
+        "ba_mod_extensions",
+        "cost_recovery_crp"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "PSM"
+      ],
+      "module_axis": [
+        "FM",
+        "PS"
+      ],
+      "process_axis": [
+        "B2R"
+      ],
+      "_note": "domains.json registers it as `PSM` and hangs `Cost_Recovery_CRP` off it as a child; here that child resolves to the SUBDOMAIN `cost_recovery_crp`, not to a top-level domain."
+    },
+    {
+      "canonical_key": "Closing_Activities",
+      "aliases": [
+        "Closing Activities"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [],
+      "_note": "Orphan by design: a capability-model row with NO entry in the L14 domain registry. Kept - it is a real closing/period-end domain; the registry is what is incomplete, not this row."
+    },
+    {
+      "canonical_key": "FI",
+      "aliases": [
+        "FI"
+      ],
+      "subdomains": [
+        "validations_substitutions",
+        "gl_master_data",
+        "busa_derivation"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "FI"
+      ],
+      "module_axis": [
+        "FI"
+      ],
+      "process_axis": [
+        "B2R",
+        "P2P",
+        "T2R"
+      ]
+    },
+    {
+      "canonical_key": "Treasury_EBS",
+      "aliases": [
+        "Treasury"
+      ],
+      "subdomains": [
+        "house_bank_configuration",
+        "bank_statement_ebs",
+        "bank_reconciliation",
+        "field_office_custom_clearing",
+        "xref_office_tagging",
+        "payment_landscape"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Treasury"
+      ],
+      "module_axis": [
+        "FI",
+        "TV"
+      ],
+      "process_axis": [
+        "T2R",
+        "P2P"
+      ],
+      "_note": "domains.json `Treasury` is the parent of `Payment` and `BCM`; the capability model splits the payment leg into its own row (Payment_BCM)."
+    },
+    {
+      "canonical_key": "HCM",
+      "aliases": [
+        "HCM"
+      ],
+      "subdomains": [
+        "infotypes",
+        "payroll",
+        "fiori_apps"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "HCM"
+      ],
+      "module_axis": [
+        "HCM",
+        "PD"
+      ],
+      "process_axis": [
+        "H2R"
+      ]
+    },
+    {
+      "canonical_key": "Travel",
+      "aliases": [
+        "Travel"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Travel"
+      ],
+      "module_axis": [
+        "TV",
+        "FI",
+        "HCM"
+      ],
+      "process_axis": [
+        "H2R"
+      ]
+    },
+    {
+      "canonical_key": "Integration",
+      "aliases": [
+        "Integration"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Integration"
+      ],
+      "module_axis": [
+        "BASIS"
+      ]
+    },
+    {
+      "canonical_key": "HR_Workflows",
+      "aliases": [
+        "HR-Workflows"
+      ],
+      "parent": "HCM",
+      "subdomains": [
+        "staff_rejected_flow",
+        "return_step01_impossible",
+        "fiori_apps",
+        "asr_framework",
+        "webdynpro_legacy",
+        "core_hr_project_2025_2026",
+        "successfactors_end_state_2026"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "HR-Workflows"
+      ],
+      "module_axis": [
+        "HCM",
+        "PD",
+        "UI5",
+        "WDY"
+      ],
+      "process_axis": [
+        "H2R"
+      ]
+    },
+    {
+      "canonical_key": "PY_Finance",
+      "aliases": [
+        "PY-Finance"
+      ],
+      "parent": "HCM",
+      "subdomains": [
+        "lcr_monthly",
+        "salary_scale_fo",
+        "csi",
+        "pensionable_remuneration",
+        "ticket_new_country_setup",
+        "custom_schemas_pcrs"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "PY-Finance"
+      ],
+      "module_axis": [
+        "PY",
+        "PA",
+        "FI"
+      ],
+      "process_axis": [
+        "H2R"
+      ]
+    },
+    {
+      "canonical_key": "BusinessPartner",
+      "aliases": [
+        "BusinessPartner"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "BusinessPartner"
+      ],
+      "module_axis": [
+        "FI"
+      ],
+      "process_axis": [
+        "P2D"
+      ]
+    },
+    {
+      "canonical_key": "PS",
+      "aliases": [
+        "PS"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "PS"
+      ],
+      "module_axis": [
+        "PS"
+      ],
+      "process_axis": [
+        "B2R"
+      ]
+    },
+    {
+      "canonical_key": "RE_FX",
+      "aliases": [
+        "RE-FX"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "RE-FX"
+      ],
+      "module_axis": [
+        "RE"
+      ]
+    },
+    {
+      "canonical_key": "Output",
+      "aliases": [
+        "Output"
+      ],
+      "in_capability_model": true,
+      "registry_keys": [
+        "Output"
+      ],
+      "module_axis": [
+        "FI"
+      ]
+    },
+    {
+      "canonical_key": "Transport_Intelligence",
+      "aliases": [],
+      "in_capability_model": false,
+      "registry_keys": [
+        "Transport_Intelligence"
+      ],
+      "module_axis": [
+        "CTS",
+        "BASIS"
+      ],
+      "_note": "REGISTRY_ONLY. Real functional domain in domains.json (7,745 transports classified across 21 modules, own knowledge docs + objects) with NO row in capability_model.json. NOT an alias: it is a CTS/lifecycle lens that cuts across all 15 rows, so folding it into any single one would be false. Disposition: capability-model backlog - open a row when the domain is scored on the 11 dimensions."
+    },
+    {
+      "canonical_key": "Support",
+      "aliases": [],
+      "in_capability_model": false,
+      "registry_keys": [
+        "Support"
+      ],
+      "module_axis": [
+        "BASIS"
+      ],
+      "_note": "REGISTRY_ONLY. domains.json describes it verbatim as a `cross-cutting incident & maintenance domain - INC tickets that span multiple functional domains`. NOT an alias by its own definition (it spans several). Disposition: either promote to a capability row or reclassify as a cross_cutting_key once incidents are keyed per-domain."
+    }
+  ],
+  "subdomain_aliases": {
+    "Cost_Recovery_CRP": {
+      "canonical_key": "PSM_FM",
+      "subdomain": "cost_recovery_crp",
+      "_note": "Top-level functional domain in domains.json (child of PSM), but in capability_model.json it lives as PSM_FM.subdomains.cost_recovery_crp. Mapped as a SUBDOMAIN, not a 16th domain."
+    }
+  },
+  "cross_cutting_keys": [
+    {
+      "key": "D_DATA",
+      "kind": "dimension_code",
+      "_note": "Dimension code used as a domain. The claim is about the METHOD for that dimension (extraction registry, RFC_READ_TABLE limits), not about a business domain."
+    },
+    {
+      "key": "F_INTERFACE_FILE",
+      "kind": "dimension_code",
+      "_note": "Dimension code used as a domain (RFC/SNC reachability, PA0105 sync)."
+    },
+    {
+      "key": "G_CONFORMANCE",
+      "kind": "dimension_code",
+      "_note": "Dimension code used as a domain (claims-health verification rate)."
+    },
+    {
+      "key": "H_IMPROVE",
+      "kind": "dimension_code",
+      "_note": "Dimension code used as a domain (meta-capability maturity of our way of working)."
+    },
+    {
+      "key": "Security",
+      "kind": "technical_axis",
+      "_note": "Cross-cutting security/SoD lens (RSAU retention, behavioural SoD). Also a value of the process axis in domains.json."
+    },
+    {
+      "key": "BASIS",
+      "kind": "technical_axis",
+      "_note": "Module-axis value (module_map.BASIS) used in the functional slot."
+    },
+    {
+      "key": "CUSTOM",
+      "kind": "technical_axis",
+      "_note": "Module-axis value (module_map.CUSTOM) used in the functional slot."
+    },
+    {
+      "key": "Infrastructure",
+      "kind": "technical_axis",
+      "_note": "Extraction/plumbing lens (Gold DB, RFC_READ_TABLE), not an SAP business domain."
+    },
+    {
+      "key": "System Lifecycle",
+      "kind": "technical_axis",
+      "_note": "S/4 readiness / SIC class family. Feeds R_S4_READINESS, not a domain."
+    },
+    {
+      "key": "Brain_Architecture",
+      "kind": "meta",
+      "_note": "Claim about the brain itself (never bulk-extract D010TAB/WBCROSSGT)."
+    },
+    {
+      "key": "Cross_Domain",
+      "kind": "multi_domain",
+      "_note": "Explicit multi-domain marker; the real domains live in domain_axes.functional."
+    },
+    {
+      "key": "PSM_PS",
+      "kind": "multi_domain",
+      "resolves_to": [
+        "PSM_FM",
+        "PS"
+      ],
+      "_note": "Ad-hoc PSM x PS compound (WBS/PS-budget channel). Resolves to two canonical keys."
+    }
+  ],
+  "_consumers": [
+    "brain_v2/validate_ontology.py - gate (step 0 of rebuild_all.py)",
+    "brain_v2/build_brain_state.py - L14 x L15 crossing (replaced the _norm() token hack)"
+  ]
+}

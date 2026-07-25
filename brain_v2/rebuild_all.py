@@ -2,6 +2,8 @@
 Rebuild EVERYTHING in one command.
 
 Order:
+0. validate_ontology       — GATE: the canonical vocabulary (contract C-1). No rebuild
+                             on an inconsistent domain vocabulary.
 1. brain_v2 build          — rebuild NetworkX graph from code + Gold DB
 2. build_active_db         — rebuild SQLite active DB (PMO, claims, sessions, incidents)
 3. generate_index / brain_state — rebuild brain_state.json from graph + annotations + claims
@@ -66,6 +68,12 @@ def main():
     print("Brain v3 Full Rebuild")
     print("=" * 60)
 
+    # STEP 0 — the vocabulary GATE (contract C-1). Every `domain` in claims /
+    # domains.json / capability_model must resolve to a canonical_key in
+    # brain_v2/capability_model/ontology.json. If it doesn't, the rebuild STOPS:
+    # materializing brain_state on an inconsistent vocabulary is what forced the
+    # fuzzy token-matching this gate replaces.
+    run(["python", "brain_v2/validate_ontology.py"], "Step 0: Validate canonical ontology (contract C-1)")
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
