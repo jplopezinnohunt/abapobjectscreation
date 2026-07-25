@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[0]
 MCP = REPO / "Zagentexecution" / "mcp-backend-server-python"
 sys.path.insert(0, str(MCP))
-GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 JOBCLASS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "job_classification.json"
 OUT = REPO / "brain_v2" / "executed_objects_domain_map.json"
 

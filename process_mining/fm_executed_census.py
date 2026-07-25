@@ -25,7 +25,7 @@ import sqlite3
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 OUT = REPO / "brain_v2" / "fm_executed_census.json"
 
 # FM / PSM-FM object-name matcher (tcodes, reports, FMs, BAPIs).

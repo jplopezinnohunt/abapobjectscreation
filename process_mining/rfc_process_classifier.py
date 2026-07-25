@@ -11,7 +11,9 @@ Extend: add a (process, [patterns]) row to KNOWN to explain more of the UNKNOWN 
 import sqlite3, re
 from collections import defaultdict
 
-GOLD = r"Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db"
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 
 # Ordered: first matching pattern wins. Patterns are substrings of the FM name (upper).
 KNOWN = [

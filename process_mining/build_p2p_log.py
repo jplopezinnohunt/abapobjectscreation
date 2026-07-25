@@ -8,7 +8,9 @@ Run:  python process_mining/build_p2p_log.py
 """
 import sqlite3, datetime, pandas as pd, pm4py
 
-GOLD = r"Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db"
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 # VGABE (PO-history transaction/event type) -> business activity + intra-day order rank
 VGABE_ACT = {"1": ("Goods Receipt", 2), "2": ("Invoice Receipt", 3),
              "3": ("Subsequent Adjustment", 4), "9": ("Delivery Cost/Other", 5),

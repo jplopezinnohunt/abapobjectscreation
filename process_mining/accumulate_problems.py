@@ -10,7 +10,9 @@ Run:  python process_mining/accumulate_problems.py [lookback_days]
 import os, sys, sqlite3, hashlib, datetime
 sys.path.insert(0, os.path.abspath("Zagentexecution/mcp-backend-server-python"))
 from rfc_helpers import get_connection
-GOLD = r"Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db"
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 DUMP_F = ["ON_DATE", "ON_TIME", "USER_NAME", "ERROR_CLASS", "OBJECT", "MESSAGE", "HOST"]
 SYS_F = ["SENDER_ID", "TS", "AREA", "SUBID", "CLASID", "CENTDATA"]
 

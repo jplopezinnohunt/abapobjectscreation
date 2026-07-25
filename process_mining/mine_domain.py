@@ -29,7 +29,7 @@ if hasattr(sys.stdout, "reconfigure"):
 import executed_objects_domain_map as eom  # noqa: E402  (the shared classifier)
 
 REPO = HERE.parent
-GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 OUTDIR = REPO / "brain_v2" / "domain_footprints"
 
 CHANNELS = [  # (label, rsau TXSUBCLSID, name-field, resolve-tcode?)

@@ -536,6 +536,84 @@ def adt_deploy(object_name: str, source: str, object_type: str = "CLASS") -> str
         return f"Deploy error: {str(e)}"
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  GOLDEN HUB TOOLS — the golden DB served BY MANIFEST, not by path (T5 / peldano 5)
+#  The 13 tools above never touch the golden: 4 brain_* load brain_v2_graph.json,
+#  the rest go live over RFC/ADT. These 3 close that gap.
+#  All logic lives in golden_hub.py (stdlib only); these are thin, additive wrappers.
+#  Read-only and tenant-scoped: tenant_id/system_role are first-class (D3). No d01_/v01_
+#  prefix is hardcoded anywhere here — the manifest resolves the system (T7-safe).
+# ══════════════════════════════════════════════════════════════════════════════
+
+import golden_hub as _gh  # noqa: E402
+
+
+@mcp.tool()
+def golden_manifest(tenant_id: str = "", system_role: str = "", domain: str = "",
+                    gold_table: str = "", include_columns: bool = False) -> str:
+    """Discover what gold tables exist, from which SAP system, how fresh, under what contract.
+
+    Returns a slice of golden_manifest.json. The caller never needs a .db path.
+    Examples: golden_manifest(domain="PSM_FM"), golden_manifest(gold_table="funds",
+    include_columns=True), golden_manifest(tenant_id="UNESCO", system_role="PROD")
+    """
+    try:
+        res = _gh.golden_manifest(
+            tenant_id=tenant_id or None, system_role=system_role or None,
+            domain=domain or None, gold_table=gold_table or None,
+            include_columns=include_columns,
+        )
+        return json.dumps(res, indent=2, default=str)
+    except _gh.GoldenHubError as e:
+        return f"golden_manifest error: {e}"
+
+
+@mcp.tool()
+def golden_query(gold_table: str, cols: str = "", where: str = "", tenant_id: str = "",
+                 system_role: str = "", max_rows: int = 1000, order_by: str = "") -> str:
+    """Read a gold table from the golden DB. READ-ONLY, tenant-scoped, always LIMITed.
+
+    Replaces "open the .db at <hardcoded path>". `cols` is a comma-separated list
+    (empty = all). `where` is a single SQL expression; SELECT/UNION/DDL/DML/PRAGMA are
+    rejected. max_rows defaults to 1000 and is capped at 10000.
+    Returns {rows, _meta{extracted_at, freshness_days, provenance, source_sid, ...}}.
+
+    Example: golden_query("funds", cols="FIKRS,FINCODE,TYPE", where="FIKRS='UNES'",
+                          tenant_id="UNESCO", system_role="PROD", max_rows=5)
+    """
+    try:
+        col_list = [c.strip() for c in cols.split(",") if c.strip()] if cols else None
+        res = _gh.golden_query(
+            gold_table, cols=col_list, where=where,
+            tenant_id=tenant_id or None, system_role=system_role or None,
+            max_rows=max_rows, order_by=order_by,
+        )
+        return json.dumps(res, indent=2, default=str)
+    except _gh.GoldenHubError as e:
+        return f"golden_query error: {e}"
+
+
+@mcp.tool()
+def golden_freshness(gold_table: str = "", domain: str = "", tenant_id: str = "",
+                     system_role: str = "") -> str:
+    """How stale is a gold table (or a whole domain)?
+
+    Returns {extracted_at, freshness_days, cadence, stale} per table. `stale` is null when
+    the table has no extracted_at at all (not covered by _gold_sync_log nor
+    _config_frontier_manifest) — an honest "unknown", never a false "fresh".
+
+    Examples: golden_freshness(gold_table="funds"), golden_freshness(domain="PSM_FM")
+    """
+    try:
+        res = _gh.golden_freshness(
+            gold_table=gold_table, domain=domain,
+            tenant_id=tenant_id or None, system_role=system_role or None,
+        )
+        return json.dumps(res, indent=2, default=str)
+    except _gh.GoldenHubError as e:
+        return f"golden_freshness error: {e}"
+
+
 if __name__ == "__main__":
     print("Starting SAP Backend MCP Server...")
     # By default, start with standard input/output transport for MCP
