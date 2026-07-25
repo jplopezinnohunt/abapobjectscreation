@@ -53,6 +53,27 @@ Read the lean index, not the whole brain: `brain_v2/BRAIN_INDEX.md`. Drill on
 demand via `python brain_v2/graph_queries.py <cmd>`. Read full `brain_state.json`
 only if you must verify whether a specific object/claim already exists.
 
+## THE CONTRACT LIVES IN ONE FILE — `brain_v2/CONTRACTS.md`
+
+Everything about **what a producer may send you and what only YOU may decide** is
+defined there, not here (one source, not two):
+- **C-2 `submit_claim`** — the required / optional / FORBIDDEN fields of a claim,
+  derived field-by-field from the real claim #3 (`brain_v2/claims/claims.json`
+  L89-148), the `>=2 distinct evidence types` independence rule, and the
+  `verification` block shape.
+- **C-3 `cell-move`** — a capability-model cell may not move without
+  `evidence_claim_ids`. The producer never sends the target value.
+- **C-1** — the canonical vocabulary (`capability_model/ontology.json`), the only
+  contract with an executable gate today (`validate_ontology.py`, step 0 of the rebuild).
+
+**You are the judge, the producer is the witness.** `HAVE` / `PARTIAL` / `NONE` is
+a coverage verdict across the whole brain — YOURS alone. A producer sending a
+`verdict`, a `status`, a `superseded_*` field or an `id` is out of contract: strip
+the field, keep the observation, and land it as a claim (or, with no evidence, as a
+`known_unknown` — see Hard limits below). CONTRACTS.md §7 is the honest list of
+which of these rules a script actually enforces today (most: none) — read it before
+assuming a submission was validated for you.
+
 ## One writer at a time (HARD)
 You modify shared state (`claims.json`, `incidents.json`, registry, domain docs,
 `feedback_rules.json`). If another session may be editing the brain, STOP and say
@@ -72,10 +93,10 @@ and run the rebuild (CLAUDE.md "One writer at a time").
    | Knowledge shape | Central store | How it lands |
    | --- | --- | --- |
    | Custom code / exit / BAdI / substitution | `knowledge/sap_custom_enhancement_registry.md` (+ matrix) | new row/section + cross-link |
-   | A system-level FACT with evidence | `brain_v2/claims/claims.json` | claim w/ tier + evidence path |
+   | A system-level FACT with evidence | `brain_v2/claims/claims.json` | claim per **contract C-2** (`CONTRACTS.md`) |
    | An incident | → route to `incident-analyst` | its 7-step output |
    | Rich domain behavior | `knowledge/domains/<D>/*.md` | doc edit + brain ingest |
-   | A capability gap / AS-RUN vs AS-DESIGNED delta | `brain_v2/capability_model/` (EXTEND, never redesign) | execution_backlog / applied_models row |
+   | A capability gap / AS-RUN vs AS-DESIGNED delta | `brain_v2/capability_model/` (EXTEND, never redesign) | execution_backlog / applied_models row; any CELL change follows **contract C-3** |
    | A way-of-working lesson (how I should work) | `brain_v2/agent_rules/feedback_rules.json` | rule w/ why + how_to_apply + CP link |
    | A pointer to an external resource | the relevant doc | reference link |
 
@@ -118,6 +139,10 @@ THE one gap still trapped in chat: <fact + recommended store — or "none">
 ## Hard limits (steward, not bureaucrat)
 - NEVER invent a new knowledge schema or a parallel store — write into the
   EXISTING ones (CLAUDE.md STOP block: the model already exists, EXTEND it).
+  The shape of a contribution is fixed by `brain_v2/CONTRACTS.md` — if it needs to
+  change, change THAT file, never a local variant.
+- NEVER move a capability-model cell without `evidence_claim_ids` (C-3). No
+  programmatic writer exists for those cells: the discipline is yours, not a gate's.
 - NEVER hand-edit `brain_state.json` (generated) — edit sources + rebuild.
 - NEVER promote an unverified hunch as a fact. No evidence → it is a
   `known_unknown`, not a claim.
