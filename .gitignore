@@ -46,6 +46,16 @@ Thumbs.db
 *.db
 *.db-journal
 *.sqlite
+
+# The model-state history DB (the maturity curve over time). Ignored ON PURPOSE and
+# EXPLICITLY, not by inheriting the blanket *.db rule above: one ~218 KB binary blob per
+# rebuild would be undiffable and unmergeable, and two parallel sessions committing it
+# would conflict irreconcilably (ADR-008, one writer at a time).
+# ⚠ It is NOT reconstructible — it is the only copy of the time series. Its durable,
+# git-friendly counterpart is brain_v2/capability_model/maturity_history.jsonl (one ~200 B
+# line per run), which IS versioned. Back the .db up off-disk before touching this rule.
+brain_v2/model_state/*.db
+
 *.tflite
 *.pb
 *.wasm
