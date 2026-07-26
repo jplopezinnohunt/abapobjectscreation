@@ -152,6 +152,15 @@
   ],
   "analysis_tasks_no_extraction": [
     {
+      "id": "AN-FOOTPRINT-INGEST",
+      "fills": "U_USAGE — the column has ZERO backlog tasks today, yet carries live PARTIAL cells. Cheapest U_USAGE move on the board: the data is already on disk, nothing to extract.",
+      "do": "ingest brain_v2/domain_footprints/*.json (17 files, produced by process_mining/mine_domain.py) into the model as U_USAGE evidence",
+      "what_to_look_for": "per domain: by_channel (dialog_tcode/report/rfc_bapi/batch_job), by_actor (human/batch/integration), top_objects, dead_objects, hidden_extractions, integration_objects, time_monthly. U_USAGE asks exactly this: WHAT executes, WHO runs it, by which CHANNEL.",
+      "blocked_by": "footprint keys do not reconcile with capability_model domains — only 12 of 17 match. Extra: Basis_Security, CTS_Transport, Controlling, Uncatalogued. Missing: Closing_Activities, PY_Finance, RE_FX. Contract C-1 (validate_ontology.py) covers claims/domains.json/capability_model but NOT the footprint keys, so this mismatch is ungated.",
+      "source": "sapilot analysis/arch/00-matriz-interoperabilidad.md gap E7 — domain_footprint declared as C2 output with consumers listed, but no C5 contract ingests it. Confirmed on disk 2026-07-26.",
+      "status": "DEFERRED"
+    },
+    {
       "id": "AN-OCEL2",
       "fills": "A_PROCESS substrate",
       "do": "reformat existing events into an OCEL 2.0 SQLite store",
@@ -244,6 +253,40 @@
       "for": "R_S4 composite roll-up",
       "do": "DESIGN task (ours, not research): define how to WEIGHT the readiness factors (BP/CVI + SI-Check + custom-code + finance + technical) into one R_S4_READINESS score. Judgment-based scoring, not an external fact.",
       "status": "DEFERRED"
+    }
+  ],
+
+  "_meta_tasks_design": "Added 2026-07-26. The three sections above serve Layer 15 — the BUSINESS capability model. The brain also measures ITSELF (brain_v2/meta_capability.py: 7 capabilities, meta-maturity 60.8%), and that model had NO task structure at all: its weakest capability, DURABILITY (0.10), carried three measured ZEROES with nothing tracking them. Same task shape as above; `fills` points at a meta sub-lever instead of an L15 dimension. The session-start hook has been saying 'pick ONE weak sub-lever and move it this session' — this is where those picks live.",
+  "meta_tasks": [
+    {
+      "id": "META-BACKUP",
+      "fills": "DURABILITY.assets_backed_up (0.00 measured — the single worst score in the meta-model)",
+      "do": "define and execute an OFFSITE backup for the three local-only assets; git does NOT protect them",
+      "what_to_look_for": "(1) Golden DB p01_gold_master_data.db, 14.2 GB, gitignored — the least reproducible asset. (2) ~/.claude memory. (3) brain_v2/model_state/model_state.db — the ONLY copy of the maturity time series, added 2026-07-25; it made this sub-lever worse, not better.",
+      "blocked_by": "needs a human decision on the backup target (external disk / network share / cloud). Cannot be chosen by an agent.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "META-UNATTENDED",
+      "fills": "DURABILITY.unattended_ready (0.00 measured)",
+      "do": "close H66 — headless SNC/keytab so extraction can run without an interactive SSO session",
+      "what_to_look_for": "the SAP_AccumulateLogs scheduled task was activated 2026-07-25 but registered as 'Interactive only', so the sub-lever did NOT move. Unattended operation is the actual blocker, not the schedule.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "META-WEAK-TIER1",
+      "fills": "VERIFY.weak_tier1_cleared (0.00 measured) and VERIFY.claims_2plus_sources (0.245)",
+      "do": "work the 21 weak TIER_1 claims in the claims_health.py worklist up to >=2 independent evidence types",
+      "what_to_look_for": "78 claims carry evidence_for as bare strings with no `type`, so they cannot satisfy the independence rule at all. The rule is also gameable: `type` is free text with 111 distinct values — freezing that vocabulary is part of the fix.",
+      "source": "brain_v2/CONTRACTS.md §7 (enforcement status, Ola 2) — the contract exists, the enforcement does not.",
+      "status": "DEFERRED"
+    },
+    {
+      "id": "META-INSTRUMENTS-IN-LOOP",
+      "fills": "the measurement itself — a self-assessment that is not refreshed is not a measurement",
+      "do": "keep every scoring instrument inside rebuild_all.py",
+      "what_to_look_for": "DONE 2026-07-26: gold_extractor_maturity.py and meta_capability.py were NOT in the pipeline (0 references), so gold_extractor_maturity.json sat 19 days stale and the model-state curve recorded meta_maturity=62.4 for 6 consecutive runs while the real value was 60.8. Wired as Steps 3b3/3b4, before the snapshot. Verified: run 7 records meta=60.8, extractor=30.0.",
+      "status": "DONE (2026-07-26)"
     }
   ]
 }
