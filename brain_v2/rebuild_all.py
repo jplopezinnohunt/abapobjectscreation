@@ -203,7 +203,18 @@ def main():
         "Step 2c: Claims-health gate (evidence independence -> claims_health.json)", fatal=False)
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
-    # Step 3b2 — MUST run after 3b, never before. maturity_score.py (3b) overwrites
+    # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline
+    # (measured 2026-07-26: 0 references), so nothing refreshed them: gold_extractor_maturity.json
+    # sat 19 days stale (2026-07-07) and meta_capability.json was read as fresh while frozen.
+    # Consequence: the model-state curve recorded meta_maturity=62.4 for 6 consecutive runs when
+    # the real re-measured value was 60.8 — the instrument that measures how we work was itself
+    # unmaintained. Both run in ~0.2s. They go BEFORE the snapshot so the curve records live values.
+    run(["python", "brain_v2/gold_extractor_maturity.py"],
+        "Step 3b3: Score extractor maturity (per domain x table ladder L0..L4)", fatal=False)
+    run(["python", "brain_v2/meta_capability.py"],
+        "Step 3b4: Self-assess our way of working (meta-capability, 7 dimensions)", fatal=False)
+
+    # Step 3b2 — MUST run after 3b/3b3/3b4, never before. maturity_score.py (3b) overwrites
     # maturity.json in place; snapshotting before it would silently capture the PREVIOUS
     # rebuild's measurement — a permanent, invisible off-by-one-rebuild in the curve.
     # Appends one row per run to the model-state history DB: the time series of the
