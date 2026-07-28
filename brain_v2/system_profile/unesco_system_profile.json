@@ -15,13 +15,17 @@
   "documents": "Gold DB p01_gold_master_data.db (P01 provenance, scope 2024-2026)",
   "operating_model": "knowledge/system_operating_model_rfc.md + knowledge/domains/Integration/integration_map_complete.md (claims #220-#230)"
  },
-
  "landscape": {
   "product": "SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA",
   "key_components": {
-   "SAP_BASIS": "750 SP34", "SAP_ABA": "750 SP34", "SAP_APPL": "618 SP25",
-   "SAP_FIN": "618 SP25", "SAP_HR": "608 SP156", "SAP_BW": "750 SP34",
-   "SAP_GWFND": "750 SP34 (OData/Gateway)", "SAP_UI": "754 SP18 (Fiori-capable)"
+   "SAP_BASIS": "750 SP34",
+   "SAP_ABA": "750 SP34",
+   "SAP_APPL": "618 SP25",
+   "SAP_FIN": "618 SP25",
+   "SAP_HR": "608 SP156",
+   "SAP_BW": "750 SP34",
+   "SAP_GWFND": "750 SP34 (OData/Gateway)",
+   "SAP_UI": "754 SP18 (Fiori-capable)"
   },
   "systems": {
    "P01": "production — read-only for us (RFC over SNC/SSO). 9 company codes.",
@@ -31,7 +35,6 @@
   "components_installed_total": 177,
   "components_caveat": "MOST are shipped-by-default and unused: ~60 country HR versions + industry solutions (IS-OIL, IS-H, INSURANCE, IS-UT, IS-M, IS-CWM, IS-PRA, EA-RETAIL, EA-DFPS). 'Installed' is NOT a scope signal."
  },
-
  "org_structure": {
   "company_codes": 9,
   "controlling_areas": 1,
@@ -43,77 +46,416 @@
   "personnel_areas": "multiple (T500P)",
   "payroll_areas": "multiple (T549A)"
  },
-
  "modules": {
-  "FI": {"status": "PRODUCTIVE", "core": true, "evidence": "9 company codes; 1.83M accounting docs; 3.35M open + 2.19M cleared GL items; 316K vendors; 12.5K customers"},
-  "PSM_FM": {"status": "PRODUCTIVE", "core": true, "evidence": "67.5K funds, 787 fund centres, 205 commitment items; 294K budget headers / 328K budget lines; 2.19M commitments (FMIOI); AVC ledger active"},
-  "PS": {"status": "PRODUCTIVE", "core": true, "evidence": "13,976 projects / 59,749 WBS elements; 1.6M executions (mostly via MuleSoft RFC)"},
-  "CO": {"status": "PRODUCTIVE", "evidence": "1 controlling area, 3 cocd assignments, 688 cost centres, 2.63M CO line items"},
-  "MM": {"status": "PRODUCTIVE", "evidence": "84 plants; 73K POs / 201K items; 23K requisitions; 2.89M service lines; 134K supplier invoices; 1,613 material masters; >=20K goods movements 2024+"},
-  "HCM": {"status": "PRODUCTIVE", "core": true, "evidence": "full PA/OM; 279K module + 223K HR-workflow executions in 4 months; payroll + personnel areas configured"},
-  "FI_AA": {"status": "PRODUCTIVE", "added_s097": true, "evidence": ">=20,000 asset masters; 9 asset company codes (= all); 10,680 asset postings 2024+", "note": "MISSED in the first s097 answer — reported as 'not evidenced'."},
-  "RE_FX": {"status": "PRODUCTIVE", "added_s097": true, "evidence": "312 contracts, 1,600 rental objects, 1 business entity; RECN 80 execs/4 users, RERAPP 25, RERAIV 16, reversals, 8 RE-IS reports; custom pkgs ZRE/ZRE_CONTRACT/ZRE_INVOICE/ZRE_POSTINGS/ZRE_WORKFLOW/YA_FEX", "business_use": "contract & lease management for field offices", "note": "USER-FLAGGED miss. Claim #353."},
-  "PM": {"status": "PRODUCTIVE", "added_s097": true, "evidence": "19,313 equipment records", "note": "Ties to the 'Mouv' satellite (asset/equipment mgmt, 12 RFC FMs)."},
-  "SD": {"status": "PRODUCTIVE", "added_s097": true, "evidence": "1 sales org; 2,116 sales orders 2024+; 2,901 billing docs 2024+; 0 deliveries", "note": "BILLING-ONLY pattern — order-to-invoice without logistics execution. Previously reported 'not implemented' — WRONG."},
-  "TRM": {"status": "PRODUCTIVE", "added_s097": true, "evidence": "1,835 treasury deals (VTBFHA)", "note": "Treasury & Risk Mgmt deal management — distinct from the EBS bank-statement flow, and previously invisible."},
-  "Treasury_EBS": {"status": "PRODUCTIVE", "evidence": "211 house banks / 402 accounts; MT940 import daily; 964K reprocessing records"},
-  "Payment_BCM": {"status": "PRODUCTIVE", "evidence": "3.7M payment-run records; 27K batches / 600K batch items; DMEE (CGI/SEPA/CITI) files generated; BCM release procedures configured"},
-  "Travel": {"status": "PRODUCTIVE", "evidence": "13,735 trips / 14,118 trip cost records"},
-  "BusinessPartner": {"status": "PARTIAL", "evidence": "559 business partners vs 316K classic vendors — BP conversion not done"},
-  "WM": {"status": "CONFIGURED", "evidence": "2 warehouses; no productive volume measured"},
-  "BW_embedded": {"status": "MARGINAL", "evidence": "SAP_BW 750 + BI_CONT 757 installed; negligible execution"},
-  "QM": {"status": "NOT_USED", "evidence": "0 inspection lots"},
-  "CS": {"status": "NOT_USED", "evidence": "0 service notifications"},
-  "GM": {"status": "NOT_USED", "evidence": "0 grants — UNESCO runs grant-like funding through FM, not Grants Management"}
+  "FI": {
+   "status": "PRODUCTIVE",
+   "core": true,
+   "evidence": "9 company codes; 1.83M accounting docs; 3.35M open + 2.19M cleared GL items; 316K vendors; 12.5K customers"
+  },
+  "PSM_FM": {
+   "status": "PRODUCTIVE",
+   "core": true,
+   "evidence": "67.5K funds, 787 fund centres, 205 commitment items; 294K budget headers / 328K budget lines; 2.19M commitments (FMIOI); AVC ledger active"
+  },
+  "PS": {
+   "status": "PRODUCTIVE",
+   "core": true,
+   "evidence": "13,976 projects / 59,749 WBS elements; 1.6M executions (mostly via MuleSoft RFC)"
+  },
+  "CO": {
+   "status": "PRODUCTIVE",
+   "evidence": "1 controlling area, 3 cocd assignments, 688 cost centres, 2.63M CO line items"
+  },
+  "MM": {
+   "status": "PRODUCTIVE",
+   "evidence": "84 plants; 73K POs / 201K items; 23K requisitions; 2.89M service lines; 134K supplier invoices; 1,613 material masters; >=20K goods movements 2024+"
+  },
+  "HCM": {
+   "status": "PRODUCTIVE",
+   "core": true,
+   "evidence": "full PA/OM; 279K module + 223K HR-workflow executions in 4 months; payroll + personnel areas configured"
+  },
+  "FI_AA": {
+   "status": "PRODUCTIVE",
+   "added_s097": true,
+   "evidence": ">=20,000 asset masters; 9 asset company codes (= all); 10,680 asset postings 2024+",
+   "note": "MISSED in the first s097 answer — reported as 'not evidenced'."
+  },
+  "RE_FX": {
+   "status": "PRODUCTIVE",
+   "added_s097": true,
+   "evidence": "312 contracts, 1,600 rental objects, 1 business entity; RECN 80 execs/4 users, RERAPP 25, RERAIV 16, reversals, 8 RE-IS reports; custom pkgs ZRE/ZRE_CONTRACT/ZRE_INVOICE/ZRE_POSTINGS/ZRE_WORKFLOW/YA_FEX",
+   "business_use": "contract & lease management for field offices",
+   "note": "USER-FLAGGED miss. Claim #353."
+  },
+  "PM": {
+   "status": "PRODUCTIVE",
+   "added_s097": true,
+   "evidence": "19,313 equipment records",
+   "note": "Ties to the 'Mouv' satellite (asset/equipment mgmt, 12 RFC FMs)."
+  },
+  "SD": {
+   "status": "PRODUCTIVE",
+   "added_s097": true,
+   "evidence": "1 sales org; 2,116 sales orders 2024+; 2,901 billing docs 2024+; 0 deliveries",
+   "note": "BILLING-ONLY pattern — order-to-invoice without logistics execution. Previously reported 'not implemented' — WRONG."
+  },
+  "TRM": {
+   "status": "PRODUCTIVE",
+   "added_s097": true,
+   "evidence": "1,835 treasury deals (VTBFHA)",
+   "note": "Treasury & Risk Mgmt deal management — distinct from the EBS bank-statement flow, and previously invisible."
+  },
+  "Treasury_EBS": {
+   "status": "PRODUCTIVE",
+   "evidence": "211 house banks / 402 accounts; MT940 import daily; 964K reprocessing records"
+  },
+  "Payment_BCM": {
+   "status": "PRODUCTIVE",
+   "evidence": "3.7M payment-run records; 27K batches / 600K batch items; DMEE (CGI/SEPA/CITI) files generated; BCM release procedures configured"
+  },
+  "Travel": {
+   "status": "PRODUCTIVE",
+   "evidence": "13,735 trips / 14,118 trip cost records"
+  },
+  "BusinessPartner": {
+   "status": "PARTIAL",
+   "evidence": "559 business partners vs 316K classic vendors — BP conversion not done"
+  },
+  "WM": {
+   "status": "CONFIGURED",
+   "evidence": "2 warehouses; no productive volume measured"
+  },
+  "BW_embedded": {
+   "status": "MARGINAL",
+   "evidence": "SAP_BW 750 + BI_CONT 757 installed; negligible execution"
+  },
+  "QM": {
+   "status": "NOT_USED",
+   "evidence": "0 inspection lots"
+  },
+  "CS": {
+   "status": "NOT_USED",
+   "evidence": "0 service notifications"
+  },
+  "GM": {
+   "status": "NOT_USED",
+   "evidence": "0 grants — UNESCO runs grant-like funding through FM, not Grants Management"
+  }
  },
-
  "third_party_addons": {
   "_why_first_class": "Each is a licence, an upgrade dependency AND an independent data-exit channel. Absent from the brain until s097. Claim #354.",
-  "EPI_USE_Labs": {"status": "ACTIVE", "domain": "HCM", "components": ["GBX01HR 600 SP19", "GBX01HR5 605 SP34"], "packages": ["/EPIUSE/PYXX", "/EPIUSE/SHARED", "/EPIUSE/VM3", "/EPIUSE/VM3TI"], "programs": 73, "evidence": "Variance Monitor VM3 reports executed ~124x Mar-Jun 2026 (1-3 users)", "open": "confirm which products are licensed (Query Manager / Data Sync Manager?) — only Variance Monitor is observed executing"},
-  "ACL_Data_Link": {"status": "ACTIVE", "purpose": "audit-analytics data extraction OUT of SAP", "component": "ACLDL 750", "package": "/ACLDL/DL", "evidence": "/ACLDL/DL7_DLINKBKGD 1,775 executions Mar-May 2026, single service user, scheduled background"},
-  "Winshuttle_Query": {"status": "INSTALLED_DORMANT", "purpose": "Excel-based data extract + upload", "component": "WINSHTLQ", "packages": 11, "evidence": "0 executions in the 4-month audit window", "open": "licence still paid? candidate saving"},
-  "SAP_Screen_Personas": {"status": "INSTALLED", "component": "PERSONAS 300 SP20"},
-  "SuccessFactors_integration": {"status": "INSTALLED", "components": ["SFIHCM01 600", "SFIHCM02 600", "SFIHCM03 600"], "note": "consistent with the productive SF EC extraction jobs"},
-  "SRM": {"status": "INSTALLED_NO_EVIDENCE", "component": "SRM_SERVER 714"},
-  "E_Recruiting": {"status": "INSTALLED_NO_EVIDENCE", "component": "ERECRUIT 617"},
-  "Learning_Solution": {"status": "INSTALLED_NO_EVIDENCE", "component": "LSOFE 617"},
-  "Central_Finance_ODP": {"status": "INSTALLED_NO_EVIDENCE", "component": "ODTFINCC 600"},
-  "MDG": {"status": "INSTALLED_NO_EVIDENCE_OF_ACTIVATION", "components": ["MDG_FND 749", "MDG_APPL 619", "MDG_UX 619", "MDG_MDC 100"], "warning": "NEVER assert 'no MDG component is in use' — they ARE installed. Activation is what is unproven."}
+  "EPI_USE_Labs": {
+   "status": "ACTIVE",
+   "domain": "HCM",
+   "components": [
+    "GBX01HR 600 SP19",
+    "GBX01HR5 605 SP34"
+   ],
+   "packages": [
+    "/EPIUSE/PYXX",
+    "/EPIUSE/SHARED",
+    "/EPIUSE/VM3",
+    "/EPIUSE/VM3TI"
+   ],
+   "programs": 73,
+   "evidence": "Variance Monitor VM3 reports executed ~124x Mar-Jun 2026 (1-3 users)",
+   "open": "confirm which products are licensed (Query Manager / Data Sync Manager?) — only Variance Monitor is observed executing"
+  },
+  "ACL_Data_Link": {
+   "status": "ACTIVE",
+   "purpose": "audit-analytics data extraction OUT of SAP",
+   "component": "ACLDL 750",
+   "package": "/ACLDL/DL",
+   "evidence": "/ACLDL/DL7_DLINKBKGD 1,775 executions Mar-May 2026, single service user, scheduled background"
+  },
+  "Winshuttle_Query": {
+   "status": "INSTALLED_DORMANT",
+   "purpose": "Excel-based data extract + upload",
+   "component": "WINSHTLQ",
+   "packages": 11,
+   "evidence": "0 executions in the 4-month audit window",
+   "open": "licence still paid? candidate saving"
+  },
+  "SAP_Screen_Personas": {
+   "status": "INSTALLED",
+   "component": "PERSONAS 300 SP20"
+  },
+  "SuccessFactors_integration": {
+   "status": "INSTALLED",
+   "components": [
+    "SFIHCM01 600",
+    "SFIHCM02 600",
+    "SFIHCM03 600"
+   ],
+   "note": "consistent with the productive SF EC extraction jobs"
+  },
+  "SRM": {
+   "status": "INSTALLED_NO_EVIDENCE",
+   "component": "SRM_SERVER 714"
+  },
+  "E_Recruiting": {
+   "status": "INSTALLED_NO_EVIDENCE",
+   "component": "ERECRUIT 617"
+  },
+  "Learning_Solution": {
+   "status": "INSTALLED_NO_EVIDENCE",
+   "component": "LSOFE 617"
+  },
+  "Central_Finance_ODP": {
+   "status": "INSTALLED_NO_EVIDENCE",
+   "component": "ODTFINCC 600"
+  },
+  "MDG": {
+   "status": "INSTALLED_NO_EVIDENCE_OF_ACTIVATION",
+   "components": [
+    "MDG_FND 749",
+    "MDG_APPL 619",
+    "MDG_UX 619",
+    "MDG_MDC 100"
+   ],
+   "warning": "NEVER assert 'no MDG component is in use' — they ARE installed. Activation is what is unproven."
+  }
  },
-
  "operating_model": {
   "headline": "UNESCO does NOT operate SAP by dialog. 80.6% of business RFC traffic is driven by EXTERNAL satellite applications. SAP is a read-dominant SYSTEM-OF-RECORD that feeds satellites and receives concentrated writes.",
-  "external_share_by_month": {"2026-02": "86%", "2026-03": "80%", "2026-04": "80%", "2026-05": "82%", "2026-06": "77%"},
+  "external_share_by_month": {
+   "2026-02": "86%",
+   "2026-03": "80%",
+   "2026-04": "80%",
+   "2026-05": "82%",
+   "2026-06": "77%"
+  },
   "stability": "STRUCTURAL, not a spike — holds every month once our own extraction footprint is excluded.",
   "process_coverage": "91.1% of business RFC calls mapped to a process (2-axis engine: process x origin).",
   "satellites": {
-   "MuleSoft": {"volume": "1.62M", "share": "~50%", "direction": "bidirectional", "what": "SAP <-> PPM/Salesforce (Core Manager / Core Planner) project-financials sync", "fleet": "174 endpoints, synctrigger-sap-app-* workers", "key_fms": ["Y_BAPI_WBS_FINANCIAL_DATA_1 (974K)", "Y_BAPI_YPS8 (461K)", "Y_BAPI_CUSTOMER_GET_ID (148K)", "BAPI_PROJECT_MAINTAIN (write)", "Y_FMKU_0050_CREATE_WITH_COMMIT (fund create)"]},
-   "BRIDGE_RFC_ORION": {"volume": "875K", "share": "~25%", "direction": "92% READ", "what": "procurement + travel + master-data-read self-service portal", "key_fms": ["ZBAPI_VENDOR_GETDETAIL (72K)", "Z_RFC_GET_USER (508K SSO)", "BAPI_PR_GETDETAIL", "BAPI_PO_GETDETAIL1", "YHRTRV_IF_GET/MODIFY_TRIP (46K)"]},
-   "Named_user_portal": {"volume": "501K", "share": "~15%", "direction": "37% read / 32% write", "what": "THE WRITE CHANNEL — transactions and master changes enter under a named user's ID", "key_fms": ["BAPI_PR_CHANGE (37K)", "Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K)", "ZBAPI_VENDOR_CHANGE (24K)", "BAPI_GOODSMVT_CREATE", "BAPI_INCOMINGINVOICE_CREATE1"], "risk": "SoD — see H71 write-channel finding"},
-   "WF_BATCH": {"what": "HR lifecycle automation (RE_RHAKTI00, HR_IT1000/1001)"},
-   "PBC_engine": {"what": "payroll commitments (ZPBC_PERIOD_CLS_EXEC -> FMRESERV, 6.4M CDHDR rows)"},
-   "RFC_SSIS": {"volume": "123", "what": "Microsoft SSIS BI extractor reading SAP tables raw"}
+   "MuleSoft": {
+    "volume": "1.62M",
+    "share": "~50%",
+    "direction": "bidirectional",
+    "what": "SAP <-> PPM/Salesforce (Core Manager / Core Planner) project-financials sync",
+    "fleet": "174 endpoints, synctrigger-sap-app-* workers",
+    "key_fms": [
+     "Y_BAPI_WBS_FINANCIAL_DATA_1 (974K)",
+     "Y_BAPI_YPS8 (461K)",
+     "Y_BAPI_CUSTOMER_GET_ID (148K)",
+     "BAPI_PROJECT_MAINTAIN (write)",
+     "Y_FMKU_0050_CREATE_WITH_COMMIT (fund create)"
+    ]
+   },
+   "BRIDGE_RFC_ORION": {
+    "volume": "875K",
+    "share": "~25%",
+    "direction": "92% READ",
+    "what": "procurement + travel + master-data-read self-service portal",
+    "key_fms": [
+     "ZBAPI_VENDOR_GETDETAIL (72K)",
+     "Z_RFC_GET_USER (508K SSO)",
+     "BAPI_PR_GETDETAIL",
+     "BAPI_PO_GETDETAIL1",
+     "YHRTRV_IF_GET/MODIFY_TRIP (46K)"
+    ]
+   },
+   "Named_user_portal": {
+    "volume": "501K",
+    "share": "~15%",
+    "direction": "37% read / 32% write",
+    "what": "THE WRITE CHANNEL — transactions and master changes enter under a named user's ID",
+    "key_fms": [
+     "BAPI_PR_CHANGE (37K)",
+     "Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K)",
+     "ZBAPI_VENDOR_CHANGE (24K)",
+     "BAPI_GOODSMVT_CREATE",
+     "BAPI_INCOMINGINVOICE_CREATE1"
+    ],
+    "risk": "SoD — see H71 write-channel finding"
+   },
+   "WF_BATCH": {
+    "what": "HR lifecycle automation (RE_RHAKTI00, HR_IT1000/1001)"
+   },
+   "PBC_engine": {
+    "what": "payroll commitments (ZPBC_PERIOD_CLS_EXEC -> FMRESERV, 6.4M CDHDR rows)"
+   },
+   "RFC_SSIS": {
+    "volume": "123",
+    "what": "Microsoft SSIS BI extractor reading SAP tables raw"
+   }
   },
   "still_dialog": "vendor master change (XK02, dual-channel with the BAPI), GL master (FS00, rare), bank master (FI01), some FI postings. Dialog is a MINORITY for P2P, Travel, FM/Project master and HR-org.",
-  "named_business_systems": ["SISTER (47 FMs)", "HR Workflow App (87 FMs)", "CMT / Contract Management (44 FMs)", "UBO Field Office (15 FMs)", "Travel App (21 FMs)", "Mouv equipment (12 FMs)", "Procurement App (13 FMs)", "Core Manager / Core Planner (PPM, via MuleSoft)", "COUPA", "SuccessFactors EC", "TULIP", "UNESDIR", "UNJSPF", "BOC", "Data Hub", "MBF", "BW", "Banks (SocGen, Citi, SWIFT/MT940)"]
+  "named_business_systems": [
+   "SISTER (47 FMs)",
+   "HR Workflow App (87 FMs)",
+   "CMT / Contract Management (44 FMs)",
+   "UBO Field Office (15 FMs)",
+   "Travel App (21 FMs)",
+   "Mouv equipment (12 FMs)",
+   "Procurement App (13 FMs)",
+   "Core Manager / Core Planner (PPM, via MuleSoft)",
+   "COUPA",
+   "SuccessFactors EC",
+   "TULIP",
+   "UNESDIR",
+   "UNJSPF",
+   "BOC",
+   "Data Hub",
+   "MBF",
+   "BW",
+   "Banks (SocGen, Citi, SWIFT/MT940)"
+  ]
  },
-
  "integration": {
   "documented_flows": 37,
   "external_systems": "18+",
-  "channels": ["RFC (.NET connector — 7 apps, 334 custom FMs)", "IDoc (PROJECT02, RSINFO/RSRQST, EXCHANGE_RATE)", "MuleSoft middleware", "file-based jobs (~8,700 runs)", "BDC", "LSMW", "DBCON direct SQL", "HTTP/SOAP"],
-  "failing": ["TULIP DBCON 93% job failure", "UNESDIR DBCON 93% job failure"],
-  "security_flags": ["AWS CSI destinations over HTTP:80 without TLS"],
+  "channels": [
+   "RFC (.NET connector — 7 apps, 334 custom FMs)",
+   "IDoc (PROJECT02, RSINFO/RSRQST, EXCHANGE_RATE)",
+   "MuleSoft middleware",
+   "file-based jobs (~8,700 runs)",
+   "BDC",
+   "LSMW",
+   "DBCON direct SQL",
+   "HTTP/SOAP"
+  ],
+  "failing": [
+   "TULIP DBCON 93% job failure",
+   "UNESDIR DBCON 93% job failure"
+  ],
+  "security_flags": [
+   "AWS CSI destinations over HTTP:80 without TLS"
+  ],
   "detail": "knowledge/domains/Integration/integration_map_complete.md (per-flow) + knowledge/system_operating_model_rfc.md (volumes/direction)"
  },
-
  "custom_code": {
   "share_of_executed_code": "~35% custom, concentrated in FM, HR workflows and payments",
   "moat": "custom satellite interface names (YHRTRV_IF_*, ZBAPI_VENDOR_*, Y_FMKU_*, Y_BAPI_YPS8, Y_BAPI_WBS_FINANCIAL_DATA_1, Y_RFC_FMRP_*) are unlabelable by any commercial process-mining tool. Claim #229."
  },
-
  "known_limits": {
   "execution_map_is_a_floor": "executed_objects_domain_map has NO bucket for RE_FX nor for third-party namespaces (/EPIUSE/, /ACLDL/, /WINSHTLQ/, /GBX01/) — 3,893 objects / 4.56M execs (40% of volume) sit in 'Uncatalogued'. NEVER read that bucket as 'technical substrate only'; it hides productive business modules. Claim #355.",
-  "not_yet_profiled": ["activated business functions (SFW5)", "Fiori/OData apps actually in use", "licence/user-type mix", "archiving status"]
+  "not_yet_profiled": [
+   "OData/Fiori actual call volume (SU_STATS not RFC-readable)",
+   "archiving status",
+   "which of the 149 switches were activated by project vs shipped-on",
+   "meaning of the USR06 licence codes (needs the contract)"
+  ],
+  "odata_active_flag": "/IWFND/I_MED_SRH.IS_ACTIVE uses 'A', and SFW_SWITCH_STATE.STATE uses T/F - both bit us once. Verify domain values before filtering."
+ },
+ "switch_framework": {
+  "_source": "SFW_SWITCH_STATE on P01, 2026-07-28 (read-only). Note: STATE uses T/F, not 1/0.",
+  "switches_total": 2453,
+  "switches_ON": 149,
+  "what_the_activations_reveal": "the activated set is an INDEPENDENT confirmation of the module footprint",
+  "highlights": {
+   "enterprise_extensions": [
+    "EA-FIN",
+    "EA-FS",
+    "EA-HR",
+    "EA-TRV"
+   ],
+   "FI_AA": [
+    "FI_AA_TRANSFER"
+   ],
+   "new_GL": [
+    "FAGL_FIN_GL_SPLCONFIG_NS",
+    "FAGL_FIN_GL_SPL_TECH_RS"
+   ],
+   "PSM_FM": [
+    "FM_SFWS_ACC_DERI",
+    "FM_SWFS_ACC_SPLIT",
+    "FM_SFWS_UI_MD_CREATE",
+    "FM_SFWS_UI_ACC_DERI",
+    "FM_SWFS_UI_ACC_SPLIT"
+   ],
+   "FM_to_RE_integration": [
+    "FMRE_RE_INT",
+    "FMRE_MM_FLX_CAT"
+   ],
+   "BCM_payments": [
+    "BNK_SFWS_BRM",
+    "BNK_SFWS_DDIC_BRM",
+    "BNK_SFWS_UI_BRM",
+    "BNK_SFWS_UI_SIMPL4"
+   ],
+   "EAM_plant_maintenance": [
+    "EAM_SFWS_SC1",
+    "EAM_SFWS_UI1_MP",
+    "EAM_SFWS_UI1_WOREL",
+    "EAM_SFWS_UI1_WOCAL",
+    "EAM_SFWS_UI1_SHOPP",
+    "EAM_SFWS_UI1_DSIGN"
+   ],
+   "HR_self_service_and_forms": [
+    "HRASR_SFWS_UI_ENH_01..11",
+    "HRESS_SFWS_UI5_UI_01",
+    "HRESS_SFWS_UI5_UI_02",
+    "HRHCP_SFWS_SC_01"
+   ],
+   "HR_localisations": [
+    "HRLOCUN_SFWS_UI_01..13 (UN localisation)",
+    "HRLOCAT",
+    "HRLOCAU",
+    "HRLOCPT",
+    "HRLOCRU"
+   ]
+  },
+  "cross_checks": "FMRE_RE_INT proves the RE-FX <-> Funds Management integration is switched ON (independent of the RE document counts). EAM_* corroborates PM (19,313 equipment). FI_AA_TRANSFER corroborates Asset Accounting."
+ },
+ "digital_front_end": {
+  "_source": "/IWFND/I_MED_SRH on P01, 2026-07-28. IS_ACTIVE='A' for all 185.",
+  "_why_it_matters": "A 'Digital Transformation' review must know the digital front-end that ALREADY exists. This layer was absent from the first module answer entirely.",
+  "odata_services_registered": 185,
+  "all_active": true,
+  "composition": {
+   "sap_flagged": 93,
+   "other": 92,
+   "of_which_SAP_demo_EPM_*": 19,
+   "custom_Z_Y": 8
+  },
+  "hcm_fiori_self_service": "full SAP Fiori for HCM set registered: HCMFAB_MYPERSONALDATA / MYPAYSTUBS / MYBENEFITS / MYADDRESSES / MYBANKDETAILS / MYFAMILYMEMBERS / MY_MEDICAL_INFO / MYFORMS / PROCESS_INBOX / START_PROCESS, plus HRESS_* (ESS) and HRMSS_* (MSS: approvals, substitution, notes)",
+  "successfactors_odata": [
+   "HRSFEC_ECP_INFO_SRV",
+   "HRSFEC_INFOTYPE_SRV",
+   "HRSFEC_PAYSLIP_PDF_SRV",
+   "HRSFEC_PAY_OVERVIEW_SRV",
+   "HRSFEC_PAYCTRL_REC_SRV"
+  ],
+  "custom_services": [
+   "ZHR_BENEFITS_COMMON_SRV",
+   "ZHR_BENEFITS_REQUESTS_SRV",
+   "ZHR_BENEFITS_REQ_APPROVAL_SRV",
+   "ZHRF_OFFBOARD_SRV",
+   "ZHR_PROCESS_AND_FORMS_SRV",
+   "ZHCMFAB_MYFAMILYMEMBERS_SRV",
+   "Z_HCMFAB_MYFAMILYMEMBERS_SRV",
+   "Z_HCMFAB_MYPERSONALDATA_SRV"
+  ],
+  "characterisation": "The digital front-end is almost ENTIRELY HR (employee & manager self-service + benefits + offboarding + forms). Finance/procurement have NO Fiori footprint - they are served by the external satellite portals instead.",
+  "limit": "REGISTERED and ACTIVE is measured; actual CALL VOLUME is not - /IWFND/SU_STATS is not readable via RFC here. Do not claim adoption from this."
+ },
+ "users_and_licences": {
+  "_source": "USR02 + USR06 on P01, 2026-07-28 (read-only)",
+  "users_total": 6752,
+  "by_user_type": {
+   "A_dialog": 6692,
+   "B_system": 52,
+   "S_service": 6,
+   "C_communication": 2
+  },
+  "logged_on_since_2026_01_01": 2130,
+  "dormancy": "2,130 of 6,752 users (31.5%) have logged on since 1 Jan 2026 - i.e. ~68% show no logon in the last ~7 months. Locked/expired accounts were NOT separated out; treat as a flag to investigate, not a licence saving yet.",
+  "licence_classification_USR06": {
+   "total_classified": 6666,
+   "by_lic_type": {
+    "AZ": 4677,
+    "BK": 1176,
+    "AX": 692,
+    "91": 86,
+    "AY": 25,
+    "BA": 5,
+    "04": 3,
+    "60": 1,
+    "71": 1
+   }
+  },
+  "warning": "LIC_TYPE codes are CONTRACTUAL - AZ/AX/AY/BK/BA are UNESCO-specific codes whose meaning lives in the SAP licence agreement, NOT in the system. Never guess what they map to; ask for the contract."
  }
 }
