@@ -68,7 +68,7 @@
   },
   "MM": {
    "status": "PRODUCTIVE",
-   "evidence": "84 plants; 73K POs / 201K items; 23K requisitions; 2.89M service lines; 134K supplier invoices; 1,613 material masters; >=20K goods movements 2024+"
+   "evidence": "84 plants; 73K POs / 201K items; 23K requisitions; 2.89M service lines; 134K supplier invoices; 1,613 material masters; >=20K goods movements 2024+; MM-IM: >=20K material documents + >=20K item lines 2024+ but MARD=0 (no valuated stock at storage-location level) = goods receipts against POs, NOT warehouse stock-keeping"
   },
   "HCM": {
    "status": "PRODUCTIVE",
@@ -98,7 +98,7 @@
    "status": "PRODUCTIVE",
    "added_s097": true,
    "evidence": "1 sales org; 2,116 sales orders 2024+; 2,901 billing docs 2024+; 0 deliveries",
-   "note": "BILLING-ONLY pattern — order-to-invoice without logistics execution. Previously reported 'not implemented' — WRONG."
+   "note": "BILLING-ONLY pattern — order-to-invoice without logistics execution. Previously reported 'not implemented' — WRONG. Confirms the user's own list."
   },
   "TRM": {
    "status": "PRODUCTIVE",
@@ -141,6 +141,14 @@
   "GM": {
    "status": "NOT_USED",
    "evidence": "0 grants — UNESCO runs grant-like funding through FM, not Grants Management"
+  },
+  "PBC": {
+   "status": "PRODUCTIVE",
+   "core": true,
+   "added_s097": true,
+   "full_name": "Position Budgeting and Control (PSM-FM x HCM)",
+   "evidence": "HRFPM_PBCDOC_DISP 2,881 execs / 68 USERS (widest dialog user base measured); PBC engine HRPBC_ENGINE_PNP running daily (RHRFPM_ENGINE_PERSON/PNP/MASS_PROC, HUNCALC0 1,515, RHHCP_DC_EMPLOYEE 940, RPCIPE00_OLD 677); HRFPM_VACANCY_DISP; FMRESERV = 6,415,467 change-doc headers 2024-01-01..2026-03-16. Custom extensions: YKBLP_N/Y_KBLP_PBC_OPEN_N (1,399), YPBC/RFFMEPGAX (258), YPS8_PBC (60 execs/26 users), YBBUR001_PBC (57/8).",
+   "note": "USER-FLAGGED miss (s097). It was in the brain only as an 'engine' inside the operating model (ZPBC_PERIOD_CLS_EXEC -> FMRESERV), never as a MODULE - so it never appeared in a scope answer. PBC is how staff posts are budgeted and committed against FM: the payroll-to-budget bridge. For a UN agency this is a central process, not a technical detail."
   }
  },
  "third_party_addons": {
@@ -457,5 +465,8 @@
    }
   },
   "warning": "LIC_TYPE codes are CONTRACTUAL - AZ/AX/AY/BK/BA are UNESCO-specific codes whose meaning lives in the SAP licence agreement, NOT in the system. Never guess what they map to; ask for the contract."
+ },
+ "_probe_negative_contract": {
+  "TABLE_NOT_AVAILABLE_is_NOT_absence": "RFC_READ_TABLE returns key=TABLE_NOT_AVAILABLE on P01 for tables that demonstrably exist and hold data (FMBH -> 294,098 rows in the Gold DB; FMRESERV -> 6.4M change docs; also FM01, HRFPM_*, T093C, T703P, USR02 without narrow FIELDS). It is an ACCESS/read restriction, never proof the table or the module is missing. When it fires: fall back to the Gold DB, to cdhdr, or to rsau_audit_history (execution evidence) before concluding anything."
  }
 }

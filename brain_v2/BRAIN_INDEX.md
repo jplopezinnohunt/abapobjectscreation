@@ -9,7 +9,7 @@
 capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid-conversation.
 - **Platform:** SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA · 177 components installed
   (**installed ≠ implemented** — most ship by default: ~60 country HR versions + industry solutions).
-- **PRODUCTIVE modules:** FI, PSM_FM, PS, CO, MM, HCM, FI_AA, RE_FX, PM, SD, TRM, Treasury_EBS, Payment_BCM, Travel
+- **PRODUCTIVE modules:** FI, PSM_FM, PS, CO, MM, HCM, FI_AA, RE_FX, PM, SD, TRM, Treasury_EBS, Payment_BCM, Travel, PBC
 - **Configured / marginal:** BusinessPartner, WM, BW_embedded
 - **NOT used:** QM, CS, GM
 - **Third-party add-ons ACTIVE:** EPI_USE_Labs, ACL_Data_Link (each = a licence + an independent DATA-EXIT channel)
