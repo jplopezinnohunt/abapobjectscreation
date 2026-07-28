@@ -4,12 +4,27 @@
 > bootstrap. Load this, then DRILL on demand via `python brain_v2/graph_queries.py <cmd>`. Read the full
 > brain_state.json ONLY when you need depth this index doesn't give.
 
+## 🇺🇳 THE UNESCO PROFILE — what this tenant IS (read before answering anything about scope)
+`brain_v2/system_profile/unesco_system_profile.json` — the base fact-sheet. Profile = the SYSTEM;
+capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid-conversation.
+- **Platform:** SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA · 177 components installed
+  (**installed ≠ implemented** — most ship by default: ~60 country HR versions + industry solutions).
+- **PRODUCTIVE modules:** FI, PSM_FM, PS, CO, MM, HCM, FI_AA, RE_FX, PM, SD, TRM, Treasury_EBS, Payment_BCM, Travel
+- **Configured / marginal:** BusinessPartner, WM, BW_embedded
+- **NOT used:** QM, CS, GM
+- **Third-party add-ons ACTIVE:** EPI_USE_Labs, ACL_Data_Link (each = a licence + an independent DATA-EXIT channel)
+- **⚡ HOW IT OPERATES:** UNESCO does NOT operate SAP by dialog. 80.6% of business RFC traffic is driven by EXTERNAL satellite applications. SAP is a read-dominant SYSTEM-OF-RECORD that feeds satellites and receives concentrated writes.
+  Satellites: MuleSoft 1.62M · BRIDGE_RFC_ORION 875K · Named_user_portal 501K · RFC_SSIS 123
+- **Integration:** 37 flows / 18+ external systems ·
+  detail in `knowledge/domains/Integration/integration_map_complete.md` + `knowledge/system_operating_model_rfc.md`
+- ⚠️ **executed_objects_domain_map has NO bucket for RE_FX nor for third-party namespaces (/EPIUSE/, /ACLDL/, /WINSHTLQ/, /GBX01/) — 3,893 objects / 4.56M execs (40% of volume) ...**
+
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **32.1%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1125 objects · 170 rules · 345 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1135 objects · 170 rules · 351 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

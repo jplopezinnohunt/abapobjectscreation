@@ -16,7 +16,46 @@ HERE = Path(__file__).parent
 STATE = HERE / "brain_state.json"
 MAT = HERE / "capability_model" / "maturity.json"
 EB = HERE / "capability_model" / "execution_backlog.json"
+PROFILE = HERE / "system_profile" / "unesco_system_profile.json"
 OUT = HERE / "BRAIN_INDEX.md"
+
+
+def _profile_block():
+    """THE UNESCO PROFILE — what the tenant IS, at bootstrap (s097).
+
+    Rendered from unesco_system_profile.json so the index can never drift from the
+    profile. Answers 'what is installed / implemented / used / how is it operated'
+    BEFORE any session re-derives it from cvers + audit logs (which is what went
+    wrong in s097 and produced 5 wrong module verdicts).
+    """
+    if not PROFILE.exists():
+        return "## ⚠️ UNESCO profile MISSING — brain_v2/system_profile/unesco_system_profile.json not found\n"
+    p = json.load(open(PROFILE, encoding="utf-8"))
+    mods = p.get("modules", {})
+    om = p.get("operating_model", {})
+    addons = p.get("third_party_addons", {})
+
+    def names(pred):
+        return ", ".join(k for k, v in mods.items()
+                         if isinstance(v, dict) and pred(v.get("status", "")))
+
+    active_addons = ", ".join(k for k, v in addons.items()
+                              if isinstance(v, dict) and v.get("status") == "ACTIVE")
+    return f"""## 🇺🇳 THE UNESCO PROFILE — what this tenant IS (read before answering anything about scope)
+`brain_v2/system_profile/unesco_system_profile.json` — the base fact-sheet. Profile = the SYSTEM;
+capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid-conversation.
+- **Platform:** {p.get('landscape', {}).get('product', '?')} · {p.get('landscape', {}).get('components_installed_total', '?')} components installed
+  (**installed ≠ implemented** — most ship by default: ~60 country HR versions + industry solutions).
+- **PRODUCTIVE modules:** {names(lambda s: s == 'PRODUCTIVE')}
+- **Configured / marginal:** {names(lambda s: s in ('CONFIGURED', 'PARTIAL', 'MARGINAL'))}
+- **NOT used:** {names(lambda s: s == 'NOT_USED')}
+- **Third-party add-ons ACTIVE:** {active_addons} (each = a licence + an independent DATA-EXIT channel)
+- **⚡ HOW IT OPERATES:** {om.get('headline', '?')}
+  Satellites: {' · '.join(f"{k} {v.get('volume', '')}" for k, v in om.get('satellites', {}).items() if v.get('volume'))}
+- **Integration:** {p.get('integration', {}).get('documented_flows', '?')} flows / {p.get('integration', {}).get('external_systems', '?')} external systems ·
+  detail in `knowledge/domains/Integration/integration_map_complete.md` + `knowledge/system_operating_model_rfc.md`
+- ⚠️ **{p.get('known_limits', {}).get('execution_map_is_a_floor', '')[:170]}...**
+"""
 
 
 def run():
@@ -41,6 +80,7 @@ def run():
 > bootstrap. Load this, then DRILL on demand via `python brain_v2/graph_queries.py <cmd>`. Read the full
 > brain_state.json ONLY when you need depth this index doesn't give.
 
+{_profile_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
