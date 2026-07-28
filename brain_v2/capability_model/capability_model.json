@@ -1,812 +1,813 @@
 {
-  "_design": "Layer 15 — Capability Model. The 4th axis of the domain taxonomy (after functional/module/process). Reflects the process+code+conformance work structurally: a domain is 'understood' only when 10 capability dimensions are covered for it (S precondition + A-H understanding + R composite readiness). ALIGN (re-express every domain on one skeleton) then EXPAND (every weak cell is the ranked roadmap). THIS FILE IS THE SINGLE SOURCE OF TRUTH for the matrix — do not hand-copy the matrix into prose docs (it drifts). Born Session #079.",
-  "_strata": {
-    "note": "A domain is a PAIR, not one model. The product lives in the delta. Capability G = compare AS_RUN against AS_DESIGNED. Conformance has TWO preconditions per domain: the standard baseline AND our process. Capturing AS_DESIGNED per domain is itself a precondition capability (S_STANDARD_REF below), mostly NONE today.",
-    "AS_DESIGNED": "how SAP designed the domain — normative reference flow/objects/config as delivered (SAP Best Practices / PaPM reference content)",
-    "AS_RUN": "how UNESCO actually does it — real process from data + Z-code/config/exits/.NET apps/workflows on top",
-    "DELTA": "G_CONFORMANCE — where AS_RUN extends/deviates from AS_DESIGNED, down to the implementing object (the custom-over-standard x-ray)",
-    "example_public_sector_budget_planning": {
-      "AS_DESIGNED": "SAP BCS: FMBB budget entry -> release -> AVC -> posting",
-      "AS_RUN": "UNESCO planning lives in Core Manager / Core Planner (SuccessFactors), integrated to SAP via MuleSoft (RFC+IDoc, PROJECT02); + .NET budget transfers + Z-config. NOT SISTER (corrected s079).",
-      "delta_status": "unbuilt — AS_RUN detail to be refined once the model/extraction lands"
-    }
-  },
-  "_version": "1.3",
-  "_created_session": "079",
-  "_portability": {
-    "note": "This capability model is NOT project-specific — it is the OPERATING MODEL / way of working. It applies to other projects (e.g. unesco-sap-brain) verbatim: same 10 dimensions + AS-DESIGNED/AS-RUN strata. Cross-project feedback: a standard SAP AS-DESIGNED baseline captured once is reusable across ALL projects (standard is system-invariant); each project contributes its AS-RUN deltas back to a shared library. Governed by the ecosystem-coordinator.",
-    "shared_across_projects": "S_STANDARD_REF baselines + verified methods (Phase-B backlog) + the 10-dimension skeleton",
-    "project_specific": "AS-RUN coverage + the G delta (each customer's reality)"
-  },
-  "_tier_legend": {
-    "HAVE": "verified/strong coverage on our data",
-    "PARTIAL": "some coverage, incomplete",
-    "NONE": "not covered"
-  },
-  "_method_tier_legend": {
-    "VERIFIED": "Phase-B 3-vote verified method exists",
-    "GAP": "method not yet in our hands",
-    "OWN": "our own design, to be validated"
-  },
-  "dimensions": {
-    "S_STANDARD_REF": {
-      "question": "do we have the STANDARD SAP as-designed baseline for this domain (precondition for G)?",
-      "method": "SAP Best Practices / PaPM reference content / standard reference model capture",
-      "method_tier": "GAP",
-      "is_precondition_for": "G_CONFORMANCE"
-    },
-    "A_PROCESS": {
-      "question": "how does it actually run (discovered from data) — AS-RUN?",
-      "method": "event log -> DFG/variants/performance; OCEL 2.0; pm4py",
-      "method_tier": "VERIFIED"
-    },
-    "B_CODE": {
-      "question": "which programs/classes/exits/BDC implement it?",
-      "method": "ATC/SCI, dependency graph, abaplint, SCMON/UPL usage",
-      "method_tier": "VERIFIED"
-    },
-    "C_CONFIG": {
-      "question": "which customizing parameterizes it?",
-      "method": "standard-vs-custom config tables",
-      "method_tier": "OWN"
-    },
-    "D_DATA": {
-      "question": "which tables + real keys hold it?",
-      "method": "DDIC keys; Gold DB; SAP-official P2P table set",
-      "method_tier": "VERIFIED"
-    },
-    "E_AUTH": {
-      "question": "who can/does execute it (roles, users, SoD)?",
-      "method": "VERIFIED (RES-AUTH-SOD wwyujjqyk): role model AGR_DEFINE/AGR_USERS(validity)/AGR_TCODES/AGR_1251(obj+field LOW/HIGH)/AGR_AGRS/AGR_1016; users USR01/02/04/12, UST12; SU24 proposals USOBT_C(values)+USOBX_C(OKFLAG N/X/Y); TSTCA(start-tcode auth). SoD = Function(tcodes+auth objects) -> Risk(2+ conflicting functions), 3 risk types (SoD/Critical Action/Critical Permission), action+permission levels. Expand AGR_USERS->AGR_1251 for effective role auth. CAVEAT: SU24/USOBX_C is a PROPOSAL, not enforcement — real check only where code has AUTHORITY-CHECK (pair with code scan / ST01-STAUTHTRACE). GRC: 3-tier function->action->permission, risk header GRACSODRISK(RISKTYPE), ruleset COMPILED. REFUTED: exact '5 GRC tables' enumeration + GRACSODRISK-as-violations.",
-      "method_tier": "VERIFIED",
-      "split_d01_p01": "role STRUCTURE (AGR_DEFINE/AGR_1251/USOBT_C/TSTCA) = D01 -> ROLE-level SoD without P01; user ASSIGNMENTS (AGR_USERS/USR02/UST12) = P01 -> USER-level SoD gated"
-    },
-    "F_INTERFACE_FILE": {
-      "question": "how does it cross the boundary (RFC/IDoc/file)?",
-      "method": "RFCDES, IDoc, file system AL11/OPEN DATASET, job variant->intent",
-      "method_tier": "OWN"
-    },
-    "G_CONFORMANCE": {
-      "question": "does it deviate from / extend STANDARD SAP?",
-      "method": "OPID conformance; PaPM reference baseline",
-      "method_tier": "VERIFIED"
-    },
-    "H_IMPROVE": {
-      "question": "where is the opportunity; what-if before building?",
-      "method": "simulation (designed); improvement framing",
-      "method_tier": "OWN"
-    },
-    "R_S4_READINESS": {
-      "question": "how ready is this domain's custom code/config/process for the S/4HANA migration?",
-      "method": "ATC S4HANA_READINESS_<ver> variant + Simplification Database (SYCM) + Custom Code Migration app (usage-based scoping) + CCLM decommissioning + SCMON/UPL/ST03N usage (used-to-migrate vs dead-to-delete); 40-60% custom code typically dead",
-      "method_tier": "VERIFIED",
-      "advance_path": "EXTRACTION",
-      "is_composite": true,
-      "composite_note": "NOT a leaf cell. R_S4_READINESS ROLLS UP from its own sub-scorecard (factor x domain) — fractal: the operating model one level down. Factor list VERIFIED by research wh5gw9exu (CLOSED). Sub-model source of truth: brain_v2/capability_model/s4_readiness_model.json.",
-      "note": "Method now VERIFIED across factors (research wh5gw9exu, 22/25). Coverage NONE = not yet APPLIED. Commercial hook: the S/4 migration x-ray. KEY: BP_CVI_READINESS is scoreable NOW from our Gold DB (LFA1/KNA1/BUT000/CVI_CUST_LINK) — no new extraction.",
-      "factors_verified": {
-        "BP_CVI_READINESS": "VERIFIED + SCOREABLE NOW from our data (CVI_MIGRATION_PRECHK/CVI_PRECHK logic: 9 business checks). The central pillar.",
-        "SIMPLIFICATION_ITEM_READINESS": "VERIFIED — SI-Check /SDF/RC_START_CHECK (hard gate). Needs system run.",
-        "CUSTOM_CODE_READINESS": "VERIFIED (research #3) — ATC S4HANA_READINESS + CCM. Needs system run.",
-        "TECHNICAL_READINESS": "VERIFIED — Maintenance Planner (stack.xml). System-level.",
-        "READINESS_CHECK_2_0": "VERIFIED orchestration (Notes 2913617/3059197). Area enumeration unverified.",
-        "FINANCE_READINESS": "PARTIAL — Asset Acc/ACDOCA VERIFIED; ML/newGL/FSCM/BAM = gap (follow-up)."
-      }
-    },
-    "U_USAGE": {
-      "question": "WHAT objects actually execute, WHO runs them, by which CHANNEL (dialog / batch / RFC-BAPI / batch-input BDC), WHEN, and at what VOLUME — the AS-RUN execution footprint?",
-      "method": "Fuse the execution-evidence channels into a per-domain object×actor×channel×time×volume census: RSAU/SM20 audit (Transaction Start->tcode, Report Start->program, RFC Function Call->function) + TBTCO/TBTCP (batch program+variant) + APQI/APQD (batch input / BDC). Cross-reference the static catalog (TSTC / TFDIR) to split EXECUTED vs CATALOG-ONLY. Builder: process_mining/fm_executed_census.py (generalize per domain via the FM-style name filter). Scored: NONE=no census; PARTIAL=one channel or counts-only; HAVE=all 4 channels with actor+volume(+time).",
-      "method_tier": "VERIFIED",
-      "advance_path": "EXTRACTION",
-      "note": "The AS-RUN usage layer. Distinct from B_CODE (STATIC: which code exists), A_PROCESS (the FLOW/variants) and E_AUTH (who CAN execute). U_USAGE = who ACTUALLY executes what, how, when, how much. Bridges static inventory -> live reality; the dead-vs-used signal also feeds R_S4_READINESS (used-to-migrate vs dead-to-delete). Added 2026-06-23 on user directive ('otra dimension del process discovery: que se usa, quien, como, cuando, volumen')."
-    }
-  },
-  "domains": {
-    "Payment_BCM": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "HAVE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "HAVE",
-      "D_DATA": "HAVE",
-      "E_AUTH": "PARTIAL",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "PARTIAL",
-      "note": "strongest row; 1.4M events; FBZP/house-bank config; x-ray lands here first. E_AUTH PARTIAL s083: behavioral SoD from rsau_audit_history (646 events / 13 users; C_LOPEZ concentrated authority — claim #216). Role-level SoD (AGR_*) still NONE. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL",
-      "subdomains": {
-        "dual_control_gap": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "HAVE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "PARTIAL",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "PARTIAL",
-          "note": "H71 write-channel SoD (claims #237-240); behavioral+declared. evidence-based."
-        },
-        "signatory_rules": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "HAVE",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "BCM signatory IT1218 + INC-000011781; bcm_signatory work. evidence-based."
-        },
-        "workflow_mod_path": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "WS90000003/YBSEG_REL custom workflow. evidence-based."
-        }
-      }
-    },
-    "Procurement_P2P": {
-      "S_STANDARD_REF": "PARTIAL",
-      "A_PROCESS": "HAVE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "HAVE",
-      "E_AUTH": "PARTIAL",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "PARTIAL",
-      "H_IMPROVE": "NONE",
-      "note": "x-ray UPDATED s083: 38% clean 3-way-match, 17% open PO (no GR), ~44% multi-receipt/variant. AUDIT FINDING: 70 IR-before-GR violations = $713,341 (claim #214). GR->IR median 1d; 4% >30d. Behavioral SoD: T_ENG #1 user (claim #216). p2p_conformance.py (commit 9b4fb1a). F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION (HQ-ORION-EAI03) = primary procurement portal channel; BAPI_PR_GET/CHANGE (37K writes) + BAPI_PO_GET/CREATE + BAPI_ENTRYSHEET_GET via Z_RFC_GET_USER (508K SSO). Named-user portal GR/Invoice (E_SILVA/L_NEVES) = write channel. Claims #222,#223,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL"
-    },
-    "PSM_FM": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "HAVE",
-      "C_CONFIG": "HAVE",
-      "D_DATA": "HAVE",
-      "E_AUTH": "PARTIAL",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "PARTIAL",
-      "H_IMPROVE": "HAVE",
-      "note": "largest domain; know the opportunity (model gap) but not the as-is process vs standard; public-sector differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (4,697 events / 238 users, widest domain reach, mostly read-only YFM1/ZICTP_COCKPIT -- claim #216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE HAVE s085: MuleSoft = FM/Fund master sync IN (Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC, Y_BAPI_FUND_C5_ASSIGNMENT) + WBS financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K). 17 distinct MuleSoft flows. PBC engine (ZPBC_PERIOD_CLS_EXEC) = payroll commitment channel. Claims #221,#224,#225. D_DATA s088 (2026-06-22): BCS+PS master-data backbone refreshed — Gold DB now has funds/FMFINT (67,408/67,410 — all 9 institutes), fund_centers+text (FMFCTR/FMFCTRT 787), commitment_items+text (FMCI/FMCIT 205, GJAHR='0000' year-indep — claim #246), functional_areas+text (TFKB/TFKBT 9), proj/prps (13,976/59,749), proj_hierarchy NEW (PRHI 59,751 — 100% PRPS link). FMMEASURE=0 on all 9 areas: UNESCO does NOT use Funded-Program dimension (claims #245). Canonical refresher: scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py. Extraction rule: P01 SAIS rejects ROWSKIPS — use ROWCOUNT=0 per FIKRS (claim #244, rule feedback_p01_sais_rowskips_rejection). U_USAGE HAVE s090 (2026-06-23): PSM_FM deep-dive (brain_v2/fm_usage_deepdive.json, 15 cards, P01 4mo) -- standard tcodes carry the clicks, custom layer carries the truth. AVC monitoring blind spot: YPS8(11,314/571 users)+YFM1(10,134/557) reuse IS_COMMITMENT_ITEM_IN_AVC -- ~21K org-wide runs blind to INC-000005638-class overruns (claims #249, #153, #159; PMO H86). ICTP monolith: ZICTP_COCKPIT(5,014) fronts 70+ ZICTP_* suite, 42% on 2 Trieste users -- largest S/4 decommission burden + bus-factor (claim #250; PMO H87). Fork duplication: RFFMEPGAX forked twice (ZRFFMEPGAX_NEW+Y_RFFMEPGAX_FOR_UBO_1 30K UBO-RFC), plus RFFMRE01+FMRP_RFFMEP1FX RFFMR*/RFFMEP* S/4 migration (claim #251). Write-channel reinforcement (H71): Y_FMKU_0050_CREATE_WITH_COMMIT(4,953 MULESOFT)+Y_BAPI_FUND_C5_ASSIGNMENT(3,309 MULESOFT)+Y_RFFMEPGAX_FOR_UBO_1(30,738 UBO-RFC)=PPM->SAP fund/budget sync backbone, all single-service-account, no role-layer 4-eyes (claims #237-#240). Synthesis claim #252. R_S4_READINESS NONE: ICTP monolith + report forks = primary blockers identified. B_CODE HAVE s091: AVC FM chain fully mapped -- FMAVC_READ_TOTALS_FOR_ADDRESS (836ln) -> FMAVC_DERI_CONTROL_OBJECT -> FMAVC_CALL_DERIVATION_ACO -> ABADR_DERIVE_CHARACTERISTICS(AFMA) -> FMAVC_SELECT_ANNUAL_TOTALS_ACO; all 94 FMAVC_* FMs not RFC-enabled (TFDIR FMODE empty); external access via RFC_ABAP_INSTALL_AND_RUN V01/D01 only. ZRFC_FRESERVATION_CREATE confirmed BDC anti-pattern (claim #258). C_CONFIG HAVE s091: ledger 9H=PAYMENT-budget (corrected, was assumed commitment -- claim #255); strategy AFMA/9HZ00001 8 steps fully decoded (tabadrs/tabadrsf -- claim #256); activity groups FMAVCATGR WRTTP->amtype map (claim #257); fmavcldgract/fmavcbudfil*/fmavcbudfilth all read. G_CONFORMANCE PARTIAL s091: first deviation confirmed -- ZRFC_FRESERVATION_CREATE BDC of FMX1 where standard FMFR_CREATE_FROM_DATA exists (I_FLG_CHECKONLY mode; claim #258). BAPI_0050_CREATE=budget entry only; BAPI_0051_GET_TOTALS=totals only -- both misidentification candidates confirmed. AVC process axis: budget->commitment->actual->AVC-check->closing lifecycle verified (claim #253 formula; claim #259 refutes leaf-level hand-rolling, 23.7% spurious negatives). Source doc: knowledge/domains/PSM/avc_availability_model.md (committed 92f1004). Cross-link: executed_objects_domain_map claim #260 (system-wide U_USAGE method). Cost_Recovery_CRP subdomain added s-2026-06-26: full E2E model (R1->BOR), Y_FMKU_0050/BAPI_0050_CREATE/YFMXCHKP source-read, 281 633CRP* funds, fund-code anatomy, GL-by-PERSG, manual-FISTL finding, time-split non-derivability. Claims #268-#277. Companion: cost_recovery_bor_model.html. AVC layer on recurring pipeline (s-2026-06-30): FMAVCT re-extracted WIDE (77 fields -> 38-col gold schema; prior 7-col schema collided ~36% rows). Coverage expanded to all 9 FM areas: fmavct_2024=18,838 rows, fmavct_2025=16,112, fmavct_2026=13,593. Natural key = RCLNT/RLDNR/RRCTY/RVERS/RYEAR/ROBJNR/COBJNR/SOBJNR/RTCUR/DRCRK/RPMAX. available=budget-consumed verified via ROBJNR-pair (claims #341-#343). AVC config+totals layer now in gold_table_registry.json (source=curated, delta=external, psm_avc_refresh.py canonical, cadence weekly/daily). BUAVCTOLASS drift 34->36 rows confirmed (claim #344). Field-split RFC pattern (<=7 cols/group, 512-byte WA limit, ROWCOUNT=0 per FIKRS x year) documented as claim #345.",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "HAVE",
-      "subdomains": {
-        "availability_control": {
-          "S_STANDARD_REF": "HAVE",
-          "A_PROCESS": "HAVE",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "PARTIAL",
-          "G_CONFORMANCE": "HAVE",
-          "H_IMPROVE": "HAVE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "PARTIAL",
-          "note": "AVC fully verified from ABAP source + config + data (claims #253-259, doc avc_availability_model.md). HAVE: standard mechanism (S), check lifecycle (A), FM chain (B), ledger 9H+AFMA+activity groups (C), FMAVCT keys (D), BDC-vs-clean deviation (G), improvements identified (H). NONE: who-maintains/overrides AVC (E), boundary-crossing N/A (F), S/4 readiness not assessed (R). U PARTIAL: RFFMAVC* report execution seen in census, no full AVC-control-object usage census. D_DATA UPGRADED s-2026-06-30: FMAVCT re-extracted to 38 gold cols (all 9 FM areas); available=budget-consumed formula verified (ROBJNR-pair). Claims #341 (77 fields/natural key), #342 (ROBJNR-pair formula), #343 (ALLOCTYPE_9 domain values + KBFC-only for all 9 areas), #344 (AVC pipeline registration), #345 (field-split RFC pattern). F_INTERFACE_FILE now PARTIAL: psm_avc_refresh.py = the canonical extraction interface, registered in gold_table_registry.json with delta=external cadence."
-        },
-        "fm_fi_bridge": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "PARTIAL",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "PARTIAL",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "PARTIAL",
-          "note": "FM-FI bridge FMIFIIT.KNBELNR=BKPF.BELNR. D_DATA solid (the bridge key + FMIFIIT). Process/code/config PARTIAL. ESTIMATE pending a focused pass."
-        },
-        "ba_mod_extensions": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "Business-area mod extensions. Lightly analyzed. ESTIMATE — placeholder until a focused pass."
-        },
-        "cost_recovery_crp": {
-          "S_STANDARD_REF": "PARTIAL",
-          "A_PROCESS": "HAVE",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "PARTIAL",
-          "F_INTERFACE_FILE": "HAVE",
-          "G_CONFORMANCE": "HAVE",
-          "H_IMPROVE": "HAVE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "PARTIAL",
-          "note": "Cost Recovery BOR E2E fully verified (session 2026-06-26, P01 live RFC + Gold DB). A_PROCESS HAVE: full two-phase loop documented (R1 FI posting -> BOR supplement). B_CODE HAVE: Y_FMKU_0050_CREATE_WITH_COMMIT source read (RPY_PROGRAM_READ), BAPI_ACC_DOCUMENT_POST, YFMXCHKP fiscal-year guard confirmed. F_INTERFACE_FILE HAVE: same Y_FMKU_0050 channel as MuleSoft PPM budget load (4,953 calls, claim #221) PLUS manual Finance BOR supplement -- dual use case confirmed (claim #277). G_CONFORMANCE HAVE: Funds Center = MANUAL (not FMDERIVE) confirmed by exhaustive Gold DB scan (claim #271); time-split not derivable from PA0027/CATSDB/PA0014 (claim #273). H_IMPROVE HAVE: Z_CRP_OFFICE_MAP (ORGEH->FISTL derivation, 96% stable) + CRP_FUND_MAP (project->category) = two buildable automation tasks. FMBL TVAL01..TVAL16 gap for reconciliation. D_DATA PARTIAL: fmifiit_full has R1 credit side; FMBL TVAL01..TVAL16 missing from Gold DB extract (amounts not reconcilable). C_CONFIG PARTIAL: BOR fixed fields documented (BUDCAT=9F, VALTYPE=B1, BUDGETING_PERIOD=016); GL/FIPOS by PERSG confirmed; fund code structure 633CRP<cat><off> confirmed; FMDERIVE gap confirmed. E_AUTH PARTIAL: manual Finance posting known; no role-level audit of who creates R1/BOR docs. S_STANDARD_REF PARTIAL: standard BAPI_ACC_DOCUMENT_POST and BAPI_0050_CREATE are standard SAP; UNESCO cost-recovery-specific fund structure/GL mapping = custom. R_S4_READINESS NONE: not yet assessed. U_USAGE PARTIAL: BAPI_ACC_DOCUMENT_POST volume in audit census not isolated to cost-recovery use case; Y_FMKU_0050 census includes MuleSoft+manual combined. Claims: #268-#277. Companion: companions/cost_recovery_bor_model.html."
-        }
-      }
-    },
-    "Closing_Activities": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "NONE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "HAVE",
-      "note": "FX reval first activity; high H, low A/G",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE"
-    },
-    "FI": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "HAVE",
-      "E_AUTH": "PARTIAL",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "note": "E_AUTH PARTIAL s083: behavioral SoD (4,385 events / 185 users; T_ENG #1 power user FI+Treasury+Payment conflict -- claims #213,#216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE PARTIAL s085: named-user portal Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K, FI posting from field offices via E_SILVA/L_NEVES) confirmed as external FI write channel. COUPA file-based FI posting (YFI_COUPA_POSTING_FILE) also active. Claims #223,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL",
-      "subdomains": {
-        "validations_substitutions": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "OBBH/YRGGBS00/GGB0 analyzed. evidence-based."
-        },
-        "gl_master_data": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "SKA1/SKAT/SKB1 master-data sync skill. evidence-based."
-        },
-        "busa_derivation": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "business-area derivation. partial/estimate."
-        }
-      }
-    },
-    "Treasury_EBS": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "HAVE",
-      "D_DATA": "HAVE",
-      "E_AUTH": "PARTIAL",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "PARTIAL",
-      "note": "MT940/EBS = file-based boundary -> F differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (1,970 events / 24 users; specialist domain; T_ENG appears with bank-statement + clearing overlap = cross-domain SoD risk — claims #213 and #216). Role-level SoD (AGR_*) still NONE. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL",
-      "subdomains": {
-        "house_bank_configuration": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "skill sap_house_bank_configuration (13 steps + compliance checker). evidence-based."
-        },
-        "bank_statement_ebs": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "HAVE",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "skill sap_bank_statement_recon (MT940/FEBAN/263K-event PM). evidence-based."
-        },
-        "bank_reconciliation": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "skill + INC-000006906. evidence-based."
-        },
-        "field_office_custom_clearing": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "STEM/field-office custom clearing. partial."
-        },
-        "xref_office_tagging": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "xref office tagging. partial."
-        },
-        "payment_landscape": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "HAVE",
-          "B_CODE": "HAVE",
-          "C_CONFIG": "HAVE",
-          "D_DATA": "HAVE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "PARTIAL",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "PARTIAL",
-          "note": "DMEE/F110/payment-E2E (sap_payment_bcm_agent, 1.4M events). evidence-based."
-        }
-      }
-    },
-    "HCM": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "HAVE",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "note": "strong extracted_code (CL_HCMFAB_*); weak process. F_INTERFACE_FILE HAVE s085: WF-BATCH satellite = HR lifecycle automation (RE_RHAKTI00, HR infotype 1000/1001); SuccessFactors EC ECPAO_OM_OBJECT_EXTRACTION (43 parallel jobs, claim #8). Claims #224,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL",
-      "subdomains": {
-        "infotypes": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "PARTIAL",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "PARTIAL",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "PA infotypes. estimate. EXTENDED s-2026-07-03 (claims #333-337): PA0105 subtype-0001 (SAP-user link, field USRID) vs subtype-0010 (work email, USRID_LONG) confirmed disjoint via live P01/D01/V01 read; measured P01->D01/V01 link gap (D01 857, V01 775, all against pre-existing USR02 users) closed via reusable BAPI_EMPLCOMM_CREATE sync (pa0105_user_sync.py). F_INTERFACE_FILE moved NONE->PARTIAL: a working, reusable replication mechanism now exists for this table (sap_master_data_sync family). D_DATA stays PARTIAL (was already partial pre-existing)."
-        },
-        "payroll": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "payroll (hcm_domain_agent). partial."
-        },
-        "fiori_apps": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "HCM Fiori. estimate."
-        }
-      }
-    },
-    "Travel": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "note": "F_INTERFACE_FILE HAVE s085: Travel runs exclusively via BRIDGE-RFC/ORION using custom FMs YHRTRV_IF_GET_TRIP + YHRTRV_IF_MODIFY_TRIP (46K calls). Dialog is NONE for Travel transactions. Claims #222,#225,#229. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL"
-    },
-    "Integration": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "HAVE",
-      "B_CODE": "NONE",
-      "C_CONFIG": "NONE",
-      "D_DATA": "HAVE",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "PARTIAL",
-      "note": "MAJOR UPDATE s085: A_PROCESS HAVE (was NONE): 80.6% of business RFC = external satellites, 91.1% explained by 2-axis method. Named satellites: MuleSoft (1.62M, 17 flows, synctrigger fleet), BRIDGE-RFC/ORION (875K, 92% read), named-user portal (501K, write channel), WF-BATCH, PBC, RFC-SSIS. D_DATA HAVE: rsau_audit_history (8.5M/4mo), RFCDES, EDIDC, cdhdr_history all in Gold DB. H_IMPROVE PARTIAL: satellite-process OCEL model = next build. Claims #220-#230. Engine: process_mining/rfc_process_classifier.py. Doc: knowledge/system_operating_model_rfc.md. UPDATE s086: D_DATA += st22_dumps_history (1 dump) + sm21_syslog_history (2,402 rows ~7d volatile, /USE/BL_GET_SHORTDUMPS P01-safe). A_PROCESS += FAILURE SIDE: #1 failure mode = network connectivity (10054/recv/HTTP ~12% syslog, mirrors 80%-external operating model). SoD gap documented: E_SILVA/L_NEVES self-approve 3-way-match; MP_ANCUTA/S_STANTIC direct-spend risk. Claims #232-#235. MuleSoft 174 GUIDs = RFC connection-pool IDs NOT SOAMANAGER ports (resolved, claim #235). Channel-mix: RFC ~5-6x dialog/month (claim #234). U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL"
-    },
-    "HR_Workflows": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "NONE",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL",
-      "subdomains": {
-        "staff_rejected_flow": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "staff rejected flow (incident). partial."
-        },
-        "return_step01_impossible": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "return step01 (incident). partial."
-        },
-        "fiori_apps": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "HR-WF Fiori. estimate."
-        },
-        "asr_framework": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "ASR framework. partial."
-        },
-        "webdynpro_legacy": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "PARTIAL",
-          "U_USAGE": "NONE",
-          "note": "WebDynpro legacy (S/4 risk). partial."
-        },
-        "core_hr_project_2025_2026": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "PARTIAL",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "Core HR project 2025-2026 (future). estimate."
-        },
-        "successfactors_end_state_2026": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "PARTIAL",
-          "R_S4_READINESS": "PARTIAL",
-          "U_USAGE": "NONE",
-          "note": "SuccessFactors end-state 2026 (future). estimate."
-        }
-      },
-      "note": " U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90)."
-    },
-    "PY_Finance": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "PARTIAL",
-      "note": "418 TRs reverse-engineered; wage-type config. F_INTERFACE_FILE PARTIAL s085: PBC engine (F_DERAKHSHAN/HIPER, ZPBC_PERIOD_CLS_EXEC) = payroll-commitment generator creating FMRESERV (6.4M CDHDR rows, blank-tcode channel -- identified in rsau). Claims #224.",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE",
-      "subdomains": {
-        "lcr_monthly": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "PARTIAL",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "LCR monthly. estimate."
-        },
-        "salary_scale_fo": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "PARTIAL",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "salary scale field office. estimate."
-        },
-        "csi": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "CSI. not assessed — placeholder."
-        },
-        "pensionable_remuneration": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "pensionable remuneration. not assessed — placeholder."
-        },
-        "ticket_new_country_setup": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "NONE",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "new-country setup ticket. not assessed — placeholder."
-        },
-        "custom_schemas_pcrs": {
-          "S_STANDARD_REF": "NONE",
-          "A_PROCESS": "NONE",
-          "B_CODE": "PARTIAL",
-          "C_CONFIG": "NONE",
-          "D_DATA": "NONE",
-          "E_AUTH": "NONE",
-          "F_INTERFACE_FILE": "NONE",
-          "G_CONFORMANCE": "NONE",
-          "H_IMPROVE": "NONE",
-          "R_S4_READINESS": "NONE",
-          "U_USAGE": "NONE",
-          "note": "custom payroll schemas/PCRs. partial/estimate."
-        }
-      }
-    },
-    "BusinessPartner": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "NONE",
-      "C_CONFIG": "PARTIAL",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "note": "A_PROCESS PARTIAL s085: vendor master dual-channel confirmed (XK02 M_AYIMBA 72K + ZBAPI_VENDOR_CHANGE MP_ANCUTA 19K); 2025 KRED spike 110K (3.7x, likely mass cleanup). CDHDR change inventory is the real 'what changes' source. F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION = vendor read portal (ZBAPI_VENDOR_GETDETAIL 72K, ZBAPI_VENDOR_SEARCH*); named-user portal ZBAPI_VENDOR_CHANGE (write). Claims #222,#225,#227,#228. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL"
-    },
-    "PS": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "NONE",
-      "C_CONFIG": "NONE",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "HAVE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "note": "A_PROCESS PARTIAL + F_INTERFACE_FILE HAVE s085: PS is operated heavily via MuleSoft. Project WBS creation = BAPI_PROJECT_MAINTAIN + Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE from synctrigger fleet. WBS financial reads OUT = Y_BAPI_WBS_FINANCIAL_DATA_1 (974K) + Y_BAPI_YPS8 (463K) to PPM/Core Planner. Project IDoc = PROJECT02 (4,420 IDocs Dec25-Mar26). Claims #221,#225,#230. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "PARTIAL"
-    },
-    "RE_FX": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "NONE",
-      "C_CONFIG": "NONE",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "NONE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE"
-    },
-    "Output": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "NONE",
-      "C_CONFIG": "NONE",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE"
-    }
-  },
-  "systemic_gaps": [
-    {
-      "column": "S_STANDARD_REF",
-      "finding": "NONE for every domain — we never captured the SAP as-designed baseline. This is the PRECONDITION for G: without the standard reference there is nothing to conform AS-RUN against. This is why G is empty everywhere. Capture standard baselines (PaPM/Best-Practices) per domain FIRST.",
-      "rank": 0
-    },
-    {
-      "column": "E_AUTH",
-      "finding": "NONE for every domain — Auth/SoD is a missing MODEL capability, not a per-domain gap. Closing it once lifts all domains.",
-      "rank": 1
-    },
-    {
-      "column": "G_CONFORMANCE",
-      "finding": "NONE for every domain — the custom-over-standard x-ray (the differentiator) is unbuilt; AS-RUN vs AS-DESIGNED delta. Start on strongest rows (Payment, P2P) where PaPM/standard baselines exist.",
-      "rank": 2
-    },
-    {
-      "column": "R_S4_READINESS",
-      "finding": "NONE for every domain — S/4HANA migration readiness not yet APPLIED, though the method is fully VERIFIED (ATC S4HANA_READINESS + Simplification DB + Custom Code Migration app + usage scoping, research #3). Commercial hook (migration x-ray). Largely D01-runnable; usage scoping needs P01.",
-      "rank": 3
-    }
-  ],
-  "expansion_order": [
-    "1. Close E (Auth/SoD) once — highest leverage, lifts every domain (AGR_*/SU24/SUIM).",
-    "2. Close G (Conformance) on Payment + P2P first (baselines exist) — the differentiator.",
-    "3. Fill A (Process) for high-H/low-A domains: PSM/FM, Closing — turn known opportunity into discovered as-is.",
-    "4. Build F (file/variant) across Integration + batch-heavy domains — the OWN additions.",
-    "5. Apply R_S4_READINESS — run ATC S4HANA_READINESS + Simplification items + usage scoping per domain (method verified; mostly D01-runnable). The migration x-ray / commercial hook."
-  ],
-  "_meta_capability": {
-    "note": "As of Session S-087 (2026-06-22), the domain x capability discipline is applied to OUR OWN way-of-working (meta-capability model). See brain_v2/meta_capability.json + brain_v2/meta_capability.py. Meta-maturity=67.8%; weakest=VERIFY (24.3% claims with >=2 independent sources); self-correction demonstrated (claim #232 superseded by #236 via H74 chip). The self-correcting loop is: find->escalate->verify->correct->consolidate. Claim #243.",
-    "meta_maturity_pct": 67.8,
-    "weakest_dim": "VERIFY",
-    "meta_file": "brain_v2/meta_capability.json",
-    "added_session": 87
+ "_design": "Layer 15 — Capability Model. The 4th axis of the domain taxonomy (after functional/module/process). Reflects the process+code+conformance work structurally: a domain is 'understood' only when 10 capability dimensions are covered for it (S precondition + A-H understanding + R composite readiness). ALIGN (re-express every domain on one skeleton) then EXPAND (every weak cell is the ranked roadmap). THIS FILE IS THE SINGLE SOURCE OF TRUTH for the matrix — do not hand-copy the matrix into prose docs (it drifts). Born Session #079.",
+ "_strata": {
+  "note": "A domain is a PAIR, not one model. The product lives in the delta. Capability G = compare AS_RUN against AS_DESIGNED. Conformance has TWO preconditions per domain: the standard baseline AND our process. Capturing AS_DESIGNED per domain is itself a precondition capability (S_STANDARD_REF below), mostly NONE today.",
+  "AS_DESIGNED": "how SAP designed the domain — normative reference flow/objects/config as delivered (SAP Best Practices / PaPM reference content)",
+  "AS_RUN": "how UNESCO actually does it — real process from data + Z-code/config/exits/.NET apps/workflows on top",
+  "DELTA": "G_CONFORMANCE — where AS_RUN extends/deviates from AS_DESIGNED, down to the implementing object (the custom-over-standard x-ray)",
+  "example_public_sector_budget_planning": {
+   "AS_DESIGNED": "SAP BCS: FMBB budget entry -> release -> AVC -> posting",
+   "AS_RUN": "UNESCO planning lives in Core Manager / Core Planner (SuccessFactors), integrated to SAP via MuleSoft (RFC+IDoc, PROJECT02); + .NET budget transfers + Z-config. NOT SISTER (corrected s079).",
+   "delta_status": "unbuilt — AS_RUN detail to be refined once the model/extraction lands"
   }
+ },
+ "_version": "1.3",
+ "_created_session": "079",
+ "_portability": {
+  "note": "This capability model is NOT project-specific — it is the OPERATING MODEL / way of working. It applies to other projects (e.g. unesco-sap-brain) verbatim: same 10 dimensions + AS-DESIGNED/AS-RUN strata. Cross-project feedback: a standard SAP AS-DESIGNED baseline captured once is reusable across ALL projects (standard is system-invariant); each project contributes its AS-RUN deltas back to a shared library. Governed by the ecosystem-coordinator.",
+  "shared_across_projects": "S_STANDARD_REF baselines + verified methods (Phase-B backlog) + the 10-dimension skeleton",
+  "project_specific": "AS-RUN coverage + the G delta (each customer's reality)"
+ },
+ "_tier_legend": {
+  "HAVE": "verified/strong coverage on our data",
+  "PARTIAL": "some coverage, incomplete",
+  "NONE": "not covered"
+ },
+ "_method_tier_legend": {
+  "VERIFIED": "Phase-B 3-vote verified method exists",
+  "GAP": "method not yet in our hands",
+  "OWN": "our own design, to be validated"
+ },
+ "dimensions": {
+  "S_STANDARD_REF": {
+   "question": "do we have the STANDARD SAP as-designed baseline for this domain (precondition for G)?",
+   "method": "SAP Best Practices / PaPM reference content / standard reference model capture",
+   "method_tier": "GAP",
+   "is_precondition_for": "G_CONFORMANCE"
+  },
+  "A_PROCESS": {
+   "question": "how does it actually run (discovered from data) — AS-RUN?",
+   "method": "event log -> DFG/variants/performance; OCEL 2.0; pm4py",
+   "method_tier": "VERIFIED"
+  },
+  "B_CODE": {
+   "question": "which programs/classes/exits/BDC implement it?",
+   "method": "ATC/SCI, dependency graph, abaplint, SCMON/UPL usage",
+   "method_tier": "VERIFIED"
+  },
+  "C_CONFIG": {
+   "question": "which customizing parameterizes it?",
+   "method": "standard-vs-custom config tables",
+   "method_tier": "OWN"
+  },
+  "D_DATA": {
+   "question": "which tables + real keys hold it?",
+   "method": "DDIC keys; Gold DB; SAP-official P2P table set",
+   "method_tier": "VERIFIED"
+  },
+  "E_AUTH": {
+   "question": "who can/does execute it (roles, users, SoD)?",
+   "method": "VERIFIED (RES-AUTH-SOD wwyujjqyk): role model AGR_DEFINE/AGR_USERS(validity)/AGR_TCODES/AGR_1251(obj+field LOW/HIGH)/AGR_AGRS/AGR_1016; users USR01/02/04/12, UST12; SU24 proposals USOBT_C(values)+USOBX_C(OKFLAG N/X/Y); TSTCA(start-tcode auth). SoD = Function(tcodes+auth objects) -> Risk(2+ conflicting functions), 3 risk types (SoD/Critical Action/Critical Permission), action+permission levels. Expand AGR_USERS->AGR_1251 for effective role auth. CAVEAT: SU24/USOBX_C is a PROPOSAL, not enforcement — real check only where code has AUTHORITY-CHECK (pair with code scan / ST01-STAUTHTRACE). GRC: 3-tier function->action->permission, risk header GRACSODRISK(RISKTYPE), ruleset COMPILED. REFUTED: exact '5 GRC tables' enumeration + GRACSODRISK-as-violations.",
+   "method_tier": "VERIFIED",
+   "split_d01_p01": "role STRUCTURE (AGR_DEFINE/AGR_1251/USOBT_C/TSTCA) = D01 -> ROLE-level SoD without P01; user ASSIGNMENTS (AGR_USERS/USR02/UST12) = P01 -> USER-level SoD gated"
+  },
+  "F_INTERFACE_FILE": {
+   "question": "how does it cross the boundary (RFC/IDoc/file)?",
+   "method": "RFCDES, IDoc, file system AL11/OPEN DATASET, job variant->intent",
+   "method_tier": "OWN"
+  },
+  "G_CONFORMANCE": {
+   "question": "does it deviate from / extend STANDARD SAP?",
+   "method": "OPID conformance; PaPM reference baseline",
+   "method_tier": "VERIFIED"
+  },
+  "H_IMPROVE": {
+   "question": "where is the opportunity; what-if before building?",
+   "method": "simulation (designed); improvement framing",
+   "method_tier": "OWN"
+  },
+  "R_S4_READINESS": {
+   "question": "how ready is this domain's custom code/config/process for the S/4HANA migration?",
+   "method": "ATC S4HANA_READINESS_<ver> variant + Simplification Database (SYCM) + Custom Code Migration app (usage-based scoping) + CCLM decommissioning + SCMON/UPL/ST03N usage (used-to-migrate vs dead-to-delete); 40-60% custom code typically dead",
+   "method_tier": "VERIFIED",
+   "advance_path": "EXTRACTION",
+   "is_composite": true,
+   "composite_note": "NOT a leaf cell. R_S4_READINESS ROLLS UP from its own sub-scorecard (factor x domain) — fractal: the operating model one level down. Factor list VERIFIED by research wh5gw9exu (CLOSED). Sub-model source of truth: brain_v2/capability_model/s4_readiness_model.json.",
+   "note": "Method now VERIFIED across factors (research wh5gw9exu, 22/25). Coverage NONE = not yet APPLIED. Commercial hook: the S/4 migration x-ray. KEY: BP_CVI_READINESS is scoreable NOW from our Gold DB (LFA1/KNA1/BUT000/CVI_CUST_LINK) — no new extraction.",
+   "factors_verified": {
+    "BP_CVI_READINESS": "VERIFIED + SCOREABLE NOW from our data (CVI_MIGRATION_PRECHK/CVI_PRECHK logic: 9 business checks). The central pillar.",
+    "SIMPLIFICATION_ITEM_READINESS": "VERIFIED — SI-Check /SDF/RC_START_CHECK (hard gate). Needs system run.",
+    "CUSTOM_CODE_READINESS": "VERIFIED (research #3) — ATC S4HANA_READINESS + CCM. Needs system run.",
+    "TECHNICAL_READINESS": "VERIFIED — Maintenance Planner (stack.xml). System-level.",
+    "READINESS_CHECK_2_0": "VERIFIED orchestration (Notes 2913617/3059197). Area enumeration unverified.",
+    "FINANCE_READINESS": "PARTIAL — Asset Acc/ACDOCA VERIFIED; ML/newGL/FSCM/BAM = gap (follow-up)."
+   }
+  },
+  "U_USAGE": {
+   "question": "WHAT objects actually execute, WHO runs them, by which CHANNEL (dialog / batch / RFC-BAPI / batch-input BDC), WHEN, and at what VOLUME — the AS-RUN execution footprint?",
+   "method": "Fuse the execution-evidence channels into a per-domain object×actor×channel×time×volume census: RSAU/SM20 audit (Transaction Start->tcode, Report Start->program, RFC Function Call->function) + TBTCO/TBTCP (batch program+variant) + APQI/APQD (batch input / BDC). Cross-reference the static catalog (TSTC / TFDIR) to split EXECUTED vs CATALOG-ONLY. Builder: process_mining/fm_executed_census.py (generalize per domain via the FM-style name filter). Scored: NONE=no census; PARTIAL=one channel or counts-only; HAVE=all 4 channels with actor+volume(+time).",
+   "method_tier": "VERIFIED",
+   "advance_path": "EXTRACTION",
+   "note": "The AS-RUN usage layer. Distinct from B_CODE (STATIC: which code exists), A_PROCESS (the FLOW/variants) and E_AUTH (who CAN execute). U_USAGE = who ACTUALLY executes what, how, when, how much. Bridges static inventory -> live reality; the dead-vs-used signal also feeds R_S4_READINESS (used-to-migrate vs dead-to-delete). Added 2026-06-23 on user directive ('otra dimension del process discovery: que se usa, quien, como, cuando, volumen')."
+  }
+ },
+ "domains": {
+  "Payment_BCM": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "HAVE",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "HAVE",
+   "D_DATA": "HAVE",
+   "E_AUTH": "PARTIAL",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "PARTIAL",
+   "note": "strongest row; 1.4M events; FBZP/house-bank config; x-ray lands here first. E_AUTH PARTIAL s083: behavioral SoD from rsau_audit_history (646 events / 13 users; C_LOPEZ concentrated authority — claim #216). Role-level SoD (AGR_*) still NONE. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "subdomains": {
+    "dual_control_gap": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "HAVE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "PARTIAL",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "PARTIAL",
+     "note": "H71 write-channel SoD (claims #237-240); behavioral+declared. evidence-based."
+    },
+    "signatory_rules": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "HAVE",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "BCM signatory IT1218 + INC-000011781; bcm_signatory work. evidence-based."
+    },
+    "workflow_mod_path": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "WS90000003/YBSEG_REL custom workflow. evidence-based."
+    }
+   }
+  },
+  "Procurement_P2P": {
+   "S_STANDARD_REF": "PARTIAL",
+   "A_PROCESS": "HAVE",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "HAVE",
+   "E_AUTH": "PARTIAL",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "PARTIAL",
+   "H_IMPROVE": "NONE",
+   "note": "x-ray UPDATED s083: 38% clean 3-way-match, 17% open PO (no GR), ~44% multi-receipt/variant. AUDIT FINDING: 70 IR-before-GR violations = $713,341 (claim #214). GR->IR median 1d; 4% >30d. Behavioral SoD: T_ENG #1 user (claim #216). p2p_conformance.py (commit 9b4fb1a). F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION (HQ-ORION-EAI03) = primary procurement portal channel; BAPI_PR_GET/CHANGE (37K writes) + BAPI_PO_GET/CREATE + BAPI_ENTRYSHEET_GET via Z_RFC_GET_USER (508K SSO). Named-user portal GR/Invoice (E_SILVA/L_NEVES) = write channel. Claims #222,#223,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL"
+  },
+  "PSM_FM": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "HAVE",
+   "C_CONFIG": "HAVE",
+   "D_DATA": "HAVE",
+   "E_AUTH": "PARTIAL",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "PARTIAL",
+   "H_IMPROVE": "HAVE",
+   "note": "largest domain; know the opportunity (model gap) but not the as-is process vs standard; public-sector differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (4,697 events / 238 users, widest domain reach, mostly read-only YFM1/ZICTP_COCKPIT -- claim #216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE HAVE s085: MuleSoft = FM/Fund master sync IN (Y_FMKU_0050_CREATE_WITH_COMMIT, FM_FUND_CHANGE_RFC, Y_BAPI_FUND_C5_ASSIGNMENT) + WBS financials OUT (Y_BAPI_WBS_FINANCIAL_DATA_1 974K, Y_BAPI_YPS8 463K). 17 distinct MuleSoft flows. PBC engine (ZPBC_PERIOD_CLS_EXEC) = payroll commitment channel. Claims #221,#224,#225. D_DATA s088 (2026-06-22): BCS+PS master-data backbone refreshed — Gold DB now has funds/FMFINT (67,408/67,410 — all 9 institutes), fund_centers+text (FMFCTR/FMFCTRT 787), commitment_items+text (FMCI/FMCIT 205, GJAHR='0000' year-indep — claim #246), functional_areas+text (TFKB/TFKBT 9), proj/prps (13,976/59,749), proj_hierarchy NEW (PRHI 59,751 — 100% PRPS link). FMMEASURE=0 on all 9 areas: UNESCO does NOT use Funded-Program dimension (claims #245). Canonical refresher: scripts/extraction/p01_fm_ps_bcs_masterdata_refresh.py. Extraction rule: P01 SAIS rejects ROWSKIPS — use ROWCOUNT=0 per FIKRS (claim #244, rule feedback_p01_sais_rowskips_rejection). U_USAGE HAVE s090 (2026-06-23): PSM_FM deep-dive (brain_v2/fm_usage_deepdive.json, 15 cards, P01 4mo) -- standard tcodes carry the clicks, custom layer carries the truth. AVC monitoring blind spot: YPS8(11,314/571 users)+YFM1(10,134/557) reuse IS_COMMITMENT_ITEM_IN_AVC -- ~21K org-wide runs blind to INC-000005638-class overruns (claims #249, #153, #159; PMO H86). ICTP monolith: ZICTP_COCKPIT(5,014) fronts 70+ ZICTP_* suite, 42% on 2 Trieste users -- largest S/4 decommission burden + bus-factor (claim #250; PMO H87). Fork duplication: RFFMEPGAX forked twice (ZRFFMEPGAX_NEW+Y_RFFMEPGAX_FOR_UBO_1 30K UBO-RFC), plus RFFMRE01+FMRP_RFFMEP1FX RFFMR*/RFFMEP* S/4 migration (claim #251). Write-channel reinforcement (H71): Y_FMKU_0050_CREATE_WITH_COMMIT(4,953 MULESOFT)+Y_BAPI_FUND_C5_ASSIGNMENT(3,309 MULESOFT)+Y_RFFMEPGAX_FOR_UBO_1(30,738 UBO-RFC)=PPM->SAP fund/budget sync backbone, all single-service-account, no role-layer 4-eyes (claims #237-#240). Synthesis claim #252. R_S4_READINESS NONE: ICTP monolith + report forks = primary blockers identified. B_CODE HAVE s091: AVC FM chain fully mapped -- FMAVC_READ_TOTALS_FOR_ADDRESS (836ln) -> FMAVC_DERI_CONTROL_OBJECT -> FMAVC_CALL_DERIVATION_ACO -> ABADR_DERIVE_CHARACTERISTICS(AFMA) -> FMAVC_SELECT_ANNUAL_TOTALS_ACO; all 94 FMAVC_* FMs not RFC-enabled (TFDIR FMODE empty); external access via RFC_ABAP_INSTALL_AND_RUN V01/D01 only. ZRFC_FRESERVATION_CREATE confirmed BDC anti-pattern (claim #258). C_CONFIG HAVE s091: ledger 9H=PAYMENT-budget (corrected, was assumed commitment -- claim #255); strategy AFMA/9HZ00001 8 steps fully decoded (tabadrs/tabadrsf -- claim #256); activity groups FMAVCATGR WRTTP->amtype map (claim #257); fmavcldgract/fmavcbudfil*/fmavcbudfilth all read. G_CONFORMANCE PARTIAL s091: first deviation confirmed -- ZRFC_FRESERVATION_CREATE BDC of FMX1 where standard FMFR_CREATE_FROM_DATA exists (I_FLG_CHECKONLY mode; claim #258). BAPI_0050_CREATE=budget entry only; BAPI_0051_GET_TOTALS=totals only -- both misidentification candidates confirmed. AVC process axis: budget->commitment->actual->AVC-check->closing lifecycle verified (claim #253 formula; claim #259 refutes leaf-level hand-rolling, 23.7% spurious negatives). Source doc: knowledge/domains/PSM/avc_availability_model.md (committed 92f1004). Cross-link: executed_objects_domain_map claim #260 (system-wide U_USAGE method). Cost_Recovery_CRP subdomain added s-2026-06-26: full E2E model (R1->BOR), Y_FMKU_0050/BAPI_0050_CREATE/YFMXCHKP source-read, 281 633CRP* funds, fund-code anatomy, GL-by-PERSG, manual-FISTL finding, time-split non-derivability. Claims #268-#277. Companion: cost_recovery_bor_model.html. AVC layer on recurring pipeline (s-2026-06-30): FMAVCT re-extracted WIDE (77 fields -> 38-col gold schema; prior 7-col schema collided ~36% rows). Coverage expanded to all 9 FM areas: fmavct_2024=18,838 rows, fmavct_2025=16,112, fmavct_2026=13,593. Natural key = RCLNT/RLDNR/RRCTY/RVERS/RYEAR/ROBJNR/COBJNR/SOBJNR/RTCUR/DRCRK/RPMAX. available=budget-consumed verified via ROBJNR-pair (claims #341-#343). AVC config+totals layer now in gold_table_registry.json (source=curated, delta=external, psm_avc_refresh.py canonical, cadence weekly/daily). BUAVCTOLASS drift 34->36 rows confirmed (claim #344). Field-split RFC pattern (<=7 cols/group, 512-byte WA limit, ROWCOUNT=0 per FIKRS x year) documented as claim #345.",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "HAVE",
+   "subdomains": {
+    "availability_control": {
+     "S_STANDARD_REF": "HAVE",
+     "A_PROCESS": "HAVE",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "PARTIAL",
+     "G_CONFORMANCE": "HAVE",
+     "H_IMPROVE": "HAVE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "PARTIAL",
+     "note": "AVC fully verified from ABAP source + config + data (claims #253-259, doc avc_availability_model.md). HAVE: standard mechanism (S), check lifecycle (A), FM chain (B), ledger 9H+AFMA+activity groups (C), FMAVCT keys (D), BDC-vs-clean deviation (G), improvements identified (H). NONE: who-maintains/overrides AVC (E), boundary-crossing N/A (F), S/4 readiness not assessed (R). U PARTIAL: RFFMAVC* report execution seen in census, no full AVC-control-object usage census. D_DATA UPGRADED s-2026-06-30: FMAVCT re-extracted to 38 gold cols (all 9 FM areas); available=budget-consumed formula verified (ROBJNR-pair). Claims #341 (77 fields/natural key), #342 (ROBJNR-pair formula), #343 (ALLOCTYPE_9 domain values + KBFC-only for all 9 areas), #344 (AVC pipeline registration), #345 (field-split RFC pattern). F_INTERFACE_FILE now PARTIAL: psm_avc_refresh.py = the canonical extraction interface, registered in gold_table_registry.json with delta=external cadence."
+    },
+    "fm_fi_bridge": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "PARTIAL",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "PARTIAL",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "PARTIAL",
+     "note": "FM-FI bridge FMIFIIT.KNBELNR=BKPF.BELNR. D_DATA solid (the bridge key + FMIFIIT). Process/code/config PARTIAL. ESTIMATE pending a focused pass."
+    },
+    "ba_mod_extensions": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "Business-area mod extensions. Lightly analyzed. ESTIMATE — placeholder until a focused pass."
+    },
+    "cost_recovery_crp": {
+     "S_STANDARD_REF": "PARTIAL",
+     "A_PROCESS": "HAVE",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "PARTIAL",
+     "F_INTERFACE_FILE": "HAVE",
+     "G_CONFORMANCE": "HAVE",
+     "H_IMPROVE": "HAVE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "PARTIAL",
+     "note": "Cost Recovery BOR E2E fully verified (session 2026-06-26, P01 live RFC + Gold DB). A_PROCESS HAVE: full two-phase loop documented (R1 FI posting -> BOR supplement). B_CODE HAVE: Y_FMKU_0050_CREATE_WITH_COMMIT source read (RPY_PROGRAM_READ), BAPI_ACC_DOCUMENT_POST, YFMXCHKP fiscal-year guard confirmed. F_INTERFACE_FILE HAVE: same Y_FMKU_0050 channel as MuleSoft PPM budget load (4,953 calls, claim #221) PLUS manual Finance BOR supplement -- dual use case confirmed (claim #277). G_CONFORMANCE HAVE: Funds Center = MANUAL (not FMDERIVE) confirmed by exhaustive Gold DB scan (claim #271); time-split not derivable from PA0027/CATSDB/PA0014 (claim #273). H_IMPROVE HAVE: Z_CRP_OFFICE_MAP (ORGEH->FISTL derivation, 96% stable) + CRP_FUND_MAP (project->category) = two buildable automation tasks. FMBL TVAL01..TVAL16 gap for reconciliation. D_DATA PARTIAL: fmifiit_full has R1 credit side; FMBL TVAL01..TVAL16 missing from Gold DB extract (amounts not reconcilable). C_CONFIG PARTIAL: BOR fixed fields documented (BUDCAT=9F, VALTYPE=B1, BUDGETING_PERIOD=016); GL/FIPOS by PERSG confirmed; fund code structure 633CRP<cat><off> confirmed; FMDERIVE gap confirmed. E_AUTH PARTIAL: manual Finance posting known; no role-level audit of who creates R1/BOR docs. S_STANDARD_REF PARTIAL: standard BAPI_ACC_DOCUMENT_POST and BAPI_0050_CREATE are standard SAP; UNESCO cost-recovery-specific fund structure/GL mapping = custom. R_S4_READINESS NONE: not yet assessed. U_USAGE PARTIAL: BAPI_ACC_DOCUMENT_POST volume in audit census not isolated to cost-recovery use case; Y_FMKU_0050 census includes MuleSoft+manual combined. Claims: #268-#277. Companion: companions/cost_recovery_bor_model.html."
+    }
+   }
+  },
+  "Closing_Activities": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "NONE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "HAVE",
+   "note": "FX reval first activity; high H, low A/G",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "NONE"
+  },
+  "FI": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "HAVE",
+   "E_AUTH": "PARTIAL",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "note": "E_AUTH PARTIAL s083: behavioral SoD (4,385 events / 185 users; T_ENG #1 power user FI+Treasury+Payment conflict -- claims #213,#216). Role-level SoD (AGR_*) still NONE. F_INTERFACE_FILE PARTIAL s085: named-user portal Y_RFC_FMRP_RFFMEP1FX_FI_POST (31K, FI posting from field offices via E_SILVA/L_NEVES) confirmed as external FI write channel. COUPA file-based FI posting (YFI_COUPA_POSTING_FILE) also active. Claims #223,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "subdomains": {
+    "validations_substitutions": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "OBBH/YRGGBS00/GGB0 analyzed. evidence-based."
+    },
+    "gl_master_data": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "SKA1/SKAT/SKB1 master-data sync skill. evidence-based."
+    },
+    "busa_derivation": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "business-area derivation. partial/estimate."
+    }
+   }
+  },
+  "Treasury_EBS": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "HAVE",
+   "D_DATA": "HAVE",
+   "E_AUTH": "PARTIAL",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "PARTIAL",
+   "note": "MT940/EBS = file-based boundary -> F differentiator. E_AUTH PARTIAL s083: behavioral from rsau_audit_history (1,970 events / 24 users; specialist domain; T_ENG appears with bank-statement + clearing overlap = cross-domain SoD risk — claims #213 and #216). Role-level SoD (AGR_*) still NONE. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "subdomains": {
+    "house_bank_configuration": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "skill sap_house_bank_configuration (13 steps + compliance checker). evidence-based."
+    },
+    "bank_statement_ebs": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "HAVE",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "skill sap_bank_statement_recon (MT940/FEBAN/263K-event PM). evidence-based."
+    },
+    "bank_reconciliation": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "skill + INC-000006906. evidence-based."
+    },
+    "field_office_custom_clearing": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "STEM/field-office custom clearing. partial."
+    },
+    "xref_office_tagging": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "xref office tagging. partial."
+    },
+    "payment_landscape": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "HAVE",
+     "B_CODE": "HAVE",
+     "C_CONFIG": "HAVE",
+     "D_DATA": "HAVE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "PARTIAL",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "PARTIAL",
+     "note": "DMEE/F110/payment-E2E (sap_payment_bcm_agent, 1.4M events). evidence-based."
+    }
+   }
+  },
+  "HCM": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "NONE",
+   "B_CODE": "HAVE",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "note": "strong extracted_code (CL_HCMFAB_*); weak process. F_INTERFACE_FILE HAVE s085: WF-BATCH satellite = HR lifecycle automation (RE_RHAKTI00, HR infotype 1000/1001); SuccessFactors EC ECPAO_OM_OBJECT_EXTRACTION (43 parallel jobs, claim #8). Claims #224,#225. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "subdomains": {
+    "infotypes": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "PARTIAL",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "PARTIAL",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "PA infotypes. estimate. EXTENDED s-2026-07-03 (claims #333-337): PA0105 subtype-0001 (SAP-user link, field USRID) vs subtype-0010 (work email, USRID_LONG) confirmed disjoint via live P01/D01/V01 read; measured P01->D01/V01 link gap (D01 857, V01 775, all against pre-existing USR02 users) closed via reusable BAPI_EMPLCOMM_CREATE sync (pa0105_user_sync.py). F_INTERFACE_FILE moved NONE->PARTIAL: a working, reusable replication mechanism now exists for this table (sap_master_data_sync family). D_DATA stays PARTIAL (was already partial pre-existing)."
+    },
+    "payroll": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "payroll (hcm_domain_agent). partial."
+    },
+    "fiori_apps": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "HCM Fiori. estimate."
+    }
+   }
+  },
+  "Travel": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "NONE",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "note": "F_INTERFACE_FILE HAVE s085: Travel runs exclusively via BRIDGE-RFC/ORION using custom FMs YHRTRV_IF_GET_TRIP + YHRTRV_IF_MODIFY_TRIP (46K calls). Dialog is NONE for Travel transactions. Claims #222,#225,#229. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL"
+  },
+  "Integration": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "HAVE",
+   "B_CODE": "NONE",
+   "C_CONFIG": "NONE",
+   "D_DATA": "HAVE",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "PARTIAL",
+   "note": "MAJOR UPDATE s085: A_PROCESS HAVE (was NONE): 80.6% of business RFC = external satellites, 91.1% explained by 2-axis method. Named satellites: MuleSoft (1.62M, 17 flows, synctrigger fleet), BRIDGE-RFC/ORION (875K, 92% read), named-user portal (501K, write channel), WF-BATCH, PBC, RFC-SSIS. D_DATA HAVE: rsau_audit_history (8.5M/4mo), RFCDES, EDIDC, cdhdr_history all in Gold DB. H_IMPROVE PARTIAL: satellite-process OCEL model = next build. Claims #220-#230. Engine: process_mining/rfc_process_classifier.py. Doc: knowledge/system_operating_model_rfc.md. UPDATE s086: D_DATA += st22_dumps_history (1 dump) + sm21_syslog_history (2,402 rows ~7d volatile, /USE/BL_GET_SHORTDUMPS P01-safe). A_PROCESS += FAILURE SIDE: #1 failure mode = network connectivity (10054/recv/HTTP ~12% syslog, mirrors 80%-external operating model). SoD gap documented: E_SILVA/L_NEVES self-approve 3-way-match; MP_ANCUTA/S_STANTIC direct-spend risk. Claims #232-#235. MuleSoft 174 GUIDs = RFC connection-pool IDs NOT SOAMANAGER ports (resolved, claim #235). Channel-mix: RFC ~5-6x dialog/month (claim #234). U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL"
+  },
+  "HR_Workflows": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "NONE",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "NONE",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "subdomains": {
+    "staff_rejected_flow": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "staff rejected flow (incident). partial."
+    },
+    "return_step01_impossible": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "return step01 (incident). partial."
+    },
+    "fiori_apps": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "HR-WF Fiori. estimate."
+    },
+    "asr_framework": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "ASR framework. partial."
+    },
+    "webdynpro_legacy": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "PARTIAL",
+     "U_USAGE": "NONE",
+     "note": "WebDynpro legacy (S/4 risk). partial."
+    },
+    "core_hr_project_2025_2026": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "PARTIAL",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "Core HR project 2025-2026 (future). estimate."
+    },
+    "successfactors_end_state_2026": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "PARTIAL",
+     "R_S4_READINESS": "PARTIAL",
+     "U_USAGE": "NONE",
+     "note": "SuccessFactors end-state 2026 (future). estimate."
+    }
+   },
+   "note": " U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90)."
+  },
+  "PY_Finance": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "NONE",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "PARTIAL",
+   "note": "418 TRs reverse-engineered; wage-type config. F_INTERFACE_FILE PARTIAL s085: PBC engine (F_DERAKHSHAN/HIPER, ZPBC_PERIOD_CLS_EXEC) = payroll-commitment generator creating FMRESERV (6.4M CDHDR rows, blank-tcode channel -- identified in rsau). Claims #224.",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "NONE",
+   "subdomains": {
+    "lcr_monthly": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "PARTIAL",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "LCR monthly. estimate."
+    },
+    "salary_scale_fo": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "PARTIAL",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "salary scale field office. estimate."
+    },
+    "csi": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "CSI. not assessed — placeholder."
+    },
+    "pensionable_remuneration": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "pensionable remuneration. not assessed — placeholder."
+    },
+    "ticket_new_country_setup": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "NONE",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "new-country setup ticket. not assessed — placeholder."
+    },
+    "custom_schemas_pcrs": {
+     "S_STANDARD_REF": "NONE",
+     "A_PROCESS": "NONE",
+     "B_CODE": "PARTIAL",
+     "C_CONFIG": "NONE",
+     "D_DATA": "NONE",
+     "E_AUTH": "NONE",
+     "F_INTERFACE_FILE": "NONE",
+     "G_CONFORMANCE": "NONE",
+     "H_IMPROVE": "NONE",
+     "R_S4_READINESS": "NONE",
+     "U_USAGE": "NONE",
+     "note": "custom payroll schemas/PCRs. partial/estimate."
+    }
+   }
+  },
+  "BusinessPartner": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "NONE",
+   "C_CONFIG": "PARTIAL",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "note": "A_PROCESS PARTIAL s085: vendor master dual-channel confirmed (XK02 M_AYIMBA 72K + ZBAPI_VENDOR_CHANGE MP_ANCUTA 19K); 2025 KRED spike 110K (3.7x, likely mass cleanup). CDHDR change inventory is the real 'what changes' source. F_INTERFACE_FILE HAVE s085: BRIDGE-RFC/ORION = vendor read portal (ZBAPI_VENDOR_GETDETAIL 72K, ZBAPI_VENDOR_SEARCH*); named-user portal ZBAPI_VENDOR_CHANGE (write). Claims #222,#225,#227,#228. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL"
+  },
+  "PS": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "NONE",
+   "C_CONFIG": "NONE",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "HAVE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "note": "A_PROCESS PARTIAL + F_INTERFACE_FILE HAVE s085: PS is operated heavily via MuleSoft. Project WBS creation = BAPI_PROJECT_MAINTAIN + Y_BAPI_WBS_TEXT_MAINTAIN + Y_BAPI_WBS_CUS_FIELD_UPDATE from synctrigger fleet. WBS financial reads OUT = Y_BAPI_WBS_FINANCIAL_DATA_1 (974K) + Y_BAPI_YPS8 (463K) to PPM/Core Planner. Project IDoc = PROJECT02 (4,420 IDocs Dec25-Mar26). Claims #221,#225,#230. U_USAGE PARTIAL s092: package-method floor from executed_objects_domain_map (TADIR.DEVCLASS); claims #260/#262. Full 4-method triangulation pending (PMO H88/H90).",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL"
+  },
+  "RE_FX": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "PARTIAL",
+   "B_CODE": "PARTIAL",
+   "C_CONFIG": "NONE",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "NONE",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "PARTIAL",
+   "note": "s097 CORRECTION (user-flagged miss): RE-FX is IMPLEMENTED AND PRODUCTIVE - it was wrongly reported as 'no evidenced usage'. MEASURED rsau_audit_history 2026-02-21..2026-06-21: RECN (contracts, 80 execs/4 users), RE80, RERAPP (periodic posting 25), RERAIV (invoicing 16), RERAPPRV/RERAIVRV (reversals), 8 RE-IS reports (REISCN/REISBP/REISROOC/REISMSBD/REISCNOA/REISCNMS/REISMSCN/REISCNBP). B_CODE PARTIAL: 6 customer packages ZRE, ZRE_CONTRACT, ZRE_INVOICE, ZRE_POSTINGS, ZRE_WORKFLOW, YA_FEX; productive custom progs YRE_CONTRACT_CREATE_WORD, YRE_CONTRACT_SEND_EMAIL, YRE_INVOICE_SEND_EMAIL (tcode ZRE_INVOICE, 22 execs/2 users). Business use = contract & lease mgmt for field offices. ROOT CAUSE OF THE MISS: executed_objects_domain_map has NO RE_FX bucket - RE objects fall into 'Uncatalogued' (4.56M execs = 40% of volume). Claim #352."
+  },
+  "Output": {
+   "S_STANDARD_REF": "NONE",
+   "A_PROCESS": "NONE",
+   "B_CODE": "NONE",
+   "C_CONFIG": "NONE",
+   "D_DATA": "PARTIAL",
+   "E_AUTH": "NONE",
+   "F_INTERFACE_FILE": "PARTIAL",
+   "G_CONFORMANCE": "NONE",
+   "H_IMPROVE": "NONE",
+   "R_S4_READINESS": "NONE",
+   "U_USAGE": "NONE"
+  }
+ },
+ "systemic_gaps": [
+  {
+   "column": "S_STANDARD_REF",
+   "finding": "NONE for every domain — we never captured the SAP as-designed baseline. This is the PRECONDITION for G: without the standard reference there is nothing to conform AS-RUN against. This is why G is empty everywhere. Capture standard baselines (PaPM/Best-Practices) per domain FIRST.",
+   "rank": 0
+  },
+  {
+   "column": "E_AUTH",
+   "finding": "NONE for every domain — Auth/SoD is a missing MODEL capability, not a per-domain gap. Closing it once lifts all domains.",
+   "rank": 1
+  },
+  {
+   "column": "G_CONFORMANCE",
+   "finding": "NONE for every domain — the custom-over-standard x-ray (the differentiator) is unbuilt; AS-RUN vs AS-DESIGNED delta. Start on strongest rows (Payment, P2P) where PaPM/standard baselines exist.",
+   "rank": 2
+  },
+  {
+   "column": "R_S4_READINESS",
+   "finding": "NONE for every domain — S/4HANA migration readiness not yet APPLIED, though the method is fully VERIFIED (ATC S4HANA_READINESS + Simplification DB + Custom Code Migration app + usage scoping, research #3). Commercial hook (migration x-ray). Largely D01-runnable; usage scoping needs P01.",
+   "rank": 3
+  }
+ ],
+ "expansion_order": [
+  "1. Close E (Auth/SoD) once — highest leverage, lifts every domain (AGR_*/SU24/SUIM).",
+  "2. Close G (Conformance) on Payment + P2P first (baselines exist) — the differentiator.",
+  "3. Fill A (Process) for high-H/low-A domains: PSM/FM, Closing — turn known opportunity into discovered as-is.",
+  "4. Build F (file/variant) across Integration + batch-heavy domains — the OWN additions.",
+  "5. Apply R_S4_READINESS — run ATC S4HANA_READINESS + Simplification items + usage scoping per domain (method verified; mostly D01-runnable). The migration x-ray / commercial hook."
+ ],
+ "_meta_capability": {
+  "note": "As of Session S-087 (2026-06-22), the domain x capability discipline is applied to OUR OWN way-of-working (meta-capability model). See brain_v2/meta_capability.json + brain_v2/meta_capability.py. Meta-maturity=67.8%; weakest=VERIFY (24.3% claims with >=2 independent sources); self-correction demonstrated (claim #232 superseded by #236 via H74 chip). The self-correcting loop is: find->escalate->verify->correct->consolidate. Claim #243.",
+  "meta_maturity_pct": 67.8,
+  "weakest_dim": "VERIFY",
+  "meta_file": "brain_v2/meta_capability.json",
+  "added_session": 87
+ }
 }
