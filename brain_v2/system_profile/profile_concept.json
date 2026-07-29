@@ -1,0 +1,82 @@
+{
+ "_concept": "PROFILE",
+ "_one_line": "The PROFILE is what the TENANT IS. The capability model is what WE KNOW about it. Two different questions about the same system — and the delta between them is the work.",
+ "_version": "1.0",
+ "_created_session": 97,
+ "_why_a_new_concept": {
+  "trigger": "s097 — an external Business Process Review asked 'which modules are implemented and which are actively used'. The brain could not answer it. It held the HOW (operating model: 80.6% external orchestration; 37 integration flows) and it held OUR KNOWLEDGE (capability_model: domain x 11 capabilities), but nowhere did it hold the WHAT: the tenant's own footprint. The answer had to be re-derived live from cvers + audit logs and was wrong on 6 modules (RE-FX, SD, FI-AA, PM, TRM, PBC) plus an entire missing category (third-party add-ons).",
+  "diagnosis": "Those 6 were not unknown — they were UNADDRESSED. PBC was in the brain as an 'engine' inside a prose doc; RE-FX had a domain folder; the add-ons had a companion. Knowledge existed but was not KEYED on the question being asked. A store you cannot query by the question you are asked is not knowledge, it is storage.",
+  "principle": "CP-001 traceability + CP-003 evidence. A concept earns its place when a whole CLASS of question has no home. 'What is this tenant?' is that class."
+ },
+ "_definition": {
+  "profile": "The measured reality of ONE tenant/system landscape: what is installed, what is configured, what is productive, how it is operated, who uses it, and through which channels data enters and leaves.",
+  "keyed_on": "SAP APPLICATION COMPONENT (the technical module: FI-AA-AA, PA-PM-PB, RE-FX-CN...). This is deliberately a DIFFERENT axis from the capability model's canonical domain key.",
+  "not_the_profile": [
+   "our coverage/knowledge of a domain -> that is capability_model (L15)",
+   "per-flow integration detail -> that is knowledge/domains/Integration/integration_map_complete.md",
+   "object-level graph -> that is L1 objects",
+   "an opinion, a roadmap or a recommendation -> the profile carries FACTS with evidence only"
+  ]
+ },
+ "_evidence_tiers": {
+  "_rule": "Every module MUST carry one of these. Never state a module without its tier — 'implemented' alone is the ambiguity that caused the s097 failure.",
+  "INSTALLED": "component present in CVERS. Near-meaningless on its own: 177 components are installed and most ship by default.",
+  "CONFIGURED": "organisational structure / customising exists (company code, sales org, plant, asset company code...).",
+  "PRODUCTIVE": "business documents exist AND/OR transactions are executed in the audit log.",
+  "NOT_USED": "the module exists but zero documents and zero executions — an ASSERTED negative, only valid when actually probed.",
+  "NOT_EVIDENCED": "we have no evidence either way. NOT the same as NOT_USED. Never collapse the two.",
+  "_adoption_is_a_separate_axis": "Do NOT widen this vocabulary to express extent. The TIER answers 'how do we know?'; the optional `adoption` field (FULL/PARTIAL/MARGINAL) answers 'how far is it rolled out?'. Collapsing the two is what produced statuses like 'PARTIAL' that mean neither. Caught by the I1 gate on its first run — the gate paid for itself immediately."
+ },
+ "_strata": {
+  "note": "The profile has three strata, in increasing order of what they cost to establish and of what they are worth.",
+  "1_footprint": "installed / configured / productive per module + org structure. Cheap, factual, and the thing external parties always ask for first.",
+  "2_operation": "HOW it is run: channel mix (dialog vs RFC vs IDoc vs batch vs file), who orchestrates, read vs write direction. This is where UNESCO's 80.6%-external headline lives.",
+  "3_periphery": "what surrounds the core: third-party add-ons, the digital front-end (OData/Fiori), users and licences, and every channel through which data EXITS. Systematically forgotten, and the richest for a governance conversation."
+ },
+ "_interrelations": {
+  "_design": "The profile is not a leaf. It is the SPINE that the other stores hang off. Each link below is a LOOKUP (explicit key), never a fuzzy token match — the mistake ontology.json already had to correct once.",
+  "profile.module -> ontology.canonical_key": "explicit `capability_domain` field per module. Resolves the technical module onto the canonical domain vocabulary.",
+  "profile.module -> capability_model.domains[key]": "via the above. Answers: for a module that is PRODUCTIVE, do we actually have capability coverage? A PRODUCTIVE module with no capability row is a SYSTEM-LEVEL BLIND SPOT — a different and more serious animal than the object-level blind_spots (L12), which are names we mentioned without a node.",
+  "profile.module -> claims": "by domain + by related_objects. Every profile assertion must be traceable to a claim with evidence.",
+  "profile.module -> knowledge/domains/<x>/": "the prose layer (artifact hierarchy: brain .md -> companion .html -> Word).",
+  "profile.operating_model -> knowledge/system_operating_model_rfc.md + integration_map_complete.md": "the profile SUMMARISES; those docs stay the source of truth for per-flow detail. Never duplicate them here.",
+  "profile.third_party_addons -> F_INTERFACE_FILE + E_AUTH": "each add-on is an independent data-exit channel and therefore a governance object, not a licence line item.",
+  "profile -> capability_model": "COMPLEMENTARY, NOT NESTED. Profile = the system. Capability model = our knowledge of it. Do not merge them; the delta between the two IS the backlog."
+ },
+ "_module_to_domain": {
+  "_authority": "EXPLICIT mapping, hand-maintained. `null` = no canonical domain exists yet -> that is a finding, not an error.",
+  "FI": "FI",
+  "PSM_FM": "PSM_FM",
+  "PBC": null,
+  "PS": "PS",
+  "CO": null,
+  "MM": "Procurement_P2P",
+  "HCM": "HCM",
+  "FI_AA": null,
+  "RE_FX": "RE_FX",
+  "PM": null,
+  "SD": null,
+  "TRM": null,
+  "Treasury_EBS": "Treasury_EBS",
+  "Payment_BCM": "Payment_BCM",
+  "Travel": "Travel",
+  "BusinessPartner": "BusinessPartner",
+  "WM": null,
+  "BW_embedded": null,
+  "QM": null,
+  "CS": null,
+  "GM": null
+ },
+ "_invariants": {
+  "I1": "Every module carries an evidence tier AND its evidence string. No tier without evidence.",
+  "I2": "NOT_USED requires an actual probe. Absence in the Gold DB or in executed_objects_domain_map is a FLOOR, never an inventory — it yields NOT_EVIDENCED, never NOT_USED.",
+  "I3": "Technical component names are resolved from the system (TADIR -> TDEVC -> DF14L), never from memory.",
+  "I4": "The profile is rendered into BRAIN_INDEX.md at bootstrap. If a session has to re-derive the footprint, the profile has failed — fix the profile, do not answer from scratch.",
+  "I5": "The profile is TENANT-SCOPED. Nothing here is portable to another client; the CONCEPT and the build scripts are."
+ },
+ "_maintenance": {
+  "who_updates": "any session that measures something about the system's footprint, operation or periphery — before it answers, not after.",
+  "how": "edit unesco_system_profile.json, then `python brain_v2/system_profile/build_profile_links.py` (also runs inside rebuild_all.py), which recomputes the interrelations and the gap report.",
+  "gate": "build_profile_links.py FAILS LOUD on an invariant breach (module without tier, NOT_USED without evidence, unmapped module key)."
+ }
+}

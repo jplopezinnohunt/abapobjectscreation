@@ -201,6 +201,12 @@ def main():
     # never touches the 14 GB Gold DB). Its failure is still logged in full to curation.log.
     run(["python", "brain_v2/claims_health.py"],
         "Step 2c: Claims-health gate (evidence independence -> claims_health.json)", fatal=False)
+    # PROFILE (L16) must be crossed BEFORE brain_state is assembled — build_brain_state
+    # attaches profile_links.json as system_profile._links. This step also GATES the
+    # profile invariants (tier + evidence per module), so a malformed profile stops the
+    # rebuild instead of silently shipping a fact-sheet nobody can trust.
+    run(["python", "brain_v2/system_profile/build_profile_links.py"],
+        "Step 2c: Cross the PROFILE (L16) against L14/L15/claims + gate invariants")
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
     # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline

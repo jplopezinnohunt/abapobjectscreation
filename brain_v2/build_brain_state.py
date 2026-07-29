@@ -59,6 +59,14 @@ CAPABILITY_MODEL = BRAIN_V2 / "capability_model" / "capability_model.json"
 # thing; capability_model.json stays the source of truth for the cell VALUES.
 # Gated at rebuild step 0 by brain_v2/validate_ontology.py.
 ONTOLOGY = BRAIN_V2 / "capability_model" / "ontology.json"
+# LAYER 16: PROFILE — what the TENANT IS (installed / configured / productive per
+# module, org structure, operating model, add-ons, digital front-end, users). The
+# capability model says what WE KNOW; the profile says what the SYSTEM IS, and the
+# delta between them is the backlog. Concept spec + invariants in
+# system_profile/profile_concept.json; the crossing against L14/L15/claims is
+# precomputed by system_profile/build_profile_links.py. Added Session #097 after a
+# scope question the brain could not answer without re-deriving it live.
+SYSTEM_PROFILE = BRAIN_V2 / "system_profile" / "unesco_system_profile.json"
 
 # Legacy single-string domain -> 3-axis domain_axes. Derived at build time;
 # does NOT mutate the source graph. Keeps objects queryable by functional
@@ -515,6 +523,18 @@ def main():
     if DOMAINS_REGISTRY.exists():
         domains_registry = json.load(open(DOMAINS_REGISTRY, encoding="utf-8"))
 
+    # LAYER 16 — PROFILE. The tenant fact-sheet + its precomputed crossing against
+    # the rest of the brain. Attached whole so ONE read of brain_state answers
+    # "what is this system?" without re-deriving it from cvers/audit logs.
+    system_profile = {}
+    if SYSTEM_PROFILE.exists():
+        system_profile = json.load(open(SYSTEM_PROFILE, encoding="utf-8"))
+        for _sib, _key in [("profile_concept.json", "_concept"),
+                           ("profile_links.json", "_links")]:
+            _p = SYSTEM_PROFILE.parent / _sib
+            if _p.exists():
+                system_profile[_key] = json.load(open(_p, encoding="utf-8"))
+
     # LAYER 15 — Capability Model (4th axis). Load the domain x capability matrix
     # and inject each domain's coverage into its Layer-14 entry (best-effort name
     # map); keep the full model as a top-level layer so it's queryable even when a
@@ -697,6 +717,13 @@ def main():
         # gaps, not per-domain gaps. ALIGN acquired knowledge, EXPAND the empty
         # cells. Source: brain_v2/capability_model/capability_model.json. S#079.
         "capability_model": capability_model,
+        # LAYER 16: PROFILE — the tenant's measured reality. Keyed on SAP
+        # application component (a different axis from L15's domain key), with
+        # evidence tiers INSTALLED/CONFIGURED/PRODUCTIVE/NOT_USED/NOT_EVIDENCED.
+        # `_links` carries the precomputed crossing against L14/L15/claims/docs —
+        # read `_links.system_level_blind_spots` first: PRODUCTIVE modules with no
+        # capability row are modules the tenant runs that our model never examined.
+        "system_profile": system_profile,
         "_coverage": coverage,
         "_trust": _trust,
     }

@@ -9,8 +9,8 @@
 capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid-conversation.
 - **Platform:** SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA · 177 components installed
   (**installed ≠ implemented** — most ship by default: ~60 country HR versions + industry solutions).
-- **PRODUCTIVE modules:** FI, PSM_FM, PS, CO, MM, HCM, FI_AA, RE_FX, PM, SD, TRM, Treasury_EBS, Payment_BCM, Travel, PBC
-- **Configured / marginal:** BusinessPartner, WM, BW_embedded
+- **PRODUCTIVE modules:** FI, PSM_FM, PS, CO, MM, HCM, FI_AA, RE_FX, PM, SD, TRM, Treasury_EBS, Payment_BCM, Travel, BusinessPartner, PBC
+- **Configured / marginal:** WM
 - **NOT used:** QM, CS, GM
 - **Third-party add-ons ACTIVE:** EPI_USE_Labs, ACL_Data_Link (each = a licence + an independent DATA-EXIT channel)
 - **⚡ HOW IT OPERATES:** UNESCO does NOT operate SAP by dialog. 80.6% of business RFC traffic is driven by EXTERNAL satellite applications. SAP is a read-dominant SYSTEM-OF-RECORD that feeds satellites and receives concentrated writes.
@@ -24,7 +24,7 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **32.1%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1135 objects · 170 rules · 351 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1199 objects · 171 rules · 357 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -56,7 +56,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 170 total)
+## Rules to load first (behavioral DNA — 171 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

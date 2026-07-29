@@ -337,6 +337,39 @@ def capability_gaps(brain):
     }
 
 
+def profile(brain, module=None):
+    """LAYER 16 — the tenant PROFILE. No arg = the fact-sheet + the gap report;
+    with a module name = that module crossed against capability model, claims and docs.
+
+    This is the answer to 'what is this system?' — ask it BEFORE re-deriving the
+    footprint from cvers or the audit log (rule feedback_profile_first...)."""
+    p = brain.get("system_profile", {})
+    if not p:
+        return {"error": "no system_profile layer — run brain_v2/rebuild_all.py"}
+    links = p.get("_links", {})
+    if module:
+        row = links.get("modules", {}).get(module)
+        if not row:
+            return {"error": f"unknown module {module!r}",
+                    "known": sorted(links.get("modules", {}))}
+        return {"module": module, "profile": p.get("modules", {}).get(module), "links": row}
+    return {
+        "platform": p.get("landscape", {}).get("product"),
+        "org_structure": p.get("org_structure"),
+        "operating_model_headline": p.get("operating_model", {}).get("headline"),
+        "modules_by_status": {
+            s: sorted(k for k, v in p.get("modules", {}).items()
+                      if isinstance(v, dict) and v.get("status") == s)
+            for s in ("PRODUCTIVE", "CONFIGURED", "INSTALLED", "NOT_USED", "NOT_EVIDENCED")
+        },
+        "third_party_addons_active": sorted(
+            k for k, v in p.get("third_party_addons", {}).items()
+            if isinstance(v, dict) and v.get("status") == "ACTIVE"),
+        "coverage": links.get("coverage"),
+        "system_level_blind_spots": links.get("system_level_blind_spots"),
+    }
+
+
 COMMANDS = {
     "what_reads": lambda b, args: what_reads(b, args[0]),
     "what_depends_on": lambda b, args: what_depends_on(b, args[0]),
@@ -354,6 +387,8 @@ COMMANDS = {
     # Layer 15 (session #079) — capability model (4th axis)
     "capability": lambda b, args: capability(b, args[0] if args else None),
     "capability_gaps": lambda b, args: capability_gaps(b),
+    # Layer 16 (session #097) — the tenant PROFILE (what the SYSTEM IS)
+    "profile": lambda b, args: profile(b, args[0] if args else None),
 }
 
 if __name__ == "__main__":
