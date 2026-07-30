@@ -113,13 +113,36 @@ def run():
     docs = {p.name.upper(): p.name for p in KNOWLEDGE.iterdir()} if KNOWLEDGE.exists() else {}
     comps = [p.name for p in COMPANIONS.glob("*.html")] if COMPANIONS.exists() else []
 
+    # Doc folders are named by ALIAS, not by canonical key: PSM_FM lives in PSM/,
+    # Payment_BCM in Payment/ + BCM/, Treasury_EBS in Treasury/, Procurement_P2P in
+    # Procurement/. Resolving by exact name reported 4 docs as MISSING that exist —
+    # which would have led to writing duplicates of knowledge we already had (CP-002).
+    # The aliases are already declared in ontology.json; use them.
+    alias_of = {}
+    for od in onto.get("domains", []):
+        ck = od.get("canonical_key")
+        for a in [ck] + list(od.get("aliases") or []) + list(od.get("registry_keys") or []):
+            if a:
+                alias_of.setdefault(ck, []).append(str(a).upper())
+
+    def resolve_doc(module_name, dom_key):
+        """Folder for this module, tried canonical -> aliases -> hyphen/underscore."""
+        cands = [module_name.upper(), module_name.upper().replace("_", "-")]
+        if dom_key:
+            cands += [dom_key.upper(), dom_key.upper().replace("_", "-")]
+            cands += alias_of.get(dom_key, [])
+            cands += [a.replace("_", "-") for a in alias_of.get(dom_key, [])]
+        for c in cands:
+            if c in docs:
+                return docs[c]
+        return None
+
     links, blind = {}, []
     for name, m in profile.get("modules", {}).items():
         if not isinstance(m, dict):
             continue
         dom = mapping.get(name)
-        key = name.upper().replace("_", "-")
-        doc = docs.get(name.upper()) or docs.get(key) or (docs.get(dom.upper()) if dom else None)
+        doc = resolve_doc(name, dom)
         comp = [c for c in comps if name.lower().split("_")[0] in c.lower()]
         row = {
             "status": m.get("status"),
