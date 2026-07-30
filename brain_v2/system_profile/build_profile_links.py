@@ -17,6 +17,7 @@ token match. ontology.json already had to correct that mistake once; we do not r
 Emits: profile_links.json   Run standalone or inside rebuild_all.py.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -60,21 +61,34 @@ def check_invariants(profile, concept):
 
 
 def claims_for(claims, domain_key, module_name):
-    """Claims that speak about this module: by domain, by module axis, or by name."""
+    """Claims that speak about this module.
+
+    STRUCTURED FIELDS ONLY (domain + module axis), plus a word-boundary text match
+    that is deliberately restricted to names of 4+ characters.
+
+    The first version matched the module name as a plain substring of the claim text.
+    For two-letter modules that is catastrophic: 'CO' matched 337 claims, 'PM' 47,
+    'SD' 30 — noise presented as linkage, which is worse than an empty list because
+    it reads as coverage. Same class of error ontology.json already had to correct.
+    """
     hits = []
+    long_enough = len(module_name) >= 4
+    pat = re.compile(r"\b%s\b" % re.escape(module_name.replace("_", " ")), re.I) \
+        if long_enough else None
     for c in claims:
         if not isinstance(c, dict):
             continue
-        dom = c.get("domain")
         # domain_axes is a dict in the current schema but older claims carry a bare
         # list — tolerate both rather than dropping those claims silently.
         axes = c.get("domain_axes") or {}
         mods = [str(x).upper() for x in (axes.get("module") or [])] if isinstance(axes, dict) \
             else [str(x).upper() for x in axes]
-        blob = str(c.get("claim", ""))
-        if (domain_key and dom == domain_key) \
-           or module_name.upper().replace("_", "-") in mods \
-           or module_name.upper().replace("_", " ") in blob.upper():
+        matched = (domain_key and c.get("domain") == domain_key) \
+            or module_name.upper().replace("_", "-") in mods \
+            or module_name.upper() in mods
+        if not matched and pat and pat.search(str(c.get("claim", ""))):
+            matched = True
+        if matched:
             hits.append(c.get("id"))
     return hits
 

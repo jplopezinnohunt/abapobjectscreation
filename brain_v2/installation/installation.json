@@ -1,0 +1,70 @@
+{
+ "_concept": "INSTALLATION",
+ "_one_line": "The ROOT object. The single thing this entire brain is about. Everything else — profile, capability model, domains, claims, incidents — is a statement ABOUT this object, and the traversal starts here.",
+ "_version": "1.0",
+ "_created_session": 97,
+
+ "_two_roots": {
+  "_note": "The brain has TWO roots, of different kinds. Keeping them apart is the point.",
+  "core_principles (L0)": "the constitution of the AGENT — how we work, decide, store (CP-001/002/003). Governs OUR behaviour.",
+  "installation (ROOT)": "the SUBJECT — what we model. Governs what is TRUE about the customer.",
+  "why_it_matters": "Until s097 only the agent-root existed. The subject was implicit in every layer and first-class in none — which is exactly how a question about the installation ('which modules are implemented?') found no home."
+ },
+
+ "_anchor_not_container": {
+  "rule": "This object holds IDENTITY, AXES, POINTERS and the TRAVERSAL ORDER. It NEVER holds content that a store already owns.",
+  "why": "The failure mode of a root node is becoming a god-object: content gets copied upward, and now two places disagree. The stores stay the owners; the root only says WHAT THIS IS and WHERE TO ENTER.",
+  "test": "If you can delete a field here and lose information that exists nowhere else, that field is in the wrong place — push it down into its store."
+ },
+
+ "identity": {
+  "installation_id": "UNESCO-ECC",
+  "tenant": "UNESCO — United Nations Educational, Scientific and Cultural Organization",
+  "tenant_type": "UN specialised agency (public sector, non-profit, multi-currency, multi-country)",
+  "product": "SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA",
+  "operating_character": "public-sector finance: budget-and-grants, not manufacturing or sales",
+  "systems": {
+   "P01": {"role": "production", "host": "172.16.4.100:00", "access": "READ-ONLY for us, RFC over SNC/SSO", "note": "9 company codes; the system of record"},
+   "D01": {"role": "development", "host": "172.16.4.66:00", "access": "password, ADT/deploy", "note": "the ONLY system where objects are created"},
+   "V01": {"role": "validation", "access": "read", "note": "source for Transport-of-Copies recovery"}
+  },
+  "no_QAS": "There is no QA system between D01 and P01. Recorded here because it is a STRUCTURAL risk of the installation itself, not of any one change."
+ },
+
+ "axes": {
+  "_note": "The five ways this installation is sliced. Each axis is owned by a store; the root only declares that the axis exists and who owns it.",
+  "1_module": {"question": "what SAP application components does it run?", "owner": "system_profile (L16)", "key": "SAP application component"},
+  "2_domain": {"question": "what business domains does it have?", "owner": "domains_layer (L14) + ontology", "key": "canonical domain key"},
+  "3_capability": {"question": "what do WE KNOW about each domain?", "owner": "capability_model (L15)", "key": "domain x 11 capabilities"},
+  "4_object": {"question": "what code/config/data objects implement it?", "owner": "objects (L1)", "key": "object name"},
+  "5_channel": {"question": "how is it operated and how does data cross the boundary?", "owner": "system_profile.operating_model + knowledge/domains/Integration/", "key": "satellite / channel"}
+ },
+
+ "traversal": {
+  "_design": "THE FIRING ORDER — 'de aquí se dispara el resto'. Deterministic, not a suggestion. Each step names what it answers and what it hands to the next.",
+  "0_installation": "WHAT IS THIS? -> identity above. Always the first read.",
+  "1_profile": "WHAT DOES IT RUN? -> system_profile (L16): modules with evidence tiers, org structure, add-ons, front-end, users. `graph_queries.py profile`",
+  "2_operation": "HOW IS IT RUN? -> system_profile.operating_model: 80.6% orchestrated by external satellites. Detail in knowledge/system_operating_model_rfc.md.",
+  "3_capability": "WHAT DO WE KNOW ABOUT IT? -> capability_model (L15). `graph_queries.py capability_gaps`",
+  "4_delta": "WHERE IS THE WORK? -> profile_links.system_level_blind_spots = modules it RUNS that we have NOT modelled. This is the backlog, generated not written.",
+  "5_evidence": "PROVE IT -> claims (L4) + incidents (L11) + objects (L1). Never assert without this step.",
+  "_invariant": "Steps 0-1 are MANDATORY before answering any question about scope, modules, or how UNESCO works. Skipping them is what rule #171 exists to prevent."
+ },
+
+ "what_hangs_off_this": {
+  "system_profile": "brain_v2/system_profile/ — L16. The DESCRIPTION of this object.",
+  "capability_model": "brain_v2/capability_model/ — L15. Our KNOWLEDGE of this object.",
+  "domains_layer": "brain_v2/domains/ — L14. Its business decomposition.",
+  "objects": "L1 — its implementing artifacts.",
+  "claims_incidents": "L4/L11 — the evidence trail for every assertion about it.",
+  "integration_map": "knowledge/domains/Integration/integration_map_complete.md — its boundary.",
+  "gold_db": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db — its extracted data (LOCAL-ONLY, not in git)."
+ },
+
+ "_multi_tenant": {
+  "status": "single-tenant today (UNESCO-ECC), but the schema is deliberately tenant-keyed.",
+  "portable": "the CONCEPTS (installation, profile, capability model, the 11 dimensions) + every build script + AS-DESIGNED standard baselines (standard SAP is system-invariant).",
+  "not_portable": "everything under identity/, the whole system_profile instance, AS-RUN coverage and the G delta — those ARE the customer.",
+  "why_declared_now": "capability_model._portability already claimed the model applies to other tenants, but with no installation object there was nothing to scope a second tenant AGAINST. This makes the seam explicit before it is needed, not after."
+ }
+}

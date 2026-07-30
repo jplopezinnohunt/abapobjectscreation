@@ -20,6 +20,35 @@ PROFILE = HERE / "system_profile" / "unesco_system_profile.json"
 OUT = HERE / "BRAIN_INDEX.md"
 
 
+INSTALL = HERE / "installation" / "installation.json"
+
+
+def _installation_block():
+    """THE ROOT — what this brain is ABOUT, and the deterministic firing order.
+
+    Rendered before everything else because every other block is a statement about
+    this object. Distinct in kind from L0 core_principles: that is the agent's
+    constitution, this is the subject.
+    """
+    if not INSTALL.exists():
+        return "## ⚠️ INSTALLATION root MISSING — brain_v2/installation/installation.json\n"
+    i = json.load(open(INSTALL, encoding="utf-8"))
+    idt = i.get("identity", {})
+    tr = i.get("traversal", {})
+    steps = [f"{k.split('_', 1)[1]}" for k in sorted(tr) if k[0].isdigit()]
+    return f"""## 🏛️ ROOT — THE INSTALLATION (what this whole brain is ABOUT)
+`brain_v2/installation/installation.json`. Two roots, different kinds: **L0 core_principles = the
+AGENT's constitution** (how we work) · **installation = the SUBJECT** (what we model). Anchor, not
+container — it holds identity, axes, pointers and the firing order; never content a store owns.
+- **{idt.get('tenant', '?')}** — {idt.get('tenant_type', '')}
+- **{idt.get('product', '?')}** · character: {idt.get('operating_character', '')}
+- Systems: {' · '.join(f"**{k}** ({v.get('role')})" for k, v in idt.get('systems', {}).items())}
+  · ⚠️ {idt.get('no_QAS', '')}
+- **FIRING ORDER** (deterministic, steps 0–1 mandatory before ANY scope answer — rule #171):
+  {' → '.join(steps)}
+"""
+
+
 def _profile_block():
     """THE UNESCO PROFILE — what the tenant IS, at bootstrap (s097).
 
@@ -80,6 +109,7 @@ def run():
 > bootstrap. Load this, then DRILL on demand via `python brain_v2/graph_queries.py <cmd>`. Read the full
 > brain_state.json ONLY when you need depth this index doesn't give.
 
+{_installation_block()}
 {_profile_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}

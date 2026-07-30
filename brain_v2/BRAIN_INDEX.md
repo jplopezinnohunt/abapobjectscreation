@@ -4,6 +4,17 @@
 > bootstrap. Load this, then DRILL on demand via `python brain_v2/graph_queries.py <cmd>`. Read the full
 > brain_state.json ONLY when you need depth this index doesn't give.
 
+## 🏛️ ROOT — THE INSTALLATION (what this whole brain is ABOUT)
+`brain_v2/installation/installation.json`. Two roots, different kinds: **L0 core_principles = the
+AGENT's constitution** (how we work) · **installation = the SUBJECT** (what we model). Anchor, not
+container — it holds identity, axes, pointers and the firing order; never content a store owns.
+- **UNESCO — United Nations Educational, Scientific and Cultural Organization** — UN specialised agency (public sector, non-profit, multi-currency, multi-country)
+- **SAP ERP 6.0 EhP8 (ECC) — NOT S/4HANA** · character: public-sector finance: budget-and-grants, not manufacturing or sales
+- Systems: **P01** (production) · **D01** (development) · **V01** (validation)
+  · ⚠️ There is no QA system between D01 and P01. Recorded here because it is a STRUCTURAL risk of the installation itself, not of any one change.
+- **FIRING ORDER** (deterministic, steps 0–1 mandatory before ANY scope answer — rule #171):
+  installation → profile → operation → capability → delta → evidence
+
 ## 🇺🇳 THE UNESCO PROFILE — what this tenant IS (read before answering anything about scope)
 `brain_v2/system_profile/unesco_system_profile.json` — the base fact-sheet. Profile = the SYSTEM;
 capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid-conversation.
@@ -24,7 +35,7 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **32.1%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1199 objects · 171 rules · 357 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1205 objects · 171 rules · 358 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.

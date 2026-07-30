@@ -67,6 +67,12 @@ ONTOLOGY = BRAIN_V2 / "capability_model" / "ontology.json"
 # precomputed by system_profile/build_profile_links.py. Added Session #097 after a
 # scope question the brain could not answer without re-deriving it live.
 SYSTEM_PROFILE = BRAIN_V2 / "system_profile" / "unesco_system_profile.json"
+# ROOT: INSTALLATION — the single object this whole brain is ABOUT. Distinct in kind
+# from L0 core_principles: L0 is the constitution of the AGENT (how we work), this is
+# the SUBJECT (what we model). It is an ANCHOR, not a container — identity, axes,
+# pointers and the deterministic traversal order, never content a store already owns.
+# Emitted FIRST in brain_state so a reader hits "what is this?" before anything else.
+INSTALLATION = BRAIN_V2 / "installation" / "installation.json"
 
 # Legacy single-string domain -> 3-axis domain_axes. Derived at build time;
 # does NOT mutate the source graph. Keeps objects queryable by functional
@@ -523,6 +529,9 @@ def main():
     if DOMAINS_REGISTRY.exists():
         domains_registry = json.load(open(DOMAINS_REGISTRY, encoding="utf-8"))
 
+    # ROOT — INSTALLATION. Loaded first; emitted first.
+    installation = json.load(open(INSTALLATION, encoding="utf-8")) if INSTALLATION.exists() else {}
+
     # LAYER 16 — PROFILE. The tenant fact-sheet + its precomputed crossing against
     # the rest of the brain. Attached whole so ONE read of brain_state answers
     # "what is this system?" without re-deriving it from cvers/audit logs.
@@ -655,6 +664,10 @@ def main():
             "domain_layer_entries": len(domains_registry.get("domains", {})) if isinstance(domains_registry, dict) else 0,
             "session": session_num,
         },
+        # ROOT: INSTALLATION — the subject. What this entire brain is about. Read
+        # `installation.traversal` for the deterministic firing order; steps 0-1
+        # are mandatory before answering anything about scope (rule #171).
+        "installation": installation,
         # LAYER 0: Core principles — constitutional tier above all rules/claims.
         # Governs HOW the agent decides, stores, compresses. Zero-tolerance
         # violations. Every feedback_rule should derive_from one of these.
