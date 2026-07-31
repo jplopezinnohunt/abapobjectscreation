@@ -33,7 +33,7 @@ MCP = REPO / "Zagentexecution" / "mcp-backend-server-python"
 sys.path.insert(0, str(MCP))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 sys.path.insert(0, str(REPO / "brain_v2"))
-from component_map import domain_of_package  # SAP's own taxonomy — the authoritative rung
+from component_map import domain_of_package, domain_of_function_module  # SAP's own taxonomy
 JOBCLASS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "job_classification.json"
 OUT = REPO / "brain_v2" / "executed_objects_domain_map.json"
 
@@ -274,6 +274,10 @@ def make_classifier(con):
                 # when DF14L says FTBB is FIN-FSCM-TRM-MR, i.e. TRM. A guess corrected by
                 # a guess is not a fix.
                 or domain_of_package(dc)
+                # function modules belong to a function GROUP, not to TADIR directly.
+                # Without this hop the frontier was dominated by BAPIs — which are the
+                # satellite calls behind the externally-orchestrated traffic.
+                or domain_of_function_module(name)
                 or _match(DEVCLASS_RULES, dc)
                 or _match(DLVUNIT_RULES, dc_dlv.get(dc) if dc else None)
                 or _match(NAME_RULES, name) or _match(NAME_RULES, program)

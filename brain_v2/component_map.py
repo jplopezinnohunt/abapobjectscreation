@@ -81,6 +81,47 @@ def _package_component(db_path=None):
         return {}
 
 
+@lru_cache(maxsize=1)
+def _fm_package(db_path=None):
+    """function module -> package, via TFDIR -> function group (FUGR) -> TADIR.
+
+    Function modules are NOT repository objects in their own right: they belong to a
+    function GROUP, whose program is SAPL<FUGR>. Skipping that hop is why the frontier
+    was dominated by BAPIs — BAPI_PR_GETDETAIL, BAPI_TRIP_CHECK_STATUS, BAPI_PO_GETDETAIL1
+    all sat unclassified while being plainly Procurement and Travel. They are also exactly
+    the satellite calls that make up the externally-orchestrated traffic, so leaving them
+    unresolved blinded the model to its own headline.
+    """
+    path = db_path or str(GOLD)
+    if not Path(path).exists():
+        return {}
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        have = {r[0] for r in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        if not {"tfdir_all", "tadir_obj"} <= have:
+            con.close()
+            return {}
+        rows = con.execute(
+            "SELECT f.FUNCNAME, t.DEVCLASS FROM tfdir_all f "
+            "JOIN tadir_obj t ON t.OBJECT='FUGR' AND t.OBJ_NAME = substr(f.PNAME, 5)").fetchall()
+        con.close()
+        return {fn.strip(): dc.strip() for fn, dc in rows if dc}
+    except sqlite3.Error:
+        return {}
+
+
+def package_of_object(name, db_path=None):
+    """Package for an object of any kind, including function modules."""
+    return _fm_package(db_path).get(name)
+
+
+def domain_of_function_module(funcname, db_path=None):
+    """FM -> function group -> package -> component -> domain."""
+    dc = _fm_package(db_path).get(funcname)
+    return domain_of_package(dc, db_path) if dc else None
+
+
 def domain_of_package(devclass, db_path=None):
     """DEVCLASS -> canonical domain, through SAP's own taxonomy. None when unresolvable."""
     if not devclass:
