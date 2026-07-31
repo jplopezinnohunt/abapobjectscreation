@@ -16,9 +16,10 @@ Status is then one of:
     ON_DEMAND   bound, no artifact       real code, run when needed
     PROPOSED    not bound                an idea in the registry, no implementation
 
-The distinction matters most for the ROADMAP: DECLARE mining, LLM-assisted derivation and
-drift detection are PROPOSED. They are not part of the model yet, and saying otherwise
-would be the same kind of confident-and-wrong the golden cases exist to prevent.
+The distinction matters most for the ROADMAP. Of the three techniques proposed in s097,
+concept drift is now BUILT (A7) and appears in the registry; DECLARE constraint mining and
+LLM-assisted overlay derivation have zero code and are backlog tasks, not algorithms.
+Saying otherwise would be the same confident-and-wrong the golden cases exist to prevent.
 """
 import json
 import sys
@@ -102,7 +103,7 @@ def main():
     if proposed:
         print(f"  PROPOSED (declared, no code): {', '.join(proposed)}")
     print(f"  not gated by a golden case: {len(ungated)} of {len(rows)}")
-    print("\n  The three roadmap techniques are NOT here — no code exists for them.")
+    print("\n  Roadmap: drift is BUILT (A7). DECLARE and LLM-overlay have zero code.")
 
 
 if __name__ == "__main__":
