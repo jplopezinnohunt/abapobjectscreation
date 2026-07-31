@@ -353,11 +353,25 @@
    "already_compliant": "process_mining/rfc_process_classifier.py was ALREADY doing this before the pattern had a name: 'SELECT PARAM3, SLGUSER, COUNT(*) ... GROUP BY PARAM3, SLGUSER'. Naming a pattern sometimes just makes visible what a good instinct already did.",
    "not_a_defect_today": "CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M) and FMIOI (2.2M) were named as candidates in the ecosystem pattern. CHECKED: no current tool scans them row-by-row in Python. They are future risks to watch, not present defects — inventing work there would have been dishonest.",
    "gated": "GATED s097: the drift statistic was extracted from main() to departures_for() and BOTH of its real defects are now cases — constant per-day rate must produce NO signal (the volume-vs-rate defect, 11 false signals), and no magnitude may exceed 1000% (the z=1016 defect). Neither was caught by a check before, because inline code cannot be gated."
+  },
+  "A8_change_to_executor_attribution": {
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "join a STATE-CHANGE stream to an EXECUTION stream on (user, day, hour) to derive WHAT WRITES a thing, and through WHICH CHANNEL — dialog, program or interface. Scored by the phi coefficient over the slot contingency table, with an exclusivity constraint across classes and a channel classification that names the calling function modules when the writes arrive over RFC/BAPI.",
+   "why_it_matters": "It converts a change log into behaviour. The model could say a thing changed and who the user was; it could not say what did the writing — and for the largest object class in this tenant, 93% of the change documents carry NO transaction code, so the field that should answer is empty. This is the generic enrichment: any state-change log crossed with any execution log answers the same question. Which program sends this IDoc type. Which job produces this file. Which process touches this interface. It is not a PBC analysis that happened to work; it is the method.",
+   "bound_in": [
+    "process_mining/attribute_changes_to_programs.py"
+   ],
+   "first_run": "72 object classes, 3,280 programs, 2,493 hour-slots. Recovers known-correct writers as a control: RM_MEPO_GUI for EINKBELEG (purchase orders), RM_MEREQ_GUI for BANF (requisitions), the HR engine chain RHHCP_DC_EMPLOYEE / RHRFPM_ENGINE_PA30 for PBC and FMRESERV. SAPMSSY1 correctly demoted to AMBIGUOUS everywhere.",
+   "failure_mode": "THREE SCORINGS WERE WRONG BEFORE ONE WAS RIGHT, and each failure is now a comment in the file. (1) RAW COINCIDENCE named a spool artifact as the writer of the largest class, because the RFC dispatcher runs constantly and coincides with everything. (2) LIFT fixed that and inverted the error: it rewards RARITY, so it ranked the real PBC engine below noise and filtered it out — HUNCALC0 runs on 91 of 108 days, so its base rate is 0.84 and its lift cannot exceed 1.19 however perfect the coincidence. An engine is not rare; running whenever the class changes is what makes it the engine. (3) Small denominators: a program that ran ONE day scored lift 27 on a single coincidence — the same defect as D6's z-score over a two-month baseline, in different clothes. The standing failure mode is that CO-OCCURRENCE IS NOT CAUSATION. Two programs in the same chain cannot be separated below the shared time granularity. Every row carries its evidence and a verdict so a human can disagree.",
+   "improve": "(a) the exclusivity constraint is currently a FLAG, not a solver — turning it into a real assignment (each program assigned to the class it best explains, globally) would sharpen every row at once; (b) join on the object key, not only the user, where the execution log carries one; (c) for the INTERFACE channel, feed the named function modules straight into F1/F2 so a satellite inherits the tables it writes.",
+   "gated": "GATED s097: golden cases over phi() and the channel classifier, including the two scorings that were wrong — a daily dispatcher must score 0, and a program that covers nearly every change slot must NOT be filtered for being frequent."
   }
  },
  "_portfolio": {
   "by_operand": {
-   "logs": 7,
+   "logs": 8,
    "process_events": 5,
    "repository": 5,
    "data": 4,
@@ -371,7 +385,7 @@
   },
   "by_state": {
    "STRONG": 12,
-   "WORKS": 12,
+   "WORKS": 13,
    "WEAK": 0,
    "FRAGILE": 1,
    "UNDER_EXERCISED": 0,
@@ -501,7 +515,8 @@
    "1": "an algorithm CANNOT be better than its dependencies. A3's origin resolution is capped by F1's quality — today F1 truncates destination names, so A3 inherits that error.",
    "2": "improving a LOW layer lifts everything above it. The L0 fix (DF14L instead of regex) took the frontier from 40% to 7.7% without touching any algorithm above it.",
    "3": "the improvement mechanism must weight by DEPTH, not only by state. improve_algorithms.py does not yet — that is a declared gap."
-  }
+  },
+  "A8_change_to_executor_attribution": "L2 — consumes the accumulated logs (A1/A2) and feeds F1/F2: attribution names the channel, and an INTERFACE channel names the functions that define a satellite"
  },
  "_improvement_axes": {
   "_note": "improve_algorithms.py ranks by HEALTH — unguarded, stale, fragile. That is maintenance. These four axes rank by DISTANCE TO THE GOAL, which is a product that instantiates on another organisation and explores its domains autonomously.",

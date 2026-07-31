@@ -259,7 +259,7 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · **`brain_v2/methods/check_triggers.py`** (fires the loop on evidence) · **`brain_v2/methods/build_domain_capability_matrix.py`** (is capability where the work is?) · **`brain_v2/methods/build_domain_assets.py`** (the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows, and what is missing) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) · `brain_v2/session_activate.py` + `brain_v2/migrate_memory.py` (session bootstrap and memory portability) |
 | **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will") |
 | **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
-| **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) |
+| **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) |
 | **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `process_mining/p2p_conformance.py` (Tier-1: cases classified against the 3-way match) · **`p2p_stdref_xray.py`** (the custom-over-standard x-ray — AS-DESIGNED vs AS-RUN; a *different* capability that used to share the other one's filename) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
 
 ---
@@ -277,6 +277,7 @@ coherence re-checks → the gaps move. Each layer feeds the one above it, at its
 | **EVERY REBUILD** | `rebuild_all.py` — ontology gate → **path gate** → asset gate → profile crossing → model graph → brain state → indexes | the gates only protect what they run against | the whole brain |
 | **MONTHLY** | `executed_objects_domain_map.py`, `adaptive_discovery.py` | new objects appear; the unresolved tail is the frontier, and it shrinks only if re-run | domains, subdomains, usage |
 | **QUARTERLY** | `probe_footprint.py`, `extract_component_hierarchy.py` | the FOOTPRINT DRIFTS — modules get activated, add-ons installed, org structure extended. Nothing currently detects that automatically | the profile, the ascent |
+| **PER DOMAIN** | `attribute_changes_to_programs.py` (A8) | a domain with tables but no known write path is listed, not understood | the A_PROCESS and F_INTERFACE cells |
 | **PER CLOSE** | `meta_capability.py`, `verify_assets.py`, `validate_paths.py`, `algorithm_status.py`, `audit_skill_coverage.py` | measure whether the machine improved, and catch knowledge that failed to land | the maturity score |
 
 **The feedback that matters most:** the log accumulator is the only activity whose value
@@ -418,6 +419,53 @@ path-typed fields across five stores on every rebuild.
 **The rule:** a field that is declared to hold a path holds a path. Prose belongs in a
 field named for prose. A path field carrying a sentence does not fail loudly — it makes
 every check over it *silently wrong*, which is worse than a gap, because a gap is visible.
+
+---
+
+## Write-path discovery — the generic enrichment (algorithm A8)
+
+**Use it whenever a domain holds tables with no maintenance transaction.** Listing a
+domain's tables is not understanding it; the WRITE PATH is the behaviour. And the field
+that should answer — the transaction code on the change document — is frequently **empty**:
+in this tenant, 93% of the largest object class's changes carry none.
+
+**An empty transaction code is a POINTER, not a gap.** It usually means the write arrived
+through a **BAPI or RFC whose interface design never set one**. Reading it as "batch" throws
+away the interface; reading it correctly hands you straight to F1 and F2.
+
+**The join** is two streams every SAP tenant already produces, on `(user, day, hour)`:
+
+| | |
+|---|---|
+| change stream | who changed WHICH object, when |
+| execution stream | who ran WHICH program, when |
+
+Nothing about it is SAP-specific. The same shape answers *which program sends this IDoc
+type*, *which job produces this file*, *which process touches this interface*.
+
+### Three scorings, two of them wrong — do not repeat them
+
+| attempt | what happened |
+|---|---|
+| raw coincidence | the RFC dispatcher runs constantly, so it coincides with everything. It named a **spool artifact** as the writer of the largest object class |
+| **lift** `P(ran∣changed)/P(ran)` | fixes that and **inverts** the error. It rewards RARITY — so it ranked the real engine below noise and filtered it out. An engine runs on 91 of 108 days, giving a base rate of 0.84 and a lift that cannot exceed 1.19 *however perfect the coincidence*. **An engine is not rare; running whenever the thing changes is what makes it the engine** |
+| **φ coefficient** over the slot contingency table | symmetric — how much of the change activity a program covers AND how specific it is — correcting for both base rates. A program present in every slot has `d=0`, its margin collapses, and it scores nothing |
+
+Two further guards, both from defects that happened: **small denominators** (a program that
+ran one day scored lift 27 on a single coincidence — the same defect as D6's z-score over a
+two-month baseline), and **volume weighting** (a user with 4 changes and one with 5,640,493
+are not equal witnesses).
+
+### Exclusivity — the answer is an assignment, not N rankings
+
+A program associated with forty classes has explained none of them. After scoring, each
+program is counted across classes; one claimed broadly is reported **AMBIGUOUS**, and a
+dispatcher is labelled as **evidence of an interface**, never as the writer. Attributing the
+same writer to every table is the failure this constraint exists to prevent.
+
+**Output is a ranked HYPOTHESIS with its evidence and a verdict, for a human to confirm.**
+Co-occurrence is not causation, and two programs in the same chain cannot be separated below
+the shared time granularity.
 
 ---
 

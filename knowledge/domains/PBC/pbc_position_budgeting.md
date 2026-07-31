@@ -5,7 +5,7 @@ type: project
 module: PA-PM-PB
 capability_domain: PBC
 status: PRODUCTIVE
-claims: [358]
+claims: [358, 386, 388]
 ---
 
 # PBC — Position Budgeting and Control
@@ -88,3 +88,67 @@ table reads. Any future extraction must plan for that.
 - **Module axes:** HCM + FM · **Process axes:** B2R, H2R
 - **Adjacent:** [[PSM]] (funds & budget) · [[HCM]] (positions, org management) · [[PY-Finance]]
 - **Claim:** #358 (TIER_1, measured)
+
+---
+
+## How it actually runs (measured 2026-07-31, claim #388)
+
+**PBC is the dominant write path of the installation.** Not a small module scored 4/11 — the
+largest single source of change in the tenant:
+
+| | change documents | share |
+|---|---|---|
+| `FMRESERV` (earmarked funds) | 6,951,908 | **#1 object class** |
+| `PBC` | 3,449,049 | #3 |
+| authored by the account `F_DERAKHSHAN` | **8,917,700 of 12,029,963** | **74.1% of every change document in the system** |
+
+99.98% of that account's activity is those two classes. Everything else it touches is in the
+hundreds.
+
+### The engine chain — correlated day by day, not inferred
+
+Each program below was matched against the days PBC change documents appear:
+
+| program | days run | days coincident with a PBC change | what it is |
+|---|---|---|---|
+| `HUNCALC0` | 91 | **89** | the PBC commitment calculation — the engine |
+| `RHHCP_DC_EMPLOYEE` | 90 | 89 | PBC data collection, employees |
+| `RHHCP_DC_ORGOBJECT` | 35 | 35 | PBC data collection, org objects |
+| `RHRFPM_ENGINE_PA30` | 85 | 84 | the engine fired when PA30 saves |
+| **`ZPBC_PERIOD_CLS_EXEC`** (custom) | — | — | **the PERIOD CLOSE** — 286,704 FMRESERV changes, **one operator** |
+| **`Y_KBLP_PBC_OPEN_N`** (custom, tcode `YKBLP_N`) | 8 | 8 | bridge from PBC to `KBLP` earmarked-fund line items |
+
+Peaks line up exactly: 2026-03-15 → 3,039 `HUNCALC0` executions and 620,972 PBC changes;
+2026-04-15 → 2,964 / 445,972; 2026-05-14 → 2,552 / 373,309; 2026-06-14 → 3,850 / 366,121.
+
+### The cadence, and why 93% of the changes have no transaction code
+
+**Monthly, peaking on the 14th–15th.** The writes land between 18h and 00h (19h: 383,966 ·
+00h: 328,887 · 23h: 289,639) while the operator's own audit activity peaks at **09h**. The
+run is *launched in the morning and writes into the night*.
+
+It is **not a scheduled background job** — no `TBTCO` entry on those dates corresponds. That
+is the whole explanation for the empty `TCODE` on 3,208,545 of 3,449,049 rows: a program
+writing directly, not a person in a transaction.
+
+PBC change history **begins 2026-02-20**, which is why the superseded `cdhdr` snapshot holds
+zero of it ([[claim 386]]).
+
+### What this does and does not tell us
+
+**Known now:** when it writes, how often, through which programs, and that the period close
+is a custom program. This closes `AN-PBC-CHANGE-BEHAVIOUR`.
+
+**Still unknown — and it is the bigger half:** *what the engine decides.* `HUNCALC0` turns HR
+position and employee data into FM commitments; none of those rules are in the model. The
+biennium cycle is also still unproven. `A_PROCESS` therefore stays **PARTIAL** on purpose —
+knowing when something writes is not knowing what it decides (`AN-PBC-ENGINE-DECIDES`).
+
+### One observation to carry, stated as measurement
+
+The largest write path in the installation is operated through **one named user account**
+rather than a service account, and `ZPBC_PERIOD_CLS_EXEC` has exactly **one operator**. Two
+consequences follow, both factual: a single point of dependence for the monthly commitment
+run, and an attribution problem — every FM commitment posting is recorded against a person,
+so the change log cannot separate an engine run from a manual edit by that user. The remedy
+is the tenant's decision (`AN-PBC-OPERATOR-CONCENTRATION`).

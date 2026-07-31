@@ -446,10 +446,11 @@
    "domain": "PBC",
    "priority": 1,
    "created_session": 97,
-   "status": "OPEN",
+   "status": "DONE s097 — claim #388",
    "task": "PBC is the third most-changed object class in the system — 3,449,049 change documents — and 93% of them (3,208,545) carry an EMPTY TCODE: they are written by the engine (HRPBC_ENGINE_PNP, ZCONSOLE_STC), not by a person in a transaction. Only 193,326 come through PA30, across 76 users. Characterise that: what does the engine change, on what trigger, and who are the 76. This is AS-RUN evidence for a domain scored 4/11, and it was invisible until 2026-07-31 because every change-analysis tool read the scope-filtered `cdhdr`.",
    "method": "group cdhdr_history WHERE OBJECTCLAS='PBC' by TCODE, USERNAME, UDATE and by OBJECTID shape; correlate the empty-TCODE volume with job runs in tbtco/tbtcp to identify the engine's schedule",
-   "feeds": "AN-PBC-DEEP (4/11 capability cells)"
+   "feeds": "AN-PBC-DEEP (4/11 capability cells)",
+   "result": "PBC writes 74.1% of all change documents in the tenant through one named account. Engine chain and monthly cadence measured; period close identified as custom ZPBC_PERIOD_CLS_EXEC."
   },
   {
    "id": "AN-REGUH-KUNNR",
@@ -459,6 +460,25 @@
    "status": "OPEN",
    "task": "REGUH is missing KUNNR, which is part of its SAP key — 1,748 key collisions are the measured consequence (customer refunds colliding with vendor payments). Enrich BY KEY, never re-extract ([[feedback_missing_fields_by_key]]). Also record that REGUH holds data from 20160104, well outside the declared 2024–2026 extraction scope: decide whether the scope rule has an exception here or the table needs trimming.",
    "method": "enrich by key over LAUFD+LAUFI+ZBUKR+LIFNR+VBLNR, adding KUNNR and EMPFG"
+  },
+  {
+   "id": "AN-PBC-ENGINE-DECIDES",
+   "domain": "PBC",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "Knowing WHEN the PBC engine writes is not knowing WHAT it decides. HUNCALC0 turns HR position and employee data into FM earmarked-funds commitments (FMRESERV) — the rules of that conversion are the AS-DESIGNED half of the domain and we hold none of it. Read the engine: what drives the amount, which period it commits to, how a position change re-drives an existing reservation, and what ZPBC_PERIOD_CLS_EXEC does at close. This is the A_PROCESS cell, and it is the largest write path in the installation.",
+   "method": "extract HUNCALC0 / RHRFPM_ENGINE_* / ZPBC_PERIOD_CLS_EXEC source from D01 via ADT; trace against FMRESERV rows for one position across two months"
+  },
+  {
+   "id": "AN-PBC-OPERATOR-CONCENTRATION",
+   "domain": "PBC",
+   "priority": 2,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "The largest write path in the installation is operated through ONE NAMED USER account (F_DERAKHSHAN, 74.1% of all change documents) rather than a service account, and ZPBC_PERIOD_CLS_EXEC has exactly one operator. Two separate issues follow: a SINGLE POINT OF DEPENDENCE — if that person is unavailable, the monthly commitment run has no second operator — and an ATTRIBUTION problem: every FM commitment posting is recorded against a person, so the change log cannot distinguish an engine run from a manual edit by that user. State it as an observation with the measurement attached; the remedy (service account, second operator) is the tenant's decision, not ours.",
+   "method": "cross-check against the E_AUTH cell and the H71 write-channel SoD finding",
+   "relates_to": "H71 write-channel SoD"
   }
  ],
  "research_tasks_followups": [

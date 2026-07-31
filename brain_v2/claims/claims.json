@@ -16904,5 +16904,99 @@
         "B2C2A"
       ]
     }
+  },
+  {
+    "id": 388,
+    "claim": "PBC IS THE DOMINANT WRITE PATH OF THE ENTIRE SYSTEM, AND IT RUNS UNDER ONE NAMED USER. Measured 2026-07-31 on cdhdr_history. The account F_DERAKHSHAN authored 8,917,700 of 12,029,963 change documents = **74.1% of every change document in the tenant**, and 99.98% of that is two object classes: FMRESERV 5,640,493 and PBC 3,276,168. FMRESERV (earmarked-funds documents) is the #1 changed object class in the system at 6,951,908; PBC is #3 at 3,449,049. A domain scored 4/11 on the capability model is the largest source of change in the installation. THE ENGINE CHAIN, correlated day-by-day against the audit log (not inferred): HUNCALC0 — the PBC commitment calculation — ran on 91 days and coincides with a PBC change day on 89 of them (peaks: 20260315 3,039 executions / 620,972 PBC changes; 20260415 2,964 / 445,972; 20260514 2,552 / 373,309; 20260614 3,850 / 366,121). RHHCP_DC_EMPLOYEE (90 days, 89 coincident) and RHHCP_DC_ORGOBJECT (35/35) are the PBC data collection for employees and org objects. RHRFPM_ENGINE_PA30 fires the engine when PA30 saves (85 days). Two CUSTOM programs complete it: ZPBC_PERIOD_CLS_EXEC — the PBC PERIOD CLOSE — authored 286,704 FMRESERV changes under a SINGLE user, and Y_KBLP_PBC_OPEN_N (tcode YKBLP_N) bridges PBC to KBLP earmarked-fund line items on 8 days. CADENCE: monthly, peaking on the 14th–15th (20260315, 20260415, 20260514, 20260614). The writes land between 18h and 00h (19h 383,966 · 00h 328,887 · 23h 289,639) while the operator's own audit activity peaks at 09h — the run is LAUNCHED in the morning and writes into the night. It is NOT a scheduled background job: no TBTCO job on those dates corresponds, which is why 93% of PBC changes carry an EMPTY TCODE. PBC change history begins 20260220 — the module went productive during 2026, which is why the older `cdhdr` snapshot has zero of it. OPERATIONAL RISK, stated as an observation and not an accusation: the largest write path in the installation is operated through one named user account rather than a service account, and ZPBC_PERIOD_CLS_EXEC has exactly one operator. That is a single point of dependence and an attribution problem — every commitment posting in FM is attributed to a person.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "PBC",
+    "created_session": 97,
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "p01_gold_master_data.db — cdhdr_history x rsau_audit_history x tbtco",
+        "cite": "F_DERAKHSHAN 8,917,700 of 12,029,963 = 74.1%; FMRESERV 6,951,908 (#1), PBC 3,449,049 (#3); HUNCALC0 91 days / 89 coincident; ZPBC_PERIOD_CLS_EXEC 286,704 changes 1 user; empty TCODE 3,208,545 of 3,449,049; no matching TBTCO job on the peak dates",
+        "added_session": 97
+      }
+    ],
+    "evidence_against": null,
+    "resolved_session": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "related_objects": [
+      "PBC",
+      "FMRESERV",
+      "HUNCALC0",
+      "RHHCP_DC_EMPLOYEE",
+      "RHHCP_DC_ORGOBJECT",
+      "RHRFPM_ENGINE_PA30",
+      "ZPBC_PERIOD_CLS_EXEC",
+      "Y_KBLP_PBC_OPEN_N",
+      "ZZHUNCEDT0",
+      "HRPBC_ENGINE_PNP",
+      "ZCONSOLE_STC",
+      "KBLP",
+      "cdhdr_history"
+    ],
+    "resolution_notes": "Closes AN-PBC-CHANGE-BEHAVIOUR (p1), opened the same day. The task existed only because the scope-filtered `cdhdr` hid PBC from every change-analysis tool ([[claim 386]]). Answers the two questions it asked: WHAT the engine changes (FMRESERV earmarked funds, from HR position and employee data) and ON WHAT TRIGGER (a monthly mid-month run, launched interactively, plus a custom period close). Supersedes nothing in claim #358 — it extends it: that claim recorded 'the commit chain is known, the period/biennium cycle is not'. The PERIOD close is now identified (ZPBC_PERIOD_CLS_EXEC) and the cadence measured; the BIENNIUM cycle is still unproven.",
+    "domain_axes": {
+      "functional": [
+        "PBC",
+        "PSM_FM",
+        "HCM"
+      ],
+      "module": [
+        "PA-PM-PB",
+        "PSM-FM"
+      ],
+      "process": [
+        "POST2BUDGET",
+        "B2C2A"
+      ]
+    }
+  },
+  {
+    "id": 389,
+    "claim": "ALGORITHM A8 — CHANGE-TO-EXECUTOR ATTRIBUTION, the generic enrichment. Built s097 by generalising the PBC analysis on the spot: joining a STATE-CHANGE stream to an EXECUTION stream on (user, day, hour) answers WHAT WRITES a thing for ANY domain, and the same shape answers which program sends an IDoc type, which job produces a file, which process touches an interface. THREE SCORINGS WERE WRONG BEFORE ONE WAS RIGHT, and this is the durable content. (1) RAW COINCIDENCE named a spool artifact `!QGYAO==========A_SEFI0410` as the writer of FMRESERV, because the RFC dispatcher runs constantly and coincides with everything. (2) LIFT removed that and INVERTED the error: it rewards rarity, so it ranked HUNCALC0 — the actual PBC engine — below noise and filtered it out at a 1.5 threshold. HUNCALC0 runs on 91 of 108 days, base rate 0.84, so its lift cannot exceed 1.19 however perfect the coincidence. AN ENGINE IS NOT RARE: running whenever the class changes is precisely what makes it the engine. (3) SMALL DENOMINATORS: a program that ran ONE day of 108 scored lift 27 on a single coincidence — the same defect as D6's z-score over a two-month baseline in different clothes. THE SCORE IS THE PHI COEFFICIENT over the 2x2 contingency table of (day,hour) slots: symmetric, correcting for both base rates, and a program present in every slot has d=0 so its margin collapses and it scores nothing. TWO CONSTRAINTS the user specified and that make it correct: TIME not day (2,493 hour slots vs 108 days — programs in the same nightly chain separate), and EXCLUSIVITY (a program claimed by >=5 classes is AMBIGUOUS; attributing one writer to every table is the failure the constraint prevents). CHANNEL CLASSIFICATION, from the user's second point: an EMPTY TCODE is not 'batch', it usually means a BAPI or RFC whose interface design never set one. So a dispatcher ranking high is EVIDENCE OF AN INTERFACE CHANNEL rather than noise to filter, and the calling function modules are named from PARAM3 — which is the hand-off into F1 (interface boundary) and F2 (satellites). Classes are labelled DIALOG / PROGRAM / INTERFACE. CONTROL RESULT: the algorithm independently recovers known-correct writers — RM_MEPO_GUI for EINKBELEG (purchase orders), RM_MEREQ_GUI for BANF (requisitions), the HR engine chain RHHCP_DC_EMPLOYEE / RHRFPM_ENGINE_PA30 for PBC and FMRESERV — while demoting SAPMSSY1 to AMBIGUOUS everywhere. 72 object classes, 3,280 programs, 2,493 slots.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Brain_Architecture",
+    "created_session": 97,
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "process_mining/attribute_changes_to_programs.py + brain_v2/change_attribution.json",
+        "cite": "72 classes / 3,280 programs / 2,493 hour-slots; RM_MEPO_GUI phi 0.777 on EINKBELEG, RM_MEREQ_GUI phi 0.848 on BANF, RHHCP_DC_EMPLOYEE phi 0.774 on PBC; SAPMSSY1 AMBIGUOUS on every class; 6 golden cases (69 total)",
+        "added_session": 97
+      }
+    ],
+    "evidence_against": null,
+    "resolved_session": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "related_objects": [
+      "process_mining/attribute_changes_to_programs.py",
+      "RM_MEPO_GUI",
+      "RM_MEREQ_GUI",
+      "SAPMSSY1",
+      "HUNCALC0",
+      "RHHCP_DC_EMPLOYEE",
+      "cdhdr_history",
+      "rsau_audit_history",
+      ".agents/skills/sap_installation_profiling/SKILL.md"
+    ],
+    "resolution_notes": "USER POINTS that produced this, in order: 'correlacionar CDHDR con los logs para ver que programas pueden modificarlos genera un gran algoritmo de enriquecimiento que no hay que perder y se aplica a cualquier cosa'; then 'cada dominio para las tablas que no tienen transaccion de modificacion debera descubrir por el rango de fechas y hora que programa lo actualiza, y que ese proceso no este ya asignado a otra tabla/dominio' (= hour granularity + exclusivity); then 'muchos casos pueden ser por interfaces BAPI o RFC las cuales dejaron vacia la transaccion en el diseno' (= the empty tcode is a pointer to the interface layer, not a gap). All three are implemented. The analysis was never the deliverable — the method is.",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture"
+      ],
+      "module": [
+        "BASIS"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]

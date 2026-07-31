@@ -258,6 +258,51 @@ def main():
             failures.append("D6 signalled with a single baseline month — a departure needs "
                             "something to depart FROM")
 
+    # ---- A8 · change-to-executor attribution ------------------------------
+    # Every case here is one of the three scorings that were WRONG before one was right.
+    try:
+        from attribute_changes_to_programs import phi as a8_phi, _channel as a8_channel
+    except ImportError:
+        a8_phi = None
+    if a8_phi is not None:
+        checked += 1
+        # DEFECT 1 — the daily dispatcher. It runs in every slot, so d=0, a margin
+        # collapses, and it must score NOTHING. Raw coincidence gave it a perfect score and
+        # named it the writer of every object class.
+        if abs(a8_phi(100, 50, 0, 0)) > 1e-9:
+            failures.append("A8 a program present in every slot must score 0 — the "
+                            "dispatcher would be named the writer of everything")
+        checked += 1
+        # DEFECT 2 — LIFT buried the real engine for being frequent. A program that runs in
+        # nearly every slot the class changes and rarely otherwise is the ENGINE, and must
+        # score HIGH. Lift capped it at 1.19 and a 1.5 threshold deleted it.
+        engine = a8_phi(89, 2, 2, 15)
+        if engine < 0.5:
+            failures.append(f"A8 an engine covering nearly every change slot scored "
+                            f"{engine:.2f} — frequency is being punished again")
+        checked += 1
+        # a program that runs only when the class does NOT change is negative association
+        if a8_phi(0, 40, 40, 28) >= 0:
+            failures.append("A8 anti-correlated program must score negative")
+        checked += 1
+        # INVARIANT: an empty transaction code is a POINTER, not a gap. When the writes carry
+        # no tcode and a dispatcher is among the top associates, the channel is INTERFACE —
+        # a BAPI/RFC whose design never set one. Reading it as "batch" loses the interface.
+        ch, _ = a8_channel({"": 930, "PA30": 70},
+                           [{"program": "SAPMSSY1"}, {"program": "HUNCALC0"}])
+        if ch != "INTERFACE":
+            failures.append(f"A8 channel {ch!r} != 'INTERFACE' — an empty tcode plus a "
+                            f"dispatcher is a BAPI/RFC write, not a batch job")
+        checked += 1
+        ch, _ = a8_channel({"ME22N": 800, "": 200}, [{"program": "RM_MEPO_GUI"}])
+        if ch != "DIALOG":
+            failures.append(f"A8 channel {ch!r} != 'DIALOG' when most changes carry a tcode")
+        checked += 1
+        ch, _ = a8_channel({"": 950}, [{"program": "HUNCALC0"}, {"program": "RHHCP_DC_EMPLOYEE"}])
+        if ch != "PROGRAM":
+            failures.append(f"A8 channel {ch!r} != 'PROGRAM' when no tcode and named programs "
+                            f"lead — that is a report or engine writing directly")
+
     print(f"[algorithm validation] {checked} golden cases")
     if failures:
         print(f"  {len(failures)} REGRESSION(S):", file=sys.stderr)
