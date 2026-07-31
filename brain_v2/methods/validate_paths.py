@@ -43,7 +43,14 @@ TARGETS = {
 }
 # sections that describe the SCHEMA rather than instances of it
 SCHEMA_DOC = ("_fields", "_legend", "_schema", "_doctrine")
-PATHLIKE = re.compile(r"\.(py|json|md|db|sqlite|html|jsonl|docx)\b")
+# Extensions this repository actually stores things in. It grew twice: `.abap` when the
+# production source corpus arrived, `.ps1` when the scheduler did. Both were REAL paths that
+# the gate called prose — a false positive in the gate itself.
+#
+# The lesson is not "relax the gate". It is that a whitelist tied to what existed when the
+# check was written goes stale silently, and a gate that cries wolf gets switched off, which
+# costs more than the defect it was guarding against.
+PATHLIKE = re.compile(r"\.(py|json|md|db|sqlite|html|jsonl|docx|abap|ps1|sh|sql|csv|txt|js)\b")
 
 
 def walk(node, keys, trail=""):

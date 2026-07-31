@@ -3,119 +3,290 @@
  "_one_line": "Conformance checking is the market's algorithm. The normative content for public-sector finance is ours, and it is where the moat actually is.",
  "_version": "1.0",
  "_created_session": 97,
-
  "_why_this_is_the_most_valuable_asset_class": {
   "the_argument": "B4 (declarative conformance) is the heart of the product and is WORTHLESS without a normative model to measure against. We do not compete by building a better conformance checker — pm4py and the market already have one. We compete by being the only ones who know what 'correct' means for budget → commitment → actual.",
   "evidence_of_the_gap": "Before this file, exactly ONE normative model existed in the whole system: the 3-way match for P2P. The four public-sector flows — B2C2A, POST2BUDGET, PROJ2FUND, GRANT2REPORT — had none, which is why they are unmined despite carrying the organisation's primary financial control.",
   "portability": "A normative model is KIT in its shape and largely KIT in its content: 'no commitment may exceed available budget' is true in every public-sector installation. Only the thresholds and the exception list are tenant-specific.",
   "the_trap": "Applying a market normative model without checking the tenant's real shape. A standard O2C model here would report 100% non-conformance because there are ZERO deliveries — a false finding produced by borrowed content."
  },
-
  "_anatomy": {
   "rules": "each rule states a condition that MUST hold, the objects it is evaluated on, and how a violation is quantified",
   "severity": "CONTROL (a control failed) · PROCESS (inefficiency) · DATA (integrity)",
   "quantification": "every violation must be expressible in money or in exposure. A deviation nobody can price is a deviation nobody will fix.",
   "exceptions": "legitimate deviations, declared. An undeclared exception is indistinguishable from a violation, and that is how conformance reports lose credibility."
  },
-
  "models": {
-
   "P2P": {
    "status": "IMPLEMENTED",
    "source": "SAP best practice, verified research",
    "implemented_in": "process_mining/p2p_conformance.py",
    "rules": [
-    {"id": "P2P-1", "rule": "every invoice receipt has a matching purchase order and goods receipt (3-way match)", "severity": "CONTROL", "quantify": "PO value of unmatched invoices"},
-    {"id": "P2P-2", "rule": "goods receipt occurs strictly BEFORE invoice receipt", "severity": "CONTROL", "quantify": "value of IR-before-GR cases", "measured": "70 violations, $713,341 exposure"},
-    {"id": "P2P-3", "rule": "a purchase order exists before the goods receipt", "severity": "PROCESS", "quantify": "count and value of retrospective POs"}
+    {
+     "id": "P2P-1",
+     "rule": "every invoice receipt has a matching purchase order and goods receipt (3-way match)",
+     "severity": "CONTROL",
+     "quantify": "PO value of unmatched invoices"
+    },
+    {
+     "id": "P2P-2",
+     "rule": "goods receipt occurs strictly BEFORE invoice receipt",
+     "severity": "CONTROL",
+     "quantify": "value of IR-before-GR cases",
+     "measured": "70 violations, $713,341 exposure"
+    },
+    {
+     "id": "P2P-3",
+     "rule": "a purchase order exists before the goods receipt",
+     "severity": "PROCESS",
+     "quantify": "count and value of retrospective POs"
+    }
    ],
    "public_sector_addition": "AVC commitment check between requisition and PO — absent from every commercial reference model",
    "measured_conformance": "38% conformant, 17% open, 44% multi-path"
   },
-
   "B2C2A": {
    "status": "AUTHORED — not yet implemented",
    "source": "OURS. No vendor ships content for this.",
    "why": "the primary financial control of a public-sector organisation. FMRESERV carries 6.4M change documents.",
    "rules": [
-    {"id": "B2C2A-1", "rule": "no commitment may be created that exceeds the available budget of its fund/fund-centre/commitment-item combination", "severity": "CONTROL",
+    {
+     "id": "B2C2A-1",
+     "rule": "no commitment may be created that exceeds the available budget of its fund/fund-centre/commitment-item combination",
+     "severity": "CONTROL",
      "quantify": "value of commitments created against insufficient availability",
      "evaluated_on": "FMIOI commitments vs FMAVCT availability at the moment of creation",
-     "note": "availability control may be configured as ERROR or WARNING per ledger — a WARNING-configured breach is a finding, not an error, and must be reported separately"},
-    {"id": "B2C2A-2", "rule": "every actual posting traces to a commitment, or to a declared exception category", "severity": "CONTROL",
+     "note": "availability control may be configured as ERROR or WARNING per ledger — a WARNING-configured breach is a finding, not an error, and must be reported separately"
+    },
+    {
+     "id": "B2C2A-2",
+     "rule": "every actual posting traces to a commitment, or to a declared exception category",
+     "severity": "CONTROL",
      "quantify": "value of actuals with no antecedent commitment",
-     "evaluated_on": "FMIFIIT actuals joined to FMIOI commitments"},
-    {"id": "B2C2A-3", "rule": "budget distributed to fund centres never exceeds the appropriation above it", "severity": "CONTROL",
-     "quantify": "over-distribution by fund centre", "evaluated_on": "FMBH/FMBL budget hierarchy"},
-    {"id": "B2C2A-4", "rule": "a commitment is released or consumed; it does not age indefinitely", "severity": "PROCESS",
+     "evaluated_on": "FMIFIIT actuals joined to FMIOI commitments"
+    },
+    {
+     "id": "B2C2A-3",
+     "rule": "budget distributed to fund centres never exceeds the appropriation above it",
+     "severity": "CONTROL",
+     "quantify": "over-distribution by fund centre",
+     "evaluated_on": "FMBH/FMBL budget hierarchy"
+    },
+    {
+     "id": "B2C2A-4",
+     "rule": "a commitment is released or consumed; it does not age indefinitely",
+     "severity": "PROCESS",
      "quantify": "value and age of open commitments beyond the biennium",
-     "note": "in a biennium organisation, an open commitment crossing the biennium boundary is a specific and expensive category"},
-    {"id": "B2C2A-5", "rule": "carry-forward preserves the commitment-to-budget relationship across the period boundary", "severity": "DATA",
-     "quantify": "commitments whose budget did not carry with them"}
+     "note": "in a biennium organisation, an open commitment crossing the biennium boundary is a specific and expensive category"
+    },
+    {
+     "id": "B2C2A-5",
+     "rule": "carry-forward preserves the commitment-to-budget relationship across the period boundary",
+     "severity": "DATA",
+     "quantify": "commitments whose budget did not carry with them"
+    }
    ],
-   "exceptions_to_declare": ["emergency spending categories", "funds exempt from availability control", "ledger configured as WARNING rather than ERROR"],
+   "exceptions_to_declare": [
+    "emergency spending categories",
+    "funds exempt from availability control",
+    "ledger configured as WARNING rather than ERROR"
+   ],
    "next": "build the event log first: FMBH/FMBL (budget) + FMIOI (commitment) + FMIFIIT (actual), object-centric — the case notion is genuinely ambiguous, which is exactly what OCEL 2.0 exists for"
   },
-
   "POST2BUDGET": {
-   "status": "AUTHORED — not yet implemented",
-   "source": "OURS",
-   "rules": [
-    {"id": "P2B-1", "rule": "every established position carries a funded commitment before payroll executes for it", "severity": "CONTROL",
-     "quantify": "staff cost paid against uncommitted posts"},
-    {"id": "P2B-2", "rule": "the commitment value reflects the current valuation of the post", "severity": "DATA",
-     "quantify": "variance between committed and actual staff cost, by post"},
-    {"id": "P2B-3", "rule": "a vacant post does not hold a commitment beyond its declared vacancy tolerance", "severity": "PROCESS",
-     "quantify": "budget locked by vacant posts"}
+   "flow": "POST2BUDGET",
+   "what_correct_means": "how an established post becomes a committed amount against a fund. There is NO vendor process content for this: the rules are OURS, implemented as BAdI overrides of the standard PBC engine.",
+   "source_of_truth": "PRODUCTION source, not SAP documentation and not D01",
+   "why_not_the_standard": "the engine is OVERRIDDEN, not extended — 77 custom objects in P01 (claim #397). Reading SAP's documentation would describe behaviour this system does not have.",
+   "read_from": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+   "derived_rules": [
+    {
+     "id": "PBC-R1-VACANT-ONLY",
+     "statement": "A position commits budget ONLY while it is VACANT. An occupied position generates no commitment of its own — the commitment comes from the PERSON.",
+     "derived_from": {
+      "file": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+      "method": "DO_HANDLE_VACANCY",
+      "line": 110
+     },
+     "mechanism": "OTYPE_S with a non-empty HROBJECT_DP is dropped from the requirement set; for OTYPE_P the pointer to the position is cleared",
+     "violation_looks_like": "a commitment on a position AND on its holder for the same period — double counting. Detect: FMRESERV rows for an S object whose P assignment covers the same interval",
+     "checkable_against": "FMRESERV x HRP1001 (S-P assignment) over the same period",
+     "confidence": "read from production source and confirmed line by line",
+     "caveat": "the comment block says the P->S pointer deletion is 'deactivated' while the code DOES clear it. Comment and code disagree; the code is authoritative"
+    },
+    {
+     "id": "PBC-R2-PRORATE-BY-DATE",
+     "statement": "A commitment is PRO-RATED by date intersection with the funding validity window. It is never all-or-nothing at a period boundary.",
+     "derived_from": {
+      "file": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+      "method": "ADJUST_REQ_WITH_VALIDITY",
+      "line": 34
+     },
+     "mechanism": "three cases — no overlap SKIPPED; validity contains requirement ADJUSTED whole; partial overlap SPLIT, amount re-derived by ZCL_HRFPM_REQUIREMENT_SERVICES=>ADJUST_COST_DIST_AMOUNT",
+     "violation_looks_like": "a commitment amount that does not scale with its day range at a validity boundary — a full-period amount on a partial period",
+     "checkable_against": "FMRESERV amount vs (ENDDA-BEGDA) against the funding window",
+     "confidence": "read from production source"
+    },
+    {
+     "id": "PBC-R3-BIENNIUM",
+     "statement": "The relevant biennium BEGINS with the encumbrance interval and ENDS two years from that start. Two invariants are asserted in code: the encumbrance interval MUST end on 31 December, and its span must be at least one year.",
+     "derived_from": {
+      "file": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+      "method": "DET_BIENNIUM_FROM_ENC_IV",
+      "line": 739
+     },
+     "mechanism": "ASSERT ENDDA+4(4)='1231'; ASSERT year_span GE 1; biennium.BEGDA = enc_iv.BEGDA; biennium.ENDDA(4) = BEGDA(4) + 1",
+     "changed_by": {
+      "transport": "D01K9B04Z3",
+      "was": "endda(4) = enc_iv.endda(4) - 1  (one year BEFORE the interval end)",
+      "now": "endda(4) = begda(4) + 1  (two years FROM the start)",
+      "why_it_matters": "the two formulas agree ONLY while the interval is exactly two years. The same transport relaxed the span assertion from BETWEEN 1 AND 2 to GE 1, which permits longer intervals — so the formula had to move with the assertion. One change, two edits."
+     },
+     "violation_looks_like": "an encumbrance interval not ending 31-12 — the ASSERT dumps, so this surfaces as a short dump rather than a wrong number",
+     "checkable_against": "T77HRFPM_ENCUMB active interval; ST22 dumps on ASSERT",
+     "confidence": "read from production source; closes the biennium gap recorded in claim #358"
+    },
+    {
+     "id": "PBC-R4-EXTENSION-YEARS",
+     "statement": "A temporary position is financed up to MV_EXTENSION_YEARS = 10 years ahead. This is a BUSINESS DECISION LIVING AS A HARD-CODED CONSTANT — the author labelled it 'quasi-config' because the configuration for end-date determination does not exist.",
+     "derived_from": {
+      "file": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+      "method": "INIT_ENCUMB_HANDLING",
+      "line": 226
+     },
+     "mechanism": "MV_EXTENSION_YEARS = 10",
+     "changed_by": {
+      "transport": "D01K9B04Y9",
+      "was": "mv_extension_years = 1",
+      "now": "10",
+      "why": "Spring 2019 change request: temporary positions must be financed to contract end, which may exceed three years"
+     },
+     "violation_looks_like": "nothing visible. The stated reasoning — 'no contract end date will exceed 3 years from today' — has an EXPIRY BUILT IN, and if that assumption stops holding no part of the system will say so. This is the rule most worth re-validating with the business.",
+     "checkable_against": "PA0001/PA0016 contract end dates vs today + 10 years — count how many exceed the constant",
+     "confidence": "read from production source",
+     "related": {
+      "transport": "D01K9B050N",
+      "statement": "temporary positions need to be financed until 'highdate' regardless of business area"
+     }
+    },
+    {
+     "id": "PBC-R5-SCENARIO-FIXED",
+     "statement": "The scenario is not derived from anything — GET_SCENARIO always returns C_SCENARIO_STAT.",
+     "derived_from": {
+      "file": "extracted_sap_p01/ZPBC/ZCL_IM__UNESCO_ENCUMB.abap",
+      "method": "GET_SCENARIO",
+      "line": 773
+     },
+     "mechanism": "RV_SCENARIO = C_SCENARIO_STAT",
+     "violation_looks_like": "any expectation that PBC behaves differently per scenario is unfounded — there is only one",
+     "checkable_against": "n/a — a constant",
+     "confidence": "read from production source"
+    }
    ],
-   "note": "the variance rule (P2B-2) may already be partly served by the EPI-USE Variance Monitor add-on, which is active — verify before building"
+   "_how_to_use": "each rule carries violation_looks_like and checkable_against — that is what makes it a CONFORMANCE REFERENCE rather than a description. A rule with no way to be violated is prose.",
+   "_created_session": 97,
+   "_open": "R4 is the one to re-validate with the business: its stated assumption has an expiry and nothing monitors it.",
+   "status": "AUTHORED + DERIVED — the derived half is read from production source",
+   "authored_rules": [
+    {
+     "id": "P2B-1",
+     "rule": "every established position carries a funded commitment before payroll executes for it",
+     "severity": "CONTROL",
+     "quantify": "staff cost paid against uncommitted posts"
+    },
+    {
+     "id": "P2B-2",
+     "rule": "the commitment value reflects the current valuation of the post",
+     "severity": "DATA",
+     "quantify": "variance between committed and actual staff cost, by post"
+    },
+    {
+     "id": "P2B-3",
+     "rule": "a vacant post does not hold a commitment beyond its declared vacancy tolerance",
+     "severity": "PROCESS",
+     "quantify": "budget locked by vacant posts"
+    }
+   ],
+   "authored_note": "the variance rule (P2B-2) may already be partly served by the EPI-USE Variance Monitor add-on, which is active — verify before building",
+   "_reconciliation": [
+    {
+     "authored": "P2B-3 — a vacant post does not hold a commitment beyond its declared vacancy tolerance",
+     "derived": "PBC-R1 — a post commits ONLY while it is vacant",
+     "finding": "these are not the same statement and the difference matters. The authored rule treats a vacant commitment as something to LIMIT; the implementation makes vacancy the very CONDITION for committing. Both can hold — commit while vacant, but not indefinitely — and the tolerance the authored rule assumes is NOT VISIBLE in the code read so far. What bounds it is MV_EXTENSION_YEARS = 10 (PBC-R4), which is a HORIZON, not a tolerance. Whether a vacancy tolerance exists elsewhere is OPEN.",
+     "action": "AN-PBC-VACANCY-TOLERANCE"
+    }
+   ]
   },
-
   "PROJ2FUND": {
    "status": "AUTHORED — not yet implemented",
    "source": "OURS",
    "rules": [
-    {"id": "P2F-1", "rule": "every WBS element consuming budget derives to exactly one fund, deterministically", "severity": "DATA",
+    {
+     "id": "P2F-1",
+     "rule": "every WBS element consuming budget derives to exactly one fund, deterministically",
+     "severity": "DATA",
      "quantify": "WBS elements with ambiguous or missing derivation",
-     "evaluated_on": "PRPS + the FM derivation rules (TABADR*)"},
-    {"id": "P2F-2", "rule": "project actuals never exceed the budget assigned to the project's fund", "severity": "CONTROL"},
-    {"id": "P2F-3", "rule": "a project's status permits the postings made against it", "severity": "CONTROL",
+     "evaluated_on": "PRPS + the FM derivation rules (TABADR*)"
+    },
+    {
+     "id": "P2F-2",
+     "rule": "project actuals never exceed the budget assigned to the project's fund",
+     "severity": "CONTROL"
+    },
+    {
+     "id": "P2F-3",
+     "rule": "a project's status permits the postings made against it",
+     "severity": "CONTROL",
      "evaluated_on": "PRPS + JEST system/user status",
-     "note": "posting to a technically-closed WBS is a classic and expensive finding"}
+     "note": "posting to a technically-closed WBS is a classic and expensive finding"
+    }
    ],
    "user_note": "the user states B2C2A and PROJ2FUND are fundamentally the same process — funds are executed THROUGH projects. If confirmed, these merge into one flow with project as the execution vehicle. PENDING their explanation; do not merge on my inference alone."
   },
-
   "GRANT2REPORT": {
    "status": "SLOT — no content, no tenant using it",
    "source": "OURS, to author",
    "why_the_slot_exists_now": "UNESCO does not use Grants Management (GMGR = 0, measured), which makes it cheap to be wrong about. Almost every peer UN organisation does use it. Authoring the model before the client needs it is the difference between a product and a bespoke project.",
-   "rules_to_author": ["expenditure satisfies sponsor eligibility before posting",
-                       "grant budget is not exceeded by sponsored programme",
-                       "cost sharing respects the agreed ratio",
-                       "reporting periods reconcile to the sponsor agreement"]
+   "rules_to_author": [
+    "expenditure satisfies sponsor eligibility before posting",
+    "grant budget is not exceeded by sponsored programme",
+    "cost sharing respects the agreed ratio",
+    "reporting periods reconcile to the sponsor agreement"
+   ]
   },
-
   "DISBURSE": {
    "status": "PARTIAL — a companion audit exists, not a mined flow",
    "rules": [
-    {"id": "DIS-1", "rule": "dual control on payment release: the releaser is never the creator", "severity": "CONTROL",
-     "quantify": "value released under single control"},
-    {"id": "DIS-2", "rule": "every disbursement reconciles to a bank statement line", "severity": "CONTROL"},
-    {"id": "DIS-3", "rule": "the payment medium generated matches the format agreed with the bank", "severity": "PROCESS"}
+    {
+     "id": "DIS-1",
+     "rule": "dual control on payment release: the releaser is never the creator",
+     "severity": "CONTROL",
+     "quantify": "value released under single control"
+    },
+    {
+     "id": "DIS-2",
+     "rule": "every disbursement reconciles to a bank statement line",
+     "severity": "CONTROL"
+    },
+    {
+     "id": "DIS-3",
+     "rule": "the payment medium generated matches the format agreed with the bank",
+     "severity": "PROCESS"
+    }
    ]
   },
-
   "O2C_BILLING": {
    "status": "SHAPE CORRECTED — the standard model does not apply",
    "warning": "the standard O2C reference assumes delivery. This tenant has ZERO deliveries: applying the borrowed model would report 100% non-conformance, a false finding. The normative model here must be order → invoice, with delivery ABSENT BY DESIGN.",
    "rules": [
-    {"id": "O2C-1", "rule": "every billing document traces to a sales order OR to a declared order-less billing category", "severity": "DATA",
-     "note": "billing documents (2,901) OUTNUMBER sales orders (2,116) — either multi-invoice orders or order-less billing. Establish which before treating the excess as a violation."}
+    {
+     "id": "O2C-1",
+     "rule": "every billing document traces to a sales order OR to a declared order-less billing category",
+     "severity": "DATA",
+     "note": "billing documents (2,901) OUTNUMBER sales orders (2,116) — either multi-invoice orders or order-less billing. Establish which before treating the excess as a violation."
+    }
    ]
   }
  },
-
  "_next": {
   "1": "B2C2A event log + conformance — the highest-value unbuilt thing in the product",
   "2": "confirm the PROJ2FUND / B2C2A relationship with the user before merging or splitting",

@@ -260,6 +260,7 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will", and THE ONLY PLACE the order lives) · **`brain_v2/methods/audit_agent_freshness.py`** (do the agents still know what the model knows?) · **`brain_v2/methods/audit_prose_classifications.py`** (which analysis is trapped in prose?) · **`brain_v2/build_channel_registry.py`** (lift the DECLARED channel taxonomy out of the integration map) |
 | **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
 | **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) |
+| **rules in code** | **`Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py`** (read the source that is ACTUALLY VALID — from PRODUCTION, read-only; classes need the generated pool plus one include per method, or a 1,296-line class reads as empty) · **`process_mining/extract_business_rules.py`** (A9 — quasi-config, hard constants with their reasoning, intent comments, modification blocks with their transports, standard overrides, leftovers) · **`brain_v2/build_interface_inventory.py`** (every interface as a RECORD) · **`brain_v2/build_audit_slots.py`** (the SHARED pre-aggregate: 15.6M audit rows to 987K INDEXED slots. The golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place — this turns a full scan into a keyed lookup and took A8 from over an hour to 3m29s) |
 | **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `process_mining/p2p_conformance.py` (Tier-1: cases classified against the 3-way match) · **`p2p_stdref_xray.py`** (the custom-over-standard x-ray — AS-DESIGNED vs AS-RUN; a *different* capability that used to share the other one's filename) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
 
 ---
@@ -597,6 +598,62 @@ These compose. Bank statements and postings originate in COUPA, which writes a *
 a folder; a scheduled **job** picks it up; the **program** posts. A single-label
 classification calls that "PROGRAM" and throws away three links and the entire external
 origin. So channels are reported as a **chain**, each link with its own evidence.
+
+---
+
+## The rules that decide are often not in configuration
+
+**A domain can look fully configured and still behave in a way nobody documented.** The
+decisions frequently live in a custom BAdI implementation — as a hard-coded constant, a
+branch condition, or a comment stating an intent no table records. A config-frontier
+analysis cannot see any of them.
+
+The case that produced algorithm **A9**, read from production source:
+
+```abap
+"until a configuration for the enddate determination rules
+"is available, use hard-coded values
+********Quasi-config *****************************
+*{   REPLACE        D01K9B04Y9
+*\      mv_extension_years = 1.
+      MV_EXTENSION_YEARS = 10.
+*}   REPLACE
+```
+
+How far ahead a temporary position is financed — a business decision — living as a constant,
+raised from 1 by a named transport, with the reasoning in a comment **and an expiry built
+into that reasoning**. The same read recovered the biennium rule the capability model had
+recorded as unknown.
+
+A9 extracts six things from any ABAP corpus: **QUASI_CONFIG** (a literal the author flagged
+as standing in for missing configuration) · **HARD_CONSTANT** with the comment that explains
+it · **INTENT** (a comment stating a requirement) · **MODIFICATION** (`*{ REPLACE
+<transport>` — what changed and under which transport) · **OVERRIDE** (which standard
+interface this code takes over) · **LEFTOVER** (debug and prototype artifacts still in
+production).
+
+**Its limit is the important part:** A9 reads text. A construct it does not recognise is
+simply not reported, so **absence in its output is never evidence** — which is the most
+dangerous way to misuse it, because the output looks like an inventory. Every finding carries
+a line number so it can be confirmed against the source, and it must be.
+
+### Knowledge is a record, not a paragraph
+
+A finding written into a document — or into the body of a claim — cannot be queried, cannot
+be diffed next month, and cannot go stale visibly. Everything discovered goes into a
+**structured store keyed on something an algorithm holds**, with the document as its human
+companion, never as its home:
+
+| finding | its record |
+|---|---|
+| what writes each object class, through which channel | `brain_v2/change_attribution.json` |
+| every inbound and outbound path | `brain_v2/interface_inventory.json` |
+| rules living in code | `brain_v2/business_rules.json` |
+| what CORRECT means per flow, as checkable rules | `brain_v2/normative_models/` |
+
+**A rule with no way to be violated is prose.** Every normative rule carries
+`violation_looks_like` and `checkable_against` — that is what makes it a conformance
+reference rather than a description.
 
 ---
 

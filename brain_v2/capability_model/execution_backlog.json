@@ -427,7 +427,10 @@
    "domain": "Infrastructure",
    "created_session": 97,
    "task": "Schedule run_analysis_cycle.py so the loop turns without a human remembering.",
-   "why": "the runner closes the 'nobody demands it' hole, but the runner itself is still on demand. A cadence written in a document is a wish."
+   "why": "the runner closes the 'nobody demands it' hole, but the runner itself is still on demand. A cadence written in a document is a wish.",
+   "status": "READY s097 — one operator command away",
+   "result": "scripts/schedule_cycle.ps1 registers three tasks: accumulate_logs DAILY (the only one whose value is destroyed by delay — the system purges in 7-120 days), run_analysis_cycle WEEKLY (~15 min against the pre-aggregate), extract_write_channel_logs MONTHLY (APQI sessions are purged). NOT run automatically: registering a scheduled task changes system configuration.",
+   "operator_action": "powershell -ExecutionPolicy Bypass -File scripts\\schedule_cycle.ps1"
   },
   {
    "id": "AN-GOLDEN-FIXTURES",
@@ -466,10 +469,10 @@
    "domain": "PBC",
    "priority": 1,
    "created_session": 97,
-   "status": "STEP1 s097 — the decisions are LOCATED and verified in P01",
+   "status": "DONE s097 — claim #399",
    "task": "Knowing WHEN the PBC engine writes is not knowing WHAT it decides. HUNCALC0 turns HR position and employee data into FM earmarked-funds commitments (FMRESERV) — the rules of that conversion are the AS-DESIGNED half of the domain and we hold none of it. Read the engine: what drives the amount, which period it commits to, how a position change re-drives an existing reservation, and what ZPBC_PERIOD_CLS_EXEC does at close. This is the A_PROCESS cell, and it is the largest write path in the installation.",
    "method": "extract HUNCALC0 / RHRFPM_ENGINE_* / ZPBC_PERIOD_CLS_EXEC source from D01 via ADT; trace against FMRESERV rows for one position across two months",
-   "result": "Package ZPBC: 77 objects in production. The engine is OVERRIDDEN by BAdI implementations, not extended. Six decision classes verified present in P01, led by ZCL_IM__UNESCO_ENCUMB (the encumbrance calculation) and ZCL_IM_HRFPM_CREATE_DOCS (creates the FMRESERV documents). Next: read those sources from D01 via ADT."
+   "result": "Five decision rules read from production source and integrated into normative_models.POST2BUDGET as checkable rules. Biennium gap closed."
   },
   {
    "id": "AN-PBC-OPERATOR-CONCENTRATION",
@@ -531,6 +534,24 @@
    "status": "OPEN",
    "task": "37 objects of package ZPBC exist in D01 and NOT in P01, including SIXTEEN transactions (ZPBC_CIPE_ANALYSIS, ZPBC_COMPLETION, ZPBC_PERIOD_BLOCK, ZPBC_SET_CHKAC and others) plus 5 tables and 3 BAdI implementations. Either they are unreleased development, or they were deliberately not transported, or they are abandoned. Each answer means something different for the domain: unreleased work is a pending change, abandoned work is debt, and deliberately-dev-only tooling is a support pattern. Determine which by checking the transport history (E070/E071) for those objects.",
    "method": "compare TADIR ZPBC D01 vs P01, then read E070/E071 for the 37"
+  },
+  {
+   "id": "AN-PBC-VACANCY-TOLERANCE",
+   "domain": "PBC",
+   "priority": 2,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "The authored rule P2B-3 assumes a 'declared vacancy tolerance' — a limit on how long a vacant post may hold a commitment. No such tolerance is visible in the encumbrance code read so far. What bounds the commitment is MV_EXTENSION_YEARS = 10, which is a HORIZON, not a tolerance. Determine whether a vacancy tolerance exists elsewhere (customizing, another BAdI, or the requirement filter classes) or whether the authored rule describes an intent the system does not implement. Either answer is a finding.",
+   "method": "read ZCL_IM__UNESCO_ENCUMB_VACANCY and the ZIF_REQUIREMENT_VAC_HANDLING chain"
+  },
+  {
+   "id": "AN-PBC-R4-REVALIDATE",
+   "domain": "PBC",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "MV_EXTENSION_YEARS = 10 rests on a stated assumption with an expiry: 'no contract end date will exceed 3 years from today' (Spring 2019). Nothing in the system monitors whether that still holds. Count PA0001/PA0016 contract end dates beyond today + 10 years, and beyond today + 3, and take the result to the business. A business rule frozen in a constant with an expiring justification is the definition of a silent risk.",
+   "method": "read PA0016/PA0001 end dates from P01 and compare against the constant"
   }
  ],
  "research_tasks_followups": [
