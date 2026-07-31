@@ -1,0 +1,125 @@
+{
+ "_concept": "NORMATIVE MODELS — what 'correct' means, per flow. The AS-DESIGNED reference.",
+ "_one_line": "Conformance checking is the market's algorithm. The normative content for public-sector finance is ours, and it is where the moat actually is.",
+ "_version": "1.0",
+ "_created_session": 97,
+
+ "_why_this_is_the_most_valuable_asset_class": {
+  "the_argument": "B4 (declarative conformance) is the heart of the product and is WORTHLESS without a normative model to measure against. We do not compete by building a better conformance checker — pm4py and the market already have one. We compete by being the only ones who know what 'correct' means for budget → commitment → actual.",
+  "evidence_of_the_gap": "Before this file, exactly ONE normative model existed in the whole system: the 3-way match for P2P. The four public-sector flows — B2C2A, POST2BUDGET, PROJ2FUND, GRANT2REPORT — had none, which is why they are unmined despite carrying the organisation's primary financial control.",
+  "portability": "A normative model is KIT in its shape and largely KIT in its content: 'no commitment may exceed available budget' is true in every public-sector installation. Only the thresholds and the exception list are tenant-specific.",
+  "the_trap": "Applying a market normative model without checking the tenant's real shape. A standard O2C model here would report 100% non-conformance because there are ZERO deliveries — a false finding produced by borrowed content."
+ },
+
+ "_anatomy": {
+  "rules": "each rule states a condition that MUST hold, the objects it is evaluated on, and how a violation is quantified",
+  "severity": "CONTROL (a control failed) · PROCESS (inefficiency) · DATA (integrity)",
+  "quantification": "every violation must be expressible in money or in exposure. A deviation nobody can price is a deviation nobody will fix.",
+  "exceptions": "legitimate deviations, declared. An undeclared exception is indistinguishable from a violation, and that is how conformance reports lose credibility."
+ },
+
+ "models": {
+
+  "P2P": {
+   "status": "IMPLEMENTED",
+   "source": "SAP best practice, verified research",
+   "implemented_in": "process_mining/p2p_conformance.py",
+   "rules": [
+    {"id": "P2P-1", "rule": "every invoice receipt has a matching purchase order and goods receipt (3-way match)", "severity": "CONTROL", "quantify": "PO value of unmatched invoices"},
+    {"id": "P2P-2", "rule": "goods receipt occurs strictly BEFORE invoice receipt", "severity": "CONTROL", "quantify": "value of IR-before-GR cases", "measured": "70 violations, $713,341 exposure"},
+    {"id": "P2P-3", "rule": "a purchase order exists before the goods receipt", "severity": "PROCESS", "quantify": "count and value of retrospective POs"}
+   ],
+   "public_sector_addition": "AVC commitment check between requisition and PO — absent from every commercial reference model",
+   "measured_conformance": "38% conformant, 17% open, 44% multi-path"
+  },
+
+  "B2C2A": {
+   "status": "AUTHORED — not yet implemented",
+   "source": "OURS. No vendor ships content for this.",
+   "why": "the primary financial control of a public-sector organisation. FMRESERV carries 6.4M change documents.",
+   "rules": [
+    {"id": "B2C2A-1", "rule": "no commitment may be created that exceeds the available budget of its fund/fund-centre/commitment-item combination", "severity": "CONTROL",
+     "quantify": "value of commitments created against insufficient availability",
+     "evaluated_on": "FMIOI commitments vs FMAVCT availability at the moment of creation",
+     "note": "availability control may be configured as ERROR or WARNING per ledger — a WARNING-configured breach is a finding, not an error, and must be reported separately"},
+    {"id": "B2C2A-2", "rule": "every actual posting traces to a commitment, or to a declared exception category", "severity": "CONTROL",
+     "quantify": "value of actuals with no antecedent commitment",
+     "evaluated_on": "FMIFIIT actuals joined to FMIOI commitments"},
+    {"id": "B2C2A-3", "rule": "budget distributed to fund centres never exceeds the appropriation above it", "severity": "CONTROL",
+     "quantify": "over-distribution by fund centre", "evaluated_on": "FMBH/FMBL budget hierarchy"},
+    {"id": "B2C2A-4", "rule": "a commitment is released or consumed; it does not age indefinitely", "severity": "PROCESS",
+     "quantify": "value and age of open commitments beyond the biennium",
+     "note": "in a biennium organisation, an open commitment crossing the biennium boundary is a specific and expensive category"},
+    {"id": "B2C2A-5", "rule": "carry-forward preserves the commitment-to-budget relationship across the period boundary", "severity": "DATA",
+     "quantify": "commitments whose budget did not carry with them"}
+   ],
+   "exceptions_to_declare": ["emergency spending categories", "funds exempt from availability control", "ledger configured as WARNING rather than ERROR"],
+   "next": "build the event log first: FMBH/FMBL (budget) + FMIOI (commitment) + FMIFIIT (actual), object-centric — the case notion is genuinely ambiguous, which is exactly what OCEL 2.0 exists for"
+  },
+
+  "POST2BUDGET": {
+   "status": "AUTHORED — not yet implemented",
+   "source": "OURS",
+   "rules": [
+    {"id": "P2B-1", "rule": "every established position carries a funded commitment before payroll executes for it", "severity": "CONTROL",
+     "quantify": "staff cost paid against uncommitted posts"},
+    {"id": "P2B-2", "rule": "the commitment value reflects the current valuation of the post", "severity": "DATA",
+     "quantify": "variance between committed and actual staff cost, by post"},
+    {"id": "P2B-3", "rule": "a vacant post does not hold a commitment beyond its declared vacancy tolerance", "severity": "PROCESS",
+     "quantify": "budget locked by vacant posts"}
+   ],
+   "note": "the variance rule (P2B-2) may already be partly served by the EPI-USE Variance Monitor add-on, which is active — verify before building"
+  },
+
+  "PROJ2FUND": {
+   "status": "AUTHORED — not yet implemented",
+   "source": "OURS",
+   "rules": [
+    {"id": "P2F-1", "rule": "every WBS element consuming budget derives to exactly one fund, deterministically", "severity": "DATA",
+     "quantify": "WBS elements with ambiguous or missing derivation",
+     "evaluated_on": "PRPS + the FM derivation rules (TABADR*)"},
+    {"id": "P2F-2", "rule": "project actuals never exceed the budget assigned to the project's fund", "severity": "CONTROL"},
+    {"id": "P2F-3", "rule": "a project's status permits the postings made against it", "severity": "CONTROL",
+     "evaluated_on": "PRPS + JEST system/user status",
+     "note": "posting to a technically-closed WBS is a classic and expensive finding"}
+   ],
+   "user_note": "the user states B2C2A and PROJ2FUND are fundamentally the same process — funds are executed THROUGH projects. If confirmed, these merge into one flow with project as the execution vehicle. PENDING their explanation; do not merge on my inference alone."
+  },
+
+  "GRANT2REPORT": {
+   "status": "SLOT — no content, no tenant using it",
+   "source": "OURS, to author",
+   "why_the_slot_exists_now": "UNESCO does not use Grants Management (GMGR = 0, measured), which makes it cheap to be wrong about. Almost every peer UN organisation does use it. Authoring the model before the client needs it is the difference between a product and a bespoke project.",
+   "rules_to_author": ["expenditure satisfies sponsor eligibility before posting",
+                       "grant budget is not exceeded by sponsored programme",
+                       "cost sharing respects the agreed ratio",
+                       "reporting periods reconcile to the sponsor agreement"]
+  },
+
+  "DISBURSE": {
+   "status": "PARTIAL — a companion audit exists, not a mined flow",
+   "rules": [
+    {"id": "DIS-1", "rule": "dual control on payment release: the releaser is never the creator", "severity": "CONTROL",
+     "quantify": "value released under single control"},
+    {"id": "DIS-2", "rule": "every disbursement reconciles to a bank statement line", "severity": "CONTROL"},
+    {"id": "DIS-3", "rule": "the payment medium generated matches the format agreed with the bank", "severity": "PROCESS"}
+   ]
+  },
+
+  "O2C_BILLING": {
+   "status": "SHAPE CORRECTED — the standard model does not apply",
+   "warning": "the standard O2C reference assumes delivery. This tenant has ZERO deliveries: applying the borrowed model would report 100% non-conformance, a false finding. The normative model here must be order → invoice, with delivery ABSENT BY DESIGN.",
+   "rules": [
+    {"id": "O2C-1", "rule": "every billing document traces to a sales order OR to a declared order-less billing category", "severity": "DATA",
+     "note": "billing documents (2,901) OUTNUMBER sales orders (2,116) — either multi-invoice orders or order-less billing. Establish which before treating the excess as a violation."}
+   ]
+  }
+ },
+
+ "_next": {
+  "1": "B2C2A event log + conformance — the highest-value unbuilt thing in the product",
+  "2": "confirm the PROJ2FUND / B2C2A relationship with the user before merging or splitting",
+  "3": "verify P2B-2 against the EPI-USE Variance Monitor before building it",
+  "_principle": "one flow end to end, proven, then the next. P2P is the worked example that shows the pattern holds."
+ }
+}

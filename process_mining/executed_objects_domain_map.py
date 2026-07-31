@@ -32,6 +32,8 @@ REPO = HERE.parents[0]
 MCP = REPO / "Zagentexecution" / "mcp-backend-server-python"
 sys.path.insert(0, str(MCP))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
+sys.path.insert(0, str(REPO / "brain_v2"))
+from component_map import domain_of_package  # SAP's own taxonomy — the authoritative rung
 JOBCLASS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "job_classification.json"
 OUT = REPO / "brain_v2" / "executed_objects_domain_map.json"
 
@@ -262,6 +264,16 @@ def make_classifier(con):
         prog = program or (name if name in prog_dc else None)
         dc = prog_dc.get(prog) if prog else None
         return (overlay
+                # AUTHORITATIVE RUNG (s097): package -> TDEVC -> DF14L -> application
+                # component -> domain. SAP states the answer; we no longer guess it from
+                # the package NAME. The regex ladder below stays as the fallback for the
+                # packages DF14L cannot resolve (28,053 of them do resolve).
+                #
+                # This rung exists because the regex was demonstrably wrong twice, and the
+                # correction was ALSO a guess: 'FTB' was moved to Treasury_EBS by hand,
+                # when DF14L says FTBB is FIN-FSCM-TRM-MR, i.e. TRM. A guess corrected by
+                # a guess is not a fix.
+                or domain_of_package(dc)
                 or _match(DEVCLASS_RULES, dc)
                 or _match(DLVUNIT_RULES, dc_dlv.get(dc) if dc else None)
                 or _match(NAME_RULES, name) or _match(NAME_RULES, program)

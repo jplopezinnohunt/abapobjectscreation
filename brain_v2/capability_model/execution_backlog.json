@@ -148,6 +148,16 @@
    "unblock_requires": "A read channel that serializes STRING from P01. The only ones that exist (ADT Data Preview / OpenSQL; remote ABAP) are NOT used against production by policy and/or are authorization-gated for this user. Until such a channel is sanctioned for prod, the full ODESC stays unavailable. RFC-readable substitute already stored: OTEXT (CHAR40) — complete for 88/259 outputs, truncated for 171.",
    "note": "The 4 companion tables ARE landed (golden DB ytfm_fund_c5/ytfm_c5/ytfm_output/ytfm_output_t, P01-sourced via RFC/SSO, no Excel) and registered in the brain graph. ONLY the ODESC long-text is deferred. Full evidence: memory/reference_p01_strg_columns_unreadable.md.",
    "status": "DEFERRED (RFC cannot serialize STRG; OTEXT kept as the SSO-readable substitute)"
+  },
+  {
+   "id": "EXT-HCM-TABLES",
+   "priority": 1,
+   "domain": "HCM",
+   "created_session": 97,
+   "task": "Register and extract HCM's tables. HCM shows 188,636 executions and ZERO tables in the gold registry — we observe it in the log and hold none of its data. Start with the org/personnel spine: HRP1000/HRP1001 (org objects and relationships), PA0000/0001/0002 (actions, org assignment, personal data), PA0008 (basic pay), T500P/T549A (personnel/payroll areas).",
+   "why": "Found by build_domain_assets.py — a gap NO kind-major view could show. HCM feeds POST2BUDGET, which is a DIFFERENTIATOR flow, and staff cost is the largest budget line in a UN agency.",
+   "constraint": "personnel data — confirm scope and any privacy constraint with the user before extracting",
+   "evidence": "domain_assets.json gaps_ranked_by_activity"
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -291,6 +301,50 @@
    "created_session": 97,
    "task": "Build PROJ2FUND: WBS -> fund derivation -> budget assignment -> commitment -> actual.",
    "why": "PS is the busiest business domain (1.6M execs) and its whole purpose is consuming budget"
+  },
+  {
+   "id": "AN-OBJ-TEXT",
+   "priority": 1,
+   "domain": "Infrastructure",
+   "created_session": 97,
+   "task": "Attach the human-readable TEXT to every executed object: transaction texts (d01_tstct, 99,566 rows already extracted), report titles (TRDIRT), function-module short texts. Join it into executed_objects_domain_map and into the frontier worklist.",
+   "why": "USER POINT s097: today the frontier is 3,667 object NAMES. A human cannot tell what 'RKPDEMO2' is, so the unclassified tail cannot be triaged by eye and every classification argument becomes archaeology. With the text attached, the frontier becomes readable and the classifier's mistakes become obvious at a glance.",
+   "evidence": "d01_tstct already in the Gold DB — this is a join, not an extraction",
+   "cheap": "yes — the data is already local"
+  },
+  {
+   "id": "AN-CLAIM-VERIFY",
+   "priority": 1,
+   "domain": "Brain_Architecture",
+   "created_session": 97,
+   "task": "Raise the claim verification rate from 24.5%. Run claims_health.py, take the weak TIER_1 worklist, and give each claim a second INDEPENDENT source.",
+   "why": "Cheaper than new extraction, and it is what stops the model repeating something false with confidence. Most claims currently rest on a single source.",
+   "evidence": "meta_capability VERIFY block: claims_2plus_sources = 0.245"
+  },
+  {
+   "id": "AN-INTEGRATION-VERIFY",
+   "priority": 2,
+   "domain": "Integration",
+   "created_session": 97,
+   "task": "Verify object-by-object where Integration's 794,261 executions went after the A4 fix. Plausibly correct (ED/BD/SRT/SAI are technical ALE/IDoc packages that belong to Basis) but NOT verified.",
+   "why": "a large silent movement between domains is exactly what the anti-method warns about",
+   "evidence": "diff of executed_objects_domain_map before/after the DF14L rung"
+  },
+  {
+   "id": "AN-EVENTLOG-DEFS",
+   "priority": 2,
+   "domain": "Infrastructure",
+   "created_session": 97,
+   "task": "Extract the event-log definitions (case_id / activity / timestamp / resource mapping) out of sap_process_discovery.py's internal configs and into a declared asset class.",
+   "why": "asset class #2 of the s097 doctrine: reusable across clients, invisible today"
+  },
+  {
+   "id": "AN-FAILMODE-VIEW",
+   "priority": 3,
+   "domain": "Brain_Architecture",
+   "created_session": 97,
+   "task": "Make failure modes queryable on their own: 'in how many known ways can this model lie?'",
+   "why": "asset class #3. The question an auditor asks and no vendor answers."
   }
  ],
  "research_tasks_followups": [
