@@ -90,6 +90,25 @@ DEVCLASS_RULES = [
     ("Integration",     r"^(SMOI|SAI_|SBDC|KC_GEN|ZINT|ZRFC|ZIDOC)"),
     ("Basis_Security",  r"^(S[A-Z]|BC|SUSR|STSK|SRSR|SEU|SDYN|SABP|SAPP|SBC|SCSC|SZ|SPO|ST_|SMON|SARA|SYST|SUU|RSPO|RSAU|SUST|SWNC|SECU|SDB|SDWB|SDIC)"),
 ]
+# TECHNICAL SUBSTRATE — s097. The principle "no executed object may remain unrelated to a
+# domain" is right, but the answer is NOT to file RFCPING under a business domain. These
+# objects are connectivity checks, session management, monitoring agents and transaction
+# control: real execution, legitimately non-business.
+#
+# Collapsing them into "Uncatalogued" is what made 40% of execution volume look like
+# ignorance when most of it is plumbing: RFCPING alone is 1,413,013 executions.
+#
+# Declaring the tier makes the remaining "unexplained" number HONEST and therefore
+# actionable — it becomes the real frontier instead of a bucket nobody trusts.
+SUBSTRATE_RULES = [
+    ("Technical_Substrate", r"^(RFCPING|RFC_PING|RFC_SYSTEM_INFO|RFC_READ_TABLE|"
+                            r"SESSION_MANAGER|BAPI_TRANSACTION_(COMMIT|ROLLBACK)|"
+                            r"ARFC_RUN_NOWAIT|TRINT_PROGRESS_INDICATOR|AMDP_CLEANUP|"
+                            r"FM_ENQ_CTX_CLEANUP_TASK|ICM_GET_INFO|PARTNER_LOGICAL_SYSTEM_GET|"
+                            r"/SDF/|SAPMSSY|SAPLSYST|RSRZLLG0|RSBTCRTE|SAPMSYST)"),
+]
+
+
 # table / infotype / object-name -> domain (for generated programs that embed an object)
 TABLE_RULES = [
     ("HCM",             r"^(PA[0-9]|PB[0-9]|PCL|T5[0-9]|HRP|HRT|T52|T51|T7|PEVE|PTEX|PA_IT)"),
@@ -248,6 +267,10 @@ def make_classifier(con):
                 or _match(NAME_RULES, name) or _match(NAME_RULES, program)
                 or _match(TEXT_RULES, text)
                 or _match_table(resolve_generated(name))
+                # LAST, deliberately: a business rule always wins over the substrate
+                # tier. Substrate is what remains genuinely non-business, not a
+                # convenient place to dump anything unresolved.
+                or _match(SUBSTRATE_RULES, name)
                 or "Uncatalogued")
 
     return domain_of, {"prog_dc": prog_dc, "dc_dlv": dc_dlv, "tc_prog": tc_prog,
