@@ -106,6 +106,19 @@ NOT_A_PROGRAM = ("!", "=", " ")
 # The RFC/CPIC dispatchers. Their presence is EVIDENCE OF AN INTERFACE CHANNEL, not noise.
 DISPATCHERS = {"SAPMSSY1", "SAPMSSY6", "SAPLSYST", "SAPMSSYD"}
 
+# The runtimes that PROCESS the other two write channels. Detecting them needs no new
+# extraction — they run as ordinary programs and are already in the log.
+BATCH_INPUT_PROGS = ("RSBDC", "SAPMSBDC")   # replay a recorded screen session (APQI/APQD)
+WEBSERVICE_PROGS = ("SAPLSRT", "SOAP", "WSPROC")   # the SOAP runtime
+# ...but NOT its housekeeping. The first version matched "SRT_" and immediately scored
+# WEBSERVICE at 0.99 on two classes, naming SRT_CCMS_DATA_COLL_LOW_FREQ,
+# SRT_SEQ_DELETE_BGRFC_QUEUES and SRT_UTIL_CLEANUP as the evidence. Those are CCMS
+# monitoring and queue cleanup — they run constantly and process no inbound call. It is
+# the dispatcher problem in SOAP clothing: detecting the plumbing and calling it the
+# channel. A near-certain confidence built on housekeeping is worse than no detection,
+# because it reads as proof.
+WEBSERVICE_HOUSEKEEPING = ("SRT_CCMS", "SRT_SEQ_DELETE", "SRT_UTIL", "SRT_ADMIN")
+
 
 def _profile(con, _derived=False):
     """Both streams, aggregated in SQL before anything reaches Python (pattern D6).
@@ -258,6 +271,48 @@ def resolve_channels(tc_hist, top_programs, ev):
                       "evidence": "a scheduled job runs the candidate program",
                       "jobs": ev["jobs"][:4],
                       "_why_it_matters": "the job is the TRIGGER; the program is the writer"})
+    # BATCH INPUT and WEB SERVICE are write channels in their own right, and leaving them
+    # out made this algorithm structurally blind to two of the ways a change actually
+    # arrives. Neither needs a new extraction: the audit log already carries the runtime
+    # that processes them — RSBDC*/SAPMSBDC* replay a recorded session, SRT_*/SAPLSRT* is
+    # the SOAP runtime — so the same slots that prove an RFC channel prove these.
+    #
+    # Their detail lives elsewhere (APQI/APQD for the session, the SRT logs for the
+    # message), which is why the DECLARED web services could not be found among programs
+    # earlier. That was the wrong log, not an absent interface — and calling them unused
+    # would have repeated the error that produced six wrong module answers this session.
+    if ev.get("batch_input_share", 0) >= 0.10:
+        found.append({"channel": "BATCH_INPUT", "confidence": round(ev["batch_input_share"], 2),
+                      "evidence": (f"a batch-input processor ran in "
+                                   f"{100 * ev['batch_input_share']:.0f}% of the hours this "
+                                   f"class changed"),
+                      "processors": (ev.get("batch_input_progs") or [])[:4],
+                      "_why_it_matters": ("a recorded SCREEN SESSION replayed — it writes as "
+                                          "if a person typed it, so it carries a transaction "
+                                          "code and hides among dialog changes. The session "
+                                          "detail is in APQI/APQD, not here")})
+    if ev.get("webservice_share", 0) >= 0.10:
+        found.append({"channel": "WEBSERVICE", "confidence": round(ev["webservice_share"], 2),
+                      "evidence": (f"the SOAP runtime ran in "
+                                   f"{100 * ev['webservice_share']:.0f}% of the hours this "
+                                   f"class changed"),
+                      "runtime": (ev.get("webservice_progs") or [])[:4],
+                      "_why_it_matters": ("an inbound web service writes with no transaction "
+                                          "and no RFC destination. Which SERVICE it was is in "
+                                          "the SRT logs, which are NOT extracted — so this "
+                                          "names the channel and cannot yet name the caller")})
+    elif ev.get("webservice_housekeeping"):
+        # Say what we CANNOT see, rather than let silence read as absence. Four declared
+        # web services exist; this log cannot confirm or refute any of them.
+        found.append({"channel": "WEBSERVICE_UNDETECTABLE", "confidence": 0.0,
+                      "evidence": ("only SOAP HOUSEKEEPING ran in these hours (CCMS "
+                                   "collection, queue cleanup) — that is the plumbing, not "
+                                   "an inbound call"),
+                      "_why_it_matters": ("this log answers for PROGRAMS. An inbound web "
+                                          "service is processed by the ICF/SRT runtime and "
+                                          "logged in SRT_UTIL / SRTUTIL, which are NOT "
+                                          "extracted. UNVERIFIED is the honest verdict here, "
+                                          "never 'not used' — that is the wrong-log error")})
     if not found:
         found.append({"channel": "PROGRAM", "confidence": round(blank, 2),
                       "evidence": (f"{100 * blank:.0f}% of changes have no transaction code and "
@@ -275,6 +330,13 @@ def resolve_channels(tc_hist, top_programs, ev):
     elif "RFC_INBOUND" in names:
         chain = ("EXTERNAL CALLER -> RFC/BAPI -> SAP. The transaction code is empty because "
                  "the interface design never set one, not because it was a batch run.")
+    elif "BATCH_INPUT" in names:
+        chain = ("a RECORDED SCREEN SESSION replayed -> SAP. It writes as if a person typed "
+                 "it, so it can carry a transaction code and pass for a dialog change. The "
+                 "session and its source are in APQI/APQD.")
+    elif "WEBSERVICE" in names:
+        chain = ("EXTERNAL CALLER -> SOAP/HTTP -> SAP. No transaction and no RFC destination; "
+                 "the caller is in the SRT logs, which are not extracted.")
     elif "BATCH_JOB" in names:
         chain = "scheduled job -> program -> SAP"
     return found, chain
@@ -412,6 +474,24 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
             "jobs": sorted({j for c in cands[:4]
                             for j in (jobs_of_prog.get(c["program"]) or {})})[:6],
         }
+        # BATCH_INPUT and WEBSERVICE, derived from what is already in memory — the same
+        # runs[] map that scores the writers. No extra query, no extra scan.
+        uruns = runs.get(top_user) or {}
+        for key, prefixes in (("batch_input", BATCH_INPUT_PROGS),
+                              ("webservice", WEBSERVICE_PROGS)):
+            hit, names = set(), []
+            for prog, pslots in uruns.items():
+                if key == "webservice" and prog.startswith(WEBSERVICE_HOUSEKEEPING):
+                    continue
+                if prog.startswith(prefixes):
+                    inter = cs & pslots
+                    if inter:
+                        hit |= inter
+                        names.append(prog)
+            ev[f"{key}_share"] = (len(hit) / len(cs)) if cs else 0.0
+            ev[f"{key}_progs"] = sorted(names)
+        ev["webservice_housekeeping"] = sorted(
+            p for p in uruns if p.startswith(WEBSERVICE_HOUSEKEEPING) and (cs & uruns[p]))[:4]
         chans, chain = resolve_channels(tcodes.get(cls) or {}, cands, ev)
         # DERIVED and DECLARED stay in SEPARATE fields on purpose. Merging them would
         # launder a document into a measurement, and afterwards nobody could tell which was

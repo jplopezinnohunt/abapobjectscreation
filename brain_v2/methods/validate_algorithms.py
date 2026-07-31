@@ -351,6 +351,34 @@ def main():
         if v and v[0]["declared_source"] != "TULIP":
             failures.append("A8b the declared side must carry its source system")
 
+        checked += 1
+        # BATCH INPUT is a write channel: a recorded screen session replayed. It writes as
+        # if a person typed it, so it can even carry a transaction code and pass for a
+        # dialog change — which is why it has to be detected explicitly.
+        ch, _ = resolve_channels({"": 900, "PA30": 100},
+                           [{"program": "RSBDCSUB"}],
+                           {"batch_input_share": 0.9, "batch_input_progs": ["RSBDCSUB"]})
+        if not any(c["channel"] == "BATCH_INPUT" for c in ch):
+            failures.append("A8 channel BATCH_INPUT not detected from the session processor "
+                            "— a replayed screen session would pass for a dialog change")
+        checked += 1
+        # THE SOAP HOUSEKEEPING TRAP. Matching "SRT_" scored WEBSERVICE at 0.99 on the
+        # strength of CCMS collection and queue cleanup — the plumbing, not an inbound
+        # call. Near-certain confidence built on housekeeping is worse than no detection,
+        # because it reads as proof. The honest output is UNDETECTABLE.
+        ch, _ = resolve_channels({"": 950},
+                           [{"program": "HUNCALC0"}],
+                           {"webservice_share": 0.0,
+                            "webservice_housekeeping": ["SRT_UTIL_CLEANUP"]})
+        got = [c["channel"] for c in ch]
+        if "WEBSERVICE" in got:
+            failures.append("A8 scored WEBSERVICE from SOAP housekeeping — that is the "
+                            "dispatcher trap in SOAP clothing")
+        if "WEBSERVICE_UNDETECTABLE" not in got:
+            failures.append("A8 must SAY it cannot see the web-service channel rather than "
+                            "stay silent — silence reads as absence, and absence in the "
+                            "wrong log is the error that produced six wrong module answers")
+
     print(f"[algorithm validation] {checked} golden cases")
     if failures:
         print(f"  {len(failures)} REGRESSION(S):", file=sys.stderr)

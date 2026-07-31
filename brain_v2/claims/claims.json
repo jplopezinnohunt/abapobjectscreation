@@ -17165,5 +17165,47 @@
     "cross-cutting"
    ]
   }
+ },
+ {
+  "id": 394,
+  "claim": "BATCH INPUT AND WEB SERVICE ARE WRITE CHANNELS, AND A8 WAS STRUCTURALLY BLIND TO BOTH (s097). Neither needed a new extraction: the audit log already carries the runtimes that process them — RSBDC*/SAPMSBDC* replay a recorded screen session, SAPLSRT*/SOAP* is the SOAP runtime — so the same slots that prove an RFC channel prove these. Both are now derived from runs[] already in memory, at zero query cost. BATCH_INPUT DETECTED and it matters more than the count suggests: a replayed session writes AS IF A PERSON TYPED IT, so it can carry a transaction code and pass for a dialog change. Y_HR_IT1081 (2,827 changes) is written through RSBDCSUB / RSBDCBTC_SUB at confidence 1.0 — a custom HR infotype maintained by batch input, which every previous channel model read as dialog. WEBSERVICE WAS A FALSE POSITIVE AND IS NOW HONEST. Matching the prefix 'SRT_' scored WEBSERVICE at 0.99 on two classes, citing SRT_CCMS_DATA_COLL_LOW_FREQ, SRT_SEQ_DELETE_BGRFC_QUEUES and SRT_UTIL_CLEANUP. Those are CCMS monitoring and queue cleanup — the plumbing, which runs constantly and processes no inbound call. It is the dispatcher trap in SOAP clothing, and a near-certain confidence built on housekeeping is WORSE than no detection because it reads as proof. Housekeeping is now excluded and the algorithm emits WEBSERVICE_UNDETECTABLE with the reason: this log answers for PROGRAMS, an inbound web service is processed by the ICF/SRT runtime and logged in SRT_UTIL/SRTUTIL, which are NOT extracted. UNVERIFIED is the honest verdict, never 'not used' — the wrong-log error that produced six wrong module answers earlier in this session. CHANNELS NOW DERIVED across 72 classes: DIALOG 64, RFC_INBOUND 40, BATCH_JOB 19, FILE 6, PROGRAM 2, WEBSERVICE_UNDETECTABLE 2, BATCH_INPUT 1. Gated: 76 golden cases, including one that fails if SOAP housekeeping is ever scored as a channel again, and one that fails if the algorithm stays SILENT about what it cannot see.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Integration",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "process_mining/attribute_changes_to_programs.py + change_attribution.json",
+    "cite": "BATCH_INPUT on Y_HR_IT1081 via RSBDCSUB conf 1.0; WEBSERVICE 0.99 refuted as CCMS/cleanup housekeeping and replaced by WEBSERVICE_UNDETECTABLE; 76 golden cases",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "RSBDCSUB",
+   "RSBDCBTC_SUB",
+   "SAPLSRT2",
+   "Y_HR_IT1081",
+   "APQI",
+   "APQD",
+   "SRT_UTIL",
+   "process_mining/attribute_changes_to_programs.py"
+  ],
+  "resolution_notes": "USER POINT: 'Batch Inputs y Webservices son fuentes a considerar tambien como cambios, no podemos ignorarlas.' Correct — the channel model had five boxes and the system writes through seven. Implementing it also caught my own false positive: I detected the SOAP plumbing and would have reported a 0.99 web-service channel that does not exist.",
+  "domain_axes": {
+   "functional": [
+    "Integration"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  }
  }
 ]

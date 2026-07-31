@@ -575,8 +575,23 @@ disagree, which before could not even be expressed.
 
 Beyond a person in a transaction, a change can arrive through: an **interface** (BAPI/RFC —
 and `PARAMX` names the calling host and destination, which *is* the satellite); a **job**
-firing a program; a program reading a **file** in a directory; a **DBCON** link to a declared
-external database; or ABAP consuming a **web service**.
+firing a program; a program reading a **file** in a directory; a **batch-input session**
+replayed; a **DBCON** link to a declared external database; or an inbound **web service**.
+
+Two of those hide in plain sight:
+
+- **BATCH INPUT writes as if a person typed it.** A replayed session drives real screens, so
+  it can carry a transaction code and pass for a dialog change. It must be detected
+  explicitly, from the session processors (`RSBDC*`, `SAPMSBDC*`). Its detail is in
+  `APQI`/`APQD`.
+- **WEB SERVICE cannot be seen in this log at all.** An inbound call is processed by the
+  ICF/SRT runtime, not by an ABAP program, so it never reaches `SLGREPNA`. Matching `SRT_`
+  looks like it works and detects only **housekeeping** — CCMS collection and queue cleanup,
+  which run constantly. That scored a web-service channel at 0.99 that does not exist: the
+  dispatcher trap in SOAP clothing. **A near-certain confidence built on plumbing is worse
+  than no detection, because it reads as proof.** The honest output is
+  `WEBSERVICE_UNDETECTABLE` with the reason — never silence, because silence reads as
+  absence, and absence in the wrong log is not absence in the system.
 
 These compose. Bank statements and postings originate in COUPA, which writes a **file** into
 a folder; a scheduled **job** picks it up; the **program** posts. A single-label
