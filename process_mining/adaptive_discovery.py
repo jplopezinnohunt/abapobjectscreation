@@ -18,6 +18,47 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 LEARNED = os.path.join(os.path.dirname(__file__), "learned_rules.json")
+
+# THE AUTHORITATIVE RUNG (s097). Until now this engine resolved by KEYWORD over the FM
+# name, its function group and its app domain. That was the strongest signal available
+# when it was written; it no longer is. The component chain — object -> package -> TDEVC ->
+# DF14L — is SAP stating the answer, and it covers 28,053 packages plus 208,451 function
+# modules through their function group.
+#
+# A5 is the only algorithm in the model that LEARNS, and it was learning blind to the
+# strongest signal we have. A keyword guess that happens to agree with the component is
+# still a guess; one that disagrees is a defect nobody would have seen.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain_v2"))
+try:
+    from component_map import resolve_domain
+except ImportError:
+    resolve_domain = None
+
+# canonical domain -> this engine's process vocabulary. Kept explicit rather than fuzzy:
+# the two vocabularies are different on purpose and mapping them by token is the defect
+# ontology.json already had to correct once.
+DOMAIN_TO_PROCESS = {
+    "PS": "PS-Project", "PSM_FM": "PSM-Budget/FM", "PBC": "PSM-Budget/FM",
+    "HCM": "HCM", "Travel": "HCM", "HR_Workflows": "HCM",
+    "BusinessPartner": "MDM-Vendor", "Procurement_P2P": "P2P",
+    "FI": "FI", "FI_AA": "FI", "CO": "FI",
+    "Payment_BCM": "Payment/Bank", "Treasury_EBS": "Payment/Bank", "TRM": "Payment/Bank",
+    "Security": "Identity/Role",
+    "SD": "FI", "PM": "P2P", "RE_FX": "FI",
+    # DELIBERATELY ABSENT: Basis_Security.
+    #
+    # Its first run mapped it to "Identity/Role" and immediately taught itself that
+    # IDOCS_OUTPUT_TO_R3, IDOC_INBOUND_ASYNCHRONOUS, BAPI_EXCHANGERATE_GETDETAIL and
+    # BAPI_TRANSACTION_ROLLBACK are identity management. They are integration, treasury and
+    # transaction control. Basis_Security is a broad TECHNICAL bucket and forcing it into
+    # one business process label is a category error — one that A5 then PERSISTS, which is
+    # its declared failure mode: a rule learned wrong once is wrong permanently and
+    # invisibly.
+    #
+    # Returning nothing is correct here. An unresolved call goes to the frontier for human
+    # review, which is exactly where a technical call with no business process belongs.
+    # Precision beats coverage when the engine remembers its mistakes.
+}
 MIN_VOL = 50  # only auto-learn FMs above this call volume (avoid noise)
 
 # Auto-resolver: keyword over {FM name + function group + app domain} -> process. The function group
@@ -37,10 +78,22 @@ FG_RULES = [
 
 
 def auto_resolve(fm, fg, app):
+    """Resolve one unknown call. AUTHORITATIVE FIRST, keywords as fallback.
+
+    Returns (process, why). `why` records WHICH rung answered, so a learned rule can be
+    audited later: a rule learned from SAP's own taxonomy is a different kind of fact from
+    one learned from a keyword, and collapsing them is how a guess becomes doctrine.
+    """
+    if resolve_domain is not None:
+        r = resolve_domain(fm)
+        if r.get("domain"):
+            proc = DOMAIN_TO_PROCESS.get(r["domain"])
+            if proc:
+                return proc, f"component={r['rung']} conf={r['confidence']} ({r['domain']})"
     hay = f"{fm} {fg or ''} {app or ''}".upper()
     for proc, kws in FG_RULES:
         if any(k in hay for k in kws):
-            return proc, f"func_group={fg or app or '?'}"
+            return proc, f"keyword func_group={fg or app or '?'}"
     return None, None
 
 

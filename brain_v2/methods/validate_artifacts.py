@@ -136,6 +136,22 @@ def main():
     lr = load("process_mining/learned_rules.json")
     case("A5", "learned rules persist", lr is not None,
          "learned_rules.json missing — the only algorithm that LEARNS has lost what it learned")
+    if lr:
+        rules = lr.get("rules", lr) if isinstance(lr, dict) else {}
+        # FLOOR: the authoritative signal took it from 8 rules to 25. Falling back toward
+        # the old count means the component rung stopped feeding it.
+        case("A5", "keeps what it learned", len(rules) >= 15,
+             f"{len(rules)} rules — it was 25 after the component signal was wired; the "
+             f"authoritative rung has stopped feeding it")
+        # INVARIANT: its declared failure mode is a rule learned WRONG that then persists
+        # forever. Basis_Security is a broad technical bucket; forcing it into one business
+        # process taught the engine that IDoc output and exchange rates are identity
+        # management. That mapping must never come back.
+        poisoned = [k for k, v in rules.items()
+                    if "Basis_Security" in json.dumps(v, ensure_ascii=False)]
+        case("A5", "no rule learned from a technical catch-all", not poisoned,
+             f"{len(poisoned)} rule(s) learned from Basis_Security: {poisoned[:4]} — that "
+             f"mapping taught the engine that IDoc output is identity management")
 
     # ---- A7 · concept drift ---------------------------------------------
     drift = load("brain_v2/drift_signals.json")

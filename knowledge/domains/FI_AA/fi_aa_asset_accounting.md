@@ -32,6 +32,14 @@ the system. One bounded probe settled it.
 
 **The floor-is-not-an-inventory rule (profile invariant I2) exists because of this case.**
 
+## The PM overlap — ANSWERED (s097)
+
+The "PM overlap" question below is closed. The **Mouv** satellite calls both sides:
+`Y_AM_CREATE_ASSET`, `Y_AM_ASSET_CHANGE`, `Z_AM_ASSET_DELETE`, `ZINV_CONFASSET_FIORI`
+(Asset Accounting) **and** `ZPM_MYEQUIPMENT`, `ZPM_READ_EQUI_DATA`, `Y_BAPI_COMPLETE_EQUI`
+(Plant Maintenance). Equipment and assets are linked **by an external application**, not
+by an SAP standard link — so asset custody is governed outside SAP. Claim #379.
+
 ## Open questions
 
 1. **Depreciation areas and the chart of depreciation** — not yet read. Determines whether this is

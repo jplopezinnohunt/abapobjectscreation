@@ -25,7 +25,22 @@ claims: [356]
 functions mean somebody deliberately switched on enhanced maintenance functionality — a project
 decision, not a default.
 
-## The hypothesis to test first
+## CONFIRMED (s097): Mouv is the front-end
+
+The hypothesis below is now **evidenced**. `tfdir_custom` resolves the satellite to 12
+function modules, and they straddle two domains:
+
+| PM side | FI-AA side |
+|---|---|
+| `ZPM_MYEQUIPMENT` · `ZPM_READ_EQUI_DATA` · `ZPM_ASSIGN_OWNER` · `Y_BAPI_COMPLETE_EQUI` · `Y_BAPI_GET_INVENT_NUMBER_LIST` | `Y_AM_CREATE_ASSET` · `Y_AM_ASSET_CHANGE` · `Z_AM_ASSET_DELETE` · `ZINV_CONFASSET_FIORI` · `ZAM_ADMIN_MDOC_RESET` |
+
+**That answers the open question this document carried** about whether equipment and
+assets are one population or two: they are linked **by this satellite, at the application
+layer** — not by an SAP standard link. Which also means equipment and assets are governed
+by an EXTERNAL application, placing both domains inside the 80%-externally-orchestrated
+operating model. Claim #379.
+
+## The original hypothesis (kept for the record)
 
 The integration map documents a satellite called **"Mouv"** — *asset/equipment management*, 12
 custom RFC function modules, classified low volume. PM is very probably its SAP back-end.
