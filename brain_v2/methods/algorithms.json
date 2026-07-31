@@ -272,12 +272,12 @@
    "state": "WORKS",
    "does": "enumerate the boundary (RFCDES / EDIDC / TBTCP / ICFSERVICE) and CORRELATE the configuration against observed traffic in the call stream. Configuration says what someone once set up; the call stream says what happens today; the GAP is the finding, in both directions.",
    "why_it_matters": "the boundary carries 1.33M executions and 37 documented flows, and the map is PROSE written by hand: it cannot detect a new destination appearing, cannot go stale visibly, and cannot be reproduced on a second installation (INSTANCE, not KIT)",
-   "improve": "1. fix the destination regex and remove the row cap so DEAD is a fact, not a sample. 2. resolve the middleware GUIDs from the middleware side — SAP cannot name them. 3. bind each live destination to the PROCESS FLOWS it serves, not only to domains.",
+   "improve": "fix the destination regex truncation. Then bind each live destination to the PROCESS FLOWS it serves, not only to domains.",
    "bound_in": [
     "process_mining/interface_boundary.py"
    ],
-   "first_run": "238 destinations configured -> 8 LIVE, 230 DEAD (configured, zero traffic: maintenance and attack surface nobody uses), 40 UNDECLARED (traffic with no RFCDES entry, including the MuleSoft logical-port GUIDs at 75,066 calls). 9 IDoc message types / 19,400 documents. 5,822 active HTTP services.",
-   "failure_mode": "TWO defects declared on its own first run, because an algorithm that hides its own weaknesses is worse than none: (1) the destination parse TRUNCATES names ('HQ-SAP-P0', cut GUIDs), so DEAD/UNDECLARED counts carry parse error; (2) the call-stream scan is capped at 400,000 rows of 15.6M, so it is a SAMPLE — a destination could be marked DEAD purely because its traffic fell outside the sample."
+   "first_run": "238 destinations configured -> 10 LIVE, 228 DEAD (configured, zero traffic: maintenance and attack surface nobody uses), 249 UNDECLARED (traffic with no RFCDES entry). 9 IDoc message types / 19,400 documents. 5,822 active HTTP services. FULL scan, no sampling.",
+   "failure_mode": "ONE defect remains: the destination parse TRUNCATES names ('HQ-SAP-P0', cut GUIDs), so DEAD/UNDECLARED counts still carry parse error. THE SAMPLING DEFECT IS FIXED (s097): it scanned 400,000 of 8.7M rows, and that was not merely imprecise — it was WRONG. The full scan moved LIVE 8 -> 10 (two destinations were reported DEAD purely because their traffic fell outside the sample) and UNDECLARED 40 -> 249 (the sample hid 209 undeclared callers). A sample presented as a census is how a model lies quietly."
   },
   "C1c_custom_fm_domain": {
    "operates_on": "repository",
@@ -335,14 +335,19 @@
    "origin": "OURS",
    "state": "STRONG",
    "does": "push the row reduction into SQL (GROUP BY), then resolve the expensive enrichment ONCE per distinct entity, and cache the aggregate against a watermark so a re-run with no new data costs nothing",
-   "why_it_matters": "MEASURED 548x less Python work: 15,605,644 audit rows collapse to 33,607 (month,object) pairs over 26,131 distinct objects. 430s -> 187s cold -> 30s warm. And speed is not an optimisation here: a slow algorithm gets skipped, and a skipped algorithm is documentation — the model stops learning without anyone deciding it should.",
+   "why_it_matters": "MEASURED 548x less Python work: 15,605,644 audit rows collapse to 33,607 (month,object) pairs over 26,131 distinct objects. 430s -> 187s cold -> 30s warm. And speed is not an optimisation here: a slow algorithm gets skipped, and a skipped algorithm is documentation — the model stops learning without anyone deciding it should. AND IT IS NOT ONLY SPEED: in interface_boundary the pattern made a full scan affordable, which removed a 400,000-row sample that had been producing WRONG verdicts — two destinations reported DEAD that are alive, and 209 undeclared callers hidden. A sample presented as a census is how a model lies quietly.",
    "bound_in": [
     "process_mining/detect_drift.py"
    ],
    "failure_mode": "the aggregate must be keyed on a WATERMARK that actually moves. Cached against something static, it serves stale results forever and looks fast while being wrong.",
    "constraint": "the Golden DB is read-only by contract, so the cache lives OUTSIDE it. Adding an index would have been the other obvious fix and is not permitted.",
    "shared_with_ecosystem": "ecosystem-coordinator/.knowledge/way-of-working/sql-aggregate-before-resolve.md",
-   "improve": "apply it to the other per-row enrichments: CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M), FMIOI (2.2M)"
+   "improve": "apply it to the other per-row enrichments: CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M), FMIOI (2.2M)",
+   "applied_to": [
+    "process_mining/detect_drift.py  430s -> 187s cold, 30s warm (548x)",
+    "process_mining/derive_satellites.py  126s -> 68s (734x: 8,764,296 rows -> 11,936 distinct caller strings)",
+    "process_mining/interface_boundary.py  removed a 400,000-row SAMPLE entirely — the full scan is now cheaper than the sample was, and it changed the ANSWER: LIVE 8->10, UNDECLARED 40->249"
+   ]
   }
  },
  "_portfolio": {

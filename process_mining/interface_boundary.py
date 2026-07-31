@@ -100,19 +100,35 @@ def main():
     # The audit log records the DESTINATION and HOST of each RFC call in PARAMX.
     seen_dest, seen_host = defaultdict(int), defaultdict(int)
     fm_by_dest = defaultdict(lambda: defaultdict(int))
-    for paramx, fm in _rows(
-            con, "SELECT PARAMX, PARAM3 FROM rsau_audit_history "
-                 "WHERE PARAMX IS NOT NULL AND PARAMX <> '' LIMIT 400000"):
+
+    # PATTERN D6 — aggregate in SQL before resolving in Python, and it fixes a declared
+    # defect at the same time. The first version scanned a LIMIT of 400,000 rows out of
+    # 8.7M, so every DEAD verdict carried sampling error: a destination could be reported
+    # dead purely because its traffic fell outside the sample.
+    #
+    # 8,764,296 rows carry a PARAMX and only 11,936 are DISTINCT (734x). Grouping first
+    # makes the FULL scan cheaper than the sample was, so the cap is gone and DEAD is now
+    # a fact rather than an artefact.
+    rows = con.execute(
+        "SELECT PARAMX, PARAM3, COUNT(*) AS n FROM rsau_audit_history "
+        "WHERE PARAMX IS NOT NULL AND PARAMX <> '' GROUP BY PARAMX, PARAM3").fetchall()
+    parsed = {}
+    for paramx, fm, n in rows:
         px = paramx or ""
-        d = re.search(r"dest=\s*([^\s,;]+)", px)
-        h = re.search(r"host=\s*([^\s,;]+)", px)
-        if d:
-            dd = d.group(1).strip()
-            seen_dest[dd] += 1
+        if px not in parsed:
+            d = re.search(r"dest=\s*([^\s,;]+)", px)
+            h = re.search(r"host=\s*([^\s,;]+)", px)
+            parsed[px] = (d.group(1).strip() if d else None,
+                          h.group(1).strip() if h else None)
+        dd, hh = parsed[px]
+        if dd:
+            seen_dest[dd] += n
             if fm:
-                fm_by_dest[dd][fm.strip()] += 1
-        if h:
-            seen_host[h.group(1).strip()] += 1
+                fm_by_dest[dd][fm.strip()] += n
+        if hh:
+            seen_host[hh] += n
+    print(f"  FULL scan (no sampling): {len(rows):,} aggregated rows, "
+          f"{len(parsed):,} distinct caller strings")
 
     live, dead, undeclared = [], [], []
     for dest, meta in destinations.items():

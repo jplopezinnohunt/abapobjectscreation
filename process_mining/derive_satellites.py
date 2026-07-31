@@ -67,31 +67,45 @@ def signature(fms):
 def main():
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
 
-    # ---- observe: who calls what, from where -----------------------------
+    # ---- observe: who calls what, from where ----------------------------
+    # PATTERN D6 — aggregate in SQL before resolving in Python.
+    # 8,764,296 audit rows carry a PARAMX, but only 11,936 DISTINCT values: a 734x ratio.
+    # Parsing per row ran the regex 8.7 million times to produce 11,936 answers. The
+    # GROUP BY pushes the reduction to the database and the parse runs once per distinct
+    # caller string.
+    # See ecosystem-coordinator/.knowledge/way-of-working/sql-aggregate-before-resolve.md
     by_caller = defaultdict(lambda: {"calls": 0, "fms": defaultdict(int),
                                      "users": set(), "hosts": set(), "dests": set()})
     rows = con.execute(
-        "SELECT PARAMX, PARAM3, SLGUSER FROM rsau_audit_history "
-        "WHERE PARAMX IS NOT NULL AND PARAMX <> ''").fetchall()
-    for paramx, fm, user in rows:
+        "SELECT PARAMX, PARAM3, SLGUSER, COUNT(*) AS n "
+        "FROM rsau_audit_history "
+        "WHERE PARAMX IS NOT NULL AND PARAMX <> '' "
+        "GROUP BY PARAMX, PARAM3, SLGUSER").fetchall()
+
+    parsed = {}                      # PARAMX -> (dest, host); parse each string ONCE
+    for paramx, fm, user, n in rows:
         px = paramx or ""
-        d = re.search(r"dest=\s*([^\s,;]+)", px)
-        h = re.search(r"host=\s*([^\s,;]+)", px)
-        dest = d.group(1).strip() if d else None
-        host = h.group(1).strip() if h else None
+        if px not in parsed:
+            d = re.search(r"dest=\s*([^\s,;]+)", px)
+            h = re.search(r"host=\s*([^\s,;]+)", px)
+            parsed[px] = (d.group(1).strip() if d else None,
+                          h.group(1).strip() if h else None)
+        dest, host = parsed[px]
         key = dest or host or (user or "").strip()
         if not key or INTERNAL.match(key):
             continue
         e = by_caller[key]
-        e["calls"] += 1
+        e["calls"] += n
         if fm:
-            e["fms"][fm.strip()] += 1
+            e["fms"][fm.strip()] += n
         if user:
             e["users"].add(user.strip())
         if host:
             e["hosts"].add(host)
         if dest:
             e["dests"].add(dest)
+    print(f"  aggregated to {len(rows):,} rows; parsed {len(parsed):,} distinct caller strings")
+
     con.close()
 
     # ---- enrich with F1's configuration ----------------------------------
