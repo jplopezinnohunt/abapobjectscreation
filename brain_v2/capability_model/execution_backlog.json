@@ -466,9 +466,10 @@
    "domain": "PBC",
    "priority": 1,
    "created_session": 97,
-   "status": "OPEN",
+   "status": "STEP1 s097 — the decisions are LOCATED and verified in P01",
    "task": "Knowing WHEN the PBC engine writes is not knowing WHAT it decides. HUNCALC0 turns HR position and employee data into FM earmarked-funds commitments (FMRESERV) — the rules of that conversion are the AS-DESIGNED half of the domain and we hold none of it. Read the engine: what drives the amount, which period it commits to, how a position change re-drives an existing reservation, and what ZPBC_PERIOD_CLS_EXEC does at close. This is the A_PROCESS cell, and it is the largest write path in the installation.",
-   "method": "extract HUNCALC0 / RHRFPM_ENGINE_* / ZPBC_PERIOD_CLS_EXEC source from D01 via ADT; trace against FMRESERV rows for one position across two months"
+   "method": "extract HUNCALC0 / RHRFPM_ENGINE_* / ZPBC_PERIOD_CLS_EXEC source from D01 via ADT; trace against FMRESERV rows for one position across two months",
+   "result": "Package ZPBC: 77 objects in production. The engine is OVERRIDDEN by BAdI implementations, not extended. Six decision classes verified present in P01, led by ZCL_IM__UNESCO_ENCUMB (the encumbrance calculation) and ZCL_IM_HRFPM_CREATE_DOCS (creates the FMRESERV documents). Next: read those sources from D01 via ADT."
   },
   {
    "id": "AN-PBC-OPERATOR-CONCENTRATION",
@@ -521,6 +522,15 @@
    "status": "OPEN",
    "task": "7,202 batch-input sessions (12%) sit in ERROR state and 413 more in F, over a 21-year window. Nobody is watching that rate. Characterise it: which programs fail, since when, and whether the failures cluster on the RFC-generated sessions (95% are created by SAPMSSY1, top creator BRIDGE-RFC) or on the human ones. A failing write channel is a silent data gap.",
    "method": "group apqi by PROGID, CREATOR, QSTATE and CREDATE year"
+  },
+  {
+   "id": "AN-ZPBC-D01-ONLY",
+   "domain": "PBC",
+   "priority": 2,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "37 objects of package ZPBC exist in D01 and NOT in P01, including SIXTEEN transactions (ZPBC_CIPE_ANALYSIS, ZPBC_COMPLETION, ZPBC_PERIOD_BLOCK, ZPBC_SET_CHKAC and others) plus 5 tables and 3 BAdI implementations. Either they are unreleased development, or they were deliberately not transported, or they are abandoned. Each answer means something different for the domain: unreleased work is a pending change, abandoned work is debt, and deliberately-dev-only tooling is a support pattern. Determine which by checking the transport history (E070/E071) for those objects.",
+   "method": "compare TADIR ZPBC D01 vs P01, then read E070/E071 for the 37"
   }
  ],
  "research_tasks_followups": [
