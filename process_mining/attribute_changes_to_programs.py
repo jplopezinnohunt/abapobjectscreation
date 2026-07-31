@@ -169,11 +169,25 @@ def _profile(con, _derived=False):
     # BATCH evidence. A job fires a program; the program writes. The user's concrete case:
     # Coupa drops a file in a folder, a scheduled job processes it, the program posts. Any
     # classification that stops at "a program wrote it" loses the three links outside SAP.
+    #
+    # This reads the GOLDEN directly even on the fast path. The first version returned an
+    # empty map whenever the pre-aggregate was used, so BATCH_JOB evidence vanished — and
+    # "no job channel" would have read as a fact about the tenant rather than as a fact
+    # about which connection happened to be open. `tbtcp` is small; there is no reason to
+    # trade the channel away for it. A faster path that silently answers a different
+    # question is the failure this whole session has been chasing.
     jobs_of_prog = defaultdict(lambda: defaultdict(int))   # program -> job -> runs
-    for prog, job, n in ([] if _derived else con.execute(
-            "SELECT p.PROGNAME, p.JOBNAME, COUNT(*) FROM tbtcp p "
-            "WHERE p.PROGNAME <> '' GROUP BY 1,2")):
-        jobs_of_prog[prog][job] += n
+    jcon = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True) if _derived else con
+    try:
+        for prog, job, n in jcon.execute(
+                "SELECT p.PROGNAME, p.JOBNAME, COUNT(*) FROM tbtcp p "
+                "WHERE p.PROGNAME <> '' GROUP BY 1,2"):
+            jobs_of_prog[prog][job] += n
+    except sqlite3.Error as e:
+        print(f"  [A8] batch evidence unavailable: {e}")
+    finally:
+        if _derived:
+            jcon.close()
 
     return (changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
             jobs_of_prog, all_slots)
@@ -307,12 +321,12 @@ def _interface_functions(con, user, slots, limit=6):
     """For an INTERFACE channel, name the function modules called in the same slots."""
     if not slots:
         return []
-    days = sorted({d for d, _ in slots})[:40]
-    qs = ",".join("?" * len(days))
+    # keyed lookup against the shared aggregate. This used to hit the golden with a
+    # SAL_DATE IN (...) over 15.6M unindexed rows, once per interface class — ten
+    # "targeted" lookups that were ten more full scans. Materialised is not lazy.
     rows = con.execute(
-        f"SELECT PARAM3, COUNT(*) n FROM rsau_audit_history "
-        f"WHERE SLGUSER = ? AND SAL_DATE IN ({qs}) AND PARAM3 <> '' "
-        f"GROUP BY 1 ORDER BY n DESC LIMIT 40", [user] + days).fetchall()
+        "SELECT fm, n FROM calls WHERE user = ? ORDER BY n DESC LIMIT 40",
+        (user,)).fetchall()
     # A read is not a writer. RFC_PING, RFC_READ_TABLE and the connection probes appeared at
     # the top of the first run because the query returned everything the account called,
     # not what could have written. Names shorter than 4 characters are PARAM3 truncation,
@@ -336,7 +350,9 @@ def _interface_functions(con, user, slots, limit=6):
 
 
 def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
-              jobs_of_prog, all_slots, classes=None):
+              jobs_of_prog, all_slots, classes=None, lookup_paths=None, lookup_origins=None):
+    lookup_paths = lookup_paths or (lambda _u: [])
+    lookup_origins = lookup_origins or (lambda _u: [])
     horizon = len(all_slots) or 1
     wanted = classes or [c for c, _ in
                          sorted(volume.items(), key=lambda x: -x[1])[:TOP_CLASSES]]
@@ -391,8 +407,8 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
         ev = {
             "rfc_share": (len(cs & rfc_slots.get(top_user, set())) / len(cs)) if cs else 0.0,
             "file_share": (len(cs & file_slots.get(top_user, set())) / len(cs)) if cs else 0.0,
-            # filled in after ranking, by a targeted lookup for this one account
-            "paths": [], "origins": [],
+            "paths": lookup_paths(top_user) if top_user else [],
+            "origins": lookup_origins(top_user) if top_user else [],
             "jobs": sorted({j for c in cands[:4]
                             for j in (jobs_of_prog.get(c["program"]) or {})})[:6],
         }
@@ -459,8 +475,23 @@ def main():
           f"{len(all_slots):,} hour-slots in the shared window")
 
     declared_map = _declared()
+    def _paths(u):
+        return [r[0] for r in con.execute(
+            "SELECT path FROM paths WHERE user = ? ORDER BY n DESC LIMIT 6", (u,))]             if derived else []
+
+    def _origins(u):
+        out = []
+        for (px,) in con.execute(
+                "SELECT origin FROM origins WHERE user = ? ORDER BY n DESC LIMIT 20", (u,))                 if derived else []:
+            d, h, _u = parse_caller(px)
+            tag = d if d and d != "NONE" else h
+            if tag and tag not in out:
+                out.append(tag)
+        return out[:4]
+
     result = attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots,
                        file_slots, jobs_of_prog, all_slots,
+                       lookup_paths=_paths, lookup_origins=_origins,
                        classes=sys.argv[1:] or None)
 
     # for every INTERFACE class, name the functions — this is the hand-off to F1/F2
@@ -470,7 +501,7 @@ def main():
             continue
         top = r["candidate_writers"][0]
         slots = (changes[cls].get(top["user"]) or set()) & all_slots
-        r["interface_functions"] = _interface_functions(gold, top["user"], slots)
+        r["interface_functions"] = _interface_functions(con, top["user"], slots)
     if derived:
         gold.close()
     con.close()

@@ -485,20 +485,32 @@
    "domain": "Brain_Architecture",
    "priority": 1,
    "created_session": 97,
-   "status": "OPEN",
+   "status": "DONE s097 — pre-aggregate derived_audit_slots.db",
    "task": "A8 became SLOW when the channel evidence was added, and slow is a correctness problem here, not a comfort one: three heavy passes were added over the audit log — two LIKE scans for file paths and a PARAMX GROUP BY over 8.7M rows — none of which can use an index, and the golden database is read-only by contract so an index cannot be added. The run went from roughly 3 minutes to over 15. The D6 lesson applies directly: A SLOW ALGORITHM GETS SKIPPED, AND A SKIPPED ALGORITHM IS DOCUMENTATION — and A8 now sits inside the analysis cycle, so it slows every cycle for every domain.",
    "method": "apply pattern D6 properly: ONE pass over rsau_audit_history that emits every signal at once (program, RFC flag, file flag, caller) grouped by (user, day, hour), instead of four separate scans. Then cache the aggregate against MAX(SAL_DATE) exactly as detect_drift does, so a re-run with no new audit data costs nothing.",
-   "why_it_matters": "A8 runs in the cycle; its cost is paid on every domain, every time."
+   "why_it_matters": "A8 runs in the cycle; its cost is paid on every domain, every time.",
+   "result": ">1h -> 3m29s. 15.6M audit rows collapsed to 987K indexed slots and 12M change rows to 507K groups, in a DERIVED database — the golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place."
   },
   {
    "id": "AN-A8-PERFORMANCE",
    "domain": "Infrastructure",
    "priority": 2,
    "created_session": 97,
-   "status": "OPEN",
+   "status": "DONE s097 — pre-aggregate derived_audit_slots.db",
    "task": "A8 went from ~3 minutes to over 10 when the FILE and ORIGIN evidence was added. The origin query parses PARAMX across 8.7M rows and the file query scans PARAM3 with four LIKE patterns, neither of which is cached. By our own D6 principle this matters more than it looks: a slow algorithm gets skipped, and a skipped algorithm is documentation — which is exactly the state A8 was built to rescue other algorithms from. Apply the same fix D6 got: cache the aggregate against the newest SAL_DATE watermark, so a re-run with no new audit data costs nothing.",
    "method": "watermark cache alongside the tool, as in detect_drift.build_profile()",
-   "measured": "~3 min -> >10 min after the channel-chain extension"
+   "measured": "~3 min -> >10 min after the channel-chain extension",
+   "result": ">1h -> 3m29s. 15.6M audit rows collapsed to 987K indexed slots and 12M change rows to 507K groups, in a DERIVED database — the golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place."
+  },
+  {
+   "id": "AN-WEBSERVICE-VERIFY",
+   "domain": "Integration",
+   "priority": 2,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "Four declared WEBSERVICE integrations (BOC_INVOICE_WF, CSI_AWS_EC2, CSI_AWS_S3, UNJSPF_INTERFACE1) cannot be verified from the audit log: a web service does not execute as an ABAP program, so it never appears in SLGREPNA. They are UNVERIFIED, not unused — and calling them unused would repeat the exact error that produced six wrong module answers earlier in this session. Verify them against ICF/SRT: icfservice is already extracted; SRT_UTIL / SRTUTIL logs are not.",
+   "method": "cross the declared web services against icfservice, then request the SRT monitor extract",
+   "why_it_matters": "absence in the wrong log is not absence in the system"
   }
  ],
  "research_tasks_followups": [
