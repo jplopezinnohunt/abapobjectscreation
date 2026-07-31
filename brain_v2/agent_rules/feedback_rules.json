@@ -200,7 +200,7 @@
  },
  {
   "id": "feedback_data_p01_code_d01",
-  "rule": "ALL reads = P01 (prod). Only exception: code deployment writes = D01 (dev).",
+  "rule": "ALL reads = P01 (prod). Only exception: code deployment writes = D01 (dev). || REFINED s097: 'code from D01' applies to DEVELOPING. To EVALUATE what is true, read the code from P01 — see feedback_code_d01_to_develop_p01_to_evaluate.",
   "why": "D01 may have untransported config, draft trees, or test entries that don't exist in P01. Only P01 reflects what is real and in production. Session #039 error: ran DMEE tree probe against D01 because P01 was unreachable — user correctly rejected the results because D01 config is not trustworthy for analysis.",
   "how_to_apply": "If P01 is unreachable, WAIT. Do not fall back to D01 for reads. The only valid D01 operation is writing code. When P01 is down, work on offline tasks (skill docs, analysis of already-extracted data, scripts for later execution).",
   "severity": "MEDIUM",
@@ -220,7 +220,8 @@
     "T2R",
     "P2P"
    ]
-  }
+  },
+  "refined_by": "feedback_code_d01_to_develop_p01_to_evaluate"
  },
  {
   "id": "feedback_data_scope_2024_2026",
@@ -3791,5 +3792,15 @@
   "how_to_apply": "1. take the names you were given and look them up, one by one. 2. only then widen with a pattern, and report the two results separately. 3. never let a prefix stand for 'custom', 'used' or 'ours' — SAP-delivered objects that are activated are part of the AS-RUN system. 4. a negative result from a pattern is not evidence of absence.",
   "evidence": "claim #396 supersedes #395; wsheader AUTHOR<>'SAP' = 8 SuccessFactors services; icfservice Z%/Y% = 304 — both invisible under the first test",
   "domain": "Integration"
+ },
+ {
+  "id": "feedback_code_d01_to_develop_p01_to_evaluate",
+  "severity": "CRITICAL",
+  "created_session": 97,
+  "rule": "D01 CODE IS FOR DEVELOPING. WHEN YOU EVALUATE, READ THE CODE FROM P01 — because the code may never have reached P01. Any statement about how the system BEHAVES must be anchored in production source. D01 answers 'what have we built'; only P01 answers 'what is valid'.",
+  "why": "s097, measured. Package ZPBC holds 114 objects in D01 and 77 in P01 — 37 never reached production, INCLUDING SIXTEEN TRANSACTIONS and 3 BAdI implementations. A conclusion drawn from the D01 inventory would have overstated the production footprint by 32%, and would have described transactions no user can run. The user stated it exactly: 'Codigo de D01 es cuando desarrollamos. Cuando evaluamos es de P01, ya que puede ser que el codigo nunca haya llegado a P01.'",
+  "how_to_apply": "1. P01 source IS readable, read-only, via RPY_PROGRAM_READ — no ADT and no write path involved. Reading what is active is how you CHECK a claim instead of assuming it. 2. Classes need the pool: <CLASSNAME> padded to 30 with '=' then 'CP', whose include list carries one CM<xx> include per method. The pool ALONE is ~25 lines of skeleton — reporting that as the class makes a 1,296-line implementation look empty. 3. Keep the two corpora SEPARATE (extracted_sap_p01/ vs the D01 corpus). Merging them destroys the only distinction that matters: deployed versus merely existing. 4. When they differ, the DIFFERENCE is a finding — unreleased work, abandoned work, or dev-only tooling, and each means something different.",
+  "evidence": "Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py; ZPBC D01 114 vs P01 77; ZCL_IM__UNESCO_ENCUMB 1,296 lines read from production; claims #397, #398",
+  "domain": "Brain_Architecture"
  }
 ]

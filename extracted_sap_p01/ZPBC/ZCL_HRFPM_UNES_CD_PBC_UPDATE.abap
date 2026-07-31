@@ -1,0 +1,148 @@
+* ==== CLASS POOL ZCL_HRFPM_UNES_CD_PBC_UPDATE ====
+CLASS-POOL .
+*"* class pool for class ZCL_HRFPM_UNES_CD_PBC_UPDATE
+
+*"* local type definitions
+INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CCDEF.
+
+*"* class ZCL_HRFPM_UNES_CD_PBC_UPDATE definition
+*"* public declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CU.
+*"* protected declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CO.
+*"* private declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CI.
+ENDCLASS. "ZCL_HRFPM_UNES_CD_PBC_UPDATE definition
+
+*"* macro definitions
+INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CCMAC.
+*"* local class implementation
+INCLUDE ZCL_HRFPM_UNES_CD_PBC_UPDATE==CCIMP.
+
+CLASS ZCL_HRFPM_UNES_CD_PBC_UPDATE IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "ZCL_HRFPM_UNES_CD_PBC_UPDATE implementation
+
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CI ----
+PRIVATE SECTION.
+*"* private components of class ZCL_HRFPM_UNES_CD_PBC_UPDATE
+*"* do not include other source files here!!!
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CM001 ----
+METHOD UPDATE_IN_FM_REQUIRED.
+* In order to enforce that certain postings must not occur
+* beyond some configuration has to e added allowing ofr that
+* (should go ito the standard some times)
+  DATA LS_ACC_VALUES TYPE HRFPM_FPM_DOC_ACC_VALUE.
+
+  "super has to be called first: only in this way
+  "the standard blocking logic for clsoed documents/decoupled posting etc.
+  "is still implemented
+  RP_UPDATE_REQUIRED = SUPER->UPDATE_IN_FM_REQUIRED( IS_FM_DOC_POS ).
+
+  IF NOT RP_UPDATE_REQUIRED IS INITIAL.
+
+    IF TRANSF_BLOCKING_CNTRL->CHECK_BLOCKING_ACTIVE( ) = ABAP_TRUE.
+
+      RP_UPDATE_REQUIRED = SPACE.
+      TRY .
+          MOVE-CORRESPONDING  IS_FM_DOC_POS TO LS_ACC_VALUES.
+
+          RAISE EXCEPTION TYPE CX_HRFPM_ACC_POSTING
+            EXPORTING
+              MODULE_NAME = C_MODULE_NAME
+              ABDAT       = IS_FM_DOC_POS-DUE_DATE
+              RESP_DEP    = CL_HRFPM_CONST=>RESP_DEP_RW
+              RUNID       = RUNID
+              ACC_VALUES  = LS_ACC_VALUES
+              ACC_ASS     = IS_FM_DOC_POS-ACC_ASS
+              ACC_DOC_POS = IS_FM_DOC_POS-KEY_POS.
+
+        CATCH CX_HRFPM_ACC_POSTING INTO EXC_ACC.
+          TRANSF_BLOCKING_CNTRL->WRITE_BLOCKING_MESSAGE( ).
+          EXC_ACC->SET_SY_MESSAGE( ).
+          RAISE EXCEPTION EXC_ACC.
+          "we do explictely want that the objects get an error status
+          "(since the error date (ABDAT) was specified this should
+          "actually not block payroll )
+          "cl_hrfpm_appl_log=>write_exception_log( exc_acc ).
+      ENDTRY.
+    ENDIF.
+  ENDIF.
+
+ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CM002 ----
+METHOD DET_REQ_AMOUNT_OF_FM_POS.
+
+  DATA LT_FM_POS_DELTA TYPE CL_HRFPM_CD_UPDATE_LOGIC=>TT_FM_POS_DELTA.
+  DATA LRS_FM_POS_DELTA TYPE REF TO CL_HRFPM_CD_UPDATE_LOGIC=>TS_FM_POS_DELTA.
+
+  CALCULATE_DELTA_AMNT(
+    IMPORTING
+      ET_FM_POS_DELTA = LT_FM_POS_DELTA   ).
+
+  READ TABLE LT_FM_POS_DELTA REFERENCE INTO LRS_FM_POS_DELTA
+    WITH KEY KEY_POS = IS_FM_DOC_POS.
+
+  RV_DELTA_AMOUNT = LRS_FM_POS_DELTA->DELTA_AMNT +
+         LRS_FM_POS_DELTA->DELTA_AMNT_NY_COMMITED.
+
+ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CM003 ----
+METHOD INIT.
+  FIELD-SYMBOLS <FM_POS> LIKE LINE OF FM-DOC_POS.
+
+  SUPER->INIT( ).
+
+  READ TABLE FM-DOC_POS ASSIGNING <FM_POS> INDEX 1.
+
+  TRANSF_BLOCKING_CNTRL =
+   ZCL_HRFPM_UNES_TRANSFER_BLOCK=>S_GET_INSTANCE(
+     IS_FM_DOC_POS = <FM_POS>-KEY_POS
+     IR_PBC_UPDATE = ME ).
+
+ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CM004 ----
+METHOD GET_FM_DOC_POS_DATA.
+  READ TABLE FM-DOC_POS INTO RS_FM_DOC_POS
+     WITH KEY KEY_POS = IS_FM_DOC_POS.
+ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CO ----
+PROTECTED SECTION.
+*"* protected components of class ZCL_HRFPM_UNES_CD_PBC_UPDATE
+*"* do not include other source files here!!!
+
+  DATA TRANSF_BLOCKING_CNTRL TYPE REF TO ZCL_HRFPM_UNES_TRANSFER_BLOCK .
+
+  METHODS UPDATE_IN_FM_REQUIRED
+    REDEFINITION .
+
+* ---- ZCL_HRFPM_UNES_CD_PBC_UPDATE==CU ----
+CLASS ZCL_HRFPM_UNES_CD_PBC_UPDATE DEFINITION
+  PUBLIC
+  INHERITING FROM CL_HRFPM_CD_PBC_UPDATE
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+*"* public components of class ZCL_HRFPM_UNES_CD_PBC_UPDATE
+*"* do not include other source files here!!!
+
+  METHODS DET_REQ_AMOUNT_OF_FM_POS
+    IMPORTING
+      !IS_FM_DOC_POS TYPE HRFPM_FM_DOC_POS-KEY_POS
+    RETURNING
+      VALUE(RV_DELTA_AMOUNT) TYPE HRFPM_FM_POS-DELTA_AMOUNT .
+  METHODS GET_FM_DOC_POS_DATA
+    IMPORTING
+      !IS_FM_DOC_POS TYPE HRFPM_FM_POS-KEY_POS
+    RETURNING
+      VALUE(RS_FM_DOC_POS) TYPE HRFPM_FM_DOC_POS .
+
+  METHODS INIT
+    REDEFINITION .

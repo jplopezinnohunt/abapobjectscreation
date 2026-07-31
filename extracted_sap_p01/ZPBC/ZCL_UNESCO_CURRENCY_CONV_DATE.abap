@@ -1,0 +1,79 @@
+* ==== CLASS POOL ZCL_UNESCO_CURRENCY_CONV_DATE ====
+CLASS-POOL .
+*"* class pool for class ZCL_UNESCO_CURRENCY_CONV_DATE
+
+*"* local type definitions
+INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CCDEF.
+
+*"* class ZCL_UNESCO_CURRENCY_CONV_DATE definition
+*"* public declarations
+  INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CU.
+*"* protected declarations
+  INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CO.
+*"* private declarations
+  INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CI.
+ENDCLASS. "ZCL_UNESCO_CURRENCY_CONV_DATE definition
+
+*"* macro definitions
+INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CCMAC.
+*"* local class implementation
+INCLUDE ZCL_UNESCO_CURRENCY_CONV_DATE=CCIMP.
+
+CLASS ZCL_UNESCO_CURRENCY_CONV_DATE IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "ZCL_UNESCO_CURRENCY_CONV_DATE implementation
+
+
+* ---- ZCL_UNESCO_CURRENCY_CONV_DATE=CI ----
+PRIVATE SECTION.
+*"* private components of class ZCL_UNESCO_CURRENCY_CONV_DATE
+*"* do not include other source files here!!!
+
+* ---- ZCL_UNESCO_CURRENCY_CONV_DATE=CM001 ----
+METHOD IF_EX_HRFPM_CURRENCY_CONV_DATE~DETERMINE_CONVERSION_DATE.
+  DATA LS_CURR_CONV LIKE LINE OF ET_CURRENCY_CONVERSION_DATE.
+  DATA LO_EXC TYPE REF TO CX_HRFPM_CD_CUSTOMIZING.
+  DATA LV_MSG_DUMMY TYPE STRING.
+  "(financing period should be entirely within one month due to
+  "the configuration of the commitment periods at UNESCO)
+
+  "dates are in format YYYYMMDD
+  IF IS_VALIDITY_PERIOD-BEGDA+4(2) = IS_VALIDITY_PERIOD-ENDDA+4(2) .
+    LS_CURR_CONV-PERIOD          = IS_VALIDITY_PERIOD.
+    LS_CURR_CONV-CONVERSION_DATE = IS_VALIDITY_PERIOD-BEGDA.
+    "15'th of same month
+    LS_CURR_CONV-CONVERSION_DATE+6(2) = 15.
+    INSERT LS_CURR_CONV INTO TABLE ET_CURRENCY_CONVERSION_DATE.
+  ELSE.
+    "(if not met: splitting necessary....)
+    CREATE OBJECT LO_EXC
+      EXPORTING       "well, not the best...
+        TEXTID   = CX_HRFPM_CD_CUSTOMIZING=>NO_CURRENCY_FOUND
+*       previous =
+        ABDAT    = IS_VALIDITY_PERIOD-BEGDA.
+    MESSAGE A899(HRFPM)
+       WITH 'Error at determination of xrate'
+         INTO LV_MSG_DUMMY.
+    LO_EXC->SET_SY_MESSAGE( ).
+    RAISE EXCEPTION LO_EXC.
+  ENDIF.
+ENDMETHOD.
+
+* ---- ZCL_UNESCO_CURRENCY_CONV_DATE=CO ----
+PROTECTED SECTION.
+*"* protected components of class ZCL_UNESCO_CURRENCY_CONV_DATE
+*"* do not include other source files here!!!
+
+* ---- ZCL_UNESCO_CURRENCY_CONV_DATE=CU ----
+CLASS ZCL_UNESCO_CURRENCY_CONV_DATE DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+*"* public components of class ZCL_UNESCO_CURRENCY_CONV_DATE
+*"* do not include other source files here!!!
+
+  INTERFACES IF_BADI_INTERFACE .
+  INTERFACES IF_EX_HRFPM_CURRENCY_CONV_DATE .

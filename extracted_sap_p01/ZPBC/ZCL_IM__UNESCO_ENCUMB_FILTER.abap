@@ -1,0 +1,25 @@
+* ==== CLASS POOL ZCL_IM__UNESCO_ENCUMB_FILTER ====
+CLASS-POOL .
+*"* class pool for class ZCL_IM__UNESCO_ENCUMB_FILTER
+
+*"* local type definitions
+INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CCDEF.
+
+*"* class ZCL_IM__UNESCO_ENCUMB_FILTER definition
+*"* public declarations
+  INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CU.
+*"* protected declarations
+  INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CO.
+*"* private declarations
+  INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CI.
+ENDCLASS. "ZCL_IM__UNESCO_ENCUMB_FILTER definition
+
+*"* macro definitions
+INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CCMAC.
+*"* local class implementation
+INCLUDE ZCL_IM__UNESCO_ENCUMB_FILTER==CCIMP.
+
+CLASS ZCL_IM__UNESCO_ENCUMB_FILTER IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "ZCL_IM__UNESCO_ENCUMB_FILTER implementation

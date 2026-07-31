@@ -1,0 +1,114 @@
+* ==== CLASS POOL ZCL_IM_HRFPM_CURRENCY_UNES ====
+CLASS-POOL .
+*"* class pool for class ZCL_IM_HRFPM_CURRENCY_UNES
+
+*"* local type definitions
+INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CCDEF.
+
+*"* class ZCL_IM_HRFPM_CURRENCY_UNES definition
+*"* public declarations
+  INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CU.
+*"* protected declarations
+  INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CO.
+*"* private declarations
+  INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CI.
+ENDCLASS. "ZCL_IM_HRFPM_CURRENCY_UNES definition
+
+*"* macro definitions
+INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CCMAC.
+*"* local class implementation
+INCLUDE ZCL_IM_HRFPM_CURRENCY_UNES====CCIMP.
+
+CLASS ZCL_IM_HRFPM_CURRENCY_UNES IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "ZCL_IM_HRFPM_CURRENCY_UNES implementation
+
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CI ----
+PRIVATE SECTION.
+*"* private components of class ZCL_IM_HRFPM_CURRENCY_UNES
+*"* do not include other source files here!!!
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CM001 ----
+METHOD IF_EX_HRFPM_CURRENCY~GET_CURRENCY.
+
+  DATA LX_CD TYPE REF TO CX_HRFPM_CD_CUSTOMIZING.
+  DATA LV_MSG TYPE STRING.
+
+  IF IP_BEGDA GE GET_ACTIVATION_DATE( IP_COMPANY_CODE ) .
+    MO_STD_HANDLING_CCD->GET_CURRENCY(
+     EXPORTING
+       IP_BEGDA        = IP_BEGDA
+       IP_ENDDA        = IP_ENDDA
+       IP_COMPANY_CODE = IP_COMPANY_CODE
+     IMPORTING
+       ET_CURCY        = ET_CURCY ).
+  ELSEIF IP_ENDDA LT GET_ACTIVATION_DATE( IP_COMPANY_CODE ) .
+    MO_STD_HANDLING->GET_CURRENCY(
+     EXPORTING
+       IP_BEGDA        = IP_BEGDA
+       IP_ENDDA        = IP_ENDDA
+       IP_COMPANY_CODE = IP_COMPANY_CODE
+     IMPORTING
+       ET_CURCY        = ET_CURCY ).
+  ELSE .
+    "should do a provide, but for the time beeing do not allow
+    "it has to be ensured that the activation date is set in a way that
+    "does not lead to such problems (e.g. when setting the date
+    "to the start of a new biennium)
+    CREATE OBJECT LX_CD
+      EXPORTING
+        TEXTID   = CX_HRFPM_CD_CUSTOMIZING=>NO_CURRENCY_FOUND
+*       previous = previous
+        ABDAT    = IP_BEGDA
+        RESP_DEP = CL_HRFPM_CONST=>RESP_DEP_AD.
+
+    MESSAGE E046(HRFPM) INTO LV_MSG.
+*   No currency found for document creation
+    LX_CD->SET_SY_MESSAGE( ).
+    RAISE EXCEPTION LX_CD.
+  ENDIF.
+ENDMETHOD.
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CM002 ----
+METHOD CONSTRUCTOR.
+
+  CREATE OBJECT MO_STD_HANDLING TYPE CL_IM_HRFPM_CURRENCY_STD.
+  CREATE OBJECT MO_STD_HANDLING_CCD TYPE CL_IM_HRFPM_CURRENCY_CCD.
+
+ENDMETHOD.
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CM003 ----
+METHOD GET_ACTIVATION_DATE.
+  "next biennium
+  RV_DATE = '20140101'.
+ENDMETHOD.
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CO ----
+PROTECTED SECTION.
+*"* protected components of class ZCL_IM_HRFPM_CURRENCY_UNES
+*"* do not include other source files here!!!
+
+  CLASS-DATA MO_STD_HANDLING_CCD TYPE REF TO IF_EX_HRFPM_CURRENCY .
+  CLASS-DATA MO_STD_HANDLING TYPE REF TO IF_EX_HRFPM_CURRENCY .
+
+  CLASS-METHODS GET_ACTIVATION_DATE
+    IMPORTING
+      !IV_CCODE TYPE BUKRS
+    RETURNING
+      VALUE(RV_DATE) TYPE DATUM .
+
+* ---- ZCL_IM_HRFPM_CURRENCY_UNES====CU ----
+CLASS ZCL_IM_HRFPM_CURRENCY_UNES DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+*"* public components of class ZCL_IM_HRFPM_CURRENCY_UNES
+*"* do not include other source files here!!!
+
+  INTERFACES IF_BADI_INTERFACE .
+  INTERFACES IF_EX_HRFPM_CURRENCY .
+
+  METHODS CONSTRUCTOR .

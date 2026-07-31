@@ -1,0 +1,133 @@
+* ==== CLASS POOL ZCL_HRFPM_UNES_CD_UPDATE_LOGIC ====
+CLASS-POOL .
+*"* class pool for class ZCL_HRFPM_UNES_CD_UPDATE_LOGIC
+
+*"* local type definitions
+INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCCDEF.
+
+*"* class ZCL_HRFPM_UNES_CD_UPDATE_LOGIC definition
+*"* public declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCU.
+*"* protected declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCO.
+*"* private declarations
+  INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCI.
+ENDCLASS. "ZCL_HRFPM_UNES_CD_UPDATE_LOGIC definition
+
+*"* macro definitions
+INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCCMAC.
+*"* local class implementation
+INCLUDE ZCL_HRFPM_UNES_CD_UPDATE_LOGICCCIMP.
+
+CLASS ZCL_HRFPM_UNES_CD_UPDATE_LOGIC IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "ZCL_HRFPM_UNES_CD_UPDATE_LOGIC implementation
+
+
+* ---- ZCL_HRFPM_UNES_CD_UPDATE_LOGICCI ----
+PRIVATE SECTION.
+
+* ---- ZCL_HRFPM_UNES_CD_UPDATE_LOGICCM001 ----
+  METHOD PRESORT_UPDATE_LIST.
+    TYPES: BEGIN OF LTY_S_INDEX,
+             DUE_DATE TYPE HRFPM_FM_DOC-COST_DUE_DATE,
+             AMOUNT   TYPE HRFPM_FM_POS-DELTA-DELTA_AMOUNT,
+           END OF LTY_S_INDEX.
+*--- want to achieve that the update happens grouped by
+*--- account assignment with negative values first
+
+    TYPES LTY_T_INDEX TYPE STANDARD TABLE OF LTY_S_INDEX WITH DEFAULT KEY.
+    TYPES LTY_T_INDEX_NEG TYPE STANDARD TABLE OF LTY_S_INDEX WITH DEFAULT KEY.
+
+    DATA LT_INDEX TYPE LTY_T_INDEX.
+    DATA LT_INDEX_NEG TYPE LTY_T_INDEX.
+    DATA LS_INDEX LIKE LINE OF LT_INDEX.
+    DATA LT_FM_POS TYPE HRFPM_FM_DOC_POS_IT.
+    DATA LS_FM_POS LIKE LINE OF LT_FM_POS.
+    DATA LT_SORTED_TAB LIKE UPDATE_LIST.
+    DATA LT_SORTED_TAB_NEG LIKE UPDATE_LIST.
+    DATA LV_TABIX TYPE SYTABIX.
+
+    DATA LS_FM_DOC_HEADER TYPE HRFPM_FM_DOC.
+
+*    IF sy-uname <> 'SAP'.
+*      super->presort_update_list( ).
+*    ELSE.
+*      break sap.
+      "in the standard the sequence of posting is with respect to sort order
+      " due_date -> amount (in that way is ensured that budget is consumed according to periods)
+      "however, in a situation where budget is to be released, it might be advisible
+      "to first do all the release-stuff (in order to free up budget) before doign the
+      "consumption
+
+      IF UPDATE_LIST IS INITIAL.
+        MESSAGE X106(HRFPM).
+      ELSE.
+        LOOP AT UPDATE_LIST INTO CURRENT_UPDATE.
+          LV_TABIX = SY-TABIX.
+          CLEAR:
+             LS_INDEX,
+             LT_FM_POS.
+
+          CURRENT_UPDATE->GET_FM_DOC_INFO(
+             IMPORTING
+               E_DOC_DELTA_AMOUNT  = LS_INDEX-AMOUNT
+               ES_FM_DOC_HEADER    = LS_FM_DOC_HEADER ).
+
+          LS_INDEX-DUE_DATE = LS_FM_DOC_HEADER-COST_DUE_DATE.
+
+          IF LS_INDEX-AMOUNT  LT 0 .
+            READ TABLE LT_INDEX_NEG TRANSPORTING NO FIELDS
+              WITH KEY
+                 DUE_DATE = LS_INDEX-DUE_DATE
+                 AMOUNT   = LS_INDEX-AMOUNT
+              BINARY SEARCH .
+            INSERT LS_INDEX INTO LT_INDEX_NEG INDEX SY-TABIX.
+            INSERT CURRENT_UPDATE INTO LT_SORTED_TAB_NEG INDEX SY-TABIX.
+          ELSE.
+            READ TABLE LT_INDEX TRANSPORTING NO FIELDS
+              WITH KEY
+                 "first with respect to amount:
+                 DUE_DATE = LS_FM_DOC_HEADER-COST_DUE_DATE
+                 AMOUNT  = LS_INDEX-AMOUNT
+              BINARY SEARCH .
+            INSERT LS_INDEX INTO LT_INDEX INDEX SY-TABIX.
+            INSERT CURRENT_UPDATE INTO LT_SORTED_TAB INDEX SY-TABIX.
+          ENDIF.
+        ENDLOOP.
+        "first relases
+        UPDATE_LIST = LT_SORTED_TAB_NEG.
+        "then consumptions
+        APPEND LINES OF LT_SORTED_TAB TO UPDATE_LIST.
+      ENDIF.
+*    ENDIF.
+  ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_UPDATE_LOGICCM002 ----
+  METHOD CREATE_NEW_UPDATE.
+    CREATE OBJECT RP_NEW_UPDATE TYPE ZCL_HRFPM_UNES_CD_PBC_UPDATE
+      EXPORTING
+        IS_FM_DOC_HEADER    = IS_FM_DOC_HEADER
+        IP_RUNID            = RUNID
+        IP_CREATION_MODE    = CNTRL_PARAMETERS-DOC_CREATION_MODE
+        I_UPDATE_LOGIC      = ME
+        IS_CNTRL_PARAMETERS = CNTRL_PARAMETERS-POST.
+    RP_NEW_UPDATE->INIT( ).
+  ENDMETHOD.
+
+* ---- ZCL_HRFPM_UNES_CD_UPDATE_LOGICCO ----
+PROTECTED SECTION.
+
+  METHODS PRESORT_UPDATE_LIST
+    REDEFINITION .
+  METHODS CREATE_NEW_UPDATE
+    REDEFINITION .
+
+* ---- ZCL_HRFPM_UNES_CD_UPDATE_LOGICCU ----
+CLASS ZCL_HRFPM_UNES_CD_UPDATE_LOGIC DEFINITION
+  PUBLIC
+  INHERITING FROM CL_HRFPM_CD_UPDATE_LOGIC
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
