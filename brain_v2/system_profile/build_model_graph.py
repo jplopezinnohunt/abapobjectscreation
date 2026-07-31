@@ -96,6 +96,17 @@ CROSS_CUTTING = {
 }
 
 
+# An object type either CAN carry an application component or it cannot. Users, GL
+# accounts, variants and synthesised concepts are not repository objects — no amount of
+# TADIR extraction will ever resolve them, and counting them in the denominator measures
+# the wrong thing. They get their own rung and their own denominator.
+NON_REPOSITORY_TYPES = {
+    "CONCEPT", "USER", "GL_ACCOUNT", "VARIANT_OR_SET", "COMPANY_CODE", "VENDOR",
+    "CUSTOMER", "BANK", "FUND", "COST_CENTER", "WBS", "DOCUMENT", "INCIDENT",
+    "SKILL", "COMPANION", "DOC", "PROCESS", "ROLE", "JOB_NAME", "FIELD",
+}
+
+
 def _load(p, default=None):
     if not p.exists():
         return default if default is not None else {}
@@ -191,7 +202,11 @@ def run():
             if ax:
                 dom, rung = C(ax[0]), "3_derived_domain_axis"
         if not dom:
-            rung = "9_unresolved"
+            # separate "cannot be resolved this way" from "should be and is not"
+            otype = str(o.get("type", "")).upper()
+            rung = ("8_non_repository_entity"
+                    if otype in NON_REPOSITORY_TYPES or "." in name
+                    else "9_unresolved")
         by_rung[rung] += 1
         if dom:
             dom_objects[dom].append(name)
@@ -272,12 +287,22 @@ def run():
                    "= SAP's own application component. Deterministic, no name guessing."),
         "installation": install.get("identity", {}).get("installation_id"),
         "resolution": {
-            "_meaning": "which rung of the evidence ladder resolved each object",
+            "_meaning": ("Which rung of the evidence ladder resolved each object. The "
+                         "DENOMINATOR matters: users, GL accounts, variants and synthesised "
+                         "concepts are not repository objects and can never carry an "
+                         "application component. Counting them as 'unresolved' measures the "
+                         "wrong thing — they are reported separately."),
             "by_rung": dict(sorted(by_rung.items())),
             "objects_total": len(objects),
-            "objects_resolved": sum(v for k, v in by_rung.items() if k != "9_unresolved"),
-            "pct_resolved": round(100.0 * sum(v for k, v in by_rung.items()
-                                              if k != "9_unresolved") / max(1, len(objects)), 1),
+            "non_repository": by_rung.get("8_non_repository_entity", 0),
+            "resolvable_total": len(objects) - by_rung.get("8_non_repository_entity", 0),
+            "objects_resolved": sum(v for k, v in by_rung.items()
+                                    if k not in ("9_unresolved", "8_non_repository_entity")),
+            "pct_resolved": round(100.0 * sum(
+                v for k, v in by_rung.items()
+                if k not in ("9_unresolved", "8_non_repository_entity"))
+                / max(1, len(objects) - by_rung.get("8_non_repository_entity", 0)), 1),
+            "_pct_meaning": "of RESOLVABLE (repository) objects, not of all nodes",
         },
         "coherence": {
             "_meaning": ("Does the macro assertion survive contact with the detail? A module "

@@ -1,808 +1,825 @@
 [
-  {
-    "id": "DQ-001",
-    "source": "LFA1 + LFB1 + T077K (Vendor Master integrity)",
-    "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA â†’ AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off â€” full vendor master never audited for KTOKKâ†”AKONT consistency.",
-    "severity": "HIGH",
-    "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEPâ†”UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
-    "workaround": "(a) Run vendor_master_integrity_check.py against Gold DB to list all LFB1 rows where AKONT does not match T077K canonical mapping for the LFA1.KTOKK. (b) For each violation, decide whether to correct AKONT (FK02) or extend GGB1 substitution (YFI_BASU_MOD). (c) Promote this to a recurring monthly check.",
-    "discovered_session": 48,
-    "promoted_to_recurring_check": 50,
-    "related_check_script": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
-    "related_known_unknown": "KU-020",
-    "status": "OPEN_RECURRING",
-    "affected_count": null,
-    "affected_count_note": "Full LFA1×T077K scan not yet run — tracked as KU-020",
-    "resolution_path": "Promoted to recurring check Zagentexecution/quality_checks/vendor_master_integrity_check.py (s#050). Runs weekly against Gold DB. FALS-006 predicts ≥5 new drifters on first full scan.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-002",
-    "source": "T015L (Payment Purpose Codes)",
-    "issue": "Country-level PPC config codes are UNESCO-proprietary format, not ISO 20022. Documentation PDFs show wrong codes (001/002/003) instead of real (slash-notation).",
-    "severity": "HIGH",
-    "impact": "Payment configuration misunderstood. PDF documentation unusable for PPC mapping.",
-    "workaround": "Use live T015L extraction. Ignore PDF documentation for PPC codes.",
-    "discovered_session": 25,
-    "status": "OPEN",
-    "affected_count": 47,
-    "affected_count_note": "47 distinct UNESCO PPC codes in T015L (proprietary format, not ISO 20022)",
-    "resolution_path": "Documented in payment_bcm_companion.html + epiuse_companion.html. PurposeCode source = FPAYP-XREF3 via BAdI FI_CGI_DMEE_EXIT_W_BADI (see claim #5). No migration planned — UNESCO uses proprietary codes intentionally.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-003",
-    "source": "EKBE (Goods Receipt Notes)",
-    "issue": "GJAHR=0000 on 119K delivery notes (VGABE=9). Not real GL years but ACH returns marked as 'delivery notes'.",
-    "severity": "MEDIUM",
-    "impact": "EKBE year filtering problematic. 119K phantom 'year 0000' records exist.",
-    "workaround": "Filter GJAHR=0000 OUT of delivery note analysis queries.",
-    "discovered_session": 28,
-    "status": "OPEN",
-    "affected_count": 119000,
-    "affected_count_note": "119K EKBE delivery notes with GJAHR=0000 (VGABE=9)",
-    "resolution_path": "H6 closure (s#028): GJAHR=0000 rows are ACH returns marked as delivery notes. Skipped in BUDAT enrichment. Documented in Payment process mining.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-004",
-    "source": "EKBE.MEINS (unit of measure)",
-    "issue": "Auth-restricted on P01. Cannot extract via RFC without buffer overflow.",
-    "severity": "LOW",
-    "impact": "GR field analysis incomplete. Cannot verify item quantities in GR chain.",
-    "workaround": "Query MEINS via different path or skip in bulk extractions.",
-    "discovered_session": 28,
-    "status": "OPEN",
-    "affected_count": null,
-    "affected_count_note": "Auth-restricted tables — count unknown without SAP Basis escalation",
-    "resolution_path": "Document per-table in extraction log. Some tables extractable via chunked WHERE clauses + DDIF_FIELDINFO_GET introspection. FMAVCT handled this way (s#053 retro).",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-005",
-    "source": "SKAT (GL Account Text)",
-    "issue": "510 (later 1,690) GL descriptions inconsistent between P01 and D01. P01 has CLOSED-BK prefixes; D01 still has old active names. Text updates inconsistent.",
-    "severity": "MEDIUM",
-    "impact": "Master data sync incomplete until Session #038 ran multi-language sync (1,511 UPDATEs + 179 INSERTs).",
-    "workaround": "Use sap_master_data_sync skill pattern: SELECT SINGLE + UPDATE FROM ls (avoids 72-char ABAP truncation).",
-    "discovered_session": 34,
-    "status": "RESOLVED",
-    "affected_count": 1690,
-    "affected_count_note": "1,690 SKAT rows resolved (518 E + 500 F + 493 P languages + 179 new INSERTs)",
-    "resolution_path": "H29 closure (s#038): sync script rfc_helpers.py with SELECT SINGLE + UPDATE FROM ls pattern. All 1,690 rows UPDATE ok=1690/ko=0. Log: knowledge/domains/FI/h29_skat_sync_log.md.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-006",
-    "source": "BSAS.AUGBL (clearing document reference)",
-    "issue": "All 449K BSAS items have blank AUGBL initially. Clearing chain cannot be traced via AUGBL.",
-    "severity": "HIGH",
-    "impact": "Clearing relationships hidden. Session #030 re-enrichment fixed 553K items with AUGBL+AUGDT (100% fill).",
-    "workaround": "Use BSAS_2024_2026 enriched table, not raw BSAS extraction.",
-    "discovered_session": 29,
-    "status": "RESOLVED",
-    "affected_count": 553781,
-    "affected_count_note": "553,781 BSAS items re-enriched with AUGBL+AUGDT",
-    "resolution_path": "H20 closure (s#030): 100% fill rate via targeted enrichment. Documented in bank_statement_ebs_architecture.md.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-007",
-    "source": "FEBKO (Bank Statement Headers)",
-    "issue": "Only 8 of 62 DD03L fields extracted initially. BUKRS, HBKID, HKTID missing.",
-    "severity": "HIGH",
-    "impact": "Cannot link statements to banks without FEBKO_2024_2026 enriched table.",
-    "workaround": "Always query FEBKO_2024_2026 (31,416 rows, 62 fields), not unsuffixed FEBKO.",
-    "discovered_session": 29,
-    "status": "RESOLVED",
-    "affected_count": 62,
-    "affected_count_note": "62 DD03L fields (incl. BUKRS/HBKID/HKTID)",
-    "resolution_path": "Re-extracted with explicit FIELDS list (not default 8). Pattern now standard.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-008",
-    "source": "FEBEP (Bank Statement Line Items)",
-    "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
-    "severity": "HIGH",
-    "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
-    "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols â€” truncated first attempt).",
-    "discovered_session": 29,
-    "status": "RESOLVED",
-    "affected_count": 104,
-    "affected_count_note": "104 FEBEP fields including VGEXT/VGINT/GSBER/ZUONR/INTAG/XBLNR/BUTXT",
-    "resolution_path": "H22 closure (s#042): FEBEP_2024_2026 table has all 27 critical fields filled. Pattern: always check _2024_2026 suffix, not unsuffixed FEBEP.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-009",
-    "source": "T010P (Posting Period Variants)",
-    "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/FranÃ§ais/Portuguese), looks like functional types.",
-    "severity": "MEDIUM",
-    "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
-    "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
-    "discovered_session": 31,
-    "status": "OPEN",
-    "affected_count": 4,
-    "affected_count_note": "4 language keys (D/E/F/P)",
-    "resolution_path": "Superseded claim #19 (s#031): these are LANGUAGE keys, not period types. No fix needed — documentation correction only.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-010",
-    "source": "FMIFIIT extraction script",
-    "issue": "Script filter missing ICBA and UIL FM areas. Only 7 of 9 institutes included initially. Zero postings for ICBA/UIL appeared as data finding (was extraction bug).",
-    "severity": "HIGH",
-    "impact": "Company code analysis wrong. Shared with team before verification (credibility hit).",
-    "workaround": "Always verify filter completeness against T001 BUKRS list before publishing findings.",
-    "discovered_session": 31,
-    "status": "RESOLVED",
-    "affected_count": 2,
-    "affected_count_note": "2 FM areas missing (ICBA + UIL)",
-    "resolution_path": "Filter list extended. Re-extraction completed. All 9 institutes now included.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-011",
-    "source": "BNK_BATCH_ITEM.IBC17 (BCM Failed Items)",
-    "issue": "2,056 IBC17 items all from 2021-2022 BCM outage (Jul2021-Dec2022). No failures 2024-2026.",
-    "severity": "LOW",
-    "impact": "Stale error state. BCM failure analysis weighted wrong if date range not checked.",
-    "workaround": "Always filter BCM data to 2024-2026 for current-state analysis.",
-    "discovered_session": 28,
-    "status": "OPEN",
-    "affected_count": 2056,
-    "affected_count_note": "2,056 IBC17 items, all 2021-2022 BCM outage",
-    "resolution_path": "H16 closure (s#028): out of data scope (2024-2026). Historical record only. Root cause documented: BCM activation Jul2021 misconfigured until Oct2022.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-012",
-    "source": "T030H (Bank Valuation Configuration)",
-    "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
-    "severity": "CRITICAL",
-    "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
-    "workaround": "Requires remediation project. No workaround â€” structural config gap.",
-    "discovered_session": 44,
-    "status": "OPEN",
-    "affected_count": 261,
-    "affected_count_note": "213 non-USD bank accts + 48 non-USD clearing accts missing T030H entries",
-    "resolution_path": "Tracked as KU-010 (does FAGL_FC_VAL use fallback?). Needs P01 config check before deciding fix path. May not be a bug — could be intentional (USD-only valuation).",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-013",
-    "source": "TADIR in P01 (DMEE AE/BH BAdI)",
-    "issue": "YCL_IDFI_CGI_DMEE_AE and YCL_IDFI_CGI_DMEE_BH classes don't exist in P01 TADIR. Only in D01 CTS. P01 uses UTIL fallback.",
-    "severity": "HIGH",
-    "impact": "AE and BH countries get default processing instead of custom logic. Configuration incomplete in production.",
-    "workaround": "Transport the classes to P01 if custom AE/BH logic needed. Currently UTIL fallback is working.",
-    "discovered_session": 25,
-    "status": "OPEN",
-    "affected_count": 2,
-    "affected_count_note": "2 classes (YCL_IDFI_CGI_DMEE_AE + YCL_IDFI_CGI_DMEE_BH) exist in D01 TADIR but not P01",
-    "resolution_path": "Superseded claim #22 (s#039, H18 closure): PurposeCode comes from FPAYP-XREF3 via DMEE tree + BAdI FI_CGI_DMEE_EXIT_W_BADI, not from AE/BH classes. P01 uses UTIL fallback. No migration needed.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-014",
-    "source": "E071/E071K (Transport Objects) in P01",
-    "issue": "SAP clears E071/E071K after transport release. Previous extraction is source of truth. Re-extraction of released transports returns empty.",
-    "severity": "CRITICAL",
-    "impact": "Can permanently destroy transport content data by re-extracting. Happened in Session #031 (destroyed 36/682, 9/51).",
-    "workaround": "NEVER re-extract released transports. Check status before extraction. Rule in feedback_never_reextract_released_transports.",
-    "discovered_session": 31,
-    "status": "RESOLVED",
-    "affected_count": null,
-    "affected_count_note": "Applies to all released transports — structural SAP behavior",
-    "resolution_path": "Documented as extraction pattern: always extract transport contents BEFORE release. Previous extraction is source of truth.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-015",
-    "source": "BSIS on 10xxxxx accounts",
-    "issue": "199K 'open' items on 10xxxxx are actually permanent ledger entries (never cleared by design). Not a reconciliation gap.",
-    "severity": "LOW",
-    "impact": "Misinterpreted as operational crisis for 4 sessions. Real unreconciled = 2,737 on 11xxxxx (0.6%).",
-    "workaround": "Filter BSIS to 11xxxxx accounts only for reconciliation analysis.",
-    "discovered_session": 29,
-    "status": "RESOLVED",
-    "affected_count": 199000,
-    "affected_count_note": "199K permanent ledger items on 10xxxxx GLs (by design)",
-    "resolution_path": "Superseded claim #18 (s#029): these are permanent ledger entries, never cleared. Real unreconciled = 2,737 on 11xxxxx (0.6% gap). H28 closure documented in bank_statement_ebs_architecture.md.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-016",
-    "source": "~/.claude/projects/*/memory/ files",
-    "issue": "Memory files got Windows-1252 encoding bytes injected during Python stdout writes on Windows, corrupting em dashes and arrows.",
-    "severity": "HIGH",
-    "impact": "feedback_rules.json became unreadable (UTF-8 decode errors) mid-Session #049, required cleanup.",
-    "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
-    "discovered_session": 49,
-    "status": "RESOLVED",
-    "affected_count": null,
-    "affected_count_note": "Multiple memory files on Windows stdout path",
-    "resolution_path": "Pattern: always use open(..., encoding='utf-8') + sys.stdout.reconfigure(encoding='utf-8') on Windows. Python scripts retrofitted.",
-    "related_incidents": [],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-017",
-    "issue": "187,514 rows in fmifiit_full (UNES company code, bank clearing GLs 0006045011/0007045011/0006045014) have FISTL='UNESCO' due to the ZXFMDTU02_RPY.abap:99 hardcode. Zero rows on these GLs have FISTL='JAK' or any other field-office FICTR. This makes office-level cash-flow reporting impossible for the bank side of vendor payments.",
-    "severity": "MEDIUM",
-    "source": "Gold DB query Session #050 (INC-000005240)",
-    "domain": "FI",
-    "related_objects": [
-      "fmifiit_full",
-      "ZXFMDTU02_RPY",
-      "fund_centers"
-    ],
-    "incident": "INC-000005240",
-    "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side.",
-    "affected_count": 187514,
-    "affected_count_note": "187,514 fmifiit_full rows UNES + bank clearing GLs + FISTL='UNESCO' hardcode signature",
-    "related_incidents": [
-      "INC-000006073"
-    ],
-    "discovered_session": 48,
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-018",
-    "issue": "AL_JONATHAN (Jakarta Field Unit user) has USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. Every F-53/FBZ2 posting he makes carries BSEG-XREF1='HQ' BSEG-XREF2='HQ' instead of the correct 'JAK'. PA0001.WERKS='ID00' BTRTL='JKT' confirms HR has him assigned to Indonesia/Jakarta.",
-    "source": "USR05 live RFC 2026-04-09 + PA0001/PA0105 cross-reference",
-    "severity": "HIGH",
-    "impact": "10 documents in 2026-02/03 carry wrong XREF tag. No automated detection. Manual correction via FBL3N by A_HIZKIA on 2 of 10.",
-    "status": "OPEN - fix pending SU3 update after KU-027 YFO_CODES.JAK verification",
-    "discovered_session": "#51",
-    "related_incident": "INC-000005240",
-    "related_known_unknown": "KU-027",
-    "promoted_to_recurring_check": false,
-    "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py",
-    "affected_count": 1,
-    "affected_count_note": "1 user (AL_JONATHAN) with Y_USERFO='HQ' instead of 'JAK'",
-    "resolution_path": "H45 (s#054). Blocked by KU-027 (verify YFO_CODES has FOCOD='JAK') before SU3 update. See knowledge/incidents/INC-000005240_xref_office_substitution.md.",
-    "related_incidents": [
-      "INC-000005240"
-    ],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-019",
-    "issue": "Systemic XREF drift at UNESCO: 21,754 manual post-posting edits via FBL3N/FBL1N/FB02/FBL5N in Q1 2026 on UNES BELEG documents, across 242 distinct users, touching 24,597 distinct documents. This is the operational workaround for missing XREF validation and signals a systemic gap rather than isolated errors.",
-    "source": "Gold DB cdhdr query 2026-04-09",
-    "severity": "MEDIUM",
-    "impact": "Ongoing operational burden. Users spend significant time manually correcting XREF values because no runtime validation catches wrong values.",
-    "status": "OPEN - strategic fix options in Treasury xref_office_tagging_model.md §7.3",
-    "discovered_session": "#51",
-    "related_incident": "INC-000005240",
-    "related_known_unknown": "KU-028",
-    "promoted_to_recurring_check": false,
-    "related_check_script": null,
-    "affected_count": 21754,
-    "affected_count_note": "21,754 manual XREF edits Q1 2026 via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents",
-    "resolution_path": "H46 (s#054). Strategic fix options in knowledge/domains/Treasury/xref_office_tagging_model.md §7.3. Decision pending between preventive substitution fix / opt-in SU3 model / periodic reconciliation / tolerate. Blocked by H48.",
-    "related_incidents": [
-      "INC-000005240"
-    ],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-020",
-    "issue": "USR05.Y_USERFO (finance office code) and PA0001.BTRTL (HR personnel subarea) use different code systems at UNESCO with no enforced mapping. Example drift: Kabul is BTRTL='KBL' but Y_USERFO='KAB'; Dakar is BTRTL='DKR' but Y_USERFO='DAK'. A user's office in finance can drift from their HR assignment with no automated detection.",
-    "source": "Live RFC 2026-04-09 PA0001 + USR05 for 7 users",
-    "severity": "MEDIUM",
-    "impact": "Enables the DQ-018 class of issues to persist undetected. A user can be hired in Jakarta (HR correct) and still have wrong finance office code (USR05) forever.",
-    "status": "OPEN - needs HR/BASIS alignment process",
-    "discovered_session": "#51",
-    "related_incident": "INC-000005240",
-    "related_known_unknown": "KU-028",
-    "promoted_to_recurring_check": false,
-    "related_check_script": null,
-    "affected_count": null,
-    "affected_count_note": "Unknown drift count without full USR05×PA0001 diff — tracked as KU-028",
-    "resolution_path": "H47 (s#054). Organizational process gap. Needs HR→BASIS alert mechanism + periodic diff report + policy for mandatory SU3 update on HR transfer. Cross-domain item.",
-    "related_incidents": [
-      "INC-000005240"
-    ],
-    "enriched_session": 54
-  },
-  {
-    "id": "dq_ghost_pernr_bcm_oesttveit",
-    "source": "HRP1001 (P01) via bcm_signatory_assignment (Gold DB)",
-    "issue": "Ghost PERNR 10567156 active in UIS BCM rules 90000004 + 90000005 since 2025-10-04. PA0105/0001 empty -> workflow 90000003 cannot route BNK_APP work items -> Svein OESTTVEIT silently cannot sign UIS payments even though he appears on the Citibank Canada carton des signatures as PERNR 10067156.",
-    "severity": "HIGH",
-    "impact": "Production payment routing for UIS is understaffed by one committer. If Svein would have been the deciding signatory, the batch waits or a different user approves. The real PERNR 10067156 (user S_OESTTVEIT, email S.OESTTVEIT@UNESCO.ORG) should have been used in OOCU_RESP.",
-    "workaround": "None automated. DBS must delimit HRP1001 SOBID=10567156 and insert fresh rows with SOBID=10067156 after TRS authorization. Until then, the other 7 UIS signatories on the carton must cover Svein's work.",
-    "discovered_session": 52,
-    "promoted_to_recurring_check": true,
-    "related_check_script": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
-    "related_known_unknown": null,
-    "first_seen_date": "2025-10-04",
-    "status": "RESOLVED",
-    "resolved_session": 52,
-    "resolved_date": "2026-04-13",
-    "resolution": "DBS delimited HRP1001 SOBID=10567156 on RY 50010054 + RY 50036801 (ENDDA set pre-20260413), inserted new rows with SOBID=10067156 (real Svein OESTTVEIT, user S_OESTTVEIT, BEGDA=20260413 ENDDA=99991231). Verified 2026-04-13 via RFC_READ_TABLE: 0 ghosts remain. Carton diff exit=0.",
-    "affected_count": 1,
-    "affected_count_note": "1 ghost PERNR (10567156 / Svein OESTTVEIT) active in 2 BCM rules",
-    "resolution_path": "INC-000006313 closure (s#052). Reconciliation check Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py added as recurring detector. PERNR removed from rules.",
-    "related_incidents": [
-      "INC-000006313"
-    ],
-    "enriched_session": 54
-  },
-  {
-    "id": "DQ-2026-063-04",
-    "issue": "KU-011 hypothesised T042Z extraction missing DMEE_ASSIGNMENT_TABLE column. Verified Session #63 (2026-04-30) via Gold DB PRAGMA table_info(T042Z): T042Z has 35 cols, no DMEE_ASSIGNMENT_TABLE column, but FORMI / XBKKT / XSTRA all present. The hypothetical missing column does not exist in standard SAP T042Z schema — KU-011 was based on incorrect schema assumption.",
-    "resolution": "CLOSED. T042Z fully extracted (263 rows). Per-entity differentiation via T042A (ZBUKR + ZLSCH + WAERS → HBKID).",
-    "status": "closed",
-    "created_session": 63,
-    "resolved_session": 63
-  },
-  {
-    "id": "DQ-2026-005638-01",
-    "session": 66,
-    "incident": "INC-000005638",
-    "issue": "UNESCO Earmarked Activities donor stream has NO carry-forward fund pattern (e.g. no 196EAR4142). Other UNESCO budget streams have these: 196RES4142 (Emergency Assistance carryforward), 196IAC4042 (International Assistance carryforward). The absence forces field offices with deliverables that span the biennium boundary to keep posting on the (now expired in spirit) predecessor biennium fund 196EAR4042, depleting its 2026 AVC pool and triggering FMAVC005 blocks on SES / MIRO / F110 postings.",
-    "severity": "HIGH",
-    "scope_count": 1,
-    "scope_unit": "missing fund / missing process",
-    "status": "OPEN - process gap; needs HQ Budget Office review (KU-2026-005638-02)"
-  },
-  {
-    "id": "MODEL-GAP-2026-001",
-    "session": 67,
-    "created_session": 67,
-    "discovered_session": 66,
-    "incident": "INC-000005638",
-    "source": "FM-AVC engine (FMAVCT + FMAFMAP013500109) vs PS-AVC engine (BPJA + COSP + PRPS) cross-engine reconciliation",
-    "issue": "Structural model gap: UNESCO runs two AVC engines (FM-AVC per (FUND, FUNDSCTR, CommItem); PS-AVC per WBS) at different granularities. They disagree at biennium close-out on TYPE 101-112 donor funds because revenue is loaded onto a placeholder FIPEX (REVENUE) that does not match the AVC-derivation range, while consumption posts to operational FIPEX (11, 13, 20, 30, ...). Result: FM-AVC blocks SES / MIRO / F110 postings while the PS-AVC project pool reports healthy. This is a configuration-level defect (FIPEX-derivation strategy + revenue-loading procedure), not a bug in custom code.",
-    "severity": "HIGH",
-    "impact": "2,005 buckets at risk UNESCO-wide (488 Tier 1 BOTH engines blocking + 1,517 Tier 2 FM-only blocking) per the 2026-05-01 class-detector run. Growth rate +4.1%/month measured Mar 31 -> Apr 28 2026 (+60 Tier 2 buckets in 4 weeks). Every biennium-end cycle on every Earmarked donor fund stream is structurally exposed. Symptom: red FMAVC005 / FI 026 abend at SES posting, invoice posting, or F110/F-53 payment time — independent of FBZP, BCM, or workflow configuration.",
-    "workaround": "Per affected bucket: (a) FMAVCREINIT on (RLDNR=9H, RFIKRS=UNES, RYEAR=current, RFUND=<legacy>); OR (b) load supplementary AVC budget on operational FIPEX via FMBB/FMX1; OR (c) close legacy fund (TYPE 104 -> 106) once successor is active. Pre-carry-forward gate: run inc5638_fm_ps_avc_misalignment.py against latest Gold DB and triage every Tier 1/Tier 2 bucket before the CF run.",
-    "scope_count": 2005,
-    "scope_unit": "(Fund, FundCenter, AVC-Bucket) buckets at risk",
-    "affected_count": 2005,
-    "affected_count_note": "488 Tier 1 + 1,517 Tier 2 = 2,005 buckets. Companion: companions/fm_ps_avc_model_gap_companion_v1.html",
-    "promoted_to_recurring_check": true,
-    "related_check_script": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
-    "csv_output": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.csv",
-    "canonical_doc": "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
-    "canonical_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
-    "related_incidents": [
-      "INC-000005638"
-    ],
-    "related_known_unknowns": [
-      "DQ-2026-005638-01"
-    ],
-    "growth_rate_monthly_pct": 4.1,
-    "growth_rate_window": "2026-03-31 to 2026-04-28",
-    "status": "OPEN",
-    "status_detail": "OPEN_RECURRING - structural defect, not yet remediated UNESCO-wide. Each individual fund needs case-by-case triage at biennium close-out.",
-    "evidence_tier": "TIER_1",
-    "companions_updated_session_67": [
-      "companions/carry_forward_2026.html",
-      "companions/payment_bcm_companion.html",
-      "companions/treasury_operations_companion_v1.html",
-      "companions/p2p_process_mining.html",
-      "companions/payment_process_mining.html",
-      "companions/fi_maintenance.html",
-      "companions/unesco_sap_landing.html"
-    ],
-    "related_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
-    "extended_companion_session_67": "companions/fm_ps_pool_health_matrix_v1.html",
-    "extended_check_script_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
-    "extended_csv_output_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.csv",
-    "extended_outliers_csv_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix_outliers.csv",
-    "coverage_extension": "Coverage extended from 11,357 HARD-linked pairs (old detector) to 15,455 pairs (matrix) on 2026-05-01. State distribution: ALIGNED 4,363 / FM-EXHAUSTED 2,390 / PS-EXHAUSTED 991 / BOTH-EXHAUSTED 3,842. NEW BAD pairs found in DERIVED + DERIVED-MULTI tiers: 1,245 (invisible to old detector).",
-    "outlier_governance_pending": "10 multi-fund (>10 funds) WBSs flagged for HQ Budget Office governance review on AVC policy for common-cost objects. WBSs: PR00027627 (1211 funds), PR00000106 (592), PR00000107 (591), PR00000111 (448), PR00000109 (369), PR00000108 (275), PR00000110 (249), PR00008981 (68), PR00002724 (36), PR00008982 (30). Tracked under KU-2026-OUTLIER-WBS-AVC.",
-    "enriched_session": 70,
-    "proposed_controls": {
-      "parked_session": 68,
-      "parked_reason": "User explicitly deferred control-mechanism execution to live under MODEL-GAP-2026-001 governance, not as separate work item.",
-      "options": [
-        {
-          "id": "CONTROL-A",
-          "name": "In-line BAdI / enhancement validation",
-          "where": "BAdI FMAVC_CUSTOMER or enhancement on FMBB / FMBBT / FMJ2",
-          "logic": "Before posting a budget movement in FM, simulate the resulting (FUND, FUNDSCTR, CommItem) bucket state. If any bucket would cross zero while the corresponding PS-AVC pool stays positive, raise message ZFI/200 with Tier-2 misalignment evidence and block the posting.",
-          "effect": "Prevents desalignment from being created in the first place.",
-          "cost": "1 sprint config + UAT + transport",
-          "risk": "False positives until tolerance is calibrated; debug overhead in production.",
-          "recommendation_strength": "STRONG"
-        },
-        {
-          "id": "CONTROL-B",
-          "name": "Nightly batch detector + alert",
-          "where": "Job scheduler (SM37) running inc5638_fm_ps_avc_misalignment.py and fm_ps_pool_health_matrix.py",
-          "logic": "Detect overnight any (Fund, FundCenter, CommItem) bucket that transitioned Tier 4 -> Tier 2 between two consecutive runs. Email HQ Budget Office.",
-          "effect": "Detects within < 24h. Does NOT prevent.",
-          "cost": "2 hours config (job + email distro list)",
-          "risk": "Damage already done at detection time.",
-          "recommendation_strength": "IMMEDIATE"
-        },
-        {
-          "id": "CONTROL-C",
-          "name": "Pre-flight check companion (manual)",
-          "where": "Companion HTML the Budget Office consults before any FMBB / FMBBT posting",
-          "logic": "Interactive simulator showing per-bucket impact before committing.",
-          "effect": "Educational / advisory only.",
-          "cost": "Zero development.",
-          "risk": "Only effective if used voluntarily.",
-          "recommendation_strength": "FALLBACK"
-        }
-      ],
-      "recommendation": "A + B in parallel. CONTROL-B activates this week (cheap, prevents fire-after-detection). CONTROL-A activates in a 4-6 week sprint (the only one that prevents drift from being created).",
-      "decision_owner": "HQ Budget Office (UNESCO) + FM/PS config team",
-      "decision_status": "PENDING_HQ_DECISION",
-      "related_known_unknown": "KU-2026-MODEL-GAP-CONTROL"
+ {
+  "id": "DQ-001",
+  "source": "LFA1 + LFB1 + T077K (Vendor Master integrity)",
+  "issue": "Vendor account group (LFA1.KTOKK) and reconciliation account (LFB1.AKONT) drift from the canonical mapping in T077K. Discovered case: vendor 10133079 (Katja HINZ) has KTOKK=SCSA â†’ AKONT=2021011 in IIEP company code, while T077K canonical mapping for SCSA staff expects AKONT=2021010 (and the GGB1 rule set only covers 2021042 for KTOKK=UNES). Class of defect, not a one-off â€” full vendor master never audited for KTOKKâ†”AKONT consistency.",
+  "severity": "HIGH",
+  "impact": "Caused INC-000006073 (Travel posting RW609/ZFI020 for cross-funded IIEPâ†”UNES trips). Class effect: any vendor with non-canonical AKONT silently passes posting until an intercompany scenario or new GGB1 rule set exposes the gap. UNESCO has 316K vendors in LFA1; total exposure unquantified.",
+  "workaround": "(a) Run vendor_master_integrity_check.py against Gold DB to list all LFB1 rows where AKONT does not match T077K canonical mapping for the LFA1.KTOKK. (b) For each violation, decide whether to correct AKONT (FK02) or extend GGB1 substitution (YFI_BASU_MOD). (c) Promote this to a recurring monthly check.",
+  "discovered_session": 48,
+  "promoted_to_recurring_check": 50,
+  "related_check_script": "Zagentexecution/quality_checks/vendor_master_integrity_check.py",
+  "related_known_unknown": "KU-020",
+  "status": "OPEN_RECURRING",
+  "affected_count": null,
+  "affected_count_note": "Full LFA1×T077K scan not yet run — tracked as KU-020",
+  "resolution_path": "Promoted to recurring check Zagentexecution/quality_checks/vendor_master_integrity_check.py (s#050). Runs weekly against Gold DB. FALS-006 predicts ≥5 new drifters on first full scan.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-002",
+  "source": "T015L (Payment Purpose Codes)",
+  "issue": "Country-level PPC config codes are UNESCO-proprietary format, not ISO 20022. Documentation PDFs show wrong codes (001/002/003) instead of real (slash-notation).",
+  "severity": "HIGH",
+  "impact": "Payment configuration misunderstood. PDF documentation unusable for PPC mapping.",
+  "workaround": "Use live T015L extraction. Ignore PDF documentation for PPC codes.",
+  "discovered_session": 25,
+  "status": "OPEN",
+  "affected_count": 47,
+  "affected_count_note": "47 distinct UNESCO PPC codes in T015L (proprietary format, not ISO 20022)",
+  "resolution_path": "Documented in payment_bcm_companion.html + epiuse_companion.html. PurposeCode source = FPAYP-XREF3 via BAdI FI_CGI_DMEE_EXIT_W_BADI (see claim #5). No migration planned — UNESCO uses proprietary codes intentionally.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-003",
+  "source": "EKBE (Goods Receipt Notes)",
+  "issue": "GJAHR=0000 on 119K delivery notes (VGABE=9). Not real GL years but ACH returns marked as 'delivery notes'.",
+  "severity": "MEDIUM",
+  "impact": "EKBE year filtering problematic. 119K phantom 'year 0000' records exist.",
+  "workaround": "Filter GJAHR=0000 OUT of delivery note analysis queries.",
+  "discovered_session": 28,
+  "status": "OPEN",
+  "affected_count": 119000,
+  "affected_count_note": "119K EKBE delivery notes with GJAHR=0000 (VGABE=9)",
+  "resolution_path": "H6 closure (s#028): GJAHR=0000 rows are ACH returns marked as delivery notes. Skipped in BUDAT enrichment. Documented in Payment process mining.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-004",
+  "source": "EKBE.MEINS (unit of measure)",
+  "issue": "Auth-restricted on P01. Cannot extract via RFC without buffer overflow.",
+  "severity": "LOW",
+  "impact": "GR field analysis incomplete. Cannot verify item quantities in GR chain.",
+  "workaround": "Query MEINS via different path or skip in bulk extractions.",
+  "discovered_session": 28,
+  "status": "OPEN",
+  "affected_count": null,
+  "affected_count_note": "Auth-restricted tables — count unknown without SAP Basis escalation",
+  "resolution_path": "Document per-table in extraction log. Some tables extractable via chunked WHERE clauses + DDIF_FIELDINFO_GET introspection. FMAVCT handled this way (s#053 retro).",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-005",
+  "source": "SKAT (GL Account Text)",
+  "issue": "510 (later 1,690) GL descriptions inconsistent between P01 and D01. P01 has CLOSED-BK prefixes; D01 still has old active names. Text updates inconsistent.",
+  "severity": "MEDIUM",
+  "impact": "Master data sync incomplete until Session #038 ran multi-language sync (1,511 UPDATEs + 179 INSERTs).",
+  "workaround": "Use sap_master_data_sync skill pattern: SELECT SINGLE + UPDATE FROM ls (avoids 72-char ABAP truncation).",
+  "discovered_session": 34,
+  "status": "RESOLVED",
+  "affected_count": 1690,
+  "affected_count_note": "1,690 SKAT rows resolved (518 E + 500 F + 493 P languages + 179 new INSERTs)",
+  "resolution_path": "H29 closure (s#038): sync script rfc_helpers.py with SELECT SINGLE + UPDATE FROM ls pattern. All 1,690 rows UPDATE ok=1690/ko=0. Log: knowledge/domains/FI/h29_skat_sync_log.md.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-006",
+  "source": "BSAS.AUGBL (clearing document reference)",
+  "issue": "All 449K BSAS items have blank AUGBL initially. Clearing chain cannot be traced via AUGBL.",
+  "severity": "HIGH",
+  "impact": "Clearing relationships hidden. Session #030 re-enrichment fixed 553K items with AUGBL+AUGDT (100% fill).",
+  "workaround": "Use BSAS_2024_2026 enriched table, not raw BSAS extraction.",
+  "discovered_session": 29,
+  "status": "RESOLVED",
+  "affected_count": 553781,
+  "affected_count_note": "553,781 BSAS items re-enriched with AUGBL+AUGDT",
+  "resolution_path": "H20 closure (s#030): 100% fill rate via targeted enrichment. Documented in bank_statement_ebs_architecture.md.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-007",
+  "source": "FEBKO (Bank Statement Headers)",
+  "issue": "Only 8 of 62 DD03L fields extracted initially. BUKRS, HBKID, HKTID missing.",
+  "severity": "HIGH",
+  "impact": "Cannot link statements to banks without FEBKO_2024_2026 enriched table.",
+  "workaround": "Always query FEBKO_2024_2026 (31,416 rows, 62 fields), not unsuffixed FEBKO.",
+  "discovered_session": 29,
+  "status": "RESOLVED",
+  "affected_count": 62,
+  "affected_count_note": "62 DD03L fields (incl. BUKRS/HBKID/HKTID)",
+  "resolution_path": "Re-extracted with explicit FIELDS list (not default 8). Pattern now standard.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-008",
+  "source": "FEBEP (Bank Statement Line Items)",
+  "issue": "Only 8 of 104 fields extracted initially. Critical fields missing: VGEXT, VGINT, GSBER, ZUONR, INTAG, XBLNR, BUTXT.",
+  "severity": "HIGH",
+  "impact": "EBS analysis incomplete. Real data is in FEBEP_2024_2026 (223K rows, 27 fields).",
+  "workaround": "Always query FEBEP_2024_2026, not unsuffixed FEBEP (50K rows, 104 cols â€” truncated first attempt).",
+  "discovered_session": 29,
+  "status": "RESOLVED",
+  "affected_count": 104,
+  "affected_count_note": "104 FEBEP fields including VGEXT/VGINT/GSBER/ZUONR/INTAG/XBLNR/BUTXT",
+  "resolution_path": "H22 closure (s#042): FEBEP_2024_2026 table has all 27 critical fields filled. Pattern: always check _2024_2026 suffix, not unsuffixed FEBEP.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-009",
+  "source": "T010P (Posting Period Variants)",
+  "issue": "TABKEY field contains language keys (D/E/F/P = Deutsch/English/FranÃ§ais/Portuguese), looks like functional types.",
+  "severity": "MEDIUM",
+  "impact": "Configuration misinterpreted. Wrong analysis in companion before Session #031 correction.",
+  "workaround": "Apply feedback_tabkey_language_codes rule: D/E/F/P in SAP are ALWAYS language codes, not functional types.",
+  "discovered_session": 31,
+  "status": "OPEN",
+  "affected_count": 4,
+  "affected_count_note": "4 language keys (D/E/F/P)",
+  "resolution_path": "Superseded claim #19 (s#031): these are LANGUAGE keys, not period types. No fix needed — documentation correction only.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-010",
+  "source": "FMIFIIT extraction script",
+  "issue": "Script filter missing ICBA and UIL FM areas. Only 7 of 9 institutes included initially. Zero postings for ICBA/UIL appeared as data finding (was extraction bug).",
+  "severity": "HIGH",
+  "impact": "Company code analysis wrong. Shared with team before verification (credibility hit).",
+  "workaround": "Always verify filter completeness against T001 BUKRS list before publishing findings.",
+  "discovered_session": 31,
+  "status": "RESOLVED",
+  "affected_count": 2,
+  "affected_count_note": "2 FM areas missing (ICBA + UIL)",
+  "resolution_path": "Filter list extended. Re-extraction completed. All 9 institutes now included.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-011",
+  "source": "BNK_BATCH_ITEM.IBC17 (BCM Failed Items)",
+  "issue": "2,056 IBC17 items all from 2021-2022 BCM outage (Jul2021-Dec2022). No failures 2024-2026.",
+  "severity": "LOW",
+  "impact": "Stale error state. BCM failure analysis weighted wrong if date range not checked.",
+  "workaround": "Always filter BCM data to 2024-2026 for current-state analysis.",
+  "discovered_session": 28,
+  "status": "OPEN",
+  "affected_count": 2056,
+  "affected_count_note": "2,056 IBC17 items, all 2021-2022 BCM outage",
+  "resolution_path": "H16 closure (s#028): out of data scope (2024-2026). Historical record only. Root cause documented: BCM activation Jul2021 misconfigured until Oct2022.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-012",
+  "source": "T030H (Bank Valuation Configuration)",
+  "issue": "213 of 219 non-USD bank accounts (3% coverage) + 48 of 204 non-USD clearing accounts (76% coverage) missing OBA1/T030H entries.",
+  "severity": "CRITICAL",
+  "impact": "FAGL_FC_VAL skips these accounts. FX gains/losses on 80+ currencies at 80+ field offices not reflected in financial statements. Material weakness.",
+  "workaround": "Requires remediation project. No workaround â€” structural config gap.",
+  "discovered_session": 44,
+  "status": "OPEN",
+  "affected_count": 261,
+  "affected_count_note": "213 non-USD bank accts + 48 non-USD clearing accts missing T030H entries",
+  "resolution_path": "Tracked as KU-010 (does FAGL_FC_VAL use fallback?). Needs P01 config check before deciding fix path. May not be a bug — could be intentional (USD-only valuation).",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-013",
+  "source": "TADIR in P01 (DMEE AE/BH BAdI)",
+  "issue": "YCL_IDFI_CGI_DMEE_AE and YCL_IDFI_CGI_DMEE_BH classes don't exist in P01 TADIR. Only in D01 CTS. P01 uses UTIL fallback.",
+  "severity": "HIGH",
+  "impact": "AE and BH countries get default processing instead of custom logic. Configuration incomplete in production.",
+  "workaround": "Transport the classes to P01 if custom AE/BH logic needed. Currently UTIL fallback is working.",
+  "discovered_session": 25,
+  "status": "OPEN",
+  "affected_count": 2,
+  "affected_count_note": "2 classes (YCL_IDFI_CGI_DMEE_AE + YCL_IDFI_CGI_DMEE_BH) exist in D01 TADIR but not P01",
+  "resolution_path": "Superseded claim #22 (s#039, H18 closure): PurposeCode comes from FPAYP-XREF3 via DMEE tree + BAdI FI_CGI_DMEE_EXIT_W_BADI, not from AE/BH classes. P01 uses UTIL fallback. No migration needed.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-014",
+  "source": "E071/E071K (Transport Objects) in P01",
+  "issue": "SAP clears E071/E071K after transport release. Previous extraction is source of truth. Re-extraction of released transports returns empty.",
+  "severity": "CRITICAL",
+  "impact": "Can permanently destroy transport content data by re-extracting. Happened in Session #031 (destroyed 36/682, 9/51).",
+  "workaround": "NEVER re-extract released transports. Check status before extraction. Rule in feedback_never_reextract_released_transports.",
+  "discovered_session": 31,
+  "status": "RESOLVED",
+  "affected_count": null,
+  "affected_count_note": "Applies to all released transports — structural SAP behavior",
+  "resolution_path": "Documented as extraction pattern: always extract transport contents BEFORE release. Previous extraction is source of truth.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-015",
+  "source": "BSIS on 10xxxxx accounts",
+  "issue": "199K 'open' items on 10xxxxx are actually permanent ledger entries (never cleared by design). Not a reconciliation gap.",
+  "severity": "LOW",
+  "impact": "Misinterpreted as operational crisis for 4 sessions. Real unreconciled = 2,737 on 11xxxxx (0.6%).",
+  "workaround": "Filter BSIS to 11xxxxx accounts only for reconciliation analysis.",
+  "discovered_session": 29,
+  "status": "RESOLVED",
+  "affected_count": 199000,
+  "affected_count_note": "199K permanent ledger items on 10xxxxx GLs (by design)",
+  "resolution_path": "Superseded claim #18 (s#029): these are permanent ledger entries, never cleared. Real unreconciled = 2,737 on 11xxxxx (0.6% gap). H28 closure documented in bank_statement_ebs_architecture.md.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-016",
+  "source": "~/.claude/projects/*/memory/ files",
+  "issue": "Memory files got Windows-1252 encoding bytes injected during Python stdout writes on Windows, corrupting em dashes and arrows.",
+  "severity": "HIGH",
+  "impact": "feedback_rules.json became unreadable (UTF-8 decode errors) mid-Session #049, required cleanup.",
+  "workaround": "Always use explicit encoding='utf-8' when reading/writing files. Rule in feedback_always_utf8_encoding.",
+  "discovered_session": 49,
+  "status": "RESOLVED",
+  "affected_count": null,
+  "affected_count_note": "Multiple memory files on Windows stdout path",
+  "resolution_path": "Pattern: always use open(..., encoding='utf-8') + sys.stdout.reconfigure(encoding='utf-8') on Windows. Python scripts retrofitted.",
+  "related_incidents": [],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-017",
+  "issue": "187,514 rows in fmifiit_full (UNES company code, bank clearing GLs 0006045011/0007045011/0006045014) have FISTL='UNESCO' due to the ZXFMDTU02_RPY.abap:99 hardcode. Zero rows on these GLs have FISTL='JAK' or any other field-office FICTR. This makes office-level cash-flow reporting impossible for the bank side of vendor payments.",
+  "severity": "MEDIUM",
+  "source": "Gold DB query Session #050 (INC-000005240)",
+  "domain": "FI",
+  "related_objects": [
+   "fmifiit_full",
+   "ZXFMDTU02_RPY",
+   "fund_centers"
+  ],
+  "incident": "INC-000005240",
+  "resolution_path": "Apply Option-A SU3-based fix in ZXFMDTU02_RPY:94-101 (see knowledge/incidents/INC-000005240_f53_fistl_unesco_default.md section 6.2) then run Zagentexecution/quality_checks/fmderive_hardcoded_fictr_check.py monthly to confirm the ratio of default-vs-home-FICTR trends toward the home-FICTR side.",
+  "affected_count": 187514,
+  "affected_count_note": "187,514 fmifiit_full rows UNES + bank clearing GLs + FISTL='UNESCO' hardcode signature",
+  "related_incidents": [
+   "INC-000006073"
+  ],
+  "discovered_session": 48,
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-018",
+  "issue": "AL_JONATHAN (Jakarta Field Unit user) has USR05 SU3 parameter Y_USERFO='HQ' instead of 'JAK'. Every F-53/FBZ2 posting he makes carries BSEG-XREF1='HQ' BSEG-XREF2='HQ' instead of the correct 'JAK'. PA0001.WERKS='ID00' BTRTL='JKT' confirms HR has him assigned to Indonesia/Jakarta.",
+  "source": "USR05 live RFC 2026-04-09 + PA0001/PA0105 cross-reference",
+  "severity": "HIGH",
+  "impact": "10 documents in 2026-02/03 carry wrong XREF tag. No automated detection. Manual correction via FBL3N by A_HIZKIA on 2 of 10.",
+  "status": "OPEN - fix pending SU3 update after KU-027 YFO_CODES.JAK verification",
+  "discovered_session": "#51",
+  "related_incident": "INC-000005240",
+  "related_known_unknown": "KU-027",
+  "promoted_to_recurring_check": false,
+  "related_check_script": "Zagentexecution/incidents/INC-000005240_live_diagnostic.py",
+  "affected_count": 1,
+  "affected_count_note": "1 user (AL_JONATHAN) with Y_USERFO='HQ' instead of 'JAK'",
+  "resolution_path": "H45 (s#054). Blocked by KU-027 (verify YFO_CODES has FOCOD='JAK') before SU3 update. See knowledge/incidents/INC-000005240_xref_office_substitution.md.",
+  "related_incidents": [
+   "INC-000005240"
+  ],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-019",
+  "issue": "Systemic XREF drift at UNESCO: 21,754 manual post-posting edits via FBL3N/FBL1N/FB02/FBL5N in Q1 2026 on UNES BELEG documents, across 242 distinct users, touching 24,597 distinct documents. This is the operational workaround for missing XREF validation and signals a systemic gap rather than isolated errors.",
+  "source": "Gold DB cdhdr query 2026-04-09",
+  "severity": "MEDIUM",
+  "impact": "Ongoing operational burden. Users spend significant time manually correcting XREF values because no runtime validation catches wrong values.",
+  "status": "OPEN - strategic fix options in Treasury xref_office_tagging_model.md §7.3",
+  "discovered_session": "#51",
+  "related_incident": "INC-000005240",
+  "related_known_unknown": "KU-028",
+  "promoted_to_recurring_check": false,
+  "related_check_script": null,
+  "affected_count": 21754,
+  "affected_count_note": "21,754 manual XREF edits Q1 2026 via FBL3N/FBL1N/FB02/FBL5N on UNES BELEG documents",
+  "resolution_path": "H46 (s#054). Strategic fix options in knowledge/domains/Treasury/xref_office_tagging_model.md §7.3. Decision pending between preventive substitution fix / opt-in SU3 model / periodic reconciliation / tolerate. Blocked by H48.",
+  "related_incidents": [
+   "INC-000005240"
+  ],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-020",
+  "issue": "USR05.Y_USERFO (finance office code) and PA0001.BTRTL (HR personnel subarea) use different code systems at UNESCO with no enforced mapping. Example drift: Kabul is BTRTL='KBL' but Y_USERFO='KAB'; Dakar is BTRTL='DKR' but Y_USERFO='DAK'. A user's office in finance can drift from their HR assignment with no automated detection.",
+  "source": "Live RFC 2026-04-09 PA0001 + USR05 for 7 users",
+  "severity": "MEDIUM",
+  "impact": "Enables the DQ-018 class of issues to persist undetected. A user can be hired in Jakarta (HR correct) and still have wrong finance office code (USR05) forever.",
+  "status": "OPEN - needs HR/BASIS alignment process",
+  "discovered_session": "#51",
+  "related_incident": "INC-000005240",
+  "related_known_unknown": "KU-028",
+  "promoted_to_recurring_check": false,
+  "related_check_script": null,
+  "affected_count": null,
+  "affected_count_note": "Unknown drift count without full USR05×PA0001 diff — tracked as KU-028",
+  "resolution_path": "H47 (s#054). Organizational process gap. Needs HR→BASIS alert mechanism + periodic diff report + policy for mandatory SU3 update on HR transfer. Cross-domain item.",
+  "related_incidents": [
+   "INC-000005240"
+  ],
+  "enriched_session": 54
+ },
+ {
+  "id": "dq_ghost_pernr_bcm_oesttveit",
+  "source": "HRP1001 (P01) via bcm_signatory_assignment (Gold DB)",
+  "issue": "Ghost PERNR 10567156 active in UIS BCM rules 90000004 + 90000005 since 2025-10-04. PA0105/0001 empty -> workflow 90000003 cannot route BNK_APP work items -> Svein OESTTVEIT silently cannot sign UIS payments even though he appears on the Citibank Canada carton des signatures as PERNR 10067156.",
+  "severity": "HIGH",
+  "impact": "Production payment routing for UIS is understaffed by one committer. If Svein would have been the deciding signatory, the batch waits or a different user approves. The real PERNR 10067156 (user S_OESTTVEIT, email S.OESTTVEIT@UNESCO.ORG) should have been used in OOCU_RESP.",
+  "workaround": "None automated. DBS must delimit HRP1001 SOBID=10567156 and insert fresh rows with SOBID=10067156 after TRS authorization. Until then, the other 7 UIS signatories on the carton must cover Svein's work.",
+  "discovered_session": 52,
+  "promoted_to_recurring_check": true,
+  "related_check_script": "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+  "related_known_unknown": null,
+  "first_seen_date": "2025-10-04",
+  "status": "RESOLVED",
+  "resolved_session": 52,
+  "resolved_date": "2026-04-13",
+  "resolution": "DBS delimited HRP1001 SOBID=10567156 on RY 50010054 + RY 50036801 (ENDDA set pre-20260413), inserted new rows with SOBID=10067156 (real Svein OESTTVEIT, user S_OESTTVEIT, BEGDA=20260413 ENDDA=99991231). Verified 2026-04-13 via RFC_READ_TABLE: 0 ghosts remain. Carton diff exit=0.",
+  "affected_count": 1,
+  "affected_count_note": "1 ghost PERNR (10567156 / Svein OESTTVEIT) active in 2 BCM rules",
+  "resolution_path": "INC-000006313 closure (s#052). Reconciliation check Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py added as recurring detector. PERNR removed from rules.",
+  "related_incidents": [
+   "INC-000006313"
+  ],
+  "enriched_session": 54
+ },
+ {
+  "id": "DQ-2026-063-04",
+  "issue": "KU-011 hypothesised T042Z extraction missing DMEE_ASSIGNMENT_TABLE column. Verified Session #63 (2026-04-30) via Gold DB PRAGMA table_info(T042Z): T042Z has 35 cols, no DMEE_ASSIGNMENT_TABLE column, but FORMI / XBKKT / XSTRA all present. The hypothetical missing column does not exist in standard SAP T042Z schema — KU-011 was based on incorrect schema assumption.",
+  "resolution": "CLOSED. T042Z fully extracted (263 rows). Per-entity differentiation via T042A (ZBUKR + ZLSCH + WAERS → HBKID).",
+  "status": "closed",
+  "created_session": 63,
+  "resolved_session": 63
+ },
+ {
+  "id": "DQ-2026-005638-01",
+  "session": 66,
+  "incident": "INC-000005638",
+  "issue": "UNESCO Earmarked Activities donor stream has NO carry-forward fund pattern (e.g. no 196EAR4142). Other UNESCO budget streams have these: 196RES4142 (Emergency Assistance carryforward), 196IAC4042 (International Assistance carryforward). The absence forces field offices with deliverables that span the biennium boundary to keep posting on the (now expired in spirit) predecessor biennium fund 196EAR4042, depleting its 2026 AVC pool and triggering FMAVC005 blocks on SES / MIRO / F110 postings.",
+  "severity": "HIGH",
+  "scope_count": 1,
+  "scope_unit": "missing fund / missing process",
+  "status": "OPEN - process gap; needs HQ Budget Office review (KU-2026-005638-02)"
+ },
+ {
+  "id": "MODEL-GAP-2026-001",
+  "session": 67,
+  "created_session": 67,
+  "discovered_session": 66,
+  "incident": "INC-000005638",
+  "source": "FM-AVC engine (FMAVCT + FMAFMAP013500109) vs PS-AVC engine (BPJA + COSP + PRPS) cross-engine reconciliation",
+  "issue": "Structural model gap: UNESCO runs two AVC engines (FM-AVC per (FUND, FUNDSCTR, CommItem); PS-AVC per WBS) at different granularities. They disagree at biennium close-out on TYPE 101-112 donor funds because revenue is loaded onto a placeholder FIPEX (REVENUE) that does not match the AVC-derivation range, while consumption posts to operational FIPEX (11, 13, 20, 30, ...). Result: FM-AVC blocks SES / MIRO / F110 postings while the PS-AVC project pool reports healthy. This is a configuration-level defect (FIPEX-derivation strategy + revenue-loading procedure), not a bug in custom code.",
+  "severity": "HIGH",
+  "impact": "2,005 buckets at risk UNESCO-wide (488 Tier 1 BOTH engines blocking + 1,517 Tier 2 FM-only blocking) per the 2026-05-01 class-detector run. Growth rate +4.1%/month measured Mar 31 -> Apr 28 2026 (+60 Tier 2 buckets in 4 weeks). Every biennium-end cycle on every Earmarked donor fund stream is structurally exposed. Symptom: red FMAVC005 / FI 026 abend at SES posting, invoice posting, or F110/F-53 payment time — independent of FBZP, BCM, or workflow configuration.",
+  "workaround": "Per affected bucket: (a) FMAVCREINIT on (RLDNR=9H, RFIKRS=UNES, RYEAR=current, RFUND=<legacy>); OR (b) load supplementary AVC budget on operational FIPEX via FMBB/FMX1; OR (c) close legacy fund (TYPE 104 -> 106) once successor is active. Pre-carry-forward gate: run inc5638_fm_ps_avc_misalignment.py against latest Gold DB and triage every Tier 1/Tier 2 bucket before the CF run.",
+  "scope_count": 2005,
+  "scope_unit": "(Fund, FundCenter, AVC-Bucket) buckets at risk",
+  "affected_count": 2005,
+  "affected_count_note": "488 Tier 1 + 1,517 Tier 2 = 2,005 buckets. Companion: companions/fm_ps_avc_model_gap_companion_v1.html",
+  "promoted_to_recurring_check": true,
+  "related_check_script": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
+  "csv_output": "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.csv",
+  "canonical_doc": "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+  "canonical_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
+  "related_incidents": [
+   "INC-000005638"
+  ],
+  "related_known_unknowns": [
+   "DQ-2026-005638-01"
+  ],
+  "growth_rate_monthly_pct": 4.1,
+  "growth_rate_window": "2026-03-31 to 2026-04-28",
+  "status": "OPEN",
+  "status_detail": "OPEN_RECURRING - structural defect, not yet remediated UNESCO-wide. Each individual fund needs case-by-case triage at biennium close-out.",
+  "evidence_tier": "TIER_1",
+  "companions_updated_session_67": [
+   "companions/carry_forward_2026.html",
+   "companions/payment_bcm_companion.html",
+   "companions/treasury_operations_companion_v1.html",
+   "companions/p2p_process_mining.html",
+   "companions/payment_process_mining.html",
+   "companions/fi_maintenance.html",
+   "companions/unesco_sap_landing.html"
+  ],
+  "related_companion": "companions/fm_ps_avc_model_gap_companion_v1.html",
+  "extended_companion_session_67": "companions/fm_ps_pool_health_matrix_v1.html",
+  "extended_check_script_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
+  "extended_csv_output_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.csv",
+  "extended_outliers_csv_session_67": "Zagentexecution/quality_checks/fm_ps_pool_health_matrix_outliers.csv",
+  "coverage_extension": "Coverage extended from 11,357 HARD-linked pairs (old detector) to 15,455 pairs (matrix) on 2026-05-01. State distribution: ALIGNED 4,363 / FM-EXHAUSTED 2,390 / PS-EXHAUSTED 991 / BOTH-EXHAUSTED 3,842. NEW BAD pairs found in DERIVED + DERIVED-MULTI tiers: 1,245 (invisible to old detector).",
+  "outlier_governance_pending": "10 multi-fund (>10 funds) WBSs flagged for HQ Budget Office governance review on AVC policy for common-cost objects. WBSs: PR00027627 (1211 funds), PR00000106 (592), PR00000107 (591), PR00000111 (448), PR00000109 (369), PR00000108 (275), PR00000110 (249), PR00008981 (68), PR00002724 (36), PR00008982 (30). Tracked under KU-2026-OUTLIER-WBS-AVC.",
+  "enriched_session": 70,
+  "proposed_controls": {
+   "parked_session": 68,
+   "parked_reason": "User explicitly deferred control-mechanism execution to live under MODEL-GAP-2026-001 governance, not as separate work item.",
+   "options": [
+    {
+     "id": "CONTROL-A",
+     "name": "In-line BAdI / enhancement validation",
+     "where": "BAdI FMAVC_CUSTOMER or enhancement on FMBB / FMBBT / FMJ2",
+     "logic": "Before posting a budget movement in FM, simulate the resulting (FUND, FUNDSCTR, CommItem) bucket state. If any bucket would cross zero while the corresponding PS-AVC pool stays positive, raise message ZFI/200 with Tier-2 misalignment evidence and block the posting.",
+     "effect": "Prevents desalignment from being created in the first place.",
+     "cost": "1 sprint config + UAT + transport",
+     "risk": "False positives until tolerance is calibrated; debug overhead in production.",
+     "recommendation_strength": "STRONG"
     },
-    "fix_paths_v3": {
-      "parked_session": 69,
-      "replaces": "fix_paths_v2 - now adds FIX-D (timing compression) and FIX-E (pre-flight hard block)",
-      "options": [
-        {
-          "id": "FIX-A-MULESOFT",
-          "phase": "biennium-START",
-          "cost": "3-5 days",
-          "coverage": "95% (prevents formation)",
-          "description": "MULESOFT distributes Allocation__c.Amount__c to operational FIPEX based on Commitment_Item__c instead of flattening to FIPEX=REVENUE",
-          "severity": "AUTO",
-          "related_ku": "KU-2026-MULESOFT-FIPEX-FLATTENING"
-        },
-        {
-          "id": "FIX-D-COMPRESS-WINDOW",
-          "phase": "biennium-END",
-          "cost": "1-2 weeks",
-          "coverage": "~95% biennium-end gap",
-          "description": "Trigger TYPE flip 104->106 simultaneously with FB01 R1 reversal. Closes the timing gap that produces tickets.",
-          "severity": "AUTO",
-          "priority": "HIGH-quick-win"
-        },
-        {
-          "id": "FIX-E-PREFLIGHT-HARD",
-          "phase": "PRE-FLIGHT",
-          "cost": "1-2 sprints",
-          "coverage": "true HARD BLOCK",
-          "description": "BAdI on FB01 that detects open POs/SES/commitments on source fund and HARD-BLOCKS the revenue transfer until they are resolved or override given by Budget Office.",
-          "severity": "BLOCK",
-          "recommended": "STRONG"
-        },
-        {
-          "id": "FIX-B-FULL-SYMMETRIC",
-          "phase": "biennium-END",
-          "cost": "2-3 weeks",
-          "coverage": "residual 5%",
-          "description": "Full 5-action synchronized biennium-end batch: FM revenue out + PS KBW1 + WBS TECO + ME22N PO reassign + Workplan update.",
-          "requires": "FIX-C",
-          "severity": "AUTO",
-          "related_ku": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT"
-        },
-        {
-          "id": "FIX-C-PROJECT-MAPPING",
-          "phase": "enabler",
-          "cost": "4-6 weeks",
-          "coverage": "enables FIX-B",
-          "description": "Cross-biennium project-mapping table linking legacy WBS to successor WBS for KBW2 cross-project transfers.",
-          "severity": "-"
-        }
-      ],
-      "recommended_order": "FIX-E (immediate hard control) -> FIX-A (root cause) -> FIX-D (timing) -> FIX-B+C (residual)",
-      "decision_owner": "HQ Budget Office (UNESCO) + Programme Office + IT (MULESOFT integration team) + FM/PS config team",
-      "evidence_chain": [
-        "INC-000005638 -> Pool Health Matrix (6,232 BAD pairs) -> Active filter (3,193 active BAD pairs) -> Pre-flight HARD-BLOCK (30 immediate)",
-        "Workplan PROD query confirms FIPEX granularity exists in SF Core Manager",
-        "BPJA verifies KBW1/KBW2 only used WITHIN projects, never cross-project",
-        "jest verifies TYPE flip 104->106 IS symmetric with WBS CLSD (gap is TIMING not absence)",
-        "committed_vs_available_detector.py classifies 4,115 active pairs by link_type and verdict"
-      ],
-      "ku_resolution_2026_05_01": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT closed: UNESCO has no SOP, no mapping table, no end-to-end owner. Therefore FIX-B and FIX-C require building organizational + master-data baselines from scratch (high cost, slow). Re-prioritized: FIX-E + FIX-F become load-bearing.",
-      "recommended_order_v2_2026_05_01": "1. FIX-E (Pre-flight HARD-BLOCK BAdI) — immediate, catches manual paths, does not require organizational SOP. 2. FIX-F (Meta-AVC unified engine) — strategic 6-month north star, closes model gap permanently. 3. FIX-A (MULESOFT FIPEX-aware) — quick win in parallel for automated path. 4. FIX-D (compress timing) — process win if Budget Office willing to coordinate. 5. FIX-B and FIX-C — DEFERRED until FIX-E/FIX-F land. UNESCO would need to BUILD the SOP and the mapping table from scratch, which is a multi-quarter governance project. Not blocking the technical fix.",
-      "critical_reframe_2026_05_01_part2": "User insight + empirical verification: desalignment is a CONTINUOUS risk, not a periodic biennium-end event. 14 revenue events + dozens of monthly operational adjustments on 196EAR4042 alone in 2024-2026. Therefore FIX-D (compress closure timing) is DEMOTED. FIX-E and FIX-F are PROMOTED as load-bearing.",
-      "final_recommended_order": "1. FIX-E (BAdI HARD-BLOCK on every FB01/FMBB/FMBBT/FMX1) — runs on EVERY posting, catches manual paths continuously. CRITICAL #1. 2. FIX-F (Meta-AVC unified engine, atomic validation per posting) — strategic permanent close. CRITICAL #2. 3. FIX-A (MULESOFT FIPEX-aware) — quick win parallel for automated path only (does not catch manual FB01). 4. FIX-D (compress closure timing) — DEMOTED to residual. Addresses 1 event/biennium = ~1% of risk surface. 5. FIX-B + FIX-C (symmetric closeout SOP + mapping table) — DEFERRED. Even with perfect SOP, mid-biennium adjustments would still create asymmetry. System-enforced consistency (FIX-E + FIX-F) is the only durable answer.",
-      "fix_g_root_config": {
-        "discovery_session": 69,
-        "discovery_date": "2026-05-01",
-        "description": "Root cause traced to AVC derivation rule FMAFMAP013500109 in env 9HZ00001 — collapses 8 FIPEX into 1 control object TC, hiding per-FIPEX deficits.",
-        "fix_g1": {
-          "name": "Granular AVC per-FIPEX",
-          "action": "Modify FMAFMAP013500109 so each FIPEX has its own control object",
-          "effort": "~1 sprint config + UAT",
-          "effect": "AVC blocks at first per-FIPEX deficit (granular control)"
-        },
-        "fix_g2": {
-          "name": "REVENUE exclusion from TC pool",
-          "action": "Keep TC aggregation but exclude FIPEX=REVENUE from TC pool — REVENUE has its own control object",
-          "effort": "~1 sprint config + UAT",
-          "effect": "REVENUE buffer no longer hides operational FIPEX deficits at AVC layer"
-        },
-        "priority": "FIX-G is now the cheapest structural fix and may obviate FIX-E and FIX-F if approved by HQ Budget Office",
-        "related_claim": 149
-      },
-      "session_69_final_synthesis": {
-        "date": "2026-05-02",
-        "project_classification_unesco_wide": {
-          "Class_A_Locked_controlled": {
-            "projects": 705,
-            "postings": 280693,
-            "pattern": "INC-005638 (TC aggregator + biennium-end trap)"
-          },
-          "Class_B_Locked_no_AVC": {
-            "projects": 255,
-            "postings": 32541,
-            "pattern": "Earmarked + locked + no AVC rule (worse than A)"
-          },
-          "Class_C_Process_dependent": {
-            "projects": 22,
-            "postings": 18638,
-            "pattern": "Multi-fund with partial AVC (PFF management cost type)"
-          },
-          "Class_D_Uncontrolled": {
-            "projects": 307,
-            "postings": 169075,
-            "pattern": "No AVC + non-Earmarked, fund can run negative without alarm"
-          }
-        },
-        "avc_coverage_global": "6.5% (3,576 / 55,428 UNES funds have any AVC rule)",
-        "fix_priority_final": "FIX-G4 (policy) -> FIX-G1 + FIX-G2 (Class A root cause) + FIX-G3 (Class B+D) -> FIX-E (BAdI tactical) -> FIX-F (Meta-AVC strategic)",
-        "detector_scripts": [
-          "inc5638_per_po_engine_analysis.py",
-          "inc5638_fm_ps_avc_misalignment.py",
-          "fm_ps_pool_health_matrix.py",
-          "committed_vs_available_detector.py",
-          "project_risk_classifier.py"
-        ],
-        "related_companions": [
-          "companions/fm_ps_avc_model_gap_companion_v1.html (master with AGI synthesis)",
-          "companions/fm_ps_avc_temporal_forecast_v1.html (temporal + Meta-AVC)",
-          "companions/fm_ps_pool_health_matrix_v1.html (pool health)"
-        ]
-      },
-      "session_69_user_correction_2026_05_02": {
-        "date": "2026-05-02",
-        "correction": "User SME confirmed MULESOFT is courier-only, not the leverage point. All structural fixes are SAP-side.",
-        "fix_a_demoted": {
-          "name": "FIX-A MULESOFT FIPEX-aware revenue load",
-          "reason_demoted": "MULESOFT only carries BOR; SAP custom code (YCL_YPS8_BCS_BL) is what decides REVENUE placeholder preservation. Fixing MULESOFT does not address the SAP-side hardcoded logic.",
-          "status": "DEPRECATED"
-        },
-        "fix_h_added": {
-          "name": "FIX-H Modify YCL_YPS8_BCS_BL to remove REVENUE placeholder preservation",
-          "description": "Modify the UNESCO custom PS budget BCS class YCL_YPS8_BCS_BL (lines 58/73) so that either: (a) revenue is distributed to operational FIPEX based on incoming Allocation context, or (b) the REVENUE placeholder preservation is removed so AVC validates per-operational-FIPEX directly. This is the SAP-side root-config fix that closes the gap at source.",
-          "effort": "~1 sprint config + UAT (low risk — single class, well-isolated)",
-          "effect": "Operational FIPEX get real budget allocation at fund creation; AVC blocks per-FIPEX correctly",
-          "recommendation_strength": "STRONG — cheapest structural fix yet identified",
-          "related_claim": 154,
-          "related_evidence": "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73"
-        },
-        "final_recommended_order_v4": "1. FIX-H (modify YCL_YPS8_BCS_BL) — cheapest SAP-side structural fix (1 sprint), addresses root cause. 2. FIX-G1 (granular AVC FMAFMAP013500109) — also SAP-side (1 sprint). 3. FIX-G2 (REVENUE exclusion from TC pool) — SAP config (1 sprint). 4. FIX-G3 + FIX-G4 (extend AVC to non-Earmarked TYPEs after policy decision). 5. FIX-E (BAdI HARD-BLOCK on FB01/FMBB) — tactical 1-2 sprints. 6. FIX-F (Meta-AVC unified) — strategic 6-month. FIX-A (MULESOFT) DEPRECATED."
-      },
-      "scope_clarification_2026_05_02": "All \"FIX\" entries in this file are OPTIONS for UNESCO teams to evaluate. The agent does not propose to execute code changes. The agent role is to document empirical evidence, classify risk, and structure options — UNESCO decides and executes. Per feedback_evaluate_dont_propose_code_changes (HIGH).",
-      "agent_scope": "EVALUATIVE_ONLY — empirical analysis + structured options + companion documentation",
-      "execution_owner": "UNESCO HQ Budget Office + FM/PS Config Team + MuleSoft Ops + Architecture Board",
-      "fix_i_workplan_driven_validation": {
-        "discovery_session": 69,
-        "discovery_date": "2026-05-03",
-        "attribution": "User SME 2026-05-03",
-        "description": "Replace the static 10-digit rule (POSID(10)=GEBER) in ZXFMYU22 with a dynamic 5-step lookup against Workplan Allocation__c. Uses the actual Programme intent (which funds + CommItems are allowed for this workplan) instead of the POSID convention.",
-        "variant_ia": {
-          "name": "Live read from Salesforce",
-          "how": "User-exit RFC/HTTP to MULESOFT/Salesforce at posting time",
-          "tradeoff": "Latency + external dependency",
-          "strength": "WEAK"
-        },
-        "variant_ib": {
-          "name": "Push Workplan data to SAP Z-table",
-          "how": "MULESOFT writes Z_WP_FUND_ALLOC table nightly or on Workplan change. User-exit reads Z-table at posting time.",
-          "tradeoff": "Z-table refresh cadence (~24h lag tolerable)",
-          "strength": "STRONG — preferred per user"
-        },
-        "works_for": "Multi-fund workplans, non-Earmarked TYPEs, all 4 mutation paths if combined with FIX-F",
-        "relationship_to_other_fixes": {
-          "FIX-G": "Complementary — different layer (FIX-G fixes AVC math, FIX-I fixes WBS/Fund pairing semantics)",
-          "FIX-F": "FIX-F can absorb FIX-I as Check 4 (Workplan reconciliation in Meta-AVC engine)",
-          "FIX-E": "Complementary — FIX-E catches paths, FIX-I checks semantic validity"
-        },
-        "related_claim": 158
-      },
-      "monitoring_blindness_2026_05_03": {
-        "finding": "UNESCO primary Project Manager dashboard (YPS8) and budget/expenditure report (YFM1) use the same IS_COMMITMENT_ITEM_IN_AVC filter as FM-AVC. Therefore the monitoring tool is as blind as the engine. Project Managers cannot pre-empt INC-005638-class incidents from YPS8 alone.",
-        "evidence_class": "YCL_YPS8_BCS_BL===CM005_RPY.abap (PREPARE_DATA method)",
-        "related_claim": 159,
-        "implication": "Any monitoring/alerting strategy must use a per-FIPEX detector (e.g., committed_vs_available_detector.py) INSTEAD OF or IN ADDITION TO YPS8/YFM1, because YPS8/YFM1 will not surface the gap. This is independent of fixes G/H/I/F — even after fixing AVC config, the reports themselves should be reviewed."
-      }
+    {
+     "id": "CONTROL-B",
+     "name": "Nightly batch detector + alert",
+     "where": "Job scheduler (SM37) running inc5638_fm_ps_avc_misalignment.py and fm_ps_pool_health_matrix.py",
+     "logic": "Detect overnight any (Fund, FundCenter, CommItem) bucket that transitioned Tier 4 -> Tier 2 between two consecutive runs. Email HQ Budget Office.",
+     "effect": "Detects within < 24h. Does NOT prevent.",
+     "cost": "2 hours config (job + email distro list)",
+     "risk": "Damage already done at detection time.",
+     "recommendation_strength": "IMMEDIATE"
     },
-    "related_companions_v2": [
-      "companions/fm_ps_avc_model_gap_companion_v1.html",
-      "companions/fm_ps_pool_health_matrix_v1.html",
-      "companions/fm_ps_avc_temporal_forecast_v1.html"
-    ],
-    "related_detector_scripts": [
-      "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
-      "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
-      "Zagentexecution/quality_checks/committed_vs_available_detector.py"
-    ],
-    "related_known_unknowns_v2": [
-      "KU-2026-005638-OPSV",
-      "KU-2026-MODEL-GAP-CONTROL",
-      "KU-2026-OUTLIER-WBS-AVC",
-      "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT",
-      "KU-2026-MULESOFT-FIPEX-FLATTENING",
-      "KU-2026-AGI-GAP-2",
-      "KU-2026-AGI-GAP-6",
-      "KU-2026-WP-INTENT",
-      "KU-2026-NET-DRIFT"
-    ],
-    "central_narrative_2026_05_02": "AVC absence/misconfiguration is the UPSTREAM root cause. Everything downstream (FB01 batches, closure protocols, workplan reprogramming, MULESOFT mappings, PO redirects) are symptoms or transport layers. SAP knew about the open commitments but had no guardian to enforce the constraint. The structural fix priority is therefore: FIX-G1 (granular AVC per-FIPEX) + FIX-G2 (exclude REVENUE from TC pool) + FIX-G3 (enable AVC for non-Earmarked TYPEs that need it) + FIX-H (remove REVENUE preservation in YCL_YPS8_BCS_BL). FIX-F Meta-AVC is the long-term strategic enhancement that ALSO adds cross-engine FM<->PS consistency check at every posting. FIX-A MULESOFT is deprecated. FIX-D/E/B are mitigations of symptoms.",
-    "narrative_credit": "User SME 2026-05-02",
-    "related_central_claim": 157,
-    "session_70_correction_2026_05_03": {
-      "date": "2026-05-03",
-      "attribution": "User SME screenshot of FMAVCT live view",
-      "correction": "Prior claim 'FM-AVC TC bucket on 196EAR4042/WHC in 2026 = -$1.56M deficit' is FALSE. Real values per SAP live AVC view: TC Available=$2,251,685.21 (positive); 80 Available=$200,854.89 (positive). Both AVC control objects show positive availability. The PS-FM consistency narrative needs adjustment: the gap is not 'FM exhausted vs PS healthy'. The 3 Gabon PO block has a different cause we have not yet identified.",
-      "methodology_error": "fmifiit_full WRTTP=66 - WRTTP=54 raw aggregation != AVC Consumable - Consumed semantics. AVC uses pre-allocated control object budgets and registration rules.",
-      "working_hypothesis": "Timing-window failure: FB01 R1 reversal exhausted AVC briefly; KBFC carry-forward restored it. Block may have been resolved by carry-forward rather than the structural fix we proposed.",
-      "superseded_claims": [
-        136,
-        142,
-        156,
-        157,
-        159
-      ],
-      "replaced_by_claim": 174,
-      "related_kus": [
-        "KU-2026-AVC-MATH-METHODOLOGY",
-        "KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE",
-        "KU-2026-FMAVCT-FULL-EXTRACT"
-      ]
+    {
+     "id": "CONTROL-C",
+     "name": "Pre-flight check companion (manual)",
+     "where": "Companion HTML the Budget Office consults before any FMBB / FMBBT posting",
+     "logic": "Interactive simulator showing per-bucket impact before committing.",
+     "effect": "Educational / advisory only.",
+     "cost": "Zero development.",
+     "risk": "Only effective if used voluntarily.",
+     "recommendation_strength": "FALLBACK"
     }
+   ],
+   "recommendation": "A + B in parallel. CONTROL-B activates this week (cheap, prevents fire-after-detection). CONTROL-A activates in a 4-6 week sprint (the only one that prevents drift from being created).",
+   "decision_owner": "HQ Budget Office (UNESCO) + FM/PS config team",
+   "decision_status": "PENDING_HQ_DECISION",
+   "related_known_unknown": "KU-2026-MODEL-GAP-CONTROL"
   },
-  {
-    "id": "DQ-2026-05-11-001",
-    "title": "v001_change_matrix.csv row 1 (SEPA Cdtr/StrtNm → FPAYP/REF01) contradicts code reading",
-    "severity": "HIGH",
-    "domain": "Payment",
-    "discovered_session": "#075",
-    "discovered_at": "2026-05-11T17:48:31",
-    "summary": "Matrix row 1 binds /SEPA_CT_UNES Cdtr/StrtNm to FPAYP/REF01 with rationale 'CM005 line 109 writes Cdtr to FPAYP-REF01'. Direct code reading of CL_IDFI_CGI_CALL05_GENERIC->GENERIC_CALL line 108-115 shows the LOOP writes <fs_fpayp>-ref01+0(60) = ls_adrc-street where ls_adrc was loaded via get_company_address(zbukr) — i.e. PAYING-CO address, not vendor. Under this code path, the matrix-row-1 binding would render UNESCO HQ street as <Cdtr><StrtNm>. Empirical 2026-05-07 BERTOLDINI test rendered VENDOR street ('BFM/FAS/PAY') under V001, which is inconsistent with the matrix-row-1 design.",
-    "candidate_explanations": [
-      "(A) The actual V001 binding deployed to D01 SEPA tree differs from matrix-row-1 — the deployed binding uses FPAYH-ZSTRA (vendor street Z-field) directly, and the matrix row 1 is forward-design only.",
-      "(B) FPAYP-REF01 layout for SEPA differs from FPAYHX-REF01 for CGI — but matrix row 1 says they're identical (CM005 line 109 cite).",
-      "(C) There's another code path that overwrites FPAYP-REF01 with vendor data after GENERIC_CALL (e.g. a BAdI or another Event)."
+  "fix_paths_v3": {
+   "parked_session": 69,
+   "replaces": "fix_paths_v2 - now adds FIX-D (timing compression) and FIX-E (pre-flight hard block)",
+   "options": [
+    {
+     "id": "FIX-A-MULESOFT",
+     "phase": "biennium-START",
+     "cost": "3-5 days",
+     "coverage": "95% (prevents formation)",
+     "description": "MULESOFT distributes Allocation__c.Amount__c to operational FIPEX based on Commitment_Item__c instead of flattening to FIPEX=REVENUE",
+     "severity": "AUTO",
+     "related_ku": "KU-2026-MULESOFT-FIPEX-FLATTENING"
+    },
+    {
+     "id": "FIX-D-COMPRESS-WINDOW",
+     "phase": "biennium-END",
+     "cost": "1-2 weeks",
+     "coverage": "~95% biennium-end gap",
+     "description": "Trigger TYPE flip 104->106 simultaneously with FB01 R1 reversal. Closes the timing gap that produces tickets.",
+     "severity": "AUTO",
+     "priority": "HIGH-quick-win"
+    },
+    {
+     "id": "FIX-E-PREFLIGHT-HARD",
+     "phase": "PRE-FLIGHT",
+     "cost": "1-2 sprints",
+     "coverage": "true HARD BLOCK",
+     "description": "BAdI on FB01 that detects open POs/SES/commitments on source fund and HARD-BLOCKS the revenue transfer until they are resolved or override given by Budget Office.",
+     "severity": "BLOCK",
+     "recommended": "STRONG"
+    },
+    {
+     "id": "FIX-B-FULL-SYMMETRIC",
+     "phase": "biennium-END",
+     "cost": "2-3 weeks",
+     "coverage": "residual 5%",
+     "description": "Full 5-action synchronized biennium-end batch: FM revenue out + PS KBW1 + WBS TECO + ME22N PO reassign + Workplan update.",
+     "requires": "FIX-C",
+     "severity": "AUTO",
+     "related_ku": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT"
+    },
+    {
+     "id": "FIX-C-PROJECT-MAPPING",
+     "phase": "enabler",
+     "cost": "4-6 weeks",
+     "coverage": "enables FIX-B",
+     "description": "Cross-biennium project-mapping table linking legacy WBS to successor WBS for KBW2 cross-project transfers.",
+     "severity": "-"
+    }
+   ],
+   "recommended_order": "FIX-E (immediate hard control) -> FIX-A (root cause) -> FIX-D (timing) -> FIX-B+C (residual)",
+   "decision_owner": "HQ Budget Office (UNESCO) + Programme Office + IT (MULESOFT integration team) + FM/PS config team",
+   "evidence_chain": [
+    "INC-000005638 -> Pool Health Matrix (6,232 BAD pairs) -> Active filter (3,193 active BAD pairs) -> Pre-flight HARD-BLOCK (30 immediate)",
+    "Workplan PROD query confirms FIPEX granularity exists in SF Core Manager",
+    "BPJA verifies KBW1/KBW2 only used WITHIN projects, never cross-project",
+    "jest verifies TYPE flip 104->106 IS symmetric with WBS CLSD (gap is TIMING not absence)",
+    "committed_vs_available_detector.py classifies 4,115 active pairs by link_type and verdict"
+   ],
+   "ku_resolution_2026_05_01": "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT closed: UNESCO has no SOP, no mapping table, no end-to-end owner. Therefore FIX-B and FIX-C require building organizational + master-data baselines from scratch (high cost, slow). Re-prioritized: FIX-E + FIX-F become load-bearing.",
+   "recommended_order_v2_2026_05_01": "1. FIX-E (Pre-flight HARD-BLOCK BAdI) — immediate, catches manual paths, does not require organizational SOP. 2. FIX-F (Meta-AVC unified engine) — strategic 6-month north star, closes model gap permanently. 3. FIX-A (MULESOFT FIPEX-aware) — quick win in parallel for automated path. 4. FIX-D (compress timing) — process win if Budget Office willing to coordinate. 5. FIX-B and FIX-C — DEFERRED until FIX-E/FIX-F land. UNESCO would need to BUILD the SOP and the mapping table from scratch, which is a multi-quarter governance project. Not blocking the technical fix.",
+   "critical_reframe_2026_05_01_part2": "User insight + empirical verification: desalignment is a CONTINUOUS risk, not a periodic biennium-end event. 14 revenue events + dozens of monthly operational adjustments on 196EAR4042 alone in 2024-2026. Therefore FIX-D (compress closure timing) is DEMOTED. FIX-E and FIX-F are PROMOTED as load-bearing.",
+   "final_recommended_order": "1. FIX-E (BAdI HARD-BLOCK on every FB01/FMBB/FMBBT/FMX1) — runs on EVERY posting, catches manual paths continuously. CRITICAL #1. 2. FIX-F (Meta-AVC unified engine, atomic validation per posting) — strategic permanent close. CRITICAL #2. 3. FIX-A (MULESOFT FIPEX-aware) — quick win parallel for automated path only (does not catch manual FB01). 4. FIX-D (compress closure timing) — DEMOTED to residual. Addresses 1 event/biennium = ~1% of risk surface. 5. FIX-B + FIX-C (symmetric closeout SOP + mapping table) — DEFERRED. Even with perfect SOP, mid-biennium adjustments would still create asymmetry. System-enforced consistency (FIX-E + FIX-F) is the only durable answer.",
+   "fix_g_root_config": {
+    "discovery_session": 69,
+    "discovery_date": "2026-05-01",
+    "description": "Root cause traced to AVC derivation rule FMAFMAP013500109 in env 9HZ00001 — collapses 8 FIPEX into 1 control object TC, hiding per-FIPEX deficits.",
+    "fix_g1": {
+     "name": "Granular AVC per-FIPEX",
+     "action": "Modify FMAFMAP013500109 so each FIPEX has its own control object",
+     "effort": "~1 sprint config + UAT",
+     "effect": "AVC blocks at first per-FIPEX deficit (granular control)"
+    },
+    "fix_g2": {
+     "name": "REVENUE exclusion from TC pool",
+     "action": "Keep TC aggregation but exclude FIPEX=REVENUE from TC pool — REVENUE has its own control object",
+     "effort": "~1 sprint config + UAT",
+     "effect": "REVENUE buffer no longer hides operational FIPEX deficits at AVC layer"
+    },
+    "priority": "FIX-G is now the cheapest structural fix and may obviate FIX-E and FIX-F if approved by HQ Budget Office",
+    "related_claim": 149
+   },
+   "session_69_final_synthesis": {
+    "date": "2026-05-02",
+    "project_classification_unesco_wide": {
+     "Class_A_Locked_controlled": {
+      "projects": 705,
+      "postings": 280693,
+      "pattern": "INC-005638 (TC aggregator + biennium-end trap)"
+     },
+     "Class_B_Locked_no_AVC": {
+      "projects": 255,
+      "postings": 32541,
+      "pattern": "Earmarked + locked + no AVC rule (worse than A)"
+     },
+     "Class_C_Process_dependent": {
+      "projects": 22,
+      "postings": 18638,
+      "pattern": "Multi-fund with partial AVC (PFF management cost type)"
+     },
+     "Class_D_Uncontrolled": {
+      "projects": 307,
+      "postings": 169075,
+      "pattern": "No AVC + non-Earmarked, fund can run negative without alarm"
+     }
+    },
+    "avc_coverage_global": "6.5% (3,576 / 55,428 UNES funds have any AVC rule)",
+    "fix_priority_final": "FIX-G4 (policy) -> FIX-G1 + FIX-G2 (Class A root cause) + FIX-G3 (Class B+D) -> FIX-E (BAdI tactical) -> FIX-F (Meta-AVC strategic)",
+    "detector_scripts": [
+     "inc5638_per_po_engine_analysis.py",
+     "inc5638_fm_ps_avc_misalignment.py",
+     "fm_ps_pool_health_matrix.py",
+     "committed_vs_available_detector.py",
+     "project_risk_classifier.py"
     ],
-    "verification_plan": [
-      "(1) RFC-extract DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' for node N_3513093480 (per matrix row 1) — read MP_SC_TAB and MP_SC_FLD.",
-      "(2) If (1) returns MP_SC_TAB=FPAYP, MP_SC_FLD=REF01, then trace the V001 BERTOLDINI F110 run on 2026-05-07 — check whether SAPFPAYM_MERGE bypassed CGI_05 entirely (using ZSAPFPAYM_REPLAY path) which would explain a different REF01 population.",
-      "(3) Examine ZSAPFPAYM_REPLAY's FPAYHX/FPAYP construction — does it call FI_PAYMEDIUM_DMEE_CGI_05 or pre-populate REF01 from REGUH/FPAYH-ZSTRA?"
-    ],
-    "blocks": "Phase 5 V001 SEPA cutover — must not release until matrix row 1 vs code reality is reconciled",
-    "status": "OPEN",
-    "owner": "next session"
+    "related_companions": [
+     "companions/fm_ps_avc_model_gap_companion_v1.html (master with AGI synthesis)",
+     "companions/fm_ps_avc_temporal_forecast_v1.html (temporal + Meta-AVC)",
+     "companions/fm_ps_pool_health_matrix_v1.html (pool health)"
+    ]
+   },
+   "session_69_user_correction_2026_05_02": {
+    "date": "2026-05-02",
+    "correction": "User SME confirmed MULESOFT is courier-only, not the leverage point. All structural fixes are SAP-side.",
+    "fix_a_demoted": {
+     "name": "FIX-A MULESOFT FIPEX-aware revenue load",
+     "reason_demoted": "MULESOFT only carries BOR; SAP custom code (YCL_YPS8_BCS_BL) is what decides REVENUE placeholder preservation. Fixing MULESOFT does not address the SAP-side hardcoded logic.",
+     "status": "DEPRECATED"
+    },
+    "fix_h_added": {
+     "name": "FIX-H Modify YCL_YPS8_BCS_BL to remove REVENUE placeholder preservation",
+     "description": "Modify the UNESCO custom PS budget BCS class YCL_YPS8_BCS_BL (lines 58/73) so that either: (a) revenue is distributed to operational FIPEX based on incoming Allocation context, or (b) the REVENUE placeholder preservation is removed so AVC validates per-operational-FIPEX directly. This is the SAP-side root-config fix that closes the gap at source.",
+     "effort": "~1 sprint config + UAT (low risk — single class, well-isolated)",
+     "effect": "Operational FIPEX get real budget allocation at fund creation; AVC blocks per-FIPEX correctly",
+     "recommendation_strength": "STRONG — cheapest structural fix yet identified",
+     "related_claim": 154,
+     "related_evidence": "extracted_code/UNESCO_CUSTOM_LOGIC/PS_PROJECTS/YCL_YPS8_BCS_BL===CM005_RPY.abap:58,73"
+    },
+    "final_recommended_order_v4": "1. FIX-H (modify YCL_YPS8_BCS_BL) — cheapest SAP-side structural fix (1 sprint), addresses root cause. 2. FIX-G1 (granular AVC FMAFMAP013500109) — also SAP-side (1 sprint). 3. FIX-G2 (REVENUE exclusion from TC pool) — SAP config (1 sprint). 4. FIX-G3 + FIX-G4 (extend AVC to non-Earmarked TYPEs after policy decision). 5. FIX-E (BAdI HARD-BLOCK on FB01/FMBB) — tactical 1-2 sprints. 6. FIX-F (Meta-AVC unified) — strategic 6-month. FIX-A (MULESOFT) DEPRECATED."
+   },
+   "scope_clarification_2026_05_02": "All \"FIX\" entries in this file are OPTIONS for UNESCO teams to evaluate. The agent does not propose to execute code changes. The agent role is to document empirical evidence, classify risk, and structure options — UNESCO decides and executes. Per feedback_evaluate_dont_propose_code_changes (HIGH).",
+   "agent_scope": "EVALUATIVE_ONLY — empirical analysis + structured options + companion documentation",
+   "execution_owner": "UNESCO HQ Budget Office + FM/PS Config Team + MuleSoft Ops + Architecture Board",
+   "fix_i_workplan_driven_validation": {
+    "discovery_session": 69,
+    "discovery_date": "2026-05-03",
+    "attribution": "User SME 2026-05-03",
+    "description": "Replace the static 10-digit rule (POSID(10)=GEBER) in ZXFMYU22 with a dynamic 5-step lookup against Workplan Allocation__c. Uses the actual Programme intent (which funds + CommItems are allowed for this workplan) instead of the POSID convention.",
+    "variant_ia": {
+     "name": "Live read from Salesforce",
+     "how": "User-exit RFC/HTTP to MULESOFT/Salesforce at posting time",
+     "tradeoff": "Latency + external dependency",
+     "strength": "WEAK"
+    },
+    "variant_ib": {
+     "name": "Push Workplan data to SAP Z-table",
+     "how": "MULESOFT writes Z_WP_FUND_ALLOC table nightly or on Workplan change. User-exit reads Z-table at posting time.",
+     "tradeoff": "Z-table refresh cadence (~24h lag tolerable)",
+     "strength": "STRONG — preferred per user"
+    },
+    "works_for": "Multi-fund workplans, non-Earmarked TYPEs, all 4 mutation paths if combined with FIX-F",
+    "relationship_to_other_fixes": {
+     "FIX-G": "Complementary — different layer (FIX-G fixes AVC math, FIX-I fixes WBS/Fund pairing semantics)",
+     "FIX-F": "FIX-F can absorb FIX-I as Check 4 (Workplan reconciliation in Meta-AVC engine)",
+     "FIX-E": "Complementary — FIX-E catches paths, FIX-I checks semantic validity"
+    },
+    "related_claim": 158
+   },
+   "monitoring_blindness_2026_05_03": {
+    "finding": "UNESCO primary Project Manager dashboard (YPS8) and budget/expenditure report (YFM1) use the same IS_COMMITMENT_ITEM_IN_AVC filter as FM-AVC. Therefore the monitoring tool is as blind as the engine. Project Managers cannot pre-empt INC-005638-class incidents from YPS8 alone.",
+    "evidence_class": "YCL_YPS8_BCS_BL===CM005_RPY.abap (PREPARE_DATA method)",
+    "related_claim": 159,
+    "implication": "Any monitoring/alerting strategy must use a per-FIPEX detector (e.g., committed_vs_available_detector.py) INSTEAD OF or IN ADDITION TO YPS8/YFM1, because YPS8/YFM1 will not surface the gap. This is independent of fixes G/H/I/F — even after fixing AVC config, the reports themselves should be reviewed."
+   }
   },
-  {
-    "id": "DQ-S079-FEBEP",
-    "source": "gold_db_dedup",
-    "issue": "FEBEP exists as two extract twins: FEBEP (104 cols, 50K-row sample) vs FEBEP_2024_2026 (27 cols, 223K rows). Neither is a superset — one has the columns, the other the rows.",
-    "severity": "MEDIUM",
-    "impact": "Redundant twin; cannot consolidate losslessly from existing data.",
-    "workaround": "Use FEBEP_2024_2026 (223K rows) for row-complete work; FEBEP for the wide 104-col schema.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "RE-EXTRACT FEBEP with ALL 104 cols for the full 2024-2026 row set, then drop both twins. BLOCKED: P01 not active.",
-    "affected_count": 2
-  },
-  {
-    "id": "DQ-S079-FEBKO",
-    "source": "gold_db_dedup",
-    "issue": "FEBKO extract twins: FEBKO (8 cols, 50K) vs FEBKO_2024_2026 (62 cols, 31K). FEBKO is the bank-statement HEADER (1 per KUKEY) to FEBEP items.",
-    "severity": "MEDIUM",
-    "impact": "Redundant twin; columns-vs-rows split.",
-    "workaround": "Use FEBKO_2024_2026 (62 cols) for analysis.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "RE-EXTRACT FEBKO with full 62 cols for full row set. BLOCKED: P01 not active.",
-    "affected_count": 2
-  },
-  {
-    "id": "DQ-S079-CDPOS",
-    "source": "process_mining",
-    "issue": "CDPOS (field-level change documents) is NOT loaded in the Gold DB. extract_cdhdr.py supports it (table cdpos, --cdpos-only) and extracted_data/CDPOS exists but is EMPTY; no cdpos table. cdhdr (7.8M headers) is present.",
-    "severity": "HIGH",
-    "impact": "Process mining activities are coarse (Change PO) instead of field-level (PROCSTAT->Released, quantity changed). CDPOS is the richest activity source.",
-    "workaround": "Use cdhdr TCODE-level activities for now.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extractor BUILT: scripts/extract_cdpos_by_object.py — by object + OBJECTID windows (2000) + resumable checkpoints + field-filtered (activity FNAMEs) + stream to SQLite (PK dedup). Plan: ~784 windows across 7 priority objects (EINKBELEG 37, BANF 5, BELEG 174, ENTRYSHEET 60, KRED 54, FMRESERV 438, MM_SERVICE 16). Run order: prio1 first. CDPOS is PERMANENT (one-time bulk + delta), NOT a 15-day log. BLOCKED: P01 not active.",
-    "affected_count": 1,
-    "resolution_ready": true
-  },
-  {
-    "id": "DQ-S079-JCDS",
-    "source": "process_mining",
-    "issue": "JCDS (object status change history) not loaded. JEST (current status) IS present. JCDS = the status TRANSITIONS (created->released->completed->closed) for orders/PS/PM/QM, decoded via TJ02T. NOT captured by CDHDR/CDPOS.",
-    "severity": "HIGH",
-    "impact": "No status-lifecycle process mining.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract JCDS (OBJNR,STAT,UDATE,UTIME,USERID,CHGNR) + TJ02T (status texts). Pairs with existing JEST. Priority 2 after CDPOS. Verified by deep research (van der Aalst/RWTH, SAP KBA 3527846).",
-    "affected_count": 1
-  },
-  {
-    "id": "DQ-S079-VBFA",
-    "source": "process_mining",
-    "issue": "VBFA (SD/O2C document flow) not loaded. Canonical flow table: links VBELN(current)->VBELV(prev) with VBTYP_N/VBTYP_V doc types.",
-    "severity": "HIGH",
-    "impact": "No O2C document-flow/lifecycle mining.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract VBFA via RFC_READ_TABLE (transparent). Activity = VBTYP_N. Priority 3. Supplement timestamps from VBAK/LIKP/VBRK.",
-    "affected_count": 1
-  },
-  {
-    "id": "DQ-S079-WORKFLOW",
-    "source": "process_mining",
-    "issue": "Workflow history tables (SWWWIHEAD + SWWLOGHIST) not loaded. Approval-flow mining: case_id=COALESCE(TOP_WI_ID,WI_ID); SWWLOGHIST adds step/agent history.",
-    "severity": "MEDIUM_HIGH",
-    "impact": "No approval/SoD/control process mining (BCM dual-control, payment approvals, YWFI).",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract SWWWIHEAD + SWWLOGHIST via RFC_READ_TABLE. Priority 4. SWWWIHEAD alone insufficient (deep-research refuted) — need SWWLOGHIST for agents/steps.",
-    "affected_count": 1
-  },
-  {
-    "id": "DQ-S079-EDIDS",
-    "source": "interface_mining",
-    "issue": "EDIDS (IDoc status history) not loaded — only EDIDC current status. 70 IDocs already in error status 51. Without EDIDS we cannot see interface failures, retries, manual reprocessing (BD87).",
-    "severity": "HIGH",
-    "impact": "Blind to interface failure/reprocessing improvement opportunities.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract EDIDS (DOCNUM,STATUS,LOGDAT,LOGTIM,UNAME,STATXT). case=DOCNUM, activity=status text, ts=LOGDAT+LOGTIM. Reveals failure/retry/reprocess patterns."
-  },
-  {
-    "id": "DQ-S079-VRSD",
-    "source": "code_mining",
-    "issue": "VRSD/VRSX (version management = code-change log) not loaded. No visibility into code churn — which objects change most, by whom, correlated with incidents.",
-    "severity": "HIGH",
-    "impact": "Cannot find unstable/over-modified objects at scale; improvements found only by manual deep-dive.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract VRSD (OBJTYPE,OBJNAME,VERSNO,KORRNUM,AUTHOR,DATUM,ZEIT). Mine code-change frequency per object; join incidents/transports. Code is system-invariant -> D01 OK."
-  },
-  {
-    "id": "DQ-S079-MODSAP",
-    "source": "code_mining",
-    "issue": "MODSAP/SMOD/CMOD/ENHO (user exits, BAdIs, enhancements) not loaded. The custom logic inside processes (YRGGBS00/ZXFMDTU02 type) is found one-off, not systematically.",
-    "severity": "HIGH",
-    "impact": "Cannot connect exits/enhancements to discovered processes at scale (the process<->code moat).",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract MODSAP (active exits->program), SMOD/CMOD (enhancement projects), ENHO/ENHOBJ (enhancement implementations). Connect to mined process steps. System-invariant -> D01 OK."
-  },
-  {
-    "id": "DQ-S079-ARFC",
-    "source": "interface_mining",
-    "issue": "ARFCSSTATE/TRFCQOUT/TRFCQIN (tRFC/qRFC error & stuck-queue logs, SM58/SMQ1/SMQ2) not loaded. The async-interface failure log.",
-    "severity": "MEDIUM",
-    "impact": "Blind to stuck/failed async RFC interface calls.",
-    "discovered_session": 79,
-    "status": "PENDING_P01",
-    "resolution_path": "Extract ARFCSSTATE + queue tables. Short retention possible -> consider accumulator."
+  "related_companions_v2": [
+   "companions/fm_ps_avc_model_gap_companion_v1.html",
+   "companions/fm_ps_pool_health_matrix_v1.html",
+   "companions/fm_ps_avc_temporal_forecast_v1.html"
+  ],
+  "related_detector_scripts": [
+   "Zagentexecution/quality_checks/inc5638_fm_ps_avc_misalignment.py",
+   "Zagentexecution/quality_checks/fm_ps_pool_health_matrix.py",
+   "Zagentexecution/quality_checks/committed_vs_available_detector.py"
+  ],
+  "related_known_unknowns_v2": [
+   "KU-2026-005638-OPSV",
+   "KU-2026-MODEL-GAP-CONTROL",
+   "KU-2026-OUTLIER-WBS-AVC",
+   "KU-2026-PS-MM-SYMMETRIC-CLOSEOUT",
+   "KU-2026-MULESOFT-FIPEX-FLATTENING",
+   "KU-2026-AGI-GAP-2",
+   "KU-2026-AGI-GAP-6",
+   "KU-2026-WP-INTENT",
+   "KU-2026-NET-DRIFT"
+  ],
+  "central_narrative_2026_05_02": "AVC absence/misconfiguration is the UPSTREAM root cause. Everything downstream (FB01 batches, closure protocols, workplan reprogramming, MULESOFT mappings, PO redirects) are symptoms or transport layers. SAP knew about the open commitments but had no guardian to enforce the constraint. The structural fix priority is therefore: FIX-G1 (granular AVC per-FIPEX) + FIX-G2 (exclude REVENUE from TC pool) + FIX-G3 (enable AVC for non-Earmarked TYPEs that need it) + FIX-H (remove REVENUE preservation in YCL_YPS8_BCS_BL). FIX-F Meta-AVC is the long-term strategic enhancement that ALSO adds cross-engine FM<->PS consistency check at every posting. FIX-A MULESOFT is deprecated. FIX-D/E/B are mitigations of symptoms.",
+  "narrative_credit": "User SME 2026-05-02",
+  "related_central_claim": 157,
+  "session_70_correction_2026_05_03": {
+   "date": "2026-05-03",
+   "attribution": "User SME screenshot of FMAVCT live view",
+   "correction": "Prior claim 'FM-AVC TC bucket on 196EAR4042/WHC in 2026 = -$1.56M deficit' is FALSE. Real values per SAP live AVC view: TC Available=$2,251,685.21 (positive); 80 Available=$200,854.89 (positive). Both AVC control objects show positive availability. The PS-FM consistency narrative needs adjustment: the gap is not 'FM exhausted vs PS healthy'. The 3 Gabon PO block has a different cause we have not yet identified.",
+   "methodology_error": "fmifiit_full WRTTP=66 - WRTTP=54 raw aggregation != AVC Consumable - Consumed semantics. AVC uses pre-allocated control object budgets and registration rules.",
+   "working_hypothesis": "Timing-window failure: FB01 R1 reversal exhausted AVC briefly; KBFC carry-forward restored it. Block may have been resolved by carry-forward rather than the structural fix we proposed.",
+   "superseded_claims": [
+    136,
+    142,
+    156,
+    157,
+    159
+   ],
+   "replaced_by_claim": 174,
+   "related_kus": [
+    "KU-2026-AVC-MATH-METHODOLOGY",
+    "KU-2026-WHY-3-POS-BLOCKED-IF-AVC-POSITIVE",
+    "KU-2026-FMAVCT-FULL-EXTRACT"
+   ]
   }
+ },
+ {
+  "id": "DQ-2026-05-11-001",
+  "title": "v001_change_matrix.csv row 1 (SEPA Cdtr/StrtNm → FPAYP/REF01) contradicts code reading",
+  "severity": "HIGH",
+  "domain": "Payment",
+  "discovered_session": "#075",
+  "discovered_at": "2026-05-11T17:48:31",
+  "summary": "Matrix row 1 binds /SEPA_CT_UNES Cdtr/StrtNm to FPAYP/REF01 with rationale 'CM005 line 109 writes Cdtr to FPAYP-REF01'. Direct code reading of CL_IDFI_CGI_CALL05_GENERIC->GENERIC_CALL line 108-115 shows the LOOP writes <fs_fpayp>-ref01+0(60) = ls_adrc-street where ls_adrc was loaded via get_company_address(zbukr) — i.e. PAYING-CO address, not vendor. Under this code path, the matrix-row-1 binding would render UNESCO HQ street as <Cdtr><StrtNm>. Empirical 2026-05-07 BERTOLDINI test rendered VENDOR street ('BFM/FAS/PAY') under V001, which is inconsistent with the matrix-row-1 design.",
+  "candidate_explanations": [
+   "(A) The actual V001 binding deployed to D01 SEPA tree differs from matrix-row-1 — the deployed binding uses FPAYH-ZSTRA (vendor street Z-field) directly, and the matrix row 1 is forward-design only.",
+   "(B) FPAYP-REF01 layout for SEPA differs from FPAYHX-REF01 for CGI — but matrix row 1 says they're identical (CM005 line 109 cite).",
+   "(C) There's another code path that overwrites FPAYP-REF01 with vendor data after GENERIC_CALL (e.g. a BAdI or another Event)."
+  ],
+  "verification_plan": [
+   "(1) RFC-extract DMEE_TREE_NODE WHERE TREE_ID='/SEPA_CT_UNES' AND VERSION='001' for node N_3513093480 (per matrix row 1) — read MP_SC_TAB and MP_SC_FLD.",
+   "(2) If (1) returns MP_SC_TAB=FPAYP, MP_SC_FLD=REF01, then trace the V001 BERTOLDINI F110 run on 2026-05-07 — check whether SAPFPAYM_MERGE bypassed CGI_05 entirely (using ZSAPFPAYM_REPLAY path) which would explain a different REF01 population.",
+   "(3) Examine ZSAPFPAYM_REPLAY's FPAYHX/FPAYP construction — does it call FI_PAYMEDIUM_DMEE_CGI_05 or pre-populate REF01 from REGUH/FPAYH-ZSTRA?"
+  ],
+  "blocks": "Phase 5 V001 SEPA cutover — must not release until matrix row 1 vs code reality is reconciled",
+  "status": "OPEN",
+  "owner": "next session"
+ },
+ {
+  "id": "DQ-S079-FEBEP",
+  "source": "gold_db_dedup",
+  "issue": "FEBEP exists as two extract twins: FEBEP (104 cols, 50K-row sample) vs FEBEP_2024_2026 (27 cols, 223K rows). Neither is a superset — one has the columns, the other the rows.",
+  "severity": "MEDIUM",
+  "impact": "Redundant twin; cannot consolidate losslessly from existing data.",
+  "workaround": "Use FEBEP_2024_2026 (223K rows) for row-complete work; FEBEP for the wide 104-col schema.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "RE-EXTRACT FEBEP with ALL 104 cols for the full 2024-2026 row set, then drop both twins. BLOCKED: P01 not active.",
+  "affected_count": 2
+ },
+ {
+  "id": "DQ-S079-FEBKO",
+  "source": "gold_db_dedup",
+  "issue": "FEBKO extract twins: FEBKO (8 cols, 50K) vs FEBKO_2024_2026 (62 cols, 31K). FEBKO is the bank-statement HEADER (1 per KUKEY) to FEBEP items.",
+  "severity": "MEDIUM",
+  "impact": "Redundant twin; columns-vs-rows split.",
+  "workaround": "Use FEBKO_2024_2026 (62 cols) for analysis.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "RE-EXTRACT FEBKO with full 62 cols for full row set. BLOCKED: P01 not active.",
+  "affected_count": 2
+ },
+ {
+  "id": "DQ-S079-CDPOS",
+  "source": "process_mining",
+  "issue": "CDPOS (field-level change documents) is NOT loaded in the Gold DB. extract_cdhdr.py supports it (table cdpos, --cdpos-only) and extracted_data/CDPOS exists but is EMPTY; no cdpos table. cdhdr (7.8M headers) is present.",
+  "severity": "HIGH",
+  "impact": "Process mining activities are coarse (Change PO) instead of field-level (PROCSTAT->Released, quantity changed). CDPOS is the richest activity source.",
+  "workaround": "Use cdhdr TCODE-level activities for now.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extractor BUILT: scripts/extract_cdpos_by_object.py — by object + OBJECTID windows (2000) + resumable checkpoints + field-filtered (activity FNAMEs) + stream to SQLite (PK dedup). Plan: ~784 windows across 7 priority objects (EINKBELEG 37, BANF 5, BELEG 174, ENTRYSHEET 60, KRED 54, FMRESERV 438, MM_SERVICE 16). Run order: prio1 first. CDPOS is PERMANENT (one-time bulk + delta), NOT a 15-day log. BLOCKED: P01 not active.",
+  "affected_count": 1,
+  "resolution_ready": true
+ },
+ {
+  "id": "DQ-S079-JCDS",
+  "source": "process_mining",
+  "issue": "JCDS (object status change history) not loaded. JEST (current status) IS present. JCDS = the status TRANSITIONS (created->released->completed->closed) for orders/PS/PM/QM, decoded via TJ02T. NOT captured by CDHDR/CDPOS.",
+  "severity": "HIGH",
+  "impact": "No status-lifecycle process mining.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract JCDS (OBJNR,STAT,UDATE,UTIME,USERID,CHGNR) + TJ02T (status texts). Pairs with existing JEST. Priority 2 after CDPOS. Verified by deep research (van der Aalst/RWTH, SAP KBA 3527846).",
+  "affected_count": 1
+ },
+ {
+  "id": "DQ-S079-VBFA",
+  "source": "process_mining",
+  "issue": "VBFA (SD/O2C document flow) not loaded. Canonical flow table: links VBELN(current)->VBELV(prev) with VBTYP_N/VBTYP_V doc types.",
+  "severity": "HIGH",
+  "impact": "No O2C document-flow/lifecycle mining.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract VBFA via RFC_READ_TABLE (transparent). Activity = VBTYP_N. Priority 3. Supplement timestamps from VBAK/LIKP/VBRK.",
+  "affected_count": 1
+ },
+ {
+  "id": "DQ-S079-WORKFLOW",
+  "source": "process_mining",
+  "issue": "Workflow history tables (SWWWIHEAD + SWWLOGHIST) not loaded. Approval-flow mining: case_id=COALESCE(TOP_WI_ID,WI_ID); SWWLOGHIST adds step/agent history.",
+  "severity": "MEDIUM_HIGH",
+  "impact": "No approval/SoD/control process mining (BCM dual-control, payment approvals, YWFI).",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract SWWWIHEAD + SWWLOGHIST via RFC_READ_TABLE. Priority 4. SWWWIHEAD alone insufficient (deep-research refuted) — need SWWLOGHIST for agents/steps.",
+  "affected_count": 1
+ },
+ {
+  "id": "DQ-S079-EDIDS",
+  "source": "interface_mining",
+  "issue": "EDIDS (IDoc status history) not loaded — only EDIDC current status. 70 IDocs already in error status 51. Without EDIDS we cannot see interface failures, retries, manual reprocessing (BD87).",
+  "severity": "HIGH",
+  "impact": "Blind to interface failure/reprocessing improvement opportunities.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract EDIDS (DOCNUM,STATUS,LOGDAT,LOGTIM,UNAME,STATXT). case=DOCNUM, activity=status text, ts=LOGDAT+LOGTIM. Reveals failure/retry/reprocess patterns."
+ },
+ {
+  "id": "DQ-S079-VRSD",
+  "source": "code_mining",
+  "issue": "VRSD/VRSX (version management = code-change log) not loaded. No visibility into code churn — which objects change most, by whom, correlated with incidents.",
+  "severity": "HIGH",
+  "impact": "Cannot find unstable/over-modified objects at scale; improvements found only by manual deep-dive.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract VRSD (OBJTYPE,OBJNAME,VERSNO,KORRNUM,AUTHOR,DATUM,ZEIT). Mine code-change frequency per object; join incidents/transports. Code is system-invariant -> D01 OK."
+ },
+ {
+  "id": "DQ-S079-MODSAP",
+  "source": "code_mining",
+  "issue": "MODSAP/SMOD/CMOD/ENHO (user exits, BAdIs, enhancements) not loaded. The custom logic inside processes (YRGGBS00/ZXFMDTU02 type) is found one-off, not systematically.",
+  "severity": "HIGH",
+  "impact": "Cannot connect exits/enhancements to discovered processes at scale (the process<->code moat).",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract MODSAP (active exits->program), SMOD/CMOD (enhancement projects), ENHO/ENHOBJ (enhancement implementations). Connect to mined process steps. System-invariant -> D01 OK."
+ },
+ {
+  "id": "DQ-S079-ARFC",
+  "source": "interface_mining",
+  "issue": "ARFCSSTATE/TRFCQOUT/TRFCQIN (tRFC/qRFC error & stuck-queue logs, SM58/SMQ1/SMQ2) not loaded. The async-interface failure log.",
+  "severity": "MEDIUM",
+  "impact": "Blind to stuck/failed async RFC interface calls.",
+  "discovered_session": 79,
+  "status": "PENDING_P01",
+  "resolution_path": "Extract ARFCSSTATE + queue tables. Short retention possible -> consider accumulator."
+ },
+ {
+  "id": "DQ-s097-GOLD-PROVENANCE",
+  "severity": "HIGH",
+  "status": "open",
+  "created_session": 97,
+  "issue": "Golden DB provenance is AMBIGUOUS for 2 tables. The stated rule is 'a bare table name means P01', but bare SKB1 holds 2,312 rows for ONE company code (UNES) with 41 columns, while P01_SKB1 holds 9,249 for ALL NINE with 38 columns. Bare SKAT=7,485 vs P01_SKAT=7,473. Anyone reading SKB1 as production GL data silently gets an eighth of it.",
+  "impact": "silent partial reads on GL company-code data; any analysis keyed on SKB1 is under-scoped",
+  "detected_by": "scripts/extraction/split_golden_by_system.py (ambiguity check)",
+  "fix_path": "decide which extract is authoritative per table, then either drop the bare one or rename it with its real provenance. Do NOT auto-resolve: the bare SKB1 has 3 EXTRA columns, so it is not simply a subset.",
+  "related": [
+   "SKB1",
+   "P01_SKB1",
+   "SKAT",
+   "P01_SKAT",
+   "golden_manifest.json"
+  ]
+ }
 ]

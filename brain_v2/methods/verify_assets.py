@@ -71,6 +71,11 @@ def main(strict=False):
             if gold_tables and name not in gold_tables:
                 fail.append(f"A DECLARED-BUT-MISSING gold_table '{name}' "
                             f"— regenerate: {a.get('regenerate', '?')}")
+        elif kind == "gold_database":
+            # a whole DB file, not a table inside one — provenance made structural
+            p = a.get("path")
+            if p and not (REPO / p).exists():
+                fail.append(f"A DECLARED-BUT-MISSING gold_database '{name}' at {p}")
         elif kind in ("store", "tool", "doc"):
             p = a.get("path")
             if p and not (REPO / p).exists():
