@@ -78,6 +78,12 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from caller_parse import parse as parse_caller  # noqa: E402
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+# The SHARED aggregate. Both streams this algorithm needs are pre-collapsed and INDEXED in
+# brain_v2/build_audit_slots.py — 15.6M audit rows to 987K slots, 12M change rows to 507K
+# groups. Reading it turns a full unindexed scan of a 13 GB database into a keyed lookup.
+# The golden itself cannot be indexed: it is 13 GB, gitignored and UNBACKED, so an index
+# write risks an extraction that cannot be reproduced.
+SLOTS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "derived_audit_slots.db"
 OUT = REPO / "brain_v2" / "change_attribution.json"
 # The DECLARED channel taxonomy — 48 flows across 8 channels, already documented and now
 # structured (brain_v2/build_channel_registry.py). This algorithm DERIVES a channel from the
@@ -101,17 +107,20 @@ NOT_A_PROGRAM = ("!", "=", " ")
 DISPATCHERS = {"SAPMSSY1", "SAPMSSY6", "SAPLSYST", "SAPMSSYD"}
 
 
-def _profile(con):
+def _profile(con, _derived=False):
     """Both streams, aggregated in SQL before anything reaches Python (pattern D6).
 
     12M change rows and 15.6M audit rows. Resolving either row by row is the defect this
     project already measured at 548x wasted work.
     """
     changes = defaultdict(lambda: defaultdict(set))    # class -> user -> {(day,hour)}
+    src = "changes" if _derived else "cdhdr"
     volume = defaultdict(int)
     user_vol = defaultdict(lambda: defaultdict(int))
     tcodes = defaultdict(lambda: defaultdict(int))     # class -> tcode -> rows
     for cls, user, day, hh, tc, n in con.execute(
+            "SELECT objectclas, username, day, hh, tcode, SUM(n) "
+            "FROM changes GROUP BY 1,2,3,4,5" if _derived else
             "SELECT OBJECTCLAS, USERNAME, UDATE, substr(UTIME,1,2), TCODE, COUNT(*) "
             "FROM cdhdr_history WHERE UDATE <> '' GROUP BY 1,2,3,4,5"):
         changes[cls][user].add((day, hh))
@@ -140,6 +149,7 @@ def _profile(con):
     prog_slots = defaultdict(set)                      # program -> {(day,hour)}  BASE RATE
     all_slots = set()
     for user, prog, day, hh, is_rfc, is_file in con.execute(
+            "SELECT user, prog, day, hh, is_rfc, is_file FROM slots" if _derived else
             "SELECT SLGUSER, SLGREPNA, SAL_DATE, substr(SAL_TIME,1,2), "
             "       MAX(CASE WHEN PARAM3 <> '' THEN 1 ELSE 0 END), "
             "       MAX(CASE WHEN PARAM3 LIKE '%/%' OR PARAM3 LIKE '%.XLS%' "
@@ -160,9 +170,9 @@ def _profile(con):
     # Coupa drops a file in a folder, a scheduled job processes it, the program posts. Any
     # classification that stops at "a program wrote it" loses the three links outside SAP.
     jobs_of_prog = defaultdict(lambda: defaultdict(int))   # program -> job -> runs
-    for prog, job, n in con.execute(
+    for prog, job, n in ([] if _derived else con.execute(
             "SELECT p.PROGNAME, p.JOBNAME, COUNT(*) FROM tbtcp p "
-            "WHERE p.PROGNAME <> '' GROUP BY 1,2"):
+            "WHERE p.PROGNAME <> '' GROUP BY 1,2")):
         jobs_of_prog[prog][job] += n
 
     return (changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
@@ -256,7 +266,7 @@ def resolve_channels(tc_hist, top_programs, ev):
     return found, chain
 
 
-def check_declared(top_programs, derived, declared):
+def check_declared(top_programs, derived, declared, extra_names=None):
     """The documented channel is a HYPOTHESIS. This is where it gets tested.
 
     Prose on its own is worth nothing. The integration map says a given program carries a
@@ -273,7 +283,12 @@ def check_declared(top_programs, derived, declared):
     """
     got = {c["channel"] for c in derived}
     out = []
-    for prog in [p["program"] for p in top_programs[:5]]:
+    # MATCH ON BOTH NAME SPACES. The first version compared only PROGRAM names against a
+    # registry keyed on FUNCTION MODULES and JOB names, so nothing ever matched: 72 classes,
+    # 72 NOT_DECLARED, a check that looked like it worked and verified nothing. That is
+    # worse than having no check, because the green result is trusted.
+    candidates = [p["program"] for p in top_programs[:5]] + list(extra_names or [])
+    for prog in candidates:
         for d in (declared or {}).get(prog, []):
             verdict = ("CONFIRMED" if d["channel"] in got
                        else ("CONTRADICTED" if got else "UNVERIFIED"))
@@ -385,7 +400,8 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
         # DERIVED and DECLARED stay in SEPARATE fields on purpose. Merging them would
         # launder a document into a measurement, and afterwards nobody could tell which was
         # which. The verdict is the third thing, and it is the one worth reading.
-        checks = check_declared(cands, chans, declared)
+        checks = check_declared(cands, chans, declared)  # re-checked in main() with the
+        # function modules, which live in a different name space than the programs
         verdicts = sorted({c["verdict"] for c in checks}) or ["NOT_DECLARED"]
         out[cls] = {
             "change_documents": volume[cls], "users": len(by_user),
@@ -421,13 +437,28 @@ def main():
     if not GOLD.exists():
         print(f"golden not found: {GOLD}", file=sys.stderr)
         return 1
-    con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
-    print("  aggregating both streams in SQL, at (day, hour) ...")
+    # prefer the shared aggregate; fall back to the raw golden so the algorithm still works
+    # on an installation where it has not been built yet
+    derived = SLOTS.exists()
+    con = sqlite3.connect(f"file:{SLOTS if derived else GOLD}?mode=ro", uri=True)
+    print("  reading the SHARED AGGREGATE (indexed)" if derived else
+          "  scanning the raw golden — run brain_v2/build_audit_slots.py to make this fast")
     (changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
-     jobs_of_prog, all_slots) = _profile(con)
+     jobs_of_prog, all_slots) = _profile(con, derived)
+    # TWO connections on purpose. The bulk read comes from the shared aggregate; the
+    # targeted lookups — which function modules, which calling host, which job — need the
+    # raw values and run only for the handful of accounts that ranked first, so they stay
+    # on the golden where those values live. Cheap because they are keyed, not scanned.
+    gold = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True) if derived else con
+    if derived:
+        for prog, job, n in gold.execute(
+                "SELECT p.PROGNAME, p.JOBNAME, COUNT(*) FROM tbtcp p "
+                "WHERE p.PROGNAME <> '' GROUP BY 1,2"):
+            jobs_of_prog[prog][job] += n
     print(f"  {len(volume)} object classes · {len(prog_slots):,} programs · "
           f"{len(all_slots):,} hour-slots in the shared window")
 
+    declared_map = _declared()
     result = attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots,
                        file_slots, jobs_of_prog, all_slots,
                        classes=sys.argv[1:] or None)
@@ -439,7 +470,9 @@ def main():
             continue
         top = r["candidate_writers"][0]
         slots = (changes[cls].get(top["user"]) or set()) & all_slots
-        r["interface_functions"] = _interface_functions(con, top["user"], slots)
+        r["interface_functions"] = _interface_functions(gold, top["user"], slots)
+    if derived:
+        gold.close()
     con.close()
 
     json.dump({

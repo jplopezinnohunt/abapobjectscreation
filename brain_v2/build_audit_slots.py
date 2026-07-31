@@ -81,6 +81,9 @@ def main():
                            is_rfc INT, is_file INT);
         CREATE TABLE changes(objectclas TEXT, username TEXT, day TEXT, hh TEXT,
                              tcode TEXT, n INT);
+        CREATE TABLE calls(user TEXT, fm TEXT, n INT);
+        CREATE TABLE paths(user TEXT, path TEXT, n INT);
+        CREATE TABLE origins(user TEXT, origin TEXT, n INT);
         CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
     """)
 
@@ -99,6 +102,25 @@ def main():
         "FROM cdhdr_history WHERE UDATE <> '' GROUP BY 1,2,3,4,5")
     dst.executemany("INSERT INTO changes VALUES (?,?,?,?,?,?)", rows)
     n_chg = dst.execute("SELECT COUNT(*) FROM changes").fetchone()[0]
+
+    # The RAW VALUES the targeted lookups need. Leaving these "lazy" was a mistake I made
+    # and then measured: a per-class query against the golden is not cheap, because the
+    # golden has no index on SLGUSER or SAL_DATE either — so ten "targeted" lookups were ten
+    # more full scans. If a derivation is expensive, it is materialized. There is no third
+    # option that is merely lazy.
+    print("  pass 3/3 — call, path and origin values ...")
+    dst.executemany("INSERT INTO calls VALUES (?,?,?)", src.execute(
+        "SELECT SLGUSER, PARAM3, COUNT(*) FROM rsau_audit_history "
+        "WHERE PARAM3 <> '' GROUP BY 1,2"))
+    dst.executemany("INSERT INTO paths VALUES (?,?,?)", src.execute(
+        f"SELECT SLGUSER, PARAM3, COUNT(*) FROM rsau_audit_history "
+        f"WHERE {FILE_LIKE} GROUP BY 1,2"))
+    # PARAMX carries the caller string; the origin is parsed from it in Python, so the
+    # aggregate stores the distinct strings and the consumer parses 12K of them, not 8.7M.
+    dst.executemany("INSERT INTO origins VALUES (?,?,?)", src.execute(
+        "SELECT SLGUSER, PARAMX, COUNT(*) FROM rsau_audit_history "
+        "WHERE PARAMX <> '' GROUP BY 1,2"))
+    n_calls = dst.execute("SELECT COUNT(*) FROM calls").fetchone()[0]
     src.close()
 
     # indexed HERE, where an index is safe: losing this database costs one rebuild,
@@ -109,6 +131,9 @@ def main():
         CREATE INDEX ix_slots_prog      ON slots(prog);
         CREATE INDEX ix_chg_class       ON changes(objectclas);
         CREATE INDEX ix_chg_user_slot   ON changes(username, day, hh);
+        CREATE INDEX ix_calls_user      ON calls(user);
+        CREATE INDEX ix_paths_user      ON paths(user);
+        CREATE INDEX ix_origins_user    ON origins(user);
     """)
     dst.execute("INSERT OR REPLACE INTO meta VALUES ('watermark', ?)", (mark,))
     dst.execute("INSERT OR REPLACE INTO meta VALUES ('built_from', ?)", (str(GOLD.name),))
@@ -119,7 +144,7 @@ def main():
     tmp.rename(OUT)
     mb = OUT.stat().st_size / 1024 / 1024
     print(f"[audit slots] {n_slots:,} slots · {n_chg:,} change groups · "
-          f"{mb:.0f} MB · {time.time() - t0:.0f}s")
+          f"{n_calls:,} call values · {mb:.0f} MB · {time.time() - t0:.0f}s")
     print(f"  watermark {mark} — a re-run with no new data exits immediately")
     print(f"wrote {OUT}")
     return 0
