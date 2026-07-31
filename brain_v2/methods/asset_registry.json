@@ -13,7 +13,8 @@
   "store": "a JSON store under brain_v2/ — git-tracked, part of the brain",
   "tool": "a runnable script that regenerates an asset or performs a method",
   "doc": "a knowledge document — the prose layer",
-  "gold_database": "a whole SQLite golden database, one per SAP system. The FILE is the environment — this is what makes provenance structural instead of a naming convention."
+  "gold_database": "a whole SQLite golden database, one per SAP system. The FILE is the environment — this is what makes provenance structural instead of a naming convention.",
+  "algorithm": "a TECHNIQUE, portable across domains and problems. Distinct from a tool (one binding of an algorithm to one problem) and from a method (an activity with a cadence). The value of an analysis product IS its algorithms: what a buyer pays Celonis or Signavio for is conformance checking and object-centric mining, not storage. Declared in brain_v2/methods/algorithms.json."
  },
  "assets": {
   "df14l": {
@@ -237,6 +238,351 @@
    "produced_by": "architectural analysis + pm4py implementations already in the repo",
    "what_it_is": "the FLOW layer: end-to-end chains that cross components and domains, with many-to-many edges, normative references, and the public-sector flows the market has no content for",
    "why_it_matters": "domains keyed on SAP modules are a technical taxonomy wearing a business name. Nobody does 'FI'. And a component serves SEVERAL flows — FI-BL-PT pays suppliers, staff, travellers and treasury. A 1:1 module→domain map cannot express that. Process mining must run on flows, which is why every vendor names content P2P/O2C/R2R."
+  },
+  "algo:A1_chunked_temporal_read": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "read a purging log in bounded time windows (<=6h) because a wide call hangs and the connection degrades every ~12 calls",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py"
+   ],
+   "failure_mode": "a silently truncated window looks like a quiet period in the data",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:A2_rolling_window_accumulation": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "FRAGILE",
+   "what_it_is": "capture a window the source purges (7-120 days) into *_history tables, turning a window into a history",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py"
+   ],
+   "failure_mode": "a missed day is invisible: the history simply has a hole nobody sees",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:A3_two_axis_classification": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "MARKET_EXTENDED",
+   "state": "STRONG",
+   "what_it_is": "explain every call on two independent axes — PROCESS (from the object name) and ORIGIN (from host/destination/user)",
+   "bound_in": [
+    "process_mining/rfc_process_classifier.py"
+   ],
+   "failure_mode": "an unresolved origin collapses a fleet into one label — 174 middleware endpoints currently read as one caller",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:A4_ordered_classifier_ladder": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "WORKS",
+   "what_it_is": "ordered rule chain (package -> software component -> overlay -> name -> text -> substrate); first match wins, specificity expressed by ORDER",
+   "bound_in": [
+    "process_mining/executed_objects_domain_map.py"
+   ],
+   "failure_mode": "ORDER-DEPENDENCE IS SILENT. A greedy early rule steals from a later one and nothing errors. Proven twice in s097: 'FTB' swallowed FTBB (bank statements) into deal management; an inline comment swallowed two dict entries and moved 70,766 executions between domains.",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:A5_adaptive_learning_loop": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "UNDER_EXERCISED",
+   "what_it_is": "auto-resolve unknown calls by function group / naming / app domain, LEARN the resolution, re-classify until convergence, expose the remainder as an explicit frontier",
+   "bound_in": [
+    "process_mining/adaptive_discovery.py"
+   ],
+   "failure_mode": "a learned rule that was wrong once is now wrong permanently and invisibly",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:A6_frontier_with_substrate_tier": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "logs",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session, monitoring): real execution, legitimately non-business",
+   "bound_in": [
+    "process_mining/executed_objects_domain_map.py"
+   ],
+   "failure_mode": "substrate becomes a dumping ground if it is ever matched before business rules — it is matched LAST on purpose",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:B1_dfg_discovery": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "process events",
+   "origin": "MARKET_STANDARD",
+   "state": "WORKS",
+   "what_it_is": "build the process map from an event log — activities as nodes, observed transitions as edges",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"
+   ],
+   "failure_mode": "a DFG on the wrong case notion produces a plausible map of a process that does not exist",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:B2_variant_analysis": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "process events",
+   "origin": "MARKET_STANDARD",
+   "state": "WORKS",
+   "what_it_is": "group cases by exact path, rank by frequency and cost — the long tail is where exceptions live",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"
+   ],
+   "failure_mode": "variants computed on a truncated log look like process simplicity",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:B3_performance_bottleneck": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "process events",
+   "origin": "MARKET_STANDARD",
+   "state": "WORKS",
+   "what_it_is": "cycle time per transition; waiting versus processing",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"
+   ],
+   "failure_mode": "timestamps from different systems make a bottleneck out of a clock skew",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:B4_declarative_conformance": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "process events",
+   "origin": "MARKET_STANDARD",
+   "state": "STRONG",
+   "what_it_is": "state the normative rules, classify every case against them, quantify the deviation in money",
+   "bound_in": [
+    "process_mining/p2p_conformance.py",
+    "Zagentexecution/sap_data_extraction/scripts/p2p_stdref_xray.py"
+   ],
+   "failure_mode": "applying a market normative model without checking the tenant's real shape. A standard O2C model here would report 100% non-conformance because there are ZERO deliveries — a false finding.",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:B5_ocel2_object_centric": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "process events",
+   "origin": "MARKET_STANDARD",
+   "state": "WORKS",
+   "what_it_is": "one event references MULTIPLE object types, with no forced single-case notion",
+   "bound_in": [
+    "Zagentexecution/sap_data_extraction/scripts/ocel_build_p2p.py"
+   ],
+   "failure_mode": "choosing object types badly reproduces the single-case distortion in a more expensive format",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:C1_component_resolution_chain": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component)",
+   "bound_in": [
+    "brain_v2/system_profile/probes/extract_component_hierarchy.py"
+   ],
+   "failure_mode": "a name-range chunk that returns exactly the cap truncates silently",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:C2_ascent_with_provenance_rung": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "climb from any object to the installation, ALWAYS recording which rung of the evidence ladder resolved it",
+   "bound_in": [
+    "brain_v2/system_profile/build_model_graph.py"
+   ],
+   "failure_mode": "measuring the percentage against the wrong denominator. s097: 182 synthesised concepts and 24 users counted as 'unresolved' when they can never carry a component.",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:C3_static_edge_extraction": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "repository",
+   "origin": "MARKET_STANDARD",
+   "state": "WEAK",
+   "what_it_is": "parse source for reads_tables / calls_fms / writes_tables",
+   "bound_in": [
+    "brain_v2 graph build"
+   ],
+   "failure_mode": "an impact analysis on a thin edge set returns 'nothing depends on this' — the most dangerous possible false negative",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:D1_D3_delta_strategies": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "data",
+   "origin": "MARKET_STANDARD",
+   "state": "STRONG",
+   "what_it_is": "PK-delta for master, value-compare for totals, high-water-mark for transactional",
+   "bound_in": [
+    "scripts/extraction/gold_refresh.py",
+    "Zagentexecution/sap_data_extraction/scripts/delta_refresh_2026.py"
+   ],
+   "failure_mode": "the sync log records domain, table and strategy but NEVER the system — with one golden DB per system that ambiguity is now structural",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:D4_field_splitting": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "data",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "split a wide table read into column groups against the 512-byte line buffer, re-join locally",
+   "bound_in": [
+    "Zagentexecution/mcp-backend-server-python/rfc_helpers.py"
+   ],
+   "failure_mode": "a re-join on a non-unique key silently multiplies rows",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:D5_bounded_probe_with_cap_reporting": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "data",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "read with an explicit cap and date filter; report a hit cap as '>=cap', NEVER as a count",
+   "bound_in": [
+    "brain_v2/system_profile/probes/probe_footprint.py"
+   ],
+   "failure_mode": "the one it exists to prevent",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:E1_crossing": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "model",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "join profile x capability x claims x documents x companions through an explicit canonical key",
+   "bound_in": [
+    "brain_v2/system_profile/build_profile_links.py"
+   ],
+   "failure_mode": "comparing names raw instead of canonically. That defect appeared THREE times in one session.",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:E2_coherence": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "model",
+   "origin": "OURS",
+   "state": "STRONG",
+   "what_it_is": "compare what the macro asserts top-down against what the detail evidences bottom-up",
+   "bound_in": [
+    "brain_v2/system_profile/build_model_graph.py"
+   ],
+   "failure_mode": "a defect in the checker reads as a defect in the model — which is what happened, and is why it must fail loudly",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:E3_trigger_evaluation": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "model",
+   "origin": "OURS",
+   "state": "WORKS",
+   "what_it_is": "compare state against thresholds across accumulation / maturity / interpretation families; return what to re-run and why",
+   "bound_in": [
+    "brain_v2/methods/check_triggers.py"
+   ],
+   "failure_mode": "thresholds chosen by judgement can be so loose nothing ever fires, which looks identical to a healthy model",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:E4_canonicalisation": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "model",
+   "origin": "OURS",
+   "state": "WORKS",
+   "what_it_is": "resolve any spelling to a canonical key through a declared alias contract, in exactly one place",
+   "bound_in": [
+    "brain_v2/canonical.py"
+   ],
+   "failure_mode": "the defect it removes: reporting something MISSING that exists under an alias",
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algo:F1_interface_boundary_analysis": {
+   "kind": "algorithm",
+   "created_session": 97,
+   "path": "brain_v2/methods/algorithms.json",
+   "operates_on": "interfaces",
+   "origin": "OURS",
+   "state": "MISSING",
+   "what_it_is": "NOTHING YET — this algorithm does not exist",
+   "bound_in": [],
+   "failure_mode": null,
+   "produced_by": "declared as a technique; bound in the tools listed"
+  },
+  "algorithms_registry": {
+   "kind": "store",
+   "path": "brain_v2/methods/algorithms.json",
+   "what_it_is": "the algorithm asset class: technique, operand, origin, state, binding, failure mode",
+   "why_it_matters": "an algorithm fails differently from a tool. A broken tool fails loudly; a subtly wrong algorithm produces confident, plausible, WRONG output. You cannot review what you have not named.",
+   "created_session": 97,
+   "produced_by": "s097 algorithm/asset audit"
+  },
+  "algorithm_catalogue": {
+   "kind": "doc",
+   "path": "brain_v2/methods/algorithm_catalogue.md",
+   "what_it_is": "the readable form, organised by the data each algorithm operates on",
+   "created_session": 97,
+   "produced_by": "s097 algorithm/asset audit"
+  },
+  "process_flows_store": {
+   "kind": "store",
+   "path": "brain_v2/process_flows/process_flows.json",
+   "what_it_is": "the flow layer: end-to-end chains crossing components and domains",
+   "created_session": 97,
+   "produced_by": "s097 algorithm/asset audit"
+  },
+  "domain_assets": {
+   "kind": "store",
+   "path": "brain_v2/methods/domain_assets.json",
+   "what_it_is": "the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows",
+   "why_it_matters": "assets were catalogued by KIND and never by DOMAIN, so nobody could say what a domain has or lacks",
+   "created_session": 97,
+   "produced_by": "s097 algorithm/asset audit"
+  },
+  "build_domain_assets": {
+   "kind": "tool",
+   "path": "brain_v2/methods/build_domain_assets.py",
+   "what_it_is": "inverts the asset index from kind-major to domain-major",
+   "created_session": 97,
+   "produced_by": "s097 algorithm/asset audit"
   }
  },
  "_the_guarantee": {

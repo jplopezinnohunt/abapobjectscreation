@@ -204,6 +204,10 @@ def main():
     run(["python", "brain_v2/methods/build_domain_capability_matrix.py"],
         "Step 0d: Domain x capability matrix — coverage inversion + thesis health",
         fatal=False)
+    # Invert the asset index: what does each DOMAIN have — tables, extraction, algorithms,
+    # knowledge, flows — and what is it missing? Assets catalogued by kind cannot answer that.
+    run(["python", "brain_v2/methods/build_domain_assets.py"],
+        "Step 0e: Domain asset bundles — what each domain has and lacks", fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")

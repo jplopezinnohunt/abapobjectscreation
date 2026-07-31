@@ -1,0 +1,206 @@
+{
+ "_concept": "ALGORITHMS — a first-class asset class, not content hidden inside scripts",
+ "_one_line": "The value of an analysis product IS its algorithms. Everything else — the data, the findings, the documents — is either an input to them or an output of them.",
+ "_version": "1.0",
+ "_created_session": 97,
+
+ "_why_first_class": {
+  "the_audit": "The asset registry declared five kinds — gold_table, store, tool, doc, gold_database — all of them ARTIFACTS. Zero algorithms. The techniques existed only as implicit content inside scripts, which made them invisible: we could not say which algorithm runs where, reuse one deliberately, compare ours against the market's, or improve one and know what it affected.",
+  "the_market_argument": "What a buyer pays Celonis or Signavio for is not their storage and not their dashboards — it is conformance checking, variant analysis, object-centric mining. The algorithms ARE the product. Ours being undeclared meant the product was undeclared.",
+  "the_sharper_argument": "An algorithm fails differently from a tool. A broken tool fails loudly. A subtly wrong algorithm produces confident, plausible, WRONG output. This session produced four: a greedy classifier rule that stole FTBB from bank statements; a substring matcher that linked 337 claims to 'CO'; a wrong denominator that made a 35% gap of which half was a category error; a swallowed generic error that masked an invalid field for three runs. You cannot review what you have not named.",
+  "the_portability_argument": "A tool is one binding of an algorithm to one problem, one schema, one tenant. The ALGORITHM is what travels to installation #2. Data ages, findings age, tools are bindings — algorithms compound."
+ },
+
+ "_fields": {
+  "operates_on": "the data class it consumes — logs / process events / repository / data / model / interfaces",
+  "origin": "MARKET_STANDARD (adopted) · MARKET_EXTENDED (adopted and improved) · OURS (no market equivalent)",
+  "state": "STRONG · WORKS · WEAK · FRAGILE · MISSING",
+  "bound_in": "the tool(s) that implement it — an algorithm with no binding is a paper",
+  "failure_mode": "how this algorithm produces a WRONG answer without failing loudly",
+  "improve": "the specific next lever"
+ },
+
+ "algorithms": {
+
+  "A1_chunked_temporal_read": {
+   "operates_on": "logs", "origin": "OURS", "state": "STRONG",
+   "does": "read a purging log in bounded time windows (<=6h) because a wide call hangs and the connection degrades every ~12 calls",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py"],
+   "failure_mode": "a silently truncated window looks like a quiet period in the data",
+   "improve": "derive the chunk size from observed response time instead of a constant"},
+
+  "A2_rolling_window_accumulation": {
+   "operates_on": "logs", "origin": "OURS", "state": "FRAGILE",
+   "does": "capture a window the source purges (7-120 days) into *_history tables, turning a window into a history",
+   "market_equivalent": "NONE — commercial tools connect live and inherit the system's retention",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py"],
+   "why_fragile": "gitignored, unversioned, writing to a local database with no confirmed backup — and it cannot be back-filled at any price",
+   "failure_mode": "a missed day is invisible: the history simply has a hole nobody sees",
+   "improve": "make 'days of history captured' a first-class metric; version the script"},
+
+  "A3_two_axis_classification": {
+   "operates_on": "logs", "origin": "MARKET_EXTENDED", "state": "STRONG",
+   "does": "explain every call on two independent axes — PROCESS (from the object name) and ORIGIN (from host/destination/user)",
+   "why_extended": "process mining assigns activities but does not systematically resolve WHO CALLED. Without origin, a middleware call and an internal report are indistinguishable.",
+   "produced": "the 80.6%-external finding; 91.1% of business calls explained",
+   "bound_in": ["process_mining/rfc_process_classifier.py"],
+   "failure_mode": "an unresolved origin collapses a fleet into one label — 174 middleware endpoints currently read as one caller",
+   "improve": "resolve endpoint GUIDs from the middleware side; SAP cannot name them"},
+
+  "A4_ordered_classifier_ladder": {
+   "operates_on": "logs", "origin": "OURS", "state": "WORKS",
+   "does": "ordered rule chain (package -> software component -> overlay -> name -> text -> substrate); first match wins, specificity expressed by ORDER",
+   "bound_in": ["process_mining/executed_objects_domain_map.py"],
+   "failure_mode": "ORDER-DEPENDENCE IS SILENT. A greedy early rule steals from a later one and nothing errors. Proven twice in s097: 'FTB' swallowed FTBB (bank statements) into deal management; an inline comment swallowed two dict entries and moved 70,766 executions between domains.",
+   "improve": "replace the package-regex rung with the DF14L component lookup, which is authoritative. Regex becomes the fallback, not the primary. THIS IS PRIORITY 2 OF THE WHOLE MODEL."},
+
+  "A5_adaptive_learning_loop": {
+   "operates_on": "logs", "origin": "OURS", "state": "UNDER_EXERCISED",
+   "does": "auto-resolve unknown calls by function group / naming / app domain, LEARN the resolution, re-classify until convergence, expose the remainder as an explicit frontier",
+   "why_it_matters": "the closest thing the model has to learning — each run explains more with zero hand-coding",
+   "bound_in": ["process_mining/adaptive_discovery.py"],
+   "failure_mode": "a learned rule that was wrong once is now wrong permanently and invisibly",
+   "improve": "not run since the component chain existed. Feed it the component as a signal and measure whether the frontier shrinks."},
+
+  "A6_frontier_with_substrate_tier": {
+   "operates_on": "logs", "origin": "OURS", "state": "STRONG",
+   "does": "coverage % + explicit worklist, with a third tier for technical substrate (connectivity, session, monitoring): real execution, legitimately non-business",
+   "produced": "unexplained execution fell from 40% to 11.7% without hiding anything",
+   "bound_in": ["process_mining/executed_objects_domain_map.py"],
+   "failure_mode": "substrate becomes a dumping ground if it is ever matched before business rules — it is matched LAST on purpose",
+   "improve": "watch the TREND, not the size: a frontier that stops moving means the discovery loop stopped running"},
+
+  "B1_dfg_discovery": {
+   "operates_on": "process events", "origin": "MARKET_STANDARD", "state": "WORKS",
+   "does": "build the process map from an event log — activities as nodes, observed transitions as edges",
+   "market_equivalent": "pm4py — the reference implementation (van der Aalst lineage), the substrate Celonis and Signavio productised",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"],
+   "failure_mode": "a DFG on the wrong case notion produces a plausible map of a process that does not exist",
+   "improve": "two event sources are wired (transactions AND change documents); the change-document source is richer for lifecycle and under-used"},
+
+  "B2_variant_analysis": {
+   "operates_on": "process events", "origin": "MARKET_STANDARD", "state": "WORKS",
+   "does": "group cases by exact path, rank by frequency and cost — the long tail is where exceptions live",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"],
+   "failure_mode": "variants computed on a truncated log look like process simplicity"},
+
+  "B3_performance_bottleneck": {
+   "operates_on": "process events", "origin": "MARKET_STANDARD", "state": "WORKS",
+   "does": "cycle time per transition; waiting versus processing",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"],
+   "failure_mode": "timestamps from different systems make a bottleneck out of a clock skew"},
+
+  "B4_declarative_conformance": {
+   "operates_on": "process events", "origin": "MARKET_STANDARD", "state": "STRONG",
+   "does": "state the normative rules, classify every case against them, quantify the deviation in money",
+   "why_it_matters": "THIS IS WHERE THE PRODUCT LIVES — the delta between AS-DESIGNED and AS-RUN",
+   "proven": "P2P: 3-way match, GR strictly before IR — 38% conformant, 70 IR-before-GR violations, $713,341 exposure",
+   "bound_in": ["process_mining/p2p_conformance.py", "Zagentexecution/sap_data_extraction/scripts/p2p_stdref_xray.py"],
+   "failure_mode": "applying a market normative model without checking the tenant's real shape. A standard O2C model here would report 100% non-conformance because there are ZERO deliveries — a false finding.",
+   "improve": "exists for exactly ONE flow. The four public-sector flows have no normative model at all. THIS IS PRIORITY 3."},
+
+  "B5_ocel2_object_centric": {
+   "operates_on": "process events", "origin": "MARKET_STANDARD", "state": "WORKS",
+   "does": "one event references MULTIPLE object types, with no forced single-case notion",
+   "why_it_matters": "ahead of most commercial tooling. Flat single-case mining forces an artificial case ID and distorts anything convergent or divergent — which public-sector finance is constantly: one budget, many commitments, many actuals.",
+   "bound_in": ["Zagentexecution/sap_data_extraction/scripts/ocel_build_p2p.py"],
+   "failure_mode": "choosing object types badly reproduces the single-case distortion in a more expensive format",
+   "improve": "this is the correct substrate for budget-to-actual, where 'the case' is genuinely ambiguous. Build it there next."},
+
+  "C1_component_resolution_chain": {
+   "operates_on": "repository", "origin": "OURS", "state": "STRONG",
+   "does": "object -> TADIR (package) -> TDEVC (component id) -> DF14L (application component)",
+   "why_it_matters": "the strongest algorithm in the inventory because it is DETERMINISTIC: SAP states the answer instead of us pattern-matching a name. 1.61M objects resolvable.",
+   "bound_in": ["brain_v2/system_profile/probes/extract_component_hierarchy.py"],
+   "failure_mode": "a name-range chunk that returns exactly the cap truncates silently",
+   "improve": "function modules resolve only via their function group; resolve them directly via TFDIR"},
+
+  "C2_ascent_with_provenance_rung": {
+   "operates_on": "repository", "origin": "OURS", "state": "STRONG",
+   "does": "climb from any object to the installation, ALWAYS recording which rung of the evidence ladder resolved it",
+   "why_it_matters": "the rung IS the point — a curated assignment must never be presentable as an inference (CP-003). 92.2%.",
+   "bound_in": ["brain_v2/system_profile/build_model_graph.py"],
+   "failure_mode": "measuring the percentage against the wrong denominator. s097: 182 synthesised concepts and 24 users counted as 'unresolved' when they can never carry a component.",
+   "improve": "add recency — an object with no execution in the window is a different verdict from one with none at all"},
+
+  "C3_static_edge_extraction": {
+   "operates_on": "repository", "origin": "MARKET_STANDARD", "state": "WEAK",
+   "does": "parse source for reads_tables / calls_fms / writes_tables",
+   "bound_in": ["brain_v2 graph build"],
+   "why_weak": "only 98 of 1,212 objects carry code edges. Most of the graph is connected by crossings, not by parsed structure.",
+   "failure_mode": "an impact analysis on a thin edge set returns 'nothing depends on this' — the most dangerous possible false negative",
+   "improve": "the thinnest layer in the model and the one that would most improve impact analysis; requires source at scale"},
+
+  "D1_D3_delta_strategies": {
+   "operates_on": "data", "origin": "MARKET_STANDARD", "state": "STRONG",
+   "does": "PK-delta for master, value-compare for totals, high-water-mark for transactional",
+   "why_it_matters": "the intelligence is the ROUTING (table class -> strategy), not the strategies themselves",
+   "bound_in": ["scripts/extraction/gold_refresh.py", "Zagentexecution/sap_data_extraction/scripts/delta_refresh_2026.py"],
+   "failure_mode": "the sync log records domain, table and strategy but NEVER the system — with one golden DB per system that ambiguity is now structural",
+   "improve": "add the system column to _gold_sync_log"},
+
+  "D4_field_splitting": {
+   "operates_on": "data", "origin": "OURS", "state": "STRONG",
+   "does": "split a wide table read into column groups against the 512-byte line buffer, re-join locally",
+   "bound_in": ["Zagentexecution/mcp-backend-server-python/rfc_helpers.py"],
+   "failure_mode": "a re-join on a non-unique key silently multiplies rows"},
+
+  "D5_bounded_probe_with_cap_reporting": {
+   "operates_on": "data", "origin": "OURS", "state": "STRONG",
+   "does": "read with an explicit cap and date filter; report a hit cap as '>=cap', NEVER as a count",
+   "why_it_matters": "the discipline IS the algorithm — a truncated read reported as a total is how a model starts lying",
+   "bound_in": ["brain_v2/system_profile/probes/probe_footprint.py"],
+   "failure_mode": "the one it exists to prevent"},
+
+  "E1_crossing": {
+   "operates_on": "model", "origin": "OURS", "state": "STRONG",
+   "does": "join profile x capability x claims x documents x companions through an explicit canonical key",
+   "produces": "system-level blind spots — modules the tenant runs that the model never examined",
+   "bound_in": ["brain_v2/system_profile/build_profile_links.py"],
+   "failure_mode": "comparing names raw instead of canonically. That defect appeared THREE times in one session.",
+   "improve": "the claim matcher still has a text fallback; report it as weak linkage rather than merging it with structured evidence"},
+
+  "E2_coherence": {
+   "operates_on": "model", "origin": "OURS", "state": "STRONG",
+   "does": "compare what the macro asserts top-down against what the detail evidences bottom-up",
+   "why_it_matters": "the ONLY mechanism that detects the model drifting from the system it describes",
+   "bound_in": ["brain_v2/system_profile/build_model_graph.py"],
+   "failure_mode": "a defect in the checker reads as a defect in the model — which is what happened, and is why it must fail loudly"},
+
+  "E3_trigger_evaluation": {
+   "operates_on": "model", "origin": "OURS", "state": "WORKS",
+   "does": "compare state against thresholds across accumulation / maturity / interpretation families; return what to re-run and why",
+   "bound_in": ["brain_v2/methods/check_triggers.py"],
+   "failure_mode": "thresholds chosen by judgement can be so loose nothing ever fires, which looks identical to a healthy model",
+   "improve": "derive thresholds from observed variance"},
+
+  "E4_canonicalisation": {
+   "operates_on": "model", "origin": "OURS", "state": "WORKS",
+   "does": "resolve any spelling to a canonical key through a declared alias contract, in exactly one place",
+   "bound_in": ["brain_v2/canonical.py"],
+   "failure_mode": "the defect it removes: reporting something MISSING that exists under an alias"},
+
+  "F1_interface_boundary_analysis": {
+   "operates_on": "interfaces", "origin": "OURS", "state": "MISSING",
+   "does": "NOTHING YET — this algorithm does not exist",
+   "why_it_matters": "the boundary carries 1.33M executions and 37 documented flows, and the map is PROSE written by hand: it cannot detect a new destination appearing, cannot go stale visibly, and cannot be reproduced on a second installation (INSTANCE, not KIT)",
+   "specification": ["1. enumerate the boundary from RFCDES / EDIDC / TBTCO / TBTCP / ICFSERVICE / DB connections / the RFC call stream",
+                     "2. correlate each destination against OBSERVED TRAFFIC — a configured destination with no traffic is dead; traffic with no destination is a finding",
+                     "3. classify direction and volume per flow, and bind each to the process flows it serves",
+                     "4. DIFF against the previous run — a new interface can change the meaning of a domain, which is exactly the interpretation trigger already declared"],
+   "improve": "BUILD IT. Well-defined, on data already extracted. THIS IS PRIORITY 1 OF THE ALGORITHM LAYER."}
+ },
+
+ "_portfolio": {
+  "by_operand": {"logs": 6, "process_events": 5, "repository": 3, "data": 3, "model": 4, "interfaces": 0},
+  "by_origin": {"MARKET_STANDARD": 8, "MARKET_EXTENDED": 1, "OURS": 12},
+  "by_state": {"STRONG": 11, "WORKS": 6, "WEAK": 1, "FRAGILE": 1, "UNDER_EXERCISED": 1, "MISSING": 1},
+  "_reading": "Twelve algorithms have no market equivalent — that is the defensible surface. Eight are adopted standards, correctly, because reinventing DFG discovery would be vanity. The single MISSING one covers the integration boundary, and the single FRAGILE one is the log accumulator, which is simultaneously the most valuable algorithm here and the least protected."
+ },
+
+ "_priorities": {
+  "1": "F1 — build the interface boundary algorithm. Zero coverage of 1.33M executions on data we already hold.",
+  "2": "A4 — give the classifier the DF14L component lookup. The authoritative signal exists and it still guesses.",
+  "3": "B4 — write normative models for the public-sector flows. The product lives in the delta this measures, and it measures one flow."
+ }
+}
