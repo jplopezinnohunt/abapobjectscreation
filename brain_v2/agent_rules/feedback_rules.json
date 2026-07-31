@@ -3757,5 +3757,15 @@
   "how_to_apply": "1. when an analysis produces a classification, emit a STRUCTURED store, not only a document — the document explains, the store is queried. 2. before deriving something, check whether it was already analysed and left as prose. 3. keep declared and derived in SEPARATE fields with an explicit verdict. 4. a disagreement is a FINDING on one side or the other — stale documentation, a stopped flow, or a blind derivation — and until both sides exist you cannot even have the disagreement.",
   "evidence": "brain_v2/build_channel_registry.py -> integration_channels.json (48 flows, 8 channels, 30 artifacts) parsed from knowledge/domains/Integration/integration_map_complete.md · process_mining/attribute_changes_to_programs.py resolve_channels() verdict",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_a_gate_that_can_go_silent_is_worse_than_none",
+  "severity": "CRITICAL",
+  "created_session": 97,
+  "rule": "A check must never be able to switch itself off quietly. Any guard that can be SKIPPED — an optional import, a missing file, an absent table, an exception path — must record the skip as a FAILURE or at minimum print it. `except ImportError: x = None` inside a test harness is forbidden.",
+  "why": "measured this session: the golden cases for algorithm A8 ran for a whole session against a function that no longer existed. A rename turned `_channel` into `resolve_channels`, the import raised, the bare `except ImportError` swallowed it, six cases stopped executing and the harness printed OK. The count went 69 -> 68 and nothing flagged it — the only reason it was caught is that the total was read against memory of the previous run. A gate reporting success while not running is worse than no gate, because a missing gate is visible and a silent one is trusted. The same shape appeared in check_triggers.py, where an `except sqlite3.Error: pass` made a new measurement return None and read as 'nothing to measure'.",
+  "how_to_apply": "1. in a harness, an unavailable dependency appends to `failures`, never sets a flag to None silently. 2. in a measurement, a caught exception PRINTS what could not be measured. 3. when a check's own case count drops, treat it as a defect until proven otherwise — the count is the gate on the gate. 4. never rename a function without running the harness that imports it.",
+  "evidence": "brain_v2/methods/validate_algorithms.py (5 ImportError paths now append to failures; 68 -> 74 cases once they ran again) · brain_v2/methods/check_triggers.py (sqlite3.Error now prints)",
+  "domain": "Brain_Architecture"
  }
 ]

@@ -479,6 +479,16 @@
    "task": "The largest write path in the installation is operated through ONE NAMED USER account (F_DERAKHSHAN, 74.1% of all change documents) rather than a service account, and ZPBC_PERIOD_CLS_EXEC has exactly one operator. Two separate issues follow: a SINGLE POINT OF DEPENDENCE — if that person is unavailable, the monthly commitment run has no second operator — and an ATTRIBUTION problem: every FM commitment posting is recorded against a person, so the change log cannot distinguish an engine run from a manual edit by that user. State it as an observation with the measurement attached; the remedy (service account, second operator) is the tenant's decision, not ours.",
    "method": "cross-check against the E_AUTH cell and the H71 write-channel SoD finding",
    "relates_to": "H71 write-channel SoD"
+  },
+  {
+   "id": "AN-A8-PERFORMANCE",
+   "domain": "Brain_Architecture",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "A8 became SLOW when the channel evidence was added, and slow is a correctness problem here, not a comfort one: three heavy passes were added over the audit log — two LIKE scans for file paths and a PARAMX GROUP BY over 8.7M rows — none of which can use an index, and the golden database is read-only by contract so an index cannot be added. The run went from roughly 3 minutes to over 15. The D6 lesson applies directly: A SLOW ALGORITHM GETS SKIPPED, AND A SKIPPED ALGORITHM IS DOCUMENTATION — and A8 now sits inside the analysis cycle, so it slows every cycle for every domain.",
+   "method": "apply pattern D6 properly: ONE pass over rsau_audit_history that emits every signal at once (program, RFC flag, file flag, caller) grouped by (user, day, hour), instead of four separate scans. Then cache the aggregate against MAX(SAL_DATE) exactly as detect_drift does, so a re-run with no new audit data costs nothing.",
+   "why_it_matters": "A8 runs in the cycle; its cost is paid on every domain, every time."
   }
  ],
  "research_tasks_followups": [
