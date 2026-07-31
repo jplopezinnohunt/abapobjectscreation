@@ -3747,5 +3747,15 @@
   "how_to_apply": "1. new algorithm => place it in run_analysis_cycle.py at its dependency level, and say WHY that level. 2. new trigger => it fires on a measured change and declares needs=CYCLE|EXTRACTION|AUTHORING. 3. if the answer is 'run X', the real answer is 'X belongs in the cycle'. 4. EXTRACTION stays outside the cycle on purpose — it depends on a connection and on a human deciding it is time.",
   "evidence": "brain_v2/methods/run_analysis_cycle.py (A8 placed at L2 because its INTERFACE channel names the functions the satellite derivation groups on) · brain_v2/methods/check_triggers.py (RESPONSE table; 9 triggers converted)",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_prose_identifies_the_log_confirms",
+  "severity": "CRITICAL",
+  "created_session": 97,
+  "rule": "An analysis written up as PROSE is not knowledge the system can use. Prose IDENTIFIES what to look for; a measurement CONFIRMS it. Never let a documented fact stand as evidence on its own, and never let it sit in the same field as a derived one — keep DECLARED and DERIVED separate and emit a VERDICT: CONFIRMED (both agree), UNCONFIRMED PROSE (documented, not visible in the data), UNDECLARED (visible in the data, not documented).",
+  "why": "prose that is never structured gets RE-DERIVED by the next question, and the two answers then drift with nothing able to notice. Measured instance: the integration map classified every flow into 8 channels — RFC, IDoc, middleware, file jobs, batch input, LSMW, DBCON, HTTP/SOAP — including that Coupa arrives as a FILE processed by a job, and that TULIP/UNESDIR come over DBCON and fail 93% of the time. All in markdown tables. So `interface_boundary.json` (F1) contained the string 'channel' ZERO times, and algorithm A8 was about to re-derive the whole taxonomy from the audit log while the answer sat in a document nobody could query. Worse, the first cross-check APPENDED the declared channel next to the derived ones, which silently promotes a sentence in a table to the standing of a measurement and destroys the comparison that makes either one useful.",
+  "how_to_apply": "1. when an analysis produces a classification, emit a STRUCTURED store, not only a document — the document explains, the store is queried. 2. before deriving something, check whether it was already analysed and left as prose. 3. keep declared and derived in SEPARATE fields with an explicit verdict. 4. a disagreement is a FINDING on one side or the other — stale documentation, a stopped flow, or a blind derivation — and until both sides exist you cannot even have the disagreement.",
+  "evidence": "brain_v2/build_channel_registry.py -> integration_channels.json (48 flows, 8 channels, 30 artifacts) parsed from knowledge/domains/Integration/integration_map_complete.md · process_mining/attribute_changes_to_programs.py resolve_channels() verdict",
+  "domain": "Brain_Architecture"
  }
 ]
