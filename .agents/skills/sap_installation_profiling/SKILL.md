@@ -550,6 +550,41 @@ becomes deliberate rather than accidental.
 
 ---
 
+## Prose identifies; the derivation confirms
+
+**A documented finding is a hypothesis to verify, never evidence to add.** Use the prose to
+know what to look for, then confirm it against derived data and report the verdict —
+**CONFIRMED · CONTRADICTED · UNVERIFIED**. Merging a documented claim into a derived result
+set launders a document into a measurement, and afterwards the two cannot be told apart.
+
+**Before deriving anything, check whether it was already analysed.** This cost real work:
+the write-channel taxonomy — RFC, IDoc, middleware, FILE, batch input, LSMW, DBCON,
+HTTP/SOAP — was fully analysed and written into `integration_map_complete.md` **as markdown
+tables**. The measurable consequence: `interface_boundary.json` contains the word "channel"
+**zero times**, and A8 was about to re-derive the same taxonomy from the audit log while the
+answer sat in a document nobody could query. Two answers to one question, drifting apart,
+with nothing able to notice.
+
+`brain_v2/build_channel_registry.py` parses it — it does not re-analyse it — keyed on the
+artifact that carries the channel, because that is the key the attribution algorithm holds.
+
+**CONTRADICTED is the valuable verdict.** It means the documentation and the running system
+disagree, which before could not even be expressed.
+
+### The write channels, and why a label is not enough
+
+Beyond a person in a transaction, a change can arrive through: an **interface** (BAPI/RFC —
+and `PARAMX` names the calling host and destination, which *is* the satellite); a **job**
+firing a program; a program reading a **file** in a directory; a **DBCON** link to a declared
+external database; or ABAP consuming a **web service**.
+
+These compose. Bank statements and postings originate in COUPA, which writes a **file** into
+a folder; a scheduled **job** picks it up; the **program** posts. A single-label
+classification calls that "PROGRAM" and throws away three links and the entire external
+origin. So channels are reported as a **chain**, each link with its own evidence.
+
+---
+
 ## Anti-methods — each of these cost real errors in instance #1
 
 | | why it looks like evidence, and is not |

@@ -250,39 +250,9 @@ def resolve_channels(tc_hist, top_programs, ev):
                                    f"no interface, file or job evidence — a report or engine "
                                    f"run directly")})
 
-    # CROSS-CHECK against what was already documented — and keep the two SEPARATE.
-    #
-    # The first version appended the declared channel into `found`, alongside the derived
-    # ones, which quietly promotes a sentence in a markdown table to the same standing as a
-    # measurement. Prose ALONE is worth nothing: it identifies what to look for, and the log
-    # is what confirms it. Mixing them destroys exactly the comparison that makes both
-    # useful, because you can no longer tell which side said what.
-    declared = declared or {}
-    decl = []
-    for prog in [p["program"] for p in top_programs[:5]]:
-        for d in declared.get(prog, []):
-            decl.append({"channel": d["channel"], "artifact": prog,
-                         "source_system": d.get("source"), "status": d.get("status"),
-                         "what_it_does": d.get("what_it_does")})
-
-    derived_names = {f["channel"] for f in found}
-    declared_names = {d["channel"] for d in decl}
-    if declared_names and derived_names & declared_names:
-        verdict = ("CONFIRMED — the documented channel is visible in the logs. Two "
-                   "independent sources agreeing is the only thing that earns confidence")
-    elif declared_names:
-        verdict = ("UNCONFIRMED PROSE — documented as "
-                   + "/".join(sorted(declared_names))
-                   + ", but the logs show " + "/".join(sorted(derived_names))
-                   + ". Prose alone is worth nothing: either the documentation is stale, or "
-                     "the flow stopped running, or the derivation is missing it. One of the "
-                     "three, and finding out which is the work")
-    elif derived_names:
-        verdict = ("UNDECLARED — the logs show this write path and the integration map does "
-                   "not document it. Something writes here off-map")
-    else:
-        verdict = "NO EVIDENCE either way"
-
+    # DECLARED is NOT resolved here. This function derives from the logs and nothing
+    # else; testing the documented claim belongs in check_declared(), separately, so
+    # that a sentence in a markdown table can never be laundered into a measurement.
     names = [f["channel"] for f in found]
     chain = None
     if "FILE" in names and "BATCH_JOB" in names:
@@ -325,7 +295,7 @@ def check_declared(top_programs, derived, declared):
                          "means the documentation and the system disagree, which is a "
                          "finding on one side or the other"),
             })
-    return out, decl, verdict
+    return out
 
 
 def _interface_functions(con, user, slots, limit=6):
@@ -423,15 +393,20 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
             "jobs": sorted({j for c in cands[:4]
                             for j in (jobs_of_prog.get(c["program"]) or {})})[:6],
         }
-        chans, chain, decl, verdict = resolve_channels(
-            tcodes.get(cls) or {}, cands, ev, declared)
+        chans, chain = resolve_channels(tcodes.get(cls) or {}, cands, ev)
+        # DERIVED and DECLARED stay in SEPARATE fields on purpose. Merging them would
+        # launder a document into a measurement, and afterwards nobody could tell which was
+        # which. The verdict is the third thing, and it is the one worth reading.
+        checks = check_declared(cands, chans, declared)
+        verdicts = sorted({c["verdict"] for c in checks}) or ["NOT_DECLARED"]
         out[cls] = {
             "change_documents": volume[cls], "users": len(by_user),
             "channels_DERIVED_from_logs": chans,
-            "channels_DECLARED_in_the_map": decl,
-            "verdict": verdict,
+            "channels_DECLARED_in_the_map": checks or None,
+            "verdict": verdicts,
             "chain": chain,
             "channel": chans[0]["channel"],
+            "channels": chans,
             "candidate_writers": cands[:8],
         }
 

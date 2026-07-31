@@ -264,7 +264,8 @@ def main():
     # ---- A8 · change-to-executor attribution ------------------------------
     # Every case here is one of the three scorings that were WRONG before one was right.
     try:
-        from attribute_changes_to_programs import phi as a8_phi, resolve_channels
+        from attribute_changes_to_programs import (phi as a8_phi, resolve_channels,
+                                                   check_declared)
     except ImportError as e:
         # NEVER silent. These cases stopped running for a whole session because a function
         # was renamed and the import failed quietly — the harness switched itself off and
@@ -295,69 +296,60 @@ def main():
         # INVARIANT: an empty transaction code is a POINTER, not a gap. When the writes carry
         # no tcode and a dispatcher is among the top associates, the channel is INTERFACE —
         # a BAPI/RFC whose design never set one. Reading it as "batch" loses the interface.
-        chans, _c, _d, _v = resolve_channels({"": 930, "PA30": 70},
-                                             [{"program": "SAPMSSY1"}], {"rfc_share": 0.9})
+        chans, _c = resolve_channels({"": 930, "PA30": 70},
+                                     [{"program": "SAPMSSY1"}], {"rfc_share": 0.9})
         ch = chans[0]["channel"]
         if ch != "RFC_INBOUND":
             failures.append(f"A8 channel {ch!r} != 'RFC_INBOUND' — an empty tcode plus "
                             f"function calls is a BAPI/RFC write, not a batch job")
         checked += 1
-        chans, _c, _d, _v = resolve_channels({"ME22N": 800, "": 200},
-                                             [{"program": "RM_MEPO_GUI"}], {})
+        chans, _c = resolve_channels({"ME22N": 800, "": 200},
+                                     [{"program": "RM_MEPO_GUI"}], {})
         ch = chans[0]["channel"]
         if ch != "DIALOG":
             failures.append(f"A8 channel {ch!r} != 'DIALOG' when most changes carry a tcode")
         checked += 1
-        chans, _c, _d, _v = resolve_channels({"": 950}, [{"program": "HUNCALC0"}], {})
+        chans, _c = resolve_channels({"": 950}, [{"program": "HUNCALC0"}], {})
         ch = chans[0]["channel"]
         if ch != "PROGRAM":
             failures.append(f"A8 channel {ch!r} != 'PROGRAM' when no tcode and named programs "
                             f"lead — that is a report or engine writing directly")
 
-    # ---- A8b · declared vs derived ----------------------------------------
-    # "Prose alone is worth nothing." A documented channel with no evidence in the logs must
-    # NEVER read as confirmed — the first version appended it beside the derived channels,
-    # which promotes a sentence in a markdown table to the standing of a measurement.
-    try:
-        from attribute_changes_to_programs import resolve_channels as a8_resolve
-    except ImportError as e:
-        a8_resolve = None
-        failures.append(f"A8b cases could not load — the harness went SILENT: {e}")
-    if a8_resolve is not None:
-        dialog = {"ME22N": 900, "": 100}
+    # ---- A8b · the documented claim, TESTED -------------------------------
+    # "Prose alone is worth nothing." The map is a HYPOTHESIS; the logs are the check. These
+    # cases exist because the first version APPENDED the declared channel beside the derived
+    # ones, which launders a sentence in a markdown table into a measurement and leaves
+    # nobody able to tell which side said what.
+    if a8_phi is not None:
         blank = {"": 1000}
+        chans, _c = resolve_channels(blank, [{"program": "ZCOUPA_LOAD"}],
+                                     {"file_share": 0.8, "paths": ["/interface/coupa.csv"]})
         checked += 1
-        # DECLARED file channel, and the logs show file evidence -> CONFIRMED
-        _c, _ch, decl, v = a8_resolve(
-            blank, [{"program": "ZCOUPA_LOAD"}],
-            {"file_share": 0.8, "paths": ["/interface/coupa/stmt.csv"]},
-            {"ZCOUPA_LOAD": [{"channel": "FILE", "source": "COUPA"}]})
-        if not v.startswith("CONFIRMED"):
-            failures.append(f"A8b declared FILE + file evidence must CONFIRM, got {v[:40]!r}")
-        checked += 1
-        if not decl or decl[0]["source_system"] != "COUPA":
-            failures.append("A8b the declared side must carry its source system")
-        checked += 1
-        # DECLARED, but the logs show something else -> must NOT confirm
-        _c, _ch, _d, v = a8_resolve(
-            dialog, [{"program": "ZCOUPA_LOAD"}], {},
-            {"ZCOUPA_LOAD": [{"channel": "FILE", "source": "COUPA"}]})
-        if not v.startswith("UNCONFIRMED PROSE"):
-            failures.append(f"A8b documented-but-unobserved must read UNCONFIRMED, got {v[:40]!r}")
-        checked += 1
-        # observed, nothing documented -> UNDECLARED, which is its own finding
-        _c, _ch, _d, v = a8_resolve(dialog, [{"program": "ZUNKNOWN"}], {}, {})
-        if not v.startswith("UNDECLARED"):
-            failures.append(f"A8b undocumented write path must read UNDECLARED, got {v[:40]!r}")
-        checked += 1
-        # INVARIANT: the declared side must never leak into the derived list. Mixing them
-        # destroys the only comparison that makes either side worth having.
-        chans, _ch, _d, _v = a8_resolve(
-            blank, [{"program": "ZCOUPA_LOAD"}], {"file_share": 0.8},
-            {"ZCOUPA_LOAD": [{"channel": "DBCON", "source": "TULIP"}]})
-        if any(c.get("declared") for c in chans) or "DBCON" in {c["channel"] for c in chans}:
+        # INVARIANT: the declared side must NEVER appear among the derived channels
+        if any(c.get("declared") for c in chans):
             failures.append("A8b a DECLARED channel leaked into the DERIVED list — prose is "
                             "being counted as measurement")
+        checked += 1
+        v = check_declared([{"program": "ZCOUPA_LOAD"}], chans,
+                           {"ZCOUPA_LOAD": [{"channel": "FILE", "source": "COUPA"}]})
+        if not v or v[0]["verdict"] != "CONFIRMED":
+            failures.append(f"A8b map says FILE and the logs show FILE — must CONFIRM, got "
+                            f"{v[0]['verdict'] if v else None!r}")
+        checked += 1
+        # the valuable verdict: documentation and system disagree
+        v = check_declared([{"program": "ZCOUPA_LOAD"}], chans,
+                           {"ZCOUPA_LOAD": [{"channel": "DBCON", "source": "TULIP"}]})
+        if not v or v[0]["verdict"] != "CONTRADICTED":
+            failures.append(f"A8b map says DBCON and the logs show FILE — must CONTRADICT, "
+                            f"got {v[0]['verdict'] if v else None!r}")
+        checked += 1
+        # nothing documented for this artifact -> nothing to verify, and no invented verdict
+        if check_declared([{"program": "ZUNKNOWN"}], chans, {}):
+            failures.append("A8b an undocumented artifact must produce NO verdict, not a "
+                            "manufactured one")
+        checked += 1
+        if v and v[0]["declared_source"] != "TULIP":
+            failures.append("A8b the declared side must carry its source system")
 
     print(f"[algorithm validation] {checked} golden cases")
     if failures:

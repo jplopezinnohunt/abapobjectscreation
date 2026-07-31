@@ -3756,7 +3756,10 @@
   "why": "prose that is never structured gets RE-DERIVED by the next question, and the two answers then drift with nothing able to notice. Measured instance: the integration map classified every flow into 8 channels — RFC, IDoc, middleware, file jobs, batch input, LSMW, DBCON, HTTP/SOAP — including that Coupa arrives as a FILE processed by a job, and that TULIP/UNESDIR come over DBCON and fail 93% of the time. All in markdown tables. So `interface_boundary.json` (F1) contained the string 'channel' ZERO times, and algorithm A8 was about to re-derive the whole taxonomy from the audit log while the answer sat in a document nobody could query. Worse, the first cross-check APPENDED the declared channel next to the derived ones, which silently promotes a sentence in a table to the standing of a measurement and destroys the comparison that makes either one useful.",
   "how_to_apply": "1. when an analysis produces a classification, emit a STRUCTURED store, not only a document — the document explains, the store is queried. 2. before deriving something, check whether it was already analysed and left as prose. 3. keep declared and derived in SEPARATE fields with an explicit verdict. 4. a disagreement is a FINDING on one side or the other — stale documentation, a stopped flow, or a blind derivation — and until both sides exist you cannot even have the disagreement.",
   "evidence": "brain_v2/build_channel_registry.py -> integration_channels.json (48 flows, 8 channels, 30 artifacts) parsed from knowledge/domains/Integration/integration_map_complete.md · process_mining/attribute_changes_to_programs.py resolve_channels() verdict",
-  "domain": "Brain_Architecture"
+  "domain": "Brain_Architecture",
+  "status": "SUPERSEDED",
+  "superseded_by": "feedback_prose_identifies_the_derivation_confirms",
+  "superseded_why": "same finding, written twice in one session by two passes over the same conversation. The surviving rule is the more precise one: it names the documented finding a HYPOTHESIS TO VERIFY and carries three verdicts including CONTRADICTED, which this one collapsed into a single 'unconfirmed'. Kept rather than deleted so the duplication itself stays visible — it is evidence that a promotion pass can run twice and not notice."
  },
  {
   "id": "feedback_a_gate_that_can_go_silent_is_worse_than_none",
@@ -3767,5 +3770,16 @@
   "how_to_apply": "1. in a harness, an unavailable dependency appends to `failures`, never sets a flag to None silently. 2. in a measurement, a caught exception PRINTS what could not be measured. 3. when a check's own case count drops, treat it as a defect until proven otherwise — the count is the gate on the gate. 4. never rename a function without running the harness that imports it.",
   "evidence": "brain_v2/methods/validate_algorithms.py (5 ImportError paths now append to failures; 68 -> 74 cases once they ran again) · brain_v2/methods/check_triggers.py (sqlite3.Error now prints)",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_prose_identifies_the_derivation_confirms",
+  "severity": "HIGH",
+  "created_session": 97,
+  "rule": "A documented finding is a HYPOTHESIS TO VERIFY, never evidence to add. Use the prose to IDENTIFY what to look for, then CONFIRM it against derived data, and report the verdict — CONFIRMED, CONTRADICTED or UNVERIFIED. Never merge a documented claim into a derived result set: that launders a document into a measurement and makes the two impossible to separate afterwards. And before deriving anything, CHECK WHETHER IT WAS ALREADY ANALYSED: an analysis that never became structured gets silently re-derived.",
+  "why": "s097, twice in one hour. FIRST: the write-channel taxonomy — RFC, IDoc, middleware, FILE, batch input, LSMW, DBCON, HTTP/SOAP — was fully analysed and written into `integration_map_complete.md` as MARKDOWN TABLES. The consequence was measurable: `interface_boundary.json` contains the string 'channel' ZERO times, and algorithm A8 was about to re-derive the same taxonomy from the audit log while the answer sat in a document nobody could query. Two answers to the same question, drifting apart, with no way to notice. SECOND: on wiring the registry in, the first version APPENDED the declared channel to the derived list with confidence 0.9 — prose dressed as measurement. The user's correction was exact: 'mira la prosa para identificar, pero debes confirmarlo con A8. Prosa sola no vale de nada.'",
+  "how_to_apply": "1. before deriving, grep knowledge/ for the same question — it may already be answered in prose. 2. if it is, PARSE it into a store keyed on something an algorithm holds, do not re-analyse it. 3. keep the two SEPARATE: declared in one field, derived in another, plus an explicit verdict. 4. treat CONTRADICTED as the valuable output — it means the documentation and the system disagree, which could not even be expressed before. MECHANIZED as M16: `brain_v2/methods/audit_prose_classifications.py` measures how much classification is still trapped — 59 in the LIVE reference, 26 already structured, 34 historical. A document whose table is genuinely illustrative declares itself with `<!-- narrative-only -->`; the point is that the choice becomes DELIBERATE. The worked example of clearing one is `brain_v2/build_channel_registry.py`. NOTE on the measurement itself: the first count reported 87 by including session retros and plans — technically derived and practically useless, which is its own kind of wrong answer.",
+  "evidence": "brain_v2/build_channel_registry.py -> integration_channels.json (48 flows, 8 channels, 30 artifacts) · check_declared() in process_mining/attribute_changes_to_programs.py",
+  "domain": "Integration",
+  "supersedes": "feedback_prose_identifies_the_log_confirms"
  }
 ]

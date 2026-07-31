@@ -17039,7 +17039,7 @@
  },
  {
   "id": 391,
-  "claim": "PROSE IDENTIFIES, THE LOG CONFIRMS — and a gate that can go silent is worse than none (s097). (A) THE PROSE FINDING, measured rather than assumed: knowledge/domains/Integration/integration_map_complete.md classifies 48 integration flows into 8 channels (RFC, IDoc, middleware, file jobs, batch input, LSMW, DBCON, HTTP/SOAP), records that COUPA arrives as a FILE processed by a scheduled job, and that TULIP and UNESDIR arrive over DBCON failing 93% of the time. All of it in markdown tables. CONSEQUENCE: brain_v2/interface_boundary.json (algorithm F1) contains the string 'channel' ZERO times, and algorithm A8 was about to re-derive the entire taxonomy from the audit log while the answer sat in a document no tool could query. Lifted into brain_v2/integration_channels.json — 48 flows, 8 channels, 30 artifacts keyed by the object that carries them. THE CONTRACT: DECLARED and DERIVED are kept in SEPARATE fields with an explicit verdict (CONFIRMED / UNCONFIRMED PROSE / UNDECLARED). The first cross-check APPENDED the declared channel beside the derived ones, which promotes a sentence in a table to the standing of a measurement and destroys the comparison that makes either side worth having. MECHANIZED as M16: 59 classifications still trapped in the LIVE reference, 26 already structured, 34 historical. The first count said 87 by including session retros and plans — technically derived and practically useless, which is its own kind of wrong answer. (B) THE SILENT GATE. The golden cases for A8 ran for a whole session against a function that no longer existed: a rename turned `_channel` into `resolve_channels`, the import raised, a bare `except ImportError` swallowed it, SIX CASES STOPPED EXECUTING and the harness printed OK. Caught only because the case count dropped 69 -> 68 and was read against memory. Every ImportError path now appends to failures; 68 -> 74 cases once they ran again. The same shape existed in check_triggers.py (`except sqlite3.Error: pass` made a new measurement return None and read as 'nothing to measure').",
+  "claim": "A GATE THAT CAN GO SILENT IS WORSE THAN NONE (s097). The golden cases for algorithm A8 ran for a whole session against a function that no longer existed: a rename turned `_channel` into `resolve_channels`, the import raised, a bare `except ImportError` swallowed it, SIX CASES STOPPED EXECUTING and the harness printed OK. It was caught only because the case count dropped 69 -> 68 and was read against memory of the previous run. Every ImportError path now appends to failures instead of setting a flag to None; 68 -> 74 cases once they ran again. The same shape existed in check_triggers.py, where an `except sqlite3.Error: pass` made a new measurement return None and read as 'nothing to measure'. A gate reporting success while not running is worse than no gate: a missing gate is visible, a silent one is trusted. SECOND, AND IT IS THE SAME CLASS OF DEFECT ONE LEVEL UP: this session's own knowledge promotion ran TWICE over the same conversation — once by hand, once by an automated pass — producing DUPLICATE rules and claims about the prose finding, plus a HALF-APPLIED refactor that left resolve_channels() raising UnboundLocalError and check_declared() returning undefined variables. The broken code sat in the working tree while the harness could not even load. Two writers with no lease, in one repository, is exactly what ADR-008 exists to prevent — and it was not another person, it was the same session promoting twice. The PROSE finding itself is claim #392, which supersedes the half of this claim that covered it.",
   "claim_type": "verified_fact",
   "confidence": "TIER_1",
   "domain": "Brain_Architecture",
@@ -17066,10 +17066,52 @@
    "TULIP",
    "UNESDIR"
   ],
-  "resolution_notes": "USER POINTS, both sharp: 'esto deberia estar en algun conocimiento previo de interfaces ya que se analizo pero seguro no se clasifico y quedo como prosa, esto hay que verlo y evitarlo' — correct, and verified by measurement rather than taken on trust. Then: 'mira la prosa para identificar, pero debes confirmarlo con A8. Prosa sola no vale de nada' — which is precisely the contract the first implementation broke by mixing the two sides in one field.",
+  "resolution_notes": "USER POINTS, both sharp: 'esto deberia estar en algun conocimiento previo de interfaces ya que se analizo pero seguro no se clasifico y quedo como prosa, esto hay que verlo y evitarlo' — correct, and verified by measurement rather than taken on trust. Then: 'mira la prosa para identificar, pero debes confirmarlo con A8. Prosa sola no vale de nada' — which is precisely the contract the first implementation broke by mixing the two sides in one field. DEDUPED s097: the prose half of this claim is covered in full by #392, and the rule `feedback_prose_identifies_the_log_confirms` was superseded by `feedback_prose_identifies_the_derivation_confirms`. Neither was deleted — the duplication is itself the evidence that a promotion pass can run twice without noticing.",
   "domain_axes": {
    "functional": [
     "Brain_Architecture",
+    "Integration"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  },
+  "superseded_partially_by": 392
+ },
+ {
+  "id": 392,
+  "claim": "THE WRITE-CHANNEL TAXONOMY EXISTED AND COULD NOT BE USED (s097). `knowledge/domains/Integration/integration_map_complete.md` classifies every integration into EIGHT channels with source, artifact, volume and verification status — including that TULIP and UNESDIR arrive over DBCON and fail 93% of the time. All of it in MARKDOWN TABLES. Measured consequence: `brain_v2/interface_boundary.json` (algorithm F1) contains the string 'channel' ZERO times — it marks destinations LIVE/DEAD/UNDECLARED and never says what KIND any of them is — and algorithm A8 was about to re-derive the same taxonomy from the audit log from scratch. Two answers to one question, drifting, with nothing able to notice. PARSED, NOT RE-ANALYSED: brain_v2/build_channel_registry.py lifts it into integration_channels.json — 48 flows, 8 channels, 30 artifacts keyed by the program or function module that carries them, which is the key A8 holds when it asks what wrote something. FILE is the largest channel at 20 flows, consistent with the user's account that bank statements and postings arrive from COUPA as files dropped in a folder and processed by a scheduled job. AND THE DECLARED IS A HYPOTHESIS, NOT EVIDENCE. The first wiring appended the declared channel to the derived list at confidence 0.9 — prose dressed as measurement. Corrected to check_declared(), which returns CONFIRMED / CONTRADICTED / UNVERIFIED against what the logs show. CONTRADICTED is the valuable verdict: it means the documentation and the system disagree, a disagreement that could not previously be expressed at all. A8's CHANNEL MODEL WAS ALSO WRONG AND IS NOW A CHAIN. A single label loses the links outside SAP. The real path — COUPA writes a FILE into a folder, a scheduled JOB processes it, the PROGRAM posts — would have been reported as 'PROGRAM', discarding three links and the external origin entirely. Channels are now reported as a chain with per-link evidence: DIALOG, RFC_INBOUND (naming the calling host/destination from PARAMX, which is the satellite), FILE (naming the paths), BATCH_JOB (naming the jobs), PROGRAM.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Integration",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/build_channel_registry.py + integration_channels.json + grep -c channel brain_v2/interface_boundary.json",
+    "cite": "48 flows / 8 channels / 30 artifacts; FILE 20, RFC_INBOUND 7, LSMW 5, WEBSERVICE 5, IDOC 4, BATCH_INPUT 3, MIDDLEWARE 2, DBCON 2; 'channel' appears 0 times in interface_boundary.json",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "brain_v2/build_channel_registry.py",
+   "brain_v2/integration_channels.json",
+   "knowledge/domains/Integration/integration_map_complete.md",
+   "process_mining/attribute_changes_to_programs.py",
+   "COUPA",
+   "TULIP",
+   "UNESDIR"
+  ],
+  "resolution_notes": "USER POINTS, in order: the write channels beyond a dialog user are interfaces/BAPI/RFC (whose origin we can name), jobs firing programs that read files in directories, DBCON against declared external databases, and ABAP consuming web services; then the concrete case — bank statements and postings arrive from COUPA as files processed by jobs; then 'esto deberia estar en algun conocimiento previo de interfaces ya que se analizo pero seguro no se clasifico y quedo como prosa, esto hay que verlo y evitarlo'; then 'mira la prosa para identificar, pero debes confirmarlo con A8. Prosa sola no vale de nada.' Every one of them was right, and the last one caught me laundering the document into the measurement.",
+  "domain_axes": {
+   "functional": [
     "Integration"
    ],
    "module": [
