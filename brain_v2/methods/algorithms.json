@@ -329,6 +329,20 @@
    "first_run": "178 objects: 55 REPORT, 46 POSTING_ENGINE, 27 MASTER_DATA_MAINTENANCE, 23 INTERFACE, 12 WORKLIST, 9 CHECKER, 4 TECHNICAL, 2 BATCH_ENGINE. INDEPENDENT CONFIRMATION of the operating model: PS, Travel, BusinessPartner, Procurement_P2P and Treasury_EBS all flagged DRIVEN FROM OUTSIDE — derived from object ROLES, not from the audit log's origin axis. Two independent methods agreeing is real validation.",
    "failure_mode": "a role is a HYPOTHESIS. A report that writes a log table looks like a writer; a getter that posts looks like a reader. The confidence and the evidence are returned so a reader can disagree — a role asserted without its evidence would be worse than none.",
    "improve": "feed it the flows: an object's role WITHIN a flow (approver, poster, reconciler) is sharper than its role in general"
+  },
+  "D6_aggregate_before_resolve": {
+   "operates_on": "data",
+   "origin": "OURS",
+   "state": "STRONG",
+   "does": "push the row reduction into SQL (GROUP BY), then resolve the expensive enrichment ONCE per distinct entity, and cache the aggregate against a watermark so a re-run with no new data costs nothing",
+   "why_it_matters": "MEASURED 548x less Python work: 15,605,644 audit rows collapse to 33,607 (month,object) pairs over 26,131 distinct objects. 430s -> 187s cold -> 30s warm. And speed is not an optimisation here: a slow algorithm gets skipped, and a skipped algorithm is documentation — the model stops learning without anyone deciding it should.",
+   "bound_in": [
+    "process_mining/detect_drift.py"
+   ],
+   "failure_mode": "the aggregate must be keyed on a WATERMARK that actually moves. Cached against something static, it serves stale results forever and looks fast while being wrong.",
+   "constraint": "the Golden DB is read-only by contract, so the cache lives OUTSIDE it. Adding an index would have been the other obvious fix and is not permitted.",
+   "shared_with_ecosystem": "ecosystem-coordinator/.knowledge/way-of-working/sql-aggregate-before-resolve.md",
+   "improve": "apply it to the other per-row enrichments: CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M), FMIOI (2.2M)"
   }
  },
  "_portfolio": {
@@ -336,7 +350,7 @@
    "logs": 7,
    "process_events": 5,
    "repository": 5,
-   "data": 3,
+   "data": 4,
    "model": 4,
    "interfaces": 2
   },
@@ -346,7 +360,7 @@
    "OURS": 12
   },
   "by_state": {
-   "STRONG": 11,
+   "STRONG": 12,
    "WORKS": 12,
    "WEAK": 0,
    "FRAGILE": 1,

@@ -16666,5 +16666,42 @@
     "cross-cutting"
    ]
   }
+ },
+ {
+  "id": 382,
+  "claim": "AGGREGATE IN SQL BEFORE RESOLVING IN PYTHON — algorithm D6, promoted to an ECOSYSTEM-LEVEL pattern (s097). The concept-drift algorithm took 430 seconds, and the SQL scan was never the bottleneck: 15,605,644 Python iterations were. Doing the GROUP BY in SQL first collapses those rows to 33,607 (month,object) pairs over 26,131 distinct objects — 548x less Python work — then the expensive resolution runs once per distinct entity instead of once per row. Plus a cache keyed on the latest audit date, so a re-run with no new data is free. MEASURED: 430s -> 187s cold -> 30s warm. WHY IT IS NOT MERELY AN OPTIMISATION: a slow algorithm gets skipped, and a skipped algorithm is documentation — the model stops learning without anyone deciding it should. CONSTRAINT that shaped it: the Golden DB is read-only by contract, so an index was not an option and the cache lives outside it. SHARED with all four ecosystem projects at ecosystem-coordinator/.knowledge/way-of-working/sql-aggregate-before-resolve.md — every project that enriches Golden DB rows in Python has this defect, and the candidates are named: CDHDR 7.8M, cdhdr_history 12M, REGUH 3.7M, FMIOI 2.2M.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Infrastructure",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "process_mining/detect_drift.py build_profile() + timed runs",
+    "cite": "cold 3m07s (was 7m10s), warm 30s; 33,607 aggregated rows over 26,131 distinct objects",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "process_mining/detect_drift.py",
+   "brain_v2/drift_profile.json",
+   "rsau_audit_history"
+  ],
+  "resolution_notes": "Rule of thumb recorded: if the row count entering Python exceeds the count of distinct things you actually resolve, you are doing avoidable work — and the ratio tells you how much. FAILURE MODE: the cache must be keyed on a watermark that MOVES; keyed on something static it serves stale results forever and looks fast while being wrong.",
+  "domain_axes": {
+   "functional": [
+    "Infrastructure"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  }
  }
 ]

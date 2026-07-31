@@ -53,41 +53,78 @@ REL_CHANGE = 0.50     # a signal must move at least this much against its baseli
 BASELINE_MIN = 2      # months of history required before any comparison is made
 
 
-def main():
-    con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
+PROFILE = REPO / "brain_v2" / "drift_profile.json"
 
-    # monthly profile per domain, resolved through the standard taxonomy
-    # DAYS COVERED PER MONTH. The first run of this algorithm produced 11 drift signals,
-    # almost all in the same month across unrelated domains — PM, CTS, Security, FI-AA,
-    # Travel, SD, FI. When drift fires everywhere at once the PROCESS did not change, the
-    # DATA did: the window runs 2026-02-21 to 2026-06-21, so February has 3 days and June
-    # has 20, while April has 30. April was simply the first full month.
-    #
-    # Comparing monthly VOLUMES across unequal months is the same defect this project
-    # already names as an anti-method. The fix is to compare RATES PER DAY.
+
+def build_profile(con):
+    """Monthly profile per domain, AGGREGATED IN SQL and cached.
+
+    The first version resolved a domain for each of 15.6M audit rows — 430 seconds. The
+    scan was never the bottleneck: 15.6M Python iterations were. Aggregating in SQL first
+    collapses those rows to 28,473 (month, object) pairs over 26,143 distinct objects, so
+    the expensive per-object resolution runs 548x fewer times.
+
+    The result is cached against the latest date seen. A re-run with no new audit data
+    costs nothing, which matters because a slow algorithm gets skipped, and a skipped
+    algorithm is documentation.
+    """
+    latest = con.execute("SELECT MAX(SAL_DATE) FROM rsau_audit_history").fetchone()[0]
+    if PROFILE.exists():
+        try:
+            cached = json.loads(PROFILE.read_text(encoding="utf-8"))
+            if cached.get("_latest_date") == latest:
+                print(f"  profile cache hit (audit unchanged through {latest})")
+                return ({d: {m: v for m, v in months.items()}
+                         for d, months in cached["profile"].items()},
+                        cached["days_in"])
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass
+
+    print("  aggregating in SQL (cold) ...")
     days_in = dict(con.execute(
         "SELECT substr(SAL_DATE,1,6), COUNT(DISTINCT SAL_DATE) FROM rsau_audit_history "
-        "GROUP BY 1"))
-
-    prof = defaultdict(lambda: defaultdict(lambda: {"execs": 0, "objs": set(), "users": set()}))
+        "WHERE SAL_DATE <> '' GROUP BY 1"))
     prog_dc = dict(con.execute("SELECT OBJ_NAME, DEVCLASS FROM tadir_prog"))
+
+    # one row per (month, object) instead of one per execution
     rows = con.execute(
-        "SELECT SAL_DATE, SLGREPNA, PARAM3, SLGUSER FROM rsau_audit_history "
-        "WHERE SAL_DATE IS NOT NULL AND SAL_DATE <> ''").fetchall()
-    for sal_date, prog, fm, user in rows:
-        month = str(sal_date)[:6]
-        obj = (fm or prog or "").strip()
-        if not obj:
+        "SELECT substr(SAL_DATE,1,6) m, "
+        "       COALESCE(NULLIF(PARAM3,''), SLGREPNA) obj, "
+        "       SLGREPNA prog, COUNT(*) n, COUNT(DISTINCT SLGUSER) u "
+        "FROM rsau_audit_history WHERE SAL_DATE <> '' GROUP BY 1,2,3").fetchall()
+
+    # resolve each distinct object ONCE, not once per execution
+    dom_cache = {}
+
+    def dom_of(obj, prog):
+        key = (obj, prog)
+        if key not in dom_cache:
+            dom_cache[key] = (domain_of_package(prog_dc.get((prog or "").strip()))
+                              or domain_of_function_module((obj or "").strip()))
+        return dom_cache[key]
+
+    prof = defaultdict(lambda: defaultdict(lambda: {"execs": 0, "objs": 0, "users": 0}))
+    for month, obj, prog, n, u in rows:
+        d = dom_of(obj, prog)
+        if not d:
             continue
-        dom = domain_of_package(prog_dc.get((prog or "").strip())) \
-            or domain_of_function_module(obj)
-        if not dom:
-            continue
-        p = prof[dom][month]
-        p["execs"] += 1
-        p["objs"].add(obj)
-        if user:
-            p["users"].add(user.strip())
+        p = prof[d][month]
+        p["execs"] += n
+        p["objs"] += 1          # already one row per distinct object in this month
+        p["users"] = max(p["users"], u or 0)
+
+    plain = {d: {m: dict(v) for m, v in months.items()} for d, months in prof.items()}
+    PROFILE.write_text(json.dumps(
+        {"_latest_date": latest, "_note": "aggregated in SQL; cached against the latest audit date",
+         "days_in": days_in, "profile": plain}, indent=1), encoding="utf-8")
+    print(f"  aggregated {len(rows):,} (month,object) rows over "
+          f"{len(dom_cache):,} distinct objects")
+    return plain, days_in
+
+
+def main():
+    con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
+    prof, days_in = build_profile(con)
     con.close()
 
     signals, examined = [], 0
@@ -103,7 +140,7 @@ def main():
             if d < MIN_DAYS:
                 continue
             series.append((m, months[m]["execs"] / d,
-                           len(months[m]["objs"]) / d, len(months[m]["users"]) / d))
+                           months[m]["objs"] / d, months[m]["users"] / d))
         if len(series) < MIN_MONTHS or sum(x[1] for x in series) < MIN_EXECS / 30.0:
             continue
         examined += 1
