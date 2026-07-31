@@ -25,6 +25,7 @@ someone deciding it is time; those stay explicit. This runs what can always run.
     python brain_v2/methods/run_analysis_cycle.py            # the full cycle
     python brain_v2/methods/run_analysis_cycle.py --quick    # skip the slow log scans
 """
+import json
 import subprocess
 import sys
 import time
@@ -45,6 +46,7 @@ def say(text):
         print(text.encode(enc, "replace").decode(enc, "replace"))
 
 REPO = Path(__file__).resolve().parents[2]
+STATE = Path(__file__).parent / "cycle_state.json"
 
 # (script, label, needs_full_log_scan) — ORDER IS THE DEPENDENCY ORDER.
 CYCLE = [
@@ -101,6 +103,20 @@ def main():
           f"{' (quick: skipping full log scans)' if quick else ''}\n")
     ok, failed, skipped = 0, [], 0
 
+    # Stamp STARTED before anything runs. Two reasons, and the second is the better one:
+    #   1. the path gate runs INSIDE this cycle, and on a fresh machine it would fail on
+    #      cycle_state.json not existing yet — a chicken-and-egg of my own making;
+    #   2. a cycle that STARTED AND NEVER FINISHED is now visible. Writing only on
+    #      completion makes a crashed run indistinguishable from one that never began.
+    import datetime
+    _started = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    try:
+        json.dump({"status": "RUNNING", "started_utc": _started,
+                   "_why": "a run that starts and dies must not look like a run that never began"},
+                  open(STATE, "w", encoding="utf-8"), indent=1)
+    except OSError:
+        pass
+
     for script, label, heavy in CYCLE:
         if quick and heavy:
             say(f"  SKIP  {label}")
@@ -130,6 +146,31 @@ def main():
             say(f"        {(err[-1] if err else '')[:110]}")
 
     print(f"\n  {ok} ran · {len(failed)} failed · {skipped} skipped")
+    # RECORD THAT IT RAN — before the exit, and whether or not steps failed.
+    #
+    # Written even on failure ON PURPOSE. A cycle that ran and failed half its steps is WORSE
+    # than one that did not run, because its artifacts look fresh; recording only successes
+    # would hide exactly that case. And it is written before sys.exit(1), because the run
+    # happened regardless of how it ended.
+    #
+    # Without this file, "run it weekly" cannot be verified and "it did not run" cannot be
+    # detected — the loop would go back to depending on someone remembering, which is the
+    # hole this file exists to close.
+    try:
+        json.dump({
+            "status": "COMPLETE",
+            "started_utc": _started,
+            "_what_this_is": "when the cycle last ran, and how it went",
+            "_why": ("a schedule that fails silently is worse than no schedule: the absence "
+                     "of fresh artifacts reads as 'nothing changed'. This makes it visible."),
+            "last_run_utc": datetime.datetime.now(
+                datetime.timezone.utc).isoformat(timespec="seconds"),
+            "steps_ran": ok, "steps_failed": len(failed), "steps_skipped": skipped,
+            "failed": failed,
+        }, open(STATE, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    except OSError as e:
+        say(f"  could not record the run: {e}")
+
     if failed:
         say("  failed: " + ", ".join(failed))
         sys.exit(1)

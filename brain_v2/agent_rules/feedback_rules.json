@@ -3802,5 +3802,15 @@
   "how_to_apply": "1. P01 source IS readable, read-only, via RPY_PROGRAM_READ — no ADT and no write path involved. Reading what is active is how you CHECK a claim instead of assuming it. 2. Classes need the pool: <CLASSNAME> padded to 30 with '=' then 'CP', whose include list carries one CM<xx> include per method. The pool ALONE is ~25 lines of skeleton — reporting that as the class makes a 1,296-line implementation look empty. 3. Keep the two corpora SEPARATE (extracted_sap_p01/ vs the D01 corpus). Merging them destroys the only distinction that matters: deployed versus merely existing. 4. When they differ, the DIFFERENCE is a finding — unreleased work, abandoned work, or dev-only tooling, and each means something different.",
   "evidence": "Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py; ZPBC D01 114 vs P01 77; ZCL_IM__UNESCO_ENCUMB 1,296 lines read from production; claims #397, #398",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_a_schedule_must_notice_its_own_absence",
+  "severity": "HIGH",
+  "created_session": 97,
+  "rule": "Anything scheduled must RECORD THAT IT RAN, and something must READ that record and act. A schedule alone is not a mechanism: a task that stops firing produces no error and no artifact, and the absence of fresh output reads as 'nothing changed'.",
+  "why": "s097. The analysis cycle was built to close the 'on demand means never' hole, then sat unscheduled for a whole session — the same hole, one level up. Scheduling it is only half: a missed week is SILENT unless the loop can see its own gap. The user framed the requirement exactly: 'si detectas que no fue corrida durante la semana, hazlo una vez que lo detectes' — detect AND act, not detect.",
+  "how_to_apply": "1. the scheduled thing writes a state file with its last run, step count and failures. 2. the trigger evaluation MEASURES the gap and fires a response class. 3. the SESSION START surfaces it, because a measurement nobody reads changes nothing and session start is the one moment the agent is guaranteed to look. 4. report FAILED STEPS too: a cycle that ran and failed half its steps is worse than one that did not run, because its artifacts look fresh.",
+  "evidence": "brain_v2/methods/cycle_state.json; check_triggers CYCLE_STALE_DAYS=8; cycle_headline() in brain_v2/session_start_hook.py; three Windows tasks in Ready state",
+  "domain": "Brain_Architecture"
  }
 ]

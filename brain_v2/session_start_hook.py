@@ -69,6 +69,36 @@ def maybe_curate():
         return f" | (curation skip: {str(e)[:60]})"
 
 
+def cycle_headline():
+    """Has the loop turned? Surfaced at session start, because DETECTION IS NOT ACTION.
+
+    The cycle is scheduled weekly. A scheduled task that stops firing produces no error and
+    no artifact, and the absence of fresh artifacts reads as 'nothing changed' — the most
+    expensive kind of silence. check_triggers can MEASURE the gap, but nothing acts on a
+    measurement nobody reads, so the instruction has to reach the agent at the one moment it
+    is guaranteed to look: the start of a session.
+    """
+    import datetime
+    st = HERE / "methods" / "cycle_state.json"
+    if not st.exists():
+        return (" | LOOP: the analysis cycle has NEVER recorded a run — RUN IT NOW: "
+                "python brain_v2/methods/run_analysis_cycle.py")
+    try:
+        d = json.loads(st.read_text(encoding="utf-8"))
+        last = datetime.datetime.fromisoformat(d["last_run_utc"])
+        days = (datetime.datetime.now(datetime.timezone.utc) - last).days
+    except (json.JSONDecodeError, KeyError, ValueError, OSError):
+        return " | LOOP: cycle_state.json is unreadable — run the cycle and let it rewrite it"
+    if days > 8:
+        return (f" | LOOP STALE: the analysis cycle last ran {days} days ago (weekly expected). "
+                f"A missed schedule is silent — RUN IT NOW: "
+                f"python brain_v2/methods/run_analysis_cycle.py")
+    if d.get("steps_failed"):
+        return (f" | LOOP: last cycle {days}d ago had {d['steps_failed']} FAILED step(s): "
+                f"{', '.join(d.get('failed') or [])[:80]} — fix before trusting its artifacts")
+    return f" | loop healthy: cycle ran {days}d ago, {d.get('steps_ran')} steps, 0 failed"
+
+
 def main():
     try:
         sys.stdin.read()
@@ -77,6 +107,7 @@ def main():
     stamp_session()
     note = maybe_curate()
     meta = meta_headline()
+    loop = cycle_headline()
     ctx = (
         "MANDATORY FIRST ACTION (TIERED LOADING): read brain_v2/BRAIN_INDEX.md FIRST (~800 tokens, lean L1 "
         "index) — NOT the full 400K brain_state.json. Then DRILL on demand: python brain_v2/graph_queries.py "
@@ -94,10 +125,10 @@ def main():
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
         "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (~6.4GB, gitignored) + ~/.claude memory "
-        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta
+        "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop
     )
     print(json.dumps({
-        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta,
+        "systemMessage": "Brain v3 — read brain_v2/BRAIN_INDEX.md first (lean). MODEL EXISTS (Layer 15) — do NOT re-invent." + note + meta + loop,
         "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": ctx},
     }))
 

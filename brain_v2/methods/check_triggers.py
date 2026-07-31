@@ -45,6 +45,7 @@ def _load(p, d=None):
 
 
 UNATTRIBUTED_CLASSES = 5   # below this it is a tail, not a gap
+CYCLE_STALE_DAYS = 8       # weekly schedule + one day of slack
 
 
 def measure():
@@ -71,6 +72,19 @@ def measure():
     m["company_codes"] = org.get("company_codes")
     m["plants"] = org.get("plants")
     m["switches_on"] = (p.get("switch_framework", {}) or {}).get("switches_ON")
+
+    # HAS THE LOOP TURNED? measured, not assumed
+    cs = _load(HERE / "cycle_state.json")
+    if cs.get("last_run_utc"):
+        try:
+            import datetime
+            last = datetime.datetime.fromisoformat(cs["last_run_utc"])
+            m["cycle_days_since_run"] = (
+                datetime.datetime.now(datetime.timezone.utc) - last).days
+            m["cycle_last_run"] = cs["last_run_utc"]
+            m["cycle_steps_failed"] = cs.get("steps_failed")
+        except (ValueError, TypeError):
+            pass
 
     # audit history depth — the evidence window every domain assignment rests on
     if GOLD.exists():
@@ -126,6 +140,21 @@ def evaluate(now, prev):
 
     if not prev:
         return fired, "baseline established — nothing to compare against yet"
+
+    # ---- THE LOOP ITSELF ------------------------------------------------
+    # "Run it weekly" is only real if a missed week is DETECTED. A scheduled task that stops
+    # firing produces no error and no artifact, and the absence of fresh artifacts reads as
+    # "nothing changed" — the most expensive kind of silence. This fires so the next session
+    # catches it up instead of inheriting stale answers without knowing.
+    stale = now.get("cycle_days_since_run")
+    if stale is None:
+        fire("MAINTENANCE", "the analysis cycle has NEVER recorded a run",
+             "no cycle_state.json — either it has not run since this check existed, or the "
+             "schedule was never registered", "CYCLE")
+    elif stale > CYCLE_STALE_DAYS:
+        fire("MAINTENANCE", "the analysis cycle is stale",
+             f"last run {stale} days ago, expected weekly — a missed schedule produces no "
+             f"error, so this is the only thing that notices", "CYCLE")
 
     # ---- WRITE PATH ----------------------------------------------------
     # NOTE ON WHAT A TRIGGER MAY SAY. Every `run` below points at the CYCLE, never at an
