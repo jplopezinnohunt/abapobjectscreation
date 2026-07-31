@@ -25,6 +25,7 @@ Exit 1 on any failure.
 """
 import json
 import sqlite3
+import re
 import sys
 from pathlib import Path
 
@@ -262,6 +263,59 @@ def main():
         resolved = [x for x in sat.get("satellites", []) if x.get("serves_domains")]
         case("F2", "satellites resolve to domains", len(resolved) >= 5,
              f"only {len(resolved)} satellites resolve to a domain")
+
+    # ---- a superseded gold table must have no readers ---------------------
+    # 2026-07-31: `cdhdr` is a strict SUBSET of `cdhdr_history` (100% of its keys) AND is
+    # scope-filtered — 57 object classes against 72. Four tools were still reading it,
+    # including the CHANGE-AUDIT skill and the process-discovery algorithms B1/B2/B3. Every
+    # one of them reported that PBC has ZERO change activity, where it has 3,449,049, and
+    # that Real Estate does not change at all.
+    #
+    # That is the same failure as reading absence in a derived index as absence in the
+    # system — the error that produced six wrong module answers earlier in this session.
+    # A stale copy is not a small problem: it answers confidently and it answers wrong.
+    #
+    # So the registry declares `superseded_by`, and this case holds the repository to it.
+    # It is generic: it applies to whatever table is marked next, not only to this one.
+    registry = load("brain_v2/gold_table_registry.json")
+    if registry:
+        superseded = {}
+        for dom, secs in (registry.get("domains") or {}).items():
+            for sec, items in (secs.items() if isinstance(secs, dict) else []):
+                for it in (items if isinstance(items, list) else []):
+                    if isinstance(it, dict) and it.get("superseded_by"):
+                        superseded[str(it["gold"]).lower()] = it["superseded_by"].lower()
+
+        SKIP = (".git", "scratchpad", "brain/conversations", "session_retros",
+                "gold_table_catalog", "validate_artifacts", "gold_table_registry",
+                "accumulate_logs")   # the accumulator legitimately SEEDS from the old copy
+        for old, new in superseded.items():
+            readers = []
+            for f in list(REPO.rglob("*.py")) + list(REPO.rglob("*.md")):
+                rel = str(f.relative_to(REPO)).replace("\\", "/")
+                if any(k in rel for k in SKIP):
+                    continue
+                try:
+                    txt = f.read_text(encoding="utf-8", errors="replace")
+                except OSError:
+                    continue
+                # A READ is `FROM <table>`, or the bare name used as a python string. A
+                # documented MENTION is not a read — the catalogue, the status report and
+                # the capability docs must be able to NAME the superseded copy in order to
+                # warn about it. A gate that forbids naming the trap deletes the warning.
+                # CASE-SENSITIVE on purpose. The convention in this repo is exact:
+                # lowercase `cdhdr` is the GOLD table, uppercase `CDHDR` is the SAP table
+                # read from P01 over RFC. They are different things, and matching
+                # case-insensitively made English prose ("mining from CDHDR") and a
+                # legitimate RFC extraction both read as a stale gold query.
+                is_read = bool(re.search(rf"\bFROM\s+{old}\b", txt)) or (
+                    f'"{old}"' in txt and rel.endswith(".py") and "SUPERSEDED" not in txt)
+                if is_read:
+                    readers.append(rel)
+            case("D_DATA", f"nothing reads the superseded {old}", not readers,
+                 f"SUPERSEDED by {new} — {len(readers)} file(s) still read it: "
+                 f"{', '.join(sorted(readers)[:5])}. A stale copy does not fail; it answers "
+                 f"confidently and wrong")
 
     # ---- report ----------------------------------------------------------
     print(f"[artifact golden cases] {checked} cases over what the algorithms PRODUCE")

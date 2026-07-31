@@ -419,7 +419,7 @@ def phase3_gold_db(bukrs):
     # --- Assets (CDHDR as proxy - ANLA changes) ---
     results["asset_changes"] = query(
         "Asset changes (CDHDR OBJECTCLAS=ANLA)",
-        "SELECT COUNT(*) as cnt FROM cdhdr WHERE OBJECTCLAS = 'ANLA' AND OBJECTID LIKE ?",
+        "SELECT COUNT(*) as cnt FROM cdhdr_history WHERE OBJECTCLAS = 'ANLA' AND OBJECTID LIKE ?",
         (f"{bukrs}%",)
     )
 

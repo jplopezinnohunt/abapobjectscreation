@@ -169,7 +169,7 @@ Layer 3: YCL_FI_ACCOUNT_SUBST_BL (UNESCO class)
 # Check substitution log via CDHDR (change documents)
 conn.execute("""
     SELECT OBJECTCLAS, OBJECTID, UDATE, USERNAME, CHANGENR
-    FROM cdhdr  -- needs extraction
+    FROM cdhdr_history  -- extracted: 12,029,963 rows (NOT `cdhdr`, that copy is scope-filtered)
     WHERE OBJECTCLAS = 'BKPF'
       AND UDATE BETWEEN '20250101' AND '20251231'
     LIMIT 100

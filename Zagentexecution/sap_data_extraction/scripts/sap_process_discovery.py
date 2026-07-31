@@ -7,7 +7,10 @@ Capability #1 (UNDERSTAND) + calibration source for #3 (SIMULATE).
 
 TWO event sources (the user's point: bkpf is only part — changes/logs are richer):
   * TRANSACTIONS — bkpf (FI documents).
-  * CHANGES — cdhdr (change documents: object lifecycle, who changed what when).
+  * CHANGES — cdhdr_history (change documents: object lifecycle, who changed what when).
+    NOT `cdhdr`: verified 2026-07-31, that table is a strict SUBSET of cdhdr_history AND
+    scope-filtered to 57 object classes of 72. Discovery run against it reports ZERO PBC
+    activity where there are 3,449,049 change documents, and no Real Estate at all.
 Cross many tables toward OCEL (object-centric) next.
 
 Each config declares a SQL that returns columns: case_id, activity_raw, ddate, dtime, resource;
@@ -51,7 +54,7 @@ def _cdhdr_config(objectclass, label, where_extra=""):
         "sql": f"""
             SELECT OBJECTID AS case_id, TCODE AS activity_raw,
                    UDATE AS ddate, UTIME AS dtime, USERNAME AS resource
-            FROM cdhdr
+            FROM cdhdr_history
             WHERE OBJECTCLAS='{objectclass}' AND TCODE IS NOT NULL AND TCODE<>''
                   {where_extra}
         """,

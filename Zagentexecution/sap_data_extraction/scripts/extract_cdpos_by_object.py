@@ -79,7 +79,7 @@ def save_state(s):
 def object_id_windows(db, objclass):
     """Sorted distinct OBJECTIDs (from local cdhdr) grouped into BETWEEN windows."""
     ids = [r[0] for r in db.execute(
-        "SELECT DISTINCT OBJECTID FROM cdhdr WHERE OBJECTCLAS=? ORDER BY OBJECTID", (objclass,))]
+        "SELECT DISTINCT OBJECTID FROM cdhdr_history WHERE OBJECTCLAS=? ORDER BY OBJECTID", (objclass,))]
     for i in range(0, len(ids), WINDOW):
         chunk = ids[i:i + WINDOW]
         yield i // WINDOW, chunk[0], chunk[-1], len(chunk)

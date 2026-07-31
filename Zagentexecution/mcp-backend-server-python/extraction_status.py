@@ -68,7 +68,10 @@ TABLE_REGISTRY = [
     ("BSIS", os.path.join(DATA_DIR, "BSIS"), "BSIS_{y}_{m}.json", "bsis",  7, "GL Open Items"),
     ("BSAS", os.path.join(DATA_DIR, "BSAS"), "BSAS_{y}_{m}.json", "bsas",  7, "GL Cleared Items"),
     # --- CDHDR Pipeline ---
-    ("CDHDR", os.path.join(DATA_DIR, "CDHDR"), "CDHDR_{y}_{m}.json", "cdhdr",  8, "Change Doc Headers"),
+    # `cdhdr` here is the STATUS of the superseded snapshot, not a read for analysis. The
+    # table to analyse is `cdhdr_history` (72 object classes vs 57; `cdhdr` reports zero
+    # PBC changes where there are 3,449,049). Kept so the old copy stays visible, not used.
+    ("CDHDR", os.path.join(DATA_DIR, "CDHDR"), "CDHDR_{y}_{m}.json", "cdhdr",  8, "Change Doc Headers (SUPERSEDED snapshot)"),
     ("CDPOS", os.path.join(DATA_DIR, "CDPOS"), "CDPOS_all.json",     "cdpos",  9, "Change Doc Items (single file)"),
     # --- P2P Complement ---
     ("EBAN", os.path.join(DATA_DIR, "EBAN"), "EBAN_{y}_{m}.json", "eban", 10, "Purchase Requisitions"),

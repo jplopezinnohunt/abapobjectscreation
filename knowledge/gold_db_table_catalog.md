@@ -18,9 +18,36 @@ type: project
 |---|---|---|---|---|---|
 | **TBTCO** | `tbtco` + `tbtco_history` | Background job headers (status, start/end, scheduler) | Job/batch process mining: who ran which program, when, status, duration | JOBNAME+JOBCOUNT | ~14d → accumulate |
 | **TBTCP** | `tbtcp` + `tbtcp_history` | Job step list incl. **VARIANT** | Job INTENT via variant (program + targeted scope) | JOBNAME+JOBCOUNT+STEPCOUNT | with TBTCO → accumulate |
-| **CDHDR** | `cdhdr` + `cdhdr_history` | Change-document **headers** (who/when/object/tcode) | Audit-trail event log; base of `cdhdr_activity_mapping.py` (OBJECTCLAS+TCODE→activity). **This is the PM base, not CDPOS.** | OBJECTCLAS+OBJECTID+CHANGENR | headers persist; accumulate deltas |
+| **CDHDR** | `cdhdr_history` ✅ **READ THIS ONE** · `cdhdr` ⚠️ stale subset | Change-document **headers** (who/when/object/tcode) | Audit-trail event log; base of `cdhdr_activity_mapping.py` (OBJECTCLAS+TCODE→activity). **This is the PM base, not CDPOS.** **BOTH GOLD TABLES ARE CDHDR** — verified 2026-07-31: all 7,810,913 keys of `cdhdr` are contained in `cdhdr_history` (INTERSECT = 100%), so `cdhdr` is a superseded snapshot (cut 20260316) and `cdhdr_history` accumulates (to 20260620). **`cdhdr` is not merely older, it is SCOPE-FILTERED and therefore misleading:** it holds 57 object classes against 72, and reading it concludes that **PBC has ZERO change activity when it has 3,449,049** — plus Real Estate (REBD_*/REBP_*/RETM_*), the custom HR infotypes Y_HR_IT1080/1081/9080/9081 (5,330) and YFMFUNDC5 (2,221), all invisible. Its window covers 20260220–20260316, when PBC changes had already started, so this is a CLASS FILTER and not a date cut. | OBJECTCLAS+OBJECTID+CHANGENR | headers persist; accumulate deltas into `cdhdr_history` ONLY |
 | **CDPOS** | *(not extracted)* | Change-document **detail** (field, value old→new) | Would give field-level change events. DEFERRED — no value now ([[project-cdpos-extraction-deferred]]). Only `INC-000005240_cdpos_a_hizkia.json` = 2 docs. | OBJECTCLAS+OBJECTID+CHANGENR+TABNAME+FNAME | n/a |
+| **REGUH** | `reguh` ✅ 3,707,737 | Payment-run **header**: one row per payee per payment run (F110) — house bank, method, amount, currency, payee name/address | The payment domain's spine. Joins the AP invoice to the bank file: `REGUH` → `REGUP` (items) → DMEE/`ZSAPFPAYM_REPLAY`. Serves **BOTH Payment_BCM and FI-AP** — it is where an AP open item becomes a disbursement, so an AP analysis that skips it stops at the invoice. | LAUFD+LAUFI+ZBUKR+LIFNR+**KUNNR**+EMPFG+VBLNR | 20160104–20260512 (**predates the 2024–2026 scope — 10 years present**) |
+| **FMIOI** | `fmioi` ✅ 2,190,893 | FM **commitment** line items (open items): the money PROMISED but not yet spent — reservations, requisitions, purchase orders | The commitment leg of budget→commitment→actual (flow B2C2A). 8,380 funds, 9 company codes, GJAHR 2017–2026. `REFBT` gives the committing document: 110 funds reservation (1,381,250) · 020 purchase order (588,255) · 040 purchase requisition (172,517) · 010 (42,746) · 060 (6,125). | REFBN+REFBT+RFPOS+GJAHR (+PERIO) | 2017–2026 |
 | **RSAU / SAL** (SM20 Security Audit Log) | `rsau_audit_history` ✅ built | Security audit events (logon, tcode/report start, RFC calls, sensitive changes) | **THE volatile system log.** Read via FM `RSAU_API_GET_LOG_DATA(IS_INTERVAL)`, **chunked ≤6h** (a 2-day call hangs on volume; the conn poisons every ~12 calls → recycle; transient `partner not reached` → resilient reconnect). Dedup by MD5 row-hash PK. **Retention is ≥4 months, NOT 15/61** (full volume back to the Feb-21 window edge; true boundary not yet hit — 15.6M rows captured). | 28 cols incl. SLGUSER/SLGTC/SLGREPNA/TXSUBCLSID/SEVERITY/SAL_DATA | volatile → accumulate ≤14d |
+
+
+### REGUH and FMIOI — two traps that produce confident wrong numbers
+
+**REGUH · a PROPOSAL is not a PAYMENT.** `XVORL = 'X'` marks an F110 *proposal* run. Measured
+2026-07-31: **358,106 of 3,707,737 rows (9.7%) are proposals**, not disbursements. Counting
+REGUH rows as payments overstates by that much, and the error is invisible because every row
+looks like a payment. Always filter `XVORL <> 'X'` (3,349,631 real).
+
+**REGUH · KUNNR was not extracted, and it is part of the key.** The SAP key is
+`LAUFD+LAUFI+ZBUKR+LIFNR+KUNNR+EMPFG+VBLNR`; the gold table has no `KUNNR` column, and
+**1,748 key collisions** are the direct consequence — customer refunds collapsing onto the
+same key as vendor payments. Enrich by key, never re-extract ([[feedback_missing_fields_by_key]]).
+
+**REGUH · a third of it is not vendors.** `PERNR` is populated on **1,195,826 rows (32%)** —
+payments to EMPLOYEES (travel claims, payroll). That makes REGUH an **HCM↔Payment bridge**, not
+a pure AP table, and any "vendor payment" metric computed over the whole table is wrong by a
+third. Remember to label DISTINCT payees vs REGUH LINES ([[feedback_distinct_vs_lines]]).
+
+**FMIOI · never hand-roll availability from WRTTP.** The value types present (65: 776,201 ·
+51: 588,255 · 82: 415,403 · 81: 176,300 · 52: 172,517 · 50: 42,746) invite an
+`available = budget − commitment − actual` formula. That approach is **REFUTED** — AVC
+availability comes from the STANDARD (`FMAVCT`/`FMAVCR`, or the AVC read FM), never from
+arithmetic over FM document tables ([[feedback_avc_real_from_standard_not_handrolled]]).
+FMIOI answers *what is committed and against which document*, not *what is left*.
 
 ### RSAU triage — 4-month sample (15,605,644 rows, 2026-02-21→06-21, 108 days, verified 2026-06-21)
 ~150K rows/day. **By event class:** RFC Function Call 3.81M (45%) · Report Start 2.20M (26%) · RFC/CPIC Logon 1.31M (15%) · **Dialog Logon 514K (6%)** · **Transaction Start 362K (4%)** · Other 272K · **User Master Changes 27K** · System Events 135. **Severity:** Low 7.85M (92%) · Medium 611K · High 35,681. **Real human top users** (Dialog+Tcode, excl. technical): P_IKOUNA 17K, MP_ANCUTA 14K, V.VAURETTE 11K, T_COLLOCA 11K, A_VASAS, N_MENARD, M_JOSHI, F_DERAKHSHAN.
@@ -150,7 +177,7 @@ NOT master data — out of scope of this refresher.
 
 ## TODO (extend this catalog)
 Started with the log/change/job/upgrade/audit tables + the FM/BCS+PS master-data backbone above.
-**Not yet catalogued: the remaining ~270 of 311 tables** (FI bsX, FM fmavc*/fmifiit*/fmioi, BCM bcm_*,
+**Not yet catalogued: the remaining ~268 of 311 tables** (FI bsX, FM fmavc*/fmifiit*, BCM bcm_*,
 config T0*, etc.). Extend incrementally; each table gets: real SAP name, what it is, how we use it, key,
 provenance. Companion of capability-model dimension **D_DATA**.
 

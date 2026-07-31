@@ -3727,5 +3727,15 @@
    "brain_v2/system_profile/unesco_system_profile.json",
    "feedback_capability_model_is_the_operating_model"
   ]
+ },
+ {
+  "id": "feedback_a_correction_is_not_a_fix_sweep_then_gate",
+  "severity": "HIGH",
+  "created_session": 97,
+  "rule": "When you find a defect in a declared fact — a wrong path, a wrong label, a wrong denominator, a stale binding — do NOT fix the value and move on. Do TWO things first: (1) SWEEP for siblings across every store, because the same hand wrote the same mistake elsewhere; (2) if it appears TWICE, it is structural — write the GATE, not the second correction. And when the defect lives inside main() where no check can reach it, EXTRACT THE DECISION TO A PURE FUNCTION FIRST: inline logic cannot be gated, so it fails by being read rather than by being checked.",
+  "why": "s097: C3 was published as PROPOSED — an idea with no code — while its tool ran, because ONE prose entry sat in a list of paths. Correcting it would have looked like a fix. The sweep found the SAME prose copied into a second store. Nothing had ever checked whether a path field held a path. Separately, the drift algorithm's two real defects (raw monthly volumes over unequal months -> 11 false signals; z-scores on a 2-month baseline -> z=1016) were BOTH found by reading output, never by a check, because the statistic lived inside main(). A field or a decision that nothing can check does not fail loudly — it makes everything built on it SILENTLY WRONG, which is worse than a gap, because a gap is visible.",
+  "how_to_apply": "1. grep the defective SHAPE across all stores before fixing the instance. 2. count the sightings: one = fix; two = gate. 3. to gate a decision buried in main(), extract it to a pure function with its inputs explicit, have main() call it, then write the cases — one case per defect that ALREADY happened, phrased so a failure reads as 'the old defect is back'. 4. register the gate as a method and wire it into rebuild_all + the analysis cycle; a gate nobody runs is documentation.",
+  "evidence": "brain_v2/methods/validate_paths.py (149 path fields, 5 stores, rebuild 0a3) · process_mining/detect_drift.py departures_for() · Zagentexecution/mcp-backend-server-python/rfc_helpers.py plan_field_chunks() · golden cases 43->63 · claim #385",
+  "domain": "Brain_Architecture"
  }
 ]

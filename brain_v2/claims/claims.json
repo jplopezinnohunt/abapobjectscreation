@@ -16817,5 +16817,92 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": 386,
+    "claim": "CDHDR — BOTH GOLD TABLES ARE CDHDR, AND THE ONE MOST TOOLS READ IS BLIND TO PBC. Verified 2026-07-31 by INTERSECT: all 7,810,913 keys (OBJECTCLAS+OBJECTID+CHANGENR) of `cdhdr` are contained in `cdhdr_history`, so `cdhdr` is a superseded snapshot (window to 20260316) and `cdhdr_history` accumulates (to 20260620). But `cdhdr` is not merely older — it is SCOPE-FILTERED BY OBJECT CLASS: 57 classes against 72. The 15 classes it cannot see include **PBC with 3,449,049 change documents**, Real Estate (REBD_MEAS/REBD_OBJASS/REBD_RERO/REBD_ROOC/REBP_ADDRESS/REBP_OBJREL/RETM_PERN), the custom HR infotypes Y_HR_IT1080/1081/9080/9081 (5,330) and YFMFUNDC5 (2,221). It is NOT a date cut: `cdhdr`'s window covers 20260220–20260316 and PBC changes start 20260220, so the filter is on class, not on time. SIX TOOLS WERE READING THE BLIND COPY, including the CHANGE-AUDIT SKILL itself and the process-discovery algorithms B1/B2/B3 — every one of them would report that PBC and Real Estate have zero change activity. All repointed to `cdhdr_history`; the extraction-status report keeps the name to WARN about it. PBC BEHAVIOUR, from the log the tools could not see: 3,449,049 changes, 76 users, 5 tcodes — and **3,208,545 (93%) carry an EMPTY TCODE**, i.e. they are made programmatically by the engine (HRPBC_ENGINE_PNP, ZCONSOLE_STC), not through a dialog transaction. Only 193,326 come through PA30. A module scored at 4/11 capability is the third most-changed object class in the system. GATED: the registry now carries `superseded_by` and a golden case fails the harness if any tool reads a superseded gold table. The gate found 6 readers where a manual grep found 4.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Brain_Architecture",
+    "created_session": 97,
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "p01_gold_master_data.db — INTERSECT on cdhdr/cdhdr_history + OBJECTCLAS diff",
+        "cite": "INTERSECT = 7,810,913 (100% of cdhdr); OBJECTCLAS 57 vs 72; PBC in cdhdr = 0, in cdhdr_history = 3,449,049; PBC empty TCODE = 3,208,545 of 3,449,049",
+        "added_session": 97
+      }
+    ],
+    "evidence_against": null,
+    "resolved_session": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "related_objects": [
+      "cdhdr",
+      "cdhdr_history",
+      "PBC",
+      "HRPBC_ENGINE_PNP",
+      "ZCONSOLE_STC",
+      ".agents/skills/sap_change_audit/SKILL.md",
+      "Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py"
+    ],
+    "resolution_notes": "USER POINT: 'CDHDR y quizas CDPOS son los cambios, quizas los 2 son CDHDR. Se usan para entender como se hacen cambios en el sistema, son muy importantes como logs para entender el comportamiento real del sistema.' The guess was right and the reason for asking was righter: I had listed these four tables as CANDIDATES FOR A SQL PATTERN — treating four business logs as rows to be counted faster. Classifying them properly is what exposed the blindness. CDPOS stays DEFERRED ([[project_cdpos_extraction_deferred]]) — that decision is unchanged.",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture",
+        "PBC"
+      ],
+      "module": [
+        "BASIS",
+        "PA-PM-PB"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 387,
+    "claim": "REGUH and FMIOI — classified, catalogued, and three traps recorded that produce confident wrong numbers. REGUH (3,707,737 rows, LAUFD 20160104–20260512) is the PAYMENT-RUN HEADER and serves BOTH Payment_BCM and FI-AP: it is where an AP open item becomes a disbursement, so an AP analysis that skips it stops at the invoice. TRAP 1 — a PROPOSAL is not a PAYMENT: XVORL='X' on 358,106 rows (9.7%) are F110 proposal runs; counting REGUH rows as payments overstates by that much and every row looks identical. TRAP 2 — KUNNR is part of the SAP key (LAUFD+LAUFI+ZBUKR+LIFNR+KUNNR+EMPFG+VBLNR) and was NOT extracted; 1,748 key collisions are the direct consequence. TRAP 3 — PERNR is populated on 1,195,826 rows (32%): those are payments to EMPLOYEES, making REGUH an HCM-Payment bridge rather than a pure AP table, so any 'vendor payment' metric over the whole table is wrong by a third. FMIOI (2,190,893 rows, GJAHR 2017–2026, 8,380 funds, 9 company codes) is the FM COMMITMENT line-item table — the commitment leg of budget->commitment->actual (flow B2C2A). REFBT names the committing document: 110 funds reservation 1,381,250 · 020 purchase order 588,255 · 040 purchase requisition 172,517 · 010 42,746 · 060 6,125. Its registry row count was STALE by 376,950 (1,813,943 declared vs 2,190,893 actual). TRAP 4 — the WRTTP distribution invites an available = budget - commitment - actual formula; that is REFUTED ([[feedback_avc_real_from_standard_not_handrolled]]). FMIOI answers what is COMMITTED and against which document, never what is LEFT.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "domain": "Payment_BCM",
+    "created_session": 97,
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "p01_gold_master_data.db — reguh, fmioi",
+        "cite": "REGUH XVORL='X' 358,106 of 3,707,737; PERNR populated 1,195,826; 1,748 key collisions on LAUFD+LAUFI+ZBUKR+LIFNR+VBLNR. FMIOI 2,190,893 rows vs 1,813,943 in the registry",
+        "added_session": 97
+      }
+    ],
+    "evidence_against": null,
+    "resolved_session": null,
+    "status": "active",
+    "evidence_legacy_text_for": null,
+    "related_objects": [
+      "REGUH",
+      "REGUP",
+      "FMIOI",
+      "F110",
+      "knowledge/gold_db_table_catalog.md"
+    ],
+    "resolution_notes": "USER POINT: 'REGUH es la cabecera de los pagos, esto deberia haberse analizado en los dominios de AP y payments' and 'FMIOI son los Commitments de fondos'. Correct on both. REGUH was registered under Payment only and appeared in NO catalogue row; FMIOI was registered under PSM_FM with a stale count and was explicitly listed as 'not yet catalogued'.",
+    "domain_axes": {
+      "functional": [
+        "Payment_BCM",
+        "FI",
+        "PSM_FM"
+      ],
+      "module": [
+        "FI-AP",
+        "FI-BL",
+        "PSM-FM"
+      ],
+      "process": [
+        "DISBURSE",
+        "B2C2A"
+      ]
+    }
   }
 ]

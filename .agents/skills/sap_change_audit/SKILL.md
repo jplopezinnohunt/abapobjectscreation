@@ -40,7 +40,8 @@ This skill maps raw change documents to process activities for:
 
 | Table | Rows | Purpose | Key Fields |
 |-------|------|---------|------------|
-| `cdhdr` | 7,810,913 | Change document headers | OBJECTCLAS, OBJECTID, CHANGENR, USERNAME, UDATE, UTIME, TCODE |
+| `cdhdr_history` ✅ **read this** | 12,029,963 | Change document headers (72 object classes, to 20260620) |
+| `cdhdr` ⚠️ superseded | 7,810,913 | Same table, stale snapshot cut 20260316 AND scope-filtered to 57 classes — reading it reports **zero PBC changes where there are 3,449,049**, and no Real Estate | OBJECTCLAS, OBJECTID, CHANGENR, USERNAME, UDATE, UTIME, TCODE |
 | `cdpos` | (loaded with CDHDR) | Change document items (field-level) | OBJECTCLAS, OBJECTID, CHANGENR, TABNAME, FNAME, VALUE_OLD, VALUE_NEW |
 
 ## CDHDR Object Classes (Most Common at UNESCO)
@@ -124,7 +125,7 @@ def get_activity(row):
 ```sql
 SELECT USERNAME, TCODE, COUNT(*) as changes,
        MIN(UDATE) as first_change, MAX(UDATE) as last_change
-FROM cdhdr
+FROM cdhdr_history
 WHERE UDATE >= '20260301'
   AND OBJECTCLAS IN ('FMMD', 'PFCG', 'TABL')
 GROUP BY USERNAME, TCODE
@@ -136,7 +137,7 @@ LIMIT 20;
 ```sql
 SELECT c.USERNAME, c.TCODE, c.UDATE, c.OBJECTID,
        p.TABNAME, p.FNAME, p.VALUE_OLD, p.VALUE_NEW
-FROM cdhdr c
+FROM cdhdr_history c
 JOIN cdpos p ON c.OBJECTCLAS = p.OBJECTCLAS
              AND c.OBJECTID = p.OBJECTID
              AND c.CHANGENR = p.CHANGENR
@@ -150,7 +151,7 @@ LIMIT 50;
 ```sql
 SELECT c.USERNAME, c.UDATE, c.OBJECTID AS VENDOR,
        p.FNAME AS FIELD_CHANGED, p.VALUE_OLD, p.VALUE_NEW
-FROM cdhdr c
+FROM cdhdr_history c
 JOIN cdpos p ON c.OBJECTCLAS = p.OBJECTCLAS
              AND c.OBJECTID = p.OBJECTID
              AND c.CHANGENR = p.CHANGENR
@@ -169,7 +170,7 @@ events = conn.execute("""
            TCODE AS activity,
            UDATE || UTIME AS timestamp,
            USERNAME AS resource
-    FROM cdhdr
+    FROM cdhdr_history
     WHERE UDATE >= '20250101'
     ORDER BY UDATE, UTIME
 """).fetchall()
@@ -210,7 +211,7 @@ SELECT
     p.FNAME           AS field_changed,
     p.VALUE_OLD       AS old_value,
     p.VALUE_NEW       AS new_value
-FROM cdhdr c
+FROM cdhdr_history c
 JOIN cdpos p
     ON  c.OBJECTCLAS = p.OBJECTCLAS
     AND c.OBJECTID   = p.OBJECTID
@@ -233,7 +234,7 @@ ORDER BY c.UDATE DESC, c.UTIME DESC;
 SELECT c1.USERNAME, c1.OBJECTCLAS, c1.OBJECTID,
        MIN(c1.UDATE) as created, MAX(c2.UDATE) as modified,
        COUNT(*) as change_count
-FROM cdhdr c1
+FROM cdhdr_history c1
 JOIN cdhdr c2 ON c1.OBJECTID = c2.OBJECTID
              AND c1.OBJECTCLAS = c2.OBJECTCLAS
              AND c1.USERNAME = c2.USERNAME
@@ -249,7 +250,7 @@ ORDER BY change_count DESC;
 ```sql
 SELECT c.USERNAME, c.UDATE, c.OBJECTID AS vendor,
        p.FNAME AS field, p.VALUE_OLD, p.VALUE_NEW
-FROM cdhdr c
+FROM cdhdr_history c
 JOIN cdpos p ON c.OBJECTCLAS = p.OBJECTCLAS
              AND c.OBJECTID = p.OBJECTID
              AND c.CHANGENR = p.CHANGENR
@@ -267,7 +268,7 @@ SELECT c.USERNAME, c.UDATE, c.UTIME, c.OBJECTCLAS, c.OBJECTID, c.TCODE,
            WHEN 6 THEN 'Saturday'
            ELSE 'Weekday'
        END AS day_type
-FROM cdhdr c
+FROM cdhdr_history c
 WHERE c.UDATE >= '20260101'
   AND c.OBJECTCLAS IN ('KRED','FMMD','PFCG')
   AND (
