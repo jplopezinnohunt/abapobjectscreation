@@ -82,7 +82,7 @@ MIN_CHANGE_SLOTS = 8     # an association computed from a handful of slots is a 
 MIN_COINCIDENT = 5       # small-denominator ratios are noise with a decimal point (see D6)
 MIN_PHI = 0.15
 MIN_USER_SHARE = 0.02    # only users carrying weight in a class can testify about it
-TOP_CLASSES = 15
+TOP_CLASSES = 999   # all of them: the trigger asks about every class that changes
 AMBIGUOUS_AT = 5         # claimed by this many classes or more => explains none of them
 
 # `SLGREPNA` is not always a program: spool and job artifacts land in it, and

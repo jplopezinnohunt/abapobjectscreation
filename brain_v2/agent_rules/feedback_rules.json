@@ -3737,5 +3737,15 @@
   "how_to_apply": "1. grep the defective SHAPE across all stores before fixing the instance. 2. count the sightings: one = fix; two = gate. 3. to gate a decision buried in main(), extract it to a pure function with its inputs explicit, have main() call it, then write the cases — one case per defect that ALREADY happened, phrased so a failure reads as 'the old defect is back'. 4. register the gate as a method and wire it into rebuild_all + the analysis cycle; a gate nobody runs is documentation.",
   "evidence": "brain_v2/methods/validate_paths.py (149 path fields, 5 stores, rebuild 0a3) · process_mining/detect_drift.py departures_for() · Zagentexecution/mcp-backend-server-python/rfc_helpers.py plan_field_chunks() · golden cases 43->63 · claim #385",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_triggers_report_evidence_the_cycle_holds_the_order",
+  "severity": "HIGH",
+  "created_session": 97,
+  "rule": "A trigger reports EVIDENCE and the KIND of response required — CYCLE, EXTRACTION or AUTHORING. It must NEVER name a script to run. The knowledge of WHAT to run and IN WHICH ORDER lives in one place, the analysis cycle, so adding an algorithm means PLACING IT IN THE CHAIN — never remembering to call it. The same holds for a new capability: it is not delivered until it sits in the orchestration at its correct dependency position.",
+  "why": "naming a script inside a trigger is a decision taken on demand, and on-demand decisions are exactly the ones that stop being taken — which is the hole the trigger file exists to close, so committing it there is self-defeating. It also scatters the ordering knowledge across ten call sites, where it silently rots: nine of the ten triggers named individual scripts and none of them knew that write-path attribution must precede boundary discovery.",
+  "how_to_apply": "1. new algorithm => place it in run_analysis_cycle.py at its dependency level, and say WHY that level. 2. new trigger => it fires on a measured change and declares needs=CYCLE|EXTRACTION|AUTHORING. 3. if the answer is 'run X', the real answer is 'X belongs in the cycle'. 4. EXTRACTION stays outside the cycle on purpose — it depends on a connection and on a human deciding it is time.",
+  "evidence": "brain_v2/methods/run_analysis_cycle.py (A8 placed at L2 because its INTERFACE channel names the functions the satellite derivation groups on) · brain_v2/methods/check_triggers.py (RESPONSE table; 9 triggers converted)",
+  "domain": "Brain_Architecture"
  }
 ]

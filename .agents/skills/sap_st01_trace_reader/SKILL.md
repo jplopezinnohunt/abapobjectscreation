@@ -283,6 +283,11 @@ The skill writes results in two forms:
       "type": "DB",
       "wp": 5,
       "table": "FMIOI",
+      "_trap": ("FM COMMITMENT line items. NEVER hand-roll availability from "
+                "WRTTP arithmetic over this table — that approach is REFUTED. "
+                "AVC availability comes from the standard (FMAVCT/FMAVCR). "
+                "FMIOI answers what is COMMITTED, never what is LEFT. "
+                "See knowledge/gold_db_table_catalog.md, claim #387."),
       "operation": "SELECT",
       "rowcount": 46
     }

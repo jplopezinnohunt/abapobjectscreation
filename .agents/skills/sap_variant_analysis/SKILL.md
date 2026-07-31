@@ -229,3 +229,28 @@ Parameterize by changing `PROGRAM = "SAPF100"` to any program name.
 | `P01_SKA1` | Chart-of-accounts GL data (KTOKS for account type) |
 | `bkpf` | Document headers — verify actual execution (TCODE=FBB1) |
 | `bsis` | Document line items — verify which HKONTs were actually posted |
+
+---
+
+## Where these tables are defined — read before querying them
+
+Every gold table this skill names is defined in **`knowledge/gold_db_table_catalog.md`**:
+real SAP name, what it is, how we use it, key, and provenance. **The catalogue also records
+the TRAPS**, and each one produces a confident wrong number when missed:
+
+- **`reguh`** — `XVORL='X'` marks **F110 PROPOSALS, not payments** (358,106 of 3,707,737,
+  9.7%). `PERNR` is populated on 1,195,826 rows (32%) — those are **employee** payments, not
+  vendors. `KUNNR` is part of the SAP key and was not extracted (1,748 key collisions).
+- **`fmioi`** — FM commitments. **Never hand-roll availability from `WRTTP`**: that approach
+  is REFUTED. AVC availability comes from the standard (`FMAVCT`/`FMAVCR`). FMIOI answers
+  what is *committed*, never what is *left*.
+- **`cdhdr_history`** — read this one. The `cdhdr` copy is a **superseded, scope-filtered
+  snapshot** (57 object classes against 72) and reports **zero PBC change activity where
+  there are 3,449,049**.
+- **`bkpf`/`bseg`** — `bseg` is a **JOIN via the Golden Query**, never extracted or enriched.
+
+Claims: **#386** (CDHDR) · **#387** (REGUH, FMIOI) · **#388** (PBC write path).
+
+**When a table here has no maintenance transaction, do not guess what writes it** — run
+algorithm **A8**, `process_mining/attribute_changes_to_programs.py`, which derives the write
+path and its channel from the logs.

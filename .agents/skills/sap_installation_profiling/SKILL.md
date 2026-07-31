@@ -257,7 +257,7 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **8 · transport** | `.agents/skills/sap_transport_intelligence` · CTS extracts (`cts_transports`, `cts_objects`) |
 | **9 · verification** | `brain_v2/system_profile/build_model_graph.py` (ascent · coherence · cross-cutting) · `brain_v2/verify_claims.py` · `brain_v2/claims_health.py` · `brain_v2/curate.py` |
 | **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · **`brain_v2/methods/check_triggers.py`** (fires the loop on evidence) · **`brain_v2/methods/build_domain_capability_matrix.py`** (is capability where the work is?) · **`brain_v2/methods/build_domain_assets.py`** (the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows, and what is missing) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) · `brain_v2/session_activate.py` + `brain_v2/migrate_memory.py` (session bootstrap and memory portability) |
-| **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will") |
+| **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will", and THE ONLY PLACE the order lives) · **`brain_v2/methods/audit_agent_freshness.py`** (do the agents still know what the model knows?) |
 | **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
 | **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) |
 | **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `process_mining/p2p_conformance.py` (Tier-1: cases classified against the 3-way match) · **`p2p_stdref_xray.py`** (the custom-over-standard x-ray — AS-DESIGNED vs AS-RUN; a *different* capability that used to share the other one's filename) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
@@ -466,6 +466,48 @@ same writer to every table is the failure this constraint exists to prevent.
 **Output is a ranked HYPOTHESIS with its evidence and a verdict, for a human to confirm.**
 Co-occurrence is not causation, and two programs in the same chain cannot be separated below
 the shared time granularity.
+
+---
+
+## Orchestration — a trigger reports evidence, the cycle holds the order
+
+**A trigger must never name a script to run.** Naming one is a decision taken on demand, and
+on-demand decisions are precisely the ones that stop being taken — which is the hole the
+trigger mechanism exists to close, so committing it there defeats the mechanism. It also
+scatters the ordering knowledge across every call site, where it rots quietly: nine of ten
+triggers here named individual scripts, and not one of them knew that write-path attribution
+must precede boundary discovery.
+
+A trigger reports **evidence** and a **response class**:
+
+| class | meaning |
+|---|---|
+| `CYCLE` | the analysis cycle runs it, in dependency order |
+| `EXTRACTION` | needs a connection — deliberately outside the cycle, because it depends on a VPN and on someone deciding it is time |
+| `AUTHORING` | a human writes it; no algorithm produces a domain doc or a capability row |
+
+**Adding an algorithm means placing it in the chain**, with a stated reason for its level —
+not remembering to call it. A8 sits at L2, ahead of boundary discovery, because classifying a
+class as INTERFACE names the calling function modules, and those functions are what the
+satellite derivation groups on.
+
+**If the answer to a trigger is "run X", the real answer is "X belongs in the cycle".**
+
+---
+
+## Agents are frozen knowledge — audit them
+
+An agent or skill was written on one day against one understanding, and nothing tells it when
+that understanding moves. `brain_v2/methods/audit_agent_freshness.py` asks three questions of
+every agent and skill, derived from disk: does it read something the registry marks
+**SUPERSEDED**; does it name a table whose catalogue entry records a **trap** it omits; does
+it name gold tables while citing no claim and no catalogue.
+
+The cost is not hypothetical. The **change-audit skill was reading a scope-filtered copy of
+the change log** — the one table its entire purpose depends on — and the FI domain agent still
+said that table "needs extraction" with twelve million rows already on disk. An agent
+answering confidently from a superseded fact is worse than one that says nothing, because it
+is trusted.
 
 ---
 

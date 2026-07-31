@@ -44,6 +44,9 @@ def _load(p, d=None):
     return json.load(open(p, encoding="utf-8")) if p.exists() else (d if d is not None else {})
 
 
+UNATTRIBUTED_CLASSES = 5   # below this it is a tail, not a gap
+
+
 def measure():
     """Everything the triggers compare against, in one shot."""
     m = {}
@@ -75,21 +78,79 @@ def measure():
             con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
             row = con.execute("SELECT MIN(SAL_DATE), MAX(SAL_DATE), COUNT(*) "
                               "FROM rsau_audit_history").fetchone()
-            con.close()
             m["audit_from"], m["audit_to"], m["audit_rows"] = row
-        except sqlite3.Error:
-            pass
+
+            # WRITE PATHS. An object class that changes and whose writer we cannot name is
+            # behaviour we do not hold — and the transaction-code field frequently CANNOT
+            # answer, because a BAPI/RFC leaves it empty by design. This is the measurement
+            # that makes algorithm A8 fire on evidence instead of on someone remembering.
+            classes = {r[0] for r in con.execute(
+                "SELECT DISTINCT OBJECTCLAS FROM cdhdr_history WHERE OBJECTCLAS <> ''")}
+            m["change_classes"] = len(classes)
+            attributed = _load(REPO / "brain_v2" / "change_attribution.json")
+            known = set((attributed.get("classes") or {}))
+            m["classes_unattributed"] = len(classes - known)
+            m["classes_no_write_path"] = sorted(classes - known)[:12]
+            con.close()
+        except sqlite3.Error as e:
+            # was `pass`. A swallowed error here reads as "nothing to measure", which is
+            # exactly how a trigger silently stops firing — the failure this file exists
+            # to prevent, committed inside the file itself.
+            print(f"  [triggers] measurement incomplete: {e}")
     return m
 
 
 def evaluate(now, prev):
     fired = []
 
-    def fire(family, what, why, action):
-        fired.append({"family": family, "trigger": what, "why": why, "run": action})
+    # A trigger reports EVIDENCE and the KIND of response it needs. It never names a
+    # script, because naming a script is a decision taken on demand, and on-demand
+    # decisions are precisely the ones that stop being taken — the hole this whole file
+    # exists to close. The ORDER lives in run_analysis_cycle.py; adding an algorithm means
+    # placing it in that chain, not remembering to call it here.
+    RESPONSE = {
+        "CYCLE": ("python brain_v2/methods/run_analysis_cycle.py",
+                  "the analysis cycle runs it in dependency order"),
+        "EXTRACTION": ("an extraction pass — needs a connection",
+                       "deliberately outside the cycle: it depends on a VPN and on someone "
+                       "deciding it is time"),
+        "AUTHORING": ("a human writes it",
+                      "no algorithm produces a domain doc or a capability row"),
+    }
+
+    def fire(family, what, why, needs, detail=""):
+        cmd, note = RESPONSE[needs]
+        fired.append({"family": family, "trigger": what, "why": why,
+                      "needs": needs, "run": cmd, "_why_that": note,
+                      "scope": detail or None})
 
     if not prev:
         return fired, "baseline established — nothing to compare against yet"
+
+    # ---- WRITE PATH ----------------------------------------------------
+    # NOTE ON WHAT A TRIGGER MAY SAY. Every `run` below points at the CYCLE, never at an
+    # individual script. A trigger that names one algorithm is an on-demand decision, and
+    # on-demand decisions are the ones that stop being taken — which is the hole this whole
+    # trigger file exists to close. The trigger's job is to report EVIDENCE; the ORDER lives
+    # in run_analysis_cycle.py, so adding an algorithm means placing it in the chain.
+    # A NEW object class appearing in the change log is new behaviour, and until its writer
+    # is named the domain that owns it is listed rather than understood. This fires on the
+    # evidence, which is the whole point: nobody has to remember to ask.
+    pa, pb = prev.get("change_classes", 0), now.get("change_classes", 0)
+    if pa and pb > pa:
+        fire("WRITE_PATH", "new object classes are changing",
+             f"change classes {pa} -> {pb} — something began writing that was not writing "
+             f"before, and no writer is named for it",
+             "CYCLE")
+    un = now.get("classes_unattributed", 0)
+    if un >= UNATTRIBUTED_CLASSES:
+        fire("WRITE_PATH", "object classes with no known writer",
+             f"{un} class(es) change with no attributed write path"
+             + (f" — e.g. {', '.join(now.get('classes_no_write_path', [])[:5])}"
+                if now.get("classes_no_write_path") else "")
+             + ". An empty transaction code is not an answer: it usually means a BAPI/RFC "
+               "whose design never set one, so the channel is the finding",
+             "CYCLE")
 
     # ---- ACCUMULATION -------------------------------------------------
     a, b = prev.get("frontier_objects", 0), now.get("frontier_objects", 0)
@@ -98,14 +159,14 @@ def evaluate(now, prev):
         if growth >= FRONTIER_GROWTH_PCT or (b - a) >= NEW_OBJECTS_ABSOLUTE:
             fire("ACCUMULATION", "frontier grew",
                  f"unresolved objects {a:,} -> {b:,} (+{growth:.1f}%) — new behaviour appeared",
-                 "process_mining/executed_objects_domain_map.py + adaptive_discovery.py")
+                 "CYCLE", "classification + adaptive discovery")
 
     for k, label in [("company_codes", "company codes"), ("plants", "plants"),
                      ("switches_on", "activated business functions")]:
         if prev.get(k) is not None and now.get(k) is not None and now[k] != prev[k]:
             fire("ACCUMULATION", f"{label} changed",
                  f"{prev[k]} -> {now[k]} — the FOOTPRINT DRIFTED",
-                 "brain_v2/system_profile/probes/probe_footprint.py")
+                 "EXTRACTION", "footprint probe")
 
     if prev.get("audit_to") and now.get("audit_to") and now["audit_to"] > prev["audit_to"]:
         try:
@@ -115,7 +176,7 @@ def evaluate(now, prev):
             if days >= AUDIT_DAYS_FOR_REBUILD:
                 fire("ACCUMULATION", "audit window extended",
                      f"{days} days of new execution history since the last check",
-                     "process_mining/rfc_process_classifier.py (operating model)")
+                     "CYCLE", "the operating model")
         except (ValueError, TypeError):
             pass
 
@@ -124,15 +185,15 @@ def evaluate(now, prev):
         fire("MATURITY", "ascent REGRESSED",
              f"{prev['ascent_pct']}% -> {now['ascent_pct']}% — objects arrived the chain "
              f"cannot resolve",
-             "brain_v2/system_profile/probes/extract_component_hierarchy.py")
+             "EXTRACTION", "component hierarchy TADIR->TDEVC->DF14L")
     if now.get("unsupported", 0) > 0:
         fire("MATURITY", "coherence broke",
              f"{now['unsupported']} module(s) asserted PRODUCTIVE with no evidence beneath",
-             "brain_v2/system_profile/probes/probe_footprint.py for those modules")
+             "EXTRACTION", "footprint probe for those modules")
     if now.get("blind_spots", 0) > 0:
         fire("MATURITY", "system-level blind spot",
              f"{now['blind_spots']} module(s) running with no capability row",
-             "add the capability row, then a domain doc")
+             "AUTHORING", "capability row + domain doc")
 
     # ---- INTERPRETATION -----------------------------------------------
     # Not "more data arrived" but "the MEANING of a domain may have changed".
@@ -141,14 +202,14 @@ def evaluate(now, prev):
         fire("INTERPRETATION", "a domain became active that was not",
              f"{prev['domains_with_activity']} -> {now['domains_with_activity']} domains "
              f"show execution — a previously silent domain is now real",
-             "re-derive that domain: its assignment was a hypothesis on an older window")
+             "CYCLE", "re-derive that domain — its assignment was a hypothesis on an older window")
 
     doc_gap = now.get("productive", 0) - now.get("productive_documented", 0)
     if doc_gap > 0:
         fire("INTERPRETATION", "productive module without a domain doc",
              f"{doc_gap} module(s) run in production with no prose layer — nobody can read "
              f"what they do",
-             "write the domain doc")
+             "AUTHORING", "domain doc")
 
     return fired, None
 

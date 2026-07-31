@@ -11,6 +11,14 @@ data we already hold — **in dependency order**, because the nesting is real: t
 must be discovered before satellites can be derived from it, and objects must resolve to
 components before anything can be attributed to a domain.
 
+**The order IS the knowledge.** A trigger must never name a script to run — that is a
+decision taken on demand, and on-demand decisions are exactly what stops being taken. A
+trigger reports EVIDENCE; this file holds what to run and in which sequence, so adding an
+algorithm means placing it in the chain, not remembering to call it. Write-path attribution
+sits at L2 for a concrete reason: when it classifies a class as INTERFACE it names the
+calling function modules, and those functions are what the satellite derivation groups on
+— so attribution has to precede boundary discovery, not follow it.
+
 Deliberately NOT included: anything requiring RFC. Extraction depends on a VPN and on
 someone deciding it is time; those stay explicit. This runs what can always run.
 
@@ -48,6 +56,8 @@ CYCLE = [
      "L0 code edges from extracted source", False),
     ("process_mining/derive_object_roles.py",
      "L1 what each object is FOR", False),
+    ("process_mining/attribute_changes_to_programs.py",
+     "L2 what WRITES each object class, and through which channel", True),
     ("process_mining/interface_boundary.py",
      "L2 discover the boundary: live / dead / undeclared", True),
     ("process_mining/derive_satellites.py",
@@ -65,11 +75,13 @@ CYCLE = [
     ("brain_v2/methods/measure_portability.py",
      "L6 what survives installation #2", False),
     ("brain_v2/methods/validate_paths.py",
-     "the path gate — a path field must hold a path, never prose"),
+     "the path gate — a path field must hold a path, never prose", False),
     ("brain_v2/methods/algorithm_status.py",
      "L6 which algorithms are real", False),
     ("brain_v2/methods/improve_algorithms.py",
      "L6 which algorithm to improve next", False),
+    ("brain_v2/methods/audit_agent_freshness.py",
+     "L6 do the agents still know what the model knows?", False),
     ("brain_v2/methods/check_triggers.py",
      "L6 what needs re-running on current evidence", False),
 ]
