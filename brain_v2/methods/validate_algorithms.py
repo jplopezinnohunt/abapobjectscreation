@@ -70,6 +70,16 @@ FM_CASES = [
 # ---------------------------------------------------------------------------
 # E4 · canonicalisation — the defect that appeared three times in one session
 # ---------------------------------------------------------------------------
+# C1c · custom Z/Y function modules — no SAP component exists for them BY DEFINITION.
+# These are the objects the product thesis rests on: no commercial tool can label them.
+CUSTOM_FM_CASES = [
+    ("Y_BAPI_WBS_FINANCIAL_DATA_1", "PS",
+     "974,868 calls — the highest-volume business function module in the tenant, and it "
+     "resolved to NOTHING until the custom overlay rung existed"),
+    ("Y_BAPI_YPS8", "PS", "460,003 calls, the MuleSoft project-financials sync"),
+    ("Y_BAPI_YFM1", "PSM_FM", "the FM/Budget side of the same satellite"),
+]
+
 ALIAS_CASES = [
     ("PSM", "PSM_FM", "domain docs live in PSM/, the canonical key is PSM_FM"),
     ("Payment", "Payment_BCM", "registry alias"),
@@ -112,6 +122,12 @@ def main():
         got = domain_of_function_module(fm)
         if got != want:
             failures.append(f"C1b function module {fm}: {got!r} != {want!r} — {why}")
+
+    for fm, want, why in CUSTOM_FM_CASES:
+        checked += 1
+        got = domain_of_function_module(fm)
+        if got != want:
+            failures.append(f"C1c custom FM {fm}: {got!r} != {want!r} — {why}")
 
     for spelling, want, why in ALIAS_CASES:
         checked += 1

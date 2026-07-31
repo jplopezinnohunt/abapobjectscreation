@@ -111,15 +111,58 @@ def _fm_package(db_path=None):
         return {}
 
 
+# Custom Z/Y function modules have no SAP component: their function group lives in a
+# customer package that DF14L cannot resolve, by definition. They need their own rung —
+# and they are exactly the objects the product thesis rests on, because no commercial
+# tool can label them either. tfdir_custom.APP_DOMAIN is the curated answer.
+APP_DOMAIN_TO_CANONICAL = {
+    "FM/Budget": "PSM_FM", "PS/Projects": "PS", "Travel": "Travel",
+    "HR Workflow": "HR_Workflows", "HR": "HCM",
+    "CMT/Vendor": "BusinessPartner", "CMT/Master Data": "BusinessPartner",
+    "Procurement": "Procurement_P2P", "FI/Finance": "FI",
+    "Banking/Validation": "Payment_BCM", "Mouv/Asset Mgmt": "PM",
+    "UBO Field Office": "Treasury_EBS", "Dashboards": "Output",
+    "SISTER": "Integration", "UNESDIR": "Integration", "IDoc": "Integration",
+    "RFC Utils": "Integration", "Data Extraction": "Integration",
+    "SLD/Monitoring": "Basis_Security", "Basis/Tools": "Basis_Security",
+}
+
+
+@lru_cache(maxsize=1)
+def _custom_fm_domain(db_path=None):
+    """custom function module -> canonical domain, via the curated APP_DOMAIN overlay."""
+    path = db_path or str(GOLD)
+    if not Path(path).exists():
+        return {}
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        if not con.execute("SELECT name FROM sqlite_master WHERE name='tfdir_custom'").fetchone():
+            con.close()
+            return {}
+        rows = con.execute("SELECT FUNCNAME, APP_DOMAIN FROM tfdir_custom "
+                           "WHERE APP_DOMAIN IS NOT NULL AND APP_DOMAIN <> ''").fetchall()
+        con.close()
+        return {fn.strip(): APP_DOMAIN_TO_CANONICAL.get(ad.strip())
+                for fn, ad in rows if APP_DOMAIN_TO_CANONICAL.get(ad.strip())}
+    except sqlite3.Error:
+        return {}
+
+
 def package_of_object(name, db_path=None):
     """Package for an object of any kind, including function modules."""
     return _fm_package(db_path).get(name)
 
 
 def domain_of_function_module(funcname, db_path=None):
-    """FM -> function group -> package -> component -> domain."""
+    """FM -> domain. Standard taxonomy first, curated custom overlay second.
+
+    The order matters: SAP's own answer wins where it exists, and the curated overlay
+    covers exactly what SAP cannot answer — the customer's Z/Y namespace, which is where
+    the differentiating processes live.
+    """
     dc = _fm_package(db_path).get(funcname)
-    return domain_of_package(dc, db_path) if dc else None
+    d = domain_of_package(dc, db_path) if dc else None
+    return d or _custom_fm_domain(db_path).get(funcname)
 
 
 def domain_of_package(devclass, db_path=None):

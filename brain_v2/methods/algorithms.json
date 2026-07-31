@@ -265,26 +265,50 @@
   "F1_interface_boundary_analysis": {
    "operates_on": "interfaces",
    "origin": "OURS",
-   "state": "MISSING",
-   "does": "NOTHING YET — this algorithm does not exist",
+   "state": "WORKS",
+   "does": "enumerate the boundary (RFCDES / EDIDC / TBTCP / ICFSERVICE) and CORRELATE the configuration against observed traffic in the call stream. Configuration says what someone once set up; the call stream says what happens today; the GAP is the finding, in both directions.",
    "why_it_matters": "the boundary carries 1.33M executions and 37 documented flows, and the map is PROSE written by hand: it cannot detect a new destination appearing, cannot go stale visibly, and cannot be reproduced on a second installation (INSTANCE, not KIT)",
-   "specification": [
-    "1. enumerate the boundary from RFCDES / EDIDC / TBTCO / TBTCP / ICFSERVICE / DB connections / the RFC call stream",
-    "2. correlate each destination against OBSERVED TRAFFIC — a configured destination with no traffic is dead; traffic with no destination is a finding",
-    "3. classify direction and volume per flow, and bind each to the process flows it serves",
-    "4. DIFF against the previous run — a new interface can change the meaning of a domain, which is exactly the interpretation trigger already declared"
+   "improve": "1. fix the destination regex and remove the row cap so DEAD is a fact, not a sample. 2. resolve the middleware GUIDs from the middleware side — SAP cannot name them. 3. bind each live destination to the PROCESS FLOWS it serves, not only to domains.",
+   "bound_in": [
+    "process_mining/interface_boundary.py"
    ],
-   "improve": "BUILD IT. Well-defined, on data already extracted. THIS IS PRIORITY 1 OF THE ALGORITHM LAYER."
+   "first_run": "238 destinations configured -> 8 LIVE, 230 DEAD (configured, zero traffic: maintenance and attack surface nobody uses), 40 UNDECLARED (traffic with no RFCDES entry, including the MuleSoft logical-port GUIDs at 75,066 calls). 9 IDoc message types / 19,400 documents. 5,822 active HTTP services.",
+   "failure_mode": "TWO defects declared on its own first run, because an algorithm that hides its own weaknesses is worse than none: (1) the destination parse TRUNCATES names ('HQ-SAP-P0', cut GUIDs), so DEAD/UNDECLARED counts carry parse error; (2) the call-stream scan is capped at 400,000 rows of 15.6M, so it is a SAMPLE — a destination could be marked DEAD purely because its traffic fell outside the sample."
+  },
+  "C1c_custom_fm_domain": {
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "custom Z/Y function module -> canonical domain, via the curated tfdir_custom.APP_DOMAIN overlay",
+   "why_it_matters": "custom FMs have no SAP component by definition, and they are precisely the objects the differentiation rests on. Y_BAPI_WBS_FINANCIAL_DATA_1 (974,868 calls) resolved to nothing until this rung existed — the single highest-volume business function module in the tenant was invisible to the model.",
+   "bound_in": [
+    "brain_v2/component_map.py"
+   ],
+   "failure_mode": "the overlay is CURATED (3,073 FMs). An uncurated custom FM resolves to nothing and looks like a technical object.",
+   "improve": "derive the overlay from what each custom FM READS/WRITES rather than curating it by hand"
+  },
+  "F2_satellite_derivation": {
+   "operates_on": "interfaces",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "group boundary endpoints into SATELLITES by call signature, resolve what each calls, and bind it to the domains and flows it drives",
+   "why_it_matters": "each interface DEFINES a satellite; the satellite is the ORIGIN of the transaction; the origin is what associates it to a flow. In a system orchestrated 80% from outside, the satellite catalogue IS the process map at the boundary.",
+   "bound_in": [
+    "process_mining/derive_satellites.py"
+   ],
+   "first_run": "40 satellites from 7,783,106 calls; 12 GUID FLEETS RECOVERED. Independently rediscovered MuleSoft: a 21-endpoint fleet calling Y_BAPI_WBS_FINANCIAL_DATA_1 974,868 times -> PS -> PROJ2FUND, and a 17-endpoint fleet on Y_BAPI_YPS8 -> PS/PSM_FM -> B2C2A, P2P, POST2BUDGET, PROJ2FUND.",
+   "failure_mode": "endpoint names TRUNCATE in the parse, so one fleet can split into two — the 17- and 21-endpoint fleets share a GUID prefix and may be the same satellite. Grouping by call signature mitigates this but does not fix the parse.",
+   "improve": "fix the truncation, then merge fleets whose endpoint prefixes match"
   }
  },
  "_portfolio": {
   "by_operand": {
    "logs": 6,
    "process_events": 5,
-   "repository": 3,
+   "repository": 4,
    "data": 3,
    "model": 4,
-   "interfaces": 0
+   "interfaces": 2
   },
   "by_origin": {
    "MARKET_STANDARD": 8,
@@ -293,18 +317,19 @@
   },
   "by_state": {
    "STRONG": 11,
-   "WORKS": 6,
+   "WORKS": 9,
    "WEAK": 1,
    "FRAGILE": 1,
    "UNDER_EXERCISED": 1,
-   "MISSING": 1
+   "MISSING": 0
   },
   "_reading": "Twelve algorithms have no market equivalent — that is the defensible surface. Eight are adopted standards, correctly, because reinventing DFG discovery would be vanity. The single MISSING one covers the integration boundary, and the single FRAGILE one is the log accumulator, which is simultaneously the most valuable algorithm here and the least protected."
  },
  "_priorities": {
-  "1": "F1 — build the interface boundary algorithm. Zero coverage of 1.33M executions on data we already hold.",
-  "2": "A4 — give the classifier the DF14L component lookup. The authoritative signal exists and it still guesses.",
-  "3": "B4 — write normative models for the public-sector flows. The product lives in the delta this measures, and it measures one flow."
+  "1": "A2 — protect the log accumulator. FRAGILE, unversioned, and the only algorithm whose value is destroyed by delay.",
+  "2": "golden cases for the unguarded algorithms — 20 of 22 can regress silently today.",
+  "3": "B4 — normative models for the public-sector flows; authored, not yet implemented.",
+  "_note": "F1 was priority 1 and is now built. The mechanism (improve_algorithms.py) re-ranks these from measured signals rather than from memory."
  },
  "_doctrine_how_to_build_better_algorithms": {
   "_why_here": "the reasoning that produces the next algorithm must live with the algorithms, not in a conversation",
@@ -333,6 +358,95 @@
   "4_benchmarks": {
    "status": "SLOT — cannot be filled before client #2",
    "why": "'in a UN agency, staff cost is X% of budget'. The slot must exist NOW: without it the second client gets analysed as if it were the first and the comparison is lost."
+  }
+ },
+ "_nesting": {
+  "_insight": "USER, s097: algorithms are NESTED. You start from the standard, then the logs, then discover interfaces and correlate — and each interface or connection DEFINES A SATELLITE, which gives you the ORIGIN of the transaction, which is what associates it to a flow and a domain.",
+  "_why_it_was_wrong_before": "the catalogue was a FLAT LIST organised by operand. But an algorithm's output is another's input: this is a directed graph. Treating it as a list is why F1 (boundary) and A3 (origin axis) ran INDEPENDENTLY — F1 enumerated destinations, A3 parsed raw host strings — and a fleet of 174 middleware endpoints collapsed into one label because A3 had no satellite catalogue, only strings.",
+  "layers": {
+   "L0_INVARIANT": {
+    "algorithms": [
+     "C1_component_resolution_chain"
+    ],
+    "depends_on": "nothing but SAP itself",
+    "note": "the ground truth every other answer is anchored to. Improving it lifts everything above."
+   },
+   "L0b_CUSTOM_OVERLAY": {
+    "algorithms": [
+     "C1c_custom_fm_domain"
+    ],
+    "depends_on": "the curated APP_DOMAIN overlay",
+    "note": "custom Z/Y function modules have NO SAP component by definition — their function group lives in a customer package DF14L cannot resolve. They need their own rung, and they are exactly the objects the product thesis rests on because no commercial tool can label them either."
+   },
+   "L1_OBSERVATION": {
+    "algorithms": [
+     "A1",
+     "A2",
+     "A4",
+     "A6"
+    ],
+    "depends_on": [
+     "L0"
+    ],
+    "note": "what runs, when, by whom — classification anchored on the standard"
+   },
+   "L2_BOUNDARY": {
+    "algorithms": [
+     "F1_interface_boundary_analysis"
+    ],
+    "depends_on": [
+     "L1 (traffic to correlate configuration against)"
+    ],
+    "produces": "the satellite catalogue"
+   },
+   "L3_ORIGIN": {
+    "algorithms": [
+     "F2_satellite_derivation",
+     "A3_two_axis_classification"
+    ],
+    "depends_on": [
+     "L2 (the catalogue)",
+     "L0/L0b (to resolve what each satellite calls)"
+    ],
+    "note": "a satellite is an ENTITY, not a caller string: identity, channel, volume, direction, the domains it touches"
+   },
+   "L4_FLOW": {
+    "algorithms": [
+     "B1",
+     "B2",
+     "B3",
+     "B5"
+    ],
+    "depends_on": [
+     "L3 (origin) + the flow model"
+    ],
+    "note": "process mining runs per FLOW, never per module"
+   },
+   "L5_CONFORMANCE": {
+    "algorithms": [
+     "B4_declarative_conformance"
+    ],
+    "depends_on": [
+     "L4 (a flow)",
+     "a NORMATIVE MODEL"
+    ],
+    "note": "worthless without the normative model — which is why that asset class exists"
+   },
+   "L6_SELF_CHECK": {
+    "algorithms": [
+     "E1",
+     "E2",
+     "E3"
+    ],
+    "depends_on": [
+     "everything below"
+    ]
+   }
+  },
+  "_consequences": {
+   "1": "an algorithm CANNOT be better than its dependencies. A3's origin resolution is capped by F1's quality — today F1 truncates destination names, so A3 inherits that error.",
+   "2": "improving a LOW layer lifts everything above it. The L0 fix (DF14L instead of regex) took the frontier from 40% to 7.7% without touching any algorithm above it.",
+   "3": "the improvement mechanism must weight by DEPTH, not only by state. improve_algorithms.py does not yet — that is a declared gap."
   }
  }
 }

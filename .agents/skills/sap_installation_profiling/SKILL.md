@@ -323,6 +323,79 @@ extracted and what is stale).
 
 ---
 
+## The principle that makes this portable: ALGORITHMS ARE THE ASSET
+
+Everything in this skill is a binding of an algorithm to a problem. Strip the tenant away
+and what remains — what actually travels to installation #2 — is the algorithms.
+
+- **Data ages** from the moment it is extracted.
+- **Findings age**: "80.6% external" is true for one four-month window.
+- **Tools are bindings**: one algorithm, one flow, one schema, one tenant.
+- **Algorithms compound.**
+
+And the sharper reason they are first-class: **an algorithm fails differently from a tool.**
+A broken tool fails loudly. A subtly wrong algorithm produces confident, plausible, WRONG
+output. One classifier ran for months filing Project System cost reports under Controlling
+— 19,524 executions — and never errored once. **You cannot review what you have not named.**
+
+So every algorithm here declares four things, and the last two are the ones the market
+does not publish:
+
+| | |
+|---|---|
+| what it does | the technique |
+| where it is bound | the tools that implement it — an algorithm with no binding is a paper |
+| **its failure mode** | **how it produces a wrong answer without failing** |
+| **its improvement lever** | **the specific next step, not "make it better"** |
+
+**Registry:** `brain_v2/methods/algorithms.json` — 22 algorithms, organised by the data they
+operate on: logs · process events · repository · data · model · interfaces.
+
+### The continuous-improvement mechanism
+
+Three tools, and they answer three different questions:
+
+1. **`validate_algorithms.py`** — *did it regress?* 40 golden cases, every one a real defect
+   found the hard way. Gated in the rebuild. **A fix without a case is not a fix.**
+2. **`improve_algorithms.py`** — *which one next, and why that one?* Ranks from five measured
+   signals: frontier trend · stale lever · unguarded · unexercised · failure-mode debt.
+   A worklist, deliberately not a score — a score invites admiring the number.
+3. **`check_triggers.py`** — *does anything need re-running now?* Accumulation, maturity and
+   interpretation triggers.
+
+**The signal that matters most is the frontier TREND.** An algorithm whose frontier stops
+shrinking has stopped learning, and nothing else detects that. It is not the size of the
+unexplained remainder that tells you the machine is healthy — it is whether that remainder
+is still moving.
+
+### How a new algorithm gets born
+
+None of the twenty-two came from someone having an idea. Five real origins:
+
+| origin | example |
+|---|---|
+| a **constraint** the system imposes | chunked reads, field-splitting — *the refusal IS the specification* |
+| a **recurring defect** | alias canonicalisation, after the same bug appeared three times. **A defect that repeats is an algorithm waiting to be written.** |
+| **adoption** from the field | DFG, variants, conformance, OCEL 2.0 — reinventing these would be vanity |
+| a **question with no home** | the profile; the interface boundary |
+| an observed **asymmetry** | the market assigns activities but not *who called* — in a system called from outside 80% of the time, the caller IS the process |
+
+### How to improve one without breaking it
+
+**Add a rung; do not rewrite.** The function-module fix did not touch the classifier — it
+added one hop (module → function group → package). The frontier went from 40% of execution
+to 7.7%.
+
+**Correct the denominator before optimising the numerator.** Half of a measured "35% gap"
+turned out to be a category error: synthesised concepts and user records counted as
+unresolved repository objects, which they can never be.
+
+**Prefer an authoritative source over a better heuristic.** Package-name regex was guessing;
+`DF14L` states the answer. And note the trap — *a guess corrected by a guess is not a fix*:
+one hand-correction here was itself wrong, and only the authoritative source settled it.
+
+---
+
 ## Anti-methods — each of these cost real errors in instance #1
 
 | | why it looks like evidence, and is not |

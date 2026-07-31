@@ -417,3 +417,37 @@ At the END of every session, the agent MUST:
 4. **Brain rule**: After any extraction → run `sap_brain.py --build --html`
 5. **Skill rule**: After discovering a new pattern 3x → create a skill for it
 6. **P01 rule**: All monitoring data from P01 only. Never use D01 data for decision-making
+
+
+## s097 — PENDIENTES (recuperar en la próxima sesión)
+
+> Fuente de verdad: `brain_v2/capability_model/execution_backlog.json`. Esto es el índice.
+> Estado del modelo: `graph_queries.py profile` · `methods` · `coherence`.
+
+### Bloqueado por el usuario (no por el modelo)
+- **BACKUP** — `DURABILITY 0.10`. Golden DB 13,28 GB + `~/.claude`, sin respaldo confirmado.
+  Contiene ahora `df14l`, `tadir_obj`, `tfdir_all` y la base de D01. Git no los protege.
+- **EXT-HCM-TABLES** — 188.636 ejecuciones, cero tablas. Es dato de personal: falta confirmar
+  alcance y restricciones de privacidad.
+- **AN-FLOW-B2C2A** — falta la explicación de la relación PROJ2FUND ↔ B2C2A (¿los fondos se
+  ejecutan por proyectos? Si sí, los dos flujos se fusionan y el event log se construye distinto).
+
+### Prioridad 1
+`AN-PS-DOC` (1,6M ejecuciones, sin documento) · `AN-PBC-DEEP` (68 usuarios, 4/11 celdas) ·
+`AN-CLAIM-VERIFY` (desde 24,5%) · `AN-ALGO-GOLDEN` (un fix sin caso no es un fix)
+
+### Prioridad 2
+`AN-GM-CAPABILITY` (Grants, antes del cliente #2) · `AN-CRP-CELLS` · `AN-FLOW-POST2BUDGET` ·
+`AN-FLOW-PROJ2FUND` · `AN-INTEGRATION-VERIFY` (794.261 ejecuciones movidas, sin verificar) ·
+`AN-EVENTLOG-DEFS` · `AN-ALGO-CROSSCHECK` (ascenso vs clasificador: el desacuerdo es un defecto
+en uno de los dos — la validación más barata que tenemos, sin usar) · `AN-ALGO-ADAPTIVE-FEED`
+
+### Prioridad 3
+`AN-LEGACY-ARCHIVE` (8 extractores superados) · `AN-FAILMODE-VIEW`
+
+### Defectos declarados de algoritmos nuevos (arreglar antes de citar sus cifras)
+- **F1** trunca nombres de destino y escanea una muestra → `230 DEAD` lleva error de parseo.
+- **F2** por la misma truncación puede partir una flota en dos: las de 17 y 21 endpoints
+  comparten prefijo GUID y podrían ser el mismo satélite. **No citar 40 como cifra cerrada.**
+- **improve_algorithms** no pondera por PROFUNDIDAD en el DAG, y debería: mejorar una capa baja
+  levanta todo lo de arriba.
