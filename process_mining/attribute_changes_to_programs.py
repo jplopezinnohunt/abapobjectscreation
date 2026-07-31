@@ -119,53 +119,43 @@ def _profile(con):
         user_vol[cls][user] += n
         tcodes[cls][tc or ""] += n
 
-    # DIRECT evidence of an RFC channel: a populated PARAM3 means the row IS a function
-    # call. The first version inferred the channel from whether a dispatcher reached the
-    # top of the ranking — a ranking built to DEMOTE dispatchers. It suppressed the signal
-    # and then looked for it where it had just been suppressed, so 71 of 72 classes came
-    # back as anything-but-INTERFACE.
+    # ONE PASS over the audit log, not four.
+    #
+    # The channel evidence was first added as three extra full scans — an RFC probe, two
+    # LIKE scans for file paths, and a PARAMX group-by over 8.7M rows — on top of the scan
+    # that was already there. None of them can use an index, and the golden database is
+    # READ-ONLY BY CONTRACT so an index cannot be added. The run went from minutes to over
+    # an hour, and that is a correctness problem, not a comfort one: A SLOW ALGORITHM GETS
+    # SKIPPED, AND A SKIPPED ALGORITHM IS DOCUMENTATION (pattern D6). A8 runs inside the
+    # analysis cycle, so its cost is paid on every domain, every time.
+    #
+    # The fix is to ask for the SIGNALS in the same scan rather than the raw values: a
+    # CASE per signal collapses to a flag inside the existing GROUP BY and costs nothing
+    # extra. The raw values — which paths, which calling host — are only ever needed for the
+    # handful of accounts that end up ranked first, so those became TARGETED lookups after
+    # the ranking instead of full scans before it.
     rfc_slots = defaultdict(set)                       # user -> {(day,hour)} with an RFC call
-    for user, day, hh in con.execute(
-            "SELECT SLGUSER, SAL_DATE, substr(SAL_TIME,1,2) FROM rsau_audit_history "
-            "WHERE SAL_DATE <> '' AND PARAM3 <> '' GROUP BY 1,2,3"):
-        rfc_slots[user].add((day, hh))
-
-    # FILE evidence. A path in PARAM3 is not a function module — it is a program reading a
-    # file. This surfaced by accident: an .XLSX path under a user's Downloads folder was
-    # ranked as a "function module" because nothing was looking for the file channel.
-    file_slots = defaultdict(set)                      # user -> {(day,hour)}
-    file_paths = defaultdict(lambda: defaultdict(int))  # user -> path -> rows
-    for user, day, hh, path, n in con.execute(
-            "SELECT SLGUSER, SAL_DATE, substr(SAL_TIME,1,2), PARAM3, COUNT(*) "
-            "FROM rsau_audit_history WHERE SAL_DATE <> '' AND ("
-            "  PARAM3 LIKE '%/%' OR PARAM3 LIKE '%.XLS%' "
-            "  OR PARAM3 LIKE '%.CSV%' OR PARAM3 LIKE '%.TXT%' OR PARAM3 LIKE '%.DAT%') "
-            "GROUP BY 1,2,3,4"):
-        file_slots[user].add((day, hh))
-        file_paths[user][path] += n
-
-    # ORIGIN evidence. PARAMX carries the CALLER — host, destination, user. For an inbound
-    # RFC this names WHERE the write came from, which is exactly what the satellite
-    # derivation groups on, so attribution hands straight over to it.
-    origins = defaultdict(lambda: defaultdict(int))    # user -> destination -> rows
-    for user, px, n in con.execute(
-            "SELECT SLGUSER, PARAMX, COUNT(*) FROM rsau_audit_history "
-            "WHERE PARAMX <> '' GROUP BY 1,2"):
-        d, h, _u = parse_caller(px)
-        tag = d if d and d != "NONE" else h
-        if tag:
-            origins[user][tag] += n
-
+    file_slots = defaultdict(set)                      # user -> {(day,hour)} touching a file
     runs = defaultdict(lambda: defaultdict(set))       # user -> program -> {(day,hour)}
     prog_slots = defaultdict(set)                      # program -> {(day,hour)}  BASE RATE
     all_slots = set()
-    for user, prog, day, hh in con.execute(
-            "SELECT SLGUSER, SLGREPNA, SAL_DATE, substr(SAL_TIME,1,2) "
-            "FROM rsau_audit_history WHERE SAL_DATE <> '' AND SLGREPNA <> '' GROUP BY 1,2,3,4"):
+    for user, prog, day, hh, is_rfc, is_file in con.execute(
+            "SELECT SLGUSER, SLGREPNA, SAL_DATE, substr(SAL_TIME,1,2), "
+            "       MAX(CASE WHEN PARAM3 <> '' THEN 1 ELSE 0 END), "
+            "       MAX(CASE WHEN PARAM3 LIKE '%/%' OR PARAM3 LIKE '%.XLS%' "
+            "                  OR PARAM3 LIKE '%.CSV%' OR PARAM3 LIKE '%.TXT%' "
+            "                  OR PARAM3 LIKE '%.DAT%' THEN 1 ELSE 0 END) "
+            "FROM rsau_audit_history WHERE SAL_DATE <> '' GROUP BY 1,2,3,4"):
         slot = (day, hh)
-        runs[user][prog].add(slot)
-        prog_slots[prog].add(slot)
         all_slots.add(slot)
+        if is_rfc:
+            rfc_slots[user].add(slot)
+        if is_file:
+            file_slots[user].add(slot)
+        if prog:
+            runs[user][prog].add(slot)
+            prog_slots[prog].add(slot)
+
     # BATCH evidence. A job fires a program; the program writes. The user's concrete case:
     # Coupa drops a file in a folder, a scheduled job processes it, the program posts. Any
     # classification that stops at "a program wrote it" loses the three links outside SAP.
@@ -176,7 +166,7 @@ def _profile(con):
         jobs_of_prog[prog][job] += n
 
     return (changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
-            file_paths, origins, jobs_of_prog, all_slots)
+            jobs_of_prog, all_slots)
 
 
 def phi(a, b, c, d):
@@ -331,7 +321,7 @@ def _interface_functions(con, user, slots, limit=6):
 
 
 def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
-              file_paths, origins, jobs_of_prog, all_slots, classes=None):
+              jobs_of_prog, all_slots, classes=None):
     horizon = len(all_slots) or 1
     wanted = classes or [c for c, _ in
                          sorted(volume.items(), key=lambda x: -x[1])[:TOP_CLASSES]]
@@ -386,10 +376,8 @@ def attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, fi
         ev = {
             "rfc_share": (len(cs & rfc_slots.get(top_user, set())) / len(cs)) if cs else 0.0,
             "file_share": (len(cs & file_slots.get(top_user, set())) / len(cs)) if cs else 0.0,
-            "paths": [p for p, _ in sorted((file_paths.get(top_user) or {}).items(),
-                                           key=lambda x: -x[1])[:6]],
-            "origins": [o for o, _ in sorted((origins.get(top_user) or {}).items(),
-                                             key=lambda x: -x[1])[:6]],
+            # filled in after ranking, by a targeted lookup for this one account
+            "paths": [], "origins": [],
             "jobs": sorted({j for c in cands[:4]
                             for j in (jobs_of_prog.get(c["program"]) or {})})[:6],
         }
@@ -436,12 +424,12 @@ def main():
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
     print("  aggregating both streams in SQL, at (day, hour) ...")
     (changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots, file_slots,
-     file_paths, origins, jobs_of_prog, all_slots) = _profile(con)
+     jobs_of_prog, all_slots) = _profile(con)
     print(f"  {len(volume)} object classes · {len(prog_slots):,} programs · "
           f"{len(all_slots):,} hour-slots in the shared window")
 
     result = attribute(changes, volume, user_vol, tcodes, runs, prog_slots, rfc_slots,
-                       file_slots, file_paths, origins, jobs_of_prog, all_slots,
+                       file_slots, jobs_of_prog, all_slots,
                        classes=sys.argv[1:] or None)
 
     # for every INTERFACE class, name the functions — this is the hand-off to F1/F2
@@ -475,8 +463,17 @@ def main():
 
     print(f"wrote {OUT}")
     for cls, r in sorted(result.items(), key=lambda x: -x[1]["change_documents"])[:7]:
-        print(f"\n  {cls}  ({r['change_documents']:,} changes)  channel={r['channel']}")
-        print(f"    {r['channel_evidence']}")
+        chans = " + ".join(c["channel"] for c in r["channels_DERIVED_from_logs"])
+        print(f"\n  {cls}  ({r['change_documents']:,} changes)  DERIVED: {chans}")
+        if r.get("chain"):
+            print(f"    chain: {r['chain']}")
+        for c in r["channels_DERIVED_from_logs"]:
+            extra = (c.get("called_from") or c.get("paths") or c.get("jobs") or [])
+            if extra:
+                print(f"      {c['channel']:12s} {', '.join(str(x)[:32] for x in extra[:3])}")
+        for v in (r.get("channels_DECLARED_in_the_map") or [])[:3]:
+            print(f"      MAP SAYS {v['declared_channel']} via {v['artifact'][:20]} "
+                  f"({v['declared_source']})  ->  {v['verdict']}")
         for c in r["candidate_writers"][:3]:
             tag = c["verdict"].split(" —")[0]
             print(f"    {c['program'][:26]:26s} phi {c['phi']:>6.3f}  "
