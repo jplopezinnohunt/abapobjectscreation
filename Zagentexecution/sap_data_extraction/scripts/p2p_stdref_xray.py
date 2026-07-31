@@ -1,6 +1,11 @@
 """
-p2p_conformance.py — AN-STDREF + AN-G-P2P: custom-over-standard P2P x-ray.
+p2p_stdref_xray.py — AN-STDREF + AN-G-P2P: custom-over-standard P2P x-ray.
 =========================================================================
+RENAMED s097: this file was called p2p_conformance.py and collided with
+process_mining/p2p_conformance.py, which is a DIFFERENT capability (Tier-1 rule
+conformance). Two distinct capabilities sharing one filename is worse than a copy:
+nobody can tell which one a reference means. This one is the custom-over-standard
+x-ray (AS-DESIGNED vs AS-RUN); the other classifies cases against the 3-way match.
 The STANDARD (AS-DESIGNED) P2P normative model (SAP best practice / PaPM, verified
 research wh5gw9exu/wgrqpmt9f): PO -> Goods Receipt -> Invoice Receipt, 3-way match,
 GR strictly BEFORE IR (goods confirmed before paying). We measure how UNESCO's AS-RUN

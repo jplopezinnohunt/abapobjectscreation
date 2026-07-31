@@ -8,109 +8,6 @@
   "process": "UNESCO end-to-end process chain (B2R/H2R/P2P/T2R/P2D/FM)"
  },
  "domains": {
-  "BCM": {
-   "axis": "functional",
-   "description": "Bank Communication Management â€” payment batch orchestration, dual-control workflow (90000003 main, 90000004 BNK_COM, 90000005 BNK_INI), signatory/approver rules stored as PD objects OTYPE='RY' under PLVAR='01', exception-list governance (AE/JO/embargo).",
-   "parent_domain": "Treasury",
-   "knowledge_doc_path": "knowledge/domains/BCM/",
-   "knowledge_docs": [
-    "knowledge/domains/BCM/h13_executive_summary.md",
-    "knowledge/domains/BCM/h13_remediation_hypothesis.md",
-    "knowledge/domains/Treasury/bcm_signatory_rules.md"
-   ],
-   "companions": [
-    "companions/bcm_dual_control_audit.html",
-    "companions/payment_bcm_companion.html"
-   ],
-   "skills": [
-    "sap_payment_bcm_agent",
-    "sap_payment_e2e"
-   ],
-   "subtopics": {
-    "dual_control_gap": {
-     "description": "3,359 same-user batches 2024-2026 (CRUSR=CHUSR), $656M exposure. Root cause: structural understaffing of HQ treasury (only 2 operators: C_LOPEZ 94.7%, I_MARQUAND 92.9%). Not fraud â€” automation debt.",
-     "status": "ACTIVE_MONITORING",
-     "key_users": [
-      "C_LOPEZ",
-      "I_MARQUAND",
-      "E_AMARAL",
-      "F_DERAKHSHAN"
-     ],
-     "top_risk_subset": "UNES_AP_EX (331 batches, $1.9M, sanctions-jurisdiction AE/JO/embargo)",
-     "batch_types": [
-      "UNES_AP_10",
-      "UBO_AP_MAX",
-      "UNES_AP_EX",
-      "UNES_AP_ST",
-      "PAYROLL",
-      "UNES_AP_IK",
-      "IIEP"
-     ],
-     "remediation_paths": [
-      "1=detective_nightly",
-      "2=UNES_AP_EX_carveout",
-      "3=HQ_3rd_operator",
-      "4=workflow_90000003_mod",
-      "5=automate_wed_AP_cycle"
-     ],
-     "docs": [
-      "knowledge/domains/BCM/h13_executive_summary.md",
-      "knowledge/domains/BCM/h13_remediation_hypothesis.md"
-     ],
-     "companion": "companions/bcm_dual_control_audit.html",
-     "script": "Zagentexecution/bcm_dual_control_monitor.py"
-    },
-    "signatory_rules": {
-     "description": "Workflow responsibility groups 90000004 BNK_COM / 90000005 BNK_INI stored as PD objects (HRP1000/HRP1001) OTYPE='RY', PLVAR='01'. Every BCM spec for a new office or rule must include both RY STEXT and the OTYPE='RY' PLVAR='01' keys.",
-     "pd_otype": "RY",
-     "plvar": "01",
-     "related_tables": [
-      "HRP1000",
-      "HRP1001",
-      "HRP1002"
-     ],
-     "derived_rule": "feedback_bcm_spec_must_include_rule_ry_stext",
-     "docs": [
-      "knowledge/domains/Treasury/bcm_signatory_rules.md"
-     ],
-     "related_incident": "INC-000006313"
-    },
-    "workflow_mod_path": {
-     "description": "Path 4 remediation â€” preventive workflow 90000003 modification to enforce CHUSR != CRUSR at SAP level. Blocked on YWFI package source extraction (H14).",
-     "status": "BLOCKED_ON_H14",
-     "package": "YWFI"
-    }
-   },
-   "objects": [
-    "BNK_BATCH_HEADER",
-    "BNK_BATCH_ITEM",
-    "USR02"
-   ],
-   "claims_ids": [
-    6
-   ],
-   "rules_ids": [
-    "feedback_bcm_spec_must_include_rule_ry_stext"
-   ],
-   "incidents": [
-    "INC-000006313"
-   ],
-   "known_unknowns": [
-    "H14 (YWFI source read pending)"
-   ],
-   "falsification_pending": [],
-   "data_quality_open": [
-    "dual_control_gap_growing_40pct_in_15_sessions"
-   ],
-   "blind_spots": [],
-   "owner_role": "Finance Director + Treasury Operations",
-   "coverage_pct": 82,
-   "last_session_touched": 55,
-   "related_scripts": [
-    "Zagentexecution/bcm_dual_control_monitor.py",
-    "Zagentexecution/extract_bcm_signatories.py"
-   ]
-  },
   "Treasury": {
    "axis": "functional",
    "description": "Treasury operations â€” house bank configuration, electronic bank statement (EBS) import and posting, payment execution (F110 + BCM), cash management. Integrates 9 company codes, 2 currencies, and 6+ house banks.",
@@ -966,43 +863,6 @@
     "Cost_Recovery_CRP"
    ]
   },
-  "Payment": {
-   "axis": "functional",
-   "description": "Payment execution sub-domain of Treasury â€” F110, DMEE trees, 8 DMEE variations, BCM batch orchestration, 1.4M events process mining.",
-   "parent_domain": "Treasury",
-   "knowledge_doc_path": "knowledge/domains/Payment/",
-   "knowledge_docs": [
-    "knowledge/domains/Payment/h18_dmee_tree_findings.md",
-    "knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv",
-    "knowledge/domains/Payment/h18_dmee_trees.csv",
-    "knowledge/domains/Payment/h18_dmee_tree_nodes.csv"
-   ],
-   "companions": [
-    "companions/payment_bcm_companion.html",
-    "companions/payment_process_mining.html"
-   ],
-   "skills": [
-    "sap_payment_bcm_agent",
-    "sap_payment_e2e"
-   ],
-   "objects": [
-    "F110",
-    "DMEE",
-    "REGUH",
-    "REGUP",
-    "PAYR"
-   ],
-   "owner_role": "Treasury Functional SME",
-   "coverage_pct": 70,
-   "last_session_touched": 55,
-   "primary_modules": [
-    "FI"
-   ],
-   "primary_processes": [
-    "T2R",
-    "P2P"
-   ]
-  },
   "BusinessPartner": {
    "axis": "functional",
    "description": "Vendor/customer/BP master data â€” SCSA vendor category, KTOKK â†’ AKONT mapping, intercompany BP scenarios.",
@@ -1835,6 +1695,106 @@
     293
    ],
    "technical_component": "CO-OM"
+  },
+  "Payment_BCM": {
+   "axis": "functional",
+   "description": "Payment execution sub-domain of Treasury â€” F110, DMEE trees, 8 DMEE variations, BCM batch orchestration, 1.4M events process mining. | BCM: Bank Communication Management â€” payment batch orchestration, dual-control workflow (90000003 main, 90000004 BNK_COM, 90000005 BNK_INI), signatory/approver rules stored as PD objects OTYPE='RY' under PLVAR='01', exception-list governance (AE/JO/embargo).",
+   "parent_domain": "Treasury",
+   "knowledge_doc_path": "knowledge/domains/Payment/",
+   "knowledge_docs": [
+    "knowledge/domains/BCM/h13_executive_summary.md",
+    "knowledge/domains/BCM/h13_remediation_hypothesis.md",
+    "knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv",
+    "knowledge/domains/Payment/h18_dmee_tree_findings.md",
+    "knowledge/domains/Payment/h18_dmee_tree_nodes.csv",
+    "knowledge/domains/Payment/h18_dmee_trees.csv",
+    "knowledge/domains/Treasury/bcm_signatory_rules.md"
+   ],
+   "companions": [
+    "companions/bcm_dual_control_audit.html",
+    "companions/payment_bcm_companion.html",
+    "companions/payment_process_mining.html"
+   ],
+   "skills": [
+    "sap_payment_bcm_agent",
+    "sap_payment_e2e"
+   ],
+   "objects": [
+    "BNK_BATCH_HEADER",
+    "BNK_BATCH_ITEM",
+    "DMEE",
+    "F110",
+    "PAYR",
+    "REGUH",
+    "REGUP",
+    "USR02"
+   ],
+   "owner_role": "Treasury Functional SME",
+   "coverage_pct": 70,
+   "last_session_touched": 55,
+   "primary_modules": [
+    "FI"
+   ],
+   "primary_processes": [
+    "T2R",
+    "P2P"
+   ],
+   "_s097_merged": "Payment and BCM were SEPARATE registry entries that both canonicalise to Payment_BCM, so every crossing counted them twice. Merged. The subdomain distinction survives in subtopics, which is where it belongs.",
+   "subtopics": {
+    "dual_control_gap": {
+     "description": "3,359 same-user batches 2024-2026 (CRUSR=CHUSR), $656M exposure. Root cause: structural understaffing of HQ treasury (only 2 operators: C_LOPEZ 94.7%, I_MARQUAND 92.9%). Not fraud â€” automation debt.",
+     "status": "ACTIVE_MONITORING",
+     "key_users": [
+      "C_LOPEZ",
+      "I_MARQUAND",
+      "E_AMARAL",
+      "F_DERAKHSHAN"
+     ],
+     "top_risk_subset": "UNES_AP_EX (331 batches, $1.9M, sanctions-jurisdiction AE/JO/embargo)",
+     "batch_types": [
+      "UNES_AP_10",
+      "UBO_AP_MAX",
+      "UNES_AP_EX",
+      "UNES_AP_ST",
+      "PAYROLL",
+      "UNES_AP_IK",
+      "IIEP"
+     ],
+     "remediation_paths": [
+      "1=detective_nightly",
+      "2=UNES_AP_EX_carveout",
+      "3=HQ_3rd_operator",
+      "4=workflow_90000003_mod",
+      "5=automate_wed_AP_cycle"
+     ],
+     "docs": [
+      "knowledge/domains/BCM/h13_executive_summary.md",
+      "knowledge/domains/BCM/h13_remediation_hypothesis.md"
+     ],
+     "companion": "companions/bcm_dual_control_audit.html",
+     "script": "Zagentexecution/bcm_dual_control_monitor.py"
+    },
+    "signatory_rules": {
+     "description": "Workflow responsibility groups 90000004 BNK_COM / 90000005 BNK_INI stored as PD objects (HRP1000/HRP1001) OTYPE='RY', PLVAR='01'. Every BCM spec for a new office or rule must include both RY STEXT and the OTYPE='RY' PLVAR='01' keys.",
+     "pd_otype": "RY",
+     "plvar": "01",
+     "related_tables": [
+      "HRP1000",
+      "HRP1001",
+      "HRP1002"
+     ],
+     "derived_rule": "feedback_bcm_spec_must_include_rule_ry_stext",
+     "docs": [
+      "knowledge/domains/Treasury/bcm_signatory_rules.md"
+     ],
+     "related_incident": "INC-000006313"
+    },
+    "workflow_mod_path": {
+     "description": "Path 4 remediation â€” preventive workflow 90000003 modification to enforce CHUSR != CRUSR at SAP level. Blocked on YWFI package source extraction (H14).",
+     "status": "BLOCKED_ON_H14",
+     "package": "YWFI"
+    }
+   }
   }
  },
  "process_map": {

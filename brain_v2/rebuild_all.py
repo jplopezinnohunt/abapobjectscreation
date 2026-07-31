@@ -199,6 +199,11 @@ def main():
     run(["python", "brain_v2/methods/audit_skill_coverage.py"],
         "Step 0c: Skill coverage audit — orphaned tools, phantom refs, missing cadences",
         fatal=False)
+    # Is our capability where the work is, and is the DIFFERENTIATOR tier actually our
+    # strongest? Measured, not asserted — the thesis has to survive its own numbers.
+    run(["python", "brain_v2/methods/build_domain_capability_matrix.py"],
+        "Step 0d: Domain x capability matrix — coverage inversion + thesis health",
+        fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
@@ -246,6 +251,10 @@ def main():
     run(["python", "brain_v2/capability_model/snapshot_model_state.py"],
         "Step 3b2: Snapshot model state -> history DB (the curve)", fatal=False)
     run(["python", "brain_v2/build_brain_index.py"], "Step 3c: Rebuild LEAN bootstrap index (tiered loading)")
+    # The loop fires on EVIDENCE, not on someone remembering. Compares the model's state
+    # against declared thresholds and says what to re-run and why.
+    run(["python", "brain_v2/methods/check_triggers.py"],
+        "Step 3d: Trigger check — what needs re-running on current evidence", fatal=False)
     run(["python", "brain_v2/add_knowledge_links.py"], "Step 4/7: Link knowledge docs")
 
     # Regenerate dynamic companions
