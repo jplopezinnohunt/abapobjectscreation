@@ -35,15 +35,44 @@ from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardco
 JOBCLASS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "job_classification.json"
 OUT = REPO / "brain_v2" / "executed_objects_domain_map.json"
 
-# DEVCLASS (package) prefix -> domain. Authoritative grouping. First match wins.
+# DEVCLASS (package) prefix -> domain. Authoritative grouping. FIRST MATCH WINS, so
+# specific rules MUST precede the general ones they would otherwise be swallowed by.
+#
+# s097 EXTENSION (closes claim #355). The ladder had no bucket for RE-FX, PBC, FI-AA,
+# PM, SD, TRM nor for any third-party add-on namespace, so those objects fell into
+# "Uncatalogued" (3,893 objects / 4.56M execs = 40% of volume) and their absence from
+# the map was then read as absence from the SYSTEM. Six productive modules were
+# reported as "not implemented" on that basis. The rules below are anchored on
+# packages resolved from the system itself (TADIR -> TDEVC -> DF14L).
 DEVCLASS_RULES = [
+    # --- s097 additions: specific first, before the broad FI/HCM/Treasury nets ---
+    # PBC before HCM: HRFPM_* and PAOC_FPM_* would otherwise be swallowed by ^PA.
+    # Component PA-PM-PB. This is the payroll-to-budget bridge, not generic HR.
+    ("PBC",             r"^(HRFPM|PAOC_FPM|PAOCFPM|RHRFPM)"),
+    # FI_AA before FI: package AA / ANLA-side. Component FI-AA-AA.
+    ("FI_AA",           r"^(AA$|AA[BFMPRTUW]|ANL|FAA[A-Z]?$|AABA|FBAA|AB01)"),
+    # TRM before Treasury_EBS: FTA = Transaction Manager (FIN-FSCM-TRM-TM); FTE stays
+    # with the bank-statement side. Conflating the two hid an entire capability.
+    ("TRM",             r"^(FTA|FTB|FTI|FTL|FTS|TRTM_|FTLM|FTZ|VTB)"),
+    # PM: component PM-EQM-EQ, package IEQM (equipment) + maintenance orders/plans.
+    ("PM",              r"^(IEQM|IPRM|IWO|IMRC|ILOM|IFLOT|IPMI|IWP|IBAP)"),
+    # SD: component SD-SLS. Billing-only here, but the packages are standard.
+    ("SD",              r"^(VA$|VA[0-9]|VF|VL|VBAK|VKM|SDBILL|SD_|VS$|VC$)"),
+    # RE-FX: THE original miss. Standard RE_* packages + the 6 UNESCO custom packages.
+    ("RE_FX",           r"^(RE_|REBD|RECN|RERA|REIS|REAJ|REEX|REOR|REMM|VI[A-Z]|ZRE|YA_FEX)"),
+    # Third-party add-ons: independent DATA-EXIT channels, not noise. Keeping them in
+    # "Uncatalogued" is what hid EPI-USE, ACL Data Link and Winshuttle entirely.
+    ("ThirdParty_Addon", r"^(/EPIUSE/|/ACLDL/|/WINSHTLQ/|/GBX0|GBX01HR|/BDTS/|/SOMO/)"),
+    # --- original ladder ---
     ("PSM_FM",          r"^(FM|FMRP|FMFR|FMBAS|FMCA|FMRE|FMOA|FMOI|FMDM|FMHH|FMFG|FMKU|FMAVC|FMCE|FMDT|FMBW|FMFI|BPIN|BP$|BPFM|AYM|/?ISPSFM|ISPS_FM)"),
     ("Payment_BCM",     r"^(FZ|FPAYM|PAYM|FCHK|FMKK|BFIBL|FIBL_PAY|FPAY|FMEC|FCH)"),
     ("FI",              r"^(FB|FBAS|FIBP|FI[A-Z]|FAGL|FVVD|GLT|FGL|FQ|GBAS|FBA|FINS|GLE|FDES|FAA|AABA|FBAA|FICA|FGLG|RFK|GL_)"),
     ("Treasury_EBS",    r"^(FF|FTE|FTBB|IDFI|TRTM|FTR|FQM|FDT)"),
     ("Procurement_P2P", r"^(ME|MM|MEPO|MR|MB|EINK|MMPUR|WRF|MEWP|ML|MMIM|MMINV)"),
     ("PS",              r"^(CJ|PS[A-Z]?|KPR|PROJ|CN|PSEX|PSHLP|RPSCO)"),
-    ("Controlling",     r"^(KO|KB|KS|KA|CO[A-Z]|KE|KKB|KAZB|KAL|KKS|RKE)"),
+    # s097: was "Controlling" — the canonical ontology key is CO. A domain key that
+    # does not resolve against ontology.json cannot be crossed with L14/L15.
+    ("CO",              r"^(KO|KB|KS|KA|CO[A-Z]|KE|KKB|KAZB|KAL|KKS|RKE)"),
     ("HCM",             r"^(PA|PB|PC|PT|PU|P[0-9]|HRPAY|PAOC|PCAL|HRAS|PBAS|PXX|RPAA|PCPO|PSPAR|HRPADXX|PAOCFB|PTIM|PBEN|PCAS|HRFPM|PEPM)"),
     ("Travel",          r"^(FITV|PTRM|TRV|FTRV|PTRA)"),
     ("BusinessPartner", r"^(BUPA|BUP|FK|FD|FLBP|KD|WKR|LO_MD_BP|VLC|BUS_LOCATOR)"),
@@ -69,6 +98,13 @@ TABLE_RULES = [
     ("Payment_BCM",     r"^(REGU|PAYR|BNKA|FEB|T012|T042)"),
     ("BusinessPartner", r"^(LFA|LFB|KNA|KNB|BUT|ADRC|CVI)"),
     ("Treasury_EBS",    r"^(FEBKO|FEBEP|T028|T033)"),
+    # s097 additions — generated programs embedding these tables were unclassified
+    ("FI_AA",           r"^(ANL[A-Z]|ANEP|ANEK|ANLC|T093)"),
+    ("PM",              r"^(EQUI|EQKT|IFLO|ILOA|AFIH|QMEL)"),
+    ("SD",              r"^(VBAK|VBAP|VBRK|VBRP|LIKP|LIPS|KNVV|TVKO)"),
+    ("TRM",             r"^(VTB|TZ[A-Z]|VWP)"),
+    ("RE_FX",           r"^(VICN|VIBD|VIOB|VIMI|VITM|VIAK)"),
+    ("PBC",             r"^(HRFPM|PBC_|FMRESERV)"),
     ("HR_Workflows",    r"^(ZTHRFIORI|SWW|HRWP)"),
 ]
 
@@ -98,7 +134,8 @@ def _match_table(tok):
 DLVUNIT_RULES = [
     ("PSM_FM", r"EA-PS|^IS_PS|PSM"),
     ("HCM", r"SAP_HR|EA-HR|SAP_HRRXX|SAP_HRGXX|HR_"),
-    ("Treasury_EBS", r"FIN_TRM|EA-FINSERV"),
+    ("TRM", r"FIN_TRM"),
+    ("Treasury_EBS", r"EA-FINSERV"),
     ("FI", r"SAP_FIN|EA-FIN|^FI"),
     ("Procurement_P2P", r"SAP_APPL.*MM|SRM"),
     ("Basis_Security", r"SAP_BASIS|WEBCUIF|SAP_UI|SAP_GWFND|ST-PI|SAP_ABA|BBPCRM"),
@@ -108,7 +145,7 @@ APP_DOMAIN_MAP = {
     "HR": "HCM", "CMT/Vendor": "BusinessPartner", "CMT/Master Data": "BusinessPartner",
     "Procurement": "Procurement_P2P", "FI/Finance": "FI", "Banking/Validation": "Payment_BCM",
     "SISTER": "Integration", "UNESDIR": "Integration", "IDoc": "Integration", "RFC Utils": "Integration",
-    "Mouv/Asset Mgmt": "FI", "UBO Field Office": "Treasury_EBS", "Dashboards": "Output",
+    "Mouv/Asset Mgmt": "PM",  # s097 hypothesis: Mouv is the front-end, PM the SAP back-end (UNVERIFIED) "UBO Field Office": "Treasury_EBS", "Dashboards": "Output",
     "SLD/Monitoring": "Basis_Security", "Basis/Tools": "Basis_Security", "Data Extraction": "Integration",
 }
 JOBLABEL_MAP = {"FM": "PSM_FM", "Payment": "Payment_BCM", "FI": "FI", "Procurement": "Procurement_P2P",

@@ -539,10 +539,18 @@ def main():
     if SYSTEM_PROFILE.exists():
         system_profile = json.load(open(SYSTEM_PROFILE, encoding="utf-8"))
         for _sib, _key in [("profile_concept.json", "_concept"),
-                           ("profile_links.json", "_links")]:
+                           ("profile_links.json", "_links"),
+                           ("model_graph.json", "_model_graph")]:
             _p = SYSTEM_PROFILE.parent / _sib
             if _p.exists():
                 system_profile[_key] = json.load(open(_p, encoding="utf-8"))
+
+    # METHODS — the repeatable activities that mature the model. Results age; the
+    # activities that produce them compound. Attached so a session can see WHAT TO RUN,
+    # not only what was found.
+    _mm = BRAIN_V2 / "methods" / "model_maturity_methods.json"
+    if _mm.exists() and system_profile:
+        system_profile["_maturity_methods"] = json.load(open(_mm, encoding="utf-8"))
 
     # LAYER 15 — Capability Model (4th axis). Load the domain x capability matrix
     # and inject each domain's coverage into its Layer-14 entry (best-effort name

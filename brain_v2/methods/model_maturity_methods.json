@@ -1,0 +1,130 @@
+{
+ "_concept": "MODEL MATURITY METHODS — the repeatable activities that mature the model",
+ "_one_line": "Results are the output; METHODS are the product. A discovery that stays in a conversation dies with the session. A discovery turned into a runnable, scheduled check compounds.",
+ "_version": "1.0",
+ "_created_session": 97,
+
+ "_why": {
+  "trigger": "s097 discovered six productive modules the model had never seen, a whole category of third-party add-ons, and an entire missing brain concept (the PROFILE). Every one of those was found by an ACTIVITY, not by luck: a bounded probe, a crossing, a gate. If only the findings are recorded, the next blind spot waits for another accident.",
+  "principle": "The model is not the set of facts it holds. It is the set of activities it can repeat. Facts age; activities compound.",
+  "test": "For anything learned this session ask: what ACTIVITY found it, is that activity runnable, and does it run on its own? If the answer to any of those is no, the learning is not yet part of the product."
+ },
+
+ "_lifecycle": {
+  "1_discovered": "an activity performed by hand in a conversation, once",
+  "2_scripted": "written as a runnable tool with its inputs and outputs declared",
+  "3_wired": "runs inside rebuild_all.py — it can no longer be forgotten",
+  "4_gated": "FAILS the rebuild when its invariant is breached — it can no longer be ignored",
+  "5_measured": "its output feeds a maturity metric, so we can see the model getting better",
+  "_rule": "An activity below stage 3 is not part of the product yet. Promote it or drop it — do not leave it at stage 1 as a note."
+ },
+
+ "methods": {
+
+  "M1_footprint_probe": {
+   "activity": "Bounded read-only probe of the tenant's module footprint (org structure + document volumes per module).",
+   "answers": "Which modules are CONFIGURED and which are PRODUCTIVE — as opposed to merely installed.",
+   "tool": "brain_v2/system_profile/probes/probe_footprint.py",
+   "stage": "3_wired",
+   "fires": "on demand + whenever a scope question arrives that the profile cannot answer",
+   "writes_to": "brain_v2/system_profile/unesco_system_profile.json (modules.*)",
+   "found_in_s097": "FI-AA, SD, PM, TRM and RE-FX are all PRODUCTIVE — all five had been reported as 'not implemented / not evidenced'.",
+   "invariant": "bounded: WHERE year >= 2024 and a ROWCOUNT cap. A hit cap is reported as '>=cap', NEVER as an exact count.",
+   "cost": "~2 minutes, read-only, no writes to SAP"
+  },
+
+  "M2_component_resolution": {
+   "activity": "Resolve any SAP object to its APPLICATION COMPONENT via the system's own taxonomy: TADIR -> TDEVC -> DF14L.",
+   "answers": "What does this object belong to? — the deterministic bottom-up rung.",
+   "tool": "brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "stage": "3_wired",
+   "fires": "when the component hierarchy is stale or a new object type is needed",
+   "writes_to": "Gold DB tables df14l (2,687 components) + tadir_obj (311K objects across 10 types)",
+   "found_in_s097": "PBC = PA-PM-PB, which sits under Personnel Management and not under PSM. That single fact explains why an FM-shaped search never found the largest staff-budget capability in the tenant.",
+   "why_it_beats_the_alternative": "Package-name regex is guessing. DF14L is SAP stating the answer. Coverage of graph objects rose from 4% to 100% of resolvable objects once the chain spanned object TYPES, not just programs.",
+   "invariant": "never infer a component from a name when the chain can resolve it"
+  },
+
+  "M3_profile_crossing": {
+   "activity": "Cross the PROFILE against capability model / ontology / claims / docs / companions.",
+   "answers": "For every module the tenant RUNS, do we actually model it?",
+   "tool": "brain_v2/system_profile/build_profile_links.py",
+   "stage": "4_gated",
+   "fires": "rebuild_all.py step 2c",
+   "produces": "SYSTEM-LEVEL BLIND SPOTS = productive module with no capability row",
+   "found_in_s097": "6 blind spots on first run — CO, FI_AA, PM, SD, TRM, PBC — reproducing, from structure alone, exactly the six modules the conversation had got wrong.",
+   "gates": "I1 tier+evidence per module · I2 NOT_USED requires a probe · mapping completeness",
+   "caught_immediately": "two ill-formed statuses (PARTIAL/MARGINAL) that were conflating evidence with adoption"
+  },
+
+  "M4_bidirectional_ascent": {
+   "activity": "Climb from every object up to the installation, recording WHICH rung of the evidence ladder resolved it.",
+   "answers": "Can we understand the macro profile THROUGH the details? — the stated objective.",
+   "tool": "brain_v2/system_profile/build_model_graph.py",
+   "stage": "3_wired",
+   "fires": "rebuild_all.py step 2d",
+   "ladder": ["1_registry_curated", "2_sap_application_component", "3_derived_domain_axis", "9_unresolved"],
+   "invariant": "the rung is ALWAYS recorded — a curated assignment must never be presented as an inference (CP-003)",
+   "metric": "pct of graph objects that resolve upward. s097 baseline: 64.5%.",
+   "improves_by": "extending TADIR coverage to more object types and closing the unresolved tail"
+  },
+
+  "M5_coherence_check": {
+   "activity": "Compare the macro tier asserted top-down against the evidence found bottom-up, per module.",
+   "answers": "Is the model believing its own summary?",
+   "tool": "brain_v2/system_profile/build_model_graph.py (coherence section)",
+   "stage": "3_wired",
+   "verdicts": {
+    "UNSUPPORTED": "asserted PRODUCTIVE with zero objects underneath — an assertion with no detail behind it",
+    "THIN": "productive but almost nothing modelled underneath",
+    "OK": "the macro survives contact with the detail"
+   },
+   "found_in_s097": "flagged MM and Payment_BCM as unsupported — which turned out to be an ALIAS DEFECT in the checker itself, not a modelling gap. A self-check that fails loudly is how you find defects in the checker.",
+   "why_it_matters": "This is the only mechanism that can detect the model drifting away from the system it describes."
+  },
+
+  "M6_cross_cutting_overlay": {
+   "activity": "Classify domains that SPAN modules rather than owning one, and make the enrichment edge explicit.",
+   "answers": "What enriches every module instead of belonging to one?",
+   "tool": "brain_v2/system_profile/build_model_graph.py (CROSS_CUTTING)",
+   "stage": "3_wired",
+   "domains": ["Integration", "Closing_Activities", "Output", "HR_Workflows", "PY_Finance", "Security", "Transport_Intelligence", "Support", "Cost_Recovery_CRP"],
+   "found_in_s097": "The 'mirror gap' (domains modelled with no module behind them) was not a defect. Those domains are a different KIND. Declaring the kind turned an anomaly into structure.",
+   "principle": "Before treating an anomaly as an error, ask whether it is a category the model lacks."
+  },
+
+  "M7_vocabulary_gate": {
+   "activity": "Refuse any domain key that does not resolve against the canonical ontology.",
+   "tool": "brain_v2/validate_ontology.py",
+   "stage": "4_gated",
+   "fires": "rebuild_all.py step 0",
+   "found_in_s097": "rejected the 6 new domains until they were declared. Vocabulary stays canonical BY CONSTRUCTION, not by anyone remembering.",
+   "principle": "A rule enforced by a human is a wish. A rule enforced by a gate is a property."
+  },
+
+  "M8_alias_resolution": {
+   "activity": "Resolve any domain/doc/module spelling through the ontology's declared aliases before concluding something is missing.",
+   "stage": "3_wired",
+   "tools": ["build_profile_links.py resolve_doc()", "build_model_graph.py C()"],
+   "found_in_s097": "4 domain docs reported as MISSING already existed under alias folder names (PSM_FM->PSM, Payment_BCM->Payment, Treasury_EBS->Treasury, MM->Procurement). Writing them would have duplicated existing knowledge (CP-002 breach).",
+   "recurrence": "This same defect appeared THREE times in one session — doc resolution, claim matching, coherence checking. It is the single most repeated failure mode in this codebase.",
+   "invariant": "never compare domain names raw; always normalise through the ontology first"
+  }
+ },
+
+ "_anti_methods": {
+  "_note": "Activities that LOOK like evidence and are not. Each cost real errors in s097.",
+  "A1_absence_in_a_derived_index": "Absence in executed_objects_domain_map or in the Gold DB is a FLOOR, never an inventory. It yields NOT_EVIDENCED, never NOT_USED. Cost: 5 modules wrongly reported as not implemented.",
+  "A2_substring_name_matching": "Matching a module name as a substring of free text. 'CO' matched 337 claims, 'PM' 47, 'SD' 30 — noise presented as coverage, which is worse than an empty list because it reads as linkage.",
+  "A3_suppressing_a_generic_error": "TABLE_WITHOUT_DATA was being swallowed as 'empty is normal'. It was masking an INVALID FIELD (PARENT_ID on DF14L), and three extraction runs returned 0 rows with no error. Never suppress a generic error class without first confirming what it is hiding.",
+  "A4_answering_from_memory": "SAP component codes, table names and field names must be resolved from the system. Every code in the profile came from DF14L, not recall."
+ },
+
+ "_next_promotions": {
+  "_note": "Activities still at stage 1-2. Each is a known lever, not a vague idea.",
+  "P1": "Schedule M1 (footprint probe) to re-run periodically — the footprint DRIFTS as the tenant changes, and nothing currently detects that.",
+  "P2": "Raise M4 ascent above 64.5% by extending TADIR coverage past the 40,000-row cap per object type (P01 rejects ROWSKIPS, so chunk by name range instead).",
+  "P3": "Feed M5 coherence into meta_capability.py so model drift becomes a MEASURED maturity lever rather than a report nobody reads.",
+  "P4": "Re-run the extended classifier (process_mining/executed_objects_domain_map.py) to shrink the 40%-of-volume 'Uncatalogued' bucket now that RE-FX, PBC, FI-AA, PM, SD, TRM and the add-on namespaces have rules."
+ }
+}

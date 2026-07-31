@@ -207,6 +207,12 @@ def main():
     # rebuild instead of silently shipping a fact-sheet nobody can trust.
     run(["python", "brain_v2/system_profile/build_profile_links.py"],
         "Step 2c: Cross the PROFILE (L16) against L14/L15/claims + gate invariants")
+    # BIDIRECTIONAL model (s097): bottom-up ascent + coherence + cross-cutting overlay.
+    # Non-fatal: it READS brain_state (previous run) to compute the ascent, so on a
+    # first-ever build it simply has less to chew on. Its output is attached as L16
+    # system_profile._model_graph on the NEXT line's rebuild.
+    run(["python", "brain_v2/system_profile/build_model_graph.py"],
+        "Step 2d: Bidirectional model graph (ascent + coherence + cross-cutting)", fatal=False)
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
     # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline

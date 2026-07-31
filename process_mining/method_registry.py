@@ -33,6 +33,8 @@ OVERRIDE = {
     "SWNCMONI":    ("FM SAPWL_* (SWNC)", "workload monitor aggregates", "tcode-usage mining", "config'd"),
     "CDPOS":       ("ABAP FOR ALL ENTRIES (CDCLS)", "cluster; pair with CDHDR by OBJECTCLAS+OBJECTID+CHANGENR; declustered sometimes on EhP8 -> probe", "blind-spot RESULT×METHOD (field-level old->new)", "persists"),
     "RFC_STREAM":  ("RSAU 'RFC Function Call' events; parse PARAMX host/dest/user", "the call stream lives in the audit log, not a table; ORIGIN axis = host/dest/user", "2-axis classification + self-adapting discovery", "~4 months"),
+    "DF14L":       ("RFC_READ_TABLE, FCTR_ID EQ only, <=40 OR-terms per call", "s097: full read AND 'LIKE' both return TABLE_WITHOUT_DATA -- only EQ works, so ask for the ids TDEVC references. The table has NO field PARENT_ID: requesting it raises TABLE_WITHOUT_DATA, i.e. a FIELD error wearing the costume of an empty table (3 runs returned 0 rows silently). OPTIONS has a length cap: 40 OR-terms OK, more returns nothing without error.", "object -> application component (the bottom-up rung)", "static"),
+    "TADIR":       ("RFC_READ_TABLE per OBJECT type, ROWCOUNT 40000", "s097: P01 rejects ROWSKIPS so paging is impossible -- each object type caps at 40K rows. Chunk by name range if more is needed. PROG alone covers only ~4% of graph objects; span TABL/FUGR/CLAS/TRAN/VIEW/DTEL/ENHO/SXCI too.", "object -> package -> component", "static"),
     "SOAMANAGER_GUID": ("NOT resolvable", "the dest GUIDs are external connection IDs, not SAP-named ports (not in RFCDES; SRT_* are SOAP, calls are RFC)", "n/a — host names the system", "n/a"),
 }
 

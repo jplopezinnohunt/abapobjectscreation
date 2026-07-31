@@ -370,6 +370,50 @@ def profile(brain, module=None):
     }
 
 
+def ascend(brain, obj):
+    """BOTTOM-UP: from one object, climb to the macro profile.
+
+    The counterpart of `profile`. `profile` answers "what is this system?"; `ascend`
+    answers "what does THIS detail belong to, and how do I know?" — the resolution
+    rung is always returned so a curated assignment is never mistaken for a guess."""
+    g = (brain.get("system_profile", {}) or {}).get("_model_graph", {})
+    if not g:
+        return {"error": "no model graph — run brain_v2/system_profile/build_model_graph.py"}
+    return {"object": obj, "ascent": g.get("ascent_sample", {}).get(obj)
+            or "not in sample; see brain_v2/system_profile/model_graph.json",
+            "chain": g.get("_chain")}
+
+
+def coherence(brain, _=None):
+    """Does the macro assertion survive contact with the detail?"""
+    g = (brain.get("system_profile", {}) or {}).get("_model_graph", {})
+    if not g:
+        return {"error": "no model graph"}
+    return {"resolution": g.get("resolution"), "coherence": g.get("coherence"),
+            "objects_per_domain": g.get("objects_per_domain")}
+
+
+def tree(brain, _=None):
+    """TOP-DOWN: the domain / subdomain tree with the cross-cutting overlay."""
+    g = (brain.get("system_profile", {}) or {}).get("_model_graph", {})
+    if not g:
+        return {"error": "no model graph"}
+    return {"tree": g.get("tree"), "cross_cutting": g.get("cross_cutting")}
+
+
+def methods(brain, _=None):
+    """The repeatable activities that mature the model — what to RUN, not what was found."""
+    m = (brain.get("system_profile", {}) or {}).get("_maturity_methods", {})
+    if not m:
+        return {"error": "no methods registry"}
+    return {"lifecycle": m.get("_lifecycle"),
+            "methods": {k: {"activity": v.get("activity"), "stage": v.get("stage"),
+                            "tool": v.get("tool") or v.get("tools")}
+                        for k, v in m.get("methods", {}).items()},
+            "anti_methods": m.get("_anti_methods"),
+            "next_promotions": m.get("_next_promotions")}
+
+
 COMMANDS = {
     "what_reads": lambda b, args: what_reads(b, args[0]),
     "what_depends_on": lambda b, args: what_depends_on(b, args[0]),
@@ -389,6 +433,11 @@ COMMANDS = {
     "capability_gaps": lambda b, args: capability_gaps(b),
     # Layer 16 (session #097) — the tenant PROFILE (what the SYSTEM IS)
     "profile": lambda b, args: profile(b, args[0] if args else None),
+    # s097 — the bidirectional model
+    "ascend": lambda b, args: ascend(b, args[0]),
+    "coherence": lambda b, args: coherence(b),
+    "tree": lambda b, args: tree(b),
+    "methods": lambda b, args: methods(b),
 }
 
 if __name__ == "__main__":

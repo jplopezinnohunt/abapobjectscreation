@@ -26,7 +26,11 @@ def main():
         except Exception:
             continue
         for name in object_names:
-            if len(name) < 5:
+            # s097: the cut used to be <5 chars, which silently dropped 4-character SAP
+            # names -- EQUI, VBAK, COEP, ANLA, BKPF, LFA1 are all real objects and all
+            # were losing their doc links. 4 is safe with a word boundary; 3 and below
+            # produce false hits (CO, PM, SD as English words).
+            if len(name) < 4:
                 continue
             if re.search(r"\b" + re.escape(name) + r"\b", text, re.IGNORECASE):
                 rel = str(doc.relative_to(PROJECT_ROOT)).replace("\\", "/")
