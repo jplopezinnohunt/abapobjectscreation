@@ -148,6 +148,116 @@ def main():
             if canonical(a) != key:
                 failures.append(f"E4 round-trip: alias {a!r} of {key} does not resolve back")
 
+    # ---- A3 · two-axis classification ------------------------------------
+    # The ORIGIN axis is the finding this project keeps returning to: the same BAPI called
+    # by MULESOFT and by a named user are DIFFERENT FACTS, and a classifier that reports
+    # only the function module cannot tell them apart. These cases hold the axis in place.
+    sys.path.insert(0, str(REPO / "process_mining"))
+    try:
+        import rfc_process_classifier as a3
+    except ImportError:
+        a3 = None
+    if a3 is not None:
+        for user, want, why in [
+            ("MULESOFT", "MuleSoft (external bus)", "the bus must never read as a person"),
+            ("BRIDGE-RFC", "BRIDGE-RFC (external portal)", "portal-as-user is its own origin"),
+            ("SMTMSBP", "SolMan (external monitor)", "monitoring traffic is not business traffic"),
+            ("JOBBATCH", "internal batch/system", "internal batch is not an external satellite"),
+            ("JP_LOPEZ", "us (JP_LOPEZ extraction)",
+             "OUR OWN extraction must be excluded, or we measure ourselves as the business"),
+            ("MARIA.ROSSI", "named user (dialog/portal-as-user)", "the default is a person"),
+        ]:
+            checked += 1
+            got = a3.classify_origin(user)
+            if got != want:
+                failures.append(f"A3 origin {user}: {got!r} != {want!r} — {why}")
+
+        for fm, want, why in [
+            ("BAPI_ACC_DOCUMENT_POST", ("KNOWN", "FI-Posting"), "the canonical posting BAPI"),
+            ("BAPI_PO_CREATE1", ("KNOWN", "P2P-PO"), "purchase order creation is P2P"),
+            ("RFC_PING", ("_technical", "_technical"),
+             "technical chatter must not inflate a business process"),
+            ("RFC_READ_TABLE", ("_ours", "_ours"),
+             "our own reader must be excluded whoever calls it — it is how WE extract"),
+        ]:
+            checked += 1
+            got = a3.classify(fm, "SOMEUSER")
+            if got != want:
+                failures.append(f"A3 classify {fm}: {got!r} != {want!r} — {why}")
+
+    # ---- D4 · field splitting --------------------------------------------
+    # RFC_READ_TABLE has a 512-byte line buffer, so a wide table is read in field chunks and
+    # merged BY ROW POSITION. Position is the only join key available — which makes a
+    # chunking that drops or reorders a field silently corrupt every merged row afterwards.
+    sys.path.insert(0, str(REPO / "Zagentexecution" / "mcp-backend-server-python"))
+    try:
+        from rfc_helpers import plan_field_chunks, merge_chunks_by_position
+    except ImportError:
+        plan_field_chunks = None
+    if plan_field_chunks is not None:
+        flds = [f"F{i:02d}" for i in range(23)]
+        plan = plan_field_chunks(flds, 8)
+        checked += 1
+        if [f for c in plan for f in c] != flds:
+            failures.append("D4 chunking lost or reordered a field — every row merged by "
+                            "position afterwards is corrupt, and it looks valid")
+        checked += 1
+        if any(len(c) > 8 for c in plan):
+            failures.append("D4 a chunk exceeds the 512-byte buffer limit — the read fails "
+                            "at runtime, not here")
+        checked += 1
+        if plan_field_chunks([], 8) != []:
+            failures.append("D4 empty field list must plan no chunks")
+        checked += 1
+        merged = merge_chunks_by_position([{"A": 1}, {"A": 2}], [[{"B": 9}, {"B": 8}]])
+        if merged != [{"A": 1, "B": 9}, {"A": 2, "B": 8}]:
+            failures.append(f"D4 positional merge is wrong: {merged}")
+        checked += 1
+        # a short chunk must not shift the rows that follow it
+        short = merge_chunks_by_position([{"A": 1}, {"A": 2}], [[{"B": 9}]])
+        if short != [{"A": 1, "B": 9}, {"A": 2}]:
+            failures.append(f"D4 a short chunk shifted the merge: {short}")
+
+    # ---- D6 · drift over an accumulated history --------------------------
+    # Both of this algorithm's real defects are cases here. Neither was caught by a check:
+    # they were caught by reading the output, because the statistic lived inside main().
+    try:
+        import detect_drift as d6
+    except ImportError:
+        d6 = None
+    if d6 is not None:
+        checked += 1
+        # DEFECT 1 — raw monthly VOLUMES across months of unequal length. February against
+        # a 31-day month differs by 10% before anything real happens: 11 false signals.
+        flat = [("202601", 100.0, 10.0, 5.0), ("202602", 100.0, 10.0, 5.0),
+                ("202603", 100.0, 10.0, 5.0)]
+        if d6.departures_for(flat):
+            failures.append("D6 flagged drift on a CONSTANT per-day rate — the volume/rate "
+                            "defect is back, and it produced 11 false signals last time")
+        checked += 1
+        jump = [("202601", 100.0, 10.0, 5.0), ("202602", 100.0, 10.0, 5.0),
+                ("202603", 300.0, 30.0, 15.0)]
+        got = d6.departures_for(jump)
+        if not got or got[0][0] != "202603":
+            failures.append("D6 missed a 3x jump — a detector that never fires is not safe, "
+                            "it is useless")
+        checked += 1
+        # DEFECT 2 — a z-score over a 2-month baseline: sigma collapses and the score
+        # explodes. The run produced z=1016. Relative change stays legible at n=2.
+        if got and any(abs(d["relative_change_pct"]) > 1000 for d in got[0][1]):
+            failures.append("D6 produced an absurd magnitude — the z-score defect is back. "
+                            "A number that looks rigorous and cannot be read is worse than "
+                            "a plain one")
+        checked += 1
+        # the baseline must travel WITH the finding, or it cannot be judged
+        if got and got[0][2] != ["202601", "202602"]:
+            failures.append(f"D6 baseline lost: {got[0][2] if got else None}")
+        checked += 1
+        # one month of history cannot support a baseline — it must stay silent
+        if d6.departures_for([("202601", 100.0, 10.0, 5.0), ("202602", 900.0, 90.0, 45.0)]):
+            failures.append("D6 signalled with a single baseline month — a departure needs "
+                            "something to depart FROM")
+
     print(f"[algorithm validation] {checked} golden cases")
     if failures:
         print(f"  {len(failures)} REGRESSION(S):", file=sys.stderr)

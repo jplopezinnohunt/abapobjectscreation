@@ -257,6 +257,9 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **8 · transport** | `.agents/skills/sap_transport_intelligence` · CTS extracts (`cts_transports`, `cts_objects`) |
 | **9 · verification** | `brain_v2/system_profile/build_model_graph.py` (ascent · coherence · cross-cutting) · `brain_v2/verify_claims.py` · `brain_v2/claims_health.py` · `brain_v2/curate.py` |
 | **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · **`brain_v2/methods/check_triggers.py`** (fires the loop on evidence) · **`brain_v2/methods/build_domain_capability_matrix.py`** (is capability where the work is?) · **`brain_v2/methods/build_domain_assets.py`** (the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows, and what is missing) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) · `brain_v2/session_activate.py` + `brain_v2/migrate_memory.py` (session bootstrap and memory portability) |
+| **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will") |
+| **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
+| **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) |
 | **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `process_mining/p2p_conformance.py` (Tier-1: cases classified against the 3-way match) · **`p2p_stdref_xray.py`** (the custom-over-standard x-ray — AS-DESIGNED vs AS-RUN; a *different* capability that used to share the other one's filename) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
 
 ---
@@ -271,10 +274,10 @@ coherence re-checks → the gaps move. Each layer feeds the one above it, at its
 |---|---|---|---|
 | **DAILY — non-negotiable** | `accumulate_logs.py` | the system PURGES audit, job, dump and syslog history in 7–120 days. A day not captured is gone permanently; it cannot be back-filled at any price | the operating model, usage per domain, the time axis of everything |
 | **WEEKLY** | `gold_refresh.py`, `delta_refresh_2026.py` | master and transactional data drift continuously | every downstream analysis |
-| **EVERY REBUILD** | `rebuild_all.py` — ontology gate → asset gate → profile crossing → model graph → brain state → indexes | the gates only protect what they run against | the whole brain |
+| **EVERY REBUILD** | `rebuild_all.py` — ontology gate → **path gate** → asset gate → profile crossing → model graph → brain state → indexes | the gates only protect what they run against | the whole brain |
 | **MONTHLY** | `executed_objects_domain_map.py`, `adaptive_discovery.py` | new objects appear; the unresolved tail is the frontier, and it shrinks only if re-run | domains, subdomains, usage |
 | **QUARTERLY** | `probe_footprint.py`, `extract_component_hierarchy.py` | the FOOTPRINT DRIFTS — modules get activated, add-ons installed, org structure extended. Nothing currently detects that automatically | the profile, the ascent |
-| **PER CLOSE** | `meta_capability.py`, `verify_assets.py`, `audit_skill_coverage.py` | measure whether the machine improved, and catch knowledge that failed to land | the maturity score |
+| **PER CLOSE** | `meta_capability.py`, `verify_assets.py`, `validate_paths.py`, `algorithm_status.py`, `audit_skill_coverage.py` | measure whether the machine improved, and catch knowledge that failed to land | the maturity score |
 
 **The feedback that matters most:** the log accumulator is the only activity whose value
 is *destroyed by delay*. Everything else can be caught up later; that one cannot. On a new
@@ -393,6 +396,28 @@ unresolved repository objects, which they can never be.
 **Prefer an authoritative source over a better heuristic.** Package-name regex was guessing;
 `DF14L` states the answer. And note the trap — *a guess corrected by a guess is not a fix*:
 one hand-correction here was itself wrong, and only the authoritative source settled it.
+
+---
+
+## The catalogue must not lie about itself
+
+The registry says which algorithms exist. That claim has to be **derived from disk**, never
+written by hand, and this is not a hypothetical:
+
+> `C3_static_edge_extraction` was reported **PROPOSED** — an idea with no implementation —
+> while `parse_abap_edges.py` sat in the repository, running. One entry in its list of
+> tools was a sentence, `"brain_v2 graph build"`, instead of a path. The binding check
+> requires every declared tool to exist on disk; a sentence exists nowhere, so the check
+> went false and a BUILT algorithm was published as unbuilt.
+
+Correcting that entry was not the fix. Searching for others found the **same prose copied
+into the asset registry** — a second store, same defect, nobody checking. A defect that
+appears twice is structural, so it became a gate: `validate_paths.py` now checks all 147
+path-typed fields across five stores on every rebuild.
+
+**The rule:** a field that is declared to hold a path holds a path. Prose belongs in a
+field named for prose. A path field carrying a sentence does not fail loudly — it makes
+every check over it *silently wrong*, which is worse than a gap, because a gap is visible.
 
 ---
 

@@ -164,6 +164,38 @@ def _rfc_read_single_page(conn, table, rfc_fields, rfc_options, batch_size, offs
     return rows, hdrs
 
 
+def plan_field_chunks(fields, chunk_size):
+    """Split a wide field list into chunks that fit RFC_READ_TABLE's 512-byte line buffer.
+
+    Pure, so it can be gated. The reading itself needs a connection; the PLAN does not, and
+    the plan is where the algorithm can be wrong: a chunking that drops a field or reorders
+    one silently corrupts every row merged by position afterwards.
+
+    Invariants the golden cases hold it to: every field appears exactly once, order is
+    preserved, and no chunk exceeds the size the buffer allows.
+    """
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be >= 1")
+    return [list(fields[i:i + chunk_size]) for i in range(0, len(fields), chunk_size)]
+
+
+def merge_chunks_by_position(base_rows, extra_chunks):
+    """Merge field chunks read at the same offset, by ROW POSITION.
+
+    Position is the only join key available: RFC_READ_TABLE returns no row identity. That
+    makes the merge correct only while every chunk is read at the same offset with the same
+    WHERE — a constraint worth stating, because violating it produces rows that look valid
+    and mix two different records.
+    """
+    out = []
+    for i, base in enumerate(base_rows):
+        for chunk_rows in extra_chunks:
+            if i < len(chunk_rows):
+                base.update(chunk_rows[i])
+        out.append(base)
+    return out
+
+
 def rfc_read_paginated(conn, table, fields, where, batch_size=5000, throttle=3.0):
     """Read SAP table with automatic field-splitting for wide tables.
 
@@ -237,21 +269,13 @@ def rfc_read_paginated(conn, table, fields, where, batch_size=5000, throttle=3.0
             break  # No more data
 
         # Read remaining field chunks at same offset
-        remaining = fields[chunk_size:]
         extra_chunks = []
-        while remaining:
-            chunk = remaining[:chunk_size]
-            remaining = remaining[chunk_size:]
+        for chunk in plan_field_chunks(fields[chunk_size:], chunk_size):
             rfc_chunk = [{"FIELDNAME": f} for f in chunk]
             chunk_rows, _ = _rfc_read_single_page(conn, table, rfc_chunk, rfc_options, batch_size, offset)
             extra_chunks.append(chunk_rows)
 
-        # Merge all chunks by row position
-        for i, base_row in enumerate(page_rows):
-            for chunk_rows in extra_chunks:
-                if i < len(chunk_rows):
-                    base_row.update(chunk_rows[i])
-            all_rows.append(base_row)
+        all_rows.extend(merge_chunks_by_position(page_rows, extra_chunks))
 
         returned = len(page_rows)
         offset += returned

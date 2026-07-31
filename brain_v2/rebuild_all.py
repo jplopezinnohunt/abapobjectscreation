@@ -194,6 +194,11 @@ def main():
     # tables nobody declared. Discipline is not a mechanism — this is.
     # Golden cases for the algorithms. Fails the rebuild on a regression, because an
     # algorithm that silently changes its answer is the most expensive defect we have.
+    # A path field holding PROSE makes every check over it silently wrong. C3 was published
+    # as an unimplemented idea while its tool ran, because one entry in its list of tools was
+    # a sentence — and the same sentence had been copied into a second store. Twice = gate.
+    run(["python", "brain_v2/methods/validate_paths.py"],
+        "Step 0a3: Path gate — a path field must hold a path, never prose")
     run(["python", "brain_v2/methods/validate_algorithms.py"],
         "Step 0a: Algorithm golden cases — no silent regressions")
     # The artifacts the algorithms PRODUCE. Non-fatal on purpose: a floor can trip because

@@ -64,6 +64,8 @@ CYCLE = [
      "L6 is capability where the work is?", False),
     ("brain_v2/methods/measure_portability.py",
      "L6 what survives installation #2", False),
+    ("brain_v2/methods/validate_paths.py",
+     "the path gate — a path field must hold a path, never prose"),
     ("brain_v2/methods/algorithm_status.py",
      "L6 which algorithms are real", False),
     ("brain_v2/methods/improve_algorithms.py",

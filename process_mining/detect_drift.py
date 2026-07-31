@@ -122,6 +122,51 @@ def build_profile(con):
     return plain, days_in
 
 
+def departures_for(series, rel_change=None):
+    """The drift statistic, as a pure function of a per-day series.
+
+    `series` is [(month, execs_per_day, objs_per_day, users_per_day), ...] in month order.
+    Returns [(month, [departure, ...], [baseline_month, ...]), ...] for every month that
+    departs from the months BEFORE it. The baseline travels WITH the finding: a departure
+    without the window it departed from cannot be judged.
+
+    This was inline in main(). Both defects it has already carried were caught by reading
+    the output, not by a check — because inline code cannot be gated:
+
+      1. comparing raw MONTHLY VOLUMES across months of unequal length. February against
+         a 31-day month is a 10% difference before anything real happens: 11 false signals.
+      2. Z-SCORES over a two-month baseline. The standard deviation collapses toward zero
+         and the score explodes — the run produced z=1016. A number that absurd, dressed as
+         a statistic, is worse than a plain one: it looks rigorous and cannot be read.
+
+    Both are now gated below by golden cases. The caller passes per-day rates; this
+    function reports RELATIVE CHANGE, which is robust at n=2 and legible to a human.
+    """
+    thresh = REL_CHANGE if rel_change is None else rel_change
+    out = []
+    for i in range(1, len(series)):
+        base = series[:i]
+        if len(base) < 2:
+            continue
+        departures = []
+        for idx, label in ((1, "executions"), (2, "distinct objects"), (3, "distinct users")):
+            vals = [b[idx] for b in base]
+            mean = statistics.mean(vals)
+            cur = series[i][idx]
+            if mean <= 0:
+                continue
+            rel = (cur - mean) / mean
+            if abs(rel) >= thresh:
+                departures.append({"signal": label,
+                                   "baseline_mean_per_day": round(mean, 1),
+                                   "observed_per_day": round(cur, 1),
+                                   "relative_change_pct": round(100 * rel, 1),
+                                   "direction": "up" if rel > 0 else "down"})
+        if departures:
+            out.append((series[i][0], departures, [b[0] for b in base]))
+    return out
+
+
 def main():
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
     prof, days_in = build_profile(con)
@@ -145,40 +190,13 @@ def main():
             continue
         examined += 1
 
-        for i in range(1, len(series)):
-            base = series[:i]
-            if len(base) < 2:
-                continue
-            m, ex, ob, us = series[i]
-            departures = []
-            for idx, label in ((1, "executions"), (2, "distinct objects"), (3, "distinct users")):
-                vals = [b[idx] for b in base]
-                mean = statistics.mean(vals)
-                cur = series[i][idx]
-                # RELATIVE CHANGE, not a z-score. The second run produced z=1016 and z=-41,
-                # because with only two baseline months the standard deviation collapses
-                # toward zero and the score explodes. A z-score needs more history than a
-                # four-month window can give.
-                #
-                # Reporting an absurd number dressed as a statistic is worse than reporting
-                # a plain one: it looks rigorous and cannot be interpreted. Relative change
-                # is robust at n=2 and a human can read it. Z-scores become meaningful once
-                # the accumulator has roughly a year — which is one more reason to protect it.
-                if mean <= 0:
-                    continue
-                rel = (cur - mean) / mean
-                if abs(rel) >= REL_CHANGE:
-                    departures.append({"signal": label,
-                                       "baseline_mean_per_day": round(mean, 1),
-                                       "observed_per_day": round(cur, 1),
-                                       "relative_change_pct": round(100 * rel, 1),
-                                       "direction": "up" if rel > 0 else "down"})
+        for m, departures, base_months in departures_for(series):
             if len(departures) >= 2:      # one signal moving is noise; two is a shape change
                 signals.append({
                     "domain": dom, "month": m,
                     "departures": departures,
                     "days_in_month": days_in.get(m),
-                    "baseline_months": [b[0] for b in base],
+                    "baseline_months": base_months,
                     "interpretation": ("the domain's activity SHAPE changed, not just its "
                                        "volume — re-derive its assignment: it was a "
                                        "hypothesis formed on the earlier window"),
