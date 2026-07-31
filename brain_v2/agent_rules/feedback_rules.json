@@ -3812,5 +3812,15 @@
   "how_to_apply": "1. the scheduled thing writes a state file with its last run, step count and failures. 2. the trigger evaluation MEASURES the gap and fires a response class. 3. the SESSION START surfaces it, because a measurement nobody reads changes nothing and session start is the one moment the agent is guaranteed to look. 4. report FAILED STEPS too: a cycle that ran and failed half its steps is worse than one that did not run, because its artifacts look fresh.",
   "evidence": "brain_v2/methods/cycle_state.json; check_triggers CYCLE_STALE_DAYS=8; cycle_headline() in brain_v2/session_start_hook.py; three Windows tasks in Ready state",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_a_silent_replace_is_a_silent_defect",
+  "severity": "HIGH",
+  "created_session": 97,
+  "rule": "A string replace that does not match FAILS SILENTLY and leaves the file half-edited. Never patch a file with an unverified `s.replace(...)` and move on. Either use an ANCHORED edit that errors when the anchor is missing, or assert the change landed before continuing — `assert new in s`, or re-read the file.",
+  "why": "s097, FOUR times in one session. A call site was left pointing at a renamed function; a print block kept referencing a field that no longer existed; a signature changed on one side only; and the run-recording block never entered the cycle at all — I only noticed because the state file did not appear. The common cause is a non-ASCII character in the match text: the middle dot in 'ran · failed' did not match through a heredoc, so the replace returned the string unchanged and the script reported success. THE SCRIPT SAID IT WORKED. Each of these cost a full re-run, and one shipped a broken file to a background job that then failed on its own.",
+  "how_to_apply": "1. anchored edits by preference — a missing anchor must ERROR, not no-op. 2. if you must use replace, ASSERT the result changed: `assert s != before` per hunk, not once at the end. 3. never put non-ASCII in a match string; anchor on ASCII-only lines. 4. after patching, RUN the thing — syntax-checking is not enough, a silent no-op parses perfectly. 5. patching the same file in several fragments compounds this: read it whole first.",
+  "evidence": "s097: resolve_channels signature, channel_evidence print, cycle_state write block",
+  "domain": "Brain_Architecture"
  }
 ]

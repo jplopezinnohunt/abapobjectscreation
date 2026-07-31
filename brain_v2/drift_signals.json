@@ -2,6 +2,8 @@
  "_generated_by": "process_mining/detect_drift.py",
  "_algorithm": "concept drift over the accumulated history",
  "_replaces": "the threshold heuristics in check_triggers.py — those are judgement, this asks the log itself",
+ "_READ_THIS_FIRST": "SUSPECT A CAPTURE CHANGE, NOT DRIFT: all 3 signals fall in the SAME month (202606). Unrelated domains do not change together — this pattern usually means the LOG CAPTURE changed (audit filter, retention, a system move). Verify the capture before investigating any business process. Tracked as AN-DRIFT-VERIFY.",
+ "signals_share_one_month": true,
  "_method": "monthly activity profile per domain as RATES PER DAY (executions, distinct objects, distinct users); a month is flagged when at least TWO signals depart from the trailing baseline by more than the domain's own volatility. One signal moving is noise; two is a change of shape.",
  "_corrected_in_first_run": "the first version compared monthly VOLUMES and produced 11 signals, almost all in the same month across unrelated domains — because the window is 2026-02-21 to 2026-06-21, so February has 3 days and April 30. April was the first full month, not a process change. Now normalised per day.",
  "_statistic": "relative change against the trailing baseline, NOT a z-score. With two baseline months the standard deviation collapses and z explodes (the second run produced z=1016). An absurd number dressed as a statistic is worse than a plain one: it looks rigorous and cannot be interpreted. Z-scores become meaningful at roughly a year of history.",

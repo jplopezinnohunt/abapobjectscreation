@@ -203,11 +203,30 @@ def main():
                 })
 
     signals.sort(key=lambda s: -max(abs(d["relative_change_pct"]) for d in s["departures"]))
+
+    # THE CAVEAT MUST TRAVEL WITH THE FINDING. Several unrelated domains departing in the SAME
+    # month is not several independent process changes — it is the signature of the LOG
+    # CAPTURE changing: a new audit filter, a retention edit, a system move. Reading it as
+    # drift would send someone to investigate three business processes that did not change.
+    #
+    # This lived in a backlog ticket and in conversation, which is the same as not existing:
+    # whoever opens this file next sees the signals, not the ticket.
+    months = {s["month"] for s in signals}
+    concentrated = len(signals) >= 3 and len(months) == 1
     out = {
         "_generated_by": "process_mining/detect_drift.py",
         "_algorithm": "concept drift over the accumulated history",
         "_replaces": ("the threshold heuristics in check_triggers.py — those are judgement, "
                       "this asks the log itself"),
+        "_READ_THIS_FIRST": (
+            ("SUSPECT A CAPTURE CHANGE, NOT DRIFT: all %d signals fall in the SAME month "
+             "(%s). Unrelated domains do not change together — this pattern usually means "
+             "the LOG CAPTURE changed (audit filter, retention, a system move). Verify the "
+             "capture before investigating any business process. Tracked as AN-DRIFT-VERIFY."
+             % (len(signals), ", ".join(months))) if concentrated else
+            ("signals are spread across %d month(s) — no capture-change pattern"
+             % max(len(months), 1))),
+        "signals_share_one_month": concentrated,
         "_method": ("monthly activity profile per domain as RATES PER DAY (executions, "
                     "distinct objects, distinct users); a month is flagged when at least TWO signals depart "
                     "from the trailing baseline by more than the domain's own volatility. "

@@ -127,7 +127,6 @@ def _profile(con, _derived=False):
     project already measured at 548x wasted work.
     """
     changes = defaultdict(lambda: defaultdict(set))    # class -> user -> {(day,hour)}
-    src = "changes" if _derived else "cdhdr"
     volume = defaultdict(int)
     user_vol = defaultdict(lambda: defaultdict(int))
     tcodes = defaultdict(lambda: defaultdict(int))     # class -> tcode -> rows
