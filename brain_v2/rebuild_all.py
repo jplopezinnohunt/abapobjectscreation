@@ -192,6 +192,10 @@ def main():
     # present, and traceable to the method that made it. Fails on a declared asset that
     # vanished or a method pointing at a tool that does not exist; warns on Gold DB
     # tables nobody declared. Discipline is not a mechanism — this is.
+    # Golden cases for the algorithms. Fails the rebuild on a regression, because an
+    # algorithm that silently changes its answer is the most expensive defect we have.
+    run(["python", "brain_v2/methods/validate_algorithms.py"],
+        "Step 0a: Algorithm golden cases — no silent regressions")
     run(["python", "brain_v2/methods/verify_assets.py"],
         "Step 0b: Asset gate — knowledge produced must be knowledge registered")
     # Is the portable skill still the machine we actually have? Non-fatal: a newly added
