@@ -272,12 +272,12 @@
    "state": "WORKS",
    "does": "enumerate the boundary (RFCDES / EDIDC / TBTCP / ICFSERVICE) and CORRELATE the configuration against observed traffic in the call stream. Configuration says what someone once set up; the call stream says what happens today; the GAP is the finding, in both directions.",
    "why_it_matters": "the boundary carries 1.33M executions and 37 documented flows, and the map is PROSE written by hand: it cannot detect a new destination appearing, cannot go stale visibly, and cannot be reproduced on a second installation (INSTANCE, not KIT)",
-   "improve": "fix the destination regex truncation. Then bind each live destination to the PROCESS FLOWS it serves, not only to domains.",
+   "improve": "disambiguate the remaining truncated fragments by CALL SIGNATURE rather than by prefix: if a fragment calls the same function modules as exactly one full name, it is that name.",
    "bound_in": [
     "process_mining/interface_boundary.py"
    ],
    "first_run": "238 destinations configured -> 10 LIVE, 228 DEAD (configured, zero traffic: maintenance and attack surface nobody uses), 249 UNDECLARED (traffic with no RFCDES entry). 9 IDoc message types / 19,400 documents. 5,822 active HTTP services. FULL scan, no sampling.",
-   "failure_mode": "ONE defect remains: the destination parse TRUNCATES names ('HQ-SAP-P0', cut GUIDs), so DEAD/UNDECLARED counts still carry parse error. THE SAMPLING DEFECT IS FIXED (s097): it scanned 400,000 of 8.7M rows, and that was not merely imprecise — it was WRONG. The full scan moved LIVE 8 -> 10 (two destinations were reported DEAD purely because their traffic fell outside the sample) and UNDECLARED 40 -> 249 (the sample hid 209 undeclared callers). A sample presented as a census is how a model lies quietly."
+   "failure_mode": "TRUNCATION: PARAMX is a FIXED-LENGTH field and SAP cuts the caller string when it does not fit — 'caller: host=HQ-SAP-P01_P01_00, dest=HQ-SAP-P01-1_P01_'. I had recorded this as 'the parse truncates names', which was WRONG ABOUT THE CAUSE: the regex extracts exactly what is stored, and no better pattern can recover a character the source never wrote. FIXED by reconciliation instead of parsing (caller_parse.py): a value that is a strict PREFIX of exactly one longer observed value is the same entity cut short. 81 repaired; 72 left AMBIGUOUS on purpose, because a fragment with two completions would be an invented fact. REMAINING: 'HQ-SAP-P0' carries 2.6M calls and is ambiguous — too many candidates share that prefix."
   },
   "C1c_custom_fm_domain": {
    "operates_on": "repository",
@@ -301,7 +301,7 @@
     "process_mining/derive_satellites.py"
    ],
    "first_run": "40 satellites from 7,783,106 calls; 12 GUID FLEETS RECOVERED. Independently rediscovered MuleSoft: a 21-endpoint fleet calling Y_BAPI_WBS_FINANCIAL_DATA_1 974,868 times -> PS -> PROJ2FUND, and a 17-endpoint fleet on Y_BAPI_YPS8 -> PS/PSM_FM -> B2C2A, P2P, POST2BUDGET, PROJ2FUND.",
-   "failure_mode": "endpoint names TRUNCATE in the parse, so one fleet can split into two — the 17- and 21-endpoint fleets share a GUID prefix and may be the same satellite. Grouping by call signature mitigates this but does not fix the parse.",
+   "failure_mode": "endpoint names arrive TRUNCATED from SAP (PARAMX is fixed length), which split one satellite across several labels. FIXED in s097 via caller_parse: fleets recomposed from 17/21 endpoints to 7/6 once the truncated GUIDs merged with their full forms. What remains is the ambiguous tail — fragments with more than one possible completion are deliberately NOT merged, because a wrong merge invents a satellite.",
    "improve": "fix the truncation, then merge fleets whose endpoint prefixes match | after A5 learned 17 rules the 19-endpoint fleet resolved from ? to FI (drives B2C2A, DISBURSE, O2C_BILLING) — evidence that re-running the cycle after a lower layer improves is not ceremony."
   },
   "A7_concept_drift": {
@@ -344,10 +344,12 @@
    "shared_with_ecosystem": "ecosystem-coordinator/.knowledge/way-of-working/sql-aggregate-before-resolve.md",
    "improve": "apply it to the other per-row enrichments: CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M), FMIOI (2.2M)",
    "applied_to": [
-    "process_mining/detect_drift.py  430s -> 187s cold, 30s warm (548x)",
-    "process_mining/derive_satellites.py  126s -> 68s (734x: 8,764,296 rows -> 11,936 distinct caller strings)",
-    "process_mining/interface_boundary.py  removed a 400,000-row SAMPLE entirely — the full scan is now cheaper than the sample was, and it changed the ANSWER: LIVE 8->10, UNDECLARED 40->249"
-   ]
+    "process_mining/detect_drift.py  430s -> 187s cold / 30s warm (548x)",
+    "process_mining/derive_satellites.py  126s -> 68s, identical output (734x)",
+    "process_mining/interface_boundary.py  removed a 400,000-row SAMPLE — and it CHANGED THE ANSWER"
+   ],
+   "already_compliant": "process_mining/rfc_process_classifier.py was ALREADY doing this before the pattern had a name: 'SELECT PARAM3, SLGUSER, COUNT(*) ... GROUP BY PARAM3, SLGUSER'. Naming a pattern sometimes just makes visible what a good instinct already did.",
+   "not_a_defect_today": "CDHDR (7.8M), cdhdr_history (12M), REGUH (3.7M) and FMIOI (2.2M) were named as candidates in the ecosystem pattern. CHECKED: no current tool scans them row-by-row in Python. They are future risks to watch, not present defects — inventing work there would have been dishonest."
   }
  },
  "_portfolio": {

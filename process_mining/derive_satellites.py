@@ -43,7 +43,9 @@ if hasattr(sys.stdout, "reconfigure"):
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "brain_v2"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from component_map import domain_of_function_module  # noqa: E402
+from caller_parse import parse as parse_caller, build_truncation_map, canonical  # noqa: E402
 
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 BOUNDARY = REPO / "brain_v2" / "interface_boundary.json"
@@ -82,15 +84,25 @@ def main():
         "WHERE PARAMX IS NOT NULL AND PARAMX <> '' "
         "GROUP BY PARAMX, PARAM3, SLGUSER").fetchall()
 
-    parsed = {}                      # PARAMX -> (dest, host); parse each string ONCE
+    # parse each distinct caller string ONCE, then REPAIR SAP's truncation.
+    # PARAMX is a fixed-length field: SAP cuts the caller string when it does not fit, so
+    # 'HQ-SAP-P01-1_P01_' and '328a121d-ba7a-4b84-b' are the same entities as their longer
+    # twins. Without the repair one satellite appears as several — which is exactly why the
+    # 17- and 21-endpoint fleets were suspected of being one.
+    parsed = {}
     for paramx, fm, user, n in rows:
         px = paramx or ""
         if px not in parsed:
-            d = re.search(r"dest=\s*([^\s,;]+)", px)
-            h = re.search(r"host=\s*([^\s,;]+)", px)
-            parsed[px] = (d.group(1).strip() if d else None,
-                          h.group(1).strip() if h else None)
-        dest, host = parsed[px]
+            d, h, _u = parse_caller(px)
+            parsed[px] = (d, h)
+    observed = {v for pair in parsed.values() for v in pair if v}
+    repair, ambiguous = build_truncation_map(observed)
+    print(f"  truncation repaired: {len(repair)} value(s); {len(ambiguous)} left ambiguous")
+
+    for paramx, fm, user, n in rows:
+        dest, host = parsed[paramx or ""]
+        dest = canonical(dest, repair) if dest else None
+        host = canonical(host, repair) if host else None
         key = dest or host or (user or "").strip()
         if not key or INTERNAL.match(key):
             continue

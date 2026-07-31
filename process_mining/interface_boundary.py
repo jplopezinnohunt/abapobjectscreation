@@ -35,7 +35,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "brain_v2"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from component_map import domain_of_function_module  # noqa: E402
+from caller_parse import parse as parse_caller, build_truncation_map, canonical  # noqa: E402
 
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 OUT = REPO / "brain_v2" / "interface_boundary.json"
@@ -112,15 +114,24 @@ def main():
     rows = con.execute(
         "SELECT PARAMX, PARAM3, COUNT(*) AS n FROM rsau_audit_history "
         "WHERE PARAMX IS NOT NULL AND PARAMX <> '' GROUP BY PARAMX, PARAM3").fetchall()
+    # parse once per distinct string, then REPAIR the truncation SAP applies to PARAMX.
+    # A truncated destination looked UNDECLARED because it matched no RFCDES entry — the
+    # repair is therefore a correctness fix, not tidiness.
     parsed = {}
     for paramx, fm, n in rows:
         px = paramx or ""
         if px not in parsed:
-            d = re.search(r"dest=\s*([^\s,;]+)", px)
-            h = re.search(r"host=\s*([^\s,;]+)", px)
-            parsed[px] = (d.group(1).strip() if d else None,
-                          h.group(1).strip() if h else None)
-        dd, hh = parsed[px]
+            d, h, _u = parse_caller(px)
+            parsed[px] = (d, h)
+    observed = {v for pair in parsed.values() for v in pair if v}
+    observed |= set(destinations)          # a fragment may complete to a CONFIGURED name
+    repair, ambiguous = build_truncation_map(observed)
+    print(f"  truncation repaired: {len(repair)} value(s); {len(ambiguous)} left ambiguous")
+
+    for paramx, fm, n in rows:
+        dd, hh = parsed[paramx or ""]
+        dd = canonical(dd, repair) if dd else None
+        hh = canonical(hh, repair) if hh else None
         if dd:
             seen_dest[dd] += n
             if fm:
