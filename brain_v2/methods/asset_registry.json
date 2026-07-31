@@ -1,0 +1,170 @@
+{
+ "_concept": "ASSET REGISTRY — every durable thing a session produces, declared with its provenance and the method that made it",
+ "_one_line": "An asset nobody registered is an asset nobody will find. Knowledge that lives only where it was created dies with the session that created it.",
+ "_version": "1.0",
+ "_created_session": 97,
+ "_why": {
+  "trigger": "s097 extracted two new Gold DB tables (df14l, tadir_obj) that unlock the entire bottom-up direction of the model — and registered them NOWHERE. They existed on disk, invisible to the registry, to the brain and to the next session. The very session that argued knowledge must not stay in the conversation left its most valuable new asset undeclared.",
+  "principle": "Three things must land, every time: the RESULT (what we found), the METHOD (how to find it again), and the ASSET (what the finding produced). Two out of three is a slow leak.",
+  "enforcement": "brain_v2/methods/verify_assets.py — gated in rebuild_all. A declared asset that is missing, or a Gold DB table that nobody declared, FAILS the rebuild. This is the guarantee; the paragraph above is only the reason."
+ },
+ "_asset_kinds": {
+  "gold_table": "a table in the Golden DB. LOCAL-ONLY — gitignored, ~6.4GB. Git does not protect it; only a disk/offsite backup does.",
+  "store": "a JSON store under brain_v2/ — git-tracked, part of the brain",
+  "tool": "a runnable script that regenerates an asset or performs a method",
+  "doc": "a knowledge document — the prose layer"
+ },
+ "assets": {
+  "df14l": {
+   "kind": "gold_table",
+   "produced_by": "M2_component_resolution",
+   "tool": "brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "created_session": 97,
+   "rows": 2687,
+   "provenance": "P01 DF14L via RFC (read-only)",
+   "what_it_is": "SAP application-component hierarchy: FCTR_ID -> PS_POSID (e.g. HLA0006110 -> FI-AA-AA)",
+   "why_it_matters": "The final rung of the deterministic chain object -> package -> component id -> APPLICATION COMPONENT. Without it the bottom-up direction of the model does not exist and module attribution falls back to guessing from package names.",
+   "consumed_by": [
+    "brain_v2/system_profile/build_model_graph.py"
+   ],
+   "regenerate": "python brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "gotchas": "no PARENT_ID field; full reads and LIKE both return TABLE_WITHOUT_DATA; EQ only; <=40 OR-terms per call"
+  },
+  "tadir_obj": {
+   "kind": "gold_table",
+   "produced_by": "M2_component_resolution",
+   "tool": "brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "created_session": 97,
+   "rows": 311623,
+   "provenance": "P01 TADIR via RFC (read-only), 10 object types",
+   "what_it_is": "object -> development package, across TABL/FUGR/CLAS/TRAN/FUNC/PROG/VIEW/DTEL/ENHO/SXCI",
+   "why_it_matters": "tadir_prog covered PROG only, which is ~4% of the graph's objects. Tables, function groups, classes and transactions had no package and therefore no component. Spanning object TYPES is what took the ascent from 4% to its current level.",
+   "consumed_by": [
+    "brain_v2/system_profile/build_model_graph.py"
+   ],
+   "regenerate": "python brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "gotchas": "P01 rejects ROWSKIPS -> hard cap of 40,000 rows per object type; chunk by name range to go beyond"
+  },
+  "system_profile": {
+   "kind": "store",
+   "path": "brain_v2/system_profile/unesco_system_profile.json",
+   "produced_by": "M1_footprint_probe",
+   "created_session": 97,
+   "what_it_is": "THE UNESCO PROFILE — installed / configured / productive per module, org structure, add-ons, front-end, users, operating model",
+   "why_it_matters": "The class of question 'what is this tenant?' had no home. Answering it live from cvers + audit logs produced six wrong module verdicts."
+  },
+  "installation": {
+   "kind": "store",
+   "path": "brain_v2/installation/installation.json",
+   "created_session": 97,
+   "what_it_is": "the ROOT object — identity, axes, pointers, deterministic firing order",
+   "why_it_matters": "16 parallel layers and no root. The subject of the model was implicit everywhere and first-class nowhere.",
+   "produced_by": "hand-authored (the ROOT is a modelling decision, not an extraction)"
+  },
+  "model_graph": {
+   "kind": "store",
+   "path": "brain_v2/system_profile/model_graph.json",
+   "produced_by": [
+    "M4_bidirectional_ascent",
+    "M5_coherence_check",
+    "M6_cross_cutting_overlay"
+   ],
+   "created_session": 97,
+   "regenerate": "python brain_v2/system_profile/build_model_graph.py",
+   "what_it_is": "ascent + coherence + cross-cutting overlay + domain tree"
+  },
+  "model_ascent": {
+   "kind": "store",
+   "path": "brain_v2/system_profile/model_ascent.json",
+   "created_session": 97,
+   "what_it_is": "one row per object: its climb to the installation and the ladder rung that resolved it",
+   "why_separate": "brain_state is at ~84% of the context window; the full ascent stays queryable on disk rather than travelling with every session (CP-002: preserve, do not force into context)",
+   "produced_by": "M4_bidirectional_ascent"
+  },
+  "maturity_methods": {
+   "kind": "store",
+   "path": "brain_v2/methods/model_maturity_methods.json",
+   "created_session": 97,
+   "what_it_is": "the 8 repeatable activities + 4 anti-methods + the promotion lifecycle",
+   "why_it_matters": "Results age. The activities that produce them compound.",
+   "produced_by": "hand-authored (the method catalogue is itself a modelling artifact)"
+  },
+  "probe_footprint": {
+   "kind": "tool",
+   "path": "brain_v2/system_profile/probes/probe_footprint.py",
+   "created_session": 97,
+   "what_it_is": "bounded read-only probe of module footprint",
+   "promoted_from": "a scratchpad script — where it would have been deleted with the session"
+  },
+  "extract_component_hierarchy": {
+   "kind": "tool",
+   "path": "brain_v2/system_profile/probes/extract_component_hierarchy.py",
+   "created_session": 97,
+   "what_it_is": "produces df14l + tadir_obj",
+   "promoted_from": "a scratchpad script"
+  },
+  "tadir_prog": {
+   "kind": "gold_table",
+   "produced_by": "M2_component_resolution",
+   "tool": "process_mining/executed_objects_domain_map.py",
+   "created_session": 92,
+   "rows": 388106,
+   "provenance": "P01 TADIR (PGMID=R3TR, OBJECT=PROG) via RFC",
+   "what_it_is": "program -> development package",
+   "consumed_by": [
+    "process_mining/executed_objects_domain_map.py",
+    "brain_v2/system_profile/build_model_graph.py"
+   ],
+   "why_it_matters": "first rung of the object->component chain, for programs. Superseded in breadth by tadir_obj (10 object types) but kept: it is the source the s092 execution map was built on.",
+   "note": "UNDECLARED until s097 — found by the asset gate on its first run, together with tdevc. Both are load-bearing for the bottom-up model and neither was visible to the registry."
+  },
+  "tdevc": {
+   "kind": "gold_table",
+   "produced_by": "M2_component_resolution",
+   "tool": "process_mining/executed_objects_domain_map.py",
+   "created_session": 92,
+   "rows": 28308,
+   "provenance": "P01 TDEVC via RFC",
+   "what_it_is": "development package -> software component (DLVUNIT) + application component id (COMPONENT)",
+   "consumed_by": [
+    "process_mining/executed_objects_domain_map.py",
+    "brain_v2/system_profile/build_model_graph.py",
+    "brain_v2/system_profile/probes/extract_component_hierarchy.py"
+   ],
+   "why_it_matters": "the middle rung: without it, packages cannot reach DF14L and the chain breaks.",
+   "note": "UNDECLARED until s097 — see tadir_prog."
+  },
+  "bseg_union": {
+   "kind": "gold_table",
+   "produced_by": "(pre-registry)",
+   "created_session": null,
+   "what_it_is": "VIEW over BSIS/BSAS/BSIK/BSAK/BSID/BSAD — BSEG is a JOIN, never extracted (rule feedback_bseg_is_join_not_table)",
+   "why_it_matters": "the Golden Query depends on it"
+  },
+  "rsau_audit_signal": {
+   "kind": "gold_table",
+   "produced_by": "(pre-registry)",
+   "created_session": null,
+   "what_it_is": "derived signal layer over rsau_audit_history",
+   "why_it_matters": "execution evidence for U_USAGE"
+  },
+  "FEBEP_USD": {
+   "kind": "gold_table",
+   "produced_by": "(pre-registry)",
+   "created_session": null,
+   "what_it_is": "USD-converted bank statement line items",
+   "why_it_matters": "EBS reconciliation"
+  }
+ },
+ "_the_guarantee": {
+  "question": "How do we guarantee that exploration becomes part of the model rather than staying in a conversation?",
+  "wrong_answer": "By remembering to write it down. Discipline is not a mechanism; it fails exactly when the session is long and interesting, which is when the discoveries happen.",
+  "right_answer": [
+   "1. RESULT lands as a claim with evidence (gated: claims_health).",
+   "2. METHOD lands in model_maturity_methods.json or method_registry.py, at stage>=3 (wired) — not as a note.",
+   "3. ASSET lands here, and verify_assets.py FAILS the rebuild if a declared asset is missing or an undeclared Gold DB table appears.",
+   "4. The TOOL lives in the product tree, never in a scratchpad. A script under a temp directory is deleted knowledge."
+  ],
+  "test": "Delete this conversation. Can the next session reproduce every finding from the repository alone? If not, something is still trapped in the chat."
+ }
+}

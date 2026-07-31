@@ -114,27 +114,22 @@ def run():
     comps = [p.name for p in COMPANIONS.glob("*.html")] if COMPANIONS.exists() else []
 
     # Doc folders are named by ALIAS, not by canonical key: PSM_FM lives in PSM/,
-    # Payment_BCM in Payment/ + BCM/, Treasury_EBS in Treasury/, Procurement_P2P in
-    # Procurement/. Resolving by exact name reported 4 docs as MISSING that exist —
-    # which would have led to writing duplicates of knowledge we already had (CP-002).
-    # The aliases are already declared in ontology.json; use them.
-    alias_of = {}
-    for od in onto.get("domains", []):
-        ck = od.get("canonical_key")
-        for a in [ck] + list(od.get("aliases") or []) + list(od.get("registry_keys") or []):
-            if a:
-                alias_of.setdefault(ck, []).append(str(a).upper())
+    # Payment_BCM in Payment/, Treasury_EBS in Treasury/, Procurement_P2P in
+    # Procurement/. Alias resolution lives in brain_v2/canonical.py — one shared
+    # implementation, because re-deriving it per consumer is what produced the same
+    # defect three times in one session.
+    sys.path.insert(0, str(BRAIN))
+    from canonical import aliases_of
 
     def resolve_doc(module_name, dom_key):
-        """Folder for this module, tried canonical -> aliases -> hyphen/underscore."""
-        cands = [module_name.upper(), module_name.upper().replace("_", "-")]
+        """Folder for this module, tried canonical -> declared aliases -> hyphen form."""
+        cands = [module_name, module_name.replace("_", "-")]
         if dom_key:
-            cands += [dom_key.upper(), dom_key.upper().replace("_", "-")]
-            cands += alias_of.get(dom_key, [])
-            cands += [a.replace("_", "-") for a in alias_of.get(dom_key, [])]
+            for a in aliases_of(dom_key):
+                cands += [a, a.replace("_", "-"), a.replace("-", "_")]
         for c in cands:
-            if c in docs:
-                return docs[c]
+            if c.upper() in docs:
+                return docs[c.upper()]
         return None
 
     links, blind = {}, []

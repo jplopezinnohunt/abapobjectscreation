@@ -38,6 +38,7 @@ HERE = Path(__file__).parent
 BRAIN = HERE.parent
 REPO = BRAIN.parent
 sys.path.insert(0, str(REPO / "process_mining"))
+sys.path.insert(0, str(BRAIN))
 
 PROFILE = HERE / "unesco_system_profile.json"
 CONCEPT = HERE / "profile_concept.json"
@@ -162,25 +163,10 @@ def run():
 
     obj_comp, _ = load_chain()
 
-    # ALIAS NORMALISATION. The L14 registry is keyed on aliases (PSM, Payment, BCM,
-    # Procurement, Treasury) while the profile and capability model use canonical keys
-    # (PSM_FM, Payment_BCM, Procurement_P2P, Treasury_EBS). Comparing them raw made
-    # coherence report MM and Payment_BCM as "unsupported" when both are richly
-    # evidenced — the same alias defect that once reported 4 existing docs as missing.
-    canon = {}
-    for od in onto.get("domains", []):
-        ck = od.get("canonical_key")
-        if not ck:
-            continue
-        canon[ck.upper()] = ck
-        for a in list(od.get("aliases") or []) + list(od.get("registry_keys") or []):
-            canon[str(a).upper()] = ck
-
-    def C(name):
-        """Any domain spelling -> canonical key."""
-        if not name:
-            return None
-        return canon.get(str(name).upper(), name)
+    # ALIAS NORMALISATION -> brain_v2/canonical.py, the single shared resolver.
+    # This logic used to be re-implemented in every consumer; the same defect then
+    # appeared three times in one session. Import the lookup, never re-derive it.
+    from canonical import canonical as C
 
     # ---------------- BOTTOM-UP: ascent per object -------------------------
     # Evidence ladder, most authoritative first. `resolved_by` is recorded so a

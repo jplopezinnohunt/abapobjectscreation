@@ -188,6 +188,12 @@ def main():
     # materializing brain_state on an inconsistent vocabulary is what forced the
     # fuzzy token-matching this gate replaces.
     run(["python", "brain_v2/validate_ontology.py"], "Step 0: Validate canonical ontology (contract C-1)")
+    # THE GUARANTEE (s097): every durable thing a session produced must be declared,
+    # present, and traceable to the method that made it. Fails on a declared asset that
+    # vanished or a method pointing at a tool that does not exist; warns on Gold DB
+    # tables nobody declared. Discipline is not a mechanism — this is.
+    run(["python", "brain_v2/methods/verify_assets.py"],
+        "Step 0b: Asset gate — knowledge produced must be knowledge registered")
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")

@@ -53,7 +53,9 @@ DEVCLASS_RULES = [
     ("FI_AA",           r"^(AA$|AA[BFMPRTUW]|ANL|FAA[A-Z]?$|AABA|FBAA|AB01)"),
     # TRM before Treasury_EBS: FTA = Transaction Manager (FIN-FSCM-TRM-TM); FTE stays
     # with the bank-statement side. Conflating the two hid an entire capability.
-    ("TRM",             r"^(FTA|FTB|FTI|FTL|FTS|TRTM_|FTLM|FTZ|VTB)"),
+    # NOT FTB* as a whole: FTBB is the BANK STATEMENT package and belongs to
+    # Treasury_EBS. Deal management is FTA/FTI/FTL/FTS/FTZ/VTB.
+    ("TRM",             r"^(FTA|FTI|FTL|FTS|TRTM_|FTLM|FTZ|VTB)"),
     # PM: component PM-EQM-EQ, package IEQM (equipment) + maintenance orders/plans.
     ("PM",              r"^(IEQM|IPRM|IWO|IMRC|ILOM|IFLOT|IPMI|IWP|IBAP)"),
     # SD: component SD-SLS. Billing-only here, but the packages are standard.
@@ -145,7 +147,12 @@ APP_DOMAIN_MAP = {
     "HR": "HCM", "CMT/Vendor": "BusinessPartner", "CMT/Master Data": "BusinessPartner",
     "Procurement": "Procurement_P2P", "FI/Finance": "FI", "Banking/Validation": "Payment_BCM",
     "SISTER": "Integration", "UNESDIR": "Integration", "IDoc": "Integration", "RFC Utils": "Integration",
-    "Mouv/Asset Mgmt": "PM",  # s097 hypothesis: Mouv is the front-end, PM the SAP back-end (UNVERIFIED) "UBO Field Office": "Treasury_EBS", "Dashboards": "Output",
+    # s097: Mouv = asset/equipment mgmt -> PM (hypothesis: Mouv is the front-end, PM the
+    # SAP back-end; UNVERIFIED -- see knowledge/domains/PM/). NOTE: the comment MUST sit
+    # on its own line. An inline "#" here once swallowed the two entries that followed it
+    # on the same line ("UBO Field Office", "Dashboards"), silently dropping 70,766 execs
+    # from Treasury_EBS into Uncatalogued.
+    "Mouv/Asset Mgmt": "PM", "UBO Field Office": "Treasury_EBS", "Dashboards": "Output",
     "SLD/Monitoring": "Basis_Security", "Basis/Tools": "Basis_Security", "Data Extraction": "Integration",
 }
 JOBLABEL_MAP = {"FM": "PSM_FM", "Payment": "Payment_BCM", "FI": "FI", "Procurement": "Procurement_P2P",
