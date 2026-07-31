@@ -236,6 +236,92 @@ until then "maturity" is a claim, not a measurement.
 
 ---
 
+## Tool binding — every phase to its runnable capability
+
+Written after an audit, not from memory: the first draft of this skill named 9 of 80
+portable capabilities (11%). A skill that describes phases without naming the tools that
+execute them is a plan, not a machine. `brain_v2/methods/audit_skill_coverage.py` re-runs
+this check and reports ORPHANED tools, PHANTOM references and missing cadences.
+
+| phase | tools |
+|---|---|
+| **0 · landscape** | `Zagentexecution/sap_data_extraction/scripts/f0_probe.py` (negative contract, 8 probes) · `scripts/extraction/split_golden_by_system.py` (one DB per system) · `scripts/extraction/build_golden_manifest.py` (the data interface: table → system → freshness → provenance) · `Zagentexecution/mcp-backend-server-python/rfc_helpers.py` (the floor: ConnectionGuard, pagination, field-splitting) · `process_mining/gold_ref.py` (resolve the golden by manifest, never by path) |
+| **1 · footprint** | `brain_v2/system_profile/probes/probe_footprint.py` · `brain_v2/system_profile/build_profile_links.py` (crossing + invariant gate) |
+| **2 · taxonomy** | `brain_v2/system_profile/probes/extract_component_hierarchy.py` (TADIR→TDEVC→DF14L) · `process_mining/executed_objects_domain_map.py` (the classifier ladder) · `process_mining/adaptive_discovery.py` (learns the unresolved tail and re-classifies until it converges) · `process_mining/mine_domain.py` (per-domain footprint discovery) · `brain_v2/canonical.py` (alias resolution — one implementation, always) · `brain_v2/validate_ontology.py` (the vocabulary gate) |
+| **3 · extraction** | `process_mining/method_registry.py` (object → how to extract/analyse) · `scripts/extraction/gold_refresh.py` (registry-driven, by domain × type) · `Zagentexecution/sap_data_extraction/scripts/delta_refresh_2026.py` (high-water-mark delta) · **`Zagentexecution/sap_data_extraction/scripts/accumulate_logs.py`** (the time moat — see the cycle below) · `run_overnight_extraction.py` (bounded parallel extraction) · `extract_ddic_model.py` (the real data model from DD03L/DD08L) · `brain_v2/build_gold_table_registry.py` |
+| **4 · operation** | `process_mining/rfc_process_classifier.py` (the 2-axis engine) · `process_mining/parse_syslog.py` · `process_mining/fm_executed_census.py` · `process_mining/semantic_activity_map.py` |
+| **5 · boundary** | the integration map is built from `RFCDES`/`EDIDC`/`TBTCO`/`TBTCP`/`ICFSERVICE` extracts · `.agents/skills/sap_interface_intelligence` · `.agents/skills/sap_job_intelligence` |
+| **6 · capability** | `brain_v2/capability_model/maturity_score.py` · `brain_v2/capability_model/snapshot_model_state.py` (the time series IS the deliverable) · `brain_v2/gold_extractor_maturity.py` |
+| **7 · S/4 readiness** | `brain_v2/capability_model/s4_readiness_model.json` (the verified factor method) · `.agents/skills/sap_change_audit` |
+| **8 · transport** | `.agents/skills/sap_transport_intelligence` · CTS extracts (`cts_transports`, `cts_objects`) |
+| **9 · verification** | `brain_v2/system_profile/build_model_graph.py` (ascent · coherence · cross-cutting) · `brain_v2/verify_claims.py` · `brain_v2/claims_health.py` · `brain_v2/curate.py` |
+| **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) |
+| **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `p2p_conformance.py` (conformance vs the designed flow) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
+
+---
+
+## The cycle — why this is a model and not a report
+
+**Maturity does not come from running these once.** It comes from the loop: logs
+accumulate → the operating model sharpens → domains resolve → the profile updates →
+coherence re-checks → the gaps move. Each layer feeds the one above it, at its own tempo.
+
+| cadence | what runs | why that tempo | what it feeds |
+|---|---|---|---|
+| **DAILY — non-negotiable** | `accumulate_logs.py` | the system PURGES audit, job, dump and syslog history in 7–120 days. A day not captured is gone permanently; it cannot be back-filled at any price | the operating model, usage per domain, the time axis of everything |
+| **WEEKLY** | `gold_refresh.py`, `delta_refresh_2026.py` | master and transactional data drift continuously | every downstream analysis |
+| **EVERY REBUILD** | `rebuild_all.py` — ontology gate → asset gate → profile crossing → model graph → brain state → indexes | the gates only protect what they run against | the whole brain |
+| **MONTHLY** | `executed_objects_domain_map.py`, `adaptive_discovery.py` | new objects appear; the unresolved tail is the frontier, and it shrinks only if re-run | domains, subdomains, usage |
+| **QUARTERLY** | `probe_footprint.py`, `extract_component_hierarchy.py` | the FOOTPRINT DRIFTS — modules get activated, add-ons installed, org structure extended. Nothing currently detects that automatically | the profile, the ascent |
+| **PER CLOSE** | `meta_capability.py`, `verify_assets.py`, `audit_skill_coverage.py` | measure whether the machine improved, and catch knowledge that failed to land | the maturity score |
+
+**The feedback that matters most:** the log accumulator is the only activity whose value
+is *destroyed by delay*. Everything else can be caught up later; that one cannot. On a new
+client it is the first thing to start, before any analysis is even scoped.
+
+**The second feedback loop is the frontier.** `Uncatalogued` is not debt — it is what the
+engine deliberately exposes as unresolved. It shrinks when the classifier learns, and it
+grows when the system changes. Watching its *trend* is a better health signal than its
+absolute size.
+
+---
+
+## Phase 11 — Delivery: how the analysis reaches a human
+
+**Answers:** none of the above is worth anything if it stays queryable-only.
+
+The audit that produced the tool binding above surfaced this phase by its absence: the
+delivery machinery existed and the skill never mentioned it.
+
+Three layers, in strict order, and the order is the point:
+
+1. **Brain `.md`** — the source, and a node in the graph. Everything else derives from it.
+2. **Companion `.html`** — the living visual (`brain_v2/companion_builder.py`,
+   `scripts/build_companion_graph.py`, `scripts/build_landing_page.py`,
+   `scripts/validate_companions.py`). Generated, never hand-edited: edit the builder.
+3. **Document snapshot** — regenerated from the same source, never authored separately.
+
+Lead with the improvement opportunity, not the inventory. A section that states what a
+thing is without stating why it matters, who uses it and what breaks when it is wrong is
+not documentation.
+
+**Brain pipeline internals** — orchestrated by `rebuild_all.py`, not run by hand:
+`build_brain_state.py` (materialises the layers), `build_active_db.py`,
+`build_brain_index.py` (the lean bootstrap index), `add_knowledge_links.py`,
+`generate_index.py`, `weave_connective.py`, `cli.py`.
+
+**Operating gates** — `session_start_hook.py` (loads the index and the constraints at
+session start), `stop_durability_hook.py` (refuses to let work end only on local disk),
+`stop_steward_hook.py` (promotes conversational knowledge before close). These are what
+make the cycle survive the humans running it.
+
+**Process-mining leftovers worth naming:** `process_mining/tier0_1_pipeline.py`,
+`process_mining/accumulate_problems.py` (the problem accumulator),
+`Zagentexecution/sap_data_extraction/scripts/extraction_status.py` (what has been
+extracted and what is stale).
+
+---
+
 ## Anti-methods — each of these cost real errors in instance #1
 
 | | why it looks like evidence, and is not |

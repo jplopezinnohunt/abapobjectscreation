@@ -194,6 +194,11 @@ def main():
     # tables nobody declared. Discipline is not a mechanism — this is.
     run(["python", "brain_v2/methods/verify_assets.py"],
         "Step 0b: Asset gate — knowledge produced must be knowledge registered")
+    # Is the portable skill still the machine we actually have? Non-fatal: a newly added
+    # tool legitimately shows up as orphaned until someone places it in a phase.
+    run(["python", "brain_v2/methods/audit_skill_coverage.py"],
+        "Step 0c: Skill coverage audit — orphaned tools, phantom refs, missing cadences",
+        fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
