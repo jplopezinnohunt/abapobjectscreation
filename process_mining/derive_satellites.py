@@ -35,6 +35,12 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# The artifact is written BEFORE this prints. A console that cannot encode an arrow must
+# not turn a successful run into a failed one — which is exactly what happened in the
+# first full cycle: both algorithms computed correctly and died displaying the result.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "brain_v2"))
 from component_map import domain_of_function_module  # noqa: E402
