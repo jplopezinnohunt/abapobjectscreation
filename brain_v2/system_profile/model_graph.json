@@ -9,11 +9,11 @@
    "1_registry_curated": 128,
    "2_sap_application_component": 286,
    "3_derived_domain_axis": 488,
-   "8_non_repository_entity": 238,
+   "8_non_repository_entity": 249,
    "9_unresolved": 76
   },
-  "objects_total": 1216,
-  "non_repository": 238,
+  "objects_total": 1227,
+  "non_repository": 249,
   "resolvable_total": 978,
   "objects_resolved": 902,
   "pct_resolved": 92.2,
@@ -102,14 +102,14 @@
    },
    "Treasury_EBS": {
     "asserted_status": "PRODUCTIVE",
-    "objects_underneath": 140,
+    "objects_underneath": 138,
     "capability_cells_filled": 9,
     "has_registry_entry": true,
     "verdict": "OK"
    },
    "Payment_BCM": {
     "asserted_status": "PRODUCTIVE",
-    "objects_underneath": 82,
+    "objects_underneath": 84,
     "capability_cells_filled": 9,
     "has_registry_entry": true,
     "verdict": "OK"
@@ -357,33 +357,17 @@
    "Treasury_EBS"
   ],
   "nodes": {
-   "Payment_BCM": {
-    "parent": "Treasury_EBS",
-    "children": [],
-    "cross_cutting": false,
-    "spans_modules": null,
-    "registry_key": "Payment",
-    "module": "Payment_BCM",
-    "objects_resolved": 82,
-    "subtopics": [],
-    "knowledge_docs": [
-     "knowledge/domains/Payment/h18_dmee_tree_findings.md",
-     "knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv",
-     "knowledge/domains/Payment/h18_dmee_trees.csv",
-     "knowledge/domains/Payment/h18_dmee_tree_nodes.csv"
-    ]
-   },
    "Treasury_EBS": {
     "parent": null,
     "children": [
-     "Payment_BCM",
-     "TRM"
+     "TRM",
+     "Payment_BCM"
     ],
     "cross_cutting": false,
     "spans_modules": null,
     "registry_key": "Treasury",
     "module": "Treasury_EBS",
-    "objects_resolved": 140,
+    "objects_resolved": 138,
     "subtopics": {
      "house_bank_configuration": {
       "description": "13 config steps for house bank create/modify/close, 15 compliance checks, cross-system D01â†”P01 comparison, ECO09 benchmark patterns. Tables: T012 (house bank), T012K (account ID), SKA1/SKB1/SKAT (G/L), T030H (posting keys), T035D (posting string), T018V (reason codes), T042I (bank clearing), TIBAN (IBAN), SETLEAF (hierarchy).",
@@ -1387,14 +1371,87 @@
     "knowledge_docs": [
      "knowledge/domains/CO/co_controlling.md"
     ]
+   },
+   "Payment_BCM": {
+    "parent": "Treasury_EBS",
+    "children": [],
+    "cross_cutting": false,
+    "spans_modules": null,
+    "registry_key": "Payment_BCM",
+    "module": "Payment_BCM",
+    "objects_resolved": 84,
+    "subtopics": {
+     "dual_control_gap": {
+      "description": "3,359 same-user batches 2024-2026 (CRUSR=CHUSR), $656M exposure. Root cause: structural understaffing of HQ treasury (only 2 operators: C_LOPEZ 94.7%, I_MARQUAND 92.9%). Not fraud â€” automation debt.",
+      "status": "ACTIVE_MONITORING",
+      "key_users": [
+       "C_LOPEZ",
+       "I_MARQUAND",
+       "E_AMARAL",
+       "F_DERAKHSHAN"
+      ],
+      "top_risk_subset": "UNES_AP_EX (331 batches, $1.9M, sanctions-jurisdiction AE/JO/embargo)",
+      "batch_types": [
+       "UNES_AP_10",
+       "UBO_AP_MAX",
+       "UNES_AP_EX",
+       "UNES_AP_ST",
+       "PAYROLL",
+       "UNES_AP_IK",
+       "IIEP"
+      ],
+      "remediation_paths": [
+       "1=detective_nightly",
+       "2=UNES_AP_EX_carveout",
+       "3=HQ_3rd_operator",
+       "4=workflow_90000003_mod",
+       "5=automate_wed_AP_cycle"
+      ],
+      "docs": [
+       "knowledge/domains/BCM/h13_executive_summary.md",
+       "knowledge/domains/BCM/h13_remediation_hypothesis.md"
+      ],
+      "companion": "companions/bcm_dual_control_audit.html",
+      "script": "Zagentexecution/bcm_dual_control_monitor.py"
+     },
+     "signatory_rules": {
+      "description": "Workflow responsibility groups 90000004 BNK_COM / 90000005 BNK_INI stored as PD objects (HRP1000/HRP1001) OTYPE='RY', PLVAR='01'. Every BCM spec for a new office or rule must include both RY STEXT and the OTYPE='RY' PLVAR='01' keys.",
+      "pd_otype": "RY",
+      "plvar": "01",
+      "related_tables": [
+       "HRP1000",
+       "HRP1001",
+       "HRP1002"
+      ],
+      "derived_rule": "feedback_bcm_spec_must_include_rule_ry_stext",
+      "docs": [
+       "knowledge/domains/Treasury/bcm_signatory_rules.md"
+      ],
+      "related_incident": "INC-000006313"
+     },
+     "workflow_mod_path": {
+      "description": "Path 4 remediation â€” preventive workflow 90000003 modification to enforce CHUSR != CRUSR at SAP level. Blocked on YWFI package source extraction (H14).",
+      "status": "BLOCKED_ON_H14",
+      "package": "YWFI"
+     }
+    },
+    "knowledge_docs": [
+     "knowledge/domains/BCM/h13_executive_summary.md",
+     "knowledge/domains/BCM/h13_remediation_hypothesis.md",
+     "knowledge/domains/Payment/h18_dmee_d01_vs_p01_comparison.csv",
+     "knowledge/domains/Payment/h18_dmee_tree_findings.md",
+     "knowledge/domains/Payment/h18_dmee_tree_nodes.csv",
+     "knowledge/domains/Payment/h18_dmee_trees.csv",
+     "knowledge/domains/Treasury/bcm_signatory_rules.md"
+    ]
    }
   }
  },
  "objects_per_domain": {
   "FI": 193,
   "PSM_FM": 184,
-  "Treasury_EBS": 140,
-  "Payment_BCM": 82,
+  "Treasury_EBS": 138,
+  "Payment_BCM": 84,
   "Travel": 42,
   "Integration": 36,
   "_Basis": 31,
@@ -1503,15 +1560,15 @@
   },
   "BNK_BATCH_HEADER": {
    "application_component": null,
-   "domain": "Treasury_EBS",
-   "module": "Treasury_EBS",
+   "domain": "Payment_BCM",
+   "module": "Payment_BCM",
    "profile_status": "PRODUCTIVE",
    "resolved_by": "1_registry_curated"
   },
   "BNK_BATCH_ITEM": {
    "application_component": null,
-   "domain": "Treasury_EBS",
-   "module": "Treasury_EBS",
+   "domain": "Payment_BCM",
+   "module": "Payment_BCM",
    "profile_status": "PRODUCTIVE",
    "resolved_by": "1_registry_curated"
   },

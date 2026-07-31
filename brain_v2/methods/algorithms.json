@@ -299,11 +299,24 @@
    "first_run": "40 satellites from 7,783,106 calls; 12 GUID FLEETS RECOVERED. Independently rediscovered MuleSoft: a 21-endpoint fleet calling Y_BAPI_WBS_FINANCIAL_DATA_1 974,868 times -> PS -> PROJ2FUND, and a 17-endpoint fleet on Y_BAPI_YPS8 -> PS/PSM_FM -> B2C2A, P2P, POST2BUDGET, PROJ2FUND.",
    "failure_mode": "endpoint names TRUNCATE in the parse, so one fleet can split into two — the 17- and 21-endpoint fleets share a GUID prefix and may be the same satellite. Grouping by call signature mitigates this but does not fix the parse.",
    "improve": "fix the truncation, then merge fleets whose endpoint prefixes match"
+  },
+  "A7_concept_drift": {
+   "operates_on": "logs",
+   "origin": "MARKET_STANDARD",
+   "state": "WORKS",
+   "does": "monthly activity profile per domain as RATES PER DAY (executions, distinct objects, distinct users); a month is flagged when at least TWO signals depart from the trailing baseline by more than 50%. One signal moving is noise; two is a change of shape.",
+   "why_it_matters": "replaces the threshold heuristics in check_triggers with a question put to the log itself: did the process change, and when? A biennium organisation has an EXPECTED drift at the boundary; any other drift is the finding worth having.",
+   "bound_in": [
+    "process_mining/detect_drift.py"
+   ],
+   "failure_mode": "TWO defects found on its own first runs, both worth recording because both produce confident nonsense: (1) comparing monthly VOLUMES across unequal months produced 11 signals, almost all in the first FULL month — the window is 2026-02-21..2026-06-21, so February has 3 days and April 30. Fixed by normalising per day. (2) z-scores over a two-month baseline exploded to z=1016 because the standard deviation collapses. Fixed by using relative change, which is robust at n=2 and readable. An absurd number dressed as a statistic is worse than a plain one.",
+   "current_reading": "3 signals, ALL in 2026-06, all 'distinct objects up', across UNRELATED domains (CTS_Transport, HCM, Basis_Security). Same month + same signal + unrelated domains is the signature of a CAPTURE CHANGE, not process drift. Recorded as a SUSPICION, not a finding.",
+   "improve": "needs about a year of history before a z-score is meaningful and before an expected biennium boundary can be told apart from an anomaly. It strengthens purely by the accumulator continuing to run — which is the argument for protecting A2."
   }
  },
  "_portfolio": {
   "by_operand": {
-   "logs": 6,
+   "logs": 7,
    "process_events": 5,
    "repository": 4,
    "data": 3,
@@ -317,7 +330,7 @@
   },
   "by_state": {
    "STRONG": 11,
-   "WORKS": 9,
+   "WORKS": 10,
    "WEAK": 1,
    "FRAGILE": 1,
    "UNDER_EXERCISED": 1,

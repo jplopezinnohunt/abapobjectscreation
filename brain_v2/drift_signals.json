@@ -1,0 +1,96 @@
+{
+ "_generated_by": "process_mining/detect_drift.py",
+ "_algorithm": "concept drift over the accumulated history",
+ "_replaces": "the threshold heuristics in check_triggers.py — those are judgement, this asks the log itself",
+ "_method": "monthly activity profile per domain as RATES PER DAY (executions, distinct objects, distinct users); a month is flagged when at least TWO signals depart from the trailing baseline by more than the domain's own volatility. One signal moving is noise; two is a change of shape.",
+ "_corrected_in_first_run": "the first version compared monthly VOLUMES and produced 11 signals, almost all in the same month across unrelated domains — because the window is 2026-02-21 to 2026-06-21, so February has 3 days and April 30. April was the first full month, not a process change. Now normalised per day.",
+ "_statistic": "relative change against the trailing baseline, NOT a z-score. With two baseline months the standard deviation collapses and z explodes (the second run produced z=1016). An absurd number dressed as a statistic is worse than a plain one: it looks rigorous and cannot be interpreted. Z-scores become meaningful at roughly a year of history.",
+ "_failure_mode": "a four-month window gives at most two comparable periods per domain: this detects STEP CHANGES, not gradual drift, and cannot yet separate an expected biennium boundary from an anomaly. It strengthens purely by the accumulator continuing to run.",
+ "window": {
+  "domains_examined": 18,
+  "signals": 3
+ },
+ "signals": [
+  {
+   "domain": "CTS_Transport",
+   "month": "202606",
+   "departures": [
+    {
+     "signal": "distinct objects",
+     "baseline_mean_per_day": 0.5,
+     "observed_per_day": 25.2,
+     "relative_change_pct": 4865.5,
+     "direction": "up"
+    },
+    {
+     "signal": "distinct users",
+     "baseline_mean_per_day": 0.2,
+     "observed_per_day": 0.2,
+     "relative_change_pct": 54.6,
+     "direction": "up"
+    }
+   ],
+   "days_in_month": 20,
+   "baseline_months": [
+    "202603",
+    "202604",
+    "202605"
+   ],
+   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
+  },
+  {
+   "domain": "HCM",
+   "month": "202606",
+   "departures": [
+    {
+     "signal": "executions",
+     "baseline_mean_per_day": 973.8,
+     "observed_per_day": 1933.7,
+     "relative_change_pct": 98.6,
+     "direction": "up"
+    },
+    {
+     "signal": "distinct objects",
+     "baseline_mean_per_day": 9.3,
+     "observed_per_day": 32.5,
+     "relative_change_pct": 249.6,
+     "direction": "up"
+    }
+   ],
+   "days_in_month": 20,
+   "baseline_months": [
+    "202603",
+    "202604",
+    "202605"
+   ],
+   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
+  },
+  {
+   "domain": "Basis_Security",
+   "month": "202606",
+   "departures": [
+    {
+     "signal": "distinct objects",
+     "baseline_mean_per_day": 93.0,
+     "observed_per_day": 298.2,
+     "relative_change_pct": 220.8,
+     "direction": "up"
+    },
+    {
+     "signal": "distinct users",
+     "baseline_mean_per_day": 52.4,
+     "observed_per_day": 83.0,
+     "relative_change_pct": 58.5,
+     "direction": "up"
+    }
+   ],
+   "days_in_month": 20,
+   "baseline_months": [
+    "202603",
+    "202604",
+    "202605"
+   ],
+   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
+  }
+ ]
+}
