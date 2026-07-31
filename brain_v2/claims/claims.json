@@ -16087,5 +16087,86 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 367,
+  "claim": "PROCESS MINING LINEAGE, recovered and recorded (s097). We adopted the field's method and are extending it, not inventing a parallel vocabulary. ENGINE: pm4py — the reference implementation of process mining (van der Aalst lineage), the same substrate Celonis and Signavio productised. IMPLEMENTED: DFG (directly-follows graph) process maps + variant analysis + performance/bottleneck (sap_process_discovery.py, two event sources: bkpf transactions AND cdhdr change documents, because change docs carry the object lifecycle that transactions do not); declarative CONFORMANCE against a normative reference (p2p_conformance.py: 3-way match, GR strictly before IR, deviations quantified as $ exposure — 38% conform, 70 IR-before-GR violations, $713,341 affected); and OCEL 2.0 OBJECT-CENTRIC event logs (ocel_build_p2p.py — one event referencing MULTIPLE object types with no forced single-case notion; object types PurchaseOrder, Vendor, PurchasingGroup). OCEL 2.0 is genuinely state of the art, ahead of most commercial tooling.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Infrastructure",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "sap_process_discovery.py + ocel_build_p2p.py + process_mining/p2p_conformance.py headers and outputs",
+    "cite": "pm4py imported in both discovery and OCEL builders; p2p.ocel2.sqlite emitted; conformance figures from commit 9b4fb1a.",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "sap_process_discovery.py",
+   "ocel_build_p2p.py",
+   "process_mining/p2p_conformance.py",
+   "p2p_stdref_xray.py",
+   "pm4py"
+  ],
+  "resolution_notes": "Recorded because the user asked what we had implemented and neither of us could recall it. A capability nobody can name is a capability nobody will reuse.",
+  "domain_axes": {
+   "functional": [
+    "Infrastructure"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  }
+ },
+ {
+  "id": 368,
+  "claim": "THREE LAYERS, NOT ONE (s097). Keying domains on SAP modules (FI, CO, MM, SD) conflates a TECHNICAL taxonomy with a business one: nobody in an organisation does 'FI', they pay an invoice or commit a budget, and every such act crosses several modules. Worse, `_module_to_domain` was ONE-TO-ONE and cannot be — FI-BL-PT pays suppliers (P2P), staff (payroll), travellers and treasury deals; PSM-FM serves B2C2A, P2P commitment checking, POST2BUDGET and PROJ2FUND. The model now separates COMPONENT (SAP's taxonomy, deterministic, not ours to rename) / DOMAIN (who owns it) / FLOW (what the organisation does end to end), with MANY-TO-MANY edges between all three. DECISION: do NOT rename domains to component codes — that would make a business layer look technical. Add the flow layer instead. PROCESS MINING RUNS ON FLOWS, never on modules, which is exactly why every vendor ships content named P2P/O2C/R2R. PUBLIC-SECTOR FLOWS WITH NO MARKET CONTENT: B2C2A (budget→commitment→actual, the primary financial control, FMRESERV 6.4M change docs), POST2BUDGET (position budgeting, 68 users), PROJ2FUND (PS 1.6M execs), GRANT2REPORT (no capability at all).",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Brain_Architecture",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/process_flows/process_flows.json",
+    "cite": "_component_serves_many_flows enumerates 5 components each serving 2-4 flows; 8 flows modelled, 4 with zero market content.",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "brain_v2/process_flows/process_flows.json",
+   "brain_v2/system_profile/profile_concept.json",
+   "FI-BL-PT",
+   "PSM-FM",
+   "PA-PM-PB"
+  ],
+  "resolution_notes": "Also caught: a standard O2C reference model applied to this tenant would report 100% non-conformance because there are ZERO deliveries — a false finding produced by using market content without checking the shape first.",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture",
+    "PSM_FM",
+    "PBC",
+    "PS"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  }
  }
 ]

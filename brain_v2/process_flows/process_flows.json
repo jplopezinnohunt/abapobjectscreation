@@ -1,0 +1,174 @@
+{
+ "_concept": "PROCESS FLOWS — the layer the module axis cannot express",
+ "_one_line": "A component is what SAP built. A domain is who owns it. A FLOW is what the organisation actually does end to end — and it crosses both.",
+ "_version": "1.0",
+ "_created_session": 97,
+
+ "_why": {
+  "the_defect": ("The model keyed domains on SAP modules — FI, CO, MM, SD. That is a TECHNICAL "
+                 "taxonomy wearing a business name. No one in the organisation does 'FI'. They pay "
+                 "an invoice, commit a budget, or hire a person, and every one of those crosses "
+                 "several modules."),
+  "the_second_defect": ("`_module_to_domain` was ONE-TO-ONE. It cannot be. The same component "
+                        "serves several flows: FI-BL-PT (payment transactions) pays suppliers in "
+                        "P2P, pays staff in payroll, reimburses travellers, and settles treasury "
+                        "deals. Forcing it into one domain either loses three flows or invents a "
+                        "false owner."),
+  "why_the_market_does_it_this_way": ("Celonis and Signavio ship content named P2P, O2C, R2R — "
+                                      "PROCESS names, never module names. Their unit of analysis is "
+                                      "the flow because that is the unit a business recognises and "
+                                      "the unit a deviation is measured against."),
+  "consequence": ("Process mining must run on FLOWS. A DFG built per module produces a picture "
+                  "nobody can act on; a DFG built per flow produces a process map with a normative "
+                  "reference to conform against.")
+ },
+
+ "_layers": {
+  "1_COMPONENT": "SAP's own taxonomy (FI-BL-PT-BS-EL). Deterministic, resolved via TADIR→TDEVC→DF14L. We do not invent it and we do not rename it.",
+  "2_DOMAIN": "an area of business responsibility — who owns the data and the decisions. Several components, and a component may serve more than one.",
+  "3_FLOW": "an end-to-end chain the organisation performs. Crosses domains and components. THIS is the unit of process mining and of conformance.",
+  "_cardinality": "component ↔ domain is MANY-TO-MANY. domain ↔ flow is MANY-TO-MANY. Anything modelled as 1:1 between these layers is a modelling error, not a simplification."
+ },
+
+ "_market_reference": {
+  "_note": "Where this comes from. We adopted the field's method and are extending it — not inventing a parallel vocabulary.",
+  "engine": "pm4py — the reference implementation of the discipline (van der Aalst lineage), the same substrate Celonis and Signavio productised",
+  "adopted": ["DFG (directly-follows graph) process maps", "variant analysis (path frequency)",
+              "performance analysis (cycle time, bottleneck)",
+              "declarative conformance against a normative reference",
+              "OCEL 2.0 object-centric event logs — one event referencing MULTIPLE object types, no forced single-case notion"],
+  "our_extension": ("the market's normative content stops at commercial flows. The public-sector "
+                    "flows below have no vendor content at all, and they are where the customer's "
+                    "actual money and control live.")
+ },
+
+ "flows": {
+
+  "P2P": {
+   "name": "Procure to Pay",
+   "market_content": "yes — every vendor ships it",
+   "chain": ["requisition", "purchase order", "goods/service receipt", "invoice receipt", "payment"],
+   "normative_reference": "3-way match; goods receipt strictly BEFORE invoice receipt",
+   "components": ["MM-PUR", "MM-IM", "FI-AP", "FI-BL-PT", "PSM-FM"],
+   "domains": ["Procurement_P2P", "FI", "Payment_BCM", "PSM_FM"],
+   "public_sector_twist": "the commitment check against available budget (AVC) sits between requisition and PO — absent from every commercial reference model",
+   "implemented": ["process_mining/p2p_conformance.py", "Zagentexecution/sap_data_extraction/scripts/ocel_build_p2p.py", "p2p_stdref_xray.py"]
+  },
+
+  "B2C2A": {
+   "name": "Budget to Commitment to Actual",
+   "market_content": "NONE — this is the differentiator",
+   "chain": ["appropriation / budget entry", "budget distribution to fund centres",
+             "availability control check", "commitment (earmarked funds)", "actual posting",
+             "budget consumption reporting", "carry-forward"],
+   "normative_reference": "no commitment may exceed available budget; every actual must trace to a commitment or an explicit exception",
+   "components": ["PSM-FM-BCS-BU", "PSM-FM", "FI-GL", "CO-OM"],
+   "domains": ["PSM_FM", "FI", "CO"],
+   "why_it_matters": "this is the public-sector equivalent of R2R and it is the organisation's primary financial control. FMRESERV alone carries 6.4M change documents.",
+   "implemented": [],
+   "gap": "no event log, no DFG, no conformance model. The most important flow in the tenant is unmined."
+  },
+
+  "POST2BUDGET": {
+   "name": "Post to Budget (position budgeting)",
+   "market_content": "NONE",
+   "chain": ["establish position", "value the post", "commit against fund", "payroll run",
+             "actual staff cost posting", "variance against commitment"],
+   "normative_reference": "every established post carries a funded commitment before payroll executes",
+   "components": ["PA-PM-PB", "PA-OS", "PY", "PSM-FM"],
+   "domains": ["PBC", "HCM", "PSM_FM"],
+   "why_it_matters": "staff cost is the largest budget line in a UN agency. 68 users touch it directly — the widest dialog audience measured.",
+   "implemented": [],
+   "gap": "the engine runs daily and nothing mines it"
+  },
+
+  "PROJ2FUND": {
+   "name": "Project to Fund",
+   "market_content": "NONE",
+   "chain": ["project/WBS creation", "fund and fund-centre derivation", "budget assignment to WBS",
+             "commitment against project", "actual against project", "project financial reporting"],
+   "normative_reference": "every WBS consuming budget derives to exactly one fund; derivation is deterministic and auditable",
+   "components": ["PS-ST-OPR", "PSM-FM", "CO-OM"],
+   "domains": ["PS", "PSM_FM", "CO"],
+   "why_it_matters": "PS is the busiest business domain in the tenant (1.6M executions) and its whole point is consuming budget",
+   "implemented": [],
+   "gap": "PS has zero knowledge documents. The busiest flow is the least understood."
+  },
+
+  "GRANT2REPORT": {
+   "name": "Grant to Report",
+   "market_content": "NONE",
+   "chain": ["sponsor agreement", "grant master", "budget by sponsored program",
+             "eligibility check", "expenditure", "donor reporting", "closure"],
+   "normative_reference": "expenditure must satisfy sponsor eligibility rules before posting",
+   "components": ["PSM-GM"],
+   "domains": ["GM"],
+   "status": "NOT USED at UNESCO (GMGR = 0 rows, measured) — and almost certainly used by peer organisations",
+   "implemented": [],
+   "gap": "no capability at all. Cheap to ignore here; expensive to discover on the second client."
+  },
+
+  "H2R": {
+   "name": "Hire to Retire",
+   "market_content": "yes",
+   "chain": ["hire", "org assignment", "payroll", "time", "separation"],
+   "components": ["PA-PA", "PA-OS", "PY", "PA-PM-PB"],
+   "domains": ["HCM", "PBC", "HR_Workflows"],
+   "public_sector_twist": "the post must be funded before the hire — POST2BUDGET gates this flow",
+   "implemented": []
+  },
+
+  "O2C_BILLING": {
+   "name": "Order to Invoice (billing-only)",
+   "market_content": "yes, but the standard reference assumes delivery",
+   "chain": ["sales order", "billing document", "receivable", "receipt"],
+   "components": ["SD-SLS", "FI-AR", "FI-BL-PT"],
+   "domains": ["SD", "FI", "BusinessPartner"],
+   "deviation_from_reference": "ZERO deliveries measured — this tenant runs order→invoice with no logistics execution. A standard O2C reference model would report 100% non-conformance, which would be a false finding.",
+   "implemented": []
+  },
+
+  "DISBURSE": {
+   "name": "Approve to Disburse",
+   "market_content": "partial",
+   "chain": ["payment proposal", "release/approval", "payment run", "payment medium",
+             "bank acknowledgement", "statement reconciliation"],
+   "normative_reference": "dual control on release; every disbursement reconciles to a bank statement",
+   "components": ["FI-AP-AP-PT", "FI-BL-PT", "FIN-FSCM-BNK", "FI-BL-PT-BS-EL"],
+   "domains": ["Payment_BCM", "Treasury_EBS", "FI"],
+   "why_it_matters": "3.7M payment records; segregation of duties is the live control question",
+   "implemented": ["partial — BCM dual-control audit exists as a companion, not as a mined flow"]
+  }
+ },
+
+ "_component_serves_many_flows": {
+  "_note": "The evidence for the many-to-many claim. Each of these components appears in several flows above; a 1:1 module→domain map cannot express any of it.",
+  "FI-BL-PT": ["P2P", "DISBURSE", "H2R (payroll disbursement)", "O2C_BILLING (receipts)"],
+  "PSM-FM": ["B2C2A", "P2P (commitment check)", "POST2BUDGET", "PROJ2FUND"],
+  "PA-PM-PB": ["POST2BUDGET", "H2R"],
+  "CO-OM": ["B2C2A", "PROJ2FUND"],
+  "FI-GL": ["B2C2A", "P2P", "O2C_BILLING", "DISBURSE"]
+ },
+
+ "_naming_decision": {
+  "question": "Should the domains be renamed to match components?",
+  "answer": ("NO — and the question reveals the real fix. Domains should NOT be renamed to component "
+             "codes; that would deepen the confusion by making a business layer look technical. "
+             "Instead: KEEP the component layer as SAP names it (it is theirs and it is "
+             "deterministic), keep domains as ownership areas, and ADD this flow layer as the unit "
+             "of process analysis. Three layers with honest many-to-many edges, rather than one "
+             "layer pretending to be all three."),
+  "what_changes_in_practice": ["process mining runs per FLOW, never per module",
+                               "conformance is measured against a flow's normative reference",
+                               "a domain answers 'who owns this', a flow answers 'what happens'",
+                               "the capability model keeps its domain rows; flows get their own coverage"]
+ },
+
+ "_next": {
+  "1": "Build the B2C2A event log — the most important unmined flow in the tenant (FMRESERV 6.4M change docs + FMIOI commitments + FI actuals).",
+  "2": "Build POST2BUDGET from the PBC engine's execution and FMRESERV.",
+  "3": "PROJ2FUND from PROJ/PRPS + fund derivation + commitments.",
+  "4": "For each: a normative reference model, then declarative conformance — the same shape as p2p_conformance.py, which is the proven pattern.",
+  "_principle": "Do not build a generic 'public sector' miner. Build one flow end to end, prove the pattern, then repeat. P2P is the worked example that shows it works."
+ }
+}
