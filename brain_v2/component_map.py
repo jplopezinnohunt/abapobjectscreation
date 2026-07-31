@@ -153,12 +153,78 @@ def package_of_object(name, db_path=None):
     return _fm_package(db_path).get(name)
 
 
+# ---------------------------------------------------------------------------
+# CONFIDENCE. Every answer carries HOW it was reached.
+#
+# Until s097 the algorithm returned a bare string, so an answer SAP itself asserts and an
+# answer we curated by hand were indistinguishable to every consumer:
+#
+#     Y_BAPI_WBS_FINANCIAL_DATA_1 -> "PS"          (our curated overlay)
+#     BAPI_PR_GETDETAIL           -> "Procurement" (SAP's own taxonomy)
+#
+# Both look identical and they are not the same kind of fact. That matters for three
+# things this product has to do:
+#   * TRIAGE      — you cannot review what you cannot rank
+#   * AUDIT       — "how do you know?" is the first question asked of any finding
+#   * PORTABILITY — on installation #2, the LOW-CONFIDENCE answers are precisely where
+#                   our algorithms are overfitted to UNESCO. Confidence is the map of
+#                   what will break next.
+#
+# An algorithm that cannot say how sure it is cannot be improved deliberately: you have
+# no way to tell a lucky answer from a sound one.
+# ---------------------------------------------------------------------------
+CONFIDENCE = {
+    "sap_component": (0.95, "SAP's own taxonomy (TADIR->TDEVC->DF14L). Tenant-invariant."),
+    "sap_component_via_function_group": (0.90, "same chain, one hop through the function group"),
+    "curated_overlay": (0.60, "OUR curated APP_DOMAIN map. Tenant-SPECIFIC: this is what "
+                              "will not travel to installation #2 unmodified."),
+    "unresolved": (0.0, "no rung answered"),
+}
+
+
+def resolve_domain(name, db_path=None):
+    """Resolve any object to (domain, confidence, rung, evidence).
+
+    The full answer, not just the verdict. Prefer this over the bare helpers below when
+    the answer will be shown to a human, stored as a claim, or carried to another tenant.
+    """
+    dc = _fm_package(db_path).get(name)
+    if dc:
+        comp = _package_component(db_path).get(dc)
+        dom, pref = component_to_domain(comp)
+        if dom:
+            conf, why = CONFIDENCE["sap_component_via_function_group"]
+            return {"domain": dom, "confidence": conf, "rung": "sap_component_via_function_group",
+                    "evidence": f"function group package {dc} -> component {comp} (prefix {pref})",
+                    "note": why, "tenant_invariant": True}
+    comp = _package_component(db_path).get(name)
+    if comp:
+        dom, pref = component_to_domain(comp)
+        if dom:
+            conf, why = CONFIDENCE["sap_component"]
+            return {"domain": dom, "confidence": conf, "rung": "sap_component",
+                    "evidence": f"package {name} -> component {comp} (prefix {pref})",
+                    "note": why, "tenant_invariant": True}
+    dom = _custom_fm_domain(db_path).get(name)
+    if dom:
+        conf, why = CONFIDENCE["curated_overlay"]
+        return {"domain": dom, "confidence": conf, "rung": "curated_overlay",
+                "evidence": "tfdir_custom.APP_DOMAIN, curated by hand",
+                "note": why, "tenant_invariant": False}
+    conf, why = CONFIDENCE["unresolved"]
+    return {"domain": None, "confidence": conf, "rung": "unresolved",
+            "evidence": None, "note": why, "tenant_invariant": None}
+
+
 def domain_of_function_module(funcname, db_path=None):
     """FM -> domain. Standard taxonomy first, curated custom overlay second.
 
     The order matters: SAP's own answer wins where it exists, and the curated overlay
     covers exactly what SAP cannot answer — the customer's Z/Y namespace, which is where
     the differentiating processes live.
+
+    Returns a bare string for backward compatibility. Use resolve_domain() when the
+    provenance matters, which is whenever a human or another tenant will see the answer.
     """
     dc = _fm_package(db_path).get(funcname)
     d = domain_of_package(dc, db_path) if dc else None
