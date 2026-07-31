@@ -33,7 +33,7 @@ BRAIN = HERE.parent
 REPO = BRAIN.parent
 
 ALGOS = HERE / "algorithms.json"
-VALIDATOR = HERE / "validate_algorithms.py"
+VALIDATORS = [HERE / "validate_algorithms.py", HERE / "validate_artifacts.py"]
 EMAP = BRAIN / "executed_objects_domain_map.json"
 STATE = HERE / "algorithm_improvement_state.json"
 
@@ -52,14 +52,17 @@ def main():
     hist = _load(STATE, {})
     prev = hist.get("last", {})
 
-    # which algorithms are guarded by a golden case
+    # Which algorithms are guarded by a golden case. BOTH harnesses count: one guards the
+    # pure functions, the other the artifacts they produce. Reading only the first is why
+    # this reported 3 guarded when 17 were — and an improvement mechanism that misreads its
+    # own coverage sends you to fix the wrong thing.
     guarded = set()
-    if VALIDATOR.exists():
-        text = VALIDATOR.read_text(encoding="utf-8", errors="replace")
-        for aid in algos:
-            token = aid.split("_")[0]                      # A4, C1, E4 ...
-            if re.search(r"\b" + re.escape(token) + r"\b", text):
-                guarded.add(aid)
+    text = "".join(v.read_text(encoding="utf-8", errors="replace")
+                   for v in VALIDATORS if v.exists())
+    for aid in algos:
+        token = aid.split("_")[0]                          # A4, C1, E4 ...
+        if re.search(r"\b" + re.escape(token) + r"\b", text):
+            guarded.add(aid)
 
     # frontier trend — the only signal that catches an algorithm that stopped learning
     emap = _load(EMAP)

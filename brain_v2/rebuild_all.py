@@ -196,6 +196,11 @@ def main():
     # algorithm that silently changes its answer is the most expensive defect we have.
     run(["python", "brain_v2/methods/validate_algorithms.py"],
         "Step 0a: Algorithm golden cases — no silent regressions")
+    # The artifacts the algorithms PRODUCE. Non-fatal on purpose: a floor can trip because
+    # the tenant legitimately changed, and blocking a rebuild on that would get the harness
+    # deleted. It must be LOUD, not obstructive — the function-level gate above is the fatal one.
+    run(["python", "brain_v2/methods/validate_artifacts.py"],
+        "Step 0a2: Artifact golden cases — did any algorithm stop working?", fatal=False)
     run(["python", "brain_v2/methods/verify_assets.py"],
         "Step 0b: Asset gate — knowledge produced must be knowledge registered")
     # Is the portable skill still the machine we actually have? Non-fatal: a newly added

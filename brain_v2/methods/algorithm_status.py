@@ -29,7 +29,7 @@ HERE = Path(__file__).parent
 BRAIN = HERE.parent
 REPO = BRAIN.parent
 ALGOS = HERE / "algorithms.json"
-VALIDATOR = HERE / "validate_algorithms.py"
+VALIDATORS = [HERE / "validate_algorithms.py", HERE / "validate_artifacts.py"]
 OUT = HERE / "algorithm_status.json"
 
 # Artifact each algorithm writes, when it writes one. Declared here rather than guessed:
@@ -52,8 +52,9 @@ ARTIFACT = {
 
 def main():
     algos = json.load(open(ALGOS, encoding="utf-8")).get("algorithms", {})
-    guard_text = VALIDATOR.read_text(encoding="utf-8", errors="replace") \
-        if VALIDATOR.exists() else ""
+    # both harnesses count: one guards pure functions, the other guards the artifacts
+    guard_text = "".join(v.read_text(encoding="utf-8", errors="replace")
+                         for v in VALIDATORS if v.exists())
 
     rows, counts = {}, {"RUNNING": 0, "ON_DEMAND": 0, "PROPOSED": 0}
     for aid, a in sorted(algos.items()):
@@ -62,7 +63,8 @@ def main():
         bound = bool(tools) and all((REPO / t.split(" (")[0]).exists() for t in tools)
         art = ARTIFACT.get(key)
         persisted = bool(art) and (REPO / art).exists()
-        gated = f" {key} " in guard_text or f"# {key} " in guard_text
+        gated = (f'"{key}"' in guard_text or f"case(\"{key}\"" in guard_text
+                 or f" {key} " in guard_text or f"# {key} " in guard_text)
 
         status = "RUNNING" if (bound and persisted) else ("ON_DEMAND" if bound else "PROPOSED")
         counts[status] += 1
