@@ -195,6 +195,24 @@ def main():
     else:
         case("C3", "code graph exists", False, "brain_v2_graph.json missing")
 
+    # ---- C4 · object roles ----------------------------------------------
+    roles = load("brain_v2/object_roles.json")
+    if roles:
+        cov = roles.get("coverage", {})
+        case("C4", "objects carry a role", (cov.get("objects_with_a_role") or 0) >= 100,
+             f"{cov.get('objects_with_a_role')} objects with a role — derivation is failing")
+        byr = cov.get("by_role", {})
+        # INVARIANT: a model where everything is one role has learnt nothing. Real systems
+        # have readers AND writers, and collapsing to a single role means the signals
+        # stopped discriminating.
+        case("C4", "roles discriminate", len(byr) >= 4,
+             f"only {len(byr)} distinct role(s) — the signals stopped discriminating")
+        # INVARIANT: every role carries its evidence. A role asserted without evidence is
+        # worse than no role, because it cannot be disagreed with.
+        noev = [k for k, v in (roles.get("objects") or {}).items() if not v.get("evidence")]
+        case("C4", "every role carries its evidence", not noev,
+             f"{len(noev)} role(s) asserted with no evidence")
+
     # ---- E1 · crossing ---------------------------------------------------
     links = load("brain_v2/system_profile/profile_links.json")
     if links:

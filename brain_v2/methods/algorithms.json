@@ -177,14 +177,16 @@
   "C3_static_edge_extraction": {
    "operates_on": "repository",
    "origin": "MARKET_STANDARD",
-   "state": "WEAK",
-   "does": "parse source for reads_tables / calls_fms / writes_tables",
+   "state": "WORKS",
+   "does": "parse ABAP source for reads_tables / writes_tables / calls_fms and merge the edges into the graph",
    "bound_in": [
+    "brain_v2/parse_abap_edges.py",
     "brain_v2 graph build"
    ],
    "why_weak": "only 98 of 1,212 objects carry code edges. Most of the graph is connected by crossings, not by parsed structure.",
-   "failure_mode": "an impact analysis on a thin edge set returns 'nothing depends on this' — the most dangerous possible false negative",
-   "improve": "the thinnest layer in the model and the one that would most improve impact analysis; requires source at scale"
+   "failure_mode": "a WRONG edge is worse than a missing one — it sends someone to change the wrong thing. The parser is deliberately conservative: unambiguous SELECT/INSERT/CALL FUNCTION forms only, full-line comments stripped so a commented-out SELECT never becomes a dependency, dynamic forms skipped.",
+   "improve": "the 134 code objects with NO source need ADT extraction — that is the real remaining gap",
+   "denominator_correction_s097": "\"98 of 1,212 objects have edges\" measured the WRONG POPULATION — tables, GL accounts, variants and synthesised concepts cannot have code edges. Against CODE objects it was 86/245 (ABAP_REPORT 64%, ABAP_CLASS 78%). The remaining 159 split into a PARSER gap (25 with source on disk, closed in s097 — 8 yielded edges) and an EXTRACTION gap (134 with no source, needs ADT). Two different problems wearing one number. SECOND TIME this exact mistake appeared this session: the ascent had it too."
   },
   "D1_D3_delta_strategies": {
    "operates_on": "data",
@@ -314,13 +316,26 @@
    "failure_mode": "TWO defects found on its own first runs, both worth recording because both produce confident nonsense: (1) comparing monthly VOLUMES across unequal months produced 11 signals, almost all in the first FULL month — the window is 2026-02-21..2026-06-21, so February has 3 days and April 30. Fixed by normalising per day. (2) z-scores over a two-month baseline exploded to z=1016 because the standard deviation collapses. Fixed by using relative change, which is robust at n=2 and readable. An absurd number dressed as a statistic is worse than a plain one.",
    "current_reading": "3 signals, ALL in 2026-06, all 'distinct objects up', across UNRELATED domains (CTS_Transport, HCM, Basis_Security). Same month + same signal + unrelated domains is the signature of a CAPTURE CHANGE, not process drift. Recorded as a SUSPICION, not a finding.",
    "improve": "needs about a year of history before a z-score is meaningful and before an expected biennium boundary can be told apart from an anomaly. It strengthens purely by the accumulator continuing to run — which is the argument for protecting A2."
+  },
+  "C4_object_role_derivation": {
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "derive what each object is FOR — posting engine, report, interface, worklist, master-data maintenance, checker, batch engine, technical — from signals we already hold: edges, execution channel, audience size, volume and text",
+   "why_it_matters": "the model could say where an object BELONGS and not what it DOES. 'PBC has 33 objects' is not knowledge; '2 posting engines, 14 reports, one operator on the worklist' is. A domain with readers and no writer is CONSUMED, not operated — and no list of names can say that.",
+   "bound_in": [
+    "process_mining/derive_object_roles.py"
+   ],
+   "first_run": "178 objects: 55 REPORT, 46 POSTING_ENGINE, 27 MASTER_DATA_MAINTENANCE, 23 INTERFACE, 12 WORKLIST, 9 CHECKER, 4 TECHNICAL, 2 BATCH_ENGINE. INDEPENDENT CONFIRMATION of the operating model: PS, Travel, BusinessPartner, Procurement_P2P and Treasury_EBS all flagged DRIVEN FROM OUTSIDE — derived from object ROLES, not from the audit log's origin axis. Two independent methods agreeing is real validation.",
+   "failure_mode": "a role is a HYPOTHESIS. A report that writes a log table looks like a writer; a getter that posts looks like a reader. The confidence and the evidence are returned so a reader can disagree — a role asserted without its evidence would be worse than none.",
+   "improve": "feed it the flows: an object's role WITHIN a flow (approver, poster, reconciler) is sharper than its role in general"
   }
  },
  "_portfolio": {
   "by_operand": {
    "logs": 7,
    "process_events": 5,
-   "repository": 4,
+   "repository": 5,
    "data": 3,
    "model": 4,
    "interfaces": 2
@@ -332,10 +347,10 @@
   },
   "by_state": {
    "STRONG": 11,
-   "WORKS": 10,
-   "WEAK": 1,
+   "WORKS": 12,
+   "WEAK": 0,
    "FRAGILE": 1,
-   "UNDER_EXERCISED": 1,
+   "UNDER_EXERCISED": 0,
    "MISSING": 0
   },
   "_reading": "Twelve algorithms have no market equivalent — that is the defensible surface. Eight are adopted standards, correctly, because reinventing DFG discovery would be vanity. The single MISSING one covers the integration boundary, and the single FRAGILE one is the log accumulator, which is simultaneously the most valuable algorithm here and the least protected."
