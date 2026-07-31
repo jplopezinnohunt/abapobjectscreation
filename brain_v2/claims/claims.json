@@ -17207,5 +17207,101 @@
     "cross-cutting"
    ]
   }
+ },
+ {
+  "id": 395,
+  "claim": "THE TWO BLIND CHANNELS ARE NOW EXTRACTED — 66,739 rows into the P01 golden, and both contradict something (s097, connected live to P01, read-only). BATCH INPUT (APQI, 57,998 sessions, 2005-2026): 55,087 of them (95%) are created by SAPMSSY1 — the RFC DISPATCHER. Batch-input sessions here are GENERATED OVER RFC, not recorded by a person at a screen, and the top creator is BRIDGE-RFC, the external portal, with 2,339. That folds the batch-input channel back into the interface channel rather than the dialog one. Real business programs behind the rest: RFBIKR00 vendor master (1,933), RFBIBL01 FI documents (146), SAPF100 valuation (143), RFEBBU00 bank statement posting (57), and custom ZHR_RETIRE_COPY_SPI (222). 7,202 sessions sit in ERROR state (12%) and 413 more in F — a failure rate nobody is watching. WEB SERVICES: 2,250 definitions exist, 2,242 authored by SAP, and **ZERO are custom (Z/Y)**. There are no custom INBOUND web-service definitions in P01. That CONTRADICTS the integration map, which declares four WEBSERVICE integrations (BOC_INVOICE_WF, CSI_AWS_EC2, CSI_AWS_S3, UNJSPF_INTERFACE1) — whatever those are, they are not ABAP inbound service definitions. Outbound CONSUMPTION would live in consumer proxies, not WSHEADER, so this refutes one reading and leaves the other open. THE HTTP SURFACE: 5,824 of 6,482 ICF services are ACTIVE; the applications expose /SAP/BC/SRT, /SAP/BC/GUI, /SAP/XI and /SAP/BC/BSP/SAP. AND THE RUNTIME LOG IS EMPTY: SRT_MONILOG_DATA has 0 rows — the SOAP monitor is switched off. So we can prove what EXISTS and what is ACTIVE, and we cannot prove what RAN. That is the precise limit, and stating it is the point: 'we cannot see the calls' is a different fact from 'there are no calls'. METHOD NOTE — THE ZERO ROWS WERE MINE. The first run returned 0 rows for three tables and that looked exactly like 'the table is empty', the most expensive wrong conclusion available because it becomes a gap nobody revisits. The cause was INVENTED FIELD NAMES (QID, CREDATE, SERVICE_NAME). RFC_READ_TABLE with FIELDS=[] returns the real list. Ask the system, never assume. Also confirmed: P01 rejects ROWSKIPS here too (OPTION_NOT_VALID), as already recorded for the FM tables.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Integration",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "P01 live RFC read -> p01_gold_master_data.db",
+    "cite": "APQI 57,998 (SAPMSSY1 55,087 = 95%; BRIDGE-RFC 2,339; QSTATE E 7,202); WSHEADER 2,250 with 0 matching Z%/Y%; ICFSERVLOC 5,824 active of 6,482; ICFAPPLICATION 9; SRT_MONILOG_DATA 0 rows",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "superseded",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "APQI",
+   "WSHEADER",
+   "ICFSERVLOC",
+   "ICFAPPLICATION",
+   "SRT_MONILOG_DATA",
+   "RFBIKR00",
+   "RFBIBL01",
+   "RFEBBU00",
+   "SAPF100",
+   "ZHR_RETIRE_COPY_SPI",
+   "BRIDGE-RFC",
+   "SAPMSSY1",
+   "Zagentexecution/sap_data_extraction/scripts/extract_write_channel_logs.py"
+  ],
+  "resolution_notes": "USER POINTS: 'Batch Inputs y Webservices son fuentes a considerar tambien como cambios, no podemos ignorarlas' and 'todo esto debe ir a goldenDB P01 y ser extraible periodicamente'. Both done: the four tables are in the golden and registered under Integration/log with a refresh cadence (APQI monthly because sessions are purged; the HTTP surface quarterly). Partially closes AN-WEBSERVICE-VERIFY: what EXISTS is now verified, what RAN cannot be, because the SOAP monitor is off. || SUPERSEDED s097 by #396: the web-service half of this claim was WRONG. It tested a NAMING CONVENTION (WSNAME LIKE 'Z%' OR 'Y%') instead of searching for the DECLARED NAMES, and concluded 'zero custom web services'. The user challenged it and was right. The batch-input half stands.",
+  "domain_axes": {
+   "functional": [
+    "Integration"
+   ],
+   "module": [
+    "BASIS"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  },
+  "superseded_by": 396
+ },
+ {
+  "id": 396,
+  "claim": "WEB SERVICES IN P01 — CORRECTED (supersedes the web-service half of #395). The earlier conclusion 'ZERO custom web services' was produced by testing a NAMING CONVENTION (WSNAME LIKE 'Z%' OR 'Y%') rather than searching for the names actually declared. Corrected by direct lookup: (1) INBOUND WEB SERVICES EXIST AND ARE BUSINESS-CRITICAL. Eight are authored by named people rather than by SAP — SCHIRA (4), SIEBERP (2), WINGERTA (1), POPPA (1) — and they are the SUCCESSFACTORS REPLICATION set: EMPLOYEEMASTERDATABUNDLEREPLIC, EMPLOYEEORGASSIGNMREPLREQUEST, EMPLOYEETIMEECTOERPREQUEST_IN, JOBREPLICATIONREQUEST, ORGANISATIONALOBJECTREPLICATIO, ORGOBJREPLNOTIFICATION, ORGSTRUCTUREREPLREQUEST, POSITIONREPLICATIONREQUEST_IN. They carry no Z/Y prefix because they are SAP-delivered service definitions that were ACTIVATED here — which is exactly why a prefix filter erased the live SF-to-ECC channel from the map. (2) THE CUSTOM HTTP SURFACE IS LARGE: 304 ICF services named Z*/Y* (the Y4H* family), against 5,824 active ICF services in total. (3) THE FOUR DECLARED WEBSERVICE FLOWS (BOC_INVOICE_WF, CSI_AWS_EC2, CSI_AWS_S3, UNJSPF_INTERFACE1) ARE NOT PRESENT under those names in WSHEADER, ICFSERVLOC or ICFSERVICE. That is a genuine CONTRADICTED against the integration map, and it has two readings left open: they are OUTBOUND consumer proxies (a different table set — consumer configuration, not service definitions), or the map records logical flow names that do not correspond to ABAP objects. Not resolved; not asserted either way. (4) WHAT RAN STILL CANNOT BE PROVEN: SRT_MONILOG_DATA has 0 rows, the SOAP monitor is off. Existence and activation are verified; execution is not.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Integration",
+  "created_session": 97,
+  "supersedes": 395,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "p01_gold_master_data.db wsheader / icfservice / icfservloc",
+    "cite": "wsheader AUTHOR<>'SAP' = 8 rows, all SuccessFactors replication services; icfservice Z%/Y% = 304; direct lookup of the 4 declared names returns nothing in wsheader, icfservloc or icfservice; SRT_MONILOG_DATA 0 rows",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "WSHEADER",
+   "ICFSERVICE",
+   "ICFSERVLOC",
+   "EMPLOYEEMASTERDATABUNDLEREPLIC",
+   "POSITIONREPLICATIONREQUEST_IN",
+   "ORGSTRUCTUREREPLREQUEST",
+   "BOC_INVOICE_WF",
+   "CSI_AWS_EC2",
+   "CSI_AWS_S3",
+   "UNJSPF_INTERFACE1",
+   "SuccessFactors"
+  ],
+  "resolution_notes": "USER CHALLENGE: 'esto me parece que esta mal.' Correct. The method was the defect, not the data: I tested a naming convention instead of searching for the declared names, and the declared names do not start with Z or Y. The same filter also erased the live SuccessFactors channel, because SAP-delivered services that are ACTIVATED carry no custom prefix. RULE: search for the entity you were told about; do not infer its existence from a naming pattern (this repeats feedback_key_validation — never infer SAP key or object identity from naming patterns; verify against actual data).",
+  "domain_axes": {
+   "functional": [
+    "Integration",
+    "HCM"
+   ],
+   "module": [
+    "BASIS",
+    "PA"
+   ],
+   "process": [
+    "cross-cutting"
+   ]
+  }
  }
 ]
