@@ -33,6 +33,55 @@ def _read(p):
     except Exception: return ""
 
 
+def _model_fidelity():
+    """MODEL_FIDELITY (s097) — does the model actually describe the system?
+
+    Stage 5 of the method lifecycle: an activity is only part of the product once its
+    output MOVES A NUMBER. Until this block existed, the profile, the bidirectional
+    ascent and the coherence check were invisible to the maturity score — the model
+    could not see itself improving, which makes "maturity" a claim rather than a
+    measurement.
+    """
+    import json as _j
+    from pathlib import Path as _P
+    _h = _P(__file__).parent
+    def _l(rel):
+        f = _h / rel
+        return _j.load(open(f, encoding="utf-8")) if f.exists() else {}
+    links = _l("system_profile/profile_links.json")
+    graph = _l("system_profile/model_graph.json")
+    meth = _l("methods/model_maturity_methods.json")
+    prof = _l("system_profile/unesco_system_profile.json")
+
+    cov = links.get("coverage", {}) or {}
+    prod = cov.get("productive", 0) or 0
+    cap_row = cov.get("productive_with_capability_row", 0) or 0
+    doc = cov.get("productive_with_knowledge_doc", 0) or 0
+    blind = len((links.get("system_level_blind_spots", {}) or {}).get("modules", []) or [])
+    asc = (graph.get("resolution", {}) or {}).get("pct_resolved", 0) or 0
+    unsup = len((graph.get("coherence", {}) or {}).get("unsupported_modules", []) or [])
+    ms = (meth.get("methods", {}) or {})
+    wired = sum(1 for m in ms.values()
+                if str(m.get("stage", "")).split("_")[0].isdigit()
+                and int(str(m.get("stage", "0")).split("_")[0]) >= 3)
+    return [
+        ("profile_exists",        1.0 if prof.get("modules") else 0.0, "M",
+         "the tenant PROFILE exists as a first-class artifact (L16)"),
+        ("no_system_blind_spots", 1.0 if blind == 0 else 0.0, "M",
+         f"{blind} productive module(s) with no capability row"),
+        ("productive_modelled",   round(cap_row / max(prod, 1), 2), "M",
+         f"{cap_row}/{prod} productive modules carry a capability row"),
+        ("productive_documented", round(doc / max(prod, 1), 2), "M",
+         f"{doc}/{prod} productive modules carry a domain doc"),
+        ("bottom_up_ascent",      round(asc / 100.0, 3), "M",
+         f"{asc}% of graph objects resolve upward to the installation"),
+        ("macro_detail_coherent", 1.0 if unsup == 0 else 0.0, "M",
+         f"{unsup} module(s) asserted PRODUCTIVE with no evidence beneath"),
+        ("methods_are_product",   round(wired / max(len(ms), 1), 2), "M",
+         f"{wired}/{len(ms)} maturity methods at stage>=3 (wired, not just discovered)"),
+    ]
+
+
 def measure():
     health = _load(os.path.join(HERE, "claims_health.json"), {}) or {}
     reg = _load(os.path.join(HERE, "method_registry.json"), {}) or {}
@@ -79,6 +128,7 @@ def measure():
             ("promoted_at_close",        1.0, "M", "brain-steward runs at close (this session: 6 passes)"),
             ("drift_clean",              0.80, "E", "curate drift-to-review backlog (3 pre-existing)"),
         ],
+        "MODEL_FIDELITY": _model_fidelity(),
         "ESCALATE": [
             ("rule_active",              1.0 if "escalate_findings_as_tasks" in rules else 0.0, "M", "feedback rule #162 present"),
             ("pmo_tracks_findings",      1.0 if re.search(r"H8[0-2]|H7\d", pmo) else 0.5, "M", "PMO carries the H-item backlog"),
