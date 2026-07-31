@@ -60,7 +60,12 @@ def main():
     for aid, a in sorted(algos.items()):
         key = aid.split("_")[0]
         tools = a.get("bound_in") or []
-        bound = bool(tools) and all((REPO / t.split(" (")[0]).exists() for t in tools)
+        # bound_in must hold PATHS. A prose entry like "the graph build" made every()
+        # false and reported a BUILT algorithm as PROPOSED — the catalogue lying about
+        # itself, which is the exact failure this file exists to prevent.
+        paths = [t for t in tools if t.split(" (")[0].endswith(".py")]
+        prose = [t for t in tools if t not in paths]
+        bound = bool(paths) and all((REPO / t.split(" (")[0]).exists() for t in paths)
         art = ARTIFACT.get(key)
         persisted = bool(art) and (REPO / art).exists()
         gated = (f'"{key}"' in guard_text or f"case(\"{key}\"" in guard_text
@@ -70,7 +75,9 @@ def main():
         counts[status] += 1
         rows[aid] = {"status": status, "state": a.get("state"),
                      "operates_on": a.get("operates_on"), "origin": a.get("origin"),
-                     "bound_in": tools, "artifact": art if persisted else None,
+                     "bound_in": tools,
+                     "_prose_in_bound_in": prose or None,
+                     "artifact": art if persisted else None,
                      "gated_by_golden_case": gated}
 
     proposed = [k for k, v in rows.items() if v["status"] == "PROPOSED"]
