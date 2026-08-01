@@ -1,0 +1,29 @@
+*&---------------------------------------------------------------------*
+*& Report YFI_ACCOUNT_SUBSTITUTION
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT YFI_ACCOUNT_SUBSTITUTION.
+
+DATA GO_SUBST_BL TYPE REF TO YCL_FI_ACCOUNT_SUBST_BL.
+DATA GS_SKB1 TYPE SKB1.
+
+INCLUDE YFI_ACCOUNT_SUBSTITUTION_SEL.
+INCLUDE YFI_ACCOUNT_SUBSTITUTION_CLAS.
+DATA GO_EVENTS TYPE REF TO LCL_HANDLE_EVENTS.
+
+
+
+
+START-OF-SELECTION.
+
+  SET PARAMETER ID 'BUK' FIELD P_BUKRS.
+
+  GO_SUBST_BL = NEW YCL_FI_ACCOUNT_SUBST_BL( IV_BUKRS = P_BUKRS
+                                             IV_MODE = P_MODE ).
+  GO_SUBST_BL->INIT_ALV( SY-REPID ).
+  CREATE OBJECT GO_EVENTS.
+  SET HANDLER GO_EVENTS->ON_USER_COMMAND FOR GO_SUBST_BL->GET_EVENT( ).
+  SET HANDLER GO_EVENTS->ON_SINGLE_CLICK FOR GO_SUBST_BL->GET_EVENT( ).
+
+  GO_SUBST_BL->DISPLAY_ALV( ).

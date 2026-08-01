@@ -1,0 +1,40 @@
+*&---------------------------------------------------------------------*
+*& Report YFI_COUPA_PROTOCOL_DISPLAY
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT YFI_COUPA_PROTOCOL_DISPLAY.
+
+DATA GO_COUPA_DISPLAY TYPE REF TO YCL_FI_COUPA_ACCOUNTING_DIS.
+DATA GV_DATUM TYPE DATUM.
+DATA GV_STATUS TYPE YE_FI_COUPA_STATUS.
+DATA GT_STATUS TYPE RANGE OF YE_BC_GENERIC_STATUS.
+
+SELECTION-SCREEN BEGIN OF BLOCK B01 WITH FRAME TITLE TEXT-B01.
+SELECT-OPTIONS S_DATE FOR GV_DATUM OBLIGATORY.
+SELECT-OPTIONS S_STATUS FOR GV_STATUS NO INTERVALS.
+SELECTION-SCREEN END OF BLOCK B01.
+
+INITIALIZATION.
+  S_DATE-SIGN = 'I'.
+  S_DATE-OPTION = 'BT'.
+  S_DATE-LOW = SY-DATUM - 90.
+  S_DATE-LOW+6(2) = '01'.
+  S_DATE-HIGH = SY-DATUM.
+  APPEND S_DATE.
+*  s_status-sign = 'I'.
+*  s_status-option = 'NE'.
+*  s_status-low = '0'.
+*  APPEND s_status.
+
+START-OF-SELECTION.
+
+  GO_COUPA_DISPLAY = NEW YCL_FI_COUPA_ACCOUNTING_DIS( ).
+  GT_STATUS = GO_COUPA_DISPLAY->FILL_GENERIC_STATUS_RANGE( S_STATUS[] ).
+  GO_COUPA_DISPLAY->GET_DATA( IV_APPL = 'COUPA_POST'
+                              IV_BEGDA = S_DATE-LOW
+                              IV_ENDDA = S_DATE-HIGH
+                              IT_STATUS = GT_STATUS
+                              IV_STATUS_VIA_JOB = ABAP_TRUE ).
+  GO_COUPA_DISPLAY->COMPLETE_DATA( ).
+  GO_COUPA_DISPLAY->DISPLAY_ALV( SY-REPID ).

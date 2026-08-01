@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Report YFI_ACCOUNT_SUBSTITUTION_LIST
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT YFI_ACCOUNT_SUBSTITUTION_LIST.
+
+TYPES:
+  BEGIN OF TY_ACCT,
+    BUKRS TYPE BUKRS,
+    BLART TYPE BLART,
+    GSBER TYPE GSBER,
+    HKONT TYPE HKONT,
+    TXT50 TYPE TXT50_SKAT,
+  END OF TY_ACCT .
+
+DATA LT_ACCT TYPE TABLE OF TY_ACCT.
+DATA LT_HKONT TYPE RANGE OF HKONT.
+DATA LO_ALV_POPUP TYPE REF TO YCL_CA_ALV_IN_POPUP.
+
+PARAMETERS P_BUKRS TYPE BUKRS OBLIGATORY.
+PARAMETERS P_BLART TYPE BLART.
+PARAMETERS P_GSBER TYPE GSBER OBLIGATORY.
+
+
+START-OF-SELECTION.
+
+  "get accounts from substitution table
+  SELECT SIGN, OPTI AS OPTION, LOW, HIGH
+   FROM YTFI_BA_SUBST
+   WHERE BUKRS = @P_BUKRS
+   AND   BLART = @P_BLART
+   AND   GSBER = @P_GSBER
+   AND   SIGN <> @SPACE
+   INTO  TABLE @LT_HKONT.
+
+  CHECK LT_HKONT IS NOT INITIAL.
+
+  "Prepare list
+  SELECT A~BUKRS, @P_BLART, @P_GSBER, A~SAKNR, T~TXT50
+    FROM SKB1 AS A
+    INNER JOIN T001 AS B ON B~BUKRS = A~BUKRS
+    LEFT OUTER JOIN SKAT AS T ON  T~SPRAS = @SY-LANGU
+                              AND T~KTOPL = B~KTOPL
+                              AND T~SAKNR = A~SAKNR
+    WHERE A~BUKRS = @P_BUKRS
+    AND   A~SAKNR IN @LT_HKONT
+    INTO  TABLE @LT_ACCT.
+
+  "Edit ALV list in popup
+  LO_ALV_POPUP = NEW YCL_CA_ALV_IN_POPUP( ).
+  LO_ALV_POPUP->EXECUTE( EXPORTING IV_TITLE = 'List of G/L accounts'
+                         CHANGING CT_TABLE = LT_ACCT ).

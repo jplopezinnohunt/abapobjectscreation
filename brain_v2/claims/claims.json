@@ -17950,5 +17950,50 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 412,
+  "claim": "THE BUDGET RATE SOLUTION READ FROM PRODUCTION — the perimeter, the three gates and a SECOND latent defect of the same shape as the known one (s097, package YA extracted from P01: 136 objects; 18 in the BR family — 5 classes, 1 composite ENHC, 12 ENHO). FIRST, AN EVIDENCE CORRECTION: the incident cited extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A as the source of the one-line defect, and THAT PATH DOES NOT EXIST in any of the three corpora. The root cause was confirmed by a debugger session and a trace, which is strong evidence — but the most-quoted line was unreadable until now. The real source is extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap, 634 lines. THE APPLICABILITY PERIMETER IS EIGHT DIMENSIONS, all of which must pass, each a CHECK that exits silently: ledger = 9A (note: NOT the AVC ledger 9H); company code = UNES; FM area = UNES; business area = GEF; currency = EUR ONLY (the defect); commitment item EXCLUDES GAINS and REVENUE; transaction EXCLUDES HRM1/HRM2/HRP1, so PBC pre-commitment, PBC commitment and payroll are OUT of the main path; and fund type IN a DATA-DRIVEN set from FMFUNDTYPE WHERE ZZFIX_RATE = X — measured in P01 as 14 types, all UNES (001-005, 009, 010, 012, 013, 016-018, 094, 095), i.e. Regular Programme only. Earmarked 101-115, MBF 299 and CRP 311/314 are NOT in the perimeter. THERE IS AN ACTIVATION SWITCH NOBODY HAD RECORDED: CHECK_BR_IS_ACTIVE compares sy-datum against MV_START_DATE, read from the TVARVC variable Y_FM_FIXED_RATE_START. Measured in P01: 20240101, so BR has been active since 1 January 2024. THE TRAP: if that variable is missing, the code defaults the date to '99991231' and BR silently never activates — a kill switch that fails closed and says nothing. THREE GATES, NOT ONE, and the difference between them is where the asymmetry lives. CHECK_CONDITIONS is the main path: EUR only, PBC and payroll excluded. CHECK_CONDITIONS_2 is the STAFF path: it accepts EUR *and* USD and INCLUDES HRM1/HRM2/HRP1 — so the cure for the currency defect exists inside the class and is unreachable from the main path. CHECK_CONDITIONS_3 is the complement, used for DELETION during RFFMREPO reconstruction: inverted membership on ledger/company/FM-area/business-area, and it INCLUDES what the others exclude. A SECOND LATENT DEFECT, NEW: the staff gate also checks IV_HKONT IN MR_HKONT, and MR_HKONT is DECLARED at line 57 and NEVER POPULATED anywhere in the class. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed the staff gate FAILS ALWAYS. Same shape as the known mr_waers defect — a range that gates and is never filled — and it means the one path that would have handled USD is itself closed on that condition.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap (634 lines, read from P01) + TVARVC + FMFUNDTYPE",
+    "cite": "8-dimension perimeter in CONSTRUCTOR/CHECK_CONDITIONS; MR_WAERS = EUR only while MR_WAERS2 = EUR+USD; MR_HKONT declared line 57, never populated, used line 366; Y_FM_FIXED_RATE_START = 20240101; 14 fund types with ZZFIX_RATE",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "YCL_FM_BR_EXCHANGE_RATE_BL",
+   "MR_WAERS",
+   "MR_WAERS2",
+   "MR_HKONT",
+   "Y_FM_FIXED_RATE_START",
+   "FMFUNDTYPE",
+   "ZZFIX_RATE",
+   "CHECK_CONDITIONS_2",
+   "RFFMREPO"
+  ],
+  "resolution_notes": "USER DIRECTION: the family has many members used in different places, with many conditions and applicability rules, and the code is in PRODUCTION. Read from production accordingly — and the D01 corpus did not contain it at all. Two tools fixed on the way: extract_p01_source.py now RECONNECTS on the transient 'partner not reached' (P01 drops after roughly a dozen calls, a pattern already recorded for the log accumulator and missing here), and extract_business_rules.py resolves a relative corpus argument, having previously worked only when called with no argument.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "FI"
+   ],
+   "module": [
+    "FM",
+    "FI"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]

@@ -1,0 +1,647 @@
+* ==== CLASS POOL YCL_BC_EXCEL_TOOL ====
+CLASS-POOL .
+*"* class pool for class YCL_BC_EXCEL_TOOL
+
+*"* local type definitions
+INCLUDE YCL_BC_EXCEL_TOOL=============CCDEF.
+
+*"* class YCL_BC_EXCEL_TOOL definition
+*"* public declarations
+  INCLUDE YCL_BC_EXCEL_TOOL=============CU.
+*"* protected declarations
+  INCLUDE YCL_BC_EXCEL_TOOL=============CO.
+*"* private declarations
+  INCLUDE YCL_BC_EXCEL_TOOL=============CI.
+ENDCLASS. "YCL_BC_EXCEL_TOOL definition
+
+*"* macro definitions
+INCLUDE YCL_BC_EXCEL_TOOL=============CCMAC.
+*"* local class implementation
+INCLUDE YCL_BC_EXCEL_TOOL=============CCIMP.
+
+CLASS YCL_BC_EXCEL_TOOL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_BC_EXCEL_TOOL implementation
+
+
+* ---- YCL_BC_EXCEL_TOOL=============CI ----
+PRIVATE SECTION.
+
+  CLASS-METHODS SET_EXTENSION
+    IMPORTING
+      !IV_EXTENSION TYPE STRING DEFAULT 'xlsx'
+    CHANGING
+      !CV_FILENAME TYPE STRING .
+
+* ---- YCL_BC_EXCEL_TOOL=============CM001 ----
+  METHOD UPLOAD_EXCEL_WORKSHEET.
+
+    DATA LO_TABLEDESCR TYPE REF TO CL_ABAP_TABLEDESCR.
+    DATA LO_STRUCTDESCR TYPE REF TO CL_ABAP_STRUCTDESCR.
+    DATA LT_COMPONENT TYPE CL_ABAP_STRUCTDESCR=>COMPONENT_TABLE.
+    DATA LT_EXCEL TYPE TABLE OF ALSMEX_TABLINE.
+    DATA LV_ROW TYPE KCD_EX_ROW_N.
+
+    FIELD-SYMBOLS <LV_DYNAMIC_FIELD>  TYPE ANY.
+    FIELD-SYMBOLS <LT_DYNAMIC_TABLE>  TYPE INDEX TABLE.
+    DATA LS_LINE                      TYPE REF TO DATA.
+
+    "get table components
+    LO_TABLEDESCR ?= CL_ABAP_TABLEDESCR=>DESCRIBE_BY_DATA( ET_TAB ).
+    LO_STRUCTDESCR ?= LO_TABLEDESCR->GET_TABLE_LINE_TYPE( ).
+    LT_COMPONENT = LO_STRUCTDESCR->GET_COMPONENTS( ).
+
+    DESCRIBE TABLE LT_COMPONENT LINES DATA(LV_LINES).
+
+    CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
+      EXPORTING
+        FILENAME                = IV_FILENAME
+        I_BEGIN_COL             = 1
+        I_BEGIN_ROW             = 1
+        I_END_COL               = LV_LINES
+        I_END_ROW               = 99999
+      TABLES
+        INTERN                  = LT_EXCEL
+      EXCEPTIONS
+        INCONSISTENT_PARAMETERS = 1
+        UPLOAD_OLE              = 2
+        OTHERS                  = 3.
+    IF SY-SUBRC <> 0.
+      EXIT.
+    ENDIF.
+
+    "delete header
+    LOOP AT LT_EXCEL INTO DATA(LS_EXCEL).
+      IF LS_EXCEL-ROW <= IV_HEADER.
+        DELETE LT_EXCEL.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    ASSIGN ET_TAB TO <LT_DYNAMIC_TABLE>.
+    "Create dynamic work area and assign to FS
+    CREATE DATA LS_LINE LIKE LINE OF <LT_DYNAMIC_TABLE>.
+    ASSIGN LS_LINE->* TO FIELD-SYMBOL(<LS_LINE>).
+
+    "Reformat to dynamic internal table
+    LOOP AT LT_EXCEL ASSIGNING FIELD-SYMBOL(<LS_EXCEL_LINE>).
+      ASSIGN COMPONENT <LS_EXCEL_LINE>-COL OF STRUCTURE <LS_LINE> TO <LV_DYNAMIC_FIELD>.
+      IF SY-SUBRC = 0.
+        <LV_DYNAMIC_FIELD> = <LS_EXCEL_LINE>-VALUE.
+      ENDIF.
+
+      AT END OF ROW.
+        APPEND <LS_LINE> TO <LT_DYNAMIC_TABLE>.
+        CLEAR <LS_LINE>.
+      ENDAT.
+    ENDLOOP.
+
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM002 ----
+  METHOD APPEND_COL_NUM_TABLE.
+
+    DATA LS_COL_NUM TYPE TY_COL_NUM.
+    DATA LV_CHAR TYPE CHAR2.
+    DATA LS_RESULT TYPE MATCH_RESULT.
+    DATA LV_NUMBER TYPE SY-FDPOS.
+
+    DESCRIBE TABLE CT_COL_NUM LINES LS_COL_NUM-COL_INDEX.
+
+    ADD 1 TO LS_COL_NUM-COL_INDEX.
+    LV_CHAR = IV_COL_FROM.
+
+    DO.
+      SEARCH SY-ABCDE FOR LV_CHAR(1).
+      LV_NUMBER = SY-FDPOS + 1.
+      IF LV_CHAR+1(1) IS INITIAL.
+        LS_COL_NUM-COL_FILE = LV_NUMBER.
+      ELSE.
+        LS_COL_NUM-COL_FILE = LV_NUMBER * 26.
+        SEARCH SY-ABCDE FOR LV_CHAR+1(1).
+        LV_NUMBER = SY-FDPOS + 1.
+        LS_COL_NUM-COL_FILE = LS_COL_NUM-COL_FILE + LV_NUMBER.
+      ENDIF.
+      APPEND LS_COL_NUM TO CT_COL_NUM.
+      ADD 1 TO LS_COL_NUM-COL_INDEX.
+
+      IF IV_COL_TO IS NOT INITIAL.
+
+        IF LV_CHAR+1(1) IS INITIAL.
+          SEARCH SY-ABCDE FOR LV_CHAR(1).
+          LV_NUMBER = SY-FDPOS + 1.
+          IF LV_NUMBER <> 26.
+            LV_CHAR(1) = SY-ABCDE+LV_NUMBER(1).
+          ELSE.
+            LV_CHAR = 'AA'.
+          ENDIF.
+        ELSE.
+          SEARCH SY-ABCDE FOR LV_CHAR+1(1).
+          LV_NUMBER = SY-FDPOS + 1.
+          IF LV_NUMBER <> 26.
+            LV_CHAR+1(1) = SY-ABCDE+LV_NUMBER(1).
+          ELSE.
+            LV_CHAR+1(1) = 'A'.
+            SEARCH SY-ABCDE FOR LV_CHAR(1).
+            LV_NUMBER = SY-FDPOS + 1.
+            LV_CHAR(1) = SY-ABCDE+LV_NUMBER(1).
+          ENDIF.
+        ENDIF.
+        IF LV_CHAR+1(1) = SPACE AND IV_COL_TO+1(1) <> SPACE.
+          CONTINUE.
+        ENDIF.
+        IF LV_CHAR > IV_COL_TO.
+          EXIT.
+        ENDIF.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDDO.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM003 ----
+  METHOD UPLOAD_EXCEL_WORKSHEET_COL_SEL.
+
+    DATA LO_TABLEDESCR TYPE REF TO CL_ABAP_TABLEDESCR.
+    DATA LO_STRUCTDESCR TYPE REF TO CL_ABAP_STRUCTDESCR.
+    DATA LT_COMPONENT TYPE CL_ABAP_STRUCTDESCR=>COMPONENT_TABLE.
+    DATA LT_EXCEL TYPE TABLE OF YSBC_EXCEL_TABLINE.
+    DATA LV_ROW TYPE KCD_EX_ROW_N.
+    DATA LS_COL TYPE TY_COL_NUM.
+    DATA LV_LINES TYPE I.
+
+    FIELD-SYMBOLS <LV_DYNAMIC_FIELD>  TYPE ANY.
+    FIELD-SYMBOLS <LT_DYNAMIC_TABLE>  TYPE INDEX TABLE.
+    DATA LS_LINE                      TYPE REF TO DATA.
+
+    "get table components
+    LO_TABLEDESCR ?= CL_ABAP_TABLEDESCR=>DESCRIBE_BY_DATA( ET_TAB ).
+    LO_STRUCTDESCR ?= LO_TABLEDESCR->GET_TABLE_LINE_TYPE( ).
+    LT_COMPONENT = LO_STRUCTDESCR->GET_COMPONENTS( ).
+
+    "Number of columns determination: the highest colum number
+    SORT IT_COL BY COL_FILE DESCENDING.
+    READ TABLE IT_COL INTO LS_COL INDEX 1.
+    CHECK SY-SUBRC = 0.
+    LV_LINES = LS_COL-COL_FILE.
+
+    CALL FUNCTION 'Y_BC_EXCEL_TO_INTERNAL_TABLE'
+      EXPORTING
+        FILENAME                = IV_FILENAME
+        I_BEGIN_COL             = 1
+        I_BEGIN_ROW             = 1
+        I_END_COL               = LV_LINES
+        I_END_ROW               = 99999
+        IV_REMOVE_FILTERS       = IV_REMOVE_FILTERS
+      IMPORTING
+        INTERN                  = LT_EXCEL
+        EV_FILTERS_REMOVED      = EV_FILTERS_REMOVED
+      EXCEPTIONS
+        INCONSISTENT_PARAMETERS = 1
+        UPLOAD_OLE              = 2
+        OTHERS                  = 3.
+    IF SY-SUBRC <> 0.
+      RAISE EXCEPTION TYPE YCX_FILE_ACCESS
+        EXPORTING
+          TEXTID     = YCX_FILE_ACCESS=>FILE_ACCESS_ERROR
+          FILE_NAME1 = IV_FILENAME(50)
+          FILE_NAME2 = IV_FILENAME+50(50)
+          FILE_NAME3 = |{ IV_FILENAME+100(28) }|.
+    ENDIF.
+
+    "delete header
+    LOOP AT LT_EXCEL INTO DATA(LS_EXCEL).
+      IF LS_EXCEL-ROW <= IV_HEADER.
+        DELETE LT_EXCEL.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    ASSIGN ET_TAB TO <LT_DYNAMIC_TABLE>.
+    "Create dynamic work area and assign to FS
+    CREATE DATA LS_LINE LIKE LINE OF <LT_DYNAMIC_TABLE>.
+    ASSIGN LS_LINE->* TO FIELD-SYMBOL(<LS_LINE>).
+
+    "Reformat to dynamic internal table
+    LOOP AT LT_EXCEL ASSIGNING FIELD-SYMBOL(<LS_EXCEL_LINE>).
+      READ TABLE IT_COL INTO LS_COL WITH KEY COL_FILE = <LS_EXCEL_LINE>-COL.
+      IF SY-SUBRC = 0.
+        ASSIGN COMPONENT LS_COL-COL_INDEX OF STRUCTURE <LS_LINE> TO <LV_DYNAMIC_FIELD>.
+        IF SY-SUBRC = 0.
+          <LV_DYNAMIC_FIELD> = <LS_EXCEL_LINE>-VALUE.
+        ENDIF.
+      ENDIF.
+
+      AT END OF ROW.
+        APPEND <LS_LINE> TO <LT_DYNAMIC_TABLE>.
+        CLEAR <LS_LINE>.
+      ENDAT.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM004 ----
+  METHOD UPLOAD_EXCEL_WORKSHEET_LC.
+
+    DATA LO_TABLEDESCR TYPE REF TO CL_ABAP_TABLEDESCR.
+    DATA LO_STRUCTDESCR TYPE REF TO CL_ABAP_STRUCTDESCR.
+    DATA LT_COMPONENT TYPE CL_ABAP_STRUCTDESCR=>COMPONENT_TABLE.
+    DATA LT_EXCEL TYPE TABLE OF YSBC_EXCEL_TABLINE.
+    DATA LV_ROW TYPE KCD_EX_ROW_N.
+
+    FIELD-SYMBOLS <LV_DYNAMIC_FIELD>  TYPE ANY.
+    FIELD-SYMBOLS <LT_DYNAMIC_TABLE>  TYPE INDEX TABLE.
+    DATA LS_LINE                      TYPE REF TO DATA.
+
+    "get table components
+    LO_TABLEDESCR ?= CL_ABAP_TABLEDESCR=>DESCRIBE_BY_DATA( ET_TAB ).
+    LO_STRUCTDESCR ?= LO_TABLEDESCR->GET_TABLE_LINE_TYPE( ).
+    LT_COMPONENT = LO_STRUCTDESCR->GET_COMPONENTS( ).
+
+    DESCRIBE TABLE LT_COMPONENT LINES DATA(LV_LINES).
+
+    CALL FUNCTION 'Y_BC_EXCEL_TO_INTERNAL_TABLE'
+      EXPORTING
+        FILENAME                = IV_FILENAME
+        I_BEGIN_COL             = 1
+        I_BEGIN_ROW             = 1
+        I_END_COL               = LV_LINES
+        I_END_ROW               = 99999
+        IV_REMOVE_FILTERS       = IV_REMOVE_FILTERS
+      IMPORTING
+        INTERN                  = LT_EXCEL
+        EV_FILTERS_REMOVED      = EV_FILTERS_REMOVED
+      EXCEPTIONS
+        INCONSISTENT_PARAMETERS = 1
+        UPLOAD_OLE              = 2
+        OTHERS                  = 3.
+    IF SY-SUBRC <> 0.
+      RAISE EXCEPTION TYPE YCX_FILE_ACCESS
+        EXPORTING
+          TEXTID     = YCX_FILE_ACCESS=>FILE_ACCESS_ERROR
+          FILE_NAME1 = IV_FILENAME(50)
+          FILE_NAME2 = IV_FILENAME+50(50)
+          FILE_NAME3 = |{ IV_FILENAME+100(28) }|.
+    ENDIF.
+
+    "delete header
+    LOOP AT LT_EXCEL INTO DATA(LS_EXCEL).
+      IF LS_EXCEL-ROW <= IV_HEADER.
+        DELETE LT_EXCEL.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    ASSIGN ET_TAB TO <LT_DYNAMIC_TABLE>.
+    "Create dynamic work area and assign to FS
+    CREATE DATA LS_LINE LIKE LINE OF <LT_DYNAMIC_TABLE>.
+    ASSIGN LS_LINE->* TO FIELD-SYMBOL(<LS_LINE>).
+
+    "Reformat to dynamic internal table
+    LOOP AT LT_EXCEL ASSIGNING FIELD-SYMBOL(<LS_EXCEL_LINE>).
+      ASSIGN COMPONENT <LS_EXCEL_LINE>-COL OF STRUCTURE <LS_LINE> TO <LV_DYNAMIC_FIELD>.
+      IF SY-SUBRC = 0.
+        <LV_DYNAMIC_FIELD> = <LS_EXCEL_LINE>-VALUE.
+      ENDIF.
+
+      AT END OF ROW.
+        APPEND <LS_LINE> TO <LT_DYNAMIC_TABLE>.
+        CLEAR <LS_LINE>.
+      ENDAT.
+    ENDLOOP.
+
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM005 ----
+  METHOD DOWNLOAD_EXCEL_WORKSHEET.
+
+    DATA LV_SIZE TYPE INT4.
+    DATA LT_BINARY TYPE SOLIX_TAB.
+
+    TRANSFORM_TABLE_TO_BINARY( EXPORTING IT_TAB = IT_TAB
+                               IMPORTING ET_BINARY = LT_BINARY
+                                         EV_SIZE = LV_SIZE
+                                         EV_SUBRC = EV_SUBRC ).
+
+    CHECK EV_SUBRC = 0.
+
+    SET_EXTENSION( CHANGING CV_FILENAME = IV_FILENAME ).
+
+    CL_GUI_FRONTEND_SERVICES=>GUI_DOWNLOAD( EXPORTING  BIN_FILESIZE = LV_SIZE
+                                                       FILENAME     = IV_FILENAME
+                                                       FILETYPE     = 'BIN'
+                                            CHANGING   DATA_TAB     = LT_BINARY
+                                            EXCEPTIONS FILE_WRITE_ERROR        = 1
+                                                       NO_BATCH                = 2
+                                                       GUI_REFUSE_FILETRANSFER = 3
+                                                       INVALID_TYPE            = 4
+                                                       NO_AUTHORITY            = 5
+                                                       UNKNOWN_ERROR           = 6
+                                                       HEADER_NOT_ALLOWED      = 7
+                                                       SEPARATOR_NOT_ALLOWED   = 8
+                                                       FILESIZE_NOT_ALLOWED    = 9
+                                                       HEADER_TOO_LONG         = 10
+                                                       DP_ERROR_CREATE         = 11
+                                                       DP_ERROR_SEND           = 12
+                                                       DP_ERROR_WRITE          = 13
+                                                       UNKNOWN_DP_ERROR        = 14
+                                                       ACCESS_DENIED           = 15
+                                                       DP_OUT_OF_MEMORY        = 16
+                                                       DISK_FULL               = 17
+                                                       DP_TIMEOUT              = 18
+                                                       FILE_NOT_FOUND          = 19
+                                                       DATAPROVIDER_EXCEPTION  = 20
+                                                       CONTROL_FLUSH_ERROR     = 21
+                                                       NOT_SUPPORTED_BY_GUI    = 22
+                                                       ERROR_NO_GUI            = 23
+                                                       OTHERS                  = 24 ).
+    EV_SUBRC = SY-SUBRC.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM006 ----
+  METHOD SET_EXTENSION.
+
+    DATA LV_FILENAME TYPE STRING.
+    DATA LV_EXTENSION TYPE STRING.
+
+    LV_FILENAME = CV_FILENAME.
+    LV_EXTENSION = IV_EXTENSION.
+
+    TRANSLATE LV_EXTENSION TO UPPER CASE.
+    LV_EXTENSION = |.{ LV_EXTENSION }|.
+
+    TRANSLATE LV_FILENAME TO UPPER CASE.
+    IF LV_FILENAME CS LV_EXTENSION.
+      EXIT.
+    ENDIF.
+
+    CV_FILENAME = |{ CV_FILENAME }.{ IV_EXTENSION }|.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM007 ----
+  METHOD READ_XLSX_FROM_SERVER.
+
+    DATA LV_XSTRING TYPE XSTRING.
+    DATA LV_FILE TYPE STRING.
+    FIELD-SYMBOLS <LT_DATA_TAB> TYPE STANDARD TABLE.
+    DATA GV_TAB_REF  TYPE REF TO DATA.
+    DATA LV_INDEX TYPE INT2.
+    DATA LV_EMPTY_INDEX TYPE INT4.
+    DATA LV_TABIX TYPE SY-TABIX.
+
+    "Get file from server
+    OPEN DATASET IV_FILENAME FOR INPUT IN BINARY MODE.
+    IF SY-SUBRC <> 0.
+      RAISE EXCEPTION TYPE YCX_FILE_ACCESS
+        EXPORTING
+          TEXTID     = YCX_FILE_ACCESS=>FILE_ACCESS_ERROR
+          FILE_NAME1 = IV_FILENAME(50)
+          FILE_NAME2 = IV_FILENAME+50(50)
+          FILE_NAME3 = IV_FILENAME+100(50)
+          FILE_NAME4 = IV_FILENAME+150(50).
+      EXIT.
+    ENDIF.
+
+    READ DATASET IV_FILENAME INTO LV_XSTRING.
+    IF SY-SUBRC <> 0.
+      EXIT.
+    ENDIF.
+
+    CLOSE DATASET IV_FILENAME.
+
+    LV_FILE = IV_FILENAME.
+    DATA(LO_XLSX) = NEW CL_FDT_XL_SPREADSHEET( DOCUMENT_NAME = LV_FILE
+                                               XDOCUMENT     = LV_XSTRING ).
+    "Get list of spreadsheet
+    LO_XLSX->IF_FDT_DOC_SPREADSHEET~GET_WORKSHEET_NAMES( IMPORTING WORKSHEET_NAMES = DATA(LT_EXCEL) ).
+
+    "read first spreadsheet
+    READ TABLE LT_EXCEL INTO DATA(LS_EXCEL) INDEX 1.
+    CHECK SY-SUBRC = 0.
+    DATA(IR_REF) = LO_XLSX->IF_FDT_DOC_SPREADSHEET~GET_ITAB_FROM_WORKSHEET( LS_EXCEL ) .
+    ASSIGN IR_REF->* TO <LT_DATA_TAB>.
+    "delete header
+    IF IV_HEADER <> 0.
+      DELETE <LT_DATA_TAB> FROM 1 TO IV_HEADER.
+    ENDIF.
+    "Transfert to input table
+    CREATE DATA GV_TAB_REF LIKE LINE OF ET_TAB.
+    ASSIGN GV_TAB_REF->* TO FIELD-SYMBOL(<LS_TAB>).
+    LOOP AT <LT_DATA_TAB> ASSIGNING FIELD-SYMBOL(<LS_DATA_TAB>).
+      LV_TABIX = SY-TABIX.
+      CLEAR: <LS_TAB>, LV_INDEX.
+      DO.
+        ADD 1 TO LV_INDEX.
+        ASSIGN COMPONENT LV_INDEX OF STRUCTURE <LS_DATA_TAB> TO FIELD-SYMBOL(<LV_DATA_TAB>).
+        IF SY-SUBRC <> 0.
+          EXIT.
+        ENDIF.
+        ASSIGN COMPONENT LV_INDEX OF STRUCTURE <LS_TAB> TO FIELD-SYMBOL(<LV_TAB>).
+        IF SY-SUBRC <> 0.
+          EXIT.
+        ENDIF.
+        <LV_TAB> = <LV_DATA_TAB>.
+      ENDDO.
+      APPEND <LS_TAB> TO ET_TAB.
+      IF <LS_TAB> IS INITIAL.
+        IF LV_EMPTY_INDEX = 0.
+          LV_EMPTY_INDEX = LV_TABIX.
+        ENDIF.
+      ELSE.
+        CLEAR LV_EMPTY_INDEX.
+      ENDIF.
+    ENDLOOP.
+
+    "Clear blank line remaining at the end
+    IF LV_EMPTY_INDEX <> 0.
+      DELETE ET_TAB FROM LV_EMPTY_INDEX.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM008 ----
+  METHOD TRANSFORM_TABLE_TO_BINARY.
+
+    DATA LV_XSTRING TYPE XSTRING.
+
+    TRANSFORM_TABLE_TO_XSTRING( EXPORTING IT_TAB = IT_TAB
+                                IMPORTING EV_XSTRING = LV_XSTRING
+                                          EV_SUBRC = EV_SUBRC ).
+
+    CHECK EV_SUBRC = 0.
+
+    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+      EXPORTING
+        BUFFER        = LV_XSTRING
+*       APPEND_TO_TABLE       = ' '
+      IMPORTING
+        OUTPUT_LENGTH = EV_SIZE
+      TABLES
+        BINARY_TAB    = ET_BINARY.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM009 ----
+  METHOD TRANSFORM_TABLE_TO_XSTRING.
+
+    DATA LT_DATA TYPE REF TO DATA.
+    DATA LO_SALV_TABLE TYPE REF TO CL_SALV_TABLE.
+    DATA LO_COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+    DATA LO_AGGREGATION TYPE REF TO CL_SALV_AGGREGATIONS.
+    DATA LT_FIELDCAT TYPE LVC_T_FCAT.
+    DATA LV_VERSION TYPE STRING.
+    DATA LO_RESULT_DATA TYPE REF TO CL_SALV_EX_RESULT_DATA_TABLE.
+    DATA LV_FLAVOUR TYPE STRING.
+    DATA LT_MSG TYPE IF_SALV_BS_TT=>YT_MSG.
+
+    GET REFERENCE OF IT_TAB INTO LT_DATA.
+
+    TRY.
+        CL_SALV_TABLE=>FACTORY( IMPORTING R_SALV_TABLE = LO_SALV_TABLE
+                                CHANGING  T_TABLE = IT_TAB ).
+      CATCH CX_SALV_MSG .
+        EV_SUBRC = 30.
+        EXIT.
+    ENDTRY.
+
+    LO_COLUMNS  = LO_SALV_TABLE->GET_COLUMNS( ).
+
+    LT_FIELDCAT = CL_SALV_CONTROLLER_METADATA=>GET_LVC_FIELDCATALOG( EXPORTING R_COLUMNS      = LO_COLUMNS
+                                                                               R_AGGREGATIONS = LO_AGGREGATION ).
+    LV_VERSION = CL_SALV_BS_A_XML_BASE=>GET_VERSION( ).
+    LO_RESULT_DATA = CL_SALV_EX_UTIL=>FACTORY_RESULT_DATA_TABLE( EXPORTING R_DATA = LT_DATA
+                                                                           T_FIELDCATALOG = LT_FIELDCAT ).
+    LV_FLAVOUR = IF_SALV_BS_C_TT=>C_TT_XML_FLAVOUR_EXPORT.
+    CL_SALV_BS_TT_UTIL=>IF_SALV_BS_TT_UTIL~TRANSFORM( EXPORTING XML_VERSION   = LV_VERSION
+                                                                R_RESULT_DATA = LO_RESULT_DATA
+                                                                XML_TYPE      = IF_SALV_BS_XML=>C_TYPE_XLSX
+                                                                XML_FLAVOUR   = LV_FLAVOUR
+                                                                GUI_TYPE      = IF_SALV_BS_XML=>C_GUI_TYPE_GUI
+                                                      IMPORTING XML           = EV_XSTRING
+                                                                T_MSG         = LT_MSG ).
+    READ TABLE LT_MSG TRANSPORTING NO FIELDS WITH KEY MSGTY ='E'.
+    IF SY-SUBRC = 0.
+      CLEAR EV_XSTRING.
+      EV_SUBRC = 31.
+      EXIT.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CM00A ----
+  METHOD WRITE_XLSX_TO_SERVER.
+
+    DATA LV_XSTRING TYPE XSTRING.
+
+    TRANSFORM_TABLE_TO_XSTRING( EXPORTING IT_TAB = IT_TAB
+                                IMPORTING EV_XSTRING = LV_XSTRING
+                                          EV_SUBRC = EV_SUBRC ).
+
+    CHECK EV_SUBRC = 0.
+
+    OPEN DATASET IV_FILENAME FOR OUTPUT IN BINARY MODE.
+    IF SY-SUBRC <> 0.
+      EV_SUBRC = SY-SUBRC.
+      EXIT.
+    ENDIF.
+
+    TRANSFER LV_XSTRING TO IV_FILENAME.
+
+    CLOSE DATASET IV_FILENAME.
+
+  ENDMETHOD.
+
+* ---- YCL_BC_EXCEL_TOOL=============CO ----
+PROTECTED SECTION.
+
+* ---- YCL_BC_EXCEL_TOOL=============CU ----
+CLASS YCL_BC_EXCEL_TOOL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  TYPES:
+    BEGIN OF TY_COL_NUM,
+        COL_INDEX TYPE KCD_EX_COL_N,
+        COL_FILE  TYPE KCD_EX_COL_N,
+      END OF TY_COL_NUM .
+  TYPES:
+    TTY_COL_NUM TYPE TABLE OF TY_COL_NUM .
+
+  CLASS-METHODS APPEND_COL_NUM_TABLE
+    IMPORTING
+      !IV_COL_FROM TYPE CHAR2
+      !IV_COL_TO TYPE CHAR2 OPTIONAL
+    CHANGING
+      !CT_COL_NUM TYPE YCL_BC_EXCEL_TOOL=>TTY_COL_NUM .
+  CLASS-METHODS DOWNLOAD_EXCEL_WORKSHEET
+    IMPORTING
+      VALUE(IV_FILENAME) TYPE STRING
+      VALUE(IT_TAB) TYPE ANY TABLE
+    EXPORTING
+      !EV_SUBRC TYPE SY-SUBRC .
+  CLASS-METHODS READ_XLSX_FROM_SERVER
+    IMPORTING
+      !IV_FILENAME TYPE TEXT200
+      !IV_HEADER TYPE NUMC1 DEFAULT '0'
+    EXPORTING
+      !ET_TAB TYPE STANDARD TABLE
+    RAISING
+      YCX_FILE_ACCESS .
+  CLASS-METHODS TRANSFORM_TABLE_TO_BINARY
+    IMPORTING
+      VALUE(IT_TAB) TYPE ANY TABLE
+    EXPORTING
+      !ET_BINARY TYPE SOLIX_TAB
+      !EV_SIZE TYPE INT4
+      !EV_SUBRC TYPE SY-SUBRC .
+  CLASS-METHODS TRANSFORM_TABLE_TO_XSTRING
+    IMPORTING
+      VALUE(IT_TAB) TYPE ANY TABLE
+    EXPORTING
+      !EV_XSTRING TYPE XSTRING
+      !EV_SUBRC TYPE SY-SUBRC .
+  CLASS-METHODS WRITE_XLSX_TO_SERVER
+    IMPORTING
+      VALUE(IV_FILENAME) TYPE STRING
+      VALUE(IT_TAB) TYPE ANY TABLE
+    EXPORTING
+      !EV_SUBRC TYPE SY-SUBRC .
+  CLASS-METHODS UPLOAD_EXCEL_WORKSHEET
+    IMPORTING
+      !IV_FILENAME TYPE LOCALFILE
+      !IV_HEADER TYPE NUMC1 DEFAULT '0'
+    EXPORTING
+      !ET_TAB TYPE ANY TABLE .
+  CLASS-METHODS UPLOAD_EXCEL_WORKSHEET_COL_SEL
+    IMPORTING
+      !IV_FILENAME TYPE LOCALFILE
+      !IV_HEADER TYPE NUMC2 DEFAULT '0'
+      !IV_REMOVE_FILTERS TYPE XFELD DEFAULT ABAP_FALSE
+      VALUE(IT_COL) TYPE YCL_BC_EXCEL_TOOL=>TTY_COL_NUM
+    EXPORTING
+      !ET_TAB TYPE ANY TABLE
+      !EV_FILTERS_REMOVED TYPE XFELD
+    RAISING
+      YCX_FILE_ACCESS .
+  CLASS-METHODS UPLOAD_EXCEL_WORKSHEET_LC
+    IMPORTING
+      !IV_FILENAME TYPE LOCALFILE
+      !IV_HEADER TYPE NUMC1 DEFAULT '0'
+      !IV_REMOVE_FILTERS TYPE XFELD DEFAULT ABAP_FALSE
+    EXPORTING
+      !ET_TAB TYPE ANY TABLE
+      !EV_FILTERS_REMOVED TYPE XFELD
+    RAISING
+      YCX_FILE_ACCESS .

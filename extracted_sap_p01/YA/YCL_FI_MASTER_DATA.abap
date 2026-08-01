@@ -1,0 +1,65 @@
+* ==== CLASS POOL YCL_FI_MASTER_DATA ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_MASTER_DATA
+
+*"* local type definitions
+INCLUDE YCL_FI_MASTER_DATA============CCDEF.
+
+*"* class YCL_FI_MASTER_DATA definition
+*"* public declarations
+  INCLUDE YCL_FI_MASTER_DATA============CU.
+*"* protected declarations
+  INCLUDE YCL_FI_MASTER_DATA============CO.
+*"* private declarations
+  INCLUDE YCL_FI_MASTER_DATA============CI.
+ENDCLASS. "YCL_FI_MASTER_DATA definition
+
+*"* macro definitions
+INCLUDE YCL_FI_MASTER_DATA============CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_MASTER_DATA============CCIMP.
+
+CLASS YCL_FI_MASTER_DATA IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_MASTER_DATA implementation
+
+
+* ---- YCL_FI_MASTER_DATA============CI ----
+PRIVATE SECTION.
+
+  CLASS-DATA MT_TGSBT TYPE SORTED TABLE OF TGSBT WITH UNIQUE KEY SPRAS GSBER.
+
+* ---- YCL_FI_MASTER_DATA============CM001 ----
+  METHOD GET_BUSINESS_AREA_TEXT.
+
+    CLEAR RV_GTEXT.
+
+    IF MT_TGSBT IS INITIAL.
+      SELECT * FROM TGSBT WHERE SPRAS = @SY-LANGU INTO TABLE @MT_TGSBT.
+    ENDIF.
+
+    READ TABLE MT_TGSBT INTO DATA(LS_TGSBT) WITH KEY SPRAS = SY-LANGU
+                                                     GSBER = IV_GSBER.
+    IF SY-SUBRC = 0.
+      RV_GTEXT = LS_TGSBT-GTEXT.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_MASTER_DATA============CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FI_MASTER_DATA============CU ----
+CLASS YCL_FI_MASTER_DATA DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  CLASS-METHODS GET_BUSINESS_AREA_TEXT
+    IMPORTING
+      !IV_GSBER TYPE GSBER
+    RETURNING
+      VALUE(RV_GTEXT) TYPE GTEXT .

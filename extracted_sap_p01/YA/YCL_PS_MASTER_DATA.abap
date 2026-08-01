@@ -1,0 +1,164 @@
+* ==== CLASS POOL YCL_PS_MASTER_DATA ====
+CLASS-POOL .
+*"* class pool for class YCL_PS_MASTER_DATA
+
+*"* local type definitions
+INCLUDE YCL_PS_MASTER_DATA============CCDEF.
+
+*"* class YCL_PS_MASTER_DATA definition
+*"* public declarations
+  INCLUDE YCL_PS_MASTER_DATA============CU.
+*"* protected declarations
+  INCLUDE YCL_PS_MASTER_DATA============CO.
+*"* private declarations
+  INCLUDE YCL_PS_MASTER_DATA============CI.
+ENDCLASS. "YCL_PS_MASTER_DATA definition
+
+*"* macro definitions
+INCLUDE YCL_PS_MASTER_DATA============CCMAC.
+*"* local class implementation
+INCLUDE YCL_PS_MASTER_DATA============CCIMP.
+
+CLASS YCL_PS_MASTER_DATA IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_PS_MASTER_DATA implementation
+
+
+* ---- YCL_PS_MASTER_DATA============CI ----
+PRIVATE SECTION.
+
+* ---- YCL_PS_MASTER_DATA============CM001 ----
+  METHOD GET_PROJECTS_1.
+
+    DATA LT_BUKRS TYPE RANGE OF BUKRS.
+
+    IF IV_BUKRS IS NOT INITIAL.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = IV_BUKRS ) TO LT_BUKRS.
+    ENDIF.
+
+    SELECT A~PSPNR,
+           A~PSPID,
+           A~VBUKR,
+           A~VERNR,
+           A~VERNA,
+           A~ASTNR,
+           A~ASTNA,
+           A~VGSBR,
+           A~PLFAZ,
+           A~PLSEZ
+           FROM PROJ AS A
+           WHERE A~VBUKR IN @LT_BUKRS
+           AND   A~PLFAZ <= @IV_PLSEZ
+           AND   A~PLSEZ >= @IV_PLFAZ
+      INTO TABLE @RT_PROJECT.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_MASTER_DATA============CM002 ----
+  METHOD GET_PROJECTS_WITH_WBS_1.
+
+    DATA LT_BUKRS TYPE RANGE OF BUKRS.
+    DATA LV_STATUS TYPE J_STEXT.
+
+    IF IV_BUKRS IS NOT INITIAL.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = IV_BUKRS ) TO LT_BUKRS.
+    ENDIF.
+
+    SELECT A~VBUKR,
+           A~PSPID,
+           B~POSID,
+           B~STUFE,
+           B~PKOKR AS KOKRS,
+           B~POST1,
+           B~VERNR,
+           B~VERNA,
+           B~ASTNR,
+           B~ASTNA,
+           B~PRART,
+           B~USR02,
+           B~OBJNR
+           FROM PROJ AS A
+           INNER JOIN PRPS AS B ON B~PSPHI = A~PSPNR
+           WHERE A~VBUKR IN @LT_BUKRS
+           AND   A~PLFAZ <= @IV_PLSEZ
+           AND   A~PLSEZ >= @IV_PLFAZ
+           INTO TABLE @RT_PROJ_WITH_WBS.
+
+    "Get status
+    LOOP AT RT_PROJ_WITH_WBS ASSIGNING FIELD-SYMBOL(<LS_PROJ_WBS>).
+      CALL FUNCTION 'STATUS_TEXT_EDIT'
+        EXPORTING
+*         CLIENT           = SY-MANDT
+          FLG_USER_STAT    = ABAP_TRUE
+          OBJNR            = <LS_PROJ_WBS>-OBJNR
+*         ONLY_ACTIVE      = 'X'
+          SPRAS            = SY-LANGU
+*         BYPASS_BUFFER    = ' '
+        IMPORTING
+*         ANW_STAT_EXISTING       =
+*         E_STSMA          =
+          LINE             = LV_STATUS
+*         USER_LINE        =
+*         STONR            =
+        EXCEPTIONS
+          OBJECT_NOT_FOUND = 1
+          OTHERS           = 2.
+      IF SY-SUBRC = 0.
+        <LS_PROJ_WBS>-STATXT = LV_STATUS.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_MASTER_DATA============CM003 ----
+  METHOD GET_PROJECT_INTERNAL_ID.
+
+    CLEAR RV_PSPNR.
+    SELECT SINGLE PSPNR FROM PROJ WHERE PSPID = @IV_PSPID INTO @RV_PSPNR.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_MASTER_DATA============CM004 ----
+  METHOD GET_WBS_INTERNAL_ID.
+
+    CLEAR RV_PSPNR.
+    SELECT SINGLE PSPNR FROM PRPS WHERE POSID = @IV_POSID INTO @RV_PSPNR.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_MASTER_DATA============CO ----
+PROTECTED SECTION.
+
+* ---- YCL_PS_MASTER_DATA============CU ----
+CLASS YCL_PS_MASTER_DATA DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  CLASS-METHODS GET_PROJECTS_1
+    IMPORTING
+      !IV_BUKRS TYPE BUKRS OPTIONAL
+      !IV_PLFAZ TYPE PS_PLFAZ_CHG DEFAULT SY-DATUM
+      !IV_PLSEZ TYPE PS_PLSEZ_CHG DEFAULT SY-DATUM
+    RETURNING
+      VALUE(RT_PROJECT) TYPE YTTPS_PROJECT_1 .
+  CLASS-METHODS GET_PROJECTS_WITH_WBS_1
+    IMPORTING
+      !IV_BUKRS TYPE BUKRS OPTIONAL
+      !IV_PLFAZ TYPE PS_PLFAZ_CHG DEFAULT SY-DATUM
+      !IV_PLSEZ TYPE PS_PLSEZ_CHG DEFAULT SY-DATUM
+    RETURNING
+      VALUE(RT_PROJ_WITH_WBS) TYPE YTTPS_PROJECT_WITH_WBS_1 .
+  CLASS-METHODS GET_PROJECT_INTERNAL_ID
+    IMPORTING
+      !IV_PSPID TYPE PS_PSPID
+    RETURNING
+      VALUE(RV_PSPNR) TYPE PS_INTNR .
+  CLASS-METHODS GET_WBS_INTERNAL_ID
+    IMPORTING
+      !IV_POSID TYPE PS_POSID
+    RETURNING
+      VALUE(RV_PSPNR) TYPE PS_POSNR .

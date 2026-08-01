@@ -1,0 +1,246 @@
+* ==== CLASS POOL YCL_FM_MASTER_DATA ====
+CLASS-POOL .
+*"* class pool for class YCL_FM_MASTER_DATA
+
+*"* local type definitions
+INCLUDE YCL_FM_MASTER_DATA============CCDEF.
+
+*"* class YCL_FM_MASTER_DATA definition
+*"* public declarations
+  INCLUDE YCL_FM_MASTER_DATA============CU.
+*"* protected declarations
+  INCLUDE YCL_FM_MASTER_DATA============CO.
+*"* private declarations
+  INCLUDE YCL_FM_MASTER_DATA============CI.
+ENDCLASS. "YCL_FM_MASTER_DATA definition
+
+*"* macro definitions
+INCLUDE YCL_FM_MASTER_DATA============CCMAC.
+*"* local class implementation
+INCLUDE YCL_FM_MASTER_DATA============CCIMP.
+
+CLASS YCL_FM_MASTER_DATA IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FM_MASTER_DATA implementation
+
+
+* ---- YCL_FM_MASTER_DATA============CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF TY_C5_ASSIGN,
+           C5_ID     TYPE YTFM_FUND_C5-C5_ID,
+           YEAR_FROM TYPE YTFM_C5-YEAR_FROM,
+           YEAR_TO   TYPE YTFM_C5-YEAR_TO,
+           C5_SEL    TYPE YTFM_FUND_C5-C5_SEL,
+           FM_OUTPUT TYPE YTFM_FUND_C5-FM_OUTPUT,
+         END OF TY_C5_ASSIGN .
+  TYPES:
+    TTY_C5_ASSIGN TYPE STANDARD TABLE OF TY_C5_ASSIGN .
+
+  CLASS-DATA:
+    BEGIN OF MS_FUND_C5,
+                FIKRS     TYPE YTFM_FUND_C5-FIKRS,
+                FINCODE   TYPE YTFM_FUND_C5-FINCODE,
+                C5_ASSIGN TYPE TTY_C5_ASSIGN,
+              END OF MS_FUND_C5 .
+  CLASS-DATA:
+    MT_FUND_C5 LIKE SORTED TABLE OF MS_FUND_C5 WITH UNIQUE KEY FIKRS FINCODE .
+  CLASS-DATA:
+    MT_FMFINCODE TYPE SORTED TABLE OF FMFINCODE WITH UNIQUE KEY FIKRS FINCODE .
+  CLASS-DATA:
+    MT_FMFINT TYPE SORTED TABLE OF FMFINT WITH UNIQUE KEY SPRAS FIKRS FINCODE .
+
+* ---- YCL_FM_MASTER_DATA============CM001 ----
+  METHOD GET_FUNDS_1.
+
+    DATA LT_FIKRS TYPE RANGE OF FIKRS.
+
+    IF IV_FIKRS IS NOT INITIAL.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = IV_FIKRS ) TO LT_FIKRS.
+    ENDIF.
+
+    SELECT A~FIKRS,
+           A~FINCODE,
+           A~TYPE,
+           Y~FUND_TYPET AS TYPE_TXT,
+           T~BEZEICH,
+           T~BESCHR,
+           A~DATAB,
+           A~DATBIS,
+           A~PROFIL
+           FROM FMFINCODE AS A
+           LEFT OUTER JOIN FMFINT AS T ON  T~SPRAS = @SY-LANGU
+                                       AND T~FIKRS = A~FIKRS
+                                       AND T~FINCODE = A~FINCODE
+           LEFT OUTER JOIN FMFUNDTYPET AS Y ON  Y~FM_AREA = A~FIKRS
+                                            AND Y~FUND_TYPE = A~TYPE
+                                            AND Y~LANGU = @SY-LANGU
+           WHERE A~FIKRS IN @LT_FIKRS
+           AND   A~DATAB <= @IV_DATBIS
+           AND   A~DATBIS >= @IV_DATAB
+           INTO TABLE @RT_FINCODE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_MASTER_DATA============CM002 ----
+  METHOD GET_FUND_CENTERS_1.
+
+    DATA LT_FIKRS TYPE RANGE OF FIKRS.
+
+    IF IV_FIKRS IS NOT INITIAL.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = IV_FIKRS ) TO LT_FIKRS.
+    ENDIF.
+
+    SELECT A~FIKRS,
+           A~FICTR,
+           T~BEZEICH,
+           T~BESCHR,
+           H~PARENT_ST AS PARENT_CTR,
+           A~ERFDAT,
+           A~DATAB,
+           A~DATBIS
+           FROM FMFCTR AS A
+           LEFT OUTER JOIN FMFCTRT AS T ON  T~SPRAS = @SY-LANGU
+                                        AND T~FIKRS = A~FIKRS
+                                        AND T~FICTR = A~FICTR
+                                        AND T~DATBIS >= @IV_DATAB
+           LEFT OUTER JOIN FMHISV AS H ON  H~FIKRS = A~FIKRS
+                                       AND H~HIVARNT = @IV_HIVARNT
+                                       AND H~FISTL = A~FICTR
+           WHERE A~FIKRS IN @LT_FIKRS
+           AND   A~DATAB <= @IV_DATBIS
+           AND   A~DATBIS >= @IV_DATAB
+           INTO TABLE @RT_FICTR.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_MASTER_DATA============CM003 ----
+METHOD GET_FUND_WITH_BUFFER.
+
+  CLEAR: ES_FMFINCODE, ES_FMFINT.
+
+  "Check in buffer
+  READ TABLE MT_FMFINCODE INTO ES_FMFINCODE WITH KEY FIKRS = IV_FIKRS
+                                                     FINCODE = IV_FINCODE.
+  IF SY-SUBRC = 0.
+    IF IV_WITH_TEXT = ABAP_TRUE.
+      READ TABLE MT_FMFINT INTO ES_FMFINT WITH KEY SPRAS = SY-LANGU
+                                                   FIKRS = IV_FIKRS
+                                                   FINCODE = IV_FINCODE.
+    ENDIF.
+  ELSE.
+    SELECT SINGLE * FROM FMFINCODE WHERE FIKRS = @IV_FIKRS
+                                   AND   FINCODE = @IV_FINCODE
+                    INTO @ES_FMFINCODE.
+    IF SY-SUBRC = 0.
+      INSERT ES_FMFINCODE INTO TABLE MT_FMFINCODE.
+      IF IV_WITH_TEXT = ABAP_TRUE.
+        SELECT SINGLE * FROM FMFINT WHERE SPRAS = @SY-LANGU
+                                    AND   FIKRS = @IV_FIKRS
+                                    AND   FINCODE = @IV_FINCODE
+                      INTO @ES_FMFINT.
+        IF SY-SUBRC = 0.
+          INSERT ES_FMFINT INTO TABLE MT_FMFINT.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMETHOD.
+
+* ---- YCL_FM_MASTER_DATA============CM004 ----
+  METHOD GET_FUND_C5_WITH_BUFFER.
+
+    DATA LT_C5_ASSIGN TYPE TTY_C5_ASSIGN.
+
+    CLEAR ES_FUND_C5.
+
+    CLEAR MS_FUND_C5.
+    READ TABLE MT_FUND_C5 INTO MS_FUND_C5 WITH KEY FIKRS = IV_FIKRS
+                                                   FINCODE = IV_FINCODE.
+    IF SY-SUBRC <> 0.
+      SELECT A~C5_ID,
+             B~YEAR_FROM,
+             B~YEAR_TO,
+             A~C5_SEL,
+             A~FM_OUTPUT
+             FROM YTFM_FUND_C5 AS A
+             INNER JOIN YTFM_C5 AS B ON B~C5_ID = A~C5_ID
+             WHERE A~FIKRS = @IV_FIKRS
+             AND   A~FINCODE = @IV_FINCODE
+             INTO TABLE @LT_C5_ASSIGN.
+
+      CLEAR MS_FUND_C5.
+      MS_FUND_C5-FIKRS = IV_FIKRS.
+      MS_FUND_C5-FINCODE = IV_FINCODE.
+      MS_FUND_C5-C5_ASSIGN = LT_C5_ASSIGN.
+      INSERT MS_FUND_C5 INTO TABLE MT_FUND_C5.
+    ENDIF.
+
+    IF IV_C5_ID IS NOT INITIAL.
+      READ TABLE MS_FUND_C5-C5_ASSIGN INTO DATA(LS_C5_ASSIGN) WITH KEY C5_ID = IV_C5_ID.
+      IF SY-SUBRC = 0.
+        ES_FUND_C5-MANDT = SY-MANDT.
+        ES_FUND_C5-FIKRS = MS_FUND_C5-FIKRS.
+        ES_FUND_C5-FINCODE = MS_FUND_C5-FINCODE.
+        MOVE-CORRESPONDING LS_C5_ASSIGN TO ES_FUND_C5.
+      ENDIF.
+    ELSEIF IV_GJAHR IS NOT INITIAL.
+      LOOP AT MS_FUND_C5-C5_ASSIGN INTO LS_C5_ASSIGN WHERE YEAR_FROM <= IV_GJAHR
+                                                     AND   YEAR_TO >= IV_GJAHR.
+        EXIT.
+      ENDLOOP.
+      IF SY-SUBRC = 0.
+        ES_FUND_C5-MANDT = SY-MANDT.
+        ES_FUND_C5-FIKRS = MS_FUND_C5-FIKRS.
+        ES_FUND_C5-FINCODE = MS_FUND_C5-FINCODE.
+        MOVE-CORRESPONDING LS_C5_ASSIGN TO ES_FUND_C5.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_MASTER_DATA============CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FM_MASTER_DATA============CU ----
+CLASS YCL_FM_MASTER_DATA DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  CLASS-METHODS GET_FUNDS_1
+    IMPORTING
+      !IV_FIKRS TYPE FIKRS OPTIONAL
+      !IV_DATAB TYPE FM_DATAB DEFAULT SY-DATUM
+      !IV_DATBIS TYPE FM_DATBIS DEFAULT SY-DATUM
+    RETURNING
+      VALUE(RT_FINCODE) TYPE YTTFM_FUNDS_1 .
+  CLASS-METHODS GET_FUND_C5_WITH_BUFFER
+    IMPORTING
+      !IV_FIKRS TYPE FIKRS
+      !IV_FINCODE TYPE BP_GEBER
+      !IV_C5_ID TYPE YE_FM_C5_ID OPTIONAL
+      !IV_GJAHR TYPE GJAHR OPTIONAL
+    EXPORTING
+      !ES_FUND_C5 TYPE YTFM_FUND_C5 .
+  CLASS-METHODS GET_FUND_CENTERS_1
+    IMPORTING
+      !IV_FIKRS TYPE FIKRS OPTIONAL
+      !IV_HIVARNT TYPE FM_HIVARNT DEFAULT '0000'
+      !IV_DATAB TYPE FM_DATAB OPTIONAL
+      !IV_DATBIS TYPE FM_DATBIS OPTIONAL
+    RETURNING
+      VALUE(RT_FICTR) TYPE YTTFM_FUND_CENTERS_1 .
+  CLASS-METHODS GET_FUND_WITH_BUFFER
+    IMPORTING
+      !IV_FIKRS TYPE FIKRS
+      !IV_FINCODE TYPE BP_GEBER
+      !IV_WITH_TEXT TYPE XFELD DEFAULT ABAP_TRUE
+    EXPORTING
+      VALUE(ES_FMFINCODE) TYPE FMFINCODE
+      VALUE(ES_FMFINT) TYPE FMFINT .

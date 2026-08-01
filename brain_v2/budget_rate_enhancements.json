@@ -1,0 +1,270 @@
+{
+ "_what_this_is": "the ZFIX_EXCHANGERATE enhancement family as RECORDS — 15 active members plus one BAdI, each with the gate it keys on, where it fires, and what it modifies",
+ "_why_structured": "this analysis existed and was excellent, in 767 lines of markdown with a 15-row table. Nothing could query it: not 'which members are posting-currency-anchored', not 'which hooks persist versus which only affect an in-memory check', not 'which are dead'. A table a human reads is not a table an algorithm reads.",
+ "_the_finding_in_one_line": "the members disagree about what THE CONSUMPTION CURRENCY IS. Camp A keys on the reservation's own currency and fires regardless of how it is consumed; Camp B keys on the currency of the row being persisted and skips when they differ. A USD posting against an EUR reservation satisfies A and fails B, so half the family converts and half does not.",
+ "_source": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md — debugger-confirmed, session 054",
+ "_evidence_gap_stated_honestly": {
+  "resolved": "s097 — the class was extracted from P01 (136 objects of package YA) and read. The previously-cited path extracted_code/CLAS/... never existed; the real source now lives at extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap, 634 lines."
+ },
+ "camps": {
+  "A_fr_currency_anchored": "key on the RESERVATION's own currency and fire whenever it is EUR, regardless of how it is consumed",
+  "B_posting_currency_anchored": "key on the currency of the ROW BEING PERSISTED and fire only when that row is EUR",
+  "C_filter_exclusion": "no gate at all — they DELETE non-applicable rows so standard SAP never sees them",
+  "D_auxiliary": "orchestration and payroll bridges, plus the dead ones"
+ },
+ "members": [
+  {
+   "id": "1a",
+   "name": "ZFIX_EF_FUND_RESERVATION",
+   "block": "Enh 2",
+   "camp": "A",
+   "hook": "KBLP/KBLK update during FMX1/FMX2 (reservation create/change)",
+   "gate_keyed_on": "t_kblk-waers (RESERVATION HEADER)",
+   "modifies": "t_kblp-hwges, -hwgesapp",
+   "persists": true,
+   "note": "this is what writes the reservation positions to FMIOI at the BR ratio 1.09529 that the golden shows"
+  },
+  {
+   "id": "1b",
+   "name": "ZFIX_EF_FUND_RESERVATION",
+   "block": "Enh 3",
+   "camp": "A",
+   "hook": "KBLP update during RFFMREPO (FM reconstruction — carryforward and recovery)",
+   "gate_keyed_on": "t_kblk-waers (RESERVATION HEADER)",
+   "modifies": "deletes non-applicable rows first (loekz='X' OR gsber<>'GEF' OR fipex/vrgng excluded OR fund type not authorised), then recomputes survivors at BR",
+   "persists": true,
+   "note": "THE CARRYFORWARD BRANCH — it determines how 2025 reservation balances arrive in 2026"
+  },
+  {
+   "id": "2",
+   "name": "ZFIX_EXCHANGERATE_CHECK_CONS",
+   "block": "Enh 1+2",
+   "camp": "A",
+   "hook": "CL_FM_EF_POSITION->CHECK_CONSUMPTION (availability check at consumption time)",
+   "gate_keyed_on": "m_r_doc->m_f_kblk-waers (RESERVATION HEADER)",
+   "modifies": "SAVE/RESTORE: temporarily overwrites m_t_addref-ref-hwges with the BR value during the standard check, then restores it",
+   "persists": false,
+   "note": "NOTHING IS PERSISTED — it exists only to make the availability check pass. This is the mechanism behind 'the check passes but persistence still drifts'"
+  },
+  {
+   "id": "1c",
+   "name": "ZFIX_EXCHANGERATE_PAYCOMMIT",
+   "camp": "B",
+   "hook": "SAPLMR1M / GET_FA_COMMIT_DATA",
+   "gate_keyed_on": "<yyls_reftab>-waers (PER-ROW transaction currency)",
+   "modifies": "<yyls_reftab>-hwges, -hwgesapp",
+   "persists": false
+  },
+  {
+   "id": "3a",
+   "name": "ZFIX_EXCHANGERATE_NEW_ITEM",
+   "camp": "B",
+   "hook": "VFH_FUNDS_CHECK_OI / CREATE_NEW_ITEM_FA",
+   "gate_keyed_on": "c_f_fmoi-twaer (NEW COMMITMENT ROW)",
+   "modifies": "c_f_fmoi-fkbtrorig, -fkbtrorig_max, -fkbtrredu, -fkbtradjst, -trbtrredu",
+   "persists": true,
+   "note": "the new commitment line BEFORE it reaches FMIOI"
+  },
+  {
+   "id": "3b",
+   "name": "ZFIX_EXCHANGERATE_AVC",
+   "block": "Enh 1",
+   "camp": "B",
+   "hook": "FM_FUNDS_CHECK_OI (loops t_fmioi)",
+   "gate_keyed_on": "<ls_fmioi>-twaer (PER-ROW, mixed)",
+   "modifies": "<ls_fmioi>-fkbtr (in-memory AVC working copy)",
+   "persists": false
+  },
+  {
+   "id": "3c",
+   "name": "ZFIX_EXCHANGERATE_AVC",
+   "block": "Enh 3",
+   "camp": "B",
+   "hook": "FM_FUNDS_CHECK_OI (loops u_t_fmifiit)",
+   "gate_keyed_on": "<ls_fmifiit>-twaer (PER-ROW)",
+   "modifies": "<ls_c_t_avc>-fkbtr (AVC accumulator)",
+   "persists": false
+  },
+  {
+   "id": "5",
+   "name": "ZFIX_EXCHANGERATE_KBLEW",
+   "camp": "B",
+   "hook": "CL_FM_EF_POSITION->CREATE_KBLEW_ENTRIES",
+   "gate_keyed_on": "ls_tr_kblew-waers (the curtp=00 row's transaction currency)",
+   "modifies": "<ls_cc_kblew>-wrbtr, -wrbtrapp (the curtp=10 local-currency line)",
+   "persists": true
+  },
+  {
+   "id": "6",
+   "name": "ZFIX_EXCHANGERATE_FI",
+   "camp": "B",
+   "hook": "FI document to FM document generation",
+   "gate_keyed_on": "<ls_fmifiit>-twaer (PER-ROW)",
+   "modifies": "<ls_fmifiit>-fkbtr, plus a Y_FM_UPDATE_BR_FMIFIIT audit row, an INSERT into mt_avc_fund and SET HANDLER fmavc_reinit_on_event",
+   "persists": true,
+   "note": "the widest-reaching member — it writes the FM actual AND triggers an AVC reinit"
+  },
+  {
+   "id": "9a",
+   "name": "ZFIX_BR_REVALUATION",
+   "block": "Enh 2",
+   "camp": "C",
+   "hook": "FMN4N (purchase-order commitment recalculation), only when sy-tcode='FMN4N'",
+   "gate_keyed_on": "none — it DELETES",
+   "modifies": "removes rows from c_t_fmoi where fikrs<>'UNES' OR twaer<>'EUR' OR bus_area<>'GEF' OR the fund type is unauthorised",
+   "persists": false,
+   "note": "revaluation operates ONLY on EUR+GEF+UNES rows, so a USD row on the same fund is silently skipped from the cleanup"
+  },
+  {
+   "id": "9b",
+   "name": "ZFIX_BR_REVALUATION",
+   "block": "Enh 3",
+   "camp": "C",
+   "hook": "same hook, applied to the FMIOI buffer u_t_fmioi_buf",
+   "gate_keyed_on": "none — it DELETES",
+   "modifies": "same filter on the buffer",
+   "persists": false
+  },
+  {
+   "id": "9c",
+   "name": "ZFIX_BR_REVAL_RESFUND",
+   "camp": "C",
+   "hook": "FMZZ (reservation fund revaluation report)",
+   "gate_keyed_on": "none — it DELETES",
+   "modifies": "forces testlauf='X' and deletes rows where bukrs='UNES' AND waers<>'EUR', or gsber<>'GEF', or the fund type is unauthorised",
+   "persists": false,
+   "note": "TEST RUN ONLY — it never persists"
+  },
+  {
+   "id": "BAdI",
+   "name": "ZFIX_BR_AVC_EXCLUSIONS",
+   "camp": "C",
+   "hook": "IF_EX_FMAVC_ENTRY_FILTER~BUDGET_FILTER — ALL AVC entry points",
+   "gate_keyed_on": "sy-tcode",
+   "modifies": "IF sy-tcode = 'MIRO' OR sy-tcode = 'F110' THEN skip the AVC entry entirely",
+   "persists": false,
+   "why_this_one_explains_the_incident": "this was the escape hatch for the cross-currency mismatch — AVC is skipped for MIRO and F110, the downstream flows where the drift was known to surface. IT DOES NOT COVER FB60, which is the transaction that fails. The workaround was scoped to the symptoms already seen, not to the mechanism."
+  },
+  {
+   "id": "D1",
+   "name": "ZFIX_FM_BR_POST_FROM_PY_AUTO",
+   "camp": "D",
+   "hook": "after payroll posting (p_rev = abap_false)",
+   "modifies": "submits submit_br_posting_in_fm",
+   "status": "ACTIVE — payroll bridge"
+  },
+  {
+   "id": "D2",
+   "name": "ZFIX_BR_BAPI_EMPLOYEE_POST",
+   "camp": "D",
+   "hook": "BAPI employee posting",
+   "modifies": "sets account data on ycl_fm_br_payroll_posting_bl",
+   "status": "ACTIVE — payroll bridge"
+  },
+  {
+   "id": "D3",
+   "name": "ZFIX_BRCHECKFUNDS",
+   "camp": "D",
+   "status": "UNKNOWN — source extraction returned 0 lines, likely a stub"
+  },
+  {
+   "id": "D4",
+   "name": "ZFIX_EXCHANGERATE_PBC_POS_UPD",
+   "camp": "D",
+   "modifies": "PBC HR amount conversion",
+   "status": "DEAD — carries CHECK 1=2"
+  },
+  {
+   "id": "D5",
+   "name": "ZFIX_EXCHANGERATE_FM_DOC_UPD / _FM_POS_UPD / _POPOST / _REDUCE / _REDUCE_1",
+   "camp": "D",
+   "status": "DELETED or ORPHANED — no runtime effect"
+  }
+ ],
+ "_what_a_reader_should_take_from_this": [
+  "FIFTEEN members and only SIX persist. Half the family exists to make in-memory checks pass, which is why an availability check can succeed while the stored figures drift.",
+  "The camps are the defect. A USD posting against an EUR reservation satisfies every Camp A gate and fails every Camp B gate, so the reservation side converts and the consumption side does not.",
+  "The escape hatch is scoped to symptoms, not to the mechanism: the AVC-skip BAdI covers MIRO and F110 and leaves FB60 exposed.",
+  "The carryforward branch (1b) decides how last year's balances arrive this year, so the drift is inherited across years rather than reset."
+ ],
+ "applicability_perimeter": {
+  "_read_from": "extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap CONSTRUCTOR + CHECK_CONDITIONS",
+  "_what_it_is": "EIGHT dimensions must ALL pass before any conversion happens, plus an activation date. Each is a CHECK that exits silently, so a single failing dimension means the conversion is skipped with no trace.",
+  "dimensions": [
+   {
+    "n": 1,
+    "field": "RLDNR",
+    "rule": "= 9A",
+    "note": "ledger 9A — NOT the AVC ledger 9H"
+   },
+   {
+    "n": 2,
+    "field": "BUKRS",
+    "rule": "= UNES",
+    "note": "company code — the other 8 entities are outside the perimeter entirely"
+   },
+   {
+    "n": 3,
+    "field": "FIKRS",
+    "rule": "= UNES",
+    "note": "FM area, same restriction"
+   },
+   {
+    "n": 4,
+    "field": "GSBER",
+    "rule": "= GEF",
+    "note": "business area"
+   },
+   {
+    "n": 5,
+    "field": "WAERS",
+    "rule": "= EUR ONLY",
+    "note": "THE DEFECT. A USD row exits here and the conversion never runs."
+   },
+   {
+    "n": 6,
+    "field": "FIPEX",
+    "rule": "EXCLUDES GAINS and REVENUE"
+   },
+   {
+    "n": 7,
+    "field": "VRGNG",
+    "rule": "EXCLUDES HRM1, HRM2, HRP1",
+    "note": "PBC pre-commitment, PBC commitment and payroll posting are OUT of the main path"
+   },
+   {
+    "n": 8,
+    "field": "FTYPE",
+    "rule": "IN (SELECT FUND_TYPE FROM FMFUNDTYPE WHERE ZZFIX_RATE = X)",
+    "note": "DATA-DRIVEN, not hard-coded — a custom field on a standard table. Measured in P01: 14 types, all UNES — 001,002,003,004,005,009,010,012,013,016,017,018,094,095. Regular-Programme types only: earmarked 101-115, MBF 299 and CRP 311/314 are NOT in the perimeter."
+   }
+  ],
+  "activation": {
+   "method": "CHECK_BR_IS_ACTIVE",
+   "rule": "sy-datum >= MV_START_DATE",
+   "source": "TVARVC variable Y_FM_FIXED_RATE_START, type P",
+   "measured_in_P01": "20240101 — BR is active since 1 January 2024",
+   "the_trap": "if that variable is missing the code defaults MV_START_DATE to '99991231', so BR silently never activates. A kill switch that fails CLOSED and says nothing."
+  }
+ },
+ "three_gates_not_one": {
+  "_the_finding": "the class carries THREE condition methods with THREE different range sets, and the difference between them is where the asymmetry lives.",
+  "CHECK_CONDITIONS": {
+   "purpose": "the main path",
+   "currency": "EUR only (MR_WAERS)",
+   "transactions": "EXCLUDES HRM1/HRM2/HRP1"
+  },
+  "CHECK_CONDITIONS_2": {
+   "purpose": "the STAFF path",
+   "currency": "EUR *and* USD (MR_WAERS2)",
+   "transactions": "INCLUDES HRM1/HRM2/HRP1",
+   "_note": "the cure for the currency defect EXISTS in this variant and is unreachable from the main path — the staff gate accepts USD, the main one does not",
+   "_second_latent_defect": "this gate also checks IV_HKONT IN MR_HKONT, and MR_HKONT is DECLARED at line 57 and NEVER POPULATED anywhere in the class. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed the staff gate FAILS ALWAYS. Same shape as the known defect: a range that gates and is never filled."
+  },
+  "CHECK_CONDITIONS_3": {
+   "purpose": "reconstruction / DELETION — the complement",
+   "logic": "INVERTED: NOT IN for ledger, company, FM area and business area; and IN for the *3 variants, which INCLUDE GAINS/REVENUE and INCLUDE HRM1/HRM2/HRP1 and EXCLUDE the ZZFIX_RATE fund types",
+   "_why_it_matters": "it decides which rows RFFMREPO deletes during carryforward and recovery"
+  }
+ }
+}

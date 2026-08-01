@@ -1,0 +1,1407 @@
+* ==== CLASS POOL YCL_FM_SPENDING_AUTH ====
+CLASS-POOL .
+*"* class pool for class YCL_FM_SPENDING_AUTH
+
+*"* local type definitions
+INCLUDE YCL_FM_SPENDING_AUTH==========CCDEF.
+
+*"* class YCL_FM_SPENDING_AUTH definition
+*"* public declarations
+  INCLUDE YCL_FM_SPENDING_AUTH==========CU.
+*"* protected declarations
+  INCLUDE YCL_FM_SPENDING_AUTH==========CO.
+*"* private declarations
+  INCLUDE YCL_FM_SPENDING_AUTH==========CI.
+ENDCLASS. "YCL_FM_SPENDING_AUTH definition
+
+*"* macro definitions
+INCLUDE YCL_FM_SPENDING_AUTH==========CCMAC.
+*"* local class implementation
+INCLUDE YCL_FM_SPENDING_AUTH==========CCIMP.
+
+CLASS YCL_FM_SPENDING_AUTH IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FM_SPENDING_AUTH implementation
+
+
+* ---- YCL_FM_SPENDING_AUTH==========CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    TTY_AL_HIER TYPE TABLE OF YTFM_HIER .
+  TYPES:
+    BEGIN OF TY_FUND_AL,
+      FINCODE TYPE BP_GEBER,
+      ALINE   TYPE YE_FM_AL,
+    END OF TY_FUND_AL .
+  TYPES:
+    TTY_FUND_CPL TYPE TABLE OF YTFM_FUND_CPL .
+  TYPES:
+    BEGIN OF TY_FUND_NON_IBF,
+      FINCODE TYPE BP_GEBER,
+      NONIBF  TYPE YE_FM_NON_IBF,
+    END OF TY_FUND_NON_IBF .
+  TYPES:
+    BEGIN OF TY_FUND_MESSAGE,
+      FINCODE TYPE BP_GEBER,
+      MESSAGE TYPE TEXT80,
+    END OF TY_FUND_MESSAGE .
+  TYPES:
+    TTY_FUND_MESSAGE TYPE TABLE OF TY_FUND_MESSAGE .
+  TYPES:
+    BEGIN OF TY_AL,
+      HIER  TYPE NUMC1,
+      ALINE TYPE YE_FM_AL,
+    END OF TY_AL .
+  TYPES:
+    TTY_AL TYPE TABLE OF TY_AL .
+  TYPES:
+    BEGIN OF TY_SPAUTH_CAT,
+      AUTH_CAT TYPE YEFM_AUTHORITY_CATEGORY,
+      AUTH_TXT TYPE TEXT60,
+    END OF TY_SPAUTH_CAT .
+  TYPES:
+    TTY_SPAUTH_CAT TYPE TABLE OF TY_SPAUTH_CAT .
+  TYPES:
+    TTY_FUND_AL TYPE TABLE OF TY_FUND_AL .
+
+  DATA MT_FUND_AL TYPE TTY_FUND_AL .
+  DATA MV_HIER_TYPE TYPE YE_FM_HIER_TYPE .
+  DATA MV_LAST_0HIERNODE TYPE RSHIENODID .
+  DATA MV_PREVIOUS_NODENAME TYPE RSNODENAME .
+  DATA MT_SPAUTH_CAT TYPE TTY_SPAUTH_CAT .
+  CONSTANTS C_AL TYPE CHAR2 VALUE 'AL' ##NO_TEXT.
+  CONSTANTS C_FC TYPE CHAR2 VALUE 'FC' ##NO_TEXT.
+  CONSTANTS C_DIRECT_SPAUTH TYPE YEFM_AUTHORITY_CATEGORY VALUE 'DIRECT_AUTH' ##NO_TEXT.
+  DATA MT_FUND_MESSAGE TYPE TTY_FUND_MESSAGE .
+  DATA MV_REPID TYPE SY-REPID .
+  DATA MT_FUND_CPL TYPE TTY_FUND_CPL .
+  DATA MT_AL_HIER TYPE TTY_AL_HIER .
+  CLASS-DATA MO_INSTANCE TYPE REF TO YCL_FM_SPENDING_AUTH .
+  DATA MT_DATA_FILE TYPE STRING_TABLE .
+  CONSTANTS C_INDIRECT_COST_SHARING TYPE YEFM_AUTHORITY_CATEGORY VALUE 'COST_SHARING' ##NO_TEXT.
+  CONSTANTS C_INDIRECT_STAFF_COST TYPE YEFM_AUTHORITY_CATEGORY VALUE 'STAFF_COST' ##NO_TEXT.
+  CONSTANTS C_DIRECT_OTHER TYPE YEFM_AUTHORITY_CATEGORY VALUE 'DIRECT_OTHER' ##NO_TEXT.
+  CONSTANTS C_NON_IBF TYPE YEFM_AUTHORITY_CATEGORY VALUE 'NON_IBF' ##NO_TEXT.
+  DATA MT_SP_HIER TYPE TTY_AL_HIER .
+  CONSTANTS C_SP TYPE CHAR2 VALUE 'SP' ##NO_TEXT.
+
+  METHODS GET_PARENTID
+    IMPORTING
+      !IV_NODENAME TYPE ANY
+    RETURNING
+      VALUE(RV_PARENTID) TYPE RSPARENT .
+  METHODS APPEND_HIERARCHY_TABLE
+    IMPORTING
+      !IV_NODENAME TYPE ANY
+      !IV_ADD_ID TYPE BOOLEAN DEFAULT SPACE
+    CHANGING
+      !CV_NODEID TYPE RSHIENODID .
+  METHODS CHECK_ALINE
+    IMPORTING
+      !IV_FINCODE TYPE BP_GEBER
+      !IV_ALINE TYPE YE_FM_AL
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS IS_IN_AL_HIERARCHY
+    IMPORTING
+      !IV_ALINE TYPE YE_FM_AL
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS IS_MANAGEMENT_COST
+    IMPORTING
+      !IV_FINCODE TYPE BP_GEBER
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS IS_NON_IBF
+    IMPORTING
+      !IV_FINCODE TYPE BP_GEBER
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS PUT_TO_SPAUTH_LIST
+    IMPORTING
+      !IV_AUTH TYPE CHAR2
+      !IV_FORCE_ALINE TYPE YE_FM_AL OPTIONAL
+      !IV_AUTH_CAT TYPE YEFM_AUTHORITY_CATEGORY
+      !IS_SPAUTH_LIST TYPE YSFM_SPAUTH_LIST .
+  METHODS READ_TABLE_FUND_CPL .
+  METHODS DISPLAY_ALV
+    IMPORTING
+      !IV_TITLE TYPE LVC_TITLE
+    CHANGING
+      !CT_TAB TYPE ANY TABLE .
+  METHODS READ_TABLE_AL_HIER
+    IMPORTING
+      !IV_HIER_TYPE TYPE YE_FM_HIER_TYPE .
+
+* ---- YCL_FM_SPENDING_AUTH==========CM001 ----
+  METHOD GET_INSTANCE.
+
+    IF MO_INSTANCE IS INITIAL.
+      CREATE OBJECT MO_INSTANCE TYPE (IV_CLASSNAME)
+                                EXPORTING IV_REPID = IV_REPID.
+    ENDIF.
+
+    RO_INSTANCE = MO_INSTANCE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM002 ----
+  METHOD UPLOAD_DATA.
+
+    CLEAR MT_DATA_FILE.
+
+    IF IV_FILETYPE = 'DAT'.
+      FIND '.csv' IN MV_FILENAME.
+      IF SY-SUBRC <> 0.
+        MESSAGE TEXT-E04 TYPE 'E'.
+      ENDIF.
+    ENDIF.
+
+    CLEAR MT_DATA_FILE.
+
+    CALL METHOD CL_GUI_FRONTEND_SERVICES=>GUI_UPLOAD
+      EXPORTING
+        FILENAME                = MV_FILENAME
+        FILETYPE                = IV_FILETYPE
+*       has_field_separator     = SPACE
+*       header_length           = 0
+*       read_by_line            = 'X'
+*       dat_mode                = SPACE
+*       codepage                = SPACE
+*       ignore_cerr             = ABAP_TRUE
+*       replacement             = '#'
+*       virus_scan_profile      =
+*      IMPORTING
+*       filelength              =
+*       header                  =
+      CHANGING
+        DATA_TAB                = MT_DATA_FILE
+*       isscanperformed         = SPACE
+      EXCEPTIONS
+        FILE_OPEN_ERROR         = 1
+        FILE_READ_ERROR         = 2
+        NO_BATCH                = 3
+        GUI_REFUSE_FILETRANSFER = 4
+        INVALID_TYPE            = 5
+        NO_AUTHORITY            = 6
+        UNKNOWN_ERROR           = 7
+        BAD_DATA_FORMAT         = 8
+        HEADER_NOT_ALLOWED      = 9
+        SEPARATOR_NOT_ALLOWED   = 10
+        HEADER_TOO_LONG         = 11
+        UNKNOWN_DP_ERROR        = 12
+        ACCESS_DENIED           = 13
+        DP_OUT_OF_MEMORY        = 14
+        DISK_FULL               = 15
+        DP_TIMEOUT              = 16
+        NOT_SUPPORTED_BY_GUI    = 17
+        ERROR_NO_GUI            = 18
+        OTHERS                  = 19.
+    IF SY-SUBRC <> 0.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM003 ----
+  METHOD SET_AL_DATA_TO_TABLE.
+
+    DATA LT_HIER TYPE TABLE OF YTFM_HIER.
+
+    DATA LS_HIER TYPE YTFM_HIER.
+    DATA LV_NODEID(5) TYPE C.
+    DATA LV_PARENTID(5) TYPE C.
+    DATA LV_CHILDID(5) TYPE C.
+    DATA LV_NEXTID(5) TYPE C.
+    DATA LV_DATETO(10) TYPE C.
+    DATA LV_DATEFROM(10) TYPE C.
+
+    "delete data from table
+    DELETE FROM YTFM_HIER WHERE HIER_TYPE = 'AL'.
+
+    LOOP AT MT_DATA_FILE INTO DATA(LV_STRING).
+      CHECK SY-TABIX <> 1.
+      SPLIT LV_STRING AT ';'
+      INTO LV_NODEID
+           LS_HIER-INFOOBJECT
+           LS_HIER-NODENAME
+           LS_HIER-LINK
+           LV_PARENTID
+           LV_CHILDID
+           LV_NEXTID
+           LS_HIER-LANGU
+           LS_HIER-TXTSH
+           LS_HIER-TXTMD
+           LS_HIER-TXTLG
+           LV_DATETO
+           LV_DATEFROM.
+      LS_HIER-NODEID = LV_NODEID.
+      LS_HIER-PARENTID = LV_PARENTID.
+      LS_HIER-CHILDID = LV_CHILDID.
+      LS_HIER-NEXTID = LV_NEXTID.
+      SPLIT LV_DATETO AT '.' INTO LS_HIER-DATETO+6(2)
+                                  LS_HIER-DATETO+4(2)
+                                  LS_HIER-DATETO(4).
+      SPLIT LV_DATEFROM AT '.' INTO LS_HIER-DATEFROM+6(2)
+                                    LS_HIER-DATEFROM+4(2)
+                                    LS_HIER-DATEFROM(4).
+      LS_HIER-MANDT = SY-MANDT.
+      LS_HIER-HIER_TYPE = 'AL'.
+      INSERT YTFM_HIER FROM LS_HIER.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM004 ----
+  METHOD READ_TABLE_AL_HIER.
+
+    IF MT_AL_HIER IS INITIAL OR MV_HIER_TYPE <> IV_HIER_TYPE.
+      CLEAR MT_AL_HIER.
+      SELECT * FROM YTFM_HIER INTO TABLE MT_AL_HIER WHERE HIER_TYPE = IV_HIER_TYPE.
+      MV_HIER_TYPE = IV_HIER_TYPE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM005 ----
+  METHOD DISPLAY_AL_HIER.
+
+    ME->READ_TABLE_AL_HIER( IV_HIER_TYPE ).
+
+    ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-ALH
+                     CHANGING  CT_TAB   = MT_AL_HIER ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM006 ----
+METHOD SET_AL_FUND_TO_TABLE.
+
+  DATA LS_FUND_AL TYPE TY_FUND_AL.
+  DATA LT_FUND_CPL TYPE TABLE OF YTFM_FUND_CPL.
+  DATA LS_FUND_CPL TYPE YTFM_FUND_CPL.
+  DATA LV_FILENAME TYPE LOCALFILE.
+  DATA LS_MESSAGE TYPE TY_FUND_MESSAGE.
+
+  CHECK MT_FUND_AL IS NOT INITIAL.
+
+  SELECT A~MANDT, A~FIKRS, A~FINCODE, B~ENDDA, B~BEGDA, B~ALINE, B~NONIBF
+         FROM FMFINCODE AS A
+         LEFT OUTER JOIN YTFM_FUND_CPL AS B
+              ON  B~FIKRS = A~FIKRS
+              AND B~FINCODE = A~FINCODE
+              AND B~ENDDA = '99991231'
+         FOR ALL ENTRIES IN @MT_FUND_AL
+             WHERE A~FINCODE = @MT_FUND_AL-FINCODE
+         INTO TABLE @LT_FUND_CPL.
+
+  LOOP AT LT_FUND_CPL INTO LS_FUND_CPL.
+    READ TABLE MT_FUND_AL INTO LS_FUND_AL WITH KEY FINCODE = LS_FUND_CPL-FINCODE.
+    IF SY-SUBRC = 0.
+      "DELETE mt_fund_al INDEX sy-tabix.
+      IF LS_FUND_AL-ALINE <> '#'
+      AND LS_FUND_AL-ALINE IS NOT INITIAL
+      AND LS_FUND_AL-ALINE <> LS_FUND_CPL-ALINE.
+        LS_FUND_CPL-ALINE = LS_FUND_AL-ALINE.
+        IF LS_FUND_CPL-ENDDA IS INITIAL.
+          LS_FUND_CPL-BEGDA = '19000101'.
+          LS_FUND_CPL-ENDDA = '99991231'.
+        ENDIF.
+        IF IV_TEST = ABAP_FALSE.
+          MODIFY YTFM_FUND_CPL FROM LS_FUND_CPL.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDLOOP.
+
+  "Fund not found in SAP:
+  LOOP AT MT_FUND_AL INTO LS_FUND_AL.
+    READ TABLE LT_FUND_CPL TRANSPORTING NO FIELDS WITH KEY FINCODE = LS_FUND_AL-FINCODE.
+    CHECK SY-SUBRC <> 0.
+    LS_MESSAGE-FINCODE = LS_FUND_AL-FINCODE.
+    LS_MESSAGE-MESSAGE = TEXT-E01.
+    APPEND LS_MESSAGE TO MT_FUND_MESSAGE.
+  ENDLOOP.
+
+  ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-ERR
+                   CHANGING  CT_TAB = MT_FUND_MESSAGE ).
+
+ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM007 ----
+  METHOD DISPLAY_ALV.
+
+    DATA LO_ALV TYPE REF TO YIF_ALV_DISPLAY.
+
+    DESCRIBE TABLE CT_TAB LINES DATA(LV_LINES).
+
+    LO_ALV = YCL_ALV_FACTORY=>GET_INSTANCE( ).
+    LO_ALV->INIT_ALV( EXPORTING IV_HEADER = 2
+                      CHANGING IT_TABLE = CT_TAB ).
+    LO_ALV->SET_MAIN_FUNCTIONS( EXPORTING IV_REPORT = MV_REPID
+                                          IV_TITLE = IV_TITLE ).
+    LO_ALV->SET_HEADER( IV_TYPE = 'T'
+                        IV_ROW = 1
+                        IV_COLUMN = 1
+                        IV_TEXT = TEXT-L01 ).
+    LO_ALV->SET_HEADER( IV_TYPE = 'L'
+                      IV_ROW = 1
+                      IV_COLUMN = 2
+                      IV_TEXT = LV_LINES ).
+    LO_ALV->DISPLAY_ALV( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM008 ----
+  METHOD DISPLAY_FUND_CPL.
+
+    ME->READ_TABLE_FUND_CPL( ).
+
+    ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-CPL
+                     CHANGING  CT_TAB   = MT_FUND_CPL ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM009 ----
+  METHOD READ_TABLE_FUND_CPL.
+
+    IF MT_FUND_CPL IS INITIAL.
+      SELECT * FROM YTFM_FUND_CPL INTO TABLE MT_FUND_CPL.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00A ----
+  METHOD SET_NON_IBF_TO_TABLE.
+
+    DATA LT_NONIBF TYPE TABLE OF TY_FUND_AL.
+    DATA LS_NONIBF TYPE TY_FUND_AL.
+    DATA LT_FUND_CPL TYPE TABLE OF YTFM_FUND_CPL.
+    DATA LS_FUND_CPL TYPE YTFM_FUND_CPL.
+    DATA LS_MESSAGE TYPE TY_FUND_MESSAGE.
+
+    LOOP AT MT_DATA_FILE INTO DATA(LV_STRING).
+      CHECK SY-TABIX <> 1.
+      SPLIT LV_STRING AT ';'
+       INTO LS_NONIBF-FINCODE
+            LS_NONIBF-ALINE.
+      APPEND LS_NONIBF TO LT_NONIBF.
+    ENDLOOP.
+
+    CHECK LT_NONIBF IS NOT INITIAL.
+
+    SELECT A~MANDT, A~FIKRS, A~FINCODE, B~ENDDA, B~BEGDA, B~ALINE, B~NONIBF
+           FROM FMFINCODE AS A
+           LEFT OUTER JOIN YTFM_FUND_CPL AS B
+                ON  B~FIKRS = A~FIKRS
+                AND B~FINCODE = A~FINCODE
+                AND B~ENDDA = '99991231'
+           FOR ALL ENTRIES IN @LT_NONIBF
+               WHERE A~FINCODE = @LT_NONIBF-FINCODE
+           INTO TABLE @LT_FUND_CPL.
+
+    LOOP AT LT_FUND_CPL INTO LS_FUND_CPL.
+      READ TABLE LT_NONIBF INTO LS_NONIBF WITH KEY FINCODE = LS_FUND_CPL-FINCODE.
+      IF SY-SUBRC = 0.
+        "DELETE lt_nonibf INDEX sy-tabix.
+        IF LS_NONIBF-ALINE <> LS_FUND_CPL-ALINE OR LS_FUND_CPL-NONIBF = ABAP_FALSE.
+          LS_FUND_CPL-ALINE = LS_NONIBF-ALINE.
+          LS_FUND_CPL-NONIBF = ABAP_TRUE.
+          IF LS_FUND_CPL-ENDDA IS INITIAL.
+            LS_FUND_CPL-BEGDA = '19000101'.
+            LS_FUND_CPL-ENDDA = '99991231'.
+          ENDIF.
+          MODIFY YTFM_FUND_CPL FROM LS_FUND_CPL.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+    "Fund not found in SAP:
+    LOOP AT LT_NONIBF INTO LS_NONIBF.
+      READ TABLE LT_FUND_CPL TRANSPORTING NO FIELDS WITH KEY FINCODE = LS_NONIBF-FINCODE.
+      CHECK SY-SUBRC <> 0.
+      LS_MESSAGE-FINCODE = LS_NONIBF-FINCODE.
+      LS_MESSAGE-MESSAGE = TEXT-E01.
+      APPEND LS_MESSAGE TO MT_FUND_MESSAGE.
+    ENDLOOP.
+
+    ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-ERR
+                     CHANGING  CT_TAB = MT_FUND_MESSAGE ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00B ----
+  METHOD CONSTRUCTOR.
+
+    MV_REPID = SY-REPID.
+
+    "Init Spending authority category table
+    MT_SPAUTH_CAT = VALUE #( ( AUTH_CAT = C_DIRECT_SPAUTH AUTH_TXT = 'Direct spending authority' )
+                             ( AUTH_CAT = C_INDIRECT_COST_SHARING AUTH_TXT = 'Indirect authority - Cost-sharing budget' )
+                             ( AUTH_CAT = C_INDIRECT_STAFF_COST AUTH_TXT = 'Indirect authority - Staff costs' )
+                             ( AUTH_CAT = C_DIRECT_OTHER AUTH_TXT = 'Direct authority - Other appropriation lines' )
+                             ( AUTH_CAT = C_NON_IBF AUTH_TXT = 'Non-IBF budget' )
+                           ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00C ----
+  METHOD GET_AL_HIERARCHY.
+
+    DATA LT_AL TYPE YTTFM_AL.
+    DATA LS_AL TYPE LINE OF YTTFM_AL.
+    DATA LS_HIER_LIST TYPE LINE OF YTTFM_AL_HIER.
+    DATA LS_AL_HIER   TYPE YTFM_HIER.
+    DATA LS_AL_HIER_W TYPE YTFM_HIER.
+    DATA LV_LEVEL(2) TYPE N.
+
+    ME->READ_TABLE_AL_HIER( C_AL ).
+
+    DATA(LT_AL_HIER) = MT_AL_HIER.
+    DELETE LT_AL_HIER WHERE NODENAME <> IV_ALINE.
+    IF LT_AL_HIER IS INITIAL.
+      EXIT.
+    ENDIF.
+
+    LOOP AT LT_AL_HIER INTO LS_AL_HIER.
+      LV_LEVEL = 1.
+      LS_AL-HLEVEL = LV_LEVEL.
+      LS_AL-ALINE = LS_AL_HIER-NODENAME.
+      APPEND LS_AL TO LT_AL.
+      ADD 1 TO LV_LEVEL.
+      LS_AL_HIER_W = LS_AL_HIER.
+      DO.
+        READ TABLE MT_AL_HIER INTO LS_AL_HIER WITH KEY NODEID = LS_AL_HIER_W-PARENTID.
+        IF SY-SUBRC <> 0.
+          EXIT.
+*        ELSEIF ls_al_hier-infoobject = '0HIER_NODE'.   "Root
+*          EXIT.
+        ELSE.
+          IF LS_AL_HIER-NODENAME <> LS_AL_HIER_W-NODENAME.    "PAX case
+            LS_AL-HLEVEL = LV_LEVEL.
+            LS_AL-ALINE = LS_AL_HIER-NODENAME.
+            APPEND LS_AL TO LT_AL.
+            ADD 1 TO LV_LEVEL.
+          ENDIF.
+          LS_AL_HIER_W = LS_AL_HIER.
+        ENDIF.
+      ENDDO.
+      SORT LT_AL BY HLEVEL DESCENDING.
+      LS_HIER_LIST-HIER = LT_AL.
+      APPEND LS_HIER_LIST TO RT_HIER_LIST.
+      CLEAR LT_AL.
+    ENDLOOP.
+
+    SORT RT_HIER_LIST BY HIER.
+    DELETE ADJACENT DUPLICATES FROM RT_HIER_LIST COMPARING HIER.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00D ----
+  METHOD IS_MANAGEMENT_COST.
+
+    DATA LV_ALINE TYPE YE_FM_AL.
+
+    "Budget codes are related to the current biennium. They have to be reported following the rules below:
+    "  - Codes starting with 680* (e.g. 680XXX1ZZZ ) are considered management costs
+    "  - From the structure XXX of the budget code you can identify the appropriation line. E.g. In 680BFM1999 ; XXX = BFM = appropriation line
+    RV_IS_OK = ABAP_FALSE.
+    CHECK IV_FINCODE(3) = '680'.
+    LV_ALINE = IV_FINCODE+3(3).
+    CHECK ME->GET_AL_HIERARCHY( LV_ALINE ) IS NOT INITIAL.
+    RV_IS_OK = ABAP_TRUE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00E ----
+  METHOD IS_NON_IBF.
+
+    ME->READ_TABLE_FUND_CPL( ).
+    RV_IS_OK = ABAP_FALSE.
+    READ TABLE MT_FUND_CPL INTO DATA(LS_FUND_CPL) WITH KEY FINCODE = IV_FINCODE.
+    CHECK SY-SUBRC = 0 AND LS_FUND_CPL-NONIBF = ABAP_TRUE.
+    RV_IS_OK = ABAP_TRUE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00F ----
+  METHOD GENERATE_HIERARCHY.
+
+    DATA LT_SPAUTH_LIST TYPE YTTFM_SPAUTH_LIST.
+    DATA LS_SPAUTH TYPE LINE OF YTTFM_SPAUTH_LIST.
+    DATA LS_MESSAGE TYPE TY_FUND_MESSAGE.
+
+    CLEAR: MT_SPAUTH_LIST, MT_FUND_MESSAGE.
+
+    "extract data
+    SELECT DISTINCT FMBL~FM_AREA  AS FM_AREA,
+                    FMBL~FUND     AS FINCODE,
+                    FMBL~FUNDSCTR AS FISTL,
+                    FMFU~TYPE     AS TYPE,
+                    YCPL~ALINE    AS ALINE,
+                    YCPL~NONIBF   AS NONIBF
+           FROM FMBL AS FMBL
+           LEFT OUTER JOIN FMFINCODE AS FMFU
+                    ON  FMFU~FIKRS = FMBL~FM_AREA
+                    AND FMFU~FINCODE = FMBL~FUND
+           LEFT OUTER JOIN YTFM_FUND_CPL AS YCPL
+                    ON  YCPL~FIKRS = FMBL~FM_AREA
+                    AND YCPL~FINCODE = FMBL~FUND
+                    AND YCPL~ENDDA >= @MV_DATE_REF
+                    AND YCPL~BEGDA <= @MV_DATE_REF
+           WHERE FMBL~FM_AREA IN @MT_RANGE_FIKRS
+           AND   FMBL~DOCYEAR IN @MT_RANGE_DOCYEAR
+           AND   FMBL~FUND IN @MT_RANGE_FINCODE
+           INTO CORRESPONDING FIELDS OF TABLE @LT_SPAUTH_LIST.
+
+    "Get authority category => follow algorithm of specification
+    LOOP AT LT_SPAUTH_LIST INTO LS_SPAUTH.
+
+      IF LS_SPAUTH-TYPE IS INITIAL. "Fund in FMBL but not in FMFINCODE !!
+        LS_MESSAGE-FINCODE = LS_SPAUTH-FINCODE.
+        LS_MESSAGE-MESSAGE = TEXT-E01.
+        APPEND LS_MESSAGE TO MT_FUND_MESSAGE.
+        CONTINUE.
+      ENDIF.
+
+      IF IS_MANAGEMENT_COST( LS_SPAUTH-FINCODE ) = ABAP_TRUE.
+        IF LS_SPAUTH-FISTL = 'HEQ'.
+          ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                  IV_AUTH_CAT = C_INDIRECT_STAFF_COST
+                                  IS_SPAUTH_LIST = LS_SPAUTH ).
+        ELSE.
+          ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_FC
+                                  IV_AUTH_CAT = C_DIRECT_SPAUTH
+                                  IS_SPAUTH_LIST = LS_SPAUTH ).
+        ENDIF.
+        CONTINUE.
+      ENDIF.
+
+      IF LS_SPAUTH-NONIBF = ABAP_TRUE.
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                IV_AUTH_CAT = C_NON_IBF
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_FC
+                                IV_AUTH_CAT = C_NON_IBF
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        CONTINUE.
+      ENDIF.
+
+      IF LS_SPAUTH-TYPE = '014'.
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                IV_AUTH_CAT = C_NON_IBF
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_FC
+                                IV_AUTH_CAT = C_NON_IBF
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        CONTINUE.
+      ENDIF.
+
+      IF LS_SPAUTH-TYPE = '003'.
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                IV_AUTH_CAT = C_INDIRECT_STAFF_COST
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        IF LS_SPAUTH-FISTL <> 'HEQ'.
+          ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_FC
+                                  IV_AUTH_CAT = C_INDIRECT_STAFF_COST
+                                  IS_SPAUTH_LIST = LS_SPAUTH ).
+        ENDIF.
+        CONTINUE.
+      ENDIF.
+
+      IF ME->IS_IN_AL_HIERARCHY( LS_SPAUTH-FISTL ) = ABAP_FALSE.
+        ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_FC
+                                IV_AUTH_CAT = C_DIRECT_SPAUTH
+                                IS_SPAUTH_LIST = LS_SPAUTH ).
+        "CONTINUE.  "if right, don't stop, check next cases
+      ENDIF.
+
+      CASE LS_SPAUTH-FISTL.
+        WHEN 'ITL'.
+          IF LS_SPAUTH-ALINE = 'KMI'.
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_AUTH_CAT = C_DIRECT_SPAUTH
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+          ELSE.
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_FORCE_ALINE = 'KMI'
+                                    IV_AUTH_CAT = C_DIRECT_OTHER
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_AUTH_CAT = C_INDIRECT_COST_SHARING
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+          ENDIF.
+
+        WHEN 'HQC'.
+          IF LS_SPAUTH-ALINE = 'OPS'.
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_AUTH_CAT = C_DIRECT_SPAUTH
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+          ELSE.
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_FORCE_ALINE = 'OPS'
+                                    IV_AUTH_CAT = C_DIRECT_OTHER
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+            ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                    IV_AUTH_CAT = C_INDIRECT_COST_SHARING
+                                    IS_SPAUTH_LIST = LS_SPAUTH ).
+
+          ENDIF.
+        WHEN OTHERS.
+          ME->PUT_TO_SPAUTH_LIST( IV_AUTH = C_AL
+                                  IV_AUTH_CAT = C_DIRECT_SPAUTH
+                                  IS_SPAUTH_LIST = LS_SPAUTH ).
+      ENDCASE.
+
+    ENDLOOP.
+
+    SORT MT_SPAUTH_LIST BY FINCODE FCT01 FCT02 FCT03 FCT04 FCT05 FCT06 AUTH_CAT.
+    DELETE ADJACENT DUPLICATES FROM MT_SPAUTH_LIST COMPARING FCT01
+                                                             FCT02
+                                                             FCT03
+                                                             FCT04
+                                                             FCT05
+                                                             FCT06
+                                                             AUTH_CAT
+                                                             FINCODE.
+
+    SORT MT_SPAUTH_LIST BY IN_AL FCT01 FCT02 FCT03 FCT04 FCT05 FCT06 AUTH_CAT FINCODE.
+
+    DESCRIBE TABLE MT_FUND_MESSAGE LINES EV_ERROR.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00G ----
+  METHOD PUT_TO_SPAUTH_LIST.
+
+    DATA LT_HIER TYPE YTTFM_AL_HIER.
+    DATA LS_HIER TYPE LINE OF YTTFM_AL_HIER.
+    DATA LS_AL TYPE LINE OF YTTFM_AL.
+    DATA LS_SPAUTH_LIST TYPE YSFM_SPAUTH_LIST.
+    FIELD-SYMBOLS <FIELD> TYPE ANY.
+
+    LS_SPAUTH_LIST = IS_SPAUTH_LIST.
+    LS_SPAUTH_LIST-AUTH_CAT = IV_AUTH_CAT.
+
+    "get hierarchy
+    IF IV_AUTH = 'AL'.   "Appropriation line
+      IF IV_FORCE_ALINE IS NOT INITIAL.
+        LT_HIER = ME->GET_AL_HIERARCHY( IV_FORCE_ALINE ).
+      ELSE.
+        "Check appropriation line.
+        IF ME->CHECK_ALINE( IV_FINCODE = LS_SPAUTH_LIST-FINCODE
+                            IV_ALINE = LS_SPAUTH_LIST-ALINE ) = ABAP_FALSE.
+          EXIT.
+        ENDIF.
+        LT_HIER = ME->GET_AL_HIERARCHY( LS_SPAUTH_LIST-ALINE ).
+      ENDIF.
+    ELSE.                "Fund center
+      LT_HIER = ME->GET_AL_HIERARCHY( LS_SPAUTH_LIST-FISTL ).
+    ENDIF.
+
+    LOOP AT LT_HIER INTO LS_HIER.
+      LOOP AT LS_HIER-HIER INTO LS_AL.
+        IF SY-TABIX = 1.
+          LS_SPAUTH_LIST-FCT01 = LS_AL-ALINE.
+        ELSE.
+          LS_SPAUTH_LIST-IN_AL = 'I'.
+          LS_SPAUTH_LIST-FCT02 = LS_AL-ALINE.
+          APPEND LS_SPAUTH_LIST TO MT_SPAUTH_LIST.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+    IF SY-SUBRC <> 0 AND IV_AUTH = 'FC'.  "Fund center not in hierarchy
+      LS_SPAUTH_LIST-IN_AL = 'O'.
+      LS_SPAUTH_LIST-FCT01 = 'UNESCO'.
+      LS_SPAUTH_LIST-FCT02 = LS_SPAUTH_LIST-FISTL.
+      APPEND LS_SPAUTH_LIST TO MT_SPAUTH_LIST.
+    ENDIF.
+
+* OLD OLD OLD
+*    LOOP AT lt_hier INTO ls_hier.
+*      LOOP AT ls_hier-hier INTO ls_al.
+*        ASSIGN COMPONENT sy-tabix OF STRUCTURE ls_spauth_list TO <field>.
+*        <field> = ls_al-aline.
+*      ENDLOOP.
+*      APPEND ls_spauth_list TO mt_spauth_list.
+*    ENDLOOP.
+*    IF sy-subrc <> 0 AND iv_auth = 'FC'.  "Fund center not in hierarchy
+*      ls_spauth_list-fct01 = 'UNESCO'.
+*      ls_spauth_list-fct02 = 'ZZZ'.
+*      ls_spauth_list-fct03 = ls_spauth_list-fistl.
+*      APPEND ls_spauth_list TO mt_spauth_list.
+*    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00H ----
+  METHOD CHECK_ALINE.
+
+    DATA LS_MESSAGE TYPE TY_FUND_MESSAGE.
+
+    RV_IS_OK = ABAP_TRUE.
+
+    IF IV_ALINE IS INITIAL.
+      LS_MESSAGE-FINCODE = IV_FINCODE.
+      LS_MESSAGE-MESSAGE = TEXT-E02.
+      APPEND LS_MESSAGE TO MT_FUND_MESSAGE.
+      RV_IS_OK = ABAP_FALSE.
+    ELSEIF ME->IS_IN_AL_HIERARCHY( IV_ALINE ) = ABAP_FALSE.
+      LS_MESSAGE-FINCODE = IV_FINCODE.
+      LS_MESSAGE-MESSAGE = TEXT-E03.
+      REPLACE '&1' IN LS_MESSAGE-MESSAGE WITH IV_ALINE.
+      CONDENSE LS_MESSAGE-MESSAGE.
+      APPEND LS_MESSAGE TO MT_FUND_MESSAGE.
+      RV_IS_OK = ABAP_FALSE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00I ----
+  METHOD IS_IN_AL_HIERARCHY.
+
+    ME->READ_TABLE_AL_HIER( C_AL ).
+
+    READ TABLE MT_AL_HIER TRANSPORTING NO FIELDS WITH KEY NODENAME = IV_ALINE.
+    IF SY-SUBRC = 0.
+      RV_IS_OK = ABAP_TRUE.
+    ELSE.
+      RV_IS_OK = ABAP_FALSE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00J ----
+  METHOD DISPLAY_MESSAGE.
+
+    ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-ERR
+                     CHANGING  CT_TAB   = MT_FUND_MESSAGE ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00K ----
+  METHOD SET_COLUMN_PROPERTIES.
+
+    DATA LV_NAME TYPE LVC_FNAME VALUE 'FCT00'.
+    DATA LV_CLAUSE(100).
+    DATA LV_NUM(2) TYPE N.
+    DATA LT_COLUMNS TYPE SALV_T_COLUMN_REF.
+    DATA LS_COLOR TYPE LVC_S_COLO.
+
+    DO 6 TIMES.
+      ADD 1 TO LV_NUM.
+      LV_NAME+3(2) = LV_NUM.
+      LV_CLAUSE = |{ LV_NAME } IS NOT INITIAL|.
+      LOOP AT MT_SPAUTH_LIST TRANSPORTING NO FIELDS WHERE (LV_CLAUSE).
+        EXIT.
+      ENDLOOP.
+      IF SY-SUBRC <> 0.
+        IO_ALV->SET_COL_VISIBLE( IV_COL_NAME = LV_NAME
+                         IV_VALUE = ABAP_FALSE ).
+      ENDIF.
+    ENDDO.
+
+    LS_COLOR-COL = COL_KEY.
+    LT_COLUMNS = IO_ALV->GET_COLUMNS( ).
+
+    LOOP AT LT_COLUMNS INTO DATA(LS_COLUMNS) FROM 1 TO 8.
+      IO_ALV->SET_COL_COLOR( IV_COL_NAME = LS_COLUMNS-COLUMNNAME
+                             IV_VALUE = LS_COLOR ).
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00L ----
+  METHOD SET_HIERARCHY_TO_TABLE.
+
+    DATA LS_SPAUTH TYPE LINE OF YTTFM_SPAUTH_LIST.
+    DATA LV_NODEID TYPE RSHIENODID.
+    DATA LS_HIER TYPE YTFM_HIER.
+    DATA LV_NEW_FCT01 TYPE BOOLEAN.
+    DATA LV_NEW_FCT02 TYPE BOOLEAN.
+    DATA LV_NEW_FCT03 TYPE BOOLEAN.
+    DATA LV_NEW_FCT04 TYPE BOOLEAN.
+    DATA LV_NEW_FCT05 TYPE BOOLEAN.
+    DATA LV_NEW_FCT06 TYPE BOOLEAN.
+    DATA LV_NEW_AUTH_CAT TYPE BOOLEAN.
+    FIELD-SYMBOLS <LS_SP_HIER> TYPE YTFM_HIER.
+
+    "Delete hierarchy table
+    DELETE FROM YTFM_HIER WHERE HIER_TYPE = 'SP'.
+
+    LOOP AT MT_SPAUTH_LIST INTO LS_SPAUTH.
+      AT NEW FCT01.
+        LV_NEW_FCT01 = ABAP_TRUE.
+      ENDAT.
+      AT NEW FCT02.
+        LV_NEW_FCT02 = ABAP_TRUE.
+      ENDAT.
+      AT NEW FCT03.
+        LV_NEW_FCT03 = ABAP_TRUE.
+      ENDAT.
+      AT NEW FCT04.
+        LV_NEW_FCT04 = ABAP_TRUE.
+      ENDAT.
+      AT NEW FCT05.
+        LV_NEW_FCT05 = ABAP_TRUE.
+      ENDAT.
+      AT NEW FCT06.
+        LV_NEW_FCT06 = ABAP_TRUE.
+      ENDAT.
+      AT NEW AUTH_CAT.
+        LV_NEW_AUTH_CAT = ABAP_TRUE.
+      ENDAT.
+
+      IF LV_NEW_FCT01 = ABAP_TRUE AND LS_SPAUTH-FCT01 IS NOT INITIAL.
+        CLEAR MV_PREVIOUS_NODENAME.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT01
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT01.
+      ENDIF.
+
+      IF LV_NEW_FCT02 = ABAP_TRUE AND LS_SPAUTH-FCT02 IS NOT INITIAL.
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT01.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT02
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT02.
+      ENDIF.
+
+      IF LV_NEW_FCT03 = ABAP_TRUE AND LS_SPAUTH-FCT03 IS NOT INITIAL.
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT02.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT03
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT03.
+      ENDIF.
+
+      IF LV_NEW_FCT04 = ABAP_TRUE AND LS_SPAUTH-FCT04 IS NOT INITIAL.
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT03.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT04
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT04.
+      ENDIF.
+
+      IF LV_NEW_FCT05 = ABAP_TRUE AND LS_SPAUTH-FCT05 IS NOT INITIAL.
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT04.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT05
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT05.
+      ENDIF.
+
+      IF LV_NEW_FCT06 = ABAP_TRUE AND LS_SPAUTH-FCT06 IS NOT INITIAL.
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT05.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-FCT06
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+        MV_PREVIOUS_NODENAME = LS_SPAUTH-FCT06.
+      ENDIF.
+
+      IF LV_NEW_AUTH_CAT = ABAP_TRUE.
+        ME->APPEND_HIERARCHY_TABLE( EXPORTING IV_NODENAME = LS_SPAUTH-AUTH_CAT
+                                              IV_ADD_ID = ABAP_TRUE
+                                    CHANGING  CV_NODEID = LV_NODEID ).
+      ENDIF.
+
+      CLEAR LS_HIER.
+      LS_HIER-HIER_TYPE = 'SP'.
+      LS_HIER-DATEFROM = '19000101'.
+      LS_HIER-DATETO = '99991231'.
+      LS_HIER-LANGU = 'EN'.
+
+      ADD 1 TO LV_NODEID.
+      LS_HIER-NODEID = LV_NODEID.
+      LS_HIER-INFOOBJECT = 'ZPROJECT'.
+      LS_HIER-PARENTID = MV_LAST_0HIERNODE.
+      LS_HIER-NODENAME = LS_HIER-TXTSH = LS_HIER-TXTMD = LS_HIER-TXTLG = LS_SPAUTH-FINCODE.
+      "update field NEXTID in previous
+      LOOP AT MT_SP_HIER ASSIGNING <LS_SP_HIER> WHERE PARENTID = LS_HIER-PARENTID.
+      ENDLOOP.
+      IF SY-SUBRC = 0.
+        <LS_SP_HIER>-NEXTID = LS_HIER-NODEID.
+      ENDIF.
+      "Check if node already exists: in that case put 'X' to link
+      READ TABLE MT_SP_HIER TRANSPORTING NO FIELDS WITH KEY INFOOBJECT = LS_HIER-INFOOBJECT
+                                                            NODENAME = LS_HIER-NODENAME.
+      IF SY-SUBRC = 0.
+        LS_HIER-LINK = ABAP_TRUE.
+      ENDIF.
+      "append to table
+      APPEND LS_HIER TO MT_SP_HIER.
+
+      CLEAR: LV_NEW_FCT01, LV_NEW_FCT02, LV_NEW_FCT03, LV_NEW_FCT04, LV_NEW_FCT05, LV_NEW_FCT06,
+             LV_NEW_AUTH_CAT.
+
+    ENDLOOP.
+
+    INSERT YTFM_HIER FROM TABLE MT_SP_HIER.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00M ----
+  METHOD SET_HIERARCHY_TO_TABLE_OLD.
+
+    DATA LS_SPAUTH TYPE LINE OF YTTFM_SPAUTH_LIST.
+    FIELD-SYMBOLS <FIELD> TYPE ANY.
+    DATA LV_NODEID TYPE RSHIENODID.
+    DATA LV_PARENTID TYPE RSPARENT.
+    DATA LS_HIER TYPE YTFM_HIER.
+    DATA LT_HIER TYPE TABLE OF YTFM_HIER.
+    DATA LS_SPAUTH_CAT TYPE TY_SPAUTH_CAT.
+
+    "Delete hierarchy table
+    DELETE FROM YTFM_HIER WHERE HIER_TYPE = 'SP'.
+
+    LS_HIER-HIER_TYPE = 'SP'.
+    LS_HIER-DATEFROM = '19000101'.
+    LS_HIER-DATETO = '99991231'.
+
+    LOOP AT MT_SPAUTH_LIST INTO LS_SPAUTH.
+
+      CLEAR LV_PARENTID.
+
+      "hierarchy of fund center
+      DO 6 TIMES.
+        ASSIGN COMPONENT SY-INDEX OF STRUCTURE LS_SPAUTH TO <FIELD>.
+        IF <FIELD> IS INITIAL.
+          EXIT.
+        ENDIF.
+        ADD 1 TO LV_NODEID.
+        LS_HIER-NODEID = LV_NODEID.
+        LS_HIER-INFOOBJECT = '0HIER_NODE'.
+        LS_HIER-NODENAME = LS_HIER-TXTSH = LS_HIER-TXTMD = LS_HIER-TXTLG = <FIELD>.
+        LS_HIER-PARENTID = LV_PARENTID.
+        LS_HIER-CHILDID = LV_NODEID + 1.
+        LS_HIER-LANGU = 'EN'.
+        LV_PARENTID = LV_NODEID.
+        INSERT YTFM_HIER FROM LS_HIER.
+      ENDDO.
+
+      "Category
+      ADD 1 TO LV_NODEID.
+      LS_HIER-NODEID = LV_NODEID.
+      LS_HIER-INFOOBJECT = '0HIER_NODE'.
+      LS_HIER-NODENAME = LS_HIER-TXTSH = LS_HIER-TXTMD = LS_SPAUTH-AUTH_CAT.
+      READ TABLE MT_SPAUTH_CAT INTO LS_SPAUTH_CAT WITH KEY AUTH_CAT = LS_SPAUTH-AUTH_CAT.
+      IF SY-SUBRC = 0.
+        LS_HIER-TXTLG = LS_SPAUTH_CAT-AUTH_TXT.
+      ENDIF.
+      LS_HIER-PARENTID = LV_PARENTID.
+      LS_HIER-CHILDID = LV_NODEID + 1.
+      LS_HIER-LANGU = 'EN'.
+      LV_PARENTID = LV_NODEID.
+      INSERT YTFM_HIER FROM LS_HIER.
+
+      "Fund
+      ADD 1 TO LV_NODEID.
+      LS_HIER-NODEID = LV_NODEID.
+      LS_HIER-INFOOBJECT = 'ZPROJECT'.
+      LS_HIER-NODENAME = LS_HIER-TXTSH = LS_HIER-TXTMD = LS_HIER-TXTLG = LS_SPAUTH-FINCODE.
+      LS_HIER-PARENTID = LV_PARENTID.
+      LS_HIER-CHILDID = 0.
+      LS_HIER-LANGU = 'EN'.
+      INSERT YTFM_HIER FROM LS_HIER.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00N ----
+  METHOD GET_PARENTID.
+
+    DATA LS_HIER TYPE YTFM_HIER.
+
+    READ TABLE MT_SP_HIER INTO LS_HIER WITH KEY NODENAME = IV_NODENAME.
+    IF SY-SUBRC = 0.
+      RV_PARENTID = LS_HIER-NODEID.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00O ----
+  METHOD APPEND_HIERARCHY_TABLE.
+
+    DATA LS_HIER TYPE YTFM_HIER.
+    FIELD-SYMBOLS <LS_SP_HIER> TYPE YTFM_HIER.
+
+    CHECK IV_NODENAME IS NOT INITIAL.
+
+    CLEAR LS_HIER.
+    LS_HIER-HIER_TYPE = 'SP'.
+    LS_HIER-DATEFROM = '19000101'.
+    LS_HIER-DATETO = '99991231'.
+    LS_HIER-LANGU = 'EN'.
+
+    ADD 1 TO CV_NODEID.
+    LS_HIER-NODEID = CV_NODEID.
+    LS_HIER-INFOOBJECT = '0HIER_NODE'.
+    LS_HIER-PARENTID = ME->GET_PARENTID( MV_PREVIOUS_NODENAME ).
+    LS_HIER-CHILDID = CV_NODEID + 1.
+    LS_HIER-NODENAME = LS_HIER-TXTSH = LS_HIER-TXTMD = LS_HIER-TXTLG = IV_NODENAME.
+    "update field NEXTID in previous
+    LOOP AT MT_SP_HIER ASSIGNING <LS_SP_HIER> WHERE PARENTID = LS_HIER-PARENTID.
+    ENDLOOP.
+    IF SY-SUBRC = 0.
+      <LS_SP_HIER>-NEXTID = LS_HIER-NODEID.
+    ENDIF.
+
+    IF IV_ADD_ID = ABAP_TRUE.
+      "Avoid duplicate nodename
+      LS_HIER-NODENAME = |{ LS_HIER-NODEID }{ LS_HIER-NODENAME }|.
+    ENDIF.
+
+    "append to table
+    APPEND LS_HIER TO MT_SP_HIER.
+
+    MV_LAST_0HIERNODE = LS_HIER-NODEID.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00P ----
+  METHOD DOWNLOAD_DATA.
+
+    CALL METHOD CL_GUI_FRONTEND_SERVICES=>GUI_DOWNLOAD
+      EXPORTING
+*       bin_filesize            =
+        FILENAME                = MV_FILENAME
+        FILETYPE                = IV_FILETYPE
+*       append                  = SPACE
+*       write_field_separator   = SPACE
+*       header                  = '00'
+*       trunc_trailing_blanks   = SPACE
+*       write_lf                = 'X'
+*       col_select              = SPACE
+*       col_select_mask         = SPACE
+*       dat_mode                = SPACE
+*       confirm_overwrite       = SPACE
+*       no_auth_check           = SPACE
+*       codepage                = SPACE
+*       ignore_cerr             = ABAP_TRUE
+*       replacement             = '#'
+*       write_bom               = SPACE
+*       trunc_trailing_blanks_eol = 'X'
+*       wk1_n_format            = SPACE
+*       wk1_n_size              = SPACE
+*       wk1_t_format            = SPACE
+*       wk1_t_size              = SPACE
+*       show_transfer_status    = 'X'
+*       fieldnames              =
+*       write_lf_after_last_line  = 'X'
+*       virus_scan_profile      = '/SCET/GUI_DOWNLOAD'
+*  IMPORTING
+*       filelength              =
+      CHANGING
+        DATA_TAB                = MT_DATA_FILE
+      EXCEPTIONS
+        FILE_WRITE_ERROR        = 1
+        NO_BATCH                = 2
+        GUI_REFUSE_FILETRANSFER = 3
+        INVALID_TYPE            = 4
+        NO_AUTHORITY            = 5
+        UNKNOWN_ERROR           = 6
+        HEADER_NOT_ALLOWED      = 7
+        SEPARATOR_NOT_ALLOWED   = 8
+        FILESIZE_NOT_ALLOWED    = 9
+        HEADER_TOO_LONG         = 10
+        DP_ERROR_CREATE         = 11
+        DP_ERROR_SEND           = 12
+        DP_ERROR_WRITE          = 13
+        UNKNOWN_DP_ERROR        = 14
+        ACCESS_DENIED           = 15
+        DP_OUT_OF_MEMORY        = 16
+        DISK_FULL               = 17
+        DP_TIMEOUT              = 18
+        FILE_NOT_FOUND          = 19
+        DATAPROVIDER_EXCEPTION  = 20
+        CONTROL_FLUSH_ERROR     = 21
+        NOT_SUPPORTED_BY_GUI    = 22
+        ERROR_NO_GUI            = 23
+        OTHERS                  = 24.
+    IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00Q ----
+  METHOD DOWNLOAD_SP_HIERARCHY.
+
+    DATA LS_HIER TYPE YTFM_HIER.
+    DATA LV_STRING TYPE STRING.
+    DATA LO_STRUCTDESCR TYPE REF TO CL_ABAP_STRUCTDESCR.
+    DATA LT_COMPONENTS TYPE CL_ABAP_STRUCTDESCR=>COMPONENT_TABLE.
+    DATA LV_TABIX TYPE SY-TABIX.
+
+    CLEAR: MT_AL_HIER, MT_DATA_FILE.
+    ME->READ_TABLE_AL_HIER( C_SP ).
+
+    "Set header
+    LO_STRUCTDESCR ?= CL_ABAP_STRUCTDESCR=>DESCRIBE_BY_NAME( 'YTFM_HIER' ).
+    LT_COMPONENTS = LO_STRUCTDESCR->GET_COMPONENTS( ).
+    LOOP AT LT_COMPONENTS INTO DATA(LS_COMPONENTS).
+      CHECK LS_COMPONENTS-NAME <> 'MANDT' AND LS_COMPONENTS-NAME <> 'HIER_TYPE'.
+      IF LV_STRING IS INITIAL.
+        LV_STRING = LS_COMPONENTS-NAME.
+      ELSE.
+        LV_STRING = |{ LV_STRING };{ LS_COMPONENTS-NAME }|.
+      ENDIF.
+    ENDLOOP.
+    APPEND LV_STRING TO MT_DATA_FILE.
+
+    "Set contents
+    LOOP AT MT_AL_HIER INTO LS_HIER.
+      LV_TABIX = 3.   "Skip MANDT and HIER_TYPE
+      CLEAR LV_STRING.
+      DO.
+        ASSIGN COMPONENT LV_TABIX OF STRUCTURE LS_HIER TO FIELD-SYMBOL(<FIELD>).
+        IF SY-SUBRC <> 0.
+          EXIT.
+        ENDIF.
+        IF LV_STRING IS INITIAL.
+          LV_STRING = <FIELD>.
+        ELSE.
+          LV_STRING = |{ LV_STRING };{ <FIELD> }|.
+        ENDIF.
+        ADD 1 TO LV_TABIX.
+      ENDDO.
+      APPEND LV_STRING TO MT_DATA_FILE.
+    ENDLOOP.
+
+    ME->DOWNLOAD_DATA( 'ASC' ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00R ----
+  METHOD DELETE_FUND_CPL.
+
+    DATA LV_SUBRC_SISTER TYPE SY-SUBRC.
+    DATA LV_SUBRC_NON_IBF TYPE SY-SUBRC.
+
+    IF IV_SISTER = ABAP_TRUE.
+      DELETE FROM YTFM_FUND_CPL WHERE NONIBF = ABAP_FALSE.
+      LV_SUBRC_SISTER = SY-SUBRC.
+    ENDIF.
+
+    IF IV_NON_IBF = ABAP_TRUE.
+      DELETE FROM YTFM_FUND_CPL WHERE NONIBF = ABAP_TRUE.
+      LV_SUBRC_NON_IBF = SY-SUBRC.
+    ENDIF.
+
+    IF LV_SUBRC_SISTER = 0 AND LV_SUBRC_NON_IBF = 0.
+      RV_IS_OK = ABAP_TRUE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00S ----
+  METHOD DISPLAY_FUND_AL.
+
+    ME->DISPLAY_ALV( EXPORTING IV_TITLE = TEXT-ALH
+                     CHANGING  CT_TAB   = MT_FUND_AL ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00T ----
+  METHOD GET_DATA_FROM_SISTER.
+
+    DATA LS_FUND_AL TYPE TY_FUND_AL.
+
+    CLEAR MT_FUND_AL.
+    RV_IS_OK = ABAP_TRUE.
+
+    "Open connexion with SISTER
+    EXEC SQL.
+      CONNECT TO 'SISTER' AS 'MYDB'
+    ENDEXEC.
+
+    EXEC SQL.
+      SET CONNECTION 'MYDB'
+    ENDEXEC.
+
+    "Get data from SISTER table
+    EXEC SQL.
+      OPEN DBCUR FOR
+      SELECT  CODE , MLAIMPLEMENTINGUNIT
+      FROM PROJECTS
+    ENDEXEC.
+
+    DO.
+      EXEC SQL.
+        FETCH NEXT DBCUR INTO :LS_FUND_AL-FINCODE,
+                              :LS_FUND_AL-ALINE
+      ENDEXEC.
+      IF SY-SUBRC <> 0.
+        EXIT.
+      ELSE.
+        APPEND LS_FUND_AL TO MT_FUND_AL.
+      ENDIF.
+    ENDDO.
+
+    EXEC SQL.
+      CLOSE DBCUR
+    ENDEXEC.
+
+* Fermer la connexion
+    EXEC SQL .
+      DISCONNECT 'MYDB'
+    ENDEXEC.
+
+    IF MT_FUND_AL IS INITIAL.
+      RV_IS_OK = ABAP_FALSE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00U ----
+  METHOD POPUP_TO_CONFIRM.
+
+    CALL FUNCTION 'POPUP_TO_CONFIRM'
+      EXPORTING
+*       TITLEBAR       = ' '
+*       DIAGNOSE_OBJECT             = ' '
+        TEXT_QUESTION  = IV_TEXT
+*       TEXT_BUTTON_1  = 'Ja'(001)
+*       ICON_BUTTON_1  = ' '
+*       TEXT_BUTTON_2  = 'Nein'(002)
+*       ICON_BUTTON_2  = ' '
+*       DEFAULT_BUTTON = '1'
+*       DISPLAY_CANCEL_BUTTON       = 'X'
+*       USERDEFINED_F1_HELP         = ' '
+*       START_COLUMN   = 25
+*       START_ROW      = 6
+*       POPUP_TYPE     =
+*       IV_QUICKINFO_BUTTON_1       = ' '
+*       IV_QUICKINFO_BUTTON_2       = ' '
+      IMPORTING
+        ANSWER         = RV_ANSWER
+*     TABLES
+*       PARAMETER      =
+      EXCEPTIONS
+        TEXT_NOT_FOUND = 1
+        OTHERS         = 2.
+    IF SY-SUBRC <> 0.
+      RV_ANSWER = 'A'.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CM00V ----
+  METHOD UPLOAD_FUND_AL_DATA.
+
+    DATA LV_FILENAME TYPE LOCALFILE.
+    DATA LS_MESSAGE TYPE TY_FUND_MESSAGE.
+    DATA LV_FILE_TYPE(4) TYPE C.
+    DATA LS_FUND_AL TYPE TY_FUND_AL.
+
+
+    CLEAR MT_FUND_AL.
+
+    LV_FILENAME = MV_FILENAME.
+
+    FIND '.xlsx' IN LV_FILENAME.
+    IF SY-SUBRC = 0.
+      LV_FILE_TYPE = 'XLSX'.
+    ELSE.
+      FIND '.xls' IN LV_FILENAME.
+      IF SY-SUBRC = 0.
+        LV_FILE_TYPE = 'XLS'.
+      ELSE.
+        FIND '.csv' IN LV_FILENAME.
+        IF SY-SUBRC = 0.
+          LV_FILE_TYPE = 'CSV'.
+        ELSE.
+          MESSAGE TEXT-E05 TYPE 'E'.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    IF LV_FILE_TYPE = 'XLS' OR LV_FILE_TYPE = 'XLSX'.
+      YCL_BC_EXCEL_TOOL=>UPLOAD_EXCEL_WORKSHEET( EXPORTING IV_FILENAME = LV_FILENAME
+                                                           IV_HEADER = '1'
+                                                 IMPORTING ET_TAB = MT_FUND_AL ).
+    ELSE.
+      ME->UPLOAD_DATA( ).
+      LOOP AT MT_DATA_FILE INTO DATA(LV_STRING).
+        CHECK SY-TABIX <> 1.
+        SPLIT LV_STRING AT ';'
+        INTO LS_FUND_AL-FINCODE
+             LS_FUND_AL-ALINE.
+        APPEND LS_FUND_AL TO MT_FUND_AL.
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_SPENDING_AUTH==========CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FM_SPENDING_AUTH==========CU ----
+CLASS YCL_FM_SPENDING_AUTH DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  DATA MT_SPAUTH_LIST TYPE YTTFM_SPAUTH_LIST .
+  DATA MT_RANGE_DOCYEAR TYPE YTT_RANGE_DOCYEAR .
+  DATA MT_RANGE_FIKRS TYPE YTT_RANGE_FIKRS .
+  DATA MT_RANGE_FINCODE TYPE YTT_RANGE_FINCODE .
+  DATA MV_DATE_REF TYPE DATUM .
+  DATA MV_FILENAME TYPE STRING .
+
+  METHODS UPLOAD_FUND_AL_DATA .
+  METHODS SET_HIERARCHY_TO_TABLE_OLD .
+  METHODS SET_HIERARCHY_TO_TABLE .
+  METHODS SET_COLUMN_PROPERTIES
+    IMPORTING
+      !IO_ALV TYPE REF TO YIF_ALV_DISPLAY .
+  METHODS POPUP_TO_CONFIRM
+    IMPORTING
+      !IV_TEXT TYPE TEXT132
+    RETURNING
+      VALUE(RV_ANSWER) TYPE CHAR1 .
+  METHODS GET_DATA_FROM_SISTER
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS GENERATE_HIERARCHY
+    EXPORTING
+      !EV_ERROR TYPE I .
+  METHODS DOWNLOAD_SP_HIERARCHY .
+  METHODS DELETE_FUND_CPL
+    IMPORTING
+      !IV_SISTER TYPE BOOLEAN DEFAULT ABAP_FALSE
+      !IV_NON_IBF TYPE BOOLEAN DEFAULT ABAP_FALSE
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS CONSTRUCTOR
+    IMPORTING
+      !IV_REPID TYPE SY-REPID .
+  METHODS DISPLAY_AL_HIER
+    IMPORTING
+      !IV_HIER_TYPE TYPE YE_FM_HIER_TYPE .
+  METHODS DISPLAY_FUND_AL
+    IMPORTING
+      !IV_HIER_TYPE TYPE YE_FM_HIER_TYPE .
+  METHODS DISPLAY_MESSAGE .
+  METHODS DISPLAY_FUND_CPL .
+  CLASS-METHODS GET_INSTANCE
+    IMPORTING
+      !IV_CLASSNAME TYPE CLASSNAME DEFAULT 'YCL_FM_SPENDING_AUTH'
+      !IV_REPID TYPE SY-REPID
+    RETURNING
+      VALUE(RO_INSTANCE) TYPE REF TO YCL_FM_SPENDING_AUTH .
+  METHODS SET_AL_DATA_TO_TABLE .
+  METHODS GET_AL_HIERARCHY
+    IMPORTING
+      !IV_ALINE TYPE YE_FM_AL
+    RETURNING
+      VALUE(RT_HIER_LIST) TYPE YTTFM_AL_HIER .
+  METHODS SET_AL_FUND_TO_TABLE
+    IMPORTING
+      !IV_TEST TYPE BOOLEAN DEFAULT SPACE .
+  METHODS SET_NON_IBF_TO_TABLE .
+  METHODS DOWNLOAD_DATA
+    IMPORTING
+      !IV_FILETYPE TYPE CHAR10 DEFAULT 'DAT' .
+  METHODS UPLOAD_DATA
+    IMPORTING
+      !IV_FILETYPE TYPE CHAR10 DEFAULT 'DAT' .

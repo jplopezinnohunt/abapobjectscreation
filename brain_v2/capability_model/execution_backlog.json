@@ -168,6 +168,17 @@
    "task": "Extract FMIT — BCS totals, FIKRS + RFONDS + RWRTTP + RYEAR with periods HSL01..HSL16. It is the HOLE IN THE REPORT LEG: the OFFICIAL negative-funds report YFM1 reads FMIT, not FMAVCT, so budget->commitment->actual->report is documented end to end and unqueryable at the last step. Verified absent from the golden (only fmavct_* and the fmavc* config tables are present). Extract FMRESERV in the same pass if readable — today the PBC->FM commitment join is evidenced by CHANGE DOCUMENTS rather than by the reservation records themselves.",
    "method": "P01 read-only, register under PSM_FM in gold_table_registry",
    "why_it_matters": "without it every reporting answer is inferred from the commitment layer instead of read from the totals the business actually reports on"
+  },
+  {
+   "id": "EXT-BR-CLASS-P01",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 97,
+   "status": "DONE s097",
+   "task": "Extract YCL_FM_BR_EXCHANGE_RATE_BL and the ZFIX_EXCHANGERATE family from P01 with extract_p01_source.py. The incident cites extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A as the source of the one-line defect and THAT PATH DOES NOT EXIST — the class is in none of the three corpora. The root cause is confirmed by a debugger session and a trace, which is strong evidence, but the single most-quoted line cannot be re-read today. P01 was unreachable when this was raised (RFC_COMMUNICATION_FAILURE, 172.16.4.100:4800 timed out), so this is queued rather than blocked.",
+   "method": "python Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py <package>",
+   "then": "run A9 (extract_business_rules.py) over it — the family is full of applicability conditions and hard-coded ranges, which is exactly what A9 is for",
+   "result": "package YA extracted from P01: 136 objects; the 634-line BR class read and structured, perimeter and gates recorded"
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -648,6 +659,16 @@
    "task": "FUNCTIONAL AREA is blank in all 2,308,814 FM line items. BBP-04 defines it as UNESCO's C/5 EXPECTED RESULTS — the dimension used for statutory reporting BY PROGRAMME OBJECTIVE. So either programme-objective reporting is produced from somewhere other than FM, or it cannot be produced from the financial system at all. Find out which. If it comes from elsewhere, find the source and record it, because it means the money-to-purpose link lives outside the ERP. Start from the ytfm_fund_c5 / ytfm_c5 tables, which map fund to C/5 output by biennium and are already in the golden — that may BE the workaround.",
    "method": "trace how a C/5 programme report is actually produced today",
    "why_it_matters": "this is the dimension that ties money to mandate in an organisation whose mandate is expressed as C/5 Expected Results"
+  },
+  {
+   "id": "AN-BR-HKONT-EMPTY-RANGE",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "MR_HKONT is declared at line 57 of YCL_FM_BR_EXCHANGE_RATE_BL and NEVER POPULATED, yet CHECK_CONDITIONS_2 — the STAFF gate — checks IV_HKONT IN MR_HKONT at line 366. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed that gate fails ALWAYS. Establish whether callers pass IV_HKONT: if they do, the staff path — the ONLY one that accepts USD — is dead on that condition, and the payroll/PBC bridge is not doing what it appears to do. Same shape as the known mr_waers defect, found the same way.",
+   "method": "grep the callers of check_conditions_2 in extracted_sap_p01/YA for iv_hkont",
+   "why_it_matters": "the staff gate is where the cure for the currency defect already exists"
   }
  ],
  "research_tasks_followups": [

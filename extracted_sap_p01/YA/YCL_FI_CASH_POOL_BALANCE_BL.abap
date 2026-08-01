@@ -1,0 +1,1254 @@
+* ==== CLASS POOL YCL_FI_CASH_POOL_BALANCE_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_CASH_POOL_BALANCE_BL
+
+*"* local type definitions
+INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CCDEF.
+
+*"* class YCL_FI_CASH_POOL_BALANCE_BL definition
+*"* public declarations
+  INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CU.
+*"* protected declarations
+  INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CO.
+*"* private declarations
+  INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CI.
+ENDCLASS. "YCL_FI_CASH_POOL_BALANCE_BL definition
+
+*"* macro definitions
+INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_CASH_POOL_BALANCE_BL===CCIMP.
+
+CLASS YCL_FI_CASH_POOL_BALANCE_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_CASH_POOL_BALANCE_BL implementation
+
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF TY_GLT0,
+      ID                    TYPE CHAR2,
+      EUR_AMOUNT_IN_EUR     TYPE WERTV9,
+      EUR_AMOUNT_IN_USD     TYPE WERTV9,
+      NON_EUR_AMOUNT_IN_USD TYPE WERTV9,
+      TOTAL_BALANCE_IN_USD  TYPE WERTV9,
+    END OF TY_GLT0 .
+  TYPES:
+    TTY_RACCT_RANGE TYPE RANGE OF RACCT .
+  TYPES:
+    TTY_RBUSA_RANGE TYPE RANGE OF GSBER .
+  TYPES:
+    BEGIN OF TY_LIST,
+      ID                  TYPE CHAR2,
+      TOPIC               TYPE TEXT60,
+      EUR_EUR_AMOUNT      TYPE WERTV9,
+      EUR_EUR_P_NEF       TYPE YE_CA_DEC_3_2_S,
+      EUR_EUR_P_NEF_C     TYPE CHAR10,
+      EUR_EUR_P_FUN       TYPE YE_CA_DEC_3_2_S,
+      EUR_EUR_P_FUN_C     TYPE CHAR10,
+      EUR_USD_AMOUNT      TYPE WERTV9,
+      EUR_USD_P_NEF       TYPE YE_CA_DEC_3_2_S,
+      EUR_USD_P_NEF_C     TYPE CHAR10,
+      EUR_USD_P_FUN       TYPE YE_CA_DEC_3_2_S,
+      EUR_USD_P_FUN_C     TYPE CHAR10,
+      NON_EUR_USD_AMOUNT  TYPE WERTV9,
+      NON_EUR_USD_P_NEF   TYPE YE_CA_DEC_3_2_S,
+      NON_EUR_USD_P_NEF_C TYPE CHAR10,
+      NON_EUR_USD_P_FUN   TYPE YE_CA_DEC_3_2_S,
+      NON_EUR_USD_P_FUN_C TYPE CHAR10,
+      TOTAL_USD_AMOUNT    TYPE WERTV9,
+      TOTAL_USD_P_NEF     TYPE YE_CA_DEC_3_2_S,
+      TOTAL_USD_P_NEF_C   TYPE CHAR10,
+      TOTAL_USD_P_FUN     TYPE YE_CA_DEC_3_2_S,
+      TOTAL_USD_P_FUN_C   TYPE CHAR10,
+      COLFIELD            TYPE LVC_T_SCOL,  "Field color
+    END OF TY_LIST .
+  TYPES:
+    BEGIN OF TY_TOPIC,
+      ID   TYPE CHAR2,
+      TEXT TYPE TEXT60,
+    END OF TY_TOPIC .
+  TYPES:
+    BEGIN OF TY_ID_AMOUNT,
+      ID     TYPE CHAR2,
+      AMOUNT TYPE WERTV9,
+    END OF TY_ID_AMOUNT .
+  TYPES:
+    TTY_ID_AMOUNT TYPE TABLE OF TY_ID_AMOUNT .
+
+  DATA MP_BUKRS9 TYPE BUKRS .
+  DATA MV_REPID TYPE SY-REPID .
+  DATA MV_TOPIC_SEQUENCE TYPE CHAR100 .
+  CONSTANTS C_USD TYPE WAERS VALUE 'USD' ##NO_TEXT.
+  CONSTANTS C_EUR TYPE WAERS VALUE 'EUR' ##NO_TEXT.
+  DATA MP_BUKRS1 TYPE BUKRS .
+  DATA MP_BUKRS2 TYPE BUKRS .
+  DATA MP_BUKRS3 TYPE BUKRS .
+  DATA MP_BUKRS4 TYPE BUKRS .
+  DATA MP_BUKRS5 TYPE BUKRS .
+  DATA MP_BUKRS6 TYPE BUKRS .
+  DATA MP_BUKRS7 TYPE BUKRS .
+  DATA MP_GJAHR TYPE GJAHR .
+  DATA:
+    MR_RACCT1 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT2 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT3 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT4 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT5 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT6 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCT7 TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTA TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTB TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTC TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTD TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTE TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTF TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTG TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTH TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTI TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTJ TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTK TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTL TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTM TYPE RANGE OF RACCT .
+  DATA:
+    MR_RACCTN TYPE RANGE OF RACCT .
+  DATA:
+    MR_PERIO TYPE RANGE OF FM_MONTH_CLOSING .
+  DATA:
+    MR_RBUSA5 TYPE RANGE OF GSBER .
+  DATA:
+    MR_RBUSA6 TYPE RANGE OF GSBER .
+  DATA:
+    MR_RBUSA7 TYPE RANGE OF GSBER .
+  DATA:
+    MT_GLT0 TYPE SORTED TABLE OF TY_GLT0 WITH UNIQUE KEY ID .
+  DATA:
+    MT_LIST TYPE TABLE OF TY_LIST .
+  DATA:
+    MT_TOPIC TYPE TABLE OF TY_TOPIC .
+  DATA MO_SALV_TABLE TYPE REF TO CL_SALV_TABLE .
+
+  METHODS CONVERT_AMOUNT
+    IMPORTING
+      !IV_YEAR            TYPE GJAHR
+      !IV_PERIO           TYPE PERIODE
+      !IV_LOCAL_AMOUNT    TYPE WERTV9
+      !IV_LOCAL_CURRENCY  TYPE WAERS
+      !IV_TARGET_CURRENCY TYPE WAERS
+    EXPORTING
+      !EV_TARGET_AMOUNT   TYPE WERTV9 .
+  METHODS READ_JCU
+    IMPORTING
+      !IV_ID    TYPE CHAR2
+      !IV_BUKRS TYPE BUKRS .
+  METHODS ADD_PERCENTAGE
+    IMPORTING
+      !IV_ID_TARGET  TYPE CHAR2
+      !IV_IDS_TO_ADD TYPE CHAR100 .
+  METHODS SET_COLUMNS .
+  METHODS DETERMINE_PERCENTAGE
+    IMPORTING
+      !IV_ID_100  TYPE CHAR2
+      !IV_IDS     TYPE CHAR100
+      !IV_PCT_COL TYPE CHAR3 .
+  METHODS CALCULATE_AMOUNTS
+    IMPORTING
+      !IV_AMOUNTS_ID  TYPE CHAR2
+      !IV_ADD_ID      TYPE CHAR100 DEFAULT SPACE
+      !IV_SUBTRACT_ID TYPE CHAR100 DEFAULT SPACE .
+  METHODS SET_CALCULATED_AMOUNTS .
+  METHODS PREPARE_DATA .
+  METHODS READ_GLT0
+    IMPORTING
+      !IV_ID      TYPE CHAR2
+      !IV_BUKRS   TYPE BUKRS
+      !IT_RACCT   TYPE TTY_RACCT_RANGE OPTIONAL
+      !IT_RBUSA   TYPE TTY_RBUSA_RANGE OPTIONAL
+      !IV_INVERSE TYPE XFELD DEFAULT ABAP_FALSE .
+  METHODS INITIALIZE .
+  METHODS SET_FUNCTIONS .
+  METHODS SET_LAYOUT .
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM001 ----
+  METHOD SET_SELECTION_VALUES.
+
+    FIELD-SYMBOLS <LT_RANGE> TYPE ANY TABLE.
+    FIELD-SYMBOLS <LV_PARAM> TYPE ANY.
+    DATA LV_SELNAME TYPE FIELDNAME.
+
+    LV_SELNAME = IV_SELNAME.
+    CASE IV_KIND.
+      WHEN 'S'.   "SELECT-OPTIONS
+        REPLACE 'S_' IN LV_SELNAME WITH 'MR_'.
+        ASSIGN (LV_SELNAME) TO <LT_RANGE>.
+        CHECK <LT_RANGE> IS ASSIGNED.
+        <LT_RANGE> = IT_VALUE.
+      WHEN 'P'. "PARAMETERS
+        REPLACE 'P_' IN LV_SELNAME WITH 'MP_'.
+        ASSIGN (LV_SELNAME) TO <LV_PARAM>.
+        CHECK <LV_PARAM> IS ASSIGNED.
+        <LV_PARAM> = IV_VALUE.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM002 ----
+  METHOD GET_DATA.
+
+    "Initialize data
+    ME->INITIALIZE( ).
+
+    "Get data for cash pool
+    ME->READ_GLT0( IV_ID = 'M2'
+                   IV_BUKRS = MP_BUKRS1
+                   IT_RACCT = MR_RACCT1 ).
+
+    "Get data for MBF
+    ME->READ_GLT0( IV_ID = 'SN'
+                   IV_BUKRS = MP_BUKRS5
+                   IT_RACCT = MR_RACCT5
+                   IT_RBUSA = MR_RBUSA5 ).
+
+     "Get data for OPF
+    ME->READ_GLT0( IV_ID = 'SO'
+                   IV_BUKRS = MP_BUKRS6
+                   IT_RACCT = MR_RACCT6
+                   IT_RBUSA = MR_RBUSA6 ).
+
+    "Get data for PFF
+    ME->READ_GLT0( IV_ID = 'SP'
+                   IV_BUKRS = MP_BUKRS7
+                   IT_RACCT = MR_RACCT7
+                   IT_RBUSA = MR_RBUSA7 ).
+
+    "Get data for IBE held at UNES
+    ME->READ_GLT0( IV_ID = 'SF'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTA
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for ICTP held at UNES
+    ME->READ_GLT0( IV_ID = 'SG'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTB
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for IICBA held at UNES
+    ME->READ_GLT0( IV_ID = 'SH'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTC
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for IIEP held at UNES
+    ME->READ_GLT0( IV_ID = 'SI'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTD
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for MGIEP held at UNES
+    ME->READ_GLT0( IV_ID = 'SJ'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTE
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for UIL held at UNES
+    ME->READ_GLT0( IV_ID = 'SK'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTF
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for UIS held at UNES
+    ME->READ_GLT0( IV_ID = 'SL'
+                   IV_BUKRS = MP_BUKRS9
+                   IT_RACCT = MR_RACCTG
+                   IV_INVERSE = ABAP_TRUE ).
+
+    "Get data for ASHI fund
+    ME->READ_GLT0( IV_ID = 'SC'
+                   IV_BUKRS = MP_BUKRS3
+                   IT_RACCT = MR_RACCT3 ).
+
+    "Get data for Nasim Habif
+    ME->READ_GLT0( IV_ID = 'SD'
+                   IV_BUKRS = MP_BUKRS4
+                   IT_RACCT = MR_RACCT4 ).
+
+    "Get data for JCU
+    ME->READ_JCU( IV_ID = 'SE'
+                  IV_BUKRS = MP_BUKRS1 ).
+
+    "Get data for cash pool UBO
+    ME->READ_GLT0( IV_ID = 'SB'
+                   IV_BUKRS = MP_BUKRS2
+                   IT_RACCT = MR_RACCT2 ).
+
+    "Get data for IBE
+    ME->READ_GLT0( IV_ID = 'SQ'
+                   IV_BUKRS = 'IBE'
+                   IT_RACCT = MR_RACCTH ).
+
+    "Get data for ICTP
+    ME->READ_GLT0( IV_ID = 'SR'
+                   IV_BUKRS = 'ICTP'
+                   IT_RACCT = MR_RACCTI ).
+
+    "Get data for IICBA
+    ME->READ_GLT0( IV_ID = 'SS'
+                   IV_BUKRS = 'ICBA'
+                   IT_RACCT = MR_RACCTJ ).
+
+    "Get data for IIEP
+    ME->READ_GLT0( IV_ID = 'ST'
+                   IV_BUKRS = 'IIEP'
+                   IT_RACCT = MR_RACCTK ).
+
+    "Get data for MGIEP
+    ME->READ_GLT0( IV_ID = 'SU'
+                   IV_BUKRS = 'MGIE'
+                   IT_RACCT = MR_RACCTL ).
+
+    "Get data for UIL held at UNES
+    ME->READ_GLT0( IV_ID = 'SV'
+                   IV_BUKRS = 'UIL'
+                   IT_RACCT = MR_RACCTM ).
+
+    "Get data for UIS
+    ME->READ_GLT0( IV_ID = 'SW'
+                   IV_BUKRS = 'UIS'
+                   IT_RACCT = MR_RACCTN ).
+
+    "Set all calculated amounts
+    ME->SET_CALCULATED_AMOUNTS( ).
+
+    "Prepare data for list
+    ME->PREPARE_DATA( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM003 ----
+  METHOD INITIALIZE.
+
+    DATA LV_POS TYPE I.
+    DATA LS_TOPIC TYPE TY_TOPIC.
+    DATA LV_TEXTNAME(10) TYPE C.
+    FIELD-SYMBOLS <TEXTID> TYPE ANY.
+
+    """"""" New Id settings and sequence
+    " M1 Total balance of UNESCO's cash and investments
+    " M2 Cash pool
+    " M4 Total cash pool balance in UNES without the institues
+    " SM GEF
+    " SN MBF
+    " SO OPF
+    " SP PFF
+    " M3 Total institutes' cash (fund) held at UNESCO
+    " SF IBE
+    " SG ICTP
+    " SH IICBA
+    " SI IIEP
+    " SJ MGIEP
+    " SK UIL
+    " SL UIS
+    " M5 Non-cash pool
+    " SC ASHI fund
+    " SD Nessim Habif
+    " SE JCU
+    " SB UBO
+    " M6 Cash at institutes
+    " SQ IBE
+    " SR ICTP
+    " SS IICBA
+    " ST IIEP
+    " SU MGIEP
+    " SV UIL
+    " SW UIS
+
+    "Set sequence
+    MV_TOPIC_SEQUENCE = 'M1/M2/M4/SM/SN/SO/SP/M3/SF/SG/SH/SI/SJ/SK/SL/M5/SC/SD/SE/SB/M6/SQ/SR/SS/ST/SU/SV/SW'.
+    "Get topic text
+    DO.
+      CLEAR LS_TOPIC.
+      LS_TOPIC-ID = MV_TOPIC_SEQUENCE+LV_POS(2).
+      IF LS_TOPIC-ID IS INITIAL.
+        EXIT.
+      ENDIF.
+      "Get text
+      LV_TEXTNAME = |TEXT-L{ LS_TOPIC-ID }|.
+      ASSIGN (LV_TEXTNAME) TO <TEXTID>.
+      IF <TEXTID> IS ASSIGNED.
+        LS_TOPIC-TEXT = <TEXTID>.
+      ENDIF.
+      APPEND LS_TOPIC TO MT_TOPIC.
+      ADD 3 TO LV_POS.
+    ENDDO.
+
+    "Adjust periods if necessary
+    READ TABLE MR_PERIO ASSIGNING FIELD-SYMBOL(<LS_PERIO>) INDEX 1.
+    IF SY-SUBRC = 0.
+      IF <LS_PERIO>-HIGH >= 12.
+        <LS_PERIO>-HIGH = 16.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM004 ----
+  METHOD READ_GLT0.
+
+    DATA LT_GLT0_DB TYPE TABLE OF GLT0.
+    DATA LS_GLT0 TYPE TY_GLT0.
+    DATA LV_WAERS TYPE WAERS.
+    DATA LV_PERIO(2) TYPE N.
+    DATA LV_AMOUNT TYPE WERTV9.
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    DATA LT_CONV_RATE TYPE YCL_FM_CONVERSION_RATE=>TTY_CONV_RATE.
+    DATA LO_CONV_RATE TYPE REF TO YCL_FM_CONVERSION_RATE.
+    DATA LT_BUKRS TYPE RANGE OF BUKRS.
+    FIELD-SYMBOLS <LV_FIELD> TYPE ANY.
+
+    SELECT * FROM GLT0 WHERE RLDNR = '00'
+                       AND   RRCTY = '0'
+                       AND   BUKRS = @IV_BUKRS
+                       AND   RYEAR = @MP_GJAHR
+                       AND   RACCT IN @IT_RACCT
+                       AND   RBUSA IN @IT_RBUSA
+             INTO TABLE @LT_GLT0_DB.
+
+    LS_GLT0-ID = IV_ID.
+
+    "Get currency for company code
+    SELECT SINGLE WAERS INTO @LV_WAERS FROM T001 WHERE BUKRS = @IV_BUKRS.
+    IF LV_WAERS <> C_USD.
+      "Get conversion rates
+      LT_BUKRS = VALUE #( ( SIGN = 'I' OPTION = 'EQ' LOW = IV_BUKRS ) ).
+      LO_CONV_RATE = NEW YCL_FM_CONVERSION_RATE( IV_TARGET_WAERS = C_USD
+                                                 IV_BEGYE = MP_GJAHR
+                                                 IV_ENDYE = MP_GJAHR
+                                                 IT_BUKRS_RANGE = LT_BUKRS
+                                                 IV_TYPE = 'P' ).
+    ENDIF.
+
+    "Consolidate amounts
+    LOOP AT LT_GLT0_DB INTO DATA(LS_GLT0_DB).
+      CLEAR LV_AMOUNT.
+      IF LV_WAERS = C_USD.   "Company code with USD local currency
+        "Get amount in USD
+        ADD LS_GLT0_DB-HSLVT TO LV_AMOUNT.
+        CLEAR LV_PERIO.
+        DO 16 TIMES.
+          ADD 1 TO LV_PERIO.
+          IF LV_PERIO NOT IN MR_PERIO.
+            EXIT.
+          ENDIF.
+          LV_FIELDNAME = |LS_GLT0_DB-HSL{ LV_PERIO }|.
+          ASSIGN (LV_FIELDNAME) TO <LV_FIELD>.
+          ADD <LV_FIELD> TO LV_AMOUNT.
+        ENDDO.
+        "Check if amounts in EUR
+        IF LS_GLT0_DB-RTCUR = C_EUR.
+          "EUR amount in USD
+          ADD LV_AMOUNT TO LS_GLT0-EUR_AMOUNT_IN_USD.
+          "EUR amount in EUR
+          ADD LS_GLT0_DB-TSLVT TO LS_GLT0-EUR_AMOUNT_IN_EUR.
+          CLEAR LV_PERIO.
+          DO 16 TIMES.
+            ADD 1 TO LV_PERIO.
+            IF LV_PERIO NOT IN MR_PERIO.
+              EXIT.
+            ENDIF.
+            LV_FIELDNAME = |LS_GLT0_DB-TSL{ LV_PERIO }|.
+            ASSIGN (LV_FIELDNAME) TO <LV_FIELD>.
+            ADD <LV_FIELD> TO LS_GLT0-EUR_AMOUNT_IN_EUR.
+          ENDDO.
+        ELSE.
+          "Non EUR amount in USD
+          ADD LV_AMOUNT TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        ENDIF.
+      ELSE.   "Company code with non USD local currency
+        "Non EUR amount in USD
+        "Convert amount in USD
+        LV_AMOUNT = LS_GLT0_DB-HSLVT / LO_CONV_RATE->GET_RATE( IV_WAERS = LV_WAERS
+                                                               IV_GJAHR = LS_GLT0_DB-RYEAR
+                                                               IV_PERIO = 0 ).
+        ADD LV_AMOUNT TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        CLEAR LV_PERIO.
+        DO 16 TIMES.
+          ADD 1 TO LV_PERIO.
+          IF LV_PERIO NOT IN MR_PERIO.
+            EXIT.
+          ENDIF.
+          LV_FIELDNAME = |LS_GLT0_DB-HSL{ LV_PERIO }|.
+          ASSIGN (LV_FIELDNAME) TO <LV_FIELD>.
+          "Convert amount in USD
+          LV_AMOUNT = <LV_FIELD> / LO_CONV_RATE->GET_RATE( IV_WAERS = LV_WAERS
+                                                           IV_GJAHR = LS_GLT0_DB-RYEAR
+                                                           IV_PERIO = |{ LV_PERIO }| ).
+          ADD LV_AMOUNT TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        ENDDO.
+      ENDIF.
+    ENDLOOP.
+
+    IF IV_INVERSE = ABAP_TRUE.
+      "Invert sign
+      MULTIPLY LS_GLT0-EUR_AMOUNT_IN_EUR BY -1.
+      MULTIPLY LS_GLT0-EUR_AMOUNT_IN_USD BY -1.
+      MULTIPLY LS_GLT0-NON_EUR_AMOUNT_IN_USD BY -1.
+    ENDIF.
+
+    INSERT LS_GLT0 INTO TABLE MT_GLT0.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM005 ----
+  METHOD PREPARE_DATA.
+
+    DATA LS_LIST TYPE TY_LIST.
+    DATA LS_COLOR TYPE LVC_S_SCOL.
+
+    "Initialize list with amounts
+    LOOP AT MT_TOPIC INTO DATA(LS_TOPIC).
+      CLEAR LS_LIST.
+      LS_LIST-ID = LS_TOPIC-ID.
+      LS_LIST-TOPIC = LS_TOPIC-TEXT.
+      "Set amounts to list
+      READ TABLE MT_GLT0 INTO DATA(LS_GLT0) WITH KEY ID = LS_LIST-ID.
+      IF SY-SUBRC = 0.
+        LS_LIST-EUR_EUR_AMOUNT = LS_GLT0-EUR_AMOUNT_IN_EUR.
+        LS_LIST-EUR_USD_AMOUNT = LS_GLT0-EUR_AMOUNT_IN_USD.
+        LS_LIST-NON_EUR_USD_AMOUNT = LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        LS_LIST-TOTAL_USD_AMOUNT = LS_GLT0-TOTAL_BALANCE_IN_USD.
+      ENDIF.
+      CLEAR LS_COLOR.
+      IF LS_LIST-ID(1) = 'S'.
+        LS_COLOR-COLOR-COL = COL_NORMAL.
+        LS_COLOR-COLOR-INT = 0.
+      ELSEIF LS_LIST-TOPIC(3) = '***'.
+        LS_COLOR-COLOR-COL = COL_KEY.
+        LS_COLOR-COLOR-INT = 0.
+      ELSEIF LS_LIST-TOPIC(3) = '** '.
+        LS_COLOR-COLOR-COL = COL_KEY.
+        LS_COLOR-COLOR-INT = 1.
+      ELSEIF LS_LIST-TOPIC(2) = '* '.
+        LS_COLOR-COLOR-COL = COL_GROUP.
+        LS_COLOR-COLOR-INT = 1.
+      ENDIF.
+      IF LS_LIST-ID(1) = 'M'.
+        APPEND LS_COLOR TO LS_LIST-COLFIELD.
+        LS_COLOR-FNAME = 'TOPIC'.
+        APPEND LS_COLOR TO LS_LIST-COLFIELD.
+      ELSE.
+        LS_COLOR-FNAME = 'TOPIC'.
+        APPEND LS_COLOR TO LS_LIST-COLFIELD.
+      ENDIF.
+      APPEND LS_LIST TO MT_LIST.
+    ENDLOOP.
+
+    "Set percentages / non emarked funds
+    ME->DETERMINE_PERCENTAGE( IV_ID_100 = 'M5'
+                              IV_IDS = 'SC/SD/SE/SB/SQ/SR/SS/ST/SU/SV/SW'
+                              IV_PCT_COL = 'NEF' ).
+    ME->DETERMINE_PERCENTAGE( IV_ID_100 = 'M2'
+                              IV_IDS = 'SM/SN/SO/SP/SF/SG/SH/SI/SJ/SK/SL'
+                              IV_PCT_COL = 'NEF' ).
+
+    "Set percentages / UNESCO's fund
+    ME->DETERMINE_PERCENTAGE( IV_ID_100 = 'M4'
+                              IV_IDS = 'SM/SN/SO/SP'
+                              IV_PCT_COL = 'FUN' ).
+
+    "Set percentage sum
+    ME->ADD_PERCENTAGE( IV_ID_TARGET = 'M6'
+                        IV_IDS_TO_ADD = 'SQ/SR/SS/ST/SU/SV/SW' ).
+    ME->ADD_PERCENTAGE( IV_ID_TARGET = 'M3'
+                        IV_IDS_TO_ADD = 'SF/SG/SH/SI/SJ/SK/SL' ).
+    ME->ADD_PERCENTAGE( IV_ID_TARGET = 'M4'
+                        IV_IDS_TO_ADD = 'SM/SN/SO/SP' ).
+
+    "format percentage in the list with non zero
+    LOOP AT MT_LIST ASSIGNING FIELD-SYMBOL(<LS_LIST>).
+      IF <LS_LIST>-ID <> 'M1'.
+        WRITE <LS_LIST>-EUR_EUR_P_NEF TO <LS_LIST>-EUR_EUR_P_NEF_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-EUR_USD_P_NEF TO <LS_LIST>-EUR_USD_P_NEF_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-NON_EUR_USD_P_NEF TO <LS_LIST>-NON_EUR_USD_P_NEF_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-TOTAL_USD_P_NEF TO <LS_LIST>-TOTAL_USD_P_NEF_C RIGHT-JUSTIFIED.
+      ENDIF.
+      IF 'M4/SM/SN/SO/SP' CS <LS_LIST>-ID.
+        WRITE <LS_LIST>-EUR_EUR_P_FUN TO <LS_LIST>-EUR_EUR_P_FUN_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-EUR_USD_P_FUN TO <LS_LIST>-EUR_USD_P_FUN_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-NON_EUR_USD_P_FUN TO <LS_LIST>-NON_EUR_USD_P_FUN_C RIGHT-JUSTIFIED.
+        WRITE <LS_LIST>-TOTAL_USD_P_FUN TO <LS_LIST>-TOTAL_USD_P_FUN_C RIGHT-JUSTIFIED.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM006 ----
+  METHOD SET_CALCULATED_AMOUNTS.
+
+    "Adjust OPF amounts with ASHI fund: OPF = OPF - ASHI
+    READ TABLE MT_GLT0 INTO DATA(LS_ASHI) WITH KEY ID = 'SC'.
+    READ TABLE MT_GLT0 ASSIGNING FIELD-SYMBOL(<LS_OPF>) WITH KEY ID = 'SO'.
+    <LS_OPF>-EUR_AMOUNT_IN_EUR = <LS_OPF>-EUR_AMOUNT_IN_EUR - LS_ASHI-EUR_AMOUNT_IN_EUR.
+    <LS_OPF>-EUR_AMOUNT_IN_USD = <LS_OPF>-EUR_AMOUNT_IN_USD - LS_ASHI-EUR_AMOUNT_IN_USD.
+    <LS_OPF>-NON_EUR_AMOUNT_IN_USD = <LS_OPF>-NON_EUR_AMOUNT_IN_USD - LS_ASHI-NON_EUR_AMOUNT_IN_USD.
+
+    "Adjust PFF amounts with Nessim Habif fund: PFF = PFF - Nessim Habif
+    READ TABLE MT_GLT0 INTO DATA(LS_NESSIM) WITH KEY ID = 'SD'.
+    READ TABLE MT_GLT0 ASSIGNING FIELD-SYMBOL(<LS_PFF>) WITH KEY ID = 'SP'.
+    <LS_PFF>-EUR_AMOUNT_IN_EUR = <LS_PFF>-EUR_AMOUNT_IN_EUR - LS_NESSIM-EUR_AMOUNT_IN_EUR.
+    <LS_PFF>-EUR_AMOUNT_IN_USD = <LS_PFF>-EUR_AMOUNT_IN_USD - LS_NESSIM-EUR_AMOUNT_IN_USD.
+    <LS_PFF>-NON_EUR_AMOUNT_IN_USD = <LS_PFF>-NON_EUR_AMOUNT_IN_USD - LS_NESSIM-NON_EUR_AMOUNT_IN_USD.
+
+
+    "Calculate Total institutes' cash (fund) held at UNESCO
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'M3'
+                           IV_ADD_ID = 'SF/SG/SH/SI/SJ/SK/SL' ).
+
+    "Calculate Total cash pool balance in UNES without institute
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'M4'
+                           IV_ADD_ID = 'M2'
+                           IV_SUBTRACT_ID = 'M3' ).
+
+    "Calculate GEF
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'SM'
+                           IV_ADD_ID = 'M4'
+                           IV_SUBTRACT_ID = 'SN/SO/SP' ).
+
+    "Calculate institutes' cash
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'M6'
+                           IV_ADD_ID = 'SQ/SR/SS/ST/SU/SV/SW' ).
+
+    "Calculate Non-cash pool
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'M5'
+                           IV_ADD_ID = 'SC/SD/SE/SB/M6' ).
+
+    "Calculate Total balance of UNESCO's cash and investments
+    ME->CALCULATE_AMOUNTS( IV_AMOUNTS_ID = 'M1'
+                           IV_ADD_ID = 'M2/M5' ).
+
+    "Caclulate total balance amounts
+    LOOP AT MT_GLT0 ASSIGNING FIELD-SYMBOL(<LS_GLT0>).
+      <LS_GLT0>-TOTAL_BALANCE_IN_USD = <LS_GLT0>-EUR_AMOUNT_IN_USD + <LS_GLT0>-NON_EUR_AMOUNT_IN_USD.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM007 ----
+  METHOD CALCULATE_AMOUNTS.
+
+    DATA LS_GLT0 TYPE TY_GLT0.
+    DATA LV_POS TYPE I.
+    DATA LV_ID TYPE CHAR2.
+
+    LS_GLT0-ID = IV_AMOUNTS_ID.
+
+    "Do addition
+    DO.
+      LV_ID = IV_ADD_ID+LV_POS(2).
+      IF LV_ID IS INITIAL.
+        EXIT.
+      ENDIF.
+      READ TABLE MT_GLT0 INTO DATA(LS_ADD) WITH KEY ID = LV_ID.
+      IF SY-SUBRC = 0.
+        ADD LS_ADD-EUR_AMOUNT_IN_EUR TO LS_GLT0-EUR_AMOUNT_IN_EUR.
+        ADD LS_ADD-EUR_AMOUNT_IN_USD TO LS_GLT0-EUR_AMOUNT_IN_USD.
+        ADD LS_ADD-NON_EUR_AMOUNT_IN_USD TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+      ENDIF.
+      ADD 3 TO LV_POS.
+    ENDDO.
+
+    CLEAR LV_POS.
+
+    "Do substraction
+    DO.
+      LV_ID = IV_SUBTRACT_ID+LV_POS(2).
+      IF LV_ID IS INITIAL.
+        EXIT.
+      ENDIF.
+      READ TABLE MT_GLT0 INTO DATA(LS_SUBTRACT) WITH KEY ID = LV_ID.
+      IF SY-SUBRC = 0.
+        SUBTRACT LS_SUBTRACT-EUR_AMOUNT_IN_EUR FROM LS_GLT0-EUR_AMOUNT_IN_EUR.
+        SUBTRACT LS_SUBTRACT-EUR_AMOUNT_IN_USD FROM LS_GLT0-EUR_AMOUNT_IN_USD.
+        SUBTRACT LS_SUBTRACT-NON_EUR_AMOUNT_IN_USD FROM LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+      ENDIF.
+      ADD 3 TO LV_POS.
+    ENDDO.
+
+    INSERT LS_GLT0 INTO TABLE MT_GLT0.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM008 ----
+  METHOD DETERMINE_PERCENTAGE.
+
+    DATA LT_EUR_EUR TYPE TABLE OF TY_ID_AMOUNT.
+    DATA LT_EUR_USD TYPE TABLE OF TY_ID_AMOUNT.
+    DATA LT_NON_EUR TYPE TABLE OF TY_ID_AMOUNT.
+    DATA LT_TOTAL   TYPE TABLE OF TY_ID_AMOUNT.
+    DATA LS_ID_AMOUNT TYPE TY_ID_AMOUNT.
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    DATA LV_LAST TYPE XFELD.
+    DATA LV_PCT TYPE YE_CA_DEC_3_2_S.
+    FIELD-SYMBOLS <LIST> TYPE TY_LIST.
+    FIELD-SYMBOLS <FIELD> TYPE ANY.
+
+    "Get amounts which represents 100%
+    READ TABLE MT_GLT0 INTO DATA(LS_100) WITH KEY ID = IV_ID_100.
+    CHECK SY-SUBRC = 0.
+
+    LOOP AT MT_GLT0 INTO DATA(LS_GLT0).
+      CHECK IV_IDS CS LS_GLT0-ID.
+      IF LS_GLT0-EUR_AMOUNT_IN_EUR IS NOT INITIAL.
+        LS_ID_AMOUNT-ID = LS_GLT0-ID.
+        LS_ID_AMOUNT-AMOUNT = LS_GLT0-EUR_AMOUNT_IN_EUR.
+        APPEND LS_ID_AMOUNT TO LT_EUR_EUR.
+      ENDIF.
+      IF LS_GLT0-EUR_AMOUNT_IN_USD IS NOT INITIAL.
+        LS_ID_AMOUNT-ID = LS_GLT0-ID.
+        LS_ID_AMOUNT-AMOUNT = LS_GLT0-EUR_AMOUNT_IN_USD.
+        APPEND LS_ID_AMOUNT TO LT_EUR_USD.
+      ENDIF.
+      IF LS_GLT0-NON_EUR_AMOUNT_IN_USD IS NOT INITIAL.
+        LS_ID_AMOUNT-ID = LS_GLT0-ID.
+        LS_ID_AMOUNT-AMOUNT = LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        APPEND LS_ID_AMOUNT TO LT_NON_EUR.
+      ENDIF.
+      IF LS_GLT0-TOTAL_BALANCE_IN_USD IS NOT INITIAL.
+        LS_ID_AMOUNT-ID = LS_GLT0-ID.
+        LS_ID_AMOUNT-AMOUNT = LS_GLT0-TOTAL_BALANCE_IN_USD.
+        APPEND LS_ID_AMOUNT TO LT_TOTAL.
+      ENDIF.
+    ENDLOOP.
+
+    "Set percentage for EUR amount in EUR
+    CLEAR: LV_LAST, LV_PCT.
+    LOOP AT LT_EUR_EUR INTO LS_ID_AMOUNT.
+      "Get line in list
+      READ TABLE MT_LIST ASSIGNING <LIST> WITH KEY ID = LS_ID_AMOUNT-ID.
+      "Set pourcentage field.
+      LV_FIELDNAME = |<LIST>-EUR_EUR_P_{ IV_PCT_COL }|.
+      ASSIGN (LV_FIELDNAME) TO <FIELD>.
+      AT LAST.
+        LV_LAST = ABAP_TRUE.
+      ENDAT.
+      IF LV_LAST = ABAP_FALSE.
+        <FIELD> = LS_ID_AMOUNT-AMOUNT * 100 / LS_100-EUR_AMOUNT_IN_EUR.
+        ADD <FIELD> TO LV_PCT.
+      ELSE.
+        <FIELD> = 100 - LV_PCT.
+      ENDIF.
+    ENDLOOP.
+
+    "Set percentage for EUR amount in USD
+    CLEAR: LV_LAST, LV_PCT.
+    LOOP AT LT_EUR_USD INTO LS_ID_AMOUNT.
+      "Get line in list
+      READ TABLE MT_LIST ASSIGNING <LIST> WITH KEY ID = LS_ID_AMOUNT-ID.
+      "Set pourcentage field.
+      LV_FIELDNAME = |<LIST>-EUR_USD_P_{ IV_PCT_COL }|.
+      ASSIGN (LV_FIELDNAME) TO <FIELD>.
+      AT LAST.
+        LV_LAST = ABAP_TRUE.
+      ENDAT.
+      IF LV_LAST = ABAP_FALSE.
+        <FIELD> = LS_ID_AMOUNT-AMOUNT * 100 / LS_100-EUR_AMOUNT_IN_USD.
+        ADD <FIELD> TO LV_PCT.
+      ELSE.
+        <FIELD> = 100 - LV_PCT.
+      ENDIF.
+    ENDLOOP.
+
+    "Set percentage for Non-EUR amount in USD
+    CLEAR: LV_LAST, LV_PCT.
+    LOOP AT LT_NON_EUR INTO LS_ID_AMOUNT.
+      "Get line in list
+      READ TABLE MT_LIST ASSIGNING <LIST> WITH KEY ID = LS_ID_AMOUNT-ID.
+      "Set pourcentage field.
+      LV_FIELDNAME = |<LIST>-NON_EUR_USD_P_{ IV_PCT_COL }|.
+      ASSIGN (LV_FIELDNAME) TO <FIELD>.
+      AT LAST.
+        LV_LAST = ABAP_TRUE.
+      ENDAT.
+      IF LV_LAST = ABAP_FALSE.
+        <FIELD> = LS_ID_AMOUNT-AMOUNT * 100 / LS_100-NON_EUR_AMOUNT_IN_USD.
+        ADD <FIELD> TO LV_PCT.
+      ELSE.
+        <FIELD> = 100 - LV_PCT.
+      ENDIF.
+    ENDLOOP.
+
+    "Set percentage for total balance
+    CLEAR: LV_LAST, LV_PCT.
+    LOOP AT LT_TOTAL INTO LS_ID_AMOUNT.
+      "Get line in list
+      READ TABLE MT_LIST ASSIGNING <LIST> WITH KEY ID = LS_ID_AMOUNT-ID.
+      "Set pourcentage field.
+      LV_FIELDNAME = |<LIST>-TOTAL_USD_P_{ IV_PCT_COL }|.
+      ASSIGN (LV_FIELDNAME) TO <FIELD>.
+      AT LAST.
+        LV_LAST = ABAP_TRUE.
+      ENDAT.
+      IF LV_LAST = ABAP_FALSE.
+        <FIELD> = LS_ID_AMOUNT-AMOUNT * 100 / LS_100-TOTAL_BALANCE_IN_USD.
+        ADD <FIELD> TO LV_PCT.
+      ELSE.
+        <FIELD> = 100 - LV_PCT.
+      ENDIF.
+    ENDLOOP.
+
+    "Set 100% to the IV_ID_100
+    READ TABLE MT_LIST ASSIGNING <LIST> WITH KEY ID = IV_ID_100.
+    IF SY-SUBRC = 0.
+      IF <LIST>-EUR_EUR_AMOUNT IS NOT INITIAL.
+        LV_FIELDNAME = |<LIST>-EUR_EUR_P_{ IV_PCT_COL }|.
+        ASSIGN (LV_FIELDNAME) TO <FIELD>.
+        <FIELD> = 100.
+      ENDIF.
+      IF <LIST>-EUR_USD_AMOUNT IS NOT INITIAL.
+        LV_FIELDNAME = |<LIST>-EUR_USD_P_{ IV_PCT_COL }|.
+        ASSIGN (LV_FIELDNAME) TO <FIELD>.
+        <FIELD> = 100.
+      ENDIF.
+      IF <LIST>-NON_EUR_USD_AMOUNT IS NOT INITIAL.
+        LV_FIELDNAME = |<LIST>-NON_EUR_USD_P_{ IV_PCT_COL }|.
+        ASSIGN (LV_FIELDNAME) TO <FIELD>.
+        <FIELD> = 100.
+      ENDIF.
+      IF <LIST>-TOTAL_USD_AMOUNT IS NOT INITIAL.
+        LV_FIELDNAME = |<LIST>-TOTAL_USD_P_{ IV_PCT_COL }|.
+        ASSIGN (LV_FIELDNAME) TO <FIELD>.
+        <FIELD> = 100.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM009 ----
+  METHOD ADD_PERCENTAGE.
+
+    DATA LS_LIST_SUM TYPE TY_LIST.
+
+    LOOP AT MT_LIST INTO DATA(LS_LIST).
+      CHECK IV_IDS_TO_ADD CS LS_LIST-ID.
+      "EUR in EUR
+      ADD LS_LIST-EUR_EUR_P_NEF TO LS_LIST_SUM-EUR_EUR_P_NEF.
+      ADD LS_LIST-EUR_EUR_P_FUN TO LS_LIST_SUM-EUR_EUR_P_FUN.
+      "EUR in USD
+      ADD LS_LIST-EUR_USD_P_NEF TO LS_LIST_SUM-EUR_USD_P_NEF.
+      ADD LS_LIST-EUR_USD_P_FUN TO LS_LIST_SUM-EUR_USD_P_FUN.
+      "Non EUR in USD
+      ADD LS_LIST-NON_EUR_USD_P_NEF TO LS_LIST_SUM-NON_EUR_USD_P_NEF.
+      ADD LS_LIST-NON_EUR_USD_P_FUN TO LS_LIST_SUM-NON_EUR_USD_P_FUN.
+      "Total balance
+      ADD LS_LIST-TOTAL_USD_P_NEF TO LS_LIST_SUM-TOTAL_USD_P_NEF.
+      ADD LS_LIST-TOTAL_USD_P_FUN TO LS_LIST_SUM-TOTAL_USD_P_FUN.
+    ENDLOOP.
+
+    READ TABLE MT_LIST ASSIGNING FIELD-SYMBOL(<LIST>) WITH KEY ID = IV_ID_TARGET.
+    CHECK SY-SUBRC = 0.
+    "EUR in EUR
+    <LIST>-EUR_EUR_P_NEF = LS_LIST_SUM-EUR_EUR_P_NEF.
+    <LIST>-EUR_EUR_P_FUN = LS_LIST_SUM-EUR_EUR_P_FUN.
+    "EUR in USD
+    <LIST>-EUR_USD_P_NEF = LS_LIST_SUM-EUR_USD_P_NEF.
+    <LIST>-EUR_USD_P_FUN = LS_LIST_SUM-EUR_USD_P_FUN.
+    "Non EUR in USD
+    <LIST>-NON_EUR_USD_P_NEF = LS_LIST_SUM-NON_EUR_USD_P_NEF.
+    <LIST>-NON_EUR_USD_P_FUN = LS_LIST_SUM-NON_EUR_USD_P_FUN.
+    "Total balance
+    <LIST>-TOTAL_USD_P_NEF = LS_LIST_SUM-TOTAL_USD_P_NEF.
+    <LIST>-TOTAL_USD_P_FUN = LS_LIST_SUM-TOTAL_USD_P_FUN.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00A ----
+  METHOD DISPLAY_ALV.
+
+    MV_REPID = IV_REPID.
+
+    TRY.
+        CALL METHOD CL_SALV_TABLE=>FACTORY
+*      EXPORTING
+*        list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*        r_container    =
+*        container_name =
+          IMPORTING
+            R_SALV_TABLE = MO_SALV_TABLE
+          CHANGING
+            T_TABLE      = MT_LIST.
+      CATCH CX_SALV_MSG .
+    ENDTRY.
+
+    "ALV functions activation
+    ME->SET_FUNCTIONS( ).
+
+    "ALV columns
+    ME->SET_COLUMNS( ).
+
+    "ALV layout
+    ME->SET_LAYOUT( ).
+
+    "Display list
+    MO_SALV_TABLE->DISPLAY( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00B ----
+  METHOD SET_FUNCTIONS.
+
+    DATA LO_FUNCTIONS TYPE REF TO CL_SALV_FUNCTIONS_LIST.
+
+    LO_FUNCTIONS = MO_SALV_TABLE->GET_FUNCTIONS( ).
+    LO_FUNCTIONS->SET_ALL( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00C ----
+  METHOD SET_LAYOUT.
+
+    DATA LS_LAYOUT_KEY TYPE SALV_S_LAYOUT_KEY.
+    DATA LO_LAYOUT TYPE REF TO CL_SALV_LAYOUT.
+
+    LO_LAYOUT = MO_SALV_TABLE->GET_LAYOUT( ).
+    LS_LAYOUT_KEY-REPORT = MV_REPID.
+    LO_LAYOUT->SET_KEY( LS_LAYOUT_KEY ).
+    LO_LAYOUT->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+    "lo_layout->set_default( abap_true ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00D ----
+  METHOD SET_COLUMNS.
+
+    DATA LO_COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+    DATA LO_COLUMN TYPE REF TO CL_SALV_COLUMN_TABLE.
+    DATA LS_COLOR TYPE LVC_S_COLO.
+
+    LO_COLUMNS = MO_SALV_TABLE->GET_COLUMNS( ).
+    "Column width optimization
+    LO_COLUMNS->SET_OPTIMIZE( ABAP_TRUE ).
+    LO_COLUMNS->SET_KEY_FIXATION( ABAP_TRUE ).
+
+    TRY.
+        LO_COLUMNS->SET_COLOR_COLUMN( 'COLFIELD' ).
+      CATCH CX_SALV_DATA_ERROR.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'ID' ).
+        LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+        "lo_column->set_key( abap_true ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOPIC' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Cash pool' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_KEY( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    LS_COLOR-COL = COL_TOTAL.
+    LS_COLOR-INT = 0.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_EUR_AMOUNT' ).
+        LO_COLUMN->SET_LONG_TEXT( 'EUR amount in EUR' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+        LO_COLUMN->SET_CURRENCY( 'EUR' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_EUR_P_NEF' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_EUR_P_NEF_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / non-emarked funds 1' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_EUR_P_FUN' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_EUR_P_FUN_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / UNESCO''s fund 1' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    LS_COLOR-COL = COL_GROUP.
+    LS_COLOR-INT = 0.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_USD_AMOUNT' ).
+        LO_COLUMN->SET_LONG_TEXT( 'EUR amount in USD' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_USD_P_NEF' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_USD_P_NEF_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / non-emarked funds 2' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_USD_P_FUN' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EUR_USD_P_FUN_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / UNESCO''s fund 2' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    LS_COLOR-COL = COL_TOTAL.
+    LS_COLOR-INT = 0.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'NON_EUR_USD_AMOUNT' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Non-EUR amount in USD' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'NON_EUR_USD_P_NEF' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'NON_EUR_USD_P_NEF_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / non-emarked funds 3' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'NON_EUR_USD_P_FUN' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'NON_EUR_USD_P_FUN_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / UNESCO''s fund 3' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    LS_COLOR-COL = COL_GROUP.
+    LS_COLOR-INT = 0.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOTAL_USD_AMOUNT' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Total balance in USD' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOTAL_USD_P_NEF' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOTAL_USD_P_NEF_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / non-emarked funds 4' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOTAL_USD_P_FUN' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'TOTAL_USD_P_FUN_C' ).
+        LO_COLUMN->SET_LONG_TEXT( '% / UNESCO''s fund 4' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+        LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>RIGHT ).
+        LO_COLUMN->SET_COLOR( LS_COLOR ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00E ----
+  METHOD READ_JCU.
+
+    DATA LT_JCU TYPE TABLE OF YTFI_JCU.
+    DATA LV_NEW_GSBER TYPE XFELD.
+    DATA LO_CONV_RATE TYPE REF TO YCL_FM_CONVERSION_RATE.
+    DATA LT_BUKRS TYPE RANGE OF BUKRS.
+    DATA LS_GLT0 TYPE TY_GLT0.
+    DATA LV_AMOUNT TYPE WERTV9.
+
+    SELECT * FROM YTFI_JCU WHERE BUKRS = @IV_BUKRS
+                           AND   GJAHR = @MP_GJAHR
+                  INTO TABLE @LT_JCU.
+
+    LS_GLT0-ID = IV_ID.
+
+    LOOP AT LT_JCU INTO DATA(LS_JCU).
+      IF LS_JCU-WAERS <> C_USD.
+        "Convert amount
+        ME->CONVERT_AMOUNT( EXPORTING IV_YEAR = MP_GJAHR
+                                      IV_PERIO = LS_JCU-PERIO
+                                      IV_LOCAL_AMOUNT = LS_JCU-AMOUNT
+                                      IV_LOCAL_CURRENCY = LS_JCU-WAERS
+                                      IV_TARGET_CURRENCY = C_USD
+                            IMPORTING EV_TARGET_AMOUNT = LV_AMOUNT ).
+        IF LS_JCU-WAERS = C_EUR.
+          ADD LS_JCU-AMOUNT TO LS_GLT0-EUR_AMOUNT_IN_EUR.
+          ADD LV_AMOUNT TO LS_GLT0-EUR_AMOUNT_IN_USD.
+        ELSE.
+          ADD LV_AMOUNT TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+        ENDIF.
+      ELSE.
+        ADD LS_JCU-AMOUNT TO LS_GLT0-NON_EUR_AMOUNT_IN_USD.
+      ENDIF.
+    ENDLOOP.
+
+    INSERT LS_GLT0 INTO TABLE MT_GLT0.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CM00F ----
+  METHOD CONVERT_AMOUNT.
+
+    DATA LV_DATE TYPE DATUM.
+
+    IF IV_PERIO = 0.
+      LV_DATE = |{ IV_YEAR }0101|.
+    ELSE.
+      CALL FUNCTION 'LAST_DAY_IN_PERIOD_GET'
+        EXPORTING
+          I_GJAHR        = IV_YEAR
+*         I_MONMIT       = 00
+          I_PERIV        = 'K4'
+          I_POPER        = IV_PERIO
+        IMPORTING
+          E_DATE         = LV_DATE
+        EXCEPTIONS
+          INPUT_FALSE    = 1
+          T009_NOTFOUND  = 2
+          T009B_NOTFOUND = 3
+          OTHERS         = 4.
+    ENDIF.
+
+    CHECK LV_DATE IS NOT INITIAL.
+
+    CALL FUNCTION 'CONVERT_TO_FOREIGN_CURRENCY'
+      EXPORTING
+*       CLIENT           = SY-MANDT
+        DATE             = LV_DATE
+        FOREIGN_CURRENCY = IV_TARGET_CURRENCY
+        LOCAL_AMOUNT     = IV_LOCAL_AMOUNT
+        LOCAL_CURRENCY   = IV_LOCAL_CURRENCY
+*       RATE             = 0
+*       TYPE_OF_RATE     = 'M'
+*       READ_TCURR       = 'X'
+      IMPORTING
+*       EXCHANGE_RATE    =
+        FOREIGN_AMOUNT   = EV_TARGET_AMOUNT
+*       FOREIGN_FACTOR   =
+*       LOCAL_FACTOR     =
+*       EXCHANGE_RATEX   =
+*       DERIVED_RATE_TYPE       =
+*       FIXED_RATE       =
+      EXCEPTIONS
+        NO_RATE_FOUND    = 1
+        OVERFLOW         = 2
+        NO_FACTORS_FOUND = 3
+        NO_SPREAD_FOUND  = 4
+        DERIVED_2_TIMES  = 5
+        OTHERS           = 6.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FI_CASH_POOL_BALANCE_BL===CU ----
+CLASS YCL_FI_CASH_POOL_BALANCE_BL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  METHODS DISPLAY_ALV
+    IMPORTING
+      !IV_REPID TYPE SY-REPID .
+  METHODS GET_DATA .
+  METHODS SET_SELECTION_VALUES
+    IMPORTING
+      !IV_SELNAME TYPE RSSCR_NAME
+      !IV_KIND TYPE RSSCR_KIND
+      !IV_VALUE TYPE ANY OPTIONAL
+      !IT_VALUE TYPE ANY TABLE OPTIONAL .

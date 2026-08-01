@@ -1,0 +1,50 @@
+* ==== CLASS POOL YCL_FI_LZBKZ_ENABLE ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_LZBKZ_ENABLE
+
+*"* local type definitions
+INCLUDE YCL_FI_LZBKZ_ENABLE===========CCDEF.
+
+*"* class YCL_FI_LZBKZ_ENABLE definition
+*"* public declarations
+  INCLUDE YCL_FI_LZBKZ_ENABLE===========CU.
+*"* protected declarations
+  INCLUDE YCL_FI_LZBKZ_ENABLE===========CO.
+*"* private declarations
+  INCLUDE YCL_FI_LZBKZ_ENABLE===========CI.
+ENDCLASS. "YCL_FI_LZBKZ_ENABLE definition
+
+*"* macro definitions
+INCLUDE YCL_FI_LZBKZ_ENABLE===========CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_LZBKZ_ENABLE===========CCIMP.
+
+CLASS YCL_FI_LZBKZ_ENABLE IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_LZBKZ_ENABLE implementation
+
+
+* ---- YCL_FI_LZBKZ_ENABLE===========CI ----
+PRIVATE SECTION.
+
+* ---- YCL_FI_LZBKZ_ENABLE===========CM001 ----
+  METHOD IF_EX_FI_LZBKZ_LANDL_ENTRY_EN~LZBKZ_LANDL_ENTRY_ENABLE.
+
+    E_SWITCHON = ABAP_TRUE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_LZBKZ_ENABLE===========CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FI_LZBKZ_ENABLE===========CU ----
+CLASS YCL_FI_LZBKZ_ENABLE DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  INTERFACES IF_BADI_INTERFACE .
+  INTERFACES IF_EX_FI_LZBKZ_LANDL_ENTRY_EN .

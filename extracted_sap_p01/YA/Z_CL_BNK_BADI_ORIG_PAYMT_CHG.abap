@@ -1,0 +1,245 @@
+* ==== CLASS POOL Z_CL_BNK_BADI_ORIG_PAYMT_CHG ====
+CLASS-POOL .
+*"* class pool for class Z_CL_BNK_BADI_ORIG_PAYMT_CHG
+
+*"* local type definitions
+INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CCDEF.
+
+*"* class Z_CL_BNK_BADI_ORIG_PAYMT_CHG definition
+*"* public declarations
+  INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CU.
+*"* protected declarations
+  INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CO.
+*"* private declarations
+  INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CI.
+ENDCLASS. "Z_CL_BNK_BADI_ORIG_PAYMT_CHG definition
+
+*"* macro definitions
+INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CCMAC.
+*"* local class implementation
+INCLUDE Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CCIMP.
+
+CLASS Z_CL_BNK_BADI_ORIG_PAYMT_CHG IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "Z_CL_BNK_BADI_ORIG_PAYMT_CHG implementation
+
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CI ----
+*"* private components of class Z_CL_BNK_BADI_ORIG_PAYMT_CHG
+*"* do not include other source files here!!!
+PRIVATE SECTION.
+
+  CLASS-METHODS FI_ITEM_FROM_REGUH
+    IMPORTING
+      !I_REGUH TYPE REGUH
+    EXPORTING
+      !E_BSEG_KEY TYPE BSEG_KEY .
+  CLASS-METHODS FI_ITEM_UPDATE
+    IMPORTING
+      !I_BSEG_KEY TYPE BSEG_KEY
+      !I_VALUT TYPE VALUT .
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CM001 ----
+METHOD FI_ITEM_FROM_REGUH.
+*
+* Obtain FI line item that belongs to a REGUH entry (payment run)
+*
+  STATICS: LF_T001 TYPE T001.
+
+  CHECK I_REGUH-XVORL = SPACE.
+  E_BSEG_KEY-BUKRS = I_REGUH-ZBUKR.
+
+  IF E_BSEG_KEY-BUKRS <> LF_T001-BUKRS.
+
+    CALL FUNCTION 'COMPANY_CODE_READ'
+      EXPORTING
+        I_BUKRS = E_BSEG_KEY-BUKRS
+      IMPORTING
+        E_T001  = LF_T001.
+  ENDIF.
+
+  CALL FUNCTION 'DATE_TO_PERIOD_CONVERT'
+    EXPORTING
+      I_DATE  = I_REGUH-ZALDT "posting date
+      I_PERIV = LF_T001-PERIV
+    IMPORTING
+      E_GJAHR = E_BSEG_KEY-GJAHR
+    EXCEPTIONS
+      OTHERS  = 0.
+
+  SELECT SINGLE BUZEI FROM  BSEG INTO E_BSEG_KEY-BUZEI
+         WHERE  BUKRS  =  E_BSEG_KEY-BUKRS
+         AND    BELNR  =  I_REGUH-VBLNR
+         AND    GJAHR  =  E_BSEG_KEY-GJAHR
+         AND    KOART  =  'S'
+         AND    KTOSL  = 'ZAH'
+         AND    AUGBL  =  SPACE.
+  CHECK SY-SUBRC = 0.
+
+  E_BSEG_KEY-BELNR = I_REGUH-VBLNR.
+
+ENDMETHOD.
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CM002 ----
+METHOD FI_ITEM_UPDATE.
+*
+* Update the value date in FI line item and Cash Management
+*
+  DATA: L_EMPTY_VALUT TYPE VALUT,
+        L_BKPF TYPE BKPF,
+        L_BSEG TYPE BSEG,
+        L_SKB1_WAERS TYPE WAERS,
+        L_FDWAERS TYPE WAERS,
+        LF_RF40S  TYPE RF40S,
+        LT_RF40S  TYPE TABLE OF RF40S.
+
+* Value date
+  UPDATE BSEG SET VALUT = I_VALUT
+         WHERE  BUKRS  =  I_BSEG_KEY-BUKRS
+         AND    BELNR  =  I_BSEG_KEY-BELNR
+         AND    GJAHR  =  I_BSEG_KEY-GJAHR
+         AND    BUZEI  =  I_BSEG_KEY-BUZEI
+         AND    VALUT  <> I_VALUT
+         AND    VALUT  <> L_EMPTY_VALUT.
+  CHECK SY-SUBRC = 0.
+
+* Value Date in Index table (open GL)
+  SELECT SINGLE * FROM BSEG INTO L_BSEG
+         WHERE  BUKRS  =  I_BSEG_KEY-BUKRS
+         AND    BELNR  =  I_BSEG_KEY-BELNR
+         AND    GJAHR  =  I_BSEG_KEY-GJAHR
+         AND    BUZEI  =  I_BSEG_KEY-BUZEI
+         AND    AUGBL  =  SPACE.
+
+  UPDATE BSIS SET VALUT = I_VALUT
+         WHERE  BUKRS  = L_BSEG-BUKRS
+         AND    HKONT  = L_BSEG-HKONT
+         AND    AUGDT  = L_BSEG-AUGDT
+         AND    AUGBL  = L_BSEG-AUGBL
+         AND    ZUONR  = L_BSEG-ZUONR
+         AND    GJAHR  = L_BSEG-GJAHR
+         AND    BELNR  = L_BSEG-BELNR
+         AND    BUZEI  = L_BSEG-BUZEI.
+
+* Proceed with CM - First heuristical 'active' check
+  CHECK L_BSEG-FDLEV  <> SPACE
+    AND L_BSEG-FDTAG  <> I_VALUT
+    AND L_BSEG-FDTAG  <> L_EMPTY_VALUT.
+
+* TR-CM logic copied from RFFDKO00
+  SELECT SINGLE * FROM BKPF INTO L_BKPF
+        WHERE  BUKRS  =  I_BSEG_KEY-BUKRS
+        AND    BELNR  =  I_BSEG_KEY-BELNR
+        AND    GJAHR  =  I_BSEG_KEY-GJAHR.
+  CHECK SY-SUBRC = 0.
+
+  SELECT SINGLE WAERS FROM  SKB1 INTO  L_SKB1_WAERS
+         WHERE  BUKRS  =  I_BSEG_KEY-BUKRS
+         AND    SAKNR  =  L_BSEG-HKONT.
+  CHECK SY-SUBRC = 0.
+
+  CALL FUNCTION 'CASH_FORECAST_DET_REL_CURRENCY'
+    EXPORTING
+      I_XPOSTING       = 'X'
+      I_KOART          = L_BSEG-KOART
+      I_DOCUMENT_WAERS = L_BKPF-WAERS
+      I_PAYM_WAERS     = L_BSEG-PYCUR
+      I_DOCUMENT_XOPVW = L_BSEG-XOPVW
+      I_HKONT          = L_BSEG-HKONT
+      I_HKONT_WAERS    = L_SKB1_WAERS
+      I_BUKRS          = L_BSEG-BUKRS
+    IMPORTING
+      E_FDWAERS        = L_FDWAERS.
+
+  MOVE-CORRESPONDING L_BSEG TO LF_RF40S.
+  LF_RF40S-CURRA = L_FDWAERS.
+
+* New entry with new date
+  LF_RF40S-FDTAG = I_VALUT.
+  APPEND LF_RF40S TO LT_RF40S.
+
+* Old entry with old date and turned amounts:
+  LF_RF40S-FDTAG = L_BSEG-FDTAG.
+  MULTIPLY: LF_RF40S-FDWBT BY -1, LF_RF40S-FDDBT BY -1.
+  APPEND LF_RF40S TO LT_RF40S.
+
+* Update CM date in original document
+  UPDATE BSEG SET FDTAG = I_VALUT
+         WHERE  BUKRS  =  I_BSEG_KEY-BUKRS
+         AND    BELNR  =  I_BSEG_KEY-BELNR
+         AND    GJAHR  =  I_BSEG_KEY-GJAHR
+         AND    BUZEI  =  I_BSEG_KEY-BUZEI.
+
+* Update CM data
+  CALL FUNCTION 'CASH_FORECAST_SUMMARY_REC_UPD'
+    TABLES
+      TAB_RF40S = LT_RF40S.
+
+ENDMETHOD.
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CM003 ----
+METHOD IF_EX_BNK_ORIG_PAYMT_CHG~ON_RESUBMIT.
+*
+* We get I_REGUH for a resubmitted Batch Item (= Payment)
+* The resubmission date is I_REGUH-AUSFD
+* We want to adjust the value date and the Cash Mgt. data of the
+*  original line item in Financials
+*
+  DATA: L_BSEG_KEY TYPE BSEG_KEY.
+
+*- We act on FI docs only
+  CHECK I_REGUH-DORIGIN(2) = 'FI'  "values in table TFIBLORIGIN
+     OR I_REGUH-DORIGIN(2) = 'TR'.                          "nte1507594
+
+*- Obtain FI line item
+  CALL METHOD FI_ITEM_FROM_REGUH
+    EXPORTING
+      I_REGUH    = I_REGUH
+    IMPORTING
+      E_BSEG_KEY = L_BSEG_KEY.
+
+  CHECK L_BSEG_KEY-BELNR <> SPACE.
+
+*- Update FI lin eitem (date)
+  CALL METHOD FI_ITEM_UPDATE
+    EXPORTING
+      I_BSEG_KEY = L_BSEG_KEY
+      I_VALUT    = I_REGUH-AUSFD.
+
+ENDMETHOD.
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CM004 ----
+METHOD IF_EX_BNK_ORIG_PAYMT_CHG~ON_REJECT.
+
+  DATA: L_REGUH TYPE REGUH.
+
+  L_REGUH = I_REGUH.
+  L_REGUH-AUSFD = '99991231'.
+
+  MESSAGE I214(BNK_GENERAL) WITH I_REGUH-ZBUKR I_REGUH-VBLNR.
+*   Payment &1 &2 should be manually reversed (FBRA)
+
+  CALL METHOD ME->IF_EX_BNK_ORIG_PAYMT_CHG~ON_RESUBMIT
+    EXPORTING
+      I_REGUH = L_REGUH.
+
+ENDMETHOD.
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CO ----
+*"* protected components of class Z_CL_BNK_BADI_ORIG_PAYMT_CHG
+*"* do not include other source files here!!!
+PROTECTED SECTION.
+
+* ---- Z_CL_BNK_BADI_ORIG_PAYMT_CHG==CU ----
+CLASS Z_CL_BNK_BADI_ORIG_PAYMT_CHG DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+*"* public components of class Z_CL_BNK_BADI_ORIG_PAYMT_CHG
+*"* do not include other source files here!!!
+PUBLIC SECTION.
+
+  INTERFACES IF_BADI_INTERFACE .
+  INTERFACES IF_EX_BNK_ORIG_PAYMT_CHG .

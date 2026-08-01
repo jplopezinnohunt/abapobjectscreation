@@ -1,0 +1,242 @@
+* ==== CLASS POOL YCL_FM_BR_POSTING_REPORT ====
+CLASS-POOL .
+*"* class pool for class YCL_FM_BR_POSTING_REPORT
+
+*"* local type definitions
+INCLUDE YCL_FM_BR_POSTING_REPORT======CCDEF.
+
+*"* class YCL_FM_BR_POSTING_REPORT definition
+*"* public declarations
+  INCLUDE YCL_FM_BR_POSTING_REPORT======CU.
+*"* protected declarations
+  INCLUDE YCL_FM_BR_POSTING_REPORT======CO.
+*"* private declarations
+  INCLUDE YCL_FM_BR_POSTING_REPORT======CI.
+ENDCLASS. "YCL_FM_BR_POSTING_REPORT definition
+
+*"* macro definitions
+INCLUDE YCL_FM_BR_POSTING_REPORT======CCMAC.
+*"* local class implementation
+INCLUDE YCL_FM_BR_POSTING_REPORT======CCIMP.
+
+CLASS YCL_FM_BR_POSTING_REPORT IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FM_BR_POSTING_REPORT implementation
+
+
+* ---- YCL_FM_BR_POSTING_REPORT======CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    TTY_RUNID_RANGE TYPE RANGE OF P_EVNUM .
+
+  DATA MP_BUKRS TYPE BUKRS .
+  DATA:
+    MR_DATE TYPE RANGE OF DATUM .
+  DATA:
+    MR_SAKNR TYPE RANGE OF SAKNR .
+  DATA:
+    MR_BLART TYPE RANGE OF BLART .
+  DATA:
+    MR_PERNR TYPE RANGE OF P_PERNR .
+
+  METHODS GET_RUNID_FROM_SELECTION_DATE
+    EXPORTING
+      !ET_RUNID TYPE TTY_RUNID_RANGE .
+
+* ---- YCL_FM_BR_POSTING_REPORT======CM001 ----
+  METHOD SET_SELECTION_VALUES.
+
+    FIELD-SYMBOLS <LT_RANGE> TYPE ANY TABLE.
+    FIELD-SYMBOLS <LV_PARAM> TYPE ANY.
+    DATA LV_SELNAME TYPE FIELDNAME.
+
+    LV_SELNAME = IV_SELNAME.
+    CASE IV_KIND.
+      WHEN 'S'.   "SELECT-OPTIONS
+        REPLACE 'S_' IN LV_SELNAME WITH 'MR_'.
+        ASSIGN (LV_SELNAME) TO <LT_RANGE>.
+        CHECK <LT_RANGE> IS ASSIGNED.
+        <LT_RANGE> = IT_VALUE.
+      WHEN 'P'. "PARAMETERS
+        REPLACE 'P_' IN LV_SELNAME WITH 'MP_'.
+        ASSIGN (LV_SELNAME) TO <LV_PARAM>.
+        CHECK <LV_PARAM> IS ASSIGNED.
+        <LV_PARAM> = IV_VALUE.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_POSTING_REPORT======CM002 ----
+  METHOD READ_DATA_FROM_BR_PAYP.
+
+    CLEAR MT_BR_POST.
+
+    SELECT H~BUKRS,
+           H~BLART,
+           H~BLDAT,
+           H~BUDAT,
+           H~WAERS,
+           H~KTEXT,
+           I~PITEM,
+           I~FIPOS,
+           I~FISTL,
+           I~GEBER,
+           I~GSBER,
+           I~SAKNR,
+           K~TXT50 AS SAKNR_TXT,
+           I~KOSTL,
+           I~PS_PSP_PNR,
+           I~WRBTR,
+           I~PTEXT
+           FROM YTFM_BR_PAYPH AS H
+           INNER JOIN YTFM_BR_PAYPI AS I ON  I~RUNID = H~RUNID
+                                         AND I~BUKRS = H~BUKRS
+                                         AND I~BLART = H~BLART
+                                         AND I~BLTYP = H~BLTYP
+                                         AND I~WAERS = H~WAERS
+           LEFT OUTER JOIN SKAT AS K ON  K~SPRAS = @SY-LANGU
+                                     AND K~KTOPL = 'UNES'
+                                     AND K~SAKNR = I~SAKNR
+           WHERE H~BUKRS = @MP_BUKRS
+           AND   H~BLART IN @MR_BLART
+           AND   H~BUDAT IN @MR_DATE
+           AND   I~SAKNR IN @MR_SAKNR
+           INTO TABLE @MT_BR_POST.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_POSTING_REPORT======CM003 ----
+  METHOD READ_DATA_FROM_BR_PAYPER.
+
+    DATA LT_RUNID TYPE TTY_RUNID_RANGE.
+
+    ME->GET_RUNID_FROM_SELECTION_DATE( IMPORTING ET_RUNID = LT_RUNID ).
+
+    CHECK LT_RUNID IS NOT INITIAL.
+
+    SELECT P~PERNR,
+           P~DMBTR_9,
+           P~HWAER_9,
+           P~WRBTR_9,
+           P~WAERS_9,
+           P~DMBTR_D,
+           P~HWAER_D,
+           P~WRBTR_D,
+           P~WAERS_D,
+           CONCAT( 'Payroll posting run:', R~VALUE ) AS KTEXT,
+           CONCAT( SUBSTRING( R~VALUE, 7, 4 ), SUBSTRING( R~VALUE, 4, 2 ) ) AS PERIOD
+           FROM YTFM_BR_PAYPER AS P
+           LEFT OUTER JOIN PEVAT AS R ON  R~TYPE = 'PP'
+                                      AND R~RUNID = P~RUNID
+                                      AND R~ATTR = 'AKPER'
+                                      AND R~ID = '00'
+          WHERE P~RUNID IN @LT_RUNID
+          AND   P~PERNR IN @MR_PERNR
+          INTO TABLE @MT_LIST_PERNR.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_POSTING_REPORT======CM004 ----
+  METHOD GET_RUNID_FROM_SELECTION_DATE.
+
+    TYPES: BEGIN OF LTY_RUNID,
+             RUNID TYPE P_EVNUM,
+             ABKRS TYPE ABKRS,
+             PABRP TYPE PABRP,
+             PABRJ TYPE PABRJ,
+           END OF LTY_RUNID.
+    DATA LT_RUNID TYPE TABLE OF LTY_RUNID.
+
+    SELECT H~RUNID,
+           SUBSTRING( R~VALUE, 1, 2 ) AS ABKRS,
+           CAST( SUBSTRING( R~VALUE, 4, 2 ) AS NUMC ) AS PABRP,
+           CAST( SUBSTRING( R~VALUE, 7, 4 ) AS NUMC ) AS PABRJ
+           FROM YTHR_PEVST AS H
+           INNER JOIN PEVAT AS R ON  R~TYPE = 'PP'
+                                 AND R~RUNID = H~RUNID
+                                 AND R~ATTR = 'AKPER'
+                                 AND R~ID = '00'
+          INTO TABLE @LT_RUNID.
+
+    READ TABLE MR_DATE INTO DATA(LS_DATE) INDEX 1.
+    CHECK SY-SUBRC = 0.
+    DELETE LT_RUNID WHERE PABRJ NOT BETWEEN LS_DATE-LOW(4) AND LS_DATE-HIGH(4).
+
+    LOOP AT LT_RUNID INTO DATA(LS_RUNID).
+      SELECT SINGLE Q~BEGDA, Q~ENDDA
+             FROM T549A AS A
+             INNER JOIN T549Q AS Q ON Q~PERMO = A~PERMO
+             WHERE A~ABKRS = @LS_RUNID-ABKRS
+             AND   Q~PABRJ = @LS_RUNID-PABRJ
+             AND   Q~PABRP = @LS_RUNID-PABRP
+             INTO ( @DATA(LV_BEGDA), @DATA(LV_ENDDA) ).
+      CHECK SY-SUBRC = 0.
+      IF LV_ENDDA < LS_DATE-LOW OR LV_BEGDA > LS_DATE-HIGH.
+        CONTINUE.
+      ENDIF.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = LS_RUNID-RUNID ) TO ET_RUNID.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_POSTING_REPORT======CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FM_BR_POSTING_REPORT======CU ----
+CLASS YCL_FM_BR_POSTING_REPORT DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    TYPES:
+      BEGIN OF TY_BR_POST,
+        BUKRS      TYPE YTFM_BR_PAYPH-BUKRS,
+        BLART      TYPE YTFM_BR_PAYPH-BLART,
+        BLDAT      TYPE YTFM_BR_PAYPH-BLDAT,
+        BUDAT      TYPE YTFM_BR_PAYPH-BUDAT,
+        WAERS      TYPE YTFM_BR_PAYPH-WAERS,
+        KTEXT      TYPE YTFM_BR_PAYPH-KTEXT,
+        PITEM      TYPE YTFM_BR_PAYPI-PITEM,
+        FIPOS      TYPE YTFM_BR_PAYPI-FIPOS,
+        FISTL      TYPE YTFM_BR_PAYPI-FISTL,
+        GEBER      TYPE YTFM_BR_PAYPI-GEBER,
+        GSBER      TYPE YTFM_BR_PAYPI-GSBER,
+        SAKNR      TYPE YTFM_BR_PAYPI-SAKNR,
+        SAKNR_TXT  TYPE SKAT-TXT50,
+        KOSTL      TYPE YTFM_BR_PAYPI-KOSTL,
+        PS_PSP_PNR TYPE YTFM_BR_PAYPI-PS_PSP_PNR,
+        WRBTR      TYPE YTFM_BR_PAYPI-WRBTR,
+        PTEXT      TYPE YTFM_BR_PAYPI-PTEXT,
+      END OF TY_BR_POST .
+    TYPES:
+      BEGIN OF TY_LIST_PERNR,
+        PERNR     TYPE P_PERNR,
+        DMBTR_9   TYPE BSEG-DMBTR,
+        HWAER_9   TYPE BKPF-HWAER,
+        WRBTR_9   TYPE BSEG-WRBTR,
+        WAERS_9   TYPE BKPF-WAERS,
+        DMBTR_D   TYPE BSEG-DMBTR,
+        HWAER_D   TYPE BKPF-HWAER,
+        WRBTR_D   TYPE BSEG-WRBTR,
+        WAERS_D   TYPE BKPF-WAERS,
+        KTEXT     TYPE KBLKTEXT,
+        PERIOD(6) TYPE C,
+      END OF TY_LIST_PERNR .
+
+    DATA:
+      MT_BR_POST TYPE TABLE OF TY_BR_POST .
+    DATA:
+      MT_LIST_PERNR TYPE TABLE OF TY_LIST_PERNR .
+
+    METHODS READ_DATA_FROM_BR_PAYPER .
+    METHODS READ_DATA_FROM_BR_PAYP .
+    METHODS SET_SELECTION_VALUES
+      IMPORTING
+        !IV_SELNAME TYPE RSSCR_NAME
+        !IV_KIND    TYPE RSSCR_KIND
+        !IV_VALUE   TYPE ANY OPTIONAL
+        !IT_VALUE   TYPE ANY TABLE OPTIONAL .

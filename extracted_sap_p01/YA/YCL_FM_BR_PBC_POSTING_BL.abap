@@ -1,0 +1,219 @@
+* ==== CLASS POOL YCL_FM_BR_PBC_POSTING_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_FM_BR_PBC_POSTING_BL
+
+*"* local type definitions
+INCLUDE YCL_FM_BR_PBC_POSTING_BL======CCDEF.
+
+*"* class YCL_FM_BR_PBC_POSTING_BL definition
+*"* public declarations
+  INCLUDE YCL_FM_BR_PBC_POSTING_BL======CU.
+*"* protected declarations
+  INCLUDE YCL_FM_BR_PBC_POSTING_BL======CO.
+*"* private declarations
+  INCLUDE YCL_FM_BR_PBC_POSTING_BL======CI.
+ENDCLASS. "YCL_FM_BR_PBC_POSTING_BL definition
+
+*"* macro definitions
+INCLUDE YCL_FM_BR_PBC_POSTING_BL======CCMAC.
+*"* local class implementation
+INCLUDE YCL_FM_BR_PBC_POSTING_BL======CCIMP.
+
+CLASS YCL_FM_BR_PBC_POSTING_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FM_BR_PBC_POSTING_BL implementation
+
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CI ----
+PRIVATE SECTION.
+
+  CLASS-DATA MO_INSTANCE TYPE REF TO YCL_FM_BR_PBC_POSTING_BL .
+  DATA MV_PERNR_BUFFERED TYPE P_PERNR .
+  DATA:
+    MT_PA0001 TYPE TABLE OF PA0001 .
+
+  METHODS CONVERT_TO_CURRENCY
+    IMPORTING
+      !IV_DATE TYPE DATUM
+      !IV_TYPE_OF_RATE TYPE KURST_CURR DEFAULT 'M'
+      !IV_FOREIGN_AMOUNT TYPE ANY
+      !IV_FOREIGN_CURRENCY TYPE WAERS
+      !IV_LOCAL_CURRENCY TYPE WAERS
+    EXPORTING
+      !EV_LOCAL_AMOUNT TYPE ANY
+      !EV_SUBRC TYPE SY-SUBRC .
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CM001 ----
+  METHOD GET_INSTANCE.
+
+    IF MO_INSTANCE IS INITIAL.
+      MO_INSTANCE = NEW YCL_FM_BR_PBC_POSTING_BL( ).
+    ENDIF.
+
+    RV_INSTANCE = MO_INSTANCE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CM002 ----
+  METHOD GET_PERNR.
+
+    CLEAR EV_PERNR.
+
+    READ TABLE IT_DOC_POS INTO DATA(LS_DOC_POS) WITH KEY ENC_TYPE_MP = IV_ENC_TYPE
+                                                         BELNR_MP = IV_BELNR
+                                                         FPM_POSNR_MP = IV_FPM_POSNR.
+    IF SY-SUBRC = 0.
+      IF LS_DOC_POS-OTYPE = 'P'.
+        EV_PERNR = LS_DOC_POS-OBJID.
+      ELSEIF LS_DOC_POS-PLVAR_DP = 'P'.
+        EV_PERNR = LS_DOC_POS-OBJID_DP.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CM003 ----
+  METHOD CHECK_CONDITIONS.
+
+    DATA LS_PA0001 TYPE PA0001.
+    "DATA ls_ys205 TYPE ys205.
+    DATA LS_YS205 TYPE PC205.
+    DATA LV_BR TYPE CHAR1.
+
+    RV_IS_OK = ABAP_FALSE.
+
+    IF IV_PERNR <> MV_PERNR_BUFFERED.
+      CLEAR MT_PA0001.
+      MV_PERNR_BUFFERED = IV_PERNR.
+    ENDIF.
+
+    LOOP AT MT_PA0001 INTO LS_PA0001 WHERE PERNR = IV_PERNR
+                                     AND   ENDDA >= IS_POS-DUE_DATE
+                                     AND   BEGDA <= IS_POS-DUE_DATE.
+      EXIT.
+    ENDLOOP.
+    IF SY-SUBRC <> 0.
+      SELECT SINGLE * FROM PA0001 WHERE PERNR = @IV_PERNR
+                                  AND   ENDDA >= @IS_POS-DUE_DATE
+                                  AND   BEGDA <= @IS_POS-DUE_DATE
+                      INTO @LS_PA0001.
+      APPEND LS_PA0001 TO MT_PA0001.
+    ENDIF.
+
+    "Check if personnel number is concerned by Budget rate
+    MOVE-CORRESPONDING LS_PA0001 TO LS_YS205.
+    MOVE-CORRESPONDING IS_POS TO LS_YS205.
+    TRY.
+        CL_HRPA_FEATURE=>GET_VALUE( EXPORTING FEATURE = 'YYCDR'
+                                              STRUC_CONTENT = LS_YS205
+                                    IMPORTING RETURN_VALUE = LV_BR ).
+      CATCH CX_HRPA_VIOLATED_ASSERTION.
+        EXIT.
+    ENDTRY.
+
+    CHECK LV_BR = 'Y'.
+
+    RV_IS_OK = ABAP_TRUE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CM004 ----
+  METHOD CONVERT_TO_BUDGET_RATE.
+
+    DATA LV_AMOUNT TYPE BPREP_REQ_AMOUNT.
+
+    CLEAR EV_SUBRC.
+
+    "Convert BETRG from USD unore to EUR
+    ME->CONVERT_TO_CURRENCY( EXPORTING IV_DATE = IV_DATE
+                                       IV_TYPE_OF_RATE = 'M'
+                                       IV_FOREIGN_AMOUNT = IV_AMOUNT
+                                       IV_FOREIGN_CURRENCY = IV_WAERS
+                                       IV_LOCAL_CURRENCY = 'EUR'
+                             IMPORTING EV_LOCAL_AMOUNT = LV_AMOUNT
+                                       EV_SUBRC = EV_SUBRC ).
+
+    CHECK EV_SUBRC = 0.
+
+    "Convert BETRG from EUR USD Budget rate
+    ME->CONVERT_TO_CURRENCY( EXPORTING IV_DATE = IV_DATE
+                                       IV_TYPE_OF_RATE = 'EURX'
+                                       IV_FOREIGN_AMOUNT = LV_AMOUNT
+                                       IV_FOREIGN_CURRENCY = IV_WAERS
+                                       IV_LOCAL_CURRENCY = 'USD'
+                             IMPORTING EV_LOCAL_AMOUNT = EV_AMOUNT
+                                       EV_SUBRC = EV_SUBRC ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CM005 ----
+  METHOD CONVERT_TO_CURRENCY.
+
+    CLEAR EV_LOCAL_AMOUNT.
+
+    CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'
+      EXPORTING
+*       CLIENT           = SY-MANDT
+        DATE             = IV_DATE
+        FOREIGN_AMOUNT   = IV_FOREIGN_AMOUNT
+        FOREIGN_CURRENCY = IV_FOREIGN_CURRENCY
+        LOCAL_CURRENCY   = IV_LOCAL_CURRENCY
+*       RATE             = 0
+        TYPE_OF_RATE     = IV_TYPE_OF_RATE
+*       READ_TCURR       = 'X'
+      IMPORTING
+*       EXCHANGE_RATE    =
+*       FOREIGN_FACTOR   =
+        LOCAL_AMOUNT     = EV_LOCAL_AMOUNT
+*       LOCAL_FACTOR     =
+*       EXCHANGE_RATEX   =
+*       FIXED_RATE       =
+*       DERIVED_RATE_TYPE       =
+      EXCEPTIONS
+        NO_RATE_FOUND    = 1
+        OVERFLOW         = 2
+        NO_FACTORS_FOUND = 3
+        NO_SPREAD_FOUND  = 4
+        DERIVED_2_TIMES  = 5
+        OTHERS           = 6.
+    EV_SUBRC = SY-SUBRC.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FM_BR_PBC_POSTING_BL======CU ----
+CLASS YCL_FM_BR_PBC_POSTING_BL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  METHODS CHECK_CONDITIONS
+    IMPORTING
+      !IV_PERNR TYPE P_PERNR
+      !IS_POS TYPE HRFPM_FM_DOC_POS
+    RETURNING
+      VALUE(RV_IS_OK) TYPE XFELD .
+  CLASS-METHODS GET_INSTANCE
+    RETURNING
+      VALUE(RV_INSTANCE) TYPE REF TO YCL_FM_BR_PBC_POSTING_BL .
+  METHODS GET_PERNR
+    IMPORTING
+      !IV_ENC_TYPE TYPE HRFPM_ENC_TYPE
+      !IV_BELNR TYPE HRFPM_FPM_DOCNR
+      !IV_FPM_POSNR TYPE HRFPM_FPM_POSNR
+      !IT_DOC_POS TYPE HRFPM_FPM_DOC_POS_STAT_IT
+    EXPORTING
+      !EV_PERNR TYPE P_PERNR .
+  METHODS CONVERT_TO_BUDGET_RATE
+    IMPORTING
+      !IV_DATE TYPE DATUM
+      !IV_AMOUNT TYPE ANY
+      !IV_WAERS TYPE WAERS DEFAULT 'USD'
+    EXPORTING
+      !EV_AMOUNT TYPE ANY
+      !EV_SUBRC TYPE SY-SUBRC .

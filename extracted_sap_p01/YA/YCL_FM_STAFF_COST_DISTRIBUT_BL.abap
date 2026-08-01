@@ -1,0 +1,1896 @@
+* ==== CLASS POOL YCL_FM_STAFF_COST_DISTRIBUT_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_FM_STAFF_COST_DISTRIBUT_BL
+
+*"* local type definitions
+INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCCDEF.
+
+*"* class YCL_FM_STAFF_COST_DISTRIBUT_BL definition
+*"* public declarations
+  INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCU.
+*"* protected declarations
+  INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCO.
+*"* private declarations
+  INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCI.
+ENDCLASS. "YCL_FM_STAFF_COST_DISTRIBUT_BL definition
+
+*"* macro definitions
+INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCCMAC.
+*"* local class implementation
+INCLUDE YCL_FM_STAFF_COST_DISTRIBUT_BLCCIMP.
+
+CLASS YCL_FM_STAFF_COST_DISTRIBUT_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FM_STAFF_COST_DISTRIBUT_BL implementation
+
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCI ----
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF TY_PERIOD,
+      GJAHR TYPE GJAHR,
+      BEGDA TYPE BEGDA,
+      ENDDA TYPE ENDDA,
+    END OF TY_PERIOD .
+  TYPES:
+    BEGIN OF TY_OUTPUT,
+      FM_OUTPUT TYPE YTFM_OUTPUT-FM_OUTPUT,
+      ZZSECT    TYPE YTFM_OUTPUT-ZZSECT,
+      OTYPE     TYPE YTFM_OUTPUT-OTYPE,
+      ONAME     TYPE YTFM_OUTPUT_T-ONAME,
+      OTEXT     TYPE YTFM_OUTPUT_T-OTEXT,
+    END OF TY_OUTPUT .
+  TYPES:
+    BEGIN OF TY_FUND,
+      FIKRS     TYPE FMFINCODE-FIKRS,
+      FINCODE   TYPE FMFINCODE-FINCODE,
+      TYPE      TYPE FMFINCODE-TYPE,
+      "zzibf     TYPE fmfincode-zzibf,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      ZZSECT    TYPE YTFM_OUTPUT-ZZSECT,
+      OTYPE     TYPE YTFM_OUTPUT-OTYPE,
+      ONAME     TYPE YTFM_OUTPUT_T-ONAME,
+    END OF TY_FUND .
+  TYPES:
+    BEGIN OF TY_1081,
+      PLANS  TYPE PLANS,
+      BEGDA  TYPE BEGDA,
+      ENDDA  TYPE ENDDA,
+      ZZSECT TYPE ZHR_SECT,
+    END OF TY_1081 .
+  TYPES:
+    BEGIN OF TY_1000,
+      PLANS TYPE PLANS,
+      BEGDA TYPE BEGDA,
+      ENDDA TYPE ENDDA,
+      SHORT TYPE SHORT_D,
+      STEXT TYPE STEXT,
+    END OF TY_1000 .
+  TYPES:
+    BEGIN OF TY_1001,
+      PLVAR TYPE P1001-PLVAR,
+      OTYPE TYPE P1001-OTYPE,
+      OBJID TYPE P1001-OBJID,
+      BEGDA TYPE P1001-BEGDA,
+      ENDDA TYPE P1001-ENDDA,
+      SCLAS TYPE P1001-SCLAS,
+      SOBID TYPE P1001-SOBID,
+    END OF TY_1001 .
+  TYPES:
+    BEGIN OF TY_9082_LINE,
+      PLANS     TYPE PLANS,
+      BEGDA     TYPE BEGDA,
+      ENDDA     TYPE ENDDA,
+      TABNR     TYPE HRTABNR,
+      FM_OUTPUT TYPE PT9082-FM_OUTPUT,
+      PROZT     TYPE PT9082-PROZT,
+    END OF TY_9082_LINE .
+  TYPES:
+    BEGIN OF TY_9082_HEAD,
+      PLANS TYPE PLANS,
+      BEGDA TYPE BEGDA,
+      ENDDA TYPE ENDDA,
+      TABNR TYPE HRTABNR,
+    END OF TY_9082_HEAD .
+  TYPES:
+    BEGIN OF TY_LIST,
+      ZZSECT    TYPE ZHR_SECT,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      ONAME     TYPE YE_FM_OUTPUT_NAME,
+      OTEXT     TYPE YE_FM_OUTPUT_TEXT.
+      INCLUDE TYPE YSFM_STAFF_COST_DISTR_AMOUNT.
+*      bud_std   TYPE hslxx9,     "Budget standard cost
+*      bud_dis   TYPE prozt,      "Budget distribution
+*      bud_adj   TYPE hslxx9,     "Adjusted budget staff
+*      exp_inc   TYPE hslxx9,     "Incurred expenditure
+*      exp_dis   TYPE prozt,      "Incurred expenditure distribution
+*      exp_pos   TYPE hslxx9,     "Incurred expenditure from posting
+*      waers     TYPE waers,
+    TYPES: END OF TY_LIST .
+  TYPES:
+    BEGIN OF TY_FMBD,
+      FM_AREA  TYPE FMBH-FM_AREA,
+      DOCYEAR  TYPE FMBH-DOCYEAR,
+      DOCNR    TYPE FMBH-DOCNR,
+      RPMAX    TYPE FMBL-RPMAX,
+      DOCDATE  TYPE FMBH-DOCDATE,
+      DOCLN    TYPE FMBL-DOCLN,
+      FISCYEAR TYPE FMBL-FISCYEAR,
+      BUDTYPE  TYPE FMBL-BUDTYPE,
+      FUND     TYPE FMBL-FUND,
+      FUNDSCTR TYPE FMBL-FUNDSCTR,
+      WAERS    TYPE FM01-WAERS,
+      LVAL01   TYPE FMBL-LVAL01,
+      LVAL02   TYPE FMBL-LVAL02,
+      LVAL03   TYPE FMBL-LVAL03,
+      LVAL04   TYPE FMBL-LVAL04,
+      LVAL05   TYPE FMBL-LVAL05,
+      LVAL06   TYPE FMBL-LVAL06,
+      LVAL07   TYPE FMBL-LVAL07,
+      LVAL08   TYPE FMBL-LVAL08,
+      LVAL09   TYPE FMBL-LVAL09,
+      LVAL10   TYPE FMBL-LVAL10,
+      LVAL11   TYPE FMBL-LVAL11,
+      LVAL12   TYPE FMBL-LVAL12,
+      LVAL13   TYPE FMBL-LVAL13,
+      LVAL14   TYPE FMBL-LVAL14,
+      LVAL15   TYPE FMBL-LVAL15,
+      LVAL16   TYPE FMBL-LVAL16,
+    END OF TY_FMBD .
+  TYPES:
+    BEGIN OF TY_SECTOR_SUM,
+      ZZSECT  TYPE ZHR_SECT,
+      BUD_STD TYPE HSLXX9,
+      BUD_ADJ TYPE HSLXX9,
+      EXP_INC TYPE HSLXX9,
+      EXP_POS TYPE HSLXX9,
+      COMMIT  TYPE HSLXX9,
+      WAERS   TYPE WAERS,
+    END OF TY_SECTOR_SUM .
+  TYPES:
+    BEGIN OF TY_0001,
+      PLANS TYPE P0001-PLANS,
+      BEGDA TYPE P0001-BEGDA,
+      ENDDA TYPE P0001-ENDDA,
+      PERNR TYPE P0001-PERNR,
+      ABKRS TYPE P0001-ABKRS,
+      PERMO TYPE T549A-PERMO,
+      ENAME TYPE P0001-ENAME,
+    END OF TY_0001 .
+  TYPES:
+    BEGIN OF TY_HOLDER,
+      OBJID TYPE HRP1001-OBJID,
+      BEGDA TYPE HRP1001-BEGDA,
+      ENDDA TYPE HRP1001-ENDDA,
+      SCLAS TYPE HRP1001-SCLAS,
+      SOBID TYPE HRP1001-SOBID,
+      PROZT TYPE HRP1001-PROZT,
+    END OF TY_HOLDER .
+  TYPES:
+    BEGIN OF TY_MESSAGE,
+      PLVAR TYPE PLVAR,
+      OTYPE TYPE OTYPE,
+      OBJID TYPE HROBJID,
+      MSGTY TYPE SYMSGTY,
+      MSGTX TYPE BAPI_MSG,
+    END OF TY_MESSAGE .
+  TYPES:
+    BEGIN OF TY_BSEG,
+           BUKRS TYPE BSEG-BUKRS,
+           BELNR TYPE BSEG-BELNR,
+           GJAHR TYPE BSEG-GJAHR,
+           BUZEI TYPE BSEG-BUZEI,
+           BUDAT TYPE BKPF-BUDAT,
+           SHKZG TYPE BSEG-SHKZG,
+           DMBTR TYPE BSEG-DMBTR,
+           WAERS TYPE T001-WAERS,
+           FIKRS TYPE T001-FIKRS,
+           GEBER TYPE BSEG-GEBER,
+           FISTL TYPE BSEG-FISTL,
+           FIPOS TYPE BSEG-FIPOS,
+         END OF TY_BSEG .
+  TYPES:
+    BEGIN OF TY_DET_BUD_STD,
+      ZZSECT    TYPE ZHR_SECT,
+      PLANS     TYPE PLANS,
+      BEGDA     TYPE BEGDA,
+      ENDDA     TYPE ENDDA,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      PROZT     TYPE PROZT,
+      BUD_STD   TYPE HSLXX9,
+      WAERS     TYPE WAERS,
+    END OF TY_DET_BUD_STD .
+  TYPES:
+    BEGIN OF TY_PERNR_EXP,
+      PERNR   TYPE P_PERNR,
+      BEGDA   TYPE BEGDA,
+      ENDDA   TYPE ENDDA,
+      EXP_INC TYPE HSLXX9,
+      WAERS   TYPE WAERS,
+    END OF TY_PERNR_EXP .
+  TYPES:
+    TTY_PERNR_EXP TYPE TABLE OF TY_PERNR_EXP .
+  TYPES:
+    BEGIN OF TY_DET_EXP_INC,
+      ZZSECT    TYPE ZHR_SECT,
+      PLANS     TYPE PLANS,
+      PERNR     TYPE P_PERNR,
+      BEGDA     TYPE BEGDA,
+      ENDDA     TYPE ENDDA,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      PROZT     TYPE PROZT,
+      EXP_INC   TYPE HSLXX9,
+      WAERS     TYPE WAERS,
+    END OF TY_DET_EXP_INC .
+  TYPES:
+    BEGIN OF TY_DET_BUD_ADJ,
+      FM_AREA   TYPE FMBL-FM_AREA,
+      DOCYEAR   TYPE FMBL-DOCYEAR,
+      DOCNR     TYPE FMBL-DOCNR,
+      DOCLN     TYPE FMBL-DOCLN,
+      BUDTYPE   TYPE FMBL-BUDTYPE,
+      FUND      TYPE FMBL-FUND,
+      ZZSECT    TYPE ZHR_SECT,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      OTEXT     TYPE YE_FM_OUTPUT_TEXT,
+      BUD_ADJ   TYPE HSLXX9,
+      WAERS     TYPE WAERS,
+    END OF TY_DET_BUD_ADJ .
+  TYPES:
+    BEGIN OF TY_DET_EXP_POS,
+      BUKRS     TYPE BSEG-BUKRS,
+      BELNR     TYPE BSEG-BELNR,
+      GJAHR     TYPE BSEG-GJAHR,
+      BUZEI     TYPE BSEG-BUZEI,
+      BUDAT     TYPE BKPF-BUDAT,
+      GEBER     TYPE BSEG-GEBER,
+      ZZSECT    TYPE ZHR_SECT,
+      FM_OUTPUT TYPE YE_FM_OUTPUT,
+      OTEXT     TYPE YE_FM_OUTPUT_TEXT,
+      FIPOS     TYPE BSEG-FIPOS,
+      FISTL     TYPE BSEG-FISTL,
+      DMBTR     TYPE BSEG-DMBTR,
+      WAERS     TYPE WAERS,
+    END OF TY_DET_EXP_POS .
+  TYPES:
+    BEGIN OF TY_COMMITMENT,
+      PLVAR TYPE HRFPM_FPM_POS-PLVAR,
+      OTYPE TYPE HRFPM_FPM_POS-OTYPE,
+      OBJID TYPE HRFPM_FPM_POS-OBJID,
+      BEGDA TYPE HRFPM_FPM_POS-BEGDA,
+      ENDDA TYPE HRFPM_FPM_POS-ENDDA,
+      BETRG TYPE HRFPM_FPM_POS-BETRG,
+      WAERS TYPE HRFPM_FPM_POS-WAERS,
+    END OF TY_COMMITMENT .
+  TYPES:
+    BEGIN OF TY_DET_COMMIT,
+      ZZSECT     TYPE ZHR_SECT,
+      PLANS      TYPE PLANS,
+      BEGDA      TYPE BEGDA,
+      ENDDA      TYPE ENDDA,
+      FM_OUTPUT  TYPE YE_FM_OUTPUT,
+      PROZT      TYPE PROZT,
+      COMMITMENT TYPE HSLXX9,
+      WAERS      TYPE WAERS,
+    END OF TY_DET_COMMIT .
+  TYPES:
+    BEGIN OF TY_FUND_C5,
+      FIKRS     TYPE FIKRS,
+      FINCODE   TYPE BP_GEBER,
+      YEAR_FROM TYPE YE_CA_YEAR_FROM,
+      YEAR_TO   TYPE YE_CA_YEAR_TO,
+    END OF TY_FUND_C5 .
+  TYPES:
+    BEGIN OF TY_FMIT,
+          KNGJAHR TYPE FMIFIIT-KNGJAHR,
+          KNBELNR TYPE FMIFIIT-KNBELNR,
+          KNBUZEI TYPE FMIFIIT-KNBUZEI,
+         END OF TY_FMIT .
+
+  DATA MP_C5_SEL TYPE YE_FM_C5_CONTRIBUTION .
+  DATA MV_BUKRS TYPE BUKRS .
+  DATA MO_EXTRACT_PAYROLL TYPE REF TO YCL_HR_EXTRACT_PAYROLL_DATA .
+  DATA MV_FIKRS_WAERS TYPE FM_WAERS .
+  CONSTANTS C_LGART_9710 TYPE LGART VALUE '9710' ##NO_TEXT.
+  DATA MO_SALV_TABLE TYPE REF TO CL_SALV_TABLE .
+  DATA:
+    MT_SECTOR_SUM TYPE SORTED TABLE OF TY_SECTOR_SUM WITH UNIQUE KEY ZZSECT .
+  DATA:
+    MT_FMBD TYPE TABLE OF TY_FMBD .
+  DATA:
+    MT_PERIOD TYPE SORTED TABLE OF TY_PERIOD WITH UNIQUE KEY GJAHR .
+  DATA:
+    MT_LIST TYPE SORTED TABLE OF TY_LIST WITH UNIQUE KEY ZZSECT FM_OUTPUT .
+  DATA:
+    MT_OUTPUT TYPE SORTED TABLE OF TY_OUTPUT WITH UNIQUE KEY FM_OUTPUT .
+  DATA:
+    MT_9082_HEAD TYPE SORTED TABLE OF TY_9082_HEAD WITH UNIQUE KEY PLANS BEGDA .
+  DATA:
+    MT_9082_LINE TYPE SORTED TABLE OF TY_9082_LINE WITH NON-UNIQUE KEY PLANS BEGDA .
+  DATA:
+    MT_1005 TYPE TABLE OF HRP1005 .
+  DATA:
+    MT_1081 TYPE SORTED TABLE OF TY_1081 WITH UNIQUE KEY PLANS BEGDA .
+  DATA:
+    MT_PLANS TYPE SORTED TABLE OF PLANS WITH UNIQUE KEY TABLE_LINE .
+  DATA:
+    MT_S_O TYPE SORTED TABLE OF TY_1001 WITH NON-UNIQUE KEY PLVAR OTYPE OBJID .
+  DATA:
+    MT_FUND TYPE SORTED TABLE OF TY_FUND WITH UNIQUE KEY FIKRS FINCODE .
+  DATA:
+    MT_FUND_C5 TYPE SORTED TABLE OF TY_FUND_C5 WITH NON-UNIQUE KEY FIKRS FINCODE .
+  DATA:
+    MT_1000 TYPE SORTED TABLE OF TY_1000 WITH UNIQUE KEY PLANS BEGDA .
+  DATA:
+    MT_0001 TYPE TABLE OF TY_0001 .
+  DATA:
+    MT_HOLDER TYPE SORTED TABLE OF TY_HOLDER WITH NON-UNIQUE KEY OBJID BEGDA .
+  DATA:
+    MT_MESSAGE TYPE TABLE OF TY_MESSAGE .
+  DATA:
+    MT_BSEG TYPE TABLE OF TY_BSEG .
+  DATA:
+    MT_FMIT TYPE TABLE OF TY_FMIT .
+  DATA:
+    MT_COMMITMENT TYPE SORTED TABLE OF TY_COMMITMENT WITH NON-UNIQUE KEY PLVAR OTYPE OBJID .
+  DATA:
+    MT_DET_BUD_STD TYPE SORTED TABLE OF TY_DET_BUD_STD WITH NON-UNIQUE KEY ZZSECT FM_OUTPUT .
+  DATA:
+    MT_DET_EXP_INC TYPE SORTED TABLE OF TY_DET_EXP_INC WITH NON-UNIQUE KEY ZZSECT FM_OUTPUT .
+  DATA:
+    MT_DET_BUD_ADJ TYPE SORTED TABLE OF TY_DET_BUD_ADJ WITH NON-UNIQUE KEY ZZSECT .
+  DATA:
+    MT_DET_EXP_POS TYPE SORTED TABLE OF TY_DET_EXP_POS WITH NON-UNIQUE KEY ZZSECT .
+  DATA:
+    MT_DET_COMMIT TYPE SORTED TABLE OF TY_DET_COMMIT WITH NON-UNIQUE KEY ZZSECT FM_OUTPUT .
+  DATA MV_BEGDA TYPE BEGDA .
+  DATA MV_BUDAT TYPE BUDAT .
+  DATA MV_ENDDA TYPE ENDDA .
+  DATA MP_FIKRS TYPE FIKRS .
+  DATA:
+    MR_TYPE TYPE RANGE OF FM_FUNDTYPE .
+  DATA:
+    MR_FUND TYPE RANGE OF BP_GEBER .
+  DATA:
+    MR_SECTOR TYPE RANGE OF ZHR_SECT .
+  DATA:
+    MR_GJAHR TYPE RANGE OF GJAHR .
+  DATA:
+    MR_PLANS TYPE RANGE OF PLANS .
+  DATA:
+    MR_OUTPUT TYPE RANGE OF YE_FM_OUTPUT .
+  DATA:
+    MR_C5_ID TYPE RANGE OF YE_FM_C5_ID .
+  DATA:
+    MR_FIPEX TYPE RANGE OF FM_FIPEX .
+
+  METHODS CHECK_HOLDER
+    IMPORTING
+      !IV_PLANS TYPE PLANS
+    RETURNING
+      VALUE(RV_IS_OK) TYPE BOOLEAN .
+  METHODS GET_PLANS_TEXT
+    IMPORTING
+      !IV_PLANS TYPE PLANS
+      !IV_DATE TYPE DATUM
+    EXPORTING
+      !EV_SHORT TYPE SHORT_D
+      !EV_STEXT TYPE STEXT .
+  METHODS HANDLE_LINK_CLICK
+    FOR EVENT LINK_CLICK OF CL_SALV_EVENTS_TABLE
+    IMPORTING
+      !ROW
+      !COLUMN .
+  METHODS HANDLE_UC
+    FOR EVENT ADDED_FUNCTION OF CL_SALV_EVENTS_TABLE
+    IMPORTING
+      !E_SALV_FUNCTION .
+  METHODS SET_TOTALS .
+  METHODS PREPARE_INCURRED_EXP_FROM_POST .
+  METHODS COMPUTE_DATA .
+  METHODS GET_COMMITMENT
+    IMPORTING
+      !IV_PLANS TYPE PLANS
+      !IV_BEGDA TYPE BEGDA
+      !IV_ENDDA TYPE ENDDA
+    EXPORTING
+      !EV_AMOUNT TYPE YE_FM_COMMITMENT_AMOUNT
+      !EV_WAERS TYPE WAERS .
+  METHODS GET_CASE_ID
+    IMPORTING
+      !IS_FUND TYPE TY_FUND
+      !IV_GJAHR TYPE GJAHR
+    RETURNING
+      VALUE(RV_CASE_ID) TYPE YE_FM_CASE_ID .
+  METHODS PREPARE_ADJUSTED_BUDGET .
+  METHODS SET_COLUMNS .
+  METHODS SET_MESSAGE_TO_TABLE
+    IMPORTING
+      !IV_OTYPE TYPE OTYPE
+      !IV_OBJID TYPE HROBJID
+      !IV_MSGTY TYPE SYMSGTY DEFAULT 'E'
+      !IV_MSGTX TYPE BAPI_MSG .
+  METHODS UPDATE_MT_LIST
+    IMPORTING
+      !IV_SECTOR TYPE ZHR_SECT
+      !IV_OUTPUT TYPE YE_FM_OUTPUT
+      !IV_WAERS TYPE WAERS
+      !IV_BUD_STD TYPE HSLXX9 OPTIONAL
+      !IV_EXP_INC TYPE HSLXX9 OPTIONAL
+      !IV_COMMIT TYPE HSLXX9 OPTIONAL .
+  METHODS GET_INCURRED_EXP_FROM_PAY
+    IMPORTING
+      !IV_PLANS TYPE PLANS
+      !IV_BEGDA TYPE BEGDA
+      !IV_ENDDA TYPE ENDDA
+    EXPORTING
+      !EV_AMOUNT TYPE YE_FM_ACTUAL_AMOUNT
+      !EV_WAERS TYPE WAERS
+      !EV_UNTIL TYPE DATUM
+      !ET_DETAIL TYPE TTY_PERNR_EXP .
+  METHODS PREPARE_BUDGET_SC_AND_INC_EXP .
+  METHODS PREPARE_DATA .
+  METHODS READ_DATA_FROM_DATABASE .
+  METHODS GET_STANDARD_COST
+    IMPORTING
+      !IV_PLANS TYPE PLANS
+      !IV_BEGDA TYPE BEGDA
+      !IV_ENDDA TYPE ENDDA
+    EXPORTING
+      !EV_STD_COST TYPE WERTV9
+      !EV_WAERS TYPE WAERS .
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM001 ----
+  METHOD SET_SELECTION_VALUES.
+
+    FIELD-SYMBOLS <LT_RANGE> TYPE ANY TABLE.
+    FIELD-SYMBOLS <LV_PARAM> TYPE ANY.
+    DATA LV_SELNAME TYPE FIELDNAME.
+
+    LV_SELNAME = IV_SELNAME.
+    CASE IV_KIND.
+      WHEN 'S'.   "SELECT-OPTIONS
+        REPLACE 'S_' IN LV_SELNAME WITH 'MR_'.
+        ASSIGN (LV_SELNAME) TO <LT_RANGE>.
+        CHECK <LT_RANGE> IS ASSIGNED.
+        <LT_RANGE> = IT_VALUE.
+      WHEN 'P'. "PARAMETERS
+        REPLACE 'P_' IN LV_SELNAME WITH 'MP_'.
+        ASSIGN (LV_SELNAME) TO <LV_PARAM>.
+        CHECK <LV_PARAM> IS ASSIGNED.
+        <LV_PARAM> = IV_VALUE.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM002 ----
+  METHOD GET_DATA.
+
+    DATA LS_GJAHR LIKE LINE OF MR_GJAHR.
+    DATA LS_PERIOD TYPE TY_PERIOD.
+
+    "Set posting date
+    IF IV_BUDAT IS INITIAL.
+      MV_BUDAT = '99991231'.
+    ELSE.
+      MV_BUDAT = IV_BUDAT.
+    ENDIF.
+
+    "Set period to analyze
+    READ TABLE MR_GJAHR INTO LS_GJAHR INDEX 1.
+    IF SY-SUBRC <> 0.  "No period set => exit
+      EXIT.
+    ENDIF.
+    MV_BEGDA = |{ LS_GJAHR-LOW(4) }0101|.
+    IF LS_GJAHR-HIGH IS INITIAL.
+      MV_ENDDA = |{ LS_GJAHR-LOW(4) }1231|.
+    ELSE.
+      MV_ENDDA = |{ LS_GJAHR-HIGH(4) }1231|.
+    ENDIF.
+
+    "Prepare period table
+    LS_PERIOD-GJAHR = MV_BEGDA(4).
+    LS_PERIOD-BEGDA = MV_BEGDA.
+    LS_PERIOD-ENDDA = |{ MV_BEGDA(4) }1231|.
+    APPEND LS_PERIOD TO MT_PERIOD.
+    DO.
+      IF LS_PERIOD-ENDDA >= MV_ENDDA.
+        EXIT.
+      ENDIF.
+      ADD 1 TO LS_PERIOD-GJAHR.
+      LS_PERIOD-BEGDA = |{ LS_PERIOD-GJAHR }0101|.
+      LS_PERIOD-ENDDA = |{ LS_PERIOD-GJAHR }1231|.
+      APPEND LS_PERIOD TO MT_PERIOD.
+    ENDDO.
+
+    "Get FM area currency
+    SELECT SINGLE WAERS INTO MV_FIKRS_WAERS FROM FM01 WHERE FIKRS = MP_FIKRS.
+
+    ME->READ_DATA_FROM_DATABASE( ).
+    ME->PREPARE_DATA( ).
+    ME->COMPUTE_DATA( ).
+
+    SORT MT_MESSAGE.
+    DELETE ADJACENT DUPLICATES FROM MT_MESSAGE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM003 ----
+  METHOD READ_DATA_FROM_DATABASE.
+
+    DATA LT_BUDTYPE TYPE RANGE OF BUKU_BUDTYPE.
+    DATA LS_9082_HEAD TYPE TY_9082_HEAD.
+    DATA LT_OBJEC TYPE OBJEC_T.
+    DATA LS_OBJEC TYPE OBJEC.
+    DATA LO_HR_OM_STRUCTURE TYPE REF TO YCL_HR_OM_STRUCTURE.
+    DATA LT_1008 TYPE TABLE OF HRP1008.
+    DATA LV_IS_OK TYPE XFELD.
+    DATA LT_IBF TYPE RANGE OF YE_FM_C5_CONTRIBUTION.
+
+
+    "Get Company code corresponding to FM area
+    SELECT SINGLE BUKRS INTO MV_BUKRS FROM T001 WHERE FIKRS = MP_FIKRS.
+
+    "Get outputs per sector
+    SELECT A~FM_OUTPUT,
+           A~ZZSECT,
+           A~OTYPE,
+           B~ONAME,
+           B~OTEXT
+           FROM YTFM_OUTPUT AS A
+           LEFT OUTER JOIN YTFM_OUTPUT_T AS B ON  B~SPRSL = @SY-LANGU
+                                              AND B~FM_OUTPUT = A~FM_OUTPUT
+           WHERE A~FM_OUTPUT IN @MR_OUTPUT
+           AND   A~ZZSECT IN @MR_SECTOR
+           INTO TABLE @MT_OUTPUT.
+
+    CHECK MT_OUTPUT IS NOT INITIAL.
+
+    "Get plans with selected outputs
+    SELECT A~OBJID AS PLANS,
+           A~BEGDA,
+           A~ENDDA,
+           A~TABNR,
+           B~FM_OUTPUT,
+           B~PROZT
+           FROM HRP9082 AS A
+           INNER JOIN HRT9082 AS B
+           ON B~TABNR = A~TABNR
+           FOR ALL ENTRIES IN @MT_OUTPUT
+           WHERE A~PLVAR = '01'
+           AND   A~OTYPE = 'S'
+           AND   A~OBJID IN @MR_PLANS
+           AND   A~ISTAT = '1'
+           AND   A~BEGDA <= @MV_ENDDA
+           AND   A~ENDDA >= @MV_BEGDA
+           AND   B~FM_OUTPUT = @MT_OUTPUT-FM_OUTPUT
+           INTO TABLE @MT_9082_LINE.
+
+    "Extract head and plans
+    LOOP AT MT_9082_LINE INTO DATA(LS_9082_LINE).
+      AT NEW PLANS.
+        "set plans
+        INSERT LS_9082_LINE-PLANS INTO TABLE MT_PLANS.
+      ENDAT.
+      "Set 9082 head
+      MOVE-CORRESPONDING LS_9082_LINE TO LS_9082_HEAD.
+      INSERT LS_9082_HEAD INTO TABLE MT_9082_HEAD.
+    ENDLOOP.
+
+    IF MT_PLANS IS NOT INITIAL.
+
+      "Get org unit assigned to position
+      SELECT PLVAR,
+             OTYPE,
+             OBJID,
+             BEGDA,
+             ENDDA,
+             SCLAS,
+             SOBID
+             FROM HRP1001
+             FOR ALL ENTRIES IN @MT_PLANS
+             WHERE PLVAR = '01'
+             AND   OTYPE = 'S'
+             AND   OBJID = @MT_PLANS-TABLE_LINE
+             AND   ISTAT = '1'
+             AND   RSIGN = 'A'
+             AND   RELAT = '003'
+             AND   BEGDA <= @MV_ENDDA
+             AND   ENDDA >= @MV_BEGDA
+             AND   SCLAS = 'O'
+             INTO TABLE @MT_S_O.
+
+      "Get company code for org units
+      LOOP AT MT_S_O INTO DATA(LS_S_O).
+        LS_OBJEC-PLVAR = LS_S_O-PLVAR.
+        LS_OBJEC-OTYPE = LS_S_O-SCLAS.
+        LS_OBJEC-OBJID = LS_S_O-SOBID(8).
+        APPEND LS_OBJEC TO LT_OBJEC.
+      ENDLOOP.
+      SORT LT_OBJEC.
+      DELETE ADJACENT DUPLICATES FROM LT_OBJEC.
+
+      LO_HR_OM_STRUCTURE = NEW YCL_HR_OM_STRUCTURE( ).
+      LO_HR_OM_STRUCTURE->GET_ACCT_ASSIGNMENT( IT_OBJEC = LT_OBJEC
+                                               IV_BEGDA = MV_BEGDA
+                                               IV_ENDDA = MV_ENDDA
+                                               IV_GET_BUKRS = ABAP_TRUE ).
+      "get acct assignment for positions
+      SELECT *
+             FROM HRP1008
+             FOR ALL ENTRIES IN @MT_PLANS
+             WHERE PLVAR = '01'
+             AND   OTYPE = 'S'
+             AND   OBJID = @MT_PLANS-TABLE_LINE
+             AND   ISTAT = '1'
+             AND   BEGDA <= @MV_ENDDA
+             AND   ENDDA >= @MV_BEGDA
+             INTO TABLE @LT_1008.
+
+      LOOP AT MT_PLANS INTO DATA(LV_PLANS).
+        READ TABLE LT_1008 INTO DATA(LS_1008) WITH KEY PLVAR = '01'
+                                                       OTYPE = 'S'
+                                                       OBJID = LV_PLANS.
+        IF SY-SUBRC = 0 AND LS_1008-BUKRS IS NOT INITIAL.
+          IF LS_1008-BUKRS = MV_BUKRS.
+            CONTINUE.
+          ELSE.
+            DELETE MT_PLANS.
+          ENDIF.
+        ELSE.
+          LV_IS_OK = ABAP_FALSE.
+          "Check company code at org unit level
+          LOOP AT MT_S_O INTO LS_S_O WHERE PLVAR = '01'
+                                     AND   OTYPE = 'S'
+                                     AND   OBJID = LV_PLANS.
+            READ TABLE LO_HR_OM_STRUCTURE->MT_1008 INTO DATA(LS_P1008) WITH KEY PLVAR = '01'
+                                                                                OTYPE = 'O'
+                                                                                OBJID = LS_S_O-SOBID(8).
+            IF SY-SUBRC = 0 AND LS_P1008-BUKRS IS NOT INITIAL AND LS_P1008-BUKRS = MV_BUKRS.
+              LV_IS_OK = ABAP_TRUE.
+            ENDIF.
+          ENDLOOP.
+          IF LV_IS_OK = ABAP_FALSE.
+            DELETE MT_PLANS.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      IF MT_PLANS IS NOT INITIAL.
+
+        "Get position definition
+        SELECT OBJID AS PLANS, BEGDA, ENDDA, SHORT, STEXT
+               FROM HRP1000
+               FOR ALL ENTRIES IN @MT_PLANS
+               WHERE PLVAR = '01'
+               AND   OTYPE = 'S'
+               AND   OBJID = @MT_PLANS-TABLE_LINE
+               AND   ISTAT = '1'
+               AND   BEGDA <= @MV_ENDDA
+               AND   ENDDA >= @MV_BEGDA
+               AND   LANGU = @SY-LANGU
+           INTO TABLE @MT_1000.
+
+        "Get standard cost infotype
+        SELECT * FROM HRP1005
+               FOR ALL ENTRIES IN @MT_PLANS WHERE PLVAR = '01'
+                                            AND   OTYPE = 'S'
+                                            AND   OBJID = @MT_PLANS-TABLE_LINE
+                                            AND   ISTAT = '1'
+                                            AND   BEGDA <= @MV_ENDDA
+                                            AND   ENDDA >= @MV_BEGDA
+               INTO TABLE @MT_1005.
+
+        "Get position holders to determine incurred expenditure
+        SELECT A~PLANS,
+               A~BEGDA,
+               A~ENDDA,
+               A~PERNR,
+               A~ABKRS,
+               B~PERMO,
+               A~ENAME
+               FROM PA0001 AS A LEFT OUTER JOIN T549A AS B ON B~ABKRS = A~ABKRS
+               FOR ALL ENTRIES IN @MT_PLANS
+               WHERE A~PLANS = @MT_PLANS-TABLE_LINE
+               AND   A~BEGDA <= @MV_ENDDA
+               AND   A~ENDDA >= @MV_BEGDA
+               AND   A~SPRPS = @ABAP_FALSE
+               INTO TABLE @MT_0001.
+
+        SORT MT_0001 BY PLANS BEGDA.
+
+        "Get holders to double check post assignment
+        "Get position holder
+        SELECT OBJID,
+               BEGDA,
+               ENDDA,
+               SCLAS,
+               SOBID,
+               PROZT
+               FROM HRP1001
+               FOR ALL ENTRIES IN @MT_PLANS
+               WHERE PLVAR = '01'
+               AND   OTYPE = 'S'
+               AND   OBJID = @MT_PLANS-TABLE_LINE
+               AND   ISTAT = '1'
+               AND   RSIGN = 'A'
+               AND   RELAT = '008'
+               AND   BEGDA <= @MV_ENDDA
+               AND   ENDDA >= @MV_BEGDA
+               AND   SCLAS = 'P'
+               INTO TABLE @MT_HOLDER.
+
+        "Get commitments
+        SELECT PLVAR, OTYPE, OBJID, BEGDA, ENDDA, BETRG, WAERS FROM HRFPM_FPM_POS
+               FOR ALL ENTRIES IN @MT_PLANS
+               WHERE PLVAR = '01'
+               AND   OTYPE = 'S'
+               AND   OBJID = @MT_PLANS-TABLE_LINE
+               AND   BEGDA <= @MV_ENDDA
+               AND   ENDDA >= @MV_BEGDA
+               INTO TABLE @MT_COMMITMENT.
+      ENDIF.
+    ENDIF.
+
+    "Set IBF flag in range
+    IF MP_C5_SEL = ABAP_TRUE.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = ABAP_TRUE ) TO LT_IBF.
+    ENDIF.
+
+    "Extract funds from selection criteria
+    SELECT DISTINCT A~FIKRS AS FIKRS,
+                    A~FINCODE AS FINCODE,
+                    A~TYPE AS TYPE,
+                    D~FM_OUTPUT,
+                    B~ZZSECT AS ZZSECT,
+                    B~OTYPE AS OTYPE,
+                    C~ONAME AS ONAME
+           FROM FMFINCODE AS A
+           LEFT OUTER JOIN YTFM_FUND_C5 AS D ON  D~FIKRS = A~FIKRS
+                                             AND D~FINCODE = A~FINCODE
+           LEFT OUTER JOIN YTFM_OUTPUT AS B ON B~FM_OUTPUT = D~FM_OUTPUT
+           LEFT OUTER JOIN YTFM_OUTPUT_T AS C ON  C~SPRSL = @SY-LANGU
+                                              AND C~FM_OUTPUT = D~FM_OUTPUT
+           WHERE A~FIKRS = @MP_FIKRS
+           AND   A~FINCODE IN @MR_FUND
+           AND   A~DATAB <= @MV_ENDDA
+           AND   A~DATBIS >= @MV_BEGDA
+           AND   A~TYPE IN @MR_TYPE
+           AND   D~FM_OUTPUT <> '0000000000'
+           AND   D~FM_OUTPUT IN @MR_OUTPUT
+           AND   B~OTYPE = 'OFFICE4'    "NME 20241218
+           AND   D~C5_SEL IN @LT_IBF
+           AND   B~ZZSECT IN @MR_SECTOR
+           AND   D~C5_ID IN @MR_C5_ID
+           INTO TABLE @MT_FUND.
+
+    CHECK MT_FUND IS NOT INITIAL.
+
+    "Get fund assignment to C/5 period (to replace IBF flag)
+    SELECT A~FIKRS, A~FINCODE, B~YEAR_FROM, B~YEAR_TO
+           FROM YTFM_FUND_C5 AS A LEFT OUTER JOIN YTFM_C5 AS B ON B~C5_ID = A~C5_ID
+           FOR ALL ENTRIES IN @MT_FUND
+           WHERE A~FIKRS = @MT_FUND-FIKRS
+           AND   A~FINCODE = @MT_FUND-FINCODE
+           INTO TABLE @MT_FUND_C5.
+
+    LT_BUDTYPE = VALUE #( ( SIGN = 'I' OPTION = 'EQ' LOW = '2000' )
+                          ( SIGN = 'I' OPTION = 'EQ' LOW = '3000' )
+                          ( SIGN = 'I' OPTION = 'EQ' LOW = '4000' ) ).
+
+    SELECT H~FM_AREA,
+           H~DOCYEAR,
+           H~DOCNR,
+           L~RPMAX,
+           H~DOCDATE,
+           L~DOCLN,
+           L~FISCYEAR,
+           L~BUDTYPE,
+           L~FUND,
+           L~FUNDSCTR,
+           F~WAERS,
+           L~LVAL01,
+           L~LVAL02,
+           L~LVAL03,
+           L~LVAL04,
+           L~LVAL05,
+           L~LVAL06,
+           L~LVAL07,
+           L~LVAL08,
+           L~LVAL09,
+           L~LVAL10,
+           L~LVAL11,
+           L~LVAL12,
+           L~LVAL13,
+           L~LVAL14,
+           L~LVAL15,
+           L~LVAL16
+           FROM FMBH AS H
+           INNER JOIN FMBL AS L ON  L~FM_AREA = H~FM_AREA
+                                AND L~DOCYEAR = H~DOCYEAR
+                                AND L~DOCNR = H~DOCNR
+           LEFT OUTER JOIN FM01 AS F ON F~FIKRS = H~FM_AREA
+           FOR ALL ENTRIES IN @MT_FUND
+           WHERE H~FM_AREA = @MT_FUND-FIKRS
+           AND   L~FUND = @MT_FUND-FINCODE
+           AND   H~VERSION = '000'
+           AND   H~DOCDATE <= @MV_BUDAT    "Document date
+           AND   L~FISCYEAR IN @MR_GJAHR
+           AND   L~CMMTITEM IN @MR_FIPEX
+           AND   L~VALTYPE = 'B1'
+           AND   L~BUDTYPE IN @LT_BUDTYPE
+           INTO TABLE @MT_FMBD.
+
+************** Initial request from FM
+    "Get data for incurred expenditure from posting
+*    SELECT h~fmbelnr,
+*           h~fikrs,
+*           i~fmbuzei,
+*           i~btart,
+*           i~rldnr,
+*           i~gjahr,
+*           i~stunr,
+*           h~budat,
+*           i~fkbtr,
+*           f~waers,
+*           i~fonds,
+*           i~fistl,
+*           i~fipex,
+*           i~wrttp
+*           FROM fmifihd AS h
+*           INNER JOIN fmifiit AS i ON  i~fmbelnr = h~fmbelnr
+*                                   AND i~fikrs = h~fikrs
+*           LEFT OUTER JOIN fm01 AS f ON f~fikrs = h~fikrs
+*           FOR ALL ENTRIES IN @mt_fund
+*           WHERE h~fikrs = @mt_fund-fikrs
+*           AND   i~fonds = @mt_fund-fincode
+*           AND   i~gjahr IN @mr_gjahr
+*           AND   i~fipex IN @mr_fipex
+*           AND   h~budat <= @mv_budat  "Posting date
+*           INTO TABLE @mt_fmid.
+
+********************** Second request : on FI because of amounts in UNORE
+*    SELECT s~bukrs,
+*           s~belnr,
+*           s~gjahr,
+*           s~buzei,
+*           k~budat,
+*           s~shkzg,
+*           s~dmbtr,
+*           b~waers,
+*           b~fikrs,
+*           s~geber,
+*           s~fistl,
+*           s~fipos
+*           FROM bseg AS s
+*           INNER JOIN bkpf AS k ON  k~bukrs = s~bukrs
+*                                AND k~belnr = s~belnr
+*                                AND k~gjahr = s~gjahr
+*           LEFT OUTER JOIN t001 AS b ON b~bukrs = s~bukrs
+*           FOR ALL ENTRIES IN @mt_fund
+*           WHERE s~bukrs = @mv_bukrs
+*           AND   s~gjahr IN @mr_gjahr
+*           AND   s~augdt = '00000000'   "Don't take cleared items
+*           AND   s~geber = @mt_fund-fincode
+*           AND   s~fipos IN @mr_fipex
+*           AND   k~budat <= @mv_budat  "Posting date
+*           INTO TABLE @mt_bseg.
+
+**************** Third request: on FM but with FI amount
+    SELECT I~KNGJAHR,
+           I~KNBELNR,
+           I~KNBUZEI
+           FROM FMIFIHD AS H
+           INNER JOIN FMIFIIT AS I ON  I~FMBELNR = H~FMBELNR
+                                   AND I~FIKRS = H~FIKRS
+           FOR ALL ENTRIES IN @MT_FUND
+           WHERE H~FIKRS = @MT_FUND-FIKRS
+           AND   I~FONDS = @MT_FUND-FINCODE
+           AND   I~GJAHR IN @MR_GJAHR
+           AND   I~FIPEX IN @MR_FIPEX
+           AND   H~BUDAT <= @MV_BUDAT  "Posting date
+           INTO TABLE @MT_FMIT.
+
+    SELECT S~BUKRS,
+           S~BELNR,
+           S~GJAHR,
+           S~BUZEI,
+           K~BUDAT,
+           S~SHKZG,
+           S~DMBTR,
+           B~WAERS,
+           B~FIKRS,
+           S~GEBER,
+           S~FISTL,
+           S~FIPOS
+           FROM BSEG AS S
+           INNER JOIN BKPF AS K ON  K~BUKRS = S~BUKRS
+                                AND K~BELNR = S~BELNR
+                                AND K~GJAHR = S~GJAHR
+           LEFT OUTER JOIN T001 AS B ON B~BUKRS = S~BUKRS
+           FOR ALL ENTRIES IN @MT_FMIT
+           WHERE S~BUKRS = @MV_BUKRS
+           AND   S~BELNR = @MT_FMIT-KNBELNR
+           AND   S~GJAHR = @MT_FMIT-KNGJAHR
+           AND   S~BUZEI = @MT_FMIT-KNBUZEI
+"           AND   k~budat <= @mv_budat  "Posting date
+           INTO TABLE @MT_BSEG.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM004 ----
+  METHOD GET_STANDARD_COST.
+
+    DATA LS_1005 TYPE HRP1005.
+    DATA LS_P1005 TYPE P1005.
+    DATA LV_1005 TYPE BOOLEAN.
+    DATA LT_Q1005 TYPE Q1005_TAB.
+    DATA LT_Q1005_TEMP TYPE Q1005_TAB.
+    DATA LS_Q1005 TYPE LINE OF Q1005_TAB.
+    DATA LV_Q1005 TYPE BOOLEAN.
+    DATA LS_PERIOD TYPE TY_PERIOD.
+    DATA LV_PERIOD TYPE BOOLEAN.
+    DATA LV_BEGDA TYPE BEGDA.
+    DATA LV_ENDDA TYPE ENDDA.
+
+    CLEAR: EV_STD_COST, EV_WAERS.
+
+    LOOP AT MT_1005 INTO LS_1005 WHERE PLVAR = '01'
+                                 AND   OTYPE = 'S'
+                                 AND   OBJID = IV_PLANS
+                                 AND   ISTAT = '1'
+                                 AND   BEGDA <= IV_ENDDA
+                                 AND   ENDDA >= IV_BEGDA.
+      CLEAR LT_Q1005.
+      MOVE-CORRESPONDING LS_1005 TO LS_P1005.
+      LS_P1005-INFTY = '1005'.
+      CALL FUNCTION 'HR_CMP_GET_VALUES_IT1005_PERIO'
+        EXPORTING
+          P1005     = LS_P1005
+        IMPORTING
+          Q1005_TAB = LT_Q1005_TEMP.
+      APPEND LINES OF LT_Q1005_TEMP TO LT_Q1005.
+    ENDLOOP.
+
+    PROVIDE FIELDS * FROM LT_Q1005 INTO LS_Q1005 VALID LV_1005
+                          BOUNDS BEGDA AND ENDDA
+            FIELDS * FROM MT_PERIOD INTO LS_PERIOD VALID LV_PERIOD
+                          BOUNDS BEGDA AND ENDDA
+                          BETWEEN IV_BEGDA AND IV_ENDDA.
+      CHECK LV_1005 = ABAP_TRUE.
+      LV_BEGDA = |{ LS_PERIOD-GJAHR }0101|.
+      LV_ENDDA = |{ LS_PERIOD-GJAHR }1231|.
+      EV_STD_COST = EV_STD_COST + ( LS_Q1005-CPMIN * ( LS_PERIOD-ENDDA - LS_PERIOD-BEGDA + 1 ) / ( LV_ENDDA - LV_BEGDA + 1 ) ).
+      EV_WAERS = LS_Q1005-CURCY.
+    ENDPROVIDE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM005 ----
+  METHOD PREPARE_DATA.
+
+    "Get budget standard cost and incurred expenditure
+    ME->PREPARE_BUDGET_SC_AND_INC_EXP( ).
+    "Get adjusted budget
+    ME->PREPARE_ADJUSTED_BUDGET( ).
+    "Geet incurred expenditure from posting
+    ME->PREPARE_INCURRED_EXP_FROM_POST( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM006 ----
+  METHOD UPDATE_MT_LIST.
+
+    DATA LS_LIST TYPE TY_LIST.
+    DATA LS_SECTOR_SUM TYPE TY_SECTOR_SUM.
+
+    READ TABLE MT_LIST ASSIGNING FIELD-SYMBOL(<LS_LIST>) WITH KEY ZZSECT = IV_SECTOR
+                                                                  FM_OUTPUT = IV_OUTPUT.
+    IF SY-SUBRC = 0.
+      IF IV_BUD_STD IS SUPPLIED.
+        ADD IV_BUD_STD TO <LS_LIST>-BUD_STD.
+      ENDIF.
+      IF IV_EXP_INC IS SUPPLIED.
+        ADD IV_EXP_INC TO <LS_LIST>-EXP_INC.
+      ENDIF.
+      IF IV_COMMIT IS SUPPLIED.
+        ADD IV_COMMIT TO <LS_LIST>-COMMITMENT.
+      ENDIF.
+    ELSE.
+      READ TABLE MT_OUTPUT INTO DATA(LS_OUTPUT) WITH KEY FM_OUTPUT = IV_OUTPUT.
+      IF SY-SUBRC = 0.
+        MOVE-CORRESPONDING LS_OUTPUT TO LS_LIST.
+        LS_LIST-ZZSECT = IV_SECTOR.
+        LS_LIST-BUD_STD = IV_BUD_STD.
+        LS_LIST-EXP_INC = IV_EXP_INC.
+        LS_LIST-COMMITMENT = IV_COMMIT.
+        LS_LIST-WAERS = IV_WAERS.
+        INSERT LS_LIST INTO TABLE MT_LIST.
+      ENDIF.
+    ENDIF.
+
+    READ TABLE MT_SECTOR_SUM ASSIGNING FIELD-SYMBOL(<LS_SECTOR_SUM>) WITH KEY ZZSECT = IV_SECTOR.
+    IF SY-SUBRC = 0.
+      IF IV_BUD_STD IS SUPPLIED.
+        ADD IV_BUD_STD TO <LS_SECTOR_SUM>-BUD_STD.
+      ENDIF.
+      IF IV_EXP_INC IS SUPPLIED.
+        ADD IV_EXP_INC TO <LS_SECTOR_SUM>-EXP_INC.
+      ENDIF.
+      IF IV_COMMIT IS SUPPLIED.
+        ADD IV_COMMIT TO <LS_SECTOR_SUM>-COMMIT.
+      ENDIF.
+    ELSE.
+      LS_SECTOR_SUM-ZZSECT = IV_SECTOR.
+      LS_SECTOR_SUM-BUD_STD = IV_BUD_STD.
+      LS_SECTOR_SUM-EXP_INC = IV_EXP_INC.
+      LS_SECTOR_SUM-COMMIT = IV_COMMIT.
+      LS_SECTOR_SUM-WAERS = IV_WAERS.
+      INSERT LS_SECTOR_SUM INTO TABLE MT_SECTOR_SUM.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM007 ----
+  METHOD DISPLAY_ALV.
+
+    DATA LT_LIST TYPE TABLE OF TY_LIST.
+    DATA LO_LAYOUT TYPE REF TO CL_SALV_LAYOUT.
+    DATA LO_DISPLAY_SETTINGS TYPE REF TO CL_SALV_DISPLAY_SETTINGS.
+    DATA LO_EVENTS TYPE REF TO CL_SALV_EVENTS_TABLE.
+    DATA LO_SORTS TYPE REF TO CL_SALV_SORTS.
+    DATA LO_SORT TYPE REF TO CL_SALV_SORT.
+
+
+    APPEND LINES OF MT_LIST TO LT_LIST.
+
+    "Init ALV
+    TRY.
+        CALL METHOD CL_SALV_TABLE=>FACTORY
+*      EXPORTING
+*        list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*        r_container    =
+*        container_name =
+          IMPORTING
+            R_SALV_TABLE = MO_SALV_TABLE
+          CHANGING
+            T_TABLE      = LT_LIST.
+      CATCH CX_SALV_MSG .
+    ENDTRY.
+
+    MO_SALV_TABLE->SET_SCREEN_STATUS( PFSTATUS = 'SALV_TABLE_2'
+                                      REPORT   = 'YCA_ALV_GUI_STATUS'
+                                      SET_FUNCTIONS = MO_SALV_TABLE->C_FUNCTIONS_ALL ).
+
+    LO_EVENTS = MO_SALV_TABLE->GET_EVENT( ).
+    SET HANDLER ME->HANDLE_UC FOR LO_EVENTS.
+    SET HANDLER ME->HANDLE_LINK_CLICK FOR LO_EVENTS.
+
+    "ALV columns
+    ME->SET_COLUMNS( ).
+
+    "ALV layout
+    DATA LS_LAYOUT_KEY TYPE SALV_S_LAYOUT_KEY.
+
+    LO_LAYOUT = MO_SALV_TABLE->GET_LAYOUT( ).
+    LS_LAYOUT_KEY-REPORT = IV_REPID.
+    LO_LAYOUT->SET_KEY( LS_LAYOUT_KEY ).
+    LO_LAYOUT->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+
+    "ALV display settings
+    LO_DISPLAY_SETTINGS = MO_SALV_TABLE->GET_DISPLAY_SETTINGS( ).
+    LO_DISPLAY_SETTINGS->SET_STRIPED_PATTERN( ABAP_TRUE ).
+
+*    "Set total and subtotal
+    ME->SET_TOTALS( ).
+    LO_SORTS = MO_SALV_TABLE->GET_SORTS( ).
+    TRY.
+        LO_SORT = LO_SORTS->ADD_SORT( COLUMNNAME = 'ZZSECT' ).
+        LO_SORT->SET_SUBTOTAL( ABAP_TRUE ).
+      CATCH CX_SALV_ERROR.
+    ENDTRY.
+
+    "Set message if messages in table MT_MESSAGE
+    IF MT_MESSAGE IS NOT INITIAL.
+      MESSAGE I007(YCOMMON).
+    ENDIF.
+
+    "Display list
+    MO_SALV_TABLE->DISPLAY( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM008 ----
+  METHOD SET_COLUMNS.
+
+    DATA LO_COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+    DATA LO_COLUMN TYPE REF TO CL_SALV_COLUMN_TABLE.
+
+    LO_COLUMNS = MO_SALV_TABLE->GET_COLUMNS( ).
+    LO_COLUMNS->SET_OPTIMIZE( ABAP_TRUE ).
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'BUD_STD' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_LONG_TEXT( 'Budget staff standard cost' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'BUD_DIS' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Budget staff distribution' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'BUD_ADJ' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_LONG_TEXT( 'Adjusted budget staff' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EXP_INC' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_LONG_TEXT( 'Incurred expenditure' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EXP_DIS' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Incur. expend. distribution' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'EXP_POS' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_LONG_TEXT( 'Incur. expend. from posting' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'COMMITMENT' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_LONG_TEXT( 'Commitment not realized' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'COMMITMENT_DIS' ).
+        LO_COLUMN->SET_LONG_TEXT( 'Commitment distribution' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM009 ----
+  METHOD PREPARE_ADJUSTED_BUDGET.
+
+    DATA LV_NUM(2) TYPE N.
+    DATA LV_AMOUNT TYPE LVALXX9.
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    DATA LS_SECTOR_SUM TYPE TY_SECTOR_SUM.
+    DATA LS_DET_BUD_ADJ TYPE TY_DET_BUD_ADJ.
+    FIELD-SYMBOLS <FM_DATA> TYPE ANY.
+
+    LOOP AT MT_FMBD INTO DATA(LS_FMBD).
+
+      "get fund
+      READ TABLE MT_FUND INTO DATA(LS_FUND) WITH KEY FIKRS = LS_FMBD-FM_AREA
+                                                     FINCODE = LS_FMBD-FUND.
+      CHECK SY-SUBRC = 0.
+      CASE LS_FMBD-BUDTYPE.
+        WHEN '1000'.
+          CONTINUE.
+        WHEN '2000'.
+          "Get case id with feature YFM01
+          IF ME->GET_CASE_ID( IS_FUND = LS_FUND IV_GJAHR = LS_FMBD-FISCYEAR ) <> 'I'.
+            CONTINUE.
+          ENDIF.
+        WHEN '4000'.
+          IF ME->GET_CASE_ID( IS_FUND = LS_FUND IV_GJAHR = LS_FMBD-FISCYEAR ) = 'I'.
+            CONTINUE.
+          ENDIF.
+      ENDCASE.
+
+      CLEAR: LV_NUM, LV_AMOUNT.
+      DO 16 TIMES.
+        ADD 1 TO LV_NUM.
+        LV_FIELDNAME = |LS_FMBD-LVAL{ LV_NUM }|.
+        ASSIGN (LV_FIELDNAME) TO <FM_DATA>.
+        CHECK <FM_DATA> IS ASSIGNED.
+        LV_AMOUNT = LV_AMOUNT - <FM_DATA>.
+        UNASSIGN <FM_DATA>.
+      ENDDO.
+
+      READ TABLE MT_SECTOR_SUM ASSIGNING FIELD-SYMBOL(<LS_SECTOR_SUM>) WITH KEY ZZSECT = LS_FUND-ZZSECT.
+      IF SY-SUBRC = 0.
+        ADD LV_AMOUNT TO <LS_SECTOR_SUM>-BUD_ADJ.
+      ELSE.
+        LS_SECTOR_SUM-ZZSECT = LS_FUND-ZZSECT.
+        LS_SECTOR_SUM-BUD_ADJ = LV_AMOUNT.
+        LS_SECTOR_SUM-WAERS = LS_FMBD-WAERS.
+        INSERT LS_SECTOR_SUM INTO TABLE MT_SECTOR_SUM.
+      ENDIF.
+
+      "Set to detail table
+      MOVE-CORRESPONDING LS_FMBD TO LS_DET_BUD_ADJ.
+      LS_DET_BUD_ADJ-ZZSECT = LS_FUND-ZZSECT.
+      LS_DET_BUD_ADJ-FM_OUTPUT = LS_FUND-FM_OUTPUT.
+      LS_DET_BUD_ADJ-BUD_ADJ = LV_AMOUNT.
+      INSERT LS_DET_BUD_ADJ INTO TABLE MT_DET_BUD_ADJ.
+
+    ENDLOOP.
+
+    "Free memory space
+    CLEAR MT_FMBD.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00A ----
+  METHOD GET_CASE_ID.
+
+    DATA LS_YSFM1 TYPE YSFM1.
+
+
+    CLEAR RV_CASE_ID.
+    MOVE-CORRESPONDING IS_FUND TO LS_YSFM1.
+
+    CHECK IV_GJAHR <= '2023'.  "Only for biennium until 41 C/5
+
+    "Set IBF flag from C/5 assignment
+    LOOP AT MT_FUND_C5 TRANSPORTING NO FIELDS WHERE FIKRS = IS_FUND-FIKRS
+                                              AND   FINCODE = IS_FUND-FINCODE
+                                              AND   YEAR_FROM <= IV_GJAHR
+                                              AND   YEAR_TO >= IV_GJAHR.
+      EXIT.
+    ENDLOOP.
+    IF SY-SUBRC = 0.
+      LS_YSFM1-ZZIBF = ABAP_TRUE.
+    ELSE.
+      LS_YSFM1-ZZIBF = ABAP_FALSE.
+    ENDIF.
+
+    TRY.
+        CALL METHOD CL_HRPA_FEATURE=>GET_VALUE
+          EXPORTING
+            FEATURE       = 'YFM01'
+            STRUC_CONTENT = LS_YSFM1
+          IMPORTING
+            RETURN_VALUE  = RV_CASE_ID.
+      CATCH CX_HRPA_VIOLATED_ASSERTION .
+        "error in feature
+        MESSAGE TEXT-M01 TYPE 'E'.
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00B ----
+  METHOD COMPUTE_DATA.
+
+    DATA LS_SECTOR_SUM TYPE TY_SECTOR_SUM.
+    DATA LV_END_SECTOR TYPE BOOLEAN.
+    DATA LV_RATE_BUD TYPE PROZT.
+    DATA LV_RATE_EXP TYPE PROZT.
+    DATA LV_RATE_COM TYPE PROZT.
+
+    LOOP AT MT_LIST ASSIGNING FIELD-SYMBOL(<LS_LIST>).
+
+      AT NEW ZZSECT.
+        CLEAR:  LS_SECTOR_SUM, LV_END_SECTOR, LV_RATE_BUD, LV_RATE_EXP, LV_RATE_COM.
+        READ TABLE MT_SECTOR_SUM INTO LS_SECTOR_SUM WITH KEY ZZSECT = <LS_LIST>-ZZSECT.
+      ENDAT.
+
+      AT END OF ZZSECT.
+        LV_END_SECTOR = ABAP_TRUE.
+      ENDAT.
+
+      IF LV_END_SECTOR = ABAP_FALSE.
+        <LS_LIST>-BUD_DIS = <LS_LIST>-BUD_STD / LS_SECTOR_SUM-BUD_STD * 100.
+        ADD <LS_LIST>-BUD_DIS TO LV_RATE_BUD.
+        <LS_LIST>-EXP_DIS = <LS_LIST>-EXP_INC / LS_SECTOR_SUM-EXP_INC * 100.
+        ADD <LS_LIST>-EXP_DIS TO LV_RATE_EXP.
+        <LS_LIST>-COMMITMENT_DIS = <LS_LIST>-COMMITMENT / LS_SECTOR_SUM-COMMIT * 100.
+        ADD <LS_LIST>-COMMITMENT_DIS TO LV_RATE_COM.
+      ELSE.
+        <LS_LIST>-BUD_DIS = 100 - LV_RATE_BUD.
+        <LS_LIST>-EXP_DIS = 100 - LV_RATE_EXP.
+        <LS_LIST>-COMMITMENT_DIS = 100 - LV_RATE_COM.
+      ENDIF.
+      <LS_LIST>-BUD_ADJ = LS_SECTOR_SUM-BUD_ADJ * <LS_LIST>-BUD_DIS / 100.
+      <LS_LIST>-EXP_POS = LS_SECTOR_SUM-EXP_POS * <LS_LIST>-EXP_DIS / 100.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00C ----
+  METHOD GET_INCURRED_EXP_FROM_PAY.
+
+    DATA LS_0001 TYPE TY_0001.
+    DATA LV_VALID TYPE BOOLEAN.
+    DATA LO_NOT_SORTED TYPE REF TO CX_SY_PROVIDE_TABLE_NOT_SORTED.
+    DATA LO_OVERLAP TYPE REF TO CX_SY_PROVIDE_INTERVAL_OVERLAP.
+    DATA LS_DETAIL TYPE TY_PERNR_EXP.
+    DATA LV_AMOUNT TYPE YE_FM_ACTUAL_AMOUNT.
+    DATA LV_WAERS TYPE WAERS.
+    DATA LV_UNTIL TYPE DATUM.
+
+    CLEAR: EV_AMOUNT, EV_WAERS, ET_DETAIL.
+
+    TRY.
+        PROVIDE FIELDS PLANS PERNR PERMO FROM MT_0001 INTO LS_0001 VALID LV_VALID
+                                         BOUNDS BEGDA AND ENDDA
+                                         WHERE PLANS = IV_PLANS
+                   BETWEEN IV_BEGDA AND IV_ENDDA.
+          "Extract wage type amount regarding period
+          MO_EXTRACT_PAYROLL->GET_AMOUNT_FROM_USD_WT( EXPORTING IV_PERNR = LS_0001-PERNR
+                                                                IV_PERMO = LS_0001-PERMO
+                                                                IV_BEGDA = LS_0001-BEGDA
+                                                                IV_ENDDA = LS_0001-ENDDA
+                                                                IV_LGART = C_LGART_9710
+                                                      IMPORTING EV_AMOUNT = LV_AMOUNT
+                                                                EV_WAERS = LV_WAERS
+                                                                EV_UNTIL = LV_UNTIL ) .
+          CHECK LV_AMOUNT <> 0.
+          "Aggregate to return amount
+          ADD LV_AMOUNT TO EV_AMOUNT.
+          EV_WAERS = LV_WAERS.
+          EV_UNTIL = LV_UNTIL.
+          "Set to detail table
+          LS_DETAIL-PERNR = LS_0001-PERNR.
+          LS_DETAIL-BEGDA = LS_0001-BEGDA.
+          LS_DETAIL-ENDDA = LS_0001-ENDDA.
+          LS_DETAIL-EXP_INC = LV_AMOUNT.
+          LS_DETAIL-WAERS = EV_WAERS.
+          APPEND LS_DETAIL TO ET_DETAIL.
+        ENDPROVIDE.
+
+      CATCH CX_SY_PROVIDE_TABLE_NOT_SORTED INTO LO_NOT_SORTED.
+        ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                  IV_OBJID = IV_PLANS
+                                  IV_MSGTY = 'E'
+                                  IV_MSGTX = |Error PROVIDE: { LO_NOT_SORTED->TABLE } not sorted| ).
+      CATCH CX_SY_PROVIDE_INTERVAL_OVERLAP INTO LO_OVERLAP.
+        ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                  IV_OBJID = IV_PLANS
+                                  IV_MSGTY = 'E'
+                                  IV_MSGTX = |Post with more than one holder in period { LS_0001-BEGDA } - { LS_0001-ENDDA }| ).
+
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00D ----
+  METHOD CONSTRUCTOR.
+
+    "Set class payroll data extraction
+    MO_EXTRACT_PAYROLL = NEW YCL_HR_EXTRACT_PAYROLL_DATA( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00E ----
+  METHOD PREPARE_BUDGET_SC_AND_INC_EXP.
+
+    DATA LS_9082_HEAD TYPE TY_9082_HEAD.
+    DATA LS_9082_LINE TYPE TY_9082_LINE.
+    DATA LV_VALID_9082 TYPE BOOLEAN.
+    DATA LV_STD_COST TYPE HSLXX9.
+    DATA LV_OUT_COST TYPE HSLXX9.
+    DATA LV_INC_EXP TYPE HSLXX9.
+    DATA LV_OUT_EXP TYPE HSLXX9.
+    DATA LV_COMMIT TYPE HSLXX9.
+    DATA LV_OUT_COMMIT TYPE HSLXX9.
+    DATA LV_WAERS TYPE WAERS.
+    DATA LV_WAERS_INC TYPE WAERS.
+    DATA LO_NOT_SORTED TYPE REF TO CX_SY_PROVIDE_TABLE_NOT_SORTED.
+    DATA LO_OVERLAP TYPE REF TO CX_SY_PROVIDE_INTERVAL_OVERLAP.
+    DATA LS_DET_BUD_STD TYPE TY_DET_BUD_STD.
+    DATA LT_PERNR_EXP TYPE TTY_PERNR_EXP.
+    DATA LS_DET_EXP_INC TYPE TY_DET_EXP_INC.
+    DATA LV_ENDDA TYPE ENDDA.
+    DATA LV_LAST_ACTUAL_DATE TYPE DATUM.
+    DATA LV_WAERS_COMMIT TYPE WAERS.
+    DATA LS_DET_COMMIT TYPE TY_DET_COMMIT.
+
+    SORT MT_0001 BY PLANS BEGDA.
+
+    LOOP AT MT_PLANS INTO DATA(LV_PLANS).
+
+      TRY.
+          PROVIDE FIELDS PLANS TABNR FROM MT_9082_HEAD INTO LS_9082_HEAD VALID LV_VALID_9082
+                                     BOUNDS BEGDA AND ENDDA
+                                     WHERE PLANS = LV_PLANS
+                   BETWEEN MV_BEGDA AND MV_ENDDA.
+            CLEAR: LV_STD_COST, LV_WAERS, LV_INC_EXP, LV_WAERS_INC, LT_PERNR_EXP, LV_LAST_ACTUAL_DATE, LV_COMMIT.
+
+            "Get standard cost for period
+            ME->GET_STANDARD_COST( EXPORTING IV_PLANS = LS_9082_HEAD-PLANS
+                                             IV_BEGDA = LS_9082_HEAD-BEGDA
+                                             IV_ENDDA = LS_9082_HEAD-ENDDA
+                                   IMPORTING EV_STD_COST = LV_STD_COST
+                                             EV_WAERS = LV_WAERS ).
+*            IF lv_std_cost IS NOT INITIAL AND lv_waers <> mv_fikrs_waers.
+*              me->set_message_to_table( iv_otype = 'S'
+*                                        iv_objid = ls_9082_head-plans
+*                                        iv_msgtx = |Currency { lv_waers } in infotype 1005 different from FM area currency { mv_fikrs_waers }| ).
+*              CONTINUE.
+*            ENDIF.
+            "Get incurred expenditure until doc/posting date
+            IF LS_9082_HEAD-BEGDA <= MV_BUDAT.
+              IF ME->CHECK_HOLDER( LV_PLANS ) = ABAP_TRUE.
+                IF LS_9082_HEAD-ENDDA > MV_BUDAT.
+                  LV_ENDDA = MV_BUDAT.
+                ELSE.
+                  LV_ENDDA = LS_9082_HEAD-ENDDA.
+                ENDIF.
+                ME->GET_INCURRED_EXP_FROM_PAY( EXPORTING IV_PLANS = LS_9082_HEAD-PLANS
+                                                         IV_BEGDA = LS_9082_HEAD-BEGDA
+                                                         IV_ENDDA = LV_ENDDA
+                                               IMPORTING EV_AMOUNT = LV_INC_EXP
+                                                         EV_WAERS = LV_WAERS_INC
+                                                         EV_UNTIL = LV_LAST_ACTUAL_DATE
+                                                         ET_DETAIL = LT_PERNR_EXP ).
+                IF LV_WAERS IS INITIAL.
+                  LV_WAERS = LV_WAERS_INC.
+                ENDIF.
+              ENDIF.
+            ENDIF.
+            "Get commitments
+            IF LV_LAST_ACTUAL_DATE < LS_9082_HEAD-ENDDA.
+              IF LV_LAST_ACTUAL_DATE IS INITIAL.
+                LV_LAST_ACTUAL_DATE = LS_9082_HEAD-BEGDA.
+              ELSE.
+                ADD 1 TO LV_LAST_ACTUAL_DATE.
+              ENDIF.
+              "get commitment
+              ME->GET_COMMITMENT( EXPORTING IV_PLANS = LS_9082_HEAD-PLANS
+                                            IV_BEGDA = LV_LAST_ACTUAL_DATE
+                                            IV_ENDDA = LS_9082_HEAD-ENDDA
+                                  IMPORTING EV_AMOUNT = LV_COMMIT
+                                            EV_WAERS = LV_WAERS_COMMIT ).
+              IF LV_WAERS IS INITIAL.
+                LV_WAERS = LV_WAERS_COMMIT.
+              ENDIF.
+            ENDIF.
+
+            CHECK LV_STD_COST IS NOT INITIAL OR LV_INC_EXP IS NOT INITIAL OR LV_COMMIT IS NOT INITIAL.
+
+            "Distribute per output
+            LOOP AT MT_9082_LINE INTO LS_9082_LINE WHERE TABNR = LS_9082_HEAD-TABNR.
+              LV_OUT_COST = LV_STD_COST * LS_9082_LINE-PROZT / 100.
+              LV_OUT_EXP = LV_INC_EXP * LS_9082_LINE-PROZT / 100.
+              LV_OUT_COMMIT = LV_COMMIT * LS_9082_LINE-PROZT / 100.
+              "Get sector from output
+              READ TABLE MT_OUTPUT INTO DATA(LS_OUTPUT) WITH KEY FM_OUTPUT = LS_9082_LINE-FM_OUTPUT.
+              ME->UPDATE_MT_LIST( EXPORTING IV_SECTOR = LS_OUTPUT-ZZSECT
+                                            IV_OUTPUT = LS_9082_LINE-FM_OUTPUT
+                                            IV_WAERS = LV_WAERS
+                                            IV_BUD_STD = LV_OUT_COST
+                                            IV_EXP_INC = LV_OUT_EXP
+                                            IV_COMMIT = LV_OUT_COMMIT ).
+              "set to detail table
+              IF LV_OUT_COST IS NOT INITIAL.
+                LS_DET_BUD_STD-ZZSECT = LS_OUTPUT-ZZSECT.
+                LS_DET_BUD_STD-PLANS = LS_9082_HEAD-PLANS.
+                LS_DET_BUD_STD-BEGDA = LS_9082_HEAD-BEGDA.
+                LS_DET_BUD_STD-ENDDA = LS_9082_HEAD-ENDDA.
+                LS_DET_BUD_STD-FM_OUTPUT = LS_9082_LINE-FM_OUTPUT.
+                LS_DET_BUD_STD-PROZT = LS_9082_LINE-PROZT.
+                LS_DET_BUD_STD-BUD_STD = LV_OUT_COST.
+                LS_DET_BUD_STD-WAERS = LV_WAERS.
+                INSERT LS_DET_BUD_STD INTO TABLE MT_DET_BUD_STD.
+              ENDIF.
+              IF LV_OUT_EXP IS NOT INITIAL.
+                LOOP AT LT_PERNR_EXP INTO DATA(LS_PERNR_EXP).
+                  LS_DET_EXP_INC-ZZSECT = LS_OUTPUT-ZZSECT.
+                  LS_DET_EXP_INC-PLANS = LS_9082_HEAD-PLANS.
+                  LS_DET_EXP_INC-PERNR = LS_PERNR_EXP-PERNR.
+                  LS_DET_EXP_INC-BEGDA = LS_PERNR_EXP-BEGDA.
+                  LS_DET_EXP_INC-ENDDA = LS_PERNR_EXP-ENDDA.
+                  LS_DET_EXP_INC-FM_OUTPUT = LS_9082_LINE-FM_OUTPUT.
+                  LS_DET_EXP_INC-PROZT = LS_9082_LINE-PROZT.
+                  LS_DET_EXP_INC-EXP_INC = LS_PERNR_EXP-EXP_INC * LS_9082_LINE-PROZT / 100.
+                  LS_DET_EXP_INC-WAERS = LV_WAERS.
+                  INSERT LS_DET_EXP_INC INTO TABLE MT_DET_EXP_INC.
+                ENDLOOP.
+              ENDIF.
+              IF LV_OUT_COMMIT IS NOT INITIAL.
+                LS_DET_COMMIT-ZZSECT = LS_OUTPUT-ZZSECT.
+                LS_DET_COMMIT-PLANS = LS_9082_HEAD-PLANS.
+                LS_DET_COMMIT-BEGDA = LS_9082_HEAD-BEGDA.
+                LS_DET_COMMIT-ENDDA = LS_9082_HEAD-ENDDA.
+                LS_DET_COMMIT-FM_OUTPUT = LS_9082_LINE-FM_OUTPUT.
+                LS_DET_COMMIT-PROZT = LS_9082_LINE-PROZT.
+                LS_DET_COMMIT-COMMITMENT = LV_OUT_COMMIT.
+                LS_DET_COMMIT-WAERS = LV_WAERS.
+                INSERT LS_DET_COMMIT INTO TABLE MT_DET_COMMIT.
+              ENDIF.
+            ENDLOOP.
+          ENDPROVIDE.
+        CATCH CX_SY_PROVIDE_TABLE_NOT_SORTED INTO LO_NOT_SORTED.
+          ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                    IV_OBJID = LV_PLANS
+                                    IV_MSGTY = 'E'
+                                    IV_MSGTX = |Error PROVIDE: { LO_NOT_SORTED->TABLE } not sorted| ).
+        CATCH CX_SY_PROVIDE_INTERVAL_OVERLAP INTO LO_OVERLAP.
+          ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                    IV_OBJID = LV_PLANS
+                                    IV_MSGTY = 'E'
+                                    IV_MSGTX = |Error PROVIDE: overlap in { LO_OVERLAP->TABLE }| ).
+
+      ENDTRY.
+
+    ENDLOOP.
+
+    "free memory space
+    CLEAR: MT_9082_HEAD, MT_9082_LINE, MT_1005.
+
+    "sort MT_0001 for better accessing for details lines
+    SORT MT_0001 BY PERNR BEGDA.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00F ----
+  METHOD SET_MESSAGE_TO_TABLE.
+
+    DATA LS_MSG TYPE TY_MESSAGE.
+
+    LS_MSG-PLVAR = '01'.
+    LS_MSG-OTYPE = IV_OTYPE.
+    LS_MSG-OBJID = IV_OBJID.
+    LS_MSG-MSGTY = IV_MSGTY.
+    LS_MSG-MSGTX = IV_MSGTX.
+    APPEND LS_MSG TO MT_MESSAGE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00G ----
+  METHOD PREPARE_INCURRED_EXP_FROM_POST.
+
+    DATA LS_SECTOR_SUM TYPE TY_SECTOR_SUM.
+    DATA LS_DET_EXP_POS TYPE TY_DET_EXP_POS.
+
+    LOOP AT MT_BSEG INTO DATA(LS_BSEG).
+
+      IF LS_BSEG-SHKZG = 'H'.
+        MULTIPLY LS_BSEG-DMBTR BY -1.
+      ENDIF.
+
+      "get fund
+      READ TABLE MT_FUND INTO DATA(LS_FUND) WITH KEY FIKRS = LS_BSEG-FIKRS
+                                                     FINCODE = LS_BSEG-GEBER.
+
+
+      READ TABLE MT_SECTOR_SUM ASSIGNING FIELD-SYMBOL(<LS_SECTOR_SUM>) WITH KEY ZZSECT = LS_FUND-ZZSECT.
+      IF SY-SUBRC = 0.
+        ADD LS_BSEG-DMBTR TO <LS_SECTOR_SUM>-EXP_POS.
+      ELSE.
+        LS_SECTOR_SUM-ZZSECT = LS_FUND-ZZSECT.
+        LS_SECTOR_SUM-BUD_ADJ = LS_BSEG-DMBTR.
+        LS_SECTOR_SUM-WAERS = LS_BSEG-WAERS.
+        INSERT LS_SECTOR_SUM INTO TABLE MT_SECTOR_SUM.
+      ENDIF.
+
+      "set to detail table
+      MOVE-CORRESPONDING LS_BSEG TO LS_DET_EXP_POS.
+      LS_DET_EXP_POS-ZZSECT = LS_FUND-ZZSECT.
+      LS_DET_EXP_POS-FM_OUTPUT = LS_FUND-FM_OUTPUT.
+      INSERT LS_DET_EXP_POS INTO TABLE MT_DET_EXP_POS.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00H ----
+  METHOD HANDLE_UC.
+
+    CASE E_SALV_FUNCTION.
+      WHEN 'YMESS'.
+        "display error list
+        CALL FUNCTION 'Y_CA_ALV_IN_POPUP'
+          EXPORTING
+*           IV_START_ROW       = 4
+*           IV_START_COL       = 4
+*           IV_END_ROW         = 31
+*           IV_END_COL         = 125
+            IV_TITLE = 'Errors during proceesing'
+          TABLES
+            IT_TABLE = MT_MESSAGE.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00I ----
+  METHOD SET_TOTALS.
+
+    DATA LO_AGGREGATIONS TYPE REF TO CL_SALV_AGGREGATIONS.
+
+    LO_AGGREGATIONS = MO_SALV_TABLE->GET_AGGREGATIONS( ).
+    TRY.
+        LO_AGGREGATIONS->ADD_AGGREGATION( COLUMNNAME = 'BUD_STD'
+                                          AGGREGATION = IF_SALV_C_AGGREGATION=>TOTAL ).
+        LO_AGGREGATIONS->ADD_AGGREGATION( COLUMNNAME = 'BUD_ADJ'
+                                          AGGREGATION = IF_SALV_C_AGGREGATION=>TOTAL ).
+        LO_AGGREGATIONS->ADD_AGGREGATION( COLUMNNAME = 'EXP_INC'
+                                          AGGREGATION = IF_SALV_C_AGGREGATION=>TOTAL ).
+        LO_AGGREGATIONS->ADD_AGGREGATION( COLUMNNAME = 'EXP_POS'
+                                          AGGREGATION = IF_SALV_C_AGGREGATION=>TOTAL ).
+        LO_AGGREGATIONS->ADD_AGGREGATION( COLUMNNAME = 'COMMITMENT'
+                                          AGGREGATION = IF_SALV_C_AGGREGATION=>TOTAL ).
+      CATCH CX_SALV_ERROR.
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00J ----
+  METHOD UPDATE_DATA_HUB.
+
+    DATA LT_STFCO TYPE SORTED TABLE OF YTDH_STFCO_2 WITH UNIQUE KEY ZZSECT FM_OUTPUT RDATE.
+    DATA LS_STFCO TYPE YTDH_STFCO_2.
+
+    "First delete old data for refrence date
+    IF IV_DELETE_OLD = ABAP_FALSE.
+      DELETE FROM YTDH_STFCO_2 WHERE FIKRS = MP_FIKRS
+                               AND   FTYPG = IV_FTYPG
+                               AND   RDATE = IV_DATE_REF.
+    ELSE.
+      DELETE FROM YTDH_STFCO_2 WHERE FIKRS = MP_FIKRS
+                               AND   FTYPG = IV_FTYPG.
+    ENDIF.
+
+    "Insert new values
+    LOOP AT MT_LIST INTO DATA(LS_LIST).
+      CLEAR LS_STFCO.
+      MOVE-CORRESPONDING LS_LIST TO LS_STFCO.
+      LS_STFCO-FIKRS = MP_FIKRS.
+      LS_STFCO-FTYPG = IV_FTYPG.
+      LS_STFCO-RDATE = IV_DATE_REF.
+      LS_STFCO-UDATE = SY-DATUM.
+      LS_STFCO-UNAME = SY-UNAME.
+      INSERT LS_STFCO INTO TABLE LT_STFCO.
+    ENDLOOP.
+
+    INSERT YTDH_STFCO_2 FROM TABLE LT_STFCO.
+    IF SY-SUBRC <> 0.
+      ES_RETURN-TYPE = 'E'.
+      ES_RETURN-ID = 'YFM1'.
+      ES_RETURN-NUMBER = '008'.
+      ES_RETURN-MESSAGE_V1 = 'YTDH_STFCO_2'.
+      MESSAGE ID ES_RETURN-ID TYPE ES_RETURN-TYPE NUMBER ES_RETURN-NUMBER
+            WITH ES_RETURN-MESSAGE_V1
+            INTO ES_RETURN-MESSAGE.
+    ENDIF.
+
+    IF IV_MODE_TEST = ABAP_TRUE.
+      ROLLBACK WORK.
+    ELSE.
+      COMMIT WORK.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00K ----
+  METHOD HANDLE_LINK_CLICK.
+
+    DATA REF_DATA TYPE REF TO DATA.
+    FIELD-SYMBOLS <TABLE> TYPE STANDARD TABLE.
+    DATA LS_ALV_BUD_STD TYPE YSFM_STAFF_COST_DET_BUD_STD.
+    DATA LS_ALV_EXP_INC TYPE YSFM_STAFF_COST_DET_EXP_INC.
+    DATA LS_ALV_COMMIT TYPE YSFM_STAFF_COST_DET_COMMIT.
+    DATA LS_OUTPUT TYPE TY_OUTPUT.
+
+    CHECK ROW IS NOT INITIAL.
+    READ TABLE MT_LIST INTO DATA(LS_LIST) INDEX ROW.
+
+    CASE COLUMN.
+      WHEN 'BUD_STD'.
+        CREATE DATA REF_DATA TYPE TABLE OF YSFM_STAFF_COST_DET_BUD_STD.
+        ASSIGN REF_DATA->* TO <TABLE>.
+        "Get output name
+        READ TABLE MT_OUTPUT INTO LS_OUTPUT WITH KEY FM_OUTPUT = LS_LIST-FM_OUTPUT.
+        LOOP AT MT_DET_BUD_STD INTO DATA(LS_DET_BUD_STD) WHERE ZZSECT = LS_LIST-ZZSECT
+                                                         AND   FM_OUTPUT = LS_LIST-FM_OUTPUT.
+          MOVE-CORRESPONDING LS_DET_BUD_STD TO LS_ALV_BUD_STD.
+          LS_ALV_BUD_STD-ONAME = LS_LIST-ONAME.
+          ME->GET_PLANS_TEXT( EXPORTING IV_PLANS = LS_DET_BUD_STD-PLANS
+                                        IV_DATE = LS_DET_BUD_STD-ENDDA
+                              IMPORTING EV_SHORT = LS_ALV_BUD_STD-SHORT
+                                        EV_STEXT = LS_ALV_BUD_STD-STEXT ).
+          APPEND LS_ALV_BUD_STD TO <TABLE>.
+        ENDLOOP.
+
+      WHEN 'EXP_INC'.
+        CREATE DATA REF_DATA TYPE TABLE OF YSFM_STAFF_COST_DET_EXP_INC.
+        ASSIGN REF_DATA->* TO <TABLE>.
+        "Get output name
+        READ TABLE MT_OUTPUT INTO LS_OUTPUT WITH KEY FM_OUTPUT = LS_LIST-FM_OUTPUT.
+        LOOP AT MT_DET_EXP_INC INTO DATA(LS_DET_EXP_INC) WHERE ZZSECT = LS_LIST-ZZSECT
+                                                         AND   FM_OUTPUT = LS_LIST-FM_OUTPUT.
+          MOVE-CORRESPONDING LS_DET_EXP_INC TO LS_ALV_EXP_INC.
+          LS_ALV_EXP_INC-ONAME = LS_LIST-ONAME.
+          ME->GET_PLANS_TEXT( EXPORTING IV_PLANS = LS_DET_EXP_INC-PLANS
+                                        IV_DATE = LS_DET_EXP_INC-ENDDA
+                              IMPORTING EV_SHORT = LS_ALV_EXP_INC-SHORT
+                                        EV_STEXT = LS_ALV_EXP_INC-STEXT ).
+          "Get ename
+          LOOP AT MT_0001 INTO DATA(LS_0001) WHERE PERNR = LS_DET_EXP_INC-PERNR.
+          ENDLOOP.
+          IF SY-SUBRC = 0.
+            LS_ALV_EXP_INC-ENAME = LS_0001-ENAME.
+          ENDIF.
+          APPEND LS_ALV_EXP_INC TO <TABLE>.
+        ENDLOOP.
+
+      WHEN 'BUD_ADJ'.
+        CREATE DATA REF_DATA TYPE TABLE OF TY_DET_BUD_ADJ.
+        ASSIGN REF_DATA->* TO <TABLE>.
+        LOOP AT MT_DET_BUD_ADJ INTO DATA(LS_DET_BUD_ADJ) WHERE ZZSECT = LS_LIST-ZZSECT.
+          "Get output name
+          READ TABLE MT_OUTPUT INTO LS_OUTPUT WITH KEY FM_OUTPUT = LS_DET_BUD_ADJ-FM_OUTPUT.
+          IF SY-SUBRC = 0.
+            LS_DET_BUD_ADJ-OTEXT = LS_OUTPUT-OTEXT.
+          ENDIF.
+          APPEND LS_DET_BUD_ADJ TO <TABLE>.
+        ENDLOOP.
+
+      WHEN 'EXP_POS'.
+        CREATE DATA REF_DATA TYPE TABLE OF TY_DET_EXP_POS.
+        ASSIGN REF_DATA->* TO <TABLE>.
+        LOOP AT MT_DET_EXP_POS INTO DATA(LS_DET_EXP_POS) WHERE ZZSECT = LS_LIST-ZZSECT.
+          "Get output name
+          READ TABLE MT_OUTPUT INTO LS_OUTPUT WITH KEY FM_OUTPUT = LS_DET_EXP_POS-FM_OUTPUT.
+          IF SY-SUBRC = 0.
+            LS_DET_EXP_POS-OTEXT = LS_OUTPUT-OTEXT.
+          ENDIF.
+          APPEND LS_DET_EXP_POS TO <TABLE>.
+        ENDLOOP.
+
+      WHEN 'COMMITMENT'.
+        CREATE DATA REF_DATA TYPE TABLE OF YSFM_STAFF_COST_DET_COMMIT.
+        ASSIGN REF_DATA->* TO <TABLE>.
+        "Get output name
+        READ TABLE MT_OUTPUT INTO LS_OUTPUT WITH KEY FM_OUTPUT = LS_LIST-FM_OUTPUT.
+        LOOP AT MT_DET_COMMIT INTO DATA(LS_DET_COMMIT) WHERE ZZSECT = LS_LIST-ZZSECT
+                                                       AND   FM_OUTPUT = LS_LIST-FM_OUTPUT.
+          MOVE-CORRESPONDING LS_DET_COMMIT TO LS_ALV_COMMIT.
+          LS_ALV_COMMIT-ONAME = LS_LIST-ONAME.
+          ME->GET_PLANS_TEXT( EXPORTING IV_PLANS = LS_DET_COMMIT-PLANS
+                                        IV_DATE = LS_DET_COMMIT-ENDDA
+                              IMPORTING EV_SHORT = LS_ALV_COMMIT-SHORT
+                                        EV_STEXT = LS_ALV_COMMIT-STEXT ).
+          APPEND LS_ALV_COMMIT TO <TABLE>.
+        ENDLOOP.
+
+    ENDCASE.
+
+    CHECK <TABLE> IS ASSIGNED.
+
+    CALL FUNCTION 'Y_CA_ALV_IN_POPUP'
+      EXPORTING
+        IV_TITLE = 'Detail'
+      TABLES
+        IT_TABLE = <TABLE>.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00L ----
+  METHOD GET_PLANS_TEXT.
+
+    DATA LS_1000 TYPE TY_1000.
+
+    LOOP AT MT_1000 INTO LS_1000 WHERE PLANS = IV_PLANS
+                                 AND   BEGDA <= IV_DATE
+                                 AND   ENDDA >= IV_DATE.
+    ENDLOOP.
+    IF SY-SUBRC <> 0.
+      READ TABLE MT_1000 INTO LS_1000 WITH KEY PLANS = IV_PLANS.
+    ENDIF.
+
+    EV_SHORT = LS_1000-SHORT.
+    EV_STEXT = LS_1000-STEXT.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00M ----
+  METHOD CHECK_HOLDER.
+
+    DATA LV_DATE TYPE DATUM.
+    DATA LV_BEGDA_C(10) TYPE C.
+    DATA LV_ENDDA_C(10) TYPE C.
+
+    RV_IS_OK = ABAP_TRUE.
+
+    "Check S->P relationship
+    LOOP AT MT_HOLDER INTO DATA(LS_HOLDER) WHERE OBJID = IV_PLANS.
+      IF LV_DATE IS NOT INITIAL.
+        IF LS_HOLDER-BEGDA <= LV_DATE.
+          "begin date of next holder is before end date of previous holder => error
+          WRITE LS_HOLDER-BEGDA TO LV_BEGDA_C.
+          WRITE LV_DATE TO LV_ENDDA_C.
+          ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                    IV_OBJID = IV_PLANS
+                                    IV_MSGTY = 'E'
+                                    IV_MSGTX = |Post with more than one holder in period { LV_BEGDA_C } - { LV_ENDDA_C } for infotype 1001| ).
+          RV_IS_OK = ABAP_FALSE.
+        ENDIF.
+      ENDIF.
+      LV_DATE = LS_HOLDER-ENDDA.
+    ENDLOOP.
+
+    "Check infotype 0001 assignment
+    CLEAR LV_DATE.
+    LOOP AT MT_0001 INTO DATA(LS_0001) WHERE PLANS = IV_PLANS.
+      IF LV_DATE IS NOT INITIAL.
+        IF LS_0001-BEGDA <= LV_DATE.
+          "begin date of next holder is before end date of previous holder => error
+          WRITE LS_0001-BEGDA TO LV_BEGDA_C.
+          WRITE LV_DATE TO LV_ENDDA_C.
+          ME->SET_MESSAGE_TO_TABLE( IV_OTYPE = 'S'
+                                    IV_OBJID = IV_PLANS
+                                    IV_MSGTY = 'E'
+                                    IV_MSGTX = |Post with more than one holder in period { LV_BEGDA_C } - { LV_ENDDA_C } for infotype 0001| ).
+          RV_IS_OK = ABAP_FALSE.
+        ENDIF.
+      ENDIF.
+      LV_DATE = LS_0001-ENDDA.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCM00P ----
+  METHOD GET_COMMITMENT.
+
+    LOOP AT MT_COMMITMENT INTO DATA(LS_COMMITMENT) WHERE PLVAR = '01'
+                                                   AND   OTYPE = 'S'
+                                                   AND   OBJID = IV_PLANS
+                                                   AND   BEGDA <= IV_ENDDA
+                                                   AND   ENDDA >= IV_BEGDA.
+      ADD LS_COMMITMENT-BETRG TO EV_AMOUNT.
+      EV_WAERS = LS_COMMITMENT-WAERS.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCO ----
+PROTECTED SECTION.
+
+* ---- YCL_FM_STAFF_COST_DISTRIBUT_BLCU ----
+CLASS YCL_FM_STAFF_COST_DISTRIBUT_BL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  METHODS UPDATE_DATA_HUB
+    IMPORTING
+      !IV_FTYPG TYPE YE_FM_FUND_TYPE_GROUP
+      !IV_DATE_REF TYPE DATUM
+      !IV_MODE_TEST TYPE BOOLEAN DEFAULT ABAP_TRUE
+      !IV_DELETE_OLD TYPE BOOLEAN DEFAULT ABAP_FALSE
+    EXPORTING
+      VALUE(ES_RETURN) TYPE BAPIRETURN1 .
+  METHODS CONSTRUCTOR .
+  METHODS DISPLAY_ALV
+    IMPORTING
+      !IV_REPID TYPE SYST-REPID DEFAULT SY-REPID .
+  METHODS GET_DATA
+    IMPORTING
+      !IV_BUDAT TYPE BUDAT OPTIONAL .
+  METHODS SET_SELECTION_VALUES
+    IMPORTING
+      !IV_SELNAME TYPE RSSCR_NAME
+      !IV_KIND TYPE RSSCR_KIND
+      !IV_VALUE TYPE ANY OPTIONAL
+      !IT_VALUE TYPE ANY TABLE OPTIONAL .

@@ -1,0 +1,24 @@
+*&---------------------------------------------------------------------*
+*& Report YFI_RAISE_EVENT_AFTER_CLOSING
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT YFI_RAISE_EVENT_AFTER_CLOSING.
+
+DATA GS_T001 TYPE T001.
+DATA GO_FI_CLOSING_PERIOD TYPE REF TO YCL_FI_CLOSING_PERIOD.
+
+SELECT-OPTIONS S_BUKRS FOR GS_T001-BUKRS NO INTERVALS.
+
+START-OF-SELECTION.
+  GO_FI_CLOSING_PERIOD = NEW YCL_FI_CLOSING_PERIOD( ).
+  GO_FI_CLOSING_PERIOD->GET_CLOSING_DATA( S_BUKRS[] ).
+  GO_FI_CLOSING_PERIOD->RAISE_EVENT_AND_CLOSE( ).
+  LOOP AT GO_FI_CLOSING_PERIOD->MT_RETURN INTO DATA(LS_RETURN).
+    CASE LS_RETURN-TYPE.
+      WHEN 'I'.
+        WRITE : / LS_RETURN-MESSAGE COLOR COL_POSITIVE.
+      WHEN 'E'.
+        WRITE : / LS_RETURN-MESSAGE COLOR COL_NEGATIVE.
+    ENDCASE.
+  ENDLOOP.

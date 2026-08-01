@@ -1,0 +1,209 @@
+* ==== CLASS POOL YCL_FI_LOCATION_DETERMINATION ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_LOCATION_DETERMINATION
+
+*"* local type definitions
+INCLUDE YCL_FI_LOCATION_DETERMINATION=CCDEF.
+
+*"* class YCL_FI_LOCATION_DETERMINATION definition
+*"* public declarations
+  INCLUDE YCL_FI_LOCATION_DETERMINATION=CU.
+*"* protected declarations
+  INCLUDE YCL_FI_LOCATION_DETERMINATION=CO.
+*"* private declarations
+  INCLUDE YCL_FI_LOCATION_DETERMINATION=CI.
+ENDCLASS. "YCL_FI_LOCATION_DETERMINATION definition
+
+*"* macro definitions
+INCLUDE YCL_FI_LOCATION_DETERMINATION=CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_LOCATION_DETERMINATION=CCIMP.
+
+CLASS YCL_FI_LOCATION_DETERMINATION IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_LOCATION_DETERMINATION implementation
+
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF TY_T001,
+      BUKRS TYPE T001-BUKRS,
+      ORGEH TYPE T001-YYORGEH,
+      STEXT TYPE HRP1000-STEXT,
+    END OF TY_T001 .
+  TYPES:
+    BEGIN OF TY_FMHISV,
+           FISTL     TYPE FMHISV-FISTL,
+           PARENT_ST TYPE FMHISV-PARENT_ST,
+           HILEVEL    TYPE FMHISV-HILEVEL,
+           MCTXT     TYPE FMFCTRT-MCTXT,
+         END OF TY_FMHISV .
+
+  CONSTANTS C_HIVARNT TYPE FM_HIVARNT VALUE '0000' ##NO_TEXT.
+  DATA MV_FIKRS TYPE FIKRS .
+  DATA:
+    MT_FMHISV TYPE SORTED TABLE OF TY_FMHISV WITH UNIQUE KEY FISTL .
+  DATA:
+    MT_T001 TYPE SORTED TABLE OF TY_T001 WITH UNIQUE KEY BUKRS .
+
+  METHODS DETERMINE_LOCATION_FCTR
+    IMPORTING
+      !IS_FMHISV TYPE TY_FMHISV
+    RETURNING
+      VALUE(RV_LOCATION) TYPE ZTYP_OTYT .
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CM001 ----
+  METHOD CONSTRUCTOR.
+
+    MV_FIKRS = IV_FIKRS.
+
+    "Get fund center hierarchy
+    SELECT H~FISTL, H~PARENT_ST, H~HILEVEL, T~MCTXT
+           FROM FMHISV AS H
+           LEFT OUTER JOIN FMFCTRT AS T ON  T~SPRAS = @SY-LANGU
+                                        AND T~FIKRS = H~FIKRS
+                                        AND T~FICTR = H~FISTL
+                                        AND T~DATBIS >= @SY-DATUM
+           WHERE H~FIKRS = @MV_FIKRS
+           AND   H~HIVARNT = @C_HIVARNT
+           INTO TABLE @MT_FMHISV.
+
+    "Get fund center for institute
+    MT_INSTITUTE = VALUE #( ( SIGN = 'I' OPTION = 'EQ' LOW = 'IBE' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'IEP' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'UIE' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'UIL' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'ITE' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'ICB' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'IES' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'MGI' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'ICT' )
+                            ( SIGN = 'I' OPTION = 'EQ' LOW = 'UIS' ) ).
+
+    "Get company code for institutes
+    SELECT BUKRS,
+           YYORGEH AS ORGEH
+           FROM T001 WHERE BUKRS <> 'UNES'
+           INTO TABLE @MT_T001.
+
+    LOOP AT MT_T001 ASSIGNING FIELD-SYMBOL(<LS_T001>).
+      SELECT SINGLE STEXT FROM HRP1000 WHERE PLVAR = '01'
+                                       AND   OTYPE = 'O'
+                                       AND   OBJID = @<LS_T001>-ORGEH
+                                       AND   ISTAT = '1'
+                                       AND   BEGDA <= @SY-DATUM
+                                       AND   ENDDA >= @SY-DATUM
+                                       AND   LANGU = @SY-LANGU
+                          INTO @<LS_T001>-STEXT.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CM002 ----
+  METHOD GET_LOCATION_FROM_FUND_CENTER.
+
+    DATA LS_FMHISV TYPE TY_FMHISV.
+    DATA LS_FMHISV_INPUT TYPE TY_FMHISV.
+
+    CLEAR: EV_LOCATION, EV_TEXT.
+
+    IF IV_FISTL IS INITIAL.
+      EXIT.
+    ENDIF.
+
+    IF IV_FISTL = 'HQ'.
+      EV_LOCATION = 'H'.
+    ELSE.
+      READ TABLE MT_FMHISV INTO LS_FMHISV_INPUT WITH KEY FISTL = IV_FISTL.
+      IF SY-SUBRC <> 0.
+        EXIT.
+      ENDIF.
+      LS_FMHISV = LS_FMHISV_INPUT.
+      EV_LOCATION = ME->DETERMINE_LOCATION_FCTR( LS_FMHISV ).
+      IF EV_LOCATION IS INITIAL.
+        DO.
+          READ TABLE MT_FMHISV INTO LS_FMHISV WITH KEY FISTL = LS_FMHISV-PARENT_ST.
+          IF SY-SUBRC <> 0.
+            EXIT.
+          ENDIF.
+          EV_LOCATION = ME->DETERMINE_LOCATION_FCTR( LS_FMHISV ).
+          IF EV_LOCATION IS NOT INITIAL.
+            EXIT.
+          ENDIF.
+        ENDDO.
+      ENDIF.
+    ENDIF.
+
+    CASE EV_LOCATION.
+      WHEN 'H'.
+        EV_TEXT = IV_FISTL.
+      WHEN 'I'.
+        EV_TEXT = LS_FMHISV-MCTXT.
+      WHEN 'F'.
+        EV_TEXT = LS_FMHISV_INPUT-MCTXT.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CM003 ----
+  METHOD GET_LOCATION_FROM_COMP_CODE.
+
+    READ TABLE MT_T001 INTO DATA(LS_T001) WITH KEY BUKRS = IV_BUKRS.
+    IF SY-SUBRC = 0.
+      IF IV_BUKRS = 'UBO'.
+        EV_LOCATION = 'F'.
+      ELSE.
+        EV_LOCATION = 'I'.
+      ENDIF.
+      EV_TEXT = LS_T001-STEXT.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CM004 ----
+  METHOD DETERMINE_LOCATION_FCTR.
+
+    CLEAR RV_LOCATION.
+
+    IF IS_FMHISV-FISTL IN MT_INSTITUTE.
+      RV_LOCATION = 'I'.
+    ELSEIF IS_FMHISV-FISTL = 'HEQ' OR IS_FMHISV-HILEVEL = 1.
+      RV_LOCATION = 'H'.
+    ELSEIF IS_FMHISV-FISTL = 'FLD'.
+      RV_LOCATION = 'F'.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FI_LOCATION_DETERMINATION=CU ----
+CLASS YCL_FI_LOCATION_DETERMINATION DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  DATA:
+    MT_INSTITUTE TYPE RANGE OF FISTL .
+
+  METHODS GET_LOCATION_FROM_FUND_CENTER
+    IMPORTING
+      !IV_FISTL TYPE ANY
+    EXPORTING
+      !EV_LOCATION TYPE ZTYP_OTYT
+      !EV_TEXT TYPE ANY .
+  METHODS CONSTRUCTOR
+    IMPORTING
+      !IV_FIKRS TYPE FIKRS DEFAULT 'UNES' .
+  METHODS GET_LOCATION_FROM_COMP_CODE
+    IMPORTING
+      !IV_BUKRS TYPE BUKRS
+    EXPORTING
+      !EV_LOCATION TYPE ZTYP_OTYT
+      !EV_TEXT TYPE YE_HR_FIELD_SECTOR .

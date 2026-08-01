@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Report  YEXECFM
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  YEXECFM.
+
+TABLES: YFUNCMOD.
+
+
+PARAMETERS: P_FMNAME LIKE YFUNCMOD-FUNCNAME MATCHCODE OBJECT YFUNCMOD.
+
+
+DATA: FB_INIT_INSTANCE TYPE REF TO CL_FB_FUNCTION_INITIAL_SCREEN,
+      L_REQUEST   TYPE REF TO CL_WB_REQUEST.
+
+SELECT SINGLE * FROM YFUNCMOD
+      WHERE FUNCNAME = P_FMNAME.
+
+CHECK SY-SUBRC IS INITIAL.
+
+
+DATA: STARTUP_MANAGER  TYPE REF TO CL_WB_STARTUP,
+      L_OBJECT_NAME TYPE SEU_OBJKEY,
+      L_WB_REQUEST     TYPE REF TO CL_WB_REQUEST,
+      L_WB_REQUEST_SET TYPE REF TO CL_WB_REQUEST OCCURS 0.
+
+*   Request für Einstiegsbild SE38 erzeugen
+CALL METHOD CL_FB_FUNCTION_INITIAL_SCREEN=>CREATE_REQUEST
+  IMPORTING
+    WB_REQUEST = L_WB_REQUEST.
+*   Startup Manager erzeugen
+CREATE OBJECT STARTUP_MANAGER.
+*   Request(menge) an Manager geben
+L_OBJECT_NAME+40 = P_FMNAME.
+    CALL METHOD L_WB_REQUEST->SET_OBJECT_NAME
+      EXPORTING
+        P_OBJECT_NAME = L_OBJECT_NAME.
+    CALL METHOD L_WB_REQUEST->SET_OPERATION
+      EXPORTING
+        P_OPERATION = 'EXECUTE'.
+
+APPEND L_WB_REQUEST TO L_WB_REQUEST_SET.
+CALL METHOD STARTUP_MANAGER->START
+  EXPORTING
+    P_WB_REQUEST_SET = L_WB_REQUEST_SET
+  EXCEPTIONS
+    OTHERS           = 1.
+
+*  write: / 'This is the end!'.

@@ -31,6 +31,7 @@ merely exists.
 Run: python Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py [PACKAGE]
 """
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
@@ -45,11 +46,56 @@ def pool_name(cls):
     return cls.ljust(30, "=") + "CP"
 
 
+class Session:
+    """A connection that RECONNECTS instead of dying.
+
+    P01 drops mid-extraction: the connection poisons after roughly a dozen calls and returns
+    RFC_COMMUNICATION_FAILURE 'partner not reached'. This is already recorded in the project
+    as the pattern for the log accumulator, and this extractor did not carry it — so a run
+    that had already read half a package threw everything away on one transient failure.
+
+    Distinguishing the two error kinds is the whole point. A COMMUNICATION failure means try
+    again on a fresh connection; an APPLICATION error (the object does not exist, the source
+    is empty) means move on. Retrying the second forever would look like resilience and be a
+    hang.
+    """
+
+    def __init__(self, system="P01"):
+        self.system = system
+        self.conn = get_connection(system)
+        self.reconnects = 0
+
+    def call(self, fm, **kw):
+        for attempt in range(4):
+            try:
+                return self.conn.call(fm, **kw)
+            except Exception as e:                                # noqa: BLE001
+                msg = str(e)
+                if "COMMUNICATION_FAILURE" not in msg and "not reached" not in msg:
+                    raise                                         # a real answer: do not retry
+                self.reconnects += 1
+                print(f"    [reconnect {self.reconnects}] {self.system} dropped, retrying")
+                time.sleep(2 + attempt * 3)
+                try:
+                    self.conn = get_connection(self.system)
+                except Exception:                                 # noqa: BLE001
+                    continue
+        raise RuntimeError(f"{self.system} unreachable after 4 attempts")
+
+    def close(self):
+        try:
+            self.conn.close()
+        except Exception:                                         # noqa: BLE001
+            pass
+
+
 def read_program(conn, name):
-    """Source lines of a program, or []. Never raises."""
+    """Source lines of a program, or []. Never raises on a missing object."""
     try:
         r = conn.call("RPY_PROGRAM_READ", PROGRAM_NAME=name, ONLY_SOURCE="X")
         return [x.get("LINE", "") for x in (r.get("SOURCE_EXTENDED") or [])]
+    except RuntimeError:
+        raise                                                     # the system is gone: stop
     except Exception:                                             # noqa: BLE001
         return []
 
@@ -81,7 +127,7 @@ def read_class(conn, cls):
 
 def main():
     package = sys.argv[1] if len(sys.argv) > 1 else "ZPBC"
-    conn = get_connection("P01")
+    conn = Session("P01")
     r = conn.call("RFC_READ_TABLE", QUERY_TABLE="TADIR", DELIMITER="|",
                   FIELDS=[{"FIELDNAME": "OBJECT"}, {"FIELDNAME": "OBJ_NAME"}],
                   OPTIONS=[{"TEXT": f"DEVCLASS = '{package}'"}], ROWCOUNT=500)

@@ -1,0 +1,402 @@
+* ==== CLASS POOL YCL_FI_VAT_BALANCE_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_VAT_BALANCE_BL
+
+*"* local type definitions
+INCLUDE YCL_FI_VAT_BALANCE_BL=========CCDEF.
+
+*"* class YCL_FI_VAT_BALANCE_BL definition
+*"* public declarations
+  INCLUDE YCL_FI_VAT_BALANCE_BL=========CU.
+*"* protected declarations
+  INCLUDE YCL_FI_VAT_BALANCE_BL=========CO.
+*"* private declarations
+  INCLUDE YCL_FI_VAT_BALANCE_BL=========CI.
+ENDCLASS. "YCL_FI_VAT_BALANCE_BL definition
+
+*"* macro definitions
+INCLUDE YCL_FI_VAT_BALANCE_BL=========CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_VAT_BALANCE_BL=========CCIMP.
+
+CLASS YCL_FI_VAT_BALANCE_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_VAT_BALANCE_BL implementation
+
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CI ----
+PRIVATE SECTION.
+
+  DATA MV_EXCLUDE_CLEAR_ITEMS TYPE XFELD .
+  DATA MV_OPEN_DATE TYPE DATUM .
+
+  METHODS SET_AMOUNT_FOR_BAPI .
+  METHODS GET_DATA_FROM_DATABASE .
+  METHODS HANDLE_LINK_CLICK
+    FOR EVENT LINK_CLICK OF CL_SALV_EVENTS_TABLE
+    IMPORTING
+      !ROW
+      !COLUMN .
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM001 ----
+  METHOD GET_DATA.
+
+    MV_OPEN_DATE = IV_OPEN_DATE.
+    MV_EXCLUDE_CLEAR_ITEMS = IV_EXCLUDE_CLEAR_ITEMS.
+
+    ME->GET_DATA_FROM_DATABASE( ).
+
+    IF IV_FOR_BAPI = ABAP_TRUE.
+      ME->SET_AMOUNT_FOR_BAPI( ).
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM002 ----
+  METHOD GET_DATA_FROM_DATABASE.
+
+    DATA LV_BAPI_AMOUNT_ZERO TYPE BAPICURR_D VALUE 0.
+
+    "Extract data from BSIS: open items
+    SELECT @ICON_LED_RED AS STATUS,
+           B~BUKRS,
+           B~HKONT,
+           T1~TXT50 AS HKONT_TEXT,
+           B~BELNR,
+           B~BUZEI,
+           B~GJAHR,
+           B~XBLNR,
+           F~CPUDT,
+           F~USNAM,
+           B~BLDAT,
+           B~BUDAT,
+           B~BLART,
+           T2~LTEXT AS BLART_TEXT,
+           B~GSBER,
+           B~BSCHL,
+           T3~LTEXT AS BSCHL_TEXT,
+           B~SHKZG,
+           B~DMBTR * CASE B~SHKZG WHEN 'H' THEN -1 WHEN 'S' THEN 1 END,
+           C~WAERS AS DWAER,
+           B~WRBTR * CASE B~SHKZG WHEN 'H' THEN -1 WHEN 'S' THEN 1 END,
+           B~WAERS,
+           @LV_BAPI_AMOUNT_ZERO,
+           B~ZUONR,
+           B~SGTXT,
+           G~XREF1,
+           T4~FOTXT,
+           B~FISTL
+           FROM BSIS AS B
+           LEFT OUTER JOIN BKPF AS F ON  F~BUKRS = B~BUKRS
+                                     AND F~BELNR = B~BELNR
+                                     AND F~GJAHR = B~GJAHR
+           LEFT OUTER JOIN BSEG AS G ON  G~BUKRS = B~BUKRS
+                                     AND G~BELNR = B~BELNR
+                                     AND G~GJAHR = B~GJAHR
+                                     AND G~BUZEI = B~BUZEI
+           LEFT OUTER JOIN T001 AS C ON C~BUKRS = B~BUKRS
+           LEFT OUTER JOIN SKAT AS T1 ON  T1~SPRAS = @SY-LANGU
+                                      AND T1~KTOPL = 'UNES'
+                                      AND T1~SAKNR = B~HKONT
+           LEFT OUTER JOIN T003T AS T2 ON  T2~SPRAS = @SY-LANGU
+                                       AND T2~BLART = B~BLART
+           LEFT OUTER JOIN TBSLT AS T3 ON  T3~SPRAS = @SY-LANGU
+                                       AND T3~BSCHL = B~BSCHL
+                                       AND T3~UMSKZ = @SPACE
+           LEFT OUTER JOIN YFO_CODES AS T4 ON T4~FOCOD = G~XREF1
+           WHERE B~BUKRS = @MP_BUKRS
+           AND   B~HKONT IN @MR_HKONT
+           AND   B~BUDAT <= @MV_OPEN_DATE
+           INTO TABLE @MT_LIST.
+
+    CHECK MV_EXCLUDE_CLEAR_ITEMS = ABAP_FALSE.
+
+    "Extract data from BSAS: cleared items
+    SELECT @ICON_LED_YELLOW AS STATUS,
+           B~BUKRS,
+           B~HKONT,
+           T1~TXT50 AS HKONT_TEXT,
+           B~BELNR,
+           B~BUZEI,
+           B~GJAHR,
+           B~XBLNR,
+           F~CPUDT,
+           F~USNAM,
+           B~BLDAT,
+           B~BUDAT,
+           B~BLART,
+           T2~LTEXT AS BLART_TEXT,
+           B~GSBER,
+           B~BSCHL,
+           T3~LTEXT AS BSCHL_TEXT,
+           B~SHKZG,
+           B~DMBTR * CASE B~SHKZG WHEN 'H' THEN -1 WHEN 'S' THEN 1 END,
+           C~WAERS AS DWAER,
+           B~WRBTR * CASE B~SHKZG WHEN 'H' THEN -1 WHEN 'S' THEN 1 END,
+           B~WAERS,
+           @LV_BAPI_AMOUNT_ZERO,
+           B~ZUONR,
+           B~SGTXT,
+           G~XREF1,
+           T4~FOTXT,
+           B~FISTL
+           FROM BSAS AS B
+           LEFT OUTER JOIN BKPF AS F ON  F~BUKRS = B~BUKRS
+                                     AND F~BELNR = B~BELNR
+                                     AND F~GJAHR = B~GJAHR
+           LEFT OUTER JOIN BSEG AS G ON  G~BUKRS = B~BUKRS
+                                     AND G~BELNR = B~BELNR
+                                     AND G~GJAHR = B~GJAHR
+                                     AND G~BUZEI = B~BUZEI
+           LEFT OUTER JOIN T001 AS C ON C~BUKRS = B~BUKRS
+           LEFT OUTER JOIN SKAT AS T1 ON  T1~SPRAS = @SY-LANGU
+                                      AND T1~KTOPL = 'UNES'
+                                      AND T1~SAKNR = B~HKONT
+           LEFT OUTER JOIN T003T AS T2 ON  T2~SPRAS = @SY-LANGU
+                                       AND T2~BLART = B~BLART
+           LEFT OUTER JOIN TBSLT AS T3 ON  T3~SPRAS = @SY-LANGU
+                                       AND T3~BSCHL = B~BSCHL
+                                       AND T3~UMSKZ = @SPACE
+           LEFT OUTER JOIN YFO_CODES AS T4 ON T4~FOCOD = G~XREF1
+           WHERE B~BUKRS = @MP_BUKRS
+           AND   B~HKONT IN @MR_HKONT
+           AND   B~AUGDT > @MV_OPEN_DATE
+           AND   B~BUDAT <= @MV_OPEN_DATE
+           APPENDING TABLE @MT_LIST.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM003 ----
+  METHOD INIT_ALV.
+
+    SUPER->INIT_ALV( EXPORTING IV_REPID = IV_REPID
+                     CHANGING CT_TABLE = MT_LIST ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM004 ----
+  METHOD SET_ALV_OTHERS.
+
+    DATA LO_TOOLTIPS TYPE REF TO CL_SALV_TOOLTIPS.
+    DATA LO_FUNCTIONAL_SETTINGS TYPE REF TO CL_SALV_FUNCTIONAL_SETTINGS.
+    DATA LV_VALUE TYPE LVC_VALUE.
+    DATA LO_EVENTS TYPE REF TO CL_SALV_EVENTS_TABLE.
+
+    LO_FUNCTIONAL_SETTINGS = MO_SALV_TABLE->GET_FUNCTIONAL_SETTINGS( ).
+    LO_TOOLTIPS = LO_FUNCTIONAL_SETTINGS->GET_TOOLTIPS( ).
+
+    "set icons tooltips
+    TRY.
+        LV_VALUE = ICON_LED_RED.
+        LO_TOOLTIPS->ADD_TOOLTIP( TYPE    = CL_SALV_TOOLTIP=>C_TYPE_ICON
+                                  VALUE   = LV_VALUE
+                                  TOOLTIP = 'Open item' ).
+      CATCH CX_SALV_EXISTING.
+    ENDTRY.
+
+    TRY.
+        LV_VALUE = ICON_LED_YELLOW.
+        LO_TOOLTIPS->ADD_TOOLTIP( TYPE    = CL_SALV_TOOLTIP=>C_TYPE_ICON
+                                  VALUE   = LV_VALUE
+                                  TOOLTIP = 'Cleared item' ).
+      CATCH CX_SALV_EXISTING.
+    ENDTRY.
+
+    "Set event management
+    LO_EVENTS = MO_SALV_TABLE->GET_EVENT( ).
+    SET HANDLER ME->HANDLE_LINK_CLICK FOR LO_EVENTS.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM005 ----
+  METHOD SET_ALV_COLUMNS.
+
+    DATA LO_COLUMN TYPE REF TO CL_SALV_COLUMN_TABLE.
+
+    SUPER->SET_ALV_COLUMNS( ).
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'STATUS' ).
+        LO_COLUMN->SET_ICON( IF_SALV_C_BOOL_SAP=>TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BELNR' ).
+        LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Doc number' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BUZEI' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Doc item' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BLART' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Doc type' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BLART_TEXT' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Doc type text' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BSCHL' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Posting key' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'BSCHL_TEXT' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Posting key text' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'DMBTR' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Local amount' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'DMBTR' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Local amount' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'WRBTR' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Document amount' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'WAERS' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Document Cur.' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'WRBTR_EXT' ).
+        LO_COLUMN->SET_TECHNICAL( ABAP_TRUE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'SGTXT' ).
+        LO_COLUMN->SET_MEDIUM_TEXT( 'Item text' ).
+        LO_COLUMN->SET_FIXED_HEADER_TEXT( 'M').
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+    TRY.
+        LO_COLUMN ?= MO_SALV_COLUMNS_TABLE->GET_COLUMN( 'FISTL' ).
+        LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+      CATCH CX_SALV_NOT_FOUND.
+    ENDTRY.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM006 ----
+  METHOD SET_DISPLAY_SETTINGS.
+
+    SUPER->SET_DISPLAY_SETTINGS( ).
+
+    MO_DISPLAY_SETTINGS->SET_STRIPED_PATTERN( ABAP_TRUE ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM007 ----
+  METHOD HANDLE_LINK_CLICK.
+
+    CHECK ROW IS NOT INITIAL.
+    READ TABLE MT_LIST INTO DATA(LS_LIST) INDEX ROW.
+
+    CASE COLUMN.
+      WHEN 'BELNR'.
+        SUBMIT YFI_DISPLAY_DOCUMENT WITH P_BUKRS = LS_LIST-BUKRS
+                                    WITH P_BELNR = LS_LIST-BELNR
+                                    WITH P_GJAHR = LS_LIST-GJAHR
+                                    WITH P_BUZEI = LS_LIST-BUZEI
+                                    AND RETURN.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CM008 ----
+  METHOD SET_AMOUNT_FOR_BAPI.
+
+    DATA LT_CURX TYPE RANGE OF SYCURR.
+    DATA LO_CURRENCY_OP TYPE REF TO YCL_CA_CURRENCY_OP.
+
+    "Get currencies with decimal places
+    SELECT 'I', 'EQ', CURRKEY AS LOW FROM TCURX INTO TABLE @LT_CURX.
+
+    LO_CURRENCY_OP = NEW YCL_CA_CURRENCY_OP( ).
+
+    LOOP AT MT_LIST ASSIGNING FIELD-SYMBOL(<LS_LIST>).
+      IF <LS_LIST>-WAERS IN LT_CURX.
+        <LS_LIST>-WRBTR_EXT = <LS_LIST>-WRBTR * LO_CURRENCY_OP->GET_DECIMAL_FACTOR( IV_CURRENCY = <LS_LIST>-WAERS ).
+      ELSE.
+        <LS_LIST>-WRBTR_EXT = <LS_LIST>-WRBTR.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CO ----
+PROTECTED SECTION.
+
+  METHODS SET_ALV_COLUMNS
+    REDEFINITION .
+  METHODS SET_ALV_OTHERS
+    REDEFINITION .
+  METHODS SET_DISPLAY_SETTINGS
+    REDEFINITION .
+
+* ---- YCL_FI_VAT_BALANCE_BL=========CU ----
+CLASS YCL_FI_VAT_BALANCE_BL DEFINITION
+  PUBLIC
+  INHERITING FROM YCL_CA_REPORT_SHARE_STATEMENTS
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  TYPES:
+    BEGIN OF TY_LIST,
+        STATUS TYPE P_99S_STATU.
+        INCLUDE TYPE YSFI_VAT_BALANCE.
+      TYPES: END OF TY_LIST .
+
+  DATA MP_BUKRS TYPE BUKRS .
+  DATA:
+    MR_HKONT TYPE RANGE OF HKONT .
+  DATA:
+    MT_LIST TYPE TABLE OF TY_LIST .
+
+  METHODS GET_DATA
+    IMPORTING
+      !IV_OPEN_DATE TYPE DATUM
+      !IV_EXCLUDE_CLEAR_ITEMS TYPE XFELD
+      !IV_FOR_BAPI TYPE XFELD DEFAULT ABAP_FALSE .
+
+  METHODS INIT_ALV
+    REDEFINITION .

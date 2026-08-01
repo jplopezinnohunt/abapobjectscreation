@@ -1,0 +1,1362 @@
+* ==== CLASS POOL YCL_FI_BANK_RECONCILIATION_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_FI_BANK_RECONCILIATION_BL
+
+*"* local type definitions
+INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CCDEF.
+
+*"* class YCL_FI_BANK_RECONCILIATION_BL definition
+*"* public declarations
+  INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CU.
+*"* protected declarations
+  INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CO.
+*"* private declarations
+  INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CI.
+ENDCLASS. "YCL_FI_BANK_RECONCILIATION_BL definition
+
+*"* macro definitions
+INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CCMAC.
+*"* local class implementation
+INCLUDE YCL_FI_BANK_RECONCILIATION_BL=CCIMP.
+
+CLASS YCL_FI_BANK_RECONCILIATION_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_FI_BANK_RECONCILIATION_BL implementation
+
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    TTY_BLART TYPE RANGE OF BLART .
+  TYPES:
+    BEGIN OF TY_BSIS,
+      BUKRS      TYPE BSIS-BUKRS,
+      HKONT      TYPE BSIS-HKONT,
+      HKONT_TEXT TYPE TEXT50,
+      AUGDT      TYPE BSIS-AUGDT,
+      AUGBL      TYPE BSIS-AUGBL,
+      ZUONR      TYPE BSIS-ZUONR,
+      GJAHR      TYPE BSIS-GJAHR,
+      BELNR      TYPE BSIS-BELNR,
+      BUZEI      TYPE BSIS-BUZEI,
+      BUDAT      TYPE BSIS-BUDAT,
+      BLDAT      TYPE BSIS-BLDAT,
+      BLART      TYPE BSIS-BLART,
+      BSCHL      TYPE BSIS-BSCHL,
+      SHKZG      TYPE BSIS-SHKZG,
+      GSBER      TYPE BSIS-GSBER,
+      DMBTR      TYPE BSIS-DMBTR,
+      DWAER      TYPE T001-WAERS,
+      WRBTR      TYPE BSIS-WRBTR,
+      WWAER      TYPE BSIS-WAERS,
+      VALUT      TYPE BSIS-VALUT,
+      SGTXT      TYPE BSIS-SGTXT,
+      STBLG      TYPE BKPF-STBLG,
+      PERNR      TYPE BSEG-PERNR,
+      XOPVW      TYPE BSIS-XOPVW,
+      BSTAT      TYPE BSIS-BSTAT,
+      BDIFF      TYPE BSIS-BDIFF,
+      BDIF2      TYPE BSIS-BDIF2,
+      BDIF3      TYPE BSIS-BDIF3,
+      XREF1      TYPE BSEG-XREF1,
+      MCTXT      TYPE FMFCTRT-MCTXT,
+      USNAM      TYPE BKPF-USNAM,
+    END OF TY_BSIS .
+  TYPES:
+    BEGIN OF TY_HKONT_NAME,
+      BUKRS TYPE SKB1-BUKRS,
+      SAKNR TYPE SKB1-SAKNR,
+      TEXT1 TYPE T012T-TEXT1,
+      NAME  TYPE TEXT50,
+    END OF TY_HKONT_NAME .
+  TYPES:
+    BEGIN OF TY_DASH_ALV,
+      BUKRS         TYPE YSFI_BANK_RECONCILIATION_DASH-BUKRS,
+      HKONT_NAME    TYPE YSFI_BANK_RECONCILIATION_DASH-HKONT_NAME,
+      STATUS_ICON_O TYPE P_99S_STATU,    "Older
+      STATUS_TEXT_O TYPE TEXT50,
+      OI_NUMBER_O   TYPE YSFI_BANK_RECONCILIATION_DASH-OI_NUMBER,
+      Z_BLART_O     TYPE YSFI_BANK_RECONCILIATION_DASH-Z_BLART,
+      Z_AMOUNT_O    TYPE YSFI_BANK_RECONCILIATION_DASH-Z_AMOUNT,
+      Z_CURRENCY_O  TYPE YSFI_BANK_RECONCILIATION_DASH-Z_CURRENCY,
+      STATUS_ICON_3 TYPE P_99S_STATU,
+      STATUS_TEXT_3 TYPE TEXT50,
+      OI_NUMBER_3   TYPE YSFI_BANK_RECONCILIATION_DASH-OI_NUMBER,
+      Z_BLART_3     TYPE YSFI_BANK_RECONCILIATION_DASH-Z_BLART,
+      Z_AMOUNT_3    TYPE YSFI_BANK_RECONCILIATION_DASH-Z_AMOUNT,
+      Z_CURRENCY_3  TYPE YSFI_BANK_RECONCILIATION_DASH-Z_CURRENCY,
+      STATUS_ICON_2 TYPE P_99S_STATU,
+      STATUS_TEXT_2 TYPE TEXT50,
+      OI_NUMBER_2   TYPE YSFI_BANK_RECONCILIATION_DASH-OI_NUMBER,
+      Z_BLART_2     TYPE YSFI_BANK_RECONCILIATION_DASH-Z_BLART,
+      Z_AMOUNT_2    TYPE YSFI_BANK_RECONCILIATION_DASH-Z_AMOUNT,
+      Z_CURRENCY_2  TYPE YSFI_BANK_RECONCILIATION_DASH-Z_CURRENCY,
+      STATUS_ICON_1 TYPE P_99S_STATU,
+      STATUS_TEXT_1 TYPE TEXT50,
+      OI_NUMBER_1   TYPE YSFI_BANK_RECONCILIATION_DASH-OI_NUMBER,
+      Z_BLART_1     TYPE YSFI_BANK_RECONCILIATION_DASH-Z_BLART,
+      Z_AMOUNT_1    TYPE YSFI_BANK_RECONCILIATION_DASH-Z_AMOUNT,
+      Z_CURRENCY_1  TYPE YSFI_BANK_RECONCILIATION_DASH-Z_CURRENCY,
+    END OF TY_DASH_ALV .
+
+  DATA MT_USER_ASSIGNMENT TYPE YCL_HR_USER_ASSIGNMENT=>TTY_USER_ASSIGNMENT .
+  DATA MV_OLDEST_USER_BEGDA TYPE BEGDA .
+  DATA MV_PERIOD_1 TYPE YE_PERIOD .
+  DATA MV_PERIOD_2 TYPE YE_PERIOD .
+  DATA MV_PERIOD_3 TYPE YE_PERIOD .
+  DATA MV_PERIOD_O TYPE YE_PERIOD .
+  DATA MS_T001 TYPE T001 .
+  DATA MV_REPID TYPE SY-REPID .
+  DATA:
+    MT_BSIS TYPE TABLE OF TY_BSIS .
+  DATA:
+    MT_HKONT_NAME TYPE SORTED TABLE OF TY_HKONT_NAME WITH UNIQUE KEY BUKRS SAKNR .
+  DATA MP_BUKRS TYPE BUKRS .
+  DATA:
+    MR_HKONT TYPE RANGE OF HKONT .
+  DATA:
+    MT_DASH_ALV TYPE TABLE OF TY_DASH_ALV .
+  DATA:
+    MR_Z_BLART TYPE RANGE OF BLART .
+  DATA MV_KEY_DATE_Z TYPE DATUM .
+  DATA MV_REPORT_TYPE TYPE CHAR1 .
+  DATA MO_DISPLAY_SETTINGS TYPE REF TO CL_SALV_DISPLAY_SETTINGS .
+  DATA MO_SALV_TABLE TYPE REF TO CL_SALV_TABLE .
+  DATA MO_LAYOUT TYPE REF TO CL_SALV_LAYOUT .
+  DATA MV_KEY_DATE_O TYPE DATUM .
+
+  METHODS PREPARE_FOR_LOCATION_SECTOR .
+  METHODS DISPLAY_ICON_LEGEND .
+  METHODS DISPLAY_DETAIL_IN_POPUP
+    IMPORTING
+      !IV_ROW TYPE SALV_DE_ROW
+      !IV_SUFFIX TYPE CHAR2 .
+  METHODS GET_DASHBOARD_STATUS
+    IMPORTING
+      !IV_OI_NUMBER TYPE INT2
+      !IV_Z_BLART TYPE BLART
+      !IV_Z_AMOUNT TYPE DMBTRV
+      !IV_Z_CURRENCY TYPE HWAER
+    EXPORTING
+      !EV_STATUS_TEXT TYPE TEXT50
+      !EV_STATUS_ICON TYPE P_99S_STATU .
+  METHODS GET_MONTH_NAME
+    IMPORTING
+      !IV_MONTH TYPE FCMNR
+    RETURNING
+      VALUE(RV_TEXT) TYPE FCLTX .
+  METHODS SET_DASHBOARD_DOCUMENT_TYPE
+    IMPORTING
+      !IV_BLART TYPE BLART
+    CHANGING
+      !CV_BLART TYPE BLART .
+  METHODS COMPUTE_DASHBOARD_DATA .
+  METHODS GET_PREVIOUS_PERIOD
+    IMPORTING
+      !IV_PERIOD TYPE YE_PERIOD
+    RETURNING
+      VALUE(RV_PERIOD) TYPE YE_PERIOD .
+  METHODS HANDLE_USER_COMMAND
+    FOR EVENT ADDED_FUNCTION OF CL_SALV_EVENTS_TABLE
+    IMPORTING
+      !E_SALV_FUNCTION .
+  METHODS SET_DATA_TO_ALV_DASHBOARD .
+  METHODS SET_HEADER .
+  METHODS GET_CLOPE
+    IMPORTING
+      !IS_BSIS TYPE TY_BSIS
+    EXPORTING
+      !EV_CLOPE TYPE ICO_AUGP
+      !EV_ISTAT TYPE YE_FI_ITEM_STATUS .
+  METHODS GET_DELAY
+    IMPORTING
+      !IV_BLDAT TYPE BLDAT
+    EXPORTING
+      !EV_DELAY TYPE YE_CA_DELAY
+      !EV_STATUS TYPE YE_CA_TIME_STATUS
+      !ES_COLOR TYPE LVC_S_SCOL .
+  METHODS SET_COLUMNS .
+  METHODS GET_HKONT_NAME .
+  METHODS READ_BSIS
+    IMPORTING
+      !IV_BEGDA TYPE BEGDA DEFAULT '20000101'
+      !IV_ENDDA TYPE ENDDA DEFAULT SY-DATUM
+      !IT_BLART TYPE TTY_BLART OPTIONAL .
+  METHODS HANDLE_LINK_CLICK
+    FOR EVENT LINK_CLICK OF CL_SALV_EVENTS_TABLE
+    IMPORTING
+      !ROW
+      !COLUMN .
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM001 ----
+  METHOD SET_SELECTION_VALUES.
+
+    FIELD-SYMBOLS <LT_RANGE> TYPE ANY TABLE.
+    FIELD-SYMBOLS <LV_PARAM> TYPE ANY.
+    DATA LV_SELNAME TYPE FIELDNAME.
+
+    LV_SELNAME = IV_SELNAME.
+    CASE IV_KIND.
+      WHEN 'S'.   "SELECT-OPTIONS
+        REPLACE 'S_' IN LV_SELNAME WITH 'MR_'.
+        ASSIGN (LV_SELNAME) TO <LT_RANGE>.
+        CHECK <LT_RANGE> IS ASSIGNED.
+        <LT_RANGE> = IT_VALUE.
+      WHEN 'P'. "PARAMETERS
+        REPLACE 'P_' IN LV_SELNAME WITH 'MP_'.
+        ASSIGN (LV_SELNAME) TO <LV_PARAM>.
+        CHECK <LV_PARAM> IS ASSIGNED.
+        <LV_PARAM> = IV_VALUE.
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM002 ----
+  METHOD GET_DATA.
+
+    DATA LV_DATE TYPE DATUM.
+    DATA LV_FIKRS TYPE FIKRS.
+
+    MV_KEY_DATE_Z = IV_KEY_DATE_Z.
+    MV_KEY_DATE_O = IV_KEY_DATE_O.
+    MV_REPORT_TYPE = IV_REPORT_TYPE.
+
+    "Set Bank document type
+    MR_Z_BLART = VALUE #( ( SIGN = 'I' OPTION = 'EQ' LOW = 'Z1' )
+                          ( SIGN = 'I' OPTION = 'EQ' LOW = 'Z2' )
+                          ( SIGN = 'I' OPTION = 'EQ' LOW = 'Z3' ) ).
+
+    CLEAR MT_BSIS.
+    "Get open items document type Z1 and Z2 and Z3
+    LV_DATE = MV_KEY_DATE_O + 1.
+    ME->READ_BSIS( IV_BEGDA = LV_DATE
+                   IV_ENDDA = MV_KEY_DATE_Z
+                   IT_BLART = MR_Z_BLART ).
+    "Get open items for months before (all document type)
+    ME->READ_BSIS( IV_ENDDA = MV_KEY_DATE_O ).
+
+    "Get Name from G/L account
+    ME->GET_HKONT_NAME( ).
+
+    "Get fund center texts
+    SELECT SINGLE FIKRS FROM T001 WHERE BUKRS = @MP_BUKRS INTO @LV_FIKRS.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM003 ----
+  METHOD READ_BSIS.
+
+    CHECK IV_BEGDA <= IV_ENDDA.
+
+    SELECT B~BUKRS,
+           B~HKONT,
+           A~TXT50 AS HKONT_TEXT,
+           B~AUGDT,
+           B~AUGBL,
+           B~ZUONR,
+           B~GJAHR,
+           B~BELNR,
+           B~BUZEI,
+           B~BUDAT,
+           B~BLDAT,
+           B~BLART,
+           B~BSCHL,
+           B~SHKZG,
+           B~GSBER,
+           B~DMBTR,
+           T~WAERS AS DWAER,
+           B~WRBTR,
+           B~WAERS AS WWAER,
+           B~VALUT,
+           B~SGTXT,
+           F~STBLG,
+           G~PERNR,
+           B~XOPVW,
+           B~BSTAT,
+           B~BDIFF,
+           B~BDIF2,
+           B~BDIF3,
+           G~XREF1,
+           M~MCTXT,
+           F~USNAM
+           FROM BSIS AS B
+           LEFT OUTER JOIN T001 AS T ON T~BUKRS = B~BUKRS
+           LEFT OUTER JOIN BKPF AS F ON  F~BUKRS = B~BUKRS
+                                     AND F~BELNR = B~BELNR
+                                     AND F~GJAHR = B~GJAHR
+           LEFT OUTER JOIN BSEG AS G ON  G~BUKRS = B~BUKRS
+                                     AND G~BELNR = B~BELNR
+                                     AND G~GJAHR = B~GJAHR
+                                     AND G~BUZEI = B~BUZEI
+           LEFT OUTER JOIN SKAT AS A ON  A~SPRAS = @SY-LANGU
+                                     AND A~KTOPL = 'UNES'
+                                     AND A~SAKNR = B~HKONT
+           LEFT OUTER JOIN FMFCTRT AS M ON  M~SPRAS = @SY-LANGU
+                                        AND M~FIKRS = T~FIKRS
+                                        AND M~FICTR = G~XREF1
+                                        AND M~DATBIS >= B~BUDAT
+                                        AND M~DATAB <= B~BUDAT
+           WHERE B~BUKRS = @MP_BUKRS
+           AND   B~HKONT IN @MR_HKONT
+           AND   B~BLART IN @IT_BLART
+           AND   B~XOPVW = @ABAP_TRUE    "Open items
+           AND   B~BUDAT BETWEEN @IV_BEGDA AND @IV_ENDDA
+           APPENDING TABLE @MT_BSIS.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM004 ----
+  METHOD GET_HKONT_NAME.
+
+    DATA LT_RESULT TYPE TABLE OF TEXT50.
+    DATA LV_TEXT TYPE TEXT50.
+    DATA LV_TEXT_PREC TYPE TEXT50.
+    DATA LV_DUMMY.
+    DATA LS_HKONT_REF TYPE LINE OF YTTFI_BANK_HKONT_NAME.
+
+    SELECT B~BUKRS,
+           B~SAKNR,
+           T~TEXT1
+           FROM SKB1 AS B
+           INNER JOIN T012T AS T ON  T~SPRAS = @SY-LANGU
+                                 AND T~BUKRS = B~BUKRS
+                                 AND T~HBKID = B~HBKID
+                                 AND T~HKTID = B~HKTID
+           WHERE B~BUKRS = @MP_BUKRS
+           AND   B~SAKNR IN @MR_HKONT
+           INTO TABLE @MT_HKONT_NAME.
+
+    LOOP AT MT_HKONT_NAME ASSIGNING FIELD-SYMBOL(<LS_NAME>).
+      TRANSLATE <LS_NAME>-TEXT1 TO UPPER CASE.
+      SPLIT <LS_NAME>-TEXT1 AT ' -' INTO TABLE LT_RESULT.
+      DESCRIBE TABLE LT_RESULT LINES DATA(LV_INDEX).
+      DATA(LV_INDEX_DO)  = LV_INDEX.
+      CLEAR LV_TEXT_PREC.
+      DO LV_INDEX_DO TIMES.
+        READ TABLE LT_RESULT INTO LV_TEXT INDEX LV_INDEX.
+        CONDENSE LV_TEXT.
+        FIND FIRST OCCURRENCE OF 'UNESCO' IN LV_TEXT MATCH OFFSET DATA(LV_OFFSET).
+        IF SY-SUBRC = 0.
+          ADD 7 TO LV_OFFSET.
+          IF LV_TEXT+LV_OFFSET IS NOT INITIAL.
+            <LS_NAME>-NAME = LV_TEXT+LV_OFFSET.
+          ELSE.
+            <LS_NAME>-NAME = LV_TEXT_PREC.
+          ENDIF.
+          SPLIT <LS_NAME>-NAME AT '- ' INTO <LS_NAME>-NAME LV_DUMMY.
+          EXIT.
+        ENDIF.
+        LV_TEXT_PREC = LV_TEXT.
+        SUBTRACT 1 FROM LV_INDEX.
+      ENDDO.
+
+      IF <LS_NAME>-NAME IS INITIAL.
+        <LS_NAME>-NAME = '//UNDETERMINED//'.
+      ENDIF.
+
+      READ TABLE MT_HKONT_REF ASSIGNING FIELD-SYMBOL(<HKONT_REF>) WITH KEY BUKRS = <LS_NAME>-BUKRS
+                                                                           HKONT_NAME = <LS_NAME>-NAME.
+      IF SY-SUBRC = 0.
+        IF <LS_NAME>-TEXT1 CS 'CLOSE'.
+        ELSE.
+          CLEAR <HKONT_REF>-CLOSED.
+        ENDIF.
+      ELSE.
+        CLEAR LS_HKONT_REF.
+        LS_HKONT_REF-BUKRS = <LS_NAME>-BUKRS.
+        LS_HKONT_REF-HKONT_NAME = <LS_NAME>-NAME.
+        IF <LS_NAME>-TEXT1 CS 'CLOSE'.
+          LS_HKONT_REF-CLOSED = ABAP_TRUE.
+        ENDIF.
+        INSERT LS_HKONT_REF INTO TABLE MT_HKONT_REF.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM005 ----
+  METHOD GET_DELAY.
+
+    DATA LV_DELAY TYPE I.
+
+    CLEAR: EV_DELAY, EV_STATUS, ES_COLOR.
+
+    CHECK IV_BLDAT IS NOT INITIAL.
+
+    IF IV_BLDAT >= SY-DATUM.
+      EV_STATUS = 'T'.   "On time
+    ELSE.
+      "Get number of workday between docuent date and today
+      CALL FUNCTION 'HR_SI_WORKDAYS_IN_INTERVAL'
+        EXPORTING
+          BEGDA   = IV_BLDAT
+          ENDDA   = SY-DATUM
+          MOFID   = 'FR'
+        CHANGING
+          WRKDAYS = LV_DELAY
+*         HOLIDAYS       =
+        .
+      EV_DELAY = LV_DELAY.
+      IF EV_DELAY <= 2.
+        EV_STATUS = 'T'. "On time
+      ELSE.
+        EV_STATUS = 'D'. "Delay
+        ES_COLOR-FNAME = 'DELAY'.
+        ES_COLOR-COLOR-COL = COL_NEGATIVE.
+        ES_COLOR-COLOR-INT = 1.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM006 ----
+  METHOD GET_CLOPE.
+
+    DATA LS_BSEGP TYPE BSEGP.
+    DATA LS_ITEM TYPE RFPOSXEXT.
+
+    CLEAR: EV_CLOPE, EV_ISTAT.
+
+    MOVE-CORRESPONDING IS_BSIS TO LS_BSEGP.
+    MOVE-CORRESPONDING IS_BSIS TO LS_ITEM.
+    LS_ITEM-KOART = 'S'.  "G/L account
+
+    CALL FUNCTION 'ITEM_DERIVE_FIELDS'
+      EXPORTING
+        S_T001       = MS_T001
+        S_BSEGP      = LS_BSEGP
+        KEY_DATE     = MV_KEY_DATE_Z
+        XOPVW        = IS_BSIS-XOPVW
+        X_ICONS_ONLY = ABAP_TRUE
+*       I_KALSM      =
+      CHANGING
+        S_ITEM       = LS_ITEM
+      EXCEPTIONS
+        BAD_INPUT    = 1
+        OTHERS       = 2.
+
+    IF SY-SUBRC = 0.
+      EV_CLOPE = LS_ITEM-ICO_AUGP.
+      CASE LS_ITEM-ICO_AUGP(3).
+        WHEN ICON_LED_RED(3).   "Open item
+          EV_ISTAT = 'O'.
+        WHEN ICON_LED_YELLOW(3).  "Parked item
+          EV_ISTAT = 'K'.
+        WHEN ICON_LED_GREEN(3).  "Cleared item
+          EV_ISTAT = 'C'.
+        WHEN ICON_CHECKED(3).  "Posted item
+          EV_ISTAT = 'P'.
+      ENDCASE.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM007 ----
+  METHOD DISPLAY_ALV_DETAIL.
+
+    DATA LO_EVENTS TYPE REF TO CL_SALV_EVENTS_TABLE.
+
+    MV_REPID = IV_REPID.
+
+    "Init ALV
+    TRY.
+        CALL METHOD CL_SALV_TABLE=>FACTORY
+*      EXPORTING
+*        list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*        r_container    =
+*        container_name =
+          IMPORTING
+            R_SALV_TABLE = MO_SALV_TABLE
+          CHANGING
+            T_TABLE      = MT_LIST.
+      CATCH CX_SALV_MSG .
+    ENDTRY.
+
+    MO_SALV_TABLE->SET_SCREEN_STATUS( PFSTATUS = 'SALV_TABLE_1'
+                                      REPORT   = 'YCA_ALV_GUI_STATUS'
+                                      SET_FUNCTIONS = MO_SALV_TABLE->C_FUNCTIONS_ALL ).
+
+    LO_EVENTS = MO_SALV_TABLE->GET_EVENT( ).
+*    SET HANDLER me->handle_user_command FOR lo_events.
+    SET HANDLER ME->HANDLE_LINK_CLICK FOR LO_EVENTS.
+
+    "ALV columns
+    ME->SET_COLUMNS( ).
+
+    "Set line selections
+*    mo_selections = mo_salv_table->get_selections( ).
+*    mo_selections->set_selection_mode( if_salv_c_selection_mode=>row_column ).
+
+    "ALV layout
+    DATA LS_LAYOUT_KEY TYPE SALV_S_LAYOUT_KEY.
+
+    MO_LAYOUT = MO_SALV_TABLE->GET_LAYOUT( ).
+    LS_LAYOUT_KEY-REPORT = MV_REPID.
+    MO_LAYOUT->SET_KEY( LS_LAYOUT_KEY ).
+    MO_LAYOUT->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+
+    "ALV display settings
+    MO_DISPLAY_SETTINGS = MO_SALV_TABLE->GET_DISPLAY_SETTINGS( ).
+    MO_DISPLAY_SETTINGS->SET_STRIPED_PATTERN( ABAP_TRUE ).
+    MO_DISPLAY_SETTINGS->SET_NO_MERGING( ABAP_TRUE ).
+
+*    "Set header
+    ME->SET_HEADER( ).
+
+*    IF mv_no_auth IS NOT INITIAL.
+*      MESSAGE i006(yfi1) WITH mv_no_auth.
+*    ENDIF.
+
+    "Display list
+    MO_SALV_TABLE->DISPLAY( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM008 ----
+  METHOD SET_COLUMNS.
+
+    DATA LO_COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+    DATA LO_COLUMN TYPE REF TO CL_SALV_COLUMN_TABLE.
+    DATA LV_SUFFIX(2) TYPE C.
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    DATA LV_PERIOD_NAME TYPE TEXT20.
+    DATA LV_TEXT_L TYPE SCRTEXT_L.
+    DATA LV_TEXT_M TYPE SCRTEXT_M.
+
+    LO_COLUMNS = MO_SALV_TABLE->GET_COLUMNS( ).
+    "Column width optimization
+    LO_COLUMNS->SET_OPTIMIZE( ABAP_TRUE ).
+
+    CASE MV_REPORT_TYPE.
+      WHEN 'L'.  "Detailed list
+        TRY.
+            LO_COLUMNS->SET_COLOR_COLUMN( 'COLFIELD' ).
+          CATCH CX_SALV_DATA_ERROR.
+        ENDTRY.
+
+        TRY.
+            LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'ISTAT' ).
+            LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+          CATCH CX_SALV_NOT_FOUND.
+        ENDTRY.
+
+        TRY.
+            LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'CLOPE' ).
+            LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+            LO_COLUMN->SET_ALIGNMENT( IF_SALV_C_ALIGNMENT=>CENTERED ).
+          CATCH CX_SALV_NOT_FOUND.
+        ENDTRY.
+
+        TRY.
+            LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'BELNR' ).
+            LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+          CATCH CX_SALV_NOT_FOUND.
+        ENDTRY.
+
+        TRY.
+            LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( 'LOCATION' ).
+            LO_COLUMN->SET_LONG_TEXT( 'Location' ).
+            LO_COLUMN->SET_MEDIUM_TEXT( 'Location' ).
+            LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+          CATCH CX_SALV_NOT_FOUND.
+        ENDTRY.
+
+      WHEN 'D'.  "Dashboard
+
+        DO 4 TIMES.
+          CASE SY-INDEX.
+            WHEN 1.
+              LV_SUFFIX = '_O'.
+              LV_PERIOD_NAME = 'Older'.
+            WHEN 2.
+              LV_SUFFIX = '_3'.
+              LV_PERIOD_NAME = ME->GET_MONTH_NAME( MV_PERIOD_3+4(2) ).
+              LV_PERIOD_NAME = |{ LV_PERIOD_NAME } { MV_PERIOD_3(4) }|.
+            WHEN 3.
+              LV_SUFFIX = '_2'.
+              LV_PERIOD_NAME = ME->GET_MONTH_NAME( MV_PERIOD_2+4(2) ).
+              LV_PERIOD_NAME = |{ LV_PERIOD_NAME } { MV_PERIOD_2(4) }|.
+            WHEN 4.
+              LV_SUFFIX = '_1'.
+              LV_PERIOD_NAME = ME->GET_MONTH_NAME( MV_PERIOD_1+4(2) ).
+              LV_PERIOD_NAME = |{ LV_PERIOD_NAME } { MV_PERIOD_1(4) }|.
+          ENDCASE.
+
+          LV_FIELDNAME = |STATUS_ICON{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = |Status { LV_PERIOD_NAME }|.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'S' ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+          LV_FIELDNAME = |STATUS_TEXT{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = LV_PERIOD_NAME.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+              LO_COLUMN->SET_CELL_TYPE( IF_SALV_C_CELL_TYPE=>HOTSPOT ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+          LV_FIELDNAME = |OI_NUMBER{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = |OI number for { LV_PERIOD_NAME }|.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+              LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+          LV_FIELDNAME = |Z_BLART{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = |Doc types for { LV_PERIOD_NAME }|.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+              LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+          LV_FIELDNAME = |Z_AMOUNT{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = |Amount for { LV_PERIOD_NAME }|.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+              LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+          LV_FIELDNAME = |Z_CURRENCY{ LV_SUFFIX }|.
+          LV_TEXT_M = LV_TEXT_L = |Currency for { LV_PERIOD_NAME }|.
+          TRY.
+              LO_COLUMN ?= LO_COLUMNS->GET_COLUMN( LV_FIELDNAME ).
+              LO_COLUMN->SET_LONG_TEXT( LV_TEXT_L ).
+              LO_COLUMN->SET_MEDIUM_TEXT( LV_TEXT_M ).
+              LO_COLUMN->SET_FIXED_HEADER_TEXT( 'L' ).
+              LO_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+            CATCH CX_SALV_NOT_FOUND.
+          ENDTRY.
+
+        ENDDO.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM009 ----
+  METHOD HANDLE_LINK_CLICK.
+
+    CHECK ROW IS NOT INITIAL.
+
+    CASE COLUMN.
+      WHEN 'BELNR'.
+        READ TABLE MT_LIST INTO DATA(LS_LIST) INDEX ROW.
+        CHECK SY-SUBRC = 0.
+        SUBMIT YFI_DISPLAY_DOCUMENT WITH P_BUKRS = LS_LIST-BUKRS
+                                    WITH P_BELNR = LS_LIST-BELNR
+                                    WITH P_GJAHR = LS_LIST-GJAHR
+                                    WITH P_BUZEI = LS_LIST-BUZEI
+                                    AND RETURN.
+      WHEN 'STATUS_TEXT_O'.
+        ME->DISPLAY_DETAIL_IN_POPUP( IV_ROW = ROW
+                                     IV_SUFFIX = '_O' ).
+      WHEN 'STATUS_TEXT_1'.
+        ME->DISPLAY_DETAIL_IN_POPUP( IV_ROW = ROW
+                                     IV_SUFFIX = '_1' ).
+      WHEN 'STATUS_TEXT_2'.
+        ME->DISPLAY_DETAIL_IN_POPUP( IV_ROW = ROW
+                                     IV_SUFFIX = '_2' ).
+      WHEN 'STATUS_TEXT_3'.
+        ME->DISPLAY_DETAIL_IN_POPUP( IV_ROW = ROW
+                                     IV_SUFFIX = '_3' ).
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00A ----
+  METHOD PREPARE_DETAILED_DATA.
+
+    DATA LS_LIST TYPE TY_LIST.
+    DATA LT_STATUS TYPE YCL_CA_UTILITIES=>TTY_DOMAIN_VALUE.
+    DATA LS_CELL_COLOR TYPE LVC_S_SCOL.
+    DATA LO_ORG_ASSIGNMENT TYPE REF TO YCL_HR_ORG_ASSIGNMENT.
+    DATA LS_ORG_ASSIGN TYPE YCL_HR_ORG_ASSIGNMENT=>TY_ORG_ASSIGNMENT.
+    DATA LO_LOCATION_DETERMINATION TYPE REF TO YCL_FI_LOCATION_DETERMINATION.
+
+    LT_STATUS = YCL_CA_UTILITIES=>GET_DOMAIN_VALUES( 'YD_CA_TIME_STATUS' ).
+
+    "Get T001
+    SELECT SINGLE * FROM T001 WHERE BUKRS = @MP_BUKRS INTO @MS_T001.
+
+    "Get user's assignment
+    ME->PREPARE_FOR_LOCATION_SECTOR( ).
+
+    "Get Org structure
+    LO_ORG_ASSIGNMENT = NEW YCL_HR_ORG_ASSIGNMENT( IV_AUTHORITY_CHECK = ABAP_FALSE
+                                                   IV_BEGDA = MV_OLDEST_USER_BEGDA
+                                                   IV_ENDDA = '99991231' ).
+
+    "Get assignment from fund center
+    LO_LOCATION_DETERMINATION = NEW YCL_FI_LOCATION_DETERMINATION( ).
+
+    CLEAR MT_LIST.
+
+    LOOP AT MT_BSIS INTO DATA(LS_BSIS) WHERE BUKRS = MP_BUKRS
+                                       AND   HKONT IN MR_HKONT
+                                       AND   BUDAT BETWEEN IV_BEGDA AND IV_ENDDA.
+      CLEAR LS_LIST.
+      MOVE-CORRESPONDING LS_BSIS TO LS_LIST.
+      "Get G/L account name
+      READ TABLE MT_HKONT_NAME INTO DATA(LS_HKONT_NAME) WITH KEY BUKRS = LS_LIST-BUKRS
+                                                                 SAKNR = LS_LIST-HKONT.
+      IF SY-SUBRC = 0.
+        LS_LIST-HKONT_NAME = LS_HKONT_NAME-NAME.
+      ENDIF.
+      "Get delay and status
+      ME->GET_DELAY( EXPORTING IV_BLDAT = LS_BSIS-BLDAT
+                     IMPORTING EV_DELAY = LS_LIST-DELAY
+                               EV_STATUS = LS_LIST-STATUS
+                               ES_COLOR = LS_CELL_COLOR ).
+      IF LS_CELL_COLOR IS NOT INITIAL.
+        APPEND LS_CELL_COLOR TO LS_LIST-COLFIELD.
+      ENDIF.
+
+      "Get status text
+      READ TABLE LT_STATUS INTO DATA(LS_STATUS) WITH KEY DOMNAME = 'YD_CA_TIME_STATUS'
+                                                         VALUE = LS_LIST-STATUS.
+      IF SY-SUBRC = 0.
+        LS_LIST-STATUS_TEXT = LS_STATUS-DDTEXT.
+      ENDIF.
+      "Get clear item / open status icon
+      ME->GET_CLOPE( EXPORTING IS_BSIS = LS_BSIS
+                     IMPORTING EV_CLOPE = LS_LIST-CLOPE
+                               EV_ISTAT = LS_LIST-ISTAT ).
+      "Set amounts sign
+      IF LS_BSIS-SHKZG = 'H'.
+        MULTIPLY LS_LIST-WRBTR BY -1.
+        MULTIPLY LS_LIST-DMBTR BY -1.
+      ENDIF.
+
+      "Get location and FO/sector
+      IF LS_BSIS-XREF1 IS NOT INITIAL.
+        LO_LOCATION_DETERMINATION->GET_LOCATION_FROM_FUND_CENTER( EXPORTING IV_FISTL = LS_BSIS-XREF1
+                                                                  IMPORTING EV_LOCATION = LS_LIST-LOCATION
+                                                                            EV_TEXT = LS_LIST-FO_SECT ).
+      ENDIF.
+      IF LS_LIST-LOCATION <> 'I' AND LS_LIST-LOCATION <> 'F'.
+        LOOP AT MT_USER_ASSIGNMENT INTO DATA(LS_USER_ASSIGNMENT) WHERE UNAME = LS_BSIS-USNAM
+                                                                 AND   IT0001_DATA-ENDDA >= LS_BSIS-BUDAT.
+          EXIT.
+        ENDLOOP.
+        IF SY-SUBRC = 0.
+          MOVE-CORRESPONDING LS_USER_ASSIGNMENT-IT0001_DATA TO LS_ORG_ASSIGN.
+          LO_ORG_ASSIGNMENT->GET_LOC_AND_FO_SECTOR_FROM_PA( EXPORTING IS_ORG_ASSIGN = LS_ORG_ASSIGN
+                                                                      IV_DATE = LS_LIST-BUDAT
+                                                            IMPORTING EV_LOCATION = LS_LIST-LOCATION
+                                                                      EV_FO_SECT = LS_LIST-FO_SECT ).
+        ENDIF.
+      ENDIF.
+      IF LS_LIST-LOCATION IS INITIAL.
+        "Try to get if through company code (if different from UNES ...)
+        LO_LOCATION_DETERMINATION->GET_LOCATION_FROM_COMP_CODE( EXPORTING IV_BUKRS = LS_BSIS-BUKRS
+                                                                IMPORTING EV_LOCATION = LS_LIST-LOCATION
+                                                                          EV_TEXT = LS_LIST-FO_SECT ).
+      ENDIF.
+      TRANSLATE LS_LIST-FO_SECT TO UPPER CASE.
+
+      "Set to list
+      APPEND LS_LIST TO MT_LIST.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00B ----
+  METHOD PREPARE_DASHBOARD_DATA.
+
+    "Prepare data
+    ME->COMPUTE_DASHBOARD_DATA( ).
+
+    "Set data to ALV dashboard
+    CHECK IV_ALV_DASHBOARD = ABAP_TRUE.
+    ME->SET_DATA_TO_ALV_DASHBOARD( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00C ----
+  METHOD SET_HEADER.
+
+    DATA LO_HEADER TYPE REF TO CL_SALV_FORM_LAYOUT_GRID.
+    DATA LV_TEXT TYPE STRING.
+    DATA LV_DATE_C(10) TYPE C.
+
+    DATA LV_TEXT_C TYPE TEXT50.
+
+    LO_HEADER = NEW CL_SALV_FORM_LAYOUT_GRID( ).
+
+    CASE MV_REPORT_TYPE.
+      WHEN 'L'.  "Detailed list
+        "Set key date for Z doc types
+        WRITE MV_KEY_DATE_Z TO LV_DATE_C.
+        LV_TEXT = |Open items for Z1/Z2/Z3 document types at { LV_DATE_C }|.
+        LO_HEADER->CREATE_LABEL( ROW = 1
+                                 COLUMN = 1
+                                 TEXT = LV_TEXT ).
+        WRITE MV_KEY_DATE_O TO LV_DATE_C.
+        LV_TEXT = |Open items for other document types at { LV_DATE_C }|.
+        LO_HEADER->CREATE_LABEL( ROW = 2
+                                 COLUMN = 1
+                                 TEXT = LV_TEXT ).
+
+    ENDCASE.
+
+    MO_SALV_TABLE->SET_TOP_OF_LIST( LO_HEADER ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00D ----
+  METHOD COMPUTE_DASHBOARD_DATA.
+
+    DATA LS_HKONT_NAME TYPE TY_HKONT_NAME.
+    DATA LS_DASH TYPE YSFI_BANK_RECONCILIATION_DASH.
+    DATA LV_TABIX TYPE SY-TABIX.
+
+    SORT MT_BSIS BY BUKRS HKONT.
+
+    LOOP AT MT_BSIS INTO DATA(LS_BSIS).
+      AT NEW HKONT.
+        "Get G/L account name
+        CLEAR LS_HKONT_NAME.
+        READ TABLE MT_HKONT_NAME INTO LS_HKONT_NAME WITH KEY BUKRS = LS_BSIS-BUKRS
+                                                             SAKNR = LS_BSIS-HKONT.
+      ENDAT.
+
+      "Get dashboard data if existing
+      CLEAR: LS_DASH, LV_TABIX.
+      READ TABLE MT_DASH INTO LS_DASH WITH KEY BUKRS = LS_BSIS-BUKRS
+                                               HKONT_NAME = LS_HKONT_NAME-NAME
+                                               PERIOD = LS_BSIS-BUDAT(6).
+      IF SY-SUBRC = 0.
+        LV_TABIX = SY-TABIX.
+      ELSE.
+        LS_DASH-BUKRS = LS_BSIS-BUKRS.
+        LS_DASH-HKONT_NAME = LS_HKONT_NAME-NAME.
+        LS_DASH-PERIOD = LS_BSIS-BUDAT(6).
+      ENDIF.
+
+      IF LS_BSIS-BLART IN MR_Z_BLART.
+        ME->SET_DASHBOARD_DOCUMENT_TYPE( EXPORTING IV_BLART = LS_BSIS-BLART
+                                         CHANGING  CV_BLART = LS_DASH-Z_BLART ).
+        IF LS_BSIS-SHKZG = 'S'.
+          ADD LS_BSIS-DMBTR TO LS_DASH-Z_AMOUNT.
+        ELSE.
+          SUBTRACT LS_BSIS-DMBTR FROM LS_DASH-Z_AMOUNT.
+        ENDIF.
+        LS_DASH-Z_CURRENCY = LS_BSIS-DWAER.
+      ELSE.
+        ADD 1 TO LS_DASH-OI_NUMBER.
+      ENDIF.
+
+      "Update MT_DASH
+      IF LV_TABIX IS INITIAL.
+        INSERT LS_DASH INTO TABLE MT_DASH.
+      ELSE.
+        MODIFY MT_DASH INDEX LV_TABIX FROM LS_DASH.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00E ----
+  METHOD SET_DATA_TO_ALV_DASHBOARD.
+
+    DATA LS_DASH_ALV TYPE TY_DASH_ALV.
+    DATA LV_SUFFIX(2) TYPE C.
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    FIELD-SYMBOLS <FIELD> TYPE ANY.
+
+    "Determine month associated to columns
+    MV_PERIOD_1 = MV_KEY_DATE_Z(6).
+    MV_PERIOD_2 = ME->GET_PREVIOUS_PERIOD( MV_PERIOD_1 ).
+    MV_PERIOD_3 = ME->GET_PREVIOUS_PERIOD( MV_PERIOD_2 ).
+    MV_PERIOD_O = ME->GET_PREVIOUS_PERIOD( MV_PERIOD_3 ).
+
+    LOOP AT MT_HKONT_REF INTO DATA(LS_HKONT_REF).
+
+      CLEAR LS_DASH_ALV.
+      LS_DASH_ALV-BUKRS = LS_HKONT_REF-BUKRS.
+      LS_DASH_ALV-HKONT_NAME = LS_HKONT_REF-HKONT_NAME.
+
+      LOOP AT MT_DASH INTO DATA(LS_DASH) WHERE BUKRS = LS_HKONT_REF-BUKRS
+                                         AND   HKONT_NAME = LS_HKONT_REF-HKONT_NAME.
+        CASE LS_DASH-PERIOD.
+          WHEN MV_PERIOD_1.
+            LV_SUFFIX = '_1'.
+          WHEN MV_PERIOD_2.
+            LV_SUFFIX = '_2'.
+          WHEN MV_PERIOD_3.
+            LV_SUFFIX = '_3'.
+          WHEN OTHERS.
+            LV_SUFFIX = '_O'.
+        ENDCASE.
+
+        "OI number
+        LV_FIELDNAME = |LS_DASH_ALV-OI_NUMBER{ LV_SUFFIX }|.
+        ASSIGN (LV_FIELDNAME) TO <FIELD>.
+        ADD LS_DASH-OI_NUMBER TO <FIELD>.
+
+        IF LS_DASH-Z_BLART IS NOT INITIAL.
+          "Document type
+          LV_FIELDNAME = |LS_DASH_ALV-Z_BLART{ LV_SUFFIX }|.
+          ASSIGN (LV_FIELDNAME) TO <FIELD>.
+          ME->SET_DASHBOARD_DOCUMENT_TYPE( EXPORTING IV_BLART = LS_DASH-Z_BLART
+                                           CHANGING  CV_BLART = <FIELD> ).
+          "Amount
+          LV_FIELDNAME = |LS_DASH_ALV-Z_AMOUNT{ LV_SUFFIX }|.
+          ASSIGN (LV_FIELDNAME) TO <FIELD>.
+          ADD LS_DASH-Z_AMOUNT TO <FIELD>.
+          "Currency
+          LV_FIELDNAME = |LS_DASH_ALV-Z_CURRENCY{ LV_SUFFIX }|.
+          ASSIGN (LV_FIELDNAME) TO <FIELD>.
+          <FIELD> = LS_DASH-Z_CURRENCY.
+        ENDIF.
+
+      ENDLOOP.
+
+      IF SY-SUBRC <> 0.
+        CHECK LS_HKONT_REF-CLOSED = ABAP_FALSE.
+      ENDIF.
+
+      "Set status
+      ME->GET_DASHBOARD_STATUS( EXPORTING IV_OI_NUMBER = LS_DASH_ALV-OI_NUMBER_O
+                                          IV_Z_BLART = LS_DASH_ALV-Z_BLART_O
+                                          IV_Z_AMOUNT =  LS_DASH_ALV-Z_AMOUNT_O
+                                          IV_Z_CURRENCY = LS_DASH_ALV-Z_CURRENCY_O
+                                IMPORTING EV_STATUS_TEXT = LS_DASH_ALV-STATUS_TEXT_O
+                                          EV_STATUS_ICON = LS_DASH_ALV-STATUS_ICON_O ).
+      ME->GET_DASHBOARD_STATUS( EXPORTING IV_OI_NUMBER = LS_DASH_ALV-OI_NUMBER_1
+                                          IV_Z_BLART = LS_DASH_ALV-Z_BLART_1
+                                          IV_Z_AMOUNT =  LS_DASH_ALV-Z_AMOUNT_1
+                                          IV_Z_CURRENCY = LS_DASH_ALV-Z_CURRENCY_1
+                                IMPORTING EV_STATUS_TEXT = LS_DASH_ALV-STATUS_TEXT_1
+                                          EV_STATUS_ICON = LS_DASH_ALV-STATUS_ICON_1 ).
+      ME->GET_DASHBOARD_STATUS( EXPORTING IV_OI_NUMBER = LS_DASH_ALV-OI_NUMBER_2
+                                          IV_Z_BLART = LS_DASH_ALV-Z_BLART_2
+                                          IV_Z_AMOUNT =  LS_DASH_ALV-Z_AMOUNT_2
+                                          IV_Z_CURRENCY = LS_DASH_ALV-Z_CURRENCY_2
+                                IMPORTING EV_STATUS_TEXT = LS_DASH_ALV-STATUS_TEXT_2
+                                          EV_STATUS_ICON = LS_DASH_ALV-STATUS_ICON_2 ).
+      ME->GET_DASHBOARD_STATUS( EXPORTING IV_OI_NUMBER = LS_DASH_ALV-OI_NUMBER_3
+                                          IV_Z_BLART = LS_DASH_ALV-Z_BLART_3
+                                          IV_Z_AMOUNT =  LS_DASH_ALV-Z_AMOUNT_3
+                                          IV_Z_CURRENCY = LS_DASH_ALV-Z_CURRENCY_3
+                                IMPORTING EV_STATUS_TEXT = LS_DASH_ALV-STATUS_TEXT_3
+                                          EV_STATUS_ICON = LS_DASH_ALV-STATUS_ICON_3 ).
+      APPEND LS_DASH_ALV TO MT_DASH_ALV.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00F ----
+  METHOD GET_PREVIOUS_PERIOD.
+
+    IF IV_PERIOD+4(2) = '01'.
+      RV_PERIOD = IV_PERIOD - 89.
+    ELSE.
+      RV_PERIOD = IV_PERIOD - 1.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00G ----
+  METHOD SET_DASHBOARD_DOCUMENT_TYPE.
+
+    IF IV_BLART = 'Z*'.
+      CV_BLART = 'Z*'.
+    ELSEIF CV_BLART IS INITIAL.
+      CV_BLART = IV_BLART.
+    ELSEIF CV_BLART <> IV_BLART.
+      CV_BLART = 'Z*'.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00H ----
+  METHOD GET_DASHBOARD_STATUS.
+
+    CLEAR: EV_STATUS_TEXT, EV_STATUS_ICON.
+
+    "Set icon
+    IF IV_OI_NUMBER IS INITIAL AND IV_Z_BLART IS INITIAL.
+      WRITE ICON_LED_GREEN TO EV_STATUS_ICON AS ICON.
+      EXIT.
+    ENDIF.
+    "Set Status text
+    EV_STATUS_TEXT = |{ IV_OI_NUMBER } OI|.
+    IF IV_Z_BLART IS NOT INITIAL.
+      EV_STATUS_TEXT = |{ EV_STATUS_TEXT } / { IV_Z_CURRENCY } { IV_Z_AMOUNT } ({ IV_Z_BLART })|.
+    ENDIF.
+    "Set icon
+    IF IV_OI_NUMBER <= 3 AND IV_Z_BLART IS INITIAL.
+      WRITE ICON_LED_YELLOW TO EV_STATUS_ICON AS ICON.
+    ELSE.
+      WRITE ICON_LED_RED TO EV_STATUS_ICON AS ICON.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00I ----
+  METHOD DISPLAY_ALV_DASHBOARD.
+
+    DATA LO_EVENTS TYPE REF TO CL_SALV_EVENTS_TABLE.
+
+
+    MV_REPID = IV_REPID.
+
+    "Init ALV
+    TRY.
+        CALL METHOD CL_SALV_TABLE=>FACTORY
+*      EXPORTING
+*        list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*        r_container    =
+*        container_name =
+          IMPORTING
+            R_SALV_TABLE = MO_SALV_TABLE
+          CHANGING
+            T_TABLE      = MT_DASH_ALV.
+      CATCH CX_SALV_MSG .
+    ENDTRY.
+
+    MO_SALV_TABLE->SET_SCREEN_STATUS( PFSTATUS = 'SALV_DASHBOARD'
+                                      REPORT   = IV_REPID
+                                      SET_FUNCTIONS = MO_SALV_TABLE->C_FUNCTIONS_ALL ).
+
+    LO_EVENTS = MO_SALV_TABLE->GET_EVENT( ).
+    SET HANDLER ME->HANDLE_USER_COMMAND FOR LO_EVENTS.
+    SET HANDLER ME->HANDLE_LINK_CLICK FOR LO_EVENTS.
+
+    "ALV columns
+    ME->SET_COLUMNS( ).
+
+    "ALV layout
+    DATA LS_LAYOUT_KEY TYPE SALV_S_LAYOUT_KEY.
+
+    MO_LAYOUT = MO_SALV_TABLE->GET_LAYOUT( ).
+    LS_LAYOUT_KEY-REPORT = MV_REPID.
+    MO_LAYOUT->SET_KEY( LS_LAYOUT_KEY ).
+    MO_LAYOUT->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+
+    "ALV display settings
+    MO_DISPLAY_SETTINGS = MO_SALV_TABLE->GET_DISPLAY_SETTINGS( ).
+    MO_DISPLAY_SETTINGS->SET_STRIPED_PATTERN( ABAP_TRUE ).
+    MO_DISPLAY_SETTINGS->SET_NO_MERGING( ABAP_TRUE ).
+
+*    "Set header
+*    me->set_header( ).
+
+*    IF mv_no_auth IS NOT INITIAL.
+*      MESSAGE i006(yfi1) WITH mv_no_auth.
+*    ENDIF.
+
+    "Display list
+    MO_SALV_TABLE->DISPLAY( ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00J ----
+  METHOD DISPLAY_DETAIL_IN_POPUP.
+
+    DATA LV_FIELDNAME TYPE FIELDNAME.
+    DATA LV_BEGDA TYPE BEGDA.
+    DATA LV_ENDDA TYPE ENDDA.
+    DATA LO_ALV_POPUP TYPE REF TO YCL_CA_ALV_IN_POPUP.
+    DATA LV_TITLE TYPE TEXT50.
+    DATA LV_PERIOD_NAME TYPE TEXT20.
+    FIELD-SYMBOLS <FIELD> TYPE ANY.
+
+    READ TABLE MT_DASH_ALV INTO DATA(LS_DASH_ALV) INDEX IV_ROW.
+    CHECK SY-SUBRC = 0.
+
+    LV_FIELDNAME = |LS_DASH_ALV-STATUS_TEXT{ IV_SUFFIX }|.
+    ASSIGN (LV_FIELDNAME) TO <FIELD>.
+    CHECK <FIELD> IS NOT INITIAL.
+    LV_TITLE = <FIELD>.
+
+    LV_FIELDNAME = |MV_PERIOD{ IV_SUFFIX }|.
+    ASSIGN (LV_FIELDNAME) TO <FIELD>.
+    LV_PERIOD_NAME = ME->GET_MONTH_NAME( <FIELD>+4(2) ).
+    LV_BEGDA = |{ <FIELD> }01|.
+    CALL FUNCTION 'RP_LAST_DAY_OF_MONTHS'
+      EXPORTING
+        DAY_IN            = LV_BEGDA
+      IMPORTING
+        LAST_DAY_OF_MONTH = LV_ENDDA
+      EXCEPTIONS
+        DAY_IN_NO_DATE    = 1
+        OTHERS            = 2.
+    CHECK SY-SUBRC = 0.
+
+    IF IV_SUFFIX = '_O'.
+      LV_BEGDA = '19000101'.
+      LV_TITLE = |{ LV_TITLE } until { LV_PERIOD_NAME } { <FIELD>(4) }|.
+    ELSE.
+      LV_TITLE = |{ LV_TITLE } - { LV_PERIOD_NAME } { <FIELD>(4) }|.
+    ENDIF.
+
+    CLEAR MR_HKONT.
+    LOOP AT MT_HKONT_NAME INTO DATA(LS_HKONT_NAME) WHERE BUKRS = LS_DASH_ALV-BUKRS
+                                                   AND   NAME = LS_DASH_ALV-HKONT_NAME.
+      APPEND VALUE #( SIGN = 'I' OPTION = 'EQ' LOW = LS_HKONT_NAME-SAKNR ) TO MR_HKONT.
+    ENDLOOP.
+
+    "Prepare data for detailed list
+    ME->PREPARE_DETAILED_DATA( IV_BEGDA = LV_BEGDA
+                               IV_ENDDA = LV_ENDDA ).
+
+    "Call ALV popup
+    LO_ALV_POPUP = NEW YCL_CA_ALV_IN_POPUP( ).
+    LO_ALV_POPUP->EXECUTE( EXPORTING IV_TITLE = LV_TITLE
+                                     IV_START_ROW = 4
+                                     IV_START_COL = 4
+                                     IV_END_ROW = 31
+                                     IV_END_COL = 160
+                           CHANGING CT_TABLE = MT_LIST ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00K ----
+  METHOD GET_MONTH_NAME.
+
+    CLEAR RV_TEXT.
+    SELECT SINGLE LTX FROM T247 WHERE SPRAS = @SY-LANGU
+                                AND   MNR = @IV_MONTH
+                       INTO @RV_TEXT.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00L ----
+  METHOD CHECK_GLOBAL_AUTHORITY.
+
+    "Check access authorization for accounting documents type G/L account
+    AUTHORITY-CHECK OBJECT 'F_BKPF_KOA'
+                ID 'KOART' FIELD 'S'
+                ID 'ACTVT' FIELD '03'.
+    IF SY-SUBRC <> 0.
+      MESSAGE S001(YFI1) WITH 'G/L account' RAISING NO_AUTHORIZATION.
+    ENDIF.
+
+    "Chack authorization access to G/L accounts
+    AUTHORITY-CHECK OBJECT 'F_SKA1_BUK'
+             ID 'BUKRS' FIELD IV_BUKRS
+             ID 'ACTVT' FIELD '03'.
+    IF SY-SUBRC <> 0.
+      MESSAGE S002(YFI1) WITH 'G/L account' IV_BUKRS RAISING NO_AUTHORIZATION.
+    ENDIF.
+
+    "Check access authorization for accounting documents for company code
+    AUTHORITY-CHECK OBJECT 'F_BKPF_BUK'
+                ID 'BUKRS' FIELD IV_BUKRS
+                ID 'ACTVT' FIELD '03'.
+    IF SY-SUBRC <> 0.
+      MESSAGE S003(YFI1) WITH IV_BUKRS RAISING NO_AUTHORIZATION.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00M ----
+  METHOD DISPLAY_ICON_LEGEND.
+
+    DATA LT_ICONS TYPE HRFPM_ICON_LEGEND_IT.
+    DATA LS_ICONS TYPE LINE OF HRFPM_ICON_LEGEND_IT.
+
+    LS_ICONS-ICON = ICON_LED_GREEN.
+    LS_ICONS-TEXT = 'No unjustified Open Items'.
+    APPEND LS_ICONS TO LT_ICONS.
+
+    LS_ICONS-ICON = ICON_LED_YELLOW.
+    LS_ICONS-TEXT = 'Less than 3 unjustified OI other than Z*'.
+    APPEND LS_ICONS TO LT_ICONS.
+
+    LS_ICONS-ICON = ICON_LED_RED.
+    LS_ICONS-TEXT = 'Any Z* OI or more than 3 unjustified OI'.
+    APPEND LS_ICONS TO LT_ICONS.
+
+    CALL FUNCTION 'HRFPM_DISPLAY_ICON_LEGEND'
+      EXPORTING
+        I_T_ICON_LEGEND = LT_ICONS.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00N ----
+  METHOD HANDLE_USER_COMMAND.
+
+    CASE E_SALV_FUNCTION.
+      WHEN 'YICON'.
+        ME->DISPLAY_ICON_LEGEND( ).
+    ENDCASE.
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00O ----
+  METHOD INITIALIZE_HKONT.
+
+    RT_HKONT_RANGE = VALUE #( ( SIGN = 'I' OPTION = 'BT' LOW = '0001100000' HIGH = '0001199999' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175012' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175032' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175011' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175912' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175023' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175083' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175063' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175093' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175043' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175922' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001136012' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001138032' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001138022' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001108012' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001108011' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001108942' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001135012' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001135912' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001143011' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001143013' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001197911' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001181911' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195011' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195021' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195031' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195012' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195041' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001195051' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001175042' )
+                              ( SIGN = 'E' OPTION = 'EQ' LOW = '0001184661' ) ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CM00Q ----
+  METHOD PREPARE_FOR_LOCATION_SECTOR.
+
+    TYPES: BEGIN OF LTY_CREATOR,
+             UNAME TYPE UNAME,
+             AEDAT TYPE AEDAT,
+           END OF LTY_CREATOR.
+
+    DATA LT_CREATOR TYPE TABLE OF LTY_CREATOR.
+    DATA LS_CREATOR TYPE LTY_CREATOR.
+    DATA LV_NEW TYPE XFELD.
+    DATA LV_END TYPE XFELD.
+    DATA LT_USER_PERIOD TYPE YCL_HR_USER_ASSIGNMENT=>TTY_USER_PERIOD.
+    DATA LS_USER_PERIOD TYPE YCL_HR_USER_ASSIGNMENT=>TY_USER_PERIOD.
+    DATA LO_USER_ASSIGNMENT TYPE REF TO YCL_HR_USER_ASSIGNMENT.
+
+    "Extract users for location / field office
+    LOOP AT MT_BSIS INTO DATA(LS_BSIS).
+      LS_CREATOR-UNAME = LS_BSIS-USNAM.
+      LS_CREATOR-AEDAT = LS_BSIS-BUDAT.
+      APPEND LS_CREATOR TO LT_CREATOR.
+    ENDLOOP.
+
+    SORT LT_CREATOR.
+    DELETE ADJACENT DUPLICATES FROM LT_CREATOR.
+
+    LOOP AT LT_CREATOR INTO LS_CREATOR.
+      LV_NEW = LV_END = ABAP_FALSE.
+      AT NEW UNAME.
+        LV_NEW = ABAP_TRUE.
+      ENDAT.
+      IF LV_NEW = ABAP_TRUE.
+        CLEAR LS_USER_PERIOD.
+        LS_USER_PERIOD-UNAME = LS_CREATOR-UNAME.
+        LS_USER_PERIOD-BEGDA = LS_CREATOR-AEDAT.
+        IF LS_USER_PERIOD-BEGDA < MV_OLDEST_USER_BEGDA AND LS_USER_PERIOD-BEGDA IS NOT INITIAL.
+          MV_OLDEST_USER_BEGDA = LS_USER_PERIOD-BEGDA.
+        ENDIF.
+      ENDIF.
+      AT END OF UNAME.
+        LV_END = ABAP_TRUE.
+      ENDAT.
+      IF LV_END = ABAP_TRUE.
+        "ls_user_period-endda = ls_creator-aedat.
+        LS_USER_PERIOD-ENDDA = '99991231'.
+        INSERT LS_USER_PERIOD INTO TABLE LT_USER_PERIOD.
+      ENDIF.
+    ENDLOOP.
+
+    "Get User assignment
+    LO_USER_ASSIGNMENT = NEW YCL_HR_USER_ASSIGNMENT( ).
+    LO_USER_ASSIGNMENT->GET_USER_PERNR_ORG_ASSIGN( EXPORTING IT_USER_PERIOD = LT_USER_PERIOD
+                                                   IMPORTING ET_USER_ASSIGNMENT = MT_USER_ASSIGNMENT ).
+
+  ENDMETHOD.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CO ----
+PROTECTED SECTION.
+
+* ---- YCL_FI_BANK_RECONCILIATION_BL=CU ----
+CLASS YCL_FI_BANK_RECONCILIATION_BL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+PUBLIC SECTION.
+
+  TYPES:
+    BEGIN OF TY_LIST.
+        INCLUDE TYPE YSFI_BANK_RECONCILIATION_DET.
+        TYPES: COLFIELD TYPE LVC_T_SCOL,
+      END OF TY_LIST .
+  TYPES:
+    TTY_LIST TYPE TABLE OF TY_LIST .
+
+  DATA MT_DASH TYPE YTTFI_BANK_RECONCILIATION_DASH .
+  DATA MT_LIST TYPE TTY_LIST .
+  DATA MT_HKONT_REF TYPE YTTFI_BANK_HKONT_NAME .
+
+  CLASS-METHODS INITIALIZE_HKONT
+    RETURNING
+      VALUE(RT_HKONT_RANGE) TYPE YTTFI_HKONT_RANGE .
+  METHODS CHECK_GLOBAL_AUTHORITY
+    IMPORTING
+      !IV_BUKRS TYPE BUKRS
+    EXCEPTIONS
+      NO_AUTHORIZATION .
+  METHODS PREPARE_DASHBOARD_DATA
+    IMPORTING
+      !IV_ALV_DASHBOARD TYPE XFELD DEFAULT ABAP_FALSE .
+  METHODS PREPARE_DETAILED_DATA
+    IMPORTING
+      !IV_BEGDA TYPE BEGDA DEFAULT '19000101'
+      !IV_ENDDA TYPE ENDDA DEFAULT '99991231' .
+  METHODS GET_DATA
+    IMPORTING
+      !IV_KEY_DATE_Z TYPE DATUM
+      !IV_KEY_DATE_O TYPE DATUM
+      !IV_REPORT_TYPE TYPE CHAR1 .
+  METHODS SET_SELECTION_VALUES
+    IMPORTING
+      !IV_SELNAME TYPE RSSCR_NAME
+      !IV_KIND TYPE RSSCR_KIND
+      !IV_VALUE TYPE ANY OPTIONAL
+      !IT_VALUE TYPE ANY TABLE OPTIONAL .
+  METHODS DISPLAY_ALV_DASHBOARD
+    IMPORTING
+      !IV_REPID TYPE SY-REPID DEFAULT SY-REPID .
+  METHODS DISPLAY_ALV_DETAIL
+    IMPORTING
+      !IV_REPID TYPE SY-REPID DEFAULT SY-REPID .

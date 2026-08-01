@@ -1,0 +1,611 @@
+* ==== CLASS POOL YCL_PS_WBS_FINANCE_DATA_BL ====
+CLASS-POOL .
+*"* class pool for class YCL_PS_WBS_FINANCE_DATA_BL
+
+*"* local type definitions
+INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CCDEF.
+
+*"* class YCL_PS_WBS_FINANCE_DATA_BL definition
+*"* public declarations
+  INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CU.
+*"* protected declarations
+  INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CO.
+*"* private declarations
+  INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CI.
+ENDCLASS. "YCL_PS_WBS_FINANCE_DATA_BL definition
+
+*"* macro definitions
+INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CCMAC.
+*"* local class implementation
+INCLUDE YCL_PS_WBS_FINANCE_DATA_BL====CCIMP.
+
+CLASS YCL_PS_WBS_FINANCE_DATA_BL IMPLEMENTATION.
+*"* method's implementations
+  INCLUDE METHODS.
+ENDCLASS. "YCL_PS_WBS_FINANCE_DATA_BL implementation
+
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CI ----
+PRIVATE SECTION.
+
+  TYPES:
+    BEGIN OF TY_KSTAR_SET,
+      VALFROM      TYPE SETLEAF-VALFROM,
+      VALTO        TYPE SETLEAF-VALTO,
+      VALSIGN      TYPE SETLEAF-VALSIGN,
+      VALOPTION    TYPE SETLEAF-VALOPTION,
+      SETNAME      TYPE SETNODE-SETNAME,
+      SETNAME_T    TYPE SETHEADERT-DESCRIPT,
+      SUBSETNAME   TYPE SETNODE-SUBSETNAME,
+      SUBSETNAME_T TYPE SETHEADERT-DESCRIPT,
+    END OF TY_KSTAR_SET .
+  TYPES:
+    BEGIN OF TY_PROJECT,
+      PSPNR TYPE PROJ-PSPNR,
+      PSPID TYPE PROJ-PSPID,
+      STAT  TYPE JEST-STAT,
+      UDATE TYPE JCDS-UDATE,
+    END OF TY_PROJECT .
+  TYPES:
+    BEGIN OF TY_WBS_ELEMENT,
+      PSPNR TYPE PRPS-PSPNR,
+      POSID TYPE PRPS-POSID,
+      OBJNR TYPE PRPS-OBJNR,
+      PSPHI TYPE PRPS-PSPHI,
+      "pspid TYPE proj-pspid,
+      BUKRS TYPE PRPS-PBUKR,
+      KOKRS TYPE PRPS-PKOKR,
+      "stat  TYPE jest-stat,
+      "udate TYPE jcds-udate,
+    END OF TY_WBS_ELEMENT .
+  TYPES:
+    BEGIN OF TY_RPSCO,
+      OBJNR TYPE RPSCO-OBJNR,
+      LEDNR TYPE RPSCO-LEDNR,
+      WRTTP TYPE RPSCO-WRTTP,
+      TRGKZ TYPE RPSCO-TRGKZ,
+      GJAHR TYPE RPSCO-GJAHR,
+      ACPOS TYPE RPSCO-ACPOS,
+      VORGA TYPE RPSCO-VORGA,
+      VERSN TYPE RPSCO-VERSN,
+      ABKAT TYPE RPSCO-ABKAT,
+      GEBER TYPE RPSCO-GEBER,
+      TWAER TYPE RPSCO-TWAER,
+      PERBL TYPE RPSCO-PERBL,
+      WLP00 TYPE RPSCO-WLP00,
+      WAERS TYPE TBP0L-WAERS,
+    END OF TY_RPSCO .
+  TYPES:
+    BEGIN OF TY_COEP,
+      KOKRS  TYPE COEP-KOKRS,
+      OBJNR  TYPE COEP-OBJNR,
+      BELNR  TYPE COEP-BELNR,
+      BUZEI  TYPE COEP-BUZEI,
+      WKGBTR TYPE COEP-WKGBTR,
+      WAERS  TYPE TKA01-WAERS,
+      GJAHR  TYPE COEP-GJAHR,
+      WRTTP  TYPE COEP-WRTTP,
+      KSTAR  TYPE COEP-KSTAR,
+      FIPOS  TYPE SKB1-FIPOS,
+    END OF TY_COEP .
+  TYPES:
+    BEGIN OF TY_COOI,
+      OBJNR  TYPE COOI-OBJNR,
+      REFBT  TYPE COOI-REFBT,
+      REFBN  TYPE COOI-REFBN,
+      RFPOS  TYPE COOI-RFPOS,
+      RFKNT  TYPE COOI-RFKNT,
+      RFTRM  TYPE COOI-RFTRM,
+      RFART  TYPE COOI-RFART,
+      LIFNR  TYPE COOI-LIFNR,
+      LEDNR  TYPE COOI-LEDNR,
+      HRKFT  TYPE COOI-HRKFT,
+      RFORG  TYPE COOI-RFORG,
+      RFTYP  TYPE COOI-RFTYP,
+      RFSYS  TYPE COOI-RFSYS,
+      GJAHR  TYPE COOI-GJAHR,
+      SAKTO  TYPE COOI-SAKTO,
+      BUKRS  TYPE COOI-BUKRS,
+      KOKRS  TYPE COOI-KOKRS,
+      FIPOS  TYPE SKB1-FIPOS,
+      WKGBTR TYPE COOI-WKGBTR,
+      WAERS  TYPE TKA01-WAERS,
+    END OF TY_COOI .
+
+  CONSTANTS C_STAT_CLOSE TYPE J_STATUS VALUE 'I0046' ##NO_TEXT.
+  DATA MV_BEGBI TYPE BEGDA .
+  DATA MV_BEGYE TYPE GJAHR .
+  DATA MV_ENDYE TYPE GJAHR .
+  DATA MT_FIPOS_EXCLUDE TYPE RANGE OF FM_FIPEX.
+  DATA:
+    MT_KSTAR_SET TYPE SORTED TABLE OF TY_KSTAR_SET WITH NON-UNIQUE KEY VALFROM VALTO .
+  DATA MT_KSTAR TYPE RANGE OF KSTAR.
+  DATA:
+    MT_PROJECT TYPE TABLE OF TY_PROJECT .
+  DATA:
+    MT_WBS_ELEMENT TYPE TABLE OF TY_WBS_ELEMENT .
+  DATA:
+    MT_PRHI TYPE SORTED TABLE OF PRHI WITH UNIQUE KEY POSNR .
+  DATA:
+    MT_RPSCO TYPE SORTED TABLE OF TY_RPSCO WITH NON-UNIQUE KEY OBJNR .
+  DATA:
+    MT_COEP TYPE SORTED TABLE OF TY_COEP WITH NON-UNIQUE KEY KOKRS OBJNR .
+  DATA:
+    MT_COOI TYPE SORTED TABLE OF TY_COOI WITH NON-UNIQUE KEY OBJNR .
+
+  METHODS CONSOLIDATE_DATA .
+  METHODS CONSOLIDATE_DATA_OLD .
+  METHODS GET_COST_ELEMENT
+    IMPORTING
+      !IV_VALUE     TYPE ANY
+    EXPORTING
+      !EV_SETNAME   TYPE SETNAMENEW
+      !EV_SETNAME_T TYPE SETTEXT .
+  METHODS PREPARE_DATA .
+  METHODS READ_PROJECT .
+  METHODS READ_FINANCIAL_DATA_1 .
+  METHODS READ_COST_ELEMENTS .
+  METHODS READ_WBS_ELEMENT .
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM001 ----
+  METHOD READ_COST_ELEMENTS.
+
+    SELECT F~VALTO,
+           N~SETNAME,
+           F~VALSIGN,
+           F~VALOPTION,
+           F~VALFROM,
+           T1~DESCRIPT AS SETNAME_T,
+           F~SETNAME AS SUBSETNAME,
+           T2~DESCRIPT AS SUBSETNAME_T
+           FROM SETLEAF AS F
+           LEFT OUTER JOIN SETNODE AS N ON  N~SETCLASS = F~SETCLASS
+                                        AND N~SUBCLASS = F~SUBCLASS
+                                        AND N~SUBSETNAME = F~SETNAME
+           LEFT OUTER JOIN SETHEADERT AS T1 ON  T1~SETCLASS = N~SETCLASS
+                                            AND T1~SUBCLASS = N~SUBCLASS
+                                            AND T1~SETNAME = N~SETNAME
+                                            AND T1~LANGU = @SY-LANGU
+           LEFT OUTER JOIN SETHEADERT AS T2 ON  T2~SETCLASS = F~SETCLASS
+                                            AND T2~SUBCLASS = F~SUBCLASS
+                                            AND T2~SETNAME = F~SETNAME
+                                            AND T2~LANGU = @SY-LANGU
+           WHERE F~SETCLASS = '0102'
+           AND   F~SUBCLASS = 'UNES'
+           AND   F~SETNAME LIKE 'U%'
+           INTO CORRESPONDING FIELDS OF TABLE @MT_KSTAR_SET.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM002 ----
+  METHOD CONSTRUCTOR.
+
+    MV_BEGYE = IV_BEGYE.
+    MV_ENDYE = IV_ENDYE.
+
+    "Get start date of biennium
+    YCL_CA_UTILITIES=>GET_BIENNIUM_FOR_DATE( EXPORTING IV_DATE = |{ MV_ENDYE }0101|
+                                             IMPORTING EV_BEGBI = MV_BEGBI ).
+
+    "me->read_cost_elements( ).
+
+    "Extract cost elements 'Revenues' and 'Gains' to exclude them
+*    LOOP AT mt_kstar_set INTO DATA(ls_kstar_set) WHERE setname_t = 'Revenues'
+*                                                 OR    setname_t = 'Gains'.
+*      APPEND VALUE #( sign = 'E' option = ls_kstar_set-valoption low = ls_kstar_set-valfrom high = ls_kstar_set-valto ) TO mt_kstar.
+*    ENDLOOP.
+
+    "Exclude commitment items 'GAINS and 'REVENUE'
+    MT_FIPOS_EXCLUDE = VALUE #( ( SIGN = 'I' OPTION = 'EQ' LOW = 'REVENUE' )
+                                ( SIGN = 'I' OPTION = 'EQ' LOW = 'GAINS' ) ).
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM003 ----
+  METHOD READ_WBS_ELEMENT.
+
+    "Get wbs element master data
+    SELECT WBS~PSPNR,
+           WBS~POSID,
+           WBS~OBJNR,
+           WBS~PSPHI,
+           WBS~PBUKR AS BUKRS,
+           WBS~PKOKR AS KOKRS
+           FROM PRPS AS WBS
+           FOR ALL ENTRIES IN @MT_PROJECT
+           WHERE WBS~PSPHI = @MT_PROJECT-PSPNR
+           INTO TABLE @MT_WBS_ELEMENT.
+
+    "Get WBS element hierarchy
+    SELECT * FROM PRHI
+           FOR ALL ENTRIES IN @MT_PROJECT
+           WHERE PSPHI = @MT_PROJECT-PSPNR
+           INTO TABLE @MT_PRHI.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM004 ----
+  METHOD GET_FINANCIAL_DATA_1.
+
+    "Get project
+    ME->READ_PROJECT( ).
+    CHECK MT_PROJECT IS NOT INITIAL.
+    "Get WBS elements
+    ME->READ_WBS_ELEMENT( ).
+    CHECK MT_WBS_ELEMENT IS NOT INITIAL.
+    "Get Financial data
+    ME->READ_FINANCIAL_DATA_1( ).
+    "Prepare data
+    ME->PREPARE_DATA( ).
+    "Consolidate data per WBS level
+    ME->CONSOLIDATE_DATA( ).
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM005 ----
+  METHOD READ_FINANCIAL_DATA_1.
+
+    "Get budget data (allotment) from rpsco
+    SELECT R~OBJNR,
+           R~LEDNR,
+           R~WRTTP,
+           R~TRGKZ,
+           R~GJAHR,
+           R~ACPOS,
+           R~VORGA,
+           R~VERSN,
+           R~ABKAT,
+           R~GEBER,
+           R~TWAER,
+           R~PERBL,
+           R~WLP00,
+           T~WAERS
+           FROM RPSCO AS R
+           LEFT OUTER JOIN TBP0L AS T ON T~LEDNR = R~LEDNR
+           FOR ALL ENTRIES IN @MT_WBS_ELEMENT
+           WHERE R~OBJNR = @MT_WBS_ELEMENT-OBJNR
+           AND   R~WRTTP = '41'  "Budget
+           AND   R~GJAHR BETWEEN @MV_BEGYE AND @MV_ENDYE
+           INTO TABLE @MT_RPSCO.
+
+    "Get actual data from coep
+    SELECT C~KOKRS,
+           C~OBJNR,
+           C~BELNR,
+           C~BUZEI,
+           C~WKGBTR,
+           K~WAERS,
+           C~GJAHR,
+           C~WRTTP,
+           C~KSTAR,
+           B~FIPOS
+           FROM COEP AS C
+           LEFT OUTER JOIN TKA01 AS K ON K~KOKRS = C~KOKRS
+           LEFT OUTER JOIN SKB1 AS B ON  B~BUKRS = C~BUKRS
+                                     AND B~SAKNR = C~KSTAR
+           FOR ALL ENTRIES IN @MT_WBS_ELEMENT
+           WHERE C~KOKRS = @MT_WBS_ELEMENT-KOKRS
+           AND   C~OBJNR = @MT_WBS_ELEMENT-OBJNR
+           AND   C~WRTTP = '04'  "Actual
+           AND   C~GJAHR BETWEEN @MV_BEGYE AND @MV_ENDYE
+           %_HINTS MSSQLNT 'TABLE COEP ABINDEX(ZOB)'    "Force index on OBJNR
+           INTO TABLE @MT_COEP.
+
+    "Get commitment data from cooi
+    SELECT C~OBJNR,
+           C~REFBT,
+           C~REFBN,
+           C~RFPOS,
+           C~RFKNT,
+           C~RFTRM,
+           C~RFART,
+           C~LIFNR,
+           C~LEDNR,
+           C~HRKFT,
+           C~RFORG,
+           C~RFTYP,
+           C~RFSYS,
+           C~GJAHR,
+           C~SAKTO,
+           C~BUKRS,
+           C~KOKRS,
+           B~FIPOS,
+           C~WKGBTR,
+           K~WAERS
+           FROM COOI AS C
+           LEFT OUTER JOIN TKA01 AS K ON K~KOKRS = C~KOKRS
+           LEFT OUTER JOIN SKB1 AS B ON  B~BUKRS = C~BUKRS
+                                     AND B~SAKNR = C~SAKTO
+           FOR ALL ENTRIES IN @MT_WBS_ELEMENT
+           WHERE C~OBJNR = @MT_WBS_ELEMENT-OBJNR
+           AND   C~GJAHR BETWEEN @MV_BEGYE AND @MV_ENDYE
+           AND   C~WKGBTR <> 0
+           AND   C~LOEKZ = @ABAP_FALSE
+           INTO TABLE @MT_COOI.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM006 ----
+  METHOD READ_PROJECT.
+
+    SELECT PROJ~PSPNR,
+           PROJ~PSPID,
+           JEST~STAT,
+           JCDS~UDATE
+           FROM PROJ AS PROJ
+           LEFT OUTER JOIN JEST AS JEST ON  JEST~OBJNR = PROJ~OBJNR
+                                        AND JEST~STAT = @C_STAT_CLOSE
+                                        AND JEST~INACT = @ABAP_FALSE
+           LEFT OUTER JOIN JCDS AS JCDS ON  JCDS~OBJNR = JEST~OBJNR
+                                        AND JCDS~STAT = JEST~STAT
+                                        AND JEST~CHGNR = JEST~CHGNR
+           WHERE PROJ~PSPID IN @MR_PSPID
+           INTO TABLE @MT_PROJECT.
+
+    "Keep only projects not closed before biennium start date
+    DELETE MT_PROJECT WHERE STAT = C_STAT_CLOSE
+                      AND   UDATE < MV_BEGBI.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM007 ----
+  METHOD PREPARE_DATA.
+
+    DATA LS_RESULT TYPE TY_RESULT_1.
+
+    LOOP AT MT_WBS_ELEMENT INTO DATA(LS_WBS).
+
+      CLEAR LS_RESULT.
+      LS_RESULT-PSPNR = LS_WBS-PSPNR.
+      LS_RESULT-POSID = LS_WBS-POSID.
+
+      """"""""""""Set allotment amounts
+      "Commitment = 'XX' (means no commitment item level)
+      LS_RESULT-COMMITMENT_ITEM = 'XX'.
+      LOOP AT MT_RPSCO INTO DATA(LS_RPSCO) WHERE OBJNR = LS_WBS-OBJNR.
+        ADD LS_RPSCO-WLP00 TO LS_RESULT-ALLOT_DIRECT_CUMUL.
+        ADD LS_RPSCO-WLP00 TO LS_RESULT-ALLOT_CONSOL_CUMUL.
+        IF LS_RPSCO-GJAHR = MV_ENDYE.  "current year
+          ADD LS_RPSCO-WLP00 TO LS_RESULT-ALLOT_DIRECT_CURRENT.
+          ADD LS_RPSCO-WLP00 TO LS_RESULT-ALLOT_CONSOL_CURRENT.
+        ENDIF.
+      ENDLOOP.
+      IF SY-SUBRC = 0.
+        LS_RESULT-WAERS = LS_RPSCO-WAERS.
+        APPEND LS_RESULT TO MT_RESULT_1.
+      ENDIF.
+      CLEAR: LS_RESULT-ALLOT_DIRECT_CUMUL, LS_RESULT-ALLOT_CONSOL_CUMUL, LS_RESULT-ALLOT_DIRECT_CURRENT, LS_RESULT-ALLOT_CONSOL_CURRENT.
+
+      """"""""""""Set Actual amounts
+      LOOP AT MT_COEP INTO DATA(LS_COEP) WHERE OBJNR = LS_WBS-OBJNR
+                                         AND   FIPOS NOT IN MT_FIPOS_EXCLUDE.
+        "get commitment item
+        LS_RESULT-COMMITMENT_ITEM = LS_COEP-FIPOS.
+        "Set amounts
+        LS_RESULT-ACTUAL_DIRECT_CUMUL = LS_COEP-WKGBTR.
+        LS_RESULT-ACTUAL_CONSOL_CUMUL = LS_COEP-WKGBTR.
+        IF LS_COEP-GJAHR = MV_ENDYE.  "current year
+          LS_RESULT-ACTUAL_DIRECT_CURRENT = LS_COEP-WKGBTR.
+          LS_RESULT-ACTUAL_CONSOL_CURRENT = LS_COEP-WKGBTR.
+        ENDIF.
+        LS_RESULT-WAERS = LS_COEP-WAERS.
+        COLLECT LS_RESULT INTO MT_RESULT_1.
+        CLEAR: LS_RESULT-ACTUAL_DIRECT_CUMUL, LS_RESULT-ACTUAL_CONSOL_CUMUL, LS_RESULT-ACTUAL_DIRECT_CURRENT, LS_RESULT-ACTUAL_CONSOL_CURRENT.
+      ENDLOOP.
+
+      """"""""""""Set commitment amounts
+      LOOP AT MT_COOI INTO DATA(LS_COOI) WHERE OBJNR = LS_WBS-OBJNR
+                                         AND   FIPOS NOT IN MT_FIPOS_EXCLUDE.
+        "get commitment item
+        LS_RESULT-COMMITMENT_ITEM = LS_COOI-FIPOS.
+        "Set amounts
+        LS_RESULT-COMMIT_DIRECT_CUMUL = LS_COOI-WKGBTR.
+        LS_RESULT-COMMIT_CONSOL_CUMUL = LS_COOI-WKGBTR.
+        IF LS_COOI-GJAHR = MV_ENDYE.  "current year
+          LS_RESULT-COMMIT_DIRECT_CURRENT = LS_COOI-WKGBTR.
+          LS_RESULT-COMMIT_CONSOL_CURRENT = LS_COOI-WKGBTR.
+        ENDIF.
+        LS_RESULT-WAERS = LS_COOI-WAERS.
+        COLLECT LS_RESULT INTO MT_RESULT_1.
+        CLEAR: LS_RESULT-COMMIT_DIRECT_CUMUL, LS_RESULT-COMMIT_CONSOL_CUMUL, LS_RESULT-COMMIT_DIRECT_CURRENT, LS_RESULT-COMMIT_CONSOL_CURRENT.
+      ENDLOOP.
+
+      """"""""""""Set assigned amount ( actual amount + commitment amount)
+      LOOP AT MT_RESULT_1 ASSIGNING FIELD-SYMBOL(<LS_RESULT>) WHERE PSPNR = LS_WBS-PSPNR.
+        <LS_RESULT>-ASSIGNED_CONSOL_CUMUL = <LS_RESULT>-ACTUAL_CONSOL_CUMUL + <LS_RESULT>-COMMIT_CONSOL_CUMUL.
+        <LS_RESULT>-ASSIGNED_CONSOL_CURRENT = <LS_RESULT>-ACTUAL_CONSOL_CURRENT + <LS_RESULT>-COMMIT_CONSOL_CURRENT.
+        <LS_RESULT>-ASSIGNED_DIRECT_CUMUL = <LS_RESULT>-ACTUAL_DIRECT_CUMUL + <LS_RESULT>-COMMIT_DIRECT_CUMUL.
+        <LS_RESULT>-ASSIGNED_DIRECT_CURRENT = <LS_RESULT>-ACTUAL_DIRECT_CURRENT + <LS_RESULT>-COMMIT_DIRECT_CURRENT.
+      ENDLOOP.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM008 ----
+  METHOD GET_COST_ELEMENT.
+
+    LOOP AT MT_KSTAR_SET INTO DATA(LS_KSTAR_SET) WHERE VALFROM <= IV_VALUE
+                                                 AND   VALTO >= IV_VALUE.
+      EXIT.
+    ENDLOOP.
+    IF SY-SUBRC = 0.
+      EV_SETNAME = LS_KSTAR_SET-SETNAME.
+      EV_SETNAME_T = LS_KSTAR_SET-SETNAME_T.
+    ELSE.
+      CLEAR: EV_SETNAME, EV_SETNAME_T.
+    ENDIF.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM009 ----
+  METHOD CONSOLIDATE_DATA.
+
+    DATA LT_RESULT TYPE TABLE OF TY_RESULT_1.
+    DATA LT_PRHI TYPE TABLE OF PRHI.
+    DATA LS_PRHI_W TYPE PRHI.
+    DATA LV_POSNR TYPE PRHI-UP.
+
+    LT_RESULT = MT_RESULT_1.
+
+    LOOP AT LT_RESULT INTO DATA(LS_RESULT).
+
+      LV_POSNR = LS_RESULT-PSPNR.
+
+      DO.
+        "Get the WBS up
+        CLEAR LS_PRHI_W.
+        READ TABLE MT_PRHI INTO LS_PRHI_W WITH KEY POSNR = LV_POSNR.
+        IF SY-SUBRC <> 0 OR LS_PRHI_W-UP IS INITIAL.
+          EXIT.
+        ENDIF.
+        READ TABLE MT_WBS_ELEMENT INTO DATA(LS_WBS_ELEMENT) WITH KEY PSPNR = LS_PRHI_W-UP.
+        CHECK SY-SUBRC = 0.
+        "Consolidate data to up level
+        LS_RESULT-PSPNR = LS_PRHI_W-UP.
+        LS_RESULT-POSID = LS_WBS_ELEMENT-POSID.
+        "Clear amounts which are not consolidated
+        CLEAR: LS_RESULT-ALLOT_DIRECT_CUMUL,
+               LS_RESULT-ALLOT_DIRECT_CURRENT,
+               LS_RESULT-ASSIGNED_DIRECT_CUMUL,
+               LS_RESULT-ASSIGNED_DIRECT_CURRENT,
+               LS_RESULT-ACTUAL_DIRECT_CUMUL,
+               LS_RESULT-ACTUAL_DIRECT_CURRENT,
+               LS_RESULT-COMMIT_DIRECT_CUMUL,
+               LS_RESULT-COMMIT_DIRECT_CURRENT.
+        COLLECT LS_RESULT INTO MT_RESULT_1.
+
+        LV_POSNR = LS_PRHI_W-UP.
+
+      ENDDO.
+
+    ENDLOOP.
+
+    "Set WBS in hierarchical order in project
+    LT_RESULT = MT_RESULT_1.
+    CLEAR MT_RESULT_1.
+
+    SORT LT_RESULT BY PSPNR COMMITMENT_ITEM.
+
+    LOOP AT MT_PROJECT INTO DATA(LS_PROJECT).
+      CLEAR LT_PRHI.
+      "Get WBS element tree correctly sorted
+      CALL FUNCTION 'GET_TREE_FROM_PRHI'
+        EXPORTING
+          I_POSID             = LS_PROJECT-PSPID
+*         I_PSPNR             = 00000000
+*         NO_BUFFER           = ' '
+        TABLES
+          PSP_TREE            = LT_PRHI
+        EXCEPTIONS
+          INPUT_ERROR         = 1
+          PSP_HIERARCHY_ERROR = 2
+          PSP_NOT_FOUND       = 3
+          OTHERS              = 4.
+      CHECK SY-SUBRC = 0.
+
+      LOOP AT LT_PRHI INTO DATA(LS_PRHI).
+        LOOP AT LT_RESULT INTO LS_RESULT WHERE PSPNR = LS_PRHI-POSNR.
+          APPEND LS_RESULT TO MT_RESULT_1.
+        ENDLOOP.
+      ENDLOOP.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CM00A ----
+  METHOD CONSOLIDATE_DATA_OLD.
+
+    DATA LT_RESULT TYPE SORTED TABLE OF TY_RESULT_1 WITH NON-UNIQUE KEY PSPNR.
+    DATA LT_PRHI TYPE TABLE OF PRHI.
+    DATA LS_PRHI_W TYPE PRHI.
+
+    INSERT LINES OF MT_RESULT_1 INTO TABLE LT_RESULT.
+    CLEAR MT_RESULT_1.
+
+    LOOP AT MT_PROJECT INTO DATA(LS_PROJECT).
+      "Get WBS element tree correctly sorted
+      CALL FUNCTION 'GET_TREE_FROM_PRHI'
+        EXPORTING
+          I_POSID             = LS_PROJECT-PSPID
+*         I_PSPNR             = 00000000
+*         NO_BUFFER           = ' '
+        TABLES
+          PSP_TREE            = LT_PRHI
+        EXCEPTIONS
+          INPUT_ERROR         = 1
+          PSP_HIERARCHY_ERROR = 2
+          PSP_NOT_FOUND       = 3
+          OTHERS              = 4.
+      CHECK SY-SUBRC = 0.
+
+      LOOP AT LT_PRHI INTO DATA(LS_PRHI).
+
+        "First append initial value for WBS element
+        LOOP AT LT_RESULT INTO DATA(LS_RESULT) WHERE PSPNR = LS_PRHI-POSNR.
+          APPEND LS_RESULT TO MT_RESULT_1.
+        ENDLOOP.
+
+        LS_PRHI_W = LS_PRHI.
+
+        DO.
+          IF LS_PRHI_W-UP IS INITIAL.
+            EXIT.
+          ENDIF.
+          LOOP AT LT_RESULT INTO LS_RESULT WHERE PSPNR = LS_PRHI-POSNR.
+            "Get WBS element corresponding to up level
+            READ TABLE MT_WBS_ELEMENT INTO DATA(LS_WBS_ELEMENT) WITH KEY PSPNR = LS_PRHI_W-UP.
+            CHECK SY-SUBRC = 0.
+            "Consolidate data to up level
+            LS_RESULT-PSPNR = LS_PRHI_W-UP.
+            LS_RESULT-POSID = LS_WBS_ELEMENT-POSID.
+            "Clear amounts which are not consolidated
+            CLEAR: LS_RESULT-ALLOT_DIRECT_CUMUL,
+                   LS_RESULT-ALLOT_DIRECT_CURRENT,
+                   LS_RESULT-ASSIGNED_DIRECT_CUMUL,
+                   LS_RESULT-ASSIGNED_DIRECT_CURRENT,
+                   LS_RESULT-ACTUAL_DIRECT_CUMUL,
+                   LS_RESULT-ACTUAL_DIRECT_CURRENT,
+                   LS_RESULT-COMMIT_DIRECT_CUMUL,
+                   LS_RESULT-COMMIT_DIRECT_CURRENT.
+            COLLECT LS_RESULT INTO MT_RESULT_1.
+          ENDLOOP.
+          "Get WBS element up
+          READ TABLE MT_PRHI INTO LS_PRHI_W WITH KEY POSNR = LS_PRHI_W-UP.
+          IF SY-SUBRC <> 0.
+            CLEAR LS_PRHI_W.
+          ENDIF.
+        ENDDO.
+
+      ENDLOOP.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CO ----
+PROTECTED SECTION.
+
+* ---- YCL_PS_WBS_FINANCE_DATA_BL====CU ----
+CLASS YCL_PS_WBS_FINANCE_DATA_BL DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF TY_RESULT_1,
+             PSPNR TYPE PS_POSNR.
+             INCLUDE TYPE YSPS_WBS_FINANCIAL_DATA_1.
+           TYPES: END OF TY_RESULT_1.
+
+    DATA:
+      MR_PSPID TYPE RANGE OF PS_PSPID .
+    DATA MT_RESULT_1 TYPE TABLE OF TY_RESULT_1.
+
+    METHODS GET_FINANCIAL_DATA_1 .
+    METHODS CONSTRUCTOR
+      IMPORTING
+        !IV_BEGYE TYPE GJAHR
+        !IV_ENDYE TYPE GJAHR .

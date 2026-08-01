@@ -125,7 +125,10 @@ def scan(path):
 
 
 def main():
-    corpus = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CORPUS
+    # resolve(): a relative corpus argument made every file path relative too, and
+    # f.relative_to(REPO) then threw on an absolute REPO. The tool worked only when called
+    # with no argument, which is the worst kind of working.
+    corpus = (Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else DEFAULT_CORPUS)
     files = sorted(corpus.rglob("*.abap"))
     if not files:
         print(f"no source under {corpus}", file=sys.stderr)
