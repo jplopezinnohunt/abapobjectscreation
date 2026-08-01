@@ -310,6 +310,67 @@
      "note": "billing documents (2,901) OUTNUMBER sales orders (2,116) — either multi-invoice orders or order-less billing. Establish which before treating the excess as a violation."
     }
    ]
+  },
+  "B2R": {
+   "flow": "B2R — budget to report",
+   "status": "AS-DESIGNED INGESTED (first pass, PSM_FM) with the delta MEASURED per rule",
+   "what_correct_means": "how budget is structured, controlled and consumed. This is the heart of a public-sector installation: B2R is served by more domains than any other process here.",
+   "source_of_truth": {
+    "as_designed": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md — BBP-04, authored 2017-06 by the implementation consultants",
+    "as_run": "our production measurements: the golden DB and P01 config frontier",
+    "why_both": "a standard reference with no delta attached is just another document. The delta IS the product."
+   },
+   "_provenance_caution": "BBP-04 is UNESCO's AS-DESIGNED intent, NOT the SAP as-shipped baseline. The BCS dimension model, the AVC address triple and PBET are standard SAP CONCEPTS described inside it, and those are legitimately usable as a standard reference. The UNESCO choices around them are not.",
+   "rules": [
+    {
+     "id": "B2R-S1-SINGLE-FM-AREA",
+     "as_designed": "ONE FM area `UNSC` covers all entities, with company codes distinguishing them. The design calls this a HARD PREREQUISITE and makes consolidated reporting, a unified commitment-item catalog and a single set of derivation rules depend on it.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md section 'FM Area Consolidation (9 to 1)'",
+     "as_run_measured": "NINE FM areas in production: IBE, ICBA, ICTP, IIEP, MGIE, UBO, UIL, UIS, UNES — measured in both fmioi.BUKRS and fmavct_2026.RFIKRS. That is the 2017 AS-IS list itself, minus IESALC and IITE.",
+     "verdict": "NOT_IMPLEMENTED",
+     "why_it_is_the_biggest_one": "everything else in BBP-04 was designed ON TOP of the consolidation. A unified commitment-item catalog and a single derivation strategy are not partially achievable across nine FM areas — so a large part of the design is not 'pending', it is unreachable in the current structure.",
+     "consequence_today": "every consolidated budget answer requires manual reconciliation across nine areas, which is precisely the AS-IS problem the design was written to remove",
+     "checkable_against": "SELECT DISTINCT RFIKRS FROM fmavct_*  /  BUKRS FROM fmioi"
+    },
+    {
+     "id": "B2R-S2-BCS-SEVEN-DIMENSIONS",
+     "as_designed": "BCS controls on SEVEN dimensions: Fund, Budget Period, Grant, Funds Center, Commitment Item, Funded Program, Functional Area. Fund means the FUNDING SOURCE and explicitly NOT the project — the design flags this as a reversal of the AS-IS meaning.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md section 'Budget Control System (BCS) — 7 Dimensions'",
+     "as_run_measured": "dimension 3 (Grant) requires GM, and GM has ZERO tables in the golden and is NOT_USED in the profile. Six dimensions at most. Separately, our own model still carries `PROJ.PSPID = GEBER` as a STATIC PROXY for fund — i.e. project-as-fund, the very equivalence the design set out to reverse.",
+     "verdict": "PARTIAL",
+     "consequence_today": "any statement about 'the 7 budget dimensions' is wrong here by at least one, and the fund/project distinction the design insisted on is still not clean in our own bridge",
+     "checkable_against": "gm* tables in the golden (zero); PROJ.PSPID vs GEBER equivalence"
+    },
+    {
+     "id": "B2R-S3-AVC-ADDRESS-TRIPLE",
+     "as_designed": "AVC distinguishes THREE addresses: POSTING (the full FM assignment on the transaction), BUDGET (where budget is entered, possibly at a higher aggregation) and CONTROL (where the check fires, which can differ from both). The design's own example: budget at Fund + Funds Center + Budget Period, control at Fund + Funds Center + Commitment Item GROUP + Budget Period.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md section 'AVC — Availability Control'",
+     "as_run_measured": "the control record is keyed Fund x Fund Center x GROUPED commitment item, ledger 9H — which matches the design's control-address example closely. Tolerance profiles Z000/Z001/Z002/ZIT1/ZIT2/ZIT3/Z100/Z200 with Error / Warning / Information semantics, as designed.",
+     "verdict": "CONFORMS",
+     "why_this_one_matters_most": "this is the vocabulary our own avc_availability_model.md lacked. We measured the control address correctly and had no NAME for the distinction between posting, budget and control — which is exactly what a standard reference is for. It also explains why a hand-rolled `available = budget - commitment - actual` is refuted: that formula assumes posting address equals control address, and here it does not.",
+     "checkable_against": "fmavct_* key columns; fmavcldgratt ADDRRULE0/ADDRRULE1/PROFRULE"
+    },
+    {
+     "id": "B2R-S4-FMDERIVE-IS-THE-ENGINE",
+     "as_designed": "FMDERIVE populates the FM assignment automatically from FI/CO data. The design states users do NOT manually enter FM account assignment, and calls this essential for user acceptance. Cost Center to Funds Center and GL Account to Commitment Item are declared 1:1.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md section 'FMDERIVE — Derivation Strategy'",
+     "as_run_measured": "FMDT_FIELD and FMDT_STEP DO NOT EXIST on ECC 6.0 EhP8 — derivation lives in the generic derivation tool TABADR*. Strategy FMOA carries 14 step rows, the year-change FMYC 22. And the FI leg is set by the ABAP user exit ZXFMDTU02_RPY, not by a table-driven strategy.",
+     "verdict": "DEVIATES",
+     "nuance": "the OUTCOME the design wanted — automatic derivation, no manual FM entry — appears to hold. The MECHANISM is different from the one designed and documented. That distinction matters: the user experience conforms, the maintainability does not, because a user exit is code and a strategy is configuration.",
+     "checkable_against": "TABADR* strategies FMOA/FMYC/EAHR; the ZXFMDTU02_RPY source"
+    },
+    {
+     "id": "B2R-S5-PBET-ACTIVE",
+     "as_designed": "PBET (Period Based Encumbrance Tracking) is activated so that commitments consume budget in the period they are expected to be LIQUIDATED rather than the period they are created, with systematic year-end carry-forward, for IPSAS commitment disclosure.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md section 'PBET — Period Based Encumbrance Tracking'",
+     "as_run_measured": "NOT VERIFIED. FMIOI carries PERIO, which is consistent with period tracking, but whether PBET is switched on has not been read from configuration.",
+     "verdict": "UNVERIFIED",
+     "to_check": "the FM area PBET flag in FM configuration, read-only",
+     "checkable_against": "FM area settings; FMIOI PERIO distribution vs posting date"
+    }
+   ],
+   "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it.",
+   "_created_session": 97
   }
  },
  "_next": {
