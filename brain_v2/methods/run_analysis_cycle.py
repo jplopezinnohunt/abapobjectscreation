@@ -92,6 +92,8 @@ CYCLE = [
      "L6 which analysis is trapped in prose, where no algorithm can reach it", False),
     ("brain_v2/methods/audit_agent_freshness.py",
      "L6 do the agents still know what the model knows?", False),
+    ("brain_v2/system_profile/compose_profile.py",
+     "L7 compose the profile from what everything above produced", False),
     ("brain_v2/methods/check_triggers.py",
      "L6 what needs re-running on current evidence", False),
 ]

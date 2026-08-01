@@ -379,6 +379,35 @@ def main():
                             "stay silent — silence reads as absence, and absence in the "
                             "wrong log is the error that produced six wrong module answers")
 
+    # ---- P1 · profile composition -----------------------------------------
+    prof = REPO / "brain_v2" / "system_profile" / "installation_profile.json"
+    if prof.exists():
+        import json as _j
+        P = _j.load(open(prof, encoding="utf-8"))
+        comps = P.get("components", [])
+        checked += 1
+        # INVARIANT: every component declares WHERE it comes from. A component with no state
+        # is a profile that cannot say what it knows versus what it assumes — which is the
+        # entire reason this algorithm replaced a hand-written document.
+        bad = [c["component"] for c in comps if c.get("state") not in
+               ("DERIVED", "DECLARED", "MISSING")]
+        if bad:
+            failures.append(f"P1 component(s) without provenance: {bad}")
+        checked += 1
+        # INVARIANT: a MISSING component must say what to run. 'Missing' with no remedy is a
+        # complaint, not a finding.
+        mute = [c["component"] for c in comps
+                if c.get("state") == "MISSING" and not c.get("to_fix")]
+        if mute:
+            failures.append(f"P1 MISSING component(s) with no remedy named: {mute}")
+        checked += 1
+        # FLOOR: if the derived share collapses, the profile has quietly become a document
+        # again — which is the defect P1 exists to prevent.
+        d = sum(1 for c in comps if c.get("state") == "DERIVED")
+        if comps and d < len(comps) // 3:
+            failures.append(f"P1 only {d} of {len(comps)} components derive themselves — "
+                            f"the profile is drifting back to hand-maintained")
+
     print(f"[algorithm validation] {checked} golden cases")
     if failures:
         print(f"  {len(failures)} REGRESSION(S):", file=sys.stderr)

@@ -258,6 +258,7 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **9 · verification** | `brain_v2/system_profile/build_model_graph.py` (ascent · coherence · cross-cutting) · `brain_v2/verify_claims.py` · `brain_v2/claims_health.py` · `brain_v2/curate.py` |
 | **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · **`brain_v2/methods/check_triggers.py`** (fires the loop on evidence) · **`brain_v2/methods/build_domain_capability_matrix.py`** (is capability where the work is?) · **`brain_v2/methods/build_domain_assets.py`** (the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows, and what is missing) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) · `brain_v2/session_activate.py` + `brain_v2/migrate_memory.py` (session bootstrap and memory portability) |
 | **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will", and THE ONLY PLACE the order lives) · **`brain_v2/methods/audit_agent_freshness.py`** (do the agents still know what the model knows?) · **`brain_v2/methods/audit_prose_classifications.py`** (which analysis is trapped in prose?) · **`brain_v2/build_channel_registry.py`** (lift the DECLARED channel taxonomy out of the integration map) |
+| **the profile itself** | **`brain_v2/system_profile/compose_profile.py`** (P1 — the profile as 18 COMPONENTS, each bound to the algorithm that derives it, each carrying DERIVED / DECLARED / MISSING. The DERIVED share is the portability number) · **`brain_v2/build_brain_index.py`** (the bootstrap index, generated: process spine, security, integration, maturity) |
 | **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
 | **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) |
 | **rules in code** | **`Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py`** (read the source that is ACTUALLY VALID — from PRODUCTION, read-only; classes need the generated pool plus one include per method, or a 1,296-line class reads as empty) · **`process_mining/extract_business_rules.py`** (A9 — quasi-config, hard constants with their reasoning, intent comments, modification blocks with their transports, standard overrides, leftovers) · **`brain_v2/build_interface_inventory.py`** (every interface as a RECORD) · **`brain_v2/build_audit_slots.py`** (the SHARED pre-aggregate: 15.6M audit rows to 987K INDEXED slots. The golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place — this turns a full scan into a keyed lookup and took A8 from over an hour to 3m29s) |
@@ -654,6 +655,51 @@ companion, never as its home:
 **A rule with no way to be violated is prose.** Every normative rule carries
 `violation_looks_like` and `checkable_against` — that is what makes it a conformance
 reference rather than a description.
+
+---
+
+## The profile is COMPOSED, never written
+
+**A hand-maintained profile cannot be reproduced on a second installation** — and being
+reproducible is the only reason the profile exists. This one said so about itself:
+*"who_updates: any session that measures something, EDIT the profile json"*. That is the
+defect, not the process.
+
+So the profile is **18 components**, each bound to the algorithm that derives it, each with
+its own provenance:
+
+| state | meaning | cost on the next tenant |
+|---|---|---|
+| **DERIVED** | an algorithm produced it from tenant data | free |
+| **DECLARED** | a human established it — correct, but by hand | must be redone |
+| **MISSING** | nothing produces it yet | the honest gap |
+
+**Read the DERIVED share as the portability number.** Here it is **61%**: that much of
+"profile this installation" runs itself. The rest is named, which is the only way it ever
+shrinks.
+
+### Why one algorithm per component, not one big prober
+
+The components fail in different ways. The footprint needs a bounded read of component
+tables; the operation needs a full log scan; the boundary needs configuration crossed against
+observed traffic; the rules-in-code need production source. One script would either do all of
+them badly or refuse to run when any single input is missing. **Composed, a missing input
+costs exactly one component and says which algorithm to run.**
+
+### What it cannot tell you
+
+P1 **composes; it does not measure.** A component reads DERIVED because an artifact exists
+with content — not because that content is current or correct. A stale artifact composes
+exactly like a fresh one, so read P1 together with the cycle state and the drift signal, never
+alone.
+
+### The one genuine hole
+
+`security_posture` is the only MISSING component: nothing here derives where the control
+surface is. The capability grid reports the same absence from the other side — `E_AUTH` empty
+in 16 of 21 domains. **Two independent instruments agreeing that something is absent is worth
+more than a placeholder**, and it is why security has its own section in the bootstrap index
+rather than a row in a table.
 
 ---
 
