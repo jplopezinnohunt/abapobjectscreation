@@ -264,7 +264,8 @@
    "currency": "EUR *and* USD (MR_WAERS2)",
    "transactions": "INCLUDES HRM1/HRM2/HRP1",
    "_note": "the cure for the currency defect EXISTS in this variant and is unreachable from the main path — the staff gate accepts USD, the main one does not",
-   "_second_latent_defect": "this gate also checks IV_HKONT IN MR_HKONT, and MR_HKONT is DECLARED at line 57 and NEVER POPULATED anywhere in the class. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed the staff gate FAILS ALWAYS. Same shape as the known defect: a range that gates and is never filled."
+   "_second_latent_defect": "this gate also checks IV_HKONT IN MR_HKONT, and MR_HKONT is DECLARED at line 57 and NEVER POPULATED anywhere in the class. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed the staff gate FAILS ALWAYS. Same shape as the known defect: a range that gates and is never filled.",
+   "_second_latent_defect_QUALIFIED": "QUALIFIED after reading the production source properly. IV_HKONT is declared OPTIONAL and the check is guarded by IF IV_HKONT IS NOT INITIAL — so the empty-range trap fires ONLY if a caller passes a GL account. And CHECK_CONDITIONS_2 has NO CALLER anywhere in the extracted corpus: only its implementation (line 336) and its declaration (line 573). WHICH RAISES A BIGGER QUESTION THAN THE TRAP: is the STAFF gate used at all? The callers would be in the ENHO members, and THE ENHANCEMENTS ARE NOT IN THE CORPUS — the extractor handles CLAS, PROG and FUGR only, so all 12 ZFIX enhancement implementations are unread. Zero ZFIX files in extracted_sap_p01/YA. Until they are read, 'the staff path is dead' and 'the staff path is never called' are indistinguishable, and both would explain why USD postings never convert."
   },
   "CHECK_CONDITIONS_3": {
    "purpose": "reconstruction / DELETION — the complement",
