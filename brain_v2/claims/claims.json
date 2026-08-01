@@ -17906,5 +17906,49 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 411,
+  "claim": "THE BUDGET RATE MECHANISM WAS DESIGNED AWAY AND BUILT ANYWAY — and its failure mode is the reason it was designed away (s097, BBP-08 against production). BBP-08 calls it 'the most significant simplification': the practice of a special CONSTANT EXCHANGE RATE for EUR-to-USD conversion IN BUDGET EXECUTION is ELIMINATED. Constant dollar becomes strictly a REPORTING concept, an extra BW column. Budget control instead uses an additional AVC in BCS with a tolerance (~105%) RATHER THAN MANIPULATING POSTING EXCHANGE RATES — expressly so that postings use operational rates, for IPSAS. WHAT EXISTS IN PRODUCTION IS THE OPPOSITE: YCL_FM_BR_EXCHANGE_RATE_BL manipulates the exchange rate during budget execution. And it carries a one-line defect confirmed in source — the conversion gate appends only 'EUR' to mr_waers, so a USD posting exits via CHECK without setting rv_is_ok and the conversion is SKIPPED SILENTLY. A trace recorded 42 invocations of the class and ZERO reads of TCURR: it fired and converted nothing. MEASURED BLAST RADIUS, already established in INC-BUDGETRATE-EQG and now attached to the rule: 458 funds carry EUR-loaded reservations with USD consumption; 135,792 bypass postings lifetime; $375,011,484.95 of volume; ~$35.7M of theoretical AVC drift exposure; 70 funds still exposed in 2026 with 214 bypass postings already made. WHY THIS IS THE CLEAREST DEMONSTRATION IN THE PROJECT OF WHY S_STANDARD_REF MATTERS: without the as-designed reference the incident reads as 'a bug to fix'. With it, the same facts read as 'a mechanism the blueprint explicitly eliminated was implemented, and the failure it produces is the very reason for the elimination'. The design's alternative — an AVC tolerance in BCS — cannot have this failure class at all, because it never touches the posting rate. Same evidence, different conclusion, and a different remedy: fix the gate, or retire the mechanism for what BBP-08 specified. AND AN IPSAS ANGLE THAT IS NOT OURS TO DECIDE: the design's stated reason for the deletion was that postings must use OPERATIONAL exchange rates. A mechanism that overrides the posting rate is therefore not merely fragile — it sits against the standard the design was aligning to. That is a question for the business.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 97,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "unesco-sap-brain/sources/2017_design/BBP08_financials_2017-06.md lines 41/132 x extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A x INC-BUDGETRATE-EQG P01 golden scan",
+    "cite": "design: constant rate ELIMINATED from execution, AVC tolerance ~105% instead; built: mr_waers = ['EUR'] only; measured: 458 funds, 135,792 bypass postings, $375M volume, ~$35.7M drift exposure, 70 funds exposed in 2026",
+    "added_session": 97
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "YCL_FM_BR_EXCHANGE_RATE_BL",
+   "mr_waers",
+   "TCURR",
+   "FMAVC005",
+   "INC-BUDGETRATE-EQG",
+   "BBP08",
+   "FMIOI",
+   "FMIFIIT"
+  ],
+  "resolution_notes": "USER POINT: the USD budget fix rate is a particular B2R topic with a custom development, documented in one project or the other. It was documented in OURS as an incident with a confirmed root cause. What the as-designed reference adds is not new evidence — it is the frame that changes the remedy. Promoted from an incident document into a normative RULE of B2R, because 'the constant rate is reporting-only' is a statement about what CORRECT means, not about one ticket.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "FI"
+   ],
+   "module": [
+    "FM",
+    "FI"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]

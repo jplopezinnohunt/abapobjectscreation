@@ -319,7 +319,8 @@
     "as_designed": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md — BBP-04, authored 2017-06 by the implementation consultants",
     "as_run": "our production measurements: the golden DB and P01 config frontier",
     "why_both": "a standard reference with no delta attached is just another document. The delta IS the product.",
-    "sap_standard_peer": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md and OECD_gm_fitgap_2014-10.md — the only genuinely SAP-standard material available. BBP-04 says what UNESCO intended; these say what SAP expects."
+    "sap_standard_peer": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md and OECD_gm_fitgap_2014-10.md — the only genuinely SAP-standard material available. BBP-04 says what UNESCO intended; these say what SAP expects.",
+    "as_designed_financials": "unesco-sap-brain/sources/2017_design/BBP08_financials_2017-06.md — BBP-08, the constant-dollar decision"
    },
    "_provenance_caution": "BBP-04 is UNESCO's AS-DESIGNED intent, NOT the SAP as-shipped baseline. The BCS dimension model, the AVC address triple and PBET are standard SAP CONCEPTS described inside it, and those are legitimately usable as a standard reference. The UNESCO choices around them are not.",
    "rules": [
@@ -394,9 +395,32 @@
      "as_run_measured": "not applicable — GM has zero tables in the golden and is NOT_USED",
      "verdict": "NOT_APPLICABLE",
      "why_recorded_anyway": "it is the reference for what grant-level control WOULD look like, and Cost_Recovery_CRP currently performs a similar function without GM. Recording the standard makes the home-grown alternative measurable against something instead of against nothing."
+    },
+    {
+     "id": "B2R-S8-CONSTANT-RATE-IS-REPORTING-ONLY",
+     "kind": "AS_DESIGNED — and it is a DELETION, which makes it the sharpest rule here",
+     "as_designed": "BBP-08 calls this 'the most significant simplification': the practice of using a special CONSTANT EXCHANGE RATE for EUR-to-USD conversion IN BUDGET EXECUTION is ELIMINATED. Constant dollar becomes strictly a REPORTING concept — an extra column in BW that converts EUR transactions at the constant rate. Budget control instead uses an additional AVC in BCS with a tolerance (the design cites ~105%), RATHER THAN MANIPULATING POSTING EXCHANGE RATES. The stated reason is IPSAS: postings must use operational rates.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP08_financials_2017-06.md lines 41 and 132",
+     "as_run_measured": "the opposite was built. YCL_FM_BR_EXCHANGE_RATE_BL is a custom class that MANIPULATES the exchange rate during budget execution — precisely the mechanism the design removed. And it carries a one-line defect confirmed in production source: `APPEND VALUE #( sign='I' option='EQ' low='EUR' ) TO mr_waers` means the conversion gate only opens for EUR, so a USD posting exits via CHECK without setting rv_is_ok and the Budget Rate conversion is SKIPPED SILENTLY. A trace showed 42 invocations of the class and ZERO reads of TCURR — it fired and converted nothing.",
+     "verdict": "DEVIATES — THE DESIGN DELETED THIS MECHANISM AND IT WAS BUILT ANYWAY",
+     "why_this_reframes_the_incident": "INC-BUDGETRATE-EQG reads as 'a bug to fix' without the as-designed reference. With it, it reads as: a mechanism the blueprint explicitly eliminated was implemented, and its failure mode is the very reason it was eliminated. The design's alternative — an AVC tolerance in BCS — would not have this failure class at all, because it never touches the posting rate. This is the clearest demonstration in the project of why S_STANDARD_REF matters: the same facts, a completely different conclusion.",
+     "measured_blast_radius": {
+      "earmarked_funds_scanned": 370064,
+      "funds_with_EUR_FR_and_USD_consumption": 458,
+      "usd_bypass_postings_lifetime": 135792,
+      "usd_volume": "375,011,484.95",
+      "theoretical_avc_drift_exposure": "~35,734,844 (volume x 9.529%)",
+      "funds_still_exposed_in_2026": 70,
+      "bypass_postings_already_made_2026": 214,
+      "source": "P01 golden scan of fmioi + fmifiit_full, session 054"
+     },
+     "violation_looks_like": "FMAVC005 on a fund that appears to have budget: a USD posting consumes an EUR-loaded reservation without the Budget Rate conversion, so the two ledgers drift by the rate gap and the pool reads as exhausted when it is not",
+     "checkable_against": "fmioi/fmifiit_full — funds carrying EUR-loaded FRs with USD consumption; and extracted_code/CLAS/YCL_FM_BR_EXCHANGE_RATE_BL/CM00A for the gate itself",
+     "the_workaround_is_unsustainable": "'post in EUR' is the current functional workaround, and operational reality forces USD postings — vendor invoices, travel. So the drift keeps accruing on 458 funds until the gate is fixed or the mechanism is retired in favour of what BBP-08 specified.",
+     "note_on_ipsas": "the design's reason for the deletion was IPSAS compliance — postings must use operational exchange rates. A mechanism that overrides the posting rate is therefore not only fragile, it is at odds with the standard the design was aligning to. That is a question for the business, not a technical one."
     }
    ],
-   "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it. || AND THE SECOND PASS IS WORSE: measured against the standard coding block, the seven-dimensional BCS runs as THREE dimensions. Fund, Funds Center and Commitment Item are 100% populated across 2,308,814 FM line items; Funded Program, Functional Area, Grant and Budget Period carry nothing. Functional Area is UNESCO's C/5 Expected Results — the dimension that ties money to programme purpose — and it is blank in every single row.",
+   "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it. || AND THE SECOND PASS IS WORSE: measured against the standard coding block, the seven-dimensional BCS runs as THREE dimensions. Fund, Funds Center and Commitment Item are 100% populated across 2,308,814 FM line items; Funded Program, Functional Area, Grant and Budget Period carry nothing. Functional Area is UNESCO's C/5 Expected Results — the dimension that ties money to programme purpose — and it is blank in every single row. || AND THE SHARPEST RULE IS A DELETION: BBP-08 eliminated the constant exchange rate from budget execution, making it a REPORTING concept and specifying an AVC tolerance instead, expressly to stay IPSAS-aligned. A custom class that manipulates the posting rate was built anyway, and its one-line gate defect has a measured blast radius of 458 funds, 135,792 bypass postings and ~$35.7M of AVC drift exposure.",
    "_created_session": 97
   }
  },
