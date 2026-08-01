@@ -1,0 +1,114 @@
+{
+ "_what_this_is": "the candidate fillers for S_STANDARD_REF, as RECORDS — the column that is empty in 20 of 21 domains and is the PRECONDITION for G_CONFORMANCE",
+ "_why_it_matters": "without a standard reference there is no delta, and the delta IS the product. G is empty everywhere BECAUSE S is. This is the highest-value unblock available.",
+ "_found_by": "cross-project exploration of unesco-sap-brain, s097",
+ "_the_distinction_that_matters": {
+  "SAP_STANDARD": "how SAP ships and intends the module to work. Only the peer-installation material qualifies.",
+  "AS_DESIGNED": "how UNESCO INTENDED to run it, authored by SAP SE / SAP Suisse / Capgemini in 2016-2019. Not the SAP baseline, but a legitimate reference to conform AS-RUN against.",
+  "why_the_difference_bites": "calling as-designed 'standard' would make every UNESCO-specific choice look like SAP behaviour, and every deviation from SAP look like a defect. Two different yardsticks, two different findings."
+ },
+ "_provenance_warning": "unesco-sap-brain declares us its UPSTREAM (refs_external.json: abapobjectscreation = 'SAP execution truth source'). Every DATA-derived claim there comes from OUR golden. What is genuinely theirs and unreproducible is this 2016-2019 design corpus — hand-written extracts of the original PDFs, which are also held there.",
+ "sources": [
+  {
+   "rank": 1,
+   "path": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md",
+   "also": "unesco-sap-brain/sources/2017_design/OECD_gm_fitgap_2014-10.md",
+   "kind": "SAP_STANDARD",
+   "fills": ["PSM_FM", "Cost_Recovery_CRP"],
+   "what": "peer public-sector SAP FM/GM baselines — UN Secretariat Umoja (199pp) and SAP Suisse fit-gap for OECD",
+   "why_ranked_first": "the ONLY genuinely SAP-standard material in either project. Lowest UNESCO contamination, so the cleanest yardstick.",
+   "verified_exists": true
+  },
+  {
+   "rank": 2,
+   "path": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md",
+   "kind": "SAP_STANDARD concepts inside an AS_DESIGNED document",
+   "fills": ["PSM_FM"],
+   "what": "BCS 7 dimensions; the AVC ADDRESS TRIPLE (Posting / Budget / Control); PBET; AVC tolerance semantics Error/Warning/Info",
+   "why": "the address triple is the yardstick our avc_availability_model.md currently lacks a NAME for. Standard BCS concepts, directly usable as S.",
+   "verified_exists": true
+  },
+  {
+   "rank": 3,
+   "path": "unesco-sap-brain/sources/2017_design/BBP06_grants_management_2017-06.md",
+   "kind": "AS_DESIGNED",
+   "fills": ["Cost_Recovery_CRP"],
+   "what": "GM as budgetary sub-ledger; Grant -> Sponsored Program -> Sponsored Class; GM AVC ledger; GMIDCPOST indirect-cost batch; grant lifecycle",
+   "why": "GM is NOT_USED in this tenant, so this is the 'should' against which our cost-recovery model is a measurable deviation",
+   "verified_exists": true
+  },
+  {
+   "rank": 4,
+   "path": "unesco-sap-brain/sources/2017_design/BBP10_hcm_pcp_2017-06.md#section-6",
+   "kind": "AS_DESIGNED",
+   "fills": ["PBC"],
+   "what": "financing-horizon rules, encumbrance-filter BAdI Z_UNESCO_ENCUMB_FIL, PCS config, vacancy-termination budget release, 4 PBC developments",
+   "why": "this is the AS-DESIGNED counterpart of what we read from PRODUCTION SOURCE in ZCL_IM__UNESCO_ENCUMB. Having both sides is what makes a conformance check possible at all.",
+   "corrects": "PBC.S_STANDARD_REF was set to NOT_APPLICABLE in s097 on the reasoning that the engine is OVERRIDDEN so SAP standard does not apply. That conflated two things: SAP-standard does not apply, but an AS-DESIGNED reference EXISTS and this is it.",
+   "verified_exists": true
+  },
+  {
+   "rank": 5,
+   "path": "unesco-sap-brain/sources/2017_design/BBP07_controlling_project_system_2017-06.md",
+   "kind": "AS_DESIGNED with standard CO/PS concepts",
+   "fills": ["CO", "PS"],
+   "what": "CO object hierarchy, 6 allocation mechanisms, settlement rules, PS<->FM via Funded Program, PS<->GM via Sponsored Program",
+   "why": "CO is our weakest B2R row — 9 of 11 cells NONE",
+   "verified_exists": true
+  },
+  {
+   "rank": 6,
+   "path": "unesco-sap-brain/sources/2017_design/BBP05_new_gl_2017-06.md",
+   "kind": "AS_DESIGNED",
+   "fills": ["FI"],
+   "what": "New GL document splitting design — method plus 3 mandatory characteristics",
+   "caveat": "THE DESIGN WAS NEVER BUILT. Our config frontier measured splitting OFF (FAGL_ACTIVEC / FAGL_SPLIT_ACTC empty, GLT0 populated) and method Z000000012 does not exist. So this fills S as INTENDED-BUT-NOT-IMPLEMENTED, which is itself a conformance finding of the largest kind.",
+   "verified_exists": true
+  },
+  {
+   "rank": 7,
+   "path": "unesco-sap-brain/sources/2017_design/dd-config-psm_202602.md",
+   "kind": "NOT S — the left-hand side of a G_CONFORMANCE check",
+   "fills": [],
+   "what": "the FMDERIVE 'UNESCO RCS' 26-step strategy",
+   "why_not_S": "it is a 2019 config-scope document, and we have REFUTED its central claim against production (see contradictions). It is the DESIGNED derivation chain, and we hold the RUNNING one — which makes it a conformance input, not a standard reference.",
+   "verified_exists": true
+  }
+ ],
+ "contradictions_worth_more_than_confirmations": [
+  {
+   "id": "X1-FMDERIVE-26-STEPS",
+   "they_assert": "FM derivation runs as a 26-step FMDERIVE strategy configured in FMDT_STRATEGY/STEP/RULE/SOURCE, hand-written from DD-CONFIG-PSM v3.0 (2019), never read from a system",
+   "we_measured": "FMDT_FIELD and FMDT_STEP DO NOT EXIST on ECC 6.0 EhP8 — FM derivation lives in the generic derivation tool TABADR*. Strategy FMOA = 14 step rows; the largest is the year-change FMYC with 22. And for the FI leg, FISTL/FONDS/WBS are set by the ABAP user exit ZXFMDTU02_RPY, not by a table-driven strategy at all.",
+   "why_it_is_the_most_valuable_one": "their entire Bridge Approach rests on 'extend FMDERIVE Step 18'. That step does not exist as described, so everything downstream of it rests on a design document rather than on the machine.",
+   "our_source": "knowledge/config_frontier_extraction_2026-06-19.md + DONE_config_frontier.md",
+   "status": "OURS VERIFIED, THEIRS REFUTED"
+  },
+  {
+   "id": "X2-THEIR-LIFECYCLE-IS-STALE",
+   "they_assert": "knowledge/14 'Current state 2026': FM in legacy Former Budgeting, AVC in legacy mode, no FMDERIVE, PBC NOT integrated, doc splitting via method Z000000012",
+   "we_measured": "BCS AVC ACTIVE (ledger 9H, 9 FM areas, FY2001+); PBC is the LARGEST FM write path (FMRESERV 6.95M change documents, #1 object class); doc splitting OFF and Z000000012 does not exist",
+   "note": "their own later data-derived work (knowledge/45) contradicts their own step 3 — the control object is Fund x Fund Center x grouped CI, not the posting address",
+   "status": "OURS VERIFIED, THEIRS STALE AND SELF-CONTRADICTORY"
+  },
+  {
+   "id": "X3-FUND-TYPE-CODE-SPACES",
+   "detail": "their fund_types table uses 4-digit designed types (1010, 1030, 1032) while production FINCTYPE is 3-digit (001-019 RP, 101-115 earmarked, 299 MBF, 311/314 CRP). Two incompatible code spaces in one repo, never cross-walked.",
+   "consequence": "any join on fund_type across their tables returns nothing",
+   "status": "STRUCTURAL, unresolved on their side"
+  },
+  {
+   "id": "X4-RETRACTED-NEGATIVE-FUNDS",
+   "detail": "the -$30.4M / -$45M / -$47.2M 'master deficits' were RETRACTED by their own knowledge/45: artifacts of parsing FMAVCT.HSL01 trailing-minus strings and summing without the value-type leg. The official figure via YFM1/FMIT is 5 RP Output-Pool funds at -$1.94M, because the official check reads FMIT, scopes FINCTYPE 001-099 and excludes *GEF* and CI GAINS.",
+   "why_it_matters": "any B2R answer quoting -$47M as 'UNESCO's negative-funds problem' is quoting a retracted number",
+   "status": "RETRACTED BY THEM — their retraction is the more valuable artifact"
+  }
+ ],
+ "the_hole_in_the_chain": {
+  "table": "FMIT",
+  "what": "BCS totals — FIKRS + RFONDS + RWRTTP + RYEAR, periods HSL01..HSL16",
+  "why_it_matters": "the OFFICIAL negative-funds report YFM1 reads FMIT, NOT FMAVCT. So the entire REPORT leg of budget->commitment->actual->report is documented and UNQUERYABLE.",
+  "verified_absent": "confirmed absent from the golden: only fmavct_* and fmavc* config tables are present. FMRESERV is absent too — the PBC->FM commitment join is evidenced by CHANGE DOCUMENTS, not by the reservation records.",
+  "action": "EXT-FMIT"
+ }
+}

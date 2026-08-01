@@ -158,6 +158,16 @@
    "why": "Found by build_domain_assets.py — a gap NO kind-major view could show. HCM feeds POST2BUDGET, which is a DIFFERENTIATOR flow, and staff cost is the largest budget line in a UN agency.",
    "constraint": "personnel data — confirm scope and any privacy constraint with the user before extracting",
    "evidence": "domain_assets.json gaps_ranked_by_activity"
+  },
+  {
+   "id": "EXT-FMIT",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "Extract FMIT — BCS totals, FIKRS + RFONDS + RWRTTP + RYEAR with periods HSL01..HSL16. It is the HOLE IN THE REPORT LEG: the OFFICIAL negative-funds report YFM1 reads FMIT, not FMAVCT, so budget->commitment->actual->report is documented end to end and unqueryable at the last step. Verified absent from the golden (only fmavct_* and the fmavc* config tables are present). Extract FMRESERV in the same pass if readable — today the PBC->FM commitment join is evidenced by CHANGE DOCUMENTS rather than by the reservation records themselves.",
+   "method": "P01 read-only, register under PSM_FM in gold_table_registry",
+   "why_it_matters": "without it every reporting answer is inferred from the commitment layer instead of read from the totals the business actually reports on"
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -607,6 +617,16 @@
    "method": "instrument the loop body directly; suspect scope or a shadowed name, not the regex",
    "why_it_matters": "this is the check for the exact defect the session kept committing: measurements living inside text fields, which is prose wearing a schema",
    "result": "literal U+0008 BACKSPACE bytes where backslash-b was intended, inside a RAW string, written through a heredoc. The pattern compiled and demanded a control character beside every figure, so it matched nothing. Not scope, not shadowing, not the traversal — which is exactly what I spent the attempts doubting. Now 312 hits (minus calendar years)."
+  },
+  {
+   "id": "AN-INGEST-S-STANDARD-REF",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "Fill S_STANDARD_REF for the B2R domains from the 7 ranked sources in brain_v2/s_standard_ref_sources.json. This is the HIGHEST-VALUE unblock in the model: S is empty in 20 of 21 domains and G_CONFORMANCE is empty BECAUSE of it — no standard reference means no delta, and the delta IS the product. KEEP THE TWO KINDS APART. Only the Umoja and OECD peer material is genuinely SAP-STANDARD; the BBPs are UNESCO's AS-DESIGNED intent authored by consultants. Recording as-designed as 'standard' would make every UNESCO choice look like SAP behaviour and every SAP deviation look like a defect — two different yardsticks, two different findings. START WITH PSM_FM (BBP-04: BCS 7 dimensions, the AVC address triple, PBET) because it is our best-covered domain and the triple names something our own avc_availability_model.md currently has no word for.",
+   "method": "read each source, extract the as-designed statements as CHECKABLE rules into normative_models, mirroring what was done for POST2BUDGET",
+   "unblocks": "G_CONFORMANCE for PSM_FM, Cost_Recovery_CRP, PBC, CO, PS, FI"
   }
  ],
  "research_tasks_followups": [
