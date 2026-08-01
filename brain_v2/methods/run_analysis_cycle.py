@@ -94,6 +94,8 @@ CYCLE = [
      "L6 do the agents still know what the model knows?", False),
     ("brain_v2/build_security_posture.py",
      "L6 the security store — built empty so findings never land in prose", False),
+    ("brain_v2/build_s4_readiness.py",
+     "L6 S/4 readiness as a SUBJECT — a column with no owner stays empty", False),
     ("brain_v2/system_profile/compose_profile.py",
      "L7 compose the profile from what everything above produced", False),
     ("brain_v2/methods/check_triggers.py",

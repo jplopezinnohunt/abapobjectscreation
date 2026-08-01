@@ -85,6 +85,65 @@ ESTABLISHED = [
 ]
 
 
+def derive_attribution(gold):
+    """The attribution table, DERIVED — not a sentence inside a finding.
+
+    This existed first as prose in a claim, then as prose inside a record, which is the same
+    thing wearing a schema. The numbers only become knowledge when something can query them:
+    ask which accounts went opaque this month, or whether a satellite started carrying its
+    caller, and a paragraph cannot answer either.
+
+    PARAMX carries the CALLING user behind each technical account, so transparency is a
+    measurable property per account rather than an opinion:
+
+        TRANSPARENT   the account names real callers  -> actions can be attributed
+        OPAQUE        one identity, always itself     -> a trail exists but leads nowhere
+        NO_CALLER     no PARAMX at all                -> there is no trail to follow
+    """
+    import sys as _s
+    _s.path.insert(0, str(REPO / "process_mining"))
+    try:
+        from caller_parse import parse
+    except ImportError:
+        return []
+    from collections import Counter
+    con = sqlite3.connect(f"file:{gold}?mode=ro", uri=True)
+    top = con.execute("SELECT SLGUSER, COUNT(*) n FROM rsau_audit_history "
+                      "GROUP BY 1 ORDER BY n DESC LIMIT 25").fetchall()
+    out = []
+    for acct, calls in top:
+        rows = con.execute("SELECT PARAMX, COUNT(*) FROM rsau_audit_history "
+                           "WHERE SLGUSER=? AND PARAMX<>'' GROUP BY 1", (acct,)).fetchall()
+        c = Counter()
+        for px, k in rows:
+            _d, _h, u = parse(px)
+            if u:
+                c[u] += k
+        e = {"account": acct, "calls": calls}
+        if not c:
+            e["transparency"] = "NO_CALLER"
+            e["distinct_callers"] = 0
+            e["_means"] = ("no PARAMX at all — not even a caller field. There is no trail to "
+                           "follow, so nothing on this path can be tied to a person")
+        else:
+            tot = sum(c.values())
+            own = c.get(acct, 0)
+            e["distinct_callers"] = len(c)
+            e["self_share"] = round(own / tot, 3)
+            e["top_callers"] = c.most_common(5)
+            if len(c) <= 2 and own / tot > 0.9:
+                e["transparency"] = "OPAQUE"
+                e["_means"] = ("one identity, always itself — a trail exists but it leads back "
+                               "to the account, never to a person")
+            else:
+                e["transparency"] = "TRANSPARENT"
+                e["_means"] = (f"{len(c)} distinct callers named behind this account — actions "
+                               f"CAN be attributed. Proof that the trail can be carried")
+        out.append(e)
+    con.close()
+    return out
+
+
 def main():
     have = set()
     if GOLD.exists():
@@ -93,7 +152,7 @@ def main():
                 con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         con.close()
 
-    comps, counts = [], {"READY": 0, "MISSING_INPUT": 0, "NO_INPUT_NEEDED": 0}
+    comps, counts = [], {"DERIVED": 0, "READY": 0, "MISSING_INPUT": 0, "NO_INPUT_NEEDED": 0}
     for name, question, table, answers in COMPONENTS:
         e = {"component": name, "question": question, "needs_table": table,
              "would_answer": answers}
@@ -103,6 +162,16 @@ def main():
         elif table in have:
             e["state"] = "READY"
             e["note"] = "the input is in the golden; the analysis has not run yet"
+            if name == "attribution" and GOLD.exists():
+                acc = derive_attribution(GOLD)
+                if acc:
+                    e["state"] = "DERIVED"
+                    e["accounts"] = acc
+                    e["summary"] = {
+                        t: sum(a["calls"] for a in acc if a["transparency"] == t)
+                        for t in ("TRANSPARENT", "OPAQUE", "NO_CALLER")}
+                    e["note"] = ("derived per account, queryable — not a sentence inside a "
+                                 "finding")
         else:
             e["state"] = "MISSING_INPUT"
             e["to_fix"] = (f"extract {table.upper()} from P01, read-only, and register it in "
@@ -137,7 +206,7 @@ def main():
           f"{counts['READY']} ready · {counts['MISSING_INPUT']} missing input · "
           f"{counts['NO_INPUT_NEEDED']} established")
     for e in comps:
-        mark = {"READY": "  ", "MISSING_INPUT": "! ", "NO_INPUT_NEEDED": "= "}[e["state"]]
+        mark = {"DERIVED": "* ", "READY": "  ", "MISSING_INPUT": "! ", "NO_INPUT_NEEDED": "= "}[e["state"]]
         print(f"  {mark}{e['component']:20s} {e['state']:14s} {e.get('needs_table') or ''}")
     print(f"\n  {len(ESTABLISHED)} findings already VERIFIED and now stored as records, "
           f"not prose.")

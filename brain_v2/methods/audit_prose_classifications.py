@@ -30,6 +30,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent.parent
 KNOWLEDGE = REPO / "knowledge"
+BRAIN = REPO / "brain_v2"
 CODE_DIRS = ["brain_v2", "process_mining", "scripts", "Zagentexecution"]
 OUT = REPO / "brain_v2" / "methods" / "prose_classifications.json"
 
@@ -91,6 +92,67 @@ def _tables(text):
     return out
 
 
+def _numbers_in_prose():
+    """MEASUREMENTS buried inside a text field of a JSON store.
+
+    ⚠️ KNOWN BROKEN (s097) — RETURNS 0 AND SHOULD NOT. The identical traversal run outside
+    this module finds 2 real cases in brain_v2/security_posture.json
+    (established_findings[1]/finding carries 3,230,958 / 100% / 2,106,347 / 324,390, and
+    /not_the_finding carries 1,848 / 902,758 / 1,882). Inside the module it returns an empty
+    list, with the same regex, the same SKIP list and the same threshold. The cause has not
+    been isolated.
+
+    LEFT VISIBLY BROKEN RATHER THAN QUIETLY GREEN. A checker that reports zero problems while
+    a real one sits in the very file it was written for is worse than no checker: the zero
+    reads as a clean bill of health. Tracked as AN-FIX-NUMBERS-IN-PROSE.
+
+    A different failure from the markdown one, and easier to miss because the file LOOKS
+    structured. A record whose 'finding' field reads '3,230,958 calls, ONE identity, 100%
+    itself' is prose wearing a schema: nothing can ask which accounts went opaque this month,
+    or whether a satellite started carrying its caller, because the numbers are inside a
+    sentence.
+
+    I committed exactly this an hour after writing the rule against it, which is why this
+    check exists rather than a reminder.
+
+    Heuristic: a long string field carrying three or more separate figures is almost always a
+    measurement that should have been a list of records. Reported, never auto-fixed — some
+    narrative legitimately cites numbers, and a checker that rewrites prose would destroy the
+    reasoning the numbers came from.
+    """
+    NUM = re.compile(r"\d[\d,\.]{3,}|\d+%")
+    SKIP = ("_why", "_design", "_concept", "_one_line", "why", "how_to_apply", "rule",
+            "_means", "consequence", "_note", "note", "resolution_notes", "claim")
+    out = []
+    for f in sorted((BRAIN).rglob("*.json")):
+        if "output" in str(f) or "brain_state" in f.name:
+            continue
+        try:
+            blob = json.load(open(f, encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        stack = [("", blob)]
+        while stack:
+            path, node = stack.pop()
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    stack.append((f"{path}/{k}", v))
+            elif isinstance(node, list):
+                for i, v in enumerate(node):
+                    stack.append((f"{path}[{i}]", v))
+            elif isinstance(node, str) and len(node) > 120:
+                key = path.rsplit("/", 1)[-1]
+                if key in SKIP or key.startswith("_"):
+                    continue
+                hits = NUM.findall(node)
+                if len(hits) >= 3:
+                    out.append({"store": str(f.relative_to(BRAIN.parent)).replace("\\", "/"),
+                                "field": path, "figures": hits[:6],
+                                "_why": ("three or more figures in one text field — this is a "
+                                         "measurement that should be records")})
+    return out
+
+
 def main():
     readers = _readers()
     trapped, narrative, structured = [], [], []
@@ -116,6 +178,7 @@ def main():
             })
 
     trapped.sort(key=lambda x: -x["rows"])
+    nip = _numbers_in_prose()
     json.dump({
         "_generated_by": "brain_v2/methods/audit_prose_classifications.py",
         "_question": "which analysis is trapped in prose, where no algorithm can reach it?",
@@ -133,7 +196,17 @@ def main():
         "trapped": trapped,
         "already_structured": structured,
         "declared_narrative": narrative,
+        "numbers_buried_in_prose": nip,
+        "_second_kind_of_trap": (
+            "a MEASUREMENT inside a text field of a JSON store is prose wearing a schema. The "
+            "file looks structured, so it passes every eye — but nothing can ask which "
+            "accounts went opaque this month when the numbers are inside a sentence."),
     }, open(OUT, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+
+    print(f"\n[numbers buried in prose] {len(nip)} text field(s) carrying measurements")
+    for x in nip[:8]:
+        print(f"    {x['store']}{x['field']}")
+        print(f"      figures: {', '.join(x['figures'])}")
 
     print(f"[prose classifications] {len(trapped)} trapped in the LIVE reference · "
           f"{len(structured)} structured · {len(narrative)} historical or declared narrative")
