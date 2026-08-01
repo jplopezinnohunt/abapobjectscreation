@@ -236,7 +236,9 @@
     "n": 8,
     "field": "FTYPE",
     "rule": "IN (SELECT FUND_TYPE FROM FMFUNDTYPE WHERE ZZFIX_RATE = X)",
-    "note": "DATA-DRIVEN, not hard-coded — a custom field on a standard table. Measured in P01: 14 types, all UNES — 001,002,003,004,005,009,010,012,013,016,017,018,094,095. Regular-Programme types only: earmarked 101-115, MBF 299 and CRP 311/314 are NOT in the perimeter."
+    "note": "DATA-DRIVEN on the EXECUTION side: SELECT FUND_TYPE FROM FMFUNDTYPE WHERE ZZFIX_RATE = X. Measured in P01: 14 types, all UNES — 001, 002, 003, 004, 005, 009, 010, 012, 013, 016, 017, 018, 094, 095. The old HARD-CODED list is still visible, COMMENTED OUT, at lines 92 and 97 ('019') — the predecessor of the select.",
+    "_but_the_reporting_side_disagrees": "YFM_CONSTANT_DOLLAR and its two variants (_V2, _DB_V2) DEFAULT S_TYPE to a LITERAL range 001 to 099, commented 'Set fund type for GEF'. The 14 flagged types all sit inside 001-099, but the range is far WIDER — so the CONSTANT-DOLLAR REPORT covers funds the BUDGET-RATE EXECUTION never converted. Two perimeters in one solution: one data-driven, one literal.",
+    "_the_nuance_that_matters": "S_TYPE is a SELECT-OPTIONS defaulted at INITIALIZATION, not a hard gate — an operator can widen or narrow it on the selection screen. So the reporting perimeter is whatever is left on the screen, and the mismatch with execution is silent in both directions."
    }
   ],
   "activation": {
@@ -244,7 +246,10 @@
    "rule": "sy-datum >= MV_START_DATE",
    "source": "TVARVC variable Y_FM_FIXED_RATE_START, type P",
    "measured_in_P01": "20240101 — BR is active since 1 January 2024",
-   "the_trap": "if that variable is missing the code defaults MV_START_DATE to '99991231', so BR silently never activates. A kill switch that fails CLOSED and says nothing."
+   "the_trap": "if that variable is missing the code defaults MV_START_DATE to '99991231', so BR silently never activates. A kill switch that fails CLOSED and says nothing.",
+   "_confirmed_by_user": "the switch is exactly what it looks like: an activation DATE, so the solution goes live from a specific day rather than on transport.",
+   "measured_in_D01": "20240101 — the SAME value",
+   "_correction": "the variable was expected to exist only in PRODUCTION. It is in D01 too, with the identical date. Two consequences, and the second is useful: BR is ALSO active in D01 since 2024-01-01, so the behaviour IS reproducible in development — a fix can be tested without touching production. And the 99991231 fail-closed default therefore does NOT apply to D01 today, though it still applies to any system where the variable is absent."
   }
  },
  "three_gates_not_one": {
@@ -266,5 +271,20 @@
    "logic": "INVERTED: NOT IN for ledger, company, FM area and business area; and IN for the *3 variants, which INCLUDE GAINS/REVENUE and INCLUDE HRM1/HRM2/HRP1 and EXCLUDE the ZZFIX_RATE fund types",
    "_why_it_matters": "it decides which rows RFFMREPO deletes during carryforward and recovery"
   }
+ },
+ "two_perimeters": {
+  "execution": {
+   "where": "YCL_FM_BR_EXCHANGE_RATE_BL CONSTRUCTOR",
+   "rule": "FMFUNDTYPE ZZFIX_RATE = X",
+   "measured": "14 fund types",
+   "nature": "data-driven — changeable without a transport"
+  },
+  "reporting": {
+   "where": "YFM_CONSTANT_DOLLAR / _V2 / _DB_V2, INITIALIZATION",
+   "rule": "S_TYPE default = 001 to 099",
+   "nature": "literal in code, but a SELECT-OPTIONS the operator can change"
+  },
+  "_consequence": "a fund whose type sits in 001-099 but is NOT flagged ZZFIX_RATE appears in the constant-dollar report having never been converted at execution. The report and the engine do not agree on who is in scope, and nothing reconciles them.",
+  "_action": "AN-BR-TWO-PERIMETERS"
  }
 }

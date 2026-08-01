@@ -669,6 +669,16 @@
    "task": "MR_HKONT is declared at line 57 of YCL_FM_BR_EXCHANGE_RATE_BL and NEVER POPULATED, yet CHECK_CONDITIONS_2 — the STAFF gate — checks IV_HKONT IN MR_HKONT at line 366. In ABAP a value IN an empty range is FALSE, so whenever a GL account is passed that gate fails ALWAYS. Establish whether callers pass IV_HKONT: if they do, the staff path — the ONLY one that accepts USD — is dead on that condition, and the payroll/PBC bridge is not doing what it appears to do. Same shape as the known mr_waers defect, found the same way.",
    "method": "grep the callers of check_conditions_2 in extracted_sap_p01/YA for iv_hkont",
    "why_it_matters": "the staff gate is where the cure for the currency defect already exists"
+  },
+  {
+   "id": "AN-BR-TWO-PERIMETERS",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 97,
+   "status": "OPEN",
+   "task": "The budget-rate solution scopes funds two different ways and nothing reconciles them. EXECUTION converts only the 14 types flagged ZZFIX_RATE in FMFUNDTYPE. REPORTING (YFM_CONSTANT_DOLLAR and its two variants) defaults to the literal range 001-099. Quantify the gap: how many funds have a type inside 001-099 WITHOUT the ZZFIX_RATE flag, and how much volume sits on them. Those funds appear in the constant-dollar report having never been converted — which is exactly how a report and an engine come to disagree.",
+   "method": "join FMFINCODE type against FMFUNDTYPE ZZFIX_RATE, restricted to types 001-099",
+   "why_it_matters": "the reporting perimeter is operator-changeable, so the mismatch moves"
   }
  ],
  "research_tasks_followups": [
