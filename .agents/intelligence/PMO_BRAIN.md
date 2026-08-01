@@ -140,6 +140,34 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H91 — SECURITY: open it as a DOMAIN (s097, JP).** It has never been one, and that is exactly
+why searching for it returns nothing: today it exists only as capability column `E_AUTH`, empty
+in 16 of 21 domains, and as the single MISSING component of the installation profile — nothing
+in the repository derives a security posture. Scope: **users, logs, profiles and roles**
+(`USR02` last logon and lock state, `AGR_*` role assignment, `USOBT`/`USOBX` authorisation
+defaults, `SU53`/RSAU failures), plus the **attribution question below**, which is a security
+question and not a usage one.
+Two things are already known and must not be re-derived: the control surface here is the CALL
+and DATA layer, not the role layer (`S_RFC=*` plus a custom write FM that skips the object
+check); and a clean PFCG picture therefore does not mean segregation holds.
+
+**H92 — ATTRIBUTION: 5.3M calls that no person can be tied to (s097, measured).** The
+"80% external" headline hides a sharper fact. Behind each technical account, `PARAMX` carries
+the calling `user=` — and the accounts split cleanly in two:
+- **TRANSPARENT** — `WF-BATCH` 660,588 calls with **542 distinct real users** behind it (only
+  14% is the account itself), `SMTMSBP` with 4 technical users.
+- **OPAQUE** — `MULESOFT` 3,230,958 calls, ONE identity, 100% itself. `BRIDGE-RFC` 2,106,347
+  and `UBO-RFC` 324,390 carry **no `PARAMX` at all** — not even a caller field.
+So it is NOT that a generic user is masking people, which would still leave a trail. For 5.3M
+calls **there is no trail**. And people DO log in: **1,848 distinct users by dialog** (902,758
+events) and 1,882 by RFC/CPIC. The finding is not "nobody uses SAP" — it is that **the write
+traffic enters through channels where attribution is lost**.
+Task: decide whether attribution is recoverable (MuleSoft-side correlation id, an ORION log, a
+header we do not read) or structurally absent. If absent, that is the finding for governance,
+because every SoD and every change-approval control assumes an actor.
+
+
+
 | # | Task | First raised | Category | Notes |
 |---|------|-------------|----------|-------|
 | ~~H1~~ | ~~Create `sap_payment_e2e` skill~~ | ~~#019~~ | ~~Skill~~ | ~~Done #021~~ |
