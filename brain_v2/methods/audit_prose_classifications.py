@@ -95,16 +95,13 @@ def _tables(text):
 def _numbers_in_prose():
     """MEASUREMENTS buried inside a text field of a JSON store.
 
-    ⚠️ KNOWN BROKEN (s097) — RETURNS 0 AND SHOULD NOT. The identical traversal run outside
-    this module finds 2 real cases in brain_v2/security_posture.json
-    (established_findings[1]/finding carries 3,230,958 / 100% / 2,106,347 / 324,390, and
-    /not_the_finding carries 1,848 / 902,758 / 1,882). Inside the module it returns an empty
-    list, with the same regex, the same SKIP list and the same threshold. The cause has not
-    been isolated.
-
-    LEFT VISIBLY BROKEN RATHER THAN QUIETLY GREEN. A checker that reports zero problems while
-    a real one sits in the very file it was written for is worse than no checker: the zero
-    reads as a clean bill of health. Tracked as AN-FIX-NUMBERS-IN-PROSE.
+    FIXED (s098) — it returned 0 because the NUM pattern below had been saved with three
+    literal U+0008 BACKSPACE control characters at the three places a backslash-b word
+    boundary was meant, so the compiled regex required a backspace character beside every
+    figure and matched nothing in any store; retyping the line outside the module produced a
+    real two-character escape, which is why "the same regex" worked there. Control characters
+    are invisible in an editor and in a diff — when a regex matches NOTHING ANYWHERE, hexdump
+    the pattern before doubting the traversal.
 
     A different failure from the markdown one, and easier to miss because the file LOOKS
     structured. A record whose 'finding' field reads '3,230,958 calls, ONE identity, 100%
@@ -120,7 +117,7 @@ def _numbers_in_prose():
     narrative legitimately cites numbers, and a checker that rewrites prose would destroy the
     reasoning the numbers came from.
     """
-    NUM = re.compile(r"\d[\d,\.]{3,}|\d+%")
+    NUM = re.compile(r"\b\d[\d,\.]{3,}\b|\b\d+%")
     SKIP = ("_why", "_design", "_concept", "_one_line", "why", "how_to_apply", "rule",
             "_means", "consequence", "_note", "note", "resolution_notes", "claim")
     out = []
@@ -144,7 +141,12 @@ def _numbers_in_prose():
                 key = path.rsplit("/", 1)[-1]
                 if key in SKIP or key.startswith("_"):
                     continue
-                hits = NUM.findall(node)
+                # A bare year is not a measurement. Without this, "2024, 2025, 2026" in a
+                # sentence counts as three figures and the worklist fills with narrative —
+                # 312 hits of which a large share were calendar years. A checker whose list
+                # is mostly noise gets ignored, which costs more than the defect it finds.
+                hits = [h for h in NUM.findall(node)
+                        if not (h.isdigit() and 1990 <= int(h) <= 2099)]
                 if len(hits) >= 3:
                     out.append({"store": str(f.relative_to(BRAIN.parent)).replace("\\", "/"),
                                 "field": path, "figures": hits[:6],
