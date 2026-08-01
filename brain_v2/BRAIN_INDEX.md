@@ -30,6 +30,51 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
   detail in `knowledge/domains/Integration/integration_map_complete.md` + `knowledge/system_operating_model_rfc.md`
 - ⚠️ **executed_objects_domain_map has NO bucket for RE_FX nor for third-party namespaces (/EPIUSE/, /ACLDL/, /WINSHTLQ/, /GBX01/) — 3,893 objects / 4.56M execs (40% of volume) ...**
 
+## 🎯 THE PROCESS SPINE — B2R is the heart, and it is measured that way
+Ranked by domains served, not by opinion. This tenant exists to run **budget-to-report**:
+public-sector finance, not manufacturing or sales.
+- **B2R** — 6 domains: CO, Cost_Recovery_CRP, FI, PBC, PS, PSM · avg coverage 61%
+- **P2P** — 5 domains: FI, PM, Payment_BCM, Procurement, Treasury · avg coverage 65%
+- **H2R** — 5 domains: HCM, HR-Workflows, PBC, PY-Finance, Travel · avg coverage 56%
+- **T2R** — 4 domains: FI, Payment_BCM, TRM, Treasury · avg coverage 72%
+- **P2D** — 1 domains: BusinessPartner · avg coverage 40%
+- **A2R** — 1 domains: FI_AA · none measured
+- **O2C** — 1 domains: SD · none measured
+- **Cross-cutting by construction** (serve NO single process because they touch all): Transport_Intelligence, Integration, Support
+- **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): Output, RE-FX
+
+## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
+**SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
+the system is used that assumes people in screens is wrong before it starts.
+- **300 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
+  RFC_DESTINATION 239 · FILE 20 · BATCH_INPUT 17 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
+- **The boundary is mostly dead:** 238 RFC destinations configured,
+  **10 live**, **228 dead**,
+  **176 undeclared** — traffic crossing with no configuration entry.
+- **Write channels, derived per object class:** DIALOG 64 · RFC_INBOUND 40 · BATCH_JOB 19 · FILE 6 · PROGRAM 2 · WEBSERVICE_UNDETECTABLE 2 · BATCH_INPUT 1
+- **An empty transaction code is a POINTER, not a gap** — usually a BAPI/RFC whose design never set
+  one. Reading it as 'batch' loses the interface.
+- **What CANNOT be seen:** inbound web-service CALLS. The SOAP monitor is off, so existence and
+  activation are verified and execution is not. UNVERIFIED, never 'unused'.
+
+## 🔐 SECURITY — a COLUMN, not a domain (that is why searching for it fails)
+`E_AUTH` has content in **5 of 21** domains: Payment_BCM, Procurement_P2P, PSM_FM, FI, Treasury_EBS.
+It is ONE missing model capability, not 21 separate gaps — closing it once lifts every row.
+- **Known and verified:** portal-as-user RFC writes carry SoD conflicts. Root: `S_RFC=*` plus a
+  custom write FM that skips the object check, so the control has to live at the CALL and DATA
+  layer, not at the role layer.
+- **What that means for any answer about roles:** the role model is NOT the control surface here.
+  A clean SU01/PFCG picture does not mean segregation holds.
+- Claims touching authorization: 12 · drill: `graph_queries.py capability E_AUTH`
+
+## 📈 MATURITY OF THE METHOD — 65.5%, measured from artifacts
+Not a self-assessment: each dimension is derived from what is on disk.
+- **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
+- **Strongest:** MODEL_FIDELITY 0.99 · CONSOLIDATE 0.95 · ESCALATE 0.93
+- **Read this together with the capability grid.** Two independent instruments agree: strong at
+  COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
+  SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
+
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:

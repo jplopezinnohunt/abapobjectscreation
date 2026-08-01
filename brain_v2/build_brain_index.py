@@ -87,6 +87,127 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
 """
 
 
+
+def _process_spine():
+    """The end-to-end processes, ranked by how many domains serve them.
+
+    B2R is not first because someone decided it should be — it is first because more
+    domains serve it than any other, and this tenant is a public-sector finance
+    installation whose reason for existing is budget-to-report. Ranking it by measurement
+    rather than by opinion means the order corrects itself if the installation changes.
+    """
+    st = json.load(open(STATE, encoding="utf-8"))
+    doms = (st.get("domains_layer") or {}).get("domains", {})
+    spine, cov = {}, {}
+    for name, d in doms.items():
+        if not isinstance(d, dict):
+            continue
+        for p in (d.get("primary_processes") or []):
+            spine.setdefault(p, []).append(name)
+        cov[name] = d.get("coverage_pct")
+    if not spine:
+        return ""
+    rows = []
+    for p, names in sorted(spine.items(), key=lambda x: -len(x[1])):
+        measured = [c for c in (cov.get(n) for n in names) if c not in (None, "None")]
+        avg = round(sum(int(c) for c in measured) / len(measured)) if measured else None
+        rows.append(f"- **{p}** — {len(names)} domains: {', '.join(sorted(names))}"
+                    + (f" · avg coverage {avg}%" if avg is not None else " · none measured"))
+    orphans = [n for n, d in doms.items()
+               if isinstance(d, dict) and not (d.get("primary_processes") or [])]
+    cross = [n for n in orphans if "BASIS" in (doms[n].get("primary_modules") or [])
+             or "CTS" in (doms[n].get("primary_modules") or [])]
+    stranded = [n for n in orphans if n not in cross]
+    return f"""## 🎯 THE PROCESS SPINE — B2R is the heart, and it is measured that way
+Ranked by domains served, not by opinion. This tenant exists to run **budget-to-report**:
+public-sector finance, not manufacturing or sales.
+{chr(10).join(rows)}
+- **Cross-cutting by construction** (serve NO single process because they touch all): {', '.join(cross) or 'none'}
+- **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): {', '.join(stranded) or 'none'}
+"""
+
+
+def _security_block():
+    """Security as a FIRST-CLASS topic, because it is not a domain and so it is invisible.
+
+    Looking for security in the domain list finds nothing, which reads as 'not a concern'.
+    It is capability column E, empty nearly everywhere — one missing MODEL capability, not
+    21 separate gaps. Closing it once lifts every row.
+    """
+    st = json.load(open(STATE, encoding="utf-8"))
+    cm = st.get("capability_model", {})
+    doms = cm.get("domains", {})
+    have = [n for n, d in doms.items() if isinstance(d, dict)
+            and str(d.get("E_AUTH")) in ("HAVE", "PARTIAL")]
+    claims = [c for c in st.get("claims", []) if isinstance(c, dict)
+              and any(k in str(c.get("claim", "")).upper()
+                      for k in ("SOD", "S_RFC", "AUTHORIZATION", "SEGREGATION"))]
+    return f"""## 🔐 SECURITY — a COLUMN, not a domain (that is why searching for it fails)
+`E_AUTH` has content in **{len(have)} of {len(doms)}** domains: {', '.join(have) or 'none'}.
+It is ONE missing model capability, not {len(doms)} separate gaps — closing it once lifts every row.
+- **Known and verified:** portal-as-user RFC writes carry SoD conflicts. Root: `S_RFC=*` plus a
+  custom write FM that skips the object check, so the control has to live at the CALL and DATA
+  layer, not at the role layer.
+- **What that means for any answer about roles:** the role model is NOT the control surface here.
+  A clean SU01/PFCG picture does not mean segregation holds.
+- Claims touching authorization: {len(claims)} · drill: `graph_queries.py capability E_AUTH`
+"""
+
+
+def _integration_block():
+    """Integration as a first-class topic — it is the richest thing this tenant has.
+
+    80% of business traffic is external. Whoever reads this index must know that BEFORE
+    answering anything about how the system is used, or they will describe a dialog system
+    that does not exist.
+    """
+    inv, bnd, att = HERE / "interface_inventory.json", HERE / "interface_boundary.json", HERE / "change_attribution.json"
+    if not inv.exists():
+        return ""
+    I = json.load(open(inv, encoding="utf-8"))
+    B = json.load(open(bnd, encoding="utf-8")) if bnd.exists() else {}
+    A = json.load(open(att, encoding="utf-8")) if att.exists() else {}
+    sm = B.get("summary", {})
+    ch = {}
+    for r in (A.get("classes") or {}).values():
+        for c in r.get("channels_DERIVED_from_logs", []):
+            ch[c["channel"]] = ch.get(c["channel"], 0) + 1
+    return f"""## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
+**SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
+the system is used that assumes people in screens is wrong before it starts.
+- **{len(I.get('interfaces', []))} interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
+  {' · '.join(f"{k} {v}" for k, v in sorted((I.get('counts') or {{}}).items(), key=lambda x: -x[1]))}
+- **The boundary is mostly dead:** {sm.get('destinations_configured','?')} RFC destinations configured,
+  **{sm.get('destinations_live','?')} live**, **{sm.get('destinations_dead','?')} dead**,
+  **{sm.get('destinations_undeclared','?')} undeclared** — traffic crossing with no configuration entry.
+- **Write channels, derived per object class:** {' · '.join(f"{k} {v}" for k, v in sorted(ch.items(), key=lambda x: -x[1]))}
+- **An empty transaction code is a POINTER, not a gap** — usually a BAPI/RFC whose design never set
+  one. Reading it as 'batch' loses the interface.
+- **What CANNOT be seen:** inbound web-service CALLS. The SOAP monitor is off, so existence and
+  activation are verified and execution is not. UNVERIFIED, never 'unused'.
+"""
+
+
+def _maturity_block():
+    """Maturity of the METHOD, measured from artifacts — not a self-assessment."""
+    mc = HERE / "meta_capability.json"
+    if not mc.exists():
+        return ""
+    M = json.load(open(mc, encoding="utf-8"))
+    dims = M.get("dimensions", {})
+    rows = sorted(((v.get("score") if isinstance(v, dict) else v), k) for k, v in dims.items())
+    weak = [f"**{k}** {v:.2f}" for v, k in rows[:3]]
+    strong = [f"{k} {v:.2f}" for v, k in rows[-3:]]
+    return f"""## 📈 MATURITY OF THE METHOD — {M.get('meta_maturity_pct','?')}%, measured from artifacts
+Not a self-assessment: each dimension is derived from what is on disk.
+- **Weakest:** {' · '.join(weak)}
+- **Strongest:** {' · '.join(reversed(strong))}
+- **Read this together with the capability grid.** Two independent instruments agree: strong at
+  COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
+  SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
+"""
+
+
 def run():
     s = json.load(open(STATE, encoding="utf-8"))
     cm = s.get("capability_model", {})
@@ -111,6 +232,10 @@ def run():
 
 {_installation_block()}
 {_profile_block()}
+{_process_spine()}
+{_integration_block()}
+{_security_block()}
+{_maturity_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
