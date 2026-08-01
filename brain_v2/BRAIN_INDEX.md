@@ -66,6 +66,8 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
 - Claims touching authorization: 12 · drill: `graph_queries.py capability E_AUTH`
+- **Posture store** `brain_v2/security_posture.json` — 3 ready · 3 missing input · 2 findings already stored as RECORDS.
+- **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
 ## 📈 MATURITY OF THE METHOD — 65.5%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.

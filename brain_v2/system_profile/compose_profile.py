@@ -103,12 +103,13 @@ COMPONENTS = [
      "brain_v2/meta_capability.json",
      "meta_capability.py",
      ["dimensions"], False),
-    # The one component with NO artifact and NO algorithm, left visible on purpose. It is
-    # not an oversight: nothing in this repository derives a security posture, and the
-    # capability grid says the same thing from the other side (E_AUTH empty in 16 of 21).
-    # Two instruments agreeing that the same thing is absent is worth more than a placeholder.
+    # Was the one MISSING component. The store is now built EMPTY on purpose, so the
+    # analysis has a structured home and its findings never land in claim prose again.
+    # Reading DERIVED here means the DESTINATION exists — not that the posture is known.
     ("security_posture", "where is the control surface, and does the role model hold it?",
-     None, None, None, True),
+     "brain_v2/security_posture.json",
+     "brain_v2/build_security_posture.py",
+     ["components"], False),
     ("periphery", "add-ons, front-end, users and licences — every data EXIT",
      "brain_v2/system_profile/unesco_system_profile.json", None,
      ["third_party_addons"], True),

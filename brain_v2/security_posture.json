@@ -1,0 +1,92 @@
+{
+ "_generated_by": "brain_v2/build_security_posture.py",
+ "_what_this_is": "the SECURITY store, built BEFORE the analysis so the findings have a structured home instead of landing in claim prose",
+ "_security_is_both": {
+  "column": "E_AUTH — do we know the authorisation model FOR THIS DOMAIN? Asked 21 times, once per domain.",
+  "domain": "users, roles, profiles, posture — studied ONCE and feeding all 21. Integration is the precedent, not the exception.",
+  "why_it_matters": "searching the domain list for security returned nothing, which reads as 'not a concern'. It was a column with no subject."
+ },
+ "_read_this_before_reporting": "a component in MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'. An empty section here would read as a clean bill of health, which is the most expensive misreading this store could produce.",
+ "counts": {
+  "READY": 3,
+  "MISSING_INPUT": 3,
+  "NO_INPUT_NEEDED": 1
+ },
+ "established_findings": [
+  {
+   "id": "SEC-1-CONTROL-SURFACE",
+   "finding": "The control surface is the CALL and DATA layer, not the role layer. Root: S_RFC=* combined with a custom write function module that skips the authorisation object check.",
+   "consequence": "a clean SU01/PFCG picture does NOT mean segregation holds. Any review that stops at roles will pass a system that has no control.",
+   "status": "VERIFIED",
+   "source": "H71 write-channel SoD"
+  },
+  {
+   "id": "SEC-2-ATTRIBUTION-GAP",
+   "finding": "~5.3M RFC calls cannot be tied to any person. MULESOFT: 3,230,958 calls, ONE identity, 100% itself. BRIDGE-RFC 2,106,347 and UBO-RFC 324,390 carry NO PARAMX at all — not even a caller field.",
+   "counter_example": "WF-BATCH proves the trail CAN be carried: 660,588 calls with 542 DISTINCT REAL USERS behind it, only 14% the account itself.",
+   "consequence": "every SoD control and every change-approval control assumes an ACTOR. On these paths there is none, so those controls are not weak — they are inapplicable.",
+   "not_the_finding": "'nobody uses SAP' — 1,848 distinct users log in by dialog (902,758 events) and 1,882 by RFC/CPIC. People are there; the WRITE traffic is what loses the actor.",
+   "status": "VERIFIED",
+   "source": "claim #404"
+  }
+ ],
+ "components": [
+  {
+   "component": "identity_inventory",
+   "question": "who has an account, when did they last use it, who is locked?",
+   "needs_table": "usr02",
+   "would_answer": "dormant and locked accounts; the gap between accounts held and accounts used",
+   "state": "MISSING_INPUT",
+   "to_fix": "extract USR02 from P01, read-only, and register it in gold_table_registry under domain Security"
+  },
+  {
+   "component": "role_assignment",
+   "question": "which roles is each user assigned, and since when?",
+   "needs_table": "agr_users",
+   "would_answer": "role sprawl; users carrying roles they never exercise",
+   "state": "READY",
+   "note": "the input is in the golden; the analysis has not run yet"
+  },
+  {
+   "component": "role_content",
+   "question": "what does each role actually authorise?",
+   "needs_table": "agr_1251",
+   "would_answer": "whether a role grants more than its name implies — the gap between label and grant",
+   "state": "MISSING_INPUT",
+   "to_fix": "extract AGR_1251 from P01, read-only, and register it in gold_table_registry under domain Security"
+  },
+  {
+   "component": "auth_defaults",
+   "question": "which transactions check which objects, by default?",
+   "needs_table": "usobt",
+   "would_answer": "transactions running with no check at all, which is where S_RFC=* becomes dangerous",
+   "state": "MISSING_INPUT",
+   "to_fix": "extract USOBT from P01, read-only, and register it in gold_table_registry under domain Security"
+  },
+  {
+   "component": "failures",
+   "question": "who was DENIED, and on what?",
+   "needs_table": "rsau_audit_history",
+   "would_answer": "attempted access is a signal the granted-permission view cannot give",
+   "state": "READY",
+   "note": "the input is in the golden; the analysis has not run yet"
+  },
+  {
+   "component": "attribution",
+   "question": "can an action be tied to a person?",
+   "needs_table": "rsau_audit_history",
+   "would_answer": "whether SoD and change-approval controls have an actor to hang on",
+   "state": "READY",
+   "note": "the input is in the golden; the analysis has not run yet"
+  },
+  {
+   "component": "write_channel_sod",
+   "question": "which write paths bypass the object check?",
+   "needs_table": null,
+   "would_answer": "the control surface itself — already established as the CALL and DATA layer",
+   "state": "NO_INPUT_NEEDED",
+   "note": "established from findings already held, not from a table"
+  }
+ ],
+ "_fills_profile_component": "security_posture — the single MISSING component of brain_v2/system_profile/installation_profile.json"
+}

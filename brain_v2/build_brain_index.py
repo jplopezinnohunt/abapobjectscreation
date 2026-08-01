@@ -151,7 +151,23 @@ It is ONE missing model capability, not {len(doms)} separate gaps — closing it
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
 - Claims touching authorization: {len(claims)} · drill: `graph_queries.py capability E_AUTH`
-"""
+{_security_store()}"""
+
+
+def _security_store():
+    """The posture store, when it exists. Says what we CANNOT see, never silence."""
+    f = HERE / "security_posture.json"
+    if not f.exists():
+        return "- No posture store yet — findings are still landing in claim prose.\n"
+    S = json.load(open(f, encoding="utf-8"))
+    c = S.get("counts", {})
+    miss = [x["component"] for x in S.get("components", [])
+            if x.get("state") == "MISSING_INPUT"]
+    return (f"- **Posture store** `brain_v2/security_posture.json` — {c.get('READY',0)} ready · "
+            f"{c.get('MISSING_INPUT',0)} missing input · {len(S.get('established_findings',[]))} "
+            f"findings already stored as RECORDS.\n"
+            f"- **Cannot see yet:** {', '.join(miss) or 'nothing'} — MISSING_INPUT means WE "
+            f"CANNOT SEE, never 'there is nothing'.\n")
 
 
 def _integration_block():
