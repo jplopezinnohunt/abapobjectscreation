@@ -318,7 +318,8 @@
    "source_of_truth": {
     "as_designed": "unesco-sap-brain/sources/2017_design/BBP04_funds_management_BCS_2017-06.md — BBP-04, authored 2017-06 by the implementation consultants",
     "as_run": "our production measurements: the golden DB and P01 config frontier",
-    "why_both": "a standard reference with no delta attached is just another document. The delta IS the product."
+    "why_both": "a standard reference with no delta attached is just another document. The delta IS the product.",
+    "sap_standard_peer": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md and OECD_gm_fitgap_2014-10.md — the only genuinely SAP-standard material available. BBP-04 says what UNESCO intended; these say what SAP expects."
    },
    "_provenance_caution": "BBP-04 is UNESCO's AS-DESIGNED intent, NOT the SAP as-shipped baseline. The BCS dimension model, the AVC address triple and PBET are standard SAP CONCEPTS described inside it, and those are legitimately usable as a standard reference. The UNESCO choices around them are not.",
    "rules": [
@@ -367,9 +368,35 @@
      "verdict": "UNVERIFIED",
      "to_check": "the FM area PBET flag in FM configuration, read-only",
      "checkable_against": "FM area settings; FMIOI PERIO distribution vs posting date"
+    },
+    {
+     "id": "B2R-S6-CODING-BLOCK",
+     "kind": "SAP_STANDARD — peer installation (UN Secretariat Umoja)",
+     "as_designed": "the canonical SAP coding block: ONE posting simultaneously populates FI, CO, FM and GM. GL Account / Cost Element / Commitment Item / Sponsored Class are the same category across modules; Fund and Grant are SHARED fields present in all four; Funds Center is shared FM-GM; Functional Area spans all four; Funded Program is the FM object whose GM parallel is Sponsored Program.",
+     "source": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md section 3 'Coding Block Integration'",
+     "as_run_measured": "MEASURED over 2,308,814 FM line items in fmifiit_full: Fund (FONDS) 100% · Funds Center (FISTL) 100% · Commitment Item (FIPEX) 100% — and then FOUR EMPTY: Funded Program (MEASURE) 0.0%, Functional Area (FAREA) 0.0% with the single distinct value being blank, Grant 0% (GM has zero tables), Budget Period column absent entirely.",
+     "verdict": "DEVIATES — SEVERELY",
+     "the_finding": "the 'seven-dimensional BCS' runs as a THREE-dimensional budget control. Not a shortfall at the margin: four of seven dimensions carry no value in a single row out of 2.3 million.",
+     "what_each_empty_dimension_costs": {
+      "Functional Area": "BBP-04 defines it as UNESCO's C/5 EXPECTED RESULTS — the programme structure, used for STATUTORY REPORTING BY PROGRAMME OBJECTIVE. Empty means budget consumption cannot be reported by programme objective from FM at all. For an organisation whose entire mandate is expressed as C/5 Expected Results, this is the dimension that connects money to purpose, and it is unused.",
+      "Funded Program": "the designed WBS-to-FM bridge — 'maps WBS elements from PS into the FM world'. Empty. THIS EXPLAINS SOMETHING WE HAD ONLY OBSERVED: our own bridge still uses PROJ.PSPID = GEBER, project-as-fund, and both projects call it a static proxy without saying why it survives. It survives BECAUSE the designed bridge dimension carries nothing — the fund code IS the only project link there is.",
+      "Grant": "GM is NOT_USED; consistent with S2, not an independent finding",
+      "Budget Period": "the column is absent, so biennium control is not carried on the line item"
+     },
+     "checkable_against": "SELECT COUNT(*) per dimension column in fmifiit_full where the value is non-blank",
+     "why_the_peer_source_matters": "this is the only genuinely SAP-STANDARD yardstick in either project. BBP-04 tells us what UNESCO intended; Umoja tells us what SAP expects a public-sector posting to carry. Measuring against the second is a different and stronger claim."
+    },
+    {
+     "id": "B2R-S7-GM-AVC-LEVELS",
+     "kind": "SAP_STANDARD — peer installation",
+     "as_designed": "GM budgetary control is set per grant across four levels: AVC1 (Fund / Time slice / Grant / SponProg / SponClass, strictest) down to AVC4 (Fund / Grant only).",
+     "source": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md section 4 'GM AVC Levels'",
+     "as_run_measured": "not applicable — GM has zero tables in the golden and is NOT_USED",
+     "verdict": "NOT_APPLICABLE",
+     "why_recorded_anyway": "it is the reference for what grant-level control WOULD look like, and Cost_Recovery_CRP currently performs a similar function without GM. Recording the standard makes the home-grown alternative measurable against something instead of against nothing."
     }
    ],
-   "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it.",
+   "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it. || AND THE SECOND PASS IS WORSE: measured against the standard coding block, the seven-dimensional BCS runs as THREE dimensions. Fund, Funds Center and Commitment Item are 100% populated across 2,308,814 FM line items; Funded Program, Functional Area, Grant and Budget Period carry nothing. Functional Area is UNESCO's C/5 Expected Results — the dimension that ties money to programme purpose — and it is blank in every single row.",
    "_created_session": 97
   }
  },
