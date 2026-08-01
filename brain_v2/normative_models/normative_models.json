@@ -321,7 +321,9 @@
     "why_both": "a standard reference with no delta attached is just another document. The delta IS the product.",
     "sap_standard_peer": "unesco-sap-brain/sources/2017_design/UMOJA_gm_framework1_2014-10.md and OECD_gm_fitgap_2014-10.md — the only genuinely SAP-standard material available. BBP-04 says what UNESCO intended; these say what SAP expects.",
     "as_designed_financials": "unesco-sap-brain/sources/2017_design/BBP08_financials_2017-06.md — BBP-08, the constant-dollar decision",
-    "as_designed_grants": "unesco-sap-brain/sources/2017_design/BBP06_grants_management_2017-06.md — BBP-06, grants management"
+    "as_designed_grants": "unesco-sap-brain/sources/2017_design/BBP06_grants_management_2017-06.md — BBP-06, grants management",
+    "as_designed_co_ps": "unesco-sap-brain/sources/2017_design/BBP07_controlling_project_system_2017-06.md",
+    "as_designed_pbc": "unesco-sap-brain/sources/2017_design/BBP10_hcm_pcp_2017-06.md#section-6"
    },
    "_provenance_caution": "BBP-04 is UNESCO's AS-DESIGNED intent, NOT the SAP as-shipped baseline. The BCS dimension model, the AVC address triple and PBET are standard SAP CONCEPTS described inside it, and those are legitimately usable as a standard reference. The UNESCO choices around them are not.",
    "rules": [
@@ -477,10 +479,55 @@
      "verdict": "UNVERIFIED",
      "to_check": "deferred-revenue GL accounts and their clearing pattern against donor receipts",
      "why_it_matters": "this is an IPSAS revenue-recognition policy, not a technical detail. If the designed mechanism does not exist, something else is producing the same accounting answer — or it is not being produced."
+    },
+    {
+     "id": "B2R-S12-PROJECTS-FREED-FROM-DONORS",
+     "kind": "AS_DESIGNED — CO/PS",
+     "as_designed": "AS-IS, projects and WBS elements reflected DONOR requirements: several projects could represent parts of one real project, and only externally-funded costs were included, so Regular-Budget costs sat outside the project structure and could not be monitored alongside extra-budgetary ones. TO-BE, by introducing GM for donor-centred reporting, the project and WBS are FREED to give an internal, controlling-driven view: one project with multiple funding sources, RP and XB costs visible in one structure, project creation moving from BFM to project managers, and projects created earlier so data on rejected projects also exists.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP07_controlling_project_system_2017-06.md section 'Projects Freed from Donor Requirements'",
+     "as_run_measured": "the freeing DEPENDS ENTIRELY on GM carrying the donor view, and GM has zero tables. So the project structure was never freed: it still carries what the donor view was meant to take over. Consistent with Funded Program at 0.0% and PROJ.PSPID = GEBER.",
+     "verdict": "NOT_IMPLEMENTED — and unreachable, not merely unfinished",
+     "why": "this design has a hard dependency on a module that does not exist. It could not have been delivered no matter how much effort went into CO/PS."
+    },
+    {
+     "id": "B2R-S13-COMMITMENT-ITEM-GRANULARITY",
+     "kind": "AS_DESIGNED — the premise several other designs rest on",
+     "as_designed": "commitment items become 1:1 WITH GL ACCOUNTS, replacing roughly TWENTY COARSE ITEMS. BBP-10 names this as a precondition for reworking the PBC encumbrance filter.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP10_hcm_pcp_2017-06.md#section-6 and BBP-04 section 'BCS 7 Dimensions'",
+     "as_run_measured": "EIGHTEEN distinct commitment items in use across fmifiit_full.",
+     "verdict": "NOT_IMPLEMENTED",
+     "why_it_matters_beyond_itself": "eighteen is the coarse structure the design set out to replace. Every design that assumed fine-grained commitment items — PBC's filter rework among them — was built on a premise that never arrived.",
+     "checkable_against": "SELECT COUNT(DISTINCT FIPEX) FROM fmifiit_full"
+    },
+    {
+     "id": "B2R-S14-PBC-FOUR-DEVELOPMENTS",
+     "kind": "AS_DESIGNED — PBC, the counterpart of what we read from production source",
+     "as_designed": "four PBC developments: (1) update the encumbrance-filter BAdI Z_UNESCO_ENCUMB_FIL for the new master data; (2) RECONFIGURE the financing-horizon rules in the new structure; (3) align Personnel Cost Simulation with the new dimensions; (4) update vacancy-termination budget release. The BAdI rework is stated to require three things: the 1:1 commitment-item structure, the Fund object meaning funding source rather than project, and the UNIFIED FM AREA.",
+     "source": "unesco-sap-brain/sources/2017_design/BBP10_hcm_pcp_2017-06.md#section-6",
+     "as_run_measured": "ALL THREE PRECONDITIONS ARE UNMET — 18 coarse commitment items, project-as-fund still the proxy, and nine FM areas. And the developments themselves, measured against the production source we read: (2) financing horizon was designed as RECONFIGURATION and built as a HARD-CODED CONSTANT — MV_EXTENSION_YEARS = 10, with the author's own comment 'until a configuration for the enddate determination rules is available, use hard-coded values'. The configuration the design called for does not exist. (4) vacancy-termination release: no vacancy TOLERANCE exists in the code at all — the vacancy filter is binary and DO_HANDLE_COMMITMENT_PERIOD is literally ASSERT 1 = 2. (1) the filter class ZCL_IM__UNESCO_ENCUMB_FILTER is TWENTY-FIVE LINES.",
+     "verdict": "DEVIATES — designed as configuration, built as constants",
+     "why_this_is_the_pattern_not_the_exception": "the same shape appears three times in this ingest: a rule designed to live in configuration, delivered as a literal in code. MV_EXTENSION_YEARS, the constant-rate mechanism, the 001-099 reporting range. Each one is invisible to every configuration analysis, and each one is why algorithm A9 exists.",
+     "checkable_against": "extracted_sap_p01/ZPBC/* — the production source we hold"
     }
    ],
    "_headline": "the design's own HARD PREREQUISITE — consolidating nine FM areas into one — was never implemented, and nine years later production still runs the 2017 AS-IS structure. Everything else in BBP-04 was designed on top of it. || AND THE SECOND PASS IS WORSE: measured against the standard coding block, the seven-dimensional BCS runs as THREE dimensions. Fund, Funds Center and Commitment Item are 100% populated across 2,308,814 FM line items; Funded Program, Functional Area, Grant and Budget Period carry nothing. Functional Area is UNESCO's C/5 Expected Results — the dimension that ties money to programme purpose — and it is blank in every single row. || AND THE SHARPEST RULE IS A DELETION: BBP-08 eliminated the constant exchange rate from budget execution, making it a REPORTING concept and specifying an AVC tolerance instead, expressly to stay IPSAS-aligned. A custom class that manipulates the posting rate was built anyway, and its one-line gate defect has a measured blast radius of 458 funds, 135,792 bypass postings and ~$35.7M of AVC drift exposure. || AND THE THIRD PASS CLOSES A CIRCLE: BBP-06, the programme's most comprehensive blueprint, designed GM as a first-class module with five dimensions and a seven-stage lifecycle. ZERO gm* tables exist. More than that, the AS-IS it set out to replace — 'donor agreements tracked outside SAP, with only indirect representation through MISUSED Fund and WBS master data objects' — is measurably the state today: Funded Program 0.0%, PROJ.PSPID = GEBER still the only project link. Nine years on, the blueprint's AS-IS is the system's AS-RUN. || AND THE THIRD PASS CLOSES A CIRCLE: BBP-06, the programme's most comprehensive blueprint, designed GM as a first-class module with five dimensions and a seven-stage lifecycle. ZERO gm* tables exist. More than that, the AS-IS it set out to replace — 'donor agreements tracked outside SAP, with only indirect representation through MISUSED Fund and WBS master data objects' — is measurably the state today: Funded Program 0.0%, PROJ.PSPID = GEBER still the only project link. Nine years on, the blueprint's AS-IS is the system's AS-RUN.",
-   "_created_session": 97
+   "_created_session": 97,
+   "_the_synthesis": {
+    "_one_sentence": "THREE FOUNDATIONS WERE DESIGNED AND NONE WAS BUILT, and almost every other design in the blueprint stands on them.",
+    "the_three": {
+     "unified FM area": "one area UNSC — production runs NINE",
+     "Fund means funding source, not project": "PROJ.PSPID = GEBER is still the only project link",
+     "GM as the donor view": "zero gm* tables"
+    },
+    "what_stood_on_them": [
+     "a unified commitment-item catalogue and a single derivation strategy (BBP-04) — both require the single FM area",
+     "projects freed from donor requirements (BBP-07) — requires GM to take the donor view",
+     "the PBC encumbrance-filter rework (BBP-10) — requires all three at once",
+     "the seven-dimensional BCS — runs as three, with Functional Area and Funded Program empty in 2.3 million rows"
+    ],
+    "_why_this_matters_more_than_any_single_rule": "these are not fourteen independent gaps. They are three unbuilt foundations and eleven consequences. A remediation plan that treats them as a list will fund eleven efforts that cannot succeed; one that treats them as a tree has three decisions to make, and they are governance decisions rather than technical ones.",
+    "_and_the_recurring_shape": "separately, three times over: a rule the design placed in CONFIGURATION was delivered as a LITERAL IN CODE — the financing horizon, the constant exchange rate, the reporting fund-type range. No configuration analysis can see any of them, which is the entire reason algorithm A9 exists."
+   }
   }
  },
  "_next": {
