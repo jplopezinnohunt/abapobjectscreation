@@ -244,5 +244,121 @@
    },
    "why": "the whole chain rests on the identifier convention. This is the only place we can ask whether the convention agrees with the structure it stands in for, because here and only here both carriers exist"
   }
- ]
+ ],
+ "session": 98,
+ "hierarchies": [
+  {
+   "set_class": "0312",
+   "what": "FUND CENTRES — the organisational / responsibility axis",
+   "master_table": "fund_centers",
+   "master_column": "FICTR",
+   "fact": {
+    "table": "fmifiit_full",
+    "column": "FISTL"
+   },
+   "_measured_not_assumed": "the class was chosen by matching set LEAF VALUES against the master: class 0312 matches fund_centers at 100%, class 0102 at 0% — 0102 holds GL account groups keyed by chart of accounts. Picking a set class by SAP convention rather than by measurement is how the wrong hierarchy gets traversed confidently."
+  },
+  {
+   "set_class": "0102",
+   "what": "GL ACCOUNT groups, by chart of accounts",
+   "master_table": null,
+   "master_column": null,
+   "fact": null
+  },
+  {
+   "set_class": "0303",
+   "what": "NOT a fund-centre hierarchy — cost-centre style groups",
+   "master_table": null,
+   "master_column": null,
+   "fact": null,
+   "_corrected": "declared as 'numeric fund centres' on a 79.3% leaf match against the fund-centre master. That match was NUMERIC COLLISION: codes like '100' exist in both masters. Traversed, only 9 of 505 reached values are real fund centres and the node names are CS01-4000 / COI-6-0200. Matching values is not identifying a hierarchy."
+  }
+ ],
+ "derivation_mechanisms": {
+  "_what_this_is": "HOW account assignments are derived in this installation. A hop can be BROKEN for two very different reasons — the rule was switched off, or the architecture has no way to produce that value at all — and only this section tells them apart. It is declared per installation and MEASURED, so the reason a carrier is empty is part of the model rather than a sentence someone wrote once.",
+  "mechanisms": [
+   {
+    "id": "CLASSIC_FM_DERIVATION",
+    "status": "IN_USE",
+    "tables": [
+     "TABADRSF",
+     "TABADRS",
+     "TABADRST",
+     "TABADRH",
+     "TABADRPCONF"
+    ],
+    "measured": {
+     "TABADRSF": 3627,
+     "TABADRST": 253,
+     "TABADRS": 170,
+     "TABADRH": 32,
+     "TABADRPCONF": 20
+    },
+    "can_derive": [
+     "FONDS",
+     "FISTL",
+     "FIPEX"
+    ],
+    "cannot_derive": [
+     "MEASURE",
+     "FAREA",
+     "GRANT_NBR"
+    ],
+    "_why_it_cannot": "the classic account-assignment derivation predates BCS. Funded Program and Grant are BCS-only dimensions and are outside what it produces."
+   },
+   {
+    "id": "DERIVATION_TOOL_FMDERIVE",
+    "status": "NEVER_CONFIGURED",
+    "tables": [
+     "T811C",
+     "T811S",
+     "T811K",
+     "T811X"
+    ],
+    "measured": {
+     "T811C": 0,
+     "T811S": 0,
+     "T811K": 0,
+     "T811X_registered_points": [
+      "CCSS",
+      "CEST7",
+      "GLPCT",
+      "JBDST7"
+     ]
+    },
+    "can_derive": [
+     "MEASURE",
+     "FAREA",
+     "GRANT_NBR",
+     "FONDS",
+     "FISTL",
+     "FIPEX"
+    ],
+    "_evidence": "strategy tables return zero rows with and without a TAB='FMDERIVE' filter, and FMDERIVE is not among the four registered derivation points in T811X"
+   }
+  ],
+  "consequences": [
+   {
+    "carrier": "MEASURE",
+    "population_pct": 0.0,
+    "verdict": "CANNOT_BE_FILLED",
+    "reason": "the mechanism in use (CLASSIC_FM_DERIVATION) cannot produce it, and the mechanism that can (DERIVATION_TOOL_FMDERIVE) was never configured. So the empty column is architectural, not neglect — and adopting Funded Program means standing up a second derivation mechanism and migrating onto it, not configuring a field.",
+    "affects_hop": "H7_ACTUALS_TO_WORK",
+    "and_explains": "why the identifier convention exists at all: the grammar is not a shortcut around a working feature, it is the only carrier available under this architecture"
+   },
+   {
+    "carrier": "FAREA",
+    "population_pct": 0.0,
+    "verdict": "CANNOT_BE_FILLED",
+    "reason": "same mechanism gap",
+    "and_explains": "the 7-dimensional BCS design runs as 3 dimensions"
+   },
+   {
+    "carrier": "GRANT_NBR",
+    "population_pct": 0.0,
+    "verdict": "CANNOT_BE_FILLED",
+    "reason": "same mechanism gap; and no gm* tables exist"
+   }
+  ]
+ }
 }

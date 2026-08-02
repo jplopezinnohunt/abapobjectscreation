@@ -659,6 +659,14 @@ def main(argv):
                   % (c["designed_work_carrier"], c["designed_work_carrier_status"]))
 
     hops = [walk_hop(cx, h, sep) for h in spec.get("hops", [])]
+    # A BROKEN verdict without a mechanism is a symptom. Attach the declared, measured
+    # reason so the report says WHY the carrier is empty, not merely that it is.
+    dm = spec.get("derivation_mechanisms") or {}
+    for con in dm.get("consequences", []):
+        for h in hops:
+            if h["id"] == con.get("affects_hop") and h["verdict"] == "BROKEN":
+                h["root_cause"] = con
+                h["why"] = "%s %s" % (h.get("why", ""), con["reason"])
     print("\nHOPS — the address chain, walked")
     for h in hops:
         print("  %-26s %-18s %s" % (h["id"], h["verdict"],
