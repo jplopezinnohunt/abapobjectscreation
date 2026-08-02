@@ -740,6 +740,16 @@
    "created_session": 98,
    "status": "OPEN",
    "why_it_matters": "the address chain is held together by convention, so its exceptions are exactly where it fails silently"
+  },
+  {
+   "id": "AN-FUNDRES-AMOUNT-DIRECTION",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Reservations are carried to the end of a budget period and adjusted a median of 6 times. The open question is the DIRECTION of those adjustments: an amount that falls in step with consumption is a commitment drawdown and is unremarkable; an amount that is restored is a HOLD, and no report names that practice. Measure the direction per document.",
+   "method": "join fmioi amounts per reservation document across periods; CDPOS value history is deferred by standing decision, so use the period-over-period amounts",
+   "why_it_matters": "6.4M change documents rest on this distinction, and the two readings have opposite audit consequences"
   }
  ],
  "research_tasks_followups": [
@@ -816,5 +826,81 @@
    "status": "DONE (2026-07-26)"
   }
  ],
- "_s097": "Findings from the domain x capability analysis entered as TRACKED WORK. A recommendation in a document is reflection; a backlog item with evidence is work."
+ "_s097": "Findings from the domain x capability analysis entered as TRACKED WORK. A recommendation in a document is reflection; a backlog item with evidence is work.",
+ "hypotheses_from_operator_memory": [
+  {
+   "id": "HYP-B2R-FUNDRES-ROLLING",
+   "priority": 1,
+   "domain": "PSM_FM",
+   "status": "PARTIALLY_CONFIRMED s098",
+   "measurable_now": true,
+   "hypothesis": "FUND RESERVATIONS ARE USED AS A ROLLING HOLD. The organisation reserves funds and then ADJUSTS the reservation MONTH BY MONTH specifically so the funds are never released. If true, the earmarked-funds mechanism is not a commitment instrument here — it is a budget-retention instrument, which is a different thing with different audit consequences.",
+   "why_it_is_credible_before_measuring": "it would explain the single largest signal in the whole system: FMRESERV is the biggest change-document class at 6,415,467 headers over 2024-01..2026-03. A create-once commitment does not generate that volume. CONTINUOUS ADJUSTMENT does.",
+   "method": "measure the change CADENCE per reservation document, not the volume. For each OBJECTID in cdhdr/cdhdr_history where OBJECTCLAS='FMRESERV': count distinct months with a change, the gap distribution between changes, and the lifetime. A rolling hold shows as many documents with a change in almost every month of their life and few final closures. Then cross to fmioi to see whether the AMOUNT moves down in step with consumption (a genuine commitment drawdown) or is topped back up (a hold).",
+   "data_on_hand": "cdhdr 6.4M FMRESERV headers + fmioi 2,190,893 commitment lines — enough",
+   "connects_to": "A10 found fmioi carries FONDS/FISTL/FIPEX at 100% and no MEASURE, so the reservation sits on the same two-legged address as everything else",
+   "created_session": 98,
+   "source": "operator recollection, s098 — to be validated, never cited as measured",
+   "result": "RETENTION confirmed, MONTHLY refuted. Documents living >=6 months are touched in 32% of their months (median 6 changes), and lifetimes spike at 13 and 25 months — the biennium. So reservations are carried to the end of a budget period rather than consumed and closed. The naive all-documents ratio of 0.96 was an artifact of single-month lives.",
+   "still_open": "whether the AMOUNT is drawn down or restored — the difference between a commitment and a hold. Needs per-document amounts from fmioi, or CDPOS values which are deferred by standing decision.",
+   "next": "AN-FUNDRES-AMOUNT-DIRECTION"
+  },
+  {
+   "id": "HYP-B2R-BR-STAFF-VIA-PAYROLL",
+   "priority": 1,
+   "domain": "PSM_FM",
+   "status": "OPEN",
+   "measurable_now": false,
+   "hypothesis": "THE BUDGET-RATE SOLUTION HAS A SECOND, SEPARATE PATH FOR PERSONNEL, running through HR PAYROLL POSTING and BCM rather than through the main FI path.",
+   "why_it_is_credible_before_measuring": "this is the strongest of the recollections because the code already shows its shape. YCL_FM_BR_EXCHANGE_RATE_BL has THREE gates, and CHECK_CONDITIONS_2 is explicitly the STAFF gate: it accepts EUR *and* USD (the main gate accepts EUR only) and it INCLUDES HRM1/HRM2/HRP1 — the PBC pre-commitment, PBC commitment and payroll transactions the main gate excludes. So a separate personnel path is not a guess; it is in the class. AND IT MAY BE DEAD: MR_HKONT is declared at line 57 and never populated, and an empty range makes IN false, so whenever a GL account is passed that gate fails always.",
+   "method": "AN-BR-HKONT-EMPTY-RANGE first — establish whether callers pass IV_HKONT. If they do, the personnel BR path is closed on that condition and staff amounts were never converted. Then trace the payroll-posting side: which document types reach FI from HRM1/HRM2/HRP1 and at which rate they were valued.",
+   "data_on_hand": "the class is read from P01; the 12 ZFIX enhancements are NOT — EXT-ENHO-SOURCE is blocked, and the enhancements are where the steps live",
+   "connects_to": "AN-BR-HKONT-EMPTY-RANGE (p1, already open) · EXT-ENHO-SOURCE (blocked)",
+   "created_session": 98,
+   "source": "operator recollection, s098 — to be validated, never cited as measured"
+  },
+  {
+   "id": "HYP-B2R-BR-IS-MULTI-STEP-ACROSS-THE-CYCLE",
+   "priority": 1,
+   "domain": "PSM_FM",
+   "status": "OPEN",
+   "measurable_now": false,
+   "hypothesis": "THE BUDGET-RATE CUSTOM IS NOT ONE CONVERSION — it is MULTIPLE STEPS applied at different points along the budget cycle, and FUND RESERVATION is one of those points.",
+   "why_it_is_credible_before_measuring": "the family is 18 objects (5 classes, 1 composite ENHC, 12 ENHO) hooked at different places, which is the shape of a multi-step mechanism rather than a single exit. And CHECK_CONDITIONS_3 is the DELETION complement used during RFFMREPO reconstruction — evidence that the mechanism participates in rebuild, not only in posting.",
+   "method": "map each of the 12 enhancements to its hook point and order them along the cycle: budget entry -> reservation -> commitment -> actual -> reconstruction. Requires the ENHO sources, which is EXT-ENHO-SOURCE. Until then the step order is inferred from the enhancement NAMES and their spots, and must be labelled INFERRED.",
+   "data_on_hand": "brain_v2/budget_rate_enhancements.json holds the family; the sources do not",
+   "connects_to": "EXT-ENHO-SOURCE (blocked, p1) · AN-BR-TWO-PERIMETERS",
+   "created_session": 98,
+   "source": "operator recollection, s098 — to be validated, never cited as measured"
+  },
+  {
+   "id": "HYP-B2R-IS-ONE-THING-END-TO-END",
+   "priority": 1,
+   "domain": "PSM_FM",
+   "status": "OPEN",
+   "measurable_now": true,
+   "hypothesis": "COST RECOVERY, THE BUDGET STRUCTURE, AND THE CORE-MANAGER-TO-FM-AND-PS FLOW ARE ONE MECHANISM, not four subjects that happen to touch. Treating them separately is why each one looks incomplete on its own.",
+   "why_it_is_credible_before_measuring": "three independent measurements already point the same way. The FM ledger posts on Fund x Fund Centre only, so PS never appears in FM and the two are joined by an identifier convention. Cost recovery is fund FUNCTION 3 with its own fund families and TYPE 311. And the workplan-to-SAP seam runs at 1.8 days median while human validation runs at 20.9 — so the flow is one pipeline with one slow human stage, not separate systems.",
+   "method": "build the single end-to-end trace for a SAMPLE of workplans: Core Planner workplan -> allocation (Fund_Type__c) -> SAP fund -> project/WBS by identifier -> FM lines -> AVC bucket -> cost-recovery fund if any. One table, one row per workplan, every hop labelled with the carrier that made it. That single artefact IS the claim.",
+   "data_on_hand": "SAP side complete; the Core Planner side lives in the peer project unesco-sap-brain and must be read across, never copied",
+   "connects_to": "A10 hops H1-H8 · AN-CRP-CELLS (Cost_Recovery_CRP still has no capability row)",
+   "created_session": 98,
+   "source": "operator recollection, s098 — to be validated, never cited as measured"
+  },
+  {
+   "id": "HYP-B2R-COST-RECOVERY-IS-FUNDAMENTAL",
+   "priority": 1,
+   "domain": "Cost_Recovery_CRP",
+   "status": "OPEN",
+   "measurable_now": true,
+   "hypothesis": "COST RECOVERY IS A FUNDAMENTAL B2R DOMAIN, not a peripheral one — and the model does not currently treat it as such.",
+   "why_it_is_credible_before_measuring": "the model has a hole exactly there: Cost_Recovery_CRP exists in the domains layer and has NO ROW in the capability model — 21 domains with cells against 23 in the layer. So the domain the user names as fundamental is the one the capability matrix cannot score. Separately, cost recovery is 364 funds / 0.6% of the master but USD 171.5M gross actuals, and TYPE 311 carries 776 allocations.",
+   "method": "close AN-CRP-CELLS by scoring the 11 capability dimensions for Cost_Recovery_CRP from evidence already held, then measure the recovery mechanism end to end: which funds earn, which are charged, on what base, and whether the earning and the charge reconcile in the same period.",
+   "data_on_hand": "fund function taxonomy + fmifiit_full + the CRP fund families — enough to start",
+   "connects_to": "AN-CRP-CELLS · knowledge/41 (peer project, fund function axis)",
+   "created_session": 98,
+   "source": "operator recollection, s098 — to be validated, never cited as measured"
+  }
+ ],
+ "_hypotheses_note": "Recollections from the person who has operated this system for years. They are worth more than most documents and they are STILL HYPOTHESES until data says otherwise — recording them as verified is the exact failure this project keeps correcting. Each carries the method that would confirm or kill it, and whether it is measurable with data on hand or blocked on an extraction."
 }

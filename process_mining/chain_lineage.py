@@ -372,6 +372,78 @@ def walk_hop(cx, hop, sep="."):
 
 # ---------------------------------------------------------------- instruments
 
+def check_consistency(cx, spec):
+    """Where TWO carriers claim the same fact, measure where they DISAGREE.
+
+    A convention is only load-bearing if it agrees with the structure it stands in for.
+    An identifier whose shape says "level 4" while the real parent-child tree puts the node
+    at level 3 is worse than a missing link: everyone reads the code, because the code IS
+    the convention, and for those rows everyone is wrong.
+
+    The first check kind is depth-vs-tree. Others belong here as they are found — the
+    pattern is the point, not this one instance.
+    """
+    out = []
+    for chk in spec.get("consistency_checks", []):
+        if chk.get("kind") != "depth_vs_tree":
+            out.append({"id": chk.get("id"), "status": "UNKNOWN_KIND"})
+            continue
+        a, b = chk["carrier_a"], chk["carrier_b"]
+        if not (has_table(cx, a["table"]) and has_table(cx, b["table"])):
+            out.append({"id": chk["id"], "status": "UNMEASURABLE"})
+            continue
+
+        sep = chk.get("separator", ".")
+        ident = {k: v for k, v in cx.execute(
+            'SELECT "%s","%s" FROM "%s"' % (a["key"], a["value"], a["table"]))}
+        parent = {k: v for k, v in cx.execute(
+            'SELECT "%s","%s" FROM "%s"' % (b["key"], b["parent"], b["table"]))}
+
+        def tree_depth(node):
+            d, cur, guard = 1, node, 0
+            while guard < 40:
+                p = parent.get(cur)
+                guard += 1
+                if not p or not str(p).strip().strip("0"):
+                    break
+                d += 1
+                cur = p
+            return d
+
+        agree, dis, ex = 0, 0, []
+        for node in parent:
+            code = ident.get(node)
+            if not code:
+                continue
+            said = len(str(code).split(sep))
+            real = tree_depth(node)
+            if said == real:
+                agree += 1
+            else:
+                dis += 1
+                if len(ex) < 10:
+                    ex.append({"identifier": code, "claimed_level": said, "actual_level": real})
+        tot = agree + dis
+        rec = {"id": chk["id"], "fact": chk.get("fact"), "status": "MEASURED",
+               "compared": tot, "agree": agree, "disagree": dis,
+               "agreement_pct": round(100.0 * agree / tot, 1) if tot else 0.0,
+               "examples": ex}
+        if tot and 100.0 * agree / tot >= 99.0:
+            rec["verdict"] = "CONVENTION_HOLDS"
+            rec["why"] = ("the identifier and the structure agree at %.1f%% — the convention is "
+                          "load-bearing AND consistent, so reading the level off the code is "
+                          "safe for all but %d rows" % (100.0 * agree / tot, dis))
+        else:
+            rec["verdict"] = "CONVENTION_DRIFTS"
+            rec["why"] = ("the identifier and the structure disagree on %d of %d rows — reading "
+                          "the level off the code is not safe" % (dis, tot))
+        rec["_the_exceptions_are_the_point"] = (
+            "every disagreeing row is a node whose identifier claims a position the tree does "
+            "not give it. Everyone reads the code, so for these everyone is wrong.")
+        out.append(rec)
+    return out
+
+
 def _norm(s):
     return re.sub("[^A-Z0-9]", "", (s or "").upper())
 
@@ -595,6 +667,19 @@ def main(argv):
         if h.get("why") and "coverage_pct" in h:
             print("        %s" % h["why"])
 
+    cons = check_consistency(cx, spec)
+    if cons:
+        print("\nCONSISTENCY — where two carriers claim the same fact")
+        for k in cons:
+            if k.get("status") != "MEASURED":
+                print("  %-16s %s" % (k["id"], k.get("status")))
+                continue
+            print("  %-16s %-20s %.1f%% agree, %d disagree"
+                  % (k["id"], k["verdict"], k["agreement_pct"], k["disagree"]))
+            for e in k["examples"][:3]:
+                print("        %-24s code says %d, tree says %d"
+                      % (e["identifier"], e["claimed_level"], e["actual_level"]))
+
     instruments = check_instruments(cx, spec, hops)
     print("\nINSTRUMENTS — who can see these objects change?")
     for i in instruments:
@@ -611,6 +696,7 @@ def main(argv):
         "_spec": os.path.relpath(spec_path, ROOT).replace("\\", "/"),
         "instance": spec.get("instance"),
         "grammars": grammars, "dimension_carriers": carriers, "hops": hops,
+        "consistency_checks": cons,
         "instruments": instruments,
         "summary": {
             "hops_walked": len(hops), "verdicts": dict(verdicts),
@@ -619,6 +705,7 @@ def main(argv):
             "collapsed": [h["id"] for h in hops if h["verdict"] == "COLLAPSED"],
             # Only objects genuinely unwatchable. Meta rows (log coverage, recalled
             # memory) are not objects and must not inflate a governance count.
+            "convention_exceptions": sum(k.get("disagree", 0) for k in cons),
             "blind_objects": [i["object"] for i in instruments
                               if i.get("visibility") in ("BLIND", "DECLARED_BUT_EMPTY")],
             "observable_in_one_log_only": [i["object"] for i in instruments
