@@ -77,6 +77,20 @@ PLAN = {
     "YTFM_BR_REP_H":   {"partition": None, "why": "BR report header"},
     "YTFM_BR_REP_D":   {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
                         "why": "BR report detail"},
+    # RE-PULL WITH ALL FIELDS. These tables are already in the golden as narrow extracts
+    # that dropped every custom column. The loader reads the whole dictionary definition, so
+    # re-pulling them is how the custom fields become measurable at all.
+    "PRPS":       {"partition": None,
+                   "why": "WBS element — 12 custom fields: donor, agencies, and the five PSC percentages"},
+    "PROJ":       {"partition": None, "why": "project definition — re-pull for any custom fields"},
+    "FMFINCODE":  {"partition": "FIKRS", "values": FIKRS,
+                   "why": "fund master — carries ZZOUTPUT (native C/5 link) and ZZIBF"},
+    "FMFUNDTYPE": {"partition": None,
+                   "why": "fund type — carries ZZFIX_RATE, the flag gating the budget-rate perimeter"},
+    "T001":       {"partition": None, "why": "company code — carries YYORGEH"},
+    "T003":       {"partition": None, "why": "document type — carries YYBLART_GRP"},
+    "T003T":      {"partition": None, "why": "document type text — carries YYNAME"},
+    "YTHR_SORG_RULE": {"partition": None, "why": "custom HR org rule — carries ZZSECT"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
     "FMIT":       {"partition": "RYEAR", "values": ["2024", "2025", "2026"],
                    "why": "FM TOTALS — the report leg the golden has never held"},
@@ -195,12 +209,20 @@ def write(con, table, rows, fields=None):
                     % (table, ",".join('"%s" TEXT' % f["name"] for f in fields)))
         con.commit()
         return 0
+    # Build the replacement BESIDE the original and swap only once it is complete. The
+    # obvious order — DROP, CREATE, INSERT — destroys the existing extract the moment
+    # anything fails afterwards, and these re-pulls are precisely the case where a table we
+    # already hold is being replaced by a wider version of itself.
     cols = list(rows[0].keys())
+    tmp = "%s__loading" % table
     cur = con.cursor()
-    cur.execute('DROP TABLE IF EXISTS "%s"' % table)
-    cur.execute('CREATE TABLE "%s" (%s)' % (table, ",".join('"%s" TEXT' % c for c in cols)))
-    cur.executemany('INSERT INTO "%s" VALUES (%s)' % (table, ",".join("?" * len(cols))),
+    cur.execute('DROP TABLE IF EXISTS "%s"' % tmp)
+    cur.execute('CREATE TABLE "%s" (%s)' % (tmp, ",".join('"%s" TEXT' % c for c in cols)))
+    cur.executemany('INSERT INTO "%s" VALUES (%s)' % (tmp, ",".join("?" * len(cols))),
                     [[r.get(c, "") for c in cols] for r in rows])
+    con.commit()
+    cur.execute('DROP TABLE IF EXISTS "%s"' % table)
+    cur.execute('ALTER TABLE "%s" RENAME TO "%s"' % (tmp, table))
     con.commit()
     return len(rows)
 

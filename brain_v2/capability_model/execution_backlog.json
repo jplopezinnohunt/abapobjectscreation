@@ -211,7 +211,7 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "re-pull the tables whose custom columns were never extracted, WITH ALL FIELDS. The list is generated: brain_v2/custom_fields.json -> tables_to_repull. PRPS first — our extract holds 9 columns and the table has at least 12 custom ones — then PROJ, FMFINCODE, FMFUNDTYPE, PA0001, T001, T003/T003T. load_wide_tables.py already reads every dictionary field, so this is a plan entry per table and not new code.",
    "why_it_matters": "the user is designing a future solution on these fields. Right now we cannot say whether YYE_DONOR is populated, whether the five PSC percentages agree, or whether ZZFIX_RATE covers what the code implies — all three are answerable the moment the columns land",
    "first_questions": [
@@ -219,7 +219,8 @@
     "do the five YYE_POUR_* percentages agree, given the code checks that they may not",
     "how many funds carry ZZOUTPUT natively versus only through ytfm_fund_c5",
     "which fund types carry ZZFIX_RATE, measured against the 14 the class selects"
-   ]
+   ],
+   "result": "PRPS 60,292 rows / 146 columns (31 custom, was 9 columns), PROJ 14,028 (no custom fields), FMFINCODE 67,698 (ZZOUTPUT, ZZIBF), FMFUNDTYPE 126 (ZZFIX_RATE on exactly 14 types), T001, T003, T003T, YTHR_SORG_RULE. The four questions it opened are all answered."
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -825,6 +826,16 @@
    "method": "look for standard FM reporting (FMEQ/FMRP_*) and BI extraction on FISTL in the execution log via A8, rather than assuming the custom corpus is the whole story",
    "why_it_matters": "it decides whether the hierarchy is a defect to fix or a remnant to retire, and those have opposite costs",
    "result": "No organisational roll-up exists. FMHICTR (fund-centre hierarchy) is EMPTY while FMHICI (commitment item) and FMHIVARNT carry data. The standard FM reporting layer is heavily used (RFFMEPGAX 441 users) but aggregates on what is spent, not on who spends it. So the orphan fund centres distort nothing — the dimension is simply not reported on."
+  },
+  {
+   "id": "AN-TWO-CARRIERS-PATTERN",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Three times now a dimension exists in two places at once and nothing declares which is authoritative: fund scope for the budget rate (ZZFIX_RATE versus the literal 001-099 range), the organisational hierarchy (set class 0312 versus the empty FMHICTR), and the fund-to-C/5 link (native FMFINCODE.ZZOUTPUT versus the bridge ytfm_fund_c5, disagreeing on 5,626 funds). Sweep for the rest of the pattern rather than finding them one at a time, and for each pair establish which one the running reports actually read.",
+   "method": "for each custom field that duplicates a standard one, compare population and then grep which is read by the executed programs from the audit log",
+   "why_it_matters": "a future design that picks the wrong carrier inherits a silent disagreement, and this installation has at least three of them"
   }
  ],
  "research_tasks_followups": [
