@@ -1,0 +1,227 @@
+"""FIRST LOAD of tables the golden does not have yet — including WIDE ones.
+
+WHY THIS EXISTS SEPARATELY FROM gold_refresh.py
+    gold_refresh.py is the registry-driven DELTA engine: it maintains tables the golden
+    already holds. This does the first load, and it solves the one problem that blocks it:
+    RFC_READ_TABLE returns a flat 512-character work area, so a table wider than that
+    cannot be read in one call, and the P01 wrapper rejects ROWSKIPS so it cannot be paged
+    either.
+
+THE CHUNKING RULE THAT MATTERS
+    Wide tables are read in several passes and the passes are merged ON THE KEY, never on
+    row position. Position merging is the obvious shortcut and it is wrong: two reads of
+    the same table are only in the same order by luck, and when they are not, every field
+    in the second chunk lands on the wrong row — silently, producing a table that looks
+    perfectly well-formed and is scrambled. Repeating the key columns in every chunk costs
+    a few bytes per row and makes the merge verifiable.
+
+PROVENANCE
+    Source is P01, read-only, over SNC/SSO. Bare table names in the golden mean P01, which
+    is the standing convention, so these load under their real SAP names.
+
+USAGE
+    python scripts/extraction/load_wide_tables.py SETHEADER SETNODE SETLEAF
+    python scripts/extraction/load_wide_tables.py --all
+"""
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+sys.path.insert(0, str(REPO / "Zagentexecution" / "mcp-backend-server-python"))
+from rfc_helpers import get_connection  # noqa: E402
+
+GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+
+# RFC_READ_TABLE's work area is 512 characters. Leave room rather than discover the edge.
+MAX_WIDTH = 460
+FIKRS = ["UNES", "IIEP", "ICTP", "UIS", "UIL", "IBE", "UBO", "MGIE", "ICBA"]
+
+# What to load, and how to keep each read under the ceiling. `partition` names a column to
+# split on when one read would return too much; None means the table is small enough whole.
+PLAN = {
+    "SETHEADER":  {"partition": None, "why": "set master — which hierarchies and groups exist"},
+    "SETNODE":    {"partition": None, "why": "set structure — a set that contains another set"},
+    "SETLEAF":    {"partition": None, "why": "set contents — the actual values in each group"},
+    "SETHEADERT": {"partition": None, "why": "set names in language"},
+    # The derivation-tool strategy tables. MEASURED EMPTY in P01 and loaded anyway: an
+    # empty table that was checked is evidence, and the next session must not have to
+    # rediscover that it is empty.
+    "T811C":      {"partition": None, "why": "derivation-tool STRATEGY header — measured EMPTY"},
+    "T811S":      {"partition": None, "why": "derivation-tool STEPS — measured EMPTY"},
+    "T811K":      {"partition": None, "why": "derivation-tool step key fields — measured EMPTY"},
+    "T811X":      {"partition": None, "why": "which derivation POINTS are registered — 4, and FMDERIVE is not one"},
+    "T811I":      {"partition": None, "why": "derivation-tool field metadata"},
+    # The mechanism actually in use: classic FM account-assignment derivation.
+    "TABADRSF":   {"partition": None, "why": "CLASSIC FM derivation — the rule rows actually in use"},
+    "TABADRS":    {"partition": None, "why": "classic FM derivation strategies"},
+    "TABADRST":   {"partition": None, "why": "classic FM derivation strategy texts"},
+    "TABADRH":    {"partition": None, "why": "classic FM derivation headers"},
+    "TABADRX":    {"partition": None, "why": "classic FM derivation assignment"},
+    "TABADRPCONF": {"partition": None, "why": "classic FM derivation process config"},
+    # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
+    "FMIT":       {"partition": "RYEAR", "values": ["2024", "2025", "2026"],
+                   "why": "FM TOTALS — the report leg the golden has never held"},
+}
+
+
+class Session(object):
+    """P01 drops after roughly a dozen calls. A dropped call is not an answer, so retry it
+    — but only for the transport failure. A real error is a real answer and must surface."""
+
+    def __init__(self):
+        self.c = get_connection("P01")
+        self.calls = 0
+        self.reconnects = 0
+
+    def call(self, fm, **kw):
+        for attempt in range(4):
+            try:
+                r = self.c.call(fm, **kw)
+                self.calls += 1
+                return r
+            except Exception as e:
+                m = str(e)
+                if "COMMUNICATION_FAILURE" not in m and "not reached" not in m:
+                    raise
+                self.reconnects += 1
+                time.sleep(2 + attempt * 3)
+                self.c = get_connection("P01")
+        raise RuntimeError("P01 unreachable after retries")
+
+
+def fields_of(s, table):
+    r = s.call("DDIF_FIELDINFO_GET", TABNAME=table, ALL_TYPES="X")
+    out = []
+    for f in r.get("DFIES_TAB") or []:
+        # Long/string columns cannot be read through RFC_READ_TABLE at all on this system.
+        if f.get("INTTYPE") in ("g", "y") or (f.get("DATATYPE") or "") in ("STRG", "RSTR"):
+            continue
+        out.append({"name": f["FIELDNAME"], "len": int(f.get("LENG") or 0),
+                    "key": f.get("KEYFLAG") == "X"})
+    return out
+
+
+def chunks_for(fields):
+    """Split into reads that fit, with the KEY repeated in every one so the merge is by key."""
+    keys = [f for f in fields if f["key"]]
+    rest = [f for f in fields if not f["key"]]
+    kw = sum(f["len"] for f in keys)
+    if kw >= MAX_WIDTH:
+        raise RuntimeError("the key alone exceeds the work area — needs a different reader")
+    out, cur, w = [], [], kw
+    for f in rest:
+        if w + f["len"] > MAX_WIDTH and cur:
+            out.append(keys + cur)
+            cur, w = [], kw
+        cur.append(f)
+        w += f["len"]
+    out.append(keys + cur)
+    return out, [f["name"] for f in keys]
+
+
+def parse(res):
+    meta = res.get("FIELDS", [])
+    rows = []
+    for row in res.get("DATA", []):
+        wa = row.get("WA", "")
+        rows.append({f["FIELDNAME"]: wa[int(f["OFFSET"]):int(f["OFFSET"]) + int(f["LENGTH"])].strip()
+                     for f in meta})
+    return rows
+
+
+def read_table(s, table, plan):
+    fields = fields_of(s, table)
+    if not fields:
+        return None, "no readable fields", None
+    groups, keys = chunks_for(fields)
+    parts = plan.get("values") if plan.get("partition") else [None]
+
+    merged = {}
+    order = []
+    for gi, grp in enumerate(groups):
+        for pv in parts:
+            opt = ("%s = '%s'" % (plan["partition"], pv)) if pv else ""
+            try:
+                res = s.call("RFC_READ_TABLE", QUERY_TABLE=table,
+                             FIELDS=[{"FIELDNAME": f["name"]} for f in grp],
+                             OPTIONS=([{"TEXT": opt}] if opt else []), ROWCOUNT=0)
+            except Exception as e:
+                m = str(e)
+                if "TABLE_WITHOUT_DATA" in m:
+                    continue
+                return None, "%s%s: %s" % (table, (" " + pv) if pv else "", m[:110]), fields
+            for row in parse(res):
+                k = tuple(row.get(x, "") for x in keys)
+                if k not in merged:
+                    merged[k] = {}
+                    order.append(k)
+                merged[k].update(row)
+        print("      chunk %d/%d  filas acumuladas %d" % (gi + 1, len(groups), len(merged)))
+    return [merged[k] for k in order], None, fields
+
+
+def write(con, table, rows, fields=None):
+    """Write the table — INCLUDING when it came back empty.
+
+    An empty table that was actually read is evidence, and dropping it on the floor means
+    the next session cannot tell "we checked and it is empty" from "we never looked". That
+    distinction is the whole point of measuring a configuration table.
+    """
+    if not rows:
+        if not fields:
+            return 0
+        cur = con.cursor()
+        cur.execute('DROP TABLE IF EXISTS "%s"' % table)
+        cur.execute('CREATE TABLE "%s" (%s)'
+                    % (table, ",".join('"%s" TEXT' % f["name"] for f in fields)))
+        con.commit()
+        return 0
+    cols = list(rows[0].keys())
+    cur = con.cursor()
+    cur.execute('DROP TABLE IF EXISTS "%s"' % table)
+    cur.execute('CREATE TABLE "%s" (%s)' % (table, ",".join('"%s" TEXT' % c for c in cols)))
+    cur.executemany('INSERT INTO "%s" VALUES (%s)' % (table, ",".join("?" * len(cols))),
+                    [[r.get(c, "") for c in cols] for r in rows])
+    con.commit()
+    return len(rows)
+
+
+def main(argv):
+    want = [a for a in argv if not a.startswith("--")]
+    if "--all" in argv or not want:
+        want = list(PLAN)
+    unknown = [t for t in want if t not in PLAN]
+    if unknown:
+        print("no estan en el plan: %s" % ", ".join(unknown))
+        return 2
+
+    s = Session()
+    con = sqlite3.connect(str(GOLD))
+    print("CARGA INICIAL desde P01 (solo lectura) -> golden")
+    print("=" * 70)
+    done, failed = [], []
+    for t in want:
+        print("\n%s  — %s" % (t, PLAN[t]["why"]))
+        rows, err, flds = read_table(s, t, PLAN[t])
+        if err:
+            print("   FALLO: %s" % err)
+            failed.append((t, err))
+            continue
+        n = write(con, t, rows, flds)
+        print("   escritas %d filas" % n)
+        done.append((t, n))
+    con.close()
+    print("\n%s" % ("=" * 70))
+    for t, n in done:
+        print("   %-14s %8d filas" % (t, n))
+    for t, e in failed:
+        print("   %-14s FALLO  %s" % (t, e[:70]))
+    print("   llamadas RFC %d, reconexiones %d" % (s.calls, s.reconnects))
+    return 0 if not failed else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

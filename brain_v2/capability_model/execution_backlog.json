@@ -164,10 +164,11 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 97,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "Extract FMIT — BCS totals, FIKRS + RFONDS + RWRTTP + RYEAR with periods HSL01..HSL16. It is the HOLE IN THE REPORT LEG: the OFFICIAL negative-funds report YFM1 reads FMIT, not FMAVCT, so budget->commitment->actual->report is documented end to end and unqueryable at the last step. Verified absent from the golden (only fmavct_* and the fmavc* config tables are present). Extract FMRESERV in the same pass if readable — today the PBC->FM commitment join is evidenced by CHANGE DOCUMENTS rather than by the reservation records themselves.",
    "method": "P01 read-only, register under PSM_FM in gold_table_registry",
-   "why_it_matters": "without it every reporting answer is inferred from the commitment layer instead of read from the totals the business actually reports on"
+   "why_it_matters": "without it every reporting answer is inferred from the commitment layer instead of read from the totals the business actually reports on",
+   "result": "FMIT loaded, 770,774 rows for 2024-2026"
   },
   {
    "id": "EXT-BR-CLASS-P01",
@@ -750,6 +751,16 @@
    "task": "Reservations are carried to the end of a budget period and adjusted a median of 6 times. The open question is the DIRECTION of those adjustments: an amount that falls in step with consumption is a commitment drawdown and is unremarkable; an amount that is restored is a HOLD, and no report names that practice. Measure the direction per document.",
    "method": "join fmioi amounts per reservation document across periods; CDPOS value history is deferred by standing decision, so use the period-over-period amounts",
    "why_it_matters": "6.4M change documents rest on this distinction, and the two readings have opposite audit consequences"
+  },
+  {
+   "id": "AN-FUNDCENTER-HIERARCHY-TRAVERSE",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "the fund-centre hierarchy is now held (class 0102: 1,459 sets, 1,406 nodes, 3,175 leaves, nested 1,737 parents over 4,320 children). Traverse it and attach every FM posting to its roll-up path, then answer the question the model has never been able to answer: what does each organisational level actually consume, and does the hierarchy agree with the 3-letter acronym grammar the fund centres use.",
+   "method": "walk SETNODE parent-child, resolve leaves through SETLEAF, join to fmifiit_full FISTL",
+   "why_it_matters": "Fund Centre is the only live organisational dimension in the FM ledger, and until now it had no structure to roll up through"
   }
  ],
  "research_tasks_followups": [
