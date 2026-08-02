@@ -70,6 +70,8 @@ CYCLE = [
      "L3 concept drift over the accumulated history", True),
     ("process_mining/extract_business_rules.py",
      "L2 the rules that live in code, not in configuration", False),
+    ("process_mining/chain_lineage.py",
+     "L2 the address chain — how funding reaches work when no foreign key says so", False),
     ("brain_v2/system_profile/build_profile_links.py",
      "L6 cross the profile against the model", False),
     ("brain_v2/system_profile/build_model_graph.py",

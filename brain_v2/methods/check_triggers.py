@@ -85,6 +85,10 @@ def measure():
             m["cycle_steps_failed"] = cs.get("steps_failed")
         except (ValueError, TypeError):
             pass
+    # A run that STARTED and never recorded a completion is not the same thing as a run
+    # that never happened, and the two send you to different places to look.
+    m["cycle_status"] = cs.get("status")
+    m["cycle_started"] = cs.get("started_utc")
 
     # audit history depth — the evidence window every domain assignment rests on
     if GOLD.exists():
@@ -111,6 +115,37 @@ def measure():
             # exactly how a trigger silently stops firing — the failure this file exists
             # to prevent, committed inside the file itself.
             print(f"  [triggers] measurement incomplete: {e}")
+
+        # THE ADDRESS CHAIN (algorithm A10). Three things can change underneath it, and
+        # each one silently invalidates every query built on the last run.
+        try:
+            con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
+            n = con.execute("SELECT count(*) FROM fmifiit_full").fetchone()[0]
+            f = con.execute("SELECT count(*) FROM fmifiit_full WHERE MEASURE IS NOT NULL "
+                            "AND trim(MEASURE) <> ''").fetchone()[0]
+            # Whether the DESIGNED work carrier is populated at all. Crossing zero in
+            # either direction means the designed chain just started or stopped running.
+            m["chain_designed_carrier_pct"] = round(100.0 * f / n, 2) if n else 0.0
+            m["chain_fm_lines"] = n
+            m["chain_funds"] = con.execute("SELECT count(*) FROM funds").fetchone()[0]
+            m["chain_wbs"] = con.execute("SELECT count(*) FROM prps").fetchone()[0]
+            # How many distinct minting rules exist for the root identifier. A new one
+            # appearing means someone started issuing codes by a rule no filter knows.
+            import re as _re
+            shapes = set()
+            for (v,) in con.execute("SELECT DISTINCT FINCODE FROM funds"):
+                if v:
+                    shapes.add(_re.sub("[0-9]", "D", _re.sub("[A-Za-z]", "A", v.strip())))
+            m["chain_fund_grammars"] = len(shapes)
+            con.close()
+        except sqlite3.Error as e:
+            print(f"  [triggers] chain measurement incomplete: {e}")
+
+    lin = _load(REPO / "brain_v2" / "chain_lineage.json")
+    if lin:
+        m["chain_hops_walked"] = (lin.get("summary") or {}).get("hops_walked")
+        m["chain_substituted"] = len((lin.get("summary") or {}).get("substituted") or [])
+        m["chain_blind_objects"] = len((lin.get("summary") or {}).get("blind_objects") or [])
     return m
 
 
@@ -148,9 +183,16 @@ def evaluate(now, prev):
     # catches it up instead of inheriting stale answers without knowing.
     stale = now.get("cycle_days_since_run")
     if stale is None:
-        fire("MAINTENANCE", "the analysis cycle has NEVER recorded a run",
-             "no cycle_state.json — either it has not run since this check existed, or the "
-             "schedule was never registered", "CYCLE")
+        fire("MAINTENANCE",
+             ("the analysis cycle STARTED AND NEVER FINISHED"
+              if now.get("cycle_status") == "RUNNING"
+              else "the analysis cycle has NEVER recorded a run"),
+             (f"a run began at {now.get('cycle_started')} and recorded no completion — it "
+              f"died, and a died run reads as a never-run unless the two are separated"
+              if now.get("cycle_status") == "RUNNING" else
+              "no cycle_state.json — either it has not run since this check existed, or the "
+              "schedule was never registered"),
+             "CYCLE")
     elif stale > CYCLE_STALE_DAYS:
         fire("MAINTENANCE", "the analysis cycle is stale",
              f"last run {stale} days ago, expected weekly — a missed schedule produces no "
@@ -239,6 +281,41 @@ def evaluate(now, prev):
              f"{doc_gap} module(s) run in production with no prose layer — nobody can read "
              f"what they do",
              "AUTHORING", "domain doc")
+
+    # ---- THE ADDRESS CHAIN (A10) -------------------------------------------------
+    # This chain is held together by identifier conventions and custom tables rather than
+    # by foreign keys, which makes it unusually easy to invalidate without anyone noticing.
+    if now.get("chain_hops_walked") is None:
+        fire("MAINTENANCE", "the address chain has never been reconstructed",
+             "no chain_lineage.json exists, so how funding reaches work is unmeasured",
+             "CYCLE")
+    else:
+        was, isnow = prev.get("chain_designed_carrier_pct"), now.get("chain_designed_carrier_pct")
+        if was is not None and isnow is not None and (was == 0) != (isnow == 0):
+            fire("INTERPRETATION", "the DESIGNED work carrier crossed zero",
+                 f"Funded Program population moved {was}% -> {isnow}%. Either the designed "
+                 f"chain has started running or it has stopped, and every join that "
+                 f"reconstructs work by identifier grammar is now answering the wrong way",
+                 "CYCLE")
+        wasg, isg = prev.get("chain_fund_grammars"), now.get("chain_fund_grammars")
+        if wasg and isg and isg > wasg:
+            fire("INTERPRETATION", "a new identifier grammar appeared",
+                 f"fund code shapes went {wasg} -> {isg}. Someone is minting identifiers by a "
+                 f"rule none of the existing filters or groupings know about, so any "
+                 f"population selected by code pattern is now silently incomplete",
+                 "CYCLE")
+        for k, label in (("chain_funds", "the fund master"), ("chain_wbs", "the WBS population")):
+            a, b = prev.get(k), now.get(k)
+            if a and b and a > 0 and (100.0 * (b - a) / a) >= FRONTIER_GROWTH_PCT:
+                fire("ACCUMULATION", f"{label} grew materially",
+                     f"{a:,} -> {b:,} ({100.0*(b-a)/a:.1f}%) — the chain's coverage and its "
+                     f"orphan set both move with it", "CYCLE")
+        if now.get("chain_blind_objects"):
+            fire("WRITE_PATH", "objects in the chain nobody can watch change",
+                 f"{now['chain_blind_objects']} object(s) in the address chain have no change "
+                 f"document coverage, so 'who changed this' is unanswerable for them — A8 "
+                 f"attribution against the execution log is the only instrument left",
+                 "CYCLE")
 
     return fired, None
 

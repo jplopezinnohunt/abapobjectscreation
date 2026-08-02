@@ -18186,5 +18186,174 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 417,
+  "claim": "THE MODEL DIMENSIONS LIVE IN THE IDENTIFIER STRING, NOT IN THE SCHEMA — measured end-to-end on the golden (s098, ALGORITHM A10). THE FM LEDGER POSTS ON EXACTLY TWO LEGS. In fmifiit_full, 2,308,814 actual lines: FONDS 100%, FISTL 100%, FIPEX 100% — and MEASURE (Funded Program), FAREA (Functional Area), GRANT_NBR and PRCTR are populated in 0.0%. MEASURE is the DESIGNED WBS-to-FM bridge, so the designed chain from work to money does not exist in the data. AND THERE IS NO FOREIGN KEY EITHER. prps carries no fund and no fund-centre column; proj carries none. Nothing in the PS master points at FM. YET THE CHAIN RESOLVES AT 99.5%, THROUGH THE STRING. Every WBS identifier is <fund code>.<level>.<level>: taking the root before the first dot, 59,424 of 59,749 WBS elements land on a real fund. The project id IS a fund code — 13,812 of 13,976 PSPID values (98.8%), the project-as-fund inversion the 2017 design explicitly forbade, still load-bearing. The 4-level spine is dot DEPTH, not a parent key. THE GRAMMAR IS ALSO A CLASSIFICATION. Three code families coexist in funds.FINCODE and each predicts the TYPE family: all-numeric 8 or 10 digits (73.2% of the UNES master) for RP/staff types 0xx; NNN+GEO+NNNN (20.8%) for extrabudgetary delivery types 1xx; alpha-prefixed legacy variants for older VC types. Fund centres are 3-letter organisational acronyms (84.0%). SO THE IMPLICIT TAXONOMY IS REAL AND IT IS THE OPERATING MODEL: the filters, groupings and hierarchies the business uses daily are encoded in identifier positions that no foreign key, no data dictionary and no migration tool can see. WHY THIS IS THE FINDING AND NOT A CURIOSITY: a link that works through a string convention is invisible to anyone reading the data model. It is never documented, never load-tested, and — the part that costs money — never migrated. An S/4 conversion that rebuilds the schema faithfully, not knowing the semantics live in the strings, carries none of this across.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/chain_lineage.json (A10) x p01_gold_master_data.db",
+    "cite": "fmifiit_full MEASURE/FAREA/GRANT_NBR/PRCTR 0 of 2,308,814; root(POSID) resolves 59,424 of 59,749 (99.5%); PSPID matches a fund 13,812 of 13,976 (98.8%); funds.FINCODE 30 shapes over 56,752 UNES funds",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "prps",
+   "proj",
+   "funds",
+   "fmifiit_full",
+   "POSID",
+   "PSPID",
+   "FINCODE",
+   "MEASURE",
+   "FMMEASURE",
+   "A10_chain_lineage"
+  ],
+  "resolution_notes": "USER DIRECTION: 'hay una taxonomia implicita en los fund centers, funds y los proyectos y WBS elements, esto define logicas, filtros, agrupaciones' and 'deberiamos tener algun algoritmo que facilite esta exploracion e interpretacion'. Both delivered: the taxonomy is measured, and ALGORITHM A10 (chain_lineage.py + chain_spec.json) reproduces it on any installation from a declarative spec.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "PS"
+   ],
+   "module": [
+    "FM",
+    "PS"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 418,
+  "claim": "AVAILABILITY CONTROL RUNS ON A SHARED POOL — quantified from the posted data (s098, A10). At 63.7% of Fund x Fund Centre addresses, SEVERAL distinct commitment items arrive at a SINGLE grouped bucket in the control object. Measured over the 5,949 addresses common to both sides: 3.99 distinct FIPEX on the posting side against 1.48 distinct RCMMTITEM on the control side. THE CONSEQUENCE IS NOT THAT CONTROL FAILS — IT IS THAT ATTRIBUTION DOES. Availability is checked on the pooled bucket, so consumption by one cost category silently reduces the headroom of its neighbours, and no report built on AVC can answer 'did this category have budget'. TWO INSTRUMENTS, ONE MODEL: the peer project reached this mechanism from CONFIGURATION (79.8% of controlled funds sit on a single TC pool); this reaches it from the POSTED DATA. Independent derivations of the same structure. PAIRED WITH THE FACT THAT ONLY A MINORITY OF FUNDS CARRY A CONTROL OBJECT AT ALL, the operating picture is a permissive preventive layer over a pooled address, with negatives caught afterwards by a detective report rather than prevented.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/chain_lineage.json (A10) x p01_gold_master_data.db",
+    "cite": "5,949 addresses compared; 3.99 distinct FIPEX in vs 1.48 distinct RCMMTITEM out; 63.7% of addresses collapse to a single bucket",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "fmavct_2025",
+   "fmifiit_full",
+   "FIPEX",
+   "RCMMTITEM",
+   "AVC",
+   "A10_chain_lineage"
+  ],
+  "resolution_notes": "USER DIRECTION: 'hay una taxonomia implicita en los fund centers, funds y los proyectos y WBS elements, esto define logicas, filtros, agrupaciones' and 'deberiamos tener algun algoritmo que facilite esta exploracion e interpretacion'. Both delivered: the taxonomy is measured, and ALGORITHM A10 (chain_lineage.py + chain_spec.json) reproduces it on any installation from a declarative spec.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM"
+   ],
+   "module": [
+    "FM"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 419,
+  "claim": "THE PROGRAMMATIC LINK IS CARRIED BY TWO CUSTOM Y-TABLES, AND WHO GETS ONE IS UNDOCUMENTED (s098, A10). Because Functional Area and Grant are empty, the link from a fund to the C/5 programmatic structure is carried by ytfm_fund_c5 (17,598 rows, FINCODE to C5_ID + FM_OUTPUT: 3 biennium documents, 251 outputs) and the planning/sector line by ytfm_fund_cpl (6,368 rows). These are the as-run replacements for dimensions the design left empty. COVERAGE IS NOT PARTIAL — IT IS UNEVEN, WHICH IS WORSE. Against the 67,526-fund master the C/5 bridge covers 20.8% overall, but by identifier family that runs from 0.0% to 96.4%: the entire 8-digit family (17,790 funds) has NO link in either table, while TYPE 115 is at 100%, 315 at 94.5% and 013 at 89.5%, and the largest type 001 at only 14.0%. No grammar and no TYPE explains the pattern, so the rule deciding which fund gets a programmatic link is not written down anywhere findable. AN AVERAGE OVER THIS POPULATION IS MEANINGLESS, and any report joining through these tables silently drops whole fund families without saying so.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/chain_lineage.json (A10) x p01_gold_master_data.db",
+    "cite": "14,048 of 67,526 funds have a C/5 row (20.8%); by identifier family 0.0%-96.4%; the 8-digit family of 17,790 funds has 0%; TYPE 115 at 100%, TYPE 001 at 14.0%",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "ytfm_fund_c5",
+   "ytfm_fund_cpl",
+   "funds",
+   "FAREA",
+   "A10_chain_lineage"
+  ],
+  "resolution_notes": "USER DIRECTION: 'hay una taxonomia implicita en los fund centers, funds y los proyectos y WBS elements, esto define logicas, filtros, agrupaciones' and 'deberiamos tener algun algoritmo que facilite esta exploracion e interpretacion'. Both delivered: the taxonomy is measured, and ALGORITHM A10 (chain_lineage.py + chain_spec.json) reproduces it on any installation from a declarative spec.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM"
+   ],
+   "module": [
+    "FM"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 420,
+  "claim": "THE CARRIERS THAT HOLD THE MODEL ARE THE ONES NOBODY CAN WATCH — the governance finding of the chain reconstruction (s098, A10). THE FUND MASTER IS UNOBSERVABLE. OBJECTCLAS='FMFINCODE' carries ZERO records in cdhdr and zero in cdhdr_history, while the master holds 67,526 funds. Who creates and changes funds cannot be answered from the change log at all — for the most heavily populated master in the model. A8 attribution against the execution log is the only instrument left. AND THE CHANGE LOG IS TWO INSTRUMENTS, NOT ONE. cdhdr carries 57 object classes; cdhdr_history carries 72. The 15 missing from cdhdr include PBC, SETS (hierarchy maintenance), SUSR_PROF (authorisation profiles) and every custom Y* class. Anyone querying cdhdr alone concludes those objects never change — a confident wrong answer produced by a partial instrument. ONE COUNTER-EXAMPLE WORTH KEEPING: a CUSTOM change-document object does exist, YFMFUNDC5 (2,221 records), for the custom C/5 bridge — visible only in cdhdr_history. Custom carriers can have custom instruments, and a discovery pass by name affinity finds them where a standard SAP list never would.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Security",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "brain_v2/chain_lineage.json (A10) x p01_gold_master_data.db",
+    "cite": "FMFINCODE 0 rows in both change logs; cdhdr 57 object classes vs cdhdr_history 72; YFMFUNDC5 2,221 records, history only",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "cdhdr",
+   "cdhdr_history",
+   "FMFINCODE",
+   "YFMFUNDC5",
+   "funds",
+   "A8",
+   "A10_chain_lineage"
+  ],
+  "resolution_notes": "USER DIRECTION: 'hay una taxonomia implicita en los fund centers, funds y los proyectos y WBS elements, esto define logicas, filtros, agrupaciones' and 'deberiamos tener algun algoritmo que facilite esta exploracion e interpretacion'. Both delivered: the taxonomy is measured, and ALGORITHM A10 (chain_lineage.py + chain_spec.json) reproduces it on any installation from a declarative spec.",
+  "domain_axes": {
+   "functional": [
+    "Security",
+    "PSM_FM"
+   ],
+   "module": [
+    "FM",
+    "BC"
+   ],
+   "process": [
+    "B2R",
+    "GOVERNANCE"
+   ]
+  }
  }
 ]

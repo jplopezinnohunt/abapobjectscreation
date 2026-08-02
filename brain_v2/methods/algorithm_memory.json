@@ -1,0 +1,200 @@
+{
+ "_what_this_is": "What the algorithms learned about the substrate they run on. Written by any algorithm, read by all of them. algorithms.json says what each algorithm IS; this says what each one LEARNED.",
+ "_the_rule": "every memory carries who learned it, from what evidence, and what other algorithms should do differently because of it. A memory with no implication is a note, and notes are not machine-actionable.",
+ "_kinds": {
+  "INSTRUMENT": "a log, table or channel and how far it can actually see",
+  "SUBSTRATE": "how the system behaves under load — timeouts, drops, limits",
+  "CARRIER": "a column or object that does or does not carry what it claims",
+  "TRAP": "a way of reading the data that produces a confident wrong answer"
+ },
+ "memories": [
+  {
+   "subject": "cdhdr",
+   "kind": "INSTRUMENT",
+   "fact": "the change-document header extract is a FILTERED SUBSET. It carries 57 object classes; cdhdr_history carries 72. Missing from cdhdr: PBC, SETS, SUSR_PROF and every custom Y* class.",
+   "learned_by": "A8_change_attribution + A10_chain_lineage",
+   "evidence": "57 vs 72 distinct OBJECTCLAS; PBC's 3.4M changes absent from cdhdr entirely",
+   "implication": "NEVER answer 'who changed this' from cdhdr alone. Read cdhdr_history too and reconcile. An object absent from cdhdr has not necessarily stopped changing — it may simply not be in this extract.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "cdhdr_history",
+   "kind": "INSTRUMENT",
+   "fact": "the fuller change log: 72 object classes, 2024-01-01 to 2026-06-20, and the ONLY store carrying PBC, SETS (hierarchy maintenance), SUSR_PROF (authorisation profiles) and the custom Y* change-document objects.",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "12,029,963 rows; classes present here and absent from cdhdr: 15",
+   "implication": "this is the default change instrument, not the fallback. Hierarchy and authorisation questions can ONLY be answered here.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "P01.rfc_session",
+   "kind": "SUBSTRATE",
+   "fact": "the connection degrades and drops after roughly a dozen calls, and a wide read hangs",
+   "learned_by": "A1_chunked_temporal_read + extract_p01_source",
+   "evidence": "observed across the log accumulator and the P01 source extractor",
+   "implication": "chunk every temporal read to <=6h windows and reconnect on COMMUNICATION_FAILURE / 'partner not reached' rather than treating it as a real answer. A silently truncated window looks like a quiet period.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_query_shape",
+   "kind": "TRAP",
+   "fact": "resolving row-by-row in Python what could be aggregated in SQL first is the single most expensive mistake available here — measured at 548x on one rewrite",
+   "learned_by": "D6_aggregate_before_resolve",
+   "evidence": "A8 runtime >1h -> 3m29s after pre-aggregating 15.6M audit rows into 987K slots",
+   "implication": "aggregate with GROUP BY, then resolve the small result. A correlated subquery over a multi-million-row fact table is not a query, it is a scan per row.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "fmifiit_full.MEASURE",
+   "kind": "CARRIER",
+   "fact": "Funded Program — SAP's designed WBS-to-FM bridge — is declared and blank in every row. So are FAREA, GRANT_NBR and PRCTR. The FM ledger posts on exactly two legs: Fund x Fund Center.",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "0 populated of 2,308,814 rows for MEASURE, FAREA, GRANT_NBR, PRCTR",
+   "implication": "no query may join FM actuals to work through MEASURE. Any analysis that needs 'which project consumed this' must reconstruct it by identifier grammar, and must say so.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "prps.POSID",
+   "kind": "CARRIER",
+   "fact": "the WBS identifier CARRIES the chain the schema does not: its root before the first dot is the fund code, and its dot depth is its hierarchy level. 99.5% of WBS elements resolve to a real fund this way.",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "59,424 of 59,749 roots match funds.FINCODE; depth runs 1..7",
+   "implication": "the fund-to-work link is reconstructable without Funded Program. Use root(POSID). And note depth >4 exists (2,046 elements), so any code assuming the designed 4-level spine will mis-handle them.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "funds.FINCODE",
+   "kind": "CARRIER",
+   "fact": "three code grammars coexist in one field and the grammar predicts the fund TYPE family: all-numeric (73%) = RP/staff types 0xx, NNN+GEO+NNNN (21%) = extrabudgetary delivery types 1xx, and legacy alpha-prefixed variants.",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "56,752 UNES funds over 30 shapes; TYPE concentration >=50% within the top shapes",
+   "implication": "the identifier is a classification, not a label. Any filter, grouping or sample that ignores the grammar mixes populations that have nothing to do with each other.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "FMFINCODE",
+   "kind": "INSTRUMENT",
+   "fact": "the fund-master change-document class carries ZERO records in either change log, while the fund master holds 67,526 funds",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "0 rows for OBJECTCLAS='FMFINCODE' in cdhdr and cdhdr_history",
+   "implication": "who creates and changes funds cannot be answered from the change log at all. Fall back to A8 attribution against the execution log — it is the only instrument left for the most heavily populated master in the model.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "YFMFUNDC5",
+   "kind": "INSTRUMENT",
+   "fact": "a CUSTOM change-document object exists for the custom fund-to-C/5 bridge table, and it appears only in cdhdr_history",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "2,221 records, cdhdr_history only",
+   "implication": "custom carriers can have custom instruments. Discover change-document classes by name affinity against the table rather than assuming the standard SAP list is complete.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "fmavct.RCMMTITEM",
+   "kind": "CARRIER",
+   "fact": "the availability-control object collapses the commitment-item leg: at 63.7% of Fund x Fund Center addresses, several distinct commitment items arrive at a single grouped bucket",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "5,949 addresses compared; 3.99 FIPEX in vs 1.48 RCMMTITEM out",
+   "implication": "availability is checked on a SHARED pool. Never report 'this cost category had budget' from AVC — the bucket is shared, so consumption by one category silently reduces headroom for its neighbours.",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "prps -> funds",
+   "kind": "CARRIER",
+   "fact": "this link resolves at 99.5% through STRING PREFIX of POSID, NOT through the designed FMMEASURE / Funded Program derivation via FMDERIVE",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "59424 of 59749 rows",
+   "implication": "join through the actual carrier and say so. Anyone reading the data model will look for the designed one and find nothing.",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "proj -> funds",
+   "kind": "CARRIER",
+   "fact": "this link resolves at 98.8% through STRING IDENTITY (PSPID = FINCODE), NOT through the designed none — Fund and Project are meant to be independent dimensions",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "13812 of 13976 rows",
+   "implication": "join through the actual carrier and say so. Anyone reading the data model will look for the designed one and find nothing.",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "prps -> proj",
+   "kind": "CARRIER",
+   "fact": "this link resolves at 99.8% through same, plus the string root agrees, NOT through the designed PRPS.PSPHI -> PROJ.PSPNR (the real SAP foreign key)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "59631 of 59749 rows",
+   "implication": "join through the actual carrier and say so. Anyone reading the data model will look for the designed one and find nothing.",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "funds",
+   "kind": "INSTRUMENT",
+   "fact": "change visibility for this object is DECLARED_BUT_EMPTY (FMFINCODE)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "{}",
+   "implication": "the change-document object is part of the design and carries no records in any log here — changes to this object leave no trace",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "ytfm_fund_c5",
+   "kind": "INSTRUMENT",
+   "fact": "change visibility for this object is OBSERVABLE_IN_ONE_LOG_ONLY (YFMFUNDC5)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "{\"cdhdr_history\": 2221}",
+   "implication": "present in cdhdr_history and absent from cdhdr — anyone querying the wrong log concludes this object never changes",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "ytfm_fund_cpl",
+   "kind": "INSTRUMENT",
+   "fact": "change visibility for this object is BLIND (no class)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "{}",
+   "implication": "no change-document object is declared for this table and none was discovered — who changed it cannot be answered from the change log",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "fmifiit_full",
+   "kind": "INSTRUMENT",
+   "fact": "change visibility for this object is BLIND (no class)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "{}",
+   "implication": "no change-document object is declared for this table and none was discovered — who changed it cannot be answered from the change log",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "fmavct_2025",
+   "kind": "INSTRUMENT",
+   "fact": "change visibility for this object is BLIND (no class)",
+   "learned_by": "A10_chain_lineage",
+   "evidence": "{}",
+   "implication": "no change-document object is declared for this table and none was discovered — who changed it cannot be answered from the change log",
+   "confidence": "MEASURED",
+   "session": null,
+   "supersedes_earlier_run": true
+  }
+ ]
+}

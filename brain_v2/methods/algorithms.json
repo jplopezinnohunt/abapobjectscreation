@@ -395,6 +395,53 @@
    "failure_mode": "IT COMPOSES, IT DOES NOT MEASURE. A component reads DERIVED because an artifact exists with content — not because that content is CURRENT or CORRECT. A stale artifact from six months ago composes exactly like a fresh one, so P1 must be read together with the cycle state and the drift signal, never alone. It also cannot tell a DECLARED value that is right from one that is wrong; it only says a human put it there.",
    "improve": "(a) carry each artifact's mtime so a stale component is visible in P1 itself rather than only in the cycle state; (b) shrink the DECLARED set — every one converted to DERIVED is hand work removed from installation #2, and footprint and org_structure are the two closest, since probe_footprint.py already derives them and only the WRITE-BACK is manual; (c) build the security-posture derivation, the one genuine hole.",
    "gated": "GATED s097: golden cases over the composition and the DERIVED/DECLARED split"
+  },
+  "A10_address_chain_reconstruction": {
+   "operates_on": "master data + fact tables + change logs",
+   "origin": "OURS",
+   "state": "STRONG",
+   "does": "reconstruct the chain from funding source to piece of work in an installation where no foreign key carries it: infer the GRAMMAR of the identifiers, walk each declared HOP, and report per hop whether it resolves, through WHICH carrier, how much finer resolution survives, and whether any instrument can observe it changing",
+   "bound_in": [
+    "process_mining/chain_lineage.py",
+    "process_mining/chain_spec.json"
+   ],
+   "reads": [
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "writes": [
+    "brain_v2/chain_lineage.json",
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "fires_on": "check_triggers.py — the designed work carrier crossing zero, a NEW identifier grammar appearing, the fund or WBS master growing >=5%, or any chain object having no change-document coverage. Placed in run_analysis_cycle.py after extract_business_rules.py",
+   "verdicts": [
+    "LIVE",
+    "SUBSTITUTED",
+    "COLLAPSED",
+    "UNEVEN",
+    "SPARSE",
+    "BROKEN",
+    "UNMEASURABLE"
+   ],
+   "why_it_matters": "SUBSTITUTED is the verdict that pays for the algorithm: a link that works through a string convention or a custom table is invisible to anyone reading the data model, so it is never migrated, never documented, and never load-tested — and it is load-bearing",
+   "failure_mode": "scoring a carrier against a population it was never meant to serve, which reads as a broken chain and is a mis-stated denominator; and a discovered change-document class claiming a table on a shared prefix. Both were real defects in the first run, fixed with breakdown-by-grammar and one-to-one assignment",
+   "improve": "derive the hops from the golden's own key structure instead of declaring them, so a new installation gets a first pass with no spec at all"
+  },
+  "A11_shared_algorithm_memory": {
+   "operates_on": "the algorithms themselves",
+   "origin": "OURS",
+   "state": "STRONG",
+   "does": "hold what each algorithm LEARNED about the substrate — which log is a filtered subset, which connection drops, which declared column is blank in every row — so the next algorithm starts from it instead of rediscovering it or, worse, drawing a conclusion from an instrument it did not know was partial",
+   "bound_in": [
+    "brain_v2/methods/algorithm_memory.py"
+   ],
+   "writes": [
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "fires_on": "continuously — every algorithm calls recall() before choosing its instruments and remember() after establishing a fact. It is not scheduled; it is a dependency",
+   "why_it_matters": "algorithms.json records what each algorithm IS. This records what each one LEARNED. Only the second one compounds — without it every algorithm pays the same discovery cost forever",
+   "the_rule": "a memory carries subject, fact, who learned it, the evidence, and what OTHER algorithms should do differently. A memory with no implication is a note, and notes are not machine-actionable",
+   "failure_mode": "a stale memory is worse than none — the substrate changes. Re-learning the same subject by the same algorithm SUPERSEDES rather than duplicates",
+   "improve": "expire a memory whose evidence is older than the window the claim depends on"
   }
  },
  "_portfolio": {
@@ -419,7 +466,8 @@
    "UNDER_EXERCISED": 0,
    "MISSING": 0
   },
-  "_reading": "Twelve algorithms have no market equivalent — that is the defensible surface. Eight are adopted standards, correctly, because reinventing DFG discovery would be vanity. The single MISSING one covers the integration boundary, and the single FRAGILE one is the log accumulator, which is simultaneously the most valuable algorithm here and the least protected."
+  "_reading": "Twelve algorithms have no market equivalent — that is the defensible surface. Eight are adopted standards, correctly, because reinventing DFG discovery would be vanity. The single MISSING one covers the integration boundary, and the single FRAGILE one is the log accumulator, which is simultaneously the most valuable algorithm here and the least protected.",
+  "_s098": "A10 and A11 added. A10 answers 'which funding source paid for which work' where no key says so; A11 is the memory that lets every algorithm inherit what the others learned."
  },
  "_priorities": {
   "1": "A2 — protect the log accumulator. FRAGILE, unversioned, and the only algorithm whose value is destroyed by delay.",

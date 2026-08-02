@@ -1,0 +1,227 @@
+{
+ "_what_this_is": "The DECLARATIVE input to ALGORITHM A10 (chain_lineage.py). It declares, for one SAP installation, (a) the identifier GRAMMARS whose string structure carries meaning the schema does not, and (b) the HOPS of the address chain that links funding to work. A10 measures it; this file asserts nothing. Another installation ships its own spec and the algorithm is unchanged — that is the portability contract.",
+ "_why_it_is_a_spec_and_not_code": "The finding that produced A10 is that UNESCO's model dimensions live in the IDENTIFIER STRING, not in foreign keys. Which positions of which string carry which meaning is INSTALLATION-SPECIFIC. Hard-coding it would make the algorithm a UNESCO script; declaring it makes it a product.",
+ "instance": "UNESCO_P01",
+ "golden_db": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db",
+ "grammars": [
+  {
+   "id": "FUND",
+   "table": "funds",
+   "column": "FINCODE",
+   "scope": {
+    "FIKRS": "UNES"
+   },
+   "correlate_to": "TYPE",
+   "why": "the fund code is the root identifier of the whole chain — project id and WBS root are both copies of it"
+  },
+  {
+   "id": "FUND_CENTER",
+   "table": "fund_centers",
+   "column": "FICTR",
+   "correlate_to": null,
+   "why": "the only live organisational dimension in the FM ledger; its code is a 3-letter org acronym"
+  },
+  {
+   "id": "WBS",
+   "table": "prps",
+   "column": "POSID",
+   "correlate_to": null,
+   "hierarchy_separator": ".",
+   "why": "POSID = <fund code>.<level2>.<level3>... — the 4-level spine is encoded as dot depth, not as a parent key"
+  },
+  {
+   "id": "PROJECT",
+   "table": "proj",
+   "column": "PSPID",
+   "correlate_to": null,
+   "why": "PSPID is expected to BE the fund code — project-as-fund, a string identity rather than a foreign key"
+  }
+ ],
+ "dimension_carriers": [
+  {
+   "table": "fmifiit_full",
+   "role": "FM actual line",
+   "columns": [
+    "FONDS",
+    "FISTL",
+    "FIPEX",
+    "MEASURE",
+    "FAREA",
+    "GRANT_NBR",
+    "PRCTR"
+   ],
+   "designed_to_carry_work": "MEASURE",
+   "why": "MEASURE (Funded Program) is SAP's designed WBS-to-FM bridge. Measuring its population decides whether the designed chain exists at all."
+  },
+  {
+   "table": "fmioi",
+   "role": "FM commitment line",
+   "columns": [
+    "FONDS",
+    "FISTL",
+    "FIPEX"
+   ],
+   "designed_to_carry_work": "MEASURE"
+  }
+ ],
+ "hops": [
+  {
+   "id": "H1_WBS_TO_FUND",
+   "semantic": "which funding source pays for this piece of work",
+   "left": {
+    "table": "prps",
+    "key": "root:POSID"
+   },
+   "right": {
+    "table": "funds",
+    "key": "col:FINCODE"
+   },
+   "designed_carrier": "FMMEASURE / Funded Program derivation via FMDERIVE",
+   "actual_carrier": "STRING PREFIX of POSID",
+   "expect": "SUBSTITUTED — the designed carrier is unused and the grammar carries it instead"
+  },
+  {
+   "id": "H2_PROJECT_TO_FUND",
+   "semantic": "the PS project scaffold and the fund it mirrors",
+   "left": {
+    "table": "proj",
+    "key": "col:PSPID"
+   },
+   "right": {
+    "table": "funds",
+    "key": "col:FINCODE"
+   },
+   "designed_carrier": "none — Fund and Project are meant to be independent dimensions",
+   "actual_carrier": "STRING IDENTITY (PSPID = FINCODE)",
+   "expect": "SUBSTITUTED — an inversion the 2017 design explicitly forbade, still load-bearing"
+  },
+  {
+   "id": "H3_WBS_TO_PROJECT",
+   "semantic": "the WBS element and its project definition",
+   "left": {
+    "table": "prps",
+    "key": "root:POSID"
+   },
+   "right": {
+    "table": "proj",
+    "key": "col:PSPID"
+   },
+   "designed_carrier": "PRPS.PSPHI -> PROJ.PSPNR (the real SAP foreign key)",
+   "actual_carrier": "same, plus the string root agrees",
+   "expect": "LIVE"
+  },
+  {
+   "id": "H4_FUND_TO_C5_OUTPUT",
+   "semantic": "which C/5 programmatic output this fund serves",
+   "left": {
+    "table": "funds",
+    "key": "col:FINCODE"
+   },
+   "right": {
+    "table": "ytfm_fund_c5",
+    "key": "col:FINCODE"
+   },
+   "designed_carrier": "Functional Area (FAREA) / Grant",
+   "actual_carrier": "CUSTOM Y-TABLE ytfm_fund_c5",
+   "expect": "UNEVEN — a custom carrier is expected to serve some fund families and not others, with no declared rule for which",
+   "breakdown_by": "grammar"
+  },
+  {
+   "id": "H5_FUND_TO_PLANNER_LINE",
+   "semantic": "the planning/sector line the fund belongs to",
+   "left": {
+    "table": "funds",
+    "key": "col:FINCODE"
+   },
+   "right": {
+    "table": "ytfm_fund_cpl",
+    "key": "col:FINCODE"
+   },
+   "designed_carrier": "none in the blueprint",
+   "actual_carrier": "CUSTOM Y-TABLE ytfm_fund_cpl",
+   "expect": "UNEVEN — a custom carrier is expected to serve some fund families and not others, with no declared rule for which",
+   "breakdown_by": "grammar"
+  },
+  {
+   "id": "H6_ACTUALS_TO_FUND",
+   "semantic": "the FM actual line and its funding source",
+   "left": {
+    "table": "fmifiit_full",
+    "key": "col:FONDS"
+   },
+   "right": {
+    "table": "funds",
+    "key": "col:FINCODE"
+   },
+   "designed_carrier": "FONDS",
+   "actual_carrier": "FONDS",
+   "expect": "LIVE"
+  },
+  {
+   "id": "H7_ACTUALS_TO_WORK",
+   "semantic": "the FM actual line and the piece of work it funded",
+   "left": {
+    "table": "fmifiit_full",
+    "key": "col:MEASURE"
+   },
+   "right": {
+    "table": "prps",
+    "key": "col:POSID"
+   },
+   "designed_carrier": "MEASURE (Funded Program)",
+   "actual_carrier": "NONE",
+   "expect": "BROKEN — this is the hop the whole model needs and does not have"
+  },
+  {
+   "id": "H8_ACTUALS_TO_CONTROL_OBJECT",
+   "semantic": "the FM actual line and the availability bucket it consumes",
+   "left": {
+    "table": "fmifiit_full",
+    "key": "concat:FONDS|FISTL",
+    "detail": "FIPEX"
+   },
+   "right": {
+    "table": "fmavct_2025",
+    "key": "concat:RFUND|RFUNDSCTR",
+    "detail": "RCMMTITEM"
+   },
+   "designed_carrier": "Fund x Fund Center x commitment item",
+   "actual_carrier": "same, but the commitment-item leg is collapsed to a grouped bucket",
+   "expect": "COLLAPSED — many cost categories share one availability pool",
+   "scope_reason": "the FM line carries a real commitment item; the availability bucket it consumes carries a grouped one. The ratio of the two is the measurement of how much cost-category resolution the control layer destroys — \"el AVC es compartido\", quantified"
+  }
+ ],
+ "instruments": {
+  "_why": "A hop is only as trustworthy as the instruments that can see it. For each right-hand object we ask: can we observe WHO changed it (change log) and WHICH channel wrote it (execution log)? A hop nobody can observe is a hop nobody can govern.",
+  "change_log": {
+   "object_column": "OBJECTCLAS",
+   "expected_classes": {
+    "funds": "FMFINCODE",
+    "fund_centers": "FMFCTR",
+    "proj": "PROJ",
+    "prps": "PROJ",
+    "ytfm_fund_c5": null,
+    "ytfm_fund_cpl": null,
+    "fmifiit_full": null,
+    "fmavct_2025": null
+   },
+   "tables": [
+    "cdhdr",
+    "cdhdr_history"
+   ],
+   "_why_two": "an installation may keep a filtered current log and a fuller history. A class present only in the second is invisible to anyone querying the first, so both are measured and the difference between them is itself reported."
+  },
+  "execution_log": {
+   "algorithm": "A8 attribute_changes_to_programs.py",
+   "note": "A8 attributes a change stream to the programs that ran in the same user-hour. Where the change log is BLIND, A8 is the only instrument left."
+  }
+ },
+ "_verdicts": {
+  "LIVE": "resolves through the carrier designed to carry it",
+  "SUBSTITUTED": "resolves through a string convention or custom table instead of the designed carrier — works, and invisible in the data model",
+  "COLLAPSED": "resolves, but many finer addresses share one coarser one: control survives, attribution does not",
+  "UNEVEN": "coverage differs wildly across identifier families with no declared rule for who gets a link",
+  "PARTIAL": "the carrier covers only part of the population",
+  "BROKEN": "does not resolve, or the carrier is declared and never populated"
+ }
+}

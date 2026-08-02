@@ -253,14 +253,15 @@ this check and reports ORPHANED tools, PHANTOM references and missing cadences.
 | **5 · boundary** | the integration map is built from `RFCDES`/`EDIDC`/`TBTCO`/`TBTCP`/`ICFSERVICE` extracts · `.agents/skills/sap_interface_intelligence` · `.agents/skills/sap_job_intelligence` |
 | **normative** | `brain_v2/normative_models/normative_models.json` — what CORRECT means per flow. The conformance algorithm is the market's; this content is ours, and it is the moat. |
 | **6 · capability** | `scripts/extraction/psm_avc_refresh.py` (the recurring AVC/budget refresh — the differentiator domain's own pipeline) · `brain_v2/capability_model/maturity_score.py` · `brain_v2/capability_model/snapshot_model_state.py` (the time series IS the deliverable) · `brain_v2/gold_extractor_maturity.py` |
-| **7 · S/4 readiness** | `brain_v2/capability_model/s4_readiness_model.json` (the verified factor method) · `.agents/skills/sap_change_audit` |
+| **7 · S/4 readiness** | **`brain_v2/build_s4_readiness.py`** (the cross-cutting DIMENSION as a subject, not a column — per-domain factors made queryable) · `brain_v2/capability_model/s4_readiness_model.json` (the verified factor method) · `.agents/skills/sap_change_audit` |
+| **security** | **`brain_v2/build_security_posture.py`** (the cross-cutting posture as a subject: who reaches the system, through which channel, under whose identity. The usage profile — interface-dominated traffic, generic vs named identities — is a licensing and S/4 API-cost question before it is a security one) |
 | **8 · transport** | `.agents/skills/sap_transport_intelligence` · CTS extracts (`cts_transports`, `cts_objects`) |
 | **9 · verification** | `brain_v2/system_profile/build_model_graph.py` (ascent · coherence · cross-cutting) · `brain_v2/verify_claims.py` · `brain_v2/claims_health.py` · `brain_v2/curate.py` |
 | **10 · maturity loop** | `brain_v2/rebuild_all.py` (the whole pipeline) · `brain_v2/meta_capability.py` (self-assessment) · `brain_v2/methods/verify_assets.py` (the asset gate) · `brain_v2/methods/audit_skill_coverage.py` (this audit) · **`brain_v2/methods/check_triggers.py`** (fires the loop on evidence) · **`brain_v2/methods/build_domain_capability_matrix.py`** (is capability where the work is?) · **`brain_v2/methods/build_domain_assets.py`** (the asset bundle PER DOMAIN — tables, extraction, algorithms, knowledge, flows, and what is missing) · `brain_v2/graph_queries.py` (profile · ascend · coherence · tree · methods) · `brain_v2/session_activate.py` + `brain_v2/migrate_memory.py` (session bootstrap and memory portability) |
-| **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will", and THE ONLY PLACE the order lives) · **`brain_v2/methods/audit_agent_freshness.py`** (do the agents still know what the model knows?) · **`brain_v2/methods/audit_prose_classifications.py`** (which analysis is trapped in prose?) · **`brain_v2/build_channel_registry.py`** (lift the DECLARED channel taxonomy out of the integration map) |
+| **algorithm engineering** | **`brain_v2/methods/algorithm_status.py`** (is an algorithm REAL or only declared? — derived from disk, never asserted) · **`brain_v2/methods/validate_paths.py`** (a path field must hold a path, never prose) · **`brain_v2/methods/validate_artifacts.py`** (SHAPE · FLOOR · INVARIANT cases over the artifacts themselves) · **`brain_v2/methods/improve_algorithms.py`** (which algorithm to strengthen next, and why) · **`brain_v2/methods/measure_portability.py`** (what survives on installation #2) · **`brain_v2/methods/run_analysis_cycle.py`** (runs the algorithms in dependency order — the answer to "who runs them, since nobody will", and THE ONLY PLACE the order lives) · **`brain_v2/methods/audit_agent_freshness.py`** (do the agents still know what the model knows?) · **`brain_v2/methods/audit_prose_classifications.py`** (which analysis is trapped in prose?) · **`brain_v2/build_channel_registry.py`** (lift the DECLARED channel taxonomy out of the integration map) · **`brain_v2/methods/algorithm_memory.py`** (A11 — SHARED MEMORY BETWEEN ALGORITHMS: what one learned about the substrate, all of them know. `recall()` before choosing an instrument, `remember()` after establishing a fact) |
 | **the profile itself** | **`brain_v2/system_profile/compose_profile.py`** (P1 — the profile as 18 COMPONENTS, each bound to the algorithm that derives it, each carrying DERIVED / DECLARED / MISSING. The DERIVED share is the portability number) · **`brain_v2/build_brain_index.py`** (the bootstrap index, generated: process spine, security, integration, maturity) |
 | **the resolver** | **`brain_v2/component_map.py`** — SAP's own taxonomy `TADIR→TDEVC→DF14L` as the authoritative rung. Every object resolves to a domain with a CONFIDENCE and a RUNG, and each rung carries a `tenant_invariant` flag: the map of exactly what breaks on the next installation. **`brain_v2/parse_abap_edges.py`** derives the code edges the graph could not see |
-| **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) |
+| **operation, derived** | **`process_mining/interface_boundary.py`** (F1 — configured vs observed; DEAD and UNDECLARED are the findings) · **`process_mining/derive_satellites.py`** (F2 — group endpoints by call signature to recover a GUID fleet) · **`process_mining/detect_drift.py`** (A7 — concept drift over accumulated history; per-day RATES, never raw monthly volumes) · **`process_mining/derive_object_roles.py`** (C4 — what an object is FOR, not merely where it belongs) · **`process_mining/caller_parse.py`** (one parser for the audit caller string, plus the truncation reconciliation) · **`process_mining/attach_object_text.py`** (the human name of every object) · **`process_mining/attribute_changes_to_programs.py`** (A8 — what WRITES a thing and through which channel; see the section below) · **`process_mining/chain_lineage.py`** (A10 — the ADDRESS CHAIN: how funding reaches work when no foreign key says so. Spec-driven via `chain_spec.json`; emits LIVE / SUBSTITUTED / COLLAPSED / UNEVEN / SPARSE / BROKEN per hop) |
 | **rules in code** | **`Zagentexecution/sap_data_extraction/scripts/extract_p01_source.py`** (read the source that is ACTUALLY VALID — from PRODUCTION, read-only; classes need the generated pool plus one include per method, or a 1,296-line class reads as empty) · **`process_mining/extract_business_rules.py`** (A9 — quasi-config, hard constants with their reasoning, intent comments, modification blocks with their transports, standard overrides, leftovers) · **`brain_v2/build_interface_inventory.py`** (every interface as a RECORD) · **`brain_v2/build_audit_slots.py`** (the SHARED pre-aggregate: 15.6M audit rows to 987K INDEXED slots. The golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place — this turns a full scan into a keyed lookup and took A8 from over an hour to 3m29s) |
 | **process mining** | `sap_process_discovery.py` · `ocel_build_p2p.py` (OCEL 2.0 event log) · `process_mining/p2p_conformance.py` (Tier-1: cases classified against the 3-way match) · **`p2p_stdref_xray.py`** (the custom-over-standard x-ray — AS-DESIGNED vs AS-RUN; a *different* capability that used to share the other one's filename) · `build_p2p_log.py` · `tier2_sod.py` (segregation of duties) |
 
@@ -329,6 +330,44 @@ extracted and what is stale).
 
 ---
 
+
+## A10 — the ADDRESS CHAIN, and when to reach for it
+
+**The question it answers:** *which funding source paid for which piece of work* — in an
+installation where no foreign key answers it.
+
+**When to run it.** Whenever the answer to "how does money reach work here" is needed and
+the schema does not obviously say. In practice that is every new installation, and here it
+is on the cycle after `extract_business_rules.py`.
+
+**How it fires** (`check_triggers.py`, on evidence, never on a calendar):
+
+| Trigger | Why it invalidates the last run |
+|---|---|
+| the DESIGNED work carrier crosses zero | the designed chain just started or stopped running, and every grammar-based reconstruction is now answering the wrong way |
+| a NEW identifier grammar appears | someone is minting codes by a rule no existing filter knows, so any population selected by pattern is silently incomplete |
+| fund or WBS master grows ≥5% | coverage and the orphan set both move with it |
+| a chain object has no change-document coverage | who changed it is unanswerable — A8 against the execution log is the only instrument left |
+
+**How to read the verdicts.** They are not severities; they are different problems.
+
+| Verdict | What it means | What to do |
+|---|---|---|
+| `LIVE` | resolves through the carrier designed to carry it | nothing |
+| `SUBSTITUTED` | resolves through a string convention or custom table INSTEAD of the designed carrier | **the one that pays for the algorithm.** It works and it is invisible in the data model, so it is never migrated, never documented, never load-tested — and it is load-bearing |
+| `COLLAPSED` | resolves, then destroys the finer dimension | control survives, attribution does not. Never report per-category from a collapsed hop |
+| `UNEVEN` | coverage swings wildly across identifier families | the rule for who gets a link is undocumented — find it before trusting any aggregate |
+| `SPARSE` | the carrier serves a real minority | correct for those rows, absent for the rest. State the denominator |
+| `BROKEN` | nothing resolves, or the carrier is declared and never populated | if it is a designed hop, the design is not running |
+
+**Extending it to a new domain or installation** means editing `chain_spec.json`, not the
+code: declare the grammars, the hops, and the change-log classes. The algorithm asserts
+nothing about any tenant.
+
+**What it writes back.** Every SUBSTITUTED hop and every blind instrument is written into
+the shared algorithm memory (A11), so the next algorithm inherits it instead of
+rediscovering it — or worse, not.
+
 ## The principle that makes this portable: ALGORITHMS ARE THE ASSET
 
 Everything in this skill is a binding of an algorithm to a problem. Strip the tenant away
@@ -354,7 +393,7 @@ does not publish:
 | **its failure mode** | **how it produces a wrong answer without failing** |
 | **its improvement lever** | **the specific next step, not "make it better"** |
 
-**Registry:** `brain_v2/methods/algorithms.json` — 22 algorithms, organised by the data they
+**Registry:** `brain_v2/methods/algorithms.json` — 32 algorithms, organised by the data they
 operate on: logs · process events · repository · data · model · interfaces.
 
 ### The continuous-improvement mechanism
