@@ -196,7 +196,7 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN — P01 dropped mid-load",
+   "status": "DONE s098 — and it disproved its own premise",
    "task": "Extract the eight YTFM_BR_* tables: YTFM_BR_FMIFIIT and YTFM_BR_FMIOI (partition by GJAHR 2024-2026), YTFM_BR_FM_POS, YTFM_BR_PAYPI, YTFM_BR_PAYPH, YTFM_BR_PAYPER, YTFM_BR_REP_H, YTFM_BR_REP_D. All probed as existing with data and narrow enough for a single chunk; the plan is already in scripts/extraction/load_wide_tables.py, so this is one command when P01 returns.",
    "why_it_matters": "this is the budget-rate ledger itself. Every claim we hold about the mechanism comes from source code — we can say what it is designed to do and cannot say what it did, including whether the EUR-only perimeter and the empty MR_HKONT range cost anything",
    "first_questions": [
@@ -204,7 +204,8 @@
     "does YTFM_BR_FMIOI cover the fund reservations that are carried across a biennium",
     "is the payroll path populated at all, or is it dead like the staff gate suggests",
     "what does BETRG_BEFORE show about how often an encumbrance is revalued"
-   ]
+   ],
+   "result": "7 of 8 tables loaded. The two that would have been a shadow ledger are EMPTY (YTFM_BR_FMIOI 0, YTFM_BR_FM_POS 0). YTFM_BR_REP_H 38,894 is reporting; the payroll trio is 1,048 / 12 / 703. YTFM_BR_FMIFIIT still unmeasured — P01 dropped. The BR mechanism modifies the STANDARD posting at write time, so there is no shadow to diff."
   },
   {
    "id": "EXT-CUSTOM-FIELDS-REPULL",
@@ -836,6 +837,16 @@
    "task": "Three times now a dimension exists in two places at once and nothing declares which is authoritative: fund scope for the budget rate (ZZFIX_RATE versus the literal 001-099 range), the organisational hierarchy (set class 0312 versus the empty FMHICTR), and the fund-to-C/5 link (native FMFINCODE.ZZOUTPUT versus the bridge ytfm_fund_c5, disagreeing on 5,626 funds). Sweep for the rest of the pattern rather than finding them one at a time, and for each pair establish which one the running reports actually read.",
    "method": "for each custom field that duplicates a standard one, compare population and then grep which is read by the executed programs from the audit log",
    "why_it_matters": "a future design that picks the wrong carrier inherits a silent disagreement, and this installation has at least three of them"
+  },
+  {
+   "id": "AN-BR-EFFECT-INSIDE-STANDARD",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Measure what the budget rate actually did, INSIDE the standard tables, since there is no shadow to diff. For FM lines that fall inside the eight-dimension perimeter — ledger 9A, company UNES, FM area UNES, business area GEF, currency EUR, commitment item excluding GAINS and REVENUE, transaction excluding HRM1/HRM2/HRP1, fund type among the 14 flagged ZZFIX_RATE — compare the rate implied by the posted amounts against the standard rate for the same date. The difference is the mechanism's effect.",
+   "method": "select fmifiit_full on the perimeter, derive the implied rate per line from the transaction and local amounts, and compare with TCURR for the posting date",
+   "why_it_matters": "every statement we hold about the budget rate is still about design. This is the only route left to its effect, now that the shadow-ledger route is known not to exist"
   }
  ],
  "research_tasks_followups": [
