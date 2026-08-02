@@ -4,7 +4,8 @@
  "_the_finding_in_one_line": "the members disagree about what THE CONSUMPTION CURRENCY IS. Camp A keys on the reservation's own currency and fires regardless of how it is consumed; Camp B keys on the currency of the row being persisted and skips when they differ. A USD posting against an EUR reservation satisfies A and fails B, so half the family converts and half does not.",
  "_source": "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md — debugger-confirmed, session 054",
  "_evidence_gap_stated_honestly": {
-  "resolved": "s097 — the class was extracted from P01 (136 objects of package YA) and read. The previously-cited path extracted_code/CLAS/... never existed; the real source now lives at extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap, 634 lines."
+  "resolved": "s097 — the class was extracted from P01 (136 objects of package YA) and read. The previously-cited path extracted_code/CLAS/... never existed; the real source now lives at extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap, 634 lines.",
+  "_s098_the_gap_is_now_named_and_sized": "eight YTFM_BR_* tables hold the mechanism's own output, all exist in P01 with data, none are extracted. Until then every statement in this file is about design, not behaviour."
  },
  "camps": {
   "A_fr_currency_anchored": "key on the RESERVATION's own currency and fire whenever it is EUR, regardless of how it is consumed",
@@ -287,5 +288,68 @@
   },
   "_consequence": "a fund whose type sits in 001-099 but is NOT flagged ZZFIX_RATE appears in the constant-dollar report having never been converted at execution. The report and the engine do not agree on who is in scope, and nothing reconciles them.",
   "_action": "AN-BR-TWO-PERIMETERS"
+ },
+ "the_parallel_ledger": {
+  "_the_structural_fact_the_artifact_was_missing": "the budget rate does NOT convert amounts in place. It maintains a PARALLEL SET OF TABLES keyed identically to the standard FM ones, holding the fixed-rate valuation of every line. Everything in this file before now described the GATES — who is in scope — and nothing described WHERE THE RESULT GOES.",
+  "_found_how": "the user's lead: look at what uses FMIOI. One grep, after a session of climbing the class hierarchy.",
+  "writer": {
+   "object": "YCL_FI_BR_UPDATE_TABLES",
+   "lines": 197,
+   "methods": {
+    "UPDATE_BR_FMIFIIT": "shadows FM ACTUAL line items",
+    "UPDATE_BR_FMIOI": "shadows FM COMMITMENTS — the fund reservations",
+    "UPDATE_BR_FM_POS": "encumbrance positions, with ENC_TYPE and BETRG_BEFORE"
+   },
+   "pattern": "SELECT SINGLE on the full key -> UPDATE if present, INSERT if not. Fixed-rate amounts in ZFKBTR and ZTRBTR; audit stamp CPUDT/CPUTM/USNAM/TCODE per line"
+  },
+  "tables": [
+   {
+    "name": "YTFM_BR_FMIFIIT",
+    "shadows": "FMIFIIT",
+    "status": "EXISTS IN P01 WITH DATA — NOT EXTRACTED"
+   },
+   {
+    "name": "YTFM_BR_FMIOI",
+    "shadows": "FMIOI",
+    "status": "EXISTS IN P01 WITH DATA — NOT EXTRACTED",
+    "_why_this_one_matters": "fund reservations are carried across a biennium and adjusted a median of 6 times; this is where their fixed-rate valuation lives"
+   },
+   {
+    "name": "YTFM_BR_FM_POS",
+    "shadows": "encumbrance positions",
+    "status": "EXISTS — NOT EXTRACTED",
+    "carries": "BETRG_BEFORE — an explicit before/after trail per revaluation"
+   },
+   {
+    "name": "YTFM_BR_PAYPI",
+    "role": "PAYROLL items — the personnel path",
+    "refs_in_corpus": 15,
+    "status": "EXISTS — NOT EXTRACTED"
+   },
+   {
+    "name": "YTFM_BR_PAYPH",
+    "role": "payroll header",
+    "refs_in_corpus": 9,
+    "status": "EXISTS — NOT EXTRACTED"
+   },
+   {
+    "name": "YTFM_BR_PAYPER",
+    "role": "payroll period control",
+    "refs_in_corpus": 5,
+    "status": "EXISTS — NOT EXTRACTED"
+   },
+   {
+    "name": "YTFM_BR_REP_H",
+    "role": "report header",
+    "status": "EXISTS — NOT EXTRACTED"
+   },
+   {
+    "name": "YTFM_BR_REP_D",
+    "role": "report detail",
+    "status": "EXISTS — NOT EXTRACTED"
+   }
+  ],
+  "_what_this_changes_about_every_other_finding_here": "the perimeter, the three gates, the EUR-only defect and the never-populated MR_HKONT range are all CODE facts. Whether any of them COST anything is a question about the shadow ledger, and the shadow ledger is precisely what has never been read. This artifact currently describes a mechanism entirely from its source. That is a real limit and it is one extraction away from being lifted — EXT-BR-SHADOW-LEDGER.",
+  "_the_personnel_path_is_now_evidenced": "three dedicated payroll tables exist. That corroborates the operator's recollection that BR for staff runs through payroll posting and BCM, and it sharpens AN-BR-HKONT-EMPTY-RANGE: if the staff gate always fails on the empty HKONT range, the payroll tables should be empty or stale. Reading them settles a defect we could otherwise only argue about."
  }
 }
