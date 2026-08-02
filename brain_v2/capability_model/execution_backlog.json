@@ -190,6 +190,21 @@
    "task": "extract_p01_source.py handles CLAS, PROG and FUGR and SKIPS ENHO — so all 12 ZFIX enhancement implementations of the budget-rate family are unread, and they are where the actual hooks and callers live. Everything we know about which member fires where comes from a prior debugger session, not from source we hold. Find the read path for an enhancement implementation (RPY_ENHANCEMENT_READ and ENH_READ_ENHANCEMENT were both untested when P01 dropped; the generated include names are the fallback) and extend the extractor. Without it, half of every enhancement-based solution in this tenant is invisible to us — and the write-channel work showed there are many.",
    "method": "probe the enhancement read FMs read-only, then add an ENHO branch to the extractor",
    "why_it_matters": "the ENHOs are where the applicability rules actually fire"
+  },
+  {
+   "id": "EXT-BR-SHADOW-LEDGER",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN — P01 dropped mid-load",
+   "task": "Extract the eight YTFM_BR_* tables: YTFM_BR_FMIFIIT and YTFM_BR_FMIOI (partition by GJAHR 2024-2026), YTFM_BR_FM_POS, YTFM_BR_PAYPI, YTFM_BR_PAYPH, YTFM_BR_PAYPER, YTFM_BR_REP_H, YTFM_BR_REP_D. All probed as existing with data and narrow enough for a single chunk; the plan is already in scripts/extraction/load_wide_tables.py, so this is one command when P01 returns.",
+   "why_it_matters": "this is the budget-rate ledger itself. Every claim we hold about the mechanism comes from source code — we can say what it is designed to do and cannot say what it did, including whether the EUR-only perimeter and the empty MR_HKONT range cost anything",
+   "first_questions": [
+    "how many lines carry a fixed-rate valuation, and how much do they differ from standard",
+    "does YTFM_BR_FMIOI cover the fund reservations that are carried across a biennium",
+    "is the payroll path populated at all, or is it dead like the staff gate suggests",
+    "what does BETRG_BEFORE show about how often an encumbrance is revalued"
+   ]
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -790,10 +805,11 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "Three measurements say the organisational roll-up is configured but inert: the fund-centre hierarchy has had zero maintenance in the observable window, no custom programme we hold reads its set class, and 20.6% of FM lines post outside it. Before proposing any repair, establish what actually produces organisational totals today — a standard FM report, a BI extract, a spreadsheet — because repairing an unread structure changes nothing.",
    "method": "look for standard FM reporting (FMEQ/FMRP_*) and BI extraction on FISTL in the execution log via A8, rather than assuming the custom corpus is the whole story",
-   "why_it_matters": "it decides whether the hierarchy is a defect to fix or a remnant to retire, and those have opposite costs"
+   "why_it_matters": "it decides whether the hierarchy is a defect to fix or a remnant to retire, and those have opposite costs",
+   "result": "No organisational roll-up exists. FMHICTR (fund-centre hierarchy) is EMPTY while FMHICI (commitment item) and FMHIVARNT carry data. The standard FM reporting layer is heavily used (RFFMEPGAX 441 users) but aggregates on what is spent, not on who spends it. So the orphan fund centres distort nothing — the dimension is simply not reported on."
   }
  ],
  "research_tasks_followups": [

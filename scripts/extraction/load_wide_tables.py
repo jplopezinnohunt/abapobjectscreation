@@ -61,6 +61,22 @@ PLAN = {
     "TABADRH":    {"partition": None, "why": "classic FM derivation headers"},
     "TABADRX":    {"partition": None, "why": "classic FM derivation assignment"},
     "TABADRPCONF": {"partition": None, "why": "classic FM derivation process config"},
+    # THE BUDGET-RATE SHADOW LEDGER. The BR solution does not convert amounts in place —
+    # it maintains a PARALLEL set of tables keyed like the standard ones, holding the
+    # fixed-rate valuation of every FM line. None of it was in the golden, so the entire
+    # mechanism was unmeasurable.
+    "YTFM_BR_FMIFIIT": {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
+                        "why": "BR shadow of FM ACTUAL line items — fixed-rate ZFKBTR/ZTRBTR"},
+    "YTFM_BR_FMIOI":   {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
+                        "why": "BR shadow of FM COMMITMENTS — the fund reservations"},
+    "YTFM_BR_FM_POS":  {"partition": None,
+                        "why": "BR encumbrance positions, carrying BETRG_BEFORE — the before/after trail"},
+    "YTFM_BR_PAYPI":   {"partition": None, "why": "BR PAYROLL items — the personnel path"},
+    "YTFM_BR_PAYPH":   {"partition": None, "why": "BR payroll header"},
+    "YTFM_BR_PAYPER":  {"partition": None, "why": "BR payroll period control"},
+    "YTFM_BR_REP_H":   {"partition": None, "why": "BR report header"},
+    "YTFM_BR_REP_D":   {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
+                        "why": "BR report detail"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
     "FMIT":       {"partition": "RYEAR", "values": ["2024", "2025", "2026"],
                    "why": "FM TOTALS — the report leg the golden has never held"},
