@@ -118,6 +118,12 @@ PLAN = {
     # THE PAYROLL-TO-FM BRIDGE, and it is CUSTOM. Symbolic account x employee grouping ->
     # company code, business area, cost centre, FUND CENTRE and FUND. Not a GL mapping —
     # an FM account assignment, which is why the search through T030 could never find it.
+    # THE ANSWER TO THE ACCOUNT DETERMINATION, and it is not a config table: the posting
+    # document ITEMS carry the symbolic account AND the resolved GL account on the same row.
+    "PPDHD":      {"partition": None, "why": "payroll posting document headers — run to document"},
+    "PPDIT":      {"partition": "BUKRS", "values": ["UNES","IIEP","ICTP","UIS","UIL","IBE","UBO","MGIE","ICBA"],
+                   "why": "payroll posting ITEMS — KTOSL and HKONT together, the resolved assignment"},
+    "PPDIX":      {"partition": None, "why": "posting run index — run to document line"},
     "T9POST":     {"partition": None, "why": "payroll symbolic account -> FM account assignment (custom)"},
     "T9FUND":     {"partition": None, "why": "payroll symbolic account -> fund (custom)"},
     "T030B":      {"partition": None, "why": "payroll account determination — symbolic account to GL, the last link"},

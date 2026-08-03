@@ -49,7 +49,7 @@ NODES = [
   "what": "the budget rate for staff cost, computed in the PAYROLL ENGINE — in the "
           "calculation schema, in its codifications",
   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel",
-  "status": "LARGELY UNMEASURED — the schema is not ABAP source and has not been read"},
+  "status": "MECHANISM CLOSED s098 — engine, carrier, gate and posting design are all described. The AMOUNT is the one thing still not measured"},
  {"id": "RATE_EURX", "kind": "CONFIGURATION",
   "what": "exchange rate type EURX, 60 entries; USD/EUR = 1.09529 from 2024-01-01",
   "content_in": "budget_rate_enhancements.json .the_rate_type"},
@@ -99,6 +99,55 @@ NODES = [
  {"id": "DEAD_CODE_PBC_CONVERSION", "kind": "DEFECT",
   "what": "the personnel two-step conversion is fully implemented behind IF 1 = 2",
   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_conversion"},
+ # --- the PAYROLL set. Added s098 so the staff mechanism stops standing alone: it is
+ # --- computed by an engine, carried by wage types, and lands through an account
+ # --- determination that is NOT the FI one. Each of those is a subject in its own right.
+ {"id": "PAYROLL_ENGINE", "kind": "MECHANISM",
+  "what": "the payroll engine as configured here: schemas, rules, wage types and features — "
+          "a layer that is neither ABAP nor data, and that no code or table search reaches",
+  "content_in": "brain_v2/payroll_discovery.json"},
+ {"id": "ALGORITHM_A16", "kind": "ALGORITHM",
+  "what": "payroll_discovery.py — the end-to-end payroll discovery, in seven parts, built on "
+          "the premise that PAYROLL LOGIC IS NAMED AFTER WHAT IT PRODUCES",
+  "content_in": "process_mining/payroll_discovery.py"},
+ {"id": "WAGE_TYPES_CONSTANT_DOLLAR", "kind": "DATA",
+  "what": "the 72 'Constant Dollar' wage types — the staff budget rate's carrier, identically "
+          "configured in T512W, so one mechanism rather than seventy-two decisions",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel"},
+ {"id": "TWIN_POSTING", "kind": "BEHAVIOUR",
+  "what": "each Constant Dollar wage type posts to its base's OWN symbolic account with the "
+          "opposite sign — 58 of 58 configured pairs — so the two net on the account",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.how_it_posts"},
+ {"id": "SYMBOLIC_ACCOUNT", "kind": "CONFIGURATION",
+  "what": "the payroll symbolic account, CHAR(4) — SPAL, BSAL, HOUS, PADJ. The thing a wage "
+          "type posts to, and NOT the same key as the FI transaction key",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_account_determination"},
+ {"id": "FIELD_WIDTH_TRAP", "kind": "CONSTRAINT",
+  "what": "T030-KTOSL is CHAR(3) and a payroll symbolic account is CHAR(4). The FI account "
+          "determination CANNOT hold one, so three extractions chasing it were impossible "
+          "by construction",
+  "content_in": "brain_v2/methods/algorithm_memory.json ._field_width"},
+ {"id": "RESOLVED_POSTING", "kind": "MEASUREMENT",
+  "what": "read from PPDIT rather than from configuration: a 3-character FI transaction key "
+          "fans out to several GL accounts, while every GL account belongs to exactly one "
+          "key — so the account is decided BEYOND the key, by the wage type",
+  "content_in": "brain_v2/payroll_discovery.json .resolved_posting"},
+ {"id": "PAYROLL_TO_FM_BRIDGE", "kind": "CONFIGURATION",
+  "what": "T9POST — a CUSTOM table mapping symbolic account x employee grouping to fund "
+          "centre and fund. Payroll reaches FM through a customer table, not a standard one",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_payroll_to_fm_bridge"},
+ {"id": "ENHANCEMENT_POSTING_ACCOUNTS", "kind": "DEFECT",
+  "what": "ZHR_POSTING_ACCOUNTS_RETRO — a custom enhancement named after the account "
+          "determination itself, hooked on RPCIPE00_OLD, the retro posting program",
+  "content_in": "brain_v2/payroll_discovery.json .posting.enhancements_on_the_posting_path"},
+ {"id": "MASTER_DATA_BY_HAND", "kind": "BEHAVIOUR",
+  "what": "which payroll master data a human edits and which arrives by a channel — the "
+          "operating risk and the automation opportunity sit in the same place",
+  "content_in": "brain_v2/payroll_discovery.json .master_data"},
+ {"id": "ALGORITHM_A17", "kind": "ALGORITHM",
+  "what": "change_governance.py — the route by which a change reaches production, judged "
+          "against the population of maintainers rather than a policy document",
+  "content_in": "process_mining/change_governance.py"},
 ]
 
 # The edges. This is the part that did not exist before.
@@ -138,6 +187,40 @@ EDGES = [
   "both call sites sit inside IF 1 = 2"),
  ("MECHANISM_PERSONNEL", "COMPUTED_IN", "MECHANISM_PERSONNEL",
   "the payroll engine's calculation schema, in its codifications — not in ABAP"),
+ # --- the payroll edges. These are what make the staff side a mechanism with a path rather
+ # --- than a claim: engine -> carrier -> symbolic account -> resolved GL account.
+ ("MECHANISM_PERSONNEL", "COMPUTED_BY", "PAYROLL_ENGINE",
+  "the calculation schema and its codifications — the reason a code search never found it"),
+ ("ALGORITHM_A16", "DISCOVERS", "PAYROLL_ENGINE",
+  "seven parts: engine, logic, output, gates, master data, posting, resolved posting"),
+ ("MECHANISM_PERSONNEL", "CARRIED_BY", "WAGE_TYPES_CONSTANT_DOLLAR",
+  "72 wage types, identical in T512W — named after their output, which is why the schema "
+  "text does not mention them"),
+ ("WAGE_TYPES_CONSTANT_DOLLAR", "POSTS_AS", "TWIN_POSTING",
+  "58 of 58 configured pairs go to the base's symbolic account with the opposite sign"),
+ ("TWIN_POSTING", "RESOLVES_THROUGH", "SYMBOLIC_ACCOUNT",
+  "the twin inherits the base's account assignment because it uses the base's account"),
+ ("FIELD_WIDTH_TRAP", "EXPLAINS_WHY_WE_COULD_NOT_FIND", "SYMBOLIC_ACCOUNT",
+  "a CHAR(4) key cannot sit in a CHAR(3) field; measuring the widths ended the search in "
+  "one call after three extractions had not"),
+ ("RESOLVED_POSTING", "ANSWERS", "SYMBOLIC_ACCOUNT",
+  "the documents carry the key and the resolved account on one row, so the assignment is "
+  "read from what happened rather than from what was configured"),
+ ("SYMBOLIC_ACCOUNT", "REACHES_FM_THROUGH", "PAYROLL_TO_FM_BRIDGE",
+  "T9POST — and none of the 24 Constant Dollar symbolic accounts appears in it, consistent "
+  "with the twin inheriting its base's assignment"),
+ ("ENHANCEMENT_POSTING_ACCOUNTS", "SITS_ON", "RESOLVED_POSTING",
+  "a custom enhancement named after account determination, on the retro posting program"),
+ ("PAYROLL_ENGINE", "DRIVEN_BY", "MASTER_DATA_BY_HAND",
+  "the infotypes that carry the driving fields, crossed with the change log"),
+ ("ALGORITHM_A17", "JUDGES", "MASTER_DATA_BY_HAND",
+  "by which route each change reached production, and whether that route is the norm"),
+ ("PERIMETER_FEATURE_YYCDR", "SELECTS_FROM", "PAYROLL_ENGINE",
+  "2,086 employees of 23,700 — a perimeter held in a feature, which no code or table "
+  "search would find"),
+ ("ALGORITHM_A16", "SHARES_WITH", "ALGORITHM_A14",
+  "both write to the shared algorithm memory, so a trap found by one is available to the "
+  "other — the field-width trap came out of the payroll hunt and applies to any join"),
 ]
 
 

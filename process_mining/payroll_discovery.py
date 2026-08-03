@@ -17,7 +17,7 @@ WHY IT EXISTS
     WHAT IT PRODUCES. So the discovery runs from the output backwards as well as from the
     driver forwards, and reports both.
 
-WHAT IT PRODUCES, in five parts
+WHAT IT PRODUCES, in seven parts
     1. THE ENGINE      which schemas exist, which are custom, and the driver's shape.
     2. THE LOGIC       rules, how many are custom, and where the custom mass sits.
     3. THE OUTPUT      wage types, the custom ones, and families that share a naming stem
@@ -26,6 +26,12 @@ WHAT IT PRODUCES, in five parts
                        A feature is a perimeter that no code or table search will find.
     5. THE MASTER DATA which infotypes carry the driving fields, and — crossed with the
                        change log — whether they are maintained BY HAND or by a channel.
+    6. THE POSTING     the programs that move payroll into accounting, and the enhancements
+                       sitting on that seam — where the custom mass concentrates.
+    7. THE RESOLVED    what the posting actually resolved to, read from the documents rather
+       POSTING         than the configuration. The configuration search fails for a
+                       structural reason: a payroll symbolic account is CHAR(4) and the FI
+                       account determination key is CHAR(3).
 
 THE PART THAT IS NOT AN INVENTORY
     Anyone can list schemas. The question worth answering is which master data a human
@@ -277,6 +283,48 @@ def discover_posting(s):
     return out
 
 
+def discover_resolved_posting(s, cx):
+    """Part 7: what the posting ACTUALLY resolved to, from the documents rather than config.
+
+    The account determination for payroll defeated a search through the configuration for a
+    structural reason worth recording: T030-KTOSL is CHAR(3) and a payroll symbolic account
+    is CHAR(4), so the FI account determination cannot hold one. They are two different
+    keys that share a field name.
+
+    The posting documents settle it. PPDIT carries, on one row, the FI TRANSACTION KEY
+    (3 characters — HRA, HRC, HRF here) and the RESOLVED GL account. So the assignment is
+    read from what happened rather than from what was configured, which is both easier and
+    more truthful.
+    """
+    out = {"_why_config_search_fails": (
+        "T030-KTOSL is CHAR(3); a payroll symbolic account is CHAR(4). They are different "
+        "keys wearing the same field name, and joining them is impossible by construction"),
+        "_where_the_answer_is": "PPDIT — the posting document items carry the key and the "
+                                "resolved GL account on the same row"}
+    try:
+        rows = s.read("PPDIT", ["DOCNUM", "DOCLIN", "ITTYP", "BUKRS", "KTOSL", "HKONT"],
+                      "BUKRS = 'UNES'", 4000)
+    except Exception as e:
+        out["error"] = str(e)[:90]
+        return out
+    fwd, rev = collections.defaultdict(set), collections.defaultdict(set)
+    for r in rows:
+        fwd[r["KTOSL"]].add(r["HKONT"])
+        rev[r["HKONT"]].add(r["KTOSL"])
+    out["sample_rows"] = len(rows)
+    out["transaction_keys"] = {k: sorted(v)[:8] for k, v in sorted(fwd.items())}
+    out["keys_with_one_account"] = sum(1 for v in fwd.values() if len(v) == 1)
+    out["keys_with_several"] = sum(1 for v in fwd.values() if len(v) > 1)
+    out["accounts_with_one_key"] = sum(1 for v in rev.values() if len(v) == 1)
+    out["accounts_total"] = len(rev)
+    out["_reading"] = (
+        "a transaction key fans out to several GL accounts while every GL account belongs to "
+        "exactly one key. So the account is decided BEYOND the key — by the wage type, which "
+        "is what the wage-type tables are for. The key is the FI bucket; the wage type picks "
+        "the account inside it")
+    return out
+
+
 def main(argv):
     molga = argv[argv.index("--molga") + 1] if "--molga" in argv else "UN"
     out_path = os.path.join(ROOT, "brain_v2", "payroll_discovery.json")
@@ -339,7 +387,21 @@ def main(argv):
     for e in ce[:12]:
         print("         %-30s -> %-8s %s" % (e["enhancement"], e["type"], e["hooked_object"]))
 
-    rep = {"_algorithm": "A16 payroll_discovery.py", "posting": post, "country_grouping": molga,
+    resolved = discover_resolved_posting(s, cx)
+    print("\n7. THE RESOLVED POSTING — read from the documents, not the configuration")
+    if "error" in resolved:
+        print("      %s" % resolved["error"])
+    else:
+        print("      sample %d items | %d transaction keys, %d fan out to several accounts"
+              % (resolved["sample_rows"], len(resolved["transaction_keys"]),
+                 resolved["keys_with_several"]))
+        print("      %d of %d GL accounts belong to exactly ONE key"
+              % (resolved["accounts_with_one_key"], resolved["accounts_total"]))
+        for k, v in list(resolved["transaction_keys"].items())[:5]:
+            print("         %-5s -> %s" % (k, ", ".join(v[:4])))
+
+    rep = {"_algorithm": "A16 payroll_discovery.py", "posting": post,
+           "resolved_posting": resolved, "country_grouping": molga,
            "engine": engine, "logic": logic, "output": output, "gates": gates,
            "master_data": md,
            "_the_premise": ("payroll logic is named after WHAT IT PRODUCES, so the discovery "

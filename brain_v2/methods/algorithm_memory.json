@@ -495,7 +495,7 @@
   {
    "subject": "budget rate graph",
    "kind": "CARRIER",
-   "fact": "17 subjects related by 20 typed edges; 30 claims on the subject",
+   "fact": "28 subjects related by 33 typed edges; 31 claims on the subject",
    "learned_by": "A15_br_graph",
    "evidence": "brain_v2/budget_rate_graph.json",
    "implication": "ask the graph before re-deriving: the relation between perimeter, moments, rate type and control is recorded, not remembered",
@@ -561,7 +561,8 @@
    "evidence": "brain_v2/payroll_discovery.json",
    "implication": "the payroll engine is configuration and reads like data. Run this before assuming any staff-cost calculation is unreachable",
    "confidence": "MEASURED",
-   "session": 98
+   "session": 98,
+   "supersedes_earlier_run": true
   },
   {
    "subject": "payroll posting path",
@@ -661,6 +662,26 @@
    "learned_by": "A16_payroll_discovery",
    "evidence": "T9POST extracted from P01; the 24 Constant Dollar symbolic accounts appear in none",
    "implication": "payroll reaches FM through a custom table, not through standard account determination. Look in the customer table range when a standard bridge does not exist",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_read_the_documents_not_the_configuration",
+   "kind": "METHOD",
+   "fact": "when the configuration will not yield an assignment, the POSTED DOCUMENTS carry the resolved result on one row. PPDIT holds the FI transaction key and the resolved GL account together",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "4,000 PPDIT items: 2 of 4 keys fan out to several accounts, 28 of 28 accounts belong to one key",
+   "implication": "read what happened rather than reconstructing what was configured. It does not depend on having found the right customising table, and the CARDINALITY IN BOTH DIRECTIONS identifies where the decision is really made",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "PPDIT",
+   "kind": "CARRIER",
+   "fact": "the payroll posting document items carry KTOSL — the CHAR(3) FI TRANSACTION KEY, not the CHAR(4) payroll symbolic account — alongside the resolved GL account",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "PPDIT KTOSL values HRA, HRC, HRF, HRK against 28 HKONT values",
+   "implication": "do not read PPDIT-KTOSL as a symbolic account. Two different keys share that field name across HR and FI, and confusing them cost three extractions",
    "confidence": "MEASURED",
    "session": 98
   }

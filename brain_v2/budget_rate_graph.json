@@ -16,9 +16,9 @@
    "kind": "MECHANISM",
    "what": "the budget rate for staff cost, computed in the PAYROLL ENGINE — in the calculation schema, in its codifications",
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel",
-   "status": "LARGELY UNMEASURED — the schema is not ABAP source and has not been read",
+   "status": "MECHANISM CLOSED s098 — engine, carrier, gate and posting design are all described. The AMOUNT is the one thing still not measured",
    "content_resolves": true,
-   "degree": 5
+   "degree": 7
   },
   {
    "id": "RATE_EURX",
@@ -50,7 +50,7 @@
    "what": "the personnel gate: HR feature YYCDR evaluated per employee against PA0001",
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_gate",
    "content_resolves": true,
-   "degree": 1
+   "degree": 2
   },
   {
    "id": "TWELVE_MOMENTS",
@@ -98,7 +98,7 @@
    "what": "br_impact.py — replicates the organisation's own baselines",
    "content_in": "process_mining/br_impact.py",
    "content_resolves": true,
-   "degree": 2
+   "degree": 3
   },
   {
    "id": "COMMITMENTS_NOT_COMPARABLE",
@@ -139,6 +139,94 @@
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_conversion",
    "content_resolves": true,
    "degree": 2
+  },
+  {
+   "id": "PAYROLL_ENGINE",
+   "kind": "MECHANISM",
+   "what": "the payroll engine as configured here: schemas, rules, wage types and features — a layer that is neither ABAP nor data, and that no code or table search reaches",
+   "content_in": "brain_v2/payroll_discovery.json",
+   "content_resolves": true,
+   "degree": 4
+  },
+  {
+   "id": "ALGORITHM_A16",
+   "kind": "ALGORITHM",
+   "what": "payroll_discovery.py — the end-to-end payroll discovery, in seven parts, built on the premise that PAYROLL LOGIC IS NAMED AFTER WHAT IT PRODUCES",
+   "content_in": "process_mining/payroll_discovery.py",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "WAGE_TYPES_CONSTANT_DOLLAR",
+   "kind": "DATA",
+   "what": "the 72 'Constant Dollar' wage types — the staff budget rate's carrier, identically configured in T512W, so one mechanism rather than seventy-two decisions",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "TWIN_POSTING",
+   "kind": "BEHAVIOUR",
+   "what": "each Constant Dollar wage type posts to its base's OWN symbolic account with the opposite sign — 58 of 58 configured pairs — so the two net on the account",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.how_it_posts",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "SYMBOLIC_ACCOUNT",
+   "kind": "CONFIGURATION",
+   "what": "the payroll symbolic account, CHAR(4) — SPAL, BSAL, HOUS, PADJ. The thing a wage type posts to, and NOT the same key as the FI transaction key",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_account_determination",
+   "content_resolves": true,
+   "degree": 4
+  },
+  {
+   "id": "FIELD_WIDTH_TRAP",
+   "kind": "CONSTRAINT",
+   "what": "T030-KTOSL is CHAR(3) and a payroll symbolic account is CHAR(4). The FI account determination CANNOT hold one, so three extractions chasing it were impossible by construction",
+   "content_in": "brain_v2/methods/algorithm_memory.json ._field_width",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "RESOLVED_POSTING",
+   "kind": "MEASUREMENT",
+   "what": "read from PPDIT rather than from configuration: a 3-character FI transaction key fans out to several GL accounts, while every GL account belongs to exactly one key — so the account is decided BEYOND the key, by the wage type",
+   "content_in": "brain_v2/payroll_discovery.json .resolved_posting",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "PAYROLL_TO_FM_BRIDGE",
+   "kind": "CONFIGURATION",
+   "what": "T9POST — a CUSTOM table mapping symbolic account x employee grouping to fund centre and fund. Payroll reaches FM through a customer table, not a standard one",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_payroll_to_fm_bridge",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "ENHANCEMENT_POSTING_ACCOUNTS",
+   "kind": "DEFECT",
+   "what": "ZHR_POSTING_ACCOUNTS_RETRO — a custom enhancement named after the account determination itself, hooked on RPCIPE00_OLD, the retro posting program",
+   "content_in": "brain_v2/payroll_discovery.json .posting.enhancements_on_the_posting_path",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "MASTER_DATA_BY_HAND",
+   "kind": "BEHAVIOUR",
+   "what": "which payroll master data a human edits and which arrives by a channel — the operating risk and the automation opportunity sit in the same place",
+   "content_in": "brain_v2/payroll_discovery.json .master_data",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "ALGORITHM_A17",
+   "kind": "ALGORITHM",
+   "what": "change_governance.py — the route by which a change reaches production, judged against the population of maintainers rather than a policy document",
+   "content_in": "process_mining/change_governance.py",
+   "content_resolves": true,
+   "degree": 1
   }
  ],
  "edges": [
@@ -261,22 +349,100 @@
    "rel": "COMPUTED_IN",
    "to": "MECHANISM_PERSONNEL",
    "why": "the payroll engine's calculation schema, in its codifications — not in ABAP"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "COMPUTED_BY",
+   "to": "PAYROLL_ENGINE",
+   "why": "the calculation schema and its codifications — the reason a code search never found it"
+  },
+  {
+   "from": "ALGORITHM_A16",
+   "rel": "DISCOVERS",
+   "to": "PAYROLL_ENGINE",
+   "why": "seven parts: engine, logic, output, gates, master data, posting, resolved posting"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "CARRIED_BY",
+   "to": "WAGE_TYPES_CONSTANT_DOLLAR",
+   "why": "72 wage types, identical in T512W — named after their output, which is why the schema text does not mention them"
+  },
+  {
+   "from": "WAGE_TYPES_CONSTANT_DOLLAR",
+   "rel": "POSTS_AS",
+   "to": "TWIN_POSTING",
+   "why": "58 of 58 configured pairs go to the base's symbolic account with the opposite sign"
+  },
+  {
+   "from": "TWIN_POSTING",
+   "rel": "RESOLVES_THROUGH",
+   "to": "SYMBOLIC_ACCOUNT",
+   "why": "the twin inherits the base's account assignment because it uses the base's account"
+  },
+  {
+   "from": "FIELD_WIDTH_TRAP",
+   "rel": "EXPLAINS_WHY_WE_COULD_NOT_FIND",
+   "to": "SYMBOLIC_ACCOUNT",
+   "why": "a CHAR(4) key cannot sit in a CHAR(3) field; measuring the widths ended the search in one call after three extractions had not"
+  },
+  {
+   "from": "RESOLVED_POSTING",
+   "rel": "ANSWERS",
+   "to": "SYMBOLIC_ACCOUNT",
+   "why": "the documents carry the key and the resolved account on one row, so the assignment is read from what happened rather than from what was configured"
+  },
+  {
+   "from": "SYMBOLIC_ACCOUNT",
+   "rel": "REACHES_FM_THROUGH",
+   "to": "PAYROLL_TO_FM_BRIDGE",
+   "why": "T9POST — and none of the 24 Constant Dollar symbolic accounts appears in it, consistent with the twin inheriting its base's assignment"
+  },
+  {
+   "from": "ENHANCEMENT_POSTING_ACCOUNTS",
+   "rel": "SITS_ON",
+   "to": "RESOLVED_POSTING",
+   "why": "a custom enhancement named after account determination, on the retro posting program"
+  },
+  {
+   "from": "PAYROLL_ENGINE",
+   "rel": "DRIVEN_BY",
+   "to": "MASTER_DATA_BY_HAND",
+   "why": "the infotypes that carry the driving fields, crossed with the change log"
+  },
+  {
+   "from": "ALGORITHM_A17",
+   "rel": "JUDGES",
+   "to": "MASTER_DATA_BY_HAND",
+   "why": "by which route each change reached production, and whether that route is the norm"
+  },
+  {
+   "from": "PERIMETER_FEATURE_YYCDR",
+   "rel": "SELECTS_FROM",
+   "to": "PAYROLL_ENGINE",
+   "why": "2,086 employees of 23,700 — a perimeter held in a feature, which no code or table search would find"
+  },
+  {
+   "from": "ALGORITHM_A16",
+   "rel": "SHARES_WITH",
+   "to": "ALGORITHM_A14",
+   "why": "both write to the shared algorithm memory, so a trap found by one is available to the other — the field-width trap came out of the payroll hunt and applies to any join"
   }
  ],
  "summary": {
-  "nodes": 17,
-  "edges": 20,
+  "nodes": 28,
+  "edges": 33,
   "by_kind": {
-   "MECHANISM": 2,
-   "CONFIGURATION": 2,
+   "MECHANISM": 3,
+   "CONFIGURATION": 4,
    "RULE": 3,
-   "BEHAVIOUR": 2,
+   "BEHAVIOUR": 4,
    "CONTROL": 1,
-   "MEASUREMENT": 1,
-   "ALGORITHM": 1,
-   "CONSTRAINT": 1,
-   "DATA": 1,
-   "DEFECT": 3
+   "MEASUREMENT": 2,
+   "ALGORITHM": 3,
+   "CONSTRAINT": 2,
+   "DATA": 2,
+   "DEFECT": 4
   },
   "orphan_nodes": [],
   "dangling_edges": [],
@@ -311,11 +477,12 @@
    450,
    451,
    452,
-   453
+   453,
+   462
   ],
   "most_connected": [
    [
-    5,
+    7,
     "MECHANISM_PERSONNEL"
    ],
    [
@@ -324,15 +491,15 @@
    ],
    [
     4,
+    "SYMBOLIC_ACCOUNT"
+   ],
+   [
+    4,
     "RATE_EURX"
    ],
    [
-    3,
-    "IMPACT_FIGURE"
-   ],
-   [
-    2,
-    "TWELVE_MOMENTS"
+    4,
+    "PAYROLL_ENGINE"
    ]
   ]
  },
