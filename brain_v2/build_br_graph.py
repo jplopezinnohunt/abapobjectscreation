@@ -115,8 +115,9 @@ NODES = [
           "configured in T512W, so one mechanism rather than seventy-two decisions",
   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel"},
  {"id": "TWIN_POSTING", "kind": "BEHAVIOUR",
-  "what": "each Constant Dollar wage type posts to its base's OWN symbolic account with the "
-          "opposite sign — 58 of 58 configured pairs — so the two net on the account",
+  "what": "AS-DESIGNED ONLY: each Constant Dollar wage type is configured to post to its "
+          "base's own symbolic account with the opposite sign, 58 of 58 pairs. MEASURED "
+          "AS-RUN: zero of the 72 post in 2026. This node is the design, not the behaviour",
   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.how_it_posts"},
  {"id": "SYMBOLIC_ACCOUNT", "kind": "CONFIGURATION",
   "what": "the payroll symbolic account, CHAR(4) — SPAL, BSAL, HOUS, PADJ. The thing a wage "
@@ -148,6 +149,31 @@ NODES = [
   "what": "change_governance.py — the route by which a change reaches production, judged "
           "against the population of maintainers rather than a policy document",
   "content_in": "process_mining/change_governance.py"},
+ # --- what ACTUALLY runs on the staff side, measured in the posting documents s098. The
+ # --- design above and this are two different mechanisms, and the gap between them is the
+ # --- product — which is the capability model's own premise, met here in the wild.
+ {"id": "WAGE_TYPE_999S", "kind": "MECHANISM",
+  "what": "the ONE wage type that carries the staff budget-rate difference: 999S, 'SUM DIF "
+          "Exch. rate Fluct.', reaching symbolic accounts CUSD, CUS1 and CUSA",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism._AS_DESIGNED_VS_AS_RUN_s098"},
+ {"id": "ACCOUNTS_999", "kind": "CONFIGURATION",
+  "what": "dedicated GL accounts that say what they are — 0009999990 Constant Dollar Clearing, "
+          "999992 consultant Experts, 999993 support personnel, 999994 other personal costs",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism._AS_DESIGNED_VS_AS_RUN_s098"},
+ {"id": "IMPACT_STAFF", "kind": "MEASUREMENT",
+  "what": "USD 20,523,434.48 and EUR 8,057,168.94 for 2026 to July, netting to EXACTLY zero "
+          "per currency — a self-balancing reclassification, not a residual",
+  "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_impact_MEASURED"},
+ {"id": "DORMANT_DESIGNED_CAPACITY", "kind": "BEHAVIOUR",
+  "what": "built and never exercised: 72 Constant Dollar wage types that do not post, "
+          "ZZSUBST_AUART and ZZSUBST_SPPRC populated on zero rows, the PBC conversion behind "
+          "IF 1 = 2. Pre-built capacity a future design could use",
+  "content_in": "brain_v2/capability_model/execution_backlog.json AN-DORMANT-DESIGNED-CAPACITY"},
+ {"id": "SUBSTITUTION_ZZSUBST", "kind": "CONFIGURATION",
+  "what": "ZZSUBST_KOMOK and ZZSUBST_KOART — a customer override of the symbolic account "
+          "inside the STANDARD posting index, populated on 2,627 of 12,795,641 rows and "
+          "present in no configuration table examined",
+  "content_in": "brain_v2/payroll_discovery.json"},
 ]
 
 # The edges. This is the part that did not exist before.
@@ -221,6 +247,30 @@ EDGES = [
  ("ALGORITHM_A16", "SHARES_WITH", "ALGORITHM_A14",
   "both write to the shared algorithm memory, so a trap found by one is available to the "
   "other — the field-width trap came out of the payroll hunt and applies to any join"),
+ # The as-run edges. These are the ones that make the graph disagree with itself on purpose:
+ # TWIN_POSTING and WAGE_TYPE_999S both describe the staff mechanism and only one of them
+ # happens. Keeping both, joined by a contradiction edge, is the record of the delta.
+ ("MECHANISM_PERSONNEL", "AS_RUN_IS", "WAGE_TYPE_999S",
+  "measured in the posting documents: one wage type, not the seventy-two the configuration "
+  "describes"),
+ ("WAGE_TYPE_999S", "RESOLVES_TO", "ACCOUNTS_999",
+  "through symbolic accounts CUSD, CUS1 and CUSA"),
+ ("ACCOUNTS_999", "CARRIES", "IMPACT_STAFF",
+  "the difference is POSTED here rather than differenced between FI and FM — which is why "
+  "the two agree on the personnel side"),
+ ("TWIN_POSTING", "IS_CONTRADICTED_BY", "WAGE_TYPE_999S",
+  "the design and the behaviour are different mechanisms; a configuration table cannot "
+  "report that its own contents are dormant"),
+ ("TWIN_POSTING", "IS_AN_INSTANCE_OF", "DORMANT_DESIGNED_CAPACITY",
+  "72 wage types configured, 0 posting"),
+ ("SUBSTITUTION_ZZSUBST", "OVERRIDES", "SYMBOLIC_ACCOUNT",
+  "a local override living inside the standard index, exercised rarely"),
+ ("SUBSTITUTION_ZZSUBST", "IS_AN_INSTANCE_OF", "DORMANT_DESIGNED_CAPACITY",
+  "two of its four fields are populated on zero rows"),
+ ("RESOLVED_POSTING", "MEASURES", "IMPACT_STAFF",
+  "reading the documents is what produced the figure the configuration could not"),
+ ("ALGORITHM_A16", "PRODUCES", "IMPACT_STAFF",
+  "the staff-side counterpart of what A14 measured on the non-personnel side"),
 ]
 
 

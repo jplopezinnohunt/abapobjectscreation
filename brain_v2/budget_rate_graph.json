@@ -18,7 +18,7 @@
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel",
    "status": "MECHANISM CLOSED s098 — engine, carrier, gate and posting design are all described. The AMOUNT is the one thing still not measured",
    "content_resolves": true,
-   "degree": 7
+   "degree": 8
   },
   {
    "id": "RATE_EURX",
@@ -154,7 +154,7 @@
    "what": "payroll_discovery.py — the end-to-end payroll discovery, in seven parts, built on the premise that PAYROLL LOGIC IS NAMED AFTER WHAT IT PRODUCES",
    "content_in": "process_mining/payroll_discovery.py",
    "content_resolves": true,
-   "degree": 2
+   "degree": 3
   },
   {
    "id": "WAGE_TYPES_CONSTANT_DOLLAR",
@@ -167,10 +167,10 @@
   {
    "id": "TWIN_POSTING",
    "kind": "BEHAVIOUR",
-   "what": "each Constant Dollar wage type posts to its base's OWN symbolic account with the opposite sign — 58 of 58 configured pairs — so the two net on the account",
+   "what": "AS-DESIGNED ONLY: each Constant Dollar wage type is configured to post to its base's own symbolic account with the opposite sign, 58 of 58 pairs. MEASURED AS-RUN: zero of the 72 post in 2026. This node is the design, not the behaviour",
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.how_it_posts",
    "content_resolves": true,
-   "degree": 2
+   "degree": 4
   },
   {
    "id": "SYMBOLIC_ACCOUNT",
@@ -178,7 +178,7 @@
    "what": "the payroll symbolic account, CHAR(4) — SPAL, BSAL, HOUS, PADJ. The thing a wage type posts to, and NOT the same key as the FI transaction key",
    "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_account_determination",
    "content_resolves": true,
-   "degree": 4
+   "degree": 5
   },
   {
    "id": "FIELD_WIDTH_TRAP",
@@ -194,7 +194,7 @@
    "what": "read from PPDIT rather than from configuration: a 3-character FI transaction key fans out to several GL accounts, while every GL account belongs to exactly one key — so the account is decided BEYOND the key, by the wage type",
    "content_in": "brain_v2/payroll_discovery.json .resolved_posting",
    "content_resolves": true,
-   "degree": 2
+   "degree": 3
   },
   {
    "id": "PAYROLL_TO_FM_BRIDGE",
@@ -227,6 +227,46 @@
    "content_in": "process_mining/change_governance.py",
    "content_resolves": true,
    "degree": 1
+  },
+  {
+   "id": "WAGE_TYPE_999S",
+   "kind": "MECHANISM",
+   "what": "the ONE wage type that carries the staff budget-rate difference: 999S, 'SUM DIF Exch. rate Fluct.', reaching symbolic accounts CUSD, CUS1 and CUSA",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism._AS_DESIGNED_VS_AS_RUN_s098",
+   "content_resolves": true,
+   "degree": 3
+  },
+  {
+   "id": "ACCOUNTS_999",
+   "kind": "CONFIGURATION",
+   "what": "dedicated GL accounts that say what they are — 0009999990 Constant Dollar Clearing, 999992 consultant Experts, 999993 support personnel, 999994 other personal costs",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism._AS_DESIGNED_VS_AS_RUN_s098",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "IMPACT_STAFF",
+   "kind": "MEASUREMENT",
+   "what": "USD 20,523,434.48 and EUR 8,057,168.94 for 2026 to July, netting to EXACTLY zero per currency — a self-balancing reclassification, not a residual",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_real_mechanism.the_impact_MEASURED",
+   "content_resolves": true,
+   "degree": 3
+  },
+  {
+   "id": "DORMANT_DESIGNED_CAPACITY",
+   "kind": "BEHAVIOUR",
+   "what": "built and never exercised: 72 Constant Dollar wage types that do not post, ZZSUBST_AUART and ZZSUBST_SPPRC populated on zero rows, the PBC conversion behind IF 1 = 2. Pre-built capacity a future design could use",
+   "content_in": "brain_v2/capability_model/execution_backlog.json AN-DORMANT-DESIGNED-CAPACITY",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "SUBSTITUTION_ZZSUBST",
+   "kind": "CONFIGURATION",
+   "what": "ZZSUBST_KOMOK and ZZSUBST_KOART — a customer override of the symbolic account inside the STANDARD posting index, populated on 2,627 of 12,795,641 rows and present in no configuration table examined",
+   "content_in": "brain_v2/payroll_discovery.json",
+   "content_resolves": true,
+   "degree": 2
   }
  ],
  "edges": [
@@ -427,18 +467,72 @@
    "rel": "SHARES_WITH",
    "to": "ALGORITHM_A14",
    "why": "both write to the shared algorithm memory, so a trap found by one is available to the other — the field-width trap came out of the payroll hunt and applies to any join"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "AS_RUN_IS",
+   "to": "WAGE_TYPE_999S",
+   "why": "measured in the posting documents: one wage type, not the seventy-two the configuration describes"
+  },
+  {
+   "from": "WAGE_TYPE_999S",
+   "rel": "RESOLVES_TO",
+   "to": "ACCOUNTS_999",
+   "why": "through symbolic accounts CUSD, CUS1 and CUSA"
+  },
+  {
+   "from": "ACCOUNTS_999",
+   "rel": "CARRIES",
+   "to": "IMPACT_STAFF",
+   "why": "the difference is POSTED here rather than differenced between FI and FM — which is why the two agree on the personnel side"
+  },
+  {
+   "from": "TWIN_POSTING",
+   "rel": "IS_CONTRADICTED_BY",
+   "to": "WAGE_TYPE_999S",
+   "why": "the design and the behaviour are different mechanisms; a configuration table cannot report that its own contents are dormant"
+  },
+  {
+   "from": "TWIN_POSTING",
+   "rel": "IS_AN_INSTANCE_OF",
+   "to": "DORMANT_DESIGNED_CAPACITY",
+   "why": "72 wage types configured, 0 posting"
+  },
+  {
+   "from": "SUBSTITUTION_ZZSUBST",
+   "rel": "OVERRIDES",
+   "to": "SYMBOLIC_ACCOUNT",
+   "why": "a local override living inside the standard index, exercised rarely"
+  },
+  {
+   "from": "SUBSTITUTION_ZZSUBST",
+   "rel": "IS_AN_INSTANCE_OF",
+   "to": "DORMANT_DESIGNED_CAPACITY",
+   "why": "two of its four fields are populated on zero rows"
+  },
+  {
+   "from": "RESOLVED_POSTING",
+   "rel": "MEASURES",
+   "to": "IMPACT_STAFF",
+   "why": "reading the documents is what produced the figure the configuration could not"
+  },
+  {
+   "from": "ALGORITHM_A16",
+   "rel": "PRODUCES",
+   "to": "IMPACT_STAFF",
+   "why": "the staff-side counterpart of what A14 measured on the non-personnel side"
   }
  ],
  "summary": {
-  "nodes": 28,
-  "edges": 33,
+  "nodes": 33,
+  "edges": 42,
   "by_kind": {
-   "MECHANISM": 3,
-   "CONFIGURATION": 4,
+   "MECHANISM": 4,
+   "CONFIGURATION": 6,
    "RULE": 3,
-   "BEHAVIOUR": 4,
+   "BEHAVIOUR": 5,
    "CONTROL": 1,
-   "MEASUREMENT": 2,
+   "MEASUREMENT": 3,
    "ALGORITHM": 3,
    "CONSTRAINT": 2,
    "DATA": 2,
@@ -478,12 +572,17 @@
    451,
    452,
    453,
-   462
+   462,
+   465
   ],
   "most_connected": [
    [
-    7,
+    8,
     "MECHANISM_PERSONNEL"
+   ],
+   [
+    5,
+    "SYMBOLIC_ACCOUNT"
    ],
    [
     5,
@@ -491,15 +590,11 @@
    ],
    [
     4,
-    "SYMBOLIC_ACCOUNT"
+    "TWIN_POSTING"
    ],
    [
     4,
     "RATE_EURX"
-   ],
-   [
-    4,
-    "PAYROLL_ENGINE"
    ]
   ]
  },
