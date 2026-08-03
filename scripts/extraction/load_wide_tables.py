@@ -121,9 +121,28 @@ PLAN = {
     # THE ANSWER TO THE ACCOUNT DETERMINATION, and it is not a config table: the posting
     # document ITEMS carry the symbolic account AND the resolved GL account on the same row.
     "PPDHD":      {"partition": None, "why": "payroll posting document headers — run to document"},
-    "PPDIT":      {"partition": "BUKRS", "values": ["UNES","IIEP","ICTP","UIS","UIL","IBE","UBO","MGIE","ICBA"],
-                   "why": "payroll posting ITEMS — KTOSL and HKONT together, the resolved assignment"},
-    "PPDIX":      {"partition": None, "why": "posting run index — run to document line"},
+    # These two are WINDOWED rather than partitioned, and the difference is the whole reason
+    # the first attempt short-dumped. Neither carries a date, so there is nothing to slice a
+    # period on directly — and a WHERE on BUKRS reads past the key, which is what produced
+    # SQL_CAUGHT_RABAX on a table this size. The key IS the document number, so the period is
+    # expressed as a RANGE OVER THE KEY, and the range is derived from the header table that
+    # does carry the date. Measured for 2026: the window is 99.8% 2026 documents.
+    "PPDIT":      {"partition": None, "window": {"key": "DOCNUM", "from": "DOCNUM", "block": 2500},
+                   "why": "payroll posting ITEMS — the transaction key and the resolved GL "
+                          "account on the same row, plus ZZWAERS/ZZBETRG, a custom amount and "
+                          "currency ON THE POSTING LINE ITSELF"},
+    "PPDIX":      {"partition": None, "window": {"key": "RUNID", "from": "RUNID", "block": 500},
+                   "why": "posting run index — the join from a PAYROLL RUN to its document lines"},
+    # THE LINK THAT CLOSES THE CHAIN, and it is narrow enough to read in a single pass. PPOIX
+    # carries the WAGE TYPE, the AMOUNT and the four-character SYMBOLIC ACCOUNT on one row,
+    # which is precisely what PPDIT does not have — PPDIT holds the three-character FI
+    # transaction key and the RESOLVED GL account. Joined through TSLIN -> PPDIX.LINUM, the
+    # two give: wage type -> amount -> symbolic account -> GL account -> fund.
+    # It also carries FOUR CUSTOM FIELDS named ZZSUBST_*, and SUBST is substitution: a local
+    # override of the symbolic account sitting inside the standard posting index.
+    "PPOIX":      {"partition": None, "window": {"key": "RUNID", "from": "RUNID", "block": 150},
+                   "why": "payroll posting index — LGART, BETRG and KOMOK together, plus the "
+                          "ZZSUBST_* custom substitution of the symbolic account"},
     "T9POST":     {"partition": None, "why": "payroll symbolic account -> FM account assignment (custom)"},
     "T9FUND":     {"partition": None, "why": "payroll symbolic account -> fund (custom)"},
     "T030B":      {"partition": None, "why": "payroll account determination — symbolic account to GL, the last link"},
@@ -245,7 +264,77 @@ def read_table(s, table, plan):
     return [merged[k] for k in order], None, fields
 
 
-def write(con, table, rows, fields=None, append=False, slice_col=None, slice_val=None):
+def window_bounds(con, table, plan, year):
+    """Turn a PERIOD into a RANGE OVER THE KEY, using the table that does carry a date.
+
+    PPDIT and PPDIX have no date column, so "load 2026" cannot be expressed against them
+    directly. PPDHD does have one, and it holds both the document number and the run id —
+    so the header table converts the period into key bounds its own children can be read by.
+    This is the general shape: when a child table has no date, ask its parent.
+    """
+    col = plan["window"]["from"]
+    r = con.execute('SELECT min("%s"), max("%s") FROM ppdhd WHERE substr(BUDAT,1,4)=?'
+                    % (col, col), (year,)).fetchone()
+    if not r or not r[0]:
+        raise RuntimeError("ppdhd has no %s for %s — load PPDHD first" % (col, year))
+    return r[0], r[1]
+
+
+def load_window(s, con, table, plan, lo, hi, resume=False):
+    """Read a windowed table one key-block at a time, PERSISTING EACH BLOCK AS IT LANDS.
+
+    Reading four million rows in one call and writing at the end means a drop at 90% costs
+    everything. Writing per block costs one block, and because the write DELETES its own
+    range first, re-running is safe rather than doubling — which is the failure that already
+    happened once on FMIOI and looked like a clean load.
+    """
+    key, step = plan["window"]["key"], plan["window"]["block"]
+    fields = fields_of(s, sap_name(table))
+    groups, keys = chunks_for(fields)
+    width = len(lo)
+    lo_i, hi_i = int(lo), int(hi)
+    blocks = [(a, min(a + step - 1, hi_i)) for a in range(lo_i, hi_i + 1, step)]
+    # Create the table ONCE, up front, then let every block append over its own deleted
+    # range. The alternative — letting the first block create it — is not resumable: a
+    # re-run after a failure at block 80 would drop the 79 blocks that already landed.
+    cur = con.cursor()
+    if not resume:
+        cur.execute('DROP TABLE IF EXISTS "%s"' % table)
+    cur.execute('CREATE TABLE IF NOT EXISTS "%s" (%s)'
+                % (table, ",".join('"%s" TEXT' % f["name"] for f in fields)))
+    con.commit()
+    total = 0
+    for bi, (a, b) in enumerate(blocks):
+        a_s, b_s = str(a).zfill(width), str(b).zfill(width)
+        opt = "%s BETWEEN '%s' AND '%s'" % (key, a_s, b_s)
+        merged, order = {}, []
+        for grp in groups:
+            try:
+                res = s.call("RFC_READ_TABLE", QUERY_TABLE=sap_name(table),
+                             FIELDS=[{"FIELDNAME": f["name"]} for f in grp],
+                             OPTIONS=[{"TEXT": opt}], ROWCOUNT=0)
+            except Exception as e:
+                if "TABLE_WITHOUT_DATA" in str(e):
+                    continue
+                raise RuntimeError("%s block %s-%s: %s" % (table, a_s, b_s, str(e)[:110]))
+            for row in parse(res):
+                k = tuple(row.get(x, "") for x in keys)
+                if k not in merged:
+                    merged[k] = {}
+                    order.append(k)
+                merged[k].update(row)
+        rows = [merged[k] for k in order]
+        if rows:
+            write(con, table, rows, fields, append=True, slice_range=(key, a_s, b_s))
+        total += len(rows)
+        print("      bloque %d/%d  %s..%s  %7d filas  (acumulado %d)"
+              % (bi + 1, len(blocks), a_s, b_s, len(rows), total))
+        sys.stdout.flush()
+    return total
+
+
+def write(con, table, rows, fields=None, append=False, slice_col=None, slice_val=None,
+          slice_range=None):
     """Write the table — INCLUDING when it came back empty.
 
     An empty table that was actually read is evidence, and dropping it on the floor means
@@ -282,6 +371,9 @@ def write(con, table, rows, fields=None, append=False, slice_col=None, slice_val
         cur.execute('CREATE TABLE IF NOT EXISTS "%s" (%s)' % (table, cols_sql))
         if slice_col and slice_val is not None:
             cur.execute('DELETE FROM "%s" WHERE trim("%s")=?' % (table, slice_col), (slice_val,))
+        if slice_range:
+            rc, rlo, rhi = slice_range
+            cur.execute('DELETE FROM "%s" WHERE "%s" BETWEEN ? AND ?' % (table, rc), (rlo, rhi))
         cur.execute('INSERT INTO "%s" SELECT * FROM "%s"' % (table, tmp))
         con.commit()
         cur.execute('DROP TABLE IF EXISTS "%s"' % tmp)
@@ -318,6 +410,23 @@ def main(argv):
     done, failed = [], []
     for t in want:
         print("\n%s  — %s" % (t, PLAN[t]["why"]))
+        if PLAN[t].get("window"):
+            if not year:
+                print("   FALLO: una tabla en ventana necesita --year")
+                failed.append((t, "needs --year"))
+                continue
+            try:
+                lo, hi = window_bounds(con, t, PLAN[t], year)
+                print("   ventana %s %s..%s derivada de PPDHD para %s"
+                      % (PLAN[t]["window"]["key"], lo, hi, year))
+                n = load_window(s, con, t, PLAN[t], lo, hi, resume="--resume" in argv)
+            except Exception as e:
+                print("   FALLO: %s" % str(e)[:130])
+                failed.append((t, str(e)[:130]))
+                continue
+            print("   escritas %d filas" % n)
+            done.append((t, n))
+            continue
         rows, err, flds = read_table(s, t, PLAN[t])
         if err:
             print("   FALLO: %s" % err)
