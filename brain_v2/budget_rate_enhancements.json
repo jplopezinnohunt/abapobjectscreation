@@ -1072,7 +1072,7 @@
    },
    "measured_activity": {
     "the_payroll_posting_path": {
-     "status": "RAN ONCE, JANUARY 2025, THEN STOPPED",
+     "status": "A PILOT, JANUARY 2025 — never adopted",
      "runs": 6,
      "header_rows": 12,
      "_note": "each run written twice, document types P1 and P2",
@@ -1093,7 +1093,21 @@
      "line_items": 1048,
      "inside_the_YYCDR_perimeter": 633,
      "_the_70_outside": "most likely leavers — the perimeter was computed on CURRENT org assignments, so anyone who left since January 2025 drops out. A limitation of the comparison, not a gate failure",
-     "_the_1453_in_scope_without_an_amount": "explained by the single month"
+     "_the_1453_in_scope_without_an_amount": "explained by the single month",
+     "the_shape_is_a_test": {
+      "employees_per_run": [
+       6,
+       634,
+       1,
+       1,
+       1,
+       60
+      ],
+      "_reading": "four single-digit probes, one bulk run of 634 and one of 60, inside ten days",
+      "total_absolute_usd": 456409.32,
+      "records": 703,
+      "avg_per_employee_usd": 649.23
+     }
     },
     "the_pbc_position_path": {
      "status": "NEVER WROTE",
@@ -1104,13 +1118,32 @@
      "_why": "both CONVERT_TO_BUDGET_RATE call sites sit inside IF 1 = 2"
     },
     "_the_currency_condition_is_not_the_blocker": "PBC commitment lines in FMIOI carry USD on 1,207,981 rows against ~4,000 in BRL, so IF CS_POS-WAERS = 'USD' is satisfied. The code comment 'ALL PBC Documents are in USD' is correct",
-    "_what_it_means_for_the_impact": "staff cost is essentially NOT being valued at the budget rate in FM: one month of amounts across 703 rows, and nothing else. Whatever the payroll schema computes upstream, it is not reaching FM as a budget-rate valuation"
-   }
+    "_what_it_means_for_the_impact": "staff cost is essentially NOT being valued at the budget rate in FM: one month of amounts across 703 rows, and nothing else. Whatever the payroll schema computes upstream, it is not reaching FM as a budget-rate valuation",
+    "the_driver": {
+     "program": "YFM_BR_POSTING_IN_FM",
+     "transaction": "YFM_BR_POST",
+     "class": "YCL_FM_BR_POSTING_IN_FM_BL — 991 lines, driven by payroll RUNID",
+     "executions_in_audit_window": 0,
+     "window": "2026-02-21 to 2026-06-21",
+     "_the_contrast": "the CONTROL report YFM_FI_COMPARE_INCLUDING_BR ran 43 times by 5 users in the same window. The control outlived the thing it was built to control"
+    },
+    "payroll_itself_never_stopped": {
+     "fmreserv_change_docs": "every month through 2026-03; 542,018 in Jan 2024, 486,651 in Jan 2026",
+     "pbc_commitments_in_fmioi": {
+      "2024": 435303,
+      "2025": 477873,
+      "2026": 298858
+     },
+     "_reading": "payroll ran throughout; only the budget-rate layer above it did not"
+    }
+   },
+   "STATUS": "BUILT AND NEVER APPLIED — no real FI postings on this model (user-confirmed)"
   },
   "the_control": {
    "transaction": "YFM_FI_BR_COMP",
    "program": "YFM_FI_COMPARE_INCLUDING_BR",
    "_confirmed_via": "TSTC"
   }
- }
+ },
+ "_THE_HEADLINE": "THE BUDGET RATE IS ONE MECHANISM IN PRODUCTION, NOT TWO. The non-personnel side runs at 94.7% of its perimeter and produces a measurable -2,365,688.44 USD on financial postings. The personnel side exists as code, tables, an HR feature, a driver program and a transaction — and posts nothing. Any statement about 'the budget rate' that does not separate the two describes a system that does not exist."
 }
