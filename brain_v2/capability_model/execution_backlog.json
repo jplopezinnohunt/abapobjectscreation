@@ -571,17 +571,6 @@
    "result": ">1h -> 3m29s. 15.6M audit rows collapsed to 987K indexed slots and 12M change rows to 507K groups, in a DERIVED database — the golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place."
   },
   {
-   "id": "AN-A8-PERFORMANCE",
-   "domain": "Infrastructure",
-   "priority": 2,
-   "created_session": 97,
-   "status": "DONE s097 — pre-aggregate derived_audit_slots.db",
-   "task": "A8 went from ~3 minutes to over 10 when the FILE and ORIGIN evidence was added. The origin query parses PARAMX across 8.7M rows and the file query scans PARAM3 with four LIKE patterns, neither of which is cached. By our own D6 principle this matters more than it looks: a slow algorithm gets skipped, and a skipped algorithm is documentation — which is exactly the state A8 was built to rescue other algorithms from. Apply the same fix D6 got: cache the aggregate against the newest SAL_DATE watermark, so a re-run with no new audit data costs nothing.",
-   "method": "watermark cache alongside the tool, as in detect_drift.build_profile()",
-   "measured": "~3 min -> >10 min after the channel-chain extension",
-   "result": ">1h -> 3m29s. 15.6M audit rows collapsed to 987K indexed slots and 12M change rows to 507K groups, in a DERIVED database — the golden is 13 GB, gitignored and unbacked, so it cannot be indexed in place."
-  },
-  {
    "id": "AN-WEBSERVICE-VERIFY",
    "domain": "Integration",
    "priority": 2,
@@ -649,17 +638,6 @@
    "task": "Decide whether attribution is RECOVERABLE for the 5.3M opaque calls (MULESOFT 3.23M with one identity; BRIDGE-RFC 2.11M and UBO-RFC 324K with no PARAMX at all). Look for a correlation id on the MuleSoft side, an ORION-side log, or a header SAP receives and does not record. If it is structurally absent, THAT is the finding for governance — every SoD and change-approval control assumes an actor, and on this path there is none. Contrast with WF-BATCH, which proves the trail CAN be carried: 542 real users are visible behind it.",
    "method": "compare PARAMX presence per satellite; then ask whether the caller can supply it",
    "why_it_matters": "not 'nobody uses SAP' but 'the writes cannot be tied to anyone'"
-  },
-  {
-   "id": "AN-DIGITAL-ACCESS-EXPOSURE",
-   "domain": "Integration",
-   "priority": 1,
-   "created_session": 97,
-   "status": "OPEN",
-   "task": "Quantify the DIGITAL ACCESS / API-cost exposure of the current operating model. SAP licenses indirect use by DOCUMENTS CREATED through non-dialog channels, and A8 already classifies every object class by write channel — so the count is computable with NO new extraction. Produce: documents created per external channel per year, split by satellite, with the opaque accounts (MULESOFT 3.23M calls, BRIDGE-RFC 2.11M, UBO-RFC 324K) called out separately because traffic that cannot be attributed cannot be defended in a negotiation. THIS IS THE FIRST CONCRETE CONTENT FOR R_S4_READINESS, the one completely empty column — and it is COMMERCIAL rather than technical, which is probably why the column stayed empty while we looked for technical readiness factors.",
-   "method": "cross change_attribution.json RFC_INBOUND classes with document counts per year; then compare against UNESCO's Digital Access terms",
-   "blocked_on": "the licensing CONSEQUENCE needs UNESCO's SAP contract and SAP's Digital Access terms — we hold neither. The TRAFFIC half needs nothing.",
-   "why_it_matters": "on S/4HANA Cloud every integration that is free today becomes a metered cost, and this tenant is 80% external — so this is not a migration detail, it is the shape of the migration"
   },
   {
    "id": "AN-DIGITAL-ACCESS-EXPOSURE",
@@ -987,10 +965,11 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "BR for Staff is carried by 72 'Constant Dollar' wage types in country grouping UN. Establish three things: which payroll rule computes them (the schema layer does not name the mechanism, so it must be traced from the wage type backwards); whether they are configured to post, since T52EL returned nothing for MOLGA 'UN'; and what they amount to — the staff-cost equivalent of the -2,365,688.44 USD measured on the non-personnel side.",
    "method": "trace each 9xxx wage type back through T512W processing classes and the rules that write it, then find the posting configuration for MOLGA UN",
-   "why_it_matters": "staff cost is the largest spend category and this is the mechanism that values it at the budget rate. It is the last unmeasured half"
+   "why_it_matters": "staff cost is the largest spend category and this is the mechanism that values it at the budget rate. It is the last unmeasured half",
+   "result": "ANSWERED, and the answer is that they are DORMANT: all 72 are configured in T512T/T512W/T52EL and ZERO of them post in 2026. The difference is carried by ONE wage type, 999S \"SUM DIF Exch. rate Fluct.\". Folded into AN-DORMANT-DESIGNED-CAPACITY."
   },
   {
    "id": "AN-PAYROLL-SCHEMA-FLOW",
@@ -1007,11 +986,12 @@
    "domain": "HCM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "Combine three streams that are each already held: the EXECUTION LOG (who ran what and when, 15.6M audit rows), the PBC output (FMRESERV change documents, 6.4M headers, and the HRM1/HRM2 commitment lines in FMIOI), and the FI DOCUMENT HEADERS (bkpf, now 122 columns including WWERT and KURSF). Joining them gives the chain from a payroll RUN to the documents it produced, with the person or channel that triggered it — which none of the three answers alone.",
    "method": "attribute payroll posting runs from the audit log to their FI documents via BKPF creation stamps and the PBC commitment lines, in the manner of A8",
    "why_it_matters": "it turns 'payroll posted' into 'this run, by this actor, produced these documents' — the level at which a control or an anomaly is actionable",
-   "_origin": "user: combining the execution logs with PBC and the FI document headers is powerful"
+   "_origin": "user: combining the execution logs with PBC and the FI document headers is powerful",
+   "result": "the chain is BKPF.AWKEY = PPDHD.DOCNUM (AWTYP HRPAY) backwards through PPDIX to PPOIX, which carries the wage type and the amount. Verified by arithmetic: a PPDIT line of 46.80 is 10.96 + 35.84 of PPOIX. The run-level reading of that chain is what exposed the simulations."
   },
   {
    "id": "AN-CHANNEL-DIFFERENCE-DETECTOR",
