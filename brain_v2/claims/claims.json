@@ -20769,6 +20769,66 @@
    "process": [
     "B2R"
    ]
+  },
+  "CORRECTED_s098_the_donor_did_not_leave": "THE CONCLUSION 'the funding-source dimension left SAP' IS WRONG. It left the PROJECT MASTER. In SAP it is the CUSTOMER master: 5,401 of 12,517 KNA1 customers (43.1%) are in the six donor account groups OGIN/MSOT/MSAC/MSCO/DELG/UNAG. In the Core Planner it is a first-class role with 5,777 rows over 2,738 workplans. The SF-to-SAP donor feed goes to BW (ZGMSPNSR), never to ECC's FM — which is why FMFINCODE-SPONSOR is 0.2%. Everything else in the claim stands."
+ },
+ {
+  "id": 475,
+  "claim": "THE DONOR DID NOT LEAVE SAP — IT LEFT THE PROJECT MASTER AND BECAME AN ENTITY IN THREE PLACES (s098, AN-DONOR-IN-THE-CORE-PLANNER, user-confirmed that the Core Planner creates the WBS). THIS CORRECTS MY OWN CLAIM OF ONE STEP EARLIER, which said the funding-source dimension had left the system. It had not. I had only looked where it used to be. IN SAP IT IS THE CUSTOMER MASTER, and this is verified on our own data rather than taken from a peer: 5,401 of 12,517 KNA1 customers — 43.1% — sit in the six donor account groups the PPM brain names, OGIN 4,010, MSOT 459, MSAC 431, MSCO 185, DELG 185 and UNAG 131. So the donor is a MASTER DATA OBJECT with an address, a country and a category, where it used to be a string like 'SWITZ.' or 'PRIV. FUND.' among 763 uncontrolled values. That is a modelling upgrade, not a loss. IN THE CORE PLANNER IT IS A FIRST-CLASS ROLE (consumed read-only from unescore20-PPM-brain under ADR-007, NOT re-derived): Workplan_Organisation_Role__c carries 5,777 donor rows across 2,738 distinct workplans, 2.11 donors per workplan, with Donor_Category__c, Original_Donor_Agreement__c and Donor_Agreement_s_Currency__c beside it, and a standing Track 2 Donor Management team. Top donors are World Bank-GPE 177, Ministry of Foreign Affairs 119, Government of China 112, UNDP MPTF 109, France 97, Monaco 92. AND THE FEED BETWEEN THEM GOES TO BW, NOT TO ECC — which is exactly why FM cannot answer the question. Their manifest maps SF Account to ZGMSPNSR, Donor_Category__c to ZDONOR_CA and Country ISO to ZDON_CTRY over a BW flat file. Nothing in that path writes FMFINCODE-SPONSOR, and measured here it is filled on 0.2% of funds. There are no GM tables in the golden at all. SO THE ANSWER TO 'WHO FUNDED THIS PROJECT' IS: not from the SAP project master, and not from FM. It is a join through the Core Planner's workplan, or through the customer master if the money movement is what is being traced. ONE MORE THING THE INTERFACE DID, AND IT IS MEASURABLE: it cleaned the grammar. YYE_BENEF1 held a mixture of shapes while people filled it — in 2019, DDDDDDDD 286, DDDD 176, AAA_DDDD 18 — and CONVERGED once MULESOFT took over: 2024 is 5,059 DDDDDDDD and one exception, 2026 is 100% DDDDDDDD. Eight clean digits, the Core Planner's workplan identifier. An interface does not only fill a field faster; it removes the variance a human hand introduces.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PS",
+  "created_session": 98,
+  "corrects": 474,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "KNA1 x PRPS — our golden",
+    "cite": "KNA1 12,517 customers, 5,401 (43.1%) in donor account groups: OGIN 4,010, MSOT 459, MSAC 431, MSCO 185, DELG 185, UNAG 131; FMFINCODE-SPONSOR 121 of 67,698; no GM tables in the golden; YYE_BENEF1 grammar 2019 mixed (DDDDDDDD 286 / DDDD 176 / AAA_DDDD 18) converging to 100% DDDDDDDD by 2026",
+    "added_session": 98
+   },
+   {
+    "type": "peer_read_only",
+    "ref": "unescore20-PPM-brain (ADR-007, consumed not re-derived)",
+    "cite": "Workplan_Organisation_Role__c Donor 5,777 rows over 2,738 workplans, 2.11 per workplan; Donor_Category__c, Original_Donor_Agreement__c; BW flat-file map SF Account->ZGMSPNSR, Donor_Category__c->ZDONOR_CA, Country ISO->ZDON_CTRY; Track 2 Donor Management team",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "KNA1",
+   "OGIN",
+   "MSOT",
+   "MSAC",
+   "MSCO",
+   "DELG",
+   "UNAG",
+   "PRPS",
+   "YYE_DONOR",
+   "YYE_BENEF1",
+   "FMFINCODE",
+   "SPONSOR",
+   "MULESOFT",
+   "unescore20-PPM-brain",
+   "ZGMSPNSR"
+  ],
+  "resolution_notes": "USER confirmed the Core Planner creates the WBS. The peer brain supplied the Salesforce side read-only under ADR-007; the SAP side (KNA1 account groups) was verified on our own data rather than accepted on their word.",
+  "domain_axes": {
+   "functional": [
+    "PS",
+    "Integration"
+   ],
+   "module": [
+    "PS",
+    "FM",
+    "SD"
+   ],
+   "process": [
+    "B2R"
+   ]
   }
  }
 ]
