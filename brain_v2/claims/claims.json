@@ -19535,5 +19535,93 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 448,
+  "claim": "THE 2024 RESIDUAL IS GONE: IT WAS THE TRANSLATION DATE ALL ALONG (s098, EXT-BKPF-WWERT). bkpf in the golden held 18 of the table's 122 columns and did not carry WWERT — the TRANSLATION DATE, which is the date SAP converts on when it is set, in preference to the posting date. Re-pulled with all fields, 1,939,003 rows over 122 columns. THE RESULT IS DECISIVE. Of the 422 resolvable 2024 pairs whose FM ratio equals the EURX rate, 416 match the UN OPERATIONAL RATE IN FORCE ON THEIR TRANSLATION DATE. Not their posting date — every single one of the 422 carries a WWERT distinct enough to matter, and the February and September clusters that looked unexplained were documents translated on an earlier date when the operational rate was 1.09529. THE REMAINING SIX CARRY AN EXPLICIT DOCUMENT RATE. KURSF is set on them: 0.91300- on two (which is exactly 1/1.09529 — the EURX value entered by hand), 0.92200-, 0.93300- and 0.90200- on the others, each matching the operational rate of its own translation date. So all 422 are accounted for by the standard machinery. THIS COMPLETES THE CORRECTION. The 2024 lines matching the EURX rate are NOT budget-rate conversions. They are documents whose ordinary conversion happened to land on 1.09529, because EURX is itself the operational rate frozen at the start of the biennium. The measured impact of exactly 0.00 across those pairs was telling the truth: nothing was converted. AND A SMALL DATA-QUALITY FINDING FELL OUT: two documents, 4500000113 and 4500000114, carry WWERT = 22040723 — a translation date in the year 2204. The rate they actually used is the one on their KURSF, so the posting is right and the date is a typo; but any report that derives a rate from WWERT would take the last rate in the table for them.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "P01 re-pull + enhancement sources + TSTC",
+    "cite": "bkpf re-pulled 1,939,003 rows / 122 columns (was 18); of 422 resolvable 2024 pairs, 416 match the operational rate on their WWERT; the other 6 carry an explicit KURSF, two of them 0.91300- = 1/1.09529; documents 4500000113/114 carry WWERT=22040723",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "bkpf",
+   "WWERT",
+   "KURSF",
+   "tcurr",
+   "EURX",
+   "fmifiit_full"
+  ],
+  "resolution_notes": "USER: the budget rate splits into non-personnel — the enhancements plus the report — and personnel, calculated in the HR payroll schema; and the GL control is transaction YFM_FI_BR_COMP.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "HCM"
+   ],
+   "module": [
+    "FM",
+    "FI",
+    "HR"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 449,
+  "claim": "THE BUDGET RATE IS TWO MECHANISMS, AND ONLY ONE OF THEM IS IN THE ENHANCEMENTS (s098, user correction on the framing). IT SPLITS INTO NON-PERSONNEL AND PERSONNEL. Everything measured so far — the eight-dimension perimeter, the twelve moments, the EURX rate, the -2,365,688.44 USD impact — is the NON-PERSONNEL side. The PERSONNEL side is computed in HR, INSIDE THE PAYROLL SCHEMA, which is a different mechanism entirely and is not visible in any of the enhancement sources. MEASURED, BY WHICH CLASS EACH ENHANCEMENT INSTANTIATES: EIGHT are exclusively non-personnel, using only YCL_FM_BR_EXCHANGE_RATE_BL — BR_REVALUATION, BR_REVAL_RESFUND, EF_FUND_RESERVATION, EXCHANGERATE_CHECK_CONS, _FUNDBLOCK, _KBLEW, _NEW_ITEM and _PAYCOMMIT. THREE ARE DUAL, instantiating a personnel class as well: EXCHANGERATE_AVC and _FI both reach for YCL_FM_BR_PAYROLL_POSTING_BL on their staff branch, and _PBC_POS_UPD reaches for YCL_FM_BR_PBC_POSTING_BL. ONE IS EXCLUSIVELY PERSONNEL: BR_BAPI_EMPLOYEE_POST, which does nothing but instantiate the payroll class. THE USER STATES THE NON-PERSONNEL SIDE IS NINE ENHANCEMENTS PLUS THE REPORT. The measurement gives eight EXCLUSIVELY non-personnel and three dual, so the ninth is one of the dual ones counted by its main path — most likely EXCHANGERATE_FI or _AVC, whose primary branch is non-personnel and whose staff branch is secondary. Recorded as measured rather than forced to the stated count. AND THE CONTROL PROGRAM IS CONFIRMED: transaction YFM_FI_BR_COMP runs YFM_FI_COMPARE_INCLUDING_BR — the program already read and analysed. TSTC resolves it. So the GL-difference control that was analysed is the right one, reached by a transaction code rather than by its program name. WHAT IS NOW KNOWN TO BE MISSING: the payroll-schema side. It is calculated in the HR schema, not in ABAP enhancements, so none of the extraction done so far can reach it.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "P01 re-pull + enhancement sources + TSTC",
+    "cite": "8 enhancements instantiate only YCL_FM_BR_EXCHANGE_RATE_BL; AVC, FI and PBC_POS_UPD also instantiate a personnel class; BAPI_EMPLOYEE_POST only the payroll class; TSTC gives YFM_FI_BR_COMP -> YFM_FI_COMPARE_INCLUDING_BR",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "ZFIX_EXCHANGERATE_AVC",
+   "ZFIX_EXCHANGERATE_FI",
+   "ZFIX_EXCHANGERATE_PBC_POS_UPD",
+   "ZFIX_BR_BAPI_EMPLOYEE_POST",
+   "YCL_FM_BR_PAYROLL_POSTING_BL",
+   "YCL_FM_BR_PBC_POSTING_BL",
+   "YFM_FI_BR_COMP",
+   "YFM_FI_COMPARE_INCLUDING_BR"
+  ],
+  "resolution_notes": "USER: the budget rate splits into non-personnel — the enhancements plus the report — and personnel, calculated in the HR payroll schema; and the GL control is transaction YFM_FI_BR_COMP.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "HCM"
+   ],
+   "module": [
+    "FM",
+    "FI",
+    "HR"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]

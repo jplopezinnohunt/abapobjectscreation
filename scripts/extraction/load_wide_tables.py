@@ -97,6 +97,10 @@ PLAN = {
     "FMIOI":      {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
                    "why": "FM commitments — re-pull with all fields for the EKBE baseline"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
+    # Loaded under a DIFFERENT golden name and swapped in one step at the end: bkpf is read
+    # by other processes and must never be visible half-replaced.
+    "BKPF_FULL":  {"partition": "GJAHR", "values": ["2024", "2025", "2026"], "sap_table": "BKPF",
+                   "why": "FI header with ALL fields — WWERT, the translation date, decides which rate a document used"},
     "FMIT":       {"partition": "RYEAR", "values": ["2024", "2025", "2026"],
                    "why": "FM TOTALS — the report leg the golden has never held"},
 }
@@ -125,6 +129,12 @@ class Session(object):
                 time.sleep(2 + attempt * 3)
                 self.c = get_connection("P01")
         raise RuntimeError("P01 unreachable after retries")
+
+
+def sap_name(t):
+    """The SAP table to READ. Lets a load land under a different golden name so a live
+    table is never left half-replaced — build beside it, swap once, atomically."""
+    return PLAN.get(t, {}).get("sap_table", t)
 
 
 def fields_of(s, table):
@@ -168,7 +178,7 @@ def parse(res):
 
 
 def read_table(s, table, plan):
-    fields = fields_of(s, table)
+    fields = fields_of(s, sap_name(table))
     if not fields:
         return None, "no readable fields", None
     groups, keys = chunks_for(fields)
@@ -180,7 +190,7 @@ def read_table(s, table, plan):
         for pv in parts:
             opt = ("%s = '%s'" % (plan["partition"], pv)) if pv else ""
             try:
-                res = s.call("RFC_READ_TABLE", QUERY_TABLE=table,
+                res = s.call("RFC_READ_TABLE", QUERY_TABLE=sap_name(table),
                              FIELDS=[{"FIELDNAME": f["name"]} for f in grp],
                              OPTIONS=([{"TEXT": opt}] if opt else []), ROWCOUNT=0)
             except Exception as e:
