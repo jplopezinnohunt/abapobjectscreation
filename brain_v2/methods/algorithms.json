@@ -478,6 +478,30 @@
    "the_state_that_is_not_empty": "FIELD_NOT_EXTRACTED and TABLE_NOT_EXTRACTED mean UNMEASURED. Reporting them as empty is a confident wrong answer, so they are a distinct state carrying the list of tables to re-pull",
    "failure_mode": "the first version matched only TABLE-FIELD and missed every field used in a WHERE clause without a prefix. ZZFIX_RATE, which gates the entire budget-rate mechanism, was absent from the first run — that absence is now the algorithm's self-test",
    "improve": "read DD03L from the system for the authoritative list rather than inferring existence from usage"
+  },
+  "A14_budget_rate_impact": {
+   "operates_on": "FM actuals crossed with FI and the rate tables",
+   "origin": "OURS, replicating THEIRS",
+   "state": "STRONG",
+   "does": "compute the budget-rate impact the way the organisation defines it — FM at the fixed rate minus the same base at the standard rate — by replicating the four baselines GET_BR_IMPACT selects between, and reporting per route rather than as one number",
+   "bound_in": [
+    "process_mining/br_impact.py"
+   ],
+   "writes": [
+    "brain_v2/br_impact.json",
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "fires_on": "whenever the budget-rate impact is asked for, and after any extraction that adds FI or rate data",
+   "why_it_matters": "the organisation already computes this in YFM_FI_COMPARE_INCLUDING_BR. Reconstructing the definition from outside when one exists is how two correct calculations disagree — so this mirrors their code",
+   "the_definition": "FINAL_DIFF = FKBTR - DMBTR - ZZAMOUNTBRDIFF (YCL_FM_FI_COMPARE_BL:709)",
+   "the_four_routes": [
+    "WRTTP 54 -> BSEG-DMBTR signed by SHKZG",
+    "WRTTP 51 + RMBE + BTART 0200 -> EKBE goods receipt, negated",
+    "KURSF when set — not the path in practice; the comparison is on AMOUNTS",
+    "otherwise rate type M at the posting date — the UN operational rate"
+   ],
+   "failure_mode": "quoting an impact computed from ONE route. Route 1 covers most LINES (8,825) and route 4 covers most MONEY (70.9M of 92.1M) — a route-1-only figure understates by roughly half. And a NEGATIVE rate in TCURR is an indirect quotation meaning DIVIDE: multiplying understates every line by about 1.3",
+   "improve": "implement route 2 against EKBE; the current perimeter has no population for it"
   }
  },
  "_portfolio": {
