@@ -96,6 +96,10 @@ PLAN = {
     # one budget-rate baseline we could not evaluate.
     "FMIOI":      {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
                    "why": "FM commitments — re-pull with all fields for the EKBE baseline"},
+    # HR organisational assignment. Feature YYCDR — the personnel budget-rate perimeter —
+    # is evaluated against PERSG, GSBER and WERKS on this infotype, and no HR table was in
+    # the golden at all.
+    "PA0001":     {"partition": None, "why": "HR org assignment — the fields feature YYCDR decides on"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
     # Loaded under a DIFFERENT golden name and swapped in one step at the end: bkpf is read
     # by other processes and must never be visible half-replaced.

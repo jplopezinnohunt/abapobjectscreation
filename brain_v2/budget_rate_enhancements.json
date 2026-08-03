@@ -984,7 +984,79 @@
     "evaluated_via": "CL_HRPA_FEATURE=>GET_VALUE with a PC205 built from PA0001 + the position",
     "in_scope_when": "the feature returns 'Y'",
     "maintained_in": "PE03 — a decision tree, per employee, per date",
-    "_contrast": "the non-personnel side has eight declared ranges evaluated per document; this has one decision tree evaluated per employee. They share nothing"
+    "_contrast": "the non-personnel side has eight declared ranges evaluated per document; this has one decision tree evaluated per employee. They share nothing",
+    "decoded": {
+     "_read_from": "/1PAPA/FEAT350YYCDR — SAP compiles every feature into a generated program",
+     "_why_that_matters": "T549B held nothing for this feature. The compiled program is the readable artefact, and a decision tree maintained in PE03 is therefore fully readable through RPY_PROGRAM_READ",
+     "levels": [
+      "PERSG (employee group)",
+      "GSBER (business area) — must be GEF",
+      "WERKS (personnel area)"
+     ],
+     "tree": {
+      "PERSG 1": {
+       "GEF": [
+        "BE00",
+        "DE00",
+        "FR00",
+        "IT00",
+        "NL00"
+       ]
+      },
+      "PERSG 2": {
+       "GEF": [
+        "BE00",
+        "DE00",
+        "FR00",
+        "IT00",
+        "NL00"
+       ]
+      },
+      "PERSG 3": {
+       "GEF": [
+        "DE00",
+        "FR00",
+        "IT00",
+        "NL00"
+       ],
+       "_excludes": "BE00"
+      },
+      "PERSG M": {
+       "GEF": [
+        "FR00"
+       ],
+       "_excludes": "BE00, DE00, IT00, NL00 — set blank explicitly"
+      }
+     },
+     "_the_shape": "euro-zone staff with two hand-cut exceptions: group 3 loses Belgium and group M keeps only France",
+     "population_measured": {
+      "in_scope": 2086,
+      "total_employees": 23747,
+      "pct": 8.8,
+      "by_group": {
+       "1": 1234,
+       "2": 777,
+       "M": 397
+      },
+      "by_personnel_area": {
+       "FR00": 2370,
+       "IT00": 21,
+       "BE00": 9,
+       "DE00": 8,
+       "NL00": 0
+      },
+      "_reading": "four of the five euro-zone areas carry almost nobody. In practice this is a Paris mechanism",
+      "why_NL00_is_zero": "not an unused branch — the Netherlands holds 7 current employees and NONE carries business area GEF; they are on PFF and MBF. The branch is reachable only for a combination absent from the data",
+      "population_vs_GEF_by_area": {
+       "FR00": "13,288 total / 2,531 with GEF",
+       "IT00": "358 / 21",
+       "DE00": "90 / 8",
+       "BE00": "39 / 8",
+       "NL00": "7 / 0"
+      },
+      "_what_actually_narrows_it": "GSBER = GEF. FR00 holds 13,288 employees in total and only 2,370 in-scope records, so the business area does the cutting, not the country list"
+     }
+    }
    },
    "the_conversion": {
     "designed": "CONVERT_TO_BUDGET_RATE: amount to EUR at rate type M (the operational rate), then that EUR amount to USD at rate type EURX",
