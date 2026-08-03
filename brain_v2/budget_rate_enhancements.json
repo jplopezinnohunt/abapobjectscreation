@@ -706,5 +706,224 @@
    "_note": "the report aggregates 'X' and 'E' separately, so a line that cannot be evaluated is reported apart rather than counted as zero impact"
   },
   "_what_it_says_about_our_measurement": "the -1,223,730.83 USD figure compared FKBTR against DMBTR, which is route 1 exactly. Correct for WRTTP '54' actuals; not correct for PO reductions or for lines carrying their own KURSF. The figure holds for the actuals population and the other three routes are needed for the rest — and the organisation already implements all four"
+ },
+ "the_twelve_moments": {
+  "_what_this_is": "WHERE the budget rate hooks into SAP and WHEN it fires. The conditions were already known; this is the other half — the moments. Read from the enhancement sources themselves, extracted from P01.",
+  "_how_they_were_read": "an ENHO has no program of its own: its source lives in a GENERATED INCLUDE named <ENHNAME> padded to 30 characters with '=' then 'E'. ENHOBJ gives the hooked object and ENHINCINX gives the include. Once the include name is right, RPY_PROGRAM_READ reads it like any program — the extractor had been skipping ENHO as unreadable.",
+  "_the_finding_that_matters_most": "NO TWO CALL SITES PASS THE SAME SET OF CONDITIONS, and every unpassed parameter SKIPS its check. So the perimeter is not one perimeter — it is twelve, one per moment. The extreme case is REVALUATION, which passes ONLY the fund type: at that moment there is no currency restriction, no business area, no commitment item and no business transaction. The EUR-only limit that shapes everything else does not apply there.",
+  "_the_staff_path_is_separate": "PBC position update and employee expense posting do not use the main perimeter at all. They gate through YCL_FM_BR_PBC_POSTING_BL and YCL_FM_BR_PAYROLL_POSTING_BL, on PERNR, and convert through CONVERT_TO_CURRENCY_2.",
+  "moments": [
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_NEW_ITEM",
+    "lines": 237,
+    "hooks_into": "SAPLFMOI",
+    "sap_object": "FUGR FMOI — FM open items",
+    "moment": "a NEW COMMITMENT LINE is created",
+    "gate": "CHECK_CONDITIONS, and CHECK_CONDITIONS_2 for the staff path",
+    "passes": [
+     "RLDNR",
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "C_F_FMOI-BUDAT"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_AVC",
+    "lines": 65,
+    "hooks_into": "SAPLFMFC",
+    "sap_object": "FUGR FMFC — FM_FUNDS_CHECK_FI and FM_FUNDS_CHECK_OI",
+    "moment": "THE AVAILABILITY CHECK, before the posting is allowed",
+    "gate": "CHECK_CONDITIONS, twice — once over FMIOI, once over FMIFIIT",
+    "passes": [
+     "RLDNR",
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "FMIOI-BUDAT for commitments, FMIFIIT-PSOBT for actuals",
+    "_why_it_matters": "the rate is applied BEFORE availability is decided, so the fixed rate is what the budget check sees — not a later reporting adjustment"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_FI",
+    "lines": 147,
+    "hooks_into": "SAPLFMRI",
+    "sap_object": "FUGR FMRI — the FI to FM interface",
+    "moment": "the FI POSTING reaches FM",
+    "gate": "CHECK_CONDITIONS, then CHECK_CONDITIONS_2 for the staff path",
+    "passes": [
+     "RLDNR",
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "LS_FMIFIHD-BUDAT",
+    "_also": "calls YCL_FM_BR_PAYROLL_POSTING_BL->GET_ACCOUNT_LINE for the staff branch"
+   },
+   {
+    "enhancement": "ZFIX_EF_FUND_RESERVATION",
+    "lines": 117,
+    "hooks_into": "FMR3_FILL_KBFM_FROM_KBLX and FMR3_UPDATE_KBLKPW_FROM_KBLD",
+    "sap_object": "FUGR FMR3 — earmarked funds",
+    "moment": "A FUND RESERVATION is created or updated",
+    "gate": "CHECK_CONDITIONS, and CHECK_CONDITIONS_3 for the complement",
+    "passes": [
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "T_KBLK-BUDAT",
+    "_why_it_matters": "fund reservations are the mechanism the organisation uses to hold funds and adjust them month by month rather than release them"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_FUNDBLOCK",
+    "lines": 59,
+    "hooks_into": "SAPLFMFR",
+    "sap_object": "FUGR FMFR — funds blocking",
+    "moment": "a FUND BLOCK is set",
+    "gate": "CHECK_CONDITIONS, twice",
+    "passes": [
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "KBLD-BUDAT"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_KBLEW",
+    "lines": 133,
+    "hooks_into": "CL_FM_EF_POSITION",
+    "sap_object": "CLAS CL_FM_EF_POSITION",
+    "moment": "an EARMARKED-FUNDS REDUCTION is posted (KBLE)",
+    "gate": "CHECK_CONDITIONS, then CHECK_CONDITIONS_2",
+    "passes": [
+     "BUKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "I_F_REFERENCE-BUDAT",
+    "_note": "FIKRS is not passed — it is DERIVED inside, via GET_FM_AREA_FROM_COMPANY_CODE( IV_BUKRS )"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_CHECK_CONS",
+    "lines": 119,
+    "hooks_into": "CL_FM_EF_POSITION",
+    "sap_object": "CLAS CL_FM_EF_POSITION",
+    "moment": "the CONSISTENCY CHECK on an earmarked-funds document",
+    "gate": "CHECK_CONDITIONS, then CHECK_CONDITIONS_2",
+    "passes": [
+     "BUKRS",
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "REF-BUDAT"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_PAYCOMMIT",
+    "lines": 108,
+    "hooks_into": "SAPLFMR_AD2",
+    "sap_object": "FUGR FMR_AD2",
+    "moment": "the PAYMENT COMMITMENT is written",
+    "gate": "CHECK_CONDITIONS, then CHECK_CONDITIONS_2",
+    "passes": [
+     "RLDNR",
+     "FIKRS",
+     "GSBER",
+     "WAERS",
+     "FIPEX",
+     "VRGNG",
+     "FTYPE"
+    ],
+    "converts_on": "REFTAB-BUDAT",
+    "_note": "in the staff branch IV_FIPEX is COMMENTED OUT, so the commitment-item condition is skipped there"
+   },
+   {
+    "enhancement": "ZFIX_EXCHANGERATE_PBC_POS_UPD",
+    "lines": 83,
+    "hooks_into": "CL_HRFPM_CD_PBC_UPDATE",
+    "sap_object": "CLAS CL_HRFPM_CD_PBC_UPDATE",
+    "moment": "a PBC POSITION is updated — the payroll commitment engine",
+    "gate": "A DIFFERENT CLASS: YCL_FM_BR_PBC_POSTING->CHECK_CONDITIONS( IV_PERNR )",
+    "passes": [
+     "PERNR",
+     "WAERS"
+    ],
+    "converts_on": "CS_POS-DUE_DATE, through CONVERT_TO_CURRENCY_2",
+    "_why_it_matters": "the staff path does not use the main perimeter at all — it gates on the PERSONNEL NUMBER and converts through a second method"
+   },
+   {
+    "enhancement": "ZFIX_BR_BAPI_EMPLOYEE_POST",
+    "lines": 6,
+    "hooks_into": "BAPI_ACC_EMPLOYEE_EXP_POST",
+    "sap_object": "FUGR ACC4",
+    "moment": "an EMPLOYEE EXPENSE is posted through the BAPI",
+    "gate": "YCL_FM_BR_PAYROLL_POSTING_BL=>GET_INSTANCE — the payroll class",
+    "passes": [],
+    "converts_on": null,
+    "_note": "six lines: it only instantiates the payroll class, which holds the logic"
+   },
+   {
+    "enhancement": "ZFIX_BR_REVALUATION",
+    "lines": 49,
+    "hooks_into": "LFMOIF0M and LFMOIF1C",
+    "sap_object": "FUGR FMOI",
+    "moment": "REVALUATION of commitments",
+    "gate": "CHECK_BR_IS_ACTIVE, then CHECK_CONDITIONS",
+    "passes": [
+     "FTYPE"
+    ],
+    "converts_on": null,
+    "_THE_WIDEST_GATE": "ONLY the fund type is passed. Currency, business area, commitment item, business transaction and ledger are ALL SKIPPED, because an unpassed parameter skips its check. At revaluation the perimeter is fund type alone — the widest gate in the whole solution"
+   },
+   {
+    "enhancement": "ZFIX_BR_REVAL_RESFUND",
+    "lines": 31,
+    "hooks_into": "RFFMBW00",
+    "sap_object": "PROG RFFMBW00",
+    "moment": "REVALUATION OF RESERVED FUNDS",
+    "gate": "CHECK_CONDITIONS_3 — the complement gate",
+    "passes": [
+     "FTYPE"
+    ],
+    "converts_on": null,
+    "_note": "same as the revaluation above: fund type only, and through the INVERTED gate"
+   }
+  ],
+  "_coverage_of_the_fm_lifecycle": [
+   "commitment created            ZFIX_EXCHANGERATE_NEW_ITEM",
+   "availability checked          ZFIX_EXCHANGERATE_AVC",
+   "fund reserved                 ZFIX_EF_FUND_RESERVATION",
+   "fund blocked                  ZFIX_EXCHANGERATE_FUNDBLOCK",
+   "earmarked funds reduced       ZFIX_EXCHANGERATE_KBLEW",
+   "earmarked funds checked       ZFIX_EXCHANGERATE_CHECK_CONS",
+   "payment commitment written    ZFIX_EXCHANGERATE_PAYCOMMIT",
+   "FI posting reaches FM         ZFIX_EXCHANGERATE_FI",
+   "payroll position updated      ZFIX_EXCHANGERATE_PBC_POS_UPD",
+   "employee expense posted       ZFIX_BR_BAPI_EMPLOYEE_POST",
+   "commitments revalued          ZFIX_BR_REVALUATION",
+   "reserved funds revalued       ZFIX_BR_REVAL_RESFUND"
+  ]
  }
 }
