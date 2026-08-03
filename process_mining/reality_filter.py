@@ -238,8 +238,16 @@ def dormant_sweep(cx, p):
             name = c[1].upper()
             if not name.startswith(CUSTOM_COL):
                 continue
-            filled = q1(cx, 'select count(*) from "%s" where trim("%s")<>\'\' '
-                            'and "%s" is not null' % (t, c[1], c[1]))
+            # A NUMERIC CUSTOM FIELD IS NEVER BLANK. It defaults to zero, so trim(col)<>''
+            # reports it as filled and the sweep silently understates dormancy — measured on
+            # PRPS: YYE_PRCTO looked 100% filled and is 0.45% real, 60,021 of its 60,292
+            # values being '0.00'. The empty value of a field depends on its TYPE, and using
+            # one test for every type is how a dormant field passes as a live one.
+            # trim(X,'0.') strips zeros and dots from both ends, so '0.00' and '00000000'
+            # collapse to empty while '7.00' keeps its 7 and 'X' keeps its X. One expression,
+            # both kinds of empty.
+            filled = q1(cx, 'select count(*) from "%s" where "%s" is not null '
+                            "and trim(trim(\"%s\"),'0.')<>''" % (t, c[1], c[1]))
             cols.append({"table": t, "column": c[1], "rows": n, "filled": filled,
                          "pct": round(100.0 * filled / n, 2) if n else 0.0,
                          "state": "EMPTY" if not filled else
