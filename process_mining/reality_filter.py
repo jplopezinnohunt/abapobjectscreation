@@ -195,6 +195,68 @@ def backward_flag(cx, p):
     return out
 
 
+CUSTOM_COL = ("ZZ", "YY")
+CUSTOM_TAB = ("Y", "Z", "T9")
+
+
+def dormant_sweep(cx, p):
+    """Every custom COLUMN and custom TABLE the golden holds, and whether anything is in it.
+
+    THE DIRECTION MATTERS, and it is why this is not A13 again. A13 harvests custom fields
+    FROM SOURCE — it finds a field because some program mentions it. That misses the field
+    that exists in the dictionary and is referenced in no extracted program, which is
+    precisely the interesting case: PPOIX carries four ZZSUBST_* columns and A13 reported
+    zero empty fields, because none of them appears in any source we hold.
+
+    This pass goes the other way: read what the tables ACTUALLY have, and measure fill. It
+    cannot say what a field is FOR — only source can — but it cannot miss one either.
+
+    WHY EMPTY IS THE POINT. A custom field is an extension point somebody already fought
+    for: it exists, it survived the upgrades, and it sits in the table a new design would
+    write to. An empty one is a slot with a name and a type, waiting. Rebuilding it is
+    waste; colliding with it is worse.
+    """
+    tabs = [r[0] for r in cx.execute(
+        "select name from sqlite_master where type='table' order by name")]
+    cols, tables, empty_tabs = [], 0, []
+    for t in tabs:
+        if t.startswith("sqlite_") or t.endswith("__loading"):
+            continue
+        try:
+            info = cx.execute('pragma table_info("%s")' % t).fetchall()
+            n = q1(cx, 'select count(*) from "%s"' % t)
+        except sqlite3.Error:
+            continue
+        tables += 1
+        up = t.upper()
+        if up.startswith(CUSTOM_TAB) and (n or 0) <= (p.get("tiny") or 2):
+            empty_tabs.append({"table": t, "rows": n,
+                               "_reading": "a custom table built and holding nothing"})
+        if not n:
+            continue
+        for c in info:
+            name = c[1].upper()
+            if not name.startswith(CUSTOM_COL):
+                continue
+            filled = q1(cx, 'select count(*) from "%s" where trim("%s")<>\'\' '
+                            'and "%s" is not null' % (t, c[1], c[1]))
+            cols.append({"table": t, "column": c[1], "rows": n, "filled": filled,
+                         "pct": round(100.0 * filled / n, 2) if n else 0.0,
+                         "state": "EMPTY" if not filled else
+                                  ("SPARSE" if filled * 100.0 / n < 1 else "IN USE")})
+    by = collections.Counter(c["state"] for c in cols)
+    return {"tables_scanned": tables, "custom_columns": len(cols), "by_state": dict(by),
+            "empty_custom_tables": empty_tabs,
+            "columns": sorted(cols, key=lambda x: (x["state"], -x["rows"])),
+            "_caveat": ("this measures what the GOLDEN holds. A column empty here may be "
+                        "populated in a period or company code we have not extracted — it is "
+                        "'empty in what we hold', which is a weaker claim than 'never used'"),
+            "_why_it_is_not_A13": ("A13 finds custom fields from SOURCE and therefore cannot "
+                                   "see one that no extracted program mentions. This finds them "
+                                   "from the dictionary and cannot say what they are FOR. The "
+                                   "two are complements, not duplicates")}
+
+
 def forward(cx, p):
     """Which configured entries never appear in a document — designed but dormant."""
     cfg, ck, doc, dk = p["config"], p["config_key"], p["document"], p["document_key"]
@@ -280,6 +342,21 @@ def main(argv):
               % (p["config"], r["configured"], r["dormant"], r["pct_dormant"],
                  ", ".join(r["examples"][:6])))
         print("      ventana: %s" % r["_window"])
+
+    if spec.get("dormant_sweep") is not False:
+        d = dormant_sweep(cx, spec.get("dormant_sweep") or {})
+        rep["dormant_sweep"] = d
+        print("\nCAPACIDAD CONSTRUIDA Y NO EJERCIDA — barrido por diccionario")
+        print("   %d tablas barridas, %d columnas custom: %s"
+              % (d["tables_scanned"], d["custom_columns"], d["by_state"]))
+        for c in d["columns"]:
+            if c["state"] in ("EMPTY", "SPARSE"):
+                print("      %-7s %-20s %-22s %d de %d (%s%%)"
+                      % (c["state"], c["table"], c["column"], c["filled"], c["rows"], c["pct"]))
+        if d["empty_custom_tables"]:
+            print("   tablas custom vacias o casi:")
+            for t in d["empty_custom_tables"]:
+                print("      %-24s %s filas" % (t["table"], t["rows"]))
 
     out = argv[argv.index("--out") + 1] if "--out" in argv else \
         os.path.join(ROOT, "brain_v2", "reality_filter.json")
