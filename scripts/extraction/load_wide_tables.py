@@ -100,6 +100,26 @@ PLAN = {
     # is evaluated against PERSG, GSBER and WERKS on this infotype, and no HR table was in
     # the golden at all.
     "PA0001":     {"partition": None, "why": "HR org assignment — the fields feature YYCDR decides on"},
+    # The transport record at source. cts_transports was built without as4text, and the
+    # text is what says WHY a transport exists — the difference between a fix and a data move.
+    "E070":       {"partition": None, "why": "transport headers — status, type, owner, date"},
+    "E07T":       {"partition": None, "why": "transport TEXTS — the field cts_transports left empty"},
+    # THE PAYROLL CALCULATION LAYER. Read live this session and not persisted — which meant
+    # every payroll question needed a live P01 connection. This is the layer that computes
+    # staff cost and none of it was held.
+    "T52C0":      {"partition": None, "why": "payroll schema steps — the engine"},
+    "T52C1":      {"partition": None, "why": "client-specific schemas, >30 custom"},
+    "T52C5":      {"partition": None, "why": "payroll RULE lines — 166,453 of them"},
+    "T512T":      {"partition": None, "why": "wage-type texts — where BR for Staff surfaced"},
+    "T512W":      {"partition": None, "why": "wage-type processing classes"},
+    "T549D":      {"partition": None, "why": "feature directory — each compiles to a readable program"},
+    "T549B":      {"partition": None, "why": "feature decision-tree nodes"},
+    "T52EL":      {"partition": None, "why": "wage type to symbolic account — measured EMPTY for UN"},
+    "T52EK":      {"partition": None, "why": "symbolic account to transaction key — measured EMPTY"},
+    # The enhancement registry: what is hooked where. Read live to find the ZFIX family.
+    "ENHOBJ":     {"partition": None, "why": "enhancement to hooked object"},
+    "ENHINCINX":  {"partition": None, "why": "enhancement to its generated include"},
+    "TSTC":       {"partition": None, "why": "transaction to program — resolves a tcode to what it runs"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
     # Loaded under a DIFFERENT golden name and swapped in one step at the end: bkpf is read
     # by other processes and must never be visible half-replaced.
