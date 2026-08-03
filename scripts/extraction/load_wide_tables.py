@@ -115,6 +115,8 @@ PLAN = {
     "T549D":      {"partition": None, "why": "feature directory — each compiles to a readable program"},
     "T549B":      {"partition": None, "why": "feature decision-tree nodes"},
     "T52EL":      {"partition": None, "why": "wage type to symbolic account — measured EMPTY for UN"},
+    "T030B":      {"partition": None, "why": "payroll account determination — symbolic account to GL, the last link"},
+    "T52EZ":      {"partition": None, "why": "payroll posting: symbolic account by employee grouping"},
     "T52EK":      {"partition": None, "why": "symbolic account to transaction key — measured EMPTY"},
     # The enhancement registry: what is hooked where. Read live to find the ZFIX family.
     "ENHOBJ":     {"partition": None, "why": "enhancement to hooked object"},
