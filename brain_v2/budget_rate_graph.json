@@ -1,0 +1,337 @@
+{
+ "_algorithm": "A15 build_br_graph.py",
+ "_what_it_is": "the RELATION between the pieces of the budget rate. Every node points at where its content lives; the graph carries only the edges and the evidence for them",
+ "_why_edges": "a conclusion with no edges is prose with a JSON wrapper. The edges are what let 'what does the availability check depend on' be answered mechanically",
+ "nodes": [
+  {
+   "id": "MECHANISM_NON_PERSONNEL",
+   "kind": "MECHANISM",
+   "what": "the budget rate for non-personnel cost: enhancements plus the control report",
+   "content_in": "budget_rate_enhancements.json",
+   "content_resolves": true,
+   "degree": 5
+  },
+  {
+   "id": "MECHANISM_PERSONNEL",
+   "kind": "MECHANISM",
+   "what": "the budget rate for staff cost, computed in the PAYROLL ENGINE — in the calculation schema, in its codifications",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel",
+   "status": "LARGELY UNMEASURED — the schema is not ABAP source and has not been read",
+   "content_resolves": true,
+   "degree": 5
+  },
+  {
+   "id": "RATE_EURX",
+   "kind": "CONFIGURATION",
+   "what": "exchange rate type EURX, 60 entries; USD/EUR = 1.09529 from 2024-01-01",
+   "content_in": "budget_rate_enhancements.json .the_rate_type",
+   "content_resolves": true,
+   "degree": 4
+  },
+  {
+   "id": "RATE_M_UNORE",
+   "kind": "CONFIGURATION",
+   "what": "rate type M — the UN operational rate, the moving baseline",
+   "content_in": "budget_rate_enhancements.json .the_rate_type._what_1_09529_actually_is",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "PERIMETER_8_RANGES",
+   "kind": "RULE",
+   "what": "eight conditions in YCL_FM_BR_EXCHANGE_RATE_BL, each SKIPPED when its parameter arrives empty",
+   "content_in": "budget_rate_enhancements.json .the_exact_perimeter",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "PERIMETER_FEATURE_YYCDR",
+   "kind": "RULE",
+   "what": "the personnel gate: HR feature YYCDR evaluated per employee against PA0001",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_gate",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "TWELVE_MOMENTS",
+   "kind": "BEHAVIOUR",
+   "what": "the twelve points in the FM lifecycle where the rate is applied",
+   "content_in": "budget_rate_enhancements.json .the_twelve_moments",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "MOMENT_AVAILABILITY_CHECK",
+   "kind": "BEHAVIOUR",
+   "what": "the rate is applied INSIDE FM_FUNDS_CHECK, before availability is decided",
+   "content_in": "budget_rate_enhancements.json .the_twelve_moments.moments[1]",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "CONTROL_REPORT",
+   "kind": "CONTROL",
+   "what": "transaction YFM_FI_BR_COMP running YFM_FI_COMPARE_INCLUDING_BR; FINAL_DIFF = FKBTR - DMBTR - ZZAMOUNTBRDIFF",
+   "content_in": "budget_rate_enhancements.json .the_control_report",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "FOUR_BASELINES",
+   "kind": "RULE",
+   "what": "the four routes GET_BR_IMPACT selects between to value the standard side",
+   "content_in": "budget_rate_enhancements.json .the_control_report.the_four_baselines_in_GET_BR_IMPACT",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "IMPACT_FIGURE",
+   "kind": "MEASUREMENT",
+   "what": "-2,365,688.44 USD over 11,179 financial-posting lines",
+   "content_in": "brain_v2/br_impact.json",
+   "content_resolves": true,
+   "degree": 3
+  },
+  {
+   "id": "ALGORITHM_A14",
+   "kind": "ALGORITHM",
+   "what": "br_impact.py — replicates the organisation's own baselines",
+   "content_in": "process_mining/br_impact.py",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "COMMITMENTS_NOT_COMPARABLE",
+   "kind": "CONSTRAINT",
+   "what": "SAP recalculates commitments, so no impact can be differenced on that side",
+   "content_in": "budget_rate_enhancements.json .the_impact._SCOPE_CORRECTION_s098",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "TRACE_TABLES",
+   "kind": "DATA",
+   "what": "YTFM_BR_* — the control tables; the actuals one holds 12,852 rows and the position one holds zero",
+   "content_in": "budget_rate_enhancements.json .measured_effect",
+   "content_resolves": true,
+   "degree": 2
+  },
+  {
+   "id": "DEFECT_MR_WAERS",
+   "kind": "DEFECT",
+   "what": "the main gate accepts EUR only while the staff gate accepting USD is unreachable",
+   "content_in": "claims 412 and the incident record",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "DEFECT_MR_HKONT",
+   "kind": "DEFECT",
+   "what": "MR_HKONT declared and never populated, so the staff gate fails whenever a GL account is passed",
+   "content_in": "AN-BR-HKONT-EMPTY-RANGE",
+   "content_resolves": true,
+   "degree": 1
+  },
+  {
+   "id": "DEAD_CODE_PBC_CONVERSION",
+   "kind": "DEFECT",
+   "what": "the personnel two-step conversion is fully implemented behind IF 1 = 2",
+   "content_in": "budget_rate_enhancements.json ._THE_TWO_MECHANISMS.personnel.the_conversion",
+   "content_resolves": true,
+   "degree": 2
+  }
+ ],
+ "edges": [
+  {
+   "from": "MECHANISM_NON_PERSONNEL",
+   "rel": "USES",
+   "to": "RATE_EURX",
+   "why": "CONVERT_TO_CURRENCY reads rate type EURX"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "USES",
+   "to": "RATE_EURX",
+   "why": "the designed two-step conversion ends on EURX — the one thing the two mechanisms share"
+  },
+  {
+   "from": "MECHANISM_NON_PERSONNEL",
+   "rel": "GATED_BY",
+   "to": "PERIMETER_8_RANGES",
+   "why": "CHECK_CONDITIONS"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "GATED_BY",
+   "to": "PERIMETER_FEATURE_YYCDR",
+   "why": "CL_HRPA_FEATURE=>GET_VALUE, per employee, per date"
+  },
+  {
+   "from": "PERIMETER_8_RANGES",
+   "rel": "APPLIED_AT",
+   "to": "TWELVE_MOMENTS",
+   "why": "each moment supplies its own subset, and an unsupplied condition is skipped"
+  },
+  {
+   "from": "TWELVE_MOMENTS",
+   "rel": "INCLUDES",
+   "to": "MOMENT_AVAILABILITY_CHECK",
+   "why": "moment 2 of 12"
+  },
+  {
+   "from": "MOMENT_AVAILABILITY_CHECK",
+   "rel": "CHANGES_WHAT_IS_ALLOWED",
+   "to": "MECHANISM_NON_PERSONNEL",
+   "why": "the rate is applied before availability is decided, so it is not a reporting adjustment"
+  },
+  {
+   "from": "RATE_EURX",
+   "rel": "IS_A_FROZEN_SNAPSHOT_OF",
+   "to": "RATE_M_UNORE",
+   "why": "1.09529 is the operational rate in force at the start of the biennium"
+  },
+  {
+   "from": "RATE_EURX",
+   "rel": "COINCIDES_WITH",
+   "to": "RATE_M_UNORE",
+   "why": "twice in 2024 — 15 January and 15 August — which is why the 2024 impact is exactly zero"
+  },
+  {
+   "from": "CONTROL_REPORT",
+   "rel": "DEFINES",
+   "to": "IMPACT_FIGURE",
+   "why": "FINAL_DIFF nets the budget-rate part out; the residual is the real break"
+  },
+  {
+   "from": "CONTROL_REPORT",
+   "rel": "SPECIFIES",
+   "to": "FOUR_BASELINES",
+   "why": "GET_BR_IMPACT chooses by value type"
+  },
+  {
+   "from": "ALGORITHM_A14",
+   "rel": "REPLICATES",
+   "to": "FOUR_BASELINES",
+   "why": "rather than reconstructing a definition the organisation already has"
+  },
+  {
+   "from": "ALGORITHM_A14",
+   "rel": "PRODUCES",
+   "to": "IMPACT_FIGURE",
+   "why": "brain_v2/br_impact.json"
+  },
+  {
+   "from": "COMMITMENTS_NOT_COMPARABLE",
+   "rel": "BOUNDS",
+   "to": "IMPACT_FIGURE",
+   "why": "the figure covers financial postings only; the commitment side has no stable counterpart"
+  },
+  {
+   "from": "MECHANISM_NON_PERSONNEL",
+   "rel": "WRITES",
+   "to": "TRACE_TABLES",
+   "why": "the YTFM_BR_* control tables"
+  },
+  {
+   "from": "TRACE_TABLES",
+   "rel": "EVIDENCES",
+   "to": "DEAD_CODE_PBC_CONVERSION",
+   "why": "YTFM_BR_FM_POS holds zero rows, consistent with the guarded branch not running"
+  },
+  {
+   "from": "DEFECT_MR_WAERS",
+   "rel": "LIMITS",
+   "to": "MECHANISM_NON_PERSONNEL",
+   "why": "EUR is 20.7% of the ledger; USD, at 52.7%, is outside the main path"
+  },
+  {
+   "from": "DEFECT_MR_HKONT",
+   "rel": "BLOCKS",
+   "to": "MECHANISM_PERSONNEL",
+   "why": "the staff gate is the only one accepting USD and it fails on an empty range"
+  },
+  {
+   "from": "DEAD_CODE_PBC_CONVERSION",
+   "rel": "BLOCKS",
+   "to": "MECHANISM_PERSONNEL",
+   "why": "both call sites sit inside IF 1 = 2"
+  },
+  {
+   "from": "MECHANISM_PERSONNEL",
+   "rel": "COMPUTED_IN",
+   "to": "MECHANISM_PERSONNEL",
+   "why": "the payroll engine's calculation schema, in its codifications — not in ABAP"
+  }
+ ],
+ "summary": {
+  "nodes": 17,
+  "edges": 20,
+  "by_kind": {
+   "MECHANISM": 2,
+   "CONFIGURATION": 2,
+   "RULE": 3,
+   "BEHAVIOUR": 2,
+   "CONTROL": 1,
+   "MEASUREMENT": 1,
+   "ALGORITHM": 1,
+   "CONSTRAINT": 1,
+   "DATA": 1,
+   "DEFECT": 3
+  },
+  "orphan_nodes": [],
+  "dangling_edges": [],
+  "nodes_with_unresolved_content": [],
+  "claims_on_this_subject": [
+   44,
+   45,
+   46,
+   141,
+   147,
+   306,
+   411,
+   412,
+   413,
+   431,
+   432,
+   435,
+   436,
+   437,
+   438,
+   439,
+   440,
+   441,
+   442,
+   443,
+   444,
+   445,
+   446,
+   447,
+   448,
+   449,
+   450
+  ],
+  "most_connected": [
+   [
+    5,
+    "MECHANISM_PERSONNEL"
+   ],
+   [
+    5,
+    "MECHANISM_NON_PERSONNEL"
+   ],
+   [
+    4,
+    "RATE_EURX"
+   ],
+   [
+    3,
+    "IMPACT_FIGURE"
+   ],
+   [
+    2,
+    "TWELVE_MOMENTS"
+   ]
+  ]
+ },
+ "_the_shape_it_reveals": "two sibling mechanisms sharing exactly one thing — the rate type. Everything else differs: the gate is eight ranges on one side and an HR feature on the other, the moments are twelve on one side and a payroll schema on the other, and only one of the two has a measurable impact. Three of the four DEFECT nodes point at the personnel side, and it is the side that has never been measured."
+}

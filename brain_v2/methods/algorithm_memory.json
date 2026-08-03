@@ -471,6 +471,37 @@
    "implication": "never derive a document's exchange rate from BUDAT. Use WWERT when present, then KURSF when the document carries its own rate",
    "confidence": "MEASURED",
    "session": 98
+  },
+  {
+   "subject": "YYCDR",
+   "kind": "CARRIER",
+   "fact": "the personnel budget-rate perimeter is an HR FEATURE, YYCDR, evaluated per employee per date against PA0001 — not a set of ranges",
+   "learned_by": "A9_business_rules",
+   "evidence": "YCL_FM_BR_PBC_POSTING_BL::CHECK_CONDITIONS calls CL_HRPA_FEATURE=>GET_VALUE",
+   "implication": "a perimeter can live in a decision tree maintained in PE03, invisible to any code or table search. When a gate looks absent from the source, look for a feature",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_disabled_code",
+   "kind": "TRAP",
+   "fact": "IF 1 = 2 is a live switch: the two-step personnel conversion is fully implemented and unreachable, and reading the class alone would report it as the mechanism",
+   "learned_by": "A9_business_rules",
+   "evidence": "ZFIX_EXCHANGERATE_PBC_POS_UPD lines 42-54 wrap both CONVERT_TO_BUDGET_RATE calls",
+   "implication": "never describe a method as the mechanism without checking that its call sites are reachable. Grep the call site for IF 1 = 2, CHECK abap_false and commented blocks before believing the class",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "budget rate graph",
+   "kind": "CARRIER",
+   "fact": "17 subjects related by 20 typed edges; 27 claims on the subject",
+   "learned_by": "A15_br_graph",
+   "evidence": "brain_v2/budget_rate_graph.json",
+   "implication": "ask the graph before re-deriving: the relation between perimeter, moments, rate type and control is recorded, not remembered",
+   "confidence": "MEASURED",
+   "session": 98,
+   "supersedes_earlier_run": true
   }
  ]
 }

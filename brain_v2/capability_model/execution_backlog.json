@@ -933,10 +933,31 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "PARTLY DONE s098",
    "task": "The budget rate's PERSONNEL side is computed in the HR PAYROLL SCHEMA and nothing extracted so far reaches it — the enhancements only show the seam, through YCL_FM_BR_PAYROLL_POSTING_BL and YCL_FM_BR_PBC_POSTING_BL. Read the payroll schema and its rules to find where the fixed rate is applied to staff cost, and establish whether its perimeter matches the non-personnel one or differs.",
    "method": "read the schema and PCRs via T52C0/T52C5 and the HR schema tables, then trace how the result reaches YCL_FM_BR_PAYROLL_POSTING_BL",
-   "why_it_matters": "half the mechanism is unmeasured, and staff cost is the largest single category of the organisation's spend"
+   "why_it_matters": "half the mechanism is unmeasured, and staff cost is the largest single category of the organisation's spend",
+   "result": "the GATE is HR feature YYCDR evaluated against PA0001, not a range. The two-step conversion (M to EUR, then EURX to USD) exists and is DEAD CODE behind IF 1 = 2. What runs is CONVERT_TO_CURRENCY_2 under WAERS='USD'. The trace table YTFM_BR_FM_POS is empty. The payroll SCHEMA itself is still unread."
+  },
+  {
+   "id": "AN-BR-YYCDR-FEATURE",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Feature YYCDR decides which personnel numbers are in budget-rate scope. Read its decision tree — T549B/T549D and the feature's structure — and measure how many employees it returns 'Y' for. That IS the personnel perimeter, and it is currently unknown.",
+   "method": "read the feature definition, then evaluate its fields against PA0001 in the golden",
+   "why_it_matters": "the non-personnel perimeter is 8 declared ranges; this one is undocumented"
+  },
+  {
+   "id": "AN-BR-PBC-PATH-ALIVE",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "The PBC budget-rate path writes its before/after trace through Y_FM_UPDATE_BR_FM_POS into YTFM_BR_FM_POS, and that table holds ZERO rows. Separate the two possible causes: the guarded branch is never reached (no PBC position in USD passing feature YYCDR), or the update task is not landing. The first is a scope fact, the second is a defect.",
+   "method": "count PBC positions by currency and cross against the feature's population",
+   "why_it_matters": "an empty trace on a live mechanism and on a dormant one look identical"
   }
  ],
  "research_tasks_followups": [

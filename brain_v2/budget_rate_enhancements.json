@@ -977,7 +977,27 @@
     "ZFIX_EXCHANGERATE_PBC_POS_UPD via YCL_FM_BR_PBC_POSTING_BL",
     "the staff branches of AVC and FI"
    ],
-   "_not_yet_reached": "a payroll schema is not ABAP source and none of the extraction done so far can read it"
+   "_not_yet_reached": "a payroll schema is not ABAP source and none of the extraction done so far can read it",
+   "the_gate": {
+    "mechanism": "an HR FEATURE, not a range",
+    "feature": "YYCDR",
+    "evaluated_via": "CL_HRPA_FEATURE=>GET_VALUE with a PC205 built from PA0001 + the position",
+    "in_scope_when": "the feature returns 'Y'",
+    "maintained_in": "PE03 — a decision tree, per employee, per date",
+    "_contrast": "the non-personnel side has eight declared ranges evaluated per document; this has one decision tree evaluated per employee. They share nothing"
+   },
+   "the_conversion": {
+    "designed": "CONVERT_TO_BUDGET_RATE: amount to EUR at rate type M (the operational rate), then that EUR amount to USD at rate type EURX",
+    "STATUS": "DEAD CODE — both call sites sit inside IF 1 = 2 in ZFIX_EXCHANGERATE_PBC_POS_UPD",
+    "what_runs_instead": "CONVERT_TO_CURRENCY_2 on YCL_FM_BR_EXCHANGE_RATE_BL, guarded by IF CS_POS-WAERS = 'USD'",
+    "the_comment_that_explains_it": "ALL PBC Documents are in USD. Even if postings are in EUR.",
+    "the_trace": {
+     "function": "Y_FM_UPDATE_BR_FM_POS IN UPDATE TASK",
+     "table": "YTFM_BR_FM_POS",
+     "rows_measured": 0,
+     "_reading": "consistent with the path being largely switched off, though 'not reached' and 'not landing' have not been separated"
+    }
+   }
   },
   "the_control": {
    "transaction": "YFM_FI_BR_COMP",

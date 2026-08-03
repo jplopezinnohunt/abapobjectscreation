@@ -19623,5 +19623,49 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 450,
+  "claim": "THE PERSONNEL SIDE OF THE BUDGET RATE IS GATED BY AN HR FEATURE, AND ITS TWO-STEP CONVERSION IS DEAD CODE (s098, AN-BR-PERSONNEL-PAYROLL-SCHEMA, first pass). THE GATE IS NOT A PERIMETER — IT IS A DECISION TREE. YCL_FM_BR_PBC_POSTING_BL:: CHECK_CONDITIONS reads PA0001, the employee's organisational assignment valid on the position's DUE_DATE, moves it into a PC205 structure and calls CL_HRPA_FEATURE=>GET_VALUE( FEATURE = 'YYCDR' ). The personnel number is in scope only if the feature returns 'Y'. So where the non-personnel side has eight declared ranges, the personnel side has ONE HR FEATURE — a decision tree maintained in PE03, evaluated per employee per date. The two mechanisms do not share a perimeter, a gate or a maintenance path. THE TWO-STEP CONVERSION EXISTS AND IS DISABLED. CONVERT_TO_BUDGET_RATE performs a round trip: the amount is converted to EUR at rate type M — the operational rate — and the EUR result is then converted to USD at rate type EURX. That is the personnel equivalent of the fixed-rate valuation. BOTH CALLS TO IT SIT INSIDE `IF 1 = 2.` in ZFIX_EXCHANGERATE_PBC_POS_UPD. Deliberately switched off, left in place, never removed. WHAT RUNS INSTEAD is CONVERT_TO_CURRENCY_2 on the non-personnel class, and it runs only under `IF CS_POS-WAERS = 'USD'`. The code comments why: 'ALL PBC Documents are in USD. Even if postings are in EUR.' So the payroll-commitment side converts USD to USD through the second conversion method rather than through its own budget-rate method. AND THE TRACE IS EMPTY, WHICH IS CONSISTENT. The path ends by calling Y_FM_UPDATE_BR_FM_POS IN UPDATE TASK to record the before-and-after amounts in YTFM_BR_FM_POS. That table was extracted this session and holds ZERO ROWS. Either the guarded branch is not being reached or the update is not landing — the two facts agree and neither has been separated from the other yet. WHAT THIS MEANS FOR THE IMPACT FIGURE. The -2,365,688.44 USD measured on financial postings is the NON-PERSONNEL side only, and now for a second reason: not merely that the personnel calculation lives in the payroll schema, but that the FM-side personnel path is largely switched off. Staff cost is the organisation's largest spend category and its budget-rate treatment remains unmeasured. STILL NOT REACHED: the payroll schema itself. The feature YYCDR decides WHO is in scope; the schema decides WHAT is computed, and a schema is not ABAP source.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "extracted_sap_p01/YA/YCL_FM_BR_PBC_POSTING_BL.abap lines 77-148 + ENHO/ZFIX_EXCHANGERATE_PBC_POS_UPD.abap lines 34-74",
+    "cite": "CHECK_CONDITIONS reads PA0001 and calls CL_HRPA_FEATURE=>GET_VALUE(FEATURE='YYCDR'), CHECK LV_BR='Y'; CONVERT_TO_BUDGET_RATE does M to EUR then EURX to USD; both call sites are inside IF 1 = 2; what runs is CONVERT_TO_CURRENCY_2 under IF CS_POS-WAERS = 'USD'; YTFM_BR_FM_POS holds 0 rows",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "YCL_FM_BR_PBC_POSTING_BL",
+   "YYCDR",
+   "CL_HRPA_FEATURE",
+   "PA0001",
+   "ZFIX_EXCHANGERATE_PBC_POS_UPD",
+   "YTFM_BR_FM_POS",
+   "Y_FM_UPDATE_BR_FM_POS",
+   "CONVERT_TO_CURRENCY_2"
+  ],
+  "resolution_notes": "First pass of AN-BR-PERSONNEL-PAYROLL-SCHEMA. The gate and the conversion are now known; the schema itself is not. Also: I overwrote both payroll class files with 25-line pool skeletons before reading them, and restored from git — the include list from RPY_PROGRAM_READ was not parsed and the write happened anyway.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "HCM"
+   ],
+   "module": [
+    "FM",
+    "HR"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]
