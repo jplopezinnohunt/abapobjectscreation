@@ -605,5 +605,53 @@
    "perimeter_is_a_superset": "business area GEF is not on the FM line, so it cannot be filtered from the data side",
    "2024_excluded": "its 740 EURX lines pair to FI lines at the SAME 1.09529 rate, so the difference is zero. A different situation, kept separate rather than averaged in"
   }
+ },
+ "the_control_report": {
+  "program": "YFM_FI_COMPARE_INCLUDING_BR",
+  "_role": "the organisation's own control for FM against FI/GL, with the budget rate isolated",
+  "logic_lives_in": "YCL_FM_FI_COMPARE_BL",
+  "three_views": {
+   "C_DIFF_DATABASE": "differences in the data",
+   "C_DIFF_BR": "differences caused by the budget rate",
+   "C_NO_RESTRICTION": "everything"
+  },
+  "the_formula": "FINAL_DIFF = FKBTR - DMBTR - ZZAMOUNTBRDIFF",
+  "_what_the_formula_means": "FM minus FI, minus the part the budget rate explains. The residual is the genuine reconciliation break — the rate difference is expected and netted out",
+  "selection": {
+   "P_BUKRS": "company code, obligatory",
+   "S_HKONT": "GL accounts",
+   "P_30ONLY": "type FM30ONLY",
+   "P_GJAHR + S_PERIO": "year and periods, obligatory"
+  },
+  "the_four_baselines_in_GET_BR_IMPACT": [
+   {
+    "when": "WRTTP = '54'",
+    "baseline": "BSEG-DMBTR, sign-corrected by SHKZG ('H' -> x-1)",
+    "_note": "passed in, or re-read from BSEG on BUKRS/BELNR/GJAHR/BUZEI"
+   },
+   {
+    "when": "WRTTP = '51' and VRGNG = 'RMBE' and BTART = '0200'",
+    "baseline": "the GOODS RECEIPT amount from EKBE via YCL_MM_PO_UTILITIES=>GET_EKBE_AMOUNTS_1, VGABE '1', then x-1",
+    "_note": "purchase-order reduction"
+   },
+   {
+    "when": "the document carries KURSF",
+    "baseline": "apply KURSF",
+    "_note": "a NEGATIVE KURSF means divide, not multiply — SAP's indirect quotation"
+   },
+   {
+    "when": "otherwise",
+    "baseline": "CONVERT_TO_LOCAL_CURRENCY to USD with TYPE_OF_RATE 'M'",
+    "_note": "the code comments this branch 'Convert Transaction Amount to UNORE' — the UN Operational Rate of Exchange"
+   }
+  ],
+  "the_flag": {
+   "ZZBRIMPACTED": {
+    "E": "transaction amount is ZERO, no rate derivable",
+    "X": "evaluated"
+   },
+   "_note": "the report aggregates 'X' and 'E' separately, so a line that cannot be evaluated is reported apart rather than counted as zero impact"
+  },
+  "_what_it_says_about_our_measurement": "the -1,223,730.83 USD figure compared FKBTR against DMBTR, which is route 1 exactly. Correct for WRTTP '54' actuals; not correct for PO reductions or for lines carrying their own KURSF. The figure holds for the actuals population and the other three routes are needed for the rest — and the organisation already implements all four"
  }
 }

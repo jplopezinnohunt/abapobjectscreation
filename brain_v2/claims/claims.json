@@ -19267,5 +19267,52 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 442,
+  "claim": "THE ORGANISATION'S OWN CONTROL DEFINES THE BUDGET-RATE IMPACT, AND IT SUBTRACTS IT TO FIND THE REAL RECONCILIATION BREAK (s098, YFM_FI_COMPARE_INCLUDING_BR extracted from P01 at the user's pointer). THE CONTROL'S SHAPE. The report is a 64-line shell over YCL_FM_FI_COMPARE_BL. Its selection screen offers three views and the middle one is the point: C_DIFF_DATABASE (differences in the data), C_DIFF_BR (differences CAUSED BY THE BUDGET RATE) and C_NO_RESTRICTION. So the two kinds of difference are separated by design, not by analysis. THE FORMULA, at line 709 of the comparison class: FINAL_DIFF = FKBTR - DMBTR - ZZAMOUNTBRDIFF. FM minus FI, MINUS the part attributable to the budget rate. What remains is the genuine break. The budget-rate difference is EXPECTED and netted out, which is what makes the control usable: a controller looking at FINAL_DIFF is looking at what the rate does not explain. AND THE BASELINE IS NOT ONE THING. GET_BR_IMPACT computes ZZAMOUNTBRLC — the amount at the standard rate — by FOUR different routes depending on the value type. (1) WRTTP '54', actuals: take BSEG-DMBTR directly, sign-corrected by SHKZG ('H' multiplies by -1), either passed in or re-read from BSEG on the document key. (2) WRTTP '51' with VRGNG 'RMBE' and BTART '0200', a purchase-order REDUCTION: fetch the GOODS RECEIPT amount from EKBE through YCL_MM_PO_UTILITIES=>GET_EKBE_AMOUNTS_1 with VGABE '1', then multiply by -1 because it is a reduction. (3) otherwise, if the document carries its own rate KURSF: apply it, honouring SAP's indirect-quotation convention — a NEGATIVE KURSF means divide rather than multiply. (4) otherwise: CONVERT_TO_LOCAL_CURRENCY to USD with TYPE_OF_RATE 'M', and the comment on that branch names it: 'Convert Transaction Amount to UNORE' — the UN Operational Rate of Exchange. SO THE STANDARD SIDE OF THE COMPARISON IS THE UN OPERATIONAL RATE, and that is why the FI rates measured across 2025-2026 move between 1.02041 and 1.17233 while FM holds 1.09529. THE FLAG HAS TWO STATES AND BOTH ARE AGGREGATED SEPARATELY. ZZBRIMPACTED is 'E' when the transaction amount is ZERO — no rate can be derived — and 'X' otherwise. The report calls EXTRACT_GLOBAL_AMOUNT once for each, so a line that cannot be evaluated is reported apart rather than silently counted as zero impact. WHAT THIS DOES TO MY OWN MEASUREMENT. The -1,223,730.83 USD figure compared FKBTR against DMBTR, which is exactly route (1) — correct for WRTTP '54' actuals and NOT correct for purchase-order reductions or for lines carrying their own KURSF. The figure therefore holds for the actuals population and needs the other three routes to cover the rest. The organisation already implements all four.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "extracted_sap_p01/YA/YFM_FI_COMPARE_INCLUDING_BR.abap + extracted_sap_p01/YA/YCL_FM_FI_COMPARE_BL.abap + extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap",
+    "cite": "report 64 lines, radio buttons C_DIFF_DATABASE / C_DIFF_BR / C_NO_RESTRICTION; comparison class line 709 FINAL_DIFF = FKBTR - DMBTR - ZZAMOUNTBRDIFF; GET_BR_IMPACT lines 432-500 with four baseline routes and TYPE_OF_RATE 'M' commented 'Convert Transaction Amount to UNORE'",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "YFM_FI_COMPARE_INCLUDING_BR",
+   "YCL_FM_FI_COMPARE_BL",
+   "YCL_FM_BR_EXCHANGE_RATE_BL",
+   "GET_BR_IMPACT",
+   "ZZAMOUNTBRDIFF",
+   "ZZBRIMPACT",
+   "EKBE",
+   "YCL_MM_PO_UTILITIES",
+   "UNORE",
+   "KURSF"
+  ],
+  "resolution_notes": "USER pointed at the report: it was built for controls and would help. It did more than help — it supplies the organisation's own definition of the impact, which is what my measurement had been reconstructing from the outside.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "FI"
+   ],
+   "module": [
+    "FM",
+    "FI",
+    "MM"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]
