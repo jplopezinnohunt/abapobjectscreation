@@ -115,6 +115,11 @@ PLAN = {
     "T549D":      {"partition": None, "why": "feature directory — each compiles to a readable program"},
     "T549B":      {"partition": None, "why": "feature decision-tree nodes"},
     "T52EL":      {"partition": None, "why": "wage type to symbolic account — measured EMPTY for UN"},
+    # THE PAYROLL-TO-FM BRIDGE, and it is CUSTOM. Symbolic account x employee grouping ->
+    # company code, business area, cost centre, FUND CENTRE and FUND. Not a GL mapping —
+    # an FM account assignment, which is why the search through T030 could never find it.
+    "T9POST":     {"partition": None, "why": "payroll symbolic account -> FM account assignment (custom)"},
+    "T9FUND":     {"partition": None, "why": "payroll symbolic account -> fund (custom)"},
     "T030B":      {"partition": None, "why": "payroll account determination — symbolic account to GL, the last link"},
     "T52EZ":      {"partition": None, "why": "payroll posting: symbolic account by employee grouping"},
     "T52EK":      {"partition": None, "why": "symbolic account to transaction key — measured EMPTY"},

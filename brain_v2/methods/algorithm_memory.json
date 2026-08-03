@@ -643,6 +643,26 @@
    "implication": "on the staff side the budget-rate difference is POSTED rather than computed by a report. To size it, resolve the payroll symbolic account to its GL account first — that link is not in T030, T030B or T52EZ",
    "confidence": "MEASURED",
    "session": 98
+  },
+  {
+   "subject": "_field_width",
+   "kind": "TRAP",
+   "fact": "a payroll symbolic account is CHAR(4) and T030-KTOSL is CHAR(3), so the FI account determination CANNOT hold it. Several queries against T030 and T030B were impossible by construction",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "DDIF_FIELDINFO_GET on T030-KTOSL and T52EK-SYMKO",
+   "implication": "when a join returns nothing, compare the FIELD WIDTHS before extracting more tables. One call ended a line of enquiry that three extractions had not",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "T9POST",
+   "kind": "CARRIER",
+   "fact": "the payroll-to-FM bridge is a CUSTOM table in the customer range: symbolic account x employee grouping -> company code, business area, cost centre, position, FUND CENTRE and FUND. 2,673 rows over 133 symbolic accounts",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "T9POST extracted from P01; the 24 Constant Dollar symbolic accounts appear in none",
+   "implication": "payroll reaches FM through a custom table, not through standard account determination. Look in the customer table range when a standard bridge does not exist",
+   "confidence": "MEASURED",
+   "session": 98
   }
  ]
 }

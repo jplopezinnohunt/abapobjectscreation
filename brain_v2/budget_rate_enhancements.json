@@ -1121,9 +1121,24 @@
      "volume": "49,577 HRPAY FI headers over 1,732,526 line items"
     },
     "_the_amount_is_still_open": {
-     "why": "the symbolic account must resolve to a GL account and that link does not resolve from what is held. T52EK types the payroll symbolic accounts 'CZ'; the T030 extract carries 52 KTOSL and none is a payroll one; T030B has 209 rows and T52EZ is a validity table, not an assignment",
+     "why": "the symbolic account must resolve to a GL account and that link is in none of the tables examined. The structural reason the first search failed is now known: T030-KTOSL is CHAR(3) and a payroll symbolic account is CHAR(4), so it cannot be there. T030B, T52EZ and the custom T9POST were also checked and none carries it",
      "task": "AN-BR-STAFF-AMOUNT stays open",
      "_not_estimated": "stated as a gap. On the FM side both valuations sit on the same LINE so the difference was measurable; here they sit on the same ACCOUNT, and until that account is named the netting cannot be separated from ordinary payroll movement"
+    },
+    "the_payroll_to_fm_bridge": {
+     "table": "T9POST — CUSTOM, customer table range",
+     "shape": "SYMKO x MOMAG (employee grouping) -> BUKRS, GSBER, KOSTL, POSNR, FISTL, FINCODE",
+     "rows": 2673,
+     "symbolic_accounts": 133,
+     "_what_it_is_not": "it does NOT map to a GL account. It maps to an FM ACCOUNT ASSIGNMENT, which is why searching the FI account determination could never find it",
+     "constant_dollar_accounts_present": 0,
+     "_reading": "the 24 symbolic accounts used by the Constant Dollar wage types appear in none of T9POST's 133 — consistent with the twin design, where the twin inherits the base's account assignment because it uses the base's symbolic account",
+     "sibling": "T9FUND — 1 row, effectively unused"
+    },
+    "uniformity": {
+     "source": "T512W",
+     "measured": "all 72 Constant Dollar wage types carry IDENTICAL configuration — the same processing-class string and the same cumulation, 800000000000",
+     "_reading": "one uniform mechanism, not seventy-two individual decisions"
     }
    },
    "the_fm_side_pilot_objects": {
