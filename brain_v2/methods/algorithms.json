@@ -554,6 +554,28 @@
    ],
    "failure_mode": "reporting an inventory and calling it a process. Listing schemas is easy; the flow through them, and the manual-versus-fed split on master data, are what make it usable",
    "improve": "follow the schema flow from the driver through COPY and PIT steps to build the actual execution order, and cross the posting runs against FI document headers"
+  },
+  "A17_change_governance": {
+   "operates_on": "the change log crossed with the execution log and the transport record",
+   "origin": "OURS",
+   "state": "STRONG",
+   "does": "detect three governance conditions: a CHANNEL DIFFERENCE where an object is reached by a route its other maintainers do not use, CONFIGURATION changed in production that has never travelled by transport, and a transport channel carrying DATA rather than development",
+   "bound_in": [
+    "process_mining/change_governance.py"
+   ],
+   "writes": [
+    "brain_v2/change_governance.json",
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "fires_on": "per close, and whenever a governance or segregation question arises",
+   "the_premise_that_makes_it_portable": "THE POPULATION OF MAINTAINERS DEFINES THE NORM. No policy document is needed and none is asked for — whatever route most people use for an object is the expected route. That is what lets the same detector run on any installation",
+   "every_finding_carries_its_counter_explanation": "a channel difference is a SIGNAL, not a verdict. Number ranges are not transported by SAP design; a new implementation is naturally driven from the editor before its transaction is rolled out; role generation legitimately carries its generated tables",
+   "two_kinds_of_channel_finding": {
+    "SOLE_USER_OF_A_GENERIC_ROUTE": "one person reaches the object through the editor while the others use a transaction",
+    "GENERIC_ROUTE_IS_THE_NORM": "the MODAL route for the object IS the editor — the stronger finding, and the one the first version missed because it only looked for outliers"
+   },
+   "failure_mode": "two, both found by running it. Listing business DOCUMENTS as 'never transported' — true and useless, since transactional data does not travel; fixed by splitting configuration from documents on volume and maintainer count. And missing the case where the generic route is the modal one, which is worse than an outlier, not better",
+   "improve": "resolve the program behind a generic route from the execution log automatically"
   }
  },
  "_portfolio": {
