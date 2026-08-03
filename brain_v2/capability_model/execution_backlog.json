@@ -854,21 +854,32 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "CLOSED s098 — not answerable from that table",
+   "status": "ANSWERED s098 from the postings",
    "task": "The budget rate was activated from 20240101 by TVARVC and the 2024 perimeter holds 10,660 FM lines, yet YTFM_BR_FMIFIIT has ZERO rows for 2024 and its earliest processing stamp is 2025-01-13. Establish which happened: the recording table was created in 2025 and the mechanism ran unrecorded through 2024, or the mechanism did not run at all in its first declared year. Anyone reconciling 2024 needs the answer and the two cases have opposite consequences.",
    "method": "check the creation date of YTFM_BR_FMIFIIT in TADIR and its transport, then compare 2024 posted rates inside the perimeter against TCURR for the same dates",
    "why_it_matters": "a year of the mechanism is either unrecorded or did not happen",
-   "result": "the 2024 gap is a property of the CONTROL TABLE, which was ultimately not used, and not of the mechanism. Asking whether BR ran in 2024 has to be answered from the postings themselves — and the fixed rate is not present in the FM actual lines in any year, so that route is also closed until the enhancement sources are readable."
+   "result": "the mechanism DID run in 2024, on 7.6% of the perimeter (740 of 9,737 lines), reaching 94.7% in 2025. The control table's emptiness in 2024 said nothing about it."
   },
   {
    "id": "AN-BR-WHERE-DOES-THE-VALUE-LAND",
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "The fixed rate is known: 1.0416667. What is not known is which field the enhancements write it to. Eliminated by measurement: the FKBTR-to-TRBTR relationship in fmifiit_full (it appears less often inside the perimeter than outside) and the EUR budget in bpja (all at rate 1.0). Remaining candidates worth testing in order: the FI document — BSEG second local currency DMBE2, which the BI extractor already reads for USD — then the commitment lines in fmioi, then the reporting layer alone, which would mean the mechanism never touches a posting at all.",
    "method": "test DMBE2 against the fixed rate for the same documents the control table names; the 12,396 matched FM lines give an exact document list to join on",
-   "why_it_matters": "the whole budget-rate question reduces to this. Everything else about the mechanism — perimeter, gates, defects — is known"
+   "why_it_matters": "the whole budget-rate question reduces to this. Everything else about the mechanism — perimeter, gates, defects — is known",
+   "result": "the FM ledger, via exchange rate type EURX at 1.09529. 94.7% of the 2025 perimeter against 0.09% outside it. FI/GL stays on the standard rate by design, and the FM-minus-FI difference is the reported impact."
+  },
+  {
+   "id": "AN-BR-IMPACT-AMOUNT",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "The impact is defined as FM minus FI/GL. Both sides are now identifiable: FM lines carrying EURX inside the perimeter, and their FI counterparts through KNBELNR/KNGJAHR/KNBUZEI plus BUKRS. Compute the difference in money, by year and by fund, and reconcile it against what the constant-dollar reports state. That number is what the organisation calls the budget-rate impact.",
+   "method": "join fmifiit_full perimeter lines at EURX to bseg_union on (BUKRS, KNBELNR, KNGJAHR, KNBUZEI) and difference FKBTR against DMBTR",
+   "why_it_matters": "everything about the mechanism is now known except the one number it exists to produce"
   }
  ],
  "research_tasks_followups": [
