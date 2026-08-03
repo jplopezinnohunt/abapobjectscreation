@@ -19940,5 +19940,97 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 457,
+  "claim": "WHAT CHANGES IN PRODUCTION VERSUS WHAT TRAVELS BY TRANSPORT — measured, with one object that shows what correct looks like (s098, user-directed). THE CONTRAST THAT MAKES IT READABLE. T003, the document-type configuration, has ZERO change documents in production and 8,646 TABU entries in the transport record. That is the intended pattern: changed in development, moved by transport, never touched in P01. Against it: SET maintenance has 25 changes in production and appears in ZERO transports. FMFCTR, the fund-centre master, has 18 changes in production and ZERO transports. NRINTERVAL has 111 changes in production against 14 transport appearances. IDENTITY has 38,277 changes and no transports, which is correct — users are not transported. SO TWO CONFIGURATION OBJECTS ARE MAINTAINED ONLY IN PRODUCTION: the SETS that carry every hierarchy, and the fund-centre master. Neither has ever moved through the transport path. ADIL SEFIANI — user A_SEFIANI — makes 1,547 changes in P01. The bulk is ordinary HR work: 1,053 FMRESERV and 466 PBC through PA30, which is the maintenance transaction for it. What stands out is 25 changes to NRINTERVAL — NUMBER RANGE INTERVALS, which are configuration — made through SE38, THE ABAP EDITOR, between February 2024 and June 2026. He is the only user who touches number ranges that way. Every other maintainer of the same object uses a dedicated transaction: AS08, OBH2, BUCF, FBN1, SNUM, PR10. AND THE SAME SHAPE, LARGER, ON THE IDENTITY SIDE. P.IKOUNA changes IDENTITY 3,626 times through SE38 in a three-week window in April and May 2026, alongside 4,199 through PFCG and 3,369 through SU01. The execution log names what SE38 is running: YBC_ESS_USER_MANAGEMENT, 6,230 times — a CUSTOM PROGRAM THAT HAS ITS OWN TRANSACTION, YBC_ESS_USER, which the same user also uses 2,376 times. So the program is reached both ways, and the editor route bypasses whatever the transaction's authorisation object protects. WHY SE38 IS THE SIGNAL RATHER THAN THE CRIME. Running a program through the editor is not itself wrong, and number ranges are deliberately not transported in SAP. What the measurement shows is a CHANNEL DIFFERENCE: for the same object, one user goes through the editor while every other goes through the maintenance transaction. That difference is what makes an action invisible to the controls built around the transaction — and it is detectable exactly this way, by crossing the change log's transaction code against the population of maintainers for the same object.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Security",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "cdhdr_history x rsau_audit_history x cts_objects — P01",
+    "cite": "T003 0 changes in P01 / 8,646 TABU in transports; SETS 25/0; FMFCTR 18/0; NRINTERVAL 111/14; IDENTITY 38,277/0. A_SEFIANI 1,547 changes: FMRESERV 1,053 and PBC 466 via PA30, NRINTERVAL 25 via SE38, sole user of that route. P.IKOUNA IDENTITY 3,626 via SE38 running YBC_ESS_USER_MANAGEMENT 6,230 times, a program whose own transaction YBC_ESS_USER he uses 2,376 times",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "A_SEFIANI",
+   "P.IKOUNA",
+   "NRINTERVAL",
+   "SETS",
+   "FMFCTR",
+   "T003",
+   "IDENTITY",
+   "SE38",
+   "YBC_ESS_USER_MANAGEMENT",
+   "cts_objects"
+  ],
+  "resolution_notes": "USER: identify through the modifications what is done manually, and by IT staff, that should not be manual or should go through transports — and cross production changes against the transport tool. A_SEFIANI is Adil Sefiani.",
+  "domain_axes": {
+   "functional": [
+    "Security",
+    "HCM"
+   ],
+   "module": [
+    "BC",
+    "HR",
+    "FI"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": 458,
+  "claim": "THE MONTHLY TRANSPORTS CARRY AUTHORISATION DATA, AND THE VOLUME TRIPLED FROM SEPTEMBER 2025 (s098, user hypothesis — confirmed and given names). THE TREND IS REAL AND RECENT. Transported TABU objects — table CONTENT rather than structure — by month: 17 in July 2025, 19 in August, then 84 in September, 129 in October, 239 in November, 187 in December, 206 in January 2026 and 201 in February. The count of transports themselves barely moved, between 44 and 157 a month. So the same cadence started carrying roughly ten times the data. AND WHAT TRAVELS IS AUTHORISATION AND USER DATA. The four largest are AGR_TIMEB with 116 objects, then UST12, USR11 and USR10 with 115 each — the generated authorisation profile and user assignment tables. Roles themselves already travel properly as ACGR objects, 6,171 of them; these are the GENERATED tables underneath. Behind them sits the T5ASRFSCN family, around 50 objects each — the HR personnel-change-request form scenarios — plus TVDIR, TDDAT and the TNODEIMG trio, which are the table directory and IMG nodes. WHO MOVES IT, since September 2025: S_IGUENINNI 385 objects across 52 transports, GD_SCHELLINC 177 across 17, P.IKOUNA 172 across 43, A_SEFIANI 114 across 30, N_MENARD 98 across 44. SO THE HYPOTHESIS HOLDS: a monthly rhythm of transports is moving DATA rather than development, and the data is mostly the generated authorisation layer. That is IT intervening in content so the process runs, which is exactly the pattern worth reducing — and it is now measured by month, by table and by person rather than suspected. WHAT THIS DOES NOT SAY, and the distinction matters. Some of these objects legitimately travel: role generation produces USR10/USR11/UST12 entries and moving them with the role is normal. What the measurement establishes is the SHAPE and the TREND — a tenfold rise in transported table content on an unchanged transport cadence — not that each individual object is wrong. Separating the legitimate from the avoidable is the next step, and it needs the transport TEXTS, which this extract does not carry.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "Security",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "cts_transports x cts_objects — P01",
+    "cite": "TABU objects by month: 17 Jul 2025, 19 Aug, 84 Sep, 129 Oct, 239 Nov, 187 Dec, 206 Jan 2026, 201 Feb; transports per month 44-157 throughout; top tables AGR_TIMEB 116, UST12/USR11/USR10 115 each, T5ASRFSCN family ~50; since Sep 2025 S_IGUENINNI 385/52, GD_SCHELLINC 177/17, P.IKOUNA 172/43, A_SEFIANI 114/30, N_MENARD 98/44",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "cts_transports",
+   "cts_objects",
+   "AGR_TIMEB",
+   "USR10",
+   "USR11",
+   "UST12",
+   "T5ASRFSCN",
+   "S_IGUENINNI",
+   "P.IKOUNA",
+   "A_SEFIANI"
+  ],
+  "resolution_notes": "USER hypothesis: monthly transports carry things that should not be transports — master-data changes or something to improve — and IT should not intervene so much in data for the process to run; classify the changes by route and by year-month. Done, and it holds.",
+  "domain_axes": {
+   "functional": [
+    "Security"
+   ],
+   "module": [
+    "BC",
+    "HR"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]

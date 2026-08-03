@@ -1012,6 +1012,37 @@
    "method": "attribute payroll posting runs from the audit log to their FI documents via BKPF creation stamps and the PBC commitment lines, in the manner of A8",
    "why_it_matters": "it turns 'payroll posted' into 'this run, by this actor, produced these documents' — the level at which a control or an anomaly is actionable",
    "_origin": "user: combining the execution logs with PBC and the FI document headers is powerful"
+  },
+  {
+   "id": "AN-CHANNEL-DIFFERENCE-DETECTOR",
+   "domain": "Security",
+   "priority": 1,
+   "task": "Generalise the finding into a detector. For every change-document object, compare the TRANSACTION CODES its maintainers use. Where one user reaches an object through SE38 or a generic route while every other uses a dedicated transaction, that is a CHANNEL DIFFERENCE — and it makes the action invisible to controls built around the transaction. Two instances are already measured: A_SEFIANI on NRINTERVAL and P.IKOUNA on IDENTITY.",
+   "method": "group cdhdr_history by OBJECTCLAS and TCODE, flag users whose route differs from the modal route for that object",
+   "why_it_matters": "it finds bypasses without needing a policy document — the population of maintainers defines the norm",
+   "created_session": 98,
+   "status": "OPEN"
+  },
+  {
+   "id": "AN-CONFIG-ONLY-IN-PRODUCTION",
+   "domain": "Security",
+   "priority": 1,
+   "task": "SETS and FMFCTR are changed in production and appear in ZERO transports, while T003 shows the intended pattern with zero production changes and 8,646 transport entries. Enumerate every configuration-like object with production changes and no transport history, and separate the ones that SAP does not transport by design from the ones that should have.",
+   "method": "cross cdhdr_history OBJECTCLAS against cts_objects by object type",
+   "why_it_matters": "the hierarchies that the whole organisational roll-up depends on are in the first group",
+   "created_session": 98,
+   "status": "OPEN"
+  },
+  {
+   "id": "AN-TRANSPORTED-DATA-LEGITIMACY",
+   "domain": "Security",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Transported table CONTENT rose tenfold from September 2025 on an unchanged transport cadence, and it is mostly the generated authorisation layer — AGR_TIMEB, USR10, USR11, UST12 — plus the HR form-scenario tables. Separate the legitimate from the avoidable: role generation properly carries its generated entries, but a tenfold rise is a change in practice, not in policy. Establish what changed in September 2025 and which of these objects could be maintained rather than moved.",
+   "method": "re-extract cts_transports WITH as4text, then group the September-2025-onward transports by text pattern and owner",
+   "blocked_by": "the transport extract does not carry as4text populated",
+   "why_it_matters": "this is IT intervening in content so the process runs — the pattern the user wants reduced, now sized and dated"
   }
  ],
  "research_tasks_followups": [
