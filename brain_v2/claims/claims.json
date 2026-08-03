@@ -19358,6 +19358,50 @@
    "process": [
     "B2R"
    ]
+  },
+  "EXTENDED_s098_route2": "this claim reported route 2 as having no population. It has 191,181 lines system-wide; they live in FMIOI, the COMMITMENT table, which the golden held as a 13-column extract without VRGNG, BTART or TWAER. With route 2 included the impact is -4,178,499.57 USD, not -2,365,688.44."
+ },
+ {
+  "id": 444,
+  "claim": "ROUTE 2 OF THE BUDGET RATE WAS NEVER EMPTY — IT LIVES IN THE COMMITMENT TABLE, AND THE GOLDEN HELD THAT TABLE AS THIRTEEN COLUMNS (s098). WHY IT LOOKED EMPTY, and it is worth stating because the shape recurs. GET_BR_IMPACT's second baseline fires on WRTTP '51' with VRGNG 'RMBE' and BTART '0200' — a purchase-order reduction. I searched fmifiit_full and found zero, and reported no population. Two errors compounded: value types 50 and 51 are COMMITMENTS and do not exist in the actuals table at all, and the golden's fmioi extract carried 13 of the table's 69 columns — without VRGNG, BTART or TWAER, which are precisely the three fields that identify the route. The absence was an artefact of where I looked and of what had been extracted, not a fact about the business. RE-PULLED: FMIOI now holds 2,254,039 rows over 69 columns, loaded one year at a time. SYSTEM-WIDE THE ROUTE HAS 191,181 LINES — 63,767 in USD, 48,736 in EUR, 24,459 in BRL. Inside the budget-rate perimeter and at the EURX rate: 1,286 lines in 2024, 2,916 in 2025, 890 in 2026 — 5,092 lines over 4,797 purchase-order items. THE IMPACT, AND THE GRANULARITY THAT DECIDES IT. EKBE holds the goods receipt per PURCHASE-ORDER ITEM, and several commitment lines can share one item — 537 of the 5,092 do. Comparing each LINE against the whole item's receipt inflated the standard side by the number of lines and produced a 35% gap that read like a finding. Aggregated at item level, where the baseline actually lives: 2024 -140,135.02, 2025 -1,693,693.89, 2026 +21,017.78. THE FULL FIGURE ACROSS ALL ROUTES: FM 111,958,704.40 against standard 116,137,203.97 — impact -4,178,499.57 USD over 11,179 actual lines and 4,363 purchase-order items. The earlier figure of -2,365,688.44 was missing the commitment side entirely. NOT EVALUATED, reported rather than counted as zero: 445 lines with no resolvable FI counterpart, 434 purchase-order items with no goods receipt in EKBE, and 60 with no posting date.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "extends": 443,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "FMIOI re-pulled from P01 (2,254,039 rows / 69 cols) x ekbe x brain_v2/br_impact.json",
+    "cite": "route 2 system-wide 191,181 lines; in perimeter at EURX 5,092 lines over 4,797 PO items; impact by year -140,135.02 / -1,693,693.89 / +21,017.78; all routes FM 111,958,704.40 vs standard 116,137,203.97 = -4,178,499.57",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "FMIOI",
+   "ekbe",
+   "GET_BR_IMPACT",
+   "YCL_MM_PO_UTILITIES",
+   "EURX",
+   "A14_budget_rate_impact"
+  ],
+  "resolution_notes": "The loader gained two things this run, both from real failures: --year slicing, because a 2.25M-row table exceeds any single run; and an IDEMPOTENT slice load that deletes the partition before inserting it. Without the second, a retry after a 'database is locked' error that had already committed its INSERT doubled the 2026 partition — 1,031,772 rows where 515,894 belonged, and it looked like a clean load.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "MM"
+   ],
+   "module": [
+    "FM",
+    "MM"
+   ],
+   "process": [
+    "B2R"
+   ]
   }
  }
 ]

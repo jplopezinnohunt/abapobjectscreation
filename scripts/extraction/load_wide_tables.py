@@ -91,6 +91,11 @@ PLAN = {
     "T003":       {"partition": None, "why": "document type — carries YYBLART_GRP"},
     "T003T":      {"partition": None, "why": "document type text — carries YYNAME"},
     "YTHR_SORG_RULE": {"partition": None, "why": "custom HR org rule — carries ZZSECT"},
+    # The COMMITMENT lines. The golden holds a 13-column extract without VRGNG, BTART or
+    # TWAER — precisely the fields that identify a purchase-order reduction, which is the
+    # one budget-rate baseline we could not evaluate.
+    "FMIOI":      {"partition": "GJAHR", "values": ["2024", "2025", "2026"],
+                   "why": "FM commitments — re-pull with all fields for the EKBE baseline"},
     # Scope rule: 2024-2026 only. RYEAR is in the key, so it partitions cleanly.
     "FMIT":       {"partition": "RYEAR", "values": ["2024", "2025", "2026"],
                    "why": "FM TOTALS — the report leg the golden has never held"},
@@ -193,7 +198,7 @@ def read_table(s, table, plan):
     return [merged[k] for k in order], None, fields
 
 
-def write(con, table, rows, fields=None):
+def write(con, table, rows, fields=None, append=False, slice_col=None, slice_val=None):
     """Write the table — INCLUDING when it came back empty.
 
     An empty table that was actually read is evidence, and dropping it on the floor means
@@ -221,13 +226,32 @@ def write(con, table, rows, fields=None):
     cur.executemany('INSERT INTO "%s" VALUES (%s)' % (tmp, ",".join("?" * len(cols))),
                     [[r.get(c, "") for c in cols] for r in rows])
     con.commit()
-    cur.execute('DROP TABLE IF EXISTS "%s"' % table)
-    cur.execute('ALTER TABLE "%s" RENAME TO "%s"' % (tmp, table))
+    if append:
+        # A sliced load adds one partition; dropping the table would discard the others.
+        # It must also be IDEMPOTENT: delete the slice before inserting it, or a retry
+        # after a failure that got as far as the INSERT silently doubles the partition.
+        # That is not hypothetical — it happened, and the duplicate looked like a clean load.
+        cols_sql = ",".join('"%s" TEXT' % c for c in cols)
+        cur.execute('CREATE TABLE IF NOT EXISTS "%s" (%s)' % (table, cols_sql))
+        if slice_col and slice_val is not None:
+            cur.execute('DELETE FROM "%s" WHERE trim("%s")=?' % (table, slice_col), (slice_val,))
+        cur.execute('INSERT INTO "%s" SELECT * FROM "%s"' % (table, tmp))
+        con.commit()
+        cur.execute('DROP TABLE IF EXISTS "%s"' % tmp)
+    else:
+        cur.execute('DROP TABLE IF EXISTS "%s"' % table)
+        cur.execute('ALTER TABLE "%s" RENAME TO "%s"' % (tmp, table))
     con.commit()
     return len(rows)
 
 
 def main(argv):
+    # A partitioned table can exceed any single run. --year narrows the partition so a big
+    # table is loaded one slice at a time and a dropped connection costs one slice, not all.
+    year = None
+    if "--year" in argv:
+        year = argv[argv.index("--year") + 1]
+        argv = [a for a in argv if a != "--year" and a != year]
     want = [a for a in argv if not a.startswith("--")]
     if "--all" in argv or not want:
         want = list(PLAN)
@@ -236,6 +260,10 @@ def main(argv):
         print("no estan en el plan: %s" % ", ".join(unknown))
         return 2
 
+    if year:
+        for t in want:
+            if PLAN[t].get("values"):
+                PLAN[t] = dict(PLAN[t], values=[year], _sliced=True)
     s = Session()
     con = sqlite3.connect(str(GOLD))
     print("CARGA INICIAL desde P01 (solo lectura) -> golden")
@@ -248,7 +276,8 @@ def main(argv):
             print("   FALLO: %s" % err)
             failed.append((t, err))
             continue
-        n = write(con, t, rows, flds)
+        n = write(con, t, rows, flds, append=bool(year),
+                  slice_col=PLAN[t].get("partition"), slice_val=year)
         print("   escritas %d filas" % n)
         done.append((t, n))
     con.close()

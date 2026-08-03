@@ -394,10 +394,31 @@
   {
    "subject": "budget rate impact",
    "kind": "CARRIER",
-   "fact": "impact -2365688.44 USD over 11179 lines, replicating the organisation's own four baselines",
+   "fact": "impact -4178499.57 USD over 15542 lines, replicating the organisation's own four baselines",
    "learned_by": "A14_br_impact",
    "evidence": "brain_v2/br_impact.json",
    "implication": "route 1 covers most LINES and route 4 covers most MONEY — never quote an impact computed from one route alone",
+   "confidence": "MEASURED",
+   "session": 98,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "FMIOI",
+   "kind": "CARRIER",
+   "fact": "the COMMITMENT table. Value types 50 and 51 exist here and NOT in fmifiit_full. The golden held it as 13 of its 69 columns until s098, without VRGNG, BTART or TWAER",
+   "learned_by": "A14_br_impact",
+   "evidence": "re-pulled: 2,254,039 rows over 69 columns; route 2 has 191,181 lines here and 0 in the actuals",
+   "implication": "a value type absent from the actuals table is not absent from the system — look in the commitments. And check the COLUMN COUNT of a golden table before concluding a field's population",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_sliced_loads",
+   "kind": "TRAP",
+   "fact": "a partition load that fails AFTER its INSERT commits will double the partition on retry, and the result looks like a clean load",
+   "learned_by": "load_wide_tables",
+   "evidence": "FMIOI 2026 held 1,031,772 rows where 515,894 belonged — exactly 2.0x",
+   "implication": "a sliced load must DELETE the slice before inserting it. And verify a load by DISTINCT KEY count, not by row count",
    "confidence": "MEASURED",
    "session": 98
   }

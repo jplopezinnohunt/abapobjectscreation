@@ -14,7 +14,10 @@ WHY IT MIRRORS THEIR CODE RATHER THAN INVENTING A METHOD
 
 THE FOUR ROUTES, exactly as GET_BR_IMPACT chooses them
     1. WRTTP '54'                      the FI document's own DMBTR, signed by SHKZG
-    2. WRTTP '51' + RMBE + BTART 0200  the goods-receipt amount from EKBE, negated
+    2. WRTTP '51' + RMBE + BTART 0200  the goods-receipt amount from EKBE, negated. THIS
+                                       LIVES IN FMIOI, NOT FMIFIIT — it is a COMMITMENT
+                                       line. Looking for it in the actuals table returns
+                                       nothing and reads as "no population"
     3. otherwise, if KURSF is set      the document's own rate — present in the class and
                                        NOT the path in practice: the comparison is done on
                                        AMOUNTS, not on rates, and KURSF is initial on these
@@ -69,6 +72,11 @@ def amt(s):
 
 def z(s):
     return (s or "").strip().lstrip("0")
+
+
+def has(cx, t):
+    return bool(cx.execute("SELECT 1 FROM sqlite_master WHERE type IN ('table','view') "
+                           "AND lower(name)=lower(?)", (t,)).fetchone())
 
 
 def rate_table(cx, fcurr, tcurr, kurst):
@@ -126,10 +134,42 @@ def main(argv):
                       "wrttp": (wt or "").strip(), "vrgng": (vr or "").strip(),
                       "btart": (bt or "").strip(),
                       "fi": ((bu or "").strip(), z(kb), (kg or "").strip(), z(kz))})
-    print("perimeter lines at EURX: %d" % len(lines))
+    # ROUTE 2 lives in the COMMITMENT table. The first version of this algorithm looked for
+    # it in fmifiit_full, found nothing, and reported "no population" — which was an artefact
+    # of reading the wrong table, not a fact about the business.
+    n_act = len(lines)
+    if has(cx, "FMIOI"):
+        for gj, fo, tr, fk, rb, rp, fx in q(
+                "SELECT GJAHR,trim(FONDS),TRBTR,FKBTR,REFBN,RFPOS,FIPEX FROM FMIOI "
+                "WHERE trim(FIKRS)='UNES' AND trim(TWAER)='EUR' AND trim(WRTTP)='51' "
+                "AND trim(VRGNG)='RMBE' AND trim(BTART)='0200'"):
+            if fo not in funds or (fx or "").strip() in ("GAINS", "REVENUE"):
+                continue
+            t, f = amt(tr), amt(fk)
+            if abs(t) < 0.01 or abs(abs(f / t) - EURX) >= TOL:
+                continue
+            lines.append({"gjahr": gj, "fund": fo, "base": abs(t), "fm": abs(f),
+                          "wrttp": "51", "vrgng": "RMBE", "btart": "0200",
+                          "po": (z(rb), z(rp), gj), "fi": None})
+    print("perimeter lines at EURX: %d actuals + %d commitments = %d"
+          % (n_act, len(lines) - n_act, len(lines)))
 
     want_bseg = set(l["fi"] for l in lines if l["wrttp"] == "54")
-    want_bkpf = set((l["fi"][0], l["fi"][1], l["fi"][2]) for l in lines if l["wrttp"] != "54")
+    want_po = set(l["po"] for l in lines if l["wrttp"] == "51")
+
+    # The goods-receipt amounts, VGABE '1', summed per purchase-order item exactly as
+    # GET_EKBE_AMOUNTS_1 does. SHKZG 'H' flips the sign before summing.
+    ekbe = collections.defaultdict(float)
+    if want_po and has(cx, "ekbe"):
+        for eb, ep, gj, dm, sh in q("SELECT EBELN,EBELP,GJAHR,DMBTR,SHKZG FROM ekbe "
+                                    "WHERE trim(VGABE)='1'"):
+            k = (z(eb), z(ep), (gj or "").strip())
+            if k in want_po:
+                v = amt(dm)
+                ekbe[k] += -abs(v) if (sh or "").strip() == "H" else abs(v)
+        print("PO items resolved for route 2: %d of %d" % (len(ekbe), len(want_po)))
+    want_bkpf = set((l["fi"][0], l["fi"][1], l["fi"][2]) for l in lines
+                    if l["wrttp"] not in ("54", "51") and l["fi"])
 
     bseg = {}
     for bu, bl, gj, bz, dm, sh in q("SELECT BUKRS,BELNR,GJAHR,BUZEI,DMBTR,SHKZG FROM bseg_union"):
@@ -161,9 +201,15 @@ def main(argv):
                 continue
             route, base = "1_BSEG_DMBTR", abs(v)
         elif l["wrttp"] == "51" and l["vrgng"] == "RMBE" and l["btart"] == "0200":
-            unresolved["2_ekbe_not_implemented_no_population"] += 1
+            # Handled at PURCHASE-ORDER ITEM level below, not per line: EKBE holds the
+            # goods receipt for the ITEM, and several commitment lines can share one item.
+            # Giving each line the whole item total inflates the standard side by the
+            # number of lines — measured here as a 35% gap that was pure double counting.
             continue
         else:
+            if not l["fi"]:
+                unresolved["4_no_fi_reference"] += 1
+                continue
             day = bkpf.get((l["fi"][0], l["fi"][1], l["fi"][2]))
             if not day:
                 unresolved["4_no_posting_date"] += 1
@@ -179,7 +225,28 @@ def main(argv):
         agg[k]["fm"] += l["fm"]
         agg[k]["std"] += base
 
+    # ROUTE 2, at the granularity its baseline actually has. EKBE holds the goods receipt
+    # per PURCHASE-ORDER ITEM, and several commitment lines can share one item. Giving each
+    # line the whole item total inflates the standard side by the number of lines — measured
+    # as a 35% gap that was pure double counting, and it looked like a finding.
+    po_fm = collections.defaultdict(float)
+    po_year = {}
+    for l in lines:
+        if l["wrttp"] == "51":
+            po_fm[l["po"]] += l["fm"]
+            po_year[l["po"]] = l["gjahr"]
+    for k, fmv in po_fm.items():
+        v = ekbe.get(k)
+        if v is None:
+            unresolved["2_no_goods_receipt_in_ekbe"] += 1
+            continue
+        a = agg[(po_year[k], "2_EKBE_GOODS_RECEIPT")]
+        a["n"] += 1
+        a["fm"] += fmv
+        a["std"] += abs(v)
+
     print("\nBUDGET-RATE IMPACT = FM at EURX minus the same base at the STANDARD rate")
+    print("  (route 2 counts PURCHASE-ORDER ITEMS — the granularity EKBE has, not lines)")
     print("  year route                    lines            FM USD        STANDARD USD"
           "           IMPACT")
     tot = {"n": 0, "fm": 0.0, "std": 0.0}
