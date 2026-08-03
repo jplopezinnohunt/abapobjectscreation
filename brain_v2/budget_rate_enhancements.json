@@ -446,5 +446,115 @@
    "control_outside_perimeter_2025": "25 of 29,307 = 0.09%",
    "_reading": "a separation of roughly a thousandfold. This is the mechanism, in the data"
   }
+ },
+ "the_exact_perimeter": {
+  "_source": "extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap CONSTRUCTOR lines 78-124, CHECK_CONDITIONS lines 127-165",
+  "_the_semantics_that_make_this_not_a_filter": "EVERY check in CHECK_CONDITIONS is wrapped in IF IV_xxx IS NOT INITIAL. A parameter the caller leaves EMPTY SKIPS ITS CONDITION ENTIRELY. So the effective perimeter is not the eight ranges — it is whichever of the eight the caller actually supplies. Two callers passing different subsets get different perimeters from the same class, and nothing in the class records which. This is why the perimeter cannot be reproduced as a WHERE clause over the FM lines and why any measurement built that way is an approximation.",
+  "gate_1_CHECK_CONDITIONS": {
+   "_role": "the main path",
+   "conditions": [
+    {
+     "param": "IV_RLDNR",
+     "range": "MR_RLDNR",
+     "sign": "I",
+     "values": [
+      "9A"
+     ],
+     "_note": "every row in fmifiit_full is ledger 9A, so this excludes nothing here"
+    },
+    {
+     "param": "IV_BUKRS",
+     "range": "MR_BUKRS",
+     "sign": "I",
+     "values": [
+      "UNES"
+     ]
+    },
+    {
+     "param": "IV_FIKRS",
+     "range": "MR_FIKRS",
+     "sign": "I",
+     "values": [
+      "UNES"
+     ]
+    },
+    {
+     "param": "IV_GSBER",
+     "range": "MR_GSBER",
+     "sign": "I",
+     "values": [
+      "GEF"
+     ],
+     "_note": "BUSINESS AREA. Not carried on the FM line at all, so this condition cannot be applied when measuring from fmifiit_full — it is the main reason a data-side perimeter is a SUPERSET of the real one"
+    },
+    {
+     "param": "IV_WAERS",
+     "range": "MR_WAERS",
+     "sign": "I",
+     "values": [
+      "EUR"
+     ]
+    },
+    {
+     "param": "IV_FIPEX",
+     "range": "MR_FIPEX",
+     "sign": "E",
+     "values": [
+      "GAINS",
+      "REVENUE"
+     ]
+    },
+    {
+     "param": "IV_VRGNG",
+     "range": "MR_VRGNG",
+     "sign": "E",
+     "values": [
+      "HRM1",
+      "HRM2",
+      "HRP1"
+     ],
+     "_note": "PBC pre-commitment, PBC commitment and payroll posting are OUT"
+    },
+    {
+     "param": "IV_FTYPE",
+     "range": "MR_FUND_TYPE",
+     "sign": "I",
+     "_built_by": "SELECT FUND_TYPE FROM FMFUNDTYPE WHERE FM_AREA IN MR_FIKRS AND ZZFIX_RATE = X",
+     "measured": [
+      "001",
+      "002",
+      "003",
+      "004",
+      "005",
+      "009",
+      "010",
+      "012",
+      "013",
+      "016",
+      "017",
+      "018",
+      "094",
+      "095"
+     ]
+    }
+   ]
+  },
+  "gate_2_CHECK_CONDITIONS_2": {
+   "_role": "the STAFF path",
+   "_how_it_differs": "MR_WAERS2 accepts EUR *and* USD, and MR_VRGNG2 INCLUDES HRM1/HRM2/HRP1 — exactly what gate 1 excludes. It also checks IV_HKONT against MR_HKONT, which is declared at line 57 and never populated; a value IN an empty range is FALSE in ABAP"
+  },
+  "gate_3_CHECK_CONDITIONS_3": {
+   "_role": "the complement, used for DELETION during RFFMREPO reconstruction",
+   "_how_it_differs": "MR_FUND_TYPE3 is the same SELECT with sign 'E' — the inverse set. MR_FIPEX3 INCLUDES GAINS and REVENUE and MR_VRGNG3 INCLUDES the three HR transactions. Everything gate 1 excludes, gate 3 admits"
+  },
+  "activation": {
+   "variable": "Y_FM_FIXED_RATE_START",
+   "type": "P",
+   "table": "TVARVC",
+   "measured": "20240101",
+   "_fails_closed": "if missing, MV_START_DATE defaults to 99991231 and BR never activates"
+  },
+  "_the_commented_out_predecessor": "lines 92 and 97 carry APPEND ... low = '019' behind a quote — the hard-coded fund-type list the SELECT replaced. Two generations of perimeter logic in one constructor",
+  "_what_this_means_for_the_94_7_percent": "the 94.7% of 2025 perimeter lines measured at the EURX rate was computed WITHOUT the business-area condition, which the FM line cannot carry. So the denominator is a superset of the true perimeter and the real coverage is HIGHER than 94.7%, not lower. The finding stands and is understated."
  }
 }

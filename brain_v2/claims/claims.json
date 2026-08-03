@@ -19182,5 +19182,48 @@
     "B2R"
    ]
   }
+ },
+ {
+  "id": 440,
+  "claim": "THE BUDGET-RATE PERIMETER IS EIGHT CONDITIONS AND EACH ONE IS SKIPPED WHEN THE CALLER PASSES IT EMPTY — so it is not a filter (s098, user direction: the conditions are in the classes, it is fund type AND currency AND more, and it is very specific). THE EIGHT, from the CONSTRUCTOR and CHECK_CONDITIONS: ledger 9A · company code UNES · FM area UNES · BUSINESS AREA GEF · currency EUR · commitment item EXCLUDING GAINS and REVENUE · business transaction EXCLUDING HRM1, HRM2 and HRP1 — PBC pre-commitment, PBC commitment and payroll posting · fund type among those flagged ZZFIX_RATE in FMFUNDTYPE for FM area UNES, measured as exactly 14. AND THE SEMANTICS THAT MATTER MORE THAN THE LIST. Every condition in CHECK_CONDITIONS is wrapped in IF IV_xxx IS NOT INITIAL. A parameter the caller leaves EMPTY SKIPS ITS CONDITION ENTIRELY. So the effective perimeter is whichever subset of the eight the caller actually supplies, two callers can get different perimeters from the same class, and nothing records which. The perimeter cannot be reproduced as a WHERE clause over the FM lines, and any measurement built that way is an approximation by construction. ONE CONDITION IS UNMEASURABLE FROM THE DATA SIDE: business area GEF is not carried on the FM line at all. So the perimeter I measured — UNES, EUR, the 14 fund types, minus GAINS/REVENUE, minus the three HR transactions — is a SUPERSET of the real one. That means the 94.7% of 2025 lines found at the EURX rate is an UNDERSTATEMENT: the true coverage against the true perimeter is higher. THE OTHER TWO GATES INVERT IT. Gate 2, the staff path, accepts EUR and USD and INCLUDES the three HR transactions that gate 1 excludes — and additionally checks IV_HKONT against a range declared at line 57 and never populated, which makes it FALSE whenever a GL account is passed. Gate 3, used for deletion during RFFMREPO reconstruction, is the complement throughout: the fund-type SELECT is repeated with sign 'E', and GAINS, REVENUE and the HR transactions are INCLUDED rather than excluded.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "extracted_sap_p01/YA/YCL_FM_BR_EXCHANGE_RATE_BL.abap lines 78-124 and 127-165",
+    "cite": "CONSTRUCTOR appends 9A / UNES / UNES / GEF / EUR, MR_FIPEX sign E on GAINS and REVENUE, MR_VRGNG sign E on HRM1/HRM2/HRP1, MR_FUND_TYPE from FMFUNDTYPE ZZFIX_RATE; CHECK_CONDITIONS wraps each CHECK in IF IV_xxx IS NOT INITIAL",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "YCL_FM_BR_EXCHANGE_RATE_BL",
+   "MR_GSBER",
+   "MR_FUND_TYPE",
+   "MR_HKONT",
+   "CHECK_CONDITIONS",
+   "CHECK_CONDITIONS_2",
+   "CHECK_CONDITIONS_3",
+   "FMFUNDTYPE",
+   "RFFMREPO"
+  ],
+  "resolution_notes": "USER: the mechanism's conditions are in the classes — fund type, currency and more, and it is very specific, not just currency. Correct, and re-reading the class produced something my earlier reading had missed entirely: the conditional guard on every check, which turns a fixed perimeter into a caller-dependent one.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM"
+   ],
+   "module": [
+    "FM"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
  }
 ]
