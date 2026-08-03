@@ -955,10 +955,21 @@
    "domain": "PSM_FM",
    "priority": 1,
    "created_session": 98,
-   "status": "OPEN",
+   "status": "DONE s098",
    "task": "The PBC budget-rate path writes its before/after trace through Y_FM_UPDATE_BR_FM_POS into YTFM_BR_FM_POS, and that table holds ZERO rows. Separate the two possible causes: the guarded branch is never reached (no PBC position in USD passing feature YYCDR), or the update task is not landing. The first is a scope fact, the second is a defect.",
    "method": "count PBC positions by currency and cross against the feature's population",
-   "why_it_matters": "an empty trace on a live mechanism and on a dormant one look identical"
+   "why_it_matters": "an empty trace on a live mechanism and on a dormant one look identical",
+   "result": "neither 'not reached' nor 'not landing'. The PAYROLL POSTING path ran six runs in JANUARY 2025 and stopped — 703 employees, 633 of them inside the YYCDR perimeter. The PBC POSITION path never wrote, because its calls are behind IF 1 = 2. Currency is not the blocker: PBC lines are USD on 1,207,981 rows."
+  },
+  {
+   "id": "AN-BR-PAYROLL-STOPPED-WHY",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "The personnel budget rate produced amounts for six payroll posting runs in January 2025 and none since. Establish whether it was switched off deliberately, failed and was abandoned, or was a pilot that never went further. The payroll schema is the place to look — the FM side only records what arrives.",
+   "method": "compare the January 2025 runs against later ones in the payroll posting log, and read the schema for a switch or a date condition",
+   "why_it_matters": "staff cost is the largest spend category and its budget-rate valuation stopped after one month, which is either a decision or a defect"
   }
  ],
  "research_tasks_followups": [
