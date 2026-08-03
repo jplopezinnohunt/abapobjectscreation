@@ -532,6 +532,28 @@
    ],
    "failure_mode": "the resolver split the reference on '.' and truncated every real filename at its extension, reporting two working references as broken. A gate with false positives is worse than no gate",
    "improve": "generalise beyond one subject — take the subject name and its stores as arguments"
+  },
+  "A16_payroll_end_to_end": {
+   "operates_on": "the payroll engine — configuration that reads like data",
+   "origin": "OURS",
+   "state": "STRONG",
+   "does": "discover payroll end to end in six parts: the ENGINE (schemas), the LOGIC (rules), the OUTPUT (wage types, grouped by stem), the GATES (features), the MASTER DATA including whether it is maintained by hand or fed, and the POSTING path with the enhancements sitting on it",
+   "bound_in": [
+    "process_mining/payroll_discovery.py"
+   ],
+   "writes": [
+    "brain_v2/payroll_discovery.json",
+    "brain_v2/methods/algorithm_memory.json"
+   ],
+   "fires_on": "whenever staff cost, a payroll calculation or an HR-to-FI posting question arises — and once per installation as part of the profile",
+   "the_premise_it_is_built_on": "PAYROLL LOGIC IS NAMED AFTER WHAT IT PRODUCES. Searching the schemas and 166,453 rule lines for the budget rate returned one false positive; grouping wage types by stem found it immediately — 72 'Constant Dollar' members under stem 9. So the discovery runs from the OUTPUT backwards as well as from the driver forwards",
+   "why_it_matters": "payroll is neither ABAP nor data, so a code search does not reach it and a table search does not recognise it. It computes the largest spend category in most public-sector installations and was a black box here",
+   "the_two_questions_that_are_not_an_inventory": [
+    "is this master data maintained BY HAND or FED? — a change document with a transaction code was made by a person in a screen; a BLANK transaction code is the signature of a BAPI, an interface or a batch, and the ratio is the answer",
+    "who enhanced the POSTING path? — a posting program is the seam between payroll and accounting, and the custom enhancements there are the shortest description of what an installation actually changed"
+   ],
+   "failure_mode": "reporting an inventory and calling it a process. Listing schemas is easy; the flow through them, and the manual-versus-fed split on master data, are what make it usable",
+   "improve": "follow the schema flow from the driver through COPY and PIT steps to build the actual execution order, and cross the posting runs against FI document headers"
   }
  },
  "_portfolio": {

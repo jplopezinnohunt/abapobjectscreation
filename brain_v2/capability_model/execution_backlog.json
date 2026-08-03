@@ -223,6 +223,16 @@
     "which fund types carry ZZFIX_RATE, measured against the 14 the class selects"
    ],
    "result": "PRPS 60,292 rows / 146 columns (31 custom, was 9 columns), PROJ 14,028 (no custom fields), FMFINCODE 67,698 (ZZOUTPUT, ZZIBF), FMFUNDTYPE 126 (ZZFIX_RATE on exactly 14 types), T001, T003, T003T, YTHR_SORG_RULE. The four questions it opened are all answered."
+  },
+  {
+   "id": "EXT-PAYROLL-CONFIG",
+   "domain": "HCM",
+   "priority": 1,
+   "task": "bring the payroll calculation layer into the golden: T52C0, T52C1, T52C5, T512T, T512W, T549B and T549D. None of it is held, so every question about how staff cost is computed currently needs a live P01 read.",
+   "method": "load_wide_tables.py with the payroll tables added to the plan",
+   "why_it_matters": "this is the layer that computes the organisation's largest spend category, and it is entirely absent from the golden",
+   "created_session": 98,
+   "status": "OPEN"
   }
  ],
  "analysis_tasks_no_extraction": [
@@ -971,6 +981,37 @@
    "method": "compare the January 2025 runs against later ones in the payroll posting log, and read the schema for a switch or a date condition",
    "why_it_matters": "staff cost is the largest spend category and its budget-rate valuation stopped after one month, which is either a decision or a defect",
    "result": "it never started. Built, piloted for one month — six runs of 6/634/1/1/1/60 employees — and never adopted. The driver program has ZERO executions in the audit window while the control report has 43. User-confirmed: no real FI postings on that model."
+  },
+  {
+   "id": "AN-BR-CONSTANT-DOLLAR-WAGE-TYPES",
+   "domain": "PSM_FM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "BR for Staff is carried by 72 'Constant Dollar' wage types in country grouping UN. Establish three things: which payroll rule computes them (the schema layer does not name the mechanism, so it must be traced from the wage type backwards); whether they are configured to post, since T52EL returned nothing for MOLGA 'UN'; and what they amount to — the staff-cost equivalent of the -2,365,688.44 USD measured on the non-personnel side.",
+   "method": "trace each 9xxx wage type back through T512W processing classes and the rules that write it, then find the posting configuration for MOLGA UN",
+   "why_it_matters": "staff cost is the largest spend category and this is the mechanism that values it at the budget rate. It is the last unmeasured half"
+  },
+  {
+   "id": "AN-PAYROLL-SCHEMA-FLOW",
+   "domain": "HCM",
+   "priority": 1,
+   "task": "YR00 is the main custom driver at 122 steps and calls a chain of schemas and rules. Trace the flow: which schemas run for which payroll areas, which rules they invoke, and where the custom logic sits against the SAP standard. That is the A_PROCESS cell for payroll and it is currently PARTIAL on an inventory alone.",
+   "method": "walk T52C1 from YR00 following COPY and PIT steps, resolving rules in T52C5",
+   "why_it_matters": "an inventory is not a process; the flow is what makes it usable",
+   "created_session": 98,
+   "status": "OPEN"
+  },
+  {
+   "id": "AN-PAYROLL-RUN-TO-DOCUMENT-CHAIN",
+   "domain": "HCM",
+   "priority": 1,
+   "created_session": 98,
+   "status": "OPEN",
+   "task": "Combine three streams that are each already held: the EXECUTION LOG (who ran what and when, 15.6M audit rows), the PBC output (FMRESERV change documents, 6.4M headers, and the HRM1/HRM2 commitment lines in FMIOI), and the FI DOCUMENT HEADERS (bkpf, now 122 columns including WWERT and KURSF). Joining them gives the chain from a payroll RUN to the documents it produced, with the person or channel that triggered it — which none of the three answers alone.",
+   "method": "attribute payroll posting runs from the audit log to their FI documents via BKPF creation stamps and the PBC commitment lines, in the manner of A8",
+   "why_it_matters": "it turns 'payroll posted' into 'this run, by this actor, produced these documents' — the level at which a control or an anomaly is actionable",
+   "_origin": "user: combining the execution logs with PBC and the FI document headers is powerful"
   }
  ],
  "research_tasks_followups": [
