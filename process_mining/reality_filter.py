@@ -75,8 +75,17 @@ def q1(cx, sql, args=()):
 
 
 def table_exists(cx, t):
-    return q1(cx, "select count(*) from sqlite_master where name=? and type in ('table','view')",
-              (t,)) > 0
+    """Case-INSENSITIVE on purpose: the golden holds both conventions.
+
+    Tables loaded by load_wide_tables.py keep their uppercase SAP names (PPDHD, FMIOI,
+    PPOIX) while older extracts are lowercase (bkpf, fmifiit_full). An exact-match check
+    reported every one of this algorithm's probes as 'not in the golden' on its first run —
+    a silent SKIP, which is the worst possible failure for a tool whose whole job is to
+    notice what is missing. SQLite resolves the name case-insensitively in the query itself,
+    so only the existence check needed fixing.
+    """
+    return q1(cx, "select count(*) from sqlite_master where lower(name)=lower(?) "
+                  "and type in ('table','view')", (t,)) > 0
 
 
 def backward(cx, p):
@@ -145,6 +154,47 @@ def backward(cx, p):
     return out
 
 
+def backward_flag(cx, p):
+    """The second shape of 'never became real': the row's OWN flag says so.
+
+    Not every unreal record needs a second table to expose it. A commitment carries a
+    deletion and a completion indicator; a reversed FI document points at its reversal.
+    Those are cheaper to check than a join and just as easy to forget in a SUM — which is
+    the only thing that matters here.
+    """
+    d = p["detail"]
+    if not table_exists(cx, d):
+        return {"skipped": "%s not in the golden" % d}
+    total = q1(cx, 'select count(*) from "%s"' % d)
+    out = {"detail": d, "rows": total, "flags": {}}
+    unreal = []
+    for f in p["flags"]:
+        col, test, why = f["column"], f["means_unreal"], f.get("_why", "")
+        try:
+            n = q1(cx, 'select count(*) from "%s" where %s' % (d, test))
+        except sqlite3.Error as e:
+            out["flags"][col] = {"error": str(e)[:70]}
+            continue
+        kind = f.get("meaning", "NEVER_REAL")
+        out["flags"][col] = {"rows": n, "pct": round(100.0 * n / total, 1) if total else None,
+                             "_means": why, "meaning": kind}
+        # ONLY never-real rows invalidate a sum of what happened. A completed commitment is
+        # the most real kind of record there is — it became an actual. Folding it in with
+        # simulations was the mistake this distinction exists to prevent, and it would have
+        # thrown away a correct figure rather than saved a wrong one.
+        if n and kind == "NEVER_REAL":
+            unreal.append(test)
+    out["_reading"] = ("'never real' is what invalidates a sum of WHAT HAPPENED. "
+                       "'no longer live' only invalidates a sum of WHAT IS OUTSTANDING")
+    if unreal:
+        out["any_flag_set"] = q1(cx, 'select count(*) from "%s" where %s'
+                                 % (d, " or ".join("(%s)" % t for t in unreal)))
+        out["pct_unreal"] = round(100.0 * out["any_flag_set"] / total, 1) if total else None
+    else:
+        out["any_flag_set"], out["pct_unreal"] = 0, 0.0
+    return out
+
+
 def forward(cx, p):
     """Which configured entries never appear in a document — designed but dormant."""
     cfg, ck, doc, dk = p["config"], p["config_key"], p["document"], p["document_key"]
@@ -164,6 +214,14 @@ def forward(cx, p):
     return {"config": cfg, "document": doc, "configured": len(keys),
             "dormant": len(dormant), "pct_dormant": round(100.0 * len(dormant) / len(keys), 1),
             "examples": sorted(dormant)[:15],
+            # DORMANT IS RELATIVE TO WHAT THE DOCUMENT TABLE HOLDS, and saying so is not a
+            # footnote. ppoix in this golden covers 2026 and posted runs only, so "dormant"
+            # here means "unused in that window" — not "never used". Reporting 82% dormant
+            # without that sentence would be the same class of overstatement this algorithm
+            # was written to catch.
+            "_window": p.get("document_covers") or
+                       "UNSTATED — the spec does not say what %s covers, so read the "
+                       "percentage as 'unused within whatever is loaded'" % doc,
             "_reading": ("configured entries that produce nothing. Pre-built capacity a future "
                          "design could use — or evidence that the mechanism described in the "
                          "configuration is NOT the mechanism that runs")}
@@ -178,7 +236,8 @@ def main(argv):
     print("=" * 74)
     print("   %d trampas ya conocidas por otros algoritmos consultadas" % len(known))
 
-    rep = {"_algorithm": "A18 reality_filter.py", "backward": [], "forward": []}
+    rep = {"_algorithm": "A18 reality_filter.py", "backward": [], "backward_flag": [],
+           "forward": []}
     print("\nHACIA ATRAS — filas registradas que nunca ocurrieron")
     for p in spec.get("backward") or []:
         r = backward(cx, p)
@@ -194,6 +253,22 @@ def main(argv):
                 print("      ratio uniforme sobre %s (%d grupos, dispersion %.3f) -> "
                       "FALTA UN FILTRO" % (g, u["groups"], u["spread"]))
 
+    print("\nHACIA ATRAS (bandera) — filas que su propio indicador declara no vivas")
+    for p in spec.get("backward_flag") or []:
+        r = backward_flag(cx, p)
+        rep["backward_flag"].append(r)
+        if r.get("skipped"):
+            print("   %-14s omitido: %s" % (p["detail"], r["skipped"]))
+            continue
+        print("   %-14s %d filas, %d NUNCA REALES (%s%%)"
+              % (r["detail"], r["rows"], r["any_flag_set"], r["pct_unreal"]))
+        for col, v in r["flags"].items():
+            if v.get("rows"):
+                print("      %-10s %8d (%s%%)  [%s] %s"
+                      % (col, v["rows"], v["pct"], v.get("meaning", "?"), v["_means"]))
+            elif v.get("error"):
+                print("      %-10s no medible: %s" % (col, v["error"]))
+
     print("\nHACIA DELANTE — configuracion que no produce nada")
     for p in spec.get("forward") or []:
         r = forward(cx, p)
@@ -204,6 +279,7 @@ def main(argv):
         print("   %-14s %d configurados, %d DORMIDOS (%s%%)  %s"
               % (p["config"], r["configured"], r["dormant"], r["pct_dormant"],
                  ", ".join(r["examples"][:6])))
+        print("      ventana: %s" % r["_window"])
 
     out = argv[argv.index("--out") + 1] if "--out" in argv else \
         os.path.join(ROOT, "brain_v2", "reality_filter.json")

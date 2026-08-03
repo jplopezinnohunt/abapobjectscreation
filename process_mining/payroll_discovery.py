@@ -45,6 +45,7 @@ USAGE
 
 import collections
 import io
+import sqlite3
 import json
 import os
 import sys
@@ -62,6 +63,15 @@ GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
 # A custom object is one in the customer namespace. Everything else is SAP's.
 CUSTOM = ("Y", "Z")
 
+# Tables whose golden copy holds ONLY runs that produced an accounting document. Reading one
+# of these without the filter puts the simulations back — see purge_simulation_runs.py.
+PURGED_TO_POSTED_RUNS = {
+    "ppdix": "RUNID in (select RUNID from payroll_runs_posted)",
+    "ppoix": "RUNID in (select RUNID from payroll_runs_posted)",
+    "ppdit": ("DOCNUM in (select DOCNUM from ppdhd "
+              "where RUNID in (select RUNID from payroll_runs_posted))"),
+}
+
 
 class Session(object):
     """P01 drops after roughly a dozen calls; a dropped call is not an answer."""
@@ -70,6 +80,11 @@ class Session(object):
         self.sid = sid
         self.c = get_connection(sid)
         self.calls = 0
+        self.from_gold, self.from_p01 = [], []
+        try:
+            self.gold = sqlite3.connect("file:%s?mode=ro" % GOLD.replace("\\", "/"), uri=True)
+        except sqlite3.Error:
+            self.gold = None
 
     def call(self, fm, **kw):
         for attempt in range(4):
@@ -86,6 +101,40 @@ class Session(object):
         raise RuntimeError("system unreachable after retries")
 
     def read(self, table, fields, where=None, rows=0):
+        """READ THE GOLDEN FIRST, and only fall back to P01 for what is not held.
+
+        Two reasons, and the second one is a correctness bug rather than a preference.
+
+        The cheap one: re-extracting a table the golden already holds is the exact waste the
+        persistence rule exists to prevent — process mining is re-reading the base you have.
+
+        The one that matters: PPDIT in the golden has been PURGED to runs that actually
+        posted. A live read has no such filter, so it silently returns the simulations back
+        — and summing those overstated this very mechanism ninefold. The filter must live
+        where the read happens, not in whoever remembers to apply it.
+        """
+        if self.gold is not None:
+            t = table.lower()
+            try:
+                cur = self.gold.execute('select 1 from sqlite_master '
+                                        "where lower(name)=? and type in ('table','view')", (t,))
+                if cur.fetchone():
+                    sql = 'select %s from "%s"' % (",".join('"%s"' % f for f in fields), t)
+                    # The WHERE must travel or the golden answers a DIFFERENT question than
+                    # P01 would — silently, and wider. RFC_READ_TABLE's OPTIONS syntax is
+                    # SQL-shaped for the simple predicates used here; if it is not valid
+                    # SQLite the except below sends the read to P01 rather than guessing.
+                    conds = [c for c in (where, PURGED_TO_POSTED_RUNS.get(t)) if c]
+                    if conds:
+                        sql += " where %s" % " and ".join("(%s)" % c for c in conds)
+                    if rows:
+                        sql += " limit %d" % rows
+                    got = [dict(zip(fields, r)) for r in self.gold.execute(sql)]
+                    self.from_gold.append(table)
+                    return [{k: (v or "").strip() for k, v in r.items()} for r in got]
+            except sqlite3.Error:
+                pass  # a golden that cannot answer is not an error; P01 still can
+        self.from_p01.append(table)
         try:
             r = self.call("RFC_READ_TABLE", QUERY_TABLE=table,
                           FIELDS=[{"FIELDNAME": f} for f in fields],
@@ -302,8 +351,7 @@ def discover_resolved_posting(s, cx):
         "_where_the_answer_is": "PPDIT — the posting document items carry the key and the "
                                 "resolved GL account on the same row"}
     try:
-        rows = s.read("PPDIT", ["DOCNUM", "DOCLIN", "ITTYP", "BUKRS", "KTOSL", "HKONT"],
-                      "BUKRS = 'UNES'", 4000)
+        rows = s.read("PPDIT", ["DOCNUM", "DOCLIN", "ITTYP", "BUKRS", "KTOSL", "HKONT"])
     except Exception as e:
         out["error"] = str(e)[:90]
         return out
@@ -311,7 +359,9 @@ def discover_resolved_posting(s, cx):
     for r in rows:
         fwd[r["KTOSL"]].add(r["HKONT"])
         rev[r["HKONT"]].add(r["KTOSL"])
-    out["sample_rows"] = len(rows)
+    out["rows"] = len(rows)
+    out["_source"] = ("the PURGED golden — runs that actually posted only. Read live from P01 "
+                      "this returns the simulations too, and they are 89% of the table")
     out["transaction_keys"] = {k: sorted(v)[:8] for k, v in sorted(fwd.items())}
     out["keys_with_one_account"] = sum(1 for v in fwd.values() if len(v) == 1)
     out["keys_with_several"] = sum(1 for v in fwd.values() if len(v) > 1)
@@ -392,8 +442,8 @@ def main(argv):
     if "error" in resolved:
         print("      %s" % resolved["error"])
     else:
-        print("      sample %d items | %d transaction keys, %d fan out to several accounts"
-              % (resolved["sample_rows"], len(resolved["transaction_keys"]),
+        print("      %d posiciones REALES | %d claves, %d abren a varias cuentas"
+              % (resolved["rows"], len(resolved["transaction_keys"]),
                  resolved["keys_with_several"]))
         print("      %d of %d GL accounts belong to exactly ONE key"
               % (resolved["accounts_with_one_key"], resolved["accounts_total"]))

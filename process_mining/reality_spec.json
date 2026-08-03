@@ -3,7 +3,8 @@
  "session": 98,
  "_the_two_directions": {
   "backward": "recorded rows that never became real — simulations, reversals, parked documents",
-  "forward": "configured entries that never produce a document — designed but dormant"
+  "forward": "configured entries that never produce a document — designed but dormant",
+  "backward_flag": "recorded rows whose OWN indicator changes their standing. CRITICAL DISTINCTION, learned by getting it wrong: NEVER_REAL (deleted, reversed, simulated) invalidates a sum of WHAT HAPPENED. NO_LONGER_LIVE (completed, cleared) does NOT — a completed commitment is the most real kind, it became an actual. It only invalidates a sum of WHAT IS OUTSTANDING. Treating the second as the first would have destroyed a correct figure"
  },
  "backward": [
   {
@@ -14,20 +15,14 @@
    "evidence": "bkpf",
    "evidence_key": "AWKEY",
    "evidence_where": "e.AWTYP='HRPAY'",
-   "uniformity_over": ["BUKRS", "DOCTYP"],
+   "uniformity_over": [
+    "BUKRS",
+    "DOCTYP"
+   ],
    "coverage_guard": {
     "column": "GJAHR",
     "_why": "bkpf in the golden covers 2024-2026 only. Outside that window every payroll run looks like a simulation and is not."
    }
-  },
-  {
-   "_why": "FM commitments can be reduced to zero and still sit in the table. A commitment with no remaining amount is a record of something that has finished, not something that is.",
-   "detail": "fmioi",
-   "unit": "FMBELNR",
-   "detail_key": "FMBELNR",
-   "evidence": "fmifiit_full",
-   "evidence_key": "FMBELNR",
-   "uniformity_over": ["GJAHR"]
   }
  ],
  "forward": [
@@ -37,7 +32,8 @@
    "config_key": "LGART",
    "config_where": "SPRSL='E' AND MOLGA='UN'",
    "document": "ppoix",
-   "document_key": "LGART"
+   "document_key": "LGART",
+   "document_covers": "ppoix holds 2026 and POSTED RUNS ONLY. 'Dormant' therefore means 'unused in 2026 real postings', not 'never used'"
   },
   {
    "_why": "a symbolic account configured for posting that no payroll item ever uses is capacity nobody is exercising.",
@@ -45,7 +41,53 @@
    "config_key": "LGART",
    "config_where": "MOLGA='UN'",
    "document": "ppoix",
-   "document_key": "LGART"
+   "document_key": "LGART",
+   "document_covers": "ppoix holds 2026 and POSTED RUNS ONLY. 'Dormant' therefore means 'unused in 2026 real postings', not 'never used'"
+  }
+ ],
+ "backward_flag": [
+  {
+   "_why": "a commitment that has been deleted or completed is a record of something that FINISHED, not something that IS. Summing FMIOI without checking these counts closed commitments as open ones — and FMIOI is the base of the non-personnel budget-rate impact A14 measured",
+   "detail": "FMIOI",
+   "flags": [
+    {
+     "column": "LOEKZ",
+     "means_unreal": "trim(LOEKZ)<>''",
+     "_why": "deletion indicator",
+     "meaning": "NEVER_REAL"
+    },
+    {
+     "column": "ERLKZ",
+     "means_unreal": "trim(ERLKZ)<>''",
+     "_why": "completion indicator — the commitment is finished",
+     "meaning": "NO_LONGER_LIVE"
+    },
+    {
+     "column": "STATS",
+     "means_unreal": "trim(STATS)<>''",
+     "_why": "statistical: recorded but does not consume budget",
+     "meaning": "NEVER_REAL"
+    }
+   ],
+   "_measured_s098": "A14's route-2 population is 27,453 lines and only 552 lack ERLKZ. That is NOT a defect in A14: those commitments completed because they became actuals. A14 measures the valuation applied when the commitment existed, which completion does not undo. The -2,365,688.44 USD figure STANDS"
+  },
+  {
+   "_why": "a reversed FI document is a document that was undone. It still sits in BKPF.",
+   "detail": "bkpf",
+   "flags": [
+    {
+     "column": "STBLG",
+     "means_unreal": "trim(STBLG)<>'' and trim(STBLG)<>'0000000000'",
+     "_why": "reversal document number — this document was reversed",
+     "meaning": "NEVER_REAL"
+    },
+    {
+     "column": "XREVERSAL",
+     "means_unreal": "trim(XREVERSAL)<>''",
+     "_why": "this document IS a reversal",
+     "meaning": "NEVER_REAL"
+    }
+   ]
   }
  ]
 }

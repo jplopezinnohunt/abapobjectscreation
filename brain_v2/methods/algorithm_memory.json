@@ -303,7 +303,7 @@
   {
    "subject": "custom fields",
    "kind": "CARRIER",
-   "fact": "144 custom (owner, field) pairs harvested from source; states {'NOT_A_TABLE': 86, 'TABLE_NOT_EXTRACTED': 37, 'POPULATED': 21}",
+   "fact": "168 custom (owner, field) pairs harvested from source; states {'NOT_A_TABLE': 110, 'TABLE_NOT_EXTRACTED': 36, 'POPULATED': 22}",
    "learned_by": "A13_custom_field_harvest",
    "evidence": "C:/Users/jp_lopez/projects/abapobjectscreation/brain_v2/custom_fields.json",
    "implication": "before designing anything that needs a new field, check this inventory — the slot may already exist, typed and upgrade-proof. And never read a NOT_EXTRACTED state as empty",
@@ -495,7 +495,7 @@
   {
    "subject": "budget rate graph",
    "kind": "CARRIER",
-   "fact": "33 subjects related by 42 typed edges; 32 claims on the subject",
+   "fact": "33 subjects related by 42 typed edges; 33 claims on the subject",
    "learned_by": "A15_br_graph",
    "evidence": "brain_v2/budget_rate_graph.json",
    "implication": "ask the graph before re-deriving: the relation between perimeter, moments, rate type and control is recorded, not remembered",
@@ -752,6 +752,47 @@
    "learned_by": "A16_payroll_discovery",
    "evidence": "purge_simulation_runs.py --apply; 21.0M detail rows -> 2.18M",
    "implication": "when data contains records of things that never happened, make the wrong answer UNAVAILABLE instead of writing down a filter to remember. But keep the parent table that proves they existed, and never apply a discriminator outside the window where its evidence exists",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "ppdhd",
+   "kind": "TRAP",
+   "fact": "only 3.7% of RUNID in ppdhd are evidenced in bkpf — the rest are recorded but never happened",
+   "learned_by": "A18_reality_filter",
+   "evidence": "A18: 1364 wholly real, 35482 wholly absent, 0 partial",
+   "implication": "filter through the evidence table before summing anything from ppdhd",
+   "confidence": "MEASURED",
+   "session": 98,
+   "supersedes_earlier_run": true
+  },
+  {
+   "subject": "_the_golden_mixes_table_name_case",
+   "kind": "TRAP",
+   "fact": "165 of 374 objects in the golden are UPPERCASE (PPDHD, FMIOI, PPOIX, LFA1, REGUH) and the rest lowercase. An exact-match check against sqlite_master silently skips them",
+   "learned_by": "A18_reality_filter",
+   "evidence": "A18's first run reported every probe as 'not in the golden'; zero case-collisions exist",
+   "implication": "match table names case-INSENSITIVELY. Duplicates are impossible — SQLite treats the names as identical for identity — so the hazard is a query that misses in silence, not a table that doubles",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_never_real_vs_no_longer_live",
+   "kind": "TRAP",
+   "fact": "a COMPLETED commitment is the most real kind of record — it completed because it became an actual. Counting it as unreal alongside simulations reported FMIOI at 95.6% when it is 2.1%, and would have invalidated a correct figure",
+   "learned_by": "A18_reality_filter",
+   "evidence": "FMIOI: LOEKZ 46,952 never-real vs ERLKZ 2,153,034 no-longer-live; A14 route-2 27,453 lines, 552 without ERLKZ",
+   "implication": "before excluding rows, ask which sum you are protecting. NEVER_REAL invalidates WHAT HAPPENED; NO_LONGER_LIVE only invalidates WHAT IS OUTSTANDING. A filter that is too aggressive destroys good data as surely as no filter overstates",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_an_algorithm_that_never_ran",
+   "kind": "METHOD",
+   "fact": "A18 was written, registered and documented before it had ever executed. Its first run found two defects in itself and one in A16 — a live P01 read that would have undone the purge",
+   "learned_by": "A18_reality_filter",
+   "evidence": "exact-match skip; never-real conflation; A16 Session.read bypassing the golden",
+   "implication": "an algorithm that has never run is a hypothesis, not a capability. Run it before registering its state as anything but NEW",
    "confidence": "MEASURED",
    "session": 98
   }
