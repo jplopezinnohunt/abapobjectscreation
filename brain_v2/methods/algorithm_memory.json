@@ -714,6 +714,46 @@
    "implication": "aggregate on the side whose granularity you want. The arithmetic of the sample is also how you VERIFY the join is right — the parts summing to the whole is the proof the keys line up",
    "confidence": "MEASURED",
    "session": 98
+  },
+  {
+   "subject": "_simulations_look_exactly_like_postings",
+   "kind": "TRAP",
+   "fact": "1,828 of 2,316 payroll posting runs in 2026 never reached FI. They carry the same document structure as real ones and nothing in the row says which is which. Summing without filtering overstated the impact NINEFOLD",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "by run: 488 wholly in FI, 1,828 wholly absent, ZERO partial; USD 18.5M of 20.5M was simulation",
+   "implication": "before summing any operational table, ask what in it never actually happened. The discriminator is usually one table away — here, whether the run produced an accounting document at all",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_uniform_ratio_is_a_missing_filter",
+   "kind": "TRAP",
+   "fact": "the payroll-to-FI ratio was 11.5% and it was the SAME across every company code and document type. That uniformity was the tell: an incidental gap varies, a systematic filter does not",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "UNES 11.2%, IIEP 11.1%, ICTP 10.4%, UIS 10.0%, ICBA 11.9%, MGIE 10.7%",
+   "implication": "a suspiciously even ratio across unrelated groupings means a filter is missing from the query, not that the data is strange. Regroup by the process unit — here the RUN — and the structure appears",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "SUSP",
+   "kind": "CARRIER",
+   "fact": "SUSP is the payroll SUSPENSE symbolic account, and the custom ZZSUBST_KOMOK records moving a line off it onto a real account — 2,627 times in 2026, always from SUSP, on one to three employees a month",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "ppoix 2026: source KOMOK is SUSP on 100% of the 2,627 substituted rows; KOART moves FZ -> CZ",
+   "implication": "a suspense account plus a custom correction field is a repair path for failed account determination. Its volume measures how often the determination fails, which is a quality metric nobody is reporting",
+   "confidence": "MEASURED",
+   "session": 98
+  },
+  {
+   "subject": "_purge_beats_a_remembered_filter",
+   "kind": "METHOD",
+   "fact": "simulation runs were DELETED from the golden rather than filtered by convention. 89% of the payroll detail went, and half of every unrelated measurement taken beforehand moved with it — the substitutions fell from 2,627 to 1,264",
+   "learned_by": "A16_payroll_discovery",
+   "evidence": "purge_simulation_runs.py --apply; 21.0M detail rows -> 2.18M",
+   "implication": "when data contains records of things that never happened, make the wrong answer UNAVAILABLE instead of writing down a filter to remember. But keep the parent table that proves they existed, and never apply a discriminator outside the window where its evidence exists",
+   "confidence": "MEASURED",
+   "session": 98
   }
  ]
 }

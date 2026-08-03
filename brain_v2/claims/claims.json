@@ -20365,7 +20365,8 @@
     "B2R"
    ]
   },
-  "corrects": 459
+  "corrects": 459,
+  "CORRECTED_s098_simulation_runs": "THE FIGURES IN THIS CLAIM INCLUDE SIMULATION RUNS and are overstated about ninefold. Corrected: USD 1,982,154.59 and EUR 796,418.86 for runs that actually posted to FI. Everything else in the claim — the 999 accounts, the exact zero net, 999S as the sole carrier, the 72 dormant wage types — is unaffected."
  },
  {
   "id": 466,
@@ -20403,6 +20404,138 @@
     "HR",
     "FI",
     "FM"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 467,
+  "claim": "MOST PAYROLL POSTING DOCUMENTS NEVER REACH FI, THE CUT IS PER RUN AND NEVER PARTIAL, AND IGNORING IT OVERSTATED MY OWN FIGURE BY NINE TIMES (s098, AN-PAYROLL-FI-RECONCILIATION — closed, and it CORRECTS the number I reported one step earlier). THE LINK IS EXACT: BKPF-AWKEY = PPDHD-DOCNUM for AWTYP 'HRPAY'. All 11,613 HRPAY documents of 2026 match a payroll posting document, so nothing is lost on the FI side. THE RECONCILIATION. Of 101,033 payroll posting documents for 2026, only 11,613 have an FI document — 11.5%, and the ratio is uniform across every company code and document type, which is the first sign it is systematic rather than incidental. Grouped by RUN it becomes unambiguous: of 2,316 runs, 488 are ENTIRELY in FI and 1,828 are ENTIRELY absent. ZERO runs are partial. A payroll posting run either transfers whole or not at all, so the 1,828 are simulation runs carrying the same document structure as real ones. AND THAT IS WHY MY FIGURE WAS WRONG. Restricted to runs that actually posted, the Constant Dollar impact for 2026 is USD 1,982,154.59 and EUR 796,418.86 — not the USD 20,523,434.48 and EUR 8,057,168.94 I reported, of which USD 18,541,279.89 and EUR 7,260,750.08 were SIMULATION. Ninety percent of the number was test data. The design survives the correction intact: the 999 block still nets to EXACTLY zero per currency on the real postings alone. THE COVERAGE QUESTION THAT PROMPTED THIS IS ALSO ANSWERED, AND I HAD IT BACKWARDS. BKPF is COMPLETE for 2026 — 42,000 to 63,000 documents in every one of the seven months. It is bseg_union, the line items, that is partial: 536,380 rows against roughly 2.2 million for a full year. So the header is trustworthy and the line-item extract is the gap. THE METHOD LESSON, AND IT IS GENERAL. A transactional table can hold SIMULATIONS that are structurally identical to real postings, and nothing in the row says which it is. The discriminator lived one table away, in whether the run produced an accounting document at all. Before summing any operational table, ask what in it never actually happened — and a SUSPICIOUSLY UNIFORM RATIO across unrelated groupings is the signal that a systematic filter is missing, not that the data is odd.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "corrects": 465,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "ppdhd x bkpf x ppdit — golden, 2026",
+    "cite": "BKPF-AWKEY = PPDHD-DOCNUM; 11,613 of 101,033 payroll documents in FI (11.5%, uniform across company codes); by run: 488 wholly in FI, 1,828 wholly absent, 0 partial; posted-only 999 impact USD 1,982,154.59 and EUR 796,418.86 netting to 0.00 each; simulated USD 18,541,279.89 and EUR 7,260,750.08; bkpf 2026 complete at 42-63k documents per month, bseg_union partial at 536,380 rows",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "PPDHD",
+   "bkpf",
+   "AWKEY",
+   "HRPAY",
+   "ppdit",
+   "bseg_union",
+   "payroll_runs_posted",
+   "0009999992",
+   "0009999994"
+  ],
+  "resolution_notes": "USER asked for the reconciliation and it turned out to invalidate the figure I had given one step earlier. A VIEW payroll_runs_posted now exists in the golden so no later analysis repeats the mistake.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "HCM"
+   ],
+   "module": [
+    "HR",
+    "FI"
+   ],
+   "process": [
+    "B2R"
+   ]
+  }
+ },
+ {
+  "id": 468,
+  "claim": "THE CUSTOM SUBSTITUTION ALWAYS MOVES A LINE OFF A SUSPENSE ACCOUNT, AND IT IS A CORRECTION PATH FOR A HANDFUL OF PEOPLE (s098). Measured over 12,795,641 PPOIX rows for 2026: ZZSUBST_KOMOK is populated on 2,627 and the ORIGINAL symbolic account is 'SUSP' in EVERY ONE of them. It is substituted to a real account — CSI1 878 times, BSAL 314, MBER 306, PFER 302, ASH1 296, FALW 257, LANG 128 and a dozen others — and the account TYPE moves from FZ to CZ, that is from balance sheet to expense, on most of them. THE POPULATION IS TINY AND CONCENTRATED. Three employees in January, one in February, one in March, three in June and three in July. June alone carries 1,986 of the 2,627 rows. The wage types involved are ordinary pay elements: CSI financing, Medical Benefits fund ER, Net Base Salary, Pension Subsidy, ASHI financing, Family allowance. SO THE READING IS: when payroll cannot resolve an account assignment it parks the item on a SUSPENSE symbolic account, and this custom field records the correction. It is not a budget-rate mechanism and it is not a mass process — it is a repair path, exercised on a handful of employees a month. TWO THINGS ARE NOT ANSWERED HERE AND ARE NOT GUESSED. Where the substitution is PERFORMED is unknown: ZZSUBST appears in no file of the extracted corpus, and the STANDARD substitution indicators PPDIT-SUBST and PPDIT-BADI_SUBST are EMPTY on all 4,046,412 rows, so the standard mechanism is not what is running. And the other two customer fields, ZZSUBST_AUART and ZZSUBST_SPPRC, are populated on zero rows — built and never used.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "HCM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "ppoix x ppdix x ppdhd x T512T — golden, 2026",
+    "cite": "2,627 of 12,795,641 rows carry ZZSUBST_KOMOK and the source KOMOK is SUSP in 100% of them; targets CSI1 878, BSAL 314, MBER 306, PFER 302, ASH1 296; KOART FZ -> CZ; by period 202601 368 / 202602 180 / 202603 50 / 202606 1,986 / 202607 43, on 1 to 3 employees each; PPDIT-SUBST and BADI_SUBST empty on all rows",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "PPOIX",
+   "ZZSUBST_KOMOK",
+   "ZZSUBST_KOART",
+   "SUSP",
+   "CSI1",
+   "BSAL",
+   "PPDIT",
+   "BADI_SUBST"
+  ],
+  "resolution_notes": "USER: 'Mira cuando fueron las substituciones y donde se hacen'. WHEN and WHAT are measured. WHERE is named as unknown rather than guessed — the field is in no extracted source and the standard BAdI indicators are empty.",
+  "domain_axes": {
+   "functional": [
+    "HCM"
+   ],
+   "module": [
+    "HR",
+    "FI"
+   ],
+   "process": [
+    "B2R"
+   ]
+  },
+  "CORRECTED_after_purge_s098": "the count 2,627 INCLUDED SIMULATION RUNS. On runs that actually posted the substitution occurs 1,264 times — still always from SUSP, still a repair path on a handful of employees. Roughly half of every measurement taken before the purge carried simulation data, which is why the golden was purged rather than a rule written down."
+ },
+ {
+  "id": 469,
+  "claim": "THE GOLDEN NOW HOLDS ONLY PAYROLL RUNS THAT PRODUCED AN ACCOUNTING DOCUMENT, AND THE PURGE REMOVED 89% OF THE DETAIL (s098, at the user's direction: 'para que la base quede pura nos deberiamos quedar solo con las RUNS finales'). WHAT WAS DELETED: ppoix 12,795,641 -> 1,302,607; ppdix 4,165,836 -> 444,886; ppdit 4,046,412 -> 434,681. Twenty-one million detail rows down to 2.18 million. WHAT WAS KEPT AND WHY. PPDHD is NOT purged, deliberately. It is the record that the simulations existed, which is the only way the 89% is measurable at all; and it spans 2007-2026 while BKPF in the golden covers 2024-2026, so the discriminator CANNOT judge a run outside that window — purging PPDHD by it would have destroyed every pre-2024 run as if it were a simulation. That trap was caught before the delete, not after. THE PURGE IS A SCRIPT, NOT AN ACT: scripts/extraction/purge_simulation_runs.py, report-only unless given --apply, and it recreates the discriminating view each run. Two views now carry the rule inside the database itself — payroll_runs_posted and payroll_detail_is_posted_runs_only — because a rule written only in a script nobody opens is not a guarantee. VERIFIED AFTER THE PURGE: the 999 block still nets to EXACTLY 0.00 in each currency; 41,553 lines still chain through to their wage type; and the only wage type feeding them is still 999S. The measurement survived; only the simulations left. AND IT MOVED HALF THE OTHER NUMBERS TOO. The ZZSUBST substitutions fall from 2,627 to 1,264. Any figure taken from these tables before the purge should be re-read, which is the argument for purging the data rather than remembering a filter.",
+  "claim_type": "verified_fact",
+  "confidence": "TIER_1",
+  "domain": "PSM_FM",
+  "created_session": 98,
+  "evidence_for": [
+   {
+    "type": "empirical",
+    "ref": "purge_simulation_runs.py --apply, golden",
+    "cite": "ppoix 12,795,641->1,302,607, ppdix 4,165,836->444,886, ppdit 4,046,412->434,681; 0 of 89,420 unposted documents appear in bkpf under any AWTYP; post-purge 999 net EUR 0.00 and USD 0.00; 41,553 chained lines; ZZSUBST 2,627->1,264",
+    "added_session": 98
+   }
+  ],
+  "evidence_against": null,
+  "resolved_session": null,
+  "status": "active",
+  "evidence_legacy_text_for": null,
+  "related_objects": [
+   "ppdit",
+   "ppdix",
+   "ppoix",
+   "ppdhd",
+   "payroll_runs_posted",
+   "purge_simulation_runs.py"
+  ],
+  "resolution_notes": "USER: keep only the final runs, simulations add nothing, and make clear we only take the final ones. Done in the data, not in a convention.",
+  "domain_axes": {
+   "functional": [
+    "PSM_FM",
+    "HCM"
+   ],
+   "module": [
+    "HR",
+    "FI"
    ],
    "process": [
     "B2R"
