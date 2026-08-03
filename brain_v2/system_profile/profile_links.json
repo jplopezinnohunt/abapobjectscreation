@@ -273,7 +273,15 @@
     439,
     441,
     442,
-    443
+    443,
+    446,
+    448,
+    449,
+    456,
+    457,
+    462,
+    463,
+    464
    ],
    "knowledge_doc": "knowledge/domains/FI",
    "companions": [
@@ -429,7 +437,21 @@
     441,
     442,
     443,
-    444
+    444,
+    445,
+    446,
+    447,
+    448,
+    449,
+    450,
+    451,
+    452,
+    453,
+    454,
+    461,
+    462,
+    463,
+    464
    ],
    "knowledge_doc": "knowledge/domains/PSM",
    "companions": [],
@@ -574,9 +596,9 @@
    "in_ontology": true,
    "capability_cells": {
     "S_STANDARD_REF": "NONE",
-    "A_PROCESS": "NONE",
+    "A_PROCESS": "PARTIAL",
     "B_CODE": "HAVE",
-    "C_CONFIG": "PARTIAL",
+    "C_CONFIG": "HAVE",
     "D_DATA": "PARTIAL",
     "E_AUTH": "NONE",
     "F_INTERFACE_FILE": "HAVE",
@@ -585,47 +607,36 @@
     "R_S4_READINESS": "NONE",
     "U_USAGE": "PARTIAL",
     "subdomains": {
-     "infotypes": {
+     "Payroll_Calculation": {
+      "_opened": "s098 — reached while tracing BR for Staff",
+      "_what_it_is": "where staff cost is actually computed: schemas, rules, wage types and features in the payroll engine",
       "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "NONE",
-      "C_CONFIG": "NONE",
-      "D_DATA": "PARTIAL",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "PARTIAL",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE",
-      "note": "PA infotypes. estimate. EXTENDED s-2026-07-03 (claims #333-337): PA0105 subtype-0001 (SAP-user link, field USRID) vs subtype-0010 (work email, USRID_LONG) confirmed disjoint via live P01/D01/V01 read; measured P01->D01/V01 link gap (D01 857, V01 775, all against pre-existing USR02 users) closed via reusable BAPI_EMPLCOMM_CREATE sync (pa0105_user_sync.py). F_INTERFACE_FILE moved NONE->PARTIAL: a working, reusable replication mechanism now exists for this table (sap_master_data_sync family). D_DATA stays PARTIAL (was already partial pre-existing)."
-     },
-     "payroll": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "PARTIAL",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "NONE",
-      "D_DATA": "NONE",
+      "A_PROCESS": "PARTIAL — the custom schema inventory is known, the flow is not",
+      "B_CODE": "PARTIAL — features read as compiled programs; rules and schemas read as configuration || s098 cont.: 11 custom enhancements found on the POSTING path (RPCIPE00/RPCIPE00_OLD, HRPAD00INFTYUI, HRBEN00PAYROLL) — registered in knowledge/sap_custom_enhancement_registry.md §16",
+      "C_CONFIG": "HAVE — T52C0 68,767 schema steps, T52C1 67 schemas, T52C5 166,453 rule lines, T512T 60,078 wage types, T549D 2,888 features",
+      "D_DATA": "PARTIAL — s098 cont.: T9POST (2,673 rows, the custom payroll-to-FM bridge), T9FUND, T52EL (6,735 rows, corrected from 'empty for UN'), T52EK, T030B, T52EZ, T512W, PPDHD (2,868,628 rows) all persisted to the golden. PPDIT (the account-determination answer — KTOSL+HKONT on one row) and PPDIX are READ LIVE ONLY, not yet persisted — that load has not completed. Still NONE on the payroll RESULT cluster itself (RT/CRT).",
       "E_AUTH": "NONE",
       "F_INTERFACE_FILE": "NONE",
-      "G_CONFORMANCE": "NONE",
+      "G_CONFORMANCE": "PARTIAL — s098 cont.: BR for Staff is a CLOSED custom mechanism (a sign-reversed twin: 58 of 72 Constant Dollar wage types post to the same symbolic account as their base with the sign inverted, T512W confirms uniform config) — a real deviation from a standard budget-rate treatment, gated by custom feature YYCDR, piloted Jan-2025 only and never put into production. The GL-account resolution of that mechanism (the amount) is still open — AN-BR-STAFF-AMOUNT.",
       "H_IMPROVE": "NONE",
       "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE",
-      "note": "payroll (hcm_domain_agent). partial."
-     },
-     "fiori_apps": {
-      "S_STANDARD_REF": "NONE",
-      "A_PROCESS": "NONE",
-      "B_CODE": "PARTIAL",
-      "C_CONFIG": "NONE",
-      "D_DATA": "NONE",
-      "E_AUTH": "NONE",
-      "F_INTERFACE_FILE": "NONE",
-      "G_CONFORMANCE": "NONE",
-      "H_IMPROVE": "NONE",
-      "R_S4_READINESS": "NONE",
-      "U_USAGE": "NONE",
-      "note": "HCM Fiori. estimate."
+      "U_USAGE": "PARTIAL — payroll runs continuously; FMRESERV carries 6.4M change documents",
+      "first_finding": "BR for Staff is 72 'Constant Dollar' wage types in grouping UN — named after its output, invisible in the schema and rule layers",
+      "s098_closure": "the account determination that defeated 3 configuration-based extractions (T030-KTOSL is CHAR(3), a payroll symbolic account is CHAR(4) — structurally different keys) is answered from PPDIT, the posting document items: one-to-many forward (key→accounts), one-to-one back (account→key) ⇒ the wage type decides the account, not the FI key. Domain writeup: knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md §2.7-2.8. Claims #462-464.",
+      "custom_schemas": [
+       "YR00 (main driver, 122 steps)",
+       "YN00",
+       "YN04",
+       "YN60",
+       "YR02",
+       "YR21",
+       "YR70",
+       "ZN00-ZN90 series",
+       "ZNFR",
+       "ZCCO",
+       "ZM01"
+      ],
+      "_why_it_matters": "staff cost is the largest spend category and its computation was a black box. Everything downstream already measured — PBC commitments, FMRESERV, the payroll posting runs — is the OUTPUT of this layer"
      }
     }
    },
@@ -657,7 +668,9 @@
     276,
     333,
     334,
-    336
+    336,
+    455,
+    456
    ],
    "knowledge_doc": "knowledge/domains/HCM",
    "companions": [],
@@ -1005,7 +1018,9 @@
     370,
     373,
     374,
-    380
+    380,
+    458,
+    460
    ],
    "knowledge_doc": "knowledge/domains/Travel",
    "companions": [
