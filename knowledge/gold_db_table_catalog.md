@@ -175,6 +175,40 @@ UNESCO models "projects" via **PS (PROJ/PRPS)**, not the FM Funded-Program dimen
 The BCS budget *documents/totals* (`fmbh`/`fmbl`/`bpge`/`bpja`) are transactional, already present, and are
 NOT master data — out of scope of this refresher.
 
+## Payroll engine + transport-text tables (loaded s098, `scripts/extraction/load_wide_tables.py`)
+> Why loaded together: ALGORITHM A16 opened the payroll CALCULATION ENGINE (HCM domain doc
+> `knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md` §2) and ALGORITHM A17 opened change
+> governance, both needing tables never before in the golden. `load_wide_tables.py` handles the
+> first-load + wide-table chunking problem (RFC_READ_TABLE's 512-byte work area) that
+> `gold_refresh.py`'s delta engine does not solve.
+
+| SAP source | Gold DB table | What it is | How we use it | Key | Rows (s098) |
+|---|---|---|---|---|---|
+| **T52C0** | `T52C0` | Payroll schema STEPS — the engine | 67 schemas, 45 custom (`YR00` main driver 122 steps). `A16_payroll_end_to_end` §engine. | SCHEMA+seq | 68,767 |
+| **T52C1** | `T52C1` | Payroll schema HEADER | One row per schema (client-specific vs standard) | SCHEMA | 2,064 |
+| **T52C5** | `T52C5` | Payroll RULE lines | 11,742 rules / 166,453 lines, 307 custom. Searched for BUDGET/EURX/CDR text — 1 false positive; the mechanism is not visible here (rule `feedback_compare_field_widths_before_more_extraction` — same session, different lesson: grouping by OUTPUT, not searching rule TEXT, is what found it). | RULE+seq | 166,453 |
+| **T512T** | `T512T` | Wage-type TEXTS | Where "BR for Staff" surfaced: grouping 1,641 wage types by stem found stem `9` = 72 "Constant Dollar" members. Claim #454. | MOLGA+LGART+SPRAS | 182,899 |
+| **T512W** | `T512W` | Wage-type PROCESSING CLASSES | Confirms the 72 Constant Dollar types are ONE uniform mechanism (identical processing-class chain + accumulation WT `800000000000`), not 72 separate decisions. Claim #462. | MOLGA+LGART+... | 68,081 |
+| **T549D** | `T549D` | Feature DIRECTORY (gates) | 2,888 features, 19 custom. Each compiles to `/1PAPA/FEAT<client><NAME>`, readable via `RPY_PROGRAM_READ`. | FEATURE | 2,888 |
+| **T549B** | `T549B` | Feature decision-tree NODES | Custom feature `YYCDR` = the personnel budget-rate perimeter gate on `PA0001` PERSG/GSBER/WERKS → 2,086 employees (8.8% of workforce). Claim #451. | FEATURE+seq | 112,366 |
+| **T52EL** | `T52EL` | Wage type → symbolic account (valuation base) | **CORRECTED s098:** earlier reported "empty for MOLGA UN" from a malformed live query against a table not yet in the golden; loaded, it is 6,735 rows / 32 country groupings incl. UN, and all 72 Constant Dollar wage types are configured here. | MOLGA+LGART+... | 6,735 |
+| **T52EK** | `T52EK` | Symbolic account → FI transaction key (typing) | Types payroll symbolic accounts as `'CZ'` (expense, determined by employee grouping) — measured, not the GL link itself. | SYMKO | 203 |
+| **T9POST** | `T9POST` | **CUSTOM** — payroll → FM account-assignment bridge | `SYMKO`×`MOMAG` (employee grouping) → BUKRS/GSBER/KOSTL/position/**FISTL**(fund centre)/**FINCODE**(fund). NOT a GL mapping — an FM assignment. The 24 Constant Dollar symbolic accounts appear in NONE of its 2,673 rows (consistent with the twin inheriting its base's assignment). Claim #463. | SYMKO+MOMAG | 2,673 |
+| **T9FUND** | `T9FUND` | **CUSTOM** — payroll symbolic account → fund | Companion of T9POST | SYMKO | 1 |
+| **T030B** | `T030B` | FI account-determination keys (general) | Checked as a candidate for the symbolic-account→GL link; does NOT carry it (no payroll rows). Part of closing `AN-BR-STAFF-AMOUNT` (amount still open). | KTOPL+KTOSL | 209 |
+| **T52EZ** | `T52EZ` | Payroll posting: symbolic account by employee grouping | Confirmed s098 to be a **validity table, not an assignment table** — does not resolve to GL. | varies | 5,751 |
+| **PPDHD** | `PPDHD` | Payroll POSTING DOCUMENT headers | Run → document. Feeds `PPDIT` (below). | ABRECHNK+... | 2,868,628 |
+| **PPDIT** | *(not yet persisted — read live only)* | Payroll posting document **ITEMS** | **THE ANSWER to the account determination.** Carries `KTOSL` (FI transaction key, CHAR(3) — HRA/HRC/HRF/HRK) AND `HKONT` (resolved GL account) on the same row. 4,000-row BUKRS=UNES sample: 2 of 4 keys fan out to several accounts, 28 of 28 accounts belong to exactly one key ⇒ account decided by wage type, beyond the key. Claims #463/#464. **Gap:** declared in `load_wide_tables.py` PLAN (partitioned by BUKRS) but the load has not yet completed — every repeat query needs a live P01 connection. | DOCNUM+DOCLIN | 4,000 (live sample only) |
+| **E070** | `E070` | Transport headers | Status, type, owner, date — the record `cts_transports` was built without. | TRKORR | 20,915 |
+| **E07T** | `E07T` | Transport TEXTS | **Reverses a volume-trend reading:** a 10x rise in transported TABU content (Aug→Nov 2025) looked like master-data intervention; the transport TEXT shows it is mostly holiday calendars (137 objects/12 transports) + HR form scenarios (492 objects) — legitimate, not a data-move incident. Rule `feedback_read_transport_text_before_the_trend`. AN-TRANSPORTED-DATA-LEGITIMACY (DONE). | TRKORR+SPRAS | 20,953 |
+| **FMIOI** | `FMIOI` | FM commitment line items — RE-PULLED with all fields | Golden previously held a 13-column extract missing `VRGNG`/`BTART`/`TWAER` — exactly the fields identifying a PO reduction, the one budget-rate baseline (Route 2) that couldn't be evaluated before. Now the full dictionary. Supersedes the FMIOI row further up this catalog (2,190,893 rows) — re-pulled wide, now 2,254,039 rows. | REFBN+REFBT+RFPOS+GJAHR | 2,254,039 |
+
+**Cross-links:** `knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md` (full domain writeup) ·
+`knowledge/sap_custom_enhancement_registry.md` §16 (the enhancements on the posting path) ·
+`brain_v2/capability_model/capability_model.json` → `HCM.subdomains.Payroll_Calculation` ·
+claims #417–#464 · `brain_v2/methods/algorithm_memory.json` subjects `_field_width`, `T9POST`,
+`PPDIT`, `_persistence`, `transported table content`.
+
 ## TODO (extend this catalog)
 Started with the log/change/job/upgrade/audit tables + the FM/BCS+PS master-data backbone above.
 **Not yet catalogued: the remaining ~268 of 311 tables** (FI bsX, FM fmavc*/fmifiit*, BCM bcm_*,

@@ -368,3 +368,50 @@ Source: Golden DB `bcm_badi_impl` (1 of 3 impls is custom).
     which claim #310 supersedes (no bank-master source exists for either field). Do not port this correction
     into the fragment until the in-progress fragment/HTML reconciliation (companion drift fix, rule #168)
     completes — fixing it mid-reconciliation risks colliding with that pending merge.
+
+---
+
+## 16. Payroll Posting-Path Enhancements (HCM — Extracted live P01, s098)
+
+> **Why this section exists:** ALGORITHM A16 (`A16_payroll_end_to_end`,
+> `process_mining/payroll_discovery.py`) opened the payroll CALCULATION ENGINE this session while
+> tracing "BR for Staff" (the personnel side of the budget rate). It discovered 11 custom
+> enhancements sitting directly on the payroll POSTING path — the seam between payroll and
+> accounting — which had lived only in `brain_v2/payroll_discovery.json` + claims #454/#456/#464
+> until now. Promoted here per the cross-reference/founding-premise rule (this file's own §13
+> preamble names the failure mode: custom code analyzed once, never landed in the master
+> registry). Full domain writeup: [`hcm_payroll_analysis.md` §2.6](file:///c:/Users/jp_lopez/projects/abapobjectscreation/knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md).
+
+### 16.1 Posting-program enhancements (`RPCIPE00` / `RPCIPE00_OLD`)
+
+| Enhancement | Hooked object | Type | Finding |
+|---|---|---|---|
+| `ZHR_SPAU_PY_IMPL_PGM_013` | `RPCIPE00` (current posting program) | PROG + REPS | SPAU-era posting implementation |
+| `ZHR_POSTING_ACCOUNTS_PAYABLE` | `RPCIPE00_OLD` (retro/legacy posting program) | PROG | Posting-accounts logic |
+| `ZHR_POSTING_ACCOUNTS_PAYABLE_2` | `RPCIPE00_OLD` | PROG | Posting-accounts logic, variant 2 |
+| `ZHR_POSTING_ACCOUNTS_PAYABLE_D` | `RPCIPE00_OLD` | PROG | Posting-accounts logic, variant D |
+| **`ZHR_POSTING_ACCOUNTS_RETRO`** | `RPCIPE00_OLD` | PROG | **Retro posting account determination** — sits exactly at the seam where a payroll symbolic account resolves to a GL account (claim #464); the account-determination search that defeated 3 configuration-based extractions is answered empirically by `PPDIT`, and this is the one custom enhancement sitting on that resolution path |
+
+### 16.2 Infotype screen enhancements (`HRPAD00INFTYUI`)
+
+| Enhancement | Type | Note |
+|---|---|---|
+| `YENH_HRPAD00INFTYUI_0002` | ENHS | Infotype UI enhancement spot 0002 |
+| `YENH_HRPAD00INFTYUI_0006` | ENHS | Infotype UI enhancement spot 0006 |
+| `YENH_HRPAD00INFTYUI_0021` | ENHS | Infotype UI enhancement spot 0021 |
+
+### 16.3 Benefits payroll process enhancement
+
+| Enhancement | Hooked object | Type | Note |
+|---|---|---|---|
+| `YHR_ENH_PAY_PROCESS_HEAL_PLANS` | `HRBEN00PAYROLL` | FUGR | Health-plans payroll process, function-group level |
+| `YHR_ENH_PAY_PROCESS_HEAL_PLANS` | `HR_BEN_PAY_PROCESS_HEAL_PLANS` | FUNC | Same enhancement, function-module level |
+
+### 16.4 Persistence / where this is queryable
+
+*   Claims: `brain_v2/claims/claims.json` #454, #456, #462–#464.
+*   Source: `brain_v2/payroll_discovery.json` (`.posting.custom_enhancements`), produced by
+    `process_mining/payroll_discovery.py`.
+*   Domain doc: `knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md` §2.6–§2.7.
+*   Capability model: `brain_v2/capability_model/capability_model.json` →
+    `HCM.subdomains.Payroll_Calculation`.

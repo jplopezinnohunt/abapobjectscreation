@@ -3852,5 +3852,35 @@
   "how_to_apply": "1. look for the AS-RUN research before the design corpus — filenames like 'asrun', 'e2e', 'current', 'operating model' beat 'BBP' and 'design'. 2. when a design statement fails against data, the FIRST hypothesis is that it was superseded, not that the system is broken. 3. a NOT_IMPLEMENTED verdict needs a second question: does anyone still intend it? If not, it is history. 4. keep what a blueprint is genuinely good for — VOCABULARY. The AVC address triple named a distinction we had measured and had no word for, and that survives the reframe. 5. the real yardstick is the measured end-to-end: here, human validation at ~21 days against an integration seam of 1.8 days says the leverage is human throughput, which no blueprint comparison would have shown.",
   "evidence": "claim superseding the framing of #409/410/414/415; unesco-sap-brain/knowledge/36_asrun_operating_model_reeval.md and 37_workplan_e2e_integrated.md",
   "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_compare_field_widths_before_more_extraction",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "When a join/lookup between two tables returns nothing, compare the FIELD WIDTHS of the two key columns (DDIF_FIELDINFO_GET) before extracting any more tables chasing the link. A join between two differently-sized keys sharing the same field NAME cannot ever succeed, no matter how many more tables are pulled.",
+  "why": "s098, A16_payroll_end_to_end. Three separate extractions chased the payroll symbolic-account-to-GL-account link through T030/T030B/T52EZ before a single DDIF_FIELDINFO_GET call ended the line of enquiry: T030-KTOSL (the FI account-determination transaction key) is CHAR(3); a payroll symbolic account (T52EK-SYMKO) is CHAR(4). Two different keys wearing the same field name — no join could ever have worked. The cost was three extractions instead of one field-metadata call.",
+  "how_to_apply": "1. The moment a join/lookup against a candidate key returns zero or nonsensical results, STOP extracting more candidate tables. 2. Call DDIF_FIELDINFO_GET (or read the DDIC) on BOTH sides of the join and compare LENG. 3. If the widths differ, the fields are NOT the same key regardless of the shared name — go find the real bridge (often a customer-range table, see feedback about T9POST) or read the POSTED DOCUMENTS instead of the configuration (companion rule). 4. Record the field-width fact in algorithm_memory so no other algorithm repeats the same trap.",
+  "evidence": "brain_v2/methods/algorithm_memory.json subject '_field_width'; claims #463/#464; brain_v2/payroll_discovery.json .resolved_posting._why_config_search_fails",
+  "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_read_posted_documents_when_config_wont_yield",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "When the configuration tables will not yield an assignment (a derivation, an account determination, a routing decision), read the POSTED DOCUMENTS instead — the resolved result sits on one row there, and the cardinality measured IN BOTH DIRECTIONS (forward and back) identifies where the decision is actually made.",
+  "why": "s098, A16_payroll_end_to_end part 7 ('the resolved posting'). The payroll account determination defeated a configuration search for a structural reason (see feedback_compare_field_widths_before_more_extraction). PPDIT — the posting document ITEMS — carries the FI transaction key and the resolved GL account together on one row. Over a 4,000-row sample: 2 of 4 keys fan out to several GL accounts, while 28 of 28 GL accounts belong to exactly one key. One-to-many forward, one-to-one back — which is what proved the account is decided BEYOND the key (by the wage type), a reading no configuration table could have given directly.",
+  "how_to_apply": "1. If a customizing/derivation table search stalls (empty joins, structurally mismatched keys, or the mechanism is simply not configured where standard SAP would put it), pivot to the TRANSACTIONAL documents that the process actually produced. 2. Read a representative sample keyed the same way the decision is made (same company code / same period) and pull BOTH the input key and the resolved output field on the same row. 3. Compute cardinality BOTH ways (key→outputs and output→keys) — the direction that collapses to 1 is where the decision is actually made. 4. This is faster AND more truthful than reconstructing configuration: it does not depend on having found the right customizing table at all.",
+  "evidence": "brain_v2/methods/algorithm_memory.json subject '_read_the_documents_not_the_configuration'; brain_v2/methods/algorithms.json A16_payroll_end_to_end.seventh_part_added_s098; claims #463/#464",
+  "domain": "Brain_Architecture"
+ },
+ {
+  "id": "feedback_read_transport_text_before_the_trend",
+  "severity": "MEDIUM",
+  "created_session": 98,
+  "rule": "Read the transport TEXT (E07T) before drawing a conclusion from a transport VOLUME trend. A trend measured on object/row counts alone invites a reading the content refutes.",
+  "why": "s098, A17_change_governance / AN-TRANSPORTED-DATA-LEGITIMACY. Transported table (TABU) content rose roughly tenfold from August to November 2025 on an unchanged transport cadence — read on volume alone, this looks like an intervention in production master data. E07T (the transport texts, previously never extracted — cts_transports was built without as4text) showed the volume was overwhelmingly holiday calendars (137 objects across 12 transports) and HR form scenarios (492 objects): legitimate, routine content, not a data-move incident. The volume-only reading would have escalated a non-issue.",
+  "how_to_apply": "1. Before characterizing ANY transport-volume trend (a spike, a rise, an unusual cadence) as suspicious or as evidence of an intervention, pull E07T (or the transport's AS4TEXT) for the objects/transports driving it. 2. Read what the transport SAYS it is for, not just how much it moved. 3. Only escalate a volume trend once the text has been read and does NOT explain it. 4. This generalizes the companion lesson about reading posted documents over configuration: read what was RECORDED about the change (the text), not just what was counted (the volume).",
+  "evidence": "brain_v2/methods/algorithm_memory.json subject 'transported content' (second entry, 's098', 'the transport TEXT reversed the reading the volume trend suggested'); brain_v2/capability_model/execution_backlog.json AN-TRANSPORTED-DATA-LEGITIMACY (DONE)",
+  "domain": "CTS"
  }
 ]

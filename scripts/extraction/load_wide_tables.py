@@ -114,7 +114,7 @@ PLAN = {
     "T512W":      {"partition": None, "why": "wage-type processing classes"},
     "T549D":      {"partition": None, "why": "feature directory — each compiles to a readable program"},
     "T549B":      {"partition": None, "why": "feature decision-tree nodes"},
-    "T52EL":      {"partition": None, "why": "wage type to symbolic account — measured EMPTY for UN"},
+    "T52EL":      {"partition": None, "why": "wage type to symbolic account — CORRECTED s098: earlier 'measured EMPTY for UN' was a malformed live query against a table not yet in the golden. Loaded, it is 6,735 rows across 32 country groupings including UN (all 72 Constant Dollar wage types configured here)"},
     # THE PAYROLL-TO-FM BRIDGE, and it is CUSTOM. Symbolic account x employee grouping ->
     # company code, business area, cost centre, FUND CENTRE and FUND. Not a GL mapping —
     # an FM account assignment, which is why the search through T030 could never find it.
