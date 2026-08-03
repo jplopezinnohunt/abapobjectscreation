@@ -69,10 +69,10 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
 - **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
-## 📈 MATURITY OF THE METHOD — 65.4%, measured from artifacts
+## 📈 MATURITY OF THE METHOD — 65.3%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
 - **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
-- **Strongest:** MODEL_FIDELITY 0.99 · CONSOLIDATE 0.95 · ESCALATE 0.93
+- **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
 - **Read this together with the capability grid.** Two independent instruments agree: strong at
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
@@ -82,7 +82,7 @@ Not a self-assessment: each dimension is derived from what is on disk.
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **29.7%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1481 objects · 183 rules · 442 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1482 objects · 183 rules · 443 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
