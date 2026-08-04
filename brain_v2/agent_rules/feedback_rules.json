@@ -3905,5 +3905,28 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_a_dead_agent_leaves_a_valid_different_file",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "When a subagent or a background write dies mid-stream, DIFF what it touched before doing anything else. It does not leave a broken file — it leaves a file that is VALID AND DIFFERENT, so parsing it, loading it and running a smoke test all pass.",
+  "why": "s098. The steward close pass died with 'API Error: Response stalled mid-stream'. It left feedback_rules.json parseable, loadable and wrong: domain_axes — the convention in 144 of 187 rules — replaced by a flat domain field, and the trailing newline dropped. Nothing would have caught it except reading the diff. The same shape of damage is why an interrupted post-INSERT DROP once left FMIOI duplicated and it looked like a clean load.",
+  "how_to_apply": "On any agent-failure notification: git status, then git diff on every file it named, BEFORE re-running it or committing. Judge each change against the file's OWN convention — count which shape the existing entries use rather than assuming. Keep what the agent got right: here the evidence field it added was useful and only the schema change was wrong. And do NOT re-run a writer that died mid-write until the partial state is resolved.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 is knowledge over velocity: re-running the failed agent is the fast path and it compounds damage over a state nobody inspected. Reading the diff costs one command and is the only thing that sees this class of defect.",
+  "evidence": "git diff brain_v2/agent_rules/feedback_rules.json after task a3be7b85e103b79e6 failed",
+  "source_file": "brain_v2/agent_rules/feedback_rules.json",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]
