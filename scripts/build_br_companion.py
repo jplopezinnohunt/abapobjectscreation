@@ -7,15 +7,33 @@ WHY GENERATED
     budget_rate_graph.json, budget_rate_enhancements.json and claims.json at build time, so
     the page cannot drift from the brain. Edit the builder, never the output.
 
+THE RULE THIS PAGE IS BUILT ON — feedback_a_companion_names_it_never_counts_it
+    A COMPANION NAMES THE OBJECTS. It never reports a count in place of them. The first
+    version of this page said "nine enhancements and a control report" while the artefact
+    held 18 members each with its hook, its gate field, what it modifies and whether the
+    effect persists; 12 moments each with its SAP object and the DATE it converts on; and 8
+    named perimeter conditions. All of it summarised away.
+
+    A count is what you write when you have not read the data — and to the reader it is
+    indistinguishable from having read it and found nothing.
+
+    Four requirements, applied here:
+      1. every quantity is immediately followed by its enumeration
+      2. every object carries its hook, its gate and its effect, not merely its name
+      3. every figure carries the perimeter it was measured on, in the same cell
+      4. the page says which sections are GENERATED and which are WRITTEN, because only the
+         written ones can go stale
+    Where an array exists in the source, a TABLE must exist in the page.
+
 WHAT IT SHOWS, and the order is the argument
     1. The two mechanisms side by side, because the whole subject is that they are NOT the
        same design and were repeatedly confused for one.
-    2. AS-DESIGNED against AS-RUN, which is the finding the model exists to express: the
-       configuration describes 72 wage types and one posts.
-    3. The numbers, each with what it is measured ON — a figure without its perimeter is how
-       the nine-fold error happened.
-    4. The graph, so a reader can see that the design node and the behaviour node are joined
-       by a CONTRADICTION edge that is deliberately kept.
+    2. AS-DESIGNED against AS-RUN: the configuration describes 72 wage types and one posts.
+    3-5. The 18 extensions, the 12 moments and the 8 conditions — named, not counted.
+    6. The numbers, each with what it is measured ON.
+    7-8. The contradiction the graph keeps on purpose, and the chain from mechanism to
+       amount, which on being walked exposes the edges the graph is still missing.
+    9. What was corrected, because on this subject that is the most transferable part.
 
 USAGE
     python scripts/build_br_companion.py
@@ -146,6 +164,51 @@ def main():
         esc("1.828"), esc("2.316"), esc("488"), esc("1.828"),
         esc(corr.get("_how_to_not_repeat_it", "vista payroll_runs_posted")))
 
+    # --- THE EXTENSIONS, NAMED. A companion that says "nine enhancements" has told the
+    # --- reader nothing they can act on: not which, not where they hook, not what they
+    # --- change, not whether the change survives the call. All of that is in the artefact
+    # --- and the first version of this page summarised it away. Counting is what you write
+    # --- when you have not read the data.
+    mem = art.get("members") or []
+    mrows = ""
+    for m in mem:
+        mrows += ('<tr><td><code>%s</code><span class="id">%s</span></td>'
+                  '<td>%s</td><td class="hk">%s</td><td class="gt">%s</td>'
+                  '<td class="md">%s</td><td class="%s">%s</td></tr>'
+                  % (esc(m.get("name")), esc(m.get("id")), esc(m.get("camp")),
+                     esc(m.get("hook")), esc(m.get("gate_keyed_on")), esc(m.get("modifies")),
+                     "yes" if m.get("persists") else "no",
+                     "PERSISTE" if m.get("persists") else "temporal"))
+
+    # --- THE MOMENTS. Where in the FM lifecycle the rate is actually applied, which object
+    # --- it hooks, which gate decides, and WHICH DATE it converts on — the last one is what
+    # --- makes two moments give different answers for the same document.
+    mo = (art.get("the_twelve_moments") or {}).get("moments") or []
+    morows = ""
+    for i, x in enumerate(mo, 1):
+        morows += ('<tr><td class="num">%d</td><td><b>%s</b></td>'
+                   '<td><code>%s</code></td><td class="hk">%s</td>'
+                   '<td class="gt">%s</td><td class="md">%s</td>'
+                   '<td class="num">%s</td></tr>'
+                   % (i, esc(x.get("moment")), esc(x.get("enhancement")),
+                      esc(x.get("sap_object") or x.get("hooks_into")), esc(x.get("gate")),
+                      esc(x.get("converts_on")), esc(x.get("lines"))))
+
+    # --- THE CONDITIONS. The perimeter is eight ranges and each is SKIPPED when its
+    # --- parameter arrives empty, which is why the same code covers different populations
+    # --- at different moments. Naming the values is the difference between "there is a
+    # --- perimeter" and knowing what is inside it.
+    cond = ((art.get("the_exact_perimeter") or {})
+            .get("gate_1_CHECK_CONDITIONS") or {}).get("conditions") or []
+    crows2 = ""
+    for c in cond:
+        vals = c.get("values")
+        crows2 += ('<tr><td><code>%s</code></td><td>%s</td><td>%s</td>'
+                   '<td class="md">%s</td></tr>'
+                   % (esc(c.get("param")), esc(c.get("range")),
+                      esc(", ".join(vals) if isinstance(vals, list) else vals),
+                      esc(c.get("_note"))))
+
     # --- the graph, presented as the two questions it exists to answer rather than as an
     # --- inventory. An alphabetical list of 33 nodes answers nothing; the contradiction pair
     # --- and the resolution chain are why the edges were built in the first place.
@@ -264,6 +327,13 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+table.det{font-size:12px}
+table.det td.hk,table.det td.gt,table.det td.md{color:var(--un-grey);max-width:290px}
+table.det td.gt{font-family:ui-monospace,Consolas,monospace;font-size:11px}
+table.det td.num{text-align:right;color:var(--un-grey)}
+table.det .id{display:block;font-size:10px;color:var(--un-grey);letter-spacing:.04em}
+table.det td.yes{color:var(--bad);font-weight:700;font-size:11px;white-space:nowrap}
+table.det td.no{color:var(--un-grey);font-size:11px;white-space:nowrap}
 .contra{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;
  background:var(--card);border:1px solid var(--border);border-left:4px solid var(--bad);
  border-radius:6px;padding:14px 16px;margin-bottom:10px}
@@ -302,15 +372,36 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 
 <h2>2 · Lo diseñado contra lo ejecutado</h2>@DELTA@
 
-<h2>3 · Las cifras, cada una con su perímetro</h2>@NUMS@
+<h2>3 · Las extensiones, una por una</h2>
+<p class="note">Dónde engancha cada una, sobre qué campo decide, qué modifica, y si el cambio
+ <b>sobrevive a la llamada</b> o solo vive durante ella. Esa última columna es la que separa
+ lo que queda escrito en FM de lo que solo altera una comprobación en curso.</p>
+<div class="scroll"><table class="det"><tr><th>extensión</th><th>campo</th><th>engancha en</th>
+<th>gatea sobre</th><th>modifica</th><th>efecto</th></tr>@MROWS@</table></div>
 
-<h2>4 · La contradicción que el grafo conserva a propósito</h2>
+<h2>4 · Los doce momentos del ciclo de vida FM</h2>
+<p class="note">Los mismos ocho rangos cubren poblaciones distintas en cada momento, porque
+ <b>una condición cuyo parámetro llega vacío se salta</b>. Y la columna <i>convierte sobre</i>
+ es la que explica que dos momentos den respuestas distintas para el mismo documento: no
+ comparten la fecha de conversión.</p>
+<div class="scroll"><table class="det"><tr><th>#</th><th>momento</th><th>extensión</th>
+<th>objeto SAP</th><th>gate</th><th>convierte sobre</th><th>líneas</th></tr>@MOROWS@</table></div>
+
+<h2>5 · El perímetro: las ocho condiciones</h2>
+<p class="note">Cada una se comprueba solo si su parámetro llega informado. Un rango vacío no
+ restringe: <b>abre</b>.</p>
+<div class="scroll"><table class="det"><tr><th>parámetro</th><th>rango</th><th>valores</th>
+<th>nota</th></tr>@CROWS2@</table></div>
+
+<h2>6 · Las cifras, cada una con su perímetro</h2>@NUMS@
+
+<h2>7 · La contradicción que el grafo conserva a propósito</h2>
 <p class="note">El diseño y el comportamiento son mecanismos distintos, y los dos siguen en el
  grafo unidos por una arista que dice que se contradicen. Borrar uno perdería la medida de la
  distancia — y esa distancia es el producto.</p>
 @CONTRA@
 
-<h2>5 · La cadena, de mecanismo a importe</h2>
+<h2>8 · La cadena, de mecanismo a importe</h2>
 <p class="note">Esto es lo que las aristas permiten responder mecánicamente: seguir el lado de
  personal hasta su cifra sin que nadie tenga que recordar el camino.</p>
 <div class="chain">@CHAIN@</div>
@@ -320,7 +411,7 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table><tr><th>de</th><th>relación</th><th>a</th><th>por qué</th></tr>@EROWS@</table></div>
 </details>
 
-<h2>6 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
+<h2>9 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
 <p class="note">Este tema se entendió mal varias veces. Las correcciones se conservan
  <b>superponiendo</b>, nunca borrando — un claim corregido sigue ahí con su corrección al lado.</p>
 <div class="scroll"><table><tr><th>claim</th><th>qué afirma</th><th>corrección</th></tr>@CROWS@</table></div>
@@ -332,7 +423,9 @@ Regenerar: <code>python scripts/build_br_companion.py</code></footer>
     for tok, val in (("@NN@", len(nodes)), ("@NE@", len(edges)), ("@TWO@", two),
                      ("@DELTA@", delta), ("@NUMS@", nums), ("@GCARDS@", gcards),
                      ("@EROWS@", erows), ("@CROWS@", crows),
-                     ("@CONTRA@", contra_html), ("@CHAIN@", chain)):
+                     ("@CONTRA@", contra_html), ("@CHAIN@", chain),
+                     ("@MROWS@", mrows), ("@MOROWS@", morows),
+                     ("@CROWS2@", crows2)):
         doc = doc.replace(tok, str(val))
 
     with io.open(OUT, "w", encoding="utf-8") as f:
