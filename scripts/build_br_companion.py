@@ -253,6 +253,86 @@ def main():
                      if amt is not None else "—",
                      esc(v.get("_note"))))
 
+    # --- HOW TO REPRODUCE EVERY FIGURE. Without this the page tells a reader WHAT was
+    # --- measured and leaves them unable to check it or to re-run it next quarter. Every
+    # --- query below was EXECUTED against the golden and returned the figure printed beside
+    # --- it — publishing a recipe you have not run is the same defect as publishing a count
+    # --- you have not read: it looks like knowledge and is a guess.
+    SIGNED = ("CASE WHEN substr(trim(WRBTR),-1)='-' "
+              "THEN -CAST(replace(trim(WRBTR),'-','') AS REAL) "
+              "ELSE CAST(trim(WRBTR) AS REAL) END")
+    REPRO = [
+     ("Impacto de personal — el lado deudor",
+      "USD 1.982.154,59 · EUR 796.418,86",
+      "SELECT WAERS, ROUND(SUM(CASE WHEN %s>0 THEN %s ELSE 0 END),2)\n"
+      "FROM ppdit WHERE ltrim(HKONT,'0') LIKE '999%%' GROUP BY WAERS;" % (SIGNED, SIGNED),
+      "No lleva filtro de runs porque <code>ppdit</code> en el golden YA está purgada a runs "
+      "posteados. Si alguna vez se recarga sin purgar, esta consulta devuelve nueve veces más "
+      "y hay que volver a pasar <code>purge_simulation_runs.py</code>."),
+     ("El bloque 999 cuadra a cero",
+      "EUR -0,00 · USD 0,00",
+      "SELECT WAERS, ROUND(SUM(%s),2)\nFROM ppdit WHERE ltrim(HKONT,'0') LIKE '999%%' "
+      "GROUP BY WAERS;" % SIGNED,
+      "Es la prueba de que es una reclasificación balanceada y no un residuo. Si algún día "
+      "deja de dar cero, el mecanismo cambió."),
+     ("Cuántos runs son simulación",
+      "2.316 runs · 488 posteados",
+      "SELECT COUNT(DISTINCT h.RUNID),\n"
+      "       COUNT(DISTINCT CASE WHEN k.BELNR IS NOT NULL THEN h.RUNID END)\n"
+      "FROM ppdhd h LEFT JOIN bkpf k ON k.AWKEY=h.DOCNUM AND k.AWTYP='HRPAY'\n"
+      "WHERE substr(h.BUDAT,1,4)='2026';",
+      "Usa <code>ppdhd</code>, que NO se purgó a propósito: es la evidencia de que las "
+      "simulaciones existieron. Solo vale donde <code>bkpf</code> tiene cobertura — 2024 a "
+      "2026. Fuera de ahí todo run parece simulación y no lo es."),
+     ("Las cuentas dedicadas, con su nombre",
+      "6 cuentas, 4 dicen «Constant dollar»",
+      "SELECT SAKNR, TXT50 FROM SKAT\nWHERE ltrim(SAKNR,'0') LIKE '999%' GROUP BY SAKNR;",
+      "El nombre de la cuenta es la evidencia más fuerte de todo el análisis: lo dice el "
+      "maestro, no una inferencia nuestra."),
+     ("72 configurados, 0 posteando",
+      "72 · 0",
+      "SELECT COUNT(*) FROM T512T\n"
+      "WHERE SPRSL='E' AND MOLGA='UN' AND upper(LGTXT) LIKE '%CONSTANT DOLLAR%';\n\n"
+      "SELECT COUNT(DISTINCT LGART) FROM ppoix WHERE LGART IN (\n"
+      "  SELECT LGART FROM T512T WHERE SPRSL='E' AND MOLGA='UN'\n"
+      "  AND upper(LGTXT) LIKE '%CONSTANT DOLLAR%');",
+      "La pareja de consultas ES el hallazgo AS-DESIGNED contra AS-RUN. Ninguna de las dos "
+      "sola dice nada."),
+     ("Quién alimenta las 999, cadena entera",
+      "solo 999S, a CUS1 · CUSD · CUSA",
+      "SELECT DISTINCT o.LGART, o.KOMOK\n"
+      "FROM ppdit t\n"
+      "JOIN ppdix x ON x.DOCNUM=t.DOCNUM AND x.DOCLIN=t.DOCLIN\n"
+      "JOIN ppoix o ON o.RUNID=x.RUNID AND o.TSLIN=x.LINUM\n"
+      "WHERE ltrim(t.HKONT,'0') LIKE '999%';",
+      "OJO al sumar por aquí: una línea de <code>ppdit</code> es la SUMA de varias de "
+      "<code>ppoix</code> (46,80 = 10,96 + 35,84), así que el join multiplica. Agrega del "
+      "lado cuya granularidad quieras, nunca a través."),
+     ("Los 14 tipos de fondo del perímetro",
+      "001 002 003 004 005 009 010 012 013 016 017 018 094 095",
+      "SELECT DISTINCT FUND_TYPE FROM FMFUNDTYPE WHERE trim(ZZFIX_RATE)='X';",
+      "Este es el perímetro del MOTOR, dirigido por datos y cambiable sin transporte. El del "
+      "informe es un literal 001-099 en el código: por eso no coinciden (sección 11)."),
+     ("Las tablas sombra están vacías",
+      "FMIOI 0 · FM_POS 0 · REP_H 38.894",
+      "SELECT 'YTFM_BR_FMIOI', COUNT(*) FROM YTFM_BR_FMIOI\n"
+      "UNION ALL SELECT 'YTFM_BR_FM_POS', COUNT(*) FROM YTFM_BR_FM_POS\n"
+      "UNION ALL SELECT 'YTFM_BR_REP_H', COUNT(*) FROM YTFM_BR_REP_H;",
+      "Es lo que refutó la lectura de «ledger paralelo». Los métodos que escriben esas tablas "
+      "existen; las tablas están vacías. Leer los métodos y no contar las filas fue el error."),
+     ("Impacto de no-personal, las cuatro rutas",
+      "-2.365.688,44 USD",
+      "python process_mining/br_impact.py",
+      "No es SQL: replica las cuatro baselines que la propia organización implementa en "
+      "<code>GET_BR_IMPACT</code>. Reconstruir la definición por nuestra cuenta habría dado "
+      "otra cifra igual de defendible y menos cierta."),
+    ]
+    rep_rows = ""
+    for title, result, sql, caveat in REPRO:
+        rep_rows += ('<div class="repro"><div class="rh"><b>%s</b><span>%s</span></div>'
+                     '<pre>%s</pre><div class="cav">%s</div></div>'
+                     % (esc(title), esc(result), esc(sql), caveat))
+
     # --- ORIENTATION FOR SOMEONE WHO KNOWS NOTHING. Everything below this point assumes the
     # --- reader already knows what a fund is here, why a fixed rate would exist, and how FM
     # --- differs from FI/GL. A newcomer needs the PROBLEM first, then the two books, and
@@ -501,6 +581,16 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+.repro{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--ok);
+ border-radius:6px;padding:12px 15px;margin-bottom:11px}
+.repro .rh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+ flex-wrap:wrap;margin-bottom:8px}
+.repro .rh b{font-size:14px}
+.repro .rh span{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;font-weight:700;
+ color:var(--un-blue)}
+.repro pre{margin:0;background:#1a3a5c;color:#e8eef5;padding:11px 13px;border-radius:4px;
+ font-size:11.5px;line-height:1.45;overflow-x:auto;white-space:pre}
+.repro .cav{margin-top:8px;font-size:12.5px;color:var(--un-grey)}
 .orient{background:#fff;border:1px solid var(--border);border-left:5px solid var(--un-blue);
  border-radius:6px;padding:6px 20px 18px;margin-bottom:8px}
 .books{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
@@ -743,7 +833,15 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table><tr><th>de</th><th>relación</th><th>a</th><th>por qué</th></tr>@EROWS@</table></div>
 </details>
 
-<h2>16 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
+<h2>16 · Cómo reproducir cada cifra</h2>
+<p class="note">Cada consulta de abajo <b>se ejecutó contra el golden y devolvió el número que
+ tiene al lado</b>. Publicar una receta que no has corrido es el mismo defecto que publicar un
+ conteo que no has leído: parece conocimiento y es una suposición. La base es
+ <code>Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db</code>, procedencia
+ P01, solo lectura.</p>
+@REPRO@
+
+<h2>17 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
 <p class="note">Este tema se entendió mal varias veces. Las correcciones se conservan
  <b>superponiendo</b>, nunca borrando — un claim corregido sigue ahí con su corrección al lado.</p>
 <div class="scroll"><table><tr><th>claim</th><th>qué afirma</th><th>corrección</th></tr>@CROWS@</table></div>
@@ -767,7 +865,7 @@ Regenerar: <code>python scripts/build_br_companion.py</code></footer>
                      ("@REPCLS@", rep_.get("logic_lives_in", "")),
                      ("@REPFRM@", rep_.get("the_formula", "")),
                      ("@REPWHAT@", rep_.get("_what_the_formula_means", "")),
-                     ("@TK@", tk), ("@DROWS@", drows)):
+                     ("@TK@", tk), ("@DROWS@", drows), ("@REPRO@", rep_rows)):
         doc = doc.replace(tok, str(val))
 
     with io.open(OUT, "w", encoding="utf-8") as f:
