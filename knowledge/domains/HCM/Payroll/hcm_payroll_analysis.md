@@ -127,30 +127,46 @@ account at all — it maps to an **FM account assignment**, which is why every s
 account determination (`T030`) could never find it (claim #463). Companion custom table:
 **`T9FUND`** (payroll symbolic account → fund).
 
-### 2.8 BR for Staff — the mechanism, closed; the amount, open
-**The mechanism (claim #462):** of the 72 Constant Dollar wage types, 58 have both a base wage type
-and the Constant Dollar twin configured, and **all 58 pairs post to the SAME symbolic account as
-their base, with the sign reversed** — e.g. `0020`/`9020` → `+SPAL`/`-SPAL`, `0400`/`9400` →
-`+HOUS`/`-HOUS`, `0050`/`9050` → `+PADJ`/`-PADJ`. `T512W` confirms this is **one uniform mechanism,
-not 72 separate decisions** — all 72 share the identical processing-class chain and accumulation
-wage type `800000000000`. The base posts the operational-rate value, the twin posts the fixed-rate
-value against the same account with the sign inverted, so they net — the **same design as the
-non-personnel side (A14) in a different language**, except here the difference is POSTED, not
-computed by a report. Real volume: **49,577 HRPAY FI headers over 1,732,526 line items**.
+### 2.8 BR for Staff — mechanism AS-DESIGNED, mechanism AS-RUN, and the amount — all closed (s098)
+**AS-DESIGNED (claim #462) — read out of `T512T`/`T512W`/`T52EL`, NOT what actually posts:** of the
+72 Constant Dollar wage types, 58 have both a base wage type and the Constant Dollar twin configured,
+and **all 58 pairs post to the SAME symbolic account as their base, with the sign reversed** — e.g.
+`0020`/`9020` → `+SPAL`/`-SPAL`, `0400`/`9400` → `+HOUS`/`-HOUS`, `0050`/`9050` → `+PADJ`/`-PADJ`.
+`T512W` confirms this is **one uniform mechanism, not 72 separate decisions** — all 72 share the
+identical processing-class chain and accumulation wage type `800000000000`. Real volume: **49,577
+HRPAY FI headers over 1,732,526 line items** (this is the pilot volume — §2.4/2.9 below — not 2026
+production volume).
 
 **Why it ran only once:** gated by feature `YYCDR` (2,086 employees, 8.8% of workforce, mostly
 Paris — §2.4), it ran for **one month, January 2025, and has not run since** (claims #452/#453,
 user-confirmed: built, piloted, never put into production).
 
-**What remains open — `AN-BR-STAFF-AMOUNT` (amount-open, see
-`brain_v2/capability_model/execution_backlog.json`):** to turn the mechanism into a number, the
-symbolic account has to resolve to a GL account, and **no table checked carries that link** — not
-`T030B` (209 rows), not `T52EZ` (5,751 rows, confirmed a validity table not an assignment table), not
-the custom `T9POST` (the 24 Constant Dollar symbolic accounts appear in NONE of its 2,673 rows,
-consistent with the twin inheriting its base's assignment). On the FM side (A14) both valuations sit
-on the same LINE so the difference was directly measurable; here they sit on the same ACCOUNT, and
-until the account is named the netting cannot be separated from ordinary payroll movement. **This is
-a genuine open gap, not an estimate** — no figure should be quoted for the staff-side BR amount.
+**AS-RUN 2026 (claims #465/#467) — a DIFFERENT mechanism from the AS-DESIGNED text above, and the
+gap between the two IS the product:** zero of the 72 Constant Dollar wage types post. What actually
+carries the staff-side budget-rate difference in 2026 is **ONE wage type — `999S` ("SUM DIF Exch.
+rate Fluct.")** — via symbolic accounts `CUSD` (credit), `CUS1`/`CUSA` (debit), FI transaction key
+`HRC`, company code `UNES`, into four dedicated GL accounts: `0009999990` (Constant Dollar Clearing),
+`0009999992` (consultant Experts), `0009999993` (support personnel), `0009999994` (other personal
+costs). The block **nets to EXACTLY zero per currency** — a self-balancing reclassification, not a
+residual, same design intent as the non-personnel side (A14) in a different implementation.
+
+**The amount — CLOSED, `AN-BR-STAFF-AMOUNT` + `AN-PAYROLL-FI-RECONCILIATION` (see
+`brain_v2/capability_model/execution_backlog.json`):** the account determination was resolved by
+reading `PPDIT` (posted documents, not configuration — §2.7). The first figure computed, **USD
+20,523,434.48 / EUR 8,057,168.94**, summed ALL payroll posting documents — but **1,828 of 2,316
+payroll runs in 2026 are SIMULATIONS that never reached FI** (a run transfers whole or not at all;
+zero runs are partial). Restricted to posted runs only (golden VIEW `payroll_runs_posted`, join
+`BKPF.AWKEY = PPDHD.DOCNUM AND AWTYP='HRPAY'`), the **real 2026 impact is USD 1,982,154.59 / EUR
+796,418.86** — ninefold lower; ~90% of the first figure was simulation data (USD 18,541,279.89 / EUR
+7,260,750.08). Both figures net to exactly zero per currency. **Do not quote the 20.5M/8.06M figures
+as the impact — they are the pre-correction gross, superseded by claim #467.**
+
+**Gold DB is now purged, posted-runs only (script `scripts/extraction/purge_simulation_runs.py`):**
+`PPOIX` 12,795,641 → 1,302,607 rows, `PPDIX` 4,165,836 → 444,886 rows, `PPDIT` 4,046,412 → 434,681
+rows. `PPDHD` was **not** purged — it is the evidence the simulations existed, and BKPF coverage
+(2024-2026) cannot judge its older runs. Any future read of these three tables from the golden
+already carries posted-runs-only; a live RFC read does not and must be joined through
+`payroll_runs_posted` or simulations will be counted as real again.
 
 ### 2.9 Cross-references
 - Claims: `brain_v2/claims/claims.json` #454–#464.
@@ -161,8 +177,9 @@ a genuine open gap, not an estimate** — no figure should be quoted for the sta
 - Capability model: `brain_v2/capability_model/capability_model.json` → `HCM.subdomains.Payroll_Calculation`.
 - Enhancement registry: `knowledge/sap_custom_enhancement_registry.md` §16.
 - Gold DB catalog: `knowledge/gold_db_table_catalog.md` (payroll-engine tables section, added s098).
-- **Known gap:** `PPDIT` and `PPDIX` (posting run index) are **read live only** — not yet persisted
-  to the Gold DB, unlike their siblings `PPDHD` (2,868,628 rows), `T9POST`, `T9FUND`, `T52EL`,
-  `T512W`, `T52EK` which ARE persisted. Any repeat query against the account determination needs a
-  live P01 connection until `PPDIT`/`PPDIX` are loaded (`scripts/extraction/load_wide_tables.py` PLAN
-  already declares them; the load has not yet completed for these two).
+- **Resolved (was a known gap, closed s098):** `PPDIT`, `PPDIX` and `PPOIX` are now **persisted to the
+  Gold DB, purged to posted-runs-only** (434,681 / 444,886 / 1,302,607 rows respectively — see
+  `knowledge/gold_db_table_catalog.md`), alongside `PPDHD` (2,868,628 rows, unpurged), `T9POST`,
+  `T9FUND`, `T52EL`, `T512W`, `T52EK`. No live P01 connection is required for the account
+  determination anymore; use the golden VIEW `payroll_runs_posted` / `payroll_detail_is_posted_runs_only`
+  rather than the raw tables.
