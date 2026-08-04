@@ -164,6 +164,80 @@ def main():
         esc("1.828"), esc("2.316"), esc("488"), esc("1.828"),
         esc(corr.get("_how_to_not_repeat_it", "vista payroll_runs_posted")))
 
+    # --- THE NON-PERSONNEL MECHANISM, which the first two versions of this page reduced to
+    # --- one card with one number — while the artefact held its four gating CAMPS, its
+    # --- THREE gates, two perimeters that disagree with each other, and an impact split by
+    # --- year and route. The detail of this subject lives on the non-personnel side; the
+    # --- page was weighted the other way round.
+    camps = art.get("camps") or {}
+    by_camp = {}
+    for m in (art.get("members") or []):
+        by_camp.setdefault((m.get("camp") or "?"), []).append(m)
+    camp_html = ""
+    for letter in sorted(camps):
+        key = letter.split("_")[0]
+        members_here = by_camp.get(key, [])
+        names = sorted({x.get("name") for x in members_here})
+        camp_html += (
+            '<div class="camp c%s"><div class="ch">CAMPO %s <em>%d extensiones</em></div>'
+            '<p>%s</p><div class="names">%s</div></div>'
+            % (esc(key), esc(key), len(members_here), esc(camps[letter]),
+               " · ".join('<code>%s</code>' % esc(n) for n in names) or "—"))
+
+    # The three gates. The asymmetry between them is the finding: the variant that accepts
+    # USD is the staff one, and the main path cannot reach it.
+    gates = art.get("three_gates_not_one") or {}
+    grows = ""
+    for gname in ("CHECK_CONDITIONS", "CHECK_CONDITIONS_2", "CHECK_CONDITIONS_3"):
+        gg = gates.get(gname) or {}
+        note = " ".join(str(v) for k, v in gg.items()
+                        if k.startswith("_") and isinstance(v, str))
+        grows += ('<tr><td><code>%s</code></td><td>%s</td><td class="cur">%s</td>'
+                  '<td>%s</td><td class="md">%s</td></tr>'
+                  % (esc(gname), esc(gg.get("purpose")), esc(gg.get("currency")),
+                     esc(gg.get("transactions")), esc(note[:400])))
+
+    # Two perimeters that do not agree, and nothing reconciles them.
+    tp = art.get("two_perimeters") or {}
+    per_html = ""
+    for side in ("execution", "reporting"):
+        s_ = tp.get(side) or {}
+        per_html += ('<div class="col %s"><div class="hd">%s</div><ul>'
+                     '<li>dónde: <code>%s</code></li><li>regla: <b>%s</b></li>'
+                     '%s<li>naturaleza: %s</li></ul></div>'
+                     % ("designed" if side == "execution" else "run",
+                        "EL MOTOR — quién se convierte de verdad" if side == "execution"
+                        else "EL INFORME — quién aparece listado",
+                        esc(s_.get("where")), esc(s_.get("rule")),
+                        ("<li>medido: %s</li>" % esc(s_["measured"])) if s_.get("measured") else "",
+                        esc(s_.get("nature"))))
+
+    # How it actually writes — including the correction, because the wrong reading is the
+    # instructive part: a shadow ledger was inferred from methods that write tables nobody
+    # ever checked were empty.
+    hw = art.get("how_the_mechanism_actually_writes") or {}
+    meas = hw.get("_measured_2026_08") or {}
+    hwrows = "".join('<tr><td><code>%s</code></td><td>%s</td></tr>' % (esc(k), esc(v))
+                     for k, v in meas.items())
+
+    # Impact by YEAR and ROUTE. One number for a mechanism that behaves differently per year
+    # and per route is the summary that hides the finding.
+    routes = ((art.get("the_impact") or {}).get("all_routes_s098") or {}).get(
+        "by_year_and_route") or {}
+    rrows = ""
+    for k in sorted(routes):
+        v = routes[k]
+        yr, _, route = k.partition("_")
+        amt = v.get("impact")
+        rrows += ('<tr><td>%s</td><td>%s</td><td class="num">%s</td>'
+                  '<td class="n %s">%s</td><td class="md">%s</td></tr>'
+                  % (esc(yr), esc(route.replace("route", "ruta ")),
+                     esc(v.get("lines") or v.get("po_items")),
+                     "neg" if (amt or 0) < 0 else ("pos" if (amt or 0) > 0 else ""),
+                     "{:,.2f}".format(amt).replace(",", "@").replace(".", ",").replace("@", ".")
+                     if amt is not None else "—",
+                     esc(v.get("_note"))))
+
     # --- THE EXTENSIONS, NAMED. A companion that says "nine enhancements" has told the
     # --- reader nothing they can act on: not which, not where they hook, not what they
     # --- change, not whether the change survives the call. All of that is in the artefact
@@ -327,6 +401,19 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+.camps{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.camp{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;
+ border-top:4px solid var(--un-blue)}
+.camp.cC{border-top-color:var(--bad)}
+.camp.cD{border-top-color:var(--un-grey)}
+.ch{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--un-grey);margin-bottom:7px}
+.ch em{float:right;font-style:normal;opacity:.7;font-weight:400}
+.camp p{margin:0 0 9px;font-size:13px}
+.camp .names{font-size:11px;line-height:1.9}
+.corr{background:#fff8ef;border-left:4px solid var(--warn);padding:11px 14px;margin:12px 0;
+ border-radius:0 4px 4px 0;font-size:13px}
+table.det td.cur{font-weight:700;font-size:11.5px}
+td.n.neg{color:var(--bad)} td.n.pos{color:var(--ok)}
 table.det{font-size:12px}
 table.det td.hk,table.det td.gt,table.det td.md{color:var(--un-grey);max-width:290px}
 table.det td.gt{font-family:ui-monospace,Consolas,monospace;font-size:11px}
@@ -370,16 +457,42 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 
 <h2>1 · Los dos mecanismos</h2>@TWO@
 
-<h2>2 · Lo diseñado contra lo ejecutado</h2>@DELTA@
+<h2>2 · NO PERSONAL · cómo funciona realmente</h2>
+<p class="note">No mantiene un libro paralelo. <b>Modifica el posting estándar</b>: las
+ extensiones cambian el valor <b>en el momento de contabilizar</b>, así que el importe a tipo
+ fijo aterriza en las tablas de FM estándar. No hay segundo libro contra el que reconciliar —
+ y por eso <b>el perímetro y los gates SON el mecanismo entero</b>: deciden, posting a
+ posting, si el valor se convierte antes de escribirse.</p>
+<div class="corr"><b>Esto corrige una lectura anterior.</b> Se describió como un libro
+ paralelo — un juego de tablas sombra con la valoración a tipo fijo de cada línea. Se dedujo
+ de que <code>YCL_FI_BR_UPDATE_TABLES</code> tiene métodos UPDATE e INSERT contra
+ <code>YTFM_BR_*</code>, sin comprobar nunca si esas tablas contenían algo. Medido:</div>
+<div class="scroll"><table class="det"><tr><th>tabla sombra</th><th>filas</th></tr>@HWROWS@</table></div>
 
-<h2>3 · Las extensiones, una por una</h2>
+<h2>3 · Los cuatro campos de gateo</h2>
+<p class="note">Las extensiones no son una lista plana: se agrupan por <b>cómo deciden</b>. Y
+ el campo C no decide — <b>borra</b> las filas no aplicables para que SAP estándar no las vea
+ nunca. Eso no es un gate, es un filtro por eliminación, y se comporta distinto ante
+ cualquier reproceso.</p>
+<div class="camps">@CAMPS@</div>
+
+<h2>4 · Tres gates, no uno — y ahí vive la asimetría</h2>
+<p class="note">La clase lleva <b>tres</b> métodos de condiciones con <b>tres</b> juegos de
+ rangos distintos. La cura del defecto de moneda <b>existe</b> en la variante de staff, que
+ acepta USD, y es <b>inalcanzable</b> desde el camino principal.</p>
+<div class="scroll"><table class="det"><tr><th>gate</th><th>para qué</th><th>moneda</th>
+<th>transacciones</th><th>nota</th></tr>@GROWS@</table></div>
+
+<h2>5 · Lo diseñado contra lo ejecutado (lado PERSONAL)</h2>@DELTA@
+
+<h2>6 · Las extensiones, una por una</h2>
 <p class="note">Dónde engancha cada una, sobre qué campo decide, qué modifica, y si el cambio
  <b>sobrevive a la llamada</b> o solo vive durante ella. Esa última columna es la que separa
  lo que queda escrito en FM de lo que solo altera una comprobación en curso.</p>
 <div class="scroll"><table class="det"><tr><th>extensión</th><th>campo</th><th>engancha en</th>
 <th>gatea sobre</th><th>modifica</th><th>efecto</th></tr>@MROWS@</table></div>
 
-<h2>4 · Los doce momentos del ciclo de vida FM</h2>
+<h2>7 · Los doce momentos del ciclo de vida FM</h2>
 <p class="note">Los mismos ocho rangos cubren poblaciones distintas en cada momento, porque
  <b>una condición cuyo parámetro llega vacío se salta</b>. Y la columna <i>convierte sobre</i>
  es la que explica que dos momentos den respuestas distintas para el mismo documento: no
@@ -387,21 +500,39 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table class="det"><tr><th>#</th><th>momento</th><th>extensión</th>
 <th>objeto SAP</th><th>gate</th><th>convierte sobre</th><th>líneas</th></tr>@MOROWS@</table></div>
 
-<h2>5 · El perímetro: las ocho condiciones</h2>
+<h2>8 · El perímetro: las ocho condiciones</h2>
 <p class="note">Cada una se comprueba solo si su parámetro llega informado. Un rango vacío no
  restringe: <b>abre</b>.</p>
 <div class="scroll"><table class="det"><tr><th>parámetro</th><th>rango</th><th>valores</th>
 <th>nota</th></tr>@CROWS2@</table></div>
 
-<h2>6 · Las cifras, cada una con su perímetro</h2>@NUMS@
+<h2>9 · Dos perímetros que no coinciden — y nada los reconcilia</h2>
+<p class="note">El motor y el informe no están de acuerdo sobre quién entra. Un fondo cuyo
+ tipo cae en 001-099 pero <b>no</b> lleva la marca <code>ZZFIX_RATE</code> aparece en el
+ informe de constant dollar <b>sin haberse convertido nunca</b> en ejecución.</p>
+<div class="delta">@PERIM@</div>
+<p class="lesson">Uno es <b>dato</b> —cambiable sin transporte— y el otro es un literal en
+ código que además el operador puede tocar en la pantalla de selección. Dos perímetros con
+ dos naturalezas distintas y ningún control que los cruce. Tarea abierta:
+ <code>AN-BR-TWO-PERIMETERS</code>.</p>
 
-<h2>7 · La contradicción que el grafo conserva a propósito</h2>
+<h2>9b · El impacto, por año y por ruta</h2>
+<p class="note">Una sola cifra para un mecanismo que se comporta distinto cada año y por cada
+ ruta es el resumen que esconde el hallazgo. En 2024 la ruta 1 da <b>exactamente cero</b>
+ —esas líneas llevan el mismo tipo EURX— y la ruta 4 sale <b>positiva</b>, porque el tipo
+ operacional cruzó al fijo.</p>
+<div class="scroll"><table class="det"><tr><th>año</th><th>ruta</th><th>líneas</th>
+<th>impacto USD</th><th>nota</th></tr>@RROWS@</table></div>
+
+<h2>10 · Las cifras, cada una con su perímetro</h2>@NUMS@
+
+<h2>11 · La contradicción que el grafo conserva a propósito</h2>
 <p class="note">El diseño y el comportamiento son mecanismos distintos, y los dos siguen en el
  grafo unidos por una arista que dice que se contradicen. Borrar uno perdería la medida de la
  distancia — y esa distancia es el producto.</p>
 @CONTRA@
 
-<h2>8 · La cadena, de mecanismo a importe</h2>
+<h2>12 · La cadena, de mecanismo a importe</h2>
 <p class="note">Esto es lo que las aristas permiten responder mecánicamente: seguir el lado de
  personal hasta su cifra sin que nadie tenga que recordar el camino.</p>
 <div class="chain">@CHAIN@</div>
@@ -411,7 +542,7 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table><tr><th>de</th><th>relación</th><th>a</th><th>por qué</th></tr>@EROWS@</table></div>
 </details>
 
-<h2>9 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
+<h2>13 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
 <p class="note">Este tema se entendió mal varias veces. Las correcciones se conservan
  <b>superponiendo</b>, nunca borrando — un claim corregido sigue ahí con su corrección al lado.</p>
 <div class="scroll"><table><tr><th>claim</th><th>qué afirma</th><th>corrección</th></tr>@CROWS@</table></div>
@@ -425,7 +556,10 @@ Regenerar: <code>python scripts/build_br_companion.py</code></footer>
                      ("@EROWS@", erows), ("@CROWS@", crows),
                      ("@CONTRA@", contra_html), ("@CHAIN@", chain),
                      ("@MROWS@", mrows), ("@MOROWS@", morows),
-                     ("@CROWS2@", crows2)):
+                     ("@CROWS2@", crows2),
+                     ("@CAMPS@", camp_html), ("@GROWS@", grows),
+                     ("@PERIM@", per_html), ("@HWROWS@", hwrows),
+                     ("@RROWS@", rrows)):
         doc = doc.replace(tok, str(val))
 
     with io.open(OUT, "w", encoding="utf-8") as f:
