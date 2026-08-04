@@ -281,7 +281,14 @@
     457,
     462,
     463,
-    464
+    464,
+    465,
+    466,
+    467,
+    468,
+    469,
+    471,
+    472
    ],
    "knowledge_doc": "knowledge/domains/FI",
    "companions": [
@@ -451,7 +458,11 @@
     461,
     462,
     463,
-    464
+    464,
+    465,
+    466,
+    467,
+    469
    ],
    "knowledge_doc": "knowledge/domains/PSM",
    "companions": [],
@@ -507,7 +518,14 @@
     432,
     433,
     434,
-    435
+    435,
+    472,
+    473,
+    474,
+    475,
+    476,
+    477,
+    478
    ],
    "knowledge_doc": "knowledge/domains/PS",
    "companions": [
@@ -614,10 +632,10 @@
       "A_PROCESS": "PARTIAL — the custom schema inventory is known, the flow is not",
       "B_CODE": "PARTIAL — features read as compiled programs; rules and schemas read as configuration || s098 cont.: 11 custom enhancements found on the POSTING path (RPCIPE00/RPCIPE00_OLD, HRPAD00INFTYUI, HRBEN00PAYROLL) — registered in knowledge/sap_custom_enhancement_registry.md §16",
       "C_CONFIG": "HAVE — T52C0 68,767 schema steps, T52C1 67 schemas, T52C5 166,453 rule lines, T512T 60,078 wage types, T549D 2,888 features",
-      "D_DATA": "PARTIAL — s098 cont.: T9POST (2,673 rows, the custom payroll-to-FM bridge), T9FUND, T52EL (6,735 rows, corrected from 'empty for UN'), T52EK, T030B, T52EZ, T512W, PPDHD (2,868,628 rows) all persisted to the golden. PPDIT (the account-determination answer — KTOSL+HKONT on one row) and PPDIX are READ LIVE ONLY, not yet persisted — that load has not completed. Still NONE on the payroll RESULT cluster itself (RT/CRT).",
+      "D_DATA": "PARTIAL — s098 cont.: T9POST (2,673 rows, the custom payroll-to-FM bridge), T9FUND, T52EL (6,735 rows, corrected from 'empty for UN'), T52EK, T030B, T52EZ, T512W, PPDHD (2,868,628 rows, unpurged — evidence simulations existed) all persisted to the golden. UPDATE s098 (late session): PPDIT, PPDIX and PPOIX are now ALSO persisted, purged to posted-runs-only via `scripts/extraction/purge_simulation_runs.py` (434,681 / 444,886 / 1,302,607 rows; golden VIEWs `payroll_runs_posted` + `payroll_detail_is_posted_runs_only`) — no live P01 connection needed for the account determination anymore. Still NONE on the payroll RESULT cluster itself (RT/CRT).",
       "E_AUTH": "NONE",
       "F_INTERFACE_FILE": "NONE",
-      "G_CONFORMANCE": "PARTIAL — s098 cont.: BR for Staff is a CLOSED custom mechanism (a sign-reversed twin: 58 of 72 Constant Dollar wage types post to the same symbolic account as their base with the sign inverted, T512W confirms uniform config) — a real deviation from a standard budget-rate treatment, gated by custom feature YYCDR, piloted Jan-2025 only and never put into production. The GL-account resolution of that mechanism (the amount) is still open — AN-BR-STAFF-AMOUNT.",
+      "G_CONFORMANCE": "HAVE — s098: BR for Staff is a CLOSED custom mechanism, AS-DESIGNED and AS-RUN both resolved and the amount measured (cell moved PARTIAL->HAVE, evidence claims #465/#467). AS-DESIGNED (T512T/T512W/T52EL): a sign-reversed twin — 58 of 72 Constant Dollar wage types configured to post to the same symbolic account as their base with the sign inverted. AS-RUN 2026: zero of the 72 post; ONE wage type (999S) carries it via symbolic accounts CUSD/CUS1/CUSA into four dedicated GL 999-accounts, FI transaction key HRC, netting to EXACTLY zero per currency. The amount (read from PPDIT, not configuration): first computed at USD 20,523,434.48/EUR 8,057,168.94 summing ALL payroll postings; corrected to USD 1,982,154.59/EUR 796,418.86 once restricted to posted runs only (1,828 of 2,316 runs were simulations, ~90% of the first figure). Gated by custom feature YYCDR, piloted Jan-2025 only and never put into production — a real deviation from a standard budget-rate treatment.",
       "H_IMPROVE": "NONE",
       "R_S4_READINESS": "NONE",
       "U_USAGE": "PARTIAL — payroll runs continuously; FMRESERV carries 6.4M change documents",
@@ -670,7 +688,8 @@
     334,
     336,
     455,
-    456
+    456,
+    468
    ],
    "knowledge_doc": "knowledge/domains/HCM",
    "companions": [],
@@ -777,7 +796,8 @@
     "U_USAGE": "PARTIAL"
    },
    "claims": [
-    356
+    356,
+    475
    ],
    "knowledge_doc": "knowledge/domains/SD",
    "companions": [],
