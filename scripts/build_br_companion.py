@@ -253,6 +253,24 @@ def main():
                      if amt is not None else "—",
                      esc(v.get("_note"))))
 
+    # --- ORIENTATION FOR SOMEONE WHO KNOWS NOTHING. Everything below this point assumes the
+    # --- reader already knows what a fund is here, why a fixed rate would exist, and how FM
+    # --- differs from FI/GL. A newcomer needs the PROBLEM first, then the two books, and
+    # --- only then the mechanism. Written, not generated — and marked as such.
+    dims = (art.get("applicability_perimeter") or {}).get("dimensions") or []
+    drows = ""
+    for x in dims:
+        note = x.get("note") or ""
+        drows += ('<tr class="%s"><td class="num">%s</td><td><code>%s</code></td>'
+                  '<td class="gt">%s</td><td class="md">%s</td></tr>'
+                  % ("bad" if "DEFECT" in note else "", esc(x.get("n")), esc(x.get("field")),
+                     esc(x.get("rule")), esc(note)))
+
+    # The four things the artefact itself says a reader should leave with. These are the
+    # sharpest sentences in the whole store and none of them was on the page.
+    takeaways = art.get("_what_a_reader_should_take_from_this") or []
+    tk = "".join('<li>%s</li>' % esc(t) for t in takeaways)
+
     # --- ONE SECTION PER ENHANCEMENT. A table of 18 rows is still a list; what a reader
     # --- needs is each enhancement as its own thing, with every block it owns. And it
     # --- reconciles the count the organisation itself uses: camps A+B+C hold 10 names, one
@@ -483,6 +501,18 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+.orient{background:#fff;border:1px solid var(--border);border-left:5px solid var(--un-blue);
+ border-radius:6px;padding:6px 20px 18px;margin-bottom:8px}
+.books{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.bk{background:#f0f7fc;border-radius:5px;padding:12px 14px}
+.bk b{display:block;font-size:14px;margin-bottom:4px}
+.bk span{font-size:13px;color:var(--un-grey)}
+.honest{background:#eef2f7;border-radius:5px;padding:10px 13px;font-size:12.5px;
+ color:var(--un-grey)}
+ol.takeaway{font-size:13.5px;padding-left:20px}
+ol.takeaway li{margin:7px 0}
+table.det tr.bad td{background:#fdecec}
+@media(max-width:900px){.books{grid-template-columns:1fr}}
 .camph{font-size:13px;letter-spacing:.05em;color:var(--un-grey);margin:22px 0 10px;
  border-left:4px solid var(--un-blue);padding-left:9px}
 .enh{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 15px;
@@ -558,6 +588,36 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
  hay que reescribirla. Nunca editar el HTML.</div>
 </div></header>
 <div class="container">
+
+<div class="orient">
+<h2 style="border:0;margin-top:6px">0 · Si no conoces nada de esto, empieza aquí</h2>
+<p><b>El problema.</b> UNESCO recibe fondos en muchas monedas y aprueba presupuestos para un
+ bienio. Si el consumo de presupuesto se valorase al tipo de cambio del día, la cifra
+ disponible se movería sola con el mercado y un plan bienal sería ingobernable. La solución
+ custom fija el tipo <b>para el libro de presupuesto</b> y deja el <b>libro contable</b>
+ siguiendo la realidad.</p>
+<div class="books">
+  <div class="bk"><b>FM — Gestión de Fondos</b><span>el libro del PRESUPUESTO. Aquí se fija el
+    tipo, para que el consumo sea comparable contra un plan aprobado.</span></div>
+  <div class="bk"><b>FI / GL — Contabilidad</b><span>el libro CONTABLE. Sigue el tipo real,
+    porque los estados financieros no pueden mentir sobre el cambio.</span></div>
+</div>
+<p><b>Por eso los dos libros DEBEN diferir</b>, y por eso hace falta un informe que diga
+ cuánta de esa diferencia es el tipo fijo (esperada) y cuánta es una rotura real. Ese informe
+ es la sección 7.</p>
+<p class="honest"><b>Lo que NO está registrado:</b> la decisión de política que dio origen a
+ esto —quién la tomó, cuándo y con qué mandato— no consta en ningún artefacto del brain. Lo
+ de arriba describe lo que el mecanismo HACE, deducido de su código y sus datos. Si necesitas
+ el porqué institucional, hay que preguntarlo a la organización, no al sistema.</p>
+
+<h2 style="border:0">0b · Las cuatro cosas que hay que saber antes de tocar nada</h2>
+<ol class="takeaway">@TK@</ol>
+<p class="lesson">La segunda es la más importante y explica el defecto entero: <b>los campos de
+ gateo no son una clasificación, son la avería</b>. Un posting en USD contra una reserva en
+ EUR <b>pasa</b> todos los gates del campo A y <b>falla</b> todos los del campo B — así que el
+ lado de la reserva se convierte y el del consumo no. La asimetría no es un caso raro: está
+ construida en la forma de decidir de cada campo.</p>
+</div>
 
 <h2>1 · Los dos mecanismos</h2>@TWO@
 
@@ -641,6 +701,9 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <h2>10 · El perímetro: las ocho condiciones</h2>
 <p class="note">Cada una se comprueba solo si su parámetro llega informado. Un rango vacío no
  restringe: <b>abre</b>.</p>
+<div class="scroll"><table class="det"><tr><th>#</th><th>campo</th><th>regla</th>
+<th>qué significa</th></tr>@DROWS@</table></div>
+<p class="note">Las mismas ocho, tal como se leen en el gate 1 con sus rangos:</p>
 <div class="scroll"><table class="det"><tr><th>parámetro</th><th>rango</th><th>valores</th>
 <th>nota</th></tr>@CROWS2@</table></div>
 
@@ -703,7 +766,8 @@ Regenerar: <code>python scripts/build_br_companion.py</code></footer>
                      ("@REPPRG@", rep_.get("program", "")),
                      ("@REPCLS@", rep_.get("logic_lives_in", "")),
                      ("@REPFRM@", rep_.get("the_formula", "")),
-                     ("@REPWHAT@", rep_.get("_what_the_formula_means", ""))):
+                     ("@REPWHAT@", rep_.get("_what_the_formula_means", "")),
+                     ("@TK@", tk), ("@DROWS@", drows)):
         doc = doc.replace(tok, str(val))
 
     with io.open(OUT, "w", encoding="utf-8") as f:

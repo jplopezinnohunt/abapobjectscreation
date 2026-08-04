@@ -58,6 +58,18 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+.orient{background:#fff;border:1px solid var(--border);border-left:5px solid var(--un-blue);
+ border-radius:6px;padding:6px 20px 18px;margin-bottom:8px}
+.books{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.bk{background:#f0f7fc;border-radius:5px;padding:12px 14px}
+.bk b{display:block;font-size:14px;margin-bottom:4px}
+.bk span{font-size:13px;color:var(--un-grey)}
+.honest{background:#eef2f7;border-radius:5px;padding:10px 13px;font-size:12.5px;
+ color:var(--un-grey)}
+ol.takeaway{font-size:13.5px;padding-left:20px}
+ol.takeaway li{margin:7px 0}
+table.det tr.bad td{background:#fdecec}
+@media(max-width:900px){.books{grid-template-columns:1fr}}
 .camph{font-size:13px;letter-spacing:.05em;color:var(--un-grey);margin:22px 0 10px;
  border-left:4px solid var(--un-blue);padding-left:9px}
 .enh{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 15px;
@@ -133,6 +145,36 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
  hay que reescribirla. Nunca editar el HTML.</div>
 </div></header>
 <div class="container">
+
+<div class="orient">
+<h2 style="border:0;margin-top:6px">0 · Si no conoces nada de esto, empieza aquí</h2>
+<p><b>El problema.</b> UNESCO recibe fondos en muchas monedas y aprueba presupuestos para un
+ bienio. Si el consumo de presupuesto se valorase al tipo de cambio del día, la cifra
+ disponible se movería sola con el mercado y un plan bienal sería ingobernable. La solución
+ custom fija el tipo <b>para el libro de presupuesto</b> y deja el <b>libro contable</b>
+ siguiendo la realidad.</p>
+<div class="books">
+  <div class="bk"><b>FM — Gestión de Fondos</b><span>el libro del PRESUPUESTO. Aquí se fija el
+    tipo, para que el consumo sea comparable contra un plan aprobado.</span></div>
+  <div class="bk"><b>FI / GL — Contabilidad</b><span>el libro CONTABLE. Sigue el tipo real,
+    porque los estados financieros no pueden mentir sobre el cambio.</span></div>
+</div>
+<p><b>Por eso los dos libros DEBEN diferir</b>, y por eso hace falta un informe que diga
+ cuánta de esa diferencia es el tipo fijo (esperada) y cuánta es una rotura real. Ese informe
+ es la sección 7.</p>
+<p class="honest"><b>Lo que NO está registrado:</b> la decisión de política que dio origen a
+ esto —quién la tomó, cuándo y con qué mandato— no consta en ningún artefacto del brain. Lo
+ de arriba describe lo que el mecanismo HACE, deducido de su código y sus datos. Si necesitas
+ el porqué institucional, hay que preguntarlo a la organización, no al sistema.</p>
+
+<h2 style="border:0">0b · Las cuatro cosas que hay que saber antes de tocar nada</h2>
+<ol class="takeaway"><li>FIFTEEN members and only SIX persist. Half the family exists to make in-memory checks pass, which is why an availability check can succeed while the stored figures drift.</li><li>The camps are the defect. A USD posting against an EUR reservation satisfies every Camp A gate and fails every Camp B gate, so the reservation side converts and the consumption side does not.</li><li>The escape hatch is scoped to symptoms, not to the mechanism: the AVC-skip BAdI covers MIRO and F110 and leaves FB60 exposed.</li><li>The carryforward branch (1b) decides how last year&#x27;s balances arrive this year, so the drift is inherited across years rather than reset.</li></ol>
+<p class="lesson">La segunda es la más importante y explica el defecto entero: <b>los campos de
+ gateo no son una clasificación, son la avería</b>. Un posting en USD contra una reserva en
+ EUR <b>pasa</b> todos los gates del campo A y <b>falla</b> todos los del campo B — así que el
+ lado de la reserva se convierte y el del consumo no. La asimetría no es un caso raro: está
+ construida en la forma de decidir de cada campo.</p>
+</div>
 
 <h2>1 · Los dos mecanismos</h2>
     <div class="grid2">
@@ -263,6 +305,9 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <h2>10 · El perímetro: las ocho condiciones</h2>
 <p class="note">Cada una se comprueba solo si su parámetro llega informado. Un rango vacío no
  restringe: <b>abre</b>.</p>
+<div class="scroll"><table class="det"><tr><th>#</th><th>campo</th><th>regla</th>
+<th>qué significa</th></tr><tr class=""><td class="num">1</td><td><code>RLDNR</code></td><td class="gt">= 9A</td><td class="md">ledger 9A — NOT the AVC ledger 9H</td></tr><tr class=""><td class="num">2</td><td><code>BUKRS</code></td><td class="gt">= UNES</td><td class="md">company code — the other 8 entities are outside the perimeter entirely</td></tr><tr class=""><td class="num">3</td><td><code>FIKRS</code></td><td class="gt">= UNES</td><td class="md">FM area, same restriction</td></tr><tr class=""><td class="num">4</td><td><code>GSBER</code></td><td class="gt">= GEF</td><td class="md">business area</td></tr><tr class="bad"><td class="num">5</td><td><code>WAERS</code></td><td class="gt">= EUR ONLY</td><td class="md">THE DEFECT. A USD row exits here and the conversion never runs.</td></tr><tr class=""><td class="num">6</td><td><code>FIPEX</code></td><td class="gt">EXCLUDES GAINS and REVENUE</td><td class="md"></td></tr><tr class=""><td class="num">7</td><td><code>VRGNG</code></td><td class="gt">EXCLUDES HRM1, HRM2, HRP1</td><td class="md">PBC pre-commitment, PBC commitment and payroll posting are OUT of the main path</td></tr><tr class=""><td class="num">8</td><td><code>FTYPE</code></td><td class="gt">IN (SELECT FUND_TYPE FROM FMFUNDTYPE WHERE ZZFIX_RATE = X)</td><td class="md">DATA-DRIVEN on the EXECUTION side: SELECT FUND_TYPE FROM FMFUNDTYPE WHERE ZZFIX_RATE = X. Measured in P01: 14 types, all UNES — 001, 002, 003, 004, 005, 009, 010, 012, 013, 016, 017, 018, 094, 095. The old HARD-CODED list is still visible, COMMENTED OUT, at lines 92 and 97 (&#x27;019&#x27;) — the predecessor of the select.</td></tr></table></div>
+<p class="note">Las mismas ocho, tal como se leen en el gate 1 con sus rangos:</p>
 <div class="scroll"><table class="det"><tr><th>parámetro</th><th>rango</th><th>valores</th>
 <th>nota</th></tr><tr><td><code>IV_RLDNR</code></td><td>MR_RLDNR</td><td>9A</td><td class="md">every row in fmifiit_full is ledger 9A, so this excludes nothing here</td></tr><tr><td><code>IV_BUKRS</code></td><td>MR_BUKRS</td><td>UNES</td><td class="md"></td></tr><tr><td><code>IV_FIKRS</code></td><td>MR_FIKRS</td><td>UNES</td><td class="md"></td></tr><tr><td><code>IV_GSBER</code></td><td>MR_GSBER</td><td>GEF</td><td class="md">BUSINESS AREA. Not carried on the FM line at all, so this condition cannot be applied when measuring from fmifiit_full — it is the main reason a data-side perimeter is a SUPERSET of the real one</td></tr><tr><td><code>IV_WAERS</code></td><td>MR_WAERS</td><td>EUR</td><td class="md"></td></tr><tr><td><code>IV_FIPEX</code></td><td>MR_FIPEX</td><td>GAINS, REVENUE</td><td class="md"></td></tr><tr><td><code>IV_VRGNG</code></td><td>MR_VRGNG</td><td>HRM1, HRM2, HRP1</td><td class="md">PBC pre-commitment, PBC commitment and payroll posting are OUT</td></tr><tr><td><code>IV_FTYPE</code></td><td>MR_FUND_TYPE</td><td></td><td class="md"></td></tr></table></div>
 
