@@ -25,15 +25,30 @@ THE RULE THIS PAGE IS BUILT ON — feedback_a_companion_names_it_never_counts_it
          written ones can go stale
     Where an array exists in the source, a TABLE must exist in the page.
 
-WHAT IT SHOWS, and the order is the argument
-    1. The two mechanisms side by side, because the whole subject is that they are NOT the
-       same design and were repeatedly confused for one.
-    2. AS-DESIGNED against AS-RUN: the configuration describes 72 wage types and one posts.
-    3-5. The 18 extensions, the 12 moments and the 8 conditions — named, not counted.
-    6. The numbers, each with what it is measured ON.
-    7-8. The contradiction the graph keeps on purpose, and the chain from mechanism to
-       amount, which on being walked exposes the edges the graph is still missing.
-    9. What was corrected, because on this subject that is the most transferable part.
+WHAT IT SHOWS — sixteen sections, and the order is the argument
+    1     the two mechanisms side by side: they are NOT one design and were confused for one
+    2     how the non-personnel side actually writes — it MODIFIES the standard posting and
+          keeps no parallel ledger, with the shadow tables' measured row counts as proof
+    3     the four gating CAMPS, including camp C which does not gate at all: it DELETES the
+          non-applicable rows so standard SAP never sees them
+    4     three gates, not one — the cure for the currency defect lives in the staff variant
+          and is unreachable from the main path
+    5     AS-DESIGNED against AS-RUN on the personnel side: 72 configured, one posts
+    6     ONE SECTION PER ENHANCEMENT, fifteen of them, each with every block it owns: hook,
+          gate field, what it modifies, whether the effect survives the call. This is also
+          where the organisation's own count of NINE reconciles — camps A+B+C hold ten and
+          one is test-run only
+    7     the control report IN FULL, because the mechanism is "the nine enhancements PLUS
+          the report" and the report is where the impact is DEFINED: its formula, its three
+          views, its selection, its four baselines and the ZZBRIMPACTED flag
+    8-10  the same extensions as one table, the twelve moments, the eight conditions
+    11    two perimeters that disagree — the engine gates on data, the report on a literal
+    12    the impact by YEAR and by ROUTE, because one number hides that 2024 route 1 is
+          exactly zero and route 4 is positive
+    13    the numbers, each with the perimeter it was measured on
+    14-15 the contradiction the graph keeps on purpose, and the chain from mechanism to
+          amount — walking it is what exposes the edges the graph is still missing
+    16    what was corrected, because on this subject that is the most transferable part
 
 USAGE
     python scripts/build_br_companion.py
@@ -238,6 +253,73 @@ def main():
                      if amt is not None else "—",
                      esc(v.get("_note"))))
 
+    # --- ONE SECTION PER ENHANCEMENT. A table of 18 rows is still a list; what a reader
+    # --- needs is each enhancement as its own thing, with every block it owns. And it
+    # --- reconciles the count the organisation itself uses: camps A+B+C hold 10 names, one
+    # --- of which (ZFIX_BR_REVAL_RESFUND) is TEST-RUN ONLY and never persists — leaving the
+    # --- NINE live enhancements of the non-personnel mechanism. Camp D's five are auxiliary
+    # --- orchestration and payroll bridges, which is why they are not in the nine.
+    import collections as _c
+    byname = _c.OrderedDict()
+    for m in (art.get("members") or []):
+        byname.setdefault(m["name"], []).append(m)
+
+    def blocks_of(xs):
+        out = ""
+        for b in xs:
+            out += (
+                '<div class="blk"><div class="bh">%s<span class="%s">%s</span></div>'
+                '<dl><dt>engancha en</dt><dd>%s</dd>'
+                '<dt>gatea sobre</dt><dd class="gt">%s</dd>'
+                '<dt>modifica</dt><dd>%s</dd>%s</dl></div>'
+                % (esc(b.get("block") or "bloque"),
+                   "yes" if b.get("persists") else "no",
+                   "PERSISTE" if b.get("persists") else "no persiste",
+                   esc(b.get("hook")), esc(b.get("gate_keyed_on")), esc(b.get("modifies")),
+                   ('<dt>nota</dt><dd class="nt">%s</dd>' % esc(b["note"]))
+                   if b.get("note") else ""))
+        return out
+
+    enh_html = ""
+    live = [n for n, xs in byname.items() if not all(x.get("camp") == "D" for x in xs)
+            and not any("TEST RUN ONLY" in (x.get("note") or "") for x in xs)]
+    for camp_letter in ("A", "B", "C", "D"):
+        names = [n for n, xs in byname.items()
+                 if sorted({x.get("camp") for x in xs})[0] == camp_letter]
+        if not names:
+            continue
+        label = next((v for k, v in (art.get("camps") or {}).items()
+                      if k.startswith(camp_letter)), "")
+        enh_html += ('<h3 class="camph">CAMPO %s — %s</h3>' % (esc(camp_letter), esc(label)))
+        for n in names:
+            xs = byname[n]
+            tag = ""
+            if any("TEST RUN ONLY" in (x.get("note") or "") for x in xs):
+                tag = '<span class="dead">SOLO SIMULACIÓN</span>'
+            elif camp_letter == "D":
+                tag = '<span class="aux">auxiliar</span>'
+            elif n in live:
+                tag = '<span class="core">de las 9 vivas</span>'
+            enh_html += ('<div class="enh"><h4><code>%s</code>%s</h4>%s</div>'
+                         % (esc(n), tag, blocks_of(xs)))
+
+    # --- THE CONTROL REPORT, in full. The user's own definition of the non-personnel
+    # --- mechanism is "the nine enhancements PLUS THE REPORT", and the report was named in
+    # --- one clause and never explained. It is where the impact is DEFINED.
+    rep_ = art.get("the_control_report") or {}
+    views = "".join('<tr><td><code>%s</code></td><td>%s</td></tr>' % (esc(k), esc(v))
+                    for k, v in (rep_.get("three_views") or {}).items())
+    sel = "".join('<tr><td><code>%s</code></td><td>%s</td></tr>' % (esc(k), esc(v))
+                  for k, v in (rep_.get("selection") or {}).items())
+    base = ""
+    for i, b in enumerate(rep_.get("the_four_baselines_in_GET_BR_IMPACT") or [], 1):
+        base += ('<tr><td class="num">%d</td><td class="gt">%s</td><td>%s</td>'
+                 '<td class="md">%s</td></tr>'
+                 % (i, esc(b.get("when")), esc(b.get("baseline")), esc(b.get("_note"))))
+    flag = (rep_.get("the_flag") or {}).get("ZZBRIMPACTED") or {}
+    flag_html = "".join('<tr><td><code>%s</code></td><td>%s</td></tr>' % (esc(k), esc(v))
+                        for k, v in flag.items())
+
     # --- THE EXTENSIONS, NAMED. A companion that says "nine enhancements" has told the
     # --- reader nothing they can act on: not which, not where they hook, not what they
     # --- change, not whether the change survives the call. All of that is in the artefact
@@ -401,6 +483,28 @@ td.why{color:var(--un-grey);font-size:12px}
 .kcard ul{margin:0;padding-left:15px;font-size:12px}
 .kcard li{margin:3px 0}.kcard li span{color:var(--un-grey)}
 .scroll{overflow-x:auto}
+.camph{font-size:13px;letter-spacing:.05em;color:var(--un-grey);margin:22px 0 10px;
+ border-left:4px solid var(--un-blue);padding-left:9px}
+.enh{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 15px;
+ margin-bottom:10px}
+.enh h4{margin:0 0 9px;font-size:14px}
+.enh h4 span{float:right;font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 7px;
+ border-radius:3px}
+.enh h4 .core{background:#e8f4ea;color:var(--ok)}
+.enh h4 .aux{background:#eef2f7;color:var(--un-grey)}
+.enh h4 .dead{background:#fdecec;color:var(--bad)}
+.blk{border-left:3px solid var(--border);padding-left:11px;margin:9px 0}
+.bh{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--un-grey)}
+.bh span{margin-left:9px;font-weight:700}
+.bh span.yes{color:var(--bad)} .bh span.no{color:var(--un-grey);font-weight:400}
+.enh dl{margin:6px 0 0;display:grid;grid-template-columns:110px 1fr;gap:2px 10px;font-size:12.5px}
+.enh dt{color:var(--un-grey);font-size:11px;letter-spacing:.04em;text-align:right}
+.enh dd{margin:0}
+.enh dd.gt{font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+.enh dd.nt{color:var(--un-grey);font-style:italic}
+.formula{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:#eef2f7;
+ padding:9px 11px;border-radius:4px;margin:11px 0;font-weight:600}
+table.mini.w50{max-width:420px}
 .camps{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
 .camp{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;
  border-top:4px solid var(--un-blue)}
@@ -485,14 +589,48 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 
 <h2>5 · Lo diseñado contra lo ejecutado (lado PERSONAL)</h2>@DELTA@
 
-<h2>6 · Las extensiones, una por una</h2>
+<h2>6 · Las quince extensiones, una por una</h2>
+<p class="note">Quince nombres distintos en dieciocho bloques. Los campos <b>A+B+C</b> son
+ diez, y una de ellas —<code>ZFIX_BR_REVAL_RESFUND</code>— es <b>solo simulación</b>: nunca
+ persiste. Quedan las <b>nueve vivas</b> del mecanismo de no-personal. Las cinco del campo D
+ son orquestación y puentes de nómina, y por eso no cuentan entre las nueve.</p>
+@ENH@
+
+<h2>7 · El informe de control — donde se DEFINE el impacto</h2>
+<p class="note">El mecanismo de no-personal son las nueve extensiones <b>más este informe</b>.
+ Las extensiones cambian el valor al contabilizar; el informe es lo único que dice cuánto de
+ la diferencia entre FM y FI/GL es el budget rate y cuánto es una rotura real.</p>
+<div class="grid2">
+  <div class="mech"><div class="tag">PROGRAMA</div>
+    <h3><code>@REPPRG@</code></h3>
+    <p>La lógica vive en <code>@REPCLS@</code>.</p>
+    <div class="formula">@REPFRM@</div>
+    <div class="note">@REPWHAT@</div></div>
+  <div class="mech alt"><div class="tag">SUS TRES VISTAS</div>
+    <table class="mini">@REPVIEWS@</table>
+    <div class="tag" style="margin-top:12px">SELECCIÓN</div>
+    <table class="mini">@REPSEL@</table></div>
+</div>
+<h3 class="camph">Las cuatro baselines de <code>GET_BR_IMPACT</code></h3>
+<p class="note">El informe no compara contra una sola referencia: <b>elige</b> según el tipo
+ de valor de la línea. Medir el impacto con una sola de ellas da la respuesta correcta solo
+ para su población.</p>
+<div class="scroll"><table class="det"><tr><th>#</th><th>cuándo</th><th>referencia</th>
+<th>nota</th></tr>@REPBASE@</table></div>
+<h3 class="camph">La marca <code>ZZBRIMPACTED</code></h3>
+<table class="mini w50">@REPFLAG@</table>
+<p class="lesson">El informe agrega la <b>X</b> y la <b>E</b> por separado, así que una línea
+ que no se puede evaluar se reporta <b>aparte</b> en vez de contarse como impacto cero. Es la
+ misma disciplina que faltó cuando sumé simulaciones: lo no evaluable no es cero.</p>
+
+<h2>8 · Las extensiones en una tabla</h2>
 <p class="note">Dónde engancha cada una, sobre qué campo decide, qué modifica, y si el cambio
  <b>sobrevive a la llamada</b> o solo vive durante ella. Esa última columna es la que separa
  lo que queda escrito en FM de lo que solo altera una comprobación en curso.</p>
 <div class="scroll"><table class="det"><tr><th>extensión</th><th>campo</th><th>engancha en</th>
 <th>gatea sobre</th><th>modifica</th><th>efecto</th></tr>@MROWS@</table></div>
 
-<h2>7 · Los doce momentos del ciclo de vida FM</h2>
+<h2>9 · Los doce momentos del ciclo de vida FM</h2>
 <p class="note">Los mismos ocho rangos cubren poblaciones distintas en cada momento, porque
  <b>una condición cuyo parámetro llega vacío se salta</b>. Y la columna <i>convierte sobre</i>
  es la que explica que dos momentos den respuestas distintas para el mismo documento: no
@@ -500,13 +638,13 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table class="det"><tr><th>#</th><th>momento</th><th>extensión</th>
 <th>objeto SAP</th><th>gate</th><th>convierte sobre</th><th>líneas</th></tr>@MOROWS@</table></div>
 
-<h2>8 · El perímetro: las ocho condiciones</h2>
+<h2>10 · El perímetro: las ocho condiciones</h2>
 <p class="note">Cada una se comprueba solo si su parámetro llega informado. Un rango vacío no
  restringe: <b>abre</b>.</p>
 <div class="scroll"><table class="det"><tr><th>parámetro</th><th>rango</th><th>valores</th>
 <th>nota</th></tr>@CROWS2@</table></div>
 
-<h2>9 · Dos perímetros que no coinciden — y nada los reconcilia</h2>
+<h2>11 · Dos perímetros que no coinciden — y nada los reconcilia</h2>
 <p class="note">El motor y el informe no están de acuerdo sobre quién entra. Un fondo cuyo
  tipo cae en 001-099 pero <b>no</b> lleva la marca <code>ZZFIX_RATE</code> aparece en el
  informe de constant dollar <b>sin haberse convertido nunca</b> en ejecución.</p>
@@ -516,7 +654,7 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
  dos naturalezas distintas y ningún control que los cruce. Tarea abierta:
  <code>AN-BR-TWO-PERIMETERS</code>.</p>
 
-<h2>9b · El impacto, por año y por ruta</h2>
+<h2>12 · El impacto, por año y por ruta</h2>
 <p class="note">Una sola cifra para un mecanismo que se comporta distinto cada año y por cada
  ruta es el resumen que esconde el hallazgo. En 2024 la ruta 1 da <b>exactamente cero</b>
  —esas líneas llevan el mismo tipo EURX— y la ruta 4 sale <b>positiva</b>, porque el tipo
@@ -524,15 +662,15 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table class="det"><tr><th>año</th><th>ruta</th><th>líneas</th>
 <th>impacto USD</th><th>nota</th></tr>@RROWS@</table></div>
 
-<h2>10 · Las cifras, cada una con su perímetro</h2>@NUMS@
+<h2>13 · Las cifras, cada una con su perímetro</h2>@NUMS@
 
-<h2>11 · La contradicción que el grafo conserva a propósito</h2>
+<h2>14 · La contradicción que el grafo conserva a propósito</h2>
 <p class="note">El diseño y el comportamiento son mecanismos distintos, y los dos siguen en el
  grafo unidos por una arista que dice que se contradicen. Borrar uno perdería la medida de la
  distancia — y esa distancia es el producto.</p>
 @CONTRA@
 
-<h2>12 · La cadena, de mecanismo a importe</h2>
+<h2>15 · La cadena, de mecanismo a importe</h2>
 <p class="note">Esto es lo que las aristas permiten responder mecánicamente: seguir el lado de
  personal hasta su cifra sin que nadie tenga que recordar el camino.</p>
 <div class="chain">@CHAIN@</div>
@@ -542,7 +680,7 @@ footer{margin-top:40px;font-size:12px;color:var(--un-grey);border-top:1px solid 
 <div class="scroll"><table><tr><th>de</th><th>relación</th><th>a</th><th>por qué</th></tr>@EROWS@</table></div>
 </details>
 
-<h2>13 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
+<h2>16 · Lo que se corrigió, y por qué eso es lo más transferible</h2>
 <p class="note">Este tema se entendió mal varias veces. Las correcciones se conservan
  <b>superponiendo</b>, nunca borrando — un claim corregido sigue ahí con su corrección al lado.</p>
 <div class="scroll"><table><tr><th>claim</th><th>qué afirma</th><th>corrección</th></tr>@CROWS@</table></div>
@@ -559,7 +697,13 @@ Regenerar: <code>python scripts/build_br_companion.py</code></footer>
                      ("@CROWS2@", crows2),
                      ("@CAMPS@", camp_html), ("@GROWS@", grows),
                      ("@PERIM@", per_html), ("@HWROWS@", hwrows),
-                     ("@RROWS@", rrows)):
+                     ("@RROWS@", rrows),
+                     ("@ENH@", enh_html), ("@REPVIEWS@", views), ("@REPSEL@", sel),
+                     ("@REPBASE@", base), ("@REPFLAG@", flag_html),
+                     ("@REPPRG@", rep_.get("program", "")),
+                     ("@REPCLS@", rep_.get("logic_lives_in", "")),
+                     ("@REPFRM@", rep_.get("the_formula", "")),
+                     ("@REPWHAT@", rep_.get("_what_the_formula_means", ""))):
         doc = doc.replace(tok, str(val))
 
     with io.open(OUT, "w", encoding="utf-8") as f:
