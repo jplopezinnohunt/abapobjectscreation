@@ -3912,11 +3912,34 @@
   "created_session": 98,
   "rule": "When a subagent or a background write dies mid-stream, DIFF what it touched before doing anything else. It does not leave a broken file — it leaves a file that is VALID AND DIFFERENT, so parsing it, loading it and running a smoke test all pass.",
   "why": "s098. The steward close pass died with 'API Error: Response stalled mid-stream'. It left feedback_rules.json parseable, loadable and wrong: domain_axes — the convention in 144 of 187 rules — replaced by a flat domain field, and the trailing newline dropped. Nothing would have caught it except reading the diff. The same shape of damage is why an interrupted post-INSERT DROP once left FMIOI duplicated and it looked like a clean load.",
-  "how_to_apply": "On any agent-failure notification: git status, then git diff on every file it named, BEFORE re-running it or committing. Judge each change against the file's OWN convention — count which shape the existing entries use rather than assuming. Keep what the agent got right: here the evidence field it added was useful and only the schema change was wrong. And do NOT re-run a writer that died mid-write until the partial state is resolved.",
+  "how_to_apply": "On any agent-failure notification: git status, then git diff on every file it named, BEFORE re-running it or committing. Judge each change against the file's OWN convention — count which shape the existing entries use rather than assuming. Keep what the agent got right: here the evidence field it added was useful and only the schema change was wrong. And do NOT re-run a writer that died mid-write until the partial state is resolved. The measured split in s098 was 144 domain_axes / 17 domain / 26 neither, so the majority settled which convention was correct — the file answered the question.",
   "derives_from_core_principle": "CP-001",
   "cp_derivation_method": "CP-001 is knowledge over velocity: re-running the failed agent is the fast path and it compounds damage over a state nobody inspected. Reading the diff costs one command and is the only thing that sees this class of defect.",
   "evidence": "git diff brain_v2/agent_rules/feedback_rules.json after task a3be7b85e103b79e6 failed",
   "source_file": "brain_v2/agent_rules/feedback_rules.json",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_run_the_recipe_before_you_publish_it",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "Never publish a query, command or reproduction step you have not EXECUTED and seen return the figure you are printing beside it. A recipe you have not run is the same defect as a count you have not read: it looks like knowledge and is a guess — and it is worse, because the reader will trust it enough to act.",
+  "why": "s098, the 'how to reproduce every figure' section of the budget-rate companion. Nine queries were written, then all nine were run against the golden and each returned its published figure exactly (USD 1,982,154.59 / EUR 796,418.86; net 0.00 per currency; 2,316 runs and 488 posted; 72 configured and 0 posting; 14 fund types). Running them also surfaced what the queries needed to SAY: that ppdit no longer needs a run filter because it is already purged, and that the chain query multiplies because FI summarises several payroll items into one line.",
+  "how_to_apply": "Write the query, run it, paste the ACTUAL result beside it, and add the caveat that running it taught you. If it cannot be run — because it needs a live system or a table not held — say so in place of the figure rather than printing an expected one.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 demands verifiable evidence. A published query IS a claim about what the data will say, and an unexecuted one has no evidence behind it at all.",
+  "evidence": "companions/budget_rate_companion_v1.html §16 (9 recetas); scratchpad repro_test.py",
+  "source_file": "scripts/build_br_companion.py",
   "domain_axes": {
    "functional": [
     "Brain_Architecture"
