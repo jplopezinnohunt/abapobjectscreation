@@ -71,7 +71,7 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
 
 ## 📈 MATURITY OF THE METHOD — 65.3%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
-- **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
+- **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.39 · **ANALYZE** 0.48
 - **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
 - **Read this together with the capability grid.** Two independent instruments agree: strong at
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
@@ -82,7 +82,7 @@ Not a self-assessment: each dimension is derived from what is on disk.
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.1%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1624 objects · 188 rules · 479 claims · 10 incidents · 8 closed researches)
+## Brain at a glance (1626 objects · 189 rules · 480 claims · 10 incidents · 8 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -114,7 +114,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 188 total)
+## Rules to load first (behavioral DNA — 189 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
