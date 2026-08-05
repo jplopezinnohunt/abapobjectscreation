@@ -3951,5 +3951,52 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_judge_a_field_on_three_axes_never_one",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "Never judge whether a data field is alive from ONE measurement. Three axes, always together: (1) FILL, tested against the field's own TYPE — a numeric or NUMC column is never blank, it defaults to zero, so use trim(trim(col),'0.') and not a plain not-empty test; (2) TREND, grouped by the ROW's creation date — a flat low rate and a decaying one are opposite findings; (3) CARDINALITY — a field populated on 42% of rows carrying ONE distinct value has a fill rate and no information. A verdict is only trustworthy when all three agree.",
+  "why": "s098, algorithm A19 over PRPS's 31 custom fields. Each axis alone produced a WRONG answer, measured: a plain not-empty test called ten of the 31 fully populated when YYE_PRCTO is 0.45% real (60,021 of its 60,292 values are '0.00'); YYE_DONOR reads as never-adopted at 18.5% flat and is a twenty-four-year abandonment curve from 82% to 5% once grouped by creation year; and YYE_IMPL_AGENCY is filled on 42% of elements with exactly ONE distinct value, which no fill rate can ever detect. Running all three also found what one axis had hidden — THREE fields abandoning on the same curve, not one, and one field (YYE_APPR_LINE) being ADOPTED that had been read as residual.",
+  "how_to_apply": "Use A19 (process_mining/wbs_model.py) or replicate its three measurements. If a field has no trend data, report SIN DATOS rather than guessing from the other two. And when reporting, give the reader all three numbers — a verdict without its axes cannot be challenged.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 requires maximum precision and checkable facts. A single-axis verdict is an approximation presented as a finding, and this rule exists because that approximation was wrong three different ways on the same table.",
+  "evidence": "brain_v2/project_wbs_model.json (A19); companions/project_wbs_companion_v1.html",
+  "source_file": "process_mining/wbs_model.py",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture",
+    "PS"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_check_where_the_keyword_hit_landed",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "A substring match is NOT evidence that a fact is already stored. Before concluding that knowledge is persisted, READ THE RECORD the keyword hit — the same word routinely appears in an unrelated rule. A coverage check that only reports yes/no is a coverage check that will lie to you.",
+  "why": "s098, twice in one session and in mirror-image forms. First: checking for an existing rule by EXACT ID missed feedback_a_dead_agent_leaves_a_valid_different_file and a duplicate was written. Then, over-correcting, a concept search reported the three-axis method and the authorship lesson as ALREADY PRESENT — 'cardinality' had hit a rule about ROWSKIPS rejection and 'authorship' had hit feedback_only_modify_our_own_code. Both were false positives and both would have left real knowledge in the chat. One failure mode says 'not there' when it is; the other says 'there' when it is not, and the second is worse because it ends the search.",
+  "how_to_apply": "Print the id and the first line of every record the probe matched, and judge them by eye. Two lines of output turn a boolean into evidence. Do this before writing a new record AND before deciding not to.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 puts traceability above velocity: a false 'already covered' loses the knowledge silently and nobody ever learns to look for it, which is the irreversible kind of loss.",
+  "evidence": "scratchpad gap2.py reported SI for both; gap3.py printing the matched records showed neither existed",
+  "source_file": "brain_v2/agent_rules/feedback_rules.json",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]
