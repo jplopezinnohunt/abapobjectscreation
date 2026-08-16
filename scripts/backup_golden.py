@@ -47,9 +47,18 @@ USAGE
     python scripts/backup_golden.py                 # local snapshot, same volume
     python scripts/backup_golden.py --dest "D:/..." # another device — both assets
     python scripts/backup_golden.py --claude-only --dest "D:/..."   # just ~/.claude (3 MB)
-    python scripts/backup_golden.py --verify <file> # integrity + row counts of a snapshot
+    python scripts/backup_golden.py --verify <file> # integrity + row counts
+    python scripts/backup_golden.py --status --dest "D:/..."  # que hay y que esta desfasado
+
+DOS COPIAS, Y CUAL ES CUAL
+    Solo se guardan ACTUAL y ANTERIOR: una tercera no protege de nada que la segunda
+    no cubra. backup_state.json en el destino declara el ROL de cada fichero y la
+    huella del origen del que salio, asi que --status responde de un vistazo que esta
+    al dia y que no. Un directorio de ficheros con fecha no puede decir si el mas
+    nuevo sigue vigente.
 """
 import fnmatch
+import hashlib
 import io
 import json
 import os
@@ -124,6 +133,90 @@ def write_manifest(con):
     return man
 
 
+STATE = "backup_state.json"
+KEEP = 2      # current + previous. A third copy protects against nothing the second does not.
+
+
+def fingerprint(path):
+    """Cheap 'did this change' signature. Hashing 16 GB costs what copying it costs, so this
+    reads size, mtime and the first and last megabyte — enough to catch any write to a SQLite
+    file, whose header page changes on every commit."""
+    p = Path(path)
+    st = p.stat()
+    h = hashlib.sha1()
+    with io.open(p, "rb") as f:
+        h.update(f.read(1 << 20))
+        if st.st_size > (2 << 20):
+            f.seek(-(1 << 20), os.SEEK_END)
+            h.update(f.read(1 << 20))
+    return {"bytes": st.st_size, "mtime": int(st.st_mtime), "edges": h.hexdigest()[:16]}
+
+
+def load_state(dest):
+    p = Path(dest) / STATE
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {"_what_this_is": "que hay copiado, de que estado del origen, y si sigue al dia",
+                "assets": {}}
+
+
+def save_state(dest, state):
+    (Path(dest) / STATE).write_text(json.dumps(state, indent=1, ensure_ascii=False),
+                                    encoding="utf-8")
+
+
+def rotate(dest, asset, new_file, fp, state):
+    """Promote the new copy to CURRENT, demote the old one to PREVIOUS, delete the rest."""
+    a = state["assets"].setdefault(asset, {"copies": []})
+    a["copies"].insert(0, {"file": Path(new_file).name, "when": time.strftime("%Y-%m-%d %H:%M"),
+                           "source": fp})
+    for old in a["copies"][KEEP:]:
+        try:
+            (Path(dest) / old["file"]).unlink()
+            print("     retirada la copia vieja: %s" % old["file"])
+        except OSError:
+            pass
+    a["copies"] = a["copies"][:KEEP]
+    for i, c in enumerate(a["copies"]):
+        c["role"] = "ACTUAL" if i == 0 else "ANTERIOR"
+    save_state(dest, state)
+
+
+def status(dest):
+    """What is protected, how old, and what the source has done since. This is the whole
+    point of keeping a state file: a directory of timestamped files cannot tell you whether
+    the newest one is still current."""
+    state = load_state(dest)
+    print("ESTADO DE LAS COPIAS EN %s" % dest)
+    print("=" * 74)
+    if not state["assets"]:
+        print("  sin copias todavia")
+        return 0
+    stale = 0
+    for asset, a in state["assets"].items():
+        src = {"golden": GOLD}.get(asset)
+        now = None
+        if src and Path(src).exists():
+            now = fingerprint(src)
+        print("\n  %s" % asset.upper())
+        for c in a["copies"]:
+            print("    %-9s %-34s %s" % (c.get("role", "?"), c["file"], c["when"]))
+        cur = a["copies"][0]["source"] if a["copies"] else None
+        if now and cur:
+            same = now["edges"] == cur.get("edges") and now["bytes"] == cur.get("bytes")
+            print("    origen: %s" % ("SIN CAMBIOS desde la copia ACTUAL"
+                                      if same else "HA CAMBIADO — la copia esta desfasada"))
+            if not same:
+                stale += 1
+        elif not src:
+            print("    origen: no comprobable desde aqui (copia externa)")
+    print("\n" + "=" * 74)
+    print("%d activo(s) pendientes de actualizar" % stale if stale
+          else "todo al dia")
+    return 0
+
+
 def is_secret(rel):
     name = Path(rel).name
     return any(fnmatch.fnmatch(name, pat) for pat in CLAUDE_SECRETS)
@@ -177,6 +270,9 @@ def snapshot_claude(dest_dir):
     print("  ~/.claude -> %s" % out.name)
     print("     %d ficheros, %.1f MB · %d de memoria · %d secretos excluidos y VERIFICADOS"
           % (len(names), out.stat().st_size / 1e6, len(mem), len(skipped)))
+    # 1.6 MB is cheap enough to rewrite every run, so the fingerprint here is of the
+    # RESULT rather than the source — it still drives rotation and the status view.
+    rotate(dest_dir, "claude_home", out, fingerprint(out), load_state(dest_dir))
     return out
 
 
@@ -198,12 +294,28 @@ def snapshot(dest_dir):
     if free and free < man["file_bytes"] * 1.1:
         print("ABORTADO: no hay espacio suficiente en el destino")
         return 2
+    # SKIP IF UNCHANGED. The golden only moves when something extracts or purges; on every
+    # other day copying 16 GB for 15 minutes buys nothing. This is where the incremental
+    # saving actually lives — a monolithic SQLite file cannot be copied in parts, so the
+    # useful question is not "which blocks changed" but "did anything change at all".
+    state = load_state(dest_dir)
+    fp = fingerprint(GOLD)
+    prev = (state["assets"].get("golden", {}).get("copies") or [{}])[0].get("source")
+    if (prev and "--force" not in sys.argv
+            and prev.get("edges") == fp["edges"]
+            and prev.get("bytes") == fp["bytes"]):
+        con.close()
+        print("SIN CAMBIOS desde la copia ACTUAL — no se copia nada.")
+        print("  (el golden solo cambia al extraer o purgar; forzar con --force)")
+        return 0
+
     t0 = time.time()
     print("copiando con VACUUM INTO (consistente, no una copia de fichero)...")
     con.execute("VACUUM INTO ?", (out.as_posix(),))
     con.close()
     print("escrito: %s · %.2f GB · %.0f min"
           % (out, out.stat().st_size / 1e9, (time.time() - t0) / 60))
+    rotate(dest_dir, "golden", out, fp, state)
     if same_volume:
         print("\n  AVISO: el destino esta en el MISMO volumen que el original.")
         print("  Esto protege de un script defectuoso, una purga mal dirigida o una")
@@ -264,6 +376,9 @@ def restore_claude(zip_path, to_dir):
 
 
 def main(argv):
+    if "--status" in argv:
+        return status(argv[argv.index("--dest") + 1] if "--dest" in argv
+                      else DEFAULT_DEST)
     if "--restore" in argv:
         z = argv[argv.index("--restore") + 1]
         to = argv[argv.index("--to") + 1] if "--to" in argv else \
