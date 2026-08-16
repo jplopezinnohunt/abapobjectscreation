@@ -21,7 +21,12 @@ WHAT IT CHECKS — each one is a failure that happened, not a hypothetical
      and the page shipped with a raw @TOKEN@ or a stray %s.
   2. THE GOLDEN SNAPSHOT IS OLDER THAN THE GOLDEN. The backup script and one snapshot exist;
      nothing ever said when it went stale. Silence here is the default state of a backup.
-  3. A SCRIPT THAT IS NOT IN THE ARSENAL. A19 was written and nearly went unregistered; an
+  3. WORK IN A SIBLING PROJECT THAT NO COPY COVERS. Measured s098: seven of eleven projects
+     have NO git remote and nine hold uncommitted work. A bundle carries only committed
+     history, so uncommitted files in a remote-less repo exist on exactly one disk — and a
+     green backup report cannot see them. Narrow on purpose: mid-session edits are normal
+     and only the two genuinely exposed shapes are reported.
+  4. A SCRIPT THAT IS NOT IN THE ARSENAL. A19 was written and nearly went unregistered; an
      algorithm nobody can find is an algorithm nobody reuses. This one PROPOSES rather than
      asserting, because the hook cannot tell a helper from an algorithm and claiming a
      defect it cannot prove is how a gate starts crying wolf.
@@ -35,6 +40,7 @@ Contract, copied from stop_durability_hook.py deliberately:
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -111,6 +117,62 @@ NOT_ALGORITHMS = {
 }
 
 
+PROJECTS = ROOT.parent
+
+
+def _git(args, cwd):
+    try:
+        r = subprocess.run(["git"] + args, cwd=str(cwd), capture_output=True, text=True,
+                           timeout=8)
+        return r.stdout.strip() if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def check_sibling_exposure():
+    """Work in OTHER projects that no copy covers.
+
+    Deliberately narrow, because uncommitted files mid-session are NORMAL and a gate that
+    flags them every turn is noise. Only two shapes are reported, and both are real
+    exposure that a green backup report cannot see:
+
+      · uncommitted work in a repo with NO REMOTE — a bundle carries only committed
+        history, so this exists on exactly one disk and nowhere else;
+      · commits that were never pushed, in a repo that HAS a remote — the one case where
+        pushing costs nothing and is simply forgotten.
+
+    THIS repo is excluded: stop_durability_hook.py already owns it, and two gates naming
+    the same files is how a reader learns to skim both.
+    """
+    out = []
+    try:
+        dirs = [p for p in sorted(PROJECTS.iterdir())
+                if p.is_dir() and (p / ".git").is_dir()
+                and not p.name.startswith("_") and p.resolve() != ROOT.resolve()]
+    except Exception:
+        return []
+    naked, unpushed = [], []
+    for p in dirs:
+        st = _git(["status", "--porcelain"], p)
+        if st is None:
+            continue
+        dirty = len([x for x in st.splitlines() if x.strip()])
+        remote = _git(["remote"], p)
+        if dirty and not remote:
+            naked.append("%s(%d)" % (p.name, dirty))
+        if remote:
+            br = _git(["rev-parse", "--abbrev-ref", "HEAD"], p)
+            cnt = _git(["rev-list", "--count", "origin/%s..HEAD" % br], p) if br else None
+            if cnt and cnt != "0":
+                unpushed.append("%s(%s)" % (p.name, cnt))
+    if naked:
+        out.append("SIN remoto y con cambios sin commitear — solo existen en este disco: %s"
+                   % ", ".join(naked[:5]))
+    if unpushed:
+        out.append("commits sin subir a origin: %s" % ", ".join(unpushed[:5]))
+    return out
+
+
 def check_algorithms():
     try:
         reg = json.loads(ALGOS.read_text(encoding="utf-8"))
@@ -142,7 +204,7 @@ def main():
         sys.exit(0)
 
     findings = []
-    for fn in (check_leaks, check_backup, check_algorithms):
+    for fn in (check_leaks, check_backup, check_sibling_exposure, check_algorithms):
         try:
             findings.extend(fn())
         except Exception:
