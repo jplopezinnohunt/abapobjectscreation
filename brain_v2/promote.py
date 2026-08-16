@@ -25,7 +25,6 @@ USAGE
     python brain_v2/promote.py "concept words to search for"
     python brain_v2/promote.py --id feedback_some_rule_id
 """
-import collections
 import io
 import json
 import os

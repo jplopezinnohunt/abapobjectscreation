@@ -34,7 +34,6 @@ Contract, copied from stop_durability_hook.py deliberately:
 """
 import hashlib
 import json
-import os
 import re
 import sys
 import time
@@ -92,13 +91,26 @@ def check_backup():
     return []
 
 
+# REVIEWED AND DELIBERATELY NOT ALGORITHMS. Without this list the gate would report the same
+# ten scripts every session forever, and a gate that repeats a finding nobody will act on
+# becomes noise — the exact degradation this hook was designed to avoid. Triaged s098: all
+# are pipeline steps or helpers of 54-135 lines, none declares itself an algorithm, and none
+# is reusable on another installation, which is the bar for the arsenal. A NEW unregistered
+# script will still be reported, which is the point.
+NOT_ALGORITHMS = {
+    "accumulate_problems.py", "attach_object_text.py", "build_p2p_log.py",
+    "fm_executed_census.py", "gold_ref.py", "method_registry.py", "parse_syslog.py",
+    "semantic_activity_map.py", "tier0_1_pipeline.py", "tier2_sod.py",
+}
+
+
 def check_algorithms():
     try:
         reg = json.loads(ALGOS.read_text(encoding="utf-8"))
         bound = json.dumps(reg).lower()
         missing = []
         for p in sorted(PM.glob("*.py")):
-            if p.name.startswith("_"):
+            if p.name.startswith("_") or p.name in NOT_ALGORITHMS:
                 continue
             if p.name.lower() not in bound:
                 missing.append(p.name)
