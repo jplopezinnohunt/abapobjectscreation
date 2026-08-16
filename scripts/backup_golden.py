@@ -72,6 +72,10 @@ REPO = Path(__file__).resolve().parents[1]
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 DEFAULT_DEST = REPO.parent / "_golden_backups"
 MANIFEST = REPO / "Zagentexecution" / "sap_data_extraction" / "golden_manifest.json"
+# Where the last backup actually went. The destination is an argument, so the
+# integrity gate cannot guess it — and a gate that reports "no copy exists"
+# because the copy MOVED is a gate that teaches you to ignore it.
+POINTER = REPO / "Zagentexecution" / "sap_data_extraction" / "backup_location.json"
 
 CLAUDE_HOME = Path(os.path.expanduser("~")) / ".claude"
 # What to take. Everything else in ~/.claude is cache, telemetry, file-history or
@@ -162,6 +166,11 @@ def load_state(dest):
 
 
 def save_state(dest, state):
+    POINTER.write_text(json.dumps(
+        {"_what_this_is": "donde escribio el ultimo backup, para que el "
+                          "gate lo encuentre aunque el destino cambie",
+         "dest": str(dest), "when": time.strftime("%Y-%m-%d %H:%M")},
+        indent=1, ensure_ascii=False), encoding="utf-8")
     (Path(dest) / STATE).write_text(json.dumps(state, indent=1, ensure_ascii=False),
                                     encoding="utf-8")
 

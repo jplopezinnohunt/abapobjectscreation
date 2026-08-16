@@ -44,7 +44,7 @@ ROOT = HERE.parent
 MARKER = HERE / ".last_integrity_nudge"
 
 GOLD = ROOT / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
-BACKUPS = ROOT.parent / "_golden_backups"
+POINTER = ROOT / "Zagentexecution" / "sap_data_extraction" / "backup_location.json"
 COMPANIONS = ROOT / "companions"
 ALGOS = ROOT / "brain_v2" / "methods" / "algorithms.json"
 PM = ROOT / "process_mining"
@@ -73,8 +73,15 @@ def check_backup():
     try:
         if not GOLD.exists():
             return []
-        snaps = sorted(BACKUPS.glob("*.db"), key=lambda x: x.stat().st_mtime) \
-            if BACKUPS.exists() else []
+        # Follow the pointer the backup script leaves. Guessing a fixed folder is how
+        # this check reported "the golden has NO copy" the moment the destination moved
+        # to an external disk — a false alarm that trains the reader to skip the gate.
+        try:
+            dest = Path(json.loads(POINTER.read_text(encoding="utf-8"))["dest"])
+        except Exception:
+            dest = ROOT.parent / "_golden_backups"
+        snaps = sorted(dest.glob("*.db"), key=lambda x: x.stat().st_mtime) \
+            if dest.exists() else []
         if not snaps:
             return ["el GOLDEN (%.1f GB) no tiene NINGUNA copia — "
                     "python scripts/backup_golden.py" % (GOLD.stat().st_size / 1e9)]
