@@ -49,7 +49,16 @@ Restaura a un **directorio de ensayo**, nunca encima del `~/.claude` vivo — as
 se puede hacer un martes cualquiera sin miedo. Verifica solo: cuenta ficheros del zip contra
 los del disco y exige ≥50 de memoria.
 
-**Última prueba real:** 595 ficheros del zip, 595 en disco, 474 de memoria. OK.
+**Última prueba real — 2026-08-16, desde el disco externo `D:` (etiqueta «backup»):**
+
+```
+RESTAURADO en D:\_restore_drill
+  595 ficheros del zip, 595 en disco, 474 de memoria
+  verificacion: OK
+```
+
+Y se abrió una nota concreta del paquete restaurado para comprobar que el contenido llegó
+íntegro, no solo el conteo — `feedback_efficiency.md` legible con su frontmatter intacto.
 
 Luego, a mano y a propósito:
 1. renombrar `~/.claude` a `~/.claude.old`
