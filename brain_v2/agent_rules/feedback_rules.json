@@ -4021,5 +4021,28 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_a_control_must_be_able_to_say_reviewed_and_excluded",
+  "severity": "HIGH",
+  "created_session": 98,
+  "rule": "Any automated check that reports CANDIDATES rather than certainties must be able to record 'reviewed and deliberately excluded', with the reason written beside it. Without that, it repeats the same finding every run, the reader learns to skip it, and the control silently becomes decoration — while still appearing to be a control, which is worse than having none. A gate with no memory of its own decisions can only repeat itself.",
+  "why": "s098, on the first real use of stop_integrity_hook.py. It flagged ten process_mining scripts as absent from the algorithm arsenal. Triaged one by one, EIGHT are helpers or pipeline steps of 54-135 lines, two are analyses, none declares itself an algorithm and none is reusable on another installation — which is the bar. The honest verdict was that NONE should be registered. But that verdict had nowhere to live, so the gate would have reported the same ten every session forever. The degradation the hook was explicitly designed to avoid reappeared through the back door, one commit after the design note warning about it.",
+  "how_to_apply": "Give the check an explicit exclusion set IN THE CODE, with a comment saying when it was triaged and on what basis — never a silent filter. Then verify BOTH directions: that it goes quiet on the reviewed set, and that it still fires on a newly introduced case. The second test is the one that proves the exclusion did not just switch the check off.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 values traceability: an exclusion with its reason recorded is traceable, while a check quietly ignored by its reader loses the signal AND the record that a decision was ever made.",
+  "evidence": "brain_v2/stop_integrity_hook.py NOT_ALGORITHMS; verified quiet on the ten and firing on a new file",
+  "source_file": "brain_v2/stop_integrity_hook.py",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]
