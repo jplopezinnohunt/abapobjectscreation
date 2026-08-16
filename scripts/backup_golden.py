@@ -21,23 +21,62 @@ WHY `VACUUM INTO` AND NOT A FILE COPY
     fine and is subtly wrong. `VACUUM INTO` takes a read lock and writes a consistent,
     compacted database — it is the supported way to snapshot without stopping the world.
 
+THE SECOND ASSET: ~/.claude
+    The project memory has always named TWO things git does not protect, and only one of
+    them was ever scripted. ~/.claude holds the accumulated memory of every session across
+    every project — 474 files, 1.5 MB — plus the hand-written CLAUDE.md, the skills and the
+    permission settings. It is the smaller asset and the more irreplaceable one: the golden
+    can be re-extracted from P01 over hours, and nothing anywhere can reconstruct a note
+    about why a decision was made.
+
+    Both go to the same --dest, because two assets that are always named together should
+    not need two commands and two destinations to remember.
+
+WHAT IS DELIBERATELY LEFT OUT OF THE ~/.claude COPY
+    THE TRANSCRIPTS. 1,836 MB of .jsonl against 1.5 MB of memory — 99.9% of the size and
+    the part that is NOT the knowledge. Backing them up would make the copy 600x larger and
+    slow enough that it stops being run, which is how a backup quietly dies.
+
+    THE CREDENTIALS. .credentials.json is an OAuth token and mcp-needs-auth-cache.json can
+    carry auth state. A token is RE-OBTAINABLE by logging in again; memory is not. So the
+    copy excludes them and VERIFIES the exclusion afterwards rather than trusting the
+    filter — an external disk can be lost, and a lost disk holding a live token is a
+    different kind of incident than a lost disk holding notes.
+
 USAGE
     python scripts/backup_golden.py                 # local snapshot, same volume
-    python scripts/backup_golden.py --dest "D:/..." # another device or a synced folder
+    python scripts/backup_golden.py --dest "D:/..." # another device — both assets
+    python scripts/backup_golden.py --claude-only --dest "D:/..."   # just ~/.claude (3 MB)
     python scripts/backup_golden.py --verify <file> # integrity + row counts of a snapshot
 """
+import fnmatch
 import io
 import json
 import os
 import sqlite3
 import sys
 import time
+import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 DEFAULT_DEST = REPO.parent / "_golden_backups"
 MANIFEST = REPO / "Zagentexecution" / "sap_data_extraction" / "golden_manifest.json"
+
+CLAUDE_HOME = Path(os.path.expanduser("~")) / ".claude"
+# What to take. Everything else in ~/.claude is cache, telemetry, file-history or
+# transcripts — regenerable, and 99.9% of the bytes.
+# NOTE the trailing /*: pathlib's `skills/**` matches DIRECTORIES, not files recursively.
+# Written without it, the first run of this script captured 4 files and ZERO memory — and
+# wrote the zip anyway. Hence the assertion in snapshot_claude: a backup of the memory that
+# contains no memory must fail loudly, not succeed quietly.
+CLAUDE_INCLUDE = [
+    "CLAUDE.md", "settings.json", "AGI-EXCELLENCE-PROTOCOL.md", "SKILL-COORDINATOR.md",
+    "skills/**/*", "plans/**/*", "memory-backups/**/*", "projects/*/memory/**/*",
+]
+# What must never travel, verified after the fact rather than trusted to the filter.
+CLAUDE_SECRETS = [".credentials.json", "mcp-needs-auth-cache.json", "*.key", "*token*"]
 
 # Tables whose content is NOT a plain extract — they carry a rule applied at load or purge
 # time. A restore that reloads these from P01 without re-applying the rule is WRONG, so the
@@ -83,6 +122,62 @@ def write_manifest(con):
     }
     MANIFEST.write_text(json.dumps(man, indent=1, ensure_ascii=False), encoding="utf-8")
     return man
+
+
+def is_secret(rel):
+    name = Path(rel).name
+    return any(fnmatch.fnmatch(name, pat) for pat in CLAUDE_SECRETS)
+
+
+def claude_files():
+    """The durable subset of ~/.claude, resolved to real paths."""
+    out = []
+    for pat in CLAUDE_INCLUDE:
+        for p in CLAUDE_HOME.glob(pat):
+            if p.is_file():
+                out.append(p)
+    return sorted(set(out))
+
+
+def snapshot_claude(dest_dir):
+    """Zip the memory and the hand-written config. Small enough to run every time."""
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out = dest_dir / ("claude_home_%s.zip" % time.strftime("%Y%m%d_%H%M"))
+    files = claude_files()
+    if not files:
+        print("  ~/.claude: nada que copiar (ruta inesperada?)")
+        return None
+    skipped = []
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in files:
+            rel = p.relative_to(CLAUDE_HOME).as_posix()
+            if is_secret(rel):
+                skipped.append(rel)
+                continue
+            z.write(p, rel)
+
+    # VERIFY the exclusion instead of trusting the filter. A backup that quietly carries a
+    # token is worse than no backup, because it is carried off-site and forgotten about.
+    with zipfile.ZipFile(out) as z:
+        names = z.namelist()
+        leaked = [n for n in names if is_secret(n)]
+    if leaked:
+        out.unlink()
+        raise SystemExit("ABORTADO: el zip contenia secretos (%s). Borrado." % leaked[:3])
+
+    # A backup of the memory that contains no memory is not a backup. Refuse to leave it on
+    # disk looking like one — the first version of this function wrote exactly that.
+    mem = [n for n in names if "/memory/" in n]
+    if len(mem) < 50:
+        out.unlink()
+        raise SystemExit("ABORTADO: solo %d ficheros de memoria en el zip (se esperan >=50). "
+                         "Los patrones de CLAUDE_INCLUDE no estan capturando nada. Borrado."
+                         % len(mem))
+    print("  ~/.claude -> %s" % out.name)
+    print("     %d ficheros, %.1f MB · %d de memoria · %d secretos excluidos y VERIFICADOS"
+          % (len(names), out.stat().st_size / 1e6, len(mem), len(skipped)))
+    return out
 
 
 def snapshot(dest_dir):
@@ -135,10 +230,55 @@ def verify(path):
     return 0 if ok == "ok" and not miss and not diff else 1
 
 
+def restore_claude(zip_path, to_dir):
+    """Restore ~/.claude to a STAGING directory — never over the live one.
+
+    A restore that writes straight into ~/.claude is a restore nobody dares rehearse, and a
+    backup nobody rehearses is a hypothesis. Extracting beside it costs one `move` and makes
+    the drill safe to run on a normal Tuesday.
+    """
+    zip_path, to_dir = Path(zip_path), Path(to_dir)
+    if to_dir.exists() and any(to_dir.iterdir()):
+        raise SystemExit("ABORTADO: %s ya existe y no esta vacio. Elige otro destino." % to_dir)
+    to_dir.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_path) as z:
+        bad = [n for n in z.namelist()
+               if n.startswith("/") or ".." in Path(n).parts]   # zip-slip
+        if bad:
+            raise SystemExit("ABORTADO: rutas peligrosas en el zip: %s" % bad[:3])
+        z.extractall(to_dir)
+        names = z.namelist()
+
+    got = sum(1 for _ in to_dir.rglob("*") if _.is_file())
+    mem = list(to_dir.glob("projects/*/memory/*"))
+    print("RESTAURADO en %s" % to_dir)
+    print("  %d ficheros del zip, %d en disco, %d de memoria" % (len(names), got, len(mem)))
+    ok = got == len(names) and len(mem) >= 50
+    print("  verificacion: %s" % ("OK" if ok else "FALLA — cuentas no cuadran"))
+    if ok:
+        print("\n  Siguiente paso MANUAL (a proposito):")
+        print("    1. renombra ~/.claude a ~/.claude.old")
+        print("    2. mueve %s a ~/.claude" % to_dir)
+        print("    3. vuelve a iniciar sesion — .credentials.json NO esta en la copia")
+    return 0 if ok else 1
+
+
 def main(argv):
+    if "--restore" in argv:
+        z = argv[argv.index("--restore") + 1]
+        to = argv[argv.index("--to") + 1] if "--to" in argv else \
+            str(Path(z).parent / "_restore_test")
+        return restore_claude(z, to)
     if "--verify" in argv:
         return verify(argv[argv.index("--verify") + 1])
     dest = argv[argv.index("--dest") + 1] if "--dest" in argv else DEFAULT_DEST
+    print("LOS DOS ACTIVOS QUE GIT NO PROTEGE -> %s" % dest)
+    print("=" * 74)
+    snapshot_claude(dest)
+    if "--claude-only" in argv:
+        print("\n  (--claude-only: el golden no se ha tocado)")
+        return 0
+    print()
     return snapshot(dest)
 
 

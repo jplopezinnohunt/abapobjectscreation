@@ -4044,5 +4044,29 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_a_backup_is_a_hypothesis_until_restored",
+  "severity": "CRITICAL",
+  "created_session": 98,
+  "rule": "A backup that has never been RESTORED is a hypothesis. Every backup this project writes must ship with a rehearsed restore, and the recovery runbook must live in the REPO so it can be read from origin when the machine it describes is gone. Six rules: MEASURE before designing (the irreplaceable asset is rarely the big one); EXCLUDE with the reason written down; VERIFY the exclusion by reading the written package, not by trusting the filter; REFUSE to write an empty backup; RESTORE to a staging directory, never over the live target; and state explicitly what is NOT recoverable.",
+  "why": "s098. Every session close for months had RESTATED that the Golden DB and ~/.claude are local-only and git does not protect them. When it was finally checked there were ZERO copies of either and no script to make one — stating a risk is not managing it, and a reminder that repeats and is never executed is the APPEARANCE of a control, which is worse than none because nobody looks again. The same session also had 73 unpushed commits: git protects nothing you have not pushed. And measuring inverted the intuition — 1,836 MB of transcripts and 16.33 GB of database are both reconstructible, while the 1.5 MB of memory is the only thing nothing can rebuild. Then TESTING the backup found it captured 4 files and zero memory (pathlib resolves `dir/**` as directories, not recursive files) AND wrote the package anyway.",
+  "how_to_apply": "Follow the universal standard at ecosystem-coordinator/.knowledge/way-of-working/project-durability-and-recovery.md. Reference implementation: scripts/backup_golden.py (both assets, one --dest) and knowledge/recovery_runbook.md. Rehearse with `--restore <pkg> --to <tmp>` and paste the ACTUAL output into the runbook — the last real drill, not the expected one. And bound the worst case for reconstructible assets with a manifest of what was loaded and under which rules; without it recovery is archaeology, with it it is a script.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 puts traceability above velocity and calls losing it irreversible. Losing the memory of WHY a decision was made is the purest form of that loss, and it is the asset with the least protection precisely because it is the smallest.",
+  "evidence": "knowledge/recovery_runbook.md; drill 595 files in / 595 out / 474 memory, OK; scripts/backup_golden.py aborts below 50 memory files",
+  "source_file": "scripts/backup_golden.py",
+  "domain_axes": {
+   "functional": [
+    "Infrastructure",
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]
