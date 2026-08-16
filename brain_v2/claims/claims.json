@@ -20366,7 +20366,19 @@
       ]
     },
     "corrects": 459,
-    "CORRECTED_s098_simulation_runs": "THE FIGURES IN THIS CLAIM INCLUDE SIMULATION RUNS and are overstated about ninefold. Corrected: USD 1,982,154.59 and EUR 796,418.86 for runs that actually posted to FI. Everything else in the claim — the 999 accounts, the exact zero net, 999S as the sole carrier, the 72 dormant wage types — is unaffected."
+    "CORRECTED_s098_simulation_runs": "THE FIGURES IN THIS CLAIM INCLUDE SIMULATION RUNS and are overstated about ninefold. Corrected: USD 1,982,154.59 and EUR 796,418.86 for runs that actually posted to FI. Everything else in the claim — the 999 accounts, the exact zero net, 999S as the sole carrier, the 72 dormant wage types — is unaffected.",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT CAST(ROUND(SUM(CASE WHEN substr(trim(WRBTR),-1)='-' THEN -CAST(replace(trim(WRBTR),'-','') AS REAL) ELSE CAST(trim(WRBTR) AS REAL) END),0) AS INT) FROM ppdit WHERE ltrim(HKONT,'0') LIKE '999%'",
+      "expect": {
+        "op": "==",
+        "value": 0
+      },
+      "note": "el bloque Constant Dollar 999 CUADRA A CERO — es el diseno, no una casualidad. Un conteo de lineas se mueve con cualquier re-extraccion; esto solo deja de cumplirse si el mecanismo cambio"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 0
   },
   {
     "id": 466,
@@ -20408,7 +20420,19 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM ppoix WHERE trim(ZZSUBST_KOMOK)<>''",
+      "expect": {
+        "op": "==",
+        "value": 1264
+      },
+      "note": "sustituciones custom de la cuenta simbolica, siempre desde SUSP"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 1264
   },
   {
     "id": 467,
@@ -20454,7 +20478,19 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(DISTINCT RUNID) FROM payroll_runs_posted",
+      "expect": {
+        "op": "==",
+        "value": 1364
+      },
+      "note": "runs de nomina que produjeron documento contable (el resto son simulaciones)"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 1364
   },
   {
     "id": 468,
@@ -20540,7 +20576,19 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM ppdit",
+      "expect": {
+        "op": "==",
+        "value": 434681
+      },
+      "note": "ppdit purgada a runs posteados — si crece sin re-extraccion, alguien recargo sin purgar"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 434681
   },
   {
     "id": 470,
@@ -20679,7 +20727,19 @@
         "GOVERNANCE"
       ]
     },
-    "CORRECTED_s098_by_the_full_block": "THE FRAMING HERE IS WRONG. PRPS carries 31 YYE_* fields, not 13; the 13 were only the ones the sweep printed. The block is NOT 'built and never populated' — YYE_DONOR shows a 24-year abandonment curve from 82% to 5%, YYE_COOP_AGENCY was a 2016-2020 pilot with three values, and YYE_POC is NEW and GROWING since 2022. Ten further fields looked 100% filled because a numeric field defaults to zero rather than blank. The inventory of the OTHER four kinds of dormancy in claim 472 stands."
+    "CORRECTED_s098_by_the_full_block": "THE FRAMING HERE IS WRONG. PRPS carries 31 YYE_* fields, not 13; the 13 were only the ones the sweep printed. The block is NOT 'built and never populated' — YYE_DONOR shows a 24-year abandonment curve from 82% to 5%, YYE_COOP_AGENCY was a 2016-2020 pilot with three values, and YYE_POC is NEW and GROWING since 2022. Ten further fields looked 100% filled because a numeric field defaults to zero rather than blank. The inventory of the OTHER four kinds of dormancy in claim 472 stands.",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM YTFM_BR_FM_POS",
+      "expect": {
+        "op": "==",
+        "value": 0
+      },
+      "note": "tabla sombra del budget rate: construida y vacia"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 0
   },
   {
     "id": 473,
@@ -20724,7 +20784,19 @@
         "B2R"
       ]
     },
-    "EXTENDED_s098_by_A19": "MEASURED PROPERLY the block is not three lifecycles but SIX verdicts, and THREE fields are abandoning on the same curve rather than one: YYE_DONOR 18.52%, YYE_TYP_SOU 25.33% and YYE_EXEC 17.26%. One field is being ADOPTED — YYE_APPR_LINE at 33.56% — which this claim read as part of the dormant mass. Four fields are populated with ONE distinct value and therefore carry no information at all: YYE_MAJ_COM, YYE_IMPL_AGENCY, YYE_COORD, YYE_POC. See A19."
+    "EXTENDED_s098_by_A19": "MEASURED PROPERLY the block is not three lifecycles but SIX verdicts, and THREE fields are abandoning on the same curve rather than one: YYE_DONOR 18.52%, YYE_TYP_SOU 25.33% and YYE_EXEC 17.26%. One field is being ADOPTED — YYE_APPR_LINE at 33.56% — which this claim read as part of the dormant mass. Four fields are populated with ONE distinct value and therefore carry no information at all: YYE_MAJ_COM, YYE_IMPL_AGENCY, YYE_COORD, YYE_POC. See A19.",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(DISTINCT YYE_IMPL_AGENCY) FROM PRPS WHERE trim(YYE_IMPL_AGENCY)<>''",
+      "expect": {
+        "op": "==",
+        "value": 1
+      },
+      "note": "YYE_IMPL_AGENCY: poblado y con UN solo valor — no informa de nada"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 1
   },
   {
     "id": 474,
@@ -20771,7 +20843,19 @@
         "B2R"
       ]
     },
-    "CORRECTED_s098_the_donor_did_not_leave": "THE CONCLUSION 'the funding-source dimension left SAP' IS WRONG. It left the PROJECT MASTER. In SAP it is the CUSTOMER master: 5,401 of 12,517 KNA1 customers (43.1%) are in the six donor account groups OGIN/MSOT/MSAC/MSCO/DELG/UNAG. In the Core Planner it is a first-class role with 5,777 rows over 2,738 workplans. The SF-to-SAP donor feed goes to BW (ZGMSPNSR), never to ECC's FM — which is why FMFINCODE-SPONSOR is 0.2%. Everything else in the claim stands."
+    "CORRECTED_s098_the_donor_did_not_leave": "THE CONCLUSION 'the funding-source dimension left SAP' IS WRONG. It left the PROJECT MASTER. In SAP it is the CUSTOMER master: 5,401 of 12,517 KNA1 customers (43.1%) are in the six donor account groups OGIN/MSOT/MSAC/MSCO/DELG/UNAG. In the Core Planner it is a first-class role with 5,777 rows over 2,738 workplans. The SF-to-SAP donor feed goes to BW (ZGMSPNSR), never to ECC's FM — which is why FMFINCODE-SPONSOR is 0.2%. Everything else in the claim stands.",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM FMFINCODE WHERE trim(SPONSOR)<>''",
+      "expect": {
+        "op": "==",
+        "value": 121
+      },
+      "note": "FMFINCODE-SPONSOR: el candidato estandar, refutado por su llenado"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 121
   },
   {
     "id": 475,
@@ -20831,7 +20915,19 @@
         "B2R"
       ]
     },
-    "EXTENDED_s098_the_donor_is_coming_back": "the donor is being RE-ESTABLISHED on the project master through the new Core Planner path: on the 367 WBS roots flagged YYE_POC='X', YYE_DONOR is 84% filled with FULL controlled names averaging 19 characters (Government of Japan, World Bank - Global Partn) matching the Core Planner's own donor list, against 8-character abbreviations elsewhere. Coverage of new extrabudgetary roots: 0% in 2021, 26% in 2024, 32% in 2025."
+    "EXTENDED_s098_the_donor_is_coming_back": "the donor is being RE-ESTABLISHED on the project master through the new Core Planner path: on the 367 WBS roots flagged YYE_POC='X', YYE_DONOR is 84% filled with FULL controlled names averaging 19 characters (Government of Japan, World Bank - Global Partn) matching the Core Planner's own donor list, against 8-character abbreviations elsewhere. Coverage of new extrabudgetary roots: 0% in 2021, 26% in 2024, 32% in 2025.",
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM KNA1 WHERE KTOKD IN ('OGIN','MSOT','MSAC','MSCO','DELG','UNAG')",
+      "expect": {
+        "op": "==",
+        "value": 5401
+      },
+      "note": "clientes en grupos de cuenta de DONANTE — donde vive el donante en SAP"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 5401
   },
   {
     "id": 476,
@@ -20915,7 +21011,19 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT MIN(ERDAT) FROM PRPS WHERE trim(ERNAM)='MULESOFT'",
+      "expect": {
+        "op": "==",
+        "value": "20231215"
+      },
+      "note": "primer PEP escrito por la interfaz = arranque de Core Manager"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": "20231215"
   },
   {
     "id": 478,
@@ -21124,6 +21232,18 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "verification": {
+      "source": "gold_db",
+      "query": "SELECT COUNT(*) FROM PRPS",
+      "expect": {
+        "op": "==",
+        "value": 60292
+      },
+      "note": "elementos PEP sobre los que se midio el modelo de 31 campos"
+    },
+    "verification_status": "CONFIRMED",
+    "last_verified": "s079",
+    "verified_value": 60292
   }
 ]
