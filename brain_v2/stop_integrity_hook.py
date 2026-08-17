@@ -86,11 +86,24 @@ def check_backup():
             dest = Path(json.loads(POINTER.read_text(encoding="utf-8"))["dest"])
         except Exception:
             dest = ROOT.parent / "_golden_backups"
-        snaps = sorted(dest.glob("*.db"), key=lambda x: x.stat().st_mtime) \
-            if dest.exists() else []
+        # UNREACHABLE IS NOT MISSING. An external disk spends most of its life unplugged —
+        # that is what makes it an external backup. Reporting "no copy exists" every time it
+        # is disconnected would fire on the normal case and teach the reader to skip the
+        # gate, which is the failure this hook was written to avoid.
+        if not dest.exists():
+            try:
+                last = json.loads(POINTER.read_text(encoding="utf-8"))
+                return ["el destino de las copias (%s) no esta accesible — disco "
+                        "desconectado. Ultima copia: %s. No es un fallo, pero mientras siga "
+                        "desconectado el golden solo existe aqui"
+                        % (dest, last.get("when", "?"))]
+            except Exception:
+                return []
+        snaps = sorted(dest.glob("*.db"), key=lambda x: x.stat().st_mtime)
         if not snaps:
-            return ["el GOLDEN (%.1f GB) no tiene NINGUNA copia — "
-                    "python scripts/backup_golden.py" % (GOLD.stat().st_size / 1e9)]
+            return ["el GOLDEN (%.1f GB) no tiene NINGUNA copia en %s — "
+                    "python scripts/backup_golden.py --dest ..."
+                    % (GOLD.stat().st_size / 1e9, dest)]
         newest = snaps[-1]
         age_d = (time.time() - newest.stat().st_mtime) / 86400.0
         if GOLD.stat().st_mtime > newest.stat().st_mtime + 3600:
