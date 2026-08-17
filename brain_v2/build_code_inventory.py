@@ -73,6 +73,12 @@ STOP_TOKENS = {
     "OUTPUT", "RESULT", "FINAL", "DRAFT", "SAMPLE", "README", "NOTES", "LOG",
 }
 
+# ABAP class-pool include names (CM001, CM00D, CCIMP, CCDEF, CCMAC, CI, CU, CO, CP, CT,
+# CS, CCAU). They name a SECTION of a class, never the class — every class in the system
+# has a CM001. Grouping on them merged ZCL_IM_TRIP_POST_FI's CM00C with
+# YCL_FM_BR_EXCHANGE_RATE_BL's CM00C, which are unrelated code.
+GENERIC_INCLUDE = re.compile(r"^(CM[0-9A-F]{3}|CC(IMP|DEF|MAC|AU)|C[IUOPTS])$", re.I)
+
 ABAP_MARKERS = ("form ", "endform", "select single", "data:", "method ", "endmethod",
                 "report ", "class ", "function ", "loop at", "call function",
                 "endmethod", "endclass", "perform ")
@@ -132,7 +138,8 @@ def name_tokens(stem: str) -> set:
     parts = re.split(r"[^A-Za-z0-9]+", stem.upper())
     toks = set()
     for p in parts:
-        if len(p) >= 5 and p not in STOP_TOKENS and not p.isdigit():
+        if (len(p) >= 5 and p not in STOP_TOKENS and not p.isdigit()
+                and not GENERIC_INCLUDE.match(p)):
             toks.add(p)
     # also the whole normalised name
     n = normalise_object_name(stem)
@@ -307,6 +314,13 @@ def build():
         for t in f["tokens"]:
             token_index[t].append(i)
 
+    # A token only IDENTIFIES an object if it is rare. 'PAYMEDIUM' is shared by a dozen
+    # distinct function modules, so grouping on it merged Y_FI_PAYMEDIUM_06,
+    # Y_FI_PAYMEDIUM_41, _NOTE_TO_PAYEE... into one 535-line file and reported eleven
+    # phantom stubs. 'YRGGBS00' is shared by exactly two files and does identify them.
+    token_df = {t: len({files[i]["name"] for i in ix}) for t, ix in token_index.items()}
+    RARE_MAX = 3
+
     print("collecting domain evidence...")
     evidence = collect_domain_evidence()
 
@@ -323,9 +337,11 @@ def build():
         fl = sorted((files[i] for i in idxs), key=lambda x: -x["lines"])
         primary = fl[0]
 
-        # every file that shares an identifying token with this object, anywhere
-        related = set()
+        # every file that shares a RARE (therefore identifying) token with this object
+        related = set(idxs)
         for t in primary["tokens"]:
+            if token_df.get(t, 99) > RARE_MAX:
+                continue
             for j in token_index.get(t, []):
                 related.add(j)
         rel_files = sorted((files[j] for j in related), key=lambda x: -x["lines"])

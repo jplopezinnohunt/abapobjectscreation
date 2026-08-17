@@ -1,0 +1,20 @@
+FUNCTION Y_FI_PAYMEDIUM_21_FILE_RENAME.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     REFERENCE(I_FPAYH) LIKE  FPAYH STRUCTURE  FPAYH
+*"     REFERENCE(I_FPAYHX) LIKE  FPAYHX STRUCTURE  FPAYHX
+*"     REFERENCE(I_FORMAT_PARAMS) LIKE  FPM_SELPAR-PARAM
+*"     REFERENCE(I_FILENAME) LIKE  REGUT-FSNAM
+*"     REFERENCE(I_XFILESYSTEM) TYPE  DFILESYST
+*"  TABLES
+*"      T_FILE_OUTPUT STRUCTURE  FPM_FILE
+*"  CHANGING
+*"     REFERENCE(C_FILENAME) LIKE  REGUT-FSNAM
+*"  EXCEPTIONS
+*"      CANCEL_PAYMENT_MEDIUM
+*"----------------------------------------------------------------------
+
+concatenate C_FILENAME '.in' into C_FILENAME.
+
+ENDFUNCTION.
