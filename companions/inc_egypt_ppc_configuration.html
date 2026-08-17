@@ -180,7 +180,7 @@ EG9  RENT  Rent</pre>
 <tr><td>Block structure, order and separators</td><td><span class="pill green">DECIDED</span> derived from our own config + the builder source</td><td>—</td></tr>
 <tr><td>Pay-type rows P and R</td><td><span class="pill green">DECIDED</span> fixed values, as every other country</td><td>—</td></tr>
 <tr><td><strong>The <code>T015L</code> reason list</strong></td><td><span class="pill green">DERIVED</span> from 12,278 real payment lines across the 9 configured countries, on the ISO 20022 pattern the Philippines already uses — see §3b. Business <em>approves the wording</em>, does not author it</td><td>BFM / Treasury</td></tr>
-<tr><td>Whether Citi wants a code prefix at all</td><td><span class="pill amber">ASK THE BANK</span> the notice does not say. If narrative only, drop block 01 and 02</td><td>CitiService Egypt</td></tr>
+<tr><td>Whether a code prefix is wanted</td><td><span class="pill green">ANSWERED from our own data</span> all nine configured countries carry a code as the first block on the same SocGen file — see §5c</td><td>—</td></tr>
 <tr><td>ABAP</td><td><span class="pill green">NONE</span></td><td>—</td></tr>
 </table>
 
@@ -231,6 +231,33 @@ Citi's requirement binds instructions submitted through Citi channels, and a pre
 </div>
 <div class="callout">
 <strong>Two caveats on the numbers.</strong> 2026 is Jan–May in the Gold DB, not a full year. And 205 of the lines carry <code>XVORL='X'</code> — payment <em>proposals</em>, not executed payments; they are excluded above. Including them would inflate transfers further, not the cheque share.
+</div>
+
+<h2>5c · The pattern in our own Citi payments — the prefix question, answered <span class="pill green">claim 492</span></h2>
+<div class="callout green">
+<strong>Every PPC country is a Société Générale country — and Egypt is one too.</strong> Measured on <code>REGUH</code> 2024-2026, executed payments only, attributing each to the beneficiary's bank country: the nine configured countries are <strong>88.7% paid through <code>SOG*</code></strong> house banks. <strong>Egypt is 93.9%</strong> (2,665 of 2,837). Egypt fits the existing framework exactly — configure it and ~94% of the flow carries a purpose code, rendered by the same builder as the other nine.
+</div>
+<table>
+<tr><th>Country</th><th class="n">via SocGen</th><th>Country</th><th class="n">via SocGen</th></tr>
+<tr><td>BH</td><td class="n">100.0%</td><td>JO</td><td class="n">93.3%</td></tr>
+<tr><td>AE</td><td class="n">96.5%</td><td>MY</td><td class="n">93.1%</td></tr>
+<tr><td>ID</td><td class="n">94.9%</td><td>CN</td><td class="n">92.2%</td></tr>
+<tr><td>PH</td><td class="n">94.4%</td><td>MA</td><td class="n">86.2%</td></tr>
+<tr style="background:#d9f2ee"><td><strong>EG</strong></td><td class="n"><strong>93.9%</strong></td><td>IN</td><td class="n">64.3%</td></tr>
+</table>
+<div class="callout green">
+<strong>So the prefix question does not need Citi.</strong> All nine countries carry a code as the first block on the SocGen file. Egypt should too — for consistency with the builder and with every other country on the same tree.
+</div>
+<div class="callout red">
+<strong>But the notice binds precisely the flow the framework cannot serve.</strong> PPC is SocGen-only by written specification (claim 267), so a payment to a PPC country that leaves through a <strong>Citi</strong> house bank carries <em>no purpose code at all</em>. Quantified since 2024:
+<table style="margin-top:6px">
+<tr><th>Country</th><th class="n">Lines via Citi</th><th class="n">Amount</th></tr>
+<tr style="background:#ffe4e6"><td><strong>EG</strong></td><td class="n"><strong>58</strong></td><td class="n"><strong>USD 3,285,100</strong></td></tr>
+<tr><td>JO</td><td class="n">53</td><td class="n">232,547</td></tr>
+<tr><td>CN</td><td class="n">26</td><td class="n">103,201</td></tr>
+<tr><td>MY · ID · AE</td><td class="n">18</td><td class="n">110,000</td></tr>
+</table>
+Egypt's Citi exposure is an order of magnitude larger than any other country's. Configuring <code>EG</code> solves the 94% that goes via SocGen — worth doing on its own merits — but that <strong>USD 3.3M</strong> is outside the framework <em>by design</em> and needs either a Citi extension (a development, per claim 267) or a process answer.
 </div>
 
 <h2>6 · Does the super-user exception apply here?</h2>
