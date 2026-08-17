@@ -4192,5 +4192,29 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_a_zero_match_grep_is_a_claim_about_your_grep",
+  "severity": "CRITICAL",
+  "created_session": 99,
+  "rule": "A search that returns nothing is evidence about the SEARCH, not about the system. Before concluding 'X does not exist', prove the search could have found X: check the file ENCODING (UTF-16 returns 0 for every ASCII pattern), the CASE (ABAP source is conventionally lowercase; SAP field names are quoted uppercase in docs), and whether you searched the FULL body or a stub. Then check the ABSTRACTION: a table-level search cannot see logic that lives behind an exit call — GB931 holds CHECKID '=U917', never the field the FORM reads.",
+  "why": "s099. Claim 116 was published TIER_1 saying the PPC capture control did not exist, on the strength of 'zero matches for LZBKZ in YRGGBS00's 1,592-line source'. The file is UTF-16 and the ABAP is lowercase; FORM u917 sits at line 1547 and blocks the posting. Three silent failures stacked — wrong encoding, wrong case, and a corpus copy that was a 29-line stub. On that claim a KU was opened proposing four ways to BUILD a control that already existed, waiting on a decision from two named people. A zero-result search feels like evidence of absence and is the cheapest way to publish a confident lie.",
+  "how_to_apply": "Positive control first: grep for something you KNOW is in the file (its own FORM names, 'ENDFORM') and confirm you get hits. If that returns 0, your pipeline is broken, not the system. Use `python brain_v2/graph_queries.py code <obj>` to get the encoding-normalised primary source and the STUB_AT_CANONICAL flag before grepping, and `graph_queries.py section <routine>` / `blocking_code` instead of raw text search for behaviour. State the negative as 'not found by <method>', never as 'does not exist'.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 demands verifiable evidence. An empty result set is only evidence once the method is shown capable of producing a non-empty one.",
+  "evidence": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547 FORM u917 vs claim 116 layer (4); claim 484 supersedes 116",
+  "source_file": "brain_v2/claims/claims.json",
+  "domain_axes": {
+   "functional": [
+    "Payment",
+    "Brain_Architecture"
+   ],
+   "module": [
+    "FI"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]

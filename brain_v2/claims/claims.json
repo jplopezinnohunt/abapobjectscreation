@@ -5338,7 +5338,7 @@
   {
     "id": 116,
     "claim": "PPC LZBKZ field has no upstream validation in UNESCO P01 — confirmed Session #63. Full 5-layer audit: (1) SAP-std F4 only verifies entered code exists in T015L (73 codes covering exactly the 9 PPC countries AE/BH/CN/ID/IN/JO/MA/MY/PH); does NOT require entry. (2) GGB0 BOOLCLASS=009 VALID='UNES' (12 steps in GB931, claim 34): zero LZBKZ references. (3) GGB1 GB922 (218 rows, Gold DB verified): zero rows with SUBSFIELD='LZBKZ'. (4) YRGGBS00 custom code (1,592 lines, 69 FORMs U100-U913 + UXR1/UXR2/UZLS/UAEP/UIT1/...): zero matches for 'LZBKZ', 'SCB', 'stat\\w*\\s*bank', 'reporting indicator' in full-source grep. (5) Vendor master: LFB1 has no PPC-country flag, LFBK has BANKS but no auto-derive rule. Operational consequence: AP clerk can post FB01/FB60/MIRO/F-43 against PPC-country vendor with empty LZBKZ → F110 BAdI YCL_IDFI_CGI_DMEE_UTIL.CM003 line 48 'READ TABLE mt_t015l WITH KEY lzbkz = is_fpayp-lzbkz' returns sy-subrc<>0 → empty <InstrInf>/<Ustrd> PPC tag → receiving bank in 9 PPC countries rejects payment.",
-    "claim_type": "infrastructure_gap",
+    "claim_type": "superseded",
     "confidence": "TIER_1",
     "evidence_for": [
       "brain_v2/agi/known_unknowns.json KU-2026-PPC-LZBKZ-VALIDATION",
@@ -5349,7 +5349,12 @@
       "claim 34 (12-step UNES validation focused on XREF1/XREF2/XREF3, no LZBKZ)",
       "claim 39 (F110 BAPI bypasses substitution callpoint 3 — may also bypass validation callpoint 2; needs verification before relying on Option A alone)"
     ],
-    "evidence_against": [],
+    "evidence_against": [
+      "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590 — FORM u917, SELECT ytfi_ppc_struc WHERE land1 = lv_banks AND ( ppc_code = 'PPC_VAR' OR ppc_code = 'PPC_DESCR' ) -> b_result = b_false",
+      "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:224 — exits-name = 'U917' registration in the exit pool",
+      "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md §2.4 documented U917 all along; feedback_psm_extensions_is_fi_substitution_home says to read it at the START of any FI validation/substitution investigation",
+      "brain_v2/code_sections.json — U917 parsed as role=VALIDATION, can_block_posting=true"
+    ],
     "related_objects": [
       "YRGGBS00",
       "GB922",
@@ -5364,16 +5369,17 @@
     ],
     "domain": "Payment",
     "created_session": 63,
-    "resolved_session": null,
-    "resolution_notes": "Tracked as KU-2026-PPC-LZBKZ-VALIDATION. 4 fix options (A: GGB0 hard-stop RECOMMENDED · B: GGB1 substitution default · C: F110/BCM pre-submit check · D: vendor master discipline). Decision needed Marlies + N_MENARD + Pablo. Phase 2 candidate (operational hardening complementary to V001 format-only changes).",
-    "status": "open_gap",
+    "resolved_session": 99,
+    "resolution_notes": "REFUTED s099 from source. The control EXISTS: FORM u917 at Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590 sets b_result = b_false when the vendor's BANK country has PPC rows and LZBKZ is empty, which blocks the posting. Layer (4) of this claim's audit — 'zero matches for LZBKZ in YRGGBS00' — was a FALSE NEGATIVE: the file is UTF-16 and the ABAP is lowercase, the grep was uppercase ASCII. Layers (2) and (3) were true but do not disprove the control, because the check lives behind an exit CHECKID (=U917) and not as a field reference in the GB931/GB922 rule tables — a table-level search structurally cannot see it. Cost of the error: a KU was opened proposing 4 options to BUILD a control that already existed, awaiting a decision from Marlies + N_MENARD + Pablo. See claim 484.",
+    "status": "superseded",
     "domain_axes": [
       "FI",
       "Payment",
       "PPC",
       "validation",
       "compliance"
-    ]
+    ],
+    "superseded_by_claim_id": 484
   },
   {
     "id": 117,
@@ -21283,6 +21289,81 @@
       ],
       "process": [
         "GOVERNANCE"
+      ]
+    }
+  },
+  {
+    "id": 484,
+    "claim": "The purpose-code (PPC) capture control EXISTS at financial-document entry: FORM u917 in the YRGGBS00 exit pool (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590), registered as exits-name 'U917' and wired as VALID='UNES' BOOLCLASS=009 VALSEQNR=012 CHECKID '2UNES###009'. Mechanism, read from source: it takes the vendor's BANK country from LFBK (by BVTYP when the line carries one, else the first LFBK row), and if BSEG-LZBKZ is empty it does SELECT SINGLE FROM ytfi_ppc_struc WHERE land1 = <bank country> AND ( ppc_code = 'PPC_VAR' OR ppc_code = 'PPC_DESCR' ); on a hit it sets b_result = b_false and the posting is BLOCKED. THE LIST THAT DECIDES OBLIGATORINESS IS THEREFORE YTFI_PPC_STRUC.LAND1 MATCHED AGAINST THE VENDOR'S BANK COUNTRY (LFBK-BANKS) — not T015L, and not the vendor's address country (LFA1-LAND1). T015L is the CATALOGUE of code values (73 rows, 9 countries); YTFI_PPC_STRUC decides whether a code is required at all. KNOWN HOLES, all read from the same source: it only fires on invoice-entry TCODEs (FB01/FB41/FB60/FB65/FBA6/FBR2/MIR7/MIRO/FBV0/FBVB/F-47) with invoice BLART and KOART='K'; it exits silently when the vendor has NO LFBK row (CHECK lv_banks IS NOT INITIAL); it skips BSCHL 26/39 down-payment clearing; and it does not fire on F-53/FBZ2 manual payments, FB1K clearings or SAPF124 auto-clearing. OPERATIONAL CONSEQUENCE FOR A NEW COUNTRY (e.g. Egypt): adding rows to YTFI_PPC_STRUC with PPC_CODE='PPC_VAR' or 'PPC_DESCR' for that LAND1 turns the capture control ON with zero ABAP.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590",
+        "cite": "FORM u917 full body: LFBK bank-country resolution, ytfi_ppc_struc lookup, b_result = b_false. Encoding UTF-16, ABAP lowercase.",
+        "added_session": 99
+      },
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:224",
+        "cite": "exits-name = 'U917' — the registration that wires the FORM into GGB0.",
+        "added_session": 99
+      },
+      {
+        "type": "knowledge_doc",
+        "ref": "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "cite": "§2.4 documents U917, its GB931 registration (VALSEQNR=012, CONDID 1UNES###009, CHECKID 2UNES###009) and the exact TCODE/BLART firing list.",
+        "added_session": 99
+      },
+      {
+        "type": "derived_artifact",
+        "ref": "brain_v2/code_sections.json",
+        "cite": "U917 parsed: role=VALIDATION, can_block_posting=true, reads LFBK + YTFI_PPC_STRUC, guards bseg-lifnr IS NOT INITIAL / bschl NE 26 / bschl NE 39 / lv_banks IS NOT INITIAL.",
+        "added_session": 99
+      },
+      {
+        "type": "production_data",
+        "ref": "Gold DB YTFI_PPC_STRUC (133 rows) + YTFI_PPC_TAG (11 rows) + T015L (73 rows)",
+        "cite": "9 countries AE/BH/CN/ID/IN/JO/MA/MY/PH; EG absent from all three.",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YRGGBS00",
+      "YFI_YRGGBS00_EXIT",
+      "U917",
+      "U915",
+      "LFBK",
+      "BSEG",
+      "T015L",
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG",
+      "GB93",
+      "GB931",
+      "YCL_IDFI_CGI_DMEE_UTIL"
+    ],
+    "domain": "Payment",
+    "created_session": 99,
+    "resolved_session": 99,
+    "resolution_notes": "Supersedes claim 116. Closes KU-2026-PPC-LZBKZ-VALIDATION: no control needs to be built. What remains open is COVERAGE of the existing control (KU-2026-099-PPC-COVERAGE), not its existence.",
+    "status": "active",
+    "supersedes_claim_id": 116,
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "FI",
+        "Procurement",
+        "Treasury"
+      ],
+      "module": [
+        "FI",
+        "MM"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
       ]
     }
   }

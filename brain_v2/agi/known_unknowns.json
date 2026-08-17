@@ -671,8 +671,20 @@
       "resolved_at": "2026-07-02",
       "resolved_session": "s-2026-07-02b",
       "resolution": "ANSWERED IN SUBSTANCE (TIER_1) -- not from the SocGen IG document itself, but from the bank's own validation-guide text quoted verbatim in the bank's test-tool result (functionally equivalent evidence, user screenshot 2026-07-02): 'This guide applies November 2026 rules: when <PstlAdr> is provided, <TwnNm> & <Ctry> tags are mandatory. Nevertheless, unstructured address <AdrLine> (+ <Ctry>) will be still accepted until Novembre 2026 on live environment.' This CONFIRMS claim #316's concern was warranted: the bank DOES impose a stricter, dated rule beyond the base ISO 20022 scheme's 'agents are exempt' reading -- but the trigger is PstlAdr-presence, not party-vs-agent role. Since CGI already emits a PstlAdr for CdtrAgt, that node is in scope and was flagged by the bank's test tool (claim #330). Claim #316 is QUALIFIED (not deleted, claim #331); the concrete CdtrAgt remediation verdict is claim #332. Residual gap: the raw SocGen IG PDF itself was still not read -- if ever obtained, cross-check it does not add further constraints (e.g. BldgNb/PstCd mandates) beyond what the test-tool quote already revealed.",
-      "related_claims": [310, 316, 317, 329, 330, 331, 332],
-      "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt"],
+      "related_claims": [
+        310,
+        316,
+        317,
+        329,
+        330,
+        331,
+        332
+      ],
+      "related_objects": [
+        "/CGI_XML_CT_UNESCO",
+        "/CITI/XML/UNESCO/DC_V3_01",
+        "CdtrAgt"
+      ],
       "evidence": "brain_v2/claims/claims.json claim #316 resolution_notes; claim #329 (bank rule text); claim #330 (bank test-tool CdtrAgt flag, user screenshot 2026-07-02)"
     },
     {
@@ -689,8 +701,19 @@
         "execution of claim #332's CGI CdtrAgt structuring remediation",
         "Nov-2026 CBPR+ compliance deadline for CGI"
       ],
-      "related_claims": [265, 317, 329, 330, 332],
-      "related_objects": ["/CGI_XML_CT_UNESCO", "/CITI/XML/UNESCO/DC_V3_01", "CdtrAgt", "BNKA"],
+      "related_claims": [
+        265,
+        317,
+        329,
+        330,
+        332
+      ],
+      "related_objects": [
+        "/CGI_XML_CT_UNESCO",
+        "/CITI/XML/UNESCO/DC_V3_01",
+        "CdtrAgt",
+        "BNKA"
+      ],
       "evidence": "claim #332 evidence_against note; claim #265 (test-tool PASS, not live-file); claim #317 (BNKA mashed source data)"
     },
     {
@@ -707,7 +730,12 @@
         "PS master-data replication for 218BDI2000.1 test posting",
         "generalizing the 3-layer chain (ps_project_replication_and_ki235.md) beyond the KI235 fund set"
       ],
-      "related_claims": [351, 352, 338, 339],
+      "related_claims": [
+        351,
+        352,
+        338,
+        339
+      ],
       "related_objects": [
         "218BDI2000",
         "218BDI2000.1",
@@ -717,6 +745,64 @@
         "YAO"
       ],
       "evidence": "Live coding-block error UNES/6046013/218BDI2000.1 'No funds center entered/derived in item 00001', session 2026-07-07. Mechanism to replicate project+WBS+FM assignment already exists but was not yet run to completion for this fund: Zagentexecution/tasks/2026_06_29_fm_model_sync/replicate_project_fund.py. UPDATE 2026-07-08 (claims #351/#352): P01 fmifiit_full confirms the fund's real Funds Center is YAO (283/283 lines) -- this narrows step (1) but does NOT yet resolve the root cause of the target-system posting failure."
+    },
+    {
+      "id": "KU-2026-PPC-LZBKZ-VALIDATION",
+      "opened_at": "2026-04-30",
+      "session": 63,
+      "severity": "HIGH",
+      "domain": "Payment",
+      "question": "Is there any upstream control forcing the AP clerk to enter the PPC purpose code (BSEG-LZBKZ) at invoice entry, or can a payment to a PPC country leave with an empty tag and be rejected by the bank?",
+      "why": "Claim 116 concluded there was none and proposed 4 options to build one (A GGB0 hard-stop, B GGB1 substitution default, C F110/BCM pre-submit check, D vendor-master discipline), pending a decision from Marlies + N_MENARD + Pablo.",
+      "status": "resolved",
+      "resolved_at": "2026-08-17",
+      "resolved_session": 99,
+      "resolution": "THE CONTROL ALREADY EXISTS — nothing to build. FORM u917 (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590), registered as VALID='UNES' BOOLCLASS=009 VALSEQNR=012 CHECKID '2UNES###009', blocks the posting when the vendor's LFBK bank country has PPC_VAR/PPC_DESCR rows in YTFI_PPC_STRUC and BSEG-LZBKZ is empty. Claim 116's 'zero matches for LZBKZ in YRGGBS00' was a false negative: UTF-16 file, lowercase ABAP, uppercase ASCII grep. The 4 build options are WITHDRAWN; no decision is required from Marlies, N_MENARD or Pablo on building a control.",
+      "resolution_claim": 484,
+      "supersedes_claim": 116,
+      "related_objects": [
+        "YRGGBS00",
+        "U917",
+        "YTFI_PPC_STRUC",
+        "LFBK",
+        "T015L",
+        "BSEG"
+      ],
+      "evidence": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590 read directly; brain_v2/code_sections.json U917 role=VALIDATION can_block_posting=true; knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md §2.4"
+    },
+    {
+      "id": "KU-2026-099-PPC-COVERAGE",
+      "opened_at": "2026-08-17",
+      "session": 99,
+      "severity": "HIGH",
+      "domain": "Payment",
+      "question": "The control exists — so why do 283 of 303 payment lines to India-domiciled vendors carry an EMPTY LZBKZ, while all 13 Jordan lines carry one?",
+      "why": "Measured on Gold DB REGUP_SCENARIOS (188 payment runs, 2025-01-02..2026-04-29, 6 company codes) joined to LFA1. With U917 in place, an empty code on a PPC-country line should be impossible at invoice entry. Something is letting them through, and the same hole will let Egypt through the day EG rows are added.",
+      "status": "open",
+      "hypotheses_to_test": [
+        "vendor has no LFBK row -> u917 exits at CHECK lv_banks IS NOT INITIAL and passes",
+        "the vendor's BANK country is not IN even though the vendor address is IN — u917 keys on LFBK-BANKS, not LFA1-LAND1",
+        "the IN rows in YTFI_PPC_STRUC may not use PPC_VAR/PPC_DESCR, so the lookup misses",
+        "the documents were created through a channel u917 does not cover (F-53/FBZ2, FB1K, SAPF124) or via BAPI/interface that bypasses validation callpoint 2 (claim 39)",
+        "REGUP_SCENARIOS is a curated subset and may not be representative of full REGUP"
+      ],
+      "how_to_resolve": "Read YTFI_PPC_STRUC rows for LAND1='IN' from the Gold DB; then for a sample of the 283 empty lines join LFBK on LIFNR to see whether a bank row exists and what BANKS holds; then check the creating TCODE/BLART against the u917 firing list.",
+      "blocking_for": [
+        "Egypt PPC activation — the same hole applies to EG on day one"
+      ],
+      "related_claims": [
+        484,
+        116,
+        39
+      ],
+      "related_objects": [
+        "U917",
+        "YTFI_PPC_STRUC",
+        "LFBK",
+        "LFA1",
+        "REGUP",
+        "BSEG"
+      ]
     }
   ]
 }
