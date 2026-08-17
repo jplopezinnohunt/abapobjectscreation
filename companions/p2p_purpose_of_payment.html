@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Purpose of Payment — the P2P end-to-end</title>
+<title>Purpose of Payment — configuring a country, end to end</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:980px;margin:30px auto;padding:0 20px;line-height:1.55}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:1000px;margin:30px auto;padding:0 20px;line-height:1.55}
 h1{color:#08305f;font-size:21px;border-bottom:3px solid #08305f;padding-bottom:6px;margin:0 0 4px 0}
-h2{color:#08305f;font-size:15px;margin:22px 0 6px 0;border-bottom:1px solid #d4d9e0;padding-bottom:3px}
-h3{color:#08305f;font-size:13px;margin:14px 0 4px 0}
+h2{color:#08305f;font-size:15px;margin:24px 0 6px 0;border-bottom:1px solid #d4d9e0;padding-bottom:3px}
+h3{color:#08305f;font-size:13px;margin:16px 0 4px 0}
 .tag{display:inline-block;background:#08305f;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.4px;margin-right:6px}
-.tag.red{background:#c5283d}
 .sub{font-size:11px;color:#666;margin:4px 0 18px 0}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
 .kpi{background:#f4f5f7;padding:10px;border-radius:5px;border-left:3px solid #08305f}
@@ -20,234 +19,202 @@ th{background:#e0ecf8;color:#08305f;text-align:left;padding:5px 8px;font-weight:
 td{padding:5px 8px;border-bottom:1px solid #d4d9e0;vertical-align:top}
 td.n{text-align:right;font-variant-numeric:tabular-nums}
 code{background:#f1f3f6;padding:1px 5px;border-radius:3px;font-size:11.5px;font-family:"SF Mono",Consolas,monospace}
-pre{background:#0f1b2b;color:#dfe7f0;padding:12px 14px;border-radius:5px;font-size:11.5px;overflow-x:auto;line-height:1.45}
-pre .c{color:#7f9ab5}pre .k{color:#ffb454}pre .h{color:#ff6b7a;font-weight:700}
+pre{background:#0f1b2b;color:#dfe7f0;padding:12px 14px;border-radius:5px;font-size:11.5px;overflow-x:auto;line-height:1.5}
+pre .c{color:#7f9ab5}pre .k{color:#ffb454}pre .h{color:#ff6b7a;font-weight:700}pre .g{color:#7fd18c}
 .callout{background:#fff4d6;border-left:4px solid #ff9f1c;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:13px}
 .callout.red{background:#ffe4e6;border-left-color:#c5283d}
 .callout.green{background:#d9f2ee;border-left-color:#2a9d8f}
 .callout.navy{background:#e8eef6;border-left-color:#08305f}
-.stage{border:1px solid #d4d9e0;border-radius:6px;padding:12px 16px;margin:10px 0;background:#fcfcfd}
-.stage h3{margin-top:0}
+.step{border:1px solid #d4d9e0;border-left:4px solid #08305f;border-radius:0 5px 5px 0;padding:10px 14px;margin:10px 0;background:#fcfcfd}
+.step h3{margin-top:0}
 .pill{display:inline-block;background:#e0ecf8;color:#08305f;padding:1px 7px;border-radius:10px;font-size:10.5px;font-weight:600;margin-right:4px}
-.pill.red{background:#ffe4e6;color:#c5283d}
-.pill.green{background:#d9f2ee;color:#0a7e6e}
+.pill.red{background:#ffe4e6;color:#c5283d}.pill.green{background:#d9f2ee;color:#0a7e6e}
 footer{margin-top:26px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;padding-top:8px}
 </style></head>
 <body>
 
-<h1><span class="tag">P2P</span>Purpose of Payment — the end-to-end</h1>
-<p class="sub">Domain: Procurement_P2P · FI · Payment_BCM · Treasury &nbsp;·&nbsp; Verified from source + P01 config + Gold DB, Session #099 (2026-08-17) &nbsp;·&nbsp; Source doc: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code></p>
+<h1><span class="tag">P2P</span>Purpose of Payment — configuring a country, end to end</h1>
+<p class="sub">Procurement_P2P · FI · Payment_BCM · Treasury &nbsp;·&nbsp; Everything below is read from P01 config and from the source of <code>YCL_IDFI_CGI_DMEE_UTIL</code> and <code>YRGGBS00</code>, Session #099 &nbsp;·&nbsp; Source doc: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code></p>
 
-<div class="callout red">
-<strong>The correction this page exists for.</strong> The list that decides whether a purpose code is <em>mandatory</em> is <code>YTFI_PPC_STRUC.LAND1</code> matched against the vendor's <strong>BANK</strong> country (<code>LFBK-BANKS</code>). Not <code>T015L</code> — that is the catalogue of code <em>values</em>. Not the vendor's address country (<code>LFA1-LAND1</code>). Claim 116 said no capture control existed at all; it does, and it is <code>FORM u917</code>. Superseded by claim 484.
+<div class="callout navy">
+<strong>The question this page answers: how does a COUNTRY become mandatory?</strong> Not "what is a purpose code" — the code is the last thing you decide. A country becomes mandatory the moment it has one particular kind of row in one table, and everything else exists to make that row usable.
 </div>
 
 <div class="kpis">
 <div class="kpi"><div class="v">9</div><div class="l">countries configured</div></div>
-<div class="kpi"><div class="v">73 / 133 / 11</div><div class="l">T015L / PPC_STRUC / PPC_TAG rows</div></div>
-<div class="kpi red"><div class="v">0</div><div class="l">Egypt rows in any list</div></div>
-<div class="kpi amber"><div class="v">5 Sep 2026</div><div class="l">Citi deadline for Egypt</div></div>
+<div class="kpi red"><div class="v">1 of 9</div><div class="l">company codes that enforce it</div></div>
+<div class="kpi amber"><div class="v">3 + 1</div><div class="l">tables to maintain</div></div>
+<div class="kpi"><div class="v">0</div><div class="l">lines of ABAP needed</div></div>
 </div>
 
-<h2>The three stages</h2>
+<h2>1 · How you make a country mandatory</h2>
 
-<svg width="100%" viewBox="0 0 940 300" role="img" aria-label="Three stages: maintained configuration, capture at invoice entry blocked by U917, rendering into the payment file">
-<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#08305f" stroke-width="1.6" stroke-linecap="round"/></marker></defs>
-<rect x="8" y="8" width="924" height="80" rx="7" fill="#f4f5f7" stroke="#d4d9e0"/>
-<text x="20" y="26" font-size="11" font-weight="600" fill="#08305f" font-family="sans-serif">1 · MAINTAINED — configuration</text>
-<g font-family="sans-serif">
-<rect x="24" y="34" width="286" height="44" rx="4" fill="#fff" stroke="#08305f"/><text x="36" y="52" font-size="12" font-weight="600" fill="#08305f">T015L — 73 rows</text><text x="36" y="68" font-size="11" fill="#555">catalogue of code VALUES</text>
-<rect x="326" y="34" width="286" height="44" rx="4" fill="#ffe4e6" stroke="#c5283d"/><text x="338" y="52" font-size="12" font-weight="600" fill="#c5283d">YTFI_PPC_STRUC — 133 rows</text><text x="338" y="68" font-size="11" fill="#8a3040">decides IF a code is REQUIRED</text>
-<rect x="628" y="34" width="288" height="44" rx="4" fill="#fff" stroke="#08305f"/><text x="640" y="52" font-size="12" font-weight="600" fill="#08305f">YTFI_PPC_TAG — 11 rows</text><text x="640" y="68" font-size="11" fill="#555">where in the XML it lands</text>
-</g>
-<line x1="470" y1="90" x2="470" y2="110" stroke="#08305f" stroke-width="1.4" marker-end="url(#a)"/>
-<rect x="8" y="114" width="924" height="80" rx="7" fill="#f4f5f7" stroke="#d4d9e0"/>
-<text x="20" y="132" font-size="11" font-weight="600" fill="#08305f" font-family="sans-serif">2 · USED — at invoice entry, and it is enforced here</text>
-<g font-family="sans-serif">
-<rect x="24" y="140" width="286" height="44" rx="4" fill="#fff" stroke="#08305f"/><text x="36" y="158" font-size="12" font-weight="600" fill="#08305f">FB60 · MIRO · FB01 · F-47</text><text x="36" y="174" font-size="11" fill="#555">clerk types BSEG-LZBKZ</text>
-<rect x="326" y="140" width="286" height="44" rx="4" fill="#ffe4e6" stroke="#c5283d"/><text x="338" y="158" font-size="12" font-weight="700" fill="#c5283d">U917 — blocks the posting</text><text x="338" y="174" font-size="11" fill="#8a3040">YRGGBS00 : 1547–1590</text>
-<rect x="628" y="140" width="288" height="44" rx="4" fill="#fff" stroke="#08305f"/><text x="640" y="158" font-size="12" font-weight="600" fill="#08305f">BSIK → REGUP → FPAYP</text><text x="640" y="174" font-size="11" fill="#555">the code rides the open item</text>
-</g>
-<line x1="470" y1="196" x2="470" y2="216" stroke="#08305f" stroke-width="1.4" marker-end="url(#a)"/>
-<rect x="8" y="220" width="924" height="72" rx="7" fill="#f4f5f7" stroke="#d4d9e0"/>
-<text x="20" y="238" font-size="11" font-weight="600" fill="#08305f" font-family="sans-serif">3 · RENDERED — into the payment file the bank validates</text>
-<g font-family="sans-serif">
-<rect x="24" y="246" width="286" height="38" rx="4" fill="#fff" stroke="#08305f"/><text x="36" y="270" font-size="12" fill="#08305f">F110 → SAPFPAYM → DMEE</text>
-<rect x="326" y="246" width="286" height="38" rx="4" fill="#fff" stroke="#08305f"/><text x="338" y="270" font-size="12" fill="#08305f">CM002 → CM003 assembles</text>
-<rect x="628" y="246" width="288" height="38" rx="4" fill="#d9f2ee" stroke="#2a9d8f"/><text x="640" y="270" font-size="12" fill="#0a7e6e">InstrInf / RmtInf&gt;Ustrd</text>
-</g>
-</svg>
-
-<h2>Stage 1 — the lists that are maintained</h2>
-<table>
-<tr><th>Table</th><th class="n">Rows</th><th>What it holds</th><th>Key</th></tr>
-<tr><td><code>T015L</code></td><td class="n">73</td><td>Catalogue of code <strong>values</strong> — <code>LZBKZ</code> + description <code>ZWCK1</code>. UNESCO-specific (<code>AE0…AE8</code>, <code>IN0…</code>), <em>not</em> ISO 20022 text codes</td><td><code>LZBKZ</code></td></tr>
-<tr><td><code>YTFI_PPC_STRUC</code></td><td class="n">133</td><td><strong>Decides obligatoriness</strong> + assembles the tag from positional blocks (<code>SEPARATOR</code>, <code>FIXED_VAL</code>, <code>PPC_VAR</code>, <code>PPC_DESCR</code>, <code>PAY_FIELD</code>)</td><td><code>LAND1</code>+<code>TAG_ID</code>+<code>PAY_TYPE</code>+<code>CODE_ORD</code></td></tr>
-<tr><td><code>YTFI_PPC_TAG</code></td><td class="n">11</td><td>Where in the XML the value goes</td><td><code>LAND1</code>+<code>TAG_ID</code>+<code>DEB_CRE</code></td></tr>
-<tr><td><code>YVENDOR_PAYM_REF</code></td><td class="n">—</td><td><strong>A fourth list</strong>, for free-text note-to-payee (SWIFT&nbsp;:70) — see below</td><td><code>BUKRS</code>+<code>LIFNR</code>+<code>BLART</code></td></tr>
-</table>
-
-<p style="font-size:12.5px">Countries configured: <span class="pill">AE</span><span class="pill">BH</span><span class="pill">CN</span><span class="pill">ID</span><span class="pill">IN</span><span class="pill">JO</span><span class="pill">MA</span><span class="pill">MY</span><span class="pill">PH</span> — nine. <span class="pill red">EG absent</span></p>
-
-<p style="font-size:12.5px">XML destination per country: <code>AE</code>, <code>CN</code> → <code>InstrForCdtrAgt/InstrInf</code>; the other seven → <code>RmtInf/Ustrd</code>. Pay type comes from <code>fpayh-dorigin(2)</code>: <code>HR</code>→<code>P</code> payroll, <code>TR</code>→<code>R</code> replenishment, else <code>O</code> third party. UAE third party renders <code>/REC/&lt;code&gt;</code>; UAE payroll <code>/REC/SAL</code>; replenishment <code>/REC/IGT</code>.</p>
-
-<h2>Stage 2 — the control, in its own words</h2>
-<pre><span class="c">* YRGGBS00 : 1547-1590 — registered as exits-name 'U917' (:224)</span>
-<span class="c">* VALID='UNES' BOOLCLASS=009 VALSEQNR=012 CHECKID '2UNES###009'</span>
-FORM u917 CHANGING b_result.
-  b_result = b_true.
-  <span class="k">CHECK</span> bseg-lifnr IS NOT INITIAL.        <span class="c">" vendor lines only</span>
-  <span class="k">CHECK</span> bseg-bschl NE '26'.               <span class="c">" skip down-payment clearing</span>
-  <span class="k">CHECK</span> bseg-bschl NE '39'.
-  ... SELECT lfbk -&gt; lv_banks              <span class="c">" the vendor's BANK country</span>
-  <span class="k">CHECK</span> lv_banks IS NOT INITIAL.          <span class="c">" no bank record -&gt; passes silently</span>
-  IF bseg-lzbkz IS NOT INITIAL. ... ELSE.
-    SELECT SINGLE * FROM ytfi_ppc_struc
-      WHERE land1 = @lv_banks
-        AND ( ppc_code = 'PPC_VAR' OR ppc_code = 'PPC_DESCR' ).
-    IF sy-subrc = 0. <span class="h">b_result = b_false.</span> ENDIF.  <span class="c">" BLOCKED</span>
-  ENDIF.
-ENDFORM.</pre>
-
-<p style="font-size:12.5px"><strong>Fires on</strong> <code>FB01</code> <code>FB41</code> <code>FB60</code> <code>FB65</code> <code>FBA6</code> <code>FBR2</code> <code>MIR7</code> <code>MIRO</code> <code>FBV0</code> <code>FBVB</code> <code>F-47</code>, with an invoice document type and a vendor line (<code>KOART='K'</code>).</p>
-
-<h3>Known holes — read from the same source, not inferred</h3>
-<table>
-<tr><th>Hole</th><th>Consequence</th></tr>
-<tr><td><code>CHECK lv_banks IS NOT INITIAL</code></td><td>A vendor with <strong>no <code>LFBK</code> row passes silently</strong> — no bank, no check</td></tr>
-<tr><td>Invoice entry only</td><td><code>F-53</code>/<code>FBZ2</code> manual payments, <code>FB1K</code> clearings and <code>SAPF124</code> auto-clearing are not covered</td></tr>
-<tr><td><code>BSCHL</code> 26 / 39 skipped</td><td>Down-payment clearing bypasses the check</td></tr>
-<tr><td>Multi-bank vendor, no <code>BVTYP</code></td><td><code>SELECT SINGLE</code> takes an arbitrary <code>LFBK</code> row (<code>U915</code> mitigates on the same TCODEs)</td></tr>
-<tr><td>Interfaces</td><td>Claim 39: the F110 BAPI bypasses substitution callpoint 3 and may bypass validation callpoint 2 — unverified for <code>U917</code></td></tr>
-</table>
-
-<h2>The separate note-to-payee mechanism (SWIFT :70)</h2>
-<p style="font-size:12.5px"><code>Y_FI_PAYMEDIUM_NOTE_TO_PAYEE</code> reads <code>YVENDOR_PAYM_REF</code> by <code>(BUKRS, LIFNR, BLART)</code> and writes <code>FPAYP-ZREF01</code>. With no row it falls back to a format chosen by <code>FPAYHX-PREFTYP</code>: <code>'SAMPLE 01'</code> → <code>No.&lt;xblnr&gt;/&lt;bldat&gt;</code>; <code>'SAP SEPA'</code> → <code>/INV/&lt;xblnr&gt; &lt;bldat&gt;</code>. <code>Y_FI_PAYMEDIUM_06</code> and <code>_DMEE_30</code> read the same table.</p>
-<div class="callout">
-<strong>Brain correction.</strong> The <code>sap_payment_bcm_agent</code> skill states this FM builds <code>EXO//reason//XBLNR//</code> from <code>REGUP-BLART</code>. The string <code>EXO</code> appears in <strong>none</strong> of the ten recovered sources. That text came from a specification, not from the code. Where <code>EXO//</code> is actually produced is still unknown — likely a DMEE tree constant.
-</div>
-
-<h2>Scope — SocGen only, by written specification</h2>
-<div class="callout navy">
-PPC functional spec v2.0 (M. Spronk), page 16: <em>the development is only for the XML file of Société Générale</em>. Citibank payments do <strong>not</strong> carry PPC. Making a purpose code mandatory for a Citi-routed country is a <strong>new development</strong>, not a configuration change. (claim 267)
-</div>
-
-<h2>Measured state</h2>
-<h3>Capture compliance — Gold DB <code>REGUP_SCENARIOS</code> ⋈ <code>LFA1</code></h3>
-<p style="font-size:11.5px;color:#666">188 payment runs, 2025-01-02 → 2026-04-29, 6 company codes. A curated subset, not full <code>REGUP</code>.</p>
-<table>
-<tr><th>Vendor country</th><th class="n">Lines</th><th class="n">Empty LZBKZ</th><th class="n">Filled</th></tr>
-<tr><td>IN</td><td class="n">303</td><td class="n" style="color:#c5283d;font-weight:600">283</td><td class="n">20</td></tr>
-<tr><td>JO</td><td class="n">13</td><td class="n">0</td><td class="n" style="color:#0a7e6e;font-weight:600">13</td></tr>
-</table>
-<div class="callout green">
-<strong>Resolved — and the answer is bigger than the question.</strong> <span class="pill green">claim 485</span>
-<strong>259 of the 283 were a measurement error:</strong> <code>U917</code> keys on the vendor's <strong>bank</strong> country (<code>LFBK-BANKS</code>); this table keys on the vendor's <strong>address</strong> country (<code>LFA1-LAND1</code>). That vendor banks in Singapore — the control correctly does not apply, no defect. The residual <strong>24 lines are all company code IIEP</strong>. And that is the real finding.
-</div>
-
-<h3>The control covers ONE company code out of NINE</h3>
-<p style="font-size:12.5px"><code>U917</code> is step <code>VALSEQNR=012</code> of validation <code>VALID='UNES'</code>. OB28 assigns validations per company code, and at UNESCO that assignment is optional. Measured live in P01 (<code>GB931</code>):</p>
-<table>
-<tr><th>Company code</th><th>Validation</th><th class="n">Steps</th><th>Has U917?</th></tr>
-<tr><td><strong>UNES</strong></td><td><code>UNES</code></td><td class="n"><strong>12</strong></td><td style="color:#0a7e6e;font-weight:600">yes — step 012</td></tr>
-<tr><td>ICTP</td><td><code>ICTP</code> + <code>ICTP_HE</code></td><td class="n">4 + 4</td><td style="color:#c5283d">no</td></tr>
-<tr><td>IIEP</td><td><code>IIEP</code></td><td class="n">2</td><td style="color:#c5283d">no</td></tr>
-<tr><td>UBO</td><td><code>UBO</code></td><td class="n">3</td><td style="color:#c5283d">no</td></tr>
-<tr><td>UIL</td><td><code>UIL</code></td><td class="n">1</td><td style="color:#c5283d">no</td></tr>
-<tr><td>UIS</td><td><code>UIS</code></td><td class="n">—</td><td style="color:#c5283d">no</td></tr>
-<tr><td>IBE · ICBA · MGIE</td><td><em>none assigned</em></td><td class="n">0</td><td style="color:#c5283d">no</td></tr>
-</table>
 <div class="callout red">
-<strong>Adding a country to <code>YTFI_PPC_STRUC</code> turns the capture control on for <code>UNES</code> and for nobody else.</strong> Whether the other institutes should get an equivalent step is a functional decision — <code>KU-2026-099-PPC-INSTITUTE-COVERAGE</code>, owner Marlies + N_MENARD + Pablo.
-</div>
-<div class="callout navy">
-<strong>Why a table search can never settle this.</strong> <code>GB931</code> stores <code>CHECKID</code> as a boolean-expression id (<code>2UNES###009</code>), never the literal <code>=U917</code>; the exit call lives inside the <code>GB901</code> expression body. A table-level search for <code>LZBKZ</code> returns nothing and <em>cannot</em> disprove the control. That is the structural reason claim 116 went wrong.
+<strong>The switch is a single row type.</strong> <code>U917</code> blocks the posting when the vendor's <strong>bank</strong> country has <em>any</em> row in <code>YTFI_PPC_STRUC</code> whose <code>PPC_CODE</code> is <code>PPC_VAR</code> or <code>PPC_DESCR</code>. Nothing else switches it on — not <code>T015L</code>, not <code>YTFI_PPC_TAG</code>, not the payment method.
 </div>
 
-<h3>Egypt — where the money actually goes</h3>
+<pre><span class="c">* YRGGBS00 : 1547-1590 — the whole enforcement, in one SELECT</span>
+SELECT SINGLE * FROM ytfi_ppc_struc
+  WHERE land1 = @lv_banks                          <span class="c">" LFBK-BANKS, the vendor's BANK country</span>
+    AND ( ppc_code = 'PPC_VAR' OR ppc_code = 'PPC_DESCR' ).
+IF sy-subrc = 0. <span class="h">b_result = b_false.</span> ENDIF.        <span class="c">" posting BLOCKED</span></pre>
+
+<p style="font-size:12.5px">Note what it keys on: <code>LFBK-BANKS</code>, the country of the vendor's <strong>bank account</strong>. Not <code>LFA1-LAND1</code>, the vendor's address. A vendor domiciled in India who banks in Singapore is not affected; a vendor anywhere who banks in Egypt is.</p>
+
+<h3>The four tables, in the order you touch them</h3>
+<table>
+<tr><th>#</th><th>Table</th><th>What it decides</th><th>Needed for</th></tr>
+<tr><td>1</td><td><code>T015L</code></td><td>The catalogue of values the AP clerk can pick. <code>LZBKZ</code> = the key, <code>ZWCK1</code> = <strong>"&lt;code&gt; &lt;description&gt;"</strong> in one field</td><td>the clerk to be able to satisfy the block</td></tr>
+<tr><td>2</td><td><code>YTFI_PPC_STRUC</code></td><td><strong>Whether it is mandatory</strong> + how the output string is assembled, block by block</td><td>the block itself, and the rendering</td></tr>
+<tr><td>3</td><td><code>YTFI_PPC_TAG</code></td><td>Which XML tag the assembled string lands in, per country and debit/credit</td><td>rendering only</td></tr>
+<tr><td>4</td><td><code>OB28</code></td><td>Whether validation <code>UNES</code> — which owns <code>U917</code> as step 012 — runs for a company code at all</td><td>enforcement to reach that institute</td></tr>
+</table>
+
+<div class="callout">
+<strong>The trap in <code>T015L</code>.</strong> <code>ZWCK1</code> is <em>not</em> a description field. It is two fields in one, split at the first space. <code>JO0 = "206 Overseas Incoming Salaries"</code> means the bank code is <code>206</code> and the text is <code>Overseas Incoming Salaries</code>. Get the space wrong and the bank receives a mangled code.
+</div>
+
+<h2>2 · What each building block emits</h2>
+<p style="font-size:12.5px">Read from <code>YCL_IDFI_CGI_DMEE_UTIL::GET_TAG_VALUE_FROM_CUSTO</code> (P01, lines 91-169). The SM30 view is <em>"PPC code structure"</em>; these are its <code>PPC code</code> dropdown values.</p>
+<table>
+<tr><th>Block (screen name)</th><th>Emits</th></tr>
+<tr><td><code>SEPARATOR</code> · <code>FIXED_VAL</code><br><span style="color:#666">Separator / Fixed value</span></td><td>the literal in <code>PPC_VALUE</code>, appended as-is</td></tr>
+<tr><td><code>PPC_VAR</code><br><span style="color:#666">PPC variable</span></td><td>reads <code>T015L</code> by the <code>LZBKZ</code> the clerk typed, then <code>SPLIT ZWCK1 AT SPACE</code> → <strong>the first word</strong> (the bank's code)</td></tr>
+<tr><td><code>PPC_DESCR</code><br><span style="color:#666">PPC description</span></td><td>same read, same split → <strong>everything after the first word</strong> (the human text)</td></tr>
+<tr><td><code>PAY_FIELD</code><br><span style="color:#666">Payment structure + Field</span></td><td>dynamic assign of <code>IS_&lt;PAY_STRUC&gt;-&lt;PAY_FIELD&gt;</code> — a live document field, e.g. <code>FPAYP-XBLNR</code> (invoice ref) or <code>FPAYP-SGTXT</code> (line text)</td></tr>
+</table>
+
+<h3>How the rows are selected at runtime</h3>
+<pre>LOOP AT mt_ppc_cus WHERE land1    = &lt;country&gt;
+                     AND deb_cre  = &lt;D|C&gt;
+                     AND ( pay_type = &lt;type&gt; <span class="g">OR pay_type = SPACE</span> )   <span class="c">" SPACE = "All"</span>
+                     AND tag_full = &lt;the XML tag&gt;
+             ORDER BY code_ord.</pre>
+<table>
+<tr><th>Pay type (screen)</th><th>Stored</th><th>Chosen when</th></tr>
+<tr><td>Other than payroll / payment request</td><td><code>O</code></td><td><code>FPAYH-DORIGIN</code> starts with anything else — the normal vendor invoice</td></tr>
+<tr><td>Payroll payment</td><td><code>P</code></td><td><code>DORIGIN(2) = 'HR'</code></td></tr>
+<tr><td>Payment request</td><td><code>R</code></td><td><code>DORIGIN(2) = 'TR'</code> — Treasury</td></tr>
+<tr><td>All</td><td><em>blank</em></td><td>always, on top of the type-specific rows</td></tr>
+</table>
+<p style="font-size:12.5px"><code>P</code> and <code>R</code> use <code>FIXED_VAL</code> in every configured country, because the purpose of a salary run or a treasury transfer is known in advance. <strong>Only <code>O</code> carries <code>PPC_VAR</code> — and that is exactly why the block fires: the third-party invoice is the one case where a human must decide.</strong></p>
+
+<h2>3 · The nine countries, as they are actually configured</h2>
+<pre><span class="c">country tag        type  assembled output</span>
+AE   INSTRINF   O   <span class="g">/REC/</span>&lt;PPC_VAR&gt;
+AE   INSTRINF   P   /REC/SAL
+AE   INSTRINF   R   /REC/IGT
+BH   USTRD      O   /&lt;PPC_VAR&gt;/<span class="g">&lt;PPC_DESCR&gt;</span>
+CN   INSTRINF   O   /REC/&lt;PPC_VAR&gt;
+ID   USTRD      O   /PURP/&lt;PPC_VAR&gt;/<span class="g">FPAYP-XBLNR</span>
+<span class="h">IN   USTRD      O   &lt;PPC_VAR&gt;;&lt;PPC_DESCR&gt;;INV;FPAYP-XBLNR</span>   <span class="c">&lt;== code + TEXT + invoice ref</span>
+JO   USTRD      O   /PURP/&lt;PPC_VAR&gt;/FPAYP-XBLNR
+MA   USTRD      O   /PURP/&lt;PPC_VAR&gt;/FPAYP-XBLNR
+MY   USTRD      O   /PURP/&lt;PPC_VAR&gt;/FPAYP-XBLNR
+PH   USTRD      O   /PURP/&lt;PPC_VAR&gt;/FPAYP-XBLNR</span></pre>
+<p style="font-size:12.5px">Two tag families: <code>INSTRINF</code> → <code>InstrForCdtrAgt/InstrInf</code> (AE, CN) and <code>USTRD</code> → <code>RmtInf/Ustrd</code> (the other seven). AE and CN also carry a <code>-INSTRINF</code> row with pay type <em>All</em> and an empty fixed value — the DMEE suppression node that empties the tag when nothing applies.</p>
+
+<h2>4 · The exception tables — how a control gets switched off per user</h2>
+<div class="callout red">
+<strong><code>YXUSER</code> is a per-user bypass, and it is bigger than the documentation said.</strong> Every gated routine opens with <code>SELECT SINGLE * FROM yxuser WHERE xtype = '&lt;x&gt;' AND uname = sy-uname</code> followed by <code>CHECK sy-subrc &lt;&gt; 0</code> — a row in <code>YXUSER</code> means <em>skip this entire routine for this user</em>. Measured: it gates <strong>five</strong> routines, and <strong>two of them can block a posting</strong>. <span class="pill red">claim 486</span>
+</div>
+<table>
+<tr><th>Routine</th><th>Lines</th><th>Role</th><th>What the bypass turns off</th></tr>
+<tr><td><code>U913</code></td><td>961-987</td><td style="color:#c5283d;font-weight:600">VALIDATION — blocks</td><td>special budget code check</td></tr>
+<tr><td><code>YFM_ACCTCHK::INIT_CHECK</code></td><td>31-326</td><td style="color:#c5283d;font-weight:600">VALIDATION — blocks</td><td>account check</td></tr>
+<tr><td><code>UAEP</code></td><td>1128-1187</td><td>SUBSTITUTION</td><td>forcing of <code>BSEG-FISTL/GEBER/GSBER/KOSTL</code> on asset expenses</td></tr>
+<tr><td><code>UATF</code></td><td>1314-1395</td><td>SUBSTITUTION</td><td>technical fund forcing + WBS clearing</td></tr>
+<tr><td><code>NSAI</code></td><td>1420-1497</td><td>SUBSTITUTION</td><td>forcing of <code>COBL-FISTL/GEBER/GSBER/KOSTL</code></td></tr>
+</table>
+<div class="callout">
+<strong>Why this matters for any country you make mandatory.</strong> <code>U917</code> itself is <em>not</em> in <code>YXUSER</code> — the purpose-code block cannot be bypassed per user. But the pattern shows the shape of the control surface here: a row added by SM30, with no transport and no trace in PFCG, silently disables hard posting controls for one user. A clean role review does not show it. <strong><code>YXUSER</code> content has never been read.</strong>
+</div>
+
+<h2>5 · Egypt — the PPC code structure, researched</h2>
+
+<h3>What Citi actually asked for</h3>
+<div class="callout navy">
+The notice (12 Jul 2026, effective <strong>5 Sep 2026</strong>) says to populate the Purpose of Payment in the <em>Transaction Details / Payment Details field, or SWIFT Field 70</em>, and that <em>"the PoP should clearly and concisely <strong>describe the reason</strong> for the payment"</em>. Its examples are sentences, not codes: <em>"Payment for goods received under Invoice 12345"</em>, <em>"Service fees for consulting work"</em>, <em>"Salary payment"</em>. It closes with <em>"ensure the description is specific enough to convey the nature of the transaction"</em>.
+</div>
+<div class="callout green">
+<strong>The notice names the field, and that decides the configuration.</strong> <em>"populate the Purpose of Payment in the Transaction Details / Payment Details field, <strong>or SWIFT Field 70</strong>"</em>. SWIFT <strong>:70 is Remittance Information</strong>, and in ISO 20022 that is <code>RmtInf/Ustrd</code> — nothing else. So Egypt's <code>YTFI_PPC_TAG</code> row is <strong><code>USTRD</code></strong>, the family BH/ID/IN/JO/MA/MY/PH already use. It is <em>not</em> <code>INSTRINF</code>: that renders <code>InstrForCdtrAgt</code>, the SWIFT :72 instruction to the account-with institution, which is what AE and CN use and is a different field entirely. One sentence in the notice removes the only structural choice there was.
+</div>
+<div class="callout red">
+<strong>And there is no code list in the request.</strong> Egypt is therefore <em>not</em> an AE/JO-style country where the bank dictates numeric codes. The load-bearing block is <code>PPC_DESCR</code> (the narrative), not <code>PPC_VAR</code> — and Citi's own example ties the description to the invoice, which is exactly what <code>PAY_FIELD FPAYP-XBLNR</code> emits.
+</div>
+<div class="callout">
+<strong>Scope, also from the opening sentence:</strong> the requirement covers <em>"all Real Time Gross Settlement (RTGS) <strong>and</strong> Cross Border Funds Transfers (CBFT)"</em> for payments <em>"destined for or originating within Egypt"</em>. RTGS is the domestic Egyptian rail and CBFT the cross-border one, so it binds both the <code>EGP01</code> local account and the <code>USD01</code> cross-border one — the configuration is per country, not per currency, which is what <code>YTFI_PPC_STRUC.LAND1</code> already keys on.
+</div>
+
+<h3>The proposal — modelled on India, the only country that emits code + text + invoice</h3>
+<pre><span class="c">YTFI_PPC_STRUC — country EG, tag USTRD, deb/cre C</span>
+
+<span class="k">O</span>  (vendor invoice)   01 PPC_VAR      <span class="c">-- our internal code, for reporting and control</span>
+                      02 SEPARATOR  /
+                      03 <span class="h">PPC_DESCR</span>    <span class="c">-- THE NARRATIVE Citi asks for</span>
+                      04 SEPARATOR  /INV/
+                      05 PAY_FIELD  FPAYP-XBLNR   <span class="c">-- "under Invoice 12345"</span>
+
+<span class="k">P</span>  (payroll)          01 FIXED_VAL  SAL
+                      02 SEPARATOR  /
+                      03 FIXED_VAL  Salary payment          <span class="c">-- Citi's own wording</span>
+
+<span class="k">R</span>  (payment request)  01 FIXED_VAL  IGT
+                      02 SEPARATOR  /
+                      03 FIXED_VAL  Intracompany funds transfer
+
+<span class="c">YTFI_PPC_TAG — 1 row</span>
+EG | USTRD | C | &lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;
+
+<span class="c">T015L — ZWCK1 must be "&lt;code&gt; &lt;narrative&gt;", split at the FIRST space</span>
+EG0  GDS Payment for goods received
+EG1  SVC Service fees for consulting work
+EG2  SAL Salary payment
+EG3  RNT Rent
+EG4  CHC Charitable contribution
+...  one per reason UNESCO actually pays for in Egypt</pre>
+<p style="font-size:12.5px">A vendor invoice then renders as <code>SVC/Service fees for consulting work/INV/5105551234</code> — a code we can report on, the narrative the bank requires, and the invoice reference its example asks for.</p>
+
+<h3>What is decided, and what is not</h3>
+<table>
+<tr><th>Item</th><th>Status</th></tr>
+<tr><td>The structure above (blocks, order, separators, tag)</td><td style="color:#0a7e6e;font-weight:600">derived from our own config + the builder source — ready to enter</td></tr>
+<tr><td>The <code>T015L</code> reason list</td><td style="color:#a86c00;font-weight:600">BUSINESS INPUT — which reasons UNESCO pays for in Egypt. Not a bank list; our own taxonomy, worded to Citi's standard</td></tr>
+<tr><td>Whether Citi wants a code prefix at all</td><td style="color:#a86c00;font-weight:600">ask CitiService Egypt — the notice does not say; if not, drop the <code>PPC_VAR</code> and first separator</td></tr>
+<tr><td>ABAP</td><td style="color:#0a7e6e;font-weight:600">none — three maintained tables, transported like any config</td></tr>
+</table>
+
+<h2>6 · Two limits that decide the value of doing it</h2>
+<div class="callout red">
+<strong>Enforcement reaches one company code of nine.</strong> <code>U917</code> is step 012 of validation <code>UNES</code>, and OB28 assigns that validation to <code>UNES</code> only. ICTP (4 steps), IIEP (2), UBO (3), UIL (1), UIS run their own rule bodies; IBE, ICBA and MGIE have no validation assigned at all. <span class="pill red">claim 485</span><br>
+For Egypt this is survivable: all 387 lines that settle at an Egyptian bank are UNES. But 1,720 lines to Egypt-domiciled payees sit in the other institutes with no capture control.
+</div>
+<div class="callout">
+<strong>The rendering half does not apply to this payment path.</strong> Measured in P01: <code>T042E</code> UNES/method 3 → <code>ZFORN='Y110_PRENUM_CHCK'</code> with no PMW; <code>T042Z</code> FR/3 = "Manual cheque (Pre-Numbered)", <code>PROGN=RFFOUS_C</code>, <code>XSCHK='X'</code>; and for the five most recent Egypt runs there is no <code>REGUT</code> row and no <code>PAYR</code> row — no payment file is produced. <span class="pill">claim 488</span><br><br>
+Citi's requirement binds instructions submitted through Citi channels; a pre-numbered cheque is not one. <strong>Configuring Egypt still buys the capture</strong> — the clerk is forced to state a purpose at invoice entry and the value sits on the document for whoever fills the bank portal — but the instruction itself is issued outside SAP, and populating it there is a process change, not a development. <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code>.
+</div>
+
+<h2>7 · Measured state</h2>
 <table>
 <tr><th>Measure</th><th class="n">Value</th><th>Source</th></tr>
 <tr><td>Vendors domiciled in Egypt</td><td class="n">2,762</td><td><code>LFA1</code> — would be 5th largest of the group</td></tr>
-<tr><td>Payment lines to Egypt-domiciled payees (2016–2026)</td><td class="n">17,778</td><td><code>REGUH.LAND1='EG'</code>, 744 vendors</td></tr>
-<tr><td>Lines settling at an <strong>Egyptian bank</strong></td><td class="n">387</td><td><code>REGUH.UBNKS='EG'</code>, 94 vendors</td></tr>
-<tr><td>…of which through house bank <code>CIT19</code> method 3</td><td class="n" style="color:#c5283d;font-weight:600">387 (100%)</td><td><code>USD01</code> 269 + <code>EGP01</code> 118 (EGP 20.8M)</td></tr>
+<tr><td>Lines settling at an Egyptian bank</td><td class="n">387</td><td><code>REGUH.UBNKS='EG'</code> — 100% UNES / CIT19 / method 3</td></tr>
+<tr><td>Lines to Egypt-domiciled payees</td><td class="n">17,778</td><td>UNES 16,058 · ICTP 1,242 · UIL 348 · IIEP 117 · UIS 9 · UBO 4</td></tr>
+<tr><td>India capture compliance (bank in IN)</td><td class="n">20 of 44</td><td>the other 259 "empty" lines bank in Singapore — the control correctly does not apply</td></tr>
+<tr><td>Jordan capture compliance</td><td class="n">13 of 13</td><td>the reference implementation</td></tr>
 </table>
 
-<h3>Egypt exposure by company code — which half the control can reach</h3>
-<table>
-<tr><th>Population</th><th class="n">Lines</th><th>Covered by U917</th></tr>
-<tr><td>Settle at an Egyptian bank (<code>UBNKS='EG'</code>) — what Citi's notice binds</td><td class="n">387</td><td style="color:#0a7e6e;font-weight:600">100% — all UNES</td></tr>
-<tr><td>Egypt-domiciled payees (<code>LAND1='EG'</code>)</td><td class="n">17,778</td><td>UNES 16,058 ✅ · ICTP 1,242 ❌ · UIL 348 ❌ · IIEP 117 ❌ · UIS 9 ❌ · UBO 4 ❌</td></tr>
-</table>
-<div class="callout green">
-For the population Citi actually binds, capture <strong>would</strong> be enforced once <code>EG</code> rows exist — all 387 are UNES. The residual exposure is <strong>1,720 lines (9.7%)</strong> to Egypt-domiciled payees sitting in institutes with no capture control at all.
-</div>
-
-<h2>How you make a country mandatory — the change spec</h2>
-<div class="callout red">
-<strong>One row type is the switch.</strong> <code>U917</code> blocks the posting when the vendor's bank country has <strong>any</strong> <code>YTFI_PPC_STRUC</code> row with <code>PPC_CODE = 'PPC_VAR'</code> or <code>'PPC_DESCR'</code>. Everything else makes the code <em>usable</em> and <em>renderable</em>; that row makes it <strong>mandatory</strong>.
-</div>
-
-<h3>The model: Jordan — the cleanest country, 13 of 13 lines carry a code</h3>
-<table>
-<tr><th>Table</th><th class="n">Rows</th><th>Content</th></tr>
-<tr><td><code>YTFI_PPC_TAG</code></td><td class="n">1</td><td><code>JO · USTRD · C · &lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td></tr>
-<tr><td><code>YTFI_PPC_STRUC</code></td><td class="n">18</td><td>6 building blocks × 3 pay types (<code>O</code> third-party, <code>P</code> payroll, <code>R</code> replenishment)</td></tr>
-<tr><td><code>T015L</code></td><td class="n">10</td><td><code>JO0</code>…<code>JO9</code> — the codes the clerk picks from</td></tr>
-</table>
-<pre>O (third party)     /  + PURP + /  + <span class="h">PPC_VAR</span>          + / + PAY_FIELD FPAYP-XBLNR
-P (payroll)         /  + PURP + /  + FIXED_VAL '206'  + / + PAY_FIELD FPAYP-SGTXT
-R (replenishment)   /  + PURP + /  + FIXED_VAL '704'  + / + PAY_FIELD FPAYP-SGTXT</pre>
-<p style="font-size:12.5px">Only <code>O</code> uses <code>PPC_VAR</code> — the clerk's code. Payroll and replenishment are fixed, because the purpose is known in advance. <strong><code>PPC_VAR</code> on the <code>O</code> rows is what makes the country mandatory.</strong></p>
-
-<h3>The spec for Egypt</h3>
-<table>
-<tr><th>#</th><th>Table</th><th>Rows to add</th><th>Status</th></tr>
-<tr><td>1</td><td><code>T015L</code></td><td><code>EG0</code>…<code>EGn</code> — one per Central Bank of Egypt purpose code (<code>LZBKZ</code> + <code>ZWCK1</code> text)</td><td style="color:#c5283d;font-weight:600">needs the CBE code list from Citi — the only missing input</td></tr>
-<tr><td>2</td><td><code>YTFI_PPC_TAG</code></td><td>1 row: <code>EG · USTRD · C · &lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td style="color:#0a7e6e">ready, copy Jordan</td></tr>
-<tr><td>3</td><td><code>YTFI_PPC_STRUC</code></td><td>18 rows in the Jordan shape; <code>O</code> carries <code>PPC_VAR</code>, <code>P</code>/<code>R</code> the fixed CBE codes</td><td style="color:#0a7e6e">ready once §1 exists</td></tr>
-</table>
-<div class="callout green"><strong>Zero ABAP.</strong> All three are maintained tables (SM30 / customizing view), transported like any config.</div>
-<div class="callout">
-<strong>Two caveats that decide whether it is worth doing.</strong>
-(1) Capture is enforced for company code <code>UNES</code> only — the 387 Egypt-bank-settling lines are all UNES, so for the population Citi binds this works, but 1,720 lines in ICTP/UIL/IIEP/UIS/UBO stay uncontrolled.
-(2) The rendering half is moot for this path: Egypt payments leave as pre-numbered cheques with no SAP file. Adding the rows still buys the <em>capture</em> — the clerk is forced to state a purpose and the value sits on the document for whoever fills the bank portal.
-</div>
-
-<h2>What the Egypt request actually needs</h2>
-<table>
-<tr><th>Lever</th><th>Effect</th><th>Reaches the Citi file?</th></tr>
-<tr><td>Add <code>EG</code> rows to <code>YTFI_PPC_STRUC</code> with <code>PPC_VAR</code>/<code>PPC_DESCR</code></td><td>Turns the <strong>capture</strong> control on at invoice entry — zero ABAP</td><td>No — renders only on the SocGen CGI tree</td></tr>
-<tr><td>Add <code>EG</code> rows to <code>T015L</code></td><td>Gives the codes something to choose from</td><td>No, on its own</td></tr>
-<tr><td><code>YVENDOR_PAYM_REF</code> / note-to-payee</td><td>Free text into <code>FPAYP-ZREF01</code> → <code>:70</code></td><td><strong>The candidate</strong> — needs verification on the CITI medium</td></tr>
-</table>
-<h3>Resolved — there is no SAP payment file to fix <span class="pill green">claim 488</span></h3>
-<table>
-<tr><th>Evidence (live P01)</th><th>Result</th></tr>
-<tr><td><code>T042E</code> (UNES, method 3)</td><td><code>ZFORN='Y110_PRENUM_CHCK'</code>, <code>XEIPO</code> empty → form-based cheque print, <strong>not</strong> the Payment Medium Workbench</td></tr>
-<tr><td><code>T042Z</code> (FR, method 3)</td><td>"Manual cheque (Pre-Numbered)", <code>PROGN='RFFOUS_C'</code>, <strong><code>XSCHK='X'</code></strong> — identical for CA, CH, MZ</td></tr>
-<tr><td><code>REGUT</code>, 5 most recent Egypt runs</td><td style="color:#c5283d;font-weight:600">no row — no payment medium file created</td></tr>
-<tr><td><code>PAYR</code>, same runs</td><td style="color:#c5283d;font-weight:600">no row — not even the cheque register is written</td></tr>
-</table>
-<div class="callout red">
-<strong>Citi's notice binds RTGS and Cross-Border Funds Transfers submitted through Citi channels. A pre-numbered cheque is neither</strong>, and there is no SAP-generated instruction to add a purpose field to. Adding <code>EG</code> rows to <code>YTFI_PPC_STRUC</code> switches the <em>capture</em> control on at invoice entry, but there is no outbound file for it to render into.
-</div>
-<div class="callout">
-<strong>The remaining fix is procedural, not a development.</strong> Whoever issues the actual instruction — the Cairo office, in the bank's own portal — must populate the Purpose of Payment there. Owner and channel tracked as <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code>, deadline 5 September 2026.
-<br><br><em>Limit of the evidence:</em> the absence of a <code>REGUT</code>/<code>PAYR</code> row was read per run for the 5 most recent Egypt runs. It was not verified that <code>REGUT</code> holds rows for other runs in the same window — so the claim is "no row for these runs", not "REGUT is empty".
-</div>
-
-<h2>Re-derive any of this</h2>
-<pre>python brain_v2/graph_queries.py search "purpose of payment"   <span class="c"># the claims</span>
-python brain_v2/graph_queries.py section U917                  <span class="c"># the control, with line range</span>
+<h2>8 · Re-derive any of this</h2>
+<pre>python brain_v2/graph_queries.py section U917                  <span class="c"># the control, with line range</span>
 python brain_v2/graph_queries.py blocking_code Payment_BCM     <span class="c"># every routine that can block</span>
-python brain_v2/graph_queries.py code YRGGBS00                 <span class="c"># where the real source lives</span></pre>
+python brain_v2/graph_queries.py code YCL_IDFI_CGI_DMEE_UTIL   <span class="c"># the builder</span>
+python brain_v2/graph_queries.py search "purpose of payment"   <span class="c"># the claims</span></pre>
 <div class="callout red">
-<code>YRGGBS00</code>'s canonical corpus path holds a <strong>29-line stub</strong>; the real 1,593-line body is <strong>UTF-16</strong> at <code>Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt</code>. Grepping the corpus for <code>LZBKZ</code> returns nothing — that false negative is what produced claim 116. See rule <code>feedback_a_zero_match_grep_is_a_claim_about_your_grep</code>.
+<code>YRGGBS00</code>'s canonical corpus path holds a <strong>29-line stub</strong>; the real 1,593-line body is <strong>UTF-16</strong> at <code>Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt</code>. Grepping the corpus for <code>LZBKZ</code> returns nothing — that false negative is what produced claim 116, which stated for months that no capture control existed.
 </div>
 
 <footer>
-Generated Session #099 · 2026-08-17 · Source of truth: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code> · Claims 484 (supersedes 116), 97, 98, 179, 267, 5, 39 · Incidents: none open · KU-2026-099-PPC-COVERAGE open · UNESCO SAP Intelligence
+Session #099 · 2026-08-17 · Source of truth: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code> · Claims 484 (supersedes 116), 485 coverage, 486 YXUSER, 487 YVENDOR_PAYM_REF, 488 payment medium · Open: KU-2026-099-INSTITUTE-COVERAGE, KU-2026-099-EGYPT-INSTRUCTION-CHANNEL · UNESCO SAP Intelligence
 </footer>
 
 </body></html>
