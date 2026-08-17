@@ -35,7 +35,7 @@ footer{margin-top:26px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;pa
 <body>
 
 <h1><span class="tag">REQUEST</span>Egypt — configure the country for Purpose of Payment</h1>
-<p class="sub">Requested by Mathewos Mehari (BFM) via Christina Lopez-Chemouny, from a Citibank Egypt notice of 12 Jul 2026 &nbsp;·&nbsp; Analysed Session #099, 2026-08-17 &nbsp;·&nbsp; How the mechanism works: <code>companions/p2p_purpose_of_payment.html</code></p>
+<p class="sub">Requested by Mathewos Mehari (BFM) via Christina Lopez-Chemouny, from a Citibank Egypt notice of 12 Jul 2026 &nbsp;·&nbsp; Analysed Session #099, 2026-08-17 &nbsp;·&nbsp; How the mechanism works: <a href="p2p_purpose_of_payment.html">Purpose of Payment — the end-to-end solution</a></p>
 
 <div class="kpis">
 <div class="kpi red"><div class="v">5 Sep 2026</div><div class="l">Citi deadline</div></div>
@@ -46,7 +46,7 @@ footer{margin-top:26px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;pa
 
 <div class="callout navy" style="margin-top:14px">
 <strong>Related incident — <code>INC-EGYPT-PPC</code></strong> · SPEC_READY · Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05).<br>
-Request companion: <code>companions/inc_egypt_ppc_configuration.html</code> &nbsp;·&nbsp; Mechanism: <code>companions/p2p_purpose_of_payment.html</code> &nbsp;·&nbsp; Analysis: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code><br>
+Mechanism: <a href="p2p_purpose_of_payment.html">Purpose of Payment — the end-to-end solution</a> &nbsp;·&nbsp; Analysis: <code>knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md</code><br>
 Brain: <code>python brain_v2/graph_queries.py incident INC-EGYPT-PPC</code>
 </div>
 <h2>1 · The request, in the requester's words</h2>
@@ -128,7 +128,7 @@ Brain: <code>python brain_v2/graph_queries.py incident INC-EGYPT-PPC</code>
 <span class="c">T015L — ZWCK1 is TWO fields split at the FIRST space: "&lt;code&gt; &lt;narrative&gt;"</span>
    11 rows, EG0..EGA — see the verified list in section 3b</pre>
 
-<h2>3b · The reason list — derived, not requested <span class="pill green">claim 490</span></h2>
+<h2>4 · The reason list — derived, then verified <span class="pill green">claims 490 · 495</span></h2>
 <div class="callout navy">
 <strong>Are the lists international? Measured: no — 7 of 9 are national and none overlaps.</strong> India uses RBI codes, Indonesia Bank Indonesia numerics, Jordan the Central Bank of Jordan list, Morocco the Office des Changes, Malaysia Bank Negara, China slash-notation. The only shared set is <strong>AE ∩ BH</strong> — six CBUAE mnemonics Bahrain reused.<br><br>
 <strong>One country already solves the "no national list" case: the Philippines uses ISO 20022 <code>ExternalPurpose</code> codes</strong> — <code>SUPP · SALA · BEXP · CHAR</code>. That is the in-house precedent for Egypt, where Citi named no code list at all.<br><br>
@@ -197,9 +197,9 @@ Registered as research <code>wegppc001</code> (CLOSED) — 4 sources indexed, 4 
 <strong>One trap to avoid.</strong> <code>LZBKZ</code> has two populations at UNESCO: the purpose codes above, and its <strong>original</strong> German SCB meaning — over 10,000 lines carry <code>521</code> with no country prefix at all. Do not read a bare numeric <code>LZBKZ</code> as a purpose code.
 </div>
 
-<h2>3c · Why this will work, and exactly how far <span class="pill green">claim 494</span></h2>
+<h2>5 · Why this will work, and exactly how far <span class="pill green">claim 494</span></h2>
 <div class="callout green">
-<strong>No ABAP is needed — and that is now mechanical, not an assumption.</strong> The BAdI is selected by the country of <em>our</em> paying house bank (<code>FPAYHX-UBISO</code>), which for SocGen is FR; the class then looks up the config by the country of <em>their</em> bank (<code>FPAYH-ZBNKS</code>). All three layers are generic — <code>u917</code> reads <code>LFBK-BANKS</code>, <code>CM002</code> passes <code>ZBNKS</code>, <code>CM003</code> filters <code>WHERE LAND1 = IV_LAND1</code>, with no country literal in any of them. Nine beneficiary countries already resolve through the same single class. See the mechanism companion §3b.
+<strong>No ABAP is needed — and that is now mechanical, not an assumption.</strong> The BAdI is selected by the country of <em>our</em> paying house bank (<code>FPAYHX-UBISO</code>), which for SocGen is FR; the class then looks up the config by the country of <em>their</em> bank (<code>FPAYH-ZBNKS</code>). All three layers are generic — <code>u917</code> reads <code>LFBK-BANKS</code>, <code>CM002</code> passes <code>ZBNKS</code>, <code>CM003</code> filters <code>WHERE LAND1 = IV_LAND1</code>, with no country literal in any of them. Nine beneficiary countries already resolve through the same single class. See <a href="p2p_purpose_of_payment.html">the mechanism companion</a>, §3b.
 </div>
 
 <h3>How far it reaches — 2,837 lines to Egyptian-banked vendors, 2024-2026</h3>
@@ -238,36 +238,16 @@ Registered as research <code>wegppc001</code> (CLOSED) — 4 sources indexed, 4 
 Whether the <code>Ustrd</code> node in the <code>/CGI_XML_CT_UNESCO</code> tree carries the exit call. <code>DMEE_TREE_NODE</code> rejects an <code>RFC_READ_TABLE</code> <code>WHERE</code> clause on this system (string columns), so it could not be read directly. <strong>Close it with a D01 test</strong>: one vendor with an Egyptian bank, one F110 run, read the XML. That is the acceptance test for this change anyway.
 </div>
 
-<h2>4 · What is decided and what is not</h2>
-<table>
-<tr><th>Item</th><th>Status</th><th>Owner</th></tr>
-<tr><td>Tag family — <code>USTRD</code> / SWIFT :70</td><td><span class="pill green">DECIDED</span> the notice names the field</td><td>—</td></tr>
-<tr><td>Block structure, order and separators</td><td><span class="pill green">DECIDED</span> derived from our own config + the builder source</td><td>—</td></tr>
-<tr><td>Pay-type rows P and R</td><td><span class="pill green">DECIDED</span> fixed values, as every other country</td><td>—</td></tr>
-<tr><td><strong>The <code>T015L</code> reason list</strong></td><td><span class="pill green">DERIVED</span> from 12,278 real payment lines across the 9 configured countries, on the ISO 20022 pattern the Philippines already uses — see §3b. Business <em>approves the wording</em>, does not author it</td><td>BFM / Treasury</td></tr>
-<tr><td>Whether a code prefix is wanted</td><td><span class="pill green">ANSWERED from our own data</span> all nine configured countries carry a code as the first block on the same SocGen file — see §5c</td><td>—</td></tr>
-<tr><td>ABAP</td><td><span class="pill green">NONE</span></td><td>—</td></tr>
-</table>
-
-<h2>5 · Two things the requester needs to know</h2>
-
+<h2>6 · The one limit that survives every correction</h2>
 <div class="callout red">
-<strong>The configuration protects UNES only.</strong> <code>U917</code> is step 012 of validation <code>UNES</code>, which OB28 assigns to company code <code>UNES</code> alone. Measured for Egypt:
-<table style="margin-top:6px">
-<tr><th>Population</th><th class="n">Lines</th><th>Covered once EG is configured</th></tr>
-<tr><td>Settle at an Egyptian bank — what Citi's notice binds</td><td class="n">387</td><td style="color:#0a7e6e;font-weight:600">100% — all UNES</td></tr>
-<tr><td>Egypt-domiciled payees</td><td class="n">17,778</td><td>UNES 16,058 ✅ · ICTP 1,242 ❌ · UIL 348 ❌ · IIEP 117 ❌ · UIS 9 ❌ · UBO 4 ❌</td></tr>
-</table>
-For the population Citi binds, this works. The residual is <strong>1,720 lines</strong> in institutes with no capture control — <code>KU-2026-099-INSTITUTE-COVERAGE</code>.
+<strong>The configuration protects company code <code>UNES</code> and nobody else.</strong> <code>U917</code> is step 012 of validation <code>UNES</code>, which OB28 assigns to <code>UNES</code> alone. ICTP runs 4 steps, IIEP 2, UBO 3, UIL 1, UIS its own; IBE, ICBA and MGIE have no validation at all. <span class="pill red">claim 485</span><br><br>
+Of the 17,778 lines to Egypt-domiciled payees, <strong>1,720 sit in institutes with no capture control</strong> — ICTP 1,242 · UIL 348 · IIEP 117 · UIS 9 · UBO 4. Whether they get an equivalent step is a functional decision: <code>KU-2026-099-INSTITUTE-COVERAGE</code>.
 </div>
-
 <div class="callout">
-<strong>Configuring Egypt buys the CAPTURE, not the file.</strong> Measured in P01: <code>T042E</code> UNES/method 3 → <code>ZFORN='Y110_PRENUM_CHCK'</code> with no PMW; <code>T042Z</code> FR/3 = "Manual cheque (Pre-Numbered)", <code>PROGN=RFFOUS_C</code>, <code>XSCHK='X'</code>; and for the five most recent Egypt runs there is <strong>no <code>REGUT</code> row and no <code>PAYR</code> row</strong> — SAP produces no payment file for this path. <span class="pill">claim 488</span><br><br>
-Citi's requirement binds instructions submitted through Citi channels, and a pre-numbered cheque is not one. So the configuration still delivers real value — <strong>the clerk is forced to state a purpose at invoice entry and the value sits on the document</strong> for whoever fills the bank portal — but populating the instruction itself is a <strong>process change, not a development</strong>.<br><br>
-<strong>Open and time-boxed:</strong> who issues the actual instruction to Citibank Egypt, through which channel, and who fills the Purpose of Payment there before 5 September. <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code> — Treasury (Ingrid Wettie / Mathewos Mehari) + the Cairo office.
+<strong>And one process question the configuration cannot answer.</strong> A small slice of Egypt payments leaves as a pre-numbered cheque with no SAP file at all — <strong>3% of lines, 6% of value in 2026</strong> (§6). For those, the instruction is issued outside SAP and somebody has to populate the Purpose of Payment in the bank's own portal. <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code> — Treasury (Ingrid Wettie / Mathewos Mehari) + the Cairo office, before 5 September.
 </div>
 
-<h2>5b · CORRECTED SCOPE — the population is ~10x larger than first reported <span class="pill red">claim 489</span></h2>
+<h2>7 · Corrected scope — the population is ~10x larger than first reported <span class="pill red">claim 489</span></h2>
 <div class="callout red">
 <strong>I read <code>REGUH-UBNKS</code> as the beneficiary's bank country. It is OUR house bank's country.</strong> Each <code>HBKID</code> maps to exactly one <code>UBNKS</code> across the whole table — <code>SOG01</code> → FR across 1,943,748 lines as a single distinct value, <code>CIT19</code> → EG, <code>CIT04</code> → US. A payee-bank field cannot behave that way. <code>UBNKS/UBNKL/UBKNT/UBHKT</code> are the house-bank block. The beneficiary's bank country is <code>LFBK-BANKS</code> — which is exactly what <code>U917</code> reads.
 </div>
@@ -298,7 +278,7 @@ Citi's requirement binds instructions submitted through Citi channels, and a pre
 <strong>Two caveats on the numbers.</strong> 2026 is Jan–May in the Gold DB, not a full year. And 205 of the lines carry <code>XVORL='X'</code> — payment <em>proposals</em>, not executed payments; they are excluded above. Including them would inflate transfers further, not the cheque share.
 </div>
 
-<h2>5c · The pattern in our own Citi payments — the prefix question, answered <span class="pill green">claim 492</span></h2>
+<h2>8 · The pattern in our own Citi payments — the prefix question, answered <span class="pill green">claim 492</span></h2>
 <div class="callout green">
 <strong>Every PPC country is a Société Générale country — and Egypt is one too.</strong> Measured on <code>REGUH</code> 2024-2026, executed payments only, attributing each to the beneficiary's bank country: the nine configured countries are <strong>88.7% paid through <code>SOG*</code></strong> house banks. <strong>Egypt is 93.9%</strong> (2,665 of 2,837). Egypt fits the existing framework exactly — configure it and ~94% of the flow carries a purpose code, rendered by the same builder as the other nine.
 </div>
@@ -327,7 +307,7 @@ Egypt sits mid-range, at less than half Jordan's share. <strong>That tail was ne
 <strong>Correction — a number I published was wrong.</strong> <span class="pill red">claim 493 corrects 492</span> I first reported Egypt's Citi exposure as "USD 3,285,100" and called it an order of magnitude above every other country. Both halves were wrong: the figure was <code>SUM(RWBTR)</code> across <em>mixed currencies</em> — the largest entries are 360,600 and 200,000 <strong>EGP</strong>, roughly USD 7,200 and USD 4,000 — and by the comparable measure, share of lines, Egypt is below Jordan. Rule <code>feedback_never_sum_an_amount_across_currencies</code> now guards it.
 </div>
 
-<h2>6 · Does the super-user exception apply here?</h2>
+<h2>9 · Does the super-user exception apply here?</h2>
 
 <div class="callout green">
 <strong>No. <code>U917</code> cannot be bypassed per user.</strong> Verified against the source: its body (<code>YRGGBS00:1547-1590</code>) contains <strong>zero</strong> occurrences of <code>yxuser</code> and zero of <code>xtype</code>. Of the eight routines in this form pool that can block a posting, only <code>U913</code> carries the bypass.
@@ -354,7 +334,18 @@ Egypt sits mid-range, at less than half Jordan's share. <strong>That tail was ne
 <strong>The honest summary for an auditor:</strong> no individual can be granted an exemption from the purpose-of-payment block. The exposure is not per person — it is per <em>company code</em>, and per <em>channel</em>.
 </div>
 
-<h2>7 · Recommended next steps</h2>
+<h2>10 · What is decided and what is not</h2>
+<table>
+<tr><th>Item</th><th>Status</th><th>Owner</th></tr>
+<tr><td>Tag family — <code>USTRD</code> / SWIFT :70</td><td><span class="pill green">DECIDED</span> the notice names the field</td><td>—</td></tr>
+<tr><td>Block structure, order and separators</td><td><span class="pill green">DECIDED</span> derived from our own config + the builder source</td><td>—</td></tr>
+<tr><td>Pay-type rows P and R</td><td><span class="pill green">DECIDED</span> fixed values, as every other country</td><td>—</td></tr>
+<tr><td><strong>The <code>T015L</code> reason list</strong></td><td><span class="pill green">DERIVED</span> from 12,278 real payment lines across the 9 configured countries, on the ISO 20022 pattern the Philippines already uses — see §4. Business <em>approves the wording</em>, does not author it</td><td>BFM / Treasury</td></tr>
+<tr><td>Whether a code prefix is wanted</td><td><span class="pill green">ANSWERED from our own data</span> all nine configured countries carry a code as the first block on the same SocGen file — see §8</td><td>—</td></tr>
+<tr><td>ABAP</td><td><span class="pill green">NONE</span></td><td>—</td></tr>
+</table>
+
+<h2>11 · Recommended next steps</h2>
 <table>
 <tr><th>#</th><th>Step</th><th>Who</th><th>Blocks</th></tr>
 <tr><td>1</td><td>Confirm with CitiService Egypt whether a code prefix is wanted or narrative only, and whether any code taxonomy is expected</td><td>Treasury</td><td>the final shape of the <code>O</code> rows</td></tr>
