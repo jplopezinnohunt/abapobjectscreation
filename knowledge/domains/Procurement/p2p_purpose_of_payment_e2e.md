@@ -371,3 +371,43 @@ false negative is what produced claim 116. See rule
 | Note-to-payee real behaviour | `extracted_code/FI/YFPAYM_full/Y_FI_PAYMEDIUM_NOTE_TO_PAYEE.abap` (recovered s099) |
 | Egypt volumes, T015L/PPC row counts | Gold DB `REGUH`, `LFA1`, `T015L`, `YTFI_PPC_STRUC`, `YTFI_PPC_TAG` |
 | Capture compliance | Gold DB `REGUP_SCENARIOS` ⋈ `LFA1` |
+
+## The configuration procedure, and what is wrong with it (claim 496)
+
+**The switch is `YTFI_PPC_STRUC`, not `T015L`.** All nine configured countries carry a `PPC_VAR`
+or `PPC_DESCR` row, and that row is what makes `u917` block the posting. `T015L` and
+`YTFI_PPC_TAG` do nothing on their own. So a new country goes in **two transports**:
+
+| Transport | Tables | Effect on import |
+|---|---|---|
+| 1 | `T015L` (10 rows) + `YTFI_PPC_TAG` (1 row) | none — the codes simply become selectable |
+| 2 | `YTFI_PPC_STRUC` (11 rows) | **the block and the rendering both start here** |
+
+Put them in one transport and every posting to a vendor banking in that country is blocked the
+second the import finishes, with no training done. Rollback is deleting the `YTFI_PPC_STRUC` rows.
+
+**Exact content constants**, measured across the 73 existing `T015L` rows: `BLART='2'`,
+`LVAWV='000'`, `ZWCK2` empty (72 of 73), `EDIBL` empty. `ZWCK1` is `CHAR(70)` holding
+`code + space + narrative`. `TAG_ID` is `USTRD` for 7 of 9 countries; only AE and CN use
+`INSTRINF`.
+
+**Prove the rendering separately from the block.** They are different layers driven by two
+different countries — our house bank picks the DMEE class, the vendor's bank picks the config
+rows. A passing block is not evidence that anything reaches the file; only reading `<Ustrd>` in a
+generated CGI XML is.
+
+### The seven weaknesses
+
+1. **The control tests presence, not correctness.** `T015L` has **no country field** — its key is
+   `LZBKZ` alone. The country prefix is a convention. `u917` only checks the field is non-empty,
+   so `JO6` on an Egyptian payment passes every layer. Fix: one condition, `lzbkz(2) = lv_banks`.
+2. **Three tables, maintained independently, nothing ties them.** Switch without tag = users
+   forced to fill a field never written to the file. Silent. Now checked by
+   `Zagentexecution/quality_checks/ppc_country_consistency_check.py`.
+3. **Vendors with no `LFBK` row are invisible** — `CHECK lv_banks IS NOT INITIAL` exits first.
+   254 lines.
+4. **No emergency bypass.** `YXUSER` gates five routines; `u917` is not one of them.
+5. **A dominant catch-all makes the control cosmetic** — IN7 63%, ID7 34%, MY9 33%, MA9 32%.
+6. **Only the FR house-bank class dispatches PPC** — `_DE`, `_IT` and `_FALLBACK` never call the
+   lookup. Latent silent failure for any non-FR paying bank.
+7. **The control stops at company code `UNES`** — 1,720 lines in the other five institutes.

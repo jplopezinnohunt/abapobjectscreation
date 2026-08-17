@@ -362,7 +362,54 @@ PH   USTRD      O   /PURP/&lt;PPC_VAR&gt;/FPAYP-XBLNR</pre>
 <strong>Rendering only exists where a file exists.</strong> The PPC framework is scoped to the Société Générale CGI file by written specification (PPC spec v2.0 p.16). Citibank payments carry no PPC, and payment methods configured as cheque produce no file at all. Capture and rendering must be reasoned about separately for every country. <span class="pill">claim 267 · 488</span>
 </div>
 
-<h2>8 · Re-derive any of this</h2>
+<h2>8 &middot; How to improve this</h2>
+
+<p style="font-size:12.5px">Seven weaknesses, each one measured while configuring Egypt &mdash; ranked by what it would actually prevent. Three are <strong>silent</strong>: the posting succeeds, the auditor is satisfied, and the bank still gets nothing usable.</p>
+
+<table>
+<tr><th>#</th><th>Weakness</th><th>Measured</th><th>Fix</th></tr>
+
+<tr><td><strong>1</strong></td>
+<td><strong>The control checks the field is filled, not that it is right.</strong> <code>T015L</code>&rsquo;s key is <code>LZBKZ</code> alone &mdash; it has <em>no country field</em>. The country prefix is a naming convention. <code>u917</code> only tests non-empty, so <code>JO6</code> on an Egyptian payment passes every layer and reaches Citi.</td>
+<td>73 rows, one flat namespace, 9 prefixes by convention only</td>
+<td>One extra condition in <code>u917</code> &mdash; <code>lzbkz(2)</code> must equal <code>lv_banks</code>. A line in a <code>FORM</code> we already own. <span class="pill green">highest value / lowest cost</span></td></tr>
+
+<tr><td><strong>2</strong></td>
+<td><strong>A blocked posting is not a rendered file.</strong> The three tables are maintained independently and nothing in SAP ties them together. Load the switch without the tag and users are <em>forced</em> to fill a field that is then never written to the payment file.</td>
+<td>9 of 9 countries currently consistent &mdash; but by hand, not by construction</td>
+<td><strong>Landed:</strong> <code>Zagentexecution/quality_checks/ppc_country_consistency_check.py</code> &mdash; switch&nbsp;without&nbsp;codes / switch&nbsp;without&nbsp;tag / codes&nbsp;without&nbsp;switch / degenerate&nbsp;usage. Runs on the Gold DB, exits non-zero on HIGH.</td></tr>
+
+<tr><td><strong>3</strong></td>
+<td><strong>Vendors with no bank record are invisible to the control.</strong> <code>u917</code> does <code>CHECK lv_banks IS NOT INITIAL</code> and exits &mdash; so missing master data silently disables the check rather than triggering it.</td>
+<td>254 lines on the Egypt-originating population alone</td>
+<td>Decide the intent: either these are genuinely out of scope (cheques) or the vendor master is incomplete. Today the code cannot tell the difference.</td></tr>
+
+<tr><td><strong>4</strong></td>
+<td><strong>There is no emergency bypass &mdash; by design.</strong> <code>YXUSER</code> gates five routines; <code>u917</code> is <em>not</em> one of them.</td>
+<td>measured against the 5 gated routines</td>
+<td>Nothing to build &mdash; but know it <em>before</em> go-live, not at 18:00 on a closing day. The only lever is deleting the <code>YTFI_PPC_STRUC</code> rows.</td></tr>
+
+<tr><td><strong>5</strong></td>
+<td><strong>One catch-all code can make the whole control cosmetic.</strong> If everyone picks &ldquo;other&rdquo;, the field is filled, the validation passes, and the bank data is worthless.</td>
+<td>IN7 <strong>63%</strong> &middot; ID7 34% &middot; MY9 33% &middot; MA9 32% &mdash; all generic &ldquo;other business services&rdquo;</td>
+<td>Measure the spread after go-live (check&nbsp;D above). A dominant <code>OTHR</code> is a <em>training</em> gap wearing a config gap&rsquo;s clothes.</td></tr>
+
+<tr><td><strong>6</strong></td>
+<td><strong>Only the French house-bank class dispatches PPC.</strong> Our bank picks the class, their bank picks the config rows &mdash; and <code>YCL_IDFI_CGI_DMEE_DE</code> / <code>_IT</code> / <code>_FALLBACK</code> never call the lookup at all.</td>
+<td>3 classes implement <code>GET_CREDIT</code> only; Citi house banks have no implementation</td>
+<td>Latent: pay a PPC country from a non-FR house bank and nothing renders, with no warning. Worth a monitor before it becomes an incident.</td></tr>
+
+<tr><td><strong>7</strong></td>
+<td><strong>The control stops at company code <code>UNES</code>.</strong> The validation is registered there and nowhere else.</td>
+<td>1,720 lines across the five other institutes</td>
+<td>A business decision, not a technical one &mdash; but it should be a <em>decision</em>, not an accident of where the validation was first assigned.</td></tr>
+</table>
+
+<div class="callout navy">
+<strong>And on how this kind of request gets handled.</strong> What was missing when the Citi notice arrived was not analysis capacity &mdash; it was a place where a country&rsquo;s configuration is written down once. Four measurement errors were made and corrected during this analysis (wrong key, <code>UBNKS</code> misread as the payee&rsquo;s bank, a sum across currencies, the wrong denominator), and each one survived as long as it did because the facts lived in a conversation instead of an artefact. They now live here and in the claims store. The next country should cost hours, not a session.
+</div>
+
+<h2>9 · Re-derive any of this</h2>
 <pre>python brain_v2/graph_queries.py section U917                  <span class="c"># the control, with line range</span>
 python brain_v2/graph_queries.py blocking_code Payment_BCM     <span class="c"># every routine that can block</span>
 python brain_v2/graph_queries.py code YCL_IDFI_CGI_DMEE_UTIL   <span class="c"># the builder</span>

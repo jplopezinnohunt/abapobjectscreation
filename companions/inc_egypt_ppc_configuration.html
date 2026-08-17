@@ -344,14 +344,85 @@ Egypt sits mid-range, at less than half Jordan's share. <strong>That tail was ne
 <tr><td>ABAP</td><td><span class="pill green">NONE</span></td><td>—</td></tr>
 </table>
 
-<h2>11 · Recommended next steps</h2>
+<h2>11 &middot; The configuration, step by step</h2>
+
+<div class="callout red">
+<strong>Read this before deciding the transport plan.</strong> The switch is <code>YTFI_PPC_STRUC</code> &mdash; <em>not</em> <code>T015L</code>. The moment those rows exist in P01, every <code>FB60</code> / <code>MIRO</code> / <code>FB01</code> posting in company code <strong>UNES</strong> to a vendor whose <code>LFBK-BANKS = EG</code> is <strong>blocked</strong> unless the purpose code is filled. <code>T015L</code> and <code>YTFI_PPC_TAG</code> are inert on their own.<br><br>
+So this goes in <strong>two transports</strong>. Put them in one and the block starts the second the import finishes &mdash; with no warning to Cairo and no training done. All nine configured countries block today; Egypt will be the tenth.
+</div>
+
+<h3>Transport 1 &mdash; inert. Can go any time.</h3>
+
+<p style="font-size:12.5px"><strong>Step 1 &middot; <code>T015L</code> &mdash; the code list.</strong> <code>SM30</code> &rarr; view <code>V_T015L</code> ("SCB indicators"). Ten new rows. <code>BLART</code> and <code>LVAWV</code> are constant across all 73 existing rows &mdash; match them exactly. Leave <code>ZWCK2</code> and <code>EDIBL</code> empty (only 1 of 73 rows uses <code>ZWCK2</code>).</p>
+
+<pre><span class="c">LZBKZ  BLART  LVAWV  ZWCK1  (CHAR 70 &mdash; code + space + narrative; longest below is 62)</span>
+EG0     2      000   SUPP Payment for goods or services received
+EG1     2      000   SCVE Service fees for consulting work
+EG2     2      000   SALA Salary payment
+EG3     2      000   BEXP Travel and business expenses
+EG4     2      000   GDDS Purchase of goods
+EG5     2      000   CHAR Charitable contribution
+EG6     2      000   RENT Rent
+EG7     2      000   STDY Training and education services
+EG8     2      000   GOVT Payment to a government or international organisation
+EG9     2      000   OTHR Other business services</pre>
+
+<div class="callout">
+<strong><code>T015L</code> has no country field.</strong> Its key is <code>LZBKZ</code> alone &mdash; measured, 73 rows, one flat global namespace. The <code>EG</code> prefix is a <em>naming convention</em>, not a rule SAP enforces. Nothing stops a user picking <code>JO6</code> on an Egyptian payment, and the validation will accept it because it only checks the field is <strong>not empty</strong>. See improvement&nbsp;#1 in the <a href="p2p_purpose_of_payment.html">solution companion</a>.
+</div>
+
+<p style="font-size:12.5px"><strong>Step 2 &middot; <code>YTFI_PPC_TAG</code> &mdash; where it lands in the XML.</strong> One row. Seven of the nine configured countries use <code>USTRD</code>; only AE and CN use <code>INSTRINF</code>. Egypt takes <code>USTRD</code> &mdash; the ISO&nbsp;20022 remittance-information field, which is what Citi reads.</p>
+
+<pre>LAND1  TAG_ID  DEB_CRE  TAG_FULL
+EG     USTRD   C        &lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;</pre>
+
+<h3>Transport 2 &mdash; this is the live moment</h3>
+
+<p style="font-size:12.5px"><strong>Step 3 &middot; <code>YTFI_PPC_STRUC</code> &mdash; assembly and switch, in one table.</strong> <code>SM30</code> &rarr; "PPC code structure". Eleven rows across the three pay types. <code>PAY_TYPE</code> comes from <code>FPAYH-DORIGIN(2)</code>: <code>HR</code>&rarr;<code>P</code>, <code>TR</code>&rarr;<code>R</code>, anything else&rarr;<code>O</code>.</p>
+
+<pre>LAND1 TAG_ID PAY_TYPE CODE_ORD PPC_CODE   PPC_VALUE                    PAY_STRUC PAY_FIELD
+EG    USTRD  O        01       PPC_VAR                                                     <span class="c">-- 1st word of ZWCK1</span>
+EG    USTRD  O        02       SEPARATOR  /
+EG    USTRD  O        03       PPC_DESCR                                                   <span class="c">-- rest of ZWCK1 = narrative</span>
+EG    USTRD  O        04       SEPARATOR  /INV/
+EG    USTRD  O        05       PAY_FIELD                               FPAYP     XBLNR     <span class="c">-- invoice reference</span>
+EG    USTRD  P        01       FIXED_VAL  SAL
+EG    USTRD  P        02       SEPARATOR  /
+EG    USTRD  P        03       FIXED_VAL  Salary payment
+EG    USTRD  R        01       FIXED_VAL  IGT
+EG    USTRD  R        02       SEPARATOR  /
+EG    USTRD  R        03       FIXED_VAL  Intracompany funds transfer
+
+<span class="c">Renders, for an invoice paid to an Egyptian-banked supplier:</span>
+   <span class="h">SUPP/Payment for goods or services received/INV/5105551234</span></pre>
+
+<h3>Prove it in D01 before transport 2 imports</h3>
+
+<p style="font-size:12.5px"><strong>Step 4 &middot; the block.</strong> In D01, take a vendor with <code>LFBK-BANKS = EG</code>. Post <code>FB60</code> leaving the purpose code empty &rarr; must fail on validation <strong>UNES step 012</strong>, <code>CHECKID 2UNES###009</code>. Fill <code>EG0</code> &rarr; posts.</p>
+
+<p style="font-size:12.5px"><strong>Step 5 &middot; the rendering. Do not skip this one.</strong> Run <code>F110</code> in D01 from a <strong>SocGen</strong> house bank, generate the CGI XML, and read the <code>&lt;Ustrd&gt;</code> node. <em>The block passing is not proof that anything renders</em> &mdash; they are different layers, driven by two different countries (see &sect;3b of the <a href="p2p_purpose_of_payment.html">solution companion</a>). Only the file proves the file.</p>
+
+<h3>Sequencing against 5 September</h3>
 <table>
-<tr><th>#</th><th>Step</th><th>Who</th><th>Blocks</th></tr>
-<tr><td>1</td><td>Confirm with CitiService Egypt whether a code prefix is wanted or narrative only, and whether any code taxonomy is expected</td><td>Treasury</td><td>the final shape of the <code>O</code> rows</td></tr>
-<tr><td>2</td><td>Agree the reason list — which purposes UNESCO pays for in Egypt, worded to Citi's standard</td><td>BFM / Treasury</td><td><code>T015L</code> entries</td></tr>
-<tr><td>3</td><td>Enter the three tables in D01, test one vendor with an Egyptian bank in the validation client, transport</td><td>FI config</td><td>—</td></tr>
-<tr><td>4</td><td>Decide who fills the Purpose of Payment in the bank portal, since SAP emits no file for this path</td><td>Treasury + Cairo office</td><td><strong>the actual compliance on 5 Sep</strong></td></tr>
-<tr><td>5</td><td>Decide whether the other five institutes get an equivalent control</td><td>Marlies Spronk + N_MENARD + Pablo Lopez</td><td>1,720 lines outside the control</td></tr>
+<tr><th>#</th><th>Step</th><th>Who</th><th>When</th></tr>
+<tr><td>6</td><td>Transport 1 (<code>T015L</code> + <code>YTFI_PPC_TAG</code>) to P01 &mdash; nothing changes behaviour, the codes simply become selectable</td><td>FI config</td><td>now</td></tr>
+<tr><td>7</td><td>Confirm the ten codes and their wording with CitiService Egypt</td><td>Treasury</td><td>before step 9</td></tr>
+<tr><td>8</td><td>Brief Cairo office + BFM: from go-live, an Egyptian-banked vendor cannot be posted without a purpose code</td><td>BFM</td><td>before step 9</td></tr>
+<tr><td>9</td><td><strong>Transport 2</strong> (<code>YTFI_PPC_STRUC</code>) &mdash; the block and the rendering both start here</td><td>FI config</td><td>1&ndash;2 days before 5 Sep</td></tr>
+<tr><td>10</td><td>Day-1 check: <code>REGUP</code> where <code>LZBKZ LIKE 'EG%'</code> &mdash; expect codes appearing, and check the spread is not 100% <code>EG9 OTHR</code></td><td>FI config</td><td>5 Sep</td></tr>
+</table>
+
+<div class="callout green">
+<strong>Rollback is one delete.</strong> Remove the <code>YTFI_PPC_STRUC</code> rows for <code>EG</code> and the block stops immediately &mdash; no code change, nothing else to reverse. The <code>T015L</code> and <code>YTFI_PPC_TAG</code> rows can stay in place harmlessly.
+</div>
+
+<h3>What this does NOT cover &mdash; decisions that stay with the business</h3>
+<table>
+<tr><th>Gap</th><th>Size</th><th>Owner</th></tr>
+<tr><td>The <strong>Citi tail</strong> &mdash; payments from our Citibank Egypt account (<code>CIT19</code>) do not go through the CGI/SocGen path, so nothing is rendered for them</td><td>2.0% of lines &mdash; <em>and every configured country carries the same tail; none treated it as a blocker</em> <span class="pill green">claim 493</span></td><td>Treasury + Cairo</td></tr>
+<tr><td><strong>Cheques</strong> &mdash; pre-numbered, no electronic file at all</td><td>3% of lines &middot; 6% of value in 2026</td><td>Cairo office</td></tr>
+<tr><td>Vendors with <strong>no <code>LFBK</code> row</strong> &mdash; <code>u917</code> exits before the check, so the control cannot see them</td><td>254 lines</td><td>Vendor master</td></tr>
+<tr><td>The <strong>five other institutes</strong> &mdash; the validation is registered to company code <code>UNES</code> only</td><td>1,720 lines outside the control</td><td>Marlies Spronk &middot; N_MENARD &middot; Pablo Lopez</td></tr>
 </table>
 
 <footer>

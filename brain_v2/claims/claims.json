@@ -22011,5 +22011,62 @@
         "P2P"
       ]
     }
+  },
+  {
+    "id": 496,
+    "claim": "THE PURPOSE-OF-PAYMENT CONTROL TESTS PRESENCE, NOT CORRECTNESS - AND T015L HAS NO COUNTRY FIELD AT ALL. MEASURED on the Gold DB: T015L has 73 rows and its key is LZBKZ alone (columns MANDT, LZBKZ, BLART, LVAWV, ZWCK1, ZWCK2, EDIBL - there is no LAND1). The 'AE'/'JO'/'PH' two-letter prefix that makes the list look country-partitioned is a NAMING CONVENTION, not a constraint SAP enforces. u917 (YRGGBS00:1547-1590) reads the vendor's LFBK-BANKS to decide WHETHER a code is required, then only tests that LZBKZ is non-empty - it never compares the code to the country. CONSEQUENCE: a user can select JO6 on a payment to an Egyptian-banked vendor and the validation passes, the DMEE exit renders it, and the wrong purpose reaches the bank. FIX IS ONE CONDITION in a FORM we already own: lzbkz(2) must equal lv_banks. THREE MORE STRUCTURAL FACTS, all measured. (1) THE SWITCH IS YTFI_PPC_STRUC, NOT T015L: all 9 configured countries carry a PPC_VAR or PPC_DESCR row, which is exactly what makes the posting block; T015L and YTFI_PPC_TAG are inert alone. So the two must go in SEPARATE TRANSPORTS or the block starts the moment the import finishes, untrained. (2) THE THREE TABLES ARE MAINTAINED INDEPENDENTLY and nothing ties them: switch-without-tag forces users to fill a field that is never written to the file - a SILENT failure that satisfies an audit and fails the bank. (3) EXACT CONTENT CONSTANTS for any new country: BLART='2' and LVAWV='000' on all 73 rows, ZWCK2 empty on 72 of 73, EDIBL empty on all; ZWCK1 is CHAR(70) holding code + space + narrative. TAG_ID is USTRD for 7 of 9 countries; only AE and CN use INSTRINF. LANDED AS A RECURRING CHECK: Zagentexecution/quality_checks/ppc_country_consistency_check.py (4 checks; 9/9 PASS today; REGUP is absent from the Gold DB so the degenerate-usage check is reported as skipped rather than silently passing).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Gold DB T015L (73 rows), YTFI_PPC_STRUC (133), YTFI_PPC_TAG (11)",
+        "cite": "PRAGMA table_info(T015L) has no LAND1; BLART/LVAWV constant; ZWCK1 CHAR(70); all 9 countries carry PPC_VAR or PPC_DESCR; TAG_ID USTRD x7, INSTRINF x2 (AE, CN)",
+        "added_session": 99
+      },
+      {
+        "type": "source_code",
+        "ref": "YRGGBS00:1547-1590 FORM u917",
+        "cite": "keys on LFBK-BANKS, then tests LZBKZ non-empty only - no country comparison",
+        "added_session": 99
+      },
+      {
+        "type": "tool",
+        "ref": "Zagentexecution/quality_checks/ppc_country_consistency_check.py",
+        "cite": "run 2026-08-17: 9/9 consistent, 0 findings, check D skipped (REGUP not in Gold DB)",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T015L",
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG",
+      "U917",
+      "YRGGBS00",
+      "LFBK",
+      "LZBKZ",
+      "REGUP"
+    ],
+    "domain": "Payment",
+    "created_session": 99,
+    "resolved_session": 99,
+    "resolution_notes": "Turns the Egypt request from a one-country config task into a reusable procedure: the load order is now derived from which table is the switch, the exact row content is recorded, and the consistency of every country is checkable rather than assumed.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
