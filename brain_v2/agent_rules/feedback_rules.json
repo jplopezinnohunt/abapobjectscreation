@@ -4216,5 +4216,30 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_never_sum_an_amount_across_currencies",
+  "severity": "HIGH",
+  "created_session": 99,
+  "rule": "Never SUM a document amount without grouping by its currency, and never label the result with a currency you did not convert into. REGUH-RWBTR, BSEG-DMBTR/WRBTR, FPAYP-* are all in the document or payment currency. If a total must span currencies, either group by WAERS and report the vector, or convert explicitly and say so.",
+  "why": "s099. I reported Egypt's Citi exposure as 'USD 3,285,100' from SUM(RWBTR) over rows that were mostly EGP. The largest entries were 360,600 and 200,000 EGP — about USD 7,200 and USD 4,000. That single number turned a routine country configuration into what I presented as an order-of-magnitude outlier, and it drove a wrong recommendation until JP challenged it. A cross-currency sum is not merely imprecise; it manufactures a finding that does not exist.",
+  "how_to_apply": "Any SELECT that sums an amount must carry its currency field in the GROUP BY, or the query is wrong. When comparing entities, prefer COUNTS or shares — they are currency-free. State the currency of every figure you report, and if it is a mix, say 'mixed currencies, not summable'.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 demands exact numbers with checkable provenance. An amount without its unit is not a number, and a sum across units is not a measurement.",
+  "evidence": "claims 492 -> 493; REGUH RWBTR/WAERS for the 58 EG Citi-routed lines",
+  "source_file": "brain_v2/claims/claims.json",
+  "domain_axes": {
+   "functional": [
+    "Payment",
+    "FI",
+    "Brain_Architecture"
+   ],
+   "module": [
+    "FI"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]
