@@ -40,8 +40,8 @@ footer{margin-top:26px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;pa
 <div class="kpis">
 <div class="kpi red"><div class="v">5 Sep 2026</div><div class="l">Citi deadline</div></div>
 <div class="kpi amber"><div class="v">3 tables</div><div class="l">to maintain · 0 ABAP</div></div>
-<div class="kpi"><div class="v">387</div><div class="l">lines settling in Egypt</div></div>
-<div class="kpi green"><div class="v">100%</div><div class="l">of those in UNES — covered</div></div>
+<div class="kpi"><div class="v">9,095</div><div class="l">lines destined for Egypt</div></div>
+<div class="kpi green"><div class="v">89%</div><div class="l">of those U917 would block</div></div>
 </div>
 
 <div class="callout navy" style="margin-top:14px">
@@ -160,6 +160,23 @@ For the population Citi binds, this works. The residual is <strong>1,720 lines</
 <strong>Configuring Egypt buys the CAPTURE, not the file.</strong> Measured in P01: <code>T042E</code> UNES/method 3 → <code>ZFORN='Y110_PRENUM_CHCK'</code> with no PMW; <code>T042Z</code> FR/3 = "Manual cheque (Pre-Numbered)", <code>PROGN=RFFOUS_C</code>, <code>XSCHK='X'</code>; and for the five most recent Egypt runs there is <strong>no <code>REGUT</code> row and no <code>PAYR</code> row</strong> — SAP produces no payment file for this path. <span class="pill">claim 488</span><br><br>
 Citi's requirement binds instructions submitted through Citi channels, and a pre-numbered cheque is not one. So the configuration still delivers real value — <strong>the clerk is forced to state a purpose at invoice entry and the value sits on the document</strong> for whoever fills the bank portal — but populating the instruction itself is a <strong>process change, not a development</strong>.<br><br>
 <strong>Open and time-boxed:</strong> who issues the actual instruction to Citibank Egypt, through which channel, and who fills the Purpose of Payment there before 5 September. <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code> — Treasury (Ingrid Wettie / Mathewos Mehari) + the Cairo office.
+</div>
+
+<h2>5b · CORRECTED SCOPE — the population is ~10x larger than first reported <span class="pill red">claim 489</span></h2>
+<div class="callout red">
+<strong>I read <code>REGUH-UBNKS</code> as the beneficiary's bank country. It is OUR house bank's country.</strong> Each <code>HBKID</code> maps to exactly one <code>UBNKS</code> across the whole table — <code>SOG01</code> → FR across 1,943,748 lines as a single distinct value, <code>CIT19</code> → EG, <code>CIT04</code> → US. A payee-bank field cannot behave that way. <code>UBNKS/UBNKL/UBKNT/UBHKT</code> are the house-bank block. The beneficiary's bank country is <code>LFBK-BANKS</code> — which is exactly what <code>U917</code> reads.
+</div>
+<p style="font-size:12.5px">Citi binds payments <em>"destined for <strong>or</strong> originating within"</em> Egypt. That is two populations, and they behave very differently:</p>
+<table>
+<tr><th>Population</th><th>How to find it</th><th class="n">Lines</th><th>U917 would block</th></tr>
+<tr><td><strong>Originating in Egypt</strong> — paid from our Citibank Egypt account</td><td><code>HBKID='CIT19'</code></td><td class="n">392</td><td style="color:#c5283d;font-weight:600">65 (17%)</td></tr>
+<tr><td><strong>Destined for Egypt</strong> — the beneficiary banks in Egypt, method N</td><td><code>LFBK-BANKS='EG'</code></td><td class="n">9,095</td><td style="color:#0a7e6e;font-weight:600">8,103 (89%) · ~USD 41.5M</td></tr>
+</table>
+<div class="callout green">
+<strong>The request is worth far more than first assessed.</strong> The control is <em>well</em> designed for the destined-for half — 89% coverage, and those payments do produce a payment file, so both capture and rendering apply. It is weak only on the originating-in half: 254 of those 392 lines go to payees with <strong>no <code>LFBK</code> row at all</strong>, so <code>CHECK lv_banks IS NOT INITIAL</code> exits and the control never fires. Those are the cheques.
+</div>
+<div class="callout red">
+<strong>A master-data ceiling no configuration can lift.</strong> 1,225 of 2,762 Egypt-domiciled vendors (44%) have no <code>LFBK</code> row. For every one of them <code>U917</code> is inert whatever you put in <code>YTFI_PPC_STRUC</code>. If those vendors are ever paid by transfer, they must get bank master data first — and that is a separate piece of work.
 </div>
 
 <h2>6 · Does the super-user exception apply here?</h2>

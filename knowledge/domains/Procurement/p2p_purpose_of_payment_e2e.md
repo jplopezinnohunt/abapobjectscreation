@@ -196,6 +196,32 @@ Read from the same source, not inferred:
 
 ---
 
+## 5a. CORRECTED SCOPE — `REGUH-UBNKS` is OUR bank, not the payee's (claim 489)
+
+Everything I first wrote about the Egypt population rested on reading `UBNKS` as the
+beneficiary's bank country. It is **our house bank's country**. Proof: each `HBKID` maps to
+exactly one `UBNKS` across the whole table — `SOG01` → FR across **1,943,748 lines as a single
+distinct value**, `CIT19` → EG, `CIT04` → US, `BRA01` → BR, `UNI01` → IT, `DEU01` → DE. A
+payee-bank field cannot behave that way. `UBNKS/UBNKL/UBKNT/UBHKT` are the house-bank block.
+The beneficiary's bank country is `LFBK-BANKS` — exactly what `u917` reads.
+
+Citi binds payments *"destined for **or** originating within"* Egypt. Two populations:
+
+| Population | How to find it | Lines | `u917` would block |
+|---|---|---:|---|
+| **Originating in Egypt** — paid from our Citibank Egypt account | `HBKID='CIT19'` | 392 | **65 (17%)** |
+| **Destined for Egypt** — beneficiary banks in Egypt, method N | `LFBK-BANKS='EG'` | 9,095 | **8,103 (89%)** ≈ USD 41.5M |
+
+**The configuration is worth far more than first assessed.** The control is well designed for
+the destined-for half — 89% coverage, and those payments *do* produce a payment file, so both
+capture and rendering apply. It is weak only on the originating-in half: 254 of those 392 lines
+go to payees with **no `LFBK` row**, so `CHECK lv_banks IS NOT INITIAL` exits and the control
+never fires. Those are the cheques.
+
+**A master-data ceiling no configuration can lift:** 1,225 of 2,762 Egypt-domiciled vendors
+(44%) have no `LFBK` row. For every one of them `u917` is inert whatever is entered in
+`YTFI_PPC_STRUC`.
+
 ## 5b. HOW YOU MAKE A COUNTRY MANDATORY — the change spec
 
 This is the actual question behind the Egypt request: *how does a country get onto the list
