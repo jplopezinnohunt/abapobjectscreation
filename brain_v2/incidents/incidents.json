@@ -1902,5 +1902,135 @@
       ],
       "process": []
     }
+  },
+  {
+    "id": "INC-EGYPT-PPC",
+    "status": "SPEC_READY",
+    "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)",
+    "reporter": "Mathewos Mehari (BFM) via Christina Lopez-Chemouny; originating notice from Citibank Egypt 2026-07-12",
+    "received_date": "2026-08-10",
+    "analyzed_session": 99,
+    "domain": "Payment",
+    "secondary_domains": [
+      "Procurement",
+      "Treasury",
+      "FI"
+    ],
+    "transactions": [
+      "SM30",
+      "OBAT",
+      "FB60",
+      "MIRO",
+      "F110"
+    ],
+    "primary_object_id": "YTFI_PPC_STRUC",
+    "primary_subject": "Country EG in the purpose-of-payment configuration",
+    "company_codes_involved": [
+      "UNES",
+      "ICTP",
+      "UIL",
+      "IIEP",
+      "UIS",
+      "UBO"
+    ],
+    "scenario": "country_ppc_configuration",
+    "incident_type": "operational_change",
+    "error_messages": [],
+    "root_cause_summary": "Not a defect. Regulatory change: Citibank Egypt requires Purpose of Payment on all RTGS and Cross-Border Funds Transfers to/from Egypt from 2026-09-05, in the Transaction Details field or SWIFT Field 70. UNESCO already runs a purpose-code framework for 9 countries; Egypt has to be added to it. The work is configuration in three maintained tables, zero ABAP.",
+    "authority": [
+      "Citibank Egypt notice, 2026-07-12 — 'payment instructions ... which do not include Purpose of Payment will not be processed', effective 2026-09-05",
+      "Request from Mathewos Mehari 2026-08-10: 'include this with the list of the countries which need this information'"
+    ],
+    "code_validation_chain": [
+      "Citi notice names SWIFT Field 70 -> ISO 20022 RmtInf/Ustrd -> YTFI_PPC_TAG TAG_ID='USTRD' (the family BH/ID/IN/JO/MA/MY/PH use), NOT INSTRINF (= SWIFT :72, used by AE/CN)",
+      "YRGGBS00:1547-1590 FORM u917 -> SELECT ytfi_ppc_struc WHERE land1 = <LFBK-BANKS> AND ppc_code IN ('PPC_VAR','PPC_DESCR') -> b_result = b_false: the row type IS the switch",
+      "YCL_IDFI_CGI_DMEE_UTIL::GET_TAG_VALUE_FROM_CUSTO:91-169 -> block semantics; T015L-ZWCK1 SPLIT AT SPACE: PPC_VAR = first word, PPC_DESCR = the rest",
+      "P01 GB931 -> VALID='UNES' has 12 steps, u917 is 012; no other institute's validation can contain it -> capture reaches company code UNES only",
+      "P01 T042E UNES/3 -> ZFORN='Y110_PRENUM_CHCK' no PMW; T042Z FR/3 = manual pre-numbered cheque PROGN=RFFOUS_C XSCHK='X'; REGUT and PAYR have no row for the 5 most recent Egypt runs -> no SAP payment file on this path",
+      "u917 body contains ZERO occurrences of yxuser/xtype -> the super-user bypass does NOT apply to this control (only U913 among the 8 blocking routines carries it)"
+    ],
+    "scope": {
+      "population_bound_by_citi": "387 REGUH lines settling at an Egyptian bank (UBNKS='EG'), 100% company code UNES / house bank CIT19 / method 3",
+      "wider_population": "17,778 lines to Egypt-domiciled payees: UNES 16,058 · ICTP 1,242 · UIL 348 · IIEP 117 · UIS 9 · UBO 4",
+      "vendors": "2,762 vendors with LAND1='EG' in LFA1",
+      "deadline": "2026-09-05"
+    },
+    "fix_path": {
+      "immediate": "Three maintained tables, no ABAP: (1) YTFI_PPC_STRUC rows for LAND1='EG', TAG_ID='USTRD', DEB_CRE='C' — pay type O carries PPC_VAR + PPC_DESCR + PAY_FIELD FPAYP-XBLNR (PPC_DESCR is the load-bearing block because Citi asks for a narrative, not a code); pay types P and R carry FIXED_VAL. (2) T015L EG* entries, ZWCK1 = '<code> <narrative>'. (3) YTFI_PPC_TAG one row EG/USTRD/C -> RmtInf/Ustrd.",
+      "structural": "Decide whether ICTP/IIEP/UBO/UIL/UIS get an equivalent step in their own validation — KU-2026-099-INSTITUTE-COVERAGE.",
+      "preventive": [
+        "Configuring Egypt buys the CAPTURE only: this payment path emits no SAP file, so the actual instruction is issued outside SAP and someone must populate the Purpose of Payment there — KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
+        "Confirm with CitiService Egypt whether a code prefix is wanted or narrative only",
+        "Agree the T015L reason list with BFM/Treasury — it is UNESCO's own taxonomy worded to Citi's standard, not a bank-issued code list"
+      ]
+    },
+    "open_followups": [
+      "T015L reason list — BUSINESS INPUT from BFM/Treasury, blocks entry",
+      "Code prefix or narrative only — ask CitiService Egypt",
+      "Who fills the Purpose of Payment in the bank portal before 2026-09-05 — Treasury + Cairo office",
+      "Whether the other five institutes get the control — Marlies Spronk + N_MENARD + Pablo Lopez"
+    ],
+    "side_findings": [
+      "The request as phrased ('add Egypt to the list of mandatory purpose code countries') is correct; the list is YTFI_PPC_STRUC and the switch is a PPC_VAR/PPC_DESCR row",
+      "The control keys on the vendor's BANK country (LFBK-BANKS), not the address country",
+      "Capture reaches 1 of 9 company codes",
+      "This path produces no payment file at all, so the rendering half of the framework is moot for Egypt"
+    ],
+    "related_objects": [
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG",
+      "T015L",
+      "U917",
+      "YRGGBS00",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "LFBK",
+      "REGUH",
+      "CIT19",
+      "T042E",
+      "T042Z",
+      "REGUT",
+      "PAYR",
+      "GB931"
+    ],
+    "related_claims": [
+      "484",
+      "485",
+      "486",
+      "488",
+      "267"
+    ],
+    "related_known_unknowns": [
+      "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
+      "KU-2026-099-INSTITUTE-COVERAGE"
+    ],
+    "lessons": [
+      "The bank's own notice decided the structure: naming SWIFT Field 70 fixes the tag family to RmtInf/Ustrd and removes the only structural choice there was.",
+      "A regulatory request that asks for a 'description' is not a code-list request — Egypt is a PPC_DESCR country, not a PPC_VAR one.",
+      "Capture and rendering must be reasoned about separately: a country can need the first and have no use for the second."
+    ],
+    "analysis_doc": "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
+    "companions": [
+      "companions/inc_egypt_ppc_configuration.html",
+      "companions/p2p_purpose_of_payment.html"
+    ],
+    "chain_anchor_type": "mixed_source_and_config",
+    "chain_anchor_note": "Anchored on the Citi notice (the authority), on YRGGBS00 u917 and the UTIL builder source for the mechanism, on live P01 GB931/T042E/T042Z/REGUT/PAYR for coverage and payment medium, and on Gold DB REGUH/LFA1 for the population.",
+    "chain_anchor_coverage_pct": 90,
+    "chain_audited_session": 99,
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
