@@ -1,0 +1,209 @@
+# Purpose of Payment — the P2P end-to-end
+
+**Domain**: Procurement_P2P (spine) · FI · Payment_BCM · Treasury
+**Status**: VERIFIED from source + P01 config + Gold DB — Session #099 (2026-08-17)
+**Supersedes**: claim 116 (which said no capture control existed). See claim 484.
+**Companion**: [companions/p2p_purpose_of_payment.html](../../../companions/p2p_purpose_of_payment.html)
+
+---
+
+## 0. Why this document exists
+
+The purpose code is one mechanism that spans the whole **purchase-to-payment** spine: it is
+**configured** by Treasury, **captured** by an AP clerk on the invoice, and **rendered** into the
+payment file that the bank validates. Until this session the knowledge lived in three
+disconnected places — a skill file, a set of orphan claims, and one paragraph of an autopsy
+filed under PSM — and none of them was reachable from the P2P process. A support request about
+Egypt was answered wrong twice because of it.
+
+**The single most important correction:** the list that decides whether a purpose code is
+*mandatory* is **`YTFI_PPC_STRUC.LAND1` matched against the vendor's BANK country
+(`LFBK-BANKS`)**. Not `T015L` — that is the catalogue of code *values*. Not the vendor's address
+country (`LFA1-LAND1`).
+
+---
+
+## 1. The three stages
+
+### Stage 1 — MAINTAIN (configuration)
+
+| Table | Rows (P01) | What it holds | Keyed by |
+|---|---|---|---|
+| `T015L` | 73 | The **catalogue of code values** — `LZBKZ` + description `ZWCK1`. UNESCO-specific values (`AE0`…`AE8`, `IN0`…, `JO0`…), **not** ISO 20022 text codes | `LZBKZ` |
+| `YTFI_PPC_STRUC` | 133 | **The list that decides obligatoriness** + how the tag string is assembled from positional blocks (`SEPARATOR`, `FIXED_VAL`, `PPC_VAR`, `PPC_DESCR`, `PAY_FIELD`) | `LAND1` + `TAG_ID` + `PAY_TYPE` + `CODE_ORD` |
+| `YTFI_PPC_TAG` | 11 | Where in the XML the value goes | `LAND1` + `TAG_ID` + `DEB_CRE` |
+
+Countries configured: **AE, BH, CN, ID, IN, JO, MA, MY, PH** — 9. **Egypt is absent from all three.**
+
+XML destination per country (`YTFI_PPC_TAG`):
+- `AE`, `CN` → `<PmtInf><CdtTrfTxInf><InstrForCdtrAgt><InstrInf>`
+- `BH`, `ID`, `IN`, `JO`, `MA`, `MY`, `PH` → `<PmtInf><CdtTrfTxInf><RmtInf><Ustrd>`
+
+Pay types (`PAY_TYPE`), derived from `fpayh-dorigin(2)`: `HR` → `P` payroll · `TR` → `R`
+replenishment · everything else → `O` third party. Example, UAE third party: `/` + `REC` + `/` +
+`<PPC_VAR>`; UAE payroll: `/REC/SAL`; UAE replenishment: `/REC/IGT`.
+
+### Stage 2 — USE (at invoice entry) — this is where the control lives
+
+The AP clerk types the code into the SCB-indicator field (`BSEG-LZBKZ`) on the vendor line.
+It is **not optional**: `FORM u917` blocks the posting.
+
+```
+FORM u917 CHANGING b_result.                    " YRGGBS00 : 1547-1590
+  b_result = b_true.
+  CHECK bseg-lifnr IS NOT INITIAL.              " vendor lines only
+  CHECK bseg-bschl NE '26'.                     " skip down-payment clearing
+  CHECK bseg-bschl NE '39'.
+  ... SELECT lfbk -> lv_banks                   " the vendor's BANK country
+  CHECK lv_banks IS NOT INITIAL.                " no bank record -> passes silently
+  IF bseg-lzbkz IS NOT INITIAL. ... ELSE.
+    SELECT SINGLE * FROM ytfi_ppc_struc
+      WHERE land1 = @lv_banks
+        AND ( ppc_code = 'PPC_VAR' OR ppc_code = 'PPC_DESCR' ).
+    IF sy-subrc = 0. b_result = b_false. ENDIF. " BLOCKED
+  ENDIF.
+ENDFORM.
+```
+
+**Registration**: `exits-name = 'U917'` (`YRGGBS00:224`), wired as `VALID='UNES'`
+`BOOLCLASS=009` `VALSEQNR=012`, `CONDID` `1UNES###009`, `CHECKID` `2UNES###009`.
+
+**Fires on**: `FB01`, `FB41`, `FB60`, `FB65`, `FBA6`, `FBR2`, `MIR7`, `MIRO`, `FBV0`, `FBVB`,
+`F-47` — with an invoice document type (`AP CO ER IN IT KA KR KT MF MR RE RF PS PN`) and a
+vendor line (`KOART='K'`).
+
+The value then rides `BSEG-LZBKZ` → open item (`BSIK`) → `REGUP-LZBKZ` at F110 → `FPAYP-LZBKZ`.
+
+### Stage 3 — RENDER (at payment)
+
+`F110` → `SAPFPAYM` → DMEE tree `/CGI_XML_CT_UNESCO` →
+`YCL_IDFI_CGI_DMEE_FR===CM002` dispatches → `YCL_IDFI_CGI_DMEE_UTIL->GET_TAG_VALUE_FROM_CUSTO`
+(`CM003`) reads `YTFI_PPC_TAG` + `YTFI_PPC_STRUC` and assembles the string.
+
+`CM003` line 48 does `READ TABLE mt_t015l WITH KEY lzbkz = is_fpayp-lzbkz`. An empty `LZBKZ`
+yields `sy-subrc <> 0` → empty tag → the receiving bank rejects. That is the failure mode
+`U917` exists to prevent.
+
+---
+
+## 2. The separate note-to-payee mechanism (free text, SWIFT :70)
+
+Distinct from PPC and **relevant whenever a bank asks for narrative purpose rather than a code**.
+
+`Y_FI_PAYMEDIUM_NOTE_TO_PAYEE` (67 lines) reads custom table **`YVENDOR_PAYM_REF`** keyed
+`(BUKRS, LIFNR, BLART)` and writes `FPAYP-ZREF01`. With no row it falls back to a format chosen
+by `FPAYHX-PREFTYP`:
+
+- `'SAMPLE 01'` → `No.<xblnr>/<bldat>`
+- `'SAP SEPA'` → `/INV/<xblnr> <bldat>`
+
+`Y_FI_PAYMEDIUM_06` and `Y_FI_PAYMEDIUM_DMEE_30` read the same table.
+
+> ⚠️ The `sap_payment_bcm_agent` skill states this FM builds `EXO//reason//XBLNR//` from
+> `REGUP-BLART`. **The string `EXO` does not appear in any of the ten recovered sources.** The
+> claim came from a spec (`FS Note to Payee v1.1`), not from the code. Treat the skill text as
+> unverified until someone finds where `EXO//` is actually produced (candidate: a DMEE tree
+> constant, not ABAP).
+
+---
+
+## 3. Scope — SocGen only, by written specification
+
+PPC functional spec v2.0 (M. Spronk), page 16:
+
+> the development is only for the XML file of Société Générale
+
+Citibank payments do **not** carry PPC. Any request to make a purpose code mandatory for a
+Citi-routed country is a **new development**, not a configuration change. (claim 267)
+
+---
+
+## 4. Measured state (2026-08-17)
+
+**Capture compliance** — Gold DB `REGUP_SCENARIOS` (188 payment runs, 2025-01-02 → 2026-04-29,
+6 company codes) joined to `LFA1`. This is a curated subset, not full `REGUP`:
+
+| Vendor country | Lines | Empty `LZBKZ` | Filled |
+|---|---:|---:|---:|
+| IN | 303 | **283** | 20 |
+| JO | 13 | 0 | 13 |
+
+Jordan is clean; India is 93% empty. With `U917` in place that should be impossible —
+tracked as **`KU-2026-099-PPC-COVERAGE`**, five hypotheses, the leading one being that the
+control keys on `LFBK-BANKS` while the measurement keys on `LFA1-LAND1`.
+
+**Egypt** — `REGUH` 2016-2026: 17,778 lines to Egypt-domiciled payees, 744 vendors, and
+**2,762 vendors** in `LFA1` (which would make it the 5th-largest of the group). Of the payments
+that actually settle at an Egyptian bank (`UBNKS='EG'`): **387 lines, 100% through house bank
+`CIT19`, method 3** (`USD01` 269 + `EGP01` 118, EGP 20.8M).
+
+---
+
+## 5. Known holes in the control
+
+Read from the same source, not inferred:
+
+1. **No bank record → no check.** `CHECK lv_banks IS NOT INITIAL` — a vendor with no `LFBK` row
+   passes silently.
+2. **Invoice entry only.** `F-53` / `FBZ2` manual payments, `FB1K` clearings and `SAPF124` auto
+   clearing are not covered.
+3. **Down-payment clearing skipped** (`BSCHL` 26 / 39).
+4. **Multi-bank ambiguity.** With no `BVTYP` on the line the `SELECT SINGLE` on `LFBK` takes an
+   arbitrary row — `U915` forces disambiguation on the same TCODEs, which mitigates but does not
+   eliminate it.
+5. **Interfaces.** Claim 39 records that the F110 BAPI bypasses substitution callpoint 3 and may
+   bypass validation callpoint 2 — unverified for `U917`.
+
+---
+
+## 6. Egypt — what the request actually needs
+
+Citi's notice (12 Jul 2026, effective **5 Sep 2026**) requires Purpose of Payment on all RTGS and
+Cross-Border Funds Transfers to/from Egypt, in *Transaction Details / Payment Details* or **SWIFT
+Field 70**, as narrative text ("Payment for goods received under Invoice 12345").
+
+The request as forwarded — *"add Egypt to the list of mandatory purpose code countries"* —
+maps onto two different levers, and only one of them reaches Citi:
+
+| | Effect | Reaches the Citi file? |
+|---|---|---|
+| Add `EG` rows to `YTFI_PPC_STRUC` with `PPC_CODE='PPC_VAR'/'PPC_DESCR'` | Turns the **capture** control on at invoice entry, zero ABAP | ❌ — renders only on the SocGen CGI tree |
+| Add `EG` rows to `T015L` | Gives the codes something to choose from | ❌ on its own |
+| `YVENDOR_PAYM_REF` / note-to-payee | Free text into `FPAYP-ZREF01` → `:70` | **The candidate** — needs verification on the CITI medium |
+
+**Open and blocking**: whether the file `CIT19` method 3 produces carries any purpose/remittance
+field, and whether method 3 (configured as *manual cheque* for field offices) generates a SAP
+payment file at all — several UNESCO field offices pay outside SAP in the bank's own portal, in
+which case the fix is procedural, not technical.
+
+---
+
+## 7. How to re-derive any of this
+
+```bash
+python brain_v2/graph_queries.py search "purpose of payment"   # the claims
+python brain_v2/graph_queries.py section U917                  # the control, with line range
+python brain_v2/graph_queries.py blocking_code Payment_BCM     # every routine that can block
+python brain_v2/graph_queries.py code YRGGBS00                 # where the real source lives
+```
+
+⚠️ `YRGGBS00`'s canonical corpus path holds a **29-line stub**; the real 1,593-line body is
+UTF-16 at `Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt`. `code` returns the
+real one and flags `STUB_AT_CANONICAL`. Grepping the corpus for `LZBKZ` returns nothing — that
+false negative is what produced claim 116. See rule
+`feedback_a_zero_match_grep_is_a_claim_about_your_grep`.
+
+---
+
+## 8. Provenance
+
+| Fact | Source |
+|---|---|
+| `u917` body, guards, registration | `YRGGBS00_SOURCE.txt:1547-1590` and `:224` (UTF-16) |
+| GB931 registration, TCODE/BLART firing list | [`finance_validations_and_substitutions_autopsy.md` §2.4](../PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md) |
+| PPC tables, DDIC inventory, dispatcher | claims 97, 98, 179 |
+| SocGen-only scope | claim 267 — PPC functional spec v2.0 p.16 |
+| `Purp>Cd` ← `FPAYP-XREF3` | claim 5 (H18, P01 DMEE tree, 631 nodes) |
+| Note-to-payee real behaviour | `extracted_code/FI/YFPAYM_full/Y_FI_PAYMEDIUM_NOTE_TO_PAYEE.abap` (recovered s099) |
+| Egypt volumes, T015L/PPC row counts | Gold DB `REGUH`, `LFA1`, `T015L`, `YTFI_PPC_STRUC`, `YTFI_PPC_TAG` |
+| Capture compliance | Gold DB `REGUP_SCENARIOS` ⋈ `LFA1` |

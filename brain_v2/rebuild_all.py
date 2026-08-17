@@ -231,6 +231,9 @@ def main():
         "Step 0f: Code inventory — source integrity + multi-domain linkage", fatal=False)
     run(["python", "brain_v2/build_code_sections.py"],
         "Step 0g: Code sections — the routine is the unit of behaviour", fatal=False)
+    run(["python", "brain_v2/interpret_code.py", "--enrich"],
+        "Step 0h: Interpret code THROUGH the brain, and write back what it learned",
+        fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
