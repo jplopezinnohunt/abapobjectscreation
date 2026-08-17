@@ -383,6 +383,25 @@ def main():
              bool(s917) and s917.get("can_block_posting"),
              "the worked example lost its verdict")
 
+    # ---- the landing rule ------------------------------------------------
+    leak = load("brain_v2/methods/unlanded_discoveries.json")
+    if leak:
+        items = leak.get("items") or []
+        # SHAPE: a leak report that does not NAME the leaking item is useless — the whole
+        # point is that "improve coverage" is not actionable and "YXUSER, 5 routines, gates
+        # a blocking validation" is.
+        case("LANDING", "every leak is named and sited",
+             all(i.get("term") and i.get("touched_by") is not None for i in items),
+             "an entry has no term or no touch site")
+        # INVARIANT: severity must be derivable, so the list can be worked in order.
+        case("LANDING", "every leak carries a severity and a landing target",
+             all(i.get("severity") and i.get("lands_in") for i in items),
+             "an entry has no severity or does not say where it should land")
+        # FLOOR on the detector itself: if it suddenly reports zero, it broke — the brain
+        # did not become complete overnight.
+        case("LANDING", "the detector still detects", len(items) >= 5,
+             f"only {len(items)} leaks reported; the interpretation input is probably empty")
+
     # ---- report ----------------------------------------------------------
     print(f"[artifact golden cases] {checked} cases over what the algorithms PRODUCE")
     if failures:

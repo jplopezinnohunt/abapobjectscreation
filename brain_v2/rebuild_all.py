@@ -234,6 +234,9 @@ def main():
     run(["python", "brain_v2/interpret_code.py", "--enrich"],
         "Step 0h: Interpret code THROUGH the brain, and write back what it learned",
         fatal=False)
+    run(["python", "brain_v2/methods/unlanded_discoveries.py"],
+        "Step 0i: Unlanded discoveries — what the code touches and the brain cannot "
+        "explain", fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")

@@ -114,12 +114,34 @@ def main():
         "DURABILITY GATE — this session has uncommitted SOURCE changes not yet in git:" + flist +
         "\nCommit them FOCUSED before the session closes: `git add <these files>` then commit "
         "(NEVER `git add -A`; do NOT commit brain_state.json — it is generated/entangled). "
+        + unlanded_status()
         + local_only_status()
     )
     print(json.dumps({
         "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg}
     }))
     sys.exit(0)
+
+
+def unlanded_status():
+    """Name what was discovered and never written down. s099: discovery without landing
+    is the largest silent loss in this project — bigger than any single uncommitted file."""
+    try:
+        p = ROOT / "brain_v2" / "methods" / "unlanded_discoveries.json"
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    items = d.get("items") or []
+    if not items:
+        return ""
+    high = [i for i in items if i.get("severity") == "HIGH"]
+    names = ", ".join(i["term"] for i in (high or items)[:6])
+    return ("\nUNLANDED DISCOVERIES — "
+            f"{len(items)} custom identifiers the code touches that the brain cannot explain, "
+            f"{len(high)} of them gating a routine that can BLOCK a posting: {names}. "
+            "Each is a thing we found and never wrote down. Land the ones this session "
+            "touched as a claim before closing "
+            "(python brain_v2/methods/unlanded_discoveries.py for the full list).")
 
 
 def _dir_size(path):

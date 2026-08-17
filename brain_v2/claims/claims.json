@@ -21439,5 +21439,116 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 486,
+    "claim": "YXUSER IS A CONTROL-BYPASS TABLE THAT GATES FIVE ROUTINES IN THE POSTING PERIMETER, not two. Every gated routine opens with SELECT SINGLE * FROM yxuser WHERE xtype = '<x>' AND uname = sy-uname followed by CHECK sy-subrc <> 0 — so a row in YXUSER means SKIP THE ENTIRE ROUTINE for that user. Measured from source: U913 (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:961-987, VALIDATION, CAN BLOCK A POSTING — special budget codes); UAEP (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1128-1187, SUBSTITUTION, forces BSEG-FISTL/GEBER/GSBER/KOSTL and COBL-KOSTL on asset expense postings); UATF (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1314-1395, SUBSTITUTION, forces BSEG-FISTL/GEBER/KOSTL and COBL-* and clears the WBS element); NSAI (Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1420-1497, SUBSTITUTION, forces COBL-FISTL/GEBER/GSBER/KOSTL); and YFM_ACCTCHK::INIT_CHECK (lines 31-326, VALIDATION, CAN BLOCK A POSTING). The existing autopsy documents only the asset pair (XTYPE 'AF' for UAEP, 'AA' for UATF/NSAI). The two BLOCKING validations it gates — U913 and YFM_ACCTCHK — were not recorded anywhere. SECURITY CONSEQUENCE: adding a user to YXUSER via SM30 turns off two hard posting controls and three field-forcing substitutions for that user, with no transport and no trace in the role model. A clean PFCG picture does not show it — the same shape as the known finding that the control surface here lives at the CALL and DATA layer, not the role layer. YXUSER CONTENT HAS NEVER BEEN READ.",
+    "claim_type": "infrastructure_gap",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:961-987,1128-1187,1314-1395,1420-1497",
+        "cite": "four YRGGBS00 routines reading YXUSER, parsed into code_sections.json with role and can_block_posting per routine",
+        "added_session": 99
+      },
+      {
+        "type": "derived_artifact",
+        "ref": "brain_v2/code_sections.json",
+        "cite": "YFM_ACCTCHK::INIT_CHECK lines 31-326 also reads YXUSER, role=VALIDATION, can_block_posting=true",
+        "added_session": 99
+      },
+      {
+        "type": "knowledge_doc",
+        "ref": "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
+        "cite": "§5 documents the bypass mechanism and XTYPE AF/AA for the asset routines only",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YXUSER",
+      "YRGGBS00",
+      "YFI_YRGGBS00_EXIT",
+      "U913",
+      "UAEP",
+      "UATF",
+      "NSAI",
+      "YFM_ACCTCHK",
+      "BSEG",
+      "COBL"
+    ],
+    "domain": "Security",
+    "created_session": 99,
+    "resolved_session": null,
+    "resolution_notes": "Read YXUSER content from P01 (read-only): who is in it, under which XTYPE, since when. Until then we know the door exists and not who holds a key.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Security",
+        "FI",
+        "PSM_FM",
+        "Payment"
+      ],
+      "module": [
+        "FI",
+        "FM"
+      ],
+      "process": [
+        "P2P",
+        "B2R",
+        "GOVERNANCE"
+      ]
+    }
+  },
+  {
+    "id": 487,
+    "claim": "YVENDOR_PAYM_REF IS THE MAINTAINED LIST THAT DECIDES THE NOTE-TO-PAYEE TEXT, keyed (BUKRS, LIFNR, BLART) — company code + vendor + document type. Read by four payment-medium function modules, all of which write the payment reference: Y_FI_PAYMEDIUM_NOTE_TO_PAYEE (67 lines, writes FPAYP-ZREF01), Y_FI_PAYMEDIUM_06 (65 lines, writes FPAYP-ZREF01), Y_FI_PAYMEDIUM_DMEE_30 (63 lines) and Y_FI_PAYMEDIUM_101_30 (535 lines). When no row matches, the FM falls back to a format chosen by FPAYHX-PREFTYP: 'SAMPLE 01' -> No.<XBLNR>/<BLDAT>, 'SAP SEPA' -> /INV/<XBLNR> <BLDAT>. THIS IS A FOURTH MAINTAINED LIST alongside T015L, YTFI_PPC_TAG and YTFI_PPC_STRUC, and it is the one that carries FREE TEXT rather than a code — therefore the candidate lever whenever a bank asks for narrative purpose (SWIFT :70) instead of a structured purpose code, which is exactly what Citi requires for Egypt. CORRECTS THE SKILL: sap_payment_bcm_agent states this FM builds EXO//reason//XBLNR// from REGUP-BLART. The string EXO appears in NONE of the ten recovered sources of the YFPAYM family. That text came from a specification, not from the code. CONTENT UNREAD: the row count and which (BUKRS, LIFNR, BLART) combinations are populated is unknown.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/YFPAYM_full/Y_FI_PAYMEDIUM_NOTE_TO_PAYEE.abap",
+        "cite": "recovered from P01 s099 (the file had been 0 bytes). Full body read: the SELECT on YVENDOR_PAYM_REF, the PREFTYP fallback and the write to zref01.",
+        "added_session": 99
+      },
+      {
+        "type": "derived_artifact",
+        "ref": "brain_v2/code_sections.json",
+        "cite": "four routines parsed with YVENDOR_PAYM_REF in reads_tables, all role=SUBSTITUTION",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YVENDOR_PAYM_REF",
+      "Y_FI_PAYMEDIUM_NOTE_TO_PAYEE",
+      "Y_FI_PAYMEDIUM_06",
+      "Y_FI_PAYMEDIUM_DMEE_30",
+      "Y_FI_PAYMEDIUM_101_30",
+      "FPAYP",
+      "FPAYHX",
+      "REGUP"
+    ],
+    "domain": "Payment",
+    "created_session": 99,
+    "resolved_session": null,
+    "resolution_notes": "Read YVENDOR_PAYM_REF content from P01 and add it to the Gold DB — it is a decision table in the payment path with no extract.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "FI",
+        "Procurement"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]

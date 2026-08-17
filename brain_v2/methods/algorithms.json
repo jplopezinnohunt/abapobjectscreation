@@ -15,7 +15,8 @@
   "state": "STRONG · WORKS · WEAK · FRAGILE · MISSING",
   "bound_in": "the tool(s) that implement it — an algorithm with no binding is a paper",
   "failure_mode": "how this algorithm produces a WRONG answer without failing loudly",
-  "improve": "the specific next lever"
+  "improve": "the specific next lever",
+  "lands_in": "the STORE where this algorithm's findings become durable. An algorithm that only prints is a leak by construction — discovery without landing is loss. Enforced by brain_v2/methods/unlanded_discoveries.py (rebuild Step 0i)."
  },
  "algorithms": {
   "A1_chunked_temporal_read": {
@@ -661,7 +662,8 @@
     "brain_v2/build_code_inventory.py"
    ],
    "failure_mode": "over-grouping. Grouping on a common token (PAYMEDIUM) merged twelve distinct function modules onto one 535-line neighbour and reported ten 0-byte extractions as healthy — the tool hid the very defect it exists to find. Under-grouping is the mirror risk: a genuinely split object reads as two.",
-   "improve": "alias resolution from TADIR instead of from file names, so YFI_YRGGBS00_EXIT and YRGGBS00_SOURCE resolve to one object rather than two entries pointing at the same body"
+   "improve": "alias resolution from TADIR instead of from file names, so YFI_YRGGBS00_EXIT and YRGGBS00_SOURCE resolve to one object rather than two entries pointing at the same body",
+   "lands_in": "brain_v2/code_inventory.json + DQ records for EMPTY/STUB findings"
   },
   "C6_routine_level_behaviour_extraction": {
    "operates_on": "repository",
@@ -672,7 +674,8 @@
     "brain_v2/build_code_sections.py"
    ],
    "failure_mode": "silent under-reading. A regex that captures only the first table after FROM misses every JOINed table, so a routine looks like it never touches a table it does read; that false negative then propagates into domain linkage AND into the conflict detector as a fake contradiction. Assignments to FORM parameters are still missed, so UXR1/UXR2 report no fields written when they write XREF1/XREF2.",
-   "improve": "parse assignments to routine PARAMETERS, not just to TABLE-FIELD; and resolve member-table reads (READ TABLE mt_x) back to the SELECT that filled them in the constructor, so a buffered config read is attributed to the routine that uses it"
+   "improve": "parse assignments to routine PARAMETERS, not just to TABLE-FIELD; and resolve member-table reads (READ TABLE mt_x) back to the SELECT that filled them in the constructor, so a buffered config read is attributed to the routine that uses it",
+   "lands_in": "brain_v2/code_sections.json"
   },
   "C7_brain_informed_code_interpretation": {
    "operates_on": "repository + model",
@@ -683,7 +686,8 @@
     "brain_v2/interpret_code.py"
    ],
    "failure_mode": "confident nonsense from a weak match. Resolving on prose mention alone matched a routine's own local variable (LV_BANKS) to a claim that merely quoted the routine, and the conflict detector fired on ordinary English written in capitals until it was anchored to the known object universe. A wrong 'meaning' reads exactly like a right one, so every resolution must carry its source.",
-   "improve": "distinguish an ARCHITECTURAL claim (describes a framework spanning several objects, so no single object touches all its terms) from a CONTRADICTION, which is the only kind worth a human's time"
+   "improve": "distinguish an ARCHITECTURAL claim (describes a framework spanning several objects, so no single object touches all its terms) from a CONTRADICTION, which is the only kind worth a human's time",
+   "lands_in": "brain_v2/code_interpretation.json + CONTROL_POINT annotations written back to brain_v2/annotations/annotations.json (--enrich); unexplained custom identifiers land as claims via the Step 0i leak report"
   }
  },
  "_portfolio": {
@@ -843,5 +847,10 @@
   "3_from_n1_to_generalisable": "EVERY algorithm is validated on ONE tenant. 43 golden cases, all UNESCO facts. COMPONENT_TO_DOMAIN is a hand-written map reflecting UNESCO's module set. MEASURED: only 22.7% of resolved executions are tenant-invariant; 2,617,419 rest on 334 hand-curated entries.",
   "4_from_confident_to_calibrated": "DONE s097 — resolve_domain() now returns (domain, confidence, rung, evidence, tenant_invariant). Before this, an answer SAP asserts and an answer we curated were indistinguishable to every consumer. An algorithm that cannot say HOW it knows cannot be triaged, audited, or ported — and cannot be improved deliberately, because you cannot tell a lucky answer from a sound one.",
   "_the_measure": "brain_v2/methods/measure_portability.py — the low-confidence answers ARE the map of what breaks next."
+ },
+ "_landing_rule": {
+  "rule": "every algorithm that produces findings declares lands_in",
+  "why": "s099: reading code through the brain surfaced YXUSER — a table that switches OFF two blocking validations and three field-forcing substitutions for any listed user — and YVENDOR_PAYM_REF, the list that decides the text a bank sees. Both sit in the posting perimeter, neither had a brain record. Found by an algorithm, reported in a conversation, and they would have evaporated with it.",
+  "enforced_by": "brain_v2/methods/unlanded_discoveries.py — counts custom identifiers the code touches that the brain cannot explain, names each one, and fails when the leak GROWS. Naming a gap is progress; letting it grow silently is not."
  }
 }
