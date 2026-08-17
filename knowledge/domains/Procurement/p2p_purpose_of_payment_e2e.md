@@ -252,9 +252,39 @@ purpose is known in advance. **`PPC_VAR` on the `O` rows is what makes the count
 
 ### The spec for Egypt
 
+### The reason list — verified against ISO 20022 (claims 490 · 495, research `wegppc001`)
+
+An earlier version of this document proposed four codes that **do not exist** — `TRVL`, `RDEV`,
+`ITSV`, `TRAI` were invented. Every code below was checked against the published ISO 20022
+External Purpose Codes list (125 codes) and confirmed independently against LHV's
+`ExternalPurpose1Code` reference.
+
+| `LZBKZ` | `ZWCK1` | Covers — measured across the nine configured countries |
+|---|---|---|
+| `EG0` | `SUPP Payment for goods or services received` | generic supplier — PH0 **76%** |
+| `EG1` | `SCVE Service fees for consulting work` | consulting **and** IT/telecom — AE4 37% · JO6 43% · IN6 21% · MA5 26% · AE3 18% |
+| `EG2` | `SALA Salary payment` | payroll — IN9 9% · PH1 3% |
+| `EG3` | `BEXP Travel and business expenses` | travel — AE7 13% · PH3 18% · ID0 21% |
+| `EG4` | `GDDS Purchase of goods` | goods |
+| `EG5` | `CHAR Charitable contribution` | charity — AE1 · PH4 |
+| `EG6` | `RENT Rent` | rent — JO9 · AE6 |
+| `EG7` | `STDY Training and education services` | training — MA6 11% |
+| `EG8` | `GOVT Payment to a government or international organisation` | international organisations — MY3 23% |
+| `EG9` | `OTHR Other business services` | **the catch-all, most used of all** — IN7 63% · ID7 34% · MY9 33% · MA9 32%; also absorbs R&D, which has no ISO code |
+
+**Three judgement calls:** ISO has no code for research and development (3rd most-used category)
+→ `OTHR`. ISO has no code for financial services (50% of Jordan) → `SCVE`. `OTLC` (Other Telecom
+Related Bill) exists but describes a telecom *bill*, not the purchase of IT services → folded
+into `SCVE`, keeping the list at ten.
+
+**To be confirmed by the bank.** The codes are valid ISO 20022 values and Egypt adopted ISO 20022
+on 2026-06-21, so the family is right. That Citibank Egypt accepts *this selection and wording*
+is not verified — confirm with CitiService Egypt before transport. No CBE purpose-code list could
+be found in any published source, consistent with the notice asking for a description.
+
 | # | Table | Rows to add | Status |
 |---|---|---|---|
-| 1 | `T015L` | `EG0`…`EGn` — one per Central Bank of Egypt purpose code, `LZBKZ` + `ZWCK1` text | ⛔ **needs the CBE code list from Citi** — the only missing input |
+| 1 | `T015L` | the 10 rows above | ✅ derived + verified; business approves the wording |
 | 2 | `YTFI_PPC_TAG` | 1 row: `EG · USTRD · C · <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>` | ready, copy Jordan |
 | 3 | `YTFI_PPC_STRUC` | 18 rows in the Jordan shape; `O` carries `PPC_VAR`, `P`/`R` carry the fixed CBE codes for salary and inter-company transfer | ready once §1 exists |
 
