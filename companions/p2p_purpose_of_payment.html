@@ -183,6 +183,37 @@ PPC functional spec v2.0 (M. Spronk), page 16: <em>the development is only for t
 For the population Citi actually binds, capture <strong>would</strong> be enforced once <code>EG</code> rows exist — all 387 are UNES. The residual exposure is <strong>1,720 lines (9.7%)</strong> to Egypt-domiciled payees sitting in institutes with no capture control at all.
 </div>
 
+<h2>How you make a country mandatory — the change spec</h2>
+<div class="callout red">
+<strong>One row type is the switch.</strong> <code>U917</code> blocks the posting when the vendor's bank country has <strong>any</strong> <code>YTFI_PPC_STRUC</code> row with <code>PPC_CODE = 'PPC_VAR'</code> or <code>'PPC_DESCR'</code>. Everything else makes the code <em>usable</em> and <em>renderable</em>; that row makes it <strong>mandatory</strong>.
+</div>
+
+<h3>The model: Jordan — the cleanest country, 13 of 13 lines carry a code</h3>
+<table>
+<tr><th>Table</th><th class="n">Rows</th><th>Content</th></tr>
+<tr><td><code>YTFI_PPC_TAG</code></td><td class="n">1</td><td><code>JO · USTRD · C · &lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;</code></td></tr>
+<tr><td><code>YTFI_PPC_STRUC</code></td><td class="n">18</td><td>6 building blocks × 3 pay types (<code>O</code> third-party, <code>P</code> payroll, <code>R</code> replenishment)</td></tr>
+<tr><td><code>T015L</code></td><td class="n">10</td><td><code>JO0</code>…<code>JO9</code> — the codes the clerk picks from</td></tr>
+</table>
+<pre>O (third party)     /  + PURP + /  + <span class="h">PPC_VAR</span>          + / + PAY_FIELD FPAYP-XBLNR
+P (payroll)         /  + PURP + /  + FIXED_VAL '206'  + / + PAY_FIELD FPAYP-SGTXT
+R (replenishment)   /  + PURP + /  + FIXED_VAL '704'  + / + PAY_FIELD FPAYP-SGTXT</pre>
+<p style="font-size:12.5px">Only <code>O</code> uses <code>PPC_VAR</code> — the clerk's code. Payroll and replenishment are fixed, because the purpose is known in advance. <strong><code>PPC_VAR</code> on the <code>O</code> rows is what makes the country mandatory.</strong></p>
+
+<h3>The spec for Egypt</h3>
+<table>
+<tr><th>#</th><th>Table</th><th>Rows to add</th><th>Status</th></tr>
+<tr><td>1</td><td><code>T015L</code></td><td><code>EG0</code>…<code>EGn</code> — one per Central Bank of Egypt purpose code (<code>LZBKZ</code> + <code>ZWCK1</code> text)</td><td style="color:#c5283d;font-weight:600">needs the CBE code list from Citi — the only missing input</td></tr>
+<tr><td>2</td><td><code>YTFI_PPC_TAG</code></td><td>1 row: <code>EG · USTRD · C · &lt;RmtInf&gt;&lt;Ustrd&gt;</code></td><td style="color:#0a7e6e">ready, copy Jordan</td></tr>
+<tr><td>3</td><td><code>YTFI_PPC_STRUC</code></td><td>18 rows in the Jordan shape; <code>O</code> carries <code>PPC_VAR</code>, <code>P</code>/<code>R</code> the fixed CBE codes</td><td style="color:#0a7e6e">ready once §1 exists</td></tr>
+</table>
+<div class="callout green"><strong>Zero ABAP.</strong> All three are maintained tables (SM30 / customizing view), transported like any config.</div>
+<div class="callout">
+<strong>Two caveats that decide whether it is worth doing.</strong>
+(1) Capture is enforced for company code <code>UNES</code> only — the 387 Egypt-bank-settling lines are all UNES, so for the population Citi binds this works, but 1,720 lines in ICTP/UIL/IIEP/UIS/UBO stay uncontrolled.
+(2) The rendering half is moot for this path: Egypt payments leave as pre-numbered cheques with no SAP file. Adding the rows still buys the <em>capture</em> — the clerk is forced to state a purpose and the value sits on the document for whoever fills the bank portal.
+</div>
+
 <h2>What the Egypt request actually needs</h2>
 <table>
 <tr><th>Lever</th><th>Effect</th><th>Reaches the Citi file?</th></tr>
@@ -190,8 +221,20 @@ For the population Citi actually binds, capture <strong>would</strong> be enforc
 <tr><td>Add <code>EG</code> rows to <code>T015L</code></td><td>Gives the codes something to choose from</td><td>No, on its own</td></tr>
 <tr><td><code>YVENDOR_PAYM_REF</code> / note-to-payee</td><td>Free text into <code>FPAYP-ZREF01</code> → <code>:70</code></td><td><strong>The candidate</strong> — needs verification on the CITI medium</td></tr>
 </table>
+<h3>Resolved — there is no SAP payment file to fix <span class="pill green">claim 488</span></h3>
+<table>
+<tr><th>Evidence (live P01)</th><th>Result</th></tr>
+<tr><td><code>T042E</code> (UNES, method 3)</td><td><code>ZFORN='Y110_PRENUM_CHCK'</code>, <code>XEIPO</code> empty → form-based cheque print, <strong>not</strong> the Payment Medium Workbench</td></tr>
+<tr><td><code>T042Z</code> (FR, method 3)</td><td>"Manual cheque (Pre-Numbered)", <code>PROGN='RFFOUS_C'</code>, <strong><code>XSCHK='X'</code></strong> — identical for CA, CH, MZ</td></tr>
+<tr><td><code>REGUT</code>, 5 most recent Egypt runs</td><td style="color:#c5283d;font-weight:600">no row — no payment medium file created</td></tr>
+<tr><td><code>PAYR</code>, same runs</td><td style="color:#c5283d;font-weight:600">no row — not even the cheque register is written</td></tr>
+</table>
+<div class="callout red">
+<strong>Citi's notice binds RTGS and Cross-Border Funds Transfers submitted through Citi channels. A pre-numbered cheque is neither</strong>, and there is no SAP-generated instruction to add a purpose field to. Adding <code>EG</code> rows to <code>YTFI_PPC_STRUC</code> switches the <em>capture</em> control on at invoice entry, but there is no outbound file for it to render into.
+</div>
 <div class="callout">
-<strong>Open and blocking.</strong> Whether the file <code>CIT19</code> method 3 produces carries any purpose or remittance field — and whether method 3 (configured as <em>manual cheque</em> for field offices) generates a SAP payment file at all. Several UNESCO field offices pay outside SAP in the bank's own portal, in which case the fix is procedural, not technical.
+<strong>The remaining fix is procedural, not a development.</strong> Whoever issues the actual instruction — the Cairo office, in the bank's own portal — must populate the Purpose of Payment there. Owner and channel tracked as <code>KU-2026-099-EGYPT-INSTRUCTION-CHANNEL</code>, deadline 5 September 2026.
+<br><br><em>Limit of the evidence:</em> the absence of a <code>REGUT</code>/<code>PAYR</code> row was read per run for the 5 most recent Egypt runs. It was not verified that <code>REGUT</code> holds rows for other runs in the same window — so the claim is "no row for these runs", not "REGUT is empty".
 </div>
 
 <h2>Re-derive any of this</h2>

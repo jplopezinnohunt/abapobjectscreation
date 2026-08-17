@@ -196,6 +196,55 @@ Read from the same source, not inferred:
 
 ---
 
+## 5b. HOW YOU MAKE A COUNTRY MANDATORY — the change spec
+
+This is the actual question behind the Egypt request: *how does a country get onto the list
+that forces a reason for payment?*
+
+**One row type is the switch.** `u917` blocks the posting when the vendor's bank country has
+**any** `YTFI_PPC_STRUC` row with `PPC_CODE = 'PPC_VAR'` or `'PPC_DESCR'`. Everything else
+makes the code *usable* and *renderable*; that row makes it **mandatory**.
+
+### The model: Jordan, the cleanest country (13 of 13 lines carry a code)
+
+| Table | Rows | Content |
+|---|---:|---|
+| `YTFI_PPC_TAG` | 1 | `JO · USTRD · C · <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>` |
+| `YTFI_PPC_STRUC` | 18 | 6 building blocks × 3 pay types (`O` third-party, `P` payroll, `R` replenishment) |
+| `T015L` | 10 | `JO0`…`JO9` — the codes the clerk picks from |
+
+The 6 blocks per pay type, in `CODE_ORD` order:
+
+```
+O (third party)     /  + PURP + /  + PPC_VAR          + / + PAY_FIELD FPAYP-XBLNR
+P (payroll)         /  + PURP + /  + FIXED_VAL '206'  + / + PAY_FIELD FPAYP-SGTXT
+R (replenishment)   /  + PURP + /  + FIXED_VAL '704'  + / + PAY_FIELD FPAYP-SGTXT
+```
+
+Only `O` uses `PPC_VAR` — the clerk's code. Payroll and replenishment are fixed, because the
+purpose is known in advance. **`PPC_VAR` on the `O` rows is what makes the country mandatory.**
+
+### The spec for Egypt
+
+| # | Table | Rows to add | Status |
+|---|---|---|---|
+| 1 | `T015L` | `EG0`…`EGn` — one per Central Bank of Egypt purpose code, `LZBKZ` + `ZWCK1` text | ⛔ **needs the CBE code list from Citi** — the only missing input |
+| 2 | `YTFI_PPC_TAG` | 1 row: `EG · USTRD · C · <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>` | ready, copy Jordan |
+| 3 | `YTFI_PPC_STRUC` | 18 rows in the Jordan shape; `O` carries `PPC_VAR`, `P`/`R` carry the fixed CBE codes for salary and inter-company transfer | ready once §1 exists |
+
+**Zero ABAP.** All three are maintained tables (SM30 / the customizing view), transported like
+any config.
+
+### Two caveats that decide the value of doing it
+
+1. **Capture is enforced for company code `UNES` only** (claim 485). The 387 Egypt-bank-settling
+   lines are all UNES, so for the population Citi binds this works — but the 1,720 lines to
+   Egypt-domiciled payees in ICTP/UIL/IIEP/UIS/UBO stay uncontrolled.
+2. **The rendering half is moot for this path** (claim 488): the Egypt payments leave as
+   pre-numbered cheques with no SAP payment file. Adding the rows still buys the *capture* —
+   the clerk is forced to state a purpose at invoice entry, and the value is on the document
+   for whoever fills the bank portal. That is worth having; it is just not the whole answer.
+
 ## 6. Egypt — what the request actually needs
 
 Citi's notice (12 Jul 2026, effective **5 Sep 2026**) requires Purpose of Payment on all RTGS and
@@ -211,10 +260,29 @@ maps onto two different levers, and only one of them reaches Citi:
 | Add `EG` rows to `T015L` | Gives the codes something to choose from | ❌ on its own |
 | `YVENDOR_PAYM_REF` / note-to-payee | Free text into `FPAYP-ZREF01` → `:70` | **The candidate** — needs verification on the CITI medium |
 
-**Open and blocking**: whether the file `CIT19` method 3 produces carries any purpose/remittance
-field, and whether method 3 (configured as *manual cheque* for field offices) generates a SAP
-payment file at all — several UNESCO field offices pay outside SAP in the bank's own portal, in
-which case the fix is procedural, not technical.
+### RESOLVED — there is no SAP payment file to fix (claim 488)
+
+Measured live in P01:
+
+| Evidence | Result |
+|---|---|
+| `T042E` (UNES, method 3) | `ZFORN='Y110_PRENUM_CHCK'`, `XEIPO` empty → form-based cheque print, **not** the Payment Medium Workbench |
+| `T042Z` (FR, method 3) | *"Manual cheque (Pre-Numbered)"*, `PROGN='RFFOUS_C'`, **`XSCHK='X'`** — identical for CA, CH, MZ |
+| `REGUT` for the 5 most recent Egypt runs | **no row** — no payment medium file created |
+| `PAYR` for the same runs | **no row** — not even the cheque register is written |
+
+**Citi's notice binds RTGS and Cross-Border Funds Transfers submitted through Citi channels.
+A pre-numbered cheque is neither, and there is no SAP-generated instruction to add a purpose
+field to.** Adding `EG` rows to `YTFI_PPC_STRUC` would switch the *capture* control on at
+invoice entry (claim 484), but there is no outbound file for it to render into.
+
+**The remaining fix is procedural**, not a development: whoever issues the actual instruction —
+the Cairo office, in the bank's own portal — must populate the Purpose of Payment there. Owner
+and channel tracked as `KU-2026-099-EGYPT-INSTRUCTION-CHANNEL`, deadline 5 September 2026.
+
+*Limit of the evidence:* absence of a `REGUT`/`PAYR` row was read per run for the 5 most recent
+Egypt runs. It was not verified that `REGUT` holds rows for other runs in the same window, so
+the claim is "no row for these runs", not "REGUT is empty".
 
 ---
 

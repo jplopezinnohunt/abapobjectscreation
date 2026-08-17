@@ -21550,5 +21550,70 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 488,
+    "claim": "THE EGYPT-SETTLING PAYMENTS PRODUCE NO SAP PAYMENT FILE — they are configured as pre-numbered cheques, so Citi's Purpose-of-Payment requirement does not reach SAP at all. Measured live in P01: T042E (UNES, method 3) carries ZFORN='Y110_PRENUM_CHCK' with XEIPO empty — a form-based cheque print, NOT the Payment Medium Workbench. T042Z for the paying country FR, method 3 = 'Manual cheque (Pre-Numbered)', PROGN='RFFOUS_C', XSCHK='X' (the cheque flag); CA, CH and MZ share the identical definition. For the Egypt runs (LAUFI ending 'O', the field-office series produced by UZLS) REGUT returns no row — no payment medium file was created — and PAYR returns no row either, so not even the cheque register is being written. CONSEQUENCE FOR THE CITI REQUEST: Citi's notice binds RTGS and Cross-Border Funds Transfers submitted through Citi channels. A pre-numbered cheque is neither, and there is no SAP-generated instruction to add a purpose field to. Adding EG rows to YTFI_PPC_STRUC would switch the CAPTURE control on at invoice entry (claim 484) but there is no outbound file for it to render into. The remaining fix is PROCEDURAL: whoever issues the actual instruction — the Cairo office in the bank's own portal — must populate the Purpose of Payment there. This is the documented UNESCO field-office pattern (SAP records the payment, the instruction is issued outside it) now measured for Egypt specifically. LIMIT OF THIS EVIDENCE: absence of a REGUT/PAYR row was read per run for the 5 most recent Egypt runs; it was not verified that REGUT holds data for other runs in the same window, so 'no row for these runs' is the exact claim, not 'REGUT is empty'.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "config",
+        "ref": "P01 T042E via RFC_READ_TABLE (read-only)",
+        "cite": "ZBUKR=UNES ZLSCH=3 -> ZFORN='Y110_PRENUM_CHCK', WFORN empty, XEIPO empty",
+        "added_session": 99
+      },
+      {
+        "type": "config",
+        "ref": "P01 T042Z via RFC_READ_TABLE",
+        "cite": "FR/3 'Manual cheque (Pre-Numbered)' PROGN=RFFOUS_C XSCHK=X; same for CA, CH, MZ",
+        "added_session": 99
+      },
+      {
+        "type": "production_data",
+        "ref": "P01 REGUT + PAYR per run (read-only)",
+        "cite": "5 most recent Egypt-settling runs (20260504/00001O .. 20260308/00001O): no REGUT row and no PAYR row for any of them",
+        "added_session": 99
+      },
+      {
+        "type": "production_data",
+        "ref": "Gold DB REGUH UBNKS='EG'",
+        "cite": "387 lines, 100% UNES / CIT19 / method 3, accounts USD01 + EGP01",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T042E",
+      "T042Z",
+      "REGUT",
+      "PAYR",
+      "REGUH",
+      "RFFOUS_C",
+      "Y110_PRENUM_CHCK",
+      "CIT19",
+      "YTFI_PPC_STRUC",
+      "UZLS"
+    ],
+    "domain": "Payment",
+    "created_session": 99,
+    "resolved_session": 99,
+    "resolution_notes": "Closes the last open question on the Egypt purpose-of-payment request. The technical levers in SAP (T015L / YTFI_PPC_STRUC / YTFI_PPC_TAG / YVENDOR_PAYM_REF) do not reach this payment path because the path emits no file. Escalate as a process change to Treasury and the Cairo office, not as a development.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury",
+        "FI",
+        "Procurement"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]
