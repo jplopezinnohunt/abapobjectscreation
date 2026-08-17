@@ -485,8 +485,76 @@ def code(brain, name):
     if not hits:
         return {"error": f"{name} not found in code inventory",
                 "hint": "try a shorter fragment; matching is substring + token"}
-    return {"query": name, "matches": len(hits),
-            "objects": [objs[h] for h in hits[:8]]}
+
+    secs = _load_code_sections()
+    out = []
+    for h in hits[:8]:
+        o = dict(objs[h])
+        s = (secs or {}).get("objects", {}).get(h)
+        if s:
+            # The routine is the unit of behaviour — an object is a container of rules.
+            o["sections"] = {
+                "count": s["section_count"],
+                "roles": s["roles"],
+                "can_block_posting": s["blocking_sections"],
+                "routines": [{"routine": x["routine"], "lines": f'{x["start_line"]}-{x["end_line"]}',
+                              "role": x["role"], "intent": x["header_comment"][:90],
+                              "reads": x["reads_tables"][:6], "blocks": x["can_block_posting"]}
+                             for x in s["sections"]],
+            }
+        out.append(o)
+    return {"query": name, "matches": len(hits), "objects": out}
+
+
+def _load_code_sections():
+    p = PROJECT_ROOT / "brain_v2" / "code_sections.json"
+    if not p.exists():
+        return None
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def section(brain, name):
+    """One routine: where it lives, what it does, when it declines to act, what it can block.
+
+    s099: mapping objects is not enough. YRGGBS00 is one object holding ~29 parsed routines
+    and 8 that can stop a posting — UXR2, U915, U916, U917 among them. The rule you care
+    about is a line range, not a file.
+    """
+    secs = _load_code_sections()
+    if secs is None:
+        return {"error": "code_sections.json missing — run python brain_v2/build_code_sections.py"}
+    key = (name or "").upper()
+    found = []
+    for obj, o in secs["objects"].items():
+        for s in o["sections"]:
+            if key == s["routine"] or key in s["routine"]:
+                found.append(s)
+    if not found:
+        return {"error": f"routine {name} not found",
+                "hint": "try `search` — routine names are also indexed there"}
+    return {"query": name, "matches": len(found), "sections": found[:10]}
+
+
+def blocking_code(brain, domain=None):
+    """Every routine that can STOP a posting — the real control surface, by domain."""
+    secs = _load_code_sections()
+    if secs is None:
+        return {"error": "code_sections.json missing — run build_code_sections.py"}
+    rows = []
+    for obj, o in secs["objects"].items():
+        if domain and domain not in (o.get("domains") or []):
+            continue
+        for s in o["sections"]:
+            if s["can_block_posting"]:
+                rows.append({"object": obj, "routine": s["routine"],
+                             "lines": f'{s["start_line"]}-{s["end_line"]}',
+                             "intent": s["header_comment"][:110],
+                             "reads": s["reads_tables"][:6],
+                             "messages": s["messages"],
+                             "domains": (o.get("domains") or [])[:5],
+                             "source": o["source"]})
+    return {"domain": domain, "count": len(rows),
+            "controls": sorted(rows, key=lambda r: (r["object"], r["routine"]))}
 
 
 def search(brain, text):
@@ -599,6 +667,8 @@ COMMANDS = {
     "code": lambda b, args: code(b, args[0] if args else ""),
     "code_gaps": lambda b, args: code_gaps(b),
     "search": lambda b, args: search(b, " ".join(args) if args else ""),
+    "section": lambda b, args: section(b, args[0] if args else ""),
+    "blocking_code": lambda b, args: blocking_code(b, args[0] if args else None),
 }
 
 if __name__ == "__main__":
