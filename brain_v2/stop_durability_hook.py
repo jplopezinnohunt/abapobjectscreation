@@ -20,6 +20,7 @@ Design (matches the Claude Code Stop-hook contract):
 """
 import json, sys, os, time, subprocess, hashlib
 from pathlib import Path
+from datetime import datetime
 
 HERE = Path(__file__).parent
 ROOT = HERE.parent
@@ -93,6 +94,7 @@ def main():
     if not changed:
         sys.exit(0)
 
+    _ = local_only_status  # defined below; referenced from the message build
     sig = hashlib.sha1("\n".join(sorted(changed)).encode("utf-8")).hexdigest()
     try:
         if NUDGE_MARKER.read_text(encoding="utf-8").strip() == sig:
@@ -112,13 +114,106 @@ def main():
         "DURABILITY GATE — this session has uncommitted SOURCE changes not yet in git:" + flist +
         "\nCommit them FOCUSED before the session closes: `git add <these files>` then commit "
         "(NEVER `git add -A`; do NOT commit brain_state.json — it is generated/entangled). "
-        "And ALWAYS state the 2 assets that are LOCAL-ONLY and NOT in git: the Golden DB "
-        "(~6.4GB, gitignored) and ~/.claude memory — git does not protect them; a disk/offsite backup does."
+        + local_only_status()
     )
     print(json.dumps({
         "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg}
     }))
     sys.exit(0)
+
+
+def _dir_size(path):
+    total = files = 0
+    for root, dirs, names in os.walk(path):
+        dirs[:] = [d for d in dirs
+                   if d not in {"file-history", "shell-snapshots", "statsig", "telemetry",
+                                "__pycache__", "node_modules", "tasks", "tool-results"}]
+        for n in names:
+            try:
+                total += os.path.getsize(os.path.join(root, n))
+                files += 1
+            except OSError:
+                pass
+    return total, files
+
+
+def local_only_status():
+    """MEASURE the two local-only assets at close — never quote a hardcoded size.
+
+    s099: the figure '~6.4 GB' had been repeated in the memory, in this hook and in the
+    session-start hook for months. Measured, the Golden DB is 15.2 GB — off by 2.4x, and a
+    backup plan sized on the stale number is wrong. A constant that describes a live asset
+    rots silently, which is the same class of defect as a reminder that never executes.
+
+    And the size is not decoration: if it CHANGED since the last close, the existing backup
+    no longer covers what is on disk, so the change itself is the trigger.
+    """
+    state_path = Path(__file__).parent / ".local_only_state.json"
+    gold = ROOT / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+    mem = Path(os.path.expanduser("~")) / ".claude" / "projects"
+
+    now = {}
+    try:
+        now["golden_bytes"] = gold.stat().st_size if gold.exists() else 0
+    except OSError:
+        now["golden_bytes"] = 0
+    try:
+        b, f = _dir_size(mem)
+        now["memory_bytes"], now["memory_files"] = b, f
+    except Exception:
+        now["memory_bytes"] = now["memory_files"] = 0
+
+    prev = {}
+    try:
+        prev = json.loads(state_path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
+    def gb(x):
+        return f"{x / 1024**3:.2f} GB"
+
+    parts = [
+        "\nLOCAL-ONLY ASSETS (git does NOT protect these — measured just now): "
+        f"Golden DB {gb(now['golden_bytes'])} · ~/.claude memory {gb(now['memory_bytes'])} "
+        f"in {now['memory_files']} files."
+    ]
+
+    drift = []
+    for key, label in (("golden_bytes", "Golden DB"), ("memory_bytes", "memory")):
+        old = prev.get(key)
+        if old and old != now[key]:
+            delta = now[key] - old
+            drift.append(f"{label} {'+' if delta > 0 else ''}{delta / 1024**2:.1f} MB")
+    if drift:
+        parts.append(
+            "CHANGED since the last close (" + ", ".join(drift) + ") — so any existing "
+            "backup no longer covers what is on disk. THE CHANGE IS THE TRIGGER: run "
+            "`python scripts/backup_golden.py --dest <disk>` or say explicitly that it was "
+            "deferred and why."
+        )
+    elif prev:
+        parts.append("Unchanged since the last close — an existing backup still covers it.")
+    else:
+        parts.append("No prior measurement on record; this is the baseline.")
+
+    try:
+        pointer = ROOT / "Zagentexecution" / "sap_data_extraction" / "backup_location.json"
+        if pointer.exists():
+            p = json.loads(pointer.read_text(encoding="utf-8"))
+            parts.append(f"Last recorded backup destination: {p.get('dest', '?')}.")
+        else:
+            parts.append("NO backup destination has ever been recorded "
+                         "(Zagentexecution/sap_data_extraction/backup_location.json absent).")
+    except Exception:
+        pass
+
+    try:
+        now["recorded_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
+        state_path.write_text(json.dumps(now, indent=1), encoding="utf-8")
+    except Exception:
+        pass
+
+    return " ".join(parts)
 
 
 if __name__ == "__main__":

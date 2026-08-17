@@ -124,7 +124,7 @@ def main():
         "prod; NO new objects/transports in P01; Excel is NEVER a source]. Park the gap as an execution_backlog task. Do NOT "
         "invent exotic channels (ADT-HTTP, SPNEGO/password, deploy-to-P01) — that re-litigates settled constraints (rule #156). "
         "(2) CLOSE — commit SOURCE changes FOCUSED (never 'git add -A'; brain_state.json is GENERATED, don't commit it entangled) "
-        "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (~6.4GB, gitignored) + ~/.claude memory "
+        "AND ALWAYS flag the 2 assets that are LOCAL-ONLY, not in git: the Golden DB (15.2GB measured 2026-08-17, gitignored) + ~/.claude memory "
         "(git does NOT protect them — a disk/offsite backup does); then capture SAP learnings." + note + meta + loop
     )
     print(json.dumps({
