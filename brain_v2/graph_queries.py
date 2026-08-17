@@ -11,7 +11,7 @@ Usage (from agent mid-session):
   python brain_v2/graph_queries.py domain_summary Travel
   python brain_v2/graph_queries.py object_detail LHRTSF01
 """
-import io, json, sys, time
+import io, json, re, sys, time
 from pathlib import Path
 
 # Windows consoles default to cp1252: any brain text containing an arrow, an em-dash or an
@@ -456,6 +456,121 @@ def methods(brain, _=None):
             "next_promotions": m.get("_next_promotions")}
 
 
+def _load_code_inventory():
+    p = PROJECT_ROOT / "brain_v2" / "code_inventory.json"
+    if not p.exists():
+        return None
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def code(brain, name):
+    """Where does this object's SOURCE actually live, is it complete, whose is it?
+
+    Answers the question that burned s099: the canonical path held a 29-line stub while
+    the 1,593-line body sat outside the corpus in UTF-16. Matches on name AND token, so
+    asking for YRGGBS00 finds YRGGBS00_SOURCE.txt and YFI_YRGGBS00_EXIT.abap together.
+    """
+    inv = _load_code_inventory()
+    if inv is None:
+        return {"error": "code_inventory.json missing — run python brain_v2/build_code_inventory.py"}
+    objs = inv["objects"]
+    key = (name or "").upper()
+    if key in objs:
+        hits = [key]
+    else:
+        hits = sorted(k for k in objs if key in k)
+        if not hits:
+            hits = sorted({o for t, names in inv.get("token_index", {}).items()
+                           if key in t for o in names})
+    if not hits:
+        return {"error": f"{name} not found in code inventory",
+                "hint": "try a shorter fragment; matching is substring + token"}
+    return {"query": name, "matches": len(hits),
+            "objects": [objs[h] for h in hits[:8]]}
+
+
+def search(brain, text):
+    """Full-text across every knowledge store AND the code inventory.
+
+    The drill that did not exist until s099. 19 commands and none searched text, so
+    'purpose of payment' returned nothing while 91 Payment claims sat in the brain.
+    Case-insensitive; the code inventory is already encoding-normalised at build time.
+    """
+    q = (text or "").strip().lower()
+    if len(q) < 3:
+        return {"error": "give at least 3 characters"}
+
+    # Phrase match is brittle on wording: 'purpose of payment' misses 91 claims that all
+    # say 'Payment Purpose Code'. So a phrase hit wins, but ALL-WORDS-PRESENT also counts.
+    _STOP = {"of", "the", "a", "an", "in", "on", "for", "to", "and", "is", "at", "by"}
+    words = [w for w in re.split(r"[^a-z0-9_]+", q) if w and w not in _STOP]
+
+    def hit(blob):
+        low = blob.lower()
+        if q in low:
+            return True
+        return bool(words) and all(w in low for w in words)
+
+    out = {"query": text, "matched_words": words, "claims": [], "rules": [],
+           "incidents": [], "annotations": [], "code": [], "domains": []}
+
+    for c in brain.get("claims", []):
+        if hit(json.dumps(c, ensure_ascii=False)):
+            out["claims"].append({"id": c.get("id"), "domain": c.get("domain"),
+                                  "confidence": c.get("confidence"),
+                                  "status": c.get("status"),
+                                  "claim": (c.get("claim") or "")[:220]})
+    for r in brain.get("rules", []):
+        if hit(json.dumps(r, ensure_ascii=False)):
+            out["rules"].append({"id": r.get("id"), "severity": r.get("severity"),
+                                 "rule": (r.get("rule") or "")[:200]})
+    incs = brain.get("incidents", [])
+    incs = incs.values() if isinstance(incs, dict) else incs
+    for i in incs:
+        if isinstance(i, dict) and hit(json.dumps(i, ensure_ascii=False)):
+            out["incidents"].append({"id": i.get("id"), "status": i.get("status"),
+                                     "title": i.get("title"),
+                                     "analysis_doc": i.get("analysis_doc")})
+    for name, o in (brain.get("objects") or {}).items():
+        for a in (o.get("annotations") or []):
+            if hit(json.dumps(a, ensure_ascii=False)):
+                out["annotations"].append({"object": name, "tag": a.get("tag"),
+                                           "finding": (a.get("finding") or "")[:200]})
+                break
+    for dname, d in ((brain.get("domains_layer") or {}).get("domains") or {}).items():
+        if hit(json.dumps(d, ensure_ascii=False)):
+            out["domains"].append(dname)
+
+    inv = _load_code_inventory()
+    if inv:
+        for name, o in inv["objects"].items():
+            if hit(name) or hit(json.dumps(o.get("domains", []), ensure_ascii=False)):
+                out["code"].append({"object": name, "source": o["primary_source"],
+                                    "lines": o["lines"],
+                                    "integrity": o["integrity"]["status"],
+                                    "domains": [d["domain"] for d in o["domains"]]})
+
+    out["_counts"] = {k: len(v) for k, v in out.items() if isinstance(v, list)}
+    for k in ("claims", "rules", "incidents", "annotations", "code"):
+        out[k] = out[k][:12]
+    return out
+
+
+def code_gaps(brain, _=None):
+    """Every object whose source is split, stubbed, or has no domain link."""
+    inv = _load_code_inventory()
+    if inv is None:
+        return {"error": "code_inventory.json missing — run build_code_inventory.py"}
+    broken = [{"object": n, "status": o["integrity"]["status"],
+               "note": o["integrity"]["note"], "source": o["primary_source"]}
+              for n, o in inv["objects"].items()
+              if o["integrity"]["status"] != "OK"]
+    return {"integrity": inv["_integrity"],
+            "broken": sorted(broken, key=lambda x: x["object"]),
+            "undomained_count": inv["_undomained_count"],
+            "undomained_sample": inv["_undomained"][:40]}
+
+
 COMMANDS = {
     "what_reads": lambda b, args: what_reads(b, args[0]),
     "what_depends_on": lambda b, args: what_depends_on(b, args[0]),
@@ -480,6 +595,10 @@ COMMANDS = {
     "coherence": lambda b, args: coherence(b),
     "tree": lambda b, args: tree(b),
     "methods": lambda b, args: methods(b),
+    # s099 — code as a first-class brain layer (source integrity + multi-domain linkage)
+    "code": lambda b, args: code(b, args[0] if args else ""),
+    "code_gaps": lambda b, args: code_gaps(b),
+    "search": lambda b, args: search(b, " ".join(args) if args else ""),
 }
 
 if __name__ == "__main__":

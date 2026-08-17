@@ -222,6 +222,13 @@ def main():
     # knowledge, flows — and what is it missing? Assets catalogued by kind cannot answer that.
     run(["python", "brain_v2/methods/build_domain_assets.py"],
         "Step 0e: Domain asset bundles — what each domain has and lacks", fatal=False)
+    # s099 — code is a first-class brain layer. Runs BEFORE the graph so the source
+    # inventory (physical integrity + multi-domain linkage) is current for everything
+    # downstream. Born from YRGGBS00: the canonical path held a 29-line stub while the
+    # 1,593-line body sat outside the corpus in UTF-16, and a TIER_1 claim was published
+    # saying a production control did not exist because the grep found nothing.
+    run(["python", "brain_v2/build_code_inventory.py"],
+        "Step 0f: Code inventory — source integrity + multi-domain linkage", fatal=False)
     run(["python", "-m", "brain_v2", "build"], "Step 1: Rebuild NetworkX graph")
     run(["python", "brain_v2/build_active_db.py"], "Step 2: Rebuild SQLite active DB")
     run(["python", "brain_v2/verify_claims.py"], "Step 2b: Verify claims vs Gold DB (Layer 3 trust)")
