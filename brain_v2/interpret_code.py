@@ -154,6 +154,75 @@ def build_table_domain():
     return out
 
 
+def build_interface_index():
+    """NESTED CALL — C7 consumes F1 (boundary), F2 (satellites) and the execution census.
+
+    Algorithms here are not pure; they call each other as needed (see algorithms.json
+    `_nesting`, and satellites.json which declares itself 'F2, nested: F1 boundary ->
+    satellite'). C7 was resolving identifiers only against claims and the table registry,
+    so every `CALL FUNCTION` came back unexplained — and function modules were the single
+    largest bucket of unexplained identifiers. A called FM is not an opaque name: the
+    interface layer knows whether it crosses the boundary, the satellite layer knows WHO
+    calls it, and the census knows how often and by which account.
+    """
+    idx = defaultdict(list)
+
+    def add(term, kind, ident, text, domain):
+        t = (term or "").upper().strip()
+        if t and t not in NOISE and len(t) >= 3:
+            idx[t].append({"kind": kind, "id": ident, "text": text[:300],
+                           "domain": domain, "direct": True})
+
+    inv = load("brain_v2/interface_inventory.json") or {}
+    for r in (inv.get("interfaces") or []):
+        art = r.get("artifact")
+        ev = r.get("evidence_it_runs")
+        add(art, "interface", r.get("channel"),
+            f"{r.get('channel')} {r.get('direction')} interface"
+            + (f", ours because {r['ours_because']}" if r.get("ours_because") else "")
+            + (f", running evidence: {ev}" if ev else
+               f", execution UNVERIFIED: {r.get('why_no_evidence', '')[:80]}"),
+            "Integration")
+
+    sat = load("brain_v2/satellites.json") or {}
+    for s in (sat.get("satellites") or []):
+        name = s.get("satellite")
+        for fn in (s.get("top_functions") or [])[:40]:
+            add(fn.get("fm"), "satellite_call", name,
+                f"called by satellite {name} — {fn.get('calls'):,} calls"
+                if isinstance(fn.get("calls"), int) else f"called by satellite {name}",
+                fn.get("domain") or "Integration")
+
+    cen = load("brain_v2/fm_executed_census.json") or {}
+    for bucket, label in (("rfc_bapi_calls", "RFC/BAPI"), ("dialog_tcodes", "dialog"),
+                          ("reports", "report"), ("batch_programs", "batch job")):
+        for name, meta in (cen.get(bucket) or {}).items():
+            if not isinstance(meta, dict):
+                continue
+            users = ", ".join(meta.get("top_users") or [])[:90]
+            add(name, "usage_census", bucket,
+                f"executes as {label}: {meta.get('exec_count')} runs, "
+                f"{meta.get('distinct_users')} distinct callers ({users})",
+                None)
+
+    ch = load("brain_v2/integration_channels.json") or {}
+    for c in (ch.get("channels") or []):
+        if isinstance(c, dict):
+            for a in (c.get("artifacts") or c.get("writers") or []):
+                if isinstance(a, str):
+                    add(a, "write_channel", c.get("channel") or c.get("name"),
+                        f"write channel {c.get('channel') or c.get('name')}", "Integration")
+
+    bnd = load("brain_v2/interface_boundary.json") or {}
+    for l in (bnd.get("live") or []):
+        if isinstance(l, dict):
+            add(l.get("destination") or l.get("rfcdest") or l.get("name"),
+                "live_boundary", "F1",
+                f"LIVE boundary destination — {l.get('calls', '?')} calls", "Integration")
+
+    return idx
+
+
 def build_co_readers(sections):
     """table -> objects that read it. 'who else cares about this table'."""
     co = defaultdict(set)
@@ -165,6 +234,27 @@ def build_co_readers(sections):
 
 
 # ------------------------------------------------------------------ interpretation
+
+# OURS vs SAP STANDARD. A gap list dominated by SAP's own function modules is useless:
+# we will never document HR_READ_INFOTYPE or DD_DOMVALUES_GET, and counting them as
+# "not understood" hides the gaps that ARE ours to close. Ownership is decided by the
+# namespace the object was authored in, the same rule the interface inventory uses
+# ("ours is decided by author, never by prefix" applies to interfaces; for code objects
+# the Y/Z customer namespace IS the authored-by-us signal).
+RE_OURS = re.compile(r"^(Y|Z)[A-Z0-9_]|^/(?!SAP)", re.I)
+
+
+def is_ours(term, known_universe=None):
+    """Ownership is the CUSTOMER NAMESPACE, not 'the brain has seen it'.
+
+    An earlier version also counted anything present in the known universe, which made
+    T001P, T005T, HR_READ_INFOTYPE and ADDR_SELECT_ADRC_SINGLE 'ours' — they exist, but
+    they are SAP's. That put SAP standard back at the top of the very list built to strip
+    it out. UNESCO custom lives in Y*/Z* (the same rule the write-discipline enforces:
+    own Z*/Y* objects only, never peer or standard).
+    """
+    return bool(RE_OURS.match(term.split("-")[0]))
+
 
 def harvest_terms(sec):
     terms = set()
@@ -264,6 +354,9 @@ def build():
 
     print("indexing what the brain already knows...")
     term_index = build_term_index()
+    # NEST F1/F2/census into the same resolution surface — a called FM is not opaque.
+    for t, entries in build_interface_index().items():
+        term_index[t].extend(entries)
     table_domain = build_table_domain()
     co_readers = build_co_readers(sections)
 
@@ -284,7 +377,9 @@ def build():
 
     out_objects = {}
     tot_terms = tot_explained = 0
+    tot_ours = tot_ours_explained = 0
     gap_counter = defaultdict(int)
+    ours_gap_counter = defaultdict(int)
     all_conflicts = []
 
     for obj, o in (sections.get("objects") or {}).items():
@@ -305,6 +400,8 @@ def build():
                 explained = bool(srcs) or t in table_domain
                 if not explained:
                     gap_counter[t] += 1
+                    if is_ours(t, known_universe):
+                        ours_gap_counter[t] += 1
                 if not srcs and t in table_domain:
                     srcs = [{"kind": "gold_table_registry", "id": t,
                              "text": f"table catalogued under domain {table_domain[t]}",
@@ -315,6 +412,10 @@ def build():
             k = sum(1 for m in meanings if m["explained"])
             tot_terms += n
             tot_explained += k
+            ours = [m for m in meanings if is_ours(m["term"], known_universe)]
+            ours_ok = [m for m in ours if m["explained"]]
+            tot_ours += len(ours)
+            tot_ours_explained += len(ours_ok)
             secs_out.append({
                 "routine": s["routine"],
                 "lines": f'{s["start_line"]}-{s["end_line"]}',
@@ -351,8 +452,18 @@ def build():
             "terms_explained": tot_explained,
         },
         "_understanding_pct": round(100.0 * tot_explained / tot_terms, 1) if tot_terms else 0,
+        "_understanding_pct_OURS": round(100.0 * tot_ours_explained / tot_ours, 1) if tot_ours else 0,
+        "_ours_terms": tot_ours,
+        "_ours_explained": tot_ours_explained,
+        "_note_on_the_two_numbers": (
+            "The headline percentage counts SAP standard identifiers we will never document. "
+            "The OURS percentage counts only Y/Z custom objects and tables the brain is "
+            "responsible for — that is the number worth moving."),
         "_conflicts": all_conflicts,
         "_top_gaps": [{"term": t, "seen_in_routines": c} for t, c in gaps[:60]],
+        "_top_gaps_OURS": [{"term": t, "seen_in_routines": c}
+                           for t, c in sorted(ours_gap_counter.items(),
+                                              key=lambda x: -x[1])[:60]],
         "objects": out_objects,
     }
     OUT.write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -361,7 +472,9 @@ def build():
     print(f"  objects interpreted:   {len(out_objects)}")
     print(f"  identifiers seen:      {tot_terms:,}")
     print(f"  explained by brain:    {tot_explained:,}  "
-          f"({result['_understanding_pct']}%)")
+          f"({result['_understanding_pct']}%)  <- includes SAP standard we never document")
+    print(f"  OF OUR OWN CODE:       {tot_ours_explained:,} of {tot_ours:,}  "
+          f"({result['_understanding_pct_OURS']}%)  <- the number worth moving")
     print(f"  conflicts to review:   {len(all_conflicts)}")
     print(f"  top unexplained terms: {[t for t, _ in gaps[:8]]}")
     return result
