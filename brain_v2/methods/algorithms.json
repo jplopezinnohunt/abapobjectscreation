@@ -651,6 +651,39 @@
     "A18_reality_filter": "A18's dormant sweep is the installation-wide version; A19 is the deep read of one master table",
     "A10_address_chain_reconstruction": "borrows the shape signature (digits->D, letters->A) to detect grammar convergence"
    }
+  },
+  "C5_source_identity_and_integrity": {
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "resolve a SAP object name to the file that actually holds its BODY, across every extraction root and any encoding, and flag when the canonical path holds a stub while the real source lives elsewhere. Groups candidate files by RARE name tokens only — a token shared by a dozen objects identifies none of them.",
+   "bound_in": [
+    "brain_v2/build_code_inventory.py"
+   ],
+   "failure_mode": "over-grouping. Grouping on a common token (PAYMEDIUM) merged twelve distinct function modules onto one 535-line neighbour and reported ten 0-byte extractions as healthy — the tool hid the very defect it exists to find. Under-grouping is the mirror risk: a genuinely split object reads as two.",
+   "improve": "alias resolution from TADIR instead of from file names, so YFI_YRGGBS00_EXIT and YRGGBS00_SOURCE resolve to one object rather than two entries pointing at the same body"
+  },
+  "C6_routine_level_behaviour_extraction": {
+   "operates_on": "repository",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "split a source file into ROUTINES with line ranges and derive, per routine, what it reads and writes, the guards under which it declines to act, the messages it can raise, and a ROLE (VALIDATION / SUBSTITUTION / DERIVATION / HELPER) inferred from what it does with its result rather than from its name. Surfaces the subset that CAN STOP A POSTING — the system's real control surface.",
+   "bound_in": [
+    "brain_v2/build_code_sections.py"
+   ],
+   "failure_mode": "silent under-reading. A regex that captures only the first table after FROM misses every JOINed table, so a routine looks like it never touches a table it does read; that false negative then propagates into domain linkage AND into the conflict detector as a fake contradiction. Assignments to FORM parameters are still missed, so UXR1/UXR2 report no fields written when they write XREF1/XREF2.",
+   "improve": "parse assignments to routine PARAMETERS, not just to TABLE-FIELD; and resolve member-table reads (READ TABLE mt_x) back to the SELECT that filled them in the constructor, so a buffered config read is attributed to the routine that uses it"
+  },
+  "C7_brain_informed_code_interpretation": {
+   "operates_on": "repository + model",
+   "origin": "OURS",
+   "state": "WORKS",
+   "does": "read code THROUGH the brain and write back what it learned. Resolves every identifier in a routine against claims, incidents, annotations and the gold table registry — preferring records that DECLARE the object over ones that merely mention it — then states in UNESCO terms what the routine decides and under which conditions. Scores understanding as explained/found identifiers, names each unexplained one as a task, flags claims whose asserted SAP objects are absent from the code, and returns CONTROL_POINT annotations to the brain for every routine that can stop a posting. The loop is bidirectional: the brain explains the code, the code corrects the brain.",
+   "bound_in": [
+    "brain_v2/interpret_code.py"
+   ],
+   "failure_mode": "confident nonsense from a weak match. Resolving on prose mention alone matched a routine's own local variable (LV_BANKS) to a claim that merely quoted the routine, and the conflict detector fired on ordinary English written in capitals until it was anchored to the known object universe. A wrong 'meaning' reads exactly like a right one, so every resolution must carry its source.",
+   "improve": "distinguish an ARCHITECTURAL claim (describes a framework spanning several objects, so no single object touches all its terms) from a CONTRADICTION, which is the only kind worth a human's time"
   }
  },
  "_portfolio": {

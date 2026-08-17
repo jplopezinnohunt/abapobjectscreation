@@ -54,6 +54,11 @@ OPEN_RE = re.compile(
 CLOSE_RE = re.compile(r"^\s*end(form|method|function|module)\s*[\.\s]", re.I)
 
 RE_SELECT = re.compile(r"\bselect\b(?:\s+single)?(?:.*?)\bfrom\s+@?([\w/]+)", re.I | re.S)
+# A JOINed table is read just as much as the one after FROM. Missing them made
+# YCL_IDFI_CGI_DMEE_UTIL look like it never touches YTFI_PPC_STRUC, when line 70 reads
+# `FROM YTFI_PPC_TAG AS A INNER JOIN YTFI_PPC_STRUC AS B` — and that false negative was
+# then reported as a claim/code conflict.
+RE_JOIN = re.compile(r"\bjoin\s+@?([\w/]+)", re.I)
 RE_WRITE_TAB = re.compile(
     r"\b(?:update|insert|modify|delete)\s+(?:from\s+)?([a-z][\w/]{2,})", re.I)
 RE_CALL_FM = re.compile(r"call\s+function\s+'([^']+)'", re.I)
@@ -177,6 +182,8 @@ def parse_file(path: Path, rel: str):
 
         tables = {t.upper() for t in RE_SELECT.findall(body_raw)
                   if t.lower() not in NOT_A_TABLE and len(t) > 2}
+        tables |= {t.upper() for t in RE_JOIN.findall(body_raw)
+                   if t.lower() not in NOT_A_TABLE and len(t) > 2}
         writes = {t.upper() for t in RE_WRITE_TAB.findall(body_raw)
                   if t.lower() not in NOT_A_TABLE and len(t) > 2}
         fms = sorted({f.upper() for f in RE_CALL_FM.findall(body_raw)})

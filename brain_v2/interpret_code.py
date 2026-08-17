@@ -216,8 +216,14 @@ def narrate(sec, meanings, table_domain):
     return ". ".join(bits)
 
 
-def detect_conflicts(obj, sections_of_obj, term_index):
-    """A claim naming this object whose asserted terms are absent from its code."""
+def detect_conflicts(obj, sections_of_obj, term_index, known_universe):
+    """A claim naming this object whose asserted TECHNICAL terms are absent from its code.
+
+    A term only counts as asserted if it exists in the brain's own universe of objects and
+    tables. Without that anchor the detector fired on ordinary English written in caps for
+    emphasis — 'EACH', 'EMPTY', 'DOCUMENTED', 'CANONICAL', 'BETWEEN' — and buried the real
+    signal under prose. A claim is not contradicted by its own adjectives.
+    """
     code_terms = set()
     for s in sections_of_obj:
         code_terms |= harvest_terms(s)
@@ -232,18 +238,19 @@ def detect_conflicts(obj, sections_of_obj, term_index):
                 continue
             seen.add((e["kind"], e["id"]))
             asserted = {m.group(1) for m in RE_TERM.finditer(txt)
-                        if m.group(1) not in NOISE and len(m.group(1)) >= 4}
+                        if m.group(1) in known_universe and len(m.group(1)) >= 4}
             asserted -= {obj.upper()}
-            missing = sorted(a for a in asserted
-                             if a not in code_terms and ("_" in a or a.isalpha()))[:6]
-            if missing and len(missing) >= 3:
+            # a table/object the claim names but the code never touches
+            missing = sorted(a for a in asserted if a not in code_terms)[:6]
+            if len(missing) >= 2:
                 conflicts.append({
                     "claim": e["id"], "domain": e["domain"],
-                    "claim_text": e["text"][:200],
+                    "claim_text": e["text"][:220],
                     "terms_asserted_but_absent_from_code": missing,
-                    "note": "REVIEW — the claim names this object and asserts terms that do "
-                            "not appear in its source. Either the claim is about a different "
-                            "object, or the source we hold is incomplete, or the claim is wrong.",
+                    "note": "REVIEW — the claim names this object and asserts SAP objects or "
+                            "tables that do not appear in its source. Either the claim is about "
+                            "a different object, the source we hold is incomplete, or the claim "
+                            "is wrong.",
                 })
     return conflicts[:5]
 
@@ -259,7 +266,21 @@ def build():
     term_index = build_term_index()
     table_domain = build_table_domain()
     co_readers = build_co_readers(sections)
-    print(f"  {len(term_index)} terms the brain can explain")
+
+    # The universe of things that ARE SAP objects/tables, used to keep the conflict
+    # detector from firing on English prose written in capitals.
+    known_universe = set(table_domain)
+    known_universe |= {k.upper() for k in (inventory.get("objects") or {})}
+    known_universe |= {k.upper() for k in (sections.get("objects") or {})}
+    bs = load("brain_v2/brain_state.json") or {}
+    known_universe |= {k.upper() for k in (bs.get("objects") or {})}
+    for o in (sections.get("objects") or {}).values():
+        for sec in o.get("sections", []):
+            known_universe |= {t.upper() for t in sec.get("reads_tables", [])}
+            known_universe |= {t.upper() for t in sec.get("calls_fms", [])}
+    known_universe -= NOISE
+    print(f"  {len(term_index)} terms the brain can explain · "
+          f"{len(known_universe)} real SAP objects/tables known")
 
     out_objects = {}
     tot_terms = tot_explained = 0
@@ -305,7 +326,7 @@ def build():
                 "unexplained": [m["term"] for m in meanings if not m["explained"]][:12],
             })
 
-        conflicts = detect_conflicts(obj, o.get("sections", []), term_index)
+        conflicts = detect_conflicts(obj, o.get("sections", []), term_index, known_universe)
         all_conflicts.extend({"object": obj, **c} for c in conflicts)
         scored = [s["understood_pct"] for s in secs_out if s["understood_pct"] is not None]
         out_objects[obj] = {

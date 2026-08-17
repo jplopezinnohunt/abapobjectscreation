@@ -317,6 +317,72 @@ def main():
                  f"{', '.join(sorted(readers)[:5])}. A stale copy does not fail; it answers "
                  f"confidently and wrong")
 
+    # ---- C5 / C6 / C7 — the s099 code layers -----------------------------
+    inv = load("brain_v2/code_inventory.json")
+    if inv:
+        objs = inv.get("objects") or {}
+        integ = inv.get("_integrity") or {}
+        # SHAPE: consumers read primary_source, integrity and domains off every object.
+        sample = objs.get("YFI_YRGGBS00_EXIT") or {}
+        case("C5", "inventory exposes the fields consumers read",
+             all(k in sample for k in ("primary_source", "integrity", "domains", "files")),
+             f"YFI_YRGGBS00_EXIT missing fields: {sorted(set(('primary_source','integrity','domains','files')) - set(sample))}")
+        # FLOOR well under the measured 1,448 — asks "did the scan break?", not "did code move".
+        case("C5", "objects floor", len(objs) >= 1100,
+             f"only {len(objs)} objects inventoried; the scan or a root is broken")
+        # INVARIANT: an EMPTY extraction must never be silently tolerated. Ten 0-byte files
+        # hid for months because the first version grouped them onto a large neighbour.
+        case("C5", "no zero-byte extraction goes unflagged", integ.get("EMPTY", 0) == 0,
+             f"{integ.get('EMPTY')} object(s) have a 0-byte source — re-extract them")
+        # INVARIANT: the case this layer was built for must keep detecting itself.
+        y = objs.get("YFI_YRGGBS00_EXIT") or {}
+        case("C5", "YRGGBS00 still resolves to its real 1,593-line body",
+             y.get("lines", 0) > 1000,
+             f"resolved to {y.get('lines')} lines — back to the 29-line stub")
+
+    secs = load("brain_v2/code_sections.json")
+    if secs:
+        sobjs = secs.get("objects") or {}
+        allsec = [x for o in sobjs.values() for x in o.get("sections", [])]
+        case("C6", "sections floor", len(allsec) >= 1800,
+             f"only {len(allsec)} routines parsed; routine detection regressed")
+        # INVARIANT: the control surface must never read as empty. If nothing can block a
+        # posting, the parser broke — it does not mean the system has no controls.
+        blocking = [x for x in allsec if x.get("can_block_posting")]
+        case("C6", "the control surface is non-empty", len(blocking) >= 50,
+             f"only {len(blocking)} blocking routines; VALIDATION detection regressed")
+        # INVARIANT: U917 is the worked example — line range, role and verdict must hold.
+        u917 = next((x for x in allsec if x.get("routine") == "U917"), None)
+        case("C6", "U917 parses as a blocking VALIDATION",
+             bool(u917) and u917.get("role") == "VALIDATION" and u917.get("can_block_posting"),
+             f"U917 came back as {u917 and u917.get('role')} / "
+             f"blocking={u917 and u917.get('can_block_posting')}")
+        # INVARIANT (the JOIN defect): a JOINed table must be counted as read.
+        util = sobjs.get("YCL_IDFI_CGI_DMEE_UTIL") or {}
+        joined = any("YTFI_PPC_STRUC" in x.get("reads_tables", [])
+                     for x in util.get("sections", []))
+        case("C6", "JOINed tables are harvested", joined,
+             "YCL_IDFI_CGI_DMEE_UTIL reads YTFI_PPC_STRUC via INNER JOIN; missing it means "
+             "the SELECT regex stopped following JOINs and every join-read is invisible again")
+
+    interp = load("brain_v2/code_interpretation.json")
+    if interp:
+        pct = interp.get("_understanding_pct", 0)
+        # FLOOR under the measured 17.5%: catches the brain index failing to load, which
+        # would silently drop understanding to near zero while still producing output.
+        case("C7", "understanding floor", pct >= 8,
+             f"understanding fell to {pct}% — the brain term index is probably not loading")
+        iobjs = interp.get("objects") or {}
+        u = (iobjs.get("YFI_YRGGBS00_EXIT") or {}).get("sections") or []
+        s917 = next((x for x in u if x["routine"] == "U917"), None)
+        # INVARIANT: the interpretation must stay ANCHORED — every meaning carries a source.
+        case("C7", "every resolved meaning cites its source",
+             bool(s917) and all(m.get("sources") for m in (s917.get("meanings") or [])),
+             "a meaning came back with no source record; an unanchored interpretation is a guess")
+        case("C7", "U917 is interpreted as able to stop a posting",
+             bool(s917) and s917.get("can_block_posting"),
+             "the worked example lost its verdict")
+
     # ---- report ----------------------------------------------------------
     print(f"[artifact golden cases] {checked} cases over what the algorithms PRODUCE")
     if failures:
