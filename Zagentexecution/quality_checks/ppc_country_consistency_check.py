@@ -31,7 +31,10 @@ alone -- it has NO country field. The 'EG'/'JO' prefix is a naming convention, n
 enforces, and u917 only checks the field is non-empty. So a user CAN pick JO6 on an Egyptian
 payment and every layer will accept it.
 
-Read-only. Exits 1 if any HIGH finding is present, so it can gate a close.
+Read-only. Exit 0 = every check ran and passed clean. Exit 1 = a HIGH finding is present.
+Exit 3 = no findings on the checks that ran, but at least one check (currently: D, when
+REGUP is absent from the Gold DB) could not run at all -- report SKIPPED, never fold a
+skipped check into PASS (rule feedback_a_skipped_check_must_never_report_pass, session #099).
 """
 import io
 import sqlite3
@@ -90,6 +93,7 @@ def main():
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
     struct, codes, tags = load(con)
     used = usage(con)
+    skipped = []  # checks that could not run at all — never fold into PASS (rule #202)
 
     findings = []
     switched = sorted(c for c, s in struct.items() if s & SWITCH_CODES)
@@ -117,7 +121,9 @@ def main():
                                                "controls nothing (SILENT)"))
 
     if used is None:
-        print("NOTE: REGUP is not in the Gold DB - check D (degenerate usage) skipped.\n")
+        skipped.append("D (degenerate usage) - REGUP is not in the Gold DB")
+        print("NOTE: REGUP is not in the Gold DB - check D (degenerate usage) SKIPPED, "
+              "not passed. This is not evidence of clean usage.\n")
     else:
         for c in switched:
             cc = used.get(c)
@@ -135,6 +141,13 @@ def main():
                                                 f"prefix: {sorted(unknown)[:6]}"))
 
     if not findings:
+        if skipped:
+            print("PASS on checks A/B/C (code list + switch + XML tag). NOT a full pass: "
+                  f"{len(skipped)} check(s) SKIPPED, not verified clean:")
+            for s in skipped:
+                print(f"  [SKIPPED] {s}")
+            print("\nA skipped check is not evidence the condition it looks for is absent.")
+            return 3  # ran clean on what executed, but coverage is incomplete — never conflate with 0
         print("PASS - every configured country has code list + switch + XML tag, and no "
               "degenerate usage.")
         return 0
@@ -143,6 +156,10 @@ def main():
     print(f"{len(findings)} finding(s):\n")
     for sev, c, chk, msg in sorted(findings, key=lambda f: (order[f[0]], f[1])):
         print(f"  [{sev:6}] {c} check {chk}: {msg}")
+    if skipped:
+        print(f"\n{len(skipped)} check(s) SKIPPED, not verified clean:")
+        for s in skipped:
+            print(f"  [SKIPPED] {s}")
 
     high = sum(1 for f in findings if f[0] == "HIGH")
     print(f"\n{high} HIGH")

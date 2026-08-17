@@ -4241,5 +4241,29 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_a_skipped_check_must_never_report_pass",
+  "severity": "HIGH",
+  "created_session": 99,
+  "rule": "When one sub-check inside a multi-check script cannot run (a precondition is missing — a table absent from the Gold DB, a source unreachable, an input undefined), the script must report that sub-check as SKIPPED, with a distinct signal (message + a different exit code from clean-pass), and must NEVER fold its absence into an overall PASS message that names the untested condition as satisfied.",
+  "why": "s099. Zagentexecution/quality_checks/ppc_country_consistency_check.py's check D (degenerate usage) needs REGUP, which is not in the Gold DB. The first version printed a NOTE that check D was skipped, then — because no other check produced a finding — printed 'PASS ... and no degenerate usage' and exited 0. That sentence asserts the one thing that was never measured. This is adjacent to rule #180 (a silent replace is a silent defect) but the mechanism is different: #180 is a WRITE that silently no-ops while the script still reports success; this is a READ that silently cannot execute while the script's SUMMARY still claims full coverage. Both are 'green paint over an unknown', but the fix lives in different code (a text-replace guard vs a coverage-aware exit path), so this is its own rule, not a duplicate.",
+  "how_to_apply": "Any script with more than one independent sub-check must track which sub-checks actually executed. If any did not, the closing message must name it explicitly as SKIPPED (never silently merged into the aggregate verdict) and the script should return a THIRD exit code (not 0=clean, not 1=finding) so a caller cannot mistake 'ran clean' for 'ran completely'. See the fix applied the same session: Zagentexecution/quality_checks/ppc_country_consistency_check.py now returns 3 when any check is skipped, with the skipped list printed even inside an otherwise-PASS run.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 demands that a claim (here, a script's PASS verdict) be anchored in checkable evidence. A PASS that includes an untested dimension is precision theater: it reads as measured and is actually approximated by omission.",
+  "evidence": "Zagentexecution/quality_checks/ppc_country_consistency_check.py (fixed s099, exit 3 path added); prior text: 'PASS - every configured country has ... and no degenerate usage' printed while check D was skipped for lack of REGUP in the Gold DB",
+  "source_file": "Zagentexecution/quality_checks/ppc_country_consistency_check.py",
+  "domain_axes": {
+   "functional": [
+    "Brain_Architecture",
+    "Payment"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]

@@ -1953,11 +1953,12 @@
       "population_bound_by_citi": "387 REGUH lines settling at an Egyptian bank (UBNKS='EG'), 100% company code UNES / house bank CIT19 / method 3",
       "wider_population": "17,778 lines to Egypt-domiciled payees: UNES 16,058 · ICTP 1,242 · UIL 348 · IIEP 117 · UIS 9 · UBO 4",
       "vendors": "2,762 vendors with LAND1='EG' in LFA1",
-      "deadline": "2026-09-05"
+      "deadline": "2026-09-05",
+      "corrected_scope_claim_489": "The original scope (below) read REGUH-UBNKS as the beneficiary's bank country. It is OUR house bank's country (proof: each HBKID maps to exactly one UBNKS across the whole table). Citi binds payments 'destined for OR originating within' Egypt -- two populations, not one: (1) ORIGINATING IN EGYPT (HBKID='CIT19') = 392 lines, u917 would block only 65 (17%) -- 254 go to payees with no LFBK row, these are the pre-numbered cheques; (2) DESTINED FOR EGYPT (LFBK-BANKS='EG', method N) = 9,095 lines, u917 would block 8,103 (89%) ~= USD 41.5M, and these DO produce a payment file. The population is roughly 10x larger than first reported and the control is well-designed for the destined-for half, weak on the originating-in half."
     },
     "fix_path": {
-      "immediate": "Three maintained tables, no ABAP: (1) YTFI_PPC_STRUC rows for LAND1='EG', TAG_ID='USTRD', DEB_CRE='C' — pay type O carries PPC_VAR + PPC_DESCR + PAY_FIELD FPAYP-XBLNR (PPC_DESCR is the load-bearing block because Citi asks for a narrative, not a code); pay types P and R carry FIXED_VAL. (2) T015L EG* entries, ZWCK1 = '<code> <narrative>'. (3) YTFI_PPC_TAG one row EG/USTRD/C -> RmtInf/Ustrd.",
-      "structural": "Decide whether ICTP/IIEP/UBO/UIL/UIS get an equivalent step in their own validation — KU-2026-099-INSTITUTE-COVERAGE.",
+      "immediate": "Three maintained tables, no ABAP: (1) YTFI_PPC_STRUC rows for LAND1='EG', TAG_ID='USTRD', DEB_CRE='C' — pay type O carries PPC_VAR + PPC_DESCR + PAY_FIELD FPAYP-XBLNR (PPC_DESCR is the load-bearing block because Citi asks for a narrative, not a code); pay types P and R carry FIXED_VAL. (2) T015L EG* entries, ZWCK1 = '<code> <narrative>'. (3) YTFI_PPC_TAG one row EG/USTRD/C -> RmtInf/Ustrd. T015L codes: 10 verified against the published ISO 20022 External Purpose Codes list and cross-checked against LHV's ExternalPurpose1Code reference (claim 495) -- SUPP, SCVE, SALA, BEXP, CHAR, RENT, GDDS, STDY, GOVT, OTHR. An earlier draft of 4 of the 10 (TRVL, RDEV, ITSV, TRAI) did not exist in ISO 20022 and must never be used.",
+      "structural": "Decide whether ICTP/IIEP/UBO/UIL/UIS get an equivalent step in their own validation — KU-2026-099-PPC-INSTITUTE-COVERAGE.",
       "preventive": [
         "Configuring Egypt buys the CAPTURE only: this payment path emits no SAP file, so the actual instruction is issued outside SAP and someone must populate the Purpose of Payment there — KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
         "Confirm with CitiService Egypt whether a code prefix is wanted or narrative only",
@@ -1997,11 +1998,18 @@
       "485",
       "486",
       "488",
-      "267"
+      "267",
+      "489",
+      "490",
+      "492",
+      "493",
+      "494",
+      "495",
+      "496"
     ],
     "related_known_unknowns": [
       "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
-      "KU-2026-099-INSTITUTE-COVERAGE"
+      "KU-2026-099-PPC-INSTITUTE-COVERAGE"
     ],
     "lessons": [
       "The bank's own notice decided the structure: naming SWIFT Field 70 fixes the tag family to RmtInf/Ustrd and removes the only structural choice there was.",
