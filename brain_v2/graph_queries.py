@@ -11,8 +11,15 @@ Usage (from agent mid-session):
   python brain_v2/graph_queries.py domain_summary Travel
   python brain_v2/graph_queries.py object_detail LHRTSF01
 """
-import json, sys, time
+import io, json, sys, time
 from pathlib import Path
+
+# Windows consoles default to cp1252: any brain text containing an arrow, an em-dash or an
+# accent crashes the drill command with UnicodeEncodeError instead of answering. Since s099
+# the incident trace surfaces root_cause_summary verbatim, so this is on the main path.
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 BRAIN_STATE = Path(__file__).parent / "brain_state.json"
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -90,9 +97,35 @@ def what_depends_on(brain, object_name):
 
 
 def incident_trace(brain, incident_id):
-    """Trace an incident: root cause objects, annotations, claims, affected tables."""
-    objects_in_incident = brain["indexes"]["by_incident"].get(incident_id, [])
-    trace = {"incident": incident_id, "objects": []}
+    """Trace an incident: header, root cause objects, annotations, claims, affected tables.
+
+    `indexes.by_incident[id]` is a DICT (status/title/domain/analysis_doc/root_cause_summary/
+    fix_immediate/related_objects), not a list of object names. Iterating it directly yields
+    the FIELD NAMES — which is what this function did until s099, so the one drill command the
+    incident protocol tells you to run in step 2 returned {'name': 'status'}, {'name': 'title'}…
+    A list form is still accepted for older brain states.
+    """
+    entry = brain["indexes"]["by_incident"].get(incident_id)
+    if entry is None:
+        known = sorted(brain["indexes"]["by_incident"].keys())
+        return {"incident": incident_id, "error": "not found in indexes.by_incident", "known": known}
+
+    if isinstance(entry, dict):
+        objects_in_incident = entry.get("related_objects", [])
+        trace = {
+            "incident": incident_id,
+            "status": entry.get("status"),
+            "title": entry.get("title"),
+            "domain": entry.get("domain"),
+            "analysis_doc": entry.get("analysis_doc"),
+            "root_cause_summary": entry.get("root_cause_summary"),
+            "fix_immediate": entry.get("fix_immediate"),
+            "objects": [],
+        }
+    else:  # legacy: plain list of object names
+        objects_in_incident = entry
+        trace = {"incident": incident_id, "objects": []}
+
     for name in objects_in_incident:
         obj = brain["objects"].get(name, {})
         entry = {"name": name, "type": obj.get("type", "")}
@@ -165,7 +198,7 @@ def domain(brain, dom_name):
     result = {
         "domain": dom_name,
         "axis": d.get("axis"),
-        "description": d.get("description", "")[:200],
+        "description": d.get("description", ""),
         "knowledge_doc_path": d.get("knowledge_doc_path"),
         "knowledge_docs": d.get("knowledge_docs", []),
         "companions": d.get("companions", []),
@@ -187,6 +220,15 @@ def domain(brain, dom_name):
         "primary_modules": d.get("primary_modules", []),
         "primary_processes": d.get("primary_processes", []),
     }
+    # Pass through anything the registry carries that this projection does not name.
+    # The whitelist above was silently DROPPING every field a later session added
+    # (s099: Support's `tracks`, `recurring_checks`, `procedures` vanished between
+    # domains.json and the drill output). A projection that discards what it does not
+    # recognise is the same failure mode as a doc with no first-class record: the
+    # knowledge exists and cannot be reached.
+    for k, v in d.items():
+        if k not in result and k not in ("objects", "subtopics"):
+            result[k] = v
     return result
 
 

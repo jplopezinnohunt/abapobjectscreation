@@ -9,6 +9,8 @@ trigger:
   - User pastes/attaches an email with INC- number
   - User says "incident", "ticket", "PRRW failure", "F110 error", "RW609", "ZFI020", etc.
   - User says "I'm passing the next incident"
+  - User forwards an operational change request ("can you add X to the panel", "grant role",
+    "remove signatory", "extend validity") — this is TRACK B, see Step 0 triage
 mandatory_inputs:
   - Email body (text or .eml file)
   - Any embedded screenshots (the agent must inspect images)
@@ -34,6 +36,33 @@ faster. INC-000006073 was the proof-of-concept (Travel BusA, Sessions #047-49):
 2 sessions of work, 34 ABAP files extracted, 5 config tables added to Gold DB,
 1 new domain created (Travel). The pattern below distils that experience into
 a reusable workflow.
+
+## STEP 0 — INTAKE TRIAGE: which track is this? (added Session #099)
+
+**Not every support item is a diagnosis.** Two archetypes come through the same inbox and they
+need different work. Deciding this FIRST is the cheapest step in the whole skill; getting it
+wrong is the most expensive.
+
+| | **Track A — DIAGNOSIS** | **Track B — OPERATIONAL ACTION** |
+|---|---|---|
+| The unknown is | *why* the system behaved this way | *nothing* — what to do is known; doing it correctly is the work |
+| Question asked | "why did X fail?" | "can you add/change/grant X?" |
+| Output | root cause + fix options | an executed, verified change + the reusable procedure |
+| Risk | wrong mechanism (see INC-000005240) | executing the requester's summary instead of the authority; missing the drift around the change |
+| Protocol | Steps 1–10 below | Steps B1–B9 below |
+| Worked examples | INC-000006073 · INC-000005240 · INC-000005638 | INC-000006313 · INC-000011781 |
+
+**How to tell in one read:** if the email names a person/entity and an action verb
+("add", "remove", "grant", "extend", "change to"), and the sender has the authority to ask
+for it, it is Track B. If it names a symptom ("fails", "blocked", "wrong value", an error
+number), it is Track A.
+
+**Mixed items exist and default to A.** "Renata can't sign" looks like a symptom but was Track B
+(she was never added). Resolve the ambiguity by asking: *is there an authorizing document?*
+If yes → B. If the answer is "it should just work" → A.
+
+**Both tracks share:** Step 2 BRAIN LOOKUP (always), the provisional-until-confirmed discipline,
+the user confirmation gate, and rebuild-only-at-the-end.
 
 ## CRITICAL — Execution Mode (updated Session #051, INC-000005240)
 
@@ -308,7 +337,151 @@ If mid-investigation you discovered you were chasing the wrong mechanism
    (same keyword different mechanism, same field different exit, etc.)
 5. Never leave a rejected hypothesis in the brain as a fact
 
-## Canonical Document Structure
+## TRACK B — The Operational Action Protocol (B1–B9, added Session #099)
+
+Derived from the two worked cases, not invented: **INC-000006313** (add VOFFAL to the UIS panel)
+and **INC-000011781** (add Ritter to the UBO panel). The second execution was faster *and* caught
+an over-authorization the first never looked for — that delta is what this track exists to make
+repeatable.
+
+The AI agent **never writes P01**. On Track B the agent's product is a *change spec* plus the
+*verification either side of it*; an authorized human (DBS/Basis/Security) executes.
+
+### B1 — AUTHORITY OF RECORD (the gate)
+
+Identify the document that authorizes the change, and read *that*:
+
+| Authority | Not the authority |
+|---|---|
+| TRS letter (`FIN.8/MOD/...`), bank carton, signed approval, an approved ticket with the change attached | The requester's email summary, a forwarded "can you please add X", a screenshot |
+
+**No authority = no change spec.** Stop and ask.
+
+**Why this is a gate, not a courtesy:** on INC-000011781 the requester's note said *"add Renata"*.
+The authoritative letters said add Renata **and delete Von Michael MARTIN**. Executing the note
+would have left an unauthorized signatory active on two bank accounts.
+
+Record: authority reference, date, effective date, and the full list of operations it mandates —
+**including the ones the requester didn't mention**.
+
+### B2 — BRAIN LOOKUP: is there a precedent or a procedure?
+
+Same traversal as Step 2. Additionally look for:
+- a prior incident with `incident_type: operational_change` in the same `scenario`
+- a **procedure** doc (e.g. `knowledge/domains/Treasury/bcm_signatory_change_solution_design.md`)
+- the **rules** doc that explains target selection (e.g. `bcm_signatory_rules.md`)
+- existing **checks** in `Zagentexecution/quality_checks/`
+
+If a procedure exists, **follow it — do not re-derive it.** If one does not, you are on the first
+occurrence; B9 will tell you what to promote.
+
+### B3 — TARGET SELECTION MECHANISM (know *why* these objects)
+
+Write down the rule that selects what you touch, and cite where it lives. Never select by
+imitation of the last ticket.
+
+> Worked example (BCM): UBO nodes are chosen by `ZBUKR=UBO` **plus** the `MAXPAYAMT_RULECURR`
+> amount band carried on **infotype 1218** (`HRP1218`/`HRT1218` expressions on
+> `BNK_STR_BATCH_REL_APPR`) — bank-agnostic; `HRP1222` is empty at UNESCO. An "unlimited"
+> signatory on the carton therefore lands on **all 4** UBO nodes, not on a node someone copied
+> from a previous request.
+
+If you cannot state the selection rule, you do not yet know which objects to change. Go find it —
+that finding is itself the durable product of the ticket.
+
+### B4 — PRE-CHANGE VERIFICATION (read-only, live)
+
+For every entity in the spec, verify *before* proposing the change:
+
+| Check | Why (each one has burned us) |
+|---|---|
+| Identity resolves (PERNR → name/DOB → matches the authority doc) | wrong person with a similar name |
+| Employment/record active (`PA0000 STAT2`) | ghost PERNR (see `dq_ghost_pernr_bcm_oesttveit`) |
+| User exists, unlocked, and **validity end date** (`USR02 UFLAG/GLTGB`) | a user that expires in 3 months signs for 3 months |
+| **Current state read ALL-PERIODS** | the GUI "Other period" view hides active rows — INC-000011781 nearly recorded Martin as already inactive |
+| The **authorization** that makes the change effective (role, e.g. `BNK_APP`) | a node row without the role is a signatory who cannot sign |
+
+Treat the change and its authorization as **one atomic unit**. A change that leaves the person
+unable to act is not done.
+
+### B5 — CHANGE SPEC (what the executor receives)
+
+A table of operations, unambiguous, one row per operation:
+
+```
+| Op      | Entity          | Rule/Attribute | Target node/object | BEGDA      | ENDDA     |
+| ADD     | 10021811 Ritter | 90000005       | 50034892           | 2026-06-19 | 99991231  |
+| DELIMIT | 10108464 Martin | 90000005       | 50034893           | —          | 2026-06-19|
+```
+
+Plus the transaction to use (`OOCU_RESP`), the system (P01), and any **separate ticket** the change
+depends on (e.g. the Security ticket for the role).
+
+**Dates:** use the authority document's effective date as `BEGDA`, not the execution date.
+INC-000006313 used the execution date and opened a 7-day audit gap for no reason.
+
+### B6 — EXECUTION (by the authorized human)
+
+The agent does not execute in P01. Record who executed, when, and via which transaction.
+
+### B7 — POST-CHANGE READBACK (live, per operation)
+
+Read back **every row you specified**, from the system, after execution. Not "the executor
+confirmed" — the table row. One line of evidence per operation in B5. An operation without a
+readback line is not verified.
+
+### B8 — DRIFT SWEEP (the step that pays for the whole track)
+
+Reconcile the **entire population** against the authority — not just the row you changed.
+
+This is where INC-000011781 earned its keep: the carton had 8 signatories; the system had someone
+extra. **De Sousa Carvalho `10016038`** had been active on all 4 nodes with full signing rights
+*and* `BCM_REV_REJ_PAY` since Jan-2024, absent from the carton — ~18 months of over-authorization
+that no standing control was looking for. Nobody asked us to check. The ticket was the occasion.
+
+If the sweep finds anything, it becomes a **recurring check** under
+`Zagentexecution/quality_checks/` (the BCM family: `bcm_signatory_reconciliation_check.py`,
+`bcm_role_gap_check.py`, `bcm_release_vs_approve.py`). This is Track B's equivalent of Step 6
+class generalization: *one ticket, one standing control*.
+
+### B9 — CLOSE GATE + PROMOTION
+
+**Closure rules:**
+- Open items **block closure**. INC-000011781 is `EXECUTED_PARTIAL_OPEN_ITEMS`, not closed: the
+  role grant and one missing signatory are still open. Do not mark an action done because the
+  part you executed worked.
+- Status vocabulary for Track B: `SPEC_READY` → `EXECUTED_PARTIAL_OPEN_ITEMS` → `CLOSED_WITH_CLEANUP` / `CLOSED`.
+
+**Promotion — this is how the ecosystem learns to execute simply:**
+
+| Occurrence | What you must leave behind |
+|---|---|
+| **1st** | incident doc + first-class record + the *rules* doc that explains target selection |
+| **2nd** | a **procedure** doc (the solution design) + a **recurring check** + a companion, so the 3rd is mechanical |
+| **3rd+** | execute from the procedure; if you had to re-derive anything, the procedure was incomplete — fix it in the same session |
+
+If you are on occurrence ≥2 and there is no procedure doc, **writing it is part of the ticket**,
+not a nice-to-have. That is the difference between an ecosystem that accumulates and one that
+repeats itself.
+
+### Track B document structure
+
+Same file location (`knowledge/incidents/INC-<id>_<slug>.md`) but the 13-section diagnosis
+outline does not apply. Use:
+
+0. **Execution status** — what is done, what is open, live-verified (put it FIRST; it is what a
+   reader needs)
+1. **Request** — the email chain, verbatim
+2. **Authority** — letters/cartons, with reference numbers and effective dates
+3. **Target selection** — the mechanism, cited
+4. **Pre-change verification** — live reads, per entity
+5. **Change spec** — the operation table handed to the executor
+6. **Post-change readback** — live evidence, per operation
+7. **Drift findings** — what the sweep found beyond the ask
+8. **Open items** — each with its owner and blocking status
+9. **Related artifacts** — procedure doc, rules doc, checks, companion
+
+## Canonical Document Structure — TRACK A (diagnosis)
 
 `knowledge/incidents/INC-<id>_<slug>.md` MUST follow the **13-section
 structure** proven on INC-000006073 (updated from the legacy 7-section
@@ -358,6 +531,21 @@ Reference: [knowledge/incidents/INC-000006073_travel_busarea.md](../../knowledge
 
 ## Validation Checklist (run before closing the incident)
 
+**Both tracks — non-negotiable:**
+- [ ] A **first-class record exists in `brain_v2/incidents/incidents.json`**, not just a doc on
+      disk. A doc without a record is invisible to Step 2 BRAIN LOOKUP — the next agent will
+      re-derive from zero. Verify with
+      `python Zagentexecution/quality_checks/incident_record_coverage_check.py` (exit 0 = clean).
+- [ ] `analysis_doc` in the record points at the real path
+
+**Track B additionally:**
+- [ ] The authority document is cited by reference number and effective date
+- [ ] Every operation in the B5 spec has a matching B7 live readback line
+- [ ] The drift sweep ran against the full population, not just the changed row
+- [ ] Open items are listed with owners, and the status reflects them (not `CLOSED`)
+- [ ] If this is occurrence ≥2 of the scenario: a procedure doc + a recurring check exist
+
+**Track A:**
 - [ ] `knowledge/incidents/INC-<id>_<slug>.md` follows 7-section structure
 - [ ] Every behavioral claim cites a file:line
 - [ ] Class generalization SQL runs against Gold DB and the count is in the doc

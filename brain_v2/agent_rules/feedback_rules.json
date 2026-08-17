@@ -4068,5 +4068,129 @@
     "GOVERNANCE"
    ]
   }
+ },
+ {
+  "id": "feedback_support_intake_triage_before_anything",
+  "severity": "CRITICAL",
+  "created_session": 99,
+  "rule": "Triage every support item into one of TWO tracks BEFORE any lookup or analysis. TRACK A = DIAGNOSIS: the unknown is why the system behaved this way; the output is a root cause. TRACK B = OPERATIONAL ACTION: what to do is already known and executing it correctly is the work; the output is an executed, verified change plus the reusable procedure. Tell them apart in one read: an action verb aimed at a named person/entity from someone with the authority to ask for it is B; a symptom, an error number, a 'this fails' is A. Ambiguous items default to A unless there is an authorizing document, in which case they are B.",
+  "why": "s099. The skill had one protocol shaped entirely around diagnosis, so the operational changes (INC-000006313, INC-000011781) were pushed through a root-cause workflow that asks the wrong questions. Track B's risks are not Track A's: A fails by chasing the wrong mechanism (INC-000005240 burned 154K tokens on FMDERIVE), B fails by executing the requester's summary instead of the authority and by never looking at the population around the change. One protocol for both means one set of blind spots applied to work that does not share them.",
+  "how_to_apply": "Step 0 of .agents/skills/sap_incident_analyst/SKILL.md. State the track explicitly in your first response on the ticket, and say why. If you find yourself writing 'how it should work' for a request that is just 'add this person', you triaged wrong. Both tracks still share: BRAIN LOOKUP, provisional-until-confirmed, the user gate, and rebuild-only-at-the-end.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 demands precision anchored in evidence. Naming the kind of work before doing it is the first precision available; skipping it makes every later step approximate.",
+  "evidence": ".agents/skills/sap_incident_analyst/SKILL.md Step 0; INC-000006313 + INC-000011781 vs INC-000005240",
+  "source_file": ".agents/skills/sap_incident_analyst/SKILL.md",
+  "domain_axes": {
+   "functional": [
+    "Support"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_authority_of_record_not_the_requester_note",
+  "severity": "CRITICAL",
+  "created_session": 99,
+  "rule": "On any operational change, the authorizing DOCUMENT is the specification — never the requester's summary. Read the TRS letter, the bank carton, the signed approval, and execute the full set of operations it mandates, including the ones nobody mentioned. No authority document = no change spec; stop and ask.",
+  "why": "INC-000011781. The request said 'can you please add Renata RITTER for UBO in BCM'. The two authoritative TRS letters (FIN.8/MOD/10.0000003618 and ...3617, both 24/03/2026) said ADD Ritter AND DELETE Von Michael MARTIN. Executing the note would have added the new signatory and left an unauthorized one active on two bank accounts. A requester's note is a pointer to the change, not the change.",
+  "how_to_apply": "Track B step B1. Record the authority reference, its date, its effective date, and the complete operation list. Use the authority's effective date as BEGDA, not the execution date — INC-000006313 used the execution date and opened a 7-day audit gap for nothing.",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "CP-003 requires verifiable evidence behind every action. A forwarded sentence is not evidence of what was authorized; the signed letter is.",
+  "evidence": "knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md §1-§4; INC-000006313 BEGDA gap",
+  "source_file": "knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md",
+  "domain_axes": {
+   "functional": [
+    "Support",
+    "Treasury",
+    "Security"
+   ],
+   "module": [
+    "FI",
+    "PD"
+   ],
+   "process": [
+    "T2R",
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_the_ticket_is_the_occasion_sweep_the_population",
+  "severity": "HIGH",
+  "created_session": 99,
+  "rule": "After executing an operational change, reconcile the ENTIRE population against the authority — not just the row you touched. Whatever the sweep finds becomes a recurring check under Zagentexecution/quality_checks/. This is Track B's equivalent of Track A's class generalization: one ticket, one standing control.",
+  "why": "INC-000011781. Nobody asked us to audit the UBO panel; the ask was to add one person. The sweep against the carton found De Sousa Carvalho 10016038 active on all 4 nodes with full signing rights and BCM_REV_REJ_PAY since Jan-2024 while absent from the carton — roughly 18 months of over-authorization that no standing control was looking for. The ticket was not the finding; the ticket was the occasion to look.",
+  "how_to_apply": "Track B step B8. Diff the system population against the authority document, both directions (present-but-unauthorized AND authorized-but-missing). Promote the diff to a script. The BCM family is the worked pattern: bcm_signatory_reconciliation_check.py, bcm_role_gap_check.py, bcm_release_vs_approve.py.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 puts knowledge above velocity. Closing the ticket at the row you changed is the fast path; sweeping the population is where the ticket turns into knowledge that outlives it.",
+  "evidence": "knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md §0; Zagentexecution/quality_checks/bcm_*.py",
+  "source_file": "knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md",
+  "domain_axes": {
+   "functional": [
+    "Support",
+    "Treasury",
+    "Security"
+   ],
+   "module": [
+    "FI",
+    "PD"
+   ],
+   "process": [
+    "T2R",
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_second_occurrence_earns_a_procedure",
+  "severity": "HIGH",
+  "created_session": 99,
+  "rule": "Track the occurrence count of every operational scenario. 1st occurrence leaves an incident doc + a first-class record + the rules doc that explains target selection. 2nd occurrence MUST leave a procedure doc + a recurring check + a companion, so the 3rd is mechanical. From the 3rd on, execute from the procedure; if you had to re-derive anything, the procedure was incomplete and fixing it is part of that ticket.",
+  "why": "s099. This is how the ecosystem gets cheaper instead of merely busier. The BCM signatory pattern proves it: the 2nd execution (INC-000011781) was faster than the 1st (INC-000006313) AND caught drift the 1st never looked for, because the 1st had left behind bcm_signatory_rules.md and a reconciliation check. Without that promotion step, each ticket re-derives the same mechanism and the cost per ticket stays flat forever.",
+  "how_to_apply": "Track B step B9. Before closing, ask: how many times have we done this scenario? Look it up via the incident records' `scenario` field. If the answer is >=2 and there is no procedure doc, writing it is part of the ticket, not a nice-to-have.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001: velocity that leaves no trace is the expensive kind. A procedure written on the 2nd occurrence is traceability that pays compound interest.",
+  "evidence": "INC-000006313 -> INC-000011781; knowledge/domains/Treasury/bcm_signatory_change_solution_design.md",
+  "source_file": ".agents/skills/sap_incident_analyst/SKILL.md",
+  "domain_axes": {
+   "functional": [
+    "Support"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
+ },
+ {
+  "id": "feedback_incident_doc_without_record_is_invisible",
+  "severity": "HIGH",
+  "created_session": 99,
+  "rule": "An incident is not captured until it has a first-class record in brain_v2/incidents/incidents.json. A markdown file under knowledge/incidents/ is prose on disk: BRAIN LOOKUP traverses brain_state.incidents -> indexes.by_incident -> objects[X], and a doc with no record is in none of those. Gate it with Zagentexecution/quality_checks/incident_record_coverage_check.py.",
+  "why": "s099 opened and found 11 docs on disk against 7 records. Three incidents were invisible: INC-000011781 (the richest BCM signatory precedent we have — IT1218 node selection, the drift sweep, the role gap), INC-180995 and INC-CLASS-LOSS-2026-06. The PMO had recorded 'TODO: run rebuild_all.py to fold INC-000011781 in' on 2026-06-18 and it never ran. A TODO is not a control; the next agent on a sibling BCM ticket would have started from zero.",
+  "how_to_apply": "Write the record in the SAME action as the doc, never 'later'. Before closing any support work run the check (exit 0 = clean) and then rebuild. If you only have time for one of the two artifacts, write the record — a record without prose is still findable; prose without a record is not.",
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "CP-001 calls lost traceability irreversible. Knowledge that exists but cannot be reached by the traversal the protocol mandates is, operationally, lost.",
+  "evidence": "Zagentexecution/quality_checks/incident_record_coverage_check.py; incidents.json 7 -> 10 records s099",
+  "source_file": "Zagentexecution/quality_checks/incident_record_coverage_check.py",
+  "domain_axes": {
+   "functional": [
+    "Support",
+    "Brain_Architecture"
+   ],
+   "module": [
+    "-"
+   ],
+   "process": [
+    "GOVERNANCE"
+   ]
+  }
  }
 ]

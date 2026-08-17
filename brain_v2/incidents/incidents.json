@@ -1511,5 +1511,396 @@
       "FI",
       "Treasury"
     ]
+  },
+  {
+    "id": "INC-000011781",
+    "status": "EXECUTED_PARTIAL_OPEN_ITEMS",
+    "title": "Add Renata Da Silva Freire RITTER to UBO BCM signatory panel (+ Martin/Ba/De Sousa delimitation, pre-existing drift)",
+    "reporter": "Ingrid Wettie (BFM-TRS / Middle Office) — originated by Evaney Amaral (UBO Treasury)",
+    "received_date": "2026-06-17",
+    "analyzed_session": 82,
+    "domain": "Treasury",
+    "secondary_domains": [
+      "BCM",
+      "HCM",
+      "Security"
+    ],
+    "transactions": [
+      "OOCU_RESP",
+      "BNK_APP",
+      "PA30",
+      "PFCG",
+      "SU01"
+    ],
+    "primary_object_id": "10021811",
+    "primary_subject": "PERNR 10021811 Renata Da Silva Freire RITTER (SAP user R_RITTER)",
+    "company_codes_involved": [
+      "UBO"
+    ],
+    "scenario": "signatory_panel_change",
+    "incident_type": "operational_change",
+    "error_messages": [
+      "not authorized to use BNK_APP (user screenshot, pre-change)"
+    ],
+    "root_cause_summary": "Not a defect. Operational change authorized by TRS letters FIN.8/MOD/10.0000003618 (Citibank Brazil) and FIN.8/MOD/10.0000003617 (Banco do Brasil), both 24/03/2026, immediate effect: ADD Ritter, DELETE Von Michael MARTIN. The requester's note asked only for the ADD; the authoritative letters also mandated the DELETE — reading the note instead of the carton would have left an unauthorized signatory active. Node selection is mechanical: UBO nodes are chosen by ZBUKR=UBO plus the MAXPAYAMT_RULECURR amount band carried on infotype 1218 (HRP1218/HRT1218 expressions on BNK_STR_BATCH_REL_APPR), bank-agnostic. Beyond the ask, the carton-vs-system reconciliation exposed pre-existing DRIFT: De Sousa Carvalho 10016038 had been active on all 4 nodes with full signing plus BCM_REV_REJ_PAY since Jan-2024 while absent from the carton — an over-authorization nobody had detected.",
+    "code_validation_chain": [
+      "PA0002 PERNR=10021811 -> Renata Da Silva Freire RITTER, DOB 1973-09-24 (matches passport on carton)",
+      "PA0105 SUBTY=0001 PERNR=10021811 -> USRID=R_RITTER; SUBTY=0010 -> R.RITTER@UNESCO.ORG",
+      "USR02 BNAME=R_RITTER -> UFLAG=0 (unlocked), USTYP=A, GLTGB=2026-09-30 (validity ends — flagged)",
+      "PA0000 STAT2=3 (active) for all 11 affected PERNRs -> no ghost PERNR in this change",
+      "HRP1218/HRT1218 expressions on BNK_STR_BATCH_REL_APPR -> node selection = ZBUKR + amount band (HRP1222 empty)",
+      "HRP1001 A007->P all-periods read: Martin 10108464 active ONLY on node 50034893 (2024-11-19 -> 99991231); expired elsewhere",
+      "Post-change HRP1001: 10021811 present on 50034892 / 50034893 / 50034894 / 50036737, BEGDA=2026-06-19 ENDDA=99991231 (live-verified)",
+      "Post-change HRP1001: 10108464 Martin, 10005016 Ba, 10016038 De Sousa Carvalho delimited ENDDA=2026-06-19 (live-verified)",
+      "AGR_USERS / role check R_RITTER -> BNK_APP role still MISSING as of 2026-06-19 (bcm_signatory_role_gap)"
+    ],
+    "scope": {
+      "person_added": "10021811 Renata Da Silva Freire RITTER",
+      "persons_delimited": [
+        "10108464 Von Michael MARTIN (per TRS letters)",
+        "10005016 Ba",
+        "10016038 De Sousa Carvalho (drift — active since Jan-2024, not on carton)"
+      ],
+      "rules_affected": [
+        "90000004",
+        "90000005"
+      ],
+      "ry_objids_affected": [
+        "50034892",
+        "50034893",
+        "50034894",
+        "50036737"
+      ],
+      "banks_affected": [
+        "Citibank Brazil (CIT01)",
+        "Banco do Brasil (BRA01)"
+      ],
+      "carton_reference": "HEPATUS carton code compte BRZ, 08/04/2026 — 8 signatories, identical on both banks",
+      "authority": [
+        "FIN.8/MOD/10.0000003618 Citibank Brazil 24/03/2026",
+        "FIN.8/MOD/10.0000003617 Banco do Brasil 24/03/2026"
+      ]
+    },
+    "fix_path": {
+      "immediate": "DBS executed in P01 via OOCU_RESP on 2026-06-19 (P01 is read-only for the AI agent): ADD 10021811 to nodes 50034892/50034893 (rule 90000005) and 50034894/50036737 (rule 90000004), BEGDA=2026-06-19 ENDDA=99991231; DELIMIT 10108464 / 10005016 / 10016038. All read back live via RFC_READ_TABLE.",
+      "structural": "None — operational change. The reusable asset is the procedure itself: node selection from IT1218, carton as the authority of record, pre-change read-only verification, post-change live readback.",
+      "preventive": [
+        "Run bcm_signatory_reconciliation_check.py + bcm_role_gap_check.py + bcm_release_vs_approve.py after every panel change",
+        "Store each bank carton under Zagentexecution/quality_checks/cartons/<entity>_<bank>_<yyyymmdd>",
+        "Read the TRS letter/carton as the authority — never the requester's summary note (it under-states deletions)",
+        "Check the BNK_APP role in the SAME pass as the node change: a node row without the role cannot sign"
+      ]
+    },
+    "open_followups": [
+      "R_RITTER has no BNK_APP role — Security ticket YS:FI:M:BCM_MON_APP______:UBO pending; incident NOT closeable until granted",
+      "Yli-Hietanen 10097358 on the carton (both tiers) but active on no UBO node (expired 2024) — ADD x4 nodes",
+      "De Sousa Carvalho's 2 BCM roles remain in PFCG (harmless without a node) — Security hygiene",
+      "R_RITTER user validity GLTGB=2026-09-30 — will silently stop signing at that date"
+    ],
+    "side_findings": [
+      "IT1218 is the BCM node-selection mechanism (HRP1218/HRT1218 on BNK_STR_BATCH_REL_APPR); HRP1222 is empty at UNESCO",
+      "SAP GUI 'Other period' view hides active HRP1001 rows — always read all-periods before concluding a PERNR is absent",
+      "De Sousa Carvalho over-authorization went undetected ~18 months: node membership is not reconciled against the carton by any standing control"
+    ],
+    "related_objects": [
+      "HRP1000",
+      "HRP1001",
+      "HRP1218",
+      "HRT1218",
+      "HRP1222",
+      "PA0000",
+      "PA0002",
+      "PA0105",
+      "USR02",
+      "OOCU_RESP",
+      "BNK_APP",
+      "BNK_STR_BATCH_REL_APPR",
+      "BCM_REV_REJ_PAY",
+      "90000004",
+      "90000005",
+      "50034892",
+      "50034893",
+      "50034894",
+      "50036737",
+      "10021811",
+      "10108464",
+      "10005016",
+      "10016038",
+      "10097358"
+    ],
+    "related_incidents": [
+      "INC-000006313"
+    ],
+    "evidence_extracted_this_incident": [
+      "Zagentexecution/quality_checks/bcm_role_gap_check.py",
+      "Zagentexecution/quality_checks/bcm_release_vs_approve.py",
+      "Zagentexecution/quality_checks/bcm_signatory_reconciliation_check.py",
+      "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md",
+      "knowledge/domains/Treasury/bcm_signatory_rules.md",
+      "companions/bcm_signatory_companion.html"
+    ],
+    "lessons": [
+      "The carton/TRS letter is the authority of record; the requester's note is a summary and under-states deletions.",
+      "A repeated operational change is where the ecosystem gets cheapest: the 2nd execution of the BCM pattern was faster AND caught drift the 1st never looked for.",
+      "A node row without the BNK_APP role is a signatory who cannot sign — treat role and node as one atomic change."
+    ],
+    "analysis_doc": "knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md",
+    "chain_anchor_type": "data",
+    "chain_anchor_note": "Anchored on live read-only P01 reads (HRP1001 all-periods, PA0002/PA0105, USR02, AGR_USERS) plus the authoritative TRS letters and carton. No source-code anchor needed: the change is master/organizational data, and node selection is config (IT1218 expressions), not code.",
+    "chain_anchor_coverage_pct": 100,
+    "chain_audited_session": 99,
+    "domain_axes": {
+      "functional": [
+        "Treasury",
+        "BCM",
+        "HCM",
+        "Security"
+      ],
+      "module": [
+        "FI",
+        "PD",
+        "BC"
+      ],
+      "process": [
+        "T2R",
+        "P2P"
+      ]
+    }
+  },
+  {
+    "id": "INC-180995",
+    "status": "ROOT_CAUSE_CONFIRMED",
+    "title": "Ticket 180995 — two sibling transports from one ticket reached P01 101 days apart (MZ payroll currency setup)",
+    "reporter": "JP Lopez (surfaced reviewing the PY-Finance companion, Session #60)",
+    "received_date": "2026-04-22",
+    "analyzed_session": 60,
+    "domain": "PY-Finance",
+    "secondary_domains": [
+      "Treasury",
+      "CTS",
+      "HCM"
+    ],
+    "transactions": [
+      "STMS",
+      "SE01",
+      "SE09",
+      "SE10"
+    ],
+    "primary_object_id": "D01K9B0CDZ",
+    "primary_subject": "Transport D01K9B0CDZ (Mozambique MZN wage type 5$B3) vs sibling D01K9B0CE6 (Sri Lanka LKR 5$B4)",
+    "company_codes_involved": [],
+    "scenario": "transport_sibling_import_lag",
+    "incident_type": "process_anomaly",
+    "error_messages": [],
+    "root_cause_summary": "Not a runtime failure. Ticket 180995 required two parallel Field-Office currency setups. FP_SPEZZANO released both transports on 2024-11-19 within 6 hours of each other, structurally identical (8 table keys each: T042Z/T042ZT payment method + the 5-table wage-type chain T512T/T512W/T52DZ/T52EL/T52EZ). Sri Lanka imported to P01 the next day; Mozambique imported 2025-02-28 — a 101-day divergence. Which of the three hypotheses applies (deliberate staggered rollout / parked in the STMS queue / awaiting FO approval) cannot be separated from the data: TMSALOG is capped at ~1000 rows via RFC and the 2024-11 to 2025-02 window has cycled out. The confirmed root cause is structural, not per-transport: UNESCO has NO control that checks whether siblings of one ticket land in P01 together, and the link ticket->transport exists only as free text in E07T (no foreign key), so the divergence is invisible by construction.",
+    "code_validation_chain": [
+      "E070 D01K9B0CDZ -> TRSTATUS=R TRFUNCTION=W OWNER=FP_SPEZZANO CLIENT=350 STRKORR=(empty)",
+      "E070 D01K9B0CE6 -> TRSTATUS=R TRFUNCTION=W OWNER=FP_SPEZZANO CLIENT=350 STRKORR=(empty)",
+      "E07T D01K9B0CDZ -> '180995/ Creat Payment Method Mozambic'; D01K9B0CE6 -> '180995 - Payment Method U with currency LKR'",
+      "E071K D01K9B0CDZ -> 8 keys: T042Z 350 MZ 3 / T042ZT 350 E MZ 3 / T512T 350 E UN 5$B3 / T512W / T52DZ / T52EL x2 / T52EZ",
+      "E071K D01K9B0CE6 -> 8 keys, symmetric: T042Z 350 LK U / T042ZT 350 E LK U / T512T 350 E UN 5$B4 / T512W / T52DZ / T52EL x2 / T52EZ",
+      "STRKORR empty on both -> neither is a correction of the other (a correction references its parent there)",
+      "Import dates: D01K9B0CDZ released 2024-11-19 11:26 -> P01 2025-02-28 (101d); D01K9B0CE6 released 2024-11-19 17:28 -> P01 2024-11-20 (1d)",
+      "TMSALOG snapshot 2026-04-20 -> V.VAURETTE is the exclusive human P01 import operator (TMS_TP_IMPORT); historical rows cycled out"
+    ],
+    "scope": {
+      "transports": [
+        "D01K9B0CDZ (MZ / 5$B3 / MZN)",
+        "D01K9B0CE6 (LK / 5$B4 / LKR)"
+      ],
+      "exposure_window": "2024-11-20 to 2025-02-28 — Sri Lanka live in P01, Mozambique not, despite same-day release",
+      "tables_per_setup": [
+        "T042Z",
+        "T042ZT",
+        "T512T",
+        "T512W",
+        "T52DZ",
+        "T52EL",
+        "T52EZ"
+      ],
+      "pattern": "every new Field Office pay currency needs a 5$Bx wage type plus a country payment method"
+    },
+    "fix_path": {
+      "immediate": "None for these transports — both are in P01 and effective since 2025-02-28.",
+      "structural": "The ticket->transport link must stop being free text. Cluster transports by the ticket number parsed from E07T (^\\d{5,7}) so sibling bundles are a first-class object in the transport companion.",
+      "preventive": [
+        "Build a TR-sibling-lag detector under Zagentexecution/quality_checks/ — same ticket in as4text, import-date delta > 7 days",
+        "Extend the transport companion to group TRs by ticket number",
+        "Governance: when a ticket produces more than one TR, cross-check sibling status at each release (ready? released? queued?)",
+        "Document the 5$Bx new-country wage-type procedure in the PY-Finance companion (done in v1)"
+      ]
+    },
+    "side_findings": [
+      "P01 import depends on a single basis operator (V.VAURETTE) — queue stalls have no Finance-side visibility",
+      "Treasury-owned PY config via service desk is a legitimate cross-functional flow, not a misclassification",
+      "A 101-day lag is not automatically a defect — it may be a deliberate staggered rollout; needs a human to confirm"
+    ],
+    "related_objects": [
+      "D01K9B0CDZ",
+      "D01K9B0CE6",
+      "E070",
+      "E071",
+      "E071K",
+      "E07T",
+      "TMSALOG",
+      "T042Z",
+      "T042ZT",
+      "T512T",
+      "T512W",
+      "T52DZ",
+      "T52EL",
+      "T52EZ",
+      "CTS_API_READ_CHANGE_REQUEST",
+      "FP_SPEZZANO",
+      "V.VAURETTE"
+    ],
+    "related_claims": [
+      "56",
+      "58",
+      "59"
+    ],
+    "related_known_unknowns": [
+      "KU-036",
+      "KU-037",
+      "KU-038"
+    ],
+    "lessons": [
+      "Ticket-linked transports can diverge silently — this is a class of defect, not a one-off.",
+      "The service-desk ticket number is the best cross-cutting key linking transports to business context, but it survives only as E07T regex.",
+      "When the log needed to decide between hypotheses has cycled out, say so and name the human who can close it — do not pick a hypothesis."
+    ],
+    "analysis_doc": "knowledge/incidents/INC-180995_py_finance_trlag_forensics.md",
+    "chain_anchor_type": "transport_metadata",
+    "chain_anchor_note": "Anchored on CTS metadata read live via RFC (E070/E071/E071K/E07T + CTS_API_READ_CHANGE_REQUEST) and the TMSALOG snapshot. No source-code anchor: the subject is config transport content and its import timeline, not program behaviour. Coverage is short of 100 because the 2024-11 to 2025-02 TMSALOG rows have cycled out.",
+    "chain_anchor_coverage_pct": 85,
+    "chain_audited_session": 99,
+    "domain_axes": {
+      "functional": [
+        "PY-Finance",
+        "Treasury",
+        "Transport_Intelligence"
+      ],
+      "module": [
+        "HCM",
+        "FI",
+        "BC"
+      ],
+      "process": [
+        "H2R",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "INC-CLASS-LOSS-2026-06",
+    "status": "RESOLVED",
+    "title": "ABAP class loss/corruption on D01 caused by our own ADT-over-RFC write client (June 2026)",
+    "reporter": "JP Lopez — 'Claude processes deleted class definitions, at least 14 lost' (2026-06-12)",
+    "received_date": "2026-06-12",
+    "analyzed_session": 82,
+    "domain": "BASIS",
+    "secondary_domains": [
+      "FI",
+      "CTS",
+      "Brain_Architecture"
+    ],
+    "transactions": [
+      "SE24",
+      "SE80",
+      "SE01",
+      "STMS",
+      "SE03"
+    ],
+    "primary_object_id": "YCL_FI_ACCOUNT_SUBST_BL",
+    "primary_subject": "4 FI classes damaged on D01 by in-place ADT writes; 14 N_MENARD classes used as live write-test targets",
+    "company_codes_involved": [],
+    "scenario": "self_inflicted_write_corruption",
+    "incident_type": "self_inflicted_defect",
+    "error_messages": [
+      "ResourceNotFound (ADT write against an already-deleted object)"
+    ],
+    "root_cause_summary": "A write-capable ADT-over-RFC client built 2026-06-07 wrote and activated EXISTING D01 classes in place — no transport, no review, and on objects we do not own (N_MENARD's). Two corruption paths, both proven from the client's own source: (1) lossy read-then-restore — read_source() falls back to CLIF_GET_SOURCE via RFC_ABAP_INSTALL_AND_RUN with WRITE:/ lv where lv is c(255), so the readback is truncated at 255 chars per line and carries report headings; writing that back as the 'restore' mangles the class; (2) writing to a class with missing/invalid SEOCLASS metadata leaves it unrecoverable — the client's own docstring records this, meaning the SEOCLASS pre-flight guard was added AFTER the damage. The deeper cause is process, not code: a RELEASED transport is the unit of change, and in-place ADT writing bypasses it entirely.",
+    "code_validation_chain": [
+      "sap_adt_rfc_client.py (created 2026-06-07 12:36) deploy() = lock -> write_source(/source/main) -> syntax -> unlock -> activate",
+      "probe_deploy_real_change.py (2026-06-07 12:21) = read -> modify -> write -> activate -> 'restore' original (restore failure leaves the class emptied)",
+      "read_source() fallback CLIF_GET_SOURCE via RFC_ABAP_INSTALL_AND_RUN, WRITE:/ lv with lv TYPE c(255) -> truncated readback",
+      "deploy() docstring: 'Writing to a class with missing SEOCLASS leaves it in unrecoverable state (learned D01 2026-06-07)'",
+      "TS2 baseline (pre-Jun-7 copy of D01) used as discriminator: healthy-in-TS2/V01 but broken-in-D01 = OUR damage",
+      "TADIR present + SEOCLASS absent for the other ~11/41 = pre-existing intentional deletions (debris), NOT loss",
+      "Recovery: transport of copies V01K910259, V01 -> D01, same transport domain DOMAIN_P01, 'Overwrite Originals', target client 350",
+      "Post-recovery SEOCLASSDF state=1 for all recovered classes; method counts match baseline (32 / 1 / 54); VRSD version history survived the deletion"
+    ],
+    "scope": {
+      "real_damage": [
+        "YCL_FI_ACCOUNT_SUBST_BL (32 methods)",
+        "YCL_FI_ACCOUNT_SUBST_READ (1 method)",
+        "YCL_FI_BANK_RECONCILIATION_BL (54 methods)",
+        "YCL_FI_ACC_DOCUMENT_ARGA (V01 version is a thin stub — that IS the correct released state)"
+      ],
+      "not_our_damage": "11 N_MENARD TADIR-orphans predating 2026-06-07 (legitimate prior deletions); the Jun-7 writes hit already-dead objects, producing the ResourceNotFound errors",
+      "false_panic": "a later broad orphan scan flagged ~41 'broken' classes — resolved by evidence: TADIR-without-SEOCLASS is deletion debris, not lost code",
+      "systems": "D01 (172.16.4.66 client 350) only — NO P01 impact found",
+      "superseded_framings": [
+        "'14 lost'",
+        "'6 lost'",
+        "'3 recovered'"
+      ]
+    },
+    "fix_path": {
+      "immediate": "Recovered all 4 via transport of copies from V01 (same transport domain, 'Overwrite Originals', target client 350) — never via ADT write. Verified line-for-line against V01.",
+      "structural": "Promoted the disciplined change process from CRP to an ecosystem-universal standard (ecosystem-coordinator/.knowledge/way-of-working/sap-abap-change-discipline.md, BROADCAST-007) and ported the gated write path to Zagentexecution/abap_deploy/deploy_object.py: own-objects-only manifest, TADIR/SEOCLASS pre-flight, PRE-readback, hard diff-gate that HALTs on deletions, operator guard, concurrent-writer guard, POST-readback byte-verify. verify_mirror.py keeps the git mirror 0-diff and the process-guardian agent HALTs a close that deployed without that evidence.",
+      "preventive": [
+        "Both ADT write clients kill-switched behind ALLOW_D01_WRITES=1 — a blunt block, to be retired once transport RELEASE + ATC-via-REST are the path (H59)",
+        "Own Z*/Y* objects only — NEVER peer-team objects, in any system",
+        "Recover deleted objects via transport of copies, never by writing them back",
+        "Verify the source system shares the target's transport domain (TMSCSYS) before attempting recovery — a cross-domain system gives 'target unknown'"
+      ]
+    },
+    "side_findings": [
+      "SE24/SE80 version-retrieve does NOT work for a fully deleted class, but VRSD version history survives a SEOCLASS deletion",
+      "Without 'Overwrite Originals' the import silently skips the object when the target is the class's home system",
+      "YCL_FI_ACC_DOCUMENT_ARGA's real CHANGE logic was never-transported WIP living only in TS2 — not lost and not our damage; ARGA is superseded anyway (live enhancement YFI_ENH_ACC_DOCUMENT_ARGA uses YFI_ENH_DOWNPAYMENT)"
+    ],
+    "related_objects": [
+      "YCL_FI_ACCOUNT_SUBST_BL",
+      "YCL_FI_ACCOUNT_SUBST_READ",
+      "YCL_FI_BANK_RECONCILIATION_BL",
+      "YCL_FI_ACC_DOCUMENT_ARGA",
+      "YFI_ENH_ACC_DOCUMENT_ARGA",
+      "YFI_ENH_DOWNPAYMENT",
+      "TADIR",
+      "SEOCLASS",
+      "SEOCLASSDF",
+      "VRSD",
+      "TMSCSYS",
+      "V01K910259",
+      "CLIF_GET_SOURCE",
+      "RFC_ABAP_INSTALL_AND_RUN",
+      "sap_adt_rfc_client.py",
+      "probe_deploy_real_change.py"
+    ],
+    "lessons": [
+      "A RELEASED transport is the unit of change — D01 is DEV, not 'the deploy'.",
+      "Never use another team's objects as test targets. Own Z*/Y* only.",
+      "Verify content before alarming: TADIR-orphan is not lost code, and a broad scan without a baseline manufactures a panic.",
+      "A guard added after the lesson does not protect the objects damaged before it — the pre-flight must exist before the first write."
+    ],
+    "analysis_doc": "knowledge/incidents/INC-CLASS-LOSS-2026-06_adt_rfc_write_corruption.md",
+    "chain_anchor_type": "source_code",
+    "chain_anchor_note": "Anchored on the write client's own source (the two corruption paths are readable in it), on the TS2/V01 baseline used as discriminator, and on post-recovery SEOCLASSDF/method-count reads. Execution record: Zagentexecution/tasks/2026_06_12_class_loss_recovery/EXECUTION_LOG.md.",
+    "chain_anchor_coverage_pct": 100,
+    "chain_audited_session": 99,
+    "domain_axes": {
+      "functional": [
+        "BASIS",
+        "FI",
+        "Transport_Intelligence"
+      ],
+      "module": [
+        "BC",
+        "FI"
+      ],
+      "process": []
+    }
   }
 ]

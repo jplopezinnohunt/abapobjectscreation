@@ -52,7 +52,7 @@
 > - **H89 [🔴 GOVERNANCE/SECURITY — ungoverned ad-hoc HR data extraction (hidden extractions)]** — VERIFIED 2026-06-23: **6,060 ad-hoc SAP-Query executions · 1,798 distinct queries · 153 users; 60% are HR (3,658 execs, 39 users)** = sensitive personnel data extracted outside governed reports. Top runner **JOBBATCH (1,890) = queries SCHEDULED AS JOBS → automated extraction → almost certainly file output = a parallel integration nobody catalogued.** Active & growing (2026-03→06, ~1,500/mo). **DO:** (1) trace which HR infotypes/tables the top HR queries read (what data leaves) + who; (2) trace whether the JOBBATCH-scheduled queries write to file system (OPEN DATASET) — confirms shadow integration; (3) route as a data-governance finding. Cross-links: H73 (arbitrary-extraction auth), H71 (write-channel SoD). Pattern doc: `operating_model_discovery_methods.md`.
 > - **H90 [🟡 MODEL — integration layer + TIME axis on U_USAGE]** — Add the BEHAVIOR axis (read / DB-write / **file** OPEN-DATASET / RFC-out) + ACTOR axis (human / integration MULESOFT·BRIDGE·UBO-RFC·SISTER / batch) to every executed object, so "internal process" vs "integration" is separable system-wide (integration = technical caller OR file OR write/call-out). Add the **TIME** axis (when used, monthly) to detect active-vs-dead + seasonality. First probe = the H89 query→job→file trace. Feeds F_INTERFACE_FILE + R_S4_READINESS (dead-code).
 
-> **⮕ INCOMING (2026-06-18, worked via the unesco-sap-brain harness — session migrated here, NOT yet reconciled):** BCM signatory **node-selection mechanism FOUND = infotype 1218** (`HRP1218`/`HRT1218` expressions on `BNK_STR_BATCH_REL_APPR`: ZBUKR + amount band, bank-agnostic; `HRP1222` empty) + **INC-000011781** (UBO / Renata Ritter, SPEC_READY: ADD 10021811 ×4 nodes, DELIMIT Martin 10108464 from 50034893; Ba/Carvalho/Yli-Hietanen parked for TRS). Landed: `knowledge/domains/Treasury/bcm_signatory_change_solution_design.md`, `companions/bcm_signatory_companion.html`, `knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md`, Treasury/README "BCM Signatory Panel Management (hub)", IT1218 section + change-history in `bcm_signatory_rules.md`, extended `feedback_bcm_signatory_intelligence.md`, skill triggers. **TODO: `python brain_v2/rebuild_all.py`** to fold IT1218 + INC-000011781 into `brain_state.json` (reconcile into H-items/claims at next session-close).
+> **⮕ INCOMING (2026-06-18, worked via the unesco-sap-brain harness — session migrated here, NOT yet reconciled):** BCM signatory **node-selection mechanism FOUND = infotype 1218** (`HRP1218`/`HRT1218` expressions on `BNK_STR_BATCH_REL_APPR`: ZBUKR + amount band, bank-agnostic; `HRP1222` empty) + **INC-000011781** (UBO / Renata Ritter, SPEC_READY: ADD 10021811 ×4 nodes, DELIMIT Martin 10108464 from 50034893; Ba/Carvalho/Yli-Hietanen parked for TRS). Landed: `knowledge/domains/Treasury/bcm_signatory_change_solution_design.md`, `companions/bcm_signatory_companion.html`, `knowledge/incidents/INC-000011781_ubo_bcm_add_ritter.md`, Treasury/README "BCM Signatory Panel Management (hub)", IT1218 section + change-history in `bcm_signatory_rules.md`, extended `feedback_bcm_signatory_intelligence.md`, skill triggers. ~~**TODO: `python brain_v2/rebuild_all.py`** to fold IT1218 + INC-000011781 into `brain_state.json`~~ — **DONE s099 (2026-08-17), but the TODO itself is the lesson.** It sat unexecuted from 2026-06-18 to 2026-08-17: INC-000011781 (our richest BCM precedent — IT1218 node selection, the drift sweep, the role gap) had a doc on disk and **no first-class record**, so `BRAIN LOOKUP` could not reach it. Same for INC-180995 and INC-CLASS-LOSS-2026-06 — **11 docs vs 7 records**. All 3 backfilled; `incidents.json` 7→10, brain 1634→1667 objects, coverage held at 100.0%, blind_spots 0. **A TODO is not a control** → the control now exists: `Zagentexecution/quality_checks/incident_record_coverage_check.py` (exit 0 = clean) + rule `feedback_incident_doc_without_record_is_invisible`.
 
 ---
 
@@ -165,6 +165,24 @@ traffic enters through channels where attribution is lost**.
 Task: decide whether attribution is recoverable (MuleSoft-side correlation id, an ORION log, a
 header we do not read) or structurally absent. If absent, that is the finding for governance,
 because every SoD and every change-approval control assumes an actor.
+
+**H93 — SUPPORT has no coverage metric (s099).** The Support domain registry now carries its
+docs, incidents, two tracks, procedures and 4 recurring checks — but `coverage_pct` is still
+`null`, and deliberately so: no metric was invented for it. Support is not a SAP business domain,
+so the 11-capability grid does not apply (`S_STANDARD_REF` for Support is a category error), and
+it is not one of the 8 meta-capability dimensions either. Decide where it belongs and what it
+measures. The candidate levers are already instrumentable: **% of incident docs with a first-class
+record** (now gated at 100% by `incident_record_coverage_check.py`), **% of repeated scenarios that
+have a procedure doc**, and **% of Track-B tickets whose drift sweep produced a standing check**.
+Until then Support reports no coverage, which is honest and useless.
+
+**H94 — PERNRs are synthesized into the brain typed `GL_ACCOUNT` (s099, measured).** Drilling
+`graph_queries.py incident INC-000011781` returns the signatories 10021811 / 10016038 / 10005016 /
+10097358 as `"type": "GL_ACCOUNT"`. The synthesizer types any 8-digit numeric name as a GL account.
+Harmless for retrieval today, wrong for anything that reasons over object type, and it inflates the
+GL population. This is the same defect family as **H41** (promote PERNRs to first-class PERSON
+objects) — H41 lists 11 PERNRs from blind_spots; Track B keeps adding more with every signatory
+ticket. Fix the type inference at the same time as H41, not separately.
 
 
 

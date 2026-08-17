@@ -416,8 +416,9 @@ Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 - `knowledge/domains/` — Rich domain documentation (15 domains)
 - `knowledge/incidents/` — **Canonical location for incident analysis docs** (added Session #050). All `INC-<id>_<slug>.md` files live here, NOT in domain folders.
 - `.agents/intelligence/PMO_BRAIN.md` — Pending work tracker
-- `.agents/skills/sap_incident_analyst/SKILL.md` — **Incident processing 7-step protocol** (added Session #050)
-- `.claude/agents/incident-analyst.md` — **Dedicated subagent for incidents** (added Session #050)
+- `.agents/skills/sap_incident_analyst/SKILL.md` — **Support processing: Step-0 triage + Track A (diagnosis, 10 steps) + Track B (operational action, B1–B9)** (added #050, two-track since #099)
+- `.claude/agents/incident-analyst.md` — subagent definition, kept as a **prompt template to read**; do NOT invoke it for the protocol (corrected #051)
+- `Zagentexecution/quality_checks/incident_record_coverage_check.py` — **gate: every incident doc has a first-class record** (added #099, after 3 incidents were found invisible to the brain)
 - `Zagentexecution/quality_checks/` — **Recurring data quality checks** (added Session #050). Class-of-defect detectors promoted from incidents.
 
 ### Generated Artifacts (rebuildable)
@@ -438,8 +439,33 @@ Full specification: `Brain_Architecture/brain_design_specification_v3.md`
 ### Making knowledge queryable (Session #079)
 Prose `.md` does NOT promote SAP objects into `brain_state.objects`. To make a name (SAPF100, OB09, an account) reachable, add **structured records** (incident + claims with the name in `related_objects`). The curation now **synthesizes** a queryable object for any referenced name with no graph node (`synthesize_object_from_records` in `build_brain_state.py`) — so blind spots → 0, coverage → 100%. Structural code edges (reads/calls/exits) still require the object's source to be a PARSED node. Full rule: `memory/feedback_knowledge_becomes_useful_via_structured_records.md`.
 
-### Incident processing
-When the user passes a support incident: invoke the `incident-analyst` subagent (or follow the `sap_incident_analyst` skill manually). The 7-step protocol is: PARSE → BRAIN LOOKUP → GOLD DB PULL → CODE TRACE → ROOT CAUSE → CLASS GENERALIZATION → BRAIN ANNOTATION. Output: `knowledge/incidents/INC-<id>_<slug>.md` + first-class record in `brain_v2/incidents/incidents.json`.
+### Support processing — TWO TRACKS, one intake (updated Session #099)
+
+**The MAIN agent executes. Do NOT delegate the protocol to the `incident-analyst` subagent** — that
+was corrected in Session #051 after the subagent chased the wrong mechanism on INC-000005240 and
+burned 154K tokens. The subagent definition is a prompt template to read, not an agent to invoke;
+use subagents only for narrow mechanical sub-tasks (a grep, a list of rows).
+
+**Step 0 is always TRIAGE** (`feedback_support_intake_triage_before_anything`, CRITICAL):
+- **TRACK A — DIAGNOSIS** (the unknown is *why*): PARSE → BRAIN LOOKUP → GOLD DB PULL → CODE TRACE →
+  PROCESS UNDERSTANDING → ROOT CAUSE → CLASS GENERALIZATION → BRAIN ANNOTATION → user gate → rebuild.
+  Output: 13-section doc. Examples: INC-000006073, INC-000005240.
+- **TRACK B — OPERATIONAL ACTION** (what to do is known; doing it correctly is the work):
+  B1 authority of record → B2 precedent → B3 target-selection mechanism → B4 pre-change live read →
+  B5 change spec → B6 execution *by an authorized human* (the agent never writes P01) →
+  B7 post-change readback → B8 **drift sweep of the whole population** → B9 close gate + promotion.
+  Output: 10-section doc, execution status first. Examples: INC-000006313, INC-000011781.
+
+**Track B's three hard rules:** the authorizing letter/carton is the spec, never the requester's note
+(INC-000011781: the note said "add Renata", the letters also said delete Martin). The ticket is the
+*occasion* to sweep the population, not the scope (that sweep found 18 months of over-authorization
+nobody asked about). And by the **2nd occurrence** of a scenario you owe a procedure doc + a recurring
+check, or the cost per ticket never falls.
+
+**Both tracks:** output `knowledge/incidents/INC-<id>_<slug>.md` **AND** a first-class record in
+`brain_v2/incidents/incidents.json`. A doc without a record is invisible to BRAIN LOOKUP — gate it
+with `python Zagentexecution/quality_checks/incident_record_coverage_check.py` (exit 0 = clean)
+before closing. Full protocol: `.agents/skills/sap_incident_analyst/SKILL.md`.
 
 ### Session close — Phase 4b: Capture SAP Learnings (Session #050)
 Every session that touches SAP must explicitly answer: "What did we learn about SAP itself this session that the next agent needs to know?" See `.agents/workflows/session_close_protocol.md` Phase 4b for the mandatory checklist. Empty section in retro = explicit "N/A" with one-sentence justification. Silent omission is a Phase 4b failure.
