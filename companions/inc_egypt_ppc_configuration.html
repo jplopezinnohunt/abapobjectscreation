@@ -173,6 +173,47 @@ EG9  RENT  Rent</pre>
 <strong>One trap to avoid.</strong> <code>LZBKZ</code> has two populations at UNESCO: the purpose codes above, and its <strong>original</strong> German SCB meaning — over 10,000 lines carry <code>521</code> with no country prefix at all. Do not read a bare numeric <code>LZBKZ</code> as a purpose code.
 </div>
 
+<h2>3c · Why this will work, and exactly how far <span class="pill green">claim 494</span></h2>
+<div class="callout green">
+<strong>No ABAP is needed — and that is now mechanical, not an assumption.</strong> The BAdI is selected by the country of <em>our</em> paying house bank (<code>FPAYHX-UBISO</code>), which for SocGen is FR; the class then looks up the config by the country of <em>their</em> bank (<code>FPAYH-ZBNKS</code>). All three layers are generic — <code>u917</code> reads <code>LFBK-BANKS</code>, <code>CM002</code> passes <code>ZBNKS</code>, <code>CM003</code> filters <code>WHERE LAND1 = IV_LAND1</code>, with no country literal in any of them. Nine beneficiary countries already resolve through the same single class. See the mechanism companion §3b.
+</div>
+
+<h3>How far it reaches — 2,837 lines to Egyptian-banked vendors, 2024-2026</h3>
+<table>
+<tr><th>Paying house bank</th><th>Our bank's country</th><th class="n">Lines</th><th>BAdI class</th><th>Renders?</th></tr>
+<tr style="background:#d9f2ee"><td><code>SOG01</code> · <code>SOG05</code></td><td>FR</td><td class="n">2,665</td><td><code>_FR</code></td><td style="color:#0a7e6e;font-weight:600">YES — 93.9%</td></tr>
+<tr><td><em>none recorded</em></td><td>—</td><td class="n">64</td><td>—</td><td style="color:#c5283d">no</td></tr>
+<tr><td><code>UNI01</code> (ICTP)</td><td>IT</td><td class="n">43</td><td><code>_IT</code></td><td style="color:#c5283d">no — GET_CREDIT only</td></tr>
+<tr><td><code>CIT04</code> · <code>CIT19</code> · <code>CIT15</code></td><td>US · EG · LB</td><td class="n">58</td><td><em>none</em></td><td style="color:#c5283d">no</td></tr>
+<tr><td><code>BLN01</code> · <code>ANZ03</code></td><td>SD · WS</td><td class="n">7</td><td><em>none</em></td><td style="color:#c5283d">no</td></tr>
+</table>
+<div class="callout">
+<strong>93.9% renders, 6.1% does not — and the reason is now known per line rather than assumed.</strong> The residual is not a defect in the Egypt configuration; it is the framework's designed scope. Closing it would mean implementing the BAdI for the Italian and Citi house banks, which is a development and a separate decision.
+</div>
+
+<h3>Which country to copy — and why not the obvious one</h3>
+<p style="font-size:12.5px">Copying a country means copying its <strong>shape</strong>, never its values: the <code>FIXED_VAL</code> entries are local central-bank codes and the <code>T015L</code> list is country-specific. The shapes differ on six axes:</p>
+<table>
+<tr><th>Axis</th><th>Variation across the nine</th></tr>
+<tr><td>Tag family</td><td><code>INSTRINF</code> (AE, CN) vs <code>USTRD</code> (the other seven)</td></tr>
+<tr><td>Suppression row <code>-INSTRINF</code></td><td>only AE and CN</td></tr>
+<tr><td>Pay types covered</td><td>AE·CN·ID·IN·JO·MA have O/P/R — <strong>BH, MY and PH have no R</strong></td></tr>
+<tr><td>Separator</td><td>India uses <code>;</code>, everyone else <code>/</code></td></tr>
+<tr><td><code>PAY_FIELD</code></td><td>AE, BH, CN use none; the other six append <code>FPAYP-XBLNR</code> (O) and <code>FPAYP-SGTXT</code> (P/R)</td></tr>
+<tr><td><code>PPC_DESCR</code></td><td><strong>only BH and India</strong> — the other seven emit the code alone</td></tr>
+</table>
+<div class="callout green">
+<strong>India is the template.</strong> Citi asks for a description <em>and</em> ties it to the invoice. India is the only configured country that emits <strong>code + description + invoice reference</strong>. Bahrain emits a description but no invoice; the other seven emit no description at all.
+</div>
+<div class="callout red">
+<strong>One thing not to copy: the missing <code>R</code>.</strong> BH, MY and PH have no <code>Payment request</code> rows, so a Treasury payment request to those countries emits <strong>nothing</strong> — silently. Egypt must define all three pay types.
+</div>
+
+<h3>The one thing still unproven</h3>
+<div class="callout">
+Whether the <code>Ustrd</code> node in the <code>/CGI_XML_CT_UNESCO</code> tree carries the exit call. <code>DMEE_TREE_NODE</code> rejects an <code>RFC_READ_TABLE</code> <code>WHERE</code> clause on this system (string columns), so it could not be read directly. <strong>Close it with a D01 test</strong>: one vendor with an Egyptian bank, one F110 run, read the XML. That is the acceptance test for this change anyway.
+</div>
+
 <h2>4 · What is decided and what is not</h2>
 <table>
 <tr><th>Item</th><th>Status</th><th>Owner</th></tr>

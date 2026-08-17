@@ -21886,5 +21886,69 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 494,
+    "claim": "THE PPC FRAMEWORK USES TWO DIFFERENT COUNTRIES IN TWO LAYERS, AND THAT IS WHY IT IS 'SOCGEN-ONLY' — the mechanism, not the specification. Read from source: FI_CGI_DMEE_EXIT_W_BADI (177 lines, P01) resolves lv_bank_country from FPAYHX-UBISO, falling back to FPAYHX-UBNKS — OUR house bank's country — and then does GET BADI l_badi FILTERS bank_country = lv_bank_country, credit_or_debit = <D|C>. So the implementation is selected by the country of the PAYING house bank. That is why the class is called YCL_IDFI_CGI_DMEE_FR: SOG01 is a French bank. INSIDE that class, CM002 (IF_IDFI_CGI_DMEE_COUNTRIES~GET_VALUE) calls GET_TAG_VALUE_FROM_CUSTO with IV_LAND1 = I_FPAYH-ZBNKS — the BENEFICIARY's bank country. Two countries, two layers: OUR bank picks the class, THEIR bank picks the config rows. MEASURED CONSEQUENCE: only the FR class dispatches PPC. YCL_IDFI_CGI_DMEE_DE (84 lines, for DEU01/UIL) and YCL_IDFI_CGI_DMEE_IT (84 lines, for UNI01/ICTP) implement GET_CREDIT only and never call GET_TAG_VALUE_FROM_CUSTO; nor does YCL_IDFI_CGI_DMEE_FALLBACK. Citi house banks have no implementation at all. THIS SETTLES WHETHER EGYPT NEEDS ABAP: it does not. A payment from a French house bank to an Egyptian-banked vendor enters the exit with lv_bank_country='FR', selects the FR class, and that class looks up YTFI_PPC_STRUC for LAND1='EG'. All three layers — u917's LFBK-BANKS lookup, CM002's ZBNKS pass-through and CM003's WHERE LAND1 = IV_LAND1 — are generic, with no country literal anywhere. Nine beneficiary countries already resolve through this one class. EGYPT RENDER COVERAGE, MEASURED on 2,837 lines to Egyptian-banked vendors 2024-2026: SOG01+SOG05 (FR) 2,665 = 93.9% RENDER · UNI01 (IT) 43 · CIT04/CIT19/CIT15 58 · no house bank 64 — 172 lines = 6.1% would NOT render even after EG is configured, and now the reason is known per line rather than assumed.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/DMEE/FI_CGI_DMEE_EXIT_W_BADI.abap",
+        "cite": "recovered from P01 s099 via RPY_FUNCTIONMODULE_READ_NEW. lv_bank_country from FPAYHX-UBISO/UBNKS then GET BADI FILTERS bank_country",
+        "added_session": 99
+      },
+      {
+        "type": "source_code",
+        "ref": "extracted_sap_p01/YA/YCL_IDFI_CGI_DMEE_FR.abap CM002",
+        "cite": "GET_TAG_VALUE_FROM_CUSTO( IV_LAND1 = I_FPAYH-ZBNKS ... )",
+        "added_session": 99
+      },
+      {
+        "type": "source_code",
+        "ref": "extracted_sap_p01/YA/YCL_IDFI_CGI_DMEE_DE.abap and _IT.abap",
+        "cite": "84 lines each, method GET_CREDIT only, no PPC dispatch",
+        "added_session": 99
+      },
+      {
+        "type": "production_data",
+        "ref": "Gold DB REGUH JOIN LFBK, EG beneficiaries 2024-2026",
+        "cite": "by paying house bank: SOG01/SOG05 2,665 (93.9%), UNI01 43, CIT* 58, none 64",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_DE",
+      "YCL_IDFI_CGI_DMEE_IT",
+      "YCL_IDFI_CGI_DMEE_FALLBACK",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "FPAYHX",
+      "FPAYH",
+      "YTFI_PPC_STRUC"
+    ],
+    "domain": "Payment",
+    "created_session": 99,
+    "resolved_session": 99,
+    "resolution_notes": "Gives claim 267 ('SocGen-only per spec') its mechanical cause, and closes the last technical doubt on INC-EGYPT-PPC: no ABAP is needed. What remains unverified is whether the Ustrd node in the DMEE tree carries the exit — DMEE_TREE_NODE rejects an RFC_READ_TABLE WHERE clause (string columns), so it needs a D01 test run.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury",
+        "Procurement",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]

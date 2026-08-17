@@ -201,6 +201,57 @@ Brain: <code>python brain_v2/graph_queries.py incident INC-EGYPT-PPC</code>
 <div class="figcap">U917, YRGGBS00:1547-1590 — registered as validation UNES, step 012, CHECKID 2UNES###009.</div>
 </div>
 
+<h2>3b · Two countries, two layers — the mechanism behind "SocGen only" <span class="pill red">claim 494</span></h2>
+<div class="callout red">
+<strong>The framework uses two different countries, and confusing them is why the class is called <code>_FR</code>.</strong> The BAdI implementation is chosen by the country of <em>our</em> paying house bank. The configuration rows are chosen by the country of <em>their</em> receiving bank.
+</div>
+
+<div class="fig">
+<svg width="100%" viewBox="0 0 960 300" role="img" aria-label="Two-layer country resolution: our house bank picks the BAdI class, the payee bank picks the config rows">
+<defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#08305f" stroke-width="1.6" stroke-linecap="round"/></marker></defs>
+<g font-family="sans-serif">
+<rect x="14" y="16" width="932" height="122" rx="6" fill="#fcfdfe" stroke="#c5283d" stroke-dasharray="4 3"/>
+<text x="26" y="36" font-size="11" font-weight="700" fill="#c5283d">LAYER 1 — OUR bank decides WHICH CLASS runs</text>
+<rect x="26" y="46" width="250" height="46" rx="4" fill="#fff" stroke="#08305f"/>
+<text x="38" y="65" font-size="11" font-weight="600" fill="#08305f">FI_CGI_DMEE_EXIT_W_BADI</text>
+<text x="38" y="81" font-size="10" fill="#555">lv_bank_country = FPAYHX-UBISO</text>
+<line x1="276" y1="69" x2="306" y2="69" stroke="#08305f" stroke-width="1.4" marker-end="url(#a3)"/>
+<rect x="310" y="46" width="250" height="46" rx="4" fill="#ffe4e6" stroke="#c5283d"/>
+<text x="322" y="65" font-size="11" font-weight="700" fill="#c5283d">GET BADI FILTERS</text>
+<text x="322" y="81" font-size="10" fill="#8a3040">bank_country = &lt;our house bank&gt;</text>
+<g font-size="10.5">
+<rect x="594" y="42" width="352" height="20" rx="3" fill="#d9f2ee" stroke="#2a9d8f"/><text x="604" y="56" fill="#0a7e6e">FR → YCL_IDFI_CGI_DMEE_FR — dispatches PPC</text>
+<rect x="594" y="66" width="352" height="20" rx="3" fill="#f4f5f7" stroke="#d4d9e0"/><text x="604" y="80" fill="#555">DE → _DE · IT → _IT — GET_CREDIT only, NO PPC</text>
+<rect x="594" y="90" width="352" height="20" rx="3" fill="#f4f5f7" stroke="#d4d9e0"/><text x="604" y="104" fill="#555">Citi (US/EG/LB) → no implementation at all</text>
+</g>
+<text x="26" y="128" font-size="10" fill="#666">SOG01 is a French bank — that is the whole reason the class is named _FR. It has nothing to do with paying France.</text>
+
+<rect x="14" y="150" width="932" height="110" rx="6" fill="#fcfdfe" stroke="#2a9d8f" stroke-dasharray="4 3"/>
+<text x="26" y="170" font-size="11" font-weight="700" fill="#0a7e6e">LAYER 2 — THEIR bank decides WHICH ROWS apply</text>
+<rect x="26" y="180" width="250" height="46" rx="4" fill="#fff" stroke="#08305f"/>
+<text x="38" y="199" font-size="11" font-weight="600" fill="#08305f">YCL_IDFI_CGI_DMEE_FR :: CM002</text>
+<text x="38" y="215" font-size="10" fill="#555">IV_LAND1 = I_FPAYH-ZBNKS</text>
+<line x1="276" y1="203" x2="306" y2="203" stroke="#08305f" stroke-width="1.4" marker-end="url(#a3)"/>
+<rect x="310" y="180" width="250" height="46" rx="4" fill="#fff" stroke="#08305f"/>
+<text x="322" y="199" font-size="11" font-weight="600" fill="#08305f">UTIL :: CM003</text>
+<text x="322" y="215" font-size="10" fill="#555">WHERE LAND1 = IV_LAND1</text>
+<line x1="560" y1="203" x2="590" y2="203" stroke="#08305f" stroke-width="1.4" marker-end="url(#a3)"/>
+<rect x="594" y="180" width="352" height="46" rx="4" fill="#d9f2ee" stroke="#2a9d8f"/>
+<text x="606" y="199" font-size="11" font-weight="700" fill="#0a7e6e">YTFI_PPC_STRUC rows for EG</text>
+<text x="606" y="215" font-size="10" fill="#0a7e6e">no country literal anywhere in the code</text>
+<text x="26" y="250" font-size="10" fill="#666">u917 uses the same country as layer 2 — LFBK-BANKS — so capture and rendering agree on which country a payment belongs to.</text>
+</g>
+</svg>
+<div class="figcap">FI_CGI_DMEE_EXIT_W_BADI:1-177 · YCL_IDFI_CGI_DMEE_FR CM002 · YCL_IDFI_CGI_DMEE_UTIL CM003, all read from P01.</div>
+</div>
+
+<div class="callout green">
+<strong>This is why adding a country needs no ABAP.</strong> All three layers are generic — <code>u917</code> reads <code>LFBK-BANKS</code>, <code>CM002</code> passes <code>ZBNKS</code>, <code>CM003</code> filters <code>WHERE LAND1 = IV_LAND1</code>. There is no country literal in any of them, and nine beneficiary countries already resolve through the single <code>_FR</code> class.
+</div>
+<div class="callout">
+<strong>And it explains the "SocGen only" scope mechanically, not just by specification.</strong> Claim 267 quotes the spec; this is the cause. Payments through a German or Italian house bank select <code>_DE</code>/<code>_IT</code>, which implement <code>GET_CREDIT</code> and never call the PPC builder. Payments through Citi select nothing at all.
+</div>
+
 <h2>4 · How the string is assembled</h2>
 
 <div class="callout">
