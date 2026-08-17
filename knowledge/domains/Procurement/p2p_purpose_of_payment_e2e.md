@@ -128,14 +128,54 @@ Citi-routed country is a **new development**, not a configuration change. (claim
 | IN | 303 | **283** | 20 |
 | JO | 13 | 0 | 13 |
 
-Jordan is clean; India is 93% empty. With `U917` in place that should be impossible —
-tracked as **`KU-2026-099-PPC-COVERAGE`**, five hypotheses, the leading one being that the
-control keys on `LFBK-BANKS` while the measurement keys on `LFA1-LAND1`.
+**Resolved — and the answer is bigger than the question** (`KU-2026-099-PPC-COVERAGE`, claim 485):
+
+1. **259 of the 283 were a measurement error.** `U917` keys on the vendor's **bank** country
+   (`LFBK-BANKS`); the measurement above keys on the vendor's **address** country
+   (`LFA1-LAND1`). That vendor banks in **Singapore** — the control correctly does not apply.
+   No defect.
+2. **The residual 24 lines are all company code `IIEP`** (vendor `0000492662` KAPUR Avani,
+   Jan–Apr 2025). And that is the real finding.
+
+### The control covers ONE company code out of NINE
+
+`U917` is step `VALSEQNR=012` of validation `VALID='UNES'`. OB28 assigns validations per
+company code, and at UNESCO that assignment is optional. Measured live in P01 (`GB931`):
+
+| Company code | Validation | Steps | Has U917? |
+|---|---|---:|---|
+| UNES | `UNES` | **12** | ✅ step 012 |
+| ICTP | `ICTP` + `ICTP_HE` | 4 + 4 | ❌ |
+| IIEP | `IIEP` | 2 | ❌ |
+| UBO | `UBO` | 3 | ❌ |
+| UIL | `UIL` | 1 | ❌ |
+| UIS | `UIS` | — | ❌ |
+| IBE · ICBA · MGIE | none assigned | 0 | ❌ |
+
+**Adding a country to `YTFI_PPC_STRUC` turns the capture control on for `UNES` and for nobody
+else.** Whether the other institutes should get an equivalent step is a functional decision,
+now tracked as `KU-2026-099-PPC-INSTITUTE-COVERAGE`.
+
+> **Why a table search can never settle this.** `GB931` stores `CHECKID` as a boolean-expression
+> id (`2UNES###009`), never the literal `=U917`; the exit call lives inside the `GB901`
+> expression body. A table-level search for `LZBKZ` returns nothing and *cannot* disprove the
+> control — the structural reason claim 116 went wrong.
 
 **Egypt** — `REGUH` 2016-2026: 17,778 lines to Egypt-domiciled payees, 744 vendors, and
 **2,762 vendors** in `LFA1` (which would make it the 5th-largest of the group). Of the payments
 that actually settle at an Egyptian bank (`UBNKS='EG'`): **387 lines, 100% through house bank
 `CIT19`, method 3** (`USD01` 269 + `EGP01` 118, EGP 20.8M).
+
+**Egypt exposure by company code** — which half of the population the control could reach:
+
+| Population | Lines | Covered by U917 |
+|---|---:|---|
+| Settle at an Egyptian bank (`UBNKS='EG'`) | 387 | **100% — all UNES** |
+| Egypt-domiciled payees (`LAND1='EG'`) | 17,778 | UNES 16,058 ✅ · ICTP 1,242 ❌ · UIL 348 ❌ · IIEP 117 ❌ · UIS 9 ❌ · UBO 4 ❌ |
+
+So for the population Citi's notice actually binds, capture *would* be enforced once `EG` rows
+exist. **1,720 lines (9.7%)** to Egypt-domiciled payees sit in institutes with no capture
+control at all.
 
 ---
 

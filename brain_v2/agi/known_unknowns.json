@@ -778,7 +778,7 @@
       "domain": "Payment",
       "question": "The control exists — so why do 283 of 303 payment lines to India-domiciled vendors carry an EMPTY LZBKZ, while all 13 Jordan lines carry one?",
       "why": "Measured on Gold DB REGUP_SCENARIOS (188 payment runs, 2025-01-02..2026-04-29, 6 company codes) joined to LFA1. With U917 in place, an empty code on a PPC-country line should be impossible at invoice entry. Something is letting them through, and the same hole will let Egypt through the day EG rows are added.",
-      "status": "open",
+      "status": "resolved",
       "hypotheses_to_test": [
         "vendor has no LFBK row -> u917 exits at CHECK lv_banks IS NOT INITIAL and passes",
         "the vendor's BANK country is not IN even though the vendor address is IN — u917 keys on LFBK-BANKS, not LFA1-LAND1",
@@ -802,6 +802,34 @@
         "LFA1",
         "REGUP",
         "BSEG"
+      ],
+      "resolved_at": "2026-08-17",
+      "resolved_session": 99,
+      "resolution_claim": 485,
+      "resolution": "TWO ANSWERS. (1) 259 of the 283 lines were MY MEASUREMENT ERROR: U917 keys on the vendor's BANK country (LFBK-BANKS), the measurement keyed on the vendor's ADDRESS country (LFA1-LAND1). That vendor banks in Singapore — the control correctly does not apply, there is no defect. (2) The residual 24 lines are all company code IIEP (vendor 0000492662 KAPUR Avani, Jan-Apr 2025). U917 is step 012 of VALID='UNES', and OB28 assigns that validation to company code UNES only; IIEP runs VALID='IIEP' with 2 steps. The control was never in IIEP's path. THE REAL FINDING IS BIGGER THAN THE QUESTION: the capture control covers 1 of 9 company codes. For Egypt that is survivable — all 387 Egypt-bank-settling lines are UNES — but 1,720 lines to Egypt-domiciled payees sit in institutes with no control."
+    },
+    {
+      "id": "KU-2026-099-PPC-INSTITUTE-COVERAGE",
+      "opened_at": "2026-08-17",
+      "session": 99,
+      "severity": "MEDIUM",
+      "domain": "Payment",
+      "question": "Should ICTP, IIEP, UBO, UIL and UIS get a U917-equivalent step in their own validation, and should IBE/ICBA/MGIE get a validation at all?",
+      "why": "This is now a functional decision, not a technical unknown. The mechanism is understood and measured (claim 485); what is missing is whether the business wants the same guardrail per institute. 1,720 payment lines to Egypt-domiciled payees alone sit outside it.",
+      "status": "open",
+      "decision_owner": "Marlies Spronk + N_MENARD + Pablo Lopez",
+      "related_claims": [
+        485,
+        484
+      ],
+      "related_objects": [
+        "U917",
+        "GB931",
+        "VALID:IIEP",
+        "VALID:ICTP",
+        "VALID:UBO",
+        "VALID:UIL",
+        "VALID:UIS"
       ]
     }
   ]

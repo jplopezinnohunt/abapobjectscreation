@@ -140,8 +140,28 @@ PPC functional spec v2.0 (M. Spronk), page 16: <em>the development is only for t
 <tr><td>IN</td><td class="n">303</td><td class="n" style="color:#c5283d;font-weight:600">283</td><td class="n">20</td></tr>
 <tr><td>JO</td><td class="n">13</td><td class="n">0</td><td class="n" style="color:#0a7e6e;font-weight:600">13</td></tr>
 </table>
+<div class="callout green">
+<strong>Resolved — and the answer is bigger than the question.</strong> <span class="pill green">claim 485</span>
+<strong>259 of the 283 were a measurement error:</strong> <code>U917</code> keys on the vendor's <strong>bank</strong> country (<code>LFBK-BANKS</code>); this table keys on the vendor's <strong>address</strong> country (<code>LFA1-LAND1</code>). That vendor banks in Singapore — the control correctly does not apply, no defect. The residual <strong>24 lines are all company code IIEP</strong>. And that is the real finding.
+</div>
+
+<h3>The control covers ONE company code out of NINE</h3>
+<p style="font-size:12.5px"><code>U917</code> is step <code>VALSEQNR=012</code> of validation <code>VALID='UNES'</code>. OB28 assigns validations per company code, and at UNESCO that assignment is optional. Measured live in P01 (<code>GB931</code>):</p>
+<table>
+<tr><th>Company code</th><th>Validation</th><th class="n">Steps</th><th>Has U917?</th></tr>
+<tr><td><strong>UNES</strong></td><td><code>UNES</code></td><td class="n"><strong>12</strong></td><td style="color:#0a7e6e;font-weight:600">yes — step 012</td></tr>
+<tr><td>ICTP</td><td><code>ICTP</code> + <code>ICTP_HE</code></td><td class="n">4 + 4</td><td style="color:#c5283d">no</td></tr>
+<tr><td>IIEP</td><td><code>IIEP</code></td><td class="n">2</td><td style="color:#c5283d">no</td></tr>
+<tr><td>UBO</td><td><code>UBO</code></td><td class="n">3</td><td style="color:#c5283d">no</td></tr>
+<tr><td>UIL</td><td><code>UIL</code></td><td class="n">1</td><td style="color:#c5283d">no</td></tr>
+<tr><td>UIS</td><td><code>UIS</code></td><td class="n">—</td><td style="color:#c5283d">no</td></tr>
+<tr><td>IBE · ICBA · MGIE</td><td><em>none assigned</em></td><td class="n">0</td><td style="color:#c5283d">no</td></tr>
+</table>
 <div class="callout red">
-Jordan is clean, India is 93% empty. With <code>U917</code> in place that should be impossible. Tracked as <strong><code>KU-2026-099-PPC-COVERAGE</code></strong>, five hypotheses — the leading one being that the control keys on <code>LFBK-BANKS</code> while this measurement keys on <code>LFA1-LAND1</code>. <strong>This blocks Egypt: the same hole applies on day one.</strong>
+<strong>Adding a country to <code>YTFI_PPC_STRUC</code> turns the capture control on for <code>UNES</code> and for nobody else.</strong> Whether the other institutes should get an equivalent step is a functional decision — <code>KU-2026-099-PPC-INSTITUTE-COVERAGE</code>, owner Marlies + N_MENARD + Pablo.
+</div>
+<div class="callout navy">
+<strong>Why a table search can never settle this.</strong> <code>GB931</code> stores <code>CHECKID</code> as a boolean-expression id (<code>2UNES###009</code>), never the literal <code>=U917</code>; the exit call lives inside the <code>GB901</code> expression body. A table-level search for <code>LZBKZ</code> returns nothing and <em>cannot</em> disprove the control. That is the structural reason claim 116 went wrong.
 </div>
 
 <h3>Egypt — where the money actually goes</h3>
@@ -152,6 +172,16 @@ Jordan is clean, India is 93% empty. With <code>U917</code> in place that should
 <tr><td>Lines settling at an <strong>Egyptian bank</strong></td><td class="n">387</td><td><code>REGUH.UBNKS='EG'</code>, 94 vendors</td></tr>
 <tr><td>…of which through house bank <code>CIT19</code> method 3</td><td class="n" style="color:#c5283d;font-weight:600">387 (100%)</td><td><code>USD01</code> 269 + <code>EGP01</code> 118 (EGP 20.8M)</td></tr>
 </table>
+
+<h3>Egypt exposure by company code — which half the control can reach</h3>
+<table>
+<tr><th>Population</th><th class="n">Lines</th><th>Covered by U917</th></tr>
+<tr><td>Settle at an Egyptian bank (<code>UBNKS='EG'</code>) — what Citi's notice binds</td><td class="n">387</td><td style="color:#0a7e6e;font-weight:600">100% — all UNES</td></tr>
+<tr><td>Egypt-domiciled payees (<code>LAND1='EG'</code>)</td><td class="n">17,778</td><td>UNES 16,058 ✅ · ICTP 1,242 ❌ · UIL 348 ❌ · IIEP 117 ❌ · UIS 9 ❌ · UBO 4 ❌</td></tr>
+</table>
+<div class="callout green">
+For the population Citi actually binds, capture <strong>would</strong> be enforced once <code>EG</code> rows exist — all 387 are UNES. The residual exposure is <strong>1,720 lines (9.7%)</strong> to Egypt-domiciled payees sitting in institutes with no capture control at all.
+</div>
 
 <h2>What the Egypt request actually needs</h2>
 <table>
