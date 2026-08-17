@@ -126,17 +126,13 @@ Brain: <code>python brain_v2/graph_queries.py incident INC-EGYPT-PPC</code>
    EG | USTRD | C | &lt;PmtInf&gt;&lt;CdtTrfTxInf&gt;&lt;RmtInf&gt;&lt;Ustrd&gt;
 
 <span class="c">T015L — ZWCK1 is TWO fields split at the FIRST space: "&lt;code&gt; &lt;narrative&gt;"</span>
-   EG0  GDS Payment for goods received
-   EG1  SVC Service fees for consulting work
-   EG2  SAL Salary payment
-   EG3  RNT Rent
-   EG4  CHC Charitable contribution
-   ...  one per reason UNESCO actually pays for in Egypt</pre>
+   11 rows, EG0..EGA — see the verified list in section 3b</pre>
 
 <h2>3b · The reason list — derived, not requested <span class="pill green">claim 490</span></h2>
 <div class="callout navy">
 <strong>Are the lists international? Measured: no — 7 of 9 are national and none overlaps.</strong> India uses RBI codes, Indonesia Bank Indonesia numerics, Jordan the Central Bank of Jordan list, Morocco the Office des Changes, Malaysia Bank Negara, China slash-notation. The only shared set is <strong>AE ∩ BH</strong> — six CBUAE mnemonics Bahrain reused.<br><br>
-<strong>But one country already solves the "no national list" case: the Philippines uses pure ISO 20022 <code>ExternalPurpose</code></strong> — <code>SUPP · SALA · BEXP · TRVL · CHAR</code>. That is the in-house precedent for Egypt, where Citi named no code list at all.
+<strong>One country already solves the "no national list" case: the Philippines uses ISO 20022 <code>ExternalPurpose</code> codes</strong> — <code>SUPP · SALA · BEXP · CHAR</code>. That is the in-house precedent for Egypt, where Citi named no code list at all.<br><br>
+<strong>With one caveat found in the research:</strong> the Philippines list also contains <code>PH3 = TRVL</code>, and <strong><code>TRVL</code> is not an ISO 20022 code</strong>. So the existing configuration is not uniformly standards-based — calling the Philippines "the ISO precedent" overstates it.
 </div>
 
 <h3>What UNESCO actually pays for — P01 REGUP 2024-2026, 12,278 lines with a purpose code</h3>
@@ -154,18 +150,46 @@ Brain: <code>python brain_v2/graph_queries.py incident INC-EGYPT-PPC</code>
 <tr><td>Marginal: training · international organisations · charity · medical · rent</td><td>MA6 720 · MY3 15200 · PH4 CHAR · JO8 809 · JO9 811</td><td>&lt;11%</td></tr>
 </table>
 
-<h3>The proposed Egypt list — Philippines pattern, UNESCO's own reasons</h3>
-<pre><span class="c">T015L · ZWCK1 = "&lt;ISO 20022 code&gt; &lt;narrative to Citi's standard&gt;"</span>
-EG0  SUPP  Payment for goods or services received
-EG1  SCVE  Service fees for consulting work
-EG2  SALA  Salary payment
-EG3  TRVL  Travel expenses
-EG4  RDEV  Research and development services
-EG5  BEXP  Business expenses
-EG6  ITSV  Information technology and telecommunication services
-EG7  TRAI  Training services
-EG8  CHAR  Charitable contribution
-EG9  RENT  Rent</pre>
+<h3>The Egypt list — every code verified against ISO 20022 <span class="pill green">claim 495 · research wegppc001</span></h3>
+<div class="callout red">
+<strong>An earlier version of this page listed four codes that do not exist.</strong> <code>TRVL</code>, <code>RDEV</code>, <code>ITSV</code> and <code>TRAI</code> were invented and have been replaced. Every code below was checked against the published ISO 20022 External Purpose Codes list (125 codes) and confirmed independently against LHV's <code>ExternalPurpose1Code</code> reference.
+</div>
+<table>
+<tr><th><code>LZBKZ</code></th><th><code>ZWCK1</code></th><th>Covers — measured across the nine configured countries</th></tr>
+<tr><td><code>EG0</code></td><td><code>SUPP Payment for goods or services received</code></td><td>generic supplier payment — PH0 <strong>76%</strong></td></tr>
+<tr><td><code>EG1</code></td><td><code>SCVE Service fees for consulting work</code></td><td>professional / consulting — AE4 37% · JO6 43% · IN6 21% · MA5 26%</td></tr>
+<tr><td><code>EG2</code></td><td><code>SALA Salary payment</code></td><td>payroll — IN9 9% · PH1 3%</td></tr>
+<tr><td><code>EG3</code></td><td><code>BEXP Travel and business expenses</code></td><td>travel — AE7 13% · PH3 18% · ID0 21% · MY0 11%</td></tr>
+<tr><td><code>EG4</code></td><td><code>GDDS Purchase of goods</code></td><td>goods</td></tr>
+<tr><td><code>EG5</code></td><td><code>OTLC Telecommunication and IT services</code></td><td>IT and telecom — AE3 18% · AE8 11% · AE2 3%</td></tr>
+<tr><td><code>EG6</code></td><td><code>STDY Training and education services</code></td><td>training — MA6 11%</td></tr>
+<tr><td><code>EG7</code></td><td><code>GOVT Payment to a government or international organisation</code></td><td>international organisations — MY3 23%</td></tr>
+<tr><td><code>EG8</code></td><td><code>CHAR Charitable contribution</code></td><td>charity — AE1 · PH4</td></tr>
+<tr><td><code>EG9</code></td><td><code>RENT Rent</code></td><td>rent — JO9 · AE6</td></tr>
+<tr style="background:#f4f5f7"><td><code>EGA</code></td><td><code>OTHR Other business services</code></td><td><strong>the catch-all, and the most used category of all</strong> — IN7 63% · ID7 34% · MY9 33% · MA9 32%</td></tr>
+</table>
+<p style="font-size:12.5px">Eleven rows, not ten. <code>LZBKZ</code> is three characters, so <code>EGA</code> is valid — India already runs <code>INA</code> in production.</p>
+
+<h3>Three judgement calls in this list</h3>
+<table>
+<tr><th>Issue</th><th>Decision</th></tr>
+<tr><td><strong>ISO has no code for research and development</strong>, yet it is the third most-used category (MA4 32% · MY6 33% · ID5 23%)</td><td>falls under <code>SCVE</code> (it is a purchase of services) or <code>OTHR</code>. No row invented for it</td></tr>
+<tr><td><strong>ISO has no code for financial services</strong> — 50% of Jordan, 16% of UAE</td><td>nearest is <code>COMM</code> (Commission), which is not the same thing. Falls under <code>SCVE</code></td></tr>
+<tr><td>Catch-all: <code>OTHR</code> or <code>MSVC</code>?</td><td><code>MSVC</code> means <em>several service types in one payment</em> — a different meaning. <code>OTHR</code> is the literal match and earns its row on volume</td></tr>
+</table>
+
+<h3>Sources — to be confirmed by the bank</h3>
+<div class="callout">
+The codes below are <strong>verified as valid ISO 20022 values</strong>, and Egypt adopted ISO 20022 on <strong>21 June 2026</strong>, so the family is right. What is <em>not</em> verified is that Citibank Egypt will accept this particular selection and wording — <strong>that has to be confirmed with CitiService Egypt before transport.</strong> No Central Bank of Egypt purpose-code list could be found in any published source, which is consistent with the notice asking for a description rather than a code.
+<table style="margin-top:8px">
+<tr><th>Source</th><th>What it established</th></tr>
+<tr><td><a href="https://www.rba.hr/documents/20182/183267/External+purpose+codes+list/8a28f888-1f83-5e29-d6ed-fce05f428689?version=1.1">ISO 20022 External Purpose Codes list</a> (published PDF, 13 pages)</td><td>125 codes extracted — the presence/absence check for every code above</td></tr>
+<tr><td><a href="https://docs.lhv.com/home/connect/overview/code-reference-tables/purpose">LHV Connect — <code>ExternalPurpose1Code</code></a></td><td>independent confirmation of the same presence and absence</td></tr>
+<tr><td><a href="https://www.iso20022.org/catalogue-messages/additional-content-messages/external-code-sets">ISO 20022 — external code sets</a></td><td>the authoritative publisher of the list</td></tr>
+<tr><td><a href="https://www.cbe.org.eg/en/news-publications/news/2026/06/21/08/03/iso-2026">Central Bank of Egypt — ISO 20022 adoption</a></td><td>Egypt adopted ISO 20022 for interbank SWIFT effective 2026-06-21; RTGS upgraded</td></tr>
+</table>
+Registered as research <code>wegppc001</code> (CLOSED) — 4 sources indexed, 4 findings verified, 1 refuted.
+</div>
 <div class="callout green">
 <strong>This removes the last blocking unknown.</strong> The list no longer has to be requested from Citi or invented — it is UNESCO's own payment history, carried on the code standard the Philippines already uses. What is left for the business is to <em>approve the wording</em>, not to author the taxonomy.
 </div>
