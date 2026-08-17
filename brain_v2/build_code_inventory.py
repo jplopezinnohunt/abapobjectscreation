@@ -184,6 +184,16 @@ def scan_files():
                 if stem.lower().endswith(suf):
                     stem = stem[: -len(suf)]
                     break
+
+            # A file named CM003.abap / CCIMP.abap / CI.abap is a SECTION of a class, not
+            # an object. Its identity is the directory it sits in. Left alone these became
+            # ~30 free-floating objects called CM001..CM00D that could never carry a domain,
+            # and — worse — the real method bodies never attached to their class.
+            member = None
+            if GENERIC_INCLUDE.match(stem):
+                parent = rp.name
+                if len(parent) >= 5 and not GENERIC_INCLUDE.match(parent):
+                    member, stem = stem.upper(), parent
             files.append({
                 "path": str(rel / fn).replace("\\", "/"),
                 "name": normalise_object_name(stem),
@@ -193,6 +203,7 @@ def scan_files():
                 "encoding": enc,
                 "in_corpus": top in CORPUS_ROOTS,
                 "root": top,
+                "member": member,
             })
     return files
 
@@ -268,6 +279,40 @@ def collect_domain_evidence():
         for d, objs in (eom.get("top_objects_by_domain") or {}).items():
             for o in objs or []:
                 add(o.get("object"), d, "usage:executed_objects_map", "medium")
+    # 3b. TADIR package — the MEASURED owner of an object. A package is not a domain, so
+    # only unambiguous packages map; 'YA' is a catch-all and deliberately does not.
+    PKG_DOMAIN = {"ZPBC": "PBC", "YHR_OM_WF": "HR-Workflows", "YWFI": "FI"}
+    tadir = load_json("brain_v2/tadir_object_package.json") or {}
+    for obj, pkg in (tadir.get("object_package") or {}).items():
+        d = PKG_DOMAIN.get(pkg)
+        if d:
+            add(obj, d, f"tadir:{pkg}", "high")
+
+    # 3c. WHAT THE CODE READS. The strongest name-independent signal available: an object
+    # that reads FMIFIIT and FMIT is doing funds management whatever it is called. Tables
+    # come from the parsed sections; table->domain from the gold table registry.
+    reg = load_json("brain_v2/gold_table_registry.json") or {}
+    table_domain = {}
+    for dom, cats in (reg.get("domains") or {}).items():
+        if not isinstance(cats, dict):
+            continue
+        for rows in cats.values():
+            for x in (rows or []):
+                if isinstance(x, dict) and x.get("gold"):
+                    table_domain.setdefault(x["gold"].upper(), dom)
+    secs = load_json("brain_v2/code_sections.json") or {}
+    for obj, o in (secs.get("objects") or {}).items():
+        counts = defaultdict(int)
+        for s in o.get("sections", []):
+            for t in s.get("reads_tables", []):
+                d = table_domain.get(t.upper())
+                if d:
+                    counts[d] += 1
+        # require 2+ distinct hits so a single incidental read cannot label an object
+        for d, c in counts.items():
+            if c >= 2:
+                add(obj, d, f"reads_tables:{c}", "medium")
+
     fp_dir = BRAIN / "domain_footprints"
     if fp_dir.is_dir():
         for fp in fp_dir.glob("*.json"):
