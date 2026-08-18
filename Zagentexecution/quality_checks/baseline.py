@@ -30,7 +30,6 @@ QUALITY_CHECK = {
     "what": "shared verdict helper - not a check, never run on its own",
 }
 
-import io
 import json
 import sys
 from pathlib import Path
@@ -59,8 +58,12 @@ def verdict(name, count, unit="findings", note=""):
 
     Call it as the last thing a check does:  return verdict("my_check", len(rows))
     """
-    out = getattr(sys.stdout, "buffer", None)
-    w = io.TextIOWrapper(out, encoding="utf-8", errors="replace") if out else sys.stdout
+    # Write through the CALLER's sys.stdout. Wrapping sys.stdout.buffer in a second
+    # TextIOWrapper here swallowed the entire report: the caller's wrapper still held its
+    # lines unflushed, this one closed the shared buffer on the way out, and everything but
+    # the verdict was discarded. The checks were hiding their own findings -- the exact
+    # failure they exist to catch.
+    w = sys.stdout
 
     data = _load()
     entry = data.get(name)
