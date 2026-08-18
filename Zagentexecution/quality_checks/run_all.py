@@ -16,6 +16,7 @@ TIERS
   gate         recurring, offline, gives a real verdict   -> runs in every rebuild
   live         needs an RFC session to P01                 -> --tier live, never in a rebuild
   analysis     produces a report, not a pass/fail          -> on demand; scheduling proves nothing
+  library      a shared helper imported by checks          -> never run on its own
   quarantined  the METHOD is refuted                       -> never run; the reason is printed
 
 EXIT CODES
@@ -107,6 +108,8 @@ def main():
             unclassified.append((p, d))
         elif d["tier"] == "quarantined":
             quarantined.append((p, d))
+        elif d["tier"] == "library":
+            continue                       # a helper module, not a check -- nothing to run
         elif args.tier == "all" or d["tier"] == args.tier:
             selected.append((p, d))
 

@@ -24,6 +24,12 @@ when it exists.
 Baselines live in brain_v2/quality_baselines.json, git-tracked, so the ratchet is a fact
 about the repo rather than a fact about one machine.
 """
+QUALITY_CHECK = {
+    "tier": "library",
+    "needs": "files",
+    "what": "shared verdict helper - not a check, never run on its own",
+}
+
 import io
 import json
 import sys

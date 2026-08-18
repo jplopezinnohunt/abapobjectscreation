@@ -224,6 +224,59 @@ Not a self-assessment: each dimension is derived from what is on disk.
 """
 
 
+NL = chr(10)
+
+DONE_STATUSES = {"CLOSED", "RESOLVED", "DONE", "CLOSED_WITH_CLEANUP"}
+
+
+def _open_work_block():
+    """The incidents that still need something DONE, deadline first.
+
+    The index used to print the incident COUNT and never say which ones. A count is not a
+    pointer: a fresh session could only reach INC-EGYPT-PPC by already knowing to ask for it
+    by name, which is precisely what a fresh session does not know. Measured at s099 --
+    BRAIN_INDEX.md had zero mentions of purpose-of-payment, PPC, Egypt or T015L while the
+    incident record held the complete ten-code fix and the transport order.
+
+    Generated, so it covers the NEXT incident too, not just the one that exposed the hole.
+    """
+    f = HERE / "incidents" / "incidents.json"
+    if not f.exists():
+        return "## WARNING - incidents.json MISSING" + NL
+    data = json.load(open(f, encoding="utf-8"))
+    inc = data if isinstance(data, list) else data.get("incidents", [])
+    live = [i for i in inc if str(i.get("status", "")).upper() not in DONE_STATUSES]
+    if not live:
+        return "## OPEN WORK - no incident is awaiting action" + NL
+
+    # a hard date outranks everything else
+    live.sort(key=lambda i: (i.get("deadline") or "9999-99-99", i.get("id", "")))
+    shown, extra = live[:8], max(0, len(live) - 8)
+
+    lines = []
+    for i in shown:
+        due = " - **DUE {}**".format(i["deadline"]) if i.get("deadline") else ""
+        lines.append("- `{}` - {}{} - {}".format(
+            i.get("id"), i.get("status"), due, (i.get("title") or "")[:96]))
+        if i.get("next_action"):
+            lines.append("  - NEXT: {}".format(i["next_action"][:260]))
+        lines.append("  - drill: `python brain_v2/graph_queries.py incident {}`".format(
+            i.get("id")))
+
+    # No silent cap. The first 8 get full detail; the rest are still LISTED by id, because
+    # an incident that does not appear here cannot be found by a session that does not
+    # already know its name -- which is the entire failure this block exists to prevent.
+    # knowledge_reachability_check.py enforces exactly that, and caught this cap on its
+    # first run: INC-FXREVAL-OB09 was live and unreachable.
+    tail = ""
+    if extra:
+        rest = "  ".join("`{}` ({})".format(i.get("id"), i.get("status"))
+                         for i in live[8:])
+        tail = (NL + "_{} more open, drill by id:_ {}".format(extra, rest) + NL)
+    return ("## OPEN WORK - incidents awaiting action ({} live, deadline first)".format(len(live))
+            + NL + NL.join(lines) + NL + tail)
+
+
 def run():
     s = json.load(open(STATE, encoding="utf-8"))
     cm = s.get("capability_model", {})
@@ -252,6 +305,7 @@ def run():
 {_integration_block()}
 {_security_block()}
 {_maturity_block()}
+{_open_work_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
