@@ -237,7 +237,10 @@ def discover_master_data(s, cx):
                 out["in_the_golden"].append({"table": t, "rows": n})
         # Manual versus channel: the change log names the transaction, and a BLANK
         # transaction code is the signature of a BAPI or an interface rather than a person.
-        for log in ("cdhdr", "cdhdr_history"):
+        # cdhdr_history FIRST: cdhdr is SUPERSEDED and is a strict subset -- 7.8M rows
+        # against 12.0M. Trying the stale one first meant this loop found it, used it, and
+        # answered confidently about 4.2M changes it never saw. A stale copy does not fail.
+        for log in ("cdhdr_history", "cdhdr"):
             has = cx.execute("SELECT 1 FROM sqlite_master WHERE type IN ('table','view') "
                              "AND name=?", (log,)).fetchone()
             if not has:

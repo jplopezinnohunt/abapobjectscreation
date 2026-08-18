@@ -19,7 +19,7 @@ THE RULE THAT MAKES IT TRUSTWORTHY
 
 USE
     from algorithm_memory import recall, remember
-    for m in recall(subject="cdhdr"):        # what do we know about this instrument?
+    for m in recall(subject="cdhdr_history"):  # what do we know about this instrument?
         ...
     remember(subject="fmifiit_full.MEASURE", fact="...", learned_by="A10",
              evidence="0 of 2,308,814 rows", implication="...")

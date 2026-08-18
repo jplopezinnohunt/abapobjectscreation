@@ -176,6 +176,11 @@ def main(argv):
     print("=" * 72)
 
     chan = []
+    # cdhdr_history first, and the order is the point: "cdhdr" is SUPERSEDED and is a
+    # strict subset (7.8M rows against 12.0M, 57 object classes against 72). It stays
+    # as a fallback for an installation that has not accumulated history yet; taking
+    # it when history exists reported PBC as having zero change activity when it has
+    # 3,449,049.
     for log in ("cdhdr_history", "cdhdr"):
         if q(cx, "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (log,)):
             chan = channel_difference(cx, log, since)

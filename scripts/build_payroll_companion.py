@@ -87,7 +87,13 @@ def main():
     # --- 5. HOW THE MASTER DATA IS MAINTAINED. The finding is not the volume, it is the
     # --- share of changes with NO TRANSACTION: those did not come from a person at a screen.
     mrows = ""
-    for obj, v in sorted((md.get("maintenance", {}).get("cdhdr") or {}).items(),
+    # payroll_discovery keys `maintenance` by the log it read, and it reads BOTH when
+    # both exist. Prefer the current one: "cdhdr" is SUPERSEDED by "cdhdr_history"
+    # and is a strict subset (7.8M rows against 12.0M), so taking it renders a
+    # confident section built on 4.2M changes it never saw.
+    _maint = md.get("maintenance", {})
+    _log = _maint.get("cdhdr_history") or _maint.get("cdhdr") or {}
+    for obj, v in sorted(_log.items(),
                          key=lambda x: -(x[1].get("pct_no_transaction") or 0)):
         tops = " · ".join("%s %s" % (esc(t[0]), esc(t[1]))
                           for t in (v.get("top_transactions") or [])[:4])
