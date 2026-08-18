@@ -38,9 +38,12 @@ import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Chars per part. Read tool caps at ~25K tokens; ~60K chars ≈ 15K tokens leaves headroom
-# for wide tables (which tokenise worse than prose).
-PART_CHARS = 60_000
+# Chars per part. The Read tool caps at 25K TOKENS, and the ratio is not constant:
+# MEASURED on this repo's own payload, dense JSON (claims/incidents, quoted keys, indentation)
+# runs ~1.95 chars/token, while prose runs ~4. Sizing at 60K chars assumed prose and produced
+# a 59,975-char part that Read refused at 30,766 tokens. Size for the WORST case:
+# 40,000 / 1.95 ≈ 20.5K tokens, inside the cap with margin.
+PART_CHARS = 40_000
 
 OUT_ROOT = os.environ.get(
     "BRAIN_LOAD_DIR",
@@ -380,7 +383,16 @@ def emit(topic, doms, tokens, wide):
         if old.endswith(".md"):
             os.remove(os.path.join(outdir, old))
 
-    parts, buf, buflen = [], [], 0
+    # `where` maps part-number -> the section titles inside it. Without it the manifest only
+    # says "77 parts, read them all", so finding one section means reading in order until you
+    # hit it — which defeats the point of having the load on disk at all. s100.
+    parts, buf, buflen, where = [], [], 0, {}
+
+    def _mark(part_no, title):
+        titles = where.setdefault(part_no, [])
+        if title not in titles:
+            titles.append(title)
+
     for title, body in sections:
         block = "\n\n@@@@@ %s\n\n%s\n" % (title, body)
         # A single oversized section is split rather than dropped (CP-002: never lose).
@@ -389,10 +401,10 @@ def emit(topic, doms, tokens, wide):
             head, block = block[:cut], "\n@@@@@ (cont.) %s\n%s" % (title, block[cut:])
             if buf:
                 parts.append("".join(buf)); buf, buflen = [], 0
-            parts.append(head)
+            parts.append(head); _mark(len(parts), title)
         if buflen + len(block) > PART_CHARS and buf:
             parts.append("".join(buf)); buf, buflen = [], 0
-        buf.append(block); buflen += len(block)
+        buf.append(block); buflen += len(block); _mark(len(parts) + 1, title)
     if buf:
         parts.append("".join(buf))
 
@@ -426,8 +438,12 @@ def emit(topic, doms, tokens, wide):
             len(written), "{:,}".format(total), total // 4000),
         "",
     ]
-    for name, n in written:
-        man.append("- `%s` (%s chars)" % (os.path.join(outdir, name), "{:,}".format(n)))
+    man += ["", "### Part index — go straight to the part you need", "",
+            "| part | chars | contains |", "|---|---|---|"]
+    for i, (name, n) in enumerate(written, 1):
+        titles = " · ".join(where.get(i, ["(continuation)"]))
+        man.append("| `%s` | %s | %s |" % (
+            os.path.join(outdir, name), "{:,}".format(n), titles[:170]))
     man += ["", "## CORE — what was loaded", ""]
     for rel, _b in docs:
         man.append("- doc: %s" % rel)
