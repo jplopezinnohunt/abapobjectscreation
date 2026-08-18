@@ -33,17 +33,24 @@
    ]
   },
   "write_abap_to_d01": {
-   "authoritative": "Zagentexecution/abap_deploy/deploy_object.py",
-   "gates": "own-objects manifest + TADIR/SEOCLASS pre-flight + PRE readback + hard diff-gate (HALT on deletions) + W-5 operator guard + concurrent-writer guard + POST readback byte-verify",
+   "authoritative": "NONE - out of scope for this project",
+   "status": "DEPRECATED WHOLE (s099, JP). Deploying ABAP is not this project's job.",
+   "measured": "91 scripts in this repo can write to SAP - detected by what they CALL (write_source, set_source, DDIF_*_PUT, RFC_ABAP_INSTALL_AND_RUN, .deploy(, BDC_INSERT), not by their names. Only 3 have the ALLOW_D01_WRITES kill-switch in their path: sap_adt_client.py, sap_adt_rfc_client.py and abap_deploy/deploy_object.py. The other 88 have no gate at all. Full list: brain_v2/sap_write_tool_inventory.json",
    "deprecated": [
     {
-     "impl": "sap_mcp_server.adt_deploy",
-     "why": "lock -> write -> syntax -> activate, with NO manifest check, NO PRE/POST readback and NO diff-gate. It bypasses the entire remediation built after INC-CLASS-LOSS (2026-06-12), where a session corrupted real N_MENARD classes by writing in place. The ALLOW_D01_WRITES kill-switch in the ADT clients currently blocks it, but a kill-switch is a blunt block, not an architecture.",
-     "severity": "DANGEROUS - do not connect this tool without removing or gating it"
+     "impl": "all 88 ungated writers (deploy_yfi_v2..v6, direct_insert_seoclass, complete_reconstruction, final_rpy_write, reposrc_insert, write_via_bridge, abap_bridge_*, redeploy_modified, install_via_rpy_v2, ...)",
+     "why": "Old, risky, and not used (JP). These are the ad-hoc scripts BROADCAST-007 already bans. They are the class of tool that caused INC-CLASS-LOSS: writing in place, no transport, no review, on objects we do not own.",
+     "severity": "DANGEROUS - never invoke"
     },
     {
-     "impl": "the legacy ad-hoc deploy_* / reconstruct_* / force_* / direct_insert_* scripts",
-     "why": "CLAUDE.md BROADCAST-007 already forbids these. Listed here so the ban lives in the ownership map too, not only in prose."
+     "impl": "Zagentexecution/abap_deploy/deploy_object.py",
+     "why": "The best-designed write path we have - 9 gates, PRE/POST readback, diff-gate - and still deprecated HERE, because the capability is out of scope for this project. It stays as the reference design and as the INC-CLASS-LOSS recovery record, not as something to run.",
+     "severity": "OUT OF SCOPE - do not run from this project"
+    },
+    {
+     "impl": "sap_mcp_server.adt_deploy",
+     "why": "lock -> write -> activate with no manifest, no readback, no diff-gate. Doubly excluded: out of scope, and in a layer that never ran.",
+     "severity": "DANGEROUS - do not connect"
     }
    ]
   },
@@ -79,5 +86,15 @@
    ]
   }
  },
- "_the_decision_s099": "The architecture that WORKS today is: Python scripts + the graph_queries CLI + 4 hooks + quality_checks discovered by glob. That layer ran mechanically all session, unattended. The MCP server is a parallel universe that NEVER RAN - no .mcp.json, its dependency not installed, 16 tools nobody ever called. JP: 'no tomar algo viejo y enchufarlo'. So it is NOT connected. It is deprecated whole. Where it had a genuinely better idea - golden reads carrying provenance and freshness instead of 15 ad-hoc sqlite3 snippets - the IDEA is ported into the working layer, not the code."
+ "_the_decision_s099": "The architecture that WORKS today is: Python scripts + the graph_queries CLI + 4 hooks + quality_checks discovered by glob. That layer ran mechanically all session, unattended. The MCP server is a parallel universe that NEVER RAN - no .mcp.json, its dependency not installed, 16 tools nobody ever called. JP: 'no tomar algo viejo y enchufarlo'. So it is NOT connected. It is deprecated whole. Where it had a genuinely better idea - golden reads carrying provenance and freshness instead of 15 ad-hoc sqlite3 snippets - the IDEA is ported into the working layer, not the code.",
+ "_scope_s099": "WHAT THIS PROJECT DOES: read SAP (read-only), extract to the golden, analyse code from the extracted corpora, build and query the brain, run recurring checks, produce companions. WHAT IT DOES NOT DO: deploy ABAP. JP, s099: 'El desplegar abap no lo hacemos con este proyecto'. So no write path here has an owner - the capability is out of scope, which is stronger than saying one implementation is preferred over another.",
+ "_valid_today": {
+  "read_sap_live": "rfc_helpers.py ConnectionGuard + RFC_READ_TABLE - P01 READ-ONLY over SNC",
+  "read_abap_source": "the extracted corpora in git (1,683 files), indexed by code_inventory + code_sections",
+  "search_the_brain": "brain_v2/graph_queries.py - search | entity | incident | domain | capability_gaps | code | blocking_code",
+  "extract_to_golden": "scripts/extraction/gold_refresh.py, registry-driven, delta-aware",
+  "recurring_verification": "Zagentexecution/quality_checks/*.py by glob, via rebuild_all Step 3e",
+  "rebuild_the_model": "brain_v2/rebuild_all.py - the one entry point that runs the rest",
+  "companions": "scripts/build_companion_graph.py + build_landing_page.py"
+ }
 }
