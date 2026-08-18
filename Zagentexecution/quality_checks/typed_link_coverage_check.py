@@ -45,6 +45,7 @@ INDEX = REPO / "brain_v2" / "entity_index.json"
 
 # Only entities specific enough that appearing in prose really means "this claim is about it".
 # Short or dictionary-like names (FUND, SYSTEM, PAYMENT) match everywhere and mean nothing.
+PERSON = re.compile(r"^[A-Z]_[A-Z]{2,}$")   # C_LOPEZ, N_MENARD
 MIN_LEN = 4
 GENERIC = {
     "SYSTEM", "PAYMENT", "TRANSPORT", "TREASURY", "BUDGET", "VALIDATION", "COMPANY CODE",
@@ -62,6 +63,16 @@ def main():
     def specific(e):
         """Specific enough that seeing it in prose really means the claim is about it."""
         if len(e) < MIN_LEN or e in GENERIC:
+            return False
+        # SAP usernames are not objects. They are in the index because some record listed a
+        # person in related_objects, and chasing them here would push the index toward being
+        # a people-tracker -- which the PMO flags as sensitive under H71 (a capability is not
+        # proven fraud; route through controls, do not broadcast names).
+        if PERSON.match(e):
+            return False
+        # Incident ids belong in related_incidents, not related_objects. Counting them as a
+        # missing OBJECT link asks for the wrong fix.
+        if e.startswith("INC-"):
             return False
         # an underscore (YTFI_PPC_STRUC) or an embedded digit (T015L, BSEG2) marks a real
         # object name; a bare capitalised word does not
