@@ -384,7 +384,38 @@ def restore_claude(zip_path, to_dir):
     return 0 if ok else 1
 
 
+# Flags the script understands. Anything else is a question it cannot answer, and the
+# answer to a question it cannot answer is NOT "run the most expensive action I have".
+KNOWN_FLAGS = {
+    "--help", "-h", "--status", "--restore", "--to", "--verify",
+    "--dest", "--claude-only", "--force",
+}
+
+
+def usage():
+    print(__doc__.strip() if __doc__ else "backup_golden.py")
+    print()
+    print("Flags: " + "  ".join(sorted(KNOWN_FLAGS)))
+    print()
+    print("Sin --dest copia a %s, que puede estar en el MISMO volumen que el" % DEFAULT_DEST)
+    print("origen. Eso protege de un script roto o una escritura interrumpida; NO")
+    print("protege de un fallo de disco, que es de lo que va este backup.")
+    return 0
+
+
 def main(argv):
+    if "--help" in argv or "-h" in argv:
+        return usage()
+
+    unknown = [a for a in argv if a.startswith("-") and a not in KNOWN_FLAGS]
+    if unknown:
+        print("Flag no reconocida: %s" % ", ".join(unknown))
+        print("Paro aqui a proposito. Antes, cualquier flag desconocida caia al backup")
+        print("por defecto y escribia 16 GB sin que nadie lo pidiera.")
+        print()
+        usage()
+        return 2
+
     if "--status" in argv:
         return status(argv[argv.index("--dest") + 1] if "--dest" in argv
                       else DEFAULT_DEST)
