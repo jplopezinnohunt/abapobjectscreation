@@ -23536,5 +23536,46 @@
     "created_session": 100,
     "status": "active",
     "supersedes_claim": 501
+  },
+  {
+    "id": 503,
+    "claim": "THE TWO BANKS DO NOT ASK FOR THE SAME THING, and treating them as one is how a compliant file gets built for the wrong spec. Verbatim from Citi's ISOXML CREDIT V3 GOLD format rules (field notes on PstlAdr, sheet 500_US_WIRE): 'Do not use both structured and unstructured address tags. Ctry can be present in both option. IF USING STRUCTURED Street name, city/town name, State/Sub Division, Postal Code and country ARE REQUIRED' and 'PARTIAL ADDRESSES WILL NOT BE ACCEPTED... using both structured and unstructured will result in a payment failure.' Versus SocGen's brochure (claim 499): TwnNm+Ctry Required, StrtNm/BldgNb/PstCd/CtrySubDvsn only 'strongly recommended'. So under CITI a structured address needs FIVE tags (StrtNm, TwnNm, CtrySubDvsn, PstCd, Ctry); under SOCGEN it needs TWO (TwnNm, Ctry) and the rest are optional. WHICH ONE GOVERNS /CGI_XML_CT_UNESCO: SocGen. The file's agents are SOGEFRPP (DbtrAgt) and SOGEUS33 (CdtrAgt), and the spec behind the validator report Treasury receives is named 'FR_pain.001.001.03_Cross Border CT'. M_SPRONK's framing 'this part has the same requirements as SG requirements' (2026-08-17) is therefore NOT exact -- Citi is STRICTER. Consequence for the CITI tree (/CITI/XML/UNESCO/DC_V3_01), which does clear through Citi: a structured agent address there would require PstCd, and BNKA has no clean postcode (claim #317) -- so on that tree, OMITTING the agent PstlAdr is the only clean option, not structuring it. TWO RULES BOTH BANKS SHARE, and neither was in the brain before: (1) structured and AdrLine tags must NEVER be mixed on the same element -- Ctry is the sole tag allowed in both formats -- which makes the all-or-nothing guard on the PstlAdr PARENT a bank rule, not a design preference; (2) hard length budgets counted PER PAIR: StrtNm+BldgNb <=35 combined, TwnNm+CtrySubDvsn <=35 combined INCLUDING the separating comma, PstCd+Ctry <=35 combined, and 'if exceeds 35 characters payment will reject'.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "documentation",
+        "ref": "ISOXML CREDIT V3_FormatRules_GOLD_2026May06 (Citi), sheet 500_US_WIRE, 'Field Additional Notes' column on GrpHdr\\InitgPty\\PstlAdr\\{StrtNm,BldgNb,PstCd,TwnNm,CtrySubDvsn,Ctry,AdrLine}",
+        "cite": "Quoted verbatim above; the same note text repeats on every PstlAdr block in the sheet.",
+        "added_session": 100
+      },
+      {
+        "type": "documentation",
+        "ref": "202601 TECHNICAL BROCH_FR_pain.001.001.03_Cross border CT.docx (SocGen) tables 7/8/9 + 3.3.5.1",
+        "cite": "TwnNm and Ctry 'Required'; StrtNm/BldgNb 'Recommended'; PstCd 'Highly recommended'; CtrySubDvsn unmarked.",
+        "added_session": 100
+      },
+      {
+        "type": "production_data",
+        "ref": "Bank validator report header, 2026-07-21",
+        "cite": "Spec name 'FR_pain.001.001.03_Cross Border CT' -- the SocGen cross-border spec, which is what governs our CGI file.",
+        "added_session": 100
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "/CITI/XML/UNESCO/DC_V3_01",
+      "CdtrAgt",
+      "DbtrAgt",
+      "PstlAdr",
+      "BNKA",
+      "SOGEFRPP",
+      "SOGEUS33"
+    ],
+    "domain": "Payment",
+    "created_session": 100,
+    "status": "active",
+    "resolution_notes": "CORRECTS a statement made earlier in s100 that 'StrtNm+TwnNm+Ctry without PstCd/BldgNb is valid' -- true for SocGen and for the XSD, NOT true for Citi. Always name WHICH bank a rule belongs to before acting on it."
   }
 ]
