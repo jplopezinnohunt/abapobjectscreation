@@ -23286,5 +23286,53 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 497,
+    "claim": "THE GOLDEN DB HAS NOT CHANGED SINCE 2026-08-03, AND THE DURABILITY GATE WAS CRYING WOLF OVER A UNIT. MEASURED 2026-08-18: the live golden is 16,332,861,440 bytes with mtime 2026-08-03 22:53. The backup at D:\\claude_backups\\p01_gold_20260816_1658.db is the SAME byte count, opens read-only with 369 tables / 5 views / bpja = 135,794 rows identical to the original, and PRAGMA quick_check returns ok. So the copy is current and intact, and backup_golden.py skipping it was CORRECT, not a silent failure. THE UNIT: the stop hook reported '15.21 GB' while backup_golden.py reported '16.33 GB'. Both are the same file - 16.33 GB decimal = 15.21 GiB binary. The mismatch read as 'the golden changed' at every close for weeks and it never had. OPERATIONAL TRAP FOUND THE SAME DAY: scripts/backup_golden.py has NO argparse, so `--help` does not print help - it RUNS THE BACKUP, to the default destination C:\\Users\\jp_lopez\\projects\\_golden_backups, which is the SAME VOLUME as the original. That protects against a broken script or an interrupted write; it does NOT protect against disk failure, which is the entire point of this backup. It left a redundant 16 GB copy on C: (PMO H96). WHAT IS ACTUALLY PROTECTED: extracted_code 1283/1283 files in git, extracted_sap_p01 175/175, extracted_sap 225 tracked + 26 deliberately-ignored .ERROR markers that are not source. No ABAP source is unprotected.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "filesystem",
+        "ref": "os.stat on the golden and both copies",
+        "cite": "16,332,861,440 bytes both sides; original mtime 2026-08-03 22:53",
+        "added_session": 99
+      },
+      {
+        "type": "tool",
+        "ref": "sqlite3 read-only open of the D: copy",
+        "cite": "369 tables, 5 views, bpja=135794, PRAGMA quick_check=ok",
+        "added_session": 99
+      },
+      {
+        "type": "tool",
+        "ref": "git ls-files vs os.walk on the three extracted corpora",
+        "cite": "1283/1283, 175/175, 225+26 .ERROR",
+        "added_session": 99
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "BPJA",
+      "P01_GOLD_MASTER_DATA",
+      "BACKUP_GOLDEN"
+    ],
+    "domain": "Operations",
+    "created_session": 99,
+    "resolved_session": 99,
+    "resolution_notes": "Stops the recurring false alarm at close, and records that a skipped golden copy is evidence of an unchanged golden rather than a missed backup - provided someone verifies it, which is what was done here.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Operations"
+      ],
+      "module": [
+        "*"
+      ],
+      "process": [
+        "*"
+      ]
+    }
   }
 ]
