@@ -10,6 +10,11 @@ This is the "FIPEX revenue/consumption mismatch" class.
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
+import sys
+from pathlib import Path as _Path
+sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from baseline import verdict  # noqa: E402  (sibling module)
+
 QUALITY_CHECK = {
     "tier": "gate",      # gate | live | analysis | quarantined
     "needs": "gold_db",    # gold_db | rfc_p01 | files
@@ -136,3 +141,7 @@ r = cur.fetchone()
 print(f'\nTotal (FUND, FISTL) buckets in P01:    {r[0]:,}')
 print(f'AT-RISK buckets (deficit class match): {r[1]:,}')
 print(f'Aggregate operational deficit (USD):   {r[2]:,.2f}')
+
+# Was UNGATED: it printed 1,232 at-risk buckets and exited 0 regardless.
+sys.exit(verdict('inc5638_avc_fipex_at_risk_buckets', r[1], 'at-risk (FUND, FISTL) buckets',
+                 'Revenue parked on the REVENUE placeholder while consumption sits on operational FIPEX.'))

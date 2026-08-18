@@ -26,6 +26,12 @@ Usage:
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.
+
+import sys
+from pathlib import Path as _Path
+sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from baseline import verdict  # noqa: E402  (sibling module)
+
 QUALITY_CHECK = {
     "tier": "gate",      # gate | live | analysis | quarantined
     "needs": "gold_db",    # gold_db | rfc_p01 | files
@@ -202,6 +208,12 @@ def main():
         Path(args.out).write_text(json.dumps(result, indent=2, default=str))
         print(f"\n  -> JSON saved to {args.out}")
 
+    # Gate on lines ALREADY affected, not on at-risk exposure: exposure is a standing
+    # figure, an affected line is a defect that already happened.
+    return verdict("br_line_level_affected_lines",
+                   result["summary"]["affected_lines"], "affected BR lines",
+                   "USD posted against a line reserved in EUR at Budget Rate.")
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

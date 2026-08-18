@@ -297,7 +297,12 @@ def main():
     # 'live' needs an RFC session, 'analysis' produces reports, 'quarantined' is refuted.
     # NON-FATAL on purpose: a finding in the data must not abort a structural rebuild of the
     # brain. It is recorded in brain_v2/quality_checks_state.json and surfaced at close.
-    run(["python", "Zagentexecution/quality_checks/run_all.py", "--tier", "gate"],
+    # --timeout 900: inc5638_fm_ps_avc_misalignment genuinely takes ~6.5 min (it crosses
+    # every fund's WBS pool against FM). It used to "take 5 seconds" only because it crashed
+    # on a renamed table and never did the work. The default 300s would time it out, and a
+    # TIMEOUT reported every rebuild is how a gate becomes furniture.
+    run(["python", "Zagentexecution/quality_checks/run_all.py", "--tier", "gate",
+         "--timeout", "900"],
         "Step 3e: Recurring quality checks (gate tier)", fatal=False)
     run(["python", "brain_v2/add_knowledge_links.py"], "Step 4/7: Link knowledge docs")
 

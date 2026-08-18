@@ -109,6 +109,57 @@ def fund_to_avc_bucket(fipex: str, rules: list[dict]) -> str:
     return fipex
 
 
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from baseline import verdict  # noqa: E402  (sibling module)
+
+
+BPJA_YEARS = ("2024", "2025", "2026")
+
+
+def _bpja_budget_by_objnr(db, _cache={}):
+    """OBJNR -> cumulative WRTTP=41 budget, read ONCE for the whole run.
+
+    Two things went wrong here and both are worth keeping written down.
+
+    BPJA used to be extracted as one table per year (bpja_2024/25/26) and is now a single
+    consolidated `bpja` with a GJAHR column. This check still named the old tables and died
+    with "no such table: bpja_2024" -- for however long, unnoticed, because nothing ran it.
+
+    Then the obvious fix (same query, new table) was 30x slower: the consolidated `bpja` has
+    NO INDEXES, while the old per-year tables did, so one query per fund became a full scan
+    of 135,794 rows per fund. Reading the table once into a dict is both faster than the
+    original and leaves the Gold DB schema untouched -- adding an index to a 15 GB shared
+    asset to satisfy one check is not a trade worth making.
+    """
+    if _cache:
+        return _cache
+
+    names = {r[0].lower() for r in db.execute(
+        "SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+    per_year = [f"bpja_{y}" for y in BPJA_YEARS if f"bpja_{y}" in names]
+
+    if per_year:
+        sources = [(f"SELECT OBJNR, WTJHR FROM {t} WHERE WRTTP='41'", []) for t in per_year]
+    elif "bpja" in names:
+        ph = ",".join("?" * len(BPJA_YEARS))
+        sources = [(f"SELECT OBJNR, WTJHR FROM bpja WHERE WRTTP='41' AND GJAHR IN ({ph})",
+                    list(BPJA_YEARS))]
+    else:
+        raise SystemExit(
+            "BPJA is absent from the Gold DB in BOTH shapes (bpja_<year> and bpja). "
+            "Refusing to continue: a zero budget here would surface as an AVC finding "
+            "when it is really missing data."
+        )
+
+    for sql, params in sources:
+        for objnr, wtjhr in db.execute(sql, params):
+            sign = -1 if (wtjhr or "").strip().endswith("-") else 1
+            _cache[objnr] = _cache.get(objnr, 0.0) + _abs_value(wtjhr) * sign
+    return _cache
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--year", default="2026", help="Year to analyse")
@@ -229,15 +280,8 @@ def main() -> int:
             continue
         in_clause = "(" + ",".join("?" * len(objnrs)) + ")"
         # Cumulative budget WRTTP=41 across BPJA 2024+2025+2026
-        budget_cum = 0.0
-        for tbl in ("bpja_2024", "bpja_2025", "bpja_2026"):
-            for r in db.execute(
-                f"SELECT WTJHR FROM {tbl} WHERE WRTTP='41' AND OBJNR IN {in_clause}",
-                objnrs,
-            ):
-                budget_cum += _abs_value(r["WTJHR"]) * (
-                    -1 if (r["WTJHR"] or "").strip().endswith("-") else 1
-                )
+        bpja_budget = _bpja_budget_by_objnr(db)
+        budget_cum = sum(bpja_budget.get(o, 0.0) for o in objnrs)
         # Cumulative actuals/commitments — sum WTG001+002+003 across cosp 2024+2025+2026
         actuals_cum = 0.0
         cmt_cum = 0.0
@@ -379,7 +423,10 @@ def main() -> int:
                   f"FM_pool={r['fm_pool_usd']:,.2f}  PS_pool={r['ps_pool_usd']:,.2f}")
 
     db.close()
-    return 0
+    # Standing population: fail when it GROWS, not because it exists.
+    return verdict("inc5638_fm_ps_blocking_pools", len(blocking),
+                   "blocking T1/T2 FM-vs-PS pools",
+                   "FM says exhausted while PS still shows budget, or the reverse.")
 
 
 if __name__ == "__main__":
