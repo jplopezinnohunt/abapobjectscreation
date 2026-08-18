@@ -152,13 +152,25 @@ def validate_bank_rules(xml_bytes, after_nov2026=False):
                                       "must be %s" % (tag, seq, want)))
 
         # (a) PstlAdr emitted => TwnNm + Ctry mandatory
+        # An element is "legacy-shaped" when it carries NO structured tag: either
+        # pure AdrLine+Ctry, or Ctry alone. Those are the shapes the grace period
+        # still covers, and grading them ERROR today makes a file the bank accepts
+        # look broken. Proven by the bank itself: on v1 it flagged ONLY CdtrAgt
+        # (lines 88/98) and left DbtrAgt (Ctry+AdrLine) and IntrmyAgt1 (Ctry only)
+        # alone -- not because they are compliant, but because Nov-2026 has not
+        # arrived. They are DEADLINE debt, not defects. Run --after-nov2026 to see
+        # the file the way the bank will read it from November 2026.
+        legacy_shape = not struct
+        # AdrLine present AND no structured tag = the format the bank calls
+        # "unstructured" (the one that dies in Nov-2026). Ctry-only is legacy-shaped
+        # too but is not "unstructured" — it has no AdrLine to measure or forbid.
         pure_unstructured = bool(adrline) and not struct
         for need in ("TwnNm", "Ctry"):
             if need not in present:
-                if need == "TwnNm" and pure_unstructured and not after_nov2026:
-                    findings.append(("WARN", "%s: no structured <TwnNm> — pure "
-                                             "AdrLine+Ctry is accepted only until "
-                                             "Nov-2026 (rule b)" % tag))
+                if legacy_shape and not after_nov2026:
+                    findings.append(("WARN", "%s: no structured <%s> — accepted "
+                                             "only until Nov-2026, then rejected "
+                                             "(rule b)" % (tag, need)))
                 else:
                     findings.append(("ERROR", "%s: <%s> is mandatory whenever "
                                               "<PstlAdr> is emitted (rule a)"
