@@ -580,7 +580,32 @@ def search(brain, text):
         return bool(words) and all(w in low for w in words)
 
     out = {"query": text, "matched_words": words, "claims": [], "rules": [],
-           "incidents": [], "annotations": [], "code": [], "domains": []}
+           "incidents": [], "annotations": [], "code": [], "domains": [],
+           "companions": []}
+
+    # Companions carry the deepest analysis we produce, and they were UNSEARCHABLE: the DMEE
+    # work lives in a companion titled "BCM Structured Address Change" tagged "finance" --
+    # 965 mentions of DMEE, and nothing in its name or registry entry says so. The signal
+    # already existed (build_companion_graph.py extracts SAP vocabulary into node.entities,
+    # 15 companions carry 'dmee'); it was computed and never queried.
+    try:
+        cg = json.loads((PROJECT_ROOT / "companions" / "companion_graph.json")
+                        .read_text(encoding="utf-8"))
+        for n in cg.get("nodes", []):
+            blob = " ".join([str(n.get("title") or ""), str(n.get("file") or ""),
+                             " ".join(str(e) for e in n.get("entities") or []),
+                             " ".join(str(i) for i in n.get("incidents") or [])])
+            if hit(blob):
+                out["companions"].append({
+                    "file": "companions/" + str(n.get("file")),
+                    "title": n.get("title"), "domain": n.get("domain"),
+                    "incidents": n.get("incidents") or [],
+                    "matched_entities": [e for e in (n.get("entities") or [])
+                                         if any(w in str(e).lower() for w in words)][:8],
+                })
+    except (OSError, ValueError):
+        out["companions"] = [{"error": "companion_graph.json unreadable - run "
+                                       "scripts/build_companion_graph.py"}]
 
     for c in brain.get("claims", []):
         if hit(json.dumps(c, ensure_ascii=False)):
