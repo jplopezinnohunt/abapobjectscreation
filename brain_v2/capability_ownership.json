@@ -96,5 +96,45 @@
   "recurring_verification": "Zagentexecution/quality_checks/*.py by glob, via rebuild_all Step 3e",
   "rebuild_the_model": "brain_v2/rebuild_all.py - the one entry point that runs the rest",
   "companions": "scripts/build_companion_graph.py + build_landing_page.py"
+ },
+ "_where_things_belong_s099": {
+  "_question": "JP: 'estamos poniendo las cosas donde las deberiamos poner? por ejemplo read golden db, deberia ser skill, mcp, agent u otra?'",
+  "_criterion": {
+   "hook": "fired by the harness, always, no LLM -> gates, measurement, state capture. The only GUARANTEED layer.",
+   "mcp_tool": "I call it with a validated schema -> repeated parameterized operations where the CONTRACT matters. A skill tells me how and I still write the code; a tool enforces the contract even when I get it wrong.",
+   "skill": "loaded on demand -> procedures and know-how.",
+   "subagent": "separate context -> work that would flood the main one.",
+   "cli_script": "everything else; costs me writing the invocation every time."
+  },
+  "correctly_placed": {
+   "quality_checks": "hooks + rebuild glob",
+   "support_protocol_track_A_B": "skill",
+   "abap_style": "skill",
+   "broad_code_search": "subagent (Explore)",
+   "close_gates": "hooks",
+   "rebuild": "one CLI entry point"
+  },
+  "misplaced": {
+   "read_the_golden_db": {
+    "today": "ad-hoc Python - roughly 15 one-off snippets in s099 alone",
+    "should_be": "MCP tool",
+    "evidence": "Several of those snippets carried real bugs: an operator-precedence slip, a wrong table name, and a broken \\U escape in a Windows path. A typed tool with read-only + LIMIT + provenance IN THE SCHEMA removes the whole class. Build a NEW minimal one in the working layer - do not revive sap_mcp_server."
+   },
+   "query_the_brain": {
+    "today": "graph_queries.py CLI, invoked by hand every time",
+    "should_be": "MCP tool",
+    "evidence": "the most frequent operation in the project."
+   }
+  },
+  "unused_claude_capability": {
+   "hooks_in_use": [
+    "SessionStart",
+    "Stop",
+    "PostToolUse",
+    "SubagentStop"
+   ],
+   "PreCompact_hook": "UNVERIFIED - could not confirm the event exists in this harness, so it is a hypothesis to check, not a fact. But the NEED is measured: s099 reached 50% of a 1M context, and when context compacts, knowledge that lives only in the chat DIES. That is precisely the CP-001 failure found with Purpose of Payment. If the event exists, the steward gate belongs there too, not only at Stop."
+  },
+  "_the_joke_that_proves_the_point": "The first attempt to write this entry died with SyntaxError: truncated \\UXXXXXXXX escape - the script describing the bad-escape bug was broken by a bad escape, in a heredoc. Which is the argument for the MCP tool in one line: hand-written code fails in ways a validated schema cannot."
  }
 }
