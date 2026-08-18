@@ -262,6 +262,11 @@ def main():
     # system_profile._model_graph on the NEXT line's rebuild.
     run(["python", "brain_v2/system_profile/build_model_graph.py"],
         "Step 2d: Bidirectional model graph (ascent + coherence + cross-cutting)", fatal=False)
+    # The reverse entity index. The brain had four indexes and NONE by entity, so
+    # "what do we know about DMEE" had no answer but a text scan -- and text scans
+    # fail on wording. Built from the typed link fields that already existed.
+    run(["python", "brain_v2/build_entity_index.py"],
+        "Step 2f: Rebuild reverse entity index (entity -> artifacts)", fatal=False)
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
     # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline

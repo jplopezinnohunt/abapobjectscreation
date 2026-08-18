@@ -99,6 +99,20 @@ Not a self-assessment: each dimension is derived from what is on disk.
 
 _1 more open, drill by id:_ `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
 
+## WHAT WE KNOW DEEPLY - 44 companions; the 10 densest, and what each covers
+> Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
+
+- `bank_statement_ebs_companion.html` - Bank Statement & Reconciliation - basis, basu, bseg, bsik, business area, cash, compliance, connectivity, derivation
+- `payment_bcm_companion.html` - Payment & BCM Intelligence - avc, basu, biennium, bseg, bsik, cash, compliance, dmee, donor
+- `transport_companion_D01K9B0CBF_v2.html` - Company Code STEM Creation - avc, basis, bseg, business area, carry forward, cash, derivation, dmee, fbzp
+- `cts_dashboard.html` - CTS Dashboard (2017-2026) - avc, basis, basu, biennium, bseg, business area, cash, derivation, dmee
+- `treasury_operations_companion_v1.html` - Treasury Operations v1 - avc, basu, biennium, bsik, business area, cash, compliance, dmee, donor
+- `BCM_StructuredAddressChange.html` - BCM Structured Address Change - basis, bseg, bsik, cash, compliance, derivation, dmee, dual control, fbzp
+- `fi_substitutions_custom_code_companion_v1.html` - Substitutions & Custom Code Registry - basu, bseg, bsik, business area, cash, derivation, fmderive, fmifiit, ggb0
+- `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - avc, basis, basu, connectivity, derivation, dmee, dual control, fmifiit, hcm
+- `fi_maintenance.html` - Finance Operations Reference - avc, basu, biennium, bsik, business area, donor, fipex, fm-avc, fmifiit
+- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - dmee, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
+
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:

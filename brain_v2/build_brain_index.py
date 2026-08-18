@@ -226,6 +226,49 @@ Not a self-assessment: each dimension is derived from what is on disk.
 
 NL = chr(10)
 
+def _knowledge_block(top=10):
+    """The deepest analyses we hold, and the terms each actually covers.
+
+    OPEN WORK makes pending incidents reachable. This makes KNOWLEDGE reachable, which is a
+    different problem and the one that bit us: the DMEE work lives in a companion titled
+    "BCM Structured Address Change" tagged "finance" -- 965 mentions of DMEE and not a word
+    of it in the name or the registry entry. A session that did not live through that work
+    could not know it existed, and would re-derive it.
+
+    Terms are filtered to those carried by 2..15 of the companions. Below 2 is a one-off;
+    above 15 is vocabulary everything mentions (system, payment, transport, fund) which says
+    nothing about WHERE to look. 'dmee' sits at 15 -- precisely the band that was invisible.
+    """
+    f = HERE.parent / "companions" / "companion_graph.json"
+    if not f.exists():
+        return "## WARNING - companion_graph.json missing, run scripts/build_companion_graph.py" + NL
+    g = json.load(open(f, encoding="utf-8"))
+    nodes = g.get("nodes", [])
+    if not nodes:
+        return "## WHAT WE KNOW DEEPLY - no companions indexed" + NL
+
+    df = {}
+    for n in nodes:
+        for e in n.get("entities") or []:
+            k = str(e).lower()
+            df[k] = df.get(k, 0) + 1
+    lo, hi = 2, 15
+
+    lines = []
+    for n in sorted(nodes, key=lambda z: -z.get("n_signals", 0))[:top]:
+        terms = [e for e in (n.get("entities") or []) if lo <= df.get(str(e).lower(), 0) <= hi]
+        if not terms:
+            terms = list(n.get("entities") or [])[:6]
+        lines.append("- `{}` - {} - {}".format(
+            n.get("file"), n.get("title"), ", ".join(sorted(terms)[:9])))
+
+    return ("## WHAT WE KNOW DEEPLY - {} companions; the {} densest, and what each covers"
+            .format(len(nodes), min(top, len(nodes))) + NL
+            + "> Do NOT re-derive these. Search any term across every store AND the "
+              "companions: `python brain_v2/graph_queries.py search <term>`." + NL + NL
+            + NL.join(lines) + NL)
+
+
 DONE_STATUSES = {"CLOSED", "RESOLVED", "DONE", "CLOSED_WITH_CLEANUP"}
 
 
@@ -306,6 +349,7 @@ def run():
 {_security_block()}
 {_maturity_block()}
 {_open_work_block()}
+{_knowledge_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:

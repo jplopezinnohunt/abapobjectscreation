@@ -557,6 +557,31 @@ def blocking_code(brain, domain=None):
             "controls": sorted(rows, key=lambda r: (r["object"], r["routine"]))}
 
 
+def entity(brain, name):
+    """What do we know about THIS THING? The drill that did not exist until s099.
+
+    The brain had four indexes and none by entity, so "what do we know about DMEE" could only
+    be answered by scanning text -- and text scans fail on wording. This reads the reverse
+    index built from the typed link fields that already existed.
+    """
+    f = Path(__file__).parent / "entity_index.json"
+    if not f.exists():
+        return {"error": "entity_index.json missing - run python brain_v2/build_entity_index.py"}
+    idx = json.loads(f.read_text(encoding="utf-8")).get("entities", {})
+    key = (name or "").strip().upper()
+    if not key:
+        return {"error": "give an entity name"}
+    if key in idx:
+        return {"entity": key, **idx[key]}
+
+    near = sorted(k for k in idx if key in k or k in key)[:15]
+    return {"entity": key, "found": False,
+            "did_you_mean": near,
+            "hint": "not in the index. Typed links only (claims.related_objects, "
+                    "incidents.related_*, companion entities, code inventory). For prose use "
+                    "`search`."}
+
+
 def search(brain, text):
     """Full-text across every knowledge store AND the code inventory.
 
@@ -692,6 +717,7 @@ COMMANDS = {
     "code": lambda b, args: code(b, args[0] if args else ""),
     "code_gaps": lambda b, args: code_gaps(b),
     "search": lambda b, args: search(b, " ".join(args) if args else ""),
+    "entity": lambda b, args: entity(b, args[0] if args else ""),
     "section": lambda b, args: section(b, args[0] if args else ""),
     "blocking_code": lambda b, args: blocking_code(b, args[0] if args else None),
 }
