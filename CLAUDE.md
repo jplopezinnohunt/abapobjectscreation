@@ -95,6 +95,27 @@ Zagentexecution/           # Task execution artifacts
 brain_v2/BRAIN_INDEX.md   ← read THIS first (lean L1 bootstrap)
 ```
 
+### ⛔ STEP 2 — THE MOMENT A TOPIC/DOMAIN IS NAMED, RUN THE DOMAIN LOAD (s100, rule #181)
+
+The index orients you; it does **not** make you competent on a topic. **As soon as the user names a
+subject** (DMEE, PPC, AVC, EBS, a transaction, an incident area) — before proposing, diagnosing or
+answering anything — run:
+
+```
+python brain_v2/load_domain.py <topic>      # e.g. dmee · "purpose of payment" · Payment_BCM
+```
+
+It resolves the topic to its domains and emits ONE ordered payload — domain docs + companions
+(prose-extracted) + claims + incidents + annotations + feedback rules + extracted-code objects +
+Gold DB tables + capability-model rows — chunked into `part_NN.md`. **READ ALL THE PARTS, IN ORDER.**
+It prints a PERIPHERAL list too: what merely mentions the topic, named and not loaded, so nothing is
+silently dropped.
+
+**Do NOT wait to be asked.** This exists because between the 4KB index and the 400K brain there was
+nothing, so every session re-discovered its own corpus by grepping and the user had to demand it.
+Measured on DMEE: 40 domain docs + 20 companions + 165 claims + 11 incidents = ~667K tokens of
+existing knowledge that a `graph_queries` drill never surfaces. Grepping is NOT loading.
+
 Then **DRILL on demand** via `python brain_v2/graph_queries.py <cmd>` (capability_gaps, capability <dom>,
 domain <name>, incident <id>, what_reads <table>, stats). Read the **full `brain_v2/brain_state.json`
 ONLY when you need depth** the index doesn't give. This is tiered loading — Anthropic's own endorsed

@@ -4,6 +4,18 @@
 > bootstrap. Load this, then DRILL on demand via `python brain_v2/graph_queries.py <cmd>`. Read the full
 > brain_state.json ONLY when you need depth this index doesn't give.
 
+## ⛔ THIS INDEX ORIENTS YOU. IT DOES NOT MAKE YOU COMPETENT ON A TOPIC.
+**The moment a topic or domain is named, run the DOMAIN LOAD and read every part it emits —
+before proposing, diagnosing or answering anything:**
+```
+python brain_v2/load_domain.py <topic>     # dmee · "purpose of payment" · avc · ebs · Payment_BCM · --list
+```
+It emits ONE ordered payload: domain docs + companions (prose) + claims + incidents + annotations +
+rules + code objects + Gold tables + capability rows, chunked into `part_NN.md`, plus a PERIPHERAL
+list of what it deliberately left out. A `graph_queries` drill returns fragments; this returns the
+domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents that no drill surfaces.
+**Do not wait to be asked** — rule `feedback_load_the_domain_before_you_reason` (CRITICAL, s100).
+
 ## 🏛️ ROOT — THE INSTALLATION (what this whole brain is ABOUT)
 `brain_v2/installation/installation.json`. Two roots, different kinds: **L0 core_principles = the
 AGENT's constitution** (how we work) · **installation = the SUBJECT** (what we model). Anchor, not
@@ -141,6 +153,9 @@ wwrqcozf1 CLOSED. A,B,C DONE. B2 scheduling = SessionStart daily curation (nativ
 Pending after gate: A · B · C · D · E · F
 
 ## DRILL — load on demand (don't read the whole brain)
+- `python brain_v2/load_domain.py <topic>` — **THE DOMAIN LOAD. Run this FIRST when a topic is named**
+  (everything the topic knows, ordered + chunked). The drills below are for follow-up questions, not
+  for getting up to speed.
 - `python brain_v2/graph_queries.py capability_gaps` — the ranked plan (generated, not written)
 - `python brain_v2/graph_queries.py capability <domain>` — a domain's capability coverage
 - `python brain_v2/graph_queries.py domain <name>` — domain registry entry
