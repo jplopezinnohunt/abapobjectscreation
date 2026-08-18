@@ -4287,5 +4287,27 @@
     "*"
    ]
   }
+ },
+ {
+  "id": "feedback_never_run_an_ungated_sap_writer",
+  "rule": "NEVER invoke a SAP write script from this project. Deploying ABAP is OUT OF SCOPE here. Before running ANY script whose name contains deploy/write/reconstruct/insert/install, check brain_v2/capability_ownership.json - if the capability has no owner, the answer is not 'pick the least bad script', it is 'this does not happen here'.",
+  "why": "MEASURED s099: 91 scripts in this repo can write to SAP and only 3 have the ALLOW_D01_WRITES kill-switch. The other 88 carry 148 write calls behind no gate, and 68 of them sit in Zagentexecution/mcp-backend-server-python/. They are unused and unreferenced, which IS the danger: a future session finds one and runs it believing it is how we deploy. This is exactly the class of tool that caused INC-CLASS-LOSS (2026-06-12) - writing in place, no transport, no review, on N_MENARD objects we do not own.",
+  "how_to_apply": "1. The scope answer comes first: this project READS SAP, extracts to the golden, analyses the extracted corpus, and builds the brain. It does not write.\n2. A kill-switch is not an architecture. ALLOW_D01_WRITES blocks 3 scripts; 88 were never behind it. Do not treat 'the switch is off' as safety.\n3. Do NOT connect the MCP server to get a nicer surface - it never ran, and it would bring adt_deploy (no gates) and brain_search (a different brain source).\n4. Do not delete them either. Deleting code is not governing it, and two of those scripts are the record of how INC-CLASS-LOSS was recovered. They are inventoried in brain_v2/sap_write_tool_inventory.json and reported every run by capability_ownership_check.py.\n5. If a write genuinely has to happen, it happens in the project that owns that capability, through a RELEASED transport, with 4-eyes - never from here.",
+  "severity": "CRITICAL",
+  "created_session": 99,
+  "source_file": "reference_mcp_backend_holds_ungated_sap_writers.md",
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "explicit_session_099",
+  "domain_axes": {
+   "functional": [
+    "*"
+   ],
+   "module": [
+    "*"
+   ],
+   "process": [
+    "*"
+   ]
+  }
  }
 ]
