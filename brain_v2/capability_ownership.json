@@ -1,0 +1,83 @@
+{
+ "_what_this_is": "For each CAPABILITY the project needs, which implementation is AUTHORITATIVE and which are deprecated. Declared, not inferred.",
+ "_why": "s099, after JP said it three times: 'es un tema de arquitectura... nuevamente'. The recurring failure was never 'we forgot to wire X'. It is that seven layers exist (CLI graph_queries, MCP server, quality_checks, algorithms, agents, skills, hooks) and NOTHING declared which layer owns a given need. So the same capability got built twice, in two layers, reading two different sources, and both rotted. Measured examples are below: two brain-search implementations reading DIFFERENT files, and two ABAP write paths one of which bypasses the entire INC-CLASS-LOSS remediation.",
+ "_rule": "One capability, one owner. A second implementation is either DEPRECATED with a pointer to the owner, or it is a defect. capability_ownership_check.py enforces it.",
+ "capabilities": {
+  "search_the_brain": {
+   "authoritative": "brain_v2/graph_queries.py (search | entity | incident | domain | capability_gaps)",
+   "reads": "brain_v2/brain_state.json + brain_v2/entity_index.json + companions/companion_graph.json",
+   "deprecated": [
+    {
+     "impl": "sap_mcp_server.brain_search / brain_impact / brain_depends / brain_stats",
+     "reads": "brain_v2/output/brain_v2_graph.json via brain_v2.core.graph.BrainGraph",
+     "why": "A DIFFERENT source. It cannot see the entity index, the companion graph, OPEN WORK or WHAT WE KNOW DEEPLY - everything s099 added. Two answers to the same question with nothing saying which is right is worse than one incomplete answer."
+    }
+   ]
+  },
+  "read_the_golden_db": {
+   "authoritative": "TO BUILD - one guarded helper in the working layer (scripts/), not the MCP",
+   "must_enforce": [
+    "read-only, always LIMITed",
+    "returns provenance + freshness with every read (feedback_gold_db_is_p01_provenance)",
+    "one place to get a table name wrong instead of fifteen"
+   ],
+   "deprecated": [
+    {
+     "impl": "ad-hoc sqlite3.connect() on the .db path, written fresh each time",
+     "why": "What s099 actually did - roughly 15 one-off snippets, several with real bugs (a wrong table name, a broken escape, an operator-precedence slip). Each bypassed the provenance and freshness the project's own rules require."
+    },
+    {
+     "impl": "sap_mcp_server.golden_query / golden_manifest / golden_freshness",
+     "why": "The right design in a layer that never ran. Port the contract, not the code."
+    }
+   ]
+  },
+  "write_abap_to_d01": {
+   "authoritative": "Zagentexecution/abap_deploy/deploy_object.py",
+   "gates": "own-objects manifest + TADIR/SEOCLASS pre-flight + PRE readback + hard diff-gate (HALT on deletions) + W-5 operator guard + concurrent-writer guard + POST readback byte-verify",
+   "deprecated": [
+    {
+     "impl": "sap_mcp_server.adt_deploy",
+     "why": "lock -> write -> syntax -> activate, with NO manifest check, NO PRE/POST readback and NO diff-gate. It bypasses the entire remediation built after INC-CLASS-LOSS (2026-06-12), where a session corrupted real N_MENARD classes by writing in place. The ALLOW_D01_WRITES kill-switch in the ADT clients currently blocks it, but a kill-switch is a blunt block, not an architecture.",
+     "severity": "DANGEROUS - do not connect this tool without removing or gating it"
+    },
+    {
+     "impl": "the legacy ad-hoc deploy_* / reconstruct_* / force_* / direct_insert_* scripts",
+     "why": "CLAUDE.md BROADCAST-007 already forbids these. Listed here so the ban lives in the ownership map too, not only in prose."
+    }
+   ]
+  },
+  "read_sap_live": {
+   "authoritative": "Zagentexecution/mcp-backend-server-python/rfc_helpers.py (ConnectionGuard + RFC_READ_TABLE)",
+   "note": "P01 is READ-ONLY via RFC/SNC. sap_mcp_server.read_sap_table wraps the same path and would be equivalent once connected; it is not a conflict, it is the same owner with a nicer surface.",
+   "deprecated": []
+  },
+  "read_abap_source": {
+   "authoritative": "the extracted corpora in git - extracted_code/ (1283), extracted_sap_p01/ (175), extracted_sap/ (225) - indexed by brain_v2/code_inventory.json and code_sections.json",
+   "note": "Live ADT reads (adt_read_source, get_abap_source) are for objects NOT yet in the corpus, and anything they fetch belongs in the corpus afterwards (feedback_downloaded_code_goes_to_golden_corpus).",
+   "deprecated": []
+  },
+  "recurring_verification": {
+   "authoritative": "Zagentexecution/quality_checks/run_all.py (discovers Zagentexecution/quality_checks/*.py by glob; run by rebuild_all.py Step 3e)",
+   "note": "Deliberately NOT a registry - a central list is a list someone forgets to update. An undeclared script is reported UNCLASSIFIED and fails loudly.",
+   "deprecated": []
+  },
+  "promote_knowledge_at_close": {
+   "authoritative": "the MAIN agent, per the project rule that the main agent executes and does not delegate the protocol",
+   "note": "The brain-steward subagent is a prompt template and a mechanisation aid, NOT the owner. stop_steward_hook.py cannot invoke it - it prints a request. Whether anything ran is now recorded by brain_v2/agent_trace_hook.py.",
+   "deprecated": []
+  },
+  "mcp_server_whole": {
+   "authoritative": "none - the MCP server is NOT part of the current architecture",
+   "status": "DEPRECATED s099. No .mcp.json, `mcp` package absent, 16 tools never invoked.",
+   "deprecated": [
+    {
+     "impl": "Zagentexecution/mcp-backend-server-python/sap_mcp_server.py",
+     "why": "Connecting it would resurrect brain_search reading a DIFFERENT brain source than graph_queries, and adt_deploy writing to D01 with none of the gates built after INC-CLASS-LOSS. Reviving an unrun parallel layer adds conflict, not capability.",
+     "severity": "DANGEROUS - do not connect"
+    }
+   ]
+  }
+ },
+ "_the_decision_s099": "The architecture that WORKS today is: Python scripts + the graph_queries CLI + 4 hooks + quality_checks discovered by glob. That layer ran mechanically all session, unattended. The MCP server is a parallel universe that NEVER RAN - no .mcp.json, its dependency not installed, 16 tools nobody ever called. JP: 'no tomar algo viejo y enchufarlo'. So it is NOT connected. It is deprecated whole. Where it had a genuinely better idea - golden reads carrying provenance and freshness instead of 15 ad-hoc sqlite3 snippets - the IDEA is ported into the working layer, not the code."
+}
