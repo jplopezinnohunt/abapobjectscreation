@@ -53,6 +53,10 @@ _FORBIDDEN = re.compile(
 _IDENT_OK = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
+_DEFAULT_DB = Path(__file__).resolve().parents[2] / "Zagentexecution" / \
+    "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+
+
 class GoldenHubError(RuntimeError):
     pass
 
@@ -119,14 +123,78 @@ def _table_index(man: dict) -> dict:
     return idx
 
 
+def _object_exists_in_db(name: str) -> str:
+    """Does this table or view actually exist in the golden? Returns its real-cased name or ''.
+
+    The manifest is the provenance source, not the existence source. s099 measured 308 tables
+    in the manifest against 369 tables + 5 views in the file: refusing the difference made the
+    guarded reader unusable for transports (E070/E07T), payroll (T512W) and — worst — the
+    `bseg_union` view that this project documents as THE way to read BSEG.
+    """
+    try:
+        man = load_manifest()
+        db = Path(man["systems"][man["primary_sid"]]["db_path"]) \
+            if "systems" in man and man.get("primary_sid") in (man.get("systems") or {}) \
+            else None
+    except Exception:                                   # noqa: BLE001
+        db = None
+    if db is None or not Path(db).exists():
+        db = _DEFAULT_DB
+    if not Path(db).exists():
+        return ""
+    con = sqlite3.connect("file:%s?mode=ro" % Path(db).as_posix(), uri=True)
+    try:
+        row = con.execute(
+            "SELECT name FROM sqlite_master WHERE type IN ('table','view') "
+            "AND lower(name) = lower(?)", (str(name),)).fetchone()
+    finally:
+        con.close()
+    return row[0] if row else ""
+
+
+def _unmanifested_record(real_name: str, man: dict = None) -> dict:
+    """A table/view that exists but the manifest does not describe.
+
+    Deliberately NOT silent: provenance_verified=false travels with the data, so a figure
+    taken from here cannot be quoted as P01-verified without someone seeing the flag.
+    """
+    # sap_sid IS known — the file is that system's golden, which is how the path resolves.
+    # What is unknown is this OBJECT's lineage: extraction date, tenant scope, row contract.
+    # Conflating "we know which file" with "we know where this table came from" is exactly
+    # the confusion provenance_verified exists to prevent.
+    man = man or load_manifest()
+    primary = man.get("primary_sid")
+    return {
+        "gold": real_name,
+        "domain": None,
+        "type": None,
+        "tenant_id": None,
+        "system_role": None,
+        "sap_sid": primary,
+        "rows": None,
+        "registry_source": "not_in_manifest",
+        "exists_in_db": True,
+        "provenance_verified": False,
+        "_why": ("present in the golden but absent from the manifest, so its lineage, "
+                 "extraction date and tenant scope are UNKNOWN. Treat any figure from it as "
+                 "unverified provenance (rule feedback_gold_db_is_p01_provenance)."),
+    }
+
+
 def resolve_table(gold_table: str, tenant_id=None, system_role=None, sap_sid=None) -> dict:
     """gold table name (case-insensitive) + tenant scope -> the manifest table record."""
     man = load_manifest()
     cands = _table_index(man).get(str(gold_table).lower(), [])
     if not cands:
+        # Degrade, do not refuse: if the object genuinely exists in the golden, return it with
+        # provenance_verified=false rather than blocking a fifth of the database.
+        real = _object_exists_in_db(gold_table)
+        if real:
+            return _unmanifested_record(real, man)
         raise GoldenHubError(
-            "gold table %r is not in the manifest (%d tables). Use golden_manifest(domain=...) "
-            "to discover what exists." % (gold_table, len(man["tables"]))
+            "gold table %r is not in the manifest (%d tables) and does not exist in the golden "
+            "either. Use golden_manifest(domain=...) to discover what exists."
+            % (gold_table, len(man["tables"]))
         )
     scoped = [
         t for t in cands
@@ -291,6 +359,12 @@ def golden_query(gold_table: str, cols=None, where: str = "", tenant_id=None,
             "delta_strategy": rec.get("delta_strategy"),
             "observed_strategy": rec.get("observed_strategy"),
             "provenance": rec.get("provenance"),
+            # These two travel with the DATA on purpose. A figure taken from an object the
+            # manifest does not describe must not be quotable as P01-verified without the
+            # reader seeing that its lineage is unknown (feedback_gold_db_is_p01_provenance).
+            "provenance_verified": rec.get("provenance_verified", True),
+            "registry_source": rec.get("registry_source"),
+            "provenance_caveat": rec.get("_why"),
             "access": rec.get("access"),
             "sql_executed": sql,
             "read_only": True,

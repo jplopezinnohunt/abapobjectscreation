@@ -15,20 +15,24 @@
    ]
   },
   "read_the_golden_db": {
-   "authoritative": "TO BUILD - one guarded helper in the working layer (scripts/), not the MCP",
-   "must_enforce": [
-    "read-only, always LIMITed",
-    "returns provenance + freshness with every read (feedback_gold_db_is_p01_provenance)",
-    "one place to get a table name wrong instead of fifteen"
+   "authoritative": "Zagentexecution/mcp-backend-server-python/golden_hub.py (golden_query | golden_manifest | golden_freshness | resolve_table)",
+   "note": "A PLAIN PYTHON MODULE. It does not import `mcp` and does not need the server — it only happens to live in that directory, and sap_mcp_server.py imports IT, not the other way round. I wrongly deprecated it in s099 by lumping it in with the server; that error is corrected here.",
+   "enforces": [
+    "read-only: every connection opened file:...?mode=ro",
+    "LIMIT always: default 1000, hard cap 10000",
+    "SELECT only, one statement, no ';', DDL/DML denylist",
+    "_meta provenance on every read: tenant, system_role, source_sid, domain, type",
+    "provenance_verified=false when the manifest does not describe the object (s099)"
    ],
+   "extended_s099": "The manifest has 308 tables; the golden holds 369 tables + 5 views. It used to REFUSE the other 66 — including E070/E07T (transports), T512W (payroll) and bseg_union, which is the documented Golden Query. A guarded reader that refuses a fifth of the database gets bypassed, and bypassing it loses provenance for everything. Now it DEGRADES instead: reads what exists, and marks provenance_verified=false with the reason.",
    "deprecated": [
     {
      "impl": "ad-hoc sqlite3.connect() on the .db path, written fresh each time",
-     "why": "What s099 actually did - roughly 15 one-off snippets, several with real bugs (a wrong table name, a broken escape, an operator-precedence slip). Each bypassed the provenance and freshness the project's own rules require."
+     "why": "What s099 did roughly 15 times, with real bugs each time and no provenance."
     },
     {
-     "impl": "sap_mcp_server.golden_query / golden_manifest / golden_freshness",
-     "why": "The right design in a layer that never ran. Port the contract, not the code."
+     "impl": "scripts/golden.py (written and DELETED in s099)",
+     "why": "I rebuilt what already existed because the name did not say so: I found golden_query inside sap_mcp_server.py, assumed it was MCP-bound and deprecated the lot, and never read line 548 — `import golden_hub as _gh`. Deleted rather than kept, because a duplicate is the exact defect this map exists to prevent. Its one better idea (suggest close table names on a miss) is worth porting."
     }
    ]
   },
@@ -83,7 +87,8 @@
      "why": "Connecting it would resurrect brain_search reading a DIFFERENT brain source than graph_queries, and adt_deploy writing to D01 with none of the gates built after INC-CLASS-LOSS. Reviving an unrun parallel layer adds conflict, not capability.",
      "severity": "DANGEROUS - do not connect"
     }
-   ]
+   ],
+   "note_s099_correction": "The SERVER is deprecated, NOT everything in its directory. golden_hub.py and rfc_helpers.py are plain modules that work today and are authoritative for their capabilities. Deprecating a directory instead of a component was my error."
   }
  },
  "_the_decision_s099": "The architecture that WORKS today is: Python scripts + the graph_queries CLI + 4 hooks + quality_checks discovered by glob. That layer ran mechanically all session, unattended. The MCP server is a parallel universe that NEVER RAN - no .mcp.json, its dependency not installed, 16 tools nobody ever called. JP: 'no tomar algo viejo y enchufarlo'. So it is NOT connected. It is deprecated whole. Where it had a genuinely better idea - golden reads carrying provenance and freshness instead of 15 ad-hoc sqlite3 snippets - the IDEA is ported into the working layer, not the code.",
