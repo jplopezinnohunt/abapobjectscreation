@@ -110,6 +110,46 @@ and invisible**. The 4 stranded datasets, the missing alias layer, the 191 outli
 `ZHROFFBOARDING` were not created this session — they became *countable*. A rising backlog made
 of newly-visible truth is not the same failure as a rising backlog made of new mess.
 
+## 6b. The second half — architecture, and the two hours it cost
+
+The session's second half was JP saying *"es un tema de arquitectura... nuevamente"* three
+times before I heard it. He was right. The recurring failure was never "we forgot to wire X":
+seven layers exist — the graph_queries CLI, an MCP server, quality_checks, algorithms, agents,
+skills, hooks — and **nothing declared which layer owns a given need**. So the same capability
+got built twice, reading two different sources, and both rotted quietly.
+
+Two measured proofs, neither of them an "old tool":
+
+| capability | implementation A | implementation B |
+|---|---|---|
+| search the brain | `graph_queries.py` reads `brain_state.json` + entity index | `brain_search` reads `output/brain_v2_graph.json` — **different source** |
+| write ABAP | `deploy_object.py`, 9 gates, PRE/POST readback | `adt_deploy`: lock→write→activate, **none of it** |
+
+**What landed:** `capability_ownership.json` (one capability, one owner, enforced by a check) ·
+deploying ABAP declared **out of scope** · 81 dead write scripts moved to `_obsolete/` with
+`git mv` · the risk landed in four places at once (MEMORY.md, a memory file, claim 498, rule
+#204) · `golden_hub` extended to stop refusing a fifth of the database.
+
+### And what it cost, honestly
+
+- **The workflow returned nothing.** Five lenses with per-finding refuters, launched to decide
+  whether a 200-line module should exist. It took the machine to 100%, died with no completion
+  record and no partial results, and burned about two hours. The question was settled
+  afterwards by one grep: `import golden_hub as _gh`, line 548. → rule #205.
+- **I rebuilt a module that already existed.** I found `golden_query` inside
+  `sap_mcp_server.py`, assumed it was MCP-bound, and deprecated the whole directory without
+  reading what it imports. `golden_hub.py` and `rfc_helpers.py` were collateral. → rule #206.
+- **An invented domain aborted a full rebuild.** Claims 497/498 used `"domain": "Operations"`,
+  which is not in the canonical ontology. The Step-0 gate killed the rebuild in 0.8s — working
+  exactly as designed, and costing a 15-minute re-run.
+- **The writer count went 91 → 3.** Two corrections: `RFC_ABAP_INSTALL_AND_RUN` against P01 is
+  a READ technique, and a write FM named inside a *string* is a mention, not a call. The first
+  number was alarm, not measurement, and it was reported to JP before being verified.
+
+The pattern under all four: **I acted on a number or a label before reading the thing itself.**
+Every correction came from finally reading the source — and in three of the four, from JP
+pushing back rather than from any check.
+
 ## 7. What remains
 
 **H91** 191 vendors with an outlier `AKONT` · **H92** *(closed — see §3)* · **H93** companions

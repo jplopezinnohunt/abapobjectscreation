@@ -4309,5 +4309,68 @@
     "*"
    ]
   }
+ },
+ {
+  "id": "feedback_match_the_machinery_to_the_question",
+  "rule": "Do not reach for multi-agent orchestration to answer a question a single read can answer. Before launching a workflow, ask: what is the cheapest thing that would settle this? If the answer is 'a grep', run the grep.",
+  "why": "s099: I launched a 5-lens workflow with per-finding refuters to decide whether a 200-line module should exist. It consumed the user's machine to 100%, returned NOTHING (it died with no completion record and no partial results), and cost about two hours. The question it was meant to settle — does a golden-DB helper already exist? — was answered afterwards in three seconds by one grep that found `import golden_hub as _gh` on line 548. Heavy machinery is not thoroughness; it is a bet, and a bet that returns nothing is worse than a cheap answer that returns something.",
+  "how_to_apply": "1. Name the single fact that would decide the question. If one file read or one grep produces it, do that first.\n2. Reserve fan-out for work that is genuinely wide: many files, many independent angles, no single decisive fact.\n3. Consider the machine. A rebuild had just finished; the box was already loaded. Cost is not only tokens.\n4. A background job that dies leaves NOTHING. Prefer a sequence of cheap steps whose partial results survive.",
+  "severity": "HIGH",
+  "created_session": 99,
+  "derives_from_core_principle": "CP-001",
+  "cp_derivation_method": "explicit_session_099",
+  "domain_axes": {
+   "functional": [
+    "*"
+   ],
+   "module": [
+    "*"
+   ],
+   "process": [
+    "*"
+   ]
+  }
+ },
+ {
+  "id": "feedback_deprecate_components_not_directories",
+  "rule": "Deprecate a COMPONENT, never a directory. Before declaring anything dead, read what it imports and what imports it.",
+  "why": "s099: I declared Zagentexecution/mcp-backend-server-python/ deprecated as a whole because sap_mcp_server.py had never run. That directory also holds golden_hub.py and rfc_helpers.py — plain Python modules with no `mcp` dependency that work today and are the authoritative implementations of their capabilities. The server imports golden_hub, not the other way round (line 548). I then spent an hour rebuilding golden_hub from scratch because I had declared it dead without reading it.",
+  "how_to_apply": "1. `grep -n '^import\\|^from' <file>` before deprecating anything — what a module depends on tells you whether it is bound to the dead layer.\n2. A shared directory is a filing decision, not an architectural boundary.\n3. Record the correction where the wrong claim lives, so the next session does not inherit it.",
+  "severity": "HIGH",
+  "created_session": 99,
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "explicit_session_099",
+  "domain_axes": {
+   "functional": [
+    "*"
+   ],
+   "module": [
+    "*"
+   ],
+   "process": [
+    "*"
+   ]
+  }
+ },
+ {
+  "id": "feedback_a_guard_that_refuses_too_much_gets_bypassed",
+  "rule": "A guarded path must cover the whole surface it guards. If it refuses part of the data, people route around it — and routing around loses the guarantee for EVERYTHING, not just for the refused part. Degrade with a warning instead of refusing.",
+  "why": "s099, measured: golden_hub's manifest described 308 tables while the golden holds 369 tables and 5 views, so it refused 66 objects — including E070/E07T (transports), T512W (payroll) and bseg_union, which IS this project's documented Golden Query. That is why the session wrote ~15 ad-hoc sqlite3 snippets instead of calling it, and every one of those lost the provenance the guard exists to supply.",
+  "how_to_apply": "Read what exists; attach `provenance_verified=false` with the reason when the metadata cannot vouch for it. The caller gets the data AND is told how far to trust it. Reserve hard refusal for what genuinely does not exist.",
+  "severity": "HIGH",
+  "created_session": 99,
+  "derives_from_core_principle": "CP-003",
+  "cp_derivation_method": "explicit_session_099",
+  "domain_axes": {
+   "functional": [
+    "*"
+   ],
+   "module": [
+    "*"
+   ],
+   "process": [
+    "*"
+   ]
+  }
  }
 ]
