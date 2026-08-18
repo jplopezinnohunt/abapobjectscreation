@@ -267,6 +267,12 @@ def main():
     # fail on wording. Built from the typed link fields that already existed.
     run(["python", "brain_v2/build_entity_index.py"],
         "Step 2f: Rebuild reverse entity index (entity -> artifacts)", fatal=False)
+    # Weave the operating model into the artifacts. The capability model rated every
+    # domain and pointed at almost nothing: "companion" appeared once in it, "entity"
+    # never. A rating you cannot navigate from is a scorecard, not a model.
+    run(["python", "brain_v2/build_capability_artifacts.py"],
+        "Step 2g: Weave capability model -> artifacts (and find ratings with no evidence)",
+        fatal=False)
     run(["python", "brain_v2/build_brain_state.py"], "Step 3: Rebuild brain_state.json")
     run(["python", "brain_v2/capability_model/maturity_score.py"], "Step 3b: Score capability maturity (Layer 15)")
     # Steps 3b3/3b4 — the two SELF-ASSESSMENT instruments. They were NOT in this pipeline
