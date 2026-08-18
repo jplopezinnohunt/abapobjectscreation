@@ -27,6 +27,16 @@ Usage:
     python bcm_release_vs_approve.py --golden <path>
 """
 
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "analysis",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "side-by-side cross, produces a report",
+}
+# --------------------------------------------------------------------------
+
 import argparse
 import io
 import os

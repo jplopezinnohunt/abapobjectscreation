@@ -6,6 +6,16 @@ even though the fund-level pool has surplus.
 
 This is the "FIPEX revenue/consumption mismatch" class.
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "gate",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "INC-000005638 class: revenue on REVENUE placeholder, consumption on operational FIPEX",
+}
+# --------------------------------------------------------------------------
 import sqlite3
 import sys
 import io

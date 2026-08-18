@@ -18,6 +18,16 @@ That's the at-risk universe that will produce INC-005638-class tickets.
 
 Output: Zagentexecution/quality_checks/committed_vs_available_detector.csv
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "quarantined",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "REFUTED by claim 259: hand-rolling AVC from FMIFIIT/WRTTP arithmetic produces 23.7% spurious negatives (196EAR4042 -> -$12.9M when reality is positive; MBF -> -$110M). Read AVC from the standard (FMAVCT/FMAVCR), never from this",
+}
+# --------------------------------------------------------------------------
 import sqlite3
 import csv
 from datetime import datetime

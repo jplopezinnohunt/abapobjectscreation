@@ -22,6 +22,16 @@ Exit code:
     2 — DB or schema error
 """
 
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "gate",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "INC-000005240 class: hardcoded FICTR in FMDERIVE",
+}
+# --------------------------------------------------------------------------
+
 import argparse
 import os
 import sqlite3

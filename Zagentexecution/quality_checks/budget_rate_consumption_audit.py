@@ -17,6 +17,16 @@ Output: JSON + human-readable table.
 Usage:
   python budget_rate_consumption_audit.py --fr 3250117351 [--fund 3110111021]
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "analysis",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "per-target audit -- needs a Fund Reservation as input",
+}
+# --------------------------------------------------------------------------
 import argparse
 import json
 import sqlite3

@@ -36,6 +36,16 @@ Exit 3 = no findings on the checks that ran, but at least one check (currently: 
 REGUP is absent from the Gold DB) could not run at all -- report SKIPPED, never fold a
 skipped check into PASS (rule feedback_a_skipped_check_must_never_report_pass, session #099).
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "gate",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "PPC: code list + switch + XML tag must agree, per country",
+}
+# --------------------------------------------------------------------------
 import io
 import sqlite3
 import sys

@@ -2,6 +2,16 @@
 nightly_diff.py — Compare today's detector output vs yesterday's.
 Emit an alert CSV listing pairs that flipped INTO HARD-BLOCK state today.
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "quarantined",      # gate | live | analysis | quarantined
+    "needs": "files",    # gold_db | rfc_p01 | files
+    "what": "consumes committed_vs_available_*.csv -- downstream of a refuted method (claim 259)",
+}
+# --------------------------------------------------------------------------
 import csv
 import os
 import glob

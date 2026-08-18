@@ -22,6 +22,16 @@ Reads from local Gold DB (P01 snapshot). No SAP connection needed.
 Usage:
   python br_line_level_inconsistency_check.py [--db PATH] [--out JSON_PATH] [--year 2026]
 """
+
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "gate",      # gate | live | analysis | quarantined
+    "needs": "gold_db",    # gold_db | rfc_p01 | files
+    "what": "Budget Rate: USD posting against a line reserved in EUR",
+}
+# --------------------------------------------------------------------------
 import argparse
 import json
 import sqlite3

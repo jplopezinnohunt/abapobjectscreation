@@ -288,6 +288,17 @@ def main():
     # against declared thresholds and says what to re-run and why.
     run(["python", "brain_v2/methods/check_triggers.py"],
         "Step 3d: Trigger check — what needs re-running on current evidence", fatal=False)
+    # Step 3e — the recurring quality checks. They existed for months and NOTHING called
+    # them: 16 scripts written after real incidents to catch the next occurrence of a class
+    # of defect, each run once by hand on the day it was written. A check nobody runs is a
+    # comment. run_all.py discovers them by GLOB and reads each script's own QUALITY_CHECK
+    # declaration, so a new check is wired the moment it is written and an UNDECLARED one is
+    # reported loudly instead of skipped. Only tier 'gate' runs here (offline, real verdict);
+    # 'live' needs an RFC session, 'analysis' produces reports, 'quarantined' is refuted.
+    # NON-FATAL on purpose: a finding in the data must not abort a structural rebuild of the
+    # brain. It is recorded in brain_v2/quality_checks_state.json and surfaced at close.
+    run(["python", "Zagentexecution/quality_checks/run_all.py", "--tier", "gate"],
+        "Step 3e: Recurring quality checks (gate tier)", fatal=False)
     run(["python", "brain_v2/add_knowledge_links.py"], "Step 4/7: Link knowledge docs")
 
     # Regenerate dynamic companions

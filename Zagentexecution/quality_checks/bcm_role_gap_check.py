@@ -44,6 +44,16 @@ Exit code:
     2 — DB / RFC / schema error
 """
 
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
+# a central registry is a list someone forgets to update.
+QUALITY_CHECK = {
+    "tier": "live",      # gate | live | analysis | quarantined
+    "needs": "rfc_p01",    # gold_db | rfc_p01 | files
+    "what": "needs a live P01 RFC session to read the role assignments",
+}
+# --------------------------------------------------------------------------
+
 import argparse
 import os
 import sqlite3
