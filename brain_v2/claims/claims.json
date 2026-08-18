@@ -23502,6 +23502,39 @@
     ],
     "domain": "Payment",
     "created_session": 100,
-    "status": "active"
+    "status": "superseded",
+    "superseded_by_claim_id": 502,
+    "superseded_reason": "WRONG, and the error was in the probe, not the system. The probe built its node index as {NODE_ID: row} over ALL versions at once. DMEE NODE_IDs REPEAT across versions, so every id kept only the LAST version read (V002, the backup) and the FIRSTCHILD/BROTHER walk produced a cross-version chimera. P01 and V01 masked it because they hold only V000. Corrected by indexing PER VERSION -- see claim 502."
+  },
+  {
+    "id": 502,
+    "claim": "MEASURED 2026-08-18 per VERSION (D01/V01/P01, read-only RFC): the structured CdtrAgt IS configured in D01 and carries the order defect, and a rollback snapshot exists. /CGI_XML_CT_UNESCO node CdtrAgt/FinInstnId/PstlAdr = N_0693479130. D01 V000 (ACTIVE) and D01 V001 (maintenance) are IDENTICAL and hold 4 children in emission order: Ctry<-FPAYHX-ZBISO (N_9575266080), StrtNm<-FPAYH-ZBSTR (N_0597776110), TwnNm<-FPAYH-ZBORT (N_5046489430), CtrySubDvsn<-FPAYHX-ZBREGX (N_0992690140) -- Ctry FIRST = the xs:sequence violation of claim 500. D01 V002 (backup) holds the PRE-change state: Ctry + AdrLine1(tech) + AdrLine<-ZBSTR + AdrLine2(tech) + AdrLine<-ZBORT. V01 V000 and P01 V000 are still the unstructured pre-change state. Node counts corroborate exactly: P01 631; D01 628 = 631 -1 (CdtrAgt 5 children -> 4) -2 (the two ultimate-party AdrLine removed per claim #315). FULL V000-vs-V001 diff in D01: 0 added, 0 deleted, 0 changed -- so nothing was bulk-copied in; the delta versus P01 is only the intended CdtrAgt restructure plus claim #315. CONDITIONS already exist and are correct per child (StrtNm emits if ZBSTR<>'', TwnNm if ZBORT<>'', CtrySubDvsn if ZBREGX<>''), but Ctry has NO condition and therefore ALWAYS emits. Consequence: for any bank whose BNKA ORT01 is empty, TwnNm self-suppresses and PstlAdr still renders with Ctry+StrtNm -- a PstlAdr without TwnNm, which is precisely the rule-(a) defect that got v1 rejected. Fixing the order alone does NOT close that path; the missing guard belongs on the PstlAdr PARENT (emit the address only if TwnNm and Ctry are both available), which is legal here because CdtrAgt carries BIC SOGEUS33 + ClrSysMmbId and SocGen requires bank name+address only 'when BIC is not provided' (claim 499).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Zagentexecution/mcp-backend-server-python/probe_cgi_v000_vs_v001.py (read-only) run on D01, V01, P01 2026-08-18",
+        "cite": "Per-version child-chain walk + full 21-field diff + DMEE_TREE_COND read for the subtree.",
+        "added_session": 100
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "/CGI_XML_CT_UNESCO",
+      "N_0693479130",
+      "N_9575266080",
+      "N_0597776110",
+      "N_5046489430",
+      "N_0992690140",
+      "DMEE_TREE_COND",
+      "FPAYH-ZBSTR",
+      "FPAYH-ZBORT",
+      "FPAYHX-ZBREGX"
+    ],
+    "domain": "Payment",
+    "created_session": 100,
+    "status": "active",
+    "supersedes_claim": 501
   }
 ]
