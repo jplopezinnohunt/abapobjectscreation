@@ -13,9 +13,9 @@ Medido en `REGUT.DTFOR` de P01 (la tabla de medios = lo que ve FDTA), no supuest
 
 | Formato (= TREE_ID) | Total 2024+ | 2026 | Paises | Nodos | PstlAdr | Hallazgos |
 |---|---:|---:|---|---:|---:|---|
-| `/CGI_XML_CT_UNESCO` | 3323 | 697 | FR, GB | 628 | 7 | NOV-2026×2 |
-| `/CITI/XML/UNESCO/DC_V3_01` | 2695 | 607 | BR, CA, US | 625 | 10 | HIBRIDO×5, NOV-2026×1 |
-| `/SEPA_CT_UNES` | 1192 | 258 | FR | 111 | 2 | HIBRIDO×1, ORDEN×1 |
+| `/CGI_XML_CT_UNESCO` | 3323 | 697 | FR, GB | 628 | 7 | NOV-2026×2, SIN-ORIGEN-VISIBLE×5 |
+| `/CITI/XML/UNESCO/DC_V3_01` | 2695 | 607 | BR, CA, US | 625 | 10 | HIBRIDO×5, NOV-2026×1, SIN-ORIGEN-VISIBLE×7 |
+| `/SEPA_CT_UNES` | 1192 | 258 | FR | 111 | 2 | HIBRIDO×1, ORDEN×1, SIN-ORIGEN-VISIBLE×1 |
 | `/SEPA_CT_ICTP_ISO` | 671 | 112 | IT | 113 | 2 | - |
 | `/SEPA_CT_ICTP_ISO_EXTRASEPA` | 532 | 136 | IT | 120 | 3 | NOV-2026×1 |
 | `ZSETIF_FOR_ICTP` | 27 | 0 | IT | 134 | 0 | - |
@@ -35,21 +35,23 @@ Medido en `REGUT.DTFOR` de P01 (la tabla de medios = lo que ve FDTA), no supuest
 
 ### Direcciones postales
 
-#### `CdtTrfTxInf > Cdtr > PstlAdr` -- OK
+#### `CdtTrfTxInf > Cdtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_8311560080`.
 
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes_Cdtr>, <Dept>, <SubDept>, <StrtNm>, <BldgNb>, <CtrySubDvsn>
+
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes_Cdtr` | `N_6304594040` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_5483073050` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_6298847140` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `StrtNm` | `N_8711074510` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 5 | `BldgNb` | `N_4025073060` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 6 | `PstCd` | `N_1441905910` | `FPAYH-ZPSTL` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 7 | `TwnNm` | `N_1709533600` | `FPAYH-ZORT1` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 8 | `CtrySubDvsn` | `N_3320603430` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 9 | `Ctry` | `N_9930896580` | `FPAYHX-ZLISO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 1 | `-PstlAdr_More_Nodes_Cdtr` | `N_6304594040` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_5483073050` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_6298847140` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `StrtNm` | `N_8711074510` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 5 | `BldgNb` | `N_4025073060` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 6 | `PstCd` | `N_1441905910` | `FPAYH-ZPSTL` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `TwnNm` | `N_1709533600` | `FPAYH-ZORT1` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `CtrySubDvsn` | `N_3320603430` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 9 | `Ctry` | `N_9930896580` | `FPAYHX-ZLISO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
 #### `CdtTrfTxInf > CdtrAgt > FinInstnId > PstlAdr` -- OK
 
@@ -72,31 +74,35 @@ Nodo padre `N_1676766900`.
 |---:|---|---|---|
 | 1 | `Ctry` | `N_8089003480` | `FPAYH-BNKS1` |
 
-#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- OK
+#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_4634017880`.
 
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes_UltmtCdtr>, <Dept>, <SubDept>, <StrtNm>, <BldgNb>
+
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes_UltmtCdtr` | `N_4036970840` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_2174147050` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_2270667760` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `StrtNm` | `N_8210927030` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 5 | `BldgNb` | `N_3599361390` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 6 | `PstCd` | `N_0620492590` | `FPAYH-ZPSTL` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 7 | `TwnNm` | `N_9772090110` | `FPAYP-ORT01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 8 | `CtrySubDvsn` | `N_1436085460` | `FPAYP-REGIO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 9 | `Ctry` | `N_9987779130` | `FPAYP-LAND1` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
+| 1 | `-PstlAdr_More_Nodes_UltmtCdtr` | `N_4036970840` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_2174147050` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_2270667760` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `StrtNm` | `N_8210927030` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 5 | `BldgNb` | `N_3599361390` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 6 | `PstCd` | `N_0620492590` | `FPAYH-ZPSTL` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 7 | `TwnNm` | `N_9772090110` | `FPAYP-ORT01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 8 | `CtrySubDvsn` | `N_1436085460` | `FPAYP-REGIO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 9 | `Ctry` | `N_9987779130` | `FPAYP-LAND1` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
 
-#### `CdtTrfTxInf > UltmtDbtr > PstlAdr` -- OK
+#### `CdtTrfTxInf > UltmtDbtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_8824498030`.
 
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes_UltmtDbtr>, <Dept>, <SubDept>
+
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes_UltmtDbtr` | `N_7541094900` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_3227684200` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 3 | `SubDept` | `N_6373861330` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
+| 1 | `-PstlAdr_More_Nodes_UltmtDbtr` | `N_7541094900` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_3227684200` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 3 | `SubDept` | `N_6373861330` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
 | 4 | `StrtNm` | `N_7241032040` | `FPAYP-REF01` · `cv 'CL RP    X'` |
 | 5 | `BldgNb` | `N_8697150300` | `FPAYP-REF01` · `cv 'CL RP    X'` |
 | 6 | `PstCd` | `N_6911918850` | `FPAYP-REF01` · `cv 'CL RP    X'` |
@@ -104,34 +110,37 @@ Nodo padre `N_8824498030`.
 | 8 | `CtrySubDvsn` | `N_3583105820` | `FPAYP-REF01` · `cv 'CL RP    X'` |
 | 9 | `Ctry` | `N_6604713370` | `FPAYP-BLAND` · `cv 'CL RP    X'` |
 
-#### `Dbtr > PstlAdr` -- OK
+#### `Dbtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_1160789980`.
 
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes>, <Dept>, <SubDept>, <StrtNm>, <BldgNb>, <PstCd>, <TwnNm>, <CtrySubDvsn>
+
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes` | `N_2326418530` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_0293281340` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_8127716780` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `StrtNm` | `N_3466207710` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 5 | `BldgNb` | `N_9244532990` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 6 | `PstCd` | `N_6313994640` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 7 | `TwnNm` | `N_8152860500` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 8 | `CtrySubDvsn` | `N_5664097610` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 9 | `Ctry` | `N_9432681780` | `FPAYHX-LDISO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 1 | `-PstlAdr_More_Nodes` | `N_2326418530` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_0293281340` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_8127716780` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `StrtNm` | `N_3466207710` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 5 | `BldgNb` | `N_9244532990` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 6 | `PstCd` | `N_6313994640` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `TwnNm` | `N_8152860500` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `CtrySubDvsn` | `N_5664097610` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 9 | `Ctry` | `N_9432681780` | `FPAYHX-LDISO` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
-#### `DbtrAgt > FinInstnId > PstlAdr` -- **[NOV-2026]**
+#### `DbtrAgt > FinInstnId > PstlAdr` -- **[NOV-2026]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_7978288280`.
 
 - **NOV-2026** -- sin <TwnNm> estructurado
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <AdrLine1>, <AdrLine2>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
 | 1 | `Ctry` | `N_6779051850` | `FPAYHX-UBISO` |
-| 2 | `AdrLine1` | `N_6968343150` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 2 | `AdrLine1` | `N_6968343150` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` · `tipo=TECH` |
 | 3 | `AdrLine` | `N_6461922040` | `FPAYHX-UBSTR` · `node N_6968343150` · `cv 'CL RP    X'` |
-| 4 | `AdrLine2` | `N_3814726690` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 4 | `AdrLine2` | `N_3814726690` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` · `tipo=TECH` |
 | 5 | `AdrLine` | `N_4920858270` | `FPAYHX-UBORT` · `node N_3814726690` · `cv 'CL RP    X'` |
 
 ---
@@ -179,37 +188,42 @@ Nodo padre `N_7978288280`.
 
 ### Direcciones postales
 
-#### `CdtTrfTxInf > Cdtr > PstlAdr` -- OK
+#### `CdtTrfTxInf > Cdtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_1496761000`.
+
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <StrtNm>, <PstCd>, <TwnNm>, <CtrySubDvsn>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
 | 1 | `StrtNm` | `N_3511983780` | `cv 'CLURP    X'` |
-| 2 | `BldgNb` | `N_9516561760` | `EXIT /CITIPMW/V3_GET_CDTR_BLDG [CITI]` |
+| 2 | `BldgNb` | `N_9516561760` | `EXIT /CITIPMW/V3_GET_CDTR_BLDG [CITI] {PPC: SIN CONFIG}` |
 | 3 | `PstCd` | `N_4122233110` | `(vacio)` |
 | 4 | `TwnNm` | `N_3708282600` | `(vacio)` |
 | 5 | `CtrySubDvsn` | `N_7413462330` | `(vacio)` |
 | 6 | `Ctry` | `N_8876219870` | `FPAYHX-ZLISO` |
 
-#### `CdtTrfTxInf > Cdtr > PstlAdr` -- OK
+#### `CdtTrfTxInf > Cdtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_2368849090`.
+
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <StrtNm>, <PstCd>, <TwnNm>, <CtrySubDvsn>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
 | 1 | `StrtNm` | `N_3825417170` | `cv 'CLURP    X'` |
-| 2 | `BldgNb` | `N_4400978440` | `EXIT /CITIPMW/V3_GET_CDTR_BLDG [CITI]` |
+| 2 | `BldgNb` | `N_4400978440` | `EXIT /CITIPMW/V3_GET_CDTR_BLDG [CITI] {PPC: SIN CONFIG}` |
 | 3 | `PstCd` | `N_0249673900` | `(vacio)` |
 | 4 | `TwnNm` | `N_3747128920` | `(vacio)` |
 | 5 | `CtrySubDvsn` | `N_3301357040` | `(vacio)` |
 | 6 | `Ctry` | `N_6501921410` | `FPAYHX-ZLISO` |
 
-#### `CdtTrfTxInf > CdtrAgt > FinInstnId > PstlAdr` -- **[HIBRIDO]**
+#### `CdtTrfTxInf > CdtrAgt > FinInstnId > PstlAdr` -- **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_5135503450`.
 
 - **HIBRIDO** -- estructurado + AdrLine en el mismo PstlAdr
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <Ctry>, <AdrLine>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
@@ -243,30 +257,32 @@ Nodo padre `N_7565057960`.
 | 2 | `Ctry` | `N_9803166830` | `FPAYH-BNKS2` |
 | 3 | `AdrLine` | `N_2930009720` | `FPAYHX-AGNT2STRAS` · `cv 'CL       X'` |
 
-#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- **[HIBRIDO]**
+#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_3468319710`.
 
 - **HIBRIDO** -- estructurado + AdrLine en el mismo PstlAdr
+- **SIN-ORIGEN-VISIBLE** -- NINGUN hijo (10) tiene origen visible: solo puede venir del BAdI en ABAP. Si el BAdI tampoco resuelve estas rutas, DMEE suprime el <PstlAdr> entero -> verificar contra un fichero generado
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes_UltmtCdtr` | `N_1384700510` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_1729098660` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_0068661910` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `StrtNm` | `N_1015394030` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 5 | `BldgNb` | `N_7033747740` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 6 | `PstCd` | `N_8256311070` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 7 | `TwnNm` | `N_7990518960` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 8 | `CtrySubDvsn` | `N_9916193710` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 9 | `Ctry` | `N_9752167650` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL RP    X'` |
-| 10 | `AdrLine` | `N_0634513430` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 1 | `-PstlAdr_More_Nodes_UltmtCdtr` | `N_1384700510` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_1729098660` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_0068661910` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `StrtNm` | `N_1015394030` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 5 | `BldgNb` | `N_7033747740` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 6 | `PstCd` | `N_8256311070` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 7 | `TwnNm` | `N_7990518960` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 8 | `CtrySubDvsn` | `N_9916193710` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 9 | `Ctry` | `N_9752167650` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 10 | `AdrLine` | `N_0634513430` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
-#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- **[HIBRIDO]**
+#### `CdtTrfTxInf > UltmtCdtr > PstlAdr` -- **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_4600960730`.
 
 - **HIBRIDO** -- estructurado + AdrLine en el mismo PstlAdr
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <StrtNm>, <AdrLine>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
@@ -277,35 +293,39 @@ Nodo padre `N_4600960730`.
 | 5 | `Ctry` | `N_8276095420` | `FPAYH-ZLAND` |
 | 6 | `AdrLine` | `N_9497274200` | `(vacio)` |
 
-#### `Dbtr > PstlAdr` -- OK
+#### `Dbtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_1905437260`.
+
+- **SIN-ORIGEN-VISIBLE** -- NINGUN hijo (8) tiene origen visible: solo puede venir del BAdI en ABAP. Si el BAdI tampoco resuelve estas rutas, DMEE suprime el <PstlAdr> entero -> verificar contra un fichero generado
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
 | 1 | `Dept` | `N_7832936870` | `(vacio)` |
 | 2 | `SubDept` | `N_4483531300` | `(vacio)` |
-| 3 | `StrtNm` | `N_6139800480` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `BldgNb` | `N_4712017280` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 5 | `PstCd` | `N_3474870610` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 6 | `TwnNm` | `N_2266488280` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 7 | `CtrySubDvsn` | `N_6927898900` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 8 | `Ctry` | `N_4523469420` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 3 | `StrtNm` | `N_6139800480` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `BldgNb` | `N_4712017280` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 5 | `PstCd` | `N_3474870610` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 6 | `TwnNm` | `N_2266488280` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `CtrySubDvsn` | `N_6927898900` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `Ctry` | `N_4523469420` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
-#### `Dbtr > PstlAdr` -- OK
+#### `Dbtr > PstlAdr` -- **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_5197213060`.
+
+- **SIN-ORIGEN-VISIBLE** -- NINGUN hijo (8) tiene origen visible: solo puede venir del BAdI en ABAP. Si el BAdI tampoco resuelve estas rutas, DMEE suprime el <PstlAdr> entero -> verificar contra un fichero generado
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
 | 1 | `Dept` | `N_9619139080` | `(vacio)` |
 | 2 | `SubDept` | `N_7678372610` | `(vacio)` |
-| 3 | `StrtNm` | `N_7635476580` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 4 | `BldgNb` | `N_5208833070` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 5 | `PstCd` | `N_9674037090` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 6 | `TwnNm` | `N_2369381760` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 7 | `CtrySubDvsn` | `N_1368770440` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
-| 8 | `Ctry` | `N_1761658350` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 3 | `StrtNm` | `N_7635476580` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `BldgNb` | `N_5208833070` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 5 | `PstCd` | `N_9674037090` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 6 | `TwnNm` | `N_2369381760` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `CtrySubDvsn` | `N_1368770440` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `Ctry` | `N_1761658350` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
 #### `DbtrAgt > FinInstnId > PstlAdr` -- **[NOV-2026]**
 
@@ -342,34 +362,35 @@ Nodo padre `N_0412758380`.
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes_Cdtr` | `N_9051681470` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` |
-| 2 | `Dept` | `N_7213712110` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_0038163390` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 4 | `StrtNm` | `N_8434593170` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CLURP    X'` |
-| 5 | `BldgNb` | `N_6554304020` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL RP    X'` |
-| 6 | `PstCd` | `N_1214474870` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 7 | `TwnNm` | `N_5373093250` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 8 | `CtrySubDvsn` | `N_4548550170` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 9 | `Ctry` | `N_1974922770` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
+| 1 | `-PstlAdr_More_Nodes_Cdtr` | `N_9051681470` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_7213712110` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_0038163390` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 4 | `StrtNm` | `N_8434593170` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CLURP    X'` |
+| 5 | `BldgNb` | `N_6554304020` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL RP    X'` |
+| 6 | `PstCd` | `N_1214474870` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `TwnNm` | `N_5373093250` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `CtrySubDvsn` | `N_4548550170` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 9 | `Ctry` | `N_1974922770` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
-#### `Dbtr > PstlAdr` -- **[ORDEN]** **[HIBRIDO]**
+#### `Dbtr > PstlAdr` -- **[ORDEN]** **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_9412627890`.
 
 - **ORDEN** -- orden ISO roto: Dept SubDept StrtNm BldgNb PstCd TwnNm Ctry CtrySubDvsn AdrLine -> debe ser Dept SubDept StrtNm BldgNb PstCd TwnNm CtrySubDvsn Ctry AdrLine
 - **HIBRIDO** -- estructurado + AdrLine en el mismo PstlAdr
+- **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes>
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `-PstlAdr_More_Nodes` | `N_9268732240` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` |
-| 2 | `Dept` | `N_4947603910` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 3 | `SubDept` | `N_8690323650` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
+| 1 | `-PstlAdr_More_Nodes` | `N_9268732240` | `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `tipo=TECH` |
+| 2 | `Dept` | `N_4947603910` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 3 | `SubDept` | `N_8690323650` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 4 | `StrtNm` | `N_1215903670` | `FPAYHX-AUST2` · `cv 'CL       X'` |
-| 5 | `BldgNb` | `N_1396453300` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 6 | `PstCd` | `N_2703639030` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 7 | `TwnNm` | `N_7609981350` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 8 | `Ctry` | `N_2225746230` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
-| 9 | `CtrySubDvsn` | `N_7471680250` | `EXIT Y_FI_DMEE_ADR [CUSTOM]` · `cv 'CL       X'` |
+| 5 | `BldgNb` | `N_1396453300` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 6 | `PstCd` | `N_2703639030` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 7 | `TwnNm` | `N_7609981350` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `Ctry` | `N_2225746230` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 9 | `CtrySubDvsn` | `N_7471680250` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 10 | `AdrLine` | `N_4946758140` | `FPAYHX-ORT1Z` · `cv 'CL RP    X'` |
 
 ---
@@ -457,7 +478,7 @@ Nodo padre `N_9926185740`.
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `StrtNm` | `N_4946758140` | `const 'Strada Costiera 11'` · `FPAYHX-REF01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 1 | `StrtNm` | `N_4946758140` | `const 'Strada Costiera 11'` · `FPAYHX-REF01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 2 | `TwnNm` | `N_6311223610` | `FPAYHX-ORT1Z` · `cv 'CL RP    X'` |
 | 3 | `Ctry` | `N_3928239110` | `FPAYHX-LAND1` |
 
@@ -523,7 +544,7 @@ Nodo padre `N_9926185740`.
 
 | # | Etiqueta XML | Nodo | De donde sale el valor |
 |---:|---|---|---|
-| 1 | `StrtNm` | `N_4946758140` | `const 'Strada Costiera 11'` · `FPAYHX-REF01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP]` · `cv 'CL       X'` |
+| 1 | `StrtNm` | `N_4946758140` | `const 'Strada Costiera 11'` · `FPAYHX-REF01` · `EXIT FI_CGI_DMEE_EXIT_W_BADI [SAP] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 2 | `TwnNm` | `N_6311223610` | `FPAYHX-ORT1Z` · `cv 'CL RP    X'` |
 | 3 | `Ctry` | `N_3928239110` | `FPAYHX-LAND1` |
 
