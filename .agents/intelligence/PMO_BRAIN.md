@@ -338,15 +338,15 @@ verificar antes de tocar.
 De paso, `INC-PSTLADR-NOV2026` llevaba `chain_audited_session: 's101'` donde los demás son entero.
 Era mío, de esta misma sesión. Normalizado a `101`.
 
-#### feedback_rules.json — 42 de 214
+#### feedback_rules.json — ~~42~~ **16** de 214
 
 > Ganaron `domain_axes` (49) en la misma pasada, pero sus desviaciones son de OTROS campos: `derives_from_core_principle` y `created_session`. Siguen en 42.
 
 
 | Falta | Cuántos | Tratamiento |
 |---|---:|---|
-| `derives_from_core_principle` | 38 | Asignable a CP-001/002/003 leyendo cada regla. Trabajo humano, no automático |
-| `created_session` | 16 | No deducible |
+| ~~`derives_from_core_principle`~~ | ~~38~~ 0 | **HECHO 2026-08-19.** Leídas una a una y asignadas. Reparto final del corpus: CP-003 114 · CP-001 70 · CP-002 30 |
+| `created_session` | 16 | **No deducible.** Dejar como está |
 | `rule` | ~~2~~ 0 | **HECHO 2026-08-19.** No estaban vacías: el texto vivía bajo `statement` y bajo `title` — la misma divergencia que se cometió hoy con los claims. Renombrada la clave, sin perder nada |
 
 #### Por dónde empezar
