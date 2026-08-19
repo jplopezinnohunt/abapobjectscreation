@@ -100,6 +100,11 @@ def cycle_headline():
 
 
 def main():
+    # Implementa, inyectandolas en cada arranque:
+    #   feedback_load_the_domain_before_you_reason
+    #   feedback_build_the_map_before_answering
+    #   feedback_declare_the_cuts_before_measuring
+    # No son notas: el agente las recibe antes de su primera decision.
     try:
         sys.stdin.read()
     except Exception:
@@ -118,6 +123,16 @@ def main():
         "schema — EXTEND it. Model: brain_v2/capability_model/. Verified research: brain_v2/research/ (8 closed; "
         "dedupe vs sources_index.json; never re-assert findings_registry refuted). If stale (graph_queries.py "
         "stats): python brain_v2/rebuild_all.py. See STOP block at top of CLAUDE.md. "
+        "EN CUANTO SE NOMBRE UN TEMA (DMEE, PPC, AVC, una transaccion, un area de incidencia): "
+        "python brain_v2/load_domain.py <tema> y LEER TODAS LAS PARTES, antes de proponer, diagnosticar o "
+        "responder. El indice ORIENTA, no da competencia. Y si el tema es un SISTEMA CONFIGURADO (arboles "
+        "DMEE, customizing, jerarquias): construir o refrescar su MAPA COMPLETO antes de responder la "
+        "primera pregunta — no solo la parte que la pregunta toca. Medido 2026-08-19: una sonda por "
+        "pregunta dejo el 62%% de un arbol invisible y 3 de 6 formatos vivos sin mirar; el mapa entero "
+        "tardo 90 segundos. Mapa de formatos de pago: python Zagentexecution/quality_checks/dmee_tree_map.py. "
+        "Y TODA medida sobre una tabla transaccional declara PRIMERO sus cortes discriminantes — en pagos "
+        "(REGUH) son DORIGIN (quien cobra), T042Z (FORMI=fichero / XSCHK=cheque) y el rail (que regla "
+        "aplica): omitir uno inventa un problema o esconde otro, paso 3 veces el mismo dia. "
         "OPERATING GATES (apply AT the decision point, NOT from memory — this is the working model, not intuition): "
         "(1) BLOCKED — when a read/method fails, STOP: test the CORE tool empirically (reads = RFC_READ_TABLE over SNC SSO; "
         "verify, never assume), then conclude against the HARD CONSTRAINTS [P01 = READ-ONLY via RFC/SSO ONLY; NO ADT against "

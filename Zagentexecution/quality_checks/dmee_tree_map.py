@@ -81,6 +81,9 @@ COND_F = ["TREE_ID", "VERSION", "NODE_ID", "COND_NUMBER", "ARG1_TYPE", "ARG1_TAB
           "LINK_OPERATOR"]
 REGUT_F = ["LAUFD", "DTFOR", "ZBUKR", "BANKS"]
 
+# Implementa feedback_build_the_map_before_answering: recorre los arboles VIVOS
+# enteros e imprime lo que hay, lo haya preguntado alguien o no.
+
 # La configuracion que hay DETRAS del exit. Sin esto, un nodo que solo cuelga de
 # FI_CGI_DMEE_EXIT_W_BADI se lee como "tiene origen" cuando en realidad no emite
 # nada -- y ese fue exactamente el estado roto del 19-08-2026 que este mapa daba

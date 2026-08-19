@@ -128,6 +128,9 @@ ORIGINS = {
 REGUH_F = ["LAUFD", "LAUFI", "ZBUKR", "LIFNR", "PERNR", "DORIGIN", "RZAWE", "ZNME1",
            "ZSTRA", "ZORT1", "ZPSTL", "ZREGI", "ZLAND", "ZBNKS", "ZBNKL"]
 
+# Los tres cortes de arriba no son un comentario: estan aplicados en build().
+# Implementa feedback_declare_the_cuts_before_measuring.
+
 
 def read_table(conn, table, fields, where="", rowcount=0):
     kw = dict(QUERY_TABLE=table, DELIMITER="|",
