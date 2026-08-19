@@ -303,14 +303,14 @@ Hasta ahora nadie las veía; ahora salen en cada cierre.
 **No se arreglaron a propósito.** Rellenar `created_session` en 13 claims donde el dato no existe
 sería inventarlo, y es exactamente lo que la regla `feedback_label_inferred_vs_measured` prohíbe.
 
-#### claims.json — ~~104~~ **76** de 520, por combinación de lo que falta
+#### claims.json — ~~104~~ ~~76~~ **41** de 520, por combinación de lo que falta
 
 | # | Cuántos | Falta | Tratamiento |
 |---|---:|---|---|
 | ~~S1~~ | ~~28~~ 0 | ~~`domain_axes`~~ | **HECHO 2026-08-19.** Y NO era derivable del `domain` como escribí: el mismo dominio produce hasta 36 `domain_axes` distintos. Lo resolvió el generador que ya existía, `brain_v2/scripts/backfill_domain_axes.py`, que infiere por palabra clave sobre el texto del claim. 44 claims + 49 reglas + 1 incidente al 100% |
-| S2 | 23 | `resolution_notes` + `resolved_session` | **Normalización segura**: son claims sin resolver, `None` es el valor correcto |
-| S3 | 11 | `resolved_session` + `status` | `status` → `active` es defendible (448 de 520 lo son). Decidir si se asume |
-| S4 | 9 | `resolution_notes` | Normalización segura → `None` |
+| ~~S2~~ | ~~23~~ 0 | ~~`resolution_notes` + `resolved_session`~~ | **HECHO 2026-08-19** |
+| ~~S3~~ | ~~11~~ 0 | ~~`resolved_session` + `status`~~ | **HECHO**: los 11 tenían `status='VERIFIED'`, que describe verificación y no ciclo de vida — y eso ya lo dicen `claim_type=verified_fact` + `confidence=TIER_1` en los 11 sin excepción. Normalizado a `active` |
+| ~~S4~~ | ~~9~~ 0 | ~~`resolution_notes`~~ | **HECHO 2026-08-19** |
 | S5 | 8 | `created_session` + `resolved_session` + `status` | **NO automatizable**: la sesión de origen no se puede deducir |
 | S6 | 25 | combinaciones de los anteriores | Mismo criterio por campo |
 
@@ -353,9 +353,13 @@ Era mío, de esta misma sesión. Normalizado a `101`.
 
 1. ~~Las 2 reglas sin `rule`~~ — **hecho**. No estaban vacías, el texto estaba bajo otra clave.
 2. ~~S1 (28) y la normalización `'#51'` → `51`~~ — **hechas**.
-3. **S2 + S4 (32)** — rellenar `None` donde el campo simplemente no aplica.
-4. **Decidir S3**: si un claim sin `status` se asume `active`. Es una convención, no un dato.
-5. **S5 y `created_session`**: dejar como están. Inventar la procedencia es peor que no tenerla.
+3. ~~S2 + S4 (32)~~ — **hechas**. Y los 6 `superseded` que parecían necesitar decisión no la
+   necesitaban: llevaban el dato bajo otra clave (`superseded_session`, o la sesión dentro de
+   `superseded_reason`). Recuperado, no inventado.
+4. ~~Decidir S3~~ — **resuelto sin convención**: no había que asumir nada.
+5. **Lo que QUEDA (41)**: 27 sin `created_session`+`resolved_session`+`status` y 14 sueltos.
+   Todos necesitan la sesión de origen, que no se puede deducir. **Dejar como están** — inventar la
+   procedencia es peor que no tenerla.
 
 Re-medir: `python Zagentexecution/quality_checks/store_schema_check.py`
 
