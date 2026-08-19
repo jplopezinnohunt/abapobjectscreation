@@ -89,10 +89,13 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
-## OPEN WORK - incidents awaiting action (9 live, deadline first)
+## OPEN WORK - incidents awaiting action (10 live, deadline first)
 - `INC-EGYPT-PPC` - SPEC_READY - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: Two transports, in this order. T1 (inert, can go now): T015L 10 rows EG0..EG9 + YTFI_PPC_TAG one row EG/USTRD/C. T2 (the live moment, 1-2 days before the deadline): YTFI_PPC_STRUC 11 rows -- this is the SWITCH, it starts the block AND the rendering. Never both
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
+- `INC-PSTLADR-NOV2026` - OPEN - **DUE 2026-11-14** - Direccion estructurada 14-11-2026: el alcance real son los PROVEEDORES (8.149 sin CtrySubDvsn en
+  - NEXT: Registro completo en knowledge/domains/Payment/dmee_map/REGISTRO_ERRORES_Y_ACCIONES.md. Por orden: B1 cargar los 399 proveedores US/CA (fichero listo) · F1 meter el validador en el ciclo antes del envio · A3 REACT_LEV nivel 1 · y tres decisiones que necesitan 
+  - drill: `python brain_v2/graph_queries.py incident INC-PSTLADR-NOV2026`
 - `INC-000005240` - ROOT_CAUSE_CONFIRMED - F-53 manual payment writes XREF1/XREF2='HQ' instead of 'JAK' for Jakarta user
   - drill: `python brain_v2/graph_queries.py incident INC-000005240`
 - `INC-000005638` - ROOT_CAUSE_CONFIRMED - SES posting blocked + invoice payment blocked on Gabon donor fund 196EAR4042 (FIPEX-level AVC de
@@ -106,10 +109,8 @@ Not a self-assessment: each dimension is derived from what is on disk.
   - drill: `python brain_v2/graph_queries.py incident INC-000011781`
 - `INC-180995` - ROOT_CAUSE_CONFIRMED - Ticket 180995 — two sibling transports from one ticket reached P01 101 days apart (MZ payroll cu
   - drill: `python brain_v2/graph_queries.py incident INC-180995`
-- `INC-BUDGETRATE-EQG` - ROOT_CAUSE_CONFIRMED - Budget Rate custom solution allows cross-currency consumption against EUR-reserved FR -> AVC poo
-  - drill: `python brain_v2/graph_queries.py incident INC-BUDGETRATE-EQG`
 
-_1 more open, drill by id:_ `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
+_2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
 
 ## WHAT WE KNOW DEEPLY - 44 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
@@ -130,7 +131,7 @@ _1 more open, drill by id:_ `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1774 objects · 204 rules · 497 claims · 14 incidents · 9 closed researches)
+## Brain at a glance (1791 objects · 214 rules · 517 claims · 15 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -165,7 +166,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 204 total)
+## Rules to load first (behavioral DNA — 214 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
