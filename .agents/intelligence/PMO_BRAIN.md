@@ -71,6 +71,23 @@
 
 ---
 
+## 🔴 INC-PSTLADR-NOV2026 — GRAVE, deadline duro 14-11-2026
+
+**804 empleados a los que seguimos pagando en 2026 no tienen ciudad en ningun sitio.** Desde el
+14-11-2026 `<TwnNm>` es obligatorio cuando se emite `<PstlAdr>` en ISO 20022, y sus pagos de nomina
+no tendran de donde sacarlo. **NO son los proveedores** — FI-AP esta al 100% con ciudad; la averia
+es HR-PY: 1.016 de 5.128 empleados sin ciudad (19%), 2.354 sin codigo postal (45%), concentrado en
+oficinas de terreno (CM, BR, SN, IN, AF, ZW, TH, KE, ML, IQ).
+
+Se nos escapaba porque en REGUH el receptor de nomina es un **PERNR que no existe en LFA1**: la
+direccion viene del infotipo HR y viaja en el propio REGUH (`ZSTRA/ZORT1/ZPSTL/ZLAND`).
+
+**Siguiente accion:** sacar la lista nominal de los 804 por oficina y devolverla a RR.HH. de terreno.
+Es dato de personal — no se parchea en DMEE.
+
+Doc: `knowledge/incidents/INC-PSTLADR-NOV2026_direccion_estructurada_nomina.md` · claims 504-509
+Drill: `python brain_v2/load_domain.py dmee`
+
 ## PROJECT BRAIN — What We Built
 
 ### The System (as of 2026-03-26)
