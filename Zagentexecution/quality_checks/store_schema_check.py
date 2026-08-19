@@ -55,6 +55,15 @@ STORES = {
 }
 UMBRAL = 0.80          # una clave es obligatoria si la tiene el 80%+ de los registros
 
+# Formato canonico de cada store: con que indent lo escribe SU generador. Escribir
+# a mano con otro indent hace que el siguiente rebuild reformatee el fichero entero
+# y produzca un diff donde una edicion real es invisible. Paso el 2026-08-19: se
+# edito claims.json con indent=1 y verify_claims.py lo devolvio a indent=2 ->
+# 48.168 lineas de diff con CERO claims cambiados.
+INDENT_CANONICO = {
+    "claims": (2, "brain_v2/verify_claims.py"),
+}
+
 # Implementa feedback_read_the_store_before_writing_to_it.
 
 
@@ -78,6 +87,22 @@ def revisar(nombre, rel, clave, enums):
              for e in enums}
 
     print("\n  %s  (%d registros, %s)" % (nombre, n, rel))
+    esperado, quien = INDENT_CANONICO.get(nombre, (None, ""))
+    if esperado is not None:
+        try:
+            # El parametro `indent` es la sangria del PRIMER nivel: la llave que
+            # abre cada registro dentro de la lista. Medir la primera clave
+            # entrecomillada da el doble, porque esa ya esta un nivel mas dentro.
+            lineas = io.open(os.path.join(RAIZ, rel), encoding="utf-8").read().splitlines()
+            real = next((len(l) - len(l.lstrip(" ")) for l in lineas[1:60]
+                         if l.startswith(" ") and l.strip() in ("{", "[")), None)
+            if real is not None and real != esperado:
+                print("     !! indent %d, el canonico es %d (lo escribe %s)."
+                      % (real, esperado, quien))
+                print("        El proximo rebuild reformateara el fichero entero y el "
+                      "diff sera ilegible.")
+        except OSError:
+            pass
     print("     esquema por mayoria (>=%d%%): %s"
           % (UMBRAL * 100, ", ".join(sorted(obligatorias))))
 
