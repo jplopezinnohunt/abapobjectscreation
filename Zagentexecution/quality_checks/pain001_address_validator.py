@@ -79,6 +79,26 @@ STRUCTURED = {"Dept", "SubDept", "StrtNm", "BldgNb", "PstCd", "TwnNm",
 # Actors for which unstructured is ALREADY forbidden (SocGen §3.3.5.1).
 NO_UNSTRUCTURED = {"UltmtCdtr", "UltmtDbtr", "InitgPty"}
 
+# FINANCIAL INSTITUTIONS ARE A DIFFERENT RULE, and missing it cost a whole day.
+# A party (Dbtr/Cdtr/Ultmt*) is identified by name+address. An AGENT is identified
+# by its BIC, and SocGen's own brochure says so in the CdtrAgt row:
+#     BIC <BIC> [0..1] ... "BIC is recommended (IF FILLED IN, NAME AND ADDRESS
+#     ARE IGNORED)"
+#   -- 202601 TECHNICAL BROCH_FR_pain.001.001.03_Cross border CT.docx
+# So for an agent the address is CONDITIONAL on the BIC being absent. The same
+# brochure spells out the exception for RUB/Russia: "choose one option between:
+# Option 1: clearing code (BIK) + BIC ... Option 2: clearing code (BIK) + name +
+# address + country of the creditor agent."
+#
+# Why this matters in numbers (REGUH P01, 2026): on /CGI_XML_CT_UNESCO 8419 of
+# 8419 payments carry a BIC -- 100%. Every CdtrAgt address on that rail is
+# ignored. On /CITI/XML/UNESCO/DC_V3_01, 898 of 11185 (8%) have NO BIC, and there
+# the address is the only identification the bank gets. Grading both the same way
+# sends you cleaning 2229 bank master records that nobody reads, while the 898
+# that actually matter stay broken.
+AGENTS = {"CdtrAgt", "DbtrAgt", "IntrmyAgt1", "IntrmyAgt2", "IntrmyAgt3",
+          "CdtrAgtAcct", "InstgAgt", "InstdAgt"}
+
 XSD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                        "incidents", "xml_payment_structured_address",
                        "xsd_validators")
@@ -86,6 +106,21 @@ XSD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
 
 def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
+
+
+def _agent_has_bic(pstl, parents):
+    """Does the agent hosting this PstlAdr identify itself with a BIC?
+
+    Looks in the same <FinInstnId> the address hangs from -- BIC and BICFI are
+    the two spellings in use across pain.001 versions.
+    """
+    fin = parents.get(pstl)
+    if fin is None or _local(fin.tag) != "FinInstnId":
+        return None
+    for c in fin:
+        if _local(c.tag) in ("BIC", "BICFI") and (c.text or "").strip():
+            return (c.text or "").strip()
+    return None
 
 
 def _owner(el, parents) -> str:
@@ -142,6 +177,22 @@ def validate_bank_rules(xml_bytes, after_nov2026=False):
         struct = present & STRUCTURED
         adrline = [c.text or "" for c in pstl if _local(c.tag) == "AdrLine"]
         tag = "%s/PstlAdr" % who
+        # Agente con BIC: el banco IGNORA nombre y direccion. Los hallazgos de
+        # esta direccion no son bloqueantes -- pero el fichero debe seguir siendo
+        # estructuralmente valido, porque el XSD valida lo emitido lo lea el banco
+        # o no (fue justo lo que tumbo el fichero del 21-07-2026).
+        es_agente = who in AGENTS
+        bic = _agent_has_bic(pstl, parents) if es_agente else None
+        if es_agente and bic:
+            findings.append(("INFO", "%s: el agente va identificado por BIC %s -- "
+                                     "el banco IGNORA nombre y direccion (brochure "
+                                     "SocGen, fila CdtrAgt/BIC). Emitirla es "
+                                     "opcional; si se emite, debe ser valida."
+                             % (tag, bic)))
+        if es_agente and not bic:
+            findings.append(("ERROR", "%s: agente SIN BIC -- aqui la direccion es "
+                                      "la unica identificacion que recibe el banco "
+                                      "y debe estar completa y estructurada" % tag))
 
         # order — the XSD says this too, but say it in the operator's language
         seq = [k for k in kids if k in ISO_ORDER]
@@ -210,6 +261,23 @@ def validate_bank_rules(xml_bytes, after_nov2026=False):
     return findings, n
 
 
+def downgrade_ignored_agents(findings):
+    """Un hallazgo sobre un agente que ya va identificado por BIC no es un
+    bloqueo: es cosmetica. Se degrada a INFO conservando el texto, para que
+    nadie lance una campana de dato maestro sobre direcciones que nadie lee."""
+    ignorados = {m.split(":")[0] for lvl, m in findings
+                 if lvl == "INFO" and "IGNORA nombre y direccion" in m}
+    out = []
+    for lvl, msg in findings:
+        duenno = msg.split(":")[0]
+        if duenno in ignorados and lvl in ("ERROR", "WARN") and                 "IGNORA" not in msg and "SIN BIC" not in msg:
+            out.append(("IGNORA", msg + "  [no bloquea: el banco lo ignora, "
+                                        "hay BIC]"))
+        else:
+            out.append((lvl, msg))
+    return out
+
+
 def run(path, after_nov2026=False):
     data = open(path, "rb").read()
     print("=" * 78)
@@ -218,6 +286,7 @@ def run(path, after_nov2026=False):
     res = validate_xsd(path, data)
     try:
         rules, n = validate_bank_rules(data, after_nov2026)
+        rules = downgrade_ignored_agents(rules)
     except Exception as exc:
         rules, n = [("ERROR", "bank-rule layer failed: %s" % exc)], 0
     print("  LAYER 1 — XSD schema")
