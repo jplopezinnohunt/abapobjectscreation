@@ -36,6 +36,12 @@ WHAT IT REPORTS
       ORDER   children violate the ISO 20022 PostalAddress6 xs:sequence
       HYBRID  structured tag and AdrLine in the same PstlAdr
       NOV26   no structured TwnNm/Ctry -- legal today, rejected from Nov-2026
+      TECNICO     un hijo con nombre de etiqueta ISO es NODE_TYPE=TECH y por tanto
+                  NO emite etiqueta XML: borra el dato en silencio
+      SIN-ORIGEN  hijos sin constante, sin mapping y sin fila PPC que respalde su
+                  exit. SOSPECHA, no veredicto: el BAdI tiene una segunda fuente
+                  (YCL_IDFI_CGI_DMEE_FALLBACK, ABAP) que no se lee de tablas.
+                  Confirmar siempre contra un fichero generado.
 
 USAGE
     python dmee_tree_map.py                  # D01 trees, live formats from P01
@@ -69,10 +75,21 @@ NODE_F = ["TREE_ID", "VERSION", "NODE_ID", "TECH_NAME", "REF_NAME", "PARENT_ID",
           "FIRSTCHILD_ID", "BROTHER_ID", "NODE_TYPE", "MP_IF_TP", "MP_SC_TAB",
           "MP_SC_FLD", "MP_SC_NODE", "MP_CONST", "CV_RULE", "MP_EXIT_FUNC",
           "CK_EXIT_FUNC", "MP_SELECTION", "LEV"]
-COND_F = ["TREE_ID", "VERSION", "NODE_ID", "COND_NUMBER", "ARG1_TAB", "ARG1_FLD",
-          "ARG1_CONST", "ARG2_TAB", "ARG2_FLD", "ARG2_CONST", "OPERATOR",
+COND_F = ["TREE_ID", "VERSION", "NODE_ID", "COND_NUMBER", "ARG1_TYPE", "ARG1_TAB",
+          "ARG1_FLD", "ARG1_CONST", "ARG1_NODE", "ARG1_NODE_ATTR", "ARG1_REF_NAME",
+          "ARG2_TYPE", "ARG2_TAB", "ARG2_FLD", "ARG2_CONST", "OPERATOR",
           "LINK_OPERATOR"]
 REGUT_F = ["LAUFD", "DTFOR", "ZBUKR", "BANKS"]
+
+# La configuracion que hay DETRAS del exit. Sin esto, un nodo que solo cuelga de
+# FI_CGI_DMEE_EXIT_W_BADI se lee como "tiene origen" cuando en realidad no emite
+# nada -- y ese fue exactamente el estado roto del 19-08-2026 que este mapa daba
+# por bueno. La implementacion FR del BAdI no tiene logica propia: resuelve cada
+# etiqueta contra YTFI_PPC_TAG (ruta -> tag_id) x YTFI_PPC_STRUC (como componer
+# el valor). Si no hay fila para la ruta, el exit devuelve vacio.
+PPC_TAG_F = ["LAND1", "DEB_CRE", "TAG_ID", "TAG_FULL"]
+PPC_STRUC_F = ["LAND1", "TAG_ID", "PAY_TYPE", "CODE_ORD", "PPC_CODE", "PPC_VALUE",
+               "PAY_STRUC", "PAY_FIELD"]
 
 
 def exit_owner(fn):
@@ -119,12 +136,48 @@ def live_formats(since="20240101"):
 def load_trees(system):
     from rfc_helpers import get_connection
     c = get_connection(system)
+    ppc = {"tags": [], "struc": []}
     try:
         nodes = read_table(c, "DMEE_TREE_NODE", NODE_F)
         conds = read_table(c, "DMEE_TREE_COND", COND_F)
+        try:
+            ppc["tags"] = read_table(c, "YTFI_PPC_TAG", PPC_TAG_F)
+            ppc["struc"] = read_table(c, "YTFI_PPC_STRUC", PPC_STRUC_F)
+        except Exception as exc:            # el motor PPC puede no existir aqui
+            ppc["error"] = str(exc)[:120]
     finally:
         c.close()
-    return nodes, conds
+    return nodes, conds, ppc
+
+
+def tag_path(src, nid):
+    """La ruta en la notacion que usa YTFI_PPC_TAG: <PmtInf><CdtTrfTxInf><...>.
+
+    Empieza en <PmtInf> — los niveles Document / CstmrCdtTrfInitn no cuentan,
+    porque asi estan escritas las filas de configuracion.
+    """
+    o, cur, k = [], src.get(nid), 0
+    while cur and k < 40:
+        o.append(cur["TECH_NAME"])
+        cur = src.get(cur["PARENT_ID"])
+        k += 1
+    o.reverse()
+    if "PmtInf" in o:
+        o = o[o.index("PmtInf"):]
+    return "".join("<%s>" % x for x in o)
+
+
+def ppc_backing(ppc, path):
+    """Que filas de configuracion PPC respaldan esta ruta. Vacio = el exit no da nada."""
+    tags = [t for t in ppc.get("tags", []) if t["TAG_FULL"] == path]
+    if not tags:
+        return []
+    out = []
+    for t in tags:
+        rows = [s for s in ppc.get("struc", [])
+                if s["LAND1"] == t["LAND1"] and s["TAG_ID"] == t["TAG_ID"]]
+        out.append((t, rows))
+    return out
 
 
 def pick_version(versions):
@@ -152,8 +205,12 @@ def node_path(src, nid):
     return p.replace("Document > CstmrCdtTrfInitn > PmtInf > ", "")
 
 
-def source_of(n):
-    """Everything that can decide this node's value. The exit outranks the map."""
+def source_of(n, ppc=None, path=""):
+    """De donde sale el valor de este nodo -- y si ese origen REALMENTE da algo.
+
+    Un exit sin configuracion detras no es un origen: es un hueco. Distinguirlo
+    es la diferencia entre leer el arbol y entenderlo.
+    """
     bits = []
     if n["MP_CONST"]:
         bits.append("const %r" % n["MP_CONST"])
@@ -162,18 +219,41 @@ def source_of(n):
     if n["MP_SC_NODE"]:
         bits.append("node %s" % n["MP_SC_NODE"])
     if n["MP_EXIT_FUNC"]:
-        bits.append("EXIT %s [%s]" % (n["MP_EXIT_FUNC"],
-                                      exit_owner(n["MP_EXIT_FUNC"])))
+        tag = "EXIT %s [%s]" % (n["MP_EXIT_FUNC"], exit_owner(n["MP_EXIT_FUNC"]))
+        if ppc is not None and path:
+            back = ppc_backing(ppc, path)
+            if back:
+                paises = ",".join(sorted({t["LAND1"] for t, _ in back}))
+                tag += " {PPC: %s}" % paises
+            elif not ppc.get("error"):
+                tag += " {PPC: SIN CONFIG}"
+        bits.append(tag)
     if n["CK_EXIT_FUNC"]:
         bits.append("CHECK %s [%s]" % (n["CK_EXIT_FUNC"],
                                        exit_owner(n["CK_EXIT_FUNC"])))
     if n["CV_RULE"]:
         bits.append("cv %r" % n["CV_RULE"])
+    if n["NODE_TYPE"] and n["NODE_TYPE"] != "ELEM":
+        bits.append("tipo=%s" % n["NODE_TYPE"])
     return bits or ["(vacio)"]
 
 
-def audit_pstladr(src, parent):
-    """The three defect classes. Returns list of (CLASS, message)."""
+def emits_nothing(n, ppc, path):
+    """True si el nodo no puede producir valor: sin constante, sin mapping, sin
+    nodo fuente, y su exit (si lo hay) no tiene configuracion PPC que lo respalde."""
+    if n["MP_CONST"] or n["MP_SC_TAB"] or n["MP_SC_NODE"]:
+        return False
+    if not n["MP_EXIT_FUNC"]:
+        return True
+    if n["MP_EXIT_FUNC"] != "FI_CGI_DMEE_EXIT_W_BADI":
+        return False        # exits propios/Citi traen su logica dentro
+    if ppc.get("error") or not ppc.get("tags"):
+        return False        # no se pudo evaluar -- no afirmar nada
+    return not ppc_backing(ppc, path)
+
+
+def audit_pstladr(src, parent, ppc=None):
+    """Las clases de defecto. Devuelve lista de (CLASE, mensaje)."""
     kids = children(src, parent)
     names = [k["TECH_NAME"] for k in kids]
     seq = [n for n in names if n in ISO_ORDER]
@@ -189,6 +269,30 @@ def audit_pstladr(src, parent):
     for need in ("TwnNm", "Ctry"):
         if need not in present:
             out.append(("NOV26", "sin <%s> estructurado" % need))
+    # Un nodo TECH con nombre de etiqueta ISO no emite nada: borra el dato en
+    # silencio. Fue lo que hizo desaparecer <Ctry> el 19-08-2026.
+    for k in kids:
+        if k["TECH_NAME"] in ISO_ORDER and k["NODE_TYPE"] == "TECH":
+            out.append(("TECNICO", "<%s> %s es NODE_TYPE=TECH: no emite etiqueta"
+                        % (k["TECH_NAME"], k["NODE_ID"])))
+    # Nodos sin origen VISIBLE: ni constante, ni mapping, ni fila PPC que respalde
+    # el exit. NO es prueba de que no emitan -- el BAdI tiene una segunda fuente
+    # que no se puede leer de tablas: la clase YCL_IDFI_CGI_DMEE_FALLBACK resuelve
+    # rutas en ABAP (p.ej. <Cdtr><PstlAdr><StrtNm>, verificado contra fichero real
+    # 2026-07-21, que SI sale). Asi que esto es una SOSPECHA que hay que confirmar
+    # contra un fichero generado, no un veredicto. Se marca porque cuando ademas
+    # falla -- CdtrAgt el 19-08-2026 -- es exactamente esto lo que se ve.
+    if ppc is not None:
+        ciegos = [k for k in kids
+                  if emits_nothing(k, ppc, tag_path(src, k["NODE_ID"]))]
+        if ciegos and len(ciegos) == len(kids):
+            out.append(("SIN-ORIGEN", "NINGUN hijo (%d) tiene origen visible: solo "
+                        "puede venir del BAdI en ABAP. Si el BAdI tampoco resuelve "
+                        "estas rutas, DMEE suprime el <PstlAdr> entero -> verificar "
+                        "contra un fichero generado" % len(ciegos)))
+        elif ciegos:
+            out.append(("SIN-ORIGEN", "sin origen visible (puede venir del BAdI): %s"
+                        % ", ".join("<%s>" % k["TECH_NAME"] for k in ciegos)))
     return out
 
 
@@ -197,14 +301,19 @@ def render_conditions(rows):
         return ""
     parts = []
     for x in sorted(rows, key=lambda z: int(z["COND_NUMBER"] or 0)):
-        a1 = x["ARG1_CONST"] or ("%s-%s" % (x["ARG1_TAB"], x["ARG1_FLD"])).strip("-")
-        a2 = x["ARG2_CONST"] or ("%s-%s" % (x["ARG2_TAB"], x["ARG2_FLD"])).strip("-")
+        # ARG_TYPE 3 = referencia a OTRO NODO. Sin leer ARG1_NODE/REF_NAME la
+        # condicion se pintaba vacia ("IF  <> 'X'") y parecia rota estando bien.
+        a1 = (("nodo %s attr %s" % (x["ARG1_REF_NAME"] or x["ARG1_NODE"],
+                                    x["ARG1_NODE_ATTR"])) if x["ARG1_TYPE"] == "3"
+              else x["ARG1_CONST"] or ("%s-%s" % (x["ARG1_TAB"], x["ARG1_FLD"])).strip("-"))
+        a2 = (("nodo %s" % x["ARG2_CONST"]) if x["ARG2_TYPE"] == "3"
+              else x["ARG2_CONST"] or ("%s-%s" % (x["ARG2_TAB"], x["ARG2_FLD"])).strip("-"))
         parts.append(("%s %s %s %s" % (x["LINK_OPERATOR"], a1, x["OPERATOR"], a2)).strip())
     return "  IF " + " ".join(parts)
 
 
 def report(system, only_tree=None, all_trees=False, dump=None, md=None):
-    nodes, conds = load_trees(system)
+    nodes, conds, ppc = load_trees(system)
     by_tree = collections.defaultdict(list)
     for n in nodes:
         by_tree[n["TREE_ID"]].append(n)
@@ -265,7 +374,7 @@ def report(system, only_tree=None, all_trees=False, dump=None, md=None):
         pstl = [n for n in src.values() if n["TECH_NAME"] == "PstlAdr"]
         print("#   PstlAdr: %d" % len(pstl))
         for p in sorted(pstl, key=lambda z: node_path(src, z["NODE_ID"])):
-            flags = audit_pstladr(src, p)
+            flags = audit_pstladr(src, p, ppc)
             for cls, _ in flags:
                 totals[cls] += 1
             tag = "  ".join("[%s]" % c for c, _ in flags) or "[OK]"
@@ -276,13 +385,13 @@ def report(system, only_tree=None, all_trees=False, dump=None, md=None):
                 print("     !! %-7s %s" % (cls, msg))
             for i, k in enumerate(children(src, p), 1):
                 print("     %2d. %-26s %-14s %s%s"
-                      % (i, k["TECH_NAME"], k["NODE_ID"], " | ".join(source_of(k)),
+                      % (i, k["TECH_NAME"], k["NODE_ID"], " | ".join(source_of(k, ppc, tag_path(src, k["NODE_ID"]))),
                          render_conditions(cond_ix.get((tid, v, k["NODE_ID"]), []))))
             tre["pstladr"].append({
                 "path": node_path(src, p["NODE_ID"]), "node_id": p["NODE_ID"],
                 "flags": [{"class": c, "msg": m} for c, m in flags],
                 "children": [{"pos": i, "tag": k["TECH_NAME"],
-                              "node_id": k["NODE_ID"], "source": source_of(k),
+                              "node_id": k["NODE_ID"], "source": source_of(k, ppc, tag_path(src, k["NODE_ID"])),
                               "mp_exit": k["MP_EXIT_FUNC"],
                               "ck_exit": k["CK_EXIT_FUNC"],
                               "cv_rule": k["CV_RULE"]}
@@ -315,7 +424,8 @@ def write_markdown(path, system, usage, trees):
     drifted doc is worse than none: it is read as fact. So this is regenerated
     from the system every time and carries the date it was measured.
     """
-    ICON = {"ORDER": "ORDEN", "HYBRID": "HIBRIDO", "NOV26": "NOV-2026"}
+    ICON = {"ORDER": "ORDEN", "HYBRID": "HIBRIDO", "NOV26": "NOV-2026",
+            "TECNICO": "NODO-TECNICO", "SIN-ORIGEN": "SIN-ORIGEN-VISIBLE"}
     L = []
     w = L.append
     w("# Configuracion DMEE por formato -- %s" % system)
