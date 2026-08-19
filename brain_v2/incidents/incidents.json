@@ -2046,8 +2046,8 @@
  {
   "id": "INC-PSTLADR-NOV2026",
   "status": "OPEN",
-  "severity": "GRAVE",
-  "title": "Direccion estructurada obligatoria 14-11-2026: DOS arreglos separados — FIX A empleados (943 sin ciudad, RR.HH.) y FIX B proveedores (941 sin CtrySubDvsn en CITI, Compras)",
+  "severity": "MEDIA",
+  "title": "Direccion estructurada 14-11-2026: el alcance real son los PROVEEDORES (8.149 sin CtrySubDvsn en todos los rails). La nomina queda fuera: los sin ciudad cobran por CHEQUE",
   "reporter": "JP_LOPEZ",
   "received_date": "2026-08-19",
   "analyzed_session": "s101",
@@ -2068,8 +2068,8 @@
    "UNES"
   ],
   "deadline": "2026-11-14",
-  "next_action": "Dos frentes en paralelo: FIX A la lista de los 943 empleados a RR.HH. de terreno; FIX B los 301 proveedores US/CA a Compras. La configuracion ya esta salvo el intercambio de dos nodos en /SEPA_CT_UNES.",
-  "scenario": "Desde el 14-11-2026 la direccion sin estructurar queda prohibida en ISO 20022 y <TwnNm> es obligatorio cuando se emite <PstlAdr>. Medido en REGUH 2024+ (1.096.949 lineas) partiendo por DORIGIN: los PROVEEDORES (FI-AP, 29.382 receptores) estan sanos - 0 sin ciudad, 276 sin codigo postal. La averia esta en NOMINA (HR-PY, 5.128 receptores): 1.016 sin ciudad nunca (19%), de ellos 804 con pagos en 2026; 2.354 sin codigo postal (45%); 52.727 lineas sin ciudad (15%) y 164.368 sin codigo postal (47%). Concentrado en oficinas de terreno: CM, BR, SN, IN, AF, ZW, TH, KE, ML, IQ.",
+  "next_action": "FIX B: sacar los 468 proveedores de US/CA sin ADRC-REGION y pasarlos a Compras. Es el unico frente con alcance real y fecha.",
+  "scenario": "Medido por CANAL de pago, no solo por calidad del dato. NOMINA: de 4.042 empleados, los 818 sin ciudad cobran SOLO POR CHEQUE (metodos O y U, XSCHK='X') — cero van en fichero ISO, luego fuera de alcance. Queda de nomina solo el codigo postal: 1.127 de 2.704 empleados que si van en fichero (41%), y PstCd no es obligatorio para ninguno de los dos bancos. PROVEEDORES: 8.894 sin CtrySubDvsn, 8.149 de ellos pagados por fichero ISO en TODOS los rails (CITI 4.357, CGI 4.114, SEPA 3.354, ICTP 3.354) — no era un problema del rail CITI como se reporto primero.",
   "error_messages": [
    "(aun no se manifiesta: DMEE omite la etiqueta vacia sin avisar)"
   ],
@@ -2082,18 +2082,16 @@
   ],
   "scope": "SECCION 1 (nomina): 5.128 receptores, 804 bloqueantes vivos sin ciudad. SECCION 2 (proveedores): 941 proveedores del rail CITI sin CtrySubDvsn, que Citi documenta como obligatorio en su Linea 2; empezar por los 301 de US/CA (724 pagos). NO incluye una campana sobre direcciones de BANCOS: descartada con medida (100% de CGI lleva BIC y SocGen ignora nombre y direccion cuando hay BIC).",
   "fix_path": [
-   "FIX A - EMPLEADOS (dueno: RR.HH. de la oficina de terreno)",
-   "  A1. Lista nominal de los 943 vivos sin ciudad por oficina -> completar el infotipo HR. Comando: structured_address_readiness.py --origin HR-PY --solo-vivos --csv nomina.csv",
-   "  A2. Decidir si PstCd es exigible por rail: mueve el alcance de 943 a 2.354",
-   "  A3. Anomalia suelta: el receptor unico de FI-AR con 131.530 lineas (93%) sin ciudad",
-   "FIX B - PROVEEDORES (dueno: Compras / Finanzas) -- solo rail CITI",
-   "  B1. Los 301 de US/CA (724 pagos) -> completar ADRC-REGION con el estado/provincia",
-   "  B2. Los 640 restantes, separando antes los que ya llevan la region dentro de CITY1 ('Montreal Quebec', 'Holland, MI'): para Citi son cosmetica y pueden esperar",
+   "FIX B - PROVEEDORES (dueno: Compras / Finanzas) -- TODOS los rails, no solo CITI",
+   "  B1. Los 468 de US/CA -> completar ADRC-REGION con el estado/provincia (ahi el estado ES parte de la direccion)",
+   "  B2. El resto de los 8.149, separando antes los que ya llevan la region dentro de CITY1 ('Montreal Quebec', 'Holland, MI'): Citi concatena TwnNm+coma+CtrySubDvsn, asi que esos producen la misma linea y pueden esperar",
    "  B3. Re-medir: structured_address_readiness.py --origin FI-AP --csv proveedores.csv",
+   "FIX A - EMPLEADOS: REDUCIDO. Los 818 sin ciudad cobran por cheque -> FUERA DE ALCANCE ISO",
+   "  A1. Unico resto real: 1.127 empleados en fichero sin codigo postal (41%). PstCd es 'strongly recommended' para SocGen y condicional para Citi -> decidir si se acomete",
    "COMUN - CONFIGURACION (dueno: nosotros)",
-   "  C1. [HECHO 2026-08-19] /SEPA_CT_UNES Dbtr: Ctry recolocado tras CtrySubDvsn en V000 y V001. Con esto ORDER=0 en los 7 arboles vivos: la clase de defecto del rechazo del 21-07 esta cerrada.",
+   "  C1. [HECHO 2026-08-19] /SEPA_CT_UNES Dbtr: Ctry recolocado. ORDER=0 en los 7 arboles vivos",
    "  C2. Encender REACT_LEV nivel 1 en los nodos de direccion para avisar EN la corrida",
-   "DESCARTADO CON MEDIDA: campana sobre direcciones de BANCOS (100% de CGI lleva BIC y SocGen ignora nombre y direccion cuando lo hay; BNKA no tiene campo de codigo postal)"
+   "DESCARTADO CON MEDIDA: campana sobre direcciones de BANCOS"
   ],
   "related_objects": [
    "REGUH",
@@ -2126,14 +2124,13 @@
    "DMEE_TREE_NODE D01 REACT_LEV_* en 1.364 nodos"
   ],
   "lessons": [
-   "Una auditoria de calidad de direcciones que no parte por DORIGIN miente: mirando solo LFA1+ADRC el veredicto era '99% sano' y el 35% de las lineas de pago no aparecia en la foto, porque los receptores de nomina son PERNR y no existen en LFA1."
+   "Una auditoria de calidad de direcciones que no parte por DORIGIN miente: mirando solo LFA1+ADRC el veredicto era '99% sano' y el 35% de las lineas de pago no aparecia en la foto, porque los receptores de nomina son PERNR y no existen en LFA1.",
+   "Medir la calidad de una direccion sin mirar el CANAL de pago produce un incidente inexistente. Los 818 empleados sin ciudad se reportaron como bloqueantes de noviembre y cobran por cheque: un cheque no lleva PstlAdr. El corte que faltaba es T042Z (FORMI = va en fichero, XSCHK = cheque), igual que antes habia faltado DORIGIN."
   ],
   "open_followups": [
-   "FIX A1 lista de los 943 por oficina -> RR.HH.",
-   "FIX A2 decision sobre PstCd por rail",
-   "FIX A3 anomalia del receptor unico de FI-AR",
-   "FIX B1 los 301 proveedores US/CA",
-   "FIX B2 los 640 restantes priorizados",
+   "FIX B1 los 468 proveedores US/CA sin REGION",
+   "FIX B2 el resto de los 8.149, priorizando los que no tienen la region en ninguna parte",
+   "FIX A1 decidir si se acomete el codigo postal de los 1.127 (no obligatorio)",
    "C2 REACT_LEV nivel 1 en nodos de direccion"
   ],
   "chain_anchor_type": "DATA",
