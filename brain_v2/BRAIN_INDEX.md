@@ -52,7 +52,7 @@ public-sector finance, not manufacturing or sales.
 - **P2D** — 1 domains: BusinessPartner · avg coverage 40%
 - **A2R** — 1 domains: FI_AA · none measured
 - **O2C** — 1 domains: SD · none measured
-- **Cross-cutting by construction** (serve NO single process because they touch all): Transport_Intelligence, Integration, Support
+- **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Support, Transport_Intelligence
 - **⚠️ Stranded** (no process AND not technical — neither in a flow nor across one): Output, RE-FX
 
 ## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
@@ -70,7 +70,7 @@ the system is used that assumes people in screens is wrong before it starts.
   activation are verified and execution is not. UNVERIFIED, never 'unused'.
 
 ## 🔐 SECURITY — a COLUMN, not a domain (that is why searching for it fails)
-`E_AUTH` has content in **5 of 21** domains: Payment_BCM, Procurement_P2P, PSM_FM, FI, Treasury_EBS.
+`E_AUTH` has content in **5 of 21** domains: FI, PSM_FM, Payment_BCM, Procurement_P2P, Treasury_EBS.
 It is ONE missing model capability, not 21 separate gaps — closing it once lifts every row.
 - **Known and verified:** portal-as-user RFC writes carry SoD conflicts. Root: `S_RFC=*` plus a
   custom write FM that skips the object check, so the control has to live at the CALL and DATA
@@ -131,13 +131,12 @@ _2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1791 objects · 214 rules · 517 claims · 15 incidents · 9 closed researches)
+## Brain at a glance (1796 objects · 214 rules · 520 claims · 15 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
 
 ## Capability model — 11 dimensions, systemic empty columns: R_S4_READINESS
-- **S_STANDARD_REF** (GAP) — do we have the STANDARD SAP as-designed baseline for this domain (precondition f
 - **A_PROCESS** (VERIFIED) — how does it actually run (discovered from data) — AS-RUN?
 - **B_CODE** (VERIFIED) — which programs/classes/exits/BDC implement it?
 - **C_CONFIG** (OWN) — which customizing parameterizes it?
@@ -147,6 +146,7 @@ superseded · user_questions · data_quality · incidents · blind_spots(0) · i
 - **G_CONFORMANCE** (VERIFIED) — does it deviate from / extend STANDARD SAP?
 - **H_IMPROVE** (OWN) — where is the opportunity; what-if before building?
 - **R_S4_READINESS** (VERIFIED) — how ready is this domain's custom code/config/process for the S/4HANA migration?
+- **S_STANDARD_REF** (GAP) — do we have the STANDARD SAP as-designed baseline for this domain (precondition f
 - **U_USAGE** (VERIFIED) — WHAT objects actually execute, WHO runs them, by which CHANNEL (dialog / batch /
 
 ## Where we are (execution sequence s079)
