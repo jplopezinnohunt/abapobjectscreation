@@ -686,7 +686,10 @@ def main():
         # LAYER 2: Cross-cutting indexes
         "indexes": {
             "by_incident": dict(by_incident),
-            "by_domain": dict(by_domain),
+            # ordenado: el orden aqui no significa nada (es el conjunto de objetos
+            # de cada dominio) y sin ordenarlo era el ultimo foco de churn — 843
+            # lineas de diff por reordenacion pura tras arreglar sort_keys.
+            "by_domain": {d: sorted(objs) for d, objs in sorted(by_domain.items())},
             "uncertain_claims": uncertain,
             "superseded_claims": superseded,
         },
