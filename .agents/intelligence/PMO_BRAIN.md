@@ -327,6 +327,17 @@ números de sesión, y convertirlas inventaría el dato. Y 13 ausentes, que tamp
 `VERIFIED` (11) · y tres con un solo uso. **`VERIFIED` parece un `claim_type` colado en `status`** —
 verificar antes de tocar.
 
+#### incidents.json — ~~3~~ 0 · **HECHO 2026-08-19**
+
+| Incidente | Faltaba | Cómo se resolvió |
+|---|---|---|
+| `INC-BUDGETRATE-EQG` | `primary_object_id` | **Derivado del propio registro**: su `root_cause_summary` habla del *"15-member `ZFIX_EXCHANGERATE` composite"* y es el 2º de `related_objects` |
+| `INC-000006906` | `root_cause_summary` | **Resumido de su doc §2** y citando la fuente: `MODE 'E'` en los BDC + WAN lento (`YTBAE002.abap:27`) |
+| `INC-000005638` | `chain_anchor_coverage_pct`, `chain_audited_session` | **`null` a propósito.** La auditoría de cadena ocurrió o no; los demás tienen valor porque se auditaron en las sesiones 54/56/78/99. Éste nunca. Poner un porcentaje sin haberla hecho sería inventarlo — queda anotado en `chain_anchor_note` |
+
+De paso, `INC-PSTLADR-NOV2026` llevaba `chain_audited_session: 's101'` donde los demás son entero.
+Era mío, de esta misma sesión. Normalizado a `101`.
+
 #### feedback_rules.json — 42 de 214
 
 > Ganaron `domain_axes` (49) en la misma pasada, pero sus desviaciones son de OTROS campos: `derives_from_core_principle` y `created_session`. Siguen en 42.
