@@ -15,7 +15,7 @@ Medido en `REGUT.DTFOR` de P01 (la tabla de medios = lo que ve FDTA), no supuest
 |---|---:|---:|---|---:|---:|---|
 | `/CGI_XML_CT_UNESCO` | 3323 | 697 | FR, GB | 628 | 7 | NOV-2026×2, SIN-ORIGEN-VISIBLE×5 |
 | `/CITI/XML/UNESCO/DC_V3_01` | 2695 | 607 | BR, CA, US | 625 | 10 | HIBRIDO×5, NOV-2026×1, SIN-ORIGEN-VISIBLE×7 |
-| `/SEPA_CT_UNES` | 1192 | 258 | FR | 111 | 2 | HIBRIDO×1, ORDEN×1, SIN-ORIGEN-VISIBLE×1 |
+| `/SEPA_CT_UNES` | 1193 | 259 | FR | 111 | 2 | HIBRIDO×1, SIN-ORIGEN-VISIBLE×1 |
 | `/SEPA_CT_ICTP_ISO` | 671 | 112 | IT | 113 | 2 | - |
 | `/SEPA_CT_ICTP_ISO_EXTRASEPA` | 532 | 136 | IT | 120 | 3 | NOV-2026×1 |
 | `ZSETIF_FOR_ICTP` | 27 | 0 | IT | 134 | 0 | - |
@@ -341,7 +341,7 @@ Nodo padre `N_4249821970`.
 
 ## `/SEPA_CT_UNES`
 
-111 nodos en V001 (versiones existentes: 000, 001, 002). 1192 medios generados desde 2024, 258 en 2026, paises FR.
+111 nodos en V001 (versiones existentes: 000, 001, 002). 1193 medios generados desde 2024, 259 en 2026, paises FR.
 
 ### Exits que llama
 
@@ -372,11 +372,10 @@ Nodo padre `N_0412758380`.
 | 8 | `CtrySubDvsn` | `N_4548550170` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 9 | `Ctry` | `N_1974922770` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 
-#### `Dbtr > PstlAdr` -- **[ORDEN]** **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
+#### `Dbtr > PstlAdr` -- **[HIBRIDO]** **[SIN-ORIGEN-VISIBLE]**
 
 Nodo padre `N_9412627890`.
 
-- **ORDEN** -- orden ISO roto: Dept SubDept StrtNm BldgNb PstCd TwnNm Ctry CtrySubDvsn AdrLine -> debe ser Dept SubDept StrtNm BldgNb PstCd TwnNm CtrySubDvsn Ctry AdrLine
 - **HIBRIDO** -- estructurado + AdrLine en el mismo PstlAdr
 - **SIN-ORIGEN-VISIBLE** -- sin origen visible (puede venir del BAdI): <-PstlAdr_More_Nodes>
 
@@ -389,8 +388,8 @@ Nodo padre `N_9412627890`.
 | 5 | `BldgNb` | `N_1396453300` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 6 | `PstCd` | `N_2703639030` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 7 | `TwnNm` | `N_7609981350` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
-| 8 | `Ctry` | `N_2225746230` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
-| 9 | `CtrySubDvsn` | `N_7471680250` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 8 | `CtrySubDvsn` | `N_7471680250` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
+| 9 | `Ctry` | `N_2225746230` | `EXIT Y_FI_DMEE_ADR [CUSTOM] {PPC: SIN CONFIG}` · `cv 'CL       X'` |
 | 10 | `AdrLine` | `N_4946758140` | `FPAYHX-ORT1Z` · `cv 'CL RP    X'` |
 
 ---
