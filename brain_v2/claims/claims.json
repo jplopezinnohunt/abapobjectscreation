@@ -24908,7 +24908,7 @@
   },
   {
     "id": 526,
-    "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, estado D = modificable, NO liberado) Y SE DESVIA DE LA ESPECIFICACION ANALIZADA EN CINCO PUNTOS MEDIDOS, UNO DE ELLOS DANO COLATERAL A OTRO PAIS. LO CONSTRUIDO: T015L 5 filas EG0..EG4 (SUPP/SCVE/SALA/BEXP/CHAR) - YTFI_PPC_TAG 1 fila EG/USTRD/C/<PmtInf><CdtTrfTxInf><RmtInf><Ustrd> - YTFI_PPC_STRUC 10 filas, tipo O (SEPARATOR, PPC_DESCR, SEPARATOR, FIXED_VAL 'INV', SEPARATOR, PAY_FIELD FPAYP-XBLNR) y tipo P (SEPARATOR, FIXED_VAL 'Salary (Compensation of employees)', SEPARATOR, PAY_FIELD FPAYP-SGTXT). EL INTERRUPTOR YA ESTA ARMADO EN D01: la fila PPC_DESCR es exactamente lo que u917 busca, asi que D01 ya bloquea. LAS CINCO DESVIACIONES. (1) DANO COLATERAL A INDONESIA, el mas grave: YTFI_PPC_STRUC ID/USTRD/O/01 tiene el separador BORRADO en D01 (vacio frente a '/' en P01) Y la clave 350ID USTRD O01 esta DENTRO del transporte D01K9B0FXF -- si se importa, Indonesia pasa de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Es la UNICA deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila: el resto esta limpio. (2) Separadores vacios -> la cadena sale pegada (claim 524). (3) NO EXISTE el tipo de pago R: un payment request de Tesoreria a Egipto emite VACIO en silencio -- justo el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. (4) Falta el cajon de sastre: 5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%); faltan tambien GDDS, RENT, STDY, GOVT respecto a la lista de 10 verificada contra ISO 20022 (claim 495). (5) UN SOLO TRANSPORTE con las tres tablas (17 claves: 5 T015L + 11 STRUC + 1 TAG), cuando el interruptor exige dos: en cuanto YTFI_PPC_STRUC entre en P01 toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo (claim 496). SUELTO, PREVIO Y SIN IMPACTO: T015L de D01 tiene DK1 = 'NOT VALID JUST TO AVOID ERROR', ausente de P01 y del transporte. LA CLASE DE DEFECTO, QUE ES LO QUE HAY QUE RECORDAR: mantener un pais en SM30 puede capturar en el transporte la clave de un pais VECINO de la misma tabla, y el diff que lo ve no es el de las claves que querias tocar sino el de la TABLA ENTERA D01 vs P01.",
+    "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, estado D = modificable, NO liberado) Y SE DESVIA DE LA ESPECIFICACION ANALIZADA EN CINCO PUNTOS MEDIDOS, UNO DE ELLOS DANO COLATERAL A OTRO PAIS. LO CONSTRUIDO -- PRIMERA VERSION, luego corregida (ver el estado final en el claim 527 y en el incidente): T015L 5 filas EG0..EG4 (SUPP/SCVE/SALA/BEXP/CHAR) - YTFI_PPC_TAG 1 fila EG/USTRD/C/<PmtInf><CdtTrfTxInf><RmtInf><Ustrd> - YTFI_PPC_STRUC 10 filas, tipo O (SEPARATOR, PPC_DESCR, SEPARATOR, FIXED_VAL 'INV', SEPARATOR, PAY_FIELD FPAYP-XBLNR) y tipo P (SEPARATOR, FIXED_VAL 'Salary (Compensation of employees)', SEPARATOR, PAY_FIELD FPAYP-SGTXT). EL INTERRUPTOR YA ESTA ARMADO EN D01: la fila PPC_DESCR es exactamente lo que u917 busca, asi que D01 ya bloquea. LAS CINCO DESVIACIONES. (1) DANO COLATERAL A INDONESIA, el mas grave -- YA CORREGIDO EL MISMO DIA: YTFI_PPC_STRUC ID/USTRD/O/01 tenia el separador BORRADO en D01 (vacio frente a '/' en P01) Y la clave 350ID USTRD O01 estaba DENTRO del transporte D01K9B0FXF. De haberse importado asi, Indonesia pasaba de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Era la UNICA deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila. ESTADO A 2026-08-19 19:xx: JP restauro el '/' sobre el mismo transporte y la relectura sin strip devuelve D01 y P01 identicos; el diff completo de las tres tablas excluyendo EG deja UNA sola deriva, la preexistente T015L DK1. La clave sigue dentro del transporte, lo que ahora es un no-op al importar -- un transporte de tabla exporta el VALOR al LIBERAR, no al capturar la clave -- pero deja a Indonesia ACOPLADA al transporte hasta la liberacion. El resto esta limpio. (2) Separadores vacios -> la cadena sale pegada (claim 524). (3) NO EXISTE el tipo de pago R: un payment request de Tesoreria a Egipto emite VACIO en silencio -- justo el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. (4) Falta el cajon de sastre -- YA CORREGIDO EL MISMO DIA: la primera version llevaba 5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%). ESTADO FINAL: se retiro SALA (la nomina va por tipo P con valor fijo; un codigo de salario seleccionable en facturas de proveedor solo inducia a error) y se anadio OTHR, quedando EG0 SUPP / EG1 SCVE / EG2 BEXP / EG3 CHAR / EG4 OTHR. GDDS, RENT, STDY y GOVT siguen fuera respecto a la lista de 10 verificada contra ISO 20022 (claim 495): es una decision de granularidad para reporting, no un error. (5) UN SOLO TRANSPORTE con las tres tablas (17 claves: 5 T015L + 11 STRUC + 1 TAG), cuando el interruptor exige dos: en cuanto YTFI_PPC_STRUC entre en P01 toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo (claim 496). SUELTO, PREVIO Y SIN IMPACTO: T015L de D01 tiene DK1 = 'NOT VALID JUST TO AVOID ERROR', ausente de P01 y del transporte. LA CLASE DE DEFECTO, QUE ES LO QUE HAY QUE RECORDAR: mantener un pais en SM30 puede capturar en el transporte la clave de un pais VECINO de la misma tabla, y el diff que lo ve no es el de las claves que querias tocar sino el de la TABLA ENTERA D01 vs P01. NOTA DE VIGENCIA (anadida tras el audit Phase 0 del cierre): este claim describe el estado ENCONTRADO al abrir la sesion y las desviaciones tal como se detectaron. Tres de las cinco se corrigieron el mismo dia. El estado ACTUAL de la configuracion vive en el claim 527 y en incidents.json INC-EGYPT-PPC (build_record + deviations_from_spec, cada una con su status). Leer este claim sin el 527 da una foto caducada de D01.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -24950,7 +24950,7 @@
     "domain": "Payment",
     "created_session": 101,
     "resolved_session": 101,
-    "resolution_notes": "El incidente INC-EGYPT-PPC pasa de SPEC_READY a BUILT_IN_D01_DEVIATIONS_OPEN y adquiere numero de ticket real INC-000016101.",
+    "resolution_notes": "El incidente INC-EGYPT-PPC pasa de SPEC_READY a BUILT_IN_D01_DEVIATIONS_OPEN y adquiere numero de ticket real INC-000016101. Actualizado en el cierre de s101: las desviaciones 1, 2 y 4 se corrigieron el mismo dia y el texto lo dice ahora explicitamente. Estado actual -> claim 527.",
     "status": "active",
     "domain_axes": {
       "functional": [
@@ -25003,6 +25003,13 @@
         "ref": "D01 GB93 + GB931 + T100 (ARBGB=ZFI), leido 2026-08-19",
         "cite": "Validacion UNES boolclass 009, MSGID=ZFI. Paso 012 -> ZFI-036 severidad E 'Enter the payment purpose code (SCB) for the respective country'. Paso 001 -> ZFI-015 (areas GEF/MBF/OPF/PFF). Paso 011 -> ZFI-012 (partner bank type).",
         "added_session": 101
+      },
+      {
+        "type": "user_report",
+        "ref": "JP_LOPEZ, D01 FB60, 2026-08-19",
+        "cite": "Ejecuto un FB60 en UNES a proveedor con banco EG dejando LZBKZ vacio y reporto que la contabilizacion fue RECHAZADA, con la captura de pantalla del popup 'Enter the payment purpose code (SCB) for the respective country'. EVIDENCIA DE LA MITAD DE CAPTURA: es un reporte de usuario mas una captura, TIER_2, no una lectura directa del agente. Corroborado a TIER_1 solo en la ATRIBUCION: GB931 UNES paso 012 es el unico de los doce que lanza ZFI-036.",
+        "tier": "TIER_2",
+        "added_session": 101
       }
     ],
     "evidence_against": null,
@@ -25024,7 +25031,119 @@
     "domain": "Payment",
     "created_session": 101,
     "resolved_session": 101,
-    "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5 y el paso 5 de su seccion 11. Deja abierta SOLO la prueba del bloqueo (u917 sin LZBKZ).",
+    "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5 y los pasos 4 y 5 de su seccion 11: el control queda probado por las DOS mitades, bloqueo y renderizado. Lo que queda abierto NO es tecnico: partir el transporte en dos antes de liberar (YTFI_PPC_STRUC es el interruptor) y que el negocio confirme los cinco motivos con CitiService Egypt.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    },
+    "confidence_by_part": {
+      "render_half": "TIER_1 -- fichero pain.001 en disco, ruta archivada, cadena identica a la prediccion",
+      "block_half": "TIER_2 -- reporte de usuario + captura; el agente no observo la pantalla",
+      "attribution_of_the_block": "TIER_1 -- ZFI-036 es exclusivo del paso 012 en GB931, leido en vivo",
+      "note": "El campo 'confidence' del store es un escalar y este claim tiene dos mitades de fuerza distinta. Se deja TIER_1 por la mitad de renderizado, que es la que sostiene la conclusion operativa (no hace falta ABAP), y se desglosa aqui para no aplanar la diferencia."
+    }
+  },
+  {
+    "id": 528,
+    "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.707.737 lineas, LAUFD 2016-01-04 a 2026-05-12, cortando por DORIGIN y quedandose solo con las ejecutadas (XVORL <> 'X'). Reparto de DORIGIN en todo el corpus: vacio 3.140.170 - FI-AP 312.889 - HR-PY 180.372 - FI-AR 73.593 - TR-CM-BT 713. El campo ESTA poblado, asi que el cero que sigue es un cero real y no una extraccion incompleta. HR-PY (nomina, tipo de pago P): las 180.372 lineas tienen perceptor con direccion FR; cero hacia AE, BH, CN, EG, ID, IN, JO, MA, MY, PH. TR-CM-BT (payment request de Tesoreria, tipo de pago R): 713 lineas en diez anos, todas FR, y ademas SIN LIFNR ni PERNR -- son transferencias banco a banco, no tienen proveedor. Verificado por los DOS cortes posibles: el pais del BANCO del proveedor (LFBK-BANKS, que es exactamente lo que lee u917 y lo que filtra CM003) y el pais de la DIRECCION del perceptor (REGUH-LAND1). Cero por ambos. CONSECUENCIA SOBRE LA CONFIGURACION EXISTENTE: los seis paises que SI tienen filas de tipo R en YTFI_PPC_STRUC -- AE '/REC/IGT', CN '/REC/COCADR/', ID '/PURP/2299/<SGTXT>', IN 'P1203;Maintenance of international institutions;INV;<SGTXT>', JO '/PURP/704/<SGTXT>', MA '/PURP/820/<SGTXT>' -- NUNCA las han disparado. Ni ellas ni las filas P de los nueve. Son configuracion defensiva, escrita por simetria y no por trafico medido. CONSECUENCIA PARA EGIPTO: la ausencia de filas R en su configuracion NO es un riesgo para el 5 de septiembre. Anadirlas sigue mereciendo la pena por dos filas de coste y porque el modo de fallo seria SILENCIOSO -- un payment request emitiria una cadena vacia sin que nada avise -- pero es simetria barata, no urgencia. ESTO CORRIGE UNA AFIRMACION MIA: marque la R ausente como CRITICA y como 'lo unico que hoy romperia', heredando el aviso del companion sin medirlo. El aviso del companion tampoco se habia medido nunca. Regla que deja: feedback_a_warning_in_a_document_is_not_a_measurement. LIMITE DE LA MEDIDA, dicho explicito: la nomina del personal de la oficina de El Cairo no aparece como HR-PY con perceptor egipcio. O se paga fuera de SAP, o por otra via, o bajo otro DORIGIN. No se ha investigado; lo unico que se afirma es que en REGUH no esta.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Gold DB p01_gold_master_data.db, tabla REGUH (3.707.737 filas) JOIN LFBK, 2026-08-19",
+        "cite": "GROUP BY DORIGIN sobre todo el corpus y sobre el subconjunto de los diez paises PPC, por pais del banco del proveedor y por REGUH-LAND1. HR-PY y TR-CM-BT: cero en los diez, por ambos cortes.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "P01 YTFI_PPC_STRUC via RFC_READ_TABLE, 2026-08-19",
+        "cite": "6 de 9 paises tienen filas PAY_TYPE='R' con contenido; BH, MY y PH no.",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "REGUH",
+      "LFBK",
+      "YTFI_PPC_STRUC",
+      "U917",
+      "YCL_IDFI_CGI_DMEE_UTIL"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "Rebaja la desviacion 3 de INC-EGYPT-PPC de HIGH a MEDIUM con numero, y corrige una valoracion mia que era herencia de un artefacto propio y no una medida.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 529,
+    "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ZWCK1 = 'P1203  Maintenance of international institutions such as offices of IM'. CM003 hace SPLIT ... AT space INTO lv_dummy lv_value y ABAP asigna al ultimo destino el resto INCLUYENDO los separadores, asi que PPC_VAR sale 'P1203' y PPC_DESCR sale ' Maintenance of international institutions such as offices of IM' -- con un blanco delante. India separa sus bloques con ';' (YTFI_PPC_STRUC IN/O: PPC_VAR ; PPC_DESCR ; 'INV' ; FPAYP-XBLNR), de modo que un pago que use el codigo INA emite 'P1203; Maintenance of international institutions such as offices of IM;INV;<XBLNR>' con un blanco de mas justo detras del primer punto y coma, y eso es lo que llega al banco. ES LA UNICA FILA ROTA DE LAS 73: barrido completo de T015L en P01, ninguna otra tiene el hueco partido ni carece de espacio. LA RUTA R DE INDIA NO ESTA AFECTADA -- usa FIXED_VAL 'P1203' y FIXED_VAL 'Maintenance of international institutions' en filas separadas, sin pasar por T015L. Solo la ruta O (factura de proveedor, donde el empleado teclea el codigo) puede emitirlo. COMO SE ENCONTRO, que es la parte que importa: NO se busco. Aparecio al mecanizar como check E/F de Zagentexecution/quality_checks/ppc_country_consistency_check.py el defecto que se habia encontrado A MANO unas horas antes configurando Egipto (T015L EG4 grabado como 'OTHR  Others'). El mismo defecto estaba esperando en produccion desde que se configuro India, invisible en SM30 porque dos espacios seguidos no se distinguen de uno. El check se pago solo en su primera corrida. NO MEDIDO: cuantos pagos reales han usado el codigo INA. REGUP no esta en el Gold DB, asi que el impacto en volumen queda sin cuantificar -- es la misma laguna que deja el check D en SKIPPED. ARREGLO: borrar un espacio en T015L INA por SM30, transportado como cualquier customizing. Cero ABAP, cero riesgo: no cambia el codigo emitido, solo quita el blanco de la narrativa.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "P01 T015L via RFC_READ_TABLE sin strip, 2026-08-19",
+        "cite": "INA -> 'P1203  Maintenance of international institutions such as offices of IM'; barrido de las 73 filas: es la unica con el hueco partido.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "P01 YTFI_PPC_STRUC LAND1='IN'",
+        "cite": "Ruta O: PPC_VAR / ';' / PPC_DESCR / ';' / FIXED_VAL 'INV' / ';' / PAY_FIELD. La ruta R usa FIXED_VAL y no toca T015L.",
+        "added_session": 101
+      },
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap",
+        "cite": "SPLIT ls_t015l-zwck1 AT space INTO lv_dummy lv_value: el ultimo destino recibe el resto incluyendo separadores.",
+        "added_session": 101
+      },
+      {
+        "type": "derived_artifact",
+        "ref": "Zagentexecution/quality_checks/ppc_country_consistency_check.py check F",
+        "cite": "Detector anadido en s101 a partir del defecto encontrado a mano en Egipto; encontro este en la primera ejecucion.",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T015L",
+      "YTFI_PPC_STRUC",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "REGUP"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "Hallazgo colateral del cierre de s101. Accion abierta en PMO. Regla que lo genero: feedback_a_char_field_cannot_store_a_trailing_blank.",
     "status": "active",
     "domain_axes": {
       "functional": [

@@ -5040,5 +5040,71 @@
         "*"
       ]
     }
+  },
+  {
+    "id": "feedback_a_char_field_cannot_store_a_trailing_blank",
+    "severity": "HIGH",
+    "created_session": 101,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Un espacio AL FINAL de un campo CHAR no existe: es indistinguible del relleno y no hay forma de almacenarlo. Un espacio AL PRINCIPIO si sobrevive. Y ninguna configuracion basada en texto se da por buena mirando la pantalla: se lee el campo EN CRUDO, sin strip, y se compara con una fila que ya funcione.",
+    "why": "2026-08-19, configurando Purpose of Payment para Egipto, TRES defectos seguidos vivieron en el mismo sitio: (1) los seis SEPARATOR de YTFI_PPC_STRUC se dejaron VACIOS con el razonamiento 'la estructura es texto simple, no necesita separaciones' -- pero YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE es literalmente ev_value_c = |{ iv_value_c }{ iv_value_to_add }|, concatenacion directa SIN separador implicito, asi que el fichero habria salido 'Payment for goods or services receivedINV5105551234', todo pegado; (2) se intento poner el separador como un espacio, y PPC_VALUE es CHAR(60) -- el blanco final se pierde porque ES el relleno; (3) T015L EG4 se grabo como 'OTHR  Others' con DOS espacios, y como el SPLIT AT SPACE parte en el PRIMERO y mete el resto -separadores incluidos- en el ultimo destino, la descripcion salia como ' Others' y el fichero habria llevado '/ Others/INV/...'. LOS TRES ERAN INVISIBLES EN SM30: un separador vacio parece vacio a proposito, y dos espacios seguidos no se distinguen de uno. Los tres los cazo la MISMA herramienta: RFC_READ_TABLE sin .strip(), contando los blancos delante y detras. Yo mismo di primero una explicacion equivocada del blanco final (culpe a la plantilla de string ABAP) antes de mirar el DDIC y ver que el motivo real es el relleno del CHAR: misma accion, explicacion un nivel por debajo de la verdad.",
+    "how_to_apply": "Al configurar o revisar cualquier tabla que componga texto: (1) leer el campo con RFC_READ_TABLE SIN strip y mostrar los blancos, p.ej. valor.replace(' ','.') mas el conteo de blancos iniciales; (2) comparar contra una fila de un pais/entidad que YA funcione en produccion -- la diferencia salta sola; (3) si hace falta separacion visible, ponerla DELANTE de un literal, nunca detras, y nunca justo antes de un campo dinamico tipo PAY_FIELD, que no admite prefijo: ahi el separador tiene que ser el ultimo caracter no blanco del bloque anterior; (4) antes de dar por buena la config, SIMULAR la cadena montada y compararla con la salida real. Claim 524.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": "feedback_diff_the_whole_table_before_releasing_a_config_transport",
+    "severity": "CRITICAL",
+    "created_session": 101,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Antes de liberar un transporte de customizing, diferenciar la TABLA ENTERA entre origen y destino -- no solo las claves que querias tocar -- y listar las claves que el transporte lleva de verdad. Mantener una entidad en SM30 puede capturar la clave de una entidad VECINA.",
+    "why": "2026-08-19: configurando Egipto en YTFI_PPC_STRUC se borro sin querer el separador '/' de la fila ID/USTRD/O/01 -- INDONESIA -- y esa clave, 350ID USTRD O01, quedo DENTRO del transporte de Egipto (D01K9B0FXF, 17 claves: 10 de EG + 1 de ID + 5 T015L + 1 TAG). Liberado en ese estado habria cambiado Indonesia de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' contra Bank Indonesia, sobre 921 lineas con codigo de proposito. NINGUNA revision centrada en 'esta Egipto bien configurado?' lo habria visto: la config de Egipto era correcta. Lo vio el diff de TODA la tabla D01 vs P01, que devolvio exactamente una deriva no-Egipto. Y hay un segundo motivo para hacer el diff completo: revela tambien la deriva que NO viaja (en el mismo diff aparecio T015L DK1, presente en D01, ausente de P01 y fuera del transporte). MATIZ QUE HAY QUE SABER: un transporte de tabla guarda la CLAVE y exporta el VALOR al LIBERAR, no al capturarlo -- por eso restaurar el valor neutraliza el dano aunque la clave siga dentro, pero deja la entidad vecina ACOPLADA al transporte hasta la liberacion.",
+    "how_to_apply": "MECANIZADA: python Zagentexecution/quality_checks/config_transport_prerelease_check.py <TRKORR> [--src D01 --dst P01]. Lee E071K para saber que tablas y claves lleva el transporte, diferencia CADA tabla entera entre los dos sistemas y clasifica: (a) dentro del transporte y distinto -> viaja, verificar que es intencionado; (b) FUERA del transporte y distinto -> deriva que no viaja; (c) dentro del transporte e igual -> no-op, candidata a quitar de la lista de objetos. Exit code != 0 si hay claves dentro del transporte que no pertenecen a la entidad que se estaba manteniendo. Correr SIEMPRE antes de liberar. Claim 526.",
+    "domain_axes": {
+      "functional": [],
+      "module": [],
+      "process": []
+    }
+  },
+  {
+    "id": "feedback_predict_the_output_before_you_generate_it",
+    "severity": "HIGH",
+    "created_session": 101,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Cuando exista el codigo que construye una salida, SIMULARLO sobre la configuracion real y PUBLICAR la prediccion ANTES de generarla. Comparar despues caracter por caracter. Mirar la salida y decir 'parece correcta' no es verificar.",
+    "why": "2026-08-19: antes de lanzar el F110 se simulo CM003/CM004 sobre las filas leidas en vivo y se predijo '/Payment for goods or services received/INV/224938'. El fichero pain.001 generado trajo exactamente esa cadena. Eso valida DOS cosas de un golpe y las separa: que la configuracion es correcta, Y que nuestro modelo del codigo es correcto. Si hubieran diferido, la diferencia habria dicho cual de las dos estaba mal -- que es informacion que 'leer el fichero y ver si tiene buena pinta' no da nunca. La misma simulacion, corrida antes, es la que hizo visibles los separadores vacios y el doble espacio: la prediccion es tambien el detector.",
+    "how_to_apply": "Antes de ejecutar el proceso real: (1) leer la configuracion en vivo, sin strip; (2) escribir una funcion corta que replique el algoritmo del codigo extraido -- no el de la especificacion, el del fuente; (3) imprimir la cadena/valor esperado y su longitud, y contrastarla con el limite del contenedor (aqui: el LENGTH del nodo DMEE); (4) ejecutar; (5) comparar exacto. Si no coinciden, NO parchear la salida: averiguar si fallo la config o el modelo. Claim 527.",
+    "domain_axes": {
+      "functional": [],
+      "module": [],
+      "process": []
+    }
+  },
+  {
+    "id": "feedback_a_warning_in_a_document_is_not_a_measurement",
+    "severity": "HIGH",
+    "created_session": 101,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Un aviso heredado de un documento propio -- companion, especificacion, retro -- NO es evidencia. Antes de repetirlo como riesgo, y sobre todo antes de marcarlo CRITICO, medirlo. Y si la medida lo contradice, corregir el documento de origen, no solo la conversacion.",
+    "why": "2026-08-19: el companion decia 'lo unico que no hay que copiar: la R que falta -- Egipto debe definir los tres tipos de pago'. Lo repeti marcandolo en ROJO como 'lo unico que hoy romperia'. Al medirlo: en REGUH completa (3.707.737 lineas, 2016-2026, ejecutadas) el corte por DORIGIN da HR-PY 180.372 y TR-CM-BT 713, y NINGUNA llega a ninguno de los diez paises PPC -- todas con perceptor de direccion FR, y TR-CM-BT sin LIFNR porque es banco a banco. Verificado por los dos cortes, pais del BANCO del proveedor (lo que lee el control) y pais de la DIRECCION. O sea: los seis paises que si tienen filas R no las han disparado nunca, ni esas ni las P. El aviso original nunca se habia medido y yo lo ascendi a critico por herencia. Riesgo real de esto: gastar la credibilidad y el tiempo del usuario en lo que no pasa, mientras lo que si importaba -- avisar a la oficina de El Cairo de que el bloqueo empieza el dia del transporte -- no estaba en ninguna lista.",
+    "how_to_apply": "Al citar un riesgo que viene de un artefacto propio y no de una medida: (1) marcarlo explicito como NO MEDIDO; (2) medirlo antes de priorizarlo -- casi siempre es una consulta al Gold DB o una lectura RFC; (3) declarar los cortes discriminantes de la tabla antes de contar; (4) si la medida lo rebaja, ACTUALIZAR el artefacto de origen en la misma sesion, con la cifra, para que el siguiente que lo lea no herede el error. Se aplico aqui: el companion y la desviacion 3 del incidente llevan ya la medida y la severidad rebajada.",
+    "domain_axes": {
+      "functional": [],
+      "module": [],
+      "process": []
+    }
   }
 ]

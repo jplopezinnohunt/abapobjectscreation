@@ -6,7 +6,7 @@ INDEPENDENTLY, nothing in SAP ties them together, and two of the three failure m
 SILENT -- the posting is blocked but nothing renders, or the code is accepted but belongs to
 another country.
 
-Four checks, all measured against the Gold DB (P01 provenance):
+Six checks, all measured against the Gold DB (P01 provenance):
 
   A  SWITCH WITHOUT A CODE LIST
      YTFI_PPC_STRUC has a PPC_VAR/PPC_DESCR row for the country, but T015L has no code with
@@ -25,6 +25,23 @@ Four checks, all measured against the Gold DB (P01 provenance):
      One code carries most of the country's real payments. The control is satisfied and the
      data the bank receives is worthless. A training problem wearing a config problem's
      clothes; only visible by measuring what was actually posted.
+
+  E  A SEPARATOR THAT SEPARATES NOTHING
+     A YTFI_PPC_STRUC row with PPC_CODE='SEPARATOR' and a blank PPC_VALUE. The assembler
+     (YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE) concatenates with no implicit separator of any
+     kind, so a blank separator emits nothing and the blocks either side come out glued:
+     'Payment for goods or services receivedINV5105551234'. SILENT -- the posting is blocked
+     correctly, the file is malformed. Note that a separator of ONE SPACE is the same defect:
+     PPC_VALUE is CHAR(60), so a trailing blank is indistinguishable from the field's padding
+     and cannot be stored at all. Found by hand on 2026-08-19; mechanised here.
+
+  F  ZWCK1 WITH A BROKEN CODE/NARRATIVE GAP
+     T015L.ZWCK1 holds two fields in one, split at the FIRST space: '<code> <narrative>'.
+     CM003 does SPLIT ... AT space INTO lv_dummy lv_value, and ABAP assigns the remainder
+     INCLUDING the separators to the last target -- so two spaces make the narrative start
+     with a blank and the file renders '/ Others/INV/...'. Two consecutive spaces are
+     indistinguishable from one in SM30; only a raw read sees it. A ZWCK1 with NO space at
+     all is also flagged: PPC_DESCR would emit nothing. Found by hand on 2026-08-19.
 
 Check D also reports cross-country contamination, which exists because T015L's key is LZBKZ
 alone -- it has NO country field. The 'EG'/'JO' prefix is a naming convention, not a rule SAP
@@ -75,7 +92,15 @@ def load(con):
             codes[lz[:2].upper()].append(lz)
 
     tags = {(land or "").strip() for (land,) in cur.execute("SELECT LAND1 FROM YTFI_PPC_TAG")}
-    return struct, codes, tags
+
+    # Los valores EN CRUDO. Aqui los blancos son el dato, no ruido: por eso no se
+    # normaliza nada antes de mirarlos (rule feedback_a_char_field_cannot_store_a_trailing_blank).
+    seps = [(l, pt, co, pv) for l, pt, co, pv in cur.execute(
+        "SELECT LAND1, PAY_TYPE, CODE_ORD, COALESCE(PPC_VALUE,'') FROM YTFI_PPC_STRUC "
+        "WHERE TRIM(PPC_CODE) = 'SEPARATOR'")]
+    zwck = [(lz, zw) for lz, zw in cur.execute(
+        "SELECT LZBKZ, COALESCE(ZWCK1,'') FROM T015L")]
+    return struct, codes, tags, seps, zwck
 
 
 def usage(con):
@@ -101,7 +126,7 @@ def main():
         return 0
 
     con = sqlite3.connect(f"file:{GOLD}?mode=ro", uri=True)
-    struct, codes, tags = load(con)
+    struct, codes, tags, seps, zwck = load(con)
     used = usage(con)
     skipped = []  # checks that could not run at all — never fold into PASS (rule #202)
 
@@ -130,6 +155,33 @@ def main():
                                                "switches the control on - looks configured, "
                                                "controls nothing (SILENT)"))
 
+    # E - un separador que no separa nada
+    for land, pt, co, pv in seps:
+        land = (land or "").strip()
+        if pv.strip() == "":
+            findings.append(("HIGH", land, "E",
+                             f"SEPARATOR row {pt.strip()}/{co.strip()} has a blank PPC_VALUE - "
+                             "the assembler concatenates with nothing in between, so the "
+                             "neighbouring blocks come out glued (SILENT)"))
+
+    # F - el hueco codigo/narrativa de ZWCK1
+    for lz, zw in zwck:
+        lz = (lz or "").strip()
+        if not (len(lz) >= 3 and lz[:2].isalpha()):
+            continue                      # SCB aleman clasico, no es un purpose code
+        body = zw.rstrip()                # el relleno CHAR(70) no es informacion
+        if " " not in body:
+            findings.append(("MEDIUM", lz[:2].upper(), "F",
+                             f"{lz}: ZWCK1 has no space, so PPC_DESCR would emit nothing "
+                             f"({body!r})"))
+            continue
+        rest = body.split(" ", 1)[1]
+        if rest.startswith(" "):
+            findings.append(("HIGH", lz[:2].upper(), "F",
+                             f"{lz}: more than one space between code and narrative - "
+                             f"PPC_DESCR inherits a leading blank and the file renders "
+                             f"'/ {rest.strip()}/...' ({body!r})"))
+
     if used is None:
         skipped.append("D (degenerate usage) - REGUP is not in the Gold DB")
         print("NOTE: REGUP is not in the Gold DB - check D (degenerate usage) SKIPPED, "
@@ -152,7 +204,7 @@ def main():
 
     if not findings:
         if skipped:
-            print("PASS on checks A/B/C (code list + switch + XML tag). NOT a full pass: "
+            print("PASS on checks A/B/C/E/F (code list + switch + XML tag + separators + ZWCK1 gap). NOT a full pass: "
                   f"{len(skipped)} check(s) SKIPPED, not verified clean:")
             for s in skipped:
                 print(f"  [SKIPPED] {s}")
