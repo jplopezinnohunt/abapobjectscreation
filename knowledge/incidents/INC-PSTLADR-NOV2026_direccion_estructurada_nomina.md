@@ -78,6 +78,74 @@ A partir del 14-11-2026 esa dirección parcial deja de aceptarse.
 4. **Mirar el receptor único de FI-AR**: 131.530 líneas (93%) sin ciudad concentradas en una
    sola ficha. Es una anomalía barata de arreglar y no debería quedar suelta.
 
+## 6-bis. SECCIÓN 2 — Proveedores: el `CtrySubDvsn` del rail CITI
+
+Añadida 2026-08-19. **Ésta sí es de proveedores**, a diferencia de la sección 1.
+
+### Qué exige Citi que no exige SocGen
+
+Los dos bancos no consumen la dirección igual. SocGen la lee estructurada. **Citi la
+aplana en tres líneas de 35 caracteres** (reglas GOLD 2026-05-06, hoja `499_US_WIRE`):
+
+| Línea Citi | Se compone de |
+|---|---|
+| Target Address Line 1 | `BldgNb` + espacio + `StrtNm` |
+| Target Address Line 2 | `TwnNm` + coma + `CtrySubDvsn` — *"both fields are mandatory"* |
+| Target Address Line 3 | `PstCd` + `Ctry` |
+
+> *"Overall max length of 35 characters. If exceeds 35 characters payment will reject."*
+> *"Partial addresses will not be accepted. Street name, city and country are required."*
+
+`CtrySubDvsn` es obligatorio **para Citi**, no para SocGen. Por eso este riesgo vive
+sólo en el rail CITI.
+
+### La medida
+
+De 11.185 pagos del rail CITI en 2026, **5.239 (46%) van sin `CtrySubDvsn`**:
+
+| Población | Pagos | Receptores distintos | Dónde está el hueco |
+|---|---:|---:|---|
+| **Proveedores** (FI-AP) | 2.640 | **941** | Ficha ADRC existe, `REGION` vacío |
+| Nómina (HR-PY) | 2.578 | — | Sin ficha ADRC (son PERNR) → sección 1 |
+| Clientes (FI-AR) | 21 | — | |
+
+**`ADRC-REGION` está poblado en CERO de los 5.239.** No es que el árbol pierda el dato:
+el dato no existe. Descartada la hipótesis de que bastara con dos mappings.
+
+Por país: US 551 · BR 351 · FR 319 · MG 250 · CA 173 · MM 100.
+
+### Por dónde empezar
+
+**301 proveedores de US y Canadá, 724 pagos.** Ahí el estado o la provincia no es un
+adorno: `NEW YORK` sin `NY`, `AURORA` sin `CO`, no son direcciones completas. En el
+resto de países la subdivisión suele ser prescindible, y Citi la exige por formato más
+que por necesidad postal.
+
+Los más repetidos: `GRAEBEL COMPANIES INC` (AURORA, US, 19 pagos) · `UNITED NATIONS`
+(NEW YORK, 16) · `UNICEF` (NEW YORK, 13) · `COMINAR REAL ESTATE` (Montreal, CA, 14).
+
+### Un patrón que abarata el trabajo
+
+`COMINAR` tiene `CITY1='Montreal Quebec'`. La región **existe, pegada dentro de la
+ciudad**. Igual que `WASHINGTON, DC`, `Holland, MI`, `Etobicoke, Ontario`. En muchos
+casos no hay que averiguar el dato: hay que **separarlo** de donde está.
+
+Y una casualidad afortunada, que conviene conocer antes de dimensionar: como Citi
+concatena `TwnNm` + coma + `CtrySubDvsn` en una sola línea, un `CITY1='Holland, MI'`
+produce **exactamente la misma Línea 2** que la versión bien partida. **Para Citi es
+inocuo.** Sólo importa para la conformidad ISO en general y para los rails que sí
+consumen estructurado.
+
+Eso significa que los 941 no son todos igual de urgentes: **primero los que no tienen
+la región en ninguna parte**, después los que la tienen mal colocada.
+
+### Lo que NO hay que hacer
+
+Lanzar una campaña sobre las direcciones de **bancos**. Se descartó con medida: en el
+rail CGI el 100% de los 8.419 pagos lleva BIC, y el manual de SocGen dice que *"if
+filled in, name and address are ignored"*. El único sitio donde la dirección del banco
+identifica de verdad son los **898 pagos de CITI sin BIC** (8%).
+
 ## 7. Qué NO es este incidente
 
 El desastre del **lado banco** (`BNKA`: 77% de ciudades sucias en los 2.886 bancos que usamos,
