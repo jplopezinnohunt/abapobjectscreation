@@ -24785,5 +24785,175 @@
         "*"
       ]
     }
+  },
+  {
+    "id": 524,
+    "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE (CM004) es integro 'IF iv_value_c IS INITIAL. ev_value_c = iv_value_to_add. ELSE. ev_value_c = |{ iv_value_c }{ iv_value_to_add }|. ENDIF.' -- no hay separador implicito, ni espacio, ni delimitador. CM003 trata 'SEPARATOR' y 'FIXED_VAL' con la MISMA rama: ambos anaden PPC_VALUE literal. CONSECUENCIA MEDIDA sobre la configuracion de EG construida en D01 el 2026-08-19: sus tres filas SEPARATOR de PAY_TYPE='O' (CODE_ORD 01/03/05) tienen PPC_VALUE vacio -- leido con RFC_READ_TABLE SIN strip, para descartar que fuese un artefacto de lectura; los nueve paises ya configurados llevan '/' (JO/ID/MA/MY/PH/BH/AE/CN) o ';' (IN) en esa misma posicion. Con la config actual una factura rinde 'Payment for goods or services receivedINV5105551234' y una nomina 'Salary (Compensation of employees)<SGTXT>' -- todo pegado, que no es lo que Citi pide ('Payment for goods received under Invoice 12345'). LA CREENCIA QUE ESTO REFUTA: 'la estructura es simple, sin separaciones, es texto' -- sin separaciones no da texto, da concatenacion. CAVEAT DE NIVEL 2, NO VERIFICADO: un separador de UN ESPACIO probablemente tampoco sirva, porque en una plantilla de string ABAP un campo tipo C pierde los blancos finales; no se pudo confirmar el tipo de IV_VALUE_TO_ADD porque la seccion privada de la clase (include CI) no esta en el corpus extraido. La opcion segura es un caracter visible, que es ademas lo que hacen los otros nueve. La primera fila SEPARATOR (CODE_ORD 01) es inocua en cualquier caso: con cv_value_c todavia inicial, build_value la asigna y sigue siendo inicial.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM004.abap",
+        "cite": "METHOD build_value completo: concatenacion directa, sin separador implicito.",
+        "added_session": 101
+      },
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap",
+        "cite": "WHEN 'SEPARATOR' OR 'FIXED_VAL' comparten rama: ambos pasan ls_cus-ppc_value tal cual a build_value.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 YTFI_PPC_STRUC via RFC_READ_TABLE (sin strip), LAND1 EG vs JO",
+        "cite": "EG O01/O03/O05 SEPARATOR vacio ; JO O01/O03/O05 SEPARATOR = '/'. Medido 2026-08-19.",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "YTFI_PPC_STRUC",
+      "T015L",
+      "YTFI_PPC_TAG",
+      "FPAYP"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "Nace de revisar la configuracion de EG realmente construida en D01. Complementa el claim 496 (el control prueba presencia, no correccion): aqui el fallo no es el codigo elegido sino la CADENA ensamblada, y tampoco lo ve nadie -- el bloqueo pasa, el fichero sale mal formado.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 525,
+    "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D01 (DMEE_TREE_NODE, arbol /CGI_XML_CT_UNESCO, version 001): nodo Ustrd = N_6995550560, MP_EXIT_FUNC = 'FI_CGI_DMEE_EXIT_W_BADI', campo fuente DMEE_PAYD-TEXT, ruta <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>. Cruzada esa ruta contra YTFI_PPC_TAG, la respaldan OCHO paises -- BH, EG, ID, IN, JO, MA, MY, PH -- es decir EG YA RESUELVE contra el nodo. El hermano InstrInf (N_6995850210 y N_8721337940, ruta <PmtInf><CdtTrfTxInf><InstrForCdtrAgt><InstrInf>) tambien lleva el exit y lo respaldan AE y CN, exactamente las dos familias de tag documentadas. El nodo padre RmtInf (N_4360444640) no lleva exit ni respaldo, como corresponde a un contenedor. ESTO ELIMINA EL RIESGO DE 'capturar sin renderizar' PARA EGIPTO: el motor esta cableado, la fila de tag existe y el dispatcher FR resuelve por LAND1 sin literal de pais (claim 494). LIMITE EXACTO DE LA EVIDENCIA: leido en D01, no en P01 -- P01 rechaza un WHERE de RFC_READ_TABLE sobre DMEE_TREE_NODE por columnas string, que es la razon por la que quedo abierto en s099. Y sigue sin ser prueba de que el fichero salga bien: solo un F110 en D01 desde banco casa SocGen a proveedor con banco EG, leyendo el <Ustrd> generado, prueba el fichero. Metodo reutilizable: Zagentexecution/quality_checks/dmee_tree_map.py resuelve nodo->ruta->respaldo PPC.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "D01 DMEE_TREE_NODE /CGI_XML_CT_UNESCO v001 nodo N_6995550560",
+        "cite": "MP_EXIT_FUNC='FI_CGI_DMEE_EXIT_W_BADI'; ruta <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>. Medido 2026-08-19.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 YTFI_PPC_TAG (12 filas)",
+        "cite": "8 paises con TAG_FULL = la ruta del nodo Ustrd, EG incluido; AE y CN sobre InstrInf.",
+        "added_session": 101
+      },
+      {
+        "type": "derived_artifact",
+        "ref": "Zagentexecution/quality_checks/dmee_tree_map.py",
+        "cite": "ppc_backing() cruza ruta de nodo contra YTFI_PPC_TAG x YTFI_PPC_STRUC.",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "DMEE_TREE_NODE",
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "YTFI_PPC_TAG",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "YCL_IDFI_CGI_DMEE_FR"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 526,
+    "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, estado D = modificable, NO liberado) Y SE DESVIA DE LA ESPECIFICACION ANALIZADA EN CINCO PUNTOS MEDIDOS, UNO DE ELLOS DANO COLATERAL A OTRO PAIS. LO CONSTRUIDO: T015L 5 filas EG0..EG4 (SUPP/SCVE/SALA/BEXP/CHAR) - YTFI_PPC_TAG 1 fila EG/USTRD/C/<PmtInf><CdtTrfTxInf><RmtInf><Ustrd> - YTFI_PPC_STRUC 10 filas, tipo O (SEPARATOR, PPC_DESCR, SEPARATOR, FIXED_VAL 'INV', SEPARATOR, PAY_FIELD FPAYP-XBLNR) y tipo P (SEPARATOR, FIXED_VAL 'Salary (Compensation of employees)', SEPARATOR, PAY_FIELD FPAYP-SGTXT). EL INTERRUPTOR YA ESTA ARMADO EN D01: la fila PPC_DESCR es exactamente lo que u917 busca, asi que D01 ya bloquea. LAS CINCO DESVIACIONES. (1) DANO COLATERAL A INDONESIA, el mas grave: YTFI_PPC_STRUC ID/USTRD/O/01 tiene el separador BORRADO en D01 (vacio frente a '/' en P01) Y la clave 350ID USTRD O01 esta DENTRO del transporte D01K9B0FXF -- si se importa, Indonesia pasa de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Es la UNICA deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila: el resto esta limpio. (2) Separadores vacios -> la cadena sale pegada (claim 524). (3) NO EXISTE el tipo de pago R: un payment request de Tesoreria a Egipto emite VACIO en silencio -- justo el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. (4) Falta el cajon de sastre: 5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%); faltan tambien GDDS, RENT, STDY, GOVT respecto a la lista de 10 verificada contra ISO 20022 (claim 495). (5) UN SOLO TRANSPORTE con las tres tablas (17 claves: 5 T015L + 11 STRUC + 1 TAG), cuando el interruptor exige dos: en cuanto YTFI_PPC_STRUC entre en P01 toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo (claim 496). SUELTO, PREVIO Y SIN IMPACTO: T015L de D01 tiene DK1 = 'NOT VALID JUST TO AVOID ERROR', ausente de P01 y del transporte. LA CLASE DE DEFECTO, QUE ES LO QUE HAY QUE RECORDAR: mantener un pais en SM30 puede capturar en el transporte la clave de un pais VECINO de la misma tabla, y el diff que lo ve no es el de las claves que querias tocar sino el de la TABLA ENTERA D01 vs P01.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "D01 E070/E07T/E071K TRKORR D01K9B0FXE, D01K9B0FXF",
+        "cite": "fn=W/Q st=D user=JP_LOPEZ 20260819, texto 'INC-000016101 EGYP Payment Reasons'; 17 claves E071K: T015L 5, YTFI_PPC_STRUC 11 (10 EG + 350ID USTRD O01), YTFI_PPC_TAG 1.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 vs P01 YTFI_PPC_STRUC / YTFI_PPC_TAG / T015L, diff fila a fila",
+        "cite": "STRUC D01 143 / P01 133; unica deriva no-EG = ID/O/01 separador vacio vs '/'. T015L D01 79 / P01 73 = 5 EG + DK1.",
+        "added_session": 101
+      },
+      {
+        "type": "source_code",
+        "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590",
+        "cite": "u917 dispara con PPC_CODE IN ('PPC_VAR','PPC_DESCR'); EG tiene PPC_DESCR -> el interruptor esta armado.",
+        "added_session": 101
+      },
+      {
+        "type": "knowledge_doc",
+        "ref": "companions/inc_egypt_ppc_configuration.html",
+        "cite": "Seccion 11 (dos transportes, 10 codigos, tres tipos de pago) y seccion 5 (la R que falta) = la linea base contra la que se mide la desviacion.",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG",
+      "T015L",
+      "U917",
+      "YRGGBS00",
+      "E071K",
+      "E070"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "El incidente INC-EGYPT-PPC pasa de SPEC_READY a BUILT_IN_D01_DEVIATIONS_OPEN y adquiere numero de ticket real INC-000016101.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]

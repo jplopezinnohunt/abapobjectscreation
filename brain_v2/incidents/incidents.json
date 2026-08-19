@@ -1927,11 +1927,11 @@
   },
   {
     "id": "INC-EGYPT-PPC",
-    "status": "SPEC_READY",
+    "status": "BUILT_IN_D01_DEVIATIONS_OPEN",
     "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)",
     "reporter": "Mathewos Mehari (BFM) via Christina Lopez-Chemouny; originating notice from Citibank Egypt 2026-07-12",
     "received_date": "2026-08-10",
-    "analyzed_session": 99,
+    "analyzed_session": 101,
     "domain": "Payment",
     "secondary_domains": [
       "Procurement",
@@ -1939,11 +1939,13 @@
       "FI"
     ],
     "transactions": [
-      "SM30",
-      "OBAT",
+      "F110",
       "FB60",
       "MIRO",
-      "F110"
+      "OBAT",
+      "SE01",
+      "SE10",
+      "SM30"
     ],
     "primary_object_id": "YTFI_PPC_STRUC",
     "primary_subject": "Country EG in the purpose-of-payment configuration",
@@ -2000,34 +2002,43 @@
       "This path produces no payment file at all, so the rendering half of the framework is moot for Egypt"
     ],
     "related_objects": [
-      "YTFI_PPC_STRUC",
-      "YTFI_PPC_TAG",
-      "T015L",
-      "U917",
-      "YRGGBS00",
-      "YCL_IDFI_CGI_DMEE_UTIL",
-      "LFBK",
-      "REGUH",
       "CIT19",
+      "D01K9B0FXE",
+      "D01K9B0FXF",
+      "DMEE_TREE_NODE",
+      "E070",
+      "E071K",
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "GB931",
+      "LFBK",
+      "PAYR",
+      "REGUH",
+      "REGUT",
+      "T015L",
       "T042E",
       "T042Z",
-      "REGUT",
-      "PAYR",
-      "GB931"
+      "U917",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "YRGGBS00",
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG"
     ],
     "related_claims": [
+      "267",
       "484",
       "485",
       "486",
       "488",
-      "267",
       "489",
       "490",
       "492",
       "493",
       "494",
       "495",
-      "496"
+      "496",
+      "524",
+      "525",
+      "526"
     ],
     "related_known_unknowns": [
       "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
@@ -2046,7 +2057,7 @@
     "chain_anchor_type": "mixed_source_and_config",
     "chain_anchor_note": "Anchored on the Citi notice (the authority), on YRGGBS00 u917 and the UTIL builder source for the mechanism, on live P01 GB931/T042E/T042Z/REGUT/PAYR for coverage and payment medium, and on Gold DB REGUH/LFA1 for the population.",
     "chain_anchor_coverage_pct": 90,
-    "chain_audited_session": 99,
+    "chain_audited_session": 101,
     "domain_axes": {
       "functional": [
         "Payment",
@@ -2063,7 +2074,82 @@
       ]
     },
     "deadline": "2026-09-05",
-    "next_action": "Two transports, in this order. T1 (inert, can go now): T015L 10 rows EG0..EG9 + YTFI_PPC_TAG one row EG/USTRD/C. T2 (the live moment, 1-2 days before the deadline): YTFI_PPC_STRUC 11 rows -- this is the SWITCH, it starts the block AND the rendering. Never both in one transport. Confirm the 10 codes with CitiService Egypt first. Step by step: companions/inc_egypt_ppc_configuration.html section 11."
+    "next_action": "Por orden, uno a uno. (1) HECHO 2026-08-19: Indonesia restaurada y verificada; queda opcional quitar la clave 350ID USTRD O01 de D01K9B0FXF por SE10 para cortar el acoplamiento. (2) Arreglar los separadores de EG: separador visible, o el espacio DELANTE dentro de un FIXED_VAL (PPC_VALUE es CHAR(60): los blancos finales se pierden, los iniciales no). (3) Anadir el tipo de pago R. (4) Anadir OTHR como minimo y cerrar la lista con BFM/Tesoreria. (5) Partir en dos transportes. (6) F110 en D01 desde banco casa SocGen a proveedor con banco EG y leer el <Ustrd> generado: es la unica prueba del fichero y valida (2),(3),(4) de una vez. Paso a paso: companions/inc_egypt_ppc_configuration.html seccion 11.",
+    "ticket_number": "INC-000016101",
+    "build_record": {
+      "built_by": "JP_LOPEZ",
+      "built_date": "2026-08-19",
+      "system": "D01",
+      "ticket": "INC-000016101",
+      "transports": {
+        "parent": "D01K9B0FXE",
+        "task": "D01K9B0FXF",
+        "status": "D (modificable, NO liberado)",
+        "text": "INC-000016101 EGYP Payment Reasons",
+        "keys": "17 = T015L 5 + YTFI_PPC_STRUC 11 + YTFI_PPC_TAG 1"
+      },
+      "what_exists_in_d01": {
+        "T015L": "5 filas EG0..EG4 = SUPP / SCVE / SALA / BEXP / CHAR (BLART=2, LVAWV=000)",
+        "YTFI_PPC_TAG": "1 fila EG / USTRD / C / <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>",
+        "YTFI_PPC_STRUC": "10 filas. O: 01 SEPARATOR(vacio) 02 PPC_DESCR 03 SEPARATOR(vacio) 04 FIXED_VAL 'INV' 05 SEPARATOR(vacio) 06 PAY_FIELD FPAYP-XBLNR. P: 01 SEPARATOR(vacio) 02 FIXED_VAL 'Salary (Compensation of employees)' 03 SEPARATOR(vacio) 04 PAY_FIELD FPAYP-SGTXT. NO hay tipo R."
+      },
+      "switch_state": "ARMADO EN D01: la fila PPC_DESCR es lo que busca u917, asi que D01 ya bloquea. P01 intacto (0 filas EG en las tres tablas).",
+      "design_rationale_from_author": "Interpretacion del correo de Citi: pide una descripcion narrativa, no un codigo -> se elige PPC_DESCR sin PPC_VAR y 'sin separadores porque es texto'."
+    },
+    "deviations_from_spec": [
+      {
+        "n": 1,
+        "severity": "CRITICAL",
+        "title": "Dano colateral a Indonesia dentro del transporte",
+        "detail": "YTFI_PPC_STRUC ID/USTRD/O/01 tiene el separador borrado en D01 (vacio) frente a '/' en P01, y la clave 350ID USTRD O01 esta DENTRO de D01K9B0FXF. Importar el transporte cambia Indonesia de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Unica deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila.",
+        "fix": "1) Restaurar '/' en D01 (SM30, mismo transporte) ANTES de tocar la lista de objetos. 2) Opcionalmente borrar la clave en SE10; con el valor ya restaurado la importacion seria un no-op. Ese orden y no el inverso.",
+        "status": "RESOLVED_VALUE_RESTORED_KEY_REMAINS",
+        "resolution": "2026-08-19, mismo dia: JP_LOPEZ restauro / en YTFI_PPC_STRUC ID/USTRD/O/01 en D01, sobre el mismo transporte. Verificado releyendo D01 y P01 sin strip: filas identicas. Diff completo de las tres tablas excluyendo EG = 1 sola deriva (T015L DK1, previa y fuera del transporte). SIN IMPACTO al importar, porque un transporte de tabla guarda la CLAVE y el valor se exporta al LIBERAR: esa clave exportara / , que es lo que P01 ya tiene -> no-op. RESIDUO: la clave 350ID USTRD O01 sigue dentro de D01K9B0FXF (17 claves, 16 de EG + esa), lo que deja a Indonesia acoplada al transporte hasta la liberacion: cualquier edicion de esa fila en D01 antes de liberar viajaria sola. Recomendado quitarla por SE10; si se deja, releer esa fila justo antes de liberar."
+      },
+      {
+        "n": 2,
+        "severity": "HIGH",
+        "title": "Separadores vacios: la cadena sale pegada",
+        "detail": "build_value concatena sin nada en medio (claim 524). Rinde 'Payment for goods or services receivedINV5105551234' y 'Salary (Compensation of employees)<SGTXT>'. PPC_VALUE es CHAR(60), asi que un separador de UN ESPACIO tampoco sirve: una plantilla de string ABAP elimina los blancos FINALES de un campo tipo C. Los blancos INICIALES si sobreviven.",
+        "fix": "O un separador visible como los otros nueve ('/'), o meter el espacio DELANTE dentro de un FIXED_VAL: FIXED_VAL ' under Invoice #' rinde '...received under Invoice #5105551234', que es literalmente el ejemplo de Citi. Verificar releyendo por RFC que SM30 no ha condensado el blanco inicial.",
+        "status": "OPEN"
+      },
+      {
+        "n": 3,
+        "severity": "HIGH",
+        "title": "No existe el tipo de pago R",
+        "detail": "Solo O y P. Un payment request de Tesoreria a Egipto emite VACIO, en silencio. Es el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'.",
+        "fix": "Anadir las filas R (los otros paises usan FIXED_VAL fijo, p.ej. 'Intracompany funds transfer').",
+        "status": "OPEN"
+      },
+      {
+        "n": 4,
+        "severity": "MEDIUM",
+        "title": "Falta el cajon de sastre y cuatro codigos mas",
+        "detail": "5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%). Faltan OTHR, GDDS, RENT, STDY, GOVT respecto a la lista de 10 verificada contra ISO 20022 (claim 495). Sin cajon de sastre el empleado mete un codigo equivocado y el control no lo ve: solo comprueba que no este vacio y T015L no tiene campo pais (claim 496).",
+        "fix": "Anadir al menos OTHR. Decision de negocio con BFM/Tesoreria sobre la lista final.",
+        "status": "OPEN"
+      },
+      {
+        "n": 5,
+        "severity": "HIGH",
+        "title": "Un solo transporte con las tres tablas",
+        "detail": "17 claves en D01K9B0FXF: T015L + YTFI_PPC_TAG + YTFI_PPC_STRUC juntas. YTFI_PPC_STRUC es el interruptor: en cuanto entre en P01, toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo ni formacion (claim 496).",
+        "fix": "Separar en dos: T1 inerte (T015L + TAG) ahora, T2 (STRUC) 1-2 dias antes del 5-sep.",
+        "status": "OPEN"
+      },
+      {
+        "n": 0,
+        "severity": "INFO",
+        "title": "T015L DK1 en D01",
+        "detail": "DK1 = 'NOT VALID JUST TO AVOID ERROR' existe en D01, no en P01 y no esta en el transporte. Deriva previa, sin impacto en este cambio.",
+        "fix": "Ninguna accion ahora; anotado para que no se lea como nuevo.",
+        "status": "NOTED"
+      }
+    ],
+    "closed_followups": [
+      "Si el nodo <Ustrd> del arbol /CGI_XML_CT_UNESCO lleva la llamada al exit -- CERRADO por claim 525: N_6995550560 lleva MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI y EG ya resuelve contra el. Leido en D01; sigue pendiente el F110 real como prueba del fichero."
+    ]
   },
   {
     "id": "INC-PSTLADR-NOV2026",
