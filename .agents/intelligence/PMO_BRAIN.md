@@ -294,6 +294,54 @@ ticket. Fix the type inference at the same time as H41, not separately.
 | ~~H28~~ | ~~Bank Statement EBS Companion HTML~~ | ~~#029~~ | ~~Viz~~ | ~~Done #030: `bank_statement_ebs_companion.html` — 10 tabs (Overview, E2E Chain, Config Tiers, Posting Rules, Algorithms, GL Structure, BA Determination, Production Reality, Interactive Map, Glossary). Includes production analysis: 97% outgoing clearing, 46.5% incoming, 85.7% algo 015. SVG network diagram.~~ |
 | ~~H15~~ | ~~Read Blueprint BCM pages 21-47~~ | ~~#021~~ | ~~Knowledge~~ | ~~Done #022 — Full 21 SAP Notes, Delegation of Authority table, grouping rules, XML char handling all extracted~~ |
 
+### 🟡 DESVIACIONES DE ESQUEMA EN LOS STORES — detectadas 2026-08-19, sin tratar
+
+Las detecta `python Zagentexecution/quality_checks/store_schema_check.py` (enganchado al hook Stop,
+sale 1). **Ninguna es de la sesión 101**: vienen de las sesiones 51, 62, 66, 69, 71, 79, 97 y 98.
+Hasta ahora nadie las veía; ahora salen en cada cierre.
+
+**No se arreglaron a propósito.** Rellenar `created_session` en 13 claims donde el dato no existe
+sería inventarlo, y es exactamente lo que la regla `feedback_label_inferred_vs_measured` prohíbe.
+
+#### claims.json — 104 de 520, por combinación de lo que falta
+
+| # | Cuántos | Falta | Tratamiento |
+|---|---:|---|---|
+| S1 | 28 | `domain_axes` | **Derivable**: se calcula del `domain` contra la ontología. Automatizable |
+| S2 | 23 | `resolution_notes` + `resolved_session` | **Normalización segura**: son claims sin resolver, `None` es el valor correcto |
+| S3 | 11 | `resolved_session` + `status` | `status` → `active` es defendible (448 de 520 lo son). Decidir si se asume |
+| S4 | 9 | `resolution_notes` | Normalización segura → `None` |
+| S5 | 8 | `created_session` + `resolved_session` + `status` | **NO automatizable**: la sesión de origen no se puede deducir |
+| S6 | 25 | combinaciones de los anteriores | Mismo criterio por campo |
+
+#### claims.json — inconsistencia de TIPO, además de ausencia
+
+`created_session` convive en cuatro formatos: `int` (379) · `'s-2026-06-29'` (115) · ausente (13) ·
+`'#51'` (11). **Normalizar `'#51'` → `51` es seguro** (misma información, tipo canónico); convertir
+`'s-2026-06-29'` a un número no lo es, porque es una fecha y no una sesión.
+
+`status` tiene 7 valores para 520 claims: `active` (448) · `superseded` (37) · ausente (21) ·
+`VERIFIED` (11) · y tres con un solo uso. **`VERIFIED` parece un `claim_type` colado en `status`** —
+verificar antes de tocar.
+
+#### feedback_rules.json — 42 de 214
+
+| Falta | Cuántos | Tratamiento |
+|---|---:|---|
+| `derives_from_core_principle` | 38 | Asignable a CP-001/002/003 leyendo cada regla. Trabajo humano, no automático |
+| `created_session` | 16 | No deducible |
+| `rule` | ~~2~~ 0 | **HECHO 2026-08-19.** No estaban vacías: el texto vivía bajo `statement` y bajo `title` — la misma divergencia que se cometió hoy con los claims. Renombrada la clave, sin perder nada |
+
+#### Por dónde empezar
+
+1. ~~Las 2 reglas sin `rule`~~ — **hecho**. No estaban vacías, el texto estaba bajo otra clave.
+2. **S1 (28) y la normalización `'#51'` → `51`** — automatizables sin inventar nada.
+3. **S2 + S4 (32)** — rellenar `None` donde el campo simplemente no aplica.
+4. **Decidir S3**: si un claim sin `status` se asume `active`. Es una convención, no un dato.
+5. **S5 y `created_session`**: dejar como están. Inventar la procedencia es peor que no tenerla.
+
+Re-medir: `python Zagentexecution/quality_checks/store_schema_check.py`
+
 ### 🟢 BACKLOG — When blocking/high are clear
 
 > **Session #036 Purge**: 31 zombie items (>10 sessions old, no movement) killed with explicit reason.
