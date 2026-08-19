@@ -203,7 +203,7 @@ def render_conditions(rows):
     return "  IF " + " ".join(parts)
 
 
-def report(system, only_tree=None, all_trees=False, dump=None):
+def report(system, only_tree=None, all_trees=False, dump=None, md=None):
     nodes, conds = load_trees(system)
     by_tree = collections.defaultdict(list)
     for n in nodes:
@@ -299,7 +299,105 @@ def report(system, only_tree=None, all_trees=False, dump=None):
                              for k, v in usage.items()},
                    "trees": result}, open(dump, "w"), indent=1)
         print("JSON -> %s" % dump)
+    if md:
+        if not usage:
+            print("!! --md necesita el barrido de formatos vivos "
+                  "(no combinar con --tree / --all-trees)")
+        else:
+            write_markdown(md, system, usage, result)
     return totals
+
+
+def write_markdown(path, system, usage, trees):
+    """The knowledge doc, one section per format -- GENERATED, never hand-written.
+
+    Hand-written config docs drift the moment someone edits the tree, and a
+    drifted doc is worse than none: it is read as fact. So this is regenerated
+    from the system every time and carries the date it was measured.
+    """
+    ICON = {"ORDER": "ORDEN", "HYBRID": "HIBRIDO", "NOV26": "NOV-2026"}
+    L = []
+    w = L.append
+    w("# Configuracion DMEE por formato -- %s" % system)
+    w("")
+    w("> GENERADO por `Zagentexecution/quality_checks/dmee_tree_map.py`. **No editar a mano.**")
+    w("> Regenerar: `python Zagentexecution/quality_checks/dmee_tree_map.py "
+      "--sys %s --md <este_fichero>`" % system)
+    w("")
+    w("Que lee cada seccion: el arbol DMEE completo de un formato -- estructura, "
+      "de donde sale el valor de cada nodo, que exit lo decide, y bajo que condicion "
+      "se emite. El **orden de los hijos es el orden del XML**, y para `PstlAdr` ese "
+      "orden es un `xs:sequence` de ISO 20022: violarlo es el rechazo del 21-07-2026.")
+    w("")
+    w("Un nodo puede tener mapping **y** exit a la vez. **Gana el exit** -- el mapping "
+      "solo dice que haria SAP si nadie lo hubiera sobrescrito.")
+    w("")
+    w("## Formatos vivos")
+    w("")
+    w("Medido en `REGUT.DTFOR` de P01 (la tabla de medios = lo que ve FDTA), no supuesto.")
+    w("")
+    w("| Formato (= TREE_ID) | Total 2024+ | 2026 | Paises | Nodos | PstlAdr | Hallazgos |")
+    w("|---|---:|---:|---|---:|---:|---|")
+    for f in sorted(usage, key=lambda z: -usage[z]["total"]):
+        t = trees.get(f)
+        if not t:
+            continue
+        d = usage[f]
+        fl = collections.Counter(x["class"] for p in t["pstladr"] for x in p["flags"])
+        w("| `%s` | %d | %d | %s | %d | %d | %s |"
+          % (f, d["total"], d["by_year"]["2026"], ", ".join(sorted(d["countries"])),
+             t["nodes"], len(t["pstladr"]),
+             ", ".join("%s×%d" % (ICON[k], n) for k, n in sorted(fl.items())) or "-"))
+    w("")
+    for f in sorted(usage, key=lambda z: -usage[z]["total"]):
+        t = trees.get(f)
+        if not t:
+            continue
+        w("---")
+        w("")
+        w("## `%s`" % f)
+        w("")
+        w("%d nodos en V%s (versiones existentes: %s). %d medios generados desde 2024, "
+          "%d en 2026, paises %s."
+          % (t["nodes"], t["version"], ", ".join(t["versions"]), usage[f]["total"],
+             usage[f]["by_year"]["2026"], ", ".join(sorted(usage[f]["countries"]))))
+        w("")
+        w("### Exits que llama")
+        w("")
+        if t["exits"]:
+            w("| Funcion | Nodos | Quien la entrega |")
+            w("|---|---:|---|")
+            for fn, k in sorted(t["exits"].items(), key=lambda z: -z[1]):
+                o = exit_owner(fn)
+                who = {"CUSTOM": "**nuestra** -- la podemos cambiar",
+                       "CITI": "Citi (add-on del banco)",
+                       "SAP": "SAP estandar"}[o]
+                w("| `%s` | %d | %s |" % (fn, k, who))
+        else:
+            w("Ninguno -- todo el arbol es mapping directo.")
+        w("")
+        w("### Direcciones postales")
+        w("")
+        for p in t["pstladr"]:
+            flags = p["flags"]
+            tag = " ".join("**[%s]**" % ICON[x["class"]] for x in flags) or "OK"
+            w("#### `%s` -- %s" % (p["path"], tag))
+            w("")
+            w("Nodo padre `%s`." % p["node_id"])
+            w("")
+            for x in flags:
+                w("- **%s** -- %s" % (ICON[x["class"]], x["msg"]))
+            if flags:
+                w("")
+            w("| # | Etiqueta XML | Nodo | De donde sale el valor |")
+            w("|---:|---|---|---|")
+            for k in p["children"]:
+                w("| %d | `%s` | `%s` | %s |"
+                  % (k["pos"], k["tag"], k["node_id"],
+                     " · ".join("`%s`" % s for s in k["source"])))
+            w("")
+    open(path, "w", encoding="utf-8").write("\n".join(L) + "\n")
+    print("MARKDOWN -> %s" % path)
 
 
 def main():
@@ -308,8 +406,9 @@ def main():
     ap.add_argument("--tree")
     ap.add_argument("--all-trees", action="store_true")
     ap.add_argument("--json")
+    ap.add_argument("--md", help="genera el doc de conocimiento, seccion por formato")
     a = ap.parse_args()
-    report(a.sys, a.tree, a.all_trees, a.json)
+    report(a.sys, a.tree, a.all_trees, a.json, a.md)
     return 0
 
 
