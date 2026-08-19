@@ -24028,5 +24028,30 @@
   "resolution_notes": "Mitigado con Zagentexecution/quality_checks/brain_state_enrichment_check.py, que mira dentro de objects[] y sale 1 si el enriquecimiento desaparecio. Enganchado al hook Stop. La cura de fondo seria que curate.py re-ejecute add_knowledge_links.py al terminar.",
   "status": "active",
   "domain_axes": null
+ },
+ {
+  "id": 520,
+  "claim": "Los generadores del brain escriben brain_state.json con ORDEN NO DETERMINISTA: dos ejecuciones sobre el mismo contenido producen un diff de ~39.600 lineas (19.801 inserciones y 19.801 borrados) que al normalizar el orden resulta ser CONTENIDO IDENTICO. Medido 2026-08-19 sobre objects[], indexes.by_domain y system_profile._model_graph. Consecuencia practica: cada rebuild produce un diff enorme y sin sentido en el que un cambio real es invisible — es exactamente como estuvo a punto de pasar desapercibida la perdida de knowledge_docs en 1.256 objetos (claim 519), que tambien salia como 'diff gigante'. Revisar brain_state.json por diff NO funciona; hay que comparar por contenido normalizado o por checks que miren dentro.",
+  "claim_type": "structural_defect",
+  "confidence": "TIER_1",
+  "evidence_for": [
+   {
+    "type": "measurement",
+    "ref": "git diff brain_state.json 2026-08-19: 19.801+/19.801- con contenido identico tras ordenar claves y listas"
+   }
+  ],
+  "evidence_against": [],
+  "related_objects": [
+   "brain_state.json",
+   "rebuild_all.py",
+   "curate.py",
+   "build_brain_state.py"
+  ],
+  "domain": "Brain_Architecture",
+  "created_session": 101,
+  "resolved_session": null,
+  "resolution_notes": "Mitigacion actual: brain_state_enrichment_check.py mira DENTRO en vez de contar o diffear. Cura de fondo: ordenar claves y listas al serializar (json.dump con sort_keys y listas ordenadas), para que el diff vuelva a ser legible y un cambio real se vea.",
+  "status": "active",
+  "domain_axes": null
  }
 ]
