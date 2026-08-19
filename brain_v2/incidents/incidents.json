@@ -1927,7 +1927,7 @@
   },
   {
     "id": "INC-EGYPT-PPC",
-    "status": "BUILT_IN_D01_DEVIATIONS_OPEN",
+    "status": "TESTED_IN_D01_BOTH_HALVES_PROVEN",
     "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)",
     "reporter": "Mathewos Mehari (BFM) via Christina Lopez-Chemouny; originating notice from Citibank Egypt 2026-07-12",
     "received_date": "2026-08-10",
@@ -2038,7 +2038,8 @@
       "496",
       "524",
       "525",
-      "526"
+      "526",
+      "527"
     ],
     "related_known_unknowns": [
       "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
@@ -2074,7 +2075,7 @@
       ]
     },
     "deadline": "2026-09-05",
-    "next_action": "Por orden, uno a uno. (1) HECHO 2026-08-19: Indonesia restaurada y verificada; queda opcional quitar la clave 350ID USTRD O01 de D01K9B0FXF por SE10 para cortar el acoplamiento. (2) Arreglar los separadores de EG: separador visible, o el espacio DELANTE dentro de un FIXED_VAL (PPC_VALUE es CHAR(60): los blancos finales se pierden, los iniciales no). (3) Anadir el tipo de pago R. (4) Anadir OTHR como minimo y cerrar la lista con BFM/Tesoreria. (5) Partir en dos transportes. (6) F110 en D01 desde banco casa SocGen a proveedor con banco EG y leer el <Ustrd> generado: es la unica prueba del fichero y valida (2),(3),(4) de una vez. Paso a paso: companions/inc_egypt_ppc_configuration.html seccion 11.",
+    "next_action": "CONTROL PROBADO POR LAS DOS MITADES en D01 el 2026-08-19: bloquea sin codigo (ZFI-036) y renderiza con codigo (fichero pain.001 con <Ustrd>/Payment for goods or services received/INV/224938). Quedan dos, y ninguna es tecnica. (1) PARTIR EL TRANSPORTE EN DOS antes de liberar: T1 T015L + YTFI_PPC_TAG (inerte, puede ir ya) y T2 YTFI_PPC_STRUC (el interruptor, 1-2 dias antes del 5-sep). Hoy las tres tablas van juntas en D01K9B0FXF, y ahi dentro sigue la clave 350ID USTRD O01 de Indonesia -- inocua desde que se restauro el valor, pero conviene quitarla para que el transporte diga la verdad sobre lo que cambia. (2) Confirmar los 5 motivos y su redaccion con Mathewos Mehari y CitiService Egypt. OPCIONAL: tipo de pago R (medido cero trafico en 10 anos). Paso a paso: companions/inc_egypt_ppc_configuration.html seccion 11.",
     "ticket_number": "INC-000016101",
     "build_record": {
       "built_by": "JP_LOPEZ",
@@ -2112,13 +2113,14 @@
         "title": "Separadores vacios: la cadena sale pegada",
         "detail": "build_value concatena sin nada en medio (claim 524). Rinde 'Payment for goods or services receivedINV5105551234' y 'Salary (Compensation of employees)<SGTXT>'. PPC_VALUE es CHAR(60), asi que un separador de UN ESPACIO tampoco sirve: una plantilla de string ABAP elimina los blancos FINALES de un campo tipo C. Los blancos INICIALES si sobreviven.",
         "fix": "O un separador visible como los otros nueve ('/'), o meter el espacio DELANTE dentro de un FIXED_VAL: FIXED_VAL ' under Invoice #' rinde '...received under Invoice #5105551234', que es literalmente el ejemplo de Citi. Verificar releyendo por RFC que SM30 no ha condensado el blanco inicial.",
-        "status": "OPEN"
+        "status": "RESOLVED",
+        "resolution": "2026-08-19: separadores puestos a / en O01/O03/O05 y P01/P03. Verificado releyendo sin strip. Rinde /Payment for goods or services received/INV/5105551234 (54 car., el nodo Ustrd admite 140). Se eligio la forma de los otros nueve (barra sin espacios) en vez de la variante narrativa con espacios. CONFIRMADO EMPIRICAMENTE de paso: un blanco DELANTE sobrevive a SM30 y al ensamblado (probado con ' INV'), uno DETRAS no -- y la razon no es la plantilla de string sino que PPC_VALUE es CHAR(60): un espacio final es indistinguible del relleno, no hay forma de almacenarlo."
       },
       {
         "n": 3,
-        "severity": "HIGH",
+        "severity": "MEDIUM",
         "title": "No existe el tipo de pago R",
-        "detail": "Solo O y P. Un payment request de Tesoreria a Egipto emite VACIO, en silencio. Es el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'.",
+        "detail": "Solo O y P. Un payment request de Tesoreria a Egipto emite VACIO, en silencio. Es el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. MEDIDO 2026-08-19, y corrige mi propia valoracion inicial de CRITICO: en REGUH completa (3.707.737 lineas, 2016-2026, ejecutadas XVORL<>X) el corte por DORIGIN da HR-PY 180.372 y TR-CM-BT 713, y NINGUNA llega a los diez paises -- todas con perceptor de direccion FR, y TR-CM-BT ademas sin LIFNR ni PERNR (transferencias banco a banco). Verificado por los DOS cortes: pais del banco del proveedor (LFBK-BANKS, que es lo que lee el control) y pais de la direccion. Cero por ambos. CONSECUENCIA: los seis paises que SI tienen filas R (AE /REC/IGT, CN /REC/COCADR/, ID /PURP/2299/, IN P1203;..., JO /PURP/704/, MA /PURP/820/) nunca las han disparado, ni ellas ni las P. Se configuraron por simetria defensiva, no por trafico medido -- y lo mismo vale para las filas P que Egipto ya tiene. Anadir R sigue siendo barato y cubre un fallo silencioso, pero NO es un riesgo para el 5 de septiembre. LIMITE DE LA MEDIDA: la nomina del personal de la oficina de El Cairo no aparece como HR-PY con perceptor egipcio; o se paga fuera de SAP o por otra via. No investigado.",
         "fix": "Anadir las filas R (los otros paises usan FIXED_VAL fijo, p.ej. 'Intracompany funds transfer').",
         "status": "OPEN"
       },
@@ -2128,7 +2130,8 @@
         "title": "Falta el cajon de sastre y cuatro codigos mas",
         "detail": "5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%). Faltan OTHR, GDDS, RENT, STDY, GOVT respecto a la lista de 10 verificada contra ISO 20022 (claim 495). Sin cajon de sastre el empleado mete un codigo equivocado y el control no lo ve: solo comprueba que no este vacio y T015L no tiene campo pais (claim 496).",
         "fix": "Anadir al menos OTHR. Decision de negocio con BFM/Tesoreria sobre la lista final.",
-        "status": "OPEN"
+        "status": "RESOLVED",
+        "resolution": "2026-08-19: lista rehecha a 5 codigos, todos ISO 20022 validos -- SUPP/SCVE/BEXP/CHAR/OTHR. Se retiro SALA (la nomina va por tipo P con valor fijo; un codigo de salario disponible en facturas de proveedor solo inducia a error) y se anadio el cajon de sastre OTHR, que era el hueco real. Cubre las 8 categorias medidas en los nueve paises, con OTHR absorbiendo cuatro (I+D, formacion, organismos internacionales, alquiler). GDDS/STDY/GOVT/RENT quedan fuera por decision de granularidad, no por error. DEFECTO CAZADO Y CORREGIDO EN EL CAMINO: EG4 se grabo como 'OTHR  Others' con DOS espacios; el SPLIT AT SPACE parte en el primero y mete el resto -separadores incluidos- en la descripcion, asi que rendia '/ Others/INV/...' con un blanco suelto tras la barra. Invisible en pantalla, solo visible leyendo el campo en crudo. Constantes BLART=2/LVAWV=000 y ZWCK2/EDIBL vacios verificados contra las 73 filas existentes."
       },
       {
         "n": 5,
@@ -2149,7 +2152,51 @@
     ],
     "closed_followups": [
       "Si el nodo <Ustrd> del arbol /CGI_XML_CT_UNESCO lleva la llamada al exit -- CERRADO por claim 525: N_6995550560 lleva MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI y EG ya resuelve contra el. Leido en D01; sigue pendiente el F110 real como prueba del fichero."
-    ]
+    ],
+    "config_verified_d01": {
+      "date": "2026-08-19",
+      "T015L": [
+        "EG0 SUPP Payment for goods or services received",
+        "EG1 SCVE Service fees for consulting work",
+        "EG2 BEXP Travel and business expenses",
+        "EG3 CHAR Charity Payment",
+        "EG4 OTHR Others"
+      ],
+      "YTFI_PPC_TAG": "EG / C / USTRD / <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>",
+      "YTFI_PPC_STRUC": "O: / + PPC_DESCR + / + INV + / + FPAYP-XBLNR ; P: / + 'Salary payment' + / + FPAYP-SGTXT ; R: ausente",
+      "rendered": [
+        "/Payment for goods or services received/INV/5105551234 (54)",
+        "/Service fees for consulting work/INV/5105551234 (48)",
+        "/Travel and business expenses/INV/5105551234 (44)",
+        "/Charity Payment/INV/5105551234 (31)",
+        "/Others/INV/5105551234 (22)",
+        "/Salary payment/<SGTXT> (23)"
+      ],
+      "note": "Simulacion del algoritmo de CM003/CM004 sobre los valores reales leidos de D01. NO es el fichero: eso lo prueba solo un F110."
+    },
+    "e2e_test_d01": {
+      "date": "2026-08-19",
+      "invoice": "UNES 6400000000/2026 KR, proveedor 0000318305 SilverKey Technologies Egypt, 250.00 USD, XBLNR 224938, LZBKZ EG0, GSBER GEF, gasto 0002086092",
+      "payment_run": "F110 LAUFD 20260819 LAUFI EG1, metodo N, propuesta",
+      "medium": "SAPFPAYM variante 1TST_USD_INT, formato /CGI_XML_CT_UNESCO, sin salida a fichero (no se escribio en \\\\hq-sapitf\\SWIFT$\\D01\\INPUT)",
+      "result": "<RmtInf><Ustrd>/Payment for goods or services received/INV/224938</Ustrd></RmtInf> -- identico a la prediccion",
+      "proves": [
+        "capa 1: DbtrAgt BIC SOGEFRPP -> clase _FR seleccionada por el pais de NUESTRO banco",
+        "capa 2: CdtrAgt BIC AGRIEGCX Ctry EG -> filas filtradas por el pais de SU banco",
+        "ensamblado: PPC_DESCR + SEPARATOR + FIXED_VAL + PAY_FIELD FPAYP-XBLNR",
+        "cero ABAP necesario para anadir un pais"
+      ],
+      "artifact": "Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml",
+      "block_test": {
+        "result": "BLOQUEA. FB60 en UNES a proveedor con banco EG sin LZBKZ -> rechazado.",
+        "message": "ZFI-036 severidad E, 'Enter the payment purpose code (SCB) for the respective country', GB931 VALID=UNES VALSEQNR=012",
+        "tier": "observado por JP en pantalla; corroborado leyendo el mensaje asignado al paso. Yo no vi la pantalla."
+      },
+      "collateral_rules_found": [
+        "paso 001 ZFI-015: en UNES solo valen las areas de negocio GEF, MBF, OPF, PFF",
+        "paso 011 ZFI-012 (U915): el Partner Bank Type es obligatorio -- por eso BVTYP='USD' en la linea del proveedor"
+      ]
+    }
   },
   {
     "id": "INC-PSTLADR-NOV2026",

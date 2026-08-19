@@ -24788,7 +24788,7 @@
   },
   {
     "id": 524,
-    "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE (CM004) es integro 'IF iv_value_c IS INITIAL. ev_value_c = iv_value_to_add. ELSE. ev_value_c = |{ iv_value_c }{ iv_value_to_add }|. ENDIF.' -- no hay separador implicito, ni espacio, ni delimitador. CM003 trata 'SEPARATOR' y 'FIXED_VAL' con la MISMA rama: ambos anaden PPC_VALUE literal. CONSECUENCIA MEDIDA sobre la configuracion de EG construida en D01 el 2026-08-19: sus tres filas SEPARATOR de PAY_TYPE='O' (CODE_ORD 01/03/05) tienen PPC_VALUE vacio -- leido con RFC_READ_TABLE SIN strip, para descartar que fuese un artefacto de lectura; los nueve paises ya configurados llevan '/' (JO/ID/MA/MY/PH/BH/AE/CN) o ';' (IN) en esa misma posicion. Con la config actual una factura rinde 'Payment for goods or services receivedINV5105551234' y una nomina 'Salary (Compensation of employees)<SGTXT>' -- todo pegado, que no es lo que Citi pide ('Payment for goods received under Invoice 12345'). LA CREENCIA QUE ESTO REFUTA: 'la estructura es simple, sin separaciones, es texto' -- sin separaciones no da texto, da concatenacion. CAVEAT DE NIVEL 2, NO VERIFICADO: un separador de UN ESPACIO probablemente tampoco sirva, porque en una plantilla de string ABAP un campo tipo C pierde los blancos finales; no se pudo confirmar el tipo de IV_VALUE_TO_ADD porque la seccion privada de la clase (include CI) no esta en el corpus extraido. La opcion segura es un caracter visible, que es ademas lo que hacen los otros nueve. La primera fila SEPARATOR (CODE_ORD 01) es inocua en cualquier caso: con cv_value_c todavia inicial, build_value la asigna y sigue siendo inicial.",
+    "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE (CM004) es integro 'IF iv_value_c IS INITIAL. ev_value_c = iv_value_to_add. ELSE. ev_value_c = |{ iv_value_c }{ iv_value_to_add }|. ENDIF.' -- no hay separador implicito, ni espacio, ni delimitador. CM003 trata 'SEPARATOR' y 'FIXED_VAL' con la MISMA rama: ambos anaden PPC_VALUE literal. CONSECUENCIA MEDIDA sobre la configuracion de EG construida en D01 el 2026-08-19: sus tres filas SEPARATOR de PAY_TYPE='O' (CODE_ORD 01/03/05) tienen PPC_VALUE vacio -- leido con RFC_READ_TABLE SIN strip, para descartar que fuese un artefacto de lectura; los nueve paises ya configurados llevan '/' (JO/ID/MA/MY/PH/BH/AE/CN) o ';' (IN) en esa misma posicion. Con la config actual una factura rinde 'Payment for goods or services receivedINV5105551234' y una nomina 'Salary (Compensation of employees)<SGTXT>' -- todo pegado, que no es lo que Citi pide ('Payment for goods received under Invoice 12345'). LA CREENCIA QUE ESTO REFUTA: 'la estructura es simple, sin separaciones, es texto' -- sin separaciones no da texto, da concatenacion. VERIFICADO EMPIRICAMENTE EL MISMO DIA, y la razon es mas simple de la que primero di: PPC_VALUE es CHAR(60) (DDIC), asi que un espacio FINAL es indistinguible del relleno del campo -- no es que ABAP lo descarte al montar la cadena, es que NO HAY FORMA DE ALMACENARLO. Un espacio INICIAL si sobrevive: se grabo ' INV' por SM30 y la relectura por RFC sin strip devolvio blancos_delante=1, blancos_detras=0. COROLARIO OPERATIVO: en la cadena montada se puede poner separacion DELANTE de cualquier literal y nunca DETRAS, y por tanto nunca justo antes de un PAY_FIELD (campo dinamico, no admite prefijo) -- ahi el separador visible tiene que ser el ultimo caracter no blanco del bloque anterior. La opcion segura es un caracter visible, que es ademas lo que hacen los otros nueve. La primera fila SEPARATOR (CODE_ORD 01) es inocua en cualquier caso: con cv_value_c todavia inicial, build_value la asigna y sigue siendo inicial. SEGUNDO DEFECTO DE LA MISMA FAMILIA, CAZADO EN T015L: EG4 se grabo como 'OTHR  Others' con DOS espacios. SPLIT ls_t015l-zwck1 AT space INTO lv_dummy lv_value parte en el PRIMER espacio y asigna al ultimo destino el resto INCLUYENDO los separadores, asi que PPC_DESCR salia como ' Others' y el fichero rendia '/ Others/INV/...'. Invisible en la pantalla de SM30 -- dos espacios seguidos no se distinguen de uno -- y solo detectable leyendo el campo en crudo. LA REGLA QUE DEJA: en ZWCK1 el separador entre codigo y narrativa tiene que ser EXACTAMENTE UN espacio, y eso se verifica leyendo, no mirando.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -24808,6 +24808,18 @@
         "type": "production_data",
         "ref": "D01 YTFI_PPC_STRUC via RFC_READ_TABLE (sin strip), LAND1 EG vs JO",
         "cite": "EG O01/O03/O05 SEPARATOR vacio ; JO O01/O03/O05 SEPARATOR = '/'. Medido 2026-08-19.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 YTFI_PPC_STRUC EG y T015L EG, relectura sin strip 2026-08-19",
+        "cite": "' INV' -> blancos delante=1 / detras=0 (el inicial sobrevive a SM30). 'OTHR  Others' -> PPC_DESCR con blanco inicial. Ambos corregidos y re-verificados.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 DD03L YTFI_PPC_STRUC y T015L",
+        "cite": "PPC_VALUE CHAR(60); T015L-ZWCK1 CHAR(70). El techo de la narrativa es 70 menos codigo y espacio; el nodo Ustrd admite 140.",
         "added_session": 101
       }
     ],
@@ -24939,6 +24951,80 @@
     "created_session": 101,
     "resolved_session": 101,
     "resolution_notes": "El incidente INC-EGYPT-PPC pasa de SPEC_READY a BUILT_IN_D01_DEVIATIONS_OPEN y adquiere numero de ticket real INC-000016101.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Procurement",
+        "Treasury",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 527,
+    "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad UNES, proveedor 0000318305 SilverKey Technologies Egypt, banco Credit Agricole Egypt AGRIEGCX, LFBK-BANKS='EG', 250.00 USD, XBLNR='224938', LZBKZ='EG0', GSBER='GEF', cuenta de gasto 0002086092) -> F110 LAUFD 20260819 LAUFI 'EG1' metodo N -> SAPFPAYM variante 1TST_USD_INT formato /CGI_XML_CT_UNESCO -> fichero pain.001.001.03. EL NODO SALIO EXACTAMENTE COMO SE HABIA PREDICHO SIMULANDO CM003/CM004 SOBRE LA CONFIGURACION LEIDA: <RmtInf><Ustrd>/Payment for goods or services received/INV/224938</Ustrd></RmtInf>. LOS TRES MECANISMOS QUEDAN PROBADOS POR EVIDENCIA DE EJECUCION, NO SOLO POR LECTURA DE FUENTE. (1) CAPA 1, nuestro banco elige la CLASE: el fichero lleva <DbtrAgt><BIC>SOGEFRPP</BIC> -- Societe Generale France -- luego FI_CGI_DMEE_EXIT_W_BADI resolvio lv_bank_country='FR' y selecciono YCL_IDFI_CGI_DMEE_FR, la unica implementacion que llama al constructor PPC (confirma claim 494 con ejecucion). (2) CAPA 2, su banco elige las FILAS: <CdtrAgt><BIC>AGRIEGCX</BIC>...<Ctry>EG</Ctry> -- CM002 paso I_FPAYH-ZBNKS='EG' y CM003 filtro YTFI_PPC_STRUC WHERE LAND1='EG'. (3) EL ENSAMBLADO: PPC_DESCR leyo T015L por LZBKZ='EG0' y emitio la narrativa tras el SPLIT AT SPACE, los tres SEPARATOR pusieron las barras, el FIXED_VAL puso 'INV' y el PAY_FIELD saco FPAYP-XBLNR='224938'. CONSECUENCIA PARA EL CAMBIO: queda demostrado que anadir un pais al framework PPC NO NECESITA ABAP -- no hay literal de pais en ninguna de las tres capas y Egipto resolvio solo por configuracion, igual que los otros nueve. Cierra la unica pieza que seguia sin probar desde s099 (claim 525 confirmo que el nodo Ustrd lleva el exit leyendo DMEE_TREE_NODE; esto lo confirma con el fichero generado). OTROS HECHOS DEL FICHERO, medidos: pain.001.001.03, 1 transaccion, CtrlSum 250.00, ReqdExctnDt 2026-08-19, cuenta cargo IBAN FR7630003033010007729009180 Ccy USD; la direccion del beneficiario sale ESTRUCTURADA (StrtNm 'Messaha St', BldgNb '27', PstCd '12311', TwnNm 'Dokki Giza Cairo', Ctry 'EG') pero SIN CtrySubDvsn -- misma clase de hueco que INC-PSTLADR-NOV2026, aunque Egipto queda fuera del alcance US/CA de ese caso; y XBLNR aparece ademas en <Tax><RefNb>224938</RefNb>. LA MITAD DE CAPTURA TAMBIEN QUEDA PROBADA, el mismo dia: JP_LOPEZ ejecuto un FB60 en UNES a proveedor con banco EG dejando LZBKZ vacio y la contabilizacion FUE RECHAZADA. El paso que la rechaza esta identificado sin ambiguedad: GB931 VALID=UNES VALSEQNR=012 lanza el mensaje ZFI-036 severidad E, 'Enter the payment purpose code (SCB) for the respective country' -- ningun otro de los 12 pasos usa ese mensaje. TIER DE ESTA MITAD: el rechazo lo observo JP en pantalla y yo lo corrobore leyendo el mensaje que el paso tiene asignado en GB931/T100; yo no vi la pantalla. El resto del claim si es evidencia directa del fichero generado. FICHERO ARCHIVADO: Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml DOS REGLAS COLATERALES LEIDAS DE GB931+T100 QUE EXPLICAN DECISIONES DEL MONTAJE: el paso 001 lanza ZFI-015 'For UNES company code, only use business area GEF, MBF, OPF or PFF' -- GSBER='GEF' no era una preferencia sino una obligacion, y solo esas cuatro areas pasan; el paso 011 lanza ZFI-012 'Partner Bank Type should be entered' (= U915), que es por que hacia falta BVTYP='USD' en la linea del proveedor y lo que mitiga la ambiguedad multi-banco del SELECT SINGLE sobre LFBK que hace u917.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "production_data",
+        "ref": "Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml",
+        "cite": "Fichero pain.001 generado por SAPFPAYM en D01, 2.153 bytes. Contiene el nodo <Ustrd> con la cadena completa, el BIC SOGEFRPP del ordenante y el BIC AGRIEGCX del beneficiario.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 BKPF/BSEG UNES 6400000000/2026",
+        "cite": "KR 19.08.2026, FB60, JP_LOPEZ. Pos 001 BSCHL=31 proveedor 0000318305 AKONT 0002021011 LZBKZ='EG0' BVTYP='USD' GSBER='GEF' 250.00 USD; pos 002 BSCHL=40 cuenta 0002086092.",
+        "added_session": 101
+      },
+      {
+        "type": "source_code",
+        "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap y _CM004.abap",
+        "cite": "El algoritmo simulado sobre la config leida predijo la cadena exacta antes de generar el fichero. Prediccion y salida coinciden caracter por caracter.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 T042Z (FR, metodo N) y VARID/VARIT SAPFPAYM",
+        "cite": "Metodo N -> FORMI=/CGI_XML_CT_UNESCO. Variante 1TST_USD_INT 'UNES INT PAYM XML USD NO US', creada por M_SPRONK el 2024-03-25, un dia antes de los transportes del framework PPC.",
+        "added_session": 101
+      },
+      {
+        "type": "production_data",
+        "ref": "D01 GB93 + GB931 + T100 (ARBGB=ZFI), leido 2026-08-19",
+        "cite": "Validacion UNES boolclass 009, MSGID=ZFI. Paso 012 -> ZFI-036 severidad E 'Enter the payment purpose code (SCB) for the respective country'. Paso 001 -> ZFI-015 (areas GEF/MBF/OPF/PFF). Paso 011 -> ZFI-012 (partner bank type).",
+        "added_session": 101
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "YTFI_PPC_STRUC",
+      "YTFI_PPC_TAG",
+      "T015L",
+      "YCL_IDFI_CGI_DMEE_FR",
+      "YCL_IDFI_CGI_DMEE_UTIL",
+      "FI_CGI_DMEE_EXIT_W_BADI",
+      "DMEE_TREE_NODE",
+      "SAPFPAYM",
+      "T042Z",
+      "REGUT",
+      "LFBK",
+      "U917",
+      "BSEG"
+    ],
+    "domain": "Payment",
+    "created_session": 101,
+    "resolved_session": 101,
+    "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5 y el paso 5 de su seccion 11. Deja abierta SOLO la prueba del bloqueo (u917 sin LZBKZ).",
     "status": "active",
     "domain_axes": {
       "functional": [
