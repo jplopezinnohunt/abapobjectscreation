@@ -3,9 +3,9 @@
     "blind_spots_ghosts": 0,
     "blind_spots_missing": 0,
     "blind_spots_total": 0,
-    "names_classified": 1720,
-    "names_referenced": 1720,
-    "objects_in_brain": 1796,
+    "names_classified": 1727,
+    "names_referenced": 1727,
+    "objects_in_brain": 1803,
     "pct_classified": 100.0
   },
   "_design": "Object-centric knowledge graph with 15 layers (0-14). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode. Layer 13 (interactions) added Session #059 — turn-level reasoning path as source of truth, zero-compression preserved_full_text; retros are DERIVED from this layer. Layer 14 (domains) added Session #059 — 3-axis taxonomy {functional, module, process} with reverse indexes (objects, claims, rules, KUs, incidents, skills, companions). Every node must carry a domain (feedback_every_node_has_domain).",
@@ -13,12 +13,12 @@
     "_design": "Estado del pipeline que produce este fichero. INCOMPLETE significa que un paso posterior no llego a correr: el contenido es plausible pero le faltan enriquecimientos.",
     "built_by": "brain_v2/build_brain_state.py",
     "completed_by": "brain_v2/add_knowledge_links.py",
-    "objects_with_knowledge_docs": 1259,
+    "objects_with_knowledge_docs": 1266,
     "pending_steps": [],
     "status": "COMPLETE"
   },
   "_stats": {
-    "claims": 520,
+    "claims": 528,
     "core_principles": 3,
     "data_quality_open": 9,
     "domain_layer_entries": 23,
@@ -28,8 +28,8 @@
     "incidents": 15,
     "interactions": 8,
     "known_unknowns": 1,
-    "objects": 1796,
-    "rules": 214,
+    "objects": 1803,
+    "rules": 218,
     "session": 99,
     "superseded": 19,
     "user_questions_open": 0
@@ -43,10 +43,10 @@
     ],
     "drift_needs_review": 3,
     "error": 0,
-    "no_check_prose_only": 496,
+    "no_check_prose_only": 504,
     "note": "Run `python brain_v2/verify_claims.py` to refresh. Every new claim should carry a `verification` block.",
-    "pct_machine_verifiable": 4.6,
-    "total_claims": 520
+    "pct_machine_verifiable": 4.5,
+    "total_claims": 528
   },
   "blind_spots": [],
   "capability_model": {
@@ -28093,6 +28093,453 @@
       "resolved_session": 101,
       "status": "active",
       "supersedes": 519
+    },
+    {
+      "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe un generador para esto y hay que usarlo — brain_v2/scripts/backfill_domain_axes.py — que infiere por palabra clave sobre el TEXTO del registro, cae al dominio heredado si no hay match, y cruza con related_objects. Verificado 2026-08-19: llevo los tres stores al 100% (44 claims + 49 reglas + 1 incidente) sin perder nada (0 ids, 0 campos borrados). Y el FORMATO canonico de los tres stores es indent=2, que es como lo escriben sus generadores (verify_claims.py, backfill_domain_axes.py): escribir a mano con otro indent hace que el siguiente rebuild reformatee el fichero entero y el diff sea ilegible.",
+      "claim_type": "measured_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Brain_Architecture",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "evidence_against": [],
+      "evidence_for": [
+        {
+          "ref": "claims.json 2026-08-19: 458 claims con domain_axes, 21 dominios con mas de un valor distinto, Payment con 36",
+          "type": "measurement"
+        },
+        {
+          "ref": "brain_v2/scripts/backfill_domain_axes.py:188 backfill_claims()",
+          "type": "code"
+        }
+      ],
+      "id": 522,
+      "related_objects": [
+        "backfill_domain_axes.py",
+        "claims.json",
+        "feedback_rules.json",
+        "incidents.json",
+        "store_schema_check.py"
+      ],
+      "resolution_notes": null,
+      "resolved_session": null,
+      "status": "active"
+    },
+    {
+      "claim": "LINEA BASE del corpus de reglas por principio constitucional, tras asignar las 38 que no lo tenian (2026-08-19): CP-003 (precision y evidencia) 114 · CP-001 (conocimiento sobre velocidad) 70 · CP-002 (findability por estructura) 30, sobre 214 reglas. Que CP-003 domine con el 53% no es casualidad: la mayoria de las reglas de este proyecto tienen la misma forma —'antes de X, comprobar Y'— y nacen del mismo error, dar algo por bueno sin medirlo.",
+      "claim_type": "measured_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "H_IMPROVE",
+      "domain_axes": {
+        "functional": [
+          "*"
+        ],
+        "module": [
+          "*"
+        ],
+        "process": [
+          "*"
+        ]
+      },
+      "evidence_against": [],
+      "evidence_for": [
+        {
+          "ref": "feedback_rules.json 2026-08-19, 214 reglas, reparto contado tras la asignacion",
+          "type": "measurement"
+        }
+      ],
+      "id": 523,
+      "related_objects": [
+        "feedback_rules.json",
+        "core_principles.json",
+        "rules_mechanization_check.py"
+      ],
+      "resolution_notes": null,
+      "resolved_session": null,
+      "status": "active"
+    },
+    {
+      "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE (CM004) es integro 'IF iv_value_c IS INITIAL. ev_value_c = iv_value_to_add. ELSE. ev_value_c = |{ iv_value_c }{ iv_value_to_add }|. ENDIF.' -- no hay separador implicito, ni espacio, ni delimitador. CM003 trata 'SEPARATOR' y 'FIXED_VAL' con la MISMA rama: ambos anaden PPC_VALUE literal. CONSECUENCIA MEDIDA sobre la configuracion de EG construida en D01 el 2026-08-19: sus tres filas SEPARATOR de PAY_TYPE='O' (CODE_ORD 01/03/05) tienen PPC_VALUE vacio -- leido con RFC_READ_TABLE SIN strip, para descartar que fuese un artefacto de lectura; los nueve paises ya configurados llevan '/' (JO/ID/MA/MY/PH/BH/AE/CN) o ';' (IN) en esa misma posicion. Con la config actual una factura rinde 'Payment for goods or services receivedINV5105551234' y una nomina 'Salary (Compensation of employees)<SGTXT>' -- todo pegado, que no es lo que Citi pide ('Payment for goods received under Invoice 12345'). LA CREENCIA QUE ESTO REFUTA: 'la estructura es simple, sin separaciones, es texto' -- sin separaciones no da texto, da concatenacion. VERIFICADO EMPIRICAMENTE EL MISMO DIA, y la razon es mas simple de la que primero di: PPC_VALUE es CHAR(60) (DDIC), asi que un espacio FINAL es indistinguible del relleno del campo -- no es que ABAP lo descarte al montar la cadena, es que NO HAY FORMA DE ALMACENARLO. Un espacio INICIAL si sobrevive: se grabo ' INV' por SM30 y la relectura por RFC sin strip devolvio blancos_delante=1, blancos_detras=0. COROLARIO OPERATIVO: en la cadena montada se puede poner separacion DELANTE de cualquier literal y nunca DETRAS, y por tanto nunca justo antes de un PAY_FIELD (campo dinamico, no admite prefijo) -- ahi el separador visible tiene que ser el ultimo caracter no blanco del bloque anterior. La opcion segura es un caracter visible, que es ademas lo que hacen los otros nueve. La primera fila SEPARATOR (CODE_ORD 01) es inocua en cualquier caso: con cv_value_c todavia inicial, build_value la asigna y sigue siendo inicial. SEGUNDO DEFECTO DE LA MISMA FAMILIA, CAZADO EN T015L: EG4 se grabo como 'OTHR  Others' con DOS espacios. SPLIT ls_t015l-zwck1 AT space INTO lv_dummy lv_value parte en el PRIMER espacio y asigna al ultimo destino el resto INCLUYENDO los separadores, asi que PPC_DESCR salia como ' Others' y el fichero rendia '/ Others/INV/...'. Invisible en la pantalla de SM30 -- dos espacios seguidos no se distinguen de uno -- y solo detectable leyendo el campo en crudo. LA REGLA QUE DEJA: en ZWCK1 el separador entre codigo y narrativa tiene que ser EXACTAMENTE UN espacio, y eso se verifica leyendo, no mirando.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "METHOD build_value completo: concatenacion directa, sin separador implicito.",
+          "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM004.abap",
+          "type": "source_code"
+        },
+        {
+          "added_session": 101,
+          "cite": "WHEN 'SEPARATOR' OR 'FIXED_VAL' comparten rama: ambos pasan ls_cus-ppc_value tal cual a build_value.",
+          "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap",
+          "type": "source_code"
+        },
+        {
+          "added_session": 101,
+          "cite": "EG O01/O03/O05 SEPARATOR vacio ; JO O01/O03/O05 SEPARATOR = '/'. Medido 2026-08-19.",
+          "ref": "D01 YTFI_PPC_STRUC via RFC_READ_TABLE (sin strip), LAND1 EG vs JO",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "' INV' -> blancos delante=1 / detras=0 (el inicial sobrevive a SM30). 'OTHR  Others' -> PPC_DESCR con blanco inicial. Ambos corregidos y re-verificados.",
+          "ref": "D01 YTFI_PPC_STRUC EG y T015L EG, relectura sin strip 2026-08-19",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "PPC_VALUE CHAR(60); T015L-ZWCK1 CHAR(70). El techo de la narrativa es 70 menos codigo y espacio; el nodo Ustrd admite 140.",
+          "ref": "D01 DD03L YTFI_PPC_STRUC y T015L",
+          "type": "production_data"
+        }
+      ],
+      "id": 524,
+      "related_objects": [
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "YTFI_PPC_STRUC",
+        "T015L",
+        "YTFI_PPC_TAG",
+        "FPAYP"
+      ],
+      "resolution_notes": "Nace de revisar la configuracion de EG realmente construida en D01. Complementa el claim 496 (el control prueba presencia, no correccion): aqui el fallo no es el codigo elegido sino la CADENA ensamblada, y tampoco lo ve nadie -- el bloqueo pasa, el fichero sale mal formado.",
+      "resolved_session": 101,
+      "status": "active"
+    },
+    {
+      "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D01 (DMEE_TREE_NODE, arbol /CGI_XML_CT_UNESCO, version 001): nodo Ustrd = N_6995550560, MP_EXIT_FUNC = 'FI_CGI_DMEE_EXIT_W_BADI', campo fuente DMEE_PAYD-TEXT, ruta <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>. Cruzada esa ruta contra YTFI_PPC_TAG, la respaldan OCHO paises -- BH, EG, ID, IN, JO, MA, MY, PH -- es decir EG YA RESUELVE contra el nodo. El hermano InstrInf (N_6995850210 y N_8721337940, ruta <PmtInf><CdtTrfTxInf><InstrForCdtrAgt><InstrInf>) tambien lleva el exit y lo respaldan AE y CN, exactamente las dos familias de tag documentadas. El nodo padre RmtInf (N_4360444640) no lleva exit ni respaldo, como corresponde a un contenedor. ESTO ELIMINA EL RIESGO DE 'capturar sin renderizar' PARA EGIPTO: el motor esta cableado, la fila de tag existe y el dispatcher FR resuelve por LAND1 sin literal de pais (claim 494). LIMITE EXACTO DE LA EVIDENCIA: leido en D01, no en P01 -- P01 rechaza un WHERE de RFC_READ_TABLE sobre DMEE_TREE_NODE por columnas string, que es la razon por la que quedo abierto en s099. Y sigue sin ser prueba de que el fichero salga bien: solo un F110 en D01 desde banco casa SocGen a proveedor con banco EG, leyendo el <Ustrd> generado, prueba el fichero. Metodo reutilizable: Zagentexecution/quality_checks/dmee_tree_map.py resuelve nodo->ruta->respaldo PPC.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "MP_EXIT_FUNC='FI_CGI_DMEE_EXIT_W_BADI'; ruta <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>. Medido 2026-08-19.",
+          "ref": "D01 DMEE_TREE_NODE /CGI_XML_CT_UNESCO v001 nodo N_6995550560",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "8 paises con TAG_FULL = la ruta del nodo Ustrd, EG incluido; AE y CN sobre InstrInf.",
+          "ref": "D01 YTFI_PPC_TAG (12 filas)",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "ppc_backing() cruza ruta de nodo contra YTFI_PPC_TAG x YTFI_PPC_STRUC.",
+          "ref": "Zagentexecution/quality_checks/dmee_tree_map.py",
+          "type": "derived_artifact"
+        }
+      ],
+      "id": 525,
+      "related_objects": [
+        "DMEE_TREE_NODE",
+        "FI_CGI_DMEE_EXIT_W_BADI",
+        "YTFI_PPC_TAG",
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "YCL_IDFI_CGI_DMEE_FR"
+      ],
+      "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5.",
+      "resolved_session": 101,
+      "status": "active"
+    },
+    {
+      "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, estado D = modificable, NO liberado) Y SE DESVIA DE LA ESPECIFICACION ANALIZADA EN CINCO PUNTOS MEDIDOS, UNO DE ELLOS DANO COLATERAL A OTRO PAIS. LO CONSTRUIDO -- PRIMERA VERSION, luego corregida (ver el estado final en el claim 527 y en el incidente): T015L 5 filas EG0..EG4 (SUPP/SCVE/SALA/BEXP/CHAR) - YTFI_PPC_TAG 1 fila EG/USTRD/C/<PmtInf><CdtTrfTxInf><RmtInf><Ustrd> - YTFI_PPC_STRUC 10 filas, tipo O (SEPARATOR, PPC_DESCR, SEPARATOR, FIXED_VAL 'INV', SEPARATOR, PAY_FIELD FPAYP-XBLNR) y tipo P (SEPARATOR, FIXED_VAL 'Salary (Compensation of employees)', SEPARATOR, PAY_FIELD FPAYP-SGTXT). EL INTERRUPTOR YA ESTA ARMADO EN D01: la fila PPC_DESCR es exactamente lo que u917 busca, asi que D01 ya bloquea. LAS CINCO DESVIACIONES. (1) DANO COLATERAL A INDONESIA, el mas grave -- YA CORREGIDO EL MISMO DIA: YTFI_PPC_STRUC ID/USTRD/O/01 tenia el separador BORRADO en D01 (vacio frente a '/' en P01) Y la clave 350ID USTRD O01 estaba DENTRO del transporte D01K9B0FXF. De haberse importado asi, Indonesia pasaba de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Era la UNICA deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila. ESTADO A 2026-08-19 19:xx: JP restauro el '/' sobre el mismo transporte y la relectura sin strip devuelve D01 y P01 identicos; el diff completo de las tres tablas excluyendo EG deja UNA sola deriva, la preexistente T015L DK1. La clave sigue dentro del transporte, lo que ahora es un no-op al importar -- un transporte de tabla exporta el VALOR al LIBERAR, no al capturar la clave -- pero deja a Indonesia ACOPLADA al transporte hasta la liberacion. El resto esta limpio. (2) Separadores vacios -> la cadena sale pegada (claim 524). (3) NO EXISTE el tipo de pago R: un payment request de Tesoreria a Egipto emite VACIO en silencio -- justo el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. (4) Falta el cajon de sastre -- YA CORREGIDO EL MISMO DIA: la primera version llevaba 5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%). ESTADO FINAL: se retiro SALA (la nomina va por tipo P con valor fijo; un codigo de salario seleccionable en facturas de proveedor solo inducia a error) y se anadio OTHR, quedando EG0 SUPP / EG1 SCVE / EG2 BEXP / EG3 CHAR / EG4 OTHR. GDDS, RENT, STDY y GOVT siguen fuera respecto a la lista de 10 verificada contra ISO 20022 (claim 495): es una decision de granularidad para reporting, no un error. (5) UN SOLO TRANSPORTE con las tres tablas (17 claves: 5 T015L + 11 STRUC + 1 TAG), cuando el interruptor exige dos: en cuanto YTFI_PPC_STRUC entre en P01 toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo (claim 496). SUELTO, PREVIO Y SIN IMPACTO: T015L de D01 tiene DK1 = 'NOT VALID JUST TO AVOID ERROR', ausente de P01 y del transporte. LA CLASE DE DEFECTO, QUE ES LO QUE HAY QUE RECORDAR: mantener un pais en SM30 puede capturar en el transporte la clave de un pais VECINO de la misma tabla, y el diff que lo ve no es el de las claves que querias tocar sino el de la TABLA ENTERA D01 vs P01. NOTA DE VIGENCIA (anadida tras el audit Phase 0 del cierre): este claim describe el estado ENCONTRADO al abrir la sesion y las desviaciones tal como se detectaron. Tres de las cinco se corrigieron el mismo dia. El estado ACTUAL de la configuracion vive en el claim 527 y en incidents.json INC-EGYPT-PPC (build_record + deviations_from_spec, cada una con su status). Leer este claim sin el 527 da una foto caducada de D01.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "fn=W/Q st=D user=JP_LOPEZ 20260819, texto 'INC-000016101 EGYP Payment Reasons'; 17 claves E071K: T015L 5, YTFI_PPC_STRUC 11 (10 EG + 350ID USTRD O01), YTFI_PPC_TAG 1.",
+          "ref": "D01 E070/E07T/E071K TRKORR D01K9B0FXE, D01K9B0FXF",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "STRUC D01 143 / P01 133; unica deriva no-EG = ID/O/01 separador vacio vs '/'. T015L D01 79 / P01 73 = 5 EG + DK1.",
+          "ref": "D01 vs P01 YTFI_PPC_STRUC / YTFI_PPC_TAG / T015L, diff fila a fila",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "u917 dispara con PPC_CODE IN ('PPC_VAR','PPC_DESCR'); EG tiene PPC_DESCR -> el interruptor esta armado.",
+          "ref": "Zagentexecution/mcp-backend-server-python/YRGGBS00_SOURCE.txt:1547-1590",
+          "type": "source_code"
+        },
+        {
+          "added_session": 101,
+          "cite": "Seccion 11 (dos transportes, 10 codigos, tres tipos de pago) y seccion 5 (la R que falta) = la linea base contra la que se mide la desviacion.",
+          "ref": "companions/inc_egypt_ppc_configuration.html",
+          "type": "knowledge_doc"
+        }
+      ],
+      "id": 526,
+      "related_objects": [
+        "YTFI_PPC_STRUC",
+        "YTFI_PPC_TAG",
+        "T015L",
+        "U917",
+        "YRGGBS00",
+        "E071K",
+        "E070"
+      ],
+      "resolution_notes": "El incidente INC-EGYPT-PPC pasa de SPEC_READY a BUILT_IN_D01_DEVIATIONS_OPEN y adquiere numero de ticket real INC-000016101. Actualizado en el cierre de s101: las desviaciones 1, 2 y 4 se corrigieron el mismo dia y el texto lo dice ahora explicitamente. Estado actual -> claim 527.",
+      "resolved_session": 101,
+      "status": "active"
+    },
+    {
+      "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad UNES, proveedor 0000318305 SilverKey Technologies Egypt, banco Credit Agricole Egypt AGRIEGCX, LFBK-BANKS='EG', 250.00 USD, XBLNR='224938', LZBKZ='EG0', GSBER='GEF', cuenta de gasto 0002086092) -> F110 LAUFD 20260819 LAUFI 'EG1' metodo N -> SAPFPAYM variante 1TST_USD_INT formato /CGI_XML_CT_UNESCO -> fichero pain.001.001.03. EL NODO SALIO EXACTAMENTE COMO SE HABIA PREDICHO SIMULANDO CM003/CM004 SOBRE LA CONFIGURACION LEIDA: <RmtInf><Ustrd>/Payment for goods or services received/INV/224938</Ustrd></RmtInf>. LOS TRES MECANISMOS QUEDAN PROBADOS POR EVIDENCIA DE EJECUCION, NO SOLO POR LECTURA DE FUENTE. (1) CAPA 1, nuestro banco elige la CLASE: el fichero lleva <DbtrAgt><BIC>SOGEFRPP</BIC> -- Societe Generale France -- luego FI_CGI_DMEE_EXIT_W_BADI resolvio lv_bank_country='FR' y selecciono YCL_IDFI_CGI_DMEE_FR, la unica implementacion que llama al constructor PPC (confirma claim 494 con ejecucion). (2) CAPA 2, su banco elige las FILAS: <CdtrAgt><BIC>AGRIEGCX</BIC>...<Ctry>EG</Ctry> -- CM002 paso I_FPAYH-ZBNKS='EG' y CM003 filtro YTFI_PPC_STRUC WHERE LAND1='EG'. (3) EL ENSAMBLADO: PPC_DESCR leyo T015L por LZBKZ='EG0' y emitio la narrativa tras el SPLIT AT SPACE, los tres SEPARATOR pusieron las barras, el FIXED_VAL puso 'INV' y el PAY_FIELD saco FPAYP-XBLNR='224938'. CONSECUENCIA PARA EL CAMBIO: queda demostrado que anadir un pais al framework PPC NO NECESITA ABAP -- no hay literal de pais en ninguna de las tres capas y Egipto resolvio solo por configuracion, igual que los otros nueve. Cierra la unica pieza que seguia sin probar desde s099 (claim 525 confirmo que el nodo Ustrd lleva el exit leyendo DMEE_TREE_NODE; esto lo confirma con el fichero generado). OTROS HECHOS DEL FICHERO, medidos: pain.001.001.03, 1 transaccion, CtrlSum 250.00, ReqdExctnDt 2026-08-19, cuenta cargo IBAN FR7630003033010007729009180 Ccy USD; la direccion del beneficiario sale ESTRUCTURADA (StrtNm 'Messaha St', BldgNb '27', PstCd '12311', TwnNm 'Dokki Giza Cairo', Ctry 'EG') pero SIN CtrySubDvsn -- misma clase de hueco que INC-PSTLADR-NOV2026, aunque Egipto queda fuera del alcance US/CA de ese caso; y XBLNR aparece ademas en <Tax><RefNb>224938</RefNb>. LA MITAD DE CAPTURA TAMBIEN QUEDA PROBADA, el mismo dia: JP_LOPEZ ejecuto un FB60 en UNES a proveedor con banco EG dejando LZBKZ vacio y la contabilizacion FUE RECHAZADA. El paso que la rechaza esta identificado sin ambiguedad: GB931 VALID=UNES VALSEQNR=012 lanza el mensaje ZFI-036 severidad E, 'Enter the payment purpose code (SCB) for the respective country' -- ningun otro de los 12 pasos usa ese mensaje. TIER DE ESTA MITAD: el rechazo lo observo JP en pantalla y yo lo corrobore leyendo el mensaje que el paso tiene asignado en GB931/T100; yo no vi la pantalla. El resto del claim si es evidencia directa del fichero generado. FICHERO ARCHIVADO: Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml DOS REGLAS COLATERALES LEIDAS DE GB931+T100 QUE EXPLICAN DECISIONES DEL MONTAJE: el paso 001 lanza ZFI-015 'For UNES company code, only use business area GEF, MBF, OPF or PFF' -- GSBER='GEF' no era una preferencia sino una obligacion, y solo esas cuatro areas pasan; el paso 011 lanza ZFI-012 'Partner Bank Type should be entered' (= U915), que es por que hacia falta BVTYP='USD' en la linea del proveedor y lo que mitiga la ambiguedad multi-banco del SELECT SINGLE sobre LFBK que hace u917.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "confidence_by_part": {
+        "attribution_of_the_block": "TIER_1 -- ZFI-036 es exclusivo del paso 012 en GB931, leido en vivo",
+        "block_half": "TIER_2 -- reporte de usuario + captura; el agente no observo la pantalla",
+        "note": "El campo 'confidence' del store es un escalar y este claim tiene dos mitades de fuerza distinta. Se deja TIER_1 por la mitad de renderizado, que es la que sostiene la conclusion operativa (no hace falta ABAP), y se desglosa aqui para no aplanar la diferencia.",
+        "render_half": "TIER_1 -- fichero pain.001 en disco, ruta archivada, cadena identica a la prediccion"
+      },
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "Fichero pain.001 generado por SAPFPAYM en D01, 2.153 bytes. Contiene el nodo <Ustrd> con la cadena completa, el BIC SOGEFRPP del ordenante y el BIC AGRIEGCX del beneficiario.",
+          "ref": "Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "KR 19.08.2026, FB60, JP_LOPEZ. Pos 001 BSCHL=31 proveedor 0000318305 AKONT 0002021011 LZBKZ='EG0' BVTYP='USD' GSBER='GEF' 250.00 USD; pos 002 BSCHL=40 cuenta 0002086092.",
+          "ref": "D01 BKPF/BSEG UNES 6400000000/2026",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "El algoritmo simulado sobre la config leida predijo la cadena exacta antes de generar el fichero. Prediccion y salida coinciden caracter por caracter.",
+          "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap y _CM004.abap",
+          "type": "source_code"
+        },
+        {
+          "added_session": 101,
+          "cite": "Metodo N -> FORMI=/CGI_XML_CT_UNESCO. Variante 1TST_USD_INT 'UNES INT PAYM XML USD NO US', creada por M_SPRONK el 2024-03-25, un dia antes de los transportes del framework PPC.",
+          "ref": "D01 T042Z (FR, metodo N) y VARID/VARIT SAPFPAYM",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "Validacion UNES boolclass 009, MSGID=ZFI. Paso 012 -> ZFI-036 severidad E 'Enter the payment purpose code (SCB) for the respective country'. Paso 001 -> ZFI-015 (areas GEF/MBF/OPF/PFF). Paso 011 -> ZFI-012 (partner bank type).",
+          "ref": "D01 GB93 + GB931 + T100 (ARBGB=ZFI), leido 2026-08-19",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "Ejecuto un FB60 en UNES a proveedor con banco EG dejando LZBKZ vacio y reporto que la contabilizacion fue RECHAZADA, con la captura de pantalla del popup 'Enter the payment purpose code (SCB) for the respective country'. EVIDENCIA DE LA MITAD DE CAPTURA: es un reporte de usuario mas una captura, TIER_2, no una lectura directa del agente. Corroborado a TIER_1 solo en la ATRIBUCION: GB931 UNES paso 012 es el unico de los doce que lanza ZFI-036.",
+          "ref": "JP_LOPEZ, D01 FB60, 2026-08-19",
+          "tier": "TIER_2",
+          "type": "user_report"
+        }
+      ],
+      "id": 527,
+      "related_objects": [
+        "YTFI_PPC_STRUC",
+        "YTFI_PPC_TAG",
+        "T015L",
+        "YCL_IDFI_CGI_DMEE_FR",
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "FI_CGI_DMEE_EXIT_W_BADI",
+        "DMEE_TREE_NODE",
+        "SAPFPAYM",
+        "T042Z",
+        "REGUT",
+        "LFBK",
+        "U917",
+        "BSEG"
+      ],
+      "resolution_notes": "Cierra el 'one thing still unproven' de companions/inc_egypt_ppc_configuration.html seccion 5 y los pasos 4 y 5 de su seccion 11: el control queda probado por las DOS mitades, bloqueo y renderizado. Lo que queda abierto NO es tecnico: partir el transporte en dos antes de liberar (YTFI_PPC_STRUC es el interruptor) y que el negocio confirme los cinco motivos con CitiService Egypt.",
+      "resolved_session": 101,
+      "status": "active"
+    },
+    {
+      "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.707.737 lineas, LAUFD 2016-01-04 a 2026-05-12, cortando por DORIGIN y quedandose solo con las ejecutadas (XVORL <> 'X'). Reparto de DORIGIN en todo el corpus: vacio 3.140.170 - FI-AP 312.889 - HR-PY 180.372 - FI-AR 73.593 - TR-CM-BT 713. El campo ESTA poblado, asi que el cero que sigue es un cero real y no una extraccion incompleta. HR-PY (nomina, tipo de pago P): las 180.372 lineas tienen perceptor con direccion FR; cero hacia AE, BH, CN, EG, ID, IN, JO, MA, MY, PH. TR-CM-BT (payment request de Tesoreria, tipo de pago R): 713 lineas en diez anos, todas FR, y ademas SIN LIFNR ni PERNR -- son transferencias banco a banco, no tienen proveedor. Verificado por los DOS cortes posibles: el pais del BANCO del proveedor (LFBK-BANKS, que es exactamente lo que lee u917 y lo que filtra CM003) y el pais de la DIRECCION del perceptor (REGUH-LAND1). Cero por ambos. CONSECUENCIA SOBRE LA CONFIGURACION EXISTENTE: los seis paises que SI tienen filas de tipo R en YTFI_PPC_STRUC -- AE '/REC/IGT', CN '/REC/COCADR/', ID '/PURP/2299/<SGTXT>', IN 'P1203;Maintenance of international institutions;INV;<SGTXT>', JO '/PURP/704/<SGTXT>', MA '/PURP/820/<SGTXT>' -- NUNCA las han disparado. Ni ellas ni las filas P de los nueve. Son configuracion defensiva, escrita por simetria y no por trafico medido. CONSECUENCIA PARA EGIPTO: la ausencia de filas R en su configuracion NO es un riesgo para el 5 de septiembre. Anadirlas sigue mereciendo la pena por dos filas de coste y porque el modo de fallo seria SILENCIOSO -- un payment request emitiria una cadena vacia sin que nada avise -- pero es simetria barata, no urgencia. ESTO CORRIGE UNA AFIRMACION MIA: marque la R ausente como CRITICA y como 'lo unico que hoy romperia', heredando el aviso del companion sin medirlo. El aviso del companion tampoco se habia medido nunca. Regla que deja: feedback_a_warning_in_a_document_is_not_a_measurement. LIMITE DE LA MEDIDA, dicho explicito: la nomina del personal de la oficina de El Cairo no aparece como HR-PY con perceptor egipcio. O se paga fuera de SAP, o por otra via, o bajo otro DORIGIN. No se ha investigado; lo unico que se afirma es que en REGUH no esta.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "GROUP BY DORIGIN sobre todo el corpus y sobre el subconjunto de los diez paises PPC, por pais del banco del proveedor y por REGUH-LAND1. HR-PY y TR-CM-BT: cero en los diez, por ambos cortes.",
+          "ref": "Gold DB p01_gold_master_data.db, tabla REGUH (3.707.737 filas) JOIN LFBK, 2026-08-19",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "6 de 9 paises tienen filas PAY_TYPE='R' con contenido; BH, MY y PH no.",
+          "ref": "P01 YTFI_PPC_STRUC via RFC_READ_TABLE, 2026-08-19",
+          "type": "production_data"
+        }
+      ],
+      "id": 528,
+      "related_objects": [
+        "REGUH",
+        "LFBK",
+        "YTFI_PPC_STRUC",
+        "U917",
+        "YCL_IDFI_CGI_DMEE_UTIL"
+      ],
+      "resolution_notes": "Rebaja la desviacion 3 de INC-EGYPT-PPC de HIGH a MEDIUM con numero, y corrige una valoracion mia que era herencia de un artefacto propio y no una medida.",
+      "resolved_session": 101,
+      "status": "active"
+    },
+    {
+      "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ZWCK1 = 'P1203  Maintenance of international institutions such as offices of IM'. CM003 hace SPLIT ... AT space INTO lv_dummy lv_value y ABAP asigna al ultimo destino el resto INCLUYENDO los separadores, asi que PPC_VAR sale 'P1203' y PPC_DESCR sale ' Maintenance of international institutions such as offices of IM' -- con un blanco delante. India separa sus bloques con ';' (YTFI_PPC_STRUC IN/O: PPC_VAR ; PPC_DESCR ; 'INV' ; FPAYP-XBLNR), de modo que un pago que use el codigo INA emite 'P1203; Maintenance of international institutions such as offices of IM;INV;<XBLNR>' con un blanco de mas justo detras del primer punto y coma, y eso es lo que llega al banco. ES LA UNICA FILA ROTA DE LAS 73: barrido completo de T015L en P01, ninguna otra tiene el hueco partido ni carece de espacio. LA RUTA R DE INDIA NO ESTA AFECTADA -- usa FIXED_VAL 'P1203' y FIXED_VAL 'Maintenance of international institutions' en filas separadas, sin pasar por T015L. Solo la ruta O (factura de proveedor, donde el empleado teclea el codigo) puede emitirlo. COMO SE ENCONTRO, que es la parte que importa: NO se busco. Aparecio al mecanizar como check E/F de Zagentexecution/quality_checks/ppc_country_consistency_check.py el defecto que se habia encontrado A MANO unas horas antes configurando Egipto (T015L EG4 grabado como 'OTHR  Others'). El mismo defecto estaba esperando en produccion desde que se configuro India, invisible en SM30 porque dos espacios seguidos no se distinguen de uno. El check se pago solo en su primera corrida. NO MEDIDO: cuantos pagos reales han usado el codigo INA. REGUP no esta en el Gold DB, asi que el impacto en volumen queda sin cuantificar -- es la misma laguna que deja el check D en SKIPPED. ARREGLO: borrar un espacio en T015L INA por SM30, transportado como cualquier customizing. Cero ABAP, cero riesgo: no cambia el codigo emitido, solo quita el blanco de la narrativa.",
+      "claim_type": "verified_fact",
+      "confidence": "TIER_1",
+      "created_session": 101,
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "evidence_against": null,
+      "evidence_for": [
+        {
+          "added_session": 101,
+          "cite": "INA -> 'P1203  Maintenance of international institutions such as offices of IM'; barrido de las 73 filas: es la unica con el hueco partido.",
+          "ref": "P01 T015L via RFC_READ_TABLE sin strip, 2026-08-19",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "Ruta O: PPC_VAR / ';' / PPC_DESCR / ';' / FIXED_VAL 'INV' / ';' / PAY_FIELD. La ruta R usa FIXED_VAL y no toca T015L.",
+          "ref": "P01 YTFI_PPC_STRUC LAND1='IN'",
+          "type": "production_data"
+        },
+        {
+          "added_session": 101,
+          "cite": "SPLIT ls_t015l-zwck1 AT space INTO lv_dummy lv_value: el ultimo destino recibe el resto incluyendo separadores.",
+          "ref": "extracted_code/FI/DMEE/YCL_IDFI_CGI_DMEE_UTIL_CM003.abap",
+          "type": "source_code"
+        },
+        {
+          "added_session": 101,
+          "cite": "Detector anadido en s101 a partir del defecto encontrado a mano en Egipto; encontro este en la primera ejecucion.",
+          "ref": "Zagentexecution/quality_checks/ppc_country_consistency_check.py check F",
+          "type": "derived_artifact"
+        }
+      ],
+      "id": 529,
+      "related_objects": [
+        "T015L",
+        "YTFI_PPC_STRUC",
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "REGUP"
+      ],
+      "resolution_notes": "Hallazgo colateral del cierre de s101. Accion abierta en PMO. Regla que lo genero: feedback_a_char_field_cannot_store_a_trailing_blank.",
+      "resolved_session": 101,
+      "status": "active"
     }
   ],
   "core_principles": [
@@ -33888,15 +34335,38 @@
     },
     {
       "analysis_doc": "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
-      "analyzed_session": 99,
+      "analyzed_session": 101,
       "authority": [
         "Citibank Egypt notice, 2026-07-12 — 'payment instructions ... which do not include Purpose of Payment will not be processed', effective 2026-09-05",
         "Request from Mathewos Mehari 2026-08-10: 'include this with the list of the countries which need this information'"
       ],
+      "build_record": {
+        "built_by": "JP_LOPEZ",
+        "built_date": "2026-08-19",
+        "design_rationale_from_author": "Interpretacion del correo de Citi: pide una descripcion narrativa, no un codigo -> se elige PPC_DESCR sin PPC_VAR y 'sin separadores porque es texto'.",
+        "switch_state": "ARMADO EN D01: la fila PPC_DESCR es lo que busca u917, asi que D01 ya bloquea. P01 intacto (0 filas EG en las tres tablas).",
+        "system": "D01",
+        "ticket": "INC-000016101",
+        "transports": {
+          "keys": "17 = T015L 5 + YTFI_PPC_STRUC 11 + YTFI_PPC_TAG 1",
+          "parent": "D01K9B0FXE",
+          "status": "D (modificable, NO liberado)",
+          "task": "D01K9B0FXF",
+          "text": "INC-000016101 EGYP Payment Reasons"
+        },
+        "what_exists_in_d01": {
+          "T015L": "5 filas EG0..EG4 = SUPP / SCVE / SALA / BEXP / CHAR (BLART=2, LVAWV=000)",
+          "YTFI_PPC_STRUC": "10 filas. O: 01 SEPARATOR(vacio) 02 PPC_DESCR 03 SEPARATOR(vacio) 04 FIXED_VAL 'INV' 05 SEPARATOR(vacio) 06 PAY_FIELD FPAYP-XBLNR. P: 01 SEPARATOR(vacio) 02 FIXED_VAL 'Salary (Compensation of employees)' 03 SEPARATOR(vacio) 04 PAY_FIELD FPAYP-SGTXT. NO hay tipo R.",
+          "YTFI_PPC_TAG": "1 fila EG / USTRD / C / <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>"
+        }
+      },
       "chain_anchor_coverage_pct": 90,
       "chain_anchor_note": "Anchored on the Citi notice (the authority), on YRGGBS00 u917 and the UTIL builder source for the mechanism, on live P01 GB931/T042E/T042Z/REGUT/PAYR for coverage and payment medium, and on Gold DB REGUH/LFA1 for the population.",
       "chain_anchor_type": "mixed_source_and_config",
-      "chain_audited_session": 99,
+      "chain_audited_session": 101,
+      "closed_followups": [
+        "Si el nodo <Ustrd> del arbol /CGI_XML_CT_UNESCO lleva la llamada al exit -- CERRADO por claim 525: N_6995550560 lleva MP_EXIT_FUNC=FI_CGI_DMEE_EXIT_W_BADI y EG ya resuelve contra el. Leido en D01; sigue pendiente el F110 real como prueba del fichero."
+      ],
       "code_validation_chain": [
         "Citi notice names SWIFT Field 70 -> ISO 20022 RmtInf/Ustrd -> YTFI_PPC_TAG TAG_ID='USTRD' (the family BH/ID/IN/JO/MA/MY/PH use), NOT INSTRINF (= SWIFT :72, used by AE/CN)",
         "YRGGBS00:1547-1590 FORM u917 -> SELECT ytfi_ppc_struc WHERE land1 = <LFBK-BANKS> AND ppc_code IN ('PPC_VAR','PPC_DESCR') -> b_result = b_false: the row type IS the switch",
@@ -33917,7 +34387,81 @@
         "UIS",
         "UBO"
       ],
+      "config_verified_d01": {
+        "T015L": [
+          "EG0 SUPP Payment for goods or services received",
+          "EG1 SCVE Service fees for consulting work",
+          "EG2 BEXP Travel and business expenses",
+          "EG3 CHAR Charity Payment",
+          "EG4 OTHR Others"
+        ],
+        "YTFI_PPC_STRUC": "O: / + PPC_DESCR + / + INV + / + FPAYP-XBLNR ; P: / + 'Salary payment' + / + FPAYP-SGTXT ; R: ausente",
+        "YTFI_PPC_TAG": "EG / C / USTRD / <PmtInf><CdtTrfTxInf><RmtInf><Ustrd>",
+        "date": "2026-08-19",
+        "note": "Simulacion del algoritmo de CM003/CM004 sobre los valores reales leidos de D01. NO es el fichero: eso lo prueba solo un F110.",
+        "rendered": [
+          "/Payment for goods or services received/INV/5105551234 (54)",
+          "/Service fees for consulting work/INV/5105551234 (48)",
+          "/Travel and business expenses/INV/5105551234 (44)",
+          "/Charity Payment/INV/5105551234 (31)",
+          "/Others/INV/5105551234 (22)",
+          "/Salary payment/<SGTXT> (23)"
+        ]
+      },
       "deadline": "2026-09-05",
+      "deviations_from_spec": [
+        {
+          "detail": "YTFI_PPC_STRUC ID/USTRD/O/01 tiene el separador borrado en D01 (vacio) frente a '/' en P01, y la clave 350ID USTRD O01 esta DENTRO de D01K9B0FXF. Importar el transporte cambia Indonesia de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' para Bank Indonesia (921 lineas con codigo 2024-2026). Unica deriva no-EG entre D01 y P01 en las tres tablas, verificado fila a fila.",
+          "fix": "1) Restaurar '/' en D01 (SM30, mismo transporte) ANTES de tocar la lista de objetos. 2) Opcionalmente borrar la clave en SE10; con el valor ya restaurado la importacion seria un no-op. Ese orden y no el inverso.",
+          "n": 1,
+          "resolution": "2026-08-19, mismo dia: JP_LOPEZ restauro / en YTFI_PPC_STRUC ID/USTRD/O/01 en D01, sobre el mismo transporte. Verificado releyendo D01 y P01 sin strip: filas identicas. Diff completo de las tres tablas excluyendo EG = 1 sola deriva (T015L DK1, previa y fuera del transporte). SIN IMPACTO al importar, porque un transporte de tabla guarda la CLAVE y el valor se exporta al LIBERAR: esa clave exportara / , que es lo que P01 ya tiene -> no-op. RESIDUO: la clave 350ID USTRD O01 sigue dentro de D01K9B0FXF (17 claves, 16 de EG + esa), lo que deja a Indonesia acoplada al transporte hasta la liberacion: cualquier edicion de esa fila en D01 antes de liberar viajaria sola. Recomendado quitarla por SE10; si se deja, releer esa fila justo antes de liberar.",
+          "severity": "CRITICAL",
+          "status": "RESOLVED_VALUE_RESTORED_KEY_REMAINS",
+          "title": "Dano colateral a Indonesia dentro del transporte"
+        },
+        {
+          "detail": "build_value concatena sin nada en medio (claim 524). Rinde 'Payment for goods or services receivedINV5105551234' y 'Salary (Compensation of employees)<SGTXT>'. PPC_VALUE es CHAR(60), asi que un separador de UN ESPACIO tampoco sirve: una plantilla de string ABAP elimina los blancos FINALES de un campo tipo C. Los blancos INICIALES si sobreviven.",
+          "fix": "O un separador visible como los otros nueve ('/'), o meter el espacio DELANTE dentro de un FIXED_VAL: FIXED_VAL ' under Invoice #' rinde '...received under Invoice #5105551234', que es literalmente el ejemplo de Citi. Verificar releyendo por RFC que SM30 no ha condensado el blanco inicial.",
+          "n": 2,
+          "resolution": "2026-08-19: separadores puestos a / en O01/O03/O05 y P01/P03. Verificado releyendo sin strip. Rinde /Payment for goods or services received/INV/5105551234 (54 car., el nodo Ustrd admite 140). Se eligio la forma de los otros nueve (barra sin espacios) en vez de la variante narrativa con espacios. CONFIRMADO EMPIRICAMENTE de paso: un blanco DELANTE sobrevive a SM30 y al ensamblado (probado con ' INV'), uno DETRAS no -- y la razon no es la plantilla de string sino que PPC_VALUE es CHAR(60): un espacio final es indistinguible del relleno, no hay forma de almacenarlo.",
+          "severity": "HIGH",
+          "status": "RESOLVED",
+          "title": "Separadores vacios: la cadena sale pegada"
+        },
+        {
+          "detail": "Solo O y P. Un payment request de Tesoreria a Egipto emite VACIO, en silencio. Es el defecto de BH/MY/PH que el companion marcaba como 'lo unico que no hay que copiar'. MEDIDO 2026-08-19, y corrige mi propia valoracion inicial de CRITICO: en REGUH completa (3.707.737 lineas, 2016-2026, ejecutadas XVORL<>X) el corte por DORIGIN da HR-PY 180.372 y TR-CM-BT 713, y NINGUNA llega a los diez paises -- todas con perceptor de direccion FR, y TR-CM-BT ademas sin LIFNR ni PERNR (transferencias banco a banco). Verificado por los DOS cortes: pais del banco del proveedor (LFBK-BANKS, que es lo que lee el control) y pais de la direccion. Cero por ambos. CONSECUENCIA: los seis paises que SI tienen filas R (AE /REC/IGT, CN /REC/COCADR/, ID /PURP/2299/, IN P1203;..., JO /PURP/704/, MA /PURP/820/) nunca las han disparado, ni ellas ni las P. Se configuraron por simetria defensiva, no por trafico medido -- y lo mismo vale para las filas P que Egipto ya tiene. Anadir R sigue siendo barato y cubre un fallo silencioso, pero NO es un riesgo para el 5 de septiembre. LIMITE DE LA MEDIDA: la nomina del personal de la oficina de El Cairo no aparece como HR-PY con perceptor egipcio; o se paga fuera de SAP o por otra via. No investigado.",
+          "fix": "Anadir las filas R (los otros paises usan FIXED_VAL fijo, p.ej. 'Intracompany funds transfer').",
+          "n": 3,
+          "severity": "MEDIUM",
+          "status": "OPEN",
+          "title": "No existe el tipo de pago R"
+        },
+        {
+          "detail": "5 codigos y ninguno 'otros', cuando la categoria generica es la mas usada de los nueve paises (IN7 63% ID7 34% MY9 33% MA9 32%). Faltan OTHR, GDDS, RENT, STDY, GOVT respecto a la lista de 10 verificada contra ISO 20022 (claim 495). Sin cajon de sastre el empleado mete un codigo equivocado y el control no lo ve: solo comprueba que no este vacio y T015L no tiene campo pais (claim 496).",
+          "fix": "Anadir al menos OTHR. Decision de negocio con BFM/Tesoreria sobre la lista final.",
+          "n": 4,
+          "resolution": "2026-08-19: lista rehecha a 5 codigos, todos ISO 20022 validos -- SUPP/SCVE/BEXP/CHAR/OTHR. Se retiro SALA (la nomina va por tipo P con valor fijo; un codigo de salario disponible en facturas de proveedor solo inducia a error) y se anadio el cajon de sastre OTHR, que era el hueco real. Cubre las 8 categorias medidas en los nueve paises, con OTHR absorbiendo cuatro (I+D, formacion, organismos internacionales, alquiler). GDDS/STDY/GOVT/RENT quedan fuera por decision de granularidad, no por error. DEFECTO CAZADO Y CORREGIDO EN EL CAMINO: EG4 se grabo como 'OTHR  Others' con DOS espacios; el SPLIT AT SPACE parte en el primero y mete el resto -separadores incluidos- en la descripcion, asi que rendia '/ Others/INV/...' con un blanco suelto tras la barra. Invisible en pantalla, solo visible leyendo el campo en crudo. Constantes BLART=2/LVAWV=000 y ZWCK2/EDIBL vacios verificados contra las 73 filas existentes.",
+          "severity": "MEDIUM",
+          "status": "RESOLVED",
+          "title": "Falta el cajon de sastre y cuatro codigos mas"
+        },
+        {
+          "detail": "17 claves en D01K9B0FXF: T015L + YTFI_PPC_TAG + YTFI_PPC_STRUC juntas. YTFI_PPC_STRUC es el interruptor: en cuanto entre en P01, toda factura de UNES a proveedor con banco EG queda bloqueada al instante, sin aviso a El Cairo ni formacion (claim 496).",
+          "fix": "Separar en dos: T1 inerte (T015L + TAG) ahora, T2 (STRUC) 1-2 dias antes del 5-sep.",
+          "n": 5,
+          "severity": "HIGH",
+          "status": "OPEN",
+          "title": "Un solo transporte con las tres tablas"
+        },
+        {
+          "detail": "DK1 = 'NOT VALID JUST TO AVOID ERROR' existe en D01, no en P01 y no esta en el transporte. Deriva previa, sin impacto en este cambio.",
+          "fix": "Ninguna accion ahora; anotado para que no se lea como nuevo.",
+          "n": 0,
+          "severity": "INFO",
+          "status": "NOTED",
+          "title": "T015L DK1 en D01"
+        }
+      ],
       "domain": "Payment",
       "domain_axes": {
         "functional": [
@@ -33933,6 +34477,29 @@
           "P2P",
           "T2R"
         ]
+      },
+      "e2e_test_d01": {
+        "artifact": "Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/UNES_SOGE_03INTUSD_20260819_EG1.xml",
+        "block_test": {
+          "message": "ZFI-036 severidad E, 'Enter the payment purpose code (SCB) for the respective country', GB931 VALID=UNES VALSEQNR=012",
+          "result": "BLOQUEA. FB60 en UNES a proveedor con banco EG sin LZBKZ -> rechazado.",
+          "tier": "observado por JP en pantalla; corroborado leyendo el mensaje asignado al paso. Yo no vi la pantalla."
+        },
+        "collateral_rules_found": [
+          "paso 001 ZFI-015: en UNES solo valen las areas de negocio GEF, MBF, OPF, PFF",
+          "paso 011 ZFI-012 (U915): el Partner Bank Type es obligatorio -- por eso BVTYP='USD' en la linea del proveedor"
+        ],
+        "date": "2026-08-19",
+        "invoice": "UNES 6400000000/2026 KR, proveedor 0000318305 SilverKey Technologies Egypt, 250.00 USD, XBLNR 224938, LZBKZ EG0, GSBER GEF, gasto 0002086092",
+        "medium": "SAPFPAYM variante 1TST_USD_INT, formato /CGI_XML_CT_UNESCO, sin salida a fichero (no se escribio en \\\\hq-sapitf\\SWIFT$\\D01\\INPUT)",
+        "payment_run": "F110 LAUFD 20260819 LAUFI EG1, metodo N, propuesta",
+        "proves": [
+          "capa 1: DbtrAgt BIC SOGEFRPP -> clase _FR seleccionada por el pais de NUESTRO banco",
+          "capa 2: CdtrAgt BIC AGRIEGCX Ctry EG -> filas filtradas por el pais de SU banco",
+          "ensamblado: PPC_DESCR + SEPARATOR + FIXED_VAL + PAY_FIELD FPAYP-XBLNR",
+          "cero ABAP necesario para anadir un pais"
+        ],
+        "result": "<RmtInf><Ustrd>/Payment for goods or services received/INV/224938</Ustrd></RmtInf> -- identico a la prediccion"
       },
       "error_messages": [],
       "fix_path": {
@@ -33951,7 +34518,7 @@
         "A regulatory request that asks for a 'description' is not a code-list request — Egypt is a PPC_DESCR country, not a PPC_VAR one.",
         "Capture and rendering must be reasoned about separately: a country can need the first and have no use for the second."
       ],
-      "next_action": "Two transports, in this order. T1 (inert, can go now): T015L 10 rows EG0..EG9 + YTFI_PPC_TAG one row EG/USTRD/C. T2 (the live moment, 1-2 days before the deadline): YTFI_PPC_STRUC 11 rows -- this is the SWITCH, it starts the block AND the rendering. Never both in one transport. Confirm the 10 codes with CitiService Egypt first. Step by step: companions/inc_egypt_ppc_configuration.html section 11.",
+      "next_action": "CONTROL PROBADO POR LAS DOS MITADES en D01 el 2026-08-19: bloquea sin codigo (ZFI-036) y renderiza con codigo (fichero pain.001 con <Ustrd>/Payment for goods or services received/INV/224938). Quedan dos, y ninguna es tecnica. (1) PARTIR EL TRANSPORTE EN DOS antes de liberar: T1 T015L + YTFI_PPC_TAG (inerte, puede ir ya) y T2 YTFI_PPC_STRUC (el interruptor, 1-2 dias antes del 5-sep). Hoy las tres tablas van juntas en D01K9B0FXF, y ahi dentro sigue la clave 350ID USTRD O01 de Indonesia -- inocua desde que se restauro el valor, pero conviene quitarla para que el transporte diga la verdad sobre lo que cambia. (2) Confirmar los 5 motivos y su redaccion con Mathewos Mehari y CitiService Egypt. OPCIONAL: tipo de pago R (medido cero trafico en 10 anos). Paso a paso: companions/inc_egypt_ppc_configuration.html seccion 11.",
       "open_followups": [
         "T015L reason list — BUSINESS INPUT from BFM/Treasury, blocks entry",
         "Code prefix or narrative only — ask CitiService Egypt",
@@ -33962,38 +34529,48 @@
       "primary_subject": "Country EG in the purpose-of-payment configuration",
       "received_date": "2026-08-10",
       "related_claims": [
+        "267",
         "484",
         "485",
         "486",
         "488",
-        "267",
         "489",
         "490",
         "492",
         "493",
         "494",
         "495",
-        "496"
+        "496",
+        "524",
+        "525",
+        "526",
+        "527"
       ],
       "related_known_unknowns": [
         "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
         "KU-2026-099-PPC-INSTITUTE-COVERAGE"
       ],
       "related_objects": [
-        "YTFI_PPC_STRUC",
-        "YTFI_PPC_TAG",
-        "T015L",
-        "U917",
-        "YRGGBS00",
-        "YCL_IDFI_CGI_DMEE_UTIL",
-        "LFBK",
-        "REGUH",
         "CIT19",
+        "D01K9B0FXE",
+        "D01K9B0FXF",
+        "DMEE_TREE_NODE",
+        "E070",
+        "E071K",
+        "FI_CGI_DMEE_EXIT_W_BADI",
+        "GB931",
+        "LFBK",
+        "PAYR",
+        "REGUH",
+        "REGUT",
+        "T015L",
         "T042E",
         "T042Z",
-        "REGUT",
-        "PAYR",
-        "GB931"
+        "U917",
+        "YCL_IDFI_CGI_DMEE_UTIL",
+        "YRGGBS00",
+        "YTFI_PPC_STRUC",
+        "YTFI_PPC_TAG"
       ],
       "reporter": "Mathewos Mehari (BFM) via Christina Lopez-Chemouny; originating notice from Citibank Egypt 2026-07-12",
       "root_cause_summary": "Not a defect. Regulatory change: Citibank Egypt requires Purpose of Payment on all RTGS and Cross-Border Funds Transfers to/from Egypt from 2026-09-05, in the Transaction Details field or SWIFT Field 70. UNESCO already runs a purpose-code framework for 9 countries; Egypt has to be added to it. The work is configuration in three maintained tables, zero ABAP.",
@@ -34016,14 +34593,17 @@
         "Capture reaches 1 of 9 company codes",
         "This path produces no payment file at all, so the rendering half of the framework is moot for Egypt"
       ],
-      "status": "SPEC_READY",
+      "status": "TESTED_IN_D01_BOTH_HALVES_PROVEN",
+      "ticket_number": "INC-000016101",
       "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)",
       "transactions": [
-        "SM30",
-        "OBAT",
+        "F110",
         "FB60",
         "MIRO",
-        "F110"
+        "OBAT",
+        "SE01",
+        "SE10",
+        "SM30"
       ]
     },
     {
@@ -34202,6 +34782,7 @@
         "Zagentexecution/sap_data_extraction/scripts/sap_process_discovery.py",
         "add_knowledge_links.py",
         "algorithm_memory.json",
+        "backfill_domain_axes.py",
         "brain_state.json",
         "brain_v2/BRAIN_INDEX.md",
         "brain_v2/build_brain_index.py",
@@ -34250,8 +34831,10 @@
         "d01_gold_master_data.db",
         "df14l",
         "execution_backlog.json",
+        "feedback_rules.json",
         "gold_db_table_catalog.md",
         "golden_manifest.json",
+        "incidents.json",
         "knowledge/domains/Integration/integration_map_complete.md",
         "knowledge/profile_concept.md",
         "process_mining/attribute_changes_to_programs.py",
@@ -34260,6 +34843,7 @@
         "process_mining/interface_boundary.py",
         "rebuild_all.py",
         "scripts/extraction/split_golden_by_system.py",
+        "store_schema_check.py",
         "tadir_obj"
       ],
       "CTS": [
@@ -34932,6 +35516,7 @@
         "BizTalk_SFSF_EC"
       ],
       "H_IMPROVE": [
+        "core_principles.json",
         "feedback_one_rule_in_one_rule_out",
         "maturity.json",
         "meta_capability.json",
@@ -35485,7 +36070,6 @@
       ],
       "PY-Finance": [
         "CTS_API_READ_CHANGE_REQUEST",
-        "E071K",
         "FP_SPEZZANO",
         "T042ZT",
         "TMSALOG",
@@ -35514,11 +36098,14 @@
         "Cdtr",
         "CdtrAgt",
         "Ctry",
+        "D01K9B0FXE",
+        "D01K9B0FXF",
         "DMEE_TREE:/CGI_XML_CT_UNESCO",
         "DMEE_TREE_COND",
         "DMEE_TREE_HEAD",
         "Dbtr",
         "DbtrAgt",
+        "E071K",
         "FI_CGI",
         "FPAYH",
         "FPAYH-GPA1R",
@@ -36222,6 +36809,12 @@
         "fix_immediate": "Three maintained tables, no ABAP: (1) YTFI_PPC_STRUC rows for LAND1='EG', TAG_ID='USTRD', DEB_CRE='C' — pay type O carries PPC_VAR + PPC_DESCR + PAY_FIELD FPAYP-XBLNR (PPC_DESCR is the load-bearing block because Citi asks for a narrative, not a code); pay types P and R carry FIXED_VAL. (2) T015L EG* entries, ZWCK1 = '<code> <narrative>'. (3) YTFI_PPC_TAG one row EG/USTRD/C -> RmtInf/Ustrd. T015L codes: 10 verified against the published ISO 20022 External Purpose Codes list and cross-checked against LHV's ExternalPurpose1Code reference (claim 495) -- SUPP, SCVE, SALA, BEXP, CHAR, RENT, GDDS, STDY, GOVT, OTHR. An earlier draft of 4 of the 10 (TRVL, RDEV, ITSV, TRAI) did not exist in ISO 20022 and must never be used.",
         "related_objects": [
           "CIT19",
+          "D01K9B0FXE",
+          "D01K9B0FXF",
+          "DMEE_TREE_NODE",
+          "E070",
+          "E071K",
+          "FI_CGI_DMEE_EXIT_W_BADI",
           "GB931",
           "LFBK",
           "PAYR",
@@ -36237,7 +36830,7 @@
           "YTFI_PPC_TAG"
         ],
         "root_cause_summary": "Not a defect. Regulatory change: Citibank Egypt requires Purpose of Payment on all RTGS and Cross-Border Funds Transfers to/from Egypt from 2026-09-05, in the Transaction Details field or SWIFT Field 70. UNESCO already runs a purpose-code framework for 9 countries; Egypt has to be added to it. The w",
-        "status": "SPEC_READY",
+        "status": "TESTED_IN_D01_BOTH_HALVES_PROVEN",
         "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)"
       },
       "INC-FXREVAL-OB09": {
@@ -48497,6 +49090,13 @@
           "tier": "TIER_1",
           "type": "infrastructure_gap",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CTS",
@@ -52351,6 +52951,62 @@
       ],
       "type": "TRANSPORT"
     },
+    "D01K9B0FXE": {
+      "analysis_doc": "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Treasury"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R",
+          "P2P"
+        ]
+      },
+      "incident_root_cause": "Not a defect. Regulatory change: Citibank Egypt requires Purpose of Payment on all RTGS and Cross-Border Funds Transfers to/from Egypt from 2026-09-05, in the Transaction Details field or SWIFT Field 70. UNESCO already runs a purpose-code framework for 9 countries; Egypt has to be added to it. The w",
+      "incidents": [
+        "INC-EGYPT-PPC"
+      ],
+      "knowledge_docs": [
+        "knowledge/session_retros/session_101_retro.md",
+        "knowledge/session_retros/session_101_retro_audit.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "D01K9B0FXF": {
+      "analysis_doc": "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
+      "domain": "Payment",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Treasury"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R",
+          "P2P"
+        ]
+      },
+      "incident_root_cause": "Not a defect. Regulatory change: Citibank Egypt requires Purpose of Payment on all RTGS and Cross-Border Funds Transfers to/from Egypt from 2026-09-05, in the Transaction Details field or SWIFT Field 70. UNESCO already runs a purpose-code framework for 9 countries; Egypt has to be added to it. The w",
+      "incidents": [
+        "INC-EGYPT-PPC"
+      ],
+      "knowledge_docs": [
+        "knowledge/session_retros/session_101_retro.md",
+        "knowledge/session_retros/session_101_retro_audit.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "DAK": {
       "claims": [
         {
@@ -53357,6 +54013,20 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D",
+          "id": 525,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -53572,7 +54242,9 @@
       "knowledge_docs": [
         "knowledge/domains/Payment/dmee_formats_model_comparison.md",
         "knowledge/domains/Payment/dmee_map/DMEE_CONFIG_POR_FORMATO.md",
-        "knowledge/domains/Payment/dmee_sepa_v001_compare_table.md"
+        "knowledge/domains/Payment/dmee_sepa_v001_compare_table.md",
+        "knowledge/session_retros/session_101_retro.md",
+        "knowledge/session_retros/session_101_retro_audit.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -53590,6 +54262,13 @@
         {
           "claim": "THE TRANSPORTED DATA IS MOSTLY LEGITIMATE, AND NAMING IT REQUIRED THE TRANSPORT TEXTS (s098, AN-TRANSPORTED-DATA-LEGITIMACY). cts_transports carried a",
           "id": 460,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
@@ -53682,17 +54361,33 @@
     },
     "E071K": {
       "analysis_doc": "knowledge/incidents/INC-180995_py_finance_trlag_forensics.md",
-      "domain": "PY-Finance",
+      "claims": [
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Payment",
       "domain_axes": {
-        "functional": [],
-        "module": [
-          "PY-Finance"
+        "functional": [
+          "Payment",
+          "Treasury"
         ],
-        "process": []
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "T2R",
+          "P2P"
+        ]
       },
       "incident_root_cause": "Not a runtime failure. Ticket 180995 required two parallel Field-Office currency setups. FP_SPEZZANO released both transports on 2024-11-19 within 6 hours of each other, structurally identical (8 table keys each: T042Z/T042ZT payment method + the 5-table wage-type chain T512T/T512W/T52DZ/T52EL/T52EZ",
       "incidents": [
-        "INC-180995"
+        "INC-180995",
+        "INC-EGYPT-PPC"
       ],
       "knowledge_docs": [
         "knowledge/configuration_retros/MGIE_vs_STEM_gap_2026-04-15.md",
@@ -56919,6 +57614,20 @@
           "id": 508,
           "tier": "TIER_1",
           "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D",
+          "id": 525,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -60923,6 +61632,13 @@
         {
           "claim": "YVENDOR_PAYM_REF IS THE MAINTAINED LIST THAT DECIDES THE NOTE-TO-PAYEE TEXT, keyed (BUKRS, LIFNR, BLART) — company code + vendor + document type. Read",
           "id": 487,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_",
+          "id": 524,
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
@@ -65757,6 +66473,20 @@
         {
           "claim": "THE PURPOSE-OF-PAYMENT CONTROL TESTS PRESENCE, NOT CORRECTNESS - AND T015L HAS NO COUNTRY FIELD AT ALL. MEASURED on the Gold DB: T015L has 73 rows and",
           "id": 496,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.7",
+          "id": 528,
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
@@ -73063,6 +73793,13 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.7",
+          "id": 528,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -73193,6 +73930,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ",
+          "id": 529,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -73244,6 +73988,13 @@
         {
           "claim": "THE EGYPT-SETTLING PAYMENTS PRODUCE NO SAP PAYMENT FILE — they are configured as pre-numbered cheques, so Citi's Purpose-of-Payment requirement does n",
           "id": 488,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
@@ -76302,6 +77053,13 @@
           "tier": "TIER_1",
           "type": "causal_rule",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "BASIS",
@@ -77911,7 +78669,8 @@
         ]
       },
       "knowledge_docs": [
-        "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md"
+        "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
+        "knowledge/session_retros/session_101_retro_audit.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -79341,6 +80100,34 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_",
+          "id": 524,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ",
+          "id": 529,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -79896,6 +80683,13 @@
           "id": 516,
           "tier": "TIER_1",
           "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -82291,6 +83085,27 @@
         {
           "claim": "THE PURPOSE-OF-PAYMENT CONTROL TESTS PRESENCE, NOT CORRECTNESS - AND T015L HAS NO COUNTRY FIELD AT ALL. MEASURED on the Gold DB: T015L has 73 rows and",
           "id": 496,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.7",
+          "id": 528,
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
@@ -86555,6 +87370,20 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D",
+          "id": 525,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "FI",
@@ -86835,6 +87664,41 @@
           "id": 508,
           "tier": "TIER_1",
           "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_",
+          "id": 524,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D",
+          "id": 525,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.7",
+          "id": 528,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ",
+          "id": 529,
+          "tier": "TIER_1",
+          "type": "verified_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -89692,6 +90556,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CTS",
@@ -91194,6 +92065,41 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_",
+          "id": 524,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "NI LA NOMINA NI LOS PAYMENT REQUESTS DE TESORERIA LLEGAN A NINGUNO DE LOS DIEZ PAISES CON PURPOSE CODE. Medido sobre REGUH completa en el Gold DB: 3.7",
+          "id": 528,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "DEFECTO VIVO EN P01, ENCONTRADO POR EL CHECK EN SU PRIMERA EJECUCION: la fila T015L 'INA' de India tiene DOS espacios entre el codigo y la narrativa. ",
+          "id": 529,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CTS",
@@ -91334,6 +92240,34 @@
           "id": 508,
           "tier": "TIER_1",
           "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL ENSAMBLADOR PPC CONCATENA SIN NADA EN MEDIO: UNA FILA 'SEPARATOR' CON PPC_VALUE VACIO NO EMITE NADA, Y EL TEXTO SALE PEGADO. Leido del fuente: YCL_",
+          "id": 524,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL NODO <Ustrd> DEL ARBOL /CGI_XML_CT_UNESCO SI LLEVA LA LLAMADA AL EXIT -- SE CIERRA LA UNICA PIEZA NO PROBADA DE LA SOLUCION PPC. Leido en vivo de D",
+          "id": 525,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CONFIGURACION DE EGIPTO YA ESTA CONSTRUIDA EN D01 (2026-08-19, ticket INC-000016101, transportes D01K9B0FXE padre / D01K9B0FXF tarea, JP_LOPEZ, est",
+          "id": 526,
+          "tier": "TIER_1",
+          "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EGIPTO RENDERIZA: PROBADO EXTREMO A EXTREMO EN D01 CON FICHERO REAL, 2026-08-19. Cadena completa ejecutada: FB60 documento 6400000000/2026 (sociedad U",
+          "id": 527,
+          "tier": "TIER_1",
+          "type": "verified_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -100289,6 +101223,31 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
+    "backfill_domain_axes.py": {
+      "claims": [
+        {
+          "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe u",
+          "id": 522,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Brain_Architecture",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "Brain_Architecture"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/session_retros/session_059_retro.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "backup_golden.py": {
       "claims": [
         {
@@ -100690,7 +101649,8 @@
         "process": []
       },
       "knowledge_docs": [
-        "knowledge/session_retros/session_099_retro.md"
+        "knowledge/session_retros/session_099_retro.md",
+        "knowledge/session_retros/session_101_retro_audit.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -102371,6 +103331,13 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe u",
+          "id": 522,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "G_CONFORMANCE",
@@ -102565,6 +103532,31 @@
         "knowledge/gold_table_domain_map.md",
         "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
         "knowledge/pmo_tracker.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "core_principles.json": {
+      "claims": [
+        {
+          "claim": "LINEA BASE del corpus de reglas por principio constitucional, tras asignar las 38 que no lo tenian (2026-08-19): CP-003 (precision y evidencia) 114 · ",
+          "id": 523,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "H_IMPROVE",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "H_IMPROVE"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/session_retros/session_054_retro.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -103506,6 +104498,42 @@
       "knowledge_docs": [
         "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md",
         "knowledge/domains/Payment/vendor_address_routing_by_ktokk.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "feedback_rules.json": {
+      "claims": [
+        {
+          "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe u",
+          "id": 522,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LINEA BASE del corpus de reglas por principio constitucional, tras asignar las 38 que no lo tenian (2026-08-19): CP-003 (precision y evidencia) 114 · ",
+          "id": 523,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Brain_Architecture",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "Brain_Architecture"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "Brain_Architecture/brain_design_specification_v3.md",
+        "Brain_Architecture/brain_v3_rebuild_plan.md",
+        "knowledge/domains/Payment/dme_creation_payment.md",
+        "knowledge/incidents/INC-000005240_xref_office_substitution.md",
+        "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -104785,6 +105813,35 @@
         "knowledge/domains/Treasury/house_bank_configuration.md",
         "knowledge/session_retros/session_043_retro.md",
         "knowledge/session_retros/session_045_retro.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "incidents.json": {
+      "claims": [
+        {
+          "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe u",
+          "id": 522,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Brain_Architecture",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "Brain_Architecture"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+        "knowledge/incidents/INC-000006906_full_history.md",
+        "knowledge/incidents/INC-000006906_maputo_mzn_bank_reconciliation_download.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
+        "knowledge/session_plans/revisa-nuevamente-todo-hay-parsed-scone.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -106640,6 +107697,13 @@
           "tier": "TIER_1",
           "type": "measured_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LINEA BASE del corpus de reglas por principio constitucional, tras asignar las 38 que no lo tenian (2026-08-19): CP-003 (precision y evidencia) 114 · ",
+          "id": 523,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "H_IMPROVE",
@@ -107032,6 +108096,31 @@
         "knowledge/gold_table_domain_map.md",
         "knowledge/h74_syslog_10054_connectivity_analysis.md",
         "knowledge/system_operating_model_rfc.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "store_schema_check.py": {
+      "claims": [
+        {
+          "claim": "domain_axes NO es derivable del campo `domain`: el mismo dominio produce hasta 36 domain_axes distintos (Payment), 17 (Integration), 16 (FI). Existe u",
+          "id": 522,
+          "tier": "TIER_1",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Brain_Architecture",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "Brain_Architecture"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/session_retros/session_101_retro.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -113014,6 +114103,72 @@
       "rule": "Antes de escribir un registro en un store del brain (claims, incidents, rules), LEER como estan escritos los que ya existen y usar SUS claves. No inventar el esquema.",
       "severity": "CRITICAL",
       "why": "2026-08-19: se anadieron 15 claims con claves inventadas — 'statement' en vez de 'claim', 'evidence' en vez de 'evidence_for', 'created' en vez de 'created_session', y confidence='high' donde el store usa TIER_1/2/3. El rebuild se cayo en el paso 2 con KeyError: 'claim', y los 15 claims —incluido el que cierra el rechazo bancario del 21-07— estaban en el fichero pero NO en el estado agregado. Nadie se habria enterado hasta el siguiente rebuild. El error de fondo no es tipografico: es escribir sin leer. Y NO SOLO LAS CLAVES: tambien el FORMATO. Se edito claims.json con indent=1 y verify_claims.py lo devolvio a indent=2 en el siguiente rebuild -> 48.168 lineas de diff con CERO claims cambiados. store_schema_check.py comprueba ahora el indent canonico de cada store ademas del esquema."
+    },
+    {
+      "created_session": 101,
+      "derives_from_core_principle": "CP-003",
+      "domain_axes": {
+        "functional": [
+          "Payment",
+          "Procurement",
+          "Treasury",
+          "FI"
+        ],
+        "module": [
+          "FI"
+        ],
+        "process": [
+          "P2P",
+          "T2R"
+        ]
+      },
+      "how_to_apply": "Al configurar o revisar cualquier tabla que componga texto: (1) leer el campo con RFC_READ_TABLE SIN strip y mostrar los blancos, p.ej. valor.replace(' ','.') mas el conteo de blancos iniciales; (2) comparar contra una fila de un pais/entidad que YA funcione en produccion -- la diferencia salta sola; (3) si hace falta separacion visible, ponerla DELANTE de un literal, nunca detras, y nunca justo antes de un campo dinamico tipo PAY_FIELD, que no admite prefijo: ahi el separador tiene que ser el ultimo caracter no blanco del bloque anterior; (4) antes de dar por buena la config, SIMULAR la cadena montada y compararla con la salida real. Claim 524.",
+      "id": "feedback_a_char_field_cannot_store_a_trailing_blank",
+      "rule": "Un espacio AL FINAL de un campo CHAR no existe: es indistinguible del relleno y no hay forma de almacenarlo. Un espacio AL PRINCIPIO si sobrevive. Y ninguna configuracion basada en texto se da por buena mirando la pantalla: se lee el campo EN CRUDO, sin strip, y se compara con una fila que ya funcione.",
+      "severity": "HIGH",
+      "why": "2026-08-19, configurando Purpose of Payment para Egipto, TRES defectos seguidos vivieron en el mismo sitio: (1) los seis SEPARATOR de YTFI_PPC_STRUC se dejaron VACIOS con el razonamiento 'la estructura es texto simple, no necesita separaciones' -- pero YCL_IDFI_CGI_DMEE_UTIL->BUILD_VALUE es literalmente ev_value_c = |{ iv_value_c }{ iv_value_to_add }|, concatenacion directa SIN separador implicito, asi que el fichero habria salido 'Payment for goods or services receivedINV5105551234', todo pegado; (2) se intento poner el separador como un espacio, y PPC_VALUE es CHAR(60) -- el blanco final se pierde porque ES el relleno; (3) T015L EG4 se grabo como 'OTHR  Others' con DOS espacios, y como el SPLIT AT SPACE parte en el PRIMERO y mete el resto -separadores incluidos- en el ultimo destino, la descripcion salia como ' Others' y el fichero habria llevado '/ Others/INV/...'. LOS TRES ERAN INVISIBLES EN SM30: un separador vacio parece vacio a proposito, y dos espacios seguidos no se distinguen de uno. Los tres los cazo la MISMA herramienta: RFC_READ_TABLE sin .strip(), contando los blancos delante y detras. Yo mismo di primero una explicacion equivocada del blanco final (culpe a la plantilla de string ABAP) antes de mirar el DDIC y ver que el motivo real es el relleno del CHAR: misma accion, explicacion un nivel por debajo de la verdad."
+    },
+    {
+      "created_session": 101,
+      "derives_from_core_principle": "CP-003",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "how_to_apply": "MECANIZADA: python Zagentexecution/quality_checks/config_transport_prerelease_check.py <TRKORR> [--src D01 --dst P01]. Lee E071K para saber que tablas y claves lleva el transporte, diferencia CADA tabla entera entre los dos sistemas y clasifica: (a) dentro del transporte y distinto -> viaja, verificar que es intencionado; (b) FUERA del transporte y distinto -> deriva que no viaja; (c) dentro del transporte e igual -> no-op, candidata a quitar de la lista de objetos. Exit code != 0 si hay claves dentro del transporte que no pertenecen a la entidad que se estaba manteniendo. Correr SIEMPRE antes de liberar. Claim 526.",
+      "id": "feedback_diff_the_whole_table_before_releasing_a_config_transport",
+      "rule": "Antes de liberar un transporte de customizing, diferenciar la TABLA ENTERA entre origen y destino -- no solo las claves que querias tocar -- y listar las claves que el transporte lleva de verdad. Mantener una entidad en SM30 puede capturar la clave de una entidad VECINA.",
+      "severity": "CRITICAL",
+      "why": "2026-08-19: configurando Egipto en YTFI_PPC_STRUC se borro sin querer el separador '/' de la fila ID/USTRD/O/01 -- INDONESIA -- y esa clave, 350ID USTRD O01, quedo DENTRO del transporte de Egipto (D01K9B0FXF, 17 claves: 10 de EG + 1 de ID + 5 T015L + 1 TAG). Liberado en ese estado habria cambiado Indonesia de '/PURP/<cod>/<XBLNR>' a 'PURP/<cod>/<XBLNR>' contra Bank Indonesia, sobre 921 lineas con codigo de proposito. NINGUNA revision centrada en 'esta Egipto bien configurado?' lo habria visto: la config de Egipto era correcta. Lo vio el diff de TODA la tabla D01 vs P01, que devolvio exactamente una deriva no-Egipto. Y hay un segundo motivo para hacer el diff completo: revela tambien la deriva que NO viaja (en el mismo diff aparecio T015L DK1, presente en D01, ausente de P01 y fuera del transporte). MATIZ QUE HAY QUE SABER: un transporte de tabla guarda la CLAVE y exporta el VALOR al LIBERAR, no al capturarlo -- por eso restaurar el valor neutraliza el dano aunque la clave siga dentro, pero deja la entidad vecina ACOPLADA al transporte hasta la liberacion."
+    },
+    {
+      "created_session": 101,
+      "derives_from_core_principle": "CP-003",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "how_to_apply": "Antes de ejecutar el proceso real: (1) leer la configuracion en vivo, sin strip; (2) escribir una funcion corta que replique el algoritmo del codigo extraido -- no el de la especificacion, el del fuente; (3) imprimir la cadena/valor esperado y su longitud, y contrastarla con el limite del contenedor (aqui: el LENGTH del nodo DMEE); (4) ejecutar; (5) comparar exacto. Si no coinciden, NO parchear la salida: averiguar si fallo la config o el modelo. Claim 527.",
+      "id": "feedback_predict_the_output_before_you_generate_it",
+      "rule": "Cuando exista el codigo que construye una salida, SIMULARLO sobre la configuracion real y PUBLICAR la prediccion ANTES de generarla. Comparar despues caracter por caracter. Mirar la salida y decir 'parece correcta' no es verificar.",
+      "severity": "HIGH",
+      "why": "2026-08-19: antes de lanzar el F110 se simulo CM003/CM004 sobre las filas leidas en vivo y se predijo '/Payment for goods or services received/INV/224938'. El fichero pain.001 generado trajo exactamente esa cadena. Eso valida DOS cosas de un golpe y las separa: que la configuracion es correcta, Y que nuestro modelo del codigo es correcto. Si hubieran diferido, la diferencia habria dicho cual de las dos estaba mal -- que es informacion que 'leer el fichero y ver si tiene buena pinta' no da nunca. La misma simulacion, corrida antes, es la que hizo visibles los separadores vacios y el doble espacio: la prediccion es tambien el detector."
+    },
+    {
+      "created_session": 101,
+      "derives_from_core_principle": "CP-003",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "how_to_apply": "Al citar un riesgo que viene de un artefacto propio y no de una medida: (1) marcarlo explicito como NO MEDIDO; (2) medirlo antes de priorizarlo -- casi siempre es una consulta al Gold DB o una lectura RFC; (3) declarar los cortes discriminantes de la tabla antes de contar; (4) si la medida lo rebaja, ACTUALIZAR el artefacto de origen en la misma sesion, con la cifra, para que el siguiente que lo lea no herede el error. Se aplico aqui: el companion y la desviacion 3 del incidente llevan ya la medida y la severidad rebajada.",
+      "id": "feedback_a_warning_in_a_document_is_not_a_measurement",
+      "rule": "Un aviso heredado de un documento propio -- companion, especificacion, retro -- NO es evidencia. Antes de repetirlo como riesgo, y sobre todo antes de marcarlo CRITICO, medirlo. Y si la medida lo contradice, corregir el documento de origen, no solo la conversacion.",
+      "severity": "HIGH",
+      "why": "2026-08-19: el companion decia 'lo unico que no hay que copiar: la R que falta -- Egipto debe definir los tres tipos de pago'. Lo repeti marcandolo en ROJO como 'lo unico que hoy romperia'. Al medirlo: en REGUH completa (3.707.737 lineas, 2016-2026, ejecutadas) el corte por DORIGIN da HR-PY 180.372 y TR-CM-BT 713, y NINGUNA llega a ninguno de los diez paises PPC -- todas con perceptor de direccion FR, y TR-CM-BT sin LIFNR porque es banco a banco. Verificado por los dos cortes, pais del BANCO del proveedor (lo que lee el control) y pais de la DIRECCION. O sea: los seis paises que si tienen filas R no las han disparado nunca, ni esas ni las P. El aviso original nunca se habia medido y yo lo ascendi a critico por herencia. Riesgo real de esto: gastar la credibilidad y el tiempo del usuario en lo que no pasa, mientras lo que si importaba -- avisar a la oficina de El Cairo de que el bloqueo empieza el dia del transporte -- no estaba en ninguna lista."
     }
   ],
   "superseded": [
@@ -114262,7 +115417,13 @@
             499,
             500,
             501,
-            502
+            502,
+            524,
+            525,
+            526,
+            527,
+            528,
+            529
           ],
           "companions": [
             "fi_maintenance.html",
@@ -116249,7 +117410,7 @@
             "asserted_status": "PRODUCTIVE",
             "capability_cells_filled": 10,
             "has_registry_entry": true,
-            "objects_underneath": 107,
+            "objects_underneath": 109,
             "verdict": "OK"
           },
           "QM": {
@@ -116484,7 +117645,7 @@
         "PS": 38,
         "PSM_FM": 188,
         "PY_Finance": 7,
-        "Payment_BCM": 107,
+        "Payment_BCM": 109,
         "Procurement_P2P": 10,
         "RE_FX": 18,
         "SD": 5,
@@ -116502,15 +117663,15 @@
         "by_rung": {
           "1_registry_curated": 131,
           "2_sap_application_component": 442,
-          "3_derived_domain_axis": 593,
-          "8_non_repository_entity": 477,
+          "3_derived_domain_axis": 595,
+          "8_non_repository_entity": 482,
           "9_unresolved": 153
         },
-        "non_repository": 477,
-        "objects_resolved": 1166,
-        "objects_total": 1796,
+        "non_repository": 482,
+        "objects_resolved": 1168,
+        "objects_total": 1803,
         "pct_resolved": 88.4,
-        "resolvable_total": 1319
+        "resolvable_total": 1321
       },
       "tree": {
         "nodes": {
@@ -117052,7 +118213,7 @@
               "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md"
             ],
             "module": "Payment_BCM",
-            "objects_resolved": 107,
+            "objects_resolved": 109,
             "parent": "Treasury_EBS",
             "registry_key": "Payment_BCM",
             "spans_modules": null,

@@ -33,6 +33,54 @@ def _read(p):
     except Exception: return ""
 
 
+def _assets_backed_up():
+    """MEDIDO, no estimado: mira si las copias existen DE VERDAD en el destino.
+
+    Los dos activos que git no protege son el Golden DB y ~/.claude. Hasta s101 este
+    sub-lever era un 0.0 marcado [E] con la nota "UNCONFIRMED" -- y no lo estaba: el
+    script de backup deja el destino en backup_location.json y los ficheros son
+    comprobables. Una capacidad que se puede medir y se reporta como estimacion a
+    ciegas no es prudencia, es un hueco de instrumentacion (CP-003).
+
+    Puntua 0.5 por activo con copia presente, y descuenta si la copia es vieja frente
+    al origen: un backup que existe pero no cubre lo que hay en disco no es un backup.
+    """
+    import glob, time
+    loc = _load(os.path.join(ROOT, "Zagentexecution", "sap_data_extraction",
+                             "backup_location.json"), {}) or {}
+    dest = (loc.get("dest") or "").strip()
+    if not dest or not os.path.isdir(dest):
+        return 0.0, "M", "sin destino de backup accesible (backup_location.json)"
+
+    score, notes = 0.0, []
+
+    golden = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
+                          "p01_gold_master_data.db")
+    copies = sorted(glob.glob(os.path.join(dest, "p01_gold_*.db")))
+    if copies:
+        newest = max(os.path.getmtime(c) for c in copies)
+        if os.path.exists(golden) and os.path.getmtime(golden) > newest + 3600:
+            score += 0.25
+            notes.append("golden: copia MAS VIEJA que el origen")
+        else:
+            score += 0.5
+            notes.append("golden: copia al dia (%s)"
+                         % time.strftime("%Y-%m-%d", time.localtime(newest)))
+    else:
+        notes.append("golden: SIN copia en el destino")
+
+    homes = sorted(glob.glob(os.path.join(dest, "claude_home_*.zip")))
+    if homes:
+        newest = max(os.path.getmtime(h) for h in homes)
+        age_d = (time.time() - newest) / 86400.0
+        score += 0.5 if age_d <= 7 else 0.25
+        notes.append("~/.claude: copia de hace %.1f dia(s)" % age_d)
+    else:
+        notes.append("~/.claude: SIN copia en el destino")
+
+    return round(score, 2), "M", " · ".join(notes)
+
+
 def _model_fidelity():
     """MODEL_FIDELITY (s097) — does the model actually describe the system?
 
@@ -141,7 +189,7 @@ def measure():
         ],
         "DURABILITY": [
             ("tooling_tracked",          0.30 if "accumulate_logs" in gi else 0.7, "M", "accumulators gitignored = NOT versioned (H70)"),
-            ("assets_backed_up",         0.0, "E", "Golden DB + ~/.claude memory offsite backup — UNCONFIRMED"),
+            ("assets_backed_up",) + _assets_backed_up(),
             ("unattended_ready",         0.0, "M", "headless SNC/keytab missing (H66) — no unattended ops"),
         ],
     }

@@ -90,8 +90,8 @@ Not a self-assessment: each dimension is derived from what is on disk.
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
 ## OPEN WORK - incidents awaiting action (10 live, deadline first)
-- `INC-EGYPT-PPC` - SPEC_READY - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
-  - NEXT: Two transports, in this order. T1 (inert, can go now): T015L 10 rows EG0..EG9 + YTFI_PPC_TAG one row EG/USTRD/C. T2 (the live moment, 1-2 days before the deadline): YTFI_PPC_STRUC 11 rows -- this is the SWITCH, it starts the block AND the rendering. Never both
+- `INC-EGYPT-PPC` - TESTED_IN_D01_BOTH_HALVES_PROVEN - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
+  - NEXT: CONTROL PROBADO POR LAS DOS MITADES en D01 el 2026-08-19: bloquea sin codigo (ZFI-036) y renderiza con codigo (fichero pain.001 con <Ustrd>/Payment for goods or services received/INV/224938). Quedan dos, y ninguna es tecnica. (1) PARTIR EL TRANSPORTE EN DOS an
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
 - `INC-PSTLADR-NOV2026` - OPEN - **DUE 2026-11-14** - Direccion estructurada 14-11-2026: el alcance real son los PROVEEDORES (8.149 sin CtrySubDvsn en
   - NEXT: Registro completo en knowledge/domains/Payment/dmee_map/REGISTRO_ERRORES_Y_ACCIONES.md. Por orden: B1 cargar los 399 proveedores US/CA (fichero listo) · F1 meter el validador en el ciclo antes del envio · A3 REACT_LEV nivel 1 · y tres decisiones que necesitan 
@@ -131,7 +131,7 @@ _2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1796 objects · 214 rules · 520 claims · 15 incidents · 9 closed researches)
+## Brain at a glance (1803 objects · 218 rules · 528 claims · 15 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -166,7 +166,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 214 total)
+## Rules to load first (behavioral DNA — 218 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
