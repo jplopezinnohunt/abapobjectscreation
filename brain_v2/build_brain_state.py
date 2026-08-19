@@ -747,9 +747,28 @@ def main():
         "system_profile": system_profile,
         "_coverage": coverage,
         "_trust": _trust,
+        # El pipeline NO termina aqui: rebuild_all.py sigue con el paso 4/7
+        # (add_knowledge_links.py), que anade knowledge_docs a los objetos. Si el
+        # rebuild se interrumpe entre medias, este fichero queda con TODOS los
+        # conteos correctos y sin ese enriquecimiento -- parece completo y no lo
+        # esta. Paso el 2026-08-19: un timeout mato el rebuild justo al empezar el
+        # 4/7 y se perdieron los knowledge_docs de 1.256 objetos sin que cambiara
+        # un solo numero. Esta marca lo hace detectable.
+        "_pipeline": {
+            "_design": "Estado del pipeline que produce este fichero. INCOMPLETE "
+                       "significa que un paso posterior no llego a correr: el "
+                       "contenido es plausible pero le faltan enriquecimientos.",
+            "status": "INCOMPLETE",
+            "built_by": "brain_v2/build_brain_state.py",
+            "pending_steps": ["brain_v2/add_knowledge_links.py (knowledge_docs)"],
+        },
     }
 
-    out = json.dumps(brain_state, indent=2, ensure_ascii=False)
+    # sort_keys: el orden de las claves era NO DETERMINISTA y dos ejecuciones sobre
+    # el mismo contenido producian ~39.600 lineas de diff (19.801+/19.801-) que al
+    # normalizar resultaban identicas. Un diff asi hace INVISIBLE un cambio real --
+    # es como estuvo a punto de pasar desapercibida la perdida de knowledge_docs.
+    out = json.dumps(brain_state, indent=2, ensure_ascii=False, sort_keys=True)
     BRAIN_STATE.write_text(out, encoding="utf-8")
     tokens = len(out) // 4
     print(

@@ -61,6 +61,14 @@ def main():
     print("=" * 76)
 
     fallos = []
+    pipe = b.get("_pipeline") or {}
+    estado = pipe.get("status")
+    print("\n  estado del pipeline: %s" % (estado or "(sin marca -- fichero anterior al arreglo)"))
+    if estado == "INCOMPLETE":
+        print("     !! el rebuild NO llego al final. Faltan: %s"
+              % ", ".join(pipe.get("pending_steps") or ["?"]))
+        fallos.append(("_pipeline.status", 0, 1, "brain_v2/add_knowledge_links.py"))
+
     print("\n  dentro de objects[]:")
     for campo, (quien, minimo) in ENRIQUECIMIENTOS.items():
         n = sum(1 for v in vals if isinstance(v, dict) and v.get(campo))

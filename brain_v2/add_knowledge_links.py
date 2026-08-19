@@ -44,7 +44,21 @@ def main():
             added += len(docs)
             objs_with_docs += 1
 
-    out = json.dumps(brain, indent=2, ensure_ascii=False)
+    # Este es el ULTIMO escritor del pipeline: aqui el fichero ya esta completo.
+    # build_brain_state.py lo deja marcado INCOMPLETE a proposito, para que un
+    # rebuild interrumpido antes de este paso sea detectable en vez de parecer
+    # bueno (paso el 2026-08-19: se perdieron knowledge_docs de 1.256 objetos sin
+    # que cambiara ningun conteo).
+    pipe = brain.setdefault("_pipeline", {})
+    pipe["status"] = "COMPLETE"
+    pipe["completed_by"] = "brain_v2/add_knowledge_links.py"
+    pipe["pending_steps"] = []
+    pipe["objects_with_knowledge_docs"] = objs_with_docs
+
+    # sort_keys por la misma razon que en build_brain_state.py: sin el, el orden
+    # de las claves es no determinista y cada rebuild produce un diff enorme que
+    # esconde los cambios reales.
+    out = json.dumps(brain, indent=2, ensure_ascii=False, sort_keys=True)
     BRAIN_STATE.write_text(out, encoding="utf-8")
     tokens = len(out) // 4
     print(f"Added {added} knowledge doc links to {objs_with_docs} objects")

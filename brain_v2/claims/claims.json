@@ -24003,7 +24003,7 @@
  {
   "id": 519,
   "claim": "DEFECTO DE ORDEN en el pipeline del brain: curate.py reconstruye brain_state.json desde los stores y PIERDE el enriquecimiento que add_knowledge_links.py (paso 4/7 de rebuild_all.py) aplica DESPUES. Medido 2026-08-19: tras un rebuild completo, lanzar curate.py suelto quito knowledge_docs de los 1.256 objetos que lo tenian -- 6.280 lineas menos SIN que cambiara ningun conteo (claims 517, reglas 214, objetos 1.791, cobertura 100%). knowledge_docs es un salto obligatorio del recorrido documentado en CLAUDE.md (objetos[X] -> annotations, claims, knowledge_docs): sin el, una sesion que llega a un objeto ya no encuentra su documentacion. Un check de conteos no lo ve; hay que mirar DENTRO de los objetos.",
-  "claim_type": "structural_defect",
+  "claim_type": "superseded",
   "confidence": "TIER_1",
   "evidence_for": [
    {
@@ -24025,8 +24025,8 @@
   "domain": "Brain_Architecture",
   "created_session": 101,
   "resolved_session": null,
-  "resolution_notes": "Mitigado con Zagentexecution/quality_checks/brain_state_enrichment_check.py, que mira dentro de objects[] y sale 1 si el enriquecimiento desaparecio. Enganchado al hook Stop. La cura de fondo seria que curate.py re-ejecute add_knowledge_links.py al terminar.",
-  "status": "active",
+  "resolution_notes": "SUPERSEDED por el claim 521: la causa que se dio (curate.py pierde el enriquecimiento) es FALSA. curate.py no escribe brain_state.json, lanza rebuild_all.py. La causa real es que el rebuild NO ES ATOMICO.",
+  "status": "superseded",
   "domain_axes": null
  },
  {
@@ -24053,5 +24053,36 @@
   "resolution_notes": "Mitigacion actual: brain_state_enrichment_check.py mira DENTRO en vez de contar o diffear. Cura de fondo: ordenar claves y listas al serializar (json.dump con sort_keys y listas ordenadas), para que el diff vuelva a ser legible y un cambio real se vea.",
   "status": "active",
   "domain_axes": null
+ },
+ {
+  "id": 521,
+  "claim": "CORRIGE al claim 519. El rebuild del brain NO ES ATOMICO: build_brain_state.py escribe brain_state.json en el paso 1 y add_knowledge_links.py lo enriquece en el paso 4/7. Si el pipeline se interrumpe entre medias, el fichero queda con TODOS los conteos correctos —claims, reglas, objetos, cobertura 100%— y sin el enriquecimiento: parece completo y no lo esta. Medido 2026-08-19: un `timeout 500` mato el rebuild lanzado por curate.py exactamente al empezar el paso 4/7 (exit 143 = SIGTERM, log 15:02:05) y desaparecieron los knowledge_docs de 1.256 objetos. curate.py NO poda nada — esa fue una atribucion equivocada.",
+  "claim_type": "structural_defect",
+  "confidence": "TIER_1",
+  "evidence_for": [
+   {
+    "type": "log",
+    "ref": "brain_v2/output/curation.log 2026-08-19T15:02:05 exit=143 en 'START Step 4/7: Link knowledge docs'"
+   },
+   {
+    "type": "code",
+    "ref": "build_brain_state.py:752 escribe; add_knowledge_links.py:43 enriquece despues"
+   }
+  ],
+  "evidence_against": [],
+  "related_objects": [
+   "brain_state.json",
+   "rebuild_all.py",
+   "build_brain_state.py",
+   "add_knowledge_links.py",
+   "curate.py"
+  ],
+  "domain": "Brain_Architecture",
+  "created_session": 101,
+  "resolved_session": 101,
+  "resolution_notes": "ARREGLADO: build_brain_state.py marca _pipeline.status=INCOMPLETE al escribir y add_knowledge_links.py —ultimo escritor— lo pasa a COMPLETE. Un rebuild interrumpido deja la marca en INCOMPLETE y brain_state_enrichment_check.py sale 1.",
+  "status": "active",
+  "domain_axes": null,
+  "supersedes": 519
  }
 ]
