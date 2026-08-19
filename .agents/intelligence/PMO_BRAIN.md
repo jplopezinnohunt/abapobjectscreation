@@ -303,11 +303,11 @@ Hasta ahora nadie las veía; ahora salen en cada cierre.
 **No se arreglaron a propósito.** Rellenar `created_session` en 13 claims donde el dato no existe
 sería inventarlo, y es exactamente lo que la regla `feedback_label_inferred_vs_measured` prohíbe.
 
-#### claims.json — 104 de 520, por combinación de lo que falta
+#### claims.json — ~~104~~ **76** de 520, por combinación de lo que falta
 
 | # | Cuántos | Falta | Tratamiento |
 |---|---:|---|---|
-| S1 | 28 | `domain_axes` | **Derivable**: se calcula del `domain` contra la ontología. Automatizable |
+| ~~S1~~ | ~~28~~ 0 | ~~`domain_axes`~~ | **HECHO 2026-08-19.** Y NO era derivable del `domain` como escribí: el mismo dominio produce hasta 36 `domain_axes` distintos. Lo resolvió el generador que ya existía, `brain_v2/scripts/backfill_domain_axes.py`, que infiere por palabra clave sobre el texto del claim. 44 claims + 49 reglas + 1 incidente al 100% |
 | S2 | 23 | `resolution_notes` + `resolved_session` | **Normalización segura**: son claims sin resolver, `None` es el valor correcto |
 | S3 | 11 | `resolved_session` + `status` | `status` → `active` es defendible (448 de 520 lo son). Decidir si se asume |
 | S4 | 9 | `resolution_notes` | Normalización segura → `None` |
@@ -316,15 +316,21 @@ sería inventarlo, y es exactamente lo que la regla `feedback_label_inferred_vs_
 
 #### claims.json — inconsistencia de TIPO, además de ausencia
 
-`created_session` convive en cuatro formatos: `int` (379) · `'s-2026-06-29'` (115) · ausente (13) ·
-`'#51'` (11). **Normalizar `'#51'` → `51` es seguro** (misma información, tipo canónico); convertir
-`'s-2026-06-29'` a un número no lo es, porque es una fecha y no una sesión.
+~~`created_session` convive en cuatro formatos~~ — **HECHO 2026-08-19**: normalizados **91**
+referencias de sesión a entero (`'#51'`, `'#051'`, `'s079'`, `'S-098'` → `51`, `79`, `98`) en los tres
+stores. `int` pasa de 379 a 421 en claims.
+
+**Lo que queda sin tocar y no debe tocarse**: 115 valores tipo `'s-2026-06-29'`. Son **fechas**, no
+números de sesión, y convertirlas inventaría el dato. Y 13 ausentes, que tampoco se pueden deducir.
 
 `status` tiene 7 valores para 520 claims: `active` (448) · `superseded` (37) · ausente (21) ·
 `VERIFIED` (11) · y tres con un solo uso. **`VERIFIED` parece un `claim_type` colado en `status`** —
 verificar antes de tocar.
 
 #### feedback_rules.json — 42 de 214
+
+> Ganaron `domain_axes` (49) en la misma pasada, pero sus desviaciones son de OTROS campos: `derives_from_core_principle` y `created_session`. Siguen en 42.
+
 
 | Falta | Cuántos | Tratamiento |
 |---|---:|---|
@@ -335,7 +341,7 @@ verificar antes de tocar.
 #### Por dónde empezar
 
 1. ~~Las 2 reglas sin `rule`~~ — **hecho**. No estaban vacías, el texto estaba bajo otra clave.
-2. **S1 (28) y la normalización `'#51'` → `51`** — automatizables sin inventar nada.
+2. ~~S1 (28) y la normalización `'#51'` → `51`~~ — **hechas**.
 3. **S2 + S4 (32)** — rellenar `None` donde el campo simplemente no aplica.
 4. **Decidir S3**: si un claim sin `status` se asume `active`. Es una convención, no un dato.
 5. **S5 y `created_session`**: dejar como están. Inventar la procedencia es peor que no tenerla.

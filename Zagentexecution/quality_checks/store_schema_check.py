@@ -62,6 +62,8 @@ UMBRAL = 0.80          # una clave es obligatoria si la tiene el 80%+ de los reg
 # 48.168 lineas de diff con CERO claims cambiados.
 INDENT_CANONICO = {
     "claims": (2, "brain_v2/verify_claims.py"),
+    "rules": (2, "brain_v2/scripts/backfill_domain_axes.py"),
+    "incidents": (2, "brain_v2/scripts/backfill_domain_axes.py"),
 }
 
 # Implementa feedback_read_the_store_before_writing_to_it.
