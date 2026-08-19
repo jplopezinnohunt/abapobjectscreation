@@ -82,8 +82,16 @@ oficinas de terreno (CM, BR, SN, IN, AF, ZW, TH, KE, ML, IQ).
 Se nos escapaba porque en REGUH el receptor de nomina es un **PERNR que no existe en LFA1**: la
 direccion viene del infotipo HR y viaja en el propio REGUH (`ZSTRA/ZORT1/ZPSTL/ZLAND`).
 
-**Siguiente accion:** sacar la lista nominal de los 804 por oficina y devolverla a RR.HH. de terreno.
-Es dato de personal — no se parchea en DMEE.
+**Registro completo de errores y acciones:** `knowledge/domains/Payment/dmee_map/REGISTRO_ERRORES_Y_ACCIONES.md` — 17 riesgos medidos, con los
+descartados y la medida que los descarto, para que no se reabran.
+
+**Por orden:** B1 cargar los 399 proveedores US/CA (fichero listo, `FIXB_1_CARGAR_region.csv`) ·
+F1 meter `pain001_address_validator.py` en el ciclo ANTES del envio · A3 encender `REACT_LEV`
+nivel 1. Y tres decisiones que necesitan respuesta, no codigo: los 68 proveedores con codigo
+postal comodin, el codigo postal de 1.127 empleados, y los 898 pagos de CITI sin BIC.
+
+**Corregido 2026-08-19:** la nomina NO esta en alcance — los 818 sin ciudad cobran por cheque.
+El alcance real son los proveedores: 8.149 sin `CtrySubDvsn` en TODOS los rails.
 
 Doc: `knowledge/incidents/INC-PSTLADR-NOV2026_direccion_estructurada_nomina.md` · claims 504-509
 Drill: `python brain_v2/load_domain.py dmee`
