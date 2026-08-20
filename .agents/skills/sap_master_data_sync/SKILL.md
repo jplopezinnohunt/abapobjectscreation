@@ -60,6 +60,41 @@ Antes de sincronizarlos hay que resolver el canal — no asumir que hay uno.
 Las dos direcciones muerden. **Pasa el flag SIEMPRE de forma explícita**, en los dos sentidos, y
 verifica releyendo — nunca por código de retorno.
 
+### 🪜 LA ESCALERA DE CANALES — qué usar cuando no hay API (s102)
+
+No es binario "API o INSERT". Hay **tres peldaños**, y se baja solo cuando el de arriba no existe:
+
+| # | Canal | Cuándo | Respeta el framework | Graba en orden |
+|---|---|---|---|---|
+| **1** | **API estándar** (BAPI / FM RFC del objeto) | existe un FM en `TFDIR FMODE='R'` | ✅ | según el objeto |
+| **2** | **BC-Set** (`SCPRMP_UPDATE_BCSET_REMOTE` → `SCPR_ACTIV_MN_REMOTE_SUB`) | **customizing sin API** | ✅ escribe por el framework | ✅ `TASK_CUST_EXP` |
+| **3** | `RFC_ABAP_INSTALL_AND_RUN` INSERT | **solo tablas propias `Y*`/`Z*`** | ❌ | ❌ |
+
+**El peldaño 2 es el que faltaba en este proyecto** y es el mecanismo genérico para actualizar
+tablas cuando no hay RFC ni BAPI: en vez de escribir la tabla por debajo, se le entregan los
+valores al framework de customizing, que los aplica con sus checks y los graba en una orden.
+
+#### Estado del peldaño 2 — medido s102, y tiene UN hueco
+
+| Paso | FM | RFC | Estado |
+|---|---|---|---|
+| Leer origen | `RFC_READ_TABLE` | ✅ | funciona, **no** afectado por `T000.CCCOPYLOCK` |
+| **Crear** el BC-Set | `SCPR_CTC_DB_SAVE_BCSET` · `SCPR_PRSET_MN_BCSET_SAVE` · `SCPR_EXT_BCSET_WRITE` · `SCPR_TEMPL_MN_CREATE_WITH_*` | ❌ **ninguno remote-enabled** (`FMODE` en blanco) | 🔴 **paso manual, una vez por sistema**: `SCPR20`/`SCPR3` |
+| Poblarlo | `SCPRMP_UPDATE_BCSET_REMOTE` | ✅ | actualiza uno **existente**; con id inexistente es **no-op silencioso** (devuelve tablas vacías, sin excepción) |
+| Simular | `SCPR_ACTIV_MN_REMOTE_SUB` con `SIMULATION_ON='X'` | ✅ | |
+| Activar | mismo FM sin simulación | ✅ | devuelve la orden en `TASK_CUST_EXP` |
+
+**Gotcha que cuesta una hora:** `PROTO_HANDLE` **no puede ir vacío** — es un GUID de 32 caracteres
+(`SCPR_HANDL` / dominio `SCPR_GUID`). Con vacío devuelve el genérico
+`WRONG_PARAMETERS / SCPR 273 "Function module call error"` con **cualquier** `ACTIVATION_TYPE`, lo
+que parece un problema de tipo de activación y no lo es. Con un GUID válido el error pasa a
+`NO_BCSET / SCPR 223`, que ya es información.
+
+**Conclusión operativa:** el mecanismo es genérico y reutilizable para **cualquier** tabla de
+customizing, pero exige **un bootstrap manual**: crear una vez a mano un BC-Set `Z` vacío en cada
+destino. A partir de ahí, todo el bucle es RFC y repetible. SAP no expone la creación por RFC a
+propósito: crear un BC-Set es una actividad de desarrollo, no de ejecución.
+
 ### Reglas transversales de todos los canales
 1. **Verifica releyendo, no por `RETURN`.** Un `BAPIRET2` sin errores no prueba que se escribió.
 2. **`BAPI_*` necesita `BAPI_TRANSACTION_COMMIT`** explícito (`WAIT='X'`); en error, `ROLLBACK`.

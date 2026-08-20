@@ -26205,7 +26205,7 @@
   },
   {
     "id": 548,
-    "claim": "SPIKE (parcial, en simulacion): alinear CUSTOMIZING P01->D01/V01 por RFC y por el FRAMEWORK es viable, y el cuello de botella esta identificado. SCPR_ACTIV_MN_REMOTE_SUB (BC-Sets) esta remote-enabled, acepta RECATTR+VALUES en linea, tiene SIMULATION_ON y devuelve la orden de customizing en TASK_CUST_EXP. Dos hallazgos del spike del 2026-08-20 contra D01: (1) PROTO_HANDLE NO puede ir vacio -- es un GUID de 32 caracteres (data element SCPR_HANDL, dominio SCPR_GUID); con el vacio devuelve el generico WRONG_PARAMETERS / SCPR 273 'Function module call error', y con un GUID valido el error cambia a NO_BCSET / SCPR 223, que ya es informacion. (2) El FM EXIGE que el BC-Set EXISTA en el destino: pasar los VALUES en linea con un ID inventado no basta. Candidato para cargarlo: SCPRMP_UPDATE_BCSET_REMOTE (P_BCSET + LT_VALS_NEW + LT_RECA_NEW + P_AUTOMATICMODE), tambien remote-enabled. La simulacion no escribio nada: la fila de prueba sigue ausente en D01.",
+    "claim": "LA ESCALERA DE CANALES DE ESCRITURA TIENE TRES PELDANOS, NO DOS, y el de en medio es el mecanismo generico para actualizar tablas cuando no hay RFC ni BAPI: (1) API estandar del objeto; (2) BC-Set -- SCPRMP_UPDATE_BCSET_REMOTE para poblar y SCPR_ACTIV_MN_REMOTE_SUB para activar, ambos remote-enabled, que escriben POR EL FRAMEWORK de customizing y devuelven la orden en TASK_CUST_EXP; (3) INSERT plano, solo para tablas propias Y*/Z*. Probado contra D01 el 2026-08-20. DOS hallazgos duros. (a) PROTO_HANDLE no puede ir vacio: es un GUID de 32 caracteres (SCPR_HANDL / dominio SCPR_GUID); con vacio devuelve el generico WRONG_PARAMETERS / SCPR 273 'Function module call error' con CUALQUIER ACTIVATION_TYPE, y con GUID valido pasa a NO_BCSET / SCPR 223. (b) EL PELDANO 2 TIENE UN HUECO QUE NO SE PUEDE CERRAR POR RFC: el BC-Set debe EXISTIR antes. SCPRMP_UPDATE_BCSET_REMOTE solo ACTUALIZA -- con un id inexistente es un NO-OP SILENCIOSO: devuelve todas las tablas vacias, sin excepcion, y no crea nada. SCPR_MODIFY responde PROFILE_DONT_EXIST. Y TODOS los FM de creacion (SCPR_CTC_DB_SAVE_BCSET, SCPR_PRSET_MN_BCSET_SAVE, SCPR_EXT_BCSET_WRITE, SCPR_TEMPL_MN_CREATE_WITH_IMG y _WITH_TRAN) tienen FMODE en blanco: ninguno es remote-enabled. => bootstrap MANUAL de un BC-Set Z vacio por SCPR20/SCPR3, una vez por sistema; a partir de ahi todo el bucle es RFC.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
@@ -26226,6 +26226,12 @@
         "ref": "T100 SCPR",
         "cite": "223 = NO_BCSET · 273 = 'Function module call error' · 274 = 'Data record &1: Database write error'",
         "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "TFDIR WHERE FUNCNAME LIKE 'SCPR%' filtrado por CREATE/SAVE/WRITE/NEW/GENERATE (D01, 2026-08-20)",
+        "cite": "45 FM de creacion/grabacion de BC-Sets, TODOS con FMODE en blanco. SCPR_MODIFY con PROFID='ZFSV_SPIKE_S102' -> PROFILE_DONT_EXIST (SCPR 012). SCPRMP_UPDATE_BCSET_REMOTE con ese mismo id: sin excepcion, LT_RECA/LT_VALS/LT_TABLEDESCR vacias, SCPRATTR sin ningun BC-Set Z antes ni despues.",
+        "added_session": 102
       }
     ],
     "evidence_against": null,
@@ -26244,7 +26250,7 @@
     "domain": "BASIS",
     "created_session": 102,
     "resolved_session": null,
-    "resolution_notes": "CORRIGE una afirmacion mia del mismo dia: dije 'cero BC-Sets en D01 y V01, nunca se ha usado esta via'. Falso. Lo consulte con el campo SCPRSGUID, que no existe en SCPRATTR, y lei el TABLE_WITHOUT_DATA resultante como 'no hay datos'. Con el campo correcto (ID) hay 2.181 BC-Sets en D01. Es el mismo modo de fallo que el claim 496: leer la ausencia de una lectura mal hecha como ausencia en el sistema. PENDIENTE del spike: si SCPRMP_UPDATE_BCSET_REMOTE puede crear/poblar un BC-Set Z desde cero por RFC, o si hace falta crearlo una vez por SCPR20. Si se cierra, el mecanismo sirve para TODO el customizing, no solo la FSV.",
+    "resolution_notes": "CORRIGE una afirmacion mia del mismo dia: dije 'cero BC-Sets en D01 y V01, nunca se ha usado esta via'. Falso. Lo consulte con el campo SCPRSGUID, que no existe en SCPRATTR, y lei el TABLE_WITHOUT_DATA resultante como 'no hay datos'. Con el campo correcto (ID) hay 2.181 BC-Sets en D01. Es el mismo modo de fallo que el claim 496: leer la ausencia de una lectura mal hecha como ausencia en el sistema. CERRADO: NO se puede crear el BC-Set por RFC, y no es un descuido de SAP -- crear un BC-Set es actividad de desarrollo, no de ejecucion. El mecanismo sigue siendo generico y reutilizable para cualquier tabla de customizing, con un bootstrap manual de un BC-Set Z vacio por sistema. Encaja como PELDANO 2 de la escalera de canales en el skill sap_master_data_sync. Nada se escribio en D01 durante el spike: verificado releyendo FAGL_011ZC y SCPRATTR.",
     "status": "active",
     "domain_axes": {
       "functional": [
