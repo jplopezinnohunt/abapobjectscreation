@@ -171,7 +171,13 @@ def main():
         for f in new:
             base = os.path.basename(f)
             who = [k for k, t in txt.items() if k != f and (base in t or f in t)]
-            if not who:
+            # Un quality check con declaracion QUALITY_CHECK SI esta conectado: run_all.py
+            # lo descubre por glob, no por referencia. Exigirle ademas que alguien lo nombre
+            # seria marcar como suelto algo que corre en cada rebuild -- un falso positivo,
+            # y un check que da falsos positivos deja de leerse.
+            declared = (f.startswith("Zagentexecution/quality_checks/")
+                        and "QUALITY_CHECK" in txt.get(f, ""))
+            if not who and not declared:
                 loose.append(f)
         print("     creados: %d   conectados: %d   SUELTOS: %d"
               % (len(new), len(new) - len(loose), len(loose)))

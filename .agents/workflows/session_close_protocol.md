@@ -1,5 +1,14 @@
 # Session Close Protocol — AGI-Discipline Edition
 
+> **Gate mecanico de cierre — disciplina de produccion.** Antes del commit final:
+> `python Zagentexecution/quality_checks/production_discipline_check.py`
+> Mide sobre git las dos caras del sesgo a producir: (1) **retiradas sin evidencia** en
+> claims/rules/incidents/algorithms — mecaniza `feedback_never_retire_anything_without_evidence`,
+> la disciplina es SUPERSEDE no borrar (CP-002); y (2) **producido frente a conectado** — ficheros
+> creados en la ventana que nadie referencia. Un artefacto nace desconectado y se conecta despues,
+> o no se conecta nunca: el momento barato es el cierre, no dentro de un mes.
+
+
 > **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
 > - `feedback_commit_and_push_at_close` — el momento es el cierre de sesion: este es el protocolo
 
