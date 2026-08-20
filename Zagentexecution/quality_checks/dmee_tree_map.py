@@ -53,6 +53,12 @@ USAGE
 Read-only. Two RFC_READ_TABLE reads per system, no ROWSKIPS (P01 rejects it).
 """
 
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_check_sap_format_lifecycle_before_extending_dmee
+#     -> el momento es tocar un arbol DMEE: este mapa es la primera parada
+#   feedback_validate_against_extracted_rfc_not_matrix
+#     -> mismo momento: dictar valores DMEE sin validarlos contra lo extraido
+
 from __future__ import annotations
 
 import argparse

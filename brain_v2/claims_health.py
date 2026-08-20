@@ -10,6 +10,10 @@ type is corroboration, not independence.
 
 Run:  python brain_v2/claims_health.py
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_claims_health_gate_at_close
+#     -> el momento es medir la salud de los claims: este script ES esa medida
 import io, json, os
 
 CLAIMS = os.path.join(os.path.dirname(__file__), "claims", "claims.json")

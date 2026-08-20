@@ -1,5 +1,9 @@
 # Purpose of Payment — the P2P end-to-end
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_reuse_ppc_util_framework_before_writing_badi_when_clauses` — el momento es antes de escribir un WHEN en el BAdI: este doc describe el framework a reusar
+
+
 > 🛑 **Egipto se cerró como NO NECESARIO el 2026-08-20** (claim 530): SG confirmó que no hay código para Egipto y que el canal de Citi no lleva ese flujo — SocGen 93,1% del corredor frente a Citi Egipto 0,9%, y en cheque. El mecanismo de abajo sigue siendo correcto y quedó **probado extremo a extremo** (claim 527). Lo que faltaba era el eje **doméstico vs internacional**: el purpose code es un requisito cross-border, y eso ahora vive en [`../Treasury/house_bank_operating_roles.md`](../Treasury/house_bank_operating_roles.md), que además mide que **sólo el 80% de lo capturado renderiza**.
 
 **Domain**: Procurement_P2P (spine) · FI · Payment_BCM · Treasury

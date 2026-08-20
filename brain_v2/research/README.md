@@ -29,3 +29,6 @@ already analyzed; enrich incrementally instead.** (CP-002 preserve.)
 ## Lesson encoded
 Run deep-researches **SERIALLY** (one at a time). Concurrent heavy runs degrade the Verify stage
 (StructuredOutput failures → 0-0 votes → false "all refuted"). See `_run_log.json`.
+
+> **Reglas que aplican en este punto** — citadas aquí para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_research_quality_gate_before_conclusions` — el momento es ir a USAR el resultado de una investigación: ninguna produce conclusiones hasta estar CLOSED con sus 8 garantías.

@@ -24,6 +24,10 @@ sola cuando el corpus CRECE. Para aceptar una bajada hay que sellarla a mano con
 --sellar, que es justo la friccion que se quiere.
 """
 
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_extracted_code_is_brain_data
+#     -> el momento es cuando se toca el corpus extraido: este check lo vigila
+
 from __future__ import annotations
 
 import argparse

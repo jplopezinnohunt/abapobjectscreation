@@ -24,6 +24,10 @@ going red forever.
 Deliberately NOT measured: whether the claims are good. Only whether the path from finding to
 store was ever walked.
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_escalate_findings_as_tasks
+#     -> el momento es cuando un hallazgo no llego al PMO: este check lo detecta
 from __future__ import annotations
 
 import io

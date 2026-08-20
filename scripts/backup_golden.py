@@ -57,6 +57,10 @@ DOS COPIAS, Y CUAL ES CUAL
     al dia y que no. Un directorio de ficheros con fecha no puede decir si el mas
     nuevo sigue vigente.
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_a_backup_is_a_hypothesis_until_restored
+#     -> el momento es cuando se escribe una copia: aqui
 import fnmatch
 import hashlib
 import io

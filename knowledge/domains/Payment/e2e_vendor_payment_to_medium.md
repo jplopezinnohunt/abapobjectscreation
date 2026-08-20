@@ -1,5 +1,10 @@
 # UNESCO E2E Vendor Payment → Medium Selection — 100% Detail Map
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_bseg_celonis_pattern` — el momento es querer leer BSEG: este doc recorre el camino del pago
+> - `feedback_text_parsing_not_acceptable` — mismo momento: sacar un campo estructurado del texto en vez de por JOIN
+
+
 **Created**: Session #074 (2026-05-10) — answers the question:
 **"How is a vendor paid, and how is the payment medium selected, end to end?"**
 

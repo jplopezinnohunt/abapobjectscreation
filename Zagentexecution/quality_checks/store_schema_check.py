@@ -33,6 +33,10 @@ eso es correcto: obliga a migrar, no a divergir.
 Sale 1 si hay registros que romperian el rebuild (les falta una clave obligatoria).
 """
 
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_always_utf8_encoding
+#     -> el momento es escribir un fichero de store: este check ya gatea esa escritura
+
 from __future__ import annotations
 
 import argparse

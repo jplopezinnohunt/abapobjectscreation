@@ -59,6 +59,10 @@ USO
 
 Emite brain_v2/house_bank_roles.json. Claim 530.
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_p01_canonical_for_active_classification
+#     -> el momento es clasificar algo como vivo o muerto: aqui se marcan cuentas sin actividad
 import collections
 import io
 import json

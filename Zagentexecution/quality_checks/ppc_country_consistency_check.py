@@ -60,6 +60,10 @@ REGUP is absent from the Gold DB) could not run at all -- report SKIPPED, never 
 skipped check into PASS (rule feedback_a_skipped_check_must_never_report_pass, session #099).
 """
 
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_a_gate_that_can_go_silent_is_worse_than_none
+#     -> segundo punto de uso: este check ya distingue SKIPPED de PASS por esta razon
+
 # --- self-declaration, read by quality_checks/run_all.py -------------------
 # An undeclared script is reported as UNCLASSIFIED and fails the runner loudly:
 # a central registry is a list someone forgets to update.

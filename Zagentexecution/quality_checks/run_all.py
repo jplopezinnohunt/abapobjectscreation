@@ -35,6 +35,10 @@ UNGATED
   reported as UNGATED and their output is kept. Fixing them one by one is real work; hiding
   the problem behind a green tick is not.
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_a_gate_that_can_go_silent_is_worse_than_none
+#     -> el momento es cuando un check se salta: el runner es quien lo ve
 import argparse
 import ast
 import io

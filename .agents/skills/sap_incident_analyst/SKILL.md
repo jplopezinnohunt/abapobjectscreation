@@ -28,6 +28,10 @@ domains:
 
 # SAP Incident Analyst — Skill Reference
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_authority_of_record_not_the_requester_note` — el momento es el paso B1 de Track B, que esta en este skill
+
+
 ## Why This Skill Exists
 
 UNESCO's support team forwards incidents as emails. Each one needs root cause

@@ -1,5 +1,9 @@
 # Session Close Protocol — AGI-Discipline Edition
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_commit_and_push_at_close` — el momento es el cierre de sesion: este es el protocolo
+
+
 **Supersedes:** `session_retro.md` checklist (kept as Phase 1-7 reference)
 **Author:** Session #036 (2026-04-05)
 **Enforcement:** Mandatory. Main agent cannot commit without Phase 0 PASS.

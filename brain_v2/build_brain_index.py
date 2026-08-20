@@ -9,6 +9,10 @@ via graph_queries.py only what it needs.
 
 Emits brain_v2/BRAIN_INDEX.md. Run after rebuild_all.py.
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_register_on_create_not_at_close
+#     -> el momento es cuando nace un modelo y hay que anunciarlo: este genera el anuncio
 import json
 from pathlib import Path
 

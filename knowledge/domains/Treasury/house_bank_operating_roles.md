@@ -1,5 +1,9 @@
 # El rol operativo de los bancos casa — quién es doméstico, quién cruza, quién no emite fichero
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_the_as_run_is_the_yardstick_not_the_blueprint` — este doc ES un AS-RUN frente a un AS-DESIGNED: el ejemplo vivo de la regla
+
+
 **Dominio**: Treasury · Payment_BCM · Procurement_P2P · FI
 **Estado**: VERIFICADO, medido sobre REGUH + LFBK + T042Z + T001 — Sesión #102 (2026-08-20)
 **Herramienta**: `python brain_v2/house_bank_roles.py` → `brain_v2/house_bank_roles.json` (paso 2g de `rebuild_all.py`)

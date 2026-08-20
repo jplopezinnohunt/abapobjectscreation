@@ -10,6 +10,10 @@ Each owns its system's data; the others consume it **read-only** (rule **ADR-007
 My cross-project edges: `ecosystem_link.md` + `refs_external.json`. Directory: `ecosystem-coordinator/ecosystem/data-capability-registry.md`. Rule: ADR-007 / BROADCAST-005.
 
 ## ⛔ ABAP CHANGE DISCIPLINE — mandatory before ANY ABAP write/deploy (BROADCAST-007)
+> **Reglas que aplican en este punto** — citadas aquí para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_never_run_an_ungated_sap_writer` — el momento es ir a ejecutar un script cuyo nombre lleva deploy/write/insert: esta es la disciplina que lo prohíbe
+
+
 
 Born from **INC-CLASS-LOSS (2026-06-12)** — a session corrupted real `N_MENARD` classes on D01 by writing
 in-place via direct ADT with **no transport, no review, on objects we don't own**. The universal rule now lives
@@ -31,6 +35,11 @@ the legacy ad-hoc `deploy_*`/`reconstruct_*`/`force_*`/`direct_insert_*` scripts
 [[feedback_abapgit_is_the_standard_when_installed]].
 
 ## ⛔ STOP — THE OPERATING MODEL ALREADY EXISTS (read before proposing anything)
+> **Reglas que aplican en este punto** — citadas aquí para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_model_exists_do_not_reinvent` — el momento es proponer un modelo o framework: este bloque STOP es lo primero que se lee
+> - `feedback_agent_not_human_thinking` — mismo momento: diseñar una estructura de conocimiento con patrones humanos en vez de de LLM
+
+
 
 This project HAS a built, persisted **Capability Model** (Session #079). **DO NOT re-invent it, do not
 propose a "new framework", do not redesign `brain_state.json`'s schema.** It is already there:

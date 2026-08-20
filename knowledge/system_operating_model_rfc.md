@@ -6,6 +6,10 @@ type: project
 
 # UNESCO SAP — Real Operating Model (from the logs)
 
+> **Reglas que aplican en este punto** — citadas aqui para que existan donde se usan, no sólo en `feedback_rules.json`:
+> - `feedback_exclude_jp_lopez_before_reporting_rfc` — el momento es reportar volumen RFC: este doc ES ese reporte
+
+
 **Headline:** UNESCO does not "use" SAP via dialog — it **orchestrates SAP from satellite applications**.
 Measured from the RSAU audit log (15.6M rows, 4 months Feb–Jun 2026, RFC Function Call stream with
 host/dest/user): **80.6% of business RFC traffic is driven by EXTERNAL satellites**, and the 2-axis

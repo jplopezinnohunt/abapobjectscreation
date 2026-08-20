@@ -21,6 +21,10 @@ Usage:
     python scripts/extraction/gold_refresh.py PSM_FM             # all types
     python scripts/extraction/gold_refresh.py --list             # show domains/types
 """
+
+# REGLAS QUE APLICAN AQUI (citadas para que existan en su punto de uso, no solo en el JSON):
+#   feedback_period_by_period_extraction
+#     -> el momento es lanzar una extraccion grande: este es el refresher
 import sys
 import json
 import sqlite3
