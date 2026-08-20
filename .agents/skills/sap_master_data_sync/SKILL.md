@@ -21,6 +21,52 @@ Keep D01 (development) master data aligned with P01 (production). Production acc
 GL accounts, cost elements, and other config that never gets transported back to dev.
 This skill extracts, compares, and copies the delta programmatically.
 
+## ⛔ EL CANAL DE ESCRITURA — API ESTÁNDAR, NUNCA INSERT PLANO (corregido s102, 2026-08-20)
+
+**`RFC_ABAP_INSTALL_AND_RUN` con `INSERT` directo está PROHIBIDO para master data ESTÁNDAR.**
+Solo es legítimo para **tablas propias `Y*`/`Z*`**. Las secciones "4-Step Method" y "Script Location"
+de más abajo prescribían INSERT plano sobre SKA1/SKAT/SKB1: **eso es incorrecto y no se usa.**
+`METHOD.md` del sync FM ya lo decía en junio ("Verified write channels — NOT flat INSERT for
+standard master"); este skill nunca se alineó.
+
+Por qué importa, más allá de la regla: la API estándar rellena **derivación, rangos de numeración,
+validez, jerarquía y checks de consistencia**. Un `INSERT` los salta todos y deja un registro que
+parece correcto en la tabla y está roto para el proceso.
+
+### Matriz de canales — MEDIDA en P01 (`TFDIR WHERE FMODE='R'`), no recordada
+
+| Objeto | Lectura (P01, read-only) | Escritura (D01 / V01) |
+|---|---|---|
+| **Cuentas GL** (SKA1/SKAT/SKB1) | `GL_ACCT_MASTER_GET_COA_RFC` (plan + textos) · `GL_ACCT_MASTER_GET_CCODE_RFC` (sociedad) | **`GL_ACCT_MASTER_SAVE_RFC`** |
+| **Centros de coste** | `BAPI_COSTCENTER_GETDETAIL1` | `BAPI_COSTCENTER_CREATEMULTIPLE` · `_CHANGEMULTIPLE` |
+| **Fondos** (FMFINCODE/FMFINT) | `FM_FUND_GET_DETAIL_RFC` | `FM_FUND_CREATE_RFC` · `FM_FUND_CHANGE_RFC` |
+| **Centros gestores** (FMFCTR) | `FM_FUNDS_CTR_GET_DETAILS_RFC` | `FM_FUNDS_CTR_CREATE_RFC` |
+| **Proyectos / WBS** (PROJ/PRPS) | `BAPI_PROJECTDEF_GETDETAIL` + `PRPS` | `BAPI_PROJECT_MAINTAIN` + `BAPI_TRANSACTION_COMMIT` |
+| **Tablas propias `YTFM_*`, `YTFI_*`** | `RFC_READ_TABLE` | `RFC_ABAP_INSTALL_AND_RUN` INSERT — **único uso legítimo** |
+
+**Centros de beneficio: NO se usan en UNESCO** (dirección de JP, s102). `BAPI_PROFITCENTER_CREATE`
+existe y está remote-enabled, pero está fuera de alcance. No sincronizar.
+
+**Elementos de coste:** `BAPI_COSTELEMENT_CREATEMULTIPLE` **no** está remote-enabled en P01. Medido.
+Antes de sincronizarlos hay que resolver el canal — no asumir que hay uno.
+
+### ☠️ LA TRAMPA DEL FLAG DE SIMULACIÓN — es INVERSA entre APIs
+
+| FM | Flag | Si lo OMITES |
+|---|---|---|
+| `FM_FUND_CREATE_RFC` / `FM_FUND_CHANGE_RFC` | `I_FLG_TESTRUN` (**default `'X'`**) | **simulación silenciosa**: 0 filas, `ET_MESSAGES` vacío, parece éxito |
+| `GL_ACCT_MASTER_SAVE_RFC` | `TESTMODE` (**default vacío**) | **ESCRITURA REAL** |
+
+Las dos direcciones muerden. **Pasa el flag SIEMPRE de forma explícita**, en los dos sentidos, y
+verifica releyendo — nunca por código de retorno.
+
+### Reglas transversales de todos los canales
+1. **Verifica releyendo, no por `RETURN`.** Un `BAPIRET2` sin errores no prueba que se escribió.
+2. **`BAPI_*` necesita `BAPI_TRANSACTION_COMMIT`** explícito (`WAIT='X'`); en error, `ROLLBACK`.
+3. **Primero 1 registro**, comparación campo a campo contra P01, y solo después el lote.
+4. **`pyrfc` rechaza `'00000000'` en campos DATS** — convertir a `''` antes de la llamada.
+5. **Dependencias primero**: centros gestores antes que fondos; plan de cuentas antes que sociedad.
+
 ## Direction
 
 **Always P01 → non-prod target.** Source = P01 (production, read-only). Target = **D01 (dev) or V01
@@ -100,7 +146,30 @@ WHERE NOT EXISTS (
 - Also check reverse (D01-only) — these are typically test entries
 - Present comparison to user for confirmation before any writes
 
-### Step 3: Copy via RFC_ABAP_INSTALL_AND_RUN
+### Step 3: Copy via la API ESTÁNDAR del objeto (ver la matriz de canales arriba)
+
+Para cuentas GL:
+
+```python
+# LECTURA en P01 (read-only)
+coa  = src.call("GL_ACCT_MASTER_GET_COA_RFC",   ACCOUNT_COA={"CHRT_ACCTS": "UNES", "GL_ACCOUNT": saknr})
+cc   = src.call("GL_ACCT_MASTER_GET_CCODE_RFC", ACCOUNT_CCODE={"COMP_CODE": "UNES", "GL_ACCOUNT": saknr})
+
+# ESCRITURA en D01 / V01 — TESTMODE EXPLÍCITO SIEMPRE (su default vacío = escritura real)
+res = tgt.call("GL_ACCT_MASTER_SAVE_RFC",
+               ACCOUNT_COA=coa["ACCOUNT_COA"],
+               ACCOUNT_NAMES=coa["ACCOUNT_NAMES"],      # todos los idiomas
+               ACCOUNT_CCODES=[cc["ACCOUNT_CCODE"]],
+               TESTMODE="X" if dry_run else "")
+# y DESPUÉS: releer con GET_*_RFC en el destino y comparar campo a campo. Nunca fiarse de RETURN.
+```
+
+<details><summary>❌ Método antiguo (INSERT plano) — PROHIBIDO para master data estándar</summary>
+
+⛔ Lo de abajo **solo vale para tablas propias `Y*`/`Z*`**. Aplicarlo a SKA1/SKAT/SKB1 salta la
+derivación, los rangos de numeración y los checks de consistencia. Se conserva por trazabilidad.
+
+#### (legacy) Copy via RFC_ABAP_INSTALL_AND_RUN
 
 ```python
 def build_insert_abap(table_name, cols, rows):
@@ -153,6 +222,8 @@ for w in res.get('WRITES', []):
 - **No transport request** — direct table INSERT (dev system only)
 - **Test 1 account first** — always run a single record, verify field-by-field against P01, then proceed with bulk
 
+</details>
+
 ### Step 4: Verify
 
 ```python
@@ -183,10 +254,16 @@ rows = rfc_read_paginated(guard, table, fields, '', batch_size=5000, throttle=1.
 
 | Approach | Why It Failed |
 |----------|--------------|
-| `BAPI_GL_ACCOUNT_CREATE` | Does not exist in UNESCO system |
-| `GL_ACCT_MASTER_MAINTAIN_RFC` | Raises NOT_FOUND — needs FS00 dialog session memory |
+| `BAPI_GL_ACCOUNT_CREATE` | Does not exist in UNESCO system — **confirmado s102**: no aparece en `TFDIR` |
+| `GL_ACCT_MASTER_MAINTAIN_RFC` | Raises NOT_FOUND — needs FS00 dialog session memory. **Es el FM equivocado**: el de escritura es `GL_ACCT_MASTER_SAVE_RFC` (ver matriz arriba) |
 | BDC via `RFC_CALL_TRANSACTION_USING` + FS00 | User rejected batch input approach |
 | `CSKBD` / `CSKBZ` extraction | TABLE_NOT_AVAILABLE — structures, not tables |
+| `RFC_ABAP_INSTALL_AND_RUN` INSERT sobre SKA1/SKAT/SKB1 | ⛔ **PROHIBIDO** (s102). Salta derivación, rangos de numeración y checks. Solo para tablas propias `Y*`/`Z*` |
+
+> **Cómo se recuperó el canal correcto (s102):** no consultando este skill —que estaba mal— sino
+> preguntándole al sistema: `RFC_READ_TABLE` sobre `TFDIR WHERE FMODE = 'R' AND FUNCNAME LIKE
+> '%ACCT_MASTER%'`. Ese es el reflejo a repetir cuando un skill diga "no existe canal": **el skill
+> puede estar equivocado; el diccionario del sistema no.**
 
 ## Script Location
 

@@ -26023,5 +26023,68 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": 545,
+    "claim": "EL CANAL DE ESCRITURA DE CUENTAS GL EXISTE Y ES GL_ACCT_MASTER_SAVE_RFC — el skill decia que no habia. Lectura: GL_ACCT_MASTER_GET_COA_RFC (plan + textos, todos los idiomas) y GL_ACCT_MASTER_GET_CCODE_RFC (nivel sociedad). Escritura: GL_ACCT_MASTER_SAVE_RFC con ACCOUNT_COA + ACCOUNT_NAMES + ACCOUNT_CCODES, ACTION='I' y TESTMODE explicito. Las cuatro estan remote-enabled en P01. Sobre RFC exponen estructuras ANIDADAS (KEYY/DATA/INFO/ACTION), no los campos planos de DDIC. Probado extremo a extremo el 2026-08-20: TESTMODE='X' devolvio 'FH510 The data contains no errors' y la ejecucion real creo 4041018 y 4041019 en D01 con readback campo a campo identico a P01.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "TFDIR WHERE FMODE='R' AND FUNCNAME LIKE '%ACCT_MASTER%' (P01)",
+        "cite": "GL_ACCT_MASTER_GET_CCODE_RFC · GL_ACCT_MASTER_GET_COA_RFC · GL_ACCT_MASTER_MAINTAIN_RFC · GL_ACCT_MASTER_SAVE_RFC. BAPI_GL_ACCOUNT_CREATE no aparece: esa parte del skill era correcta.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "conn.get_function_description('GL_ACCT_MASTER_GET_COA_RFC')",
+        "cite": "ACCOUNT_COA expone KEYY{KTOPL,SAKNR} · DATA{KTOKS,XBILK,GVTYP,...} · INFO{ERDAT,ERNAM,SAKAN} · ACTION. Pasar KTOPL plano da RFC_INVALID_PARAMETER.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "Sondeo de ACTION en D01 con TESTMODE='X'",
+        "cite": "ACTION='I' -> 'S FH510 The data contains no errors'; 'U' -> 'E FH058 Account 4041018 has not been created in chart of accounts UNES'; 'V'/'X' -> FH501 no existe; ACTION vacio -> 'E FH502 Internal error: Import of table SKA1 not possible'.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "gl_master_sync.py --systems D01 --execute (2026-08-20)",
+        "cite": "4041018 y 4041019 creadas en D01, readback campo a campo contra P01: TODO OK.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "GL_ACCT_MASTER_SAVE_RFC",
+      "GL_ACCT_MASTER_GET_COA_RFC",
+      "GL_ACCT_MASTER_GET_CCODE_RFC",
+      "SKA1",
+      "SKAT",
+      "SKB1",
+      "TFDIR",
+      "0004041018",
+      "0004041019",
+      ".agents/skills/sap_master_data_sync/SKILL.md",
+      "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py"
+    ],
+    "domain": "FI",
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": "Contexto que importa mas que el FM: DOS artefactos del proyecto estaban en contradiccion y el equivocado era el que se lee primero. METHOD.md del sync FM (junio) decia 'NOT flat INSERT for standard master' y daba la matriz correcta; el SKILL.md de sap_master_data_sync prescribia INSERT plano y citaba un script inexistente (copy_gl_accounts_p01_to_d01.py). Skill corregido y matriz de canales unificada. Tambien medido: BAPI_COSTELEMENT_CREATEMULTIPLE NO esta remote-enabled aqui, y los centros de beneficio no se usan en UNESCO (direccion de JP).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Brain_Architecture"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2D"
+      ]
+    }
   }
 ]

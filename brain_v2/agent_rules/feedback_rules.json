@@ -5182,5 +5182,32 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": "feedback_standard_master_data_writes_through_the_standard_api",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "rule": "MASTER DATA ESTANDAR SE ESCRIBE POR LA API ESTANDAR DEL OBJETO, NUNCA CON INSERT PLANO. RFC_ABAP_INSTALL_AND_RUN con INSERT solo es legitimo sobre tablas PROPIAS Y*/Z*. Canales medidos: GL -> GL_ACCT_MASTER_SAVE_RFC (lectura GET_COA_RFC + GET_CCODE_RFC) · centros de coste -> BAPI_COSTCENTER_CREATEMULTIPLE · fondos -> FM_FUND_CREATE_RFC · centros gestores -> FM_FUNDS_CTR_CREATE_RFC · proyectos/WBS -> BAPI_PROJECT_MAINTAIN + BAPI_TRANSACTION_COMMIT. Centros de beneficio NO se usan en UNESCO. Y el flag de simulacion es INVERSO entre APIs: omitir I_FLG_TESTRUN en FM_FUND_CREATE_RFC SIMULA en silencio; omitir TESTMODE en GL_ACCT_MASTER_SAVE_RFC ESCRIBE DE VERDAD. Pasalo siempre explicito y verifica RELEYENDO, nunca por RETURN.",
+    "why": "2026-08-20 (s102). Propuse sincronizar cuentas GL con RFC_ABAP_INSTALL_AND_RUN + INSERT sobre SKA1/SKAT/SKB1. JP me paro: eso esta explicitamente prohibido. Y tenia razon por partida doble. PRIMERO, la respuesta correcta YA ESTABA ESCRITA desde junio en Zagentexecution/tasks/2026_06_29_fm_model_sync/METHOD.md ('Verified write channels -- NOT flat INSERT for standard master'), y yo lei el SKILL.md de sap_master_data_sync, que prescribia lo contrario y ademas citaba un script (copy_gl_accounts_p01_to_d01.py) QUE NO EXISTE. Dos artefactos del mismo proyecto en contradiccion, y el equivocado era el que se lee primero. SEGUNDO, el skill afirmaba que no habia canal para GL ('BAPI_GL_ACCOUNT_CREATE no existe', 'GL_ACCT_MASTER_MAINTAIN_RFC falla'): el canal existe y es GL_ACCT_MASTER_SAVE_RFC, recuperado preguntandole a TFDIR, no al skill. El coste tecnico de haberlo hecho mal: un INSERT plano salta derivacion, rangos de numeracion, validez, jerarquia y checks, y deja un registro que parece correcto en la tabla y esta roto para el proceso.",
+    "how_to_apply": "1) ANTES de escribir master data, mira la matriz de canales en .agents/skills/sap_master_data_sync/SKILL.md y en el agente master-data-sync. 2) Si el objeto no esta en la matriz, o si un artefacto dice 'no hay canal': PREGUNTALE AL SISTEMA, RFC_READ_TABLE sobre TFDIR WHERE FMODE='R' AND FUNCNAME LIKE '%<OBJETO>%'. El diccionario del sistema gana a cualquier documentacion nuestra. 3) Introspecciona la forma REAL de los parametros con conn.get_function_description(FM) y recorre type_description.fields recursivamente: las API GL_ACCT_MASTER_* exponen estructuras ANIDADAS (KEYY/DATA/INFO/ACTION), no campos planos, y pasar {'KTOPL':...} da RFC_INVALID_PARAMETER. RFC_GET_FUNCTION_INTERFACE da los tipos DDIC pero NO esa forma. 4) ACTION es obligatorio en las API GL: 'I' alta, 'U' modificacion; sin el responde FH502 'Import of table SKA1 not possible', que suena a fallo tecnico y es solo la accion vacia. 5) Flag de test SIEMPRE explicito, en los dos sentidos. 6) Un registro primero, readback campo a campo, luego el lote. 7) Readback final obligatorio: diferencias esperadas solo en ERDAT/ERNAM.",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "PSM_FM",
+        "PS",
+        "Controlling"
+      ],
+      "module": [
+        "FI",
+        "CO",
+        "PS",
+        "FM"
+      ],
+      "process": [
+        "P2D",
+        "B2R"
+      ]
+    }
   }
 ]
