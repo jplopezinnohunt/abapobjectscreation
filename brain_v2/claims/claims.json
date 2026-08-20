@@ -26202,5 +26202,61 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": 548,
+    "claim": "SPIKE (parcial, en simulacion): alinear CUSTOMIZING P01->D01/V01 por RFC y por el FRAMEWORK es viable, y el cuello de botella esta identificado. SCPR_ACTIV_MN_REMOTE_SUB (BC-Sets) esta remote-enabled, acepta RECATTR+VALUES en linea, tiene SIMULATION_ON y devuelve la orden de customizing en TASK_CUST_EXP. Dos hallazgos del spike del 2026-08-20 contra D01: (1) PROTO_HANDLE NO puede ir vacio -- es un GUID de 32 caracteres (data element SCPR_HANDL, dominio SCPR_GUID); con el vacio devuelve el generico WRONG_PARAMETERS / SCPR 273 'Function module call error', y con un GUID valido el error cambia a NO_BCSET / SCPR 223, que ya es informacion. (2) El FM EXIGE que el BC-Set EXISTA en el destino: pasar los VALUES en linea con un ID inventado no basta. Candidato para cargarlo: SCPRMP_UPDATE_BCSET_REMOTE (P_BCSET + LT_VALS_NEW + LT_RECA_NEW + P_AUTOMATICMODE), tambien remote-enabled. La simulacion no escribio nada: la fila de prueba sigue ausente en D01.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/spike_bcset_activate.py contra D01 (2026-08-20)",
+        "cite": "PROTO_HANDLE='' con ACTIVATION_TYPE 0/1/2/3 -> WRONG_PARAMETERS SCPR 273 en los cuatro. PROTO_HANDLE=<GUID 32 hex> -> NO_BCSET SCPR 223. Con BCSET_IDS apuntando a un id inexistente -> vuelve a 273. Lectura posterior de FAGL_011ZC en D01: la fila FS10/1.1.1.1/UNES/0004041015 sigue SIN existir.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "RFC_GET_FUNCTION_INTERFACE SCPRMP_UPDATE_BCSET_REMOTE en D01",
+        "cite": "P_BCSET (SCPR_BCSET) + LT_VALS_NEW/LT_RECA_NEW/LT_VALL_NEW + P_AUTOMATICMODE + P_MASTERLANG. Es el cargador de contenido de un BC-Set por RFC.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "T100 SCPR",
+        "cite": "223 = NO_BCSET · 273 = 'Function module call error' · 274 = 'Data record &1: Database write error'",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "SCPR_ACTIV_MN_REMOTE_SUB",
+      "SCPRMP_UPDATE_BCSET_REMOTE",
+      "SCPRMP_COMPARE_BCSET_REMOTE",
+      "SCPR_MODIFY",
+      "SCPRATTR",
+      "SCPRVALS",
+      "SCPRRECA",
+      "FAGL_011ZC",
+      "SCPR20",
+      "OB58"
+    ],
+    "domain": "BASIS",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "CORRIGE una afirmacion mia del mismo dia: dije 'cero BC-Sets en D01 y V01, nunca se ha usado esta via'. Falso. Lo consulte con el campo SCPRSGUID, que no existe en SCPRATTR, y lei el TABLE_WITHOUT_DATA resultante como 'no hay datos'. Con el campo correcto (ID) hay 2.181 BC-Sets en D01. Es el mismo modo de fallo que el claim 496: leer la ausencia de una lectura mal hecha como ausencia en el sistema. PENDIENTE del spike: si SCPRMP_UPDATE_BCSET_REMOTE puede crear/poblar un BC-Set Z desde cero por RFC, o si hace falta crearlo una vez por SCPR20. Si se cierra, el mecanismo sirve para TODO el customizing, no solo la FSV.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "BASIS",
+        "FI"
+      ],
+      "module": [
+        "BC"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]
