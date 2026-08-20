@@ -25763,20 +25763,20 @@
   },
   {
     "id": 540,
-    "claim": "Clase de defecto: 'OB09 configurado pero fuera del rango de la variante' = revaluacion que no se ejecuta, en silencio. En F.05/SAPF100 son dos condiciones independientes: el rango de GL de la VARIANTE decide SI la cuenta entra en el calculo, y T030H/OBA1 decide DONDE se postea la diferencia. Configurar solo T030H no produce ningun error: la cuenta simplemente nunca se valora. Es el mismo modo de fallo silencioso que dejo a ICTP sin valorar julio y noviembre de 2025.",
+    "claim": "Clase de defecto CONFIRMADA EN VIVO: 'OB09 configurado pero la cuenta no esta en ninguna variante de F.05' = revaluacion que nunca se ejecuta, sin ningun error. En SAPF100 son dos condiciones independientes: la seleccion de cuentas de la VARIANTE decide SI la cuenta entra en el calculo, y T030H/OBA1 decide DONDE se postea la diferencia. Leidas las 4 variantes de UNES con RS_VARIANT_CONTENTS_RFC (2026-08-20): de las 5 cuentas 40410xx que tienen filas en T030H, solo 4041013 y 4041017 aparecen en UNES_DEPOSIT. 4041011, 4041012 y 4041014 tienen config de OB09 y NO estan en ninguna de las cuatro variantes (UNES_DEPOSIT, UNES_OI_AR/AP, UNES_OI_G/L, UNES_UNBA). 4041011 movio EUR en 2023, 2024 y 2025; 4041012 en 2023 y 2024 (glt0_p01 llega hasta 2025). 4041014 solo mueve USD, asi que su config es inocua.",
     "claim_type": "verified_fact",
     "confidence": "TIER_1",
     "evidence_for": [
       {
         "type": "empirical",
-        "ref": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
-        "cite": "seccion 5, paso 4: sin anadir 4041018 al rango de UNES_DEPOSIT, las filas de T030H no se ejecutan nunca",
+        "ref": "RS_VARIANT_CONTENTS_RFC sobre P01, REPORT=SAPF100, las 4 variantes de UNES (2026-08-20)",
+        "cite": "UNES_DEPOSIT SKONTO = 16 valores EQ: 2021053, 4041013, 4041017, 4043011/12/13/14/25/26, 5091010/14/15/16/19/20/23. UNES_OI_G/L = BT 1100000-1199999, 1500000-1599999, 1700000-1799999 menos 3 exclusiones. UNES_UNBA = BT 1000000-1099999, 1400000-1499999, 1900000-1999999. UNES_OI_AR/AP = BT 2031000-2031999 y 2100000-2100999 mas singles. Ninguna incluye 4041011, 4041012, 4041014 ni 4041018.",
         "added_session": 102
       },
       {
         "type": "empirical",
-        "ref": "knowledge/domains/Closing_Activities/fx_revaluation_process.md",
-        "cite": "seccion 5: UNES_DEPOSIT cubre solo cuentas 4041xxx OTHR (EUR, 1 activa = 0004041017); UNES_UNBA cubre el rango de banco 0001001604-0001098174",
+        "ref": "Gold DB T030H (KTOPL=UNES) y glt0_p01",
+        "cite": "T030H tiene 2 filas (CURTP 10 y 30) para 4041011, 4041012, 4041013, 4041014 y 4041017. glt0_p01: 4041011 con RTCUR=EUR en 2023/2024/2025; 4041012 con EUR en 2023/2024.",
         "added_session": 102
       }
     ],
@@ -25795,7 +25795,7 @@
     "domain": "Closing_Activities",
     "created_session": 102,
     "resolved_session": null,
-    "resolution_notes": "Detectable solo cruzando T030H con el rango de la variante. Hoy ese cruce NO es automatizable: VARI/VARIS son pool tables y RFC solo devuelve el nombre (KU-2026-070-02). Candidato a check mecanizado en cuanto el rango sea legible desde D01.",
+    "resolution_notes": "Deja de ser una clase teorica: hay 3 instancias vivas en UNES, 2 de ellas con exposicion EUR real. Y deja de ser inauditable: RS_VARIANT_CONTENTS_RFC hace el cruce mecanizable (ver claim del desbloqueo). Pendiente de confirmar con Treasury si 4041011/4041012 se dejaron fuera a proposito -- NO es una conclusion de defecto hasta preguntarles.",
     "status": "active",
     "domain_axes": {
       "functional": [
@@ -25859,6 +25859,111 @@
       ],
       "process": [
         "T2R"
+      ]
+    }
+  },
+  {
+    "id": 542,
+    "claim": "El contenido de las variantes de SAPF100 SI es auditable por RFC, y cada variante usa un mecanismo de seleccion distinto. VARI guarda el contenido en CLUSTD (tipo X, 2.886 bytes: un cluster binario que RFC_READ_TABLE no devuelve) y VARIS solo tiene 4 campos sin rangos, pero RS_VARIANT_CONTENTS_RFC esta remote-enabled (TFDIR.FMODE='R') y devuelve VALUTAB con SELNAME/KIND/SIGN/OPTION/LOW/HIGH. Medido en UNES: UNES_DEPOSIT selecciona por LISTA DE VALORES SUELTOS (16 entradas EQ sobre SKONTO), mientras UNES_UNBA, UNES_OI_G/L y UNES_OI_AR/AP seleccionan por RANGOS BT. Por tanto anadir una cuenta a UNES_DEPOSIT exige una linea EQ nueva: no la absorbe ningun rango. Ademas UNES_DEPOSIT lleva BWMET1=UNOI, X_GL='X' y ST_BUDAT=01.08.2026 (valora partidas abiertas de mayor y REVIERTE dia 1, Modo A), y UNES_UNBA lleva X_SALBEW='X' con ST_BUDAT=00.00.0000 (valoracion de saldos SIN reversion, Modo B intencionado).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "DD03L sobre VARI y VARIS en P01 (2026-08-20)",
+        "cite": "VARI: 10 campos, CLUSTD tipo X longitud 2886. VARIS: 4 campos (MANDT, REPORT, DYNNR, VARIANT) y ademas TABLE_WITHOUT_DATA.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "TFDIR WHERE FMODE='R' AND FUNCNAME LIKE '%VARI%' en P01",
+        "cite": "RS_VARIANT_CONTENTS_RFC y RS_VARIANT_CONTENTS_255_RFC estan remote-enabled. RS_VARIANT_CONTENTS (sin _RFC) falla al marshallar su parametro EXPORT SP de tipo SYLDB_SP; RS_VARIANT_TEXTS y GET_SELECTIONS_OF_VARIANT devuelven FU_NOT_FOUND.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "RS_VARIANT_CONTENTS_RFC(REPORT='SAPF100') sobre P01",
+        "cite": "UNES_DEPOSIT: 76 entradas en VALUTAB, SKONTO con 16 EQ y ningun BT. UNES_UNBA: 63 entradas, SKONTO con 3 BT. Ultima ejecucion sellada en la variante: P_BBUDAT/STICHTAG=31.07.2026.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "VARI",
+      "VARIS",
+      "VARID",
+      "RS_VARIANT_CONTENTS_RFC",
+      "SAPF100",
+      "F.05",
+      "UNES_DEPOSIT",
+      "UNES_UNBA",
+      "UNES_OI_G/L",
+      "UNES_OI_AR/AP",
+      "T030H",
+      "TFDIR"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "CIERRA KU-2026-070-02 ('VARI/VARID no estan en el Gold DB, el contenido de las variantes de F.05 no se puede auditar') y CIERRA KU-CA-002 ('confirmar el modo de valoracion de _UNBA'): X_SALBEW='X' con ST_BUDAT vacio = Modo B, no es un defecto. Tambien corrige fx_revaluation_process.md seccion 5, que afirmaba que UNES_DEPOSIT 'cubre solo cuentas 4041xxx OTHR' -- de sus 16 cuentas solo 2 son 4041xxx; el resto son 4043xxx (ETF y bonos), 5091xxx y una 2021053. Y que UNES_UNBA cubre '0001001604 a 0001098174': ese era el rango OBSERVADO en las 82 cuentas que valoro, no el CONFIGURADO. Habilita el check mecanizado T030H x variante.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 543,
+    "claim": "El bloque de numeracion 404xxxx del plan de cuentas UNES NO es de bancos: es el bloque de INVERSIONES Y ACTIVOS del balance. Rangos reales medidos por grupo de cuenta en P01_SKA1 (KTOPL=UNES): BANK 0001000131-0001683713 (918 cuentas), OTHR 0001000991-0009999999 (995), COLL 0002011011-0004049011 (59), P&L 0006011101-0007099999 (491), UNDP 28. Dentro del bloque 404: 4041011-4041017 depositos a plazo y fondos monetarios, 4043xxx ETF / bonos / letras / mandatos de inversion, 4044xxx intereses devengados de esos instrumentos, 4045011 fondo de renovacion, 4049011 conciliacion de business partners (unica COLL), 4054xxx provisiones, 4060000-4068xxx activos fijos. Las 9 cuentas 40410xx son KTOKS=OTHR, ninguna es KTOKS=BANK.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "P01_SKA1 x P01_SKAT (KTOPL=UNES) agrupado por KTOKS, Gold DB",
+        "cite": "SELECT KTOKS, COUNT(*), MIN(SAKNR), MAX(SAKNR) GROUP BY KTOKS -> BANK 918 [1000131..1683713]; OTHR 995 [1000991..9999999]; COLL 59 [2011011..4049011]; P&L 491 [6011101..7099999]; UNDP 28. Volcado completo del bloque 00040xxxxx: 87 cuentas, todas OTHR salvo 4049011 (COLL).",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "Formulario AM 3-11, hoja FIELD EXPLANATIONS",
+        "cite": "'A GL account is either an income and expenditure account (GL 6XXXXXX & 7XXXXXX) or a bank account (GL 10/11XXXXX) or a reconciliation account (GL 2XXXXXX) or an other balance sheet account.'",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "P01_SKA1",
+      "SKA1",
+      "T077S",
+      "0004041014",
+      "0004041018",
+      "0004041019",
+      "0004043011",
+      "0004049011"
+    ],
+    "domain": "FI",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Responde a la duda de JP: 4041014 'MMF USD JPMorgan' parecia un numero raro para un banco, y lo es -- no es un banco. Lo que lo hacia parecer bancario era encontrarlo en T030H junto a cuentas de banco, no su naturaleza. Nota lateral: T077S devuelve TABLE_WITHOUT_DATA por RFC en P01, asi que los rangos de numeracion CONFIGURADOS por grupo de cuenta no se han leido; los de arriba son los rangos OBSERVADOS en los datos, que no es lo mismo.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "B2R"
       ]
     }
   }

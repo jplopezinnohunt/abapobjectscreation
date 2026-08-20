@@ -2396,29 +2396,41 @@
       {
         "id": 541,
         "claim": "gold_refresh.py solo procesa specs 'curated' y se salta el resto sin avisar (exit 0)."
+      },
+      {
+        "id": 542,
+        "claim": "Las variantes de SAPF100 SI son auditables por RFC (RS_VARIANT_CONTENTS_RFC); UNES_DEPOSIT selecciona por valores sueltos, las otras por rangos. Cierra KU-2026-070-02 y KU-CA-002."
+      },
+      {
+        "id": 543,
+        "claim": "El bloque 404xxxx no es de bancos: es inversiones y activos. BANK = 1000131..1683713."
       }
     ],
     "related_dq": [],
     "related_known_unknowns": [
-      "KU-2026-070-02 (el rango de UNES_DEPOSIT no es legible por RFC: VARI/VARIS son pool tables)",
-      "KU-MMF-001 (si el rango actual de UNES_DEPOSIT ya cubre 4041018 por casualidad)",
-      "KU-MMF-002 (si MP_BOUA uso transporte para el alta en P01)"
+      "KU-MMF-001 CERRADO: 4041018 no esta en ninguna de las 4 variantes de UNES (verificado una por una)",
+      "KU-MMF-002 (si MP_BOUA uso transporte para el alta en P01) — abierto",
+      "KU-MMF-003 (si Treasury dejo 4041011/4041012 fuera de variante a proposito) — abierto, PREGUNTAR",
+      "T077S devuelve TABLE_WITHOUT_DATA: los rangos de numeracion CONFIGURADOS por grupo de cuenta no se han leido"
     ],
     "analysis_doc": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
     "evidence_extracted_this_incident": "Lectura live read-only P01/D01/V01 de SKA1/SKAT/SKB1/T030H/T012K para las 9 cuentas 40410xx (probe_mmf_live.py). Estado real de las casillas de los 2 formularios AM 3-11 leido desde xl/ctrlProps/*.xml con sus anclajes de celda. Cruce de los 944 HKONT de T030H contra T012K y KTOKS. Balances GLT0 por moneda de transaccion.",
     "lessons": "(1) El tipo de CUENTA decide el patron de revaluacion, y son TRES, no dos: banco casa -> mayoritariamente auto-revaluacion (251 de 259, no main->sub como decia el modelo); conciliacion AP/AR 2xxxxxx -> main->cuenta de ajuste (130+43); inversion/balance no-banco 4041xxx -> auto-revaluacion, variante UNES_DEPOSIT. (2) Un banco con nombre conocido no es un banco casa: BNP01/BNP02 son FR, el fondo es BP2S Luxemburgo, y ninguna 4041xxx esta en T012K. (3) T030H dice DONDE postear; la VARIANTE decide SI se calcula — configurar solo OB09 deja una revaluacion que no corre, en silencio. (4) La autoridad de registro es el formulario firmado, no la nota del solicitante: la nota pedia revaluar las dos y el formulario de la USD dice NO. (5) El campo 'GL to be revaluated' del AM 3-11 existe y nadie lo lee.",
     "open_followups": [
       "OB09/T030H para 4041018 (2 filas: CURTP 10 y 30)",
-      "Anadir 4041018 al rango de la variante F.05 UNES_DEPOSIT",
+      "Anadir 4041018 a UNES_DEPOSIT como valor EQ suelto — la variante NO usa rangos",
       "Responder a Jeannette con la evidencia de que 4041019 no se revalua",
       "Sync P01->D01/V01 (script bloqueado por el clasificador de permisos)",
-      "4041014: T030H con exposicion nula (solo mueve USD) — config sin efecto, decidir si se retira",
+      "PREGUNTAR A TREASURY: 4041011 (EUR 2023-2025) y 4041012 (EUR 2023-2024) tienen T030H y no estan en ninguna variante — intencionado o no?",
+      "4041014: T030H con exposicion nula (solo USD) — inocuo, decidir si se retira por higiene",
       "V01 arrastra 2 cuentas de deriva desde 2024 (4041015, 4041016) que si llegaron a D01",
-      "gold_refresh.py: procesa solo specs 'curated' y se salta el resto SIN AVISAR (exit 0, sync log vacio)"
+      "MECANIZAR el cruce T030H x variante con RS_VARIANT_CONTENTS_RFC — ya es posible",
+      "Corregir fx_revaluation_process.md seccion 5 (contenido de UNES_DEPOSIT y rango de UNES_UNBA)",
+      "gold_refresh.py: ARREGLADO (declara lo que no toca, exit 3 si no refresca nada)"
     ],
     "chain_anchor_type": "config_table",
-    "chain_anchor_note": "Anclado en T030H/OBA1 mas el rango de la variante SAPF100. La segunda mitad del ancla NO es legible por RFC (KU-2026-070-02), por eso la cobertura no llega a 100.",
-    "chain_anchor_coverage_pct": 80,
+    "chain_anchor_note": "Anclado en T030H/OBA1 mas el contenido REAL de las 4 variantes de UNES, leido con RS_VARIANT_CONTENTS_RFC. Las dos mitades del ancla estan ahora medidas; lo que falta es T077S (rangos de numeracion configurados) y el estado 2026 de saldos.",
+    "chain_anchor_coverage_pct": 95,
     "chain_audited_session": 102,
     "domain_axes": [
       "FI",

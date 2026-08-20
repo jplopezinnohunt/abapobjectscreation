@@ -128,11 +128,28 @@ V01 está **más atrasado**: le faltan además las dos de 2024 que sí llegaron 
 | 1 | `SKB1.WAERS` | **EUR** — ✅ ya correcto, verificado |
 | 2 | OB09/T030H `CURTP 10` | `LKORR=0004041018` · `LSREA=LSBEW=0006045011` · `LHREA=LHBEW=0007045011` |
 | 3 | OB09/T030H `CURTP 30` | `LKORR=0004041018` · los cuatro campos `=0005022012` |
-| 4 | Variante F.05 **`UNES_DEPOSIT`** | añadir 4041018 al rango |
+| 4 | Variante F.05 **`UNES_DEPOSIT`** | añadir 4041018 como **valor EQ suelto** en `SKONTO` |
 
 **El paso 4 es el que se olvida.** `T030H` dice *dónde* postear la diferencia; la **variante**
 decide *si* la cuenta entra en el cálculo. Configurar solo OB09 produce una revaluación que **nunca
 corre, en silencio** — el mismo modo de fallo que dejó a ICTP sin valorar julio y noviembre de 2025.
+
+### Cómo selecciona cada variante — leído en vivo, no supuesto
+
+`RS_VARIANT_CONTENTS_RFC` (remote-enabled) sobre P01, las 4 variantes de UNES:
+
+| Variante | Método | Selección `SKONTO` | Modo |
+|---|---|---|---|
+| **`UNES_DEPOSIT`** | `BWMET1=UNOI`, `X_GL=X` | **16 valores EQ sueltos**: 2021053 · **4041013** · **4041017** · 4043011/12/13/14/25/26 · 5091010/14/15/16/19/20/23 | reversión 01.08.2026 → **Modo A** |
+| `UNES_OI_G/L` | `BWMET1=UNOI`, `X_GL=X` | `BT` 1100000–1199999 · 1500000–1599999 · 1700000–1799999, menos 3 exclusiones | reversión → Modo A |
+| `UNES_OI_AR/AP` | `BWMET1=UNOI`, AR+AP+GL | `BT` 2031000–2031999 · 2100000–2100999 + sueltos, con exclusiones | reversión → Modo A |
+| `UNES_UNBA` | `X_SALBEW=X` | `BT` 1000000–1099999 · 1400000–1499999 · 1900000–1999999 | `ST_BUDAT=00.00.0000` → **Modo B, sin reversión** |
+
+**`UNES_DEPOSIT` no trabaja por rangos: es una lista de valores sueltos.** Ningún rango va a absorber
+4041018 — hay que añadir la línea. Las otras tres sí usan `BT`, y los tres bloques de `UNES_UNBA`
+(1xxxxxx, 14xxxxx, 19xxxxx) no alcanzan a 404xxxx bajo ninguna circunstancia.
+
+**4041018 no está en NINGUNA de las cuatro.** Verificado una por una.
 
 ### 4041019 (USD) — NO se revalúa
 Formulario `GL to be revaluated = NO`; referencia declarada 4041016; 4041016 sin `T030H`; la cuenta
@@ -155,13 +172,29 @@ Pendiente: readback campo a campo contra P01, esperando divergencia **solo** en 
 
 ## 8. Barrido de la población (B8) — el ticket es la ocasión, no el alcance
 
-1. **⚠️ `4041014` (MMF USD JPMorgan) tiene `T030H` con exposición nula.** Solo mueve USD en una
-   sociedad USD: configuración sin efecto. 4041015 y 4041016, también USD, no la tienen. La
-   población es **inconsistente**: tres cuentas USD, una con config y dos sin ella. Ninguna de las
-   tres puede generar diferencia de cambio, así que no hay daño — pero sí hay ruido de config que
-   contradice la regla.
-2. **V01 lleva 2 cuentas de deriva** (4041015, 4041016) desde 2024, que sí llegaron a D01.
-3. **El rango de `UNES_DEPOSIT` no es auditable offline** — ver §10.
+1. **🔴 Tres cuentas con `T030H` que no están en ninguna variante — la clase de defecto, viva.**
+   De las 5 cuentas 40410xx con filas en `T030H`, solo **4041013 y 4041017** aparecen en
+   `UNES_DEPOSIT`. Las otras tres están configuradas y **nunca se valoran**:
+
+   | Cuenta | `T030H` | ¿en alguna variante? | Exposición en `GLT0` | Lectura |
+   |---|---|---|---|---|
+   | `4041011` Term Deposits Principal | sí | **no** | **EUR en 2023, 2024 y 2025** | 🔴 candidato real |
+   | `4041012` Term Accounts Principal Current | sí | **no** | EUR en 2023 y 2024 | 🟠 candidato |
+   | `4041014` MMF USD JPMorgan | sí | **no** | solo USD | 🟢 inocuo (sin exposición) |
+
+   **No lo declaro defecto todavía**: puede que Treasury las dejara fuera a propósito. Es una
+   pregunta para ellos, no una conclusión. Lo que sí es un hecho es que hoy la config de OB09 de
+   esas tres no se ejecuta. `glt0_p01` llega hasta 2025, así que el estado 2026 no está medido.
+2. **`4041014` no es una cuenta de banco, y el bloque 404xxxx tampoco.** Rangos reales por grupo
+   de cuenta en UNES: **BANK 1000131–1683713** (918 cuentas), OTHR 1000991–9999999 (995),
+   COLL 2011011–4049011 (59), P&L 6011101–7099999 (491). El bloque 404 es **inversiones y activos**:
+   4041xxx depósitos y fondos monetarios · 4043xxx ETF, bonos, letras y mandatos · 4044xxx intereses
+   devengados · 4045011 fondo de renovación · 4049011 conciliación BP (única COLL) · 4054xxx
+   provisiones · 4060000–4068xxx activo fijo. Las 9 cuentas 40410xx son `KTOKS=OTHR`, ninguna `BANK`.
+   Lo que hacía parecer bancaria a 4041014 era encontrarla en `T030H` junto a cuentas de banco.
+3. **V01 lleva 2 cuentas de deriva** (4041015, 4041016) desde 2024, que sí llegaron a D01.
+4. **`UNES_DEPOSIT` contiene mucho más que 4041xxx**: de sus 16 cuentas solo 2 lo son. El resto son
+   4043xxx (ETF y bonos), 5091xxx y una 2021053. La descripción del brain era incompleta — ver §10.
 
 ## 9. Cierre y promoción
 
@@ -188,10 +221,24 @@ Segundo avistamiento del patrón ⇒ toca gate (regla #172).
   última fila del **2026-06-30**. Es exactamente la regla #180: *un no-op silencioso es un defecto
   silencioso*. **Arreglo mínimo: imprimir lo que se salta y por qué.** Mientras tanto, el Gold DB
   **sigue sin las cuentas nuevas** y cualquier análisis de gap debe leer LIVE.
-- **El rango de la variante `UNES_DEPOSIT` no es legible por RFC.** `sapf100_vari` / `sapf100_varid`
-  están en el registro (42/21 filas) pero **el contenido está vacío**: VARI/VARIS son pool tables y
-  RFC solo devuelve el nombre. Es `KU-2026-070-02`. Se lee en pantalla F.05 o vía
-  `RFC_ABAP_INSTALL_AND_RUN` en D01 (en P01 lo bloquea S_DEVELOP).
-- **No verificado**: si MP_BOUA usó transporte para el alta, y si el rango actual de `UNES_DEPOSIT`
-  ya cubre 4041018 por casualidad (el rango descrito es "4041011 > 4041013", con 4041017 dentro por
-  medios que no hemos leído).
+- ✅ **`KU-2026-070-02` CERRADO — el contenido de las variantes SÍ es auditable por RFC.** Lo que era
+  cierto: `sapf100_vari`/`sapf100_varid` están vacías en el Gold DB; `VARI` guarda el contenido en
+  **`CLUSTD`, tipo X de 2.886 bytes** (cluster binario que `RFC_READ_TABLE` no devuelve) y `VARIS`
+  solo tiene 4 campos, sin rangos. Lo que era falso: que por eso no se pudiera leer.
+  **`RS_VARIANT_CONTENTS_RFC` está remote-enabled** (`TFDIR.FMODE='R'`) y devuelve `VALUTAB` con
+  `SELNAME/KIND/SIGN/OPTION/LOW/HIGH`. Preguntado al sistema, no supuesto: `TFDIR WHERE FMODE='R'`.
+  `RS_VARIANT_CONTENTS` (sin `_RFC`) falla al serializar su parámetro `SP` de tipo `SYLDB_SP`;
+  `RS_VARIANT_TEXTS` y `GET_SELECTIONS_OF_VARIANT` devuelven `FU_NOT_FOUND`.
+  **Consecuencia: el cruce `T030H` × variante ya es mecanizable.**
+- ✅ **`KU-CA-002` CERRADO** — `UNES_UNBA` lleva `X_SALBEW='X'` y `ST_BUDAT=00.00.0000`: valoración de
+  saldos sin reversión = **Modo B intencionado**, no un defecto. Confirmado leyendo la variante.
+- ⚠️ **Corrección a `fx_revaluation_process.md` §5**, que decía que `UNES_DEPOSIT` "cubre solo cuentas
+  4041xxx OTHR (EUR, 1 activa = 0004041017)". De sus **16** cuentas solo **2** son 4041xxx (4041013 y
+  4041017); el resto son 4043xxx, 5091xxx y una 2021053. Y decía que `UNES_UNBA` cubre
+  "0001001604 → 0001098174": ese era el rango **observado** en las 82 cuentas que valoró, no el
+  **configurado**, que son tres bloques `BT` (1000000–1099999, 1400000–1499999, 1900000–1999999).
+- **No legible por RFC**: `T077S` devuelve `TABLE_WITHOUT_DATA`, así que los rangos de numeración
+  **configurados** por grupo de cuenta no se han leído. Los de §8 son los rangos **observados** en
+  los datos, que no es lo mismo.
+- **No verificado**: si MP_BOUA usó transporte para el alta en P01. Y `glt0_p01` llega hasta 2025:
+  el estado de saldos 2026 de 4041011/4041012 no está medido.
