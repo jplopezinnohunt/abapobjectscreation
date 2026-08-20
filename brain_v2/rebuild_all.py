@@ -257,16 +257,16 @@ def main():
     # que aviso movia el 0,9% en cheques. El dato estaba medido y disperso en prosa; aqui es
     # una propiedad consultable del modelo. Claim 530.
     run(["python", "brain_v2/house_bank_roles.py"],
-        "Step 2d: Rol operativo de los bancos casa (-> house_bank_roles.json)", fatal=False)
+        "Step 2g: Rol operativo de los bancos casa (-> house_bank_roles.json)", fatal=False)
     # El companion que lo hace legible. Va aqui y no en el paso 5 porque depende del JSON
     # que acaba de emitir el 2d; el registro en companions.json lo mantiene descubrible.
     run(["python", "scripts/build_bank_operation_design.py"],
-        "Step 2e: Companion UNESCO Bank Operation Design", fatal=False)
+        "Step 2h: Companion UNESCO Bank Operation Design", fatal=False)
     # El explorador NO recalcula el modelo: lo recorre buscando lo que no sabe. Emite
     # bank_model_findings.json para que el brain-steward lo promueva. Va despues del
     # companion a proposito: primero se publica el modelo, luego se le buscan los huecos.
     run(["python", "brain_v2/bank_model_explorer.py", "--json"],
-        "Step 2f: Explorador del modelo de banca (-> bank_model_findings.json)", fatal=False)
+        "Step 2i: Explorador del modelo de banca (-> bank_model_findings.json)", fatal=False)
     # PROFILE (L16) must be crossed BEFORE brain_state is assembled — build_brain_state
     # attaches profile_links.json as system_profile._links. This step also GATES the
     # profile invariants (tier + evidence per module), so a malformed profile stops the

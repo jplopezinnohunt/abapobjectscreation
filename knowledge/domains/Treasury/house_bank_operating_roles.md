@@ -2,7 +2,7 @@
 
 **Dominio**: Treasury · Payment_BCM · Procurement_P2P · FI
 **Estado**: VERIFICADO, medido sobre REGUH + LFBK + T042Z + T001 — Sesión #102 (2026-08-20)
-**Herramienta**: `python brain_v2/house_bank_roles.py` → `brain_v2/house_bank_roles.json` (paso 2d de `rebuild_all.py`)
+**Herramienta**: `python brain_v2/house_bank_roles.py` → `brain_v2/house_bank_roles.json` (paso 2g de `rebuild_all.py`)
 **Claims**: 530 · 531
 
 ---
@@ -139,7 +139,7 @@ Un concentrador no se distingue de una cuenta de oficina por el **volumen** sino
 
 Y `SIN DESTINO CONOCIDO` hay que nombrarlo en vez de esconderlo: sus beneficiarios no tienen registro en `LFBK`, así que **no es que no paguen, es que no lo vemos**, y ningún control que dependa del país del banco del beneficiario puede actuar sobre ellos.
 
-> Página legible y generada: [`companions/unesco_bank_operation_design.html`](../../../companions/unesco_bank_operation_design.html) — construida por `scripts/build_bank_operation_design.py`, paso 2e del rebuild.
+> Página legible y generada: [`companions/unesco_bank_operation_design.html`](../../../companions/unesco_bank_operation_design.html) — construida por `scripts/build_bank_operation_design.py`, paso 2h del rebuild.
 
 ## 5. Dónde más aplica este eje — la cadena
 
@@ -180,7 +180,7 @@ python brain_v2/house_bank_roles.py --bank CIT19     # ficha de un banco
 python brain_v2/house_bank_roles.py --ppc-exposure   # capturado vs renderizado
 ```
 
-Se regenera en el paso 2d de `rebuild_all.py`. Artefacto consultable: `brain_v2/house_bank_roles.json`.
+Se regenera en el paso 2g de `rebuild_all.py`. Artefacto consultable: `brain_v2/house_bank_roles.json`.
 
 ## 7. Límites de esta medida, dichos explícitos
 
@@ -197,7 +197,7 @@ Tres piezas, y cada una hace lo que la otra no puede:
 
 | Pieza | Qué es | Qué hace |
 |---|---|---|
-| `brain_v2/house_bank_roles.py` | algoritmo | **calcula** el censo: rol, topología, corredores, exposición PPC. Determinista, corre en los pasos 2d/2e del rebuild |
+| `brain_v2/house_bank_roles.py` | algoritmo | **calcula** el censo: rol, topología, corredores, exposición PPC. Determinista, corre en los pasos 2g/2h del rebuild |
 | `brain_v2/bank_model_explorer.py` | algoritmo (`A44_model_gap_exploration`) | **busca lo que el modelo no sabe**: residuo de taxonomía, deriva, cuentas que el censo no puede ver, dimensiones ciegas. Veredictos `NEW / DRIFT / BLIND / RISK / STABLE` a `bank_model_findings.json`. Paso 2f |
 | `.claude/agents/bank-process-discovery.md` | agente | **el criterio que ningún algoritmo tiene**: buscar en el conocimiento antes de derivar, negarse a publicar una métrica con el denominador incompleto, decidir si un `NEW` es un tipo real, y aterrizarlo |
 

@@ -38,6 +38,18 @@ USO
 Regla: feedback_diff_the_whole_table_before_releasing_a_config_transport (CRITICAL).
 Claim 526.
 """
+# --- self-declaration, read by quality_checks/run_all.py -------------------
+# Un script sin declarar sale como UNCLASSIFIED y hace fallar al runner: un registro
+# central es una lista que alguien se olvida de actualizar.
+# tier=analysis y no gate a proposito: esto se corre ANTES DE LIBERAR un transporte
+# concreto, no en cada ciclo -- necesita un TRKORR y no tiene sentido sin el.
+QUALITY_CHECK = {
+    "tier": "analysis",   # gate | live | analysis | quarantined
+    "needs": "rfc_p01",   # gold_db | rfc_p01 | files
+    "what": "transporte de customizing: diff de la TABLA ENTERA origen vs destino antes de liberar",
+    "args": "<TRKORR> [--src D01 --dst P01]",
+}
+# --------------------------------------------------------------------------
 import collections
 import os
 import sys

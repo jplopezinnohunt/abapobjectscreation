@@ -320,6 +320,36 @@ def _open_work_block():
             + NL + NL.join(lines) + NL + tail)
 
 
+
+def _bank_findings():
+    """Hallazgos del explorador del modelo de banca, en el indice.
+
+    Existe por la regla de que el conocimiento tiene que ser ALCANZABLE desde los puntos de
+    entrada: el explorador puede emitir NEW o BLIND en cada rebuild, y si nadie lo lee esta
+    gritando al vacio. Solo se muestran los veredictos que piden accion -- STABLE se calla,
+    porque un bloque que siempre dice algo deja de leerse.
+    """
+    f = HERE / "bank_model_findings.json"
+    if not f.exists():
+        return ""
+    try:
+        d = json.load(open(f, encoding="utf-8"))
+    except Exception:
+        return ""
+    act = [x for x in d.get("findings", []) if x.get("verdict") in ("NEW", "BLIND", "RISK", "DRIFT")]
+    if not act:
+        return ""
+    out = ["## BANCA - el explorador del modelo encontro {} cosa(s) que pedir accion".format(len(act)),
+           "> `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el",
+           "> agente `bank-process-discovery`; el modelo vive en",
+           "> `knowledge/domains/Treasury/house_bank_operating_roles.md`."]
+    for x in act[:6]:
+        out.append("- `{}` - {}".format(x["verdict"], x["title"]))
+    if len(act) > 6:
+        out.append("- _{} mas en `brain_v2/bank_model_findings.json`_".format(len(act) - 6))
+    return NL.join(out) + NL
+
+
 def run():
     s = json.load(open(STATE, encoding="utf-8"))
     cm = s.get("capability_model", {})
@@ -361,6 +391,8 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_security_block()}
 {_maturity_block()}
 {_open_work_block()}
+
+{_bank_findings()}
 {_knowledge_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × {len(dims)}

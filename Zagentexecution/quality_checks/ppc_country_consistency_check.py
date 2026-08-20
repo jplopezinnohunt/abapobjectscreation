@@ -43,6 +43,12 @@ Six checks, all measured against the Gold DB (P01 provenance):
      indistinguishable from one in SM30; only a raw read sees it. A ZWCK1 with NO space at
      all is also flagged: PPC_DESCR would emit nothing. Found by hand on 2026-08-19.
 
+     E y F mecanizan la regla feedback_a_char_field_cannot_store_a_trailing_blank (HIGH):
+     un blanco al FINAL de un CHAR no se puede almacenar -- es indistinguible del relleno --
+     y uno al principio si. Los tres defectos que la originaron eran invisibles en SM30 y solo
+     se vieron leyendo el campo en crudo. F encontro un cuarto, vivo en P01, en su primera
+     corrida: T015L INA con dos espacios (claim 529).
+
 Check D also reports cross-country contamination, which exists because T015L's key is LZBKZ
 alone -- it has NO country field. The 'EG'/'JO' prefix is a naming convention, not a rule SAP
 enforces, and u917 only checks the field is non-empty. So a user CAN pick JO6 on an Egyptian
