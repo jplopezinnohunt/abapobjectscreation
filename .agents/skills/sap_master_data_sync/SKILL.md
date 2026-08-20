@@ -42,7 +42,8 @@ parece correcto en la tabla y está roto para el proceso.
 | **Fondos** (FMFINCODE/FMFINT) | `FM_FUND_GET_DETAIL_RFC` | `FM_FUND_CREATE_RFC` · `FM_FUND_CHANGE_RFC` |
 | **Centros gestores** (FMFCTR) | `FM_FUNDS_CTR_GET_DETAILS_RFC` | `FM_FUNDS_CTR_CREATE_RFC` |
 | **Proyectos / WBS** (PROJ/PRPS) | `BAPI_PROJECTDEF_GETDETAIL` + `PRPS` | `BAPI_PROJECT_MAINTAIN` + `BAPI_TRANSACTION_COMMIT` |
-| **Tablas propias `YTFM_*`, `YTFI_*`** | `RFC_READ_TABLE` | `RFC_ABAP_INSTALL_AND_RUN` INSERT — **único uso legítimo** |
+| **Versión de balance (FSV)** `FAGL_011PC/QT/ZC/SC` | `RFC_READ_TABLE` (**no** le afecta `CCCOPYLOCK`) | **sin API.** `OB58` en D01 + transporte D01→V01 · o **EXC-001** (peldaño 3, autorizada) |
+| **Tablas propias `YTFM_*`, `YTFI_*`** | `RFC_READ_TABLE` | `RFC_ABAP_INSTALL_AND_RUN` INSERT — **único uso legítimo sin excepción** |
 
 **Centros de beneficio: NO se usan en UNESCO** (dirección de JP, s102). `BAPI_PROFITCENTER_CREATE`
 existe y está remote-enabled, pero está fuera de alcance. No sincronizar.
