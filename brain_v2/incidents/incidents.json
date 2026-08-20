@@ -2315,5 +2315,115 @@
       "process": "Outgoing payments"
     },
     "registro_errores_acciones": "knowledge/domains/Payment/dmee_map/REGISTRO_ERRORES_Y_ACCIONES.md"
+  },
+  {
+    "id": "INC-MMF-BNPPB-2026",
+    "status": "ANALYZED_EXECUTION_PENDING",
+    "title": "Alta de 2 GL de fondo monetario BNP PB (4041018 EUR / 4041019 USD) y su tratamiento de revaluacion FX",
+    "reporter": "Thavry ENG (FIN/Treasury Middle Office) via Jeannette La (BFM-TRS)",
+    "received_date": "2026-07-27",
+    "analyzed_session": 102,
+    "domain": "Closing Activities",
+    "secondary_domains": [
+      "FI",
+      "Treasury"
+    ],
+    "transactions": [
+      "FS00",
+      "OB09",
+      "OBA1",
+      "F.05"
+    ],
+    "primary_object_id": "0004041018",
+    "primary_subject": "Cuenta de inversion MMF en EUR pendiente de configuracion de revaluacion",
+    "company_codes_involved": [
+      "UNES"
+    ],
+    "scenario": "Treasury pide alta de 2 GL para el fondo monetario BP2S LUX / BNP Paribas Insticash (EUR y USD), bajo cash and cash equivalent. MP_BOUA las crea en UNES/P01 el 2026-07-27. La nota de traslado pide revaluar LAS DOS 'como la 4041017'; los formularios AM 3-11 firmados dicen otra cosa: la EUR SI (referencia 4041017), la USD NO (referencia 4041016).",
+    "error_messages": [],
+    "root_cause_summary": "No hay fallo de runtime: es una configuracion incompleta y una instruccion de traslado que contradice al formulario autorizante. 4041018 (EUR) se creo correctamente con WAERS=EUR pero SIN filas en T030H y sin estar en el rango de la variante F.05 UNES_DEPOSIT, asi que hoy no se revaluaria. 4041019 (USD) no necesita nada: una cuenta USD en una sociedad USD (T001.WAERS=USD) no tiene exposicion que revaluar, y su referencia declarada 4041016 tampoco tiene T030H.",
+    "code_validation_chain": "F.05 -> SAPF100 -> rango de la variante UNES_DEPOSIT (decide SI la cuenta entra) -> T030H/OBA1 KDF (decide DONDE se postea la diferencia) -> LKORR=la propia cuenta (auto-revaluacion) -> LSBEW/LHBEW 6045011/7045011 (CURTP 10) y 5022012 (CURTP 30).",
+    "scope": "2 cuentas del ticket. El barrido de poblacion cubre las 9 cuentas 40410xx de UNES y los 3 sistemas (P01/D01/V01).",
+    "fix_path": "1) OB09/T030H para 0004041018: CURTP 10 con LKORR=0004041018, LSREA=LSBEW=0006045011, LHREA=LHBEW=0007045011; CURTP 30 con LKORR=0004041018 y los cuatro campos =0005022012 (copia exacta de 4041017, leida en vivo). 2) Anadir 0004041018 al rango de la variante F.05 UNES_DEPOSIT — sin esto la config de OB09 nunca se ejecuta. 3) NO configurar 0004041019; devolver a Jeannette con la evidencia del formulario. 4) Sync P01->D01 (2 cuentas) y P01->V01 (2 del ticket + 2 de deriva: 4041015, 4041016) via Zagentexecution/tasks/2026_08_20_mmf_gl_sync/mmf_gl_sync.py.",
+    "related_objects": [
+      "0004041011",
+      "0004041012",
+      "0004041013",
+      "0004041014",
+      "0004041015",
+      "0004041016",
+      "0004041017",
+      "0004041018",
+      "0004041019",
+      "0006045011",
+      "0007045011",
+      "0005022012",
+      "SKA1",
+      "SKAT",
+      "SKB1",
+      "T030H",
+      "T012",
+      "T012K",
+      "T001",
+      "T044A",
+      "GLT0",
+      "F.05",
+      "OB09",
+      "OBA1",
+      "SAPF100",
+      "UNES_DEPOSIT",
+      "UNES_UNBA",
+      "BNP01",
+      "BNP02"
+    ],
+    "related_claims": [
+      {
+        "id": 537,
+        "claim": "MMF 4041xxx: se revalua la de moneda distinta de la local (EUR si, USD no)."
+      },
+      {
+        "id": 538,
+        "claim": "Tres patrones de revaluacion por tipo de cuenta; supersede parcial del 205."
+      },
+      {
+        "id": 539,
+        "claim": "BNP del fondo no es banco casa: BP2S LUX vs BNP01/BNP02 FR; no aplica checklist house bank."
+      },
+      {
+        "id": 540,
+        "claim": "Defecto: OB09 configurado pero fuera del rango de variante = revaluacion silenciosa."
+      },
+      {
+        "id": 541,
+        "claim": "gold_refresh.py solo procesa specs 'curated' y se salta el resto sin avisar (exit 0)."
+      }
+    ],
+    "related_dq": [],
+    "related_known_unknowns": [
+      "KU-2026-070-02 (el rango de UNES_DEPOSIT no es legible por RFC: VARI/VARIS son pool tables)",
+      "KU-MMF-001 (si el rango actual de UNES_DEPOSIT ya cubre 4041018 por casualidad)",
+      "KU-MMF-002 (si MP_BOUA uso transporte para el alta en P01)"
+    ],
+    "analysis_doc": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
+    "evidence_extracted_this_incident": "Lectura live read-only P01/D01/V01 de SKA1/SKAT/SKB1/T030H/T012K para las 9 cuentas 40410xx (probe_mmf_live.py). Estado real de las casillas de los 2 formularios AM 3-11 leido desde xl/ctrlProps/*.xml con sus anclajes de celda. Cruce de los 944 HKONT de T030H contra T012K y KTOKS. Balances GLT0 por moneda de transaccion.",
+    "lessons": "(1) El tipo de CUENTA decide el patron de revaluacion, y son TRES, no dos: banco casa -> mayoritariamente auto-revaluacion (251 de 259, no main->sub como decia el modelo); conciliacion AP/AR 2xxxxxx -> main->cuenta de ajuste (130+43); inversion/balance no-banco 4041xxx -> auto-revaluacion, variante UNES_DEPOSIT. (2) Un banco con nombre conocido no es un banco casa: BNP01/BNP02 son FR, el fondo es BP2S Luxemburgo, y ninguna 4041xxx esta en T012K. (3) T030H dice DONDE postear; la VARIANTE decide SI se calcula — configurar solo OB09 deja una revaluacion que no corre, en silencio. (4) La autoridad de registro es el formulario firmado, no la nota del solicitante: la nota pedia revaluar las dos y el formulario de la USD dice NO. (5) El campo 'GL to be revaluated' del AM 3-11 existe y nadie lo lee.",
+    "open_followups": [
+      "OB09/T030H para 4041018 (2 filas: CURTP 10 y 30)",
+      "Anadir 4041018 al rango de la variante F.05 UNES_DEPOSIT",
+      "Responder a Jeannette con la evidencia de que 4041019 no se revalua",
+      "Sync P01->D01/V01 (script bloqueado por el clasificador de permisos)",
+      "4041014: T030H con exposicion nula (solo mueve USD) — config sin efecto, decidir si se retira",
+      "V01 arrastra 2 cuentas de deriva desde 2024 (4041015, 4041016) que si llegaron a D01",
+      "gold_refresh.py: procesa solo specs 'curated' y se salta el resto SIN AVISAR (exit 0, sync log vacio)"
+    ],
+    "chain_anchor_type": "config_table",
+    "chain_anchor_note": "Anclado en T030H/OBA1 mas el rango de la variante SAPF100. La segunda mitad del ancla NO es legible por RFC (KU-2026-070-02), por eso la cobertura no llega a 100.",
+    "chain_anchor_coverage_pct": 80,
+    "chain_audited_session": 102,
+    "domain_axes": [
+      "FI",
+      "Treasury",
+      "Closing_Activities"
+    ]
   }
 ]

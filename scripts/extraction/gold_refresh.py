@@ -302,12 +302,19 @@ def main():
     g = get_connection("P01")
     print(f"Connected P01 (read-only). Refreshing {dom}" + (f" / {only_type}" if only_type else "") + "\n")
 
+    # Solo las specs 'curated' llevan sap/key/fields, que es lo que las estrategias necesitan.
+    # Saltarse las 'auto' EN SILENCIO hacia que una corrida sin efecto imprimiera "DONE." y
+    # devolviera 0 -- indistinguible de un refresco real (s102, regla #180). Ahora se declara.
+    skipped = []
+    processed = 0
     for ttype, specs in reg["domains"][dom].items():
         if only_type and ttype != only_type:
             continue
         curated = [s for s in specs if s.get("source") == "curated"]
         if tbl_filter:
             curated = [s for s in curated if s["gold"] in tbl_filter]
+        skipped += [(ttype, s["gold"], s.get("source", "?")) for s in specs
+                    if s not in curated and (not tbl_filter or s["gold"] in tbl_filter)]
         if not curated:
             continue
         print(f"  [{ttype}]")
@@ -318,18 +325,35 @@ def main():
                 print(f"    {spec['gold']}: no strategy '{strat}'"); continue
             try:
                 fn(g, con, ts, dom, ttype, spec)
+                processed += 1
             except Exception as e:
                 print(f"    {spec['gold']}: ERR {str(e)[:120]}")
     g.close()
 
+    if skipped:
+        print(f"\n[NO REFRESCADAS — {len(skipped)}: sin spec curada (falta sap/key/fields)]")
+        for ttype, gold, src in sorted(skipped):
+            print(f"    {gold:24s} [{ttype}] source={src}")
+        print("    Estas tablas NO se han tocado. Curar su spec en "
+              "brain_v2/gold_table_registry.json para incluirlas.")
+
     print("\n[sync log — this run]")
-    for r in con.cursor().execute(
-            "SELECT gold, strategy, n_new, n_changed, n_deleted, n_total FROM _gold_sync_log WHERE ts=? ORDER BY gold",
-            (ts,)):
+    rows = list(con.cursor().execute(
+        "SELECT gold, strategy, n_new, n_changed, n_deleted, n_total FROM _gold_sync_log WHERE ts=? ORDER BY gold",
+        (ts,)))
+    for r in rows:
         print(f"    {r[0]:24s} {r[1]:13s} +{r[2]} ~{r[3]} -{r[4]} / {r[5]}")
     con.close()
-    print("\nDONE.")
+
+    if processed == 0:
+        # Exit != 0: un refresco que no refresca nada es un fallo, no un exito silencioso.
+        print(f"\nNADA REFRESCADO para '{dom}'"
+              + (f" / {only_type}" if only_type else "")
+              + f" — 0 de {len(skipped)} tablas tienen spec curada.")
+        return 3
+    print(f"\nDONE — {processed} tabla(s) refrescada(s), {len(skipped)} sin spec curada.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

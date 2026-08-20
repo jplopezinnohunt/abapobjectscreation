@@ -25609,5 +25609,257 @@
         "P2P"
       ]
     }
+  },
+  {
+    "id": 537,
+    "claim": "Revaluacion FX de las cuentas MMF/deposito 4041xxx de UNES: se revalua la que esta en moneda distinta de la local, no la que comparte moneda con la sociedad. Medido sobre las 9 cuentas 40410xx con T001.WAERS(UNES)=USD: 4041017 (MMF EUR BlackRock, SKB1.WAERS=EUR, GLT0 solo EUR, 402,7 M EUR en 2025) tiene 2 filas en T030H; 4041015 y 4041016 (MMF USD, GLT0 solo USD) tienen 0. La nueva 4041018 (MMF EUR BNP PB) se creo con WAERS=EUR y necesita la config; la nueva 4041019 (MMF USD BNP PB) no la necesita, y su propio formulario AM 3-11 marca 'GL to be revaluated = NO'.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "RFC_READ_TABLE live P01 sobre SKA1/SKAT/SKB1/T030H + glt0_p01 + T001 (probe_mmf_live.py, 2026-08-20)",
+        "cite": "4041017 WAERS=EUR con T030H 2 filas; 4041015/4041016 WAERS=USD con 0 filas; 4041018 WAERS=EUR con 0 filas; 4041019 WAERS=USD con 0 filas; T001.WAERS(UNES)=USD",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
+        "cite": "seccion 4, tabla de las 9 cuentas",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "0004041014",
+      "0004041015",
+      "0004041016",
+      "0004041017",
+      "0004041018",
+      "0004041019",
+      "T030H",
+      "T001",
+      "GLT0",
+      "SKB1",
+      "F.05",
+      "SAPF100"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Regla derivada del ticket MMF BNP PB (INC-MMF-BNPPB-2026). Caso particular del principio ya escrito en fx_revaluation_process.md seccion 1 ('una cuenta USD en una sociedad USD no tiene nada que revaluar'), aqui MEDIDO cuenta a cuenta.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 538,
+    "claim": "El patron de revaluacion en T030H lo decide el TIPO DE CUENTA, y son TRES patrones, no dos. Cruce de los 944 HKONT de T030H (KTOPL=UNES, CURTP 10) contra T012K y SKA1.KTOKS: (a) BANCO CASA (en T012K o con SKB1.HBKID, KTOKS=BANK) -> auto-revaluacion 251 filas frente a main->sub solo 8; (b) CONCILIACION AP/AR (2xxxxxx, KTOKS OTHR/COLL sin HBKID) -> main->cuenta de ajuste, 130+43 filas (2031xxx->2031800, 2100xxx->2111800); (c) INVERSION / BALANCE NO-BANCO (4041xxx, sin HBKID, no en T012K, KTOKS=OTHR) -> auto-revaluacion, variante UNES_DEPOSIT.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Consulta SQL sobre T030H x T012K x P01_SKA1 x P01_SKB1 en el Gold DB (2026-08-20)",
+        "cite": "BANCO CASA/BANK: auto-reval 251, main->sub 8, sin LKORR 57. NO-BANCO/OTHR: main->sub 130, auto-reval 100, sin LKORR 98. NO-BANCO/COLL: main->sub 43. Las 350 GL de banco casa de UNES en T012K no incluyen ninguna 4041xxx.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
+        "cite": "seccion 3, tabla tipo de cuenta -> patron",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T030H",
+      "T012K",
+      "SKA1",
+      "SKB1",
+      "0001010574",
+      "0001110574",
+      "0001094316",
+      "0001194316",
+      "0002031800",
+      "0002111800",
+      "UNES_UNBA",
+      "UNES_DEPOSIT"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "SUPERSEDE PARCIAL del claim 205 ('dos patrones validos: self-ref vs main+sub-account'). Son tres, y la atribucion estaba invertida: fx_revaluation_process.md seccion 4 presenta main->sub como EL patron bancario, pero eso solo se cumple en 8 de 259 filas de banco casa (justo los pares Banco de Chile / Ecobank del INC-FXREVAL-OB09). Quien usa main->sub de forma dominante es la conciliacion AP/AR.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 539,
+    "claim": "Un banco con nombre conocido no es necesariamente un banco casa, y confundirlo cambia el diseno. El fondo monetario del ticket es BP2S LUX / BNP Paribas Insticash (Luxemburgo, IBAN LU46 3280791019TFN978 EUR y LU86 3280791019TFN840 USD), pero los unicos BNP en T012 de UNES son BNP01 y BNP02, ambos con BANKS='FR'. Ninguna cuenta 4041xxx figura en T012K (350 GL de banco casa en UNES) y las 9 tienen SKB1.HBKID/HKTID vacios. Por tanto NO aplica el checklist de house bank (FI12 / T012K / FBZP / sub-cuenta de ajuste): son cuentas de inversion bajo cash equivalents.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "RFC_READ_TABLE live P01 sobre T012, T012K y SKB1 (2026-08-20)",
+        "cite": "T012 UNES: BNP01 y BNP02 con BANKS='FR'. T012K UNES filtrado por HKONT=4041011..4041019: 0 filas. SKB1 de las 9 cuentas: HBKID y HKTID vacios. Formularios AM 3-11: 'Other balance sheet a/c' marcado, House bank ID / Bank account ID en blanco.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
+        "cite": "seccion 3",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T012",
+      "T012K",
+      "SKB1",
+      "BNP01",
+      "BNP02",
+      "0004041018",
+      "0004041019"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Misma familia de error que el caso Egipto (claim 530): el nombre del banco no determina el canal ni el rol. Aqui el custodio de un fondo se puede leer como banco operativo si no se mira T012K.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 540,
+    "claim": "Clase de defecto: 'OB09 configurado pero fuera del rango de la variante' = revaluacion que no se ejecuta, en silencio. En F.05/SAPF100 son dos condiciones independientes: el rango de GL de la VARIANTE decide SI la cuenta entra en el calculo, y T030H/OBA1 decide DONDE se postea la diferencia. Configurar solo T030H no produce ningun error: la cuenta simplemente nunca se valora. Es el mismo modo de fallo silencioso que dejo a ICTP sin valorar julio y noviembre de 2025.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "knowledge/incidents/INC-MMF-BNPPB-2026_mmf_gl_creation_and_revaluation.md",
+        "cite": "seccion 5, paso 4: sin anadir 4041018 al rango de UNES_DEPOSIT, las filas de T030H no se ejecutan nunca",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "knowledge/domains/Closing_Activities/fx_revaluation_process.md",
+        "cite": "seccion 5: UNES_DEPOSIT cubre solo cuentas 4041xxx OTHR (EUR, 1 activa = 0004041017); UNES_UNBA cubre el rango de banco 0001001604-0001098174",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T030H",
+      "OB09",
+      "OBA1",
+      "F.05",
+      "SAPF100",
+      "UNES_DEPOSIT",
+      "UNES_UNBA",
+      "VARI",
+      "VARID"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Detectable solo cruzando T030H con el rango de la variante. Hoy ese cruce NO es automatizable: VARI/VARIS son pool tables y RFC solo devuelve el nombre (KU-2026-070-02). Candidato a check mecanizado en cuanto el rango sea legible desde D01.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
+  },
+  {
+    "id": 541,
+    "claim": "gold_refresh.py refresca SOLO las specs marcadas source='curated' y se salta el resto SIN AVISAR, devolviendo exit 0 y un sync log vacio. En el registro hay 318 tablas y solo 28 son 'curated'; todas las entradas de los dominios FI y Config son 'auto' (llevan gold/rows/source pero no sap/key/fields). El filtro es curated = [s for s in specs if s.get('source')=='curated'] seguido de if not curated: continue, sin print. Corridas de FI master_data, FI text y Config config el 2026-08-20 imprimieron 'DONE.' sin tocar una sola tabla: _gold_sync_log conserva su ultima fila del 2026-06-30 y P01_SKA1 sigue sin 4041018/4041019.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "scripts/extraction/gold_refresh.py, funcion main()",
+        "cite": "curated = [s for s in specs if s.get('source') == 'curated'] ; if not curated: continue — sin mensaje",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "brain_v2/gold_table_registry.json",
+        "cite": "_meta: total_tables 318, curated 28, auto 291",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "Gold DB _gold_sync_log tras las 3 corridas del 2026-08-20",
+        "cite": "ultima fila ts=2026-06-30T10:24:54Z; SELECT COUNT(*) FROM P01_SKA1 WHERE SAKNR IN ('0004041018','0004041019') = 0",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "scripts/extraction/gold_refresh.py",
+      "brain_v2/gold_table_registry.json",
+      "_gold_sync_log",
+      "P01_SKA1",
+      "P01_SKB1",
+      "P01_SKAT",
+      "T030H"
+    ],
+    "domain": "Brain_Architecture",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Regla #180: un no-op silencioso es un defecto silencioso. Arreglo minimo: imprimir cuantas specs se saltan por no ser 'curated' y con que nombre, y salir con codigo distinto de 0 si el dominio pedido no tiene ninguna procesable. Consecuencia operativa mientras tanto: el Gold DB NO se puede usar para analisis de gap de GL — hay que leer LIVE, que es justo lo que ordena el skill sap_master_data_sync.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
   }
 ]
