@@ -5158,5 +5158,29 @@
       "module": [],
       "process": []
     }
+  },
+  {
+    "id": "feedback_read_the_variant_the_variant_is_the_process",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Ante CUALQUIER pregunta sobre que hace realmente un job, una interfaz, un report o una corrida periodica: LEE LA VARIANTE antes de responder. El programa dice lo que se PUEDE hacer; la variante dice lo que SE HACE. Cadena obligatoria: TBTCO/TBTCP (que corrio) -> TBTCP.PROGNAME + TBTCP.VARIANTE -> RS_VARIANT_CONTENTS_RFC(REPORT, VARIANT) -> VALUTAB. Y corolario duro: un objeto puede estar PERFECTAMENTE CONFIGURADO y no procesarse NUNCA porque no entra en la seleccion de ninguna variante -- sin error, en silencio. Toda auditoria de configuracion que no cruce contra la variante esta incompleta por construccion.",
+    "why": "2026-08-20 (s102). JP: 'ya tenias la capacidad de leer reports y variantes, eso es una capacidad super importante... las variantes definen mucho los procesos ya que como las generan contienen combinaciones unicas'. Cada variante se crea a mano para un caso concreto: es una combinacion que no esta en ninguna documentacion, y es donde el proceso se instancia. Sin este paso, un analisis de jobs solo sabe QUE algo corrio; con el, sabe QUE HIZO -- incluida la RUTA DONDE UNA INTERFAZ DEJA SUS FICHEROS, que es un parametro de la variante y no esta en ningun sitio mas. El bloqueo era doble y ambos lados eran falsos: el skill sap_variant_analysis y sap_variant_forensic_methodology.md afirmaban que VARI/VARID/VARIS son pool tables y que 'no hay workaround via RFC'. DD02L dice TRANSP en las tres, el contenido esta en VARI-CLUSTD (campo RAW de 2.886 bytes) y RS_VARIANT_CONTENTS_RFC esta remote-enabled y funciona sobre P01 sin S_DEVELOP. Una creencia equivocada escrita en un skill bloqueo durante sesiones un analisis de segundos. Medido el mismo dia: de las 5 cuentas 40410xx con filas en T030H, solo 2 estan en una variante -- el resto lleva anos configurado sin ejecutarse.",
+    "how_to_apply": "1) Inventario: RFC_READ_TABLE sobre VARID WHERE REPORT = '<PROG>' (transparente, multi-campo, funciona). 2) Contenido: conn.call('RS_VARIANT_CONTENTS_RFC', REPORT=..., VARIANT=..., VALUTAB=[]) y recorre VALUTAB (SELNAME/KIND/SIGN/OPTION/LOW/HIGH). KIND 'P' = parametro simple, 'S' = select-option. 3) NO ASUMAS EL MECANISMO DE SELECCION: cambia entre variantes del MISMO programa. En SAPF100/UNES, UNES_DEPOSIT usa 16 valores EQ sueltos mientras UNES_UNBA usa rangos BT -- decir 'se anade por rangos' es erroneo la mitad de las veces. 4) Lee TAMBIEN los parametros que no son rangos: rutas de fichero, fechas, metodo de valoracion y flags de modo (X_SALBEW, X_GL, ST_BUDAT, TESTLAUF) son la mitad del proceso. 5) Cruza SIEMPRE config x seleccion (p.ej. T030H x variante) y reporta lo configurado-pero-no-seleccionado. 6) Si un FM parece no existir, preguntale al sistema: TFDIR WHERE FMODE = 'R' AND FUNCNAME LIKE '%<TEMA>%'. Skill: .agents/skills/sap_variant_analysis/SKILL.md.",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI",
+        "Integration",
+        "Support"
+      ],
+      "module": [
+        "FI",
+        "BC"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]

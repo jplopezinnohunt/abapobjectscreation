@@ -25966,5 +25966,62 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 544,
+    "claim": "REFUTADO: 'VARI/VARID/VARIS son pool tables (VARPOOL) y por eso su contenido no se puede leer via RFC; no hay workaround'. Estaba escrito en .agents/skills/sap_variant_analysis/SKILL.md y en knowledge/domains/Closing_Activities/sap_variant_forensic_methodology.md desde s078. DD02L.TABCLASS devuelve TRANSP para las tres. VARID se lee multi-campo sin problema. Lo que falla es distinto: el contenido de la variante vive en VARI-CLUSTD, un campo tipo X de 2.886 bytes que RFC_READ_TABLE no devuelve, y VARIS solo tiene 4 campos (MANDT, REPORT, DYNNR, VARIANT) sin ningun rango. Y SI hay workaround: RS_VARIANT_CONTENTS_RFC, remote-enabled, read-only, funciona sobre P01 y no necesita S_DEVELOP.",
+    "claim_type": "refutation",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "DD02L WHERE TABNAME LIKE 'VARI%' AND AS4LOCAL='A' (P01, 2026-08-20)",
+        "cite": "VARI TRANSP · VARID TRANSP · VARIS TRANSP · VARIT TRANSP. Ninguna es POOL.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "RFC_READ_TABLE VARID multi-campo en P01",
+        "cite": "FIELDS=[REPORT,VARIANT,TRANSPORT,ENVIRONMNT,PROTECTED] WHERE REPORT='SAPF100' -> 21 filas. No hay TABLE_WITHOUT_DATA.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "RS_VARIANT_CONTENTS_RFC en P01",
+        "cite": "REPORT='SAPF100', VARIANT='UNES_DEPOSIT' -> VALUTAB con 76 entradas.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "VARI",
+      "VARID",
+      "VARIS",
+      "VARIT",
+      "DD02L",
+      "TFDIR",
+      "RS_VARIANT_CONTENTS_RFC",
+      "SAPF100",
+      ".agents/skills/sap_variant_analysis/SKILL.md",
+      "knowledge/domains/Closing_Activities/sap_variant_forensic_methodology.md"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": "Los dos artefactos quedan corregidos in situ, con el texto refutado conservado tachado (CP-001, no se borra: se supersede). Coste real de la creencia: bloqueo durante sesiones un analisis que tarda segundos, y dejo KU-2026-070-02 y KU-CA-002 abiertos sin motivo. Leccion transferible: una limitacion tecnica escrita en un skill se propaga como hecho a todas las sesiones siguientes -- si la limitacion es 'no se puede', hay que fecharla y decir COMO se comprobo, para que la siguiente sesion sepa si merece re-probarla.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "Brain_Architecture"
+      ],
+      "module": [
+        "FI",
+        "BC"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]

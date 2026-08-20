@@ -46,13 +46,38 @@ subtopics:
 
 A SAP variant saves selection-screen parameter values for a report/program so it can be re-run with the same inputs without re-entering them. Key tables:
 
-| Table | Type | Content | RFC Readable? |
-|-------|------|---------|---------------|
-| `VARI` | Pool (VARPOOL) | Variant header: name, text, owner, dates | Key field only (VARIANT) |
-| `VARID` | Pool (VARPOOL) | Selection parameter values (P_ parameters) | Key field only (VARIANT) |
-| `VARIS` | Pool (VARPOOL) | Selection options (S_ parameters, ranges) | Key field only (VARIANT) |
+| Table | Type (DD02L) | Content | RFC_READ_TABLE? |
+|-------|--------------|---------|-----------------|
+| `VARID` | **TRANSP** | Variant directory: REPORT, VARIANT, TRANSPORT, ENVIRONMNT, PROTECTED | ✅ **multi-field, funciona** |
+| `VARIT` | TRANSP | Variant texts (VTEXT) | ✅ |
+| `VARI` | **TRANSP** | The actual content — in `CLUSTD`, **type X, 2.886 bytes**: a serialized cluster | ❌ el campo es RAW |
+| `VARIS` | TRANSP | Only 4 fields (MANDT, REPORT, DYNNR, VARIANT) — **no ranges at all**; empty here | ❌ irrelevante |
 
-**Critical limitation**: VARI/VARID/VARIS are pool tables. RFC_READ_TABLE can only reliably return the primary key field (VARIANT). Multi-field reads fail with `TABLE_WITHOUT_DATA` (AD-718). This is not an authorization issue — it is the pool table architecture.
+> ⚠️ **CORRECCIÓN (s102, 2026-08-20).** Versiones anteriores de este skill afirmaban que
+> VARI/VARID/VARIS son **pool tables** y que "no hay workaround vía RFC". **Las dos cosas son falsas.**
+> `DD02L.TABCLASS` dice `TRANSP` para las tres. Lo que impide leer el contenido con `RFC_READ_TABLE`
+> no es la arquitectura de pool: es que **el contenido vive en un campo RAW** (`VARI.CLUSTD`), y
+> `VARIS` simplemente no contiene rangos. **Y sí existe workaround, sin `S_DEVELOP` y sobre P01.**
+> La afirmación errónea bloqueó durante sesiones un análisis que tarda segundos.
+
+### ✅ EL MÉTODO: `RS_VARIANT_CONTENTS_RFC` (remote-enabled, funciona en P01)
+
+```python
+r = conn.call("RS_VARIANT_CONTENTS_RFC", REPORT="SAPF100", VARIANT="UNES_DEPOSIT", VALUTAB=[])
+for x in r["VALUTAB"]:            # SELNAME · KIND · SIGN · OPTION · LOW · HIGH
+    if x["LOW"].strip() or x["HIGH"].strip():
+        print(x["SELNAME"], x["KIND"], x["SIGN"], x["OPTION"], x["LOW"], x["HIGH"])
+```
+
+`KIND`: `P` = parámetro simple · `S` = select-option. `SIGN` `I`/`E` = incluir/excluir.
+`OPTION` `EQ`/`BT`/… Devuelve **también** los parámetros de pantalla (fechas, flags de modo,
+método de valoración), no solo los rangos de cuentas — que es donde está la mitad del proceso.
+
+**Cómo se descubrió, y cómo repetirlo con cualquier otro FM:** pregúntale al sistema en vez de
+recordar. `RFC_READ_TABLE` sobre `TFDIR WHERE FMODE = 'R' AND FUNCNAME LIKE '%VARI%'` lista los FM
+remote-enabled. Ahí aparecen `RS_VARIANT_CONTENTS_RFC` y `RS_VARIANT_CONTENTS_255_RFC`.
+Ojo: `RS_VARIANT_CONTENTS` **sin** el sufijo `_RFC` existe pero **falla** al serializar su parámetro
+EXPORT `SP` de tipo `SYLDB_SP`; `RS_VARIANT_TEXTS` y `GET_SELECTIONS_OF_VARIANT` no existen.
 
 ## Extraction Methodology
 
@@ -86,9 +111,16 @@ criteria_counts = Counter(row['WA'].strip() for row in result['DATA'])
 
 A variant with 0 VARIS rows has no S_ selection ranges. A variant with many rows has complex account/company code selections.
 
-### Step 3 — Decode Variant Content (when RFC_ABAP_INSTALL_AND_RUN is authorized)
+### Step 3 — Decode Variant Content → **usa `RS_VARIANT_CONTENTS_RFC`** (arriba)
 
-If `S_DEVELOP` authorization exists on the target system (typically D01, not P01):
+Es la vía de primera elección: funciona en **P01**, es **read-only** y **no necesita `S_DEVELOP`**.
+Lo de abajo queda como plan B histórico para un sistema donde ese FM no exista.
+
+<details><summary>Plan B (legacy): RFC_ABAP_INSTALL_AND_RUN en D01</summary>
+
+⚠️ Este método **no lee el contenido real**: `SELECT * FROM varis` devuelve una tabla que no tiene
+rangos, y `VARI-CLUSTD` sale como binario. Se conserva solo por trazabilidad de cómo se intentó.
+Requiere `S_DEVELOP`, bloqueado en P01.
 
 ```python
 code = """
@@ -113,6 +145,58 @@ writes = result.get('WRITES', [])
 ```
 
 **Note**: `RFC_ABAP_INSTALL_AND_RUN` requires `S_DEVELOP` authorization. On P01 production this is blocked. Use D01 or a test system.
+
+</details>
+
+---
+
+## 🔑 POR QUÉ ESTO IMPORTA MÁS QUE LAS VARIANTES — la variante ES el proceso
+
+Una variante no es una comodidad de usuario: **es dónde se instancia el proceso**. El programa dice
+lo que se *puede* hacer; la variante dice lo que **se hace de verdad**, y como cada una se crea a mano
+para un caso concreto, **cada variante es una combinación única** que no está en ninguna
+documentación. Leerlas convierte "sé qué programa corre" en "sé qué hace, sobre qué, con qué
+parámetros y con qué resultado".
+
+### La cadena que desbloquea
+
+```
+TBTCO/TBTCP (¿qué job corrió, cuándo, con qué usuario?)
+   └─ TBTCP.PROGNAME + TBTCP.VARIANTE      ← el job nombra la variante
+        └─ RS_VARIANT_CONTENTS_RFC(REPORT, VARIANT)
+             └─ VALUTAB: rutas de fichero, sociedades, rangos de cuentas, fechas, flags de modo
+```
+
+**Sin el último paso, un análisis de jobs solo sabe QUE algo corrió. Con él, sabe QUÉ hizo.**
+
+### Casos de uso (no solo cierre)
+
+| Pregunta | Qué se lee en la variante |
+|---|---|
+| **¿Dónde deja los ficheros esta interfaz?** | el parámetro de ruta / nombre de fichero del programa que lanza el job |
+| ¿Qué sociedades y qué rango cubre este job? | `BUKRS`, rangos de cuenta/objeto |
+| ¿Este job revalúa, reversa, o simula? | flags de modo (`X_SALBEW`, `X_GL`, `ST_BUDAT`, `TESTLAUF`) |
+| ¿Qué formato/árbol DMEE usa esta corrida de pagos? | parámetros de `SAPFPAYM` / programas de medio de pago |
+| ¿Coincide lo configurado con lo que se ejecuta? | cruce config (p.ej. `T030H`) × selección de la variante |
+| ¿Por qué este objeto nunca se procesa? | está en la config pero **fuera de la selección** — fallo silencioso |
+
+### La regla que sale de aquí
+
+**Un objeto puede estar perfectamente configurado y no procesarse nunca porque no entra en la
+selección de ninguna variante.** No da error: simplemente no ocurre. Medido en UNESCO s102: de las 5
+cuentas `40410xx` con filas en `T030H`, solo 2 están en una variante. Cualquier auditoría de
+configuración que no cruce contra la variante es incompleta por construcción.
+
+### Cuidado — el mecanismo de selección cambia entre variantes del MISMO programa
+
+En SAPF100/UNES: `UNES_DEPOSIT` selecciona por **16 valores `EQ` sueltos**, mientras `UNES_UNBA`,
+`UNES_OI_G/L` y `UNES_OI_AR/AP` usan **rangos `BT`**. Asumir "se añade por rangos" es erróneo la
+mitad de las veces. **Lee la variante antes de decir cómo se añade algo a ella.**
+
+### Pendiente (exploración futura, marcada por JP s102)
+Aplicar esto sistemáticamente a **DMEE + reports + variantes**: mapear cada job de interfaz a su
+variante y extraer las rutas de fichero, para cerrar el modelo de "por dónde entran y salen los
+ficheros" que hoy está a medias (claim 536).
 
 ### Step 4 — Cross-Reference with Business Objects (Gold DB)
 

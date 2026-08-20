@@ -22,16 +22,39 @@ Understanding a program's variants tells you:
 
 ## SAP Variant Table Architecture
 
-| Table | Pool | Content | RFC_READ_TABLE |
-|-------|------|---------|----------------|
-| `VARI` | VARPOOL | Variant header (name, text, owner, create/modify date, flags) | **Key field only** |
-| `VARID` | VARPOOL | P_ parameter values (single values) | **Key field only** |
-| `VARIS` | VARPOOL | S_ selection options (ranges: LOW, HIGH, SIGN, OPTION) | **Key field only** |
+> ⛔ **CORREGIDO s102 (2026-08-20). Lo que decía esta sección era falso y bloqueaba el análisis.**
+> Se afirmaba que VARI/VARID/VARIS son **pool tables (VARPOOL)** y que **"no hay workaround vía RFC"**.
+> Medido con `DD02L`: las tres son **`TRANSP`**. Y el workaround existe, funciona en P01 y no necesita
+> `S_DEVELOP`. El texto original se conserva abajo tachado por trazabilidad (CP-001).
 
-**VARPOOL** is a SAP table pool — a physical storage optimization where multiple logical tables share one database table. This means:
-- RFC_READ_TABLE can read the VARIANT field (primary key fragment)
-- Adding any second field causes `TABLE_WITHOUT_DATA` error (AD-718)
-- This is architecture, not authorization — no workaround via RFC_READ_TABLE
+| Table | Type (DD02L) | Content | RFC_READ_TABLE |
+|-------|--------------|---------|----------------|
+| `VARID` | **TRANSP** | Variant directory (REPORT, VARIANT, TRANSPORT, ENVIRONMNT, PROTECTED) | ✅ multi-campo |
+| `VARIT` | TRANSP | Variant texts (VTEXT) | ✅ |
+| `VARI` | **TRANSP** | El contenido real, en `CLUSTD` — **tipo X, 2.886 bytes**, cluster serializado | ❌ campo RAW |
+| `VARIS` | TRANSP | Solo 4 campos (MANDT, REPORT, DYNNR, VARIANT). **No contiene rangos.** Vacía aquí | ❌ irrelevante |
+
+**Por qué fallaba, de verdad:** no por arquitectura de pool, sino porque el contenido está en un campo
+**RAW** que `RFC_READ_TABLE` no devuelve, y porque `VARIS` no es la tabla de rangos que creíamos.
+
+**La vía correcta — `RS_VARIANT_CONTENTS_RFC`** (remote-enabled, read-only, funciona sobre P01):
+
+```python
+r = conn.call("RS_VARIANT_CONTENTS_RFC", REPORT="SAPF100", VARIANT="UNES_DEPOSIT", VALUTAB=[])
+# VALUTAB: SELNAME · KIND (P=parámetro, S=select-option) · SIGN (I/E) · OPTION (EQ/BT…) · LOW · HIGH
+```
+
+Se descubrió preguntándole al sistema, no recordando:
+`RFC_READ_TABLE` sobre `TFDIR WHERE FMODE = 'R' AND FUNCNAME LIKE '%VARI%'`.
+
+<details><summary>Texto original (refutado, conservado por trazabilidad)</summary>
+
+~~VARPOOL is a SAP table pool — a physical storage optimization where multiple logical tables share
+one database table. RFC_READ_TABLE can read the VARIANT field only; adding any second field causes
+`TABLE_WITHOUT_DATA` (AD-718). This is architecture, not authorization — no workaround via
+RFC_READ_TABLE.~~
+
+</details>
 
 ---
 
