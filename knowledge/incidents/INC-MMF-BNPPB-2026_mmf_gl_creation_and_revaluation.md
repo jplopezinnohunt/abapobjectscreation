@@ -1,4 +1,9 @@
-# INC-MMF-BNPPB-2026 — Alta de 2 GL de fondo monetario BNP PB y su tratamiento de revaluación
+# INC-000016262 — Alta de 2 GL de fondo monetario BNP PB y su tratamiento de revaluación
+
+> **Número de ticket real: `INC-000016262`**, recuperado el 2026-08-20 del texto del transporte
+> `D01K9B0FXP` ("INC-000016262 New Account MMF investments Revaluation") — el correo no lo traía,
+> por eso este doc nació con el id provisional `INC-MMF-BNPPB-2026`, que se conserva como alias
+> para no romper los enlaces del brain.
 
 **Status**: ANALIZADO — decisión tomada con evidencia live. **PENDIENTE de ejecución**: (1) OB09/T030H + variante `UNES_DEPOSIT` para 4041018 · (2) sync P01→D01/V01 (script escrito, bloqueado por permisos) · (3) respuesta a Jeannette sobre 4041019
 **Type**: Track B — acción operativa (el qué se sabe; hacerlo bien es el trabajo)
@@ -19,10 +24,26 @@
 | # | Acción | Estado |
 |---|---|---|
 | 1 | Crear 4041018 + 4041019 en UNES/P01 | ✅ **HECHO** por MP_BOUA 2026-07-27 — y **bien**: la EUR quedó con `WAERS=EUR` |
-| 2 | OB09/T030H para 4041018 (CURTP 10 y 30) | ❌ **PENDIENTE** — 0 filas hoy |
-| 3 | Añadir 4041018 al rango de la variante F.05 `UNES_DEPOSIT` | ❌ **PENDIENTE** — y es el paso que se olvida |
-| 4 | Revaluación de 4041019 | ⛔ **NO PROCEDE** — el formulario firmado dice NO |
-| 5 | Sync P01 → D01 (2 cuentas) y V01 (2, o 4 con la deriva) | ❌ **PENDIENTE** |
+| 2 | **Variante `UNES_DEPOSIT` en P01** | ✅ **HECHO 2026-08-20** — verificado: 17 entradas `EQ`, `4041018` dentro |
+| 3 | OB09/T030H en **D01**, para transportar | ⚠️ **HECHO CON DEFECTO** — `LKORR=0004041017` en CURTP 10 y 30; debe ser `0004041018` |
+| 4 | OB09/T030H en **P01** | ⏳ se cierra **al liberar el transporte `D01K9B0FXP`**, no a mano |
+| 5 | Revaluación de 4041019 | ⛔ **NO PROCEDE** — formulario `NO`, referencia 4041016 sin T030H, y es USD en sociedad USD |
+| 6 | Sync de cuentas P01 → D01 / V01 | ✅ **HECHO 2026-08-20** — 2 en D01 y 33 en V01, readback campo a campo OK |
+| 7 | Variante en D01 y V01 | ❌ **PENDIENTE** — siguen sin `4041018`; no se transportan (`VARID.TRANSPORT='F'`). Ver H113 |
+
+### El transporte — `D01K9B0FXP`
+`TRFUNCTION=Q` (customizing) · `TRSTATUS=D` (modificable, **sin liberar**) · JP_LOPEZ 2026-08-20 ·
+texto *"INC-000016262 New Account MMF investments Revaluation"*.
+
+`config_transport_prerelease_check.py`: **2 VIAJA · 0 INTRUSA · 0 NO-OP · 2 DERIVA**. Alcance limpio,
+sin claves ajenas. Pero el valor que exporta lleva `LKORR=0004041017`.
+
+> **La mecánica que salva esto:** un transporte de tabla guarda la **CLAVE** y exporta el **VALOR al
+> LIBERAR**. Corregir `LKORR` en D01 **antes** de liberar hace que el transporte lleve ya lo correcto
+> — no hay que tocarlo, borrarlo ni rehacerlo.
+
+Las 2 `[DERIVA]`: `0001122421` y `0001122424` tienen fila en P01 y no en D01. Preexistente, este
+transporte no la corrige.
 
 ---
 
