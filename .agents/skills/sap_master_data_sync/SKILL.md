@@ -68,7 +68,74 @@ No es binario "API o INSERT". Hay **tres peldaños**, y se baja solo cuando el d
 |---|---|---|---|---|
 | **1** | **API estándar** (BAPI / FM RFC del objeto) | existe un FM en `TFDIR FMODE='R'` | ✅ | según el objeto |
 | **2** | **BC-Set** (`SCPRMP_UPDATE_BCSET_REMOTE` → `SCPR_ACTIV_MN_REMOTE_SUB`) | **customizing sin API** | ✅ escribe por el framework | ✅ `TASK_CUST_EXP` |
-| **3** | `RFC_ABAP_INSTALL_AND_RUN` INSERT | **solo tablas propias `Y*`/`Z*`** | ❌ | ❌ |
+| **3** | `RFC_ABAP_INSTALL_AND_RUN` INSERT | tablas propias `Y*`/`Z*` · **y EXCEPCIÓN AUTORIZADA** (abajo) | ❌ | ❌ |
+
+---
+
+## ⚖️ EXCEPCIONES AUTORIZADAS — el peldaño 3 sobre tablas estándar
+
+**Prohibido por defecto. Permitido solo bajo este régimen, y declarándolo.**
+
+### Qué es exactamente la técnica
+`RFC_ABAP_INSTALL_AND_RUN` **genera e instala un report ABAP al vuelo** (p. ej. `REPORT Z_GL_COPY.`)
+con sentencias `INSERT` y lo ejecuta. No deja un objeto ABAP permanente —de ahí la impresión de que
+"no hay ABAP"— pero **sí se genera y ejecuta código ABAP** en cada lote. Es la técnica con la que se
+hizo el sync de GL del **2026-04-03** (`copy_gl_accounts_p01_to_d01.py`, hoy en `_obsolete/`) y es
+de la misma familia que causó **INC-CLASS-LOSS**.
+
+### Cuándo se puede autorizar
+Cuando se cumplen **las tres**:
+1. No existe API estándar (comprobado en `TFDIR WHERE FMODE='R'`, no de memoria).
+2. El peldaño 2 (BC-Set) no es viable — p. ej. exige un bootstrap manual que no se puede hacer ahora.
+3. **JP lo autoriza explícitamente para ese caso concreto.** No hay autorización permanente ni
+   extensible a "casos parecidos".
+
+### Las diez puertas — todas obligatorias, todas en el código, no en la intención
+
+| # | Puerta |
+|---|---|
+| G1 | **Destino ∈ {D01, V01}. P01 jamás.** Rechazo cableado por nombre de sistema, no por parámetro |
+| G2 | **Origen = P01 leído EN VIVO.** Nunca valores escritos a mano, nunca del Gold DB (su caché va meses por detrás) |
+| G3 | **Solo `INSERT` de filas AUSENTES.** Nada de `UPDATE` ni `DELETE` sobre filas existentes: eso exige humano |
+| G4 | **Lista blanca de tablas literal en el script.** Nunca un nombre de tabla por parámetro libre |
+| G5 | **PRE-readback a fichero** antes de tocar nada, y **POST-readback campo a campo contra P01**. Aborta ante cualquier diferencia |
+| G6 | **Orden referencial declarado y forzado** (para la FSV: `FAGL_011PC` → `FAGL_011QT` → `FAGL_011ZC` → `FAGL_011SC`) |
+| G7 | **Dry-run por defecto**; `--commit` explícito para escribir |
+| G8 | **Tope de filas** y aborto si la clave ya existe en destino |
+| G9 | **Registro auditable** de cada invocación: quién autorizó, cuándo, qué claves, resultado |
+| G10 | **Declarar las claves escritas** y registrarlas después en una orden de customizing; verificar con `Zagentexecution/quality_checks/config_transport_prerelease_check.py` |
+
+### El coste que NO desaparece, y cómo se paga
+Un `INSERT` en crudo **no queda en ninguna orden de transporte**. Y D01 es el **origen** de los
+transportes hacia P01: customizing escrito así es invisible para CTS, así que D01 deja de ser una
+fuente fiel. **G10 es la que paga esa deuda**: tras escribir, se registran las claves en una orden
+de customizing (`SE01` → lista de objetos → `R3TR TABU <tabla>` + claves) y se pasa el check de
+pre-liberación, que además detecta la clase de defecto "clave intrusa" del caso Indonesia.
+
+Sin G10 el sistema queda alineado en el dato y desalineado en la trazabilidad — que es exactamente
+el problema que estábamos intentando arreglar.
+
+### 📋 REGISTRO DE EXCEPCIONES AUTORIZADAS — lista cerrada
+
+**Lo que no está en esta tabla, NO está autorizado.** No se extiende por analogía, ni a "otra tabla
+de customizing parecida", ni a otra sociedad, ni a otro destino. Cada ampliación es una fila nueva
+con fecha y autorización explícita de JP.
+
+| id | Alcance | Tablas | Destinos | Operación | Autorizada por | Fecha | Estado |
+|---|---|---|---|---|---|---|---|
+| **EXC-001** | **Versión de balance (FSV)**, chart `UNES` | `FAGL_011PC` · `FAGL_011QT` · `FAGL_011ZC` · `FAGL_011SC` | **D01, V01** | **solo `INSERT` de filas ausentes** | JP | 2026-08-20 | 🟢 vigente, sin ejecutar |
+
+**Fuera de EXC-001, explícitamente NO autorizado** (aunque el mecanismo sea el mismo y la tentación
+grande): `T030H`/OB09 · variantes de F.05 · `T011`/`T011T` · maestro de GL, centros de coste, fondos,
+centros gestores y proyectos —esos **sí** tienen API estándar y van por el peldaño 1— y cualquier
+tabla en P01, sin excepción posible.
+
+### Por qué el riesgo es menor en el caso FSV concreto (y por qué eso no elimina las puertas)
+El contenido se copia **verbatim de P01**, que es consistente por construcción; se insertan filas
+ausentes, no se modifican existentes; el destino nunca es producción; y hay un comparador
+determinista (`fsv_alignment_check.py`) que **prueba** el resultado antes y después. Eso hace la
+excepción defendible. No la hace automática: las diez puertas siguen siendo obligatorias, porque lo
+que falla no es el caso bien pensado — es el siguiente, hecho por analogía.
 
 **El peldaño 2 es el que faltaba en este proyecto** y es el mecanismo genérico para actualizar
 tablas cuando no hay RFC ni BAPI: en vez de escribir la tabla por debajo, se le entregan los
