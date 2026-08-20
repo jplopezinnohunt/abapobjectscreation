@@ -191,5 +191,25 @@ Se regenera en el paso 2d de `rebuild_all.py`. Artefacto consultable: `brain_v2/
 
 ---
 
+## 8. Como se mantiene vivo esto
+
+Tres piezas, y cada una hace lo que la otra no puede:
+
+| Pieza | Qué es | Qué hace |
+|---|---|---|
+| `brain_v2/house_bank_roles.py` | algoritmo | **calcula** el censo: rol, topología, corredores, exposición PPC. Determinista, corre en los pasos 2d/2e del rebuild |
+| `brain_v2/bank_model_explorer.py` | algoritmo (`A44_model_gap_exploration`) | **busca lo que el modelo no sabe**: residuo de taxonomía, deriva, cuentas que el censo no puede ver, dimensiones ciegas. Veredictos `NEW / DRIFT / BLIND / RISK / STABLE` a `bank_model_findings.json`. Paso 2f |
+| `.claude/agents/bank-process-discovery.md` | agente | **el criterio que ningún algoritmo tiene**: buscar en el conocimiento antes de derivar, negarse a publicar una métrica con el denominador incompleto, decidir si un `NEW` es un tipo real, y aterrizarlo |
+
+El reparto no es casual: **lo que pueda ser algoritmo, es algoritmo.** El agente sólo existe para lo que exige juicio — y resulta que es exactamente lo que falló el 2026-08-20: no mirar lo que ya estaba escrito, y publicar un porcentaje sobre una población incompleta. Un agente que sólo relanza el script sería ceremonia.
+
+```bash
+python brain_v2/house_bank_roles.py --by-company    # la sociedad primero
+python brain_v2/house_bank_roles.py --country EG    # quién sirve un corredor
+python brain_v2/bank_model_explorer.py              # qué no sabemos
+```
+
+---
+
 **Regla que gobierna esto:** `feedback_a_regulatory_notice_binds_a_channel_not_a_country` (CRITICAL).
 **Relacionado:** [[house_bank_configuration]] · [[payment_full_landscape]] · [[bank_statement_ebs_architecture]] · [[p2p_purpose_of_payment_e2e]] · [[citi_dbtr_pstladr_format_analysis]]
