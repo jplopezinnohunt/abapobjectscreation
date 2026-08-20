@@ -26147,5 +26147,60 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 547,
+    "claim": "UN CLIENTE SAP TIENE TRES CANDADOS INDEPENDIENTES Y HAY QUE LEER LOS TRES. Medido en P01 mandante 350: CCCORACTIV='2' (el customizing no se puede cambiar), CCNOCLIIND='3' (ni repositorio ni customizing cross-client) y CCCOPYLOCK='L' (nivel 2: no sobrescribir Y SIN DISPONIBILIDAD EXTERNA). El tercero es el que para las herramientas de comparacion: SCU0/SCMP devuelven TB569 'Comparison client is protected against external availability'. Los dos primeros hablan de ESCRIBIR en el cliente; el tercero de LEERLO desde fuera, y son ortogonales. Valores del dominio COPYLOCK: '' nivel 0 sin restriccion, 'X' nivel 1 no sobrescribir, 'L' nivel 2 no sobrescribir + sin disponibilidad externa. D01 y V01 tienen CCCOPYLOCK='' (nivel 0).",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "RFC_READ_TABLE T000 en P01/D01/V01 (2026-08-20)",
+        "cite": "P01 350: CCCATEGORY='P', CCCORACTIV='2', CCNOCLIIND='3', CCCOPYLOCK='L'. D01 350: 'C','1','',''. V01 350: 'T','1','',''.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "DD07V dominio COPYLOCK (P01)",
+        "cite": "'' Protection level 0: No restriction · 'X' Protection level 1: No overwriting · 'L' Protection level 2: No overwriting, no external availability",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "Mensaje TB569 al lanzar la comparacion (captura de JP, 2026-08-20)",
+        "cite": "'No comparison is possible, since the comparison client is protected against external access with respect to the view/table comparison tool. (see client table T000, transaction SCC4)'",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T000",
+      "SCC4",
+      "SCU0",
+      "SCMP",
+      "COPYLOCK",
+      "CCCOPYLOCK",
+      "CCCORACTIV",
+      "CCNOCLIIND",
+      "knowledge/domains/FI/fsv_alignment_runsheet.md"
+    ],
+    "domain": "BASIS",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Yo mismo lei T000 y publique CCCOPYLOCK='L' en la salida sin interpretarlo: concluí 'via libre para SCU0' mirando solo los dos primeros candados, y la herramienta lo desmintio. La salida MINIMA no es abrir el cliente: es bajar a 'X' (nivel 1), que sigue protegiendo P01 contra sobrescritura y si permite la lectura de comparacion. Y hay una salida sin tocar produccion: RFC_READ_TABLE NO esta afectado por CCCOPYLOCK, asi que la comparacion se puede hacer por RFC (fsv_alignment_check.py) y el ajuste teclearse en D01 por OB58 con transporte D01->V01.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "BASIS",
+        "FI"
+      ],
+      "module": [
+        "BC"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]

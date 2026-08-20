@@ -5,6 +5,46 @@ Instrumento de medición y verificación: `Zagentexecution/quality_checks/fsv_al
 
 ---
 
+## 🔴 BLOQUEO ACTIVO — SCU0/SCMP no pueden leer P01 hoy (TB569)
+
+Al lanzarlo, SAP responde:
+
+> **`TB569` — Comparison client is protected against external availability (T000).**
+> *No comparison is possible, since the comparison client is protected against external access with
+> respect to the view/table comparison tool. (see client table T000, transaction SCC4).*
+
+Causa medida, campo `T000.CCCOPYLOCK` (dominio `COPYLOCK`):
+
+| Valor | Significado | P01 350 | D01 350 | V01 350 |
+|---|---|---|---|---|
+| `''` | Nivel 0: sin restricción | | ✅ | ✅ |
+| `'X'` | Nivel 1: no sobrescribir | | | |
+| **`'L'`** | **Nivel 2: no sobrescribir + SIN disponibilidad externa** | **✅** | | |
+
+**Es un candado distinto del de modificabilidad.** `CCCORACTIV='2'` impide *cambiar* customizing en
+P01; `CCCOPYLOCK='L'` impide que P01 sea *leído* como cliente de comparación. Lo segundo es lo que
+para SCU0/SCMP.
+
+### Las dos salidas
+
+**A — Bajar el candado a `X` temporalmente (Basis, SCC4 en P01).**
+`X` = nivel 1 = *no overwriting*: **sigue protegiendo P01 contra ser sobrescrito** y sí permite que
+la herramienta de comparación lo lea. Es el cambio **mínimo**; no hace falta ir a `''`. Es
+reversible y es una decisión de Basis sobre producción, con ventana y vuelta atrás.
+
+**B — No usar SCU0 (recomendada si A tarda).**
+`RFC_READ_TABLE` **no** está afectado por `CCCOPYLOCK`: `fsv_alignment_check.py` ya lee P01 sin
+problema y ya produce la especificación exacta. El camino entonces es el ortodoxo del paisaje:
+teclear las entradas en **D01 por `OB58`** grabando en una orden de customizing, y **transportar
+D01 → V01**. Se cambia donde se puede cambiar y queda trazado en una orden, que es más limpio que
+un ajuste de SCU0 en cada sistema por separado.
+
+> Lección para la próxima: los tres candados de un cliente son independientes y hay que leer los
+> tres — `CCCORACTIV` (cambiar), `CCNOCLIIND` (cross-client) y `CCCOPYLOCK` (ser leído/sobrescrito
+> desde fuera). Mirar solo los dos primeros da un "vía libre" que la herramienta desmiente.
+
+---
+
 ## 0. Por qué SCU0/SCMP y no un transporte desde P01
 
 | Sistema | `T000.CCCATEGORY` | `CCCORACTIV` | Lectura |
