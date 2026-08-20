@@ -25763,8 +25763,8 @@
   },
   {
     "id": 540,
-    "claim": "Clase de defecto CONFIRMADA EN VIVO: 'OB09 configurado pero la cuenta no esta en ninguna variante de F.05' = revaluacion que nunca se ejecuta, sin ningun error. En SAPF100 son dos condiciones independientes: la seleccion de cuentas de la VARIANTE decide SI la cuenta entra en el calculo, y T030H/OBA1 decide DONDE se postea la diferencia. Leidas las 4 variantes de UNES con RS_VARIANT_CONTENTS_RFC (2026-08-20): de las 5 cuentas 40410xx que tienen filas en T030H, solo 4041013 y 4041017 aparecen en UNES_DEPOSIT. 4041011, 4041012 y 4041014 tienen config de OB09 y NO estan en ninguna de las cuatro variantes (UNES_DEPOSIT, UNES_OI_AR/AP, UNES_OI_G/L, UNES_UNBA). 4041011 movio EUR en 2023, 2024 y 2025; 4041012 en 2023 y 2024 (glt0_p01 llega hasta 2025). 4041014 solo mueve USD, asi que su config es inocua.",
-    "claim_type": "verified_fact",
+    "claim": "[REFUTADO EL MISMO DIA] Se afirmo: 'clase de defecto CONFIRMADA EN VIVO -- OB09 configurado pero la cuenta fuera de toda variante = revaluacion que nunca se ejecuta; 3 instancias vivas en UNES (4041011, 4041012, 4041014), dos con exposicion EUR real'. LA PARTE DE 'DEFECTO' ES FALSA. El error de razonamiento: se leyo exposicion en GLT0.RTCUR, que es moneda de TRANSACCION, y se asumio que habia divisa que revaluar. Medido despues sobre partidas: UNES_DEPOSIT valora PARTIDAS ABIERTAS (BWMET1=UNOI, X_GL='X'), y 4041011/4041012/4041013 NO TIENEN NI UNA partida abierta en moneda extranjera -- sus euros estan todos COMPENSADOS (bsas: 57, 56 y 216 partidas EUR cerradas). 4041011 solo tiene abiertas en USD; 4041012 y 4041013 no tienen abiertas. La unica con partidas abiertas en divisa es 4041017 (152 partidas, 482 M EUR), y esa SI esta en la variante y SI se revalua (12 documentos FBB1). LO QUE SIGUE SIENDO CIERTO: el mecanismo de dos condiciones independientes -- la VARIANTE decide SI la cuenta entra, T030H decide DONDE se postea -- y que configurar solo T030H no produce ningun error. Pero para que eso sea un DEFECTO hace falta una tercera condicion: que la cuenta tenga EXPOSICION REAL, es decir partidas abiertas en moneda distinta de la local. Sin ella, la fila de T030H es INERTE, no erronea.",
+    "claim_type": "refuted",
     "confidence": "TIER_1",
     "evidence_for": [
       {
@@ -25794,9 +25794,9 @@
     ],
     "domain": "Closing_Activities",
     "created_session": 102,
-    "resolved_session": null,
-    "resolution_notes": "Deja de ser una clase teorica: hay 3 instancias vivas en UNES, 2 de ellas con exposicion EUR real. Y deja de ser inauditable: RS_VARIANT_CONTENTS_RFC hace el cruce mecanizable (ver claim del desbloqueo). Pendiente de confirmar con Treasury si 4041011/4041012 se dejaron fuera a proposito -- NO es una conclusion de defecto hasta preguntarles.",
-    "status": "active",
+    "resolved_session": 102,
+    "resolution_notes": "Refutado por JP el 2026-08-20: 'las que no son USD no tienen revaluacion en el pasado, puede haber sido un error agregarlas'. Al comprobarlo salio que ni siquiera es un error: es inerte. Leccion del fallo: publique TIER_1 una alarma sobre una poblacion sin haber medido la condicion que la hace alarma. GLT0.RTCUR dice en que moneda se movio algo, NO que quede exposicion abierta; para eso hay que mirar bsis (abiertas) frente a bsas (compensadas). Consecuencia en el instrumental: ob09_vs_variant_check.py marcaba esas tres cuentas y eran FALSOS POSITIVOS -- corregido para exigir partidas abiertas en moneda distinta de la local antes de senalar nada. Supersedido por el claim siguiente.",
+    "status": "superseded",
     "domain_axes": {
       "functional": [
         "Closing_Activities",
@@ -26262,6 +26262,65 @@
       ],
       "process": [
         "cross-cutting"
+      ]
+    }
+  },
+  {
+    "id": 549,
+    "claim": "PARA QUE 'OB09 SIN VARIANTE' SEA UN DEFECTO HACEN FALTA TRES CONDICIONES, NO DOS: (1) la cuenta esta en T030H; (2) no la selecciona ninguna variante de F.05; (3) TIENE PARTIDAS ABIERTAS en moneda distinta de la local. Sin la tercera, la fila de T030H es INERTE. Medido EN VIVO sobre P01 el 2026-08-20 (BSIS por cuenta, no el Gold DB): 4041011 tiene 62 abiertas -- 58 USD y CUATRO EUR de 5.000.000 cada una (20-05-2026, 20-07-2026 y dos del 20-08-2026), o sea 20 M EUR de exposicion viva, y NO esta en ninguna variante -> DEFECTO REAL. 4041012 no tiene ninguna abierta -> inerte. 4041014 solo USD -> inerte. 4041013 tiene 1 EUR abierta y SI esta en la variante -> cubierta. 4041017 tiene 198 EUR abiertas, esta en la variante y acumula 12 documentos FBB1 -> correcta. Conclusion: de las tres 'alarmas' iniciales, UNA es defecto y DOS eran falsos positivos.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "RFC_READ_TABLE BSIS EN VIVO sobre P01, cuenta a cuenta (2026-08-20)",
+        "cite": "4041011: 62 abiertas = 58 USD + 4 EUR de 5.000.000 (docs 3500026116/2026 20-05, 4100000831/2026 20-07, 4100001017/2026 y 4100001021/2026 ambos 20-08). 4041012: 0 abiertas. 4041013: 1 EUR + 1 USD. 4041017: 198 EUR.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "bsis JOIN bkpf WHERE TCODE='FBB1', UNES, 40410xx",
+        "cite": "Solo 4041017 tiene documentos de revaluacion: 12 en total. Ninguna otra de las nueve tiene uno solo en toda su historia. Primer FBB1 en 11-2025 pese a existir desde 09-2024.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "RS_VARIANT_CONTENTS_RFC SAPF100/UNES_DEPOSIT en P01",
+        "cite": "BWMET1=UNOI y X_GL='X': valora PARTIDAS ABIERTAS de mayor, no saldos.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T030H",
+      "OB09",
+      "UNES_DEPOSIT",
+      "SAPF100",
+      "bsis",
+      "bsas",
+      "GLT0",
+      "0004041011",
+      "0004041012",
+      "0004041013",
+      "0004041014",
+      "0004041017",
+      "Zagentexecution/quality_checks/ob09_vs_variant_check.py"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "SUPERSEDE el claim 540. Y corrige DOS pasos en falso mios del mismo dia, que son la leccion: (a) primero use GLT0.RTCUR -- moneda de TRANSACCION -- y llame defecto a todo lo que hubiera movido euros alguna vez; (b) al corregirme use el GOLD DB, que no tiene los movimientos de 2026, y concluí que 4041011 solo tenia abiertas en USD. Las dos veces la fuente no soportaba la afirmacion. La regla del proyecto -- nunca el cache del Gold DB para analisis de hueco -- la aplique al sync de GL y la viole en el analisis de partidas. La exposicion viva se mide en BSIS EN VIVO y cuenta a cuenta: BSIS entera revienta con SQL_CAUGHT_RABAX. Instrumento corregido: ob09_vs_variant_check.py exige la tercera condicion, pregunta cuenta a cuenta, y devuelve DESCONOCIDA -- nunca 'NO' -- si la lectura falla.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "T2R"
       ]
     }
   }

@@ -123,18 +123,65 @@ def main():
                        rd(c, "SKB1", ["SAKNR", "XSPEB"], "BUKRS = '%s'" % BUKRS)
                        if x.get("XSPEB") == "X"}
 
+            # TERCERA CONDICION (s102, tras refutar el claim 540). Sin ella este check daba
+            # FALSOS POSITIVOS: marcaba 4041011/4041012/4041014 como defecto cuando sus partidas
+            # en euros estaban TODAS compensadas, asi que no habia nada que valorar.
+            # GLT0.RTCUR dice en que moneda se MOVIO algo; la exposicion viva son las PARTIDAS
+            # ABIERTAS en moneda distinta de la local (bsis frente a bsas).
+            local = next((x["WAERS"] for x in rd(c, "T001", ["BUKRS", "WAERS"],
+                                                 "BUKRS = '%s'" % BUKRS)), "")
+
+            def exposure(acct):
+                """'SI' / 'NO' / 'DESCONOCIDA'. BSIS entera revienta (SQL_CAUGHT_RABAX, 3,3M
+                filas), asi que se pregunta CUENTA A CUENTA. Y si la lectura falla se devuelve
+                DESCONOCIDA, nunca 'NO': leer la ausencia de una lectura fallida como ausencia en
+                el sistema es el error que refuto el claim 540 y el que describe el claim 496."""
+                try:
+                    rows = parse(c.call("RFC_READ_TABLE", QUERY_TABLE="BSIS", DELIMITER="|",
+                                        FIELDS=[{"FIELDNAME": "WAERS"}],
+                                        OPTIONS=[{"TEXT": "BUKRS = '%s' AND HKONT = '%s'"
+                                                  % (BUKRS, acct)}], ROWCOUNT=0))
+                except Exception as e:
+                    if "TABLE_WITHOUT_DATA" in str(e):
+                        return "NO"
+                    print("        [!] BSIS %s no legible: %s" % (acct, str(e)[:70]))
+                    return "DESCONOCIDA"
+                return "SI" if any(r["WAERS"] and r["WAERS"] != local for r in rows) else "NO"
+
             orphan = []
             for x in t030h:
-                s = x["HKONT"]
-                if covered(s, sets):
+                acct = x["HKONT"]
+                if covered(acct, sets):
                     continue
-                orphan.append((s, s in blocked, (x.get("LKORR") or "").strip()))
-            active = [o for o in orphan if not o[1]]
+                orphan.append((acct, acct in blocked, (x.get("LKORR") or "").strip()))
 
-            print("  configuradas y FUERA de toda variante: %d  (de ellas ACTIVAS: %d)"
-                  % (len(orphan), len(active)))
-            for s, blk, lk in sorted(orphan):
-                print("     %s %s  LKORR=%s" % (s, "[bloqueada]" if blk else "[ACTIVA]  ", lk or "-"))
+            print("  moneda local: %s" % local)
+            print("  configuradas y FUERA de toda variante: %d" % len(orphan))
+            defect, inert, unknown = [], [], []
+            for acct, blk, lk in sorted(orphan):
+                if blk:
+                    inert.append((acct, lk, "bloqueada"))
+                    continue
+                e = exposure(acct)
+                if e == "SI":
+                    defect.append((acct, lk))
+                elif e == "NO":
+                    inert.append((acct, lk, "sin partidas abiertas en divisa"))
+                else:
+                    unknown.append((acct, lk))
+
+            print("     DEFECTO  (activa + partidas abiertas en divisa): %d" % len(defect))
+            for acct, lk in defect:
+                print("        %s  LKORR=%s   <<< exposicion que no se valora" % (acct, lk or "-"))
+            print("     inertes  (config sin efecto): %d" % len(inert))
+            for acct, lk, why in inert[:20]:
+                print("        %s  LKORR=%s   (%s)" % (acct, lk or "-", why))
+            if unknown:
+                print("     DESCONOCIDA (no pudimos VER la exposicion): %d" % len(unknown))
+                for acct, lk in unknown:
+                    print("        %s  LKORR=%s" % (acct, lk or "-"))
+
+            active = defect
 
             # el reverso: en la variante pero sin OB09 -> si tiene exposicion, no sabe donde postear
             invar = set()
