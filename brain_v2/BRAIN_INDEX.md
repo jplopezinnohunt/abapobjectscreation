@@ -112,26 +112,38 @@ Not a self-assessment: each dimension is derived from what is on disk.
 
 _2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
 
-## WHAT WE KNOW DEEPLY - 44 companions; the 10 densest, and what each covers
+
+## BANCA - el explorador del modelo encontro 6 cosa(s) que pedir accion
+> `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
+> agente `bank-process-discovery`; el modelo vive en
+> `knowledge/domains/Treasury/house_bank_operating_roles.md`.
+- `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
+- `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
+- `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
+- `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
+- `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
+- `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
+
+## WHAT WE KNOW DEEPLY - 45 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
 
 - `bank_statement_ebs_companion.html` - Bank Statement & Reconciliation - basis, basu, bseg, bsik, business area, cash, compliance, connectivity, derivation
-- `payment_bcm_companion.html` - Payment & BCM Intelligence - avc, basu, biennium, bseg, bsik, cash, compliance, dmee, donor
-- `transport_companion_D01K9B0CBF_v2.html` - Company Code STEM Creation - avc, basis, bseg, business area, carry forward, cash, derivation, dmee, fbzp
-- `cts_dashboard.html` - CTS Dashboard (2017-2026) - avc, basis, basu, biennium, bseg, business area, cash, derivation, dmee
-- `treasury_operations_companion_v1.html` - Treasury Operations v1 - avc, basu, biennium, bsik, business area, cash, compliance, dmee, donor
-- `BCM_StructuredAddressChange.html` - BCM Structured Address Change - basis, bseg, bsik, cash, compliance, derivation, dmee, dual control, fbzp
+- `payment_bcm_companion.html` - Payment & BCM Intelligence - avc, basu, biennium, bseg, bsik, cash, compliance, donor, dual control
+- `transport_companion_D01K9B0CBF_v2.html` - Company Code STEM Creation - avc, basis, bseg, business area, carry forward, cash, derivation, fbzp, fmderive
+- `cts_dashboard.html` - CTS Dashboard (2017-2026) - avc, basis, basu, biennium, bseg, business area, cash, derivation, epi-use
+- `treasury_operations_companion_v1.html` - Treasury Operations v1 - avc, basu, biennium, bsik, business area, cash, compliance, donor, fbzp
+- `BCM_StructuredAddressChange.html` - BCM Structured Address Change - basis, bseg, bsik, cash, compliance, derivation, dual control, fbzp, ggb0
 - `fi_substitutions_custom_code_companion_v1.html` - Substitutions & Custom Code Registry - basu, bseg, bsik, business area, cash, derivation, fmderive, fmifiit, ggb0
-- `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - avc, basis, basu, connectivity, derivation, dmee, dual control, fmifiit, hcm
+- `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - avc, basis, basu, connectivity, derivation, dual control, fmifiit, hcm, idoc
 - `fi_maintenance.html` - Finance Operations Reference - avc, basu, biennium, bsik, business area, donor, fipex, fm-avc, fmifiit
-- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - business area, dmee, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
+- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - business area, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
 
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1809 objects · 219 rules · 531 claims · 15 incidents · 9 closed researches)
+## Brain at a glance (1827 objects · 220 rules · 535 claims · 15 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -166,7 +178,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 219 total)
+## Rules to load first (behavioral DNA — 220 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
