@@ -81,7 +81,7 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
 - **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
-## 📈 MATURITY OF THE METHOD — 65.3%, measured from artifacts
+## 📈 MATURITY OF THE METHOD — 65.4%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
 - **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
 - **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
@@ -90,8 +90,8 @@ Not a self-assessment: each dimension is derived from what is on disk.
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
 ## OPEN WORK - incidents awaiting action (10 live, deadline first)
-- `INC-EGYPT-PPC` - TESTED_IN_D01_BOTH_HALVES_PROVEN - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
-  - NEXT: CONTROL PROBADO POR LAS DOS MITADES en D01 el 2026-08-19: bloquea sin codigo (ZFI-036) y renderiza con codigo (fichero pain.001 con <Ustrd>/Payment for goods or services received/INV/224938). Quedan dos, y ninguna es tecnica. (1) PARTIR EL TRANSPORTE EN DOS an
+- `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
+  - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
 - `INC-PSTLADR-NOV2026` - OPEN - **DUE 2026-11-14** - Direccion estructurada 14-11-2026: el alcance real son los PROVEEDORES (8.149 sin CtrySubDvsn en
   - NEXT: Registro completo en knowledge/domains/Payment/dmee_map/REGISTRO_ERRORES_Y_ACCIONES.md. Por orden: B1 cargar los 399 proveedores US/CA (fichero listo) · F1 meter el validador en el ciclo antes del envio · A3 REACT_LEV nivel 1 · y tres decisiones que necesitan 
@@ -124,14 +124,14 @@ _2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 - `fi_substitutions_custom_code_companion_v1.html` - Substitutions & Custom Code Registry - basu, bseg, bsik, business area, cash, derivation, fmderive, fmifiit, ggb0
 - `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - avc, basis, basu, connectivity, derivation, dmee, dual control, fmifiit, hcm
 - `fi_maintenance.html` - Finance Operations Reference - avc, basu, biennium, bsik, business area, donor, fipex, fm-avc, fmifiit
-- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - dmee, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
+- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - business area, dmee, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
 
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1803 objects · 218 rules · 528 claims · 15 incidents · 9 closed researches)
+## Brain at a glance (1809 objects · 219 rules · 531 claims · 15 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -166,7 +166,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 218 total)
+## Rules to load first (behavioral DNA — 219 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

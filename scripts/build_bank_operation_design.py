@@ -78,10 +78,17 @@ TYPES = [
      "acotado o en desuso.",
      "&lt;15 destinos y ninguno con &ge;70%",
      "Revisar si sigue vivo antes de construir nada para el."),
-    ("SIN DESTINO CONOCIDO", "red",
-     "Mueve dinero pero no sabemos hacia donde: sus beneficiarios no tienen registro de banco "
-     "en <code>LFBK</code>.",
-     "0 paises de destino resolubles",
+    ("TESORERIA (entre cuentas propias)", "",
+     "No paga a terceros: mueve dinero entre nuestras propias cuentas. Sus lineas no llevan "
+     "<code>LIFNR</code> ni <code>PERNR</code> porque el beneficiario somos nosotros.",
+     "metodo <code>A</code> &quot;Treasury Transfers&quot; y cero beneficiarios resolubles",
+     "<strong>Ningun requisito sobre el pago a un tercero le aplica</strong> &mdash; no hay tercero. "
+     "Aqui viven <code>WEL01</code>, <code>CHA01</code>, <code>SCB14</code>, <code>DNB01</code>, "
+     "<code>CIC01</code>, <code>BPP01</code>, <code>CRA01</code>."),
+    ("SIN DESTINO RESOLUBLE", "red",
+     "Paga, pero no sabemos a donde: sus beneficiarios no tienen registro de banco en "
+     "<code>LFBK</code> y no es una cuenta de tesoreria.",
+     "0 destinos resolubles y no encaja en tesoreria",
      "No es que no pague: es que <strong>no lo vemos</strong>. Ningun control que dependa del "
      "pais del banco del beneficiario puede actuar aqui."),
 ]
@@ -147,10 +154,22 @@ def build():
         a('<tr><td>%s</td><td>%s</td><td><code>%s</code></td><td>%s</td><td class="n">%d</td></tr>'
           % (pill, what, how, implies, n))
     a('</table>')
+    a('<div class="callout red"><strong>Una categoria que se publico MAL y se corrigio el mismo dia.</strong> '
+      'Los cuatro bancos de arriba salieron primero como <em>SIN DESTINO CONOCIDO</em> &mdash; una etiqueta que '
+      'afirma &quot;no lo vemos&quot; cuando la verdad es &quot;no aplica&quot;. Al investigarlos: 5.690 lineas '
+      'con <code>LIFNR</code> y <code>PERNR</code> vacios, metodo <code>A</code> = <em>Treasury Transfers</em>, y '
+      '<code>SCB14</code> con <code>DORIGIN=&#39;TR-CM-BT&#39;</code>. No hay tercero. Y a esas mismas cuentas el '
+      'clasificador les daba rol <em>CROSS-BORDER</em>, inventado por dividir el %% domestico entre un denominador '
+      'vacio. Las dos cosas son la misma falta: <strong>producir un valor donde no hay base en vez de decir que no '
+      'la hay</strong>. <span class="pill red">claim 533</span></div>')
     a('<div class="callout"><strong>Y una segunda dimension, independiente del tipo: PAPEL.</strong> '
       'Un banco cuyos metodos llevan <code>T042Z-XSCHK=\'X\'</code> emite cheque y <strong>no produce '
       'fichero SAP</strong>. No hay nada que corregir en un fichero que no existe &mdash; y eso, y no '
-      'otra cosa, es lo que dejo fuera a la cuenta de Citibank Egipto.</div>')
+      'otra cosa, es lo que dejo fuera a la cuenta de Citibank Egipto.<br><br>'
+      '<strong>Las oficinas de campo pagan en papel.</strong> Al 100% de cheque: <code>AIB01</code> Afganistan, '
+      '<code>BLN01</code> Sudan, <code>BTE01</code> Iran, <code>SCB12</code> Kenia, <code>BMN01</code> Cuba, '
+      '<code>CIT07</code> RD Congo, <code>ECO04</code> Mali, <code>BST01</code> Mozambique. Pagos domesticos, en '
+      'papel, sin fichero SAP: ningun requisito de fichero puede alcanzarlos ni tiene por que.</div>')
 
     # -------- 2. los tres ejes
     a('<h2>2 &middot; Tres capas sobre el mismo pago, tres ejes distintos <span class="pill red">claim 532</span></h2>')
@@ -205,22 +224,57 @@ def build():
     a('<h2>4 &middot; Cada banco, clasificado</h2>')
     a('<p style="font-size:12.5px">Bancos con al menos 50 lineas ejecutadas. <code>dest</code> = paises de '
       'destino distintos; <code>dom</code> = %% de sus pagos donde el beneficiario banca en su mismo pais; '
-      '<code>cheque</code> = %% por metodos sin fichero.</p>')
+      '<code>cheque</code> = %% por metodos sin fichero; <code>n/a</code> = no hay base para calcularlo '
+      '(tesoreria, o beneficiarios sin banco en <code>LFBK</code>). La ultima ejecucion va en rojo si es de '
+      '2024 o anterior: <strong>una cuenta muerta no es una cuenta viva</strong>.</p>')
     order = {t[0]: i for i, t in enumerate(TYPES)}
     a('<table><tr><th>Banco</th><th>Pais</th><th class="n">Lineas</th><th class="n">dest</th>'
-      '<th class="n">dom</th><th class="n">cheque</th><th>Tipo</th><th>Rol</th><th>PPC</th>'
+      '<th class="n">dom</th><th class="n">cheque</th><th>Últ. pago</th><th>Tipo</th><th>Rol</th><th>PPC</th>'
       '<th>Sociedades</th><th>Destino principal</th></tr>')
     for b in sorted(live, key=lambda x: (order.get(x["topology"], 9), -x["lines"])):
         top = b["top_payee_countries"][0]["country"] if b["top_payee_countries"] else "&mdash;"
         ppc = '<span class="pill green">si</span>' if b["ppc"]["dispatches_ppc"] else '<span class="pill">no</span>'
+        na = b["role"].startswith("n/a")
+        lr = b.get("last_run", "")
+        lrtxt = (lr[:4] + "-" + lr[4:6]) if lr else "&mdash;"
+        dead = lr and lr[:4] <= "2024"
         a('<tr><td><code>%s</code></td><td>%s</td><td class="n">%s</td><td class="n">%d</td>'
-          '<td class="n">%.0f%%</td><td class="n">%.0f%%</td><td>%s</td><td>%s</td><td>%s</td>'
-          '<td>%s</td><td>%s</td></tr>'
+          '<td class="n">%s</td><td class="n">%.0f%%</td><td class="n">%s</td><td>%s</td><td>%s</td>'
+          '<td>%s</td><td>%s</td><td>%s</td></tr>'
           % (esc(b["house_bank"]), esc(b["country"]), "{:,}".format(b["lines"]).replace(",", "."),
-             b["destination_countries"], 100 * b["domestic_share"], 100 * b["cheque_share"],
+             b["destination_countries"],
+             "n/a" if na else "%.0f%%" % (100 * b["domestic_share"]),
+             100 * b["cheque_share"],
+             ('<span class="pill red">%s</span>' % lrtxt) if dead else lrtxt,
              esc(b["topology"]), esc(b["role"]), ppc,
              ", ".join(esc(c) for c in b["company_codes"][:3]), esc(top)))
     a('</table>')
+
+    # -------- 4b. el ciclo end to end
+    a('<h2>4b &middot; El ciclo end-to-end: el canal es de FICHEROS y lo mueven tres jobs '
+      '<span class="pill red">claim 536</span></h2>')
+    a('<p style="font-size:12.5px">El banco no esta conectado a SAP: hay ficheros en carpetas y programas '
+      'estandar que los recogen. Todo lo de abajo esta medido en <code>TBTCO</code>/<code>TBTCP</code> sobre '
+      '2026-03-04 a 2026-03-18.</p>')
+    a('<pre><span class="c">-- SALIDA: el dinero se va</span>\\n  F110 &rarr; SAPFPAYM &rarr; arbol DMEE &rarr; fichero &rarr; <span class="h">\\\\\\\\hq-sapitf\\\\SWIFT$\\\\...\\\\INPUT</span>\\n\\n<span class="c">-- VUELTA: tres canales distintos, dos jobs</span>\\n  <span class="g">ACUSE</span>     ZFI_SWIFT_UPLOAD_BCM            var <span class="h">SWIFT_ACK_UNES</span> / <span class="h">SWIFT_ACK_IIEP</span>   <span class="c">por SOCIEDAD</span>\\n  <span class="g">ESTADO</span>    RBNK_IMPORT_PAYM_STATUS_REPORT  var <span class="h">Z_PSR_SOCGEN</span> / <span class="h">Z_PSR_CITI</span>       <span class="c">por BANCO</span>\\n            job &quot;PAYMENT STATUS REPORTS&quot; &mdash; 1.389 ejec / 15 dias &asymp; <span class="h">cada 15 min</span>, 0 abortadas\\n\\n  <span class="g">EXTRACTO</span>  FEB_FILE_HANDLING               var <span class="h">EBS JOB_COUPA</span>\\n            job &quot;EBS INTEGRATION&quot; &mdash; 348 ejec / 15 dias &asymp; <span class="h">cada hora</span>, 0 abortadas\\n            MT940 &rarr; SWIFT Alliance Lite2 (SIL) &rarr; <span class="h">\\\\\\\\hq-sapitf\\\\SWIFTS\\\\output\\\\*</span> &rarr; FF_5 &rarr; doc Z1\\n            fichero: OSOGEFRPPXXX_&lt;CCODE&gt;_&lt;BANK_ID&gt;_&lt;ACCOUNT_ID&gt;_&lt;STMT_DATE&gt;</pre>')
+    a('<div class="callout"><strong>Fijate en las variantes.</strong> El acuse SWIFT va por <em>sociedad</em> '
+      '(<code>UNES</code>, <code>IIEP</code>) y el estado de pago por <em>banco</em> (<code>SOCGEN</code>, '
+      '<code>CITI</code>). La sociedad como primer driver se ve hasta en los nombres de las variantes.</div>')
+    a('<div class="callout red"><strong>Por que aqui NO hay una columna &quot;recibe extracto electronico&quot;.</strong> '
+      'Porque seria falsa. <code>FEBKO_2024_2026</code> en el Gold DB cubre <strong>3 sociedades de 6</strong> y '
+      '<strong>31.416 de las 84.972 cabeceras</strong> que la sesion #029 ya midio &mdash; el 37%. '
+      '<code>SOG01</code>, con 1,9M de pagos, sale con cero extractos, lo que leido como hallazgo diria que los '
+      'hubs no reciben extractos. Es falso: es el alcance de la extraccion. '
+      '<strong>Y ademas la pregunta esta mal planteada:</strong> &quot;recibe extracto&quot; no es un atributo del '
+      'banco, es un atributo de la INTERFAZ &mdash; de si el fichero de ese banco llega a esa carpeta. Un cero '
+      'ahi puede significar que el banco no envia, que el fichero no llega, o que no lo hemos extraido, y desde '
+      'la tabla no se distinguen. La dimension queda declarada <code>MISSING_INPUT</code> hasta completar la '
+      'extraccion (PMO H110). <span class="pill red">claim 535</span></div>')
+    a('<div class="callout green"><strong>Lo que si se ve ya, y el modelo de pagos no podia:</strong> '
+      '<code>SCB04</code>, <code>CIT13</code>, <code>SCB18</code>, <code>SBN01</code>, <code>SCB19</code> y once '
+      'mas tienen extracto y <strong>cero pagos</strong>. Son <strong>cuentas receptoras</strong>: cobran, no '
+      'pagan. Un modelo derivado solo de <code>REGUH</code> es ciego a ellas por construccion, porque '
+      '<code>REGUH</code> solo ve dinero saliendo.</div>')
 
     # -------- 5. re-derivar
     a('<h2>5 &middot; Como re-derivar y como usarlo</h2>')
@@ -257,7 +311,7 @@ def build():
         pass
     a('<footer>Generado por <code>scripts/build_bank_operation_design.py</code> desde '
       '<code>brain_v2/house_bank_roles.json</code> &middot; %s lineas de pago analizadas &middot; '
-      'commit %s &middot; Claims 530 &middot; 531 &middot; 532 &middot; '
+      'commit %s &middot; Claims 530-536 &middot; '
       'Nodo: <code>knowledge/domains/Treasury/house_bank_operating_roles.md</code> &middot; '
       'UNESCO SAP Intelligence</footer>'
       % ("{:,}".format(total_lines).replace(",", "."), rev))

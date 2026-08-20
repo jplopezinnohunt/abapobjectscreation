@@ -262,6 +262,11 @@ def main():
     # que acaba de emitir el 2d; el registro en companions.json lo mantiene descubrible.
     run(["python", "scripts/build_bank_operation_design.py"],
         "Step 2e: Companion UNESCO Bank Operation Design", fatal=False)
+    # El explorador NO recalcula el modelo: lo recorre buscando lo que no sabe. Emite
+    # bank_model_findings.json para que el brain-steward lo promueva. Va despues del
+    # companion a proposito: primero se publica el modelo, luego se le buscan los huecos.
+    run(["python", "brain_v2/bank_model_explorer.py", "--json"],
+        "Step 2f: Explorador del modelo de banca (-> bank_model_findings.json)", fatal=False)
     # PROFILE (L16) must be crossed BEFORE brain_state is assembled — build_brain_state
     # attaches profile_links.json as system_profile._links. This step also GATES the
     # profile invariants (tier + evidence per module), so a malformed profile stops the

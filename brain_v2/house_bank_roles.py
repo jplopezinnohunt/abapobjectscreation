@@ -39,7 +39,19 @@ LA REGLA DE NEGOCIO QUE ESTO HACE VISIBLE
     ningun fichero, y 171 lineas domesticas (JO 150, MA 21) lo capturan estando pagadas por
     un banco casa LOCAL que jamas lo habria pedido. Vista: --ppc-exposure.
 
+LA SOCIEDAD ES EL PRIMER DRIVER -- el banco solo ejecuta dentro de su marco
+    Correccion estructural de JP, 2026-08-20, y encaja con lo ya medido: BCM se clava en
+    ZBUKR, T042E es por sociedad, OB28 asigna la validacion por sociedad, y T001-LAND1 -- el
+    pais de la sociedad -- es lo que decide QUE T042Z aplica y por tanto los metodos y los
+    formatos. La sociedad decide el MARCO; el banco solo ejecuta dentro de el.
+
+    Y explica lo que un modelo banco-primero no puede: ICTP es ITALIANA, luego su banco UNI01
+    selecciona la clase BAdI _IT, que no despacha purpose codes. No es una peculiaridad de
+    UNI01: es consecuencia de la sociedad. Igual UIL (alemana, _DE), UIS (canadiense), UBO
+    (brasilena). Solo UNES e IIEP son francesas, y por eso solo ellas alcanzan la clase _FR.
+
 USO
+    python brain_v2/house_bank_roles.py --by-company     # la sociedad primero, el banco despues
     python brain_v2/house_bank_roles.py                 # el censo completo
     python brain_v2/house_bank_roles.py --ppc-exposure  # capturado vs renderizado por pais
     python brain_v2/house_bank_roles.py --country EG    # quien sirve a un corredor
@@ -68,6 +80,10 @@ PPC_DISPATCH = {
 }
 FALLBACK = ("(sin implementacion)", False, "el pais no tiene implementacion del BAdI")
 
+# Metodos que mueven dinero entre NUESTRAS propias cuentas. T042Z pais FR: A = "Treasury
+# Transfers". Sus lineas no llevan LIFNR ni PERNR porque el beneficiario somos nosotros.
+TREASURY_METHODS = {"A"}
+
 HUB_GLOBAL_DEST = 150   # destinos distintos -> concentrador global
 HUB_REGIONAL_DEST = 15  # destinos distintos -> hub regional
 LOCAL_TOPSHARE = 0.70   # un solo destino se lleva esto -> banco de oficina
@@ -94,25 +110,27 @@ def _t042z():
                 v = [x.strip() for x in d["WA"].split("|")]
                 out[(v[0], v[1])] = {"text": v[2], "formi": v[3], "cheque": v[4] == "X"}
             r2 = c.call("RFC_READ_TABLE", QUERY_TABLE="T001", DELIMITER="|",
-                        FIELDS=[{"FIELDNAME": "BUKRS"}, {"FIELDNAME": "LAND1"}], ROWCOUNT=0)
-            cc = {}
+                        FIELDS=[{"FIELDNAME": "BUKRS"}, {"FIELDNAME": "LAND1"},
+                                {"FIELDNAME": "BUTXT"}], ROWCOUNT=0)
+            cc, nm = {}, {}
             for d in r2["DATA"]:
                 v = [x.strip() for x in d["WA"].split("|")]
                 cc[v[0]] = v[1]
-            return out, cc
+                nm[v[0]] = v[2]
+            return out, cc, nm
         finally:
             c.close()
     except Exception as exc:                       # sin RFC el censo sigue siendo util
         print("  (T042Z no leido: %s -- el censo sale sin formato ni marca de cheque)"
               % str(exc)[:60], file=sys.stderr)
-        return {}, {}
+        return {}, {}, {}
 
 
 def build():
     if not os.path.exists(GOLD):
         print("Gold DB no encontrado: %s" % GOLD)
         return None
-    t042z, cc_country = _t042z()
+    t042z, cc_country, cc_name = _t042z()
     con = sqlite3.connect("file:%s?mode=ro" % GOLD, uri=True)
     cur = con.cursor()
 
@@ -122,7 +140,8 @@ def build():
                TRIM(COALESCE(h.ZBUKR,''))  AS bukrs,
                TRIM(COALESCE(h.RZAWE,''))  AS method,
                TRIM(COALESCE(b.BANKS,''))  AS payeectry,
-               COUNT(*)                    AS n
+               COUNT(*)                    AS n,
+               MAX(h.LAUFD)                AS last_run
         FROM REGUH h
         LEFT JOIN (SELECT DISTINCT LIFNR, BANKS FROM LFBK) b ON b.LIFNR = h.LIFNR
         WHERE COALESCE(h.XVORL,'') <> 'X'
@@ -132,7 +151,7 @@ def build():
 
     banks = {}
     corridor = collections.defaultdict(collections.Counter)   # pais destino -> banco casa
-    for hbkid, ourctry, bukrs, method, payeectry, n in rows:
+    for hbkid, ourctry, bukrs, method, payeectry, n, last_run in rows:
         if not hbkid:
             # Sin banco casa registrado. NO se ignoran: son las lineas que con mas
             # seguridad no renderizan nada, y esconderlas inflaba la cobertura -- el
@@ -143,11 +162,18 @@ def build():
         b = banks.setdefault(hbkid, {
             "house_bank": hbkid, "country": ourctry, "company_codes": collections.Counter(),
             "methods": collections.Counter(), "payee_countries": collections.Counter(),
-            "lines": 0, "domestic": 0, "known_payee_bank": 0, "cheque": 0})
+            "lines": 0, "domestic": 0, "known_payee_bank": 0, "cheque": 0, "treasury": 0, "last_run": ""})
         if ourctry and not b["country"]:
             b["country"] = ourctry
         b["lines"] += n
+        if last_run and last_run > b["last_run"]:
+            b["last_run"] = last_run
         b["company_codes"][bukrs] += n
+        # Transferencia de TESORERIA: sin proveedor y sin empleado no hay tercero, luego no
+        # hay "destino" que resolver. Antes esto caia en SIN DESTINO CONOCIDO, que dice "no lo
+        # vemos" cuando la verdad es "no aplica" -- son cosas opuestas y la etiqueta mentia.
+        if method in TREASURY_METHODS:
+            b["treasury"] += n
         b["methods"][method] += n
         if payeectry:
             b["payee_countries"][payeectry] += n
@@ -173,18 +199,28 @@ def build():
         # de destinos, no por el volumen. SOG01 alcanza 209 paises; ECO02 alcanza 3.
         ndest = len(b["payee_countries"])
         topshare = (b["payee_countries"].most_common(1)[0][1] / float(known)) if b["payee_countries"] else 0.0
-        if ndest >= HUB_GLOBAL_DEST:
+        tre = b["treasury"] / float(b["lines"] or 1)
+        if tre >= 0.60 and b["known_payee_bank"] == 0:
+            topo = "TESORERIA (entre cuentas propias)"
+        elif ndest >= HUB_GLOBAL_DEST:
             topo = "HUB GLOBAL"
         elif ndest >= HUB_REGIONAL_DEST:
             topo = "HUB REGIONAL"
         elif topshare >= LOCAL_TOPSHARE and dom >= 0.60:
             topo = "LOCAL (oficina de campo)"
         elif ndest == 0:
-            topo = "SIN DESTINO CONOCIDO"
+            topo = "SIN DESTINO RESOLUBLE"
         else:
             topo = "CORREDOR ESTRECHO"
 
-        if chq > CHEQUE_HI:
+        # Un rol domestico/cross-border sale de comparar el pais del beneficiario con el
+        # nuestro. Si no HAY beneficiario, ese cociente divide por un denominador vacio y
+        # devuelve CROSS-BORDER por defecto: un valor inventado. Decirlo es lo correcto.
+        if topo.startswith("TESORERIA"):
+            role = "n/a - no hay tercero"
+        elif b["known_payee_bank"] == 0:
+            role = "n/a - beneficiarios sin banco en LFBK"
+        elif chq > CHEQUE_HI:
             role = "PAPEL - cheque, sin fichero SAP"
         elif dom >= DOMESTIC_HI:
             role = "DOMESTICO (%s)" % (b["country"] or "?")
@@ -199,6 +235,8 @@ def build():
             "country": b["country"],
             "role": role,
             "topology": topo,
+            "treasury_share": round(tre, 3),
+            "last_run": b["last_run"],
             "destination_countries": ndest,
             "top_destination_share": round(topshare, 3),
             "lines": b["lines"],
@@ -224,17 +262,65 @@ def build():
             "served_by": [{"house_bank": h, "lines": n, "share": round(n / float(tot), 3)}
                           for h, n in cnt.most_common()]}
 
+    companies = {}
+    for hbkid, ourctry, bukrs, method, payeectry, n, last_run in rows:
+        if not bukrs:
+            continue
+        cc_ = companies.setdefault(bukrs, {"country": cc_country.get(bukrs, ""),
+                                           "name": cc_name.get(bukrs, ""),
+                                           "lines": 0, "cheque": 0,
+                                           "banks": collections.Counter()})
+        cc_["lines"] += n
+        cc_["banks"][hbkid or "(sin banco casa)"] += n
+        info = t042z.get((cc_["country"], method))
+        if info and info["cheque"]:
+            cc_["cheque"] += n
+    for cid, c_ in companies.items():
+        c_["cheque_share"] = round(c_["cheque"] / float(c_["lines"] or 1), 3)
+        c_["banks"] = dict(c_["banks"])
+
     doc = {"_what_this_is": ("Rol operativo de cada banco casa, derivado de REGUH+LFBK+T042Z. "
                             "Responde 'quien sirve este corredor' y 'este banco emite fichero "
                             "o papel' sin volver a derivarlo. Claim 530."),
            "_generated_by": "brain_v2/house_bank_roles.py",
-           "banks": out, "corridors": corridors}
+           "companies": companies, "banks": out, "corridors": corridors}
     io.open(OUT, "w", encoding="utf-8", newline="\n").write(
         json.dumps(doc, indent=2, ensure_ascii=False))
     return doc
 
 
 PPC_COUNTRIES = ["AE", "BH", "CN", "ID", "IN", "JO", "MA", "MY", "PH"]
+
+
+def by_company(doc):
+    """La sociedad primero. Su PAIS decide el marco; sus bancos ejecutan dentro de el."""
+    comps = doc.get("companies", {})
+    if not comps:
+        print("Sin capa de sociedad en el JSON -- regenera con la version actual.")
+        return
+    banks = {b["house_bank"]: b for b in doc["banks"]}
+    print("=" * 92)
+    print("LA SOCIEDAD ES EL PRIMER DRIVER -- su pais decide el marco, el banco ejecuta")
+    print("=" * 92)
+    for cid, c in sorted(comps.items(), key=lambda kv: -kv[1]["lines"]):
+        if c["lines"] < 20:
+            continue
+        ppc = "SI" if c["country"] in PPC_DISPATCH and PPC_DISPATCH[c["country"]][1] else "no"
+        print("")
+        print("%-6s pais=%-3s  %-34s %10d lineas  %2d bancos  %3.0f%% cheque"
+              % (cid, c["country"], c["name"][:34], c["lines"], len(c["banks"]), 100 * c["cheque_share"]))
+        print("       marco: T042Z del pais %s -> sus metodos y formatos  |  clase BAdI del pais: %s -> despacha PPC: %s"
+              % (c["country"], PPC_DISPATCH.get(c["country"], FALLBACK)[0], ppc))
+        for hb, n in sorted(c["banks"].items(), key=lambda kv: -kv[1])[:6]:
+            b = banks.get(hb)
+            if not b:
+                print("          %-8s %8d  (sin banco casa registrado)" % (hb, n))
+                continue
+            print("          %-8s %8d  %-34s %s" % (hb, n, b["topology"], b["role"]))
+    print()
+    print("  Leer de arriba abajo: la sociedad fija el pais, el pais fija T042Z y la clase BAdI,")
+    print("  y solo entonces el banco importa. Un banco italiano no despacha purpose codes porque")
+    print("  su sociedad es italiana -- no por nada del banco.")
 
 
 def ppc_exposure(doc):
@@ -321,14 +407,18 @@ def show(doc, country=None, bank=None):
     print("=" * 96)
     print("BANCOS CASA -- rol operativo derivado, no declarado")
     print("=" * 96)
-    print("%-7s %-4s %8s %6s %6s %5s  %-24s %-26s %s"
-          % ("banco", "pais", "lineas", "domest", "cheque", "dest", "topologia", "rol", "PPC"))
+    print("%-7s %-4s %8s %6s %6s %5s %-9s %-34s %-30s %s"
+          % ("banco", "pais", "lineas", "domest", "cheque", "dest", "ult.pago", "topologia", "rol", "PPC"))
     for b in banks:
         if b["lines"] < 20 and not bank:
             continue
-        print("%-7s %-4s %8d %5.0f%% %5.0f%% %5d  %-24s %-26s %s"
-              % (b["house_bank"], b["country"], b["lines"], 100 * b["domestic_share"],
-                 100 * b["cheque_share"], b["destination_countries"], b["topology"], b["role"],
+        domtxt = ("  n/a" if b["role"].startswith("n/a")
+                  else "%4.0f%%" % (100 * b["domestic_share"]))
+        print("%-7s %-4s %8d %6s %5.0f%% %5d %-9s %-34s %-30s %s"
+              % (b["house_bank"], b["country"], b["lines"], domtxt,
+                 100 * b["cheque_share"], b["destination_countries"],
+                 (b["last_run"][:4] + "-" + b["last_run"][4:6]) if b["last_run"] else "-",
+                 b["topology"], b["role"],
                  "si" if b["ppc"]["dispatches_ppc"] else "no"))
         if bank:
             print("   sociedades : %s" % ", ".join(b["company_codes"]))
@@ -343,6 +433,9 @@ def show(doc, country=None, bank=None):
     print("  domest = %% de sus pagos donde el banco del beneficiario esta en SU MISMO pais.")
     print("  cheque = %% por metodos con T042Z-XSCHK='X': no producen fichero SAP.")
     print("  dest   = paises de destino distintos: es lo que separa un HUB de una oficina.")
+    print("  n/a    = no hay tercero (tesoreria) o sus beneficiarios no tienen banco en LFBK:")
+    print("           el % domestico dividiria por un denominador vacio, asi que no se calcula.")
+    print("  ult.pago = ultima ejecucion vista. Una cuenta muerta no es una cuenta viva.")
     print("  PPC    = si su pais selecciona una clase BAdI que despacha purpose codes.")
     print()
     print("  OJO -- la aprobacion BCM NO se clava en el banco casa: sus reglas deciden por")
@@ -356,7 +449,9 @@ if __name__ == "__main__":
     d = build()
     if not d:
         sys.exit(2)
-    if "--ppc-exposure" in a:
+    if "--by-company" in a:
+        by_company(d)
+    elif "--ppc-exposure" in a:
         ppc_exposure(d)
     else:
         show(d,

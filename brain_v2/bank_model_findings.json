@@ -1,0 +1,364 @@
+{
+  "_what_this_is": "Hallazgos del explorador del modelo de banca. NO es un informe de estado: cada entrada es algo que el modelo no sabia, no puede ver, o que se movio. Listo para que el brain-steward lo promueva.",
+  "_lands_in": [
+    "brain_v2/claims/claims.json",
+    ".agents/intelligence/PMO_BRAIN.md",
+    "knowledge/domains/Treasury/house_bank_operating_roles.md"
+  ],
+  "_generated_by": "brain_v2/bank_model_explorer.py",
+  "findings": [
+    {
+      "probe": "denominator_integrity",
+      "verdict": "STABLE",
+      "title": "Los desgloses suman sus totales",
+      "detail": "Comprobados 213 corredores.",
+      "evidence": {}
+    },
+    {
+      "probe": "taxonomy_residue",
+      "verdict": "NEW",
+      "title": "El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'",
+      "detail": "20 de 47 bancos quedan en CORREDOR ESTRECHO, MIXTO, SIN DESTINO RESOLUBLE. Cuando ese residuo es grande el que se queda corto es el MODELO, no los datos: mirar si hay un tipo nuevo escondido ahi, como paso con TESORERIA y con las cuentas receptoras.",
+      "evidence": {
+        "banks": [
+          "SOG01",
+          "CIT04",
+          "UNI01",
+          "SOG02",
+          "SOG04",
+          "DEU01",
+          "CHA01",
+          "SCB12",
+          "BMN01",
+          "ECO03",
+          "CIT19",
+          "SCB09",
+          "CIT15",
+          "SCB16",
+          "SCB05",
+          "CBE01",
+          "SCB08",
+          "BOP01",
+          "CIT22",
+          "GRN01"
+        ]
+      }
+    },
+    {
+      "probe": "role_drift",
+      "verdict": "BLIND",
+      "title": "No hay foto anterior con la que comparar",
+      "detail": "Primera ejecucion: se guarda la instantanea y a partir de la proxima se detecta deriva.",
+      "evidence": {}
+    },
+    {
+      "probe": "receiving_accounts",
+      "verdict": "NEW",
+      "title": "16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN",
+      "detail": "REGUH solo ve dinero saliendo, asi que el censo de pagos no puede verlas. Es un rol que el modelo aun no representa.",
+      "evidence": {
+        "accounts": [
+          {
+            "bank": "SCB04",
+            "statements": 1348,
+            "last": "20260330"
+          },
+          {
+            "bank": "CIT13",
+            "statements": 1308,
+            "last": "20260330"
+          },
+          {
+            "bank": "SCB18",
+            "statements": 1010,
+            "last": "20260330"
+          },
+          {
+            "bank": "SBN01",
+            "statements": 820,
+            "last": "20260330"
+          },
+          {
+            "bank": "SCB19",
+            "statements": 670,
+            "last": "20260330"
+          },
+          {
+            "bank": "NTB02",
+            "statements": 586,
+            "last": "20260330"
+          },
+          {
+            "bank": "ECO05",
+            "statements": 585,
+            "last": "20260330"
+          },
+          {
+            "bank": "ECO06",
+            "statements": 584,
+            "last": "20260330"
+          },
+          {
+            "bank": "TSC01",
+            "statements": 575,
+            "last": "20260330"
+          },
+          {
+            "bank": "ECO01",
+            "statements": 520,
+            "last": "20260125"
+          },
+          {
+            "bank": "SCB03",
+            "statements": 382,
+            "last": "20250714"
+          },
+          {
+            "bank": "SCB10",
+            "statements": 274,
+            "last": "20260330"
+          }
+        ]
+      }
+    },
+    {
+      "probe": "statement_coverage",
+      "verdict": "BLIND",
+      "title": "El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)",
+      "detail": "FEBKO_2024_2026 no cubre ICTP, IIEP, UBO, UIL, UIS. Cruzar pagos contra extractos con esta tabla produce conclusiones invertidas -- el 2026-08-20 salia que los hubs no reciben extractos, que es falso (claim 535). NO publicar ninguna columna de 'recibe extracto' hasta completar la extraccion.",
+      "evidence": {
+        "missing_company_codes": [
+          "ICTP",
+          "IIEP",
+          "UBO",
+          "UIL",
+          "UIS"
+        ]
+      }
+    },
+    {
+      "probe": "channel_jobs",
+      "verdict": "STABLE",
+      "title": "FEB_FILE_HANDLING activo",
+      "detail": "entrada de extractos: sondea la carpeta y dispara FF_5 -- 348 ejecuciones, ultima programada 20260318.",
+      "evidence": {
+        "executions": 348,
+        "last": "20260318"
+      }
+    },
+    {
+      "probe": "channel_jobs",
+      "verdict": "STABLE",
+      "title": "RBNK_IMPORT_PAYM_STATUS_REPORT activo",
+      "detail": "estado de pago que devuelve el banco (por BANCO) -- 4167 ejecuciones, ultima programada 20260318.",
+      "evidence": {
+        "executions": 4167,
+        "last": "20260318"
+      }
+    },
+    {
+      "probe": "channel_jobs",
+      "verdict": "STABLE",
+      "title": "ZFI_SWIFT_UPLOAD_BCM activo",
+      "detail": "acuse SWIFT de los ficheros enviados (por SOCIEDAD) -- 2778 ejecuciones, ultima programada 20260318.",
+      "evidence": {
+        "executions": 2778,
+        "last": "20260318"
+      }
+    },
+    {
+      "probe": "dead_accounts",
+      "verdict": "RISK",
+      "title": "10 banco(s) casa sin actividad desde 2024 o antes",
+      "detail": "Una cuenta abierta y sin uso es superficie de riesgo, no un dato neutro. Confirmar con Tesoreria si se cierran o se mantienen a proposito.",
+      "evidence": {
+        "banks": [
+          {
+            "bank": "DNB01",
+            "country": "NO",
+            "lines": 469,
+            "last_run": "20170707"
+          },
+          {
+            "bank": "SOG04",
+            "country": "US",
+            "lines": 32204,
+            "last_run": "20200115"
+          },
+          {
+            "bank": "CHA01",
+            "country": "US",
+            "lines": 1495,
+            "last_run": "20200115"
+          },
+          {
+            "bank": "ECO03",
+            "country": "SS",
+            "lines": 405,
+            "last_run": "20210728"
+          },
+          {
+            "bank": "WEL01",
+            "country": "US",
+            "lines": 2908,
+            "last_run": "20230106"
+          },
+          {
+            "bank": "SCB07",
+            "country": "JO",
+            "lines": 207,
+            "last_run": "20230604"
+          },
+          {
+            "bank": "DEU01",
+            "country": "DE",
+            "lines": 20319,
+            "last_run": "20230904"
+          },
+          {
+            "bank": "BPP01",
+            "country": "FR",
+            "lines": 167,
+            "last_run": "20240110"
+          },
+          {
+            "bank": "CIT05",
+            "country": "HT",
+            "lines": 422,
+            "last_run": "20240916"
+          },
+          {
+            "bank": "CIT10",
+            "country": "GT",
+            "lines": 113,
+            "last_run": "20240924"
+          }
+        ]
+      }
+    },
+    {
+      "probe": "single_purpose",
+      "verdict": "NEW",
+      "title": "35 banco(s) ejecutan UN SOLO metodo de pago",
+      "detail": "Un banco que hace exactamente una cosa suele merecer un rol con nombre propio en vez de caer en un cubo generico. Mirar si comparten proposito.",
+      "evidence": {
+        "banks": [
+          {
+            "bank": "WEL01",
+            "country": "US",
+            "method": "A",
+            "topology": "TESORERIA (entre cuentas propias)",
+            "lines": 2908
+          },
+          {
+            "bank": "AIB01",
+            "country": "AF",
+            "method": "3",
+            "topology": "HUB REGIONAL",
+            "lines": 1735
+          },
+          {
+            "bank": "BLN01",
+            "country": "SD",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 1248
+          },
+          {
+            "bank": "SCB14",
+            "country": "GB",
+            "method": "A",
+            "topology": "TESORERIA (entre cuentas propias)",
+            "lines": 818
+          },
+          {
+            "bank": "BTE01",
+            "country": "IR",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 676
+          },
+          {
+            "bank": "SCB12",
+            "country": "KE",
+            "method": "3",
+            "topology": "CORREDOR ESTRECHO",
+            "lines": 622
+          },
+          {
+            "bank": "BMN01",
+            "country": "CU",
+            "method": "3",
+            "topology": "CORREDOR ESTRECHO",
+            "lines": 579
+          },
+          {
+            "bank": "CIT07",
+            "country": "CD",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 507
+          },
+          {
+            "bank": "ECO04",
+            "country": "ML",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 473
+          },
+          {
+            "bank": "DNB01",
+            "country": "NO",
+            "method": "A",
+            "topology": "TESORERIA (entre cuentas propias)",
+            "lines": 469
+          },
+          {
+            "bank": "ECO02",
+            "country": "CI",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 448
+          },
+          {
+            "bank": "CIT05",
+            "country": "HT",
+            "method": "3",
+            "topology": "LOCAL (oficina de campo)",
+            "lines": 422
+          }
+        ]
+      }
+    },
+    {
+      "probe": "company_frame",
+      "verdict": "RISK",
+      "title": "4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC",
+      "detail": "El pais de la SOCIEDAD decide el marco -- que T042Z aplica y que clase BAdI se selecciona. Ninguna de estas puede renderizar purpose codes por construccion, por mucho que su beneficiario este en un pais configurado.",
+      "evidence": {
+        "companies": [
+          {
+            "cc": "UBO",
+            "country": "BR",
+            "lines": 204477
+          },
+          {
+            "cc": "ICTP",
+            "country": "IT",
+            "lines": 111482
+          },
+          {
+            "cc": "UIL",
+            "country": "DE",
+            "lines": 34506
+          },
+          {
+            "cc": "UIS",
+            "country": "CA",
+            "lines": 14637
+          }
+        ]
+      }
+    }
+  ]
+}
