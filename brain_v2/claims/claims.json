@@ -26086,5 +26086,66 @@
         "P2D"
       ]
     }
+  },
+  {
+    "id": 546,
+    "claim": "ALINEAR MASTER DATA NO ALINEA EL SISTEMA. Master data y customizing son dos canales distintos y solo el primero se replica con el sync P01->D01/V01. Medido 2026-08-20 tras dejar las cuentas GL de UNES al 100% en los tres sistemas (SKA1 0 huecos, SKB1 UNES 0 huecos en D01 y V01): la VERSION DE BALANCE seguia derivada. FAGL_011ZC (asignacion cuenta->posicion) tiene 1.059 filas en P01 y le faltan 195 a D01 y 131 a V01; FAGL_011PC (jerarquia de posiciones) 452 filas, faltan 287 y 278; FAGL_011QT (textos) 2.463 filas, faltan 179 y 96; FAGL_011SC faltan 51 y 22 y DIFIEREN 229 y 213. Las versiones en si (T011, T011T) son identicas en los tres: el marco coincide y el contenido no. Lo mismo aplica a OB09/T030H y a las variantes de F.05, que ademas llevan VARID.TRANSPORT='F' y no se transportan nunca.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Zagentexecution/quality_checks/fsv_alignment_check.py sobre P01/D01/V01 (2026-08-20)",
+        "cite": "D01: 011QT faltan 179 difieren 148 · 011PC faltan 287 difieren 38 · 011ZC faltan 195 difieren 11 · 011SC faltan 51 difieren 229. V01: 011QT 96/140 · 011PC 278/47 · 011ZC 131/2 · 011SC 22/213. T011 y T011T identicas.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "FAGL_011ZC VERSN=FS10, bloque 4041 en los tres sistemas",
+        "cite": "P01 tiene 4 filas incluida '1.1.1.1 -> 0004041015-0004041019'; D01 tiene 3 y la ultima llega solo a 0004041013; V01 tiene 3 y llega a 0004041014. La fila del intervalo NO existe fuera de P01, asi que las cuentas nuevas no quedan mapeadas alli pese a haberse copiado la cuenta.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "TFDIR WHERE FMODE='R' — busqueda de API de FSV",
+        "cite": "Cero FMs remote-enabled para FSV/BILANZ/ERGSL/FIN_STATEMENT. No hay canal programatico: el mantenimiento es OB58 o una orden de customizing.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "T011",
+      "T011T",
+      "FAGL_011ZC",
+      "FAGL_011QT",
+      "FAGL_011PC",
+      "FAGL_011SC",
+      "OB58",
+      "T030H",
+      "OB09",
+      "SKA1",
+      "SKB1",
+      "SKAT",
+      "UNES_DEPOSIT",
+      "VARID",
+      "Zagentexecution/quality_checks/fsv_alignment_check.py"
+    ],
+    "domain": "FI",
+    "created_session": 102,
+    "resolved_session": null,
+    "resolution_notes": "Origen: JP pregunta si la asignacion al balance vino con la copia de las cuentas. No vino, y no podia venir. Modo de fallo especialmente traicionero: un RANGO no cubre nada si la FILA del rango no existe, y esa ausencia no se ve mirando la cuenta — se ve mirando el intervalo. En P01 la peticion de Treasury ('map under cash and cash equivalent') se cumplio SOLA porque el intervalo 4041015-4041019 ya existia; fuera de P01 no hay tal intervalo. Mecanismo de medicion + generacion de la especificacion de cambio: fsv_alignment_check.py. No escribe: no hay API y FAGL_011* son tablas estandar, asi que el INSERT plano esta prohibido.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "Closing_Activities"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "B2R"
+      ]
+    }
   }
 ]

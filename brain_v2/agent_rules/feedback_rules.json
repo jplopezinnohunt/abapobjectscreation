@@ -5209,5 +5209,29 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": "feedback_master_data_sync_does_not_carry_customizing",
+    "severity": "HIGH",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Cuando se replica master data de P01 a D01/V01, DECLARAR SIEMPRE lo que la replica NO trae. Copiar la cuenta/fondo/centro no trae su CUSTOMIZING: version de balance (FAGL_011ZC via OB58), determinacion de cuentas (T030H via OB09), variantes de ejecucion (no se transportan, VARID.TRANSPORT='F'), derivacion, sets. Decir 'alineado' cuando solo lo esta el master data es una afirmacion falsa que el usuario descubrira cuando una prueba no reproduzca produccion.",
+    "why": "2026-08-20 (s102). Deje D01 y V01 con las cuentas GL de UNES al 100% y JP pregunto si la asignacion al balance venia con la copia. No venia. Medido: a D01 le faltan 195 intervalos de FAGL_011ZC y a V01 131, mas 287/278 filas de jerarquia de posiciones. Y el modo de fallo es traicionero: un RANGO no cubre nada si la FILA del rango no existe, y eso no se ve mirando la cuenta sino el intervalo. En P01 la peticion de Treasury se cumplio sola porque el intervalo 4041015-4041019 ya estaba; fuera de P01 no existe esa fila. El mismo dia se vio que la variante UNES_DEPOSIT tiene TRES contenidos distintos en los tres sistemas.",
+    "how_to_apply": "1) Al cerrar un sync, publicar DOS cifras: master data alineado, y customizing pendiente. 2) Correr los medidores: Zagentexecution/quality_checks/fsv_alignment_check.py (FSV) y ob09_vs_variant_check.py (determinacion de cuentas x variante). 3) Para el customizing NO inventar canal: si TFDIR no da un FM remote-enabled, el canal es la transaccion (OB58, OB09) o una orden de customizing, y lo que produce el agente es la ESPECIFICACION, no la escritura. Las tablas FAGL_011*/T030H son ESTANDAR: INSERT plano prohibido. 4) Nunca afirmar 'D01/V01 reproduce P01' sin haber comparado tambien la variante que selecciona los objetos.",
+    "domain_axes": {
+      "functional": [
+        "FI",
+        "PSM_FM",
+        "Closing_Activities"
+      ],
+      "module": [
+        "FI",
+        "CTS"
+      ],
+      "process": [
+        "P2D",
+        "B2R"
+      ]
+    }
   }
 ]
