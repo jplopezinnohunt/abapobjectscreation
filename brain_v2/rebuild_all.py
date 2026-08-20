@@ -250,6 +250,18 @@ def main():
     # never touches the 14 GB Gold DB). Its failure is still logged in full to curation.log.
     run(["python", "brain_v2/claims_health.py"],
         "Step 2c: Claims-health gate (evidence independence -> claims_health.json)", fatal=False)
+    # Step 2d — el rol operativo de cada banco casa. NO BLOQUEANTE: necesita el Gold DB y
+    # una lectura de P01 (T042Z + T001), y sin ellos el resto del rebuild sigue siendo valido.
+    # Existe porque en agosto de 2026 se construyo Purpose of Payment para Egipto sin
+    # preguntarse quien lleva realmente ese corredor: lo llevaba SocGen al 93%, y el banco
+    # que aviso movia el 0,9% en cheques. El dato estaba medido y disperso en prosa; aqui es
+    # una propiedad consultable del modelo. Claim 530.
+    run(["python", "brain_v2/house_bank_roles.py"],
+        "Step 2d: Rol operativo de los bancos casa (-> house_bank_roles.json)", fatal=False)
+    # El companion que lo hace legible. Va aqui y no en el paso 5 porque depende del JSON
+    # que acaba de emitir el 2d; el registro en companions.json lo mantiene descubrible.
+    run(["python", "scripts/build_bank_operation_design.py"],
+        "Step 2e: Companion UNESCO Bank Operation Design", fatal=False)
     # PROFILE (L16) must be crossed BEFORE brain_state is assembled — build_brain_state
     # attaches profile_links.json as system_profile._links. This step also GATES the
     # profile invariants (tier + evidence per module), so a malformed profile stops the

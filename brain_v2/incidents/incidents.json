@@ -1927,7 +1927,7 @@
   },
   {
     "id": "INC-EGYPT-PPC",
-    "status": "TESTED_IN_D01_BOTH_HALVES_PROVEN",
+    "status": "CLOSED_NOT_REQUIRED",
     "title": "Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026-09-05)",
     "reporter": "Mathewos Mehari (BFM) via Christina Lopez-Chemouny; originating notice from Citibank Egypt 2026-07-12",
     "received_date": "2026-08-10",
@@ -2039,7 +2039,8 @@
       "524",
       "525",
       "526",
-      "527"
+      "527",
+      "530"
     ],
     "related_known_unknowns": [
       "KU-2026-099-EGYPT-INSTRUCTION-CHANNEL",
@@ -2075,7 +2076,7 @@
       ]
     },
     "deadline": "2026-09-05",
-    "next_action": "CONTROL PROBADO POR LAS DOS MITADES en D01 el 2026-08-19: bloquea sin codigo (ZFI-036) y renderiza con codigo (fichero pain.001 con <Ustrd>/Payment for goods or services received/INV/224938). Quedan dos, y ninguna es tecnica. (1) PARTIR EL TRANSPORTE EN DOS antes de liberar: T1 T015L + YTFI_PPC_TAG (inerte, puede ir ya) y T2 YTFI_PPC_STRUC (el interruptor, 1-2 dias antes del 5-sep). Hoy las tres tablas van juntas en D01K9B0FXF, y ahi dentro sigue la clave 350ID USTRD O01 de Indonesia -- inocua desde que se restauro el valor, pero conviene quitarla para que el transporte diga la verdad sobre lo que cambia. (2) Confirmar los 5 motivos y su redaccion con Mathewos Mehari y CitiService Egypt. OPCIONAL: tipo de pago R (medido cero trafico en 10 anos). Paso a paso: companions/inc_egypt_ppc_configuration.html seccion 11.",
+    "next_action": "CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incidente: DESARMAR D01. Borrar las filas EG de YTFI_PPC_STRUC (es el interruptor; rollback = un delete) y borrar el transporte D01K9B0FXE/D01K9B0FXF. T015L y YTFI_PPC_TAG pueden quedarse, son inertes. No se pierde nada: la configuracion exacta esta en companions/inc_egypt_ppc_configuration.html seccion 11, en los claims 526/527 y en el fichero archivado Zagentexecution/tasks/2026_08_19_egypt_ppc_d01_test/. Se preserva el CONOCIMIENTO, no el artefacto. PENDIENTE Y AJENO A ESTE CIERRE: T015L INA en P01 (claim 529, PMO H103).",
     "ticket_number": "INC-000016101",
     "build_record": {
       "built_by": "JP_LOPEZ",
@@ -2196,6 +2197,22 @@
         "paso 001 ZFI-015: en UNES solo valen las areas de negocio GEF, MBF, OPF, PFF",
         "paso 011 ZFI-012 (U915): el Partner Bank Type es obligatorio -- por eso BVTYP='USD' en la linea del proveedor"
       ]
+    },
+    "closed_date": "2026-08-20",
+    "closure": {
+      "date": "2026-08-20",
+      "verdict": "NOT_REQUIRED - no hay que transportar nada",
+      "authority": "Mathewos Mehari (BFM), tras contactar a Societe Generale con Marlies Spronk: SG confirma que no existe codigo nuevo para Egipto; y los pagos USD por Citibank son solo domesticos de EEUU, asi que tampoco hace falta cambio por ese lado.",
+      "why_it_holds_against_our_own_data": "8.405 lineas a proveedores con banco EG: 76,2% por Societe Generale, 1,9% por Citi. La cuenta Citi Egipto (CIT19) emite 387 lineas, el 100% por metodo 3 = cheque prenumerado (T042Z FR, XSCHK='X'), que no es ni RTGS ni CBFT. El aviso de Citi vincula su propio canal, y ese canal no lleva este flujo.",
+      "the_lesson": "El dato que hacia la pregunta correcta estaba medido desde el 2026-08-17 (claims 492 y 493: 93,9% SocGen, 2,0% Citi). Se leyo como una observacion sobre la cobertura de nuestro framework en vez de como una pregunta sobre la aplicabilidad del mandato. Nadie pregunto a SG hasta el 20. Regla nueva: feedback_a_regulatory_notice_binds_a_channel_not_a_country (CRITICAL).",
+      "what_survives": [
+        "El mecanismo PPC queda probado extremo a extremo (claim 527): el decimo pais costara horas, no una sesion.",
+        "T015L INA roto en P01 (claim 529) -- defecto vivo, ajeno a Egipto, sigue abierto (PMO H103).",
+        "El separador de Indonesia, borrado y restaurado (claim 526).",
+        "4 reglas y 2 checks, todos generales.",
+        "Claim 528: ni nomina ni payment requests llegan a ninguno de los diez paises."
+      ],
+      "what_is_now_a_hazard": "La configuracion EG sigue en D01 y el INTERRUPTOR esta ARMADO: cualquier FB60 en D01 a uno de los 716 proveedores con banco egipcio se bloquea sin motivo. Y el transporte D01K9B0FXE/D01K9B0FXF existe sin liberar: si se libera por error, el bloqueo arranca en P01. HAY QUE DESARMARLO."
     }
   },
   {

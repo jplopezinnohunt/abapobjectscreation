@@ -1,0 +1,129 @@
+<meta charset="utf-8"><title>UNESCO — Bank Operation Design</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:1000px;margin:30px auto;padding:0 20px;line-height:1.55}
+h1{color:#08305f;font-size:21px;border-bottom:3px solid #08305f;padding-bottom:6px;margin:0 0 4px 0}
+h2{color:#08305f;font-size:15px;margin:26px 0 6px 0;border-bottom:1px solid #d4d9e0;padding-bottom:3px}
+h3{color:#08305f;font-size:13px;margin:16px 0 4px 0}
+.tag{display:inline-block;background:#08305f;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.4px;margin-right:6px}
+.sub{font-size:11px;color:#666;margin:4px 0 18px 0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.kpi{background:#f4f5f7;padding:10px;border-radius:5px;border-left:3px solid #08305f}
+.kpi.red{border-left-color:#c5283d}.kpi.amber{border-left-color:#ff9f1c}.kpi.green{border-left-color:#2a9d8f}
+.kpi .v{font-size:19px;font-weight:700;color:#08305f}
+.kpi.red .v{color:#c5283d}.kpi.amber .v{color:#a86c00}.kpi.green .v{color:#0a7e6e}
+.kpi .l{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+th{background:#e0ecf8;color:#08305f;text-align:left;padding:5px 8px;font-weight:600}
+td{padding:5px 8px;border-bottom:1px solid #d4d9e0;vertical-align:top}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+code{background:#f1f3f6;padding:1px 5px;border-radius:3px;font-size:11.5px;font-family:"SF Mono",Consolas,monospace}
+pre{background:#0f1b2b;color:#dfe7f0;padding:12px 14px;border-radius:5px;font-size:11.5px;overflow-x:auto;line-height:1.5}
+pre .c{color:#7f9ab5}pre .h{color:#ff6b7a;font-weight:700}pre .g{color:#7fd18c}
+.callout{background:#fff4d6;border-left:4px solid #ff9f1c;padding:10px 14px;margin:12px 0;border-radius:3px;font-size:13px}
+.callout.red{background:#ffe4e6;border-left-color:#c5283d}
+.callout.green{background:#d9f2ee;border-left-color:#2a9d8f}
+.callout.navy{background:#e8eef6;border-left-color:#08305f}
+.pill{display:inline-block;background:#e0ecf8;color:#08305f;padding:1px 7px;border-radius:10px;font-size:10.5px;font-weight:600;margin-right:4px}
+.pill.red{background:#ffe4e6;color:#c5283d}.pill.green{background:#d9f2ee;color:#0a7e6e}.pill.amber{background:#fff4d6;color:#a86c00}
+footer{margin-top:26px;font-size:10px;color:#666;border-top:1px solid #d4d9e0;padding-top:8px}</style>
+<h1><span class="tag">MODELO</span>UNESCO &mdash; Bank Operation Design</h1>
+<p class="sub">Que tipos de banco operamos, que hace cada tipo y en que tipo cae cada banco. <strong>Pagina GENERADA</strong> desde <code>brain_v2/house_bank_roles.json</code> &mdash; se edita <code>scripts/build_bank_operation_design.py</code>, nunca este HTML. Nodo de conocimiento: <code>knowledge/domains/Treasury/house_bank_operating_roles.md</code></p>
+<div class="kpis">
+<div class="kpi"><div class="v">47</div><div class="l">bancos casa con actividad</div></div>
+<div class="kpi green"><div class="v">10</div><div class="l">hubs concentradores</div></div>
+<div class="kpi amber"><div class="v">16</div><div class="l">bancos locales de oficina</div></div>
+<div class="kpi"><div class="v">209</div><div class="l">paises alcanzados por el hub global</div></div>
+</div>
+<div class="callout navy"><strong>De donde sale esto y por que existe.</strong> En agosto de 2026 se construyo y probo entero un requisito de Purpose of Payment para Egipto que resulto no hacer falta: el banco que lo pedia movia el 0,9% de ese corredor, en cheque. El dato estaba medido tres dias antes y disperso en prosa. Lo que faltaba no era una regla que recordar &mdash; era saber <strong>como opera cada banco</strong>. Esta pagina es ese modelo. <span class="pill red">claim 530</span></div>
+<h2>1 &middot; Los tipos de banco, y que hace cada uno</h2>
+<p style="font-size:12.5px">Un concentrador no se distingue de una cuenta de oficina por el <em>volumen</em> sino por la <strong>diversidad de destinos</strong>. El hub global alcanza 209 paises; una oficina de campo alcanza tres. El criterio va al lado del significado a proposito: un tipo cuyo criterio no se ve es una etiqueta, no una clasificacion.</p>
+<table><tr><th style="width:17%">Tipo</th><th style="width:30%">Que es</th><th style="width:18%">Como se deriva</th><th>Que implica operativamente</th><th class="n">bancos</th></tr>
+<tr><td><span class="pill green">HUB GLOBAL</span></td><td>El concentrador. Paga a casi cualquier parte del mundo y para mas de una sociedad. Es el que produce el grueso del fichero y el unico cuya familia de pais selecciona la clase BAdI que despacha purpose codes.</td><td><code>&ge;150 paises de destino distintos</code></td><td>Todo requisito regulatorio sobre un corredor pasa casi seguro por aqui. Es el primer banco al que preguntar.</td><td class="n">1</td></tr>
+<tr><td><span class="pill">HUB REGIONAL</span></td><td>Concentra un area o una divisa. Alcanza decenas de paises pero no el mundo entero, y normalmente sirve a una sola sociedad.</td><td><code>entre 15 y 149 paises de destino</code></td><td>Puede llevar una parte relevante de un corredor sin ser el dominante: mirar su cuota antes de descartarlo.</td><td class="n">9</td></tr>
+<tr><td><span class="pill amber">LOCAL (oficina de campo)</span></td><td>La cuenta de una oficina sobre el terreno. Paga casi todo dentro de su propio pais, a beneficiarios con banco local.</td><td><code>un destino se lleva &ge;70% y el domestico es &ge;60%</code></td><td><strong>Sus pagos son DOMESTICOS: no necesitan purpose code ni direccion estructurada transfronteriza.</strong> Todo requisito cross-border que les llegue es sobre-captura.</td><td class="n">16</td></tr>
+<tr><td><span class="pill">CORREDOR ESTRECHO</span></td><td>Pocos destinos y sin dominar ninguno con claridad. Suelen ser cuentas de proposito acotado o en desuso.</td><td><code>&lt;15 destinos y ninguno con &ge;70%</code></td><td>Revisar si sigue vivo antes de construir nada para el.</td><td class="n">13</td></tr>
+<tr><td><span class="pill red">SIN DESTINO CONOCIDO</span></td><td>Mueve dinero pero no sabemos hacia donde: sus beneficiarios no tienen registro de banco en <code>LFBK</code>.</td><td><code>0 paises de destino resolubles</code></td><td>No es que no pague: es que <strong>no lo vemos</strong>. Ningun control que dependa del pais del banco del beneficiario puede actuar aqui.</td><td class="n">8</td></tr>
+</table>
+<div class="callout"><strong>Y una segunda dimension, independiente del tipo: PAPEL.</strong> Un banco cuyos metodos llevan <code>T042Z-XSCHK='X'</code> emite cheque y <strong>no produce fichero SAP</strong>. No hay nada que corregir en un fichero que no existe &mdash; y eso, y no otra cosa, es lo que dejo fuera a la cuenta de Citibank Egipto.</div>
+<h2>2 &middot; Tres capas sobre el mismo pago, tres ejes distintos <span class="pill red">claim 532</span></h2>
+<p style="font-size:12.5px">Esta es la parte que no estaba escrita en ningun sitio, y explica la mayoria de las sorpresas de este dominio.</p>
+<table><tr><th>Capa</th><th>Se clava en</th><th>Consecuencia</th></tr>
+<tr><td><strong>Captura</strong> &mdash; <code>u917</code> bloquea la contabilizacion</td><td>el pais del banco del <strong>BENEFICIARIO</strong> (<code>LFBK-BANKS</code>)</td><td>no mira por donde sale el dinero</td></tr>
+<tr><td><strong>Fichero</strong> &mdash; BAdI &rarr; arbol DMEE</td><td>el pais de <strong>NUESTRO</strong> banco casa (<code>FPAYHX-UBISO</code>)</td><td>solo la familia FR despacha purpose codes</td></tr>
+<tr><td><strong>Aprobacion</strong> &mdash; BCM</td><td><code>ZBUKR</code> + techo de importe (y <code>ZLAND</code>/<code>ZBNKS</code> para agrupar el lote)</td><td><strong>el banco casa no entra</strong>: <code>HBKID</code> no aparece ni en <code>bcm_grouping_rule_selop</code> ni en <code>bcm_node_selection_criteria</code></td></tr>
+</table>
+<div class="callout red"><strong>Lo que esto produce.</strong> Captura y fichero no coinciden: de 47.399 lineas capturadas en los nueve paises con purpose code, <strong>solo el 80% llega a un fichero</strong>. Casi 9.500 pagos obligan a rellenar un campo que se descarta. El caso mas puro son <strong>171 lineas domesticas</strong> &mdash; Jordania 150, Marruecos 21 &mdash; pagadas de un banco casa LOCAL a un beneficiario LOCAL: se les exige un codigo transfronterizo en un pago que no cruza ninguna frontera, y luego se tira.<br><br>Y la aprobacion es ciega a todo esto: un pago domestico desde una oficina de campo y uno transfronterizo desde el hub de Paris siguen la misma logica si coinciden sociedad e importe. Puede ser politica deliberada &mdash; pero hoy no es visible, asi que nadie la ha decidido a proposito. <span class="pill red">claim 531</span></div>
+<h2>3 &middot; La regla que gobierna: domestico no, cross-border si</h2>
+<p style="font-size:12.5px">El purpose code &mdash; y en general el requisito de informar sobre el pago &mdash; es <strong>transfronterizo</strong>. El banco local no lo pide. Y la clasificacion <em>ya estaba escrita en SAP</em>, en el texto del metodo de pago (<code>T042Z-TEXT1</code>, pais FR): llevabamos meses leyendo los metodos como claves de enrutado y nunca como lo que tambien son, una afirmacion sobre que clase de pago es cada uno.</p>
+<table><tr><th>Metodo</th><th>Texto en SAP</th><th>Eje</th><th>Formato</th></tr>
+<tr><td><code>L</code></td><td>Payments in US in USD only</td><td><strong>DOMESTICO US</strong></td><td><code>/CITI/XML/UNESCO/DC_V3_01</code></td></tr>
+<tr><td><code>N</code></td><td>Payments outside US non-EUR</td><td><strong>INTERNACIONAL</strong></td><td><code>/CGI_XML_CT_UNESCO</code></td></tr>
+<tr><td><code>H</code></td><td>Euro Payments France</td><td><strong>DOMESTICO FR</strong></td><td><code>/CMI101</code></td></tr>
+<tr><td><code>I</code></td><td>Euro Payment SEPA zone</td><td><strong>ZONA</strong></td><td><code>/CMI101</code></td></tr>
+<tr><td><code>J</code></td><td>Euro Payment outside SEPA-zone</td><td><strong>INTERNACIONAL</strong></td><td><code>/CGI_XML_CT_UNESCO</code></td></tr>
+<tr><td><code>S</code></td><td>SEPA Payment</td><td><strong>ZONA</strong></td><td><code>/SEPA_CT_UNES</code></td></tr>
+<tr><td><code>3</code></td><td>Manual cheque (Pre-Numbered)</td><td><strong>&mdash;</strong></td><td><code>ninguno &mdash; <code>XSCHK=&#39;X&#39;</code></code></td></tr>
+</table>
+<div class="callout green">La frase con la que BFM cerro el caso de Egipto &mdash; <em>&quot;USD payments through Citibank are only used for domestic, US, payments&quot;</em> &mdash; es literalmente el nombre del metodo <code>L</code>. Estaba en <code>T042Z</code> desde siempre.</div>
+<h2>4 &middot; Cada banco, clasificado</h2>
+<p style="font-size:12.5px">Bancos con al menos 50 lineas ejecutadas. <code>dest</code> = paises de destino distintos; <code>dom</code> = %% de sus pagos donde el beneficiario banca en su mismo pais; <code>cheque</code> = %% por metodos sin fichero.</p>
+<table><tr><th>Banco</th><th>Pais</th><th class="n">Lineas</th><th class="n">dest</th><th class="n">dom</th><th class="n">cheque</th><th>Tipo</th><th>Rol</th><th>PPC</th><th>Sociedades</th><th>Destino principal</th></tr>
+<tr><td><code>SOG01</code></td><td>FR</td><td class="n">1.925.633</td><td class="n">209</td><td class="n">39%</td><td class="n">16%</td><td>HUB GLOBAL</td><td>MIXTO</td><td><span class="pill green">si</span></td><td>UNES, IIEP</td><td>FR</td></tr>
+<tr><td><code>CIT04</code></td><td>US</td><td class="n">189.348</td><td class="n">76</td><td class="n">70%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>MIXTO</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>CIT01</code></td><td>BR</td><td class="n">106.486</td><td class="n">87</td><td class="n">86%</td><td class="n">1%</td><td>HUB REGIONAL</td><td>DOMESTICO (BR)</td><td><span class="pill">no</span></td><td>UBO, UIS</td><td>BR</td></tr>
+<tr><td><code>UNI01</code></td><td>IT</td><td class="n">105.242</td><td class="n">148</td><td class="n">64%</td><td class="n">7%</td><td>HUB REGIONAL</td><td>MIXTO</td><td><span class="pill">no</span></td><td>ICTP</td><td>IT</td></tr>
+<tr><td><code>SOG02</code></td><td>FR</td><td class="n">43.034</td><td class="n">70</td><td class="n">78%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>MIXTO</td><td><span class="pill green">si</span></td><td>IIEP</td><td>FR</td></tr>
+<tr><td><code>SOG03</code></td><td>FR</td><td class="n">36.371</td><td class="n">58</td><td class="n">6%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UNES</td><td>GB</td></tr>
+<tr><td><code>SOG04</code></td><td>US</td><td class="n">32.204</td><td class="n">41</td><td class="n">78%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>MIXTO</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>DEU01</code></td><td>DE</td><td class="n">20.319</td><td class="n">109</td><td class="n">77%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>MIXTO</td><td><span class="pill">no</span></td><td>UIL</td><td>DE</td></tr>
+<tr><td><code>SOG05</code></td><td>FR</td><td class="n">10.101</td><td class="n">44</td><td class="n">4%</td><td class="n">0%</td><td>HUB REGIONAL</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UIL, UNES</td><td>DE</td></tr>
+<tr><td><code>AIB01</code></td><td>AF</td><td class="n">1.735</td><td class="n">18</td><td class="n">60%</td><td class="n">100%</td><td>HUB REGIONAL</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>AF</td></tr>
+<tr><td><code>BRA01</code></td><td>BR</td><td class="n">112.387</td><td class="n">14</td><td class="n">99%</td><td class="n">7%</td><td>LOCAL (oficina de campo)</td><td>DOMESTICO (BR)</td><td><span class="pill">no</span></td><td>UBO</td><td>BR</td></tr>
+<tr><td><code>CIT21</code></td><td>CA</td><td class="n">22.792</td><td class="n">12</td><td class="n">85%</td><td class="n">0%</td><td>LOCAL (oficina de campo)</td><td>DOMESTICO (CA)</td><td><span class="pill">no</span></td><td>UNES</td><td>CA</td></tr>
+<tr><td><code>BLN01</code></td><td>SD</td><td class="n">1.248</td><td class="n">12</td><td class="n">82%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>SD</td></tr>
+<tr><td><code>BTE01</code></td><td>IR</td><td class="n">676</td><td class="n">5</td><td class="n">76%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>IR</td></tr>
+<tr><td><code>CIT07</code></td><td>CD</td><td class="n">507</td><td class="n">7</td><td class="n">87%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>CD</td></tr>
+<tr><td><code>ECO04</code></td><td>ML</td><td class="n">473</td><td class="n">5</td><td class="n">93%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>ML</td></tr>
+<tr><td><code>ECO02</code></td><td>CI</td><td class="n">448</td><td class="n">3</td><td class="n">99%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>CI</td></tr>
+<tr><td><code>CIT05</code></td><td>HT</td><td class="n">422</td><td class="n">6</td><td class="n">83%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>HT</td></tr>
+<tr><td><code>BST01</code></td><td>MZ</td><td class="n">343</td><td class="n">3</td><td class="n">78%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>MZ</td></tr>
+<tr><td><code>FTB01</code></td><td>KH</td><td class="n">292</td><td class="n">2</td><td class="n">98%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>KH</td></tr>
+<tr><td><code>SCB07</code></td><td>JO</td><td class="n">207</td><td class="n">4</td><td class="n">98%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>JO</td></tr>
+<tr><td><code>SCB02</code></td><td>NP</td><td class="n">174</td><td class="n">4</td><td class="n">71%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>NP</td></tr>
+<tr><td><code>SCB15</code></td><td>QA</td><td class="n">161</td><td class="n">4</td><td class="n">84%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>QA</td></tr>
+<tr><td><code>CIT10</code></td><td>GT</td><td class="n">113</td><td class="n">1</td><td class="n">100%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>GT</td></tr>
+<tr><td><code>ECO09</code></td><td>MZ</td><td class="n">95</td><td class="n">1</td><td class="n">100%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>MZ</td></tr>
+<tr><td><code>CIT24</code></td><td>GA</td><td class="n">69</td><td class="n">2</td><td class="n">83%</td><td class="n">100%</td><td>LOCAL (oficina de campo)</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>GA</td></tr>
+<tr><td><code>SCB12</code></td><td>KE</td><td class="n">622</td><td class="n">13</td><td class="n">50%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>KE</td></tr>
+<tr><td><code>BMN01</code></td><td>CU</td><td class="n">579</td><td class="n">9</td><td class="n">36%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>CU</td></tr>
+<tr><td><code>ECO03</code></td><td>SS</td><td class="n">405</td><td class="n">6</td><td class="n">56%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>SS</td></tr>
+<tr><td><code>CIT19</code></td><td>EG</td><td class="n">387</td><td class="n">10</td><td class="n">49%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>EG</td></tr>
+<tr><td><code>SCB09</code></td><td>NG</td><td class="n">325</td><td class="n">4</td><td class="n">18%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>CIT15</code></td><td>LB</td><td class="n">302</td><td class="n">6</td><td class="n">11%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>SCB16</code></td><td>GH</td><td class="n">265</td><td class="n">4</td><td class="n">4%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>FR</td></tr>
+<tr><td><code>SCB05</code></td><td>PK</td><td class="n">197</td><td class="n">11</td><td class="n">8%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>CBE01</code></td><td>ET</td><td class="n">160</td><td class="n">2</td><td class="n">50%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>SCB08</code></td><td>ID</td><td class="n">119</td><td class="n">2</td><td class="n">0%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>BOP01</code></td><td>PS</td><td class="n">98</td><td class="n">3</td><td class="n">31%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>US</td></tr>
+<tr><td><code>CIT22</code></td><td>UY</td><td class="n">60</td><td class="n">1</td><td class="n">0%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>BR</td></tr>
+<tr><td><code>GRN01</code></td><td>IN</td><td class="n">50</td><td class="n">3</td><td class="n">0%</td><td class="n">100%</td><td>CORREDOR ESTRECHO</td><td>PAPEL - cheque, sin fichero SAP</td><td><span class="pill">no</span></td><td>UNES</td><td>FR</td></tr>
+<tr><td><code>WEL01</code></td><td>US</td><td class="n">2.908</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill">no</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>CHA01</code></td><td>US</td><td class="n">1.495</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill">no</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>SCB14</code></td><td>GB</td><td class="n">818</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill">no</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>DNB01</code></td><td>NO</td><td class="n">469</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill">no</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>CIC01</code></td><td>FR</td><td class="n">381</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>BPP01</code></td><td>FR</td><td class="n">167</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>CRA01</code></td><td>FR</td><td class="n">162</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+<tr><td><code>BNP01</code></td><td>FR</td><td class="n">142</td><td class="n">0</td><td class="n">0%</td><td class="n">0%</td><td>SIN DESTINO CONOCIDO</td><td>CROSS-BORDER</td><td><span class="pill green">si</span></td><td>UNES</td><td>&amp;mdash;</td></tr>
+</table>
+<h2>5 &middot; Como re-derivar y como usarlo</h2>
+<pre><span class="c">-- ante un requisito de un banco, ESTO va primero, antes de disenar nada</span>
+python brain_v2/house_bank_roles.py --country <span class="h">EG</span>
+
+<span class="c">-- el censo completo, la ficha de un banco, y la exposicion del purpose code</span>
+python brain_v2/house_bank_roles.py
+python brain_v2/house_bank_roles.py --bank <span class="h">CIT19</span>
+python brain_v2/house_bank_roles.py --ppc-exposure</pre>
+<div class="callout"><strong>El protocolo, en una frase:</strong> si el banco que avisa no domina la fila del corredor, esa es la primera pregunta al negocio &mdash; <em>&iquest;nos vincula esto, y que dice el banco que lleva el resto?</em> &mdash; y no la ultima. Regla <code>feedback_a_regulatory_notice_binds_a_channel_not_a_country</code> (CRITICAL).</div>
+<div class="callout red"><strong>Aplicacion inmediata:</strong> la rama de direccion estructurada del arbol CITI ramifica por <code>FPAYHX-UBISO</code> &mdash; el mismo eje &mdash; y <code>INC-PSTLADR-NOV2026</code> vence el <strong>2026-11-14</strong>. La pregunta que no se hizo para Egipto hay que hacerla aqui antes.</div>
+<h3>Limites, dichos explicitos</h3>
+<ul style="font-size:12.5px"><li>El join a <code>LFBK</code> no usa <code>BVTYP</code>: un proveedor con varias cuentas puede contarse en mas de un corredor. Afecta a los margenes, no al orden de magnitud.</li><li><code>SIN DESTINO CONOCIDO</code> no significa que el banco no pague: significa que sus beneficiarios no tienen registro en <code>LFBK</code> y no lo vemos.</li><li>El eje domestico/internacional del &sect;3 se lee del <em>texto</em> del metodo: es la intencion de quien lo configuro, no una propiedad que SAP imponga. Coincide con lo medido, pero son dos cosas.</li></ul>
+<footer>Generado por <code>scripts/build_bank_operation_design.py</code> desde <code>brain_v2/house_bank_roles.json</code> &middot; 2.621.314 lineas de pago analizadas &middot; commit fc59ad0 &middot; Claims 530 &middot; 531 &middot; 532 &middot; Nodo: <code>knowledge/domains/Treasury/house_bank_operating_roles.md</code> &middot; UNESCO SAP Intelligence</footer>

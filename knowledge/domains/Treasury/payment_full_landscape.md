@@ -1,5 +1,7 @@
 # UNESCO SAP Payment Full Landscape
 
+> **Quién es quién entre los bancos casa:** el rol operativo de cada uno — doméstico / cross-border / papel-cheque, formato DMEE y si despacha purpose codes — está derivado y medido en [`house_bank_operating_roles.md`](house_bank_operating_roles.md). Ahí vive también el eje **doméstico vs internacional**, que es el que decide si un purpose code hace falta.
+
 **Source**: BFM/TRS Handover Documentation (PDFs) + Gold DB analysis + CTS mining
 **Session**: #021 (2026-03-27) — 100% PDF coverage achieved
 **Companion**: `Zagentexecution/mcp-backend-server-python/payment_bcm_companion.html` (v4, 775KB, 12 tabs)

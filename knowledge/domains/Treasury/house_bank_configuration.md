@@ -1,5 +1,7 @@
 # House Bank Configuration — Support & Maintenance Procedure
 
+> **AS-RUN — qué papel juega cada banco de verdad:** este documento describe *cómo se da de alta* un banco casa. Para saber **qué hace cada uno de los que ya existen** — doméstico o cross-border, si emite fichero o cheque, qué corredor sirve y si su país despacha purpose codes — ver [`house_bank_operating_roles.md`](house_bank_operating_roles.md), derivado y regenerado en cada rebuild.
+
 > **Domain:** FI — Bank Accounting  
 > **Category:** Support & Maintenance (S&M)  
 > **Source:** Handover documentation + real config (NTB02/EUR02, Sogebank Haiti, UBA01 Mozambique)  

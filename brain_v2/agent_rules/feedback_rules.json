@@ -5106,5 +5106,29 @@
       "module": [],
       "process": []
     }
+  },
+  {
+    "id": "feedback_a_regulatory_notice_binds_a_channel_not_a_country",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "rule": "Un aviso regulatorio de un banco vincula EL CANAL DE ESE BANCO, no un pais. Antes de disenar nada, medir POR QUE CANAL sale realmente el flujo afectado y preguntar al banco que lo lleva. Si el que avisa no es el que transporta, puede que no haya nada que construir.",
+    "why": "2026-08-10 a 2026-08-20, Egipto. Citibank aviso de que exigiria Purpose of Payment en RTGS y CBFT hacia o desde Egipto. Se analizo con detalle COMO configurar Egipto, se construyo y se probo extremo a extremo. El 2026-08-20 SG confirmo que no existe codigo nuevo para Egipto y que el canal Citi no lleva ese flujo: la peticion decayo entera. LO GRAVE NO ES EL TRABAJO PERDIDO, ES QUE EL DATO ESTABA MEDIDO DESDE EL 2026-08-17: claim 492 'EGYPT IS 93.9% SOCGEN', claim 493 'cola de Citi 2,0% de las lineas', y el propio 492 escribio 'the Citi notice binds precisely the flow the framework cannot serve'. Ese hallazgo se leyo como una observacion sobre la cobertura de NUESTRO framework en vez de como lo que era: la prueba de que el mandato apunta a un canal que casi no usamos. Medimos lo correcto y derivamos el siguiente paso equivocado. Ademas, la cuenta Citi de Egipto emite el 100% por metodo 3 = cheque prenumerado, que no es ni RTGS ni CBFT -- es decir, ni siquiera la parte que si pasa por Citi estaba vinculada. Hermana de la regla de Track B 'la carta que autoriza es la especificacion, no la nota del solicitante': aqui la nota del solicitante ('anadir Egipto a la lista') traia dentro la premisa de que nuestra lista es el mecanismo que satisface al banco, y se valido el mecanismo sin tocar la premisa.",
+    "how_to_apply": "MECANIZADA: `python brain_v2/house_bank_roles.py --country <ISO2>` responde en un vistazo quien sirve ese corredor, con que rol (DOMESTICO / CROSS-BORDER / MIXTO / PAPEL-cheque), que formato DMEE emite y si su pais despacha purpose codes. El censo completo es `house_bank_roles.py` sin argumentos y `--bank <HBKID>` da la ficha de uno. Se regenera en el paso 2d de rebuild_all.py; el artefacto consultable es brain_v2/house_bank_roles.json. PROTOCOLO ante un aviso de un banco: (1) correr `--country` del pais afectado ANTES de disenar nada; (2) si el banco que avisa no domina la fila, esa es la primera pregunta al negocio, antes que cualquier diseno: '¿nos vincula esto, y que dice el banco que lleva el resto?'; (3) un banco marcado PAPEL no tiene fichero que corregir; (4) el requisito solo esta confirmado cuando lo confirma el banco que OPERA el canal, no el que envio la circular. En Egipto: SOG01 93,1% frente a CIT19 0,9% en cheque. Claim 530.",
+    "domain_axes": {
+      "functional": [
+        "Payment",
+        "Treasury",
+        "Procurement",
+        "FI"
+      ],
+      "module": [
+        "FI"
+      ],
+      "process": [
+        "P2P",
+        "T2R"
+      ]
+    }
   }
 ]

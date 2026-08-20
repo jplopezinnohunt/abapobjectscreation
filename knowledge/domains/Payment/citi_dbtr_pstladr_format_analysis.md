@@ -1,5 +1,7 @@
 # Formato `/CITI/XML/UNESCO/DC_V3_01` — Dbtr `PstlAdr`: estructura, defectos y compliance
 
+> ⚠️ **El mismo eje, y con deadline vivo.** La rama de dirección estructurada de este árbol ramifica por `FPAYHX-UBISO`, el país de NUESTRO banco casa — exactamente el eje doméstico/internacional que documenta [`../Treasury/house_bank_operating_roles.md`](../Treasury/house_bank_operating_roles.md). Antes de dimensionar `INC-PSTLADR-NOV2026`, correr `python brain_v2/house_bank_roles.py --country <ISO2>` y preguntar qué banco lo exige y si domina ese corredor. Es la pregunta que no se hizo para Egipto.
+
 **Formato (DMEE TREE_ID / FORMI):** `/CITI/XML/UNESCO/DC_V3_01`
 **Fuente de datos:** **P01 (PRODUCCIÓN)** — `SYSID P01`, host `HQ-SAP-P`, RFC read-only (SNC/SSO).
 - Uso del formato: `REGUT.DTFOR` + `DFPAYG.FORMI` (P01, toda la historia 2019-2026).
