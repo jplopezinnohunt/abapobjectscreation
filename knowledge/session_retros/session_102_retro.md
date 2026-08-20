@@ -42,7 +42,9 @@ Los 220 reglas del corpus no dispararon ni una vez. Lo que sí disparó fue mec�
 
 > **Una regla con forma de juicio, guardada en un JSON, no dispara. Un mecanismo sí. Una persona sí.**
 
-Eso no es una observación blanda: es la respuesta a la pregunta de qué hacer con 195 reglas de prosa. **28 de ellas son CRITICAL y no se citan en ningún artefacto** — ni código, ni doc, ni agente, ni `CLAUDE.md`. Existen sólo en el fichero. Eso no es un control, es una creencia archivada.
+Eso no es una observación blanda: es la respuesta a la pregunta de qué hacer con 195 reglas de prosa. **22 de ellas son CRITICAL y no se citan en ningún artefacto.** *(Corregido el mismo día: publiqué 95 sin citar y 28 CRITICAL; el corpus con el que medí excluía `claims.json` e `incidents.json`, donde se citan 31 reglas. Los números reales son 72 y 22.)*
+
+Y una corrección más importante que el número, que vino de JP: **iba a retirar 9 reglas usando "no está citada" como prueba de que no sirven.** Eso no mide utilidad, mide citación — el patrón del claim 496 aplicado por mí a las reglas que me gobiernan. Dos de mis candidatas: `never_run_an_ungated_sap_writer`, que protege contra la clase de INC-CLASS-LOSS, y `never_sum_an_amount_across_currencies`, que **violé el día anterior**. Estaban trabajando; mi medidor no las veía. **La deuda de one-in-one-out no se paga borrando: se paga mecanizando o reubicando** — y hoy se mecanizaron 4 de las 7. Regla nueva: `feedback_never_retire_anything_without_evidence` (CRITICAL).
 
 ---
 
@@ -105,7 +107,7 @@ No lo construí hoy a propósito: hoy ya añadí tres checks y debo nueve retira
 
 ## 6. La deuda que dejo, dicha
 
-- **Nueve retiradas de reglas.** `one_rule_in_one_rule_out` dice que por cada regla nueva se mecaniza o se retira una vieja. Añadí 7 ayer y 2 hoy. Retiré 0.
+- **La deuda de `one_rule_in_one_rule_out` sigue abierta, pero NO se paga retirando.** Añadí 7 ayer y 3 hoy; mecanicé 4. Lo que falta es **reubicar** las 22 CRITICAL sin punto de uso a donde apliquen —un check, un agente, un doc— no borrarlas.
 - **68 items de PMO vivos**, el bloque `INCOMING` más antiguo del 18 de junio. Hoy metí 11 y cerré 2.
 - **8 huérfanos** que el check nuevo destapa y que no arreglé.
 - **El borrado de la configuración de Egipto en D01** queda pendiente de confirmación del usuario (H106), con snapshot previo guardado.
