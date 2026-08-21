@@ -126,6 +126,7 @@ mark{background:#fff3a8;padding:1px 3px;border-radius:2px}
     <a href="#disambiguation"><strong>🧭 Disambiguation (OBA1/OBV1/OBV2/OT83)</strong></a>
     <a href="#oba1-architecture"><strong>🔬 OBA1 Architecture (6 procedures · KDF vs KDB)</strong></a>
     <a href="#pl-origin"><strong>🎯 Where 6045011/7045011 come from</strong></a>
+    <a href="#universo"><strong>El universo (posici&oacute;n &times; variante)</strong></a>
     <a href="#typology"><strong>&#129516; Tipolog&iacute;a (3 m&eacute;todos &middot; 4 variantes)</strong></a>
     <a href="#summary"><strong>Executive Summary</strong></a>
     <a href="#vocabulary">Vocabulary</a>
@@ -380,6 +381,90 @@ XOPVW = ''    saldo              &rarr;  KDB  &rarr;  T030S   una fila por CLAVE
       &rarr; gasto <code>6045011</code> / ingreso <code>7045011</code>. La fila <code>GRP</code>
       (<code>5022012</code>) est&aacute; definida y no la usa nadie. <b>Pedir <code>T030H</code> a una cuenta de
       saldo produce 160 falsos defectos</b> &mdash; pas&oacute; el 2026-08-21.</p>
+
+
+      <h3 id="universo">El UNIVERSO: qu&eacute; posiciones del balance trabaja cada variante</h3>
+      <p>El alcance no se mide contra el balance entero. Contar &laquo;cuentas de balance fuera de
+      toda variante&raquo; da <b>497</b> en UNES y no significa nada: la mayor&iacute;a est&aacute;n fuera
+      porque su posici&oacute;n no la trabaja nadie. <b>El universo son las 28 posiciones que las
+      variantes ocupan de verdad</b>; las otras 51 quedan fuera del an&aacute;lisis por dise&ntilde;o.</p>
+
+      <table><thead><tr><th>Variante</th><th>Selecciona por</th><th>Posiciones que ocupa</th>
+      <th>Cobertura medida</th></tr></thead><tbody>
+      <tr><td><code>UNES_UNBA</code></td><td><b>RANGO</b> (3 intervalos)</td>
+          <td>Cash in Hand &middot; Cash with Banks</td><td><b>100&nbsp;% &middot; 94&nbsp;%</b></td></tr>
+      <tr><td><code>UNES_OI_G/L</code></td><td><b>RANGO</b> + 3 recortes</td>
+          <td>Cash with Banks</td><td>46&nbsp;% de sus posiciones</td></tr>
+      <tr><td><code>UNES_OI_AR/AP</code></td><td>submayor: <b>todas menos 27</b> + 12 sueltas</td>
+          <td>21 posiciones</td><td>Accruals 97&nbsp;% &middot; VAT 83&nbsp;%</td></tr>
+      <tr><td><code>UNES_DEPOSIT</code></td><td><b>LISTA</b> de 18 cuentas</td>
+          <td>InterFund &middot; Other Investments &middot; Term accounts</td>
+          <td><b>30&nbsp;% &middot; 50&nbsp;% &middot; 50&nbsp;%</b></td></tr>
+      </tbody></table>
+
+      <p><b>Una misma posici&oacute;n puede estar en varias variantes</b>, y no es redundancia: la
+      posici&oacute;n agrupa por <b>presentaci&oacute;n</b> y la variante por <b>tratamiento</b>.
+      <code>1.1.1.1 Cash with Banks</code> contiene tres familias con tratamientos distintos:</p>
+      <table><thead><tr><th>Bloque</th><th>Qu&eacute; es</th><th>Gesti&oacute;n</th><th>Variante</th>
+      <th>Cuentas</th></tr></thead><tbody>
+      <tr><td><code>10xxxxx</code></td><td>cuentas de banco principales</td><td>saldo</td>
+          <td><code>UNES_UNBA</code></td><td>145 de 145</td></tr>
+      <tr><td><code>11xxxxx</code></td><td>subcuentas de banco</td><td>partidas abiertas</td>
+          <td><code>UNES_OI_G/L</code></td><td>141 de 141</td></tr>
+      <tr><td><code>40xxxxx</code></td><td>fondos monetarios</td><td>partidas abiertas</td>
+          <td><code>UNES_DEPOSIT</code></td><td><b>4 de 7</b></td></tr>
+      <tr class="n"><td><code>12x</code>/<code>13x</code>/<code>16x</code></td>
+          <td>t&eacute;cnicas y clearing de cheques</td><td>partidas abiertas</td>
+          <td><i>ninguna</i></td><td>0 de 16 &mdash; <span class="mut">a cero, no urge</span></td></tr>
+      </tbody></table>
+      <p><b>Ninguna cuenta est&aacute; en dos variantes</b> &mdash; 0 medido en toda la sociedad. Y no es
+      disciplina: lo decide <code>SKB1-XOPVW</code>. En una cuenta de partidas abiertas el saldo
+      <b>es</b> la suma de las partidas, as&iacute; que valorarla por las dos v&iacute;as posteria la
+      diferencia <b>dos veces</b>.</p>
+
+      <div style="margin:14px 0;padding:12px 16px;border-left:4px solid #7b4bb7;background:rgba(123,75,183,0.07)">
+      <h3 style="margin-top:0;color:#7b4bb7">La ley que explica los huecos: un rango es una REGLA, una lista es un INVENTARIO</h3>
+      <table><thead><tr><th>C&oacute;mo entra la cuenta</th><th>Cuentas cubiertas</th>
+      <th>Huecos que genera</th><th>Comportamiento</th></tr></thead><tbody>
+      <tr class="g"><td><code>RANGE</code></td><td><b>483 &mdash; 87&nbsp;%</b></td><td><b>0</b></td>
+          <td>una cuenta nueva dentro del rango queda cubierta el d&iacute;a que se crea</td></tr>
+      <tr><td><code>ALL-BUT</code></td><td>53 &mdash; 10&nbsp;%</td><td>4</td>
+          <td>cubierta por defecto salvo decisi&oacute;n expresa</td></tr>
+      <tr class="r"><td><code>INDIVIDUAL</code></td><td><b>20 &mdash; 4&nbsp;%</b></td><td><b>47</b></td>
+          <td>cada alta exige que alguien se acuerde</td></tr>
+      </tbody></table>
+      <p style="margin-bottom:0"><b><code>INDIVIDUAL</code> cubre el 4&nbsp;% y concentra el 68&nbsp;% de
+      los huecos</b> &mdash; casi 20 a 1. La regla no envejece; el inventario s&iacute;.
+      <code>UNES_DEPOSIT</code> es la <b>&uacute;nica de las cuatro que va por lista</b>, y es la que
+      tiene el defecto. Por eso la recomendaci&oacute;n no es &laquo;a&ntilde;adid <code>4041011</code>&raquo;
+      &mdash; eso repara el s&iacute;ntoma y el a&ntilde;o que viene habr&aacute; otras &mdash; sino
+      <b>convertir <code>UNES_DEPOSIT</code> de lista a rango</b>, con los recortes que Tesorer&iacute;a
+      quiera. Es la diferencia entre corregir un dato y arreglar el generador.</p>
+      </div>
+
+      <div style="margin:14px 0;padding:12px 16px;border-left:4px solid #a32d2d;background:rgba(163,45,45,0.08)">
+      <h3 style="margin-top:0;color:#a32d2d">La clase de defecto, cuantificada: <code>4041011</code> es una de 50</h3>
+      <p>Barrido de toda la sociedad: <b>69 cuentas activas con partidas abiertas en divisa y fuera de
+      toda variante</b>, y <b>50 de ellas tienen <code>T030H</code> configurado</b> &mdash; alguien quiso
+      revaluarlas y nunca entraron en el c&aacute;lculo.</p>
+      <table><thead><tr><th>Familia</th><th>Cuentas</th><th>Lo m&aacute;s grueso</th></tr></thead><tbody>
+      <tr><td>Travel Agency Clearing de oficinas de campo (<code>920x</code>/<code>923x</code>)</td>
+          <td><b>31</b></td><td>UZS 136,5&nbsp;M &middot; IRR 222&nbsp;M &middot; NGN 14,2&nbsp;M</td></tr>
+      <tr><td>Clearing de institutos (<code>509x</code>)</td><td><b>7</b></td>
+          <td><code>5098012</code> UIS en <b>13 monedas</b> &middot; <code>5091011</code> EUR &minus;12,89&nbsp;M</td></tr>
+      <tr><td>Inversiones y dep&oacute;sitos (<code>404x</code>)</td><td>2</td>
+          <td><code>4041011</code> EUR 10&nbsp;M &middot; <code>4044015</code> EUR &minus;3,97&nbsp;M</td></tr>
+      <tr><td>Otras</td><td>10</td>
+          <td><code>2111000</code> VAT HQ EUR 1,44&nbsp;M &middot; <code>4060000</code> en 4 monedas</td></tr>
+      </tbody></table>
+      <p style="margin-bottom:0"><b>El m&eacute;todo que lo encuentra:</b> la incoherencia no es
+      &laquo;no estar en una variante&raquo; sino <b>no estar cuando tus iguales de la misma posici&oacute;n
+      s&iacute; est&aacute;n</b>. Filtrado as&iacute;: 208 cuentas, no 497. Y hay que separar lo que
+      <b>no es</b> un hueco de revaluaci&oacute;n: 14 cuentas con <b>725&nbsp;M USD</b> est&aacute;n en
+      posiciones que <b>ninguna</b> variante trabaja &mdash; pr&eacute;stamos Miollis, condiciones con
+      donantes, patrimonio. Eso es pregunta de compensaci&oacute;n o de pol&iacute;tica contable, no de F.05.
+      M&eacute;todo completo: <code>knowledge/domains/Closing_Activities/fx_revaluation_scope_discovery_method.md</code>.</p>
+      </div>
 
       <h3>La familia de dep&oacute;sitos e inversiones &mdash; con moneda, saldo y exposici&oacute;n reales</h3>
       <p>Poblaci&oacute;n <code>40410xx</code> / <code>40430xx</code>. <b>PA</b> = gestionada por partidas
