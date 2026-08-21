@@ -43,6 +43,10 @@ GENERATED = [
     ("scripts/build_br_companion.py", "companions/budget_rate_companion_v1.html"),
     ("scripts/build_payroll_companion.py", "companions/payroll_end_to_end_companion_v1.html"),
     ("scripts/build_wbs_companion.py", "companions/project_wbs_companion_v1.html"),
+    # Anadido s102: el companion de gobierno de datos maestros se genera del registro
+    # brain_v2/master_data_registry.json. Estaba cableado a rebuild_all pero NO aqui, o sea
+    # que nadie comprobaba que el HTML publicado siguiera coincidiendo con su generador.
+    ("scripts/build_master_data_companion.py", "companions/master_data_governance.html"),
     ("brain_v2/build_br_graph.py", "brain_v2/budget_rate_graph.json"),
 ]
 
