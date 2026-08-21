@@ -47,8 +47,15 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 
 # Un doc es de PROCESO si su nombre lo declara. Deliberadamente conservador: preferimos pedir un
 # nombre explicito a adivinar por el contenido, porque un falso "si" aqui esconde el hueco.
+# Falso positivo medido el 2026-08-21: esta lista no incluia "rules" ni "design", asi que
+# marco al dominio de BANCOS como "sin proceso" cuando tenia bcm_signatory_change_solution_design.md
+# (37 KB, con la rutina en 7 fases) y bcm_signatory_rules.md (20 KB). El segundo fallo fue del
+# REGISTRO: el solution design no estaba en knowledge_docs del dominio, asi que el check no podia
+# verlo aunque hubiera acertado la palabra. Un check que solo mira nombres de fichero depende de que
+# el registro este completo -- por eso el punto 1 (dominio con registro) va ANTES que el punto 2.
 PROCESO = ("process", "proceso", "method", "metodo", "runsheet", "calendar", "governance",
-           "procedure", "procedimiento", "workflow", "lifecycle")
+           "procedure", "procedimiento", "workflow", "lifecycle",
+           "rules", "reglas", "design", "diseno", "runbook", "protocol", "protocolo")
 
 
 def load(p):
