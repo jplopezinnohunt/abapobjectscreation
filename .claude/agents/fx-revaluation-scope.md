@@ -48,6 +48,62 @@ que 560 M son dolares limpios y **10 M son euros abiertos sin revaluar**.
 barrido en las PARTIDAS. La moneda del maestro solo sirve para saber cual de los dos grupos
 estas mirando.
 
+## ⭐ TU METODO — una variante es una DECLARACION DE PERTENENCIA
+
+Una variante no es un filtro tecnico: **se crea para agrupar elementos que alguien considera
+similares**. Por eso leerla es explorar COMPORTAMIENTO, no configuracion. Y de ahi sale el
+criterio que tienes que aplicar siempre:
+
+> **La incoherencia no es "no estar". Es NO ESTAR CUANDO TUS IGUALES SI ESTAN.**
+
+"Igual" se define por la **posicion del balance** (FS10), que es como el negocio agrupa las
+cuentas. Asi que el metodo es:
+
+1. Agrupa la poblacion por posicion FS10.
+2. Descarta las posiciones donde **nadie** entra en variante: eso es por diseno, no un hueco.
+3. En las posiciones donde **al menos una** cuenta se revalua, mira las que no. **Esas son las
+   anomalias**, porque sus iguales si se revaluan.
+4. Ordena por exposicion abierta en divisa, no por saldo.
+
+Medido asi el 2026-08-21: **208 cuentas fuera de variante en posiciones que SI se revaluan**.
+Contra "497 cuentas fuera de toda variante", que no significaba nada.
+
+**El texto de la variante te da la pista del agrupamiento.** `UNES_UNBA` = "UNES BANK Balances
+Revaluation" (bancos, saldo) · `UNES_OI_G/L` = "UNES SUB BANK OI REVALUATION" (subcuentas de
+banco, partidas abiertas) · `UNES_OI_AR/AP` = "UNES AR/AP OI revaluation" · `UNES_DEPOSIT` =
+**"UNES_Deposit 4041011 > 4041013"**. Ese ultimo texto es un fosil del alcance original: la
+variante nacio para 4041011-4041013 y luego crecio a 18 cuentas sueltas. Hoy `4041013` esta
+dentro y **`4041011`, la cuenta que da nombre a la variante, no**.
+
+## LA LEY QUE EXPLICA LOS HUECOS — rango contra lista
+
+| Modo de seleccion | Posiciones | Cobertura medida |
+|---|---|---|
+| **RANGO** (`UNBA`, `OI_G/L`) | Cash in Hand · Cash with Banks | **100 % · 94 %** |
+| **submayor** (`OI_AR/AP`, todas menos 27) | Accruals · VAT | 97 % · 83 % |
+| **LISTA** (`DEPOSIT`, 18 sueltas) | InterFund · Other Investments · Term accounts | **30 % · 50 % · 50 %** |
+
+La FSV asigna por **intervalos de numero de cuenta** y una variante por rango selecciona por
+**numero de cuenta**: leen la misma estructura, asi que la cobertura por rango es casi total y
+se mantiene sola. La cobertura por lista depende de que alguien la actualice, y cae a la mitad.
+**`UNES_DEPOSIT` es la unica de las cuatro que va por lista, y es la que tiene el defecto.**
+
+## LA CLASE DE DEFECTO, CUANTIFICADA (P01, 2026-08-21)
+
+**69 cuentas activas con partidas abiertas en divisa y fuera de toda variante. De ellas, 50
+tienen `T030H`/OB09 configurado** — es decir, alguien QUISO revaluarlas y nunca las metio en el
+calculo. `4041011` es una de las 50, no un caso aislado:
+
+| Familia | Cuentas con OB09, con divisa, sin variante |
+|---|---|
+| Travel Agency Clearing de oficinas de campo (`920x`/`923x`) | **31** |
+| Clearing de institutos (`509x` — IIEP, UIS, ICTP, IBE, UIL, MGIE, UBO, IICBA) | **7** |
+| Inversiones y depositos (`404x`) | 2 |
+| Otros | 10 |
+
+Los `509x` son los mas gruesos: `5098012` UIS arrastra saldo abierto en **13 monedas**,
+`5091011` lleva **EUR -12,89 M**. Todos con OB09 puesto y en ninguna variante.
+
 ## Lo que YA esta medido — no lo re-derives
 
 **Nacimiento.** `4041011` (s102): 10 M EUR netos abiertos, `T030H` configurado y en NINGUNA

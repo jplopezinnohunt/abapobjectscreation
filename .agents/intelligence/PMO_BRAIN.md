@@ -202,6 +202,30 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H107 — 50 CUENTAS CON OB09 Y SIN VARIANTE DE F.05 (s102, medido). Escala muy superior a
+INC-000016262.** `4041011` no era un caso aislado. Barrido de toda la sociedad UNES: **69 cuentas
+activas con partidas abiertas en divisa y fuera de toda variante, 50 de ellas con `T030H`
+configurado** — alguien quiso revaluarlas y nunca entraron en el calculo.
+
+| Familia | Cuentas | Lo mas grueso |
+|---|---|---|
+| Travel Agency Clearing de oficinas de campo (`920x`/`923x`) | **31** | UZS 136,5 M · IRR 222 M · NGN 14,2 M |
+| Clearing de institutos (`509x`) | **7** | `5098012` UIS en **13 monedas** · `5091011` EUR −12,89 M |
+| Inversiones y depositos (`404x`) | 2 | `4041011` EUR 10 M · `4044015` EUR −3,97 M |
+| Otras | 10 | `2111000` VAT HQ EUR 1,44 M · `4060000` Fixed Assets Clearing en 4 monedas |
+
+**Metodo que hay que usar para revisarlo** (esta en el agente `fx-revaluation-scope`): la
+incoherencia no es "no estar en una variante" — hay 497 cuentas de balance fuera y la mayoria con
+razon — sino **no estar cuando tus iguales de la misma posicion de balance si estan**. Filtrado
+asi: 208 cuentas.
+
+**Causa estructural, no descuido:** la cobertura por RANGO (`UNES_UNBA`, `UNES_OI_G/L`) da 94-100 %
+porque la FSV y la variante leen la misma estructura de numeracion; la cobertura por LISTA
+(`UNES_DEPOSIT`, 18 sueltas) da 30-50 %. **La recomendacion no es "anade la cuenta X" sino "por que
+`404xxxx` y los clearing `509x`/`920x` se mantienen a mano cuando bancos va por rango".**
+
+*Pendiente de decidir con FRA/Tesoreria antes de tocar nada.* Claims 558-563.
+
 **H106 — PREGUNTA A TESORERIA: 3 cuentas con OB09 y en ninguna variante de F.05 (s102, medido).**
 No es una cuenta suelta, es un patron en la familia de depositos e inversiones. Con `T030H` puesto
 y **fuera de toda variante**: `4041011` Term Deposits Principal (**defecto VIVO**, 10 M EUR netos
