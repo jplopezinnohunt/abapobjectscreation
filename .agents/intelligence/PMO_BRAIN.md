@@ -202,6 +202,25 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H106 — PREGUNTA A TESORERIA: 3 cuentas con OB09 y en ninguna variante de F.05 (s102, medido).**
+No es una cuenta suelta, es un patron en la familia de depositos e inversiones. Con `T030H` puesto
+y **fuera de toda variante**: `4041011` Term Deposits Principal (**defecto VIVO**, 10 M EUR netos
+abiertos), `4041012` Term Accounts Principal Current y `4041014` MMF USD JPMorgan (latentes: misma
+configuracion incompleta, sin exposicion hoy). Alguien configuro donde postear y nunca las metio
+en el calculo.
+
+Segundo grupo, sin `T030H` **y** sin variante, que nadie ha preguntado: `4041015`, `4041016`,
+`4043021`, `4043022`, `4043024`, `4043027`, `4043028` y los mandatos `4043030/31/32`
+(PIMCO · JP Morgan · RAMP). `4041019` NO entra: cerrada en INC-000016262 (USD sobre sociedad USD).
+
+**La pregunta buena no es "¿anadimos 4041011?"** sino: el criterio con el que se mantiene
+`UNES_DEPOSIT` parece ser "cuentas en moneda distinta de USD", y ese criterio deja fuera a las
+cuentas con moneda de cuenta USD que arrastran partidas en divisa — que es literalmente el caso de
+`4041011`. Confirmar el criterio con Tesoreria antes de tocar la variante.
+
+Instrumento: `python Zagentexecution/quality_checks/fx_revaluation_scope_check.py` · agente
+`fx-revaluation-scope` · claims 558-561.
+
 **H105 — REVALUACION FX (F.05 / SAPF100): el dominio NO existe, la materia SI (s102, medido).**
 Mismo patron que master data: hay conocimiento de sobra y ningun registro que lo reuna.
 **Medido 2026-08-21:** 36 claims, 5 incidentes y 6 documentos hablan de revaluacion FX, repartidos
