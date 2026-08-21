@@ -52,6 +52,28 @@ def sources():
     yield "capability_model/capability_model.json (domains keys)", list(cm.get("domains", {}))
 
 
+def orphan_domains(ont):
+    """Dominios DECLARADOS canonicos que no tienen registro en domains.json.
+
+    El validador solo miraba una direccion -- que lo que esta en los stores resuelva contra la
+    ontologia. Nunca comprobo la contraria, y por eso Closing_Activities estuvo declarado y sin
+    registro desde s097 hasta s102: sus 4 documentos, 17 claims, 2 companions y su incidente
+    colgaban de nada, y preguntar por "el dominio de la revaluacion" no devolvia dominio.
+    Un dominio declarado sin registro no es media entrada: es conocimiento que se pierde.
+    """
+    reg = set(json.load(open(BRAIN_V2 / "domains" / "domains.json", encoding="utf-8"))
+              .get("domains", {}))
+    sub = json.load(open(BRAIN_V2 / "capability_model" / "ontology.json",
+                         encoding="utf-8")).get("subdomain_aliases", {})
+    orphans = []
+    for d in ont["domains"]:
+        keys = {d["canonical_key"]} | set(d.get("aliases") or [])
+        keys |= {k for k, v in sub.items() if v.get("canonical_key") == d["canonical_key"]}
+        if not (keys & reg):
+            orphans.append(d["canonical_key"])
+    return orphans
+
+
 def main():
     ont, idx = load_index()
     print("[ontology v%s] %d canonical domains, %d aliases, %d cross-cutting keys, %d dimensions"
@@ -76,6 +98,15 @@ def main():
             for v in bad:
                 print("  %s :: %r" % (label, v))
         return 1
+    orphans = orphan_domains(ont)
+    if orphans:
+        print("\nFAIL - dominios DECLARADOS sin registro en domains/domains.json. Un dominio "
+              "declarado y sin registro pierde sus docs, claims, companions e incidentes:")
+        for k in orphans:
+            print("  ontology.domains :: %r sin entrada (ni por alias ni por subdominio)" % k)
+        return 1
+    print("  %-52s %3d declarados, 0 huerfanos"
+          % ("bidireccional: declarado -> registro", len(ont["domains"])))
     print("\nOK - every domain value resolves. %d canonical domains referenced across %d stores."
           % (len(resolved), len(list(sources()))))
     return 0

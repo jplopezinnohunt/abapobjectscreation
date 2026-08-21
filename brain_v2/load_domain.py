@@ -104,6 +104,17 @@ ALIASES = {
     "ob09": ["Closing_Activities", "Master_Data_Governance", "FI"],
     "revaluacion": ["Closing_Activities", "Master_Data_Governance", "FI"],
     "variante": ["Closing_Activities", "Master_Data_Governance"],
+    # Cierre y revaluacion FX. El dominio estuvo declarado y sin registro desde s097: se entra
+    # por la TRANSACCION y por el PROGRAMA tanto como por el nombre, porque nadie pregunta
+    # "por Closing_Activities" — pregunta por F.05.
+    "f.05": ["Closing_Activities", "FI", "Treasury"],
+    "f05": ["Closing_Activities", "FI", "Treasury"],
+    "sapf100": ["Closing_Activities", "FI"],
+    "cierre": ["Closing_Activities", "FI"],
+    "closing": ["Closing_Activities", "FI"],
+    "valoracion": ["Closing_Activities", "FI", "Treasury"],
+    "revaluation": ["Closing_Activities", "Master_Data_Governance", "FI"],
+    "fx": ["Closing_Activities", "Treasury", "TRM"],
 }
 
 # Adjacent domains: used ONLY for the cheap structured stores (claims, incidents, rules,
