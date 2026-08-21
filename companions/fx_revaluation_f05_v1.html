@@ -126,6 +126,7 @@ mark{background:#fff3a8;padding:1px 3px;border-radius:2px}
     <a href="#disambiguation"><strong>🧭 Disambiguation (OBA1/OBV1/OBV2/OT83)</strong></a>
     <a href="#oba1-architecture"><strong>🔬 OBA1 Architecture (6 procedures · KDF vs KDB)</strong></a>
     <a href="#pl-origin"><strong>🎯 Where 6045011/7045011 come from</strong></a>
+    <a href="#typology"><strong>&#129516; Tipolog&iacute;a (3 m&eacute;todos &middot; 4 variantes)</strong></a>
     <a href="#summary"><strong>Executive Summary</strong></a>
     <a href="#vocabulary">Vocabulary</a>
     <a href="#fx-2025"><strong>2025 Execution History</strong></a>
@@ -344,6 +345,128 @@ F.05 reads <strong>SKB1.XOPVW</strong> for the HKONT being revalued:<br>
     </section>
 
     <!-- ═════════════════ EXECUTIVE SUMMARY ═════════════════ -->
+
+    <section id="typology" style="margin-top:18px;padding:14px 18px;border:2px solid #7b4bb7;border-radius:8px;background:rgba(123,75,183,0.06)">
+      <h2 style="margin-top:0;color:#7b4bb7">&#129516; Tipolog&iacute;a: 3 m&eacute;todos &middot; 4 variantes &middot; 2 tablas de determinaci&oacute;n &mdash; TIER_1 (2026-08-21)</h2>
+      <p>Le&iacute;do en vivo de P01: <code>T044A</code> y el contenido &iacute;ntegro de las 4 variantes con
+      <code>RS_VARIANT_CONTENTS_RFC</code>. Cierra la confirmaci&oacute;n que este documento daba por
+      <em>no extra&iacute;ble por RFC</em> desde la sesi&oacute;n 78 &mdash; s&iacute; lo es.</p>
+
+      <h3>Los m&eacute;todos de valoraci&oacute;n (<code>T044A</code>)</h3>
+      <table><thead><tr><th>M&eacute;todo</th><th>&iquest;En uso?</th><th>Mecanismo</th><th>Tipo de cambio</th><th>Tipo doc</th></tr></thead><tbody>
+      <tr><td><code>UNBA</code></td><td>s&iacute;</td><td>saldo (<code>XSALK</code>)</td><td><b>M</b> medio</td><td><code>JV</code></td></tr>
+      <tr><td><code>UNOI</code></td><td>s&iacute;</td><td>partidas abiertas (<code>XPOSD</code>+<code>XSALR</code>)</td><td><b>M</b> medio</td><td><code>JV</code></td></tr>
+      <tr><td><code>UNIM</code></td><td><b>no lo usa ninguna variante</b></td><td>saldo, id&eacute;ntico a UNBA</td><td><b>V</b> venta</td><td><code>JV</code></td></tr>
+      </tbody></table>
+
+      <h3>Las variantes de <code>SAPF100</code> para UNES</h3>
+      <table><thead><tr><th>Variante</th><th>M&eacute;todo</th><th>Mecanismo real</th><th>Selecci&oacute;n de cuentas</th></tr></thead><tbody>
+      <tr><td><code>UNES_UNBA</code></td><td>UNBA</td><td><b>SALDO</b> (<code>X_SALBEW=X</code>, OI apagado)</td><td>3 <b>rangos</b> <code>BT</code>: 1000000&ndash;1099999 &middot; 1400000&ndash;1499999 &middot; 1900000&ndash;1999999 (bancos y caja)</td></tr>
+      <tr><td><code>UNES_DEPOSIT</code></td><td>UNOI</td><td>partidas abiertas G/L</td><td>17 cuentas <b>sueltas</b> <code>EQ</code></td></tr>
+      <tr><td><code>UNES_OI_G/L</code></td><td>UNOI</td><td>partidas abiertas G/L</td><td>6 sueltas</td></tr>
+      <tr><td><code>UNES_OI_AR/AP</code></td><td>UNOI</td><td><b>las dos a la vez</b> &mdash; <code>X_SALBEW</code> <b>y</b> <code>X_GL</code>/<code>X_AP</code>/<code>X_AR</code></td><td>12</td></tr>
+      </tbody></table>
+      <p><b>El modelo de &laquo;dos procesos&raquo; no captura <code>UNES_OI_AR/AP</code>:</b> no son dos cajones,
+      son dos interruptores independientes que una variante puede encender a la vez. Y el
+      <b>mecanismo de selecci&oacute;n cambia entre variantes del mismo programa</b> &mdash; rangos en una,
+      valores sueltos en las otras tres.</p>
+
+      <h3>Qu&eacute; tabla de determinaci&oacute;n le toca a cada cuenta &mdash; lo decide <code>SKB1-XOPVW</code></h3>
+<pre style="background:var(--code-bg);padding:10px 12px;border-radius:6px;font-size:12px;overflow-x:auto">XOPVW = 'X'   partidas abiertas  &rarr;  KDF  &rarr;  T030H   una fila POR CUENTA   (= OB09)
+XOPVW = ''    saldo              &rarr;  KDB  &rarr;  T030S   una fila por CLAVE (SKB1-KDFSL);
+                                                     clave vac&iacute;a = DEFECTO DEL PLAN</pre>
+      <p>Medido en UNES: 2.315 cuentas &middot; <code>XOPVW='X'</code> en <b>1.155</b> y vac&iacute;o en <b>1.160</b> &middot;
+      <code>KDFSL</code> <b>vac&iacute;o en las 2.315</b>, as&iacute; que toda cuenta de saldo cae en el defecto del plan
+      &rarr; gasto <code>6045011</code> / ingreso <code>7045011</code>. La fila <code>GRP</code>
+      (<code>5022012</code>) est&aacute; definida y no la usa nadie. <b>Pedir <code>T030H</code> a una cuenta de
+      saldo produce 160 falsos defectos</b> &mdash; pas&oacute; el 2026-08-21.</p>
+
+      <h3>La familia de dep&oacute;sitos e inversiones &mdash; con moneda, saldo y exposici&oacute;n reales</h3>
+      <p>Poblaci&oacute;n <code>40410xx</code> / <code>40430xx</code>. <b>PA</b> = gestionada por partidas
+      abiertas. Saldo = <code>GLT0</code> 2026 en moneda de sociedad. Exposici&oacute;n = partidas
+      <b>abiertas</b> en divisa (<code>BSIS</code>, netas por <code>SHKZG</code>).</p>
+      <style>
+      #typology table.fam td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+      #typology table.fam td.c{text-align:center}
+      #typology table.fam tr.r{background:rgba(163,45,45,0.12)}
+      #typology table.fam tr.w{background:rgba(176,107,0,0.12)}
+      #typology table.fam tr.g{background:rgba(44,122,74,0.08)}
+      #typology table.fam tr.n{color:var(--muted)}
+      #typology .mut{color:var(--muted);font-size:11px}
+      </style>
+      <table class="fam"><thead><tr><th>Cuenta</th><th>Texto</th><th>Moneda de la cuenta</th>
+      <th>Gesti&oacute;n</th><th>Determi-<br>naci&oacute;n</th><th>Variante</th><th>Saldo 2026<br>(USD)</th>
+      <th>Exposici&oacute;n abierta<br>en divisa</th><th>Estado</th></tr></thead><tbody>
+      <tr class='r'><td><code>0004041011</code></td><td>Term Deposits Principal</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td><i>ninguna</i></td><td class='n'>571 569 087</td><td class='n'>EUR 10 000 000</td><td class='c'><b>DEFECTO</b></td></tr>
+      <tr class='w'><td><code>0004041012</code></td><td>Term Accounts Principal Current</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>latente</b></td></tr>
+      <tr class='g'><td><code>0004041013</code></td><td>Short Term Deposits Principal</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>15 854 801</td><td class='n'>EUR 5 000 000</td><td class='c'><b>completa</b></td></tr>
+      <tr class='w'><td><code>0004041014</code></td><td>MMF USD JPMorgan</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td><i>ninguna</i></td><td class='n'>21 753 000</td><td class='n'>&mdash;</td><td class='c'><b>latente</b></td></tr>
+      <tr class='n'><td><code>0004041015</code></td><td>MMF USD ASHI JPMorgan</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>2 000</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004041016</code></td><td>MMF USD BlackRock</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>78 000 000</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='g'><td><code>0004041017</code></td><td>MMF EUR BlackRock</td><td><b>EUR</b> fija</td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>30 213 120</td><td class='n'>EUR 29 603 200</td><td class='c'><b>completa</b></td></tr>
+      <tr class='g'><td><code>0004041018</code></td><td>MMF EUR BNP PB</td><td><b>EUR</b> fija</td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>1 143</td><td class='n'>EUR 1 000</td><td class='c'><b>completa</b></td></tr>
+      <tr class='n'><td><code>0004041019</code></td><td>MMF USD BNP PB</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>1 000</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='g'><td><code>0004043011</code></td><td>ETFs ASHI Equity</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>39 125 406</td><td class='n'>EUR 20 491 398</td><td class='c'><b>completa</b></td></tr>
+      <tr class='n'><td><code>0004043012</code></td><td>BLOCKED – Other investments</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>saldo</td><td class='c'>T030S</td><td>UNES_DEPOSIT</td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>bloqueada</b></td></tr>
+      <tr class='n'><td><code>0004043013</code></td><td>CLOSED - Shares - EUR equity funds</td><td><b>EUR</b> fija</td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>bloqueada</b></td></tr>
+      <tr class='g'><td><code>0004043014</code></td><td>Term Accounts Principal Non Current</td><td><b>EUR</b> fija</td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>59 647 831</td><td class='n'>EUR 55 000 000</td><td class='c'><b>completa</b></td></tr>
+      <tr class='n'><td><code>0004043021</code></td><td>Treasury Bills Principal</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043022</code></td><td>ETFs Nessim Habif Corporate</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>3 308 676</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043023</code></td><td>Bonds Accrued Interest</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>saldo</td><td class='c'>T030S</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043024</code></td><td>Bonds Nassim Habif - Current</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='g'><td><code>0004043025</code></td><td>ETFs ASHI Government</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>12 101 954</td><td class='n'>EUR 7 334 218</td><td class='c'><b>completa</b></td></tr>
+      <tr class='g'><td><code>0004043026</code></td><td>ETFs ASHI Corporate</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>T030H</td><td>UNES_DEPOSIT</td><td class='n'>12 634 758</td><td class='n'>EUR 6 243 217</td><td class='c'><b>completa</b></td></tr>
+      <tr class='n'><td><code>0004043027</code></td><td>Bonds Principal Non Current</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043028</code></td><td>Bonds Principal Current</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043029</code></td><td>Accrued PFF-GTF - Bond Interest</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>saldo</td><td class='c'>T030S</td><td><i>ninguna</i></td><td class='n'>0</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043030</code></td><td>Investments - Mandate PIMCO</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>87 465 822</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043031</code></td><td>Investments - Mandate JP Morgan</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>104 619 278</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      <tr class='n'><td><code>0004043032</code></td><td>Investments - Mandate RAMP</td><td>USD <span class='mut'>(sociedad: admite cualquiera)</span></td><td class='c'>PA</td><td class='c'>&mdash;</td><td><i>ninguna</i></td><td class='n'>203 614 636</td><td class='n'>&mdash;</td><td class='c'><b>sin config, sin divisa</b></td></tr>
+      </tbody></table>
+
+      <div style="margin-top:14px;padding:12px 16px;border-left:4px solid #a32d2d;background:rgba(163,45,45,0.08)">
+      <h3 style="margin-top:0;color:#a32d2d">La regla real &mdash; y por qu&eacute; es fr&aacute;gil</h3>
+      <p><code>SKB1-WAERS = USD</code> <b>no significa &laquo;cuenta en d&oacute;lares&raquo;</b>: USD es la moneda
+      de la sociedad, y poner la moneda de la sociedad en el maestro quiere decir <b>&laquo;admite
+      cualquier moneda&raquo;</b>. En cambio una cuenta con <code>EUR</code> en el maestro <b>solo</b> admite
+      euros. Esa diferencia parte la familia en dos grupos que se cubren de forma muy distinta:</p>
+      <table><thead><tr><th>Grupo de cuentas</th><th>Qu&eacute; permite SAP</th><th>&iquest;Hay que revaluarla?</th><th>Dentro de la variante</th></tr></thead><tbody>
+      <tr><td><b>Moneda de cuenta = EUR</b><br><span class="mut">4041017 &middot; 4041018 &middot; 4043013 &middot; 4043014</span></td>
+          <td>solo se puede contabilizar <b>en euros</b></td>
+          <td><b>SIEMPRE</b> &mdash; y se ve en el maestro, sin mirar ning&uacute;n apunte</td>
+          <td><b>4 de 4 &mdash; 100&nbsp;%</b></td></tr>
+      <tr><td><b>Moneda de cuenta = USD</b> (la de la sociedad)<br><span class="mut">21 cuentas; solo 5 llevan divisa de verdad</span></td>
+          <td>se puede contabilizar <b>en cualquier moneda</b></td>
+          <td><b>DEPENDE</b> de lo que tenga contabilizado &mdash; el maestro no lo dice, hay que ir a los apuntes</td>
+          <td><b>4 de 5</b></td></tr>
+      </tbody></table>
+      <p>Las 5 cuentas en USD que s&iacute; llevan divisa: <code>4041013</code> (EUR 5&nbsp;000&nbsp;000) &middot;
+      <code>4043011</code> (EUR 20&nbsp;491&nbsp;398) &middot; <code>4043025</code> (EUR 7&nbsp;334&nbsp;218) &middot;
+      <code>4043026</code> (EUR 6&nbsp;243&nbsp;217) &mdash; las cuatro dentro &mdash; y
+      <b><code>4041011</code> (EUR 10&nbsp;000&nbsp;000), fuera</b>. Las otras 16 en USD no llevan divisa,
+      as&iacute; que est&aacute; bien que est&eacute;n fuera.</p>
+      <p style="margin-bottom:0"><b>Eso no es una omisi&oacute;n suelta: es una clase de defecto.</b> El grupo que se cubre
+      solo &mdash; el de moneda fija &mdash; acierta el 100&nbsp;%. El grupo que exige que alguien vaya a
+      mirar los apuntes es donde se produjo el fallo: la cobertura depende de que una persona se d&eacute;
+      cuenta, no de una regla.
+      <code>4041011</code> &laquo;Term Deposits Principal&raquo; es el caso donde nadie se dio cuenta:
+      <b>571,6&nbsp;M USD</b> de saldo, <b>10&nbsp;M EUR</b> abiertos, su fila en <code>T030H</code> puesta
+      &mdash; configurada para saber d&oacute;nde postear, y nunca seleccionada para calcular.</p>
+      </div>
+
+      <p style="margin-top:10px"><b>Latentes</b> (<code>T030H</code> puesto, ninguna variante, sin divisa hoy):
+      <code>4041012</code> y <code>4041014</code>. Lo ser&aacute;n el d&iacute;a que se postee en divisa.<br>
+      <b>Sin preguntar nunca</b>: los mandatos <code>4043030</code> PIMCO &middot; <code>4043031</code> JP&nbsp;Morgan
+      &middot; <code>4043032</code> RAMP suman <b>395 699 736 USD</b> sin <code>OB09</code> ni variante &mdash; hoy sin
+      exposici&oacute;n en divisa, as&iacute; que correctos; pero nadie lo ha confirmado, y son exactamente el
+      perfil de cuenta que esta clase de defecto atrapa.</p>
+
+      <p style="font-size:12px;color:var(--muted)">Reproducible:
+      <code>python Zagentexecution/quality_checks/fx_revaluation_scope_check.py</code> &middot;
+      agente <code>fx-revaluation-scope</code> &middot; claims 558&ndash;561 &middot;
+      <code>knowledge/domains/Closing_Activities/fx_revaluation_process.md</code> &sect;2-bis</p>
+    </section>
+
     <section id="summary">
       <h2>Executive Summary</h2>
       <div class="kpi">

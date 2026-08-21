@@ -213,10 +213,13 @@ Segundo grupo, sin `T030H` **y** sin variante, que nadie ha preguntado: `4041015
 `4043021`, `4043022`, `4043024`, `4043027`, `4043028` y los mandatos `4043030/31/32`
 (PIMCO · JP Morgan · RAMP). `4041019` NO entra: cerrada en INC-000016262 (USD sobre sociedad USD).
 
-**La pregunta buena no es "¿anadimos 4041011?"** sino: el criterio con el que se mantiene
-`UNES_DEPOSIT` parece ser "cuentas en moneda distinta de USD", y ese criterio deja fuera a las
-cuentas con moneda de cuenta USD que arrastran partidas en divisa — que es literalmente el caso de
-`4041011`. Confirmar el criterio con Tesoreria antes de tocar la variante.
+**Hipotesis descartada en la misma sesion.** Se penso que el criterio de `UNES_DEPOSIT` fuera
+"cuentas en moneda distinta de USD". Falso: dentro hay cuentas en USD que llevan euros y estan bien
+incluidas — `4043011` (USD, EUR 20,5 M), `4043025` (USD, EUR 7,3 M), `4043026` (USD, EUR 6,2 M).
+**El dato que cierra la cuestion:** de las 25 cuentas de la familia, **8 tienen exposicion abierta
+en divisa y SIETE estan dentro de la variante**. La unica fuera es `4041011` — 571,6 M USD de saldo
+y 10 M EUR abiertos. Es una **omision suelta**, no un criterio mal planteado. La pregunta a
+Tesoreria es directa: ¿por que esta fuera, y se anade?
 
 Instrumento: `python Zagentexecution/quality_checks/fx_revaluation_scope_check.py` · agente
 `fx-revaluation-scope` · claims 558-561.
