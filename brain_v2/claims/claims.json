@@ -26323,5 +26323,54 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 550,
+    "claim": "LAS VARIANTES DE PROGRAMA SI SE ESCRIBEN POR RFC. Probado extremo a extremo contra D01 el 2026-08-21: RS_CREATE_VARIANT_RFC crea y RS_VARIANT_DELETE_RFC borra, ambos remote-enabled, verificado RELEYENDO con RS_VARIANT_CONTENTS_RFC (PRE vacio -> POST con BUKRS=UNES y SKONTO=4041018 tal como se enviaron -> borrado -> vacio). Interfaces reales: RS_CREATE_VARIANT_RFC(CURR_REPORT, CURR_VARIANT, VARI_DESC{MANDT,REPORT,VARIANT,TRANSPORT,ENVIRONMNT,PROTECTED,ENAME,MLANGU,...}, VARI_CONTENTS[SELNAME,KIND,SIGN,OPTION,LOW,HIGH], VARI_TEXT, VSCREENS) y RS_VARIANT_DELETE_RFC(REPORT, VARIANT como CHANGING, USE_EXCEPTIONS). DOS LIMITES QUE IMPORTAN. (a) RS_VARIANT_CHANGE_RFC NO sirve para modificar contenido: su interfaz es solo REPORT + VARIANT + VALUE_OR_ATTR, sin tabla de contenido -- es de dialogo. Para cambiar una variante existente hay que BORRAR Y RECREAR con el contenido completo. (b) LO QUE NO SE ENVIA SE RELLENA CON DEFECTOS EN SILENCIO: la variante de prueba se creo con solo 2 lineas y SAP anadio FS_NUM, N_PROTG, P_BBUDAT, P_BBUPEM, P_BLDAT, P_PROTG, P_SBUPEM, STICHTAG y ST_BUDAT a cero. Replicar una variante exige mandar TODOS sus parametros, no solo la seleccion de cuentas -- si no, se pierden fechas, metodo de valoracion y flags de modo sin aviso.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/spike_variant_write.py contra D01 (2026-08-21)",
+        "cite": "PRE ZZTEST_S102 = []. RS_CREATE_VARIANT_RFC -> RETURN.TYPE vacio. POST = BUKRS/S/I/EQ/UNES + SKONTO/S/I/EQ/4041018 + 9 parametros de pantalla rellenados por SAP. RS_VARIANT_DELETE_RFC(USE_EXCEPTIONS='X') -> 'Variant ZZTEST_S102 deleted'; POST = []. UNES_DEPOSIT de D01 intacta antes y despues.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "get_function_description RS_VARIANT_CHANGE_RFC en D01",
+        "cite": "Solo RETURN, VARIANT (changing), REPORT y VALUE_OR_ATTR. Sin tabla de contenido: no puede transportar valores.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "RS_CREATE_VARIANT_RFC",
+      "RS_VARIANT_DELETE_RFC",
+      "RS_VARIANT_CHANGE_RFC",
+      "RS_VARIANT_CONTENTS_RFC",
+      "RS_CREATE_VARIANT_255_RFC",
+      "VARID",
+      "SAPF100",
+      "UNES_DEPOSIT"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": "CIERRA H113 sin necesidad de excepcion de escritura directa: alinear UNES_DEPOSIT en D01 y V01 con el contenido de P01 es leer con RS_VARIANT_CONTENTS_RFC y recrear con RS_CREATE_VARIANT_RFC, o sea PELDANO 1 de la escalera (API estandar), no peldano 3. El borrar-y-recrear es destructivo, asi que exige snapshot PRE en fichero y readback POST. Disciplina del spike, que conviene repetir: se probo en una variante DESECHABLE (ZZTEST_S102) y no en UNES_DEPOSIT, y se limpio -- el primer intento de borrado fallo por inventar un parametro (FLAG_CONFIRMSCREEN) que no existe, asi que la basura estuvo en D01 unos minutos hasta releer la interfaz real.",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI",
+        "BC"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
   }
 ]
