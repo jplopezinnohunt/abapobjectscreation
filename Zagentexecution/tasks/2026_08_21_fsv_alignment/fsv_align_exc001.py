@@ -133,7 +133,7 @@ def main():
         print("\nABORTA (G2): la referencia no se pudo leer entera.")
         return 2
 
-    rc, ledger = 0, {}
+    rc, ledger, pendientes = 0, {}, 0
     for tgt in targets:
         print("\n" + "=" * 74)
         print("DESTINO %s" % tgt)
@@ -159,6 +159,7 @@ def main():
                     rc = 1
                     continue
                 if not a.execute:
+                    pendientes += len(todo)
                     for r in todo[:4]:
                         print("       + %s" % {k: r.get(k) for k in keys})
                     continue
@@ -217,7 +218,12 @@ def main():
             ledger[tgt] = led
             print("\n  G9/G10 -> %s (%d claves escritas)" % (os.path.basename(led), len(written)))
 
-    print("\n%s" % ("FSV ALINEADA" if rc == 0 else "HUBO PROBLEMAS — revisa arriba"))
+    # Un dry-run con filas pendientes NO esta alineado: decirlo, o el instrumento miente.
+    if rc == 0 and pendientes:
+        print("\nDRY-RUN: %d filas PENDIENTES de insertar. Nada escrito." % pendientes)
+        rc = 1
+    else:
+        print("\n%s" % ("FSV ALINEADA" if rc == 0 else "HUBO PROBLEMAS — revisa arriba"))
     if ledger:
         print("PENDIENTE G10: registrar las claves de %s en una orden de customizing."
               % ", ".join(ledger))
