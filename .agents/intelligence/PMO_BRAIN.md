@@ -211,9 +211,9 @@ dia. Mecanizado en `Zagentexecution/quality_checks/incident_domain_knowledge_che
 
 | Dominio | Tipo | Incidentes | Proceso que falta |
 |---|---|---|---|
-| `Treasury_EBS` | MASTER_DATA | `INC-000006313` + `INC-000011781` | **autorizacion bancaria BCM**: alta y baja de personas, la carta como autoridad de registro, el barrido de la poblacion |
+| **BANCOS** (hoy tagueado `Treasury`, canonico `Treasury_EBS`) · eje **P2P** | MASTER_DATA | `INC-000006313` + `INC-000011781` | **panel de firmantes BCM**: alta y baja de personas, la carta como autoridad de registro, el barrido de la poblacion. Correccion de JP: BCM vive en el dominio de los BANCOS y su eje es purchase-to-pay, no T2R — autorizar un pago es P2P. El canonico `Treasury_EBS` induce a error: ese dominio es banco casa **y** extractos |
 | `Payment_BCM` | REGULATORY | `INC-EGYPT-PPC` + `INC-PSTLADR-NOV2026` | **requisito regulatorio de un banco**: como se decide si aplica (rol del banco casa, corredor), como se prueba, como se despliega |
-| `PSM_FM` | ERROR | `INC-000005638` + `INC-BUDGETRATE-EQG` | **tipo de cambio presupuestario** |
+| `PSM_FM` — **Fund Management** | ERROR | `INC-000005638` + `INC-BUDGETRATE-EQG` | **tipo de cambio presupuestario y deriva del pool de AVC** |
 
 Y **`INC-CLASS-LOSS-2026-06` apunta a `BASIS`**, que es una clave transversal y no un dominio con
 registro: el mismo defecto que tuvo `Closing_Activities` cinco sesiones.
