@@ -124,7 +124,31 @@ con fecha y autorización explícita de JP.
 
 | id | Alcance | Tablas | Destinos | Operación | Autorizada por | Fecha | Estado |
 |---|---|---|---|---|---|---|---|
-| **EXC-001** | **Versión de balance (FSV)**, chart `UNES` | `FAGL_011PC` · `FAGL_011QT` · `FAGL_011ZC` · `FAGL_011SC` | **D01, V01** | **solo `INSERT` de filas ausentes** | JP | 2026-08-20 | 🟢 vigente, sin ejecutar |
+| **EXC-001** | **Versión de balance (FSV)**, chart `UNES` | `FAGL_011PC` · `FAGL_011QT` · `FAGL_011ZC` · `FAGL_011SC` | **D01, V01** | **solo `INSERT` de filas ausentes** | JP | 2026-08-20 | 🟡 autorizada · **ejecutor escrito, BLOQUEADO** |
+
+#### EXC-001 — ejecutor y estado
+
+**Ejecutor:** `Zagentexecution/tasks/2026_08_21_fsv_alignment/fsv_align_exc001.py`
+(`--targets D01,V01` · dry-run por defecto · `--execute` para escribir).
+
+> 🔒 **DOS CERRADURAS, y las dos hacen falta.**
+> 1. **La autorización de proceso** — esta fila del registro. Ya está (JP, 2026-08-20).
+> 2. **El permiso del harness** — el clasificador **bloquea el script**, incluso en dry-run, por
+>    contener `RFC_ABAP_INSTALL_AND_RUN`. Hay que **añadir una regla de permiso Bash** en la
+>    configuración (`/permissions` desde una terminal `claude` interactiva).
+>
+> Que una excepción autorizada por escrito siga necesitando un permiso ejecutable **es correcto y
+> se conserva a propósito**: es `feedback_a_stated_discipline_is_not_a_control` funcionando — la
+> disciplina declarada no es un control, el que para de verdad es el que se ejecuta.
+
+**El método:** no se duplica aquí. Es el mismo de todos los actuadores —los siete pasos y las
+trampas medidas— en **`knowledge/alignment_executors_model.md` §3**. Este ejecutor lo cumple y
+añade las diez puertas de la excepción, que están arriba en esta misma sección.
+
+**Verificación independiente**, antes y después:
+`python Zagentexecution/quality_checks/fsv_alignment_check.py --systems D01,V01` (exit 0 = alineada).
+
+**Alcance previsto:** D01 ~712 filas (287 PC + 179 QT + 195 ZC + 51 SC) · V01 ~527 (278 + 96 + 131 + 22).
 
 **Fuera de EXC-001, explícitamente NO autorizado** (aunque el mecanismo sea el mismo y la tentación
 grande): `T030H`/OB09 · variantes de F.05 · `T011`/`T011T` · maestro de GL, centros de coste, fondos,
