@@ -272,7 +272,9 @@ def main():
             # los recortes son higiene (cuentas cerradas que caen dentro del bloque) y se
             # declaran uno a uno. Medido en UNES_OI_G/L: 3 rangos + 3 exclusiones, y las tres
             # excluidas son cuentas CLOSED, bloqueadas, sin saldo y sin divisa.
-            n_carve = len([x for x in act_p if v in excl[x]])
+            # sobre TODAS las cuentas de la posicion, no solo las activas: los recortes de
+            # UNES_OI_G/L son las tres cuentas CLOSED y bloqueadas, que ya salieron de act_p.
+            n_carve = len([x for x in g if v in excl[x]])
             if n_carve and "RANGE" in modo:
                 modo += " + %d carve-out" % n_carve + ("s" if n_carve > 1 else "")
             encajan = [x for x in out
