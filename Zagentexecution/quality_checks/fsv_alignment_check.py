@@ -30,6 +30,14 @@ Uso:
     python fsv_alignment_check.py --systems V01 --accounts 40410
 Salida: exit 0 alineado · exit 1 si hay deriva.
 """
+
+QUALITY_CHECK = {
+    "tier": "live",   # gate | live | analysis | quarantined
+    "needs": "rfc_p01",
+    "what": "compara las 8 tablas de la version de balance entre P01 y D01/V01",
+    "args": "[--targets D01,V01] [--spec]",
+}
+
 import argparse
 import os
 import sys

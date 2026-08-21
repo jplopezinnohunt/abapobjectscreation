@@ -45,6 +45,14 @@ Uso:
     python fx_revaluation_scope_check.py --system P01 --positions 1.1.1.1,1.1.2.1
 Salida: exit 0 si toda cuenta con exposicion esta completa · exit 1 si hay alguna incompleta.
 """
+
+QUALITY_CHECK = {
+    "tier": "live",   # gate | live | analysis | quarantined
+    "needs": "rfc_p01",
+    "what": "alcance de la revaluacion FX: que cuentas entran, cuales se quedan fuera y con que exposicion",
+    "args": "[--bukrs UNES]",
+}
+
 import argparse
 import os
 import sys

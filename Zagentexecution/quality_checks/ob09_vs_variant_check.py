@@ -18,6 +18,14 @@ Uso:
     python ob09_vs_variant_check.py --accounts 40410      # limita a un prefijo
 Salida: exit 0 limpio · exit 1 si hay cuentas ACTIVAS con OB09 fuera de toda variante.
 """
+
+QUALITY_CHECK = {
+    "tier": "live",   # gate | live | analysis | quarantined
+    "needs": "rfc_p01",
+    "what": "cruza T030H/OB09 contra la variante de F.05 que de verdad selecciona la cuenta",
+    "args": "[--bukrs UNES]",
+}
+
 import argparse
 import os
 import sys

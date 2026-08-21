@@ -23,6 +23,14 @@ Uso:
     python fsv_coverage_check.py --sweep
     python fsv_coverage_check.py --sweep --system V01 --versions FS10,FS11
 """
+
+QUALITY_CHECK = {
+    "tier": "live",   # gate | live | analysis | quarantined
+    "needs": "rfc_p01",
+    "what": "una cuenta cae en alguna posicion de la version de balance que la sociedad EJECUTA de verdad",
+    "args": "<cuenta...> [--ref <cuenta>] | --sweep",
+}
+
 import argparse
 import os
 import sys

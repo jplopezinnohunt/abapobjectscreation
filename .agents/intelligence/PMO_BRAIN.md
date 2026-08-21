@@ -202,6 +202,28 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H108 — 11 DE 13 INCIDENTES NO DEJARON PROCESO, SOLO CASO (s102, medido).** Lo detecto JP:
+*"la creacion de cuentas no tenia conocimiento a dominio, solo incidente"*. Barrido de los 13
+incidentes: **solo 2 tienen documento de PROCESO en su dominio**, y son los dos que se tocaron ese
+dia. Mecanizado en `Zagentexecution/quality_checks/incident_domain_knowledge_check.py` (tier gate).
+
+**Tres pares — dos incidentes del mismo dominio y tipo — donde el proceso YA se puede escribir:**
+
+| Dominio | Tipo | Incidentes | Proceso que falta |
+|---|---|---|---|
+| `Treasury_EBS` | MASTER_DATA | `INC-000006313` + `INC-000011781` | **autorizacion bancaria BCM**: alta y baja de personas, la carta como autoridad de registro, el barrido de la poblacion |
+| `Payment_BCM` | REGULATORY | `INC-EGYPT-PPC` + `INC-PSTLADR-NOV2026` | **requisito regulatorio de un banco**: como se decide si aplica (rol del banco casa, corredor), como se prueba, como se despliega |
+| `PSM_FM` | ERROR | `INC-000005638` + `INC-BUDGETRATE-EQG` | **tipo de cambio presupuestario** |
+
+Y **`INC-CLASS-LOSS-2026-06` apunta a `BASIS`**, que es una clave transversal y no un dominio con
+registro: el mismo defecto que tuvo `Closing_Activities` cinco sesiones.
+
+**La regla ya existia y llevamos tres pares incumpliendola** (`sap_incident_analyst`: *por la 2a
+ocurrencia debes un procedimiento*). Lo que faltaba no era la regla: era el check que la mide.
+
+*Siguiente accion: escribir el proceso de autorizacion bancaria BCM — es el par mas maduro, con
+dos casos ya documentados en detalle.*
+
 **H107 — 50 CUENTAS CON OB09 Y SIN VARIANTE DE F.05 (s102, medido). Escala muy superior a
 INC-000016262.** `4041011` no era un caso aislado. Barrido de toda la sociedad UNES: **69 cuentas
 activas con partidas abiertas en divisa y fuera de toda variante, 50 de ellas con `T030H`
