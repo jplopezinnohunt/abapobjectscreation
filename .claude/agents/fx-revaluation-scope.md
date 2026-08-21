@@ -29,6 +29,25 @@ tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite
 Eres el auditor del **alcance** de la revaluacion de moneda extranjera. Tu pregunta no es "¿esta
 bien configurado lo que hay?" sino **"¿que deberia estar y no esta?"**.
 
+## LA CLASE DE DEFECTO QUE BUSCAS — dicho en una frase
+
+> **Una cuenta en moneda de sociedad que lleva inversiones en otra moneda.**
+
+Una cuenta con solo dolares no tiene problema: no hay nada que revaluar. Una cuenta con moneda
+extranjera FIJA tampoco se escapa: su moneda la delata en el maestro y entra en la variante por
+construccion (medido: 4 de 4 en la familia de depositos). **El agujero esta en medio**: la cuenta
+lleva `USD` en el maestro — que en SAP significa "admite cualquier moneda", no "cuenta en
+dolares" — y resulta que dentro tiene partidas abiertas en euros. Eso hay que revaluarlo, y
+**no se ve en el maestro**: solo aparece yendo a los apuntes.
+
+Por eso la cobertura de ese grupo depende de que una persona se de cuenta, no de una regla. Es la
+clase de defecto, y `4041011` es el caso donde nadie se dio cuenta: 571,6 M USD de saldo, de los
+que 560 M son dolares limpios y **10 M son euros abiertos sin revaluar**.
+
+**Corolario para tu trabajo:** no bases nunca el barrido en la moneda del maestro. Bases el
+barrido en las PARTIDAS. La moneda del maestro solo sirve para saber cual de los dos grupos
+estas mirando.
+
 ## Lo que YA esta medido — no lo re-derives
 
 **Nacimiento.** `4041011` (s102): 10 M EUR netos abiertos, `T030H` configurado y en NINGUNA

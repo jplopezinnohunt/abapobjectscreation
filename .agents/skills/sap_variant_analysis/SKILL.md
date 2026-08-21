@@ -240,6 +240,44 @@ WHERE SAKNR BETWEEN :low AND :high
   AND (XSPEB = 'X' OR XLOEB = 'X')
 ```
 
+## ⛔ CÓMO SE LEE UNA SELECCIÓN — dos errores que producen alarma inventada (s102, medido)
+
+> Regla: `feedback_a_selection_with_only_exclusions_means_everything_else` (CRITICAL)
+
+### 1. Una selección con SOLO exclusiones significa **TODO MENOS ESO**, nunca «nada»
+
+En un `select-option` de ABAP un rango vacío significa *sin restricción*. Añadirle **solo**
+líneas `SIGN='E'` sigue significando *sin restricción, salvo estas*. Contar inclusiones,
+encontrar cero y concluir «no entra nada» es el error.
+
+**Medido 2026-08-21**, variante `UNES_OI_AR/AP` de `SAPF100`: el campo `AKONTO` trae **27 líneas
+y las 27 son `E`**, sin una sola inclusión. Significa *«valora todas las cuentas asociadas de
+submayor menos esas 27»*. Leído como conjunto vacío daba **549** cuentas «fuera de toda
+variante» cuando son **497**, y de las 69 cuentas asociadas marcaba **68** como huérfanas
+cuando son **16**.
+
+### 2. Cada campo de selección es un UNIVERSO distinto — no los mezcles
+
+| Campo | Selecciona | Se aplica a |
+|---|---|---|
+| `SKONTO` | cuentas de **mayor** | cuentas normales (`SKB1-MITKZ` vacío) |
+| `AKONTO` | cuentas **asociadas** de submayor | proveedores y clientes (`SKB1-MITKZ` lleno) |
+| `DKONTO` / `KKONTO` | clientes / proveedores individuales | subledger |
+
+Volcar `SKONTO` y `AKONTO` en un único conjunto pierde cuál manda para cada cuenta, y una cuenta
+asociada preguntada por `SKONTO` sale **siempre** «fuera». Es lo que hacía `variant_accounts()`.
+
+**Usa `variant_selection()` + `covered_in(cuenta, sel, campo)`** de
+`Zagentexecution/quality_checks/ob09_vs_variant_check.py`, que guarda la selección por campo y
+respeta la semántica de solo-exclusiones. `variant_accounts()`/`covered()` quedan como legado:
+correctos para cuentas de mayor normales, falsos negativos para asociadas.
+
+### 3. Y antes de publicar un recuento de «objetos fuera del alcance», contrástalo
+
+549 le sonó mal a JP en el acto y tenía razón. Un recuento de exclusión es una afirmación sobre
+el proceso, no sobre una tabla: si el orden de magnitud choca con lo que sabe quien opera el
+proceso, el defecto está en la lectura, no en el sistema.
+
 ## Naming Convention Patterns
 
 UNESCO SAPF100 variants follow this pattern (discovered Session #078):

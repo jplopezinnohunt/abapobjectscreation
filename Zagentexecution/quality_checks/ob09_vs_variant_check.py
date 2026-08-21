@@ -77,11 +77,70 @@ def variant_accounts(conn, variant):
     return inc, exc, rngs
 
 
+def variant_selection(conn, variant, fields=("SKONTO", "AKONTO")):
+    """Seleccion de la variante SEPARADA POR CAMPO. Usa esta, no variant_accounts().
+
+    `variant_accounts` mezcla SKONTO (cuentas de mayor) con AKONTO (cuentas asociadas de
+    submayor) en un unico conjunto, y al mezclarlas pierde la semantica de cada campo. Medido el
+    2026-08-21 en UNES_OI_AR/AP: SKONTO trae 12 inclusiones y AKONTO trae 27 lineas que son
+    TODAS de exclusion. Mezclados parece "12 dentro, 27 fuera"; separados dicen otra cosa muy
+    distinta -> ver `covered_in`.
+    """
+    out = {f: {"inc": set(), "exc": set(), "rin": [], "rex": []} for f in fields}
+    try:
+        r = conn.call("RS_VARIANT_CONTENTS_RFC", REPORT=PROGRAM, VARIANT=variant, VALUTAB=[])
+    except Exception as e:
+        print("    variante %s no legible: %s" % (variant, str(e)[:90]))
+        return out
+    for x in (r.get("VALUTAB") or []):
+        f = (x.get("SELNAME") or "").strip()
+        if f not in out:
+            continue
+        lo, hi = (x.get("LOW") or "").strip(), (x.get("HIGH") or "").strip()
+        if not lo:
+            continue
+        sign, opt = (x.get("SIGN") or "").strip(), (x.get("OPTION") or "").strip()
+        if opt == "BT" and hi:
+            out[f]["rex" if sign == "E" else "rin"].append((lo.zfill(10), hi.zfill(10)))
+        else:
+            out[f]["exc" if sign == "E" else "inc"].add(lo.zfill(10))
+    return out
+
+
+def covered_in(saknr, selections, field="SKONTO"):
+    """¿La cuenta entra por ESE campo en alguna variante? Devuelve la lista de variantes.
+
+    LA REGLA QUE HAY QUE RESPETAR: en un select-option de ABAP, si un campo no tiene ninguna
+    linea de INCLUSION pero si de exclusion, el conjunto resultante es **TODO MENOS LO
+    EXCLUIDO**, no el conjunto vacio. UNES_OI_AR/AP tiene AKONTO con 27 exclusiones y cero
+    inclusiones: significa "todas las cuentas asociadas menos estas 27". Leerlo como "ninguna"
+    daba 549 cuentas fuera de toda variante cuando son 497, y ensuciaba entero cualquier barrido
+    de proveedores y clientes.
+
+    Y el campo importa: una cuenta ASOCIADA de submayor (SKB1-MITKZ lleno) se selecciona por
+    AKONTO; una cuenta de mayor normal, por SKONTO. Preguntar por el campo equivocado es
+    preguntar por el universo equivocado.
+    """
+    hit = []
+    for var, sel in selections.items():
+        s = sel.get(field)
+        if not s:
+            continue
+        if saknr in s["exc"] or any(lo <= saknr <= hi for lo, hi in s["rex"]):
+            continue
+        solo_exclusiones = not s["inc"] and not s["rin"] and (s["exc"] or s["rex"])
+        if solo_exclusiones or saknr in s["inc"] \
+                or any(lo <= saknr <= hi for lo, hi in s["rin"]):
+            hit.append(var)
+    return hit
+
+
 def covered(saknr, sets):
-    """¿La cuenta entra en la seleccion de alguna variante? Devuelve la lista de variantes."""
+    """LEGADO — mezcla SKONTO y AKONTO. Correcto para cuentas de mayor normales; para cuentas
+    ASOCIADAS de submayor da falsos negativos. Prefiere variant_selection() + covered_in()."""
     hit = []
     for var, (inc, exc, rngs) in sets.items():
-        if saknr in exc:
+        if saknr in exc or any(lo <= saknr <= hi for sign, lo, hi in rngs if sign == "E"):
             continue
         if saknr in inc or any(lo <= saknr <= hi for sign, lo, hi in rngs if sign == "I"):
             hit.append(var)

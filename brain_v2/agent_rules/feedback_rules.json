@@ -5282,5 +5282,18 @@
     "rule": "UN DOMINIO DE GOBIERNO DE DATOS MAESTROS NO ES UNA CARPETA, ES UN REGISTRO DE TIPOS DE OBJETO. Cuando se pregunta por governance de master data tienen que aparecer los subdominios -- cuenta de mayor, centro de coste, clase de coste, fondo, centro gestor, posicion presupuestaria, proyecto/PEP, proveedor/BP, banco casa -- cada uno con su autoridad de alta, su canal MEDIDO, su ejecutor y sus tareas posteriores. Store: brain_v2/master_data_registry.json; companion generado por scripts/build_master_data_companion.py.",
     "why": "Un dominio descrito solo en prosa contesta la pregunta que ya sabias hacer. Un registro contesta la que no: 'y para un fondo, que canal hay?'. Ademas hace VISIBLE la brecha en vez de esconderla -- de 10 tipos, 1 esta mecanizado y 7 tienen canal medido sin ejecutor. Eso es una brecha honesta y accionable; la prosa la habria dejado en silencio. Medir el inventario tambien corrigio dos creencias falsas de golpe (las clases de coste SI tienen canal; los BAPI_BANKDETAIL* NO son del banco casa).",
     "how_to_apply": "1) Al tocar un tipo de objeto maestro nuevo, anadelo al registro con su estado MEDIDO -- no supuesto: MECANIZADO / CANAL_SIN_EJECUTOR / SIN_CANAL / NO_APLICA. 2) El canal se mide en TFDIR (FMODE='R'), no se recuerda. 3) El companion se GENERA del registro: edita el registro, nunca el HTML. 4) Alta un alias en load_domain.py por el nombre del OBJETO, no solo del dominio: quien pregunta por 'centro de coste' no sabe que el dominio se llama Master_Data_Governance."
+  },
+  {
+    "id": "feedback_a_selection_with_only_exclusions_means_everything_else",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Closing_Activities",
+      "process": "B2R"
+    },
+    "rule": "UN SELECT-OPTION QUE SOLO TIENE EXCLUSIONES SIGNIFICA 'TODO MENOS ESO', NUNCA 'NADA'. Y CADA CAMPO ES UN UNIVERSO DISTINTO: no los mezcles. Medido 2026-08-21 en la variante UNES_OI_AR/AP de SAPF100: el campo AKONTO trae 27 lineas y las 27 son SIGN='E', sin una sola inclusion -> la variante valora TODAS las cuentas asociadas de submayor MENOS esas 27. Leerlo como conjunto vacio daba 549 cuentas 'fuera de toda variante' cuando son 497, y de las 69 cuentas asociadas marcaba 68 como huerfanas cuando son 16.",
+    "why": "Son dos errores encadenados y los dos producen alarma inventada. (1) La semantica: un rango de seleccion vacio en ABAP significa 'sin restriccion'; anadirle solo exclusiones sigue significando 'sin restriccion, salvo estas'. Un lector ingenuo cuenta inclusiones, encuentra cero y concluye que no entra nada. (2) La mezcla de campos: SKONTO selecciona cuentas de MAYOR y AKONTO cuentas ASOCIADAS de submayor. Son universos distintos con reglas distintas; volcarlos en un unico conjunto pierde cual manda para cada cuenta, y una cuenta asociada preguntada por SKONTO sale siempre 'fuera'.",
+    "how_to_apply": "1) Al leer una variante, guarda la seleccion POR CAMPO, no en un saco comun: `variant_selection()` en ob09_vs_variant_check.py. 2) Para cada campo, si no hay ninguna linea con SIGN='I', el conjunto es TODO menos las 'E'. 3) Elige el campo por la naturaleza de la cuenta: SKB1-MITKZ lleno -> AKONTO; vacio -> SKONTO. 4) Y antes de publicar un recuento de 'objetos fuera del alcance', comprueba el orden de magnitud contra alguien que conozca el proceso: 549 sono mal a JP en el acto, y tenia razon."
   }
 ]
