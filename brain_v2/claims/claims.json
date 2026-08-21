@@ -26657,5 +26657,110 @@
     "created_session": 102,
     "resolved_session": 102,
     "resolution_notes": ""
+  },
+  {
+    "id": 558,
+    "claim": "LA REVALUACION FX DE UNES TIENE 3 METODOS DEFINIDOS Y 2 EN USO, REPARTIDOS EN 4 VARIANTES -- y una variante puede encender los DOS mecanismos a la vez. Medido 2026-08-21 leyendo T044A y el contenido integro de las 4 variantes con RS_VARIANT_CONTENTS_RFC. METODOS: UNBA (XSALK=X, valoracion de SALDOS, tipo de cambio M, doc JV) · UNOI (XPOSD+XSALR, PARTIDAS ABIERTAS, M, JV) · UNIM (identico a UNBA salvo tipo de cambio V de venta) DEFINIDO Y SIN USAR POR NINGUNA VARIANTE. VARIANTES: UNES_UNBA -> UNBA, mecanismo SALDO (X_SALBEW=X, OI apagado), selecciona por RANGOS BT 1000000-1099999 / 1400000-1499999 / 1900000-1999999 (bancos y caja); UNES_DEPOSIT -> UNOI, partidas abiertas G/L, 17 cuentas sueltas EQ; UNES_OI_G/L -> UNOI, partidas abiertas G/L, 6 sueltas; UNES_OI_AR/AP -> UNOI, con X_SALBEW=X **Y** X_GL/X_AP/X_AR=X, es decir SALDO Y PARTIDAS ABIERTAS EN LA MISMA EJECUCION, 12 cuentas. El modelo de 'dos procesos' (OI vs Balance) no captura esa cuarta variante: no son dos cajones, son dos interruptores independientes. El mecanismo de SELECCION tambien cambia entre variantes del mismo programa: rangos BT en una, valores sueltos EQ en las otras tres.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Closing_Activities",
+    "domain_axes": {
+      "functional": "Closing_Activities",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "P01 2026-08-21: RS_VARIANT_CONTENTS_RFC REPORT='SAPF100' sobre UNES_UNBA, UNES_DEPOSIT, UNES_OI_G/L, UNES_OI_AR/AP",
+      "P01 T044A BWMET LIKE 'UN%': UNBA/UNOI/UNIM",
+      "knowledge/domains/Closing_Activities/fx_revaluation_process.md seccion 2-bis"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SAPF100",
+      "F.05",
+      "T044A",
+      "UNBA",
+      "UNOI",
+      "UNIM",
+      "UNES_UNBA",
+      "UNES_DEPOSIT",
+      "UNES_OI_G/L",
+      "UNES_OI_AR/AP",
+      "VARID",
+      "RS_VARIANT_CONTENTS_RFC"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
+  },
+  {
+    "id": 559,
+    "claim": "LA DETERMINACION DE CUENTAS DE LA REVALUACION SE ELIGE POR CUENTA CON SKB1-XOPVW, Y SON DOS TABLAS DISTINTAS: XOPVW='X' (partidas abiertas) -> KDF -> T030H, una fila POR CUENTA, que es lo que se mantiene en OB09; XOPVW='' (saldo) -> KDB -> T030S, una fila por CLAVE DE DIFERENCIAS DE CAMBIO (SKB1-KDFSL), donde la fila con clave VACIA es el DEFECTO DEL PLAN. Medido en vivo en P01 el 2026-08-21: SKB1 de UNES = 2.315 cuentas, XOPVW='X' en 1.155 y vacio en 1.160, y KDFSL VACIO EN LAS 2.315 -> toda cuenta valorada por saldo cae en el defecto del plan. T030S KTOPL='UNES' tiene exactamente 2 filas: la de defecto -> gasto 0006045011 / ingreso 0007045011, y KDFSL='GRP' -> 0005022012 en ambos, DEFINIDA Y SIN USAR. ERROR PROPIO QUE ESTE CLAIM CORRIGE: se busco la determinacion de la valoracion por saldo en T030 con KTOSL='KDB' (0 filas) y en un campo inexistente de SKB1, y al no encontrarla se declaro 'mecanismo sin explicar' y se marcaron 160 cuentas de banco como REVISAR. La respuesta llevaba meses escrita en el companion companions/fx_revaluation_f05_v1.html (seccion 'Where 6045011 / 7045011 come from', TIER_1 2026-05-05), que nombra T030S y el arbol por XOPVW. No se miro el cerebro antes de declarar un hueco: es exactamente feedback_brain_first_then_grep. Con la determinacion correcta, esas 160 pasan de REVISAR a OK.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Closing_Activities",
+    "domain_axes": {
+      "functional": "Closing_Activities",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "P01 2026-08-21: T030H KTOPL='UNES' -> 1016 filas, 892 HKONT, WAERS siempre vacio, CURTP 10 (780) y 30 (236); solo 5 HKONT empiezan por 00010",
+      "P01 T030 KTOPL='UNES' -> 22.261 filas, claves GBB/HRC/HRF/HRK/HRT/WRX..., KDB=0",
+      "P01 DD03L TABNAME='SKB1' -> no existe campo de clave de diferencias de cambio",
+      "Zagentexecution/quality_checks/fx_revaluation_scope_check.py",
+      "P01 2026-08-21: T030S KTOPL='UNES' -> 2 filas (defecto 6045011/7045011; GRP 5022012)",
+      "P01 SKB1 BUKRS='UNES': 2.315 cuentas, KDFSL vacio en todas, XOPVW 1.155 X / 1.160 vacio",
+      "companions/fx_revaluation_f05_v1.html seccion pl-origin (TIER_1, 2026-05-05)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "T030H",
+      "T030",
+      "OB09",
+      "SAPF100",
+      "UNES_UNBA",
+      "SKB1",
+      "BKPF",
+      "FBB1",
+      "T030S",
+      "KDFSL",
+      "XOPVW",
+      "0006045011",
+      "0007045011",
+      "0005022012"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
+  },
+  {
+    "id": 560,
+    "claim": "ALCANCE MEDIDO DE LA REVALUACION SOBRE LA POBLACION ENTERA DE BANCO E INVERSION (P01/UNES, FS10, 2026-08-21, aplicando el arbol XOPVW -> T030H/T030S): de 1.084 cuentas presentadas en las posiciones de banco, caja, deposito, letras del tesoro y otras inversiones -- 678 BLOQUEADAS (fuera de la poblacion: no se postean), 350 COMPLETAS (en variante y con su determinacion), 55 LATENTES (determinacion incompleta y sin exposicion abierta hoy: no es alarma, lo sera el dia que se postee en divisa), 0 con exposicion y sin determinacion, y **1 UNICO DEFECTO VIVO**: 4041011 'Term Deposits Principal', activa, XOPVW='X', con su fila en T030H (LKORR=4041011) y en NINGUNA variante de F.05 -- configurada para saber donde postear, y nunca seleccionada para calcular. 10 M EUR netos abiertos. Pendiente de respuesta de Tesoreria. NOTA DE CORRECCION: una version anterior de esta medida dijo 133 completas y 160 'a revisar'; esa cifra salia de pedir T030H a cuentas que se determinan por T030S (ver claim 559).",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Closing_Activities",
+    "domain_axes": {
+      "functional": "Closing_Activities",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "python Zagentexecution/quality_checks/fx_revaluation_scope_check.py contra P01, 2026-08-21",
+      "posiciones FS10 1.1.1.1 / 1.1.1.2 / 1.1.2.1 / 1.1.2.3 / 1.2.1.1"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "4041011",
+      "SAPF100",
+      "F.05",
+      "T030H",
+      "UNES_UNBA",
+      "FS10",
+      "SKB1"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
   }
 ]

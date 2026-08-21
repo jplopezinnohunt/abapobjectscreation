@@ -28,6 +28,89 @@ Foreign-currency (FX) revaluation restates foreign-currency balances and open it
 
 ---
 
+## 2-bis. ⭐ LA TIPOLOGÍA COMPLETA — métodos, variantes y mecanismo (MEDIDO 2026-08-21, s102)
+
+Leído en vivo de P01 con `RS_VARIANT_CONTENTS_RFC` (contenido íntegro de las 4 variantes) y de
+`T044A` (definición de los métodos). No es el modelo de dos procesos de §2: es **más fino**, y en
+un punto lo corrige.
+
+### Los métodos de valoración (`T044A`) — 3 definidos, 2 en uso
+
+| Método | En uso | `XSALK` | `XPOSD` | `XSALR` | Tipo de cambio | Tipo doc | Qué es |
+|---|---|---|---|---|---|---|---|
+| **UNBA** | ✅ | X | — | — | **M** (medio) | `JV` | Valoración de **saldos** de cuenta de mayor |
+| **UNOI** | ✅ | — | X | X | **M** (medio) | `JV` | Valoración de **partidas abiertas** |
+| `UNIM` | ❌ **ninguna variante lo usa** | X | — | — | **V** (venta) | `JV` | Idéntico a UNBA salvo el tipo de cambio |
+
+`UNIM` es la única diferencia real que existe entre métodos definidos: mismo comportamiento que
+`UNBA` con tipo de cambio **V** en vez de **M**. Está definido y **nadie lo ejecuta**.
+
+### Las variantes — cuál usa qué (el programa dice qué se PUEDE; la variante, qué se HACE)
+
+| Variante | Método | Mecanismo real | Selección de cuentas |
+|---|---|---|---|
+| **UNES_UNBA** | UNBA | **SALDO** (`X_SALBEW=X`, OI apagado) | 3 **rangos**: `1000000–1099999`, `1400000–1499999`, `1900000–1999999` — bancos y caja |
+| **UNES_DEPOSIT** | UNOI | **Partidas abiertas** G/L (`X_GL=X`) | 17 cuentas **sueltas** (EQ) |
+| **UNES_OI_G/L** | UNOI | **Partidas abiertas** G/L (`X_GL=X`) | 6 cuentas sueltas |
+| **UNES_OI_AR/AP** | UNOI | **LAS DOS A LA VEZ** — `X_SALBEW=X` **y** `X_GL`/`X_AP`/`X_AR`=X | 12 cuentas |
+
+> **El modelo de dos procesos de §2 no captura `UNES_OI_AR/AP`**, que activa saldo *y* partidas
+> abiertas en la misma ejecución. No son dos cajones: son dos interruptores independientes que una
+> variante puede encender a la vez.
+
+> **El mecanismo de selección cambia entre variantes del MISMO programa**: `UNES_UNBA` usa rangos
+> `BT`, las tres `_OI`/`_DEPOSIT` usan valores sueltos `EQ`. Suponer uno de los dos deja fuera a la
+> mitad de la población.
+
+### La determinación de cuentas se elige POR CUENTA con `SKB1-XOPVW` — y son DOS tablas
+
+§4 describe `T030H`/OB09 como *la* determinación de la revaluación. Es la mitad. El árbol real,
+verificado en vivo el 2026-08-21 y ya documentado en el companion desde 2026-05-05:
+
+```
+SKB1-XOPVW = 'X'   partidas abiertas  →  KDF  →  T030H   una fila POR CUENTA  (esto es OB09)
+SKB1-XOPVW = ''    saldo              →  KDB  →  T030S   una fila por CLAVE (SKB1-KDFSL);
+                                                          clave vacía = DEFECTO DEL PLAN
+```
+
+Medido en UNES: **2.315 cuentas**, `XOPVW='X'` en **1.155** y vacío en **1.160**; y **`KDFSL` vacío
+en las 2.315**, así que toda cuenta valorada por saldo cae en el defecto del plan. `T030S` para
+UNES tiene exactamente **2 filas**:
+
+| `KDFSL` | Gasto (`KSOLL`) | Ingreso (`KHABN`) | |
+|---|---|---|---|
+| *(vacía — defecto)* | `0006045011` | `0007045011` | la que usa **todo** |
+| `GRP` | `0005022012` | `0005022012` | definida y **sin usar** |
+
+**Consecuencia práctica**: un check que exija fila en `T030H` a toda cuenta de banco produce
+**160 falsos positivos** — las cuentas de saldo no tienen fila y no la necesitan. Pasó en la
+primera corrida de `fx_revaluation_scope_check.py` el 2026-08-21.
+
+> **Y un error de método que merece quedar escrito.** Al no encontrar la determinación en `T030`
+> con `KTOSL='KDB'` (0 filas) ni en un campo inexistente de `SKB1`, se declaró *"mecanismo sin
+> explicar"* y se marcaron 160 cuentas como REVISAR. La respuesta llevaba **meses** en
+> `companions/fx_revaluation_f05_v1.html` §*Where 6045011 / 7045011 come from* (TIER_1,
+> 2026-05-05), con `T030S` y el árbol por `XOPVW` escritos. No se miró el cerebro antes de declarar
+> el hueco: `feedback_brain_first_then_grep`, literal.
+
+**Alcance real, con el árbol correcto** (P01/UNES, FS10, 2026-08-21): de **1.084** cuentas de
+banco/inversión — **678 bloqueadas** · **350 completas** · **55 latentes** (sin exposición hoy) ·
+**0** con exposición y sin determinación · **1 defecto vivo**: `4041011`, con `T030H` y en ninguna
+variante.
+
+### ⛔ Afirmación REFUTADA (estaba en §3 de este mismo documento)
+
+> ~~"La única confirmación pendiente es leer el check `Bal.sheet preparation valuatn` en la
+> pantalla de una variante `_UNBA` — **no extraíble por RFC**: VARI/VARIS son tablas pool que solo
+> devuelven el nombre de la variante."~~
+
+**Falso, y cerrado.** `RS_VARIANT_CONTENTS_RFC` es remote-enabled y devuelve el contenido íntegro:
+las 4 variantes se leyeron enteras, `X_SALBEW` incluido. Lo que no se puede leer es `VARI.CLUSTD`
+por `RFC_READ_TABLE` (campo RAW), que no es lo mismo que "la variante no es auditable".
+Ver `sap_variant_analysis` y la regla `feedback_read_the_variant_the_variant_is_the_process`.
+
+---
+
 ## 2. Execution Model — Two-Step via Batch Input
 
 F.05 / SAPF100 **does not post directly to FI**, and it runs as **two distinct processes** — Open Item revaluation and Balance revaluation — that share one posting mechanism but **diverge on reversal**. They are separate F.05 executions with separate variants.
@@ -93,7 +176,7 @@ Reversal is **not** exclusive to Open Items. SAP F.05 reverses both OI and G/L-b
 - **Balances (`_UNBA` variants)** run effectively as **Mode B** — valuate month-end, no reversal. This is the **standard, correct** treatment for bank/cash balances. It is **not** a defect.
 - UIL has one balance reversal (Jan 2025) — that is the one-off **deviation**, not evidence the others are wrong.
 
-> **Anti-regression note:** Do NOT label "balance valuations don't reverse" as an error. It was incorrectly flagged as a defect in an earlier draft and corrected Session #078. The only confirmation still open is reading the `Bal.sheet preparation valuatn` checkbox on a `_UNBA` variant screen (not extractable via RFC — VARI/VARIS are pool tables returning only the variant name).
+> **Anti-regression note:** Do NOT label "balance valuations don't reverse" as an error. It was incorrectly flagged as a defect in an earlier draft and corrected Session #078. ~~The only confirmation still open is reading the `Bal.sheet preparation valuatn` checkbox on a `_UNBA` variant screen (not extractable via RFC — VARI/VARIS are pool tables returning only the variant name).~~ **REFUTADO y CERRADO (s102, 2026-08-21):** `RS_VARIANT_CONTENTS_RFC` devuelve el contenido íntegro de la variante y `UNES_UNBA` lleva **`X_SALBEW = X`** con `X_GL`/`X_AP`/`X_AR` en blanco — valoración de saldo pura, confirmada por lectura, no por pantalla. Lo irrecuperable por `RFC_READ_TABLE` es `VARI.CLUSTD` (campo RAW), que no es lo mismo que "la variante no es auditable". Ver §2-bis.
 
 ---
 
