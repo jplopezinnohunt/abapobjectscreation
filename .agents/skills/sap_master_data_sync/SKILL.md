@@ -150,6 +150,28 @@ añade las diez puertas de la excepción, que están arriba en esta misma secci�
 
 **Alcance previsto:** D01 ~712 filas (287 PC + 179 QT + 195 ZC + 51 SC) · V01 ~527 (278 + 96 + 131 + 22).
 
+| **EXC-002** | **FSV — reemplazo ATÓMICO por versión**, chart `UNES` | mismas 4 tablas, **solo `FS10` y `FS11`** | **D01, V01** | **`DELETE` de la versión entera + `INSERT` desde P01** | JP | 2026-08-21 | 🟡 D01 ✅ · V01 parcial (falta `FAGL_011QT`) |
+
+**Por qué EXC-002 existiendo EXC-001.** `FAGL_011PC.ID` es una clave **subrogada** y
+`PARENT`/`CHILD`/`NEXTN` apuntan a ella; los ID se asignan por contador según el orden de creación,
+así que el mismo nodo tiene ID distinto en cada sistema. Insertar fila a fila (EXC-001) produce un
+**superconjunto** — dejó FS10 de D01 con 304 nodos donde P01 tiene 167 — y `UPDATE` fila a fila
+sería peor: apuntaría a IDs que en el destino significan otra cosa. **La unidad de alineamiento es
+la VERSIÓN, no la fila.**
+
+**Qué justificó borrar** (medido con `FAGL_011PC.AEDAT`/`USNAM`): no hay tres ramas de trabajo, hay
+**una estructura fotografiada en tres momentos y toda hecha por `J_LA`** — D01 = 2017 · V01 = 2024 ·
+P01 = 2026. Las filas "locales" del destino eran versiones viejas que P01 ya reorganizó.
+
+**Guardia añadida:** `FS01` y `FS02` ya eran idénticas en los tres sistemas y **no se tocan**; el
+ejecutor cuenta sus filas antes y después y falla si cambian.
+
+**Autoría:** `USNAM = JP_LOPEZ` y `AEDAT` = fecha de ejecución en `FAGL_011PC` (única tabla con esos
+campos). Registra **quién alineó y cuándo** en vez de fingir la autoría de P01 — y corrige que
+EXC-001 los dejara vacíos por no incluirlos en las columnas copiadas.
+
+Ejecutor: `Zagentexecution/tasks/2026_08_21_fsv_alignment/fsv_replace_exc002.py`.
+
 **Fuera de EXC-001, explícitamente NO autorizado** (aunque el mecanismo sea el mismo y la tentación
 grande): `T030H`/OB09 · variantes de F.05 · `T011`/`T011T` · maestro de GL, centros de coste, fondos,
 centros gestores y proyectos —esos **sí** tienen API estándar y van por el peldaño 1— y cualquier
