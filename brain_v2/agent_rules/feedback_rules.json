@@ -5233,5 +5233,28 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": "feedback_name_the_source_before_you_assert",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "rule": "ANTES DE AFIRMAR, NOMBRA LA FUENTE Y COMPRUEBA QUE SOPORTA LA AFIRMACION. Cuatro formas de que no la soporte, y las cuatro pasaron el mismo dia: (a) UNA LECTURA FALLIDA NO ES AUSENCIA -- si la consulta devolvio error, campo inexistente o TABLE_WITHOUT_DATA, el resultado es DESCONOCIDO, nunca 'no hay'; (b) UN CACHE NO ES EL SISTEMA -- el Gold DB va meses por detras y no tiene el ejercicio en curso; (c) UN PROXY NO ES LA COSA -- la moneda de TRANSACCION dice en que se movio algo, no que quede exposicion abierta; (d) LEER N DE M CAMPOS Y CONCLUIR ES NO HABER LEIDO -- si el objeto tiene tres candados, mirar dos y dar via libre es peor que no mirar. Y el corolario para el instrumental: un check que no distingue 'no hay' de 'no pude ver' devuelve exit 0 con la lectura reventada, que es la peor salida posible.",
+    "why": "2026-08-20/21 (s102). Cuatro veces en una sesion afirme algo que mi fuente no soportaba, y las cuatro las cazo JP preguntando en vez de aceptar. (1) 'cero BC-Sets en D01, nunca se ha usado esta via' -- consulte SCPRATTR por el campo SCPRSGUID, que no existe, y lei el TABLE_WITHOUT_DATA como ausencia; hay 2.181. (2) 'via libre para SCU0' -- imprimi T000.CCCOPYLOCK='L' en mi propia salida y me quede con CCCORACTIV y CCNOCLIIND; el tercero es justo el que bloquea la comparacion (TB569). (3) 'tres defectos vivos de revaluacion' -- lei euros en GLT0.RTCUR, que es moneda de transaccion, y llame exposicion a movimientos ya compensados. (4) al corregirme, 'no hay exposicion, todo compensado' -- use el Gold DB, que no tiene 2026; en vivo, 4041011 tiene 20 M EUR en cuatro partidas abiertas, dos de ese mismo dia. La numero 4 duele especialmente: es la regla que el propio skill sap_master_data_sync enuncia -nunca el cache para analisis de hueco- y que yo aplique al sync de GL y viole en el analisis de partidas media hora despues.",
+    "how_to_apply": "1) Al escribir una afirmacion, escribe al lado DE DONDE SALE. Si no puedes, no la escribas. 2) Antes de leer una tabla que no conoces, mira sus campos (DD03L o get_function_description): el campo inventado devuelve TABLE_WITHOUT_DATA y parece un dato. 3) Distingue SIEMPRE tres estados -- SI / NO / DESCONOCIDO -- en el codigo y en la prosa; el tercero no es un fallo del analisis, es un resultado. 4) Para exposicion financiera: partidas ABIERTAS (BSIS) frente a COMPENSADAS (BSAS), en vivo y cuenta a cuenta; GLT0 y los saldos no valen. 5) Para cualquier analisis de hueco entre sistemas: LIVE, nunca el Gold DB. 6) Cuando un objeto tiene varios atributos de control, enumeralos TODOS antes de concluir (T000 tiene tres candados: CCCORACTIV, CCNOCLIIND, CCCOPYLOCK). 7) Si el usuario cuestiona una conclusion, la respuesta correcta casi nunca es defenderla: es medir lo que no mediste.",
+    "domain_axes": {
+      "functional": [
+        "Brain_Architecture",
+        "FI",
+        "BASIS"
+      ],
+      "module": [
+        "BC",
+        "FI"
+      ],
+      "process": [
+        "cross-cutting"
+      ]
+    }
   }
 ]
