@@ -79,6 +79,31 @@ ALIASES = {
     "travel": ["Travel", "HCM"],
     "payroll": ["PY_Finance", "PY-Finance", "HCM", "PBC"],
     "transport": ["Transport_Intelligence", "CTS"],
+    # Gobierno de datos maestros. Se entra por el TIPO DE OBJETO ("centro de coste",
+    # "fondo", "proyecto") tanto como por el nombre del dominio: quien pregunta por el
+    # alta de un objeto no sabe que el dominio se llama Master_Data_Governance.
+    "master data": ["Master_Data_Governance", "FI"],
+    "datos maestros": ["Master_Data_Governance", "FI"],
+    "governance": ["Master_Data_Governance"],
+    "gobierno de datos": ["Master_Data_Governance"],
+    "gl account": ["Master_Data_Governance", "FI", "Closing_Activities"],
+    "cuenta de mayor": ["Master_Data_Governance", "FI", "Closing_Activities"],
+    "alta de cuenta": ["Master_Data_Governance", "FI", "Closing_Activities"],
+    "cost center": ["Master_Data_Governance", "CO"],
+    "centro de coste": ["Master_Data_Governance", "CO"],
+    "cost element": ["Master_Data_Governance", "CO"],
+    "clase de coste": ["Master_Data_Governance", "CO"],
+    "fund": ["Master_Data_Governance", "PSM_FM", "PSM"],
+    "fondo": ["Master_Data_Governance", "PSM_FM", "PSM"],
+    "funds center": ["Master_Data_Governance", "PSM_FM", "PSM"],
+    "centro gestor": ["Master_Data_Governance", "PSM_FM", "PSM"],
+    "wbs": ["Master_Data_Governance", "PS"],
+    "proyecto": ["Master_Data_Governance", "PS"],
+    "fsv": ["Master_Data_Governance", "FI", "Closing_Activities"],
+    "balance statement": ["Master_Data_Governance", "FI", "Closing_Activities"],
+    "ob09": ["Closing_Activities", "Master_Data_Governance", "FI"],
+    "revaluacion": ["Closing_Activities", "Master_Data_Governance", "FI"],
+    "variante": ["Closing_Activities", "Master_Data_Governance"],
 }
 
 # Adjacent domains: used ONLY for the cheap structured stores (claims, incidents, rules,
@@ -97,6 +122,16 @@ ADJACENT = {
     "citi": ["Treasury", "BCM", "FI", "PPC"],
     "cgi": ["Treasury", "BCM", "FI", "PPC"],
     "f110": ["Treasury", "BCM", "FI", "PPC", "Procurement"],
+    "master data": ["CO", "PSM_FM", "PS", "Treasury", "Closing_Activities",
+                    "Transport_Intelligence", "BusinessPartner"],
+    "datos maestros": ["CO", "PSM_FM", "PS", "Treasury", "Closing_Activities",
+                       "Transport_Intelligence", "BusinessPartner"],
+    "governance": ["FI", "CO", "PSM_FM", "PS", "Treasury", "Closing_Activities",
+                   "Transport_Intelligence"],
+    "gl account": ["Treasury", "PSM_FM", "Transport_Intelligence"],
+    "cuenta de mayor": ["Treasury", "PSM_FM", "Transport_Intelligence"],
+    "fsv": ["Treasury", "Transport_Intelligence"],
+    "ob09": ["Treasury", "FI"],
 }
 
 STOP = {

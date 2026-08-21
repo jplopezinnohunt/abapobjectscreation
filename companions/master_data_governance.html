@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Master Data Governance — el registro de objetos y su proceso</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:1000px;margin:30px auto;padding:0 20px;line-height:1.55}
+h1{color:#08305f;font-size:21px;border-bottom:3px solid #08305f;padding-bottom:6px;margin:0 0 4px 0}
+h2{color:#08305f;font-size:15px;margin:26px 0 6px 0;border-bottom:1px solid #d4d9e0;padding-bottom:3px}
+h3{color:#08305f;font-size:13px;margin:16px 0 4px 0}
+.tag{display:inline-block;background:#08305f;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.4px;margin-right:6px}
+.sub{font-size:11px;color:#666;margin:4px 0 18px 0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.kpi{background:#f4f5f7;padding:10px;border-radius:5px;border-left:3px solid #08305f}
+.kpi.red{border-left-color:#c5283d}.kpi.amber{border-left-color:#ff9f1c}.kpi.green{border-left-color:#2a9d8f}
+.kpi .v{font-size:19px;font-weight:700;color:#08305f}
+.kpi.red .v{color:#c5283d}.kpi.amber .v{color:#a86c00}.kpi.green .v{color:#0a7e6e}
+.kpi .l{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+th{background:#e0ecf8;color:#08305f;text-align:left;padding:5px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td{padding:5px 8px;border-bottom:1px solid #eceff3;vertical-align:top}
+tr:hover td{background:#fafbfc}
+code{background:#eef1f5;padding:1px 4px;border-radius:3px;font-family:Consolas,Monaco,monospace;font-size:11px}
+.pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.p-ok{background:#d8f3ef;color:#0a7e6e}.p-mid{background:#ffeccc;color:#a86c00}
+.p-no{background:#fadde1;color:#a01829}.p-na{background:#e8eaee;color:#5a6270}
+.box{background:#f7f9fc;border-left:3px solid #08305f;padding:10px 14px;margin:12px 0;font-size:12.5px}
+.box.warn{border-left-color:#c5283d;background:#fdf5f6}
+.box.good{border-left-color:#2a9d8f;background:#f3fbfa}
+.flow{font-family:Consolas,Monaco,monospace;font-size:11.5px;background:#0f2440;color:#d6e4f5;padding:12px 14px;border-radius:5px;white-space:pre;overflow-x:auto}
+ol.steps{padding-left:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:8px 0 8px 40px;border-bottom:1px solid #eceff3;font-size:12.5px}
+ol.steps li:before{content:counter(s);position:absolute;left:0;top:8px;width:24px;height:24px;background:#08305f;color:#fff;border-radius:50%;text-align:center;line-height:24px;font-size:11px;font-weight:700}
+ol.steps li.zero:before{content:"0";background:#c5283d}
+.small{font-size:11px;color:#666}
+</style></head><body>
+<h1>Master Data Governance</h1>
+<div class="sub"><span class="tag">DOMINIO CROSS</span><span class="tag">PROCESO P2D</span>Quien pide un dato maestro, quien lo crea, y — la parte que se pierde — <b>que tareas dispara despues</b>. Medido 2026-08-21 (sesion 102).</div>
+<div class="kpis">
+<div class="kpi green"><div class="v">1</div><div class="l">tipo mecanizado</div></div>
+<div class="kpi amber"><div class="v">7</div><div class="l">canal medido, sin ejecutor</div></div>
+<div class="kpi red"><div class="v">1</div><div class="l">sin canal RFC</div></div>
+<div class="kpi red"><div class="v">33</div><div class="l">cuentas de retraso en V01</div></div>
+</div>
+<div class="box warn"><b>El fallo estructural.</b> El usuario crea el dato maestro <b>directamente en P01</b> y solo avisa <b>cuando hace falta revaluar</b>. Las altas que no llevan revaluacion no generan aviso: nadie sabe que existen hasta que algo falla en dev. Las 33 cuentas de retraso de V01 son el sedimento de todas esas altas silenciosas. <b>Por eso el paso 0 no puede ser una notificacion: tiene que ser un barrido programado.</b></div>
+<h2>La asimetria: maestro y configuracion viajan en sentidos opuestos</h2>
+<div class="flow">MAESTRO  (SKA1/SKB1/SKAT)          P01  --&gt;  D01 . V01        nace en PRODUCCION, se rellena hacia atras
+CONFIG   (OB09 . variante . FSV)   D01  --&gt;  V01  --&gt;  P01   nace en DESARROLLO, sube por transporte</div>
+<p class="small">Nadie los ve como un solo proceso porque tienen direcciones contrarias. Ahi es donde se pierde el trabajo posterior al alta.</p>
+<h2>El proceso operativo — 7 pasos</h2>
+<ol class="steps">
+<li class="zero"><b>DETECTAR la deriva.</b> El aviso solo llega si hay revaluacion. Programado, no bajo demanda. &rarr; <code>Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_alignment_check.py</code></li>
+<li><b>Alinear D01/V01</b> &rarr; <code>gl_master_sync.py</code></li>
+<li><b>Decidir si revalua (3 condiciones: formulario + moneda cuenta != moneda sociedad + exposicion abierta)</b></li>
+<li><b>OB09 (T030H) Y variante de F.05 — un solo gate, inseparables</b> &rarr; <code>ob09_vs_variant_check.py</code></li>
+<li><b>Cobertura en la version de balance (FSV) que se EJECUTA para la sociedad</b> &rarr; <code>fsv_coverage_check.py</code></li>
+<li><b>Transportar con control de alcance</b> &rarr; <code>config_transport_prerelease_check.py</code></li>
+<li><b>Barrer la poblacion (la ocasion es el ticket, el alcance es todo)</b> &rarr; <code>--sweep de los pasos 3 y 4</code></li>
+</ol>
+<div class="box"><b>Los pasos 3 y 4 son los que se olvidan, y cada uno falla en silencio.</b> OB09 sin variante: la revaluacion no corre y no da error. Variante sin OB09: F.05 revienta. Y la cobertura de balance se asigna por <b>intervalo</b>, asi que una cuenta nueva entra sola o cae en <i>Not assigned</i> — y el balance cuadra igual.</div>
+<div class="box good"><b>Prueba de que el tipo de cuenta NO decide si se revalua.</b> <code>4041018</code> y <code>4041019</code> son ambas de inversion, del mismo formulario y del mismo dia. La 18 revalua; la 19 no, porque esta en USD sobre una sociedad en USD. El tipo decide el <i>metodo</i> y las cuentas de contrapartida de <code>T030H</code>, no el <i>si</i>.</div>
+<div class="box warn"><b>Prueba de que el paso 6 hace falta.</b> El barrido de la poblacion encontro <code>4041011</code>: 10 M EUR netos abiertos, <code>T030H</code> configurado, <b>en ninguna variante de F.05</b>. Nadie la habia pedido.</div>
+<h2>Los objetos de datos maestros — estado medido</h2>
+<p class="small">Canales MEDIDOS 2026-08-21 contra TFDIR de D01 (FMODE='R'). Los estados son medidos, no supuestos: CANAL = existe el FM remote; EJECUTOR = existe script probado; AGENTE = cableado a un agente/skill.</p>
+<table><tr><th>Objeto</th><th>Tablas</th><th>Tx</th><th>Canal de escritura (medido)</th><th>Ejecutor</th><th>Estado</th></tr>
+<tr><td><b>Cuenta de mayor</b></td><td><code>SKA1 . SKB1 . SKAT</code></td><td>FS00</td><td><code>GL_ACCT_MASTER_SAVE_RFC</code></td><td><code>gl_master_sync.py</code></td><td><span class='pill p-ok'>MECANIZADO</span></td></tr>
+<tr><td><b>Banco casa</b></td><td><code>T012 . T012K</code></td><td>FI12</td><td><i>ninguno</i></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Centro de coste</b></td><td><code>CSKS . CSKT</code></td><td>KS01</td><td><code>BAPI_COSTCENTER_CREATEMULTIPLE · _CHANGEMULTIPLE</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Centro gestor (FM)</b></td><td><code>FMFCTR . FMFCTRT</code></td><td>FMSA</td><td><code>BAPI_0051_UPDATE</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Clase de coste</b></td><td><code>CSKA . CSKB</code></td><td>KA01</td><td><code>BAPI_COSTELEM_CREATEMULTIPLE · _CHANGEMULTIPLE</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Fondo (FM)</b></td><td><code>FMFINCODE . FMFINT</code></td><td>FM5I</td><td><code>BAPI_0050_CREATE</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Proveedor / interlocutor comercial</b></td><td><code>LFA1 . LFB1 . BUT000</code></td><td>XK01 / BP</td><td><code>BAPI_BUPA_CENTRAL_CHANGE y familia</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Proyecto / elemento PEP</b></td><td><code>PROJ . PRPS</code></td><td>CJ20N</td><td><code>BAPI_BUS2001_CREATE (definicion) · BAPI_BUS2054_CREATE_MULTI (PEP) · BAPI_PROJECTDEF_CREATE</code></td><td><i>-</i></td><td><span class='pill p-mid'>CANAL, SIN EJECUTOR</span></td></tr>
+<tr><td><b>Posicion presupuestaria (FM)</b></td><td><code>FMCI . FMCIT</code></td><td>FMCIA</td><td><i>ninguno</i></td><td><i>-</i></td><td><span class='pill p-no'>SIN CANAL</span></td></tr>
+<tr><td><b>Centro de beneficio</b></td><td><code>CEPC . CEPCT</code></td><td>-</td><td><code>BAPI_PROFITCENTER_CREATE (existe, pero no se usa)</code></td><td><i>-</i></td><td><span class='pill p-na'>NO APLICA</span></td></tr>
+</table>
+<h3>Lo que hay que saber de cada uno</h3><table><tr><th>Objeto</th><th>Nota</th></tr>
+<tr><td><b>Cuenta de mayor</b></td><td>requiere ACTION='I' en ACCOUNT_COA o falla con FH502</td></tr>
+<tr><td><b>Clase de coste</b></td><td>Se creia SIN CANAL. Medido 2026-08-21: BAPI_COSTELEM_CREATEMULTIPLE existe y es remote-enabled en D01. La creencia anterior era falsa.</td></tr>
+<tr><td><b>Centro gestor (FM)</b></td><td>solo UPDATE: no se ha medido un CREATE remote</td></tr>
+<tr><td><b>Posicion presupuestaria (FM)</b></td><td>medido 2026-08-21: 0 FM remote con patron BAPI_FMCI%/BAPI_0052%</td></tr>
+<tr><td><b>Proveedor / interlocutor comercial</b></td><td>H71 — el canal de escritura del portal (ZBAPI_VENDOR_CHANGE) salta F_LFA1 y arrastra conflictos de segregacion de funciones. Ver reference_h71_write_channel_sod</td></tr>
+<tr><td><b>Banco casa</b></td><td>los BAPI_BANKDETAIL* medidos son de datos bancarios de INTERLOCUTOR, no del banco casa. No confundirlos.</td></tr>
+<tr><td><b>Centro de beneficio</b></td><td>UNESCO NO usa centros de beneficio. Confirmado por JP, s102.</td></tr>
+</table>
+<h2>Lo que este dominio todavia no sabe</h2><ul>
+<li>Quien es el dueno de las tareas POSTERIORES al alta. Hoy llegan por correo a quien las reciba, y ese es el agujero.</li>
+<li>Que tareas posteriores dispara el alta de un centro de coste, un fondo o un proyecto. Solo esta medida la cadena de la cuenta de mayor.</li>
+<li>Si el formulario AM 3-11 se archiva en algun sitio consultable, o vive solo en la cadena de correo.</li>
+<li>Si FRA valida el campo <i>GL to be revaluated</i>, o solo el alta.</li>
+</ul>
+<p class="small">Generado por <code>scripts/build_master_data_companion.py</code> desde <code>brain_v2/master_data_registry.json</code>. No editar este HTML a mano.</p>
+</body></html>

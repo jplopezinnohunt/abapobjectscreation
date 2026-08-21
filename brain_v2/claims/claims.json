@@ -26535,5 +26535,123 @@
         "B2R"
       ]
     }
+  },
+  {
+    "id": 554,
+    "claim": "QUE VERSION DE BALANCE (FSV) APLICA A UNA SOCIEDAD NO SE DEDUCE DE T011: LO DICE LA VARIANTE DE RFBILA00. Medido 2026-08-21 en P01 sobre las 36 variantes de RFBILA00, leyendo el parametro BILAVERS junto a SD_BUKRS: FS10 la usan 13 variantes, todas de UNES o sin sociedad fijada; FS11 la usan 16 variantes, TODAS de IIEP o ICTP; FS01 la usan 4, dos de ellas de 2001 y 2003; KONS e INT son versiones de demo de SAP de 1995 con 0 intervalos para el plan UNES. CONSECUENCIA MEDIDA: barrer las 1.018 cuentas con movimiento de UNES contra FS11 devuelve 68 cuentas 'descubiertas' por 144.381.941,74 EUR que NO son un hueco -- es el denominador equivocado, porque FS11 es la version de los institutos. Contra FS10, la version que UNES ejecuta de verdad, quedan 4 cuentas descubiertas que suman 0,01 EUR (constant dollar, juego tecnico auto-compensado). La version correcta cubre el 100% de lo que tiene sustancia contable.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Master_Data_Governance",
+    "domain_axes": {
+      "functional": "Master_Data_Governance",
+      "process": "P2D"
+    },
+    "evidence_for": [
+      "Lectura en vivo P01 2026-08-21: VARID REPORT='RFBILA00' (36 variantes) + RS_VARIANT_CONTENTS_RFC parametro BILAVERS/SD_BUKRS",
+      "Barrido GLT0 BUKRS=UNES RYEAR=2026 x FAGL_011ZC KTOPL=UNES",
+      "Zagentexecution/quality_checks/fsv_coverage_check.py --sweep"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "RFBILA00",
+      "VARID",
+      "FAGL_011ZC",
+      "T011",
+      "GLT0",
+      "FS10",
+      "FS11",
+      "FS01"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
+  },
+  {
+    "id": 555,
+    "claim": "EL PARAMETRO DE LA VERSION DE BALANCE EN RFBILA00 SE LLAMA 'BILAVERS', NO 'VERSN'. Medido 2026-08-21: filtrar VALUTAB por SELNAME IN ('VERSN','P_VERSN','SO_VERSN') devuelve vacio en las 36 variantes y hace parecer que ninguna fija la version. El nombre real es BILAVERS; la sociedad es SD_BUKRS y el plan SD_KTOPL. Lección de metodo: cuando un filtro por nombre de parametro devuelve vacio en el 100% de las variantes, el nombre esta mal, no los datos.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Closing_Activities",
+    "domain_axes": {
+      "functional": "Closing_Activities",
+      "process": "P2D"
+    },
+    "evidence_for": [
+      "RS_VARIANT_CONTENTS_RFC REPORT='RFBILA00' VARIANT='MONTHLYSTAT', volcado completo de VALUTAB (84 filas)"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "RFBILA00",
+      "VARID",
+      "RS_VARIANT_CONTENTS_RFC"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
+  },
+  {
+    "id": 556,
+    "claim": "CANALES RFC DE ALTA DE DATOS MAESTROS -- INVENTARIO MEDIDO EN TFDIR DE D01 (FMODE='R'), 2026-08-21. CON canal de escritura: cuenta de mayor (GL_ACCT_MASTER_SAVE_RFC), centro de coste (BAPI_COSTCENTER_CREATEMULTIPLE), clase de coste (BAPI_COSTELEM_CREATEMULTIPLE), fondo (BAPI_0050_CREATE), centro gestor (solo BAPI_0051_UPDATE, no se midio un CREATE), proyecto y PEP (BAPI_BUS2001_CREATE / BAPI_BUS2054_CREATE_MULTI), proveedor/BP (familia BAPI_BUPA_*). SIN canal: posicion presupuestaria FMCI (0 FM remote con patron BAPI_FMCI%/BAPI_0052%) y programa/medida GM (solo EXISTENCECHECK). DOS CORRECCIONES: (1) se creia que las clases de coste no tenian canal RFC y SI lo tienen; (2) los BAPI_BANKDETAIL* NO son del banco casa (T012/T012K) sino datos bancarios de interlocutor -- confundirlos lleva a buscar un alta de banco casa por un canal que no existe. Centros de beneficio: el BAPI existe pero UNESCO NO los usa. De los 10 tipos, 1 esta mecanizado punta a punta y 7 tienen canal sin ejecutor.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Master_Data_Governance",
+    "domain_axes": {
+      "functional": "Master_Data_Governance",
+      "process": "P2D"
+    },
+    "evidence_for": [
+      "RFC_READ_TABLE TFDIR FMODE='R' contra D01, 12 patrones de nombre, 2026-08-21",
+      "brain_v2/master_data_registry.json"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "TFDIR",
+      "GL_ACCT_MASTER_SAVE_RFC",
+      "BAPI_COSTCENTER_CREATEMULTIPLE",
+      "BAPI_COSTELEM_CREATEMULTIPLE",
+      "BAPI_0050_CREATE",
+      "BAPI_0051_UPDATE",
+      "BAPI_BUS2001_CREATE",
+      "BAPI_BUS2054_CREATE_MULTI",
+      "FMCI",
+      "T012K",
+      "CSKA",
+      "CSKB"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
+  },
+  {
+    "id": 557,
+    "claim": "EL ALTA DE DATOS MAESTROS NACE EN P01 Y SOLO SE NOTIFICA SI HAY REVALUACION -- esa es la MECANICA de la desalineacion, no un olvido puntual. El usuario crea la cuenta directamente en produccion (FS00, formulario AM 3-11) y avisa al equipo solo cuando hace falta configurar la valoracion. Las altas sin revaluacion no generan aviso y nadie sabe que existen. Medido 2026-08-20: faltaban 2 cuentas en D01 y 33 en V01. Ademas el maestro y su configuracion viajan en SENTIDOS OPUESTOS -- el maestro P01->D01/V01 (relleno hacia atras), el customizing D01->V01->P01 (transporte) -- y por eso nadie los ve como un solo proceso. CONSECUENCIA: el paso 0 del proceso no puede ser una notificacion, tiene que ser un barrido PROGRAMADO.",
+    "claim_type": "measured_fact",
+    "confidence": "TIER_1",
+    "status": "VERIFIED",
+    "domain": "Master_Data_Governance",
+    "domain_axes": {
+      "functional": "Master_Data_Governance",
+      "process": "P2D"
+    },
+    "evidence_for": [
+      "Confirmado por JP 2026-08-21 como mecanica del proceso",
+      "gl_alignment_check.py contra P01/D01/V01 2026-08-20: 2 y 33 cuentas ausentes",
+      "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md"
+    ],
+    "evidence_against": [],
+    "related_objects": [
+      "SKA1",
+      "SKB1",
+      "SKAT",
+      "FS00",
+      "AM 3-11",
+      "INC-MMF-BNPPB-2026"
+    ],
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": ""
   }
 ]

@@ -340,6 +340,10 @@ def main():
     run(["python", "scripts/validate_companions.py"], "Step 6/7: Validate HTML companions")
     # Companion relationship graph BEFORE the landing — it injects `related`/`attachments` into
     # companions.json, which the landing renders as the per-card Related chips. Order matters.
+    # El companion de gobierno de datos maestros se GENERA del registro: si el registro
+    # crece (un tipo de objeto nuevo, un canal medido), el companion crece solo.
+    run(["python", "scripts/build_master_data_companion.py"],
+        "Step 6d/7: Rebuild Master Data Governance companion")
     run(["python", "scripts/build_companion_graph.py", "--write-related"], "Step 7a/7: Rebuild companion knowledge graph")
     run(["python", "scripts/build_landing_page.py"], "Step 7/7: Rebuild landing page dashboard")
 

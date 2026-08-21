@@ -10,6 +10,35 @@ las dos en ese incidente.
 
 ---
 
+## 0. El REGISTRO de objetos de datos maestros
+
+Este dominio no es una carpeta, es un **registro de tipos de objeto**. Cuando alguien pregunta
+por gobierno de datos maestros, esto es lo que tiene que aparecer. Fuente estructurada y
+consultable: [`brain_v2/master_data_registry.json`](../../../brain_v2/master_data_registry.json) ·
+companion generado: `companions/master_data_governance.html`.
+
+| Objeto | Tablas | Tx | Canal de escritura (MEDIDO en TFDIR de D01, 2026-08-21) | Estado |
+|---|---|---|---|---|
+| **Cuenta de mayor** | `SKA1 · SKB1 · SKAT` | FS00 | `GL_ACCT_MASTER_SAVE_RFC` | MECANIZADO |
+| **Banco casa** | `T012 · T012K` | FI12 | `—` | canal medido, SIN ejecutor |
+| **Centro de coste** | `CSKS · CSKT` | KS01 | `BAPI_COSTCENTER_CREATEMULTIPLE · _CHANGEMULTIPLE` | canal medido, SIN ejecutor |
+| **Centro gestor (FM)** | `FMFCTR · FMFCTRT` | FMSA | `BAPI_0051_UPDATE` | canal medido, SIN ejecutor |
+| **Clase de coste** | `CSKA · CSKB` | KA01 | `BAPI_COSTELEM_CREATEMULTIPLE · _CHANGEMULTIPLE` | canal medido, SIN ejecutor |
+| **Fondo (FM)** | `FMFINCODE · FMFINT` | FM5I | `BAPI_0050_CREATE` | canal medido, SIN ejecutor |
+| **Proveedor / interlocutor comercial** | `LFA1 · LFB1 · BUT000` | XK01 / BP | `BAPI_BUPA_CENTRAL_CHANGE y familia` | canal medido, SIN ejecutor |
+| **Proyecto / elemento PEP** | `PROJ · PRPS` | CJ20N | `BAPI_BUS2001_CREATE (definicion) · BAPI_BUS2054_CREATE_MULTI (PEP) · BAPI_PROJECTDEF_CREATE` | canal medido, SIN ejecutor |
+| **Posicion presupuestaria (FM)** | `FMCI · FMCIT` | FMCIA | `—` | SIN canal RFC |
+| **Centro de beneficio** | `CEPC · CEPCT` | — | `BAPI_PROFITCENTER_CREATE (existe, pero no se usa)` | no aplica |
+
+**Solo 1 de 10 está mecanizado de punta a punta.** Los otros 7 con canal medido tienen el FM
+comprobado y nadie ha escrito el ejecutor — que es una brecha honesta, no una promesa.
+
+**Dos creencias corregidas al medir:** las *clases de coste* se daban por SIN CANAL y sí lo tienen
+(`BAPI_COSTELEM_CREATEMULTIPLE`); y los `BAPI_BANKDETAIL*` **no** sirven para el banco casa —
+son datos bancarios de interlocutor. **Centros de beneficio: UNESCO no los usa.**
+
+---
+
 ## 1. La cadena, y quién hace qué
 
 ```
@@ -21,6 +50,29 @@ formulario AM 3-11     el formulario      p.ej. MP_BOUA
                                      TAREAS POSTERIORES según el TIPO
                                      — sin dueño formal, y ahí se pierden
 ```
+
+### La asimetría que causa la desalineación
+
+El maestro y su configuración **viajan en sentidos opuestos**, y por eso nadie los ve como un
+solo proceso:
+
+```
+MAESTRO (SKA1/SKB1/SKAT)      P01 ──▶ D01 · V01     nace en PRODUCCIÓN, se rellena hacia atrás
+CONFIG  (OB09 · variante ·    D01 ──▶ V01 ──▶ P01   nace en DESARROLLO, sube por transporte
+         FSV · intervalos)
+```
+
+El usuario crea la cuenta **directamente en P01** y solo nos avisa **cuando hace falta revaluar**.
+Las altas que no la llevan no generan aviso: nadie sabe que existen hasta que algo falla en dev.
+Eso no es un olvido puntual, es la mecánica del proceso — y se mide.
+
+| Sistema | Cuentas de P01 que faltaban (medido 2026-08-20) |
+|---|---|
+| D01 | 2 |
+| V01 | **33** |
+
+Las 33 son el sedimento de todas las altas sobre las que nunca hubo correo. **Corolario: el paso 0
+no puede ser una notificación, tiene que ser un barrido programado.**
 
 **El punto débil medido:** el proceso termina cuando la cuenta existe. Las tareas que la hacen
 *funcionar* —revaluación, mapeo al balance, alineación de entornos— caen fuera y llegan por correo,
@@ -97,15 +149,35 @@ nada si la fila del rango no existe en ese sistema**, y esa ausencia no se ve mi
 
 Ejecutores y método: [`knowledge/alignment_executors_model.md`](../../alignment_executors_model.md).
 
-## 6. Checklist para el próximo alta
+## 6. ⭐ EL PROCESO OPERATIVO — 7 pasos, cada uno con su instrumento
 
+Propuesto por JP como 3 pasos (alinear → configurar revaluación → controlar variante) y revisado
+con lo medido en s102: le faltaba un paso **antes** (nadie dispara el proceso) y dos **después**
+(el balance y el transporte). Los pasos 2 y 3 de la propuesta original son **un solo gate**.
+
+| # | Paso | Por qué | Instrumento |
+|---|---|---|---|
+| **0** | **DETECTAR la deriva** | El aviso solo llega si hay revaluación; las demás altas son invisibles. 33 cuentas de retraso en V01 | `gl_alignment_check.py` — **programado**, no bajo demanda |
+| **1** | **ALINEAR maestro P01 → D01/V01** | La cuenta debe existir donde se prueba, o la config no se puede probar | `gl_master_sync.py` (API estándar `GL_ACCT_MASTER_SAVE_RFC`) |
+| **2** | **DECIDIR si revalúa** | El tipo NO decide esto | las 3 condiciones de §4, leídas del `AM 3-11` + `SKB1.WAERS` vs `T001.WAERS` + exposición viva |
+| **3** | **CONFIGURAR el gate completo: OB09 *y* variante** | Son inseparables: OB09 solo = no corre y no avisa; variante sola = F.05 falla | `ob09_vs_variant_check.py` (cruza `T030H` × variante × exposición) |
+| **4** | **COMPROBAR cobertura en el balance** | Se asigna por INTERVALO: entra sola o cae en *Not assigned*, y el balance cuadra igual | `fsv_coverage_check.py <cuenta>` |
+| **5** | **TRANSPORTAR con control de alcance** | Un transporte de tabla guarda la CLAVE y exporta el VALOR al liberar: arrastra vecinos | `config_transport_prerelease_check.py <TRKORR>` |
+| **6** | **BARRER la población** | La ocasión es el ticket; el alcance es todo | `--sweep` de los pasos 3 y 4 |
+
+**El tipo de cuenta entra en el paso 3, no en el 2.** Inversión, banco u otra determinan el
+*método* de valoración y las *cuentas de contrapartida* de `T030H` — no si hay que valorar.
+
+**Prueba de que el paso 2 no es el tipo:** `4041018` y `4041019` son ambas de inversión, dadas de
+alta el mismo día, con el mismo formulario. La 18 revalúa y la 19 no — porque la 19 está en USD
+sobre una sociedad en USD. Mismo tipo, decisión opuesta.
+
+**Prueba de que el paso 6 hace falta:** el barrido de la población encontró `4041011` — 10 M EUR
+netos abiertos, `T030H` configurado, **en ninguna variante de F.05**. Nadie la había pedido.
+
+### Antes de empezar, sobre el papel
 1. Leer el **formulario**, no la nota. Casilla por casilla, y **una referencia por cuenta**.
 2. Verificar cómo quedó creada: `SKB1.WAERS`, `KTOKS`, `XOPVW`, `FDLEV`, `FIPOS` — contra su referencia.
-3. Determinar el **tipo** (§3) y de ahí las tareas posteriores.
-4. Si toca revaluación: las **tres** condiciones (§4), y la variante es la que se olvida.
-5. Comprobar la **posición de balance**: puede estar ya cubierta por un intervalo.
-6. Alinear D01/V01 por los **cuatro canales** (§5) — no basta con copiar la cuenta.
-7. Verificar con: `ob09_vs_variant_check.py` · `fsv_alignment_check.py` · `gl_alignment_check.py`.
 
 ## 7. Lo que este dominio todavía no sabe
 - **Quién es el dueño de las tareas posteriores.** Hoy llegan por correo a quien las reciba.

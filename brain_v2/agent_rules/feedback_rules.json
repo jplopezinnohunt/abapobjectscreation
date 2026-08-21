@@ -5256,5 +5256,31 @@
         "cross-cutting"
       ]
     }
+  },
+  {
+    "id": "feedback_a_config_object_applies_to_a_population_prove_it_before_measuring",
+    "severity": "CRITICAL",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-003",
+    "domain_axes": {
+      "functional": "Master_Data_Governance",
+      "process": "P2D"
+    },
+    "rule": "UN OBJETO DE CONFIGURACION EXISTE PARA TODOS Y SE EJECUTA PARA ALGUNOS: antes de medir una poblacion contra el, DEMUESTRA que se le aplica. Que la version de balance FS11 exista para el plan UNES no significa que UNES la use -- la ejecutan 16 variantes de RFBILA00 y las 16 son de IIEP o ICTP. Medir las 1.018 cuentas de UNES contra FS11 fabrico un hueco de 68 cuentas y 144 millones de euros que no existe. Contra FS10, la que UNES ejecuta de verdad, el hueco son 4 cuentas que suman 0,01 EUR. El mismo dato, el denominador equivocado, y una alarma inventada.",
+    "why": "Es la hermana de feedback_declare_the_cuts_before_measuring, pero en el otro lado de la ecuacion: alli el corte esta en los DATOS (quien cobra, por que via), aqui esta en la CONFIGURACION (para quien corre esto). La tabla de customizing no lleva el corte: T011 no dice que sociedad usa cada version, T030H no dice que cuentas se valoran de verdad, un arbol DMEE no dice que corredor lo despacha. Quien lo sabe es lo que EJECUTA la configuracion. Publicar sin ese corte no es un error de calculo: es inventar un problema y hacer que alguien lo persiga.",
+    "how_to_apply": "1) Antes de barrer una poblacion contra una configuracion, pregunta QUIEN la ejecuta y con que restriccion. Para un report, la respuesta esta en la VARIANTE (RFBILA00 -> parametro BILAVERS + SD_BUKRS); para un pago, en el arbol y el corredor; para una valoracion, en la variante de F.05. 2) Si una version tiene 0 entradas para tu plan/sociedad, no esta en uso para ti: descartala, no la cuentes como hueco. 3) Usa la REFERENCIA como patron: si la cuenta de referencia del formulario tampoco esta cubierta, esa configuracion es SELECTIVA por diseno y no te falta nada. 4) Metelo en el instrumento, no en la cabeza: fsv_coverage_check.py deriva la version en uso leyendo las variantes y se niega a llamar hueco a lo que no se ejecuta."
+  },
+  {
+    "id": "feedback_a_master_data_domain_is_a_registry_of_object_types",
+    "severity": "HIGH",
+    "created_session": 102,
+    "derives_from_core_principle": "CP-002",
+    "domain_axes": {
+      "functional": "Master_Data_Governance",
+      "process": "P2D"
+    },
+    "rule": "UN DOMINIO DE GOBIERNO DE DATOS MAESTROS NO ES UNA CARPETA, ES UN REGISTRO DE TIPOS DE OBJETO. Cuando se pregunta por governance de master data tienen que aparecer los subdominios -- cuenta de mayor, centro de coste, clase de coste, fondo, centro gestor, posicion presupuestaria, proyecto/PEP, proveedor/BP, banco casa -- cada uno con su autoridad de alta, su canal MEDIDO, su ejecutor y sus tareas posteriores. Store: brain_v2/master_data_registry.json; companion generado por scripts/build_master_data_companion.py.",
+    "why": "Un dominio descrito solo en prosa contesta la pregunta que ya sabias hacer. Un registro contesta la que no: 'y para un fondo, que canal hay?'. Ademas hace VISIBLE la brecha en vez de esconderla -- de 10 tipos, 1 esta mecanizado y 7 tienen canal medido sin ejecutor. Eso es una brecha honesta y accionable; la prosa la habria dejado en silencio. Medir el inventario tambien corrigio dos creencias falsas de golpe (las clases de coste SI tienen canal; los BAPI_BANKDETAIL* NO son del banco casa).",
+    "how_to_apply": "1) Al tocar un tipo de objeto maestro nuevo, anadelo al registro con su estado MEDIDO -- no supuesto: MECANIZADO / CANAL_SIN_EJECUTOR / SIN_CANAL / NO_APLICA. 2) El canal se mide en TFDIR (FMODE='R'), no se recuerda. 3) El companion se GENERA del registro: edita el registro, nunca el HTML. 4) Alta un alias en load_domain.py por el nombre del OBJETO, no solo del dominio: quien pregunta por 'centro de coste' no sabe que el dominio se llama Master_Data_Governance."
   }
 ]

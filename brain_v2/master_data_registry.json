@@ -1,0 +1,239 @@
+{
+  "_meta": {
+    "title": "Registro de OBJETOS DE DATOS MAESTROS — Master_Data_Governance",
+    "purpose": "Un dominio de gobierno de datos maestros no es una carpeta: es un REGISTRO de tipos de objeto. Cuando se pregunta por governance de master data, esto es lo que tiene que aparecer — cuenta de mayor, centro de coste, fondo, proyecto, proveedor... cada uno con su autoridad de alta, su canal MEDIDO, su ejecutor y sus tareas posteriores.",
+    "evidence": "Canales MEDIDOS 2026-08-21 contra TFDIR de D01 (FMODE='R'). Los estados son medidos, no supuestos: CANAL = existe el FM remote; EJECUTOR = existe script probado; AGENTE = cableado a un agente/skill.",
+    "measured_on": "2026-08-21",
+    "session": 102,
+    "domain": "Master_Data_Governance",
+    "process": "P2D",
+    "status_legend": {
+      "MECANIZADO": "canal medido + ejecutor probado + cableado a agente/skill",
+      "CANAL_SIN_EJECUTOR": "el FM existe y esta medido, pero nadie ha escrito el ejecutor",
+      "SIN_CANAL": "medido: no hay FM remote de escritura. Requiere otra via o excepcion",
+      "NO_APLICA": "UNESCO no usa este objeto"
+    }
+  },
+  "objects": [
+    {
+      "id": "GL_ACCOUNT",
+      "name": "Cuenta de mayor",
+      "tables": [
+        "SKA1",
+        "SKB1",
+        "SKAT"
+      ],
+      "transaction": "FS00",
+      "status": "MECANIZADO",
+      "authority_of_record": "Formulario AM 3-11, validado por FRA, creado por Master Data Unit",
+      "created_in": "P01 — directamente en produccion por el usuario",
+      "flow": "P01 -> D01/V01 (relleno hacia atras); el customizing va D01 -> V01 -> P01",
+      "channel": {
+        "read": "GL_ACCT_MASTER_GET_COA_RFC",
+        "write": "GL_ACCT_MASTER_SAVE_RFC",
+        "note": "requiere ACTION='I' en ACCOUNT_COA o falla con FH502"
+      },
+      "executor": "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_master_sync.py",
+      "gap_check": "Zagentexecution/tasks/2026_08_20_mmf_gl_sync/gl_alignment_check.py",
+      "agent": "master-data-sync",
+      "post_creation_tasks": [
+        {
+          "n": 1,
+          "task": "Alinear D01/V01",
+          "tool": "gl_master_sync.py"
+        },
+        {
+          "n": 2,
+          "task": "Decidir si revalua (3 condiciones: formulario + moneda cuenta != moneda sociedad + exposicion abierta)",
+          "tool": "-"
+        },
+        {
+          "n": 3,
+          "task": "OB09 (T030H) Y variante de F.05 — un solo gate, inseparables",
+          "tool": "Zagentexecution/quality_checks/ob09_vs_variant_check.py"
+        },
+        {
+          "n": 4,
+          "task": "Cobertura en la version de balance (FSV) que se EJECUTA para la sociedad",
+          "tool": "Zagentexecution/quality_checks/fsv_coverage_check.py"
+        },
+        {
+          "n": 5,
+          "task": "Transportar con control de alcance",
+          "tool": "Zagentexecution/quality_checks/config_transport_prerelease_check.py"
+        },
+        {
+          "n": 6,
+          "task": "Barrer la poblacion (la ocasion es el ticket, el alcance es todo)",
+          "tool": "--sweep de los pasos 3 y 4"
+        }
+      ],
+      "measured_drift": {
+        "D01": 2,
+        "V01": 33,
+        "as_of": "2026-08-20"
+      },
+      "incidents": [
+        "INC-MMF-BNPPB-2026"
+      ],
+      "doc": "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md"
+    },
+    {
+      "id": "COST_CENTER",
+      "name": "Centro de coste",
+      "tables": [
+        "CSKS",
+        "CSKT"
+      ],
+      "transaction": "KS01",
+      "status": "CANAL_SIN_EJECUTOR",
+      "authority_of_record": "DESCONOCIDA — no medido quien autoriza el alta",
+      "created_in": "no medido",
+      "channel": {
+        "read": "BAPI_COSTCENTER_GETLIST / _GETDETAIL",
+        "write": "BAPI_COSTCENTER_CREATEMULTIPLE · _CHANGEMULTIPLE",
+        "extra": "BAPI_COSTCENTER_CHECKMULTIPLE permite validar sin escribir"
+      },
+      "executor": null,
+      "agent": "master-data-sync (declarado, sin ejecutor aun)",
+      "post_creation_tasks": [],
+      "known_unknowns": [
+        "que tareas posteriores dispara un alta"
+      ]
+    },
+    {
+      "id": "COST_ELEMENT",
+      "name": "Clase de coste",
+      "tables": [
+        "CSKA",
+        "CSKB"
+      ],
+      "transaction": "KA01",
+      "status": "CANAL_SIN_EJECUTOR",
+      "authority_of_record": "DESCONOCIDA",
+      "channel": {
+        "read": "BAPI_COSTELEM_GETDETAIL",
+        "write": "BAPI_COSTELEM_CREATEMULTIPLE · _CHANGEMULTIPLE"
+      },
+      "executor": null,
+      "agent": null,
+      "correction": "Se creia SIN CANAL. Medido 2026-08-21: BAPI_COSTELEM_CREATEMULTIPLE existe y es remote-enabled en D01. La creencia anterior era falsa."
+    },
+    {
+      "id": "FUND",
+      "name": "Fondo (FM)",
+      "tables": [
+        "FMFINCODE",
+        "FMFINT"
+      ],
+      "transaction": "FM5I",
+      "status": "CANAL_SIN_EJECUTOR",
+      "authority_of_record": "DESCONOCIDA",
+      "channel": {
+        "read": "BAPI_0050_GET_LIST / _GET_DETAIL",
+        "write": "BAPI_0050_CREATE"
+      },
+      "executor": null,
+      "agent": null
+    },
+    {
+      "id": "FUNDS_CENTER",
+      "name": "Centro gestor (FM)",
+      "tables": [
+        "FMFCTR",
+        "FMFCTRT"
+      ],
+      "transaction": "FMSA",
+      "status": "CANAL_SIN_EJECUTOR",
+      "channel": {
+        "read": "BAPI_0051_GET_TOTALS",
+        "write": "BAPI_0051_UPDATE",
+        "note": "solo UPDATE: no se ha medido un CREATE remote"
+      },
+      "executor": null,
+      "agent": null
+    },
+    {
+      "id": "COMMITMENT_ITEM",
+      "name": "Posicion presupuestaria (FM)",
+      "tables": [
+        "FMCI",
+        "FMCIT"
+      ],
+      "transaction": "FMCIA",
+      "status": "SIN_CANAL",
+      "channel": {
+        "read": null,
+        "write": null,
+        "note": "medido 2026-08-21: 0 FM remote con patron BAPI_FMCI%/BAPI_0052%"
+      },
+      "executor": null,
+      "agent": null
+    },
+    {
+      "id": "PROJECT_WBS",
+      "name": "Proyecto / elemento PEP",
+      "tables": [
+        "PROJ",
+        "PRPS"
+      ],
+      "transaction": "CJ20N",
+      "status": "CANAL_SIN_EJECUTOR",
+      "channel": {
+        "read": "BAPI_BUS2001_GETDATA · BAPI_BUS2054_GETDATA",
+        "write": "BAPI_BUS2001_CREATE (definicion) · BAPI_BUS2054_CREATE_MULTI (PEP) · BAPI_PROJECTDEF_CREATE"
+      },
+      "executor": null,
+      "agent": null
+    },
+    {
+      "id": "VENDOR_BP",
+      "name": "Proveedor / interlocutor comercial",
+      "tables": [
+        "LFA1",
+        "LFB1",
+        "BUT000"
+      ],
+      "transaction": "XK01 / BP",
+      "status": "CANAL_SIN_EJECUTOR",
+      "channel": {
+        "read": "BAPI_BUPA_*_GETDETAIL",
+        "write": "BAPI_BUPA_CENTRAL_CHANGE y familia"
+      },
+      "executor": null,
+      "agent": null,
+      "risk": "H71 — el canal de escritura del portal (ZBAPI_VENDOR_CHANGE) salta F_LFA1 y arrastra conflictos de segregacion de funciones. Ver reference_h71_write_channel_sod"
+    },
+    {
+      "id": "HOUSE_BANK",
+      "name": "Banco casa",
+      "tables": [
+        "T012",
+        "T012K"
+      ],
+      "transaction": "FI12",
+      "status": "CANAL_SIN_EJECUTOR",
+      "channel": {
+        "read": "lectura directa de T012/T012K",
+        "write": null,
+        "note": "los BAPI_BANKDETAIL* medidos son de datos bancarios de INTERLOCUTOR, no del banco casa. No confundirlos."
+      },
+      "executor": null,
+      "agent": "bank-process-discovery (modelo de rol, no alta)",
+      "model": "brain_v2/house_bank_roles.py — rol de cada banco casa por pais"
+    },
+    {
+      "id": "PROFIT_CENTER",
+      "name": "Centro de beneficio",
+      "tables": [
+        "CEPC",
+        "CEPCT"
+      ],
+      "status": "NO_APLICA",
+      "channel": {
+        "write": "BAPI_PROFITCENTER_CREATE (existe, pero no se usa)"
+      },
+      "note": "UNESCO NO usa centros de beneficio. Confirmado por JP, s102."
+    }
+  ]
+}
