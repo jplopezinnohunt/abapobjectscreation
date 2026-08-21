@@ -150,6 +150,25 @@ writes = result.get('WRITES', [])
 
 ---
 
+## ✍️ ESCRIBIRLAS: alinear variantes entre sistemas (probado 2026-08-21)
+
+No se transportan (`VARID.TRANSPORT='F'`) pero **sí se escriben por RFC** — peldaño 1, API estándar,
+sin excepción. `RS_VARIANT_DELETE_RFC` (VARIANT es CHANGING, `USE_EXCEPTIONS='X'`) +
+`RS_CREATE_VARIANT_RFC`. **`RS_VARIANT_CHANGE_RFC` no sirve**: sin tabla de contenido, es de diálogo,
+así que modificar = borrar y recrear.
+
+Herramienta: `Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py`.
+Resultado en UNESCO: **21/21 variantes de SAPF100 idénticas a P01 en D01 y V01**.
+
+**Dos trampas que corrompen sin dar error:** (1) las fechas salen en formato externo `31.07.2026` y
+entran en interno `20260731` — mandarlas tal cual escribe basura (`20.7..31.0`); (2) lo que no se
+envía se rellena con defectos en silencio. Snapshot PRE + readback POST no son ceremonia: cazaron
+las dos.
+
+**Clasifica antes de copiar**: selección (`SKONTO`/`AKONTO`) · modo (`PAR_BNAM`, `PA_WEREF`/`PA_WEREN`,
+`BWMET1`) · residuo de la última corrida (periodos, fechas). "Hazlas idénticas" puede borrar nombres
+de sesión batch y voltear banderas de alcance.
+
 ## 🔑 POR QUÉ ESTO IMPORTA MÁS QUE LAS VARIANTES — la variante ES el proceso
 
 Una variante no es una comodidad de usuario: **es dónde se instancia el proceso**. El programa dice

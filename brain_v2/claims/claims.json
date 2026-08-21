@@ -26431,5 +26431,59 @@
         "T2R"
       ]
     }
+  },
+  {
+    "id": 552,
+    "claim": "H113 EJECUTADO: las 21 variantes operativas de SAPF100 quedan IDENTICAS a P01 en D01 y en V01, verificado releyendo entrada a entrada (2026-08-21). Canal: peldano 1, API estandar, sin excepcion de escritura directa. Decision de JP sobre el alcance: las variantes que existen en P01 se igualan aunque eso borre diferencias locales -- PAR_BNAM (nombre de sesion batch, vacio en P01 y con valor en D01) y PA_WEREN->PA_WEREF -- porque UNA VEZ IGUALES SE PODRAN TRANSPORTAR, y eso resuelve de raiz que VARID.TRANSPORT='F'. Las que existen solo en el destino no se tocan: STEM_OI y STEM_UNBA en ambos, mas TESTE_CURR en V01. UN DEFECTO INTRODUCIDO Y REPARADO EN LA MISMA CORRIDA: la primera pasada escribio CORRUPTOS los 4 parametros de fecha (P_BBUDAT, P_BLDAT, STICHTAG, ST_BUDAT) de IBE_OI, UIS_OI y UNES_DEPOSIT en V01 -- '20.7..31.0' en vez de '31.07.2026' -- porque RS_VARIANT_CONTENTS_RFC devuelve las fechas en formato EXTERNO y RS_CREATE_VARIANT_RFC las quiere en INTERNO, y mandarlas tal cual NO da error. Y esas fechas eran IDENTICAS a P01 antes de tocarlas: no eran divergencia, las rompi yo. Lo cazo la verificacion POST, los snapshots PRE dijeron que habia antes, y la reparacion fue una corrida mas con el conversor puesto.",
+    "claim_type": "verified_fact",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      {
+        "type": "empirical",
+        "ref": "variant_align.py --targets D01/V01 --execute + verificacion posterior (2026-08-21)",
+        "cite": "D01 y V01: 21/21 'YA IDENTICA' en la corrida de verificacion. Recreadas en D01: IBE_OI, ICBA_OI, ICBA_UNBA, ICTP_OI, IIEP_OI, MGIE_OI, MGIE_UNBA, UIL_OI, UIS_OI, UNES_DEPOSIT, UNES_OI_AR/AP. En V01: IBE_OI, UIS_OI, UNES_DEPOSIT. UIL_OI de D01 difería en 36 entradas de seleccion.",
+        "added_session": 102
+      },
+      {
+        "type": "empirical",
+        "ref": "PRE_V01_*.json y salida '!!! POST NO COINCIDE' de la primera pasada",
+        "cite": "Los snapshots PRE muestran P_BBUDAT/P_BLDAT/STICHTAG='31.07.2026' y ST_BUDAT='01.08.2026' -- identicos a P01 -- y tras recrear quedaron '20.7..31.0' y '20.8..01.0'.",
+        "added_session": 102
+      }
+    ],
+    "evidence_against": null,
+    "related_objects": [
+      "SAPF100",
+      "RS_CREATE_VARIANT_RFC",
+      "RS_VARIANT_DELETE_RFC",
+      "RS_VARIANT_CONTENTS_RFC",
+      "VARID",
+      "UNES_DEPOSIT",
+      "UIL_OI",
+      "UIS_OI",
+      "IBE_OI",
+      "PAR_BNAM",
+      "PA_WEREF",
+      "PA_WEREN",
+      "Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py"
+    ],
+    "domain": "Closing_Activities",
+    "created_session": 102,
+    "resolved_session": 102,
+    "resolution_notes": "CIERRA H113. La leccion transferible no es el FM: es que SNAPSHOT PRE A FICHERO + READBACK POST no son ceremonia. Sin el POST, V01 se habria quedado con cuatro fechas corruptas en tres variantes y nadie se entera hasta el cierre de mes; sin el PRE, no habria sabido que esas fechas eran correctas antes. Capacidad ya cableada en: agente variant-intelligence (seccion de escritura), skill sap_variant_analysis (seccion de alineamiento), agente master-data-sync (fila en la matriz de canales) y capability_model Closing_Activities.C_CONFIG (nota: de leer a leer-y-escribir la parametrizacion de ejecucion; sigue PARTIAL por la FSV, H112).",
+    "status": "active",
+    "domain_axes": {
+      "functional": [
+        "Closing_Activities",
+        "FI"
+      ],
+      "module": [
+        "FI",
+        "BC"
+      ],
+      "process": [
+        "T2R"
+      ]
+    }
   }
 ]

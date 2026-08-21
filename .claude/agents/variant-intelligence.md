@@ -82,6 +82,48 @@ Sin el último paso solo sabes **que** algo corrió. Con él sabes **qué hizo**
 **No leas solo los rangos.** Los parámetros que no son rangos —rutas, fechas, flags— son la mitad
 del proceso, y son justo los que ninguna tabla de configuración contiene.
 
+## ✍️ Y TAMBIÉN SE ESCRIBEN — alinear variantes entre sistemas
+
+Probado 2026-08-21. Las variantes **no se transportan** (`VARID.TRANSPORT='F'`), así que divergen;
+pero **sí se escriben por RFC**, con API estándar. Es peldaño 1: no hace falta excepción.
+
+| Paso | FM | Nota |
+|---|---|---|
+| Leer | `RS_VARIANT_CONTENTS_RFC` | funciona también en P01 (`CCCOPYLOCK` no le afecta) |
+| Borrar | `RS_VARIANT_DELETE_RFC` | `VARIANT` es **CHANGING**, `USE_EXCEPTIONS='X'` |
+| Crear | `RS_CREATE_VARIANT_RFC` | `CURR_REPORT`, `CURR_VARIANT`, `VARI_DESC`, `VARI_CONTENTS`, `VARI_TEXT` |
+
+**`RS_VARIANT_CHANGE_RFC` NO sirve** — su interfaz es `REPORT` + `VARIANT` + `VALUE_OR_ATTR`, sin
+tabla de contenido: es de diálogo. Modificar una existente = **borrar y recrear**, que es
+destructivo y exige snapshot PRE y verificación POST.
+
+Herramienta: `Zagentexecution/tasks/2026_08_21_variant_alignment/variant_align.py`
+(dry-run por defecto · `--targets` · `--variants ALL` · snapshot PRE a disco · restauración
+automática si la creación falla · verificación POST releyendo).
+
+### ☠️ Las dos trampas que rompen datos sin dar error
+
+1. **Formato de fecha externo vs interno.** `RS_VARIANT_CONTENTS_RFC` devuelve `31.07.2026`;
+   `RS_CREATE_VARIANT_RFC` espera `20260731`. Mandarlo tal cual **no falla: escribe basura**
+   (`20.7..31.0`). Ocurrió en V01 sobre `P_BBUDAT`, `P_BLDAT`, `STICHTAG` y `ST_BUDAT` — que
+   además **eran idénticos a P01** y quedaron rotos por copiarlos. Convertir siempre antes de crear.
+2. **Lo que no se envía se rellena con defectos, en silencio.** Una variante creada con 2 líneas
+   salió con 9 parámetros de pantalla a cero. Copiar solo la selección de cuentas **pierde el
+   método de valoración, las fechas y los flags de modo**.
+
+En ambos casos lo que salva es el diseño, no la suerte: **snapshot PRE en fichero y readback POST**.
+
+### La divergencia NO es homogénea — clasificar antes de copiar
+| Clase | Campos | Qué significa |
+|---|---|---|
+| **Selección** | `SKONTO`, `AKONTO` | qué objetos se procesan — el proceso |
+| **Modo/config** | `PAR_BNAM` (sesión batch), `PA_WEREF`/`PA_WEREN`, `BWMET1`, `X_GL`, `X_SALBEW` | **cambia el comportamiento** |
+| **Residuo** | `P_BBUPEM`/`P_SBUPEM`, fechas, `P_LVIEW`, handles de log | estado de la última corrida |
+
+"Hazlas idénticas" no es una instrucción segura por defecto: puede borrar nombres de sesión batch y
+voltear banderas de alcance. **Clasificar, presentar y dejar decidir.** En UNESCO la decisión fue
+igualar todo lo que existe en P01 — para que en el futuro las variantes sí se puedan transportar.
+
 ## Las dos reglas duras
 
 **1. Configurado ≠ ejecutado.** Un objeto puede estar perfectamente configurado y no procesarse

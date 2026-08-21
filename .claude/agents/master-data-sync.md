@@ -46,6 +46,8 @@ tools:
 | **Fondos** | `FM_FUND_GET_DETAIL_RFC` | `FM_FUND_CREATE_RFC` / `FM_FUND_CHANGE_RFC` |
 | **Centros gestores** | `FM_FUNDS_CTR_GET_DETAILS_RFC` | `FM_FUNDS_CTR_CREATE_RFC` |
 | **Proyectos / WBS** | `BAPI_PROJECTDEF_GETDETAIL` + `PRPS` | `BAPI_PROJECT_MAINTAIN` + `BAPI_TRANSACTION_COMMIT` |
+| **Variantes de programa** | `RS_VARIANT_CONTENTS_RFC` | `RS_VARIANT_DELETE_RFC` + `RS_CREATE_VARIANT_RFC` (borrar y recrear; `RS_VARIANT_CHANGE_RFC` NO vale). ⚠️ fechas externo→interno |
+| **Versión de balance (FSV)** | `RFC_READ_TABLE` | sin API — `OB58` + transporte, o **EXC-001** |
 | **Tablas propias `YT*`** | `RFC_READ_TABLE` | `RFC_ABAP_INSTALL_AND_RUN` INSERT — único uso legítimo |
 
 - **Centros de beneficio: NO se usan en UNESCO.** Fuera de alcance aunque el BAPI exista.

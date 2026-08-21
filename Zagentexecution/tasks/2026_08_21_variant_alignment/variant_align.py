@@ -32,6 +32,7 @@ Uso:
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -82,7 +83,27 @@ def texts(conn, variant):
         return []
 
 
+_EXT_DATE = re.compile(r"^(\d{2})\.(\d{2})\.(\d{4})$")
+
+
+def to_internal(rows):
+    """RS_VARIANT_CONTENTS_RFC devuelve las fechas en formato EXTERNO (31.07.2026) y
+    RS_CREATE_VARIANT_RFC las quiere en INTERNO (20260731). Mandarlas como vienen NO da error:
+    las escribe CORRUPTAS ('20.7..31.0'). Medido en V01 el 2026-08-21 sobre P_BBUDAT, P_BLDAT,
+    STICHTAG y ST_BUDAT, que eran IDENTICAS a P01 y quedaron rotas por copiarlas tal cual."""
+    out = []
+    for r in rows:
+        r = dict(r)
+        for f in ("LOW", "HIGH"):
+            m = _EXT_DATE.match(r.get(f, "") or "")
+            if m:
+                r[f] = m.group(3) + m.group(2) + m.group(1)
+        out.append(r)
+    return out
+
+
 def create(conn, variant, rows, txts):
+    rows = to_internal(rows)
     desc = {"REPORT": PROGRAM, "VARIANT": variant, "TRANSPORT": "F", "ENVIRONMNT": "A",
             "PROTECTED": "", "MLANGU": "E", "ENAME": "JP_LOPEZ"}
     return conn.call("RS_CREATE_VARIANT_RFC", CURR_REPORT=PROGRAM, CURR_VARIANT=variant,
