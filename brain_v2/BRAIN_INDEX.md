@@ -45,11 +45,11 @@ capability_model = our KNOWLEDGE of it. Never re-derive this from cvers/logs mid
 ## 🎯 THE PROCESS SPINE — B2R is the heart, and it is measured that way
 Ranked by domains served, not by opinion. This tenant exists to run **budget-to-report**:
 public-sector finance, not manufacturing or sales.
-- **B2R** — 6 domains: CO, Cost_Recovery_CRP, FI, PBC, PS, PSM · avg coverage 61%
+- **B2R** — 7 domains: CO, Closing_Activities, Cost_Recovery_CRP, FI, PBC, PS, PSM · avg coverage 61%
+- **T2R** — 5 domains: Closing_Activities, FI, Payment_BCM, TRM, Treasury · avg coverage 69%
 - **P2P** — 5 domains: FI, PM, Payment_BCM, Procurement, Treasury · avg coverage 65%
 - **H2R** — 5 domains: HCM, HR-Workflows, PBC, PY-Finance, Travel · avg coverage 56%
-- **T2R** — 4 domains: FI, Payment_BCM, TRM, Treasury · avg coverage 72%
-- **P2D** — 1 domains: BusinessPartner · avg coverage 40%
+- **P2D** — 2 domains: BusinessPartner, Master_Data_Governance · avg coverage 48%
 - **A2R** — 1 domains: FI_AA · none measured
 - **O2C** — 1 domains: SD · none measured
 - **Cross-cutting by construction** (serve NO single process because they touch all): Integration, Support, Transport_Intelligence
@@ -77,7 +77,7 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
   layer, not at the role layer.
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
-- Claims touching authorization: 18 · drill: `graph_queries.py capability E_AUTH`
+- Claims touching authorization: 19 · drill: `graph_queries.py capability E_AUTH`
 - **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
@@ -113,9 +113,10 @@ Not a self-assessment: each dimension is derived from what is on disk.
 _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
-## AGENTES - lo que sabemos HACER (6 disponibles)
+## AGENTES - lo que sabemos HACER (7 disponibles)
 - **`bank-process-discovery`** - model: sonnet ---
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
+- **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
 - **`master-data-sync`** - Alinea MASTER DATA de P01 (fuente, read-only) hacia D01 / V01: cuentas GL, centros de coste, fondos, centros gestores, proyectos/WBS. Mide primer
 - **`process-guardian`** - model: sonnet ---
@@ -134,7 +135,7 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
 - `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
-## WHAT WE KNOW DEEPLY - 45 companions; the 10 densest, and what each covers
+## WHAT WE KNOW DEEPLY - 46 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
 
 - `bank_statement_ebs_companion.html` - Bank Statement & Reconciliation - basis, basu, bseg, bsik, business area, cash, compliance, connectivity, derivation
@@ -153,7 +154,7 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1908 objects · 225 rules · 552 claims · 16 incidents · 9 closed researches)
+## Brain at a glance (1955 objects · 228 rules · 564 claims · 16 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -188,7 +189,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 225 total)
+## Rules to load first (behavioral DNA — 228 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
