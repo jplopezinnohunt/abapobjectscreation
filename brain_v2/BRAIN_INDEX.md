@@ -77,7 +77,7 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
   layer, not at the role layer.
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
-- Claims touching authorization: 14 · drill: `graph_queries.py capability E_AUTH`
+- Claims touching authorization: 18 · drill: `graph_queries.py capability E_AUTH`
 - **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
@@ -89,7 +89,7 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
-## OPEN WORK - incidents awaiting action (10 live, deadline first)
+## OPEN WORK - incidents awaiting action (11 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
   - drill: `python brain_v2/graph_queries.py incident INC-EGYPT-PPC`
@@ -110,8 +110,18 @@ Not a self-assessment: each dimension is derived from what is on disk.
 - `INC-180995` - ROOT_CAUSE_CONFIRMED - Ticket 180995 — two sibling transports from one ticket reached P01 101 days apart (MZ payroll cu
   - drill: `python brain_v2/graph_queries.py incident INC-180995`
 
-_2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)
+_3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
+
+## AGENTES - lo que sabemos HACER (6 disponibles)
+- **`bank-process-discovery`** - model: sonnet ---
+- **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
+- **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
+- **`master-data-sync`** - Alinea MASTER DATA de P01 (fuente, read-only) hacia D01 / V01: cuentas GL, centros de coste, fondos, centros gestores, proyectos/WBS. Mide primer
+- **`process-guardian`** - model: sonnet ---
+- **`variant-intelligence`** - Lee el CONTENIDO REAL de las variantes de ejecucion de programas ABAP y lo convierte en conocimiento de proceso. El programa dice lo que se PUEDE
+
+**Modelo de ejecutores de alineamiento P01 -> D01/V01**: `knowledge/alignment_executors_model.md` - la escalera de canales (API estandar / BC-Set / escritura directa bajo excepcion), los medidores, los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista cerrada: `.agents/skills/sap_master_data_sync/SKILL.md`.
 
 ## BANCA - el explorador del modelo encontro 6 cosa(s) que pedir accion
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
@@ -143,7 +153,7 @@ _2 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1827 objects · 220 rules · 535 claims · 15 incidents · 9 closed researches)
+## Brain at a glance (1908 objects · 225 rules · 552 claims · 16 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -178,7 +188,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 220 total)
+## Rules to load first (behavioral DNA — 225 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

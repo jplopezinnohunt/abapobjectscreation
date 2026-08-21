@@ -354,6 +354,44 @@ def _bank_findings():
     return NL.join(out) + NL
 
 
+def _agents_block():
+    """Los AGENTES son la superficie de CAPACIDAD: lo que sabemos HACER, no solo lo que sabemos.
+    Se derivan de .claude/agents/*.md, asi que un agente nuevo aparece solo, sin tocar esto.
+
+    Nace de s102: se construyeron tres capacidades de alineamiento (GL, variantes, FSV) y el
+    INDICE -- que es uno de los dos puntos de entrada de una sesion nueva -- no las mencionaba.
+    Regla feedback_knowledge_must_be_reachable_from_the_entry_points."""
+    import re as _re
+    d = HERE.parent / ".claude" / "agents"
+    if not d.exists():
+        return "## AGENTES - directorio .claude/agents no encontrado" + NL
+    out = []
+    for f in sorted(d.glob("*.md")):
+        txt = f.read_text(encoding="utf-8", errors="replace")[:1500]
+        m = _re.search(r"^name:[ \t]*(.+)$", txt, _re.M)
+        name = m.group(1).strip() if m else f.stem
+        desc = ""
+        lines = txt.splitlines()
+        for i, ln in enumerate(lines):
+            if ln.startswith("description:"):
+                for nxt in lines[i + 1:i + 4]:
+                    t = nxt.strip()
+                    if not t or t.endswith(":"):
+                        break
+                    desc += " " + t
+                break
+        out.append("- **`%s`** - %s" % (name, " ".join(desc.split())[:145]))
+    tail = ""
+    if (HERE.parent / "knowledge" / "alignment_executors_model.md").exists():
+        tail = (NL + "**Modelo de ejecutores de alineamiento P01 -> D01/V01**: "
+                "`knowledge/alignment_executors_model.md` - la escalera de canales "
+                "(API estandar / BC-Set / escritura directa bajo excepcion), los medidores, "
+                "los actuadores por objeto y el metodo comun. Excepciones autorizadas, lista "
+                "cerrada: `.agents/skills/sap_master_data_sync/SKILL.md`." + NL)
+    return ("## AGENTES - lo que sabemos HACER (%d disponibles)" % len(out) + NL
+            + NL.join(out) + NL + tail)
+
+
 def run():
     s = json.load(open(STATE, encoding="utf-8"))
     cm = s.get("capability_model", {})
@@ -396,6 +434,7 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_maturity_block()}
 {_open_work_block()}
 
+{_agents_block()}
 {_bank_findings()}
 {_knowledge_block()}
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
