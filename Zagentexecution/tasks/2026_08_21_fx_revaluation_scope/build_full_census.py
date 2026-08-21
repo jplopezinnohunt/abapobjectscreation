@@ -268,6 +268,13 @@ def main():
         for v in vs:
             mine = [x for x in inv if v in member[x]]
             modo = " + ".join(sorted({m for x in mine for m in how[x]})) or "-"
+            # Un rango con exclusiones individuales sigue siendo una REGLA, no un inventario:
+            # los recortes son higiene (cuentas cerradas que caen dentro del bloque) y se
+            # declaran uno a uno. Medido en UNES_OI_G/L: 3 rangos + 3 exclusiones, y las tres
+            # excluidas son cuentas CLOSED, bloqueadas, sin saldo y sin divisa.
+            n_carve = len([x for x in act_p if v in excl[x]])
+            if n_carve and "RANGE" in modo:
+                modo += " + %d carve-out" % n_carve + ("s" if n_carve > 1 else "")
             encajan = [x for x in out
                        if (mech[v]["oi"] if skb1[x].get("XOPVW") == "X" else mech[v]["bal"])]
             filas.append((v, modo, p, qt.get(p, ""), len(mine), len(encajan),
