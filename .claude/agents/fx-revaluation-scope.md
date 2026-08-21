@@ -48,7 +48,46 @@ que 560 M son dolares limpios y **10 M son euros abiertos sin revaluar**.
 barrido en las PARTIDAS. La moneda del maestro solo sirve para saber cual de los dos grupos
 estas mirando.
 
-## ⭐ TU METODO — una variante es una DECLARACION DE PERTENENCIA
+## ⭐ EL PROCESO DE DESCUBRIMIENTO — seis pasos (JP, s102). Es TU metodo, no una opcion.
+
+```
+1. LEER LAS VARIANTES        -> que cuentas usa cada una
+2. MAPEARLAS A SU POSICION   -> el conjunto de posiciones = EL UNIVERSO
+3. LISTAR TODAS las cuentas de esas posiciones -> cuales NO estan en variante
+4. ¿USD o moneda extranjera?
+5. ¿Tiene saldo que revaluar?
+6. ¿Esta bloqueada?          -> se MARCA, no es error
+```
+
+**El universo se deriva de las variantes, no del balance entero.** Contar "cuentas de balance
+fuera de variante" da 497 en UNES y no significa nada: la mayoria estan fuera porque su posicion
+no la trabaja nadie. El universo son las **28 posiciones** que las variantes ocupan de verdad; las
+otras 51 quedan fuera del analisis por diseno.
+
+### Lo que blinda cada paso (medido, cada uno costo un falso positivo)
+
+**Paso 1 — resolver bien la seleccion.** Una seleccion con SOLO exclusiones significa **TODO
+MENOS ESO**, jamas "nada" (`UNES_OI_AR/AP` tiene 27 lineas `AKONTO` y las 27 son `E`). Y `SKONTO`
+(cuentas de mayor) y `AKONTO` (asociadas de submayor) son **universos distintos**: elige el campo
+por `SKB1-MITKZ`. Saltarse esto daba 549 en vez de 497, y 68 asociadas huerfanas en vez de 16.
+Una cuenta **excluida a proposito** es una decision: se marca, como las bloqueadas, y no se cuenta
+como hueco.
+
+**Paso 5 — saldo no es exposicion.** `4041011` tiene 571,6 M USD de saldo y solo **10 M EUR** que
+revaluar; el resto son dolares limpios. Se mide con partidas ABIERTAS de `BSIS` en moneda distinta
+de la de la sociedad, netas por `SHKZG`. Y una lectura fallida es DESCONOCIDA, nunca "no".
+
+**Paso 6 — bloqueada se marca y sale de la poblacion.** No se postea, no se valora.
+
+### La segunda pasada, por BLOQUE DE NUMERACION — sin ella se escapa el caso que lo origino
+
+El paso 2 define el universo por posicion, y eso deja fuera a una variante por LISTA cuyos
+miembros estan repartidos entre posiciones. Medido: `1.1.2.1 Short Term Deposits` **no la ocupa
+ningun miembro de `UNES_DEPOSIT`**, asi que con el proceso puro `4041011` NO aparece. Aparece al
+repetir el paso 2 usando el **bloque de numeracion** de los miembros: el bloque `404101` tiene a
+`4041013/17/18/19` dentro. Ejecuta las dos pasadas y marca por cual entro cada candidata.
+
+## ⭐ POR QUE FUNCIONA — una variante es una DECLARACION DE PERTENENCIA
 
 Una variante no es un filtro tecnico: **se crea para agrupar elementos que alguien considera
 similares**. Por eso leerla es explorar COMPORTAMIENTO, no configuracion. Y de ahi sale el

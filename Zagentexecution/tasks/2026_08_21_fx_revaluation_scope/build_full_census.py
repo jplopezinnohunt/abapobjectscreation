@@ -100,7 +100,15 @@ def main():
         def field(x):
             return "AKONTO" if (skb1[x].get("MITKZ") or "") else "SKONTO"
 
+        # COMO entra cada cuenta, no solo SI entra. Es la columna que explica el comportamiento:
+        #   RANGE      -> la coge un intervalo. Se mantiene SOLA: una cuenta nueva dentro del
+        #                 rango queda cubierta sin que nadie haga nada.
+        #   INDIVIDUAL -> esta puesta a mano, una a una. Cada alta exige una accion humana, y
+        #                 por eso es donde se acumulan los huecos.
+        #   ALL-BUT    -> el campo solo tiene exclusiones: cubre TODO menos lo excluido. Tambien
+        #                 se mantiene solo, pero al reves.
         member = collections.defaultdict(list)
+        how = collections.defaultdict(set)
         excl = collections.defaultdict(list)
         for v in variants:
             for f in ("SKONTO", "AKONTO"):
@@ -109,13 +117,19 @@ def main():
                 ex = {x for x in pool
                       if x in s["exc"] or any(lo <= x <= hi for lo, hi in s["rex"])}
                 if not s["inc"] and not s["rin"] and (s["exc"] or s["rex"]):
-                    keep = set(pool) - ex
+                    for x in set(pool) - ex:
+                        member[x].append(v)
+                        how[x].add("ALL-BUT")
                 else:
-                    keep = {x for x in pool
-                            if (x in s["inc"] or any(lo <= x <= hi for lo, hi in s["rin"]))
-                            and x not in ex}
-                for x in keep:
-                    member[x].append(v)
+                    for x in pool:
+                        if x in ex:
+                            continue
+                        if x in s["inc"]:
+                            member[x].append(v)
+                            how[x].add("INDIVIDUAL")
+                        elif any(lo <= x <= hi for lo, hi in s["rin"]):
+                            member[x].append(v)
+                            how[x].add("RANGE")
                 for x in ex:
                     excl[x].append(v)
 
@@ -149,8 +163,9 @@ def main():
     ws.title = "Full census"
     # La VARIANTE va primera y ordena: es el eje por el que se decide y se actua.
     head = ["F.05 variant", "FS10 position", "Position text", "G/L account", "Description",
-            "Account currency", "Currency is fixed?", "Managed as", "Blocked?",
-            "Balance %s (%s)" % (a.year, local), "Anything to revalue?", "Open FX",
+            "Selected by", "Account currency", "Currency is fixed?", "Managed as", "Blocked?",
+            "Balance %s (%s)" % (a.year, local), "Anything to revalue?",
+            "FX currency", "Balance in FX currency", "All open FX",
             "FX in %s" % local, "OB09 (T030H)", "Verdict"]
     ws.append(head)
     for x in sorted(todas, key=lambda z: (", ".join(sorted(member[z])) or "zzz NONE",
@@ -172,11 +187,20 @@ def main():
             verdict = "Excluded on purpose (%s)" % ", ".join(sorted(excl[x]))
         else:
             verdict = "Out - nothing to revalue"
+        # La exposicion EN SU PROPIA MONEDA: la moneda dominante y su importe. El contravalor
+        # va aparte, porque son dos preguntas distintas y mezclarlas confunde.
+        cur, amt = "", None
+        if d:
+            cur = max(d, key=lambda k: abs(d[k]))
+            amt = round(d[cur], 2)
+            if len(d) > 1:
+                cur += " (+%d)" % (len(d) - 1)
         ws.append([vs or "NONE", pos(x), qt.get(pos(x), ""), x, txt.get(x, ""),
+                   " + ".join(sorted(how[x])) or ("EXCLUDED" if excl[x] else "not selected"),
                    r.get("WAERS") or "", "YES" if fixed else "no",
                    "Open items" if r.get("XOPVW") == "X" else "Balance",
                    "YES" if blocked else "", round(bal.get(x, 0.0), 2),
-                   "YES" if d else "no",
+                   "YES" if d else "no", cur, amt,
                    " | ".join("%s %s" % (k, "{:,.0f}".format(v)) for k, v in sorted(d.items())),
                    round(eq, 2) if eq else None,
                    "YES" if x in t030h else "", verdict])
@@ -186,7 +210,7 @@ def main():
         for cn in range(1, len(head) + 1):
             if fill:
                 ws.cell(row=i, column=cn).fill = fill
-            if cn in (10, 13):
+            if cn in (11, 14, 16):
                 ws.cell(row=i, column=cn).number_format = "#,##0"
     for cell in ws[1]:
         cell.fill = HDR
@@ -194,13 +218,14 @@ def main():
         cell.alignment = Alignment(vertical="center", wrap_text=True)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = "A1:%s%d" % (get_column_letter(len(head)), ws.max_row)
-    for j, w in enumerate([17, 13, 26, 13, 40, 12, 12, 11, 9, 17, 12, 34, 15, 10, 34], 1):
+    for j, w in enumerate([17, 13, 26, 13, 40, 20, 12, 12, 11, 9, 17, 12,
+                           13, 20, 34, 15, 10, 34], 1):
         ws.column_dimensions[get_column_letter(j)].width = w
 
     ws2 = wb.create_sheet("By position")
-    ws2.append(["Variants working this position", "FS10 position", "Position text", "Accounts",
-                "Revalued", "Not revalued", "Blocked", "With FX open",
-                "GAPS (FX + no variant)", "Balance (%s)" % local])
+    ws2.append(["Variants working this position", "FS10 position", "Position text",
+                "Selected by", "Accounts", "Revalued", "Not revalued", "Blocked",
+                "With FX open", "GAPS (FX + no variant)", "Balance (%s)" % local])
     filas2 = []
     for p in sorted({pos(x) for x in todas}):
         g = [x for x in todas if pos(x) == p]
@@ -213,21 +238,23 @@ def main():
                        round(sum(bal.get(x, 0.0) for x in g), 2), gaps, inv, act))
     for row in sorted(filas2):
         gaps, inv, act = row[10], row[11], row[12]
-        ws2.append([row[0].replace("zzz ", "")] + list(row[1:10]))
+        modos = sorted({m for x in inv for m in how[x]})
+        ws2.append([row[0].replace("zzz ", "")] + list(row[1:3])
+                   + [" + ".join(modos) or "-"] + list(row[3:10]))
         i = ws2.max_row
-        for cn in range(1, 11):
+        for cn in range(1, 12):
             if gaps:
                 ws2.cell(row=i, column=cn).fill = RED
             elif act and not inv:
                 ws2.cell(row=i, column=cn).fill = AMB
-            if cn == 10:
+            if cn == 11:
                 ws2.cell(row=i, column=cn).number_format = "#,##0"
     for cell in ws2[1]:
         cell.fill = HDR
         cell.font = Font(color="FFFFFF", bold=True, size=10)
         cell.alignment = Alignment(vertical="center", wrap_text=True)
     ws2.freeze_panes = "A2"
-    for j, w in enumerate([34, 13, 30, 10, 10, 13, 9, 12, 14, 18], 1):
+    for j, w in enumerate([34, 13, 30, 22, 10, 10, 13, 9, 12, 14, 18], 1):
         ws2.column_dimensions[get_column_letter(j)].width = w
 
     wb.save(a.out)
