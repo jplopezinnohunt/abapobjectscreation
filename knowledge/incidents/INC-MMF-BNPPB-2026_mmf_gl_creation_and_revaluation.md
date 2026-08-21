@@ -263,3 +263,14 @@ Segundo avistamiento del patrón ⇒ toca gate (regla #172).
   los datos, que no es lo mismo.
 - **No verificado**: si MP_BOUA usó transporte para el alta en P01. Y `glt0_p01` llega hasta 2025:
   el estado de saldos 2026 de 4041011/4041012 no está medido.
+
+
+## Instrumento nacido de este incidente (s102, 2026-08-21)
+
+`Zagentexecution/quality_checks/fsv_coverage_check.py` — responde la pregunta que aqui se contesto a mano: **¿la cuenta nueva cae en alguna posicion del balance?** Deriva de las variantes de `RFBILA00` que version se EJECUTA para la sociedad (`BILAVERS` + `SD_BUKRS`), descarta las que no tienen intervalos para el plan, y con `--ref <cuenta>` distingue una version SELECTIVA de un hueco real.
+
+```bash
+python Zagentexecution/quality_checks/fsv_coverage_check.py 4041018 4041019 --ref 4041016
+```
+
+Resultado 2026-08-21: **FS10, 0 de 2 sin posicion** — ambas en `1.1.1.1`, cubiertas por el intervalo preexistente `4041015-4041019`. El proceso completo, en [`gl_account_creation_process.md`](../domains/Master_Data_Governance/gl_account_creation_process.md).

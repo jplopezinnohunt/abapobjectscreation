@@ -202,6 +202,65 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H105 — REVALUACION FX (F.05 / SAPF100): el dominio NO existe, la materia SI (s102, medido).**
+Mismo patron que master data: hay conocimiento de sobra y ningun registro que lo reuna.
+**Medido 2026-08-21:** 36 claims, 5 incidentes y 6 documentos hablan de revaluacion FX, repartidos
+entre **10 etiquetas de dominio**. El dueno natural, `Closing_Activities`, tiene el registro
+**VACIO** — 0 docs, 0 companions, 0 objetos, 0 incidentes, sin `coverage_pct` — mientras 4 docs de
+revaluacion viven fisicamente en `knowledge/domains/Closing_Activities/`
+(`fx_revaluation_process.md`, `fx_revaluation_closing_calendar_2025.md`, `README.md`,
+`sap_variant_forensic_methodology.md`).
+
+**Defecto de datos a arreglar primero (barato y silencioso):** conviven **dos grafias** —
+`Closing_Activities` (10 claims) y `Closing Activities` con espacio (6 claims, entre ellos el
+incidente `INC-FXREVAL-OB09`). Cualquier consulta por una pierde la otra sin avisar. Normalizar en
+el store y anadir un gate al validador de ontologia para que no vuelva a pasar.
+
+*Lo que ya esta medido y no hay que re-derivar:* los **2 tipos de valoracion** (A reversible /
+B a balance) y la mecanica `T030H`/OB09; que **OB09 y la variante de F.05 son un solo gate** y
+cada mitad falla en silencio por separado; que `4041011` tiene **10 M EUR netos abiertos, OB09
+puesto y esta en ninguna variante**; y `INC-FXREVAL-OB09` (la sub-cuenta bloqueada 1109574 usada
+como LKORR de 1010574/1110574).
+
+*Alcance propuesto:* poblar el registro de `Closing_Activities` con sus objetos (`T030H`, `TCURR`,
+`SAPF100`, `VARID`/variantes de F.05, `BSIS`/`BSAS`), reclamar los 36 claims dispersos, colgar los
+5 incidentes, y declarar la matriz **que cuenta se valora, con que metodo, por que variante** —
+que hoy solo se puede reconstruir a mano. Instrumento existente:
+`Zagentexecution/quality_checks/ob09_vs_variant_check.py`.
+
+**H104 — MASTER DATA GOVERNANCE: explorar y expandir el dominio (s102, JP).** El dominio existe
+y esta cableado (`brain_v2/master_data_registry.json`, companion generado, alias por nombre de
+objeto en `load_domain.py`), pero **solo 1 de 10 tipos esta mecanizado punta a punta**. Queda
+abierto a proposito: lo que falta no es codigo, es CONOCIMIENTO DE PROCESO que hoy no tenemos.
+
+*Lo que YA esta medido y no hay que re-derivar:* el canal RFC de cada tipo (`TFDIR` de D01,
+`FMODE='R'`, 2026-08-21); que las clases de coste SI tienen canal; que los `BAPI_BANKDETAIL*`
+son de interlocutor y NO del banco casa; que los centros de beneficio no se usan; y que el alta
+nace en P01 y solo se notifica si hay revaluacion (2 cuentas de retraso en D01, **33 en V01**).
+
+*Lo que falta, por orden de valor:*
+1. **La cadena de tareas POSTERIORES de cada tipo.** Solo esta medida la de la cuenta de mayor
+   (7 pasos). Para un centro de coste, un fondo o un PEP no sabemos que dispara un alta — y ese
+   es el valor del dominio, no el alta en si.
+2. **La autoridad de registro de cada tipo.** Para la cuenta de mayor es el formulario `AM 3-11`
+   validado por FRA. Para los otros 9: DESCONOCIDA. Sin autoridad no hay Track B posible.
+3. **Quien es el dueno de las tareas posteriores.** Hoy llegan por correo a quien las reciba.
+   Es la causa raiz del dominio entero, y es una pregunta de organizacion, no de SAP.
+4. **Ejecutores para los 7 tipos con canal medido y sin ejecutor** — centro de coste primero
+   (`BAPI_COSTCENTER_CHECKMULTIPLE` permite validar sin escribir, asi que el dry-run es real).
+5. **El paso 0 programado.** Hoy `gl_alignment_check.py` existe pero nadie lo dispara: mientras
+   sea bajo demanda, el proceso sigue arrancando con un correo. Candidato a tarea de Windows
+   junto a las 3 ya registradas.
+6. **Extender el barrido a los otros tipos**: cuanta deriva P01 vs D01/V01 hay en centros de
+   coste, fondos y PEP. Nunca se ha medido; el numero de las cuentas (33) sugiere que no sera 0.
+
+*Instrumentos que ya existen:* `gl_alignment_check.py` · `ob09_vs_variant_check.py` ·
+`fsv_coverage_check.py` · `config_transport_prerelease_check.py` · agente `master-data-sync`.
+*Doc:* `knowledge/domains/Master_Data_Governance/gl_account_creation_process.md`.
+*Reglas:* `feedback_a_master_data_domain_is_a_registry_of_object_types` ·
+`feedback_a_config_object_applies_to_a_population_prove_it_before_measuring`.
+
+
 **H91 — SECURITY: open it as a DOMAIN (s097, JP).** It has never been one, and that is exactly
 why searching for it returns nothing: today it exists only as capability column `E_AUTH`, empty
 in 16 of 21 domains, and as the single MISSING component of the installation profile — nothing
