@@ -9,7 +9,8 @@ si esta bloqueada.
 Nace de la sesion 102: las tablas anteriores filtraban por "tiene divisa hoy" y eso, leido como
 censo, engana — de la posicion 1.1.2.1 solo aparecia una cuenta de ocho.
 
-Columnas, en el orden pedido: posicion FS10 -> variante -> cuenta -> el resto.
+Columnas, en el orden pedido: VARIANTE -> posicion FS10 -> cuenta -> el resto. Ordena por
+variante y dentro de cada una por posicion: es el eje por el que se decide y se actua.
 
 SOLO LECTURA. La exposicion se pregunta cuenta a cuenta a BSIS (una tabla de 3,3 M de filas no
 se deja leer entera), asi que la corrida tarda unos minutos.
@@ -146,12 +147,14 @@ def main():
     wb = Workbook()
     ws = wb.active
     ws.title = "Full census"
-    head = ["FS10 position", "Position text", "F.05 variant", "G/L account", "Description",
+    # La VARIANTE va primera y ordena: es el eje por el que se decide y se actua.
+    head = ["F.05 variant", "FS10 position", "Position text", "G/L account", "Description",
             "Account currency", "Currency is fixed?", "Managed as", "Blocked?",
             "Balance %s (%s)" % (a.year, local), "Anything to revalue?", "Open FX",
             "FX in %s" % local, "OB09 (T030H)", "Verdict"]
     ws.append(head)
-    for x in sorted(todas, key=lambda z: (pos(z), ", ".join(member[z]), z)):
+    for x in sorted(todas, key=lambda z: (", ".join(sorted(member[z])) or "zzz NONE",
+                                          pos(z), z)):
         r = skb1[x]
         blocked = r.get("XSPEB") == "X"
         vs = ", ".join(sorted(member[x]))
@@ -169,7 +172,7 @@ def main():
             verdict = "Excluded on purpose (%s)" % ", ".join(sorted(excl[x]))
         else:
             verdict = "Out - nothing to revalue"
-        ws.append([pos(x), qt.get(pos(x), ""), vs or "NONE", x, txt.get(x, ""),
+        ws.append([vs or "NONE", pos(x), qt.get(pos(x), ""), x, txt.get(x, ""),
                    r.get("WAERS") or "", "YES" if fixed else "no",
                    "Open items" if r.get("XOPVW") == "X" else "Balance",
                    "YES" if blocked else "", round(bal.get(x, 0.0), 2),
@@ -191,36 +194,40 @@ def main():
         cell.alignment = Alignment(vertical="center", wrap_text=True)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = "A1:%s%d" % (get_column_letter(len(head)), ws.max_row)
-    for j, w in enumerate([13, 26, 17, 13, 40, 12, 12, 11, 9, 17, 12, 34, 15, 10, 34], 1):
+    for j, w in enumerate([17, 13, 26, 13, 40, 12, 12, 11, 9, 17, 12, 34, 15, 10, 34], 1):
         ws.column_dimensions[get_column_letter(j)].width = w
 
     ws2 = wb.create_sheet("By position")
-    ws2.append(["FS10 position", "Position text", "Accounts", "Revalued", "Not revalued",
-                "Blocked", "With FX open", "GAPS (FX + no variant)", "Balance (%s)" % local,
-                "Variants working this position"])
+    ws2.append(["Variants working this position", "FS10 position", "Position text", "Accounts",
+                "Revalued", "Not revalued", "Blocked", "With FX open",
+                "GAPS (FX + no variant)", "Balance (%s)" % local])
+    filas2 = []
     for p in sorted({pos(x) for x in todas}):
         g = [x for x in todas if pos(x) == p]
         act = [x for x in g if skb1[x].get("XSPEB") != "X"]
         inv = [x for x in act if member[x]]
         gaps = [x for x in act if x in fc and not member[x]]
-        ws2.append([p, qt.get(p, ""), len(g), len(inv), len(act) - len(inv),
-                    len(g) - len(act), len([x for x in act if x in fc]), len(gaps),
-                    round(sum(bal.get(x, 0.0) for x in g), 2),
-                    ", ".join(sorted({v for x in inv for v in member[x]})) or "NONE"])
+        filas2.append((", ".join(sorted({v for x in inv for v in member[x]})) or "zzz NONE",
+                       p, qt.get(p, ""), len(g), len(inv), len(act) - len(inv),
+                       len(g) - len(act), len([x for x in act if x in fc]), len(gaps),
+                       round(sum(bal.get(x, 0.0) for x in g), 2), gaps, inv, act))
+    for row in sorted(filas2):
+        gaps, inv, act = row[10], row[11], row[12]
+        ws2.append([row[0].replace("zzz ", "")] + list(row[1:10]))
         i = ws2.max_row
         for cn in range(1, 11):
             if gaps:
                 ws2.cell(row=i, column=cn).fill = RED
             elif act and not inv:
                 ws2.cell(row=i, column=cn).fill = AMB
-            if cn == 9:
+            if cn == 10:
                 ws2.cell(row=i, column=cn).number_format = "#,##0"
     for cell in ws2[1]:
         cell.fill = HDR
         cell.font = Font(color="FFFFFF", bold=True, size=10)
         cell.alignment = Alignment(vertical="center", wrap_text=True)
     ws2.freeze_panes = "A2"
-    for j, w in enumerate([13, 30, 10, 10, 13, 9, 12, 14, 18, 34], 1):
+    for j, w in enumerate([34, 13, 30, 10, 10, 13, 9, 12, 14, 18], 1):
         ws2.column_dimensions[get_column_letter(j)].width = w
 
     wb.save(a.out)
