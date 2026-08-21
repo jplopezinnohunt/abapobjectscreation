@@ -196,13 +196,30 @@ def main():
                           fh, ensure_ascii=False, indent=1)
             print("  PRE -> %s" % os.path.basename(snap))
 
-            # --- BORRADO en orden inverso al referencial
-            for table, _, _, _ in reversed(TABLES):
+            # --- BORRADO en orden inverso al referencial.
+            # El DELETE por RFC_ABAP_INSTALL_AND_RUN NO es fiable: medido 2026-08-21, a veces no
+            # borra nada y no lo dice. Si no se comprueba, los INSERT chocan por clave duplicada y
+            # el "reemplazo atomico" se convierte en un no-op silencioso. Se AFIRMA que quedo a 0.
+            fallo_delete = False
+            for table, _, cols, _ in reversed(TABLES):
                 res = conn.call("RFC_ABAP_INSTALL_AND_RUN",
                                 PROGRAM=[{"LINE": l[:72]} for l in abap_delete(table)])
-                print("     DEL %-12s %s" % (table, " ".join(w.get("ZEILE", "").strip()
-                                                             for w in (res.get("WRITES") or []))))
+                salida = " ".join(w.get("ZEILE", "").strip()
+                                  for w in (res.get("WRITES") or []))
+                queda = read(conn, table, cols, VERSIONS)
+                n = "?" if queda is None else len(queda)
+                print("     DEL %-12s %-18s -> quedan %s" % (table, salida, n))
+                if queda is None or len(queda) > 0:
+                    print("        !!! EL BORRADO NO VACIO LA TABLA. Abortando antes de insertar:")
+                    print("            insertar ahora chocaria por clave y dejaria el contenido viejo.")
+                    fallo_delete = True
+                    break
                 time.sleep(0.5)
+            if fallo_delete:
+                print("  ABORTA: reemplazo no atomico. Estado intacto; PRE en %s"
+                      % os.path.basename(snap))
+                rc = 1
+                continue
 
             # --- INSERCION en orden referencial
             for table, keys, cols, meta in TABLES:
