@@ -66,6 +66,14 @@ def main():
         vtext = {r["VARIANT"]: r.get("VTEXT") for r in
                  rd(c, "VARIT", ["REPORT", "VARIANT", "VTEXT"], "REPORT = '%s'" % PROGRAM)}
         sel = {v: variant_selection(c, v) for v in variants}
+        # el mecanismo (saldo / partidas abiertas) vive en los parametros, no en la seleccion
+        sel_raw = {}
+        for v in variants:
+            try:
+                sel_raw[v] = (c.call("RS_VARIANT_CONTENTS_RFC", REPORT=PROGRAM, VARIANT=v,
+                                     VALUTAB=[]).get("VALUTAB") or [])
+            except Exception:
+                sel_raw[v] = []
         ska1 = {r["SAKNR"]: r for r in rd(c, "SKA1", ["SAKNR", "XBILK"],
                                           "KTOPL = '%s'" % a.ktopl)}
         skb1 = {r["SAKNR"]: r for r in rd(c, "SKB1", ["SAKNR", "XSPEB", "MITKZ", "WAERS",
@@ -222,41 +230,120 @@ def main():
                            13, 20, 34, 15, 10, 34], 1):
         ws.column_dimensions[get_column_letter(j)].width = w
 
-    ws2 = wb.create_sheet("By position")
-    ws2.append(["Variants working this position", "FS10 position", "Position text",
-                "Selected by", "Accounts", "Revalued", "Not revalued", "Blocked",
-                "With FX open", "GAPS (FX + no variant)", "Balance (%s)" % local])
-    filas2 = []
+    mech = {}
+    for v in variants:
+        dd = {x["SELNAME"]: (x.get("LOW") or "").strip() for x in (sel_raw.get(v) or [])}
+        mech[v] = {"bal": dd.get("X_SALBEW") == "X",
+                   "oi": any(dd.get(k) == "X" for k in ("X_GL", "X_AP", "X_AR"))}
+
+    # ---- hoja resumen: VARIANTE x POSICION. Una posicion puede salir en varias filas,
+    # una por variante, porque contiene cuentas con comportamientos distintos.
+    ws2 = wb.create_sheet("Summary")
+    # OJO con la columna de lo que falta: "Missing in the position" es un numero de la POSICION
+    # y se repite en cada fila de variante; repetirlo sin decirlo hace pensar que a cada variante
+    # le faltan esas. "Missing that FITS this variant" atribuye cada cuenta que falta a la
+    # variante cuyo MECANISMO le encaja (SKB1-XOPVW): en 1.1.1.1 las 19 que faltan son todas de
+    # partidas abiertas, asi que a UNES_UNBA le faltan CERO. Cuando dos variantes comparten
+    # mecanismo, la cuenta aparece en las dos: la ambiguedad es real y se muestra.
+    ws2.append(["F.05 variant", "Selected by", "FS10 position", "Position text",
+                "Accounts this variant covers here", "Missing that FITS this variant",
+                "Accounts in the position (active)", "Covered by all variants",
+                "Missing in the position", "Blocked", "With FX open",
+                "GAPS (FX + no variant)", "Balance (%s)" % local])
+    filas = []
     for p in sorted({pos(x) for x in todas}):
         g = [x for x in todas if pos(x) == p]
-        act = [x for x in g if skb1[x].get("XSPEB") != "X"]
-        inv = [x for x in act if member[x]]
-        gaps = [x for x in act if x in fc and not member[x]]
-        filas2.append((", ".join(sorted({v for x in inv for v in member[x]})) or "zzz NONE",
-                       p, qt.get(p, ""), len(g), len(inv), len(act) - len(inv),
-                       len(g) - len(act), len([x for x in act if x in fc]), len(gaps),
-                       round(sum(bal.get(x, 0.0) for x in g), 2), gaps, inv, act))
-    for row in sorted(filas2):
-        gaps, inv, act = row[10], row[11], row[12]
-        modos = sorted({m for x in inv for m in how[x]})
-        ws2.append([row[0].replace("zzz ", "")] + list(row[1:3])
-                   + [" + ".join(modos) or "-"] + list(row[3:10]))
+        act_p = [x for x in g if skb1[x].get("XSPEB") != "X"]
+        inv = [x for x in act_p if member[x]]
+        out = [x for x in act_p if not member[x]]
+        gaps = [x for x in out if x in fc]
+        vs = sorted({v for x in inv for v in member[x]})
+        base = [len(act_p), len(inv), len(out), len(g) - len(act_p),
+                len([x for x in act_p if x in fc]), len(gaps),
+                round(sum(bal.get(x, 0.0) for x in g), 2)]
+        if not vs:
+            filas.append(("zzz NO VARIANT", "-", p, qt.get(p, ""), 0, len(out),
+                          base, gaps, inv, act_p))
+            continue
+        for v in vs:
+            mine = [x for x in inv if v in member[x]]
+            modo = " + ".join(sorted({m for x in mine for m in how[x]})) or "-"
+            encajan = [x for x in out
+                       if (mech[v]["oi"] if skb1[x].get("XOPVW") == "X" else mech[v]["bal"])]
+            filas.append((v, modo, p, qt.get(p, ""), len(mine), len(encajan),
+                          base, gaps, inv, act_p))
+    for v, modo, p, ptxt, n_mine, n_fit, base, gaps, inv, act_p in sorted(filas):
+        ws2.append([v.replace("zzz ", ""), modo, p, ptxt, n_mine, n_fit] + base)
         i = ws2.max_row
-        for cn in range(1, 12):
+        for cn in range(1, 14):
             if gaps:
                 ws2.cell(row=i, column=cn).fill = RED
-            elif act and not inv:
+            elif act_p and not inv:
                 ws2.cell(row=i, column=cn).fill = AMB
-            if cn == 11:
+            elif not base[2]:
+                ws2.cell(row=i, column=cn).fill = GRN
+            if cn == 13:
                 ws2.cell(row=i, column=cn).number_format = "#,##0"
     for cell in ws2[1]:
         cell.fill = HDR
         cell.font = Font(color="FFFFFF", bold=True, size=10)
         cell.alignment = Alignment(vertical="center", wrap_text=True)
     ws2.freeze_panes = "A2"
-    for j, w in enumerate([34, 13, 30, 22, 10, 10, 13, 9, 12, 14, 18], 1):
+    ws2.auto_filter.ref = "A1:M%d" % ws2.max_row
+    for j, w in enumerate([17, 20, 13, 30, 15, 17, 15, 13, 12, 9, 11, 13, 18], 1):
         ws2.column_dimensions[get_column_letter(j)].width = w
 
+    # ---- hoja 3: que falta en cada posicion, y a que variante deberia ir
+    ws3 = wb.create_sheet("Missing by position")
+    ws3.append(["FS10 position", "Position text", "Variants working it", "Accounts",
+                "Revalued", "Missing", "G/L account", "Description", "Managed as",
+                "Account currency", "Blocked?", "Balance (%s)" % local,
+                "Anything to revalue?", "Open FX", "OB09", "TARGET variant"])
+    for p in sorted({pos(x) for x in todas}):
+        g = [x for x in todas if pos(x) == p and skb1[x].get("XSPEB") != "X"]
+        if not g:
+            continue
+        inv = [x for x in g if member[x]]
+        out = [x for x in g if not member[x]]
+        vs = sorted({v for x in inv for v in member[x]})
+        for x in sorted(out):
+            oi = skb1[x].get("XOPVW") == "X"
+            target = [v for v in vs if (mech[v]["oi"] if oi else mech[v]["bal"])]
+            if excl[x]:
+                tgt = "EXCLUDED on purpose (%s)" % ", ".join(sorted(excl[x]))
+            elif not vs:
+                tgt = "NONE - no variant works this position"
+            elif not target:
+                tgt = "NO MATCH - %s work it but mechanism does not fit" % ", ".join(vs)
+            else:
+                tgt = ", ".join(target)
+            d, eq = fc.get(x, ({}, 0.0))
+            ws3.append([p, qt.get(p, ""), ", ".join(vs) or "NONE", len(g), len(inv), len(out),
+                        x, txt.get(x, ""), "Open items" if oi else "Balance",
+                        skb1[x].get("WAERS") or "", "", round(bal.get(x, 0.0), 2),
+                        "YES" if d else "no",
+                        " | ".join("%s %s" % (k, "{:,.0f}".format(val))
+                                   for k, val in sorted(d.items())),
+                        "YES" if x in t030h else "", tgt])
+            i = ws3.max_row
+            fill = (RED if d else AMB if x in t030h else
+                    GRY if tgt.startswith("EXCLUDED") else None)
+            for cn in range(1, 17):
+                if fill:
+                    ws3.cell(row=i, column=cn).fill = fill
+                if cn == 12:
+                    ws3.cell(row=i, column=cn).number_format = "#,##0"
+    for cell in ws3[1]:
+        cell.fill = HDR
+        cell.font = Font(color="FFFFFF", bold=True, size=10)
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+    ws3.freeze_panes = "A2"
+    ws3.auto_filter.ref = "A1:P%d" % ws3.max_row
+    for j, w in enumerate([13, 28, 26, 9, 9, 8, 13, 40, 11, 10, 9, 17, 12, 30, 8, 34], 1):
+        ws3.column_dimensions[get_column_letter(j)].width = w
+
+    # Summary primero, luego el detalle, luego lo que falta.
+    wb.move_sheet("Summary", offset=-wb.sheetnames.index("Summary"))
     wb.save(a.out)
     gaps = [x for x in activas if x in fc and not member[x]]
     print("\nescrito: %s" % a.out)
