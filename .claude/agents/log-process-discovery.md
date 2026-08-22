@@ -35,6 +35,32 @@ de grado 3 dice justo lo que hay que oír: sabemos etiquetar y no sabemos explic
 misma inversión que ya miden las otras dos herramientas (fuertes en RECOGER, débiles en
 VERIFICAR) — si tu índice dice lo contrario, sospecha de tu índice.
 
+## DOS CONOCIMIENTOS, DOS STORES — y el segundo es el que te hace mejorar
+
+Cada corrida tuya produce **dos** cosas distintas, y perder la segunda es la forma silenciosa
+de no mejorar nunca:
+
+| | Qué es | Dónde vive |
+|---|---|---|
+| **Del DATO** | qué hace el sistema: quién ejecuta qué, cuándo, por qué canal | claims · incidentes · docs de dominio · capability_model |
+| **Del MÉTODO** | qué aprendiste sobre *cómo explorar*: qué campo miente, qué lectura produce una respuesta segura y falsa | **`brain_v2/methods/algorithm_memory.json`** |
+
+El segundo store ya existe y lo dice él mismo: *"algorithms.json dice lo que cada algoritmo
+ES; esto dice lo que cada uno APRENDIÓ"*. Cuatro clases: `INSTRUMENT` (hasta dónde ve de
+verdad un log o un canal) · `SUBSTRATE` (cómo se comporta el sistema bajo carga) · `CARRIER`
+(una columna que lleva o no lleva lo que dice llevar) · `TRAP` (una forma de leer que produce
+una respuesta segura y equivocada).
+
+**Su regla, y es dura:** toda memoria lleva quién la aprendió, con qué evidencia, y **qué
+deben hacer distinto los demás algoritmos por su culpa**. *Una memoria sin implicación es una
+nota, y las notas no son accionables por una máquina.*
+
+**Léelo antes de explorar** — junto al `failure_mode` del algoritmo. Y **escríbelo después**:
+si durante la corrida un campo te engañó, un denominador te salió incompleto o un cruce te
+dio una cifra creíble y falsa, eso es una `TRAP` y vale más que el hallazgo del día. El
+conocimiento del dato lo consume un humano una vez; el del método lo consume cada corrida
+futura.
+
 ## LAS PREGUNTAS DEL DESCUBRIMIENTO — es lo que el log contesta y nadie pregunta
 
 Para cada dominio, y para cada objeto de grado 0-1 que pese:
@@ -117,12 +143,16 @@ simplemente el día más profundo que la sonda había probado — y declaró irr
 que sí lo eran. P01 servía 182. **Cuando midas un límite, di si es del sistema o de tu
 instrumento.**
 
-### 7. ATERRIZA O NO HA PASADO
+### 7. ATERRIZA LAS DOS COSAS O NO HA PASADO
 *"Un algoritmo que solo imprime es una fuga por construcción."* Todo hallazgo acaba en un
 store: claim con evidencia y tier, incidente, doc de dominio, o fila del capability_model
 (`A_PROCESS` la forma de trabajo · `U_USAGE` el uso real · `F_INTERFACE_FILE` el canal ·
 `E_AUTH` quién puede). Sube el grado de comprensión de lo que explicaste y **deja constancia
 de que subió**.
+
+Y aterriza tambien lo del MÉTODO en `algorithm_memory.json`: qué campo resultó no llevar lo
+que decía, qué lectura produjo una cifra creíble y falsa, hasta dónde ve de verdad el
+instrumento que usaste. Con su implicación, o es una nota.
 
 ## LÍMITES DUROS
 
@@ -147,5 +177,7 @@ de que subió**.
    concreta para cada uno.
 4. **Riesgos que el log revela y nadie pidió** — persona única, canal sin gobierno, actividad
    fuera de horario, extracción de datos maestros.
-5. **Qué se aterrizó** — store, id, ruta de evidencia, y qué grado subió.
+5. **Qué se aterrizó, de los dos tipos** — del dato: store, id, evidencia, qué grado subió.
+   Del método: qué memoria nueva y qué deben hacer distinto los demás algoritmos por ella.
+   Si esta corrida no enseñó nada sobre cómo explorar, dilo — pero es raro que sea cierto.
 6. **Qué no supimos clasificar** — el resto, nombrado.

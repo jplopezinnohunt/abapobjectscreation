@@ -108,6 +108,15 @@ SUBSTRATE_RULES = [
                             r"ARFC_RUN_NOWAIT|TRINT_PROGRESS_INDICATOR|AMDP_CLEANUP|"
                             r"FM_ENQ_CTX_CLEANUP_TASK|ICM_GET_INFO|PARTNER_LOGICAL_SYSTEM_GET|"
                             r"/SDF/|SAPMSSY|SAPLSYST|RSRZLLG0|RSBTCRTE|SAPMSYST)"),
+    # s103: fontaneria que la 4a superficie (llamadas RFC) puso a la vista. Sigue siendo
+    # LO ULTIMO que se empareja: cualquier regla de negocio de arriba gana. SALC_* es
+    # monitorizacion CCMS/SolMan, QDEST_* el planificador de destinos qRFC, SX_*/ZSX_*
+    # SAPconnect, y el bloque RFC_* introspeccion de interfaces, no trabajo.
+    ("Technical_Substrate", r"^(SALC_|QDEST_|RSBATCH_|START_TCOLL|_SLD_|SX_|ZSX_|"
+                            r"FUNCTION_EXISTS|RFC_GET_|RFC_FUNCTION_SEARCH|RFC_METADATA|"
+                            r"ABAP4_CALL_TRANSACTION|/SSF/|SAPLSMTR_NAVIGATION|SAPLSO3|"
+                            r"SAPLS_IMG_TOOL|SAPLSHI|START_REPORT$)"),
+    ("CTS_Transport",       r"^(TRINT_TP|TMS_|CTS_)"),
 ]
 
 
@@ -181,7 +190,30 @@ JOBLABEL_MAP = {"FM": "PSM_FM", "Payment": "Payment_BCM", "FI": "FI", "Procureme
                 "Basis/System": "Basis_Security", "SAPConnect/Email": "Basis_Security", "Integration": "Integration"}
 # name-prefix + text fallbacks (reuse from prior version, condensed)
 NAME_RULES = [
-    ("PSM_FM", r"^(FM[0-9A-Z]|RFFM|YFM|YPS|ZFM|ZICTP_REP|ZICTP_COCKPIT)"),
+    # --- s103: familias que la frontera RFC dejo al descubierto al cablear la 4a superficie.
+    # Van ANTES de las redes anchas de abajo, y con nombres EXPLICITOS a proposito: un patron
+    # ingenioso captura de mas. ^AB[AZ] parece razonable para activos fijos y se traga
+    # ABAP4_CALL_TRANSACTION, que es fontaneria RFC.
+    # Hoja de entrada de servicio: 775 y 719 actores distintos, o sea gente, no un satelite.
+    ("Procurement_P2P", r"^(BAPI_ENTRYSHEET|ML8[0-9]|SAPLMIGO|SAPLMR1M|SAPLMB[0-9A-Z]|MM0[123])"),
+    ("FI_AA",           r"^(ABAVN|ABZON|ABAON|ABUMN|ABZU|AB0[13]|AS0[123]|ANK0|AJRW|AJAB)$"),
+    ("Travel",          r"^ACC_TRAVEL"),
+    ("Treasury_EBS",    r"^(YTBAE|SAPLNEW_FEBA|SAPLFEBA)"),
+    ("Payment_BCM",     r"^(ZFI_SWIFT|YFI_SWIFT)"),
+    ("PS",              r"^SAPLCNPB"),
+    ("RE_FX",           r"^(RECN|REEX|RESCN|REBD)$"),
+    ("HCM",             r"^ZHRCA"),
+    # Administracion de usuarios y roles: es Security, no HCM, aunque el nombre lleve ESS.
+    ("Security",        r"^(PFCG|SU0[0-9]|SUIM|SAPLPRGN|YRSUSR|Z_TO_LOCKED_USERS|"
+                        r"YBC_(ESS_)?USER|YBC_CREATE_USER|YBC_USER_M)"),
+    # Canales de extraccion e integracion. RODPS = ODP, /IWBEP/ = Gateway/OData,
+    # /SAPDS/ = SAP Data Services: los tres SACAN datos por la frontera.
+    ("Integration",     r"^(RODPS_REPL|/IWBEP/|/SAPDS/|/IWFND/)"),
+    # Espacios de nombre de TERCEROS. Hueco documentado del propio mapa: no habia cubo para
+    # ellos y son 3.893 objetos / 4,56M de ejecuciones, el 40% del volumen.
+    ("ThirdParty_Addon", r"^/(EPIUSE|ACLDL|WINSHTLQ|GBX01|USE)/"),
+    ("Output",          r"^(ZSPOOL|YSPOOL)"),
+    ("PSM_FM", r"^(FM[0-9A-Z]|RFFM|YFM|YPS|ZFM|ZICTP_REP|ZICTP_COCKPIT|SAPLFM[0-9A-Z])"),
     ("Payment_BCM", r"^(F110|FBZP|REGU|PAYR|FCH|RFFO|SAPFPAYM|DMEE|FEB)"),
     ("Procurement_P2P", r"^(ME[0-9]|MIGO|MIRO|MB|MR[0-9])"),
     ("FI", r"^(FB|F-[0-9]|FBL|FS[0-9]|FAGL|RFITEM|OB[A-Z])"),
