@@ -113,8 +113,10 @@ Not a self-assessment: each dimension is derived from what is on disk.
 _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
-## AGENTES - lo que sabemos HACER (7 disponibles)
+## AGENTES - lo que sabemos HACER (9 disponibles)
+- **`authority-doc-reader`** - LECTURA. Extrae hechos ESTRUCTURADOS del documento que AUTORIZA un cambio — la carta, el formulario, el carton, el aviso del banco — que casi sie
 - **`bank-process-discovery`** - model: sonnet ---
+- **`bcm-signatory-panel`** - 
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
 - **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
@@ -154,7 +156,7 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1955 objects · 228 rules · 564 claims · 16 incidents · 9 closed researches)
+## Brain at a glance (1959 objects · 229 rules · 566 claims · 16 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -189,7 +191,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 228 total)
+## Rules to load first (behavioral DNA — 229 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
