@@ -53,6 +53,18 @@ WHY IT EXISTS
     running". A frontier measures what is left; this measures what is held, and keeps the
     derivative so a stalled loop is visible to whoever looks next.
 
+WHAT THESE THREE SURFACES DO NOT SEE, AND IT MATTERS
+    They read PROGRAM names (RSAU.SLGREPNA), the TCODE that made a change (CDHDR.TCODE) and
+    the program of a job step (TBTCP.PROGNAME). An inbound RFC call appears in none of them.
+    That is not a detail here: 80.6% of this tenant's business RFC traffic is driven by
+    external satellites, so the busiest way work actually enters this system is outside this
+    index's reach. Measured symptom: CROSS_CUTTING comes out at exactly 0 executions, and
+    Integration is a cross-cutting domain that certainly is not idle -- its objects are
+    function modules, which these three surfaces cannot carry.
+    Do NOT read this index as "the execution surface, complete". It is three of four, and
+    the fourth is the biggest. A4 already classifies the rfc_bapi channel; wiring that in as
+    a fourth surface is the next lever, not a refinement.
+
 WHAT IT FEEDS
     brain_v2/comprehension_index.json -> the brain index, the domain docs, and the
     log-process-discovery agent, whose worklist IS `keep_exploring`, ranked by executions.
@@ -101,30 +113,79 @@ def load(p, default=None):
         return default if default is not None else {}
 
 
-def domain_process_map():
-    """domain -> process chains. Stored as process -> domains, so inverted here."""
-    d = load(DOMAINS)
-    pm = d.get("process_map") or {}
-    out = collections.defaultdict(list)
+def process_resolver():
+    """domain -> (process chains, kind). THE authority, in the order the model declares it.
+
+    Three stores carry this and they are not equal:
+      1. brain_state.domains_layer.domains[*].primary_processes -- the RESOLVED answer, and
+         what build_brain_index prints as the process spine. Primary.
+      2. capability_model/ontology.json .process_axis -- the VOCABULARY contract, gated at
+         step 0. Carries rows the registry lacks, and the aliases.
+      3. domains.json .process_map -- the oldest and narrowest: 5 chains, no A2R, no O2C.
+
+    The first version of this index read only (3) and reported CO, TRM, PBC, PM, SD and
+    RE_FX as domains with no process chain -- 21% of business changes stuck at grade 0. Five
+    of those six were already answered in (1) and (2): CO is B2R, TRM is T2R, PBC is B2R+H2R,
+    PM is P2P, SD is O2C. Nothing was missing from the model; the index was reading the
+    thinnest of three files. So: UNION, never pick one, because losing a chain silently
+    degrades every object under it.
+
+    A domain with no chain in ANY of the three is not automatically a gap:
+      CROSS_CUTTING  serves every process, so demanding one chain is a category error.
+                     Same rule build_brain_index uses: BASIS or CTS among primary_modules.
+      STRANDED       no process and not technical either. A real, named gap -- RE_FX and
+                     Output. Naming it is the point; it does not get quietly absorbed.
+
+    Alias resolution is EXACT, never prefix. The ontology's own _resolution_rules say so:
+    "EXACT match only - no token matching, no fuzzy fallback". The earlier prefix match here
+    violated that contract and would happily resolve PS from PSM_FM.
+    """
+    chains = collections.defaultdict(set)
+    modules = {}
+
+    b = load(BRAIN)
+    for name, e in ((b.get("domains_layer") or {}).get("domains") or {}).items():
+        if not isinstance(e, dict):
+            continue
+        for pr in (e.get("primary_processes") or []):
+            chains[name].add(pr)
+        modules[name] = e.get("primary_modules") or []
+
+    alias = {}
+    onto = load(os.path.join(ROOT, "brain_v2", "capability_model", "ontology.json"))
+    for e in onto.get("domains") or []:
+        ck = e.get("canonical_key")
+        if not ck:
+            continue
+        alias[ck] = ck
+        for a in e.get("aliases") or []:
+            alias[a] = ck
+        for pr in (e.get("process_axis") or []):
+            chains[ck].add(pr)
+        modules.setdefault(ck, e.get("module_axis") or [])
+
+    pm = (load(DOMAINS).get("process_map") or {})
     for proc, entry in pm.items():
         if proc.startswith("_") or not isinstance(entry, dict):
             continue
         for dom in entry.get("domains") or []:
-            out[dom].append(proc)
-    assert out, "process_map vacio: domains.json cambio de forma - no grades sobre esto"
-    return dict(out)
+            chains[alias.get(dom, dom)].add(proc)
 
+    assert chains, "ninguna de las 3 fuentes trae cadenas de proceso - no grades sobre esto"
 
-def process_of(domain, dproc):
-    """A4 emits Payment_BCM / PSM_FM / Treasury_EBS; the map says Payment / PSM / Treasury."""
-    if not domain:
-        return []
-    if domain in dproc:
-        return dproc[domain]
-    for k, v in dproc.items():
-        if domain.startswith(k) or k.startswith(domain):
-            return v
-    return []
+    def resolve(domain):
+        if not domain:
+            return [], "UNKNOWN"
+        key = alias.get(domain, domain)
+        ch = sorted(chains.get(key, ()))
+        if ch:
+            return ch, "PLACED"
+        mods = modules.get(key) or []
+        if "BASIS" in mods or "CTS" in mods:
+            return [], "CROSS_CUTTING"
+        return [], "STRANDED"
+
+    return resolve
 
 
 def a4_classifier():
@@ -168,15 +229,19 @@ def explained_objects():
     return out
 
 
-def grade_item(name, execs, actors, bands, dom, dproc, explained):
-    """-> (track, grade). track in BUSINESS | TECHNICAL | UNCLASSIFIED."""
+def grade_item(name, execs, actors, bands, dom, resolve, explained):
+    """-> (track, grade). track in BUSINESS | TECHNICAL | CROSS_CUTTING | STRANDED | UNCLASSIFIED."""
     if dom in TECHNICAL_DOMAINS:
         return "TECHNICAL", 1                      # identified as substrate = closed
     if dom in UNPLACED:
         return "UNCLASSIFIED", 0
-    proc = process_of(dom, dproc)
+    proc, kind = resolve(dom)
+    if kind == "CROSS_CUTTING":
+        return "CROSS_CUTTING", 1                  # serves every chain: closed, not open
+    if kind == "STRANDED":
+        return "STRANDED", 0                       # real gap, and it is NAMED
     if not proc:
-        return "BUSINESS", 0                       # has a domain, no chain: map gap
+        return "BUSINESS", 0
     total = max(1, execs)
     shaped = (actors <= CONCENTRATED_ACTORS or
               (total >= MIN_EXECS_FOR_PROFILE and max(bands) / total >= PEAK_SHARE))
@@ -190,7 +255,7 @@ def main():
         print(f"Gold DB ausente: {GOLD}")
         return 2
     con = sqlite3.connect("file:" + GOLD + "?mode=ro", uri=True)
-    dproc = domain_process_map()
+    resolve = process_resolver()
     explained = explained_objects()
     print("cargando clasificadores A4 (dominio) y A19 (objeto vs generado) ...")
     domain_of, a4ctx = a4_classifier()
@@ -204,10 +269,9 @@ def main():
 
     def tally(surface, rows, kind):
         """rows: (name, execs, actors, b0,b1,b2,b3)"""
-        acc = {"BUSINESS": collections.Counter(), "TECHNICAL": collections.Counter(),
-               "UNCLASSIFIED": collections.Counter()}
-        accn = {"BUSINESS": collections.Counter(), "TECHNICAL": collections.Counter(),
-                "UNCLASSIFIED": collections.Counter()}
+        TRACKS = ["BUSINESS", "TECHNICAL", "CROSS_CUTTING", "STRANDED", "UNCLASSIFIED"]
+        acc = {t: collections.Counter() for t in TRACKS}
+        accn = {t: collections.Counter() for t in TRACKS}
         generated = 0
         for name, execs, actors, *bands in rows:
             if kind == "object":
@@ -224,14 +288,14 @@ def main():
                 dom = domain_of(name, program=prog, text=a4ctx["tc_text"].get(name))
             else:
                 dom = domain_of(name)
-            track, g = grade_item(name, execs, actors, bands, dom, dproc, explained)
+            track, g = grade_item(name, execs, actors, bands, dom, resolve, explained)
             acc[track][g] += execs
             accn[track][g] += 1
             if track == "TECHNICAL":
                 tech_names[dom] += execs
-            if track == "BUSINESS" and g == 0:
+            if track in ("BUSINESS", "STRANDED") and g == 0:
                 map_gaps[dom] += execs
-            if (track == "UNCLASSIFIED") or (track == "BUSINESS" and g <= 1):
+            if track in ("UNCLASSIFIED", "STRANDED") or (track == "BUSINESS" and g <= 1):
                 keep.append({"surface": surface, "object": name, "track": track, "grade": g,
                              "execs": execs, "actors": actors, "domain": dom,
                              "custom": name[:1] in "YZ",
