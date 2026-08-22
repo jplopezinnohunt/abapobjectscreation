@@ -392,10 +392,16 @@ def derive_rsau_days(db, today=None):
     reason = (f"hueco mas antiguo {d:%Y-%m-%d} ({back}d atras), {missing} dia(s) sin datos "
               f"dentro del techo -> ventana {days}d")
     if back >= RSAU_MAX_DAYS:
+        # NO decir "ya no esta en P01": el techo es NUESTRO, no de P01. Decirlo asi fue el
+        # mismo error tres veces el 2026-08-22 -- declarar irrecuperable lo que esta mas atras
+        # de donde uno miro. El techo es donde dejamos de preguntar; la frontera real solo la
+        # sabe una sonda: a 200d P01 aun servia 87.184 filas.
+        edge = today - datetime.timedelta(days=RSAU_MAX_DAYS)
         reason += ("\n"
-                   f"    [WARN] el hueco toca el techo de retencion ({RSAU_MAX_DAYS}d): lo que "
-                   f"caiga antes de {today - datetime.timedelta(days=RSAU_MAX_DAYS):%Y-%m-%d} "
-                   f"ya no esta en P01 y NO se recupera")
+                   f"    [WARN] el hueco llega al techo ({RSAU_MAX_DAYS}d, {edge:%Y-%m-%d}). Ese "
+                   f"techo es NUESTRO limite, no la retencion de P01, que nunca se ha "
+                   f"encontrado. Antes de dar por perdido nada anterior a {edge:%Y-%m-%d}: "
+                   f"sondear P01 y subir RSAU_MAX_DAYS")
     return days, reason
 
 
