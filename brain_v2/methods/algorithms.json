@@ -841,17 +841,17 @@
       "operates_on": "logs",
       "origin": "OURS",
       "state": "WORKS",
-      "does": "measure whether the EXECUTION SURFACE is closed: across what runs (RSAU), what is changed (CDHDR) and what runs unattended (TBTCO/TBTCP), how much is identified, how much is legitimately TECHNICAL, and of the business remainder how much is placed in a domain+process, described (who/when/channel) and explained by a store",
+      "does": "measure whether the EXECUTION SURFACE is closed, across the FOUR surfaces that compose it: what ran (RSAU program names), what was changed (CDHDR tcode), what runs unattended (TBTCO x TBTCP) and what ENTERS by RFC (RSAU.PARAM3 function module). Splits TECHNICAL / CROSS_CUTTING / STRANDED / BUSINESS, and grades the business remainder placed -> described -> explained",
       "bound_in": [
         "brain_v2/comprehension_index.py"
       ],
       "failure_mode": "a broken join produces a believable number. It happened THREE times while building this: reading A4's top-objects SUMMARY instead of running its classifier (100% ungraded); looking up a domain_axes.process field that does not exist (empty map, every object silently degraded); and feeding raw TCODEs to a PROGRAM classifier, which left XK01/SU01/PFCG Uncatalogued and invented a 35% gap in the change surface. Each looked like a finding",
-      "improve": "anadir la CUARTA superficie: las llamadas RFC entrantes. Las tres actuales leen nombres de programa, tcodes de cambio y programas de job; una llamada RFC no esta en ninguna, y por ahi entra el 80,6% del trabajo de negocio de este tenant. El sintoma medido es CROSS_CUTTING = 0 ejecuciones exactas, con Integration -- que no esta parado -- invisible porque sus objetos son modulos de funcion. A4 ya clasifica el canal rfc_bapi: es cablearlo, no inventarlo",
+      "improve": "los 520 de keep_exploring, y el bloque que mas pesa esta en RFC: BAPI_ENTRYSHEET_CREATE/RELEASE/GETDETAIL con 775 y 719 actores es P2P entrando sin clasificar, y ZSX_INTERNET_ADDRESS_TO_NORMAL / ZHRCA_POSTAL_CODE_CHECK son custom con 1 actor y 45K llamadas. Son reglas de A4 que faltan, no conocimiento que falte",
       "lands_in": "brain_v2/comprehension_index.json + comprehension_history.jsonl (derivada) -> brain index + docs de dominio; keep_exploring ES la lista de trabajo del agente log-process-discovery",
       "_why_it_exists": "2026-08-22: el bucle de descubrimiento llevaba 75 dias parado y nadie lo noto, porque nada medía si la comprension se movia. A6 mide lo que QUEDA; esto mide lo que se TIENE, y guarda la derivada",
       "_measured": {
-        "executions_total": 31591925,
-        "pct_unclassified": 2.66,
+        "executions_total": 44181590,
+        "pct_unclassified": 5.09,
         "by_surface": {
           "objects": {
             "BUSINESS": 7.3,
@@ -873,14 +873,24 @@
             "CROSS_CUTTING": 0.0,
             "STRANDED": 0.0,
             "UNCLASSIFIED": 4.2
+          },
+          "rfc": {
+            "BUSINESS": 33.2,
+            "TECHNICAL": 48.3,
+            "CROSS_CUTTING": 7.3,
+            "STRANDED": 0.0,
+            "UNCLASSIFIED": 11.2
           }
         },
         "process_map_gaps": [
           "RE_FX"
         ],
-        "keep_exploring": 209,
+        "keep_exploring": 520,
         "_six_gaps_closed": "CO TRM PBC PM SD resueltos leyendo domains_layer + ontology en vez de solo process_map; RE_FX queda STRANDED, que es lo que el modelo ya declaraba",
-        "_blind_to": "llamadas RFC entrantes (CROSS_CUTTING sale 0 por eso)"
+        "_blind_to": "llamadas RFC entrantes (CROSS_CUTTING sale 0 por eso)",
+        "surfaces": 4,
+        "_rfc_surface_added": "+12.589.665 ejecuciones, ~40% del total. CROSS_CUTTING paso de 0 a 922.428: Integration era invisible porque sus objetos son modulos de funcion y ninguna de las otras 3 superficies los lleva",
+        "_scope_change_note": "el sin-clasificar subio 2,66% -> 5,09% al cablear la cuarta superficie. No es retroceso: es vision. El historico guarda surface_set y la derivada solo se calcula entre corridas del mismo alcance"
       }
     }
   },

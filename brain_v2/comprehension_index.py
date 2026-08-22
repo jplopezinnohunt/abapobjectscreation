@@ -6,12 +6,13 @@ THE QUESTION, AND IT IS THE MATURITY QUESTION
 
     Not "how many objects are catalogued". Whether the execution surface is CLOSED.
 
-THREE SURFACES, BECAUSE EXECUTION IS NOT ONLY A PROGRAM
-    Measuring programs alone answers a third of the question and reads like the whole one.
+FOUR SURFACES, BECAUSE EXECUTION IS NOT ONLY A PROGRAM
+    Measuring programs alone answers a quarter of the question and reads like the whole one.
 
-        OBJECTS  what ran            RSAU/SM20   program, transaction, RFC
-        CHANGES  what was altered    CDHDR       object class + the tcode that changed it
-        JOBS     what runs unattended TBTCO/TBTCP  job -> program -> VARIANT
+        OBJECTS  what ran             RSAU/SM20     program and report names
+        CHANGES  what was altered     CDHDR         the tcode that made the change
+        JOBS     what runs unattended TBTCO/TBTCP   job -> program -> VARIANT
+        RFC      what ENTERS          RSAU.PARAM3   the function module a satellite called
 
     A job is not its program: the program says what CAN be done, the variant says what IS
     done. A change is not an execution: something can run all day and alter nothing, and one
@@ -53,17 +54,22 @@ WHY IT EXISTS
     running". A frontier measures what is left; this measures what is held, and keeps the
     derivative so a stalled loop is visible to whoever looks next.
 
-WHAT THESE THREE SURFACES DO NOT SEE, AND IT MATTERS
-    They read PROGRAM names (RSAU.SLGREPNA), the TCODE that made a change (CDHDR.TCODE) and
-    the program of a job step (TBTCP.PROGNAME). An inbound RFC call appears in none of them.
-    That is not a detail here: 80.6% of this tenant's business RFC traffic is driven by
-    external satellites, so the busiest way work actually enters this system is outside this
-    index's reach. Measured symptom: CROSS_CUTTING comes out at exactly 0 executions, and
-    Integration is a cross-cutting domain that certainly is not idle -- its objects are
-    function modules, which these three surfaces cannot carry.
-    Do NOT read this index as "the execution surface, complete". It is three of four, and
-    the fourth is the biggest. A4 already classifies the rfc_bapi channel; wiring that in as
-    a fourth surface is the next lever, not a refinement.
+THE FOURTH SURFACE, AND WHY IT WAS THE POINT
+    The first three read PROGRAM names (RSAU.SLGREPNA), the TCODE that made a change
+    (CDHDR.TCODE) and the program of a job step (TBTCP.PROGNAME). An inbound RFC call is in
+    none of them: in SLGREPNA it shows up as SAPMSSY1, the dispatcher, which is technical --
+    so those three saw the pipe and not what flows through it. The function module's real
+    name travels in PARAM3 of the 'RFC Function Call' rows, and that is surface 4.
+
+    It is not an extra: 80.6% of this tenant's business RFC traffic is driven by external
+    satellites, so this is how work mostly ENTERS the system. Running with three surfaces
+    reported CROSS_CUTTING at exactly 0 executions with Integration -- a domain that is
+    plainly not idle -- invisible, because its objects are function modules.
+
+    A function module does not hang off TADIR directly, it hangs off its function GROUP, so
+    it is classified through A4's TFDIR.APP_DOMAIN overlay, which is the FIRST rung of
+    domain_of. Skipping that overlay lets BAPIs -- exactly the satellite calls -- dominate
+    the frontier while looking unclassifiable.
 
 WHAT IT FEEDS
     brain_v2/comprehension_index.json -> the brain index, the domain docs, and the
@@ -286,6 +292,12 @@ def main():
             if kind == "change":
                 prog = a4ctx["tc_prog"].get(name)
                 dom = domain_of(name, program=prog, text=a4ctx["tc_text"].get(name))
+            elif kind == "rfc":
+                # Un modulo de funcion no cuelga de TADIR directamente: cuelga de su GRUPO
+                # de funciones. A4 resuelve eso con el overlay TFDIR.APP_DOMAIN, y ese
+                # overlay es el PRIMER peldano de domain_of -- no pasarlo deja las BAPI,
+                # que son justo las llamadas de los satelites, dominando la frontera.
+                dom = domain_of(name, overlay=a4ctx["fm_dom"].get(name))
             else:
                 dom = domain_of(name)
             track, g = grade_item(name, execs, actors, bands, dom, resolve, explained)
@@ -353,6 +365,26 @@ def main():
     except sqlite3.Error as e:
         surfaces["jobs"] = {"error": str(e)[:160]}
 
+    # ---- SUPERFICIE 4: lo que ENTRA POR RFC ------------------------------------------
+    # La mayor de las cuatro y la ultima en cablearse. El modulo de funcion NO esta en
+    # SLGREPNA: ahi solo aparece SAPMSSY1, el despachador, que es tecnico -- por eso las
+    # otras tres superficies veian el tubo y no lo que pasa por dentro. El nombre real
+    # viaja en PARAM3 de las filas 'RFC Function Call'. Aqui vive el 80,6% del trabajo de
+    # negocio de este tenant, que llega desde satelites externos y no desde una pantalla.
+    print("4/4 llamadas RFC entrantes (RSAU PARAM3) ...")
+    try:
+        tally("rfc", con.execute("""
+            SELECT PARAM3, COUNT(*), COUNT(DISTINCT SLGUSER),
+                   SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) <  6 THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) BETWEEN  6 AND 11 THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) BETWEEN 12 AND 17 THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END)
+            FROM rsau_audit_history
+            WHERE TXSUBCLSID = 'RFC Function Call' AND PARAM3 != ''
+            GROUP BY PARAM3"""), "rfc")
+    except sqlite3.Error as e:
+        surfaces["rfc"] = {"error": str(e)[:160]}
+
     keep.sort(key=lambda x: -x["execs"])
     tot_all = sum(s.get("executions_graded", 0) for s in surfaces.values())
     unclass = sum(s.get("by_track_executions", {}).get("UNCLASSIFIED", 0)
@@ -402,15 +434,30 @@ def main():
             prev = json.loads(lines[-1]) if lines else None
         except Exception:
             pass
+    # Comparar dos corridas con DISTINTO conjunto de superficies no es una derivada, es una
+    # ilusion: al cablear la cuarta superficie el "sin clasificar" subio de 2,66% a 5,09% --
+    # no porque entendieramos menos, sino porque empezamos a ver 12,6M de ejecuciones que
+    # antes no miraba nadie. Un lector futuro leeria eso como un retroceso. Asi que el
+    # historico guarda QUE superficies se midieron y el movimiento solo se calcula cuando
+    # coinciden; si no, se dice que el alcance cambio.
+    cur_surfaces = sorted(surfaces)
     if prev and "pct_unclassified" in prev:
-        rep["movement_since_last"] = round(
-            rep["headline"]["pct_unclassified"] - prev["pct_unclassified"], 2)
-        rep["_movement_note"] = ("0.0 significa que el bucle de descubrimiento no se movio "
-                                 "desde la ultima corrida - eso ES el hallazgo")
+        if sorted(prev.get("surface_set") or []) == cur_surfaces:
+            rep["movement_since_last"] = round(
+                rep["headline"]["pct_unclassified"] - prev["pct_unclassified"], 2)
+            rep["_movement_note"] = ("0.0 significa que el bucle de descubrimiento no se movio "
+                                     "desde la ultima corrida - eso ES el hallazgo")
+        else:
+            rep["movement_since_last"] = None
+            rep["_movement_note"] = (
+                f"ALCANCE CAMBIADO: la corrida anterior midio {prev.get('surface_set')} y esta "
+                f"mide {cur_surfaces}. No hay derivada comparable - un porcentaje que sube "
+                f"porque se anadio una superficie no es un retroceso, es mas vision")
 
     json.dump(rep, open(OUT, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
     with open(HIST, "a", encoding="utf-8") as f:
         f.write(json.dumps({"utc": rep["_measured_utc"],
+                            "surface_set": cur_surfaces,
                             "pct_unclassified": rep["headline"]["pct_unclassified"],
                             "surfaces": {k: v.get("pct_by_track")
                                          for k, v in surfaces.items()}},
