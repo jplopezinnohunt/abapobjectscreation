@@ -220,7 +220,21 @@ ultimo run` (que ya esta en `accumulate_logs_state.json`) **+ margen**, acotado 
 medida — nunca una constante. El `freshness_guard()` ya DETECTA el gap y lo imprime como WARN; luego
 pide 16 dias igual. **Detectar no es actuar** (misma forma que la regla #179).
 
-*Rescate lanzado hoy (`--rsau-only --rsau-days 63`), encolado detras del escritor vivo por H109.*
+**RESUELTO el mismo dia.** (a) Rescate ejecutado: julio paso de **0 a 4.507.421 filas**, los 45 dias
+del hueco estan **45 de 45** cubiertos. (b) La ventana ya no es constante: `derive_rsau_days()` la
+saca del **hueco mas antiguo que la historia REALMENTE tiene** dentro del techo de retencion medido
+(70d), no de "dias desde la ultima corrida" — porque una corrida que muere a medias sella el estado
+igual, y en cuanto una corrida posterior rellena los dias recientes un hueco en MEDIO se vuelve
+invisible a cualquier aritmetica sobre la fecha de corrida. Probado en 6 escenarios; el del hueco
+real deriva **63d**, la misma ventana que hoy hubo que elegir a mano. (c) El WARN ya no miente:
+decia "lost forever" y era falso. (d) **RSAU no salia en el informe de cobertura** — por eso el
+agujero de julio nunca se vio; ahora sale y cuenta dias AUSENTES, no solo el span MIN..MAX que los
+oculta por construccion.
+
+**Lo que destapo nada mas anadirlo, y esto si queda abierto:** `14 de 183 dias sin filas`, la peor
+racha **12 dias (2026-02-24..2026-03-07)**. Estan fuera del techo de 70d: **irrecuperables**. No es
+accion, es el coste ya pagado de haber tenido este defecto abierto — y la medida de por que la
+cobertura tiene que mirarse por dias y no por span.
 
 **H109 — UN REBUILD SOBREVIVE AL SUSPEND Y COLISIONA CON EL SIGUIENTE (s102, medido 2026-08-22).**
 Un `rebuild_all.py` lanzado el 21/08 a las 23:17 seguia VIVO a las 08:36 del dia siguiente: el PC se

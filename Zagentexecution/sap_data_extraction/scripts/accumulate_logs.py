@@ -59,7 +59,8 @@ GOLD_DB = os.path.join(PROJECT_ROOT, "Zagentexecution", "sap_data_extraction",
 STATE = os.path.join(os.path.dirname(__file__), "accumulate_logs_state.json")
 
 RETENTION_MIN_DAYS = 183  # ≥6 months (user requirement 2026-06-20). No prune path exists.
-P01_WINDOW_DAYS    = 14   # assume P01 keeps ~14d → run interval must stay under this.
+P01_WINDOW_DAYS    = 14   # SCHEDULE target (run at least this often), NOT a retention fact.
+                          # Measured SM20 retention is >=62d -- see RSAU_MAX_DAYS.
 
 # Each LOG table: SAP source, history table, natural key (PK -> dedup), fields,
 # an optional date field + lookback (days) to bound the pull to the live window,
@@ -213,8 +214,13 @@ def freshness_guard():
         days = (datetime.date.today() -
                 datetime.datetime.strptime(last, "%Y-%m-%d").date()).days
         if days > P01_WINDOW_DAYS:
-            print(f"  [WARN] GAP RISK - last run {last} ({days}d ago) > P01 window "
-                  f"(~{P01_WINDOW_DAYS}d). Logs in the gap may be lost forever.")
+            # NO decir "perdido para siempre": es una suposicion, y el 2026-08-22 fue FALSA --
+            # tras 62 dias parados P01 todavia servia el 22-jun (23.076 filas en 2h). Lo que se
+            # pierde de verdad lo dice la retencion MEDIDA, no el intervalo de agenda; y la
+            # ventana se ensancha sola (derive_rsau_days), no hace falta actuar a mano.
+            print(f"  [WARN] GAP - last run {last} ({days}d ago) > schedule interval "
+                  f"(~{P01_WINDOW_DAYS}d). RSAU widens its window automatically; "
+                  f"beyond ~{RSAU_MAX_DAYS}d (measured SM20 retention) it IS unrecoverable.")
         else:
             print(f"  [OK] Last run {last} ({days}d ago) - within P01 window.")
     except Exception as e:
@@ -246,11 +252,53 @@ def coverage_report(db):
             f'WHERE _first_seen IS NOT NULL').fetchone()
         live = f" | live-runs {fs[0]}..{fs[1]}" if fs[0] else " | live-runs none (seed only)"
         print(f"  {h:16s}: {n:>9,} rows{span_txt}{live}")
+    _rsau_coverage(db)
     if os.path.exists(STATE):
         last = json.load(open(STATE)).get("run")
         print(f"  last accumulation run: {last}")
     else:
         print("  last accumulation run: NEVER")
+
+
+def _rsau_coverage(db):
+    """RSAU was ABSENT from this report until 2026-08-22 -- which is why a 45-day hole
+    (July 2026 = 0 rows) sat there unseen while the report said everything was OK. A
+    span MIN..MAX hides holes by construction, so count the days that are actually
+    MISSING inside the span and name the biggest run of them."""
+    try:
+        days = sorted(r[0] for r in db.execute(
+            f'SELECT DISTINCT SAL_DATE FROM {RSAU_HISTORY} WHERE SAL_DATE != ""'))
+    except sqlite3.Error:
+        print(f"  {RSAU_HISTORY}: (not created yet)")
+        return
+    if not days:
+        print(f"  {RSAU_HISTORY}: 0 rows")
+        return
+    n = db.execute(f'SELECT COUNT(*) FROM {RSAU_HISTORY}').fetchone()[0]
+    have = set(days)
+    lo = datetime.datetime.strptime(days[0], "%Y%m%d").date()
+    hi = datetime.datetime.strptime(days[-1], "%Y%m%d").date()
+    total = (hi - lo).days + 1
+    missing, worst, run, run_start = [], (0, None, None), 0, None
+    for k in range(total):
+        d = lo + datetime.timedelta(days=k)
+        if d.strftime("%Y%m%d") in have:
+            run, run_start = 0, None
+        else:
+            missing.append(d)
+            run_start = run_start or d
+            run += 1
+            if run > worst[0]:
+                worst = (run, run_start, d)
+    flag = "OK >=6mo" if total >= RETENTION_MIN_DAYS else "[WARN] BELOW 6mo"
+    print(f"  {RSAU_HISTORY:16s}: {n:>9,} rows | SAL_DATE {days[0]}->{days[-1]} "
+          f"({total}d, {flag})")
+    if missing:
+        print(f"      [WARN] {len(missing)} of {total} days have NO rows - "
+              f"biggest run {worst[0]}d ({worst[1]:%Y-%m-%d}..{worst[2]:%Y-%m-%d}). "
+              f"Recoverable only within ~{RSAU_MAX_DAYS}d of today.")
+    else:
+        print(f"      [OK] no missing days inside the span")
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +312,14 @@ RSAU_FIELDS = ["SID", "INSTANCE", "SAL_DATE", "SAL_TIME", "SLGMAND", "AREA", "SU
                "MSG", "SLGUSER", "COUNTER", "SLGLTRM2", "TERM_IPV6", "SLGTC", "SLGREPNA",
                "SUBCLASID", "TXSUBCLSID", "SEVERITY", "SEVERITY_S", "TXSEVERITY", "FILE_NO",
                "TASKTYPE", "TASKNO", "SAL_DATA", "PARAM1", "PARAM2", "PARAM3", "PARAMX", "SRC"]
-RSAU_DEFAULT_DAYS = 16   # ongoing: covers the 14-day schedule + margin
+# The RSAU window is DERIVED from coverage, never a constant -- see derive_rsau_days().
+# H110 (2026-08-22): it WAS a constant 16, so a run after a 62-day gap asked for 16 days and
+# silently left 45 days behind (July = 0 rows) that P01 still held. freshness_guard() printed
+# the gap as a WARN and the code then asked for 16 days anyway: detecting is not acting.
+RSAU_MIN_DAYS   = 16   # floor: the routine 14-day schedule + margin
+RSAU_MAX_DAYS   = 70   # ceiling: MEASURED P01 SM20 retention >=62d (probe 2026-08-22:
+                       # 20260622 08-10h returned 23,076 rows). Asking beyond this is dead time.
+RSAU_MARGIN_DAYS = 2   # overlap so consecutive windows dedupe into a continuous history
 RSAU_CHUNK_HOURS = 6     # a 6h block stays well under the buffer/timeout
 
 
@@ -290,6 +345,49 @@ def _rsau_connect():
     except Exception as e:
         print(f"    [connect retry] {str(e)[:90]}")
         return None
+
+
+def derive_rsau_days(db, today=None):
+    """How far back to ask P01 -- derived from what rsau_audit_history ACTUALLY HOLDS.
+
+    Finds the OLDEST day with no rows inside the retention ceiling and stretches the window
+    to reach it. That is deliberately not "days since the last run": a run that dies halfway
+    still stamps the state, and once a later run fills the recent days a hole in the MIDDLE
+    becomes invisible to any last-run arithmetic -- which is exactly how July 2026 went to
+    zero. Coverage is the fact; the run date is only a claim about it.
+
+    Returns (days, reason) -- reason is printed so the choice is auditable, never silent.
+    """
+    today = today or datetime.date.today()
+    try:
+        have = {r[0] for r in db.execute(
+            f'SELECT DISTINCT SAL_DATE FROM {RSAU_HISTORY} WHERE SAL_DATE != ""')}
+    except sqlite3.Error:
+        return RSAU_MAX_DAYS, f"primera corrida (sin {RSAU_HISTORY}) -> ventana maxima"
+    if not have:
+        return RSAU_MAX_DAYS, "historia vacia -> ventana maxima"
+
+    oldest_gap = None
+    for back in range(RSAU_MAX_DAYS, -1, -1):          # del mas viejo al mas nuevo
+        d = today - datetime.timedelta(days=back)
+        if d.strftime("%Y%m%d") not in have:
+            oldest_gap = (d, back)
+            break
+    if oldest_gap is None:
+        return RSAU_MIN_DAYS, f"cobertura continua {RSAU_MAX_DAYS}d -> ventana minima"
+
+    d, back = oldest_gap
+    days = min(RSAU_MAX_DAYS, max(RSAU_MIN_DAYS, back + RSAU_MARGIN_DAYS))
+    missing = sum((today - datetime.timedelta(days=b)).strftime("%Y%m%d") not in have
+                  for b in range(back + 1))
+    reason = (f"hueco mas antiguo {d:%Y-%m-%d} ({back}d atras), {missing} dia(s) sin datos "
+              f"dentro del techo -> ventana {days}d")
+    if back >= RSAU_MAX_DAYS:
+        reason += ("\n"
+                   f"    [WARN] el hueco toca el techo de retencion ({RSAU_MAX_DAYS}d): lo que "
+                   f"caiga antes de {today - datetime.timedelta(days=RSAU_MAX_DAYS):%Y-%m-%d} "
+                   f"ya no esta en P01 y NO se recupera")
+    return days, reason
 
 
 def accumulate_rsau(db, run_stamp, lookback_days, chunk_hours=RSAU_CHUNK_HOURS):
@@ -363,11 +461,15 @@ def main():
         return
 
     rsau_only = "--rsau-only" in sys.argv
-    rsau_days = RSAU_DEFAULT_DAYS
+    rsau_days, rsau_why = None, None
     if "--rsau-days" in sys.argv:
         i = sys.argv.index("--rsau-days")
         if i + 1 < len(sys.argv):
             rsau_days = int(sys.argv[i + 1])
+            rsau_why = "forzado por --rsau-days"
+    if rsau_days is None:
+        ensure_rsau_table(db)
+        rsau_days, rsau_why = derive_rsau_days(db)
 
     run_stamp = datetime.datetime.now().strftime("%Y-%m-%d")
     print(f"=== accumulate_logs  (run {run_stamp}) ===")
@@ -388,6 +490,7 @@ def main():
                     report["tables"][src] = {"error": f"{type(e).__name__}: {str(e)[:160]}"}
         # SM20/RSAU Security Audit Log -- the headline volatile log that purges
         try:
+            print(f"  RSAU ventana: {rsau_days}d - {rsau_why}")
             report["tables"]["RSAU"] = accumulate_rsau(db, run_stamp, rsau_days)
         except Exception as e:
             print(f"  RSAU: FAILED - {type(e).__name__}: {str(e)[:160]}")
