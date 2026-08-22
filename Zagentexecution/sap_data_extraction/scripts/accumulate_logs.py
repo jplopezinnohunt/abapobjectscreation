@@ -296,7 +296,8 @@ def _rsau_coverage(db):
     if missing:
         print(f"      [WARN] {len(missing)} of {total} days have NO rows - "
               f"biggest run {worst[0]}d ({worst[1]:%Y-%m-%d}..{worst[2]:%Y-%m-%d}). "
-              f"Recoverable only within ~{RSAU_MAX_DAYS}d of today.")
+              f"Probe P01 before calling any of them lost - retention measured >=182d "
+              f"and the boundary has never been found.")
     else:
         print(f"      [OK] no missing days inside the span")
 
@@ -317,8 +318,16 @@ RSAU_FIELDS = ["SID", "INSTANCE", "SAL_DATE", "SAL_TIME", "SLGMAND", "AREA", "SU
 # silently left 45 days behind (July = 0 rows) that P01 still held. freshness_guard() printed
 # the gap as a WARN and the code then asked for 16 days anyway: detecting is not acting.
 RSAU_MIN_DAYS   = 16   # floor: the routine 14-day schedule + margin
-RSAU_MAX_DAYS   = 70   # ceiling: MEASURED P01 SM20 retention >=62d (probe 2026-08-22:
-                       # 20260622 08-10h returned 23,076 rows). Asking beyond this is dead time.
+# Ceiling. FIRST SET TO 70 AND THAT WAS WRONG (2026-08-22): 70 came from the deepest day the
+# probe happened to test, not from a boundary anybody found -- and claim #217 already said
+# ">=4 months", more than the probe, sitting in the brain unread. A ceiling derived from your
+# own partial probe silently redefines "unrecoverable" as "further back than I looked": the 12
+# missing days of Feb-Mar got declared lost on exactly that reasoning, and they were not.
+# Probed 2026-08-22, window 08-10h: 20260224 (179d back) -> 22,307 rows; 20260221 (182d)
+# -> 12,663. THE TRUE BOUNDARY IS STILL NOT FOUND -- P01 was still serving data at the deepest
+# day tested. So this is a floor on retention, and it is set past the >=183d target on purpose:
+# too high only costs empty calls, too low silently abandons recoverable days.
+RSAU_MAX_DAYS   = 200
 RSAU_MARGIN_DAYS = 2   # overlap so consecutive windows dedupe into a continuous history
 RSAU_CHUNK_HOURS = 6     # a 6h block stays well under the buffer/timeout
 
@@ -390,20 +399,40 @@ def derive_rsau_days(db, today=None):
     return days, reason
 
 
-def accumulate_rsau(db, run_stamp, lookback_days, chunk_hours=RSAU_CHUNK_HOURS):
+def accumulate_rsau(db, run_stamp, lookback_days, chunk_hours=RSAU_CHUNK_HOURS,
+                    only_missing=True, always_days=3):
+    """only_missing: ask P01 ONLY for days the history does not already hold.
+
+    Once the ceiling is honest (>=200d instead of a made-up 70) a contiguous window costs
+    ~800 RFC calls to fill ~30 real gaps -- 85% of them re-fetching rows we already have and
+    throwing them away at the PK. The window decides HOW FAR BACK to look; this decides WHICH
+    days are actually worth a call. The last `always_days` are pulled regardless: today is
+    still being written, and yesterday may have been captured half-done.
+    """
     ensure_rsau_table(db)
     now = datetime.datetime.utcnow()
     start = now - datetime.timedelta(days=lookback_days)
+    skip_days = set()
+    if only_missing:
+        have = {r[0] for r in db.execute(
+            f'SELECT DISTINCT SAL_DATE FROM {RSAU_HISTORY} WHERE SAL_DATE != ""')}
+        recent = {(now - datetime.timedelta(days=k)).strftime("%Y%m%d")
+                  for k in range(always_days)}
+        skip_days = have - recent
     before = db.execute(f'SELECT COUNT(*) FROM {RSAU_HISTORY}').fetchone()[0]
     ph = ",".join("?" * (len(RSAU_FIELDS) + 2))
     collist = ",".join(f'"{f}"' for f in RSAU_FIELDS) + ',"_first_seen","_rowhash"'
     total_pulled, cur, chunk_i, fail_n = 0, start, 0, 0
-    print(f"  RSAU: {lookback_days}-day window, {chunk_hours}h chunks, "
+    mode = (f"solo dias ausentes ({len(skip_days)} dias ya cubiertos se saltan)"
+            if only_missing else "ventana completa")
+    print(f"  RSAU: {lookback_days}-day window, {chunk_hours}h chunks, {mode}, "
           f"recycle conn every {RSAU_RECONNECT_EVERY} chunks")
     conn = _rsau_connect()
     while cur < now:
-        chunk_i += 1
         nxt = min(cur + datetime.timedelta(hours=chunk_hours), now)
+        if cur.strftime("%Y%m%d") in skip_days:   # dia ya cubierto -> ni una llamada
+            cur = nxt; continue
+        chunk_i += 1
         if conn is None or chunk_i % RSAU_RECONNECT_EVERY == 0:   # recycle / recover
             try: conn.close()
             except Exception: pass
@@ -470,6 +499,7 @@ def main():
     if rsau_days is None:
         ensure_rsau_table(db)
         rsau_days, rsau_why = derive_rsau_days(db)
+    rsau_full = "--rsau-full" in sys.argv   # re-pull days we already have (repair, not routine)
 
     run_stamp = datetime.datetime.now().strftime("%Y-%m-%d")
     print(f"=== accumulate_logs  (run {run_stamp}) ===")
@@ -491,7 +521,8 @@ def main():
         # SM20/RSAU Security Audit Log -- the headline volatile log that purges
         try:
             print(f"  RSAU ventana: {rsau_days}d - {rsau_why}")
-            report["tables"]["RSAU"] = accumulate_rsau(db, run_stamp, rsau_days)
+            report["tables"]["RSAU"] = accumulate_rsau(db, run_stamp, rsau_days,
+                                                       only_missing=not rsau_full)
         except Exception as e:
             print(f"  RSAU: FAILED - {type(e).__name__}: {str(e)[:160]}")
             report["tables"]["RSAU"] = {"error": f"{type(e).__name__}: {str(e)[:160]}"}
