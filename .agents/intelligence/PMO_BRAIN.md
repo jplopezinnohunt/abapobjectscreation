@@ -202,6 +202,28 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H109 — UN REBUILD SOBREVIVE AL SUSPEND Y COLISIONA CON EL SIGUIENTE (s102, medido 2026-08-22).**
+Un `rebuild_all.py` lanzado el 21/08 a las 23:17 seguia VIVO a las 08:36 del dia siguiente: el PC se
+suspendio, no se apago, y el proceso sobrevivio. Al volver se lanzo otro (via `curate.py`, que
+invoca `rebuild_all.py` en su linea 84). Resultado: **dos escritores concurrentes sobre
+`brain_state.json`** durante horas, y el fichero en disco quedo en 5.337.221 bytes cuando la version
+verificada y commiteada la noche anterior tenia 5.639.898.
+
+**Por que la regla de un solo escritor no lo evito**: la regla dice "no lances dos rebuilds", y nadie
+lanzo dos a sabiendas — uno resucito. Una regla que depende de que el operador recuerde no cubre el
+caso en que el sistema recuerda por el.
+
+**Lo que hay que mecanizar** (ninguna de las tres esta hecha):
+1. **Lock con PID y heartbeat** en `rebuild_all.py`: si hay un lock vivo, el segundo se niega a
+   arrancar y lo dice; si el lock esta huerfano (PID muerto o heartbeat parado > N minutos), lo
+   reclama. Hoy no hay lock de ningun tipo.
+2. **Tope de duracion**: un rebuild que pasa de ~40 min esta colgado, no lento. Debe abortar y
+   dejarlo escrito.
+3. **Guard al commitear**: negarse a `git add` de artefactos generados si hay un `rebuild_all` vivo
+   — el 21/08 se commiteo un `brain_state` a medio construir por esto mismo.
+
+*Resuelto hoy a mano: matado el proceso zombi (PID 10680 + hijo), dejado correr el nuevo.*
+
 **H108 — 11 DE 13 INCIDENTES NO DEJARON PROCESO, SOLO CASO (s102, medido).** Lo detecto JP:
 *"la creacion de cuentas no tenia conocimiento a dominio, solo incidente"*. Barrido de los 13
 incidentes: **solo 2 tienen documento de PROCESO en su dominio**, y son los dos que se tocaron ese
