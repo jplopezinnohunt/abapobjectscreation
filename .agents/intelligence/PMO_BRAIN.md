@@ -202,6 +202,26 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H110 — EL ACUMULADOR PIDE SIEMPRE 16 DIAS, PASE LO QUE PASE: 45 DIAS DE SM20 AUSENTES (s102, medido 2026-08-22).**
+`accumulate_logs.py` corrio hoy tras **62 dias** sin ejecutarse. TBTCO (lookback 180d) y CDHDR (120d)
+cubrieron el hueco entero. **RSAU/SM20 no**: `RSAU_DEFAULT_DAYS = 16` es una CONSTANTE, asi que pidio
+2026-08-06..2026-08-22 y dejo fuera **2026-06-22 .. 2026-08-05 = 45 dias**. Medido en la Gold DB:
+**julio entero = 0 filas** (`202602` 299K · `202603` 3,49M · `202604` 4,94M · `202605` 4,30M ·
+`202606` 2,58M · **`202607` 0** · `202608` 2,22M).
+
+**No estaban perdidos — sonda a P01 el 2026-08-22, ventana 08:00-10:00h:**
+20260622 → 23.076 filas · 20260701 → 21.793 · 20260715 → 21.117 · 20260731 → 20.865 ·
+20260805 → 22.113 (control: 20260810 → 22.987, 20260820 → 19.689). O sea **la retencion real de SM20
+en P01 es ≥ 62 dias**, no los ~14d que el script asume ni el ≥61d del claim #212. El hueco era
+recuperable y el propio acumulador no lo pidio.
+
+**El arreglo NO es correr mas a menudo.** Es que la ventana se DERIVE del estado: `dias desde el
+ultimo run` (que ya esta en `accumulate_logs_state.json`) **+ margen**, acotado por la retencion
+medida — nunca una constante. El `freshness_guard()` ya DETECTA el gap y lo imprime como WARN; luego
+pide 16 dias igual. **Detectar no es actuar** (misma forma que la regla #179).
+
+*Rescate lanzado hoy (`--rsau-only --rsau-days 63`), encolado detras del escritor vivo por H109.*
+
 **H109 — UN REBUILD SOBREVIVE AL SUSPEND Y COLISIONA CON EL SIGUIENTE (s102, medido 2026-08-22).**
 Un `rebuild_all.py` lanzado el 21/08 a las 23:17 seguia VIVO a las 08:36 del dia siguiente: el PC se
 suspendio, no se apago, y el proceso sobrevivio. Al volver se lanzo otro (via `curate.py`, que
