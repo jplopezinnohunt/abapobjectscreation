@@ -247,3 +247,82 @@ dejamos cinco instrumentos. También gastamos **una cuarta parte de los commits 
 La diferencia entre una sesión buena y una excelente no está en el hallazgo — está en cuántas veces
 el usuario tuvo que hacer de verificador. Hoy: cuatro. **Ese es el número que hay que bajar**, y se
 baja mecanizando el punto 6, no prometiendo cuidado.
+
+---
+---
+
+# Cierre — 2026-08-22
+
+## 13. Lo que se cerró después de la retro
+
+La retro de la sección 11 listaba seis cosas a mecanizar. Tres se hicieron en el cierre:
+
+| # | Mecanizar | Estado |
+|---|---|---|
+| 1 | `incident_domain_knowledge_check.py` | ✅ hecho — y **dio un falso positivo el primer día** (§14) |
+| 2 | Cablear los checks al runner | ✅ **6 declararon tier** — no era «cablear», el runner descubre por glob y lee `QUALITY_CHECK`; sin esa declaración salían `UNCLASSIFIED`, o sea existían sin gatear nada |
+| 4 | Guard de escritor único | ✅ **`rebuild_lock.py`** — PID + heartbeat, probado en HELD / ORPHAN / HUNG |
+| 3 · 5 · 6 | gate de huérfanos · retirar duplicado · denominador declarado | ⬜ pendientes, en el PMO |
+
+Y aparecieron dos cosas que la retro no había visto:
+
+**El runbook del panel de firmantes BCM** — `bcm_signatory_change_procedure.md`, con las ocho
+trampas que costaron un incidente cada una, más los agentes `authority-doc-reader` (lectura) y
+`bcm-signatory-panel` (control). La separación la nombró JP: **el PDF manda, SAP es la realidad, el
+correo es solo el pedido, y el valor está en cruzar los tres.**
+
+**El lock del rebuild** — que no estaba en la lista porque el fallo ocurrió *durante* el cierre.
+
+## 14. El quinto y el sexto falso positivo
+
+La retro contó cuatro. Fueron seis.
+
+**El quinto**: el check que escribí para cazar conocimiento perdido marcó al dominio de BANCOS como
+«sin proceso» **teniendo 57 KB de documentación**. Dos fallos encadenados: su lista de palabras no
+incluía `rules` ni `design`, y el solution design **no estaba en `knowledge_docs` del dominio**, así
+que no había forma de verlo aunque hubiera acertado la palabra. Lección que va dentro del propio
+check: **un check que mira nombres de fichero depende de que el registro esté completo** — por eso
+el punto 1 (dominio con registro) va antes que el punto 2 (tiene proceso).
+
+**El sexto**: dije que ningún check estaba cableado al runner tras hacer `grep` de referencias en
+`run_all.py`. El runner **descubre por glob**. La prueba estaba mal, no el cableado.
+
+Los dos son la misma falta de siempre, ahora sobre mis propias herramientas: **afirmar sobre una
+población sin comprobar que el método de medida se le aplica.**
+
+## 15. Un fallo de disciplina que no estaba previsto
+
+Anoche **nadie lanzó dos rebuilds y hubo dos**. El de las 23:17 sobrevivió al suspend del PC —el
+equipo no se apagó, se durmió— y seguía vivo nueve horas después, cuando al reanudar arrancó otro.
+`brain_state.json` quedó en disco **más pequeño que la versión que estaba en git**.
+
+La regla existía y decía *«no lances dos rebuilds»*. **No cubría el caso en que el sistema se
+acuerda por ti.** Eso ya no depende de la memoria de nadie: hay lock con heartbeat, se niega si hay
+uno vivo, reclama el huérfano, y ante uno colgado **informa y deja decidir en vez de matar** —
+matar un escritor a medias es peor que el problema.
+
+## 16. El número que hay que bajar
+
+La retro decía: *«la diferencia entre una sesión buena y una excelente está en cuántas veces el
+usuario tuvo que hacer de verificador. Hoy: cuatro.»*
+
+Fueron **seis**, y las seis las cazó JP. Pero hay una diferencia entre las cuatro primeras y las dos
+últimas: las cuatro primeras eran sobre **datos de SAP** y ya están cubiertas por instrumentos que
+derivan su denominador. Las dos últimas eran sobre **mis propias herramientas**, y ahí no había
+instrumento ninguno — porque nadie audita al auditor.
+
+Eso es lo que queda como deuda de método para la próxima: **el mismo rigor que le exijo a una
+medición sobre SAP se lo debo a una medición sobre nuestro propio corpus.**
+
+## 17. Estado al cierre
+
+| | |
+|---|---|
+| Commits | 50 en el arco · **0 sin subir**, todo en `origin/master` |
+| Cerebro | 25 dominios · **230 reglas** · claims 554–567 · 0 blind spots · cobertura 100% |
+| Dominios | `Master_Data_Governance` creado · `Closing_Activities` rescatado |
+| Procesos escritos | alta de cuenta de mayor · alcance de revaluación FX · panel de firmantes BCM |
+| Agentes | +3: `fx-revaluation-scope`, `authority-doc-reader`, `bcm-signatory-panel` |
+| Instrumentos | +7 checks, 6 con tier declarado, + `rebuild_lock.py` |
+| Incidentes sin proceso | de **11 de 13** a **4 de 13** |
+| **Sin resolver** | **`D:\claude_backups` desconectado desde el 19-ago** — Golden DB 15,2 GB y `~/.claude` solo en este disco. Git no los protege |
