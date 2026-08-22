@@ -290,6 +290,17 @@ def main():
     # companion a proposito: primero se publica el modelo, luego se le buscan los huecos.
     run(["python", "brain_v2/bank_model_explorer.py", "--json"],
         "Step 2i: Explorador del modelo de banca (-> bank_model_findings.json)", fatal=False)
+    # COMPRENSION (A19 + A20). Primero A19 separa objetos de instancias generadas -- sin eso
+    # el indice contaria como huecos ~3.500 nombres que no son objetos. Luego A20 mide, sobre
+    # las TRES superficies de ejecucion (lo que corre, lo que cambia, lo que corre solo), si
+    # esta todo identificado y si lo que no es tecnico lo entendemos y sabemos su dominio.
+    # Va aqui, antes de ensamblar brain_state, para que el indice de entrada lo lleve.
+    # No fatal: mide, no gatea -- pero su keep_exploring ES la lista de trabajo del agente
+    # log-process-discovery, y su derivada delata un bucle de descubrimiento parado.
+    run(["python", "process_mining/log_reality_filter.py"],
+        "Step 2j: Filtro de realidad del log (A19 -> log_reality.json)", fatal=False)
+    run(["python", "brain_v2/comprehension_index.py"],
+        "Step 2k: Indice de comprension (A20 -> comprehension_index.json)", fatal=False)
     # PROFILE (L16) must be crossed BEFORE brain_state is assembled — build_brain_state
     # attaches profile_links.json as system_profile._links. This step also GATES the
     # profile invariants (tier + evidence per module), so a malformed profile stops the
