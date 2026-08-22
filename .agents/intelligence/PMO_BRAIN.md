@@ -233,14 +233,12 @@ verificada y commiteada la noche anterior tenia 5.639.898.
 lanzo dos a sabiendas — uno resucito. Una regla que depende de que el operador recuerde no cubre el
 caso en que el sistema recuerda por el.
 
-**Lo que hay que mecanizar** (ninguna de las tres esta hecha):
-1. **Lock con PID y heartbeat** en `rebuild_all.py`: si hay un lock vivo, el segundo se niega a
-   arrancar y lo dice; si el lock esta huerfano (PID muerto o heartbeat parado > N minutos), lo
-   reclama. Hoy no hay lock de ningun tipo.
-2. **Tope de duracion**: un rebuild que pasa de ~40 min esta colgado, no lento. Debe abortar y
-   dejarlo escrito.
-3. **Guard al commitear**: negarse a `git add` de artefactos generados si hay un `rebuild_all` vivo
-   — el 21/08 se commiteo un `brain_state` a medio construir por esto mismo.
+**Mecanizado el 2026-08-22 — `brain_v2/rebuild_lock.py`, cableado en `rebuild_all.py`:**
+1. ✅ **Lock con PID y heartbeat**. HELD se niega y dice quien manda · ORPHAN (PID muerto) lo
+   reclama solo · HUNG (vivo pero sin latir >15 min) se niega y **no mata**. Probado en los tres.
+2. ✅ **Tope de duracion** — >45 min cuenta como HUNG.
+3. ⬜ **Guard al commitear** — la funcion existe (`is_rebuild_running()`), **falta llamarla desde el
+   hook de cierre**. Es lo unico que queda de H109.
 
 *Resuelto hoy a mano: matado el proceso zombi (PID 10680 + hijo), dejado correr el nuevo.*
 

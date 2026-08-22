@@ -89,12 +89,29 @@ def log(message, echo=False):
         _safe_print(message)
 
 
+def _beat():
+    try:
+        import rebuild_lock
+        rebuild_lock.beat()
+    except Exception:
+        pass
+
+
 def _log_streams(description, returncode, elapsed, stdout, stderr):
     status = "OK" if returncode == 0 else "FAILED"
     log(f"[{_now()}] {status}  {description}  exit={returncode}  ({elapsed:.1f}s)\n"
         f"--- stdout ({len(stdout or '')} chars) ---\n{stdout or ''}\n"
         f"--- stderr ({len(stderr or '')} chars) ---\n{stderr or ''}\n"
         f"--- end: {description} ---")
+
+
+def _lock_or_die(force):
+    """Un solo escritor, COMPROBADO. Ver brain_v2/rebuild_lock.py para el caso que lo motivo."""
+    sys.path.insert(0, str(PROJECT_ROOT / "brain_v2"))
+    import rebuild_lock
+    if not rebuild_lock.acquire(force=force):
+        sys.exit(2)
+    return rebuild_lock
 
 
 def run(cmd, description, fatal=True):
@@ -128,6 +145,7 @@ def run(cmd, description, fatal=True):
         return None
 
     elapsed = time.monotonic() - started
+    _beat()
     _log_streams(description, result.returncode, elapsed, result.stdout, result.stderr)
 
     if result.returncode != 0:
@@ -176,6 +194,11 @@ def regenerate_dynamic_companions():
 
 
 def main():
+    _force = "--force" in sys.argv
+    _lock = _lock_or_die(_force)
+    import atexit
+    atexit.register(_lock.release)
+
     _safe_print("=" * 60)
     _safe_print("Brain v3 Full Rebuild")
     _safe_print("=" * 60)
