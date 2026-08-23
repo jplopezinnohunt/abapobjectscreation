@@ -97,6 +97,37 @@ proyectos: es un satélite leyendo datos financieros de WBS en bucle.
 
 Por eso existe A22. Un porcentaje por dominio es un número sin proceso dentro.
 
+## El eje que el volumen escondía: LEE o MODIFICA
+
+Un dominio con un millón de ejecuciones de lectura y otro con un millón de modificaciones no
+son comparables, y hasta añadir este eje contaban igual.
+
+**La evidencia manda sobre el nombre.** Si un código de transacción aparece en
+`cdhdr_history`, produjo documentos de cambio y por tanto **escribió** — eso es una prueba, no
+una convención. El nombre solo decide lo que la evidencia no alcanza: una llamada RFC o un
+informe no dejan documento de cambio por sí mismos.
+
+| Dominio | Ejecuciones | lee | **modifica** | sin determinar |
+|---|---:|---:|---:|---:|
+| Integration | 1.082.889 | **93%** | 0% | 7% |
+| HR_Workflows | 127.881 | **98%** | 0% | 2% |
+| PBC | 525.091 | 0% | **94%** | 6% |
+| PSM_FM | 324.620 | 2% | **72%** | 26% |
+| HCM | 1.204.892 | 13% | **66%** | 21% |
+| Procurement_P2P | 670.000 | 26% | **63%** | 11% |
+| BusinessPartner | 689.680 | 42% | 41% | 18% |
+| FI | 1.249.047 | 23% | 37% | 40% |
+| PS | 3.501.118 | 0% | 0% | **99%** |
+
+Lo que dice: `Integration` **lee y no escribe** — es un canal de extracción, no un actor.
+`PBC` y `PSM_FM` son lo contrario: casi todo su volumen modifica. Y `HCM` es de modificación
+porque `PA30` se lleva el 59% del dominio y es mantenimiento de datos maestros de personal.
+
+**El `sin determinar` se queda visible y es el siguiente trabajo.** En `PS` es el 99%: sus dos
+objetos dominantes se llaman `Y_BAPI_WBS_FINANCIAL_DATA_1` y `Y_BAPI_YPS8`, y ni la evidencia
+ni el nombre dicen si leen o escriben. Un 99% sin determinar no es un fallo del eje: es el eje
+negándose a inventar.
+
 ## Dos conocimientos, dos stores
 
 | | Dónde vive |

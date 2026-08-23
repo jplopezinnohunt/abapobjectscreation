@@ -44,6 +44,33 @@ GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")
 OUT = os.path.join(ROOT, "brain_v2", "domain_composition.json")
 TOP = 15            # objetos que se guardan por dominio y canal
+
+# LEE o ESCRIBE. El eje que el volumen esconde: un dominio con 1M de ejecuciones de lectura
+# y otro con 1M de modificaciones no son comparables, y hasta ahora contaban igual.
+#
+# La EVIDENCIA manda sobre el nombre: si un tcode aparece en cdhdr_history, produjo documentos
+# de cambio y por tanto ESCRIBIO. Eso es una prueba, no una convencion. El nombre solo decide
+# lo que la evidencia no alcanza -- las llamadas RFC y los informes no dejan documento de
+# cambio por si mismos.
+WRITE_WORDS = ("_CREATE", "_CHANGE", "_MAINTAIN", "_POST", "_UPDATE", "_DELETE", "_INSERT",
+               "_MODIFY", "_SAVE", "_RELEASE", "_APPROVE", "_CANCEL", "_REVERSE", "_EXEC",
+               "CREATE_", "CHANGE_", "MAINTAIN_", "POST_", "UPDATE_", "DELETE_")
+READ_WORDS = ("_GET", "_READ", "_DISPLAY", "_LIST", "_SELECT", "_EXTRACT", "_CHECK",
+              "_SIMULATE", "_GETLIST", "_GETDETAIL", "_INFO", "_SHOW", "_EXPORT", "_DOWNLOAD",
+              "GET_", "READ_", "DISPLAY_", "LIST_", "EXTRACT_")
+
+
+def rw_of(name, writes_measured):
+    """-> ('WRITE'|'READ'|'UNKNOWN', 'medido'|'nombre')."""
+    if name in writes_measured:
+        return "WRITE", "medido: dejo documentos de cambio"
+    u = name.upper()
+    if any(w in u for w in WRITE_WORDS):
+        return "WRITE", "nombre"
+    if any(w in u for w in READ_WORDS):
+        return "READ", "nombre"
+    return "UNKNOWN", "ni evidencia ni nombre"
+
 CONCENTRATED = 5    # <= actores para llamarlo concentrado
 
 
@@ -82,6 +109,11 @@ def build():
             dom_obj[d][channel][name] += n
             if mes:
                 dom_month[d][mes] += n
+
+    print("0/4 que objetos ESCRIBEN, medido en el log de cambios ...")
+    writes_measured = {r[0] for r in q(
+        "SELECT DISTINCT TCODE FROM cdhdr_history WHERE TCODE != ''")}
+    print(f"    {len(writes_measured):,} tcodes con documentos de cambio a su nombre")
 
     print("1/4 informes y programas ...")
     feed("report", q(f"""SELECT SLGREPNA, COUNT(*), COUNT(DISTINCT SLGUSER),
@@ -132,6 +164,13 @@ def build():
                             .isoformat(timespec="seconds"),
            "domains": {}}
 
+    out["_read_write"] = {
+        "_method": ("EVIDENCIA primero: un tcode que aparece en cdhdr_history escribio, y eso "
+                    "es una prueba. El NOMBRE solo decide lo que la evidencia no alcanza -- una "
+                    "llamada RFC o un informe no dejan documento de cambio por si mismos"),
+        "tcodes_with_change_docs": len(writes_measured),
+    }
+
     for d, chans in dom_obj.items():
         allc = collections.Counter()
         for ch, c in chans.items():
@@ -150,6 +189,12 @@ def build():
         for s in dom_actors[d].values():
             actors |= s
         months = dict(sorted(dom_month[d].items()))
+        rw = collections.Counter()
+        rw_why = collections.Counter()
+        for o, v in allc.items():
+            k, why = rw_of(o, writes_measured)
+            rw[k] += v
+            rw_why[why] += v
         out["domains"][d] = {
             "executions": tot,
             "distinct_objects": len(allc),
@@ -161,6 +206,12 @@ def build():
             "top_objects": [{"object": o, "execs": v, "pct": round(100 * v / tot, 1)}
                             for o, v in ranked[:TOP]],
             "by_month": months,
+            "read_write": {k: rw.get(k, 0) for k in ("READ", "WRITE", "UNKNOWN")},
+            "read_write_pct": {k: round(100 * rw.get(k, 0) / tot, 1)
+                               for k in ("READ", "WRITE", "UNKNOWN")},
+            "read_write_evidence": dict(rw_why.most_common()),
+            "top_objects_rw": [{"object": o, "execs": v, "rw": rw_of(o, writes_measured)[0]}
+                               for o, v in ranked[:TOP]],
             "shape": _shape(top1, n90, len(actors), months),
         }
     json.dump(out, open(OUT, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
@@ -203,9 +254,15 @@ def show(dom, data=None):
     print("  forma: " + " · ".join(d["shape"]))
     print(f"  {d['distinct_objects']:,} objetos distintos, y {d['objects_for_90pct']} hacen el 90%")
     print("  canal: " + " · ".join(f"{k} {v:,}" for k, v in d["by_channel"].items()))
+    rw = d.get("read_write_pct", {})
+    if rw:
+        print(f"  lee/escribe: LECTURA {rw.get('READ',0)}% · "
+              f"MODIFICACION {rw.get('WRITE',0)}% · sin determinar {rw.get('UNKNOWN',0)}%")
+    marca = {o["object"]: o["rw"] for o in d.get("top_objects_rw", [])}
     print("  objetos:")
     for o in d["top_objects"][:8]:
-        print(f"    {o['object'][:44]:44s} {o['execs']:>10,} {o['pct']:>5.1f}%")
+        print(f"    {o['object'][:40]:40s} {o['execs']:>10,} {o['pct']:>5.1f}%  "
+              f"{marca.get(o['object'], '')}")
     print("  por mes:")
     for m, v in d["by_month"].items():
         print(f"    {m}  {v:>10,}  {'#' * min(50, int(50 * v / max(d['by_month'].values())))}")
