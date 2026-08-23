@@ -294,6 +294,35 @@
     ],
     "lo_que_NO_se_concluye": "que CDPOS este vacia. Hoy mismo TABLE_WITHOUT_DATA resulto no significar vacio, y dar un mensaje por hecho es justo el error que costo tres rondas. Candidatos sin distinguir: items de CDPOS genuinamente ausentes para estas clases, o una puerta de autorizacion o de configuracion sobre el propio modulo",
     "siguiente_paso": "distinguir esos dos candidatos: leer CDPOS por la via cluster (extract_cdpos_by_object.py, acotado a PBC -- la extraccion MASIVA de CDPOS sigue diferida por decision del usuario) o comprobar la autorizacion del usuario RFC sobre el objeto S_SCD0",
-    "referencia": "la via CDPOS.TABKEY esta documentada: CDHDR y CDPOS se casan por OBJECTCLAS + OBJECTID + CHANGENR, y TABKEY contiene la clave del registro cambiado"
+    "referencia": "la via CDPOS.TABKEY esta documentada: CDHDR y CDPOS se casan por OBJECTCLAS + OBJECTID + CHANGENR, y TABKEY contiene la clave del registro cambiado",
+    "s_scd0_descartado": {
+      "pregunta": "es una puerta de autorizacion S_SCD0?",
+      "respuesta": "NO",
+      "evidencia": "el usuario del canal es JP_LOPEZ (cliente 350, P01) con 56 roles, y NUEVE entradas de S_SCD0 con ACTVT 08 (visualizar documentos de cambio) y 12, en roles de display de BC, CO, CA y HR: YS:BC:D:DISPLAY, YS:BC:D:ABAP_WORKBENCH, YS:CO:D:DISPLAY, YS:CA:D:MD_CUSTOMER, Y_HR_CUSTOMIZE_DISPLAY",
+      "y_tampoco_son_los_parametros": "cinco variantes mas sobre un KRED de 2002 -- fechas explicitas 00000000-99991231, fecha exacta, fecha+hora, todo junto con I_PREP_UNIT, y sin OBJECTID -- las cinco NOT_FOUND",
+      "y_no_es_de_PBC": "falla igual en BELEG y en KRED, las clases mas clasicas que hay, con cabeceras vivas en CDHDR de 2002, 2022 y 2026",
+      "conclusion": "CHANGEDOCUMENT_READ no es utilizable por este canal RFC, y la causa no es ni autorizacion de documentos de cambio ni la forma de la llamada. Queda sin determinar y NO se le pone una etiqueta que suene bien",
+      "ruta_que_queda": "leer CDPOS por la via cluster (CDCLS) con el patron FOR ALL ENTRIES, acotado a PBC: process_mining/extract_cdpos_by_object.py. La extraccion MASIVA de CDPOS sigue diferida por decision del usuario"
+    }
+  },
+  "_hallazgo_successfactors": {
+    "_por_que_esta_aqui": "pista del usuario: SuccessFactors se implanto hace ~2 meses. Encaja con algo que el log ya habia sacado y no se habia atado: entre las tablas navegadas directamente estaban ECPAO_EE_INVT, ECPAO_FLD_MAP, ECPAO_INVT y ECPAO_VALUE_MAP, que son la replicacion de Employee Central",
+    "confirmado_en_P01": {
+      "componentes": [
+        "SFIHCM01 rel.600",
+        "SFIHCM02 rel.600",
+        "SFIHCM03 rel.600",
+        "PA_SE_IN rel.100"
+      ],
+      "tablas_con_datos": [
+        "ECPAO_INVT",
+        "ECPAO_EE_INVT",
+        "ECPAO_FLD_MAP",
+        "ECPAO_VALUE_MAP"
+      ]
+    },
+    "lo_que_encaja": "los documentos de cambio de la clase PBC NO EXISTEN antes de febrero de 2026: 9.855 en feb, salto a 876.760 en marzo, y de ahi 674K-1,07M al mes. FMRESERV en cambio viene de 2025 y antes. Hay una discontinuidad real en PBC a principios de 2026",
+    "lo_que_NO_se_afirma": "que SuccessFactors CAUSE el fallo de CHANGEDOCUMENT_READ -- no hay ninguna evidencia que una las dos cosas. Ni que la discontinuidad de PBC en feb-2026 sea la implantacion de SF: la fecha que dio el usuario es ~junio-2026, cuatro meses despues. Son dos hechos medidos y una coincidencia temporal que NO coincide",
+    "vale_la_pena_por_si_mismo": "el perfil del sistema no registraba SuccessFactors. Es un add-on activo, con replicacion de datos de empleado, o sea un canal de datos de personal que el mapa de integracion no tiene"
   }
 }
