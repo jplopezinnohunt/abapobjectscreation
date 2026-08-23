@@ -261,7 +261,48 @@
     "reading": "PA30 es mantenimiento de datos maestros de personal y HRPBC_ENGINE es Position Budgeting and Control: el mayor flujo de cambios del sistema es PBC creando y manteniendo reservas de fondos para PUESTOS, y el 82% de esos cambios no lleva transaccion, o sea corre de fondo. El compromiso presupuestario de la plantilla no se teclea: se genera",
     "why_it_does_not_join": "los documentos FMRESERV son del rango 32* (99,6%) y fmbl solo contiene 1x/2x/4x. NO es una tabla que falte por extraer: es otro rango de numeracion, es decir otra clase de documento FM. Antes de pedir una extraccion hay que saber QUE documento es el 32*",
     "next": "identificar la tabla del rango 32* (candidatas: la cabecera de fondos afectados y sus posiciones) y, para PBC, que HRP1000/HRP1001 no estan en la Gold DB -- de HR solo hay PA0001",
-    "status": "MEASURED, sin cerrar"
+    "status": "RESUELTO 2026-08-23 - tablas identificadas y verificadas con datos"
   },
-  "_honest_coverage": "6 combinaciones verificadas alcanzan el 8,8% de los cambios. El 88% restante esta en 2 clases y NO se resuelve extrayendo mas de lo mismo. Un porcentaje de cobertura sin decir donde esta el resto es propaganda"
+  "_honest_coverage": "6 combinaciones verificadas alcanzan el 8,8% de los cambios. El 88% restante esta en 2 clases y NO se resuelve extrayendo mas de lo mismo. Un porcentaje de cobertura sin decir donde esta el resto es propaganda",
+  "_resolved_2026_08_23": {
+    "_how": "preguntado a TCDOB en P01, no deducido del nombre",
+    "FMRESERV": {
+      "tables": [
+        "KBLK",
+        "KBLP",
+        "KBLE",
+        "KBLKKRED"
+      ],
+      "header": "KBLK",
+      "items": "KBLP",
+      "verified": "KBLK.BELNR devuelve 3210000000/3210000001 - el rango 32* del log",
+      "in_gold": false,
+      "note": "FMBH y FMBL eran la hipotesis razonable y son FALSAS. Y la tabla local llamada 'fmbl' tiene columnas FM_AREA/DOCYEAR/DOCNR, que NO son las de la FMBL de SAP (FIKRS/BELNR/GJAHR): no es esa tabla"
+    },
+    "PBC": {
+      "tables": [
+        "HRFPM_FM_DOC",
+        "HRFPM_FM_POS",
+        "HRFPM_FPM_DOC",
+        "HRFPM_FPM_POS"
+      ],
+      "verified": "HRFPM_FM_DOC devuelve filas: 350|20|$1000704667|...|20230430",
+      "in_gold": false,
+      "org_structure": {
+        "HRP1000": "legible",
+        "HRP1001": "legible",
+        "in_gold": false,
+        "note": "de HR la Gold DB solo tiene PA0001"
+      }
+    },
+    "extraction_ready": [
+      "KBLK",
+      "KBLP",
+      "HRFPM_FM_DOC",
+      "HRFPM_FM_POS",
+      "HRP1000",
+      "HRP1001"
+    ],
+    "_unlocks": "las 2 clases que son el 88% del log de cambios: 7.252.630 + 4.963.680 de 13.973.856"
+  }
 }

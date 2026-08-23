@@ -157,7 +157,7 @@
       "kind": "INSTRUMENT",
       "fact": "change visibility for this object is OBSERVABLE_IN_ONE_LOG_ONLY (YFMFUNDC5)",
       "learned_by": "A10_chain_lineage",
-      "evidence": "{\"cdhdr_history\": 2221}",
+      "evidence": "{\"cdhdr_history\": 2747}",
       "implication": "present in cdhdr_history and absent from cdhdr — anyone querying the wrong log concludes this object never changes",
       "confidence": "MEASURED",
       "session": 98,
@@ -1233,6 +1233,26 @@
       "learned_by": "A21_case_spine",
       "evidence": "distribucion de TCODE sobre 7.252.630 cambios de OBJECTCLAS='FMRESERV'",
       "implication": "el mayor flujo de cambios del sistema no se teclea, se genera. Cualquier analisis de 'quien cambia el presupuesto' que mire transacciones de dialogo ve el 18% y cree que lo ve todo",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "RFC_READ_TABLE / TABLE_WITHOUT_DATA",
+      "kind": "TRAP",
+      "fact": "el error AD 718 TABLE_WITHOUT_DATA NO significa que la tabla este vacia: significa que TU seleccion no devolvio filas. KBLK con una lista de campos devolvio TABLE_WITHOUT_DATA, y pidiendo solo BELNR devolvio 3210000000 y 3210000001. Preguntar por MANDT como sonda de existencia lo dispara casi siempre.",
+      "learned_by": "A21_case_spine",
+      "evidence": "P01 2026-08-23: FMIT devolvio TABLE_WITHOUT_DATA mientras la Gold DB tiene FMIT con 770.774 filas de procedencia P01 -- contradiccion que delato el mensaje. KBLK, KBLP, HRFPM_FM_DOC y HRFPM_FPM_DOC dieron el mismo falso vacio y las cuatro TIENEN datos",
+      "implication": "nunca declares una tabla vacia por ese mensaje. Reintenta con UN campo real de la tabla (nunca MANDT) y confirma en DD02L que existe. Este proyecto ya tenia la regla de verificar los '0 filas' y esto es la mecanica exacta por la que se incumple",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "TCDOB",
+      "kind": "INSTRUMENT",
+      "fact": "es la respuesta AUTORITATIVA a que tablas guarda cada clase de documento de cambio, y evita la ronda de hipotesis. FMRESERV -> KBLE/KBLK/KBLKKRED/KBLP (NO FMBH/FMBL, que fue la hipotesis razonable y era falsa). PBC -> HRFPM_FM_DOC/HRFPM_FM_POS/HRFPM_FPM_DOC/HRFPM_FPM_POS. BELEG -> BKDF/BKPF/BSEC/BSED/BSEG/BSEG_ADD/BSET. ENTRYSHEET -> ESKN/ESSR.",
+      "learned_by": "A21_case_spine",
+      "evidence": "RFC_READ_TABLE sobre TCDOB WHERE OBJECT = <clase>, P01, 2026-08-23",
+      "implication": "ante una OBJECTCLAS desconocida, preguntale a TCDOB antes de adivinar por el nombre. Dos hipotesis razonables (FMBH y FMBL) costaron dos rondas y las dos eran incorrectas",
       "confidence": "MEASURED",
       "session": 103
     }
