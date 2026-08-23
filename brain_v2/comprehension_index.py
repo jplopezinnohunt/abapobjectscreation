@@ -111,6 +111,26 @@ TECHNICAL_DOMAINS = {
 }
 UNPLACED = {"Uncatalogued", "", None}
 
+# EL OBSERVADOR. Nuestra propia herramienta lee P01 por RFC y cada lectura queda en el mismo
+# log que estamos midiendo. Medido 2026-08-23: 264.521 filas (0,93% del log) y 135.377 de la
+# superficie RFC (1,08%), todas del usuario con el que se autentica el conector.
+#
+# Contarlas seria un error de dos filos. El grueso -- RFC_READ_TABLE, RFCPING,
+# DDIF_FIELDINFO_GET -- cae en sustrato tecnico y solo hincha el denominador. Pero una parte
+# NO: FM_FUND_GET_DETAIL_RFC (1.306), GL_ACCT_MASTER_GET_COA_RFC, FM_FUNDS_CTR_GET_DETAILS_RFC,
+# BAPI_PROJECTDEF_GETDETAIL y /SAPPSPRO/PD_GM_FMR2_READ_KBLE son modulos de NEGOCIO, asi que
+# se clasifican como actividad de PSM_FM, FI y PS. O sea: el observador inflaba precisamente
+# los dominios que estudia, y ademas los hacia parecer mas vivos cuanto mas los miraba.
+#
+# Un control que SI sale limpio y conviene guardar: CDHDR con USERNAME='JP_LOPEZ' son 0 filas.
+# El agente lee y no escribe, y eso es comprobable, no una promesa.
+#
+# Solo va aqui el usuario del CONECTOR, verificado por get_connection_attributes(). NO se
+# meten otros apellidos parecidos (C_LOPEZ, A_LOPEZ-REY, E_LOPEZ son personas distintas), ni
+# los *-RFC de satelites -- BRIDGE-RFC, UBO-RFC, EPAM-RFC son integraciones reales del cliente
+# y su trafico es negocio de verdad.
+OBSERVER_USERS = {"JP_LOPEZ"}
+
 
 def load(p, default=None):
     try:
@@ -274,12 +294,25 @@ def main():
     tech_names = collections.Counter()
 
     def tally(surface, rows, kind):
-        """rows: (name, execs, actors, b0,b1,b2,b3)"""
-        TRACKS = ["BUSINESS", "TECHNICAL", "CROSS_CUTTING", "STRANDED", "UNCLASSIFIED"]
+        """rows: (name, execs, actors, b0,b1,b2,b3[, observer_execs])
+
+        Si la fila trae un octavo valor, son las ejecuciones que hizo NUESTRA herramienta.
+        Se restan del recuento normal y van a la via OBSERVER, para que el total se conserve
+        y a la vez ninguna via de negocio cargue con lo que hicimos nosotros."""
+        TRACKS = ["BUSINESS", "TECHNICAL", "CROSS_CUTTING", "STRANDED", "UNCLASSIFIED",
+                  "OBSERVER"]
         acc = {t: collections.Counter() for t in TRACKS}
         accn = {t: collections.Counter() for t in TRACKS}
         generated = 0
-        for name, execs, actors, *bands in rows:
+        for name, execs, actors, *rest in rows:
+            bands = rest[:4]
+            obs = rest[4] if len(rest) > 4 else 0
+            if obs:
+                acc["OBSERVER"][1] += obs
+                accn["OBSERVER"][1] += 1
+                execs = execs - obs
+                if execs <= 0:      # objeto que SOLO existe porque lo llamamos nosotros
+                    continue
             if kind == "object":
                 k, _, _, _ = classify_program(name)
                 if k != "OBJECT":
@@ -334,8 +367,10 @@ def main():
                SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) <  6 THEN 1 ELSE 0 END),
                SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) BETWEEN  6 AND 11 THEN 1 ELSE 0 END),
                SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) BETWEEN 12 AND 17 THEN 1 ELSE 0 END),
-               SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END)
-        FROM rsau_audit_history WHERE SLGREPNA != '' GROUP BY SLGREPNA"""), "object")
+               SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END),
+               SUM(CASE WHEN SLGUSER IN ({obs}) THEN 1 ELSE 0 END)
+        FROM rsau_audit_history WHERE SLGREPNA != '' GROUP BY SLGREPNA""".format(
+            obs=",".join("'%s'" % u for u in sorted(OBSERVER_USERS)))), "object")
 
     # ---- SUPERFICIE 2: lo que CAMBIA --------------------------------------------------
     # La transaccion que hizo el cambio, no la clase de objeto: la clase dice QUE se toco,
@@ -381,7 +416,11 @@ def main():
                    SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END)
             FROM rsau_audit_history
             WHERE TXSUBCLSID = 'RFC Function Call' AND PARAM3 != ''
-            GROUP BY PARAM3"""), "rfc")
+            GROUP BY PARAM3""".replace(
+                "SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END)",
+                "SUM(CASE WHEN CAST(SUBSTR(SAL_TIME,1,2) AS INT) >= 18 THEN 1 ELSE 0 END), "
+                "SUM(CASE WHEN SLGUSER IN (%s) THEN 1 ELSE 0 END)"
+                % ",".join("'%s'" % u for u in sorted(OBSERVER_USERS)))), "rfc")
     except sqlite3.Error as e:
         surfaces["rfc"] = {"error": str(e)[:160]}
 
@@ -395,11 +434,21 @@ def main():
                       "clasificado? y lo que no es tecnico, lo entendemos y sabemos su dominio?"),
         "_measured_utc": datetime.datetime.now(datetime.timezone.utc)
                          .isoformat(timespec="seconds"),
+        "_observer": {
+            "users": sorted(OBSERVER_USERS),
+            "_what": ("trafico generado por NUESTRA propia herramienta al leer P01. Se separa "
+                      "porque contarlo hace que un dominio parezca mas vivo cuanto mas lo "
+                      "miramos, y porque parte de nuestras llamadas son modulos de NEGOCIO "
+                      "(FM_FUND_GET_DETAIL_RFC, GL_ACCT_MASTER_GET_*, BAPI_PROJECTDEF_GETDETAIL)"),
+            "_control": "CDHDR con este usuario = 0 filas: el agente lee y no escribe",
+        },
         "_tracks": {
             "TECHNICAL": ("sustrato, Basis, seguridad, transporte, runtime de terceros. "
                           "Clasificarlo como tecnico ES la respuesta: esta cerrado"),
             "BUSINESS": "todo lo demas; aqui el dominio solo no basta, hacen falta los 3 grados",
             "UNCLASSIFIED": "no sabemos ni de cual de los dos es. ESTE es el hueco real",
+            "OBSERVER": ("nosotros mirando. No es actividad del sistema y no cuenta para "
+                         "ninguna otra via"),
         },
         "headline": {
             "executions_total": tot_all,
@@ -469,6 +518,10 @@ def main():
             print(f"  {s:9s} ERROR {v['error']}")
             continue
         p = v["pct_by_track"]
+        ob = v["by_track_executions"].get("OBSERVER", 0)
+        if ob:
+            print(f"  {s:9s} {ob:>12,} de las ejecuciones son NUESTRAS (observador) y se "
+                  f"apartan")
         print(f"  {s:9s} {v['executions_graded']:>12,} ejec | "
               f"tecnico {p['TECHNICAL']:>5}% · negocio {p['BUSINESS']:>5}% · "
               f"SIN CLASIFICAR {p['UNCLASSIFIED']:>5}%")

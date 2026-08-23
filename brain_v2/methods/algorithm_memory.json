@@ -1295,6 +1295,26 @@
       "implication": "hay un canal de datos de PERSONAL que el mapa de integracion no tiene. Y sirve de ejemplo de por que lo generado se RE-ENRUTA en vez de tirarse: estas tablas salieron de nombres de programa /1BCDWB/DB* que un indice de objetos habria descartado como basura",
       "confidence": "MEASURED",
       "session": 103
+    },
+    {
+      "subject": "el observador en su propio log",
+      "kind": "TRAP",
+      "fact": "nuestra herramienta lee P01 por RFC y cada lectura queda en el MISMO log que medimos. 264.521 filas (0,93% del log) y 135.377 de la superficie RFC (1,08%) son nuestras. El grueso -- RFC_READ_TABLE 81.080, RFCPING 43.082, DDIF_FIELDINFO_GET 4.797 -- cae en sustrato tecnico, pero una parte NO: FM_FUND_GET_DETAIL_RFC (1.306), GL_ACCT_MASTER_GET_COA_RFC, FM_FUNDS_CTR_GET_DETAILS_RFC, BAPI_PROJECTDEF_GETDETAIL y /SAPPSPRO/PD_GM_FMR2_READ_KBLE son modulos de NEGOCIO y se contaban como actividad de PSM_FM, FI y PS.",
+      "learned_by": "A20_comprehension_index",
+      "evidence": "P01 2026-08-23, rsau_audit_history agrupado por SLGUSER y por PARAM3; el usuario del conector se verifico con get_connection_attributes() y es JP_LOPEZ",
+      "implication": "un dominio parecia mas vivo cuanto mas lo mirabamos. Toda metrica sobre el log necesita una via OBSERVER separada, no una resta silenciosa: separada se ve y se audita, restada desaparece. Y NO metas ahi apellidos parecidos (C_LOPEZ, A_LOPEZ-REY son personas) ni los *-RFC de satelites (BRIDGE-RFC, UBO-RFC, EPAM-RFC son integraciones reales del cliente)",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "el agente no escribe en P01",
+      "kind": "INSTRUMENT",
+      "fact": "comprobable y comprobado: cdhdr_history con USERNAME='JP_LOPEZ' son 0 filas. La disciplina de solo-lectura sobre produccion no es una promesa, deja rastro medible -- o su ausencia.",
+      "learned_by": "A20_comprehension_index",
+      "evidence": "count(*) sobre 13.973.856 cambios acumulados, 2026-08-23",
+      "implication": "este contador vale como control permanente. Si algun dia deja de ser 0, algo escribio en produccion y hay que saberlo el mismo dia",
+      "confidence": "MEASURED",
+      "session": 103
     }
   ]
 }

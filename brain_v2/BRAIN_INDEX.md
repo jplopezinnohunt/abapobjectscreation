@@ -61,8 +61,8 @@ the system is used that assumes people in screens is wrong before it starts.
 - **300 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
   RFC_DESTINATION 239 · FILE 20 · BATCH_INPUT 17 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
 - **The boundary is mostly dead:** 238 RFC destinations configured,
-  **10 live**, **228 dead**,
-  **176 undeclared** — traffic crossing with no configuration entry.
+  **11 live**, **227 dead**,
+  **319 undeclared** — traffic crossing with no configuration entry.
 - **Write channels, derived per object class:** DIALOG 64 · RFC_INBOUND 40 · BATCH_JOB 19 · FILE 6 · PROGRAM 2 · WEBSERVICE_UNDETECTABLE 2 · BATCH_INPUT 1
 - **An empty transaction code is a POINTER, not a gap** — usually a BAPI/RFC whose design never set
   one. Reading it as 'batch' loses the interface.
@@ -89,19 +89,19 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
-## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.73% sin clasificar
+## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.71% sin clasificar
 Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
 corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
-- **objects** — 28,499,310 ejec · tecnico 92.5% · negocio 7.5% · sin clasificar **0.0%**
+- **objects** — 28,499,551 ejec · tecnico 91.6% · negocio 7.5% · sin clasificar **0.0%**
 - **changes** — 2,873,448 ejec · tecnico 15.4% · negocio 84.5% · sin clasificar **0.0%**
 - **jobs** — 219,167 ejec · tecnico 81.4% · negocio 18.4% · sin clasificar **0.2%**
-- **rfc** — 12,589,665 ejec · tecnico 54.2% · negocio 34.7% · sin clasificar **2.5%**
+- **rfc** — 12,589,665 ejec · tecnico 53.2% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
-  El hueco real es SIN CLASIFICAR: 320,976 de 44,181,590.
+  El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
 - **Situar no es explicar:** solo el **60.6%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
-- Movimiento: -4.36 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
-- **370 objetos por explorar** (36 custom) —
+- Movimiento: -0.02 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
+- **354 objetos por explorar** (36 custom) —
   la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
   y es el trabajo del agente `log-process-discovery`.
 - Lo aprendido sobre COMO explorar (no sobre el dato) vive aparte, en
