@@ -30,7 +30,16 @@ SPINE = [
     ("KRED",       "LFA1", ["LIFNR"], lambda o: (o,)),
     ("MM_SERVICE", "esll", ["PACKNO"], lambda o: (o,)),
     ("ADRESSE",    "ADRC", ["ADDRNUMBER"], lambda o: (o,)),
-    ("FMRESERV",   "FMIOI", ["BELNR"], lambda o: (o,)),
+    # FMRESERV: destino dado por TCDOB (KBLK/KBLP), no por parecido de nombre. KBLK se
+    # indexa SOLO por BELNR -- sin GJAHR -- cosa que hay que mirar en DD03L, no suponer.
+    ("FMRESERV",   "KBLK", ["BELNR"], lambda o: (o,)),
+    # PBC: TCDOB dice HRFPM_FM_DOC, pero esa tabla trae PLVAR, OTYPE y OBJID VACIOS en el
+    # 100% de sus 1.393.580 filas (1 solo valor distinto en cada una), asi que no hay por
+    # donde unir. Y el OBJECTID de PBC (29 caracteres, p.ej. 01P10000140302026013120260131)
+    # tampoco casa contra HRP1000: OBJID='10000140' no existe alli, y los OTYPE reales son
+    # CP/S/O/WF/T/WS/RY/PJ, sin P. Se sonda igualmente para que el 0% quede MEDIDO y con
+    # fecha, en vez de desaparecer como si nadie lo hubiera intentado.
+    ("PBC",        "HRFPM_FM_DOC", ["BELNR"], lambda o: (o,)),
 ]
 
 con = sqlite3.connect("file:" + GOLD + "?mode=ro", uri=True)

@@ -218,91 +218,82 @@
     },
     {
       "case_class": "FMRESERV",
-      "target": "FMIOI",
+      "target": "KBLK",
       "key": [
         "BELNR"
       ],
-      "status": "SIN_COLUMNA",
-      "note": "FMIOI no tiene ['BELNR']; tiene ['BLDOCDATE', 'BL_DOC_TYPE', 'BTART', 'BUDAT', 'BUDGET_PD', 'BUKRS', 'BUS_AREA', 'CFCNT', 'CFLEV', 'CFSTAT', 'CFSTATSV', 'CPUDT']",
+      "status": "COMBINA",
+      "probed": 250,
+      "matched": 250,
+      "pct": 100.0,
+      "sample": [
+        {
+          "objectid": "3110008371",
+          "key": [
+            "3110008371"
+          ]
+        },
+        {
+          "objectid": "3110008375",
+          "key": [
+            "3110008375"
+          ]
+        },
+        {
+          "objectid": "3110008376",
+          "key": [
+            "3110008376"
+          ]
+        }
+      ],
       "changes_in_log": 7252630
+    },
+    {
+      "case_class": "PBC",
+      "target": "HRFPM_FM_DOC",
+      "key": [
+        "BELNR"
+      ],
+      "status": "NO_COMBINA",
+      "probed": 250,
+      "matched": 0,
+      "pct": 0.0,
+      "sample": [],
+      "changes_in_log": 4963680
     }
   ],
   "_coverage": {
-    "classes_probed": 8,
-    "combining": 6,
-    "changes_reachable": 1234421,
+    "classes_probed": 9,
+    "combining": 7,
+    "changes_reachable": 8487051,
     "changes_total": 13973856,
-    "classes_never_probed": 64
+    "classes_never_probed": 63
   },
-  "_the_finding": {
-    "what": "las dos clases que se comen el 88% del log de cambios -- FMRESERV (7,25M, 52%) y PBC (4,96M, 36%) -- no son dos huecos de extraccion: son UN proceso",
-    "evidence": {
-      "fmreserv_tcodes": {
-        "(ninguna)": 5980533,
-        "PA30": 425956,
-        "ZPBC_PERIOD_CLS_EXEC": 286704,
-        "SE38": 222817,
-        "HRPBC_ENGINE_PNP": 156581,
-        "FMX2": 66728
-      },
-      "fmreserv_docnr_prefix": {
-        "32": 7221796,
-        "31": 27563,
-        "61": 2278,
-        "63": 805,
-        "64": 188
-      },
-      "fmbl_docnr_prefix": {
-        "4": 263332,
-        "2": 43626,
-        "1": 20785
-      }
-    },
-    "reading": "PA30 es mantenimiento de datos maestros de personal y HRPBC_ENGINE es Position Budgeting and Control: el mayor flujo de cambios del sistema es PBC creando y manteniendo reservas de fondos para PUESTOS, y el 82% de esos cambios no lleva transaccion, o sea corre de fondo. El compromiso presupuestario de la plantilla no se teclea: se genera",
-    "why_it_does_not_join": "los documentos FMRESERV son del rango 32* (99,6%) y fmbl solo contiene 1x/2x/4x. NO es una tabla que falte por extraer: es otro rango de numeracion, es decir otra clase de documento FM. Antes de pedir una extraccion hay que saber QUE documento es el 32*",
-    "next": "identificar la tabla del rango 32* (candidatas: la cabecera de fondos afectados y sus posiciones) y, para PBC, que HRP1000/HRP1001 no estan en la Gold DB -- de HR solo hay PA0001",
-    "status": "RESUELTO 2026-08-23 - tablas identificadas y verificadas con datos"
+  "_run_2026_08_23_con_tablas_cargadas": {
+    "coverage_before": "8.8% (1.234.421 de 13.973.856 cambios)",
+    "coverage_after": "60.7% (8.487.051 de 13.973.856)",
+    "what_changed": "FMRESERV -> KBLK casa al 100% (250/250). Es el 52% del log de cambios y entra entero",
+    "combinations": {
+      "FMRESERV->KBLK": 100.0,
+      "ENTRYSHEET->essr": 100.0,
+      "KRED->LFA1": 100.0,
+      "MM_SERVICE->esll": 100.0,
+      "EINKBELEG->ekko": 94.0,
+      "BELEG->bkpf": 92.4,
+      "BANF->eban": 70.0,
+      "ADRESSE->ADRC": 0.0,
+      "PBC->HRFPM_FM_DOC": 0.0
+    }
   },
-  "_honest_coverage": "6 combinaciones verificadas alcanzan el 8,8% de los cambios. El 88% restante esta en 2 clases y NO se resuelve extrayendo mas de lo mismo. Un porcentaje de cobertura sin decir donde esta el resto es propaganda",
-  "_resolved_2026_08_23": {
-    "_how": "preguntado a TCDOB en P01, no deducido del nombre",
-    "FMRESERV": {
-      "tables": [
-        "KBLK",
-        "KBLP",
-        "KBLE",
-        "KBLKKRED"
-      ],
-      "header": "KBLK",
-      "items": "KBLP",
-      "verified": "KBLK.BELNR devuelve 3210000000/3210000001 - el rango 32* del log",
-      "in_gold": false,
-      "note": "FMBH y FMBL eran la hipotesis razonable y son FALSAS. Y la tabla local llamada 'fmbl' tiene columnas FM_AREA/DOCYEAR/DOCNR, que NO son las de la FMBL de SAP (FIKRS/BELNR/GJAHR): no es esa tabla"
-    },
-    "PBC": {
-      "tables": [
-        "HRFPM_FM_DOC",
-        "HRFPM_FM_POS",
-        "HRFPM_FPM_DOC",
-        "HRFPM_FPM_POS"
-      ],
-      "verified": "HRFPM_FM_DOC devuelve filas: 350|20|$1000704667|...|20230430",
-      "in_gold": false,
-      "org_structure": {
-        "HRP1000": "legible",
-        "HRP1001": "legible",
-        "in_gold": false,
-        "note": "de HR la Gold DB solo tiene PA0001"
-      }
-    },
-    "extraction_ready": [
-      "KBLK",
-      "KBLP",
-      "HRFPM_FM_DOC",
-      "HRFPM_FM_POS",
-      "HRP1000",
-      "HRP1001"
+  "_pbc_sigue_abierto": {
+    "status": "NO RESUELTO - causa no determinada, y se deja dicho asi",
+    "que_se_probo": [
+      "HRFPM_FM_DOC, que es lo que TCDOB declara: PLVAR, OTYPE y OBJID vienen VACIOS en el 100% de sus 1.393.580 filas (1 solo valor distinto en cada columna), asi que no hay columna por la que unir",
+      "partir el OBJECTID de 29 caracteres (01P10000140302026013120260131) como PLVAR(2)+OTYPE(1)+OBJID(8)+..+BEGDA(8)+ENDDA(8) y buscarlo en HRP1000: 0 de 300. OBJID='10000140' no existe alli -- el rango es 00000001..70100080 -- y los OTYPE reales son CP/S/O/WF/T/WS/RY/PJ, sin P",
+      "CHANGEDOCUMENT_READ, que es la via general y correcta: CDPOS lleva TABNAME y TABKEY, o sea la tabla y la clave EXACTA de la fila cambiada, sin tener que parsear nada. Devuelve NOT_FOUND (DA 300) en las CINCO variantes probadas, incluida la mas amplia -- solo clase y fecha, sin objeto -- mientras RFC_READ_TABLE sobre CDHDR demuestra que la cabecera SI esta viva en P01, tanto para un cambio de 2024 como para uno del 17-ago-2026"
     ],
-    "_unlocks": "las 2 clases que son el 88% del log de cambios: 7.252.630 + 4.963.680 de 13.973.856"
+    "lo_que_NO_se_concluye": "que CDPOS este vacia. Hoy mismo TABLE_WITHOUT_DATA resulto no significar vacio, y dar un mensaje por hecho es justo el error que costo tres rondas. Candidatos sin distinguir: items de CDPOS genuinamente ausentes para estas clases, o una puerta de autorizacion o de configuracion sobre el propio modulo",
+    "siguiente_paso": "distinguir esos dos candidatos: leer CDPOS por la via cluster (extract_cdpos_by_object.py, acotado a PBC -- la extraccion MASIVA de CDPOS sigue diferida por decision del usuario) o comprobar la autorizacion del usuario RFC sobre el objeto S_SCD0",
+    "referencia": "la via CDPOS.TABKEY esta documentada: CDHDR y CDPOS se casan por OBJECTCLAS + OBJECTID + CHANGENR, y TABKEY contiene la clave del registro cambiado"
   }
 }

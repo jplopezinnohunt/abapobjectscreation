@@ -1255,6 +1255,26 @@
       "implication": "ante una OBJECTCLAS desconocida, preguntale a TCDOB antes de adivinar por el nombre. Dos hipotesis razonables (FMBH y FMBL) costaron dos rondas y las dos eran incorrectas",
       "confidence": "MEASURED",
       "session": 103
+    },
+    {
+      "subject": "CDPOS / CHANGEDOCUMENT_READ",
+      "kind": "INSTRUMENT",
+      "fact": "la via GENERAL para llevar un cambio a su documento no es parsear el OBJECTID -- que es especifico de cada clase y no esta documentado -- sino CDPOS, que trae TABNAME y TABKEY: la tabla y la clave exacta de la fila. En P01, sin embargo, CHANGEDOCUMENT_READ devuelve NOT_FOUND (DA 300) en las cinco variantes probadas, incluida clase+fecha sin objeto, con la cabecera demostrablemente viva en CDHDR.",
+      "learned_by": "A21_case_spine",
+      "evidence": "P01 2026-08-23: CDHDR devuelve la cabecera para FMRESERV/0082847884 (2024) y PBC/0124229413 (15-ago-2026); CHANGEDOCUMENT_READ falla en las dos",
+      "implication": "no des el NOT_FOUND por 'no hay datos': quedan sin distinguir items de CDPOS ausentes y una puerta de autorizacion (S_SCD0) o de configuracion sobre el modulo. Y READ_CHANGEDOCU viene por defecto en SPACE, asi que hay que ponerlo a X -- aunque en este caso no fue la causa",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "HRFPM_FM_DOC",
+      "kind": "CARRIER",
+      "fact": "TCDOB la declara como la tabla de la clase de cambio PBC, pero sus columnas PLVAR, OTYPE y OBJID estan VACIAS en el 100% de sus 1.393.580 filas: una sola valor distinto en cada una. La tabla existe, tiene volumen, y no lleva la identidad del objeto de RRHH al que pertenece.",
+      "learned_by": "A21_case_spine",
+      "evidence": "count(distinct) por columna sobre la tabla recien extraida, 2026-08-23",
+      "implication": "que TCDOB declare una tabla no garantiza que esa tabla lleve por donde unir. Comprueba la POBLACION de las columnas de union antes de disenar el join, no despues de que devuelva 0%",
+      "confidence": "MEASURED",
+      "session": 103
     }
   ]
 }
