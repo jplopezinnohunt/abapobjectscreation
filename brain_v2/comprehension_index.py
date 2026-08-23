@@ -105,11 +105,31 @@ PEAK_SHARE = 0.40
 
 # Domains whose nature IS technical. Named explicitly and kept SHORT on purpose: the moment
 # this list grows to absorb something awkward, the index starts lying in our favour.
+# TECNICO es FONTANERIA: el despachador por el que pasa cada llamada, el planificador de
+# fondos, el sustrato de sesion. Nadie lo "hace", ocurre.
 TECHNICAL_DOMAINS = {
-    "Basis_Security", "Technical_Substrate", "Security", "CTS_Transport",
-    "BW_embedded", "ThirdParty_Addon",
+    "Basis_Security", "Technical_Substrate",
+}
+
+# TRANSVERSAL es TRABAJO DE UN EQUIPO que sirve a todas las cadenas a la vez. No es
+# fontaneria y no es un hueco: exigirle una cadena de proceso de negocio es un error de
+# categoria, igual que preguntarle a la contabilidad de que almacen depende.
+#
+# Security, BW_embedded y ThirdParty_Addon estaban en TECNICO y salieron de ahi el
+# 2026-08-23 por una razon buena: son acciones del EQUIPO DE SEGURIDAD administrando
+# identidades y roles, y de INTEGRACIONES moviendo datos. Tienen dueno, tienen proceso y
+# tienen responsable; lo que no tienen es una cadena B2R/P2P/H2R/T2R/P2D. Llamarlas
+# sustrato las hacia invisibles: 1.030.312 + 68.801 + 13.062 ejecuciones de trabajo real
+# contadas como tuberia.
+#
+# CTS_Transport se queda en transversal por el mismo argumento -- gestionar transportes es
+# trabajo de un equipo -- y no en tecnico.
+CROSS_CUTTING_DOMAINS = {
+    "Security", "BW_embedded", "ThirdParty_Addon", "CTS_Transport", "Integration",
+    "Support", "Transport_Intelligence",
 }
 UNPLACED = {"Uncatalogued", "", None}
+GRADE_LABEL = {0: "0_EXECUTES", 1: "1_PLACED", 2: "2_DESCRIBED", 3: "3_EXPLAINED"}
 
 # EL OBSERVADOR. Nuestra propia herramienta lee P01 por RFC y cada lectura queda en el mismo
 # log que estamos midiendo. Medido 2026-08-23: 264.521 filas (0,93% del log) y 135.377 de la
@@ -259,6 +279,8 @@ def grade_item(name, execs, actors, bands, dom, resolve, explained):
     """-> (track, grade). track in BUSINESS | TECHNICAL | CROSS_CUTTING | STRANDED | UNCLASSIFIED."""
     if dom in TECHNICAL_DOMAINS:
         return "TECHNICAL", 1                      # identified as substrate = closed
+    if dom in CROSS_CUTTING_DOMAINS:
+        return "CROSS_CUTTING", 1                  # trabajo de equipo que sirve a todo
     if dom in UNPLACED:
         return "UNCLASSIFIED", 0
     proc, kind = resolve(dom)
@@ -291,6 +313,10 @@ def main():
     surfaces = {}
     keep = []
     map_gaps = collections.Counter()
+    # Reparto por DOMINIO. Se perdio al reescribir a cuatro superficies y hubo que
+    # reponerlo: un indice global sin el desglose dice que entendemos, no DONDE.
+    per_domain = collections.defaultdict(lambda: collections.Counter())
+    per_domain_track = collections.defaultdict(lambda: collections.Counter())
     tech_names = collections.Counter()
 
     def tally(surface, rows, kind):
@@ -336,7 +362,10 @@ def main():
             track, g = grade_item(name, execs, actors, bands, dom, resolve, explained)
             acc[track][g] += execs
             accn[track][g] += 1
-            if track == "TECHNICAL":
+            if dom:
+                per_domain[dom][g] += execs
+                per_domain_track[dom][track] += execs
+            if track in ("TECHNICAL", "CROSS_CUTTING"):
                 tech_names[dom] += execs
             if track in ("BUSINESS", "STRANDED") and g == 0:
                 map_gaps[dom] += execs
@@ -457,7 +486,12 @@ def main():
             "_note": "pct_unclassified es EL numero que debe ir a cero",
         },
         "surfaces": surfaces,
-        "technical_domains_used": dict(tech_names.most_common()),
+        "by_domain": {
+            d: {"executions": sum(c.values()),
+                "track": dict(per_domain_track[d].most_common()),
+                "grades": {GRADE_LABEL[g]: c.get(g, 0) for g in range(4)}}
+            for d, c in sorted(per_domain.items(), key=lambda x: -sum(x[1].values()))},
+        "technical_and_crosscutting_domains": dict(tech_names.most_common()),
         "process_map_gaps": {
             "_what": ("dominios de NEGOCIO que A4 asigna y domains.json no ata a ninguna "
                       "cadena de proceso. No es que no se entiendan: es que el mapa no los "
