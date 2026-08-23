@@ -33,6 +33,7 @@ GRAPH = BRAIN / "system_profile" / "model_graph.json"
 LINKS = BRAIN / "system_profile" / "profile_links.json"
 PROFILE = BRAIN / "system_profile" / "unesco_system_profile.json"
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
+COMPREHENSION = BRAIN / "comprehension_index.json"
 
 # Thresholds. Stated here so they can be argued with, rather than buried in a condition.
 FRONTIER_GROWTH_PCT = 5.0     # below this, new unresolved objects are noise
@@ -45,6 +46,12 @@ def _load(p, d=None):
 
 
 UNATTRIBUTED_CLASSES = 5   # below this it is a tail, not a gap
+# A20: cuanto puede empeorar el sin-clasificar antes de que sea una regresion y no ruido.
+# Va bajo a proposito: el numero cayo a 0,73% con reglas que costaron una tarde, asi que
+# medio punto de subida ya significa que entro algo cuya forma no reconoce nadie.
+COMPREHENSION_REGRESSION_PCT = 0.5
+COMPREHENSION_EXPLAIN_FLOOR = 40.0   # % de ejecuciones de negocio en grado 3
+
 CYCLE_STALE_DAYS = 8       # weekly schedule + one day of slack
 
 
@@ -89,6 +96,24 @@ def measure():
     # that never happened, and the two send you to different places to look.
     m["cycle_status"] = cs.get("status")
     m["cycle_started"] = cs.get("started_utc")
+
+    # A20 — la superficie de ejecucion. Se guardan el sin-clasificar Y el conjunto de
+    # superficies: comparar dos corridas de distinto alcance no es una derivada, es una
+    # ilusion, y ya paso una vez (2,66% -> 5,09% al cablear la 4a superficie, sin que nadie
+    # entendiera menos).
+    ci = _load(COMPREHENSION)
+    if ci:
+        h = ci.get("headline") or {}
+        m["comprehension_pct_unclassified"] = h.get("pct_unclassified")
+        m["comprehension_surface_set"] = sorted(ci.get("surfaces") or {})
+        m["comprehension_keep_exploring"] = ci.get("keep_exploring_total")
+        m["comprehension_keep_custom"] = ci.get("keep_exploring_custom")
+        gb = gn = 0
+        for v in (ci.get("surfaces") or {}).values():
+            g = v.get("business_grades_executions") or {}
+            gb += sum(g.values())
+            gn += g.get("3", 0)
+        m["comprehension_pct_explained"] = round(100 * gn / gb, 1) if gb else None
 
     # audit history depth — the evidence window every domain assignment rests on
     if GOLD.exists():
@@ -197,6 +222,45 @@ def evaluate(now, prev):
         fire("MAINTENANCE", "the analysis cycle is stale",
              f"last run {stale} days ago, expected weekly — a missed schedule produces no "
              f"error, so this is the only thing that notices", "CYCLE")
+
+    # ---- LA SUPERFICIE DE EJECUCION (A20) ------------------------------
+    # Medir sin que nada dispare es la version elegante de no hacer nada: el propio bucle de
+    # descubrimiento estuvo 75 dias parado y lo unico que lo noto fue una persona mirando una
+    # fecha de fichero. Estos tres disparos son para que no dependa de eso otra vez.
+    pu, cu = prev.get("comprehension_pct_unclassified"), now.get("comprehension_pct_unclassified")
+    same_scope = (prev.get("comprehension_surface_set")
+                  == now.get("comprehension_surface_set"))
+    if pu is not None and cu is not None and same_scope:
+        if cu - pu >= COMPREHENSION_REGRESSION_PCT:
+            fire("MATURITY", "la superficie de ejecucion se esta ABRIENDO",
+                 f"sin clasificar {pu}% -> {cu}% con el mismo alcance: algo empezo a ejecutarse "
+                 f"cuya forma no reconoce ninguna regla. Es evidencia nueva, no ruido",
+                 "CYCLE")
+        elif cu == pu and now.get("comprehension_keep_exploring") == \
+                prev.get("comprehension_keep_exploring"):
+            fire("MATURITY", "el bucle de descubrimiento no se movio",
+                 f"sin clasificar clavado en {cu}% y la lista de exploracion en "
+                 f"{now.get('comprehension_keep_exploring')}: o no entra evidencia nueva, o el "
+                 f"ciclo corre sin que nadie trabaje su salida. A6 ya lo dice de la frontera: "
+                 f"lo que deja de moverse es que el bucle paro, no que este terminado",
+                 "CYCLE")
+    elif pu is not None and cu is not None and not same_scope:
+        fire("MATURITY", "el ALCANCE del indice de comprension cambio",
+             f"antes {prev.get('comprehension_surface_set')}, ahora "
+             f"{now.get('comprehension_surface_set')} — no hay derivada comparable y la "
+             f"linea base hay que rehacerla antes de leer ninguna tendencia",
+             "CYCLE")
+
+    # Grado 3 no lo produce ningun algoritmo: exige prosa con evidencia. Por eso este disparo
+    # es AUTHORING y no CYCLE — correr el ciclo otra vez no lo sube ni un punto.
+    ex = now.get("comprehension_pct_explained")
+    if ex is not None and ex < COMPREHENSION_EXPLAIN_FLOOR:
+        fire("MATURITY", "sabemos SITUAR mucho mas de lo que sabemos EXPLICAR",
+             f"solo el {ex}% de las ejecuciones de negocio llega a grado 3 (explicado). "
+             f"Etiquetar no es entender, y esta es la misma inversion que ya miden las otras "
+             f"dos herramientas: fuertes recogiendo, debiles verificando",
+             "AUTHORING",
+             detail=f"{now.get('comprehension_keep_custom')} objetos CUSTOM en la lista")
 
     # ---- WRITE PATH ----------------------------------------------------
     # NOTE ON WHAT A TRIGGER MAY SAY. Every `run` below points at the CYCLE, never at an

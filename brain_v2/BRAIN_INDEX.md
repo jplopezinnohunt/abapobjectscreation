@@ -89,6 +89,24 @@ Not a self-assessment: each dimension is derived from what is on disk.
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
 
+## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.73% sin clasificar
+Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
+corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
+- **objects** — 28,499,310 ejec · tecnico 92.5% · negocio 7.5% · sin clasificar **0.0%**
+- **changes** — 2,873,448 ejec · tecnico 15.4% · negocio 84.5% · sin clasificar **0.0%**
+- **jobs** — 219,167 ejec · tecnico 81.4% · negocio 18.4% · sin clasificar **0.2%**
+- **rfc** — 12,589,665 ejec · tecnico 54.2% · negocio 34.7% · sin clasificar **2.5%**
+- **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
+  El hueco real es SIN CLASIFICAR: 320,976 de 44,181,590.
+- **Situar no es explicar:** solo el **60.6%** de las ejecuciones de negocio llega a grado 3
+  (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
+- Movimiento: -4.36 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
+- **370 objetos por explorar** (36 custom) —
+  la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
+  y es el trabajo del agente `log-process-discovery`.
+- Lo aprendido sobre COMO explorar (no sobre el dato) vive aparte, en
+  `brain_v2/methods/algorithm_memory.json`: INSTRUMENT · SUBSTRATE · CARRIER · TRAP.
+
 ## OPEN WORK - incidents awaiting action (11 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide
@@ -113,13 +131,14 @@ Not a self-assessment: each dimension is derived from what is on disk.
 _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
-## AGENTES - lo que sabemos HACER (9 disponibles)
+## AGENTES - lo que sabemos HACER (10 disponibles)
 - **`authority-doc-reader`** - LECTURA. Extrae hechos ESTRUCTURADOS del documento que AUTORIZA un cambio — la carta, el formulario, el carton, el aviso del banco — que casi sie
 - **`bank-process-discovery`** - model: sonnet ---
 - **`bcm-signatory-panel`** - 
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
 - **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
+- **`log-process-discovery`** - model: sonnet ---
 - **`master-data-sync`** - Alinea MASTER DATA de P01 (fuente, read-only) hacia D01 / V01: cuentas GL, centros de coste, fondos, centros gestores, proyectos/WBS. Mide primer
 - **`process-guardian`** - model: sonnet ---
 - **`variant-intelligence`** - Lee el CONTENIDO REAL de las variantes de ejecucion de programas ABAP y lo convierte en conocimiento de proceso. El programa dice lo que se PUEDE

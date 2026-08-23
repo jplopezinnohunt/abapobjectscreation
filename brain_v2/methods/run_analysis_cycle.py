@@ -54,6 +54,13 @@ CYCLE = [
      "L1 classify every executed object", True),
     ("process_mining/attach_object_text.py",
      "L1 attach readable text — makes the frontier reviewable", False),
+    # A19 va DESPUES de clasificar y ANTES de todo lo que cuente: separa objetos de
+    # instancias generadas, y sin eso cualquier conteo trata ~3.500 nombres generados como
+    # si fueran objetos. A20 va detras porque consume las dos cosas.
+    ("process_mining/log_reality_filter.py",
+     "L1 objeto vs instancia generada vs actor — clasificar antes de contar", True),
+    ("brain_v2/comprehension_index.py",
+     "L3 indice de comprension: esta CERRADA la superficie de ejecucion?", True),
     ("brain_v2/parse_abap_edges.py",
      "L0 code edges from extracted source", False),
     ("process_mining/derive_object_roles.py",

@@ -228,6 +228,55 @@ Not a self-assessment: each dimension is derived from what is on disk.
 """
 
 
+def _comprehension_block():
+    """Is the EXECUTION SURFACE closed? Lives in the entry index on purpose.
+
+    A20 measured this and wrote a JSON that nothing read. Guardar no es recuperar: if a fact
+    is not reachable from the entry points it does not exist, and this project has measured
+    that failure before -- an incident held a complete fix while BRAIN_INDEX and MEMORY had
+    zero mentions of it. So the number that says how much of this system we can actually
+    account for belongs HERE, next to maturity, not in a file someone has to know to open.
+    """
+    ci = HERE / "comprehension_index.json"
+    if not ci.exists():
+        return ""
+    C = json.load(open(ci, encoding="utf-8"))
+    h = C.get("headline", {})
+    rows = []
+    for name, v in (C.get("surfaces") or {}).items():
+        if "error" in v:
+            continue
+        t = v.get("pct_by_track", {})
+        rows.append(f"- **{name}** — {v.get('executions_graded', 0):,} ejec · "
+                    f"tecnico {t.get('TECHNICAL', 0)}% · negocio {t.get('BUSINESS', 0)}% · "
+                    f"sin clasificar **{t.get('UNCLASSIFIED', 0)}%**")
+    gaps = list((C.get("process_map_gaps") or {}).get("domains") or {})
+    gb = gn = 0
+    for v in (C.get("surfaces") or {}).values():
+        g = v.get("business_grades_executions") or {}
+        gb += sum(g.values()); gn += g.get("3", 0)
+    ex = round(100 * gn / gb, 1) if gb else 0
+    mv = C.get("movement_since_last")
+    mv_txt = ("sin linea base comparable" if mv is None else
+              ("**no se movio** desde la ultima corrida — eso ES el hallazgo" if mv == 0
+               else f"{mv:+} desde la ultima corrida"))
+    return f"""## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — {h.get('pct_unclassified', '?')}% sin clasificar
+Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
+corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
+{NL.join(rows)}
+- **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
+  El hueco real es SIN CLASIFICAR: {h.get('unclassified_executions', 0):,} de {h.get('executions_total', 0):,}.
+- **Situar no es explicar:** solo el **{ex}%** de las ejecuciones de negocio llega a grado 3
+  (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
+- Movimiento: {mv_txt} · sin cadena de proceso: {', '.join(gaps) or 'ninguno'} (stranded, no olvido)
+- **{C.get('keep_exploring_total', 0)} objetos por explorar** ({C.get('keep_exploring_custom', 0)} custom) —
+  la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
+  y es el trabajo del agente `log-process-discovery`.
+- Lo aprendido sobre COMO explorar (no sobre el dato) vive aparte, en
+  `brain_v2/methods/algorithm_memory.json`: INSTRUMENT · SUBSTRATE · CARRIER · TRAP.
+"""
+
+
 NL = chr(10)
 
 def _knowledge_block(top=10):
@@ -432,6 +481,7 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_integration_block()}
 {_security_block()}
 {_maturity_block()}
+{_comprehension_block()}
 {_open_work_block()}
 
 {_agents_block()}
