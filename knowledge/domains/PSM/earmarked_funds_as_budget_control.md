@@ -38,41 +38,72 @@ adivinar la semántica:
 **Separar por WRTTP es obligatorio antes de cualquier medida.** Mezclarlos produce cifras que
 parecen razonables y son falsas — ver la sección de trampas al final.
 
-## LO AUTOMÁTICO: el 83,5% son dos usuarios y la nómina
+## SON DOS POBLACIONES, NO UN PROCESO CON DOS CANALES
 
-| Transacción | Líneas | | Importe | Usuarios |
-|---|---:|---:|---:|---:|
-| `SE38` | 477.846 | 33,8% | 1.124.806.450 | **HIPER 100%** |
-| `ZPBC_PERIOD_CLS_EXEC` | 434.859 | 30,7% | 1.045.188.361 | **HIPER 100%** |
-| *(sin tcode — batch)* | 268.379 | 19,0% | 822.877.299 | **F_DERAKHSHAN 99%** |
+Esta es la división que lo ordena todo, y verificarla cambió la lectura entera. Cruzando cada
+transacción contra el tipo de documento y el tipo de valor que produce:
 
-**1.181.084 líneas, el 83,5%, y efectivamente DOS usuarios.**
+| Transacción | BLART | WRTTP | Qué es |
+|---|---|---|---|
+| `ZPBC_PERIOD_CLS_EXEC` | 91 / 92 | **65** `COMMITM` | cierre periódico PBC |
+| `SE38` | 91 / 92 | **65** `COMMITM` | ejecución del motor PBC |
+| `PA30` | 91 / 92 | **65** `COMMITM` | **datos de personal — SÍ es cadena PBC** |
+| `PCP0` · `HRPBC_ENGINE_PNP` | 91 / 92 | 65 | motor PBC |
+| `FMX1` · `FMX2` | 12 / 13 | **81** `EXPENDU` | **gasto, no reserva** |
+| `FB60` · `FB01` · `FB50` | 12 / 13 | **81** `EXPENDU` | **consumo** |
 
-`ZPBC_PERIOD_CLS_EXEC` es el **cierre periódico de PBC** (Position Budgeting and Control). Junto
-con `PA30`, `PCP0`, `HRPBC_ENGINE_PNP` y `HRFPM_VACANCY_DISP`, esto es el mecanismo por el que
-**cada puesto reserva su coste mes a mes**. El presupuesto de personal no se gestiona: se
-compromete automáticamente por puesto.
+**No hay un proceso con canal automático y canal manual. Hay DOS mecanismos separados que
+comparten tabla:**
 
-Los tipos de documento lo confirman: de las reservas reales (WRTTP 65), **794.157 son `BLART=91`**
-y 8.954 son `92`. Un solo tipo de documento carga con el 99% de la nómina.
+### 1. Documentos 91/92 — el compromiso de puestos (PBC)
 
-## LO MANUAL: unas 300 personas, el 16,5%
+**El 100% de la reserva real** (WRTTP 65 = `COMMITM`, 803.111 líneas, 1.833 M). Automático de
+principio a fin, ejecutado por **dos usuarios**:
 
-| Transacción | Líneas | Usuarios | Qué es |
+| Transacción | Líneas | | Usuarios |
 |---|---:|---:|---|
-| `FMX2` | 98.293 | **296** | modificar reserva de fondos |
-| `FB60` | 36.204 | **298** | factura de acreedor (consume) |
-| `PA30` | 21.152 | 72 | datos maestros de personal |
-| `FB01` | 18.836 | 37 | contabilizar documento |
-| `FMW2` | 12.124 | 11 | pre-compromiso |
-| `FMJ2` | 9.297 | 11 | **arrastre de compromisos** |
-| `FMX1` | 3.240 | **198** | crear reserva de fondos |
+| `SE38` | 477.846 | 33,8% | **HIPER 100%** |
+| `ZPBC_PERIOD_CLS_EXEC` | 434.859 | 30,7% | **HIPER 100%** |
+| *(sin tcode — job de fondo)* | 268.379 | 19,0% | **F_DERAKHSHAN 99%** |
+| `PA30` | 21.152 | 1,5% | 72 |
 
-Nota la asimetría: **`FMX2` (modificar) tiene 98.293 líneas y `FMX1` (crear) solo 3.240.** La
-gente **retoca** reservas mucho más de lo que las crea — porque las crea la máquina.
+`PA30` entra aquí y no en lo manual: un cambio en los datos de una persona **dispara** la
+reserva de su puesto. La persona edita el maestro; el compromiso lo crea la máquina.
 
-`W_NORTON` es un caso aparte: 1.148 líneas a **16.599 €/línea**, frente a los 2.164 de HIPER.
-Reservas grandes y puntuales, otro proceso.
+**El presupuesto de personal no se gestiona: se compromete solo, por puesto y mes a mes.**
+
+### 2. Documentos 12/13 — los fondos afectados a mano
+
+Aquí NO hay reserva: cada línea que estas transacciones generan en `FMIOI` es **WRTTP 81 =
+`EXPENDU`, gasto**. `FMX1`/`FMX2` crean y retocan el documento de fondos afectados, y `FB60`,
+`FB01`, `FB50` lo **consumen** con facturas y contabilizaciones.
+
+| Transacción | Líneas | Usuarios | Papel |
+|---|---:|---:|---|
+| `FMX2` | 98.293 | **296** | modificar el documento |
+| `FB60` | 36.204 | **298** | consumir (factura acreedor) |
+| `FB01` | 18.836 | 37 | consumir (contabilizar) |
+| `FMX1` | 3.240 | **198** | crear el documento |
+| `FMJ2` | 9.297 | 11 | arrastre |
+
+La asimetría **modificar 98.293 / crear 3.240** dice que el documento se retoca treinta veces
+más de lo que se crea.
+
+## El batch input NO es de reservas: es de VIAJES
+
+`apqi` tiene **57.998 sesiones** de batch input, y el reparto no deja lugar a dudas:
+
+| Grupo | Sesiones | | Creadores |
+|---|---:|---:|---:|
+| `TRIP_MODIFY` | 40.104 | 69,1% | 384 |
+| `TRIP_CREATE` | 10.062 | 17,3% | 241 |
+| `PRAAUNESC_SC` | 1.191 | 2,1% | 1 |
+| `SAPF100` | 108 | 0,2% | 18 |
+
+**86,4% son viajes.** De FM hay **una sola sesión** (`FMRP_RFFMEP1`).
+
+Conclusión: las 268.379 líneas "sin tcode" de las reservas **no son batch input** — son jobs de
+fondo. Distinguir los dos importa, y la única forma de hacerlo es esta tabla.
 
 ## El calendario: dos eventos mensuales distintos
 
