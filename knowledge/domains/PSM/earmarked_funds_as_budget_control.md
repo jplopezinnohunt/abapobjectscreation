@@ -89,21 +89,42 @@ Aquí NO hay reserva: cada línea que estas transacciones generan en `FMIOI` es 
 La asimetría **modificar 98.293 / crear 3.240** dice que el documento se retoca treinta veces
 más de lo que se crea.
 
-## El batch input NO es de reservas: es de VIAJES
+## El batch input: lo que el instrumento NO puede decir
 
-`apqi` tiene **57.998 sesiones** de batch input, y el reparto no deja lugar a dudas:
+**`APQI` no es un histórico de batch input. Es una COLA.** Los números lo prueban: de 57.998
+sesiones, **50.334 tienen `QSTATE` vacío y solo 413 están en `F` (finalizada)**. Una sesión
+procesada con éxito **se borra**. Lo que sobrevive son las que fallaron o nunca corrieron.
 
-| Grupo | Sesiones | | Creadores |
-|---|---:|---:|---:|
-| `TRIP_MODIFY` | 40.104 | 69,1% | 384 |
-| `TRIP_CREATE` | 10.062 | 17,3% | 241 |
-| `PRAAUNESC_SC` | 1.191 | 2,1% | 1 |
-| `SAPF100` | 108 | 0,2% | 18 |
+Por eso la lectura ingenua de esta tabla —`TRIP_MODIFY` 40.104 y `TRIP_CREATE` 10.062, el 86,4%
+viajes— **no autoriza a concluir que el batch input sea de viajes**. Autoriza a decir que *las
+sesiones que sobreviven en la cola* son de viajes. Lo procesado y limpiado es invisible aquí.
 
-**86,4% son viajes.** De FM hay **una sola sesión** (`FMRP_RFFMEP1`).
+Se escribió la conclusión fuerte y era un salto: el instrumento no ve esa pregunta.
 
-Conclusión: las 268.379 líneas "sin tcode" de las reservas **no son batch input** — son jobs de
-fondo. Distinguir los dos importa, y la única forma de hacerlo es esta tabla.
+### Lo que sí se ve, y apunta a una herramienta externa
+
+**`PROGID = 'SAPMSSY1'` en 55.087 de las 57.998 sesiones.** `SAPMSSY1` es el despachador RFC:
+esas sesiones las creó **algo externo por RFC**, no un programa ABAP de la casa. Los programas
+propios que crean sesiones son pocos y pequeños: `RFBIKR00` (1.933, maestro de acreedores),
+`ZHR_RETIRE_COPY_SPI` (222), `RFBIBL01` (146, documentos FI), `YEBUET01` (110),
+`/SAPDMC/SAP_LSMW_BI_RECORDING` (42).
+
+### Y una confusión de canal que hay que evitar
+
+**Una sesión de batch input EJECUTA la transacción, así que graba su código.** No aparece como
+"sin tcode". Por tanto:
+
+- Las 268.379 líneas **sin tcode** de las reservas no son batch input: son **jobs de fondo**.
+- Pero las 98.293 de `FMX2` y las 3.240 de `FMX1` **podrían ser batch input** y por `TCODE` son
+  indistinguibles del diálogo. Llamarlas "manuales" es una suposición, no una medida.
+
+Se comprobó si algún usuario domina `FMX1`/`FMX2` como firma de herramienta: **no**. Están
+repartidas entre ~296 personas, la mayor con 5.417 líneas.
+
+**PENDIENTE, y es una afirmación del operador que el dato local no puede confirmar ni refutar:**
+existe una herramienta externa que genera transacciones por batch input y se usa para reservas
+de fondos. Para separarla hace falta su nombre, su programa o su destino RFC. Ver
+`EXT-BDC-SESSIONS`.
 
 ## El calendario: dos eventos mensuales distintos
 
