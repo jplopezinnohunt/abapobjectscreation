@@ -130,6 +130,135 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
+## 🧭 LOS 35 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
+en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
+para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
+lo deja — solo que nadie lo publicaba.
+
+⚠️ = el algoritmo está marcado FRAGILE o WEAK: **lee su `failure_mode` antes de usar su salida.**
+
+**logs**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A19_log_reality_filter` | classify every identifier the audit log carries into OBJECT / GENERATED IN | -- | `brain_v2/log_reality.json` |
+| `A20_comprehension_index` | measure whether the EXECUTION SURFACE is closed, across the FOUR surfaces  | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/comprehension_index.json` |
+| `A3_two_axis_classification` | explain every call on two independent axes — PROCESS (from the object name | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
+| `A4_ordered_classifier_ladder` | ordered rule chain (package -> software component -> overlay -> name -> te | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
+| `A5_adaptive_learning_loop` | auto-resolve unknown calls by function group / naming / app domain, LEARN  | BusinessPartner, FI_AA, Travel | `process_mining/learned_rules.json` |
+| `A7_concept_drift` | monthly activity profile per domain as RATES PER DAY (executions, distinct | -- | `brain_v2/drift_signals.json` |
+| `A8_change_to_executor_attribution` | join a STATE-CHANGE stream to an EXECUTION stream on (user, day, hour) to  | -- | `brain_v2/change_attribution.json` |
+
+**process events**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A21_case_spine` | probar, clase a clase, si el identificador de caso del log de cambios (CDH | -- | `brain_v2/case_spine.json` |
+| `B1_dfg_discovery` | build the process map from an event log — activities as nodes, observed tr | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+| `B2_variant_analysis` | group cases by exact path, rank by frequency and cost — the long tail is w | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+| `B3_performance_bottleneck` | cycle time per transition; waiting versus processing | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+| `B4_declarative_conformance` | state the normative rules, classify every case against them, quantify the  | -- | `Zagentexecution/sap_data_extraction/process_discovery/p2p_conformance.json` |
+| `B5_ocel2_object_centric` | one event references MULTIPLE object types, with no forced single-case not | -- | `Zagentexecution/sap_data_extraction/process_discovery/p2p_ocel2_summary.json` |
+
+**repository**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A9_business_rules_from_source` | extract the DECISIONS that live in code rather than in configuration — qua | Travel | `brain_v2/business_rules.json` |
+| `C1c_custom_fm_domain` | custom Z/Y function module -> canonical domain, via the curated tfdir_cust | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +7 | `brain_v2/code_inventory.json` |
+| `C2_ascent_with_provenance_rung` | climb from any object to the installation, ALWAYS recording which rung of  | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +7 | `brain_v2/capability_model/capability_model.json` |
+| `C5_source_identity_and_integrity` | resolve a SAP object name to the file that actually holds its BODY, across | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +7 | `brain_v2/code_inventory.json` |
+| `C6_routine_level_behaviour_extraction` | split a source file into ROUTINES with line ranges and derive, per routine | BusinessPartner, Cost_Recovery_CRP, HR-Workflows, Integration +7 | `brain_v2/code_sections.json` |
+
+**model**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `E1_crossing` | join profile x capability x claims x documents x companions through an exp | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+| `E2_coherence` | compare what the macro asserts top-down against what the detail evidences  | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +7 | `brain_v2/capability_model/capability_model.json` |
+| `E3_trigger_evaluation` | compare state against thresholds across accumulation / maturity / interpre | -- | `brain_v2/methods/trigger_state.json` |
+| `P1_profile_composition` | compose the installation profile from 18 COMPONENTS, each bound to the alg | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +7 | `brain_v2/capability_model/capability_model.json` |
+
+**interfaces**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `F1_interface_boundary_analysis` | enumerate the boundary (RFCDES / EDIDC / TBTCP / ICFSERVICE) and CORRELATE | Treasury | `brain_v2/interface_boundary.json` |
+| `F2_satellite_derivation` | group boundary endpoints into SATELLITES by call signature, resolve what e | BusinessPartner, Integration, Procurement, Travel +1 | `brain_v2/satellites.json` |
+
+**master data + fact tab...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A10_address_chain_reconstruction` | reconstruct the chain from funding source to piece of work in an installat | -- | `brain_v2/chain_lineage.json` |
+
+**configuration (sets) c...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A12_set_hierarchy_traversal` | walk a SAP set hierarchy to every leaf, then answer the three questions th | -- | `brain_v2/hierarchy_traversal.json` |
+
+**source code crossed wi...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A13_custom_field_harvest` | harvest every customer-namespace field this installation added to the stan | -- | `brain_v2/custom_fields.json` |
+
+**FM actuals crossed wit...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A14_budget_rate_impact` | compute the budget-rate impact the way the organisation defines it — FM at | -- | `brain_v2/br_impact.json` |
+
+**the knowledge stores t...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A15_subject_graph` | relate the pieces of a subject as a graph of typed edges, where every node | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
+
+**the payroll engine — c...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A16_payroll_end_to_end` | discover payroll end to end in six parts: the ENGINE (schemas), the LOGIC  | -- | `brain_v2/payroll_discovery.json` |
+
+**the change log crossed...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A17_change_governance` | detect three governance conditions: a CHANNEL DIFFERENCE where an object i | -- | `brain_v2/change_governance.json` |
+
+**any operational table ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A18_reality_filter` | measures the distance between what the system RECORDS and what HAPPENED, i | -- | `brain_v2/reality_filter.json` |
+
+**a master table's custo...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A19_wbs_model` | reads every custom field of a master table on THREE axes — type-aware fill | -- | `brain_v2/project_wbs_model.json` |
+
+**repository + model**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `C7_brain_informed_code_interpretation` | read code THROUGH the brain and write back what it learned. Resolves every | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, HR-Workflows +10 | `brain_v2/code_interpretation.json` |
+
+**el propio modelo de ba...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A44_model_gap_exploration` | recorrer un modelo ya construido preguntando que NO sabe: cuanto cae en cu | Treasury | `brain_v2/bank_model_findings.json` |
+
+- **Ninguno de estos ficheros se lee entero.** Se abren con
+  `python brain_v2/graph_queries.py search <termino>` o directamente cuando la tabla de arriba
+  dice que contestan tu pregunta.
+- **Comprobar que siguen siendo alcanzables:**
+  `python Zagentexecution/quality_checks/artifact_reachability_check.py`
+
 ## OPEN WORK - incidents awaiting action (11 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026
   - NEXT: CERRADO como NOT_REQUIRED el 2026-08-20: SG confirma que no hay codigo para Egipto y el canal Citi no lleva este flujo (76,2% SocGen vs 1,9% Citi; la cuenta Citi Egipto emite el 100% en cheque prenumerado). QUEDA UNA SOLA ACCION, y es de higiene, no del incide

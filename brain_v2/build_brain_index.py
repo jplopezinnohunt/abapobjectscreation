@@ -14,6 +14,7 @@ Emits brain_v2/BRAIN_INDEX.md. Run after rebuild_all.py.
 #   feedback_register_on_create_not_at_close
 #     -> el momento es cuando nace un modelo y hay que anunciarlo: este genera el anuncio
 import json
+import os
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -225,6 +226,111 @@ Not a self-assessment: each dimension is derived from what is on disk.
 - **Read this together with the capability grid.** Two independent instruments agree: strong at
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
   SHOULD do — which is the same finding as the near-empty `S_STANDARD_REF` column.
+"""
+
+
+_SERVES_CACHE = {}
+
+
+def _serves(art_path, cap=3_000_000):
+    """Que dominios cubre un artefacto -- MEDIDO en su contenido, no clasificado a mano.
+
+    Ninguno de los 47 algoritmos declaraba dominio, y ponerselo a ojo habria sido inventarlo.
+    Esto lee el fichero y cuenta que claves de dominio del registro aparecen dentro. Si un
+    artefacto no nombra ninguna, se dice: `--`. Un fichero grande se corta al leer, porque el
+    indice tiene que generarse rapido.
+    """
+    if art_path in _SERVES_CACHE:
+        return _SERVES_CACHE[art_path]
+    base = os.path.basename(art_path)
+    ruta = None
+    for d in ("brain_v2", "process_mining", "Zagentexecution", "scripts"):
+        raiz = HERE.parent / d
+        if not raiz.is_dir():
+            continue
+        for root, _, files in os.walk(raiz):
+            if ".git" in root:
+                continue
+            if base in files:
+                ruta = os.path.join(root, base)
+                break
+        if ruta:
+            break
+    doms = []
+    if ruta:
+        try:
+            if os.path.getsize(ruta) <= cap:
+                txt = open(ruta, encoding="utf-8", errors="ignore").read()
+                reg = json.load(open(HERE / "domains" / "domains.json",
+                                     encoding="utf-8")).get("domains", {})
+                doms = sorted({d for d in reg if len(d) > 3 and d in txt})
+        except Exception:
+            doms = []
+    val = ", ".join(doms[:4]) + (f" +{len(doms)-4}" if len(doms) > 4 else "") if doms else "--"
+    _SERVES_CACHE[art_path] = val
+    return val
+
+
+def _findings_block():
+    """QUE ANALISIS EXISTEN Y DONDE ATERRIZAN. El indice de los analisis, generado.
+
+    El gate de alcanzabilidad encontro 24 artefactos INVISIBLES de 31: existian, se
+    regeneraban en cada rebuild, eran correctos, y no se llegaba a ellos desde ningun punto de
+    entrada. Se generaban para nadie.
+
+    Meterlos a mano habria inflado el indice y habria envejecido igual. La fuente correcta ya
+    existia: `algorithms.json` dice de cada algoritmo QUE HACE (`does`) y DONDE DEJA su
+    resultado (`lands_in`). Este bloque lo lee y lo publica.
+
+    Se agrupa por `operates_on` porque esa es la pregunta con la que se llega: "quiero saber
+    algo de los LOGS" antes que "quiero el fichero X".
+    """
+    algos = {}
+    try:
+        algos = json.load(open(HERE / "methods" / "algorithms.json",
+                               encoding="utf-8")).get("algorithms", {})
+    except Exception:
+        return ""
+    by = {}
+    for aid, a in algos.items():
+        li = str(a.get("lands_in") or "")
+        art = ""
+        for tok in li.replace(",", " ").replace("(", " ").replace(")", " ").split():
+            if tok.endswith(".json") and "/" in tok:
+                art = tok
+                break
+        if not art:
+            continue          # tecnicas puras: no producen fichero, no van en este indice
+        grp = str(a.get("operates_on") or "otros")
+        if len(grp) > 22:
+            grp = grp[:22] + "..."
+        by.setdefault(grp, []).append((aid, str(a.get("does") or "")[:74], art,
+                                       str(a.get("state") or ""), _serves(art)))
+    if not by:
+        return ""
+    out = []
+    for grp in sorted(by, key=lambda g: -len(by[g])):
+        out.append(f"\n**{grp}**\n")
+        out.append("| algoritmo | qué contesta | dominios que cubre | aterriza en |")
+        out.append("|---|---|---|---|")
+        for aid, does, art, st, srv in sorted(by[grp]):
+            flag = " ⚠️" if st in ("FRAGILE", "WEAK") else ""
+            out.append(f"| `{aid}`{flag} | {does} | {srv} | `{art}` |")
+    n = sum(len(v) for v in by.values())
+    return f"""## 🧭 LOS {n} ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
+en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
+para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
+lo deja — solo que nadie lo publicaba.
+
+⚠️ = el algoritmo está marcado FRAGILE o WEAK: **lee su `failure_mode` antes de usar su salida.**
+{chr(10).join(out)}
+
+- **Ninguno de estos ficheros se lee entero.** Se abren con
+  `python brain_v2/graph_queries.py search <termino>` o directamente cuando la tabla de arriba
+  dice que contestan tu pregunta.
+- **Comprobar que siguen siendo alcanzables:**
+  `python Zagentexecution/quality_checks/artifact_reachability_check.py`
 """
 
 
@@ -548,6 +654,7 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_maturity_block()}
 {_comprehension_block()}
 {_stores_block()}
+{_findings_block()}
 {_open_work_block()}
 
 {_agents_block()}

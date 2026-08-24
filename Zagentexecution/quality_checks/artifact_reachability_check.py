@@ -93,12 +93,22 @@ def main():
         # capability_model.json en capability_model/, incidents.json en incidents/.
         # Buscarlo solo en la raiz producia "AUSENTE" sobre ficheros que existen, y un gate
         # que grita en falso deja de leerse.
+        # buscar en TODO el repo, no solo en brain_v2: job_classification.json vive en
+        # Zagentexecution/sap_data_extraction/sqlite/, learned_rules.json en process_mining/,
+        # los p2p_* en process_discovery/. Buscar solo en brain_v2 marcaba AUSENTE cinco
+        # ficheros que existen, y un gate que grita en falso deja de leerse.
         p = None
-        for root, _, files in os.walk(BRAIN):
-            if ".git" in root:
+        for base in ("brain_v2", "process_mining", "Zagentexecution", "scripts", "knowledge"):
+            d = os.path.join(ROOT, base)
+            if not os.path.isdir(d):
                 continue
-            if art in files:
-                p = os.path.join(root, art)
+            for root, _, files in os.walk(d):
+                if ".git" in root:
+                    continue
+                if art in files:
+                    p = os.path.join(root, art)
+                    break
+            if p:
                 break
         existe = p is not None
         leido = art in lectores and bool(lectores[art] - {art})
