@@ -126,6 +126,46 @@ existe una herramienta externa que genera transacciones por batch input y se usa
 de fondos. Para separarla hace falta su nombre, su programa o su destino RFC. Ver
 `EXT-BDC-SESSIONS`.
 
+## LAS TRES "PUERTAS" NO SON TRES: SON TRES AÑOS
+
+La tabla por transacción confunde si se lee como si `SE38`, `ZPBC_PERIOD_CLS_EXEC` y el job de
+fondo fueran tres mecanismos. **No lo son. Es uno solo, y cada año se lanza de otra forma:**
+
+| Año | `SE38` | `ZPBC_PERIOD_CLS_EXEC` | job de fondo |
+|---|---:|---:|---:|
+| 2024 | 6 | **434.859** | 261 |
+| 2025 | **477.840** | 0 | 192 |
+| 2026 | 0 | 0 | **267.926** |
+
+2024 por su transacción · 2025 a mano por `SE38` · 2026 por job programado. Los usuarios
+acompañan el cambio: `HIPER` en 2024-2025, `F_DERAKHSHAN` en 2026.
+
+Que un proceso de 1.833 M cambie de puerta cada año, y que en 2025 se ejecutara **a mano por
+`SE38`**, es un hecho de gobierno, no una curiosidad técnica.
+
+## Los programas detrás de cada transacción
+
+De `TSTC`, no deducido:
+
+| Transacción | Programa | |
+|---|---|---|
+| `ZPBC_PERIOD_CLS_EXEC` | **`RHRFPM_SET_CLOSED_INDICATOR`** | estándar SAP HRFPM |
+| `ZPBC_COMPLETION` | `RHRFPM_ERLK_EXT` | estándar SAP HRFPM |
+| `FMX1` | `SAPLFMFR` dynpro 0500 | crear |
+| `FMX2` · `FMW2` · `FMZ6` | **`SAPLFMFR` dynpro 0511** | mismo programa Y misma pantalla |
+| `FMMC` | `RFFMCCLS` | |
+| `FMJ2` | `RFFMCCF1` | arrastre |
+
+Dos cosas que esto revela:
+
+**`FMX2`, `FMW2` y `FMZ6` son el mismo programa y la misma pantalla** — `SAPLFMFR` 0511. Lo que
+las distingue es el código de transacción, que parametriza el comportamiento. Por eso una hace
+gasto (98.293 líneas), otra bloqueo (12.124) y otra reserva (8.279) siendo la misma pantalla.
+
+**Las transacciones `Z` de PBC envuelven programas ESTÁNDAR de SAP.** `ZPBC_PERIOD_CLS_EXEC` no
+es código propio: es `RHRFPM_SET_CLOSED_INDICATOR` con un código de transacción propio delante.
+Lo custom es la puerta, no el motor.
+
 ## El calendario: dos eventos mensuales distintos
 
 **Creación — días 3, 4 y 5:** 172.412 + 327.497 + 106.250 = **606.159 de 803.111 (75%)**, con el
