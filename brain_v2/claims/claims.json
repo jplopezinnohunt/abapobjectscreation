@@ -27016,11 +27016,6 @@
   },
   {
     "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en release 600, mas PA_SE_IN 100, y las tablas de replicacion de Employee Central pobladas: ECPAO_INVT, ECPAO_EE_INVT, ECPAO_FLD_MAP, ECPAO_VALUE_MAP. Es un canal de datos de PERSONAL que el mapa de integracion (37 flujos / 18 sistemas) no tiene. Ademas se ejecuta: ECPAO_OM_OBJECT_EXTRACTION (93.692) y ECPAO_EMPL_EXTRACTION (38.637) son el 2o y 6o objeto de HCM por volumen, 132K de LECTURA. COMO APARECIO, y esto importa mas que el hallazgo: lo saco el log antes que ninguna sonda. Las ECPAO_* salieron como TABLAS NAVEGADAS DIRECTAMENTE, o sea nombres /1BCDWB/DB<TABLA> que un indice de objetos habria descartado por basura. Es el argumento entero de por que A19 RE-ENRUTA lo generado en vez de tirarlo.",
-    "evidence": [
-      "CVERS via RFC_READ_TABLE en P01 2026-08-23",
-      "brain_v2/log_reality.json -> programs.carried_signal.TABLE_BROWSER",
-      "brain_v2/domain_composition.json -> HCM.top_objects"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27036,19 +27031,25 @@
       "ECPAO_OM_OBJECT_EXTRACTION",
       "ECPAO_EMPL_EXTRACTION"
     ],
-    "domains": [
-      "HCM",
-      "Integration"
+    "id": 568,
+    "claim_type": "measured_fact",
+    "domain": "HCM",
+    "domain_axes": {
+      "functional": "HCM",
+      "process": "H2R"
+    },
+    "evidence_for": [
+      "CVERS via RFC_READ_TABLE en P01 2026-08-23",
+      "brain_v2/log_reality.json -> programs.carried_signal.TABLE_BROWSER",
+      "brain_v2/domain_composition.json -> HCM.top_objects"
     ],
-    "id": 568
+    "resolution_notes": "",
+    "also_touches_domains": [
+      "Integration"
+    ]
   },
   {
     "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda la actividad de negocio y mas que FI y HCM juntos. Abierto: el 78,3% lo mueve Core Manager a traves de MuleSoft, concentrado en DOS modulos -- Y_BAPI_WBS_FINANCIAL_DATA_1 (1.861.107) y Y_BAPI_YPS8 (878.833) -- con UN actor tecnico y cadencia estable de 100K a 320K al mes sin picos. Y LEE: 3,5 millones de ejecuciones contra 234 documentos de cambio en total. Nadie modifica tres millones y medio de veces dejando 234 rastros. El nombre de la aplicacion NO es medible desde SAP -- el log solo da el usuario tecnico MULESOFT -- y lo aporto JP; el actor y los volumenes SI son medidos, y esos dos hechos no se mezclan.",
-    "evidence": [
-      "brain_v2/domain_composition.json -> PS",
-      "brain_v2/rfc_caller_apps.json",
-      "rsau_audit_history agrupado por PARAM3 y SLGUSER, 2026-08-24"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27058,20 +27059,26 @@
       "MULESOFT",
       "Y_BAPI_CUSTOMER_GET_ID"
     ],
-    "domains": [
-      "PS",
+    "id": 569,
+    "claim_type": "operating_model",
+    "domain": "PS",
+    "domain_axes": {
+      "functional": "PS",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "brain_v2/domain_composition.json -> PS",
+      "brain_v2/rfc_caller_apps.json",
+      "rsau_audit_history agrupado por PARAM3 y SLGUSER, 2026-08-24"
+    ],
+    "resolution_notes": "",
+    "also_touches_domains": [
       "Integration",
       "FI"
-    ],
-    "id": 569
+    ]
   },
   {
     "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y el 66% es MODIFICACION frente al 13% de lectura -- el reparto mas escorado a escritura de todos los dominios grandes. PA30 solo se lleva el 59,1% (712.285) y es mantenimiento de datos maestros de personal: 743.376 de las ejecuciones del dominio son cambios. De 228 objetos distintos, NUEVE hacen el 90%. Y solo el 15% esta explicado. El eje lee/modifica se derivo con la EVIDENCIA por delante del nombre: un tcode que aparece en cdhdr_history produjo documentos de cambio, luego escribio, y eso es prueba y no convencion.",
-    "evidence": [
-      "brain_v2/domain_composition.json -> HCM",
-      "brain_v2/comprehension_index.json",
-      "cdhdr_history: 743.376 cambios del dominio"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27083,18 +27090,22 @@
       "HR_HCP_SIMULATE_PLANNING",
       "ZCONSOLE_STC"
     ],
-    "domains": [
-      "HCM"
+    "id": 570,
+    "claim_type": "measured_fact",
+    "domain": "HCM",
+    "domain_axes": {
+      "functional": "HCM",
+      "process": "H2R"
+    },
+    "evidence_for": [
+      "brain_v2/domain_composition.json -> HCM",
+      "brain_v2/comprehension_index.json",
+      "cdhdr_history: 743.376 cambios del dominio"
     ],
-    "id": 570
+    "resolution_notes": ""
   },
   {
     "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 264.521 filas (0,93% del log) y 135.377 de la superficie RFC (1,08%), del usuario JP_LOPEZ. El grueso es inofensivo porque cae en sustrato -- RFC_READ_TABLE 81.080, RFCPING 43.082 -- pero una parte NO: FM_FUND_GET_DETAIL_RFC (1.306), GL_ACCT_MASTER_GET_COA_RFC, FM_FUNDS_CTR_GET_DETAILS_RFC y BAPI_PROJECTDEF_GETDETAIL son modulos de NEGOCIO, asi que un dominio parecia mas vivo cuanto mas lo mirabamos. Corregido con una via OBSERVER separada, NO restada: restada desaparece y nadie la audita. CONTROL PERMANENTE que sale limpio: cdhdr_history con nuestro usuario = 0 filas sobre 13.973.856 cambios. La disciplina de solo-lectura sobre produccion deja rastro medible, o su ausencia; si ese contador deja de ser 0 alguna vez, algo escribio en P01.",
-    "evidence": [
-      "rsau_audit_history agrupado por SLGUSER y PARAM3, 2026-08-23",
-      "brain_v2/comprehension_index.json -> _observer",
-      "cdhdr_history WHERE USERNAME='JP_LOPEZ' -> 0"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27103,20 +27114,25 @@
       "RFC_READ_TABLE",
       "FM_FUND_GET_DETAIL_RFC"
     ],
-    "domains": [
-      "Support",
-      "Integration"
+    "id": 571,
+    "claim_type": "methodology",
+    "domain": "Support",
+    "domain_axes": {
+      "functional": "Support",
+      "process": null
+    },
+    "evidence_for": [
+      "rsau_audit_history agrupado por SLGUSER y PARAM3, 2026-08-23",
+      "brain_v2/comprehension_index.json -> _observer",
+      "cdhdr_history WHERE USERNAME='JP_LOPEZ' -> 0"
     ],
-    "id": 571
+    "resolution_notes": "",
+    "also_touches_domains": [
+      "Integration"
+    ]
   },
   {
     "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive en KBLE, KBLK, KBLKKRED y KBLP -- NO en FMBH/FMBL, que son documentos de presupuesto BCS. En FMIOI las reservas son REFBT='110', que casa al 100% con KBLK.BELNR. El tipo de valor lo resuelve YTFM_WRTTP_GR, tabla de configuracion PROPIA de UNESCO: WRTTP 65 = COMMITM (reserva), 80 = BLOCKED (bloqueo), 81 = EXPENDU (gasto), 82 = PRECOMM (pre-compromiso). Sin separar por WRTTP toda medida mezcla gasto con reserva y produce cifras creibles y falsas. Los programas salen de TSTC: ZPBC_PERIOD_CLS_EXEC envuelve el ESTANDAR RHRFPM_SET_CLOSED_INDICATOR, ZPBC_COMPLETION envuelve RHRFPM_ERLK_EXT, y FMX1/FMX2/FMW2/FMZ6 son TODAS el mismo programa SAPLFMFR -- FMX2, FMW2 y FMZ6 comparten hasta la misma pantalla, la dynpro 0511. Lo que las distingue es el codigo de transaccion, que parametriza: por eso una hace gasto, otra bloqueo y otra reserva siendo la misma pantalla.",
-    "evidence": [
-      "TCDOB via RFC_READ_TABLE en P01 2026-08-23",
-      "TSTC (Gold DB local)",
-      "YTFM_WRTTP_GR (Gold DB local)",
-      "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27144,18 +27160,26 @@
       "FMBH",
       "FMBL"
     ],
-    "domains": [
-      "PSM_FM",
-      "PBC"
+    "id": 572,
+    "claim_type": "reference_fact",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": "PSM_FM",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "TCDOB via RFC_READ_TABLE en P01 2026-08-23",
+      "TSTC (Gold DB local)",
+      "YTFM_WRTTP_GR (Gold DB local)",
+      "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
     ],
-    "id": 572
+    "resolution_notes": "",
+    "also_touches_domains": [
+      "PBC"
+    ]
   },
   {
     "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion contra el tipo de valor que produce: FMW2 genera 12.124 de las 13.352 lineas WRTTP 80 (BLOCKED), 28,6 M. Y FMX1, FMX2, FMMC y FMJ2 son 100% WRTTP 81 (EXPENDU): producen GASTO, no reserva. El 100% de la reserva real -- 803.111 lineas, 1.833 M -- y el 100% del pre-compromiso -- 417.202 lineas, 1.303 M -- los genera el motor PBC: SE38, ZPBC_PERIOD_CLS_EXEC, PA30, PCP0 y el job de fondo, sobre documentos BLART 91/92. PA30 pertenece a esa cadena: editar los datos de una persona DISPARA la reserva de su puesto. Confundir las dos poblaciones es facil porque comparten tabla, y fue el error que costo tres correcciones seguidas.",
-    "evidence": [
-      "FMIOI agrupado por TCODE x WRTTP x BLART, Gold DB 2026-08-24",
-      "companions/fund_reservation_as_budget_throttle.html"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27176,19 +27200,24 @@
       "FMIOI",
       "HIPER"
     ],
-    "domains": [
-      "PSM_FM",
-      "PBC"
+    "id": 573,
+    "claim_type": "measured_fact",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": "PSM_FM",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "FMIOI agrupado por TCODE x WRTTP x BLART, Gold DB 2026-08-24",
+      "companions/fund_reservation_as_budget_throttle.html"
     ],
-    "id": 573
+    "resolution_notes": "",
+    "also_touches_domains": [
+      "PBC"
+    ]
   },
   {
     "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMERO: de los 1.167 documentos con 3 o mas modificaciones, 777 (66,6%) terminan con MENOS importe del que empezaron; ICBA 87%, UIS 75%, IBE 71%, UIL 70%. Eso es liberacion por tramos, no consumo. SEGUNDO: no llevan acreedor -- UIL 100%, MGIE 98%, UIS 97%, IIEP 93% de lineas sin LIFNR. Un compromiso real lleva proveedor; estos son retenciones sobre el fondo. El patron de edicion lo confirma: hasta 352 modificaciones sobre UN documento en 393 dias (IBE 3250112222, C_LEROY). NO CUANTIFICADO: que porcentaje del presupuesto asignado esta retenido, porque BPJA no contiene los fondos de los institutos en el extracto local. Y la premisa de que las claves de control AVC son demasiado genericas NO se ha comprobado.",
-    "evidence": [
-      "FMIOI: direccion del cambio de importe por documento, Gold DB 2026-08-24",
-      "FMIOI.LIFNR por FIKRS",
-      "companions/fund_reservation_as_budget_throttle.html"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27201,18 +27230,22 @@
       "FMX1",
       "LFA1"
     ],
-    "domains": [
-      "PSM_FM"
+    "id": 574,
+    "claim_type": "process_mining_finding",
+    "domain": "PSM_FM",
+    "domain_axes": {
+      "functional": "PSM_FM",
+      "process": "B2R"
+    },
+    "evidence_for": [
+      "FMIOI: direccion del cambio de importe por documento, Gold DB 2026-08-24",
+      "FMIOI.LIFNR por FIKRS",
+      "companions/fund_reservation_as_budget_throttle.html"
     ],
-    "id": 574
+    "resolution_notes": ""
   },
   {
     "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RFC (109.617 llamadas + 18.215 logons) desde dos IPs fijas de servidor: 172.17.9.133 y 172.17.10.132. Su llamada principal es /SAPDS/RFC_READ_TABLE2 (22.850), y el prefijo /SAPDS/ ES SAP Data Services (BODS). Hace 13.885 llamadas a RFC_FUNCTION_SEARCH y 14.666 a RFC_METADATA_GET, o sea recorre el DICCIONARIO para descubrir que puede leer. LEE Y NO ESCRIBE: 0 lineas en FMIOI, 0 cambios en cdhdr_history. Su actividad se clasifica 49% Technical_Substrate, 18% Integration y 15% sin catalogar. Pese a 127.832 eventos NO figura en ninguno de los 300 registros del inventario de interfaces: es un canal de SALIDA de datos de un proveedor externo que el mapa de integracion no tenia.",
-    "evidence": [
-      "rsau_audit_history agrupado por SLGUSER='EPAM-RFC', Gold DB 2026-08-24",
-      "brain_v2/rfc_caller_apps.json",
-      "brain_v2/interface_inventory.json (ausencia)"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27224,16 +27257,22 @@
       "SAP_DATA_SERVICES",
       "BODS"
     ],
-    "domains": [
-      "Integration"
+    "id": 575,
+    "claim_type": "measured_fact",
+    "domain": "Integration",
+    "domain_axes": {
+      "functional": "Integration",
+      "process": null
+    },
+    "evidence_for": [
+      "rsau_audit_history agrupado por SLGUSER='EPAM-RFC', Gold DB 2026-08-24",
+      "brain_v2/rfc_caller_apps.json",
+      "brain_v2/interface_inventory.json (ausencia)"
     ],
-    "id": 575
+    "resolution_notes": ""
   },
   {
     "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE vacio y solo 413 en 'F' (finalizada). Una sesion procesada con exito SE BORRA, asi que lo que sobrevive son las que fallaron o nunca corrieron. Por eso la lectura ingenua -- TRIP_MODIFY 40.104 y TRIP_CREATE 10.062, el 86,4% viajes -- NO autoriza a concluir que el batch input sea de viajes: solo dice que las sesiones que SOBREVIVEN lo son. Lo que si se ve: PROGID='SAPMSSY1' en 55.087 de las 57.998, o sea creadas por RFC desde FUERA y no por un programa ABAP de la casa. Y una confusion de canal que hay que evitar: una sesion de batch input EJECUTA la transaccion, luego graba su TCODE, luego NO aparece como 'sin tcode' -- las lineas de FMX1/FMX2 podrian ser batch input y por TCODE son indistinguibles del dialogo.",
-    "evidence": [
-      "apqi por QSTATE, GROUPID y PROGID, Gold DB 2026-08-24"
-    ],
     "tier": "TIER_1",
     "confidence": "MEASURED",
     "session": 103,
@@ -27248,11 +27287,20 @@
       "FMX1",
       "FMX2"
     ],
-    "domains": [
-      "Integration",
+    "id": 576,
+    "claim_type": "technical_gotcha",
+    "domain": "Integration",
+    "domain_axes": {
+      "functional": "Integration",
+      "process": null
+    },
+    "evidence_for": [
+      "apqi por QSTATE, GROUPID y PROGID, Gold DB 2026-08-24"
+    ],
+    "resolution_notes": "",
+    "also_touches_domains": [
       "Travel",
       "PSM_FM"
-    ],
-    "id": 576
+    ]
   }
 ]

@@ -337,7 +337,8 @@
       "failure_mode": "TRUNCATION: PARAMX is a FIXED-LENGTH field and SAP cuts the caller string when it does not fit — 'caller: host=HQ-SAP-P01_P01_00, dest=HQ-SAP-P01-1_P01_'. I had recorded this as 'the parse truncates names', which was WRONG ABOUT THE CAUSE: the regex extracts exactly what is stored, and no better pattern can recover a character the source never wrote. FIXED by reconciliation instead of parsing (caller_parse.py): a value that is a strict PREFIX of exactly one longer observed value is the same entity cut short. 81 repaired; 72 left AMBIGUOUS on purpose, because a fragment with two completions would be an invented fact. REMAINING: 'HQ-SAP-P0' carries 2.6M calls and is ambiguous — too many candidates share that prefix.",
       "lands_in": "brain_v2/interface_boundary.json (dataset) -> brain_v2/claims/claims.json - configuration that exists and never fires, and traffic with no configuration behind it, are both claims about the operating model",
       "lands_in_kind": "discovery",
-      "lands_in_decided": "s099"
+      "lands_in_decided": "s099",
+      "also_populated_by": "A23_channel_discovery_by_traffic — F1 correlaciona la CONFIGURACION contra el trafico; A23 descubre canales que no tienen configuracion ninguna. Son complementarios: F1 encuentra lo declarado que no corre, A23 lo que corre sin declarar"
     },
     "C1c_custom_fm_domain": {
       "operates_on": "repository",
@@ -931,6 +932,81 @@
           "FMRESERV": "KBLK/KBLP (via TCDOB; FMBH/FMBL era falso)",
           "PBC": "HRFPM_FM_DOC/HRFPM_FM_POS + HRP1000/HRP1001"
         }
+      }
+    },
+    "A23_channel_discovery_by_traffic": {
+      "operates_on": "logs",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "descubrir canales de entrada por su TRAFICO y no por su configuracion, y separar maquina de persona con una senal medible: una interfaz no hace logon de dialogo",
+      "bound_in": [
+        "brain_v2/build_interface_inventory.py"
+      ],
+      "failure_mode": "DOS, y las dos producen un inventario que parece completo. (1) Derivar el inventario SOLO de la configuracion: rfcdes lista destinos SALIENTES y configurados, asi que un satelite que ENTRA autenticandose como usuario RFC no deja destino y es estructuralmente invisible -- EPAM-RFC llevaba 127.832 eventos desde dos IPs fijas sin figurar en ninguno de los 300 registros. (2) Separar maquina de persona por el NOMBRE: el sufijo -RFC parece bastar y no basta. MULESOFT tiene 14.224 logons de dialogo y V.VAURETTE, que es una persona, tiene 211.702 llamadas RFC. Sin la senal medible, el inventario se llena de humanos usando SAP GUI",
+      "improve": "el umbral de 1.000 llamadas es una constante puesta a ojo -- derivarlo de la distribucion. Y cruzar cada canal descubierto contra rfc_caller_apps.json para decir QUE APLICACION hay detras, no solo que usuario",
+      "lands_in": "brain_v2/interface_inventory.json (canal RFC_INBOUND_OBSERVED) -> brain_v2/claims/claims.json - un canal de datos que el mapa de integracion no tenia es un hallazgo, no una fila mas",
+      "_why_it_exists": "2026-08-24. El inventario de interfaces tenia 300 registros y ninguno era EPAM-RFC, que hace 109.617 llamadas RFC y saca datos por SAP Data Services hacia cuadros de mando. No era un olvido: era que el inventario se derivaba de rfcdes, o sea de lo CONFIGURADO. Un canal se descubre por su trafico, no solo por su configuracion.",
+      "_the_signal": "UNA INTERFAZ NO HACE LOGON DE DIALOGO. Es medible, es binaria, y no depende de convenciones de nombres. Medido: EPAM-RFC 0 logons; V.VAURETTE 31.077. Esa es toda la regla",
+      "_measured": {
+        "canales_descubiertos": 255,
+        "no_declarados_en_rfcdes": "todos: rfcdes no los tiene por construccion",
+        "ejemplo": "EPAM-RFC 109.617 llamadas · 9 FMs · 3 terminales · 0 logons de dialogo",
+        "coste_de_la_primera_version": "un COUNT por usuario = 255 barridos completos de 28,5M de filas sin indice. Reescrito como UN GROUP BY. Ver la memoria 'consultar por cada elemento de una lista' en algorithm_memory.json"
+      }
+    },
+    "A22_domain_composition": {
+      "operates_on": "logs",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "abrir un dominio: de que objetos esta hecho, quien lo conduce, cuando, por que canal, si LEE o MODIFICA, y que aplicacion hay detras del usuario tecnico",
+      "bound_in": [
+        "brain_v2/domain_composition.py"
+      ],
+      "failure_mode": "AGREGAR SIN ABRIR INVIERTE LA IMPORTANCIA. PS salia con 3.501.373 ejecuciones, el 39,1% de toda la actividad de negocio, mas que FI y HCM juntos: parecia el corazon del sistema. Abierto, el 99,7% de su trafico RFC son DOS objetos con UN actor -- un satelite leyendo datos financieros de WBS en bucle. Un porcentaje por dominio es un numero sin proceso dentro. | Y el eje LEE/MODIFICA se deriva con la EVIDENCIA por delante del nombre: un tcode que aparece en cdhdr_history produjo documentos de cambio, luego escribio. El nombre solo decide lo que la evidencia no alcanza",
+      "improve": "el sin-determinar del eje lee/modifica es el 99% en PS: sus dos objetos dominantes no dejan documento de cambio ni tienen nombre que lo diga. Cerrar eso pide el canal de escritura por objeto, no mas heuristica de nombres",
+      "lands_in": "brain_v2/domain_composition.json (dataset) -> claims + capability_model A_PROCESS y U_USAGE",
+      "_why_it_exists": "2026-08-23. El indice de comprension daba un porcentaje por dominio y no se podia sacar ninguna conclusion de el: no decia de que estaba hecho el dominio ni quien lo movia. Este algoritmo es el que convierte un porcentaje en una forma de trabajar.",
+      "_measured": {
+        "dominios": 26,
+        "hallazgo_1": "PS es una interfaz de lectura, no un dominio de negocio",
+        "hallazgo_2": "Integration lee el 93% y no escribe; PBC modifica el 94%. Dos dominios que el volumen presentaba como equivalentes"
+      }
+    },
+    "A24_document_lifecycle": {
+      "operates_on": "process events",
+      "origin": "MARKET_EXTENDED",
+      "state": "WORKS",
+      "does": "seguir un documento como CASO -- cuantas veces se toca, quien, cuanto vive, si cruza el ejercicio y si su importe sube o baja -- en vez de contar ejecuciones",
+      "bound_in": [
+        "process_mining/document_lifecycle.py"
+      ],
+      "failure_mode": "DOS, y las dos dan un resultado creible. (1) No traducir el codigo de transaccion al ACTO DE NEGOCIO: FMX2, FMW2 y FMZ6 son el mismo programa y la misma pantalla (SAPLFMFR dynpro 0511) y hacen cosas distintas -- tratarlas como una pierde el bloqueo, tratarlas como tres crea variantes falsas. (2) Mezclar tipos de valor: sin separar por WRTTP el gasto se cuenta como reserva, y eso costo TRES correcciones seguidas el mismo dia",
+      "improve": "solo sabe de KBLK/FMIOI. El metodo es generico -- caso, acto, orden, agrupar -- y deberia aceptar cualquier clase de documento de cambio ahora que TCDOB dice donde vive cada una",
+      "lands_in": "brain_v2/document_lifecycle.json (dataset) -> claims. Un documento con 352 modificaciones no es una estadistica: es un hallazgo con nombre",
+      "_why_it_exists": "2026-08-24. La pregunta era si UNESCO usa las reservas para RETENER presupuesto en vez de comprometerlo. Ningun recuento la contesta. La contestaron tres medidas sobre el ciclo: el 66,6% de los documentos con 3+ cambios acaban con MENOS importe, hasta el 100% de las lineas no llevan acreedor, y hay un documento con 352 modificaciones en 393 dias. Las tres salen de mirar el documento como CASO",
+      "_measured": {
+        "documentos_analizados": 1884,
+        "pct_que_reducen_importe": 66.6,
+        "max_modificaciones_un_documento": 352,
+        "sin_acreedor_UIL_pct": 100
+      }
+    },
+    "A25_artifact_reachability": {
+      "operates_on": "the knowledge stores themselves",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "comprobar que cada artefacto que un algoritmo promete en lands_in exista, lo lea alguien, y se llegue a el desde el indice de entrada",
+      "bound_in": [
+        "Zagentexecution/quality_checks/artifact_reachability_check.py"
+      ],
+      "failure_mode": "UN GATE QUE GRITA EN FALSO DEJA DE LEERSE. La primera version buscaba los ficheros solo en brain_v2 y marco AUSENTE cinco que existian en otras carpetas. | Y el riesgo de fondo: exigir que TODO este en el indice lo llenaria de ruido y recrearia el problema de los 400K que la carga escalonada vino a resolver. Se exige el artefacto o su CONCLUSION, no su contenido",
+      "improve": "mide artefactos, no CLAIMS. Los 575 claims eran 98% invisibles y este gate no lo habria visto: hizo falta una medida aparte. Extenderlo a los stores",
+      "lands_in": "n/a - gate: su salida es un exit code y una lista de acciones, no un dataset",
+      "_why_it_exists": "2026-08-24. La sesion produjo CINCO stores nuevos y solo UNO era alcanzable desde el indice. Al medirlo en serio, 24 de 31 artefactos del brain entero eran invisibles: existian, se regeneraban en cada rebuild, eran correctos, y se generaban para nadie. Ya habia un gate parecido (unlanded_discoveries) pero vigila IDENTIFICADORES que el codigo toca, y un store nuevo caia por el hueco entre los dos",
+      "_measured": {
+        "primera_corrida": "24 invisibles y 4 ausentes de 31",
+        "tras_el_arreglo": "31 de 31 en verde",
+        "el_arreglo": "no fue meterlos a mano en el indice sino publicar algorithms.json, que ya sabia que hace cada uno y donde lo deja"
       }
     }
   },

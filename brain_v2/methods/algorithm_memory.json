@@ -1315,6 +1315,36 @@
       "implication": "este contador vale como control permanente. Si algun dia deja de ser 0, algo escribio en produccion y hay que saberlo el mismo dia",
       "confidence": "MEASURED",
       "session": 103
+    },
+    {
+      "subject": "consultar por cada elemento de una lista",
+      "kind": "TRAP",
+      "fact": "una consulta DENTRO de un bucle sobre N elementos son N barridos completos de la tabla. En rsau_audit_history, 28,5M de filas sin indice, eso convirtio un paso de segundos en el mas lento del rebuild entero: 255 usuarios x un COUNT cada uno. La misma respuesta sale de UNA consulta con GROUP BY.",
+      "learned_by": "F1_interface_boundary_analysis",
+      "evidence": "build_interface_inventory.py 2026-08-24: el descubrimiento de canales por trafico hacia un COUNT de logons de dialogo por usuario; reescrito como un solo GROUP BY sobre toda la tabla",
+      "implication": "cuando necesites un dato POR CADA elemento de una lista, sacalo de una vez a un diccionario y consultalo en memoria. Y el coste no es solo tiempo: A7 ya lo dice -- un algoritmo lento se salta, y un algoritmo saltado es documentacion. La lentitud termina en perdida de conocimiento, no en espera",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "escribir en un store compartido",
+      "kind": "TRAP",
+      "fact": "anadir filas a claims.json con campos inventados -- `domains` en plural, `evidence` en vez de `evidence_for`, y sin `claim_type` -- no falla al escribir. Falla VEINTE MINUTOS DESPUES, en otro proceso, con un KeyError que aborto el rebuild en el paso 2 de 35.",
+      "learned_by": "A20_comprehension_index",
+      "evidence": "2026-08-24: 9 claims (ids 568-576) escritos sin claim_type; build_active_db.py aborto con KeyError: 'claim_type'",
+      "implication": "antes de anadir a un store compartido, COPIA el esquema de una fila existente en vez de inventar los campos. El esquema esta en el propio fichero: claim, claim_type, confidence, domain, domain_axes, evidence_for, id, related_objects, resolution_notes. Y comprueba que el consumidor arranca, porque escribir bien no es lo mismo que ser legible",
+      "confidence": "MEASURED",
+      "session": 103
+    },
+    {
+      "subject": "leer marcas de tiempo de ficheros como progreso",
+      "kind": "TRAP",
+      "fact": "mirar mtimes para deducir por que paso va un proceso largo confunde lo que el proceso escribio con lo que escribio OTRA cosa. Se leyeron artefactos de las 17:xx como del rebuild cuando eran de corridas manuales previas, y de ahi salio la conclusion de que llevaba una hora atascado. Llevaba UN minuto.",
+      "learned_by": "A20_comprehension_index",
+      "evidence": "2026-08-24, seguimiento del rebuild por mtime en vez de por su propia salida",
+      "implication": "un proceso largo se sigue por SU salida, no por efectos laterales en el disco. Y si se canaliza a `tail`, la salida se retiene hasta el final: redirige a fichero y leelo, o no habra progreso que ver",
+      "confidence": "MEASURED",
+      "session": 103
     }
   ]
 }

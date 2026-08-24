@@ -125,6 +125,18 @@ def main():
     # estructuralmente invisible aqui -- por eso EPAM-RFC, con 127.832 eventos desde dos IPs
     # fijas, no figuraba en ninguno de los 300 registros. Un canal se descubre por su TRAFICO,
     # no solo por su configuracion.
+    # UNA consulta agrupada, no una por usuario. La primera version hacia un COUNT por cada
+    # uno de los 255 usuarios: 255 barridos completos de 28,5M de filas sin indice, y el paso
+    # se volvia el mas lento del rebuild entero. El propio registro lo avisa en A7 -- "un
+    # algoritmo lento se salta, y un algoritmo saltado es documentacion".
+    _dialog_logons = {}
+    try:
+        for u, k in con.execute("SELECT SLGUSER, COUNT(*) FROM rsau_audit_history "
+                                "WHERE TXSUBCLSID = 'Dialog Logon' GROUP BY SLGUSER"):
+            _dialog_logons[u] = k
+    except sqlite3.Error:
+        _dialog_logons = {}
+
     for user, calls, fms, terms in q(con, """
             SELECT SLGUSER, COUNT(*), COUNT(DISTINCT PARAM3), COUNT(DISTINCT SLGLTRM2)
             FROM rsau_audit_history
@@ -133,21 +145,14 @@ def main():
         # PERSONA o MAQUINA, decidido por una senal MEDIBLE y no por el nombre: una interfaz
         # no hace LOGON DE DIALOGO. Un humano que usa SAP GUI genera muchisimas llamadas RFC
         # -- V.VAURETTE tiene 211.702 -- y sin este corte el inventario se llena de personas.
-        # q() no acepta parametros (su 3er argumento es el default), asi que la consulta
-        # parametrizada va por la conexion directa.
-        try:
-            dlg = con.execute("SELECT COUNT(*) FROM rsau_audit_history "
-                              "WHERE SLGUSER = ? AND TXSUBCLSID = 'Dialog Logon'",
-                              (user,)).fetchone()[0] or 0
-        except sqlite3.Error:
-            dlg = None
+        dlg = _dialog_logons.get(user)
         inv.append({
             "channel": "RFC_INBOUND_OBSERVED", "artifact": (user or "").strip(),
             "direction": "inbound", "calls": calls,
             "distinct_function_modules": fms, "distinct_terminals": terms,
-            "dialog_logons": dlg,
-            "likely": ("MAQUINA" if dlg == 0 else
-                       "PERSONA (usa SAP GUI)" if dlg else "sin determinar"),
+            # ausente del dict = CERO logons de dialogo, que es la senal de maquina.
+            "dialog_logons": dlg or 0,
+            "likely": "MAQUINA" if not dlg else "PERSONA (usa SAP GUI)",
             "evidence_it_runs": f"{calls:,} llamadas RFC en rsau_audit_history",
             "_why_here": ("descubierto por TRAFICO, no por configuracion: no tiene entrada en "
                           "rfcdes. Un satelite que entra como usuario RFC no deja destino"),
