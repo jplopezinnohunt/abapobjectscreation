@@ -378,6 +378,11 @@ def main():
     # crece (un tipo de objeto nuevo, un canal medido), el companion crece solo.
     run(["python", "scripts/build_master_data_companion.py"],
         "Step 6d/7: Rebuild Master Data Governance companion")
+    # La vista "como trabaja UNESCO" se RECONSTRUYE aqui, no se escribe a mano. Va DESPUES de
+    # todo lo que mide (comprehension_index, domain_composition, perfil) porque los lee. La
+    # prosa a mano no envejece: envejece en silencio, y eso es lo que este paso evita.
+    run(["python", "scripts/build_operating_model.py"],
+        "Step 7b/7: Rebuild 'como trabaja UNESCO' (vista general generada)")
     run(["python", "scripts/build_companion_graph.py", "--write-related"], "Step 7a/7: Rebuild companion knowledge graph")
     run(["python", "scripts/build_landing_page.py"], "Step 7/7: Rebuild landing page dashboard")
 
