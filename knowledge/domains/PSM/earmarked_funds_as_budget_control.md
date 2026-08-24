@@ -100,6 +100,48 @@ adelantado todo el ejercicio.
 pero de otros tipos de valor. El mecanismo de reserva de puestos es de **UNES y UBO**, no de los
 institutos.
 
+## DOS MODELOS OPERATIVOS BAJO EL MISMO SISTEMA
+
+Cortando por área de gestión financiera aparece la diferencia estructural: **la sede tiene el
+proceso automatizado y los institutos lo hacen entero a mano.**
+
+| Área | Total | SE38 | ZPBC | batch | **diálogo** | usuarios diálogo |
+|---|---:|---:|---:|---:|---:|---:|
+| UNES | 1.386.850 | 476.288 | 442.557 | 267.176 | 200.829 | 350 |
+| UBO | 10.959 | 1.558 | 1.479 | 1.203 | 6.719 | 15 |
+| IBE | 5.550 | 0 | 0 | 0 | **5.550** | 15 |
+| ICTP | 4.457 | 0 | 0 | 0 | **4.457** | 13 |
+| IIEP | 3.898 | 0 | 0 | 0 | **3.898** | 27 |
+| UIL | 1.341 | 0 | 0 | 0 | **1.341** | 4 |
+| MGIE | 1.038 | 0 | 0 | 0 | **1.038** | 9 |
+| UIS | 892 | 0 | 0 | 0 | **892** | 15 |
+| ICBA | 843 | 0 | 0 | 0 | **843** | 13 |
+
+**Los siete institutos tienen CERO ejecución automática.** Ni un `SE38`, ni un `ZPBC`, ni una
+línea de fondo. El 100% pasa por una persona en una pantalla.
+
+UNES tiene el **85,5% automatizado**; UBO el 38,7%.
+
+### Y el perfil de lo manual también difiere
+
+| | institutos | UNES en diálogo |
+|---|---:|---:|
+| `FMX2` modificar reserva | **63,8%** | 43,1% |
+| `FB01` contabilizar | 15,8% | 5,1% |
+| `FB60` factura acreedor | 8,3% | 17,2% |
+| `PA30` datos de personal | — | 10,5% |
+
+El instituto vive en `FMX2`: dos de cada tres cosas que hace son **retocar una reserva a mano**.
+
+### Qué significa
+
+La automatización de UNES es **el cierre periódico de PBC**, que compromete el coste de cada
+puesto. Los institutos no tienen eso — **no comprometen presupuesto de personal
+automáticamente**. Su presupuesto de puestos, si lo gestionan, no pasa por este mecanismo.
+
+Carga por persona, que lo confirma: UNES 3.951 líneas/persona frente a UIS 59 o ICBA 65. No es
+que los institutos trabajen menos: es que el volumen de UNES lo genera una máquina.
+
 ## Ciclo de vida
 
 | Estado (`ERLKZ`) | Líneas | | Importe |
