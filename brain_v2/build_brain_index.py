@@ -326,6 +326,8 @@ lo deja — solo que nadie lo publicaba.
 ⚠️ = el algoritmo está marcado FRAGILE o WEAK: **lee su `failure_mode` antes de usar su salida.**
 {chr(10).join(out)}
 
+- 📐 **Cómo encajan entre sí:** `knowledge/exploration_architecture.md` — la cadena completa,
+  las 4 superficies, las 5 vías, los 4 grados y las trampas que costó llegar ahí.
 - **Ninguno de estos ficheros se lee entero.** Se abren con
   `python brain_v2/graph_queries.py search <termino>` o directamente cuando la tabla de arriba
   dice que contestan tu pregunta.
