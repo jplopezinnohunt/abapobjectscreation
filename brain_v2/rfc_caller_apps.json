@@ -1,0 +1,94 @@
+{
+  "_what_this_is": "Que APLICACION hay detras de una llamada RFC, cuando el log solo da un usuario tecnico.",
+  "_why": [
+    "El log dice SLGUSER='MULESOFT' y ahi se acaba. MuleSoft es el BUS, no el que quiere el dato:",
+    "por el pasan varias aplicaciones distintas y todas se ven igual desde SAP.",
+    "El modelo de satelites que ya existe (brain_v2/satellites.json) agrupa por ENDPOINT y",
+    "detecta flotas de GUIDs, pero no puede nombrar la aplicacion: esa informacion no esta en",
+    "el sistema. La pone una persona que sabe como esta montado, y por eso este fichero existe."
+  ],
+  "_the_rule": [
+    "Cada entrada dice de DONDE sale lo que afirma. Un 'source' de tipo user_knowledge es una",
+    "afirmacion de una persona, no una medida, y se etiqueta asi -- pero el actor y el volumen",
+    "que la acompanan SI estan medidos, y esos dos hechos no se mezclan."
+  ],
+  "_how_it_is_used": "brain_v2/domain_composition.py (A22) lo lee para decir quien conduce el volumen de cada dominio.",
+  "callers": [
+    {
+      "function_modules": [
+        "Y_BAPI_WBS_FINANCIAL_DATA_1",
+        "Y_BAPI_YPS8"
+      ],
+      "application": "Core Manager",
+      "via": "MuleSoft",
+      "technical_user": "MULESOFT",
+      "reads_domain": "PS",
+      "measured": {
+        "Y_BAPI_WBS_FINANCIAL_DATA_1": 1861107,
+        "Y_BAPI_YPS8": 878833,
+        "share_of_PS_rfc_traffic_pct": 99.7,
+        "actor_share_pct": 100.0,
+        "months": "202602-202608, entre 100K y 320K al mes, sin picos: cadencia de interfaz",
+        "_note": "el actor y el volumen son MEDIDOS en rsau_audit_history 2026-08-23"
+      },
+      "source": "user_knowledge",
+      "stated_by": "JP (2026-08-23)",
+      "why_it_matters": [
+        "PS salia como el 39,1% de toda la actividad de negocio -- mas que FI y HCM juntos --",
+        "y ese volumen no es gente gestionando proyectos: es Core Planner leyendo datos",
+        "financieros de WBS a traves del bus. Sin este dato, el dominio parece el corazon del",
+        "sistema; con el, es una interfaz de lectura con una cadencia estable."
+      ],
+      "read_or_write": {
+        "verdict": "READ",
+        "evidence": "PS tiene 3.501.118 ejecuciones y SOLO 234 cambios en el canal change. Un dominio que ejecuta 3,5 millones de veces y deja 234 documentos de cambio no esta modificando: esta leyendo. Es evidencia de VOLUMEN, no del nombre del modulo",
+        "measured_utc": "2026-08-24"
+      },
+      "_was": "Core Planner (JP 2026-08-23), corregido por JP el 2026-08-24"
+    },
+    {
+      "function_modules": [
+        "Y_BAPI_CUSTOMER_GET_ID"
+      ],
+      "application": "Core Manager",
+      "via": "MuleSoft",
+      "technical_user": "MULESOFT",
+      "reads_domain": "FI",
+      "measured": {
+        "Y_BAPI_CUSTOMER_GET_ID": 278979,
+        "share_of_FI_pct": 22.3,
+        "_note": "es el objeto MAS grande de FI y lo llama el mismo usuario tecnico que Core Planner"
+      },
+      "source": "user_knowledge (todo MuleSoft es Core Manager)",
+      "_resolved": "quedaba sin nombrar por prudencia; la regla de bus lo resuelve"
+    }
+  ],
+  "technical_user_apps": {
+    "_what": "que aplicacion hay detras de un USUARIO TECNICO, cuando no se sabe por modulo.",
+    "_caveat": [
+      "Un usuario tecnico es un CANAL, no una aplicacion, y por eso esto se etiqueta como",
+      "atribucion de BUS. Aqui, sin embargo, el alcance es deliberado y completo: TODO MULESOFT",
+      "es Core Manager, dicho por quien conoce el montaje."
+    ],
+    "MULESOFT": {
+      "primary_application": "Core Manager",
+      "scope": "TODO el trafico del usuario tecnico MULESOFT",
+      "source": "user_knowledge",
+      "stated_by": "JP (2026-08-24, corrigiendo lo del dia anterior)",
+      "measured": {
+        "drives_PS_pct": 78.6,
+        "drives_FI_pct": 22.3,
+        "drives_PSM_FM_pct": 8.8,
+        "drives_Technical_Substrate_pct": 26.9
+      }
+    }
+  },
+  "_superseded": [
+    {
+      "what": "Y_BAPI_WBS_FINANCIAL_DATA_1 y Y_BAPI_YPS8 atribuidos a 'Core Planner'",
+      "stated_by": "JP (2026-08-23)",
+      "superseded_by": "JP (2026-08-24): todo MuleSoft es Core Manager",
+      "why_kept": "se conserva porque una correccion sin su version anterior no se puede auditar. Lo MEDIDO no cambia con la correccion: el actor sigue siendo MULESOFT al 100% y los volumenes son los mismos. Lo que cambia es el NOMBRE de la aplicacion, que nunca fue medido -- no esta en el sistema -- sino afirmado"
+    }
+  ]
+}

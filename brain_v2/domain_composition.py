@@ -72,6 +72,30 @@ def rw_of(name, writes_measured):
     return "UNKNOWN", "ni evidencia ni nombre"
 
 CONCENTRATED = 5    # <= actores para llamarlo concentrado
+CALLERS = os.path.join(ROOT, "brain_v2", "rfc_caller_apps.json")
+
+
+def caller_apps():
+    """FM -> aplicacion que hay detras. El log da un usuario tecnico ('MULESOFT') y ahi se
+    acaba: el bus no es quien quiere el dato, y por el pasan varias aplicaciones que desde
+    SAP se ven identicas. Esa informacion NO esta en el sistema -- la pone quien sabe como
+    esta montado -- asi que vive en un fichero y se etiqueta como tal."""
+    try:
+        d = json.load(open(CALLERS, encoding="utf-8"))
+    except Exception:
+        return {}
+    m = {"_by_user": {}}
+    for u, v in (d.get("technical_user_apps") or {}).items():
+        if u.startswith("_") or not isinstance(v, dict):
+            continue
+        m["_by_user"][u] = v
+    for c in d.get("callers", []):
+        if not c.get("application"):
+            continue
+        for fm in c.get("function_modules", []):
+            m[fm] = {"application": c["application"], "via": c.get("via"),
+                     "source": c.get("source")}
+    return m
 
 
 def classifiers():
@@ -90,6 +114,8 @@ def classifiers():
 
 def build():
     domain_of, ctx, classify_program, normalize_actor = classifiers()
+    apps = caller_apps()
+    by_user = apps.pop("_by_user", {})
     q = sqlite3.connect("file:" + GOLD + "?mode=ro", uri=True).execute
     # OBSERVER: nuestras propias lecturas no son actividad del sistema (ver A20)
     obs = "'JP_LOPEZ'"
@@ -135,6 +161,25 @@ def build():
             GROUP BY TCODE, SUBSTR(UDATE,1,6)"""), "change",
          resolve=lambda n: domain_of(n, program=ctx["tc_prog"].get(n),
                                      text=ctx["tc_text"].get(n)))
+
+    print("3b/4 quien CONDUCE el volumen de cada dominio ...")
+    dom_driver = collections.defaultdict(collections.Counter)
+    dom_app = collections.defaultdict(collections.Counter)
+    for name, user, n in q(f"""SELECT PARAM3, SLGUSER, COUNT(*) FROM rsau_audit_history
+            WHERE TXSUBCLSID = 'RFC Function Call' AND PARAM3 != ''
+              AND SLGUSER NOT IN ({obs}) GROUP BY PARAM3, SLGUSER"""):
+        d = domain_of(name, overlay=ctx["fm_dom"].get(name))
+        dom_driver[d][user] += n
+        a = apps.get(name)
+        if a:
+            dom_app[d][f"{a['application']} (via {a['via']})"] += n
+        elif user in by_user:
+            # atribucion a nivel de BUS: dice el ocupante principal, no que sea el unico.
+            # Un modulo confirmado arriba gana sobre esto, que es lo que hace el elif.
+            u = by_user[user]
+            otras = u.get("may_include") or []
+            suf = f" o alguna de {', '.join(otras)}" if otras else ""
+            dom_app[d][f"{u['primary_application']} (via {user}){suf}"] += n
 
     print("4/4 actores por dominio ...")
     for name, user in q(f"""SELECT DISTINCT PARAM3, SLGUSER FROM rsau_audit_history
@@ -212,6 +257,10 @@ def build():
             "read_write_evidence": dict(rw_why.most_common()),
             "top_objects_rw": [{"object": o, "execs": v, "rw": rw_of(o, writes_measured)[0]}
                                for o, v in ranked[:TOP]],
+            "driven_by": [{"actor": u, "execs": v, "pct": round(100 * v / tot, 1)}
+                          for u, v in dom_driver[d].most_common(4)],
+            "applications": [{"application": a, "execs": v, "pct": round(100 * v / tot, 1)}
+                             for a, v in dom_app[d].most_common()],
             "shape": _shape(top1, n90, len(actors), months),
         }
     json.dump(out, open(OUT, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
@@ -259,6 +308,13 @@ def show(dom, data=None):
         print(f"  lee/escribe: LECTURA {rw.get('READ',0)}% · "
               f"MODIFICACION {rw.get('WRITE',0)}% · sin determinar {rw.get('UNKNOWN',0)}%")
     marca = {o["object"]: o["rw"] for o in d.get("top_objects_rw", [])}
+    if d.get("applications"):
+        for a in d["applications"]:
+            print(f"  APLICACION: {a['application']} mueve el {a['pct']}% "
+                  f"({a['execs']:,})")
+    if d.get("driven_by"):
+        print("  lo conduce: " + " · ".join(
+            f"{x['actor']} {x['pct']}%" for x in d["driven_by"][:3]))
     print("  objetos:")
     for o in d["top_objects"][:8]:
         print(f"    {o['object'][:40]:40s} {o['execs']:>10,} {o['pct']:>5.1f}%  "
