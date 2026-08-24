@@ -228,6 +228,71 @@ Not a self-assessment: each dimension is derived from what is on disk.
 """
 
 
+def _stores_block():
+    """QUE HAY Y COMO SE ABRE. El bloque que faltaba, y su ausencia era el agujero.
+
+    Medido 2026-08-24, comparando cada store contra lo que los puntos de entrada NOMBRAN:
+        reglas          230 de 230 alcanzables    0% invisible
+        incidentes       11 de  13               15%
+        companions       10 de  42               76%
+        docs de dominio   5 de 143               96%
+        claims           10 de 575               98%
+        memorias metodo   0 de 129              100%
+
+    Las REGLAS son el unico store sano, y por un motivo concreto: el indice las enumera. Ese
+    es el patron que funciona y no se habia aplicado a nada mas.
+
+    El resto depende de que alguien sepa preguntar. `load_domain.py` resuelve el acceso POR
+    TEMA -- pero hay que nombrar el tema primero, y solo se encuentra lo que ya se sabe que
+    existe. Ese es el mecanismo exacto de la perdida.
+
+    La solucion NO es volcarlo todo aqui: eso recrea el problema de los 400K que la carga
+    escalonada vino a resolver. Es decir CUANTO hay y CON QUE COMANDO se abre. Un inventario,
+    no el contenido.
+    """
+    import glob as _g
+
+    def _n(path, key=None):
+        try:
+            d = json.load(open(HERE / path, encoding="utf-8"))
+            if key:
+                d = d.get(key, d)
+            return len(d)
+        except Exception:
+            return "?"
+
+    docs = len(_g.glob(str(HERE.parent / "knowledge" / "domains" / "**" / "*.md"),
+                       recursive=True))
+    try:
+        cos = len(json.load(open(HERE.parent / "companions" / "companions.json",
+                                 encoding="utf-8")))
+    except Exception:
+        cos = "?"
+    return f"""## 🗄️ LO QUE HAY, Y CON QUÉ COMANDO SE ABRE
+Este bloque existe porque **solo se encuentra lo que ya se sabe que existe**. Medido: los
+claims eran 98% invisibles desde aquí, los docs de dominio 96%, y las memorias de método
+**100%**. Las reglas eran el único store sano — porque este índice las enumera. Aquí está el
+inventario del resto; el contenido se abre con su comando.
+
+| Store | Cuánto | Cómo se abre |
+|---|---:|---|
+| **claims** | {_n('claims/claims.json')} | `python brain_v2/graph_queries.py search <termino>` |
+| **docs de dominio** | {docs} | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
+| **companions** | {cos} | `companions/how_unesco_works.html` los indexa todos |
+| **incidentes** | {_n('incidents/incidents.json')} | `python brain_v2/graph_queries.py incident <id>` |
+| **reglas** | {_n('agent_rules/feedback_rules.json')} | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | {_n('methods/algorithm_memory.json', 'memories')} | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | {_n('methods/algorithms.json', 'algorithms')} | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+
+- ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
+  qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
+  instrumento. Léelas antes de medir algo nuevo.
+- 🔍 **Gate de alcanzabilidad:** `python Zagentexecution/quality_checks/artifact_reachability_check.py`
+  — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
+  a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
+"""
+
+
 def _comprehension_block():
     """Is the EXECUTION SURFACE closed? Lives in the entry index on purpose.
 
@@ -482,6 +547,7 @@ domain. Measured on DMEE: 40 docs + 20 companions + 165 claims + 11 incidents th
 {_security_block()}
 {_maturity_block()}
 {_comprehension_block()}
+{_stores_block()}
 {_open_work_block()}
 
 {_agents_block()}

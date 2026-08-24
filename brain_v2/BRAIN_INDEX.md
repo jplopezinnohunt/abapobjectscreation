@@ -58,8 +58,8 @@ public-sector finance, not manufacturing or sales.
 ## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
 **SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
 the system is used that assumes people in screens is wrong before it starts.
-- **300 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
-  RFC_DESTINATION 239 · FILE 20 · BATCH_INPUT 17 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
+- **555 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
+  RFC_INBOUND_OBSERVED 255 · RFC_DESTINATION 239 · FILE 20 · BATCH_INPUT 17 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
 - **The boundary is mostly dead:** 238 RFC destinations configured,
   **11 live**, **227 dead**,
   **319 undeclared** — traffic crossing with no configuration entry.
@@ -92,20 +92,43 @@ Not a self-assessment: each dimension is derived from what is on disk.
 ## 🔍 ¿ENTENDEMOS LO QUE EL SISTEMA EJECUTA? — 0.71% sin clasificar
 Cuatro superficies, porque ejecutar no es solo un programa: lo que corre, lo que CAMBIA, lo que
 corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta en SLGREPNA.
-- **objects** — 28,499,551 ejec · tecnico 91.6% · negocio 7.5% · sin clasificar **0.0%**
-- **changes** — 2,873,448 ejec · tecnico 15.4% · negocio 84.5% · sin clasificar **0.0%**
-- **jobs** — 219,167 ejec · tecnico 81.4% · negocio 18.4% · sin clasificar **0.2%**
-- **rfc** — 12,589,665 ejec · tecnico 53.2% · negocio 34.7% · sin clasificar **2.5%**
+- **objects** — 28,499,551 ejec · tecnico 86.9% · negocio 7.5% · sin clasificar **0.0%**
+- **changes** — 2,873,448 ejec · tecnico 13.2% · negocio 84.5% · sin clasificar **0.0%**
+- **jobs** — 219,167 ejec · tecnico 54.1% · negocio 18.4% · sin clasificar **0.2%**
+- **rfc** — 12,589,665 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
   El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
 - **Situar no es explicar:** solo el **60.6%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
-- Movimiento: -0.02 desde la ultima corrida · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
+- Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
   la lista es `brain_v2/comprehension_index.json` → `keep_exploring`, ordenada por ejecuciones,
   y es el trabajo del agente `log-process-discovery`.
 - Lo aprendido sobre COMO explorar (no sobre el dato) vive aparte, en
   `brain_v2/methods/algorithm_memory.json`: INSTRUMENT · SUBSTRATE · CARRIER · TRAP.
+
+## 🗄️ LO QUE HAY, Y CON QUÉ COMANDO SE ABRE
+Este bloque existe porque **solo se encuentra lo que ya se sabe que existe**. Medido: los
+claims eran 98% invisibles desde aquí, los docs de dominio 96%, y las memorias de método
+**100%**. Las reglas eran el único store sano — porque este índice las enumera. Aquí está el
+inventario del resto; el contenido se abre con su comando.
+
+| Store | Cuánto | Cómo se abre |
+|---|---:|---|
+| **claims** | 575 | `python brain_v2/graph_queries.py search <termino>` |
+| **docs de dominio** | 143 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
+| **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
+| **incidentes** | 13 | `python brain_v2/graph_queries.py incident <id>` |
+| **reglas** | 230 | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | 129 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 47 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+
+- ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
+  qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
+  instrumento. Léelas antes de medir algo nuevo.
+- 🔍 **Gate de alcanzabilidad:** `python Zagentexecution/quality_checks/artifact_reachability_check.py`
+  — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
+  a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
 ## OPEN WORK - incidents awaiting action (11 live, deadline first)
 - `INC-EGYPT-PPC` - CLOSED_NOT_REQUIRED - **DUE 2026-09-05** - Add Egypt to the mandatory purpose-of-payment country list (Citi CBE requirement, effective 2026

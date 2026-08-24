@@ -27108,5 +27108,151 @@
       "Integration"
     ],
     "id": 571
+  },
+  {
+    "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive en KBLE, KBLK, KBLKKRED y KBLP -- NO en FMBH/FMBL, que son documentos de presupuesto BCS. En FMIOI las reservas son REFBT='110', que casa al 100% con KBLK.BELNR. El tipo de valor lo resuelve YTFM_WRTTP_GR, tabla de configuracion PROPIA de UNESCO: WRTTP 65 = COMMITM (reserva), 80 = BLOCKED (bloqueo), 81 = EXPENDU (gasto), 82 = PRECOMM (pre-compromiso). Sin separar por WRTTP toda medida mezcla gasto con reserva y produce cifras creibles y falsas. Los programas salen de TSTC: ZPBC_PERIOD_CLS_EXEC envuelve el ESTANDAR RHRFPM_SET_CLOSED_INDICATOR, ZPBC_COMPLETION envuelve RHRFPM_ERLK_EXT, y FMX1/FMX2/FMW2/FMZ6 son TODAS el mismo programa SAPLFMFR -- FMX2, FMW2 y FMZ6 comparten hasta la misma pantalla, la dynpro 0511. Lo que las distingue es el codigo de transaccion, que parametriza: por eso una hace gasto, otra bloqueo y otra reserva siendo la misma pantalla.",
+    "evidence": [
+      "TCDOB via RFC_READ_TABLE en P01 2026-08-23",
+      "TSTC (Gold DB local)",
+      "YTFM_WRTTP_GR (Gold DB local)",
+      "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "KBLK",
+      "KBLP",
+      "KBLE",
+      "KBLKKRED",
+      "FMIOI",
+      "YTFM_WRTTP_GR",
+      "TCDOB",
+      "TSTC",
+      "FMX1",
+      "FMX2",
+      "FMW1",
+      "FMW2",
+      "FMZ6",
+      "FMMC",
+      "FMJ2",
+      "SAPLFMFR",
+      "RHRFPM_SET_CLOSED_INDICATOR",
+      "RHRFPM_ERLK_EXT",
+      "ZPBC_PERIOD_CLS_EXEC",
+      "ZPBC_COMPLETION",
+      "FMBH",
+      "FMBL"
+    ],
+    "domains": [
+      "PSM_FM",
+      "PBC"
+    ],
+    "id": 572
+  },
+  {
+    "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion contra el tipo de valor que produce: FMW2 genera 12.124 de las 13.352 lineas WRTTP 80 (BLOCKED), 28,6 M. Y FMX1, FMX2, FMMC y FMJ2 son 100% WRTTP 81 (EXPENDU): producen GASTO, no reserva. El 100% de la reserva real -- 803.111 lineas, 1.833 M -- y el 100% del pre-compromiso -- 417.202 lineas, 1.303 M -- los genera el motor PBC: SE38, ZPBC_PERIOD_CLS_EXEC, PA30, PCP0 y el job de fondo, sobre documentos BLART 91/92. PA30 pertenece a esa cadena: editar los datos de una persona DISPARA la reserva de su puesto. Confundir las dos poblaciones es facil porque comparten tabla, y fue el error que costo tres correcciones seguidas.",
+    "evidence": [
+      "FMIOI agrupado por TCODE x WRTTP x BLART, Gold DB 2026-08-24",
+      "companions/fund_reservation_as_budget_throttle.html"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "FMW2",
+      "FMX1",
+      "FMX2",
+      "FMMC",
+      "FMJ2",
+      "PA30",
+      "PCP0",
+      "SE38",
+      "ZPBC_PERIOD_CLS_EXEC",
+      "HRPBC_ENGINE_PNP",
+      "HRFPM_VACANCY_DISP",
+      "KBLK",
+      "KBLP",
+      "FMIOI",
+      "HIPER"
+    ],
+    "domains": [
+      "PSM_FM",
+      "PBC"
+    ],
+    "id": 573
+  },
+  {
+    "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMERO: de los 1.167 documentos con 3 o mas modificaciones, 777 (66,6%) terminan con MENOS importe del que empezaron; ICBA 87%, UIS 75%, IBE 71%, UIL 70%. Eso es liberacion por tramos, no consumo. SEGUNDO: no llevan acreedor -- UIL 100%, MGIE 98%, UIS 97%, IIEP 93% de lineas sin LIFNR. Un compromiso real lleva proveedor; estos son retenciones sobre el fondo. El patron de edicion lo confirma: hasta 352 modificaciones sobre UN documento en 393 dias (IBE 3250112222, C_LEROY). NO CUANTIFICADO: que porcentaje del presupuesto asignado esta retenido, porque BPJA no contiene los fondos de los institutos en el extracto local. Y la premisa de que las claves de control AVC son demasiado genericas NO se ha comprobado.",
+    "evidence": [
+      "FMIOI: direccion del cambio de importe por documento, Gold DB 2026-08-24",
+      "FMIOI.LIFNR por FIKRS",
+      "companions/fund_reservation_as_budget_throttle.html"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "KBLK",
+      "KBLP",
+      "FMIOI",
+      "BPJA",
+      "FMX2",
+      "FMX1",
+      "LFA1"
+    ],
+    "domains": [
+      "PSM_FM"
+    ],
+    "id": 574
+  },
+  {
+    "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RFC (109.617 llamadas + 18.215 logons) desde dos IPs fijas de servidor: 172.17.9.133 y 172.17.10.132. Su llamada principal es /SAPDS/RFC_READ_TABLE2 (22.850), y el prefijo /SAPDS/ ES SAP Data Services (BODS). Hace 13.885 llamadas a RFC_FUNCTION_SEARCH y 14.666 a RFC_METADATA_GET, o sea recorre el DICCIONARIO para descubrir que puede leer. LEE Y NO ESCRIBE: 0 lineas en FMIOI, 0 cambios en cdhdr_history. Su actividad se clasifica 49% Technical_Substrate, 18% Integration y 15% sin catalogar. Pese a 127.832 eventos NO figura en ninguno de los 300 registros del inventario de interfaces: es un canal de SALIDA de datos de un proveedor externo que el mapa de integracion no tenia.",
+    "evidence": [
+      "rsau_audit_history agrupado por SLGUSER='EPAM-RFC', Gold DB 2026-08-24",
+      "brain_v2/rfc_caller_apps.json",
+      "brain_v2/interface_inventory.json (ausencia)"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "EPAM-RFC",
+      "/SAPDS/RFC_READ_TABLE2",
+      "RFC_FUNCTION_SEARCH",
+      "RFC_METADATA_GET",
+      "SAP_DATA_SERVICES",
+      "BODS"
+    ],
+    "domains": [
+      "Integration"
+    ],
+    "id": 575
+  },
+  {
+    "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE vacio y solo 413 en 'F' (finalizada). Una sesion procesada con exito SE BORRA, asi que lo que sobrevive son las que fallaron o nunca corrieron. Por eso la lectura ingenua -- TRIP_MODIFY 40.104 y TRIP_CREATE 10.062, el 86,4% viajes -- NO autoriza a concluir que el batch input sea de viajes: solo dice que las sesiones que SOBREVIVEN lo son. Lo que si se ve: PROGID='SAPMSSY1' en 55.087 de las 57.998, o sea creadas por RFC desde FUERA y no por un programa ABAP de la casa. Y una confusion de canal que hay que evitar: una sesion de batch input EJECUTA la transaccion, luego graba su TCODE, luego NO aparece como 'sin tcode' -- las lineas de FMX1/FMX2 podrian ser batch input y por TCODE son indistinguibles del dialogo.",
+    "evidence": [
+      "apqi por QSTATE, GROUPID y PROGID, Gold DB 2026-08-24"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "APQI",
+      "APQD",
+      "SAPMSSY1",
+      "RFBIKR00",
+      "RFBIBL01",
+      "TRIP_MODIFY",
+      "TRIP_CREATE",
+      "FMX1",
+      "FMX2"
+    ],
+    "domains": [
+      "Integration",
+      "Travel",
+      "PSM_FM"
+    ],
+    "id": 576
   }
 ]

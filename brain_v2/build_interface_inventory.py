@@ -119,6 +119,42 @@ def main():
     for mestyp, n in Counter(m for (m,) in q(con, "SELECT MESTYP FROM edidc") if m).items():
         inv.append({"channel": "IDOC", "artifact": mestyp, "direction": "both",
                     "documents": n, "evidence_it_runs": f"{n} documents in EDIDC"})
+    # ---- RFC OBSERVADO: usuarios que ENTRAN sin destino configurado ---------
+    # El inventario derivaba solo de rfcdes, que son destinos CONFIGURADOS y SALIENTES. Un
+    # satelite que entra autenticandose como usuario RFC no tiene destino, luego era
+    # estructuralmente invisible aqui -- por eso EPAM-RFC, con 127.832 eventos desde dos IPs
+    # fijas, no figuraba en ninguno de los 300 registros. Un canal se descubre por su TRAFICO,
+    # no solo por su configuracion.
+    for user, calls, fms, terms in q(con, """
+            SELECT SLGUSER, COUNT(*), COUNT(DISTINCT PARAM3), COUNT(DISTINCT SLGLTRM2)
+            FROM rsau_audit_history
+            WHERE TXSUBCLSID = 'RFC Function Call' AND SLGUSER != ''
+            GROUP BY SLGUSER HAVING COUNT(*) >= 1000 ORDER BY 2 DESC""") or []:
+        # PERSONA o MAQUINA, decidido por una senal MEDIBLE y no por el nombre: una interfaz
+        # no hace LOGON DE DIALOGO. Un humano que usa SAP GUI genera muchisimas llamadas RFC
+        # -- V.VAURETTE tiene 211.702 -- y sin este corte el inventario se llena de personas.
+        # q() no acepta parametros (su 3er argumento es el default), asi que la consulta
+        # parametrizada va por la conexion directa.
+        try:
+            dlg = con.execute("SELECT COUNT(*) FROM rsau_audit_history "
+                              "WHERE SLGUSER = ? AND TXSUBCLSID = 'Dialog Logon'",
+                              (user,)).fetchone()[0] or 0
+        except sqlite3.Error:
+            dlg = None
+        inv.append({
+            "channel": "RFC_INBOUND_OBSERVED", "artifact": (user or "").strip(),
+            "direction": "inbound", "calls": calls,
+            "distinct_function_modules": fms, "distinct_terminals": terms,
+            "dialog_logons": dlg,
+            "likely": ("MAQUINA" if dlg == 0 else
+                       "PERSONA (usa SAP GUI)" if dlg else "sin determinar"),
+            "evidence_it_runs": f"{calls:,} llamadas RFC en rsau_audit_history",
+            "_why_here": ("descubierto por TRAFICO, no por configuracion: no tiene entrada en "
+                          "rfcdes. Un satelite que entra como usuario RFC no deja destino"),
+            "_how_classified": ("MAQUINA = cero logons de dialogo. Es una senal medible, no "
+                                "una convencion de nombres"),
+        })
+
     con.close()
 
     # ---- DECLARED (parsed from the map) + DERIVED (from the change log) ----
