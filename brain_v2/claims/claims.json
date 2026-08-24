@@ -27013,5 +27013,100 @@
     "created_session": 102,
     "resolved_session": 102,
     "resolution_notes": ""
+  },
+  {
+    "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en release 600, mas PA_SE_IN 100, y las tablas de replicacion de Employee Central pobladas: ECPAO_INVT, ECPAO_EE_INVT, ECPAO_FLD_MAP, ECPAO_VALUE_MAP. Es un canal de datos de PERSONAL que el mapa de integracion (37 flujos / 18 sistemas) no tiene. Ademas se ejecuta: ECPAO_OM_OBJECT_EXTRACTION (93.692) y ECPAO_EMPL_EXTRACTION (38.637) son el 2o y 6o objeto de HCM por volumen, 132K de LECTURA. COMO APARECIO, y esto importa mas que el hallazgo: lo saco el log antes que ninguna sonda. Las ECPAO_* salieron como TABLAS NAVEGADAS DIRECTAMENTE, o sea nombres /1BCDWB/DB<TABLA> que un indice de objetos habria descartado por basura. Es el argumento entero de por que A19 RE-ENRUTA lo generado en vez de tirarlo.",
+    "evidence": [
+      "CVERS via RFC_READ_TABLE en P01 2026-08-23",
+      "brain_v2/log_reality.json -> programs.carried_signal.TABLE_BROWSER",
+      "brain_v2/domain_composition.json -> HCM.top_objects"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "SFIHCM01",
+      "SFIHCM02",
+      "SFIHCM03",
+      "PA_SE_IN",
+      "ECPAO_INVT",
+      "ECPAO_EE_INVT",
+      "ECPAO_FLD_MAP",
+      "ECPAO_VALUE_MAP",
+      "ECPAO_OM_OBJECT_EXTRACTION",
+      "ECPAO_EMPL_EXTRACTION"
+    ],
+    "domains": [
+      "HCM",
+      "Integration"
+    ],
+    "id": 568
+  },
+  {
+    "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda la actividad de negocio y mas que FI y HCM juntos. Abierto: el 78,3% lo mueve Core Manager a traves de MuleSoft, concentrado en DOS modulos -- Y_BAPI_WBS_FINANCIAL_DATA_1 (1.861.107) y Y_BAPI_YPS8 (878.833) -- con UN actor tecnico y cadencia estable de 100K a 320K al mes sin picos. Y LEE: 3,5 millones de ejecuciones contra 234 documentos de cambio en total. Nadie modifica tres millones y medio de veces dejando 234 rastros. El nombre de la aplicacion NO es medible desde SAP -- el log solo da el usuario tecnico MULESOFT -- y lo aporto JP; el actor y los volumenes SI son medidos, y esos dos hechos no se mezclan.",
+    "evidence": [
+      "brain_v2/domain_composition.json -> PS",
+      "brain_v2/rfc_caller_apps.json",
+      "rsau_audit_history agrupado por PARAM3 y SLGUSER, 2026-08-24"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "Y_BAPI_WBS_FINANCIAL_DATA_1",
+      "Y_BAPI_YPS8",
+      "MULESOFT",
+      "Y_BAPI_CUSTOMER_GET_ID"
+    ],
+    "domains": [
+      "PS",
+      "Integration",
+      "FI"
+    ],
+    "id": 569
+  },
+  {
+    "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y el 66% es MODIFICACION frente al 13% de lectura -- el reparto mas escorado a escritura de todos los dominios grandes. PA30 solo se lleva el 59,1% (712.285) y es mantenimiento de datos maestros de personal: 743.376 de las ejecuciones del dominio son cambios. De 228 objetos distintos, NUEVE hacen el 90%. Y solo el 15% esta explicado. El eje lee/modifica se derivo con la EVIDENCIA por delante del nombre: un tcode que aparece en cdhdr_history produjo documentos de cambio, luego escribio, y eso es prueba y no convencion.",
+    "evidence": [
+      "brain_v2/domain_composition.json -> HCM",
+      "brain_v2/comprehension_index.json",
+      "cdhdr_history: 743.376 cambios del dominio"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "PA30",
+      "HUNCALC0",
+      "RHHCP_DC_EMPLOYEE",
+      "ZHRCA_POSTAL_CODE_CHECK",
+      "HR_HCP_SIMULATE_PLANNING",
+      "ZCONSOLE_STC"
+    ],
+    "domains": [
+      "HCM"
+    ],
+    "id": 570
+  },
+  {
+    "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 264.521 filas (0,93% del log) y 135.377 de la superficie RFC (1,08%), del usuario JP_LOPEZ. El grueso es inofensivo porque cae en sustrato -- RFC_READ_TABLE 81.080, RFCPING 43.082 -- pero una parte NO: FM_FUND_GET_DETAIL_RFC (1.306), GL_ACCT_MASTER_GET_COA_RFC, FM_FUNDS_CTR_GET_DETAILS_RFC y BAPI_PROJECTDEF_GETDETAIL son modulos de NEGOCIO, asi que un dominio parecia mas vivo cuanto mas lo mirabamos. Corregido con una via OBSERVER separada, NO restada: restada desaparece y nadie la audita. CONTROL PERMANENTE que sale limpio: cdhdr_history con nuestro usuario = 0 filas sobre 13.973.856 cambios. La disciplina de solo-lectura sobre produccion deja rastro medible, o su ausencia; si ese contador deja de ser 0 alguna vez, algo escribio en P01.",
+    "evidence": [
+      "rsau_audit_history agrupado por SLGUSER y PARAM3, 2026-08-23",
+      "brain_v2/comprehension_index.json -> _observer",
+      "cdhdr_history WHERE USERNAME='JP_LOPEZ' -> 0"
+    ],
+    "tier": "TIER_1",
+    "confidence": "MEASURED",
+    "session": 103,
+    "related_objects": [
+      "JP_LOPEZ",
+      "RFC_READ_TABLE",
+      "FM_FUND_GET_DETAIL_RFC"
+    ],
+    "domains": [
+      "Support",
+      "Integration"
+    ],
+    "id": 571
   }
 ]
