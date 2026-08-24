@@ -3,9 +3,9 @@
     "blind_spots_ghosts": 0,
     "blind_spots_missing": 0,
     "blind_spots_total": 0,
-    "names_classified": 1883,
-    "names_referenced": 1883,
-    "objects_in_brain": 1959,
+    "names_classified": 1918,
+    "names_referenced": 1918,
+    "objects_in_brain": 1994,
     "pct_classified": 100.0
   },
   "_design": "Object-centric knowledge graph with 15 layers (0-14). 1 Read = full self-aware intelligence. Layer 0 (core_principles) added Session #054 — constitutional tier above rules. Layer 11 (incidents) added Session #050 to fix 'context loaded but not used' failure mode. Layer 13 (interactions) added Session #059 — turn-level reasoning path as source of truth, zero-compression preserved_full_text; retros are DERIVED from this layer. Layer 14 (domains) added Session #059 — 3-axis taxonomy {functional, module, process} with reverse indexes (objects, claims, rules, KUs, incidents, skills, companions). Every node must carry a domain (feedback_every_node_has_domain).",
@@ -13,12 +13,12 @@
     "_design": "Estado del pipeline que produce este fichero. INCOMPLETE significa que un paso posterior no llego a correr: el contenido es plausible pero le faltan enriquecimientos.",
     "built_by": "brain_v2/build_brain_state.py",
     "completed_by": "brain_v2/add_knowledge_links.py",
-    "objects_with_knowledge_docs": 1384,
+    "objects_with_knowledge_docs": 1412,
     "pending_steps": [],
     "status": "COMPLETE"
   },
   "_stats": {
-    "claims": 566,
+    "claims": 575,
     "core_principles": 3,
     "data_quality_open": 9,
     "domain_layer_entries": 25,
@@ -28,8 +28,8 @@
     "incidents": 16,
     "interactions": 8,
     "known_unknowns": 1,
-    "objects": 1959,
-    "rules": 229,
+    "objects": 1994,
+    "rules": 230,
     "session": 102,
     "superseded": 19,
     "user_questions_open": 0
@@ -43,10 +43,10 @@
     ],
     "drift_needs_review": 3,
     "error": 0,
-    "no_check_prose_only": 542,
+    "no_check_prose_only": 551,
     "note": "Run `python brain_v2/verify_claims.py` to refresh. Every new claim should carry a `verification` block.",
     "pct_machine_verifiable": 4.2,
-    "total_claims": 566
+    "total_claims": 575
   },
   "blind_spots": [],
   "capability_model": {
@@ -2111,6 +2111,30 @@
           "status": "OPEN",
           "task": "bring the payroll calculation layer into the golden: T52C0, T52C1, T52C5, T512T, T512W, T549B and T549D. None of it is held, so every question about how staff cost is computed currently needs a live P01 read.",
           "why_it_matters": "this is the layer that computes the organisation's largest spend category, and it is entirely absent from the golden"
+        },
+        {
+          "already_measured_locally": {
+            "channel_by_fm_area": "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+            "note": "el corte por FIKRS es la división principal y ya está hecho; falta el detalle de canal dentro del 'sin tcode'"
+          },
+          "blocked_by": "SSO/SNC no resuelve desde 2026-08-24. Con solo SNC: 'Could not find a suitable SAP...'; con SNC+user: 'SNC name and specified user/client do not match'. No es la VPN ni la contraseña — es el ticket Kerberos. Se renueva desde la sesión de Windows (reabrir SAP GUI suele bastar). NO buscar canal alternativo con usuario/contraseña: P01 es READ-ONLY vía RFC/SSO y eso está cerrado (regla #156)",
+          "fills": "A_PROCESS + U_USAGE de PSM_FM y PBC — cómo se EJECUTA realmente cada canal",
+          "id": "EXT-BDC-SESSIONS",
+          "source": "JP (2026-08-24)",
+          "system": "P01 (solo lectura, RFC/SSO)",
+          "tables": [
+            "APQI (cabecera de sesión batch input: nombre, creador, estado, fecha)",
+            "APQD (datos de la sesión: qué transacción y qué campos)",
+            "TSTC / TSTCT (texto de las transacciones: FMX1, FMX2, FMW1, FMW2, FMJ2, FMZ6, FMMC, ZPBC_PERIOD_CLS_EXEC)",
+            "T003/TBLART equivalente para los tipos 91, 92, 12, 13, FB — el texto que falta"
+          ],
+          "what_to_look_for": [
+            "SEPARAR los tres canales por área de gestión financiera, que es la división que ya reveló el hallazgo: batch input real (sesión SM35) vs job de fondo vs transacción directa en pantalla. Hoy solo se distingue 'sin tcode' de 'con tcode', y eso mezcla el batch input con el job.",
+            "QUÉ PROGRAMA hay detrás de cada SE38: son 477.846 líneas al 100% de HIPER y no se sabe qué report ejecuta. TBTCP lo tiene si corre por job; si no, hace falta el log.",
+            "Si los INSTITUTOS usan batch input alguna vez. Medido: 0 de 18.019 líneas pasan por SE38, ZPBC o fondo — el 100% es diálogo. Confirmarlo contra APQI cierra el hallazgo.",
+            "ERLKZ='F' (154.045 líneas, 386,9 M) frente a 'X': si 'F' es cierre parcial, la cifra de abierto se mueve."
+          ],
+          "why_it_matters": "ya produjo un hallazgo estructural sin P01: UNES tiene el 85,5% automatizado y los SIETE institutos tienen CERO ejecución automática, 100% diálogo. Con las sesiones de batch input se sabría si esa diferencia es de herramienta o de política."
         }
       ],
       "hypotheses_from_operator_memory": [
@@ -4563,7 +4587,7 @@
         "source": "gold_db"
       },
       "verification_status": "DRIFT",
-      "verified_value": 207702
+      "verified_value": 219627
     },
     {
       "claim": "261 distinct UNES users have mixed-FICTR posting history (proving non-HQ home office) but are affected by the ZXFMDTU02_RPY:99 hardcode on their bank-clearing rows. Top offenders: J_LA (47,090 rows), T_ENG (28,107), C_LOPEZ (14,435), I_MARQUAND (12,845), S_AGOSTO (8,247). AL_JONATHAN (the INC-000005240 reporter) is in this set but not in the top 20 - his 39 docs are a small subset of the larger systemic class.",
@@ -30393,6 +30417,295 @@
       "resolution_notes": "",
       "resolved_session": 102,
       "status": "VERIFIED"
+    },
+    {
+      "also_touches_domains": [
+        "Integration"
+      ],
+      "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en release 600, mas PA_SE_IN 100, y las tablas de replicacion de Employee Central pobladas: ECPAO_INVT, ECPAO_EE_INVT, ECPAO_FLD_MAP, ECPAO_VALUE_MAP. Es un canal de datos de PERSONAL que el mapa de integracion (37 flujos / 18 sistemas) no tiene. Ademas se ejecuta: ECPAO_OM_OBJECT_EXTRACTION (93.692) y ECPAO_EMPL_EXTRACTION (38.637) son el 2o y 6o objeto de HCM por volumen, 132K de LECTURA. COMO APARECIO, y esto importa mas que el hallazgo: lo saco el log antes que ninguna sonda. Las ECPAO_* salieron como TABLAS NAVEGADAS DIRECTAMENTE, o sea nombres /1BCDWB/DB<TABLA> que un indice de objetos habria descartado por basura. Es el argumento entero de por que A19 RE-ENRUTA lo generado en vez de tirarlo.",
+      "claim_type": "measured_fact",
+      "confidence": "MEASURED",
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": "HCM",
+        "process": "H2R"
+      },
+      "evidence_for": [
+        "CVERS via RFC_READ_TABLE en P01 2026-08-23",
+        "brain_v2/log_reality.json -> programs.carried_signal.TABLE_BROWSER",
+        "brain_v2/domain_composition.json -> HCM.top_objects"
+      ],
+      "id": 568,
+      "related_objects": [
+        "SFIHCM01",
+        "SFIHCM02",
+        "SFIHCM03",
+        "PA_SE_IN",
+        "ECPAO_INVT",
+        "ECPAO_EE_INVT",
+        "ECPAO_FLD_MAP",
+        "ECPAO_VALUE_MAP",
+        "ECPAO_OM_OBJECT_EXTRACTION",
+        "ECPAO_EMPL_EXTRACTION"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "also_touches_domains": [
+        "Integration",
+        "FI"
+      ],
+      "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda la actividad de negocio y mas que FI y HCM juntos. Abierto: el 78,3% lo mueve Core Manager a traves de MuleSoft, concentrado en DOS modulos -- Y_BAPI_WBS_FINANCIAL_DATA_1 (1.861.107) y Y_BAPI_YPS8 (878.833) -- con UN actor tecnico y cadencia estable de 100K a 320K al mes sin picos. Y LEE: 3,5 millones de ejecuciones contra 234 documentos de cambio en total. Nadie modifica tres millones y medio de veces dejando 234 rastros. El nombre de la aplicacion NO es medible desde SAP -- el log solo da el usuario tecnico MULESOFT -- y lo aporto JP; el actor y los volumenes SI son medidos, y esos dos hechos no se mezclan.",
+      "claim_type": "operating_model",
+      "confidence": "MEASURED",
+      "domain": "PS",
+      "domain_axes": {
+        "functional": "PS",
+        "process": "B2R"
+      },
+      "evidence_for": [
+        "brain_v2/domain_composition.json -> PS",
+        "brain_v2/rfc_caller_apps.json",
+        "rsau_audit_history agrupado por PARAM3 y SLGUSER, 2026-08-24"
+      ],
+      "id": 569,
+      "related_objects": [
+        "Y_BAPI_WBS_FINANCIAL_DATA_1",
+        "Y_BAPI_YPS8",
+        "MULESOFT",
+        "Y_BAPI_CUSTOMER_GET_ID"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y el 66% es MODIFICACION frente al 13% de lectura -- el reparto mas escorado a escritura de todos los dominios grandes. PA30 solo se lleva el 59,1% (712.285) y es mantenimiento de datos maestros de personal: 743.376 de las ejecuciones del dominio son cambios. De 228 objetos distintos, NUEVE hacen el 90%. Y solo el 15% esta explicado. El eje lee/modifica se derivo con la EVIDENCIA por delante del nombre: un tcode que aparece en cdhdr_history produjo documentos de cambio, luego escribio, y eso es prueba y no convencion.",
+      "claim_type": "measured_fact",
+      "confidence": "MEASURED",
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": "HCM",
+        "process": "H2R"
+      },
+      "evidence_for": [
+        "brain_v2/domain_composition.json -> HCM",
+        "brain_v2/comprehension_index.json",
+        "cdhdr_history: 743.376 cambios del dominio"
+      ],
+      "id": 570,
+      "related_objects": [
+        "PA30",
+        "HUNCALC0",
+        "RHHCP_DC_EMPLOYEE",
+        "ZHRCA_POSTAL_CODE_CHECK",
+        "HR_HCP_SIMULATE_PLANNING",
+        "ZCONSOLE_STC"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "also_touches_domains": [
+        "Integration"
+      ],
+      "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 264.521 filas (0,93% del log) y 135.377 de la superficie RFC (1,08%), del usuario JP_LOPEZ. El grueso es inofensivo porque cae en sustrato -- RFC_READ_TABLE 81.080, RFCPING 43.082 -- pero una parte NO: FM_FUND_GET_DETAIL_RFC (1.306), GL_ACCT_MASTER_GET_COA_RFC, FM_FUNDS_CTR_GET_DETAILS_RFC y BAPI_PROJECTDEF_GETDETAIL son modulos de NEGOCIO, asi que un dominio parecia mas vivo cuanto mas lo mirabamos. Corregido con una via OBSERVER separada, NO restada: restada desaparece y nadie la audita. CONTROL PERMANENTE que sale limpio: cdhdr_history con nuestro usuario = 0 filas sobre 13.973.856 cambios. La disciplina de solo-lectura sobre produccion deja rastro medible, o su ausencia; si ese contador deja de ser 0 alguna vez, algo escribio en P01.",
+      "claim_type": "methodology",
+      "confidence": "MEASURED",
+      "domain": "Support",
+      "domain_axes": {
+        "functional": "Support",
+        "process": null
+      },
+      "evidence_for": [
+        "rsau_audit_history agrupado por SLGUSER y PARAM3, 2026-08-23",
+        "brain_v2/comprehension_index.json -> _observer",
+        "cdhdr_history WHERE USERNAME='JP_LOPEZ' -> 0"
+      ],
+      "id": 571,
+      "related_objects": [
+        "JP_LOPEZ",
+        "RFC_READ_TABLE",
+        "FM_FUND_GET_DETAIL_RFC"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "also_touches_domains": [
+        "PBC"
+      ],
+      "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive en KBLE, KBLK, KBLKKRED y KBLP -- NO en FMBH/FMBL, que son documentos de presupuesto BCS. En FMIOI las reservas son REFBT='110', que casa al 100% con KBLK.BELNR. El tipo de valor lo resuelve YTFM_WRTTP_GR, tabla de configuracion PROPIA de UNESCO: WRTTP 65 = COMMITM (reserva), 80 = BLOCKED (bloqueo), 81 = EXPENDU (gasto), 82 = PRECOMM (pre-compromiso). Sin separar por WRTTP toda medida mezcla gasto con reserva y produce cifras creibles y falsas. Los programas salen de TSTC: ZPBC_PERIOD_CLS_EXEC envuelve el ESTANDAR RHRFPM_SET_CLOSED_INDICATOR, ZPBC_COMPLETION envuelve RHRFPM_ERLK_EXT, y FMX1/FMX2/FMW2/FMZ6 son TODAS el mismo programa SAPLFMFR -- FMX2, FMW2 y FMZ6 comparten hasta la misma pantalla, la dynpro 0511. Lo que las distingue es el codigo de transaccion, que parametriza: por eso una hace gasto, otra bloqueo y otra reserva siendo la misma pantalla.",
+      "claim_type": "reference_fact",
+      "confidence": "MEASURED",
+      "domain": "PSM_FM",
+      "domain_axes": {
+        "functional": "PSM_FM",
+        "process": "B2R"
+      },
+      "evidence_for": [
+        "TCDOB via RFC_READ_TABLE en P01 2026-08-23",
+        "TSTC (Gold DB local)",
+        "YTFM_WRTTP_GR (Gold DB local)",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "id": 572,
+      "related_objects": [
+        "KBLK",
+        "KBLP",
+        "KBLE",
+        "KBLKKRED",
+        "FMIOI",
+        "YTFM_WRTTP_GR",
+        "TCDOB",
+        "TSTC",
+        "FMX1",
+        "FMX2",
+        "FMW1",
+        "FMW2",
+        "FMZ6",
+        "FMMC",
+        "FMJ2",
+        "SAPLFMFR",
+        "RHRFPM_SET_CLOSED_INDICATOR",
+        "RHRFPM_ERLK_EXT",
+        "ZPBC_PERIOD_CLS_EXEC",
+        "ZPBC_COMPLETION",
+        "FMBH",
+        "FMBL"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "also_touches_domains": [
+        "PBC"
+      ],
+      "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion contra el tipo de valor que produce: FMW2 genera 12.124 de las 13.352 lineas WRTTP 80 (BLOCKED), 28,6 M. Y FMX1, FMX2, FMMC y FMJ2 son 100% WRTTP 81 (EXPENDU): producen GASTO, no reserva. El 100% de la reserva real -- 803.111 lineas, 1.833 M -- y el 100% del pre-compromiso -- 417.202 lineas, 1.303 M -- los genera el motor PBC: SE38, ZPBC_PERIOD_CLS_EXEC, PA30, PCP0 y el job de fondo, sobre documentos BLART 91/92. PA30 pertenece a esa cadena: editar los datos de una persona DISPARA la reserva de su puesto. Confundir las dos poblaciones es facil porque comparten tabla, y fue el error que costo tres correcciones seguidas.",
+      "claim_type": "measured_fact",
+      "confidence": "MEASURED",
+      "domain": "PSM_FM",
+      "domain_axes": {
+        "functional": "PSM_FM",
+        "process": "B2R"
+      },
+      "evidence_for": [
+        "FMIOI agrupado por TCODE x WRTTP x BLART, Gold DB 2026-08-24",
+        "companions/fund_reservation_as_budget_throttle.html"
+      ],
+      "id": 573,
+      "related_objects": [
+        "FMW2",
+        "FMX1",
+        "FMX2",
+        "FMMC",
+        "FMJ2",
+        "PA30",
+        "PCP0",
+        "SE38",
+        "ZPBC_PERIOD_CLS_EXEC",
+        "HRPBC_ENGINE_PNP",
+        "HRFPM_VACANCY_DISP",
+        "KBLK",
+        "KBLP",
+        "FMIOI",
+        "HIPER"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMERO: de los 1.167 documentos con 3 o mas modificaciones, 777 (66,6%) terminan con MENOS importe del que empezaron; ICBA 87%, UIS 75%, IBE 71%, UIL 70%. Eso es liberacion por tramos, no consumo. SEGUNDO: no llevan acreedor -- UIL 100%, MGIE 98%, UIS 97%, IIEP 93% de lineas sin LIFNR. Un compromiso real lleva proveedor; estos son retenciones sobre el fondo. El patron de edicion lo confirma: hasta 352 modificaciones sobre UN documento en 393 dias (IBE 3250112222, C_LEROY). NO CUANTIFICADO: que porcentaje del presupuesto asignado esta retenido, porque BPJA no contiene los fondos de los institutos en el extracto local. Y la premisa de que las claves de control AVC son demasiado genericas NO se ha comprobado.",
+      "claim_type": "process_mining_finding",
+      "confidence": "MEASURED",
+      "domain": "PSM_FM",
+      "domain_axes": {
+        "functional": "PSM_FM",
+        "process": "B2R"
+      },
+      "evidence_for": [
+        "FMIOI: direccion del cambio de importe por documento, Gold DB 2026-08-24",
+        "FMIOI.LIFNR por FIKRS",
+        "companions/fund_reservation_as_budget_throttle.html"
+      ],
+      "id": 574,
+      "related_objects": [
+        "KBLK",
+        "KBLP",
+        "FMIOI",
+        "BPJA",
+        "FMX2",
+        "FMX1",
+        "LFA1"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RFC (109.617 llamadas + 18.215 logons) desde dos IPs fijas de servidor: 172.17.9.133 y 172.17.10.132. Su llamada principal es /SAPDS/RFC_READ_TABLE2 (22.850), y el prefijo /SAPDS/ ES SAP Data Services (BODS). Hace 13.885 llamadas a RFC_FUNCTION_SEARCH y 14.666 a RFC_METADATA_GET, o sea recorre el DICCIONARIO para descubrir que puede leer. LEE Y NO ESCRIBE: 0 lineas en FMIOI, 0 cambios en cdhdr_history. Su actividad se clasifica 49% Technical_Substrate, 18% Integration y 15% sin catalogar. Pese a 127.832 eventos NO figura en ninguno de los 300 registros del inventario de interfaces: es un canal de SALIDA de datos de un proveedor externo que el mapa de integracion no tenia.",
+      "claim_type": "measured_fact",
+      "confidence": "MEASURED",
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": "Integration",
+        "process": null
+      },
+      "evidence_for": [
+        "rsau_audit_history agrupado por SLGUSER='EPAM-RFC', Gold DB 2026-08-24",
+        "brain_v2/rfc_caller_apps.json",
+        "brain_v2/interface_inventory.json (ausencia)"
+      ],
+      "id": 575,
+      "related_objects": [
+        "EPAM-RFC",
+        "/SAPDS/RFC_READ_TABLE2",
+        "RFC_FUNCTION_SEARCH",
+        "RFC_METADATA_GET",
+        "SAP_DATA_SERVICES",
+        "BODS"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
+    },
+    {
+      "also_touches_domains": [
+        "Travel",
+        "PSM_FM"
+      ],
+      "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE vacio y solo 413 en 'F' (finalizada). Una sesion procesada con exito SE BORRA, asi que lo que sobrevive son las que fallaron o nunca corrieron. Por eso la lectura ingenua -- TRIP_MODIFY 40.104 y TRIP_CREATE 10.062, el 86,4% viajes -- NO autoriza a concluir que el batch input sea de viajes: solo dice que las sesiones que SOBREVIVEN lo son. Lo que si se ve: PROGID='SAPMSSY1' en 55.087 de las 57.998, o sea creadas por RFC desde FUERA y no por un programa ABAP de la casa. Y una confusion de canal que hay que evitar: una sesion de batch input EJECUTA la transaccion, luego graba su TCODE, luego NO aparece como 'sin tcode' -- las lineas de FMX1/FMX2 podrian ser batch input y por TCODE son indistinguibles del dialogo.",
+      "claim_type": "technical_gotcha",
+      "confidence": "MEASURED",
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": "Integration",
+        "process": null
+      },
+      "evidence_for": [
+        "apqi por QSTATE, GROUPID y PROGID, Gold DB 2026-08-24"
+      ],
+      "id": 576,
+      "related_objects": [
+        "APQI",
+        "APQD",
+        "SAPMSSY1",
+        "RFBIKR00",
+        "RFBIBL01",
+        "TRIP_MODIFY",
+        "TRIP_CREATE",
+        "FMX1",
+        "FMX2"
+      ],
+      "resolution_notes": "",
+      "session": 103,
+      "tier": "TIER_1"
     }
   ],
   "core_principles": [
@@ -32461,7 +32774,8 @@
         "knowledge_doc_path": "knowledge/domains/Master_Data_Governance/",
         "knowledge_docs": [
           "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md",
-          "knowledge/alignment_executors_model.md"
+          "knowledge/alignment_executors_model.md",
+          "knowledge/domains/Master_Data_Governance/master_data_read_surface.md"
         ],
         "known_unknowns": [
           "Quien es el dueno de las tareas POSTERIORES al alta (hoy llegan por correo)",
@@ -37407,6 +37721,7 @@
         "ZFPAYM_SEL",
         "ZFPAYM_STA",
         "ZFPAYM_SUB",
+        "ZHRCA_POSTAL_CODE_CHECK",
         "ZPM_MYEQUIPMENT",
         "ZPM_READ_EQUI_DATA",
         "ZPR_TRIP_HEADER_DATA",
@@ -37603,6 +37918,7 @@
         "FMAVCLDGRACT",
         "FMAVCT_2026",
         "FMBDT",
+        "FMBH",
         "FMBL",
         "FMCI",
         "FMFCTR",
@@ -37620,6 +37936,7 @@
         "GB922",
         "GLT0",
         "HRP1000",
+        "HRP1001",
         "ICFAPPLICATION",
         "ICFSERVICE",
         "ICFSERVLOC",
@@ -37919,14 +38236,22 @@
         "CSI1",
         "DELETE_ATTACHMENT",
         "DELETE_DOC_IN_ARCHIVE",
+        "ECPAO_EE_INVT",
+        "ECPAO_FLD_MAP",
+        "ECPAO_INVT",
+        "ECPAO_VALUE_MAP",
         "EMPLOYEESET_GET_ENTITYSET",
         "ENRICH_SPENDING",
         "GET_ENTITY",
-        "HRP1001",
+        "HR_HCP_SIMULATE_PLANNING",
         "HR_IT1005",
+        "PA30",
+        "PA_SE_IN",
         "PCYC",
         "PSCC",
         "REQUESTSET_GET_ENTITY",
+        "SFIHCM02",
+        "SFIHCM03",
         "SUSP",
         "TOAATSET_DELETE_ENTITY",
         "UPDATE_ATTACHMENT",
@@ -38013,6 +38338,7 @@
       ],
       "Integration": [
         "/ACLDL/DL",
+        "/SAPDS/RFC_READ_TABLE2",
         "/USE/BL_GET_SHORTDUMPS",
         "APQD",
         "BAPI_ENTRYSHEET_GETDETAIL",
@@ -38025,6 +38351,7 @@
         "BAPI_PR_CREATE",
         "BAPI_PR_GETDETAIL",
         "BOC_INVOICE_WF",
+        "BODS",
         "BRIDGE-RFC",
         "CSI_AWS_EC2",
         "CSI_AWS_S3",
@@ -38032,6 +38359,7 @@
         "DBIF_REPO_SQL_ERROR",
         "DBSQL_SQL_ERROR",
         "EMPLOYEEMASTERDATABUNDLEREPLIC",
+        "EPAM-RFC",
         "ERECRUIT",
         "FMRESERV",
         "FM_FUND_CHANGE_RFC",
@@ -38048,13 +38376,18 @@
         "ORGSTRUCTUREREPLREQUEST",
         "PARAMX",
         "POSITIONREPLICATIONREQUEST_IN",
+        "RFC_FUNCTION_SEARCH",
+        "RFC_METADATA_GET",
         "RFEBBU00",
         "SAPLYBAPI_SISTER",
+        "SAP_DATA_SERVICES",
         "SFIHCM01",
         "SMTMSBP",
         "SRM_SERVER",
         "SRT_MONILOG_DATA",
         "SuccessFactors",
+        "TRIP_CREATE",
+        "TRIP_MODIFY",
         "UNESCORE20-PPM-BRAIN",
         "UNJSPF_INTERFACE1",
         "WF-BATCH",
@@ -38413,6 +38746,7 @@
         "I_PROJECT_DEFINITION",
         "I_WBS_ELEMENT_TABLE",
         "I_WBS_HIERARCHIE_TABLE",
+        "KBLKKRED",
         "KTOSL",
         "KURSF",
         "MBF",
@@ -38446,6 +38780,7 @@
         "SPAL",
         "SYMKO",
         "S_TYPE",
+        "TCDOB",
         "TCJ04",
         "TFKB",
         "TFKBT",
@@ -38695,6 +39030,7 @@
         "F_CADIO",
         "F_DERAKHSHAN",
         "F_LFA1_GEN",
+        "HIPER",
         "IDENTITY",
         "I_MARQUAND",
         "J_DAVANE",
@@ -38737,10 +39073,12 @@
         "tier2_sod.py"
       ],
       "Support": [
+        "FM_FUND_GET_DETAIL_RFC",
         "INC-000005638",
         "INC-000006906",
         "INC-BUDGETRATE-EQG",
         "INC-EGYPT-PPC",
+        "JP_LOPEZ",
         "domains.json"
       ],
       "System Lifecycle": [
@@ -42182,6 +42520,30 @@
         }
       ],
       "type": "TRANSACTION"
+    },
+    "/SAPDS/RFC_READ_TABLE2": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
     },
     "/SAPPSPRO/PD_GM_FMR2_READ_KBLE": {
       "analysis_doc": "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
@@ -49157,6 +49519,9 @@
         "module": [],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/exploration_architecture.md"
+      ],
       "source": "structured_record",
       "synthesized": true,
       "type": "VARIANT_OR_SET"
@@ -49206,6 +49571,7 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
         "knowledge/gold_table_domain_map.md",
         "knowledge/session_retros/session_048_retro.md"
       ],
@@ -49392,9 +49758,9 @@
       "knowledge_docs": [
         "knowledge/adoption_backlog_synthesis_phaseB.md",
         "knowledge/capability_model_execution_plan.md",
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
         "knowledge/domains/Security/README.md",
-        "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
-        "knowledge/domains/Treasury/bcm_signatory_change_solution_design.md"
+        "knowledge/domains/Security/h71_write_channel_sod_remediation.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -49749,6 +50115,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "Integration",
@@ -49787,6 +50160,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -49800,9 +50180,9 @@
       "knowledge_docs": [
         "knowledge/capability_U_USAGE_execution_footprint.md",
         "knowledge/domains/Closing_Activities/fx_revaluation_process.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/process_engineering_model.md",
-        "knowledge/process_intelligence_layer.md",
-        "knowledge/product_custom_over_standard_overlay.md"
+        "knowledge/process_intelligence_layer.md"
       ],
       "type": "SAP_TABLE"
     },
@@ -51165,7 +51545,8 @@
         ]
       },
       "knowledge_docs": [
-        "knowledge/domains/PSM/ps_project_replication_and_ki235.md"
+        "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -52100,7 +52481,7 @@
         "knowledge/brain_coverage_audit.md",
         "knowledge/configuration_retros/UBA01_house_bank_2026-04-07.md",
         "knowledge/domains/BusinessPartner/README.md",
-        "knowledge/domains/Payment/dmee_formats_model_comparison.md"
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md"
       ],
       "read_by": [
         "CITIPMW_V3_CGI_BANK_NAME",
@@ -52532,6 +52913,30 @@
       "synthesized": true,
       "type": "VARIANT_OR_SET"
     },
+    "BODS": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "BOR": {
       "claims": [
         {
@@ -52860,6 +53265,13 @@
           "id": 497,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
           "verified": "NO_CHECK"
         }
       ],
@@ -54429,10 +54841,11 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/gold_db_table_catalog.md",
-        "knowledge/gold_table_domain_map.md",
-        "knowledge/process_mining_table_analysis.md"
+        "knowledge/gold_table_domain_map.md"
       ],
       "type": "SAP_TABLE"
     },
@@ -56700,10 +57113,10 @@
       },
       "knowledge_docs": [
         "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md",
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
         "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
         "knowledge/session_retros/session031-company-code-companion-learnings.md",
-        "knowledge/session_retros/session_031_retro.md",
-        "knowledge/session_retros/session_034_retro.md"
+        "knowledge/session_retros/session_031_retro.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -59307,6 +59720,33 @@
       "synthesized": true,
       "type": "TCODE"
     },
+    "ECPAO_EE_INVT": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
     "ECPAO_EMPL_EXTRACTION": {
       "claims": [
         {
@@ -59314,6 +59754,13 @@
           "id": 8,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -59330,6 +59777,60 @@
       ],
       "type": "ABAP_REPORT"
     },
+    "ECPAO_FLD_MAP": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "ECPAO_INVT": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
     "ECPAO_OM_OBJECT_EXTRACTION": {
       "claims": [
         {
@@ -59337,6 +59838,13 @@
           "id": 8,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -59352,6 +59860,33 @@
         "knowledge/session_retros/session_035_retro.md"
       ],
       "type": "ABAP_REPORT"
+    },
+    "ECPAO_VALUE_MAP": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
     },
     "EDTFLAG": {
       "claims": [
@@ -59660,6 +60195,30 @@
       },
       "type": "ABAP_REPORT"
     },
+    "EPAM-RFC": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "EQUI": {
       "claims": [
         {
@@ -59740,6 +60299,9 @@
         ],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "source": "structured_record",
       "synthesized": true,
       "type": "CONCEPT"
@@ -60920,7 +61482,7 @@
         "knowledge/domains/PSM/EXTENSIONS/basu_mod_technical_autopsy.md",
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
         "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
-        "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md"
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
       ],
       "other_edges": [
         {
@@ -61113,6 +61675,7 @@
       },
       "knowledge_docs": [
         "knowledge/domains/Closing_Activities/fx_revaluation_closing_calendar_2025.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/domains/Treasury/fx_revaluation_2025_agi_research.md"
       ],
       "other_edges": [
@@ -62978,10 +63541,10 @@
       },
       "knowledge_docs": [
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
         "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
-        "knowledge/project_extraction_capabilities.md",
-        "knowledge/project_golden_query.md"
+        "knowledge/project_extraction_capabilities.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -64276,6 +64839,33 @@
       ],
       "type": "SAP_TABLE"
     },
+    "FMBH": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "DATA_MODEL",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "DATA_MODEL"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "Brain_Architecture/code_brain_strategy.md",
+        "knowledge/adoption_backlog_synthesis_phaseB.md",
+        "knowledge/analysis_methodology_per_group.md",
+        "knowledge/capability_model.md",
+        "knowledge/domains/PBC/pbc_position_budgeting.md"
+      ],
+      "type": "SAP_TABLE"
+    },
     "FMBL": {
       "claims": [
         {
@@ -64360,6 +64950,13 @@
           "id": 339,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -65502,6 +66099,27 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -65561,6 +66179,77 @@
       "other_edges": [
         {
           "to": "RFFMUD21",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
+    "FMJ2": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/fund_management_public_sector_process.md",
+        "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
+      ],
+      "other_edges": [
+        {
+          "to": "RFFMCCF1",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
+    "FMMC": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "RFFMCCLS",
           "type": "EXECUTES_PROGRAM"
         }
       ],
@@ -65790,6 +66479,67 @@
       ],
       "type": "TRANSACTION"
     },
+    "FMW1": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md"
+      ],
+      "other_edges": [
+        {
+          "to": "SAPLFMFR",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
+    "FMW2": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "SAPLFMFR",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
     "FMX1": {
       "claims": [
         {
@@ -65804,6 +66554,34 @@
           "id": 258,
           "tier": "TIER_1",
           "type": "structural_defect",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
           "verified": "NO_CHECK"
         }
       ],
@@ -65824,7 +66602,58 @@
         "knowledge/code_analysis_control_matrix.md",
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
         "knowledge/domains/PSM/avc_availability_model.md",
-        "knowledge/domains/PSM/fm_ps_connectivity_bw_bridge.md"
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "SAPLFMFR",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
+    "FMX2": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/fund_management_public_sector_process.md",
+        "knowledge/incidents/INC-000005638_ses_block_donor_fund_avc_fipex_deficit.md"
       ],
       "other_edges": [
         {
@@ -65861,6 +66690,34 @@
         "knowledge/capability_U_USAGE_execution_footprint.md",
         "knowledge/process_mining_table_analysis.md",
         "knowledge/system_operating_model_rfc.md"
+      ],
+      "other_edges": [
+        {
+          "to": "SAPLFMFR",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
+    "FMZ6": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
       ],
       "other_edges": [
         {
@@ -65960,6 +66817,35 @@
         "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md",
         "knowledge/domains/PSM/d01_test_data_setup_avc_gates_runbook.md",
         "knowledge/domains/PSM/fund_management_sync_playbook.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "FM_FUND_GET_DETAIL_RFC": {
+      "claims": [
+        {
+          "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 26",
+          "id": 571,
+          "tier": "MEASURED",
+          "type": "methodology",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Support",
+      "domain_axes": {
+        "functional": [
+          "Support"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/alignment_executors_model.md",
+        "knowledge/domains/PSM/fund_management_sync_playbook.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -66644,7 +67530,7 @@
     "FPAYM_SUB": {
       "annotations": [
         {
-          "finding": "DISPLAY_FORM decides whether the document may post. author states: \"Form DISPLAY_FORM | Maintain / Display  form layout set | > I_FORM        Name of layout set to be displayed\". in UNESCO terms — FUNCTION_EXISTS = called by satellite SM_P01CLNT350_READ — 8,592 calls [satellite_call:SM_P01CLNT350_READ] ; REGUP = 81-scenario coverage analysis (Session #62, scenario_discovery.json) — full enumeration of (tree × co × vendor [claim:106] ; REGUV = BCM routing at UNESCO is triggered by tcode OBPM5 configuration (table TFIBLMPAYBLOCK, 2 rows): LAUFK=' '/P +  [claim:65]. acts only when NOT i_form IS INITIAL and i_xvorl IS INITIAL and l_msgty NE '-'. CAN STOP A POSTING",
+          "finding": "DISPLAY_FORM decides whether the document may post. author states: \"Form DISPLAY_FORM | Maintain / Display  form layout set | > I_FORM        Name of layout set to be displayed\". in UNESCO terms — FUNCTION_EXISTS = called by satellite SM_P01CLNT350_READ — 15,825 calls [satellite_call:SM_P01CLNT350_READ] ; REGUP = 81-scenario coverage analysis (Session #62, scenario_discovery.json) — full enumeration of (tree × co × vendor [claim:106] ; REGUV = BCM routing at UNESCO is triggered by tcode OBPM5 configuration (table TFIBLMPAYBLOCK, 2 rows): LAUFK=' '/P +  [claim:65]. acts only when NOT i_form IS INITIAL and i_xvorl IS INITIAL and l_msgty NE '-'. CAN STOP A POSTING",
           "impact": "This routine can STOP a posting. Any investigation into why a document will not post must consider it.",
           "line": 263,
           "provenance": "brain_v2/interpret_code.py — code read through claims, incidents, annotations and the gold table registry",
@@ -68861,6 +69747,47 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
+    "HIPER": {
+      "claims": [
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Security",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "Security"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
+        "knowledge/domains/Integration/integration_map_complete.md",
+        "knowledge/domains/PSM/EXTENSIONS/validation_substitution_autopsy.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/process_mining_table_analysis.md"
+      ],
+      "other_edges": [
+        {
+          "to": "MIRO",
+          "type": "OPERATES_TCODE"
+        },
+        {
+          "to": "ML81N",
+          "type": "OPERATES_TCODE"
+        },
+        {
+          "to": "MR8M",
+          "type": "OPERATES_TCODE"
+        }
+      ],
+      "type": "USER"
+    },
     "HKONT": {
       "claims": [
         {
@@ -69081,6 +70008,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -69273,14 +70207,15 @@
           "verified": "NO_CHECK"
         }
       ],
-      "domain": "HCM",
+      "domain": "DATA_MODEL",
       "domain_axes": {
         "functional": [
           "HCM"
         ],
         "module": [
           "HCM",
-          "PD"
+          "PD",
+          "DATA_MODEL"
         ],
         "process": [
           "H2R"
@@ -69440,6 +70375,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -69458,7 +70400,8 @@
       },
       "knowledge_docs": [
         "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
-        "knowledge/domains/PBC/pbc_position_budgeting.md"
+        "knowledge/domains/PBC/pbc_position_budgeting.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
       ],
       "other_edges": [
         {
@@ -69496,6 +70439,33 @@
       "source": "structured_record",
       "synthesized": true,
       "type": "CONCEPT"
+    },
+    "HR_HCP_SIMULATE_PLANNING": {
+      "claims": [
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
     },
     "HR_IT1005": {
       "claims": [
@@ -69581,6 +70551,13 @@
           "id": 389,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
           "verified": "NO_CHECK"
         }
       ],
@@ -71032,6 +72009,37 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
+    "JP_LOPEZ": {
+      "claims": [
+        {
+          "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 26",
+          "id": 571,
+          "tier": "MEASURED",
+          "type": "methodology",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Support",
+      "domain_axes": {
+        "functional": [
+          "Support"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/abap-style-guide/README.md",
+        "knowledge/code_analysis_control_matrix.md",
+        "knowledge/domains/FI/fi_enhancements_analysis.md",
+        "knowledge/domains/HCM/Benefits/hcm_benefits_analysis.md",
+        "knowledge/domains/HCM/Fiori Apps/hcm_personal_data_analysis.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
     "JV": {
       "claims": [
         {
@@ -71222,6 +72230,15 @@
           "timestamp": "2026-04-13T17:36:53.424754"
         }
       ],
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
       "domain": "DATA_MODEL",
       "domain_axes": {
         "functional": [],
@@ -71235,6 +72252,7 @@
       ],
       "knowledge_docs": [
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
         "knowledge/session_retros/session_053_retro.md"
       ],
@@ -71288,6 +72306,29 @@
       "type": "CONCEPT"
     },
     "KBLK": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
+          "verified": "NO_CHECK"
+        }
+      ],
       "domain": "DATA_MODEL",
       "domain_axes": {
         "functional": [],
@@ -71298,6 +72339,8 @@
       },
       "knowledge_docs": [
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
         "knowledge/session_retros/session_053_retro.md"
       ],
@@ -71306,6 +72349,31 @@
       ],
       "type": "SAP_TABLE"
     },
+    "KBLKKRED": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "PSM_FM",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "PSM_FM"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
     "KBLP": {
       "claims": [
         {
@@ -71313,6 +72381,27 @@
           "id": 388,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
           "verified": "NO_CHECK"
         }
       ],
@@ -71328,8 +72417,8 @@
         "knowledge/domains/PBC/pbc_position_budgeting.md",
         "knowledge/domains/PSM/EXTENSIONS/budget_rate_custom_solution.md",
         "knowledge/domains/PSM/EXTENSIONS/bw_extraction_logics_autopsy.md",
-        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md",
-        "knowledge/session_retros/session_053_retro.md"
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/incidents/INC-BUDGETRATE-EQG_budget_rate_usd_posting.md"
       ],
       "read_by": [
         "ZXRSAU01_RPY"
@@ -71568,8 +72657,8 @@
         "Brain_Architecture/code_brain_strategy.md",
         "knowledge/domains/BusinessPartner/README.md",
         "knowledge/domains/FI/ggb1_substitution_tables_distinction.md",
-        "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md",
-        "knowledge/domains/Payment/phase0/process_mining_synthesis.md"
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
+        "knowledge/domains/Payment/e2e_vendor_payment_to_medium.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -72006,6 +73095,13 @@
           "id": 516,
           "tier": "TIER_1",
           "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LAS RESERVAS SE USAN PARA RETENER PRESUPUESTO, NO PARA COMPROMETERLO -- CONFIRMADO EN DOS EJES (medido 2026-08-24, hipotesis planteada por JP). PRIMER",
+          "id": 574,
+          "tier": "MEASURED",
+          "type": "process_mining_finding",
           "verified": "NO_CHECK"
         }
       ],
@@ -74204,6 +75300,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "CONFIRMED"
+        },
+        {
+          "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda l",
+          "id": 569,
+          "tier": "MEASURED",
+          "type": "operating_model",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "PSM",
@@ -77072,6 +78175,51 @@
       ],
       "type": "SAP_TABLE"
     },
+    "PA30": {
+      "claims": [
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "knowledge_docs": [
+        "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
+        "knowledge/domains/HCM/Infotypes/hcm_infotypes_analysis.md",
+        "knowledge/domains/Integration/integration_map_complete.md",
+        "knowledge/domains/PBC/pbc_position_budgeting.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "SAPMP50A",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
     "PADJ": {
       "claims": [
         {
@@ -77234,6 +78382,33 @@
         "knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md",
         "knowledge/gold_db_table_catalog.md"
       ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "PA_SE_IN": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
       "source": "structured_record",
       "synthesized": true,
       "type": "VARIANT_OR_SET"
@@ -77438,6 +78613,69 @@
       "synthesized": true,
       "type": "TCODE"
     },
+    "PCP0": {
+      "claims": [
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "ICBA",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "ICTP",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "IIEP",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "MGIE",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "UBO",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "UIL",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "UIS",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "UNES",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "IBE",
+          "type": "USED_IN_CC"
+        },
+        {
+          "to": "SAPMPCP0",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
+    },
     "PCYC": {
       "claims": [
         {
@@ -77514,6 +78752,8 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
         "knowledge/session_retros/session_102b_retro.md"
       ],
@@ -78296,7 +79536,8 @@
       "knowledge_docs": [
         "knowledge/domains/Procurement/p2p_process_discovery_asis.md",
         "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
-        "knowledge/domains/Treasury/house_bank_operating_roles.md"
+        "knowledge/domains/Treasury/house_bank_operating_roles.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -79412,7 +80653,8 @@
       "knowledge_docs": [
         "knowledge/domains/Procurement/p2p_process_discovery_asis.md",
         "knowledge/domains/Procurement/p2p_purpose_of_payment_e2e.md",
-        "knowledge/domains/Treasury/house_bank_operating_roles.md"
+        "knowledge/domains/Treasury/house_bank_operating_roles.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -80505,6 +81747,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CTS",
@@ -80517,6 +81766,9 @@
         ],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "type": "CODE_OBJECT"
     },
     "RFBIKR00": {
@@ -80527,6 +81779,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -80535,6 +81794,9 @@
         "module": [],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "type": "ABAP_REPORT"
     },
     "RFBILA00": {
@@ -80620,7 +81882,8 @@
       },
       "knowledge_docs": [
         "knowledge/adoption_backlog_synthesis_phaseB.md",
-        "knowledge/analysis_methodology_per_group.md"
+        "knowledge/analysis_methodology_per_group.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -80715,6 +81978,54 @@
         "knowledge/domains/PSM/avc_availability_model.md",
         "knowledge/domains/PSM/cost_recovery_avc_disponible_model.md"
       ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "RFC_FUNCTION_SEARCH": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "RFC_METADATA_GET": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
       "source": "structured_record",
       "synthesized": true,
       "type": "VARIANT_OR_SET"
@@ -80911,6 +82222,13 @@
           "id": 494,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "EL OBSERVADOR APARECIA EN SU PROPIA MEDIDA (medido 2026-08-23). Nuestra herramienta lee P01 por RFC y cada lectura cae en el MISMO log que medimos: 26",
+          "id": 571,
+          "tier": "MEASURED",
+          "type": "methodology",
           "verified": "NO_CHECK"
         }
       ],
@@ -81510,6 +82828,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -81683,6 +83008,48 @@
       "source": "structured_record",
       "synthesized": true,
       "type": "VARIANT_OR_SET"
+    },
+    "RHRFPM_ERLK_EXT": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "type": "ABAP_REPORT"
+    },
+    "RHRFPM_SET_CLOSED_INDICATOR": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "type": "ABAP_REPORT"
     },
     "RKPDEMO2": {
       "claims": [
@@ -83609,6 +84976,27 @@
       "synthesized": true,
       "type": "PROGRAM"
     },
+    "SAPLFMFR": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "type": "ABAP_REPORT"
+    },
     "SAPLFMOI": {
       "claims": [
         {
@@ -83763,6 +85151,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "Brain_Architecture",
@@ -83774,6 +85169,8 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/h74_syslog_10054_connectivity_analysis.md",
         "knowledge/operating_model_discovery_methods.md"
       ],
@@ -83873,6 +85270,30 @@
       "knowledge_docs": [
         "knowledge/incidents/INC-CLASS-LOSS-2026-06_adt_rfc_write_corruption.md"
       ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "SAP_DATA_SERVICES": {
+      "claims": [
+        {
+          "claim": "EPAM-RFC ES UN CANAL DE EXTRACCION PARA CUADROS DE MANDO QUE NO ESTABA EN EL INVENTARIO DE INTERFACES (medido 2026-08-24). 127.832 eventos, el 100% RF",
+          "id": 575,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
       "source": "structured_record",
       "synthesized": true,
       "type": "VARIANT_OR_SET"
@@ -84537,6 +85958,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -84921,6 +86349,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "Integration",
@@ -84932,6 +86367,60 @@
           "BASIS"
         ],
         "process": []
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "SFIHCM02": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
+      },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "SFIHCM03": {
+      "claims": [
+        {
+          "claim": "SUCCESSFACTORS ESTA INSTALADO Y ACTIVO EN P01 Y NO CONSTABA EN EL PERFIL DEL SISTEMA (medido 2026-08-23). Componentes SFIHCM01, SFIHCM02 y SFIHCM03 en",
+          "id": 568,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "HCM",
+      "domain_axes": {
+        "functional": [
+          "HCM"
+        ],
+        "module": [
+          "HCM",
+          "PD"
+        ],
+        "process": [
+          "H2R"
+        ]
       },
       "source": "structured_record",
       "synthesized": true,
@@ -85445,6 +86934,7 @@
       },
       "knowledge_docs": [
         "knowledge/capability_U_USAGE_execution_footprint.md",
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
         "knowledge/gold_db_table_catalog.md",
         "knowledge/session_retros/retro_operating_model_method_2026-06-21.md"
       ],
@@ -86283,9 +87773,9 @@
       "knowledge_docs": [
         "knowledge/domains/PSM/EXTENSIONS/finance_validations_and_substitutions_autopsy.md",
         "knowledge/domains/Treasury/payment_full_landscape.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/incidents/INC-000005240_xref_office_substitution.md",
-        "knowledge/incidents/INC-000006906_full_history.md",
-        "knowledge/session_retros/session_075_retro.md"
+        "knowledge/incidents/INC-000006906_full_history.md"
       ],
       "other_edges": [
         {
@@ -89230,7 +90720,8 @@
       },
       "knowledge_docs": [
         "knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md",
-        "knowledge/gold_db_table_catalog.md"
+        "knowledge/gold_db_table_catalog.md",
+        "knowledge/session_retros/session_098_retro.md"
       ],
       "type": "SAP_TABLE"
     },
@@ -89502,6 +90993,31 @@
           "B2R"
         ]
       },
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "CONCEPT"
+    },
+    "TCDOB": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "PSM_FM",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "PSM_FM"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "source": "structured_record",
       "synthesized": true,
       "type": "CONCEPT"
@@ -90244,6 +91760,60 @@
       "synthesized": true,
       "type": "CONCEPT"
     },
+    "TRIP_CREATE": {
+      "claims": [
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
+    "TRIP_MODIFY": {
+      "claims": [
+        {
+          "claim": "APQI ES UNA COLA, NO UN HISTORICO DE BATCH INPUT (medido 2026-08-24). Contiene 57.998 sesiones, y el reparto de estado lo delata: 50.334 con QSTATE va",
+          "id": 576,
+          "tier": "MEASURED",
+          "type": "technical_gotcha",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "Integration",
+      "domain_axes": {
+        "functional": [
+          "Integration"
+        ],
+        "module": [
+          "BASIS"
+        ],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "source": "structured_record",
+      "synthesized": true,
+      "type": "VARIANT_OR_SET"
+    },
     "TR_TADIR_INTERFACE": {
       "claims": [
         {
@@ -90311,6 +91881,13 @@
           "tier": "HIGH",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "DATA_MODEL",
@@ -90324,9 +91901,9 @@
       "knowledge_docs": [
         "knowledge/capability_U_USAGE_execution_footprint.md",
         "knowledge/domains/PSM/REPORTS/yfm1_technical_analysis.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/domains/Treasury/bank_reconciliation_program_inventory.md",
-        "knowledge/domains/Treasury/bank_statement_ebs_architecture.md",
-        "knowledge/incidents/INC-000006906_full_history.md"
+        "knowledge/domains/Treasury/bank_statement_ebs_architecture.md"
       ],
       "type": "SAP_TABLE"
     },
@@ -96662,6 +98239,9 @@
         "module": [],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "type": "ABAP_REPORT"
     },
     "YE_FI_PAY_STRUC": {
@@ -101268,6 +102848,13 @@
           "tier": "TIER_1",
           "type": "project_finding",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CTS",
@@ -101285,7 +102872,7 @@
         "knowledge/brain_coverage_audit.md",
         "knowledge/domains/PSM/REPORTS/yfm1_technical_analysis.md",
         "knowledge/domains/PSM/REPORTS/yps8_technical_analysis.md",
-        "knowledge/entity_brain_map.md"
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
       ],
       "type": "CODE_OBJECT"
     },
@@ -101949,6 +103536,9 @@
           "B2R"
         ]
       },
+      "knowledge_docs": [
+        "knowledge/session_retros/session_098_retro.md"
+      ],
       "source": "structured_record",
       "synthesized": true,
       "type": "PROGRAM_OR_CUSTOM"
@@ -102335,6 +103925,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda l",
+          "id": 569,
+          "tier": "MEASURED",
+          "type": "operating_model",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CUSTOM",
@@ -102498,6 +104095,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda l",
+          "id": 569,
+          "tier": "MEASURED",
+          "type": "operating_model",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "CUSTOM",
@@ -102513,7 +104117,7 @@
         "knowledge/domains/PSM/budget_control_system_bcs_domain.md",
         "knowledge/domains/PSM/ppm_sap_project_fund_e2e_flow.md",
         "knowledge/domains/PSM/ps_project_replication_and_ki235.md",
-        "knowledge/process_mining_table_analysis.md"
+        "knowledge/exploration_architecture.md"
       ],
       "type": "FUNCTION_MODULE"
     },
@@ -102578,6 +104182,13 @@
           "id": 372,
           "tier": "TIER_1",
           "type": "verified_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "PS NO ES UN DOMINIO DE NEGOCIO, ES UNA INTERFAZ DE LECTURA DE CORE MANAGER (medido 2026-08-24). PS salia con 3.501.118 ejecuciones, el 39,1% de toda l",
+          "id": 569,
+          "tier": "MEASURED",
+          "type": "operating_model",
           "verified": "NO_CHECK"
         }
       ],
@@ -103974,7 +105585,7 @@
     "ZABAPGIT_STANDALONE_2026-05-25": {
       "annotations": [
         {
-          "finding": "TYPE decides whether the document may post. in UNESCO terms — ABAP4_CALL_TRANSACTION = called by satellite P01 — 14,411 calls [satellite_call:P01] ; ADR6 = table catalogued under domain Master_BP [gold_table_registry:ADR6] ; ALL = PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures f [claim:43]. acts only when <ls_line> IS ASSIGNED and <lv_selected> IS ASSIGNED and sy-subrc = 0. CAN STOP A POSTING. touches Logs, Master_BP",
+          "finding": "TYPE decides whether the document may post. in UNESCO terms — ABAP4_CALL_TRANSACTION = called by satellite P01 — 26,427 calls [satellite_call:P01] ; ADR6 = table catalogued under domain Master_BP [gold_table_registry:ADR6] ; ALL = PERNR 10567156 is a ghost shell referenced by HRP1001 rows under RY 50010054 and RY 50036801 (UIS signatures f [claim:43]. acts only when <ls_line> IS ASSIGNED and <lv_selected> IS ASSIGNED and sy-subrc = 0. CAN STOP A POSTING. touches Logs, Master_BP",
           "impact": "This routine can STOP a posting. Any investigation into why a document will not post must consider it.",
           "line": 4191,
           "provenance": "brain_v2/interpret_code.py — code read through claims, incidents, annotations and the gold table registry",
@@ -105549,6 +107160,13 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -106696,7 +108314,7 @@
     "ZFPAYM_SUB": {
       "annotations": [
         {
-          "finding": "DISPLAY_FORM decides whether the document may post. author states: \"Form DISPLAY_FORM | Maintain / Display  form layout set | > I_FORM        Name of layout set to be displayed\". in UNESCO terms — FUNCTION_EXISTS = called by satellite SM_P01CLNT350_READ — 8,592 calls [satellite_call:SM_P01CLNT350_READ] ; REGUP = 81-scenario coverage analysis (Session #62, scenario_discovery.json) — full enumeration of (tree × co × vendor [claim:106] ; REGUV = BCM routing at UNESCO is triggered by tcode OBPM5 configuration (table TFIBLMPAYBLOCK, 2 rows): LAUFK=' '/P +  [claim:65]. acts only when NOT i_form IS INITIAL and i_xvorl IS INITIAL and l_msgty NE '-'. CAN STOP A POSTING",
+          "finding": "DISPLAY_FORM decides whether the document may post. author states: \"Form DISPLAY_FORM | Maintain / Display  form layout set | > I_FORM        Name of layout set to be displayed\". in UNESCO terms — FUNCTION_EXISTS = called by satellite SM_P01CLNT350_READ — 15,825 calls [satellite_call:SM_P01CLNT350_READ] ; REGUP = 81-scenario coverage analysis (Session #62, scenario_discovery.json) — full enumeration of (tree × co × vendor [claim:106] ; REGUV = BCM routing at UNESCO is triggered by tcode OBPM5 configuration (table TFIBLMPAYBLOCK, 2 rows): LAUFK=' '/P +  [claim:65]. acts only when NOT i_form IS INITIAL and i_xvorl IS INITIAL and l_msgty NE '-'. CAN STOP A POSTING",
           "impact": "This routine can STOP a posting. Any investigation into why a document will not post must consider it.",
           "line": 263,
           "provenance": "brain_v2/interpret_code.py — code read through claims, incidents, annotations and the gold table registry",
@@ -106833,6 +108451,26 @@
         "TBLGART"
       ]
     },
+    "ZHRCA_POSTAL_CODE_CHECK": {
+      "claims": [
+        {
+          "claim": "HCM ES EL MAYOR DESEQUILIBRIO DEL SISTEMA: DONDE MAS SE MODIFICA Y MENOS SE EXPLICA (medido 2026-08-24). 1.204.892 ejecuciones, 712 actores reales, y ",
+          "id": 570,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "CUSTOM",
+      "domain_axes": {
+        "functional": [],
+        "module": [
+          "CUSTOM"
+        ],
+        "process": []
+      },
+      "type": "FUNCTION_MODULE"
+    },
     "ZHRFIORI_OFFBOARDING": {
       "claims": [
         {
@@ -106940,6 +108578,9 @@
         "module": [],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
       "type": "ABAP_REPORT"
     },
     "ZHR_SPAU_PY_IMPL_PGM_013": {
@@ -107246,9 +108887,37 @@
       "knowledge_docs": [
         "knowledge/domains/Integration/integration_map_complete.md",
         "knowledge/domains/PBC/pbc_encumbrance_rules.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/system_operating_model_rfc.md"
       ],
       "type": "FUNCTION_MODULE"
+    },
+    "ZPBC_COMPLETION": {
+      "claims": [
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        }
+      ],
+      "domain": "",
+      "domain_axes": {
+        "functional": [],
+        "module": [],
+        "process": []
+      },
+      "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md"
+      ],
+      "other_edges": [
+        {
+          "to": "RHRFPM_ERLK_EXT",
+          "type": "EXECUTES_PROGRAM"
+        }
+      ],
+      "type": "TRANSACTION"
     },
     "ZPBC_PERIOD_CLS_EXEC": {
       "claims": [
@@ -107279,6 +108948,20 @@
           "tier": "TIER_1",
           "type": "verified_fact",
           "verified": "NO_CHECK"
+        },
+        {
+          "claim": "LA CADENA COMPLETA DE LA RESERVA DE FONDOS: TABLAS, PROGRAMAS Y TRANSACCIONES (medido 2026-08-24). TCDOB declara que la clase de cambio FMRESERV vive ",
+          "id": 572,
+          "tier": "MEASURED",
+          "type": "reference_fact",
+          "verified": "NO_CHECK"
+        },
+        {
+          "claim": "FMW2 ES LA UNICA TRANSACCION QUE BLOQUEA PRESUPUESTO, Y NINGUNA TRANSACCION MANUAL DE FM CREA RESERVA (medido 2026-08-24). Cruzando cada transaccion c",
+          "id": 573,
+          "tier": "MEASURED",
+          "type": "measured_fact",
+          "verified": "NO_CHECK"
         }
       ],
       "domain": "",
@@ -107291,8 +108974,8 @@
         "knowledge/domains/FI/project_cdhdr_pbc_dominance.md",
         "knowledge/domains/Integration/integration_map_complete.md",
         "knowledge/domains/PBC/pbc_position_budgeting.md",
-        "knowledge/process_mining_table_analysis.md",
-        "knowledge/system_operating_model_rfc.md"
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/process_mining_table_analysis.md"
       ],
       "other_edges": [
         {
@@ -109658,6 +111341,7 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/exploration_architecture.md",
         "knowledge/gold_db_table_catalog.md",
         "knowledge/session_retros/final_analysis_way_of_working_tools_model_2026-06-22.md",
         "knowledge/session_retros/retro_operating_model_method_2026-06-21.md"
@@ -109806,6 +111490,9 @@
       },
       "knowledge_docs": [
         "knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md",
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/gold_db_table_catalog.md"
       ],
       "source": "structured_record",
@@ -110798,7 +112485,9 @@
         "process": []
       },
       "knowledge_docs": [
-        "knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md"
+        "knowledge/domains/HCM/Payroll/hcm_payroll_analysis.md",
+        "knowledge/domains/Master_Data_Governance/master_data_read_surface.md",
+        "knowledge/exploration_architecture.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -110932,6 +112621,9 @@
         ],
         "process": []
       },
+      "knowledge_docs": [
+        "knowledge/exploration_architecture.md"
+      ],
       "source": "structured_record",
       "synthesized": true,
       "type": "CONCEPT"
@@ -111930,10 +113622,11 @@
         "process": []
       },
       "knowledge_docs": [
+        "knowledge/domains/PSM/earmarked_funds_as_budget_control.md",
         "knowledge/domains/Security/h71_write_channel_sod_remediation.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/gold_db_table_catalog.md",
-        "knowledge/gold_table_domain_map.md",
-        "knowledge/process_mining_table_analysis.md"
+        "knowledge/gold_table_domain_map.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -116170,10 +117863,10 @@
       },
       "knowledge_docs": [
         "knowledge/domains/Treasury/house_bank_operating_roles.md",
+        "knowledge/exploration_architecture.md",
         "knowledge/incidents/INC-000006906_full_history.md",
         "knowledge/profile_concept.md",
-        "knowledge/session_plans/revisa-nuevamente-todo-hay-parsed-scone.md",
-        "knowledge/session_plans/session_062_plan.md"
+        "knowledge/session_plans/revisa-nuevamente-todo-hay-parsed-scone.md"
       ],
       "source": "structured_record",
       "synthesized": true,
@@ -123186,6 +124879,19 @@
       "rule": "AL RESOLVER UN INCIDENTE, COMPROBAR SI TIENE CONOCIMIENTO O DOMINIO RELACIONADO -- y si no lo tiene, ESCRIBIRLO. Un incidente cerrado con su documento de caso y nada mas es un expediente, no conocimiento: el proximo igual vuelve a costar lo mismo. Medido 2026-08-21: **11 de 13 incidentes no tenian documento de PROCESO en su dominio**, y los 2 que si lo tenian son los dos que se tocaron ese dia porque JP lo pidio. Peor: TRES pares de incidentes comparten dominio y tipo sin proceso escrito -- panel de firmantes BCM (INC-000006313 + INC-000011781), requisito regulatorio de banco (INC-EGYPT-PPC + INC-PSTLADR-NOV2026) y tipo de cambio presupuestario (INC-000005638 + INC-BUDGETRATE-EQG).",
       "severity": "CRITICAL",
       "why": "La regla de la 2a ocurrencia ya existia en el skill de incidentes y llevabamos tres pares incumpliendola, porque era una intencion y no una medida. Un incidente es la OCASION; el proceso que hay detras es el PRODUCTO. Sin esa promocion el coste por ticket nunca baja y el conocimiento queda atrapado en un expediente que nadie lee -- que es exactamente lo que le paso al alta de cuentas de mayor hasta que se escribio su proceso."
+    },
+    {
+      "created_session": 102,
+      "derives_from_core_principle": "CP-001",
+      "domain_axes": {
+        "functional": "Brain_Architecture",
+        "process": "P2D"
+      },
+      "how_to_apply": "1) Todo generador de estado compartido adquiere lock antes de escribir y late entre pasos; sin latido no se distingue lento de colgado. 2) Antes de commitear artefactos GENERADOS, pregunta `rebuild_lock.is_rebuild_running()` -- si es True, no los anadas. 3) Si el lock dice HUNG, decide tu: mata el PID o relanza con --force. El lock nunca mata. 4) Y prueba el lock en los tres estados: un check que nunca ha fallado no es un check.",
+      "id": "feedback_single_writer_must_be_a_lock_not_a_memory",
+      "rule": "LA REGLA DE UN SOLO ESCRITOR TIENE QUE SER UN LOCK, NO UN RECUERDO. Medido 2026-08-22: un `rebuild_all.py` arrancado a las 23:17 SOBREVIVIO AL SUSPEND del PC y seguia vivo nueve horas despues; al reanudar arranco otro por `curate.py`. Dos escritores concurrentes sobre brain_state.json durante horas, y el fichero quedo en 5.337.221 bytes cuando la version verificada de la noche anterior tenia 5.639.898. NADIE lanzo dos a sabiendas: uno resucito. Mecanizado en `brain_v2/rebuild_lock.py`, cableado en `rebuild_all.py` con heartbeat entre pasos: HELD se niega, ORPHAN se reclama solo, HUNG (vivo pero sin latir >15 min, o corriendo >45) se niega y NO mata nada. Probado en los tres estados.",
+      "severity": "CRITICAL",
+      "why": "Una regla escrita depende de que el operador se acuerde, y no cubre el caso en que el SISTEMA se acuerda por el: un proceso que sobrevive a un suspend, un scheduler que relanza, un hook de arranque. El dano no es teorico -- el 2026-08-21 se commiteo un brain_state a medio construir por la misma causa, y el estado en disco quedo mas pequeno que el que estaba en git. Y matar un escritor a medias es peor que el problema, por eso el lock informa y deja decidir en vez de matar."
     }
   ],
   "superseded": [
@@ -124597,7 +126303,9 @@
             336,
             455,
             456,
-            468
+            468,
+            568,
+            570
           ],
           "companions": [],
           "in_ontology": true,
@@ -124764,7 +126472,8 @@
             476,
             477,
             478,
-            482
+            482,
+            569
           ],
           "companions": [
             "fm_ps_avc_model_gap_companion_v1.html",
@@ -124940,7 +126649,10 @@
             467,
             469,
             479,
-            481
+            481,
+            572,
+            573,
+            574
           ],
           "companions": [],
           "in_ontology": true,
@@ -127035,7 +128747,8 @@
             "cross_cutting": false,
             "knowledge_docs": [
               "knowledge/domains/Master_Data_Governance/gl_account_creation_process.md",
-              "knowledge/alignment_executors_model.md"
+              "knowledge/alignment_executors_model.md",
+              "knowledge/domains/Master_Data_Governance/master_data_read_surface.md"
             ],
             "module": null,
             "objects_resolved": 7,

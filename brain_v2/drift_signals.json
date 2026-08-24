@@ -2,65 +2,39 @@
  "_generated_by": "process_mining/detect_drift.py",
  "_algorithm": "concept drift over the accumulated history",
  "_replaces": "the threshold heuristics in check_triggers.py — those are judgement, this asks the log itself",
- "_READ_THIS_FIRST": "SUSPECT A CAPTURE CHANGE, NOT DRIFT: all 3 signals fall in the SAME month (202606). Unrelated domains do not change together — this pattern usually means the LOG CAPTURE changed (audit filter, retention, a system move). Verify the capture before investigating any business process. Tracked as AN-DRIFT-VERIFY.",
- "signals_share_one_month": true,
+ "_READ_THIS_FIRST": "signals are spread across 3 month(s) — no capture-change pattern",
+ "signals_share_one_month": false,
  "_method": "monthly activity profile per domain as RATES PER DAY (executions, distinct objects, distinct users); a month is flagged when at least TWO signals depart from the trailing baseline by more than the domain's own volatility. One signal moving is noise; two is a change of shape.",
  "_corrected_in_first_run": "the first version compared monthly VOLUMES and produced 11 signals, almost all in the same month across unrelated domains — because the window is 2026-02-21 to 2026-06-21, so February has 3 days and April 30. April was the first full month, not a process change. Now normalised per day.",
  "_statistic": "relative change against the trailing baseline, NOT a z-score. With two baseline months the standard deviation collapses and z explodes (the second run produced z=1016). An absurd number dressed as a statistic is worse than a plain one: it looks rigorous and cannot be interpreted. Z-scores become meaningful at roughly a year of history.",
  "_failure_mode": "a four-month window gives at most two comparable periods per domain: this detects STEP CHANGES, not gradual drift, and cannot yet separate an expected biennium boundary from an anomaly. It strengthens purely by the accumulator continuing to run.",
  "window": {
-  "domains_examined": 18,
-  "signals": 3
+  "domains_examined": 19,
+  "signals": 4
  },
  "signals": [
-  {
-   "domain": "CTS_Transport",
-   "month": "202606",
-   "departures": [
-    {
-     "signal": "distinct objects",
-     "baseline_mean_per_day": 0.5,
-     "observed_per_day": 25.4,
-     "relative_change_pct": 4885.1,
-     "direction": "up"
-    },
-    {
-     "signal": "distinct users",
-     "baseline_mean_per_day": 0.1,
-     "observed_per_day": 0.1,
-     "relative_change_pct": 73.6,
-     "direction": "up"
-    }
-   ],
-   "days_in_month": 20,
-   "baseline_months": [
-    "202603",
-    "202604",
-    "202605"
-   ],
-   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
-  },
   {
    "domain": "HCM",
    "month": "202606",
    "departures": [
     {
      "signal": "executions",
-     "baseline_mean_per_day": 973.8,
-     "observed_per_day": 1933.7,
-     "relative_change_pct": 98.6,
+     "baseline_mean_per_day": 938.8,
+     "observed_per_day": 1461.5,
+     "relative_change_pct": 55.7,
      "direction": "up"
     },
     {
      "signal": "distinct objects",
      "baseline_mean_per_day": 10.1,
-     "observed_per_day": 33.4,
-     "relative_change_pct": 232.1,
+     "observed_per_day": 23.9,
+     "relative_change_pct": 137.7,
      "direction": "up"
     }
    ],
-   "days_in_month": 20,
+   "days_in_month": 30,
    "baseline_months": [
+    "202602",
     "202603",
     "202604",
     "202605"
@@ -68,29 +42,90 @@
    "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
   },
   {
-   "domain": "Basis_Security",
-   "month": "202606",
+   "domain": "RE_FX",
+   "month": "202608",
    "departures": [
     {
+     "signal": "executions",
+     "baseline_mean_per_day": 1.7,
+     "observed_per_day": 0.0,
+     "relative_change_pct": -97.2,
+     "direction": "down"
+    },
+    {
      "signal": "distinct objects",
-     "baseline_mean_per_day": 94.8,
-     "observed_per_day": 300.0,
-     "relative_change_pct": 216.6,
-     "direction": "up"
+     "baseline_mean_per_day": 0.4,
+     "observed_per_day": 0.0,
+     "relative_change_pct": -89.0,
+     "direction": "down"
+    }
+   ],
+   "days_in_month": 22,
+   "baseline_months": [
+    "202602",
+    "202603",
+    "202604",
+    "202605",
+    "202606",
+    "202607"
+   ],
+   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
+  },
+  {
+   "domain": "PM",
+   "month": "202607",
+   "departures": [
+    {
+     "signal": "executions",
+     "baseline_mean_per_day": 4.5,
+     "observed_per_day": 1.0,
+     "relative_change_pct": -78.7,
+     "direction": "down"
+    },
+    {
+     "signal": "distinct objects",
+     "baseline_mean_per_day": 0.2,
+     "observed_per_day": 0.0,
+     "relative_change_pct": -82.2,
+     "direction": "down"
+    }
+   ],
+   "days_in_month": 31,
+   "baseline_months": [
+    "202602",
+    "202603",
+    "202604",
+    "202605",
+    "202606"
+   ],
+   "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
+  },
+  {
+   "domain": "CO",
+   "month": "202607",
+   "departures": [
+    {
+     "signal": "executions",
+     "baseline_mean_per_day": 8.2,
+     "observed_per_day": 2.7,
+     "relative_change_pct": -67.0,
+     "direction": "down"
     },
     {
      "signal": "distinct users",
-     "baseline_mean_per_day": 36.2,
-     "observed_per_day": 62.6,
-     "relative_change_pct": 73.2,
-     "direction": "up"
+     "baseline_mean_per_day": 0.2,
+     "observed_per_day": 0.1,
+     "relative_change_pct": -66.7,
+     "direction": "down"
     }
    ],
-   "days_in_month": 20,
+   "days_in_month": 31,
    "baseline_months": [
+    "202602",
     "202603",
     "202604",
-    "202605"
+    "202605",
+    "202606"
    ],
    "interpretation": "the domain's activity SHAPE changed, not just its volume — re-derive its assignment: it was a hypothesis formed on the earlier window"
   }

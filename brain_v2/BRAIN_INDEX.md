@@ -77,13 +77,13 @@ It is ONE missing model capability, not 21 separate gaps — closing it once lif
   layer, not at the role layer.
 - **What that means for any answer about roles:** the role model is NOT the control surface here.
   A clean SU01/PFCG picture does not mean segregation holds.
-- Claims touching authorization: 19 · drill: `graph_queries.py capability E_AUTH`
+- Claims touching authorization: 20 · drill: `graph_queries.py capability E_AUTH`
 - **Posture store** `brain_v2/security_posture.json` — 2 ready · 3 missing input · 2 findings already stored as RECORDS.
 - **Cannot see yet:** identity_inventory, role_content, auth_defaults — MISSING_INPUT means WE CANNOT SEE, never 'there is nothing'.
 
-## 📈 MATURITY OF THE METHOD — 65.4%, measured from artifacts
+## 📈 MATURITY OF THE METHOD — 69.5%, measured from artifacts
 Not a self-assessment: each dimension is derived from what is on disk.
-- **Weakest:** **DURABILITY** 0.10 · **VERIFY** 0.40 · **ANALYZE** 0.48
+- **Weakest:** **VERIFY** 0.40 · **DURABILITY** 0.43 · **ANALYZE** 0.48
 - **Strongest:** MODEL_FIDELITY 0.98 · CONSOLIDATE 0.95 · ESCALATE 0.93
 - **Read this together with the capability grid.** Two independent instruments agree: strong at
   COLLECTING, weak at VERIFYING. We know precisely what the system DOES and little about what it
@@ -120,8 +120,8 @@ inventario del resto; el contenido se abre con su comando.
 | **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 13 | `python brain_v2/graph_queries.py incident <id>` |
 | **reglas** | 230 | `brain_v2/agent_rules/feedback_rules.json` |
-| **memorias de MÉTODO** | 129 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 47 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **memorias de MÉTODO** | 132 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 51 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -130,7 +130,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 35 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 38 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -144,6 +144,8 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A19_log_reality_filter` | classify every identifier the audit log carries into OBJECT / GENERATED IN | -- | `brain_v2/log_reality.json` |
 | `A20_comprehension_index` | measure whether the EXECUTION SURFACE is closed, across the FOUR surfaces  | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/comprehension_index.json` |
+| `A22_domain_composition` | abrir un dominio: de que objetos esta hecho, quien lo conduce, cuando, por | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/domain_composition.json` |
+| `A23_channel_discovery_by_traffic` | descubrir canales de entrada por su TRAFICO y no por su configuracion, y s | -- | `brain_v2/interface_inventory.json` |
 | `A3_two_axis_classification` | explain every call on two independent axes — PROCESS (from the object name | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
 | `A4_ordered_classifier_ladder` | ordered rule chain (package -> software component -> overlay -> name -> te | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
 | `A5_adaptive_learning_loop` | auto-resolve unknown calls by function group / naming / app domain, LEARN  | BusinessPartner, FI_AA, Travel | `process_mining/learned_rules.json` |
@@ -155,6 +157,7 @@ lo deja — solo que nadie lo publicaba.
 | algoritmo | qué contesta | dominios que cubre | aterriza en |
 |---|---|---|---|
 | `A21_case_spine` | probar, clase a clase, si el identificador de caso del log de cambios (CDH | -- | `brain_v2/case_spine.json` |
+| `A24_document_lifecycle` | seguir un documento como CASO -- cuantas veces se toca, quien, cuanto vive | -- | `brain_v2/document_lifecycle.json` |
 | `B1_dfg_discovery` | build the process map from an event log — activities as nodes, observed tr | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
 | `B2_variant_analysis` | group cases by exact path, rank by frequency and cost — the long tail is w | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
 | `B3_performance_bottleneck` | cycle time per transition; waiting versus processing | BusinessPartner, Closing_Activities, Cost_Recovery_CRP, FI_AA +12 | `brain_v2/claims/claims.json` |
@@ -303,12 +306,12 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
 > agente `bank-process-discovery`; el modelo vive en
 > `knowledge/domains/Treasury/house_bank_operating_roles.md`.
-- `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
+- `NEW` - El 51% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
 - `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
 - `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
 - `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
-- `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
+- `RISK` - 6 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
 ## WHAT WE KNOW DEEPLY - 46 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
@@ -329,7 +332,7 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1959 objects · 229 rules · 566 claims · 16 incidents · 9 closed researches)
+## Brain at a glance (1994 objects · 230 rules · 575 claims · 16 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -364,7 +367,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 229 total)
+## Rules to load first (behavioral DNA — 230 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).
