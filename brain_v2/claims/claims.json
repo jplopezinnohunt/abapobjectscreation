@@ -27989,5 +27989,78 @@
       "module": "FI-GL",
       "process": "R2R"
     }
+  },
+  {
+    "id": 593,
+    "claim": "EL CONTENIDO DE LOS TRANSPORTES YA ESTA EN EL GOLD, Y SE SABE QUE LE FALTA (medido 2026-08-26). e071 tiene 2.369.936 objetos en 14.939 transportes, con indice UNICO (TRKORR, AS4POS). Lo que mas viaja: TABU 1.795.300 (contenido de tabla de customizing), FORM 106.843, PROG 75.312, SMIM 32.726, TABL 28.620. El reparto por origen es desigual y dice algo: P01K son 453 transportes con 1.906.549 objetos -- 4.200 objetos por transporte, movimientos masivos de customizing hechos EN produccion -- frente a D01K con 12.627 transportes y 223.769 objetos, o sea 18 objetos por transporte. LO QUE FALTA, declarado: 5.976 de las 20.915 cabeceras de E070 no tienen contenido leido. De esas, 5.941 son SAPK (paquetes de soporte de SAP) y esta VERIFICADO que SI tienen contenido -- leidos de uno en uno dan 713, 205, 393 objetos; no se trajeron por un defecto de particion, no porque no existan. Las ~35 restantes (P01K 10, ISB1 10, D01K 10, P30A 2, UNKR 1) se leyeron una a una y estan VACIAS DE VERDAD: cabecera de transporte sin objetos, que es un hecho del sistema y no un fallo de lectura.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "Gold DB tabla e071 x e070, medido 2026-08-26 tras deduplicar",
+      "lectura directa de SAPK-10001INIWPGW/INMDGMDC/INPASEIN via RFC_READ_TABLE",
+      "scripts/extraction/extract_fsv_structure.py"
+    ],
+    "domain": "Transport_Management",
+    "related_objects": [
+      "E071",
+      "E070",
+      "E07T",
+      "TABU",
+      "A50_transport_content_extraction"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Transport",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 594,
+    "claim": "UNA LISTA ESCRITA A MANO NO AVISA DE LO QUE DEJA FUERA, Y UN CERO LEGITIMO PARECE UN CERO REAL (medido 2026-08-26 sobre la extraccion de E071, dos veces el mismo defecto). PRIMERO: los prefijos de transporte estaban codificados en el script (D01K, V01K, P01K, SAPK, E01K, Q01K); E070 tiene CIENTOS (ICDK, DUBK, ZSAP, E9BK, D11K, ZEAF...) y la lista escondia objetos de todos ellos. El limite era la lista, no el sistema. SEGUNDO, el mismo error un nivel mas abajo: cuando una consulta revienta con TSV_TNEW_PAGE_ALLOC_FAILED hay que partirla, y se partia con un alfabeto '0-9A-Z' escrito a mano. Los 5.455 transportes SAPK se llaman 'SAPK-10001INIWPGW', con GUION en la quinta posicion, asi que TODAS las subconsultas devolvieron 0 -- legitimamente, sin error -- y el total se reporto como exito. Leidos uno a uno tienen contenido. REGLA: cuando el dato ya esta en el Gold, las CATEGORIAS por las que recorrerlo se derivan del dato, nunca se escriben; y si una particion se dispara por un fallo y sus partes suman cero, eso NO es 'no hay datos', es INCOMPLETO y hay que declararlo.",
+    "claim_type": "METHOD",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "scripts/extraction/extract_fsv_structure.py, las tres versiones, 2026-08-25/26",
+      "e070: cientos de prefijos distintos frente a los 6 codificados",
+      "SAPK-* leidos uno a uno: 713, 205, 393, 60 objetos"
+    ],
+    "domain": "Transport_Management",
+    "related_objects": [
+      "E071",
+      "E070",
+      "A50_transport_content_extraction"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Transport",
+      "module": "BASIS",
+      "process": "P2D"
+    }
+  },
+  {
+    "id": 595,
+    "claim": "UN COMPLETAR SIN CLAVE UNICA DUPLICA, Y LA UNICA SEÑAL ES UNA CIFRA QUE NO SE MUEVE (medido 2026-08-26: 4.266.812 filas repetidas metidas en el Gold en dos pases). MECANISMO: un prefijo entraba en la lista de pendientes si tenia UNA cabecera de E070 sin contenido, y entonces se re-pedia el prefijo ENTERO. D01K tiene 10 transportes VACIOS que no van a estar cubiertos nunca porque no hay nada que cubrir, asi que quedaba pendiente para siempre; P01K igual. Y el conjunto que deduplicaba arrancaba VACIO en cada corrida: solo miraba dentro de la corrida. La tabla llego a 6.636.748 objetos cuando los reales son 2.369.936. LA UNICA SEÑAL: los objetos subieron 2,1 M y los TRANSPORTES se quedaron clavados en 14.939 -- un aumento de filas sin aumento de entidades distintas es la firma de un duplicado, y no lo comprobaba nadie. TRES CIERRES, en tres capas a proposito: el conjunto se precarga de la tabla · INSERT OR IGNORE sobre un indice UNICO, para que la BASE defienda su clave aunque el llamador se equivoque · y una asercion que PARA si suben las filas y no suben las entidades.",
+    "claim_type": "METHOD",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "Gold DB: 6.636.748 -> 2.369.936 filas al deduplicar por (TRKORR, AS4POS)",
+      "scripts/extraction/extract_fsv_structure.py",
+      "indice ux_e071 creado 2026-08-26"
+    ],
+    "domain": "Data_Quality",
+    "related_objects": [
+      "E071",
+      "A50_transport_content_extraction"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "Data_Quality",
+      "module": "BASIS",
+      "process": "P2D"
+    }
   }
 ]

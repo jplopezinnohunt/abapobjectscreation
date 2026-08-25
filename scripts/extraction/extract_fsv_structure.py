@@ -35,6 +35,16 @@ REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 from gold_refresh import GOLD, read_p01, get_connection  # type: ignore
 
+# LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO, ANTES DE LEER NADA.
+# Escribir las memorias y no leerlas es aprender y no aprender a la vez -- y este script es el
+# que metio 4.266.812 filas repetidas en el Gold, asi que es exactamente el que tiene que
+# empezar recordandoselo.
+sys.path.insert(0, str(REPO / "process_mining"))
+try:
+    from metodo import lo_que_ya_aprendimos as _aprendido  # type: ignore
+except Exception:
+    _aprendido = None
+
 TABLAS = {
     "FAGL_011ZC": (["VERSN", "ERGSL", "VONKT", "BISKT", "KTOPL"], None),
     "FAGL_011QT": (["VERSN", "ERGSL", "SPRAS", "TXT45"], "SPRAS = 'E'"),
@@ -89,6 +99,9 @@ def main():
     solo = None
     if "--solo" in sys.argv:
         solo = sys.argv[sys.argv.index("--solo") + 1]
+
+    if _aprendido:
+        _aprendido("transporte", "e071", "prefijo", "duplicado", "balance", "variante").avisar()
 
     g = get_connection()
     con = sqlite3.connect(GOLD, timeout=900)

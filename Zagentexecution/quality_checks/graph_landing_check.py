@@ -206,6 +206,23 @@ def main():
                 break
         if not vivo:
             muertos.append(aid)
+    # UN ALGORITMO ROTO **DEBE** NO TENER LLAMADOR: enchufarlo seria el error, no el arreglo.
+    #
+    # A41_extract_fund_center_hierarchy es codigo que NUNCA ha corrido -- muere en un NameError
+    # antes del primer RFC, y su manifiesto en el Gold esta vacio, lo que lo confirma. Que nadie
+    # lo llame es lo correcto. Pero esto NO es una exclusion silenciosa: sigue apareciendo, con
+    # su estado y su motivo, porque un roto que se calla se queda roto para siempre. La unica
+    # diferencia es que no rompe la puerta.
+    rotos = [x for x in muertos if str(algos.get(x, {}).get("state", "")).upper()
+             in ("ROTO", "MUERTO", "QUARANTINED")]
+    muertos = [x for x in muertos if x not in rotos]
+    if rotos:
+        h.append({"gravedad": "AVISO_ALGORITMO_ROTO", "store": "algorithms.json",
+                  "algoritmos": sorted(rotos),
+                  "que_pasa": (f"{len(rotos)} algoritmo(s) declarados ROTOS y sin llamador. Eso "
+                               "es COHERENTE -- enchufar codigo que no corre seria el error -- "
+                               "pero siguen contados: arreglarlos o retirarlos con motivo. No "
+                               "rompen la puerta")})
     if muertos:
         h.append({"gravedad": "ALGORITMO_SIN_LLAMADOR", "store": "algorithms.json",
                   "algoritmos": sorted(muertos)[:12],
@@ -250,21 +267,30 @@ def main():
            "objetos_en_el_grafo": len(objetos),
            "hallazgos": h}
 
+    # UN AVISO_ SE CUENTA Y SE IMPRIME, PERO NO ROMPE LA PUERTA.
+    #
+    # Son situaciones COHERENTES que hay que seguir viendo: un algoritmo declarado ROTO y sin
+    # llamador lo es -- enchufar codigo que no corre seria el error, no el arreglo. Si un aviso
+    # rompiera, la unica forma de dejar la puerta en verde seria dejar de declarar el estado, y
+    # asi es como se hueca un gate: no quitandolo, sino haciendo que mienta el que lo rellena.
+    rompen = [x for x in h if not str(x.get("gravedad", "")).startswith("AVISO_")]
+
     if "--json" in sys.argv:
         print(json.dumps(rep, ensure_ascii=False, indent=2))
-        return 1 if h else 0
+        return 1 if rompen else 0
 
     print(f"[grafo] {rep['stores_vigilados']} stores vigilados · "
           f"{len(objetos):,} objetos en el grafo")
-    if not h:
+    if not rompen:
         print("  OK - lo generado llega al grafo, los algoritmos tienen llamador, "
-              "los agentes ejecutan y depositan")
+              "los agentes ejecutan y depositan" +
+              (f"  ({len(h)} aviso(s), no rompen)" if h else ""))
     for x in h:
         print(f"  [{x['gravedad']}] {x['store']}")
         print(f"      {x['que_pasa']}")
         if x.get("algoritmos"):
             print(f"      -> {', '.join(x['algoritmos'])}")
-    return 1 if h else 0
+    return 1 if rompen else 0
 
 
 if __name__ == "__main__":

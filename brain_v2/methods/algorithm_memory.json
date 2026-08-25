@@ -1542,6 +1542,61 @@
       "confidence": null,
       "session": 103,
       "source": "brain_v2/fsv_versions_in_use.json, variantes de RFBILA00 leidas en P01 2026-08-25"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "Una lista escrita a mano no avisa de lo que deja fuera, y un cero legitimo parece un cero real. Los prefijos de transporte estaban codificados (6) cuando E070 tiene cientos, y escondian objetos de todos los demas. El mismo error un nivel mas abajo: al partir una consulta que no cabe en memoria, el alfabeto era '0-9A-Z' a mano; los 5.455 SAPK llevan GUION en la quinta posicion, asi que TODAS las subconsultas devolvieron 0 sin error y el total se reporto como exito.",
+      "learned_by": "A50_transport_content_extraction",
+      "evidence": null,
+      "implication": "cuando el dato ya esta en el Gold, las CATEGORIAS por las que recorrerlo se DERIVAN del dato, nunca se escriben. Y si una particion se dispara por un fallo y sus partes suman cero, eso no es 'no hay datos': es INCOMPLETO y hay que declararlo.",
+      "confidence": null,
+      "session": 103,
+      "source": "scripts/extraction/extract_fsv_structure.py, tres versiones, 2026-08-25/26"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "Un completar sin clave unica DUPLICA, y la unica señal es una cifra que NO se mueve. Entraron 4.266.812 filas repetidas en el Gold (tabla a 6.636.748 objetos cuando los reales son 2.369.936) porque un prefijo con UNA cabecera vacia quedaba pendiente para siempre y se re-pedia ENTERO, y porque el conjunto que deduplicaba arrancaba vacio en cada corrida. Lo unico que lo delataba: las filas subian 2,1 M y las entidades distintas se quedaban en 14.939.",
+      "learned_by": "A50_transport_content_extraction",
+      "evidence": null,
+      "implication": "todo store que se COMPLETA lleva tres cierres, en tres capas distintas: precargar lo ya guardado, un indice UNICO sobre la clave real (que la base defienda su clave aunque el llamador se equivoque), y una asercion que PARE si suben las filas y no suben las entidades distintas. Y nunca re-pidas un bloque entero por una parte que falta: pide la parte.",
+      "confidence": null,
+      "session": 103,
+      "source": "Gold DB e071: 6.636.748 -> 2.369.936 al deduplicar por (TRKORR, AS4POS)"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "En rsau_audit_history con TXSUBCLSID='Transaction Start' (MSG='AU3'), el tcode ARRANCADO vive en PARAM1; SLGTC es el tcode de CONTEXTO desde el que se lanzo. Coinciden en 8 de 1.235.225 filas (0,0%). Agrupar por SLGTC histograma EL LANZADOR, no lo lanzado: SESSION_MANAGER -> FBL1N 54.362, MIRO 39.367, F-53 33.757. Ademas el filtro SLGTC<>'' descarta 108.375 arranques (8,8%) de los que 108.168 llevan un tcode real.",
+      "learned_by": "A48_semantic_activity_map",
+      "evidence": null,
+      "implication": "para contar QUE TRANSACCION se ejecuto, lee PARAM1, no SLGTC. Y antes de filtrar una columna vacia, comprueba que lo que descartas es basura: aqui no lo era.",
+      "confidence": null,
+      "session": 103,
+      "source": "verificacion adversarial 2026-08-25 contra el Gold, 1.235.225 arranques"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "Un SID inexistente conecta a D01 EN SILENCIO. rfc_helpers._build_connection_params resuelve SAP_<SID>_<K> y, si no existe, cae al bloque generico SAP_<K> del .env -- que ES D01 y lleva password, asi que la conexion TIENE EXITO contra el sistema equivocado en vez de fallar. Probado: pedido VO1 o ZZZ -> SID REAL D01 (host HQ-SAP-D), confirmado por RFC_SYSTEM_INFO.",
+      "learned_by": "A43_fsv_alignment_check",
+      "evidence": null,
+      "implication": "todo script que acepte un SID por parametro DEBE confirmar contra que sistema hablo de verdad, llamando a RFC_SYSTEM_INFO y comparando, antes de rotular ninguna salida con el nombre que le dio el usuario. Un typo no puede certificar un sistema que nadie leyo.",
+      "confidence": null,
+      "session": 103,
+      "source": "rfc_helpers.py:31 + RFC_SYSTEM_INFO, medido 2026-08-25"
+    },
+    {
+      "subject": null,
+      "kind": "INSTRUMENT",
+      "fact": "Las claves de customizing viven en E071K de la TAREA, no de la orden padre. La orden de Egipto D01K9B0FXE imprime 'E071K vacio' y devuelve exit 0, mientras su hija D01K9B0FXF da exit 1 con la clave INTRUSA de Indonesia '350/ID/USTRD/O/01'. La unidad de cambio -- lo que se libera -- es la ORDEN, y es justo la que dice OK.",
+      "learned_by": "A40_config_transport_prerelease_check",
+      "evidence": null,
+      "implication": "para juzgar un transporte, resuelve sus TAREAS HIJAS por E070.STRKORR y analiza la UNION. Si no hay hijas y no hay claves, sal 2 (no analizable), nunca 0: un exit 0 sobre algo que no se pudo mirar se lee como aprobado.",
+      "confidence": null,
+      "session": 103,
+      "source": "corrida real D01K9B0FXE vs D01K9B0FXF, 2026-08-25"
     }
   ]
 }

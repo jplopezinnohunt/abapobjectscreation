@@ -161,6 +161,15 @@ STORES_AL_GRAFO = [
     # alguien hace es "¿que es 'Field Office Imprest Accounts' y como lo declara SAP?". El
     # detalle por cuenta se queda en el store, a un drill de distancia.
     {"file": "account_classes.json", "key": "concepto_de_balance", "at": "por_concepto"},
+    # Los que aparecieron AL REGISTRAR los mineros del workflow (A42, A45): estaban produciendo
+    # su store desde hace tiempo y nadie los habia enchufado, porque nadie los habia registrado.
+    # Registrar una capacidad es lo que hace VISIBLE que su salida no llega a ningun sitio.
+    {"file": "fm_executed_census.json", "key": "tcode_ejecutado", "at": "dialog_tcodes"},
+    {"file": "fm_executed_census.json", "key": "report_ejecutado", "at": "reports"},
+    {"file": "fm_executed_census.json", "key": "rfc_ejecutado", "at": "rfc_bapi_calls"},
+    {"file": "fm_executed_census.json", "key": "programa_batch", "at": "batch_programs"},
+    {"file": "security_posture.json", "key": "componente_de_seguridad", "at": "components",
+     "name_field": "component"},
     # El camino de vuelta tambien tiene que ser recorrible: que un minero haya contestado a un
     # claim abierto es conocimiento sobre ESE objeto, no un parte suelto.
     {"file": "claim_resolution_proposals.json", "key": "cierra_claim", "at": "propuestas",
