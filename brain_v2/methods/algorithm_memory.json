@@ -1345,6 +1345,16 @@
       "implication": "un proceso largo se sigue por SU salida, no por efectos laterales en el disco. Y si se canaliza a `tail`, la salida se retiene hasta el final: redirige a fichero y leelo, o no habra progreso que ver",
       "confidence": "MEASURED",
       "session": 103
+    },
+    {
+      "subject": "escribir en un store compartido",
+      "kind": "TRAP",
+      "fact": "el mismo error dos veces el mismo dia: anadir filas a un store con campos inventados en vez de copiar el esquema de las que ya estan. Primero un KeyError en claims (claim_type ausente) que aborto el paso 2 del rebuild; luego un TypeError en companions (metrics como dict cuando 40 de 42 usan lista de {label,value}) que aborto el paso 7. Ninguno falla al escribir: fallan en OTRO proceso, veinte minutos y treinta pasos despues.",
+      "learned_by": "rebuild_all",
+      "evidence": "dos abortos del rebuild el 2026-08-24, ambos por escrituras mias en claims.json y companions.json",
+      "implication": "antes de anadir a un store, LEE UNA FILA EXISTENTE y copia su forma. Y lo mas incomodo: esta memoria se escribio ENTRE los dos fallos y no impidio el segundo. Una memoria explica un error despues; no lo impide. Lo que falta es un gate de ESQUEMA en el punto de escritura, del mismo tipo que el de alcanzabilidad",
+      "confidence": "MEASURED",
+      "session": 103
     }
   ]
 }

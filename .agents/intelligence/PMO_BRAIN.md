@@ -202,6 +202,22 @@ Each layer FEEDS the others:
 
 ### 🟡 HIGH — Next available session
 
+**H111 — EL BRAIN_STATE YA NO CABE EN CONTEXTO: 1.396.967 TOKENS, EL 139,7% DE UN MILLON
+(medido por el propio rebuild, 2026-08-24).** 5.587.869 bytes. La progresion es **4 MB el
+20-ago, 5 el 21, 5,5 el 24**: medio mega al dia.
+
+Hoy no rompe nada porque la carga es escalonada y nadie lo lee entero. Pero **un fichero que no
+cabe en contexto ha dejado de ser un fallback**: el `BRAIN_INDEX` dice "lee el brain_state
+completo cuando necesites profundidad que el indice no da", y eso ya no se puede hacer.
+
+**No se toca a lo bruto.** Encogerlo por compresion va contra CP-002, y la respuesta correcta
+es estructura, no perdida. Las opciones reales son tres y son una DECISION, no una tarea:
+particionarlo por dominio · dejar de materializar en el las capas que ya viven en su store ·
+o aceptar que el fallback desaparece y quitar esa frase del indice.
+
+Lo que NO se puede seguir haciendo es mirarlo crecer: nada vigila ese numero, y solo aparecio
+porque `add_knowledge_links` lo imprime de paso.
+
 **H110 — EL ACUMULADOR PIDE SIEMPRE 16 DIAS, PASE LO QUE PASE: 45 DIAS DE SM20 AUSENTES (s102, medido 2026-08-22).**
 `accumulate_logs.py` corrio hoy tras **62 dias** sin ejecutarse. TBTCO (lookback 180d) y CDHDR (120d)
 cubrieron el hueco entero. **RSAU/SM20 no**: `RSAU_DEFAULT_DAYS = 16` es una CONSTANTE, asi que pidio
