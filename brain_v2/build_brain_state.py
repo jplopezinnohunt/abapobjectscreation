@@ -130,7 +130,9 @@ STORES_AL_GRAFO = [
      "name_field": "job"},
     {"file": "satellites.json", "key": "satellite", "at": "satellites",
      "name_field": "satellite"},
-    {"file": "process_flows.json", "key": "process_flow", "at": "flows", "name_field": "name"},
+    # vive en su propio subdirectorio, y `flows` es un DICCIONARIO indexado por flujo (P2P,
+    # B2C2A...), no una lista con campo `name`. Declarado mal, no aterrizaba nada y nadie lo veia.
+    {"file": "process_flows/process_flows.json", "key": "process_flow", "at": "flows"},
     {"file": "payroll_discovery.json", "key": "payroll", "at": None},
     {"file": "custom_fields.json", "key": "custom_field", "at": "fields", "name_field": "owner"},
     {"file": "Zagentexecution/sap_data_extraction/sqlite/job_classification.json",
