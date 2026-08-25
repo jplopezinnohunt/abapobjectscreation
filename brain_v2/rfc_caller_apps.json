@@ -125,7 +125,7 @@
       "_se_llevaba_buscando": "mas de un ano sin encontrarla (JP, 2026-08-24)",
       "como_se_identifica": [
         "APQI.PROGID = 'SAPMSSY1' -- la sesion la creo algo EXTERNO por RFC, no un programa ABAP de la casa",
-        "GROUPID = <acreedor 8 digitos><sufijo 4>, p.ej. 63154754U101. Los 8 digitos casaron 60 de 60 contra LFA1.LIFNR",
+        "GROUPID con forma <8 digitos><sufijo 4>: los 8 digitos son el NUMERO DE PERSONAL (PERNR), no un acreedor -- aunque case contra LFA1, porque en UNESCO empleado y proveedor comparten numero. El sufijo es a veces la TRANSACCION (PA30) y a veces un codigo de oficina o de medida",
         "CREATOR = un TEXTO que la herramienta escribe, NO un usuario validado. SAP no comprueba que exista: de 14 grafias *-RFC, nueve existen en USR02 como usuarios de SISTEMA y cinco no existen. La misma persona aparece con guion y con guion bajo (BILLAULT-RFC existe, BILLAULT_RFC no), asi que el campo indica QUE ESCRIBIO LA HERRAMIENTA, no quien la uso"
       ],
       "medido": {
@@ -204,7 +204,30 @@
         },
         "ninguna_bloqueada": true
       },
-      "_correccion": "la primera lectura decia 'cada persona tiene su propia cuenta RFC' y era un salto: el campo CREATOR es un parametro de BDC_OPEN_GROUP, no una identidad. Lo corrigio JP el 2026-08-24 y la comprobacion contra USR02 le dio la razon en 5 de 14 casos"
+      "_correccion": "la primera lectura decia 'cada persona tiene su propia cuenta RFC' y era un salto: el campo CREATOR es un parametro de BDC_OPEN_GROUP, no una identidad. Lo corrigio JP el 2026-08-24 y la comprobacion contra USR02 le dio la razon en 5 de 14 casos",
+      "_CORRECCION_GRAVE_2026_08_24": {
+        "que_dije": "que ALLOS toca el maestro de ACREEDORES (BusinessPartner)",
+        "que_es": "ALLOS es una herramienta de RECURSOS HUMANOS",
+        "como_me_equivoque": "cruce los 8 digitos del GROUPID contra LFA1.LIFNR, casaron 200 de 200, y lo di por bueno. El numero es correcto y la conclusion falsa: en UNESCO el MISMO numero es PERNR y LIFNR, porque cada empleado tiene su acreedor para reembolsos. Los 8 digitos casan 200/200 contra PA0001.PERNR y 200/200 contra HRP1001.OBJID ADEMAS de contra LFA1. Elegi una de las tres lecturas sin comprobar las otras dos",
+        "lo_que_lo_prueba": "el log de CAMBIOS, que era la verificacion que no hice. Esos usuarios cambian HR_IT1018 (6.353), HR_IT1001 (3.207), Y_HR_IT1081 (1.186) e IBAN (197). Cambios de clase KRED (acreedor): CERO. Y sus transacciones son PP01 (657), PA30 (475), PA40 (458) mas 9.352 sin dialogo, o sea batch input",
+        "la_leccion": "que una clave case no dice de que ES: dice que ese numero existe en esa tabla. La prueba de a que DOMINIO pertenece es lo que el usuario CAMBIA, no como se llama el grupo. Verificar contra cdhdr antes de asignar dominio, no despues"
+      },
+      "dominio": "HCM (estructura organizativa y datos de personal)",
+      "_dominio_anterior_ERRONEO": "BusinessPartner",
+      "que_cambian_de_verdad": {
+        "HR_IT1018": 6353,
+        "HR_IT1001": 3207,
+        "Y_HR_IT1081": 1186,
+        "IBAN": 197,
+        "KRED_acreedor": 0,
+        "_transacciones": {
+          "(batch input, sin dialogo)": 9352,
+          "PP01": 657,
+          "PA30": 475,
+          "PA40": 458,
+          "PA41": 19
+        }
+      }
     },
     "BATCH_INPUT_MAP": {
       "que_es": "el mapa del canal batch input: QUE programa genera cada sesion y a que dominio pertenece. PROGID es la puerta -- dice si la creo un programa de SAP y cual, o algo externo por RFC -- asi que con el se sabe de donde viene sin adivinar",
@@ -335,11 +358,12 @@
             "nota": "TRIP_CREATE y TRIP_MODIFY"
           },
           {
-            "dominio": "BusinessPartner (acreedor)",
+            "dominio": "HCM (ALLOS)",
             "sesiones": 4918,
             "grupos": 1805,
             "creadores": 41,
-            "nota": "ALLOS. El sufijo es codigo de oficina/entidad; en 2 casos es una TRANSACCION (PA30)"
+            "nota": "ALLOS. El sufijo es codigo de oficina/entidad; en 2 casos es una TRANSACCION (PA30)",
+            "_corregido": "decia BusinessPartner. Los 8 digitos son PERNR: lo prueba que esos usuarios cambian infotipos de RRHH y CERO acreedores"
           },
           {
             "dominio": "otro",
@@ -441,8 +465,8 @@
         ],
         "por_dominio_sumando_origenes": {
           "Travel": 50166,
-          "BusinessPartner": 6851,
-          "HCM": 418,
+          "HCM": 5336,
+          "BusinessPartner": 1933,
           "FI": 341,
           "PS": 110,
           "Treasury_EBS": 57,
