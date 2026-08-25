@@ -47,6 +47,31 @@ CALLERS = REPO / "brain_v2" / "rfc_caller_apps.json"
 # busqueda encontraba las dos mitades.
 SUSTRATO = {"Technical_Substrate", "Basis_Security", "CTS_Transport"}
 
+# TODO CORTE SE PUBLICA. "El resto sin clasificar es el sensor": un umbral que no dice cuanto
+# tiro convierte una poblacion truncada en una cobertura, y nadie lo nota. Medido: el corte de
+# 1.000 llamadas descartaba 1.843 de 2.098 cuentas RFC sin dejar rastro.
+DESCARTES = {}
+
+# Que hace cada generador de batch input. Sin esto, "143 sesiones de SAPF100" no dice nada.
+QUE_HACE_BDC = {
+    "SAPMSSY1": "el DESPACHADOR RFC: vino de FUERA. No identifica la herramienta",
+    "RFBIKR00": "carga del maestro de acreedores",
+    "RFBIBL01": "carga de documentos contables (report)",
+    "SAPF100": "revaluacion en moneda extranjera",
+    "RFEBBU00": "extractos bancarios (report)",
+    "HUNUPSR0": "nomina",
+    "ZHR_UPDATE_IT0021": "infotipo 0021 = FAMILIA. DATO PERSONAL SENSIBLE",
+    "ZHR_UPDATE_IT0167": "infotipo 0167 = PLANES DE SALUD. DATO PERSONAL SENSIBLE",
+    "ZHR_RETIRE_COPY_SPI": "cartas de jubilacion",
+    "YEBUET01": "extractos UBO",
+    "ZMM_BI_MM01_PLANT": "maestro de materiales por centro",
+    "SAPMSBDT": "SHDB, el grabador BDC",
+}
+# Codigo PROPIO que escribe en produccion por BDC y cuyo fuente NO esta extraido.
+BDC_SIN_FUENTE = {"ZHR_RETIRE_COPY_SPI", "YEBUET01", "ZHR_UPDATE_IT0167", "ZHR_UPDATE_IT0021",
+                  "ZMM_BI_MM01_PLANT"}
+BDC_SENSIBLE = {"ZHR_UPDATE_IT0021", "ZHR_UPDATE_IT0167"}
+
 # ---------------------------------------------------------------------------------------------
 # NATURALEZA: que le hace al sistema. Es un eje DISTINTO del dominio, y sin el el inventario
 # dice donde pasa algo pero no que pasa. Las tres no valen lo mismo cuando fallan:
@@ -106,6 +131,36 @@ except Exception:
     CANALES = {}
 
 
+try:
+    _CALLERS_RAW = json.loads(CALLERS.read_text(encoding="utf-8"))
+except Exception:
+    _CALLERS_RAW = {}
+APPS = _CALLERS_RAW.get("technical_user_apps") or {}
+
+# La ventana del INSTRUMENTO. Un techo tuyo no es un limite del sistema: un `last_seen` puede
+# ser el suelo del log, no la muerte del canal. Y APQI abarca desde 2005 mientras rsau cubre
+# unos meses: poner las dos cifras juntas sin decirlo compara denominadores distintos.
+VENTANA_LOG = {"_que_es": "el rango que cubre rsau_audit_history, no la vida del canal",
+               "_se_rellena_al_medir": True}
+
+
+def _app_detras(usuario):
+    """Que APLICACION hay detras de un usuario tecnico, y si eso esta MEDIDO o AFIRMADO.
+
+    Una afirmacion de una persona y una medida no valen lo mismo y no se mezclan: ALLOS tiene
+    dominio probado contra el log de cambios; MULESOFT tiene 'Core Manager' dicho por JP y nunca
+    medido. Bajo una etiqueta unica se heredan igual.
+    """
+    v = APPS.get((usuario or "").strip()) or APPS.get((usuario or "").strip().upper())
+    if not isinstance(v, dict):
+        return {}
+    return {"application": v.get("primary_application"),
+            "application_kind": v.get("kind") or v.get("tool"),
+            "application_source": ("MEDIDO" if str(v.get("source", "")).lower().startswith(
+                ("measur", "medid")) else "AFIRMADO por una persona, no medido"),
+            "application_measured": v.get("measured")}
+
+
 def _dom_canal(ch):
     """El dominio de un canal declarado -- SOLO si el canal lo declara.
 
@@ -151,6 +206,74 @@ OBSERVADORES = {"JP_LOPEZ"}
 USTYP_ES = {"A": "Dialogo - una PERSONA", "B": "Sistema - tecnico, no entra por dialogo",
             "C": "Comunicacion - CPIC/RFC entre sistemas", "S": "Servicio - dialogo compartido",
             "L": "Referencia - solo hereda permisos"}
+
+
+def _lo_que_cambia_de_verdad(con):
+    """LA PRUEBA DE ESCRITURA ES EL LOG DE CAMBIOS, NO EL NOMBRE DEL MODULO.
+
+    Decidir MASTER_DATA/TRANSACCIONAL por subcadenas del nombre es el metodo que este proyecto
+    abandono DESPUES de equivocarse: los GROUPID de ALLOS casaron 200/200 contra LFA1 y la
+    conclusion 'es de acreedores' era falsa. La regla que quedo: la prueba de a que dominio
+    pertenece un canal -- y de si escribe -- es lo que su gente CAMBIA.
+
+    Se ve en la salida: MULESOFT sale MASTER_DATA+TRANSACCIONAL por 20.197 llamadas cuyo NOMBRE
+    lleva CREATE/CHANGE, cuando el canal de cambios registra ordenes de magnitud menos. Sin este
+    cruce se declara escritura de datos maestros donde el sistema no registra un solo cambio.
+    """
+    out = {}
+    try:
+        for u, n, clases in con.execute("""
+                SELECT UPPER(TRIM(USERNAME)), COUNT(*), COUNT(DISTINCT OBJECTCLAS)
+                FROM cdhdr_history WHERE TRIM(COALESCE(USERNAME,'')) <> ''
+                GROUP BY 1"""):
+            out[u] = {"documentos_de_cambio": n, "clases_distintas": clases}
+    except sqlite3.Error:
+        return {}
+    try:
+        for u, clase, n in con.execute("""
+                SELECT UPPER(TRIM(USERNAME)), OBJECTCLAS, COUNT(*)
+                FROM cdhdr_history WHERE TRIM(COALESCE(USERNAME,'')) <> ''
+                GROUP BY 1,2"""):
+            d = out.get(u)
+            if d is not None:
+                d.setdefault("top_clases", []).append((clase, n))
+    except sqlite3.Error:
+        pass
+    for d in out.values():
+        d["top_clases"] = [{"clase": c, "cambios": k} for c, k in
+                           sorted(d.get("top_clases", []), key=lambda t: -t[1])[:5]]
+    return out
+
+
+def _ventana_del_log(con):
+    """Que rango cubre el log, y CUANTOS DIAS FALTAN dentro de el.
+
+    Un techo del instrumento no es un limite del sistema: un `last_seen` se lee como 'el canal
+    murio' cuando es el suelo de la ventana. Y APQI abarca desde 2005 mientras rsau cubre unos
+    meses -- publicar las dos cifras juntas sin decirlo compara denominadores distintos.
+    """
+    try:
+        lo, hi, dias = con.execute("""SELECT MIN(SAL_DATE), MAX(SAL_DATE),
+                                             COUNT(DISTINCT SAL_DATE)
+                                      FROM rsau_audit_history""").fetchone()
+    except sqlite3.Error:
+        return {}
+    posibles = None
+    try:
+        from datetime import date
+        a, b = (date(int(lo[:4]), int(lo[4:6]), int(lo[6:8])),
+                date(int(hi[:4]), int(hi[4:6]), int(hi[6:8])))
+        posibles = (b - a).days + 1
+    except Exception:
+        pass
+    return {"_que_es": "el rango que cubre rsau_audit_history, NO la vida del canal",
+            "desde": lo, "hasta": hi, "dias_con_datos": dias,
+            "dias_posibles": posibles,
+            "dias_ausentes": (posibles - dias) if posibles else None,
+            "_como_leerlo": ("todo `calls`, `first_seen` y `last_seen` esta recortado por esta "
+                             "ventana. Un last_seen igual al suelo NO significa que el canal "
+                             "murio. Y las cifras de APQI (desde 2005) no son comparables con "
+                             "estas sin decirlo")}
 
 
 def _tipos_de_usuario(con):
@@ -297,6 +420,12 @@ def _canales_custom_de_escritura(con):
     for _c in (CANALES or {}).values():
         declarados |= {str(x).strip().upper() for x in (_c.get("modulos_custom") or {})}
         declarados |= {str(x).strip().upper() for x in (_c.get("modulos_estandar") or {})}
+        # Y LAS BAPIs ESTANDAR QUE EL CANAL USA. Se caian por los dos filtros a la vez -- no
+        # empiezan por Z/Y y no estaban en las claves que se leian -- asi que crear pedidos,
+        # movimientos de mercancia y facturas de entrada desde un servidor de integracion era
+        # escritura transaccional en produccion, estructuralmente invisible en el inventario.
+        declarados |= {str(x).strip().upper()
+                       for x in (_c.get("bapis_estandar_que_usan") or [])}
     try:
         rows = con.execute("""
             SELECT PARAM3, COUNT(*), COUNT(DISTINCT SLGUSER),
@@ -308,9 +437,15 @@ def _canales_custom_de_escritura(con):
         return out
 
     propio = ("Z", "Y")
+    todas = len(rows)
     rows = [r for r in rows
             if (str(r[0]).strip().upper() in declarados)
             or (str(r[0]).strip().upper().startswith(propio) and r[1] >= 50)]
+    # EL RESTO SIN CLASIFICAR ES EL SENSOR. Un corte que no publica lo que tiro presenta una
+    # poblacion ya truncada como si fuera la cobertura. Aqui se nombra.
+    DESCARTES["RFC_CUSTOM_FM"] = {
+        "criterio": "modulo Z/Y con >=50 llamadas, o declarado en un canal",
+        "vistos": todas, "conservados": len(rows), "descartados": todas - len(rows)}
     # los llamantes de TODOS los modulos en UNA pasada. Una consulta por modulo era un barrido
     # completo de 20M filas por cada uno: la version ingenua no termino en 15 minutos.
     porfm = {}
@@ -384,15 +519,29 @@ def main():
     by_creator = dict(q(con, "SELECT CREATOR, COUNT(*) FROM apqi GROUP BY 1"))
     states = dict(q(con, "SELECT QSTATE, COUNT(*) FROM apqi GROUP BY 1"))
     total = sum(by_prog.values()) or 1
-    for prog, n in sorted(by_prog.items(), key=lambda x: -x[1])[:12]:
+    # SIN CORTE. El top-12 tiraba ZMM_BI_MM01_PLANT, que es uno de los cinco generadores
+    # PROPIOS cuyo codigo no esta extraido. Y cortar por arriba es como se concluyo una vez
+    # "el batch input es de viajes": debajo del 86,4% de TRIP_* habia 1.806 grupos sin mirar.
+    for prog, n in sorted(by_prog.items(), key=lambda x: -x[1]):
+        p = (prog or "").strip()
         inv.append({
-            "channel": "BATCH_INPUT", "artifact": prog, "direction": "inbound",
+            "channel": "BATCH_INPUT", "artifact": p, "direction": "inbound",
             "sessions": n, "share_of_all_sessions": round(n / total, 3),
-            "generated_not_recorded": prog == "SAPMSSY1",
+            "que_hace": QUE_HACE_BDC.get(p),
+            "generated_not_recorded": p == "SAPMSSY1",
             "_why_that_matters": ("SAPMSSY1 is the RFC dispatcher. Sessions it creates were "
                                  "GENERATED OVER RFC, not recorded by a person at a screen — "
                                  "so this belongs to the interface channel, not the dialog "
-                                 "one") if prog == "SAPMSSY1" else None,
+                                 "one") if p == "SAPMSSY1" else None,
+            # HUECO DE AUDITORIA: codigo PROPIO que escribe en produccion por BDC y cuyo fuente
+            # no esta extraido. Dos tocan datos personales sensibles.
+            "codigo_extraido": False if p in BDC_SIN_FUENTE else None,
+            "dato_personal_sensible": True if p in BDC_SENSIBLE else None,
+            "_el_hueco": ("codigo PROPIO que ESCRIBE en produccion por BDC y no se puede "
+                          "auditar porque su fuente no esta extraido") if p in BDC_SIN_FUENTE
+                         else None,
+            "why_no_evidence": ("que transaccion ejecuta no se puede saber: APQD.VARDATA es "
+                                "LCHR(7902) y RFC_READ_TABLE lo rechaza con OPTION_NOT_VALID"),
             "evidence_it_runs": f"{n} sessions in APQI",
         })
 
@@ -409,8 +558,10 @@ def main():
     ext = Counter()
     ext_grupos = defaultdict(set)
     ext_creadores = defaultdict(set)
-    for grupo, creador, n in q(con, """SELECT GROUPID, CREATOR, COUNT(*) FROM apqi
-                                       WHERE PROGID='SAPMSSY1' GROUP BY 1,2"""):
+    ext_mes = defaultdict(Counter)
+    for grupo, creador, fecha, n in q(con, """SELECT GROUPID, CREATOR, CREDATE, COUNT(*)
+                                              FROM apqi WHERE PROGID='SAPMSSY1'
+                                              GROUP BY 1,2,3"""):
         g = (grupo or "").strip()
         if g.upper().startswith("TRIP_"):
             d = "Travel"
@@ -422,6 +573,8 @@ def main():
         ext[clave] += n
         ext_grupos[clave].add(g)
         ext_creadores[clave].add((creador or "").strip())
+        if (fecha or "").strip():
+            ext_mes[clave][str(fecha)[:6]] += n
     for clave, n in ext.most_common():
         inv.append({
             "channel": "BATCH_INPUT", "artifact": f"SAPMSSY1/{clave}", "direction": "inbound",
@@ -437,6 +590,22 @@ def main():
             "_lo_que_no_encaja_es_el_hallazgo": (
                 "EXTERNO_SIN_GRAMATICA son generadores que todavia no sabemos nombrar. Ahi "
                 "estuvo ALLOS un ano: debajo del 86,4% de TRIP_*, en la cola larga"),
+            "_que_falta_para_cerrarlo": (
+                "su usuario tecnico (CREATOR y USERID contra USR02), su destino RFC si lo tiene, "
+                "y su programa") if clave == "EXTERNO_SIN_GRAMATICA" else None,
+            "por_mes": dict(sorted(ext_mes[clave].items())),
+            "_la_serie_es_el_hallazgo": (
+                "un reparto sin serie temporal dice como se ha trabajado EN TOTAL, que a veces "
+                "es lo contrario de como se trabaja HOY: ALLOS paso de 6-30 sesiones al mes a "
+                "115 en junio y 271 en julio de 2026, x9, mientras Travel caia un 64%. Con solo "
+                "el total, ALLOS parece marginal"),
+            "_cuidado_con_la_pendiente": (
+                "la cola BORRA lo que se procesa bien, y borra mas cuanto mas atras: la serie es "
+                "mas fiable hacia el presente. NO leer la pendiente como actividad"),
+            "why_no_evidence": (
+                "que TRANSACCION ejecuta cada sesion NO se puede saber: esta en APQD.VARDATA, "
+                "que es LCHR(7902), y RFC_READ_TABLE lo rechaza con OPTION_NOT_VALID. No es que "
+                "nadie haya mirado: es que el canal no lo permite"),
             "evidence_it_runs": f"{n} sesiones en APQI",
         })
     inv.append({
@@ -490,11 +659,24 @@ def main():
     except sqlite3.Error:
         _dialog_logons = {}
 
-    for user, calls, fms, terms in q(con, """
-            SELECT SLGUSER, COUNT(*), COUNT(DISTINCT PARAM3), COUNT(DISTINCT SLGLTRM2)
-            FROM rsau_audit_history
-            WHERE TXSUBCLSID = 'RFC Function Call' AND SLGUSER != ''
-            GROUP BY SLGUSER HAVING COUNT(*) >= 1000 ORDER BY 2 DESC""") or []:
+    # EL RESTO ES EL SENSOR. El corte de 1.000 llamadas descarta 1.843 de 2.098 cuentas RFC
+    # -- 295.011 llamadas -- y sin publicarlo el "X de N con dominio" se calcula sobre una
+    # poblacion ya truncada y se presenta como cobertura.
+    _todos = q(con, """SELECT SLGUSER, COUNT(*), COUNT(DISTINCT PARAM3),
+                              COUNT(DISTINCT SLGLTRM2)
+                       FROM rsau_audit_history
+                       WHERE TXSUBCLSID = 'RFC Function Call' AND SLGUSER != ''
+                       GROUP BY SLGUSER ORDER BY 2 DESC""") or []
+    _conserva = [r for r in _todos if r[1] >= 1000]
+    DESCARTES["RFC_INBOUND_OBSERVED"] = {
+        "criterio": "cuenta con >=1000 llamadas RFC",
+        "vistos": len(_todos), "conservados": len(_conserva),
+        "descartados": len(_todos) - len(_conserva),
+        "llamadas_descartadas": sum(r[1] for r in _todos if r[1] < 1000),
+        "_por_que_importa": ("un umbral que no publica lo que tira convierte una poblacion "
+                             "truncada en una cobertura")}
+
+    for user, calls, fms, terms in _conserva:
         # PERSONA o MAQUINA, decidido por una senal MEDIBLE y no por el nombre: una interfaz
         # no hace LOGON DE DIALOGO. Un humano que usa SAP GUI genera muchisimas llamadas RFC
         # -- V.VAURETTE tiene 211.702 -- y sin este corte el inventario se llena de personas.
@@ -516,7 +698,12 @@ def main():
             "_likely_RETIRADO": ("2026-08-25: la senal 'cero logons de dialogo = maquina' es "
                                  "FALSA por los dos lados. Lo declara USR02-USTYP, campo "
                                  "`user_type`. No reintroducir"),
+            # QUE APLICACION hay detras del usuario tecnico. El log solo da la cuenta; el
+            # nombre de la aplicacion esta en rfc_caller_apps.json, en el mismo fichero que este
+            # script ya abre y del que solo leia `channels`.
+            **_app_detras(user),
             "evidence_it_runs": f"{calls:,} llamadas RFC en rsau_audit_history",
+            "_ventana_del_instrumento": VENTANA_LOG,
             "_why_here": ("descubierto por TRAFICO, no por configuracion: no tiene entrada en "
                           "rfcdes. Un satelite que entra como usuario RFC no deja destino"),
         })
@@ -553,8 +740,11 @@ def main():
     _mueve = _lo_que_mueve_cada_usuario_rfc(_con2, _dom, _ctx)
     _tipos = _tipos_de_usuario(_con2)
     _desde = _desde_donde_llama(_con2)
+    _cambia = _lo_que_cambia_de_verdad(_con2)
+    _ventana = _ventana_del_log(_con2)
     _con2.close()
     _riesgo = []
+    _contradicciones = []
 
     _base, _nat = Counter(), Counter()
     for _it in inv:
@@ -581,10 +771,21 @@ def main():
                 if not _a:
                     break
                 _txt = (_k + " " + str(_ch.get("nombre", ""))).upper()
-                if _a.upper() in _txt or _a.upper() in json.dumps(
-                        _ch.get("modulos_custom") or {}).upper():
+                # Se miran las TRES claves. La version anterior solo leia `modulos_custom`,
+                # asi que /SAPPSPRO/PD_GM_FMR2_READ_KBLE entraba al inventario por la fuerza-
+                # inclusion (que si lee las dos) y salia con dominio null, cuando su canal
+                # declara PSM_FM y que "lee las tablas de reserva". Un dominio conocido
+                # publicado como deuda.
+                _decl = json.dumps({k: _ch.get(k) for k in
+                                    ("modulos_custom", "modulos_estandar",
+                                     "bapis_estandar_que_usan")}).upper()
+                if _a.upper() in _txt or _a.upper() in _decl:
                     _d = _dom_canal(_ch)
                     _b = f"INFERIDO: canal declarado {_k}" if _d else None
+                    # Un canal multi-dominio dice sus dominios secundarios en vez de perderlos.
+                    _sec = _ch.get("dominios_secundarios") or _ch.get("dominios_que_toca")
+                    if _sec:
+                        _it["domains_secondary"] = _sec if isinstance(_sec, list) else None
                     if _d:
                         break
 
@@ -685,13 +886,100 @@ def main():
                   "Se resolveria leyendo la configuracion del destino en SM59, o el codigo "
                   "que lo invoca")
 
+        # ---- ¿ESCRIBE DE VERDAD? La prueba es el LOG DE CAMBIOS, no el nombre del modulo ----
+        _c = _cambia.get(_a.upper())
+        if _it.get("channel") == "RFC_INBOUND_OBSERVED":
+            _it["cambios_registrados"] = (_c or {}).get("documentos_de_cambio", 0)
+            _it["que_cambia_de_verdad"] = (_c or {}).get("top_clases")
+            _nat_nombre = str(_it.get("nature") or "")
+            if _nat_nombre and _nat_nombre not in ("LECTURA", "NO_MEDIBLE"):
+                _docs = (_c or {}).get("documentos_de_cambio", 0)
+                if _docs == 0:
+                    # SIN VEREDICTO, Y A PROPOSITO. `cdhdr` registra CAMBIOS a objetos que
+                    # tienen documento de modificacion configurado -- NO registra CREACIONES.
+                    # Un canal que contabiliza en FI crea BKPF/BSEG y no deja rastro aqui: no
+                    # se esta contradiciendo, esta creando. Decir "gana el log" convertiria
+                    # esta comprobacion en la misma clase de conclusion apresurada que vino a
+                    # corregir. Es una PREGUNTA ABIERTA, no un defecto.
+                    _it["_sin_rastro_en_cdhdr"] = (
+                        "el nombre de sus modulos dice que escribe y el log de CAMBIOS no "
+                        "registra ni un documento suyo. Las dos lecturas son posibles y hay "
+                        "que decidir mirando: (a) CREA documentos nuevos, que no generan "
+                        "documento de modificacion, o (b) el nombre promete una escritura que "
+                        "no ocurre. Se resuelve buscandolo en la tabla de su objeto (BKPF, "
+                        "FMIOI, EKKO...), no en cdhdr")
+                    _contradicciones.append((_a, _nat_nombre, 0))
+                elif _docs < (_it.get("calls") or 0) / 1000:
+                    _it["_desproporcion"] = (
+                        f"{_docs:,} documentos de cambio frente a {(_it.get('calls') or 0):,} "
+                        "llamadas: la mayor parte de su trafico NO escribe, aunque el nombre de "
+                        "algunos modulos lo sugiera")
+
+        # ---- ACTOR UNICO: es un hallazgo, no una estadistica ----
+        if _it.get("distinct_users") == 1 and _it.get("nature") not in (None, "LECTURA",
+                                                                       "NO_MEDIBLE"):
+            _it["riesgo_actor_unico"] = (
+                f"UNA sola cuenta mueve este canal de escritura ({(_it.get('calls') or 0):,} "
+                "llamadas). Riesgo de persona clave: si esa cuenta cae o se va, el canal para")
+
+        if _it.get("channel") in ("RFC_INBOUND_OBSERVED", "RFC_CUSTOM_FM"):
+            _it["_ventana_del_instrumento"] = _ventana.get("desde") and \
+                f"{_ventana['desde']}..{_ventana['hasta']}"
+
         _it["domain"] = _d
         _it["domain_basis"] = _b
         _base["sin dominio" if not _d else _b.split(":")[0]] += 1
         _nat[_it.get("nature") or "sin naturaleza"] += 1
 
+    # ---- EL INDICE DE COMPRENSION, PONDERADO POR TRAFICO Y CON DERIVADA ----
+    # Contar REGISTROS hace que un destino RFC muerto pese igual que
+    # Y_BAPI_WBS_FINANCIAL_DATA_1 con 1.861.107 llamadas: el "X de N con dominio" puede subir
+    # mientras baja la fraccion de trafico real entendida. Y sin derivada, nadie nota que la
+    # frontera dejo de moverse -- eso ya duro 75 dias sin que nadie lo viera.
+    _peso_tot = sum((i.get("calls") or i.get("sessions") or 0) for i in inv) or 1
+    def _grado(i):
+        if not i.get("domain"):
+            return 0                                  # 0 EJECUTA: existe y no sabemos donde
+        if not i.get("nature") or i.get("nature") == "NO_MEDIBLE":
+            return 1                                  # 1 SITUADO: sabemos el area
+        if not (i.get("que_cambia_de_verdad") or i.get("application") or i.get("top_callers")):
+            return 2                                  # 2 DESCRITO: sabemos que hace
+        return 3                                      # 3 EXPLICADO: con evidencia de quien y que
+    _por_grado_reg, _por_grado_peso = Counter(), Counter()
+    for i in inv:
+        g = _grado(i)
+        _por_grado_reg[g] += 1
+        _por_grado_peso[g] += (i.get("calls") or i.get("sessions") or 0)
+    _comprension = {
+        "_los_cuatro_grados": {"0": "EJECUTA (sin dominio)", "1": "SITUADO (area)",
+                               "2": "DESCRITO (que hace)", "3": "EXPLICADO (con evidencia)"},
+        "_se_pondera_por_trafico_no_por_registros": True,
+        "por_registros": {str(k): v for k, v in sorted(_por_grado_reg.items())},
+        "pct_del_trafico": {str(k): round(100.0 * v / _peso_tot, 1)
+                            for k, v in sorted(_por_grado_peso.items())},
+    }
+    try:
+        _prev = json.loads(OUT.read_text(encoding="utf-8")).get("_comprension", {})
+        _pa = _prev.get("pct_del_trafico") or {}
+        _comprension["derivada_vs_corrida_anterior"] = {
+            k: round(_comprension["pct_del_trafico"].get(k, 0) - _pa.get(k, 0), 1)
+            for k in set(list(_pa) + list(_comprension["pct_del_trafico"]))}
+        _comprension["_un_indice_sin_derivada"] = ("no dice si avanzamos. Un hallazgo es una "
+                                                   "DIFERENCIA")
+    except Exception:
+        _comprension["derivada_vs_corrida_anterior"] = "primera corrida: no hay con que comparar"
+
     _ok = len(inv) - _base["sin dominio"]
     print(f"  dominio asignado a {_ok} de {len(inv)} interfaces  {dict(_base)}")
+    print(f"  comprension por TRAFICO: {_comprension['pct_del_trafico']}  "
+          f"(por registros: {_comprension['por_registros']})")
+    if _contradicciones:
+        print(f"  prometen escritura y no dejan rastro en cdhdr: {len(_contradicciones)} "
+              f"-- {', '.join(a for a, _n, _d in _contradicciones[:5])}")
+        print("     (cdhdr registra CAMBIOS, no CREACIONES: no es un veredicto, es una lista "
+              "de preguntas)")
+    for _k, _v in DESCARTES.items():
+        print(f"  descartados en {_k}: {_v['descartados']} de {_v['vistos']} ({_v['criterio']})")
     print(f"  naturaleza: {dict(_nat.most_common())}")
     _riesgo.sort(key=lambda t: -t[2])
     _conf = [r for r in _riesgo if r[3]]
@@ -717,6 +1005,25 @@ def main():
                                  "not happen' are different facts"),
         "counts": dict(counts),
         "object_classes_with_a_derived_channel": len(derived),
+        # LO QUE SE TIRO, con nombre. Un umbral que no se publica convierte una poblacion
+        # truncada en una cobertura y nadie lo nota.
+        "_lo_descartado_por_los_cortes": DESCARTES,
+        # LA VENTANA DEL INSTRUMENTO. Un techo tuyo no es un limite del sistema.
+        "_ventana_del_log": _ventana,
+        # DONDE EL NOMBRE PROMETE ESCRITURA Y EL LOG DE CAMBIOS NO LA VE.
+        # NO es un veredicto: cdhdr registra CAMBIOS, no CREACIONES, asi que un canal que crea
+        # documentos nuevos aparece aqui sin estar equivocado. Es una lista de PREGUNTAS.
+        "_prometen_escritura_y_no_dejan_rastro_en_cdhdr": {
+            "_como_se_lee": ("dos lecturas posibles y hay que decidir mirando la tabla del "
+                             "objeto (BKPF, FMIOI, EKKO), no cdhdr: o CREA documentos nuevos "
+                             "-- que no generan documento de modificacion -- o el nombre "
+                             "promete una escritura que no ocurre"),
+            "casos": [{"artefacto": a, "naturaleza_por_el_nombre": n,
+                       "documentos_de_cambio": d} for a, n, d in _contradicciones[:20]]},
+        # EL INDICE DE COMPRENSION, con su DERIVADA. Un indice sin derivada no dice si
+        # avanzamos, y ponderar por REGISTROS hace que un destino muerto pese igual que un
+        # canal con 1,8M de llamadas.
+        "_comprension": _comprension,
         "interfaces": inv,
     }, open(OUT, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 

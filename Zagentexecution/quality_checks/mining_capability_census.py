@@ -36,8 +36,23 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 ALGOS = os.path.join(ROOT, "brain_v2", "methods", "algorithms.json")
 
 # Tablas de EVENTO: guardan que PASO, con su momento y su actor.
-EVENTO = ["rsau_audit_history", "cdhdr_history", "cdhdr", "cdpos", "apqi", "apqd",
-          "tbtco", "tbtcp", "rsau", "sm20", "edidc", "srt_monilog", "balhdr", "balm"]
+#
+# ⛔ NADA DE SUBCADENAS ANIDADAS. 'rsau_audit_history' contenia ademas 'rsau', y
+# 'cdhdr_history' contenia 'cdhdr': una sola tabla mencionada puntuaba como DOS y anulaba el
+# umbral anti-"de pasada". Medido: 3 de 23 candidatos pasaban solo por ese doble conteo. Se
+# buscan con frontera de palabra y sin solapes.
+EVENTO = ["rsau_audit_history", "cdhdr_history", "cdpos", "apqi", "apqd",
+          "tbtco", "tbtcp", "edidc", "srt_monilog", "balhdr", "balm", "e070", "e071"]
+
+# MINAR NO ES SOLO LEER EL LOG. La version anterior definia minar como "leer una tabla de
+# EVENTO" y decia explicitamente que leer configuracion o maestros no cuenta. Eso contradice la
+# taxonomia del propio registro, donde REALIDAD y CONFORMIDAD son tipos de mineria de pleno
+# derecho: A33 (contenido de variantes) y A34 (clase de cuenta por estructura de balance) son
+# mineros y NUNCA podrian aparecer en un censo que solo mira el log. Los dos se descubrieron a
+# mano, que es exactamente lo que el censo existe para evitar.
+ESTRUCTURA = ["vari", "varid", "tvarv", "fagl_011", "t011", "ska1", "skb1", "setleaf",
+              "setnode", "tstc", "tadir", "tdevc", "df14l", "usr02", "agr_", "rfcdes",
+              "t030h", "t030s", "fmderive", "t042"]
 # Verbos de DESCUBRIMIENTO: no basta con leer el evento, hay que sacar un patron de el.
 DESCUBRE = ["group by", "counter(", "defaultdict", "most_common", "discover", "descubr",
             "classif", "clasific", "pattern", "patron", "variant", "dfg", "conform",
@@ -54,6 +69,14 @@ FUERA = {
     "build_p2p_log.py": "construye el log de eventos para que otros lo minen",
     "parse_syslog.py": "parser",
     "gold_ref.py": "helper de rutas",
+    # CONSUMEN el grafo, no minan. Ingerir y consultar no es descubrir.
+    "build_brain_state.py": "constructor del grafo: ingiere lo que los mineros produjeron",
+    "graph_queries.py": "consulta el grafo, no lo descubre",
+    "cli.py": "linea de comandos del brain",
+    "rebuild_all.py": "orquestador del rebuild",
+    "curate.py": "curacion estructural del grafo",
+    "validate_artifacts.py": "validador de artefactos",
+    "meta_capability.py": "mide nuestra propia madurez, no el sistema SAP",
 }
 
 
@@ -148,6 +171,33 @@ def main():
     YO = os.path.abspath(__file__)
 
     candidatos, revisados = [], 0
+
+    # ---- LOS AGENTES TAMBIEN. Un metodo que vive en un PROMPT era estructuralmente
+    # invisible para este censo, y ESE ES SU CASO FUNDACIONAL: el metodo que encontro ALLOS
+    # vivio como prompt sin algoritmo. Barrer solo *.py permitia imprimir "todo lo que mina
+    # esta registrado" con doce agentes sin mirar.
+    for p in glob.glob(os.path.join(ROOT, ".claude", "agents", "*.md")):
+        nom = os.path.basename(p)
+        try:
+            t = open(p, encoding="utf-8", errors="ignore").read().lower()
+        except Exception:
+            continue
+        ev = [e for e in EVENTO + ESTRUCTURA
+              if re.search(r"\b" + re.escape(e) + r"\b", t)]
+        if len(set(ev)) < 2:
+            continue
+        if nom[:-3].lower() in registrados or nom[:-3].lower() in \
+                json.dumps(algos, ensure_ascii=False).lower():
+            continue
+        candidatos.append({
+            "script": os.path.relpath(p, ROOT).replace(os.sep, "/"),
+            "tablas_de_evento": sorted(set(ev))[:4],
+            "senales_de_descubrimiento": ["metodo descrito en un PROMPT de agente"],
+            "lineas": t.count("\n"),
+            "mining_kind_probable": _kind_probable(t, ev),
+            "_por_que_grave": ("un metodo que solo vive en un prompt no se repite, no se "
+                               "programa, no se gatea y no se compara con la corrida anterior")})
+
     for pat in ("process_mining/**/*.py", "brain_v2/**/*.py", "scripts/**/*.py",
                 "Zagentexecution/**/*.py"):
         for p in glob.glob(os.path.join(ROOT, pat), recursive=True):
@@ -159,9 +209,14 @@ def main():
                 t = open(p, encoding="utf-8", errors="ignore").read().lower()
             except Exception:
                 continue
-            ev = [e for e in EVENTO if e in t]
-            if not ev:
+            # Frontera de palabra. Y las de ESTRUCTURA cuentan, pero NO igual: clasificar
+            # cuentas por su nodo de balance o leer el contenido de una variante es minar, y
+            # mencionar `usr02` de pasada no lo es. Se exige UNA de evento, o DOS de estructura.
+            ev_e = {e for e in EVENTO if re.search(r"\b" + re.escape(e) + r"\b", t)}
+            ev_s = {e for e in ESTRUCTURA if re.search(r"\b" + re.escape(e) + r"\b", t)}
+            if not ev_e and len(ev_s) < 2:
                 continue
+            ev = sorted(ev_e | ev_s)
             desc = [v for v in DESCUBRE if v in t]
             if not desc:
                 continue                 # lee el evento pero no saca patron: no es minero

@@ -1,434 +1,926 @@
 {
   "_algoritmo": "A31_bdc_channel_mining",
-  "_que_es": "el canal batch input minado desde APQI: quien genera sesiones, de donde vienen y a que dominio pertenecen",
-  "_LO_QUE_NO_SE_PUEDE_SABER": "APQI es una COLA: las sesiones que se procesan BIEN SE BORRAN. Esto no mide cuanto batch input se hace, mide cuanto QUEDA VISIBLE -- lo que fallo, lo que nadie corrio y lo reciente. Confundir las dos cosas produjo una conclusion falsa el 2026-08-24",
-  "_progid_no_es_la_transaccion": "PROGID dice el PROGRAMA que genero la sesion, no la transaccion que ejecuta. SAPMSSY1 solo significa 'vino de fuera por RFC' y no identifica la herramienta: eso se abre por GROUPID, que es lo unico que la sesion externa trae consigo",
-  "ventana": "CREDATE >= 20250101",
-  "sesiones_en_ventana": 10259,
-  "sesiones_en_toda_la_cola": 57998,
+  "_metodo": ".claude/agents/batch-input-explorer.md",
+  "_LIMITES_DEL_INSTRUMENTO": {
+    "1_es_una_cola": "APQI BORRA las sesiones que se procesan bien. Todo recuento de aqui es LO QUE QUEDA, no lo que pasa",
+    "2_la_transaccion_no_se_lee_de_dentro": "APQD.VARDATA es LCHR(7902) y RFC_READ_TABLE lo rechaza con OPTION_NOT_VALID. No es un fallo de la llamada, es el canal. Por eso se rodea por TSTC y por rsau",
+    "3_tcode_vacio_no_distingue": "el 61% de los cambios de los creadores de sesiones tiene TCODE vacio y el log no tiene clase de evento para batch input. Lo que separa es SM35 vs SM37",
+    "4_creator_no_es_identidad": "es un texto de BDC_OPEN_GROUP que SAP no valida, y USERID -- el usuario bajo el que se EJECUTA -- es otro campo"
+  },
+  "_qstate_no_es_una_tasa": "NO dividir los estados entre el total. 'F' significa FINALIZADA CON EXITO, y el denominador esta sesgado por construccion porque la cola borra los exitos: leerlo como tasa de fallo da un 92,6% que no existe",
+  "_cuidado_con_la_tendencia": "la serie es mas fiable hacia el PRESENTE que hacia atras, porque el pasado esta mas borrado. NO leer la pendiente como actividad: todo canal antiguo parece crecer",
+  "sesiones_en_la_cola": 57998,
+  "ventana_del_cruce_con_el_log": "20250101",
   "generadores": [
     {
       "progid": "SAPMSSY1",
-      "dominio": "EXTERNO_RFC",
-      "sesiones": 9288,
-      "creadores": 225,
-      "primera": "20250102",
-      "ultima": "20260731",
+      "que_hace": "el DESPACHADOR RFC: la sesion vino de FUERA. No identifica la herramienta",
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 55087,
+      "creator_strings": 446,
+      "usuarios_de_ejecucion": 446,
       "estados": {
+        "E": 4889,
         "F": 342,
-        "E": 527,
-        "R": 6,
-        "": 8413
+        "R": 30,
+        "(vacio)": 49826
+      },
+      "activo_desde": "20160101",
+      "ultima": "20260731",
+      "por_ano": {
+        "2016": 4050,
+        "2017": 5922,
+        "2018": 4788,
+        "2019": 6111,
+        "2020": 2431,
+        "2021": 3248,
+        "2022": 6084,
+        "2023": 7155,
+        "2024": 6010,
+        "2025": 6509,
+        "2026": 2779
       },
       "autoria": "EXTERNO por RFC",
-      "codigo_auditable": true,
-      "por_mes": {}
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
     },
     {
       "progid": "RFBIKR00",
-      "dominio": "BusinessPartner",
-      "sesiones": 707,
-      "creadores": 2,
-      "primera": "20250101",
+      "que_hace": "carga del maestro de acreedores",
+      "transacciones_derivadas": [
+        "OMSV",
+        "OT39",
+        "OV/3"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "C MM-BD Vendor Data Transfer",
+        "C FI Batch Input Program",
+        "RV Batch Input Program"
+      ],
+      "sesiones": 1933,
+      "creator_strings": 5,
+      "usuarios_de_ejecucion": 5,
+      "estados": {
+        "(vacio)": 3,
+        "E": 1930
+      },
+      "activo_desde": "20160115",
       "ultima": "20260731",
-      "estados": {
-        "E": 707
+      "por_ano": {
+        "2016": 3,
+        "2020": 129,
+        "2021": 415,
+        "2022": 173,
+        "2023": 103,
+        "2024": 403,
+        "2025": 348,
+        "2026": 359
       },
       "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202501": 35,
-        "202502": 37,
-        "202503": 43,
-        "202504": 32,
-        "202505": 31,
-        "202506": 27,
-        "202507": 2,
-        "202508": 6,
-        "202509": 12,
-        "202510": 31,
-        "202511": 41,
-        "202512": 51,
-        "202601": 41,
-        "202602": 35,
-        "202603": 36,
-        "202604": 40,
-        "202605": 63,
-        "202606": 74,
-        "202607": 70
-      }
-    },
-    {
-      "progid": "RFBIBL01",
-      "dominio": "FI",
-      "sesiones": 52,
-      "creadores": 2,
-      "primera": "20250102",
-      "ultima": "20260731",
-      "estados": {
-        "F": 42,
-        "E": 7,
-        "": 3
-      },
-      "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202501": 1,
-        "202502": 2,
-        "202506": 1,
-        "202510": 2,
-        "202601": 2,
-        "202604": 2,
-        "202606": 8,
-        "202607": 34
-      }
-    },
-    {
-      "progid": "HUNUPSR0",
-      "dominio": "HCM",
-      "sesiones": 40,
-      "creadores": 1,
-      "primera": "20250127",
-      "ultima": "20260729",
-      "estados": {
-        "": 32,
-        "E": 5,
-        "F": 3
-      },
-      "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202501": 1,
-        "202502": 4,
-        "202503": 2,
-        "202504": 1,
-        "202505": 1,
-        "202506": 1,
-        "202507": 2,
-        "202508": 1,
-        "202509": 1,
-        "202510": 1,
-        "202511": 4,
-        "202512": 1,
-        "202601": 3,
-        "202602": 3,
-        "202603": 1,
-        "202604": 3,
-        "202605": 2,
-        "202606": 2,
-        "202607": 6
-      }
-    },
-    {
-      "progid": "/SAPDMC/SAP_LSMW_BI_RECORDING",
-      "dominio": "Basis_Security",
-      "sesiones": 32,
-      "creadores": 2,
-      "primera": "20250211",
-      "ultima": "20260629",
-      "estados": {
-        "F": 11,
-        "E": 19,
-        "R": 1,
-        "": 1
-      },
-      "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202502": 5,
-        "202503": 1,
-        "202505": 1,
-        "202510": 4,
-        "202511": 1,
-        "202512": 7,
-        "202604": 1,
-        "202606": 12
-      }
-    },
-    {
-      "progid": "SAPF100",
-      "dominio": "FI",
-      "sesiones": 30,
-      "creadores": 10,
-      "primera": "20250101",
-      "ultima": "20260703",
-      "estados": {
-        "": 21,
-        "F": 6,
-        "C": 2,
-        "E": 1
-      },
-      "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202501": 5,
-        "202502": 2,
-        "202504": 1,
-        "202506": 1,
-        "202508": 1,
-        "202510": 1,
-        "202511": 1,
-        "202512": 1,
-        "202601": 2,
-        "202602": 3,
-        "202603": 1,
-        "202604": 2,
-        "202605": 1,
-        "202606": 1,
-        "202607": 7
-      }
-    },
-    {
-      "progid": "YEBUET01",
-      "dominio": "PS",
-      "sesiones": 28,
-      "creadores": 2,
-      "primera": "20250109",
-      "ultima": "20260706",
-      "estados": {
-        "": 26,
-        "E": 2
-      },
-      "autoria": "PROPIO",
-      "codigo_auditable": null,
-      "por_mes": {
-        "202501": 1,
-        "202505": 1,
-        "202507": 1,
-        "202508": 1,
-        "202509": 1,
-        "202510": 1,
-        "202511": 1,
-        "202512": 1,
-        "202601": 3,
-        "202602": 6,
-        "202603": 6,
-        "202604": 1,
-        "202605": 1,
-        "202606": 1,
-        "202607": 2
-      }
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
     },
     {
       "progid": "ZHR_RETIRE_COPY_SPI",
-      "dominio": "HCM",
-      "sesiones": 25,
-      "creadores": 1,
-      "primera": "20250121",
-      "ultima": "20260730",
+      "que_hace": "cartas de jubilacion",
+      "transacciones_derivadas": [
+        "YHR_SPI_REALLETTERS",
+        "YHR_SPI_SIMULLETTERS"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Real Letters (SPI)",
+        "Simulation Letters (SPI)"
+      ],
+      "sesiones": 222,
+      "creator_strings": 3,
+      "usuarios_de_ejecucion": 3,
       "estados": {
-        "E": 23,
-        "F": 2
+        "E": 219,
+        "F": 2,
+        "(vacio)": 1
+      },
+      "activo_desde": "20161105",
+      "ultima": "20260730",
+      "por_ano": {
+        "2016": 8,
+        "2017": 56,
+        "2018": 13,
+        "2019": 9,
+        "2020": 16,
+        "2021": 39,
+        "2022": 32,
+        "2023": 10,
+        "2024": 14,
+        "2025": 10,
+        "2026": 15
       },
       "autoria": "PROPIO",
-      "codigo_auditable": null,
-      "por_mes": {
-        "202501": 1,
-        "202502": 1,
-        "202503": 1,
-        "202504": 1,
-        "202505": 3,
-        "202507": 1,
-        "202509": 2,
-        "202601": 1,
-        "202602": 1,
-        "202603": 1,
-        "202604": 1,
-        "202605": 3,
-        "202606": 4,
-        "202607": 4
-      }
+      "codigo_extraido": false,
+      "dato_personal_sensible": null
     },
     {
-      "progid": "ZHR_UPDATE_IT0167",
-      "dominio": "HCM",
-      "sesiones": 19,
-      "creadores": 1,
-      "primera": "20250728",
-      "ultima": "20260728",
+      "progid": "RFBIBL01",
+      "que_hace": "carga de documentos contables (report, se lanza por SE38 o job)",
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 146,
+      "creator_strings": 6,
+      "usuarios_de_ejecucion": 4,
       "estados": {
-        "E": 6,
-        "": 12,
-        "F": 1
+        "(vacio)": 47,
+        "E": 55,
+        "F": 42,
+        "R": 2
+      },
+      "activo_desde": "20160119",
+      "ultima": "20260731",
+      "por_ano": {
+        "2016": 32,
+        "2017": 3,
+        "2018": 6,
+        "2019": 19,
+        "2020": 7,
+        "2021": 6,
+        "2022": 5,
+        "2023": 3,
+        "2024": 13,
+        "2025": 6,
+        "2026": 46
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "SAPF100",
+      "que_hace": "revaluacion en moneda extranjera",
+      "transacciones_derivadas": [
+        "F04N",
+        "F05N",
+        "F06N"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Vendor Foreign Currency Valuation",
+        "Customer Foreign Currency Valuation",
+        "Foreign Currency Val. (G/L Accounts)"
+      ],
+      "sesiones": 143,
+      "creator_strings": 24,
+      "usuarios_de_ejecucion": 24,
+      "estados": {
+        "(vacio)": 128,
+        "F": 6,
+        "E": 7,
+        "C": 2
+      },
+      "activo_desde": "20160603",
+      "ultima": "20260703",
+      "por_ano": {
+        "2016": 1,
+        "2017": 30,
+        "2018": 10,
+        "2019": 17,
+        "2020": 23,
+        "2021": 5,
+        "2022": 8,
+        "2023": 7,
+        "2024": 12,
+        "2025": 13,
+        "2026": 17
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "HUNUPSR0",
+      "que_hace": "nomina",
+      "transacciones_derivadas": [
+        "PC00_MUN_PSR"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "NPO: PS Reclassification"
+      ],
+      "sesiones": 129,
+      "creator_strings": 3,
+      "usuarios_de_ejecucion": 3,
+      "estados": {
+        "(vacio)": 102,
+        "E": 24,
+        "F": 3
+      },
+      "activo_desde": "20170328",
+      "ultima": "20260729",
+      "por_ano": {
+        "2017": 14,
+        "2018": 9,
+        "2019": 18,
+        "2020": 21,
+        "2021": 4,
+        "2022": 10,
+        "2023": 4,
+        "2024": 9,
+        "2025": 20,
+        "2026": 20
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "YEBUET01",
+      "que_hace": "extractos UBO",
+      "transacciones_derivadas": [
+        "YSC1"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "SUPPORT COSTS"
+      ],
+      "sesiones": 110,
+      "creator_strings": 7,
+      "usuarios_de_ejecucion": 7,
+      "estados": {
+        "(vacio)": 88,
+        "E": 12,
+        "C": 3,
+        "R": 7
+      },
+      "activo_desde": "20160304",
+      "ultima": "20260706",
+      "por_ano": {
+        "2016": 2,
+        "2017": 3,
+        "2018": 11,
+        "2019": 9,
+        "2020": 11,
+        "2021": 16,
+        "2022": 6,
+        "2023": 8,
+        "2024": 16,
+        "2025": 8,
+        "2026": 20
       },
       "autoria": "PROPIO",
-      "codigo_auditable": null,
-      "por_mes": {
-        "202507": 1,
-        "202508": 1,
-        "202509": 1,
-        "202510": 2,
-        "202511": 1,
-        "202602": 1,
-        "202604": 7,
-        "202605": 2,
-        "202606": 2,
-        "202607": 1
-      }
+      "codigo_extraido": false,
+      "dato_personal_sensible": null
     },
     {
       "progid": "RFEBBU00",
-      "dominio": "Treasury_EBS",
-      "sesiones": 16,
-      "creadores": 5,
-      "primera": "20250402",
-      "ultima": "20260408",
+      "que_hace": "extractos bancarios (report)",
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 57,
+      "creator_strings": 14,
+      "usuarios_de_ejecucion": 14,
       "estados": {
-        "": 13,
-        "E": 1,
-        "R": 2
+        "(vacio)": 52,
+        "E": 2,
+        "R": 3
+      },
+      "activo_desde": "20210506",
+      "ultima": "20260408",
+      "por_ano": {
+        "2021": 23,
+        "2022": 6,
+        "2023": 2,
+        "2024": 10,
+        "2025": 14,
+        "2026": 2
       },
       "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202504": 2,
-        "202506": 9,
-        "202508": 1,
-        "202511": 1,
-        "202512": 1,
-        "202604": 2
-      }
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
     },
     {
-      "progid": "ZHR_UPDATE_IT0021",
-      "dominio": "HCM",
-      "sesiones": 13,
-      "creadores": 1,
-      "primera": "20250925",
-      "ultima": "20260728",
+      "progid": "ZHR_UPDATE_IT0167",
+      "que_hace": "infotipo 0167 = PLANES DE SALUD. DATO PERSONAL SENSIBLE",
+      "transacciones_derivadas": [
+        "YPA0167"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Children above 25 – MBF cov. update"
+      ],
+      "sesiones": 44,
+      "creator_strings": 3,
+      "usuarios_de_ejecucion": 2,
       "estados": {
-        "": 11,
-        "F": 2
+        "(vacio)": 25,
+        "E": 18,
+        "F": 1
+      },
+      "activo_desde": "20170421",
+      "ultima": "20260728",
+      "por_ano": {
+        "2017": 5,
+        "2018": 3,
+        "2019": 4,
+        "2020": 4,
+        "2022": 1,
+        "2023": 1,
+        "2024": 7,
+        "2025": 6,
+        "2026": 13
       },
       "autoria": "PROPIO",
-      "codigo_auditable": null,
-      "por_mes": {
-        "202509": 1,
-        "202510": 2,
-        "202511": 1,
-        "202512": 1,
-        "202601": 1,
-        "202602": 1,
-        "202603": 1,
-        "202604": 1,
-        "202606": 2,
-        "202607": 2
-      }
+      "codigo_extraido": false,
+      "dato_personal_sensible": true
     },
     {
-      "progid": "SAPF180",
-      "dominio": "FI",
-      "sesiones": 7,
-      "creadores": 5,
-      "primera": "20250205",
-      "ultima": "20260707",
+      "progid": "/SAPDMC/SAP_LSMW_BI_RECORDING",
+      "que_hace": "LSMW: grabacion de carga (report)",
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 42,
+      "creator_strings": 3,
+      "usuarios_de_ejecucion": 3,
       "estados": {
+        "F": 11,
+        "E": 29,
         "R": 1,
-        "E": 1,
-        "F": 2,
-        "": 3
+        "(vacio)": 1
+      },
+      "activo_desde": "20170113",
+      "ultima": "20260629",
+      "por_ano": {
+        "2017": 1,
+        "2021": 1,
+        "2023": 5,
+        "2024": 3,
+        "2025": 19,
+        "2026": 13
       },
       "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202502": 3,
-        "202505": 1,
-        "202602": 1,
-        "202607": 2
-      }
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
     },
     {
       "progid": "RFSZIS00",
-      "dominio": "FI",
-      "sesiones": 2,
-      "creadores": 1,
-      "primera": "20260702",
-      "ultima": "20260702",
+      "que_hace": null,
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 31,
+      "creator_strings": 2,
+      "usuarios_de_ejecucion": 2,
       "estados": {
+        "(vacio)": 15,
+        "E": 14,
         "F": 2
       },
+      "activo_desde": "20160706",
+      "ultima": "20260702",
+      "por_ano": {
+        "2016": 7,
+        "2017": 9,
+        "2018": 4,
+        "2021": 1,
+        "2022": 2,
+        "2023": 3,
+        "2024": 3,
+        "2026": 2
+      },
       "autoria": "de SAP",
-      "codigo_auditable": true,
-      "por_mes": {
-        "202607": 2
-      }
-    }
-  ],
-  "externos_por_rfc_abiertos_por_groupid": [
-    {
-      "dominio": "Travel",
-      "sesiones": 8428,
-      "grupos": 1,
-      "creadores": 215,
-      "como_se_reconoce": "TRIP_CREATE / TRIP_MODIFY",
-      "por_mes": {
-        "202501": 381,
-        "202502": 402,
-        "202503": 371,
-        "202504": 449,
-        "202505": 479,
-        "202506": 507,
-        "202507": 462,
-        "202508": 462,
-        "202509": 513,
-        "202510": 702,
-        "202511": 803,
-        "202512": 653,
-        "202601": 394,
-        "202602": 324,
-        "202603": 338,
-        "202604": 306,
-        "202605": 233,
-        "202606": 357,
-        "202607": 292
-      }
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
     },
     {
-      "dominio": "HCM (ALLOS)",
-      "sesiones": 857,
-      "grupos": 503,
-      "creadores": 9,
-      "como_se_reconoce": "<numero><sufijo de oficina>: la firma de ALLOS",
-      "por_mes": {
-        "202501": 72,
-        "202502": 22,
-        "202503": 26,
-        "202504": 22,
-        "202505": 54,
-        "202506": 6,
-        "202507": 20,
-        "202508": 8,
-        "202509": 28,
-        "202510": 15,
-        "202511": 30,
-        "202512": 22,
-        "202601": 32,
-        "202602": 24,
-        "202603": 23,
-        "202604": 54,
-        "202605": 13,
-        "202606": 115,
-        "202607": 271
-      }
+      "progid": "ZHR_UPDATE_IT0021",
+      "que_hace": "infotipo 0021 = FAMILIA. DATO PERSONAL SENSIBLE",
+      "transacciones_derivadas": [
+        "YPA0021"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Children dependency status update"
+      ],
+      "sesiones": 20,
+      "creator_strings": 2,
+      "usuarios_de_ejecucion": 3,
+      "estados": {
+        "(vacio)": 18,
+        "F": 2
+      },
+      "activo_desde": "20191123",
+      "ultima": "20260728",
+      "por_ano": {
+        "2019": 1,
+        "2020": 3,
+        "2022": 2,
+        "2023": 1,
+        "2025": 5,
+        "2026": 8
+      },
+      "autoria": "PROPIO",
+      "codigo_extraido": false,
+      "dato_personal_sensible": true
     },
     {
-      "dominio": "EXTERNO sin gramatica reconocida",
+      "progid": "SAPF180",
+      "que_hace": "ajuste de intereses (report)",
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 16,
+      "creator_strings": 7,
+      "usuarios_de_ejecucion": 7,
+      "estados": {
+        "(vacio)": 10,
+        "R": 1,
+        "E": 3,
+        "F": 2
+      },
+      "activo_desde": "20170706",
+      "ultima": "20260707",
+      "por_ano": {
+        "2017": 1,
+        "2019": 2,
+        "2023": 3,
+        "2024": 3,
+        "2025": 4,
+        "2026": 3
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "SAPMSBDT",
+      "que_hace": "SHDB, el grabador BDC",
+      "transacciones_derivadas": [
+        "SHDB"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Batch Input Transaction Recorder"
+      ],
+      "sesiones": 8,
+      "creator_strings": 2,
+      "usuarios_de_ejecucion": 2,
+      "estados": {
+        "(vacio)": 8
+      },
+      "activo_desde": "20050808",
+      "ultima": "20100420",
+      "por_ano": {
+        "2005": 7,
+        "2010": 1
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "RFPUEB00",
+      "que_hace": null,
+      "transacciones_derivadas": null,
+      "_sin_transaccion_no_es_un_fallo": "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se encontro' es correcto; inventarle una, no",
+      "texto_de_la_transaccion": [],
+      "sesiones": 5,
+      "creator_strings": 4,
+      "usuarios_de_ejecucion": 4,
+      "estados": {
+        "(vacio)": 5
+      },
+      "activo_desde": "20210331",
+      "ultima": "20240123",
+      "por_ano": {
+        "2021": 4,
+        "2024": 1
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "RPIPSR00",
+      "que_hace": null,
+      "transacciones_derivadas": [
+        "HRCMP0042"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Pay Scale Reclassification"
+      ],
       "sesiones": 3,
-      "grupos": 1,
-      "creadores": 1,
-      "como_se_reconoce": "el GROUPID no encaja en ninguna gramatica conocida: es un generador externo que todavia no sabemos nombrar",
-      "por_mes": {
-        "202607": 3
-      }
+      "creator_strings": 1,
+      "usuarios_de_ejecucion": 1,
+      "estados": {
+        "(vacio)": 3
+      },
+      "activo_desde": "20170201",
+      "ultima": "20170523",
+      "por_ano": {
+        "2017": 3
+      },
+      "autoria": "de SAP",
+      "codigo_extraido": null,
+      "dato_personal_sensible": null
+    },
+    {
+      "progid": "ZMM_BI_MM01_PLANT",
+      "que_hace": "maestro de materiales por centro",
+      "transacciones_derivadas": [
+        "ZMM_BI_MM01_PLANT"
+      ],
+      "_sin_transaccion_no_es_un_fallo": null,
+      "texto_de_la_transaccion": [
+        "Generate Batch input MM01 - Plant"
+      ],
+      "sesiones": 2,
+      "creator_strings": 1,
+      "usuarios_de_ejecucion": 1,
+      "estados": {
+        "(vacio)": 2
+      },
+      "activo_desde": "20200220",
+      "ultima": "20200220",
+      "por_ano": {
+        "2020": 2
+      },
+      "autoria": "PROPIO",
+      "codigo_extraido": false,
+      "dato_personal_sensible": null
     }
   ],
-  "_el_hueco": {
-    "que_pasa": "estos generadores son CODIGO PROPIO que escribe en produccion por BDC. Si su fuente no esta extraida, no se puede auditar que hacen",
-    "generadores_propios": [
+  "lo_externo_por_rfc": {
+    "sesiones": 55087,
+    "grupos_distintos": 1808,
+    "creator_strings": 446,
+    "usuarios_de_ejecucion": 446,
+    "tres_ejes": {
+      "_regla": "los tres ejes solo identifican JUNTOS. Ninguno basta: una forma repetida puede ser una convencion humana, un sufijo -RFC puede ser una cuenta real, y una cadencia larga puede ser un job de SAP",
+      "eje_1_forma_del_groupid": {
+        "_que_mide": "una herramienta emite con PLANTILLA. Digitos->9, letras->A: si muchos grupos comparten forma, eso es una plantilla",
+        "top": [
+          {
+            "forma": "AAAA_AAAAAA",
+            "grupos": 50166
+          },
+          {
+            "forma": "99999999A999",
+            "grupos": 3535
+          },
+          {
+            "forma": "99999999AA99",
+            "grupos": 1383
+          },
+          {
+            "forma": "AA9999_AAAAA",
+            "grupos": 3
+          }
+        ],
+        "formas_distintas": 4
+      },
+      "eje_2_patron_del_creator": {
+        "_que_mide": "un sufijo repetido -RFC / _RFC senala una herramienta, no una persona",
+        "reparto": {
+          "sin sufijo tecnico": 430,
+          "sufijo *-RFC o *_RFC": 16
+        },
+        "grafias_que_NO_existen_en_usr02": [
+          "BILLAULT_RFC",
+          "BOUQUET_RFC",
+          "BRIDGE_RFC",
+          "COLLOCA_RFC",
+          "KROTOVA_RFC",
+          "M_KANTINTI",
+          "SIFFRE_RFC",
+          "W_OKEYO"
+        ],
+        "_limite_4": "CREATOR es un TEXTO de BDC_OPEN_GROUP que SAP no valida. 8 de 446 grafias no existen como usuario: contar creadores es contar PARAMETROS, no actores"
+      },
+      "eje_3_cadencia": {
+        "_que_mide": "una herramienta sostenida en anos no es una carga puntual",
+        "por_ano": {
+          "2016": 4050,
+          "2017": 5922,
+          "2018": 4788,
+          "2019": 6111,
+          "2020": 2431,
+          "2021": 3248,
+          "2022": 6084,
+          "2023": 7155,
+          "2024": 6010,
+          "2025": 6509,
+          "2026": 2779
+        },
+        "activo_desde": "20160101"
+      },
+      "sufijos_del_groupid": {
+        "top": [
+          {
+            "sufijo": "U101",
+            "grupos": 1627
+          },
+          {
+            "sufijo": "XA04",
+            "grupos": 987
+          },
+          {
+            "sufijo": "U701",
+            "grupos": 703
+          },
+          {
+            "sufijo": "V901",
+            "grupos": 511
+          },
+          {
+            "sufijo": "XA01",
+            "grupos": 394
+          },
+          {
+            "sufijo": "V404",
+            "grupos": 234
+          },
+          {
+            "sufijo": "V402",
+            "grupos": 80
+          },
+          {
+            "sufijo": "U105",
+            "grupos": 60
+          }
+        ],
+        "_cuidado": "el sufijo es A VECES la TRANSACCION (PA30) y a veces un codigo de oficina. Afirmar 'codigo de oficina' como hecho fijo enmascara los casos en que es la transaccion, que es la unica pista directa de que se ejecuta"
+      },
+      "prueba_contra_maestros": {
+        "claves_probadas": 243,
+        "casan_contra_lfa1": 243,
+        "casan_contra_pa0001": 243,
+        "casan_contra_hrp1001": 243,
+        "_la_regla": "QUE UNA CLAVE CASE NO DICE DE QUE ES. Acreedor y PERNR tienen el mismo ancho, asi que los mismos numeros casan contra las dos tablas. La prueba de dominio es lo que el usuario CAMBIA en cdhdr, no contra que maestro casa el numero. Esta comprobacion sirve para saber que la clave ES un objeto de negocio, no para decidir CUAL"
+      }
+    },
+    "por_gramatica": {
+      "TRAVEL": {
+        "sesiones": 50166,
+        "grupos_distintos": 2,
+        "muestra": [
+          "TRIP_CREATE",
+          "TRIP_MODIFY"
+        ]
+      },
+      "HCM_ALLOS": {
+        "sesiones": 4918,
+        "grupos_distintos": 1805,
+        "muestra": [
+          "10001976X504",
+          "10003578X108",
+          "10004543V901",
+          "10004930V901",
+          "10005016V901",
+          "10006301V901",
+          "10008160V901",
+          "10008305X604",
+          "10008385V404",
+          "10008385V901",
+          "10008853V403",
+          "10011155X201"
+        ]
+      },
+      "SIN_GRAMATICA": {
+        "sesiones": 3,
+        "grupos_distintos": 1,
+        "muestra": [
+          "IT0378_CREAT"
+        ],
+        "_que_falta_para_cerrarlo": "para nombrar la herramienta que hay detras hace falta: su usuario tecnico (cruzar CREATOR y USERID contra USR02), su destino RFC si lo tiene, y su programa. Un cubo desconocido que no dice que le falta no genera trabajo: se queda ahi corrida tras corrida"
+      },
+      "_mira_debajo_del_top": "se concluyo una vez 'el batch input es de viajes' porque TRIP_* es el 86,4% de lo que queda. Debajo habia 1.806 grupos sin mirar, y ahi estaba ALLOS. Por eso este bloque no corta: la cola se agrega y se nombra"
+    }
+  },
+  "contexto": {
+    "quien_ejecuta_sesiones": {
+      "SM35": {
+        "significa": "ejecuta sesiones",
+        "top": [
+          {
+            "usuario": "I_WETTIE",
+            "veces": 53
+          },
+          {
+            "usuario": "K_TOUFFAHI",
+            "veces": 20
+          },
+          {
+            "usuario": "S_COURONNAUD",
+            "veces": 14
+          },
+          {
+            "usuario": "HIPER",
+            "veces": 12
+          },
+          {
+            "usuario": "B_DESPLOMBAI",
+            "veces": 7
+          },
+          {
+            "usuario": "A_SEFIANI",
+            "veces": 7
+          }
+        ]
+      },
+      "SM37": {
+        "significa": "monitor de JOBS, no de sesiones",
+        "top": [
+          {
+            "usuario": "A_DOOKHUN",
+            "veces": 628
+          },
+          {
+            "usuario": "F_DERAKHSHAN",
+            "veces": 140
+          },
+          {
+            "usuario": "N_MENARD",
+            "veces": 21
+          },
+          {
+            "usuario": "V.VAURETTE",
+            "veces": 3
+          },
+          {
+            "usuario": "I_WELTER",
+            "veces": 2
+          },
+          {
+            "usuario": "W_OKEYO-OWUO",
+            "veces": 1
+          }
+        ]
+      },
+      "_por_que": "TCODE vacio NO distingue batch input de job de fondo -- el 61% de los cambios de los creadores de sesiones lo tiene vacio, y el log no tiene clase de evento para batch input. Quien corre SM35 ejecuta SESIONES; quien corre SM37 mira JOBS"
+    },
+    "lo_que_de_verdad_se_ejecuto": {
+      "transacciones_que_arrancan": [
+        {
+          "tcode": "SESSION_MANAGER",
+          "veces": 32115
+        },
+        {
+          "tcode": "S000",
+          "veces": 13880
+        },
+        {
+          "tcode": "YFM1",
+          "veces": 465
+        },
+        {
+          "tcode": "START_REPORT",
+          "veces": 412
+        },
+        {
+          "tcode": "FMRP_RFFMEP1OX",
+          "veces": 317
+        },
+        {
+          "tcode": "FMX3",
+          "veces": 280
+        },
+        {
+          "tcode": "MIR4",
+          "veces": 271
+        },
+        {
+          "tcode": "MIRO",
+          "veces": 269
+        },
+        {
+          "tcode": "FMRP_RFFMEP1AX",
+          "veces": 132
+        },
+        {
+          "tcode": "ME23N",
+          "veces": 113
+        },
+        {
+          "tcode": "FMRP_RFFMEP1FX",
+          "veces": 113
+        },
+        {
+          "tcode": "F13E",
+          "veces": 95
+        },
+        {
+          "tcode": "FBL1N",
+          "veces": 57
+        },
+        {
+          "tcode": "FBRA",
+          "veces": 56
+        },
+        {
+          "tcode": "FB60",
+          "veces": 56
+        }
+      ],
+      "_como_se_lee": "CORRELACION TEMPORAL, no causalidad: son las transacciones que esos mismos usuarios arrancaron en la ventana, no lo que la sesion ejecuto. Es el unico rodeo posible porque APQD.VARDATA es LCHR y RFC_READ_TABLE lo rechaza con OPTION_NOT_VALID"
+    },
+    "dominio_por_lo_que_cambian": {
+      "objetos_que_cambian": [
+        {
+          "clase": "FMRESERV",
+          "cambios": 19105
+        },
+        {
+          "clase": "PBC",
+          "cambios": 13703
+        },
+        {
+          "clase": "BELEG",
+          "cambios": 8033
+        },
+        {
+          "clase": "EINKBELEG",
+          "cambios": 5050
+        },
+        {
+          "clase": "HR_IT1001",
+          "cambios": 2014
+        },
+        {
+          "clase": "ENTRYSHEET",
+          "cambios": 1750
+        },
+        {
+          "clase": "MM_SERVICE",
+          "cambios": 1705
+        },
+        {
+          "clase": "BELEGR",
+          "cambios": 587
+        },
+        {
+          "clase": "HR_IT1018",
+          "cambios": 509
+        },
+        {
+          "clase": "HR_IT1000",
+          "cambios": 503
+        },
+        {
+          "clase": "KRED",
+          "cambios": 268
+        },
+        {
+          "clase": "HR_IT1005",
+          "cambios": 252
+        }
+      ],
+      "_por_que": "la prueba de a que DOMINIO pertenece un canal es lo que su gente CAMBIA, no como se llama el grupo ni contra que maestro casa la clave"
+    },
+    "quien_entra": {
+      "AB_NGUER": "Dialogo = PERSONA",
+      "AH_IBRAHIM": "Dialogo = PERSONA",
+      "AM_HUSSAIN": "Dialogo = PERSONA",
+      "AM_TRAN": "Dialogo = PERSONA",
+      "AN_GONZALEZ": "Dialogo = PERSONA",
+      "AN_HOQUE": "Dialogo = PERSONA",
+      "AZ_TOURE": "Dialogo = PERSONA",
+      "A_AL-FARAH": "Dialogo = PERSONA",
+      "A_AMREYEVA": "Dialogo = PERSONA",
+      "A_BAAKRIM": "Dialogo = PERSONA",
+      "A_BEGUE": "Dialogo = PERSONA",
+      "A_BOU-SLEIMA": "Dialogo = PERSONA",
+      "A_CAMINO": "Dialogo = PERSONA",
+      "A_CAMPOS": "Dialogo = PERSONA",
+      "A_CARVE": "Dialogo = PERSONA",
+      "A_CHASCO-LEZ": "Dialogo = PERSONA",
+      "A_COPPOLA": "Dialogo = PERSONA",
+      "A_CORASSA": "Dialogo = PERSONA",
+      "A_DAVID": "Dialogo = PERSONA",
+      "A_DEGA": "Dialogo = PERSONA"
+    }
+  },
+  "el_hueco": {
+    "generadores_propios_sin_fuente_extraida": [
       "YEBUET01",
       "ZHR_RETIRE_COPY_SPI",
+      "ZHR_UPDATE_IT0021",
       "ZHR_UPDATE_IT0167",
-      "ZHR_UPDATE_IT0021"
-    ]
-  }
+      "ZMM_BI_MM01_PLANT"
+    ],
+    "con_dato_personal_sensible": [
+      "ZHR_UPDATE_IT0021",
+      "ZHR_UPDATE_IT0167"
+    ],
+    "_que_pasa": "codigo PROPIO que ESCRIBE en produccion por BDC y cuyo fuente no esta extraido, asi que no se puede auditar que hace. Dos tocan datos personales sensibles: el infotipo 0021 es FAMILIA y el 0167 PLANES DE SALUD"
+  },
+  "_memorias_de_metodo_leidas": [
+    "a field's fill rate is a property of WHOEVER WRITES THE TABLE, not of the field's usefulness. When PRPS's writer went from people to an interface — 0% of new elements in 2022, 85% in 2024 — coverage, value quality and identifier grammar all moved at once with no decision about any field",
+    "no es una identidad: es un PARAMETRO que quien llama a BDC_OPEN_GROUP escribe, y SAP no comprueba que el usuario exista. Medido: de 14 grafias *-RFC que aparecen como CREATOR, cinco no existen en USR02 -- y son justo las que llevan guion bajo mientras su gemela con guion si existe (BILLAULT_RFC no, BILLAULT-RFC si).",
+    "LIFNR es CHAR(10) RELLENADO CON CEROS A LA IZQUIERDA, y lo mismo vale para casi toda clave numerica de SAP. Un numero de 8 digitos sacado de otro sitio NO casa con la tabla maestra por igualdad: hay que rellenarlo. Medido: 0 de 400 casaban con match exacto y 400 de 400 anteponiendo '00'.",
+    "NO distingue batch input de job de fondo. Se afirmo que una sesion de batch input graba su tcode y es FALSO: el 61% de los cambios de quienes crean sesiones tienen TCODE vacio. Lo que si separa es SM35 (ejecutar sesiones) frente a SM37 (monitor de jobs) en el log."
+  ]
 }

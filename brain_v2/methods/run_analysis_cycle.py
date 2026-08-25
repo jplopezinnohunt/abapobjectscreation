@@ -78,8 +78,14 @@ CYCLE = [
     # es la puerta de B1-B5, y sin columna vertebral un DFG dibuja un proceso que no existe --
     # y ese orden debe estar definido en UN sitio. `--desde 2` salta la fase de realidad, que
     # este ciclo ya corre arriba, y la de ingesta, que es un grifo periodico aparte.
-    ("process_mining/run_discovery_pipeline.py --desde 2",
-     "L2-L3 cadena de descubrimiento: columna vertebral -> familia B -> cruce con lo conocido",
+    # --desde 1, NO 2. Con `--desde 2` la fase 1 entera se saltaba, y ese salto dejaba a A3
+    # (rfc_process_classifier) y A31 (bdc_channel_mining) SIN NINGUN LLAMADOR: este ciclo corre
+    # A19 y A4 mas arriba, pero no esos dos. A31 es el metodo que encontro ALLOS y se mecanizo
+    # precisamente para que fuera repetible y comparable con la corrida del mes pasado -- y con
+    # la delegacion anterior no volvia a correr nunca. Que A19 y A4 se repitan cuesta minutos;
+    # que A31 no corra cuesta la capacidad entera.
+    ("process_mining/run_discovery_pipeline.py --desde 1",
+     "L2-L3 cadena de descubrimiento: realidad -> columna vertebral -> familia B -> cruce",
      True),
     ("brain_v2/build_interface_inventory.py",
      "L2 every interface as a RECORD — prose is not queryable knowledge", False),

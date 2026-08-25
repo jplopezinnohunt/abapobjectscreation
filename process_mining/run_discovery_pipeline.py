@@ -115,6 +115,39 @@ FASES = [
 ]
 
 
+def la_columna_vertebral_aguanta():
+    """A21 ES UNA PUERTA, NO UN ORDEN. Y hasta ahora estaba implementada solo como orden.
+
+    Nada leia case_spine.json: la familia B corria igual si A21 fallaba, agotaba el timeout o
+    concluia que ninguna clase alcanza documento. Eso permite exactamente la conclusion falsa
+    que A21 documenta en su modo de fallo: un DFG, unas variantes y unos cuellos de botella
+    PLAUSIBLES de un proceso que no existe, presentados como resultado OK de la cadena.
+
+    Devuelve (pasa, motivo, detalle).
+    """
+    p = REPO / "brain_v2" / "case_spine.json"
+    if not p.exists():
+        return False, "no existe case_spine.json: A21 no ha corrido o fallo", {}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        return False, f"case_spine.json ilegible ({type(e).__name__})", {}
+
+    texto = json.dumps(d, ensure_ascii=False).upper()
+    combinan = texto.count("COMBINA") - texto.count("NO_COMBINA")
+    cob = None
+    for k in ("cobertura", "coverage", "pct_alcanzable", "reachable_pct"):
+        v = d.get(k)
+        if isinstance(v, (int, float)):
+            cob = float(v)
+            break
+    if combinan <= 0:
+        return False, "NINGUNA clase de documento alcanza su tabla: no hay nocion de caso", \
+            {"clases_que_combinan": combinan}
+    return True, f"{combinan} clase(s) alcanzan documento", \
+        {"clases_que_combinan": combinan, "cobertura": cob}
+
+
 def correr(nombre, rel, args, dry, tope=3600):
     p = REPO / rel
     if not p.exists():
@@ -122,6 +155,10 @@ def correr(nombre, rel, args, dry, tope=3600):
     if dry:
         return {"paso": nombre, "script": rel, "estado": "DRY"}
     t = time.time()
+    # PROGRESO EN VIVO. Capturar toda la salida hacia que un paso de dos minutos pareciera
+    # colgado -- pasa con B5 (128s) y con A5 (56s). Se emite un latido para que se vea que
+    # avanza sin ensuciar la salida.
+    print(f"           . corriendo {rel} ...", flush=True)
     try:
         r = subprocess.run([sys.executable, str(p)] + args, cwd=str(REPO),
                            capture_output=True, text=True, encoding="utf-8",
@@ -175,7 +212,13 @@ def cruzar_con_lo_conocido():
     fuentes = {s["key"]: (s["file"], s.get("at"), s.get("name_field"))
                for s in STORES_AL_GRAFO}
     # y los que produce esta cadena y todavia no estan en STORES_AL_GRAFO
-    fuentes.setdefault("log_reality", ("log_reality.json", "classified", None))
+    # La clave real es `delta_vs_model.worklist_custom`, no 'classified' -- que no existe. Con
+    # la clave equivocada el extractor caia en su fallback silencioso, contaba 4 nombres de
+    # CONTENEDOR (rows/programs/actors/delta_vs_model) y publicaba "0 NUEVOS" mientras el
+    # fichero llevaba `unexplained: 1318` y una lista de nombres concretos. El aviso "no se
+    # reconocio ninguna forma" NO saltaba, porque el fallback siempre encuentra algo.
+    fuentes.setdefault("variantes", ("variant_content.json", "variantes", "programa"))
+    fuentes.setdefault("bdc", ("bdc_channel.json", "generadores", "progid"))
     fuentes.setdefault("document_lifecycle", ("document_lifecycle.json", None, None))
     fuentes.setdefault("learned_rules", ("../process_mining/learned_rules.json", None, None))
 
@@ -210,6 +253,18 @@ def cruzar_con_lo_conocido():
     except Exception as e:
         print(f"    AVISO: no se pudo publicar en el bus de mineros ({type(e).__name__})")
 
+    # SACAR LOS CHOQUES. El final de la cadena es el unico instante en que todos los mineros
+    # acaban de opinar sobre los mismos sujetos: es cuando los choques son detectables y
+    # frescos. La version anterior solo PUBLICABA en el bus y nunca lo consultaba, asi que el
+    # metodo que produjo el hallazgo grande -- E_SILVA canal contra E_SILVA persona -- no se
+    # ejercitaba nunca.
+    choques_vistos = []
+    try:
+        from mining_bus import choques  # type: ignore
+        choques_vistos = choques()
+    except Exception:
+        pass
+
     delta = {
         "_que_es": ("lo que la cadena de descubrimiento encontro y el brain TODAVIA NO SABE. "
                     "Cada nombre de aqui es un candidato a claim, o a un objeto que falta"),
@@ -221,6 +276,12 @@ def cruzar_con_lo_conocido():
             "SIN FOTO DE BASE: se comparo contra el grafo ACTUAL, que ya contiene lo que los "
             "mineros acaban de escribir. El resultado es circular y no vale como descubrimiento"),
         "objetos_en_la_base": len(conocidos),
+        "choques_entre_mineros": {
+            "_que_son": ("sujetos sobre los que dos mineros dicen cosas distintas. Suele valer "
+                         "mas que cualquiera de los dos hallazgos por separado: asi salio H71"),
+            "n": len(choques_vistos),
+            "casos": [{"sujeto": c["sujeto"], "mineros": c["mineros"],
+                       "resolucion": c["resolucion"]} for c in choques_vistos[:20]]},
         "resumen": resumen,
         "nuevos_por_fuente": nuevos,
     }
@@ -258,6 +319,32 @@ def main():
         if f["id"] < a.desde:
             print(f"\n[{f['id']}] {f['nombre']}  -- saltada por --desde")
             continue
+        # ---- LA PUERTA. La familia B no corre sin columna vertebral de casos ----
+        if f["id"] == 3 and not a.dry:
+            pasa, motivo, det = la_columna_vertebral_aguanta()
+            if not pasa:
+                print(f"\n[3] MINERIA DE PROCESOS -- NO SE CORRE")
+                print(f"    PUERTA CERRADA: {motivo}")
+                print("    A21 declara en su modo de fallo que un DFG sobre la nocion de caso")
+                print("    equivocada produce un mapa PLAUSIBLE de un proceso que no existe.")
+                print("    Correr la familia B ahora no daria cero: daria algo verosimil y falso.")
+                bitacora.append({"fase": 3, "paso": "PUERTA A21", "estado": "BLOQUEADA",
+                                 "motivo": motivo})
+                continue
+            print(f"\n[3] {f['nombre'].upper()}   [puerta A21 abierta: {motivo}]")
+            print(f"    {f['por_que']}")
+            for nombre, rel, args in f["pasos"]:
+                r = correr(nombre, rel, args, a.dry)
+                bitacora.append(dict(r, fase=3))
+                marca = {"OK": "  ok", "DRY": " dry", "NO_EXISTE": " ---"}.get(r["estado"],
+                                                                               "FALLO")
+                print(f"    [{marca}] {nombre:38s} {r.get('segundos','')}s")
+                for l in r.get("ultimas_lineas") or []:
+                    print(f"           {l[:110]}")
+                if r.get("error"):
+                    print(f"           ERR {r['error'][:160]}")
+            continue
+
         print(f"\n[{f['id']}] {f['nombre'].upper()}")
         print(f"    {f['por_que']}")
         for nombre, rel, args in f["pasos"]:
@@ -276,8 +363,13 @@ def main():
     if not a.dry:
         d = cruzar_con_lo_conocido()
         for k, v in (d.get("resumen") or {}).items():
-            print(f"    {k:22s} {v['nombres']:>6} nombres · {v['ya_en_el_grafo']:>6} ya en el "
-                  f"grafo · {v['NUEVOS']:>5} NUEVOS")
+            aviso = "  <- FORMA NO RECONOCIDA" if v.get("_aviso") else ""
+            print(f"    {k:26s} {v['nombres']:>6} nombres · {v['ya_en_el_grafo']:>6} ya en el "
+                  f"grafo · {v['NUEVOS']:>5} NUEVOS{aviso}")
+        ch = (d.get("choques_entre_mineros") or {})
+        print(f"\n    CHOQUES entre mineros: {ch.get('n', 0)}")
+        for c in (ch.get("casos") or [])[:8]:
+            print(f"      {c['sujeto']:22s} {', '.join(c['mineros'])[:70]}")
         print(f"    -> {SALIDA}")
 
     fallos = [b for b in bitacora if b["estado"].startswith(("FALLO", "TIMEOUT"))]

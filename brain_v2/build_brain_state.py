@@ -109,23 +109,37 @@ LEGACY_TO_AXES = {
 # donde vive el mapa o la lista; `name_field` el campo que nombra al objeto cuando es una lista.
 # Anadir uno aqui es lo unico que hace falta para que su conocimiento sea RECORRIBLE.
 STORES_AL_GRAFO = [
-    {"file": "log_reality.json", "key": "log_reality", "at": "classified"},
-    {"file": "comprehension_index.json", "key": "comprehension", "at": "by_object"},
+    # `classified` no existe en este fichero: con esa clave el extractor caia en su fallback y
+    # devolvia las 4 claves de PRIMER NIVEL como si fueran hallazgos. Lo que vale de aqui son
+    # los 80 nombres que el modelo NO sabe explicar -- que es literalmente el sensor.
+    {"file": "log_reality.json", "key": "log_sin_explicar",
+     "at": "delta_vs_model.worklist_custom"},
+    {"file": "log_reality.json", "key": "log_estandar_sin_explicar",
+     "at": "delta_vs_model.worklist_standard"},
+    {"file": "comprehension_index.json", "key": "comprehension", "at": "by_domain"},
     {"file": "domain_composition.json", "key": "domain_composition", "at": "domains"},
-    {"file": "interface_boundary.json", "key": "boundary", "at": "destinations",
-     "name_field": "artifact"},
+    # Las rutas se COMPROBARON contra el fichero, una por una. Antes se escribieron de memoria
+    # y cinco de ellas no existian: el extractor caia en su fallback y publicaba ceros creibles.
+    {"file": "interface_boundary.json", "key": "boundary_dead", "at": "dead",
+     "name_field": "destination"},
+    {"file": "interface_boundary.json", "key": "boundary_live", "at": "live",
+     "name_field": "destination"},
+    {"file": "interface_boundary.json", "key": "boundary_undeclared", "at": "undeclared",
+     "name_field": "destination"},
+    {"file": "interface_boundary.json", "key": "boundary_jobs", "at": "batch_jobs",
+     "name_field": "job"},
     {"file": "satellites.json", "key": "satellite", "at": "satellites",
      "name_field": "satellite"},
     {"file": "process_flows.json", "key": "process_flow", "at": "flows", "name_field": "name"},
-    {"file": "payroll_discovery.json", "key": "payroll", "at": "objects"},
+    {"file": "payroll_discovery.json", "key": "payroll", "at": None},
     {"file": "custom_fields.json", "key": "custom_field", "at": "fields", "name_field": "owner"},
     {"file": "Zagentexecution/sap_data_extraction/sqlite/job_classification.json",
      "key": "job", "at": "programs"},
     {"file": "code_interpretation.json", "key": "interpretation", "at": "objects"},
-    {"file": "drift_profile.json", "key": "drift", "at": "domains"},
-    {"file": "case_spine.json", "key": "case_spine", "at": "cases"},
-    {"file": "br_impact.json", "key": "budget_rate", "at": "objects"},
-    {"file": "hierarchy_traversal.json", "key": "hierarchy", "at": "sets"},
+    {"file": "drift_profile.json", "key": "drift", "at": "profile"},
+    {"file": "case_spine.json", "key": "case_spine", "at": "combinations", "name_field": "case_class"},
+    {"file": "br_impact.json", "key": "budget_rate", "at": "by_year_and_route", "name_field": "route"},
+    {"file": "hierarchy_traversal.json", "key": "hierarchy", "at": "hierarchies", "name_field": "set_class"},
     {"file": "bank_model_findings.json", "key": "bank_model", "at": "findings",
      "name_field": "probe"},
     # Lo que los mineros concluyeron, colgado del objeto del que hablan. Es lo que hace que
@@ -152,8 +166,16 @@ def _pares_nombre_hechos(data, at=None, name_field=None, tope=4000):
             if isinstance(nodo, dict) and parte in nodo:
                 nodo = nodo[parte]
             else:
-                nodo = None
-                break
+                # RUTA PEDIDA Y NO ENCONTRADA = VACIO, NUNCA EL FICHERO ENTERO.
+                #
+                # Aqui habia un fallback a `data`, y convirtio un error de clave en un dato
+                # creible: se pidio `classified` en log_reality.json -- que no existe -- el
+                # fallback devolvio las 4 claves de PRIMER NIVEL (rows, programs, actors,
+                # delta_vs_model), se contaron como 4 nombres, todos "ya conocidos", y la
+                # cadena publico "0 NUEVOS" mientras el fichero llevaba unexplained=1318 y una
+                # lista de nombres concretos. El aviso de "forma no reconocida" no salto porque
+                # el fallback SIEMPRE encuentra algo. Devolver vacio hace que el llamante avise.
+                return []
     if nodo is None:
         nodo = data
     out = []
@@ -166,12 +188,16 @@ def _pares_nombre_hechos(data, at=None, name_field=None, tope=4000):
         campos = ([name_field] if name_field else []) + [
             "artifact", "object", "name", "table", "tcode", "program", "id", "actor"]
         for it in nodo[:tope]:
-            if not isinstance(it, dict):
-                continue
-            for f in campos:
-                if f and it.get(f):
-                    out.append((it[f], it))
-                    break
+            if isinstance(it, dict):
+                for f in campos:
+                    if f and it.get(f):
+                        out.append((it[f], it))
+                        break
+            elif isinstance(it, str) and it.strip():
+                # UNA LISTA DE NOMBRES TAMBIEN ES UNA LISTA DE NOMBRES. Solo se aceptaban
+                # listas de diccionarios, asi que `worklist_custom` -- 80 nombres de programa
+                # que el modelo NO sabe explicar, que es justo el hallazgo -- devolvia cero.
+                out.append((it.strip(), {"nombre": it.strip()}))
     return out
 
 
