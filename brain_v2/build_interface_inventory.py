@@ -31,6 +31,7 @@ Emits: brain_v2/interface_inventory.json
 import json
 import sqlite3
 import sys
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -394,13 +395,72 @@ def main():
                                  "one") if prog == "SAPMSSY1" else None,
             "evidence_it_runs": f"{n} sessions in APQI",
         })
+
+    # ---- ABRIR EL EXTERNO: SAPMSSY1 SOLO DICE "VINO DE FUERA" -------------
+    # Sin este paso, el canal de escritura externo MAS GRANDE del sistema -- 55.087 de 57.998
+    # sesiones, el 95% -- quedaba como UN registro llamado SAPMSSY1, y el clasificador de
+    # dominio lo etiquetaba `Basis_Security` porque miraba el paquete del DESPACHADOR RFC. Es
+    # decir: el canal por el que entran ALLOS y Travel figuraba como fontaneria de Basis.
+    #
+    # Lo unico que la sesion externa trae consigo es el GROUPID, y de su forma sale el dominio.
+    for grupo, n in q(con, """SELECT GROUPID, COUNT(*) FROM apqi WHERE PROGID='SAPMSSY1'
+                              GROUP BY 1"""):
+        pass
+    ext = Counter()
+    ext_grupos = defaultdict(set)
+    ext_creadores = defaultdict(set)
+    for grupo, creador, n in q(con, """SELECT GROUPID, CREATOR, COUNT(*) FROM apqi
+                                       WHERE PROGID='SAPMSSY1' GROUP BY 1,2"""):
+        g = (grupo or "").strip()
+        if g.upper().startswith("TRIP_"):
+            d = "Travel"
+        elif re.match(r"^\d{1,8}[A-Z0-9]{2,4}$", g, re.I):
+            d = "HCM"          # la firma de ALLOS: <numero de objeto><sufijo de oficina>
+        else:
+            d = None
+        clave = d or "EXTERNO_SIN_GRAMATICA"
+        ext[clave] += n
+        ext_grupos[clave].add(g)
+        ext_creadores[clave].add((creador or "").strip())
+    for clave, n in ext.most_common():
+        inv.append({
+            "channel": "BATCH_INPUT", "artifact": f"SAPMSSY1/{clave}", "direction": "inbound",
+            "sessions": n, "groups": len(ext_grupos[clave]),
+            "creator_strings": len(ext_creadores[clave]),
+            "domain": None if clave == "EXTERNO_SIN_GRAMATICA" else clave,
+            "domain_basis": ("MEDIDO: la forma del GROUPID, que es lo unico que una sesion "
+                             "externa por RFC trae consigo"),
+            "_por_que_esta_abierto": (
+                "SAPMSSY1 es el despachador RFC: dice que vino de fuera, no DE QUE. Sin abrirlo, "
+                "el 95% del batch input quedaba en un registro etiquetado Basis_Security -- el "
+                "paquete del despachador -- y ALLOS y Travel eran invisibles"),
+            "_lo_que_no_encaja_es_el_hallazgo": (
+                "EXTERNO_SIN_GRAMATICA son generadores que todavia no sabemos nombrar. Ahi "
+                "estuvo ALLOS un ano: debajo del 86,4% de TRIP_*, en la cola larga"),
+            "evidence_it_runs": f"{n} sesiones en APQI",
+        })
     inv.append({
         "channel": "BATCH_INPUT", "artifact": "(session health)", "direction": "inbound",
-        "top_creators": sorted(by_creator.items(), key=lambda x: -x[1])[:6],
+        # CREATOR NO ES UNA IDENTIDAD: es un texto que la herramienta escribe en
+        # BDC_OPEN_GROUP y que SAP no valida contra USR02. Medido: de 16 grafias *RFC que
+        # aparecen como CREATOR, 10 no existen como usuario. Llamarlos "creadores" y contarlos
+        # como actores es contar PARAMETROS y presentarlos como personas.
+        "top_creator_strings": sorted(by_creator.items(), key=lambda x: -x[1])[:6],
+        "_creator_no_es_usuario": ("APQI.CREATOR es un parametro de BDC_OPEN_GROUP, no una "
+                                   "identidad validada. Cruzar contra USR02 antes de tratarlo "
+                                   "como actor"),
         "states": states,
-        "error_sessions": states.get("E", 0) + states.get("F", 0),
-        "_finding": ("a failing write channel is a silent data gap — nobody is watching this "
-                     "rate"),
+        # 'F' = FINALIZADA CON EXITO. Sumarla a los errores publicaba una tasa de fallo que
+        # incluia los exitos. Y la tasa no se puede publicar de todos modos: APQI es una COLA
+        # que BORRA lo que se proceso bien, asi que el denominador esta sesgado por construccion
+        # -- lo que queda es, casi por definicion, lo que fallo.
+        "error_sessions": states.get("E", 0),
+        "_por_que_no_es_una_tasa": (
+            "no dividir esto entre el total. APQI borra las sesiones que se procesan BIEN, asi "
+            "que el reparto de QSTATE mide QUE QUEDA, no que pasa: leerlo como tasa de fallo da "
+            "un 92,6% que no existe. Y 'F' significa FINALIZADA CON EXITO, no fallo"),
+        "_finding": ("un canal de escritura que falla es un hueco de datos silencioso, y nadie "
+                     "vigila esto. Pero la MAGNITUD no es medible con este instrumento"),
     })
 
     # ---- RFC DESTINATIONS + IDOC ------------------------------------------
@@ -445,12 +505,20 @@ def main():
             "distinct_function_modules": fms, "distinct_terminals": terms,
             # ausente del dict = CERO logons de dialogo, que es la senal de maquina.
             "dialog_logons": dlg or 0,
-            "likely": "MAQUINA" if not dlg else "PERSONA (usa SAP GUI)",
+            # QUIEN ENTRA lo dice USR02-USTYP, y se rellena mas abajo en `user_type`.
+            #
+            # Aqui vivia `likely: MAQUINA/PERSONA` derivado de "cero logons de dialogo", con un
+            # comentario que lo defendia como "una senal medible". Es una HEURISTICA REFUTADA el
+            # 2026-08-25: clasifica mal a BRIDGE-RFC, JOBBATCH, MULESOFT y WF-BATCH, que son
+            # tipo B (Sistema) y tienen logons de dialogo -- MULESOFT tiene 14.224. Se publicaba
+            # como campo de primera clase AL LADO de la respuesta correcta, que es peor que
+            # equivocarse solo: obliga al lector a elegir entre dos respuestas del mismo fichero.
+            "_likely_RETIRADO": ("2026-08-25: la senal 'cero logons de dialogo = maquina' es "
+                                 "FALSA por los dos lados. Lo declara USR02-USTYP, campo "
+                                 "`user_type`. No reintroducir"),
             "evidence_it_runs": f"{calls:,} llamadas RFC en rsau_audit_history",
             "_why_here": ("descubierto por TRAFICO, no por configuracion: no tiene entrada en "
                           "rfcdes. Un satelite que entra como usuario RFC no deja destino"),
-            "_how_classified": ("MAQUINA = cero logons de dialogo. Es una senal medible, no "
-                                "una convencion de nombres"),
         })
 
     inv.extend(_canales_custom_de_escritura(con))
