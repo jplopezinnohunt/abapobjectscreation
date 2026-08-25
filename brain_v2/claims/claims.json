@@ -10284,12 +10284,12 @@
   },
   {
     "id": 213,
-    "claim": "Behavioral SoD analysis on rsau_audit_history (Apr-Jun 2026, 8.5M rows): 32 users hold both invoice-posting and payment/clearing tcodes in the same period. Conflict concentrated in cross-domain power users T_ENG (FI clearing + Treasury bank + entry) and I_MARQUAND, corroborating the BCM dual-control / H13 finding from a different data source (audit log vs. BCM payment log).",
-    "status": "active",
-    "confidence_tier": "TIER_1",
+    "claim": "RETIRADO 2026-08-26. EL NUMERO DE USUARIOS CON CONFLICTO SoD CONDUCTUAL FACTURA+PAGO SE DESCONOCE. El 32 publicado salio de process_mining/tier2_sod.py:51-54, que agrupa por SLGTC -- tcode de CONTEXTO -- cuando el arrancado vive en PARAM1, y ademas filtra SLGTC<>''. Bajo esa lectura SEIS de los OCHO tcodes clave del ruleset no aparecen NUNCA: XK01/XK02/FK01/FK02 del lado A de la regla 1 y F-53/F-58/F-44/FF_5 del lado B de la regla 2. Es decir que la regla de maestro-de-proveedor da CERO POR CONSTRUCCION y la regla 2 corre con la mitad de su lado B: el sesgo aqui no es ruido, es direccional y mutila el ruleset por los dos lados. LO QUE SI SOBREVIVE, por una fuente INDEPENDIENTE del audit-log: el solapamiento de T_ENG (FI clearing + Treasury bank + entry) e I_MARQUAND esta corroborado por el doble control de BCM (claim 6, log de PAGOS) y por el pull declarado de AGR_1251 (claims 237-240). Los NOMBRES aguantan; el RECUENTO no.",
+    "status": "superseded",
+    "confidence_tier": "TIER_3",
     "evidence": "process_mining/tier2_sod.py on rsau_audit_history. T_ENG and I_MARQUAND flagged: invoice-post tcodes (MIRO/FB60) + payment/clearing tcodes (F110/F-28/FB05) in same 2-month window. Total 32 users with conflict.",
     "evidence_path": "process_mining/tier2_sod.py",
-    "evidence_tier": "TIER_1",
+    "evidence_tier": "TIER_3",
     "related_objects": [
       "T_ENG",
       "I_MARQUAND",
@@ -10321,7 +10321,14 @@
     "domain": "Security",
     "created_session": 83,
     "resolved_session": null,
-    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101)."
+    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
+    "_superseded_text": "Behavioral SoD analysis on rsau_audit_history (Apr-Jun 2026, 8.5M rows): 32 users hold both invoice-posting and payment/clearing tcodes in the same period. Conflict concentrated in cross-domain power users T_ENG (FI clearing + Treasury bank + entry) and I_MARQUAND, corroborating the BCM dual-control / H13 finding from a different data source (audit log vs. BCM payment log).",
+    "superseded_session": 103,
+    "superseded_date": "2026-08-26",
+    "superseded_reason": "tier2_sod.py comete el mismo error de columna de forma independiente, y con sesgo direccional: 6 de los 8 tcodes del ruleset no pueden aparecer nunca",
+    "superseded_by_claim_id": 596,
+    "_para_re_medir": "re-correr tier2_sod agrupando por TRIM(PARAM1) y SLGUSER sin filtro SLGTC<>'', y comprobar primero que los 8 tcodes del ruleset SI aparecen antes de contar nada",
+    "_lo_que_sobrevive": "los NOMBRES: T_ENG e I_MARQUAND, corroborados por claim 6 (log de pagos) y por AGR_1251 (claims 237-240)"
   },
   {
     "id": 214,
@@ -10399,12 +10406,12 @@
   },
   {
     "id": 216,
-    "claim": "Per-domain AS-RUN activity from RSAU audit log (2026-04 to 2026-06, Dialog+TcodeStart events): Procurement_P2P 5,556 events / 139 users; PSM_FM 4,697 / 238 users (widest reach, mostly read); FI 4,385 / 185 users (clearing-heavy, T_ENG #1); Treasury_EBS 1,970 / 24 users (specialist); FI-AP 1,899 / 110 users; Payment_BCM 646 / 13 users only (concentrated authority, C_LOPEZ). COMPREHENSION GAP: master-data and budget maintenance runs through CUSTOM COCKPITS (YFM1, ZICTP_COCKPIT, YKBLP_N) -- the unlabeled long tail (29 tcodes cover 95% of audit volume; tail = custom = the LLM/brain moat).",
-    "status": "active",
-    "confidence_tier": "TIER_1",
+    "claim": "RETIRADO 2026-08-26. LA ACTIVIDAD AS-RUN POR DOMINIO SE DESCONOCE. Las cifras publicadas (Procurement_P2P 5.556 eventos/139 usuarios · PSM_FM 4.697/238 · FI 4.385/185 · Treasury_EBS 1.970/24 · FI-AP 1.899/110 · Payment_BCM 646/13, y '29 tcodes cubren el 95% del volumen') tienen DOS defectos independientes. (1) COLUMNA: se apoyan en un histograma de SLGTC -- el tcode LANZADOR -- cuando el arrancado vive en PARAM1, asi que el trabajo TERMINAL, el que no lanza nada desde dentro, no puede aparecer. (2) PROVENIENCIA, que es peor: el evidence_path apunta a process_mining/semantic_activity_map.py, que NO LEE SLGUSER en NINGUNA version de su historia (comprobado sobre HEAD, 27452c2 y 62b5a9e), asi que los recuentos '/N usuarios' no pueden proceder de la fuente citada; ademas el dict SEMANTIC del script no contiene las etiquetas 'Procurement_P2P', 'PSM_FM' ni 'Payment_BCM' -- esos nombres son del capability_model, no del script. La corrida que produjo las cifras no se conservo. NO se sustituyen por cifras nuevas.",
+    "status": "superseded",
+    "confidence_tier": "TIER_3",
     "evidence": "rsau_audit_history analyzed 2026-06-21 via process_mining/semantic_activity_map.py. 8.5M total rows; filtered to Dialog Logon + Transaction Start = ~876K human events. Per-domain split by tcode-to-domain mapping (LLM-generated map commit 62b5a9e).",
     "evidence_path": "process_mining/semantic_activity_map.py",
-    "evidence_tier": "TIER_1",
+    "evidence_tier": "TIER_3",
     "related_objects": [
       "C_LOPEZ",
       "PROCUREMENT_P2P",
@@ -10452,9 +10459,14 @@
     ],
     "resolved_session": null,
     "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
-    "needs_review": "SOSPECHOSO DESDE 2026-08-25: la cifra de este claim se derivo de process_mining/semantic_activity_map.py, que agrupa por SLGTC -- el tcode de CONTEXTO desde el que se lanzo -- cuando el tcode ARRANCADO vive en PARAM1. Coinciden en 8 de 1.235.225 filas. Ver claim 596. NO CITAR esta cifra hasta re-medir por PARAM1; la correcta se DESCONOCE.",
     "_suspect_since": "2026-08-25",
-    "_suspect_by_claim": 596
+    "_suspect_by_claim": 596,
+    "_superseded_text": "Per-domain AS-RUN activity from RSAU audit log (2026-04 to 2026-06, Dialog+TcodeStart events): Procurement_P2P 5,556 events / 139 users; PSM_FM 4,697 / 238 users (widest reach, mostly read); FI 4,385 / 185 users (clearing-heavy, T_ENG #1); Treasury_EBS 1,970 / 24 users (specialist); FI-AP 1,899 / 110 users; Payment_BCM 646 / 13 users only (concentrated authority, C_LOPEZ). COMPREHENSION GAP: master-data and budget maintenance runs through CUSTOM COCKPITS (YFM1, ZICTP_COCKPIT, YKBLP_N) -- the unlabeled long tail (29 tcodes cover 95% of audit volume; tail = custom = the LLM/brain moat).",
+    "superseded_session": 103,
+    "superseded_date": "2026-08-26",
+    "superseded_reason": "el reparto sale de un GROUP BY SLGTC (lanzador, no arrancado) Y su evidence_path no puede haber producido los recuentos de usuario: el script nunca leyo SLGUSER",
+    "superseded_by_claim_id": 596,
+    "_para_re_medir": "un script VERSIONADO que agrupe por TRIM(PARAM1) y SLGUSER sin el filtro SLGTC<>'', y que GUARDE su salida -- la corrida ad-hoc que dio estas cifras no existe"
   },
   {
     "id": 217,
@@ -10494,12 +10506,12 @@
   },
   {
     "id": 218,
-    "claim": "Custom-cockpit comprehension gap CLOSED (s084): UNESCO's real budget/HR-finance work that does NOT flow through standard tcodes is now mapped. Five custom tcodes resolved via d01_tstc tcode->program lookup: YFM1->YFM1_BCS_V3 (BCS budget detail, PSM), YKBLP_N->Y_KBLP_PBC_OPEN_N (HR open commitments/PBC, PSM-HR), YSC1->YEBUET01 (support-cost allocation, FI-CO), HRPADUNEDGR->HUNUEDGR_CONSOLE (Education Grant console, HCM), ZICTP_COCKPIT->ZICTP_COCKPIT (ICTP operations, PSM). Semantic activity coverage advanced 95%->97% of audit-log volume. The LLM-generated tcode->activity map now covers the long tail that no commercial PM tool knows.",
-    "status": "active",
-    "confidence_tier": "TIER_1",
+    "claim": "PARCIALMENTE RETIRADO 2026-08-26 -- veredicto PARTIDO, y las dos mitades importan. LO QUE SOBREVIVE ENTERO: la resolucion de los cinco cockpits custom a su programa -- YFM1->YFM1_BCS_V3, YKBLP_N->Y_KBLP_PBC_OPEN_N, YSC1->YEBUET01, HRPADUNEDGR->HUNUEDGR_CONSOLE, ZICTP_COCKPIT->ZICTP_COCKPIT. Sale de d01_tstc (TCODE->PGMNA), una tabla de CATALOGO que el defecto no toca: el script ni siquiera la lee, la resolucion se hizo a mano. Que el histograma este mal no cambia a que programa apunta una transaccion en el catalogo. LO QUE SE RETIRA: la cobertura semantica. La cifra publicada (95%->97% del volumen del audit-log, 155/N tcodes distintos) es la salida literal de un print calculado sobre un GROUP BY SLGTC -- el tcode de CONTEXTO -- cuando el arrancado vive en PARAM1; y el grueso de lo etiquetado (92,7%) era navegacion `_nav`, que el propio script declara 'NOT business work'. La cobertura real se DESCONOCE. Re-medir agrupando por TRIM(PARAM1) sin el filtro SLGTC<>'', publicando DOS coberturas -- total y de negocio -- y liderando con la de negocio.",
+    "status": "partially_superseded",
+    "confidence_tier": "TIER_3",
     "evidence": "process_mining/semantic_activity_map.py (commit 27452c2): mapping dict lines 48-52 (YFM1/YKBLP_N/YSC1/HRPADUNEDGR/ZICTP_COCKPIT). d01_tstc used to resolve tcode->PGMNA. Coverage line 69 reports 97% of volume, 155/N distinct tcodes mapped.",
     "evidence_path": "process_mining/semantic_activity_map.py:48-52",
-    "evidence_tier": "TIER_1",
+    "evidence_tier": "TIER_3",
     "related_objects": [
       "YFM1",
       "YFM1_BCS_V3",
@@ -10541,18 +10553,23 @@
     "created_session": 84,
     "resolved_session": null,
     "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
-    "needs_review": "SOSPECHOSO DESDE 2026-08-25: la cifra de este claim se derivo de process_mining/semantic_activity_map.py, que agrupa por SLGTC -- el tcode de CONTEXTO desde el que se lanzo -- cuando el tcode ARRANCADO vive en PARAM1. Coinciden en 8 de 1.235.225 filas. Ver claim 596. NO CITAR esta cifra hasta re-medir por PARAM1; la correcta se DESCONOCE.",
     "_suspect_since": "2026-08-25",
-    "_suspect_by_claim": 596
+    "_suspect_by_claim": 596,
+    "_superseded_text": "Custom-cockpit comprehension gap CLOSED (s084): UNESCO's real budget/HR-finance work that does NOT flow through standard tcodes is now mapped. Five custom tcodes resolved via d01_tstc tcode->program lookup: YFM1->YFM1_BCS_V3 (BCS budget detail, PSM), YKBLP_N->Y_KBLP_PBC_OPEN_N (HR open commitments/PBC, PSM-HR), YSC1->YEBUET01 (support-cost allocation, FI-CO), HRPADUNEDGR->HUNUEDGR_CONSOLE (Education Grant console, HCM), ZICTP_COCKPIT->ZICTP_COCKPIT (ICTP operations, PSM). Semantic activity coverage advanced 95%->97% of audit-log volume. The LLM-generated tcode->activity map now covers the long tail that no commercial PM tool knows.",
+    "superseded_session": 103,
+    "superseded_date": "2026-08-26",
+    "superseded_reason": "la mitad NUMERICA sale del histograma de SLGTC; la mitad del MAPEO sale de d01_tstc y es independiente del defecto",
+    "_lo_que_sobrevive": "los 5 cockpits -> programa. Escrito aparte a proposito: sin esto la proxima revision lo retira por contagio y se vuelve a pagar",
+    "superseded_by_claim_id": 596
   },
   {
     "id": 219,
-    "claim": "SA38/SA39/SE38 (run-arbitrary-ABAP-program tcodes) appear in real end-user Transaction-Start activity in rsau_audit_history (P01, 2026-02 to 2026-06). Confirmed counts: SE38 1,104 TcodeStart events / 7 users; SA39 685 / 7 users; SA38 16 / 2 users. These tcodes bypass standard business-process tcodes and allow any authorized user to run any report/program — a SoD and control-environment risk. Presence of these in production audit log warrants authorization review (S_DEVELOP / S_PROGRAM object for activity=Execute).",
-    "status": "active",
-    "confidence_tier": "TIER_1",
+    "claim": "CORREGIDO 2026-08-26. LO QUE SE MANTIENE: SA38/SA39/SE38 -- ejecucion arbitraria de programas -- APARECEN en la actividad real de usuario final en rsau_audit_history. Para que una fila lleve SLGTC='SE38' esos usuarios tuvieron que ESTAR DENTRO de SE38: la existencia del uso queda probada y el RIESGO DE CONTROL se mantiene, con la revision de autorizaciones (S_DEVELOP / S_PROGRAM ACTVT=16) igual de justificada. LO QUE SE RETIRA: las MAGNITUDES (SE38 1.104 arranques/7 usuarios · SA39 685/7 · SA38 16/2). El query las midio como SLGTC IN ('SA38','SA39','SE38'), que cuenta transacciones lanzadas DESDE esos tcodes, no arranques DE esos tcodes. El recuento correcto es COUNT(*) WHERE TRIM(PARAM1) IN (...) sin filtro sobre SLGTC, y no se ha hecho. El sesgo NO tiene direccion conocida: puede ser mayor (los 108.375 arranques descartados por SLGTC<>'' pueden llevar estos tcodes en PARAM1) o menor (un usuario dentro de SE38 que lanza mucho infla el recuento). No inventar signo.",
+    "status": "superseded",
+    "confidence_tier": "TIER_2",
     "evidence": "SELECT SLGTC, TXSUBCLSID, COUNT(*), COUNT(DISTINCT SLGUSER) FROM rsau_audit_history WHERE SLGTC IN ('SA38','SA39','SE38') GROUP BY SLGTC, TXSUBCLSID. SE38/Transaction Start: 1104 rows, 7 users; SA39/Transaction Start: 685 rows, 7 users; SA38/Transaction Start: 16 rows, 2 users. Live query against Gold DB 2026-06-22.",
     "evidence_path": "Zagentexecution/sap_data_extraction/sqlite/p01_gold_master_data.db:rsau_audit_history",
-    "evidence_tier": "TIER_1",
+    "evidence_tier": "TIER_2",
     "related_objects": [
       "SA38",
       "SA39",
@@ -10583,7 +10600,14 @@
     "domain": "Security",
     "created_session": 84,
     "resolved_session": null,
-    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101)."
+    "resolution_notes": "status era 'VERIFIED', que describe verificacion y no ciclo de vida; eso ya lo dicen claim_type=verified_fact y confidence=TIER_1. Normalizado a 'active' (s101).",
+    "_superseded_text": "SA38/SA39/SE38 (run-arbitrary-ABAP-program tcodes) appear in real end-user Transaction-Start activity in rsau_audit_history (P01, 2026-02 to 2026-06). Confirmed counts: SE38 1,104 TcodeStart events / 7 users; SA39 685 / 7 users; SA38 16 / 2 users. These tcodes bypass standard business-process tcodes and allow any authorized user to run any report/program — a SoD and control-environment risk. Presence of these in production audit log warrants authorization review (S_DEVELOP / S_PROGRAM object for activity=Execute).",
+    "superseded_session": 103,
+    "superseded_date": "2026-08-26",
+    "superseded_reason": "misma confusion de columna, esta vez en el query del claim y no en el script: SLGTC cuenta lo lanzado DESDE el tcode, no el arranque DEL tcode",
+    "superseded_by_claim_id": 596,
+    "_para_re_medir": "COUNT(*) y COUNT(DISTINCT SLGUSER) WHERE TRIM(PARAM1) IN ('SA38','SA39','SE38') sin filtro sobre SLGTC",
+    "_lo_que_sobrevive": "el USO existe y el riesgo de control se mantiene. Solo mueren las magnitudes y la etiqueta 'arranques'"
   },
   {
     "id": 220,
@@ -11165,6 +11189,13 @@
     },
     "linked_by_s099": [
       "PM4PY"
+    ],
+    "_amendments": [
+      {
+        "session": 103,
+        "date": "2026-08-26",
+        "que_cambia": "sustituir 'Tier 2: Behavioral SoD rsau (32 invoice+payment conflicts)' por 'Tier 2: SoD conductual sobre rsau CONSTRUIDA (la CAPACIDAD existe); su primera corrida esta RETIRADA -- leia SLGTC en vez de PARAM1, ver claim 213. El recuento de conflictos se desconoce hasta re-correr con TRIM(PARAM1)'. La CONCLUSION de madurez se mantiene: que exista la capa Tier 2 y que el etiquetado semantico sea la pieza fundacional es cierto con independencia de que la corrida concreta leyera la columna mala, y el salto se apoya ademas en p2p_conformance (EKKO/EKBE, fuente INTACTA), OCEL2 y pm4py"
+      }
     ]
   },
   {
@@ -25072,7 +25103,15 @@
         "P2P",
         "T2R"
       ]
-    }
+    },
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "su soporte es un diff fila a fila hecho A MANO el 2026-08-19, ANTES de que el script existiera. Ningun claim cita el instrumento. Matiz de precision sin efecto: las 17 claves E071K son de la TAREA FXF, no de FXE+FXF conjuntamente",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 527,
@@ -26252,7 +26291,14 @@
       "process": [
         "B2R"
       ]
-    }
+    },
+    "_amendments": [
+      {
+        "session": 103,
+        "date": "2026-08-26",
+        "que_cambia": "las cifras de FAGL_011ZC (195/131), FAGL_011QT (179/96) y FAGL_011SC (51/22, 229/213) se MANTIENEN. Sustituir 'FAGL_011PC 452 filas, faltan 287 y 278' por: 'FAGL_011PC: 452 filas en P01. El numero de nodos realmente ausentes SE DESCONOCE -- las 287/278 comparan por la clave SUBROGADA ID, asignada por CONTADOR y distinta en cada sistema, asi que cuentan desalineamiento de contador como filas ausentes. La cifra correcta exige re-medir por clave de negocio (ERGSL / estructura del arbol) y no se ha hecho'. Es un defecto DISTINTO del SID silencioso: por ESE, el claim esta INTACTO -- la corrida fue P01->D01,V01 y los tres tienen bloque propio o caen al generico que ES D01, o sea que cada pata leyo el sistema que nombra, probado por el inventario del .env y no por la etiqueta del script"
+      }
+    ]
   },
   {
     "id": 547,
@@ -26428,7 +26474,15 @@
       "process": [
         "T2R"
       ]
-    }
+    },
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR POBLACION MEDIDA, no porque el instrumento sea correcto -- y la distincion importa: dentro de su alcance hay CERO cuentas AKONTO, que son justo las que el camino legado clasifica mal. Reproducido celda a celda contra el workbook entregado a Tesoreria",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 550,
@@ -26867,7 +26921,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR POBLACION MEDIDA, no porque el instrumento sea correcto -- y la distincion importa: dentro de su alcance hay CERO cuentas AKONTO, que son justo las que el camino legado clasifica mal. Reproducido celda a celda contra el workbook entregado a Tesoreria",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 561,
@@ -26905,7 +26967,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR POBLACION MEDIDA, no porque el instrumento sea correcto -- y la distincion importa: dentro de su alcance hay CERO cuentas AKONTO, que son justo las que el camino legado clasifica mal. Reproducido celda a celda contra el workbook entregado a Tesoreria",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 562,
@@ -26942,7 +27012,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR DISENO, que es la forma fuerte: su cadena de evidencia pasa por el camino CORREGIDO -- build_full_census.py:35 importa variant_selection y :109 elige AKONTO/SKONTO por MITKZ, igual que fx_revaluation_peer_check. Reproducido: 1.1.2.1 da 8 cuentas y 0 en variante; 'GAP - FX open, no variant' da 69. Los dos exactos",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 563,
@@ -26981,7 +27059,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR DISENO, que es la forma fuerte: su cadena de evidencia pasa por el camino CORREGIDO -- build_full_census.py:35 importa variant_selection y :109 elige AKONTO/SKONTO por MITKZ, igual que fx_revaluation_peer_check. Reproducido: 1.1.2.1 da 8 cuentas y 0 en variante; 'GAP - FX open, no variant' da 69. Los dos exactos",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 564,
@@ -27011,7 +27097,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR DISENO, que es la forma fuerte: su cadena de evidencia pasa por el camino CORREGIDO -- build_full_census.py:35 importa variant_selection y :109 elige AKONTO/SKONTO por MITKZ, igual que fx_revaluation_peer_check. Reproducido: 1.1.2.1 da 8 cuentas y 0 en variante; 'GAP - FX open, no variant' da 69. Los dos exactos",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 565,
@@ -27048,7 +27142,15 @@
     ],
     "created_session": 102,
     "resolved_session": 102,
-    "resolution_notes": ""
+    "resolution_notes": "",
+    "_sobrevive_a": [
+      {
+        "defecto": "claim 596 -- SLGTC frente a PARAM1 / covered() legado / SID silencioso",
+        "por_que_sobrevive": "SOBREVIVE POR DISENO, que es la forma fuerte: su cadena de evidencia pasa por el camino CORREGIDO -- build_full_census.py:35 importa variant_selection y :109 elige AKONTO/SKONTO por MITKZ, igual que fx_revaluation_peer_check. Reproducido: 1.1.2.1 da 8 cuentas y 0 en variante; 'GAP - FX open, no variant' da 69. Los dos exactos",
+        "revisado": "2026-08-26",
+        "session": 103
+      }
+    ]
   },
   {
     "id": 566,
@@ -28085,7 +28187,11 @@
       "SLGTC",
       "PARAM1",
       "TSTC",
-      "A48_semantic_activity_map"
+      "A48_semantic_activity_map",
+      "claim_213",
+      "claim_219",
+      "claim_231",
+      "TIER2_SOD"
     ],
     "created_session": 103,
     "status": "OPEN",
@@ -28093,7 +28199,14 @@
       "functional": "Process_Mining",
       "module": "BASIS",
       "process": "P2D"
-    }
+    },
+    "_amendments": [
+      {
+        "session": 103,
+        "date": "2026-08-26",
+        "que_cambia": "cambiar el ancla 'process_mining/semantic_activity_map.py:65-66' por 'process_mining/semantic_activity_map.py:73-74 (HEAD); 63-64 en 27452c2; 50-51 en 62b5a9e' -- en :65-66 no hay consulta en ninguna version. Y ANADIR el hecho mas importante que el claim no decia: EL DEFECTO ESTA DESDE EL PRIMER COMMIT (62b5a9e:50-51), asi que NINGUNA cifra derivada de este script en ningun momento de su historia estuvo limpia. Anadir a related_objects los claims 213 y 219, que arrastran el mismo error de columna SIN pasar por el script"
+      }
+    ]
   },
   {
     "id": 597,
@@ -28110,7 +28223,9 @@
       "RFC_SYSTEM_INFO",
       "D01",
       "V01",
-      "A43_fsv_alignment_check"
+      "A43_fsv_alignment_check",
+      "ob09_vs_variant_check.py",
+      "A47_ob09_vs_variant_check"
     ],
     "created_session": 103,
     "status": "OPEN",
@@ -28118,7 +28233,14 @@
       "functional": "Landscape",
       "module": "BASIS",
       "process": "P2D"
-    }
+    },
+    "_amendments": [
+      {
+        "session": 103,
+        "date": "2026-08-26",
+        "que_cambia": "re-basar el ancla: 'fsv_alignment_check.py:120,130-133' es exacta contra el commit HEAD anterior, pero el fichero crecio y hoy son l.138 (--systems), l.143 (targets) y l.153-156 (rotulacion). ENSANCHAR el alcance, que estaba corto: el claim dice 'afecta a TODO script que acepte un SID por parametro' y solo nombraba A43 -- ob09_vs_variant_check.py tiene el MISMO defecto (--systems sin validar + get_connection). Y el dato que cierra el circulo: RFC_SYSTEM_INFO no se llama en NINGUN quality_check ni ejecutor, solo en 4 sondas de mcp-backend-server-python -- o sea que NINGUNA puerta comprueba con que sistema hablo"
+      }
+    ]
   },
   {
     "id": 598,
@@ -28173,7 +28295,14 @@
       "functional": "FI",
       "module": "FI-GL",
       "process": "R2R"
-    }
+    },
+    "_amendments": [
+      {
+        "session": 103,
+        "date": "2026-08-26",
+        "que_cambia": "las seis anclas estructurales se verificaron una a una contra HEAD y las seis encajan. PERO referenciar por NUMERO DE LINEA en un fichero vivo caduca: entre la escritura del claim y su revision el fichero crecio +20 lineas y las anclas se desplazaron. Referencia estable = NOMBRE DE FUNCION, no numero: covered() / variant_selection() / covered_in()"
+      }
+    ]
   },
   {
     "id": 600,
