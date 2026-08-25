@@ -38,6 +38,7 @@ POR QUE `implication` ES OBLIGATORIO
     segunda cambia lo que hace el siguiente.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -117,6 +118,80 @@ def lo_que_ya_aprendimos(*temas):
     orden = {"TRAP": 0, "INSTRUMENT": 1, "CARRIER": 2, "SUBSTRATE": 3, "METHOD": 4}
     out.sort(key=lambda m: orden.get(m.get("kind"), 9))
     return Memorias(out, list(temas))
+
+
+# ---------------------------------------------------------------------------------------------
+# IMPLICACIONES EJECUTABLES — que la memoria OBLIGUE, no que se lea.
+#
+# Medido 2026-08-25: los 34 mineros importan este modulo y la puerta los da por buenos, pero
+# solo UNO condiciona su comportamiento. Leer no es obedecer, y una puerta que mide el import
+# mide la FORMA. Esto lo cierra: una memoria puede llevar una COMPROBACION sobre la salida del
+# minero, y lo que la incumple no se publica -- se marca.
+#
+# Cada entrada: (patron que identifica la memoria, nombre, funcion(salida) -> None | motivo).
+def _falta_ventana(doc):
+    t = json.dumps(doc, ensure_ascii=False).lower()
+    if any(k in t for k in ("ventana", "desde", "_window", "first_seen", "sal_date")):
+        return None
+    return ("ninguna cifra declara la VENTANA de la que sale, y este fichero mezcla fuentes con "
+            "rangos distintos")
+
+
+def _corte_no_publicado(doc):
+    t = json.dumps(doc, ensure_ascii=False).lower()
+    corta = any(k in t for k in ("top", "limit", "[:", "muestra", "primeros"))
+    publica = any(k in t for k in ("descartad", "_lo_descartado", "vistos", "conservados",
+                                   "cola", "resto"))
+    if corta and not publica:
+        return "hay senales de un corte y ningun recuento de lo descartado"
+    return None
+
+
+def _tasa_sobre_cola(doc):
+    # Se normaliza la puntuacion antes de buscar: el aviso puede venir como texto ("no es una
+    # tasa") o como NOMBRE DE CAMPO ("_estados_no_es_una_tasa"), y buscar solo la version con
+    # espacios daba un incumplimiento donde el aviso SI estaba. Una comprobacion que depende de
+    # como se escribe una clave mide la forma, que es justo lo que esta puerta vino a dejar de
+    # medir.
+    t = re.sub(r"[_\-\s]+", " ", json.dumps(doc, ensure_ascii=False).lower())
+    if "qstate" in t or "error sessions" in t or "estados" in t:
+        if "no es una tasa" not in t:
+            return ("publica el reparto de QSTATE sin el aviso de que la cola BORRA los exitos "
+                    "y por tanto no es una tasa de fallo")
+    return None
+
+
+def _creator_como_actor(doc):
+    t = json.dumps(doc, ensure_ascii=False).lower()
+    if "creator" in t and "usr02" not in t and "no es una identidad" not in t:
+        return ("usa CREATOR sin contrastarlo contra USR02 ni advertir que es un parametro de "
+                "BDC_OPEN_GROUP que SAP no valida")
+    return None
+
+
+COMPROBACIONES = [
+    ("ventana", "declara la ventana", _falta_ventana),
+    ("corte|muestreo|umbral|descart", "publica lo que descarta", _corte_no_publicado),
+    ("qstate|cola|borra", "QSTATE no es una tasa", _tasa_sobre_cola),
+    ("creator|bdc_open_group", "CREATOR no es un actor", _creator_como_actor),
+]
+
+
+def obedece(doc, temas=()):
+    """¿La SALIDA de este minero cumple lo que las memorias que le aplican le exigen?
+
+    Devuelve la lista de incumplimientos. Esto es lo que convierte una memoria en una regla:
+    hasta ahora la implicacion era texto que se leia y se ignoraba.
+    """
+    fallos = []
+    blob = " ".join(str(t).lower() for t in temas)
+    for patron, nombre, fn in COMPROBACIONES:
+        if temas and not re.search(patron, blob):
+            continue
+        motivo = fn(doc)
+        if motivo:
+            fallos.append({"regla": nombre, "incumplimiento": motivo})
+    return fallos
 
 
 def aprender(minero, kind, hecho, implicacion, evidencia="", sesion=None):

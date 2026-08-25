@@ -376,6 +376,12 @@ def main():
             "creator_strings": len(g["creator_strings"]),
             "usuarios_de_ejecucion": len([u for u in g["userids"] if u]),
             "estados": dict(g["estados"]),
+            # El aviso viaja CON la cifra, no en una nota general al principio del fichero: quien
+            # lee un generador concreto lee esta linea, no el preambulo. La puerta de obediencia
+            # (A37) lo comprueba sobre la salida, no sobre el codigo.
+            "_estados_no_es_una_tasa": ("NO dividir entre el total: 'F' significa FINALIZADA CON "
+                                        "EXITO y la cola BORRA los exitos, asi que el "
+                                        "denominador esta sesgado por construccion"),
             "activo_desde": g["primera"], "ultima": g["ultima"],
             "por_ano": dict(sorted(g["por_ano"].items())),
             "autoria": ("PROPIO" if propio else

@@ -34,6 +34,15 @@ from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "process_mining"))
+try:
+    # Lo aprendido de este instrumento, ANTES de cruzar nada. En particular la trampa que este
+    # mismo algoritmo estreno: buscar palabras de negacion hace que "No ES batch input" cuente
+    # como una contradiccion cuando solo describe el canal.
+    from metodo import lo_que_ya_aprendimos as _aprendido
+except Exception:
+    _aprendido = None
+
 CLAIMS = REPO / "brain_v2" / "claims" / "claims.json"
 BUS = REPO / "process_mining" / "mining_findings.json"
 SALIDA = REPO / "brain_v2" / "claim_resolution_proposals.json"

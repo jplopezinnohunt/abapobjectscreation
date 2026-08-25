@@ -58,8 +58,8 @@ public-sector finance, not manufacturing or sales.
 ## 🔌 INTEGRATION — the richest surface, and the one that explains the operating model
 **SAP here is a system-of-record fed by satellites, not a dialog system.** Any answer about how
 the system is used that assumes people in screens is wrong before it starts.
-- **555 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
-  RFC_INBOUND_OBSERVED 255 · RFC_DESTINATION 239 · FILE 20 · BATCH_INPUT 17 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
+- **668 interface records** (derived, queryable — `brain_v2/interface_inventory.json`):
+  RFC_INBOUND_OBSERVED 255 · RFC_DESTINATION 239 · RFC_CUSTOM_FM 105 · BATCH_INPUT 25 · FILE 20 · IDOC 9 · WEB_SERVICE 8 · WEBSERVICE 4 · DBCON 2 · HTTP_SERVICE 1
 - **The boundary is mostly dead:** 238 RFC destinations configured,
   **11 live**, **227 dead**,
   **319 undeclared** — traffic crossing with no configuration entry.
@@ -98,7 +98,7 @@ corre solo, y lo que ENTRA por RFC — esta ultima es la mayor y la que no esta 
 - **rfc** — 12,589,665 ejec · tecnico 52.5% · negocio 34.7% · sin clasificar **2.5%**
 - **TECNICO es una respuesta, no un hueco** (el despachador y el planificador son fontaneria).
   El hueco real es SIN CLASIFICAR: 315,305 de 44,181,831.
-- **Situar no es explicar:** solo el **60.6%** de las ejecuciones de negocio llega a grado 3
+- **Situar no es explicar:** solo el **70.7%** de las ejecuciones de negocio llega a grado 3
   (alguien lo escribio con evidencia). Ese salto no lo da ningun algoritmo.
 - Movimiento: **no se movio** desde la ultima corrida — eso ES el hallazgo · sin cadena de proceso: RE_FX, Output (stranded, no olvido)
 - **354 objetos por explorar** (36 custom) —
@@ -115,13 +115,13 @@ inventario del resto; el contenido se abre con su comando.
 
 | Store | Cuánto | Cómo se abre |
 |---|---:|---|
-| **claims** | 575 | `python brain_v2/graph_queries.py search <termino>` |
+| **claims** | 589 | `python brain_v2/graph_queries.py search <termino>` |
 | **docs de dominio** | 143 | `python brain_v2/load_domain.py <tema>` — **carga el dominio ENTERO** |
 | **companions** | 42 | `companions/how_unesco_works.html` los indexa todos |
 | **incidentes** | 13 | `python brain_v2/graph_queries.py incident <id>` |
-| **reglas** | 230 | `brain_v2/agent_rules/feedback_rules.json` |
-| **memorias de MÉTODO** | 132 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
-| **algoritmos** | 51 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
+| **reglas** | 239 | `brain_v2/agent_rules/feedback_rules.json` |
+| **memorias de MÉTODO** | 147 | `brain_v2/methods/algorithm_memory.json` — INSTRUMENT · SUBSTRATE · CARRIER · TRAP |
+| **algoritmos** | 64 | `brain_v2/methods/algorithms.json` — lee su `failure_mode` ANTES de correrlo |
 
 - ⚠️ **Las memorias de MÉTODO son el store que nos hace mejores y nadie apuntaba a él.** Dicen
   qué campo miente, qué lectura produce una respuesta segura y falsa, hasta dónde ve un
@@ -130,7 +130,7 @@ inventario del resto; el contenido se abre con su comando.
   — comprueba que cada artefacto prometido por un algoritmo exista, lo lea alguien, y se llegue
   a él. En su primera corrida: **24 invisibles y 4 ausentes de 31**.
 
-## 🧭 LOS 38 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
+## 🧭 LOS 46 ANÁLISIS QUE EXISTEN, Y DÓNDE DEJAN SU RESULTADO
 El gate de alcanzabilidad encontró **24 artefactos invisibles de 31**: existían, se regeneraban
 en cada rebuild, eran correctos, y **no se llegaba a ellos desde ningún sitio**. Se generaban
 para nadie. Esta tabla se genera de `algorithms.json`, que ya sabía qué hace cada uno y dónde
@@ -145,7 +145,7 @@ lo deja — solo que nadie lo publicaba.
 | `A19_log_reality_filter` | classify every identifier the audit log carries into OBJECT / GENERATED IN | -- | `brain_v2/log_reality.json` |
 | `A20_comprehension_index` | measure whether the EXECUTION SURFACE is closed, across the FOUR surfaces  | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/comprehension_index.json` |
 | `A22_domain_composition` | abrir un dominio: de que objetos esta hecho, quien lo conduce, cuando, por | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/domain_composition.json` |
-| `A23_channel_discovery_by_traffic` | descubrir canales de entrada por su TRAFICO y no por su configuracion, y s | -- | `brain_v2/interface_inventory.json` |
+| `A23_channel_discovery_by_traffic` | descubrir canales de entrada por su TRAFICO y no por su configuracion, y s | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/interface_inventory.json` |
 | `A3_two_axis_classification` | explain every call on two independent axes — PROCESS (from the object name | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
 | `A4_ordered_classifier_ladder` | ordered rule chain (package -> software component -> overlay -> name -> te | Treasury | `Zagentexecution/sap_data_extraction/sqlite/job_classification.json` |
 | `A5_adaptive_learning_loop` | auto-resolve unknown calls by function group / naming / app domain, LEARN  | BusinessPartner, FI_AA, Travel | `process_mining/learned_rules.json` |
@@ -256,6 +256,54 @@ lo deja — solo que nadie lo publicaba.
 |---|---|---|---|
 | `A44_model_gap_exploration` | recorrer un modelo ya construido preguntando que NO sabe: cuanto cae en cu | Treasury | `brain_v2/bank_model_findings.json` |
 
+**el log de auditoria RF...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A27_interface_nature` | poner a cada interfaz DOS ejes: el dominio (donde pasa) y la NATURALEZA (q | BusinessPartner, FI_AA, Integration, Output +4 | `brain_v2/interface_inventory.json` |
+
+**los demas algoritmos d...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A29_discovery_chain` | correr la cadena de descubrimiento entera -- realidad, columna vertebral d | -- | `process_mining/discovery_delta.json` |
+
+**las conclusiones de lo...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A30_mining_bus` | dar a los mineros un sitio comun donde publicar lo que concluyen y consult | Treasury | `process_mining/mining_findings.json` |
+
+**apqi -- la cola de bat...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A31_bdc_channel_mining` | descubrir quien genera sesiones de batch input, de donde vienen y a que do | Travel | `brain_v2/bdc_channel.json` |
+
+**el repositorio entero ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A32_mining_capability_census` | encontrar scripts que leen datos de EVENTO y sacan patrones de ellos sin e | -- | `brain_v2/methods/mining_candidates.json` |
+
+**vari/varid -- el CONTE...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A33_variant_content_mining` | leer los VALORES de las variantes para saber lo que un programa HACE de ve | Output | `brain_v2/variant_content.json` |
+
+**la memoria de metodo, ...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A37_method_memory_applied` | dar a cualquier minero, ANTES de correr, lo que este proyecto ya aprendio  | Integration | `brain_v2/methods/algorithm_memory.json` |
+
+**los claims ABIERTOS cr...**
+
+| algoritmo | qué contesta | dominios que cubre | aterriza en |
+|---|---|---|---|
+| `A38_claim_resolution` | cerrar el circulo de vuelta: encontrar los claims abiertos para los que un | Treasury | `brain_v2/claim_resolution_proposals.json` |
+
 - 📐 **Cómo encajan entre sí:** `knowledge/exploration_architecture.md` — la cadena completa,
   las 4 superficies, las 5 vías, los 4 grados y las trampas que costó llegar ahí.
 - **Ninguno de estos ficheros se lee entero.** Se abren con
@@ -288,15 +336,18 @@ lo deja — solo que nadie lo publicaba.
 _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FXREVAL-OB09` (ROOT_CAUSE_CONFIRMED)  `INC-MMF-BNPPB-2026` (ANALYZED_EXECUTION_PENDING)
 
 
-## AGENTES - lo que sabemos HACER (10 disponibles)
+## AGENTES - lo que sabemos HACER (13 disponibles)
 - **`authority-doc-reader`** - LECTURA. Extrae hechos ESTRUCTURADOS del documento que AUTORIZA un cambio — la carta, el formulario, el carton, el aviso del banco — que casi sie
 - **`bank-process-discovery`** - model: sonnet ---
+- **`batch-input-explorer`** - model: sonnet ---
 - **`bcm-signatory-panel`** - 
 - **`brain-steward`** - Promotes knowledge that surfaced in a working conversation into the CENTRAL brain before it is lost. This is the missing "transcript-pattern-extr
 - **`fx-revaluation-scope`** - Audita QUE CUENTAS ENTRAN Y CUALES SE QUEDAN FUERA de la revaluacion FX (F.05 / SAPF100), entrando por la NATURALEZA de la cuenta — banco, deposi
 - **`incident-analyst`** - Processes UNESCO SAP support incidents end-to-end. Use this agent whenever the user passes an incident — whether as an .eml file, pasted email te
 - **`log-process-discovery`** - model: sonnet ---
 - **`master-data-sync`** - Alinea MASTER DATA de P01 (fuente, read-only) hacia D01 / V01: cuentas GL, centros de coste, fondos, centros gestores, proyectos/WBS. Mide primer
+- **`miner-onboarding`** - Convierte un script que MINA en una CAPACIDAD registrada — con su proceso completo, no con un esqueleto. Recibe un candidato (de `mining_capabili
+- **`mining-arbiter`** - El JUICIO del foro de mineros. Resuelve lo que la jerarquía de evidencia no puede: dos medidas del mismo peso que dicen cosas distintas del mismo
 - **`process-guardian`** - model: sonnet ---
 - **`variant-intelligence`** - Lee el CONTENIDO REAL de las variantes de ejecucion de programas ABAP y lo convierte en conocimiento de proceso. El programa dice lo que se PUEDE
 
@@ -306,33 +357,33 @@ _3 more open, drill by id:_ `INC-BUDGETRATE-EQG` (ROOT_CAUSE_CONFIRMED)  `INC-FX
 > `python brain_v2/bank_model_explorer.py` (paso 2i del rebuild). El CRITERIO lo pone el
 > agente `bank-process-discovery`; el modelo vive en
 > `knowledge/domains/Treasury/house_bank_operating_roles.md`.
-- `NEW` - El 51% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
+- `NEW` - El 43% de los bancos vivos cae en un cubo de 'no supe clasificarlo'
 - `NEW` - 16 cuenta(s) con extracto y CERO pagos: no pagan, COBRAN
 - `BLIND` - El extracto de FEBKO es PARCIAL: faltan 5 sociedad(es)
 - `RISK` - 10 banco(s) casa sin actividad desde 2024 o antes
 - `NEW` - 35 banco(s) ejecutan UN SOLO metodo de pago
-- `RISK` - 6 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
+- `RISK` - 4 sociedad(es) no francesas: su pais no alcanza la clase que despacha PPC
 
-## WHAT WE KNOW DEEPLY - 46 companions; the 10 densest, and what each covers
+## WHAT WE KNOW DEEPLY - 48 companions; the 10 densest, and what each covers
 > Do NOT re-derive these. Search any term across every store AND the companions: `python brain_v2/graph_queries.py search <term>`.
 
-- `bank_statement_ebs_companion.html` - Bank Statement & Reconciliation - basis, basu, bseg, bsik, business area, cash, compliance, connectivity, derivation
-- `payment_bcm_companion.html` - Payment & BCM Intelligence - avc, basu, biennium, bseg, bsik, cash, compliance, donor, dual control
-- `transport_companion_D01K9B0CBF_v2.html` - Company Code STEM Creation - avc, basis, bseg, business area, carry forward, cash, derivation, fbzp, fmderive
-- `cts_dashboard.html` - CTS Dashboard (2017-2026) - avc, basis, basu, biennium, bseg, business area, cash, derivation, epi-use
-- `treasury_operations_companion_v1.html` - Treasury Operations v1 - avc, basu, biennium, bsik, business area, cash, compliance, donor, fbzp
-- `BCM_StructuredAddressChange.html` - BCM Structured Address Change - basis, bseg, bsik, cash, compliance, derivation, dual control, fbzp, ggb0
-- `fi_substitutions_custom_code_companion_v1.html` - Substitutions & Custom Code Registry - basu, bseg, bsik, business area, cash, derivation, fmderive, fmifiit, ggb0
-- `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - avc, basis, basu, connectivity, derivation, dual control, fmifiit, hcm, idoc
-- `fi_maintenance.html` - Finance Operations Reference - avc, basu, biennium, bsik, business area, donor, fipex, fm-avc, fmifiit
-- `inc_egypt_ppc_configuration.html` - Egypt — configure the country for Purpose of Payment - business area, interface, p2p, procure, substitution, taxonomy, upgrade, yrggbs00
+- `how_unesco_works.html` - Como trabaja UNESCO — vista general - basis, busarea, business area, carry forward, conformance, connectivity, derivation, donor, epi-use
+- `bank_statement_ebs_companion.html` - Bank Statement & Reconciliation - basis, basu, bseg, bsik, business area, compliance, connectivity, derivation, donor
+- `payment_bcm_companion.html` - Payment & BCM Intelligence - basu, biennium, bseg, bsik, compliance, donor, dual control, fbzp, fipex
+- `transport_companion_D01K9B0CBF_v2.html` - Company Code STEM Creation - basis, bseg, business area, carry forward, derivation, fbzp, fmderive, fmifiit, ggb0
+- `cts_dashboard.html` - CTS Dashboard (2017-2026) - basis, basu, biennium, bseg, business area, derivation, epi-use, ggb0, ggb1
+- `treasury_operations_companion_v1.html` - Treasury Operations v1 - basu, biennium, bsik, business area, compliance, donor, fbzp, fipex, fm-avc
+- `BCM_StructuredAddressChange.html` - BCM Structured Address Change - basis, bseg, bsik, compliance, derivation, dual control, fbzp, ggb0, ggb1
+- `fi_substitutions_custom_code_companion_v1.html` - Substitutions & Custom Code Registry - basu, bseg, bsik, business area, derivation, fmderive, fmifiit, ggb0, ggb1
+- `sap_knowledge_graph.html` - UNESCO SAP Living Knowledge Brain - basis, basu, connectivity, derivation, dual control, fmifiit, hcm, idoc, interface
+- `fi_maintenance.html` - Finance Operations Reference - basu, biennium, bsik, business area, donor, fipex, fm-avc, fmifiit, monitoring
 
 ## ⛔ THE OPERATING MODEL EXISTS — do not re-invent
 `brain_v2/capability_model/capability_model.json` = **Layer 15** of brain_state. Domain × 11
 capabilities; AS-DESIGNED (standard SAP) + AS-RUN (ours); G = delta = the product. Model maturity:
 **30.3%**. Do NOT propose a new framework or redesign the schema — EXTEND it.
 
-## Brain at a glance (1994 objects · 230 rules · 575 claims · 16 incidents · 9 closed researches)
+## Brain at a glance (3810 objects · 239 rules · 588 claims · 16 incidents · 9 closed researches)
 16 layers (L0–L15): core_principles · objects · indexes · rules · claims · known_unknowns · falsification ·
 superseded · user_questions · data_quality · incidents · blind_spots(0) · interactions · domains_layer(3-axis) ·
 **capability_model(L15)**.
@@ -367,7 +418,7 @@ Pending after gate: A · B · C · D · E · F
 - Research base: `brain_v2/research/` — dedupe new research vs `sources_index.json` (175 urls); never re-assert `findings_registry.json` refuted.
 - Full model: `brain_v2/capability_model/` (capability_model · s4_readiness_model · execution_backlog · applied_models · maturity).
 
-## Rules to load first (behavioral DNA — 230 total)
+## Rules to load first (behavioral DNA — 239 total)
 Read `brain_v2/agent_rules/feedback_rules.json` for all. CRITICAL ones added s079: research_quality_gate (#148),
 capability_model_is_the_operating_model (#149), archive_and_dedupe_deep_research (#150),
 ask_strategy_before_scoping (#151), model_exists_do_not_reinvent (#152).

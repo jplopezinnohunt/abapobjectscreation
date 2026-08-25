@@ -37,6 +37,7 @@ QUALITY_CHECK = {
 # ----------------------------------------------------------------------------
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -93,6 +94,41 @@ def main():
                                "mecanizado corre solo cada semana"),
                   "como_se_arregla": ("from metodo import lo_que_ya_aprendimos; "
                                       "m = lo_que_ya_aprendimos('<tema>', ...); m.avisar()")})
+
+    # ---- 1b. ¿LA SALIDA OBEDECE? Leer no es obedecer, y hasta ahora esta puerta media el
+    # import -- o sea la FORMA. Ahora corre las comprobaciones ejecutables de `metodo` contra
+    # el fichero que cada minero produce de verdad.
+    sys.path.insert(0, os.path.join(ROOT, "process_mining"))
+    desobedecen = []
+    try:
+        from metodo import obedece  # type: ignore
+        for aid, a in A.items():
+            if not a.get("mining_kind") or aid in FUERA:
+                continue
+            li = str(a.get("lands_in") or "")
+            m = re.search(r"[\w/\\.-]+\.json", li)
+            if not m:
+                continue
+            p = os.path.join(ROOT, m.group(0).replace("/", os.sep))
+            if not os.path.isfile(p):
+                continue
+            try:
+                doc = json.load(open(p, encoding="utf-8"))
+            except Exception:
+                continue
+            temas = (aid + " " + str(a.get("operates_on") or "") + " " +
+                     str(a.get("does") or "")).lower()
+            for f in obedece(doc, temas=(temas,)):
+                desobedecen.append({"algoritmo": aid, "store": m.group(0), **f})
+    except Exception as e:
+        print(f"  AVISO: no se pudieron correr las comprobaciones ({type(e).__name__}: {e})")
+    if desobedecen:
+        h.append({"gravedad": "LA_SALIDA_DESOBEDECE", "cuantos": len(desobedecen),
+                  "ids": [f"{d['algoritmo']}: {d['regla']}" for d in desobedecen[:8]],
+                  "detalle": desobedecen[:12],
+                  "que_pasa": ("el minero LEE la memoria y su salida la incumple. Esta es la "
+                               "comprobacion que importa: hasta ahora esta puerta media que "
+                               "importaran el modulo, que es la FORMA")})
 
     # ---- 2. memorias que no cambian nada ----
     sin_impl = [m for m in M if not str(m.get("implication") or "").strip()]

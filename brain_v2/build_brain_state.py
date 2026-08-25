@@ -156,6 +156,10 @@ STORES_AL_GRAFO = [
      "name_field": "programa"},
     {"file": "methods/mining_candidates.json", "key": "minero_candidato", "at": "propuestas",
      "name_field": "bound_in"},
+    # El camino de vuelta tambien tiene que ser recorrible: que un minero haya contestado a un
+    # claim abierto es conocimiento sobre ESE objeto, no un parte suelto.
+    {"file": "claim_resolution_proposals.json", "key": "cierra_claim", "at": "propuestas",
+     "name_field": "sujeto"},
     {"file": "payroll_discovery.json", "key": "payroll", "at": None},
     {"file": "custom_fields.json", "key": "custom_field", "at": "fields", "name_field": "owner"},
     {"file": "Zagentexecution/sap_data_extraction/sqlite/job_classification.json",
