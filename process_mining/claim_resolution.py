@@ -1,4 +1,4 @@
-"""EL CIRCULO SE CIERRA: un minero produce la evidencia que un claim abierto estaba esperando.
+﻿"""EL CIRCULO SE CIERRA: un minero produce la evidencia que un claim abierto estaba esperando.
 
 EL HUECO
     Todo el camino de ida existe: minero -> hallazgo -> bus -> grafo -> companion. Y el de
@@ -56,6 +56,62 @@ NIEGA = ("no es", "falso", "refutad", "al contrario", "en realidad", "no existe"
          "ninguna", "nunca")
 
 
+# Lo que el filtro de polaridad TIRA. Un "0 contradicciones" con la red estrechada hoy no es
+# el mismo que un "0" con la red de ayer: si no se publica lo descartado, el detector puede
+# dejar de disparar para siempre y el store seguira pareciendo tranquilo.
+DESCARTADOS = []
+
+
+def _niega_lo_mismo(texto, terminos):
+    """¿Este texto NIEGA estos terminos? Se usa para mirar la polaridad de los DOS lados."""
+    t = " " + re.sub(r"\s+", " ", (texto or "").lower()) + " "
+    for n in NIEGA:
+        i = t.find(n)
+        while i >= 0:
+            if tokens(t[i + len(n): i + len(n) + 60]) & terminos:
+                return True
+            i = t.find(n, i + 1)
+    return False
+
+
+def _contradice(hallazgo, terminos_del_claim, texto_del_claim=""):
+    """UNA PALABRA DE NEGACION NO ES UNA CONTRADICCION: hay que ver QUE niega.
+
+    Medido 2026-08-25: esta funcion no existia y bastaba con que el hallazgo contuviera "no
+    es" para publicar CONTRADICE. Asi salieron dos falsos sobre ZRFC_FMR_CREATE -- el hallazgo
+    decia "817 llamadas desde HQ-ORION-EAI01/03/04. No es batch input", que niega el CANAL
+    batch input, no el claim; de hecho lo CONFIRMA. Publicado como CONTRADICE, el hallazgo mas
+    valioso del store ("un minero niega un claim") queda enterrado bajo ruido.
+
+    Es el mismo defecto que A34 acababa de corregir el mismo dia -- decidir un veredicto por
+    coincidencia de subcadena -- y por eso aqui hay funcion y no un `any(...)` en linea: lo
+    inline no se puede gatear.
+
+    Solo cuenta como contradiccion si lo negado es algo que el claim AFIRMA: se mira la ventana
+    de palabras que sigue a la negacion y se exige que toque el vocabulario del claim.
+    Devuelve (bool, que_niega) para que la propuesta pueda decir en que se apoya.
+    """
+    t = " " + re.sub(r"\s+", " ", (hallazgo or "").lower()) + " "
+    for n in NIEGA:
+        i = t.find(n)
+        while i >= 0:
+            ventana = tokens(t[i + len(n): i + len(n) + 60])
+            comun = ventana & terminos_del_claim
+            if comun:
+                # HAY QUE MIRAR LA POLARIDAD DE LOS DOS LADOS. Si el claim niega LO MISMO, los
+                # dos estan de acuerdo y llamarlo contradiccion es exactamente al reves.
+                # Medido: el claim 581 dice que ORION escribe por RFC "y no es batch input", y
+                # el hallazgo dice "817 llamadas... No es batch input". Coinciden. Con la
+                # ventana sola seguia saliendo CONTRADICE, que es el hallazgo mas valioso del
+                # store enterrado bajo su propio ruido.
+                if _niega_lo_mismo(texto_del_claim, comun):
+                    DESCARTADOS.append(f"'{n}' + {sorted(comun)[:3]}: el claim niega lo mismo")
+                    return False, None
+                return True, f"'{n}' seguido de {sorted(comun)[:4]}, que el claim afirma"
+            i = t.find(n, i + 1)
+    return False, None
+
+
 def cargar(p, d=None):
     try:
         return json.loads(p.read_text(encoding="utf-8"))
@@ -68,14 +124,22 @@ def tokens(t):
             if len(w) > 3 and not w.isdigit()}
 
 
-def main():
+def proponer():
+    """El camino de vuelta, COMO FUNCION — no atrapado dentro de main().
+
+    Mientras esto vivia solo en `main()`, la unica forma de usarlo era lanzar el script a mano.
+    El gate lo midio: A38 estaba registrado como capacidad y ningun otro artefacto nombraba su
+    script, asi que la fase 5 de la cadena lo declaraba en `orchestration.json` y no lo llamaba.
+    Una capacidad que nadie puede invocar desde codigo no es una capacidad, es un recordatorio.
+
+    Devuelve el documento de propuestas (y lo escribe), o None si faltan insumos.
+    """
     C = cargar(CLAIMS, [])
     if isinstance(C, dict):
         C = C.get("claims") or []
     H = (cargar(BUS) or {}).get("hallazgos") or []
     if not C or not H:
-        print("faltan claims o hallazgos")
-        return 1
+        return None
 
     # Indice por SUJETO: un hallazgo habla de un objeto concreto, y un claim que lo nombra en
     # `related_objects` es candidato. Cruzar por texto libre daria ruido; cruzar por objeto es
@@ -102,7 +166,7 @@ def main():
             solape = len(tc & th)
             if solape < 3:
                 continue
-            niega = any(n in str(h.get("hallazgo")).lower() for n in NIEGA)
+            niega, niega_a = _contradice(str(h.get("hallazgo")), tc, texto)
             props.append({
                 "claim_id": c.get("id"),
                 "claim": texto[:180],
@@ -113,6 +177,11 @@ def main():
                 "solape_de_terminos": solape,
                 "propuesta": ("CONTRADICE" if niega else
                               "RESUELVE" if abierto else "REFUERZA"),
+                "_en_que_se_apoya": (
+                    f"NEGACION QUE TOCA EL CLAIM: {niega_a}" if niega else
+                    "el claim contiene una marca de pregunta abierta y el hallazgo la solapa"
+                    if abierto else
+                    f"solape de {solape} termino(s) con el hallazgo -- solo eso"),
                 "_hay_que_leerlo": ("una coincidencia de terminos NO es una respuesta: hay que "
                                     "leer si el hallazgo contesta la pregunta del claim o solo "
                                     "se le parece"),
@@ -136,10 +205,29 @@ def main():
                                if str(c.get("status") or "").upper() in ("OPEN", "", "NONE")),
         "hallazgos_en_el_bus": len(H),
         "por_tipo": dict(Counter(p["propuesta"] for p in props)),
+        "_lo_que_el_filtro_de_polaridad_descarto": {
+            "_que_es": ("cruces que la version anterior habria publicado como CONTRADICE y que "
+                        "no lo son: el hallazgo niega LO MISMO que el claim niega, o sea que "
+                        "estan de acuerdo"),
+            "_por_que_se_publica": ("un '0 contradicciones' con la red estrechada hoy no es el "
+                                    "mismo que un '0' de ayer. Sin esta cuenta el detector "
+                                    "podria dejar de disparar para siempre sin que se note"),
+            "n": len(DESCARTADOS),
+            "casos": DESCARTADOS[:10],
+        },
         "propuestas": props[:80],
         "_quien_decide": "el agente `mining-arbiter`, o `brain-steward` al promover",
     }
     SALIDA.write_text(json.dumps(doc, indent=2, ensure_ascii=False), encoding="utf-8")
+    return doc
+
+
+def main():
+    doc = proponer()
+    if doc is None:
+        print("faltan claims o hallazgos")
+        return 1
+    props, H = doc["propuestas"], range(doc["hallazgos_en_el_bus"])
 
     if "--json" in sys.argv:
         print(json.dumps(doc, ensure_ascii=False, indent=2))

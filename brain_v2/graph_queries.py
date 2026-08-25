@@ -751,6 +751,46 @@ def channels(brain, arg=None):
                         for n, i in sel[:40]]}
 
 
+def account_class(brain, q):
+    """De que TIPO es una cuenta — o que cuentas cuelgan de una posicion del balance.
+
+    Acepta un numero de cuenta ('4041018', con o sin ceros), una clave 'UNES/0004041018', o
+    un trozo del concepto ('imprest', 'cash with banks').
+
+    Contesta con lo que SAP DECLARA (grupo de cuentas, patrimonio/resultado, si esta en T012K)
+    ANTES que con lo que se deduce del texto, y dice siempre en que se apoya. Un numero sin esa
+    etiqueta no se puede usar para decidir nada.
+    """
+    p = Path(__file__).resolve().parent / "account_classes.json"
+    if not p.exists():
+        return {"error": "no hay store: corre python process_mining/account_classes.py"}
+    d = json.loads(p.read_text(encoding="utf-8"))
+    q = (q or "").strip().upper()
+    if not q:
+        return {"_que_contesta": d.get("_que_es"),
+                "_la_trampa": d.get("_LA_TRAMPA"),
+                "conceptos": sorted(d["por_concepto"], key=lambda c: -d["por_concepto"][c]
+                                    ["cuentas_distintas"])[:40],
+                "_uso": "account_class <cuenta|trozo del concepto>"}
+    # 1) por concepto
+    conc = {c: v for c, v in d["por_concepto"].items() if q in c}
+    # 2) por cuenta: se comparan sin ceros a la izquierda, que es como la escribe la gente
+    qn = q.lstrip("0")
+    ctas = {k: v for k, v in d["cuentas"].items()
+            if k.upper() == q or (v["cuenta"] or "").lstrip("0") == qn}
+    if not conc and not ctas:
+        return {"encontrado": False, "_ojo": (
+            "no encontrarlo NO significa que la cuenta no exista: puede no caer en ninguna "
+            "posicion de la version de balance que su sociedad EJECUTA, que es un hallazgo "
+            f"distinto. {d['cuentas_sin_nodo']} cuentas estan en ese caso")}
+    return {"buscado": q,
+            "cuentas": {k: {kk: vv for kk, vv in v.items() if kk != "nodos"}
+                        for k, v in list(ctas.items())[:12]},
+            "conceptos": conc,
+            "_en_que_se_apoya": ("cada cuenta lleva `_en_que_se_apoya_la_clase`: DECLARADO_POR_SAP "
+                                 "o HEURISTICA. No uses una heuristica para decidir nada")}
+
+
 COMMANDS = {
     "channels": lambda b, args: channels(b, args[0] if args else None),
     "what_reads": lambda b, args: what_reads(b, args[0]),
@@ -783,6 +823,8 @@ COMMANDS = {
     "entity": lambda b, args: entity(b, args[0] if args else ""),
     "section": lambda b, args: section(b, args[0] if args else ""),
     "blocking_code": lambda b, args: blocking_code(b, args[0] if args else None),
+    # s103 — de que TIPO es una cuenta, por lo que SAP declara y por donde la cuelga el balance
+    "account_class": lambda b, args: account_class(b, " ".join(args) if args else ""),
 }
 
 if __name__ == "__main__":

@@ -117,7 +117,54 @@ def versions_in_use(conn, bukrs):
             mapa.setdefault(ver, set()).add(d.get("SD_BUKRS") or "(sin sociedad)")
     # una variante sin sociedad fijada la puede lanzar cualquiera: cuenta como generica
     usadas = {v for v, b in mapa.items() if bukrs in b or "(sin sociedad)" in b}
+    _persistir(mapa)
     return usadas, mapa
+
+
+def _persistir(mapa):
+    """Lo que cuesta una conexion a P01 no se imprime y se tira.
+
+    Este mapa es la unica respuesta que existe a "¿que version de balance EJECUTA esta
+    sociedad?", y hace falta leer las 33 variantes de RFBILA00 una a una para tenerlo. Hasta
+    hoy se calculaba en cada corrida, se pintaba en pantalla y se perdia -- asi que cualquier
+    otro analisis que necesitara el dato tenia dos opciones: repetir la extraccion, o elegir
+    una version. Elegir la equivocada es el error de los 144 M EUR (barrer UNES contra FS11).
+
+    Ahora aterriza. `process_mining/account_classes.py` (A34) lo consume para no clasificar una
+    cuenta contra una estructura que su sociedad no ejecuta.
+    """
+    if not mapa:
+        return
+    import datetime
+    import json
+    destino = os.path.join(REPO, "brain_v2", "fsv_versions_in_use.json")
+    doc = {
+        "_que_es": "que version de balance EJECUTA cada sociedad, no cual tiene configurada",
+        "_de_donde_sale": ("de las VARIANTES de RFBILA00 (parametro BILAVERS + SD_BUKRS), una a "
+                           "una via RS_VARIANT_CONTENTS_RFC. NUNCA de T011: una version EXISTE "
+                           "para todas las sociedades y se EJECUTA para algunas"),
+        "_por_que_importa": ("barrer las 1.018 cuentas de UNES contra FS11 invento un hueco de 68 "
+                             "cuentas y 144 M EUR; contra FS10 -- la que UNES ejecuta -- son 4 "
+                             "cuentas y 0,01 EUR"),
+        "_ojo": ("una variante sin SD_BUKRS fijado la puede lanzar cualquiera, asi que aparece "
+                 "como '(sin sociedad)' y cuenta como generica para todas"),
+        "_medido_utc": datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+        "_medido_por": "Zagentexecution/quality_checks/fsv_coverage_check.py :: versions_in_use",
+        "version_a_sociedades": {v: sorted(b) for v, b in sorted(mapa.items())},
+        "sociedad_a_versiones": {},
+    }
+    for v, soc in mapa.items():
+        for s in soc:
+            doc["sociedad_a_versiones"].setdefault(s, []).append(v)
+    for s in doc["sociedad_a_versiones"]:
+        doc["sociedad_a_versiones"][s].sort()
+    try:
+        with open(destino, "w", encoding="utf-8") as fh:
+            json.dump(doc, fh, indent=2, ensure_ascii=False)
+        print("   -> medido y GUARDADO en brain_v2/fsv_versions_in_use.json "
+              "(lo consume A34_account_behaviour_classes)")
+    except OSError as e:
+        print("   AVISO: no se pudo guardar el mapa de versiones: %s" % e)
 
 
 def main():

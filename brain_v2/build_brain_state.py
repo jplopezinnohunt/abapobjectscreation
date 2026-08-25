@@ -156,6 +156,11 @@ STORES_AL_GRAFO = [
      "name_field": "programa"},
     {"file": "methods/mining_candidates.json", "key": "minero_candidato", "at": "propuestas",
      "name_field": "bound_in"},
+    # Se cuelgan los 152 CONCEPTOS del balance, no las 8.781 claves sociedad/cuenta: colgar la
+    # clave no crea conocimiento navegable, crea 8.781 nodos que nadie recorre. La pregunta que
+    # alguien hace es "¿que es 'Field Office Imprest Accounts' y como lo declara SAP?". El
+    # detalle por cuenta se queda en el store, a un drill de distancia.
+    {"file": "account_classes.json", "key": "concepto_de_balance", "at": "por_concepto"},
     # El camino de vuelta tambien tiene que ser recorrible: que un minero haya contestado a un
     # claim abierto es conocimiento sobre ESE objeto, no un parte suelto.
     {"file": "claim_resolution_proposals.json", "key": "cierra_claim", "at": "propuestas",

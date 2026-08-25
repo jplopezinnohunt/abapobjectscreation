@@ -27935,5 +27935,59 @@
       "module": "BASIS",
       "process": "P2D"
     }
+  },
+  {
+    "id": 591,
+    "claim": "EL PERIMETRO DE CUENTAS DE BANCO ES MAYOR QUE EL GRUPO DE CUENTAS 'BANK' (medido 2026-08-25). 270 cuentas DISTINTAS cuelgan de una posicion de BANCO del balance que su sociedad EJECUTA y estan declaradas con SKA1-KTOKS = OTHR o COLL, no BANK: 94 en 'Cash on current & call accounts', 89 en 'Cash with Banks', 76 en 'Field Office Imprest Accounts' y 11 en depositos a plazo. Los dos perimetros que se usan normalmente no las ven: KTOKS = BANK son 918 cuentas distintas y T012K (contrapartida de banco casa) son 382. CONSECUENCIA: cualquier alcance construido por grupo de cuentas o por configuracion de banco casa -- revaluacion FX, analisis de bancos, control al alta de un maestro -- deja fuera cuentas que el balance trata como banco, entre ellas los imprest de oficinas de terreno. COMO SE MIDE: brain_v2/account_classes.json cruza SKA1 (declaracion) x FAGL_011ZC/FAGL_011QT (posicion en el balance) x la version que cada sociedad EJECUTA segun la variante de RFBILA00.",
+    "claim_type": "OBSERVATION",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "p01_ska1 (KTOKS, XBILK) x fagl_011zc x fagl_011qt x p01_skb1 x t012k, Gold DB 2026-08-25",
+      "brain_v2/fsv_versions_in_use.json -- version por variante de RFBILA00, leida en P01",
+      "process_mining/account_classes.py -- salida reproducible"
+    ],
+    "domain": "FI",
+    "related_objects": [
+      "SKA1",
+      "SKB1",
+      "T012K",
+      "FAGL_011ZC",
+      "FAGL_011QT",
+      "RFBILA00",
+      "SAPF100",
+      "A34_account_behaviour_classes"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "FI",
+      "module": "FI-GL",
+      "process": "R2R"
+    }
+  },
+  {
+    "id": 592,
+    "claim": "CLASIFICAR CUENTAS POR PATRON SOBRE EL TEXTO DEL NODO DE BALANCE PRODUCE CIFRAS PLAUSIBLES Y FALSAS (medido 2026-08-25 sobre el propio minero A34). Una primera version que clasificaba solo por expresiones regulares sobre el texto publico '1.418 cuentas de CAJA'; 1.278 de ellas son de BANCO. El patron de BANCO exigia el literal 'CASH AT BANK' y el texto real de UNESCO es 'Cash with Banks' y 'Cash on current & call accounts', asi que caian en el patron de CAJA por la palabra 'Cash'. Del mismo modo 'Investment income' y 'Finance Revenue', que son cuentas de RESULTADO, salian como INVERSION. Y EL MISMO ERROR SE REPITIO EN LA COMPROBACION QUE DEBIA DELATARLO: el cruce declaracion-vs-balance publico 935 'desacuerdos' decididos por si el concepto contenia la subcadena 'BANK', y los 935 eran falsos -- colgaban de 'Cash on current & call accounts', que es banco escrito de otra forma. LO QUE SI DECLARA SAP, sin que nadie interprete: SKA1-XBILK (X = patrimonio, vacio = resultado; 1.967 y 524 en el plan UNES), SKA1-KTOKS (BANK 918, OTHR 995, P&L 491, COLL 59, UNDP 28) y la presencia en T012K.HKONT, que no es un indicio de ser cuenta de banco sino la configuracion que la hace serlo. REGLA: la declaracion primero, el texto medido despues, la heuristica etiquetada como tal y nunca como respuesta principal.",
+    "claim_type": "METHOD",
+    "confidence": "TIER_1",
+    "evidence_for": [
+      "process_mining/account_classes.py -- las dos versiones y sus salidas, 2026-08-25",
+      "p01_ska1: XBILK 1967 'X' / 524 vacio; KTOKS OTHR 995, BANK 918, P&L 491, COLL 59, UNDP 28",
+      "fagl_011qt: textos reales 'Cash with Banks', 'Cash on current & call accounts'"
+    ],
+    "domain": "FI",
+    "related_objects": [
+      "SKA1",
+      "FAGL_011QT",
+      "FAGL_011ZC",
+      "A34_account_behaviour_classes"
+    ],
+    "created_session": 103,
+    "status": "OPEN",
+    "domain_axes": {
+      "functional": "FI",
+      "module": "FI-GL",
+      "process": "R2R"
+    }
   }
 ]

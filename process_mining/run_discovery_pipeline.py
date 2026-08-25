@@ -293,6 +293,17 @@ def cruzar_con_lo_conocido():
     except Exception:
         pass
 
+    # EL CAMINO DE VUELTA. La fase 5 declaraba A38 en orchestration.json y no lo llamaba: el
+    # gate lo midio como ALGORITMO_SIN_LLAMADOR. Es el momento exacto en que tiene sentido --
+    # los mineros acaban de publicar en el bus, asi que la evidencia que un claim abierto
+    # estaba esperando, si llego hoy, esta ahi ahora mismo.
+    vuelta = None
+    try:
+        from claim_resolution import proponer  # type: ignore
+        vuelta = proponer()
+    except Exception as e:
+        print(f"  AVISO: el camino de vuelta no corrio ({type(e).__name__}: {e})")
+
     delta = {
         "_que_es": ("lo que la cadena de descubrimiento encontro y el brain TODAVIA NO SABE. "
                     "Cada nombre de aqui es un candidato a claim, o a un objeto que falta"),
@@ -310,6 +321,15 @@ def cruzar_con_lo_conocido():
             "n": len(choques_vistos),
             "casos": [{"sujeto": c["sujeto"], "mineros": c["mineros"],
                        "resolucion": c["resolucion"]} for c in choques_vistos[:20]]},
+        "claims_que_la_corrida_puede_mover": {
+            "_que_es": ("claims ABIERTOS para los que un minero acaba de publicar evidencia. "
+                        "PROPONE, no cierra: hay que leer si contesta la pregunta o solo se le "
+                        "parece"),
+            "_lo_mas_valioso": "CONTRADICE -- un claim que un minero NIEGA",
+            "n": len(vuelta["propuestas"]) if vuelta else 0,
+            "por_tipo": vuelta["por_tipo"] if vuelta else {},
+            "detalle": "process_mining/claim_resolution.json",
+        } if vuelta else {"n": 0, "_por_que": "sin claims o sin hallazgos en el bus"},
         "resumen": resumen,
         "nuevos_por_fuente": nuevos,
     }

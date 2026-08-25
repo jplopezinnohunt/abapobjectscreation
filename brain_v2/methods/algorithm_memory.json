@@ -1509,6 +1509,39 @@
       "confidence": null,
       "session": 103,
       "source": "usr02 x apqi 2026-08-25"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "Clasificar por PATRON sobre un texto libre de SAP produce cifras plausibles, seguras y falsas. Clasificando cuentas por el texto del nodo de balance salieron '1.418 de CAJA' y 1.278 eran de BANCO: el patron pedia el literal 'CASH AT BANK' y el texto real de UNESCO es 'Cash with Banks' / 'Cash on current & call accounts'. SAP declaraba lo mismo en un campo (SKA1-KTOKS = BANK para 918 cuentas) sin que nadie interpretara nada.",
+      "learned_by": "A34_account_behaviour_classes",
+      "evidence": null,
+      "implication": "antes de derivar una clase de un texto, busca el campo que la DECLARA. Orden de autoridad: DECLARADO_POR_SAP > MEDIDO > HEURISTICA, y cada salida dice en cual se apoya. Una cifra sin esa etiqueta no se puede usar para decidir.",
+      "confidence": null,
+      "session": 103,
+      "source": "process_mining/account_classes.py, las dos versiones y sus salidas 2026-08-25"
+    },
+    {
+      "subject": null,
+      "kind": "TRAP",
+      "fact": "El mismo defecto reaparece en la COMPROBACION que deberia delatarlo. El cruce declaracion-vs-balance publico 935 'desacuerdos' decididos por si el concepto contenia la subcadena 'BANK' -- los 935 falsos. Y A38 publicaba CONTRADICE porque el hallazgo contenia 'no es', cuando lo negado era el CANAL y no el claim; con la ventana de terminos seguia fallando, porque el claim negaba LO MISMO: hay que mirar la polaridad de los DOS lados.",
+      "learned_by": "A38_claim_resolution",
+      "evidence": null,
+      "implication": "cuando escribas la comprobacion de un defecto, aplicale el mismo criterio que al defecto. Una negacion no es una contradiccion hasta saber QUE niega y si el otro lado niega igual. Y publica lo que el filtro descarta: un '0' con la red estrechada hoy no es el '0' de ayer.",
+      "confidence": null,
+      "session": 103,
+      "source": "brain_v2/claim_resolution_proposals.json, claims 580/581 sobre ZRFC_FMR_CREATE"
+    },
+    {
+      "subject": null,
+      "kind": "SUBSTRATE",
+      "fact": "Una version de balance EXISTE para todas las sociedades y se EJECUTA para algunas, y quien lo sabe es la VARIANTE de RFBILA00 (BILAVERS + SD_BUKRS), nunca T011. Medido en P01: FS10 la ejecuta UNES, FS11 ICTP/IIEP, FS01 mixta, mas INT y KONS por variantes sin sociedad fijada, que cuentan como genericas para todas.",
+      "learned_by": "A34_account_behaviour_classes",
+      "evidence": null,
+      "implication": "no juzgues una cuenta contra una estructura que su sociedad no ejecuta: 'no cae en ninguna posicion' de la version equivocada no es un hueco, es otra pregunta. El mapa esta medido en brain_v2/fsv_versions_in_use.json -- leelo, no lo re-derivas ni eliges una version.",
+      "confidence": null,
+      "session": 103,
+      "source": "brain_v2/fsv_versions_in_use.json, variantes de RFBILA00 leidas en P01 2026-08-25"
     }
   ]
 }
