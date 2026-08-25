@@ -1125,6 +1125,49 @@
       "improve": "mirar tambien los otros repos del ecosistema: los mineros de FINCLOSSING y unesco-sap-brain no los ve nadie desde aqui",
       "lands_in": "brain_v2/methods/mining_candidates.json",
       "_medido": "2026-08-25: 23 mineros vivos sin registrar, con tipo probable propuesto para 20 -- 11 de CANAL_Y_ACTOR, 6 de FLUJO_DE_CONTROL, 2 de REALIDAD, 1 de DERIVA"
+    },
+    "A33_variant_content_mining": {
+      "operates_on": "vari/varid -- el CONTENIDO de las variantes, cruzado con tbtcp (pasos de job)",
+      "origin": "OURS",
+      "state": "PARCIAL",
+      "mining_kind": "REALIDAD",
+      "does": "leer los VALORES de las variantes para saber lo que un programa HACE de verdad, no lo que puede hacer. En los jobs es donde estan los parametros y las RUTAS DE FICHERO, o sea el mapa de integraciones por job que de otra forma no se ve; y por similitud entre variantes salen grupos de funcionalidad",
+      "bound_in": [
+        "Zagentexecution/quality_checks/fsv_coverage_check.py",
+        ".claude/agents/variant-intelligence.md"
+      ],
+      "failure_mode": "HAY QUE SEPARAR LA VARIANTE DISENADA DE LA INSTANCIA GENERADA, IGUAL QUE A19 SEPARA EL OBJETO DEL NOMBRE GENERADO. Medido 2026-08-25: 29.190 pares (programa, variante) en tbtcp, y la mayoria son de un solo uso -- RBDAPP01 tiene 14.585 variantes, una por ejecucion. Contarlas todas convierte el corpus en ruido y la extraccion en imposible. Las DISENADAS -- pocas variantes cubriendo muchos pasos -- son 127 en 35 programas, y esas si se extraen barato. | Segundo: una version o una config EXISTE para todas las sociedades y se EJECUTA para algunas; quien sabe cual corre es la VARIANTE, nunca la tabla de configuracion. Barrer contra la version equivocada invento un hueco de 144 M EUR el 2026-08-2x",
+      "improve": "NO HAY CORPUS: el Gold DB solo tiene las variantes de SAPF100 (42), extraidas a mano para un trabajo concreto. Extraer VARI/VARID de las 127 disenadas y sacar de sus valores las rutas de fichero -> el mapa de integraciones por job",
+      "lands_in": "PENDIENTE - hoy se deriva en vivo dentro de fsv_coverage_check y no se guarda",
+      "_nace_de": "2026-08-25. La capacidad EXISTE -- fsv_coverage_check ya deriva BILAVERS de la variante de RFBILA00 y el agente variant-intelligence sabe hacerlo -- pero no estaba registrada como algoritmo ni citada en el registro, asi que nadie mas podia usarla"
+    },
+    "A34_account_behaviour_classes": {
+      "operates_on": "FAGL_011ZC (intervalos de la estructura de balance) x SKA1/SKB1 x la variante que dice que version se ejecuta",
+      "origin": "OURS",
+      "state": "PARCIAL",
+      "mining_kind": "REALIDAD",
+      "does": "mapear cada cuenta de mayor a su NODO de la estructura de balance para saber que TIPO de cuenta es -- banco, deposito, inversion, deudor -- y de ahi que comportamiento le toca. Es un clasificador reutilizable: lo necesita la revaluacion FX (que cuentas deben revaluar), el analisis de bancos (cuales son cuentas de banco) y el alta de maestros (de que tipo es esta cuenta nueva)",
+      "bound_in": [
+        "Zagentexecution/quality_checks/fsv_coverage_check.py"
+      ],
+      "failure_mode": "UNA VERSION DE BALANCE EXISTE PARA TODAS Y SE EJECUTA PARA ALGUNAS. Barrer las 1.018 cuentas de UNES contra FS11 invento un hueco de 68 cuentas y 144 M EUR; contra FS10, que es la que UNES ejecuta de verdad, el hueco son 4 cuentas y 0,01 EUR. Quien sabe que version corre es la VARIANTE de RFBILA00 (BILAVERS + SD_BUKRS), nunca T011. | Segundo: los intervalos de FAGL_011ZC estan RELLENADOS A 10 CON CEROS, asi que '4041018' no compara con '0004041018' y una cuenta parece fuera de toda estructura. | Tercero, el que importa para reusarlo: hoy esto se deriva EN VIVO cada corrida y no se guarda, asi que el analisis de bancos y el alta de maestros vuelven a derivarlo por su cuenta -- o peor, lo adivinan por el nombre de la cuenta",
+      "improve": "extraer FAGL_011ZC al Gold DB y materializar cuenta -> nodo -> clase en un store, para que deje de re-derivarse en cada analisis",
+      "lands_in": "PENDIENTE - se deriva en vivo, no se persiste",
+      "_nace_de": "2026-08-25. Ningun algoritmo del registro hablaba de balance, FSV, clase de cuenta ni revaluacion, y sin embargo el conocimiento estaba producido y medido. Vivia dentro de un quality check"
+    },
+    "A35_mining_artifact_detector": {
+      "operates_on": "lo que ESTA SESION toco, contra el registro de algoritmos",
+      "origin": "OURS",
+      "state": "WORKS",
+      "mining_kind": "COLABORACION",
+      "does": "avisar EN EL MOMENTO de que acabas de construir un artefacto que mina y no lo has registrado: un script que lee eventos y saca patrones, un store que asigna cosas a grupos, o un agente cuyo metodo solo vive en su prompt",
+      "bound_in": [
+        "Zagentexecution/quality_checks/mining_artifact_detector.py"
+      ],
+      "failure_mode": "EN SU PRIMERA CORRIDA COMETIO EL DEFECTO QUE EXISTE PARA CAZAR: medir la forma en vez del efecto. Buscaba 'vari' como SUBCADENA y casaba con 'varias', 'variable' y 'varios' en castellano, asi que marco de minero a tres generadores que no leen una sola tabla de evento. Con frontera de palabra: de 5 hallazgos a 2, y los 2 correctos -- uno de ellos el propio detector, que efectivamente no estaba registrado. | Riesgo permanente: detecta por sintaxis, asi que no distingue un minero de un helper que casualmente agrupa. Por eso dice 'registralo O di por que no lo es', y las exclusiones llevan motivo escrito",
+      "improve": "mirar tambien el TRANSCRIPT de la sesion, no solo los ficheros: parte del metodo se genera en la conversacion y no llega a tocar disco",
+      "lands_in": "n/a - gate: su salida es el aviso, y el sitio donde se actua es algorithms.json",
+      "_nace_de": "2026-08-25, dicho por el operador: 'ese tipo de mineria es la que vas generando en cada sesion y no eres capaz de entender que la generaste'. Ese dia se construyeron cuatro artefactos que minan y ninguno se reconocio como tal hasta que el lo señalo. El censo A32 contesta 'que hay suelto por el repo'; este contesta 'que acabo de crear YO', que es la pregunta que caduca al cerrar la sesion"
     }
   },
   "_portfolio": {
