@@ -82,6 +82,9 @@ QUE_HACE = {
 SIN_FUENTE = {"ZHR_RETIRE_COPY_SPI", "YEBUET01", "ZHR_UPDATE_IT0167", "ZHR_UPDATE_IT0021",
               "ZMM_BI_MM01_PLANT"}
 SENSIBLE = {"ZHR_UPDATE_IT0021", "ZHR_UPDATE_IT0167"}
+# Los UNICOS que la fuente verifico como reports (se lanzan por SE38 o por job, sin tcode).
+# De los demas sin tcode no se afirma nada: "no se encontro" es correcto, inventar no.
+REPORTS = {"RFBIBL01", "RFEBBU00", "SAPF180", "/SAPDMC/SAP_LSMW_BI_RECORDING"}
 
 USTYP_ES = {"A": "Dialogo = PERSONA", "B": "Sistema (tecnico)", "C": "Comunicacion CPIC/RFC",
             "S": "Servicio", "L": "Referencia"}
@@ -93,17 +96,17 @@ def gold():
 
 
 def memorias_de_metodo():
-    """PASO 0 del protocolo: leer lo que este instrumento ya enseño. Estan escritas para este
-    momento, y la version anterior de este script no las leia -- por eso conservaba en su codigo
-    la justificacion de acreedor ya refutada."""
-    try:
-        M = json.loads(MEMORIA.read_text(encoding="utf-8")).get("memories", [])
-    except Exception:
-        return []
-    clave = ("apqi", "creator", "batch input", "bdc", "groupid", "tcode vacio",
-             "claves numericas")
-    return [m for m in M
-            if any(k in json.dumps(m, ensure_ascii=False).lower() for k in clave)]
+    """PASO 0: leer lo que este instrumento YA enseño, y dejar que cambie lo que hago.
+
+    Se delega en el modulo compartido para que todos los mineros lean el mismo store de la
+    misma forma, y para que la implicacion de cada memoria -- que es lo que dice QUE HACER
+    DISTINTO -- llegue igual a todos. Antes cada minero tenia su propia lectura, o ninguna: la
+    memoria "APQI.CREATOR no es una identidad" estaba escrita el 24-ago y al dia siguiente se
+    mecanizo un minero de ese canal que contaba creadores como actores.
+    """
+    from metodo import lo_que_ya_aprendimos  # type: ignore
+    return lo_que_ya_aprendimos("apqi", "creator", "batch input", "bdc", "groupid",
+                                "tcode vacio", "claves numericas")
 
 
 def forma(groupid):
@@ -156,6 +159,21 @@ def tipos_de_usuario(con):
         return {}
 
 
+def _en_lotes(con, sql, claves, campo):
+    """Cuenta sobre la POBLACION ENTERA, por lotes. SQLite limita los parametros de un IN, y
+    esa limitacion se resolvio antes cortando la poblacion a 400 -- que es como se publico un
+    '243 de 243, el 100%' que sobre las 1.728 claves reales es el 32%."""
+    tot, lote = 0, sorted(claves)
+    for i in range(0, len(lote), 900):
+        trozo = lote[i:i + 900]
+        q = ",".join("?" * len(trozo))
+        try:
+            tot += con.execute(sql.format(q=q), tuple(trozo)).fetchone()[0]
+        except sqlite3.Error:
+            return None
+    return tot
+
+
 def prueba_objeto_de_negocio(con, muestra):
     """La clave del GROUPID, contrastada contra los MAESTROS -- con el numero RELLENADO A 10 CON
     CEROS, que es como SAP guarda LIFNR; sin eso casaba 0 de 400.
@@ -164,25 +182,26 @@ def prueba_objeto_de_negocio(con, muestra):
     contra LFA1 y contra PA0001 porque acreedor y PERNR tienen el mismo ancho. La prueba de
     dominio es lo que el usuario CAMBIA, no contra que tabla casa el numero.
     """
-    nums = []
+    nums = set()
     for g in muestra:
         mm = re.match(r"^(\d{1,8})", (g or "").strip())
         if mm:
-            nums.append(mm.group(1))
+            nums.add(mm.group(1))
     if not nums:
         return {}
-    pad = {n.zfill(10) for n in nums[:400]}
-    corto = {n.zfill(8) for n in nums[:400]}
-    out = {"claves_probadas": len(pad)}
+    # SIN CORTES. La version anterior cortaba a 4.000 grupos y luego a 400 claves, y publicaba
+    # "243 de 243 contra las TRES tablas -- el 100%". Sobre las 1.728 claves reales son 560,
+    # 565 y 565: el 32%. Ese 100% ademas se escribio como HECHO en algorithm_memory.
+    pad = {n.zfill(10) for n in nums}
+    corto = {n.zfill(8) for n in nums}
+    out = {"claves_probadas": len(nums), "_sin_muestreo": True}
     for tabla, campo, conj in (("lfa1", "LIFNR", pad), ("pa0001", "PERNR", corto),
                                ("hrp1001", "OBJID", corto)):
-        try:
-            q = ",".join("?" * len(conj))
-            n = con.execute(f"SELECT COUNT(DISTINCT {campo}) FROM [{tabla}] "
-                            f"WHERE {campo} IN ({q})", tuple(conj)).fetchone()[0]
-            out[f"casan_contra_{tabla}"] = n
-        except sqlite3.Error:
-            out[f"casan_contra_{tabla}"] = None
+        n = _en_lotes(con, f"SELECT COUNT(DISTINCT {campo}) FROM [{tabla}] "
+                           f"WHERE {campo} IN ({{q}})", conj, campo)
+        out[f"casan_contra_{tabla}"] = n
+        if n is not None:
+            out[f"pct_{tabla}"] = round(100.0 * n / len(conj), 1)
     out["_la_regla"] = (
         "QUE UNA CLAVE CASE NO DICE DE QUE ES. Acreedor y PERNR tienen el mismo ancho, asi que "
         "los mismos numeros casan contra las dos tablas. La prueba de dominio es lo que el "
@@ -191,26 +210,51 @@ def prueba_objeto_de_negocio(con, muestra):
     return out
 
 
-def dominio_por_lo_que_cambian(con, creadores, desde):
+def dominio_por_lo_que_cambian(con, creadores_por_herramienta):
     """LA PRUEBA DE DOMINIO, la buena: que OBJETOS cambian de verdad los que crean sesiones.
 
-    Nace de una correccion grave: los GROUPID de ALLOS casaron 200/200 contra LFA1 y se
-    concluyo 'acreedores'. Falso. El log de cambios dijo HCM.
+    ⛔ SEGMENTADO POR HERRAMIENTA, NUNCA MEZCLADO. La version anterior juntaba los 446 creadores
+    externos -- 407 de Travel y 40 de ALLOS -- y publicaba el resultado agregado bajo el rotulo
+    "la prueba de a que dominio pertenece un canal". Con Travel dentro, el top sale FMRESERV
+    966.671 y BELEG 299.899, asi que el cubo llamado HCM_ALLOS quedaba "probado" como FM.
+
+    Es el MISMO error que este bloque existe para no repetir, cometido en espejo: mezclar
+    poblaciones en vez de mezclar tablas. Segmentado, ALLOS da HR_IT1018 6.855, HR_IT1001 4.476
+    y Y_HR_IT1081 1.214 -- que es HCM, la conclusion ya medida el 24-ago.
+
+    Y sin ventana: `cdhdr_history` cubre mucho mas que el log de auditoria, y recortarla por un
+    parametro pensado para rsau tiraba datos sin decirlo.
     """
-    if not creadores:
-        return {}
-    q = ",".join("?" * len(creadores))
-    try:
-        filas = con.execute(
-            f"""SELECT OBJECTCLAS, COUNT(*) FROM cdhdr_history
-                WHERE UPPER(TRIM(USERNAME)) IN ({q}) AND UDATE >= ?
-                GROUP BY 1 ORDER BY 2 DESC LIMIT 12""",
-            tuple(creadores) + (desde,)).fetchall()
-    except sqlite3.Error:
-        return {}
-    return {"objetos_que_cambian": [{"clase": c, "cambios": n} for c, n in filas],
-            "_por_que": ("la prueba de a que DOMINIO pertenece un canal es lo que su gente "
-                         "CAMBIA, no como se llama el grupo ni contra que maestro casa la clave")}
+    out = {}
+    for herramienta, creadores in (creadores_por_herramienta or {}).items():
+        cs = {c for c in creadores if c}
+        if not cs:
+            continue
+        agg = Counter()
+        lote = sorted(cs)
+        roto = False
+        for i in range(0, len(lote), 900):
+            trozo = lote[i:i + 900]
+            q = ",".join("?" * len(trozo))
+            try:
+                for clase, n in con.execute(
+                        f"""SELECT OBJECTCLAS, COUNT(*) FROM cdhdr_history
+                            WHERE UPPER(TRIM(USERNAME)) IN ({q}) GROUP BY 1""", tuple(trozo)):
+                    agg[clase] += n
+            except sqlite3.Error:
+                roto = True
+                break
+        if roto:
+            continue
+        out[herramienta] = {
+            "creadores": len(cs),
+            "objetos_que_cambian": [{"clase": c, "cambios": n} for c, n in agg.most_common(8)],
+        }
+    out["_por_que"] = ("la prueba de a que DOMINIO pertenece un canal es lo que su gente CAMBIA "
+                       "-- no como se llama el grupo, ni contra que maestro casa la clave. Y "
+                       "SEGMENTADO por herramienta: mezclar Travel con ALLOS hace que el cubo "
+                       "de ALLOS salga 'probado' como FM")
+    return out
 
 
 def quien_ejecuta_sesiones(con, desde):
@@ -271,9 +315,11 @@ def main():
     a = ap.parse_args()
 
     mem = memorias_de_metodo()
-    print(f"[paso 0] {len(mem)} memoria(s) de metodo sobre este instrumento:")
-    for m in mem[:6]:
-        print(f"    - {str(m.get('fact'))[:110]}")
+    mem.avisar()
+    # Y que CAMBIE lo que hago, no solo que se imprima: si hay una memoria que desaconseja
+    # tratar CREATOR como una identidad, este minero no puede publicar "N creadores" a secas.
+    if mem.prohibe("creator no es una identidad usuario"):
+        globals()["_CREATOR_NO_ES_ACTOR"] = True
 
     con = gold()
     tcodes, textos_tc = transacciones_de(con)
@@ -289,6 +335,7 @@ def main():
                                "estados": Counter(), "primera": None, "ultima": None,
                                "por_ano": Counter()})
     ext_grupos, ext_creadores, ext_userids = [], set(), set()
+    ext_creadores_por_grupo = []      # paralelo a ext_grupos: quien creo CADA sesion externa
     for prog, grupo, creador, userid, fecha, estado in filas:
         p = (prog or "").strip()
         g = gen[p]
@@ -303,6 +350,7 @@ def main():
             g["por_ano"][f[:4]] += 1
         if p == "SAPMSSY1":
             ext_grupos.append((grupo or "").strip())
+            ext_creadores_por_grupo.append((creador or "").strip().upper())
             ext_creadores.add((creador or "").strip())
             ext_userids.add((userid or "").strip())
 
@@ -315,9 +363,14 @@ def main():
             "progid": p,
             "que_hace": QUE_HACE.get(p),
             "transacciones_derivadas": tcs[:6] or None,
-            "_sin_transaccion_no_es_un_fallo": (
-                "es un REPORT: se lanza por SE38 o por job y no tiene tcode. Decir 'no se "
-                "encontro' es correcto; inventarle una, no") if not tcs else None,
+            # SIN TCODE NO SIGNIFICA "ES UN REPORT". SAPMSSY1 es el DESPACHADOR RFC y salia con
+            # las dos cosas a la vez en el mismo registro. Y de los que no tienen tcode, la
+            # fuente solo verifico cuatro como reports: afirmarlo de los demas es inventar.
+            "_sin_transaccion": (
+                "es el DESPACHADOR RFC: no tiene ni debe tener transaccion" if p == "SAPMSSY1"
+                else "es un REPORT verificado: se lanza por SE38 o por job" if p in REPORTS
+                else "no tiene tcode en TSTC. NO se ha verificado que sea un report: decir 'no "
+                     "se encontro' es correcto, inventarle una categoria no") if not tcs else None,
             "texto_de_la_transaccion": [textos_tc.get(t) for t in tcs[:3] if textos_tc.get(t)],
             "sesiones": g["sesiones"],
             "creator_strings": len(g["creator_strings"]),
@@ -332,9 +385,17 @@ def main():
         })
 
     # ---- LOS TRES EJES sobre lo EXTERNO. Ninguno basta solo.
-    formas = Counter(forma(g) for g in ext_grupos)
-    suf = Counter()
+    # EL EJE 1 MIDE CUANTOS GRUPOS COMPARTEN PLANTILLA, no cuantas sesiones. Contando sesiones
+    # decia "50.166 grupos" con forma AAAA_AAAAAA cuando hay DOS (TRIP_CREATE/TRIP_MODIFY), y
+    # 3.535 para 99999999A999 cuando los distintos son 1.346 -- que es justo la cifra que el
+    # metodo cita como la prueba de que hay una plantilla detras.
+    formas, formas_ses = Counter(), Counter()
+    for g in set(ext_grupos):
+        formas[forma(g)] += 1
     for g in ext_grupos:
+        formas_ses[forma(g)] += 1
+    suf = Counter()
+    for g in set(ext_grupos):
         m = re.match(r"^\d{1,8}([A-Z0-9]{2,4})$", g, re.I)
         if m:
             suf[m.group(1).upper()] += 1
@@ -351,8 +412,11 @@ def main():
         "eje_1_forma_del_groupid": {
             "_que_mide": ("una herramienta emite con PLANTILLA. Digitos->9, letras->A: si "
                           "muchos grupos comparten forma, eso es una plantilla"),
-            "top": [{"forma": f, "grupos": n} for f, n in formas.most_common(8)],
-            "formas_distintas": len(formas)},
+            "top": [{"forma": f, "grupos_distintos": n, "sesiones": formas_ses[f]}
+                    for f, n in formas.most_common(8)],
+            "formas_distintas": len(formas),
+            "_grupos_no_es_sesiones": ("una plantilla se prueba con GRUPOS distintos, no con "
+                                       "sesiones: TRIP_* son 50.166 sesiones y solo DOS grupos")},
         "eje_2_patron_del_creator": {
             "_que_mide": "un sufijo repetido -RFC / _RFC senala una herramienta, no una persona",
             "reparto": dict(creador_patron),
@@ -375,13 +439,16 @@ def main():
 
     # ---- LA COLA LARGA, nombrada. Nunca un top-N a secas.
     conocidas = {"TRAVEL": [], "HCM_ALLOS": [], "SIN_GRAMATICA": []}
-    for g in ext_grupos:
+    cre_por_herramienta = {"TRAVEL": set(), "HCM_ALLOS": set(), "SIN_GRAMATICA": set()}
+    for g, c in zip(ext_grupos, ext_creadores_por_grupo):
         if g.upper().startswith("TRIP_"):
-            conocidas["TRAVEL"].append(g)
+            k = "TRAVEL"
         elif re.match(r"^\d{1,8}[A-Z0-9]{2,4}$", g, re.I):
-            conocidas["HCM_ALLOS"].append(g)
+            k = "HCM_ALLOS"
         else:
-            conocidas["SIN_GRAMATICA"].append(g)
+            k = "SIN_GRAMATICA"
+        conocidas[k].append(g)
+        cre_por_herramienta[k].add(c)
     cola = {
         k: {"sesiones": len(v), "grupos_distintos": len(set(v)),
             "muestra": sorted(set(v))[:12]} for k, v in conocidas.items()}
@@ -396,15 +463,42 @@ def main():
         "corrida")
 
     # ---- CONTEXTO: quien lo corre, que se ejecuta, que cambian
-    ctx = {}
+    # LA VENTANA REAL DEL LOG, leida del dato. Declarar "20250101" cuando rsau empieza en
+    # 20260203 es peor que no declarar nada: el parametro no recortaba nada y la cifra decia
+    # salir de una ventana que no existe.
+    try:
+        _lo, _hi = con.execute("SELECT MIN(SAL_DATE), MAX(SAL_DATE) "
+                               "FROM rsau_audit_history").fetchone()
+    except sqlite3.Error:
+        _lo = _hi = None
+    ventana_real = {"desde": _lo, "hasta": _hi,
+                    "_ojo": ("es la ventana del LOG, no la de la cola: apqi cubre desde 2005. "
+                             "Poner cifras de las dos juntas sin decirlo compara denominadores "
+                             "distintos")}
+
+    ctx = {"ventana_real_del_log": ventana_real}
     if not a.sin_log:
-        cre = tuple(sorted({c.upper() for c in ext_creadores if c})[:60])
-        ctx["quien_ejecuta_sesiones"] = quien_ejecuta_sesiones(con, a.desde)
-        ctx["lo_que_de_verdad_se_ejecuto"] = lo_que_de_verdad_se_ejecuto(con, cre, a.desde)
-        ctx["dominio_por_lo_que_cambian"] = dominio_por_lo_que_cambian(con, cre, a.desde)
+        # SIN CORTE ALFABETICO. Antes se cogian 60 de 446 creadores ordenados alfabeticamente
+        # -- solo 9 de los 40 de ALLOS caian dentro -- y nada en la salida decia que habia
+        # muestra. Con los 446 los mismos recuentos salen 30 veces mayores.
+        todos = {c.upper() for c in ext_creadores if c}
+        ctx["quien_ejecuta_sesiones"] = quien_ejecuta_sesiones(con, _lo or "00000000")
+        ctx["lo_que_de_verdad_se_ejecuto"] = lo_que_de_verdad_se_ejecuto(
+            con, tuple(sorted(todos)), _lo or "00000000")
+        ctx["dominio_por_lo_que_cambian"] = dominio_por_lo_que_cambian(
+            con, {k: {c.upper() for c in v if c} for k, v in cre_por_herramienta.items()})
+
+    # QUIEN ENTRA: todos, y los que NO existen en USR02 primero -- que es lo que este bloque
+    # existe para ensenar. El corte alfabetico de 20 los dejaba fuera precisamente a ellos.
+    entra = {c: USTYP_ES.get(ustyp.get(c.upper()), "NO EXISTE en USR02")
+             for c in sorted(ext_creadores) if c}
     ctx["quien_entra"] = {
-        c: USTYP_ES.get(ustyp.get(c.upper()), "NO EXISTE en USR02")
-        for c in sorted(ext_creadores)[:20] if c}
+        "total": len(entra),
+        "NO_EXISTEN_en_usr02": sorted(k for k, v in entra.items() if v.startswith("NO EXISTE")),
+        "por_tipo": dict(Counter(entra.values())),
+        "_creator_no_es_identidad": ("es un texto de BDC_OPEN_GROUP que SAP no valida: contar "
+                                     "creadores es contar PARAMETROS, no actores"),
+    }
     con.close()
 
     doc = {
@@ -477,7 +571,7 @@ def main():
     try:
         M = json.loads(MEMORIA.read_text(encoding="utf-8"))
         hechos = {m.get("fact", "")[:60] for m in M["memories"]}
-        nuevo = (f"APQI tiene {total:,} sesiones desde {gen['SAPMSSY1']['primera']}: la ventana "
+        nuevo = (f"APQI tiene {total:,} sesiones desde {min((g['primera'] for g in gen.values() if g['primera']), default='?')}: la ventana "
                  "de 2025 mira menos del 18%. El argumento mas fuerte de este canal es su "
                  "ANTIGUEDAD, y una ventana corta lo borra.")
         if nuevo[:60] not in hechos:
@@ -494,11 +588,14 @@ def main():
         pass
 
     print(f"\nCANAL BATCH INPUT — LA COLA ENTERA: {total:,} sesiones "
-          f"(desde {gen['SAPMSSY1']['primera']})")
+          f"(desde {min((g['primera'] for g in gen.values() if g['primera']), default='?')})")
     print("  OJO: la cola BORRA lo que se proceso bien. Esto es lo que QUEDA, no lo que pasa.\n")
     print(f"  {'generador':30s} {'sesiones':>9s} {'desde':>9s}  transaccion / que hace")
     for g in generadores[:16]:
-        tc = ", ".join(g["transacciones_derivadas"] or [])[:26] or "(report, sin tcode)"
+        tc = (", ".join(g["transacciones_derivadas"] or [])[:26]
+              or ("(despachador RFC)" if g["progid"] == "SAPMSSY1"
+                  else "(report verificado)" if g["progid"] in REPORTS
+                  else "(sin tcode; no verificado)"))
         print(f"  {g['progid'][:30]:30s} {g['sesiones']:>9,} {str(g['activo_desde'])[:8]:>9s}  "
               f"{tc}")
     if len(generadores) > 16:

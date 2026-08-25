@@ -165,6 +165,19 @@ def correr(nombre, rel, args, dry, tope=3600):
     # PROGRESO EN VIVO. Capturar toda la salida hacia que un paso de dos minutos pareciera
     # colgado -- pasa con B5 (128s) y con A5 (56s). Se emite un latido para que se vea que
     # avanza sin ensuciar la salida.
+    # LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO, ANTES DE CORRERLO.
+    #
+    # 22 de 32 mineros no leen algorithm_memory.json, asi que pueden repetir un error ya medido
+    # -- y mecanizado, corre solo cada semana. Que la cadena lo IMPRIMA no cambia lo que el
+    # script hace: eso solo lo arregla que el script lo lea. Pero al menos el error deja de ser
+    # invisible para quien mira la corrida, y la lista de los 22 esta en el PMO.
+    try:
+        from metodo import lo_que_ya_aprendimos  # type: ignore
+        _m = lo_que_ya_aprendimos(os.path.basename(rel).replace(".py", ""), nombre)
+        for _x in _m.trampas()[:2]:
+            print(f"           ! ya aprendido: {str(_x.get('implication'))[:100]}", flush=True)
+    except Exception:
+        pass
     print(f"           . corriendo {rel} ...", flush=True)
     try:
         r = subprocess.run([sys.executable, str(p)] + args, cwd=str(REPO),
@@ -224,8 +237,10 @@ def cruzar_con_lo_conocido():
     # CONTENEDOR (rows/programs/actors/delta_vs_model) y publicaba "0 NUEVOS" mientras el
     # fichero llevaba `unexplained: 1318` y una lista de nombres concretos. El aviso "no se
     # reconocio ninguna forma" NO saltaba, porque el fallback siempre encuentra algo.
-    fuentes.setdefault("variantes", ("variant_content.json", "variantes", "programa"))
-    fuentes.setdefault("bdc", ("bdc_channel.json", "generadores", "progid"))
+    # Nada aqui: `variant_content.json` y `bdc_channel.json` ya estan en STORES_AL_GRAFO, y
+    # declararlos otra vez los contaba DOS VECES en el delta con dos nombres distintos
+    # (variante/variantes, bdc/bdc_generador). Un duplicado con dos nombres parece dos
+    # hallazgos.
     fuentes.setdefault("document_lifecycle", ("document_lifecycle.json", None, None))
     fuentes.setdefault("learned_rules", ("../process_mining/learned_rules.json", None, None))
 

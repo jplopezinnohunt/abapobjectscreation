@@ -123,7 +123,124 @@ def choques():
     return out
 
 
+def preguntar(minero, sujeto, pregunta, para=None, porque=""):
+    """DEJA UNA PREGUNTA ABIERTA para otro minero. Es la mitad que faltaba del bus.
+
+    Publicar y leer hace un TABLON DE ANUNCIOS. Una conversacion necesita que A pueda decir "yo
+    llego hasta aqui; esto lo sabe quien mire USR02" y que B lo vea y conteste. Sin esto, cada
+    minero se para en su limite y el limite del vecino nunca se cruza con el suyo.
+
+    `para` puede ser un minero concreto o un mining_kind ("CANAL_Y_ACTOR"): normalmente quien
+    pregunta sabe QUE TIPO de mineria resuelve su duda, no quien la hace.
+    """
+    d = _cargar()
+    P = d.setdefault("preguntas", [])
+    clave = (minero, str(sujeto).upper(), pregunta[:80])
+    P[:] = [q for q in P
+            if (q.get("de"), str(q.get("sujeto", "")).upper(), str(q.get("pregunta"))[:80])
+            != clave]
+    P.append({"de": minero, "para": para or "CUALQUIERA", "sujeto": str(sujeto).upper(),
+              "pregunta": pregunta, "porque_no_puedo_yo": porque, "respuestas": []})
+    BUS.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+    return len(P)
+
+
+def responder(minero, sujeto, respuesta, evidencia="", autoridad="MEDIDO_EN_DATOS"):
+    """Contesta las preguntas abiertas sobre un sujeto. Devuelve cuantas contesto."""
+    d = _cargar()
+    s, n = str(sujeto).upper(), 0
+    for q in d.get("preguntas", []):
+        if q.get("sujeto") != s:
+            continue
+        if q.get("de") == minero:
+            continue                      # no te contestas a ti mismo
+        q.setdefault("respuestas", []).append(
+            {"de": minero, "respuesta": respuesta, "evidencia": evidencia,
+             "autoridad": autoridad, "peso": AUTORIDAD.get(autoridad, 1)})
+        n += 1
+    if n:
+        BUS.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+    return n
+
+
+def pendientes(para=None):
+    """Preguntas que NADIE ha contestado. Es la lista de trabajo del proximo minero."""
+    out = []
+    for q in _cargar().get("preguntas", []):
+        if q.get("respuestas"):
+            continue
+        if para and q.get("para") not in (para, "CUALQUIERA"):
+            continue
+        out.append(q)
+    return out
+
+
+def auto_resolver():
+    """Resuelve los choques que la JERARQUIA DE EVIDENCIA decide sola, y solo esos.
+
+    Un campo que SAP declara vence a una heuristica sobre comportamiento: eso no es opinion, es
+    regla, y una regla se puede aplicar. Pero DOS MEDIDAS DEL MISMO PESO no se votan -- se
+    miran, y eso es juicio: se dejan marcadas para un humano o un agente.
+
+    Nunca borra al perdedor. Un choque sin su version anterior no se puede auditar, y ademas el
+    choque suele valer mas que cualquiera de los dos hallazgos por separado.
+    """
+    d = _cargar()
+    resueltos, para_juicio = [], []
+    por_sujeto = {}
+    for h in d["hallazgos"]:
+        por_sujeto.setdefault((h["sujeto"], h.get("aspecto") or h.get("mining_kind")), []).append(h)
+    for (suj, asp), hs in por_sujeto.items():
+        # UN MINERO HABLANDO CONSIGO MISMO NO ES UN DESACUERDO. La cadena publica bajo
+        # A29_discovery_chain/<fuente>, asi que el mismo hallazgo visto por dos de sus fuentes
+        # aparecia como 49 "choques para juicio" que no lo eran. Se compara por FAMILIA -- lo
+        # que hay antes de la barra -- y se exige que sean dos mineros DISTINTOS.
+        familias = {str(h["minero"]).split("/")[0] for h in hs}
+        if len(familias) < 2:
+            continue
+        if len({h.get("hallazgo") for h in hs}) < 2:
+            continue        # dicen LO MISMO: eso es una confirmacion, no un choque
+        pesos = sorted({h.get("peso", 1) for h in hs}, reverse=True)
+        if len(pesos) > 1:
+            gana = max(hs, key=lambda h: h.get("peso", 1))
+            for h in hs:
+                if h is gana:
+                    h["_arbitraje"] = "GANA: fuente mas autoritativa"
+                else:
+                    h["_arbitraje"] = (f"SUPERSEDED por {gana['minero']} "
+                                       f"({gana['autoridad']}). Se conserva: un choque sin su "
+                                       "version anterior no se puede auditar")
+            resueltos.append({"sujeto": suj, "aspecto": asp, "gana": gana["minero"],
+                              "autoridad": gana["autoridad"]})
+        else:
+            for h in hs:
+                h["_arbitraje"] = ("EMPATE de autoridad: dos medidas del mismo peso NO se votan. "
+                                   "Hace falta mirar, y eso es juicio")
+            para_juicio.append({"sujeto": suj, "aspecto": asp,
+                                "mineros": [h["minero"] for h in hs]})
+    BUS.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+    return resueltos, para_juicio
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "resolver":
+        res, jui = auto_resolver()
+        print(f"{len(res)} choque(s) resueltos por jerarquia de evidencia:")
+        for r in res[:20]:
+            print(f"  {r['sujeto']:24s} gana {r['minero'] if 'minero' in r else r['gana']:34s} "
+                  f"({r['autoridad']})")
+        print(f"\n{len(jui)} para JUICIO (dos medidas del mismo peso, no se votan):")
+        for j in jui[:20]:
+            print(f"  {j['sujeto']:24s} {', '.join(j['mineros'])[:80]}")
+        return 0
+    if len(sys.argv) > 1 and sys.argv[1] == "pendientes":
+        ps = pendientes()
+        print(f"{len(ps)} pregunta(s) sin contestar:")
+        for q in ps[:25]:
+            print(f"  [{q['de']} -> {q['para']}] {q['sujeto']}: {q['pregunta'][:90]}")
+            if q.get("porque_no_puedo_yo"):
+                print(f"      no puedo yo porque: {q['porque_no_puedo_yo'][:100]}")
+        return 0
     if len(sys.argv) > 1 and sys.argv[1] == "choques":
         c = choques()
         print(f"{len(c)} sujeto(s) con mas de un minero opinando")
