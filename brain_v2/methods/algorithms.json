@@ -1129,17 +1129,25 @@
     "A33_variant_content_mining": {
       "operates_on": "vari/varid -- el CONTENIDO de las variantes, cruzado con tbtcp (pasos de job)",
       "origin": "OURS",
-      "state": "PARCIAL",
+      "state": "WORKS",
       "mining_kind": "REALIDAD",
       "does": "leer los VALORES de las variantes para saber lo que un programa HACE de verdad, no lo que puede hacer. En los jobs es donde estan los parametros y las RUTAS DE FICHERO, o sea el mapa de integraciones por job que de otra forma no se ve; y por similitud entre variantes salen grupos de funcionalidad",
       "bound_in": [
+        "process_mining/variant_content_mining.py",
         "Zagentexecution/quality_checks/fsv_coverage_check.py",
         ".claude/agents/variant-intelligence.md"
       ],
-      "failure_mode": "HAY QUE SEPARAR LA VARIANTE DISENADA DE LA INSTANCIA GENERADA, IGUAL QUE A19 SEPARA EL OBJETO DEL NOMBRE GENERADO. Medido 2026-08-25: 29.190 pares (programa, variante) en tbtcp, y la mayoria son de un solo uso -- RBDAPP01 tiene 14.585 variantes, una por ejecucion. Contarlas todas convierte el corpus en ruido y la extraccion en imposible. Las DISENADAS -- pocas variantes cubriendo muchos pasos -- son 127 en 35 programas, y esas si se extraen barato. | Segundo: una version o una config EXISTE para todas las sociedades y se EJECUTA para algunas; quien sabe cual corre es la VARIANTE, nunca la tabla de configuracion. Barrer contra la version equivocada invento un hueco de 144 M EUR el 2026-08-2x",
-      "improve": "NO HAY CORPUS: el Gold DB solo tiene las variantes de SAPF100 (42), extraidas a mano para un trabajo concreto. Extraer VARI/VARID de las 127 disenadas y sacar de sus valores las rutas de fichero -> el mapa de integraciones por job",
-      "lands_in": "PENDIENTE - hoy se deriva en vivo dentro de fsv_coverage_check y no se guarda",
-      "_nace_de": "2026-08-25. La capacidad EXISTE -- fsv_coverage_check ya deriva BILAVERS de la variante de RFBILA00 y el agente variant-intelligence sabe hacerlo -- pero no estaba registrada como algoritmo ni citada en el registro, asi que nadie mas podia usarla"
+      "failure_mode": "HAY QUE SEPARAR LA VARIANTE DISENADA DE LA INSTANCIA GENERADA, igual que A19 separa el objeto del nombre generado: 29.190 pares en tbtcp y la mayoria de un solo uso -- RBDAPP01 tiene 14.585, una por ejecucion de IDoc. Las disenadas son 127 en 35 programas. | UN PATRON DE RUTA DEMASIADO ANCHO PUBLICA INTERFACES QUE NO EXISTEN: la primera version casaba con '/STANDARD', que es un nombre de LAYOUT, y publico dos. | UNA CORRIDA PARCIAL SOBRESCRIBIA EL CORPUS COMPLETO: con --max-programas 6 quedaron 8 variantes donde habia 115, en un fichero bien formado que decia mucho menos. Ahora fusiona por clave. | Y la regla de fondo: configurado no es ejecutado -- un objeto perfectamente configurado que no entra en la seleccion de ninguna variante NO DA ERROR, simplemente no ocurre nunca",
+      "improve": "115 de 127 leidas; faltan 12 y 9 no legibles. Cruzar las rutas contra interface_inventory.json para dar de alta las interfaces de fichero que descubre. Y el reverso, que es lo mas valioso: listar lo CONFIGURADO que queda fuera de toda variante",
+      "lands_in": "brain_v2/variant_content.json",
+      "_nace_de": "2026-08-25. La capacidad EXISTE -- fsv_coverage_check ya deriva BILAVERS de la variante de RFBILA00 y el agente variant-intelligence sabe hacerlo -- pero no estaba registrada como algoritmo ni citada en el registro, asi que nadie mas podia usarla",
+      "_metodo": {
+        "LEER": "PRIMERO EL GOLD DB (sapf100_varid y demas), y solo si no esta, RS_VARIANT_CONTENTS_255_RFC contra P01. La version sin _255 TRUNCA los valores largos sin avisar, y las rutas son largas",
+        "INTERPRETAR": "cada parametro cae en SELECCION (que objetos se procesan = el proceso), MODO (flags y config: cambia el comportamiento) o RESIDUO (fechas y handles: estado de la ultima corrida). Confundirlas es lo que rompe datos al copiar variantes entre sistemas",
+        "AGRUPAR": "por FORMA DE TRABAJAR = mecanismo de seleccion + campos + si escribe fichero. El mecanismo CAMBIA dentro del mismo programa: medido, 26 variantes usan lista EQ, 25 rangos BT y 22 patron CP",
+        "CONTEXTO": "tbtcp x tbtco: cuantos jobs la usan, cuantas veces, primera y ultima, cuantos usuarios. Una variante rica que no corre desde hace anos es un fosil"
+      },
+      "_medido": "2026-08-25: 115 variantes, 16 formas de trabajar, y una interfaz de fichero no declarada -- ZSPOOL_TO_FILE volcando a \\\\hq-sapitf\\itf\\_PROD\\FM y \\_PROD\\PS, diario y mensual, por dominio"
     },
     "A34_account_behaviour_classes": {
       "operates_on": "FAGL_011ZC (intervalos de la estructura de balance) x SKA1/SKB1 x la variante que dice que version se ejecuta",

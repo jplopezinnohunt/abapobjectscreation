@@ -80,9 +80,23 @@ def _kind_probable(texto, eventos):
 
 
 def _propuesta(c):
-    """Borrador de alta. Deliberadamente SIN failure_mode: ese campo es el valioso y exige
-    saber COMO se rompe, que no se deduce leyendo imports. Un modo de fallo inventado es peor
-    que ninguno, porque parece que alguien lo penso."""
+    """Borrador de alta -- Y ES SOLO EL ARRANQUE, NO EL ALTA.
+
+    Dar de alta un minero no es rellenar `bound_in`: es reconstruir el PROCESO COMPLETO. Un
+    script mecanizado se queda con la parte contable (agrupar, contar) y tira la interpretativa
+    (que significa cada campo, que trampas tiene, que conclusion falsa permite), y la
+    interpretativa ES el conocimiento. Medido dos veces el 2026-08-25: al mecanizar el metodo
+    que encontro ALLOS se perdio el discriminador de canal a cuatro vias, la derivacion
+    programa->transaccion por TSTC y la vuelta por rsau; y la primera version del minero de
+    variantes volcaba pares campo/valor sin las tres clases de parametro, que es donde esta
+    todo el criterio.
+
+    Por eso esto emite el ESQUELETO y nombra quien lo completa: el agente `miner-onboarding`,
+    que lee el script y TODO lo que lo rodea -- agentes, skills, docs de dominio, el
+    learning_summary de la tarea donde nacio, los claims que lo citan, el commit que lo creo --
+    lo corre si es seguro, y devuelve las cuatro capas. Los campos van marcados COMPLETAR a
+    proposito: rellenarlos automaticamente seria inventarlos.
+    """
     base = os.path.basename(c["script"])[:-3]
     return {
         "id": f"A??_{base}",
@@ -90,12 +104,22 @@ def _propuesta(c):
         "origin": "OURS",
         "state": "REVISAR",
         "mining_kind": c.get("mining_kind_probable"),
-        "does": "COMPLETAR: que descubre, en una frase que sirva a quien no lo escribio",
+        "does": "COMPLETAR: que DESCUBRE, en una frase que sirva a quien no lo escribio",
         "bound_in": [c["script"]],
         "failure_mode": ("COMPLETAR -- ES EL CAMPO QUE IMPORTA. Como puede este algoritmo dar "
-                         "una respuesta VEROSIMIL Y FALSA? Si no lo sabes, correlo y averigualo "
-                         "antes de registrarlo"),
+                         "una respuesta VEROSIMIL Y FALSA? Si no lo sabes, CORRELO y averigualo. "
+                         "Un modo de fallo inventado es peor que ninguno: parece pensado"),
         "lands_in": "COMPLETAR: en que store aterriza, o 'n/a - tecnica'",
+        "_metodo": {
+            "LEER": "COMPLETAR: que tabla, con que FM o SQL, con que limite conocido",
+            "INTERPRETAR": ("COMPLETAR: que significa cada campo y en que CLASES se reparten "
+                            "los valores. ESTA es la capa que se pierde al mecanizar"),
+            "AGRUPAR": "COMPLETAR: por forma de trabajar, no por identificador",
+            "CONTEXTO": "COMPLETAR: donde se uso de verdad -- cuantas veces, cuando, quien",
+        },
+        "_quien_lo_completa": ("el agente `miner-onboarding` (.claude/agents/). Reconstruye las "
+                               "cuatro capas leyendo el script y sus fuentes de metodo, y lo "
+                               "corre si es seguro"),
     }
 
 
@@ -199,8 +223,12 @@ def main():
         print(f"      eventos: {', '.join(c['tablas_de_evento'])}")
         print(f"      descubre: {', '.join(c['senales_de_descubrimiento'])}  "
               f"({c['lineas']} lineas)")
-    print("\n  Cada uno: o se registra como algoritmo con su modo de fallo, o entra en FUERA")
-    print("  con el motivo. Dejarlo asi es perder la capacidad al cerrar la sesion.")
+    print("\n  Cada uno: o se registra como algoritmo con su PROCESO COMPLETO -- las cuatro")
+    print("  capas: leer, interpretar, agrupar y donde se uso -- o entra en FUERA con el motivo.")
+    print("  El alta NO es rellenar bound_in: mecanizar solo la parte contable mata el criterio,")
+    print("  que es lo unico que no se puede volver a derivar.")
+    print("\n  python Zagentexecution/quality_checks/mining_capability_census.py --proponer")
+    print("  y luego el agente `miner-onboarding` completa cada borrador leyendo sus fuentes.")
     return 1
 
 
