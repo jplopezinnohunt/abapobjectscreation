@@ -257,6 +257,22 @@
         "note": "el corte por FIKRS es la división principal y ya está hecho; falta el detalle de canal dentro del 'sin tcode'"
       },
       "source": "JP (2026-08-24)"
+    },
+    {
+      "id": "EXT-BDC-CUSTOM-CODE",
+      "fills": "B_CODE de HCM, PS y Procurement_P2P — codigo que ESCRIBE y no se puede leer",
+      "system": "D01 (el codigo vive en desarrollo; P01 solo para verificar que corre)",
+      "objects": [
+        "ZHR_RETIRE_COPY_SPI",
+        "YEBUET01",
+        "ZHR_UPDATE_IT0167",
+        "ZHR_UPDATE_IT0021",
+        "ZMM_BI_MM01_PLANT"
+      ],
+      "why_it_matters": "los cinco generan sesiones de batch input que escriben en PRODUCCION, y de ninguno se tiene el fuente. Dos tocan datos personales sensibles: ZHR_UPDATE_IT0021 el infotipo de FAMILIA y ZHR_UPDATE_IT0167 el de PLANES DE SALUD. Sin el codigo no se sabe que campos escriben ni con que validaciones",
+      "how": "sap_adt_api / RPY_PROGRAM_READ sobre D01 -> extracted_code/",
+      "after": "con el fuente se puede leer que TRANSACCION mete cada uno en la sesion (BDC_INSERT) y cerrar lo que APQD.VARDATA no deja leer por RFC",
+      "source": "JP (2026-08-24) + medido"
     }
   ],
   "analysis_tasks_no_extraction": [
