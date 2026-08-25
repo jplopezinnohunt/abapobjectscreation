@@ -90,6 +90,17 @@ Run:  python brain_v2/comprehension_index.py
 """
 import os, sys, json, sqlite3, collections, datetime
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. Cada memoria de `algorithm_memory.json` lleva su `implication`: que
+# deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es aprender
+# y no aprender a la vez, y el error queda MECANIZADO -- corriendo solo cada semana.
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")

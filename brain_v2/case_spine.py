@@ -12,6 +12,18 @@ Nada se declara "combina" por que el nombre encaje: se declara por el porcentaje
 """
 import sqlite3, os, json, collections
 
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
+
 ROOT = r"c:\Users\jp_lopez\projects\abapobjectscreation"
 GOLD = os.path.join(ROOT, "Zagentexecution", "sap_data_extraction", "sqlite",
                     "p01_gold_master_data.db")

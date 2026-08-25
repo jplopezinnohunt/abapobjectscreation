@@ -48,6 +48,18 @@ MCP_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "mcp-backend-serve
 sys.path.insert(0, os.path.abspath(MCP_DIR))
 from rfc_helpers import get_connection  # shared connection helper (SNC/SSO, auto-reconnect)
 from pyrfc import RFCError
+
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
 # NOTE: we deliberately do NOT use the shared rfc_read_paginated here. It paginates via
 # ROWSKIPS, and P01's SECURED RFC_READ_TABLE rejects ROWSKIPS unless GET_SORTED is set
 # ("ROWSKIPS requires GET_SORTED" — known constraint, reference_p01_strg_columns_unreadable).

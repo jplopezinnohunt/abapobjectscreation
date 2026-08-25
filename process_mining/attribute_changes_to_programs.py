@@ -77,6 +77,18 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from caller_parse import parse as parse_caller  # noqa: E402
+
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
 GOLD = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "p01_gold_master_data.db"
 # The SHARED aggregate. Both streams this algorithm needs are pre-collapsed and INDEXED in
 # brain_v2/build_audit_slots.py — 15.6M audit rows to 987K slots, 12M change rows to 507K

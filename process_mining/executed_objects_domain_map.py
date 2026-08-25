@@ -34,6 +34,18 @@ sys.path.insert(0, str(MCP))
 from gold_ref import GOLD  # T5: resolved via golden_manifest.json, not a hardcoded path
 sys.path.insert(0, str(REPO / "brain_v2"))
 from component_map import domain_of_package, domain_of_function_module  # SAP's own taxonomy
+
+# --- LO QUE YA APRENDIMOS DE ESTE INSTRUMENTO -------------------------------
+# Se lee ANTES de minar. `algorithm_memory.json` guarda, por cada memoria, su `implication`:
+# que deben hacer DISTINTO los demas algoritmos por su culpa. Escribirlas y no leerlas es
+# aprender y no aprender a la vez -- y el error queda MECANIZADO, corriendo solo cada semana.
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__))), "process_mining"))
+    from metodo import lo_que_ya_aprendimos as _aprendido   # noqa: E402
+except Exception:
+    _aprendido = None
 JOBCLASS = REPO / "Zagentexecution" / "sap_data_extraction" / "sqlite" / "job_classification.json"
 OUT = REPO / "brain_v2" / "executed_objects_domain_map.json"
 
