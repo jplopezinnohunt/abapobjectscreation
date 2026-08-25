@@ -1008,6 +1008,32 @@
         "tras_el_arreglo": "31 de 31 en verde",
         "el_arreglo": "no fue meterlos a mano en el indice sino publicar algorithms.json, que ya sabia que hace cada uno y donde lo deja"
       }
+    },
+    "A26_knowledge_connectivity": {
+      "operates_on": "los stores de conocimiento, por dentro",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "comprobar que el conocimiento guardado se pueda ENCONTRAR: que este en el campo que su store lee, que enganche con el grafo, que lleve dominio, y que un canal descubierto por el log acabe registrado donde se busca",
+      "bound_in": [
+        "Zagentexecution/quality_checks/knowledge_connectivity_check.py"
+      ],
+      "failure_mode": "LA PRIMERA VERSION MEDIA PULCRITUD, NO FINDABILITY. Marcaba como defecto todo campo con nombre minoritario, incluidos evidence_legacy_text_for -- que es el texto plano CONSERVADO junto al estructurado, o sea preserve-first funcionando -- y tier, que no es variante de confidence sino otro vocabulario (TIER_1 mide la fuente, HIGH el enunciado; el claim 31 lleva los dos sin contradecirse). Un gate que pide borrar conocimiento bueno se deja de leer. Ahora solo cuenta el caso que hace dano: variante presente y campo canonico VACIO. | Segundo riesgo: mide claims e interfaces; los demas stores siguen sin cubrir",
+      "improve": "extenderlo a incidents, annotations y domain docs. Y medir el enlace VIVO: hoy comprueba que related_objects exista, no que lo que nombra exista",
+      "lands_in": "n/a - gate: su salida es el veredicto y quality_checks_state.json",
+      "_nace_de": "2026-08-25. El gate anterior (A25) decia en su propio campo improve que media artefactos y no claims. Se midio: 555 interfaces con 0% de dominio, y los dos canales de escritura descubiertos ese dia -- ZRFC_FMR_CREATE y Y_RFC_FMRP_RFFMEP1FX_FI_POST -- vivian en un JSON que nada mas enlazaba"
+    },
+    "A27_interface_nature": {
+      "operates_on": "el log de auditoria RFC (28,58M filas) cruzado con el clasificador de dominio",
+      "origin": "OURS",
+      "state": "WORKS",
+      "does": "poner a cada interfaz DOS ejes: el dominio (donde pasa) y la NATURALEZA (que le hace al sistema: LECTURA, TRANSACCIONAL, MASTER_DATA o NO_MEDIBLE). El dominio sale de lo que el canal MUEVE de verdad -- los modulos que llama, ponderados -- no de su nombre",
+      "bound_in": [
+        "brain_v2/build_interface_inventory.py"
+      ],
+      "failure_mode": "LO QUE TODOS LOS CANALES MUEVEN NO DICE PARA QUE SIRVE ESTE CANAL. Con el voto por numero de llamadas sin filtrar, RFCPING y RFC_READ_TABLE ganaban: UBO-RFC salia 63% 'sustrato tecnico' cuando en realidad es 100% Treasury_EBS, y MULESOFT 59,6% PS en vez de 89,9%. Excluida la fontaneria, el sustrato solo decide cuando NO hay ninguna llamada de negocio -- y entonces es la respuesta buena: EPAM-RFC no tiene ni una, es un ETL que solo lee tablas. | Segundo: la naturaleza pondera, pero UNA sola llamada que escribe ya hace del canal un canal de escritura; un canal que lee un millon de veces y crea diez documentos no es 'de lectura'. | Tercero: un destino SALIENTE no deja en nuestro log que hace del otro lado -- eso es NO_MEDIBLE, un estado con nombre, no un hueco",
+      "improve": "50 interfaces sin naturaleza porque su nombre no lleva verbo (Y_BAPI_WBS_FINANCIAL_DATA_1, Y_BAPI_YPS8). Se resolveria leyendo el codigo del modulo, no su nombre. Y los 239 destinos salientes solo se miden en el otro extremo",
+      "lands_in": "brain_v2/interface_inventory.json (campos domain/domain_basis/nature/nature_basis)",
+      "_por_que_importa": "las tres naturalezas no cuestan lo mismo cuando fallan: una LECTURA rota cuesta un informe, una TRANSACCIONAL cuesta dinero, y una de MASTER_DATA corrompe todo lo que venga detras y en silencio. Un inventario que solo dice el dominio dice donde pasa algo, no que pasa"
     }
   },
   "_portfolio": {
