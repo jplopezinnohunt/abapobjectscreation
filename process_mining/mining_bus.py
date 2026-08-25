@@ -78,6 +78,27 @@ def publicar(minero, tipo, sujeto, hallazgo, evidencia="", autoridad="MEDIDO_EN_
     d = _cargar()
     H = d["hallazgos"]
     asp = str(aspecto or tipo)
+
+    # ⛔ NO SE PUEDE PUBLICAR SIN VER LO QUE YA DIJERON LOS DEMAS.
+    #
+    # Medido 2026-08-25: 235 hallazgos de 9 mineros, y solo UNO llamaba a `consultar()` -- que
+    # ademas tiraba el resultado con un `if otros: pass`. Cero preguntas en el foro. Era un
+    # tablon de anuncios con una discusion, no una colaboracion.
+    #
+    # Pedirle a cada minero que se acuerde de consultar no funciona: se olvida, y el que lo
+    # hace tira el resultado. Asi que la consulta va DENTRO de publicar: quien publica se
+    # encuentra con lo que otros dijeron del mismo sujeto, adjunto a su propio hallazgo. La
+    # colaboracion por construccion, no por disciplina.
+    _fam = str(minero).split("/")[0]
+    _otros = [h for h in H
+              if h.get("sujeto") == str(sujeto).upper()
+              and str(h.get("minero", "")).split("/")[0] != _fam]
+    _contexto = None
+    if _otros:
+        _mejor = sorted(_otros, key=lambda h: -h.get("peso", 0))[:2]
+        _contexto = [{"minero": h["minero"], "autoridad": h.get("autoridad"),
+                      "dijo": str(h.get("hallazgo"))[:140]} for h in _mejor]
+
     clave = (str(minero), str(sujeto).upper(), asp)
     H[:] = [h for h in H
             if (h.get("minero"), str(h.get("sujeto", "")).upper(),
@@ -85,7 +106,10 @@ def publicar(minero, tipo, sujeto, hallazgo, evidencia="", autoridad="MEDIDO_EN_
     H.append({"minero": minero, "mining_kind": tipo, "aspecto": asp,
               "sujeto": str(sujeto).upper(),
               "hallazgo": hallazgo, "evidencia": evidencia,
-              "autoridad": autoridad, "peso": AUTORIDAD.get(autoridad, 1), "sesion": sesion})
+              "autoridad": autoridad, "peso": AUTORIDAD.get(autoridad, 1), "sesion": sesion,
+              # Lo que OTROS ya dijeron de este sujeto, adjunto. Que el desacuerdo viaje con el
+              # hallazgo es lo que hace que se vea donde alguien lo va a leer.
+              "ya_dicho_por_otros": _contexto})
     BUS.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
     return len(H)
 
@@ -222,7 +246,79 @@ def auto_resolver():
     return resueltos, para_juicio
 
 
+def colaborar():
+    """ENSENAR A COLABORAR A TODOS, SIN QUE CADA UNO SE ACUERDE.
+
+    Medido 2026-08-25: 235 hallazgos de 9 mineros y CERO preguntas. Publicar sale solo -- es
+    el resultado del trabajo -- pero preguntar y contestar exige acordarse, y nadie se acuerda.
+
+    La salida es que cada minero YA DECLARA lo que no puede hacer: `ask.py` guarda por minero
+    un campo `lo_que_NO_puede` y una `trampa`. Eso es literalmente una pregunta abierta escrita
+    en otro sitio. Aqui se convierte en pregunta del foro, dirigida al TIPO de mineria que
+    podria contestarla, y con el "por que no puedo yo" que hace que otro la pueda tomar.
+
+    Y del otro lado: quien declara que RESPONDE a algo, encuentra las preguntas que casan con
+    lo que sabe. La colaboracion deja de depender de la disciplina de cada uno.
+    """
+    try:
+        sys.path.insert(0, str(REPO / "process_mining"))
+        from ask import CAPACIDADES  # type: ignore
+    except Exception:
+        return 0, 0
+
+    sembradas = 0
+    for c in CAPACIDADES:
+        limite = str(c.get("lo_que_NO_puede") or "").strip()
+        if not limite or limite == "-":
+            continue
+        # A quien va: al tipo de mineria del que la sabria contestar, no a un minero concreto
+        # -- quien pregunta no tiene por que saber quien tiene la respuesta.
+        sembradas += 1 if preguntar(
+            c["algoritmo"], f"LIMITE:{c['algoritmo']}",
+            f"lo que este minero NO puede: {limite[:220]}",
+            para="CUALQUIERA",
+            porque=f"limite declarado de su instrumento. Trampa asociada: "
+                   f"{str(c.get('trampa'))[:150]}") else 0
+
+    # Emparejar: quien declara que RESPONDE a algo, ve lo que le toca
+    abiertas = pendientes()
+    emparejadas = 0
+    for q in abiertas:
+        texto = (str(q.get("pregunta", "")) + " " + str(q.get("sujeto", ""))).lower()
+        for c in CAPACIDADES:
+            if c["algoritmo"] == q.get("de"):
+                continue
+            for r in c.get("responde", []):
+                pal = [w for w in r.lower().split() if len(w) > 4]
+                if pal and sum(1 for w in pal if w in texto) >= max(2, len(pal) // 3):
+                    q.setdefault("_podria_contestar", [])
+                    if c["algoritmo"] not in q["_podria_contestar"]:
+                        q["_podria_contestar"].append(c["algoritmo"])
+                        emparejadas += 1
+                    break
+    if emparejadas:
+        d = _cargar()
+        idx = {(x.get("de"), x.get("sujeto"), str(x.get("pregunta"))[:60]): x
+               for x in d.get("preguntas", [])}
+        for q in abiertas:
+            k = (q.get("de"), q.get("sujeto"), str(q.get("pregunta"))[:60])
+            if k in idx and q.get("_podria_contestar"):
+                idx[k]["_podria_contestar"] = q["_podria_contestar"]
+        BUS.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+    return sembradas, emparejadas
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "colaborar":
+        s, e = colaborar()
+        print(f"{s} limite(s) declarados convertidos en preguntas del foro")
+        print(f"{e} emparejamiento(s): una pregunta y quien podria contestarla\n")
+        for q in pendientes():
+            quien = ", ".join(q.get("_podria_contestar") or []) or "NADIE declara saberlo"
+            print(f"  [{q['de']}] {str(q['sujeto'])[:30]}")
+            print(f"      {str(q['pregunta'])[:100]}")
+            print(f"      podria contestar: {quien}")
+        return 0
     if len(sys.argv) > 1 and sys.argv[1] == "resolver":
         res, jui = auto_resolver()
         print(f"{len(res)} choque(s) resueltos por jerarquia de evidencia:")

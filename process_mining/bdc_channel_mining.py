@@ -546,17 +546,51 @@ def main():
 
     # ---- publicar, y consultar ANTES lo que saben los demas
     try:
-        from mining_bus import publicar, consultar
-        for g in generadores[:20]:
-            otros = consultar(g["progid"])
-            tc = ", ".join(g["transacciones_derivadas"] or []) or "sin tcode (es un report)"
-            publicar("A31_bdc_channel_mining", "CANAL_Y_ACTOR", g["progid"],
-                     f"genera {g['sesiones']} sesiones de batch input desde {g['activo_desde']}; "
-                     f"transaccion: {tc}. {g['que_hace'] or ''}".strip(),
+        from mining_bus import publicar, consultar, preguntar
+        for g in generadores:
+            # CONSULTAR DE VERDAD. `if otros: pass` estaba aqui, listado como corregido en un
+            # commit y sin corregir: se llamaba a consultar() y se tiraba el resultado. Leer lo
+            # que otro minero ya dijo del mismo sujeto es la mitad del mecanismo de choque.
+            otros = [o for o in consultar(g["progid"])
+                     if not str(o.get("minero", "")).startswith("A31")]
+            tc = (", ".join(g["transacciones_derivadas"] or [])
+                  or ("el DESPACHADOR RFC, sin transaccion" if g["progid"] == "SAPMSSY1"
+                      else "report verificado, sin tcode" if g["progid"] in REPORTS
+                      else "sin tcode en TSTC; NO verificado como report"))
+            hallazgo = (f"genera {g['sesiones']} sesiones de batch input desde "
+                        f"{g['activo_desde']}; transaccion: {tc}. "
+                        f"{g['que_hace'] or ''}").strip()
+            if otros:
+                # Lo que ya dijeron los demas viaja CON el hallazgo, para que el desacuerdo sea
+                # visible en el sitio donde alguien lo va a leer.
+                hallazgo += (" | YA DICHO POR OTROS: " +
+                             "; ".join(f"{o['minero'].split('/')[0]}: "
+                                       f"{str(o['hallazgo'])[:70]}" for o in otros[:2]))
+            publicar("A31_bdc_channel_mining", "CANAL_Y_ACTOR", g["progid"], hallazgo,
                      evidencia="apqi entera x TSTC, brain_v2/bdc_channel.json",
                      aspecto="genera_batch_input")
-            if otros:
-                pass
+
+        # PREGUNTAR: donde este minero llega a su limite, lo dice en vez de callarse.
+        sin_nombre = cola.get("SIN_GRAMATICA", {})
+        if isinstance(sin_nombre, dict) and sin_nombre.get("sesiones"):
+            preguntar("A31_bdc_channel_mining", "EXTERNO:SIN_GRAMATICA",
+                      f"{sin_nombre['sesiones']} sesiones externas por RFC con "
+                      f"{sin_nombre['grupos_distintos']} grupo(s) que no encajan en ninguna "
+                      "gramatica conocida. ¿Que herramienta las genera?",
+                      para="CANAL_Y_ACTOR",
+                      porque=("mi instrumento solo ve la cabecera de la sesion: APQD.VARDATA es "
+                              "LCHR y RFC_READ_TABLE lo rechaza. Quien mire el destino RFC o el "
+                              "programa que llama puede cerrarlo"))
+        no_usr = ctx.get("quien_entra", {}).get("NO_EXISTEN_en_usr02") or []
+        if no_usr:
+            preguntar("A31_bdc_channel_mining", "CREATOR_SIN_USUARIO",
+                      f"{len(no_usr)} grafias aparecen como CREATOR de sesiones y NO existen en "
+                      f"USR02: {', '.join(no_usr[:6])}. ¿Son cuentas borradas, o texto que la "
+                      "herramienta escribe sin validar?",
+                      para="CANAL_Y_ACTOR",
+                      porque=("APQI.CREATOR es un parametro de BDC_OPEN_GROUP y SAP no lo "
+                              "valida; desde aqui no se distingue una cuenta borrada de un "
+                              "texto inventado"))
         for k, v in cola.items():
             if isinstance(v, dict) and v.get("sesiones"):
                 publicar("A31_bdc_channel_mining", "CANAL_Y_ACTOR", f"EXTERNO:{k}",

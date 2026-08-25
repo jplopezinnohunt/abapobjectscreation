@@ -1099,6 +1099,49 @@ def main():
     for _k, _v in DESCARTES.items():
         print(f"  descartados en {_k}: {_v['descartados']} de {_v['vistos']} ({_v['criterio']})")
     print(f"  naturaleza: {dict(_nat.most_common())}")
+    # ---- CONTESTAR A LOS DEMAS MINEROS -------------------------------------
+    # Un foro donde todos publican y nadie contesta es un tablon. Este minero tiene USR02 y el
+    # log de auditoria cargados; otro minero llego a su limite preguntando justo por eso. La
+    # colaboracion es esto: contestar lo que tu instrumento SI puede ver y el suyo no.
+    try:
+        import importlib.util as _iu
+        _sp = _iu.spec_from_file_location("_mb", str(REPO / "process_mining" / "mining_bus.py"))
+        _mb = _iu.module_from_spec(_sp)
+        _sp.loader.exec_module(_mb)
+        _con3 = sqlite3.connect(GOLD, timeout=300)
+        _vistos = set()
+        try:
+            _vistos = {(u or "").strip().upper() for (u,) in _con3.execute(
+                "SELECT DISTINCT SLGUSER FROM rsau_audit_history WHERE SLGUSER <> ''")}
+        except sqlite3.Error:
+            pass
+        _con3.close()
+        _contestadas = 0
+        for _q in _mb.pendientes():
+            _s = str(_q.get("sujeto", "")).upper()
+            if _s == "CREATOR_SIN_USUARIO":
+                # La pregunta era: ¿cuentas BORRADAS o texto inventado? Se distingue mirando si
+                # ese nombre llego a APARECER alguna vez en el log: una cuenta borrada dejo
+                # rastro; un texto que la herramienta escribe sin validar, no.
+                _nombres = re.findall(r"\b[A-Z][A-Z0-9_.-]{3,}\b", str(_q.get("pregunta", "")))
+                _dejaron = sorted(n for n in _nombres if n in _vistos)
+                _nunca = sorted(n for n in _nombres
+                                if n not in _vistos and n not in ("USR02", "CREATOR", "BDC"))
+                _mb.responder(
+                    "A27_interface_nature", _s,
+                    (f"de las grafias preguntadas, {len(_dejaron)} aparecen alguna vez como "
+                     f"usuario en el log de auditoria ({', '.join(_dejaron[:5])}) -- esas "
+                     f"EXISTIERON y estan borradas. Las otras {len(_nunca)} no aparecen NUNCA "
+                     f"({', '.join(_nunca[:5])}): son texto que la herramienta escribe sin "
+                     "validar, no cuentas"),
+                    evidencia="usr02 + SLGUSER distinto de rsau_audit_history",
+                    autoridad="MEDIDO_EN_DATOS")
+                _contestadas += 1
+        if _contestadas:
+            print(f"  contestadas {_contestadas} pregunta(s) de otros mineros en el foro")
+    except Exception as _e:
+        print(f"  AVISO: no se pudo contestar en el foro ({type(_e).__name__})")
+
     _riesgo.sort(key=lambda t: -t[2])
     _conf = [r for r in _riesgo if r[3]]
     print(f"  personas con escritura por RFC: {len(_riesgo)}  "

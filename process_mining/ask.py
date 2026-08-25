@@ -121,6 +121,80 @@ CAPACIDADES = [
                    "equivocada invento un hueco de 144 M EUR"),
     },
     {
+        "algoritmo": "B1_B2_B3_flujo",
+        "responde": [
+            "que sigue a que en este proceso",
+            "cuantas formas distintas hay de hacer lo mismo",
+            "donde espera un proceso, donde estan los cuellos de botella",
+            "cuanto se parece lo real al modelo descubierto (fitness)",
+            "nada de flujo por si mismo: es lo que A21 no puede",
+        ],
+        "store": "Zagentexecution/sap_data_extraction/process_discovery/",
+        "como_se_llama": ("python Zagentexecution/sap_data_extraction/scripts/"
+                          "sap_process_discovery.py"),
+        "como_se_importa": "-",
+        "lo_que_NO_puede": ("nada sin NOCION DE CASO: necesita que A21 haya probado que la "
+                            "clase alcanza su tabla de documento"),
+        "trampa": ("un DFG sobre la nocion de caso equivocada produce un mapa PLAUSIBLE de un "
+                   "proceso que no existe, y variantes sobre un log truncado parecen "
+                   "simplicidad de proceso"),
+    },
+    {
+        "algoritmo": "B4_conformidad",
+        "responde": [
+            "cuanto se aparta lo real de la norma",
+            "hay facturas antes de la recepcion, o recepciones sin factura",
+            "que porcentaje sale del camino feliz",
+        ],
+        "store": "Zagentexecution/sap_data_extraction/process_discovery/p2p_conformance.json",
+        "como_se_llama": "python process_mining/p2p_conformance.py",
+        "como_se_importa": "-",
+        "lo_que_NO_puede": "juzgar un proceso que no sea P2P: el modelo de referencia es de compras",
+        "trampa": ("aplicar un modelo normativo de mercado sin comprobar la forma real del "
+                   "tenant da 100% de no conformidad sin que nada este mal"),
+    },
+    {
+        "algoritmo": "A19_log_reality_filter",
+        "responde": [
+            "este nombre es un OBJETO o una instancia generada",
+            "cuantos objetos ejecutan de verdad, sin contar basura",
+            "que actor es el mismo con dos grafias",
+        ],
+        "store": "brain_v2/log_reality.json",
+        "como_se_llama": "python process_mining/log_reality_filter.py",
+        "como_se_importa": "from log_reality_filter import normalize_actor",
+        "lo_que_NO_puede": "decir QUE HACE un objeto: solo si es un objeto y de quien es",
+        "trampa": ("contar antes de clasificar infla cualquier cifra: 576 'programas nuevos' "
+                   "eran 95% instancias generadas"),
+    },
+    {
+        "algoritmo": "A23_channel_discovery_by_traffic",
+        "responde": [
+            "que satelites entran por RFC sin estar declarados",
+            "que cuenta tecnica trae trafico y desde que terminal",
+        ],
+        "store": "brain_v2/rfc_caller_apps.json",
+        "como_se_llama": "-",
+        "como_se_importa": "-",
+        "lo_que_NO_puede": ("decir si una cuenta es una PERSONA o un sistema: eso lo declara "
+                            "USR02-USTYP y lo contesta A27"),
+        "trampa": ("la proporcion de logons RFC contra dialogo NO separa personas de sistemas: "
+                   "fallo por los dos lados con BRIDGE-RFC, JOBBATCH, MULESOFT y WF-BATCH"),
+    },
+    {
+        "algoritmo": "A24_document_lifecycle",
+        "responde": [
+            "cuantas veces se modifica un documento y en cuanto tiempo",
+            "se arrastra de un ejercicio a otro",
+            "que hizo una sesion concreta -- no, pero si que se toco ese dia",
+        ],
+        "store": "brain_v2/document_lifecycle.json",
+        "como_se_llama": "python process_mining/document_lifecycle.py",
+        "como_se_importa": "-",
+        "lo_que_NO_puede": "por ahora solo sabe de KBLK/FMIOI; el metodo es generico y no esta abierto",
+        "trampa": "un documento con 51 modificaciones en 0 dias no es un ciclo de vida: es una correccion en caliente",
+    },
+    {
         "algoritmo": "A30_mining_bus",
         "responde": [
             "que saben YA los demas mineros de este sujeto",

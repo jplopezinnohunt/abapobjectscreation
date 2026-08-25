@@ -923,3 +923,87 @@ entera. Las puertas estan todas en verde y **eso no significa que esto este hech
 ENCONTRAR, no que se haya MIRADO. Un delta con 420 hallazgos y cero lecturas humanas es
 exactamente el estado que esta sesion vino a arreglar, un nivel mas arriba.
 
+
+---
+
+## Mineria agentica — REVISION CONSOLIDADA (sesion 103, 2026-08-25)
+
+Los comentarios de JP durante la sesion, lo que quedo abierto, y lo que encontraron las TRES
+auditorias de fidelidad. Aqui y no en el chat, porque el chat se pierde con la ventana.
+
+### A. Comentarios de JP — estado real
+
+| lo que pidio | estado |
+|---|---|
+| Foto de base antes de la cadena | HECHO |
+| ¿BI/RFC desde logs es mining? | SI — A31 |
+| Buscar que otros procesos minan sin registrar | HECHO — A32, **45** candidatos |
+| Mecanizar el alta al grupo de mining | HECHO — `--proponer` + agente `miner-onboarding` |
+| Leer variantes: valores, paths, grupos por similitud | HECHO — A33 |
+| Que detecte que YO genere un minero | HECHO — A35 |
+| ¿Los mineros colaboran dejando comentarios? | PARCIAL — ver seccion C |
+| Verdadera colaboracion agentica / best practices | HECHO — blackboard + contract net + reflexion + arbitro |
+| Foro donde todos preguntan | HECHO — y estrenado con 2 preguntas |
+| Que aprendan de la forma de explorar | HECHO a medias — leen, **solo A31 obedece** |
+| Cada minero invocable desde otro discovery | HECHO — `ask.py` (A36) |
+| **El circulo que CREA y RESUELVE claims** | **HECHO tarde** — `claim_resolution.py`; se me habia pasado el camino de vuelta |
+| **La ORQUESTACION como conocimiento replicable** | **ABIERTO** — el orden vive en el codigo, no como conocimiento consultable |
+| Cuentas -> estructura de balance -> clases | ABIERTO — A34 registrado, **store sin materializar** |
+| Transport analyzer | ABIERTO — 15 scripts, **1 registrado** |
+| Buscar en otros repos y conversaciones | ABIERTO — **solo este repo** |
+| ¿El indice de capacidades debe ser un SKILL? | ABIERTO — sin decidir |
+| Que los agentes revisen lo suyo y minen EN CONJUNTO | ABIERTO — **no se ha hecho la corrida conjunta** |
+
+### B. Lo que encontraron las auditorias
+
+**1a vuelta — 65 perdidas, 27 graves, PIERDE_MUCHO en los 4.** Al mecanizar un metodo se
+conserva la parte contable y se tira la interpretativa. Reparadas.
+
+**2a vuelta — la reparacion introdujo ~10 defectos nuevos por minero.** El peor: el bloque que
+existe para no repetir el error de dominio lo repitio EN ESPEJO (mezclar poblaciones en vez de
+tablas). Y se escribio una medida FALSA en la memoria de metodo -- un "100%" que era 39%.
+Reparadas.
+
+**3a vuelta — 12 defectos nuevos en A31 y 14 en A33, y con un patron que ya no es casualidad:**
+
+> **LAS REPARACIONES APLICAN EL ARREGLO DONDE SE VE, NO DONDE TIENE CONSECUENCIA.**
+
+- el corte de 4.000 SIGUE ahi y ahora la salida publica `_sin_muestreo: true` — antes el
+  muestreo era invisible, ahora esta **desmentido por un campo**
+- la memoria se corrigio a mano a 1.728/32,4% y el instrumento mide 1.445/38,8%: **ninguna
+  corrida futura reproduce esa memoria**
+- `SAPMSSY1 es un report` se arreglo en el JSON y en el print, **no en la cadena que va al bus**
+  — que es lo que leen los demas mineros
+- `if otros: pass` se listo como corregido en un commit **y no lo estaba**
+- `prohibe()` pone un global que **nadie lee**: aparece una sola vez en todo el repo
+- la mezcla de poblaciones no se elimino, **se renombro**: FMRESERV 966.671 ahora sale bajo
+  la etiqueta TRAVEL
+- **hallazgo FALSO celebrado**: el "herramienta sin nombrar que mueve mucho" de SIN_GRAMATICA es
+  **WF-BATCH**, el usuario batch del motor de workflow, 3 sesiones; sus 198.850 cambios son su
+  trabajo normal. Y su tipo estaba en el mismo fichero.
+- la segmentacion por herramienta **solapa y no lo dice**: 407+40+1=448 para 446 distintos; dos
+  personas estan en TRAVEL y en HCM_ALLOS a la vez y aportan casi todo lo no-HR
+- `--desde` ya no alimenta ninguna consulta: **solo cambia la etiqueta publicada**
+- el `61%` hardcodeado se republica sobre otra poblacion (real: 20,4% para los 446, 71,2% para
+  los 40 de ALLOS)
+- `_es_un_fosil` (A33) sale `false` sin evidencia: 27 de 115 tienen `ultima: null` y los 27
+  dicen que no son fosiles
+
+### C. ¿Colaboran los mineros? — MEDIDO, no afirmado
+
+| senal | estado |
+|---|---|
+| PUBLICAR | 235 hallazgos de 9 mineros |
+| CONSULTAR | 1 de 9 lo hacia, y **tiraba el resultado**. Corregido en A31 |
+| PREGUNTAR | **0 preguntas** hasta hoy. Estrenado: 2, las dos diciendo *por que no puedo yo* |
+| CHOCAR | 5 sujetos con dos mineros distintos |
+| ARBITRAR | 5 resueltos por regla · **0 por el arbitro**, que nunca se ha invocado |
+
+**Era un tablon con una discusion, no una colaboracion.** Falta que los 7 mineros restantes
+consulten antes de concluir y que alguien conteste las preguntas abiertas.
+
+### D. Los tres de siempre, que siguen
+
+- **MIN-OBEDECER** — leer no es obedecer. La puerta mide la forma.
+- **MIN-REGISTRAR-45** — con borrador; el `failure_mode` hay que averiguarlo CORRIENDOLO.
+- **MIN-MIRAR-LOS-NUEVOS** — 418 nombres que el delta destapo y nadie ha mirado.
