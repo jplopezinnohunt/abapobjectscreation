@@ -825,3 +825,54 @@ en uno de los dos — la validación más barata que tenemos, sin usar) · `AN-A
   comparten prefijo GUID y podrían ser el mismo satélite. **No citar 40 como cifra cerrada.**
 - **improve_algorithms** no pondera por PROFUNDIDAD en el DAG, y debería: mejorar una capa baja
   levanta todo lo de arriba.
+
+
+---
+
+## Capacidad de mineria — pendientes abiertos (sesion 103, 2026-08-25)
+
+El patron que los une: **producimos conocimiento de CLASIFICACION dentro de un analisis y no lo
+sacamos de ahi**. Un dato perdido se nota manana; un clasificador perdido no se nota nunca,
+porque el siguiente analisis vuelve a derivarlo sin saber que ya lo sabiamos. Regla
+`feedback_a_classifier_born_inside_an_analysis_must_be_promoted` (CRITICAL).
+
+### Prioridad 1 — capacidad que existe y no se puede reusar
+- **MIN-VARIANT-CORPUS** — extraer VARI/VARID de las **127 variantes DISENADAS** (35 programas;
+  el resto de los 29.190 pares son instancias de un solo uso, como los 14.585 de RBDAPP01). De
+  sus valores salen las **rutas de fichero** = el mapa de integraciones por job, que hoy no
+  existe. Algoritmo A33, `lands_in` PENDIENTE. Empezar por `ZFI_SWIFT_UPLOAD_BCM` (2 variantes,
+  2.780 pasos, codigo propio) y `YFI_COUPA_POSTING_FILE`.
+- **MIN-ACCOUNT-CLASSES** — extraer `FAGL_011ZC` al Gold DB y materializar
+  cuenta -> nodo de balance -> **clase de cuenta**. Hoy se deriva EN VIVO dentro de
+  `fsv_coverage_check.py` y no se guarda, asi que la revaluacion FX, el analisis de bancos y el
+  alta de maestros lo re-derivan cada uno por su cuenta. Algoritmo A34. Cuidado medido: la
+  version se elige por la VARIANTE de RFBILA00 (`BILAVERS`), nunca por T011 — usar la
+  equivocada invento un hueco de 144 M EUR.
+- **MIN-TRANSPORT** — 20.915 transportes en E070, **15 scripts** que los analizan y **UN** solo
+  algoritmo registrado (`A17_change_governance`). Registrar al menos
+  `brain_v2/ingestors/transport_ingestor.py` y
+  `Zagentexecution/quality_checks/config_transport_prerelease_check.py`.
+
+### Prioridad 2 — cobertura del censo
+- **MIN-REGISTER-23** — 23 mineros vivos sin registrar, borradores ya emitidos en
+  `brain_v2/methods/mining_candidates.json` (11 CANAL_Y_ACTOR, 6 FLUJO_DE_CONTROL, 2 REALIDAD,
+  1 DERIVA). El `failure_mode` de cada uno hay que **averiguarlo corriendolo**: inventarlo es
+  peor que dejarlo vacio.
+- **MIN-OTROS-REPOS** — el censo solo mira este repo. Los mineros de `FINCLOSSING`,
+  `unesco-sap-brain` y `unescore20-PPM-brain` no los ve nadie desde aqui.
+- **MIN-TRANSCRIPT** — parte del metodo se genera en la CONVERSACION y no llega a tocar disco.
+  A35 mira ficheros; deberia mirar tambien el transcript de la sesion.
+
+### Prioridad 3 — la capa de juicio
+- **MIN-ARBITRO** — los choques entre mineros se SACAN a la luz (`mining_bus.py choques`) y no
+  los arbitra nadie. Los de hoy se resuelven solos por autoridad de evidencia; el dia que
+  choquen **dos medidas del mismo peso** hace falta juicio, y eso es un agente, no una regla.
+- **MIN-PRECONDICIONES** — los cinco modos de fallo de la familia B dicen lo mismo — *si la
+  precondicion esta mal, la salida es verosimil y falsa* — y **ninguno la comprueba**: solo la
+  documentan. Convertir cada `failure_mode` en una precondicion que se NIEGUE a publicar, como
+  hizo `fsv_coverage_check` al negarse a llamar hueco a lo que no se ejecuta.
+
+### Stores que siguen fuera del grafo (3)
+`drift_signals.json` · `p2p_ocel2_summary.json` · `reality_filter.json` — son agregados sin
+nombre de objeto: o se les da una clave por objeto, o se declaran agregados **con motivo** en
+`graph_landing_check.FUERA`. Dejarlo en silencio es lo que dejo 19 stores fuera durante meses.
