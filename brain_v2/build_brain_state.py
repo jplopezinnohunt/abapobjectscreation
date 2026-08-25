@@ -128,6 +128,11 @@ STORES_AL_GRAFO = [
     {"file": "hierarchy_traversal.json", "key": "hierarchy", "at": "sets"},
     {"file": "bank_model_findings.json", "key": "bank_model", "at": "findings",
      "name_field": "probe"},
+    # Lo que los mineros concluyeron, colgado del objeto del que hablan. Es lo que hace que
+    # preguntarle al grafo por MULESOFT devuelva tambien "A23 dice que parece persona, A27 dice
+    # que USR02 la declara cuenta de sistema" -- el choque, no solo el dato.
+    {"file": "../process_mining/mining_findings.json", "key": "mining", "at": "hallazgos",
+     "name_field": "sujeto"},
     {"file": "Zagentexecution/sap_data_extraction/process_discovery/p2p_conformance.json",
      "key": "conformance_p2p", "at": "deviations"},
 ]
@@ -596,7 +601,15 @@ def main():
             if nm not in objects:
                 objects[nm] = synthesize_object_from_records(
                     nm, claims, incidents_pre, annotations, domains_registry_preload)
-            objects[nm].setdefault("discovery", {})[st["key"]] = hechos
+            # VARIOS registros pueden hablar del MISMO objeto, y en el bus de mineros eso no es
+            # un duplicado: es el choque, que es donde estaba el hallazgo. Sobrescribir dejaba
+            # a MULESOFT con una sola conclusion y borraba que A23 y A27 dicen cosas distintas.
+            dst = objects[nm].setdefault("discovery", {})
+            if st["key"] in dst:
+                prev = dst[st["key"]]
+                dst[st["key"]] = (prev if isinstance(prev, list) else [prev]) + [hechos]
+            else:
+                dst[st["key"]] = hechos
             n += 1
         stores_ingeridos[st["key"]] = n
         if n == 0:

@@ -156,6 +156,20 @@ def cruzar_con_lo_conocido():
         if fuera:
             nuevos[clave] = fuera[:60]
 
+    # PUBLICAR EN EL BUS lo que esta corrida vio y el brain no sabia. Sin este paso la cadena
+    # escribia un parte que nadie mas leia -- exactamente el defecto que el bus vino a arreglar,
+    # cometido por la propia cadena que lo estrena.
+    try:
+        from mining_bus import publicar  # type: ignore
+        for clave, lista in nuevos.items():
+            for nombre in lista[:20]:
+                publicar(f"A29_discovery_chain/{clave}", "RESTO_SIN_EXPLICAR", nombre,
+                         f"lo vio {clave} en esta corrida y el grafo no lo tenia",
+                         evidencia=f"process_mining/discovery_delta.json :: {clave}",
+                         autoridad="MEDIDO_EN_DATOS", aspecto="visto_sin_conocer")
+    except Exception as e:
+        print(f"    AVISO: no se pudo publicar en el bus de mineros ({type(e).__name__})")
+
     delta = {
         "_que_es": ("lo que la cadena de descubrimiento encontro y el brain TODAVIA NO SABE. "
                     "Cada nombre de aqui es un candidato a claim, o a un objeto que falta"),

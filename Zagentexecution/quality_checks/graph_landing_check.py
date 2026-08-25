@@ -60,6 +60,9 @@ FUERA = {
     "quality_checks_state.json": "estado de las puertas, no conocimiento del sistema",
     "cycle_state.json": "estado del ciclo",
     "trigger_state.json": "estado de disparadores",
+    "discovery_delta.json": ("es el PARTE de una corrida -- que encontro la cadena que el brain "
+                             "aun no sabia -- y se reescribe entera en la siguiente. Lo que de "
+                             "ese parte merezca quedarse se promueve a claim; el parte no"),
 }
 
 
@@ -161,12 +164,18 @@ def main():
     # ---- 2. ALGORITMOS MUERTOS --------------------------------------------
     # El detalle (quien invoca que) lo da artifact_wiring_check. Aqui solo se cuenta, para que
     # el numero aparezca junto a los otros dos y no haya que acordarse de correr la otra puerta.
-    fuentes = ""
+    # Se guarda POR FICHERO, no concatenado. Contar apariciones sobre un pegote asumia que el
+    # propio script estaba dentro y exigia count>1; sap_process_discovery.py vive en
+    # Zagentexecution/sap_data_extraction/, que no se barre, asi que aparecia UNA vez -- en la
+    # cadena que si lo llama -- y salia muerto teniendo llamador. Lo correcto no es contar: es
+    # preguntar si lo nombra ALGUIEN QUE NO SEA EL MISMO.
+    fuentes_por_fichero = {}
     for pat in ("brain_v2/**/*.py", "scripts/**/*.py", "process_mining/**/*.py",
-                "Zagentexecution/quality_checks/*.py", ".claude/agents/*.md"):
+                "Zagentexecution/**/*.py", ".claude/agents/*.md"):
         for p in glob.glob(os.path.join(ROOT, pat), recursive=True):
             try:
-                fuentes += open(p, encoding="utf-8", errors="ignore").read()
+                fuentes_por_fichero[os.path.abspath(p)] = open(
+                    p, encoding="utf-8", errors="ignore").read()
             except Exception:
                 pass
     muertos = []
@@ -177,8 +186,14 @@ def main():
         vivo = False
         for b in binds:
             nom = os.path.basename(str(b))
-            # Se cuenta como vivo si alguien que NO es el propio fichero lo nombra...
-            if fuentes.count(nom) > 1:
+            # Un modulo se invoca por su NOMBRE DE FICHERO cuando lo ejecutas, pero por su
+            # NOMBRE DE MODULO cuando lo importas: `from mining_bus import publicar` no contiene
+            # la cadena "mining_bus.py". Buscando solo el fichero, un modulo bien usado sale
+            # muerto -- tercera vez que esta misma puerta confunde la forma con el efecto.
+            mod = nom[:-3] if nom.endswith(".py") else nom
+            propio = os.path.abspath(os.path.join(ROOT, str(b).replace("/", os.sep)))
+            if any(nom in t or f" {mod} import" in t or f"import {mod}" in t
+                   for f, t in fuentes_por_fichero.items() if f != propio):
                 vivo = True
                 break
             # ...o si vive en un directorio que un runner recorre por GLOB. Las puertas de
